@@ -56,6 +56,10 @@ Rectangle {
     //: #2013: a hely BEÁLLÍTÁSA is a gazdán megy át — 20 kijelölt elem
     //: fölött az eredeti megerősítést kér (`0x00652585`, `cmp ebx, 0x14`).
     signal setGeotagRequested(var rows, real latitude, real longitude)
+    // A rács húzása saját megerősítést kap, a kijelölt sorokkal együtt.
+    signal photosDroppedRequested(var rows, real latitude, real longitude)
+    //: #4582: a jelölő buborékából a képcsoportot mutatjuk a rácsban.
+    signal markerSearchRequested(var rows)
 
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
@@ -91,25 +95,74 @@ Rectangle {
             }
         }
 
-        Loader {
-            id: mapLoader
-            objectName: "placesMapLoader"
+        Item {
+            id: mapViewport
+            objectName: "placesMapViewport"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            active: panel.visible
-            source: "PlacesMap.qml"
-            onLoaded: {
-                item.markers = Qt.binding(function() {
-                    return panel.filteredMarkers
-                })
-                item.markerActivated.connect(function(row) {
-                    // Előbb jelöljük ki a képét, utána szűrjünk: a főablak a
-                    // modellváltáskor az azonosítója alapján visszaállítja a
-                    // kijelölést a geocímkézett rácsban.
-                    panel.photoActivated(row)
-                    if (controller) controller.showGeotagged()
-                })
-                item.placePicked.connect(panel.placeSelection)
+
+            Loader {
+                id: mapLoader
+                objectName: "placesMapLoader"
+                anchors.fill: parent
+                active: panel.visible
+                source: "PlacesMap.qml"
+                onLoaded: {
+                    item.markers = Qt.binding(function() {
+                        return panel.filteredMarkers
+                    })
+                    item.markerActivated.connect(function(row) {
+                        // Előbb jelöljük ki a képét, utána szűrjünk: a főablak a
+                        // modellváltáskor az azonosítója alapján visszaállítja a
+                        // kijelölést a geocímkézett rácsban.
+                        panel.photoActivated(row)
+                        if (controller) controller.showGeotagged()
+                    })
+                    item.markerSearchRequested.connect(panel.markerSearchRequested)
+                    item.markerEraseRequested.connect(panel.clearGeotagRequested)
+                    item.placePicked.connect(panel.placeSelection)
+                    // a térképmodul nélküli tartalék-nézetben ez a jel nincs meg
+                    if (item.photosDropped) item.photosDropped.connect(panel.photoDrop)
+                }
+            }
+
+            Rectangle {
+                id: mapStatusOverlay
+                objectName: "placesMapStatusOverlay"
+                anchors.fill: parent
+                z: 1
+                color: Theme.contentPanel
+                visible: !!(mapLoader.status === Loader.Ready
+                            && mapLoader.item
+                            && (mapLoader.item.mapLoading
+                                || mapLoader.item.offline))
+
+                Column {
+                    anchors.centerIn: parent
+                    width: Math.min(parent.width - 24, 260)
+                    spacing: 8
+
+                    BusyIndicator {
+                        objectName: "placesMapLoadingIndicator"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 48
+                        height: 48
+                        running: visible
+                        visible: !!(mapLoader.item && mapLoader.item.mapLoading)
+                    }
+
+                    Text {
+                        objectName: "placesMapStatusText"
+                        width: parent.width
+                        text: mapLoader.item && mapLoader.item.offline
+                              ? qsTr("Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.")
+                              : qsTr("Loading Map...")
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.textGray
+                        wrapMode: Text.WordWrap
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
             }
         }
 
@@ -215,6 +268,11 @@ Rectangle {
     function placeSelection(latitude, longitude) {
         if (panel.targetRows.length === 0) return
         panel.setGeotagRequested(panel.targetRows, latitude, longitude)
+    }
+
+    function photoDrop(rows, latitude, longitude) {
+        if (!rows || rows.length === 0) return
+        panel.photosDroppedRequested(rows, latitude, longitude)
     }
 
     function applyLocalSearch() {

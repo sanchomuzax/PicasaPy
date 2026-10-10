@@ -52,9 +52,11 @@ Flickable {
         case "Blur Radius": return qsTr("Blur Radius")
         case "Brightness": return qsTr("Brightness")
         case "Color Mix": return qsTr("Color Mix")
-        case "Edge Strength": return qsTr("Edge Strength")
-        case "Posterize": return qsTr("Posterize")
-        case "Smoothness": return qsTr("Smoothness")
+        //: #4556: a Képregény csúszkái — az eredeti `ImageFilters::BlurXY`,
+        //: `DotContrast` és `DotFade` feliratai (ld. picasa-effekt-feliratok.md)
+        case "Color Brush": return qsTr("Color Brush")
+        case "Dot Density": return qsTr("Dot Density")
+        case "Dot Fade": return qsTr("Dot Fade")
         case "Width": return qsTr("Width")
         case "Border Width": return qsTr("Border Width")
         case "Angle": return qsTr("Angle")
@@ -383,6 +385,7 @@ Flickable {
             PanelButton {
                 objectName: "effectParamApplyButton"
                 label: qsTr("Apply")
+                tooltip: qsTr("Apply Changes")
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.applyParamPanel()
@@ -397,6 +400,7 @@ Flickable {
             PanelButton {
                 objectName: "effectParamCancelButton"
                 label: qsTr("Cancel")
+                tooltip: qsTr("Cancel Changes")
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.cancelParamPanel()

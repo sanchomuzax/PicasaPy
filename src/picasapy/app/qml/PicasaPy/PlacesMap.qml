@@ -8,8 +8,35 @@ import QtPositioning
 Item {
     id: root
 
-    // jelölők: [{row, name, latitude, longitude}] — a controller.geoMarkers
+    // jelölők: [{row, name, thumbUrl, latitude, longitude}] — controller.geoMarkers
     property var markers: []
+    readonly property var groupedMarkers: {
+        var groups = []
+        var byPosition = {}
+        if (!markers) return groups
+        for (var i = 0; i < markers.length; ++i) {
+            var marker = markers[i]
+            // A geotag írása hat tizedesjegyű; ez a pontosság egy helyen
+            // tartja az azonos helyre mentett képeket.
+            var key = Number(marker.latitude).toFixed(6) + ","
+                    + Number(marker.longitude).toFixed(6)
+            var group = byPosition[key]
+            if (!group) {
+                group = {
+                    latitude: marker.latitude,
+                    longitude: marker.longitude,
+                    rows: [],
+                    thumbUrl: marker.thumbUrl || ""
+                }
+                byPosition[key] = group
+                groups.push(group)
+            }
+            group.rows.push(marker.row)
+        }
+        return groups
+    }
+    readonly property bool mapLoading: !map.mapReady && map.error === Map.NoError
+    readonly property bool offline: map.error === Map.ConnectionError
     readonly property var mapTypeNames: {
         var names = []
         for (var i = 0; i < map.supportedMapTypes.length; ++i)
@@ -24,8 +51,13 @@ Item {
     }
     // a térképen kattintott hely (a „kép ide" művelethez)
     signal placePicked(real latitude, real longitude)
-    // jelölőre kattintás → a kép sora
+    // jelölőre kattintás → az első kép sora
     signal markerActivated(int row)
+    // a rácsból érkezett kijelölés és az ejtési pont koordinátája
+    signal photosDropped(var rows, real latitude, real longitude)
+    // buborékműveletek: az azonos helyen álló összes képsor
+    signal markerSearchRequested(var rows)
+    signal markerEraseRequested(var rows)
 
     function centerOnMarkers() {
         if (!markers || markers.length === 0) return
@@ -57,32 +89,27 @@ Item {
         center: QtPositioning.coordinate(47.4979, 19.0402)  // alapnézet
 
         MapItemView {
-            model: root.markers
+            model: root.groupedMarkers
             delegate: MapQuickItem {
+                id: markerItem
                 required property var modelData
                 coordinate: QtPositioning.coordinate(modelData.latitude,
                                                      modelData.longitude)
-                anchorPoint.x: pin.width / 2
-                anchorPoint.y: pin.height
-                sourceItem: Item {
-                    id: pin
-                    width: 18; height: 24
-                    Rectangle {
-                        width: 14; height: 14; radius: 7
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        color: Theme.brandRed
-                        border.color: "#ffffff"; border.width: 2
+                sourceItem: PlacesMarker {
+                    id: markerVisual
+                    markerData: markerItem.modelData
+                    onMarkerActivated: function(row) {
+                        root.markerActivated(row)
                     }
-                    Rectangle {
-                        width: 2; height: 10
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-                        color: Theme.brandRed
+                    onMarkerSearchRequested: function(rows) {
+                        root.markerSearchRequested(rows)
                     }
-                    TapHandler {
-                        onTapped: root.markerActivated(pin.parent.modelData.row)
+                    onMarkerEraseRequested: function(rows) {
+                        root.markerEraseRequested(rows)
                     }
                 }
+                anchorPoint.x: markerVisual.width / 2
+                anchorPoint.y: markerVisual.height
             }
         }
 
@@ -92,6 +119,54 @@ Item {
                 var coord = map.toCoordinate(point.position)
                 root.placePicked(coord.latitude, coord.longitude)
             }
+        }
+    }
+
+    DropArea {
+        id: mapDropArea
+        objectName: "placesMapDropArea"
+        anchors.fill: parent
+        z: 1
+
+        onDropped: function(drop) {
+            var source = drop.source
+            if (!source || source.payload !== "photos") return
+            var rows = source.photoRows
+            if (!rows || rows.length === 0) return
+            var mapPoint = map.mapFromItem(mapDropArea, drop.x, drop.y)
+            var coordinate = map.toCoordinate(mapPoint)
+            drop.acceptProposedAction()
+            root.photosDropped(rows, coordinate.latitude,
+                               coordinate.longitude)
+        }
+    }
+
+    Rectangle {
+        objectName: "placesDropHint"
+        anchors.centerIn: parent
+        z: 2
+        visible: mapDropArea.containsDrag
+                 && mapDropArea.drag.source
+                 && mapDropArea.drag.source.payload === "photos"
+        readonly property int padding: 8
+        implicitWidth: dropHintLabel.implicitWidth + padding * 2
+        implicitHeight: dropHintLabel.implicitHeight + padding * 2
+        color: Theme.contentPanel
+        border.color: Theme.chromeBorder
+        radius: 3
+        Text {
+            id: dropHintLabel
+            objectName: "placesDropHintLabel"
+            anchors.centerIn: parent
+            text: {
+                var source = mapDropArea.drag.source
+                if (!source) return ""
+                var rows = source.photoRows
+                return qsTr("Place %d photos here")
+                    .replace("%d", String(rows ? rows.length : 1))
+            }
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
         }
     }
 

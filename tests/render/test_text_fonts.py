@@ -66,9 +66,22 @@ class TestFontResolution:
         assert font_path_for("nincs-ilyen") == font_path_for(DEFAULT_FAMILY)
 
     def test_the_dropdown_data_is_key_and_label(self):
+        """#4546: futó Qt-alkalmazás mellett a telepített családok adják a
+        listát, nélküle a Pillow-kompatibilitási lista — a teszt azt várja,
+        ami az adott folyamatban érvényes (a CI egy folyamatban több fájlt is
+        futtathat, így a Qt-alkalmazás jelenléte nem rögzített)."""
+        from PySide6.QtGui import QFontDatabase, QGuiApplication
+
         labels = family_labels()
         assert {"key", "label"} == set(labels[0])
-        assert [item["key"] for item in labels] == [f.key for f in FONT_FAMILIES]
+        if QGuiApplication.instance() is not None:
+            vart = sorted(
+                set(QFontDatabase.families()),
+                key=lambda family: (family.casefold(), family),
+            )
+        else:
+            vart = [f.key for f in FONT_FAMILIES]
+        assert [item["key"] for item in labels] == vart
 
     def test_a_nonpositive_size_is_refused(self):
         with pytest.raises(ValueError):

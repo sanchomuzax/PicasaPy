@@ -30,25 +30,23 @@ fölöslegesen.
 
 - Feltöltés (almenü)
 
-**Súgó**
-
-- Billentyűkódok — a billentyűparancsok listáját itt találod:
-  [Billentyűparancsok](billentyuk.md)
-
-(A **Súgó - tartalom és tárgymutató** tétel és az **F1** billentyű
-**működik**: ezt a súgót nyitja meg — lásd [A beépített súgó](sugo.md).)
+(A **Súgó** menü tételei közül a **Súgó - tartalom és tárgymutató** az
+**F1** billentyűvel együtt, valamint a **Billentyűkódok** **működik**:
+az előbbi ezt a súgót nyitja meg — lásd [A beépített súgó](sugo.md) —,
+az utóbbi a működő gyorsbillentyűk listáját, lásd
+[Billentyűparancsok](billentyuk.md).)
 
 **Helyi menükben**
 
 - Társítás (a kép helyi menüjében és a nézőben)
-- Névcímkék hozzáadása (a mappa és az album helyi menüjében)
 - Mappa felosztása itt…
 - Album törlése, Album rendezésének alapja — az **Albumleírás
   szerkesztése…** viszont **működik**, lásd [A könyvtár](konyvtar.md)
 - Jelszó megadása/módosítása… a saját gyűjteményeken — a **Rejtett
   mappák** fejlécén viszont **működik**, lásd [A könyvtár](konyvtar.md)
-- Az Emberek album törlése, Az Emberek album szerkesztése…, Beállítás
-  az Emberek album indexképeként
+- Beállítás az Emberek album indexképeként — az **Az Emberek album
+  törlése** és **Az Emberek album szerkesztése…** viszont **működik**,
+  lásd [Emberek és arcok](emberek.md)
 
 **Beállítások**
 

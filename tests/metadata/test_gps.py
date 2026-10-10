@@ -107,6 +107,12 @@ class TestABeolvasasTOVABBRA_IS_TURO:
         assert pont is not None
         assert pont.as_geotag() == "47.500000,19.050000"
 
+    def test_a_korpusz_alak_bajtra_visszajon(self):
+        eredeti = "47.820020,18.848376"
+        pont = parse_geotag(eredeti)
+        assert pont is not None
+        assert pont.as_geotag() == eredeti
+
     def test_out_of_range_is_error(self):
         with pytest.raises(ValueError):
             format_geotag(120.0, 0.0)

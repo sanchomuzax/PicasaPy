@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 import time
 from pathlib import Path
+from weakref import WeakKeyDictionary
 
 import shiboken6
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QSettings, Qt
@@ -27,17 +28,19 @@ _MENUK = (
     ("File", "&File"),
 )
 _MENU_UTVONAL_DARAB = {
-    "View": 43,
+    "View": 50,
     "Folder": 15,
-    "Picture": 19,
+    "Picture": 20,
     "Edit": 13,
     "Tools": 70,
     "Create": 8,
     "Help": 6,
     "File": 17,
 }
-assert sum(_MENU_UTVONAL_DARAB.values()) == 191
-_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 30, "mappanezet": 13}
+# #4528: hét új bejárható parancs került a Mappanézetbe (3 személyrendezés,
+# 4 Shortcuts-gyökér); maga az almenücím nem külön parancsútvonal.
+assert sum(_MENU_UTVONAL_DARAB.values()) == 199
+_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 30, "mappanezet": 20}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
 ]
@@ -56,6 +59,10 @@ _RENDSZERGYOKER_TETELEK = {
     "menuViewRootMyPictures": ("mypics", "mydocs"),
     "menuViewRootMyDocuments": ("mydocs",),
     "menuViewRootDesktop": ("desktop",),
+    # #4528: a Mappanézet ▸ Shortcuts almenü ugyanezt a három gyökeret választja
+    "menuViewShortcutMyPictures": ("mypics", "mydocs"),
+    "menuViewShortcutMyDocuments": ("mydocs",),
+    "menuViewShortcutDesktop": ("desktop",),
 }
 
 
@@ -149,8 +156,8 @@ _QML_ELEMEK: list[object] = []
 _UI_ELEMEK: dict[int, list[tuple[QObject, str, str]]] = {}
 _DIALOG_ELEMEK: dict[int, list[QObject]] = {}
 _LOADER_ELEMEK: dict[int, list[QObject]] = {}
-_MENU_ELEMEK: dict[int, list[QObject]] = {}
-_MENU_FEJLECEK: dict[int, list[QObject]] = {}
+_MENU_ELEMEK: WeakKeyDictionary[QObject, list[QObject]] = WeakKeyDictionary()
+_MENU_FEJLECEK: WeakKeyDictionary[QObject, list[QObject]] = WeakKeyDictionary()
 
 
 def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
@@ -210,14 +217,18 @@ def _menupont(menu, index: int) -> QQuickItem | None:
 
 
 def _menuk(menu_bar) -> list[QObject]:
-    azon = id(menu_bar)
-    if azon not in _MENU_ELEMEK:
-        _MENU_ELEMEK[azon] = [
+    # Az app minden QML-próbánál új MenuBar-t épít. A Python `id()` a régi
+    # ablak lebontása után újra kiosztható, ezért a gyorsítótár kulcsa az élő
+    # QObject legyen, gyenge hivatkozással.
+    if menu_bar not in _MENU_ELEMEK:
+        _MENU_ELEMEK[menu_bar] = [
             elem
             for elem in menu_bar.findChildren(QObject)
             if shiboken6.isValid(elem) and _menu_e(elem)
         ]
-    return [elem for elem in _MENU_ELEMEK[azon] if shiboken6.isValid(elem)]
+    return [
+        elem for elem in _MENU_ELEMEK[menu_bar] if shiboken6.isValid(elem)
+    ]
 
 
 def _almenu(menu_bar, szulo, sor):
@@ -330,20 +341,52 @@ def _kattints_qobject(qt_app, elem) -> None:
     _kattints(qt_app, elem_item)
 
 
+def _gyoker_jeloltek(menu_bar, cim: str) -> tuple[list, list[str]]:
+    """A MenuBar közvetlen menüi közül a `cim`-mel egyezők + diagnosztika."""
+    jeloltek = []
+    latott = []
+    for index in range(int(menu_bar.property("count") or 0)):
+        kifejezes = QQmlExpression(
+            qmlContext(menu_bar), menu_bar, f"menuAt({index})"
+        )
+        menu, hiba = kifejezes.evaluate()
+        assert not hiba, kifejezes.error()
+        # a QQmlExpression a menü újraépülése közben QMetaObject-et is adhat
+        # QObject helyett (CI-n előjött) — az ilyen találat nem menü
+        if not (isinstance(menu, QObject) and shiboken6.isValid(menu)):
+            latott.append(f"{index}: nem menü ({type(menu).__name__})")
+            continue
+        felirat = _szoveg(menu, "title")
+        latott.append(f"{index}: {felirat!r}")
+        if _normalizal(felirat) == _normalizal(cim):
+            jeloltek.append(menu)
+    return jeloltek, latott
+
+
 def _gyoker_menu(menu_bar, cim: str):
-    jeloltek = [
-        menu
-        for menu in _menuk(menu_bar)
-        if _normalizal(_szoveg(menu, "title")) == _normalizal(cim)
-    ]
-    assert len(jeloltek) == 1, f"a felső {cim} menü nem egyértelmű"
+    """A MenuBar közvetlen menüi közül válassza ki a felső menüpontot.
+
+    A menüsor újraépülése (pl. ablakmagasság-váltás után) alatt a lista
+    átmenetileg hiányos lehet; ezért az egyértelműséget VÁRJUK ki (legfeljebb
+    5 s), és a bukás kiírja, mit látott — a windowsos CI-n a `&Tools` ebben
+    az állapotban bukott (hipotézis: átmeneti újraépülés)."""
+    app = QGuiApplication.instance()
+    hatarido = time.monotonic() + 5.0
+    jeloltek, latott = _gyoker_jeloltek(menu_bar, cim)
+    while len(jeloltek) != 1 and time.monotonic() < hatarido:
+        app.processEvents()
+        time.sleep(0.05)
+        jeloltek, latott = _gyoker_jeloltek(menu_bar, cim)
+    assert len(jeloltek) == 1, (
+        f"a felső {cim} menü nem egyértelmű: {len(jeloltek)} találat; "
+        f"a menüsor: {latott}"
+    )
     return jeloltek[0]
 
 
 def _menu_fejlec(menu_bar, cim: str):
-    azon = id(menu_bar)
-    if azon not in _MENU_FEJLECEK:
-        _MENU_FEJLECEK[azon] = [
+    if menu_bar not in _MENU_FEJLECEK:
+        _MENU_FEJLECEK[menu_bar] = [
             elem
             for elem in menu_bar.findChildren(QObject)
             if isinstance(elem, QObject)
@@ -352,7 +395,7 @@ def _menu_fejlec(menu_bar, cim: str):
         ]
     jeloltek = [
         elem
-        for elem in _MENU_FEJLECEK[azon]
+        for elem in _MENU_FEJLECEK[menu_bar]
         if shiboken6.isValid(elem)
         and _normalizal(_szoveg(elem, "text")) == _normalizal(cim)
     ]

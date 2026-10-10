@@ -33,10 +33,13 @@ rácsban, ahogy a valódi Picasa importja is tenné."""
 
 from __future__ import annotations
 
+import ctypes
 import sqlite3
+import sys
 import time
 from collections.abc import Sequence
-from pathlib import Path
+from ctypes import wintypes
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable
 
 from PySide6.QtCore import (
@@ -44,6 +47,7 @@ from PySide6.QtCore import (
     QObject,
     QSettings,
     QStandardPaths,
+    QStorageInfo,
     QUrl,
     Signal,
     Slot,
@@ -126,6 +130,139 @@ DEFAULT_DESTINATION_SETTINGS_KEY = "import/defaultdestination"
 # `[+0x74c]`); ettől egy új méret felvétele nem töri el a meglévő
 # beállításokat. A `0` jelentése „EREDETI MÉRET", nem „nincs beállítva".
 RESIZE_SETTINGS_KEY = "import/resizeLimit"
+
+
+def _platform() -> str:
+    """A futó platform helyettesíthető fogantyúja (#1217)."""
+    return sys.platform
+
+
+def _read_mountinfo() -> str:
+    """A Linux helyi mountlistáját olvassa be."""
+    return Path("/proc/self/mountinfo").read_text(encoding="utf-8")
+
+
+def _linux_media_mount_points(mountinfo: str) -> list[str]:
+    """A mountinfóból csak a felhasználói médiagyökerek alatti pontokat adja."""
+    mount_roots = (PurePosixPath("/media"), PurePosixPath("/run/media"))
+    mount_points: set[str] = set()
+    for line in mountinfo.splitlines():
+        fields = line.split()
+        if len(fields) < 6:
+            continue
+        # A mountinfo a szóközt, tabot, sortörést és backslash-t oktális
+        # escape-ként tárolja a mountpont mezőben.
+        raw_path = fields[4]
+        decoded_path = (
+            raw_path.replace("\\040", " ")
+            .replace("\\011", "\t")
+            .replace("\\012", "\n")
+            .replace("\\134", "\\")
+        )
+        mount_path = PurePosixPath(decoded_path)
+        if not mount_path.is_absolute():
+            continue
+        if any(
+            mount_path != root and mount_path.is_relative_to(root)
+            for root in mount_roots
+        ):
+            mount_points.add(str(mount_path))
+    return sorted(mount_points)
+
+
+def discover_linux_mounted_sources() -> list[dict[str, str]]:
+    """A Linux felhasználói médiagyökerei alatti mountokat adja vissza.
+
+    A helyi mountlistából először csak a `/media` és `/run/media` alatti
+    pontokat választjuk ki, utána a QStorageInfo ezek kész állapotát és
+    címkéjét adja meg. Így más csatolt fájlrendszert (például hálózati
+    meghajtót) nem kérdezünk le.
+    """
+    by_path: dict[str, dict[str, str]] = {}
+    try:
+        mountinfo = _read_mountinfo()
+    except OSError:
+        return []
+
+    for path in _linux_media_mount_points(mountinfo):
+        volume = QStorageInfo(path)
+        if not volume.isReady():
+            continue
+        root = PurePosixPath(str(volume.rootPath()))
+        # Csak a mountlistában felsorolt tényleges csatolási pontot fogadjuk
+        # el; egy közönséges almappa saját QStorageInfo-ja a szülő mountot
+        # adná vissza.
+        if root != PurePosixPath(path):
+            continue
+
+        name = str(volume.name() or "").strip() or root.name
+        if not name:
+            continue
+        by_path[path] = {"path": path, "name": name}
+
+    return sorted(
+        by_path.values(), key=lambda source: (source["name"].casefold(), source["path"])
+    )
+
+
+_DRIVE_REMOVABLE = 2
+_DRIVE_REMOTE = 4
+
+
+def _windows_drive_type(root_path: str) -> int:
+    """A Windows meghajtótípusát adja vissza a GetDriveTypeW hívással."""
+    get_drive_type = ctypes.windll.kernel32.GetDriveTypeW
+    get_drive_type.argtypes = [wintypes.LPCWSTR]
+    get_drive_type.restype = wintypes.UINT
+    return int(get_drive_type(root_path))
+
+
+def _has_dcim_directory(root_path: str) -> bool:
+    """Megnézi, hogy a helyi meghajtó gyökerében van-e DCIM mappa."""
+    return (Path(root_path) / "DCIM").is_dir()
+
+
+def discover_windows_mounted_sources() -> list[dict[str, str]]:
+    """Windows cserélhető meghajtókat és DCIM-et tartalmazó köteteket ad vissza.
+
+    A távoli meghajtót a meghajtótípus alapján még azelőtt kihagyjuk, hogy
+    készültséget, címkét vagy DCIM könyvtárat kérdeznénk le róla.
+    """
+    by_path: dict[str, dict[str, str]] = {}
+    for volume in QStorageInfo.mountedVolumes():
+        root_path = str(volume.rootPath() or "").strip()
+        if not root_path:
+            continue
+
+        drive_type = _windows_drive_type(root_path)
+        if drive_type == _DRIVE_REMOTE or not volume.isReady():
+            continue
+        if drive_type != _DRIVE_REMOVABLE and not _has_dcim_directory(root_path):
+            continue
+
+        path_key = root_path.casefold()
+        name = str(volume.name() or "").strip()
+        if not name:
+            name = PureWindowsPath(root_path).drive or root_path
+        by_path[path_key] = {"path": root_path, "name": name}
+
+    return sorted(
+        by_path.values(),
+        key=lambda source: (source["name"].casefold(), source["path"].casefold()),
+    )
+
+
+def discover_mounted_sources() -> list[dict[str, str]]:
+    """A támogatott platformokon felderített kártya- és USB-források.
+
+    A PTP/MTP kamerák külön termékdöntésig nem kerülnek ebbe a listába.
+    """
+    active_platform = _platform()
+    if active_platform.startswith("linux"):
+        return discover_linux_mounted_sources()
+    if active_platform == "win32":
+        return discover_windows_mounted_sources()
+    return []
 
 
 def _thumb_url(photo_id: int) -> str:
@@ -223,6 +360,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     selectionChanged = Signal(list)
     autoExcludeChanged = Signal()
     mediaFilterChanged = Signal()
+    mountedSourcesChanged = Signal()
     recentSourcesChanged = Signal()
     recentDestinationsChanged = Signal()
     defaultDestinationChanged = Signal()
@@ -276,6 +414,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         # #441: import ELŐTTI forgatás (negyed fordulatok, 0..3) és
         # csillagozás, forrás-útvonal szerint
         self._media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
+        self._mounted_sources: list[dict[str, str]] = []
         self._rotations: dict[str, int] = {}
         self._starred: set[str] = set()
         # a legutóbb regisztrált előnézeti (negatív) id-k — új szkennelés
@@ -309,6 +448,20 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         A `LastImport…` legördülő adata: a felhasználó egy kattintással
         visszatérhet a rendszeresen használt kártyához/mappához."""
         return self._read_recent_sources()
+
+    @Property("QVariant", notify=mountedSourcesChanged)
+    def mountedSources(self):  # noqa: N802 — QML property-konvenció
+        """A jelenleg elérhető, cserélhető importforrások."""
+        return [dict(source) for source in self._mounted_sources]
+
+    @Slot()
+    def refreshMountedSources(self) -> None:  # noqa: N802 — QML property-konvenció
+        """Frissíti a csatolt kártyák és USB-meghajtók listáját."""
+        sources = discover_mounted_sources()
+        if sources == self._mounted_sources:
+            return
+        self._mounted_sources = sources
+        self.mountedSourcesChanged.emit()
 
     def _read_recent_sources(self) -> list[str]:
         stored = self._get_settings().value(RECENT_SOURCES_SETTINGS_KEY, [])

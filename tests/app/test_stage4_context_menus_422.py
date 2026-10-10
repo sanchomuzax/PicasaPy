@@ -72,22 +72,25 @@ class TestAlbumContextMenu:
         ]
         assert found == self.DOCUMENTED
 
-    def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
-        """Az album törlése és a webes műveletek mögött nincs réteg — szürkén
-        LÁTSZANAK (spec 5.1.).
+    def test_unbacked_commands_are_shown_but_album_torles_aktiv(self, qml_engine):
+        """Az album törlése (#4598) és a webes műveletek rétege eltérő.
 
-        ⭐ #3173: az „Albumleírás szerkesztése…" KIKERÜLT ebből a listából —
+        A törlés aktív, a megszűnt webes műveletek továbbra is szürkék.
+
+        ⭐ #3173: az „Albumleírás szerkesztése…” KIKERÜLT ebből a listából —
         valódi tétel lett (az album tulajdonságai az `album.fen`
         párbeszédén szerkeszthetők). A viselkedését a
         `test_album_tulajdonsagok_*_3173.py` méri.
         """
         menu = _load(qml_engine, "AlbumContextMenu")
         for name in (
-            "albumMenuDelete",
             "albumMenuOnlineActions",
             "albumMenuUploadToGooglePhotos",
         ):
             assert menu.findChild(QObject, name).property("enabled") is False
+        assert menu.findChild(
+            QObject, "albumMenuDelete"
+        ).property("enabled") is True
 
         # #4535: a Névcímkék hozzáadása az album tagképeit vizsgálja.
         assert menu.findChild(QObject, "albumMenuAddNameTags").property("enabled")
@@ -143,15 +146,25 @@ class TestPeopleAlbumContextMenu:
         ]
         assert found == self.EXPECTED
 
-    def test_people_album_editing_is_disabled_until_the_faces_work(
-        self, qml_engine
-    ):
-        """A személy-album törlése/szerkesztése a #26 hatóköre."""
+    def test_people_album_delete_and_edit_are_live_signals(self, qml_engine):
+        """A #4587 beköti a személy szerkesztését és megerősített törlését."""
         menu = _load(qml_engine, "PeopleAlbumContextMenu")
-        assert menu.findChild(
-            QObject, "peopleAlbumMenuDelete").property("enabled") is False
-        assert menu.findChild(
-            QObject, "peopleAlbumMenuEdit").property("enabled") is False
+        menu.setProperty("personName", "Anna")
+        events = []
+        menu.deleteRequested.connect(
+            lambda name: events.append(("delete", name))
+        )
+        menu.editRequested.connect(lambda name: events.append(("edit", name)))
+
+        for name, action in (
+            ("peopleAlbumMenuDelete", "delete"),
+            ("peopleAlbumMenuEdit", "edit"),
+        ):
+            item = menu.findChild(QObject, name)
+            assert item is not None
+            assert item.property("enabled") is True
+            _trigger(menu, name)
+            assert events[-1] == (action, "Anna")
 
     @pytest.mark.parametrize(
         "item_name,signal_name",

@@ -55,6 +55,25 @@ Window {
     property string sourceFolder: ""
     property string destFolder: ""
 
+    // A Qt által észlelt, csatolt kártyák és USB-meghajtók. A
+    // forrásfajta feliratát itt fordítjuk; a vezérlő csak útvonalat és
+    // kötetcímkét ad vissza.
+    readonly property var mountedSourceOptions: {
+        if (typeof importSourceController === "undefined"
+                || !importSourceController
+                || importSourceController.mountedSources === undefined)
+            return []
+        var sources = importSourceController.mountedSources
+        var options = []
+        for (var i = 0; i < sources.length; i++) {
+            options.push({
+                "path": sources[i].path,
+                "label": qsTr("Removable Drive (%1)").arg(sources[i].name)
+            })
+        }
+        return options
+    }
+
     // #441: a HÁROM célmappa-elnevezési mód — a `picasapy.importsource.
     // NAMING_*` konstansaival egyező string. A dátum szerinti bontás a
     // Picasa import-munkafolyamatának lelke, ezért ez az alapértelmezés.
@@ -108,6 +127,14 @@ Window {
     property int lastFailedCount: -1
 
     property string lastError: ""
+
+    onVisibleChanged: {
+        if (visible
+                && typeof importSourceController !== "undefined"
+                && importSourceController
+                && importSourceController.refreshMountedSources !== undefined)
+            importSourceController.refreshMountedSources()
+    }
 
     //: #1629: a megjelenített útvonal OS-NATÍV alakban. A szöveges
     //: `file://`-levágás Windowson `/C:/Users/…`-t hagyott maga után; a
@@ -268,6 +295,20 @@ Window {
                 displayText: qsTr("Recent sources")
                 onActivated: {
                     importSourceWindow.sourceFolder = model[currentIndex]
+                    importSourceWindow.scanCurrentSource()
+                }
+            }
+            PicasaComboBox {
+                objectName: "importSourceMountedSourcesBox"
+                Layout.preferredWidth: 170
+                visible: count > 0
+                textRole: "label"
+                displayText: qsTr("Removable drives")
+                model: importSourceWindow.mountedSourceOptions
+                onActivated: {
+                    var source = model[currentIndex]
+                    if (!source) return
+                    importSourceWindow.sourceFolder = source.path
                     importSourceWindow.scanCurrentSource()
                 }
             }

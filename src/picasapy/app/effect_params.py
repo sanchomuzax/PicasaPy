@@ -280,9 +280,11 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _color("color", "Neon Color", "#ff0000"),
     ),
     "comicize": (
-        _p("edge_strength", "Edge Strength", 0.0, 100.0, 20.0),
-        _p("posterize", "Posterize", 0.0, 100.0, 50.0),
-        _p("smoothness", "Smoothness", 0.0, 100.0, 50.0),
+        # #4556: az eredeti feliratok (`ImageFilters::BlurXY`, `DotContrast`,
+        # `DotFade`) — ld. `docs/specs/picasa-effekt-feliratok.md`
+        _p("blur_xy", "Color Brush", 0.0, 100.0, 20.0),
+        _p("dot_contrast", "Dot Density", 0.0, 100.0, 50.0),
+        _p("dot_fade", "Dot Fade", 0.0, 100.0, 50.0),
     ),
     # --- #516: a filterdesc-registry.md 4.2 szerint kiegészített/javított --
     # Border: OuterThickness, InnerThickness, CornerRadius, OuterColor,

@@ -24,7 +24,7 @@ from __future__ import annotations
 import cv2
 import numpy as np
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Q_ARG, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPointF, Q_ARG, Qt
 from PySide6.QtTest import QTest
 
 from tests.app.qml_functional.conftest import _build_qml_app
@@ -144,6 +144,26 @@ def _felvetel(window, hova) -> np.ndarray:
     return bgr
 
 
+def _navigator_bezarasa_a_pixelmereshez(window, qt_app) -> None:
+    """A főfotó pixelmérése ne számolja bele az áttekintő bélyegét.
+
+    A #4568 navigátora ugyanazt a fotót kicsiben újrarajzolja; a pixelteszt
+    ezért a saját, látható bezárógombjával eltünteti, mielőtt a főképet méri.
+    """
+    navigator = window.findChild(QObject, "zoomNavigator")
+    if navigator is None or not navigator.property("visible"):
+        return
+    close_button = window.findChild(QObject, "zoomNavigatorCloseButton")
+    assert close_button is not None
+    point = close_button.mapToScene(
+        QPointF(close_button.property("width") / 2,
+                close_button.property("height") / 2)
+    ).toPoint()
+    QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=point)
+    qt_app.processEvents()
+    assert not navigator.property("visible"), "a pixelmérés előtti bezárás nem sikerült"
+
+
 def _keret_resz(bgr, kep_elem) -> np.ndarray:
     """A kép KERETÉNEK kivágata — a filmszalag bélyegképei ugyanezeket a
     színeket hordják, ezért a mérés csak a néző képterületén folyik."""
@@ -214,6 +234,7 @@ class TestAzEgyAzEgyForgatottKepen:
 
         _hivd(qt_app, nezo, "zoomActual")
 
+        _navigator_bezarasa_a_pixelmereshez(window, qt_app)
         resz = _keret_resz(_felvetel(window, tmp_path), kep)
         jel = _szin_doboz(resz, SAROK, ALAP_A)
         assert jel is not None, "a sarokjel nem látszik a kirajzolt képen"
@@ -246,6 +267,7 @@ class TestAzEgyAzEgyForgatottKepen:
 
         _hivd(qt_app, nezo, "setZoomValue", 1.0)
 
+        _navigator_bezarasa_a_pixelmereshez(window, qt_app)
         resz = _keret_resz(_felvetel(window, tmp_path), kep)
         jel = _szin_doboz(resz, KOZEP, ALAP_A)
         assert jel is not None, "a középső jel nem látszik"
@@ -269,6 +291,7 @@ class TestForgatasNelkulValtozatlan:
 
         _hivd(qt_app, nezo, "zoomActual")
 
+        _navigator_bezarasa_a_pixelmereshez(window, qt_app)
         resz = _keret_resz(_felvetel(window, tmp_path), kep)
         jel = _szin_doboz(resz, SAROK, ALAP_A)
         assert jel is not None
@@ -305,6 +328,7 @@ class TestKettosNezetForgatottKeppel:
 
         _hivd(qt_app, nezo, "zoomActual")
 
+        _navigator_bezarasa_a_pixelmereshez(window, qt_app)
         # a fél kerete egyetlen képet mutat — a nagyobb színfolt dönti el, melyiket
         resz = _keret_resz(_felvetel(window, tmp_path), kep)
         alap = max(

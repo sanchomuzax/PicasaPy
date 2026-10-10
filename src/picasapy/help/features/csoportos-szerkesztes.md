@@ -5,16 +5,22 @@
 Jelölj ki több képet, majd **Kép ▸ Csoportos szerkesztés**. Az almenüből
 választott műveletet a program **minden kijelölt képre** ráteszi:
 
+- **Átnevezés…** (F2) — a kijelölt képek átnevezése, lásd
+  [Fájlműveletek](fajlmuveletek.md)
+- **Forgatás jobbra** és **Forgatás balra**
 - **Automatikus kontraszt**
 - **Automatikus szín**
-- **Automatikus vörösszem-eltávolítás**
 - **Jó napom van**
 - **Szépia**
 - **Élesítés**
-- **Fekete-fehér**
-- **Filmszemcse**
 - **Melegítés**
-- **Forgatás jobbra** és **Forgatás balra**
+- **Filmszemcse**
+- **Fekete-fehér**
+- **Automatikus vörösszem-eltávolítás**
+
+Az almenü tételei csoportokban állnak, vonalakkal elválasztva: elöl az
+átnevezés, utána a forgatás, majd az automatikus javítások, a
+hatások, végül a vörösszem-eltávolítás.
 
 Munka közben haladásjelző sáv látszik, ami meg is szakítható.
 

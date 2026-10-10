@@ -29,12 +29,14 @@ from picasapy.cvimage import scale_down
 from picasapy.faces.redeye import detect_eye_circles
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp
+from picasapy.ini.rect64 import decode_rect64
 from picasapy.lazy_cv2 import cv2
 from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
 from picasapy.render import apply_filters, count_redeye_spots, normalize_crop_ops
-from picasapy.render.chain_geometry import TartalomHely
+from picasapy.render.chain_report import validate_and_clamp_op
+from picasapy.render.chain_geometry import AZONOSSAG, Matrix, TartalomHely, _szorzat
 from picasapy.render.elonezeti_arany import elonezeti_arany, gyors_elonezet_aktiv
-from picasapy.render.op_geometry import LancHelyzet
+from picasapy.render.op_geometry import LancHelyzet, invertal, op_geometria
 from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
     apply_display_mode,
@@ -56,6 +58,7 @@ _MAX_PREVIEW_EDGE = 2560
 # halmozódnának. Két elem elég: az aktuális + az előző kép, így az
 # előre-hátra lapozás újradekód nélkül gyors marad, a régebbiek felszabadulnak.
 _LRU_CAPACITY = 2
+_REDEYE_DETECTION_SPLIT = FilterOp("__redeye_detection_split__", ())
 
 
 #: #2271: a körvonalvastagság `[0, 1]`-ből képpontba. A felső határ a
@@ -71,9 +74,98 @@ def _outline_px(vastagsag: float) -> int:
     return max(0, round(float(vastagsag) * _OUTLINE_MAX_PX))
 
 
+def _normalize_redeye_ops(
+    crop_reader: PhotoCropReader,
+    path: Path,
+    ops: tuple[FilterOp, ...],
+    post_ops: tuple[FilterOp, ...],
+    crop: str | None,
+    crop_ini_readable: bool | None,
+) -> tuple[tuple[FilterOp, ...], tuple[FilterOp, ...]]:
+    """A redeye előtti és utáni láncrész a renderrel azonos crop64-et kapja."""
+    if crop_ini_readable is None:
+        crop, crop_ini_readable = crop_reader.read(
+            path.parent / PICASA_INI_NAME, path.name
+        )
+    normalized = normalize_crop_ops(
+        (*ops, _REDEYE_DETECTION_SPLIT, *post_ops),
+        crop,
+        crop_ini_readable=crop_ini_readable,
+        warning_key=str(path),
+    )
+    split_index = normalized.index(_REDEYE_DETECTION_SPLIT)
+    return normalized[:split_index], normalized[split_index + 1 :]
+
+
+def _post_ops_geometry(
+    ops: tuple[FilterOp, ...],
+    width: int,
+    height: int,
+    position: LancHelyzet,
+) -> tuple[int, int, Matrix]:
+    """A végső méretet és affin leképezést számolja, képszűrők futtatása nélkül."""
+    original_matrix = position.eredeti_matrix
+    initial_matrix = original_matrix
+    original_width = position.eredeti_szelesseg
+    original_height = position.eredeti_magassag
+    crop_ops = [op for op in ops if op.name == "crop64"]
+    last_crop = crop_ops[-1] if crop_ops else None
+
+    for op in ops:
+        if op.name == "crop64":
+            if op is not last_crop or len(op.params) < 2:
+                continue
+            try:
+                rect = decode_rect64(op.params[1])
+                (a, b, c), (d, e, f) = original_matrix
+                corners = (
+                    (
+                        a * (rect.left * original_width)
+                        + b * (rect.top * original_height)
+                        + c,
+                        d * (rect.left * original_width)
+                        + e * (rect.top * original_height)
+                        + f,
+                    ),
+                    (
+                        a * (rect.right * original_width)
+                        + b * (rect.bottom * original_height)
+                        + c,
+                        d * (rect.right * original_width)
+                        + e * (rect.bottom * original_height)
+                        + f,
+                    ),
+                )
+                left = max(0, min(round(min(x for x, _ in corners)), width))
+                right = max(0, min(round(max(x for x, _ in corners)), width))
+                top = max(0, min(round(min(y for _, y in corners)), height))
+                bottom = max(0, min(round(max(y for _, y in corners)), height))
+                if right <= left or bottom <= top:
+                    continue
+            except (IndexError, ValueError, ZeroDivisionError):
+                continue
+            crop_matrix: Matrix = (
+                (1.0, 0.0, float(-left)),
+                (0.0, 1.0, float(-top)),
+            )
+            original_matrix = _szorzat(crop_matrix, original_matrix)
+            width, height = right - left, bottom - top
+            continue
+
+        try:
+            validated_op, _warnings = validate_and_clamp_op(op)
+            step = op_geometria(validated_op, width, height)
+        except (IndexError, TypeError, ValueError, ZeroDivisionError):
+            continue
+        original_matrix = _szorzat(step.matrix, original_matrix)
+        width, height = step.szelesseg, step.magassag
+
+    return width, height, _szorzat(original_matrix, invertal(initial_matrix))
+
+
 @dataclass(frozen=True)
 class TextOverlaySpec:
-    """A szöveg-eszköz (#148/#450) élő előnézetéhez kért egyetlen szöveg-réteg.
+    """A szöveg-eszköz (#148/#450) egy szövegrétegének renderelési adatai.
 
     A `text=` ini-kulcs NEM a `filters=` láncba tartozik (ld.
     `picasapy.ini.text_overlay` docsztring), ezért a `FilterOp`-lánccal ellentétben
@@ -251,7 +343,7 @@ class EditPreviewProvider(QQuickImageProvider):
         photo_id: str,
         path: Path,
         ops: tuple[FilterOp, ...],
-        text: TextOverlaySpec | None = None,
+        text: TextOverlaySpec | tuple[TextOverlaySpec, ...] | None = None,
         gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
         gpu_lut: np.ndarray | None = None,
         shared_cache: bool = True,
@@ -299,7 +391,7 @@ class EditPreviewProvider(QQuickImageProvider):
         photo_id: str,
         path: Path,
         ops: tuple[FilterOp, ...],
-        text: TextOverlaySpec | None = None,
+        text: TextOverlaySpec | tuple[TextOverlaySpec, ...] | None = None,
         gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
         gpu_lut: np.ndarray | None = None,
         shared_cache: bool = True,
@@ -352,28 +444,31 @@ class EditPreviewProvider(QQuickImageProvider):
             result_array, elhelyezes = self._futtasd_a_lancot(
                 key, source_array, ops, shared_cache, paint_strokes
             )
-        if text is not None and result_array is not None and text.content:
-            # a szöveg a filters-lánc UTÁN kerül a képre — a hisztogram (lent)
-            # így is a TÉNYLEGESEN megjelenített (szöveggel együtt renderelt)
-            # képet tükrözi, a modul-docsztring elve szerint
-            result_array = apply_text_overlay(
-                result_array,
-                text.content,
-                text.x,
-                text.y,
-                color=text.fill_color,
-                outline_color=text.outline_color,
-                outline_thickness=_outline_px(text.outline_thickness),
-                fill_enabled=text.fill_enabled,
-                opacity=text.opacity,
-                font_family=text.font_family,
-                font_scale=text.font_scale,
-                font_size_pt=text.font_size_pt,
-                bold=text.bold,
-                italic=text.italic,
-                underline=text.underline,
-                align=text.align,
-            )
+        text_specs = (text,) if isinstance(text, TextOverlaySpec) else (text or ())
+        if result_array is not None:
+            # a szövegek a filters-lánc UTÁN, fájlbeli sorrendben kerülnek
+            # a képre — a hisztogram így a tényleges előnézetet tükrözi.
+            for text_spec in text_specs:
+                if not text_spec.content:
+                    continue
+                result_array = apply_text_overlay(
+                    result_array,
+                    text_spec.content,
+                    text_spec.x,
+                    text_spec.y,
+                    color=text_spec.fill_color,
+                    outline_color=text_spec.outline_color,
+                    outline_thickness=_outline_px(text_spec.outline_thickness),
+                    fill_enabled=text_spec.fill_enabled,
+                    opacity=text_spec.opacity,
+                    font_family=text_spec.font_family,
+                    font_scale=text_spec.font_scale,
+                    font_size_pt=text_spec.font_size_pt,
+                    bold=text_spec.bold,
+                    italic=text_spec.italic,
+                    underline=text_spec.underline,
+                    align=text_spec.align,
+                )
         image = (
             _rgb_array_to_qimage(_megjelenitendo(result_array, teljes_felbontas))
             if result_array is not None
@@ -498,11 +593,34 @@ class EditPreviewProvider(QQuickImageProvider):
     def redeye_auto_result(
         self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
     ) -> tuple[int, tuple[tuple[float, float, float], ...] | None]:
+        """Az Auto gomb régi, képméret nélküli eredményformátuma (#4261)."""
+        count, circles, *_geometry = self.redeye_auto_result_with_size(
+            photo_id, path, ops
+        )
+        return count, circles
+
+    def redeye_auto_result_with_size(
+        self,
+        photo_id: str,
+        path: Path,
+        ops: tuple[FilterOp, ...],
+        post_ops: tuple[FilterOp, ...] = (),
+        crop: str | None = None,
+        crop_ini_readable: bool | None = None,
+    ) -> tuple[
+        int,
+        tuple[tuple[float, float, float], ...] | None,
+        tuple[int, int] | None,
+        tuple[int, int] | None,
+        Matrix,
+    ]:
         """Az Auto gomb találatszáma és normalizált YuNet-szemkörei (#4261).
 
         Az `ops` a láncban a `redeye` beszúrási pontjáig tart (új rétegnél
         a teljes lánc) — így a körök ugyanabban a képméretben értendők,
-        amelyen a renderben alkalmazódnak.
+        amelyen a renderben alkalmazódnak. A visszaadott méret és leképezés
+        a kereteket a végső előnézetre vetíti, ha a mentett vörösszem-réteg
+        után geometriai művelet (például vágás) következik.
         A detektálás itt, az app-oldalon történik; a visszaadott körök az
         `eye64` FilterOp-paraméterbe kerülnek, így a render sávnak nem kell
         modellt vagy `faces` csomagot ismernie. Modell nélkül `None` a
@@ -510,20 +628,38 @@ class EditPreviewProvider(QQuickImageProvider):
 
         A GUI-szálról hívandó (a `_sources`/prefix gyorsítótárat használja,
         ld. `_resolve_source` #546-os megjegyzését). Ha a forrás nem
-        dekódolható, `(0, ())`-t ad.
+        dekódolható, üres köröket és méret nélküli geometriai adatot ad.
         """
         key = str(photo_id)
         path = Path(path)
+        detection_ops, post_ops = _normalize_redeye_ops(
+            self._crop_reader,
+            path,
+            tuple(ops),
+            tuple(post_ops),
+            crop,
+            crop_ini_readable,
+        )
         try:
             mtime = path.stat().st_mtime
         except OSError:
             mtime = None
         source_array = self._resolve_source(key, path, mtime, shared_cache=True)
         if source_array is None:
-            return 0, ()
-        rendered = self._render_cached(key, source_array, tuple(ops))
+            return 0, (), None, None, AZONOSSAG
+        rendered, _placement, input_position = self._render_cached_jelentes(
+            key, source_array, detection_ops
+        )
         if rendered is None:
-            return 0, ()
+            return 0, (), None, None, AZONOSSAG
+        height, width = rendered.shape[:2]
+        image_size = (int(width), int(height))
+        if input_position is None:
+            input_position = LancHelyzet.kezdo(width, height)
+        display_width, display_height, eye_to_display = _post_ops_geometry(
+            post_ops, width, height, input_position
+        )
+        display_size = (display_width, display_height)
         detected = detect_eye_circles(rendered)
         pixel_circles = (
             None
@@ -535,15 +671,14 @@ class EditPreviewProvider(QQuickImageProvider):
         )
         count = count_redeye_spots(rendered, eye_circles=pixel_circles)
         if detected is None:
-            return count, None
-        height, width = rendered.shape[:2]
+            return count, None, image_size, display_size, eye_to_display
         scale = float(min(width, height))
         normalized = tuple(
             (circle.x / width, circle.y / height, circle.radius / scale)
             for circle in detected
             if circle.radius > 0
         )
-        return count, normalized
+        return count, normalized, image_size, display_size, eye_to_display
 
     def redeye_spot_count(
         self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
@@ -617,7 +752,9 @@ class EditPreviewProvider(QQuickImageProvider):
             result_array = jelentes.image
             elhelyezes = jelentes.content_placement
         elif shared_cache:
-            result_array, elhelyezes = self._render_cached_jelentes(key, source_array, tuple(ops))
+            result_array, elhelyezes, _helyzet = self._render_cached_jelentes(
+                key, source_array, tuple(ops)
+            )
         elif source_array is None or not ops:
             result_array = source_array
         else:
@@ -674,7 +811,7 @@ class EditPreviewProvider(QQuickImageProvider):
         key: str,
         source_array: np.ndarray | None,
         ops: tuple[FilterOp, ...],
-    ) -> tuple[np.ndarray | None, TartalomHely | None]:
+    ) -> tuple[np.ndarray | None, TartalomHely | None, LancHelyzet | None]:
         """Renderelés lánc-prefix gyorsítótárral: interakció közben (azonos
         prefix, csak az utolsó op paramétere változik) csak az utolsó op fut.
 
@@ -686,9 +823,10 @@ class EditPreviewProvider(QQuickImageProvider):
         vissza a szűretlen köztes eredményre (kivétel nem szökik ki innen),
         a #73-elv (részleges előnézet a placeholder helyett) így is teljesül."""
         if source_array is None:
-            return None, None
+            return None, None, None
         if not ops:
-            return source_array, None
+            height, width = source_array.shape[:2]
+            return source_array, None, LancHelyzet.kezdo(width, height)
         # #3229: a lánc MÁR NEM rendez át — az `apply_filters` az ops
         # sorrendjében fut, és a `crop64` koordinátáit a leképezés vezeti át.
         # Ezért a prefix egyszerűen a lánc eleje, és a kettévágott futtatás
@@ -702,7 +840,7 @@ class EditPreviewProvider(QQuickImageProvider):
         # megkapja a prefix koordináta-állapotát (`bejovo`), különben a
         # prefixben lefutott vágás/keret elveszne belőle.
         jelentes = apply_filters(prefix_array, ops[-1:], bejovo=prefix_helyzet)
-        return jelentes.image, jelentes.content_placement
+        return jelentes.image, jelentes.content_placement, jelentes.helyzet
 
     def _render_cached(
         self,

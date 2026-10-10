@@ -98,6 +98,7 @@ ApplicationWindow {
     // önmagára kötne (kötési hurok) — ez az álnév oldja fel, egy helyen.
     readonly property var appController: controller
 
+    property string pendingPeopleManagerPersonName: ""
     property int thumbSize: 144
     //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
     //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
@@ -116,6 +117,17 @@ ApplicationWindow {
         selectedSet = s
     }
     property bool viewerOpen: false
+    // #4656: a néző saját megjelenítési módot kap, bezáráskor visszaáll az
+    // előző ablakállapot. A valódi megnyitás külön belépőn fut át, így a
+    // közvetlen állapotbeállítások (például a QML-próbapadban) nem váltanak módot.
+    property int visibilityBeforeViewer: Window.Windowed
+    property bool viewerVisibilityManaged: false
+    onViewerOpenChanged: {
+        if (!window.viewerOpen && window.viewerVisibilityManaged) {
+            window.visibility = window.visibilityBeforeViewer
+            window.viewerVisibilityManaged = false
+        }
+    }
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
@@ -184,12 +196,28 @@ ApplicationWindow {
     //: szerkesztés" parancs: a kijelölt képet a nézőben nyitja meg, ahol a
     //: szerkesztő panel is ül. Egy belépő, több hívó — a tálca helyi
     //: menüje (#1917) is ezt hívja.
+    // #4656: minden tényleges nézőnyitás ezt használja. A teljes képernyő
+    // vagy ablakos mód a mentett jelölőt követi; bezáráskor a korábbi
+    // ablakállapot áll vissza.
+    function openPhotoViewer(row) {
+        if (!window.viewerOpen) {
+            window.visibilityBeforeViewer = window.visibility
+            var fullscreenStartup = controller
+                && controller.viewerFullscreenStartup !== undefined
+                ? controller.viewerFullscreenStartup : true
+            window.visibility = fullscreenStartup
+                ? Window.FullScreen : Window.Windowed
+            window.viewerVisibilityManaged = true
+            window.viewerOpen = true
+        }
+        photoViewer.show(row)
+    }
+
     function nezdEsSzerkeszd() {
         if (window.viewerOpen) return
         var sorok = window.selectedRows()
         if (sorok.length === 0) return
-        window.viewerOpen = true
-        photoViewer.show(sorok[0])
+        window.openPhotoViewer(sorok[0])
     }
 
     // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt
@@ -543,8 +571,7 @@ ApplicationWindow {
         documentTabStrip.activateTab(documentTabStrip.libraryTabId)
         window.selectedIndex = sor
         window.selectedIndexes = [sor]
-        window.viewerOpen = true
-        photoViewer.show(sor)
+        window.openPhotoViewer(sor)
     }
 
     // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
@@ -998,6 +1025,23 @@ ApplicationWindow {
         var target = path && path.length > 0
             ? path : (controller ? controller.currentFolder : "")
         if (target.length > 0) folderPane.openFolderContextMenu(target)
+    }
+    // #4637: az alsó kimeneti gombsor helyi menüje.
+    function openConfigureButtonsContextMenu(anchorItem, x, y) {
+        if (!anchorItem) return
+        configureButtonsContextMenu.popup(anchorItem, x, y)
+    }
+
+    // A helyi gombsor-menü az ApplicationWindow része, nem a PicasaMenuBaré:
+    // így a főmenü szerkezete és bejárási útvonalai változatlanok maradnak.
+    Menu {
+        id: configureButtonsContextMenu
+        objectName: "configureButtonsContextMenu"
+        MenuItem {
+            objectName: "configureButtonsContextMenuItem"
+            text: qsTr("Configure Buttons...")
+            onTriggered: picasaMenuBar.configureButtonsRequested()
+        }
     }
 
     // #135: a háttér-frissítés (5 perces rescan, watcher-jelzés) a
@@ -1831,6 +1875,8 @@ ApplicationWindow {
         onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
         onAddToScreensaverRequested: window.requestAddToScreensaver()
         onThumbSizePreset: function(size) { window.thumbSize = size }
+        // #4623: a Nézet menü rádiócsoportja ebből számolja a pipát
+        thumbSize: window.thumbSize
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
         onSelectStarredRequested: window.selectStarred()
@@ -2218,6 +2264,74 @@ ApplicationWindow {
         }
     }
 
+    // A térképre ejtés az eredeti Picasa szerint mindig külön megerősítést
+    // kér; az elfogadás ugyanazt az INI-író utat hívja, mint a panel helye.
+    DeferredDialog {
+        id: dropGeotagDialog
+        objectName: "dropGeotagDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            Dialog {
+                id: dialog
+                objectName: "dropGeotagConfirm"
+                modal: true
+                focus: true
+                anchors.centerIn: parent ? Overlay.overlay : undefined
+                property var rows: []
+                property real latitude: 0
+                property real longitude: 0
+                property string message: ""
+
+                function futtasd(rowList, lat, lon) {
+                    if (!rowList || rowList.length === 0) return
+                    rows = rowList.slice()
+                    latitude = lat
+                    longitude = lon
+                    var moving = controller.geotaggedCount(rows) > 0
+                    if (rows.length === 1) {
+                        message = moving ? qsTr("Move photo here?")
+                                         : qsTr("Put photo here?")
+                    } else {
+                        var template = moving
+                            ? qsTr("Move %d photos here?")
+                            : qsTr("Put %d photos here?")
+                        message = template.replace("%d", String(rows.length))
+                    }
+                    open()
+                }
+
+                onAccepted: controller.setGeotagRows(rows, latitude, longitude)
+
+                ColumnLayout {
+                    spacing: 12
+                    Text {
+                        objectName: "dropGeotagMessage"
+                        Layout.preferredWidth: 320
+                        text: dialog.message
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 8
+                        PicasaButton {
+                            objectName: "dropGeotagYesButton"
+                            text: qsTr("(OK)")
+                            accent: Theme.picasaGreen
+                            onClicked: dialog.accept()
+                        }
+                        PicasaButton {
+                            objectName: "dropGeotagCancelButton"
+                            text: qsTr("Cancel")
+                            onClicked: dialog.reject()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     //: #1612: halasztva — a Helyek panel törlés-megerősítése csak onnan nyílik
     DeferredDialog {
         id: panelClearGeotagDialog
@@ -2442,6 +2556,18 @@ ApplicationWindow {
         }
     }
 
+    // #4533: Társítás… — a fájltípushoz társított alkalmazások választója (Linux)
+    DeferredDialog {
+        id: openWithDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            OpenWithDialog {
+                objectName: "openWithDialog"
+                onAccepted: fileOpsController.openWithApp(photoPath, selectedAppId)
+            }
+        }
+    }
+
     // #1720: halasztott példányosítás — a párbeszéd csak az első
     // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
     DeferredDialog {
@@ -2449,6 +2575,17 @@ ApplicationWindow {
         anchors.fill: parent
         sourceComponent: Component { FolderManagerDialog { } }
     }
+
+    function openPeopleManagerForPerson(name) {
+        var targetName = String(name || "").trim()
+        if (peopleManagerLoader.status === Loader.Ready) {
+            peopleManagerLoader.item.openForPerson(targetName)
+        } else {
+            window.pendingPeopleManagerPersonName = targetName
+            peopleManagerLoader.active = true
+        }
+    }
+
     // #4334: a komponens csak az első menükattintásra töltődik be; a
     // külön fájl miatt a forró Main.qml-ben csak a bekötés marad.
     Loader {
@@ -2458,7 +2595,12 @@ ApplicationWindow {
         source: Qt.resolvedUrl("PicasaPy/PeopleManagerDialog.qml")
         onLoaded: {
             item.controller = controller
-            item.open()
+            var targetName = window.pendingPeopleManagerPersonName
+            window.pendingPeopleManagerPersonName = ""
+            if (targetName.length > 0)
+                item.openForPerson(targetName)
+            else
+                item.open()
         }
     }
     // Duplikátum-kezelő (#287): a SAJÁT kezelő-párbeszéd. #1398 óta a
@@ -2765,6 +2907,7 @@ ApplicationWindow {
         // egy parancs, egy út.
         onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
         onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onDropGeotagRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
         // #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár rácsát
         // cseréli le, amit a néző eltakarna — ezért előbb ZÁRUL a néző.
         // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
@@ -2836,8 +2979,7 @@ ApplicationWindow {
             controller.selectFolder(folderPath)
             var row = controller.photos.rowOfId(photoId)
             if (row >= 0) {
-                window.viewerOpen = true
-                photoViewer.show(row)
+                window.openPhotoViewer(row)
             }
         }
     }
@@ -3086,6 +3228,9 @@ ApplicationWindow {
                         anchors.leftMargin: 8
                         spacing: 10
                         Rectangle {
+                            // #4531: a keresés után is látszik (az eredetiben
+                            // a keresősáv `viewallbutton`-ja)
+                            objectName: "searchBackToViewAll"
                             Layout.preferredHeight: 18
                             Layout.preferredWidth: viewAllText.width + 20
                             radius: 9
@@ -3102,7 +3247,21 @@ ApplicationWindow {
                                 font.bold: true
                                 color: "#3b8f00"
                             }
-                            TapHandler { onTapped: controller.clearFilter() }
+                            TapHandler {
+                                // #4531: keresésből a mező is ürüljön, és a bal
+                                // hasáb is álljon vissza a teljes mappalistára —
+                                // ugyanaz az út, mint a keresőmező ✕ gombja
+                                onTapped: {
+                                    if (toolbar.searchText.trim().length > 0) {
+                                        toolbar.clearSearch()
+                                        window.clearSelection()
+                                        controller.search("")
+                                        searchSuggestionsBox.suggestions = []
+                                    } else {
+                                        controller.clearFilter()
+                                    }
+                                }
+                            }
                         }
                         Text {
                             // #305: null-őr
@@ -3271,8 +3430,7 @@ ApplicationWindow {
                             mentesToltodnek: backupHost.mappakToltodnek
                             mentesVanKeszlet: backupHost.kivalasztott >= 0
                             onOpenRequested: function(row) {
-                                window.viewerOpen = true
-                                photoViewer.show(row)
+                                window.openPhotoViewer(row)
                             }
                             onSlideshowRequested: function(startRow) {
                                 window.startSlideshow(startRow)
@@ -3359,6 +3517,10 @@ ApplicationWindow {
                                               : false
                                         isHidden: modelData.hidden === true
                                         index: modelData.row
+                                        dragRows: window.selectedIndexes
+                                            && window.selectedIndexes.length
+                                            ? window.selectedIndexes.slice()
+                                            : [modelData.row]
                                         keywords: modelData.keywords
                                         resolution: modelData.resolution
                                         // #305: null-őr
@@ -3370,8 +3532,7 @@ ApplicationWindow {
                                             window.handleThumbClick(i, mods)
                                         }
                                         onOpened: function(i) {
-                                            window.viewerOpen = true
-                                            photoViewer.show(i)
+                                            window.openPhotoViewer(i)
                                         }
                                         onContextMenuRequested: function(i, cx, cy) {
                                             window.openPhotoContextMenu(
@@ -3508,6 +3669,7 @@ ApplicationWindow {
         //: kérdez. A menüpont változatlanul azon megy át.
         onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
         onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onPhotosDroppedRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
         visible: window.placesPanelOpen
         anchors.fill: parent
         appWindow: window
@@ -3515,6 +3677,11 @@ ApplicationWindow {
         onPhotoActivated: function(row) {
             window.selectedIndexes = [row]
             window.selectedIndex = row
+        }
+        onMarkerSearchRequested: function(rows) {
+            if (!rows || rows.length === 0) return
+            window.selectedIndexes = rows.slice(0)
+            window.selectedIndex = rows[0]
         }
     }
 
@@ -3525,6 +3692,9 @@ ApplicationWindow {
         visible: window.propertiesPanelOpen
         anchors.fill: parent
         hasSelection: window.selectedIndex >= 0
+        appController: controller
+        selectedRows: window.selectedRows()
+        focusRow: window.selectedIndex
         // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
         // #305: null-őr
         entries: controller
@@ -3532,6 +3702,7 @@ ApplicationWindow {
                controller.propertiesOf(window.selectedIndex))
             : []
         onCloseRequested: window.ureseidAFiokot()
+        onEditTagsRequested: window.valtsFiokLapot("tags")
     }
 
     // Emberek-panel (#26): a jobb fiók negyedik panelje. EGY fejléc és
@@ -3541,6 +3712,7 @@ ApplicationWindow {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
+        manualAddActive: window.viewerOpen && photoViewer.facesEditMode
         // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
@@ -3549,6 +3721,9 @@ ApplicationWindow {
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
+        // #4585: a Névtelenek GYŰJTEMÉNYE üres (az Ignored album nem ide tartozik)
+        unnamedCollectionEmpty: window.facesAlbumMode === "unnamed"
+                                && unnamedFacesView.groupsModel.length === 0
         // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a
         // `currentPersonName` az előző személyé marad — az albumban nincs
         // „nézett személy", tehát a „Szintén" lista sem
@@ -3569,6 +3744,11 @@ ApplicationWindow {
             window.unnamedFacesOpen = false
             controller.showPerson(name)
         }
+        onManualAddRequested: {
+            if (!window.viewerOpen) window.nezdEsSzerkeszd()
+            if (window.viewerOpen) photoViewer.beginManualFaceAdd()
+        }
+        onManualCancelRequested: photoViewer.cancelManualFaceAdd()
         onCloseRequested: window.ureseidAFiokot()
     }
     }
@@ -3994,6 +4174,7 @@ ApplicationWindow {
     Connections {
         target: window._faceScanController
         function onUnnamedCountChanged() { window.peopleFaceRevision++ }
+        function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false
             errorBannerText.text = qsTr("Face data could not be written to XMP: %1").arg(reason)
@@ -4112,6 +4293,10 @@ ApplicationWindow {
         // vászon kapja meg.
         visible: window.libraryFrameVisible
         appWindow: window
+        // #4637: a testreszabható alsó kimeneti gombsor közös helyi menüje.
+        onConfigureButtonsContextMenuRequested: function(anchorItem, x, y) {
+            window.openConfigureButtonsContextMenu(anchorItem, x, y)
+        }
         //: #3756: a `currentIndex` MINDIG a jobb/alsó félé (ld.
         //: `PhotoViewer.qml` `photo` `source`-a) — kettős nézetben bal
         //: fókusznál a sávnak a KIJELÖLT (`aktivSor`) képet kell mutatnia.
@@ -4232,14 +4417,22 @@ ApplicationWindow {
         }
         // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
         onOpenRequested: {
-            window.viewerOpen = true
-            photoViewer.show(window.fileOpTargetRow)
+            window.openPhotoViewer(window.fileOpTargetRow)
         }
         onRotateRightRequested: controller.rotateRightMany(window.selectedRows())
         onRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
         onOpenFileRequested: {
             var target = controller.photos.filePathAt(window.fileOpTargetRow)
             if (target.length > 0) fileOpsController.openPhoto(target)
+        }
+        // #4533: Társítás… — Windowson a héj saját párbeszéde, Linuxon a mi választónk
+        onOpenWithRequested: {
+            var target = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (target.length === 0) return
+            if (fileOpsController.hasNativeOpenWith())
+                fileOpsController.openWithNative(target)
+            else
+                openWithDialog.ensure().openFor(target)
         }
         onCopyFullPathRequested: {
             var full = controller.photos.filePathAt(window.fileOpTargetRow)

@@ -3,7 +3,7 @@ közti híd. A bekötést (QML-regisztráció, jelzések) az integrátor végzi.
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import itertools
 import re
 
@@ -50,6 +50,7 @@ from picasapy.ini.retouch import RetouchPatch
 from .paint_mask_controller import PaintMaskMixin
 from picasapy.ini.text_overlay import (
     BETUMERETEK,
+    meret_taroltbol,
     tarolt_meret,
     TextBlock,
     TextGeometry,
@@ -69,14 +70,15 @@ from picasapy.render.chain import (
     can_offer_filter_control,
     normalize_crop_ops,
 )
+from picasapy.render.chain_geometry import AZONOSSAG, Matrix
+from picasapy.render.op_geometry import invertal
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.registry import chain_flags
 from picasapy.render.registry import one_click_keys
 from picasapy.render.elonezeti_arany import gyors_elonezet
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
-from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_TEXT_FAMILY
-from picasapy.render.text_fonts import family_labels
+from picasapy.render.text_fonts import default_family, family_labels
 from picasapy.render.tone import estimate_neutral_color, parse_neutral_argb
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -98,6 +100,21 @@ _PICKER_MRU_SETTINGS_KEYS = tuple(f"picker/mru_{index}" for index in range(5))
 _PICKER_COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
 _log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class _RedeyeBufferState:
+    """A vörösszem-panel egy régiónként visszaállítható állapota."""
+
+    regions: tuple[Rect64, ...]
+    eye_circles: tuple[tuple[float, float, float], ...]
+    eye_image_size: tuple[int, int] | None
+    eye_overlay_size: tuple[int, int] | None
+    eye_to_overlay: Matrix
+    full_image_fallback: bool
+    found: int
+    can_reapply_auto: bool
+    reset_message: bool
 
 # #459: a csillag/album-írás mintája (photo_ops_controller.py) — a tartós
 # ütközés/lemezhiba is kezelt hiba, nem néma adatvesztés/kivétel.
@@ -265,21 +282,9 @@ _BRUSH_SIZE_MAX = 100
 _DEFAULT_BRUSH_SIZE = 20
 _BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0
 
-#: A szöveg-eszköz (#148) rögzített betűtípusa. A `text=` betűtípus-mezője
-#: a valódi Picasánál a betűtípus TELJES neve (`Arial`,
-#: `Bickham Script Pro Regular`) — mi ezt beolvasva megőrizzük, de a
-#: rajzoláshoz a render-réteg (`picasapy.render.text_overlay`) egységes
-#: Hershey-fontot használ, ezért betűtípus-választó nincs a UI-ban, és
-#: mentéskor az `Arial`-t írjuk.
-_DEFAULT_TEXT_FONT = "Arial"
-
 #: #450 (2. lépcső): tipográfia — a rajzoló (`render.text_fonts`) családja,
-#: méret-szorzója és stílusai. PicasaPy-saját, MUNKAMENET-szintű állapot: a
-#: `.picasa.ini`-be nem kerül: a `text=` kulcsnak van ugyan betűtípus- és
-#: stílus-mezője (#371 megfejtette), de azok a Picasa saját rajzolójára
-#: vonatkoznak — a mi Hershey-alapú rajzolónk család/méret/dőlt/aláhúzott
-#: beállításai nem képezhetők le rájuk veszteség nélkül.
-_DEFAULT_TEXT_FAMILY = DEFAULT_TEXT_FAMILY
+#: méret-szorzója és stílusai. A családnevet a rendszer betűtípus-adatbázisa
+#: adja; a választott család a `text=` ini-mezőbe kerül.
 #: #2287: a betűméret az eredeti 16 elemű listájából (`BETUMERETEK`),
 #: alapértéke **12** (a panel `+0x2cc` mezőjének kezdő értéke).
 _DEFAULT_TEXT_SIZE_PT = 12
@@ -494,16 +499,21 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._retouch_target: tuple[float, float] | None = None
         self._retouch_patch_undo: list[tuple[RetouchPatch, ...]] = []
         self._retouch_patch_redo: list[tuple[RetouchPatch, ...]] = []
-        # vörösszem (#445/#4261): a Retusáláséval azonos szerkezetű, MÉG NEM
-        # mentett puffer. Az Auto az app-oldali YuNet-köröket normalizálva
-        # tárolja az előnézeti FilterOp-ban; modell nélkül külön teljes képes
-        # tartalékjelölést ad. A régiópuffer a kézzel pótolt szemeké.
+        # vörösszem (#445/#4261/#4541): a Retusáláséval azonos szerkezetű,
+        # MÉG NEM mentett puffer. Az automatikus körökből a panel négyzeteket
+        # rajzol, kattintásra pedig ugyanebből a körlistából törlünk, amely a
+        # renderelőhöz jut. A régiópuffer a kézi kiegészítéseket tárolja.
         self._redeye_regions: tuple[Rect64, ...] = ()
-        self._redeye_region_undo: list[tuple[Rect64, ...]] = []
+        self._redeye_region_undo: list[_RedeyeBufferState] = []
         self._redeye_eye_circles: tuple[tuple[float, float, float], ...] = ()
+        self._redeye_eye_image_size: tuple[int, int] | None = None
+        self._redeye_eye_overlay_size: tuple[int, int] | None = None
+        self._redeye_eye_to_overlay: Matrix = AZONOSSAG
         self._redeye_full_image_fallback = False
         # az automatika utolsó futásának találat-száma (-1: még nem futott)
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         # #448: a vágás-javaslatokhoz kért képarány (None = a forráskép
         # arányát tartjuk); a vágó-panel arány-választója állítja
         self._crop_aspect: float | None = None
@@ -516,23 +526,24 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         # a #301-elv szerint), plusz a szerkesztés alatti, MÉG NEM mentett
         # piszkozat (tartalom + kattintott pozíció).
         self._text_overlay: TextOverlay | None = None
+        self._text_selected_index: int | None = None
         self._text_active = False
         # A showtextcheckbox csak az előnézet rajzát kapcsolja; nem írja át
         # a mentett szöveget vagy a textactive mezőt.
         self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos: tuple[float, float] | None = None
-        # szöveg-stílus (#450): PicasaPy-saját, csak a munkamenetben élő
-        # állapot (ld. a `_DEFAULT_TEXT_*` konstansok megjegyzését) — a
-        # `.picasa.ini`-be NEM kerül, minden szerkesztés-nyitáskor alapértékre
-        # áll (ld. `beginEdit`/`endEdit`).
+        # szöveg-megjelenítési stílus (#450): a színek, méret és igazítás
+        # munkamenet-szintű állapot; a betűcsalád kivétel, azt a `text=`
+        # mezőből visszaolvassuk, és mentéskor oda írjuk.
         self._text_fill_color: tuple[int, int, int] = _DEFAULT_TEXT_FILL_COLOR
         self._text_outline_color: tuple[int, int, int] = _DEFAULT_TEXT_OUTLINE_COLOR
         self._text_outline_thickness: int = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled: bool = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity: float = _DEFAULT_TEXT_OPACITY
-        self._text_family: str = _DEFAULT_TEXT_FAMILY
+        self._text_family: str = default_family()
         self._text_size_pt: int = _DEFAULT_TEXT_SIZE_PT
+        self._text_size_edited = False
         self._text_bold: bool = _DEFAULT_TEXT_BOLD
         self._text_italic: bool = _DEFAULT_TEXT_ITALIC
         self._text_underline: bool = _DEFAULT_TEXT_UNDERLINE
@@ -815,16 +826,63 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Property(bool, notify=revisionChanged)
     def textHasPlacement(self) -> bool:
-        """Kattintott-e már pozíciót a felhasználó a jelenlegi piszkozathoz —
-        az Alkalmaz gomb csak ekkor engedélyezett."""
-        return self._text_pending_pos is not None
+        """Van-e kijelölt vagy új pozícióra váró szövegdoboz."""
+        return self._text_pending_pos is not None or self._text_selected_index is not None
+
+    @Property(int, notify=toolsChanged)
+    def textSelectedIndex(self) -> int:
+        """A kiválasztott mentett doboz sorszáma, vagy -1, ha nincs."""
+        return self._text_selected_index if self._text_selected_index is not None else -1
+
+    @Property("QVariantList", notify=toolsChanged)
+    def textOverlayItems(self) -> list[dict]:
+        """A QML kattintásos kijelölőinek képre normalizált adatai."""
+        if not self._text_overlay_visible or not self._text_active or not self._text_overlay:
+            return []
+        items = []
+        for index, block in enumerate(self._text_overlay.blocks):
+            if not block.content:
+                continue
+            items.append(
+                {
+                    "index": index,
+                    "content": (
+                        self._text_draft
+                        if index == self._text_selected_index
+                        else block.content
+                    ),
+                    "x": (
+                        self._text_pending_pos[0]
+                        if index == self._text_selected_index
+                        and self._text_pending_pos is not None
+                        else block.geometry.x
+                    ),
+                    "y": (
+                        self._text_pending_pos[1]
+                        if index == self._text_selected_index
+                        and self._text_pending_pos is not None
+                        else block.geometry.y
+                    ),
+                    "size": (
+                        self._text_size_pt
+                        if index == self._text_selected_index
+                        else block.geometry.size * 360.0
+                    ),
+                    "font": block.font,
+                    "rotation": block.geometry.rotation,
+                }
+            )
+        return items
 
     @Property(bool, notify=toolsChanged)
     def hasTextOverlay(self) -> bool:
         """Van-e MENTETT, aktív szöveg-overlay — a „Visszavonás: Szöveg"
         felirathoz és a UI állapot-jelzéséhez."""
-        primary = self._text_overlay.primary if self._text_overlay else None
-        return primary is not None and self._text_active and bool(primary.content)
+        return (
+            self._text_active
+            and self._text_overlay is not None
+            and any(block.content for block in self._text_overlay.blocks)
+        )
 
     @Property(bool, notify=toolsChanged)
     def textOverlayVisible(self) -> bool:
@@ -881,8 +939,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     def textFontFamilies(self):
         """A betűtípus-lenyíló adata: `key` + megjelenő `label`.
 
-        A katalógus a `render.text_fonts`-ból jön (Arial · Times New Roman ·
-        Courier New), nem kézzel a QML-be írva."""
+        A katalógust a Qt rendszer-betűtípus-adatbázisa adja, nem kézzel a
+        QML-be írt rögzített lista."""
         return family_labels()
 
     @Property(str, notify=toolsChanged)
@@ -921,10 +979,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Slot(str)
     def setTextFontFamily(self, value: str) -> None:
-        """A betűcsalád beállítása; élő előnézettel. Ismeretlen kulcsnál a
-        rajzoló az alapértelmezett családra esik vissza."""
+        """A teljes rendszer-betűcsaládnév beállítása; élő előnézettel."""
         self._require_active()
-        self._text_family = value or _DEFAULT_TEXT_FAMILY
+        self._text_family = value.strip() or default_family()
         self._refresh_text_preview()
 
     @Slot(int)
@@ -939,6 +996,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         if value <= 0:
             raise ValueError(f"A textFontSize pozitív kell legyen: {value}")
         self._text_size_pt = min(BETUMERETEK, key=lambda e: abs(e - int(value)))
+        self._text_size_edited = True
         self._refresh_text_preview()
 
     @Slot(bool)
@@ -1225,13 +1283,19 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         # #448: a vágás-javaslatokhoz kért képarány (None = a
         # forráskép arányát tartjuk)
         self._crop_aspect: float | None = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = self._read_text_overlay()
+        self._text_selected_index = None
         self._text_active = (
             self._read_text_active() if self._text_overlay is not None else False
         )
@@ -1257,8 +1321,11 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             else _DEFAULT_TEXT_FILL_ENABLED
         )
         self._text_opacity = _DEFAULT_TEXT_OPACITY
-        self._text_family = _DEFAULT_TEXT_FAMILY
+        self._text_family = (
+            loaded.font if loaded is not None and loaded.font else default_family()
+        )
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
+        self._text_size_edited = False
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1320,11 +1387,17 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._crop_aspect = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = None
+        self._text_selected_index = None
         self._text_active = False
         self._text_overlay_visible = True
         self._text_draft = ""
@@ -1334,8 +1407,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
-        self._text_family = _DEFAULT_TEXT_FAMILY
+        self._text_family = default_family()
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
+        self._text_size_edited = False
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1457,8 +1531,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
 
     @Slot(str)
     def toggleTool(self, name: str) -> None:
@@ -1789,8 +1868,17 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Property(int, notify=revisionChanged)
     def redeyeRegionCount(self) -> int:
-        """A kézzel megjelölt, MÉG NEM alkalmazott vörösszem-régiók száma."""
-        return len(self._redeye_regions)
+        """Az automatikus és kézi, MÉG NEM alkalmazott keretek száma."""
+        return len(self._redeye_regions) + len(self._redeye_auto_rectangles())
+
+    @Property(bool, notify=revisionChanged)
+    def redeyeResetAvailable(self) -> bool:
+        """Van-e automatikus vagy kézi javítás, amelyet a Reset visszavehet."""
+        return bool(
+            self._redeye_regions
+            or self._redeye_eye_circles
+            or self._redeye_full_image_fallback
+        )
 
     @Property(bool, notify=revisionChanged)
     def canUndoRedeyeRegion(self) -> bool:
@@ -1801,7 +1889,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     @Property("QVariant", notify=revisionChanged)
     def redeyeRegions(self):
         """A puffer régiói relatív [0..1] `{x, y, w, h}` szótárakként — a QML
-        overlay ebből rajzolja a kijelölő-négyzeteket."""
+        overlay ebből rajzolja a kézi és automatikus kijelölő-négyzeteket.
+        Az automatikus körökből négyzet lesz, a renderelő azonban továbbra is
+        az eredeti körkoordinátát használja a tényleges javításhoz."""
         return [
             {
                 "x": rect.left,
@@ -1809,7 +1899,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
                 "w": rect.right - rect.left,
                 "h": rect.bottom - rect.top,
             }
-            for rect in self._redeye_regions
+            for rect in (
+                *self._redeye_auto_rectangles(),
+                *self._redeye_manual_overlay_rectangles(),
+            )
         ]
 
     @Property(int, notify=revisionChanged)
@@ -1818,6 +1911,136 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         futott. A panel ebből írja ki a Picasa sikerüzenetét („Picasa has
         found and corrected red eye(s)"), illetve a talált-nulla esetet."""
         return self._redeye_found
+
+    @Property(bool, notify=revisionChanged)
+    def canReapplyRedeyeAuto(self) -> bool:
+        """Az Auto gomb csak akkor él, ha a felhasználó visszavont javítást."""
+        return self._redeye_can_reapply_auto
+
+    @Property(bool, notify=revisionChanged)
+    def redeyeAutoReset(self) -> bool:
+        """A Reset utáni állapotüzenet (`AutoFixRedoMessage`) látható-e."""
+        return self._redeye_reset_message
+
+    @staticmethod
+    def _map_redeye_rectangle(
+        rect: Rect64,
+        matrix: Matrix,
+        source_size: tuple[int, int],
+        output_size: tuple[int, int],
+    ) -> Rect64:
+        """Normalizált téglalap leképezése és az eredmény képhatáron tartása."""
+        source_width, source_height = source_size
+        output_width, output_height = output_size
+        if min(source_width, source_height, output_width, output_height) <= 0:
+            return Rect64(0.0, 0.0, 0.0, 0.0)
+        (a, b, c), (d, e, f) = matrix
+        corners = (
+            (rect.left * source_width, rect.top * source_height),
+            (rect.right * source_width, rect.top * source_height),
+            (rect.right * source_width, rect.bottom * source_height),
+            (rect.left * source_width, rect.bottom * source_height),
+        )
+        mapped = tuple(
+            (a * x + b * y + c, d * x + e * y + f) for x, y in corners
+        )
+        left = max(0.0, min(point[0] for point in mapped))
+        top = max(0.0, min(point[1] for point in mapped))
+        right = min(float(output_width), max(point[0] for point in mapped))
+        bottom = min(float(output_height), max(point[1] for point in mapped))
+        if right <= left or bottom <= top:
+            return Rect64(0.0, 0.0, 0.0, 0.0)
+        return Rect64(
+            left=left / output_width,
+            top=top / output_height,
+            right=right / output_width,
+            bottom=bottom / output_height,
+        )
+
+    def _redeye_manual_overlay_rectangles(self) -> tuple[Rect64, ...]:
+        eye_size = self._redeye_eye_image_size or self._image_size or (0, 0)
+        overlay_size = self._redeye_eye_overlay_size or self._image_size or (0, 0)
+        return tuple(
+            self._map_redeye_rectangle(
+                rect, self._redeye_eye_to_overlay, eye_size, overlay_size
+            )
+            for rect in self._redeye_regions
+        )
+
+    def _redeye_region_in_eye_coordinates(self, rect: Rect64) -> Rect64:
+        eye_size = self._redeye_eye_image_size or self._image_size or (0, 0)
+        overlay_size = self._redeye_eye_overlay_size or self._image_size or (0, 0)
+        try:
+            inverse = invertal(self._redeye_eye_to_overlay)
+        except ValueError:
+            return Rect64(0.0, 0.0, 0.0, 0.0)
+        return self._map_redeye_rectangle(rect, inverse, overlay_size, eye_size)
+
+    def _redeye_auto_rectangles(self) -> tuple[Rect64, ...]:
+        """Az automatikus szemkörök négyzetes, normált keretei (#4541)."""
+        eye_width, eye_height = self._redeye_eye_image_size or self._image_size or (0, 0)
+        view_width, view_height = (
+            self._redeye_eye_overlay_size or self._image_size or (0, 0)
+        )
+        if min(eye_width, eye_height, view_width, view_height) <= 0:
+            return ()
+        (a, b, c), (d, e, f) = self._redeye_eye_to_overlay
+        rectangles = []
+        for x, y, radius in self._redeye_eye_circles:
+            center_x = x * eye_width
+            center_y = y * eye_height
+            radius_px = radius * min(eye_width, eye_height)
+            corners = (
+                (center_x - radius_px, center_y - radius_px),
+                (center_x + radius_px, center_y - radius_px),
+                (center_x + radius_px, center_y + radius_px),
+                (center_x - radius_px, center_y + radius_px),
+            )
+            def vetit(point: tuple[float, float]) -> tuple[float, float]:
+                px, py = point
+                return a * px + b * py + c, d * px + e * py + f
+
+            mapped = tuple(vetit(point) for point in corners)
+            mapped_center = vetit((center_x, center_y))
+            mapped_width = max(point[0] for point in mapped) - min(
+                point[0] for point in mapped
+            )
+            mapped_height = max(point[1] for point in mapped) - min(
+                point[1] for point in mapped
+            )
+            side = max(mapped_width, mapped_height)
+            left = max(0.0, mapped_center[0] - side / 2.0)
+            top = max(0.0, mapped_center[1] - side / 2.0)
+            right = min(float(view_width), mapped_center[0] + side / 2.0)
+            bottom = min(float(view_height), mapped_center[1] + side / 2.0)
+            if right <= left or bottom <= top:
+                rectangles.append(Rect64(0.0, 0.0, 0.0, 0.0))
+            else:
+                rectangles.append(
+                    Rect64(
+                        left=left / view_width,
+                        top=top / view_height,
+                        right=right / view_width,
+                        bottom=bottom / view_height,
+                    )
+                )
+        return tuple(rectangles)
+
+    def _push_redeye_region_undo(self) -> None:
+        """A kézi és automatikus puffer egy közös Undo-lépést kap."""
+        self._redeye_region_undo.append(
+            _RedeyeBufferState(
+                regions=self._redeye_regions,
+                eye_circles=self._redeye_eye_circles,
+                eye_image_size=self._redeye_eye_image_size,
+                eye_overlay_size=self._redeye_eye_overlay_size,
+                eye_to_overlay=self._redeye_eye_to_overlay,
+                full_image_fallback=self._redeye_full_image_fallback,
+                found=self._redeye_found,
+                can_reapply_auto=self._redeye_can_reapply_auto,
+                reset_message=self._redeye_reset_message,
+            )
+        )
 
     @Slot()
     def runRedeyeAuto(self) -> None:
@@ -1828,11 +2051,29 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         rendererhez; hiányzó modellnél a régi teljes képes út kerül jelölésre.
         """
         self._require_active()
-        self._redeye_found, eye_circles = self._provider.redeye_auto_result(
-            self._kulcs, self._image_path, self._session.redeye_detection_ops()
+        crop, crop_ini_readable = self._crop_value_for_session(self._session)
+        (
+            self._redeye_found,
+            eye_circles,
+            self._redeye_eye_image_size,
+            self._redeye_eye_overlay_size,
+            self._redeye_eye_to_overlay,
+        ) = self._provider.redeye_auto_result_with_size(
+            self._kulcs,
+            self._image_path,
+            self._session.redeye_detection_ops(),
+            self._session.redeye_post_detection_ops(),
+            crop,
+            crop_ini_readable,
         )
+        if self._redeye_eye_image_size is None:
+            self._redeye_eye_image_size = self._image_size
+        if self._redeye_eye_overlay_size is None:
+            self._redeye_eye_overlay_size = self._image_size
         self._redeye_eye_circles = eye_circles or ()
         self._redeye_full_image_fallback = eye_circles is None
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
@@ -1855,8 +2096,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._register_preview()
         self._bump_revision()
 
@@ -1874,10 +2120,15 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         bottom = _clamp01(max(y, y + h))
         if right <= left or bottom <= top:
             return
-        self._redeye_region_undo.append(self._redeye_regions)
+        region = self._redeye_region_in_eye_coordinates(
+            Rect64(left=left, top=top, right=right, bottom=bottom)
+        )
+        if region.right <= region.left or region.bottom <= region.top:
+            return
+        self._push_redeye_region_undo()
         self._redeye_regions = (
             *self._redeye_regions,
-            Rect64(left=left, top=top, right=right, bottom=bottom),
+            region,
         )
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
@@ -1905,14 +2156,34 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         volt — a hívó ebből tudja, hogy a kattintás nem törlés volt.
         """
         self._require_active()
-        for index in range(len(self._redeye_regions) - 1, -1, -1):
-            rect = self._redeye_regions[index]
+        manual_overlay_rectangles = self._redeye_manual_overlay_rectangles()
+        # A Repeater a detektált kereteket a kézi régiók elé rajzolja, így
+        # az átfedésben a kézi, utoljára felvett keret marad legfelül.
+        for index in range(len(manual_overlay_rectangles) - 1, -1, -1):
+            rect = manual_overlay_rectangles[index]
+            if rect.right <= rect.left or rect.bottom <= rect.top:
+                continue
             if rect.left <= x <= rect.right and rect.top <= y <= rect.bottom:
-                self._redeye_region_undo.append(self._redeye_regions)
+                self._push_redeye_region_undo()
                 self._redeye_regions = (
                     *self._redeye_regions[:index],
                     *self._redeye_regions[index + 1 :],
                 )
+                self._register_preview(self._session_with_redeye_pending())
+                self._bump_revision()
+                return True
+        auto_rectangles = self._redeye_auto_rectangles()
+        for index in range(len(auto_rectangles) - 1, -1, -1):
+            rect = auto_rectangles[index]
+            if rect.right <= rect.left or rect.bottom <= rect.top:
+                continue
+            if rect.left <= x <= rect.right and rect.top <= y <= rect.bottom:
+                self._push_redeye_region_undo()
+                self._redeye_eye_circles = (
+                    *self._redeye_eye_circles[:index],
+                    *self._redeye_eye_circles[index + 1 :],
+                )
+                self._redeye_can_reapply_auto = True
                 self._register_preview(self._session_with_redeye_pending())
                 self._bump_revision()
                 return True
@@ -1927,8 +2198,14 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         mozgásra lefut, egy mellékhatásos vizsgálat itt drága és hibás is
         lenne."""
         return any(
-            rect.left <= x <= rect.right and rect.top <= y <= rect.bottom
-            for rect in self._redeye_regions
+            rect.right > rect.left
+            and rect.bottom > rect.top
+            and rect.left <= x <= rect.right
+            and rect.top <= y <= rect.bottom
+            for rect in (
+                *self._redeye_auto_rectangles(),
+                *self._redeye_manual_overlay_rectangles(),
+            )
         )
 
     @Slot()
@@ -1937,20 +2214,39 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         if not self._redeye_region_undo:
             return
         self._require_active()
-        self._redeye_regions = self._redeye_region_undo.pop()
+        state = self._redeye_region_undo.pop()
+        self._redeye_regions = state.regions
+        self._redeye_eye_circles = state.eye_circles
+        self._redeye_eye_image_size = state.eye_image_size
+        self._redeye_eye_overlay_size = state.eye_overlay_size
+        self._redeye_eye_to_overlay = state.eye_to_overlay
+        self._redeye_full_image_fallback = state.full_image_fallback
+        self._redeye_found = state.found
+        self._redeye_can_reapply_auto = state.can_reapply_auto
+        self._redeye_reset_message = state.reset_message
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
     @Slot()
     def resetRedeyeRegions(self) -> None:
-        """A puffer minden kézi régiójának törlése — régiónkénti undo-lépéssel
-        (`undoRedeyeRegion` visszaállíthatja). Az automatika ettől még fut az
-        előnézeten. Üres pufferen néma no-op."""
-        if not self._redeye_regions:
+        """Minden automatikus és kézi vörösszem-javítás visszavonása (#4541).
+
+        A változás egy régiónkénti Undo-lépés, és az Auto gomb újra
+        alkalmazhatja az automatikus javítást. Üres pufferen néma no-op.
+        """
+        if not self.redeyeResetAvailable:
             return
         self._require_active()
-        self._redeye_region_undo.append(self._redeye_regions)
+        self._push_redeye_region_undo()
         self._redeye_regions = ()
+        self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
+        self._redeye_full_image_fallback = False
+        self._redeye_found = -1
+        self._redeye_can_reapply_auto = True
+        self._redeye_reset_message = True
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
@@ -1963,8 +2259,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -1986,13 +2287,31 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Slot()
     def enterTextTool(self) -> None:
-        """A Szöveg eszköz megnyitása: a mező a MENTETT tartalommal indul
-        (ha van), pozíció nélkül — a felhasználónak a képre kattintva kell
-        elhelyeznie."""
+        """A szöveg-eszköz megnyitása: az első mentett doboz kijelölődik."""
         self._require_active()
         primary = self._text_overlay.primary if self._text_overlay else None
+        self._text_selected_index = 0 if primary and primary.content else None
         self._text_draft = primary.content if primary else ""
         self._text_pending_pos = None
+        if primary:
+            self._load_text_settings_from_block(primary)
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(int)
+    def selectTextOverlay(self, index: int) -> None:
+        """A képen kiválasztott szövegdoboz szerkesztésre megnyitása."""
+        self._require_active()
+        if self._text_overlay is None or not 0 <= index < len(self._text_overlay.blocks):
+            return
+        block = self._text_overlay.blocks[index]
+        self._text_selected_index = index
+        self._text_pending_pos = None
+        self._text_draft = block.content
+        self._load_text_settings_from_block(block)
+        self._register_preview()
+        self._bump_revision()
         self.toolsChanged.emit()
 
     @Slot()
@@ -2000,10 +2319,12 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         """A Szöveg eszköz bezárása (Mégse): a piszkozat eldobása, visszaáll
         a ténylegesen mentett előnézetre."""
         self._require_active()
+        self._text_selected_index = None
         self._text_pending_pos = None
         self._text_draft = ""
         self._register_preview()
         self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot(str)
     def setTextDraft(self, content: str) -> None:
@@ -2013,15 +2334,40 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_draft = content
         self._register_preview()
         self._bump_revision()
+        self.toolsChanged.emit()
 
-    @Slot(float, float)
     def previewTextPlacement(self, x: float, y: float) -> None:
-        """Kattintás a képen: a piszkozat pozíciójának beállítása, élő
-        előnézettel — NEM ír inibe, NEM tol undo-lépést (Alkalmazásig)."""
+        """Python API a piszkozat helyének előnézetéhez; QML külön slotot használ."""
         self._require_active()
         self._text_pending_pos = (_clamp01(x), _clamp01(y))
         self._register_preview()
         self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(float, float)
+    def previewNewTextPlacement(self, x: float, y: float) -> None:
+        """Üres képpontra kattintva új szövegdoboz helyének előnézete."""
+        self._require_active()
+        self._text_selected_index = None
+        self._text_pending_pos = (_clamp01(x), _clamp01(y))
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    def _load_text_settings_from_block(self, block: TextBlock) -> None:
+        """A kiválasztott blokk ismert stílusát a szerkesztőmezőkre tölti."""
+        style = block.style
+        self._text_fill_color = _argb_to_rgb(style.fill_argb)
+        self._text_outline_color = _argb_to_rgb(style.outline_argb)
+        self._text_outline_thickness = float(style.unknown_a)
+        self._text_fill_enabled = style.fill_mode != _MOD_NINCS_KITOLTES
+        self._text_family = block.font or default_family()
+        self._text_size_pt = meret_taroltbol(block.geometry.size)
+        self._text_size_edited = False
+        self._text_bold = style.weight >= 700
+        self._text_italic = style.italic
+        self._text_underline = style.underline
+        self._text_align = alignment_name(style.alignment)
 
     @Slot(bool)
     def setTextOverlayVisible(self, visible: bool) -> None:
@@ -2039,95 +2385,86 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Slot()
     def applyText(self) -> None:
-        """Alkalmaz: a piszkozat mentése `text=`/`textactive=` kulcsokba.
-
-        Pozíció vagy tartalom nélkül no-op (a gomb ilyenkor a UI-ban
-        tiltott). **NEM kerül a Visszavonás-verembe** — ld. `clearText`
-        docsztringje az indoklásért; az újbóli Alkalmazás egyszerűen felülírja
-        az előző mentett szöveget."""
+        """A kijelölt blokk módosítása vagy új blokk hozzáfűzése az ini-hez."""
         self._require_active()
-        if self._text_pending_pos is None or not self._text_draft.strip():
+        if not self._text_draft.strip():
             return
-        # A meglévő overlay TÖBBI blokkja megmarad: ha a képen valódi
-        # Picasa-felirat van több blokkal, a szerkesztés csak az elsőt
-        # írja át, a többit nem dobjuk el.
+
         previous = self._text_overlay or TextOverlay()
-        block = TextBlock(
-            content=self._text_draft,
-            # #1994: a VÁLASZTOTT betűtípus, nem a beégetett alapérték.
-            font=self._text_family,
-            geometry=TextGeometry(
+        target_index = self._text_selected_index
+        if target_index is not None:
+            if not 0 <= target_index < len(previous.blocks):
+                return
+            existing = previous.blocks[target_index]
+            geometry = existing.geometry
+            if self._text_pending_pos is not None:
+                geometry = replace(
+                    geometry,
+                    x=self._text_pending_pos[0],
+                    y=self._text_pending_pos[1],
+                )
+            if self._text_size_edited:
+                geometry = replace(geometry, size=tarolt_meret(self._text_size_pt))
+            style_template = existing.style
+        else:
+            if self._text_pending_pos is None:
+                return
+            geometry = TextGeometry(
                 x=self._text_pending_pos[0],
                 y=self._text_pending_pos[1],
-                # #2287: a választott listaérték 360-ad része
                 size=tarolt_meret(self._text_size_pt),
-            ),
-            style=TextStyle(
-                fill_argb=_rgb_to_argb(self._text_fill_color),
-                outline_argb=_rgb_to_argb(self._text_outline_color),
-                # #1994: a betűsúly a félkövér gomb állásából. A stílusblokk
-                # 8. mezője (`0x0062d483`): alap **400**, félkövéren **700**
-                # (a gomb `cmp …, 0x2bc` a `0x0062e31a`-n). Eddig a
-                # `TextStyle` alapértéke fixen 700 volt, tehát MINDEN
-                # feliratunk félkövérként ment ki, a gomb állásától
-                # függetlenül.
-                #
-                weight=700 if self._text_bold else 400,
-                # #2271: a KÖRVONALVASTAGSÁG az 5. mezőbe, átszámítás
-                # nélkül. A kutatói kör kimérte, hogy a csúszka `[0, 1]`
-                # folytonos (ugyanaz a `ytSliderHandler`, mint az
-                # átlátszatlanságé), tehát a mi értékünk ugyanabban a
-                # mértékegységben van, mint az ini mezője. Eddig fixen
-                # 0,0 ment ki — a valódi Picasában az »nincs körvonal«,
-                # ezért TŰNT EL minden körvonalunk mentés után.
-                #
-                # ⚠️ A betűméret továbbra sem megy ki: a mérés szerint a
-                # geometria 3. mezőjébe tartozna (em-képpont ÷ a kép
-                # MAGASSÁGA), de a felületi méretválasztónk ma nem em-ben
-                # jár. Külön lépés, külön mérés — ld. a jegyet.
-                unknown_a=float(self._text_outline_thickness),
-                # #2448: a DŐLT és az ALÁHÚZOTT a 9. mező 0. és 3. bitje.
-                # Eddig mindkettőt megrajzoltuk, de a mező fixen `0xC000`
-                # ment ki — a felirat újranyitáskor elvesztette a dőltségét
-                # és az aláhúzását.
-                #
-                # ⚠️ A mezőt a `with_style_flags` állítja, NEM a
-                # konstruktor: a többi bitet (köztük a fel nem tárt
-                # `0x4000`/`0x8000`-et) meg kell őrizni. Ezért indul a
-                # KORÁBBI stílusból, ha van.
-            ),
-        )
-        korabbi = previous.primary.style if previous.primary else None
-        stilus = block.style
-        if korabbi is not None:
-            # a korábbi mezők bitjeit visszük tovább (köztük a fel nem
-            # tártakat); az ismerteket alább állítjuk
-            stilus = replace(
-                stilus,
-                trailer=korabbi.trailer,
-                layout_field=korabbi.layout_field,
             )
-        block = replace(
-            block,
-            style=stilus.with_style_flags(
-                italic=self._text_italic, underline=self._text_underline
-            # #2108: a 8. mező két alsó bájtja. A mód nem szabad érték: a
-            # panel minden alkalommal ÚJRASZÁMOLJA a `no_fill` négyzetből
-            # és a körvonal-csúszkából, ebben a sorrendben.
-            ).with_text_layout(
-                alignment=alignment_code(self._text_align),
-                fill_mode=fill_mode_from(
-                    no_fill=not self._text_fill_enabled,
-                    outline_width=float(self._text_outline_thickness),
-                ),
-            ),
+            style_template = previous.primary.style if previous.primary else None
+
+        style = self._text_style_for_apply(style_template)
+        block = TextBlock(
+            content=self._text_draft,
+            font=self._text_family,
+            geometry=geometry,
+            style=style,
         )
-        self._text_overlay = previous.with_primary(block)
+        blocks = list(previous.blocks)
+        if target_index is None:
+            blocks.append(block)
+            target_index = len(blocks) - 1
+        else:
+            blocks[target_index] = block
+
+        self._text_overlay = TextOverlay(blocks=tuple(blocks))
+        self._text_selected_index = target_index
         self._text_active = True
         self._text_pending_pos = None
+        self._text_size_edited = False
         self._save_text()
         self._bump_revision()
         self.toolsChanged.emit()
+
+    def _text_style_for_apply(self, template: TextStyle | None) -> TextStyle:
+        """Ismert stílust állít, a fájl többi mezőjét és bitjét megőrzi."""
+        if template is None:
+            style = TextStyle(
+                fill_argb=_rgb_to_argb(self._text_fill_color),
+                outline_argb=_rgb_to_argb(self._text_outline_color),
+                weight=700 if self._text_bold else 400,
+                unknown_a=float(self._text_outline_thickness),
+            )
+        else:
+            style = replace(
+                template,
+                fill_argb=_rgb_to_argb(self._text_fill_color),
+                outline_argb=_rgb_to_argb(self._text_outline_color),
+                weight=700 if self._text_bold else 400,
+                unknown_a=float(self._text_outline_thickness),
+            )
+        return style.with_style_flags(
+            italic=self._text_italic, underline=self._text_underline
+        ).with_text_layout(
+            alignment=alignment_code(self._text_align),
+            fill_mode=fill_mode_from(
+                no_fill=not self._text_fill_enabled,
+                outline_width=float(self._text_outline_thickness),
+            ),
+        )
 
     @Slot()
     def clearText(self) -> None:
@@ -2143,6 +2480,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         mint egyáltalán nem kínálni. A törlés ezért azonnali és végleges."""
         self._require_active()
         self._text_overlay = None
+        self._text_selected_index = None
         self._text_active = False
         self._text_pending_pos = None
         self._save_text()
@@ -2561,8 +2899,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             return
 
         def mutate(document):
-            primary = self._text_overlay.primary if self._text_overlay else None
-            if primary is None or not primary.content:
+            has_content = self._text_overlay and any(
+                block.content for block in self._text_overlay.blocks
+            )
+            if not has_content:
                 document = document.with_removed(self._section_name, "text")
                 document = document.with_removed(self._section_name, "textactive")
             else:
@@ -2876,32 +3216,46 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             temperature=values.temperature,
         )
 
-    def _current_text_spec(self) -> TextOverlaySpec | None:
-        """Az élő előnézetbe rajzolandó szöveg — a PENDING piszkozat élvez
-        elsőbbséget (a szöveg-eszköz nyitva van), különben a mentett, aktív
-        overlay (ha van tartalma); egyébként None (nincs mit rajzolni)."""
+    def _current_text_spec(self) -> tuple[TextOverlaySpec, ...] | None:
+        """Az előnézet aktív feliratai, a kijelölt piszkozatot is beleértve."""
         if not self._text_overlay_visible:
             return None
-        if self._text_pending_pos is not None:
+        specs: list[TextOverlaySpec] = []
+        if self._text_active and self._text_overlay:
+            for index, block in enumerate(self._text_overlay.blocks):
+                content = (
+                    self._text_draft
+                    if index == self._text_selected_index
+                    else block.content
+                )
+                if not content:
+                    continue
+                x = _clamp01(
+                    self._text_pending_pos[0]
+                    if index == self._text_selected_index
+                    and self._text_pending_pos is not None
+                    else block.geometry.x
+                )
+                y = _clamp01(
+                    self._text_pending_pos[1]
+                    if index == self._text_selected_index
+                    and self._text_pending_pos is not None
+                    else block.geometry.y
+                )
+                style = (
+                    self._text_style_kwargs()
+                    if index == self._text_selected_index
+                    else self._text_style_kwargs_for_block(block)
+                )
+                specs.append(TextOverlaySpec(content=content, x=x, y=y, **style))
+        if self._text_pending_pos is not None and self._text_selected_index is None:
             content = self._text_draft
-            if not content.strip():
-                return None
-            x, y = self._text_pending_pos
-            return TextOverlaySpec(
-                content=content, x=x, y=y, **self._text_style_kwargs()
-            )
-        primary = self._text_overlay.primary if self._text_overlay else None
-        if primary is not None and self._text_active and primary.content:
-            # A valódi Picasa a képen KÍVÜLRE lógó feliratot is elmenthet;
-            # a rajzoló viszont [0..1]-en kívül hibát dob, ezért itt vágunk.
-            # Ez csak az ELŐNÉZETET érinti — a mentett érték nem változik.
-            return TextOverlaySpec(
-                content=primary.content,
-                x=_clamp01(primary.geometry.x),
-                y=_clamp01(primary.geometry.y),
-                **self._text_style_kwargs(),
-            )
-        return None
+            if content.strip():
+                x, y = self._text_pending_pos
+                specs.append(
+                    TextOverlaySpec(content=content, x=x, y=y, **self._text_style_kwargs())
+                )
+        return tuple(specs) or None
 
     def _text_style_kwargs(self) -> dict:
         """A `TextOverlaySpec` stílus-mezői a jelenlegi (#450, munkamenet-
@@ -2918,6 +3272,24 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             "italic": self._text_italic,
             "underline": self._text_underline,
             "align": self._text_align,
+        }
+
+    @staticmethod
+    def _text_style_kwargs_for_block(block: TextBlock) -> dict:
+        """A mentett blokk saját ismert stílusa a többblokkos előnézethez."""
+        style = block.style
+        return {
+            "fill_color": _argb_to_rgb(style.fill_argb),
+            "outline_color": _argb_to_rgb(style.outline_argb),
+            "outline_thickness": style.unknown_a,
+            "fill_enabled": style.fill_mode != _MOD_NINCS_KITOLTES,
+            "opacity": _DEFAULT_TEXT_OPACITY,
+            "font_family": block.font or default_family(),
+            "font_size_pt": block.geometry.size * 360.0,
+            "bold": style.weight >= 700,
+            "italic": style.italic,
+            "underline": style.underline,
+            "align": alignment_name(style.alignment),
         }
 
     def _bump_revision(self) -> None:

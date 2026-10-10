@@ -434,16 +434,28 @@ def properties_entries(photo, locale: QLocale, tr) -> list:
 
 
 def _movie_entries(photo, locale: QLocale, tr) -> list:
-    """A `properties.xml` videó-mezői (`MovieLength`, `MovieRate`).
+    """A `properties.xml` videómezői, az eredeti panel-sorrendben (#4580)."""
+    entries = []
+    if photo.movie_format:
+        entries.append((tr("Movie Info"), photo.movie_format))
+    if photo.frame_rate is not None:
+        rate = locale.toString(float(photo.frame_rate), "g", 6)
+        entries.append((tr("Movie Rate"), f"{rate} fps"))
+    if photo.duration_seconds is not None:
+        entries.append(
+            (tr("Movie Length"), _movie_duration_text(photo.duration_seconds))
+        )
+    return entries
 
-    ŐSZINTESÉG: az indexben ma NINCS videó-hossz/képsebesség (a
-    `PhotoRecord`-ban nem szerepel), és a projektben nincs videó-dekóder,
-    amiből kiolvashatnánk. Amíg ez nincs meg, a videó ugyanazt a három
-    alapsort kapja, mint a kép — a mezők HELYE viszont rögzített, hogy az
-    adat megjelenésekor csak az olvasót kelljen bekötni.
-    """
-    del locale, tr
-    return []
+
+def _movie_duration_text(seconds: float) -> str:
+    """A videó hossza perc:másodperc vagy óra:perc:másodperc alakban."""
+    total_seconds = max(0, int(round(seconds)))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d}"
 
 
 def _enum_entry(value, tr) -> str | None:
@@ -538,7 +550,12 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
     if details.has_embedded_thumbnail:
         add("Embedded Thumbnail", tr("Yes"))
     if photo.keywords:
-        add("Keywords", ", ".join(photo.keywords))
+        keywords = (
+            keyword.strip()
+            for keyword in (photo.keywords or "").split(",")
+            if keyword.strip()
+        )
+        add("Keywords", ", ".join(keywords))
     # a koordináta a Picasában is mindig pontos (`.picasa.ini`
     # `geotag=33.770556,-84.293055`, KML `<longitude>%f`): vesszős
     # tizedesjellel egy koordinátapár olvashatatlan volna
