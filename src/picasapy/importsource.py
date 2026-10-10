@@ -23,6 +23,7 @@ teljes SHA-256) — ugyanaz a mérce, mint a Duplikátum-kezelőé (#287)."""
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -281,6 +282,37 @@ def destination_subpath(
     return Path(*parts) if parts else Path(".")
 
 
+_FORBIDDEN_FOLDER_NAME_CHARS = frozenset('<>:"|?*/\\')
+
+
+_WINDOWS_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL"}
+    | {f"COM{n}" for n in range(1, 10)}
+    | {f"LPT{n}" for n in range(1, 10)}
+)
+
+
+def is_valid_folder_name(name: str) -> bool:
+    """A kézi importmappanév (#4837) EGYETLEN, biztonságos útvonal-elem-e.
+
+    Elutasítja az üres/csak-szóköz nevet, a `.`/`..` nevet, az elválasztókat
+    (`/`, `\\`), a meghajtóbetűt/abszolút utat (`:`), a Windowson tiltott
+    `<>:"|?*` karaktereket és a vezérlőkaraktereket. A szóközökkel körbevett
+    nevet a hívó `strip()`-pel használja, ezért itt is azt vizsgáljuk."""
+    stripped = name.strip()
+    if not stripped or stripped in {".", ".."}:
+        return False
+    # Windowson a záró pont/szóköz lekopik ("..." a célgyökér, "foo." = "foo")
+    if stripped.endswith((".", " ")) or set(stripped) <= {".", " "}:
+        return False
+    if stripped.split(".")[0].rstrip(" ").upper() in _WINDOWS_RESERVED_NAMES:
+        return False
+    return not any(
+        char in _FORBIDDEN_FOLDER_NAME_CHARS or unicodedata.category(char) == "Cc"
+        for char in stripped
+    )
+
+
 def destination_subpath_for_mode(
     candidate_date: date | None,
     mode: str,
@@ -292,7 +324,8 @@ def destination_subpath_for_mode(
 
     - `NAMING_MANUAL`: egyetlen, felhasználó által megadott mappanév
       (`manual_name`) — MINDEN jelölt ugyanoda kerül. Üres/csak
-      szóközökből álló névnél a cél-mappa gyökere (`Path(".")`).
+      szóközökből álló névnél `ValueError` (#4595): cím nélkül az
+      importálás nem indul, a cél-mappa gyökerébe nem másolunk.
     - `NAMING_BY_DATE`: felvétel dátuma szerint, "ÉÉÉÉ-HH-NN" mappánként
       külön (a `candidate_date`-et a hívó a `resolve_date`/`scan_source`
       mintájával állapította meg) — ismeretlen dátumnál
@@ -305,7 +338,11 @@ def destination_subpath_for_mode(
     `NAMING_*` konstans egyikét adja át."""
     if mode == NAMING_MANUAL:
         name = manual_name.strip()
-        return Path(name) if name else Path(".")
+        if not name:
+            raise ValueError("manual naming requires a folder name (#4595)")
+        if not is_valid_folder_name(name):
+            raise ValueError("manual folder name must be a single path element (#4837)")
+        return Path(name)
     if mode == NAMING_TODAY:
         chosen = today if today is not None else date.today()
         return Path(chosen.isoformat())

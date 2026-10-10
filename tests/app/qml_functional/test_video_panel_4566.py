@@ -37,6 +37,25 @@ def qml_app_video(qt_app, tmp_path):
     yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_videoleiras)
 
 
+@pytest.fixture
+def qml_app_video_windows(qt_app, tmp_path, monkeypatch):
+    from picasapy.app import movie_clip_export_controller as export_controller
+
+    calls = []
+    monkeypatch.setattr(export_controller, "_platform", lambda: "win32")
+
+    def fake_export(source, folder, *, start_ms, end_ms, cancel_event=None):
+        calls.append((source, folder, start_ms, end_ms, cancel_event))
+        return Path(r"C:\Users\Test\Exported Videos\clip.mp4")
+
+    monkeypatch.setattr(export_controller, "export_clip", fake_export)
+    app_generator = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_videoleiras)
+    try:
+        yield (*next(app_generator), calls)
+    finally:
+        next(app_generator, None)
+
+
 def _elem(window, nev: str):
     elem = window.findChild(QObject, nev)
     assert elem is not None, f"{nev} nem található a főablakban"
@@ -113,9 +132,18 @@ class TestVideoPanelAFulsavHelyen:
 class TestVideoPanelKattintas:
     @pytest.mark.parametrize("eltolas", _ABLAKMAGASSAG_ELTOLASOK)
     def test_mind_harom_gomb_valodi_kattintassal_mukodik(
-        self, qml_app_video, qt_app, eltolas
+        self, qml_app_video, qt_app, eltolas, monkeypatch
     ):
         window, controller, _engine = qml_app_video
+        from picasapy.app import movie_clip_export_controller as export_controller
+
+        export_calls = []
+
+        def fake_export(source, folder, *, start_ms, end_ms, cancel_event=None):
+            export_calls.append((source, folder, start_ms, end_ms, cancel_event))
+            return Path("clip.mp4")
+
+        monkeypatch.setattr(export_controller, "export_clip", fake_export)
         viewer = window.findChild(QObject, "photoViewer")
         sor = _nyisd_meg_a_videot(window, viewer, qt_app)
         window.setHeight(window.height() + eltolas)
@@ -145,6 +173,12 @@ class TestVideoPanelKattintas:
                 in str(ertesites.property("text")),
                 "a Linux-es exportkorlát üzenete",
             )
+            assert export_calls == []
+        else:
+            _var(qt_app, lambda: len(export_calls) == 1, "elindult a klipexport")
+            assert export_calls[0][0].name == "b.mp4"
+            assert export_calls[0][2:4] == (200, 1600)
+            assert export_calls[0][4] is not None
 
         # az eredeti előbb rákérdez (`CThumbUI::UndomovieEdits`): a „Nem"
         # a vágást megtartja, a „Szerkesztések eltávolítása" törli
@@ -171,4 +205,41 @@ class TestVideoPanelKattintas:
             qt_app,
             lambda: str(ertesites.property("text")) != "",
             "a képkocka-mentés visszajelzése",
+        )
+
+
+class TestVideoPanelKlipExport:
+    @pytest.mark.parametrize("eltolas", _ABLAKMAGASSAG_ELTOLASOK)
+    def test_windows_kattintas_a_vagott_szakaszt_exportalja_es_fajlnevet_mutat(
+        self, qml_app_video_windows, qt_app, eltolas
+    ):
+        window, controller, _engine, calls = qml_app_video_windows
+        viewer = window.findChild(QObject, "photoViewer")
+        sor = _nyisd_meg_a_videot(window, viewer, qt_app)
+        window.setHeight(window.height() + eltolas)
+        _var(
+            qt_app,
+            lambda: window.height() == 1005 + eltolas,
+            f"az ablakmagasság {eltolas:+d} képponttal változzon",
+        )
+
+        controller.setMovieTrim(sor, 200, 1600)
+        export = _elem(window, "movieeditpanel/export_movie")
+        _var(qt_app, export.isEnabled, "a vágott klip exportgombja aktív")
+        _kattint(window, qt_app, export)
+
+        _var(qt_app, lambda: len(calls) == 1, "a valódi kattintás exportot indít")
+        source, folder, start_ms, end_ms, cancel_event = calls[0]
+        assert source.name == "b.mp4"
+        assert start_ms == 200
+        assert end_ms == 1600
+        assert folder.parent.name == "Picasa"
+        assert cancel_event is not None
+
+        notice = _elem(window, "videoCaptureNotice")
+        _var(
+            qt_app,
+            lambda: str(notice.property("text"))
+            == "Saved clip.mp4 to Exported Videos",
+            "a sikerjelzés csak a fájlnevet, Windows-elválasztóval is mutatja",
         )

@@ -72,6 +72,7 @@ from picasapy.importsource import (
     atmeretez_masolatot,
     destination_subpath_for_mode,
     duplicate_paths,
+    is_valid_folder_name,
 )
 from picasapy.index import (
     IndexFastKeySource,
@@ -793,6 +794,12 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
     # -- import ---------------------------------------------------------------
 
+    @Slot(str, result=bool)
+    def isValidFolderName(self, name: str) -> bool:  # noqa: N802
+        """#4837: a kézi importmappanév érvényes-e (a QML az Import gomb
+        tiltásához használja)."""
+        return is_valid_folder_name(name)
+
     @Slot(str, str, str, str)
     def runImport(
         self,
@@ -814,6 +821,14 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         after_copying = (
             after_copying if after_copying in _VALID_AFTER_COPYING else AFTER_COPY_LEAVE
         )
+        # #4595: kézi elnevezésnél cím nélkül nincs import — se másolás a
+        # célgyökérbe, se háttérszál (a QML-tipp kéri a címet).
+        if naming_mode == NAMING_MANUAL and not manual_name.strip():
+            return
+        # #4837: a kézi név EGYETLEN útvonal-elem lehet (se `../`, se
+        # abszolút út, se Windowson tiltott karakter) — érvénytelenre nincs import.
+        if naming_mode == NAMING_MANUAL and not is_valid_folder_name(manual_name):
+            return
         all_candidates = self._candidates
         included = tuple(
             candidate
