@@ -93,27 +93,72 @@ Rectangle {
             }
         }
 
-        Loader {
-            id: mapLoader
-            objectName: "placesMapLoader"
+        Item {
+            id: mapViewport
+            objectName: "placesMapViewport"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            active: panel.visible
-            source: "PlacesMap.qml"
-            onLoaded: {
-                item.markers = Qt.binding(function() {
-                    return panel.filteredMarkers
-                })
-                item.markerActivated.connect(function(row) {
-                    // Előbb jelöljük ki a képét, utána szűrjünk: a főablak a
-                    // modellváltáskor az azonosítója alapján visszaállítja a
-                    // kijelölést a geocímkézett rácsban.
-                    panel.photoActivated(row)
-                    if (controller) controller.showGeotagged()
-                })
-                item.markerSearchRequested.connect(panel.markerSearchRequested)
-                item.markerEraseRequested.connect(panel.clearGeotagRequested)
-                item.placePicked.connect(panel.placeSelection)
+
+            Loader {
+                id: mapLoader
+                objectName: "placesMapLoader"
+                anchors.fill: parent
+                active: panel.visible
+                source: "PlacesMap.qml"
+                onLoaded: {
+                    item.markers = Qt.binding(function() {
+                        return panel.filteredMarkers
+                    })
+                    item.markerActivated.connect(function(row) {
+                        // Előbb jelöljük ki a képét, utána szűrjünk: a főablak a
+                        // modellváltáskor az azonosítója alapján visszaállítja a
+                        // kijelölést a geocímkézett rácsban.
+                        panel.photoActivated(row)
+                        if (controller) controller.showGeotagged()
+                    })
+                    item.markerSearchRequested.connect(panel.markerSearchRequested)
+                    item.markerEraseRequested.connect(panel.clearGeotagRequested)
+                    item.placePicked.connect(panel.placeSelection)
+                }
+            }
+
+            Rectangle {
+                id: mapStatusOverlay
+                objectName: "placesMapStatusOverlay"
+                anchors.fill: parent
+                z: 1
+                color: Theme.contentPanel
+                visible: !!(mapLoader.status === Loader.Ready
+                            && mapLoader.item
+                            && (mapLoader.item.mapLoading
+                                || mapLoader.item.offline))
+
+                Column {
+                    anchors.centerIn: parent
+                    width: Math.min(parent.width - 24, 260)
+                    spacing: 8
+
+                    BusyIndicator {
+                        objectName: "placesMapLoadingIndicator"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 48
+                        height: 48
+                        running: visible
+                        visible: !!(mapLoader.item && mapLoader.item.mapLoading)
+                    }
+
+                    Text {
+                        objectName: "placesMapStatusText"
+                        width: parent.width
+                        text: mapLoader.item && mapLoader.item.offline
+                              ? qsTr("Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.")
+                              : qsTr("Loading Map...")
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.textGray
+                        wrapMode: Text.WordWrap
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
             }
         }
 

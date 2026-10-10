@@ -35,6 +35,8 @@ Item {
         }
         return groups
     }
+    readonly property bool mapLoading: !map.mapReady && map.error === Map.NoError
+    readonly property bool offline: map.error === Map.ConnectionError
     readonly property var mapTypeNames: {
         var names = []
         for (var i = 0; i < map.supportedMapTypes.length; ++i)
