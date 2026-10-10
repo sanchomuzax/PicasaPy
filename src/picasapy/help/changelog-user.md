@@ -4,6 +4,109 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-10
+
+**Új funkciók**
+
+- **Visszaállítás a biztonsági mentésből**: az **Eszközök ▸ Képek
+  biztonsági mentése…** panelen a **Visszaállítás...** gombbal egy
+  mentési mappából vagy ISO-lemezkép-készletből a programon belül
+  visszaállíthatod a képeket. Meglévő fájlt nem ír felül. Lásd [Képek
+  biztonsági mentése](features/biztonsagi-mentes.md).
+- A weboldal-export a saját `.tpl`-sablonjaidat is felajánlja. Lásd
+  [Exportálás](features/exportalas.md).
+- A **Szöveg** eszközzel egy képre több szövegdoboz is felvehető; a
+  meglévőre kattintva kijelölöd és átszerkesztheted. A betűtípus-lista a
+  gépre telepített betűcsaládokat kínálja. Lásd [A
+  szerkesztő](features/szerkeszto.md).
+
+**Néző**
+
+- Az **F11** teljes képernyőre váltja a nézőt, újra megnyomva visszaáll.
+  Lásd [Nézegetés](features/nezegetes.md).
+- A **◀** és **▶** gombot nyomva tartva a néző folyamatosan léptet.
+- A filmszalag hét férőhelyes, az éppen látott képet mindig középen
+  tartja, kétszínű kerettel.
+- Videónál a bal oldalon a fülsáv helyén a **videópanel** áll: a vágás
+  visszaállítása (megerősítéssel), a pillanatfelvétel és a klip
+  exportálása.
+- Az **Eszközök ▸ Fotómegjelenítő beállítása…** **Teljes képernyős
+  indítás** jelölője most már hat, újraindítás nélkül. Lásd
+  [Beállítások](features/beallitasok.md).
+
+**Szerkesztés és effektek**
+
+- A **Vörösszem** panel figyelmeztet, ha a képet a Kiegyenesítés
+  elforgatta; az automatikus vörösszem-javítás nem akad el egy hibás
+  szemhelyen.
+- A **Vágás** méretarány-listája kiírja a keret és a kép pixelméretét.
+- A **Retusálás** ecsetköre a kurzornál, a célnál és a forrásnál is
+  látszik a képen.
+- A szöveg igazítógombjain három külön jel áll.
+- A **Shift + Ragyogás** csúszkás panelt nyit (**Intenzitás**,
+  **Sugár**). A **Színátmenet** **Lágy perem** alapértéke 0,25, a
+  **Fókuszos FF** csúszkája **Méret**; a Polaroid, a 60-as évek és a
+  Kerekített élek színmintája **Háttérszín**. Lásd
+  [Effektek](features/effektek.md).
+- Egy effekt alkalmazása után az effektcsempék a frissített képet
+  mutatják.
+
+**Emberek és helyek**
+
+- A nézőben a felismert, névtelen arcra kattintva keret és **Írjon be
+  egy nevet** mező nyílik. Lásd [Emberek és arcok](features/emberek.md).
+- Az Emberek-album helyi menüjében működik **Az Emberek album törlése**
+  (megerősítéssel) és **Az Emberek album szerkesztése…**.
+- A mappa és az album helyi menüjének **Névcímkék hozzáadása** tétele
+  csak annak a képein keres arcot.
+- Windowson is működik a személyalbum javaslatainak kijelölése.
+- A **Helyek** panelen a jelölőre kattintva a rács a helyhez kötött
+  képeket mutatja; a keresőmező felirata **Keresés**. Lásd
+  [Helyek](features/helyek.md).
+
+**Könyvtár, keresés, menük**
+
+- A keresősáv javaslatai billentyűzettel is kezelhetők (**↓**/**↑**,
+  **Enter**, **Esc**); keresés után a zöld sáv **Vissza az összes
+  megtekintéséhez** gombja kilép a keresésből. Lásd
+  [Keresés](features/kereses.md).
+- A szűrősáv csak az aktív szűrőt mutatja bekapcsoltnak, a kor-szűrő
+  nézetváltáskor alaphelyzetbe áll, és a működés nélküli „▤" jel
+  eltűnt.
+- Fanézetben a képes mappasoron a jobb gomb a teljes mappa-menüt adja.
+  Lásd [A könyvtár](features/konyvtar.md).
+- A **Nézet** menü indexkép-tételei pipával jelzik az aktuális nézetet.
+- Album- és személynézetben a **Mappa ▸ Elrejtés** és **Megjelenítés**
+  szürke.
+- A **További lehetőségek…** a ki nem férő gombokat függőleges oszlopban
+  kínálja; a tálca ★ gombjának súgója a ★ fölött jelenik meg.
+- A Tulajdonságok panel jobbgombos menüjéből a Címkék panel nyílik.
+- A régi, **Picasa.ini** nevű fájlból is beolvasódnak a csillagok és a
+  feliratok. Lásd [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+- A **Kép ▸ Csoportos szerkesztés** az eredeti sorrendet követi, első
+  tétele az **Átnevezés…** (F2). Lásd [Csoportos
+  szerkesztés](features/csoportos-szerkesztes.md).
+- Az **Eszközök ▸ Kísérleti** almenü tételei az eredeti sorrendben
+  állnak.
+- A PicasaPy saját menüparancsai kék jelölést kapnak. Lásd [Első
+  lépések](getting-started.md).
+- A **Súgó ▸ Billentyűkódok** a működő gyorsbillentyűk listáját nyitja;
+  a **Súgó ▸ Frissítések keresése** szürke, mert megszűnt szolgáltatás.
+  Lásd [Billentyűparancsok](features/billentyuk.md).
+
+**Film, képernyővédő, háttérkép, e-mail**
+
+- A filmkészítő előnézete mutatja az átmenetet és a szöveges diát, és a
+  hangsáv is szól, hangerő-csúszkával. A mappafejlécben a kollázs-gomb
+  mellett filmgomb áll. Az album zenéje szól az album diavetítésében és
+  filmjében. Lásd [Mozgófilm](features/mozgofilm.md).
+- Albumnézetben a képernyővédőhöz adás előbb rákérdez. Lásd
+  [Képernyővédő](features/kepernyovedo.md).
+- A háttérkép a szerkesztett, helyesen álló képből készül. Lásd [Asztali
+  háttérkép](features/hatterkep.md).
+- Az e-mailhez készült ideiglenes képmásolatokat a program indításkor
+  törli. Lásd [Küldés e-mailben](features/email.md).
+
 ## 2026-10-09
 
 **Szerkesztés és effektek**
