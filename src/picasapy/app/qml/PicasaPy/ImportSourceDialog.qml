@@ -719,6 +719,19 @@ Window {
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
             }
+            // #4595: cím nélkül nincs import — a tipp ezt mondja ki
+            Text {
+                objectName: "importSourceManualTipText"
+                Layout.fillWidth: true
+                Layout.leftMargin: 24
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                visible: importSourceWindow.namingMode === "manual"
+                         && importSourceWindow.manualFolderName.trim().length === 0
+                //: #4595: `acquirepanel/importtiptext` (Text1)
+                text: qsTr("Enter new folder title or choose existing folder to continue")
+            }
             RadioButton {
                 objectName: "importSourceNamingByDateRadio"
                 //: #3575: `iCAcquireUI::AutoDate`
@@ -836,6 +849,8 @@ Window {
                 enabled: importSourceWindow.includedCount > 0
                          && importSourceWindow.destFolder.length > 0
                          && !importSourceWindow.importing
+                         && (importSourceWindow.namingMode !== "manual"
+                             || importSourceWindow.manualFolderName.trim().length > 0)
                 onClicked: importSourceWindow.requestImport()
             }
             PicasaButton {

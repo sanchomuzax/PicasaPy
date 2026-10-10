@@ -292,7 +292,8 @@ def destination_subpath_for_mode(
 
     - `NAMING_MANUAL`: egyetlen, felhasználó által megadott mappanév
       (`manual_name`) — MINDEN jelölt ugyanoda kerül. Üres/csak
-      szóközökből álló névnél a cél-mappa gyökere (`Path(".")`).
+      szóközökből álló névnél `ValueError` (#4595): cím nélkül az
+      importálás nem indul, a cél-mappa gyökerébe nem másolunk.
     - `NAMING_BY_DATE`: felvétel dátuma szerint, "ÉÉÉÉ-HH-NN" mappánként
       külön (a `candidate_date`-et a hívó a `resolve_date`/`scan_source`
       mintájával állapította meg) — ismeretlen dátumnál
@@ -305,7 +306,9 @@ def destination_subpath_for_mode(
     `NAMING_*` konstans egyikét adja át."""
     if mode == NAMING_MANUAL:
         name = manual_name.strip()
-        return Path(name) if name else Path(".")
+        if not name:
+            raise ValueError("Kézi elnevezésnél a mappanév kötelező (#4595).")
+        return Path(name)
     if mode == NAMING_TODAY:
         chosen = today if today is not None else date.today()
         return Path(chosen.isoformat())

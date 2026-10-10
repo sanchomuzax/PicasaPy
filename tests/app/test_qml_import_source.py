@@ -11,6 +11,8 @@ ezért ez a fájl szándékosan funkció-szintű `qml_app` fixture-t használ.""
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from PySide6.QtCore import (
     QMetaObject,
     QObject,
@@ -341,6 +343,67 @@ class TestRunImport:
         qt_app.processEvents()
 
         assert (dest / "Nyaralás" / "a.jpg").exists()
+
+    @pytest.mark.parametrize("dy", [-5, 0, 5])
+    def test_manual_mode_blank_name_disables_import_and_shows_the_tip(
+        self, qml_app, qt_app, tmp_path, dy
+    ):
+        # #4595: cím nélkül az Import gomb letiltva, a tipp látszik.
+        # A `dy` az ablakmagasság ±5 px-es eltolása (platformfüggő keret).
+        window, _controller, _lib, engine = qml_app
+        dialog = _dialog_window(window)
+        dialog.setProperty("height", dialog.property("height") + dy)
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "cel-konyvtar"
+        dest.mkdir()
+
+        _scan(dialog, source, engine, qt_app)
+        dialog.setProperty("destFolder", str(dest))
+        dialog.setProperty("namingMode", "manual")
+        dialog.setProperty("manualFolderName", "")
+        qt_app.processEvents()
+
+        start_button = _child(window, "importSourceStartButton")
+        tip = _child(window, "importSourceManualTipText")
+        assert start_button.property("enabled") is False
+        assert tip.property("visible") is True
+        assert tip.property("text") == (
+            "Enter new folder title or choose existing folder to continue"
+        )
+
+        started = []
+        _import_source_controller(engine).importStarted.connect(started.append)
+        QMetaObject.invokeMethod(
+            start_button, "clicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        assert started == []
+        assert list(dest.iterdir()) == []
+
+    def test_typing_a_folder_name_enables_import_and_hides_the_tip(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, _controller, _lib, engine = qml_app
+        dialog = _dialog_window(window)
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "cel-konyvtar"
+        dest.mkdir()
+
+        _scan(dialog, source, engine, qt_app)
+        dialog.setProperty("destFolder", str(dest))
+        dialog.setProperty("namingMode", "manual")
+        dialog.setProperty("manualFolderName", "")
+        qt_app.processEvents()
+        dialog.setProperty("manualFolderName", "Nyaralás")
+        qt_app.processEvents()
+
+        assert _child(window, "importSourceStartButton").property("enabled") is True
+        assert _child(window, "importSourceManualTipText").property("visible") is False
 
     def test_today_mode_uses_todays_date_folder(self, qml_app, qt_app, tmp_path):
         window, _controller, _lib, engine = qml_app

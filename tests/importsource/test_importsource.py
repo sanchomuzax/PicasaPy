@@ -134,11 +134,13 @@ class TestDestinationSubpathForMode:
         )
         assert with_date == without_date == Path("Album")
 
-    def test_manual_mode_blank_name_falls_back_to_destination_root(self):
-        result = destination_subpath_for_mode(
-            date(2024, 3, 5), NAMING_MANUAL, manual_name="   "
-        )
-        assert result == Path(".")
+    def test_manual_mode_blank_name_is_refused_not_copied_to_root(self):
+        # #4595: cím nélkül az importálás nem indul — a célgyökérbe
+        # másolás (a régi `Path(".")`) a Picasa-tipp szerint nem lehet.
+        with pytest.raises(ValueError):
+            destination_subpath_for_mode(
+                date(2024, 3, 5), NAMING_MANUAL, manual_name="   "
+            )
 
     def test_by_date_mode_splits_into_one_folder_per_date(self):
         first = destination_subpath_for_mode(date(2024, 3, 5), NAMING_BY_DATE)
