@@ -141,7 +141,10 @@ jobs:
         if: steps.tag.outputs.skip != 'true'
         run: |
           python -m pip install --upgrade pip
-          pip install $(python scripts/print_dependencies.py --dev)
+          # #4831: a .qm-fordításhoz a PySide6 (pyside6-lrelease) is kell — a
+          # `--dev` lista csak a fejlesztői eszközöket adja (v0.9.48: „nincs
+          # pyside6-lrelease”, a csomagok nem épültek meg)
+          pip install $(python scripts/print_dependencies.py) $(python scripts/print_dependencies.py --dev)
           if [ -f scripts/build_qm.py ]; then python scripts/build_qm.py; else echo "Régi kiadási tag (#4825): a .qm még a fában van, nincs mit építeni."; fi  # #4817
           python -m build
 

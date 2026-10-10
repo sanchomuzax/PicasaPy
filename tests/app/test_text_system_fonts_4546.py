@@ -36,8 +36,9 @@ def test_catalogue_lists_the_installed_qt_system_families(qt_app):
 
 
 def test_selected_family_is_rendered_saved_and_loaded_again(
-    edit_controller, photo, qt_app, monkeypatch
+    legalabb_ket_betucsalad, edit_controller, photo, qt_app, monkeypatch
 ):
+    # #4831: a windowsos offscreen gépen csak egy (Arial) család látszik
     from picasapy.app import edit_preview as preview_module
 
     family = next(
