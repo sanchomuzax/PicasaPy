@@ -12252,9 +12252,9 @@ picasapy-origin-key: album:album/autodate.title</extracomment>
             <translation>Automatic date</translation>
         </message>
         <message>
-            <source>Enter the date as YYYY-MM-DD.</source>
+            <source>Enter the date like this: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Enter the date as YYYY-MM-DD.</translation>
+            <translation>Enter the date like this: %1</translation>
         </message>
         <message>
             <source>Use music for Slideshow and Movie presentation:</source>
@@ -12296,6 +12296,24 @@ picasapy-origin-key: album:album/labelgroup14.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/labelgroup16.title</extracomment>
             <translation>Description (optional):</translation>
+        </message>
+        <message>
+            <source>Choose date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose date</translation>
+        </message>
+    </context>
+    <context>
+        <name>DateCalendarPopup</name>
+        <message>
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Previous month</translation>
+        </message>
+        <message>
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Next month</translation>
         </message>
     </context>
     <context>

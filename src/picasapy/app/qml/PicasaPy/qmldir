@@ -114,6 +114,7 @@ ProjectsSection 1.0 ProjectsSection.qml
 TagContextMenu 1.0 TagContextMenu.qml
 TrayContextMenu 1.0 TrayContextMenu.qml
 FolderPropertiesDialog 1.0 FolderPropertiesDialog.qml
+DateCalendarPopup 1.0 DateCalendarPopup.qml
 NewCollectionDialog 1.0 NewCollectionDialog.qml
 AddCustomAspectRatioDialog 1.0 AddCustomAspectRatioDialog.qml
 OptionsDialog 1.0 OptionsDialog.qml
