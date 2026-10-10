@@ -44,6 +44,7 @@ import concurrent.futures
 import json
 import atexit
 import os
+import re
 import shutil
 import subprocess
 import importlib
@@ -1470,20 +1471,51 @@ def _kiegyensulyozott_darab(
     darabba. Enélkül a darabok egyenetlenek, és a leglassabb határozza meg a
     kör végét — a felosztás fele haszna elveszne.
 
-    Ismeretlen egységre a MEDIÁN időt vesszük, nem nullát: egy új tesztfájl
-    így nem torzítja a kiosztást azzal, hogy „ingyen van"."""
+    Ismeretlen egységre KONZERVATÍV becslést veszünk (`becsult_idok`), nem
+    nullát: egy új tesztfájl így nem torzítja a kiosztást azzal, hogy
+    „ingyen van"."""
     if darab <= 1:
         return set(egysegek)
-    idok = _mert_idok()
-    ismert = sorted(idok[nev] for nev in egysegek if nev in idok)
-    median = ismert[len(ismert) // 2] if ismert else 1.0
+    idok = becsult_idok(egysegek)
     terhelés = [0.0] * darab
     kiosztas: list[list[str]] = [[] for _ in range(darab)]
-    for nev in sorted(egysegek, key=lambda n: -idok.get(n, median)):
+    for nev in sorted(egysegek, key=lambda n: -idok[n]):
         cel = min(range(darab), key=lambda i: terhelés[i])
         kiosztas[cel].append(nev)
-        terhelés[cel] += idok.get(nev, median)
+        terhelés[cel] += idok[nev]
     return set(kiosztas[sorszam - 1])
+
+
+#: A mérés nélküli egység becslése: az ismert idők ennyiedik percentilise.
+#: #4825: korábban a medián volt — de a hiányzó mérés az új, jellemzően
+#: QML-es (tehát lassabb) fájloké, a medián tehát alulbecsült. A 90.
+#: percentilis felülről közelít: a darab inkább hamarabb ér véget.
+BECSLESI_PERCENTILIS = 0.9
+
+
+def becsult_idok(egysegek: list[str]) -> dict[str, float]:
+    """Minden egység ideje: a mért, vagy ha nincs, a konzervatív becslés.
+
+    #4825: a hiányzó mérés NEM blokkolhatja a PR-eket. 2026-10-09–10-én a
+    lefedettségi őr minden PR-t megbuktatott, mert az új fájlok windowsos
+    mérése egy ütemezett futásra várt, ami el sem indult (8 óra kiesés). A
+    hiányzó egység ezért jelölt becslést kap (`becsult_egysegek`), a
+    pótlás a CI-naplókból később jön; az egyensúly- és határidő-őrök a
+    becsléssel együtt számolnak, tehát a garanciájuk megmarad."""
+    idok = _mert_idok()
+    ismert = sorted(idok[nev] for nev in egysegek if nev in idok)
+    becsles = (
+        ismert[min(len(ismert) - 1, int(len(ismert) * BECSLESI_PERCENTILIS))]
+        if ismert
+        else 1.0
+    )
+    return {nev: idok.get(nev, becsles) for nev in egysegek}
+
+
+def becsult_egysegek(egysegek: list[str]) -> list[str]:
+    """A mérés nélküli (becsült idejű) egységek — a pótlás listája."""
+    idok = _mert_idok()
+    return sorted(nev for nev in egysegek if nev not in idok)
 
 
 def _mert_idok() -> dict[str, float]:
@@ -1744,9 +1776,12 @@ def erintett_app_tesztek(
             # futnak, amelyek a modult NÉV szerint említik (a modul saját
             # tesztjei a mindig teljesen futó nem-app készletben vannak)
             kulcsok.add(Path(ut).stem)
+    # #4809: egész szóra illeszt, különben a `sync` minden `async`-ra is talál
+    minta = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(kulcsok))) + r")\b") \
+        if kulcsok else None
     valasztott = [
         t for t in app_tesztek
-        if t in sajat or any(k in olvas(t) for k in kulcsok)
+        if t in sajat or (minta is not None and minta.search(olvas(t)))
     ]
     if len(valasztott) > _SZUKITES_MAX_HANYAD * len(app_tesztek):
         return list(app_tesztek)

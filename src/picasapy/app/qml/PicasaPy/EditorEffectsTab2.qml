@@ -48,6 +48,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectIr"
             label: qsTr("Infrared Film")
+            tooltip: qsTr("Simulate black-and-white infrared film")
             onButtonClicked: if (!panel.tryOpenParamPanel("ir", label)) panel.effectRequested("ir")
             thumbSource: panel.effectThumbSource("ir")
             badge: panel.hasBadge("ir")
@@ -55,6 +56,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectLomo"
             label: qsTr("Lomo-ish")
+            tooltip: qsTr("Imitate the Lomo toy camera")
             onButtonClicked: if (!panel.tryOpenParamPanel("lomo", label)) panel.effectRequested("lomo")
             thumbSource: panel.effectThumbSource("lomo")
             badge: panel.hasBadge("lomo")
@@ -62,6 +64,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectHolga"
             label: qsTr("Holga-ish")
+            tooltip: qsTr("Make your photo look like it was taken with a plastic camera")
             onButtonClicked: if (!panel.tryOpenParamPanel("holga", label)) panel.effectRequested("holga")
             thumbSource: panel.effectThumbSource("holga")
             badge: panel.hasBadge("holga")
@@ -69,6 +72,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectHdr"
             label: qsTr("HDR-ish")
+            tooltip: qsTr("Emulate that \"high dynamic range\" look")
             onButtonClicked: if (!panel.tryOpenParamPanel("hdr", label)) panel.effectRequested("hdr")
             thumbSource: panel.effectThumbSource("hdr")
             badge: panel.hasBadge("hdr")
@@ -76,6 +80,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectCinemascope"
             label: qsTr("Cinemascope")
+            tooltip: qsTr("Add a little classic movie magic")
             onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope", label)) panel.effectRequested("cinemascope")
             thumbSource: panel.effectThumbSource("cinemascope")
             badge: panel.hasBadge("cinemascope")
@@ -83,6 +88,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectOrton"
             label: qsTr("Orton-ish")
+            tooltip: qsTr("Mimic Michael Orton's effect")
             onButtonClicked: if (!panel.tryOpenParamPanel("orton", label)) panel.effectRequested("orton")
             thumbSource: panel.effectThumbSource("orton")
             badge: panel.hasBadge("orton")
@@ -90,6 +96,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectSixties"
             label: qsTr("1960's")
+            tooltip: qsTr("Rounded corners and a warm, aged glow")
             onButtonClicked: if (!panel.tryOpenParamPanel("sixties", label)) panel.effectRequested("sixties")
             thumbSource: panel.effectThumbSource("sixties")
             badge: panel.hasBadge("sixties")
@@ -97,6 +104,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectInvert"
             label: qsTr("Invert Colors")
+            tooltip: qsTr("Make your photo look like a negative")
             onButtonClicked: if (!panel.tryOpenParamPanel("invert", label)) panel.effectRequested("invert")
             thumbSource: panel.effectThumbSource("invert")
             badge: panel.hasBadge("invert")
@@ -105,6 +113,9 @@ ColumnLayout {
             objectName: "effectHeatMap"
             label: panel.shiftMasodlagos
                    ? qsTr("Night Vision") : qsTr("Heat Map")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Mimics infrared night-vision cameras")
+                     : qsTr("Simulate heat vision")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (nightvision) —
             //: az eredeti csempe-táblája (heatmap -> nightvision)
             readonly property string szuro: panel.shiftMasodlagos
@@ -123,6 +134,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectCrossProcess"
             label: qsTr("Cross Process")
+            tooltip: qsTr("Mimics film cross-processing")
             onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess", label)) panel.effectRequested("crossprocess")
             thumbSource: panel.effectThumbSource("crossprocess")
             badge: panel.hasBadge("crossprocess")
@@ -130,6 +142,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectQuantizePalette"
             label: qsTr("Posterize")
+            tooltip: qsTr("Reduce the number of colors in your photo")
             onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette", label)) panel.effectRequested("quantizepalette")
             thumbSource: panel.effectThumbSource("quantizepalette")
             badge: panel.hasBadge("quantizepalette")
@@ -137,6 +150,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectTwoTone"
             label: qsTr("Duo-Tone")
+            tooltip: qsTr("Convert your photo to two colors")
             onButtonClicked: if (!panel.tryOpenParamPanel("twotone", label)) panel.effectRequested("twotone")
             thumbSource: panel.effectThumbSource("twotone")
             badge: panel.hasBadge("twotone")

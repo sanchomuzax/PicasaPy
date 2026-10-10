@@ -124,13 +124,16 @@ Rectangle {
     signal retouchUndoPatchRequested()
     signal retouchRedoPatchRequested()
     signal retouchResetRequested()
-    // #445: Vörösszem — a hívó (PhotoViewer) tölti a controllerből a kézi
-    // régiók számát, a régiónkénti Visszavonás elérhetőségét és az
-    // automatika találat-számát (-1: még nem futott). A
-    // `redeyeHideOutlines` tisztán NÉZET-állapot: csak a kijelölő-
+    // #445/#4541: a hívó (PhotoViewer) tölti a controllerből az automatikus
+    // és kézi keretek számát, a régiónkénti Visszavonást, a Reset
+    // elérhetőségét, az Auto újraalkalmazhatóságát és az állapotüzenetet.
+    // A `redeyeHideOutlines` tisztán NÉZET-állapot: csak a kijelölő-
     // négyzetek rajzát kapcsolja ki, a javításon nem változtat.
     property int redeyeRegionCount: 0
     property bool canUndoRedeyeRegion: false
+    property bool redeyeResetAvailable: false
+    property bool canReapplyRedeyeAuto: false
+    property bool redeyeAutoReset: false
     property int redeyeFoundCount: -1
     property bool redeyeHideOutlines: false
     signal redeyeAutoRequested()
@@ -450,7 +453,6 @@ Rectangle {
     signal undoRequested()
     signal redoRequested()
     // vágás-mód jelei a hívónak
-    signal quickCropRequested(string kind)   // "topleft"|"landscape"|"portrait"
     signal cropRotateRequested()
     signal cropPreviewHold(bool held)
     signal cropResetRequested()
@@ -681,11 +683,11 @@ Rectangle {
     // Cancel/vágás-gombak sose adnak meg ilyet), a gomb a korábbi, sima
     // kinézetét mutatja, VÁLTOZATLANUL — ez a legtöbb PanelButton-hívó.
 
-    // #450: kitöltés/körvonal szín-választó — rögzített, PicasaPy-saját
-    // színpaletta (nincs a projektben natív ColorDialog-használat, ld.
-    // #450 jelentés), a kijelölt szín kék kerettel jelölt. A `currentColor`
-    // a controller mentett/piszkozat értékét tükrözi, `colorPicked` viszi
-    // vissza a kattintást a hívóhoz.
+    // #450/#4548: kitöltés/körvonal szín-választó — PicasaPy-saját
+    // palettával, spektrumválasztóval és előzmény-sorral (natív
+    // ColorDialog nélkül). A kijelölt szín kék kerettel jelölt; a
+    // `currentColor` a controller mentett/piszkozat értékét tükrözi,
+    // `colorPicked` viszi vissza a kattintást a hívóhoz.
 
     // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
     // 4. effekt-fül / 5. effekt-fül (#20, #328) — csak "tools" módban,

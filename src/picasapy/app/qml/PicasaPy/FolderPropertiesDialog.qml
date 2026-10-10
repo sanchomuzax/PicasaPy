@@ -63,11 +63,60 @@ Dialog {
     property string currentDate: ""
     property string currentDescription: ""
 
-    readonly property var _isoPattern: /^\d{4}-\d{2}-\d{2}$/
+    // A dátummező a nyelvi beállítás szerinti alakot mutatja (magyarul
+    // `2026. 01. 01.`); a mentett érték ISO-alakú (ÉÉÉÉ-HH-NN), ahogy eddig.
+    function _dateFormat() {
+        return Qt.locale().dateFormat(Locale.ShortFormat).replace(/y+/, "yyyy")
+    }
+
+    // ISO-dátumot a nyelvi alakjára fordít; ami nem ISO, az változatlanul marad
+    // (így a hibás régi érték hibaüzenetet ad, nem tűnik üres dátumnak).
+    function _isoToField(iso) {
+        var reszek = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+        if (!reszek)
+            return iso
+        return Qt.formatDate(
+            new Date(Number(reszek[1]), Number(reszek[2]) - 1, Number(reszek[3])),
+            root._dateFormat())
+    }
+
+    // A beírt szöveg ISO-dátuma: "" = üres (automatikus dátum), null = hibás.
+    // ISO-alakot mindig elfogad; a többi alakban a nyelvi sorrend dönt.
+    function _fieldToIso(szoveg) {
+        var be = szoveg.trim()
+        if (be.length === 0)
+            return ""
+        var reszek = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(be)
+        var mezok = {}
+        if (reszek) {
+            mezok = { y: reszek[1], M: reszek[2], d: reszek[3] }
+        } else {
+            var szamok = be.match(/\d+/g)
+            var sorrend = root._dateFormat().match(/y+|M+|d+/g)
+            if (!szamok || !sorrend || szamok.length !== 3 || sorrend.length !== 3)
+                return null
+            for (var i = 0; i < 3; ++i)
+                mezok[sorrend[i].charAt(0)] = szamok[i]
+        }
+        if (!mezok.y || mezok.y.length !== 4 || !mezok.M || !mezok.d)
+            return null
+        var ev = Number(mezok.y)
+        var honap = Number(mezok.M)
+        var nap = Number(mezok.d)
+        var datum = new Date(ev, honap - 1, nap)
+        if (datum.getFullYear() !== ev || datum.getMonth() !== honap - 1
+                || datum.getDate() !== nap)
+            return null
+        return ev + "-" + ("0" + honap).slice(-2) + "-" + ("0" + nap).slice(-2)
+    }
+
     // üres dátum is elfogadható: az „automatikus dátum" ága
-    readonly property bool _dateValid:
-        dateField.text.trim().length === 0
-        || root._isoPattern.test(dateField.text.trim())
+    readonly property bool _dateValid: root._fieldToIso(dateField.text) !== null
+
+    // a mezőben lévő dátum ISO-alakban (érvénytelennél a mentés úgyis tiltott)
+    function _datumIso() {
+        return root._fieldToIso(dateField.text) || ""
+    }
 
     // (mappa, ISO-dátum vagy "", leírás) — az Ok gomb
     signal folderPropertiesAccepted(string folderPath, string isoDate, string description)
@@ -82,7 +131,7 @@ Dialog {
 
     onOpened: {
         nameField.text = root.albumMode ? root.albumName : root.folderName
-        dateField.text = root.currentDate
+        dateField.text = root._isoToField(root.currentDate)
         locationField.text = root.albumMode ? root.albumLocation : ""
         descriptionField.text = root.currentDescription
         musicCheck.checked = root.currentMusicEnabled
@@ -95,14 +144,14 @@ Dialog {
         if (!root._dateValid) return
         if (root.albumMode) {
             root.albumPropertiesAccepted(
-                root.albumToken, nameField.text, dateField.text.trim(),
+                root.albumToken, nameField.text, root._datumIso(),
                 locationField.text, descriptionField.text)
             root.albumMusicAccepted(
                 root.albumToken, musicCheck.checked, musicPathField.text)
             return
         }
         root.folderPropertiesAccepted(
-            root.folderPath, dateField.text.trim(), descriptionField.text)
+            root.folderPath, root._datumIso(), descriptionField.text)
         root.folderMusicAccepted(
             root.folderPath, musicCheck.checked, musicPathField.text)
     }
@@ -283,10 +332,44 @@ Dialog {
                         Layout.preferredHeight: 26
                         Layout.maximumHeight: 26
                         font.pixelSize: Theme.fontSize
-                        placeholderText: "2020-01-15"
+                        placeholderText: root._isoToField("2020-01-15")
+                        // a naptár-ikon a mező jobb szélén, az eredetiben is ott
+                        rightPadding: 26
                         onAccepted: root._saveProperties()
                         // #422: jobbklikk-menü (Picasa `Address`)
                         TextFieldContextArea {}
+
+                        ToolButton {
+                            id: calendarButton
+                            objectName: "folderPropertiesDateCalendarButton"
+                            anchors.right: parent.right
+                            anchors.rightMargin: 1
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 24
+                            height: 24
+                            padding: 0
+                            //: #4494: a naptár-gomb súgója (az eredetiben nincs külön felirata)
+                            ToolTip.visible: hovered
+                            ToolTip.delay: Theme.tooltipDelay
+                            ToolTip.text: qsTr("Choose date")
+                            onClicked: calendarPopup.openBelow(
+                                dateField, root._datumIso())
+                            contentItem: Item {
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    width: 12
+                                    height: 11
+                                    color: "transparent"
+                                    border.color: Theme.ink
+                                    border.width: 1
+                                    Rectangle {
+                                        width: parent.width
+                                        height: 3
+                                        color: Theme.ink
+                                    }
+                                }
+                            }
+                        }
                     }
                     PicasaButton {
                         // az eredeti „Automatic date" gombja: törli a kézi
@@ -302,7 +385,9 @@ Dialog {
                     id: dateHint
                     objectName: "folderPropertiesDateHint"
                     visible: !root._dateValid
-                    text: qsTr("Enter the date as YYYY-MM-DD.")
+                    //: %1 a nyelvi dátumalak mintája (magyarul „2026. 01. 01.”)
+                    text: qsTr("Enter the date like this: %1").arg(
+                        Qt.formatDate(new Date(2026, 0, 1), root._dateFormat()))
                     font.pixelSize: Theme.fontSize - 1
                     color: Theme.brandRed
                     Layout.fillWidth: true
@@ -495,6 +580,17 @@ Dialog {
                     TextFieldContextArea {}
                 }
             }
+        }
+    }
+
+    // #4494: a naptár a dátummező alatt nyílik; a nap a mezőbe kerül, a mentés
+    // az OK-ra történik, mint a kézi beírásnál.
+    DateCalendarPopup {
+        id: calendarPopup
+        objectName: "folderPropertiesCalendar"
+        parent: root.contentItem
+        onDateChosen: function(iso) {
+            dateField.text = root._isoToField(iso)
         }
     }
 

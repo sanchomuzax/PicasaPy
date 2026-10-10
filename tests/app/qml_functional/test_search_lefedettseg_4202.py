@@ -59,6 +59,41 @@ def _click_item(window, item, qt_app) -> None:
         "a kattintandó elem nem kapott kirajzolható méretet: "
         f"visible={item.isVisible()}, width={item.width()}, height={item.height()}"
     )
+    item.ensurePolished()
+    szulo = item.parentItem()
+    if szulo is not None:
+        szulo.ensurePolished()
+    window.update()
+
+    elozo_geometria = None
+    stabil_mintak = 0
+
+    def geometria_stabil() -> bool:
+        nonlocal elozo_geometria, stabil_mintak
+        bal_felso = item.mapToScene(QPointF(0, 0))
+        kozep = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+        most = tuple(
+            round(float(ertek), 3)
+            for ertek in (
+                bal_felso.x(),
+                bal_felso.y(),
+                kozep.x(),
+                kozep.y(),
+                item.width(),
+                item.height(),
+            )
+        )
+        if most == elozo_geometria:
+            stabil_mintak += 1
+        else:
+            elozo_geometria = most
+            stabil_mintak = 0
+        return stabil_mintak >= 2
+
+    assert _wait_until(qt_app, geometria_stabil), (
+        "a kattintási célpont geometriája nem stabilizálódott a "
+        "felületi átrendeződés után"
+    )
     point = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
         window,
@@ -198,6 +233,23 @@ def test_keresesi_elemlista_es_valodi_felhasznaloi_ut(
         and window.findChild(QObject, "dupeFilter").isVisible(),
     ), "a másodpéldány-mód nem jelent meg"
     dupe_filter = window.findChild(QObject, "dupeFilter")
+    movie_filter = window.findChild(QObject, "movieFilter")
+    filter_row = dupe_filter.parentItem()
+    assert movie_filter is not None and filter_row is not None
+    # A Row-ba dinamikusan bekerülő gomb láthatósága megelőzheti az új x-et.
+    # Várjuk meg a testvérből számolt pozíciót, mielőtt arra kattintunk.
+    assert _wait_until(
+        qt_app,
+        lambda: abs(
+            float(dupe_filter.x())
+            - (
+                float(movie_filter.x())
+                + float(movie_filter.width())
+                + float(filter_row.property("spacing"))
+            )
+        )
+        <= 0.5,
+    ), "a másodpéldány-kapcsoló nem került a filmszűrő utáni helyére"
     _click_item(window, dupe_filter, qt_app)
     assert _wait_until(
         qt_app,

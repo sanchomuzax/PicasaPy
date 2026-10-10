@@ -38,11 +38,13 @@ on:
 # párhuzamos futást pörgetett ugyanazon az ágon, és a sor emiatt torlódott.
 #
 # ⚠️ A `main`-en NINCS megszakítás: ott minden commit CI-bizonyítéka kell,
-# és a kiadási automatika is erre épül. A csoportkulcs tartalmazza a refet,
-# tehát a `main` minden pushja külön csoport marad; a kikapcsolást ezen
-# felül a `cancel-in-progress` feltétele is biztosítja.
+# és a kiadási automatika is erre épül. #4825: a `cancel-in-progress: false`
+# ehhez NEM elég — egy csoportban csak EGY várakozó futás maradhat, az újabb
+# lecseréli a korábbit, tehát közös main-csoportnál gyors beolvadáskor a
+# köztes commitok CI-je elveszett (10-10: 38044749969, 38044767026). Ezért
+# PR-en a ref, minden másnál (main-push, ütemezett, kézi) a commit a kulcs.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -98,7 +100,9 @@ jobs:
   # kapuzza, a windowsos eltérés a beolvadás után a main körén derül ki.
   darabok-windows:
     needs: valtozas
-    if: ${{ github.event_name != 'pull_request' && github.event_name != 'push' }}
+    # 2026-10-10: a main-pushon ÚJRA fut — csak éjszakára ütemezve a GitHub
+    # el sem indította, és a futásidő-tábla windowsos mérés nélkül maradt
+    if: ${{ github.event_name != 'pull_request' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: windows-latest
@@ -308,6 +312,12 @@ jobs:
         # azzal, --no-build-isolation-nel épít. Ez az egyetlen ellenőrzés,
         # ami a deklarációt a valósághoz méri, nem önmagához (#652).
         run: python scripts/check_declared_setuptools_minimum.py
+
+      - name: A .qm fordítások elkészítése a .ts-ből (#4817)
+        # a fordító (pyside6-lrelease) a PySide6 része — a futásidejű csomagok kellenek
+        run: |
+          pip install $(python scripts/print_dependencies.py)
+          python scripts/build_qm.py
 
       - name: Wheel build
         run: python -m build --wheel --outdir dist .

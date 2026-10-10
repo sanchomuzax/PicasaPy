@@ -112,6 +112,17 @@ def main(work_dir: Path) -> None:
     window = engine.rootObjects()[0]
     controller._reload()
     controller.selectFolder(str(lib))
+    # A szándékosan érvénytelen b.mp4 bélyegképe nem készül el, és a sérült
+    # kép ajánlata (#459, „Picasa had a problem loading this file(s)") a
+    # háttérszálas bélyegkép-készítés ütemében, ~400 ms-os gyűjtés után
+    # modális felugróként nyílik meg a nézőre. A próba a kattintási
+    # gesztust méri, nem az ajánlatot: ha a felugró épp egy kattintás előtt
+    # nyílik (a lassú windowsos CI-n a fotós lépés alatt, #4683), az
+    # átfedő lap fogja meg az egeret, és a MouseArea sosem kap eseményt.
+    # Az ajánlat külön, determinisztikus tesztje a #459-é.
+    for fotosor in controller._photos.photos:
+        if fotosor.name == "b.mp4":
+            controller._broken_photo_ids.add(fotosor.id)
     app.processEvents()
     print("PROBE-INIT after initial processEvents", flush=True)
     original_height = int(window.height())
@@ -203,6 +214,30 @@ def main(work_dir: Path) -> None:
         except (AttributeError, RuntimeError, TypeError):
             return None
 
+    def elem_leiras(elem):
+        """Az esemény alatti elem: osztály + a legközelebbi elnevezett ős.
+
+        Az üres objectName semmit nem árul el arról, mi fogta meg a kattintást
+        (a #4683 windowsos bukásánál `eventTarget=''` volt minden sorban).
+        """
+        if elem is None:
+            return None
+        try:
+            osztaly = elem.metaObject().className()
+            lanc = []
+            cur = elem
+            while cur is not None and len(lanc) < 6:
+                nev = cur.objectName()
+                lanc.append(
+                    f"{cur.metaObject().className().split('_QML')[0]}"
+                    f"[{nev}]@{int(cur.x())},{int(cur.y())}"
+                    f"/{int(cur.width())}x{int(cur.height())}"
+                )
+                cur = cur.parentItem()
+            return f"{osztaly}<{'<'.join(lanc)}>"
+        except (AttributeError, RuntimeError, TypeError):
+            return "<destroyed>"
+
     def timer_fut(elem):
         if elem is None:
             return None
@@ -241,7 +276,7 @@ def main(work_dir: Path) -> None:
             if nev is not None:
                 elem = aktiv_lepes["elem"]
                 talalat = elem_az_esemeny_pontjaban(event)
-                talalat_nev = elem_nev(talalat)
+                talalat_nev = elem_leiras(talalat)
                 timer_running = timer_fut(elem)
                 if nev == "press":
                     aktiv_lepes["press_events"].append(
@@ -267,12 +302,56 @@ def main(work_dir: Path) -> None:
         nonlocal elozo_gesztus_volt
         target_height = original_height + height_offset
         window.setHeight(target_height)
+        elem.ensurePolished()
+        szulo = elem.parentItem()
+        if szulo is not None:
+            szulo.ensurePolished()
+        window.contentItem().ensurePolished()
+        window.update()
         assert varj(
             lambda: int(window.height()) == target_height
             and elem.property("visible") is True
             and float(elem.property("width")) > 0
             and float(elem.property("height")) > 0
         ), f"{nev}: a kattintási célpont nem kapott kirajzolható méretet"
+
+        # A látható, nem nulla méretű elem még őrizheti az előző ablakmagasság
+        # jelenetkoordinátáit. A kattintást csak stabil mapToScene-geometriából
+        # számoljuk, különben az esemény az ablakig jut, nem a MouseArea-ig.
+        elozo_geometria = None
+        stabil_mintak = 0
+
+        def geometria_stabil():
+            nonlocal elozo_geometria, stabil_mintak
+            bal_felso = elem.mapToScene(QPointF(0, 0))
+            kozep = elem.mapToScene(
+                QPointF(
+                    float(elem.property("width")) / 2,
+                    float(elem.property("height")) / 2,
+                )
+            )
+            most = tuple(
+                round(float(ertek), 3)
+                for ertek in (
+                    bal_felso.x(),
+                    bal_felso.y(),
+                    kozep.x(),
+                    kozep.y(),
+                    elem.property("width"),
+                    elem.property("height"),
+                )
+            )
+            if most == elozo_geometria:
+                stabil_mintak += 1
+            else:
+                elozo_geometria = most
+                stabil_mintak = 0
+            return stabil_mintak >= 2
+
+        assert varj(geometria_stabil), (
+            f"{nev}: az ablak átméretezése után nem stabilizálódott a "
+            "kattintási célpont geometriája"
+        )
         aktiv_lepes.update(nev=nev, elem=elem, press_events=[])
         print(f"PROBE-STEP START {nev} {nezo_allapot(elem)}", flush=True)
         try:
@@ -370,7 +449,7 @@ def main(work_dir: Path) -> None:
     dupla_allapot = {"belepesek": 0}
     elotte_lenyomasok = pan_area.property("pressEventCount")
 
-    def dupla_kattintas_kezelo(*_args):
+    def dupla_kattintas_kezelo():
         dupla_allapot["belepesek"] += 1
         single_exit, layout_mode, tilt_active = dupla_feltetelek()
         print(
@@ -418,10 +497,15 @@ def main(work_dir: Path) -> None:
     # NEM indult újra: a panel engedélyezettnek látszott, de az
     # editController-ben nem volt aktív session, amíg egy TOVÁBBI
     # lapozás nem történt)
+    # (az előző lépés dupla kattintása a SingleClickExit mellett bezárta a
+    # nézőt, ezért a visszalépés előtt újra meg kell nyitni — #4499)
+    window.setProperty("viewerOpen", True)
     viewer.setProperty("currentIndex", 0)
     app.processEvents()
+    assert varj(lambda: child("viewerImage").property("visible") is True), (
+        "a videó után az állóképes előnézet nem jelent meg"
+    )
     assert child("videoLoader").property("active") is False
-    assert child("viewerImage").property("visible") is True
     assert child("viewerEditorPanel").property("enabled") is True
     assert edit_controller.previewSource != "", (
         "a szerkesztő-munkamenet nem indult el a videó→kép átmenetnél (#218)"

@@ -20,10 +20,16 @@ from pathlib import Path
 from picasapy.index.origin import forget_origin_keys_outside
 from picasapy.ini import IniDocument, load_document, read_folder_date_override
 from picasapy.ini.albums import albums_of, parse_album_refs
-from picasapy.metadata import EMPTY_METADATA, read_file_metadata
+from picasapy.metadata import (
+    EMPTY_METADATA,
+    EMPTY_VIDEO_METADATA,
+    read_file_metadata,
+    read_video_metadata,
+)
 from picasapy.paths import normalize_path
 from picasapy.render.flip import FLIP_MASK
 from picasapy.scanner import (
+    PICASA_INI_LEGACY_NAME,
     PICASA_INI_NAME,
     FolderScan,
     HibasBejegyzes,
@@ -839,9 +845,21 @@ def _make_skip(
             " FROM folder_scan_state s JOIN folders f ON f.path = s.path"
         )
     }
+    # #4580: migráció után a régi indexek videói NULL formátummal indulnak.
+    # Ezek mappája nem hagyható ki akkor sem, ha a scan-pecsét még friss.
+    stale_video_folders = {
+        row["path"]
+        for row in conn.execute(
+            "SELECT DISTINCT f.path FROM photos p"
+            " JOIN folders f ON f.id = p.folder_id"
+            " WHERE p.kind = 'video' AND p.movie_format IS NULL"
+        )
+    }
     fresh_limit = time.time_ns() - _SKIP_SAFETY_NS
 
     def skip(path: Path, mtime_ns: int, ini_mtime_ns: int | None) -> bool:
+        if str(path) in stale_video_folders:
+            return False
         return (
             state.get(str(path)) == (mtime_ns, ini_mtime_ns, filetype_signature)
             and mtime_ns <= fresh_limit
@@ -897,10 +915,12 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
                 row["filters"],
                 row["geotag_ini"],
             ),
+            row["movie_format"],
         )
         for row in conn.execute(
             "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
-            " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini"
+            " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
+            " movie_format"
             " FROM photos WHERE folder_id = ?",
             (folder_id,),
         )
@@ -929,7 +949,11 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             # fájl-metaadat oszlopok maradnak. UPDATE csak akkor fut, ha
             # az ini-mezők ténylegesen eltérnek (#139) — különben a sor
             # érintetlen, az FTS-trigger sem sül el.
-            if current[1] != ini_fields:
+            if media.kind == "video" and current[2] is None:
+                # #4580: a v20-ról migrált sorokból a fájl újraolvasása tölti
+                # fel a videómezőket.
+                _upsert_photo(conn, folder_id, scan, media, ini_fields)
+            elif current[1] != ini_fields:
                 conn.execute(
                     "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
                     " keywords_ini = ?, rotate_steps = ?, flip_flags = ?,"
@@ -1025,14 +1049,19 @@ def _upsert_photo(
         if media.kind == "photo"
         else EMPTY_METADATA
     )
+    video_meta = (
+        read_video_metadata(scan.path / media.name)
+        if media.kind == "video"
+        else EMPTY_VIDEO_METADATA
+    )
     conn.execute(
         "INSERT INTO photos"
         "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
         " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
         " taken_at, orientation, width, height, caption_file, keywords_file,"
+        " movie_format, frame_rate, duration_seconds,"
         " exif_lat, exif_lon, first_seen_mtime_ns)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
-        " ?, ?) "
+        " VALUES (" + ", ".join("?" for _ in range(25)) + ") "
         "ON CONFLICT(folder_id, name) DO UPDATE SET "
         # #2486: a BEFAGYASZTÁS egyetlen sora. A `mtime_ns` az élő érték —
         # a változás-detektálásé, a bélyegkép-gyorstáré, a „legutóbbi
@@ -1059,6 +1088,9 @@ def _upsert_photo(
         "width = excluded.width, height = excluded.height, "
         "caption_file = excluded.caption_file, "
         "keywords_file = excluded.keywords_file, "
+        "movie_format = excluded.movie_format, "
+        "frame_rate = excluded.frame_rate, "
+        "duration_seconds = excluded.duration_seconds, "
         "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon",
         (
             folder_id,
@@ -1073,6 +1105,9 @@ def _upsert_photo(
             meta.height,
             meta.caption,
             ",".join(meta.keywords) or None,
+            video_meta.movie_format,
+            video_meta.frame_rate,
+            video_meta.duration_seconds,
             meta.latitude,
             meta.longitude,
             media.mtime_ns,
@@ -1084,7 +1119,10 @@ def _load_ini(scan: FolderScan) -> IniDocument | None:
     if not scan.has_ini:
         return None
     try:
-        return load_document(scan.path / PICASA_INI_NAME)
+        ini_path = scan.path / PICASA_INI_NAME
+        if not ini_path.exists():
+            ini_path = scan.path / PICASA_INI_LEGACY_NAME
+        return load_document(ini_path)
     except (OSError, ValueError):
         # Zárolt/olvashatatlan/sérült ini (pl. a futó Picasa fogja): a mappa
         # metaadat nélkül indexelődik, a következő sync majd pótolja.
