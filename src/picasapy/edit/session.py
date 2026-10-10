@@ -593,6 +593,18 @@ class EditSession:
                 return self.ops[:index]
         return self.ops
 
+    def redeye_post_detection_ops(self) -> tuple[FilterOp, ...]:
+        """A mentett vörösszem-réteg után futó műveletek.
+
+        Ezek nem változtatják meg a detektált kör renderkoordinátáit, de az
+        overlay kereteit át kell vetíteni rajtuk a végső előnézethez.
+        Új vörösszem-rétegnél nincs utótag, mert az a lánc végére kerül.
+        """
+        for index, op in enumerate(self.ops):
+            if op.matches(REDEYE_FILTER_NAME):
+                return self.ops[index + 1 :]
+        return ()
+
     def redeye_regions(self) -> tuple[Rect64, ...]:
         """A jelenlegi, kézzel megjelölt vörösszem-régiók (#445).
 
