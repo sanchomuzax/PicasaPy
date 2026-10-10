@@ -424,6 +424,42 @@ class TestRunImport:
 
         assert (dest / "Nyaralas" / "a.jpg").exists()
 
+    def test_typing_a_path_escaping_folder_name_disables_import(
+        self, qml_app, qt_app, tmp_path
+    ):
+        # #4837: valódi gépelés + kattintás: `../x` nevre az Import gomb
+        # letiltva, kattintásra nem indul import, és semmi nem jön létre.
+        window, _controller, _lib, engine = qml_app
+        dialog = _dialog_window(window)
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "cel-konyvtar"
+        dest.mkdir()
+
+        _scan(dialog, source, engine, qt_app)
+        dialog.setProperty("destFolder", str(dest))
+        qt_app.processEvents()
+        _click_center(dialog, _child(window, "importSourceNamingManualRadio"), qt_app)
+        field = _child(window, "importSourceManualNameField")
+        _click_center(dialog, field, qt_app)
+        for char in "../x":
+            QTest.keyClick(dialog, char)
+        qt_app.processEvents()
+
+        assert field.property("text") == "../x"
+        start_button = _child(window, "importSourceStartButton")
+        assert start_button.property("enabled") is False
+
+        started = []
+        _import_source_controller(engine).importStarted.connect(started.append)
+        _click_center(dialog, start_button, qt_app)
+        qt_app.processEvents()
+
+        assert started == []
+        assert list(dest.iterdir()) == []
+        assert not (tmp_path / "x").exists()
+
     def test_today_mode_uses_todays_date_folder(self, qml_app, qt_app, tmp_path):
         window, _controller, _lib, engine = qml_app
         dialog = _dialog_window(window)

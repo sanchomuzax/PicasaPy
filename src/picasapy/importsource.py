@@ -281,6 +281,25 @@ def destination_subpath(
     return Path(*parts) if parts else Path(".")
 
 
+_FORBIDDEN_FOLDER_NAME_CHARS = frozenset('<>:"|?*/\\')
+
+
+def is_valid_folder_name(name: str) -> bool:
+    """A kézi importmappanév (#4837) EGYETLEN, biztonságos útvonal-elem-e.
+
+    Elutasítja az üres/csak-szóköz nevet, a `.`/`..` nevet, az elválasztókat
+    (`/`, `\\`), a meghajtóbetűt/abszolút utat (`:`), a Windowson tiltott
+    `<>:"|?*` karaktereket és a vezérlőkaraktereket. A szóközökkel körbevett
+    nevet a hívó `strip()`-pel használja, ezért itt is azt vizsgáljuk."""
+    stripped = name.strip()
+    if not stripped or stripped in {".", ".."}:
+        return False
+    return not any(
+        char in _FORBIDDEN_FOLDER_NAME_CHARS or ord(char) < 32 or ord(char) == 127
+        for char in stripped
+    )
+
+
 def destination_subpath_for_mode(
     candidate_date: date | None,
     mode: str,
@@ -308,6 +327,8 @@ def destination_subpath_for_mode(
         name = manual_name.strip()
         if not name:
             raise ValueError("manual naming requires a folder name (#4595)")
+        if not is_valid_folder_name(name):
+            raise ValueError("manual folder name must be a single path element (#4837)")
         return Path(name)
     if mode == NAMING_TODAY:
         chosen = today if today is not None else date.today()
