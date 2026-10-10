@@ -169,6 +169,85 @@ az online páros — hatókörön kívül.
 1024 · 800 · 640 · 320, célmegjelöléssel), mozgókép-mód (első kocka / teljes),
 oldalcím, célmappa, **sablonlista + leírás + élő előnézet**, „Export".
 
+### 6.1 `webexport.fen` — a méretválasztó és a mozgókép-mód (#4610)
+
+Források: a helyi telepítés (`research/copy_Picasa_3_7/Picasa3/`)
+`runtime/webexport.fen`, `web/templates/*`, `web/documentation/index.html`,
+a hivatalos magyar katalógus (`referencia/i18n-hu/webexport.xml`), és a
+`Picasa3.exe` diszasszemblátuma (`eszkozok/binaris/picasa_dis.py`).
+
+**Egy méretválasztó van, nem kettő.** A párbeszédnek egyetlen
+`popup name="sizeradio"` vezérlője van („Export pictures at:",
+`webexport.fen` 2–10. sor), és ez a **nagy kép** méretét adja. Bélyegkép-
+méret választó **nincs**: a bélyegkép méretét a sablon `define
+thumbnailWidth`/`thumbnailHeight` sora szabja meg (`greyfrm/index.tpl`
+38–39. sor: 120; `whitefrm/index.tpl` 36–37.: 120; a `*bg` sablonokban a
+sor ki van kommentezve, pl. `blackbg/index.tpl` 38–39.).
+
+| index | `webexport.fen` elem | hivatalos magyar felirat (`webexport/itemN`) | képpont | `WebExportSize` érték |
+|---|---|---|---|---|
+| 0 | `Original Size` (4. sor) | Eredeti méret (`item4`) | 0 = eredeti | 0 |
+| 1 | `1024 pixels (for large monitors)` (5.) | 1024 képpont (nagy képernyőkhöz) (`item5`) | 1024 | 5 |
+| 2 | `800 pixels (for large Web pages)` (6.) | 800 képpont (nagyméretű weboldalakhoz) (`item6`) | 800 | 4 |
+| 3 | `640 pixels (for Web pages)` (7.) | 640 képpont (weboldalakhoz) (`item7`) | 640 | 3 |
+| 4 | `320 pixels (for email)` (8.) | 320 képpont (e-mailhez) (`item8`) | 320 | 1 |
+
+- **Alapérték: 640 képpont (3. index).** A párbeszéd-init (`0x007f52b0`) a
+  `Preferences\WebExportSize`-t **3-as alapértékkel** olvassa
+  (`0x007f5310 mov [esp+0x20], 3` → `0x007f5318 call 0x407a20`), a tárolt
+  érték → index leképezés az ugrótábla `0x7f5bf0` (`0x007f55a6`): 0→0, 1→4,
+  3→3, 4→2, 5→1, minden más (2, >5) → 0. A mentés (`0x007f5e80`) a fordítottja
+  (`0x7f61f8`: index 0→0, 1→5, 2→4, 3→3, 4→1), és mindkét kulcsot a
+  `Preferences` alá írja (`0x007f5ffe`, `0x007f6020`) — a választás tehát
+  **megmarad** a következő megnyitásig.
+- **A sablon felülírhatja.** A `define imageWidth/imageHeight` a
+  felhasználó választását írja felül (`blackbg/index.tpl` 31–34. sor
+  megjegyzése; `web/documentation` „Command Variables"). A képgeneráló
+  (`0x0086bce0`) a változótáblából olvas, és ha a sablon nem adta meg:
+  `imageWidth`/`imageHeight` = a párbeszéd választása (`[exp+0xae0]`/
+  `[exp+0xae4]`, `0x0086c207`–`0x0086c222`; a mentés ide írja,
+  `0x007f6070`–`0x007f6089`), **`thumbnailWidth`/`thumbnailHeight` = 144**
+  (`0x0086c125 push 0x90`, `0x0086c136 push 0x90`), `shadowedThumbnails` = 1
+  (`0x0086c117`).
+
+**A mozgókép-mód** — `popup name="moviesradio"` („Export movies using:",
+`webexport.fen` 11–16. sor), két elem: **`First frame`** („Első képkocka",
+`item11`) és **`Full movie`** („Teljes mozgófilm", `item12`); a csoport
+címkéje „Mozgófilmek exportálása:" (`labelgroup9`).
+
+- **Alapérték: Első képkocka.** `Preferences\WebExportMovie` alapértéke 0
+  (`0x007f5355 mov [esp+0x20], esi`, ahol `esi = 0` a `0x007f52e9` óta); a
+  mentés nem nulla indexre 1-et ír (`0x007f5f67`–`0x007f5f75`).
+- **Mit jelent:** a mentés a választást az exportáló objektum `+0xae8`
+  bájtjába teszi (`0x007f60aa`–`0x007f60b9`: `[dlg+0xbb0]` = `[exp+0xae8]`,
+  mert `exp = dlg+0xc8`, `0x007f6076`). A sablonfeltételek ebből és a
+  fájltípusból jönnek (`0x0086db20`); film = a hét filmkód egyike (8, 9, 10,
+  11, 12, 0x17, 0x1D — ugyanaz a lista, mint az `export-parbeszed.md`-ben):
+  - `isImage` = **nem film, VAGY Első képkocka** (`0x0086efe6`–`0x0086f043`);
+  - `isSimpleEmbed` = film ÉS Teljes mozgófilm ÉS típuskód 10
+    (`0x0086ee82`–`0x0086eec9`);
+  - `isExtendedEmbed` = film ÉS Teljes mozgófilm ÉS típuskód ≠ 10
+    (`0x0086ef36`–`0x0086ef73`).
+
+  A gyári sablonok `targetlistelement.html`-je (mind a hat HTML-sablon,
+  pl. `blackbg/targetlistelement.html` 8–25. sor) az `isSimpleEmbed` ágon
+  `<embed src="<%itemLargeImage%>">`-et, az `isExtendedEmbed` ágon Windows
+  Media Player `<OBJECT>`-et, az `isImage` ágon `<img>`-et ad ⇒ **Teljes
+  mozgófilmnél az `itemLargeImage` maga a filmfájl**, Első képkockánál a film
+  állóképként szerepel a galériában.
+
+**Nyitott:**
+
+- melyik kiterjesztés a 10-es típuskód (tehát melyik film kap `<embed>`-et
+  és melyik `<OBJECT>`-et). Nálunk minden teljes film `isSimpleEmbed`
+  (termékdöntés: a mai böngészőkben az ActiveX `<OBJECT>` nem játszik le,
+  az `<embed>` igen) — ez NEM az eredeti leképezése;
+- a teljes film bélyegképe és a filmfájl kimeneti neve az `image/` alatt
+  (a fájlokból nem olvasható ki); nálunk a bélyegkép az első kocka, a film
+  bájthű másolat;
+- hogy a `moviesradio` tiltott-e film nélküli kijelölésnél (a `webexport`
+  init-jében nem kerestük; az `export.fen`-é igen, ld. `export-parbeszed.md`).
+
 ## 7. Színkezelés — és a beállítások TÁROLÁSI HELYE
 
 `ID_VIEW_COLOR_MANAGED` kapcsolója: **`EnableColorManagement`**, és
