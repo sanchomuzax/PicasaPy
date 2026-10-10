@@ -29,6 +29,13 @@ def pytest_configure(config):
         "markers",
         "valodi_kepmappa: a teszt a rendszer VALÓDI képmappáját méri (#2897)",
     )
+    # #4817: a `.qm` nincs a repóban — a futásidejű fordítás a `.ts`-ből
+    # itt készül el (csak a hiányzó vagy elavult fájl fordul újra)
+    from pathlib import Path
+
+    from picasapy.app.i18n_build import forditsd_mind
+
+    forditsd_mind(Path(__file__).resolve().parents[1] / "src" / "picasapy" / "app" / "i18n")
 
 
 @pytest.fixture(autouse=True)
