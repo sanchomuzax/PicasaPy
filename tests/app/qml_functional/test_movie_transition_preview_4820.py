@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt, QUrl
 from PySide6.QtGui import QImage
+from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
 
 from picasapy.lazy_cv2 import cv2
@@ -28,6 +29,7 @@ _ATMENETEK = (
     "circlein", "circleout", "kenburns", "kenburnsaoi",
     "timelapse", "rect",
 )
+_DISSOLVE_VAGY_VAGAS = {"cut", "dissolve", "timelapse"}
 _MERENDO_ATMENETEK = ("wipeleft", "pushleft", "circlein", "kenburns")
 
 
@@ -48,13 +50,65 @@ def _wait(qt_app, condition, timeout=3.0):
     return bool(condition())
 
 
-def _click(window, qt_app, item):
+def _click(window, qt_app, item, x_ratio=0.5):
     assert item.property("visible"), f"{item.objectName()} nem látható"
     point = item.mapToScene(
-        QPointF(item.property("width") / 2, item.property("height") / 2)
+        QPointF(item.property("width") * x_ratio, item.property("height") / 2)
     ).toPoint()
     QTest.mouseClick(item.window() or window, Qt.MouseButton.LeftButton, pos=point)
     qt_app.processEvents()
+
+
+def _select_transition(window, qt_app, transition):
+    combo = _elem(window, "movieTransitionBox")
+    index = _ATMENETEK.index(transition)
+    _click(window, qt_app, combo, x_ratio=0.9)
+    popup = combo.findChild(QObject, "picasaComboPopup")
+    assert popup is not None, "az átmenetlista popupja nem található"
+    assert _wait(qt_app, lambda: popup.property("visible")), (
+        "az átmenetlista nem nyílt le"
+    )
+    rows = combo.findChild(QObject, "picasaComboList")
+    assert rows is not None, "az átmenetlista nézete nem található"
+    assert _wait(qt_app, lambda: int(rows.property("count")) == len(_ATMENETEK))
+    row_height = float(rows.property("contentHeight")) / len(_ATMENETEK)
+    list_height = float(rows.property("height"))
+    assert row_height > 0 and list_height > row_height, (
+        f"a legördülő lista mérete érvénytelen: "
+        f"{row_height=} {list_height=}"
+    )
+    content_y = max(
+        0.0,
+        min(
+            (index + 0.5) * row_height - list_height / 2,
+            float(rows.property("contentHeight")) - list_height,
+        ),
+    )
+    rows.setProperty("contentY", content_y)
+    assert _wait(qt_app, lambda: abs(float(rows.property("contentY")) - content_y) <= 1)
+    y_in_view = (index + 0.5) * row_height - float(rows.property("contentY"))
+    assert 0 <= y_in_view < list_height, (
+        f"a(z) {transition} sor nem látható a legördülő nézetben"
+    )
+    expression = QQmlExpression(
+        qmlContext(rows), rows, f"itemAtIndex({index})"
+    )
+
+    def visible_row():
+        value, error = expression.evaluate()
+        assert not error, expression.error()
+        return value.toVariant() if hasattr(value, "toVariant") else value
+
+    assert _wait(qt_app, lambda: visible_row() is not None), (
+        f"a(z) {transition} sor nem jelent meg"
+    )
+    row = visible_row()
+    point = row.mapToScene(QPointF(row.width() / 2, row.height() / 2)).toPoint()
+    QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=point)
+    qt_app.processEvents()
+    assert _wait(qt_app, lambda: combo.property("currentIndex") == index), (
+        f"a kattintás nem választotta ki a(z) {transition} átmenetet"
+    )
 
 
 def _open_movie_dialog(window, qt_app, height):
@@ -126,8 +180,27 @@ def _movie_reference(outgoing_path, incoming_path, transition, progress, size):
     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
+def _screenshot_content_bounds(window, screenshot, viewport):
+    origin = viewport.mapToScene(QPointF(0, 0))
+    scale_x = screenshot.width() / float(window.width())
+    scale_y = screenshot.height() / float(window.height())
+    rectangle = (
+        round(origin.x() * scale_x),
+        round(origin.y() * scale_y),
+        max(1, round(float(viewport.property("width")) * scale_x)),
+        max(1, round(float(viewport.property("height")) * scale_y)),
+    )
+    crop = _qimage_rgb_array(screenshot.copy(*rectangle))
+    # A tesztképek színesek, a panel/vászonszegély szürke vagy fekete. Csak a
+    # színes, szöveg nélküli képterületet mérjük, betűpixelt nem.
+    colored = np.ptp(crop.astype(np.int16), axis=2) > 30
+    ys, xs = np.where(colored)
+    assert len(xs), "a nézőke képtartalma nem látszik a renderelt ablakon"
+    return (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+
+
 def test_a_renderelt_elonezet_a_slideshow_atmeneti_kockajat_mutatja(
-    qml_app, qt_app, tmp_path, height_delta
+    qml_app, qt_app, tmp_path
 ):
     window, _controller, _engine = qml_app
     outgoing_path = tmp_path / "kilepo.png"
@@ -138,7 +211,7 @@ def test_a_renderelt_elonezet_a_slideshow_atmeneti_kockajat_mutatja(
         QUrl.fromLocalFile(str(outgoing_path)).toString(),
         QUrl.fromLocalFile(str(incoming_path)).toString(),
     ]
-    dialog = _open_movie_dialog(window, qt_app, 800 + height_delta)
+    dialog = _open_movie_dialog(window, qt_app, 800)
     try:
         dialog.setProperty("movieClipSources", sources)
         dialog.setProperty("previewIndex", 0)
@@ -147,32 +220,31 @@ def test_a_renderelt_elonezet_a_slideshow_atmeneti_kockajat_mutatja(
         qt_app.processEvents()
 
         transition = _elem(window, "moviePreviewTransition")
-        incoming_frame = _elem(window, "moviePreviewIncomingFrame")
-        rendered_image = window.findChild(QObject, "moviePreviewTransitionImage")
-        if rendered_image is None:
-            rendered_image = _elem(window, "moviePreviewImage")
+        rendered_image = _elem(window, "moviePreviewTransitionImage")
+        initial_source = str(rendered_image.property("source"))
+        assert QMetaObject.invokeMethod(dialog, "requestPreviewFrame")
         assert _wait(
-            qt_app, lambda: incoming_frame.property("imageSourceWidth") > 0
-        )
+            qt_app,
+            lambda: str(rendered_image.property("source")) != initial_source
+            and float(rendered_image.property("paintedWidth")) > 0,
+        ), "a kezdő, a slideshow geometriájú képkocka nem készült el"
         measured_errors = {}
-        for key in _MERENDO_ATMENETEK:
-            dialog.setProperty("transitionIndex", _ATMENETEK.index(key))
+        for key in _ATMENETEK:
+            _select_transition(window, qt_app, key)
+            previous_source = str(rendered_image.property("source"))
             dialog.setProperty("previewIndex", 0)
             dialog.setProperty("previewSource", sources[0])
-            dialog.setProperty("previewFromIndex", -1)
             transition.stop()
-            qt_app.processEvents()
-            assert QMetaObject.invokeMethod(dialog, "advancePreview")
-            transition.setProperty("paused", True)
+            dialog.setProperty("previewFromIndex", 0)
+            dialog.setProperty("previewIndex", 1)
             dialog.setProperty("previewTransitionProgress", 0.5)
+            assert QMetaObject.invokeMethod(dialog, "requestPreviewFrame")
             qt_app.processEvents()
             assert _wait(
                 qt_app,
-                lambda: (
-                    float(rendered_image.property("paintedWidth")) > 0
-                    if rendered_image.objectName() == "moviePreviewTransitionImage"
-                    else incoming_frame.property("imageSourceWidth") > 0
-                ),
+                lambda previous_source=previous_source: rendered_image.property("visible")
+                and str(rendered_image.property("source")) != previous_source
+                and float(rendered_image.property("paintedWidth")) > 0,
             )
 
             screenshot = window.grabWindow()
@@ -204,11 +276,154 @@ def test_a_renderelt_elonezet_a_slideshow_atmeneti_kockajat_mutatja(
                 f"{key}: az előnézet és a slideshow félidős képkockája eltér; "
                 f"mért átlagos RGB-hiba={error:.2f}/255"
             )
+            if key not in _DISSOLVE_VAGY_VAGAS:
+                dissolve_reference = _movie_reference(
+                    outgoing_path,
+                    incoming_path,
+                    "dissolve",
+                    0.5,
+                    (expected.shape[1], expected.shape[0]),
+                ).astype(np.int16)
+                dissolve_error = float(
+                    np.abs(expected - dissolve_reference).mean()
+                )
+                assert dissolve_error > 2.0, (
+                    f"{key}: a slideshow definíciója szerint különbözik a sima "
+                    "áttűnéstől, az előnézeti képkocka mégis annak felel meg"
+                )
             transition.stop()
 
         print(
             f"ablakmagasság={window.height()}, félidős átmeneti MAE: "
             + ", ".join(f"{key}={value:.2f}" for key, value in measured_errors.items())
+        )
+    finally:
+        dialog.close()
+        qt_app.processEvents()
+
+
+@pytest.mark.parametrize("height_delta", (-5, 0, 5), ids=("minus5", "normal", "plus5"))
+def test_a_kezdo_atmeneti_es_vegkep_nezoke_geometriaja_egyezik(
+    qml_app, qt_app, tmp_path, height_delta
+):
+    window, _controller, _engine = qml_app
+    outgoing_path = tmp_path / "kilepo.jpg"
+    incoming_path = tmp_path / "erkezo.jpg"
+    _make_pattern(outgoing_path, incoming=False)
+    _make_pattern(incoming_path, incoming=True)
+    sources = [
+        QUrl.fromLocalFile(str(outgoing_path)).toString(),
+        QUrl.fromLocalFile(str(incoming_path)).toString(),
+    ]
+    dialog = _open_movie_dialog(window, qt_app, 800 + height_delta)
+    try:
+        dialog.setProperty("movieClipSources", sources)
+        dialog.setProperty("previewSource", sources[0])
+        _elem(window, "movieHeightBox").setProperty("currentIndex", 5)
+        _elem(window, "video_control_bar2/1to1").setProperty("checked", True)
+        dialog.setProperty("previewActualSizeEnabled", True)
+        dialog.setProperty("previewFromIndex", -1)
+        dialog.setProperty("previewIndex", 0)
+        assert QMetaObject.invokeMethod(dialog, "requestPreviewFrame")
+        qt_app.processEvents()
+        image = _elem(window, "moviePreviewTransitionImage")
+        viewport = _elem(window, "moviePreviewViewport")
+        initial_source = str(image.property("source"))
+        assert QMetaObject.invokeMethod(dialog, "requestPreviewFrame")
+        assert _wait(
+            qt_app,
+            lambda: str(image.property("source")) != initial_source
+            and image.property("visible")
+            and float(image.property("paintedWidth")) > 0,
+        )
+        before = _screenshot_content_bounds(window, window.grabWindow(), viewport)
+
+        _select_transition(window, qt_app, "wipeleft")
+        dialog.setProperty("previewFromIndex", 0)
+        dialog.setProperty("previewIndex", 1)
+        dialog.setProperty("previewTransitionProgress", 0.02)
+        previous_source = str(image.property("source"))
+        assert QMetaObject.invokeMethod(dialog, "requestPreviewFrame")
+        assert _wait(
+            qt_app,
+            lambda: str(image.property("source")) != previous_source
+            and float(image.property("paintedWidth")) > 0,
+        )
+        during = _screenshot_content_bounds(window, window.grabWindow(), viewport)
+
+        dialog.setProperty("previewTransitionProgress", 1.0)
+        previous_source = str(image.property("source"))
+        assert QMetaObject.invokeMethod(dialog, "requestPreviewFrame")
+        assert _wait(
+            qt_app,
+            lambda: str(image.property("source")) != previous_source
+            and float(image.property("paintedWidth")) > 0,
+        )
+        after = _screenshot_content_bounds(window, window.grabWindow(), viewport)
+
+        for phase, bounds in (("0,02", during), ("utána", after)):
+            assert all(
+                abs(a - b) <= 3 for a, b in zip(before, bounds, strict=True)
+            ), (
+                f"{phase}: a képtéglalap elmozdult; előtte={before}, "
+                f"{phase}={bounds}, ablakmagasság={window.height()}"
+            )
+    finally:
+        dialog.close()
+        qt_app.processEvents()
+
+
+def test_a_szovegdia_vagasa_felirata_es_datuma_is_a_kozos_kockaba_kerul(
+    qml_app, qt_app, tmp_path
+):
+    window, controller, _engine = qml_app
+    photo_path = tmp_path / "filmkep.png"
+    _make_pattern(photo_path, incoming=False)
+    (tmp_path / ".picasa.ini").write_text(
+        "[filmkep.png]\ncaption=4820 tesztfelirat\n", encoding="utf-8"
+    )
+    source = QUrl.fromLocalFile(str(photo_path)).toString()
+    dialog = _open_movie_dialog(window, qt_app, 800)
+    try:
+        dialog.setProperty("movieClipSources", [source])
+        dialog.setProperty("movieSlides", [{
+            "text": "4820 szöveges dia",
+            "style": 4,
+            "backgroundColor": "#304050",
+            "textColor": "#ffffff",
+            "size": 24,
+        }])
+        _elem(window, "movieCropToFit").setProperty("checked", True)
+        _elem(window, "movieShowCaptions").setProperty("checked", True)
+        _elem(window, "movieShowDates").setProperty("checked", True)
+        _select_transition(window, qt_app, "wipeleft")
+        dialog.setProperty("previewIndex", 0)
+        dialog.setProperty("previewFromIndex", 0)
+        dialog.setProperty("previewIndex", 1)
+        dialog.setProperty("previewTransitionProgress", 0.5)
+        previous_source = str(_elem(window, "moviePreviewTransitionImage").property("source"))
+        assert QMetaObject.invokeMethod(dialog, "requestPreviewFrame")
+        qt_app.processEvents()
+
+        rendered_image = _elem(window, "moviePreviewTransitionImage")
+        incoming = _elem(window, "moviePreviewIncomingFrame")
+        assert _wait(
+            qt_app,
+            lambda: rendered_image.property("visible")
+            and str(rendered_image.property("source")) != previous_source
+            and rendered_image.property("paintedWidth") > 0,
+        ), "a szöveges diás átmenet képkockája nem készült el"
+        assert incoming.property("isTextSlide") is True
+        assert incoming.property("displayText") == "4820 szöveges dia"
+
+        cached_photo = next(
+            frame
+            for key, frame in controller.movie_transition_preview_provider._frames.items()
+            if key[0] == "photo" and key[1] == str(photo_path)
+        )
+        assert cached_photo.shape[0] > 0 and cached_photo.shape[1] > 0
+        assert cached_photo[-1, 0].mean() < 180, (
+            "a felirat/dátum alatti, szöveg nélküli képpont nem sötétült el"
         )
     finally:
         dialog.close()
@@ -226,8 +441,3 @@ def test_a_film_es_a_renderelo_atmenetkulcskeszlete_megegyezik():
     assert match is not None, "a QML filmátmenet-lista nem található"
     qml_keys = set(re.findall(r'"([a-z]+)"', match.group(1)))
     assert qml_keys == _TRANSITION_TYPES
-
-
-@pytest.fixture(params=(-5, 0, 5), ids=("minus5", "normal", "plus5"))
-def height_delta(request):
-    return request.param

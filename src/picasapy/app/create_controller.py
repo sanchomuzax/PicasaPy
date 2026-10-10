@@ -184,6 +184,7 @@ class CreateMixin(PosterMixin):
     movieProgress = Signal(int, int)
     movieFinished = Signal(str, int, int, int)
     movieFailed = Signal(str)
+    movieTransitionPreviewReady = Signal(str)
     #: #920: az élő előnézet elkészült — a paraméter a revízió, amivel a
     #: QML törni tudja a Qt kép-gyorsítótárát (`?rev=<n>`).
     collagePreviewReady = Signal(int)
@@ -303,6 +304,9 @@ class CreateMixin(PosterMixin):
         """A slideshow azonos átmenetfüggvényét használó QML-képszolgáltató."""
         if not hasattr(self, "_movie_transition_preview_provider"):
             self._movie_transition_preview_provider = MovieTransitionPreviewProvider()
+            self._movie_transition_preview_provider.frameReady.connect(
+                self.movieTransitionPreviewReady
+            )
         return self._movie_transition_preview_provider
 
     @Slot(
@@ -318,9 +322,11 @@ class CreateMixin(PosterMixin):
         str,
         str,
         bool,
-        result=str,
+        int,
+        int,
+        float,
     )
-    def renderMovieTransitionPreview(  # noqa: N802
+    def requestMovieTransitionPreview(  # noqa: N802
         self,
         outgoing_source: str,
         incoming_source: str,
@@ -334,9 +340,12 @@ class CreateMixin(PosterMixin):
         outgoing_slide_json: str,
         incoming_slide_json: str,
         actual_size: bool,
-    ) -> str:
-        """A választott átmenet aktuális, slideshow-val közös képkockája."""
-        return self.movie_transition_preview_provider.render_transition(
+        viewport_width: int,
+        viewport_height: int,
+        device_pixel_ratio: float,
+    ) -> None:
+        """Elindítja a nézőképkocka háttérbeli renderelését."""
+        self.movie_transition_preview_provider.request_transition(
             outgoing_source,
             incoming_source,
             transition,
@@ -349,6 +358,9 @@ class CreateMixin(PosterMixin):
             outgoing_slide_json,
             incoming_slide_json,
             actual_size,
+            viewport_width,
+            viewport_height,
+            device_pixel_ratio,
         )
 
     @property

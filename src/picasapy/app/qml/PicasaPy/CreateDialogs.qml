@@ -393,37 +393,12 @@ Item {
                 ? controller.movieVolume / 1000 : 0.5
         readonly property string previewTransitionKind:
             transitionKeys[transitionIndex] || "dissolve"
-        readonly property bool previewThroughColorTransition:
-            previewTransitionKind === "dissolveblack"
-            || previewTransitionKind === "dissolvewhite"
-        readonly property bool previewRasterTransition:
-            moviePreviewTransition.running && previewFromIndex >= 0
-            && previewTransitionKind !== "cut"
-        readonly property string previewTransitionFrameSource: {
-            if (!previewRasterTransition || !controller
-                    || typeof controller.renderMovieTransitionPreview !== "function")
-                return ""
-            var outgoingSlide = previewFromIndex >= movieClipSources.length
-                ? movieSlides[previewFromIndex - movieClipSources.length] : null
-            var incomingSlide = previewIndex >= movieClipSources.length
-                ? movieSlides[previewIndex - movieClipSources.length] : null
-            return controller.renderMovieTransitionPreview(
-                previewFromIndex < movieClipSources.length
-                    ? String(movieClipSources[previewFromIndex]) : "",
-                previewIndex < movieClipSources.length
-                    ? String(movieClipSources[previewIndex]) : "",
-                previewTransitionKind,
-                previewTransitionProgress,
-                previewOutputWidth,
-                previewOutputHeight,
-                movieCropToFit.checked,
-                movieShowCaptions.checked,
-                movieShowDates.checked,
-                outgoingSlide ? JSON.stringify(outgoingSlide) : "",
-                incomingSlide ? JSON.stringify(incomingSlide) : "",
-                previewActualSizeEnabled
-            )
-        }
+        property string previewTransitionFrameSource: ""
+        property bool previewAwaitingTransitionFrame: false
+        property bool previewAwaitingFinalFrame: false
+        readonly property int previewFramesPerSecond: 24
+        readonly property bool previewTransitionServiceAvailable:
+            controller && typeof controller.requestMovieTransitionPreview === "function"
         readonly property real previewAspectRatio: {
             var size = sizeOptions[movieHeightBox.currentIndex]
             return size[0] / size[1]
@@ -546,6 +521,45 @@ Item {
             moviePreviewTransition.stop()
             previewFromIndex = -1
             previewTransitionProgress = 1
+            previewAwaitingTransitionFrame = false
+            previewAwaitingFinalFrame = false
+            requestPreviewFrame()
+        }
+        function requestPreviewFrame() {
+            if (!movieDialog.visible || !previewTransitionServiceAvailable
+                    || previewItemCount < 1
+                    || moviePreviewViewport.width < 16
+                    || moviePreviewViewport.height < 16)
+                return false
+            var outgoingIndex = previewFromIndex >= 0
+                ? previewFromIndex : previewIndex
+            var outgoingSlide = outgoingIndex >= movieClipSources.length
+                ? movieSlides[outgoingIndex - movieClipSources.length] : null
+            var incomingSlide = previewIndex >= movieClipSources.length
+                ? movieSlides[previewIndex - movieClipSources.length] : null
+            var hostWindow = moviePreviewViewport.Window.window
+            var devicePixelRatio = hostWindow && hostWindow.devicePixelRatio > 0
+                ? hostWindow.devicePixelRatio : 1
+            controller.requestMovieTransitionPreview(
+                outgoingIndex < movieClipSources.length
+                    ? String(movieClipSources[outgoingIndex]) : "",
+                previewIndex < movieClipSources.length
+                    ? String(movieClipSources[previewIndex]) : "",
+                previewTransitionKind,
+                previewTransitionProgress,
+                previewOutputWidth,
+                previewOutputHeight,
+                movieCropToFit.checked,
+                movieShowCaptions.checked,
+                movieShowDates.checked,
+                outgoingSlide ? JSON.stringify(outgoingSlide) : "",
+                incomingSlide ? JSON.stringify(incomingSlide) : "",
+                previewActualSizeEnabled,
+                moviePreviewViewport.width,
+                moviePreviewViewport.height,
+                devicePixelRatio
+            )
+            return true
         }
         function advancePreview() {
             if (!previewItemCount) {
@@ -560,9 +574,13 @@ Item {
                 previewFromIndex = -1
                 previewTransitionProgress = 1
                 moviePreviewTransition.stop()
+                requestPreviewFrame()
                 return
             }
             previewTransitionProgress = 0
+            previewAwaitingTransitionFrame = previewTransitionServiceAvailable
+            previewAwaitingFinalFrame = false
+            if (requestPreviewFrame()) return
             moviePreviewTransition.restart()
         }
         function seekPreview(seconds) {
@@ -949,6 +967,7 @@ Item {
                 moviePreviewMusicLoader.item.stop()
             movieDialog.restorePreviewFullscreen()
         }
+        onOpened: movieDialog.requestPreviewFrame()
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 14
@@ -1030,6 +1049,7 @@ Item {
                                 onActivated: {
                                     if (!movieDialog.personMovieMode)
                                         controller.setMovieResolutionIndex(currentIndex)
+                                    movieDialog.requestPreviewFrame()
                                 }
                             }
                         }
@@ -1173,18 +1193,29 @@ Item {
                                 text: qsTr("Show Captions")
                                 checked: controller && typeof controller.moviePreference === "function"
                                         ? controller.moviePreference("captions") : false
-                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
-                                               controller.setMoviePreference("captions", checked)
+                                onToggled: {
+                                    if (controller && typeof controller.setMoviePreference === "function")
+                                        controller.setMoviePreference("captions", checked)
+                                    movieDialog.requestPreviewFrame()
+                                }
                             }
-                            CheckBox { id: movieShowDates; objectName: "movieShowDates"; text: qsTr("Show Dates") }
+                            CheckBox {
+                                id: movieShowDates
+                                objectName: "movieShowDates"
+                                text: qsTr("Show Dates")
+                                onToggled: movieDialog.requestPreviewFrame()
+                            }
                             CheckBox {
                                 id: movieCropToFit
                                 objectName: "movieCropToFit"
                                 text: qsTr("Full frame photo crop")
                                 checked: controller && typeof controller.moviePreference === "function"
                                         ? controller.moviePreference("cropfit") : false
-                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
-                                               controller.setMoviePreference("cropfit", checked)
+                                onToggled: {
+                                    if (controller && typeof controller.setMoviePreference === "function")
+                                        controller.setMoviePreference("cropfit", checked)
+                                    movieDialog.requestPreviewFrame()
+                                }
                             }
                             CheckBox {
                                 id: movieRemoveLowResFaces
@@ -1498,6 +1529,7 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Item {
+                        id: moviePreviewViewport
                         objectName: "moviePreviewViewport"
                         Layout.preferredWidth: 240
                         // Az infósor külön sora ne szorítsa le a filmvezérlőket.
@@ -1507,12 +1539,9 @@ Item {
                             objectName: "moviePreviewOutgoingFrame"
                             anchors.fill: parent
                             z: 0
-                            visible: !movieDialog.previewRasterTransition
+                            visible: !movieDialog.previewTransitionServiceAvailable
                                 && moviePreviewTransition.running
                                 && movieDialog.previewFromIndex >= 0
-                            opacity: movieDialog.previewThroughColorTransition
-                                ? Math.max(0, 1 - 2 * movieDialog.previewTransitionProgress)
-                                : 1 - movieDialog.previewTransitionProgress
                             photoSources: movieDialog.movieClipSources
                             slides: movieDialog.movieSlides
                             itemIndex: movieDialog.previewFromIndex
@@ -1531,13 +1560,8 @@ Item {
                             objectName: "moviePreviewIncomingFrame"
                             anchors.fill: parent
                             z: 1
-                            visible: !movieDialog.previewRasterTransition
+                            visible: !movieDialog.previewTransitionServiceAvailable
                                 && movieDialog.previewItemCount > 0
-                            opacity: !moviePreviewTransition.running
-                                ? 1
-                                : movieDialog.previewThroughColorTransition
-                                    ? Math.max(0, 2 * movieDialog.previewTransitionProgress - 1)
-                                    : movieDialog.previewTransitionProgress
                             photoSources: movieDialog.movieClipSources
                             slides: movieDialog.movieSlides
                             itemIndex: movieDialog.previewIndex
@@ -1555,16 +1579,9 @@ Item {
                         Image {
                             id: moviePreviewTransitionImage
                             objectName: "moviePreviewTransitionImage"
-                            anchors.centerIn: parent
+                            anchors.fill: parent
                             z: 2
-                            width: movieDialog.previewActualSizeEnabled
-                                    && sourceSize.width > 0
-                                ? sourceSize.width : parent.width
-                            height: movieDialog.previewActualSizeEnabled
-                                    && sourceSize.height > 0
-                                ? sourceSize.height : parent.height
-                            visible: movieDialog.previewRasterTransition
-                                && source !== ""
+                            visible: source !== ""
                             source: movieDialog.previewTransitionFrameSource
                             fillMode: Image.PreserveAspectFit
                             cache: false
@@ -1657,7 +1674,10 @@ Item {
                         ToolTip.text: qsTr("Show actual movie size (don't stretch)")
                         ToolTip.delay: Theme.tooltipDelay
                         ToolTip.visible: hovered
-                        onClicked: movieDialog.previewActualSizeEnabled = checked
+                        onClicked: {
+                            movieDialog.previewActualSizeEnabled = checked
+                            movieDialog.requestPreviewFrame()
+                        }
                     }
                     PicasaButton {
                         objectName: "video_control_bar2/fullscreen"
@@ -1721,6 +1741,42 @@ Item {
                 onClicked: movieReplaceDialog.close()
             }
         }
+    }
+
+    Connections {
+        target: controller
+        function onMovieTransitionPreviewReady(source) {
+            movieDialog.previewTransitionFrameSource = String(source || "")
+            if (movieDialog.previewAwaitingTransitionFrame) {
+                movieDialog.previewAwaitingTransitionFrame = false
+                moviePreviewTransition.restart()
+            } else if (movieDialog.previewAwaitingFinalFrame) {
+                movieDialog.previewAwaitingFinalFrame = false
+            }
+        }
+    }
+
+    Connections {
+        target: moviePreviewTransition
+        function onRunningChanged() {
+            if (moviePreviewTransition.running) return
+            moviePreviewFrameTimer.stop()
+            movieDialog.previewAwaitingFinalFrame =
+                movieDialog.previewTransitionServiceAvailable
+                && movieDialog.previewTransitionProgress >= 1
+            if (!movieDialog.requestPreviewFrame())
+                movieDialog.previewAwaitingFinalFrame = false
+        }
+    }
+
+    Timer {
+        id: moviePreviewFrameTimer
+        objectName: "moviePreviewFrameTimer"
+        interval: Math.max(1, Math.round(1000 / movieDialog.previewFramesPerSecond))
+        repeat: true
+        running: moviePreviewTransition.running
+            && !movieDialog.previewAwaitingTransitionFrame
+        onTriggered: movieDialog.requestPreviewFrame()
     }
 
     Timer {

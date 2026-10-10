@@ -1,4 +1,4 @@
-"""A filmátmenetek közös renderútja a QML-előnézethez és az exporthoz."""
+"""A filmátmenetek aszinkron, az exporttal közös előnézeti renderútja."""
 
 from __future__ import annotations
 
@@ -6,42 +6,154 @@ import json
 import logging
 import threading
 from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtGui import QImage
+from PySide6.QtCore import QRunnable, QSize, QThreadPool, Signal
+from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.app.collage_preview import rgb_to_qimage
 from picasapy.app.formatting import to_local_path
-from picasapy.movie.slideshow import (
-    MovieSettings,
-    _atmeneti_kocka,
-    _decode,
-    _fotofelirat,
-    _picasa_caption,
-    _szovegdia,
-    crop_to_fit,
-    letterbox,
-)
+from picasapy.app.worker_thread import register_pool_owner
 from picasapy.lazy_cv2 import cv2
+from picasapy.movie import (
+    MovieSettings,
+    decode_photo,
+    prepare_photo_frame,
+    render_text_slide,
+    transition_frame,
+)
 
 _log = logging.getLogger(__name__)
 _PROVIDER_URL = "image://moviepreview/frame?rev={}"
-_FRAME_CACHE_LIMIT = 4
+_FRAME_CACHE_LIMIT = 8
 _PREVIEW_LONG_EDGE = 640
 
 
+@dataclass(frozen=True)
+class _TransitionRequest:
+    generation: int
+    outgoing_source: str
+    incoming_source: str
+    transition: str
+    progress: float
+    width: int
+    height: int
+    cropfit: bool
+    show_captions: bool
+    show_dates: bool
+    outgoing_slide_json: str
+    incoming_slide_json: str
+    actual_size: bool
+    viewport_width: int | None = None
+    viewport_height: int | None = None
+    device_pixel_ratio: float = 1.0
+
+
+class _TransitionJob(QRunnable):
+    """Egy átmeneti képkocka előállítása a saját poolban."""
+
+    def __init__(
+        self, provider: MovieTransitionPreviewProvider, request: _TransitionRequest
+    ) -> None:
+        super().__init__()
+        self._provider = provider
+        self._request = request
+
+    def run(self) -> None:
+        try:
+            frame = self._provider._render_request(self._request)
+        except Exception as exc:  # noqa: BLE001 — a hibás kérés se akassza be a poolt
+            self._provider._log_source_error(
+                f"átmenet:{self._request.outgoing_source}->{self._request.incoming_source}",
+                exc,
+            )
+            width, height = _preview_size(
+                self._request.width,
+                self._request.height,
+                self._request.actual_size,
+                self._request.viewport_width,
+                self._request.viewport_height,
+                self._request.device_pixel_ratio,
+            )
+            frame = np.zeros((height, width, 3), dtype=np.uint8)
+        self._provider._finish_request(self._request.generation, frame)
+
+
 class MovieTransitionPreviewProvider(QQuickImageProvider):
-    """Az export képkockáját adja a filmkészítő élő átmenet-előnézetéhez."""
+    """A slideshow átmenetfüggvényével készülő, friss képkocka-szolgáltató."""
+
+    frameReady = Signal(str)
 
     def __init__(self) -> None:
         super().__init__(QQuickImageProvider.ImageType.Image)
         self._lock = threading.RLock()
+        self._image_lock = threading.Lock()
         self._image = QImage(1, 1, QImage.Format.Format_RGB888)
         self._image.fill(0)
         self._revision = 0
         self._frames: OrderedDict[tuple, np.ndarray] = OrderedDict()
+        self._logged_sources: set[str] = set()
+        self._pool = QThreadPool()
+        self._pool.setMaxThreadCount(1)
+        self._pool.setExpiryTimeout(30_000)
+        self._generation = 0
+        self._latest_generation = 0
+        self._running = False
+        self._pending: _TransitionRequest | None = None
+        register_pool_owner(self)
+
+    def request_transition(
+        self,
+        outgoing_source: str,
+        incoming_source: str,
+        transition: str,
+        progress: float,
+        width: int,
+        height: int,
+        cropfit: bool,
+        show_captions: bool,
+        show_dates: bool,
+        outgoing_slide_json: str,
+        incoming_slide_json: str,
+        actual_size: bool,
+        viewport_width: int | None = None,
+        viewport_height: int | None = None,
+        device_pixel_ratio: float = 1.0,
+    ) -> int:
+        """Azonnal visszatér; a két alapképet és az átmenetet a pool készíti."""
+        with self._lock:
+            self._generation += 1
+            generation = self._generation
+            self._latest_generation = generation
+            request = _TransitionRequest(
+                generation,
+                outgoing_source,
+                incoming_source,
+                transition,
+                progress,
+                width,
+                height,
+                cropfit,
+                show_captions,
+                show_dates,
+                outgoing_slide_json,
+                incoming_slide_json,
+                actual_size,
+                viewport_width,
+                viewport_height,
+                device_pixel_ratio,
+            )
+            if self._running:
+                # A lassú képkockát a legfrissebb állapot váltja; a GUI nem
+                # gyűjt felhalmozódó, már elavult animációs munkát.
+                self._pending = request
+            else:
+                self._running = True
+                self._pool.start(_TransitionJob(self, request))
+        return generation
 
     def render_transition(
         self,
@@ -57,45 +169,77 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
         outgoing_slide_json: str,
         incoming_slide_json: str,
         actual_size: bool,
+        viewport_width: int | None = None,
+        viewport_height: int | None = None,
+        device_pixel_ratio: float = 1.0,
     ) -> str:
-        """Képkockát készít a slideshow ugyanazon átmenetfüggvényével."""
-        render_width, render_height = _preview_size(width, height, actual_size)
-        settings = MovieSettings(
-            width=render_width,
-            height=render_height,
-            cropfit=cropfit,
-            show_captions=show_captions,
-            show_dates=show_dates,
+        """Szinkron render-mag tesztekhez; a felület az aszinkron metódust hívja."""
+        request = _TransitionRequest(
+            0,
+            outgoing_source,
+            incoming_source,
+            transition,
+            progress,
+            width,
+            height,
+            cropfit,
+            show_captions,
+            show_dates,
+            outgoing_slide_json,
+            incoming_slide_json,
+            actual_size,
+            viewport_width,
+            viewport_height,
+            device_pixel_ratio,
+        )
+        return self._store_frame(self._render_request(request))
+
+    def _render_request(self, request: _TransitionRequest) -> np.ndarray:
+        render_width, render_height = _preview_size(
+            request.width,
+            request.height,
+            request.actual_size,
+            request.viewport_width,
+            request.viewport_height,
+            request.device_pixel_ratio,
         )
         try:
+            settings = MovieSettings(
+                width=request.width,
+                height=request.height,
+                cropfit=request.cropfit,
+                show_captions=request.show_captions,
+                show_dates=request.show_dates,
+            )
             outgoing = self._input_frame(
-                outgoing_source,
-                outgoing_slide_json,
+                request.outgoing_source,
+                request.outgoing_slide_json,
                 settings,
+                (render_width, render_height),
             )
             incoming = self._input_frame(
-                incoming_source,
-                incoming_slide_json,
+                request.incoming_source,
+                request.incoming_slide_json,
                 settings,
+                (render_width, render_height),
             )
-            frame = _atmeneti_kocka(outgoing, incoming, transition, progress)
-        except (OSError, RuntimeError, TypeError, ValueError, json.JSONDecodeError):
-            _log.exception("A filmátmenet előnézeti képkockája nem készíthető el")
-            frame = np.zeros((render_height, render_width, 3), dtype=np.uint8)
-
-        image = rgb_to_qimage(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        with self._lock:
-            self._image = image
-            self._revision += 1
-            revision = self._revision
-        return _PROVIDER_URL.format(revision)
+            return transition_frame(
+                outgoing, incoming, request.transition, request.progress
+            )
+        except (OSError, RuntimeError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            self._log_source_error(
+                f"átmenet:{request.outgoing_source}->{request.incoming_source}", exc
+            )
+            return np.zeros((render_height, render_width, 3), dtype=np.uint8)
 
     def _input_frame(
         self,
         source: str,
         slide_json: str,
         settings: MovieSettings,
+        preview_size: tuple[int, int],
     ) -> np.ndarray:
+        preview_width, preview_height = preview_size
         slide = json.loads(slide_json) if slide_json else None
         if slide is not None:
             key = (
@@ -103,45 +247,70 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
                 slide_json,
                 settings.width,
                 settings.height,
+                preview_size,
             )
             return self._cached_frame(
-                key, lambda: _szovegdia(slide, settings)
+                key,
+                lambda: _resize_to_preview(
+                    render_text_slide(slide, settings), preview_size
+                ),
+                source=f"dia:{slide_json}",
+                size=preview_size,
             )
 
         local_path = to_local_path(source)
         if not local_path:
             raise ValueError("A filmátmenet egyik képkockájának nincs forrása")
         path = Path(local_path)
+        try:
+            modified = path.stat().st_mtime_ns
+        except OSError:
+            modified = None
         key = (
             "photo",
             str(path),
-            path.stat().st_mtime_ns if path.exists() else None,
+            modified,
             settings.width,
             settings.height,
+            preview_size,
             settings.cropfit,
             settings.show_captions,
             settings.show_dates,
+            settings.background,
         )
 
         def create() -> np.ndarray:
-            image = _decode(path)
-            frame = (
-                crop_to_fit(image, settings.width, settings.height)
-                if settings.cropfit
-                else letterbox(image, settings.width, settings.height)
+            frame = prepare_photo_frame(
+                path,
+                settings,
+                {},
+                decoder=lambda photo_path: _decode_preview(
+                    photo_path,
+                    preview_width,
+                    preview_height,
+                    settings.cropfit,
+                ),
             )
-            caption = _picasa_caption(path, {}) if settings.show_captions else ""
-            return _fotofelirat(frame, path, settings, caption)
+            return _resize_to_preview(frame, preview_size)
 
-        return self._cached_frame(key, create)
+        return self._cached_frame(
+            key,
+            create,
+            source=str(path),
+            size=preview_size,
+        )
 
-    def _cached_frame(self, key: tuple, create) -> np.ndarray:
+    def _cached_frame(self, key, create, *, source: str, size) -> np.ndarray:
         with self._lock:
-            cached = self._frames.get(key)
-            if cached is not None:
+            if key in self._frames:
                 self._frames.move_to_end(key)
-                return cached
-        frame = create()
+                return self._frames[key]
+        try:
+            frame = create()
+        except Exception as exc:  # noqa: BLE001 — a rossz kép maradjon helyben
+            self._log_source_error(source, exc)
+            width, height = size
+            frame = np.zeros((height, width, 3), dtype=np.uint8)
         with self._lock:
             existing = self._frames.get(key)
             if existing is not None:
@@ -151,8 +320,43 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
                 self._frames.popitem(last=False)
         return frame
 
-    def requestImage(self, image_id, size, requested_size):  # noqa: N802 (Qt API)
+    def _log_source_error(self, source: str, error: Exception) -> None:
         with self._lock:
+            if source in self._logged_sources:
+                return
+            self._logged_sources.add(source)
+        _log.warning("A filmelőnézeti forrás nem olvasható (%s): %s", source, error)
+
+    def _finish_request(self, generation: int, frame: np.ndarray) -> None:
+        next_request = None
+        url = None
+        with self._lock:
+            if generation == self._latest_generation:
+                url = self._store_frame(frame)
+            if self._pending is not None:
+                next_request = self._pending
+                self._pending = None
+            else:
+                self._running = False
+        if url is not None:
+            self.frameReady.emit(url)
+        if next_request is not None:
+            self._pool.start(_TransitionJob(self, next_request))
+
+    def _store_frame(self, frame: np.ndarray) -> str:
+        image = rgb_to_qimage(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        with self._image_lock:
+            self._image = image
+            self._revision += 1
+            revision = self._revision
+        return _PROVIDER_URL.format(revision)
+
+    def wait_for_done(self, msecs: int = 10_000) -> bool:
+        """A saját pool bevárása a teszt- és alkalmazáslebontáshoz."""
+        return self._pool.waitForDone(msecs)
+
+    def requestImage(self, image_id, size, requested_size):  # noqa: N802 (Qt API)
+        with self._image_lock:
             image = self._image
         if size is not None:
             size.setWidth(image.width())
@@ -160,9 +364,76 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
         return image
 
 
-def _preview_size(width: int, height: int, actual_size: bool) -> tuple[int, int]:
-    width = max(2, int(width)) // 2 * 2
-    height = max(2, int(height)) // 2 * 2
+def _decode_preview(
+    path: Path, width: int, height: int, cropfit: bool
+) -> np.ndarray:
+    """A Qt képdekódere kicsinyítve olvas; a RAW képek a közös dekóderre esnek."""
+    reader = QImageReader(str(path))
+    reader.setAutoTransform(True)
+    source_size = reader.size()
+    if reader.canRead() and source_size.isValid():
+        scale = (
+            max(width / source_size.width(), height / source_size.height())
+            if cropfit
+            else min(width / source_size.width(), height / source_size.height())
+        )
+        scaled_size = QSize(
+            max(1, round(source_size.width() * scale)),
+            max(1, round(source_size.height() * scale)),
+        )
+        reader.setScaledSize(scaled_size)
+        image = reader.read()
+        if not image.isNull():
+            rgb = image.convertToFormat(QImage.Format.Format_RGB888)
+            bytes_per_line = rgb.bytesPerLine()
+            rows = np.frombuffer(rgb.bits(), dtype=np.uint8).reshape(
+                rgb.height(), bytes_per_line
+            )
+            pixels = rows[:, : rgb.width() * 3].reshape(
+                rgb.height(), rgb.width(), 3
+            ).copy()
+            return cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
+    return decode_photo(path, goal=max(width, height))
+
+
+def _resize_to_preview(
+    frame: np.ndarray, preview_size: tuple[int, int]
+) -> np.ndarray:
+    width, height = preview_size
+    if frame.shape[1] == width and frame.shape[0] == height:
+        return frame
+    interpolation = (
+        cv2.INTER_AREA
+        if width < frame.shape[1] or height < frame.shape[0]
+        else cv2.INTER_LINEAR
+    )
+    return cv2.resize(frame, (width, height), interpolation=interpolation)
+
+
+def _preview_size(
+    width: int,
+    height: int,
+    actual_size: bool,
+    viewport_width: int | None = None,
+    viewport_height: int | None = None,
+    device_pixel_ratio: float = 1.0,
+) -> tuple[int, int]:
+    width = max(2, int(width))
+    height = max(2, int(height))
+    if viewport_width is not None and viewport_height is not None:
+        dpr = max(0.5, float(device_pixel_ratio))
+        max_width = max(2, round(viewport_width * dpr))
+        max_height = max(2, round(viewport_height * dpr))
+        aspect = width / height
+        render_width = min(max_width, round(max_height * aspect))
+        render_height = round(render_width / aspect)
+        if render_height > max_height:
+            render_height = max_height
+            render_width = round(render_height * aspect)
+        return max(2, render_width // 2 * 2), max(2, render_height // 2 * 2)
+
+    width = width // 2 * 2
+    height = height // 2 * 2
     longest_edge = max(width, height)
     if actual_size or longest_edge <= _PREVIEW_LONG_EDGE:
         return width, height
