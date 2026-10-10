@@ -4083,6 +4083,7 @@ ApplicationWindow {
     Connections {
         target: window._faceScanController
         function onUnnamedCountChanged() { window.peopleFaceRevision++ }
+        function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false
             errorBannerText.text = qsTr("Face data could not be written to XMP: %1").arg(reason)

@@ -8,10 +8,13 @@ Rectangle {
     property string photoUrl: ""
     property bool unnamedFace: false
     property int faceId: -1
+    property string suggestedName: ""
     property real availableWidth: 266
     signal chosen()
     signal nameSubmitted(int faceId, string name)
     signal ignoreRequested(int faceId)
+    signal suggestionAccepted(int faceId)
+    signal suggestionRejected(int faceId)
 
     function submitName(name) {
         var cleanName = String(name).trim()
@@ -44,7 +47,7 @@ Rectangle {
         objectName: "peoplePanelFaceImage_"
                     + (row.unnamedFace ? row.faceId : row.personName)
         anchors.left: parent.left
-        anchors.leftMargin: 7
+        anchors.leftMargin: row.unnamedFace ? 3 : 7
         anchors.verticalCenter: parent.verticalCenter
         width: 60
         height: 70
@@ -79,12 +82,85 @@ Rectangle {
         anchors.leftMargin: 16
         anchors.right: parent.right
         anchors.rightMargin: 20
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.top: row.suggestedName.length > 0 ? parent.top : undefined
+        anchors.topMargin: 7
+        anchors.verticalCenter:
+            row.suggestedName.length === 0 ? parent.verticalCenter : undefined
         height: 22
         placeholderText: qsTr("Add a name")
         font.pixelSize: Theme.fontSize - 1
         Keys.onReturnPressed: row.submitName(nameField.text)
         TextFieldContextArea {}
+    }
+
+    Rectangle {
+        id: suggestionYes
+        objectName: "peoplePanelSuggestionYes_" + row.faceId
+        visible: row.unnamedFace && row.suggestedName.length > 0
+        anchors.left: faceImage.right
+        anchors.top: nameField.bottom
+        anchors.topMargin: 5
+        width: 27
+        height: 22
+        radius: 2
+        color: Theme.infoBar
+        border.width: 1
+        border.color: Theme.panelSelectionActive
+
+        Text {
+            anchors.centerIn: parent
+            text: "✓"
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.infoBarText
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: row.suggestionAccepted(row.faceId)
+        }
+    }
+
+    Rectangle {
+        id: suggestionNo
+        objectName: "peoplePanelSuggestionNo_" + row.faceId
+        visible: row.unnamedFace && row.suggestedName.length > 0
+        anchors.left: suggestionYes.right
+        anchors.leftMargin: 5
+        anchors.top: suggestionYes.top
+        width: 27
+        height: 22
+        radius: 2
+        color: Theme.infoBar
+        border.width: 1
+        border.color: Theme.panelSelectionActive
+
+        Text {
+            anchors.centerIn: parent
+            text: "✗"
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.infoBarText
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: row.suggestionRejected(row.faceId)
+        }
+    }
+
+    Text {
+        objectName: "peoplePanelSuggestionName_" + row.faceId
+        visible: row.unnamedFace && row.suggestedName.length > 0
+        anchors.left: suggestionNo.right
+        anchors.leftMargin: 5
+        anchors.right: parent.right
+        anchors.rightMargin: 8
+        anchors.verticalCenter: suggestionNo.verticalCenter
+        text: qsTr("%1?").arg(row.suggestedName)
+        elide: Text.ElideRight
+        font.pixelSize: Theme.fontSize - 1
+        color: Theme.panelSelectionText
     }
 
     Rectangle {
