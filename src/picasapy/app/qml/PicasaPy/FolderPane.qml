@@ -1350,8 +1350,12 @@ Rectangle {
         modal: true
         title: qsTr("Delete Person")
         property string personName: ""
+        // #1599/#1748: rögzített szélesség, különben a tördelő felirat és a
+        // Dialog egymás szélességéből számolna (kötési hurok)
+        implicitWidth: 380 + leftPadding + rightPadding
 
         contentItem: Label {
+            width: 380
             text: qsTr("Are you sure you want to delete the people album \"%1\"?")
                 .arg(peopleAlbumDeleteConfirmation.personName)
             wrapMode: Text.WordWrap
