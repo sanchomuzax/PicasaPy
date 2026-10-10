@@ -101,19 +101,38 @@ Item {
     return probe
 
 
+def _kozep(target) -> QPoint:
+    return target.mapToScene(target.boundingRect().center()).toPoint()
+
+
 def _buborek_hoverre(qt_app, window, probe, target) -> bool:
-    """Az egeret a célra viszi, és kivárja, hogy a buborék megjelenjen."""
-    pont = target.mapToScene(target.boundingRect().center()).toPoint()
+    """Az egeret a célra viszi, és kivárja, hogy a buborék megjelenjen.
+
+    A célpontot MINDEN próbálkozáskor újraszámolja: a gomb a mező
+    kitöltése és az ablak átméretezése után még odébb csúszhat, és egy
+    egyszer kiszámolt pont ilyenkor mellé találna (a lassú CI-gépen ez
+    látszott: a hover soha nem érte el a gombot).
+    """
     # előbb el a céltól: ugyanarra a pontra mozgatás nem ad belépést (hover)
     QTest.mouseMove(window, QPoint(1, 1))
     qt_app.processEvents()
 
     def ra_mutat() -> bool:
-        QTest.mouseMove(window, pont)
+        QTest.mouseMove(window, _kozep(target))
         return bool(probe.property("isVisible"))
 
     # a 600 ms-os késleltetés a terhelt CI-gépen lassabban jár le
     return _wait_for(qt_app, ra_mutat, timeout_ms=8000)
+
+
+def _hover_allapot(window, target) -> str:
+    """Hibaüzenethez: hol áll a cél, és kapta-e a hovert."""
+    return (
+        f"pont={_kozep(target)}, hovered={target.property('hovered')}, "
+        f"enabled={target.property('enabled')}, visible={target.isVisible()}, "
+        f"cel={target.width():.0f}x{target.height():.0f}, "
+        f"ablak={window.width()}x{window.height()}"
+    )
 
 
 def _buborek_eltunik(qt_app, window, probe) -> bool:
@@ -155,9 +174,11 @@ class TestCimkeSugo4577:
             ), (
                 "a + gomb a beírt szöveg után sem kattintható"
             )
+            _varj_nyugalmi_helyzet(qt_app, plusz)
             plusz_sugo = _sugo_probe(engine, plusz)
             assert _buborek_hoverre(qt_app, window, plusz_sugo, plusz), (
-                f"a + gomb buborékja nem jelent meg ({eltolás:+} px)"
+                f"a + gomb buborékja nem jelent meg ({eltolás:+} px): "
+                f"{_hover_allapot(window, plusz)}"
             )
             assert plusz_sugo.property("tipDelay") == 600
             assert plusz_sugo.property("tipText") == (
@@ -166,9 +187,11 @@ class TestCimkeSugo4577:
             assert _buborek_eltunik(qt_app, window, plusz_sugo)
 
             fogaskerek = _item(window, "quickTagsGearButton")
+            _varj_nyugalmi_helyzet(qt_app, fogaskerek)
             fogaskerek_sugo = _sugo_probe(engine, fogaskerek)
             assert _buborek_hoverre(qt_app, window, fogaskerek_sugo, fogaskerek), (
-                f"a fogaskerék buborékja nem jelent meg ({eltolás:+} px)"
+                f"a fogaskerék buborékja nem jelent meg ({eltolás:+} px): "
+                f"{_hover_allapot(window, fogaskerek)}"
             )
             assert fogaskerek_sugo.property("tipDelay") == 600
             assert fogaskerek_sugo.property("tipText") == "Configure Quick Tags"
