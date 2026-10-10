@@ -155,6 +155,10 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
   (HDTV) és **5:3** (széles digitális képkeret). Az **Egyéni méretarány
   hozzáadása…** paranccsal saját arányt vehetsz fel névvel,
   szélességgel és magassággal; a saját arányt később törölni is tudod.
+  A lista első két sora a
+  pixelméretet is kiírja: a **Kézi** sor a kijelölt keret méretét (például
+  „Kézi: 1200x800"), a **Jelenlegi méretarány** sor a teljes kép méretét.
+  A kézi sor értéke követi a keretet, amíg húzod.
 - **Álló** / **Fekvő** — a keret elforgatása.
 - **Forgatás** gomb — a képarány oldalainak cseréje.
 - **Javasolt vágások** — a program kínál néhány kivágást: a részletre, a
@@ -199,7 +203,13 @@ azt is jelzi.
 Az automatikus javítás a **felismert arcok szemére** korlátozódik: az arcon
 kívüli vörös részeket — például egy piros lámpát vagy ruhát — nem bántja.
 Ha az arcfelismerő nem érhető el, a program a korábbi módon, a teljes
-képen keres.
+képen keres. Ha az arcfelismerő egy arcnál értelmetlen szemhelyet ad,
+a program azt kihagyja, és a javítás a többi szemmel lefut.
+
+Ha a képet a **Kiegyenesítés** elforgatta, a panelen figyelmeztetés áll:
+a forgatott képen a szem köré húzott keretek pontatlanok lehetnek. Ilyenkor
+vond vissza a Kiegyenesítést, javítsd a vörös szemeket, és szükség esetén
+egyenesítsd ki újra a képet.
 
 Kézzel is jelölhetsz: húzz keretet a szem köré. Húzás közben a
 **Shift**, a **Ctrl** és az **Alt** itt is megköti a keret arányát — ahogy
@@ -223,6 +233,9 @@ eredményt.
 Az **Ecset mérete** csúszkával állítod a folt méretét. Kattintással
 jelölöd ki a javítandó területet; utána az egeret mozgatva előnézetben
 látod, mivel pótolná a program, és egy újabb kattintás véglegesíti.
+Az egérmutató helyén az ecset méretű **kör** látszik (a rendszermutató
+ilyenkor nem jelenik meg); az első kattintás után a **cél** körét, a
+másodiknál a **forrásét** is látod a képen, amíg a javítás el nem készül.
 Nagyított képen a **Ctrl** lenyomva tartásával húzva pásztázhatsz. A
 panel kiírja, hány foltot javítottál.
 **Folt visszavonása** és **Folt újra** léptet a foltok között, az
@@ -230,11 +243,18 @@ panel kiírja, hány foltot javítottál.
 
 ## Szöveg
 
-Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Beállítható:
+Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Egy képre
+**több szövegdoboz** is felvehető: az **Alkalmaz** után kattints egy másik
+helyre, és írd be a következőt. Egy meglévő szövegre kattintva kijelölöd
+(kék keret jelzi), és átírhatod, áthelyezheted vagy a beállításait
+módosíthatod; az **Alkalmaz** a kijelölt dobozt frissíti. Beállítható:
 
 - **Betűtípus** és **betűméret**, valamint **félkövér**, **dőlt** és
-  **aláhúzott** stílus,
-- **igazítás** balra, középre, jobbra,
+  **aláhúzott** stílus. A betűtípus listája a gépre telepített
+  betűcsaládokat sorolja, és a választott család a képen is úgy látszik,
+  ahogy kiválasztottad,
+- **igazítás** balra, középre, jobbra — a három gombon külön jel mutatja,
+  melyik melyik,
 - **Szöveg színe** és **Körvonal színe**, **Körvonal vastagsága**,
 - **Átlátszóság**,
 - kapcsoló, amivel csak a körvonal látszik, kitöltés nélkül.

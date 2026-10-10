@@ -10,6 +10,16 @@ tartalma találat lesz.
 Gépelés közben javaslatok jelennek meg; a bal hasáb pedig a keresésre
 szűkül, és mappánként mutatja, hány találat van benne.
 
+A javaslatlistát billentyűzettel is kezelheted, miközben a kurzor a
+mezőben van: a **↓** és a **↑** lépked a javaslatok között (a kiemelt sor
+mutatja, hol tartasz), az **Enter** megnyitja a kiemeltet, az **Esc**
+pedig bezárja a listát. Ha egyik javaslatot sem emelted ki, az Enter
+nem választ semmit.
+
+Keresés után a rács fölötti zöld sávon megjelenik a **Vissza az összes
+megtekintéséhez** gomb. Erre kattintva kilépsz a keresésből: a mező
+kiürül, a bal hasáb pedig újra a teljes mappalistát mutatja.
+
 A mező jobb szélén lévő **×** törli a keresést, és visszaáll az előző
 nézet.
 
@@ -65,7 +75,8 @@ felvett kép ezért csak kis késéssel jelenik meg a színkeresésben.
 ## Szűrők az eszköztáron
 
 Az eszköztár közepén, a **Szűrők** felirat mellett négy kapcsoló van.
-Mindegyik a jelenlegi nézetet szűkíti:
+Mindegyik a jelenlegi nézetet szűkíti, és mindig csak az éppen aktív
+szűrő gombja látszik bekapcsoltnak:
 
 - **csillag** — csak a csillagozott képek,
 - **arc** — csak azok a képek, amikben arcot talált a program,
@@ -79,6 +90,9 @@ kapcsolva, és egy kattintással ki is vezet belőle. Lásd
 
 Szűrés közben zöld sáv jelzi, hány kép látszik; a sávon a **Vissza az
 összes megtekintéséhez** gombbal lépsz ki a szűrésből.
+
+A kapcsolók után nincs más gomb: a szűrősáv végén korábban látszott
+egy kis „▤" jel, de az nem csinált semmit, ezért kikerült.
 
 Szűk ablakban a szűrő-zóna elrejtőzik, hogy az eszköztár egy sorban
 maradjon.
@@ -94,7 +108,10 @@ A zöld sávon megjelenik, mit szűrtél — például **„Legfeljebb 9 hetes
 képek."** A program a kor nagyságához igazítja a mértékegységet: nap,
 hét, hónap vagy év.
 
-A csúszkát **balra, a szélére** húzva kikapcsolod a szűrőt.
+A csúszkát **balra, a szélére** húzva kikapcsolod a szűrőt. Ha közben
+másik nézetre váltasz (például csillag-szűrőre, keresésre vagy másik
+mappára), a csúszka magától alaphelyzetbe, balra áll vissza, és a kor
+felirata is eltűnik a zöld sávról.
 
 ## Hasonló képek keresése
 
