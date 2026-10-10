@@ -344,8 +344,10 @@ def _gyoker_menu(menu_bar, cim: str):
         )
         menu, hiba = kifejezes.evaluate()
         assert not hiba, kifejezes.error()
+        # a QQmlExpression a menü újraépülése közben QMetaObject-et is adhat
+        # QObject helyett (CI-n előjött) — az ilyen találat nem menü
         if (
-            menu is not None
+            isinstance(menu, QObject)
             and shiboken6.isValid(menu)
             and _normalizal(_szoveg(menu, "title")) == _normalizal(cim)
         ):
