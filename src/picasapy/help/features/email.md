@@ -25,6 +25,12 @@ tükrözés és minden szerkesztés bele van égetve, ahogy exportáláskor
 átméretezés, de a szerkesztések itt is benne vannak. Az eredeti fájlt
 a küldés nem érinti.
 
+A küldéshez a program a mellékleteket a gép ideiglenes mappájába készíti
+el. Ezek a másolatok nem maradnak ott örökre: a PicasaPy **indításkor
+törli** a korábbi küldések másolatait, így nem halmozódnak a lemezen. Az
+egy óránál frissebb másolathoz nem nyúl, mert egy másik PicasaPy-ablakban
+éppen küldés lehet folyamatban.
+
 ## A levélszerkesztő ablak
 
 Itt állítod össze a levelet:
