@@ -139,6 +139,12 @@ def test_jelolo_buborek_keres_es_torol(
 
     assert _var(qt_app, lambda: jelolo.property("thumbnailReady") is True)
     kep = _elem(window, "placesMarkerImage")
+    # a kép (nem a jelölő bal felső sarka) kerüljön az ablak közepére: a
+    # jelölő szélessége platformonként eltér, és a CI-n a kép kilógott
+    kozep = kep.mapToScene(kep.boundingRect().center())
+    jelolo.setX(jelolo.x() + window.width() / 2 - kozep.x())
+    jelolo.setY(jelolo.y() + window.height() / 2 - kozep.y())
+    qt_app.processEvents()
     scene_pont = kep.mapToScene(kep.boundingRect().center())
     assert 0 <= scene_pont.x() < window.width()
     assert 0 <= scene_pont.y() < window.height()
