@@ -40,6 +40,10 @@ kérdés).
 > témát — a fenti parancs a működő forrás.
 
 
+### [pmp-database.md](pmp-database.md) — 1 nyitott (örökölt) kérdés: a KÉZI sorrend tárolási helye (15.4, #4591)
+
+⭐ **2026-10-11 (#4591):** a videó módosított dátuma a `thumbindex.db` rekordjának **1. FILETIME-ja** (a Dátum és idő beállítása nem-JPEG ága, `0x004ef3c0`/`0x004ef5a0`) + az NTFS létrehozási idő; a videó-geotag az `imagedata` `lat`/`long`/`geoview`. ⛔ **Megdőlt** a „kézi sorrend = `albums_0.db`" (2026-08-30): nincs „előtte" pillanatkép, és az `albums_0.db` élő tartalma 41/41 borító-raszter. ⛔ **Helyesbítve** a 10.3 „az 1. mezőnek egyetlen írója van". **Nyitva:** a 11. rendezési mód („prioritás") kulcsának forrása és az újraindítás-állóság — út a 15.4-ben (bináris: a 8./11. mód kulcsképzője a `0x0071c650` → `0x0071f030` láncon; viselkedés: új Colab-lépéssor `db3`-kiadással).
+
 ### [ui-audit-editor.md](ui-audit-editor.md) — ✅ nincs nyitott kérdés (a #2061 2026-09-04-én LEZÁRULT; a fejléc 2026-09-05-ig elavult volt)
 
 ⭐ **2026-09-18 — #710 forrásból megválaszolva, a jegy nyitva marad a terméki átvezetésre.** Az `editpanel.tre` a négy `editsliderN_container` elemet (N=1..4) egyetlen közös `editcontrol_well` alá teszi; a `tab3`–`tab5` nem vezet be effektfüggő slider-konténert. Az index `string_xrefs` táblájában a 2–4. konténer közös feldolgozó címe `0x007518e0`, külön effektcsúszka-családnak nincs nyoma. A már rögzített rétegtéglalap-mérés mind a négyre **191 × 27 px**, x=**30..221**; a **127 × 27 px** a külön `scaleslider`/Derítőfény-család. A kutatási válasz bekerült a lap 4.3/a szakaszába; a PicasaPy paraméter-alpanelének fix szélességre igazítása fejlesztői teendő, a #710-et ezért nem zárjuk le.

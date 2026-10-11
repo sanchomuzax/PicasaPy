@@ -297,8 +297,13 @@ felhasználásra kerül).
 ## Csak a db-ben élő (újraépítéskor elvesző) adatok — import szempontból kritikus
 
 - Ignorált arcok listája
-- Képek egyedi sorrendje mappákban/albumokban
-- Videók „date taken" / geotag módosításai
+- Képek egyedi sorrendje mappákban/albumokban — ⚠️ **a tárolási helye
+  NINCS MEG** (2026-10-11, #4591): az `albums_0.db`-jelölt mérve megdőlt,
+  ld. a 15.4 szakaszt
+- Videók „date taken" / geotag módosításai — ✅ **MEGVAN** (2026-10-11,
+  #4591): a dátum a `thumbindex.db` rekordjának **1. FILETIME-ja**
+  (+ a fájl NTFS létrehozási ideje), a hely az `imagedata_lat`/`_long`/
+  `_geoview` oszlop — ld. a 15.1–15.3 szakaszt
 - → Ezeket a PMP-importnak KELL kinyernie, mert az ini-ből nem pótolhatók.
 
 ## Ismert hibamódok (az eredeti Picasában)
@@ -1555,9 +1560,37 @@ ezt **prioritásnak** hívja. A `0x0071c4f0` a rendezési állapotszöveget írj
 KATEGÓRIÁKÉ, nem a képeké. Kép-prioritás oszlop a db3 sémájában
 (`0x00415790` teljes felsorolása) **nincs**.
 
-### A kézi sorrend tárolási helye — MEGVÁLASZOLVA (2026-08-30)
+### ~~A kézi sorrend tárolási helye — MEGVÁLASZOLVA (2026-08-30)~~ ⛔ MEGDŐLT (2026-10-11, #4591)
 
-A tulajdonos által végzett „előtte-utána" bináris összevetés (#1645) eldöntötte
+> ⛔ **HELYESBÍTÉS (2026-10-11, #4591) — az alábbi „MEGERŐSÍTVE" nem áll meg.**
+> Három okból:
+>
+> 1. **Nincs „előtte" állapot.** A kutatási anyagban egyetlen `db3`-pillanatkép
+>    van (`research/testdata/1557-masolat-mentese/db3-utana/`, a `db3.zip`
+>    ugyanennek a csomagja); `db3-elotte` vagy `db3-masodik` nincs. A #1645
+>    korábbi kommentjei is csak az UTÁNA-állapotot írják le, és a második
+>    csomag kérését visszavonták. Az összevetés tehát nem történt meg.
+> 2. **Az `albums_0.db` élő tartalma teljes egészében borítókép.** Mérve
+>    ugyanezen az UTÁNA-állapoton: **41/41** élő rés pontosan
+>    `8 + szélesség·magasság·4` bájt (BGRA-raszter, ld. „Az ÖTÖDIK
+>    bélyegkép-tár" szakaszt), a legutolsó blob vége **= a fájl mérete**
+>    (1 409 692 B). A maradék 165 808 bájt hézag: fejléc (`0x3FCCCCCD`) és
+>    elavult raszter-töredék, 95 588 bájtja BGRA-láncként végig parszolható.
+>    A `Picasa2-arcok` adatbázison ugyanez 37/37 volt. **Tagsági lista vagy
+>    képazonosító-sor tehát nem fér bele** — a #1645 2. kommentje a négy
+>    érintett rekord azonosítóját (2899–2902) 2 és 4 bájtos alakban is
+>    hiába kereste benne.
+> 3. **A változás magyarázható tárolt sorrend nélkül is.** A borító az album
+>    elemlistájának első legfeljebb négy eleméből áll (`0x00423780`, ld. „A
+>    BORÍTÓ ÖSSZEÁLLÍTÁSA" 7.1), tehát egy átrendezés a borítót — és vele az
+>    `albums_0.db` blobját — akkor is átírhatja, ha a sorrendet semmi nem
+>    tárolja. Ezért az, hogy itt „a legtöbb bináris változás" volt, nem
+>    bizonyíték.
+>
+> A helyes állapot: **a kézi sorrend tárolási helye NINCS MEG.** A mért
+> bináris tények és a következő lépés: **15.4**.
+
+*(Az eredeti, megdőlt szöveg:)* A tulajdonos által végzett „előtte-utána" bináris összevetés (#1645) eldöntötte
 a kérdést.
 
 | helyszín | állapot | bizonyíték |
@@ -3510,9 +3543,16 @@ nem a hozzáférési ideje. A Picasa saját CSV-fejléce („Access Time") ezen 
 ponton **rossz nevet ad** a mezőnek. *(A `picasa-mappakezelo.md` 16.2/b
 oszloptáblája az eltolásokat helyesen adja meg; a NÉV az, ami félrevezet.)*
 
-### 10.3 Az 1. mező egyetlen írója: a kép METAADAT-dátuma
+### 10.3 Az 1. mező ~~egyetlen~~ beolvasáskori írója: a kép METAADAT-dátuma
 
-A rekord `+0x04` mezőjét egyetlen beállító írja:
+> ⛔ **HELYESBÍTÉS (2026-10-11, #4591): a `+0x04` mezőnek HÁROM írója van,
+> nem egy.** A `0x004eeb10` a beolvasáskori író (ez a szakasz); a
+> **Dátum és idő beállítása** parancs nem-JPEG ága két további beállítóval
+> ugyanezt a mezőt írja: `0x004ef3c0` (eltolás, `+0x04 += Δ·10⁷`) és
+> `0x004ef5a0` (abszolút, `+0x04 := új FILETIME`). A „pásztázó soha nem
+> frissíti" állítás igaz marad; a „soha nem változik" nem. Részletek: **15.1**.
+
+A rekord `+0x04` mezőjét a beolvasáskor ez a beállító írja:
 
 | lépés | cím |
 |---|---|
@@ -4096,3 +4136,215 @@ ugyanazzal a mintával, kontroll-pozitívval (`n = 140 755`).*
 *Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — bájt/bejegyzés és
 kihasználtság szintenként) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül ·
 0 „csak nyitva".*
+
+## 15. Az átvétel három „csak db-ben élő" tétele — videódátum, videó-geotag, egyedi sorrend (2026-10-11, #4591)
+
+A 297. sor listája három tételt nevez meg, amit a PMP-importnak a db3-ból
+kell kinyernie. Ez a szakasz mindhárom **tárolási helyét** a binárisból és
+valódi adatbázisból méri, és összeveti a PicasaPy mai átvételével és saját
+tárolásával.
+
+Bizonyíték-források: a `Picasa3.exe` helyi diszasszemblálása (capstone; a
+fájloffszet = RVA, `picasapy-agent/eszkozok/binaris/picasa_dis.py`), két
+valódi katalógus (`research/testdata/Picasa2/db3` — 140 758 rekord;
+`research/testdata/Picasa2-arcok/Picasa2/db3` — 3 338 rekord) és az
+átrendezés utáni állapot (`research/testdata/1557-masolat-mentese/db3-utana`).
+
+### 15.1 ⭐ A videó módosított dátuma: a `thumbindex.db` 1. FILETIME-ja
+
+A **Dátum és idő beállítása** (`offsettime.fen`) munkaszála
+`AdjustTimeThread` (vtábla `0x00c90cf8`, konstruktor `0x005641e0`, futtató
+`0x0077cfd0`). Két feldolgozója van: **eltolás** `0x00490580` és
+**abszolút** `0x00490c10` (a választás: `0x0057d9cb`–`0x0057da08`).
+
+**1. Képenként előbb lemásolja a katalógus-rekordot.** Az `IThumbDB`
+vtábla (`0x00c81fa4`) `+0xc4` rése = `0x0043c3f0` → `0x004edf60`, ami a
+`CThumbDB+0xf8` tárolóban álló rekordot mezőnként a hívó pufferébe másolja
+(`0x004ee08a`–`0x004ee0c1`): `+0x04/+0x08` 1. FILETIME, `+0x0c/+0x10` 2.
+FILETIME, `+0x14` méret, `+0x18` **típus**, `+0x1c`/`+0x1d` dirty/valid,
+`+0x20` szülő. Ez pontosan a `thumbindex.db` lemezen tárolt farka
+(`<QQIIBBI>`, `pmpimport/thumbindex.py:_FAROK`).
+
+**2. A típus dönt az ágról** (`0x0049070a` és `0x00490d4f`):
+`cmp [puffer+0x18], 2` — vagyis a **2-es típusú** fájlnál próbál EXIF-et
+írni (`0x009ed330`, a `picasa-menu-parancsok-viselkedes.md` 3. szakasza).
+A 2-es típus mérve **JPEG**: a nagy katalógusban 119 456 `.jpg` +
+2 104 `.jpeg` (+ 33 `.png`), a kisebben 2 416 + 8. **Minden más típus** —
+köztük a videók — a nem-EXIF ágra megy.
+
+**3. A nem-EXIF ág két helyre ír:**
+
+| mit | cím | hogyan |
+|---|---|---|
+| a fájl **létrehozási** ideje | `0x00490900` / `0x00490f40` → `0x00992780` | `SetFileTime`, csak a létrehozási-idő mutató nem null (`picasa-menu-parancsok-viselkedes.md` 3.) |
+| a katalógus-rekord **1. FILETIME-ja** — eltolás | `0x00490913` → **`0x004ef3c0`** | `0x0098cb20`: `rekord+4 += Δmp · 10 000 000` (`__allmul` `0x0098cb52`), majd `[tár+0x5c]++`, `[tár+0x60] = 1` (piszkos) |
+| a katalógus-rekord **1. FILETIME-ja** — abszolút | `0x00490f4f` → **`0x004ef5a0`** | `rekord+4 := *új` (`0x004ef666`–`0x004ef66e`), ugyanazzal a piszkos-jelzéssel |
+
+Mindkét beállító csak a következő típusokra ír (`0x004ef436`–`0x004ef46d`,
+ill. `0x004ef618`–`0x004ef64f`): **2, 3, 6–18, 21–24, 26, 27–29, 31,
+1001**. A videók típusa mérve: **8** (`.avi`, 37 db), **10** (`.mp4`
+1 770 + 17, `.mpg` 872, `.mts` 3), **11** (`.wmv`, 13) — mind a 6–18
+tartományban.
+
+**4. Az érték időzóna-konvenciója azonos a beolvasáskorival.** Az
+eltolás a meglévő 1. FILETIME-hoz ad (a konvenció öröklődik). Az abszolút
+érték a párbeszéd `+0xd0` mezője (`0x0057d9f7`–`0x0057da08` másolja a szál
+`+0x78`-ába, amit a `0x0077d07e` hívás ad át), azt pedig a `0x0077cee0`
+tölti a `0x0077cbe0`-ból, amely `TzSpecificLocalTimeToSystemTime`
+(`0x0077cd2f`) + `SystemTimeToFileTime` (`0x0077cd3b`) párral készül —
+ugyanaz a lánc, mint a `0x004eeb10`-ben (10.3). Az eltolás mértéke
+`0x0077cf70`: `round(új/10⁷) − round(régi/10⁷)` másodperc.
+⚠️ Egyetlen kijelölt képnél mindig az abszolút ág fut
+(`0x0057d9d4`–`0x0057d9de`: eltolás csak `elemszám > 1` mellett).
+
+⇒ **A videó módosított dátuma a db3-ban a `thumbindex.db` rekordjának 1.
+mezőjében (`creation_filetime`) él**, és a fájl NTFS létrehozási idejében.
+`.picasa.ini`-kulcs nem keletkezik (a `picasa-menu-parancsok-viselkedes.md`
+3. szakaszának indexfüggetlen pásztázása), PMP-oszlop sem (a `creation`/`modified`/`updated` regisztrált
+oszlopnak a három vizsgált valódi `db3` egyikében sincs `.pmp` fájlja).
+
+### 15.2 Mérés: módosítatlan videónál a két FILETIME bitre egyenlő
+
+| katalógus | videós rekord (8/10/11) | 1. mező = 2. mező | `geoview` nem üres |
+|---|---:|---:|---:|
+| nagy (140 758 rekord) | 2 695 | **2 695** | 0 |
+| kisebb (3 338 rekord) | 17 | **17** | 0 |
+
+⇒ Videónál a beolvasáskori 1. mező a fájl akkori módosítási ideje (nincs
+EXIF-dátum, a 10.4 tartalék-szabálya). **Ha a kettő eltér, az a dátum
+kézi módosításának nyoma** — vagy a fájl beolvasás utáni módosításáé (a 2.
+mezőt a pásztázó frissíti, az 1.-t nem); a Picasa mindkét esetben az 1.
+mezőt tartja a kép dátumának. A két valódi katalógusban módosított dátumú
+videó **nincs**, tehát a viselkedés-oldali mintát a 15.1 bináris lánca adja.
+
+### 15.3 A videó geotagje: ugyanaz az út, mint a képeké
+
+A hely tárolása a db3-ban típusfüggetlen: az `imagedata` `lat`/`long`
+(`double`, `+0xb70`/`+0xbd8`) és a `geoview` oszlop (a geotag jelzője,
+#2336) minden rekordra regisztrált. A `.picasa.ini` kép-szakaszainak olvasója (`0x00456610`) a `geotag`
+kulcsot `%lf,%lf` alakban olvassa; hogy videó-szakaszra is lefut-e, mintán
+nem mértük — az átvételhez nem kell (15.5: ha a kulcs már áll, az átvétel
+kihagyja, ha nem, beírja).
+
+A két valódi katalógusban **0/2 712** videónak van geotagje, a 859 fájlos
+`.picasa.ini`-korpuszban **0/86** videó-szakaszban áll `geotag=` (a 84
+`geotag=` sor mind `.jpg`). Videós geotag-mintánk tehát nincs; a PicasaPy
+oldalán a lánc kódszinten típusfüggetlen (15.5), ezért a hiányzó minta az
+átvétel helyességét nem befolyásolja — szintetikus db3-mintával kell
+igazolni (15.6).
+
+### 15.4 Az egyedi (kézi) sorrend — amit a bináris kimond, és ami NINCS MEG
+
+**Megdőlt jelölt:** az `albums_0.db` (ld. a „kézi sorrend tárolási helye"
+szakasz 2026-10-11-i helyesbítését): élő tartalma 41/41 borító-raszter.
+
+**A rács rendezési módjai** (`CSelectionNode`, mód: `[this+0x2c0]`, a
+beállító a vtábla 48. rése, `0x0071c4f0`):
+
+| mód | jelentés | bizonyíték |
+|---:|---|---|
+| 0 | nincs rendezés — a hasonlító a **`thumbindex`-sorindexet** veti össze | `0x0071f228`, `0x0071f24d`–`0x0071f259` |
+| 2 | „Rendezés hozzáférési dátum alapján" — a hasonlító állandó `1` | állapotszöveg `0x0071c591`; `0x006b9b5e` |
+| 3 | „… létrehozási dátum alapján" — kulcs: a rekord **1. FILETIME-ja** | `0x0071c59d`; `0x006b9be0` (`[+4]`,`[+8]`) |
+| 5 | „… méret alapján" — kulcs: `+0x14` | `0x0071c5a9`; `0x006b9b69` |
+| 6 | „… név alapján" — kulcs: a név (`+0`) | `0x0071c5b5`; `0x006b9c28` |
+| 8 | „… szín alapján" | `0x0071c5c1`; a rekord-hasonlítóban nincs kulcs (`0x004efd74`: csak 2–7) |
+| **11** | **„Rendezés prioritás szerint"** | `0x0071c5cd`; a rekord-hasonlítóban **nincs kulcs** |
+| 12 | fordított bejárás, rendezés nélkül | `0x0071c689`, `0x0071c8a7` |
+
+A rekord-hasonlító (`0x004efce0`, hívói `0x0071f220`/`0x0071f270`, az
+összefésülő rendező `0x0071f030`) a 2–7. módokra a `0x006b9b50`
+ugrótábláján (`0x006b9db8`) ágazik; a 8. és a 11. mód ebben **állandó
+`−1`-et** kap. A szín-rendezésnek viszont van kulcsa (`avgcolor`), tehát a
+8. és a 11. mód kulcsa **ezen a hasonlítón kívül** képződik — a 11. mód
+kulcsának forrása ebből nem olvasható ki.
+
+**Kizárva (a #1645 nyolc helye mellé):** a 859 fájlos `.picasa.ini`-korpusz
+`[Picasa]` és `[.album:…]` szakaszainak egyetlen kulcsa sem sorrend
+(`[Picasa]`: `name`, `P2category`, `date`, `category`, `<fiók>_lh`,
+`location`, `link`, `description`; `[.album:]`: `token`, `name`, `date`,
+`<fiók>_lh`, `description`, `location`); az `albumdata` 15 valódi
+oszlopa (az átrendezés utáni `db3`-ban) (`albumcontactids`, `albumpeoplechecksum`, `category`, `date`,
+`description`, `filename`, `hascollage`, `inisync`, `location`, `music`,
+`name`, `<fiók>_lh`, `token`, `uid`, `unread`) között sincs sorrend- vagy
+rendezésimód-oszlop.
+
+⇒ **A kézi sorrend tárolási helye NINCS MEG**, és az sem mért, hogy egy
+újraindítást túlél-e (a #1645 ezt a tulajdonostól kérte, majd a kérést
+visszavonta). A megszerzés útja — ebben a sorrendben:
+
+1. **bináris:** a 11. mód kulcsképzője. Horgony: a `0x0071c650` (a
+   `CSelectionNode` vtábla 49. rése) a 0. és 12. módon kívül a
+   `[this+0x358]` listát a `0x0071f030`-cal rendezi; a 8. mód
+   (`avgcolor`) kulcsképzőjét megtalálva a 11.-é mellette lesz. Ha a kulcs
+   egy perzisztált mezőből jön, az a tároló; ha az elemek pillanatnyi
+   helyéből, a sorrend munkamenetre szól;
+2. **viselkedés:** a Colab-os végrehajtón új lépéssor — két kép átrendezése,
+   a Picasa bezárása és újraindítása, utána képernyőkép és a `db3` mappa
+   kiadása. (Ma a végrehajtó kimenete `export`/`picasa_ini`/`kepernyokep`/
+   `ablakmeret` lehet, `db3` nem — a katalógust bővíteni kell.)
+
+### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
+
+| tétel | az eredeti tárolása (mérve) | a PicasaPy átvétele ma (`pmpimport/`) | a PicasaPy saját tárolása ma |
+|---|---|---|---|
+| **videó dátuma** | `thumbindex.db` 1. FILETIME + NTFS létrehozási idő (15.1) | **NEM veszi át**: a `thumbindex.read_thumb_index` beolvassa a `creation_filetime`-ot, de az `importer.PhotoRecord` nem viszi tovább, és a `db3_atvetel` sem ír dátumot | videónál nincs `taken_at` (`index/sync.py` `_upsert_photo`: `EMPTY_METADATA`), a dátum a befagyasztott első fájlidő (`first_seen_mtime_ns`); a `photos.taken_at_override` oszlop él, a lekérdezések előnyben részesítik (`index/queries.py:22`, `sync.py:1034`), szinkronkor megmarad (`sync.py:1091`), de ma **semmi nem írja**. ⚠️ A saját dátummódosítónk (`app/timestamp_controller.py`) videónál az EXIF-írás hibája után csak Windowson állít létrehozási időt — POSIX-on a módosítás **nem tárolódik sehol** |
+| **videó geotagje** | `imagedata` `lat`/`long`/`geoview` (15.3) | **átveszi**: az `importer.iter_photo_records` típusszűrés nélkül minden fájlrekordot ad, a `db3_atvetel.helyet_atvesz` a hiányzó `geotag=` kulcsot írja (#2336) | `.picasa.ini` `geotag=` (`photos.geotag_ini`), minden médiára |
+| **egyedi sorrend** | **NINCS MEG** (15.4) | nincs mit átvenni | `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — szándékos eltérés |
+
+### 15.6 A megvalósítandó viselkedés — „Kész, ha"
+
+**Videódátum-átvétel** (megvalósítható, a forrás bizonyított):
+
+- [ ] az `importer.PhotoRecord` megkapja a `thumbindex` rekord **típusát**
+      és **mindkét FILETIME-ját**;
+- [ ] az átvétel a **nem-2-es típusú** (nem JPEG) fájlrekordoknál, ahol az
+      1. FILETIME ≠ 2. FILETIME, az 1. FILETIME-ot veszi a kép dátumának;
+      a 2-es típusnál (JPEG) dátumot **nem** vesz át, mert ott az eredeti az
+      EXIF-et írja át, és azt a PicasaPy maga olvassa;
+- [ ] az átalakítás a 10.3 konvenciója szerint: FILETIME (100 ns, 1601-01-01,
+      UTC) → **helyi** idő; ISO `yyyy-MM-ddTHH:mm:ss` alakban, ahogy a
+      `photos.taken_at` is tárolja;
+- [ ] a cél a `photos.taken_at_override` (a rács, a dátum szerinti rendezés,
+      a mappa dátuma és az export ma is ezt veszi előre); a `.picasa.ini`
+      érintetlen marad (az eredeti sem ír oda), és a videófájl sem változik;
+- [ ] az „A" szabály itt is áll: meglévő `taken_at_override`-ot az átvétel
+      nem ír felül; az átvétel jelentése külön számolja a videódátumokat;
+- [ ] **pontosítás (#4591 átnézése):** az átvétel csak akkor ír, ha az 1.
+      FILETIME helyi ISO-alakja a `photos.taken_at`-tól is eltér — a 10.3
+      szerint az 1. FILETIME a metaadat-dátum, ezért a 2.-tól kézi módosítás
+      nélkül is eltérhet (módosítatlan PNG/RAW/HEIC), és az ilyen fájl dátuma
+      már megvan;
+- [ ] teszt **szintetikus db3-mintával**: egy `.mp4` rekord (típus 10)
+      eltérő két FILETIME-mal → az indexben a felülírt dátum; egy `.mp4`
+      egyenlő FILETIME-okkal → nincs felülírás; egy `.jpg` (típus 2)
+      eltérő FILETIME-okkal → nincs felülírás.
+
+**Videó-geotag** (már működik, igazolni kell):
+
+- [ ] teszt szintetikus db3-mintával: egy `.mp4` rekord kitöltött
+      `lat`/`long`-gal és nem üres `geoview`-val → a mappa `.picasa.ini`-jében
+      a videó szakaszában `geotag=<lat>,<long>` (6 tizedes, vesszős alak).
+
+**Egyedi sorrend** — ⛔ **nem megvalósítható, amíg a forrás nincs meg**:
+
+- [ ] a #4591 első „Kész, ha" pontja a sorrendre a 15.4 megszerzési útjának
+      (1. bináris, 2. viselkedés) eredményéig vár; ha az eredmény az, hogy a
+      sorrend munkamenetre szól, a pont **tárgytalan** (nincs mit átvenni).
+
+### 15.7 Nyitott kérdések mérlege (15.)
+
+`1 nyílt (örökölt) · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| hová kerül a videó módosított dátuma | **LEZÁRVA** — `thumbindex.db` 1. FILETIME (`0x004ef3c0`/`0x004ef5a0`) + NTFS létrehozási idő (`0x00992780`) |
+| melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
+| milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
+| hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645) — az `albums_0.db` kizárva; út: 15.4 (1. a 11. mód kulcsképzője, 2. Colab-lépéssor) |
+
+*Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
+importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
+**megerősített** az `albums_0.db` kizárására (41/41 + 37/37 méret-azonosság);
+**kódszintű** a videó-geotag átvételére (valódi minta nincs).*

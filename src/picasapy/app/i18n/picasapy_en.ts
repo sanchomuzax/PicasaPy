@@ -9552,6 +9552,11 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
             <translation>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</translation>
         </message>
         <message>
+            <source>%1 video date(s) taken over from Picasa.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 video date(s) taken over from Picasa.</translation>
+        </message>
+        <message>
             <source>%1 photo(s) were left untouched because they already had data.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 photo(s) were left untouched because they already had data.</translation>

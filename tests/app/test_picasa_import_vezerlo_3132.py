@@ -105,7 +105,7 @@ class TestSikeresAtvetel:
         kesz = _Fogo()
         v.importFinished.connect(kesz)
         _lefut(v, qt_app)
-        assert kesz.tetelek == [(3, 12, 4, 7, 2)]
+        assert kesz.tetelek == [(3, 12, 4, 7, 2, 0)]
 
     def test_futas_kozben_a_running_IGAZ_utana_hamis(self, vezerlo_gyar, qt_app, tmp_path):
         db3 = tmp_path / "Picasa2"
@@ -144,3 +144,67 @@ class TestHiba:
         assert hibak.tetelek, "a hiba némán elnyelődött"
         assert "thumbindex" in hibak.tetelek[0][0]
         assert v.running is False
+
+
+class TestIndexLepes:
+    """#4591: a videódátum az ini-átvétel UTÁN, az index útvonalán megy."""
+
+    def _vezerlo(self, tmp_path, vd_atvevo, **extra):
+        db3 = tmp_path / "Picasa2"
+        db3.mkdir()
+        return PicasaImportController(
+            felderito=lambda: (_telepites(db3),),
+            olvaso=lambda d, r: ("r1",),
+            atvevo=lambda rek, **kw: AtvetelJelentes(mappak=1, hely=1),
+            index_path=tmp_path / "index.db",
+            videodatum_atvevo=vd_atvevo,
+            **extra,
+        )
+
+    def test_a_videodatum_szama_a_hatodik_parameter(self, qt_app, tmp_path):
+        kapott: list = []
+
+        def vd(rekordok, ut):
+            kapott.append((tuple(rekordok), ut))
+            return AtvetelJelentes(videodatum=3)
+
+        v = self._vezerlo(tmp_path, vd)
+        kesz, datum = _Fogo(), _Fogo()
+        v.importFinished.connect(kesz)
+        v.datesApplied.connect(datum)
+        _lefut(v, qt_app)
+        v.waitForBackgroundWorkers(5.0)
+        qt_app.processEvents()
+        assert kapott == [(("r1",), tmp_path / "index.db")]
+        assert kesz.tetelek == [(1, 0, 1, 0, 0, 3)]
+        assert datum.tetelek, "a felület nem kapott frissítést"
+
+    def test_az_index_lepes_az_iro_soron_fut(self, qt_app, tmp_path):
+        class Sor:
+            hivasok = 0
+
+            def submit(self, munka, *, name=""):
+                Sor.hivasok += 1
+                munka()
+                return True
+
+        v = self._vezerlo(
+            tmp_path, lambda r, u: AtvetelJelentes(), writer_queue=Sor()
+        )
+        kesz = _Fogo()
+        v.importFinished.connect(kesz)
+        _lefut(v, qt_app)
+        v.waitForBackgroundWorkers(5.0)
+        qt_app.processEvents()
+        assert Sor.hivasok == 1
+        assert len(kesz.tetelek) == 1
+        assert v.running is False
+
+    def test_videodatum_nelkul_nincs_frissites_jelzes(self, qt_app, tmp_path):
+        v = self._vezerlo(tmp_path, lambda r, u: AtvetelJelentes())
+        datum = _Fogo()
+        v.datesApplied.connect(datum)
+        _lefut(v, qt_app)
+        v.waitForBackgroundWorkers(5.0)
+        qt_app.processEvents()
+        assert not datum.tetelek
