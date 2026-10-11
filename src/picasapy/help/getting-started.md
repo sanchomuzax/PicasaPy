@@ -27,6 +27,17 @@ csak akkor, ha a Qt-t a rendszer csomagjaiból telepíted (a `pip`-es
 változat magával hozza). A négy `lib…` csomag a grafikus megjelenítéshez
 és a hanghoz kell; asztali rendszeren általában már fent van.
 
+Két további csomag ajánlott: az `xdg-utils` (ezzel adja át a program a
+képeket mellékletként a levelezőprogramnak) és a `cups-client` (a
+nyomtatáshoz). A PicasaPy Debian-csomagja ezt a kettőt ajánlásként
+magától felkínálja.
+
+Ha a programot a forrásból indítod, az első indításkor a felület
+fordításait is maga készíti el; ehhez a `pyside6-lrelease` eszköz kell (a
+`pip`-pel telepített PySide6 tartalmazza). Ha nem találja, és a fordítás
+még nem készült el, a felület angolul jelenik meg. A telepítővel feltett
+program a fordításokat készen hozza, ott ez nem kérdés.
+
 ### Windows
 
 **A rendes út a telepítő.** Minden kiadáshoz készül egy

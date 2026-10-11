@@ -133,6 +133,13 @@ ott a kép már a saját mappájában látszik.
 A helyi menüben ezen kívül:
 
 - **Fájl megnyitása** — a rendszer alapértelmezett programjával,
+- **Társítás** — te választod ki, melyik programmal nyíljon meg a kép.
+  Windowson a rendszer saját „Megnyitás ezzel" ablaka jön elő. Linuxon a
+  **Társítás...** ablak a képtípushoz társított programokat sorolja fel:
+  válassz egyet, és a **Megnyitás** gombbal abban nyílik meg a kép. Ha
+  egyetlen program sincs a típushoz társítva, az ablak ezt írja: „Ehhez a
+  fájltípushoz nincs társított alkalmazás." (A néző helyi menüjének
+  **Társítás** tétele még nem működik.)
 - **Teljes elérési út másolása** — a vágólapra teszi az útvonalat.
 
 ## Mappák

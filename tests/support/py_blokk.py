@@ -61,8 +61,22 @@ def _sor_kezdetek(forras: str) -> list[int]:
 
 
 def _eltolas(kezdetek: list[int], sor: int, oszlop: int) -> int:
-    """A `sor`:`oszlop` (ast-koordináta) karakter-eltolása."""
+    """A `sor`:`oszlop` (KARAKTER-oszlop, pl. `tokenize`) eltolása."""
     return kezdetek[sor] + oszlop
+
+
+def _ast_eltolas(forras: str, kezdetek: list[int], sor: int, bajt: int) -> int:
+    """Az `ast` `sor`:`bajt` koordinátájának karakter-eltolása.
+
+    Az `ast` `col_offset`/`end_col_offset` értéke a sor UTF-8 BÁJT-oszlopa,
+    nem a karakteré: egy ékezetes docstring vége (`end_col_offset`) ezért
+    karakterben számolva túlnyúlna, és a kifehérítés a következő sor elejét
+    is elvinné (pl. a `duplicates` „d”-jét).
+    """
+    eleje = kezdetek[sor]
+    sor_vege = forras.find("\n", eleje)
+    szoveg = forras[eleje:] if sor_vege < 0 else forras[eleje:sor_vege]
+    return eleje + len(szoveg.encode("utf-8")[:bajt].decode("utf-8", "ignore"))
 
 
 def kommentek_nelkul(forras: str) -> str:
@@ -112,8 +126,8 @@ def kommentek_nelkul(forras: str) -> str:
             and isinstance(elso.value.value, str)
         ):
             continue
-        tol = _eltolas(kezdetek, elso.lineno, elso.col_offset)
-        ig = _eltolas(kezdetek, elso.end_lineno, elso.end_col_offset)
+        tol = _ast_eltolas(forras, kezdetek, elso.lineno, elso.col_offset)
+        ig = _ast_eltolas(forras, kezdetek, elso.end_lineno, elso.end_col_offset)
         darabok[tol:ig] = _kifeheritve(forras[tol:ig])
 
     return "".join(darabok)
@@ -146,9 +160,9 @@ def fuggveny_torzs(forras: str, horgony: str) -> str:
         if not isinstance(csomopont, _BLOKK_CSOMOPONTOK):
             continue
         # a `def`/`class` sorától (a díszítők NÉLKÜL) a törzs végéig
-        tol = _eltolas(kezdetek, csomopont.lineno, csomopont.col_offset)
-        ig = _eltolas(
-            kezdetek, csomopont.end_lineno, csomopont.end_col_offset
+        tol = _ast_eltolas(forras, kezdetek, csomopont.lineno, csomopont.col_offset)
+        ig = _ast_eltolas(
+            forras, kezdetek, csomopont.end_lineno, csomopont.end_col_offset
         )
         if not tol <= hely < ig:
             continue

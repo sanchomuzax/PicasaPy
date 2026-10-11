@@ -20,6 +20,8 @@ Item {
         || editSaveErrorDialog.visible
     // #448: az egyéni arány törlésének megerősítése (a jegy szerint az
     // egyéni tételek törölhetők) — #422 mintája szerint EGYEDI namePrefix.
+    // #4550: a vágó panel kukája innen éri el (külön fájl, saját id-kör)
+    property alias deleteCustomAspectConfirm: deleteCustomAspectConfirm
     ConfirmDialog {
         id: deleteCustomAspectConfirm
         namePrefix: "deleteCustomAspectConfirm"

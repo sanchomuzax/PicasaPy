@@ -61,7 +61,6 @@ from picasapy.fileops import (
 )
 from picasapy.fileops.original_ini import remove_original_ini_sections
 from picasapy.importsource import (
-    scan_source_detailed,
     ATMERETEZES_EREDETI,
     ATMERETEZES_OPCIOK,
     MEDIA_FILTER_PICTURES_AND_MOVIES,
@@ -73,6 +72,8 @@ from picasapy.importsource import (
     destination_subpath_for_mode,
     duplicate_paths,
     is_valid_folder_name,
+    scan_files,
+    scan_source_detailed,
 )
 from picasapy.index import (
     IndexFastKeySource,
@@ -80,8 +81,9 @@ from picasapy.index import (
     all_photos,
     open_index,
 )
-from picasapy.ini import load_document, save_document, update_document
-from picasapy.scanner import PICASA_INI_NAME, media_kind_of
+from picasapy.ini import has_ini_source, load_or_empty, update_document
+from picasapy.ini.names import INI_NAME
+from picasapy.scanner import media_kind_of
 
 from .formatting import to_file_url, to_local_path
 from .wipe_card_warning import WipeCardFacts, wipe_card_warning
@@ -747,33 +749,62 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                 self.sourceScanFailed.emit(str(error))
                 return
 
-            duplicates = _duplikatumok(self._index_path, candidates)
-
-            self._candidates = candidates
-            # #441: új forrás → a korábbi forgatások/csillagok nem élnek
-            self._rotations = {}
-            self._starred = set()
-            self._duplicate_paths = duplicates
-            self._excluded_paths = (
-                {str(path) for path in duplicates} if self._auto_exclude else set()
-            )
-            records = tuple(
-                _preview_photo_record(index, candidate)
-                for index, candidate in enumerate(candidates)
-            )
-            if self._provider is not None:
-                self._provider.unregister_additional_photos(self._preview_ids)
-                self._provider.register_additional_photos(records)
-            self._preview_ids = tuple(str(record.id) for record in records)
-
-            items = self._preview_items()
-            # #441: a SIKERES beolvasás után jegyezzük meg a forrást — a
-            # hibás/nem létező mappa ne kerüljön a legördülőbe
-            self._remember_source(target)
-            self.sourceScanFinished.emit(items, len(candidates))
+            self._apply_scan(candidates, remember=target)
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-scan")
+
+    def _apply_scan(
+        self, candidates: tuple[ImportCandidate, ...], remember: str = ""
+    ) -> None:
+        """A beolvasás közös lezárása (mappa és fájllista): duplikátum-
+        jelölés, kizárások, előnézeti rekordok, jelzés. Háttérszálon fut."""
+        duplicates = _duplikatumok(self._index_path, candidates)
+
+        self._candidates = candidates
+        # #441: új forrás → a korábbi forgatások/csillagok nem élnek
+        self._rotations = {}
+        self._starred = set()
+        self._duplicate_paths = duplicates
+        self._excluded_paths = (
+            {str(path) for path in duplicates} if self._auto_exclude else set()
+        )
+        records = tuple(
+            _preview_photo_record(index, candidate)
+            for index, candidate in enumerate(candidates)
+        )
+        if self._provider is not None:
+            self._provider.unregister_additional_photos(self._preview_ids)
+            self._provider.register_additional_photos(records)
+        self._preview_ids = tuple(str(record.id) for record in records)
+
+        items = self._preview_items()
+        # #441: a SIKERES beolvasás után jegyezzük meg a forrást — a
+        # hibás/nem létező mappa ne kerüljön a legördülőbe
+        if remember:
+            self._remember_source(remember)
+        self.sourceScanFinished.emit(items, len(candidates))
+
+    @Slot("QVariantList")
+    def scanFiles(self, files) -> None:  # noqa: N802 — QML-stílus
+        """#4596: a forrás KIJELÖLT FÁJLOK listája (a QML `FileDialog`
+        `selectedFiles`-a: `file://` URL-ek vagy útvonalak) — háttérszálon,
+        a mappás beolvasással azonos jelzésekkel és utófeldolgozással. A
+        „legutóbbi források” listája mappákat őriz, ezért fájllistát nem
+        jegyzünk meg."""
+        targets = [
+            text for text in (to_local_path(str(item)) for item in (files or [])) if text
+        ]
+        if not targets:
+            self.sourceScanFailed.emit(self.tr("Choose a source folder first."))
+            return
+
+        def worker() -> None:
+            scan = scan_files(targets, self._media_filter)
+            self._unrecognized = scan.unrecognized
+            self._apply_scan(scan.candidates)
+
+        self._start_background(worker, name="picasapy-importsource-scanfiles")
 
     @Slot(result=str)
     def wipeCardWarning(self) -> str:  # noqa: N802 — QML-stílus
@@ -954,7 +985,7 @@ def _mark_imported_ini(
             result = result.with_value(target.name, "star", "yes")
         return result
 
-    update_document(target.parent / PICASA_INI_NAME, _mutate, backup=True)
+    update_document(target.parent / INI_NAME, _mutate, backup=True)
 
 
 def _remove_source_file(path: Path) -> None:
@@ -982,12 +1013,16 @@ def _remove_source_file(path: Path) -> None:
                 directory.rmdir()  # csak ÜRES mappát töröl
             except OSError:
                 pass
-    source_ini = path.parent / PICASA_INI_NAME
-    if not source_ini.exists():
+    source_ini = path.parent / INI_NAME
+    if not has_ini_source(source_ini):
         return
     try:
-        document = load_document(source_ini)
+        document = load_or_empty(source_ini)
     except (OSError, ValueError):
         return
     if document.section(path.name) is not None:
-        save_document(document.without_section(path.name), source_ini, backup=True)
+        update_document(
+            source_ini,
+            lambda current: current.without_section(path.name),
+            backup=True,
+        )
