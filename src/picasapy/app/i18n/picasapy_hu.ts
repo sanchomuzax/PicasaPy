@@ -1926,16 +1926,6 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
             <translation>Teljes mozgófilm</translation>
         </message>
         <message>
-            <source>Shadow pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Árnyékolt képek</translation>
-        </message>
-        <message>
-            <source>Shadow thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Árnyékolt bélyegképek</translation>
-        </message>
-        <message>
             <source>PicasaPy is generating the web page.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>A PicasaPy készíti a weboldalt.</translation>

@@ -209,6 +209,11 @@ sor ki van kommentezve, pl. `blackbg/index.tpl` 38–39.).
   `0x007f6070`–`0x007f6089`), **`thumbnailWidth`/`thumbnailHeight` = 144**
   (`0x0086c125 push 0x90`, `0x0086c136 push 0x90`), `shadowedThumbnails` = 1
   (`0x0086c117`).
+- **Árnyék-jelölőnégyzet nincs.** A `webexport.fen` egyetlen jelölőnégyzetet
+  vagy kapcsolót sem tartalmaz az árnyékoláshoz: a bélyegképek árnyéka a
+  sablon `define shadowedThumbnails` sorából jön (alapérték 1), a képeké a
+  `shadowedImages`-ből (alapérték 0, `web/documentation` „Command
+  Variables"). A PicasaPy ezért nem kínál árnyék-választót (#4849).
 
 **A mozgókép-mód** — `popup name="moviesradio"` („Export movies using:",
 `webexport.fen` 11–16. sor), két elem: **`First frame`** („Első képkocka",
