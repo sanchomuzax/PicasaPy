@@ -147,7 +147,7 @@ jobs:
       - name: Python-csomagok
         run: |
           python3 -m pip install --upgrade pip
-          pip install $(python3 scripts/print_dependencies.py --all)
+          pip install -c packaging/ci-constraints.txt $(python3 scripts/print_dependencies.py --all)
 
       - name: A docs/-ot olvasó őrök futtatása
         run: |
@@ -316,7 +316,7 @@ jobs:
       - name: A .qm fordítások elkészítése a .ts-ből (#4817)
         # a fordító (pyside6-lrelease) a PySide6 része — a futásidejű csomagok kellenek
         run: |
-          pip install $(python scripts/print_dependencies.py)
+          pip install -c packaging/ci-constraints.txt $(python scripts/print_dependencies.py)
           python scripts/build_qm.py
 
       - name: Wheel build

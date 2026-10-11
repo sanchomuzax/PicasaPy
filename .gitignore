@@ -51,6 +51,7 @@ MANIFEST
 
 # Virtuális környezetek
 .venv/
+.venv-ci/
 venv/
 env/
 ENV/
