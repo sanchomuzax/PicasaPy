@@ -1589,6 +1589,26 @@ def kornyezet_sorai() -> list[str]:
     ]
 
 
+def qt_eltérés_sorai() -> list[str]:
+    """A futtató PySide6-ja vs. a CI rögzített verziója (#4834).
+
+    Üres, ha egyezik (a CI-n nem zajlunk). Sosem dönti le a futást.
+    """
+    try:
+        if str(Path(__file__).resolve().parent) not in sys.path:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import ci_kornyezet  # noqa: PLC0415
+
+        return ci_kornyezet.figyelmeztetes_a_futora()
+    except Exception:  # noqa: BLE001 — az összevetés nem dönthet le semmit
+        return []
+
+
+def _ird_ki_a_qt_eltérést() -> None:
+    for sor in qt_eltérés_sorai():
+        print(sor, flush=True)
+
+
 def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
     """A bukott részfutások + a KÖRNYEZET, amiben történtek (#2264).
 
@@ -1673,6 +1693,8 @@ def main(argv: list[str] | None = None) -> int:
     plafon_sor = _plafon_sor()
     if plafon_sor:
         print(plafon_sor, flush=True)
+    # #4834: nem CI-azonos Qt-nél a futás ELEJÉN és a VÉGÉN is jelzünk.
+    _ird_ki_a_qt_eltérést()
 
     # #1360: a harmadik egyidejű futás VÁRJON, ne induljon el. A gép
     # négymagos; a túlterhelésből valódi hiba nélküli bukások lesznek.
@@ -1701,7 +1723,9 @@ def main(argv: list[str] | None = None) -> int:
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     _jelold_a_futast(basetemp)
     try:
-        return _futtat(cov, basetemp, sorszam=sorszam, darab=darab)
+        visszater = _futtat(cov, basetemp, sorszam=sorszam, darab=darab)
+        _ird_ki_a_qt_eltérést()
+        return visszater
     finally:
         # a takarítás nem függhet attól, zöld volt-e a futás, és attól sem,
         # hogy megszakították-e (#677)

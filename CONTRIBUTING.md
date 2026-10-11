@@ -60,13 +60,20 @@ A futtató bukáskor kiírja a saját környezetét (`A FUTÁS KÖRNYEZETE`), a
 CI-naplóban pedig a telepítési lépés mutatja a magáét — a kettőt vesd össze
 **először**, mielőtt flakynek könyvelnéd el a hibát.
 
-**A CI verzióival futtatni** (eldobható venv, nem érinti a rendszer-Pythont):
+**A CI verzióival futtatni** (#4834) — egy paranccsal, a repó `.venv-ci`
+mappájába (gitignore-ban, nem érinti a rendszer-Pythont):
 
 ```sh
-python3 -m venv /tmp/ci-venv && /tmp/ci-venv/bin/pip install -q --upgrade pip
-/tmp/ci-venv/bin/pip install -q $(python3 scripts/print_dependencies.py)
-/tmp/ci-venv/bin/python -m pytest tests/app/<a bukott fájl> -q
+python3 scripts/ci_venv.py                 # létrehozza; ha már jó, nem épít újra
+.venv-ci/bin/python scripts/run_tests.py   # vagy: .venv-ci/bin/python -m pytest <fájl> -q
 ```
+
+A CI Qt-verziója EGY helyen él: `packaging/ci-constraints.txt` (pontos
+`PySide6==…`). A CI constraintként használja (`pip install -c …`), a
+`ci_venv.py` is, a `scripts/run_tests.py` pedig a futás elején ÉS végén
+figyelmeztet, ha a futtató Python PySide6-ja eltér tőle (nem áll meg miatta).
+A `pyproject.toml` `PySide6<6.12` korlátja (#4671) tartomány marad; a pontos
+verziót itt léptesd. `--python python3.12` a CI Pythonjára állítja a venv-et.
 
 ⚠️ A csomaglisták **egyetlen helyen** élnek (`pyproject.toml`,
 `packaging/qt-runtime-deps.txt`); a `print_dependencies.py` onnan olvas.

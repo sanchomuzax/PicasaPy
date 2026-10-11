@@ -116,7 +116,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install $(python scripts/print_dependencies.py --all)
+          pip install -c packaging/ci-constraints.txt $(python scripts/print_dependencies.py --all)
 
       - name: Run tests
         # darabolt futtatás (#53): a teljes készlet egy processzben a
