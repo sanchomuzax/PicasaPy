@@ -559,8 +559,9 @@ Item {
             previewIndex = Math.max(0, Math.min(itemCount - 1, previewIndex))
             previewSource = previewIndex < movieClipSources.length
                 ? String(movieClipSources[previewIndex]) : ""
-            requestPreviewFrame()
-            prefetchNextPreviewFrame()
+            // Egy gépelés/szerkesztés több tételváltozást is jelez (#4852):
+            // a kérés rövid összevonás után, legfeljebb egyszer indul.
+            movieItemsRefreshTimer.restart()
         }
         function requestPreviewFrame() {
             if (!movieDialog.visible || !previewTransitionServiceAvailable
@@ -1037,6 +1038,7 @@ Item {
         }
         onClosed: {
             movieDialog.projektbolNyilt = false
+            movieItemsRefreshTimer.stop()
             moviePreviewTimer.stop()
             moviePreviewTransition.stop()
             if (moviePreviewMusicLoader.item)
@@ -1879,6 +1881,17 @@ Item {
             if (!movieDialog.previewAwaitingTransitionFrame) return
             movieDialog.previewAwaitingTransitionFrame = false
             moviePreviewTransition.restart()
+        }
+    }
+
+    Timer {
+        id: movieItemsRefreshTimer
+        objectName: "movieItemsRefreshTimer"
+        interval: 120
+        repeat: false
+        onTriggered: {
+            movieDialog.requestPreviewFrame()
+            movieDialog.prefetchNextPreviewFrame()
         }
     }
 
