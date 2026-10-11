@@ -4,6 +4,87 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-11
+
+**Néző és diavetítés**
+
+- Nagyított képen a sarokban **navigátorablak** mutatja, a kép melyik
+  része látszik; a kék keretet húzva máshová lépsz. Lásd
+  [Nézegetés](features/nezegetes.md).
+- A diavetítés átmenet-választója az eredeti Picasa mind a **22
+  átmenetét** kínálja (Törlés, Tolás, Kör, Négyszög, Gyorsítás és a
+  többi).
+- A nézőben megnyitott videó magától elindul.
+- Windowson és macOS-en a **Klip exportálása** gomb a vágott szakaszt
+  MP4-fájlba menti; Linuxon továbbra sem támogatott.
+
+**Szerkesztés**
+
+- A szerkesztő gombjaira és effektcsempéire mutatva az eredeti Picasa
+  súgóbuborékai jelennek meg. Lásd [A szerkesztő](features/szerkeszto.md).
+- A szöveg, a körvonal és az effektek színe **szabad színválasztóból** is
+  megadható, és a szövegeszköznél is ott vannak a legutóbbi színek.
+- A **Vörösszem** az automatikusan javított szemek köré is négyzetet
+  rajzol; ezek egyenként visszavonhatók, és az **Alaphelyzet** az
+  automatikus javítást is visszaveszi.
+- A **Vágás** paneljéről eltűnt három gyorsvágás-gomb, ami az eredetiben
+  nem volt meg; a javasolt vágások maradtak.
+- A **Képregény** csúszkái az eredeti nevükön: **Színes ecset**,
+  **Pontsűrűség**, **Ponthalványítás**. Lásd
+  [Effektek](features/effektek.md).
+
+**Emberek, helyek, címkék**
+
+- Az Emberek panelen a névtelen arc **javasolt neve** a **✓** gombbal
+  elfogadható, a **✗** gombbal elvethető, és megjelent a **Személy kézi
+  hozzáadása** gomb útmutatóval. Lásd [Emberek és
+  arcok](features/emberek.md).
+- Az üres Névtelenek gyűjteménynél az Emberek panel az eredeti
+  útmutatót mutatja.
+- A **Helyek** térképén a jelölők bélyegképet mutatnak, és kattintásra
+  buborék nyílik (**Ezen fotók keresése a Picasában**, **Helyadatok
+  törlése**). A rácsból a térképre húzott képek megerősítés után helyet
+  kapnak. Betöltés közben „Térkép betöltése..." látszik, internet nélkül
+  hibaüzenet. Lásd [Helyek](features/helyek.md).
+- A Címkék panel **+** és fogaskerék-gombja buboréksúgót kapott, a
+  gyorscímke-sor felirata **Gyorscímkék:**. Lásd [Csillagok, feliratok,
+  címkék](features/csillag-felirat-cimke.md).
+- A Tulajdonságok panel **Kulcsszavak** gombja a **Címkék** ablakot
+  nyitja; videónál a panel a formátumot, a képkockasebességet és a hosszt
+  is mutatja. Lásd [A könyvtár](features/konyvtar.md).
+
+**Könyvtár és menük**
+
+- Az album helyi menüjében működik az **Album törlése**: megerősítés után
+  az album minden mappából kikerül, a képek megmaradnak.
+- A **Mappa tulajdonságai** **Dátum** mezője mellől naptár nyílik, és a
+  dátum a nyelvi beállítás szerinti alakban látszik.
+- A **Nézet ▸ Mappanézet** (és a ▾ gomb) menüjében ott van a három
+  személyrendezés és a **Gyorsbillentyűk** almenü.
+- A kép helyi menüjének **Társítás** tétele programot választ, és azzal
+  nyitja meg a képet. Lásd [Fájlműveletek](features/fajlmuveletek.md).
+- A képtálca kimeneti gombsorán jobbgombbal elérhető a **Gombok
+  konfigurálása…**.
+
+**Importálás, e-mail, nyomtatás, régi adatok**
+
+- Az importálás a csatolt memóriakártyát és USB-meghajtót is felkínálja
+  forrásként (**Cserélhető meghajtók**). Kézi mappanévnél név nélkül nem
+  indul az importálás, és a név csak egyetlen mappanév lehet. Lásd
+  [Importálás](features/importalas.md).
+- Az **Import a Picasából** kézzel megadott Picasa2-adatmappából,
+  meghajtó-leképezéssel is működik.
+- Windowson az e-mail a képeket mellékletként csatolja a levelezőprogram
+  szabványos felületén át. Lásd [Küldés e-mailben](features/email.md).
+- A Nyomtatás ablak a tartalomhoz igazodik, a **Nyomtatás** és a
+  **Bezárás** gomb mindig látszik; nyomtató nélküli gépen az ablak
+  megmondja, mi a teendő. Lásd [Nyomtatás](features/nyomtatas.md).
+- A régi, **Picasa.ini** nevű fájl tartalma az első mentéskor átkerül az
+  új `.picasa.ini`-be, és a biztonsági mentés meg az áthelyező importálás
+  is megőrzi.
+- Forrásból indítva a program a felület fordításait maga készíti el.
+  Lásd [Első lépések](getting-started.md).
+
 ## 2026-10-10
 
 **Új funkciók**
