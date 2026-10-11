@@ -125,6 +125,17 @@ HIVATALOS = {
         "PeoplePanel::UnnamedCluster"),
     "Unnamed groups of people:": (
         "Név nélküli személycsoportok:", "PeoplePanel::Unnamed"),
+    # #4586: az Emberek panel állapot-feliratai (a %d helyén %1)
+    "Loading faces for file...": (
+        "Arcok betöltése a fájlhoz...", "PeoplePanel::Loading1"),
+    "Loading faces for %1 files...": (
+        "Arcok betöltése %1 fájlhoz...", "PeoplePanel::Loading2"),
+    "Looking for other people...": (
+        "További személyek keresése...", "PeoplePanel::Looking"),
+    "Sorting face data, %1%": (
+        "Arcok adatainak rendezése, %1%", "PeoplePanel::SortingData"),
+    ", %1 files unchecked.": (
+        ", %1 ellenőrizetlen fájl.", "PeoplePanel::Unchecked"),
 }
 
 #: a Gyorscímkék-útmutató (a két szóköz a mondatok között az eredetié)
@@ -147,7 +158,11 @@ ELOFORDULASOK = {
         "Select someone you know and add a name.",
         "Select someone you know and add a name"],
     "PicasaPy/PeoplePanel.qml": [
-        "Unnamed people in these photos:", "Unnamed groups of people:"],
+        "Unnamed people in these photos:", "Unnamed groups of people:",
+        # #4586
+        "Loading faces for file...", "Looking for other people...",
+        "Sorting face data, %1%", "Loading faces for %1 files...",
+        ", %1 files unchecked."],
     "PicasaPy/PicasaMenuBar.qml": ["From Faces in Selection..."],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
