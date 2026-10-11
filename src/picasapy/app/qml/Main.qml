@@ -1135,6 +1135,29 @@ ApplicationWindow {
         onActivated: window.fokuszAKeresore()
     }
     Shortcut {
+        id: shortcutSearchF3
+        objectName: "searchF3Shortcut"
+        sequence: "F3"
+        //: A keresősáv a nézőben nincs jelen (ld. `fokuszAKeresore`), ezért
+        //: az F3 a könyvtári őrön marad; diavetítés alatt nem fut.
+        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+                 && !window.slideshowRunning
+        //: #4600: `0x005e69a4` — módosító nélküli ág, ugyanaz a
+        //: `searchcontainer/searchbutton`, mint a `Ctrl+F`-é.
+        onActivated: window.fokuszAKeresore()
+    }
+    Shortcut {
+        id: shortcutStarToggle
+        objectName: "starToggleShortcut"
+        sequence: "F4"
+        //: A kezelő a könyvtárban ÉS a szerkesztőben közös (spec 10.11/10.13),
+        //: ezért a nézőben is él; a gomb saját őrét a `kapcsoldACsillagot` adja.
+        enabled: !window._szovegmezoneVanFokusz && !window.slideshowRunning
+        //: #4600: `0x005e696c` — a `thumbui/startoggle`-t kattintja, ha az
+        //: nem tiltott; a tálca gombja ugyanezt a kijelölést/nézőt követi.
+        onActivated: trayBar.kapcsoldACsillagot()
+    }
+    Shortcut {
         id: shortcutRefreshCurrentFolder
         objectName: "refreshCurrentFolderShortcut"
         sequence: "F5"
@@ -1788,6 +1811,7 @@ ApplicationWindow {
             title: picasaMenuBar.keyboardShortcutGroupTitles.view,
             sequences: picasaMenuBar.keyboardShortcutSequences.view.concat([
                 shortcutToggleRightDrawer.sequence, shortcutSearch.sequence,
+                shortcutSearchF3.sequence, shortcutStarToggle.sequence,
                 shortcutTagsPanelAlt.sequence, shortcutEditView.sequence,
                 shortcutDuplicateSearch.sequence, shortcutFindSimilar.sequence,
                 shortcutClearSimilar.sequence, shortcutSlideshow.sequence,

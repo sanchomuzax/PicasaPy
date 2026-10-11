@@ -92,6 +92,12 @@ Column {
     signal zoomActualRequested()
     signal zoomValueRequested(real ertek)
 
+    // #4600: az `F4` a csillag-gomb kattintása, ha a gomb engedélyezett
+    // (az eredetiben `[eax+0x20e] == 0` őr) — tiltottan nem tesz semmit.
+    function kapcsoldACsillagot() {
+        if (tray.visible && trayStar.enabled) trayStar.clicked()
+    }
+
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayStar.targetRow
 
