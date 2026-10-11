@@ -74,10 +74,11 @@ class TestAProvider:
 
         provider = FolderCoverProvider(robban)
         kep = provider.requestImage("/nincs/ilyen", QSize(), QSize())
-        # #2215: a válasz ÜRES (null) kép. A korábbi 1×1 átlátszó a
-        # docstring ígéretét hiúsította meg: az sikeresen betöltődik, ezért
-        # a QML elrejtette a mappaikont, és a sor üresen maradt.
-        assert kep.isNull(), "hibánál nem az üres helyettesítő jött vissza"
+        # #4876: a válasz az 1 × 1-es „nincs borító" jelölő; a QML a
+        # szélességből tudja, hogy a mappaikont kell mutatnia (#2215).
+        assert (kep.width(), kep.height()) == (1, 1), (
+            "hibánál nem a »nincs borító« jelölő jött vissza"
+        )
 
     def test_masodszorra_a_GYORSTARBOL_jon(self, qt_app, tmp_path):
         fajlok = _mappa_kepekkel(tmp_path / "m", 2)
