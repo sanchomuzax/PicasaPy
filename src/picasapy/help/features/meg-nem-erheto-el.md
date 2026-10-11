@@ -38,9 +38,10 @@ az utóbbi a működő gyorsbillentyűk listáját, lásd
 
 **Helyi menükben**
 
-- Társítás (a kép helyi menüjében és a nézőben)
+- Társítás a néző helyi menüjében — a könyvtárban, a kép helyi menüjében
+  viszont **működik**, lásd [Fájlműveletek](fajlmuveletek.md)
 - Mappa felosztása itt…
-- Album törlése, Album rendezésének alapja — az **Albumleírás
+- Album rendezésének alapja — az **Album törlése** és az **Albumleírás
   szerkesztése…** viszont **működik**, lásd [A könyvtár](konyvtar.md)
 - Jelszó megadása/módosítása… a saját gyűjteményeken — a **Rejtett
   mappák** fejlécén viszont **működik**, lásd [A könyvtár](konyvtar.md)

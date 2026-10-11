@@ -4824,6 +4824,12 @@ ApplicationWindow {
             if (createDialogs.item)
                 createDialogs.item.frissitsdAzElonezetet(revision)
         }
+        function onMovieTransitionPreviewReady(source, generation) {
+            // Mint a kollázs-előnézet: csak a NYITOTT párbeszédnek szól,
+            // felépíteni fölösleges (nincs film-előnézet, ha nem áll).
+            if (createDialogs.item)
+                createDialogs.item.jelezdAFilmAtmenetElonezetet(source, generation)
+        }
         function onCollageFinished(path, used, skipped, missing) {
             createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)
         }

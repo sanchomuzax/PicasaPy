@@ -55,7 +55,9 @@ Item {
                 ? sourceSize.width : parent.width
             height: frame.actualSizeEnabled && sourceSize.height > 0
                 ? sourceSize.height : parent.height
-            source: frame.imageSource
+            // A közös átmenet-renderelő mellett rejtett fallback-képek ne
+            // dekódolódjanak a GUI-szálon pusztán a forrásméret lekéréséért.
+            source: frame.visible ? frame.imageSource : ""
             fillMode: Image.PreserveAspectFit
             cache: false
             onSourceSizeChanged: frame.imageSizeChanged(

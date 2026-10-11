@@ -43,6 +43,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from PySide6.QtCore import Property, QUrl, Signal, Slot
+from PySide6.QtGui import QImageReader
 
 from picasapy.collage import write_collage
 from picasapy.collage.autosave import (
@@ -54,6 +55,7 @@ from picasapy.collage.autosave import (
 from picasapy.collage.draft import project_from_nodes
 from picasapy.collage.picasa_render import PicasaCollageSettings, make_picasa_collage
 from picasapy.app.collage_preview import CollagePreviewProvider
+from picasapy.app.movie_preview import MovieTransitionPreviewProvider
 from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, NOBORDER
 from picasapy.index import album_photos, open_index
 from picasapy.ini import load_or_empty, read_folder_music
@@ -183,6 +185,7 @@ class CreateMixin(PosterMixin):
     movieProgress = Signal(int, int)
     movieFinished = Signal(str, int, int, int)
     movieFailed = Signal(str)
+    movieTransitionPreviewReady = Signal(str, int)
     #: #920: az élő előnézet elkészült — a paraméter a revízió, amivel a
     #: QML törni tudja a Qt kép-gyorsítótárát (`?rev=<n>`).
     collagePreviewReady = Signal(int)
@@ -296,6 +299,111 @@ class CreateMixin(PosterMixin):
             QUrl.fromLocalFile(str(path)).toString()
             for path in self._selected_sources(rows)
         ]
+
+    @property
+    def movie_transition_preview_provider(self) -> MovieTransitionPreviewProvider:
+        """A slideshow azonos átmenetfüggvényét használó QML-képszolgáltató."""
+        if not hasattr(self, "_movie_transition_preview_provider"):
+            self._movie_transition_preview_provider = MovieTransitionPreviewProvider()
+            self._movie_transition_preview_provider.frameReady.connect(
+                self.movieTransitionPreviewReady
+            )
+        return self._movie_transition_preview_provider
+
+    @Slot(
+        str,
+        str,
+        str,
+        float,
+        int,
+        int,
+        bool,
+        bool,
+        bool,
+        str,
+        str,
+        bool,
+        int,
+        int,
+        float,
+        result=int,
+    )
+    def requestMovieTransitionPreview(  # noqa: N802
+        self,
+        outgoing_source: str,
+        incoming_source: str,
+        transition: str,
+        progress: float,
+        width: int,
+        height: int,
+        cropfit: bool,
+        show_captions: bool,
+        show_dates: bool,
+        outgoing_slide_json: str,
+        incoming_slide_json: str,
+        actual_size: bool,
+        viewport_width: int,
+        viewport_height: int,
+        device_pixel_ratio: float,
+    ) -> int:
+        """Elindítja a nézőképkocka háttérbeli renderelését."""
+        return self.movie_transition_preview_provider.request_transition(
+            outgoing_source,
+            incoming_source,
+            transition,
+            progress,
+            width,
+            height,
+            cropfit,
+            show_captions,
+            show_dates,
+            outgoing_slide_json,
+            incoming_slide_json,
+            actual_size,
+            viewport_width,
+            viewport_height,
+            device_pixel_ratio,
+        )
+
+    @Slot(str, str, int, int, bool, bool, bool, bool, int, int, float)
+    def prefetchMovieTransitionPreview(  # noqa: N802
+        self,
+        source: str,
+        slide_json: str,
+        width: int,
+        height: int,
+        cropfit: bool,
+        show_captions: bool,
+        show_dates: bool,
+        actual_size: bool,
+        viewport_width: int,
+        viewport_height: int,
+        device_pixel_ratio: float,
+    ) -> None:
+        """Kéri a film-előnézet következő dia-alapkockájának előtöltését."""
+        self.movie_transition_preview_provider.prefetch_frame(
+            source,
+            slide_json,
+            width,
+            height,
+            cropfit,
+            show_captions,
+            show_dates,
+            actual_size,
+            viewport_width,
+            viewport_height,
+            device_pixel_ratio,
+        )
+
+    @Slot(str, result=list)
+    def moviePreviewImageSize(self, source: str) -> list[int]:  # noqa: N802
+        """A forrásméretet fejlécekből olvassa, képtartalom-dekódolás nélkül."""
+        local_path = to_local_path(source)
+        reader = QImageReader(local_path or source)
+        size = reader.size()
+        if not size.isValid():
+            return [0, 0]
+        return [size.width(), size.height()]
 
     @property
     def collage_preview_provider(self) -> CollagePreviewProvider:
