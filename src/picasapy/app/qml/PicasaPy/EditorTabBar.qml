@@ -52,6 +52,8 @@ Item {
     readonly property var ikonMeretek: [
         [15, 16], [17, 18], [20, 19], [25, 19], [25, 19], [25, 19], [25, 19]
     ]
+    // #4846: a 4–5. fül tájképes négyzetének felhője mindkét fülön fehér
+    readonly property color felhoSzin: "#ffffff"
     function ikonSzelesseg(index) { return tabBarRoot.ikonMeretek[index][0] }
     function ikonMagassag(index) { return tabBarRoot.ikonMeretek[index][1] }
 
@@ -113,7 +115,7 @@ Item {
         description: qsTr("More fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.picasaGreen
-        iconFleck: Qt.lighter(Theme.picasaGreen, 2.8)
+        iconFleck: tabBarRoot.felhoSzin
     }
     // #328/#338: 5. fül — KÉK ecset ("művészi effektek"), kék ég-mintával.
     EditTabButton {
@@ -129,7 +131,7 @@ Item {
         description: qsTr("Even more fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.brandBlue
-        iconFleck: Qt.lighter(Theme.brandBlue, 2.8)
+        iconFleck: tabBarRoot.felhoSzin
     }
     // #422 (felhasználói döntés): 6. fül — azok a Glimmer-effektek,
     // amelyek NEM szerepelnek a 3–5. fül igazolt listáján. Külön fülön,

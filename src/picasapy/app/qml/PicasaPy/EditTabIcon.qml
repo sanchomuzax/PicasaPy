@@ -39,13 +39,11 @@ Canvas {
         if (icon.kind === "sun") return [17, 18]
         return icon.landscape ? [25, 19] : [20, 19]
     }
-    function contentBounds(w, h) {
-        var d = icon.designSize()
-        return [0, 0, d[0], d[1]]
-    }
-    // csavarkulcs: feje bal fent (a nyitott száj a bal-felső irányba néz),
-    // nyele jobb lent
+    // csavarkulcs: feje bal fent — teli kör, belőle a nyél tengelye mentén
+    // (225°, azaz bal-felfelé) kerek végű rés kivágva: két egyforma pofa,
+    // köztük kerek U-rés —, nyele jobb lent
     function paintWrench(ctx) {
+        var cx = 4.7, cy = 4.7, r = 4.7
         ctx.strokeStyle = icon.strokeColor
         ctx.lineWidth = 3.2
         ctx.beginPath()
@@ -54,10 +52,16 @@ Canvas {
         ctx.stroke()
         ctx.fillStyle = icon.strokeColor
         ctx.beginPath()
-        ctx.moveTo(4.8, 4.8)
-        ctx.arc(4.8, 4.8, 4.8, Math.PI * 1.5, Math.PI * 2.8)
-        ctx.closePath()
+        ctx.arc(cx, cy, r, 0, Math.PI * 2)
         ctx.fill()
+        ctx.save()
+        ctx.globalCompositeOperation = "destination-out"
+        ctx.lineWidth = 2.4
+        ctx.beginPath()
+        ctx.moveTo(cx, cy)
+        ctx.lineTo(cx - r * 0.8, cy - r * 0.8)
+        ctx.stroke()
+        ctx.restore()
     }
     // nap: 8 sugár (a négy főirányú hosszabb), a korong körvonala, a BAL
     // fele kitöltve, a jobb fele üres
@@ -70,10 +74,10 @@ Canvas {
             var a = Math.PI * i / 4
             var diag = (i % 2 === 1)
             var r0 = diag ? 5.6 : 5.4
-            var r1 = diag ? 7.0 : 7.7
+            var r1 = diag ? 7.0 : (i % 4 === 2 ? 8.2 : 7.7)
             ctx.beginPath()
-            ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0 * 1.0)
-            ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1 * 1.1)
+            ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
+            ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
             ctx.stroke()
         }
         ctx.lineWidth = 1.4
@@ -98,8 +102,10 @@ Canvas {
         ctx.beginPath()
         ctx.moveTo(dx + 11.2, 8.4)
         ctx.lineTo(dx + 14.2, 11.4)
-        ctx.bezierCurveTo(dx + 12.8, 14.6, dx + 7.4, 18.2, dx + 1.4, 18.8)
-        ctx.bezierCurveTo(dx + 0.2, 16.4, dx + 3.0, 12.6, dx + 7.4, 11.4)
+        ctx.bezierCurveTo(dx + 12.8, 14.8, dx + 7.4, 17.8, dx + 0.7, 19)
+        ctx.lineTo(dx + 0, 18.2)
+        ctx.lineTo(dx + 0, 17.6)
+        ctx.bezierCurveTo(dx + 0.4, 15.4, dx + 3.0, 12.6, dx + 7.4, 11.4)
         ctx.closePath()
         ctx.fill()
     }

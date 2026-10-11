@@ -37,9 +37,13 @@ MERT = (
 SZELEN_LEGFELJEBB = 5
 
 #: #4846: a 4–5. fül ikonja tájképes négyzet — a négyzet bal és felső éle
-#: az eredetiben is egyenes, és a doboz szélén fut (legfeljebb a négyzet
-#: 15 képpontos oldala + az élsimítás); a jobb és alsó szél marad ≤ 5
-LAPOS_EL_LEGFELJEBB = {"editTabEffects2": 20, "editTabEffects3": 20}
+#: az eredetiben is egyenes, és a doboz szélén fut. Oldalanként külön, a
+#: MÉRT értékhez kötött határ (mért: bal 13, felső 17 festett képpont; a
+#: négyzet 15 széles, a doboz 19 magas); a jobb és az alsó szél marad ≤ 5
+LAPOS_EL_LEGFELJEBB = {
+    "editTabEffects2": {"bal": 15, "felso": 18},
+    "editTabEffects3": {"bal": 15, "felso": 18},
+}
 
 TURES = 2
 KUSZOB = 40  # a három csatorna összegében
@@ -145,7 +149,7 @@ def test_az_ikon_merete_es_helye_a_renderelt_kepen(sav, qt_app, nev, szel, mag):
     assert abs((y0 - fy) - 4) <= TURES, (nev, y0 - fy)
     # a rajz nem vágódik le a vászon szélén
     szelek = _szelek(kep, x0, y0, x1, y1)
-    felso_hatar = LAPOS_EL_LEGFELJEBB.get(nev, SZELEN_LEGFELJEBB)
+    hatarok = LAPOS_EL_LEGFELJEBB.get(nev, {})
     for oldal, db in szelek.items():
-        hatar = felso_hatar if oldal in ("bal", "felso") else SZELEN_LEGFELJEBB
+        hatar = hatarok.get(oldal, SZELEN_LEGFELJEBB)
         assert db <= hatar, (nev, szelek)

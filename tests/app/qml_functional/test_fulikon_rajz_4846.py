@@ -95,6 +95,18 @@ def test_a_csavarkulcs_feje_bal_fent_van(sav, qt_app):
     assert n["jl"] > 0, n
 
 
+def test_a_csavarkulcs_fejen_a_nyel_tengelyen_kerek_u_res_van(sav, qt_app):
+    ikon = _Ikon(sav, qt_app, "editTabFixes")
+    # a fej középpontja a tervezési doboz (4,7; 4,7) pontja; a rés a nyél
+    # tengelye mentén (225°, bal-felfelé) 2–3 képpontra a középponttól üres
+    for t in (2, 3):
+        x = round(4.7 - t * 0.7071)
+        assert not ikon.festett(x, x), (t, x)
+    # a két pofa a rés két oldalán festett: balra és felfelé a középponttól
+    assert ikon.festett(1, 4), "bal pofa (185°, 3 px)"
+    assert ikon.festett(4, 1), "felső pofa (265°, 3 px)"
+
+
 def test_az_ecset_sortéje_bal_lent_van(sav, qt_app):
     n = _Ikon(sav, qt_app, "editTabEffects").negyedek()
     assert n["bl"] > n["bf"], n
