@@ -397,7 +397,7 @@ def test_irasi_hiba_eseten_a_tmp_takaritva(tmp_path, monkeypatch):
     def _hiba(*_args, **_kwargs):
         raise OSError("tele a lemez")
 
-    monkeypatch.setattr(idle.os, "replace", _hiba)
+    monkeypatch.setattr(idle, "_replace", _hiba)
     with pytest.raises(OSError):
         integration.enable(5)
     assert not list((tmp_path / "config" / "autostart").glob("*"))

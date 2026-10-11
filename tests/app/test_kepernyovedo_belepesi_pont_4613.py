@@ -196,3 +196,11 @@ def test_ismeretlen_semaju_indexnel_nincs_traceback_es_egyes_kod(
     assert "sémaverzió" in err
     assert "Traceback" not in err
     assert db.read_bytes() == elotte, "a séma-eltérés nem indíthat migrációt"
+
+
+def test_az_indulas_kapcsoloja_egyezik_a_figyelo_kapcsolojaval():
+    """Az `application.py` import nélkül olvasható másolata (#1653) nem
+    térhet el a figyelő által írt kapcsolótól."""
+    from picasapy.app import application, screensaver_idle
+
+    assert application.KEPERNYOVEDO_KAPCSOLO == screensaver_idle.SCREENSAVER_FLAG

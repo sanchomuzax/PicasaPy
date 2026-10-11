@@ -222,6 +222,15 @@ def _spawn(argv: list[str]) -> None:
         raise OSError("a képernyővédő-figyelő indítása nem fejeződött be") from exc
 
 
+# modulszintű fogantyú: a teszt ezt cseréli, nem a globális `os.replace`-t (#1375)
+_replace = os.replace
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217)."""
+    return sys.platform
+
+
 def _repo_launcher() -> Path:
     return Path(__file__).resolve().parents[3] / "picasapy"
 
@@ -259,7 +268,7 @@ class IdleIntegration:
         command = screensaver_command(
             launcher=_repo_launcher(), which=shutil.which, executable=sys.executable
         )
-        return cls(env=env, platform=sys.platform, config_home=config_home, command=command)
+        return cls(env=env, platform=_platform(), config_home=config_home, command=command)
 
     @property
     def command(self) -> list[str]:
@@ -324,7 +333,7 @@ class IdleIntegration:
         tmp = path.with_name(path.name + ".tmp")
         try:
             tmp.write_text(text, encoding="utf-8")
-            os.replace(tmp, path)
+            _replace(tmp, path)
         finally:
             tmp.unlink(missing_ok=True)
         try:

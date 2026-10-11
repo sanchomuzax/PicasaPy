@@ -13,6 +13,7 @@ import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Property, QObject, QSettings, Signal, Slot
 
@@ -27,13 +28,15 @@ from picasapy.index import (
 from picasapy.index.schema import SCHEMA_VERSION
 
 from .models import PhotoGridModel, sorted_folder_rows
-from .screensaver_idle import (
-    DEFAULT_MINUTES,
-    MAX_MINUTES,
-    MIN_MINUTES,
-    IdleIntegration,
-    IdleIntegrationError,
-)
+
+if TYPE_CHECKING:
+    from .screensaver_idle import IdleIntegration
+
+def _idle():
+    from . import screensaver_idle
+
+    return screensaver_idle
+
 
 _SOURCES_KEY = "screensaver/sources"
 _PHOTO_PATHS_KEY = "screensaver/photoPaths"
@@ -321,6 +324,9 @@ class ScreensaverMixin:
     # --- indítás a gép tétlenségekor (#4613) -------------------------------
 
     def _screensaver_idle_integration(self) -> IdleIntegration:
+        # lustán töltve: a tétlenség-figyelő ne nehezítse az indulást (#1653)
+        from .screensaver_idle import IdleIntegration
+
         integration = getattr(self, "_screensaver_idle", None)
         if integration is None:
             integration = IdleIntegration.for_session()
@@ -359,13 +365,13 @@ class ScreensaverMixin:
         integration = self._screensaver_idle_integration()
         if integration.is_enabled():
             configured = integration.configured_minutes()
-            if configured is not None and MIN_MINUTES <= configured <= MAX_MINUTES:
+            if configured is not None and _idle().MIN_MINUTES <= configured <= _idle().MAX_MINUTES:
                 return configured
         try:
-            minutes = int(self._get_settings().value(_IDLE_MINUTES_KEY, DEFAULT_MINUTES))
+            minutes = int(self._get_settings().value(_IDLE_MINUTES_KEY, _idle().DEFAULT_MINUTES))
         except (TypeError, ValueError):
-            return DEFAULT_MINUTES
-        return minutes if MIN_MINUTES <= minutes <= MAX_MINUTES else DEFAULT_MINUTES
+            return _idle().DEFAULT_MINUTES
+        return minutes if _idle().MIN_MINUTES <= minutes <= _idle().MAX_MINUTES else _idle().DEFAULT_MINUTES
 
     @Slot(bool, result=bool)
     def setScreensaverIdleEnabled(self, enabled: bool) -> bool:  # noqa: N802
@@ -376,7 +382,7 @@ class ScreensaverMixin:
                 integration.enable(self.screensaverIdleMinutes)
             else:
                 integration.disable()
-        except (IdleIntegrationError, OSError, ValueError):
+        except (_idle().IdleIntegrationError, OSError, ValueError):
             return False
         finally:
             self.screensaverIdleChanged.emit()
@@ -388,7 +394,7 @@ class ScreensaverMixin:
             minutes = int(minutes)
         except (TypeError, ValueError):
             return False
-        if not MIN_MINUTES <= minutes <= MAX_MINUTES:
+        if not _idle().MIN_MINUTES <= minutes <= _idle().MAX_MINUTES:
             return False
         self._get_settings().setValue(_IDLE_MINUTES_KEY, minutes)
         integration = self._screensaver_idle_integration()
@@ -396,7 +402,7 @@ class ScreensaverMixin:
         if integration.is_enabled():
             try:
                 integration.enable(minutes)
-            except (IdleIntegrationError, OSError, ValueError):
+            except (_idle().IdleIntegrationError, OSError, ValueError):
                 result = False
         self.screensaverIdleChanged.emit()
         return result

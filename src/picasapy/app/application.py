@@ -6,6 +6,8 @@ Könyvtár-gyökerek: parancssori argumentumok, vagy a Picasa-paritású
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import ctypes
 import logging
 import math
@@ -134,8 +136,6 @@ from .platform_storage import (
     default_storage_paths,
 )
 from .startup_status import StartupStatus
-from . import screensaver_mode
-from .screensaver_mode import ScreensaverRunBridge, argv_kepernyovedo
 from .startup_diagnostics import (
     StartupProgressLog,
     runtime_version_messages,
@@ -216,6 +216,15 @@ class _StartupSmokeProbe(QObject):
             self._progress_log.mark(message)
             write_console(message, error=True)
             self._app.exit(1)
+
+
+
+if TYPE_CHECKING:
+    from .screensaver_mode import ScreensaverRunBridge
+
+# a `screensaver_idle.SCREENSAVER_FLAG` másolata — az import nélkül olvasható
+# (#1653); az egyezést a #4613 tesztje őrzi
+KEPERNYOVEDO_KAPCSOLO = "--screensaver"
 
 
 def _platform() -> str:
@@ -1126,8 +1135,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     (#1654), a `--tesztuzem` kapcsoló és a `PICASAPY_STARTUP_TIMELINE=1`
     környezeti változó (#1601) kapcsolja be — ld. `_indulasi_idovonal`."""
     # #4613: a tétlenség-figyelő hívja — főablak, példányzár és napló nélkül
-    kepernyovedo, argv = argv_kepernyovedo(argv)
-    if kepernyovedo:
+    if KEPERNYOVEDO_KAPCSOLO in argv:
+        # lustán töltve: a normál indulás importlánca ne hízzon (#1653)
+        from . import screensaver_mode
+
+        _kepernyovedo, argv = screensaver_mode.argv_kepernyovedo(argv)
         return screensaver_mode.run_screensaver(argv)
     progress_log = StartupProgressLog()
     progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
