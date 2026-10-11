@@ -8,6 +8,7 @@ próbák (QML-es és vezérlős egyaránt) innen kapnak másodikat.
 from __future__ import annotations
 
 import struct
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from picasapy.app import edit_preview as preview_module
@@ -43,3 +44,44 @@ def atnevezett_betu(cel: Path) -> Path:
         adat[eltolas:eltolas + hossz] = blokk
     cel.write_bytes(bytes(adat))
     return cel
+
+
+#: Nem valódi rendszerbetű: az üres fontconfig-adatbázis általános álnevei és
+#: a saját próbabetűink (`legalabb_ket_betucsalad`).
+_NEM_VALODI_CSALADOK = frozenset(
+    {"sans serif", "serif", "monospace", "open sans", "open sanz"}
+)
+
+
+def potlando_betufajlok(
+    csaladok: Iterable[str],
+    jeloltek: Iterable[Path | None],
+) -> list[Path]:
+    """A regisztrálandó betűfájlok, ha a Qt-adatbázis gyakorlatilag üres (#4506).
+
+    A windowsos offscreen Qt (`QFreeTypeFontDatabase`) a rendszerbetűket nem
+    látja, így a szövegrajzoló próbák Qt-útja betűkép nélkül fest. Ilyenkor —
+    és CSAK ilyenkor, ha egyetlen VALÓDI család sincs (az általános álneveken és
+    a saját próbabetűinken kívül) — a renderelő saját fájljelöltjeit
+    (`render.text_fonts.font_path_for`) adjuk alkalmazás-betűként. Rendes
+    adatbázisnál (Linux fontconfig) üres listát ad: ott nincs mit pótolni.
+    """
+    if any(c.casefold() not in _NEM_VALODI_CSALADOK for c in csaladok):
+        return []
+    egyedi: list[Path] = []
+    for jelolt in jeloltek:
+        if jelolt is not None and jelolt not in egyedi:
+            egyedi.append(jelolt)
+    return egyedi
+
+
+def betufajlok_regisztralasa(
+    fajlok: Iterable[Path], hozzaad: Callable[[str], int]
+) -> dict[Path, int]:
+    """A fájlok felvétele: `{fájl: azonosító}`, a sikertelen (-1) kimarad."""
+    regisztralt: dict[Path, int] = {}
+    for fajl in fajlok:
+        azonosito = hozzaad(str(fajl))
+        if azonosito >= 0:
+            regisztralt[fajl] = azonosito
+    return regisztralt

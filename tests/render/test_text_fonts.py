@@ -92,6 +92,7 @@ class TestFontResolution:
 
 
 @_needs_font
+@pytest.mark.usefixtures("renderelo_betuk")
 class TestTypography:
     def test_bold_puts_more_ink_on_the_canvas(self):
         normal = apply_text_overlay(_canvas(), "Proba", 0.05, 0.6)
