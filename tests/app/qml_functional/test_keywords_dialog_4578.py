@@ -105,7 +105,15 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
         if Path(controller.photos.filePathAt(index)) == png
     )
     png_bytes_before = png.read_bytes()
-    window.setHeight(int(window.height()) + magassag_eltolas)
+    uj_magassag = int(window.height()) + magassag_eltolas
+    window.setHeight(uj_magassag)
+    # #4835: az átméretezés ablakrendszerenként aszinkron (Windowson a kattintás
+    # még a régi elrendezésre érkezhetett) — a kattintás előtt megvárjuk a
+    # tényleges új magasságot és egy kirajzolt képkockát.
+    assert _wait_for(qt_app, lambda: int(window.height()) == uj_magassag), (
+        f"az ablak magassága {window.height()}, várt: {uj_magassag}"
+    )
+    _wait_for_next_frame(window, qt_app)
     window.setProperty("selectedIndexes", [row])
     window.setProperty("selectedIndex", row)
     window.setProperty("activeDrawerTab", "properties")
@@ -120,7 +128,18 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
     assert edit_button.isVisible() and edit_button.isEnabled()
     _click(window, edit_button, qt_app)
     dialog = _item(panel, "keywordsDialog")
-    assert _wait_for(qt_app, lambda: bool(dialog.property("visible")))
+    assert _wait_for(qt_app, lambda: bool(dialog.property("visible"))), (
+        "a Keywords párbeszéd nem nyílt meg a kattintásra; "
+        f"ablak={window.width()}x{window.height()}, "
+        f"gomb: látható={edit_button.isVisible()} "
+        f"engedélyezett={edit_button.isEnabled()} "
+        f"méret={edit_button.width()}x{edit_button.height()} "
+        f"középpont={edit_button.mapToScene(edit_button.boundingRect().center())}, "
+        f"párbeszéd: visible={dialog.property('visible')} "
+        f"opened={dialog.property('opened')}, "
+        f"selectedIndex={window.property('selectedIndex')}, "
+        f"activeDrawerTab={window.property('activeDrawerTab')}"
+    )
     info_bar = _item(window, "trayInfoText")
     kezdo_status = str(info_bar.property("nyersSzoveg"))
     kezdo_datum = _status_date(kezdo_status)

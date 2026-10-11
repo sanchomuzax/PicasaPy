@@ -65,7 +65,7 @@ class TestFontResolution:
     def test_an_unknown_family_falls_back_to_the_default(self):
         assert font_path_for("nincs-ilyen") == font_path_for(DEFAULT_FAMILY)
 
-    def test_the_dropdown_data_is_key_and_label(self):
+    def test_the_dropdown_data_is_key_and_label(self, legalabb_ket_betucsalad):
         """#4546: futó Qt-alkalmazás mellett a telepített családok adják a
         listát, nélküle a Pillow-kompatibilitási lista — a teszt azt várja,
         ami az adott folyamatban érvényes (a CI egy folyamatban több fájlt is
@@ -73,6 +73,9 @@ class TestFontResolution:
         from PySide6.QtGui import QFontDatabase, QGuiApplication
 
         labels = family_labels()
+        # #4835: a windowsos offscreen gépen kevés család látszik — a fixture
+        # gondoskodik legalább kettőről, így a lista nem lehet üres.
+        assert len(labels) >= 2
         assert {"key", "label"} == set(labels[0])
         if QGuiApplication.instance() is not None:
             vart = sorted(
