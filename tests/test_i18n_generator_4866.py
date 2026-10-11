@@ -142,6 +142,72 @@ def test_hianyzo_uzenet_bekerul_a_megszunt_kiesik_az_unfinished_ujraszamolodik(t
     assert _tr(de_out["Todo"]) == (None, "Aufgabe")
 
 
+def test_ket_futas_azonos_es_a_kitoltott_sor_nem_valtozik(tmp_path):
+    jelolo = "picasapy-origin: picasa\npicasapy-origin-key: p:regi"
+    hu = _ts(
+        "hu_HU",
+        [
+            ("Kept", jelolo, "Megtartott"),
+            ("Todo", None, "Teendő"),
+            ("New", None, "Új"),
+            ("Dup", None, "Ismétlődő"),
+            ("Dup", None, "Ismétlődő"),
+            ("Files...", None, "Fájlok…"),
+            ("Dot", None, "Pont."),
+        ],
+    )
+    de = _ts(
+        "de_DE",
+        [
+            ("Kept", jelolo, "Behalten"),
+            ("Todo", "picasapy-origin: picasapy", None),
+            ("Dup", "picasapy-origin: picasapy", "Erste"),
+            ("Dup", "picasapy-origin: picasapy", "Zweite"),
+        ],
+    )
+    hu_ref = {"p:t": "Teendő", "p:n": "Új", "p:m": "Fájlok…", "p:l": "Fájlok:", "p:d": "Pont...", "p:i": "Ismétlődő"}
+    de_ref = {"p:t": "Aufgabe", "p:n": "Neu", "p:m": "Dateien…", "p:l": "Dateien:", "p:d": "Punkt...", "p:i": "Wiederholt"}
+    out = _futtat(tmp_path, hu, de, hu_ref, de_ref)
+    first = {p.name: p.read_bytes() for p in out.glob("*.ts")}
+    gen.build_dictionaries(tmp_path / "ref", out, compile_qm=False)
+    assert {p.name: p.read_bytes() for p in out.glob("*.ts")} == first
+    de_out = ET.parse(out / "picasapy_de.ts").getroot()
+    rows = [m for m in de_out.iter("message") if m.findtext("source") == "Dup"]
+    assert [_tr(m)[1] for m in rows] == ["Erste", "Zweite"]
+    msgs = _messages(out / "picasapy_de.ts")
+    assert _tr(msgs["Kept"]) == (None, "Behalten")
+    assert _tr(msgs["Todo"]) == (None, "Aufgabe")
+    assert _tr(msgs["New"]) == (None, "Neu")
+    assert _tr(msgs["Files..."]) == (None, "Dateien…")
+    # „.” és „...” külön osztály: a „Pont.” nem párosul a „Pont...”-tal
+    assert _tr(msgs["Dot"])[0] == "unfinished"
+
+
+def test_comment_kulonbozteti_meg_az_azonos_forrasu_sorokat(tmp_path):
+    def rows(items):
+        return "".join(
+            f"<message><source>Same</source><comment>{c}</comment>"
+            f"<translation>{t}</translation></message>"
+            for c, t in items
+        )
+
+    def doc(lang, items):
+        return (
+            f'<?xml version="1.0" encoding="utf-8"?><TS version="2.1" language="{lang}">'
+            f"<context><name>Ctx</name>{rows(items)}</context></TS>"
+        )
+
+    hu = doc("hu_HU", [("a", "Egy"), ("mid", "Közbe"), ("b", "Kettő")])
+    de = doc("de_DE", [("a", "Eins"), ("b", "Zwei")])
+    out = _futtat(tmp_path, hu, de, {"p:x": "Egy"}, {"p:x": "Eins"})
+    got = {
+        m.findtext("comment"): _tr(m)
+        for m in ET.parse(out / "picasapy_de.ts").getroot().iter("message")
+    }
+    assert got["a"] == (None, "Eins")
+    assert got["b"] == (None, "Zwei")
+
+
 def _kitoltott(root: ET.Element) -> dict[tuple, tuple[bytes, bytes]]:
     """(környezet, forrás, sorszám) -> (extracomment, translation) a kitöltött soroknál."""
     result = {}
@@ -168,10 +234,12 @@ def test_valodi_ts_eken_nem_modosit_hivatalosat_es_masodszorra_ures_diff(tmp_pat
 
     for name, root in before.items():
         settled_before = _kitoltott(root)
-        settled_after = _kitoltott(ET.fromstring(after_first[name]))
+        after_root = ET.fromstring(after_first[name])
+        settled_after = _kitoltott(after_root)
+        all_after = {k for _m, k in gen._message_keys(after_root)}
         for key, value in settled_before.items():
-            if key in settled_after:
-                assert settled_after[key] == value, (name, key)
+            if key in all_after:  # a magyarból megszűnt üzenet kieshet
+                assert key in settled_after and settled_after[key] == value, (name, key)
     hu_after = {
         key: message
         for message, key in gen._message_keys(ET.fromstring(after_first["picasapy_hu.ts"]))

@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from picasapy.app.i18n.dictionary import (
     ORIGIN_PICASA,
+    ORIGIN_KEY_PREFIX,
     ORIGIN_PICASAPY,
     dump_catalog,
     index_original_texts,
@@ -160,21 +161,28 @@ def _hungarian_text(message: ET.Element) -> str:
     return translation.text or ""
 
 
-def _message_keys(root: ET.Element) -> list[tuple[ET.Element, tuple[str, str, int]]]:
-    """Minden üzenet `(környezet, forrás, előfordulás)` kulccsal, dokumentumsorrendben."""
-    seen: dict[tuple[str, str], int] = {}
-    output: list[tuple[ET.Element, tuple[str, str, int]]] = []
+_Key = tuple[str, str, str, int]
+
+
+def _message_keys(root: ET.Element) -> list[tuple[ET.Element, _Key]]:
+    """Minden üzenet `(környezet, forrás, comment, előfordulás)` kulccsal.
+
+    A Qt azonosítójának része a `<comment>`: két sor csak abban különbözhet.
+    """
+    seen: dict[tuple[str, str, str], int] = {}
+    output: list[tuple[ET.Element, _Key]] = []
     for context in root.iter("context"):
         name = context.findtext("name") or ""
         for message in context.findall("message"):
             source = message.findtext("source") or ""
-            count = seen.get((name, source), 0)
-            seen[(name, source)] = count + 1
-            output.append((message, (name, source, count)))
+            comment = message.findtext("comment") or ""
+            count = seen.get((name, source, comment), 0)
+            seen[(name, source, comment)] = count + 1
+            output.append((message, (name, source, comment, count)))
     return output
 
 
-def _existing_messages(path: Path) -> dict[tuple[str, str, int], ET.Element]:
+def _existing_messages(path: Path) -> dict[_Key, ET.Element]:
     """A célnyelv jelenlegi `.ts`-ének üzenetei; hiányzó fájlnál üres."""
     if not path.is_file():
         return {}
@@ -182,32 +190,35 @@ def _existing_messages(path: Path) -> dict[tuple[str, str, int], ET.Element]:
 
 
 def _is_settled(message: ET.Element) -> bool:
-    """Kitöltött, nem `unfinished` fordítás — ezt a generátor nem írja felül."""
+    """Kitöltött, nem `unfinished`/`obsolete`/`vanished` fordítás."""
+    translation = message.find("translation")
+    if translation is None or translation.get("type") in {"obsolete", "vanished"}:
+        return False
     probe = ET.Element("TS")
     probe.append(copy.deepcopy(message))
-    return missing_count(probe) == 0 and message.find("translation") is not None
+    return missing_count(probe) == 0
 
 
 def _keep_existing(message: ET.Element, existing: ET.Element) -> bool:
-    """A kitöltött meglévő fordítás és eredetjelölő átvétele; igaz, ha átvette."""
-    if not _is_settled(existing) or message_origin(existing) is None:
+    """A kitöltött meglévő fordítás és eredetjelölő átvétele; igaz, ha átvette.
+
+    Az `extracomment`-ből csak a jelölősorokat vesszük át, a többi a magyarból
+    jön; jelölő nélküli kitöltött sor `picasapy` jelölőt kap.
+    """
+    if not _is_settled(existing):
         return False
-    for tag in ("translation", "extracomment"):
-        new = copy.deepcopy(existing.find(tag))
-        old = message.find(tag)
-        if old is not None:
-            message.remove(old)
-        message.insert(_insert_index(message, tag), new)
+    old = message.find("translation")
+    if old is not None:
+        message.remove(old)
+    message.append(copy.deepcopy(existing.find("translation")))
+    lines = (existing.findtext("extracomment") or "").splitlines()
+    origin = message_origin(existing) or ORIGIN_PICASAPY
+    keys = ()
+    for line in lines:
+        if line.startswith(ORIGIN_KEY_PREFIX):
+            keys = tuple(k for k in line[len(ORIGIN_KEY_PREFIX):].strip().split(";") if k)
+    set_message_origin(message, origin, keys)
     return True
-
-
-def _insert_index(message: ET.Element, tag: str) -> int:
-    """A Qt TS sorrendje: …, extracomment, translation."""
-    children = list(message)
-    if tag == "translation":
-        return len(children)
-    translation = message.find("translation")
-    return children.index(translation) if translation is not None else len(children)
 
 
 def _build_language(
@@ -216,7 +227,7 @@ def _build_language(
     source_texts: dict[str, str],
     target_texts: dict[str, str],
     source_index: dict[str, tuple[str, ...]],
-    existing: dict[tuple[str, str, int], ET.Element] | None = None,
+    existing: dict[_Key, ET.Element] | None = None,
 ) -> ET.Element:
     catalog = copy.deepcopy(base)
     catalog.set("language", _QT_LOCALE.get(app_code, app_code))
