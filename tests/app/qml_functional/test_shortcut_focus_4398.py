@@ -278,7 +278,7 @@ def test_all_shortcut_sequences_are_silent_while_search_has_focus(
 
     qml_root = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml"
     sequences = _declared_shortcut_sequences(qml_root)
-    assert len(sequences) == 57, f"a QML-leltár {len(sequences)} Shortcut-kötést ad"
+    assert len(sequences) == 59, f"a QML-leltár {len(sequences)} Shortcut-kötést ad"
 
     for sequence in sequences:
         parsed = QKeySequence(sequence)
