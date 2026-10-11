@@ -25,6 +25,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from typing import NamedTuple
 
 from picasapy.lazy_cv2 import cv2
 import numpy as np
@@ -367,8 +368,50 @@ def _hanggal_osszeilleszt(
         Path(atmeneti_cel).unlink(missing_ok=True)
 
 
-def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
-    """Képkockát készít a Szöveg fülön felvett dia beállításaiból."""
+@lru_cache(maxsize=256)
+def _betu_utvonal(fontfajlok: tuple[str, ...]) -> str | None:
+    """Az első betölthető betűfájl TELJES útvonala (vagy None: alapbetű).
+
+    A fájlnév nélküli betűnév keresése a rendszer betűmappáit járja be, ami
+    hideg gépen ~1 s; ezt a szerkesztés közben nem fizetjük újra (#4852).
+    Futás közben telepített betű csak a program újraindítása után látszik."""
+    for fontfajl in fontfajlok:
+        try:
+            return str(ImageFont.truetype(fontfajl, 10).path)
+        except OSError:
+            continue
+    return None
+
+
+def _betu_betoltese(fontfajlok: tuple[str, ...], meret: int):
+    """A gyorsítótárazott útvonalról tölt; ha a fájl közben eltűnt, újrakeres."""
+    for _ in range(2):
+        utvonal = _betu_utvonal(fontfajlok)
+        if utvonal is None:
+            break
+        try:
+            return ImageFont.truetype(utvonal, meret)
+        except OSError:
+            _betu_utvonal.cache_clear()
+    return ImageFont.load_default()
+
+
+class _Vaszon(NamedTuple):
+    """Csak a méret: a kis előnézeti vászon nem esik a páros/min. méret alá."""
+
+    width: int
+    height: int
+
+
+def _szovegdia(
+    slide: dict[str, object], settings: MovieSettings | _Vaszon, skala: float = 1.0
+) -> np.ndarray:
+    """Képkockát készít a Szöveg fülön felvett dia beállításaiból.
+
+    A `settings` már a TÉNYLEGES vászonméretet hordozza; a `skala` (a teljes
+    filmmérethez képesti arány, export: 1.0) a betűméretet és a margót
+    arányosan igazítja (a körvonal legalább 1 px), hogy a kis kocka ugyanazt mutassa kicsiben.
+    """
     def szin(ertek: object, tartalek: str) -> tuple[int, int, int]:
         try:
             return ImageColor.getrgb(str(ertek))[:3]
@@ -380,6 +423,8 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
     kep = Image.new("RGB", (settings.width, settings.height), hatter)
     rajz = ImageDraw.Draw(kep, "RGBA")
     meret = max(8, int(slide.get("size", 16)))
+    if skala != 1.0:
+        meret = max(1, round(meret * skala))
     betu = str(slide.get("font", "DejaVuSans"))
     fontfajlok = [betu, f"{betu}.ttf"]
     if slide.get("italic"):
@@ -387,21 +432,16 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
     if slide.get("bold"):
         fontfajlok.append("DejaVuSans-Bold.ttf")
     fontfajlok.append("DejaVuSans.ttf")
-    font = None
-    for fontfajl in fontfajlok:
-        try:
-            font = ImageFont.truetype(fontfajl, meret)
-            break
-        except OSError:
-            continue
-    if font is None:
-        font = ImageFont.load_default()
+    font = _betu_betoltese(tuple(fontfajlok), meret)
 
     szoveg = str(slide.get("text", ""))
     if not szoveg:
         return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
     stilus = int(slide.get("style", 0))
-    marg = max(16, settings.width // 18)
+    if skala == 1.0:
+        marg = max(16, settings.width // 18)
+    else:
+        marg = max(1, round(max(16, round(settings.width / skala) // 18) * skala))
     keret = rajz.multiline_textbbox((0, 0), szoveg, font=font)
     szoveg_szeles = keret[2] - keret[0]
     szoveg_magas = keret[3] - keret[1]
@@ -431,10 +471,19 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
 
 
 def render_text_slide(
-    slide: dict[str, object], settings: MovieSettings
+    slide: dict[str, object],
+    settings: MovieSettings,
+    size: tuple[int, int] | None = None,
 ) -> np.ndarray:
-    """A film szöveges diájának publikus renderelője."""
-    return _szovegdia(slide, settings)
+    """A film szöveges diájának publikus renderelője.
+
+    `size` nélkül (export) a teljes filmméreten rajzol. `size`-zal (előnézet)
+    közvetlenül az adott méretű vászonra rajzol, a betű/elrendezés arányosan
+    skálázva, így nem kell a teljes méretet renderelni és kicsinyíteni."""
+    if size is None or tuple(size) == (settings.width, settings.height):
+        return _szovegdia(slide, settings)
+    width, height = max(2, int(size[0])), max(2, int(size[1]))
+    return _szovegdia(slide, _Vaszon(width, height), width / settings.width)
 
 
 def _picasa_caption(

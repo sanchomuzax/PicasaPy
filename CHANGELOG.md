@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.64] – 2026-10-11
+
+- A filmelőnézet szöveges diájának szerkesztése után a kocka azonnal frissül: a dia a nézőke méretén készül, és egy billentyűleütés legfeljebb egy előnézet-kérést indít (#4852).
+
+## [0.9.63] – 2026-10-11
+
+- A szerkesztő fülikonjainak rajza az eredeti iránya és formája szerinti: a csavarkulcs feje bal fent, az ecset sörtéje bal lent, a nap korongjának jobb fele üres, a 4–5. fülön tájképes négyzet + ecset (#4846).
+
 ## [0.9.62] – 2026-10-11
 
 - A weboldal-exportálásban az eredeti Picasához hasonlóan egyetlen méretválasztó van (alapból 640 képpont, a bélyegkép méretét a sablon adja), és a mozgófilmek első képkockaként vagy teljes mozgófilmként is exportálhatók (#4610).

@@ -6,16 +6,21 @@ import QtQuick
 // megkülönböztetve" követelményét, amit egy fix színű emoji-glif nem tudna).
 //
 // #496: az `EditorPanel.qml` inline `component`-jéből önálló fájlba emelve —
-// a fájl a 800 soros korlát fölé nőtt. A rajz és a tulajdonságok
-// VÁLTOZATLANOK.
+// a fájl a 800 soros korlát fölé nőtt.
+//
+// #4846: a rajz az eredeti Picasa 3.9 fülsávjának irányát és formáját követi
+// (SAJÁT rajz, a respack-grafika nem használható): a csavarkulcs feje bal
+// fent, az ecset sörtéje bal lent, a nap korongjának jobb fele üres, a 4–5.
+// fül ikonja tájképes négyzet bal fent + az ecset jobb lent.
 Canvas {
     id: icon
     property string kind: "wrench"   // "wrench" | "sun" | "brush"
     property color strokeColor: Theme.iconInk
     // ecset-füleknél a sörte színe (a 3./4./5. fül megkülönböztetése)
     property color accentColor: strokeColor
-    // apró minta-pötty a sörtén (zöld/kék fülnél "levél"/"felhő" folt);
-    // "transparent" = nincs
+    // a tájképes négyzet felhője (4./5. fül); ha nem átlátszó, az ikon
+    // tájképes négyzet + ecset: a négyzet az `accentColor` színű, az ecset
+    // sötét. "transparent" = sima ecset, a sörte az `accentColor`-ral.
     property color fleckColor: "transparent"
     onKindChanged: requestPaint()
     onStrokeColorChanged: requestPaint()
@@ -23,101 +28,131 @@ Canvas {
     onFleckColorChanged: requestPaint()
     onWidthChanged: requestPaint()
     onHeightChanged: requestPaint()
+    // #4552/#4846: minden ikon SAJÁT TERVEZÉSI dobozban (képpont) készül, és a
+    // rajz pontosan kitölti — a vonalvégekkel együtt. Az ikon mérete
+    // fülenként más (15×16 … 25×19), ezért a tervezési doboz a vászonra
+    // nyújtva kerül (két tengelyen külön), így a mért befoglaló doboz egyezik
+    // a vászonnal, nem a rajz körüli üres szegéllyel.
+    readonly property bool landscape: icon.fleckColor.a > 0
+    function designSize() {
+        if (icon.kind === "wrench") return [15, 16]
+        if (icon.kind === "sun") return [17, 18]
+        return icon.landscape ? [25, 19] : [20, 19]
+    }
+    // csavarkulcs: feje bal fent — teli kör, belőle a nyél tengelye mentén
+    // (225°, azaz bal-felfelé) kerek végű rés kivágva: két egyforma pofa,
+    // köztük kerek U-rés —, nyele jobb lent
+    function paintWrench(ctx) {
+        var cx = 4.7, cy = 4.7, r = 4.7
+        ctx.strokeStyle = icon.strokeColor
+        ctx.lineWidth = 3.2
+        ctx.beginPath()
+        ctx.moveTo(6.5, 6.5)
+        ctx.lineTo(13.4, 14.4)
+        ctx.stroke()
+        ctx.fillStyle = icon.strokeColor
+        ctx.beginPath()
+        ctx.arc(cx, cy, r, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.save()
+        ctx.globalCompositeOperation = "destination-out"
+        ctx.lineWidth = 2.4
+        ctx.beginPath()
+        ctx.moveTo(cx, cy)
+        ctx.lineTo(cx - r * 0.8, cy - r * 0.8)
+        ctx.stroke()
+        ctx.restore()
+    }
+    // nap: 8 sugár (a négy főirányú hosszabb), a korong körvonala, a BAL
+    // fele kitöltve, a jobb fele üres
+    function paintSun(ctx) {
+        var cx = 8.5, cy = 9
+        ctx.strokeStyle = icon.strokeColor
+        ctx.fillStyle = icon.strokeColor
+        ctx.lineWidth = 1.6
+        for (var i = 0; i < 8; i++) {
+            var a = Math.PI * i / 4
+            var diag = (i % 2 === 1)
+            var r0 = diag ? 5.6 : 5.4
+            var r1 = diag ? 7.0 : (i % 4 === 2 ? 8.2 : 7.7)
+            ctx.beginPath()
+            ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
+            ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
+            ctx.stroke()
+        }
+        ctx.lineWidth = 1.4
+        ctx.beginPath()
+        ctx.arc(cx, cy, 4.0, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(cx, cy, 4.0, Math.PI * 0.5, Math.PI * 1.5)
+        ctx.closePath()
+        ctx.fill()
+    }
+    // ecset: nyele jobb fent, sörte bal lent; dx = vízszintes eltolás
+    // (a tájképes négyzet mellett az ecset jobbra kerül)
+    function paintBrush(ctx, dx, bristle) {
+        ctx.strokeStyle = icon.strokeColor
+        ctx.lineWidth = 3.4
+        ctx.beginPath()
+        ctx.moveTo(dx + 18.2, 1.8)
+        ctx.lineTo(dx + 10.6, 9.6)
+        ctx.stroke()
+        ctx.fillStyle = bristle
+        ctx.beginPath()
+        ctx.moveTo(dx + 11.2, 8.4)
+        ctx.lineTo(dx + 14.2, 11.4)
+        ctx.bezierCurveTo(dx + 12.8, 14.8, dx + 7.4, 17.8, dx + 0.7, 19)
+        ctx.lineTo(dx + 0, 18.2)
+        ctx.lineTo(dx + 0, 17.6)
+        ctx.bezierCurveTo(dx + 0.4, 15.4, dx + 3.0, 12.6, dx + 7.4, 11.4)
+        ctx.closePath()
+        ctx.fill()
+    }
+    // tájképes négyzet (4./5. fül): a fül színe + fehér felhő
+    function paintLandscape(ctx) {
+        var r = 3.5
+        ctx.fillStyle = icon.accentColor
+        ctx.beginPath()
+        ctx.moveTo(r, 0)
+        ctx.lineTo(15 - r, 0)
+        ctx.quadraticCurveTo(15, 0, 15, r)
+        ctx.lineTo(15, 15 - r)
+        ctx.quadraticCurveTo(15, 15, 15 - r, 15)
+        ctx.lineTo(r, 15)
+        ctx.quadraticCurveTo(0, 15, 0, 15 - r)
+        ctx.lineTo(0, r)
+        ctx.quadraticCurveTo(0, 0, r, 0)
+        ctx.closePath()
+        ctx.fill()
+        ctx.fillStyle = icon.fleckColor
+        ctx.beginPath()
+        ctx.moveTo(3.5, 5.6)
+        ctx.quadraticCurveTo(3.5, 3.4, 6.2, 3.4)
+        ctx.quadraticCurveTo(7.6, 2.4, 9.2, 3.6)
+        ctx.quadraticCurveTo(12, 3.8, 12, 5.6)
+        ctx.closePath()
+        ctx.fill()
+    }
     onPaint: {
         var ctx = getContext("2d")
         ctx.reset()
         ctx.clearRect(0, 0, width, height)
         ctx.lineCap = "round"
         ctx.lineJoin = "round"
-        var w = width, h = height
-        // #4552: a rajz mindig kitölti a teljes dobozt — az ikon mérete
-        // fülenként más (15×16 … 25×19), és a mért befoglaló doboznak kell
-        // egyeznie, nem a rajz körüli üres szegélynek. A tartalom saját
-        // befoglalóját [x0, y0, x1, y1] képpontban vesszük (a lekerekített
-        // vonalvégekkel együtt), és a két tengelyen külön, a dobozhoz
-        // nyújtva skálázzuk a vászonra.
-        var b = icon.contentBounds(w, h)
+        var d = icon.designSize()
         ctx.save()
-        ctx.scale(w / (b[2] - b[0]), h / (b[3] - b[1]))
-        ctx.translate(-b[0], -b[1])
+        ctx.scale(width / d[0], height / d[1])
         if (icon.kind === "wrench") {
-            // nyél: bal-alsó → jobb-felső átló
-            ctx.strokeStyle = icon.strokeColor
-            ctx.lineWidth = Math.max(2, w * 0.14)
-            ctx.beginPath()
-            ctx.moveTo(w * 0.20, h * 0.85)
-            ctx.lineTo(w * 0.58, h * 0.45)
-            ctx.stroke()
-            // fej: nyitott gyűrű (csavarkulcs-száj) a nyél végén
-            ctx.beginPath()
-            ctx.arc(w * 0.68, h * 0.32, w * 0.20, Math.PI * 0.15, Math.PI * 1.65)
-            ctx.lineWidth = Math.max(2, w * 0.12)
-            ctx.stroke()
+            icon.paintWrench(ctx)
         } else if (icon.kind === "sun") {
-            ctx.fillStyle = icon.strokeColor
-            ctx.beginPath()
-            ctx.arc(w * 0.5, h * 0.5, w * 0.20, 0, Math.PI * 2)
-            ctx.fill()
-            ctx.strokeStyle = icon.strokeColor
-            ctx.lineWidth = Math.max(1.5, w * 0.08)
-            var rays = 8
-            for (var i = 0; i < rays; i++) {
-                var a = (Math.PI * 2 * i) / rays
-                var innerR = w * 0.30
-                var outerR = w * 0.46
-                ctx.beginPath()
-                ctx.moveTo(w * 0.5 + Math.cos(a) * innerR, h * 0.5 + Math.sin(a) * innerR)
-                ctx.lineTo(w * 0.5 + Math.cos(a) * outerR, h * 0.5 + Math.sin(a) * outerR)
-                ctx.stroke()
-            }
-        } else if (icon.kind === "brush") {
-            // nyél
-            ctx.strokeStyle = icon.strokeColor
-            ctx.lineWidth = Math.max(2, w * 0.12)
-            ctx.beginPath()
-            ctx.moveTo(w * 0.28, h * 0.14)
-            ctx.lineTo(w * 0.56, h * 0.48)
-            ctx.stroke()
-            // sörte (ékalakú folt, a fül szín-tokenjével — plain/zöld/kék)
-            ctx.fillStyle = icon.accentColor
-            ctx.beginPath()
-            ctx.moveTo(w * 0.56, h * 0.50)
-            ctx.lineTo(w * 0.82, h * 0.60)
-            ctx.lineTo(w * 0.86, h * 0.82)
-            ctx.lineTo(w * 0.66, h * 0.90)
-            ctx.lineTo(w * 0.50, h * 0.68)
-            ctx.closePath()
-            ctx.fill()
-            if (icon.fleckColor.toString() !== "#00000000"
-                    && icon.fleckColor.toString() !== "transparent") {
-                ctx.fillStyle = icon.fleckColor
-                ctx.beginPath()
-                ctx.arc(w * 0.70, h * 0.74, w * 0.06, 0, Math.PI * 2)
-                ctx.fill()
-            }
+            icon.paintSun(ctx)
+        } else if (icon.landscape) {
+            icon.paintLandscape(ctx)
+            icon.paintBrush(ctx, 5, icon.strokeColor)
+        } else {
+            icon.paintBrush(ctx, 0, icon.accentColor)
         }
         ctx.restore()
-    }
-    // A három rajz PONTOS befoglaló doboza képpontban: az útvonal-pontok
-    // szélei, kibővítve a fél vonalvastagsággal (kerek vonalvég). A
-    // vonalvastagságok ugyanazok, mint az onPaint-ban.
-    function contentBounds(w, h) {
-        var lw, lw2
-        if (icon.kind === "wrench") {
-            lw = Math.max(2, w * 0.14)
-            lw2 = Math.max(2, w * 0.12)
-            return [Math.min(w * 0.20 - lw / 2, w * 0.48 - lw2 / 2),
-                    Math.min(h * 0.45 - lw / 2, h * 0.32 - w * 0.20 - lw2 / 2),
-                    w * 0.858 + lw2 / 2,
-                    Math.max(h * 0.85 + lw / 2, h * 0.32 + w * 0.20 + lw2 / 2)]
-        }
-        if (icon.kind === "sun") {
-            lw = Math.max(1.5, w * 0.08)
-            var r = w * 0.46 + lw / 2
-            return [w * 0.5 - r, h * 0.5 - r, w * 0.5 + r, h * 0.5 + r]
-        }
-        lw = Math.max(2, w * 0.12)
-        return [Math.min(w * 0.28 - lw / 2, w * 0.50), h * 0.14 - lw / 2,
-                w * 0.86, h * 0.90]
     }
 }
