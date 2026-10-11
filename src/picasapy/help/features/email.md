@@ -19,6 +19,14 @@ utóbbi nem sül el, amíg egy szövegmezőbe gépelsz.
 5. A **Küldés** gombra a levelezőprogramod új levéllel nyílik meg, a
    képek csatolva.
 
+Windowson a program a levelezőprogram szabványos csatolási felületén át
+adja át a képeket, így azok **mellékletként** érkeznek meg. A levél a
+levelezőprogram szerkesztőjében nyílik meg, és onnan te küldöd el — a
+PicasaPy magától nem küld levelet.
+
+Linuxon a mellékletek átadásához a rendszeren az `xdg-utils` csomagnak
+kell lennie (asztali rendszereken általában fent van).
+
 A mellékletek mindig a **szerkesztett** képet viszik: a forgatás, a
 tükrözés és minden szerkesztés bele van égetve, ahogy exportáláskor
 ([Exportálás](exportalas.md)). **Eredeti méret** esetén sincs

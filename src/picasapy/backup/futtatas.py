@@ -36,7 +36,8 @@ from picasapy.index.backup_sets import (
     jegyezd_fel_az_elmentettet,
 )
 from picasapy.paths import normalize_path
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.ini import ini_source_path
+from picasapy.ini.names import INI_NAME
 
 from .szuro import szurd_meg
 
@@ -224,13 +225,13 @@ def futtasd(
             haladas((index, osszes))
 
     for mappa in sorted(ini_mappak):
-        ini = mappa / PICASA_INI_NAME
-        if not ini.is_file():
+        ini = ini_source_path(mappa / INI_NAME)
+        if ini is None:
             continue
-        celmappa = (cel / _ini_relativ(mappa, terv)).parent
+        celmappa = (cel / _ini_relativ(mappa, terv, ini.name)).parent
         celmappa.mkdir(parents=True, exist_ok=True)
         try:
-            shutil.copy2(ini, celmappa / PICASA_INI_NAME)
+            shutil.copy2(ini, celmappa / ini.name)
         except OSError:
             continue
 
@@ -248,12 +249,12 @@ def futtasd(
     return tuple(masoltak)
 
 
-def _ini_relativ(mappa: Path, terv: Terv) -> Path:
-    """A mappához tartozó `.picasa.ini` helye a célon belül.
+def _ini_relativ(mappa: Path, terv: Terv, ini_nev: str = INI_NAME) -> Path:
+    """A mappához tartozó ini helye a célon belül.
 
     A mappa relatív útját a benne lévő, MÁR tervezett fájl adja meg — így
-    az ini pontosan a képei mellé kerül."""
+    az ini pontosan a képei mellé kerül, az eredeti fájlnevén."""
     for tetel in terv.fajlok:
         if tetel.forras.parent == mappa:
-            return tetel.relativ.parent / PICASA_INI_NAME
-    return Path(mappa.name) / PICASA_INI_NAME
+            return tetel.relativ.parent / ini_nev
+    return Path(mappa.name) / ini_nev
