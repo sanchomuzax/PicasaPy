@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.61] – 2026-10-11
+
+- Az F3 a keresőmezőre viszi a fókuszt (mint a Ctrl+F), az F4 a kijelölt kép csillagát kapcsolja, ha a csillag-gomb engedélyezett (#4600).
+- Fejlesztőknek: a tesztfuttató figyelmeztet, ha a helyi Qt-verzió eltér a CI-étől, és egy paranccsal (`python3 scripts/ci_venv.py`) CI-azonos környezet készíthető (#4834).
+
 ## [0.9.60] – 2026-10-11
 
 - Az Emberek panel a háttér-arckeresés közben mutatja a betöltés-, az ellenőrizetlen fájlok és az adatrendezés állapotát az eredeti szövegekkel, és a keresés közben frissül (#4586).
