@@ -95,9 +95,7 @@ Window {
             webExportWindow.templateId,
             webExportWindow.albumTitle,
             sizeBox.currentIndex,
-            movieBox.currentIndex === 1,
-            shadowThumbsCheck.checked,
-            shadowImagesCheck.checked)
+            movieBox.currentIndex === 1)
     }
 
     Connections {
@@ -267,23 +265,6 @@ Window {
                 model: [qsTr("First frame"), qsTr("Full movie")]
                 // `Preferences\WebExportMovie` alapértéke → Első képkocka
                 currentIndex: 0
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 16
-            enabled: !webExportWindow.exporting
-            CheckBox {
-                id: shadowThumbsCheck
-                objectName: "webExportShadowThumbsCheck"
-                text: qsTr("Shadow thumbnails")
-                checked: true
-            }
-            CheckBox {
-                id: shadowImagesCheck
-                objectName: "webExportShadowImagesCheck"
-                text: qsTr("Shadow pictures")
             }
         }
 

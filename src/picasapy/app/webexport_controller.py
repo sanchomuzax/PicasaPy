@@ -164,7 +164,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
 
         return str(pictures_dir() / self.HTML_EXPORT_MAPPA)
 
-    @Slot(str, str, str, int, bool, bool, bool)
+    @Slot(str, str, str, int, bool)
     def generateWebExport(
         self,
         target_dir: str,
@@ -172,8 +172,6 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         album_name: str,
         size_index: int,
         movie_full: bool,
-        shadowed_thumbnails: bool,
-        shadowed_images: bool,
     ) -> None:
         """A webexport indítása HÁTTÉRSZÁLON. `album_name` a cím-mező
         (`webexport.fen` "edit") tartalma — a generált oldalak
@@ -182,7 +180,9 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): `size_index`
         a `webexport.fen` EGYETLEN méretválasztójának indexe (`SIZE_CHOICES`,
         a nagy kép mérete); a bélyegkép méretét a sablon adja (hiányában
-        144). `movie_full`: „Teljes mozgófilm" (True) / „Első képkocka".
+        144). Az árnyékolás (`shadowedThumbnails`, alapérték 1;
+        `shadowedImages`, alapérték 0) nem a párbeszédből jön: a sablon
+        `define`-ja adja, hiányában az alapérték (#4849). `movie_full`: „Teljes mozgófilm" (True) / „Első képkocka".
         Mindkettő megmarad a következő megnyitásig, de csak elinduló
         exportnál — az eredeti is az elfogadáskor ment.
 
@@ -227,11 +227,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         settings = settings_for_template(
             template.path,
             image_size_for_index(_size_index(size_index)),
-            WebExportSettings(
-                shadowed_thumbnails=shadowed_thumbnails,
-                shadowed_images=shadowed_images,
-                movie_full=bool(movie_full),
-            ),
+            WebExportSettings(movie_full=bool(movie_full)),
         )
         self._remember_choice(size_index, movie_full)
         self.webExportStarted.emit()
