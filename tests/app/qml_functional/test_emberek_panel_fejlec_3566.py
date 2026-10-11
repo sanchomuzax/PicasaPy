@@ -24,6 +24,8 @@ panel property-jeinek felülírása.
 
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
@@ -309,6 +311,11 @@ class TestUnnamedAlbum:
                     QPoint(round(center.x()), round(center.y())),
                 )
                 _settle(qt_app)
+                # a kijelölés a panel fejlécét eseménykörök után kapcsolja be;
+                # a fix körszám a CI-n kevés volt (#4870) — megvárjuk
+                deadline = time.monotonic() + 5.0
+                while _header(window) is None and time.monotonic() < deadline:
+                    QTest.qWait(20)
                 return
         raise AssertionError(f"{target} nem található/nem látszik a rácson")
 
