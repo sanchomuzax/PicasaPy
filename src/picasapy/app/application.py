@@ -134,6 +134,8 @@ from .platform_storage import (
     default_storage_paths,
 )
 from .startup_status import StartupStatus
+from . import screensaver_mode
+from .screensaver_mode import ScreensaverRunBridge, argv_kepernyovedo
 from .startup_diagnostics import (
     StartupProgressLog,
     runtime_version_messages,
@@ -518,6 +520,25 @@ def _bootstrap_storage(
         home=home,
         migrate=migrate,
     )
+
+
+def load_screensaver_window(
+    engine: QQmlApplicationEngine, saver: ScreensaverRunBridge
+):
+    """A `--screensaver` önálló vetítőablaka (#4613); `None`, ha nem töltődött be.
+
+    Itt, és nem a `screensaver_mode.py`-ban regisztrál, mert a
+    `kepesseg_or.py` a kontextus-objektumokat ebben a fájlban méri.
+    """
+    engine.addImageProvider(
+        display_photo_provider.PROVIDER_NAME,
+        display_photo_provider.DisplayPhotoProvider(),
+    )
+    engine.addImportPath(str(_APP_DIR / "qml"))
+    engine.rootContext().setContextProperty("saver", saver)
+    engine.load(str(_APP_DIR / "qml" / "ScreensaverWindow.qml"))
+    roots = engine.rootObjects()
+    return roots[0] if roots else None
 
 
 def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
@@ -1104,6 +1125,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     Az idővonal alapból KI van kapcsolva; a tartós „tesztüzem" beállítás
     (#1654), a `--tesztuzem` kapcsoló és a `PICASAPY_STARTUP_TIMELINE=1`
     környezeti változó (#1601) kapcsolja be — ld. `_indulasi_idovonal`."""
+    # #4613: a tétlenség-figyelő hívja — főablak, példányzár és napló nélkül
+    kepernyovedo, argv = argv_kepernyovedo(argv)
+    if kepernyovedo:
+        return screensaver_mode.run_screensaver(argv)
     progress_log = StartupProgressLog()
     progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
     onellenorzes, argv = argv_onellenorzes(argv)
