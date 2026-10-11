@@ -9,6 +9,7 @@ import ctypes
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from picasapy.mailer import mapi as mapi_modul
 from picasapy.mailer.mapi import (
     MAPI_DIALOG,
     MAPI_LOGON_UI,
@@ -98,7 +99,7 @@ class TestSendFlags:
         dll = MagicMock()
         dll.MAPISendMailW = fake
         payload = build_mapi_message("T", "S", [])
-        with patch.object(ctypes, "WinDLL", create=True, return_value=dll):
+        with patch.object(mapi_modul, "_load_mapi32", return_value=dll):
             send_mapi(payload, dialog=dialog)
         return fake
 
