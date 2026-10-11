@@ -363,7 +363,10 @@ def test_a_film_elonezete_gorgetes_nelkul_latszik_es_kattinthato(
             motion = _elem(window, "movieTabPanelMotion")
             footer = _elem(window, "movieCancelButton")
             assert panel.property("visible") is True
-            assert _elem(window, "moviePreviewImage").property("visible") is True
+            kep = _elem(window, "moviePreviewTransitionImage")
+            assert _varj(
+                qt_app, lambda kep=kep: kep.property("visible") is True
+            ), "a szolgáltató kockája nem látszik az előnézeten"
             preview = _elem(window, "moviePreviewButton")
             assert preview.property("visible") is True
 

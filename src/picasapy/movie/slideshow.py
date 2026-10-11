@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from functools import lru_cache
 import os
 from pathlib import Path
 import re
@@ -179,6 +180,20 @@ def _decode(source: Path) -> np.ndarray:
     return image
 
 
+def decode_photo(source: Path, goal: int | None = None) -> np.ndarray:
+    """A slideshow fotódekódoló publikus belépője.
+
+    A `goal` a preview célmérete; JPEG és RAW esetén a közös képdekóder
+    kicsinyített olvasást választ, ha az elérhető.
+    """
+    if goal is None:
+        return _decode(source)
+    image = dekodolj_forrast(source, goal=goal)
+    if image is None:
+        raise ValueError(f"A kép nem dekódolható: {source}")
+    return image
+
+
 def _atmeneti_kocka(
     kilepo: np.ndarray, erkezo: np.ndarray, tipus: str, arany: float
 ) -> np.ndarray:
@@ -203,37 +218,6 @@ def _atmeneti_kocka(
         return cv2.addWeighted(koztes, 1.0 - (p - 0.5) * 2, erkezo, (p - 0.5) * 2, 0.0)
 
     magassag, szelesseg = kilepo.shape[:2]
-    y, x = np.mgrid[0:magassag, 0:szelesseg]
-    xn = (x + 0.5) / max(1, szelesseg)
-    yn = (y + 0.5) / max(1, magassag)
-
-    iranyok = {
-        "wipeleft": xn < p,
-        "wiperight": xn >= 1.0 - p,
-        "wipeup": yn >= 1.0 - p,
-        "wipedown": yn < p,
-        "diagwipeul": xn + yn < 2.0 * p,
-        "diagwipeur": (1.0 - xn) + yn < 2.0 * p,
-        "diagwipedl": xn + (1.0 - yn) < 2.0 * p,
-        "diagwipedr": (1.0 - xn) + (1.0 - yn) < 2.0 * p,
-    }
-    if tipus in iranyok:
-        return np.where(iranyok[tipus][..., None], erkezo, kilepo)
-
-    if tipus in {"circlein", "circleout"}:
-        tav = np.sqrt(((xn - 0.5) * 2) ** 2 + ((yn - 0.5) * 2) ** 2)
-        sugar = p * np.sqrt(2)
-        belul = tav <= sugar
-        if tipus == "circleout":
-            belul = ~belul
-        return np.where(belul[..., None], erkezo, kilepo)
-
-    if tipus == "rect":
-        szeles = p * 0.5
-        mag = p * 0.5
-        kozep = (np.abs(xn - 0.5) <= szeles) & (np.abs(yn - 0.5) <= mag)
-        return np.where(kozep[..., None], erkezo, kilepo)
-
     if tipus in {"pushleft", "pushright", "pushtop", "pushdown"}:
         out = np.empty_like(kilepo)
         if tipus == "pushleft":
@@ -266,7 +250,65 @@ def _atmeneti_kocka(
         mozgatott = nagy[y0 : y0 + magassag, x0 : x0 + szelesseg]
         return cv2.addWeighted(kilepo, 1.0 - p, mozgatott, p, 0.0)
 
+    if tipus in {
+        "wipeleft", "wiperight", "wipeup", "wipedown",
+        "diagwipeul", "diagwipeur", "diagwipedl", "diagwipedr",
+        "circlein", "circleout", "rect",
+    }:
+        xn, yn = _atmenet_koordinatak(magassag, szelesseg)
+        if tipus == "wipeleft":
+            maszk = xn[None, :] < p
+        elif tipus == "wiperight":
+            maszk = xn[None, :] >= 1.0 - p
+        elif tipus == "wipeup":
+            maszk = yn[:, None] >= 1.0 - p
+        elif tipus == "wipedown":
+            maszk = yn[:, None] < p
+        elif tipus == "diagwipeul":
+            maszk = xn[None, :] + yn[:, None] < 2.0 * p
+        elif tipus == "diagwipeur":
+            maszk = (1.0 - xn[None, :]) + yn[:, None] < 2.0 * p
+        elif tipus == "diagwipedl":
+            maszk = xn[None, :] + (1.0 - yn[:, None]) < 2.0 * p
+        elif tipus == "diagwipedr":
+            maszk = (1.0 - xn[None, :]) + (1.0 - yn[:, None]) < 2.0 * p
+        elif tipus in {"circlein", "circleout"}:
+            tav = np.sqrt(
+                ((xn[None, :] - 0.5) * 2) ** 2
+                + ((yn[:, None] - 0.5) * 2) ** 2
+            )
+            maszk = tav <= p * np.sqrt(2)
+            if tipus == "circleout":
+                maszk = ~maszk
+        else:
+            maszk = (np.abs(xn[None, :] - 0.5) <= p * 0.5) & (
+                np.abs(yn[:, None] - 0.5) <= p * 0.5
+            )
+        return np.where(maszk[..., None], erkezo, kilepo)
+
     return erkezo
+
+
+def transition_frame(
+    outgoing: np.ndarray,
+    incoming: np.ndarray,
+    transition: str,
+    progress: float,
+) -> np.ndarray:
+    """A kész film és az előnézet közös átmeneti képkockája."""
+    return _atmeneti_kocka(outgoing, incoming, transition, progress)
+
+
+@lru_cache(maxsize=8)
+def _atmenet_koordinatak(magassag: int, szelesseg: int) -> tuple[np.ndarray, np.ndarray]:
+    """A maszkok normalizált sor- és oszlopkoordinátái méret szerint cache-elve."""
+    # A korábbi np.mgrid-képlet float64 koordinátákat adott; a körmaszk
+    # határán a float32 2–4 pixellel eltérő exportot eredményezett.
+    xn = (np.arange(szelesseg, dtype=np.float64) + 0.5) / max(1, szelesseg)
+    yn = (np.arange(magassag, dtype=np.float64) + 0.5) / max(1, magassag)
+    xn.setflags(write=False)
+    yn.setflags(write=False)
+    return xn, yn
 
 
 def _ffmpeg_exe() -> str | None:
@@ -388,6 +430,13 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
     return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
 
 
+def render_text_slide(
+    slide: dict[str, object], settings: MovieSettings
+) -> np.ndarray:
+    """A film szöveges diájának publikus renderelője."""
+    return _szovegdia(slide, settings)
+
+
 def _picasa_caption(
     path: Path, documents: dict[Path, IniDocument | None]
 ) -> str:
@@ -450,6 +499,34 @@ def _fotofelirat(
     return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 
+def prepare_photo_frame(
+    path: Path,
+    settings: MovieSettings,
+    ini_docs: dict[Path, IniDocument | None],
+    *,
+    decoder=None,
+) -> np.ndarray:
+    """Dekódolja és a filmvászonra készíti a fotót.
+
+    Az export és az élő előnézet ugyanazt a vágást/letterboxot, hátteret,
+    feliratot és dátumsávot használja. A `decoder` csak a kis felbontású
+    előnézeti dekódert cseréli be; exportkor a teljes képkocka készül.
+    """
+    photo_path = Path(path)
+    image = (decoder or _decode)(photo_path)
+    frame = (
+        crop_to_fit(image, settings.width, settings.height)
+        if settings.cropfit
+        else letterbox(
+            image, settings.width, settings.height, settings.background
+        )
+    )
+    caption = (
+        _picasa_caption(photo_path, ini_docs) if settings.show_captions else ""
+    )
+    return _fotofelirat(frame, photo_path, settings, caption)
+
+
 def export_movie(
     sources,
     target: Path,
@@ -487,22 +564,12 @@ def export_movie(
             reasons.append("a fájl nem található")
             continue
         try:
-            image = _decode(path)
+            frame = prepare_photo_frame(path, settings, ini_documents)
         except (ValueError, OSError) as error:
             skipped.append(path)
             reasons.append(str(error))
             continue
-        frame = (
-            crop_to_fit(image, settings.width, settings.height)
-            if settings.cropfit
-            else letterbox(image, settings.width, settings.height, settings.background)
-        )
-        picasa_caption = (
-            _picasa_caption(path, ini_documents) if settings.show_captions else ""
-        )
-        decoded.append(
-            (path, _fotofelirat(frame, path, settings, picasa_caption))
-        )
+        decoded.append((path, frame))
 
     text_frames = [(None, _szovegdia(slide, settings)) for slide in settings.text_slides]
     if settings.ordering == 2:

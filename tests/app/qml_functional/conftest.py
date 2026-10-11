@@ -209,6 +209,9 @@ def _build_qml_app(
     )
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
+    engine.addImageProvider(
+        "moviepreview", controller.movie_transition_preview_provider
+    )
     # #1640: a diavetítés teljes felbontású, MÓD-TUDATOS szolgáltatója. ⚠️ A
     # harness a szolgáltató-listát KÉZZEL tükrözi az `application.py`-ból: aki
     # új szolgáltatót vezet be és ezt kihagyja, a QML-tesztekben FEKETE képet

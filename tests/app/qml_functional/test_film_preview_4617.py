@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QPointF, Qt, QUrl
+from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt, QUrl
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 
@@ -88,6 +88,8 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                 _elem(window, "movieOverlapSlider").setProperty("value", 0.4)
                 _hozzadott_szoveges_dia(window, qt_app, "4617 preview text")
 
+                transition_image = _elem(window, "moviePreviewTransitionImage")
+                before_playback_source = str(transition_image.property("source"))
                 _kattint(window, qt_app, _elem(window, "moviePreviewButton"))
                 transition = _elem(window, "moviePreviewTransition")
                 assert _varj(
@@ -101,6 +103,20 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                     <= 0.65,
                     masodperc=6.0,
                 ), "a kattintott előnézet nem rajzolt átmeneti képkockát"
+                diaidozito = _elem(window, "moviePreviewTimer")
+                diaidozito.setProperty("running", False)
+                assert QMetaObject.invokeMethod(transition, "pause"), (
+                    "az átmenetet nem lehetett a képkockamérés idejére megállítani"
+                )
+                film = _elem(window, "movieDialog")
+                assert _varj(
+                    qt_app,
+                    lambda film=film: int(
+                        film.property("previewDisplayedGeneration")
+                    )
+                        >= int(film.property("previewLatestRequestGeneration"))
+                    and bool(film.property("previewTransitionFrameSource")),
+                ), "az átmenet legfrissebb képkockája nem érkezett meg"
 
                 viewport = _elem(window, "moviePreviewViewport")
                 kep = window.grabWindow()
@@ -122,6 +138,10 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                     "az előnézet átmeneti képpontja nem keverte a piros és kék képet: "
                     f"RGB=({pixel.red()}, {pixel.green()}, {pixel.blue()})"
                 )
+                diaidozito.setProperty("running", True)
+                assert QMetaObject.invokeMethod(transition, "resume"), (
+                    "az átmenetet nem lehetett folytatni a képkockamérés után"
+                )
                 assert transition.property("running") is True
                 assert _varj(
                     qt_app,
@@ -130,7 +150,17 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                 ), "az előnézet nem léptetett tovább a szöveges diára"
                 assert _varj(
                     qt_app,
-                    lambda transition=transition: not transition.property("running"),
+                    lambda transition=transition: transition.property("running"),
+                    masodperc=3.0,
+                ), "a szöveges diára váltó átmenet nem indult el"
+                assert _varj(
+                    qt_app,
+                    lambda transition=transition, film=film,
+                    transition_image=transition_image,
+                    before_playback_source=before_playback_source:
+                        not transition.property("running")
+                        and str(transition_image.property("source"))
+                            != before_playback_source,
                     masodperc=2.0,
                 ), "a szöveges diára váltó átmenet nem fejeződött be"
                 szoveges_kep = window.grabWindow()
@@ -142,6 +172,29 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                 assert _elem(window, "moviePreviewImage").property("visible") is False
                 canvas = _elem(window, "moviePreviewIncomingFrame/canvas")
                 sarok = canvas.mapToScene(QPointF(4, 4))
+                vegkepek = []
+
+                def vegkep_latszik(sarok=sarok, vegkepek=vegkepek):
+                    aktualis = window.grabWindow()
+                    if aktualis.isNull():
+                        return False
+                    aktualis_pixel = aktualis.pixelColor(
+                        round(sarok.x() * aktualis.width() / window.width()),
+                        round(sarok.y() * aktualis.height() / window.height()),
+                    )
+                    if max(
+                        aktualis_pixel.red(),
+                        aktualis_pixel.green(),
+                        aktualis_pixel.blue(),
+                    ) >= 8:
+                        return False
+                    vegkepek[:] = [aktualis]
+                    return True
+
+                assert _varj(qt_app, vegkep_latszik, masodperc=3.0), (
+                    "a végső szöveges dia képkockája nem rajzolódott ki"
+                )
+                szoveges_kep = vegkepek[-1]
                 pixel = szoveges_kep.pixelColor(
                     round(sarok.x() * szoveges_kep.width() / window.width()),
                     round(sarok.y() * szoveges_kep.height() / window.height()),
