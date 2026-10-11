@@ -235,8 +235,17 @@ class TestAzImportalas:
     aszinkron, és van hozzá kapcsoló (`acquirepanel/excludedupesbutton`)."""
 
     def test_a_dupe_ellenorzes_a_HATTERSZALON_fut(self):
+        # #4596: a duplikátum-jelölés a mappa- és a fájllista-beolvasás közös
+        # lezárásába (`_apply_scan`) került; azt mindkét beolvasás a saját
+        # háttér-`worker`-éből hívja
         blokk = fuggveny_torzs(_IMPORT, "duplicates = _duplikatumok(")
-        assert "def worker()" in blokk
+        assert blokk.lstrip().startswith("def _apply_scan(")
+        for hivas in (
+            "self._apply_scan(candidates, remember=target)",
+            "self._apply_scan(scan.candidates)",
+        ):
+            hivo = fuggveny_torzs(_IMPORT, hivas)
+            assert hivo.lstrip().startswith("def worker()"), hivas
 
     def test_a_szkennelés_nem_a_GUI_szalon_fut(self):
         blokk = fuggveny_torzs(_IMPORT, "def scanSource(")

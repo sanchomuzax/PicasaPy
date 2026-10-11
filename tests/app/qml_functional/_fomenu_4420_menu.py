@@ -186,7 +186,7 @@ def _menu_e(elem) -> bool:
     try:
         if not shiboken6.isValid(elem):
             return False
-        osztaly = elem.metaObject().className()
+        osztaly = _osztalynev(elem)
         cim = elem.property("title")
         darab = elem.property("count")
     except RuntimeError:
@@ -220,7 +220,12 @@ def _menuk(menu_bar) -> list[QObject]:
     # Az app minden QML-próbánál új MenuBar-t épít. A Python `id()` a régi
     # ablak lebontása után újra kiosztható, ezért a gyorsítótár kulcsa az élő
     # QObject legyen, gyenge hivatkozással.
-    if menu_bar not in _MENU_ELEMEK:
+    # Ha a menüsor újraépült (pl. ablakmagasság-váltás után), a régi menük
+    # érvénytelenné válnak, az újak pedig hiányoznak a listából: ilyenkor
+    # újragyűjtünk.
+    if menu_bar not in _MENU_ELEMEK or not all(
+        shiboken6.isValid(elem) for elem in _MENU_ELEMEK[menu_bar]
+    ):
         _MENU_ELEMEK[menu_bar] = [
             elem
             for elem in menu_bar.findChildren(QObject)
@@ -272,7 +277,7 @@ def _parancsok(menu, menu_bar, utvonal=(), feliratok=(), kihagyas=None):
         sor = _menupont(menu, index)
         if not isinstance(sor, QObject) or not shiboken6.isValid(sor):
             continue
-        osztaly = sor.metaObject().className()
+        osztaly = _osztalynev(sor)
         if "Separator" in osztaly:
             continue
 
@@ -384,22 +389,121 @@ def _gyoker_menu(menu_bar, cim: str):
     return jeloltek[0]
 
 
-def _menu_fejlec(menu_bar, cim: str):
-    if menu_bar not in _MENU_FEJLECEK:
+# Ha a metaobjektum Python-burka elavult, a C++-oldali `inherits` még
+# megbízhatóan megmondja, mi az elem; a sorrend számít (MenuBarItem a MenuBar
+# és a Menu előtt).
+_ISMERT_OSZTALYOK = (
+    "QQuickMenuBarItem",
+    "QQuickMenuBar",
+    "QQuickMenuItem",
+    "QQuickMenuSeparator",
+    "QQuickMenu",
+    "QQuickDialog",
+    "QQuickAbstractDialog",
+    "QQuickPopup",
+    "QQuickLoader",
+    "QQuickWindow",
+)
+
+
+def _engedd_el_a_metaobjektum_burkokat() -> None:
+    """Érvénytelenítse a Pythonban élő összes `QMetaObject`-burkot.
+
+    A shiboken a `metaObject()` által visszaadott (nem Python-tulajdonú)
+    `QMetaObject`-burkot a C++-CÍMÉVEL kulcsolva a burok-térképben tartja, és
+    nem tudja meg, ha a metaobjektum megszűnik. A QML-típusok dinamikus
+    metaobjektumai a QML-motorral együtt szabadulnak fel — mérve: egy próba
+    után ~600-700 ilyen burok marad élve. A következő próba motorja ugyanarra a
+    címre tehet új QObjectet vagy új metaobjektumot, és a shiboken ilyenkor a
+    RÉGI burkot adja vissza: az ablak `menuBar`-ja „QMetaObject”-ként jön
+    vissza („has no attribute 'findChildren'”, „QMetaObject.property(str)”),
+    a `metaObject()` pedig „Internal C++ object (QMetaObject) already deleted”
+    hibát dob. A bejáró ez utóbbit kihagyásként kezelte, így egy élő panel
+    (pl. `backupHost`) némán kimaradt a megfigyelt elemek közül.
+    """
+    for burok in shiboken6.getAllValidWrappers():
+        if isinstance(burok, QMetaObject):
+            shiboken6.invalidate(burok)
+
+
+# Ha a metaobjektum burka mégis elavult, a C++-oldali `inherits` még
+# megbízhatóan megmondja, mi az elem; a sorrend számít (MenuBarItem a MenuBar
+# és a Menu előtt).
+_ISMERT_OSZTALYOK = (
+    "QQuickMenuBarItem",
+    "QQuickMenuBar",
+    "QQuickMenuItem",
+    "QQuickMenuSeparator",
+    "QQuickMenu",
+    "QQuickDialog",
+    "QQuickAbstractDialog",
+    "QQuickPopup",
+    "QQuickLoader",
+    "QQuickWindow",
+)
+
+
+def _osztalynev(elem) -> str:
+    """Az elem osztályneve úgy, hogy ne maradjon utána `QMetaObject`-burok.
+
+    A kiolvasás után a burkot azonnal érvénytelenítjük (ld.
+    `_engedd_el_a_metaobjektum_burkokat`), így a bejáró maga nem hagy
+    címhez kötött burkot a következő QML-motornak. Ha a burok mégis elavult
+    (más kód hagyta ott), az elem nem esik ki: a C++-oldali `inherits`-re
+    esünk vissza.
+    """
+    try:
+        meta = elem.metaObject()
+        try:
+            return meta.className()
+        finally:
+            if shiboken6.isValid(meta):
+                shiboken6.invalidate(meta)
+    except (RuntimeError, TypeError, AttributeError):
+        pass
+    try:
+        for osztaly in _ISMERT_OSZTALYOK:
+            if elem.inherits(osztaly):
+                return osztaly
+    except (RuntimeError, TypeError, AttributeError):
+        return ""
+    return type(elem).__name__
+
+
+def _menu_fejlec_jeloltek(menu_bar, cim: str, *, friss: bool) -> list:
+    if friss or menu_bar not in _MENU_FEJLECEK:
         _MENU_FEJLECEK[menu_bar] = [
             elem
             for elem in menu_bar.findChildren(QObject)
             if isinstance(elem, QObject)
             and shiboken6.isValid(elem)
-            and "MenuBarItem" in elem.metaObject().className()
+            and "MenuBarItem" in _osztalynev(elem)
         ]
-    jeloltek = [
+    return [
         elem
         for elem in _MENU_FEJLECEK[menu_bar]
         if shiboken6.isValid(elem)
         and _normalizal(_szoveg(elem, "text")) == _normalizal(cim)
     ]
-    assert len(jeloltek) == 1, f"a felső {cim} menü fejléce nem található"
+
+
+def _menu_fejlec(menu_bar, cim: str):
+    """A felső menü fejléce; a menüsor újraépülésekor a gyorsítótár elavul.
+
+    A fejléc-lista az első híváskor készül; ha a menüsor közben újraépült, a
+    régi elemek érvénytelenek, az újak hiányoznak. Ilyenkor újragyűjtünk, és
+    az egyértelműséget legfeljebb 5 s-ig várjuk ki (`_gyoker_menu` mintája).
+    """
+    app = QGuiApplication.instance()
+    jeloltek = _menu_fejlec_jeloltek(menu_bar, cim, friss=False)
+    hatarido = time.monotonic() + 5.0
+    while len(jeloltek) != 1 and time.monotonic() < hatarido:
+        app.processEvents()
+        time.sleep(0.05)
+        jeloltek = _menu_fejlec_jeloltek(menu_bar, cim, friss=True)
+    assert len(jeloltek) == 1, (
+        f"a felső {cim} menü fejléce nem található: {len(jeloltek)} találat"
+    )
     return jeloltek[0]
 
 
@@ -503,7 +607,7 @@ def _betoltott_feluleti_objektumok(ablak):
                 continue
             latott.add(azon)
             nev = objektum.objectName()
-            osztaly = objektum.metaObject().className()
+            osztaly = _osztalynev(objektum)
         except RuntimeError:
             continue
         eredmeny.append(objektum)
@@ -550,7 +654,7 @@ def _frissitsd_a_halasztott_objektumokat(ablak) -> None:
                 continue
             ismert.add(azon)
             nev = objektum.objectName()
-            osztaly = objektum.metaObject().className()
+            osztaly = _osztalynev(objektum)
         except RuntimeError:
             continue
         if nev and nev.casefold() != "label":
@@ -577,7 +681,7 @@ def _feluleti_allapot(ablak):
         for objektum in objektumok:
             try:
                 nev = objektum.objectName()
-                osztaly = objektum.metaObject().className()
+                osztaly = _osztalynev(objektum)
                 if "dialog" in (nev + osztaly).casefold():
                     dialogusok.append(objektum)
                 if nev and nev.casefold() != "label":
