@@ -1839,25 +1839,24 @@ Item {
         }
     }
 
-    Connections {
-        target: controller
-        function onMovieTransitionPreviewReady(source, generation) {
-            var readyGeneration = Number(generation)
-            if (movieDialog.movieClipSources.length
-                        + movieDialog.movieSlides.length < 1
-                    || readyGeneration <= movieDialog.previewDisplayedGeneration
-                    || readyGeneration <= movieDialog.previewGenerationFloor)
-                return
-            movieDialog.previewDisplayedGeneration = readyGeneration
-            movieDialog.previewTransitionFrameSource = String(source || "")
-            if (movieDialog.previewAwaitingTransitionFrame
-                    && readyGeneration
-                        === movieDialog.previewAwaitingTransitionGeneration) {
-                movieDialog.previewAwaitingTransitionFrame = false
-                moviePreviewTransitionFallbackTimer.stop()
-                if (!moviePreviewTransition.running)
-                    moviePreviewTransition.restart()
-            }
+    // #1743: a vezérlő jelzését a `Main.qml` mindig álló `Connections`-e
+    // hívja ezen a függvényen át (csak NYITOTT párbeszédnél).
+    function jelezdAFilmAtmenetElonezetet(source, generation) {
+        var readyGeneration = Number(generation)
+        if (movieDialog.movieClipSources.length
+                    + movieDialog.movieSlides.length < 1
+                || readyGeneration <= movieDialog.previewDisplayedGeneration
+                || readyGeneration <= movieDialog.previewGenerationFloor)
+            return
+        movieDialog.previewDisplayedGeneration = readyGeneration
+        movieDialog.previewTransitionFrameSource = String(source || "")
+        if (movieDialog.previewAwaitingTransitionFrame
+                && readyGeneration
+                    === movieDialog.previewAwaitingTransitionGeneration) {
+            movieDialog.previewAwaitingTransitionFrame = false
+            moviePreviewTransitionFallbackTimer.stop()
+            if (!moviePreviewTransition.running)
+                moviePreviewTransition.restart()
         }
     }
 
