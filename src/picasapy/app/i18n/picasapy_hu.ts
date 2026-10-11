@@ -2481,8 +2481,9 @@ picasapy-origin-key: stringres:CPropertiesDlg::movieinfo;stringres:ytImageMetada
             <location filename="../formatting.py" />
             <source>Movie Rate</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPropertiesDlg::movierate;stringres:ytImageMetadata::MovieRate</extracomment>
-            <translation>Mozgófilm minősítése</translation>
+picasapy-origin-key: stringres:CPropertiesDlg::movierate;stringres:ytImageMetadata::MovieRate
+picasapy-deviation: szándékos eltérés az eredeti magyar fordítástól (#4855) — a „rate” itt sebesség, az érték fps; az eredeti „Mozgófilm minősítése” félrevezető</extracomment>
+            <translation>Képkockasebesség</translation>
         </message>
         <message>
             <location filename="../formatting.py" />

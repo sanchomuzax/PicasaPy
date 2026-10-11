@@ -252,3 +252,17 @@ def test_valodi_ts_eken_nem_modosit_hivatalosat_es_masodszorra_ures_diff(tmp_pat
     gen.build_dictionaries(_REFERENCIA, work, compile_qm=False)
     after_second = {p.name: p.read_bytes() for p in work.glob("picasapy_*.ts")}
     assert after_second == after_first
+
+
+@pytest.mark.skipif(not _REFERENCIA.is_dir(), reason="nincs helyi referencia (~/picasapy-agent)")
+def test_a_szandekos_eltérés_4855_a_generator_utan_is_megmarad(tmp_path):
+    work = tmp_path / "i18n"
+    work.mkdir()
+    for path in _I18N.glob("picasapy_*.ts"):
+        shutil.copy(path, work / path.name)
+    gen.build_dictionaries(_REFERENCIA, work, compile_qm=False)
+    hu = _messages(work / "picasapy_hu.ts")["Movie Rate"]
+    assert _tr(hu) == (None, "Képkockasebesség")
+    assert "szándékos eltérés" in hu.findtext("extracomment")
+    for path in work.glob("picasapy_*.ts"):
+        assert _tr(_messages(path)["Movie Rate"])[0] != "unfinished" or path.name == "picasapy_vi.ts", path.name

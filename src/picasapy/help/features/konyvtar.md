@@ -474,8 +474,8 @@ dátum nélküli képek dátumát sem változtatja meg.
 A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
 annak **a sora sem jelenik meg** — a panel tehát képenként rövidebb vagy
 hosszabb. Videónál a három felső sor után a videó adatai jönnek: a
-**Mozgófilm adatai** sor a formátumot, a **Mozgófilm minősítése** sor —
-a felirata ellenére — a képkockasebességet (például `25 fps`), a
+**Mozgófilm adatai** sor a formátumot, a **Képkockasebesség** sor a
+másodpercenkénti képkockák számát (például `25 fps`), a
 **Mozgófilm hossza** pedig a hosszt perc:másodperc (hosszabb videónál
 óra:perc:másodperc) alakban.
 
