@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.66] – 2026-10-11
+
+- A nem magyar nyelvű felületen is megjelennek a legutóbb hozzáadott feliratok fordításai (#4863).
+
 ## [0.9.65] – 2026-10-11
 
 - A weboldal-export párbeszédben nincs többé „Árnyékolt bélyegképek” és „Árnyékolt képek” jelölőnégyzet, mert az eredetiben sincs: az árnyékolást a sablon adja (#4849).
