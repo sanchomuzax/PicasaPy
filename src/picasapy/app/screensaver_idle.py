@@ -29,7 +29,6 @@ import shutil
 import signal
 import subprocess
 import sys
-import threading
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -205,16 +204,22 @@ def _terminate(pid: int) -> None:
 
 
 def _spawn(argv: list[str]) -> None:
-    process = subprocess.Popen(  # noqa: S603 — a parancs a saját, ellenőrzött listánk
-        argv,
+    """A figyelő indítása kettős elágazással: a rövid életű `sh` háttérbe
+    teszi a parancsot és azonnal kilép, így a figyelőt az init örökli —
+    a PicasaPy-nak nem kell rá várnia, és zombi sem marad utána."""
+    shell = subprocess.Popen(  # noqa: S603 — a parancs a saját, ellenőrzött listánk
+        ["/bin/sh", "-c", 'exec "$@" >/dev/null 2>&1 </dev/null &', "sh", *argv],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
         close_fds=True,
     )
-    # a leállított figyelő ne maradjon zombiként a PicasaPy kilépéséig
-    threading.Thread(target=process.wait, name="swayidle-reaper", daemon=True).start()
+    try:
+        shell.wait(timeout=5)
+    except subprocess.TimeoutExpired as exc:
+        shell.kill()
+        raise OSError("a képernyővédő-figyelő indítása nem fejeződött be") from exc
 
 
 def _repo_launcher() -> Path:

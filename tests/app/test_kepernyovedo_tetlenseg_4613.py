@@ -337,18 +337,27 @@ def test_for_session_a_valodi_kornyezetbol_epul(monkeypatch, tmp_path):
     assert Path(integration.command[0]).name
 
 
-def test_valodi_indito_levalasztva_futtat_es_begyujti_a_gyermeket():
+def test_valodi_indito_levalasztva_futtat_es_nem_hagy_zombit(tmp_path):
+    """A figyelő a mi folyamatunktól leválasztva fut (nem a mi gyermekünk,
+    tehát zombiként sem maradhat ránk), és szál sem indul hozzá (#988)."""
+    import os
     import sys
     import threading
     import time
 
-    idle._spawn([sys.executable, "-c", "pass"])
-    deadline = time.monotonic() + 5
-    while time.monotonic() < deadline and any(
-        t.name == "swayidle-reaper" for t in threading.enumerate()
-    ):
+    jel = tmp_path / "szulo.txt"
+    szalak_elotte = threading.active_count()
+    idle._spawn([
+        sys.executable, "-c",
+        f"import os, pathlib; pathlib.Path({str(jel)!r}).write_text(str(os.getppid()))",
+    ])
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline and not (jel.exists() and jel.read_text()):
         time.sleep(0.05)
-    assert not any(t.name == "swayidle-reaper" for t in threading.enumerate())
+
+    assert jel.read_text(), "a figyelő nem indult el"
+    assert int(jel.read_text()) != os.getpid()
+    assert threading.active_count() == szalak_elotte
 
 
 def test_vezerlokaraktert_tartalmazo_parancs_nem_ir_fajlt(tmp_path):
