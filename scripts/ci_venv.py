@@ -45,7 +45,7 @@ def _venv_pyside(python: Path) -> str | None:
         kimenet = subprocess.run(
             [str(python), "-c",
              "import importlib.metadata as m; print(m.version('PySide6'))"],
-            capture_output=True, text=True, timeout=60, check=True,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, check=True,
         ).stdout.strip()
     except (OSError, subprocess.SubprocessError):
         return None
@@ -61,7 +61,7 @@ def telepits_pip(hely: Path, python_exe: str) -> None:
     subprocess.run([py, "-m", "pip", "install", "-q", "--upgrade", "pip"], check=True)
     csomagok = subprocess.run(
         [sys.executable, str(Path(__file__).with_name("print_dependencies.py")), "--all"],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", check=True,
     ).stdout.split()
     subprocess.run(
         [py, "-m", "pip", "install", "-c", str(ci_kornyezet.CONSTRAINT_FAJL), *csomagok],
