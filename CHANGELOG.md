@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.59] – 2026-10-11
+
+- Az importálás forrásaként mostantól egyes fájlok is kijelölhetők: a Tallózás… gomb menüjében a Mappa… és a Fájlok… közül lehet választani (#4596).
+
 ## [0.9.58] – 2026-10-11
 
 - A szerkesztő fülsávjának ikonjai most az eredeti Picasa mért méretét kapják (15×16-tól 25×19-ig), a fülön belül középre igazítva (#4552).
