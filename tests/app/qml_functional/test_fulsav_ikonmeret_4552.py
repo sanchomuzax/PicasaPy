@@ -36,6 +36,11 @@ MERT = (
 #: több azt jelenti, hogy a rajz a vászon szélén levágódik
 SZELEN_LEGFELJEBB = 5
 
+#: #4846: a 4–5. fül ikonja tájképes négyzet — a négyzet bal és felső éle
+#: az eredetiben is egyenes, és a doboz szélén fut (legfeljebb a négyzet
+#: 15 képpontos oldala + az élsimítás); a jobb és alsó szél marad ≤ 5
+LAPOS_EL_LEGFELJEBB = {"editTabEffects2": 20, "editTabEffects3": 20}
+
 TURES = 2
 KUSZOB = 40  # a három csatorna összegében
 
@@ -140,4 +145,7 @@ def test_az_ikon_merete_es_helye_a_renderelt_kepen(sav, qt_app, nev, szel, mag):
     assert abs((y0 - fy) - 4) <= TURES, (nev, y0 - fy)
     # a rajz nem vágódik le a vászon szélén
     szelek = _szelek(kep, x0, y0, x1, y1)
-    assert max(szelek.values()) <= SZELEN_LEGFELJEBB, (nev, szelek)
+    felso_hatar = LAPOS_EL_LEGFELJEBB.get(nev, SZELEN_LEGFELJEBB)
+    for oldal, db in szelek.items():
+        hatar = felso_hatar if oldal in ("bal", "felso") else SZELEN_LEGFELJEBB
+        assert db <= hatar, (nev, szelek)

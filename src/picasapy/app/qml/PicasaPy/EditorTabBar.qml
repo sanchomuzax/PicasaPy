@@ -113,7 +113,7 @@ Item {
         description: qsTr("More fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.picasaGreen
-        iconFleck: Qt.darker(Theme.picasaGreen, 1.4)
+        iconFleck: Qt.lighter(Theme.picasaGreen, 2.8)
     }
     // #328/#338: 5. fül — KÉK ecset ("művészi effektek"), kék ég-mintával.
     EditTabButton {
@@ -129,7 +129,7 @@ Item {
         description: qsTr("Even more fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.brandBlue
-        iconFleck: Qt.lighter(Theme.brandBlue, 1.6)
+        iconFleck: Qt.lighter(Theme.brandBlue, 2.8)
     }
     // #422 (felhasználói döntés): 6. fül — azok a Glimmer-effektek,
     // amelyek NEM szerepelnek a 3–5. fül igazolt listáján. Külön fülön,
