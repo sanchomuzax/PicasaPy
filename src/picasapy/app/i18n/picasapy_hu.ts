@@ -12729,6 +12729,12 @@ picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
             <translation>Törlés lemezről</translation>
         </message>
         <message>
+            <source>Remove from Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
+            <translation>Eltávolítás az albumból</translation>
+        </message>
+        <message>
             <source>Copy Full Path</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
