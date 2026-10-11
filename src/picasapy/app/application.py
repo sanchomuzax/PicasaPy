@@ -6,6 +6,8 @@ Könyvtár-gyökerek: parancssori argumentumok, vagy a Picasa-paritású
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import ctypes
 import logging
 import math
@@ -214,6 +216,15 @@ class _StartupSmokeProbe(QObject):
             self._progress_log.mark(message)
             write_console(message, error=True)
             self._app.exit(1)
+
+
+
+if TYPE_CHECKING:
+    from .screensaver_mode import ScreensaverRunBridge
+
+# a `screensaver_idle.SCREENSAVER_FLAG` másolata — az import nélkül olvasható
+# (#1653); az egyezést a #4613 tesztje őrzi
+KEPERNYOVEDO_KAPCSOLO = "--screensaver"
 
 
 def _platform() -> str:
@@ -518,6 +529,25 @@ def _bootstrap_storage(
         home=home,
         migrate=migrate,
     )
+
+
+def load_screensaver_window(
+    engine: QQmlApplicationEngine, saver: ScreensaverRunBridge
+):
+    """A `--screensaver` önálló vetítőablaka (#4613); `None`, ha nem töltődött be.
+
+    Itt, és nem a `screensaver_mode.py`-ban regisztrál, mert a
+    `kepesseg_or.py` a kontextus-objektumokat ebben a fájlban méri.
+    """
+    engine.addImageProvider(
+        display_photo_provider.PROVIDER_NAME,
+        display_photo_provider.DisplayPhotoProvider(),
+    )
+    engine.addImportPath(str(_APP_DIR / "qml"))
+    engine.rootContext().setContextProperty("saver", saver)
+    engine.load(str(_APP_DIR / "qml" / "ScreensaverWindow.qml"))
+    roots = engine.rootObjects()
+    return roots[0] if roots else None
 
 
 def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
@@ -1104,6 +1134,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     Az idővonal alapból KI van kapcsolva; a tartós „tesztüzem" beállítás
     (#1654), a `--tesztuzem` kapcsoló és a `PICASAPY_STARTUP_TIMELINE=1`
     környezeti változó (#1601) kapcsolja be — ld. `_indulasi_idovonal`."""
+    # #4613: a tétlenség-figyelő hívja — főablak, példányzár és napló nélkül
+    if KEPERNYOVEDO_KAPCSOLO in argv:
+        # lustán töltve: a normál indulás importlánca ne hízzon (#1653)
+        from . import screensaver_mode
+
+        _kepernyovedo, argv = screensaver_mode.argv_kepernyovedo(argv)
+        return screensaver_mode.run_screensaver(argv)
     progress_log = StartupProgressLog()
     progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
     onellenorzes, argv = argv_onellenorzes(argv)
