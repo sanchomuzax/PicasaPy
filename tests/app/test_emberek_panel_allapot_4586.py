@@ -5,7 +5,7 @@ betöltés-, ellenőrizetlen-fájl- és adatrendezés-feliratot mutat. Ez a tesz
 a jelek és a property-k értéksorozatát méri, a háttérszál kibocsátásának
 pillanatában (`Qt.DirectConnection`, ld. a #1233 megjegyzést a
 `test_face_scan_controller.py`-ban). A renderelt szöveget a
-`qml_functional/test_emberek_panel_allapot_4586.py` nézi.
+`qml_functional/test_emberek_panel_fejlec_allapot_4586.py` nézi.
 """
 
 from __future__ import annotations
