@@ -296,7 +296,17 @@ def _click_diagnosis(window, target: str, center) -> str:
         f" fejléc.text={label.property('text')!r}"
         f" panel.visible={_child(window, 'peoplePanel').property('visible')}"
         f" találatok(alulról felfelé)={hits[-8:]}"
+        f" nyitott felugrók={_open_popups(window)}"
     )
+
+
+def _open_popups(window) -> list[str]:
+    """A nyitott Popup-ok (a Qt overlay-ében élnek, nem a contentItem alatt)."""
+    return [
+        f"{obj.metaObject().className()}:{obj.objectName() or '-'}"
+        for obj in window.findChildren(QObject)
+        if obj.property("opened") is True
+    ]
 
 
 class TestUnnamedAlbum:
