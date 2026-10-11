@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.57] – 2026-10-11
+
+- Ha az effektek fülén lenyomod a Shiftet, a kilenc kétmódú effekt csempéjén nemcsak a felirat, hanem a bélyegkép is a másodlagos effektet mutatja, és a Shift felengedésekor visszaáll (#4558).
+
 ## [0.9.56] – 2026-10-11
 
 - A filmelőnézet már a kiválasztott átmenetet játssza le a kész film geometriájával (#4820).
