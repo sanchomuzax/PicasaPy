@@ -7805,6 +7805,12 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A mappát nem sikerült újra megjeleníteni, mert a .picasa.ini fájlja nem írható. A mappa rejtett marad.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Áthelyezés új személyhez</translation>

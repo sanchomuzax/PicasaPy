@@ -4186,6 +4186,13 @@ ApplicationWindow {
             errorBanner.notice = true
             errorBannerText.text = qsTr("This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.")
         }
+        //: #4597: a mappa megjelenítése nem ment át — az ini nem írható
+        function onFolderHideFailed(path, reason) {
+            errorBanner.notice = reason === "offline-unhide"
+            errorBannerText.text = reason === "offline-unhide"
+                ? qsTr("This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.")
+                : qsTr("The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.")
+        }
         //: #1403: az XMP-arcírás EGY összegzést ad a köteg végén (kiírt ·
         //: kihagyott · első hiba). A csak olvasható fájl az eredetiben is
         //: megnevezett hibaeset, ezért az okot kiírjuk.

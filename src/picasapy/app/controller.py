@@ -9,6 +9,7 @@ változatlan."""
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime
 from pathlib import Path
@@ -41,7 +42,13 @@ from picasapy.index import (
     video_photos,
     sync_tree,
 )
-from picasapy.ini import load_or_empty, update_document
+from picasapy.ini import (
+    FOLDERS_ON_DISK_CATEGORY,
+    HIDDEN_FOLDERS_CATEGORY,
+    load_or_empty,
+    set_folder_hidden_in_ini,
+    update_document,
+)
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
@@ -96,6 +103,8 @@ from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+
+_log = logging.getLogger(__name__)
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 _SLIDESHOW_TRANSITIONS = (
@@ -254,6 +263,9 @@ class AppController(
     # kihúzott lemez). NEM hiba — tájékoztatás: a mappa és a bélyegképei
     # megmaradnak, csak az eredeti fájlok nem érhetők el most.
     folderUnavailable = Signal(str)
+    # #4597: a mappa rejtése/megjelenítése nem ment át: (útvonal, ok) —
+    # ok: "offline-unhide" | "write-failed-unhide"
+    folderHideFailed = Signal(str, str)
 
     def __init__(
         self,
@@ -942,7 +954,38 @@ class AppController(
             return
         with open_index(self._db_path) as conn:
             rejtve = is_folder_hidden(conn, path)
-            set_folder_hidden(conn, path, not rejtve)
+            van_mappa = Path(path).is_dir()
+            if rejtve and not van_mappa:
+                # Offline mappa ini-je nem írható: a megjelenítés nem
+                # engedett (a rejtett mappa nem válhat láthatóvá úgy, hogy
+                # az ini még „Hidden Folders" — a Picasa újra elrejtené).
+                self.folderHideFailed.emit(path, "offline-unhide")
+                return
+            # #4597: az igazságforrás a mappa ini-je (P2category) — előbb az
+            # ini. Elrejtésnél írási hibára a mappa AZONNAL rejtett (2-es
+            # jelölés, a szinkron pótolja); megjelenítésnél hibára rejtett
+            # marad, és a felület jelzést kap.
+            try:
+                if van_mappa:
+                    set_folder_hidden_in_ini(path, not rejtve)
+            except (OSError, RuntimeError, ValueError):
+                _log.warning("A mappa rejtése nem írható az ini-be: %s", path, exc_info=True)
+                if rejtve:
+                    self.folderHideFailed.emit(path, "write-failed-unhide")
+                    return
+                set_folder_hidden(conn, path, True, ini_pending=True)
+            else:
+                # Offline mappánál a rejtés az indexben vár (2), a mappa
+                # visszatérésekor a szinkron beírja az ini-be.
+                set_folder_hidden(
+                    conn, path, not rejtve, ini_pending=not van_mappa
+                )
+                if van_mappa:
+                    self._init_custom_collections()
+                    self._set_cached_folder_category(
+                        path,
+                        FOLDERS_ON_DISK_CATEGORY if rejtve else HIDDEN_FOLDERS_CATEGORY,
+                    )
         if not rejtve and not self.showHidden and self._current_folder == path:
             self._current_folder = ""
             self._view_mode = ("folder", "")
@@ -978,6 +1021,12 @@ class AppController(
 
     # #1476: nem `Slot` — a felület a `setHiddenPassword`-öt hívja, ez a
     # NYERS lenyomat útja (átvétel, teszt). A QML-nek nincs dolga vele.
+    def adoptHiddenPasswordHash(self, hash_value: str) -> None:
+        """Picasából átvett lenyomat (#4597): csak ha még nincs jelszónk —
+        a meglévőt az átvétel sosem írja felül."""
+        if not self.hiddenPasswordHash:
+            self.setHiddenPasswordHash(hash_value)
+
     def setHiddenPasswordHash(self, hash_value: str) -> None:
         """A LENYOMAT közvetlen beállítása (import, teszt). A feloldás
         állapotát nullázza — új jelszó után újra kérni kell."""

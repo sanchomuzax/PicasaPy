@@ -253,8 +253,17 @@ def photos_up_to_age(
     return _records(rows)
 
 
+#: `folders.hidden` értékei: 0 látszik, 1 rejtett (az ini-ben is), 2 rejtett,
+#: de az ini-be még nincs beírva (régi index / offline mappa, #4597).
+HIDDEN_INI_PENDING = 2
+
+
 def set_folder_hidden(
-    conn: sqlite3.Connection, folder_path: str, hidden: bool
+    conn: sqlite3.Connection,
+    folder_path: str,
+    hidden: bool,
+    *,
+    ini_pending: bool = False,
 ) -> bool:
     """A mappa elrejtése/megjelenítése (#1637).
 
@@ -263,7 +272,10 @@ def set_folder_hidden(
     felület a jelzésből tud üzenetet adni)."""
     kurzor = conn.execute(
         "UPDATE folders SET hidden = ? WHERE path = ?",
-        (1 if hidden else 0, str(folder_path)),
+        (
+            (HIDDEN_INI_PENDING if ini_pending else 1) if hidden else 0,
+            str(folder_path),
+        ),
     )
     conn.commit()
     return kurzor.rowcount > 0
@@ -282,7 +294,7 @@ def hidden_folders(conn: sqlite3.Connection) -> tuple[str, ...]:
     return tuple(
         sor["path"]
         for sor in conn.execute(
-            "SELECT path FROM folders WHERE hidden = 1 ORDER BY path"
+            "SELECT path FROM folders WHERE hidden != 0 ORDER BY path"
         )
     )
 

@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 21
+SCHEMA_VERSION = 22
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -566,5 +566,14 @@ ALTER TABLE photos ADD COLUMN duration_seconds REAL;
 CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
     ON photos(folder_id)
     WHERE kind = 'video' AND movie_format IS NULL;
+""",
+    # #4597: EGYSZERI ÁTÁLLÍTÁS. A `folders.hidden` eddig csak az indexben
+    # élt (0/1); az új kód az ini `P2category=Hidden Folders` sorából
+    # származtatja. A régi 1-es sorok 2-re („rejtett, az ini-be még nincs
+    # beírva") állnak át: az első szinkron beírja őket az ini-be, és CSAK
+    # EZUTÁN számít az ini az igazságforrásnak. Az offline mappa 2-esen
+    # marad, és visszatérésekor pótlódik — rejtés nem veszhet el.
+    21: """
+UPDATE folders SET hidden = 2 WHERE hidden = 1;
 """,
 }

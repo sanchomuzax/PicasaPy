@@ -1103,26 +1103,136 @@ A mező alapértéke új indexben `0`, ezért a jelenlegi rejtés nem rendelkezi
 az indexen kívüli forrással.
 
 *Bizonyítottsági fok: **megerősített** a menüleltár, a feliratok és a három
-elrejtés-réteg. **Nincs mérve**, hogy az eredeti mappaszintű Hide/Unhide
-állapot milyen tartós mezőbe kerül.*
+elrejtés-réteg. A mappaszintű Hide/Unhide tartós tárolója a 32.3.1 szerint
+**megerősített** (bináris, két független úton): `.picasa.ini`
+`[Picasa] P2category=Hidden Folders`.*
 
-### 32.3.1. #4597 — a mappaszintű jelölés tárolása nyitott
+### 32.3.1. ✅ #4597 — a mappa elrejtése a `.picasa.ini` `[Picasa] P2category=Hidden Folders` sora (2026-10-11)
 
-**Bináris lelet:** `0x007319f0` építi a `&Hide Folder` / `&Unhide Folder`
-menüt, és tartalmazza a `Folder::ID_HIDEENTIREALBUM` /
-`Folder::ID_UNHIDEENTIREALBUM` parancsneveket. Ez a menü meglétét bizonyítja,
-az írási útvonalat nem. A `0x005d3290` eseménykezelőn át vezető parancs és a
-tartós írási cél még nincs végigkövetve.
+**Következtetés.** Az eredeti a „Mappa elrejtése" parancsra **nem külön
+jelölőt** ír, hanem a mappát átsorolja a **`Hidden Folders` gyűjteménybe**:
+a mappa saját `.picasa.ini`-jének `[Picasa]` szakaszába
+`P2category=Hidden Folders` kerül. A „Mappa megjelenítése" ugyanezt a kulcsot
+`P2category=Folders on Disk`-re írja vissza. A `P2category`-t az eredeti a
+mappa beolvasásakor szó szerint gyűjteménynévként veszi át, tehát az
+elrejtés **túléli az adatbázis újraépítését**, és a mappával együtt költözik.
+A db3-ban ennek csak a **származtatott másolata** van (`albumdata_category` →
+`catdata` sorindex). A jelszó viszont NEM az ini-ben van, hanem a db3
+`catdata` táblájában (ld. alább).
 
-A `.picasa.ini`-ben talált `hidden=yes` nem használható mappajelölésként:
-`0x00710080` a képfájlok rekordjainak `star` / `hidden` jelzőit szerializálja,
-míg `0x00456610` a képszintű `hidden` állapotot a belső `]hidden` tokenhez
-kapcsolja. A `0x0040cd10` cím szintén nem Hide Folder rutin: a sérült képek
-`Hide Files` párbeszédét kezeli (`CThumbUI::GetBadImages`).
+#### Az írási lánc (A út), címekkel
 
-**Eredmény:** az eredeti mappaszintű állapot pontos tárolási helye **NINCS
-MEG**; a fenti képszintű `.picasa.ini` út nem bizonyítja azt. A teljes
-Hide/Unhide írási útvonal Ghidra-köre szükséges.
+| lépés | cím | kiolvasott tény |
+|---|---|---|
+| menü | `0x007319f0` | `&Hide Folder` → parancs **`0x9c72`** (`0x00731d7a`: `mov word [esp+0x11e], 0x9c72`, a `push` miatt eltolt veremmel a Hide-tétel azonosítómezője); `&Unhide Folder` → **`0x9cd0`** (`0x00731dea`) |
+| diszpécser | `0x005cb990` | ugrótábla `0x005cdb34`/`0x005cd9fc`, alap `0x9c42`: a **`0x9c72` → `0x005cc054`**, a **`0x9cd0` → `0x005cc069`** (a táblát a binárisból kiolvasva) |
+| a két ág | `0x005cc054` / `0x005cc069` | `push 1` ill. `push edi` (=0), majd `call 0x005ee2a0` — **egy** rutin, a harmadik argumentum az irány |
+| gyűjtemény kiválasztása | `0x005ee2c1`–`0x005ee327` | ha az irány 1: `"Hidden Folders"` (`0x00c7ecb4`), különben `"Folders on Disk"` (`0x00c7ec78`); a név → `catdata`-sorindex a `0x00452a30`-cal |
+| átsorolás | `0x005ee352` | `call 0x00445b80(db, album, gyűjtemény, 1)` — a negyedik argumentum (1) kapcsolja az ini-írást |
+| ini-írás kapuja | `0x00445ea4` | `cmp byte [esp+0x34], 0` — csak ha a 4. argumentum igaz |
+| a gyűjtemény neve | `0x00445ebf` | `call 0x00453c00` — sorindex → név |
+| a mappa ini-útja | `0x00445eff` | `call 0x004543e0` (ugyanaz az út-feloldó, mint a mappadátumnál, `pmp-database.md` 12.1); nem nulla visszatérésnél **nincs** írás |
+| **a kiírás** | `0x00446012`–`0x00446017` | `push "P2category"` (`0x00c809e8`) · `call 0x0045c0a0` |
+| a közös `[Picasa]`-beállító | `0x0045c0a0` | `.picasa.ini` (`0x00c80a6c`) megnyitása, majd `0x0045c127`: `push "Picasa"` · `call 0x005ab210` (szakasz, kulcs, érték); a régi `Picasa.ini` (`0x00c8644c`) név ágát is kezeli |
+
+#### Az olvasási lánc (B út) — miért éli túl az újraépítést
+
+| lépés | cím | kiolvasott tény |
+|---|---|---|
+| `[Picasa]`-olvasó | `0x00441ed0` | `0x004420d3`: `P2category` kérése; **ha üres**, `0x004420fd`: visszaesés a régi **`category`** kulcsra |
+| gyűjtemény feloldása | `0x00452bd0` | nem üres névnél egyenesen `0x00452cdb`-re ugrik: `0x00453970` név szerinti keresés, hiánynál `0x00452ad0` **létrehozza** a gyűjteményt. Alapértéket (`Folders on Disk` / `Other Stuff` / iPhoto) **csak üres** kategóriánál ad |
+| hívók | `0x0047c560`, `0x004ada80` | a `0x0047c560` a betöltő (`0x0041ee10`, `0x0041fa3a`) és `0x0041ba40` alól minden ismert mappára (`0x00441cd0` találat + `0x00992ed0`) újraolvassa a `[Picasa]` szakaszt (`0x0047c732`); a `0x004ada80` az új album (`CAlbumState::newalbum`) útja |
+
+⇒ Az ini a mérvadó: a `Hidden Folders` érték a következő beolvasáskor
+visszaállítja a gyűjteménytagságot, adatbázistól függetlenül.
+
+#### A db3 oldala — mérve valódi adatbázison
+
+A `0x00415790` oszlopregisztráló a `catdata` táblát a `CThumbDB+0x760`-ra
+teszi (`0x00415861`–`0x0041586d`: `push "catdata"` · `lea esi,[ebp+0x760]`).
+A helyi minta (`research/testdata/Picasa2/db3`, `read_pmp_column`):
+
+- `catdata_name.pmp` — 20 sor; a beépítettek sorrendje: `Labels`,
+  `Projects (internal)`, `Folders on Disk`, `Web Albums`, `Web Drive`,
+  `Exported Pictures`, `Other Stuff`, **`Hidden Folders` (7. index)**,
+  `People`, utánuk a felhasználói gyűjtemények;
+- `catdata_state.pmp` (20 sor), `catdata_catpri.pmp` (18 sor);
+- `albumdata_category.pmp` — 2371 sor, az érték `catdata`-sorindex; a 7-es
+  érték **0-szor** fordul elő.
+
+Ez egyezik a korpusszal: a 859 `.picasa.ini` egyikében sincs
+`P2category=Hidden Folders` — a mintagazdának nincs rejtett mappája. A
+gyűjteménytagság tehát a db3-ban is megvan, de onnan **nem** kell átvenni:
+az ini hordozza.
+
+#### A „Rejtett mappák" jelszava — a `catdata` `info` mezője
+
+A `0x005eb910` jelszóút a lenyomatot (`0x00a4d420`, 32 jegyű kisbetűs hex
+MD5 — `picasa-mappakezelo.md`, a jelszó-szakasz) a
+`0x005ebc52`–`0x005ebc58`: `push "info"` (`0x00c812cc`) ·
+`call 0x006a63f0(CThumbDB+0x760, …)` hívással a **`catdata`** tábla
+`info` oszlopába írja, a `Hidden Folders` sorába; üres jelszónál
+(`0x005eba5e`–`0x005eba68`) ugyanide üres értéket. A `0x005ee2a0`
+elrejtéskor (`0x005ee4f9`–`0x005ee537`) az `info`-t olvassa vissza, és ha
+nem üres, a `catdata` `state` mezőjét állítja.
+
+⇒ A jelszó a **db3-ban** él, nem az ini-ben: a db3 törlésével elvész, a
+Picasa-átvétel pedig a `catdata` `Hidden Folders` sorának `info` értékéből
+veheti át. A helyi mintában `catdata_info.pmp` nincs (jelszót sosem
+állítottak be), ezért a fájl neve a `<tábla>_<oszlop>.pmp` konvencióból
+következik, mintán nem látott — ld. a nyitott pontot alább.
+
+#### Egy viselkedési részlet, ami könnyen elcsúszik
+
+A megjelenítés **nem** az elrejtés előtti gyűjteménybe tesz vissza: a
+`0x005ee300` ág feltétel nélkül `Folders on Disk`-et ír. Egy `Other Stuff`
+vagy egyéni gyűjteményből elrejtett mappa tehát megjelenítés után a
+**Mappák** között lesz.
+
+#### Kizárt jelöltek (ne járja újra a következő kör)
+
+- A `hidden=yes` (`0x00710080`, `0x00456610`) **képszintű** — a korpusz
+  mind a hat előfordulása képszakaszban áll (`[<fájl>.JPG]` alatt).
+- A `0x0040cd10` a sérült képek `Hide Files` párbeszéde
+  (`CThumbUI::GetBadImages`), nem mapparejtés.
+- Registry: a láncban (`0x005ee2a0` → `0x00445b80` → `0x0045c0a0`) nincs
+  `Reg*` hívás; az egyetlen beállítás-olvasás a `Preferences\DoNotConfirmHiddenPwd`
+  (`0x005ee3af`), ami a jelszó-felajánló párbeszéd „ne kérdezze újra"
+  jelölője, nem a rejtés állapota.
+
+#### Nálunk ma — az eltérés
+
+| | eredeti | PicasaPy (`5ea930822`) |
+|---|---|---|
+| rejtés tárolója | `.picasa.ini` `[Picasa] P2category=Hidden Folders` | csak SQLite `folders.hidden` (`index/queries.py` `set_folder_hidden`, `app/controller.py` `toggleFolderHidden`) |
+| újraépítés után | megmarad | **elvész** (`folders.hidden` alapértéke 0) |
+| megjelenítés | `P2category=Folders on Disk` | `folders.hidden=0` |
+| Picasában rejtett mappa nálunk | — | a `P2category=Hidden Folders` mappát az `is_custom_collection_category` **egyéni gyűjteménynek** sorolja (a `Hidden Folders` nincs a `_BUILTIN_CATEGORIES`-ban), tehát **látható** „Hidden Folders" nevű egyéni gyűjteményként jelenik meg |
+| `category=` visszaesés | `P2category` üresnél a `category` kulcs | a `read_folder_category` csak a `P2category`-t olvassa |
+| jelszó | db3 `catdata` `Hidden Folders` sor `info` (hex MD5) | `QSettings` `view/hiddenPasswordHash`; a db3-átvétel (`pmpimport/`) a `catdata`-t nem olvassa |
+
+#### Nyitott kérdések mérlege (32.3.1)
+
+- **LEZÁRVA** — a mappa rejtésének tárolója: `.picasa.ini`
+  `[Picasa] P2category=Hidden Folders` (A és B út, fent).
+- **LEZÁRVA** — túléli-e az újraépítést: igen, a `0x00441ed0` →
+  `0x00452bd0` olvasó a nevet adatbázistól függetlenül veszi át.
+- **LEZÁRVA** — a jelszó helye: db3 `catdata` `info` oszlop, a
+  `Hidden Folders` sorában (`0x005ebc52`, `0x00415866`).
+- **NYITOTT (örökölt, nem blokkoló)** — a jelszóoszlop fájlneve mintán:
+  `catdata_info.pmp` a konvenció szerint; megszerzés: egy Colab-futás az
+  eredeti Picasával (mappa elrejtése + jelszó megadása, utána a `db3`
+  fájllistája és a `catdata_info.pmp` tartalma).
+- **NYITOTT (örökölt, nem blokkoló)** — hiányzó `.picasa.ini` esetén a
+  `0x0045c0a0` létrehozza-e a fájlt (a `0x00410610` megnyitó `cl=1`
+  argumentuma nincs értelmezve); megszerzés: ugyanaz a Colab-futás egy
+  ini nélküli mappán.
+- **LEZÁRVA** — a gyűjtemény-név keresése (`0x00453970`) **csak az ASCII
+  betűkre kis-nagybetű-tűrő**: `0x00453a46`–`0x00453a5c` az `A`–`Z`
+  tartományt `+0x20`-szal kisbetűsíti mindkét oldalon, majd bájtonként
+  hasonlít, a hossznak egyeznie kell (`0x00453a6b`–`0x00453a85`); vágás
+  (szóköz-eltávolítás) a hasonlítóban nincs. ⇒ `hidden folders` is a
+  `Hidden Folders` gyűjteménybe sorol.
 
 ### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
 

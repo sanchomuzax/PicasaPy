@@ -1581,6 +1581,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
     picasa_import_controller = PicasaImportController()
     engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
+    # #4597: a Picasában beállított rejtett-jelszó átvétele (csak ha nálunk
+    # még nincs) — sorba állított hívás, hogy a fő szálon fusson.
+    picasa_import_controller.hiddenPasswordFound.connect(
+        controller.adoptHiddenPasswordHash, Qt.ConnectionType.QueuedConnection
+    )
     engine.rootContext().setContextProperty("importSourceController", import_source_controller)
     # #147/#4572: a néző arc-keret overlay-jének hídja — a
     # faces=/Contacts2 az ini-ből, a névtelen felismerések az indexből jönnek.
