@@ -25,6 +25,7 @@ from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.folder_hierarchy_wiring import wire_folder_hierarchy
 from support.print_wiring import wire_passport, wire_print
 from support.jpeg_factory import make_jpeg
+from support import keep_burkok
 
 
 @pytest.fixture(autouse=True)
@@ -354,10 +355,15 @@ def _build_qml_app(
     # EffectThumbnailProvider QRunnable-je a végén Qt `finished` jelzést küld;
     # Windows alatt hozzáférési hibát okoz, ha a válasz QML-tulajdonosa addigra
     # már megsemmisült.
+    # #4880: a `_KEEP…` listákban tartott, ehhez a motorhoz tartozó burkokat a
+    # törlés előtt kigyűjtjük, utána elengedjük — különben elavult címre
+    # mutatnak, és a következő teszt objektuma helyett ők jönnek vissza.
+    tartott = keep_burkok.kigyujt((engine, window))
     engine.deleteLater()
     qt_app.processEvents()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     qt_app.processEvents()
+    keep_burkok.elenged(tartott)
 
 
 @pytest.fixture
