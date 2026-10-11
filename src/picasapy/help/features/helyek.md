@@ -20,6 +20,35 @@ földgömb-szűrője. A rács fölötti zöld sávon a **Vissza az összes
 megtekintéséhez** gomb (vagy a földgömb-szűrő újabb megnyomása) visszahozza
 a teljes nézetet.
 
+A jelölők a hely **egyik képének bélyegképét** mutatják. A jelölőre
+kattintva egy buborék is felnyílik („1 fotó itt:", illetve „*N* fotó
+itt:"), benne két gombbal:
+
+- **Ezen fotók keresése a Picasában** — a rácson kijelöli az ezen a
+  helyen lévő képeket;
+- **Helyadatok törlése** — ezekről a képekről leszedi a helyet (ötnél
+  több képnél előbb rákérdez, lásd lentebb).
+
+A jelölőre újra kattintva a buborék bezárul.
+
+### Kép húzása a térképre
+
+Helyet úgy is adhatsz, hogy a képeket a rácsból **a térképre húzod**, és
+ott elengeded. A program mindig rákérdez: „Ide teszi a képet?" — vagy ha
+a képnek már van helye, „Áthelyezi ide a képet?" (több képnél „Ide teszi
+mind a *N* képet?", illetve „Áthelyezi ide mind a *N* képet?"). Az
+**(OK)** gombbal a képek megkapják az elengedés helyét, a **Mégse**
+semmit nem változtat. Ha a kijelölésből húzol, a kijelölés összes képe
+megy.
+
+### Betöltés és internetkapcsolat
+
+A térkép csempéit a program az internetről tölti le. Amíg a térkép
+betöltődik, a panelen „Térkép betöltése..." áll. Ha nincs
+internetkapcsolat, és a térkép nem tud betöltődni, ezt írja ki: „A Picasa
+nem tudta inicializálni a Google Térképet. Ellenőrizze, hogy van-e
+internetkapcsolat." (A felirat az eredeti Picasáé.)
+
 A **Geocímkék törlése** gomb a kijelölt képekről leszedi a helyet; a
 gomb kiírja, hány képet érint. Ugyanez elérhető az **Eszközök ▸ Geocímke
 ▸ Geocímkék törlése** menüpontból is.

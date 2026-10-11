@@ -12,6 +12,12 @@ A párbeszéd felül a **Forrás** mappát kéri (a **Tallózás…** gombbal
 választható, és a legutóbbi forrásokat is felkínálja), alatta megjelenik,
 mit talált: hány kép és videó van benne.
 
+Ha memóriakártya vagy USB-meghajtó van a géphez csatlakoztatva, a
+forrás mellett egy **Cserélhető meghajtók** lista is megjelenik (Windowson
+és Linuxon). A tételei „Cserélhető meghajtó (*név*)" alakúak; egyet
+kiválasztva az lesz a forrás, és a program rögtön átnézi. Ha nincs ilyen
+meghajtó, a lista nem látszik.
+
 ### Mit hozzon be
 
 - Az indexképekre kattintva egyenként dönthetsz: **Bevonás** vagy
@@ -41,7 +47,11 @@ képek **milyen nevű almappába** kerüljenek:
   `2026-01-31 (ma)`).
 
 Az első lehetőségnél a mappa nevét meg kell adni, mielőtt az importálás
-elindulhat.
+elindulhat. Amíg a mező üres, az importálás nem indul el, és az ablak ezt
+írja: „A folytatáshoz írjon be egy új mappanevet, vagy válasszon egy
+létező mappát". A név **egyetlen mappanév** lehet: a célmappán kívülre
+mutató név (például `../valami`), a teljes útvonal és a mappanévben
+tiltott karakterek nem fogadhatók el — ilyenkor sem indul az importálás.
 
 ### Másolás után
 
@@ -131,8 +141,9 @@ Ha ezen a gépen korábban Picasát használtál, a benne megadott **nevek**,
 
 Indítás: **Eszközök ▸ Import a Picasából…**
 
-Az ablak az **Import a Picasából** címet viseli, és amíg fut, ezt írja:
-„Nevek, kulcsszavak és helyek átvétele a Picasából…". A végén megmondja,
+Az ablak az **Import a Picasából** címet viseli. Az **Importálás** gomb
+indítja az átvételt; amíg fut, az ablak ezt írja: „Nevek, kulcsszavak és
+helyek átvétele a Picasából…". A végén megmondja,
 mit végzett — például „12 mappa frissült: 342 kulcsszó, 219 hely, 87
 név." —, és azt is, hány fotóhoz nem nyúlt hozzá, mert azoknál **már
 volt adat**.
@@ -145,3 +156,23 @@ Két fontos tulajdonsága van:
 
 Ha a program nem talál régi Picasa-adatot a gépen, ezt írja ki: „Nem
 találtunk Picasa-adatokat ezen a gépen."
+
+### Kézzel megadott Picasa-adatmappa
+
+Alapból a program maga keresi meg a gépen a régi Picasa adatait — ehhez
+hagyd üresen a **Picasa2-adatmappa** mezőt. Ha az adatok máshol vannak
+(például egy régi gépről átmásolt `Picasa2` mappában, vagy Linuxon egy
+windowsos lemezen), a mezőbe írd be, vagy a **Tallózás…** gombbal
+válaszd ki a mappát.
+
+Ilyenkor a program azt is tudni akarja, hol vannak most a képek, mert a
+régi Picasa windowsos útvonalakat tárolt. Ezt a **meghajtó-leképezés**
+két mezőjében adod meg:
+
+- **Windows-útvonal előtagja** — ahogy a régi Picasa ismerte a képek
+  helyét, például `C:/Pictures`;
+- **A megfelelő helyi mappa** — ahol ugyanezek a képek most vannak,
+  például `/home/felhasználó/Képek`.
+
+Kézi adatmappánál **mindkét mezőt** ki kell tölteni; ha valamelyik üres,
+az ablak szól: „Adja meg a meghajtó-leképezés mindkét útvonalát."
