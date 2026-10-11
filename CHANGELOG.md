@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.67] – 2026-10-11
+
+- Fejlesztőknek: a `PySide6<6.12` korlát indoklása rögzítve — a 6.12-es összeomlás a PySide hibája, nem a programé (#4671).
+- A Tulajdonságok panel videósora magyarul „Képkockasebesség” feliratot kap a félrevezető „Mozgófilm minősítése” helyett (#4855).
+
 ## [0.9.66] – 2026-10-11
 
 - A nem magyar nyelvű felületen is megjelennek a legutóbb hozzáadott feliratok fordításai (#4863).
