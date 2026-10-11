@@ -2100,17 +2100,32 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
         <name>AddCustomAspectRatioDialog</name>
         <message>
             <source>Add Custom Aspect Ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/window1.title</extracomment>
             <translation>Egyéni méretarány hozzáadása</translation>
         </message>
         <message>
-            <source>Width:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Szélesség:</translation>
+            <source>Dimensions:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/labelgroup3.title</extracomment>
+            <translation>Méretek:</translation>
+        </message>
+        <message>
+            <source>Example:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/labelgroup10.title</extracomment>
+            <translation>Példa:</translation>
+        </message>
+        <message>
+            <source>   4 x 6   Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/label11.title</extracomment>
+            <translation>   4x6   kisméretű nyomat</translation>
         </message>
         <message>
             <source>Name:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/labelgroup8.title</extracomment>
             <translation>Név:</translation>
         </message>
     </context>
@@ -13012,6 +13027,18 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
     </context>
     <context>
         <name>EditorCropPanel</name>
+        <message>
+            <source>Custom Aspect Ratios</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
+            <translation>Egyéni méretarányok</translation>
+        </message>
+        <message>
+            <source>Deletes the current aspect ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
+            <translation>Törli az aktuális méretarányt</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Suggested crops</source>
