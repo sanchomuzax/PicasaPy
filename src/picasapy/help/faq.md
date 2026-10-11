@@ -45,6 +45,14 @@ fülön a **Nyelv:** választóval. A program rákérdez, és a váltás **a
 következő indításnál** lép életbe — lásd
 [Beállítások, nyelv, megjelenés](features/beallitasok.md).
 
+### Forrásból indítva angol a felület, pedig magyart választottam
+
+A forrásból indított program a fordításokat az első indításkor maga
+készíti el, ehhez a `pyside6-lrelease` eszközt keresi. Ha nem találja,
+a felület angol marad. Telepítsd a PySide6-ot `pip`-pel (az tartalmazza
+az eszközt), majd indítsd újra a programot. A telepítővel feltett
+programot ez nem érinti. Lásd [Első lépések](getting-started.md).
+
 ## Hibaüzenetek
 
 ### Nem indul el: hiányzik a Qt 6 wayland-bővítménye
@@ -100,6 +108,25 @@ a rendszer. Linuxon telepítsd a `qml6-module-qtmultimedia` és a
 
 A térkép megjelenítéséhez való Qt-modul hiányzik a rendszeredről. A
 geocímkék ettől még olvashatók és törölhetők, csak a térkép nem látszik.
+
+### „A Picasa nem tudta inicializálni a Google Térképet. Ellenőrizze, hogy van-e internetkapcsolat."
+
+A Helyek panel térképe az internetről tölti le a térképet, és most nem
+érte el. Ellenőrizd a hálózati kapcsolatot. A geocímkék ettől függetlenül
+megvannak. Lásd
+[Helyek](features/helyek.md).
+
+### „A nyomtatáshoz telepítsen nyomtatót."
+
+A gépen nincs egyetlen nyomtató sem beállítva. PDF-be ilyenkor is
+nyomtathatsz; papírra nyomtatáshoz előbb állíts be nyomtatót a rendszer
+beállításaiban. Lásd [Nyomtatás](features/nyomtatas.md).
+
+### „A klip exportálása nem sikerült"
+
+A videó kivágott szakaszát a program nem tudta fájlba menteni. Az
+eredeti videó ilyenkor sem változik. Linuxon a klip exportálása nem
+támogatott. Lásd [Nézegetés](features/nezegetes.md).
 
 ### „Ezeken a képeken olyan szerkesztés van, amit a PicasaPy még nem tud megjeleníteni"
 

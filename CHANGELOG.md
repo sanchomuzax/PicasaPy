@@ -7,6 +7,63 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.66] – 2026-10-11
+
+- A nem magyar nyelvű felületen is megjelennek a legutóbb hozzáadott feliratok fordításai (#4863).
+
+## [0.9.65] – 2026-10-11
+
+- A weboldal-export párbeszédben nincs többé „Árnyékolt bélyegképek” és „Árnyékolt képek” jelölőnégyzet, mert az eredetiben sincs: az árnyékolást a sablon adja (#4849).
+
+## [0.9.64] – 2026-10-11
+
+- A filmelőnézet szöveges diájának szerkesztése után a kocka azonnal frissül: a dia a nézőke méretén készül, és egy billentyűleütés legfeljebb egy előnézet-kérést indít (#4852).
+
+## [0.9.63] – 2026-10-11
+
+- A szerkesztő fülikonjainak rajza az eredeti iránya és formája szerinti: a csavarkulcs feje bal fent, az ecset sörtéje bal lent, a nap korongjának jobb fele üres, a 4–5. fülön tájképes négyzet + ecset (#4846).
+
+## [0.9.62] – 2026-10-11
+
+- A weboldal-exportálásban az eredeti Picasához hasonlóan egyetlen méretválasztó van (alapból 640 képpont, a bélyegkép méretét a sablon adja), és a mozgófilmek első képkockaként vagy teljes mozgófilmként is exportálhatók (#4610).
+
+## [0.9.61] – 2026-10-11
+
+- Az F3 a keresőmezőre viszi a fókuszt (mint a Ctrl+F), az F4 a kijelölt kép csillagát kapcsolja, ha a csillag-gomb engedélyezett (#4600).
+- Fejlesztőknek: a tesztfuttató figyelmeztet, ha a helyi Qt-verzió eltér a CI-étől, és egy paranccsal (`python3 scripts/ci_venv.py`) CI-azonos környezet készíthető (#4834).
+
+## [0.9.60] – 2026-10-11
+
+- Az Emberek panel a háttér-arckeresés közben mutatja a betöltés-, az ellenőrizetlen fájlok és az adatrendezés állapotát az eredeti szövegekkel, és a keresés közben frissül (#4586).
+
+## [0.9.59] – 2026-10-11
+
+- Az importálás forrásaként mostantól egyes fájlok is kijelölhetők: a Tallózás… gomb menüjében a Mappa… és a Fájlok… közül lehet választani (#4596).
+
+## [0.9.58] – 2026-10-11
+
+- A szerkesztő fülsávjának ikonjai most az eredeti Picasa mért méretét kapják (15×16-tól 25×19-ig), a fülön belül középre igazítva (#4552).
+
+## [0.9.57] – 2026-10-11
+
+- Ha az effektek fülén lenyomod a Shiftet, a kilenc kétmódú effekt csempéjén nemcsak a felirat, hanem a bélyegkép is a másodlagos effektet mutatja, és a Shift felengedésekor visszaáll (#4558).
+
+## [0.9.56] – 2026-10-11
+
+- A filmelőnézet már a kiválasztott átmenetet játssza le a kész film geometriájával (#4820).
+
+## [0.9.55] – 2026-10-11
+
+- Az egyéni méretarány felvételekor a párbeszéd a hivatalos feliratokat és mintasort mutatja, a legördülőben „Egyéni méretarányok” szakaszcím áll, a törlés pedig a legördülő melletti kukával megy (#4550).
+
+## [0.9.54] – 2026-10-11
+
+- A biztonsági mentés és az áthelyező műveletek a régi Picasa.ini adatait is megőrzik (#4839).
+
+## [0.9.53] – 2026-10-10
+
+- A Nyomtatás ablak a tartalomhoz igazodó magassággal nyílik, a Nyomtatás és Bezárás gomb mindig látszik, kis képernyőn a tartalom görgethető (#4795).
+
 ## [0.9.52] – 2026-10-10
 
 - Az importálás kézi mappaneve csak egyetlen mappanév lehet: a `../`, az abszolút útvonal és a tiltott karakterek nem engedik elindítani az importot (#4837).

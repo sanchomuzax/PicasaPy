@@ -6,7 +6,12 @@ lentebb).
 
 A program a régi, nagy kezdőbetűs **Picasa.ini** nevű fájlból is beolvassa a
 csillagokat és a feliratokat, ha a mappában nincs `.picasa.ini`. Így a
-nagyon régi Picasával készített mappák adatai sem vesznek el.
+nagyon régi Picasával készített mappák adatai sem vesznek el. Amikor egy
+ilyen mappában először mentesz valamit, a program új `.picasa.ini`-t hoz
+létre, és a régi fájl **minden bejegyzését átviszi** bele; a régi
+**Picasa.ini**-hez nem nyúl. A biztonsági mentés, a módosított képek
+eltett eredetijei és az áthelyező importálás is számol a régi fájl
+adataival, tehát ezeknél sem vesznek el.
 
 ## Csillag
 
@@ -66,8 +71,10 @@ Címkék** vagy **Ctrl+T**, illetve a képtálca Címkék gombja. A Ctrl+T
 nyitja és zárja is a panelt.
 
 - Jelölj ki egy vagy több képet, majd a beíró mezőbe („Írjon be egy
-  hozzáadandó címkét:") írd be a címkét, és nyomj Entert. A címke a
-  kijelölés minden képére felkerül.
+  hozzáadandó címkét:") írd be a címkét, és nyomj Entert, vagy kattints
+  a mező melletti **+** gombra (buboréksúgója: „Címke hozzáadása az
+  aktuálisan kijelölt elemekhez"). A címke a kijelölés minden képére
+  felkerül.
 - A panelen látszik, mely címkék vannak a kijelölésen. A lista fölötti
   fejléc megmondja, mire vonatkozik: egyetlen kijelölt képnél a kép
   nevét írja (*kép.jpg címkéi:*), több képnél *Címkék az aktuális
@@ -112,8 +119,9 @@ Ez nem élő szűrő: a kész album onnantól önálló, és a bal hasábon mara
 
 ### Gyorscímkék
 
-A panel alján tíz **Gyorscímke**-gomb van a leggyakoribb címkéidnek.
-Egy gombra kattintva a címke azonnal felkerül a kijelölésre.
+A panel alján, a **Gyorscímkék:** felirat alatt tíz gomb van a
+leggyakoribb címkéidnek. Egy gombra kattintva a címke azonnal felkerül a
+kijelölésre.
 
 A még üres gomb **?** jelet mutat. Ha rámutatsz, a buboréksúgója: „Ide
 kattintva konfigurálhatja a gyorscímkéket"; ha rákattintasz, egy
@@ -121,6 +129,7 @@ tájékoztató ablak elmondja, hogyan kerül címke a gombra, és semmi nem
 íródik a képekre.
 
 A gombok tartalmát a **Gyorscímkék konfigurálása** párbeszédben állítod
-be. Itt bekapcsolhatod, hogy a felső két gombot a program tartsa fenn a
+be; ezt a felirat melletti fogaskerék-gomb nyitja meg (buboréksúgója is
+**Gyorscímkék konfigurálása**). Itt bekapcsolhatod, hogy a felső két gombot a program tartsa fenn a
 legutóbb használt címkéknek, és egy gombbal fel is töltheted az üres
 mezőket a gyakran használt címkéiddel.

@@ -69,7 +69,7 @@ main {
   margin-top: 4px;
   font-size: 0.8em;
   color: #555555;
-  max-width: 200px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

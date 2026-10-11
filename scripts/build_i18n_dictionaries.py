@@ -12,6 +12,14 @@ saját magyar fordítás normalizált alakja az eredeti magyar szöveghez kapcso
 kerül be, ha az összes azonos magyar jelöltkulcs megvan, és mindegyik pontosan
 ugyanazt a célnyelvi szöveget adja. Kétértelmű esetben üres `unfinished` marad.
 Az eredeti fájlokhoz a program nem ír.
+
+Idempotens (#4866): a már meglévő, kitöltött (nem `unfinished`, nem üres)
+fordítást és eredetjelölőjét a program változatlanul átveszi a célnyelvi `.ts`-ből
+(kulcs: környezet + forrásszöveg + előfordulási sorszám); csak a hiányzó vagy még
+`unfinished` sort számolja újra, a magyar katalógusból megszűnt üzenetet pedig
+elhagyja. A magyar `.ts` meglévő eredetjelölőit sem írja át (a magyar a mérvadó);
+csak a jelölő nélküli sorhoz számol újat. Két eltérő, kiírt záró írásjelű
+(`...` vs `:`) elem nem párosodik automatikusan.
 """
 
 from __future__ import annotations
@@ -27,10 +35,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from picasapy.app.i18n.dictionary import (
     ORIGIN_PICASA,
+    ORIGIN_KEY_PREFIX,
     ORIGIN_PICASAPY,
     dump_catalog,
     index_original_texts,
+    load_catalog,
     match_original_translation,
+    message_origin,
     missing_count,
     set_message_origin,
 )
@@ -150,18 +161,83 @@ def _hungarian_text(message: ET.Element) -> str:
     return translation.text or ""
 
 
+_Key = tuple[str, str, str, int]
+
+
+def _message_keys(root: ET.Element) -> list[tuple[ET.Element, _Key]]:
+    """Minden üzenet `(környezet, forrás, comment, előfordulás)` kulccsal.
+
+    A Qt azonosítójának része a `<comment>`: két sor csak abban különbözhet.
+    """
+    seen: dict[tuple[str, str, str], int] = {}
+    output: list[tuple[ET.Element, _Key]] = []
+    for context in root.iter("context"):
+        name = context.findtext("name") or ""
+        for message in context.findall("message"):
+            source = message.findtext("source") or ""
+            comment = message.findtext("comment") or ""
+            count = seen.get((name, source, comment), 0)
+            seen[(name, source, comment)] = count + 1
+            output.append((message, (name, source, comment, count)))
+    return output
+
+
+def _existing_messages(path: Path) -> dict[_Key, ET.Element]:
+    """A célnyelv jelenlegi `.ts`-ének üzenetei; hiányzó fájlnál üres."""
+    if not path.is_file():
+        return {}
+    return {key: message for message, key in _message_keys(load_catalog(path.read_bytes()))}
+
+
+def _is_settled(message: ET.Element) -> bool:
+    """Kitöltött, nem `unfinished`/`obsolete`/`vanished` fordítás."""
+    translation = message.find("translation")
+    if translation is None or translation.get("type") in {"obsolete", "vanished"}:
+        return False
+    probe = ET.Element("TS")
+    probe.append(copy.deepcopy(message))
+    return missing_count(probe) == 0
+
+
+def _keep_existing(message: ET.Element, existing: ET.Element) -> bool:
+    """A kitöltött meglévő fordítás és eredetjelölő átvétele; igaz, ha átvette.
+
+    Az `extracomment`-ből csak a jelölősorokat vesszük át, a többi a magyarból
+    jön; jelölő nélküli kitöltött sor `picasapy` jelölőt kap.
+    """
+    if not _is_settled(existing):
+        return False
+    old = message.find("translation")
+    if old is not None:
+        message.remove(old)
+    message.append(copy.deepcopy(existing.find("translation")))
+    lines = (existing.findtext("extracomment") or "").splitlines()
+    origin = message_origin(existing) or ORIGIN_PICASAPY
+    keys = ()
+    for line in lines:
+        if line.startswith(ORIGIN_KEY_PREFIX):
+            keys = tuple(k for k in line[len(ORIGIN_KEY_PREFIX):].strip().split(";") if k)
+    set_message_origin(message, origin, keys)
+    return True
+
+
 def _build_language(
     base: ET.Element,
     app_code: str,
     source_texts: dict[str, str],
     target_texts: dict[str, str],
     source_index: dict[str, tuple[str, ...]],
+    existing: dict[_Key, ET.Element] | None = None,
 ) -> ET.Element:
     catalog = copy.deepcopy(base)
     catalog.set("language", _QT_LOCALE.get(app_code, app_code))
     catalog.set("sourcelanguage", "en_US")
 
-    for message in catalog.iter("message"):
+    existing = existing or {}
+    for message, key in _message_keys(catalog):
+        previous = existing.get(key)
+        if previous is not None and _keep_existing(message, previous):
+            continue
         hungarian_translation = _hungarian_text(message)
         origin_match = match_original_translation(
             hungarian_translation,
@@ -233,6 +309,8 @@ def build_dictionaries(references: Path, i18n_dir: Path, *, compile_qm: bool = T
             catalog = copy.deepcopy(base)
             catalog.set("sourcelanguage", "en_US")
             for message in catalog.iter("message"):
+                if message_origin(message) is not None:
+                    continue  # a magyar a mérvadó: meglévő jelölőt nem írunk át (#4866)
                 match = match_original_translation(
                     _hungarian_text(message),
                     hu_originals,
@@ -250,6 +328,7 @@ def build_dictionaries(references: Path, i18n_dir: Path, *, compile_qm: bool = T
                 hu_originals,
                 originals[reference_code],
                 hu_index,
+                _existing_messages(i18n_dir / f"picasapy_{app_code}.ts"),
             )
 
         ts_path = i18n_dir / f"picasapy_{app_code}.ts"

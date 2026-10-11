@@ -211,3 +211,28 @@ class TestBundledFeherTemplate:
         assert (target / "assets" / "extra.css").is_file()
         detail_html = (target / "index0.html").read_text(encoding="utf-8")
         assert "index.html" in detail_html  # "vissza" hivatkozás a referrerre
+
+
+class TestArnyekASablonbol4849:
+    """#4849: az árnyékolás nem párbeszéd-beállítás — alapérték, amit a
+    sablon `define`-ja felülír (`shadowedThumbnails` 1, `shadowedImages` 0)."""
+
+    BODY = (
+        "T=<%if shadowedThumbnails%>ARNYEK<%endif%><%if !shadowedThumbnails%>SIMA<%endif%>"
+        ";I=<%if shadowedImages%>ARNYEK<%endif%><%if !shadowedImages%>SIMA<%endif%>"
+    )
+
+    def _run(self, tmp_path, index_extra):
+        template = tmp_path / "tpl"
+        template.mkdir()
+        _write(template, "index.tpl", index_extra + "define exportFileName index.html\ninclude body.html\n")
+        _write(template, "body.html", self.BODY)
+        report = run_web_export(template, tmp_path / "out", _album(), WebExportSettings())
+        return report.output_files[0].read_text(encoding="utf-8")
+
+    def test_alapertek_belyegkep_arnyekos_kep_nem(self, tmp_path):
+        assert self._run(tmp_path, "") == "T=ARNYEK;I=SIMA"
+
+    def test_a_sablon_define_ja_felulirja(self, tmp_path):
+        out = self._run(tmp_path, "define shadowedThumbnails 0\ndefine shadowedImages 1\n")
+        assert out == "T=SIMA;I=ARNYEK"

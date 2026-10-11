@@ -305,6 +305,40 @@ ApplicationWindow {
     // A névadás után a fotókijelölés nem változik, ezért külön frissítőjel
     // kell az Emberek-panel sorlistáinak újraolvasásához.
     property int peopleFaceRevision: 0
+    // #4586: csak az `unnamedFacesHere` frissítéséhez (keresés közben)
+    property int unnamedFaceRevision: 0
+    Timer {
+        id: unnamedFaceRefreshTimer
+        interval: 500
+        onTriggered: window.unnamedFaceRevision++
+    }
+    // nyitáskor az arc-lista friss: a nyitott-panel kapu miatt a zárt panel
+    // alatt érkezett `facesStored` jelek kimaradtak
+    onPeoplePanelOpenChanged: if (window.peoplePanelOpen) unnamedFaceRevision++
+    Connections {
+        target: photoViewer
+        function onPeopleOpenChanged() {
+            if (photoViewer.peopleOpen) window.unnamedFaceRevision++
+        }
+    }
+    // a kijelölt képek közül a futó keresés által még nem ellenőrzöttek
+    // száma — csak nyitott panelnél és nem a Név nélküliek albumban számolunk
+    readonly property int _selectionPending:
+        (window.peoplePanelOpen && !window.unnamedFacesOpen)
+            ? window.selectionPendingCount() : 0
+
+    // #4586: a kijelölt képek közül hányat nem vizsgált még át a futó
+    // háttér-arckeresés (`PeoplePanel` betöltés / ellenőrizetlen fájlok)
+    function selectionPendingCount() {
+        var scan = window._faceScanController
+        if (!scan || !controller)
+            return 0
+        // a függés az `uncheckedFiles`-en: a keresés haladására újraszámol
+        var remaining = scan.uncheckedFiles
+        if (remaining <= 0)
+            return 0
+        return scan.pendingAmong(window.selectedPaths())
+    }
     // #1236: külön ablak-szintű név kell. Az UnnamedFacesView azonos nevű
     // property-jének jobb oldalán a `faceScanController` önmagára oldódna.
     readonly property var _faceScanController:
@@ -1101,6 +1135,29 @@ ApplicationWindow {
         onActivated: window.fokuszAKeresore()
     }
     Shortcut {
+        id: shortcutSearchF3
+        objectName: "searchF3Shortcut"
+        sequence: "F3"
+        //: A keresősáv a nézőben nincs jelen (ld. `fokuszAKeresore`), ezért
+        //: az F3 a könyvtári őrön marad; diavetítés alatt nem fut.
+        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+                 && !window.slideshowRunning
+        //: #4600: `0x005e69a4` — módosító nélküli ág, ugyanaz a
+        //: `searchcontainer/searchbutton`, mint a `Ctrl+F`-é.
+        onActivated: window.fokuszAKeresore()
+    }
+    Shortcut {
+        id: shortcutStarToggle
+        objectName: "starToggleShortcut"
+        sequence: "F4"
+        //: A kezelő a könyvtárban ÉS a szerkesztőben közös (spec 10.11/10.13),
+        //: ezért a nézőben is él; a gomb saját őrét a `kapcsoldACsillagot` adja.
+        enabled: !window._szovegmezoneVanFokusz && !window.slideshowRunning
+        //: #4600: `0x005e696c` — a `thumbui/startoggle`-t kattintja, ha az
+        //: nem tiltott; a tálca gombja ugyanezt a kijelölést/nézőt követi.
+        onActivated: trayBar.kapcsoldACsillagot()
+    }
+    Shortcut {
         id: shortcutRefreshCurrentFolder
         objectName: "refreshCurrentFolderShortcut"
         sequence: "F5"
@@ -1754,6 +1811,7 @@ ApplicationWindow {
             title: picasaMenuBar.keyboardShortcutGroupTitles.view,
             sequences: picasaMenuBar.keyboardShortcutSequences.view.concat([
                 shortcutToggleRightDrawer.sequence, shortcutSearch.sequence,
+                shortcutSearchF3.sequence, shortcutStarToggle.sequence,
                 shortcutTagsPanelAlt.sequence, shortcutEditView.sequence,
                 shortcutDuplicateSearch.sequence, shortcutFindSimilar.sequence,
                 shortcutClearSimilar.sequence, shortcutSlideshow.sequence,
@@ -3718,6 +3776,14 @@ ApplicationWindow {
         selectionCount: window.unnamedFacesOpen
             ? unnamedFacesView.selectedCount : window.selectedRows().length
         faceScanController: window._faceScanController
+        // #4586: a háttér-arckeresés állapota (spec 9/b: betöltés, ellenőrizetlen
+        // fájlok, adatok rendezése)
+        // A kapu a KIJELÖLÉSRE vonatkozik: csak a még nem átvizsgált
+        // kijelölt képek számítanak (egy már átvizsgált képnél nincs betöltés).
+        loading: window._selectionPending > 0
+        uncheckedCount: window._selectionPending
+        sortingPercent: window._faceScanController
+            ? window._faceScanController.sortingPercent : -1
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
@@ -3735,7 +3801,8 @@ ApplicationWindow {
                controller.peopleOfRows(window.selectedRows()))
             : []
         unnamedFacesHere: controller && !window.unnamedFacesOpen
-            ? (window.peopleFaceRevision, controller.photos.revision,
+            ? (window.peopleFaceRevision, window.unnamedFaceRevision,
+               controller.photos.revision,
                controller.unnamedFacesOfRows(window.selectedRows()))
             : []
         onPersonChosen: function(name) {
@@ -4174,6 +4241,12 @@ ApplicationWindow {
     Connections {
         target: window._faceScanController
         function onUnnamedCountChanged() { window.peopleFaceRevision++ }
+        // #4586: a keresés közben is frissül a panel névtelen-arc listája —
+        // összevonva, és csak nyitott panel mellett
+        function onFacesStored() {
+            if (window.peoplePanelOpen || photoViewer.peopleOpen)
+                { if (!unnamedFaceRefreshTimer.running) unnamedFaceRefreshTimer.start() }
+        }
         function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false
@@ -4823,6 +4896,12 @@ ApplicationWindow {
             // `ensure()` KÖTELEZŐ — különben némán elmaradna a visszajelzés.
             if (createDialogs.item)
                 createDialogs.item.frissitsdAzElonezetet(revision)
+        }
+        function onMovieTransitionPreviewReady(source, generation) {
+            // Mint a kollázs-előnézet: csak a NYITOTT párbeszédnek szól,
+            // felépíteni fölösleges (nincs film-előnézet, ha nem áll).
+            if (createDialogs.item)
+                createDialogs.item.jelezdAFilmAtmenetElonezetet(source, generation)
         }
         function onCollageFinished(path, used, skipped, missing) {
             createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)

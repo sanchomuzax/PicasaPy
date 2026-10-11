@@ -146,8 +146,10 @@ def test_inditas_a_valasztott_alkalmazassal_a_kep_utvonalaval(monkeypatch):
     )
     app = open_with.OpenWithApp("eog.desktop", "Képnézegető", "eog %F")
 
-    open_with.launch_app(app, Path("/k/kep.jpg"))
+    kep = Path("/k/kep.jpg")
+    open_with.launch_app(app, kep)
 
+    # A fájl a platform saját alakjában kerül az argumentumba (#4835).
     (argv, kwargs), = hivasok
-    assert argv == ["eog", "/k/kep.jpg"]
+    assert argv == ["eog", str(kep)]
     assert kwargs["start_new_session"] is True

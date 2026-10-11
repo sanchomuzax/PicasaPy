@@ -40,15 +40,20 @@ class FakeWebExportController(QObject):
     def defaultWebExportTarget(self):
         return "/tmp/Kepek/Picasa HTML exportok"
 
-    @Slot(str, str, str, int, int, bool, bool)
+    @Slot(str, str, str, int, bool)
     def generateWebExport(
-        self, target_dir, template_id, album_name, thumb_max, image_max,
-        shadow_thumbs, shadow_images,
+        self, target_dir, template_id, album_name, size_index, movie_full,
     ):
         self.generate_calls.append(
-            (target_dir, template_id, album_name, thumb_max, image_max,
-             shadow_thumbs, shadow_images)
+            (target_dir, template_id, album_name, size_index, movie_full)
         )
+
+    #: #4610: a megőrzött választás (az eredeti `WebExportSize`/`WebExportMovie`)
+    prefs = {"sizeIndex": 3, "movieFull": False}
+
+    @Slot(result="QVariantMap")
+    def webExportPrefs(self):
+        return dict(self.prefs)
 
 
 @pytest.fixture
@@ -238,3 +243,138 @@ class TestASablonElonezete:
         qt_app.processEvents()
 
         assert _child(window, "webExportTemplatePreview").property("visible") is False
+
+
+# -- #4610: egy méretválasztó + mozgókép-mód, valódi kattintással ----------
+
+#: `webexport.fen` 4–8. és 12–13. sor — a felület angol forrásszövegei
+FEN_MERETEK = [
+    "Original Size",
+    "1024 pixels (for large monitors)",
+    "800 pixels (for large Web pages)",
+    "640 pixels (for Web pages)",
+    "320 pixels (for email)",
+]
+FEN_MOZGOKEP = ["First frame", "Full movie"]
+
+
+def _egerkattintas(qt_app, window, elem):
+    """Valódi egérkattintás az elem közepén (nem `clicked`/`activated` hívás).
+
+    Az ablakot a hívó adja: az `elem.window()` új Python-burkot adhat a
+    párbeszédre, és annak felszámolása az ablakot is törölné."""
+    from PySide6.QtCore import QPointF
+    from PySide6.QtTest import QTest
+
+    kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
+    QTest.mouseClick(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kozep
+    )
+    qt_app.processEvents()
+
+
+def _legordulo_sora(qt_app, combo, index):
+    """A lenyitott legördülő `index`-edik sora (a delegált elem)."""
+    import time
+
+    hatarido = time.monotonic() + 5.0
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        lista = combo.findChild(QObject, "picasaComboList")
+        if lista is not None:
+            for gyerek in lista.property("contentItem").childItems():
+                if gyerek.property("index") == index and gyerek.property("visible"):
+                    return gyerek
+        time.sleep(0.02)
+    raise AssertionError(f"a legördülő {index}. sora nem jelent meg")
+
+
+def _valassz(qt_app, window, combo, index):
+    _egerkattintas(qt_app, window, combo)
+    _egerkattintas(qt_app, window, _legordulo_sora(qt_app, combo, index))
+
+
+@pytest.fixture
+def megnyitott(dialog, qt_app):
+    window, fake, _qt = dialog
+    QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+    window.setProperty("targetFolder", "/tmp/webexport-cel")
+    window.setProperty("width", 520)
+    window.setProperty("height", 560)
+    qt_app.processEvents()
+    return window, fake
+
+
+class TestEgyMeretvalaszto4610:
+    """Spec `picasa-menu-parancsok-viselkedes.md` 6.1: EGY `sizeradio` van
+    (a nagy kép mérete), bélyegkép-választó nincs."""
+
+    def test_nincs_kulon_belyegkep_valaszto(self, megnyitott):
+        window, _fake = megnyitott
+        assert window.findChild(QObject, "webExportThumbSizeBox") is None
+        assert window.findChild(QObject, "webExportImageSizeBox") is None
+
+    def test_az_ot_fogas_a_fen_szovegevel(self, megnyitott):
+        window, _fake = megnyitott
+        combo = _child(window, "webExportSizeBox")
+        assert list(combo.property("model")) == FEN_MERETEK
+
+    def test_alaperteke_640(self, megnyitott):
+        window, _fake = megnyitott
+        assert _child(window, "webExportSizeBox").property("currentIndex") == 3
+
+    def test_mozgokep_mod_ket_eleme_es_alaperteke(self, megnyitott):
+        window, _fake = megnyitott
+        combo = _child(window, "webExportMovieBox")
+        assert list(combo.property("model")) == FEN_MOZGOKEP
+        assert combo.property("currentIndex") == 0
+
+    def test_a_megorzott_valasztasbol_indul(self, dialog, qt_app):
+        window, fake, _qt = dialog
+        fake.prefs = {"sizeIndex": 1, "movieFull": True}
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert _child(window, "webExportSizeBox").property("currentIndex") == 1
+        assert _child(window, "webExportMovieBox").property("currentIndex") == 1
+
+    def test_kattintott_valasztas_jut_a_vezerlohoz(self, megnyitott, qt_app):
+        window, fake = megnyitott
+        window.show()
+        qt_app.processEvents()
+
+        _valassz(qt_app, window, _child(window, "webExportSizeBox"), 4)
+        _valassz(qt_app, window, _child(window, "webExportMovieBox"), 1)
+        assert _child(window, "webExportSizeBox").property("currentIndex") == 4
+        assert _child(window, "webExportMovieBox").property("currentIndex") == 1
+
+        _egerkattintas(qt_app, window, _child(window, "webExportGenerateButton"))
+        assert len(fake.generate_calls) == 1
+        _cel, _sablon, _cim, size_index, movie_full = fake.generate_calls[0][:5]
+        assert size_index == 4
+        assert movie_full is True
+
+
+class TestNincsArnyekJelolonegyzet4849:
+    """#4849: a `webexport.fen`-ben nincs árnyék-jelölőnégyzet — az
+    árnyékolást a sablon adja (`shadowedThumbnails`/`shadowedImages`)."""
+
+    def test_nincs_jelolonegyzet_a_parbeszedben(self, megnyitott):
+        window, _fake = megnyitott
+        assert window.findChild(QObject, "webExportShadowThumbsCheck") is None
+        assert window.findChild(QObject, "webExportShadowImagesCheck") is None
+
+    def test_nincs_checkbox_tipusu_vezerlo_arnyek_felirattal(self, megnyitott):
+        window, _fake = megnyitott
+        from PySide6.QtQuick import QQuickItem
+
+        for elem in window.findChildren(QQuickItem):
+            felirat = str(elem.property("text") or "")
+            assert "hadow" not in felirat
+
+    def test_a_megmaradt_vezerlok_kattintasra_mukodnek(self, megnyitott, qt_app):
+        window, fake = megnyitott
+        window.show()
+        qt_app.processEvents()
+        _valassz(qt_app, window, _child(window, "webExportSizeBox"), 2)
+        _egerkattintas(qt_app, window, _child(window, "webExportGenerateButton"))
+        assert fake.generate_calls[-1][3:] == (2, False)

@@ -18,7 +18,13 @@ from collections.abc import Callable, Collection
 from pathlib import Path
 
 from picasapy.index.origin import forget_origin_keys_outside
-from picasapy.ini import IniDocument, load_document, read_folder_date_override
+from picasapy.ini import (
+    IniDocument,
+    ini_source_path,
+    load_document,
+    read_folder_date_override,
+)
+from picasapy.ini.names import INI_NAME
 from picasapy.ini.albums import albums_of, parse_album_refs
 from picasapy.metadata import (
     EMPTY_METADATA,
@@ -29,8 +35,6 @@ from picasapy.metadata import (
 from picasapy.paths import normalize_path
 from picasapy.render.flip import FLIP_MASK
 from picasapy.scanner import (
-    PICASA_INI_LEGACY_NAME,
-    PICASA_INI_NAME,
     FolderScan,
     HibasBejegyzes,
     MediaFile,
@@ -1119,9 +1123,9 @@ def _load_ini(scan: FolderScan) -> IniDocument | None:
     if not scan.has_ini:
         return None
     try:
-        ini_path = scan.path / PICASA_INI_NAME
-        if not ini_path.exists():
-            ini_path = scan.path / PICASA_INI_LEGACY_NAME
+        ini_path = ini_source_path(scan.path / INI_NAME)
+        if ini_path is None:
+            return None
         return load_document(ini_path)
     except (OSError, ValueError):
         # Zárolt/olvashatatlan/sérült ini (pl. a futó Picasa fogja): a mappa
