@@ -123,13 +123,25 @@ def best_region(rect: Sequence[float], regions: Iterable[RelRect]) -> RelRect | 
     return match_regions([(0, rect)], regions).get(0)
 
 
-def ini_faces_of(photo_path: Path) -> tuple[Face, ...]:
+def ini_faces_of(
+    photo_path: Path, cache: dict | None = None
+) -> tuple[Face, ...]:
     """A fotó `faces=` bejegyzései a mappa `.picasa.ini`-jéből. Hiányzó
-    vagy olvashatatlan ini, hiányzó szakasz, hibás érték: üres."""
+    vagy olvashatatlan ini, hiányzó szakasz, hibás érték: üres.
+
+    `cache` (#4586): mappánként egyszer olvassa be az ini-t (a mappa → a
+    dokumentum vagy `None`) — tömeges bejárásnál nem képenként parse-ol."""
     ini_path = photo_path.parent / PICASA_INI_NAME
-    try:
-        document = load_existing(ini_path)
-    except (OSError, ValueError):
+    if cache is not None and photo_path.parent in cache:
+        document = cache[photo_path.parent]
+    else:
+        try:
+            document = load_existing(ini_path)
+        except (OSError, ValueError):
+            document = None
+        if cache is not None:
+            cache[photo_path.parent] = document
+    if document is None:
         return ()
     section = document.section(photo_path.name)
     raw_faces = section.get("faces") if section is not None else None
