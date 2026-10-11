@@ -7,6 +7,10 @@ import QtQuick.Layouts
 //
 // #496: kiemelve az EditorPanel.qml-ből — a gazda-panelre a `panel`
 // tulajdonságon át hivatkozik (ld. `EditorCropPanel.qml`).
+// #4558: a kétmódú csempék BÉLYEGKÉPE is a Shift szerinti szűrőé
+// — az eredeti a csempe erőforrás-nevét a `_mod%s` utótaggal képzi,
+// tehát a másodlagos előnézetét mutatja. A bélyegkép a HALASZTOTT
+// `panel.shiftBelyegkep`-et követi, nem a `szuro`-t (ld. EditorPanel.qml).
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -121,14 +125,8 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "nightvision" : "heatmap"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
-            thumbSource: panel.effectThumbSource("heatmap")
+            thumbSource: panel.effectThumbSource(panel.shiftBelyegkep
+                                               ? "nightvision" : "heatmap")
             badge: panel.hasBadge(szuro)
         }
         PanelButton {

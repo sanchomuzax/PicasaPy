@@ -298,6 +298,19 @@ Rectangle {
         ? editController.shiftAktiv
         : false
 
+    // #4558: a csempék BÉLYEGKÉPE ezt a HALASZTOTT másolatot követi, nem
+    // közvetlenül a `shiftMasodlagos`-t. ⚠️ Holtpont-őr: a Shift-váltás
+    // Pythonból érkezik (eseményszűrő → `shiftAktivChanged`, vagy
+    // `setProperty`), a GIL-t tartva. Ha a kötés ugyanabban a hívásban
+    // cserélné a tíz Image forrását, a `QQuickPixmap::load` a képolvasó
+    // szál zárjára várna — az olvasó pedig épp a Python-szolgáltatóban a
+    // GIL-re. Mérve: gdb-vel ez a kölcsönös várakozás, a fókuszpuck-teszt
+    // 400 s-ig állt (CI exit 124). A `Qt.callLater` az eseményhurokból
+    // cseréli a forrást, ahol a GIL szabad.
+    property bool shiftBelyegkep: false
+    onShiftMasodlagosChanged: Qt.callLater(panel._igazitsdAShiftBelyegkepet)
+    function _igazitsdAShiftBelyegkepet() { shiftBelyegkep = shiftMasodlagos }
+
     function frissitsdAShiftAllapotot() { return Logika.frissitsdAShiftAllapotot() }
 
     function allitsdAShiftFigyelest() { return Logika.allitsdAShiftFigyelest() }
@@ -305,6 +318,7 @@ Rectangle {
     Component.onCompleted: {
         panel.allitsdAShiftFigyelest()
         panel.frissitsdAShiftAllapotot()
+        panel.shiftBelyegkep = panel.shiftMasodlagos
     }
     Component.onDestruction: {
         if (typeof editController !== "undefined" && editController
