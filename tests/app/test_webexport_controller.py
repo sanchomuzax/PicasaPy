@@ -277,3 +277,6 @@ class TestArnyekASablonbol4849:
         loop.exec()
         html = (target / "index.html").read_text(encoding="utf-8")
         assert 'class="thumb shadow"' in html
+        assert 'class="item-figure shadow"' not in (
+            target / "index0.html"
+        ).read_text(encoding="utf-8")

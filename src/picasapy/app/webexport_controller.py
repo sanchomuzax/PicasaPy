@@ -180,9 +180,10 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): `size_index`
         a `webexport.fen` EGYETLEN méretválasztójának indexe (`SIZE_CHOICES`,
         a nagy kép mérete); a bélyegkép méretét a sablon adja (hiányában
-        144). Az árnyékolás (`shadowedThumbnails`, alapérték 1;
+        144). `movie_full`: „Teljes mozgófilm" (True) / „Első képkocka".
+        Az árnyékolás (`shadowedThumbnails`, alapérték 1;
         `shadowedImages`, alapérték 0) nem a párbeszédből jön: a sablon
-        `define`-ja adja, hiányában az alapérték (#4849). `movie_full`: „Teljes mozgófilm" (True) / „Első képkocka".
+        `define`-ja adja, hiányában az alapérték (#4849).
         Mindkettő megmarad a következő megnyitásig, de csak elinduló
         exportnál — az eredeti is az elfogadáskor ment.
 
