@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.62] – 2026-10-11
+
+- A weboldal-exportálásban az eredeti Picasához hasonlóan egyetlen méretválasztó van (alapból 640 képpont, a bélyegkép méretét a sablon adja), és a mozgófilmek első képkockaként vagy teljes mozgófilmként is exportálhatók (#4610).
+
 ## [0.9.61] – 2026-10-11
 
 - Az F3 a keresőmezőre viszi a fókuszt (mint a Ctrl+F), az F4 a kijelölt kép csillagát kapcsolja, ha a csillag-gomb engedélyezett (#4600).
