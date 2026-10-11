@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.73] – 2026-10-11
+
+- Fejlesztőknek: a tesztek, a spec és egy kódkomment Windows-útvonal-példái helyettesítő felhasználónevet és mappanevet használnak (#4877).
+
 ## [0.9.72] – 2026-10-11
 
 - A windowsos CI szövegrajzoló próbái üres betűadatbázis mellett a renderelő saját betűfájljait kapják, globális beállítás nélkül (#4506).
