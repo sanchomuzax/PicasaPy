@@ -126,6 +126,11 @@ def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
     controller.sourceScanFinished.connect(lambda *_a: scan_done.append(True))
     valaszto.setProperty("selectedFile", QUrl.fromLocalFile(str(kijelolt[0])))
     assert QMetaObject.invokeMethod(valaszto, "accepted", Qt.ConnectionType.DirectConnection)
+    # A kiváltott `accepted` jel nem zárja be a választót; nem natív (Qt Quick)
+    # párbeszédnél a nyitva maradt ablak a további kattintásokat elnyelné —
+    # a valódi elfogadás bezárja, tehát itt is be kell zárni.
+    assert QMetaObject.invokeMethod(valaszto, "close", Qt.ConnectionType.DirectConnection)
+    _varj(qt_app, lambda: valaszto.property("visible") is not True, "a fájlválasztó nem zárult be")
     _varj(qt_app, lambda: bool(scan_done), "az onAccepted nem indította a beolvasást")
     assert int(dialog.property("previewCount")) == 1
     assert dialog.property("sourceFiles").toVariant() == [QUrl.fromLocalFile(str(kijelolt[0])).toString()]
