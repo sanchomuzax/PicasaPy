@@ -269,6 +269,36 @@ _FACE_LANDMARKS = FaceLandmarks(
 )
 
 
+def _click_diagnosis(window, target: str, center) -> str:
+    """A CI-n időnként hatástalan arc-kattintás (#4870) okának kiírása: mi
+    van a kattintás pontján, és mi a nézet/panel állapota."""
+    view = _child(window, "unnamedFacesView")
+    label = _child(window, "peoplePanelHeader")
+    hits = []
+    tiles = 0
+    for item in _walk(window.contentItem()):
+        if item.objectName() == target:
+            tiles += 1
+        if not item.isVisible():
+            continue
+        local = item.mapFromScene(center)
+        if item.contains(local):
+            hits.append(f"{item.metaObject().className()}:{item.objectName() or '-'}"
+                        f"(z={item.z()})")
+    return (
+        f"a kattintás után nincs fejléc; pont={center.x():.0f},{center.y():.0f}"
+        f" ablak={window.width()}x{window.height()}"
+        f" selectedCount={view.property('selectedCount')}"
+        f" grouped={view.property('grouped')}"
+        f" csoportok={len(view.property('groupsModel') or [])}"
+        f" {target}-példány={tiles}"
+        f" fejléc.visible={label.property('visible')}"
+        f" fejléc.text={label.property('text')!r}"
+        f" panel.visible={_child(window, 'peoplePanel').property('visible')}"
+        f" találatok(alulról felfelé)={hits[-8:]}"
+    )
+
+
 class TestUnnamedAlbum:
     def _open(self, window, qt_app):
         """A Névtelenek album megnyitása — a `reload()`-ot az
@@ -316,6 +346,9 @@ class TestUnnamedAlbum:
                 deadline = time.monotonic() + 5.0
                 while _header(window) is None and time.monotonic() < deadline:
                     QTest.qWait(20)
+                if _header(window) is None:
+                    raise AssertionError(
+                        _click_diagnosis(window, target, center))
                 return
         raise AssertionError(f"{target} nem található/nem látszik a rácson")
 
