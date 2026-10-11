@@ -387,3 +387,5 @@ StartupRelocateWindow.qml	Moving the database	segedszoveg	Az adatbázis áthelye
 StartupRelocateWindow.qml	Photo index…	segedszoveg	Az adatbázis-áthelyezés (eredeti funkció) folyamatjelzőjének lépése; eredeti szövege nincs.		
 StartupRelocateWindow.qml	PicasaPy is moving the database.	segedszoveg	Az adatbázis-áthelyezés (eredeti funkció) induláskori folyamatjelzője; eredeti szövege nincs.		
 StartupRelocateWindow.qml	Thumbnail cache…	segedszoveg	Az adatbázis-áthelyezés (eredeti funkció) folyamatjelzőjének lépése; eredeti szövege nincs.		
+PicasaPy/ImportSourceDialog.qml	Folder...	segedszoveg	A forrás-tallózó menüjének tétele (mappa választása); az eredeti tallózó egyetlen „Fájlok/mappa importálása” ablak volt, a két tételnek külön eredeti szövege nincs.		
+PicasaPy/ImportSourceDialog.qml	Files...	segedszoveg	A forrás-tallózó menüjének tétele (fájlok választása); az eredeti tallózó egyetlen „Fájlok/mappa importálása” ablak volt, a két tételnek külön eredeti szövege nincs.		

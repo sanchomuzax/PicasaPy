@@ -251,6 +251,41 @@ def scan_source(
     return tuple(sorted(candidates, key=lambda candidate: str(candidate.path)))
 
 
+def scan_files(
+    paths: Iterable[str | Path],
+    media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES,
+) -> SourceScan:
+    """#4596: a forrás KIJELÖLT FÁJLOK listája (mappa helyett) — ugyanazok a
+    jelöltek, mint a mappás úton: csak létező, a szűrő szerinti médiafájl
+    kerül be (a nem média és a hiányzó fájl kimarad), ismétlés nélkül,
+    útvonal szerint rendezve. Idegen (nem felismert) fájl itt nincs: a
+    „minden törlése" is csak a kijelölt fájlokat érinti, ezért az
+    `unrecognized` mindig 0."""
+    kinds = _FILTER_KINDS.get(
+        media_filter, _FILTER_KINDS[MEDIA_FILTER_PICTURES_AND_MOVIES]
+    )
+    candidates: dict[Path, ImportCandidate] = {}
+    for raw in paths:
+        path = Path(raw)
+        if path in candidates or media_kind_of(path.name) not in kinds:
+            continue
+        try:
+            if not path.is_file():
+                continue
+            mtime_ns = path.stat().st_mtime_ns
+        except OSError:
+            continue
+        candidates[path] = ImportCandidate(
+            path=path, date=_resolve_file_date(path, mtime_ns)
+        )
+    return SourceScan(
+        candidates=tuple(
+            sorted(candidates.values(), key=lambda candidate: str(candidate.path))
+        ),
+        unrecognized=0,
+    )
+
+
 def _resolve_file_date(path: Path, mtime_ns: int) -> date | None:
     """A csoportosítás/sablon dátuma: EXIF `taken_at`, ennek hiányában
     fájl-mtime (`picasapy.timeline.resolve_date`, #24 mintája)."""
