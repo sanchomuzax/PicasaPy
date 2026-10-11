@@ -7,9 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.55] – 2026-10-11
+
 ## [0.9.54] – 2026-10-11
 
+<<<<<<< HEAD
 - A filmelőnézet már a kiválasztott átmenetet játssza le a kész film geometriájával (#4820).
+=======
+- A biztonsági mentés és az áthelyező műveletek a régi Picasa.ini adatait is megőrzik (#4839).
+>>>>>>> origin/main
 
 ## [0.9.53] – 2026-10-10
 
