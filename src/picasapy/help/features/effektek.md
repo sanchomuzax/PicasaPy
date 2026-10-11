@@ -82,7 +82,7 @@ mielőtt a színeket kiválasztja, ahogy az eredeti Picasa is tette.
 |---|---|
 | Felpörgetés | erősebb színek és kontraszt |
 | Szegély | keret a kép köré |
-| Képregény | rajzolt, képregényes hatás |
+| Képregény | rajzolt, képregényes, pontrácsos hatás — a **Színes ecset**, a **Pontsűrűség** és a **Ponthalványítás** csúszkával |
 | Árnyékvetés | árnyék a kép mögé |
 | Fókusznagyítás | egy pont felnagyítása, sugaras elmosással — a **Suhanás** és a **Fókuszméret** csúszkával |
 | Múzeumi matt | képkeret-szerű paszpartu |

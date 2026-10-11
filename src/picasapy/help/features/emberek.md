@@ -87,6 +87,24 @@ kéri: a program rákérdez, hogy valóban a Mellőzött emberek albumba
 kerüljön-e az arc. Az **×** a megnevezett sorokon is látszik, ahogy az
 eredetiben, de ott nem csinál semmit.
 
+Ha a program **tippel** egy névtelen arcra, a sorban a javasolt név
+kérdőjellel áll (például „Anna?"), alatta két kis gomb: a **✓** elfogadja
+a javaslatot, és az arc a személyhez kerül; a **✗** elveti, és az arc
+névtelen marad.
+
+### Személy kézi hozzáadása
+
+Ha az arckereső egy arcot nem talált meg, magad is kijelölheted. A panel
+alján lévő **Személy kézi hozzáadása** gomb csak kijelölt képpel él.
+Rákattintva a kép a nézőben nyílik meg (ha még nem ott álltál), rajta egy
+négyszöggel, a panelen pedig egy rövid útmutató jelenik meg:
+
+1. Húzd a négyszöget az arcra, és az oldalait mozgatva igazítsd hozzá.
+2. Kattints a négyszög alatti **Név hozzáadása** feliratra, írd be a
+   nevet, és nyomj **Entert** (vagy kattints a felkínált névre).
+
+A **Mégse** gomb kilép a kézi hozzáadásból.
+
 A bal hasáb **Emberek** csoportjában minden névhez tartozik egy album. A
 névre jobbgombbal kattintva:
 
@@ -101,7 +119,12 @@ névre jobbgombbal kattintva:
 ## Névtelen arcok
 
 A bal hasáb **Névtelenek** bejegyzése a még el nem nevezett arcokat
-gyűjti. Itt:
+gyűjti. Ha ez a gyűjtemény **üres** — például még egyetlen arcot sem
+talált a keresés —, az Emberek panelen az eredeti Picasa útmutatója
+olvasható: hogyan nevezz el valakit, hogyan mellőzz egy arcot, és hol
+találod a javaslatokat. (Az útmutató egyik mondata Google-fiókos
+bejelentkezést említ — a PicasaPy-ban ilyen nincs, erre nincs szükség.)
+Itt:
 
 - Az album csoportosítva nyílik: egy emberhez tartozó arcokat egyben
   látod. A fejléc **Csoportok részletes nézete** gombja szétnyitja őket,

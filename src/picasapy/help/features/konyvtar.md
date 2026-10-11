@@ -41,6 +41,14 @@ sorrend és az indexképek kapcsolója tehát egy helyről vezérelhető, és a
 két belépési pont nem tud szétcsúszni. Keskeny ablakban a ▾ gomb
 elrejtőzik; a menüsorból ilyenkor is elérhető minden.
 
+Ebben a menüben a rendezési tételek után az Emberek-lista három rendezése
+áll: **Személyek rendezése név alapján**, **Személyek rendezése mennyiség
+alapján** és **Személyek rendezése a toplista alapján**. A pipa mutatja,
+melyik van érvényben. Alattuk a **Gyorsbillentyűk** almenü a négy
+ugrópontot kínálja (**Sajátgép**, **Képek**, **Dokumentumok**,
+**Asztal**) — ugyanazokat, mint az almenü teteje (lásd lentebb, „Honnan
+induljon a fa").
+
 Fanézetben a mappa sorára jobbgombbal kattintva a menü attól függ, milyen
 sor az: ha a mappában vannak saját képek (vagyis a könyvtár valódi
 mappája), a **teljes mappa-menü** nyílik, ugyanaz, mint a többi nézetben.
@@ -134,9 +142,15 @@ megnyitja a **Mappa tulajdonságai** ablakot. A mezői:
   együtt maradnak. Ha a név foglalt, érvénytelen, vagy a mappa egyik képe
   épp szerkesztés alatt áll, **A mappa nem nevezhető át** címmel ablak
   mondja meg az okot, és semmi nem változik;
-- **Dátum:** — a mappa dátuma ÉÉÉÉ-HH-NN alakban. Az **Automatikus dátum**
+- **Dátum:** — a mappa dátuma, a nyelvi beállításod szerinti alakban
+  (magyarul például `2026. 01. 01.`); a szabványos ÉÉÉÉ-HH-NN alakot is
+  elfogadja. A mező jobb szélén lévő naptár-ikonra (**Dátum
+  kiválasztása**) kattintva naptár nyílik a mező alatt: az **Előző hónap**
+  és a **Következő hónap** nyíllal lapozol, a napra kattintva a dátum a
+  mezőbe kerül. Menteni itt is az **OK** ment. Az **Automatikus dátum**
   gomb törli a kézzel megadott értéket, és a mappa visszaáll a benne lévő
-  legkorábbi kép dátumára. Érvénytelen dátumnál az **OK** szürke;
+  legkorábbi kép dátumára. Érvénytelen dátumnál az **OK** szürke, és egy
+  sor megmutatja, milyen alakban várja a program a dátumot;
 - **Zene:** — a **Zene használata diavetítéshez és mozgófilmes
   prezentációhoz** jelölővel, és a **Tallózás…** gombbal választott hangfájllal
   (Windowson `.mp3` vagy `.wma`, máshol `.mp3` vagy `.m4a`). Ez a zene szól
@@ -236,6 +250,15 @@ van tagja.
 Ugyanez az ablak nyílik meg a mappáknál is (**Mappaleírás
 szerkesztése…**) — az eredeti Picasa is egy ablakot használ a kettőre.
 Mappánál a mezők kicsit mások (lásd fent, **A mappa tulajdonságai**).
+
+### Album törlése
+
+Az album sorára jobbgombbal kattintva az **Album törlése** tétel előbb
+rákérdez: „Biztosan törli a(z) "*név*" albumot?" Az **Album törlése**
+gombbal jóváhagyva a program az albumot minden olyan mappa
+`.picasa.ini` fájljából kiveszi, ahol tagja volt. **A képek megmaradnak**
+a mappáikban, és a többi albumhoz sem nyúl — csak ez az egy összeállítás
+szűnik meg.
 
 ### Az Album menü albumnézetben
 
@@ -394,6 +417,10 @@ férő gombok alatta, a gombra kattintva felnyíló függőleges oszlopban
 érhetők el. Az oszlopban ugyanúgy ikon és felirat áll, mint a sávban, és
 a tétel szürke, ha a hozzá tartozó gomb is az volna.
 
+A kimeneti gombsorra jobbgombbal kattintva a **Gombok konfigurálása…**
+tétel ugyanazt az ablakot nyitja meg, mint az **Eszközök ▸ Gombok
+konfigurálása…** menüpont (lásd [Beállítások](beallitasok.md)).
+
 ## A képek dátumának módosítása
 
 Ha egy képnek rossz a dátuma — például a gép órája rosszul volt beállítva
@@ -434,9 +461,23 @@ GPS-koordináták.
 A panelen jobbgombbal kattintva egyetlen tétel nyílik: a **Szerkesztési
 címkék**, ami a Címkék panelt hozza elő.
 
+Ha van kijelölés, a panelen egy **Kulcsszavak** gomb is áll, mellette a
+kijelölés címkéivel. A gomb a **Címkék** ablakot nyitja meg: felül a kép
+bélyegképe, neve és dátuma, alatta a **Címkék:** lista. A **Címke
+hozzáadása:** mezőbe írt címkét a **Hozzáadás** gomb teszi fel a
+kijelölésre, a listában kijelölt címkét az **Eltávolítás** veszi le, a
+**Kész** bezárja az ablakot. Ha a kijelölésben írásvédett kép van, az
+ablak ezt kiírja („A címkék nem módosíthatók, mert a kijelölésben
+írásvédett elem van."), és nem enged módosítani. A címkézés a felvételi
+dátum nélküli képek dátumát sem változtatja meg.
+
 A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
 annak **a sora sem jelenik meg** — a panel tehát képenként rövidebb vagy
-hosszabb. Videóra ma csak a három felső sor jön ki.
+hosszabb. Videónál a három felső sor után a videó adatai jönnek: a
+**Mozgófilm adatai** sor a formátumot, a **Mozgófilm minősítése** sor —
+a felirata ellenére — a képkockasebességet (például `25 fps`), a
+**Mozgófilm hossza** pedig a hosszt perc:másodperc (hosszabb videónál
+óra:perc:másodperc) alakban.
 
 ### Az objektív neve
 
