@@ -158,3 +158,31 @@ def test_all_dictionaries_round_trip_byte_for_byte_and_report_missing_rows(capsy
         print("Hiányzó aktív fordítások nyelvenként:")
         for code, count in summaries:
             print(f"{code:5s} {count:4d}")
+
+
+def _message_keys(path: Path) -> set[tuple[str, str]]:
+    root = ET.parse(path).getroot()
+    return {
+        (context.findtext("name") or "", message.findtext("source") or "")
+        for context in root.iterfind("context")
+        for message in context.iterfind("message")
+    }
+
+
+def test_every_language_has_all_messages_of_the_hungarian_catalog_4863():
+    """#4863: a magyar .ts-be került új üzenet minden nyelvi .ts-ben is megvan.
+
+    A generátor (scripts/build_i18n_dictionaries.py) a magyar katalógusból
+    származtatja a többit; ha valaki csak a magyart bővíti, a többi nyelv
+    elcsúszik, és a felirat a felületen fordítatlanul jelenik meg.
+    """
+    hungarian = _message_keys(_I18N / "picasapy_hu.ts")
+    lagging = {}
+    for code in SUPPORTED_LANGUAGES:
+        missing = hungarian - _message_keys(_I18N / f"picasapy_{code}.ts")
+        if missing:
+            lagging[code] = len(missing)
+    assert not lagging, (
+        "a magyar .ts üzeneteiből hiányzik a nyelvi fájlokból "
+        f"(futtasd: python3 scripts/build_i18n_dictionaries.py): {lagging}"
+    )
