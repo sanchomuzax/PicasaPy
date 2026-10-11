@@ -104,6 +104,13 @@ kép adatait.
 
 ## Gyakori javítások
 
+Ha az egeret a szerkesztő egy gombja vagy effektcsempéje fölé viszed,
+rövid súgóbuborék mondja meg, mire való — például a **Vágás**-nál „Vágja
+ezt a fotót más alakúra", a **Szépia**-nál „Átalakítja a fotót szépia
+tónusúvá". A buborékok szövege az eredeti Picasáé. Ugyanígy kap
+buborékot az **Alkalmaz**, a **Mégse**, a **Visszavonás** és az
+**Újra** gomb is.
+
 Kilenc gomb:
 
 - **Vágás** — külön eszköz, lásd lentebb.
@@ -159,7 +166,6 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
   pixelméretet is kiírja: a **Kézi** sor a kijelölt keret méretét (például
   „Kézi: 1200x800"), a **Jelenlegi méretarány** sor a teljes kép méretét.
   A kézi sor értéke követi a keretet, amíg húzod.
-- **Álló** / **Fekvő** — a keret elforgatása.
 - **Forgatás** gomb — a képarány oldalainak cseréje.
 - **Javasolt vágások** — a program kínál néhány kivágást: a részletre, a
   színre, a horizontra, illetve az arcokra komponálva és az arcokra
@@ -198,7 +204,10 @@ keretének húzásakor is.
 
 Az **Automatikus** gomb magától megkeresi a vörös szemeket. Ha nem talál
 semmit, kiírja: „Az automatika nem talált vörös szemet." Ha talált,
-azt is jelzi.
+azt is jelzi, és **minden kijavított szem köré négyzetet rajzol** —
+ugyanúgy, mint a kézzel jelölt szemek köré. Az automatikusan javított
+szemeket így egyenként is visszavonhatod: kattints a négyzetükbe (lásd
+lentebb). Az **Alaphelyzet** az automatikus javítást is visszaveszi.
 
 Az automatikus javítás a **felismert arcok szemére** korlátozódik: az arcon
 kívüli vörös részeket — például egy piros lámpát vagy ruhát — nem bántja.
@@ -286,8 +295,19 @@ beállítottad, és a windowsos Picasa is így látja.
 Az effektek színválasztóján — például a **Neon** színénél — a színek
 rácsa alatt **öt „legutóbbi szín"** rekesz áll: a legutóbb választott öt
 színt őrzi, a legfrissebb elöl. A rekeszek **megmaradnak** a következő
-indításig is, és a színekre rákattintva újra használhatod őket. A
-**Szöveg** eszköz saját, kisebb palettáján nincs ilyen sor.
+indításig is, és a színekre rákattintva újra használhatod őket.
+
+A **Szöveg** eszköz **Szöveg színe** és **Körvonal színe** választóján is
+ott vannak a legutóbbi színek: a keskeny panel miatt kisebb rekeszekben, a
+paletta mellett.
+
+A rögzített palettán túl **bármilyen színt** választhatsz: a választó
+színkerék-gombja (buboréksúgója: **Színválasztás**) egy nagyobb
+színválasztót nyit. Ebben felül az öt legutóbbi szín áll, alatta egy
+nagy színmező, legalul pedig a teljes színskála csíkja: a csíkon a
+színárnyalatot választod, a színmezőben annak világosabb, sötétebb vagy
+fakóbb változatát. Amire kattintasz, az azonnal
+érvényesül a képen, és bekerül a legutóbbi színek közé.
 
 ## Festés ecsettel: hol hasson a Vámpírszem
 

@@ -206,6 +206,16 @@ visszaugrik az illesztett nézetbe. (Ha az egykattintásos kilépés be van
 kapcsolva, a dupla kattintás helyette kilép a nézőből — lásd fent.)
 Videónál és vágás közben a nagyítás nem használható.
 
+### A navigátorablak
+
+Amint a képet az illesztett nézetnél jobban felnagyítod, a kép sarkában
+egy kis **navigátorablak** jelenik meg: benne az egész kép kicsiben, a
+pillanatnyilag látható rész kék kerettel, a többi elsötétítve. Alatta a
+nagyítás mértéke áll, például „Nagyítás: 250%". A **keretet húzva** a
+nagyított képen is arra a részre lépsz. Az ablak sarkában lévő **×**
+elrejti; legközelebb akkor jön elő újra, ha a képet visszaállítod az
+illesztett nézetre, és ismét nagyítasz.
+
 Nagyított nézetben is használhatók a szerkesztő eszközei: a **Vámpírszem**
 ecsete, a **vörösszem**, a **retusálás**, a **szöveg** és az **arcjelölés**
 egérrel dolgozik a nagyított képen, és ha egyik eszköz sincs nyitva, a
@@ -288,7 +298,8 @@ vetítésre és a következő indításig is.
 
 ### Átmenetek
 
-A választóban öt átmenet van:
+A választóban az eredeti Picasa mind a 22 átmenete megvan, ugyanabban a
+sorrendben és ugyanazokkal a nevekkel:
 
 | átmenet | mit csinál |
 |---|---|
@@ -296,10 +307,17 @@ A választóban öt átmenet van:
 | Szétoszlás | a két kép egymásba úszik |
 | Szétoszlás feketén át | az előző kép feketébe halványul, onnan jön elő a következő |
 | Szétoszlás fehéren át | ugyanez fehéren keresztül |
+| Törlés – balra, Törlés, Törlés – felfelé, Törlés – lefelé | az előző kép oldalra, illetve fel vagy le kicsúszik, és közben előtűnik a következő |
+| Törlés – balra fel, jobbra fel, balra le, jobbra le | ugyanez átlós irányban |
+| Tolás – balra, Tolás, Tolás – felfelé, Tolás – lefelé | a következő kép becsúszik, és kitolja az előzőt |
+| Kör – befelé, Kör | a következő kép kicsinyedve, illetve kicsiből nőve jelenik meg |
+| Négyszög | a következő kép kisebb méretből kinagyulva jelenik meg |
 | Pásztázás és nagyítás | a kép lassan mozog, és közben egyre nagyobb lesz |
+| Pásztázás és nagyítás – arc | ugyanez, valamivel erősebb nagyítással |
+| Gyorsítás | a következő kép gyorsan, kissé nagyított állásból úszik be |
 
-A **Pásztázás és nagyítás** nem a képek közé esik, hanem magán a képen
-fut, ezért a **diaidőhöz** igazodik, nem az átmenet hosszához.
+A két **Pásztázás és nagyítás** nem a képek közé esik, hanem magán a
+képen fut, ezért a **diaidőhöz** igazodik, nem az átmenet hosszához.
 
 ## Megjelenítési mód
 
@@ -323,6 +341,9 @@ hiányzik, a program fut tovább, csak a lejátszó helyén ezt írja ki:
 „A videó-lejátszáshoz a Qt Multimedia modul szükséges."
 
 Az eszköztár szűrőjével csak a videókat is megjelenítheted.
+
+A nézőben megnyitott videó **magától elindul**, ahogy az eredeti
+Picasában.
 
 ### A videósáv
 
@@ -369,10 +390,18 @@ történik.
 A lejátszás ezután a kijelölt szakaszra szorítkozik: a kezdőpontra
 ugrik, a végpontnál megáll, a csúszka pedig csak a szakaszon mozog.
 
-A videópanel **Klip exportálása** gombja csak vágott videónál él, de a kivágott klip
-fájlba mentése ma még nem működik: Linuxon a gomb azt írja ki, hogy „A
-program ezt a funkciót Linux rendszeren nem támogatja". A kivágás ettől
-még megmarad, és a lejátszás a szakaszra szorítkozik.
+A videópanel **Klip exportálása** gombja csak vágott videónál él.
+**Windowson és macOS-en** a kivágott szakaszt új MP4-fájlba menti a
+**Képek** mappád **Picasa** almappáján belül, az exportált videóklipek
+mappájába; a végén ezt írja: „A(z) *fájlnév* mentve az Exportált
+videoklipek mappába". Ha már van ilyen nevű fájl, a program sorszámot
+tesz a név végére, meglévő fájlt nem ír felül. Ha az export nem sikerül,
+„A klip exportálása nem sikerült" üzenet jelenik meg. Az eredeti videó
+ilyenkor sem változik.
+
+**Linuxon** a klip fájlba mentése nem működik: a gomb azt írja ki, hogy
+„A program ezt a funkciót Linux rendszeren nem támogatja". A kivágás
+ettől még megmarad, és a lejátszás a szakaszra szorítkozik.
 
 **A videófájlhoz nem nyúlunk.** A vágáspontok a mappa `.picasa.ini`
 fájljába kerülnek, pontosan abban az alakban, amit az eredeti Picasa is

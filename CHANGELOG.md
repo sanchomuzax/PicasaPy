@@ -9,7 +9,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.9.55] – 2026-10-11
 
-- A filmelőnézet már a kiválasztott átmenetet játssza le a kész film geometriájával (#4820).
+- Az egyéni méretarány felvételekor a párbeszéd a hivatalos feliratokat és mintasort mutatja, a legördülőben „Egyéni méretarányok” szakaszcím áll, a törlés pedig a legördülő melletti kukával megy (#4550).
 
 ## [0.9.54] – 2026-10-11
 
