@@ -99,6 +99,22 @@ Item {
     return probe
 
 
+@pytest.fixture
+def szondak(qml_app, qt_app):
+    """A szondák a QML-motor bontása ELŐTT válnak le a célról (#4871).
+
+    A motor a lebontáskor valóban megszűnik; a cél nélkül maradt szonda
+    `targetItem.ToolTip` kötése különben TypeError-t adna (#1260-as őr).
+    """
+    yield
+    for obj in _KEEP_ALIVE:
+        if obj.property("targetItem") is not None:
+            obj.setProperty("targetItem", None)
+        obj.deleteLater()
+    _KEEP_ALIVE.clear()
+    qt_app.processEvents()
+
+
 def _kapcsold_at(ablak: QObject, qt_app, object_name: str) -> None:
     options = _nyisd_meg_beallitasokat(ablak, qt_app)
     checkbox = _elem(ablak, object_name)
@@ -108,7 +124,7 @@ def _kapcsold_at(ablak: QObject, qt_app, object_name: str) -> None:
 
 @pytest.mark.parametrize("magassageltolas", (-5, 0, 5))
 def test_tooltip_kapcsolo_kattintasra_elrejti_es_visszahozza(
-    qml_app, qt_app, magassageltolas
+    qml_app, qt_app, szondak, magassageltolas
 ):
     ablak, controller, engine = qml_app
     _ablakmagassag(ablak, qt_app, magassageltolas)

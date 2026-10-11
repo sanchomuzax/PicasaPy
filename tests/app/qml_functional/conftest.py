@@ -89,7 +89,7 @@ def _build_qml_app(
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.app.timeline_controller import TimelineController
     from picasapy.thumbs import ThumbnailCache
-    from PySide6.QtCore import QSettings
+    from PySide6.QtCore import QCoreApplication, QEvent, QSettings
     from picasapy.app.worker_thread import (
         running_background_workers,
         elo_valaszok,
@@ -355,6 +355,8 @@ def _build_qml_app(
     # Windows alatt hozzáférési hibát okoz, ha a válasz QML-tulajdonosa addigra
     # már megsemmisült.
     engine.deleteLater()
+    qt_app.processEvents()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     qt_app.processEvents()
 
 
