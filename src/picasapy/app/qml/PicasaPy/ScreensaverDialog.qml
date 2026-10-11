@@ -38,6 +38,10 @@ Dialog {
     }
 
     function frissitsd() {
+        // a bejegyzést közben kívülről is törölhették: a vezérlő újraolvassa
+        if (dialog.saverController
+                && dialog.saverController.refreshScreensaverIdle !== undefined)
+            dialog.saverController.refreshScreensaverIdle()
         var effect = dialog.saverController
                    ? dialog.saverController.screensaverEffect : "dissolve"
         effectBox.currentIndex = 0
@@ -51,6 +55,40 @@ Dialog {
                 ? dialog.saverController.screensaverSeconds : 3.0
         captionCheck.checked = dialog.saverController
                 ? dialog.saverController.screensaverShowCaptions : true
+        idleMinutesBox.value = dialog.saverController
+                ? dialog.saverController.screensaverIdleMinutes : 10
+        dialog.idleSaveFailed = false
+    }
+
+    //: #4613: a tétlenségi indítás állapota a vezérlőből; a kattintás után
+    //: a kötés visszaáll, így a pipa mindig a valódi bejegyzést mutatja
+    readonly property bool idleSupported: (dialog.saverController
+            && dialog.saverController.screensaverIdleSupported !== undefined)
+        ? dialog.saverController.screensaverIdleSupported : false
+    readonly property bool idleEnabled: (dialog.saverController
+            && dialog.saverController.screensaverIdleEnabled !== undefined)
+        ? dialog.saverController.screensaverIdleEnabled : false
+    readonly property bool idleAutostart: (dialog.saverController
+            && dialog.saverController.screensaverIdleAutostart !== undefined)
+        ? dialog.saverController.screensaverIdleAutostart : true
+    readonly property string idleReason: dialog.saverController
+        ? dialog.saverController.screensaverIdleReason : "not-linux"
+    readonly property string idleDesktop: dialog.saverController
+        ? dialog.saverController.screensaverIdleDesktop : ""
+    property bool idleSaveFailed: false
+    readonly property string idleMessage: {
+        if (dialog.idleSaveFailed)
+            return qsTr("The setting could not be saved.")
+        if (dialog.idleReason === "not-linux")
+            return qsTr("Starting when the computer is idle is only available on Linux.")
+        if (dialog.idleReason === "no-swayidle")
+            return qsTr("Install the swayidle package to use this option.")
+        if (dialog.idleReason === "desktop")
+            return qsTr("Not supported on this desktop (%1). It works on wlroots-based Wayland desktops (labwc, sway, Wayfire) with swayidle.")
+                .arg(dialog.idleDesktop.length > 0 ? dialog.idleDesktop : qsTr("unknown"))
+        if (dialog.idleSupported && !dialog.idleAutostart)
+            return qsTr("This desktop does not start it by itself after you log in again; it works in the current session.")
+        return ""
     }
 
     onOpened: dialog.frissitsd()
@@ -161,6 +199,58 @@ Dialog {
             text: qsTr("Show captions")
             onClicked: if (dialog.saverController)
                 dialog.saverController.setScreensaverShowCaptions(checked)
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            CheckBox {
+                id: idleCheck
+                objectName: "screensaverIdleCheck"
+                text: qsTr("Start when the computer is idle for")
+                enabled: dialog.idleSupported
+                checked: dialog.idleEnabled
+                onClicked: {
+                    var ok = dialog.saverController
+                            ? dialog.saverController.setScreensaverIdleEnabled(checked)
+                            : false
+                    dialog.idleSaveFailed = !ok
+                    checked = Qt.binding(function() { return dialog.idleEnabled })
+                }
+            }
+            SpinBox {
+                id: idleMinutesBox
+                objectName: "screensaverIdleMinutes"
+                from: 1
+                to: 120
+                value: 10
+                editable: true
+                enabled: dialog.idleSupported
+                // a nyilak nevet kapnak, hogy a felület-teszt rájuk kattinthasson
+                Component.onCompleted: {
+                    if (up.indicator) up.indicator.objectName = "screensaverIdleMinutesUp"
+                    if (down.indicator) down.indicator.objectName = "screensaverIdleMinutesDown"
+                }
+                onValueModified: {
+                    if (dialog.saverController)
+                        dialog.idleSaveFailed =
+                            !dialog.saverController.setScreensaverIdleMinutes(value)
+                }
+            }
+            Text {
+                text: qsTr("minutes")
+                font.pixelSize: Theme.fontSize
+                color: dialog.idleSupported ? Theme.ink : Theme.textGray
+            }
+        }
+
+        Text {
+            objectName: "screensaverIdleMessage"
+            visible: text.length > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: dialog.idleMessage
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
         }
 
         Button {

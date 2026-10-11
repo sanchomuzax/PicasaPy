@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.70] – 2026-10-11
+
+- A windowsos CI-láb tesztjei ismét a betűkönyvtár-kiegészítés nélkül futnak: a globális QT_QPA_FONTDIR a rács- és nyomtatáspróbák rajzolását is megváltoztatta (#4506).
+
+## [0.9.69] – 2026-10-11
+
+- A képernyővédő a gép tétlenségekor magától is elindulhat: a Képernyővédő konfigurálása ablakban bekapcsolható, hány perc tétlenség után induljon. A wlroots-alapú Wayland-asztalokon (például a Raspberry Pi OS labwc-asztalán) működik a swayidle programmal; más környezetben a program megírja, miért nem érhető el (#4613).
+
 ## [0.9.68] – 2026-10-11
 
 - Fejlesztőknek: a windowsos CI-láb betűtípus- és MAPI-próbái a valódi viselkedést mérik (offscreen betűkönyvtár, modulszintű MAPI-fogantyú) (#4506).
