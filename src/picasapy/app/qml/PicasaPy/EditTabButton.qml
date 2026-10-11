@@ -34,6 +34,13 @@ Rectangle {
     // effekt, ami erre a fülre tartozik; a felhasználónak tudnia kell,
     // hol nézze meg
     property bool marked: false
+    // #4552: az ikon MÉRT mérete (`docs/specs/ui-audit-editor.md`, „A fülsáv
+    // ikonjai — sorrend és méret"): fülenként más, a gazda `EditorTabBar`
+    // adja át. Az alapérték az eredeti 3. fülé.
+    property int iconWidth: 20
+    property int iconHeight: 19
+    // a spec szerint az ikon y-ja 4 képponttal a fül teteje alatt van
+    readonly property int iconTop: 4
 
     //: #1857: a fül LEÍRÁSA — mire való a fül —, nem a neve.
     //: Korábban a buboréksúgó a `label`-t ismételte, vagyis a
@@ -56,11 +63,12 @@ Rectangle {
 
     EditTabIcon {
         objectName: tbtn.objectName ? tbtn.objectName + "Icon" : ""
-        anchors.centerIn: parent
-        // #741: az eredeti fülikonok y 49..68 a 25 képpontos sávban, azaz
-        // 16–19 képpont magasak (fülönként 15 × 16 … 25 × 19). A korábbi
-        // 22 × 22 nem fért volna a sávba.
-        width: 20; height: 18
+        // #4552: vízszintesen a fül közepén, a tetejétől 4 képpontra
+        x: Math.round((tbtn.width - width) / 2)
+        y: tbtn.iconTop
+        // #741/#4552: az eredeti fülikonok 16–19 képpont magasak (fülönként
+        // 15 × 16 … 25 × 19) — a méretet a gazda adja át.
+        width: tbtn.iconWidth; height: tbtn.iconHeight
         kind: tbtn.iconKind
         strokeColor: Theme.iconInk
         accentColor: tbtn.iconAccent
