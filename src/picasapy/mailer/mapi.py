@@ -147,12 +147,17 @@ def build_mapi_message(
     return MapiPayload(message=message, keep=tuple(keep))
 
 
+def _load_mapi32():
+    """Modulszintű fogantyú: a tesztek ezt cserélik, nem a globális `ctypes.WinDLL`-t (#1375)."""
+    return ctypes.WinDLL("mapi32")  # type: ignore[attr-defined]
+
+
 def send_mapi(payload: MapiPayload, *, dialog: bool = True) -> int:
     """`MAPISendMailW` hívása — csak Windowson.
 
     Visszatérése a MAPI-kód: `MAPI_OK` a sikeres megnyitás,
     `MAPI_USER_ABORT` a bezárt szerkesztő; minden más hiba."""
-    mapi32 = ctypes.WinDLL("mapi32")  # type: ignore[attr-defined]
+    mapi32 = _load_mapi32()
     send = mapi32.MAPISendMailW
     send.argtypes = [
         ctypes.c_size_t,

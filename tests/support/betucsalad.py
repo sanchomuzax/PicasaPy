@@ -1,8 +1,8 @@
 """Próbabetű: egy második betűcsalád a rendszerbetű-adatbázisba (#4546).
 
 A betűtípus-választó próbái legalább KÉT telepített családot igényelnek.
-Windowson az offscreen CI-futtató adatbázisában egy család látszik, ezért a
-próbák (QML-es és vezérlős egyaránt) innen kapnak másodikat.
+Ha a futtató adatbázisában ennél kevesebb látszik, a próbák (QML-es és
+vezérlős egyaránt) innen kapnak másodikat.
 """
 
 from __future__ import annotations
@@ -21,11 +21,12 @@ def atnevezett_betu(cel: Path) -> Path:
     """A csomagolt Open Sans egy másik CSALÁDNÉVEN („Open Sanz") futó másolata.
 
     Miért kell: a legördülő a telepített rendszerbetűket kínálja, a választást
-    pedig csak legalább KÉT családnál lehet mérni. A windowsos CI offscreen
-    futtatóján a rendszerbetű-adatbázis csak a csomagolt felület-betűt
-    tartalmazza (hipotézis: a CI-bukás `target_index == -1` értéke ezt
-    jelzi: legfeljebb egy család volt). A másolat azonos hosszú névcserével
-    készül, így a táblaszerkezet érintetlen marad.
+    pedig csak legalább KÉT családnál lehet mérni. A windowsos offscreen
+    platform rendszerbetű-adatbázisa üres volt, mert a `QFreeTypeFontDatabase`
+    csak a `QT_QPA_FONTDIR` mappát olvassa (#4506 — ezt a gyökér-`conftest`
+    már beállítja, ld. `support/qt_betukonyvtar.py`); a másolat tartalék
+    olyan környezetre, ahol a mappa sem ad két családot. A másolat azonos
+    hosszú névcserével készül, így a táblaszerkezet érintetlen marad.
     """
     adat = bytearray(BETU_FORRAS.read_bytes())
     darab = struct.unpack(">H", adat[4:6])[0]

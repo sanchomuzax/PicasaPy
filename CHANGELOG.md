@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.68] – 2026-10-11
+
+- Fejlesztőknek: a windowsos CI-láb betűtípus- és MAPI-próbái a valódi viselkedést mérik (offscreen betűkönyvtár, modulszintű MAPI-fogantyú) (#4506).
+
 ## [0.9.67] – 2026-10-11
 
 - Fejlesztőknek: a `PySide6<6.12` korlát indoklása rögzítve — a 6.12-es összeomlás a PySide hibája, nem a programé (#4671).
