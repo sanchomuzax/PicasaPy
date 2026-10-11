@@ -935,6 +935,178 @@ nézet `+0x2c0` mezőjén át közvetlenül nem követtük végig).
 
 `0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 
+### D.8 ⭐ A Csillagozott fotók (`]star`) gyűjteményben a törlés a CSILLAGOT veszi le, a fájl marad (2026-10-11, #4883)
+
+*Előzmény: a #4621 D.7 szakasza (a néző `Ctrl+Delete`-je; a `0x9c9a`
+kezelője `0x005cbaef` → az ágválasztó `0x005c9b00`). A D.7 a Csillagozott
+sort csak **következtette** az ágtáblából; ez a szakasz utasításszinten
+végigköveti. Forrás: `0x005c9b00` (`0x005c9bce`–`0x005c9d4d`,
+`0x005c9de4`–`0x005c9e3a`, `0x005c9ec7`–`0x005ca07a`) · `0x0045ecf0` ·
+`0x004da1d0` · `0x0044db30` (`CThumbDB` vtábla `0x00c81fa4`, `+0x28`) ·
+az ini-betöltő `0x00456610` (`0x00458c53`–`0x00458d17`) · a címke-figyelő
+`0x004a51f0` (`CAlbumState::vftable` `0x00c836b4`) · `0x005ed240` · mérés:
+`research/testdata/Picasa2/db3/albumdata_*.pmp` · szövegek:
+`stringres-en-hu.tsv`.*
+
+#### D.8.1 A Csillagozott album nem kap külön ágat — az eltávolító ágra esik
+
+**Indextől független pásztázás** (a `]star` literál `0x00c811d4` mint
+4 bájtos operandus, és közvetlen `call rel32` a két `]star`-predikátumra,
+`0x004acaf0` és `0x004aa0b0`, a teljes `.text`-en):
+
+| tartomány | `]star`-literál | `]star`-predikátum hívása |
+|---|---:|---:|
+| `0x005c9930`–`0x005cb170` (szövegező + ágválasztó) | 0 | 0 |
+| `0x005cb990`–`0x005cdd00` (parancsdiszpécser) | 0 | 0 |
+| `0x005fd160`–`0x005fe090` (megerősítő ablak, szövegezők) | 0 | 0 |
+
+A predikátumok egyetlen közvetlen hívója `0x006644c8` (a „Hozzáadás az
+albumhoz” almenü építője) és `0x005666e5` (`CStarSync`, lásd D.8.6). ⇒ A
+törlés útján **sehol nincs `]star`-specifikus elágazás**; a Csillagozott
+album sorsát a D.7.2 általános feltételei döntik el:
+
+| feltétel | cím | a `]star` albumra | bizonyíték |
+|---|---|---|---|
+| mappa-e (`0x004461a0` = üres útvonal → album) | `0x005c9bd5` | **album** | mérés: a valódi `albumdata_filename.pmp` 0. sora (token `]star`) üres; ugyanígy a `]search` sora (2366.), amelyet a kód épp ezen az ágon belül vizsgál · bináris: a `0x005ed240` a `]star`-vizsgálatát (`0x005ed2dc`) szintén a `0x004461a0` igaz ága (`0x005ed278 jne`) mögött végzi |
+| `]ignoreface`? | `0x005c9c17` | nem | literál-összevetés |
+| `]search`? | `0x005c9c5c` | nem | literál-összevetés |
+| ⇒ | `0x005c9c8d je 0x005c9d4b` | **eltávolító ág** | — |
+
+#### D.8.2 A megerősítés — ugyanaz, mint bármely albumnál
+
+Az eltávolító ág a 3. argumentumra (a `0x005cbb0e`-n `1`) megerősít:
+`0x005c9930(ui, lista, 0, albumid, 1, 1, 0, &dlg)` (`0x005c9e2f`), majd
+`0x005fd670` (`0x005c9e3a`). A `0x005c9930` két felülírója:
+
+| felülíró | mit vizsgál | `]star`-ra |
+|---|---|---|
+| `0x00448c90` → fajta 2 (Emberek) | az album 64 bites kapcsolat-azonosítója (`db+0x2748` tábla, `0x00449020`) ≠ 0 | hamis — mérés: a valódi `albumdata_albumcontactids.pmp` **0 sort** tartalmaz (erős: a `db+0x2748` ↔ pmp-oszlop megfeleltetés nincs utasításszinten igazolva) |
+| `0x00448a10` → fajta 3 (Névtelen emberek) | a token egyezik-e a `db+0x2e98` / `db+0x2e94` sztringgel (a `]unknownface`-ág ugyanezeket használja, `0x005c9fa6`) | hamis |
+
+A `0x005c9930` hívásai között (`0x00448c90`, `0x00448a10`, `0x00926c20`,
+`0x005fd160`, `0x005fd1c0`, `0x005fdc30`) nincs más token-vizsgálat. ⇒
+**fajta 1 (album)**, a D.7.3 albumsora:
+
+| elem | érték (hivatalos magyar) | kulcs |
+|---|---|---|
+| cím | Elemek eltávolítása | `DeleteMessage::RemoveItemsTitle` |
+| kérdés, egy kép | *Biztosan eltávolítja a kijelölt képet a jelenlegi albumból?* | `DeleteMessage::RemoveSingle` |
+| kérdés, több kép | *Biztosan eltávolítja a kijelölt %d képet a jelenlegi albumból?* | `DeleteMessage::RemoveMultiple` |
+| igen-gomb | Kép eltávolítása / Képek eltávolítása | `RemoveSingleYesButton` / `RemoveMultipleYesButton` |
+| jelölőnégyzet | *Ne kérdezzen újból, mindig távolítsa el* | `Preferences\DoNotConfirmRemoveFromAlbum` (változat 5, D.7.3) |
+
+A szöveg tehát „a jelenlegi albumból” beszél — **nem** említi a csillagot.
+
+#### D.8.3 Az eltávolítás maga: a `]star` CÍMKE levétele = a csillag levétele
+
+Megerősítés után (`0x005c9ec7`): `0x00448c90` hamis → `0x00448a10` hamis
+(`0x005c9f10 je 0x005c9fd1`) → `0x00717140` a kijelölés-csomóponton →
+**`0x0045ecf0(db, &lista, albumid)`** (`0x005c9fe9`).
+
+1. **A `0x0045ecf0` az album TOKENJÉT veszi kulcsnak.** A `db+0xaf0` tábla
+   `+0x58` → `+0x48` tömbjéből olvas `albumid` indexszel (`0x0045ed44`,
+   `0x0045ee5e`–`0x0045ee61`). Ugyanezt a tömböt olvassa a `CThumbDB`
+   `+0x28` slotja, a `0x0044db30` (`[this+0xaa8]`, ahol `this = db+0x48`;
+   `0x0044db32`, `0x0044db8b`–`0x0044db8e`) — és ez az a slot, amelyből a
+   `0x005c9b00` a `]ignoreface`/`]search` tokent kapja (`0x005c9bf5`). A
+   Csillagozott albumnál a kulcs tehát **`]star`**.
+2. **A címke levétele:** `0x004da1d0(eax = &kulcs, db+0x68, lista, 1)`
+   (`0x0045ef25`–`0x0045ef31`): a `db+0x68` címketábla hasítójában
+   megkeresi a kulcsot (`0x004da26d`–`0x004da2a9`), és a tagtömbből kiveszi a
+   kijelölt képeket (`0x004da390`–`0x004da3f1`).
+3. **A `]star` címke = a csillag.** Az ini-betöltő ugyanezt a hívást
+   használja a `star` kulcsra: `star=yes` (kis-nagybetű-független,
+   `0x00458c73`–`0x00458cbe`) → `0x004d9aa0(&"]star", db+0x68, …)`
+   (`0x00458cc4`–`0x00458ce9`), egyébként → `0x004da1d0(&"]star", db+0x68,
+   …)` (`0x00458cf4`–`0x00458d17`). Visszafelé a címke-változás figyelője,
+   a `0x004a51f0` (`CAlbumState`) a `]star` tokent a **`star`** ini-kulcsra
+   képezi (`0x004a5333`–`0x004a5347`; ugyanígy `]hidden` → `hidden`,
+   `]screensaver` → `screensaver`).
+4. A `CThumbDB` vtábla `+0xc8` slotja (`0x004744d0`, a csillag beállítója) is
+   a `]star` címkén dolgozik (`0x00474520 mov edx, 0xc811d4` →
+   `0x00475250`), a `+0xcc` slot (`0x004755d0`) a lekérdezője — a
+   csillag a binárisban **mindenütt** ez a címke.
+
+Utána: a `0x004aca00(albumid)` (= a token nem `]album:`/`]facealbum:`,
+`0x004aca3c`/`0x004aca50`) a `]star`-ra igaz, ezért a `CThumbDB` `+0xec`
+slotja (`0x00451ff0`) **kimarad** (`0x005c9ffc jne`); a felület frissül
+(`0x0065b840(ui, 0, 0, 1)`, `0x005ca074`–`0x005ca07a` → `0x005c9dc7`).
+
+⇒ **A Csillagozott fotók albumban a törlés-parancs leveszi a kijelölt képek
+csillagát** (a `star=yes` kikerül a `.picasa.ini`-ből); a fájl a lemezen
+marad, és a kép kiesik a Csillagozott albumból. Lemezes törlés
+(`0x009929b0`) ezen az úton nincs. A Shift **nem számít** (a 2. argumentumot
+csak a lemezes ág olvassa, D.7.5).
+
+*Bizonyítottsági fok:* az ágválasztás, a token-kulcs azonossága, a
+`0x004da1d0` címke-levétele és az ini-betöltő `star` ↔ `]star` megfeleltetése
+**megerősített** (utasításszinten, a literálok programmal kiolvasva). A
+`]star` album üres útvonala **mérés** (valódi `albumdata_filename.pmp`). A
+figyelő (`0x004a51f0`) ini-írását a kulcsválasztásig követtem, a tényleges
+fájlírásig nem — **erős**.
+
+#### D.8.4 Rács, néző, menüsáv — egyformán
+
+A D.7.1 szerint a menüsáv `Delete`-je (Fájl ▸ Törlés), a rács és a néző
+helyi menüjének törlés-tétele és a `Ctrl+Delete` **ugyanazt** a
+`0x005c9b00(ui, !Shift, 1, 1)` hívást váltja ki; a felület nem számít. Az
+egyetlen különbség a kijelölés-csomópont: ha a kép **a Csillagozott albumból**
+van kijelölve vagy megnyitva (`+0xea8 == +0xeac`), az eltávolító ág fut; ha a
+**tálcáról** (`+0xea8 = +0xea4 ≠ +0xeac`), a lemezes ág (`0x005c9b55`) — ez a
+D.7-tel azonos, nem `]star`-függő.
+
+A felirat ugyanezt mutatja: a maszk `0x10` bitje (D.7.4) a `]star` albumra
+beáll (album, és nem `]search`), tehát a néző és az album-kép menüjében
+**„Eltávolítás az albumból”** (`IDS_REMOVE_FROM_LABEL`), nem „Törlés a
+lemezről”.
+
+#### D.8.5 Ha maga az album a cél: „A csillagozott fotók albuma nem törölhető.”
+
+Ha nincs kép kijelölve, és a 4. argumentum nem nulla (maga a gyűjtemény a
+kijelölés, D.7.2 `0x005c9b70`–`0x005c9b98`), a `0x005ed240` (album-törlés)
+fut. Ez a `]star` tokent **külön** vizsgálja (`0x005ed2dc`–`0x005ed30d`), és
+törlés helyett üzenetet ad: `CThumbUI::DeleteStarAlbum` (`0x005ed30f`,
+`0x00980700`) — *„A csillagozott fotók albuma nem törölhető.”* —, majd
+kilép (`0x005ed61a`).
+
+#### D.8.6 Mellékleletek, és ami nyitva marad
+
+- **`CStarSync`** (`vftable 0x00c90b40`): a 2. slot (`0x00563580`) `4`-et
+  ad, ha a jelenlegi gyűjtemény (`+0xeac`) a `]star` album (`0x005666b0` →
+  `0x004aa0b0`), különben `8`-at. Hogy a felületen mit vezérel, **NYITOTT
+  KÉRDÉS** — megszerzése: a `CStarSync` példányát létrehozó kód
+  (`find_data_refs.py 0x00c90b40`) és a `+0x8` slot hívóhelyének követése.
+  A törlés útját nem érinti (D.8.1 pásztázás).
+- **A keresősáv ★ szűrője (`searchcontainer/starsearch`) MÁS állapot**,
+  mint a Csillagozott album: az eredetiben szűrő, nem gyűjtemény-választás.
+  Hogy szűrő közben mi a jelenlegi gyűjtemény (`+0xeac`: a kiválasztott
+  mappa/album, vagy a `]search`), és ezért ott a törlés lemezes-e,
+  **NYITOTT KÉRDÉS** — megszerzése: a `0x00660c80` `starsearch`-kezelőjének
+  (`]star` hivatkozás `0x006615db`) követése a `+0xea8`/`+0xeac` írókig
+  (D.7.6 öt írója), vagy Colab-végrehajtós viselkedési próba
+  (`tipus:behavior`): szűrő be, mappa kiválasztva, `Delete`, az ablak címe.
+
+#### D.8.7 Nálunk (2026-10-11, a `main`-en)
+
+A PicasaPy **egyetlen** `("starred", "")` nézetmóddal szolgálja ki a bal
+hasáb „Csillagozott fotók” bejegyzését (`Main.qml` `onStarredChosen`) **és**
+a keresősáv ★ szűrőjét (`MainToolbar.qml` `starFilter`) —
+`controller.showStarred`. A `currentAlbumToken` itt üres
+(`controller.py` `currentAlbumToken`: csak `"album"` módban nem üres), ezért:
+
+| belépő | mit tesz ma a Csillagozottban | az eredeti (D.8.3–D.8.4) |
+|---|---|---|
+| menüsáv `Delete` / Fájl ▸ (`PicasaMenuBar.activateDeleteCommand`, #1608) | `deleteRequested` → **lemezről töröl (Lomtár)** | csillag le, fájl marad |
+| rács `Ctrl+Delete` és helyi menü (`contextMenuDelete`) | „Törlés lemezről” → **lemezről töröl** | „Eltávolítás az albumból” → csillag le |
+| néző `Ctrl+Delete` és helyi menü (a #4621 után) | `deleteRemovesFromAlbum` hamis → **lemezről töröl** | „Eltávolítás az albumból” → csillag le |
+| megerősítés | a lemezes törlés ablaka (`fileOpsDialogs.openDelete`) | „Elemek eltávolítása” / `RemoveSingle`, `DoNotConfirmRemoveFromAlbum` |
+| nincs kijelölt kép, album-törlés | nincs ilyen út (a „Csillagozott fotók” sornak nincs helyi menüje, `AlbumsSection.qml` `starredMouse`) | „A csillagozott fotók albuma nem törölhető.” |
+
+⇒ **Eltérés, adatvesztés-jellegű**: a mi Csillagozott nézetünk a fájlt
+Lomtárba teszi, az eredeti csak a csillagot veszi le. Megvalósítás: #4883
+(„Kész, ha” pontok a jegyen). A ★ szűrő viselkedése a D.8.6 nyitott kérdéséig
+**nem változik** — ehhez a két belépőt a nézetmódban szét kell választani.
+
 ## E. #4462 — helyi menük: eredeti tétel → mai kód
 
 A táblázat a fenti specifikáció eredeti feliratait és menüosztályait tekinti mércének. A rejtett/állapotfüggő tételeket külön sorban tartja, akkor is, ha a felületen ugyanazt a sort használják. Az album osztály eredeti 13 parancsazonosítója 12 különböző feliratot ad; a két feltöltési felirat több azonosítón osztozik, ezért a táblázat látható tételeket sorol.
