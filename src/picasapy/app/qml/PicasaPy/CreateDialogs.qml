@@ -1038,6 +1038,7 @@ Item {
         }
         onClosed: {
             movieDialog.projektbolNyilt = false
+            movieItemsRefreshTimer.stop()
             moviePreviewTimer.stop()
             moviePreviewTransition.stop()
             if (moviePreviewMusicLoader.item)

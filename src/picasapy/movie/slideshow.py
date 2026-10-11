@@ -373,13 +373,27 @@ def _betu_utvonal(fontfajlok: tuple[str, ...]) -> str | None:
     """Az első betölthető betűfájl TELJES útvonala (vagy None: alapbetű).
 
     A fájlnév nélküli betűnév keresése a rendszer betűmappáit járja be, ami
-    hideg gépen ~1 s; ezt a szerkesztés közben nem fizetjük újra (#4852)."""
+    hideg gépen ~1 s; ezt a szerkesztés közben nem fizetjük újra (#4852).
+    Futás közben telepített betű csak a program újraindítása után látszik."""
     for fontfajl in fontfajlok:
         try:
             return str(ImageFont.truetype(fontfajl, 10).path)
         except OSError:
             continue
     return None
+
+
+def _betu_betoltese(fontfajlok: tuple[str, ...], meret: int):
+    """A gyorsítótárazott útvonalról tölt; ha a fájl közben eltűnt, újrakeres."""
+    for _ in range(2):
+        utvonal = _betu_utvonal(fontfajlok)
+        if utvonal is None:
+            break
+        try:
+            return ImageFont.truetype(utvonal, meret)
+        except OSError:
+            _betu_utvonal.cache_clear()
+    return ImageFont.load_default()
 
 
 class _Vaszon(NamedTuple):
@@ -395,8 +409,8 @@ def _szovegdia(
     """Képkockát készít a Szöveg fülön felvett dia beállításaiból.
 
     A `settings` már a TÉNYLEGES vászonméretet hordozza; a `skala` (a teljes
-    filmmérethez képesti arány, export: 1.0) a betűméretet, a margót és a
-    körvonalat arányosan igazítja, hogy a kis kocka ugyanazt mutassa kicsiben.
+    filmmérethez képesti arány, export: 1.0) a betűméretet és a margót
+    arányosan igazítja (a körvonal legalább 1 px), hogy a kis kocka ugyanazt mutassa kicsiben.
     """
     def szin(ertek: object, tartalek: str) -> tuple[int, int, int]:
         try:
@@ -418,12 +432,7 @@ def _szovegdia(
     if slide.get("bold"):
         fontfajlok.append("DejaVuSans-Bold.ttf")
     fontfajlok.append("DejaVuSans.ttf")
-    utvonal = _betu_utvonal(tuple(fontfajlok))
-    font = (
-        ImageFont.truetype(utvonal, meret)
-        if utvonal is not None
-        else ImageFont.load_default()
-    )
+    font = _betu_betoltese(tuple(fontfajlok), meret)
 
     szoveg = str(slide.get("text", ""))
     if not szoveg:
