@@ -55,8 +55,8 @@ def make_controller(qt_app):
     A determinista leépítés ezért a fixture felelőssége."""
     created: list[WebExportController] = []
 
-    def _make(photo_source):
-        controller = WebExportController(photo_source=photo_source)
+    def _make(photo_source, settings=None):
+        controller = WebExportController(photo_source=photo_source, settings=settings)
         created.append(controller)
         return controller
 
@@ -84,14 +84,14 @@ class TestGenerateWebExportValidation:
     def test_missing_target_emits_failure_synchronously(self, controller):
         seen = []
         controller.webExportFailed.connect(seen.append)
-        controller.generateWebExport("", "feher", "Album", 0, 0, True, False)
+        controller.generateWebExport("", "feher", "Album", 0, False, True, False)
         assert seen
 
     def test_unknown_template_emits_failure_synchronously(self, controller, tmp_path):
         seen = []
         controller.webExportFailed.connect(seen.append)
         controller.generateWebExport(
-            str(tmp_path / "out"), "nemletezik", "Album", 0, 0, True, False
+            str(tmp_path / "out"), "nemletezik", "Album", 0, False, True, False
         )
         assert seen
 
@@ -100,7 +100,7 @@ class TestGenerateWebExportValidation:
         seen = []
         controller.webExportFailed.connect(seen.append)
         controller.generateWebExport(
-            str(tmp_path / "out"), "feher", "Album", 0, 0, True, False
+            str(tmp_path / "out"), "feher", "Album", 0, False, True, False
         )
         assert seen
 
@@ -114,7 +114,7 @@ class TestGenerateWebExportSuccess:
         )
         loop = _quit_on(controller.webExportFinished)
         controller.generateWebExport(
-            str(target), "feher", "Nyaralás", 100, 800, True, False
+            str(target), "feher", "Nyaralás", 2, False, True, False
         )
         loop.exec()
 
@@ -132,7 +132,7 @@ class TestGenerateWebExportSuccess:
         controller.webExportProgress.connect(lambda done, total: progress.append((done, total)))
         loop = _quit_on(controller.webExportFinished)
         controller.generateWebExport(
-            str(tmp_path / "kimenet"), "feher", "Album", 0, 0, True, False
+            str(tmp_path / "kimenet"), "feher", "Album", 0, False, True, False
         )
         loop.exec()
         assert progress == [(2, 2)]
@@ -148,7 +148,7 @@ class TestGenerateWebExportSuccess:
         controller.webExportFailed.connect(failed.append)
         loop = _quit_on(controller.webExportFailed)
         controller.generateWebExport(
-            str(tmp_path / "kimenet"), "feher", "Album", 0, 0, True, False
+            str(tmp_path / "kimenet"), "feher", "Album", 0, False, True, False
         )
         loop.exec()
         assert failed
@@ -164,7 +164,7 @@ class TestBackgroundThreadTeardown:
     def test_wait_for_export_joins_the_worker_thread(self, controller, tmp_path):
         loop = _quit_on(controller.webExportFinished)
         controller.generateWebExport(
-            str(tmp_path / "kimenet"), "feher", "Album", 0, 0, True, False
+            str(tmp_path / "kimenet"), "feher", "Album", 0, False, True, False
         )
         loop.exec()
         assert controller.waitForExport(30.0)
@@ -194,3 +194,73 @@ class TestAzAlapertelmezettCelmappa:
         monkeypatch.setattr(collage_output, "pictures_dir", lambda: tmp_path / "Képek")
         controller.defaultWebExportTarget()
         assert not (tmp_path / "Képek").exists()
+
+
+class _MemSettings:
+    """`value()`/`setValue()` páros a QSettings helyett (#4610)."""
+
+    def __init__(self, values=None):
+        self.values = dict(values or {})
+
+    def value(self, key, default=None):
+        return self.values.get(key, default)
+
+    def setValue(self, key, value):  # noqa: N802 — a QSettings neve
+        self.values[key] = value
+
+
+def _kep_merete(path):
+    from picasapy.cvimage import dekodolj_forrast
+
+    kep = dekodolj_forrast(path)
+    assert kep is not None, f"nem olvasható: {path}"
+    return max(kep.shape[:2])
+
+
+class TestMeretvalasztoEsMozgokepMod4610:
+    """#4610: egy méretválasztó (a nagy kép), a bélyegkép a sablonból (144),
+    a mozgókép-mód és mindkettő megőrzése (`WebExportSize`/`WebExportMovie`,
+    spec `picasa-menu-parancsok-viselkedes.md` 6.1)."""
+
+    def test_alapertekek_640_es_elso_kepkocka(self, make_controller):
+        controller = make_controller(lambda: [], settings=_MemSettings())
+        assert controller.webExportPrefs() == {"sizeIndex": 3, "movieFull": False}
+
+    def test_a_mentett_valasztas_visszajon(self, make_controller):
+        tarolo = _MemSettings({"webexport/size": 4, "webexport/movieFull": "true"})
+        controller = make_controller(lambda: [], settings=tarolo)
+        assert controller.webExportPrefs() == {"sizeIndex": 4, "movieFull": True}
+
+    def test_hibas_tarolt_ertek_az_alapertekre_esik(self, make_controller):
+        tarolo = _MemSettings({"webexport/size": "x", "webexport/movieFull": None})
+        controller = make_controller(lambda: [], settings=tarolo)
+        assert controller.webExportPrefs() == {"sizeIndex": 3, "movieFull": False}
+
+    def test_tablan_kivuli_tarolt_index_az_alapra_esik(self, make_controller):
+        tarolo = _MemSettings({"webexport/size": 9})
+        controller = make_controller(lambda: [], settings=tarolo)
+        assert controller.webExportPrefs()["sizeIndex"] == 3
+
+    def test_az_index_kepmeretet_ad_a_belyegkep_a_sablone(
+        self, make_controller, library, tmp_path
+    ):
+        make_jpeg(library / "nagy.jpg", size=(1600, 1200))
+        photos = [_record(library, "nagy.jpg", width=1600, height=1200)]
+        tarolo = _MemSettings()
+        controller = make_controller(lambda: photos, settings=tarolo)
+        target = tmp_path / "kimenet"
+        loop = _quit_on(controller.webExportFinished)
+        # 4. index = „320 pixels (for email)"
+        controller.generateWebExport(str(target), "feher", "A", 4, True, True, False)
+        loop.exec()
+
+        assert _kep_merete(target / "image" / "nagy.jpg") == 320
+        assert _kep_merete(target / "thumbnail" / "nagy.jpg") == 144
+        # a választás megmarad a következő megnyitásig
+        assert tarolo.values == {"webexport/size": 4, "webexport/movieFull": True}
+
+    def test_hibas_inditas_nem_ment(self, make_controller):
+        tarolo = _MemSettings()
+        controller = make_controller(lambda: [], settings=tarolo)
+        controller.generateWebExport("", "feher", "A", 1, True, True, False)
+        assert tarolo.values == {}

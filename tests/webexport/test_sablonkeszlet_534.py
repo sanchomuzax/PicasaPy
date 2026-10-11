@@ -188,6 +188,8 @@ def test_az_xml_sablon_album_es_kepadatot_ad(album):
     assert [k.get("name") for k in kepek] == ["a.jpg", "b.jpg"]
     assert kepek[0].findtext("caption") == 'Anyu & Apu <a "nyaralás">'
     assert kepek[1].find("caption") is None  # felirat nélküli kép
-    assert kepek[0].find("original").get("width") == "400"
+    # #4610: az `itemWidth` az exportált kép mérete, ezért a `<large>`-on áll
+    assert kepek[0].find("large").get("width") == "400"
+    assert kepek[0].find("original").get("width") is None
     assert kepek[0].find("thumbnail").get("src")
     assert kepek[0].find("large").get("src")
