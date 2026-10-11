@@ -13,8 +13,16 @@ hozzányúlt — a szennyezést így ott fogjuk meg, ahol keletkezik.
 
 from __future__ import annotations
 
+import os
+import sys
+
 import pytest
 from support.fixture_guards import user_folder_guard
+from support.qt_betukonyvtar import qt_betukonyvtar_kiegeszites
+
+# #4506: a windowsos offscreen Qt a rendszerbetűket csak a QT_QPA_FONTDIR-ből
+# látja — az első QGuiApplication ELŐTT kell beállítani, ezért importkor.
+os.environ.update(qt_betukonyvtar_kiegeszites(os.environ, sys.platform))
 
 
 def pytest_configure(config):
