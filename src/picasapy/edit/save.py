@@ -177,7 +177,7 @@ from picasapy.ini import (
     load_existing,
     update_document,
 )
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.ini.names import INI_NAME
 from picasapy.ioutil import write_atomic
 
 #: A rejtett almappa neve, ahová az ÚJ mentéseink érintetlen eredetije kerül
@@ -211,7 +211,7 @@ _FILTERS_KEY = "filters"
 _REDO_KEY = "redo"
 _EDIT_BOOKKEEPING_KEYS = (_FILTERS_KEY, _REDO_KEY)
 
-_INI_FILENAME = ".picasa.ini"
+_INI_FILENAME = INI_NAME
 
 # Az ini-könyvelés kezelt hibái (#297): a fájlrendszeré (`OSError`: tele
 # lemez, zárolt fájl), a kódolásé (`IniSaveError`) és a párhuzamosan futó
@@ -421,7 +421,7 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
     del number
 
     section = _section_name(image_path)
-    document = load_existing(image_path.parent / PICASA_INI_NAME)
+    document = load_existing(image_path.parent / INI_NAME)
     stored = document.section(section)
     restored_filters = (stored.get(_REDO_KEY) or "") if stored else ""
 

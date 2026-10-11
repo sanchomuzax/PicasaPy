@@ -28,6 +28,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from picasapy.ini.io import update_document
+from picasapy.ini.names import INI_NAME
 from picasapy.ini.priority import (
     kozteslepes,
     olvasd_a_prioritasokat,
@@ -35,7 +36,7 @@ from picasapy.ini.priority import (
 )
 
 #: a mappa ini-fájljának neve — az `ini/` csomag konvenciója
-INI_FAJLNEV = ".picasa.ini"
+INI_FAJLNEV = INI_NAME
 
 
 def ellenorizd_az_egy_mappat(kepek) -> str | None:
