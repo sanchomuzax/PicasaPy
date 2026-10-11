@@ -282,7 +282,7 @@ def _click_diagnosis(window, target: str, center) -> str:
         if not item.isVisible():
             continue
         local = item.mapFromScene(center)
-        if item.contains(local):
+        if item.contains(local) and item.acceptedMouseButtons() != Qt.MouseButton.NoButton:
             hits.append(f"{item.metaObject().className()}:{item.objectName() or '-'}"
                         f"(z={item.z()})")
     return (
@@ -295,7 +295,7 @@ def _click_diagnosis(window, target: str, center) -> str:
         f" fejléc.visible={label.property('visible')}"
         f" fejléc.text={label.property('text')!r}"
         f" panel.visible={_child(window, 'peoplePanel').property('visible')}"
-        f" találatok(alulról felfelé)={hits[-8:]}"
+        f" egeret fogadók a ponton (alulról felfelé)={hits[-8:]}"
         f" nyitott felugrók={_open_popups(window)}"
     )
 
