@@ -16,8 +16,9 @@ import QtQuick.Layouts
 // őket egyben, elveszés nélkül.
 // #4558: a kétmódú csempék BÉLYEGKÉPE is a Shift szerinti szűrőé
 // — az eredeti a csempe erőforrás-nevét a `_mod%s` utótaggal képzi,
-// tehát a másodlagos előnézetét mutatja. A bélyegkép a HALASZTOTT
-// `panel.shiftBelyegkep`-et követi, nem a `szuro`-t (ld. EditorPanel.qml).
+// tehát a másodlagos előnézetét mutatja. Mindkét kép előre betöltődik
+// (`thumbSource` + `thumbSourceAlt`), a Shift csak a láthatóságot váltja
+// (`thumbAltActive`) — ld. a holtpont-indoklást a PanelButton.qml-ben.
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -105,8 +106,9 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "grain" : "picnikgrain"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            thumbSource: panel.effectThumbSource(panel.shiftBelyegkep
-                                               ? "grain" : "picnikgrain")
+            thumbSource: panel.effectThumbSource("picnikgrain")
+            thumbSourceAlt: panel.effectThumbSource("grain")
+            thumbAltActive: panel.shiftMasodlagos
             badge: panel.hasBadge(szuro)
         }
     }
