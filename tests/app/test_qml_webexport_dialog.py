@@ -40,14 +40,12 @@ class FakeWebExportController(QObject):
     def defaultWebExportTarget(self):
         return "/tmp/Kepek/Picasa HTML exportok"
 
-    @Slot(str, str, str, int, bool, bool, bool)
+    @Slot(str, str, str, int, bool)
     def generateWebExport(
         self, target_dir, template_id, album_name, size_index, movie_full,
-        shadow_thumbs, shadow_images,
     ):
         self.generate_calls.append(
-            (target_dir, template_id, album_name, size_index, movie_full,
-             shadow_thumbs, shadow_images)
+            (target_dir, template_id, album_name, size_index, movie_full)
         )
 
     #: #4610: a megőrzött választás (az eredeti `WebExportSize`/`WebExportMovie`)
@@ -354,3 +352,29 @@ class TestEgyMeretvalaszto4610:
         _cel, _sablon, _cim, size_index, movie_full = fake.generate_calls[0][:5]
         assert size_index == 4
         assert movie_full is True
+
+
+class TestNincsArnyekJelolonegyzet4849:
+    """#4849: a `webexport.fen`-ben nincs árnyék-jelölőnégyzet — az
+    árnyékolást a sablon adja (`shadowedThumbnails`/`shadowedImages`)."""
+
+    def test_nincs_jelolonegyzet_a_parbeszedben(self, megnyitott):
+        window, _fake = megnyitott
+        assert window.findChild(QObject, "webExportShadowThumbsCheck") is None
+        assert window.findChild(QObject, "webExportShadowImagesCheck") is None
+
+    def test_nincs_checkbox_tipusu_vezerlo_arnyek_felirattal(self, megnyitott):
+        window, _fake = megnyitott
+        from PySide6.QtQuick import QQuickItem
+
+        for elem in window.findChildren(QQuickItem):
+            felirat = str(elem.property("text") or "")
+            assert "hadow" not in felirat
+
+    def test_a_megmaradt_vezerlok_kattintasra_mukodnek(self, megnyitott, qt_app):
+        window, fake = megnyitott
+        window.show()
+        qt_app.processEvents()
+        _valassz(qt_app, window, _child(window, "webExportSizeBox"), 2)
+        _egerkattintas(qt_app, window, _child(window, "webExportGenerateButton"))
+        assert fake.generate_calls[-1][3:] == (2, False)

@@ -84,14 +84,14 @@ class TestGenerateWebExportValidation:
     def test_missing_target_emits_failure_synchronously(self, controller):
         seen = []
         controller.webExportFailed.connect(seen.append)
-        controller.generateWebExport("", "feher", "Album", 0, False, True, False)
+        controller.generateWebExport("", "feher", "Album", 0, False)
         assert seen
 
     def test_unknown_template_emits_failure_synchronously(self, controller, tmp_path):
         seen = []
         controller.webExportFailed.connect(seen.append)
         controller.generateWebExport(
-            str(tmp_path / "out"), "nemletezik", "Album", 0, False, True, False
+            str(tmp_path / "out"), "nemletezik", "Album", 0, False
         )
         assert seen
 
@@ -100,7 +100,7 @@ class TestGenerateWebExportValidation:
         seen = []
         controller.webExportFailed.connect(seen.append)
         controller.generateWebExport(
-            str(tmp_path / "out"), "feher", "Album", 0, False, True, False
+            str(tmp_path / "out"), "feher", "Album", 0, False
         )
         assert seen
 
@@ -114,7 +114,7 @@ class TestGenerateWebExportSuccess:
         )
         loop = _quit_on(controller.webExportFinished)
         controller.generateWebExport(
-            str(target), "feher", "Nyaralás", 2, False, True, False
+            str(target), "feher", "Nyaralás", 2, False
         )
         loop.exec()
 
@@ -132,7 +132,7 @@ class TestGenerateWebExportSuccess:
         controller.webExportProgress.connect(lambda done, total: progress.append((done, total)))
         loop = _quit_on(controller.webExportFinished)
         controller.generateWebExport(
-            str(tmp_path / "kimenet"), "feher", "Album", 0, False, True, False
+            str(tmp_path / "kimenet"), "feher", "Album", 0, False
         )
         loop.exec()
         assert progress == [(2, 2)]
@@ -148,7 +148,7 @@ class TestGenerateWebExportSuccess:
         controller.webExportFailed.connect(failed.append)
         loop = _quit_on(controller.webExportFailed)
         controller.generateWebExport(
-            str(tmp_path / "kimenet"), "feher", "Album", 0, False, True, False
+            str(tmp_path / "kimenet"), "feher", "Album", 0, False
         )
         loop.exec()
         assert failed
@@ -164,7 +164,7 @@ class TestBackgroundThreadTeardown:
     def test_wait_for_export_joins_the_worker_thread(self, controller, tmp_path):
         loop = _quit_on(controller.webExportFinished)
         controller.generateWebExport(
-            str(tmp_path / "kimenet"), "feher", "Album", 0, False, True, False
+            str(tmp_path / "kimenet"), "feher", "Album", 0, False
         )
         loop.exec()
         assert controller.waitForExport(30.0)
@@ -251,7 +251,7 @@ class TestMeretvalasztoEsMozgokepMod4610:
         target = tmp_path / "kimenet"
         loop = _quit_on(controller.webExportFinished)
         # 4. index = „320 pixels (for email)"
-        controller.generateWebExport(str(target), "feher", "A", 4, True, True, False)
+        controller.generateWebExport(str(target), "feher", "A", 4, True)
         loop.exec()
 
         assert _kep_merete(target / "image" / "nagy.jpg") == 320
@@ -262,5 +262,21 @@ class TestMeretvalasztoEsMozgokepMod4610:
     def test_hibas_inditas_nem_ment(self, make_controller):
         tarolo = _MemSettings()
         controller = make_controller(lambda: [], settings=tarolo)
-        controller.generateWebExport("", "feher", "A", 1, True, True, False)
+        controller.generateWebExport("", "feher", "A", 1, True)
         assert tarolo.values == {}
+
+
+class TestArnyekASablonbol4849:
+    """#4849: a vezérlő nem vár árnyék-értéket; a kimenetben a bélyegkép
+    a sablon alapértéke szerint árnyékolt (`shadowedThumbnails` 1)."""
+
+    def test_a_belyegkepek_arnyekosak_a_kep_nem(self, controller, tmp_path):
+        target = tmp_path / "kimenet"
+        loop = _quit_on(controller.webExportFinished)
+        controller.generateWebExport(str(target), "feher", "A", 3, False)
+        loop.exec()
+        html = (target / "index.html").read_text(encoding="utf-8")
+        assert 'class="thumb shadow"' in html
+        assert 'class="item-figure shadow"' not in (
+            target / "index0.html"
+        ).read_text(encoding="utf-8")

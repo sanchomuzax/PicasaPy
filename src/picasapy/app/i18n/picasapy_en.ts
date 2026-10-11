@@ -1926,16 +1926,6 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
             <translation>Full movie</translation>
         </message>
         <message>
-            <source>Shadow pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Shadow pictures</translation>
-        </message>
-        <message>
-            <source>Shadow thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Shadow thumbnails</translation>
-        </message>
-        <message>
             <source>PicasaPy is generating the web page.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>PicasaPy is generating the web page.</translation>
@@ -2141,11 +2131,6 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
             <source>Add Custom Aspect Ratio</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Add Custom Aspect Ratio</translation>
-        </message>
-        <message>
-            <source>Width:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Width:</translation>
         </message>
         <message>
             <source>Name:</source>
