@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.55] – 2026-10-11
+
+- Az egyéni méretarány felvételekor a párbeszéd a hivatalos feliratokat és mintasort mutatja, a legördülőben „Egyéni méretarányok” szakaszcím áll, a törlés pedig a legördülő melletti kukával megy (#4550).
+
 ## [0.9.54] – 2026-10-11
 
 - A biztonsági mentés és az áthelyező műveletek a régi Picasa.ini adatait is megőrzik (#4839).
