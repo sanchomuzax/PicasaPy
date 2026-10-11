@@ -166,6 +166,19 @@ Rectangle {
     }
     // "" = sima gomb (korábbi kinézet); egyébként image://effectthumb/…
     property string thumbSource: ""
+    // #4558: a kétmódú csempe MÁSODLAGOS bélyegképe; `thumbAltActive`
+    // (a Shift) alatt ez látszik a `thumbSource` helyett. Mindkét kép
+    // ELŐRE betöltődik, a Shift csak a láthatóságot váltja.
+    // ⚠️ Holtpont-őr — NE alakítsd forráscserévé: a Shift Pythonból érkezik
+    // (eseményszűrő, `setProperty`, QTest), a GIL-t tartva. Egy ilyenkor
+    // induló `QQuickPixmap::load` a képolvasó szál zárjára vár, az olvasó
+    // pedig a Python-képszolgáltatóban a GIL-re (gdb-vel mérve; a CI-n
+    // exit 124). A `Qt.callLater` sem elég: a QTest saját `processEvents`-e
+    // a GIL-t tartva futtatja le.
+    property string thumbSourceAlt: ""
+    property bool thumbAltActive: false
+    readonly property bool thumbAltLatszik:
+        thumbAltActive && thumbSourceAlt !== "" && !thumbCropped
     // #448: a bélyegképnek megjelenítendő RÉSZE, relatív [0..1] téglalapként.
     // Alapértéke a TELJES kép — az effekt-csempék (#338) így változatlanul a
     // teljes bélyegképet mutatják, nekik nem kell tudniuk erről.
@@ -316,6 +329,7 @@ Rectangle {
             border.width: 1
             border.color: Theme.chromeBorder
             visible: !pbtnThumbImg.visible && !pbtnThumbCropImg.visible
+                     && !pbtnThumbAltImg.visible
         }
         // A TELJES bélyegkép (#338) — a `thumbSourceRect` alapértékén, azaz
         // minden eddigi hívónál (36 effekt-csempe, eszköz-gombok) ez az út
@@ -324,7 +338,10 @@ Rectangle {
         // ezen a bindingen áll, ezért nem nyúlunk hozzá.
         Image {
             id: pbtnThumbImg
-            objectName: pbtn.objectName ? pbtn.objectName + "Thumb" : ""
+            // #4558: a `<név>Thumb` név mindig a LÁTHATÓ képé
+            objectName: pbtn.objectName
+                        ? pbtn.objectName + (pbtn.thumbAltLatszik ? "ThumbElsodleges" : "Thumb")
+                        : ""
             anchors.fill: parent
             fillMode: Image.PreserveAspectFit
             asynchronous: true
@@ -332,7 +349,20 @@ Rectangle {
             smooth: true
             // amíg nem kész (Loading/Null/Error), nem rajzol semmit —
             // a fenti helyőrző-Rectangle látszik helyette, nem üres folt
-            visible: status === Image.Ready
+            visible: status === Image.Ready && !pbtn.thumbAltLatszik
+        }
+        // #4558: a másodlagos bélyegkép, ugyanabban a dobozban
+        Image {
+            id: pbtnThumbAltImg
+            objectName: pbtn.objectName
+                        ? pbtn.objectName + (pbtn.thumbAltLatszik ? "Thumb" : "ThumbMasodlagos")
+                        : ""
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+            source: pbtn.thumbCropped ? "" : pbtn.thumbSourceAlt
+            smooth: true
+            visible: status === Image.Ready && pbtn.thumbAltLatszik
         }
         // #448: a KIVÁGOTT előnézet — a kép a `thumbSourceRect` részét
         // mutatja, a doboz arányába illesztve, a doboz `clip`-jével levágva:

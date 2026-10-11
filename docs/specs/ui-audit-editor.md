@@ -1025,8 +1025,11 @@ kuka/törlés-ikon — az egyéni arányok funkciója **0%-ban implementált**.
   állapotban placeholder nélkül, csak keret — a bal mező kék kerettel
   aktív/fókuszált állapotban a képen)
 - **Név:** felirat, alatta egysoros szövegmező
-- Élő **példa-sor**: *„Példa: 4x6 kisméretű nyomat"* — feltehetően a
-  begépelt számokból/névből élőben frissül
+- **Példa-sor**: *„Példa: 4x6 kisméretű nyomat"* — **STATIKUS** minta, nem
+  élő (#4550): a `customaspectratio.fen`-ben a `labelgroup "Example:"`
+  egyetlen `<label title="   4 x 6   Small print"/>`-t tartalmaz, `bind` és
+  `name` nélkül (`picasa-fen-dialogs.md` 2.1). Az itteni korábbi „feltehetően
+  élőben frissül" a képernyőkép alapján tett feltevés volt.
 - **OK** gomb (a képen **inaktív/szürke** — üres mezőknél letiltva) és
   **Mégse** gomb, jobbra lent
 

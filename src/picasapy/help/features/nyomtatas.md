@@ -14,6 +14,15 @@ A nyomatra a kép **szerkesztett** változata kerül — vágással,
 forgatással, effektekkel —, és a fényképezőgép által megjelölt tájolás
 szerint helyesen állva. Ugyanazt kapod, mint exportáláskor.
 
+A párbeszéd a tartalmához illő magassággal nyílik, és a **Nyomtatás** meg
+a **Bezárás** gomb mindig látszik. Kis képernyőn a beállítások görgethetők.
+
+Ha a gépen **egyetlen nyomtató sincs telepítve**, a párbeszéd tetején ez
+áll: „A nyomtatáshoz telepítsen nyomtatót." Ez csak tájékoztatás: PDF-be
+ilyenkor is nyomtathatsz. Linuxon a nyomtatáshoz a rendszer
+nyomtatókezelője (CUPS) kell; ha a PicasaPy-t telepítőcsomagból tetted
+fel, a csomagkezelő ajánlja is.
+
 A párbeszédben beállítható:
 
 - **Nyomtató** — a rendszeren elérhető nyomtatók listájából. A
