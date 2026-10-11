@@ -45,11 +45,23 @@ Item {
         return tabBarRoot.tabHatar(index + 1) - tabBarRoot.tabHatar(index)
     }
 
+    // #4552: a fülikonok MÉRT mérete (`docs/specs/ui-audit-editor.md`,
+    // „A fülsáv ikonjai — sorrend és méret": tab1 15×16, tab2 17×18,
+    // tab3 20×19, tab4 25×19, tab5 25×19). A 6. és 7. fül a mi többletünk
+    // (nincs mért párja), a 3–5. fül ikonméretét kapja. Egy helyen él.
+    readonly property var ikonMeretek: [
+        [15, 16], [17, 18], [20, 19], [25, 19], [25, 19], [25, 19], [25, 19]
+    ]
+    function ikonSzelesseg(index) { return tabBarRoot.ikonMeretek[index][0] }
+    function ikonMagassag(index) { return tabBarRoot.ikonMeretek[index][1] }
+
     // #338: csavarkulcs — az eredeti Picasa 1. füle
     EditTabButton {
         panel: tabBarRoot.panel
         objectName: "editTabFixes"
         tabIndex: 0
+        iconWidth: tabBarRoot.ikonSzelesseg(0)
+        iconHeight: tabBarRoot.ikonMagassag(0)
         x: tabBarRoot.tabHatar(0)
         width: tabBarRoot.tabWidth(0)
         height: tabBarRoot.height
@@ -62,6 +74,8 @@ Item {
         panel: tabBarRoot.panel
         objectName: "editTabFinetune"
         tabIndex: 1
+        iconWidth: tabBarRoot.ikonSzelesseg(1)
+        iconHeight: tabBarRoot.ikonMagassag(1)
         x: tabBarRoot.tabHatar(1)
         width: tabBarRoot.tabWidth(1)
         height: tabBarRoot.height
@@ -74,6 +88,8 @@ Item {
         panel: tabBarRoot.panel
         objectName: "editTabEffects"
         tabIndex: 2
+        iconWidth: tabBarRoot.ikonSzelesseg(2)
+        iconHeight: tabBarRoot.ikonMagassag(2)
         x: tabBarRoot.tabHatar(2)
         width: tabBarRoot.tabWidth(2)
         height: tabBarRoot.height
@@ -88,6 +104,8 @@ Item {
         panel: tabBarRoot.panel
         objectName: "editTabEffects2"
         tabIndex: 3
+        iconWidth: tabBarRoot.ikonSzelesseg(3)
+        iconHeight: tabBarRoot.ikonMagassag(3)
         x: tabBarRoot.tabHatar(3)
         width: tabBarRoot.tabWidth(3)
         height: tabBarRoot.height
@@ -102,6 +120,8 @@ Item {
         panel: tabBarRoot.panel
         objectName: "editTabEffects3"
         tabIndex: 4
+        iconWidth: tabBarRoot.ikonSzelesseg(4)
+        iconHeight: tabBarRoot.ikonMagassag(4)
         x: tabBarRoot.tabHatar(4)
         width: tabBarRoot.tabWidth(4)
         height: tabBarRoot.height
@@ -119,6 +139,8 @@ Item {
         panel: tabBarRoot.panel
         objectName: "editTabEffects4"
         tabIndex: 5
+        iconWidth: tabBarRoot.ikonSzelesseg(5)
+        iconHeight: tabBarRoot.ikonMagassag(5)
         x: tabBarRoot.tabHatar(5)
         width: tabBarRoot.tabWidth(5)
         height: tabBarRoot.height
@@ -134,6 +156,8 @@ Item {
         panel: tabBarRoot.panel
         objectName: "editTabLegacy"
         tabIndex: 6
+        iconWidth: tabBarRoot.ikonSzelesseg(6)
+        iconHeight: tabBarRoot.ikonMagassag(6)
         x: tabBarRoot.tabHatar(6)
         width: tabBarRoot.tabWidth(6)
         height: tabBarRoot.height

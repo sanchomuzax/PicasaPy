@@ -300,7 +300,9 @@ arra az egy futásra:
 ## A fejléc gombsorának testreszabása
 
 Az **Eszközök ▸ Gombok konfigurálása…** azt állítja be, mely gombok
-látszanak a képek fölötti fejlécsávon, és milyen sorrendben.
+látszanak a képek fölötti fejlécsávon, és milyen sorrendben. Ugyanez az
+ablak nyílik meg, ha a képtálca kimeneti gombsorára jobbgombbal kattintasz,
+és a **Gombok konfigurálása…** tételt választod.
 
 Az ablakban két lista van: **Rendelkezésre álló gombok** és **Jelenlegi
 gombok**. A **Hozzáadás >>** és a **<< Eltávolítás** mozgat közöttük, a

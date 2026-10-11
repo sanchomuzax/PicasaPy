@@ -2100,17 +2100,32 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
         <name>AddCustomAspectRatioDialog</name>
         <message>
             <source>Add Custom Aspect Ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/window1.title</extracomment>
             <translation>Egyéni méretarány hozzáadása</translation>
         </message>
         <message>
-            <source>Width:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Szélesség:</translation>
+            <source>Dimensions:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/labelgroup3.title</extracomment>
+            <translation>Méretek:</translation>
+        </message>
+        <message>
+            <source>Example:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/labelgroup10.title</extracomment>
+            <translation>Példa:</translation>
+        </message>
+        <message>
+            <source>   4 x 6   Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/label11.title</extracomment>
+            <translation>   4x6   kisméretű nyomat</translation>
         </message>
         <message>
             <source>Name:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/labelgroup8.title</extracomment>
             <translation>Név:</translation>
         </message>
     </context>
@@ -9296,6 +9311,36 @@ Javaslatok: Az elnevezést követően előfordulhat, hogy a Picasa további kép
             <translation>Emberek</translation>
         </message>
         <message>
+            <source>Loading faces for file...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Loading1</extracomment>
+            <translation>Arcok betöltése a fájlhoz...</translation>
+        </message>
+        <message>
+            <source>Loading faces for %1 files...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Loading2</extracomment>
+            <translation>Arcok betöltése %1 fájlhoz...</translation>
+        </message>
+        <message>
+            <source>Looking for other people...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Looking</extracomment>
+            <translation>További személyek keresése...</translation>
+        </message>
+        <message>
+            <source>Sorting face data, %1%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::SortingData</extracomment>
+            <translation>Arcok adatainak rendezése, %1%</translation>
+        </message>
+        <message>
+            <source>, %1 files unchecked.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Unchecked</extracomment>
+            <translation>, %1 ellenőrizetlen fájl.</translation>
+        </message>
+        <message>
             <source>In this photo:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:PeoplePanel::InThis</extracomment>
@@ -12360,6 +12405,25 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <source>Import Files/Folder</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
+            <translation>Fájlok/mappa importálása</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mappa…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fájlok…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Forrásmappa kiválasztása…</translation>
@@ -12993,6 +13057,18 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
     </context>
     <context>
         <name>EditorCropPanel</name>
+        <message>
+            <source>Custom Aspect Ratios</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
+            <translation>Egyéni méretarányok</translation>
+        </message>
+        <message>
+            <source>Deletes the current aspect ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
+            <translation>Törli az aktuális méretarányt</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Suggested crops</source>

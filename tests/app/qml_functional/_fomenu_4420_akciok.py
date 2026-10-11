@@ -46,7 +46,9 @@ from tests.app.qml_functional._fomenu_4420_menu import (
     _kulonbsegek,
     _megnyit,
     _menuk,
+    _engedd_el_a_metaobjektum_burkokat,
     _normalizal,
+    _osztalynev,
     _parancsok,
     _rendszergyoker_hianyzik,
     _szoveg,
@@ -71,7 +73,7 @@ def _lathato_dialogusok(ablak):
             if not shiboken6.isValid(elem):
                 continue
             azon = shiboken6.getCppPointer(elem)[0]
-            osztaly = elem.metaObject().className()
+            osztaly = _osztalynev(elem)
             nev = elem.objectName()
         except RuntimeError:
             continue
@@ -138,7 +140,7 @@ def _parbeszed_gombok(dialogus):
     for elem in objektumok:
         try:
             if (
-                "Button" in elem.metaObject().className()
+                "Button" in _osztalynev(elem)
                 and bool(elem.property("visible"))
                 and bool(elem.property("enabled"))
             ):
@@ -157,7 +159,7 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
         for dialogus in dialogusok:
             if not shiboken6.isValid(dialogus):
                 continue
-            nev = dialogus.objectName() or dialogus.metaObject().className()
+            nev = dialogus.objectName() or _osztalynev(dialogus)
             if nev in kezelt_nevek:
                 continue
             kezelt_nevek.add(nev)
@@ -447,7 +449,7 @@ def _akcio(
 
     elotte = _allapot(ablak, vezerlo, minta)
     dialogusok_elotte = {
-        dialogus.objectName() or dialogus.metaObject().className()
+        dialogus.objectName() or _osztalynev(dialogus)
         for dialogus in _lathato_dialogusok(ablak)
     }
     kulso_elotte = len(kulsok)
@@ -486,7 +488,7 @@ def _akcio(
     utana = _allapot(ablak, vezerlo, minta)
     hatasok = _kulonbsegek(elotte, utana)
     for dialogus in _lathato_dialogusok(ablak):
-        dialogusnev = dialogus.objectName() or dialogus.metaObject().className()
+        dialogusnev = dialogus.objectName() or _osztalynev(dialogus)
         if dialogusnev not in dialogusok_elotte:
             hatasok.append(f"megnyílt párbeszédablak: {dialogusnev}")
     if len(kulsok) > kulso_elotte:
@@ -554,6 +556,9 @@ def _minta_kepek(lib: Path) -> None:
 def tiszta_menuproba(qt_app, tmp_path, monkeypatch):
     from tests.app.qml_functional.conftest import _build_qml_app
 
+    # egy korábbi próba motorjától megmaradt QMetaObject-burkok ne kerülhessenek
+    # az új motor objektumainak címére (ld. a függvény leírását)
+    _engedd_el_a_metaobjektum_burkokat()
     epito = _build_qml_app(
         qt_app,
         tmp_path,
@@ -624,6 +629,7 @@ def tiszta_menuproba(qt_app, tmp_path, monkeypatch):
             if shiboken6.isValid(motor):
                 QCoreApplication.sendPostedEvents(motor, QEvent.Type.DeferredDelete)
             qt_app.processEvents()
+        _engedd_el_a_metaobjektum_burkokat()
         _QML_ELEMEK.clear()
         _UI_ELEMEK.clear()
         _DIALOG_ELEMEK.clear()

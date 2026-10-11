@@ -7,6 +7,34 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.60] – 2026-10-11
+
+- Az Emberek panel a háttér-arckeresés közben mutatja a betöltés-, az ellenőrizetlen fájlok és az adatrendezés állapotát az eredeti szövegekkel, és a keresés közben frissül (#4586).
+
+## [0.9.59] – 2026-10-11
+
+- Az importálás forrásaként mostantól egyes fájlok is kijelölhetők: a Tallózás… gomb menüjében a Mappa… és a Fájlok… közül lehet választani (#4596).
+
+## [0.9.58] – 2026-10-11
+
+- A szerkesztő fülsávjának ikonjai most az eredeti Picasa mért méretét kapják (15×16-tól 25×19-ig), a fülön belül középre igazítva (#4552).
+
+## [0.9.57] – 2026-10-11
+
+- Ha az effektek fülén lenyomod a Shiftet, a kilenc kétmódú effekt csempéjén nemcsak a felirat, hanem a bélyegkép is a másodlagos effektet mutatja, és a Shift felengedésekor visszaáll (#4558).
+
+## [0.9.56] – 2026-10-11
+
+- A filmelőnézet már a kiválasztott átmenetet játssza le a kész film geometriájával (#4820).
+
+## [0.9.55] – 2026-10-11
+
+- Az egyéni méretarány felvételekor a párbeszéd a hivatalos feliratokat és mintasort mutatja, a legördülőben „Egyéni méretarányok” szakaszcím áll, a törlés pedig a legördülő melletti kukával megy (#4550).
+
+## [0.9.54] – 2026-10-11
+
+- A biztonsági mentés és az áthelyező műveletek a régi Picasa.ini adatait is megőrzik (#4839).
+
 ## [0.9.53] – 2026-10-10
 
 - A Nyomtatás ablak a tartalomhoz igazodó magassággal nyílik, a Nyomtatás és Bezárás gomb mindig látszik, kis képernyőn a tartalom görgethető (#4795).

@@ -84,6 +84,16 @@ class TestAzOnjavitas:
         assert "star=yes" in tartalom
         assert PROJECTS_CATEGORY in tartalom
 
+    def test_regi_projects_ini_mellett_nem_ir_uj_fajlt(self, tmp_path):
+        mappa = _kollazst_tesz(tmp_path / "Kollázsok")
+        regi = mappa / "Picasa.ini"
+        regi_bajtok = b"[Picasa]\r\nP2category=Projects (internal)\r\n"
+        regi.write_bytes(regi_bajtok)
+
+        assert ensure_project_album(mappa) is False
+        assert regi.read_bytes() == regi_bajtok
+        assert not (mappa / ".picasa.ini").exists()
+
 
 class TestAmitNEM_jelolunk_meg:
     """Csak a MI kimenetünket — egy tetszőleges képmappát soha."""
