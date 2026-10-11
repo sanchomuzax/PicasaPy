@@ -330,7 +330,7 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
             return self._cached_frame(
                 key,
                 lambda: _resize_to_preview(
-                    render_text_slide(slide, settings), preview_size
+                    render_text_slide(slide, settings, preview_size), preview_size
                 ),
                 source=f"dia:{slide_json}",
                 size=preview_size,
