@@ -66,3 +66,24 @@ def test_a_v20_as_index_videofelvetele_incrementalis_szinkronnal_frissul(
         assert photo.movie_format == "MP4"
         assert photo.frame_rate == pytest.approx(25.0)
         assert photo.duration_seconds == pytest.approx(2.0)
+
+
+def test_a_magyar_felirat_kepkockasebesseg_4855():
+    """#4855: a sor sebességet mutat (fps), nem minősítést — szándékos eltérés
+    az eredeti magyar fordítástól; a jelölő kimondja, és a hu szótár adja."""
+    import xml.etree.ElementTree as ET
+    from pathlib import Path
+
+    import picasapy.app
+
+    ts = Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
+    rows = [
+        m
+        for m in ET.parse(ts).getroot().iter("message")
+        if m.findtext("source") == "Movie Rate"
+    ]
+    assert len(rows) == 1
+    assert rows[0].findtext("translation") == "Képkockasebesség"
+    extra = rows[0].findtext("extracomment") or ""
+    assert "CPropertiesDlg::movierate" in extra
+    assert "szándékos eltérés" in extra
