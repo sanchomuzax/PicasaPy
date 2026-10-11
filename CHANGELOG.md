@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.72] – 2026-10-11
+
+- A windowsos CI szövegrajzoló próbái üres betűadatbázis mellett a renderelő saját betűfájljait kapják, globális beállítás nélkül (#4506).
+
 ## [0.9.71] – 2026-10-11
 
 - Fejlesztőknek: a QML-funkcionális tesztek lebontása már ténylegesen felszabadítja a QML-motort (a `deleteLater` esemény-ciklus nélkül nem futott le, tesztenként ~88 MB szivárgott), így a nagy tesztfájlok a memóriaplafon alatt futnak (#4871).

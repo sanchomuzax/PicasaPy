@@ -408,15 +408,66 @@ def legalabb_ket_betucsalad(qt_app, tmp_path_factory):
 
     from support.betucsalad import atnevezett_betu
 
-    azonosito = None
+    from support.betucsalad import BETU_FORRAS
+
+    azonositok = []
+    # #4506: a windowsos offscreen adatbázis ÜRES is lehet — akkor az eredeti
+    # Open Sans az első család, az átnevezett másolat a második
+    if not set(QFontDatabase.families()):
+        azonositok.append(QFontDatabase.addApplicationFont(str(BETU_FORRAS)))
     if len(set(QFontDatabase.families())) < 2:
         masolat = atnevezett_betu(
             tmp_path_factory.mktemp("betu") / "OpenSanz.ttf"
         )
-        azonosito = QFontDatabase.addApplicationFont(str(masolat))
-        assert azonosito >= 0, "a második próbabetű nem tölthető be"
+        azonositok.append(QFontDatabase.addApplicationFont(str(masolat)))
+    assert all(a >= 0 for a in azonositok), "a próbabetű nem tölthető be"
     try:
         yield
     finally:
-        if azonosito is not None:
+        for azonosito in azonositok:
+            QFontDatabase.removeApplicationFont(azonosito)
+
+
+@pytest.fixture
+def renderelo_betuk(qt_app):
+    """A szövegrajzoló próbák betűi üres Qt-adatbázis mellett (#4506).
+
+    Csak akkor tesz bármit, ha a Qt egyetlen valódi családot sem lát (a
+    windowsos offscreen futtató); ott a renderelő saját fájljelöltjeit adja
+    alkalmazás-betűként, minden stílusban. Globális környezeti változót nem
+    állít — a #4870-es `QT_QPA_FONTDIR` minden más próba rajzolását is
+    megváltoztatta.
+    """
+    from PySide6.QtGui import QFont, QFontDatabase
+
+    from picasapy.render.text_fonts import FONT_FAMILIES, font_path_for
+    from support.betucsalad import betufajlok_regisztralasa, potlando_betufajlok
+
+    jeloltek = [
+        font_path_for(csalad.key, bold=felkover, italic=dolt)
+        for csalad in FONT_FAMILIES
+        for felkover in (False, True)
+        for dolt in (False, True)
+    ]
+    fajlok = potlando_betufajlok(QFontDatabase.families(), jeloltek)
+    regisztralt = betufajlok_regisztralasa(fajlok, QFontDatabase.addApplicationFont)
+    # a rajzoló a kulcsot („times") adja a QFont-nak; rendszerbetű-adatbázis
+    # nélkül a Qt nem fordítja le a regisztrált családnévre — a normál
+    # stílus fájljából kiolvasott névre irányítjuk
+    helyettesitesek = {}
+    for csalad in FONT_FAMILIES:
+        azonosito = regisztralt.get(font_path_for(csalad.key))
+        if azonosito is None:
+            continue
+        nevek = QFontDatabase.applicationFontFamilies(azonosito)
+        if nevek:
+            helyettesitesek[csalad.key] = nevek[0]
+    for kulcs, csaladnev in helyettesitesek.items():
+        QFont.insertSubstitution(kulcs, csaladnev)
+    try:
+        yield
+    finally:
+        for kulcs in helyettesitesek:
+            QFont.removeSubstitutions(kulcs)
+        for azonosito in regisztralt.values():
             QFontDatabase.removeApplicationFont(azonosito)
