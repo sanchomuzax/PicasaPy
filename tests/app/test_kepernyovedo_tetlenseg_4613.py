@@ -9,6 +9,7 @@ folyamatlistát és az indítót mind paraméterként kapja, így a teszt a val�
 from __future__ import annotations
 
 import shlex
+import sys
 from pathlib import Path
 
 import pytest
@@ -337,6 +338,7 @@ def test_for_session_a_valodi_kornyezetbol_epul(monkeypatch, tmp_path):
     assert Path(integration.command[0]).name
 
 
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="a figyelő csak Linuxon indul")
 def test_valodi_indito_levalasztva_futtat_es_nem_hagy_zombit(tmp_path):
     """A figyelő a mi folyamatunktól leválasztva fut (nem a mi gyermekünk,
     tehát zombiként sem maradhat ránk), és szál sem indul hozzá (#988)."""
@@ -349,14 +351,14 @@ def test_valodi_indito_levalasztva_futtat_es_nem_hagy_zombit(tmp_path):
     szalak_elotte = threading.active_count()
     idle._spawn([
         sys.executable, "-c",
-        f"import os, pathlib; pathlib.Path({str(jel)!r}).write_text(str(os.getppid()))",
+        f"import os, pathlib; pathlib.Path({str(jel)!r}).write_text(str(os.getppid()), encoding='utf-8')",
     ])
     deadline = time.monotonic() + 10
-    while time.monotonic() < deadline and not (jel.exists() and jel.read_text()):
+    while time.monotonic() < deadline and not (jel.exists() and jel.read_text(encoding="utf-8")):
         time.sleep(0.05)
 
-    assert jel.read_text(), "a figyelő nem indult el"
-    assert int(jel.read_text()) != os.getpid()
+    assert jel.read_text(encoding="utf-8"), "a figyelő nem indult el"
+    assert int(jel.read_text(encoding="utf-8")) != os.getpid()
     assert threading.active_count() == szalak_elotte
 
 
