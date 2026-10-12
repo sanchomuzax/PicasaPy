@@ -3366,6 +3366,8 @@ reprodukálható. A mai golden pontos mátrixának és az ott ténylegesen haszn
 LUT-forrásnak az igazolása nyitott marad; az eredeti binárisra vonatkozó
 golden viszont a fenti, megismételt QEMU-mérés.
 
+> **Helyesbítés (2026-10-12, #626):** a fenti „a mai `native_dot_mask` alfa-hash-e `562cf71d…`" állítás a régi, floor-kvantálású kódra vonatkozott, és a „Nálunk" sor is ezt írja le. A mai kód 7×7-re `32b27875…`-öt ad, a natív QEMU-futtatás is ezt adja (lásd a 2026-10-12-i alszakaszt).
+
 **Bizonyítottság és cáfolat.** Az utasításszintű út (`0x008f3700`,
 `0x008f3cf6`–`0x008f3cfd`, `0x008f3970`) az interpolációt, a `CVTPS2DQ`
 kerekítést és a LUT-indexelést rögzíti. Ettől független dinamikus út az
@@ -3435,7 +3437,49 @@ vonatkozik; a jelenlegi kódra már nem igaz.
 
 | művelet | db | állapot (2026-10-12) |
 |---|---:|---|
-| `TiledImageMask` (maszk, nem `ImageOperation`) | 2 | **feltételes**: a pixelképlet és a 23×17 golden megerősített; a 7×7 `native_dot_mask`-kontroll nyitott (ellentmondó hash-ek), natív újramérés NINCS MEG |
+| `TiledImageMask` (maszk, nem `ImageOperation`) | 2 | **mért, 7×7 megerősítve** (natív QEMU, a `0x00bba670` wrapperen át, 2026-10-12): a golden `32b27875…6fea658`; a 23×17 újramérés és a q/LUT-összevetés nyitott |
+
+##### Tiled — natív 7×7 mérés a wrapperen át (2026-10-12, #626, 2. kör)
+
+**Állapot: a 7×7 golden megerősítve. A 23×17 újramérés és a q/LUT-összevetés ebben a körben nem futott le.**
+
+**Hívási keret (a `00bba670.c` és a szétszedés alapján).** A wrapper `0x00bba670` 3 stack-argumentumot vesz, és `ret 0xc`-vel tér vissza.
+
+- `param_1`: paraméterrekord. `+0x00` W, `+0x04` H (a maszk mérete; ha W vagy H nulla, a wrapper `-1`-gyel tér vissza). `+0x08`/`+0x0c` tileWidth/tileHeight. `+0x10`/`+0x14` scale. `+0x18`–`+0x24` padding. `+0x28` offsetX, `+0x2c` offsetY (a wrapper mindkettőt `ROUND`-olja). `+0x30`/`+0x34` alphaMin/alphaMax.
+- `param_2`: kontextus. A `+0x14` a cache-objektum.
+- `param_3`: kimeneti CImage. `+0x04` stride, `+0x08`/`+0x0c` méret, `+0x10` puffer. A `0x009a8ca0` lecseréli a puffert (új blokk), ezért az eredményt a hívás **után** az `+0x10` mutatóból kell kiolvasni.
+
+Cache-út: a `0x008e5660` 1 stack-argumentumot vesz (`ret 4`). Nemnulla értéknél nincs találat, és a csempét a `0x00bbaa90` építi, `EDI` = a paraméterrekord. A `0x008e5490` 2 stack-argumentumot vesz (`ret 8`). A méréshez a keresést miss-re, a beszúrást no-op-ra állítottuk.
+
+**Mérés.** `qemu-i386`, az eredeti `Picasa3.exe` (SHA-256 `644b7bec…`), a `0x00c0d9bc` float-inicializáló, CRT-heap shim (`install_crt_shims`), w1-es import-stubok. Rekord: W = H = 7, tile = 7, scale 0,8/0,8, padding 0, offset 0,5/0,5, alpha 0→1. A hívás `0`-val tért vissza.
+
+| mért | érték | összevetés |
+|---|---|---|
+| alfa, 49 bájt, csúcs `189` | sha256 `32b27875…6fea658` | egyezik a fenti goldennel |
+| teljes BGRA, 196 bájt | sha256 `1c40c7b1…9176bb4d` | egyezik a 2026-10-06-i dokumentált goldennel (más hívási úton mérve) |
+| `native_dot_mask(7,7,7,0.5,0.5)` (mai kód) | 49/49 egyezik | `src/picasapy/render/halftone.py` |
+| SIMD-kapcsoló `0xda1424` = 0 és 1 | azonos kimenet | — |
+| offset 0,0 | `32b27875…` | a 7×7 eset nem különbözteti meg a 0,0-t és a 0,5-öt |
+| offset 1,0 | `8d6713e0…` | a mai kód ugyanezt adja (0/49 eltérés) |
+
+A vizsgált tartományokban (`0x00bba580`–`0x00bbb200`, `0x009a8a30`–`0x009a8e00`, `0x009aaae0`–`0x009aac00`, `0x008e5660`–`0x008e5700`) nincs hivatkozás a `[0xd695d0]` / `[0xd695d4]` CPU-jelzőkre. A `[0xd695d2]` és `[0xd695d3]` csak a `0x009a8d80`-ban olvasódik.
+
+**Döntés: a `32b27875…` a helyes golden. A `562cf71d…` nem eredeti golden,** hanem a lineáris-LUT-kontroll terméke (lásd fent). A „mai `native_dot_mask` = `562cf71d…`" állítás a régi, floor-os kódra vonatkozott. A mai kódban (`_native_dot_radius_q8_8`: `np.rint`; `_native_dot_alpha_lut`: `[255, 253, 252, …]`) a kimenet `32b27875…`.
+
+**Korlátok.**
+
+- A 7×7 hívási rekord rekonstruált: az eredeti hívás NINCS MEG. A mezőket a paraméterépítő-táblából és a feladatból vettük, nem a hívóhelyről. Az egyezés azt támasztja alá, hogy a rekord az eredetihez közel áll, de nem bizonyítja.
+- A 196 bájtos BGRA-egyezés egy korábbi, másik hívási út dokumentált hash-ével egyezik. Ez keresztellenőrzés, nem független eredet.
+- Ebben a körben nem futott 23×17-es újramérés.
+
+**„Kész, ha” (a #4326 listája szerint):**
+
+1. A `native_dot_mask` float32 `q` 49/49-ben egyezik a mért SIMD `q`-val. **Nem mért ebben a körben** (a kód `np.rint`-et használ, a futtatás a `q`-t nem olvasta ki).
+2. A 256 bejegyzésű LUT 256/256-ban egyezik a workerrel. **Nem mért ebben a körben.**
+3. A 7×7 kimenet 49/49-ben egyezik a `32b27875…6fea658` goldennel. **Teljesült** (natív QEMU, a wrapperen át).
+4. A 23×17 golden változatlan. **Nem futott újra ebben a körben.**
+
+A 3. pont teljesült. Az 1., 2. és 4. pont nyitott.
 
 ##### A teljes csemperács QEMU-goldenje (2026-10-06)
 
