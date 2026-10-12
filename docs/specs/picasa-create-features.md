@@ -4254,7 +4254,7 @@ Jelölés: `fps` = `settings.fps`; `N = frames_per_photo`; `h = N − transition
 
 - [ ] **Mérés megvan és dokumentált:** `docs/benchmarks/` alatt, a mérés módja (export-beállítás, fps, a kimerített kockaszámok), és stílusonként egy táblázat `k` vagy `t_k` szerint.
 - [ ] **Gördülő (8):** `y(k) = y_start + v · t_k` (előjellel: `v`, `y_start`, a tartomány végpontja MÉRENDŐ); a záró kocka `k_end = ⌈(y_end − y_start) / v · fps⌉`, és a `k ≥ k_end` kockák a végállapotot mutatják.
-- [ ] **Írógép (11):** `n(k) = min(len(szöveg), ⌊r · t_k⌋)` látható karakter, `r` (karakter/s) MÉRENDŐ; ha van kurzor, annak periódusa és fázisa MÉRENDŐ. Ha a mérés szavankénti, a `n` a szavak számára vonatkozik.
+- [ ] **Írógép (11):** `n(k) = min(len(szöveg), ⌊r · t_k⌋)` látható karakter, `r` (karakter/s) MÉRENDŐ; ha van kurzor, annak periódusa és fázisa MÉRENDŐ. Ha a mérés szavankénti, a `n` a szavak számára vonatkozik. **⚠️ Frissítve (2026-10-12, 3. kör): ezt a képletet a G.6.7 felülírja** (`r = len/d`, a `+0,02` eltolás, a kezdet `L`, a bájt-hossz, és a kerekítés).
 - [ ] **„Jó napom van" (1):** a mért tulajdonság `P(k)`; a formula a mérés után írandó, most nincs kiindulópont. **Ez a pont nem implementálható**, amíg a C.3 nincs megmérve.
 - [ ] **A kockák renderelése k szerint:** `_szovegdia` kapjon egy `k` paramétert (alapérték: a mai, álló viselkedés), hogy a 0–7, 9, 10 stílus kimenete **bájtra** egyezzen a mostanival (regressziós teszt).
 - [ ] **Nem tárolható előre:** egy 1280×720 RGB kocka ~2,8 MB; a `text_frames` előrendelése (slideshow.py:623) kockánként nem skálázódik, ezért a kimeneti ciklusban (`export_movie`) a szövegdia-kockát a `k` függvényében kell előállítani.
@@ -4291,7 +4291,7 @@ A `CRenderMovie` (RTTI TD `0x00d400b4`) négy COL-ja (többszörös öröklés) 
   - `8` (Gördülő stáblista) → `TextFadeMoveHandler` (`call 0x809c50`, `0x00810fee`), a három float-argumentum: `[ebx+0xe8]`, egy egész `[esp+0x50]`-ből, és `0,5 ×` egy egész `[esp+0x18]`-ből (`0x00810fc9`: `fmul [0x00c72150]`, a `0,5`).
   - `11` (Képfelirat – Írógép) → `TextTypeWriterHandler` (`call 0x809fe0`, `0x00811db7`/`0x00811dca`). A `cmp dword ptr [ebx+0x44], 0xb` a `0x00811cd8`-on van; `sete cl`, `test cl,cl`, `jne 0x811d64` → a `0x809fe0` ág csak `11`-re.
   - `6`, `7` és a többi a `0x00811cf0`-ágon → `TextFadeHandler` (`0x809af0`).
-  - **Nem vizsgált:** `2`–`5`, `9`, `10`, és hogy a `0x00810b7c`, `0x00810e1d`, `0x0081122f`, `0x008114c5`, `0x00811993`, `0x0081202a` hívások melyik stílushoz tartoznak. A `0x00809af0`-t ezek is hívják, a `0x00809c50`-et a `0x008109eb` is.
+  - **Nem vizsgált:** `2`–`5`, `9`, `10`, és hogy a `0x00810b7c`, `0x00810e1d`, `0x0081122f`, `0x008114c5`, `0x00811993`, `0x0081202a` hívások melyik stílushoz tartoznak. *(2026-10-12: részben megvan, lásd G.6.5.)* A `0x00809af0`-t ezek is hívják, a `0x00809c50`-et a `0x008109eb` is.
 
 #### G.3 Bizonyított — az animáció szerkezete (képkocka-függvény)
 
@@ -4315,9 +4315,9 @@ Minden per-frame függvény (`0x0080a080`, `0x00809b40`, `0x00809d20`) ugyanazza
 
 | kérdés | mi kell hozzá | állapot |
 |---|---|---|
-| `P(t)` pontos képlete | a `0x009e5e70` szegmens-összegzés (a `0x009e5f03`–`0x009e5f71` ciklus) kiértékelése: az `fmulp` mit szoroz, és a `t0`/`t1` honnan jön (a `0x009e6010` szegmens-építő, `0x009e5b20` a darabszámolás) | **nyitott** |
-| Írógép karakteridő-üteme | `P(t)` ismeretében `n(t)`; a karakter/s = `len / dur` csak akkor, ha `P` lineáris — ez **nem bizonyított** | **nyitott** |
-| Gördülő görgetés sebessége és iránya | a `0x009debd0` és a `[esi+0x14c]`/`[esi+0x150]` mezők forrása (a dia-objektum), és a `[ebx+0x49]` jelző szerepe | **nyitott** |
+| `P(t)` pontos képlete | a `0x009e5e70` szegmens-összegzés (a `0x009e5f03`–`0x009e5f71` ciklus) kiértékelése: az `fmulp` mit szoroz, és a `t0`/`t1` honnan jön (a `0x009e6010` szegmens-építő, `0x009e5b20` a darabszámolás) | **megvan** (G.6.1–G.6.2, natív mérés) |
+| Írógép karakteridő-üteme | `P(t)` ismeretében `n(t)`; a karakter/s = `len / dur` csak akkor, ha `P` lineáris — ez **nem bizonyított** | **képlet megvan** (G.6.3: lineáris, `f` = identitás); bemenetei (`d`, `L`, `t` nulla pontja) nyitottak (G.6.6) |
+| Gördülő görgetés sebessége és iránya | a `0x009debd0` és a `[esi+0x14c]`/`[esi+0x150]` mezők forrása (a dia-objektum), és a `[ebx+0x49]` jelző szerepe | **a mozgás forrása megvan** (G.6.4: smoothstep, `P` a `dia+0x150`-be; `A`, `B` geometria és a `0x00819040` ütközés nyitott) |
 | „Jó napom van” (`textstyle1`) animált tulajdonsága | a `0x00810656`-ág (`cmp eax,1`) hátralévő része: a `0x00812110`, `0x009863f0`, `0x00810773`-as vtábla-hívás célja; a `0x2bc` (700) állandó értelme | **nyitott** |
 | Kurzor (villogás) az Írógépnél | a `0x0080a080` után a rajzoló-hívó olvassa-e a `[esi+0x34c]`-t és ír-e kurzort | **nyitott** |
 | Natív futtatás | Wine nincs a gépen; a DirectShow-láncot a harness nem futtatja | **nem lehetséges itt** |
@@ -4327,3 +4327,108 @@ Minden per-frame függvény (`0x0080a080`, `0x00809b40`, `0x00809d20`) ugyanazza
 A mérések szkriptjei ideiglenesek: `/tmp/claude-1000/kd-r4615/scripts/` (`pe.py` — PE-fejléc; `rtti.py` — RTTI-osztály → TD → COL → vtábla; `vtname.py` — vtábla → osztálynév és slotok; `xref.py` / `callers.py` — `mov [reg], imm32` és `E8`/`E9` hívóhelyek; `disasm_va.py` — capstone, a `pe_dis.py` alternatívája az `~/picasapy-agent/eszkozok/`-ban). A capstone a `/tmp/claude-1000/kd-r4615/venv`-ben van. Az `objdump` ezen a gépen nem olvassa a PE-t (ARM-build).
 
 **Ami NEM mérés, hanem következtetés:** a stílus→osztály táblát (G.2) a kód-elágazásokból olvastam, és csak a kiemelt stílusokra (0, 1, 8, 11) ellenőriztem a konstruktor-hívás helyét; a többi stílus hozzárendelése nyitott.
+
+#### G.6 3. kör (2026-10-12): a `P(t)` képlete — natívan mérve; az Írógép és a Gördülő bemenetei
+
+*Állapot: a `0x009e5e70` kiértékelője **natívan lefuttatva** (qemu-i386, a harness `hb.py`-jával), és a szintetikus bemenetekre a modellel **0 eltéréssel** egyezik. Az Írógép és a Gördülő képlete a kódból olvasott; a bemeneti értékeik (dia-idő, kezdet, geometria) és az eseményidő nulla pontja **nyitott** (G.6.6). Filmből mért számot ez a kör nem ad.*
+
+**Mérés módja.** A T-objektum és a szegmens-tömb kézzel épül a `0x009e6010` (hozzáfűzés) és a `0x0080a030` (Írógép-építő) kódja szerint; a szegmens-függvény a valódi kód (`0x00809ae0` azonosság, `0x00818cf0` smoothstep). A futtató szkriptek ideiglenesek: `/tmp/claude-1000/kd-r4615/scripts/p_native.py`, `p_native2.py`, `p_store.py`, `p_gate.py`.
+
+##### G.6.1 A kiértékelő (`0x009e5e70`), utasításszinten
+
+Bemenet: `t` (double, `[esp+4]`); a T-objektum `edi`-ben: `[T+0x8]` gyorsítótár, `[T+0x10]` a szegmens-tömb, `[T+0x14]` = 2·darabszám. Szegmens (0x28 bájt): `+0` interpolátor (függvény-mutató), `+0x8` B (double), `+0x10` A, `+0x18` s (kezdet), `+0x20` e (vég).
+
+1. `t' = t + 0,02` — a `0x009e5e7e` `fadd [0x00cf48a8]`; a konstans mért értéke **0,02** (double).
+2. `0x009e5b20` hívás. Ha `t' < e_0` (az első szegmens vége), 0-t ad, és nem módosít. Különben a szegmenseket a `t'`-nél **hasítja** (0x28-as rekordok másolása, újraallokálás). Egy szegmensnél (`darab < 2`) a `0x009e5dee` ág fut; a mérésben ez a várt eredményt adta.
+3. `acc = B_0` (a `[seg0+8]`).
+4. Minden szegmensre: `s = e` esetén `p = 1`; különben `q = (t' − s)/(e − s)`, `p = clamp(q, 0, 1)`. A `p`-t float32-re kerekíti (`fstp dword`), majd `S = f(p)` (az interpolátor, `call eax`), és `acc += S·(A − B)`.
+5. `P = acc` (double); a `[T+8]`-ba írja, és st0-ban adja vissza.
+
+Összefoglalva (a G.6.2 mérései igazolják):
+
+    P(t) = B_0 + Σ_i f_i(p_i)·(A_i − B_i),   p_i = clamp((t + 0,02 − s_i)/(e_i − s_i), 0, 1)
+
+##### G.6.2 Mért értékek (natív futás)
+
+Szintetikus bemenetek — **nem** a film értékei. Az eltérés = natív − modell.
+
+| eset | bemenet | pontok (t → natív) | eltérés |
+|---|---|---|---|
+| egy szegmens, identitás | B=0, A=12, s=0,5, e=2,5 | 0→0; 0,48→0; 0,5→0,12; 0,51→0,18; 1→3,12; 1,5→6,12; 2→9,12; 2,4→11,52; 2,49→12; 2,5→12; 2,6→12 | 0 (11/11) |
+| két szegmens, identitás | (B₀=1, A₀=5, [0;1]), (B₁=5, A₁=9, [1;3]) | −1→1; 0,2→1,88; 0,5→3,08; 0,97→4,96 (csak `t' < e_0`) | 0 (4/4) |
+| egy szegmens, smoothstep | B=10, A=50, s=1, e=3 | 0,5→10; 1→10,012; 1,5→16,706; 2→30,600; 2,5→44,194; 3→50; 3,2→50 | 0 (7/7) |
+
+**Nyers-idő kapu** (`0x009e5e20`, mért; s=0,5, e=2,5): t = 0,48; 0,5; 2,49; 2,5 → `al = 0` (a kockafüggvény **frissít**); t = 2,6; 3,0 → `al = 1` (**nem** frissít).
+
+**Tárolás-ha-változott** (`0x009debd0`, mért):
+- cur = (0,0; 0,0), a = 0,0, b = 0,5 → (0,0; 0,5), a `dia+8` bit0 = 1;
+- cur = (1,0; 2,0), a = 1,0 + 1 ULP, b = 2,0 → nem változik (1,0; 2,0), bit0 = 0;
+- cur = (1,0; 2,0), a = 1,0 + 16 ULP, b = 3,0 → (1,0 + 16 ULP; 3,0), bit0 = 1.
+
+##### G.6.3 Az Írógép: a képlet (`0x00809fe0`, `0x0080a030`, `0x0080a080`)
+
+Kódolvasás és a G.6.2 mérés alapján:
+
+- **Hossz** `len`: a szöveg **bájtszáma** (`0x00811da4`: bájtonként olvasott, NUL-ig számoló ciklus; nem Unicode-kódpont).
+- **Időtartam** `d` (`0x008104b9`–`0x008104dc`): `d = [desc+0xec]`; ha nulla, akkor `[desc+0xe8] / 3,0` (`fdiv [0x00cf39f8]`, a konstans 3,0).
+- **Kezdet** `L = [desc+0xf0] + [desc+0xf4]` (`0x00810459`–`0x00810464`, float32).
+- A `desc` a gyár második argumentuma; a filmhívókban `desc = film+0x1a8` (`0x008128aa`, `0x008138bf`), tehát `[desc+0xec] = film+0x294` stb.
+- **Szegmens** (`0x0080a030`): kezdet `L`, vég `L + d`, `B = 0`, `A = len`.
+- **Kockafüggvény** (`0x0080a080`): `d > 0` kapu; a nyers-idő kapu (G.6.2); `P = 0x009e5e70(t)`; `n = trunc(P + 0,5)` (`fadd [0x00c72150]`, csonkoló kerekítés); `n = max(1, n)`; `[dia+0x34c] = n`; `[dia+0xc] |= 7` csak változáskor.
+
+Következmény (a szerkezet mért, a paraméterek olvasottak):
+
+    P(t) = len · clamp((t + 0,02 − L) / d, 0, 1)
+    n(t) = max(1, trunc(P(t) + 0,5))
+    r    = len / d      (bájt/s; lineáris, mert f = identitás: 0x00809ae0 = `fld [esp+4]; ret`)
+
+A 2.10/b F-ben szereplő `n(k) = min(len, ⌊r·t_k⌋)` közelítés ettől eltér: van benne `+0,02` és `−L`, a kerekítés nem csonkol, és `t + 0,02 ≤ L`-re `n = 1`. Ezt a G.6.7 írja felül.
+
+A nyers-idő kapu miatt a film végén az állapot az **utolsó olyan kocka** értéke, ahol a nyers `t ≤ e` (ha `len·0,02/d < 0,5`, ez gyakorlatilag `len`; különben a szöveg hiányosan marad). Ezt a kódolvasás adja; a kockafüggvény natív futtatása nincs (RTTI-t kér).
+
+##### G.6.4 A Gördülő (`FadeMove`, stílus 8): a mozgás forrása
+
+- **Idővonal:** a `H` kezelő (`0x00809c50`) második idővonala `T2 = H+0x30`, az építő `0x00809cd0`. Egy szegmens: kezdet `L` (mint G.6.3), vég `L + [H+8]`, `[H+8] = [desc+0xe8]` (közvetlenül, nincs `/3`), az interpolátor **`0x00818cf0`** = smoothstep: `f(p) = 3p² − 2p³` (mért, G.6.2).
+- **Amplitúdó:** `B = [H+0x28]` = a második argumentum = `R_b.h` (a `0x009e51a0` hívás téglalapjának magassága), `A = [H+0x2c]` = `0,5 · V1`, `V1 = R_a.h − ([E+0x54] − [E+0x4c])` (`0x00810f7b`–`0x00810fbe`). **A és B geometria**, nem konstans. Forrásuk a `0x009e51a0` és a `[E+0x54]`/`[E+0x4c]` (vtábla-hívás, `0x00810f55`); ezek nincsenek visszakövetve (G.6.6-4).
+- **Pozíció-írás** (`0x00809d20`): `P_f = float32(0x009e5e70(T2, t))`, a kapu ugyanaz. A kezelő `[H+0x49]` jelzője dönti el, melyik mezőbe: `≠ 0` → `0x009debd0(a = P_f, b = X2)`; `= 0` → `0x009debd0(a = X1, b = P_f)`, ahol `X1 = [dia+0x14c]`, `X2 = [dia+0x150]`.
+- **Gördülőnél** a gyár a kezelő konstruktora után **`[H+0x48] = 0` és `[H+0x49] = 0`** értéket ír (`0x00811005`, `0x00811009`), tehát a konstruktor `al = 0xff` argumentuma felülíródik. Így `P_f` a **`dia+0x150`**-be kerül, a `dia+0x14c` változatlan marad.
+- **`0x009debd0` (mért): „tárolás, ha változott”.** Ha `X1` vagy `X2` és az új érték bitjei között a különbség ≥ 8 ULP, akkor `X1 := a`, `X2 := b` és `[dia+8] |= 1`; különben nem ír (G.6.2).
+
+Összegezve: a Gördülő görgetése `X2(k) = B + S(p)·(A − B)`, `S(p) = 3p² − 2p³`, `p = clamp((t + 0,02 − L)/dur, 0, 1)`, `dur = [desc+0xe8]`. Az `A` és a `B` geometriából jön (G.6.6-4).
+
+⚠️ **Ellentmondás-gyanú, nincs eldöntve:** a `0x00819040` fogyasztó (virtuális hívás, a `[eax+0x78]` slot) minden hívásakor összeveti `dia+0x14c/0x150` értékét `dia+0x388/0x38c`-vel, és ha eltér, `0x009debd0(a = dia+0x388, b = dia+0x38c)`-t hív (`or [dia+8], 7`). Ha ugyanarra a `dia` objektumra fut, felülírná a `P_f`-et. Hogy ez a Gördülő objektuma-e, és a `dia+0x388/0x38c` mit tartalmaz az animáció alatt, **nincs mérve** (G.6.6-3).
+
+A `[H+0x49]` jelző az 1-es stílusnál (`0x008107a7` előtt) nincs kiolvasva; az 1-es stílus is a `0x00809c50`-et hívja.
+
+##### G.6.5 Stílus-hozzárendelés a `0x00810420` elágazásaiból (részleges)
+
+| stílus | ág (cím) | hívott kezelő(k) | állapot |
+|---|---|---|---|
+| 0 | `0x00810598` → `0x0081061b` | TextFade `0x809af0` (építő `0x809eb0`) | olvasott |
+| 1 | `0x00810656` → `0x008107a7` | FadeMove `0x809c50` + `0x809cd0` (`0x008107ba`) | olvasott; a flag-ág nem |
+| 2 | `0x00810a40` → `0x00810b7c` | TextFade `0x809af0` (építő `0x809eb0`, `0x00810b91`) | olvasott |
+| 3 | `0x00810bce` → `0x00810e1d` | TextFade `0x809af0` + `0x809e60` (vtábla `0x00cbdba8`, **nem azonosított** osztály) | olvasott |
+| 4, 5 | `0x00810ebe`, `0x00810ec7` → `0x00811572` | a blokkban nincs `0x809`/`0x80a` hívás (csak `0x812110`) | olvasott |
+| 6, 7 | `0x00810ea6`, `0x00810eaf` → `0x00811a27` → `0x00811cf0` | TextFade `0x809af0` | olvasott |
+| 8 | `0x00810ed3` → `0x00810ed9` | FadeMove `0x809c50` + `0x809cd0`, flag 0 (G.6.4) | olvasott + mért alak |
+| 9, 10 | `0x00811031` → `0x0081103f` / `0x00811088` | a blokk több kezelőt hív (`0x809af0`, `0x809eb0`, `0x809e60`), de az ágakhoz nincs szétválasztva | **nyitott** |
+| 11 | `0x00811cd8` (`cmp 0xb`) → `0x00811db7` | TypeWriter `0x809fe0` + `0x80a030` | olvasott + mért alak |
+
+##### G.6.6 Nyitott — a megszerzés útjával
+
+1. **A `t` nulla pontja** (az esemény `[edi+0x10]` ideje, a kockafüggvények bemenete). Ez blokkolja a `k → t` leképezést. A hívó nincs azonosítva: a `0x0080a080` és a `0x00809d20` a kezelő vtábla 3-as slotja (`ecx` = `this`, három stack-argumentum, `ret 0xc`). **Megszerzés:** a `call [reg+0xc]` hívóhelyek keresése a film-osztályokban, és az eseményrekord `[+8] = 0x13` töltésének megkeresése.
+2. **A dia-időmezők értéke** (`desc+0xe8..0xf4` = `film+0x290..0x29c`). A film-konstruktor a `0x0080a1c2` körül (`mov [esi], 0xcbdbd4`) dword-öt ír ezekbe (`+0x28c` mód). **Ellentmondás-gyanú:** a `0x008122f1` egész értéket (`fistp`, csonkolás) ír `+0x298`-ra, míg a gyár `fld dword`-ként (float) olvassa a `+0xf0`-t. Ha ez ugyanarra az objektumra vonatkozik, a típus nem egyezik. A `d` és az `L` számértéke ettől függ. **Megszerzés:** a film-konstruktor hívóinak kiolvasása, és a `0x008122xx` függvény azonosítása.
+3. **A `0x00819040` fogyasztó** (Gördülő): felülírja-e a `dia+0x150`-et. **Megszerzés:** a `[eax+0x78]` vtábla-slot hívóinak azonosítása, és natív teszt ugyanazon `dia`-n.
+4. **A Gördülő A és B értéke:** a `0x009e51a0` visszatérési téglalapja és a `[E+0x54]`/`[E+0x4c]` (a `0x00810f55`-ös vtábla-hívás kimenete). **Megszerzés:** a két függvény és a vtábla kiolvasása; a valódi méretek (kép- és szöveg-keret) a film futtatásából jönnek, a jelenlegi harnesszel nem mérhetők.
+5. **A `0x809e60` osztály** (vtábla `0x00cbdba8`, a 3-as stílus), és a 4, 5, 9, 10 stílusok ágai (G.6.5).
+6. **A `[H+0x49]` az 1-es stílusnál** (`0x008107a7` előtt).
+7. **Natív film-futtatás nincs:** a DirectShow-lánc a harnessben nem fut (a README szerint), Wine nincs a gépen. Filmből mért érték a 2.10/b D szerinti Colab-os Picasa-mérésből jöhet.
+
+##### G.6.7 „Kész, ha” — az Írógépre és a Gördülőre (feltételes; `src/picasapy/movie/slideshow.py`)
+
+- [ ] **Bemenetek (blokkoló):** G.6.6-1 (a `t` nulla pontja) és G.6.6-2 (`d` és `L` számértéke) tisztázva. Enélkül a képlet csak paramétereiben áll.
+- [ ] **Írógép:** `n(k) = max(1, trunc(len·clamp((t_k + 0,02 − L)/d, 0, 1) + 0,5))`, ahol `t_k` a G.6.6-1 szerint, `len` a szöveg **bájtszáma**, `d` és `L` a G.6.3 szerint. A `slideshow.py` `_szovegdia` jelenleg a karakter-hosszt használja; ezt bájtszámra kell cserélni.
+- [ ] **Nyers-idő kapu:** ahol `t_k > e`, a `n` nem változik (G.6.2, mért); a tesztben külön ellenőrizni.
+- [ ] **Bájt, nem karakter:** a teszt többbájtos (UTF-8 vagy CP1250) szöveget is tartalmazzon. Hogy a rajzoló a `[dia+0x34c]`-t bájtként vagy karakterként használja, **nincs kiolvasva**; ez nyitott.
+- [ ] **Gördülő:** `X2(k) = B + S(p)·(A − B)`, `S(p) = 3p² − 2p³`, `p = clamp((t_k + 0,02 − L)/dur, 0, 1)`, `dur = [desc+0xe8]`; `A`, `B` a G.6.4 szerint. Előfeltétel: G.6.6-3 és G.6.6-4.
+- [ ] **Regresszió:** a 0–7, 9, 10 stílusok kimenete bájtra egyezzen a mostanival, amíg a 2, 3, 4, 5, 9, 10 viselkedése nincs kiolvasva (G.6.5); ezek maradjanak álló képként.
