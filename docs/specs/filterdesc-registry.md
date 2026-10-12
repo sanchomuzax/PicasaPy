@@ -2707,7 +2707,7 @@ szinttel. A natív kód útja igazolt; a teljes, parseren átmenő képkimenet
 | linked Brightness/Contrast → fixpontos mátrix | `0x00bb6400` → `0x008f21a0` → `0x008f2640` | `simple_color_matrix(..., linked=True)` | A felsorolt natív esetek mind bájtra egyeznek; nincs mért eltérés. |
 | fekete→fehér gradiens | `0x00bb87b0`; a `0x00bcb2f0` a nyers piros bájttal indexel | `apply_twotone` piros csatornás interpolációja | A vizsgált LUT-pixelértékek bájtra egyeznek; a korábbi Rec.601 állítás törlendő. |
 | Fade páros szélességnél | `0x00bd0700` → `0x009dc4b0` | `glimmer_ops.alpha_blend` kétutas egészképlete | A `Fade=50` páros képeken bájtra egyezik. |
-| Fade páratlan szélesség utolsó oszlopa | `0x009dc646–0x009dc6fb`: `t + (((b−t)·w)>>8)` | `glimmer_ops.alpha_blend` ugyanazt a kétutas képletet használja minden pozíción | Fejlesztői teendő: az odd-width sorvégi pixelre külön skalár farok, natív képlettel és előjeles aritmetikai `>>8`-cal; a jelenlegi 5×9 `Fade=50` kontrollban 5 pixel/10 RGB-bájt, max. 1 szint eltérés. |
+| Fade páratlan szélesség utolsó oszlopa | `0x009dc646–0x009dc6fb`: `t + (((b−t)·w)>>8)` | `glimmer_ops.alpha_blend` a sorvégi pixelre a `t + ((b−t)·w >> 8)` farokképletet használja (`glimmer_ops.py:173–176`) | **Lezárva (2026-10-12):** natív bájtra egyezik, ld. a következő helyesbítést. A korábbi „5 pixel / 10 bájt" eltérés elavult. |
 
 **Cáfoló kontroll.** A nyers piros indexelés cáfolására a `Rec.601`-luma
 alternatívát próbáltuk. A `qemu-i386` futtatás `(x=2,y=0)` mátrixolt
@@ -2717,6 +2717,45 @@ a `LUT[0]` `88 44 00 ff`. A Rec.601-alternatíva ennél a pixelnél
 A megfigyelt natív bájt ezt az alternatívát cáfolja, a nyers piros csatornát
 erősíti meg; a diszasszemblálás ettől függetlenül ugyanezt mondja a
 `src[2]` → `+0x800` indexeléssel.
+
+#### ⛔ HELYESBÍTÉS: a páratlan sorvég BÁJTRA egyezik — a Fade-keverő natív kontrollja (2026-10-12, #626)
+
+A fenti „Fade páratlan szélesség" ág (`0x009dc646–0x009dc6fb`) nyitott
+fejlesztői teendőjét a mai kör zárta le. A `0x009dc4b0` keverőt (a `TwoTone`
+Fade-útja) qemu-i386 alatt futtattuk, **mindkét CPU-ággal**: `F4=1` (MMX/SSE-ág, ez a
+valódi Picasa-út, a referencia) és `F4=0` (skalár ág). A `[0xd695d4]`
+jelzőt a harness kézzel állította; a bemenet véletlen BGRA, W×H pixel.
+
+| próba | W×H-k | `arg` (= `trunc(α·256)`) | eltérő RGB-bájt |
+|---|---|---|---:|
+| `F4=1` | 4…9 (páros és páratlan) × 3 sor | 1, 2, 64, 127, 128, 129, 204, 254, 255 | **0 / 3 159** |
+| `F4=0` | 4…9 × 3 sor | ugyanaz | **0 / 3 159** |
+| `F4=1` | 16, 17, 33 × 2 sor | 1, 128, 255 | **0 / 1 188** |
+| `F4=0` | 16, 17, 33 × 2 sor | ugyanaz | **0 / 1 188** |
+
+A PicasaPy-oldal a `glimmer_ops.alpha_blend` (`α = arg/256`, így a `w = arg`,
+a `w − 1` levonás a függvényben történik). Az összehasonlítás csak RGB-bájtokon
+fut, az alfát nem.
+
+**Cáfoló kontroll.** A 108 natív eset (mindkét ággal) kimenetén a tail-javítás
+NÉLKÜLI `(b·(255−w)+t·w)>>8` képlet páratlan szélességnél **421 bájtban** tér
+el a natívtól, tehát a próba diszkriminál. A natív kimenet 447 bájtban egyezik
+a `top`-pal és 244-ben a `base`-zel (a kevert érték nem triviális).
+
+**Mit NEM zár le ez a kör:** a teljes `filterdesc.xml`-parser és a
+`0x00bb7c80`/`0x00bd0700` külső végrehajtó end-to-end futása (a korábbi
+állapot szerint is nyitott); a mérés kis, szintetikus képeken történt, és csak
+a keverő-rutint futtatta, nem a hívó effekteket. A `glimmer_ops.alpha_blend`-et
+más effektek is hívják; azokra ez a mérés nem terjed ki külön.
+
+Kód: a mérő-driver és az összevető (`/tmp/claude-1000/kd-r626p/`, ideiglenes)
+a `qemu_harness/hb.py` + `w1.py` harnessre épül; az `F4=1` futás a referencia.
+
+#### #626 leltár — `TwoTone` sor frissítése (2026-10-12)
+
+| művelet | pixelmag (LUT, nyers piros) | Fade-keverés (`0x009dc4b0`) | összesített állapot |
+|---|---|---|---|
+| `TwoTone` | **megerősített** (2026-10-04; a LUT-skalár és a `0x00bcb2f0` alkalmazó) | **megerősített** bájtra, mindkét CPU-ággal, páros és páratlan szélességen (2026-10-12) | **megerősített a pixelmatematikára**; a teljes `filterdesc`-parser-út (`0x00bb7c80`/`0x00bd0700` end-to-end) **nyitott** |
 
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
