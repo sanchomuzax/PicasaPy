@@ -2830,6 +2830,127 @@ költsége. Célzott következő kör:
 `Ghidra-kör kell: 0x00874320 — a nyolcbájtos kimeneti elemek mezői/indexei hogyan kötődnek a fotórekordokhoz, és mi a 0x00877c50 teljes bemeneti szerződése? [blokkoló]`
 `Ghidra-kör kell: 0x00877c50 — az ordering=1/2 út minden élköltsége mely rekordadatokból áll elő, és hogyan lesz a végső útból fotóindex? [blokkoló]`
 
+#### G/2. A megtartott kép kiválasztása `ordering = 0`-n — utasításszintű olvasat (2026-10-12, #4194 5. kör)
+
+**Módszer és határ.** A kör a `0x0081b800`–`0x0081d9e0` tartományt
+utasításszinten olvasta (capstone-szétszedés az eredeti EXE-ből, a
+`ghidra-kimenet/2026-10-07/` dekompilátumával összevetve). Az
+`ordering = 0` ág mechanikája ezúttal részletesen megvan; a **getterek
+jelentése és a két horgony (ablakhatár, anchor) írója nyitott**. **Natív
+QEMU-futtatás ebben a körben NEM történt** (lásd lent az okát). A
+`ordering = 1/2` ágra ez a szakasz nem terjed ki; ott a G szakasz áll.
+
+**Hívási lánc (0x0081b800).**
+
+- A csoportosító (`0x0081ae10`) csak akkor fut, ha a `burstmodethresh`
+  nem nulla (`0x0081b8be`–`0x0081b8ca`). Nulla küszöbnél a csoportazonosító
+  nincs, a kizárás csak a kiválasztottakra vonatkozik.
+- A kimenet darabszáma `K = clamp(hossz, 2, N)` (`uStack_30` a
+  dekompilátum 26–40. során), `N = [obj+0x139] >> 1`.
+- `ordering = 0` esetén `0x0081c9b0(gyűjtemény, K, zárt-jelzők, csoportok, 0)`
+  fut (`0x0081b925`→`0x0081c925`; dekompilátum 83–99. sor), és az
+  utómunka az `0x0081b800` 780. sorától a `0x0081c980` címkére ugrik.
+  Az `ordering = 0` ág ezért nem használja a `0x00874320` gráfépítőt.
+
+**A horgony (első kiválasztott kép) — deterministikus, nem pontszám.**
+`0x0081c9b0` első lépése (`0x0081ca05`–`0x0081ca33`): ha `[obj+0x738] ≠ -1`,
+a horgony az a rekord, amelynek `+0x30` mezője egyezik vele (ciklus a
+`[obj+0x4e0]` listán, 0x38 bájtonként); különben a horgony a 0. elem. A
+horgonyt a `[esp+0x48]` kiválasztott-tömbben `1`-re állítja (`0x0081caaf`),
+és ő lesz az aktuális középpont (`[esp+0x14]`, `0x0081cab3`).
+
+**Egy kiválasztási lépés (`0x0081d298`–`0x0081d4e9`, `0x0081d730`–`0x0081d7db`,
+pick-zárás `0x0081d803`–`0x0081d8a0`).**
+
+1. **Jelöltlista — kifelé haladó spirál a középpont körül.** Az eltolások
+   sorrendje `+1, −1, +2, −2, +3, −3, …` (a `[esp+0x28]` számláló
+   előjelváltása `0x0081d4ca`–`0x0081d4d8`). Egy `j` jelölt, ha
+   (a) `0 ≤ j < N`; (b) még nincs kiválasztva (`[esp+0x48][j] = 0`,
+   `0x0081d400`–`0x0081d408`); (c) a `[obj+0x10]`-ből hivatkozott
+   zárt-jelző tömbben `0` (`0x0081d40e`–`0x0081d417`); (d) **a csoportja
+   különbözik a középpont csoportjától** (`0x0081d41d`–`0x0081d428`, a
+   csoporttömb `[obj+0x14]`). A lista legfeljebb **100** jelöltet tartalmaz
+   (`(EBX & ~1) == 0xc8`, `0x0081d4e4`); az oldalhatárok és az oldal-kimerülés
+   kilépési ágai `0x0081d3xx`–`0x0081d4ef`. A pontszám a ciklusba nem szól
+   bele (a korábbi megállapítás marad).
+2. **Pontszám — elemenként súlyozott összeg.** A regisztrált getterek
+   (`[obj+0x504]` lista, `[obj+0x508]` darabszám) jelöltenként egy-egy
+   floatot adnak (`0x0081d74d`, `call 0x873170`); a súlyok `[obj+0x50c]`.
+   Elemenként: `pont[i] += súly[g] · getter_g[i]` (`0x0081d730`–`0x0081d78c`).
+   Ez a teljes összeg, nem egyetlen getter eredménye.
+3. **Választás — szigorú minimum, 1e8 küszöbbel.** A kezdő legjobb érték
+   a `0xc7da00` konstans: **100 000 000,0** (`0x0081d792`). Egy jelölt
+   csak akkor nyer, ha pontszáma **szigorúan kisebb** a legjobbnál
+   (`0x0081d7b0`–`0x0081d7c4`, `fcompp` + `test ah,0x41`). Egyenlőségnél a
+   korábban bejárt marad. **Ezért a 1e8-nál nagyobb vagy azzal egyenlő
+   pontszámú jelölt soha nem nyer.**
+4. **Tartalék.** Ha nincs nyertes (az összes jelölt ≥ 1e8, vagy a
+   `[esp+0x3c]>>1` darabszám 0), a nyertes a **jelöltlista első eleme**
+   (`0x0081d7d5`–`0x0081d7d9`) — vagyis a spirál első találata, nem „az első
+   kép” a bemeneti sorrendben. Üres lista esetén a kód nincs ellenőrizve
+   (az olvasás a `[esp+0x30]` nullmutatón menne; ezt a futtatás nem mérte).
+5. **Pick-zárás.** A nyertes `j` jelölve (`[esp+0x48][j] = 1`); a `+0x30`
+   dword a kimeneti tömbbe kerül (`0x0081d832`), a `+0x34` dword egy
+   virtuális hívásnak megy (`0x0081d873`); az új középpont `j`
+   (`0x0081d8a0`). Az irányjelző (`[esp+0x10]`) a `j` oldalától függően
+   törlődik (`0x0081d7e0`–`0x0081d7fe`). A ciklus `[obj+0x500] == K`-ig
+   (`0x0081d8bf`) fut; a horgony ebbe a számlálóba beleszámít-e, a
+   kilépés pontos egyenlőségi feltétele ebben a körben **nincs
+   visszaellenőrizve**.
+
+**Igazolt, a G szakasz eddigi leírásán túl (utasításszint):**
+
+- **1e8 küszöb** (új): a 1e8 feletti jelölt sosem választódik; a
+  tartalék a spirál első eleme.
+- **Spirál-sorrend** (új): a holtverseny és a tartalék is a spirál
+  sorrendjéhez kötődik, nem a bemeneti sorrendhez.
+- **Csoportkizárás a középponthoz képest** (megerősít): a következő
+  kiválasztás csak az **előző kiválasztott kép** csoportját zárja ki; a
+  korábbi csoportok újra választhatók.
+- **Horgony** (új): az első kiválasztott kép nem pontszámmal dől el.
+
+**NYITOTT (ebben a körben nem lezárható):**
+
+- a `[obj+0x720]` / `[obj+0x728]` táblák írója (a `0x0081d2c1`–`0x0081d2e5`
+  ágban a spirál oldalhatárait adják a középponttól függően) és a
+  `[obj+0x738]` írója — ez adja a horgonyt;
+- a getterek **jelentése** (a HOG és a Neven getter fotómezői; a `+0x30`
+  / `+0x34` szemantikája). A „legkisebb összeg” ezért **nem nevezhető**
+  „legjobb minőségnek”;
+- a `0x0081c9b0` 5. argumentumának (`[ebp+0x18]`, mode-0 hívásban `0`) és
+  a `[obj+0x13e]` indirekciónak a szerepe;
+- a kimeneti darabszám pontos lezárása (a horgony a `K`-ba beleszámít-e).
+
+**Natív QEMU-út — NEM futtatva.** Az `ordering = 0` spirálciklus kilépése a
+`[obj+0x720]`/`[+0x728]` ablaktáblától és a `[obj+0x738]` horgonytól függ.
+Egyik korábbi szintetikus próba sem töltötte fel ezeket valódi
+rekordokkal; a 2. körben a futás a `0x0081d310` ciklusban elakadt. Egy
+értelmes második út előfeltétele tehát a táblák írójának visszakötése
+(Ghidra-kör), nem újabb futtatás. Ez nyitott kérdés, nem bizonyíték.
+
+**CPU-jelzők (`0xd695d0` MMX, `0xd695d4` SSE).** A fenti függvények és a
+hozzájuk tartozó segédek tartományai (`0x008773d0`, `0x00877820`,
+`0x008781a0`, `0x00877370`, `0x0081b150`, `0x0081e220`, `0x0081e3a0`,
+`0x0081e5a0`, `0x00873e40`, `0x008742a0`, `0x00873cb0`, `0x00873170`,
+`0x0081fab0`, `0x00824090`, `0x004edf60`, `0x0048c440`) szétszedésében
+nincs `0xd695xx` hivatkozás. A tartományok végei nem függvényhatárok (nem
+ellenőriztük), ezért ez csak annyit állít: ezekben a tartományokban a
+CPU-jelzőtől való ágazás nem látszik. Ha a lánc mégis ágazik, a valódi
+MMX/SSE-ágat a valódi gépen kell mérni — ez nem történt meg.
+
+**Bizonyítottsági fok (G/2):** a spirál, a szigorú minimum, a 1e8 küszöb, a
+tartalék és a pick-zárás **megerősített** utasításszinten (egy útról;
+második, natív út nincs). A getterek jelentése, a horgony-táblák és a
+darabszám-lezárás **NYITOTT**.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A készítési idő szerinti csoportosítás: szomszédos delta, `delta >= T` új csoport, egész másodpercre kerekítve; csak nem nulla küszöbnél fut (G, megerősített). | `burstmodethresh` csak tárolódik és átadódik (`src/picasapy/movie/slideshow.py:75`, `mxf.py:126`, `app/create_controller.py:728`, `:807`). A `src/` alatt nincs csoportosító vagy szűrő (`grep -i burst` a `movie/` alatt). | #4182: a szomszédos csoportosítás implementálható (a QEMU-s három esetet tesztnek). |
+| `ordering = 0` (sima sorrend, rádió: `smart_order_radio`): horgony, spirál-jelöltlista a középponttól, csoportkizárás, súlyozott getter-összeg, szigorú minimum 1e8 küszöbbel, tartalék a spirál első eleme. | `slideshow.py:626`–`637`: a következő, színátlagban legközelebbi kép (`np.linalg.norm`). Nincs horgony, spirál, csoport, getter. | **Eltér**: a szín-alapú láncolás nem az eredeti szabály. A szabályhoz a getter-semantika (HOG/Neven) kell; addig nem implementálható hitelesen. A jelenlegi színes ág jelölendő „nem eredeti”-ként. |
+| `ordering = 1` (album, `album_order_radio`): `0x0875ee0` (ha `[obj+0x1da]` nulla), jelölt-indirekció `[obj+0x13e]`-n át. | `slideshow.py`: a bemeneti (album) sorrend marad, nincs kiválasztó (nincs rendezés). | A szabály nyitott (graph-út nem visszafejtett); a jelenlegi album-sorrend egyezhet a kimenettel, de ezt nem igazolta semmi. |
+| `ordering = 2` (időrend, `chronological_order_radio`): a `0x0874e40` gráfút (nem időrendezés). | `slideshow.py:624`–`625`: `st_mtime` szerinti rendezés. | **Eltér**: a fájl-mtime nem az eredeti kulcs, és a kiválasztás sem időrend. A graph-út visszafejtése (`0x00877c50`) a teendő. |
+| Alapérték: a rádió-csoport kézi kezelése, az `.mxf` `<ordering>` mezőjéhez. | `movie/mxf.py:125` alapja `0`, `movie/slideshow.py:74` alapja `1`. | **Egyeztetni** a két alapértéket az eredeti rádió-alapjával (a UI-alapértelmezés ebben a körben nincs visszaellenőrizve). |
+
 #### Bizonyítottsági fok
 
 **Megerősített** (utasításszinten olvasva): a négy tálcagomb ága és
