@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.76] – 2026-10-12
+
+- A bal hasáb indexképei (a mappák kis borítóképei) induláskor gyorsan megjelennek: a program a már elkészült bélyegképeket használja, nem dekódolja újra minden indításkor az eredeti fotókat; a fotó nélküli mappák csendben a mappaikont kapják, és a konzolon nem ismétlődik többé a „Failed to get image from provider” hiba (#4876).
+
 ## [0.9.75] – 2026-10-12
 
 - Fejlesztőknek: a háttérkép-tesztek nem indíthatnak valódi asztali háttérkép-programot — a teszt képe többé nem kerülhet az asztalra (#4892).
