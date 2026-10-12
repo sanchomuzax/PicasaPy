@@ -1022,3 +1022,86 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | PplAlbumPhoto | PplAlbumPhoto::ID_SETASPEOPLEALBUMTHUMBNAIL | Beállítás az Emberek album indexképeként | objectName=contextMenuSetAsPeopleAlbumThumbnail | **hiányzik — javasolt jegycím: Lehessen indexképet választani minden Emberek-albumhoz** | Nincs személyenkénti indexkép-adat a tárolóban |
 
 Az állapotok ismételhető ellenőrzése a tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py fájlban fut. A két új valódi kattintásos QML-próba az AlbumList bélyegkép-kapcsolóját és Asztal almenüjét, valamint a OneUp „Eredeti a lemezen” útját ellenőrzi.
+
+## 1022. tétel részletezése — személy-album indexképe (#4536)
+
+Állapot: 2026-10-12, a `research/4536-szemely-indexkep` ágon mért. Csak
+kutatás, kód nem változott. A táblázat 1022. sora („hiányzik") helyes.
+
+### Mai kód (mért)
+
+- `src/picasapy/app/qml/PicasaPy/PhotoContextMenu.qml:248–251` — a helyőrző
+  indoklása: személyenkénti indexkép-tároló nincs.
+- `PhotoContextMenu.qml:253–267` — `contextMenuSetAsPeopleAlbumThumbnail`,
+  `placeholder: true` (267), látható csak `personName !== ""` mellett (265).
+  A `PicasaPy/PicasaMenuItem.qml:19,67` miatt szürke és nem kattintható.
+- A QML-ben más „Set as … Thumbnail" tétel nincs (grep: `Set as`). A jegy
+  törzsének „Arcfelismerés-rész: Set as Thumbnail megvan" állítása a kódban
+  nem igazolódik.
+- `src/picasapy/app`, `src/picasapy/index`, `src/picasapy/ini`: nincs
+  személyenkénti indexkép-író vagy -olvasó. `people_controller.py` nem hívja
+  a `set_thumbnail`-t. Az `ini/person_album_thumbnail.py` csak a
+  `fix/4536-codex` ágon (`b74647c22`) van meg, `main`-en nincs.
+
+### Eredeti: bináris-index (helyi, `referencia/binary-index/`)
+
+Forrás: Picasa 3.9.141.259, SHA-256 `644b7bec…` (`meta.json`); Ghidra 12.1.2.
+
+- A `set_thumbnail` string `0x00c96fc8`; hivatkozó függvények: `0x005e0f70`
+  (leveles elosztó), `0x0074ad40` (panel-építő), `0x0074bcc0` (panel-építő).
+- A kezelő: `0x00603660` (342 b). A `xrefs.csv` szerint a `0x005e0f70` és a
+  `0x005cb990` is hívja.
+- A kezelő közvetlen hívásai: `0x00603420` (Preferences /
+  `PeopleAlbumUseFaceSrc`), `0x0074c110` (`albumheader/%x/%d/faceicon`),
+  `0x007166c0`, `0x004af790`, `0x00407610`, `0x004115c0`, `0x0097caf0`,
+  `0x009a8a30`, `0x009a8bc0`, `0x009d2c80`.
+- A közvetlen hívások között nincs string-alapú íróhívás. Ez NEM negatív lelet:
+  az xref-index nem látja a vtábla-hívásokat (ld. a kutatási módszertant).
+- `PeopleAlbumUseFaceSrc` nyolc függvényben szerepel (`0x005704d0`,
+  `0x0057a4f0`, `0x005c7830`, `0x005cb1a0`, `0x005e5290` face_zoom/picture_zoom,
+  `0x005e8a70`, `0x00603420`, `0x00787d70`). Ez globális beállítás, nem
+  személyenkénti tároló.
+- **Spec-gyanú (nem mért ellentmondás):** a 23. (`create_face_movie`) és a 24.
+  (`set_thumbnail`) sor ugyanazt a címet (`0x00603660`) adja. A kezelő
+  hívásai között nincs filmkészítő, a `create_movie` (`0x0057cb60`) másik
+  kezelő. Vagy a kezelő belül ágazik, vagy a 23. sor téves. Ellenőrizendő.
+
+### Tárolási jelöltek — állapot
+
+| jelölt | bizonyíték | állapot |
+|---|---|---|
+| `.picasa.ini` arc-sor / `[Contacts2]` | `picasa-arcfelismeres.md` 3.x: a `faces=` és a `[Contacts2]` névcímkéé | NYITOTT — a kezelőnek nincs mért ini-írása |
+| `contacts.xml` | `picasa-arcfelismeres.md` 3.5: `id`, `name`, `modified_time`, `local_contact` | NEM VALÓSZÍNŰ — a mért alakban nincs képmező |
+| db3 `albumdata` | mért oszlopok: name, date, category, filename, token, inisync, hascollage, albumpeoplechecksum, albumcontactids, unread | NYITOTT — nincs mért borító-oszlop |
+| db3 `imagedata` (`personalbumid`) | `picasa-arcfelismeres.md` 3.4/b: albumsor-index | NYITOTT — nincs mért borító-jelző |
+| registry `Preferences\PeopleAlbumUseFaceSrc` | nyolc kezelő, globális | NEM valószínű személyenkénti tárolóként; az írása nincs mérve |
+| `albums_0.db` (indexkép-gyorsítótár) | `pmp-database.md`: gyorsítótár, nem választás | KIZÁRVA mint választás tárolója |
+
+### Nyitott kérdés (a megvalósítás előtt)
+
+Mit ír a `0x00603660`, és hová (db3-mező, ini-kulcs vagy registry)?
+
+Megszerzés útja:
+1. Célzott utasításszintű olvasat és natív futtatás a `picasa-x86-research`
+   skillel (a bináris helyben elérhető a kutatói munkakönyvtárban). A kérdés:
+   a `0x00603660` és a `0x00603420` vtábla-hívásainak célja és írói.
+2. Futásidejű mérés (a bot 2026-10-09-i kommentje javasolja): személy-albumban
+   indexképet váltani, előtte–utána diff a `.picasa.ini`-re, a `contacts.xml`-re
+   és a db3-ra.
+
+Addig nem írunk új ini-szakaszt (a `[PicasaPy]` kiterjesztés csak bizonyított
+eredeti hely esetén jöhet szóba).
+
+### Kész, ha (a tárolási döntés után)
+
+- [ ] `PhotoContextMenu.qml:253–267`: a `placeholder: true` megszűnik; a tétel
+      a személy-fotó menüjében aktív. Az `objectName` marad.
+- [ ] A kattintás jelzést küld (pl. `setPeopleAlbumThumbnailRequested`),
+      `people_controller.py`-ban bekötve; az író a felderített helyre ír.
+- [ ] Visszaolvasás: a személy-album fejléce és a People Manager a mentett
+      indexképet mutatja, újraindítás után is.
+- [ ] Teszt: `tests/app/qml_functional/test_photo_menu_commands.py` (1019–1021.
+      sor objectName-listája), `test_emberek_almenu_3464.py`, plusz a tároló-
+      és a visszaolvasás-teszt, és egy kattintásos QML-próba.
+- [ ] A menüszöveg nem változik; ha változna, a `picasapy_hu.ts` forró fájl
+      (szerializálás).
