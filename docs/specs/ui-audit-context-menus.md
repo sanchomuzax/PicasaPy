@@ -1202,3 +1202,102 @@ Megszerzés útja (sorrendben):
 
 Addig nincs „Kész, ha” lista a tárolási döntés alapján: a fenti 1022. tétel
 „Kész, ha” listája a tárolási hely bizonyítása után érvényes.
+
+### 3. kör (2026-10-12): a `0x9d1555` NEM mentési ciklus — tárolási hely még nincs bizonyítva
+
+Módszer: a bináris SHA-256 egyezik a 2. körrel (`644b7bec…`). Capstone-os
+szétszedés és címzett pásztázás a `.text`-en; a hívási gráf a közvetlen
+`call`-okból épül. Natív QEMU-futtatás NEM történt (ld. lent, miért). A
+szkriptek: `/tmp/claude-1000/kd-r4536/t/` (takarítandó a kör végén).
+
+⚠️ **Módszertani buktató (mért):** a capstone `disasm` generátora az első
+érvénytelen bájtnál **csendben megáll**. A naiv `.text`-pásztázás a 31 helyett
+4 találatot adott. A pásztázónak át kell lépnie az érvénytelen bájtot.
+
+#### A premissza: a `0x9d1555` nem mentés
+
+- A `0x9d1555` (`mov byte ptr [esi+0x291], 0`) a `0x9d1150` függvényben van
+  (törzs: `0x9d1150`–`0x9d1691`, `ret` a `0x9d1691`-en). Ez **képernyő-elrendezés**:
+  a `QueryPerformanceCounter`-t használó `0x9a5210` időzítő, a `0x9e5e20`/`0x9e5e70`
+  lebegőpontos geometria, a `0x9d1130` a szülő-láncon (`[this+0x330]`) lép.
+- A `0x9d1150` *belépéskor* olvassa a `[esi+0x291]`-et (`0x9d124e`), és a
+  végén (`0x9d1555`) törli. A `0x290`/`0x291` tehát **újrarajzolás/-elrendezés
+  kérő-jelző**, nem mentési jelző.
+- **Teljes pásztázás (literál `+ 0x291]` offset, a teljes `.text`):** 31 találat.
+  Egy olvasás (`0x9d124e`, a `0x9d1150`-ben), egy törlés (`0x9d1555`), egy
+  írás regiszterből (`0x9cfaa2`, `mov [esi+0x291], bl`) és 28 írás konstans `1`-gyel
+  (pl. `0x9d2c80`-ban, és a `0x9d24fb`–`0x9d2cc2` jelölőkben). **Egyetlen olvasó
+  van, és az elrendezés.** Mentési útvonal nem olvassa.
+- Hiányosság: a pásztázás csak a literál eltolást látja. Struktúra-másolás vagy
+  számolt bázis (`base+0x291`) nem jelenik meg benne.
+
+#### Az X rekordtáblájának mért kezelője
+
+- `0x9d2c80` (21 utasítás), `stdcall`, egy argumentum (`ret 4`):
+  `X[+0x294][idx·8+4] |= 1`; ha az argumentum alsó bájtja nem nulla, a
+  `|= 0x1000` is; utána `X[+0x291] = 1` és `X[+8] |= 2`. A jelölés tehát
+  **rekordonkénti bit**, a `0x1000` a „választott” jelző lehet, de ez
+  **nincs igazolva** (nincs név, nincs olvasó, ami a 0x1000-t mentésként
+  értelmezné).
+- A 2. kör állítása (a `0x9d2c80` a rekordot jelöli, a dirty-jelző
+  `+0x291`) **megerősítve**. A „dirty = mentésre váró” értelmezés
+  **megdőlt**.
+- A 0x9d1150 hívási gráfjának mélység-2 szintjén nincs fájl-API (`CreateFile*`,
+  `WriteFile`, `fopen`). Három vtábla-hívás (`call reg`) nem oldható fel
+  statikusan; az ezekre épülő útvonal kizárva NINCS.
+
+#### Fájl-sztringek és xrefjeik (mért)
+
+| sztring | VA | xref-függvény | mit mutat |
+|---|---|---|---|
+| `personalbumid`, `suggestionpersonalbumid`, `facerect`, `facerectdata`, `personalbumrecs`, `personalbumrecvalues`, `personalbumrecs2`, `personalbumrecvalues2`, `peoplealbumchecksum` | `0xc80b84`–`0xc80c30` | rekord-leíró konstruktor `0x4127c0` (`imagedata` osztály, `vtbl=0xc82494`) | **db3 `imagedata` sor mezői**, nem ini-kulcsok |
+| `albumdata`, `catdata`, `catpri`, `token` | `0xc80d5c` | `0x4156f0` | db3 `albumdata` leíró |
+| `contacts.xml` | `0xc90e74` | `0x57fae0` (kiírás: `contacts`, `contact`, `name`, `modified_time`, `profile_photo_url`, `google_plus_id`, `gaia_id`, `email%d`, `local_contact`, `person_id2`, `focus_ids`, `sync_enabled`, `hidden_contact`); `0x581975` (olvasó `0x5817c0`) | Google-kontakt szinkron; **nincs képazonosító-mező** (csak `profile_photo_url`, egy URL) |
+| `faceicon` | `0xcb1190` | `0x74ad40` → `0x74c110` | a gyorsítótár-kulcs (2. kör) |
+| `picasa.ini`, `.db3`, `albums_0` | `0xc80a6d` | nincs xref | a név másként épül (nem egy sztring) |
+
+Megjegyzés: a `personalbumrecs`/`personalbumrecvalues` a `imagedata` sor
+mezője. A db3 **mezőnként** író a `0x4127c0` osztályból; az író ismeretlen.
+
+#### Tárolási jelöltek — a 3. kör eredménye
+
+| jelölt | állapot |
+|---|---|
+| `0x9d1555` mentési ciklus | ⛔ **MEGDŐLT**: elrendezés; a `+0x291`-nek egyetlen olvasója van, és az elrendezés |
+| `contacts.xml` | ⬇️ **gyengült**: a kiírt mezők között nincs képazonosító |
+| db3 `imagedata.personalbumrecs` / `…recvalues` | NYITOTT — az íróját nem találtam; a személy-album rekordjainak perzisztált alakja lehet, nem bizonyított |
+| db3 `albumdata` | NYITOTT — a leíró nem tartalmaz borító-mezőt (a 2. körben mért lista sem) |
+| `faceicon` gyorsítótár | KIZÁRVA mint tároló (2. kör) |
+| `.picasa.ini` | NYITOTT — nincs sztring-xref |
+
+#### Nyitott kérdés (a tárolási döntés előtt)
+
+Melyik függvény írja a `imagedata` sor `personalbumrecs`/`personalbumrecvalues`
+mezőit (a `0x4127c0` osztály mezőkiíró ciklusa), és a választott indexkép
+azonosítója ebben a mezőben van-e?
+
+Megszerzés útja (sorrendben):
+1. A `0x4127c0` osztály mezőinek eltolása (a `lea eax,[esi+X]` a
+   `call 0x494c50` előtt) és a mezőt író függvény keresése az
+   eltolás-pásztázással (nem az xref-indexszel).
+2. A `0x9d1150` három feloldatlan vtábla-hívásának célja (RTTI vagy a
+   konstruktor), hogy a gráf zárt legyen.
+3. Csak 1–2 után natív QEMU-futtatás a `qemu_harness/hb.py`-val (a
+   rekordtábla és a `this` kézzel épül; a futtatás eredményét ki kell mondani).
+4. Futásidejű mérés (2026-10-09-i kommentben javasolt diff): indexkép-váltás
+   személy-albumban, előtte–utána diff a `.picasa.ini`-re, `contacts.xml`-re
+   és db3-ra.
+
+Addig a 1022. tétel „Kész, ha” listája NEM érvényes: a tárolási hely nincs
+bizonyítva. A megvalósítás nem indulhat.
+
+#### Megjegyzések a 2. körhöz
+
+- A 2. kör „mentési ciklus” hívottjainak listájában (`0x9a5210`, `0x40a050`,
+  `0x9e5e70`, `0x9e5e20`, `0x9e02a0`, `0x9d1130`) a `0x9a5210` időzítő
+  (`QueryPerformanceCounter`), a `0x9e5e20`/`0x9e5e70` lebegőpontos geometria. A
+  listából egyik sem fájlírás.
+- A 2. kör `0x603660` → `0x9d1555` láncát a 3. kör nem erősíti meg: a
+  `0x9d1555` nem a mentés utáni törlés.
+- A `0x603634` (`mov byte ptr [edi+0x291], 1`) egy olyan függvényben van, amely
+  a `0x603660` előtt ér véget; ezt nem vizsgáltam.
