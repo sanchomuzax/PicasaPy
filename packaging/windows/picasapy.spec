@@ -27,7 +27,7 @@ indításkor).
 
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 #: a repó gyökere — a spec a `packaging/windows/` alatt él
 GYOKER = Path(SPECPATH).resolve().parents[1]
@@ -52,12 +52,11 @@ a = Analysis(
     pathex=[str(GYOKER / "src")],
     binaries=[],
     datas=adatok,
-    hiddenimports=[
-        "picasapy.app",
-        "picasapy.printing.poster_worker",
-        "picasapy.thumbs.cache",
-        "picasapy.thumbs.video_decode_worker",
-    ],
+    #: ⚠️ A saját csomag MINDEN modulja: az indulást gyorsító lusta
+    #: (függvényen belüli) importokat a PyInstaller nem látja, és a
+    #: csomagból kimaradt modul csak a felület adott pontján, élesben
+    #: derülne ki (#4913: `picasapy.app.edit_preview` hiányzott).
+    hiddenimports=collect_submodules("picasapy"),
     hookspath=[],
     runtime_hooks=[],
     excludes=["tkinter", "pytest"],
