@@ -20,16 +20,12 @@ DATUMOK = ("2020:01:01 12:00:00", "2020:01:03 12:00:00")
 
 
 def _kepek(lib: Path) -> None:
-    for nev, taken_at, datetime_0th, nap in (
-        ("a.jpg", DATUMOK[0], "2020:01:01 12:00:00", 1),
-        ("b.jpg", DATUMOK[1], "2020:01:03 12:00:00", 3),
-        ("c.jpg", "2020:01:04 12:00:00", "2020:01:04 12:00:00", 4),
+    for nev, taken_at, datetime_0th in (
+        ("a.jpg", DATUMOK[0], "2020:01:01 12:00:00"),
+        ("b.jpg", DATUMOK[1], "2020:01:03 12:00:00"),
+        ("c.jpg", "2020:01:04 12:00:00", "2020:01:04 12:00:00"),
     ):
-        path = make_jpeg(lib / nev, taken_at=taken_at, datetime_0th=datetime_0th)
-        # A mappa újraolvasása ne módosítsa az atime-ot relatime fájlrendszeren.
-        atime = datetime(2019, 12, nap, 6, 7, 8).timestamp()
-        mtime = datetime(2019, 12, nap, 4, 5, 6).timestamp()
-        os.utime(path, (atime, mtime))
+        make_jpeg(lib / nev, taken_at=taken_at, datetime_0th=datetime_0th)
 
 
 def _ns(value: str) -> int:
@@ -245,6 +241,14 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_irja_es_fajlidot_megoriz(
         == vart,
         "az indexben a két új dátum",
     )
+    # Az atime-ot itt nem mérjük: a módosítás után a nézet újratölti a képet
+    # (bélyegkép-dekódolás), és relatime alatt ez a valódi olvasás frissíti.
+    # A visszaállítás sorrendjét a test_timestamp_fajlidok_sorrend_4646.py méri.
+    for path in forrasok:
+        most = path.stat()
+        assert most.st_mtime_ns == regi_fajlidok[path.name].st_mtime_ns
+        if os.name == "nt":
+            assert most.st_ctime_ns == regi_fajlidok[path.name].st_ctime_ns
     assert (forras_ini.read_bytes() if forras_ini.exists() else None) == ini_elotte
     assert {
         path.name: piexif.load(str(path))["Exif"][piexif.ExifIFD.DateTimeOriginal]
@@ -255,11 +259,6 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_irja_es_fajlidot_megoriz(
         if name in kijelolt_nevek
     }
     for path in forrasok:
-        most = path.stat()
-        assert most.st_atime_ns == regi_fajlidok[path.name].st_atime_ns
-        assert most.st_mtime_ns == regi_fajlidok[path.name].st_mtime_ns
-        if os.name == "nt":
-            assert most.st_ctime_ns == regi_fajlidok[path.name].st_ctime_ns
         assert path.read_bytes() != elotte[path.name]
 
     kijeloltek = {

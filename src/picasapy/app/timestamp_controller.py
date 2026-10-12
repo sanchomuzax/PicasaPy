@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+import logging
 import os
 import sys
 from datetime import datetime
@@ -17,6 +18,8 @@ from picasapy.metadata.tiff_helyben import (
     frissitett_tiff,
 )
 
+
+_log = logging.getLogger(__name__)
 
 _JPEG_SOI = b"\xff\xd8"
 _EXIF_APP1_PREFIX = b"Exif\x00\x00"
@@ -171,11 +174,10 @@ def _set_creation_time_ns(path: str | Path, timestamp_ns: int) -> None:
         kernel32.CloseHandle(handle)
 
 
-def _adjust_photo_file_date(path: str | Path, target: datetime) -> bool:
-    """EXIF-írás, siker esetén az eredeti fájlidők megőrzésével.
+def _write_photo_exif_date(path: str | Path, target: datetime) -> os.stat_result | None:
+    """EXIF-írás; siker esetén visszaadja az írás előtti fájlidőket.
 
-    Visszatérés: sikerült-e a DateTimeOriginal kiírása. Írási hiba esetén az
-    eredeti tartalékág kizárólag a létrehozási időt állítja.
+    Íráshiba esetén a tartalékág csak a létrehozási időt állítja, és None-t ad.
     """
     source = Path(path)
     before = source.stat()
@@ -183,12 +185,34 @@ def _adjust_photo_file_date(path: str | Path, target: datetime) -> bool:
         _write_exif_datetime_original(source, target)
     except Exception:  # noqa: BLE001 — az eredeti tartalékág csak fájlidőt ír
         _set_creation_time_ns(source, round(target.timestamp() * 1_000_000_000))
-        return False
+        return None
+    return before
 
-    # A .tmp-fájl cseréje új fájlrendszer-időket hoz létre; az eredeti
-    # hozzáférési és módosítási időt közvetlenül a csere után visszaállítjuk.
-    os.utime(source, ns=(before.st_atime_ns, before.st_mtime_ns))
-    _set_creation_time_ns(source, before.st_ctime_ns)
+
+def _restore_photo_file_times(path: str | Path, before: os.stat_result) -> None:
+    """Visszaállítja az EXIF-csere előtti fájlidőket.
+
+    A relatime fájlrendszeren a fájl olvasása frissíti az atime-ot, ezért ezt
+    az indexelő olvasás UTÁN kell hívni. A csere már megtörtént, így az
+    os.utime hibáját naplózzuk, és nem szakítjuk meg a köteget.
+    """
+    try:
+        os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+    except OSError:
+        _log.warning("a fájlidők visszaállítása sikertelen: %s", path, exc_info=True)
+    _set_creation_time_ns(path, before.st_ctime_ns)
+
+
+def _adjust_photo_file_date(path: str | Path, target: datetime) -> bool:
+    """EXIF-írás, siker esetén az eredeti fájlidők megőrzésével egy fájlon.
+
+    Visszatérés: sikerült-e a DateTimeOriginal kiírása. A köteges útvonal az
+    indexelő olvasás után állítja vissza az időket (lásd adjustPhotoDates).
+    """
+    before = _write_photo_exif_date(path, target)
+    if before is None:
+        return False
+    _restore_photo_file_times(path, before)
     return True
 
 
@@ -245,18 +269,20 @@ class TimestampAdjustmentMixin:
         last_folder_photo = {
             photo.folder_path: index for index, (photo, _value) in enumerate(updates)
         }
+        # Mappánként az írás előtti fájlidők; a visszaállításuk a mappa
+        # újraszkennelése után történik (ld. _reindex_folder_keeping_times).
+        befores: dict[str, dict[Path, os.stat_result]] = {}
         jobs = []
         for index, (photo, value) in enumerate(updates):
             def write_file(photo=photo, value=value, index=index):
-                _adjust_photo_file_date(Path(photo.folder_path) / photo.name, value)
+                source = Path(photo.folder_path) / photo.name
+                before = _write_photo_exif_date(source, value)
+                if before is not None:
+                    befores.setdefault(photo.folder_path, {})[source] = before
                 if last_folder_photo[photo.folder_path] == index:
-                    with open_index(self._db_path) as conn:
-                        sync_tree(
-                            conn,
-                            photo.folder_path,
-                            incremental=False,
-                            enabled_filetypes=self._filetype_scan_snapshot,
-                        )
+                    self._reindex_folder_keeping_times(
+                        photo.folder_path, befores.pop(photo.folder_path, {})
+                    )
                 return {"taken_at_override": None}
 
             jobs.append((photo.id, write_file))
@@ -264,3 +290,22 @@ class TimestampAdjustmentMixin:
         # végső lekérdezés pedig újraszámolja az aktív dátum szerinti sorrendet.
         self._run_photo_writes(jobs, after=self._refresh_view)
         return True
+
+    def _reindex_folder_keeping_times(
+        self, folder_path: str, befores: dict[Path, os.stat_result]
+    ) -> None:
+        """Újraszkenneli a mappát, majd visszaállítja a képek fájlidőit.
+
+        A visszaállítás `finally`-ban van: indexhiba esetén sem maradhat el.
+        """
+        try:
+            with open_index(self._db_path) as conn:
+                sync_tree(
+                    conn,
+                    folder_path,
+                    incremental=False,
+                    enabled_filetypes=self._filetype_scan_snapshot,
+                )
+        finally:
+            for path, before in befores.items():
+                _restore_photo_file_times(path, before)

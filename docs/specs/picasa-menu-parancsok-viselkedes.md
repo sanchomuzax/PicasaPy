@@ -210,11 +210,12 @@ A kutatás idején meglévő tesztek: `tests/app/test_timestamp_controller_4693.
   az EXIF-mezőket. Ebből eldől, hogy a fájlidő a `DateTime`-ból vagy az új
   dátumból jön. Az eredmény táblázatban kerüljön ide.
 - [ ] Ugyanez nem-JPEG-en (ha a Picasa engedi), a `2` feltétel igazolásához.
-- [ ] A bináris (2026-10-12) szerint a sikeres EXIF-ágban a `atime`/`mtime`
-  az eredeti marad (nincs `DateTime`-alapú beállítás). Ezért az `os.utime`-eltolást
-  el kell távolítani, és a `test_sikeres_exif_iras_datetime_alapjan_modositja_a_fajlidoket`
-  tesztet ehhez igazítani (jelenleg az eltolást rögzíti). A Windows-mérés
-  (fent) ezt erősítse meg, mielőtt a teszt átíródik.
+- [x] A bináris (2026-10-12) szerint a sikeres EXIF-ágban a `atime`/`mtime`
+  az eredeti marad (nincs `DateTime`-alapú beállítás). Az `os.utime`-eltolás
+  megszűnt; a `tests/app/test_timestamp_controller_4693.py`
+  `test_sikeres_exif_iras_utan_a_fajlidok_valtozatlanok` már a változatlanságot
+  rögzíti. A mérce a binárisból levezetett viselkedés; a Windows-mérés (fent)
+  kiegészítő ellenőrzés, nem kapu.
 - [ ] Linux: a creation-only fallback ne legyen hallgatólagos no-op. Vagy ír
   valamit, vagy a felület kimondja a korlátot (#4885).
 - [ ] A jegy hivatkozásai frissítendők: a menüpont most
@@ -232,15 +233,20 @@ A kutatás idején meglévő tesztek: `tests/app/test_timestamp_controller_4693.
 ### Megvalósítási állapot (#4646, 2026-10-12)
 
 A PicasaPy sikeres EXIF-írási ága már nem tolja el az `atime`/`mtime` értéket:
-az írás előtt elmenti őket, majd a `.tmp`-csere után visszaállítja. Windows
-alatt a korábban elmentett létrehozási időt is visszaírja. A hibaág továbbra
-is csak Windows alatt tudja az új dátumra állítani a létrehozási időt; a Linux
-viselkedés a #4885 hatóköre.
+az írás előtt elmenti őket, a mappa újraszkennelése (`sync_tree`, amely relatime
+alatt olvassa a fájlokat) UTÁN állítja vissza. Windows alatt a korábban
+elmentett létrehozási időt is visszaírja. A hibaág továbbra is csak Windows
+alatt tudja az új dátumra állítani a létrehozási időt; a Linux viselkedés a
+#4885 hatóköre.
 
-A `test_timestamp_controller_4693.py` sikeres írástesztje és a valódi
-menüből futó `test_adjust_timestamp_4332.py` most a fájlidők változatlanságát
-ellenőrzi. A helyi Linux-futtatás az `atime`/`mtime` visszaállítását igazolta;
-a Windows-specifikus létrehozásiidő-ág és a natív Picasa Windows-mérés itt nem
+Linuxon mérve (2026-10-12, három egymás utáni futás): zöld a
+`tests/app/test_timestamp_fajlidok_sorrend_4646.py` (a sorrendet GUI nélkül,
+valódi indexszel méri; fordított sorrendnél piros), a
+`tests/app/test_timestamp_controller_4693.py` és a valódi menüből futó
+`tests/app/qml_functional/test_adjust_timestamp_4332.py`. A menüs teszt az
+`atime`-ot nem méri: a módosítás után a nézet újratölti a képet, és ez a
+relatime alatt az `atime`-ot az EXIF-írástól függetlenül frissíti. A
+Windows-specifikus létrehozásiidő-ág és a natív Picasa Windows-mérés itt nem
 volt futtatható, ezért ezek ellenőrzése nyitott marad.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
