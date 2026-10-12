@@ -4213,3 +4213,50 @@ formátumsztringek; **nem mérve** a `stylelist` és a `sizelist` konkrét
 > funkcióját. Aki a `titledialog`-ot megvalósítja, annak a
 > figyelmeztetést is meg kell építenie, különben a felhasználó kézi
 > munkája némán elveszik.
+
+### 2.10/b A három animált szövegdia-stílus — ami bizonyított, és ami nyitott (2026-10-12, #4615)
+
+*Állapot: **NYITOTT.** A Gördülő stáblista, az Írógép és a „Jó napom van" (`textstyle1`) animációjának menete **nincs megmérve**, és a binárisból sem olvasható ki eddig. Ez a szakasz rögzíti, mi bizonyított, mi nem, és hogy mi a megszerzés útja. Számértéket nem ad: a mozgás sebessége, iránya, kezdő- és záróhelyzete, a karakteridő és a kurzor-jelenlét mind mérendő.*
+
+#### A) Bizonyított
+
+| tény | forrás |
+|---|---|
+| A három stílus azonosítója: `textstyle8` = Gördülő stáblista, `textstyle11` = Képfelirat – Írógép, `textstyle1` = „I'm Feeling Lucky" (magyarul „Jó napom van") | `referencia/stringres-en-hu.tsv`; `string_xrefs.csv`: mindhárom név a `0x00613b50` (a stílus-lista építője) hivatkozása |
+| A mentett `.mxf`-ben a stílus a `<styleid>` (0–11) mezőben van, a szövegdia betűparaméterei a `textparm` alatt: `fontname`, `size`, `color`, `weight`, `italic`, `outline`, `styleid`, `facerect*` | `string_xrefs.csv`: a `0x00816440` (átmenet-író) és a `0x008152f0` (beolvasó) sztringjei; 2.4/b szakasz |
+| A diánkénti idő a `trans` elemben van (`advanceinterval`, `transitiontime`, `blacktime`), **nem** a szövegdia-elemben | 2.4/b szakasz |
+| A mentett formában **nincs** sebesség-, irány-, karakteridő- vagy kurzor-mező. Ez a mentési szerkezet tartalma; az animáció paraméterei tehát a megjelenítő kódban vannak, vagy kódba égettek | 2.4/b szakasz (a felsorolt mezők teljes listája) |
+
+#### B) Név-ütközés: két különböző „Jó napom van"
+
+A `enhance` képi művelet (automatikus javítás, `ID_PICTURE_ENHANCE`) is a magyar „Jó napom van" nevet viseli (lásd `picasa-native-filter-workers.md`, `picasa-hu-terminology.md`). A szövegdia `textstyle1` stílusa **más dolog**, csak ugyanazt az angol „I'm Feeling Lucky" eredetet fordítja. Az animációs kérdésnél a kettőt nem szabad összekeverni: a képi `enhance` nem animál, a szövegdia-stílus viselkedését csak a szövegdia-megjelenítőben lehet megtalálni.
+
+#### C) Nyitott — a három kérdés
+
+1. **Gördülő stáblista:** a görgetés iránya, sebessége (px/s), a kezdő és záró helyzet (a szöveg a képkeret alá indul-e, és teljesen kigördül-e), és az, hogy a görgetés a dia időtartamát kitölti-e. **Nincs adat.**
+2. **Írógép:** a karakterenkénti megjelenés üteme (karakter/s vagy karakter/képkocka, vagy szavanként), és van-e kurzor (és ha van, villogó-e). **Nincs adat.**
+3. **„Jó napom van" (`textstyle1`):** mit animál (méret, forgás, átlátszóság, vagy más). **Nincs adat.** A spec és a stringtábla csak a nevet adja.
+
+#### D) A megszerzés útja
+
+- **Bináris:** a stílus-azonosító *olvasása* megvan (a `0x008152f0` és `0x00816440`), a stílus *megjelenítője* viszont nincs azonosítva. A kutatás jelenleg a `CRenderMovie` (`0x0089e07c` vtábla), a `ytDSMovieWriter` és a `CTranscodeMovie` hívási láncát nézné végig; a keresési szempont: olyan függvény, amely a szövegdia-modell `styleid` mezőjére ágazik (0–11). A `TextTypeWriterHandler` (vtábla `0x008bdbbc`, 4 szlot, RTTI megvan) **név szerint** írógépes, de a jelenlegi index csak a vtáblát látja, a filmexporthoz nem kötötte. Ez **nyom, nem bizonyíték**. A harness (`eszkozok/qemu_harness/`) a DirectShow-os filmkészítő láncot nem futtatja; a kiolvasáshoz statikus dekompilálás kell.
+- **Mérés (ez adja a számokat):** az eredeti Picasa 3.9 fut Colabon (Wine alatt), egy-egy szövegdia mindhárom stílussal, filmre exportálva; a kimenetből képkockánként kimérni a pozíciót és a megjelenést. Ez a `#4615` jegy kommentjében már kijelölt út. Ennek hiányában a menet nem írható le.
+
+#### E) Mai kód (2026-10-12)
+
+- `src/picasapy/movie/slideshow.py:406–470` (`_szovegdia`): minden stílus **álló kép**. A 2, 3, 11 alul, a 9 bal szélen, a 10 jobb szélen, a 4–7 sávban, a többi (0, 1, 8) középen. A 8 és az 1 ugyanúgy álló kép, mint a 0; a 11 ugyanúgy, mint a 2.
+- `slideshow.py:623`: a szövegdiák **egyszer**, előre renderelődnek (`text_frames`), így egy állóképként, nem kockánként.
+- `slideshow.py:679–700`: a szövegdia ugyanazt a tartási időt kapja, mint a fotó (`frames_per_photo − transition_frames`), nem a mentett `advanceinterval`-t. Ez külön eltérés, nem a stílus-animáció része.
+
+#### F) Kész, ha (a megvalósításhoz; minden paraméter a C) mérésétől függ, számérték nélkül)
+
+Jelölés: `fps` = `settings.fps`; `N = frames_per_photo`; `h = N − transition_frames` a dia tartási kockái; `k ∈ [0, h)` a dia saját idővonala; `t_k = k / fps` másodpercben.
+
+- [ ] **Mérés megvan és dokumentált:** `docs/benchmarks/` alatt, a mérés módja (export-beállítás, fps, a kimerített kockaszámok), és stílusonként egy táblázat `k` vagy `t_k` szerint.
+- [ ] **Gördülő (8):** `y(k) = y_start + v · t_k` (előjellel: `v`, `y_start`, a tartomány végpontja MÉRENDŐ); a záró kocka `k_end = ⌈(y_end − y_start) / v · fps⌉`, és a `k ≥ k_end` kockák a végállapotot mutatják.
+- [ ] **Írógép (11):** `n(k) = min(len(szöveg), ⌊r · t_k⌋)` látható karakter, `r` (karakter/s) MÉRENDŐ; ha van kurzor, annak periódusa és fázisa MÉRENDŐ. Ha a mérés szavankénti, a `n` a szavak számára vonatkozik.
+- [ ] **„Jó napom van" (1):** a mért tulajdonság `P(k)`; a formula a mérés után írandó, most nincs kiindulópont. **Ez a pont nem implementálható**, amíg a C.3 nincs megmérve.
+- [ ] **A kockák renderelése k szerint:** `_szovegdia` kapjon egy `k` paramétert (alapérték: a mai, álló viselkedés), hogy a 0–7, 9, 10 stílus kimenete **bájtra** egyezzen a mostanival (regressziós teszt).
+- [ ] **Nem tárolható előre:** egy 1280×720 RGB kocka ~2,8 MB; a `text_frames` előrendelése (slideshow.py:623) kockánként nem skálázódik, ezért a kimeneti ciklusban (`export_movie`) a szövegdia-kockát a `k` függvényében kell előállítani.
+- [ ] **Kimenet-teszt:** adott `k`-ra a kép hash-e egyezik a referencia-kockáéval (mért tolerancia mellett), és a kockaszám = `h` (a `holds` nem változik).
+- [ ] **Az `advanceinterval` külön jegy:** a mentett diaidő használata nem ennek a jegynek a része; ha a diaidő eltér, azt a 2.4/b szerint külön kell lezárni.
