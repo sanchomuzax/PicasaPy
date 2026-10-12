@@ -1868,10 +1868,18 @@ választja, különben a másodikat; a választott téglalapot a
 
 **4. A célterület (`0x0076ee50`).**
 
-- *Forrás-téglalap:* a vtable `+0x30` (slot 12, `0x009e08b0`) hívása egy
-  `out` téglalapot ad, az első paraméter `0`. **Ez a hívás csak az
-  index 0-t kéri.** Hogy ez a *legelső* vagy a *legnagyobb* arc, **nincs
-  bizonyítva** (a `0x009e08b0` törzse még nincs végigolvasva).
+- *Forrás-téglalap (2. kör: olvasva):* a vtable `+0x30` (slot 12,
+  `0x009e08b0`) hívása `out`-ot ad. **A második paraméter NEM index**, hanem
+  bájtos jelző (`cmp byte [ebp+0xc], 0`); a `0`-val hívott ágon a `0x9e6340`
+  utólagos lépés kimarad. A törzs: a slot 10 (`+0x28`, `0x009e0ad0`) téglalapja
+  `S`. Ha `S` érvényes (`x0<x1` és `y0<y1`), a kimenet `S`-ből és a `0x9de880`
+  által adott 10 dwordös szerkezetből készül (a `0x00a4a240` összerakását
+  **még nem olvastam végig**). Ha nem, és `[this+0x213]==0`, `[this+0x244]≠0`,
+  akkor az alobjektum slot 10 téglalapja adja a forrást. A slot 10 a
+  `[this+0x20f]≠0` esetben a `[this+0x188…0x194]` cache-t adja.
+- ⇒ **Az arc-adat NEM jut be a slot 12-n át.** A `0x0076ee50` csak a forrás
+  **méretét** használja (`w = x1−x0`, `h = y1−y0`) az illesztéshez. Hogy a
+  `w,h` végül melyik téglalapból jön, a `0x00a4a240` olvasásáig nyitott.
 - *Illesztés (`0x009b4b60`) — NATÍVAN MÉRVE.* Az eredmény **lefedő
   (cover) illesztés**, nem befoglaló:
   - `s = max(W_B / w, H_B / h)` (float32), ahol `(w,h)` a forrás-téglalap,
@@ -1894,9 +1902,10 @@ slotok), azok még nincsenek azonosítva. Ezért **nem tudjuk**, honnan indul
 a pásztázás (teljes kép? kezdő téglalap?), hová érkezik, és milyen görbe
 szerint halad.
 
-**6. Arc nélküli kép — NYITOTT.** Az `else` ág a slot-12 metódus saját
-téglalapját adja (feltehetően a teljes kép), és ugyanazt az illesztést
-futtatja. Ez **nem bizonyított**.
+**6. Arc nélküli kép — NYITOTT (2. kör: a régi `else`-feltevés TÉVES).** A
+konstruktorban nincs külön `else`-ág, és a slot 12 nem a „teljes kép”
+téglalapját ad a cél-ágon: a cél-téglalap sentinel (`−1`) esetén az
+`0x0076ee50` egyáltalán nem fut (lásd a 2. köri (a)/(b) pontot).
 
 **Mai megvalósítás** (eltérés):
 - `SlideshowView.qml:752–761`: középpontos `scale` 1.0 → 1.12
@@ -1906,13 +1915,103 @@ futtatja. Ez **nem bizonyított**.
 - ⇒ a mai kód **nem** követi a bináris lefedő illesztést, és a célpont-
   választás (arc) teljesen hiányzik.
 
-**Kész, ha (a kutatás lezárásához):**
-1. a slot-12 metódus (`0x009e08b0`) végigolvasva: honnan jön az arc-
-   téglalap, és több arcnál melyik (index 0 = mi?);
-2. a kirajzolás (vtable-metódusok) időparamétere és görbéje natív
-   futtatással mérve két végponton és három köztes időpontban;
-3. az arc nélküli ág mérése;
-4. a `0x0076ee50` határ-eltolásának natív mérése (a fit-mérés mintája).
+**2. kör (2026-10-12, #4856) — eredmények**
+
+*Bizonyítottsági fok: a `0x0076ee50` integer-csöve **natívan mérve** (10/10
+eset egyezik a disassemblyből írt modellel). A konstruktor-ág és a slot 12
+**olvasva, nem mérve**. A mérőkód a kör ideiglenes könyvtárában van
+(`/tmp/claude-1000/kd-r4856/ee50.py`, `model.py`, `run_ee50.py`).*
+
+**(a) A cél-téglalap csöve (`0x0076ee50`) — natívan mérve.** Bemenet: a
+`+0x4b0…+0x4bc` (4 float: `x0,y0,x1,y1`) és a slot-12 `src` kimenete.
+
+1. Ha mind a négy érték `−1.0` → korai kilépés, nincs számítás; a kimenet 0.
+2. Érvényesség: `x1 > x0` **és** `y1 > y0`. Érvényes esetén a cél
+   `T = (rne(x0−0,5), rne(y0−0,5), rne(x1+0,5), rne(y1+0,5))`, különben
+   `T = (−1,−1,−1,−1)`. (`0,5` = a `0x00c72150` double-konstans.)
+3. Forrásméret: `w = src.x1−src.x0`, `h = src.y1−src.y0`; `F = fit(w,h,T)`
+   (`0x009b4b60`, lásd fent).
+4. Eltolás: `X = rne(x0)`, `Y = rne(y0)` (**nincs** ±0,5); a végeredmény
+   `F + (X,Y)`.
+5. Határ-eltolás: `x0<0` → `x1 −= x0`, `x0 = 0`; ugyanígy `y`. Utána
+   `x1 > w` → `x0 += w−x1`, `x1 = w`; ugyanígy `y` a `h`-val. **Nincs
+   utólagos ellenőrzés**: a `w`-t használja (nem `src.x1`-et), és a lépés
+   után `x0` negatív maradhat.
+6. Kimenet: `+0x448, +0x44c, +0x450, +0x454` ← `(x0,y0,x1,y1)` float-ként.
+
+`rne` = a `fistp` alapértelmezése (félre-páros kerekítés; `29,5 → 30`).
+
+Natív futás (qemu-i386; a slot 12 stub adja a `src`-t; a `0x0076e4e0`-t
+kihorgonyoztam, mert a saját CRT-hívásai elszálltak. Visszatérési értéke
+mindig 0, és a `+0x448…` mezőkbe nem ír):
+
+| `+0x4b0…+0x4bc` | `src` | natív kimenet | modell |
+|---|---|---|---|
+| 10.2, 20.7, 110.4, 70.9 | (0,0,400,300) | (10, 9, 111, 85) | egyezik |
+| −1, −1, −1, −1 | (0,0,400,300) | (0, 0, 0, 0) | egyezik |
+| 50, 50, 40, 80 | (0,0,400,300) | (50, 50, 50, 50) | egyezik |
+| −5.5, 3.25, 200.75, 90.5 | (0,0,640,480) | (0, 0, 207, 155) | egyezik |
+| 100.5, −20.25, 300, 60 | (0,0,640,480) | (100, 0, 300, 150) | egyezik |
+| 0.5, 0.5, 1.5, 2.5 | (0,0,33,17) | (0, 0, 6, 3) | egyezik |
+| −1, −1, −1, 5 | (0,0,400,300) | (0, 0, 0, 0) | egyezik |
+| 30, 40, 230, 140 | (0,0,100,50) | **(−100, −50, 100, 50)** | egyezik |
+| 12.5, 7.5, 13.5, 8.5 | (10,10,410,310) | (12, 8, 15, 10) | egyezik |
+| 600, 400, 700, 500 | (0,0,640,480) | (507, 380, 640, 480) | egyezik |
+
+A `30, 40, 230, 140` eset mutatja, hogy a határ-eltolás **nem vág**: a
+kimenet a kép bal-felső sarkán kívülre esik.
+
+**(b) A két téglalap és a kiválasztás (a konstruktor `0x0076ed30`) — olvasva.**
+
+- Argumentumok: 1. = `p`, a nézetablak-mutató (a `0x76e4e0` a `[p+8]`,
+  `[p+0xc]` mezőit olvassa); 2. = float; 3–6. = `R1`; 7–10. = `R2`. (A
+  `ret 0x28` ezt igazolja; a `0x76e100` `ret 0xc`-je miatt a stack-eltolás
+  `entry−4`.)
+- **Az `R2` felülírja az `R1`-et.** `R1` érvényes → az ee50 lefut, és a
+  vezérlés a `R2`-vizsgálatra esik (`0x76edd2 → 0x76edd8`). `R2` nem-sentinel
+  → `R2` számít (az ee50 újra fut); `R2` sentinel → marad az `R1`-es
+  eredmény; mindkettő sentinel → nincs ee50.
+- `p`: az `R1`-ághoz az `edi`, az `R2`-höz az `ebx` (= 1. arg). Az `edi`-t a
+  konstruktor nem állítja be; a hívó (`0x771e60`) adja.
+- **Az `R1`/`R2` forrása**: a hívó (`0x8136fa`, `0x813af4` → `0x771dc0` →
+  `0x771e60`) a saját keretéből adja (`[esp+0x78…0x94]` és egy korábbi
+  16 bájtos blokk). A `+0x7c4` és `+0x7ec` mezők **0x28 bajtos
+  szerkezetek** (konstruktor: `0x0080f420`, `0x0080f455`), nem a
+  téglalapok. Hogy az `R1/R2` végül honnan (index? `ini` `faces=`?) jön,
+  **nincs követve**; az `ini` `faces=` mezőt ebben a körben nem néztem.
+- **Arc nélküli eset:** sentinel esetén az ee50 nem fut; a `+0x438…0x454`
+  a `0x76e100` `fldz`-je miatt 0 marad. Hogy a kirajzoló mit kezd a nulla
+  cél-téglalappal, **nincs mérve**.
+
+**(c) Időzítés és görbe — NYITOTT, de van nyom.**
+
+- A `+0x448…0x454` blokkot az ee50 hívása előtt a `0x76e4e0` 9 dwordnyi
+  `rep movsd`-vel `+0x414…`-re másolja, és `0x76d900`-nak adja. A
+  `0x76d900` (1039 bájt) a nézetablakkal számol; **ez a lépés időfüggetlennek
+  látszik**, de nincs végigolvasva.
+- Időfüggő nyom: a `0x0076f8xx–0x0076fb40` tartományban (a függvény-fejléc
+  még nincs megtalálva) a `+0x2e0`, `+0x2e4` (cos/sin-szerű), `+0x2e8`
+  (`sqrt(a²+b²)`, `0x0049fe60`) mezőket írja; a `+0x2ec` módja szerint a
+  `+0x268` vagy a `+0x290` 0x28-bajtos blokkot választja; `+0x2f0 = 0x50`.
+  Hogy ez a kenburnsaoi-objektumon belül van-e, nem tisztázott.
+- A másodlagos vtable (`0x00cb3294`) slot 2 (`0x0076bf00`) `double`-t kap,
+  és a `this+0x54`-re továbbítja (`0x009e5e20`): **ez a legerősebb
+  időparaméter-jelölt**, de hívói és jelentése nincs mérve.
+- Hogy a görbe lineáris-e, és a kezdő/végpont melyik téglalap: **nyitott**.
+
+**(d) Összevetés a mai kóddal.** A `movie/slideshow.py` ága (`scale = 1.12 −
+0.12·p`) nem ugyanaz a számítás, és a cél-téglalap-csöve a mai kódban nem
+létezik: **bájtos egyezés nincs, eltérés van.**
+
+**Kész, ha (a kutatás lezárásához) — állapot a 2. kör után:**
+1. ✅ a cél-téglalap csöve (`0x0076ee50`) natívan mérve: 10/10 (a táblázat).
+2. ⬜ a kirajzoló függvény fejléce (`0x0076f8xx–0x0076fb40`), a `+0x2ec`
+   mód értelme, és az időparaméter (`0x00cb3294` slot 2 hívói) natív mérése
+   két végponton és három köztes időpontban.
+3. ⬜ az arc nélküli ág kirajzolása a nulla cél-téglalap mellett.
+4. ⬜ az `R1/R2` forrása a hívóban (`0x8136fa`, `0x813af4`), és az `ini`
+   `faces=` mező.
+5. ⬜ a slot 12 kimenete (`0x00a4a240`): honnan jön a `w,h` forrásméret.
 
 ### 2.2 Beállítások
 
