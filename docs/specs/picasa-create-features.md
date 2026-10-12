@@ -2951,6 +2951,89 @@ darabszám-lezárás **NYITOTT**.
 | `ordering = 2` (időrend, `chronological_order_radio`): a `0x0874e40` gráfút (nem időrendezés). | `slideshow.py:624`–`625`: `st_mtime` szerinti rendezés. | **Eltér**: a fájl-mtime nem az eredeti kulcs, és a kiválasztás sem időrend. A graph-út visszafejtése (`0x00877c50`) a teendő. |
 | Alapérték: a rádió-csoport kézi kezelése, az `.mxf` `<ordering>` mezőjéhez. | `movie/mxf.py:125` alapja `0`, `movie/slideshow.py:74` alapja `1`. | **Egyeztetni** a két alapértéket az eredeti rádió-alapjával (a UI-alapértelmezés ebben a körben nincs visszaellenőrizve). |
 
+#### G/2b. A 6. kör (2026-10-12): a költségfüggvény, az írók és ami még hiányzik
+
+**Módszer.** A teljes `.text` szétszedése `llvm-objdump`-pal (az `objdump`
+ezen a gépen csak arm/aarch64 célt tud; a `llvm-objdump` x86-ot és PE-t olvas).
+A képcím ImageBase `0x400000`, a `.text` VA `0x401000`; a címek egyeznek a
+Ghidra-kötegével. A függvényhatárokat MSVC `int3`-kitöltésből becsültük, nem
+Ghidra-határból. Hívóhelyekhez a teljes `.text` végigolvasása, íróhelyekhez
+displacement-keresés (`0x4e0`, `0x720`, `0x728`, `0x738`) és az indexelt
+írások keresése (`(%reg,%reg,4)`). Natív futtatás nem történt.
+
+**1. A `0x00874320` NEM költségfüggvény.** Utasításszinten vektor- és
+tömbméretezés: az MSVC-s `max_size`-határok (`0x7fffffff`, `0x2492492`), elemenként
+8 bájtos inicializálás (`0x4010e0`, `push 8`), a végén bájtmaszk-írás
+(`movb $1,(%edx,%esi)`). Lebegőpontos művelet csak az egész→float konverzió
+(`fildl`/`fadds 0xcf39e4`, ahol a mért konstans 2^32) és a 2-hatvány kerekítés
+(`shrl $0x17`). Költségre utaló `fmul`/`fadd` nincs. Hívói: `0x874e70` (a
+`0x874e40` gráfútból) és `0x875f22` (a `0x875ed9` utáni függvényben, amelyet
+nem olvastunk végig). A `0x00874320` „költségfüggvény” címkéje az
+összefoglaló #22/#24 pontjában tehát téves.
+
+**Mode ≠ 0 lánc (mért).** A `0x81b925` `cmpl $0,0x4c(%esp)` után `je 0x81c925`
+(mode = 0 → `0x81c9b0`, ez a G/2 eredeti állítása). A nem-nulla ág a
+fall-through-ban van: `0x81bbac calll 0x874e40`, a `0x504`-es getter-listával
+és további `0x6f8`/`0x708`/`0x744` argumentumokkal. A `0x81b930`–`0x81bbac`
+közti ágazást nem követtük végig. **A mode ≠ 0 költségképzése tehát a
+`0x874e40`-ben van, nem a `0x874320`-ban.**
+
+**A `0x00874e40` (4249 bájt, `0x874e40`–`0x875ed9`) mért részei:**
+- `calll 0x873170` (`0x875653`) egy getter-hívás a `0x504`-listáról;
+- a float-tömb `rep stosl 0x3f800000` kitöltése (1,0f) alapértékkel
+  (`0x87562f`–`0x875634`);
+- elemenként `flds (%edx,%eax,4)`, majd bájtflag (`cmpb $0,(%ecx,%edx)`) mellett
+  `fmull 0xcf4968`. A konstans a `.rdata`-ból kiolvasva: **−1,0842·10⁻¹⁹
+  (= −2⁻⁶³)**. Hogy ez miért szorzó, és mit jelent a flag, **NYITOTT**: költség-
+  szorzónak nem természetes, lehet kiolvasási vagy kódolási hiba is;
+- `calll 0x878760` (3×) a rekordpárokra és `calll 0x874ac0` (2×);
+- időkülönbség nem látszik a függvényben (csak az int→float konverzió).
+
+**2. Az írók (mért).**
+
+| Mező | Ki írja (cím, mit) | Megjegyzés |
+|---|---|---|
+| `[obj+0x4e0]` — 56 bájtos rekordvektor | `0x823620` vektor-assign (`pushl $0x38`, `addl $0x38`, darabhatár `0x2492492`); hívja `0x824090` a `0x82417d`-nél. | A `0x823620`-ban **nincs** rekord `+0x30`-hoz való hozzáférés (a `0x30(` találatok mind `%esp`-relatívak). Az összefoglaló #24 „+0x30-at másol egész-tömbbe" állítása ezzel nem igazolódott; ezt a spec nem veszi át. A `+0x30` olvasása a `0x81c9b0`-ban és `0x81d2xx`-ben van. Közvetlen pointer-író még: `0x6999ec` (ctor `0x6999c0`), `0x81a439` (`0x81a130`), `0x820793`/`0x820ed1` (`0x81fc30`), `0x821ec1` (`0x8218a0`); ezek törzsét nem olvastuk végig. |
+| `[obj+0x4e8]` — rekordindex-tömb | `0x81c9b0` `0x81d88a`: `movl %eax,(%edx,%ecx,4)`, `edx=[obj+0x4e8]`, `ecx=[obj+0x500]`, `eax=[obj+0x4f0][j]`. Újraallokáció `0x81d05a`–`0x81d1f1`. | — |
+| `[obj+0x70]` — kimeneti azonosító-puffer | `0x81c9b0` `0x81d832`: `movl %edx,(%edi,%ecx,4)`, `edx=[0x4e0][j].+0x30`. | Megerősíti a G/2 állítását, hogy a kimenet a `+0x30` azonosító. |
+| `[obj+0x738]` — horgony | **Egyetlen direkt író a teljes `.text`-ben:** `0x824090` `0x8242f0`: `movl %edx,0x738(%ebp)`, `edx=[esp+0x40]`. A `[esp+0x40]` kezdőértéke `-1` (`0x8240f6`); a `0x8223e0` vagy `0x8226e0` írja out-paraméterként (`leal 0x40(%esp)`, `leal 0x14(%esp)`). | A két writer törzsét nem olvastuk végig. A horgony-keresés megerősítve: `[obj+0x738] ≠ -1` esetén a `0x4e0` rekordjain (0x38-as lépés) a `+0x30`-at egyezteti (`0x81ca05`–`0x81ca33`), és az egyezés **indexét** (nem azonosítóját) menti; `-1` esetén index 0. |
+| `[obj+0x720]`, `[obj+0x728]` — int-tömbök (méret: `[+0x724]`/`[+0x72c]` = 2n\|jelző) | `0x81e5a0` új elemeket tölt: `0x720 ← -1` (`0x81f026`), `0x728 ← n` (`0x81f1e8`), `0x718 ← n` (`0x81ee68`); a pointer-csere displacement-íróval (`0x81ee9e`–`0x81f1bb`). A ctor `0x6999c0` a kezdőértéket (`0x699ae7`, `0x699af3`) állítja. `0x81a130`: `0x81a1f6` (0x728), `0x81a215` (0x720) pointer-csere. | **Nem-sentinel (ablakhatár-indexű) értéket író utasítást nem találtunk.** Az indexelt-írás keresés a `0x81c9b0`, `0x81e220`, `0x81e5a0`, `0x824090` és `0x81a130` függvényekben csak a `-1`/`n` kitöltést és a rekordindex-írást adta. `rep movs/stos` a vizsgált függvényekben nincs. |
+
+**3. A „melyik kép marad” szabály: mi új és mi hipotézis.**
+
+- *Megerősített (mért):* a `0x81c9b0` ordering=0 magja a G/2 szerint működik:
+  a horgony-keresés, a `0x720[pos]`/`0x728[pos]` olvasás (`0x81d2b2`–`0x81d2e5`,
+  sentinel `-1` és `n` összehasonlítással), a pick-zárás (`0x81d803`–`0x81d8a0`),
+  a `+0x34`-es virtuális hívás (`0x81d873`), a `[obj+0x500] == K` feltétel
+  (`0x81d8bf`), és a `0xc7da00` = **100 000 000,0** (a 1e8 küszöb).
+- *Hipotézis (nem bizonyíték):* mivel a `0x720`/`0x728` táblák csak sentinelre
+  íródnak, a spirál oldalhatárai alapértelmezésben a teljes listát fedik. Ezt csak
+  az írók megtalálása vagy egy valódi rekordokkal végzett mérés dönti el.
+- *Nyitott, de mért nyom:* a `0x81e5a0` farkában a `+0x34` mezőt 64 bites
+  értékként kezeli (`adcl`), a `0x4c4b40` (5 000 000), a `0x989680`
+  (10 000 000) és a `0x15180` (86 400) konstansokkal. Ez összhangban lehet a G
+  egész-másodperces csoportosításával, de nem bizonyított. A `0xc7ccf8` double
+  konstans mért értéke 949998.0; szerepe nyitott.
+- *Nyitott:* a `0x81c9b0` `0x81c9d3` ágában, ha a `0x504`-lista egy eleme null,
+  a függvény `0x81e0f2`-re ugrik (korai kilépés). Az ág értelmét nem olvastuk
+  végig.
+
+**4. Mi maradt nyitva.**
+1. A `0x720`/`0x728` nem-sentinel értékeinek írója (ha nincs, a 3. pont
+   hipotézise igaz).
+2. A getterek jelentése: `0x873170`, `0x878760`, `0x4edf60`, `0x98b650` törzse
+   nincs olvasva.
+3. A `0xcf4968` (−2⁻⁶³) szorzó és a bájtflag szerepe a `0x874e40`-ben.
+4. A horgony forrása: a `0x8223e0` és `0x8226e0` törzse.
+5. A `0x81c9b0` 5. argumentuma (mode) és a `0x81b930`–`0x81bbac` ágazás.
+6. Natív mérés: nem történt; a 2. kör állapota változatlan.
+
+**Bizonyítottsági fok (G/2b):** megerősített: a `0x874320` nem költség (az
+utasításlista alapján), a `0x738` egyetlen direkt írója, a `0x720`/`0x728`
+sentinel-kitöltése, a horgony-logika, a `+0x30` kimenet, a `1e8` konstans.
+Nyitott: a getter-összeg és a `0x874e40` float-lánc értelme, a nem-sentinel
+ablakhatár-író, a `+0x34` időbélyeg-szerepe.
+
 #### Bizonyítottsági fok
 
 **Megerősített** (utasításszinten olvasva): a négy tálcagomb ága és
