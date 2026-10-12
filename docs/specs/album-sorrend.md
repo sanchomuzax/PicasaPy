@@ -223,7 +223,7 @@ egy pillanatképből nem dönthető el: „előtte" állapot nincs, ld.
 
 | | eredeti (mérve) | PicasaPy ma |
 |---|---|---|
-| a sorrend tárolása | mappánként és albumonként egy lista a `wordhash.dat`-ban (2.1) | mappán belül: `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — az ADR premisszája az `albums_0.db` volt, ami megdőlt; az ini-ben tartás mint SAJÁT döntés ettől még állhat; albumra: **nincs** |
+| a sorrend tárolása | mappánként és albumonként egy lista a `wordhash.dat`-ban (2.1) | mappán belül: `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — az ADR premisszája az `albums_0.db` volt, ami megdőlt; az ini-ben tartás mint SAJÁT döntés áll (az ADR-014 ennek megfelelően kiegészítve); albumra: **nincs** — a döntés: `albumorder=` a kép szakaszában (ADR-016, 4.3) |
 | a mappa „Sort Folder By" | **egyszeri** átrendezés a mappa saját listáján, mappánként (2.4) | **tartós, globális nézet-mód** (`view/folderPhotoSort` + `…Reverse`, QSettings, `folder_photo_sort_controller.py:68`), minden mappára egyszerre; öt szempont (Dátum, Név, Méret + saját: Szín, Kézi sorrend; `FolderContextMenu.qml:137–239`) |
 | az album „Sort Album By" | ugyanaz az almenü és kezelő, mint a mappáé (2.4) | helyfoglaló (`AlbumContextMenu.qml:97–108`) |
 | az album képeinek sorrendje | a tárolt lista | `index/albums.py:69`: `ORDER BY f.path, p.name` — albumonkénti sorrend nincs |
@@ -253,11 +253,36 @@ egy pillanatképből nem dönthető el: „előtte" állapot nincs, ld.
 - [ ] Shift-tel kiválasztva a három kulcs **csökkenő** irányban rendez;
       a „Fordított sorrend" a tárolt sorrendet megfordítja (Shift nélkül
       is, kulcs nélkül);
-- [ ] a sorrend **újraindítás után is megmarad** (a tárolás a 4.3 döntése
-      szerint), és csak az érintett album sorrendje változik — a többi
-      albumé és a mappáké nem;
+- [ ] a rendezés eredménye a tag képek **saját szakaszába**, az
+      `albumorder=` kulcsba íródik (ADR-016, 4.3): minden tag új helyet kap
+      (`1.0 … n`), mappánként EGY `update_document`-tel, kizárólag az `ini/`
+      API-n át; a rendezési mód sehova nem íródik;
+- [ ] a sorrend **újraindítás és index-újraépítés után is megmarad** — az
+      index a helyet csak gyorsítótárazza (a szinkron a kulcsból tölti), és
+      az `album_photos` hely szerint rendez: hely nélküliek a végén, utána
+      mappa útvonala, fájlnév;
+- [ ] **csak az érintett album** sorrendje változik: a kép más albumokhoz
+      tartozó párjai, a `priority=` (mappa-sorrend) és a szakasz minden más
+      sora bájtra változatlan;
+- [ ] **több mappára szóró album**: a rendezés a tagokat mappákon át
+      összefésülve rendezi, és mindegyik érintett mappa ini-jébe ír; ha egy
+      mappa írása bukik, a hiba hangos (megnevezi a mappát), a művelet
+      megismételhető;
+- [ ] egy hely nélküli album sorrendje **pontosan a mai** (meglévő album a
+      bevezetéstől nem változik), és a hely nélküli új tag a végére kerül;
+- [ ] a kép kivétele az albumból (`without_album`) és az album törlése
+      (`without_album_everywhere`) az `albumorder=` párt is kiveszi,
+      ugyanabban az írásban; az elárvult vagy romlott pár olvasáskor
+      kimarad, nem dob;
+- [ ] a kulcs a kódban a saját-funkció jelölővel áll (a megvalósításkor, a jegyzék-tétellel együtt), és bekerül a
+      `vedett-sajat-funkciok.md` jegyzékébe; a menütételek kék jelölést NEM
+      kapnak (az eredeti funkció, csak a tárolás saját);
+- [ ] az ADR-016 `## Kötés` szakaszában a `Megvalósítja` és az `Őrzi` a
+      tényleges modult és tesztet nevezi meg;
 - [ ] kattintásos teszt: a menütételre KATTINT (nem a metódust hívja),
-      majd a rács sorrendjét és egy újranyitott index sorrendjét is nézi;
+      majd a rács sorrendjét, a lemezen lévő `.picasa.ini`-k `albumorder=`
+      sorait és egy újranyitott index sorrendjét is nézi, köztük egy két
+      mappára szóró albumon;
 - [ ] a szomszédos tételek (a többi helyi menüpont, a mappa saját
       „Sort Folder By" almenüje) regresszió-ellenőrzése lefut.
 
@@ -275,21 +300,45 @@ egy pillanatképből nem dönthető el: „előtte" állapot nincs, ld.
 - [ ] **mappánál** (kategória 2) a sorrendet a PicasaPy kézi sorrendjeként
       veszi át (ma: `priority=`, ADR-014), és csak ha a mappában még nincs
       kézi sorrend (az „A" szabály: meglévőt nem ír felül);
-- [ ] **albumnál** (kategória 0) a sorrendet a 4.3 szerinti tárolóba
-      veszi át;
+- [ ] **albumnál** (kategória 0) a sorrendet a tag képek `albumorder=`
+      kulcsába veszi át (ADR-016, 4.3; helyek `1.0 … n` a lista sorrendjében),
+      és csak ha az album egyetlen tagja sem hordoz még helyet (az „A”
+      szabály);
 - [ ] teszt **szintetikus `wordhash.dat`-tal**: egy mappa nem növekvő
       listával → az átvett sorrend egyezik; egy üres token → kihagyva;
       egy csonka fájl → hiba.
 
-### 4.3 Döntési pont (a hívónak): hol tárolja a PicasaPy az ALBUM sorrendjét
+### 4.3 Döntés: az album sorrendje a kép saját szakaszában, `albumorder=` (ADR-016)
 
-A mappa sorrendjére megvan a saját döntés (ADR-014, `priority=` a mappa
-ini-jében). Az albumhoz ilyen nincs, és az `index/` SQLite nem lehet a
-tároló (gyorsítótár, az ini az igazságforrás). Az ADR-014 indoklása az
-`albums_0.db`-premisszára hivatkozik, ami megdőlt — az ADR-t ennek
-megfelelően frissíteni kell. **Javaslat:** új ADR az album-sorrendre, az
-ADR-014 mintájára a `.picasa.ini`-ben (saját kiterjesztésként), és a #4599
-erre épüljön.
+**Eldöntve** (2026-10-12): `docs/decisions/album-sorrend-a-kep-szakaszaban.md`
+(ADR-016). Röviden:
+
+- **Hol:** minden tag kép a **saját** szakaszában, az `albums=` mellett,
+  egyetlen `albumorder=` kulcsban hordozza a helyét, tagságonként egy
+  `<token>:<hely>` párral, pl.
+  `albumorder=604c294a68b0de9cc9222c4714f289d5:3.0`. A hely tizedes szám,
+  pont tizedesjellel, mindig tizedes alakban.
+- **A tagságot továbbra is az `albums=` adja**; az `albumorder=` csak
+  sorrend. Az `albums=`-ben nem szereplő tokenű pár figyelmen kívül marad.
+- **Az album sorrendje:** a tagok helye szerint növekvő; a hely nélküliek a
+  végén; egyenlőségnél mappa útvonala, majd fájlnév. Hely nélküli albumnál
+  ez pontosan a mai `ORDER BY f.path, p.name` — meglévő album nem változik.
+- **A több mappára szóró album** tagjai a saját mappájuk ini-jében tartják a
+  helyüket, egy közös számtérben, tehát a mappák képei összefésülhetők.
+- **Átnevezés, áthelyezés:** a kulcs a szakasszal együtt mozog
+  (`fileops/rename.py`, `fileops/move.py`), új teendő nincs.
+- **A mappa sorrendje** külön marad (`priority=`, ADR-014): az eredetiben is
+  két független lista.
+- **Miért nem az album-szakasz vagy mellékfájl:** az `[.album:<token>]`
+  szakasz mappánként megismétlődik (szétcsúszó példányok, mappákon átnyúló
+  írás), és a Picasa a saját album-adatbázisából írja; a mellékfájl az
+  igazságforrás-elvet sérti, és a Picasa fájlműveleteit nem követi.
+- **Nyitott (nem mérve):** megőrzi-e az eredeti az ismeretlen képszakasz-
+  kulcsot, amikor ugyanabba a szakaszba ír (NY1), és elviseli-e
+  mellékhatás nélkül (NY2) — ugyanaz a kockázat, amit a `priority=` az
+  ADR-014 óta hordoz. Kedvezőtlen NY1 esetén csak a sorrend vész el (a képek
+  a végére esnek); kedvezőtlen NY2 esetén a két kulcs együtt költözik
+  mellékfájlba. A mérés útja az ADR-ben; ebben a körben nem indult.
 
 ---
 
