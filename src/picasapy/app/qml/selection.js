@@ -62,8 +62,8 @@ function inverted(selected, count) {
 // #426: „Csillagozottak kijelölése" (Picasa `ID_SELECTSTAR`, Szerkesztés
 // menü) — a JELENLEGI nézet csillagos sorai, növekvő sorrendben. A
 // `starAt` a modell (`PhotoGridModel`) Slotja — tiszta lekérdezés, nem
-// mutál. Szándékosan NEM a Mappák panel „Csillagozott" nézet-szűrője
-// (`controller.showStarred()`): az a NÉZETET cseréli, ez csak KIJELÖL.
+// mutál. Szándékosan NEM a Mappák panel különleges albuma
+// (`controller.showStarredAlbum()`): az a NÉZETET cseréli, ez csak KIJELÖL.
 function starredRows(count, starAt) {
     var result = []
     for (var row = 0; row < count; ++row)

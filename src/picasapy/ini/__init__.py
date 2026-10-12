@@ -1,6 +1,12 @@
 """.picasa.ini olvasás/írás — kétirányú Picasa 3.x kompatibilitás."""
 
-from .albums import Album, albums_of, parse_album_refs, serialize_album_refs
+from .albums import (
+    STAR_ALBUM_TOKEN,
+    Album,
+    albums_of,
+    parse_album_refs,
+    serialize_album_refs,
+)
 from .contacts import (
     Contact,
     contacts_of,
@@ -98,6 +104,7 @@ from .photo_crop import PhotoCropReader
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
 __all__ = [
+    "STAR_ALBUM_TOKEN",
     "CANONICAL_FILTER_NAMES",
     "MAX_PARAM_COUNTS",
     "Album",
