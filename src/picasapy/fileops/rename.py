@@ -16,10 +16,14 @@ az F2-átnevezésnél — nincs duplikált logika."""
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+
+from PySide6.QtCore import QDate, QDateTime, QLocale, Qt
 
 from picasapy.fileops.originals import originals_follow
 from picasapy.ini import has_ini_source, load_or_empty, update_document
@@ -153,13 +157,71 @@ class RenameItem:
     EXIF-olvasás itt."""
 
     path: Path
-    date: str | None = None  # ISO dátum eleje (pl. a `taken_at` első 10 karaktere)
+    date: str | None = None  # ISO dátum(-idő), pl. a `taken_at`
     width: int | None = None
     height: int | None = None
 
 
+# A fájlnévben tiltott karakterek (a névmező `filter="filename"` párja, #4879).
+_FORBIDDEN_RE = re.compile('[\\\\/:*?"<>|]')
+_TWO_DIGIT_YEAR_RE = re.compile(r"(?<!y)yy(?!y)")
+_MINUTES_RE = re.compile(r"(?<!m)(\W?)(m{1,2})(?!m)")
+# kétirányú szövegjelzők és formázó jelek: a fájlnévbe nem kerülnek
+_BIDI_MARKS = dict.fromkeys(
+    map(ord, "\u200e\u200f\u061c\u202a\u202b\u202c\u202d\u202e"
+             "\u2066\u2067\u2068\u2069")
+)
+
+
+def _date_pattern(locale: QLocale) -> str:
+    """A területi beállítás rövid dátumhelye, a 2 jegyű év 4 jegyűre bővítve."""
+    return _TWO_DIGIT_YEAR_RE.sub("yyyy", locale.dateFormat(QLocale.FormatType.ShortFormat))
+
+
+def _time_pattern(locale: QLocale) -> str:
+    """A területi beállítás rövid időmintája, a perc után másodperccel."""
+    pattern = locale.timeFormat(QLocale.FormatType.ShortFormat)
+    return _MINUTES_RE.sub(r"\1\2\1ss", pattern, count=1)
+
+
+def _safe_filename_text(text: str) -> str:
+    """Tiltott fájlnév-karakterek `-`-re; a szűk/nem törhető szóköz sima szóköz."""
+    text = text.translate(_BIDI_MARKS)
+    text = "".join(
+        str(unicodedata.decimal(c)) if c.isdecimal() and not c.isascii() else c
+        for c in text
+    )
+    text = text.replace("\u202f", " ").replace("\u00a0", " ")
+    return _FORBIDDEN_RE.sub("-", text)
+
+
+def format_taken_at(iso: str, locale: QLocale | None = None) -> str:
+    """A felvétel dátuma + ideje fájlnév-utótagnak (#4879, `rename.fen`).
+
+    A rendszer (`QLocale.system()`) rövid dátumformája 4 jegyű évvel, mögötte
+    a rövid időforma másodperccel; a tiltott fájlnév-karakterek (`:`, `/`, …)
+    `-`-re cserélve, így en_US-en `8-1-2004 2-30-45 PM`. Idő nélküli értéknél
+    csak a dátum; értelmezhetetlen szövegnél az első 10 karakter."""
+    locale = locale if locale is not None else QLocale.system()
+    text = iso.strip()
+    moment = QDateTime.fromString(text, Qt.DateFormat.ISODate) if len(text) > 10 else QDateTime()
+    if moment.isValid():
+        rendered = locale.toString(moment, f"{_date_pattern(locale)} {_time_pattern(locale)}")
+    else:
+        day = QDate.fromString(text[:10], Qt.DateFormat.ISODate)
+        if not day.isValid():
+            return _safe_filename_text(text[:10]).strip()
+        rendered = locale.toString(day, _date_pattern(locale))
+    return _safe_filename_text(rendered).strip()
+
+
 def _build_stem(
-    base_name: str, item: RenameItem, *, include_date: bool, include_size: bool
+    base_name: str,
+    item: RenameItem,
+    *,
+    include_date: bool,
+    include_size: bool,
+    locale: QLocale | None = None,
 ) -> str:
     """Az alapnév + opcionális dátum-/felbontás-utótag — a `rename.fen`
     "Include in filename: Date / Image resolution" jelölőnégyzetei.
@@ -167,7 +229,7 @@ def _build_stem(
     (nincs dátum/felbontás) a megfelelő utótag néma kihagyással marad el."""
     parts = [base_name]
     if include_date and item.date:
-        parts.append(item.date[:10])
+        parts.append(format_taken_at(item.date, locale))
     if include_size and item.width and item.height:
         parts.append(f"{item.width}x{item.height}")
     return " ".join(parts)
@@ -181,15 +243,22 @@ def preview_name(
     include_size: bool = False,
     sequence: int = 0,
     ext: str | None = None,
+    locale: QLocale | None = None,
 ) -> str:
     """A végleges fájlnév — élő előnézethez és a tényleges átnevezéshez is
     ez számolja ki. `sequence=0` az első fájl (nincs sorszám-utótag), `1`,
     `2`, … a Picasa-mintájú `név-1`, `név-2`, … folytatás. `ext` hiányában
     (élő előnévet-híváskor) `item.path.suffix`-ot használ."""
-    stem = _build_stem(base_name, item, include_date=include_date, include_size=include_size)
+    stem = _build_stem(
+        base_name, item, include_date=include_date, include_size=include_size,
+        locale=locale,
+    )
     if sequence > 0:
         stem = f"{stem}-{sequence}"
     extension = ext if ext is not None else item.path.suffix
+    if not extension:
+        # kiterjesztés nélkül a Windows nem engedi a záró pontot/szóközt
+        stem = stem.rstrip(". ")
     return f"{stem}{extension}"
 
 
@@ -228,6 +297,7 @@ def rename_photos_many(
     *,
     include_date: bool = False,
     include_size: bool = False,
+    locale: QLocale | None = None,
 ) -> list[Path]:
     """Tömeges átnevezés a `rename.fen` szerint (#366): a kijelölt fájlok
     egyetlen alapnevet kapnak (+ opcionális dátum-/felbontás-utótag),
@@ -254,7 +324,7 @@ def rename_photos_many(
     names = [
         preview_name(
             base_name, item, include_date=include_date, include_size=include_size,
-            sequence=i,
+            sequence=i, locale=locale,
         )
         for i, item in enumerate(items)
     ]
