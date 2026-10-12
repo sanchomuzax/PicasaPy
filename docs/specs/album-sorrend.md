@@ -225,8 +225,8 @@ egy pillanatképből nem dönthető el: „előtte" állapot nincs, ld.
 |---|---|---|
 | a sorrend tárolása | mappánként és albumonként egy lista a `wordhash.dat`-ban (2.1) | mappán belül: `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — az ADR premisszája az `albums_0.db` volt, ami megdőlt; az ini-ben tartás mint SAJÁT döntés áll (az ADR-014 ennek megfelelően kiegészítve); albumra: **nincs** — a döntés: `albumorder=` a kép szakaszában (ADR-016, 4.3) |
 | a mappa „Sort Folder By" | **egyszeri** átrendezés a mappa saját listáján, mappánként (2.4) | **tartós, globális nézet-mód** (`view/folderPhotoSort` + `…Reverse`, QSettings, `folder_photo_sort_controller.py:68`), minden mappára egyszerre; öt szempont (Dátum, Név, Méret + saját: Szín, Kézi sorrend; `FolderContextMenu.qml:137–239`) |
-| az album „Sort Album By" | ugyanaz az almenü és kezelő, mint a mappáé (2.4) | helyfoglaló (`AlbumContextMenu.qml:97–108`) |
-| az album képeinek sorrendje | a tárolt lista | `index/albums.py:69`: `ORDER BY f.path, p.name` — albumonkénti sorrend nincs |
+| az album „Sort Album By" | ugyanaz az almenü és kezelő, mint a mappáé (2.4) | **kész (#4599):** négy tételes almenü (`AlbumContextMenu.qml`), egyszeri átrendezés (`PhotoOpsController.sortAlbum`, `index/album_sort.py`) |
+| az album képeinek sorrendje | a tárolt lista | **kész (#4599):** `album_photos` hely szerint rendez (`albumorder=`, `ini/album_order.py`); hely nélkül a régi `f.path, p.name` |
 | kézi húzás albumban | eltávolít + beszúr a listában (2.3) | albumra nincs |
 | a név-összevetés | természetes (számjegy-sorozat számként, ASCII kisbetűsítve; 2.4) | `name.casefold()` (`photo_sort.py:199`) — nem természetes |
 | az átvétel (`pmpimport/`) | — | a `wordhash.dat`-ot nem olvassa; a kézi sorrend ma elvész |
@@ -239,51 +239,51 @@ egy pillanatképből nem dönthető el: „előtte" állapot nincs, ld.
 
 **Kész, ha:**
 
-- [ ] az album helyi menüjében a „Sort Album By ▸" almenü él, és
+- [x] az album helyi menüjében a „Sort Album By ▸" almenü él, és
       **ugyanaz a négy tétel** áll benne, mint az eredeti `Sort::`
       almenüben: Dátum · Név · Méret · Fordított sorrend (`0x007318a0`);
-- [ ] egy tétel kiválasztása az album képeinek **tárolt sorrendjét egyszer
+- [x] egy tétel kiválasztása az album képeinek **tárolt sorrendjét egyszer
       átrendezi** — nem kapcsol be tartós nézet-módot; utána a rács a
       tárolt sorrendet mutatja, és egy későbbi kézi húzás ebből indul;
-- [ ] a kulcsok a 2.4 táblája szerint: Dátum = a kép metaadat-dátuma
+- [x] a kulcsok a 2.4 táblája szerint: Dátum = a kép metaadat-dátuma
       (`taken_at`, az ottani felülírással együtt), egyenlőségnél név; Név =
       természetes összevetés (számjegy-sorozat számértékként, ASCII
       kisbetűsítve, számjegy-sorozat a betűk előtt); Méret = fájlméret;
       mindhárom **növekvő**;
-- [ ] Shift-tel kiválasztva a három kulcs **csökkenő** irányban rendez;
+- [x] Shift-tel kiválasztva a három kulcs **csökkenő** irányban rendez;
       a „Fordított sorrend" a tárolt sorrendet megfordítja (Shift nélkül
       is, kulcs nélkül);
-- [ ] a rendezés eredménye a tag képek **saját szakaszába**, az
+- [x] a rendezés eredménye a tag képek **saját szakaszába**, az
       `albumorder=` kulcsba íródik (ADR-016, 4.3): minden tag új helyet kap
       (`1.0 … n`), mappánként EGY `update_document`-tel, kizárólag az `ini/`
       API-n át; a rendezési mód sehova nem íródik;
-- [ ] a sorrend **újraindítás és index-újraépítés után is megmarad** — az
+- [x] a sorrend **újraindítás és index-újraépítés után is megmarad** — az
       index a helyet csak gyorsítótárazza (a szinkron a kulcsból tölti), és
       az `album_photos` hely szerint rendez: hely nélküliek a végén, utána
       mappa útvonala, fájlnév;
-- [ ] **csak az érintett album** sorrendje változik: a kép más albumokhoz
+- [x] **csak az érintett album** sorrendje változik: a kép más albumokhoz
       tartozó párjai, a `priority=` (mappa-sorrend) és a szakasz minden más
       sora bájtra változatlan;
-- [ ] **több mappára szóró album**: a rendezés a tagokat mappákon át
+- [x] **több mappára szóró album**: a rendezés a tagokat mappákon át
       összefésülve rendezi, és mindegyik érintett mappa ini-jébe ír; ha egy
       mappa írása bukik, a hiba hangos (megnevezi a mappát), a művelet
       megismételhető;
-- [ ] egy hely nélküli album sorrendje **pontosan a mai** (meglévő album a
+- [x] egy hely nélküli album sorrendje **pontosan a mai** (meglévő album a
       bevezetéstől nem változik), és a hely nélküli új tag a végére kerül;
-- [ ] a kép kivétele az albumból (`without_album`) és az album törlése
+- [x] a kép kivétele az albumból (`without_album`) és az album törlése
       (`without_album_everywhere`) az `albumorder=` párt is kiveszi,
       ugyanabban az írásban; az elárvult vagy romlott pár olvasáskor
       kimarad, nem dob;
-- [ ] a kulcs a kódban a saját-funkció jelölővel áll (a megvalósításkor, a jegyzék-tétellel együtt), és bekerül a
+- [x] a kulcs a kódban a saját-funkció jelölővel áll (a megvalósításkor, a jegyzék-tétellel együtt), és bekerül a
       `vedett-sajat-funkciok.md` jegyzékébe; a menütételek kék jelölést NEM
       kapnak (az eredeti funkció, csak a tárolás saját);
-- [ ] az ADR-016 `## Kötés` szakaszában a `Megvalósítja` és az `Őrzi` a
+- [x] az ADR-016 `## Kötés` szakaszában a `Megvalósítja` és az `Őrzi` a
       tényleges modult és tesztet nevezi meg;
-- [ ] kattintásos teszt: a menütételre KATTINT (nem a metódust hívja),
+- [x] kattintásos teszt: a menütételre KATTINT (nem a metódust hívja),
       majd a rács sorrendjét, a lemezen lévő `.picasa.ini`-k `albumorder=`
       sorait és egy újranyitott index sorrendjét is nézi, köztük egy két
       mappára szóró albumon;
-- [ ] a szomszédos tételek (a többi helyi menüpont, a mappa saját
+- [x] a szomszédos tételek (a többi helyi menüpont, a mappa saját
       „Sort Folder By" almenüje) regresszió-ellenőrzése lefut.
 
 ### 4.2 Az átvétel (a kézi sorrend tartós, tehát átvehető)

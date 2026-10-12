@@ -1308,6 +1308,11 @@ Rectangle {
             albumContextMenu.albumToken, albumContextMenu.albumName)
         onDeleteAlbumRequested: pane._askDeleteAlbum(
             albumContextMenu.albumToken, albumContextMenu.albumName)
+        //: #4599: „Sort Album By" — az album tárolt sorrendjének átrendezése
+        onSortAlbumRequested: function(mode) {
+            if (controller)
+                controller.sortAlbum(albumContextMenu.albumToken, mode)
+        }
     }
 
     ConfirmDialog {

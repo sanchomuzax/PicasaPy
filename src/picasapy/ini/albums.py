@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .album_order import without_album_place
 from .document import ALBUM_SECTION_PREFIX, IniDocument
 from .folder_music import read_music_settings, with_music_settings
 
@@ -74,7 +75,8 @@ def without_album(
     """A kép kivétele az albumból.
 
     Az utolsó tagság törlésekor maga az `albums=` kulcs is kikerül — üres
-    kulcsot a Picasa sem hagy maga után.
+    kulcsot a Picasa sem hagy maga után. Az `albumorder=` megfelelő párja is
+    kikerül (#4599).
     """
     section = document.section(photo_name)
     if section is None:
@@ -84,10 +86,14 @@ def without_album(
         return document
     remaining = tuple(ref for ref in current if ref != token)
     if not remaining:
-        return document.with_removed(photo_name, "albums")
-    return document.with_value(
-        photo_name, "albums", serialize_album_refs(remaining)
-    )
+        updated = document.with_removed(photo_name, "albums")
+    else:
+        updated = document.with_value(
+            photo_name, "albums", serialize_album_refs(remaining)
+        )
+    # #4599 (ADR-016): az album kézi helye (`albumorder=`) a tagsággal együtt
+    # távozik, UGYANABBAN az írásban.
+    return without_album_place(updated, photo_name, token)
 
 
 def without_album_everywhere(document: IniDocument, token: str) -> IniDocument:

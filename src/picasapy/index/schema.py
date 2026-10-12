@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 21
+SCHEMA_VERSION = 22
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -144,6 +144,33 @@ END;
 # össze őket tokenre. Így a mappánként futó, idempotens szinkron egyszerűen
 # újraírhatja a saját sorait, és az ini-ből törölt album magától kiesik —
 # akkor is, ha másik mappa még hivatkozik rá.
+# ⚠️ **TÖRTÉNETI ALAK — CSAK a `MIGRATIONS[7]`-é** (a `place` oszlop nélkül).
+# A tábla MAI alakja az `_ALBUMS_DDL`; a `place` oszlopot a `MIGRATIONS[21]`
+# adja a már migrált indexeknek (#4599).
+_ALBUMS_V7_DDL = """
+CREATE TABLE IF NOT EXISTS albums (
+    folder_id INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    name TEXT,
+    date TEXT,
+    description TEXT,
+    location TEXT,
+    PRIMARY KEY (folder_id, token)
+);
+
+CREATE TABLE IF NOT EXISTS photo_albums (
+    photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    PRIMARY KEY (photo_id, token)
+);
+
+CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(token);
+"""
+
+# #4599 (ADR-016): a `place` az album-tagság KÉZI HELYE — a kép saját
+# `.picasa.ini`-szakaszának `albumorder=<token>:<hely>` párjából jön (a
+# szinkron tölti). Az index csak GYORSÍTÓTÁRAZZA: az igazságforrás az ini.
+# NULL = „nincs kézi hely", az album végére kerül.
 _ALBUMS_DDL = """
 CREATE TABLE IF NOT EXISTS albums (
     folder_id INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
@@ -158,6 +185,7 @@ CREATE TABLE IF NOT EXISTS albums (
 CREATE TABLE IF NOT EXISTS photo_albums (
     photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
     token TEXT NOT NULL,
+    place REAL,
     PRIMARY KEY (photo_id, token)
 );
 
@@ -484,7 +512,7 @@ ALTER TABLE photos ADD COLUMN exif_lon REAL;
     # #9: virtuális albumok. Üres táblákkal jön létre — a meglévő indexekhez
     # nem kell újraindexelés, a következő szinkron tölti fel őket az
     # ini-kből (a `[.album:token]` szekciók és az `albums=` kulcs alapján).
-    7: _ALBUMS_DDL,
+    7: _ALBUMS_V7_DDL,
     # #26 (1. lépcső): a saját arc-detektálás táblája. Üresen jön létre —
     # a meglévő indexekhez nem kell újraindexelés; a következő arc-scan
     # (`FaceScanController`, opcionális háttérfolyamat) tölti fel.
@@ -566,5 +594,12 @@ ALTER TABLE photos ADD COLUMN duration_seconds REAL;
 CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
     ON photos(folder_id)
     WHERE kind = 'video' AND movie_format IS NULL;
+""",
+    # #4599 (ADR-016): az album-tagság kézi helye (`albumorder=`). NULL-lal
+    # indul minden meglévő sor — „nincs kézi hely", tehát a meglévő albumok
+    # sorrendje változatlan (mappa útvonala, fájlnév); a következő szinkron
+    # tölti fel az ini-ből, újraindexelés nem kell.
+    21: """
+ALTER TABLE photo_albums ADD COLUMN place REAL;
 """,
 }

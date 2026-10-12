@@ -177,5 +177,5 @@ nem adja vissza kimenetként, ahhoz új kimenet-típus kell.
 *Gépi mezők — a `scripts/check_decision_links.py` őre olvassa.*
 
 - **Státusz:** ELFOGADVA
-- **Megvalósítja:** nincs megvalósítva
-- **Őrzi:** nincs őr
+- **Megvalósítja:** `src/picasapy/ini/album_order.py`, `src/picasapy/index/album_sort.py`, `src/picasapy/index/albums.py`, `src/picasapy/index/sync.py`, `src/picasapy/index/schema.py`, `src/picasapy/app/photo_ops_controller.py`, `src/picasapy/app/qml/PicasaPy/AlbumContextMenu.qml`
+- **Őrzi:** `tests/ini/test_album_order_4599.py`, `tests/index/test_album_sort_4599.py`, `tests/app/qml_functional/test_album_rendezes_klikk_4599.py`

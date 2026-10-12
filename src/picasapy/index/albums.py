@@ -61,12 +61,18 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
 def album_photos(conn: sqlite3.Connection, token: str) -> tuple[PhotoRecord, ...]:
     """Az album képei — a rács ugyanazt a rekord-alakot kapja, mint máshol.
 
+    A sorrend az `albumorder=` kézi helye szerint áll (#4599), a hely nélküliek
+    a végén, utána mappa útvonala és fájlnév szerint.
+
     Ismeretlen token esetén üres eredmény (nem hiba): a hasáb és az ini
     átmenetileg eltérhet, ha közben egy másik program írta az ini-t.
     """
     rows = conn.execute(
         f"{_SELECT} JOIN photo_albums pa ON pa.photo_id = p.id"
-        " WHERE pa.token = ? ORDER BY f.path, p.name",
+        " WHERE pa.token = ?"
+        # #4599 (ADR-016): kézi hely szerint; a hely nélküliek a végén,
+        # utána mappa útvonala, fájlnév (hely nélküli albumnál = a mai rend)
+        " ORDER BY (pa.place IS NULL), pa.place, f.path, p.name",
         (token,),
     )
     return _records(rows)

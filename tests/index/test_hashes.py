@@ -18,7 +18,7 @@ class TestSchema:
         # v17: a befagyasztott, első látáskori fájlidő, #2486 —
         # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
         # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
-        assert SCHEMA_VERSION == 21
+        assert SCHEMA_VERSION == 22
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -62,6 +62,7 @@ class TestSchema:
             # #4580: a videómezők csak a v21-ben érkeznek
             conn.execute("DROP INDEX idx_photos_video_metadata_missing")
             conn.execute("ALTER TABLE photos DROP COLUMN movie_format")
+            conn.execute("ALTER TABLE photo_albums DROP COLUMN place")
             conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
             conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
             conn.commit()
