@@ -11572,7 +11572,7 @@ float32-szorzó `NYITOTT`.
 
 | művelet | pixelképlet | méret / skála | felirat (caption) | összesített állapot |
 |---|---|---|---|---|
-| `Border` | **R > 0**: megerősített (3 QEMU-golden). **R = 0**: **eltér** (mért: 2 képpont/keret) | **méret megerősített** (`W+2(inner+outer)`, `H+2(inner+outer)+felirat`); **skála eltér** (mért: float32 arány + előbb-csonkítás) | **külső szín** (mért, 2. kör) | **eltérés** — javítási jegy a K1–K2 pontokra (lásd 2. kör) |
+| `Border` | **R > 0**: a zárt képlet bájtra egyezik (15 + 1 natív eset, mindkét CPU-ágon; lásd 4. kör), a `draw_border()` színes párokon eltér (±1 és szerkezeti). **R = 0**: **eltér** (mért: 2 képpont/keret, a `draw_border()` korai kilépése) | **méret megerősített** (`W+2(inner+outer)`, `H+2(inner+outer)+felirat`); **skála eltér** (mért: float32 arány + előbb-csonkítás) | **külső szín** (mért, 2. kör) | **eltérés** — javítási jegy a K1–K2 pontokra (lásd 2. kör) |
 
 A sor állapota **nem** „lezárt”: a feliratsáv natív pixelútja és a
 float32-es szorzó nyitott. A 2026-10-06-os „teljes egyezés” a `caption = 0`
@@ -11768,7 +11768,9 @@ A 8 eset minden képpontja egyezik. A `0,0,0`/`255,0,255` esetben a sarokpixel
   sarokpixel `(81,174,75)` és `(87,170,73)`, a natív `(81,174,74)` és
   `(87,171,73)`. A régi R > 0 goldenek (piros/kék, fekete/fehér) ezt nem
   zárják ki. A kétrétegű képletet az R > 0 ágra csak színes R > 0 futás után
-  szabad átvinni.
+  szabad átvinni. *(Lezárva a 4. körben, lásd lent: színes R > 0 futások után a
+  kétrétegű képlet az R > 0 ágra is bájtra egyezik, az MMX-ágon 255-ös
+  változatban.)*
 - **Az `aa13b0` alablak-kiosztása:** a négy sarok `C`-hozzárendelését a 8 eset
   igazolja, de az `aa13b0` sarok-ablakának utasításait (`0x00aa1514`–
   `0x00aa1641`) nem olvastam végig.
@@ -11780,6 +11782,64 @@ A 8 eset minden képpontja egyezik. A `0,0,0`/`255,0,255` esetben a sarokpixel
 `megerősített` a 8 bájtos egyezésre; a kétrétegű szerkezet és a nulla kezdőérték
 csak kimenetből `megerősített` (kódolvasás nélkül); a K = 0, az R > 0 és az
 `aa13b0` alablak-kiosztása `NYITOTT`.
+
+#### ⭐ Border — az R > 0 sarokkeverés: két natív CPU-ág, zárt képlet, a 3. kör ±1-jének oka (2026-10-12, 4. kör, #626)
+
+*Módszer: (a) dinamikus: az `0x00aa13b0` belépési argumentumainak rekordere (stub a worker valódi futásán, c1 és c3 eset); a natív worker `0x00bbe570` futtatása színes R > 0 esetekre (5 + 3, mindkét ágon), véletlen forrásképpel (2), és R = 0 esetekre (5); a két CPU-jelzőt (`[0xd695d0]`, `[0xd695d4]`) a memóriaképbe írva kétféle ágat futtattam; (b) statikus: az `0x00aa13b0` négy sarkos hurok, az `0x009ab410` kompozitor mindkét ága, a jelzőbitek írói (`0x00c33cd0`, `0x00c33d60`) és az SSE-próba (`0x009bbde0`). Ideiglenes fájlok: `/tmp/claude-1000/kd-r626/r4/` (a kör végén a `native_r*.json` megmarad, a futtató `.elf`-ek törlendők).*
+
+**1. Két natív ág van, és a QEMU-harness az egyiket méri.** A `0x009ab410` kompozitor a `[0xd695d0]` jelzőtől függ: `0` → skalár ág (`0x009ab59e`), `1` → MMX-ág (`0x009ab4b5`–`0x009ab58f`). A jelzőt a `0x00c33cd0` állítja a `cpuid` MMX-bitjéből (a 23. bit a `0x009bbd50` burkoló kimenetében; a burkoló visszatérési regiszterét nem olvastam végig). A `[0xd695d4]`-et a `0x009bbde0` adja: egy SEH-védett `prefetchnta` (SSE-utasítás) próba, amely SSE-s CPU-n `1`-et ad. A harness nem futtatja a CPU-detektálót (a jelzők a `.bss` nulla értékén maradnak), ezért **minden QEMU-golden, amely a `0x009ab410`-et használja, a skalár ágon készült.** Egy valódi x86-os, SSE-s CPU-n (a Windows-os Picasa futtatója) `[d695d0]=1` és `[d695d4]=1`, tehát **a valódi Picasa a plain MMX-ágat (`0x009ab4be`) futtatja.** (Feltételezés: az `0x00c33cd0`/`0x00c33d60` a program indításakor fut; ezt nem ellenőriztem.) A két ág eltér: ugyanazon az esetkészleten a skalár képlet MMX-ágon 7–19 képpontot téved, és fordítva. A `[d695d4]=0` (`mm6`-os) ág a harnessben nem használható: a `mm6` nincs beállítva, és kimenete értelmetlen.
+
+**2. A kompozit alakja (utasításszintű, `0x009ab410`).** Forrás-pixel `S` (ARGB, előre szorzott), alfa `A = S>>24`, cél `D`:
+- `A = 0`: nincs írás. `A = 255` (`S > 0xff000000`): `D := S`.
+- **MMX-plain** (`0x009ab4be`–`0x009ab509`): `mm2 = A ^ 0xff = 255 − A` (`pxor mm2, mm5`, `mm5` = 0x00ff-es szavak); csatornánként `D_c := telít₈( ((D_c·(255−A)) >> 8) + S_c )` (`pmullw`, `psrlw 8`, `paddw`, `packuswb`).
+- **Skalár** (`0x009ab59e`–`0x009ab65a`): `D_c := ((D_c·(256−A)) >> 8) + S_c` (a csatornák szétosztása után ugyanez az alak).
+
+**3. Az `0x00aa13b0` argumentumai, és a csempe-méret (rekorder, c1 és c3).** `arg1` = célrekord; `arg2` = float `N`, mért értéke **3.0** mindkét esetben (`R + B`); `arg3` = belső szín ARGB-ben (c3-ban `0xffff00ff`, c1-ben `0xff0adc5a`); `arg4 = arg5 = O`; `arg6 = W' − O`, `arg7 = H' − O` (a végpont kizárt). A csempe-méret a kódban: `K = trunc(N + 1)` (`fadd [0xc7e328]` = 1.0, majd `call 0xc29990`), majd a `K ≤ (x1−x0)/2` és `K ≤ (y1−y0)/2` korlát (`cdq; sub; sar 1`). c1-ben K = 3, c3-ban K = 4; mindkettő egyezik a mért kimenettel. A hurok négy sarkot ad: sarkonként `0x00aa1840` (ívraszter, fedés `C`) és `0x009ab410` (kompozit a vászonra). A worker sorrendje (`0x00bbe570`): külső kitöltés → belső kitöltés → négy sarok-csempe (`0x00bbe6e8`-nál hívja az `aa13b0`-t) → kép → sarok-kompozit (`0x00bbe8e5`, `0x009ab360`).
+
+**4. A csempe kétrétegű képlete.** A csempe-pixel fedése `C` (a `_sarok_fedes` q-rácsa, `rᵢ² = 256K²−256K+64`, `rₒ² = 256K²+256K+64`). A belső réteg: `S = (belső·C) >> 8`, `A = (255·C) >> 8`. A kompozit a `cel` (a vászon, azaz a külső szín) fölé megy: `C = 0` → `cel` marad; `C = 256` → `belső`; egyébként a 2. szakasz képlete.
+
+**5. A zárt képlet** (`/tmp/claude-1000/kd-r626/r4/zart_kepletek.py`, `keret()`):
+- **Csempe-méret:** `B = 0` → nincs csempe (K = 0); `R = 0` → K = 1; `R > 0` → `K = min(trunc(R + B + 1), (W+2B)//2, (H+2B)//2)`.
+- **Sorrend:** külső kitöltés; ha `B > 0`, a belső téglalap kitöltése; a négy K×K csempe `F(külső, belső, C)`; a kép törzse; ha `R > 0`, a kép négy R×R sarka a csempe-értékre (`cel`) kompozitálva: `(cel·(255−α) + kép·α) // 255`, `α = (255·C_s) >> 8`, `C_s` a `sugar`-fedés (`sri² = 256(R−1)²`, `sro² = 256R²`; a `draw_border()` sugár-levágása változatlan).
+- **F (MMX, a valódi ág):** `C = 0` → `cel`; `C = 256` → `belső`; egyébként `telít₈( ((cel·(255−a)) >> 8) + ((belső·C) >> 8) )`, `a = (255·C) >> 8`.
+- **F (skalár, a QEMU-harness ága):** ugyanez `256`-tal és telítés nélkül.
+
+**6. Mérés: a zárt képlet bájtra egyezik.** Mindkét ágon 15 natív eset, 2053 képpont: R > 0 színes (c1–c5, e1–e3; ebben B = 0: e3), R > 0 véletlen forrás (p1–p2), R = 0 (r0a–r0e). Plusz a 4. szakaszbeli 9×9-es fekete/fehér aranyminta. **Eredmény: 0 eltérő képpont minden esetben**, ha a megfelelő ág képletét használjuk (MMX ↔ 255; skalár ↔ 256). Keresztellenőrzés: a skalár képlet MMX-mérésen, és az MMX-képlet skalár-mérésen eltér (p1/p2: 7 és 15 képpont). A `_sarok_fedes`-t, a q-rácsot és a `_kompozital_forrassarok`-t (`//255`) a repó meglévő függvényei adják; ezek bájtos egyezése mindkét ágon igazolt, de nem lettek újra levezetve.
+
+**7. A `draw_border()` eltérése (a 3. kör ±1-je és a szerkezeti hiba).** A `draw_border()` a csempéket egyrétegű `_kever_rgb_fedessel`-lel keveri: `(cel·(255−a) + belső·C) >> 8`, egyetlen padlóval. A natív MMX-ág két tagot külön csonkít: `((cel·(255−a)) >> 8) + ((belső·C) >> 8)`. Ez ±1 az anti-aliasolt ívpixeleken: a 3. kör `(81,174,75)` / `(81,174,74)` példája ilyen (a 3. kör natív értéke a skalár ágé volt). Szerkezeti különbség is van: (a) a `draw_border()` a képet a csempék ELŐTT rakja le, így a K > O+B csempe felülírja a kép szélét (c3 és e3); a natív a csempék után rakja a képet, a sarok-kompozit a csempe-értékre megy; (b) `B = 0`-nál a `draw_border()` rajzol csempét és belső kitöltést, a natív nem; (c) `R = 0`-nál a `draw_border()` korán visszatér, a natív K = 1 csempét rajzol (ha `B > 0`).
+
+| eset (W×H, R, B, O) | `draw_border()` vs skalár | `draw_border()` vs MMX | zárt képlet (MMX) |
+|---|---|---|---|
+| c1 5×5, R2 B1 O1, (200,100,50)/(10,220,90) | 6 / 81 | 7 / 81 | 0 |
+| c2 7×7, R3 B1 O2, (30,140,220)/(250,240,20) | 12 / 169 | 10 / 169 | 0 |
+| c3 4×6, R1 B2 O1, (0,0,0)/(255,0,255) | 12 / 120 | 12 / 120 | 0 |
+| c4 9×8, R4 B1 O1, (12,200,99)/(240,30,60) | 12 / 156 | 9 / 156 | 0 |
+| c5 6×10, R3 B3 O2, (77,33,150)/(5,200,120) | 18 / 320 | 15 / 320 | 0 |
+| e1 3×3, R1 B1 O1, (40,40,200)/(200,250,10) | 2 / 49 | 4 / 49 | 0 |
+| e2 12×4, R2 B2 O3, (250,10,120)/(30,30,30) | 7 / 308 | 12 / 308 | 0 |
+| e3 10×9, R3 **B0** O2, (90,180,60)/(240,20,200) | 45 / 182 | 45 / 182 | 0 |
+
+(A táblázat a `draw_border()` jelenlegi kimenetét méri; a zárt képlet a p1/p2 véletlen-forrású esetekre is 0.)
+
+**8. A „R > 0 megerősített” állítás helyesbítése.** A 2026-10-12 (2. kör) leltár-sor és a 4. szakasz „R > 0 megerősített (3 QEMU-golden)” állítása a piros/kék és a fekete/fehér mintákon alapult. A fekete/fehér minta mindkét ágon ugyanazt adja (0 eltérés), a piros/kék mintát ebben a körben nem mértem újra, tehát egyik minta sem tudta megkülönböztetni a két ágat. **A helyes állítás:** a zárt képlet az R > 0 sarokkeverésre bájtra egyezik mindkét ágon, és a színes párokon a `draw_border()` jelenlegi egyrétegű képlete mindig eltér. Ugyanígy az R = 0 szakasz 3. kör „8/8 bájtos egyezés” állítása a **skalár ágra** igaz; az MMX-ágon ugyanaz a zárt alak 255-ös változatként egyezik (r0a–r0e: a 256-os változat MMX-en 2 képpontot téved).
+
+**9. Nyitott, nem mért pontok.**
+- **R > min(W,H)/2:** a `draw_border()` sugár-levágása (`min(round R, H//2, W//2)`) nincs mérve.
+- **B = 0, R > 0:** a K = 0 (nincs csempe) eredmény egyetlen esetből (e3) jön; a K = 1 és a K = R+B+1 variánsok ugyanebben az esetben 4, illetve 17 képpontot tévednek. Az `0x00bbe66c`–`0x00bbe685` kódágban `esi == 0` esetén az `N` nullázódik, de ez a K = 1-et adná, amit a mérés elvet; a `esi` szerepét nem azonosítottam, tehát a kódolvasás itt hiányos.
+- **`0x009ab360` (kép-sarok kompozit) és `0x00aa1840` (ívraszter) MMX-ága:** nincs utasításszintig levezetve; a bájtos egyezés (egyszínű és véletlen forrás, mindkét ág) támasztja alá.
+- **Felirat (`captionheight > 0`):** nincs mérve, ahogy a 3. körben sem.
+- **Más QEMU-goldenek:** minden, a `0x009ab410`-et használó golden skalár ágon készült. Ezeket MMX-ágon újra kell mérni, mielőtt bájtos állítást tesznek rájuk (ez a kör nem vizsgálta őket).
+
+**Bizonyítottsági fok (ez a szakasz):** a két ág különbsége és a két kompozit-alak `megerősített` (kód + mérés); az `aa13b0` argumentum-térképe és a K-képlet `megerősített` (rekorder + kód); a zárt képlet 0 eltéréssel `megerősített` a 15 + 1 esetre, mindkét ágon; a B = 0 csempe-kihagyás `megerősített` egy esetből, a kódolvasás hiányos (`NYITOTT`); az R > min/2 és a felirat `NYITOTT`.
+
+**Kész, ha** (a megvalósításhoz; ez a kör nem implementált):
+1. `draw_border()` R ≥ 0 ágán az egyrétegű `_kever_rgb_fedessel` helyett az MMX-képlet (5. szakasz, F-MMX) fut; a skalár-változat csak a QEMU-összevetéshez marad, nem a termékben.
+2. A csempe-méret a 5. szakasz szerint: `B = 0` → nincs csempe; `R = 0`, `B > 0` → K = 1 (ezzel a `if sugar == 0: return` korai kilépés megszűnik, és a K1–K2 eltérés is ezt a javítást kéri); `R > 0` → `K = min(trunc(R+B+1), …)`.
+3. Sorrend: a belső kitöltés csak `B > 0`; a csempék a kép ELŐTT; a kép-sarok kompozit a csempe-értéket (`cel`) kapja.
+4. Teszt: a 15 mért esetet (`native_r_F11.json`, `native_r_F112.json`, `native_r_F113.json`, `native_r_F114.json`) rögzíteni a repóban, pl. `tests/render/test_border_nativ_mmx_626.py`, bájtos egyezéssel; a meglévő `test_border_nativ_4370.py` (fekete/fehér) változatlanul zöld. A fixture-ban a referencia-ág neve (`MMX`) és a QEMU-harness jelzőbitjének beállítása (`d695d0=1`, `d695d4=1`) a docstringben szerepeljen.
+5. Ellenőrzés: `python scripts/run_tests.py` (a projekt futtatója, nem a csupasz pytest), és `ruff check`.
+6. A `draw_border()` docstringje frissítendő: a `_kever_rgb_fedessel` említése és az „I.4 képleteit követi” állítás a jelenlegi (skalár-egyezésen alapuló) állapotot írja le.
+
 
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
