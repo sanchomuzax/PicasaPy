@@ -1013,7 +1013,8 @@ Kimaradt a PicasaPyból: `Ctrl+6`, `Ctrl+8`, `Ctrl+9`, `Ctrl+G`,
 hatása a #4643 mérésével részben feltárt; a mai bekötési irányt és a nyitott
 részeket a **10.22** rögzíti. **Helyesbítés:** a bal szerkesztőfiók nálunk
 létezik (`PhotoViewer.qml`: `editorControlsVisible`, `toggle_left_drawer`;
-`PicasaMenuBar.qml`: „Show Edit Controls”), csak a Ctrl+9 kötés hiányzik.
+`PicasaMenuBar.qml`: „Show Edit Controls”), csak a Ctrl+9 kötés hiányzott — azóta megvan (`PhotoViewer.qml`, #4696/#4707).
+⚠️ **FRISSÍTVE (2026-10-12, #4643):** a fenti lista is elavult. A `Ctrl+9` és az `F5` (`Main.qml`, #4697) már kötve van; a `Ctrl+G`-ág és a `Ctrl+Alt+Shift+G` (kontaktlap) hiányzik. A billentyűnkénti mérést a **10.23** rögzíti.
 `Ctrl+Shift+H` / `Ctrl+Shift+V` (tükrözés — a művelet a kódbázisban NINCS
 meg; külön jegy). A soronkénti elszámolás a #2163 kommentjében áll, a gépi őr a
 `tests/app/test_gyorsbillentyu_agak_2163.py`: az bukik, ha olyan billentyűt
@@ -1408,6 +1409,149 @@ el, kell-e külön fejlesztői jegy.
 **Bizalmi fok:** a fenti táblában soronkénti. Összesítve **feltételes**, mert
 a Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
 gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem történt.
+
+### 10.23 #4643 — Ctrl+9, F5, Ctrl+G-ág: a célfüggvények utasításszintű olvasata (2026-10-12)
+
+**Módszer:** a bináris SHA-256 egyezik a `meta.json`-nel (`644b7bec…`). A
+`0x005e60d0` ugrótábláját (`0x005e66a4` indextábla, `0x005e6614` ugrótábla)
+közvetlenül a `.exe`-ből olvastam ki: VK `0x39` → `0x005e629f`, VK `0x47` →
+`0x005e6518`. A F5 a módosító nélküli kezelő (`0x005e6710`) ága (`0x005e6869`).
+A `picasa_dis.py` diszasszembléről vett utasítás-listák a munkakönyvtárban
+vannak, a vtábla-hívások a Python `pe.py`-jával (`.rdata`/`.data` fájlofszet)
+ellenőrizve. Futtatás nem történt. A módosító-bitek nevét (`Ctrl`=4, `Shift`=2,
+`Alt`=8) a 10.2 adja; ezt most nem bizonyítottam újra, csak a bitek
+**használatát** olvastam (`[esp+0x11]`, `[esp+0x12]`, `test [esi+0x10],4`).
+
+#### 10.23.1 `Ctrl+9` — `editpanel/toggle_left_drawer`
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| ugrótábla | `0x005e629f` | VK `0x39`-hez tartozik; **nincs Shift/Alt-vizsgálat** a táblaugrás előtt (`0x005e61a5–0x005e61f1`) |
+| őr | `0x00579330` | `[0xd67914]` (fő ablak-objektum) ≠ 0, és a `editpanel/preview` nevű objektum `[+0x20c]` mezője **0** → igaz, különben kilép |
+| gomb | `0x009cd8a0` | `FindNamed("editpanel/toggle_left_drawer")` (`0x009c2fc0`); `__RTDynamicCast`: forrás **`ytDrawNode`** (`0xd3b8a0`), cél **`ytButtonNode`** (`0xd3b8d8`) |
+| aktiválás | `0x00a65170` | a `ytButtonNode` vtable-slot `+0x78` (30. metódus, vtábla `0x00ce4874`), `this` = a gomb, argumentum 0 |
+
+A `0x00a65170` (337 B) lépései: (a) ha `[this+0x35a]` (kapcsolható gomb) és
+`[this+0x213]==0` és `[this+0x244]≠0`, átbillenti `[this+0x359]`-et;
+(b) `[this+0x244]`-et `__RTDynamicCast`-tal **`ytButtContainer`**-re (`0xd3ca38`)
+castolja, és annak vtable-slot `+0x78`-át hívja `(1, this)` argumentummal
+(a konténer vtáblája `0x00c9389c`, slot 30 = `0x00aa11c0`, a futásidejű típus
+felülírhatja); (c) ha ez nem nulla értéket ad, visszaállítja `[this+0x359]`-et;
+egyébként az alapút (`0x00a65110`, `0x00a635d0`) futtatja.
+
+**Felhasználói hatás — bizonyított:** a `Ctrl+9` kizárólag akkor lép tovább,
+ha a szerkesztő-előnézet (`editpanel/preview`) létezik és a `[+0x20c]` mezője 0.
+Ekkor a `toggle_left_drawer` nevű gombot aktiválja. **Mivel a Ctrl-tábla
+nem vizsgál Shift/Alt-ot, a `Ctrl+Shift+9` és `Ctrl+Alt+9` is ugyanúgy lefut**
+(ha az őr átengedi).
+
+**Nálunk:** `PhotoViewer.qml:212–215` — `Shortcut` `Ctrl+9` →
+`toggleEditorDrawer()` → `controller.setEditorControlsVisible(…)`, a mentett
+`view/editorControlsVisible` állapot (`editor_controls_controller.py`). Ugyanaz
+az állapot vezérli a Nézet menü „Show Edit Controls” tételét
+(`PicasaMenuBar.qml:1116–1126`, #4336). **Megvan** (#4707).
+Eltérések: (1) a mi kapunk `viewer.visible`, az eredetié a `editpanel/preview`
+létezése + `[+0x20c]==0` — az ekvivalencia nincs bizonyítva; (2) Shift/Alt-os
+változat nálunk nincs.
+
+**Fok: a láncszint bizonyított, a végső hatás (a fiók nyílik/csukódik) NYITOTT.**
+A kapuk és a gombaktiválás mért; a konténer `slot 30` (`0x00aa11c0`) dönti el,
+melyik panelt mozgatja, és ez nincs kiolvasva.
+
+**⛔ Ghidra-kérdés 1 (Ctrl+9):** `0x00aa11c0` — mit csinál a `ytButtContainer`
+vtable-slot 30 (`+0x78`) a `(1, gomb)` hívásra, és melyik objektum `+0x244`
+mezőjébe íródik a `editpanel/toggle_left_drawer` gomb konténere (az íróutasítás
+címe)? *[blokkoló a fiók-hatás bizonyításához]*
+
+**⛔ Ghidra-kérdés 2 (Ctrl+9):** `0x00579330` — a `editpanel/preview` objektum
+`[+0x20c]` mezőjét mi állítja 0/1-re, és a `PhotoViewer` láthatósága (`viewer.visible`)
+ugyanazt az állapotot fedi-e le?
+
+#### 10.23.2 `F5` — frissítési kérés (`0x005e6869`)
+
+Kapu a `0x005e6710`-ben: `[ebx+0x10]` Ctrl-bitje **nincs** (`0x005e6812`, `jg`
+a Ctrl-kezelőre), `WM_KEYDOWN` (`0x005e681d`), és `[edi+0x332f]==0`
+(`0x005e6829`). Shift/Alt-ot nem vizsgál: **Shift+F5 és Alt+F5 is ugyanúgy
+lefut.**
+
+A `0x005e6869` ág (`cmp ax,0x74`) sorrendben:
+1. `0x004a46e0([edi+0x2c0])` — rendszeridő-bélyeg a `[obj+0x148]` mezőbe;
+2. `0x00579480(edi, 0, 1)` — állapot-/kijelzőfrissítés (belseje nincs kiolvasva);
+3. `[ [edi+0x2c0] + 0x166 ] = 1` — **frissítési kérés-jelző**;
+4. `0x0065b840(edi, 0, 0, 1)`: a második argumentum 0, ezért nem állítja újra a
+   jelzőt; törli `[ebp+0xdbc]`-t; ha van keresőállapot, a `searchcontainer/searchclr`
+   nevű gombot aktiválja (vtable `+0x68`/`+0x6c`); majd a
+   `searchcontainer/searchbutton` (`ytButtonNode`-cast, `0x00c8f448`) állapotát
+   `[esi+0x359]`-hez igazítja, és eltérés esetén aktiválja (`+0x78`);
+5. `[ebp+0xe94] = -1` (nincs kijelölt elem), majd `0x00662b20(ebp, 1)`.
+
+**Az idle-út bizonyított:** `0x004afcfd` olvassa a `[esi+0x166]` jelzőt,
+`0x004aae90`-et hívja, majd `0x004afd41` nullázza.
+
+**Felhasználói hatás — részben bizonyított:** a keresőállapot és a kijelölt
+elem törlése, plusz egy idle-időben futó lista-/nézetfrissítés. **Nem bizonyított:**
+lemez-újraolvasás (ezt a 10.22 is kimondja). Az idle-frissítés belseje és a
+`0x00662b20` (listaépítés vs. időbélyeg-kapus frissítés) nincs kiolvasva.
+
+**Nálunk:** `Main.qml:1163` — `Shortcut` `F5` →
+`controller.resyncFolder(controller.currentFolder)` (#4697). **Megvan**, de
+más szerződés: a mi `resyncFolder` a lemez-változásokat is felveszi (a kódban
+ezt a komment mondja), az eredetiben ez nincs bizonyítva. A Shift/Alt-os
+változat nálunk nincs.
+
+**Fok: részben bizonyított.** A jelző, a keresőállapot és a kijelölés-törlés
+mért; a lista-/nézetfrissítés tartalma nyitott.
+
+**⛔ Ghidra-kérdés 3 (F5):** `0x00662b20(this, 1)` — listát épít-e újra, vagy csak
+időbélyeg-kapus állapotot frissít? És `0x004aae90` teste: mit ír a képernyőre,
+hív-e fájlrendszer-bejárást? *[blokkoló a lista-hatás bizonyításához]*
+
+#### 10.23.3 `Ctrl+G` és `Ctrl+Alt+G` — no-op; `Ctrl+Alt+Shift+G` — kontaktlap
+
+A `0x005e6518` ág (VK `0x47`):
+- `[esp+0x12]` (Alt) = 0 → `0x005e653a`: `[esp+0x11]` (Shift) = 0 → **kilép, nincs
+  művelet**; Shift = 1 → `0x00600580` (Ctrl+Shift+G, geotag; a 10.22 szerint).
+- Alt = 1 → `0x005e6524`: Shift = 0 → **kilép, nincs művelet**; Shift = 1 →
+  `0x0057b050` (`ecx = this`).
+
+**`Ctrl+G` és `Ctrl+Alt+G` bizonyítottan nem csinál semmit** — a 10.22 „feltételes”
+fokát ez lezárja. Nálunk nincs `Ctrl+G` `Shortcut` (`grep`, `src/picasapy`).
+
+**`0x0057b050`** (1225 B): wait-kurzor (`LoadCursor(0x7f00)` = IDC_WAIT, számlálóval
+a `[0xd6793c]`-n), folyamatjelző szöveg **„Making The Ginormous Contact Sheet!”**
+(`0xc9008c`), fájlnév **`ginormous.jpg`** (`0xc900b8`), memmove a kimeneti
+útvonalba (`0x0057b3fc`), majd `ShellExecute`-féle megnyitás (`0xc405e0`).
+A kontaktlap tartalma, elrendezése és az útvonal-építés nincs kiolvasva.
+
+**Felhasználói hatás — bizonyított:** a kurzor várakozóra vált, a folyamatjelző
+megjelenik, majd a `ginormous.jpg` megnyílik. **Nálunk HIÁNYZIK** (`grep`
+„ginormous”: nincs találat a `src/picasapy`-ban). A kontaktlap-modul
+(`collage/contact_sheet.py`, Ctrl+Shift+P) más funkció, nem ez.
+
+**⛔ Ghidra-kérdés 4 (Ctrl+Alt+Shift+G):** `0x0097e4c0`, `0x00996b90`,
+`0x009a3930`, `0x009d6010` — melyik képeket (az aktuális mappa / kijelölés / a
+teljes könyvtár) és milyen elrendezéssel rajzolják, és hová írja a `0x0057b3fc`
+előtti útvonalépítés a `ginormous.jpg`-t? *[blokkoló a megvalósításhoz]*
+
+**Kész, ha — `Ctrl+Alt+Shift+G`** (a 4. kérdés lezárása után; a tartalmat a
+Ghidra-választ követő jegy dönti el):
+- [ ] a könyvtárnézetben a Ctrl+Alt+Shift+G aktuális mappából (vagy a bizonyított
+      halmazból) JPEG-et készít `ginormous.jpg` néven;
+- [ ] a művelet alatt várakozó kurzor és „Making The Ginormous Contact Sheet!” folyamatjelző;
+- [ ] a kész fájl az alapértelmezett képnézőben megnyílik;
+- [ ] a `Ctrl+G`, `Ctrl+Alt+G` és `Ctrl+Shift+G` nem kötődik ehhez (utóbbi a geotag-ág).
+
+#### 10.23.4 Összesítés
+
+| billentyű | cél | mit látunk a binárisban | nálunk | fok |
+|---|---|---|---|---|
+| `Ctrl+9` | `0x005e629f` → `0x00a65170` | gomb-aktiválás a `toggle_left_drawer` nevű gombon; a végső hatás nyitott (Q1, Q2) | megvan (#4707) | láncszint bizonyított |
+| `F5` | `0x005e6869` | keresőállapot-törlés, kijelölés-reset, `0x166` jelző, idle-frissítés | megvan (#4697), eltérő szerződés | részben bizonyított (Q3) |
+| `Ctrl+G`, `Ctrl+Alt+G` | `0x005e6518` / `0x005e6524` | nincs művelet | nincs kötés (helyes) | **bizonyított** no-op |
+| `Ctrl+Alt+Shift+G` | `0x0057b050` | kontaktlap-készítés és megnyitás | **hiányzik** | bizonyított hatás, tartalom nyitott (Q4) |
+
+**Nem vizsgált ebben a körben:** Ctrl+6/8, Ctrl+Shift+L/U/Y, a videó-billentyűk,
+Ctrl+F9, Ctrl+Alt (#4698, #4699 külön jegyen).
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
