@@ -25,6 +25,7 @@ indul gyorsabban, mint az egyfájlos, mert nincs kicsomagolás minden
 indításkor).
 """
 
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
@@ -32,6 +33,11 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 #: a repó gyökere — a spec a `packaging/windows/` alatt él
 GYOKER = Path(SPECPATH).resolve().parents[1]
 APP = GYOKER / "src" / "picasapy" / "app"
+
+#: ⚠️ A `collect_*` segédek IMPORTÁLJÁK a csomagot; a `pathex` csak az
+#: elemzésre hat. Enélkül a CI-n „'picasapy' … is not a package” mellett
+#: üres listát adtak, és a csomagból modulok és adatfájlok maradtak ki.
+sys.path.insert(0, str(GYOKER / "src"))
 
 #: a QML-fa, a fordítás, az ikonok és a súgó: adatok, nem importok
 adatok = [
