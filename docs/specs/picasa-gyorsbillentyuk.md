@@ -1553,6 +1553,274 @@ Ghidra-választ követő jegy dönti el):
 **Nem vizsgált ebben a körben:** Ctrl+6/8, Ctrl+Shift+L/U/Y, a videó-billentyűk,
 Ctrl+F9, Ctrl+Alt (#4698, #4699 külön jegyen).
 
+### 10.24 #4643 — 2. kör: Ctrl+6, Ctrl+8, Ctrl+Shift+L/U/Y és a videó-billentyűk (2026-10-12)
+
+**Módszer.** A 10.23 mintáját követve, utasításszinten, a bináris SHA-256-ját
+ellenőriztem (`644b7bec…` = `meta.json`). A Ctrl-ág ugrótábláját
+(`0x005e66a4` indextábla, `0x005e6614` ugrótábla) a `.exe` nyers bájtjaiból
+oldottam fel a PE-szakaszok alapján (fájloffszet = VA − `0x400000` a `.text`-en
+és a `.rdata`-n is; a `.data`-ban a `0xd695b8` IAT-slot futásidejű). Az
+ugrótábla-feloldás kontrollja: a `0x39` (Ctrl+9) → `0x005e629f` egyezik a 10.23-mal,
+a `0x78` (F9) → `0x005e6329` egyezik a 10.22-vel. A `picasa_dis.py` diszasszemblált
+függvénytörzseit a munkakönyvtárban tartottam (`/tmp/claude-1000/kd-r4643/`), a
+vtábla-RTTI-neveket a MSVC Complete Object Locatorból (`vt−4` → COL → TypeDescriptor)
+olvastam ki, az IAT-neveket az import-könyvtárból. Futtatás nem történt.
+
+**Közös kapu, bizonyított.** `0x005e60d0`: a `[esi+0x10]` modifikátor-bájton a
+`test …,4` (Ctrl) kötelező; a Shift és az Alt NEM kapu a táblaugrásnál. A
+modifikátor-bitek a `0x005c5f90` kitöltése szerint: Ctrl = `[esp+0x10]`,
+**Shift = `[esp+0x11]`**, **Alt = `[esp+0x12]`** (a bitek `test al,4` / `test al,2`
+/ `test al,8` → `setg`; a 10.2 szerinti Ctrl=4, Shift=2, Alt=8 megerősítve).
+
+#### 10.24.1 `Ctrl+6` — `0x005e6294` → `0x00530ad0`
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| ugrótábla | `0x005e6294` (VK `0x36`, index `41`, bájt `8`) | `push ebp; call 0x00530ad0` |
+| beolvasás | `0x00530ad0` → `0x00407a20` → `0x004019b0` | a `Preferences\AdvancedFeatures` kulcsot nyitja (`0xf003f`, majd `0x20019` olvasás); ha a `0x4019b0` eredménye 0, kilép (`0x00530b25`) |
+| őr | `0x00530b2b` | `[panel+0xeac]==0` → `eax=-1`, kilép |
+| létrehozás | `0x00530b40–0x00530b8b` | 0x88-as objektum, majd `0x00982bf0` a **`timeslicer`** nevű panelt, méret **640×480** (`0x280`×`0x1e0`) |
+| építés | `0x00530b96–0x00530bc6` | 0x370-es objektum, `0x0052ec30`; majd `0x00530040` |
+| `0x00530040` | 2647 B | 0x26c-os objektum, **vtábla `0xc8b5ec` = `.?AVytBGNode@@`** (RTTI, a COL-ból); méret 640×480 (`0x00512220`) |
+
+**Bizonyított:** a láncszint — Ctrl (és csak Ctrl) → `AdvancedFeatures`-őr →
+`timeslicer` panel létrehozása és felépítése. A `0x004019b0` visszatérési
+jelentését (kulcs-/értékolvasás) részben olvastam ki; az őr polaritása (nem-nulla
+érték kell a folytatáshoz) a `sete`/`jne` mintából következik.
+
+**Felhasználói hatás: NYITOTT.** A `timeslicer` panel mit jelenít meg, és
+látszik-e a képernyőn, nincs kiolvasva.
+
+**Nálunk:** NINCS. `grep -rn 'AdvancedFeatures\|timeslicer' src/` üres; nincs
+`Ctrl+6` `Shortcut`.
+
+**Fok: láncszint bizonyított; a hatás NYITOTT.** (A 10.22 „feltételes" fokát ez
+megerősíti a láncra; a hatásra nem terjed ki.)
+
+**⛔ Ghidra-kérdés 5 (Ctrl+6):** `0x00982bf0` (a `timeslicer` nevű objektum
+létrehozása) és `0x00530040` (`ytBGNode`, 2647 B) — mit jelenít meg a 640×480-as
+panel, és a `0x00530bc6`-os `0x00530040` hívás után a `0x00983430` mit tesz a
+képernyőn látható fával? *[blokkoló a hatáshoz]*
+
+**⛔ Ghidra-kérdés 6 (Ctrl+6):** `0x004019b0` visszatérési értékének jelentése és
+az `AdvancedFeatures` értékének szemantikája (mely nem-nulla érték kapcsolja be).
+*[blokkoló a gate polaritásához]*
+
+#### 10.24.2 `Ctrl+8` — `0x005e6584` → `0x005e81e0(panel, 2)`
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| ugrótábla | `0x005e6584` (VK `0x38`, index `43`, bájt `9`) | `push 2; push ebp; call 0x005e81e0` |
+| kapu | — | **nincs Shift/Alt-vizsgálat**: Ctrl+Shift+8 és Ctrl+Alt+8 ugyanígy fut |
+| kijelölés | `0x005e81e0` (802 B) | a `this+0x2bc+0xf8` objektumból `0x00506400` a kijelölt elemek tömbjét adja; a mód `bl == 2` (`0x005e8242`) |
+| tételenként | `0x005e8260–0x005e82b2` | `this = obj+0x48` (`obj = [ebp+0x2bc]`), a vtábla `*(obj+0x48)`: **lekérdezés** a `+0xcc` slotról (`call eax` a `0x005e8289`-nél), az eredmény `test al,al; sete cl` ⇒ a beállított érték a lekérdezés **negáltja**; majd **írás** ugyanazon vtábla `+0xc8` slotján (`0x005e829f`) |
+| állapot-címke | `0x005e83d8` / `0x005e83df` | `stars/yes` vagy `stars/no` (`0x00410fa0` névfeloldás) |
+| előnézet-ág | `0x005e831f–0x005e8349` | `editpanel/preview` `[+0x20c]==0` — **ugyanaz az őr, mint a Ctrl+9-é** (10.23.1) |
+
+**Bizonyított:** a célfüggvény azonosítása, a mód `bl==2` ága, és hogy a
+kijelölés minden elemére egy lekérdezés + egy írás fut, az írt érték a
+lekérdezés negáltja. **Nem bizonyított:** hogy a lekérdezett érték a csillag-
+állapot (`]star` nem ezen az ágon, hanem a `bl≠2` ágban szerepel: `0x005e82d3`,
+`0x00475250`), és hogy a két vtábla-hívás melyik osztály vtáblája — ezért a
+„csillag-váltás” fogalma még nincs igazolva.
+
+**Felhasználói hatás: RÉSZBEN.** A kijelölt képek csillaga váltódik-e (és
+egyenként, vagy egységesen), a vtábla-osztály nélkül nem dönthető el.
+
+**Nálunk:** Ctrl+8 NINCS (`grep` a `src/picasapy`-ban nem talál `Ctrl+8`-at). A
+csillag-váltás **F4**-en van (`Main.qml:1150`, `shortcutStarToggle` →
+`trayBar.kapcsoldACsillagot()`), a binárisban az F4 a `thumbui/startoggle`-t
+kattintja (`0x005e696c`, 4600-as jegy). **Nem bizonyított**, hogy a Ctrl+8 célja
+(`0x005e81e0`) és a `startoggle` ugyanazt a műveletet végzi.
+
+**Fok: célfüggvény bizonyított; a hatás RÉSZBEN, a vtábla-célok NYITOTTAK.** A 10.22
+„megerősített” fokát ez lefelé korrigálja: a célazonosítás megerősített, a hatás nem.
+
+**⛔ Ghidra-kérdés 7 (Ctrl+8):** a `this = [ebp+0x2bc]+0x48` objektum vtáblájának
+RTTI-neve (a vtábla-írást a konstruktorban kell megkeresni), és mit csinál a
+`+0xcc` (lekérdezés: csillag-e?) és a `+0xc8` (írás) slot. *[blokkoló a hatáshoz
+és a csillag-fogalomhoz]*
+
+**Kész, ha — Ctrl+8:** NEM adható ki, amíg Ghidra-kérdés 7 nincs lezárva; a
+„csillag-váltás” fogalma nincs megalapozva.
+
+#### 10.24.3 `Ctrl+Shift+L` — `0x005e658e` → `0x004cce10` + `0x004cd010` → `ShellExecuteA`
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| ugrótábla | `0x005e658e` (VK `0x4c`, index `63`, bájt `21`) | **Shift-kapu**: `cmp [esp+0x11],0; je` kilép |
+| szerver | `0x004cce10` (499 B) | `[ebp+0x2c4]` szerver-objektum; ha `[ebp+4]==0`, 0x80-as objektum, **vtábla `0xc857d4` = `.?AVytHTTPd@@`** (RTTI); a `Preferences\LANPassword` olvasása (`0x00407630`, `0x004078e0`); a `[obj+0x58] = 0x7f000001` (127.0.0.1); indítás `0x0097b350`; majd a `[obj+0x54]` port nullától eltérő értékéig **`Sleep(50)`** (`[0xc402d0]` = `KERNEL32!Sleep`, `push 0x32`) |
+| URL | `0x004cd010` (161 B) | `"http://localhost:%d/%s/"` (`0xc85778`), a port `[obj+0x54]`, a `%s` a `0x0093a4e0` kimenete (`picasaserver` + LAN-jelszó-alapú szöveg; belső formátuma nincs kiolvasva) |
+| megnyitás | `0x005e65cb` | `call [0xd695b8]` `push 5; push 0; push 0; push url+4; push 0; push 0` ⇒ **`ShellExecuteA(NULL, NULL, url, NULL, NULL, SW_SHOW)`** |
+
+**A `[0xd695b8]` feloldása (bizonyított):** nem az import-könyvtár slotja, hanem
+futásidejű mutató. A `0x00c33b40` inicializálja: `GetVersion` (`[0xc40450]`)
+`< 0x80000000` ágán (NT) a `[0xc405e0]` IAT-slot értékét veszi át — ez
+**`SHELL32!ShellExecuteA`** (IAT-feloldás a `0xc405e0`-n); a másik ág (Win9x)
+a `0x009b2890` függvényt, ami ezen a gépen nem fut.
+
+**Bizonyított:** a Shift-kapu; a beépített webszerver (`ytHTTPd`) indítása és
+portra várakozása; a böngészőbe küldött cím alakja (`http://localhost:<port>/…/`);
+a megnyitás `ShellExecuteA`-n át.
+**Nem bizonyított:** a `%s` részletes tartalma (`0x0093a4e0`), és a szerver által
+kiszolgált tartalom.
+
+**Felhasználói hatás: BIZONYÍTOTT** — a böngésző megnyitja a Picasa beépített
+helyi webszerverének címét. A kiszolgált oldal tartalma nyitott.
+
+**Nálunk:** HIÁNYZIK. `grep -rn 'Ctrl+Shift+L' src/` üres; `localhost`/`http.server`/
+`HTTPServer` a `src/picasapy`-ban nincs.
+
+**Fok: bizonyított (a megnyitás); a tartalom NYITOTT.**
+
+**⚠️ Nem értelmezett hívás:** a `0x004cd099` és a `0x004cceb3` a `call [0xc40560]`-t
+(`KERNEL32!InterlockedIncrement`, IAT-slot 226) egy `char*` argumentummal hívja. Ez
+nem illik az InterlockedIncrement szignatúrájához — az IAT-feloldás helyes (a
+`GetDeviceCaps`/`GetAsyncKeyState` kontroll egyezik), de a hívás célja nincs
+megmagyarázva. Nem blokkolja a fenti állítást, de a Ghidra-körben ellenőrizni kell.
+
+**Kész, ha — Ctrl+Shift+L** (a termékdöntés, hogy a Picasa-webszervert megépítjük-e,
+a jegy dolga; a bináris ezt nem dönti el):
+- [ ] a könyvtárnézetben, **Shift** lenyomva, a Ctrl+Shift+L a helyi webalbum-szerver
+      `http://localhost:<port>/…/` címét nyitja meg az alapértelmezett böngészőben;
+- [ ] a kiszolgált tartalom nyitott, mielőtt a jegy lezárul;
+- [ ] a Ctrl+Shift+L nem kötődik más művelethez (a Ctrl+Shift+G, Ctrl+Shift+U és
+      Ctrl+Shift+Y külön ágon).
+
+#### 10.24.4 `Ctrl+Shift+U` — `0x005e6557` → `0x0047ca60` → `0x006b8710` ×2
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| ugrótábla | `0x005e6557` (VK `0x55`, index `72`, bájt `28`) | **Shift-kapu**; `mov eax,[ebp+0x2bc]; call 0x0047ca60` |
+| hívás | `0x0047ca60` (31 B) | `0x006b8710(this+0x22d0)`, majd `0x006b8710(this+0x237c)` — a 10.22 szerinti `m_bigThumbs`/`m_previewThumbs` tageltolások |
+| zárolás | `0x006b8710` (944 B) | tulajdonos-szál (`GetCurrentThreadId`, `[0xc40284]`) és rekurzió-számláló (`+0x24`); ha `[+0xc]≠0`, `EnterCriticalSection(+0x28)` (`[0xc4055c]`), különben a vtábla `+0x18` slotja (feloldatlan, lásd lent); **minden** hívásnál (a rekurzív ágon is) felszabadítja a `+0x54`, `+0x5c`, `+0x64` mutatókat (`0x0097caf0`) és nullázza |
+| egy szintű hívások | `0x006b5bc0`, `0x006b5cc0`, `0x0040ea90`, `0x00980ec0`, `0x009a37b0`, `0x00408b50`, `0x00408c00` | **egy szinten nincs fájl-API** (a közvetlen IAT-hívásaik üresek) |
+| egy szintű IAT | `0x009a3db0`: `GetLastError`, `InterlockedIncrement`; `0x00991f00`: `QueryPerformanceCounter/Frequency`; `0x00992ed0`: függvénymutató | — |
+| záró | `[0xc402a8]` = `KERNEL32!LeaveCriticalSection`; `[0xc40558]` = `InterlockedDecrement`; `[0xc40560]` = `InterlockedIncrement` | — |
+
+**Bizonyított:** a két almemória-állapot alaphelyzetbe állítása (a három mutató
+felszabadítása és nullázása, minden hívásnál); a közvetlen IAT-hívásokban nincs fájl-API.
+**Nem bizonyított:** a függvény további része (`0x006b87b5`–`0x006b8a5b`), benne
+két feloldatlan vtábla-hívás (`call eax` a `0x006b876c` és `0x006b8aa5` címen) és
+három függvénymutató (`0xd6957c`, `0xd694bc`, `0xd694c0`). Ezek dönthetik el, van-e
+lemez-újraolvasás — ezért a lemez-érintetlenség NINCS igazolva.
+
+**Felhasználói hatás: RÉSZBEN** — a memóriabeli bélyegképtár-állapot törlődik; a
+látható következmény (újraépítés, a nézet változása) nincs kimérve.
+
+**Nálunk:** HIÁNYZIK. `grep` a `Ctrl+Shift+U`-ra üres; a bélyegkép-gyorstár
+ürítésének megfelelője (`resetThumb`/`clearThumb`/„thumbnail cache”) a `src/picasapy`-ban nincs.
+
+**Fok: memória-törlés bizonyított; a lemez és a látható hatás NYITOTT.**
+
+**⛔ Ghidra-kérdés 8 (Ctrl+Shift+U):** `0x006b876c` és `0x006b8aa5` `call eax` célja (a
+vtábla-osztály RTTI-neve), és a `0xd6957c`, `0xd694bc`, `0xd694c0` függvénymutatók
+kitöltése (`GetProcAddress` vagy konstruktor-írás?). Van-e lemez-újraolvasás a
+`0x006b87b5`–`0x006b8a5b` tartományban? *[blokkoló a lemez- és a látható hatáshoz]*
+
+**Kész, ha — Ctrl+Shift+U:** NEM adható ki, amíg Ghidra-kérdés 8 nincs lezárva.
+
+#### 10.24.5 `Ctrl+Shift+Y` — `0x005e6572` → `0x005e5ec0`
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| ugrótábla | `0x005e6572` (VK `0x59`, index `76`, bájt `30`) | **Shift-kapu**; `push ebp; call 0x005e5ec0` |
+| őr | `0x005e5ec0` (527 B) | `[ebp+0x14c]≠0` kell; majd `0x00410fa0` az **`overlays/egg`** elemet keresi (`0xc97674`) |
+| létrehozás | `0x005e5f43–0x005e5f65` | 0x354-es objektum (`0x0097c5d0`), `0x00512400` |
+| véletlen paraméterek | `0x005e5f7f–0x005e608f` | több `rand()` (`0x0c08221`) hívás, a `(rand+0x3f8000)<<8` mintából lebegőpontos értékek; `0x009dec60`, `0x009deca0`, `0x009debd0` hívások |
+| indítás | `0x005e60ba`, `0x005e60c3` | `0x00a54b70`, `0x009a8bc0` |
+
+**Bizonyított:** a Shift-kapu; az `overlays/egg` elem megtalálása és az ehhez
+tartozó objektum-létrehozás; véletlen (`rand`-alapú) paraméterek.
+**Nem bizonyított:** az animáció tartalma és a rajzolási cél (`0x009dec60`,
+`0x009deca0`, `0x009debd0` törzse).
+
+**Felhasználói hatás: NYITOTT** (az látszik, hogy egy `overlays/egg` elem
+animációja indul, de a képe és a helye nincs kiolvasva).
+
+**Nálunk:** HIÁNYZIK. `grep` az `overlays/egg`-re, `egg`-re és `easter`-re a
+`src/picasapy`-ban üres.
+
+**Fok: láncszint bizonyított; a hatás NYITOTT.** (A 10.22 „feltételes” fokát ez a
+láncra megerősíti.)
+
+**⛔ Ghidra-kérdés 9 (Ctrl+Shift+Y):** `0x009dec60`, `0x009deca0`, `0x009debd0` —
+melyik objektum és melyik képkocka/rajz a céljuk, és a `0x00a54b70` `+0x9a8bc0`
+hívás mit indít el (képernyő-animáció, időzítő)? *[blokkoló a hatáshoz]*
+
+#### 10.24.6 Videó-billentyűk: `/` (VK `0xbf`), `,` (VK `0xbc`), `.` (VK `0xbe`)
+
+**Negatív, mért:** a teljes `.text` (**2 884 879 utasítás**) `capstone`-pásztázása
+a `paszta.py`-n (memóriakapuval, csúcs RSS 85,5 MiB) minden olyan utasítást
+listázott, amelynek immediate operandusa `0xbc`, `0xbe` vagy `0xbf`. A **83 találat**
+kategóriánként (mnemonic szerint, a fenti pásztázás kimenetéből):
+
+- **36 × `add/sub esp, …`**: veremméret-igazítás;
+- **18 × `sub ecx, 0xbc; jmp …`**: másodlagos vtábla this-eltolási thunk (a 10.x és a
+  memória szerint), **nem** billentyű-összevetés;
+- **7 × `push 0xbc`**: allokáció- és memset-méret (`0x0097c5d0` = `operator new`);
+  a `0x00a1d616`, `0x00a1dad6`, `0x00a1dd36` három `push 0xbc/0xbe/0xbf` a
+  `0x00a00120` körüli, indexen kívüli függvényben **IPTC-metaadat-azonosító**
+  (a közeli sztringek: `IPTC::UNO`, `IPTC::ApplicationVersion`, `Application Version`),
+  nem billentyű;
+- **8 × `and al, …`, 1 × `sbb al, 0xbc`, `cmp byte [ecx], 0xbf` és `[ecx+1]`**: bájt-szintű
+  UTF-8/bit-maszk;
+- **`add eax/ecx/edx, 0xbc`, `mov eax, 0xbc/0xbe/0xbf`**: mutató-eltolás, sztringhossz.
+
+Egyik találat sem `cmp` egy VK-kóddal.
+
+**Ami NEM zárható ki ezzel:** táblavezérelt (VK − bázis) diszpécser, ahol a 0xBC–0xBF
+nem jelenik meg immediate-ként. A Ctrl-tábla (`0x005e60d0`) VK-tartománya `0x0d`–`0x78`,
+a fő kezelő (`0x005e6710`) összehasonlításai az F-billentyűkre (`0x70`–`0x7b`) esnek;
+egyik sem fed le `0xbc`–`0xbf`-et. A 10.16 szerinti húsz VK-lánc közül egyik sem
+tartalmaz `0xbc`–`0xbf`-et, de az általános vezérlő (`0x00a53b00`) tábla-alapú,
+és annak teljes VK-tartományát ebben a körben nem mértem.
+
+**Felhasználói hatás: NYITOTT.** Hogy a videó vagy a diavetítés reagál-e a három
+billentyűre, és melyik fogadó ablak kapja a `WM_KEYDOWN`-t, nincs eldöntve.
+
+**Nálunk:** NINCS. `grep` a `src/picasapy/app`-ban a `Key_Comma`, `Key_Period`,
+`Key_Slash`, `Key_Less`, `Key_Greater`, `Key_Question` kulcsokra üres; a
+`VideoPlayerView.qml`-ben nincs `Keys` vagy `Shortcut`.
+
+**Fok: negatív immediate-keresés mért; a táblavezérelt út és a fogadó ablak NYITOTT.**
+
+**⛔ Ghidra-kérdés 10 (videó):** melyik `WndProc` kapja a `WM_KEYDOWN`-t, ha a
+videó-gyermek fókuszban van, és annak VK-diszpécsere (tábla-alap + index-tábla)
+tartalmaz-e `0xbc`/`0xbe`/`0xbf` bejegyzést? *[blokkoló a videó-hatáshoz]*
+
+#### 10.24.7 Összesítés és a 10.22 korrekciója
+
+| billentyű | cél | mit látunk a binárisban | nálunk | fok |
+|---|---|---|---|---|
+| `Ctrl+6` | `0x005e6294` → `0x00530ad0` | `AdvancedFeatures`-őr → `timeslicer` panel (`ytBGNode`) | NINCS | láncszint bizonyított; hatás NYITOTT (Q5, Q6) |
+| `Ctrl+8` | `0x005e6584` → `0x005e81e0(panel,2)` | kijelölés-ciklus: vtábla-lekérdezés + negált vtábla-írás | NINCS (csillag: F4) | célazonosítás bizonyított; hatás RÉSZBEN (Q7) |
+| `Ctrl+Shift+L` | `0x005e658e` → `0x004cce10` + `0x004cd010` | `ytHTTPd` indítása, `http://localhost:%d/%s/`, `ShellExecuteA` | HIÁNYZIK | megnyitás bizonyított; tartalom NYITOTT |
+| `Ctrl+Shift+U` | `0x005e6557` → `0x0047ca60` → `0x006b8710` ×2 | zárolt memória-törlés két almemórián | HIÁNYZIK | memória bizonyított; lemez és látható hatás NYITOTT (Q8) |
+| `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0` | `overlays/egg` animáció-indítás, `rand`-paraméterek | HIÁNYZIK | láncszint bizonyított; hatás NYITOTT (Q9) |
+| `/`, `,`, `.` | — | immediate-keresés: 0 VK-összevetés (83 zajtalálat) | NINCS | negatív mért; táblavezérelt út és fogadó NYITOTT (Q10) |
+
+**Korrekció a 10.22-höz:** a `Ctrl+8` fokát „megerősítettről" **célazonosítás
+megerősítettre, hatás részbenre** csökkentem (10.24.2). A `Ctrl+Shift+U` „megerősített"
+fokát **memória-törlés megerősítettre, lemez-érintetlenség nyitottra** (10.24.4).
+A `Ctrl+Shift+L` és a `Ctrl+Shift+Y` 10.22-beli fokai ezzel konzisztensek.
+
+**Kész, ha — összesítve:** csak a `Ctrl+Shift+L` és a `Ctrl+Shift+U`-t érintő
+„nálunk hiányzik" sorokra adható ki; a Ctrl+Shift+L-re a fenti lista (10.24.3), a
+Ctrl+Shift+U-ra a Ghidra-kérdés 8 lezárása után. A `Ctrl+6`, `Ctrl+8`, `Ctrl+Shift+Y`
+és a videó-billentyűk „Kész, ha"-ja a megfelelő Ghidra-kérdések lezárásáig nem adható ki.
+
+**Nyitott kérdések mérlege (a körön belül, állapotonként):**
+- **LEZÁRVA:** a kapu-polaritás (Shift=`[esp+0x11]`, Alt=`[esp+0x12]`); a 4 billentyű-célcím
+  (`0x530ad0`, `0x5e81e0`, `0x4cce10`/`0x4cd010`, `0x47ca60`/`0x6b8710`, `0x5e5ec0`) és az ugrótábla-feloldás; a
+  `Ctrl+Shift+L` megnyitási lánc; a `[0xd695b8]` = `ShellExecuteA` (NT).
+- **BLOKKOLT** (Ghidra-kör kell, `picasa-x86-research`; ez a kör nem futtatott Ghidrát): Q5–Q10.
+- **HATÓKÖRÖN KÍVÜL:** a Picasa-webszerver megépítése (`Ctrl+Shift+L`) — termékdöntés, nem bináris-kérdés.
+- **Csak nyitva:** 0 (minden nyitott tétel fentebb BLOKKOLT vagy HATÓKÖRÖN KÍVÜL, megnevezett kiváltó feltétellel).
+
+**Nem ellenőrzött:** a független újralevezetés (`ujralevezetes.py`) NEM futott: a kör
+alügynököt nem indíthatott.
+
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
 A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.
