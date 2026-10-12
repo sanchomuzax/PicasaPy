@@ -1598,6 +1598,161 @@ elég egy jegy megnyitásához.
 3. A `0x009aabf0` / `0x009b49c0` (bitmap-betöltés) és a slot 2 (Show) hívóinak felsorolása.
 4. A `Preferences\Debug Blt` alapértelmezésének meghatározása (a registry-alapérték, `0x004019b0`).
 
+### 10.25 #4698 és #4699 — 3. kör: a jelző teljes olvasóslistája, a módmező, a popup-bitkép és a kiváltó (2026-10-12)
+
+**Módszer.** `pe_dis` (capstone, scratch-venv), a `paszta.utasitasok()` darabolt
+lineáris pásztázása a **teljes `.text`-re** (2 884 879 utasítás, csúcs-RSS 85 MiB,
+`systemd-run` 2400 MiB-os plafonnal), bájt-előszűrés (`c4 0d 00 00` = disp32 `0xdc4`;
+11 találat: 4 memóriaoperandus, 7 `sub/add esp, 0xdc4` imm), és a `0x30d4`, `0x31a8`,
+`0xe70`, `0x24` mintákra ugyanez. A callee-API-neveket az index `imports.csv`
+`func_addr` oszlopa adja (függvény → IAT-API); a vtábla-slotokat a `.rdata`-ból
+olvastam; a `this`-típust a COL-ból (RTTI). Natív futás nem történt (nincs Wine).
+
+**A) `[this+0xdc4]` (Ctrl+F9-jelző): az összes hivatkozás a `.text`-ben — MÉRVE**
+
+| hely | függvény | utasítás | szerep | `this` |
+|---|---|---|---|---|
+| `0x00564b2e` | `0x005643e0` | `mov byte [ebp+0xdc4], bl` | **írás** (konstruktor) | `CThumbUI` |
+| `0x00572078` | `0x00571e50` | `cmp byte [ebx+0xdc4], 0` | **olvasás** (frissítő kapu) | `CThumbUI` |
+| `0x005e6329` | `0x005e60d0` | `cmp byte [ebp+0xdc4], 0` | **olvasás** (toggle) | `CThumbUI` |
+| `0x005e6333` | `0x005e60d0` | `mov byte [ebp+0xdc4], cl` | **írás** (toggle: `cl = (flag == 0)`) | `CThumbUI` |
+
+- **A `this`-típus:** a `0x005643e0` konstruktor az `[ebp]`-be a `0x00c9052c` vtáblát
+  írja; ennek COL-ja (`0x00cff578`-tól eltérő, `mdisp 0`) a **`.?AVCThumbUI@@`**. A
+  `0x00c90754` (az `[this+0x2a4]` INavigation-vtábla) COL-ja ugyanezt a teljes objektumot
+  adja (`mdisp 0x2a4`). Tehát mind a négy hivatkozás `CThumbUI`-objektumon van.
+- **Konstruktor-írás:** `ebx` a `0x005643eb`-ben `xor ebx, ebx`-szel nulla, és a teljes
+  függvényben ezen kívül nincs írás `ebx`-re (az egyetlen más `pop ebx` a `0x005651c3`,
+  a `0x00564b2e` után). Tehát a jelző **0-ra inicializálódik**.
+- **Mit kapcsol a `0x005e6329`:** a `0x005e60d0` VK-switch táblája (a `0x005e61f1`
+  `jmp`; index = `vk − 0xd`, bájttábla `0x005e66a4`, ugrótábla `0x005e6614`) dekódolva:
+  **`vk 0x78` (F9) → `0x005e6329`**, `vk 0x12` (Alt) → `0x005e65dc`, `vk 0x11` (Ctrl) → a
+  `0x005e65f7` kilépés. Az F9-ág: `flag = !flag` (egyetlen `sete` + `mov`), módosítóellenőrzés
+  **nélkül** az ágban.
+- **Az ág előtti kapuk (mért):** (i) csak `WM_KEYDOWN` (`0x100`); (ii) a `[esi+0x10]`
+  eseményjelző `0x04` bitje kell (`test byte [esi+0x10], 4; jle` a `0x005e6178`-ban; kivétel
+  csak az F12, `0x7b`); (iii) a `[this+0x30d4]` módmező **nem** 2, 4 vagy 6 (a `0x005e60e6`
+  három `sub 2 / je`-je; mód 2, 4, 6-ban a billentyűkezelő azonnal kilép, minden billentyűre).
+  A módosító-bitek a `0x005e61a5`–`0x005e61b8` `setg`-jeiből (bitek `0x08`, `0x02`, `0x04`)
+  a `0x005c5f90` 6 bájtos rekordjába és a `0x005c5fc0` keymap-keresésbe mennek (`[this+0xcdc]`
+  tábla). **Nem igazolt:** hogy a `0x04` bit a Ctrl-e. A „Ctrl+F9” név a 10.9 szerinti Ctrl-ágból
+  jön; ebben a körben a kiváltó üzenet-rekord írója nincs követve.
+
+**B) A `[this+0xdc4]` felhasználói hatása (egy mondatban):** F9 megfordítja a jelzőt;
+bekapcsolt jelzőnél a `0x00571e50` frissítésekor, ha a kijelölt index ≠ −1 és ≠ a
+`[this+0xe64]` (előnézet), a `0x00578dc0(0)` a megjelenített előnézet **felirat- és
+törlés-állapotát** frissíti (`0x005f89a0` → `0x009cd7e0`), a kép **nem** vált — a `[this+0xe64]`-et
+sem a `0x578dc0`, sem a `0x5f89a0` nem írja.
+
+**C) A `0x00571e50` kapu (ellenőrizve, a 10.23 pontos):** `0x572043`: `[0xd67914] ≠ 0`,
+előnézet-singleton `0x00c88a2c` nem nulla és `[+0x20c] == 0`; `esi = −1`; `0x572078`:
+`[this+0xdc4] ≠ 0` → `esi = call 0x6cfe10([[this+0x2bc]+0x346c])`; ha `esi ≠ −1` és
+`esi ≠ [this+0xe64]` → `[this+0x2a4]`-vtábla `+0x2c` (`INavigation` 11. slot) `push 0`.
+
+**D) A `0x00578dc0(arg=0)` ága (a 10.23 hívása):** feltételei sorrendben: (1)
+`[0xd67914] ≠ 0`, különben `0x578ef8` és a caption-ág kimarad; (2) előnézet-singleton
+`[+0x20c] == 0`; (3) `0x00562d00` (kapuzó, `false`; a `0x009e39b0` láthatósági láncot hívja a
+`0x00c95f70`, `0x00c95ae4`, `0x00c98adc` singletonokra — **nem azonosított**); (4) `arg == 0` →
+`0x005f89a0(this)`; utána a mód-jumptable.
+
+**E) ⛔ A `[this+0x30d4]` módmező a `0x005f89a0`-ban NINCS — a 0x578dc0-ban van.** A
+kérdés/feladat szerint a módágak a `0x005f89a0`-ban lennének; a mért szöveg szerint a
+`0x005f89a0` egyetlen `0x30d4`-hivatkozást sem tartalmaz (`[ecx+0x2c4]`, `[esi+0x2bc]`,
+`[esi+0xe64]`, `[esi+0x2ac]`, `[+0x20c]` van benne). A módágak a **`0x00578dc0`** `0x578e7e`–
+`0x578e90` jumptable-jében vannak (`0x00578f34` ugrótábla, `0x00578f40` indexbájtok; a
+10.23 ezt helyesen írta, a feladat megfogalmazása nem):
+
+| mód | ág | mit hív (mért) |
+|---|---|---|
+| 0 | `0x578e97` | `0x005f8160` (fülkezelő; a 10.23 szerinti `editpanel/tab1`/`movietab` ág) |
+| 1, 3 | `0x578e9e` | semmit (a `[this+0xc04]`-ág) |
+| 2, 4, 5, 6 | `0x578edc` | `0x569620`, majd `0x005f8d80` |
+| ≥ 7 | `0x578e9e` | semmit |
+
+- **Mód-író (mért):** `0x00564896` (konstruktor, `ebx = 0` → mód 0 kezdetben) és
+  `0x0057c21a` a `0x0057bb50` függvényben: `SetMode(this, flag: byte [+0x30d0], mode: dword)`
+  (`[+0x30d0] = flag`, `[+0x30d4] = mode`; a végén az `[ebp+0x10]` az új mód). A `0x0057bb50`
+  hívóit nem követtem végig.
+- **`0x005f8160` (mód 0), részben:** `[this+0x337c] = 0`; `call 0x50ccd0` eredményére
+  switch: `1 → 0x5d7780`, `2 → 0x5d77d0`, `3..5 → 0x5d78d0`, különben dinamikus típus-ellenőrzés
+  (`0x00c94b8c`-os üzenet). A `0x50ccd0`, `0x5d7780`, `0x5d77d0`, `0x5d78d0` célja nincs azonosítva.
+
+**F) A PopDisplay vtáblája és a bitkép (#4699).** A `0x00cb36c4` vtábla 9 slotja
+(`.rdata`-ból, mért): `0:0x774ad0 1:0x5abe20 2:0x983840 3:0x775390 4:0xaa5760 5:0x983270
+6:0x9842d0 7:0x774bc0 8:0x985550`. A `0xcb36c4`-re `.text`-ben csak a `0x00774a00` és a
+`0x00774af0` hivatkozik (konstruktor-lánc); más kód nem tesztel vtáblát ilyen cím szerint.
+
+- **`[obj+0x24]` nem a popupon van, hanem a `[popup+0x8c]`-n.** A `0x009aa720` (WM_PAINT
+  rajzoló, `0x00774c5f`-ből) `obj = [this+0x8c]`; a `0x00774a00` konstruktor a `+0x8c` részt
+  pixel-pufferként állítja be: `+0x08` szélesség, `+0x0c` magasság, `+0x10` bitek mutatója,
+  `+0x24` HBITMAP (`0`-ra induló).
+- **A bitkép írója: `0x009a9b30`.** Az index szerint ez hívja a **`CreateDIBSection`**-t
+  (`GetDC`/`ReleaseDC` mellett; a `0x009a9c2e` `call [0xc40180]` az IAT-hívás, az API-nevet
+  az index a `func_addr` oszlopból adja); a `0x009a9c36` `mov [esi+0x24], eax` a hívás után
+  írja a HBITMAP-et. A `[esi+0x10]` címe (`lea edi,[esi+0x10]`) a bitek kimeneti mutatóját
+  adja (következtetés: a `ppvBits`), a `push 0x28` a BITMAPINFOHEADER mérete. Hibaágon `0`-t ír
+  (`0x009a9bba`, `0x009a9c72`).
+- **A `0x009a9b30` hívója: `0x009a8a30`** (79 bájt): `[+0x24] = 0`, és ha a `+0x08`/`+0x0c`
+  nem nulla, a `0x009a9b30`. A `0x009a8a30`-at a `0x00774d60` (frissítő) `0x0077516e`-nál és a
+  `0x007753f0` (hover-tick) `0x00775506`-nál hívja. A konstruktor (`0x00774a52`) méret nélkül
+  hívja (nincs allokáció).
+- **A tartalom:** a `0x00774d60` a `[this+0xb8]` indexű elemre kéri a `[owner+0x270]` vtábla
+  `+0x04` slotját (`owner = [this+0x88]`), a kimenetet a `0x009aabf0` (pixel-másolás) viszi a
+  `[popup+0x8c]` bufferbe. **Tehát a bélyegkép az alkalmazás saját elemének képe, nem
+  képernyőkép.**
+
+**G) A popup megjelenésének kiváltója (mért út).**
+- **Alt-ág:** `0x005e65dc`: `[panel+0xe78] ≠ 0` és `[panel+0xe70] ≠ −1` → `0x00571a80(panel,
+  [panel+0xe70])` (`0x005e65f2`).
+- **A `0x00571a80` (újraankerez):** `MoveWindow` a popupon (`0x571b32`: `[popup]`-vtábla slot 4),
+  `[popup+0xb8] = index` (`0x571de4`), majd **`0x00774d60`** (`0x571dfa`, feltétel nélkül).
+- **A `0x00774d60`:** a bitkép-másolás után **`0x00775320`** (`0x7750ca`). A `0x775320`:
+  `[this+0x6c]` HWND-re, ha nem látszik vagy minimalizált (a két IAT-hívás sorrendje
+  következtetés, lásd H) → **`ShowWindow(h, 5)`** (SW_SHOW). A `[+0xc8]/[+0xcc]` gyorsítótár az `[owner+0x2bc]+0x346c` objektum `+0x80/+0x84`-ből.
+  A `0x774d60` korábbi kilépéseit nem tártam fel teljesen.
+- **Másodlagos anchor-hívó:** `0x005c29a9` (`0x005c24c0`-ban) `0x571a80(this, [ebx+0x28], −1)`;
+  a `−1` miatt az index a `[this+0xe64]`. Kapuja (`0x005c2410`, `0x009c84a0`) nem azonosított.
+- **Elrejtés:** a tick végén a **vtábla slot 3** (`0x775390`, `ShowWindow(h, SW_HIDE)`; a hívás
+  `0x77552c`-nál), `[+0xc8] = [+0xcc] = 0`.
+
+**H) A `Show(true)` (slot 2 = `0x983840`) hívói — NEM AZONOSÍTOTTAK.**
+- A `0x983840` törzse: `[this+0x6c]` HWND; ha `IsWindowVisible == 0` vagy `IsIconic ≠ 0`
+  → `ShowWindow(h, arg ? 5 : 8)`. (A két IAT-hívás sorrendje az `imports.csv`-ből nem derül
+  ki; a fenti hozzárendelés a törzs elágazásából következik.)
+- A **popup-osztály** kódjában (`0x774a00`–`0x775800`) **nincs** `[reg+8]`-slot-2 hívás; a
+  `0x571a80` csak slot 4-et hív a popupon; a `0x576a20` (bezárás) slot 5-öt `arg = 1`-gyel, és
+  `[this+0x31a8] = 0`-t ír.
+- A **`0x983840`-re közvetlen E8-hívás egyetlen** van: `0x009b9a3c` (`0x009b9a30`-ban). Az a
+  függvény `[this+0x6c]`-t és `[this+0x88]`-at olvas (a popup elrendezésével egyezik), de nem
+  a popup osztálya: a vtáblája nincs azonosítva (a `.text` imm-keresése nem találja a
+  `0x009b9a30`-at; a vtáblák a `.rdata`-ban vannak, azt ebben a körben nem kerestem végig).
+- **Következtetés:** a popup `Show(true)` ágát a slot 2 virtuális hívása adná, de annak
+  hívója nincs azonosítva. A megjelenést a mért út (G) adja: `0x775320` `ShowWindow(5)`-öt.
+
+**I) Kész, ha — mindkét pontra.**
+- **#4698 (Ctrl+F9):** a hatás **részben** bizonyított: a jelző olvasói/írói teljesek, a
+  felirat- és törlés-állapot-frissítés bizonyított (A–D). **Nincs kész**: a látható állapot
+  (a `0x9cd7e0` bool-jának jelentése, a `0x562d00`-gate, a módágak 0/1/3/5) nincs végigkövetve.
+  Nálunk a Ctrl+F9-nek nincs megfelelője (`grep`: nincs `F9`/`captiontrash`).
+- **#4699 (Ctrl+Alt popup):** a kiváltó lánc (Alt → `0x571a80` → `0x774d60` → `0x775320` →
+  SW_SHOW) és a bitkép tartalma (az elem képe) **bizonyított**. **Nincs kész**, mert (a) a
+  kurzor-összerendelés nyitott: a `[panel+0xe70]` a `0x0056b6f0`-ban `= [this+0xe64]`-ként
+  íródik (`0x0056b731`), az `[this+0xe64]`-et pedig a `0x005704d0` írja (`0x005704fe`,
+  `0x00570644`), a `0x56b6f0` argumentuma a `0x00641c80` paramétere (`0x0064255f`), amelynek
+  forrása (egérpozíció → elemindex) **nincs követve**; (b) a `Show(true)` hívója nincs
+  azonosítva; (c) a `[panel+0xe78]` (az Alt-kapu) írója nincs pásztázva (a konstruktor írja
+  `0x00564d1a`-nál). Nálunk nincs `EnableHover` és nincs `PopDisplay` (10.24).
+
+**Következő lépés (ebben a sorrendben):**
+1. A `0x00641c80` paraméterének hívóláncja (ki hívja, és honnan jön az elemindex): a
+   `0x00641c80` és a `0x005709a0` hívói, az `egérpozíció → index` átalakítás megtalálása.
+2. A `0x00562d00` kapu három singletonja (`0x00c95f70`, `0x00c95ae4`, `0x00c98adc`) és a
+   `0x009e39b0` láncvizsgálat azonosítása.
+3. A `[panel+0xe78]` írói (`.text`-pásztázás `0xe78`-ra) és a `0x005c24c0` kapuja
+   (`0x005c2410`, `0x009c84a0`).
+4. A `0x00774d60` korábbi kilépéseinek feltárása: a `0x775320` feltétel nélkül fut-e minden
+   frissítésnél.
+
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
 A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.
