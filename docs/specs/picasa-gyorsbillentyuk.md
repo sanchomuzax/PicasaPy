@@ -1409,6 +1409,103 @@ el, kell-e külön fejlesztői jegy.
 a Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
 gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem történt.
 
+### 10.23 #4698 és #4699 — a Ctrl+F9 és a Ctrl+Alt vtábla-célja (2026-10-12)
+
+**Módszer.** A vtábla-hívások céljait a bináris bájtjaiból olvastam: a PE
+VA-olvasó a `Picasa3.exe` `.rdata`-ját és a `.text`-et, a RTTI-t a
+complete-object locatorból (COL) vettem, a diszasszemblálás a `pe_dis.py`
+capstone-os modulja. A Ghidra-köteg (`00571e50.c`, `00571a80.c`) csak a
+belépési pontokat adta; a célokat a diszasszemblátumban ellenőriztem. Az IAT-
+hívások API-neve nincs az indexben, ezeket névtelenül írom le. Futtatás nem
+történt.
+
+**A vtábla-hívás típusa (mindkét billentyű).** A `0x005720af`–`0x005720c0`
+a `[this+0x2a4]` vtábla `+0x2c` slotját hívja: `lea ecx,[this+0x2a4]`,
+`push 0`, `call eax`. A this tehát a **részobjektum** (`this+0x2a4`), az
+egyetlen stack-argumentum 0.
+
+- A `0x00c90754` vtábla COL-ja (`0x00cff578`): a teljes objektum
+  `.?AVCThumbUI@@`, a this-eltolás `0x2a4`. A `CThumbUI` bázislistájában az
+  `mdisp = 0x2a4` a `.?AVINavigation@@`. A `[this+0x2a4]` tehát az
+  **INavigation** interfész vtáblája, a `+0x2c` a 11. metódus-slot.
+- A `0x00578dc0` a this-et `lea eax,[esi-0x2a4]`-gyel a teljes objektumra
+  igazítja, ezért a `[this+0xe64]`-olvasások helyesek. Az argumentumot
+  `cmp byte ptr [ebp+8]` olvassa (bool), `ret 4`.
+
+**#4698 — Ctrl+F9 (`[panel+0xdc4]`)**
+
+- **Kapu (`0x00571e50`, `0x00572078`–`0x005720c0`, bájtból):** `[this+0xdc4]` ≠ 0,
+  a kiválasztási index (`0x6cfe10`) ≠ −1, és ≠ `[this+0xe64]` (a
+  előnézetben látott kép). Ekkor `INavigation::+0x2c(0)` hívódik.
+- **A célfüggvény (`0x00578dc0`, arg = 0 ág):** `0x005f89a0(this)`, majd a
+  `[this+0x30d4]` módmező 7 ágú jumptable-je, és ha `[this+0xea8] ≠ 0`, a
+  `0x5696c0` / `0x717260` / `0x56a9a0` sor.
+- **`0x005f89a0` olvasata** (`0x005f89a0`–`0x005f8ab9`):
+  1. csak ha az `editpanel/preview` objektum (`0x009c2fc0`, `0xc88a2c`)
+     `[+0x20c] == 0`;
+  2. a `[this+0xe64]` indexű elem rekordját kéri (`[this+0x2bc]+0x48`
+     objektum, vtábla `+0x50`), és ebből bool-t képez;
+  3. ezt a `0x009cd7e0`-nek adja (singleton `0xc8eb98`). A string-xref szerint
+     ez az `editpanel/caption` és az `editpanel/captiontrash` állapota;
+  4. a `[this+0x2ac]+8` slotot hívja a `[this+0xe64]` indexszel;
+  5. `0x00579480(0,1)`: nézetfrissítés, a `0x571e50` ugyanezt hívja.
+- **Nem ír `[this+0xe64]`-et.** A `0x578dc0` és a `0x5f89a0` teljes
+  disasszemblátumában nincs `mov … [… +0xe64]` írás. Ezért **a kijelölt képre
+  váltás nem bizonyított**.
+
+**Bizonyított (két független útról):** (a) a kapu és a hívás bájtjai
+(`0x571e50` és `0x578dc0`, arg = 0 ág); (b) az `editpanel/caption` és
+`editpanel/captiontrash` string-xref-ek a `0x5f89a0`-hoz. Összegezve: a
+megjelenített előnézeti kép **felirat- és törlés-állapota** frissül; a
+kép nem váltódik.
+
+**Nyitott:** a `[this+0x30d4]` módmező írói és a jumptable ágai (`0x005f8160`:
+`editpanel/tab1` és `editpanel/movietab` string-xref, tehát mód 0-ban lehetséges
+fülváltás; `0x00569620` és `0x005f8d80`: módok 2, 4, 5, 6); a `0x009cd7e0`, a
+`[this+0x2ac]+8` és a `0x00401000` célja (utóbbi névtelen stub).
+
+**Kész, ha:** **nincs.** A felhasználói hatás részben bizonyított (felirat és
+törlés-állapot), a kijelölt képre váltás nem; a módágak nincsenek bejárva.
+Következő lépés: a `[this+0x30d4]` írói a `.text`-ben (mintára), és a
+`0x005f8160` dumpja.
+
+**#4699 — Ctrl+Alt (VK `0x12`)**
+
+- **Kapu (`0x005e65dc`, bájtból):** `[panel+0xe78] ≠ 0` és `[panel+0xe70] ≠ −1`,
+  akkor `0x00571a80(panel, [panel+0xe70])`. Az `EnableHover` név a binárisban
+  nincs azonosítva; a `[panel+0xe78]` lehet az, a bináris nem nevezi meg.
+- **A gyerekobjektum nem CThumbUI, hanem `PopDisplay`.** A `[panel+0x31a8]`
+  (0xd0 bájt) konstruktora `0x00774a00`, ami a `PopDisplay` vtáblát
+  (`0x00cb36c4`, 9 slot) írja. A `0x00571a80` és az `osszefoglalo.md` #26 e
+  objektumot „CThumbUI”-nak nevezi; ez a név pontatlan.
+- **Ankerezés és geometria (`0x00571a80`):** újraankerez, ha a gyerek nincs,
+  nincs HWND-je, nem látszik, vagy `[child+0xb8] ≠ index`. Ekkor a
+  `[child+0x10]` slot (`0x00aa5760`, slot 4) a szülő-rect alapján
+  `call [0x00c40814]`-et indít (MoveWindow-alakú: hwnd, x, y, w, h, 1; az
+  IAT-név nincs az indexben), majd `0x00774d60(child)`. A `0x00571a80`
+  `+0x18`, `+0x1c`, `+0x2c` vtábla-hívásait nem kötöttem a gyerekhez; az
+  `osszefoglalo.md` #26 ezt állítja, ezt nem igazoltam.
+- **Alt-flag és frissítés (`0x00774d60`):** `[child+0xb4] = !(Alt lenyomva)`
+  csak akkor, ha `[0x00d67849] ≠ 0` (a „Picasa az előtérben” jelző,
+  `docs/specs/00-index.md` #2224); különben `[child+0xb4] = 1`. Ezután
+  `GetClientRect`, indexágak, és `InvalidateRect` + `UpdateWindow` a gyerek
+  HWND-n.
+- **Olvasó:** a `0x007753f0` (nem vtábla-slot; hívója nincs az indexben)
+  olvassa a `[child+0xb4]`-et (`0x0077543c`, `0x00775495`). A kurzor
+  `LoadCursor(NULL, 0x7f89)` (IDC_HAND) + `SetCursor` (IAT-név nélkül). Ha
+  `[child+0xb4] == 0`, a `[0xd67849] ≠ 0` és az Alt élőben le van nyomva,
+  a függvény `10`-zel kilép; egyébként a `0x007754b0`-ágra megy (`0x009805e0`
+  és a további hover-feldolgozás).
+
+**Bizonyított:** a kapu, a gyerek típusa (PopDisplay), a rect-hívás, az Alt-
+flag írása és az olvasó elágazása. **Nyitott:** a látható tartalom (a
+`0x007754b0`-ág és a `+0x18` = `0x009842d0`, `+0x1c` = `0x00774bc0` slotok
+rajzolása), a `0x007753f0` hívója, és hogy az ablak `ShowWindow`-zal látszik-e.
+
+**Kész, ha:** **nincs** — a látható hatás nincs megnevezve. Következő lépés: a
+`0x007753f0` hívóinak és a `0x00774bc0`/`0x009842d0` dumpja, valamint a
+`ShowWindow`-hívás keresése a `0x00571a80`-ban.
+
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
 A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.
