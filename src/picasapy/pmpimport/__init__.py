@@ -18,6 +18,7 @@ from .thumbindex import (
     read_thumb_index,
     resolve_path,
 )
+from .wordhash import WordHashFormatError, read_wordhash
 
 __all__ = [
     "CACHE_NEVEK",
@@ -31,11 +32,13 @@ __all__ = [
     "PmpTable",
     "ThumbIndexEntry",
     "ThumbIndexFormatError",
+    "WordHashFormatError",
     "iter_photo_records",
     "open_cache_store",
     "parse_deferred_region",
     "read_pmp_column",
     "read_table",
     "read_thumb_index",
+    "read_wordhash",
     "resolve_path",
 ]

@@ -122,6 +122,7 @@ class TestMigrationV20TakenAtOverride:
             conn.execute("DROP INDEX idx_photos_video_metadata_missing")
             conn.execute("ALTER TABLE photos DROP COLUMN taken_at_override")
             conn.execute("ALTER TABLE photos DROP COLUMN movie_format")
+            conn.execute("ALTER TABLE photo_albums DROP COLUMN place")
             conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
             conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
             conn.execute("PRAGMA user_version = 19")
@@ -281,6 +282,7 @@ class TestFaceMigration:
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             # #4580: a videómezők csak a v21-ben érkeznek
             "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
             "ALTER TABLE photos DROP COLUMN frame_rate;\n"
             "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "PRAGMA user_version = 8;"
@@ -349,6 +351,7 @@ class TestFaceEmbeddingMigration:
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             # #4580: a videómezők csak a v21-ben érkeznek
             "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
             "ALTER TABLE photos DROP COLUMN frame_rate;\n"
             "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "PRAGMA user_version = 9;"
@@ -402,3 +405,105 @@ class TestFaceEmbeddingMigration:
                 )
             }
             assert "face_group" in tables
+
+
+class TestAlbumPlaceMigration:
+    """#4599 (séma v22): a `photo_albums.place` — az album-tagság kézi helye.
+    NULL-lal jön a meglévő sorokra: a meglévő album sorrendje nem változik."""
+
+    def _v21_database(self, tmp_path):
+        path = tmp_path / "regi.db"
+        raw = sqlite3.connect(path)
+        raw.executescript(DDL)
+        raw.executescript(
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
+            "PRAGMA user_version = 21;"
+        )
+        raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
+        raw.executemany(
+            "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
+            " VALUES (?, 1, ?, 'image', 10, 1)",
+            [(1, "b.jpg"), (2, "a.jpg")],
+        )
+        raw.executemany(
+            "INSERT INTO photo_albums (photo_id, token) VALUES (?, 'tok')",
+            [(1,), (2,)],
+        )
+        raw.commit()
+        raw.close()
+        return path
+
+    def test_az_oszlop_megjelenik_null_ertekkel_az_adat_megmarad(self, tmp_path):
+        with open_index(self._v21_database(tmp_path)) as conn:
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+            rows = conn.execute("SELECT photo_id, place FROM photo_albums").fetchall()
+            assert sorted((r[0], r[1]) for r in rows) == [(1, None), (2, None)]
+
+    def test_hely_nelkuli_album_a_mai_rendben_all(self, tmp_path):
+        from picasapy.index.albums import album_photos
+
+        with open_index(self._v21_database(tmp_path)) as conn:
+            assert [r.name for r in album_photos(conn, "tok")] == ["a.jpg", "b.jpg"]
+
+    def test_csak_az_albumos_mappa_pecsetje_torlodik(self, tmp_path):
+        path = self._v21_database(tmp_path)
+        raw = sqlite3.connect(path)
+        raw.executescript(
+            "CREATE TABLE IF NOT EXISTS folder_scan_state ("
+            " path TEXT PRIMARY KEY, mtime_ns INTEGER NOT NULL,"
+            " ini_mtime_ns INTEGER, filetype_signature TEXT);"
+            "INSERT INTO folders (id, path) VALUES (2, '/album-nelkul');"
+            "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
+            " VALUES (3, 2, 'x.jpg', 'image', 10, 1);"
+            "INSERT INTO folder_scan_state (path, mtime_ns) VALUES"
+            " ('/kepek', 5), ('/album-nelkul', 6);"
+        )
+        raw.commit()
+        raw.close()
+        with open_index(path) as conn:
+            rows = [r[0] for r in conn.execute("SELECT path FROM folder_scan_state")]
+        assert rows == ["/album-nelkul"]
+
+    def test_a_valtozatlan_ini_albumorder_kulcsa_a_migracio_utan_is_bekerul(
+        self, tmp_path
+    ):
+        # a scan-állapot miatt a változatlan ini-t a szinkron kihagyná: a
+        # migrációnak érvényteleníteni kell, különben a meglévő `albumorder=`
+        # sosem jut az indexbe
+        from picasapy.index import sync_tree
+        from picasapy.index.albums import album_photos
+        from support.jpeg_factory import make_jpeg
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        make_jpeg(root / "b.jpg")
+        token = "604c294a68b0de9cc9222c4714f289d5"
+        (root / ".picasa.ini").write_text(
+            f"[.album:{token}]\nname=X\ntoken={token}\n"
+            f"[a.jpg]\nalbums={token}\nalbumorder={token}:2.0\n"
+            f"[b.jpg]\nalbums={token}\nalbumorder={token}:1.0\n",
+            encoding="utf-8",
+        )
+        # a frissességi védőablak (2 s) miatt a fájlokat "megöregítjük" —
+        # különben a szinkron amúgy sem hagyná ki a mappát
+        import os
+
+        regi = 1_700_000_000
+        for utvonal in (root, *root.iterdir()):
+            os.utime(utvonal, (regi, regi))
+        db = tmp_path / "index.db"
+        with open_index(db) as conn:
+            sync_tree(conn, root)
+        # visszalépés v21-re: az oszlop nincs meg, a scan-állapot viszont igen
+        raw = sqlite3.connect(db)
+        raw.executescript(
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
+            "PRAGMA user_version = 21;"
+        )
+        raw.commit()
+        raw.close()
+
+        with open_index(db) as conn:
+            sync_tree(conn, root)  # az ini változatlan
+            assert [r.name for r in album_photos(conn, token)] == ["b.jpg", "a.jpg"]
