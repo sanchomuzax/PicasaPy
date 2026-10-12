@@ -10,6 +10,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.9.74] – 2026-10-12
 
 - Fejlesztőknek: a tesztek, a spec és egy kódkomment Windows-útvonal-példái helyettesítő felhasználónevet és mappanevet használnak (#4877).
+- Fejlesztőknek: a gyökér-áthelyezés tesztje a háttér-szinkron indulása előtt és a lebontás után lefuttatja a szemétgyűjtést, így a CI-n nem omlik össze (#4896).
 
 ## [0.9.73] – 2026-10-11
 
