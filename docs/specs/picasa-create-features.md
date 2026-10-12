@@ -2013,6 +2013,105 @@ létezik: **bájtos egyezés nincs, eltérés van.**
    `faces=` mező.
 5. ⬜ a slot 12 kimenete (`0x00a4a240`): honnan jön a `w,h` forrásméret.
 
+**3. kör (2026-10-12, #4856) — eredmények**
+
+*Bizonyítottsági fok tételenként a lenti listában. A natív mérőkód:
+`/tmp/claude-1000/kd-r4856/t_e5e20.py` és `t_a4a240.py` (a `ee50.py`
+harness mintájára, qemu-i386); a modellek a disassemblyből íródtak,
+nem a célszámból.*
+
+**(a) A slot 12 (`0x009e08b0`) törzse — olvasva, a 2. köri nyitott pontra.**
+
+- *Hívás:* `this` az `ecx`; a `[this]` vtábla `+0x28` (slot 10, `0x009e0ad0`)
+  adja az `S` téglalapot (4 × int32, `[esp+0x10…0x1c]`).
+- *Ágak* (a törzs sorrendjében):
+  1. `S` érvényes (`x0<x1` és `y0<y1`) → a buffer `buf = 0x009de880(this)`
+     (10 dword). A `0x009e6340` lépés **nem** fut.
+  2. `S` érvénytelen, de `[this+0x213] ≠ 0` → ugyanaz, mint az 1. ág.
+  3. `S` érvénytelen, `[this+0x213] = 0`, `[this+0x244] ≠ 0` → `S` az
+     alobjektum slot 10 téglalapja; `buf = 0x009de880(sub)`. **Itt** jelentkezik
+     a bájtos jelző: ha `[ebp+0xc] ≠ 0`, lefut a `0x009e6340(this+0x1dc, &buf)`,
+     különben kimarad.
+  4. `S` érvénytelen és `[this+0x244] = 0` → az 1. ág.
+- *Kimenet:* `0x00a4a240(out, &S, buf)` — ld. (c).
+- *A bájtos jelző:* a `0x0076ee50` (a cover-illesztés hívója) **0**-val hívja
+  (`0x0076eeb9`: `xor esi,esi; push esi`). A `0x9e6340`-lépés tehát a
+  cél-téglalap csőben **nem fut**; a `1`-es hívók nincsenek azonosítva.
+- ⇒ **Az arc-adat NEM a slot 12-ben van.** A slot 12 a nézet/kép
+  téglalapját adja (slot 10), affin leképezéssel. Az arc-téglalap a
+  konstruktor argumentumából (`0x0076ed30`, `R1`/`R2`) jön, és a `+0x4b0`
+  célba kerül.
+- *Többarcos választás — csak a konstruktor szabálya olvasható:* `R2`
+  felülírja `R1`-et, ha `R2` nem sentinel; `R1` marad, ha `R2` sentinel.
+  Hogy `R1`/`R2` mit jelent (első arc? legnagyobb? két különböző forrás?),
+  **NYITOTT**. A „legnagyobb arc" vagy „az összes befoglalója" egyik
+  választás sem látszik a kódban.
+- *Az `R1`/`R2` forrása — NYITOTT, de van nyom.* A hívók (`0x008136fa`,
+  `0x00813af4` → `0x00771dc0` → `0x00771e60` → `0x0076ed30`) 16 bájtos
+  blokkot adnak. A `0x008136fa` hívónál ez az eredeti keret
+  `[esp+0x78…0x84]` négy dword-je; a `0x00813af4` hívó blokkját nem
+  vizsgáltam részletesen. A hívó függvények fejlécét **nem** azonosítottam,
+  és az `ini` `faces=` mezőt nem követtem. Az
+  `faces=rect64(…)` (ld. `picasa-arcfelismeres.md`) várható jelölt, de **nincs
+  bizonyítva**.
+- *Nem mért:* a `0x009de880` és a `0x009e6340` belseje, és a slot 10
+  `[this+0x20f] = 0` ága (ez a vtábla `+0x20` virtuális hívását végzi;
+  a cache-ág, `[this+0x188…0x194]`, olvasva van).
+
+**(b) Időzítés — a `0x009e5e20` natívan mérve, 11/11 egyezés.**
+
+- A `0x00cb3294` másodlagos vtábla slot 2 (`0x0076bf00`) egy `double`-t kap,
+  és `0x009e5e20`-nak adja `this+0x54` mellett. **A visszatérési értéket
+  eldobja, és nem ír mezőt.** ⇒ a 2. köri feltevés („a `this+0x54`-re
+  továbbítja, ez a legerősebb időparaméter-jelölt") **helyesbítendő**: a `t`
+  ezen az úton nem tárolódik.
+- A `0x009e5e20` egy **időbeli végpont-predikátum** (visszatérési `AL`),
+  nem görbe. Mód `m = [P+0x14] >> 1`: `m = 0` → 1; `m ≥ 2` → 0; `m = 1`,
+  `a = [B+0x18]`, `b = [B+0x20]`: `a == b` → 1; `(t − a)/(b − a) > 1.0` → 1;
+  egyébként 0. (`1.0` = `0x00c7e328`.)
+- A görbét (lineáris vagy más) és a kezdő/végpont téglalapot **nem** ez a
+  függvény adja. A kirajzoló (`0x0076f8xx–0x0076fb40`) **nincs azonosítva**.
+
+**(c) A pixelmatematika — a `0x00a4a240` natívan mérve, 9/9 egyezés.** Ez a
+slot 12 kimenet-építője, minden ágon közös utolsó lépés.
+
+- Bemenet: `S` (4 × int32: `x0, y0, x1, y1`), és `buf` első 6 float-ja
+  (`m0…m5`).
+- Modell (a disassemblyből): a kódban négy int-betöltés van (`edx+0, +4,
+  +8, +0xc`), tehát a **négy sarok** (`(x0,y0)`, `(x1,y1)`, `(x0,y1)`,
+  `(x1,y0)`) affin-leképezése: `x' = m0·x + m1·y + m2`, `y' = m3·x + m4·y + m5`.
+  Ezután bbox (min/max), és minden koordinátára `rne(v − 0.499)`.
+- ⚠️ **A kerekítési konstans 0.499, nem 0.5.** A `0x00cf4160` double 0.499;
+  a 11,5 → 12 eset (`m2 = 0.999`, `x0 = 11`) natívan ezt igazolja (0.5 esetén
+  11 lenne). A `rne` a `fistp` alapértelmezése (félre-páros).
+- *Első modell-hiba, javítva:* a két-sarkos bbox (`(x0,y0)`, `(x1,y1)`) eltért
+  a natív `(−7,3,13,21)` esetben; a négysarkos bbox egyezik. A javítást a
+  kód négy betöltése indokolja, nem a célszám.
+- *Bájtos összevetés a mai kóddal:* **nincs egyezés.** A
+  `movie/slideshow.py:242–252` a középpontos skálát használja
+  (`scale = 1.12 − 0.12·p`, `cv2.resize`, `addWeighted`); nincs affin-bbox,
+  nincs `0.499`-es kerekítés, nincs `S`-alapú forrás-téglalap.
+
+**(d) Az arc nélküli ág — részben.**
+
+- Natív (2. kör): mindkét `R` sentinel → az `ee50` nem fut, a `+0x448…0x454`
+  nulla marad; az `ee50` `−1` bemenetre `(0,0,0,0)`-t ad.
+- *Nem mért:* a kirajzolás nulla cél-téglalap mellett (a `0x76f8xx` nincs
+  azonosítva).
+
+**Kész, ha — állapot a 3. kör után:**
+1. ✅ a cél-téglalap csöve (`0x0076ee50`) natívan mérve: 10/10 (2. kör).
+2. ⬜ a kirajzoló függvény fejléce (`0x0076f8xx–0x0076fb40`), a görbe, és az
+   időpontok két végponton és három köztes időpontban natívan mérve.
+3. ⬜ az arc nélküli ág kirajzolása a nulla cél-téglalap mellett.
+4. ⬜ `R1/R2` forrása: a `0x008136fa`/`0x00813af4` hívók fejléce, és az
+   `ini` `faces=` mező.
+5. ⬜ a slot 10 (`0x009e0ad0`) és a `0x009de880` belseje — honnan jön `S`
+   és a `buf`.
+6. ✅ a slot 12 kimenet-építője (`0x00a4a240`) natívan mérve: 9/9, a
+   kerekítés 0.499.
+7. ✅ az időbeli végpont-predikátum (`0x009e5e20`) natívan mérve: 11/11.
+
 ### 2.2 Beállítások
 
 - **Slide Duration** csúszka — kiírás: `Slide Duration: %s Sec`.
