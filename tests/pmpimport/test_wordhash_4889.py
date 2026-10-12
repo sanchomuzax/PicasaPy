@@ -12,7 +12,8 @@ from picasapy.pmpimport.db3_atvetel import rekordokat_atvesz
 from support.pmp_factory import build_pmp_column, build_thumb_index
 
 _FOLDER_TOKEN = "]album:folder-token"
-_ALBUM_TOKEN = "]album:album-token"
+_ALBUM_TOKEN = "]album:604c294a68b0de9cc9222c4714f289d5"
+_ALBUM_ID = "604c294a68b0de9cc9222c4714f289d5"
 _FOLDER = r"C:\Users\felhasznalo\Pictures"
 
 
@@ -56,13 +57,14 @@ def _db3(tmp_path, *, wordhash: bytes | None = None):
         build_pmp_column(0x0, [""] * 7)
     )
     (tmp_path / "albumdata_filename.pmp").write_bytes(
-        build_pmp_column(0x0, [_FOLDER, _FOLDER + "\\album"])
+        build_pmp_column(0x0, [_FOLDER, _FOLDER + "\\album", ""])
     )
+    # A harmadik albumdata sor üres tokenje nem indít importot.
     (tmp_path / "albumdata_token.pmp").write_bytes(
-        build_pmp_column(0x0, [_FOLDER_TOKEN, _ALBUM_TOKEN])
+        build_pmp_column(0x0, [_FOLDER_TOKEN, _ALBUM_TOKEN, ""])
     )
     (tmp_path / "albumdata_category.pmp").write_bytes(
-        build_pmp_column(0x1, [2, 0])
+        build_pmp_column(0x1, [2, 0, 0])
     )
     if wordhash is not None:
         (tmp_path / "wordhash.dat").write_bytes(wordhash)
@@ -74,6 +76,12 @@ def remapper(tmp_path):
     local_folder.mkdir()
     for name in ("a.jpg", "b.jpg", "c.jpg"):
         (local_folder / name).write_bytes(b"synthetic photo")
+    (local_folder / ".picasa.ini").write_text(
+        "[a.jpg]\nalbums=" + _ALBUM_ID + "\n"
+        "[b.jpg]\nalbums=" + _ALBUM_ID + "\n"
+        "[c.jpg]\nalbums=" + _ALBUM_ID + "\n",
+        encoding="utf-8",
+    )
     return PathRemapper.from_dict({_FOLDER: str(local_folder)})
 
 
@@ -84,8 +92,8 @@ def _rendezett_db3(tmp_path):
             7,
             (
                 (_FOLDER_TOKEN, (2, 1, 4, 3, 99)),
-                # A kategória 0 albumlistája ebben a körben nem importálandó.
-                (_ALBUM_TOKEN, (1, 2)),
+                # Album és mappa együtt; az album-lista nem növekvő.
+                (_ALBUM_TOKEN, (3, 1, 2, 4, 99, 2)),
             ),
         ),
     )
@@ -133,6 +141,58 @@ def test_a_mappalista_thumbindex_utvonalakbol_priority_sorrendet_ad(
         "a.jpg": "1.0",
         "c.jpg": "2.0",
     }
+
+
+def test_az_albumlista_albumorder_helyeket_vesz_at_es_szamolja_a_kihagyottakat(
+    tmp_path, remapper
+):
+    from picasapy.ini.document import parse_document
+    from picasapy.pmpimport.importer import beolvas_db3
+
+    _rendezett_db3(tmp_path)
+    beolvasas = beolvas_db3(tmp_path, remapper)
+    report = rekordokat_atvesz(beolvasas.rekordok, backup=False)
+
+    document = parse_document(
+        (tmp_path / "photos" / ".picasa.ini").read_text(encoding="utf-8")
+    )
+    assert {
+        name: document.section(name).get("albumorder")
+        for name in ("a.jpg", "b.jpg", "c.jpg")
+    } == {
+        "a.jpg": f"{_ALBUM_ID}:2.0",
+        "b.jpg": f"{_ALBUM_ID}:3.0",
+        "c.jpg": f"{_ALBUM_ID}:1.0",
+    }
+    assert beolvasas.wordhash_kihagyott == 5
+    assert report.sorrend == 3
+
+
+def test_egy_meglevo_albumhely_minden_tagon_megakadalyozza_az_atvetelt(
+    tmp_path, remapper
+):
+    from picasapy.ini.document import parse_document
+    from picasapy.pmpimport.importer import beolvas_db3
+
+    _rendezett_db3(tmp_path)
+    ini_path = tmp_path / "photos" / ".picasa.ini"
+    ini_path.write_text(
+        f"[a.jpg]\nalbums={_ALBUM_ID}\nalbumorder={_ALBUM_ID}:40.0\n"
+        f"[b.jpg]\nalbums={_ALBUM_ID}\n"
+        f"[c.jpg]\nalbums={_ALBUM_ID}\n",
+        encoding="utf-8",
+    )
+
+    beolvasas = beolvas_db3(tmp_path, remapper)
+    assert beolvasas.rekordok[0].manual_album_places == ((_ALBUM_ID, 2.0),)
+    assert beolvasas.rekordok[1].manual_album_places == ((_ALBUM_ID, 3.0),)
+    assert beolvasas.rekordok[2].manual_album_places == ((_ALBUM_ID, 1.0),)
+    rekordokat_atvesz(beolvasas.rekordok, backup=False)
+
+    document = parse_document(ini_path.read_text(encoding="utf-8"))
+    assert document.section("a.jpg").get("albumorder") == f"{_ALBUM_ID}:40.0"
+    assert document.section("b.jpg").get("albumorder") is None
+    assert document.section("c.jpg").get("albumorder") is None
 
 
 def test_a_meglevo_mappasorrendet_teljesen_erintetlenul_hagyja(
@@ -185,8 +245,8 @@ def test_a_beolvasas_megszamolja_a_wordhash_kihagyott_elemeit(tmp_path, remapper
 
     beolvasas = beolvas_db3(tmp_path, remapper)
 
-    # sor 4: arcrekord, sor 99: nincs a thumbindexben — a kettő kihagyva
-    assert beolvasas.wordhash_kihagyott == 2
+    # Mappa: 4 és 99; album: 4, 99 és a duplikált 2 — összesen öt.
+    assert beolvasas.wordhash_kihagyott == 5
     assert len(beolvasas.rekordok) == 3
 
 

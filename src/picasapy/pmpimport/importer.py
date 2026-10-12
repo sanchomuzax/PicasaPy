@@ -40,6 +40,7 @@ _COLUMNS = (
 #: ott 50 kép). Az `imagedata_star.pmp` oszlopot NEM váltja ki: a kettő
 #: UNIÓJA számít, hogy a régebbi adatbázisok se sérüljenek.
 _STARLIST_NAME = "starlist.txt"
+_ALBUM_WORD_PREFIX = "]album:"
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,8 @@ class PhotoRecord:
     faces: tuple[DeferredFace, ...]
     #: #4889: a Picasa mappalistájából átvett kézi pozíció, ha van.
     manual_priority: float | None = None
+    #: #4900: albumtoken és a wordhash-listában elfoglalt helye.
+    manual_album_places: tuple[tuple[str, float], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -77,8 +80,8 @@ class Db3Beolvasas:
     """Egy db3 könyvtár beolvasásának eredménye."""
 
     rekordok: tuple[PhotoRecord, ...]
-    #: #4889: a wordhash-mappalisták kihagyott elemei (nem fájl, nem
-    #: oldható fel, duplikált sor) — az átvételi jelentés számolja.
+    #: #4889/#4900: a wordhash mappa- és albumlisták kihagyott elemei (nem
+    #: fájl, nem oldható fel, duplikált sor) — az átvételi jelentés számolja.
     wordhash_kihagyott: int = 0
 
 
@@ -110,8 +113,8 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
     entries = read_thumb_index(index_path)
     table = read_table(db3_dir, "imagedata")
     csillagos = _read_starlist(db3_dir)
-    manual_priorities, wordhash_kihagyott = _folder_manual_priorities(
-        db3_dir, entries, remapper
+    manual_priorities, manual_album_places, wordhash_kihagyott = (
+        _wordhash_manual_orders(db3_dir, entries, remapper)
     )
 
     records = []
@@ -160,6 +163,7 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
                 ),
                 faces=faces,
                 manual_priority=manual_priorities.get(entry.index),
+                manual_album_places=manual_album_places.get(entry.index, ()),
             )
         )
     return Db3Beolvasas(
@@ -167,20 +171,21 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
     )
 
 
-def _folder_manual_priorities(
+def _wordhash_manual_orders(
     db3_dir: Path,
     entries: tuple[ThumbIndexEntry, ...],
     remapper: PathRemapper,
-) -> tuple[dict[int, float], int]:
-    """A `category=2` mappák wordhash-listáit thumbindex-sorokra oldja fel.
+) -> tuple[dict[int, float], dict[int, tuple[tuple[str, float], ...]], int]:
+    """A wordhash mappa- és albumlistáit thumbindex-sorokra oldja fel.
 
     A hibás, csonka vagy hiányzó wordhash nem állíthatja le a többi db3-adat
     importját. A lista nem fájl vagy fel nem oldható elemeit kihagyjuk és
-    számmal naplózzuk.
+    számmal naplózzuk. A `category=2` lista mappasorrend, a `category=0`
+    albumképek sorrendje.
     """
     wordhash_path = _find_wordhash(db3_dir)
     if wordhash_path is None:
-        return {}, 0
+        return {}, {}, 0
     try:
         album_lists = read_wordhash(
             wordhash_path, expected_entity_count=len(entries)
@@ -191,7 +196,7 @@ def _folder_manual_priorities(
             "nem olvasható: %s",
             exc,
         )
-        return {}, 0
+        return {}, {}, 0
 
     try:
         albumdata = read_table(db3_dir, "albumdata")
@@ -201,30 +206,37 @@ def _folder_manual_priorities(
             "olvasható: %s",
             exc,
         )
-        return {}, 0
+        return {}, {}, 0
 
     priorities: dict[int, float] = {}
+    album_places: dict[int, list[tuple[str, float]]] = {}
     kihagyott_osszes = 0
     for album_row in range(albumdata.row_count):
-        if albumdata.value("category", album_row) != 2:
+        category = albumdata.value("category", album_row)
+        if category not in (0, 2):
             continue
         token = albumdata.value("token", album_row)
-        filename = albumdata.value("filename", album_row)
         if not isinstance(token, str) or not token.startswith("]album:"):
-            continue
-        if not isinstance(filename, str) or not filename:
             continue
         album_rows = album_lists.get(token)
         if album_rows is None:
             continue
-        local_folder = remapper.remap(filename)
-        if local_folder is None:
-            continue
-        folder_path = Path(local_folder)
+
+        folder_path = None
+        if category == 2:
+            filename = albumdata.value("filename", album_row)
+            if not isinstance(filename, str) or not filename:
+                continue
+            local_folder = remapper.remap(filename)
+            if local_folder is None:
+                continue
+            folder_path = Path(local_folder)
 
         skipped = 0
         seen: set[int] = set()
-        position = 0
+        # A mappák priority-je 0-ról indul (#4889); az albumorder a
+        # specifikáció szerint 1.0…n helyeket használ (#4900).
+        position = 0 if category == 2 else 1
         for row in album_rows:
             if row >= len(entries):
                 skipped += 1
@@ -234,25 +246,38 @@ def _folder_manual_priorities(
                 skipped += 1
                 continue
             local_path = remapper.remap(resolve_path(entries, entry))
-            if local_path is None or Path(local_path).parent != folder_path:
+            if local_path is None:
+                skipped += 1
+                continue
+            if folder_path is not None and Path(local_path).parent != folder_path:
                 skipped += 1
                 continue
             if row in seen:
                 skipped += 1
                 continue
             seen.add(row)
-            priorities[row] = float(position)
+            if category == 2:
+                priorities[row] = float(position)
+            else:
+                album_places.setdefault(row, []).append(
+                    (token.removeprefix(_ALBUM_WORD_PREFIX), float(position))
+                )
             position += 1
 
         kihagyott_osszes += skipped
         if skipped:
             logger.warning(
-                "A wordhash.dat %s mappalistájából %d kihagyott elem "
+                "A wordhash.dat %s %slistájából %d kihagyott elem "
                 "nem fájl vagy nem oldható fel thumbindex-útvonalra",
                 token,
+                "mappa" if category == 2 else "album",
                 skipped,
             )
-    return priorities, kihagyott_osszes
+    return (
+        priorities,
+        {row: tuple(places) for row, places in album_places.items()},
+        kihagyott_osszes,
+    )
 
 
 def _find_wordhash(db3_dir: Path) -> Path | None:

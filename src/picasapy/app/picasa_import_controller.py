@@ -61,8 +61,8 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
     #: (mappák, kulcsszó, hely, arc, kihagyott, wordhash_kihagyott) — a
     #: felhasználónak szóló számok. A `kihagyott` azt mondja meg, hány fotón
     #: volt db3-adat, de az ini-ben már állt érték: ott SZÁNDÉKOSAN nem
-    #: nyúltunk hozzá. A `wordhash_kihagyott` (#4889) a mappasorrend-listák
-    #: kihagyott elemeit számolja.
+    #: nyúltunk hozzá. A `wordhash_kihagyott` (#4889/#4900) a mappa- és
+    #: albumlistákból kihagyott elemeket számolja.
     importFinished = Signal(int, int, int, int, int, int)
     #: a db3 olvasása vagy az írás hibára futott — a szöveg a felhasználóé
     importFailed = Signal(str)
