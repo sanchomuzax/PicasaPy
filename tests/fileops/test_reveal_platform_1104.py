@@ -77,7 +77,7 @@ class TestWindows:
     ⚠️ #1152: a parancs SZTRING, és az útvonal IDÉZŐJELBEN van. Ezek a
     tesztek korábban a listás, idézőjel NÉLKÜLI alakot állították — az
     viszont a valóságban NEM MŰKÖDÖTT: a tulajdonos szóközös útvonalán
-    (`OneDrive - centralmediacsoport`) az Intéző az alapértelmezett mappát
+    (`OneDrive - Ceg`) az Intéző az alapértelmezett mappát
     nyitotta meg.
 
     Az eredeti formátum-stringje a binárisból: `/select,"%s"`
@@ -103,7 +103,7 @@ class TestWindows:
         Dokumentumok mappa a kép mappája helyett."""
         rogzitett, _ = hivasok
         _platform(monkeypatch, "win32")
-        kep = tmp_path / "OneDrive - centralmediacsoport" / "Képek" / "a.jpg"
+        kep = tmp_path / "OneDrive - Ceg" / "Képek" / "a.jpg"
 
         reveal_in_file_manager(kep)
 

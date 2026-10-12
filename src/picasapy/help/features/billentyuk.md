@@ -73,6 +73,8 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+0 | A jobb oldali panel be- és kikapcsolása |
 | Ctrl+3 | A kijelölt kép megnyitása a nézőben |
 | Ctrl+F | A kereső mezőre ugrik |
+| F3 | A kereső mezőre ugrik (ugyanaz, mint a Ctrl+F); a nézőben nem működik |
+| F4 | Csillag adása vagy elvétele a kijelölt képeken, mint a képtálca csillag-gombja; a nézőben is működik, diavetítés alatt és gépelés közben nem |
 | Ctrl+F6 | Váltás a másodpéldányok nézetére |
 | Ctrl+F7 | Keresés hasonló képekre |
 | Ctrl+F8 | A hasonlóság-minta törlése |

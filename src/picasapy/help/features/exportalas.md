@@ -57,8 +57,19 @@ Beállítható:
   csak a **Létrehozás** gombra kattintva hozza létre, és bármikor
   átírhatod.
 - **Sablon** — a kész oldal kinézete, kis előnézeti rajzzal,
-- **Bélyegkép mérete** és **Kép mérete** (vagy eredeti méret),
-- **Árnyékolt bélyegképek** és **Árnyékolt képek**.
+- **Képek exportálása innen:** — a nagy képek mérete: **Eredeti méret**,
+  **1024 képpont (nagy képernyőkhöz)**, **800 képpont (nagyméretű
+  weboldalakhoz)**, **640 képpont (weboldalakhoz)** — ez az alapérték —
+  vagy **320 képpont (e-mailhez)**. Az indexképek méretét és az esetleges
+  árnyékot a választott sablon adja, ezeket külön nem állítod.
+- **Mozgófilmek exportálása:** — **Első képkocka**: a film első kockája
+  állóképként kerül az oldalra, mint egy fénykép; **Teljes mozgófilm**: az
+  indexkép az első kocka, rákattintva pedig maga a film nyílik meg (a
+  program a filmfájlt változatlanul másolja az oldal mellé). Az a film,
+  amelyet a program nem tud beolvasni, kimarad az oldalról.
+
+A méretet és a mozgófilm-módot a program megjegyzi a következő
+exportálásig.
 
 A **Létrehozás** gomb után a program megírja, hány fájlt írt és hova.
 

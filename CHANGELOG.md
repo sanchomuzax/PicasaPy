@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.75] – 2026-10-12
+
+- Fejlesztőknek: a háttérkép-tesztek nem indíthatnak valódi asztali háttérkép-programot — a teszt képe többé nem kerülhet az asztalra (#4892).
+
+## [0.9.74] – 2026-10-12
+
+- Fejlesztőknek: a tesztek, a spec és egy kódkomment Windows-útvonal-példái helyettesítő felhasználónevet és mappanevet használnak (#4877).
+- Fejlesztőknek: a gyökér-áthelyezés tesztje a háttér-szinkron indulása előtt és a lebontás után lefuttatja a szemétgyűjtést, így a CI-n nem omlik össze (#4896).
+
+## [0.9.73] – 2026-10-11
+
+- Fejlesztőknek: a QML-tesztek életben tartott burkai a motorral együtt elengednek, így nincs több pelyhes bukás elavult objektum miatt (#4880).
+
 ## [0.9.72] – 2026-10-11
 
 - A windowsos CI szövegrajzoló próbái üres betűadatbázis mellett a renderelő saját betűfájljait kapják, globális beállítás nélkül (#4506).
