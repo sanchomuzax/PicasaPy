@@ -77,23 +77,35 @@ def serialize_places(places: Mapping[str, float]) -> str:
     return ",".join(f"{token}:{_format_place(place)}" for token, place in places.items())
 
 
-def places_of(document: IniDocument) -> dict[str, dict[str, float]]:
-    """Fájlnév → {token → hely}, csak az ÉRVÉNYES párokkal.
+def places_of_section(section) -> dict[str, float]:
+    """Egy kép szakaszának ÉRVÉNYES {token → hely} párjai.
 
     Érvényes az a pár, amelynek tokenje a kép `albums=` kulcsában is szerepel
-    (a tagságot az `albums=` adja). Hely nélküli kép nem szerepel.
+    (a tagságot az `albums=` adja). Az olvasó, aki már megtalálta a szakaszt
+    (kis-nagybetű-független névkereséssel), ezt hívja — a szakasznévvel
+    kulcsolt `places_of` eltérő betűzésnél nem találná meg.
+    """
+    raw = section.get(KEY)
+    if raw is None:
+        return {}
+    members = set(_member_tokens(section.get(_ALBUMS_KEY)))
+    return {
+        token: place
+        for token, place in parse_places(raw).items()
+        if token in members
+    }
+
+
+def places_of(document: IniDocument) -> dict[str, dict[str, float]]:
+    """Fájlnév (a szakasz neve) → {token → hely}, csak az ÉRVÉNYES párokkal.
+
+    Hely nélküli kép nem szerepel. Fájlnévvel keresni a `places_of_section`
+    (a `document.section(név)` találatán) a helyes: a szakasznév betűzése
+    eltérhet a lemezen lévő fájlnévétől.
     """
     result: dict[str, dict[str, float]] = {}
     for section in document.file_sections():
-        raw = section.get(KEY)
-        if raw is None:
-            continue
-        members = set(_member_tokens(section.get(_ALBUMS_KEY)))
-        valid = {
-            token: place
-            for token, place in parse_places(raw).items()
-            if token in members
-        }
+        valid = places_of_section(section)
         if valid:
             result[section.name] = valid
     return result
@@ -123,10 +135,27 @@ def with_album_places(
             continue
         if token not in _member_tokens(section.get(_ALBUMS_KEY)):
             continue
-        current = parse_places(section.get(KEY))
-        current[token] = float(place)
-        updated = _write_places(updated, photo_name, current)
+        updated = updated.with_value(
+            photo_name,
+            KEY,
+            _replace_raw_pair(section.get(KEY), token, float(place)),
+        )
     return updated
+
+
+def _replace_raw_pair(raw: str | None, token: str, place: float) -> str:
+    """A nyers `albumorder=` szövegben CSAK a `token` párja cserélődik.
+
+    A többi nyers pár (romlott, elárvult, ismeretlen) bájtra érintetlen marad:
+    más album párját vagy egy másik program írását nem normalizáljuk. Ha a
+    tokennek még nincs (érvényes) párja, az új pár a végére kerül.
+    """
+    new_pair = f"{token}:{_format_place(place)}"
+    pairs = (raw or "").split(",") if raw else []
+    for index, pair in enumerate(pairs):
+        if token in parse_places(pair):
+            return ",".join([*pairs[:index], new_pair, *pairs[index + 1 :]])
+    return ",".join([*pairs, new_pair])
 
 
 def without_album_place(

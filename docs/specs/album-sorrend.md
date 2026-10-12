@@ -132,6 +132,10 @@ a 2–7. módra):
 | 5 Méret | `0x006b9b69` | fájlméret (`+0x14`) | nincs: `a < b` → −1, különben +1 |
 | 6 Név | `0x006b9c28` | a rekord neve, **természetes összevetéssel**: a számjegy-sorozat számértékként (`0x006b9cdc`–`0x006b9d06`), az ASCII `A–Z` kisbetűsítve (`0x006b9d0f`–`0x006b9d1a`), a számjegy-sorozat minden nem-számjegy elé kerül (a nem-számjegy `c − 0x100`, előjel nélkül hasonlítva, `0x006b9d22`, `0x006b9d71`) | 0 lehet (azonos szöveg `0x006b9ca8`; az egyik a másik előtagja `0x006b9d86`–`0x006b9d8e`) |
 
+> **NYITOTT KÉRDÉS (2.4 név-kulcs):** a `c − 0x100` trükk 8 bites karakterre
+> igazolt; 16 bites karakternél és 10+ jegyű számsorozatnál (32 bites érték
+> túlcsordul?) a viselkedés NINCS igazolva (ld. a 7. szakasz).
+
 Irány: a kisebb kerül előre (`0x0049e298`: negatív eredménynél csere) —
 **növekvő**, dátumnál a legrégebbi elöl. Shift: `+0x558` = 1 →
 a `0x004efd84`–`0x004efd9b` ág a −1-et +1-re, minden mást −1-re fordítja
@@ -249,7 +253,10 @@ egy pillanatképből nem dönthető el: „előtte" állapot nincs, ld.
       (`taken_at`, az ottani felülírással együtt), egyenlőségnél név; Név =
       természetes összevetés (számjegy-sorozat számértékként, ASCII
       kisbetűsítve, számjegy-sorozat a betűk előtt); Méret = fájlméret;
-      mindhárom **növekvő**;
+      mindhárom **növekvő**. Dátum nélküli képnél (nincs EXIF/felülírás) a
+      tartalék a **befagyasztott fájlidő** (`pmp-database.md` 10.3), romlott
+      fájlidőnél a lista vége — a mappa-rendezéssel KÖZÖS kulcs
+      (`index/photo_date.py`);
 - [x] Shift-tel kiválasztva a három kulcs **csökkenő** irányban rendez;
       a „Fordított sorrend" a tárolt sorrendet megfordítja (Shift nélkül
       is, kulcs nélkül);
@@ -394,12 +401,13 @@ viszont menüből kattintható:
 
 ## 7. Nyitott kérdések mérlege
 
-`2 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`3 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
 | hol tárolódik a kézi (húzott) sorrend | **LEZÁRVA** — a `]album:<token>` szó listája a `wordhash.dat`-ban (2.1, 2.3) |
 | mit állít a „Sort Album By", és megmarad-e | **LEZÁRVA** — egyszeri átrendezés (mód 6/3/5, Shift = csökkenő, 12 = megfordítás); a lista marad meg, mód nem tárolódik (2.4) |
 | a 11-es mód kulcsa | **LEZÁRVA** a kérdés szempontjából — a kézi sorrendhez nem kell kulcs (2.5) |
+| a név-összevetés határesetei (2.4) | **NYITOTT** — nem igazolt: a 8 bites `c − 0x100` trükk 16 bites (nem ASCII) karakternél, és a 10+ jegyű számsorozat (32 bites érték) viselkedése; a megvalósítás itt Unicode-kódpontot és tetszőleges pontosságú egészet használ |
 | a `[0x00d67849]` (a Shift-figyelés feltétele) jelentése | **NYITOTT** — út: a bájt íróinak pásztázása |
 | ki állítja a rács 11-es módját (ha valami) | **NYITOTT** — út: a hat regiszter-argumentumú `[vtábla+0xc0]` hívóhely osztályának azonosítása (2.5) |

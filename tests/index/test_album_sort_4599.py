@@ -49,11 +49,12 @@ class TestTermeszetesNev:
         assert natural_name_key("9" * 40 + ".jpg") > natural_name_key("1.jpg")
 
 
-def _rekord(nev, *, mappa="/m", meret=10, taken_at=None):
+def _rekord(nev, *, mappa="/m", meret=10, taken_at=None, mtime_ns=1):
     from picasapy.index.queries import PhotoRecord
 
     return PhotoRecord(
-        id=0, folder_path=mappa, name=nev, kind="image", size=meret, mtime_ns=1,
+        id=0, folder_path=mappa, name=nev, kind="image", size=meret,
+        mtime_ns=mtime_ns,
         star=False, caption=None, keywords=None, rotate_steps=0, filters=None,
         taken_at=taken_at, orientation=1, width=1, height=1,
     )
@@ -86,6 +87,25 @@ class TestRendezes:
         assert [k.name for k in sorted_album(kepek, "date", descending=True)] == [
             "z", "b", "a",
         ]
+
+    def test_datum_nelkuli_kep_a_fajl_idejevel_rendezodik_nem_az_elejen(self):
+        # spec 4.1 / pmp-database 10.3: EXIF-dátum hiányában a (befagyasztott)
+        # fájlidő a tartalék — a dátum nélküli kép nem kerülhet a lista elejére
+        kepek = [
+            _rekord("exif", taken_at="2020-01-01T10:00:00"),
+            _rekord("fajl_regi", mtime_ns=1_000_000_000),  # 1970
+            _rekord("fajl_uj", mtime_ns=2_000_000_000_000_000_000),  # 2033
+        ]
+        assert [k.name for k in sorted_album(kepek, "date")] == [
+            "fajl_regi", "exif", "fajl_uj",
+        ]
+
+    def test_romlott_fajlido_a_lista_vegere_kerul_es_nem_dob(self):
+        kepek = [
+            _rekord("romlott", mtime_ns=10**26),
+            _rekord("exif", taken_at="2020-01-01T10:00:00"),
+        ]
+        assert [k.name for k in sorted_album(kepek, "date")] == ["exif", "romlott"]
 
     def test_fordított_kulcs_nelkul_megfordit_shifttel_is(self):
         kepek = [_rekord("c"), _rekord("a"), _rekord("b")]
@@ -172,6 +192,27 @@ class TestHelySzerintiSorrend:
             sync_tree(conn, konyvtar)
             assert [r.name for r in album_photos(conn, _TOKEN)] == [
                 "b.jpg", "d.jpg", "a.jpg", "c.jpg",
+            ]
+
+    def test_eltero_kis_nagybetus_szakasznev_is_megtalalja_a_helyet(self, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        for nev in ("img_1.jpg", "img_2.jpg"):
+            make_jpeg(root / nev)
+        (root / ".picasa.ini").write_text(
+            f"[.album:{_TOKEN}]\nname=X\ntoken={_TOKEN}\n"
+            f"[IMG_1.JPG]\nalbums={_TOKEN}\nalbumorder={_TOKEN}:9.0\n"
+            f"[img_2.jpg]\nalbums={_TOKEN}\nalbumorder={_TOKEN}:1.0\n",
+            encoding="utf-8",
+        )
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, root)
+            assert conn.execute(
+                "SELECT place FROM photo_albums pa JOIN photos p ON p.id = pa.photo_id"
+                " WHERE p.name = 'img_1.jpg'"
+            ).fetchone()[0] == 9.0
+            assert [r.name for r in album_photos(conn, _TOKEN)] == [
+                "img_2.jpg", "img_1.jpg",
             ]
 
     def test_egyenlo_helynel_utvonal_majd_nev(self, tmp_path, konyvtar):

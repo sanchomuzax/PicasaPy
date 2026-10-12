@@ -64,7 +64,10 @@ def with_album(document: IniDocument, photo_name: str, token: str) -> IniDocumen
     current = parse_album_refs(section.get("albums") or "") if section else ()
     if token in current:
         return document
-    return document.with_value(
+    # #4599: egy korábbi tagságból árván maradt `albumorder=` pár nem ülhet rá
+    # az újonnan felvett tagra — az új tag hely nélkül, a végére kerül.
+    cleaned = without_album_place(document, photo_name, token)
+    return cleaned.with_value(
         photo_name, "albums", serialize_album_refs((*current, token))
     )
 

@@ -12,12 +12,13 @@ from picasapy.ini.album_order import (
     AlbumOrderWriteError,
     parse_places,
     places_of,
+    places_of_section,
     serialize_places,
     with_album_places,
     without_album_place,
     write_album_places,
 )
-from picasapy.ini.albums import without_album, without_album_everywhere
+from picasapy.ini.albums import with_album, without_album, without_album_everywhere
 from picasapy.ini.document import parse_document
 
 _A = "604c294a68b0de9cc9222c4714f289d5"
@@ -222,3 +223,56 @@ class TestMappankentiIras:
         assert "rossz_mappa" in str(hiba.value)
         jo_doc = parse_document((jo / ".picasa.ini").read_text(encoding="utf-8"))
         assert places_of(jo_doc) == {"a.jpg": {_A: 2.0}}
+
+
+class TestSzakaszSzintuOlvasas:
+    def test_places_of_section_ugyanazt_az_ervenyes_parokat_adja(self):
+        document = parse_document(
+            f"[A.JPG]\nalbums={_A}\nalbumorder={_A}:2.0,{_B}:7.0\n"
+        )
+        section = document.section("a.jpg")
+        assert places_of_section(section) == {_A: 2.0}
+
+    def test_hely_nelkuli_szakasz_ures(self):
+        document = parse_document(f"[a.jpg]\nalbums={_A}\n")
+        assert places_of_section(document.section("a.jpg")) == {}
+
+
+class TestMasPárokBajtraAzonosak:
+    def test_csak_a_sajat_token_nyers_parja_cserelodik(self):
+        document = parse_document(
+            f"[a.jpg]\nalbums={_A},{_B}\nalbumorder={_A}:1.0,T:x,zz:1,{_B}:5.0\n"
+        )
+        updated = with_album_places(document, _A, {"a.jpg": 3})
+        assert updated.section("a.jpg").get("albumorder") == (
+            f"{_A}:3.0,T:x,zz:1,{_B}:5.0"
+        )
+
+    def test_uj_token_a_nyers_szoveg_vegere_kerul_a_tobbi_valtozatlan(self):
+        document = parse_document(
+            f"[a.jpg]\nalbums={_A},{_B}\nalbumorder=O:3,T:x,zz:1\n"
+        )
+        updated = with_album_places(document, _A, {"a.jpg": 2})
+        assert updated.section("a.jpg").get("albumorder") == f"O:3,T:x,zz:1,{_A}:2.0"
+
+
+class TestUjFelvetelArvaParjaKiesik:
+    def test_uj_tagsagnal_az_arva_par_kikerul_a_tobbi_marad(self):
+        document = parse_document(
+            f"[a.jpg]\nalbums={_B}\nalbumorder={_A}:4.0,{_B}:2.0\n"
+        )
+        updated = with_album(document, "a.jpg", _A)
+        section = updated.section("a.jpg")
+        assert section.get("albums") == f"{_B},{_A}"
+        assert section.get("albumorder") == f"{_B}:2.0"
+        # az új tag hely nélkül, a végére kerül
+        assert places_of(updated)["a.jpg"] == {_B: 2.0}
+
+    def test_csak_arva_par_eseten_a_kulcs_torlodik(self):
+        document = parse_document(f"[a.jpg]\nalbums=\nalbumorder={_A}:4.0\n")
+        updated = with_album(document, "a.jpg", _A)
+        assert updated.section("a.jpg").get("albumorder") is None
+
+    def test_mar_tag_kepnel_nem_nyul_a_helyhez(self):
+        document = parse_document(f"[a.jpg]\nalbums={_A}\nalbumorder={_A}:4.0\n")
+        assert with_album(document, "a.jpg", _A) is document

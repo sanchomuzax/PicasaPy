@@ -3,8 +3,9 @@
 A kulcsok az eredeti hasonlítójából valók (`docs/specs/album-sorrend.md`
 2.4, `0x004efce0` → `0x006b9b50`):
 
-- **Dátum** — a kép metaadat-dátuma (`taken_at`, a felülírással együtt);
-  egyenlőségnél a név,
+- **Dátum** — a kép metaadat-dátuma (`taken_at`, a felülírással együtt); ennek
+  hiányában a BEFAGYASZTOTT fájlidő (`photo_date.datum_kulcs`, a mappa-rendezés
+  közös kulcsa); egyenlőségnél a név,
 - **Név** — természetes összevetés: a számjegy-sorozat számértékként, az
   ASCII `A–Z` kisbetűsítve, a számjegy-sorozat minden nem-számjegy elé kerül,
 - **Méret** — fájlméret,
@@ -21,6 +22,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal
 
+from .photo_date import datum_kulcs
 from .queries import PhotoRecord
 
 SortMode = Literal["date", "name", "size", "reverse"]
@@ -65,7 +67,7 @@ def _tie_break(photo: PhotoRecord) -> tuple:
 
 def _sort_key(photo: PhotoRecord, mode: str):
     if mode == "date":
-        return (photo.taken_at or "", natural_name_key(photo.name), _tie_break(photo))
+        return (datum_kulcs(photo), natural_name_key(photo.name), _tie_break(photo))
     if mode == "name":
         return (natural_name_key(photo.name), _tie_break(photo))
     if mode == "size":

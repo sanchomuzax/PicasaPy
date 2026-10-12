@@ -444,3 +444,47 @@ class TestAlbumPlaceMigration:
 
         with open_index(self._v21_database(tmp_path)) as conn:
             assert [r.name for r in album_photos(conn, "tok")] == ["a.jpg", "b.jpg"]
+
+    def test_a_valtozatlan_ini_albumorder_kulcsa_a_migracio_utan_is_bekerul(
+        self, tmp_path
+    ):
+        # a scan-állapot miatt a változatlan ini-t a szinkron kihagyná: a
+        # migrációnak érvényteleníteni kell, különben a meglévő `albumorder=`
+        # sosem jut az indexbe
+        from picasapy.index import sync_tree
+        from picasapy.index.albums import album_photos
+        from support.jpeg_factory import make_jpeg
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        make_jpeg(root / "b.jpg")
+        token = "604c294a68b0de9cc9222c4714f289d5"
+        (root / ".picasa.ini").write_text(
+            f"[.album:{token}]\nname=X\ntoken={token}\n"
+            f"[a.jpg]\nalbums={token}\nalbumorder={token}:2.0\n"
+            f"[b.jpg]\nalbums={token}\nalbumorder={token}:1.0\n",
+            encoding="utf-8",
+        )
+        # a frissességi védőablak (2 s) miatt a fájlokat "megöregítjük" —
+        # különben a szinkron amúgy sem hagyná ki a mappát
+        import os
+
+        regi = 1_700_000_000
+        for utvonal in (root, *root.iterdir()):
+            os.utime(utvonal, (regi, regi))
+        db = tmp_path / "index.db"
+        with open_index(db) as conn:
+            sync_tree(conn, root)
+        # visszalépés v21-re: az oszlop nincs meg, a scan-állapot viszont igen
+        raw = sqlite3.connect(db)
+        raw.executescript(
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
+            "PRAGMA user_version = 21;"
+        )
+        raw.commit()
+        raw.close()
+
+        with open_index(db) as conn:
+            sync_tree(conn, root)  # az ini változatlan
+            assert [r.name for r in album_photos(conn, token)] == ["b.jpg", "a.jpg"]

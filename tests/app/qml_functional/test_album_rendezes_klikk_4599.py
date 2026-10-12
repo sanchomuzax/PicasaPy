@@ -84,13 +84,15 @@ def _konyvtar(root, tmp_path):
     (root / "masodik").mkdir()
     for mappa, nev, meret, ido in _KEPEK:
         make_jpeg((root / mappa / nev) if mappa else (root / nev), size=meret, taken_at=ido)
-    (root / ".picasa.ini").write_text(
-        f"[.album:{_TOKEN}]\ntoken={_TOKEN}\nname=Nyaralás\n"
-        f"[.album:{_OTHER}]\ntoken={_OTHER}\nname=Másik\n"
-        f"[b10.jpg]\nalbums={_TOKEN},{_OTHER}\npriority=7.0\ncaption=marad\n"
-        f"[b2.jpg]\nalbums={_TOKEN}\nstar=yes\n"
-        f"[a.jpg]\nalbums={_TOKEN},{_OTHER}\nalbumorder={_OTHER}:4.5\n",
-        encoding="utf-8",
+    # CRLF sorvégek: a Picasa Windowson ír, a kiírásnak meg kell őriznie
+    (root / ".picasa.ini").write_bytes(
+        (
+            f"[.album:{_TOKEN}]\ntoken={_TOKEN}\nname=Nyaralás\n"
+            f"[.album:{_OTHER}]\ntoken={_OTHER}\nname=Másik\n"
+            f"[b10.jpg]\nalbums={_TOKEN},{_OTHER}\npriority=7.0\ncaption=marad\n"
+            f"[b2.jpg]\nalbums={_TOKEN}\nstar=yes\n"
+            f"[a.jpg]\nalbums={_TOKEN},{_OTHER}\nalbumorder={_OTHER}:4.5\n"
+        ).replace("\n", "\r\n").encode("utf-8")
     )
     (root / "masodik" / ".picasa.ini").write_text(
         f"[.album:{_TOKEN}]\ntoken={_TOKEN}\nname=Nyaralás\n"
@@ -121,6 +123,15 @@ def _rendez_kattintassal(window, qt_app, tetel, modositok=Qt.NoModifier):
         if shift:
             QTest.keyRelease(window, Qt.Key_Shift)
     _varj(lambda: not menu.property("visible"), qt_app, "menü bezárása")
+
+
+def _albumorder_nelkul(ini):
+    """A fájl bájtjai az `albumorder=` sorok nélkül (sorvégek megőrizve)."""
+    return b"".join(
+        sor
+        for sor in ini.read_bytes().splitlines(keepends=True)
+        if not sor.startswith(b"albumorder=")
+    )
 
 
 def _racs(controller):
@@ -156,7 +167,7 @@ def test_kattintasra_nev_szerint_rendez_es_a_sorrend_tartos(qml_app, qt_app, tmp
         ("kepek", "a.jpg"), ("kepek", "b10.jpg"), ("kepek", "b2.jpg"),
         ("masodik", "c.jpg"),
     ]
-    szomszed_elotte = (root / ".picasa.ini").read_text(encoding="utf-8")
+    szomszed_elotte = _albumorder_nelkul(root / ".picasa.ini")
 
     _rendez_kattintassal(window, qt_app, "albumMenuSortByName")
 
@@ -172,13 +183,10 @@ def test_kattintasra_nev_szerint_rendez_es_a_sorrend_tartos(qml_app, qt_app, tmp
     assert places_of(lemez["masodik"])["c.jpg"][_TOKEN] == 4.0
     # a szomszéd album helye és minden más sor bájtra azonos
     assert places_of(lemez["fo"])["a.jpg"][_OTHER] == 4.5
-    szoveg = (root / ".picasa.ini").read_text(encoding="utf-8")
-    for sor in ("priority=7.0", "caption=marad", "star=yes"):
-        assert sor in szoveg
-    # a nem érintett szakaszok sorai szó szerint megvannak
-    for sor in szomszed_elotte.split("\n"):
-        if sor and not sor.startswith(("albumorder=", "albums=")):
-            assert sor in szoveg
+    # minden más sor (sorvégekkel együtt) BÁJTRA azonos: az `albumorder=`
+    # sorok kivételével a fájl nem változott
+    assert _albumorder_nelkul(root / ".picasa.ini") == szomszed_elotte
+    assert b"\r\n" in (root / ".picasa.ini").read_bytes()
     # újraindítás (új index) után is ez a sorrend
     assert _ujranyitott_index(tmp_path, root) == varhato
 

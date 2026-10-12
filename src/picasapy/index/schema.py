@@ -599,7 +599,19 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
     # indul minden meglévő sor — „nincs kézi hely", tehát a meglévő albumok
     # sorrendje változatlan (mappa útvonala, fájlnév); a következő szinkron
     # tölti fel az ini-ből, újraindexelés nem kell.
+    # A scan-állapot érvénytelenítése is idetartozik: a változatlan ini-t a
+    # szinkron a `folder_scan_state` miatt kihagyná, így a meglévő
+    # `albumorder=` sosem jutna be a `place`-be. A tábla DDL-je a
+    # `sync._SCAN_STATE_DDL`-lel egyezik (tisztán eldobható gyorsítótár; a
+    # hiányzó `filetype_signature` oszlopot a `_ensure_scan_state` pótolja).
     21: """
 ALTER TABLE photo_albums ADD COLUMN place REAL;
+CREATE TABLE IF NOT EXISTS folder_scan_state (
+    path TEXT PRIMARY KEY,
+    mtime_ns INTEGER NOT NULL,
+    ini_mtime_ns INTEGER,
+    filetype_signature TEXT
+);
+DELETE FROM folder_scan_state;
 """,
 }
