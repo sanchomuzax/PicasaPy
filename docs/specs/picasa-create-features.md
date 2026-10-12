@@ -4239,7 +4239,7 @@ A `enhance` képi művelet (automatikus javítás, `ID_PICTURE_ENHANCE`) is a ma
 
 #### D) A megszerzés útja
 
-- **Bináris:** a stílus-azonosító *olvasása* megvan (a `0x008152f0` és `0x00816440`), a stílus *megjelenítője* viszont nincs azonosítva. A kutatás jelenleg a `CRenderMovie` (`0x0089e07c` vtábla), a `ytDSMovieWriter` és a `CTranscodeMovie` hívási láncát nézné végig; a keresési szempont: olyan függvény, amely a szövegdia-modell `styleid` mezőjére ágazik (0–11). A `TextTypeWriterHandler` (vtábla `0x008bdbbc`, 4 szlot, RTTI megvan) **név szerint** írógépes, de a jelenlegi index csak a vtáblát látja, a filmexporthoz nem kötötte. Ez **nyom, nem bizonyíték**. A harness (`eszkozok/qemu_harness/`) a DirectShow-os filmkészítő láncot nem futtatja; a kiolvasáshoz statikus dekompilálás kell.
+- **Bináris:** a stílus-azonosító *olvasása* megvan (a `0x008152f0` és `0x00816440`), a stílus *megjelenítője* viszont nincs azonosítva. A kutatás jelenleg a `CRenderMovie` (`0x00c9e07c` vtábla), a `ytDSMovieWriter` és a `CTranscodeMovie` hívási láncát nézné végig; a keresési szempont: olyan függvény, amely a szövegdia-modell `styleid` mezőjére ágazik (0–11). A `TextTypeWriterHandler` (vtábla `0x00cbdbbc`, 4 szlot, RTTI megvan) **név szerint** írógépes, de a jelenlegi index csak a vtáblát látja, a filmexporthoz nem kötötte. Ez **nyom, nem bizonyíték**. A harness (`eszkozok/qemu_harness/`) a DirectShow-os filmkészítő láncot nem futtatja; a kiolvasáshoz statikus dekompilálás kell.
 - **Mérés (ez adja a számokat):** az eredeti Picasa 3.9 fut Colabon (Wine alatt), egy-egy szövegdia mindhárom stílussal, filmre exportálva; a kimenetből képkockánként kimérni a pozíciót és a megjelenést. Ez a `#4615` jegy kommentjében már kijelölt út. Ennek hiányában a menet nem írható le.
 
 #### E) Mai kód (2026-10-12)
@@ -4260,3 +4260,70 @@ Jelölés: `fps` = `settings.fps`; `N = frames_per_photo`; `h = N − transition
 - [ ] **Nem tárolható előre:** egy 1280×720 RGB kocka ~2,8 MB; a `text_frames` előrendelése (slideshow.py:623) kockánként nem skálázódik, ezért a kimeneti ciklusban (`export_movie`) a szövegdia-kockát a `k` függvényében kell előállítani.
 - [ ] **Kimenet-teszt:** adott `k`-ra a kép hash-e egyezik a referencia-kockáéval (mért tolerancia mellett), és a kockaszám = `h` (a `holds` nem változik).
 - [ ] **Az `advanceinterval` külön jegy:** a mentett diaidő használata nem ennek a jegynek a része; ha a diaidő eltér, azt a 2.4/b szerint külön kell lezárni.
+
+#### G) 2. kör (2026-10-12): a rajzoló azonosítása — ami most bizonyított, és ami még nincs
+
+*Állapot: a **rajzoló szerkezete** megvan (osztályok, konstruktorok, a stílus-elágazás helye, a képkocka-függvény szerkezete). **A görgetés sebessége és a karakteridő számértéke még nincs kiolvasva**, mert az idővonal-összegző (`0x009e5e70`) pontos kiértékelése hiányzik. Ez a szakasz nem ad számot.*
+
+**⚠️ ELLENTMONDÁS a 2.10/b szakasz A) pontjával — a kör ezt NEM simította el:** a `TextTypeWriterHandler` vtáblája a spec szerint `0x008bdbbc`. A binárisban az RTTI (COL-mutató, `vtable-4`) és a konstruktor írása (`mov [esi], 0x00cbdbbc`, `0x00809fe0`) **`0x00cbdbbc`-t** mutat, és a `0x008bdbbc`-n lévő bájtok nem függvénymutatók. Ugyanígy a `CRenderMovie` spec-vtáblája (`0x0089e07c`) mért értéke `0x00c9e07c`. Mindkettő pontosan `0x400000`-lal tér el. A **kódcímek** a specben (`0x008152f0`, `0x00816440`, `0x00613b50`) viszont egyeznek a `.text` tartalmával, tehát az eltérés csak a vtábla-címekre igaz. A kör a **mért** címeket használja; a régi vtábla-címek (0x400000-val eltolt alapból felírva) a fenti bekezdésben javítva.
+
+#### G.1 Bizonyított — a három szövegdia-kezelő osztálya
+
+Az RTTI-sztringekből (`.?AV…@@`, a TypeDescriptor = sztring − 8, a COL a TD-re mutat, a vtábla = COL-mutató + 4) mért megfeleltetés:
+
+| osztály | vtábla (mért) | slotok | konstruktor | per-frame (slot 3) |
+|---|---|---|---|---|
+| `TextTypeWriterHandler` | `0x00cbdbbc` | 4 | `0x00809fe0` (float, `eax` = szövegének hossza) | `0x0080a080` |
+| `TextFadeHandler` | `0x00cbdb80` | 4 | `0x00809af0` (float; `al` = A, `cl` = B bájt) | `0x00809b40` |
+| `TextFadeMoveHandler` | `0x00cbdb94` | 4 | `0x00809c50` (float + két float; `al`, `cl`) | `0x00809d20` |
+
+A slot 0 a `TextFade`-nél és a `TypeWriter`-nél azonos (`0x0080a150`, a `[esi+0x20]` objektum felszabadítása és a vtábla `0x00c80918`-ra írása). A slot 1 és 2 (`0x009d79f0`, `0x009d7a00`) minden három osztályban közös: a `[ecx+4]`-es tag felszabadítása (a `0x009d7a00` ugyanezt végzi, és a tag törlése után `push 1`-gyel hívja a vtábla slot 0-ját, azaz a törlő-slotot). A `TextFadeMoveHandler` slot 0 más (`0x00809e00`).
+
+A `CRenderMovie` (RTTI TD `0x00d400b4`) négy COL-ja (többszörös öröklés) ugyanazokat a vtábla-mutatókat adja, mint a spec-jegyzet: `0x00c9e07c`, `0x00c9e0b4`, `0x00c9e0d0`, `0x00c9e0dc`. A `CTranscodeMovie` (`0x00d40094`) vtábla-családja: `0x00c9e100`, `0x00c9e138`, `0x00c9e154`, `0x00c9e160`.
+
+#### G.2 Bizonyított — ki példányosít, és a stílus-elágazás
+
+- **Gyár:** a szövegdia-szöveget építő függvény a `0x00810420` (a `push ebp`-es belépő; a 0x810420-tól 0x811e51-ig terjedő egy függvény). Hívói: `0x008128aa`, `0x008128e8`, `0x0081293d`, `0x0081380c`, `0x0081388d`, `0x008138bf`. Ezek a hívók még **nincsenek** azonosítva (melyik `CRenderMovie`-metódus), ez a 2. kör nyitott pontja.
+- **Elágazás:** a dia `[ebx+0x44]` mezője a stílus-azonosító (`0`–`11`); `test eax,eax` (`0x00810596`) → `cmp eax,1` (`0x00810656`) → `cmp eax,2` (`0x00810a40`) → … → `cmp eax,6/7/0xb` (`0x00810ea3`, ugrás `0x00811a27`-re) → `cmp eax,8` (`0x00810ed3`) → `cmp eax,9`, `cmp eax,0xa` (`0x00811031`) → az alapág `0x00811e4a`.
+- **Stílusonkénti konstruktor** (a belső ugrásokból):
+  - `0` (az alapág, `0x00810596` után) → `TextFadeHandler` (`call 0x809af0`, `0x0081061b`), `al = 0`, `cl = 0xff`.
+  - `1` ("Jó napom van", `textstyle1`) → `TextFadeMoveHandler` (`call 0x809c50`, `0x008107a7`).
+  - `8` (Gördülő stáblista) → `TextFadeMoveHandler` (`call 0x809c50`, `0x00810fee`), a három float-argumentum: `[ebx+0xe8]`, egy egész `[esp+0x50]`-ből, és `0,5 ×` egy egész `[esp+0x18]`-ből (`0x00810fc9`: `fmul [0x00c72150]`, a `0,5`).
+  - `11` (Képfelirat – Írógép) → `TextTypeWriterHandler` (`call 0x809fe0`, `0x00811db7`/`0x00811dca`). A `cmp dword ptr [ebx+0x44], 0xb` a `0x00811cd8`-on van; `sete cl`, `test cl,cl`, `jne 0x811d64` → a `0x809fe0` ág csak `11`-re.
+  - `6`, `7` és a többi a `0x00811cf0`-ágon → `TextFadeHandler` (`0x809af0`).
+  - **Nem vizsgált:** `2`–`5`, `9`, `10`, és hogy a `0x00810b7c`, `0x00810e1d`, `0x0081122f`, `0x008114c5`, `0x00811993`, `0x0081202a` hívások melyik stílushoz tartoznak. A `0x00809af0`-t ezek is hívják, a `0x00809c50`-et a `0x008109eb` is.
+
+#### G.3 Bizonyított — az animáció szerkezete (képkocka-függvény)
+
+Minden per-frame függvény (`0x0080a080`, `0x00809b40`, `0x00809d20`) ugyanazzal a szerkezettel indul:
+
+1. `dynamic_cast` a célobjektumra (`call 0x00c07db2`, a típusleírók `0x00d3eea4`/`0x00d3b8a0`, illetve `0x00d3ef9c`).
+2. Az eseményrekord `[edi+8] == 0x13` (az esemény típusa), különben kilép.
+3. A handler `[ebx+8]` float (a ctor-argumentum, a **szegmens hossza**) `> 0`; `fcomp`/`jp` (NaN vagy ≤ 0 esetén kilép).
+4. `t = [edi+0x10]` (double, az eseményidő) és `0x009e5e20(this+0x10 (TypeWriter/Fade) vagy +0x30 (FadeMove), t)` — ha 1, kilép (ez az „idő még nem jött el / már lejárt” ellenőrzés; a `0x009e5e20` a `[ecx+0x14]>>1` darabszámú szegmensen fut).
+5. `P = 0x009e5e70(this+0x10 …, t)` — az idővonal-kiértékelő (double).
+
+**A TypeWriter kimenete (bizonyított lépések):**
+
+- `0x0080a030` (a TypeWriter idővonal-építője) egyetlen szegmenst ír: kezdet `t0 = a ctor-argumentum` (`[esp+0x2c]`), vége `t1 = t0 + [this+8]`, az érték-amplitúdó **`[this+0xc]`** = a szöveg hossza (`fild`, a negatív egész-korrekcióval), az interpolátor a **identitás** (`0x00809ae0`: `fld [esp+4]; ret`), vagyis a szegmens-függvény `f(p) = p`.
+- A képkocka-függvény: `n = fistp(P + 0,5)` (`0x0080a0f0`: `fadd [0x00c72150]`, a `0,5`), `n == 0` → `n = 1`, majd `[esi+0x34c] = n` (a megjelenített karakterek száma) és `[esi+0xc] |= 7` (újrarajzolás), ha változott.
+- Vagyis a látható karakterek száma `n(t) = max(1, round(P(t)))`, és `P` a `0x009e5e70` kimenete.
+
+**A Fade/FadeMove kimenete:** a `0x00809eb0` (Fade idővonal-építője) és a `0x00809d20` (FadeMove) ugyanilyen szegmenst építenek, de a `+0xc`/`+0xd` bájtokkal (`A` = 0, `B` = `0xff` a Fade-nél). A `FadeMove` a `P`-t a `[esi+0x14c]`, `[esi+0x150]` float-párok közti interpolációra (`0x009debd0`) használja. **A `0x009debd0` nincs kiolvasva**, ezért a pozíció-képlet nincs bizonyítva.
+
+#### G.4 NYITOTT — ami még hiányzik a számhoz
+
+| kérdés | mi kell hozzá | állapot |
+|---|---|---|
+| `P(t)` pontos képlete | a `0x009e5e70` szegmens-összegzés (a `0x009e5f03`–`0x009e5f71` ciklus) kiértékelése: az `fmulp` mit szoroz, és a `t0`/`t1` honnan jön (a `0x009e6010` szegmens-építő, `0x009e5b20` a darabszámolás) | **nyitott** |
+| Írógép karakteridő-üteme | `P(t)` ismeretében `n(t)`; a karakter/s = `len / dur` csak akkor, ha `P` lineáris — ez **nem bizonyított** | **nyitott** |
+| Gördülő görgetés sebessége és iránya | a `0x009debd0` és a `[esi+0x14c]`/`[esi+0x150]` mezők forrása (a dia-objektum), és a `[ebx+0x49]` jelző szerepe | **nyitott** |
+| „Jó napom van” (`textstyle1`) animált tulajdonsága | a `0x00810656`-ág (`cmp eax,1`) hátralévő része: a `0x00812110`, `0x009863f0`, `0x00810773`-as vtábla-hívás célja; a `0x2bc` (700) állandó értelme | **nyitott** |
+| Kurzor (villogás) az Írógépnél | a `0x0080a080` után a rajzoló-hívó olvassa-e a `[esi+0x34c]`-t és ír-e kurzort | **nyitott** |
+| Natív futtatás | Wine nincs a gépen; a DirectShow-láncot a harness nem futtatja | **nem lehetséges itt** |
+
+#### G.5 Mérés és eszköz (reprodukálhatóság)
+
+A mérések szkriptjei ideiglenesek: `/tmp/claude-1000/kd-r4615/scripts/` (`pe.py` — PE-fejléc; `rtti.py` — RTTI-osztály → TD → COL → vtábla; `vtname.py` — vtábla → osztálynév és slotok; `xref.py` / `callers.py` — `mov [reg], imm32` és `E8`/`E9` hívóhelyek; `disasm_va.py` — capstone, a `pe_dis.py` alternatívája az `~/picasapy-agent/eszkozok/`-ban). A capstone a `/tmp/claude-1000/kd-r4615/venv`-ben van. Az `objdump` ezen a gépen nem olvassa a PE-t (ARM-build).
+
+**Ami NEM mérés, hanem következtetés:** a stílus→osztály táblát (G.2) a kód-elágazásokból olvastam, és csak a kiemelt stílusokra (0, 1, 8, 11) ellenőriztem a konstruktor-hívás helyét; a többi stílus hozzárendelése nyitott.
