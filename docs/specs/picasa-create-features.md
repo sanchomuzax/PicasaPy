@@ -1839,6 +1839,81 @@ mérce a mérés).
 > *Bizonyítottsági fok: **megerősített** a feliratokra és a megjelenítő
 > blokkra; **NINCS MÉRVE** a kattintás hatására.*
 
+#### `kenburnsaoi` — „Pásztázás és nagyítás - arc": a bináris útja (#4856, 2026-10-12)
+
+*Bizonyítottsági fok: **részben megerősített**. A téglalap-illesztés
+natívan mérve; az arc-forrás, az időzítés és a görbe NYITOTT.*
+
+**1. A sztringtől a regisztrációig.** A `CTransitions::kenburnsaoi`
+(VA `0x00cb2f00`) egyetlen xrefe a `0x00771a10` (`string_xrefs.csv`).
+Ez nem a számolás, hanem a **név-tábla feltöltése**: 22 rekord, egyenként
+16 bájt, a `0x00d34188 + 16·i` címen. A `+12` mező a lokalizált név
+CString-mutatója (a `0x00771a10` írja `0x00d34194 + 16·i`-re). A
+regisztrációs sorrend a rekord-index: `kenburns` = 1, `kenburnsaoi` = 20,
+`rect` = 21 (a `0x00d342d4` tárolja az `i = 20` nevét).
+
+**2. Példányosítás.** A `0x00771dc0` kapja az átmenet-indexet (`esi`); a
+hívók `0x008136fa` és `0x00813af4`. A rekord `+0` mezője a **csoport**; a
+`0x00771e60` ezt ágazza el: csoport `1` = `kenburns` (`0x0076e100`),
+csoport `0xa` = `kenburnsaoi` (`0x0076ed30`, 0x4c0 bájtos objektum),
+csoport `0xb` = `rect` (`0x0076bd90`). A csoport-összerendelést a
+`0x00d34188`-as tábla statikus adata adja, nem kód.
+
+**3. A konstruktor (`0x0076ed30`).** Két, egyenként 4 float-os téglalap-
+jelöltet kap (argumentum `[esp+0x10…0x1c]` és `[esp+0x20…0x2c]`). Az
+elsőt a `−1.0` konstanssal (`0x00cf3ed0`) való összehasonlítás után
+választja, különben a másodikat; a választott téglalapot a
+`+0x4b0 … +0x4bc` mezőkbe írja, majd a `0x0076ee50` számolja a célt. Az
+ágak pontos feltételei **olvasva, nem mérve**.
+
+**4. A célterület (`0x0076ee50`).**
+
+- *Forrás-téglalap:* a vtable `+0x30` (slot 12, `0x009e08b0`) hívása egy
+  `out` téglalapot ad, az első paraméter `0`. **Ez a hívás csak az
+  index 0-t kéri.** Hogy ez a *legelső* vagy a *legnagyobb* arc, **nincs
+  bizonyítva** (a `0x009e08b0` törzse még nincs végigolvasva).
+- *Illesztés (`0x009b4b60`) — NATÍVAN MÉRVE.* Az eredmény **lefedő
+  (cover) illesztés**, nem befoglaló:
+  - `s = max(W_B / w, H_B / h)` (float32), ahol `(w,h)` a forrás-téglalap,
+    `(W_B,H_B)` a cél **mérete** (a cél eltolása nem számít);
+  - `W = rne(w·s)`, `H = rne(h·s)` (`rne` = félre-páros kerekítés, az
+    x87 `fistp` alapértelmezése);
+  - `x0 = trunc((W_B − W) / 2)`, `x1 = x0 + W`; `y` ugyanígy. A `trunc`
+    a `cdq; sub; sar 1` kódrészlet miatt a nullához kerekít (`−125 → −62`).
+  - `w = 0` vagy `h = 0` esetén `(0,0,0,0)`.
+  - A kimenet `(x0, y0, x1, y1)`, 4 × int32.
+- *Utána (`0x0076ee50` második fele).* A kód a kapott téglalapot a
+  kép határaihoz **tolja** (a `[esp+0x50]`/`[esp+0x54]` képméretekkel),
+  a méretet nem változtatja. A feltételek **olvasva, nem mérve**.
+- *Kimenet:* `+0x448 … +0x454`, float-ként: `x0, y0, x1, y1`.
+
+**5. Időzítés, görbe, pásztázás iránya — NYITOTT.** A konstruktor és a
+`0x0076ee50` a **két végpontot** (a cél-téglalapot) állítja be. A köztes
+állapot a kirajzoló vtable-metódusokban van (`0x009de…`, `0x009e0…`
+slotok), azok még nincsenek azonosítva. Ezért **nem tudjuk**, honnan indul
+a pásztázás (teljes kép? kezdő téglalap?), hová érkezik, és milyen görbe
+szerint halad.
+
+**6. Arc nélküli kép — NYITOTT.** Az `else` ág a slot-12 metódus saját
+téglalapját adja (feltehetően a teljes kép), és ugyanazt az illesztést
+futtatja. Ez **nem bizonyított**.
+
+**Mai megvalósítás** (eltérés):
+- `SlideshowView.qml:752–761`: középpontos `scale` 1.0 → 1.12
+  (`kenburnsaoi`) vagy 1.08 (`kenburns`); arc-téglalap nincs.
+- `movie/slideshow.py:242–252`: `scale = 1.12 − 0.12·p`, középpontos
+  kivágás; a kommentje kimondja, hogy az arc hiányzik a fotóadat-modellből.
+- ⇒ a mai kód **nem** követi a bináris lefedő illesztést, és a célpont-
+  választás (arc) teljesen hiányzik.
+
+**Kész, ha (a kutatás lezárásához):**
+1. a slot-12 metódus (`0x009e08b0`) végigolvasva: honnan jön az arc-
+   téglalap, és több arcnál melyik (index 0 = mi?);
+2. a kirajzolás (vtable-metódusok) időparamétere és görbéje natív
+   futtatással mérve két végponton és három köztes időpontban;
+3. az arc nélküli ág mérése;
+4. a `0x0076ee50` határ-eltolásának natív mérése (a fit-mérés mintája).
+
 ### 2.2 Beállítások
 
 - **Slide Duration** csúszka — kiírás: `Slide Duration: %s Sec`.
