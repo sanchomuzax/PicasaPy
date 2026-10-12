@@ -92,6 +92,24 @@ kérdőjellel áll (például „Anna?"), alatta két kis gomb: a **✓** elfoga
 a javaslatot, és az arc a személyhez kerül; a **✗** elveti, és az arc
 névtelen marad.
 
+### Amíg a háttérben fut az arckeresés
+
+Ha a kijelölt képek közül a háttérkeresés még nem ért el mindegyikhez, a
+fejléc ezt mutatja a fenti szövegek helyett:
+
+| amikor | a fejléc |
+|---|---|
+| egy kép van kijelölve (vagy a nézőben állsz) | **Arcok betöltése a fájlhoz...** |
+| több kép van kijelölve | **Arcok betöltése *N* fájlhoz...** |
+| egy személy albumában | **További személyek keresése...** |
+| a Névtelenek albumban, amíg a program az arcok összehasonlításához szükséges adatokat számolja | **Arcok adatainak rendezése, *N*%** |
+
+A személy albumán kívül a fejléc mögött az is olvasható, hány kijelölt
+képet nem nézett még át a keresés (például „…, 3 ellenőrizetlen fájl.").
+A keresés közben a lista magától frissül: az újonnan talált névtelen
+arcok néhány tized másodpercen belül megjelennek benne. Ha minden kijelölt
+kép sorra került, a fejléc visszaáll a szokásos szövegre.
+
 ### Személy kézi hozzáadása
 
 Ha az arckereső egy arcot nem talált meg, magad is kijelölheted. A panel

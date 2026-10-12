@@ -130,12 +130,15 @@ filmhez hasonlóan viselkedik:
 - a képek a **Dia időtartama** szerint követik egymást, a **szöveges
   diák** pedig a képek után, a saját szövegükkel, betűtípusukkal és
   színükkel jelennek meg;
-- két kép között látszik az átmenet: a képek a beállított **Átfedés**
-  ideje alatt úsznak át egymásba. A **Szétoszlás feketén át** és a
-  **Szétoszlás fehéren át** a fekete, illetve a fehér képen keresztül
-  vált, a **Kivágás** pedig éles váltás. A többi stílusnál az előnézet
-  szintén csak áttűnést mutat, a tényleges mozgást (tolás, kör és így
-  tovább) a kész film adja;
+- két kép között a kiválasztott **átmenet** látszik, a beállított
+  **Átfedés** ideje alatt: a mozgásos stílusok (például a tolás, a kör
+  vagy a pásztázás és nagyítás) is ugyanúgy mozognak, mint a kész
+  filmben. Az előnézet a film méretével, a **Teljes képkockás fotó
+  körbevágása**, a
+  feliratok és a dátumok beállításával készül, tehát azt látod, amit a
+  film is mutatni fog;
+- a **szöveges dia** szövegének, betűjének vagy színének változtatása
+  gépelés közben is szinte azonnal látszik az előnézetben;
 - ha van **hangsáv**, az az előnézettel együtt szól: a **Szünet** megállítja,
   az ablak bezárása leállítja. A lejátszósáv melletti hangerő-csúszkával
   állítod az előnézet hangerejét; a program megjegyzi a beállítást.

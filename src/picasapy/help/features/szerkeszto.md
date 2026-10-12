@@ -160,8 +160,14 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
   13×18, 20×25), **A4** teljes oldal, valamint a képernyő-arányok:
   **4:3** (szabvány képernyő), **16:10** (széles monitor), **16:9**
   (HDTV) és **5:3** (széles digitális képkeret). Az **Egyéni méretarány
-  hozzáadása…** paranccsal saját arányt vehetsz fel névvel,
-  szélességgel és magassággal; a saját arányt később törölni is tudod.
+  hozzáadása…** paranccsal saját arányt vehetsz fel: az ablakban a
+  **Méretek:** sorba a szélességet és a magasságot, a **Név:** sorba a
+  nevét írod; alatta egy **Példa:** sor mutatja, mire gondol a program
+  (4x6, kisméretű nyomat). A saját arányok a listában az **Egyéni
+  méretarányok** cím alatt állnak. Törölni a lista melletti kis
+  **kukával** tudod: válaszd ki a saját arányt, kattints a kukára, és
+  hagyd jóvá a kérdést („Törli ezt az egyéni méretarányt?"). Beépített
+  aránynál a kuka szürke.
   A lista első két sora a
   pixelméretet is kiírja: a **Kézi** sor a kijelölt keret méretét (például
   „Kézi: 1200x800"), a **Jelenlegi méretarány** sor a teljes kép méretét.
