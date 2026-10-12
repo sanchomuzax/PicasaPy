@@ -1088,14 +1088,11 @@ class AppController(
     def lockHidden(self) -> None:
         """Visszazárás: a kapcsoló is visszaáll, hogy a rejtettek eltűnjenek."""
         self._hidden_unlocked = False
-        if self._get_settings().value("view/showHidden", "false") in (
-            True,
-            "true",
-            "1",
-        ):
+        if self._show_hidden_setting():
             self._get_settings().setValue("view/showHidden", False)
             self._refresh_view()
             self._reload_folders()
+        self._gyujtemenyek_ujrarajzolasa()
         self.statusChanged.emit()
 
     @Property(bool, notify=statusChanged)
@@ -1103,11 +1100,21 @@ class AppController(
         """Fel van-e oldva EBBEN a munkamenetben."""
         return bool(getattr(self, "_hidden_unlocked", False))
 
-    @Property(bool, notify=statusChanged)
-    def showHidden(self):
-        """Nézet → Rejtett képek: látszanak-e a rejtettek (halványítva)."""
+    def _show_hidden_setting(self) -> bool:
+        """A TÁROLT kapcsoló (újraindítás után is megmarad)."""
         value = self._get_settings().value("view/showHidden", "false")
         return value in (True, "true", "1")
+
+    @Property(bool, notify=statusChanged)
+    def showHidden(self):
+        """Nézet → Rejtett képek: látszanak-e a rejtettek (halványítva).
+
+        TÉNYLEGES érték (#4597): a tárolt kapcsoló csak akkor számít, ha nincs
+        jelszó, vagy ebben a munkamenetben fel van oldva — a feloldás nem
+        marad meg újraindítás után, a kapcsoló viszont igen."""
+        return self._show_hidden_setting() and (
+            not self.hiddenPasswordSet or self.hiddenUnlocked
+        )
 
     @Property(bool, notify=statusChanged)
     def showOnlyBigImages(self):  # noqa: N802 — QML-konvenció

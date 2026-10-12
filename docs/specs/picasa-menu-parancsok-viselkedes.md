@@ -1239,6 +1239,11 @@ vagy egyéni gyűjteményből elrejtett mappa tehát megjelenítés után a
   nem állítható vissza az ini-ből, ezért a mappa látható marad, amíg az ini
   olvashatóvá nem válik (a szinkron addig minden körben újrapróbálja).
 
+- **Ismert maradék kockázat (PicasaPy-oldal, #4597):** az 1-es jelölésű (az
+  ini-ben már `Hidden Folders`) mappa, amelynek az ini-je kívülről eltűnt,
+  áthelyezéskor elveszíti a rejtést, mert csak a 2-es jelölés költözik az új
+  útvonalra.
+
 ### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
 
 A determinisztikus sor három tétele mérés után rendben találtatott:

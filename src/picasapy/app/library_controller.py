@@ -42,6 +42,7 @@ from picasapy.index import (
     sync_folder,
 )
 from picasapy.index.dedup_folders import merge_duplicate_folders
+from picasapy.index.queries import carry_pending_hidden
 from picasapy.paths import normalize_path, path_key
 from picasapy.scanner import (
     LibraryWatcher,
@@ -53,7 +54,6 @@ from picasapy.scanner import (
 )
 from picasapy.scanner.filetypes import RAW_EXTENSIONS
 
-from .hidden_carry import carry_pending_hidden
 from .busy_registry import get_app_busy_registry
 from .filetype_preferences import (
     enabled_filetypes as enabled_filetype_groups,

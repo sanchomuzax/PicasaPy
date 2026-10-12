@@ -18,12 +18,26 @@ def _kategoria(mappa) -> str | None:
     return read_folder_category(load_document(Path(mappa) / PICASA_INI_NAME))
 
 
-@pytest.fixture
-def ctrl(qt_app, tmp_path):
+def _epit_vezerlo(tmp_path, library):
+    """Új vezérlő ugyanazzal az indexszel és beállításfájllal (újraindítás)."""
     from picasapy.app.controller import AppController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.thumbs import ThumbnailCache
 
+    controller = AppController(
+        tmp_path / "index.db",
+        (str(library),),
+        ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32)),
+        settings=QSettings(str(tmp_path / "s.ini"), QSettings.Format.IniFormat),
+        watched_file=tmp_path / "WatchedFolders.txt",
+    )
+    controller._reload_after_sync()
+    controller.library = library
+    return controller
+
+
+@pytest.fixture
+def ctrl(qt_app, tmp_path):
     library = tmp_path / "kepek"
     for nev, kategoria in (
         ("titkos", "tech"),
@@ -38,15 +52,8 @@ def ctrl(qt_app, tmp_path):
         )
     with open_index(tmp_path / "index.db") as conn:
         sync_tree(conn, library)
-    controller = AppController(
-        tmp_path / "index.db",
-        (str(library),),
-        ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32)),
-        settings=QSettings(str(tmp_path / "s.ini"), QSettings.Format.IniFormat),
-        watched_file=tmp_path / "WatchedFolders.txt",
-    )
-    controller._reload_after_sync()
-    controller.library = library
+    controller = _epit_vezerlo(tmp_path, library)
+    controller.tmp_path = tmp_path
     return controller
 
 
@@ -235,7 +242,7 @@ def test_rejtett_mappa_nem_helyezheto_gyujtemenybe(ctrl):
     assert jelzesek == [(str(titkos), "hidden-move")]
 
 
-def _athelyez_2_es(ctrl):
+def test_2_es_mappa_athelyezeskor_a_jeloles_az_uj_utra_kerul(ctrl):
     import shutil
 
     regi = ctrl.library / "titkos"
@@ -244,20 +251,66 @@ def _athelyez_2_es(ctrl):
         conn.execute("UPDATE folders SET hidden = 2 WHERE path = ?", (str(regi),))
         conn.commit()
     shutil.move(str(regi), str(uj))
-    return regi, uj
-
-
-def test_2_es_mappa_athelyezeskor_a_rejtes_az_uj_utra_kerul(ctrl):
-    regi, uj = _athelyez_2_es(ctrl)
-    ctrl.resyncMovedFolder(str(regi), str(uj))
-    assert _kategoria(uj) == "Hidden Folders"
-
-
-def test_athelyezes_ini_hiba_eseten_az_uj_ut_2_es_jelolest_kap(ctrl, monkeypatch):
-    regi, uj = _athelyez_2_es(ctrl)
-    monkeypatch.setattr("picasapy.app.hidden_carry.set_folder_hidden_in_ini", _hiba)
     ctrl.resyncMovedFolder(str(regi), str(uj))
     with open_index(ctrl._db_path) as conn:
         assert conn.execute(
             "SELECT hidden FROM folders WHERE path = ?", (str(uj),)
-        ).fetchone()[0] == 2
+        ).fetchone()[0] != 0
+        # a közvetlenül utána futó szinkron beírja az ini-be
+        sync_tree(conn, ctrl.library)
+        assert is_folder_hidden(conn, str(uj)) is True
+    assert _kategoria(uj) == "Hidden Folders"
+
+
+def _jelszavas_ujrainditas(ctrl):
+    ctrl.setHiddenPassword("titok", False)
+    assert ctrl.unlockHidden("titok") is True
+    ctrl.toggleFolderHidden(str(ctrl.library / "titkos"))
+    ctrl.toggleFolderHidden(str(ctrl.library / "proj"))
+    ctrl.setShowHidden(True)
+    assert ctrl.showHidden is True
+    return _epit_vezerlo(ctrl.tmp_path, ctrl.library)
+
+
+def test_ujrainditas_utan_a_jelszokapu_nem_kerulheto_ki(ctrl):
+    titkos = str(ctrl.library / "titkos")
+    proj = str(ctrl.library / "proj")
+    uj = _jelszavas_ujrainditas(ctrl)
+    assert uj.hiddenPasswordSet and not uj.hiddenUnlocked
+    assert uj.showHidden is False
+    assert titkos not in _gyujtemeny_mappai(uj)
+    assert proj not in _projekt_mappak(uj)
+    assert uj._hidden_folder_paths() >= {titkos, proj}
+    uj.clearHiddenPassword()
+    ctrl.clearHiddenPassword()
+
+
+def test_feloldas_utan_ugyanaz_a_beallitas_ismet_mutatja(ctrl):
+    uj = _jelszavas_ujrainditas(ctrl)
+    assert uj.unlockHidden("titok") is True
+    assert uj.showHidden is True
+    assert uj._hidden_folder_paths() == frozenset()
+    uj.clearHiddenPassword()
+
+
+def _jelzes_szamlalo(ctrl):
+    lista: list[str] = []
+    ctrl.customCollectionsChanged.connect(lambda: lista.append("gyujtemeny"))
+    ctrl.projectFoldersChanged.connect(lambda: lista.append("projekt"))
+    return lista
+
+
+def test_lezaraskor_a_ket_jelzes_kimegy(ctrl):
+    ctrl.setHiddenPassword("titok", False)
+    ctrl.unlockHidden("titok")
+    ctrl.setShowHidden(True)
+    lista = _jelzes_szamlalo(ctrl)
+    ctrl.lockHidden()
+    assert {"gyujtemeny", "projekt"} <= set(lista)
+    ctrl.clearHiddenPassword()
+
+
+def test_setshowhidden_a_ket_jelzest_kuldi(ctrl):
+    lista = _jelzes_szamlalo(ctrl)
+    ctrl.setShowHidden(True)
+    assert {"gyujtemeny", "projekt"} <= set(lista)

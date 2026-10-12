@@ -7820,9 +7820,9 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Show it first.</source>
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>A hidden folder cannot be moved into a collection. Show it first.</translation>
+            <translation>A hidden folder cannot be moved into a collection. Unhide it first.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />

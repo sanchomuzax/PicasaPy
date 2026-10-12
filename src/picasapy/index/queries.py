@@ -289,6 +289,32 @@ def is_folder_hidden(conn: sqlite3.Connection, folder_path: str) -> bool:
     return bool(sor["hidden"]) if sor is not None else False
 
 
+def carry_pending_hidden(conn: sqlite3.Connection, old: str, new: str) -> None:
+    """Áthelyezett mappa: a `old` részfa 2-es (az ini-be még nem írt) rejtését
+    az `new` részfa útvonalaira viszi (#4597).
+
+    Csak a JELÖLÉST viszi át (a cél sora 2-es lesz); az ini-írást a
+    közvetlenül utána futó szinkron végzi el. Mindkét útvonal-elválasztót
+    kezeli (a LIKE-jokerek escape-elve, mint a `photos_in_folder`-nél)."""
+    prefix = str(old).rstrip("/\\")
+    escaped = (
+        prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    )
+    rows = conn.execute(
+        "SELECT path FROM folders WHERE hidden = ? AND (path = ? "
+        "OR path LIKE ? ESCAPE '\\' OR path LIKE ? ESCAPE '\\')",
+        (HIDDEN_INI_PENDING, prefix, f"{escaped}/%", f"{escaped}\\\\%"),
+    ).fetchall()
+    new_prefix = str(new).rstrip("/\\")
+    for row in rows:
+        conn.execute(
+            "INSERT INTO folders(path, has_ini, hidden) VALUES (?, 0, ?) "
+            "ON CONFLICT(path) DO UPDATE SET hidden = excluded.hidden",
+            (new_prefix + row["path"][len(prefix):], HIDDEN_INI_PENDING),
+        )
+    conn.commit()
+
+
 def hidden_folders(conn: sqlite3.Connection) -> tuple[str, ...]:
     """A rejtett mappák útvonalai, ábécében."""
     return tuple(

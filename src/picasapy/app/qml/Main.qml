@@ -4199,7 +4199,7 @@ ApplicationWindow {
                 errorBannerText.text = qsTr("The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).")
             } else if (reason === "hidden-move") {
                 //: #4597: rejtett mappa gyűjteménybe mozgatása nem engedett
-                errorBannerText.text = qsTr("A hidden folder cannot be moved into a collection. Show it first.")
+                errorBannerText.text = qsTr("A hidden folder cannot be moved into a collection. Unhide it first.")
             } else {
                 //: #4597: a megjelenítés ini-írása elbukott, a mappa rejtett marad
                 errorBannerText.text = qsTr("The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.")

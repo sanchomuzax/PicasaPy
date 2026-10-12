@@ -7819,13 +7819,13 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <location filename="../qml/Main.qml" />
             <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>A mappa rejtve van, de a Picasa számára nem sikerült megjelölni (a .picasa.ini nem írható).</translation>
+            <translation>A mappa rejtett, de a Picasa számára nem sikerült rejtettként megjelölni (a .picasa.ini nem írható).</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Show it first.</source>
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rejtett mappa nem helyezhető át gyűjteménybe. Előbb jelenítse meg.</translation>
+            <translation>Rejtett mappa nem helyezhető át gyűjteménybe. Előbb szüntesse meg a rejtését.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
