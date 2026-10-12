@@ -3595,6 +3595,94 @@ pontosan a `[1, 2, 1]/4` háromszög-mag.~~ → **helyesbítve** (#3812): a
 `quality` valóban menetszám, de a menet a natív, tört súlyú dobozszűrő
 (`nativ_blur`), nem 2 képpont széles doboz; ld. a következő szakaszt.
 
+#### Comicize — a maszképítő két 255-re vágott egésze: operandusok, szerep, natív ceil-mérés (2026-10-12, #626)
+
+**Forrás:** `0x00bcc2e0` teljes dekompilálása (Ghidra-köteg 2026-10-12,
+`00bcc2e0.c`; `osszefoglalo.md` #21), utasítás-listing `0x00bcc2e0`–`0x00bcc640`.
+A két szimmetrikus blokk: `0x00bcc3d4`–`0x00bcc434` (xblur, `r_x`) és
+`0x00bcc438`–`0x00bcc48d` (yblur, `r_y`).
+
+**A második blokk operandusai, FPU-sorrendben** (a `fld1`-es `1,0` a `0x00bcc401`
+után az FPU-n marad, ezért a `fsubr` a `p5 − 1,0`-t adja):
+
+| lépés | utasítás | érték |
+|---|---|---|
+| bemenet | `fsubr dword [esp+0x88]` (`0x00bcc438`) | `p5` = **yblur** (a bázis `[esp+0x88]`) |
+| `−1,0` | a FPU-n maradt `fld1` | `0x00c7e328` = 1,0 (double) |
+| `×0,5` | `fmul qword [0xc72150]` (`0x00bcc440`) | `0x00c72150` = 0,5 (double) |
+| `ceilf` | `call 0x00529e10` → `0x00c090f0` | a `ceil` (lásd a mérést lent) |
+| `×S` | `fmul dword [esp+0x1c]` (`0x00bcc456`) | `S` = a **quality** (`p7`, `[esp+0x90]`), `bc52c0`-val [1,15]-re vágva, egész; `S<0` esetén `+2^32` (`0x00cf39e4`) |
+| `+1,0` | `fadd qword [0xc7e328]` (`0x00bcc466`) | 1,0 |
+| csonkítás | `fldcw | 0x0c00` + `fistp` (`0x00bcc479`–`0x00bcc481`) | nulla felé |
+| korlát | `esi = 0xff`, `cmp eax, esi` / `ja` (`0x00bcc487`–`0x00bcc48d`) | `> 255` (előjeles negatívat is beleértve, mert `ja` előjeltelen) → **255** |
+
+Az első blokk ugyanez `p4` = **xblur** bemenettel (a `push ecx` miatt a bázis
+`[esp+0x84]`, ld. fent), az eredmény a `[esp+0x1c]` rekeszben (`r_x`); a második a
+`[esp+0x18]`-ben (`r_y`).
+
+**Képlet (megerősítve):**
+
+```
+r_b = min(255, trunc( ceil((b − 1,0)·0,5) · q + 1,0 )),   b ∈ {xblur, yblur}
+xblur, yblur ∈ [0, 253] (bc52c0),  q ∈ [1, 15] (bc52c0, egész)
+```
+
+**A két egész SZEREPE — a hívottak utasításszintű olvasata:**
+
+- **Nem menetszám, és nem alfa-szorzó.** A menetszám a `quality` (`q`) maga:
+  `0x00bcc7b0` a `p7`-et `0x00bcce20`-nak adja, ahol a `sub dword [esp+0x30], 1`
+  / `jne` ciklus pontosan `q` menetet fut, a `[esp+0x60]` ping-pong pufferét
+  `and …, 1`-gyel váltva.
+- **Sugár (kiterjedés).** `r_x` és `r_y` a maszk-puffer PEREMSUGARA:
+  - `0x00bcbbd0(p1, r_x, r_y, &obj)`: a `param_2` (= `r_x`) a sorok BAL és JOBB
+    szélére írt `0xff` pótlás szélessége (`memset(…, 0xff, param_2)` két helyen);
+    a `param_3` (= `r_y`) a tetején és alján álló teljesen `0xff` sorok száma
+    (`uVar4 < param_3`, és a záró ciklus `param_3·2 − …`);
+  - `0x00bcc640`: a kiterjesztett méret `(x1 − x0) + 2·r_x` × `(y1 − y0) + 2·r_y`
+    (`in_EAX`-ból);
+  - a forrásalfa inverze (`−1 − x = ~x`) a belső tartományba kerül.
+  - Összhangban: a `q` menetű dobozelmosás teljes kiterjedése `n·félsugár + 1`,
+    ahol a félsugár `ceil((b−1)·0,5)` — ez a `r_b` képlet.
+- **Alfa — NEM ez a két egész.** A `glowalpha` (`p3`) külön ágon megy:
+  `trunc(a·255)` bájt a `CONCAT13` felső bájtjában (`0x00bcc4d9`–`0x00bcc4e1`,
+  a `param_2` szín-alfa).
+
+**Natív mérés (2026-10-12, qemu-i386, a `0x00529e10` közvetlen hívása):**
+a harness-driver `float32` bemenetet kap, a `st0`-t `fstp qword`-del
+visszaírja. A `0x00529e10` (→ `0x00c090f0`) a **`ceil`**: pl. `0,1 → 1`,
+`1,25 → 2`, `−2,5 → −2`, `−0,75 → −0,0`. Két ágon mérve: `[0xda1424] = 1`
+(SSE) és `= 0` (`0x00c13280`), 26 bemeneti ponton azonos kimenet. A
+`(b−1)·0,5` float32-es bemenetű grideken (22 pont, `b ∈ [0; 253]`, köztük
+`1,0000001`, `2,0000002`, `252,9`) a natív `ceil` **22/22-ben egyezett** a
+Python `math.ceil`-lel. Ez a margin-képletben az egyetlen nem-egész lépés;
+a többi (`×q`, `+1`, csonkítás, 255-korlát) egész aritmetika.
+
+**A PicasaPy-lánc összevetése (bájtos, a két egészre):**
+
+| elem | Picasa (bináris) | PicasaPy | eredmény |
+|---|---|---|---|
+| peremsugár | `min(255, trunc(ceil((b−1)·0,5)·q+1))` | `belso_ragyogas.peremsugar(blur, q)` = `min(_PEREM_MAX=255, int(ceil((blur−1,0)·0,5)·q+1))` | **egyezik** (a képlet azonos; `peremsugar` = `r_b`) |
+| tartomány | `xblur,yblur` ∈ [0,253], `q` ∈ [1,15] | `BLUR_MAX = 253.0`, `minoseg = min(max(int(q),1),15)` | **egyezik** |
+| pufferméret | `(x1−x0)+2·r_x`, `(y1−y0)+2·r_y` | `ragyogas_maszk_oszlopai`: `szeles + 2·rx`, `magas + 2·ry` | **egyezik** |
+| menetszám | `q` menet a `0x00bcce20` ciklusban | `_dobozmenetek(…, minoseg)` `for _ in range(minoseg)` | **egyezik** |
+| Comicize hívás | `GlowImageOperation innerglow`, `xblur = yblur = 35·0,02·max(W,H)/2`, `quality = 3`, `strength = 1,1` | `apply_comicize` → `inner_glow(…, xblur, xblur, 1.1)`, `xblur = 70 · (0,02/4) · max(W,H)` (= 0,35·max), `MINOSEG = 3` | **egyezik** (a `70·0,02/4 = 35·0,02/2`) |
+
+**Mit NEM mértünk ebben a körben:** a teljes `0x00bcc2e0` kimeneti maszkjának
+bájtgoldenjét (a `quality`-függő kiterjesztés QEMU-mérése korábban, 2026-10-06,
+már megvan, ld. „A `GlowImageOperation` súlya”). A két egész képlete és szerepe
+bizonyított; a Comicize-csővezeték bájtos golden-összevetése (#626) külön marad.
+
+**Leltár-sor (Comicize, a Glow-maszk szakasza):**
+
+| művelet | rész | állapot |
+|---|---|---|
+| `Comicize` (`GlowImageOperation innerglow`, `0x00bcc2e0`) | a két peremsugár `r_b = min(255, trunc(ceil((b−1)·0,5)·q+1))` képlete és szerepe (sugár, nem menetszám/alfa) | **megerősített** (utasítás + natív `ceil`: 26 ponton két CPU-ágon, 22 float32-grid ponton a Python-összevetés) |
+| `Comicize` | a teljes maszk bájtgoldenje a `0x00bcc2e0` kimenetén | **nyitott** (a Comicize-csővezeték bájtmérése külön) |
+
+**Teendő:** a PicasaPy `peremsugar` képlete egyezik a binárissal — kódteendő
+ebből a részből nincs. Eltérés csak akkor lenne, ha a natív golden egy
+`r_b`-re más egészet adna; ezt a 22 pontos grid nem mutatta.
+
 #### ⭐ `EdgeDetectionB` — a „mérésből illesztett” tényezők a binárisból, és a natív elmosás (2026-09-27, 383. kör, #626)
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
