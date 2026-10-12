@@ -65,6 +65,10 @@ class TimelineController(QObject):
         összhangban, #17) — józan alapértelmezés, hogy a böngészhető
         áttekintésben ne látsszanak rejtett fotók; a Timeline egyelőre
         nem ismeri a Nézet → Rejtett képek kapcsolót.
+
+        #4887: a rejtett MAPPÁK képeit már maga a lekérdezés kihagyja (a
+        közös kapu, `index/hidden_scope.py`), a kapcsoló tényleges értéke
+        szerint.
         """
         with open_index(self._db_path) as conn:
             records = tuple(r for r in all_photos(conn) if not r.hidden)
