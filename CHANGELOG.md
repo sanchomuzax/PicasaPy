@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.77] – 2026-10-12
+
+- Albumból megnyitott képen a Ctrl+Delete és a nagy kép helyi menüjének törlés-tétele már nem a lemezről töröl, hanem eltávolítja a képet az albumból (a fájl megmarad); a menütétel felirata is „Eltávolítás az albumból”. Mappából megnyitott képen minden változatlan (#4621).
+
 ## [0.9.76] – 2026-10-12
 
 - A bal hasáb indexképei (a mappák kis borítóképei) induláskor gyorsan megjelennek: a program a már elkészült bélyegképeket használja, nem dekódolja újra minden indításkor az eredeti fotókat; a fotó nélküli mappák csendben a mappaikont kapják, és a konzolon nem ismétlődik többé a „Failed to get image from provider” hiba (#4876).
