@@ -73,3 +73,55 @@ def test_csak_az_utolso_tabla_szamit(tmp_path):
     path = tmp_path / "hatvan.jpg"
     path.write_bytes(buf.getvalue())
     assert jpeg_quality_text(path).startswith("60")
+
+
+class _SzamlaloFajl(io.BufferedReader):
+    """Számolja, hány bájtot olvasott le a hívó."""
+
+    olvasott = 0
+
+    def read(self, meret=-1):
+        adat = super().read(meret)
+        type(self).olvasott += len(adat)
+        return adat
+
+
+def test_nagy_fajlbol_csak_a_fejlecet_olvassa(tmp_path, monkeypatch):
+    """Szegmensenkénti olvasás, SOS-nál stop: 6 MB-os fájlból pár tíz kB."""
+    buf = io.BytesIO()
+    Image.new("RGB", (16, 16), "red").save(buf, "JPEG", quality=80)
+    jpeg = buf.getvalue()
+    sos = jpeg.index(b"\xff\xda")
+    path = tmp_path / "nagy.jpg"
+    path.write_bytes(jpeg[:sos] + b"\xff\xda\x00\x08" + bytes(6) + bytes(6 * 1024 * 1024))
+    import builtins
+
+    igazi_open = builtins.open
+    _SzamlaloFajl.olvasott = 0
+
+    def szamolo_open(fajl, mod="r", *a, **kw):
+        if str(fajl) == str(path) and "b" in mod:
+            return _SzamlaloFajl(igazi_open(fajl, "rb", buffering=0), 1)
+        return igazi_open(fajl, mod, *a, **kw)
+
+    monkeypatch.setattr("picasapy.metadata.jpeg_quality.open", szamolo_open, raising=False)
+    assert jpeg_quality_text(path).startswith("80")
+    assert _SzamlaloFajl.olvasott < 64 * 1024
+
+
+def test_ffd8_nelkuli_fajlbol_nem_olvas_tobbet_par_bajtnal(tmp_path, monkeypatch):
+    path = tmp_path / "x.jpg"
+    path.write_bytes(b"\x89PNG" + bytes(1024 * 1024))
+    import builtins
+
+    igazi_open = builtins.open
+    _SzamlaloFajl.olvasott = 0
+
+    def szamolo_open(fajl, mod="r", *a, **kw):
+        if str(fajl) == str(path) and "b" in mod:
+            return _SzamlaloFajl(igazi_open(fajl, "rb", buffering=0), 1)
+        return igazi_open(fajl, mod, *a, **kw)
+
+    monkeypatch.setattr("picasapy.metadata.jpeg_quality.open", szamolo_open, raising=False)
+    assert jpeg_quality_text(path) is None
+    assert _SzamlaloFajl.olvasott <= 16

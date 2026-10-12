@@ -58,49 +58,74 @@ _STANDARD = tuple(
 )
 
 _SOF_MARKEREK = frozenset(range(0xC0, 0xD0)) - {0xC4, 0xC8, 0xCC}
-_MAX_FEJLEC = 4 * 1024 * 1024
+#: Egy szegmens legfeljebb 64 KiB (a hosszmező 16 bites).
+_SOS = 0xDA
+_EOI = 0xD9
 
 
 def jpeg_quality_text(path: str | Path) -> str | None:
-    """`"<minőség>"` + mintavétel-utótag, vagy None (nem JPEG / nincs tábla)."""
+    """`"<minőség>"` + mintavétel-utótag, vagy None (nem JPEG / nincs tábla).
+
+    A fájlt szegmensenként olvassa, és az SOS-nál (a képadat előtt) megáll,
+    ezért egy nagy fájlból is csak a fejléc (jellemzően néhány tíz kB) jön be
+    — a hívás hálózati meghajtón, kijelölésenként is olcsó.
+
+    A minőség az utolsó DQT-tábla átlagos arányából becsült érték. Telítődés:
+    a 8 bites táblaelemek 255-nél megállnak, ezért a nagyon alacsony beállított
+    minőség (Q ≲ 5, mérve: Q = 1…3 → „13”) nem adható vissza pontosan; a
+    becslés alulról kb. 13-nál megáll.
+    """
     try:
         with open(path, "rb") as handle:
-            adat = handle.read(_MAX_FEJLEC)
-    except OSError:
+            minoseg, utotag = _fejlec_adatai(handle)
+    except (OSError, ValueError):
         return None
-    if adat[:2] != b"\xff\xd8":
+    if not minoseg:
         return None
+    return f"{minoseg}{utotag}"
+
+
+def _fejlec_adatai(handle) -> tuple[int | None, str]:
+    if handle.read(2) != b"\xff\xd8":
+        return None, ""
     minoseg = None
     utotag = ""
-    for marker, szegmens in _szegmensek(adat):
+    for marker, szegmens in _szegmensek(handle):
         if marker == 0xDB:
             becsles = _utolso_tabla_becslese(szegmens)
             if becsles:
                 minoseg = becsles
         elif marker in _SOF_MARKEREK:
             utotag = _mintavetel_utotag(szegmens)
-    if not minoseg:
-        return None
-    return f"{minoseg}{utotag}"
+    return minoseg, utotag
 
 
-def _szegmensek(adat: bytes):
+def _szegmensek(handle):
     """(marker, tartalom) párok az SOS-ig; a hibás szerkezetnél megáll."""
-    hely = 2
-    while hely + 4 <= len(adat):
-        if adat[hely] != 0xFF:
+    while True:
+        fej = handle.read(2)
+        if len(fej) < 2 or fej[0] != 0xFF:
             return
-        marker = adat[hely + 1]
-        if marker == 0xFF:  # kitöltő bájt
-            hely += 1
-            continue
-        if marker == 0xDA or marker == 0xD9:
+        marker = fej[1]
+        while marker == 0xFF:  # kitöltő bájt
+            kovetkezo = handle.read(1)
+            if not kovetkezo:
+                return
+            marker = kovetkezo[0]
+        if marker in (_SOS, _EOI):
             return
-        hossz = int.from_bytes(adat[hely + 2 : hely + 4], "big")
-        if hossz < 2 or hely + 2 + hossz > len(adat):
+        if marker == 0x00 or 0xD0 <= marker <= 0xD7 or marker == 0x01:
+            continue  # hosszmező nélküli jelölő
+        hossz_bajt = handle.read(2)
+        if len(hossz_bajt) < 2:
             return
-        yield marker, adat[hely + 4 : hely + 2 + hossz]
-        hely += 2 + hossz
+        hossz = int.from_bytes(hossz_bajt, "big")
+        if hossz < 2:
+            return
+        tartalom = handle.read(hossz - 2)
+        if len(tartalom) < hossz - 2:
+            return
+        yield marker, tartalom
 
 
 def _utolso_tabla_becslese(szegmens: bytes) -> int:

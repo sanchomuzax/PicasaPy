@@ -11,10 +11,13 @@ import re
 from collections import Counter
 from pathlib import Path
 
-from PySide6.QtCore import QDateTime, QLocale
+from datetime import datetime
 
-from picasapy.ini import contacts_of, load_existing, parse_faces
+from PySide6.QtCore import QDate, QDateTime, QLocale, QTime
 
+from picasapy.ini import load_existing, parse_faces
+
+from .contact_names import contact_names_by_id
 from .photo_sort import photo_date
 
 _INI_NEV = ".picasa.ini"
@@ -28,11 +31,17 @@ def file_date_text(photo, locale: QLocale) -> str | None:
     (az eredetinél a `GetFileAttributesEx` sikere a feltétel)."""
     if not (Path(photo.folder_path) / photo.name).is_file():
         return None
-    stamp = QDateTime.fromString(photo_date(photo), "yyyy-MM-ddTHH:mm:ss")
-    if not stamp.isValid():
-        stamp = QDateTime.fromString(photo_date(photo), "yyyy-MM-ddTHH:mm:ss.zzzzzz")
-    if not stamp.isValid():
+    if not photo.taken_at and not photo.sort_mtime_ns:
+        return None  # a 0 ns „nincs adat", nem 1970
+    try:
+        # a `photo_date` ISO-ja törtmásodpercet is hordozhat (fájlidő)
+        idopont = datetime.fromisoformat(photo_date(photo)).replace(microsecond=0)
+    except (OSError, ValueError, OverflowError):
         return None
+    stamp = QDateTime(
+        QDate(idopont.year, idopont.month, idopont.day),
+        QTime(idopont.hour, idopont.minute, idopont.second),
+    )
     datum = locale.toString(stamp.date(), QLocale.FormatType.ShortFormat)
     ido = stamp.time()
     if ido.hour() == 0 and ido.minute() == 0 and ido.second() == 0:
@@ -49,11 +58,13 @@ def _masodperces_formatum(locale: QLocale) -> str:
     return _PERC_RESZ.sub(lambda talalat: talalat.group(0) + ":ss", alap, count=1)
 
 
-def person_tags_text(photo, xmp_people: tuple[str, ...]) -> str | None:
+def person_tags_text(
+    photo, xmp_people: tuple[str, ...], contacts_xml=None
+) -> str | None:
     """A „Személycímkék": a kép megnevezett arcai (`.picasa.ini` `faces=` +
     `[Contacts2]`); ha nincs, a fájl XMP-régióinak nevei. Azonos név N-szer:
     „Név (N)"; több név vesszővel (a Kulcsszavak-sor mintája)."""
-    nevek = ini_person_names(photo) or xmp_people
+    nevek = ini_person_names(photo, contacts_xml) or xmp_people
     if not nevek:
         return None
     szamlalo = Counter(nevek)
@@ -63,9 +74,11 @@ def person_tags_text(photo, xmp_people: tuple[str, ...]) -> str | None:
     )
 
 
-def ini_person_names(photo) -> tuple[str, ...]:
+def ini_person_names(photo, contacts_xml=None) -> tuple[str, ...]:
     """A kép nevesített arcainak nevei az ini-ből, az arclista sorrendjében;
-    a meg nem nevezett (üres nevű) arc kimarad. Olvasási hibára ()."""
+    a meg nem nevezett (üres nevű) arc kimarad. A nevet a központi
+    `contacts_xml` és a mappa `[Contacts2]`-je adja (`contact_names`).
+    Olvasási hibára ()."""
     try:
         document = load_existing(Path(photo.folder_path) / _INI_NEV)
         section = document.section(photo.name)
@@ -73,10 +86,7 @@ def ini_person_names(photo) -> tuple[str, ...]:
         if not raw:
             return ()
         arcok = parse_faces(raw)
-        nevek = {
-            contact.person_id.casefold(): contact.name
-            for contact in contacts_of(document)
-        }
+        nevek = contact_names_by_id(document, contacts_xml)
     except (OSError, ValueError):
         return ()
     return tuple(

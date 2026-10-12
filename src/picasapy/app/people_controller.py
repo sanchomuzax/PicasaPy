@@ -60,6 +60,7 @@ from picasapy.ini import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .contact_names import central_contacts_path
 from .models import _thumb_url
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
@@ -231,7 +232,7 @@ class PeopleMixin:
 
     def _people_contacts_path(self) -> Path:
         """A PicasaPy központi tárának contacts/contacts.xml fájlja."""
-        return Path(self._db_path).parent / "contacts" / "contacts.xml"
+        return central_contacts_path(self._db_path)
 
     @Slot("QVariantList", result=bool)
     def savePeopleManagerChanges(self, changes) -> bool:  # noqa: N802

@@ -412,7 +412,7 @@ _ORIENTATION_LABELS = {
 }
 
 
-def properties_entries(photo, locale: QLocale, tr) -> list:
+def properties_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     """A Tulajdonságok-panel (#13/#529) sorai: (címke, érték) párok.
 
     A sorrend a Picasa saját `runtime/properties.xml`-jét követi (#529) — a
@@ -431,7 +431,7 @@ def properties_entries(photo, locale: QLocale, tr) -> list:
     if photo.kind != "photo":
         entries.extend(_movie_entries(photo, locale, tr))
         return entries
-    entries.extend(exif_entries(photo, locale, tr))
+    entries.extend(exif_entries(photo, locale, tr, contacts_xml))
     return entries
 
 
@@ -475,7 +475,7 @@ def _compression_entry(value, tr) -> str | None:
     return tr(label) if label else value
 
 
-def exif_entries(photo, locale: QLocale, tr) -> list:
+def exif_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     """A `properties.xml` EXIF-eredetű mezői, EREDETI SORRENDBEN (#529).
 
     Az adat nélküli mező kimarad. A felsorolt értékek (fénymérés,
@@ -565,7 +565,7 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
             if keyword.strip()
         )
         add("Keywords", ", ".join(keywords))
-    add("People Tags", person_tags_text(photo, details.xmp_people))
+    add("People Tags", person_tags_text(photo, details.xmp_people, contacts_xml))
     # a koordináta a Picasában is mindig pontos (`.picasa.ini`
     # `geotag=33.770556,-84.293055`, KML `<longitude>%f`): vesszős
     # tizedesjellel egy koordinátapár olvashatatlan volna

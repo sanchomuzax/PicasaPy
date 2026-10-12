@@ -2521,6 +2521,11 @@ A Fájl dátumához a termékben **már megvan** a pontos megfelelő:
 `app/photo_sort.photo_date(record)` — EXIF felvételi idő, ennek hiányában a
 befagyasztott első-látáskori fájlidő (#2486, `pmp-database.md` 10.3–10.4).
 
+**Nyitott: nem-pontos félértékek.** A `%.3g`/`%g` kerekítés a nem pontosan
+ábrázolható félértékeknél (1.005, 2.675, 9.995, 99.95) még nincs qemu-harnessel
+mérve és rögzítő teszttel lezárva; a Python `round`/formázás és az eredeti CRT
+itt eltérhet.
+
 *Bizonyítottsági fok: **megerősített** az öt kulcsra, feliratra, a sorrendre,
 a CCD-képletre és feltételeire, a minőségbecslő képletére és a
 mintavétel-utótagokra, a Személycímkék két forrására és elsőbbségére, a

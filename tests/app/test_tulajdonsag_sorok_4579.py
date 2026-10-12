@@ -1,7 +1,6 @@
 """#4579: Fájl dátuma, CCD szélessége, Rekesz, JPEG minőség és Személycímkék
 sor a Tulajdonságok-panelen (spec `picasa-metaadat-tulajdonsagok.md` 17.)."""
 
-import os
 from types import SimpleNamespace
 
 import piexif
@@ -226,8 +225,21 @@ class TestFajlDatuma:
     def test_fajlido_tartalek(self, tmp_path):
         _jpeg(tmp_path / "a.jpg")
         photo = _photo(tmp_path, "a.jpg", taken_at=None)
-        os.environ.setdefault("TZ", "UTC")
         assert "File Date" in _dict(exif_entries(photo, QLocale("en"), _tr))
+
+    def test_tortmasodperces_fajlido_is_kap_sort(self, tmp_path):
+        """A `photo_date` ISO-ja `.mikroszekundum`-ot kap; a sor nem tűnhet el."""
+        _jpeg(tmp_path / "a.jpg")
+        egesz = _photo(tmp_path, "a.jpg", mtime_ns=1_700_000_000_000_000_000)
+        tort = _photo(tmp_path, "a.jpg", mtime_ns=1_700_000_000_123_456_789)
+        vart = _dict(exif_entries(egesz, QLocale("en"), _tr))["File Date"]
+        assert _dict(exif_entries(tort, QLocale("en"), _tr))["File Date"] == vart
+
+    def test_nulla_fajlido_nincs_sor(self, tmp_path):
+        """A 0 ns „nincs adat", nem 1970."""
+        _jpeg(tmp_path / "a.jpg")
+        photo = _photo(tmp_path, "a.jpg", mtime_ns=0)
+        assert "File Date" not in _dict(exif_entries(photo, QLocale("en"), _tr))
 
 
 def _ini(folder, szoveg):
@@ -310,6 +322,28 @@ class TestSzemelycimkek:
         self.test_xmp_tartalek_ha_nincs_ini(tmp_path)
         self._ini_arcokkal(tmp_path, ["Kata"])
         assert _dict(_ertekek(tmp_path, "a.jpg"))["People Tags"] == "Kata"
+
+    def test_kozponti_contacts_xml_is_feloldja_a_nevet(self, tmp_path):
+        """A `faces=` azonosítója csak a központi `contacts.xml`-ben van."""
+        _jpeg(tmp_path / "a.jpg")
+        _ini(
+            tmp_path,
+            "[a.jpg]\nfaces=rect64(1000000000000000),00000000000000aa\n",
+        )
+        kozponti = tmp_path / "kozpont" / "contacts.xml"
+        kozponti.parent.mkdir()
+        kozponti.write_text(
+            '<contacts><contact id="00000000000000aa" name="Kata" '
+            'local_contact="1" modified_time="2020-01-01T00:00:00+00:00"/>'
+            "</contacts>",
+            encoding="utf-8",
+        )
+        photo = _photo(tmp_path, "a.jpg")
+        ertek = dict(
+            exif_entries(photo, QLocale("en"), _tr, contacts_xml=kozponti)
+        )
+        assert ertek["People Tags"] == "Kata"
+        assert "People Tags" not in _dict(_ertekek(tmp_path, "a.jpg"))
 
     def test_properties_entries_tartalmazza(self, tmp_path):
         _jpeg(tmp_path / "a.jpg")
