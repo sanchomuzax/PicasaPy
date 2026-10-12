@@ -10,6 +10,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.9.76] – 2026-10-12
 
 - A bal hasáb indexképei (a mappák kis borítóképei) induláskor gyorsan megjelennek: a program a már elkészült bélyegképeket használja, nem dekódolja újra minden indításkor az eredeti fotókat; a fotó nélküli mappák csendben a mappaikont kapják, és a konzolon nem ismétlődik többé a „Failed to get image from provider” hiba (#4876).
+- Megbízhatóbb lett a kötegelt átnevezés menütesztje (#4893).
+- Fejlesztőknek: a QML-tesztek a motor törlésekor a betöltött segédmodulok burkait is elengedik, így a szerkesztő tesztfájlja lebontási hiba nélkül fut (#4897).
 
 ## [0.9.75] – 2026-10-12
 
