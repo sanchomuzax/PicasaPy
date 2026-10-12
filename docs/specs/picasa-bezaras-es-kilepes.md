@@ -134,17 +134,14 @@ szemantikája ebből a vizsgálatból nem állapítható meg.
 közvetlen író hivatkozását a `0x00563190` rutinban találta meg. Ez megerősíti,
 hogy a vizsgált handler az állóképes előnézeti ághoz tartozik.
 
-Az `1` kódhoz tartozó általános jelentés balgomb-lenyomás. Az `0x0d` fizikai
-egérüzenethez vagy kattintásszámhoz rendelése **NINCS MEG**: az
-`picasa-eger-es-kijeloles.md` 4.2/b szakasza az esemény jelentését és a
-`WM_*` → belső kód leképezést nyitott kérdésként tartja nyilván, a 4.3 pedig
-figyelmeztet, hogy a 13-as kódot nem lehet bizonyíték nélkül dupla
-kattintásnak nevezni. Ezért a bináris alapján csak feltételesen mondható meg,
-hogy kikapcsolt `SingleClickExit` mellett melyik fizikai kattintás indítja a
-visszalépést.
+Az `1` kódhoz tartozó általános jelentés balgomb-lenyomás. A 2026-10-07-i
+#4493-as állapotban még nem volt ismert, mi állítja elő az `0x0d` eseményt; ezt
+a következő, #4500-as célzott olvasat lezárta. Az `0x0d` nem egérüzenet és nem
+kattintásszám, hanem a billentyűesemény `VK_RETURN` kódja (lásd lent).
 
-**#4500 célzott utánkövetés (2026-10-07) — a natív bemeneti út még nincs
-összekötve a `PreviewHandler`-rel.** A `ytWindow::vftable` (`0x00cd87fc`)
+**A 2026-10-07-i kutatási állapot — a #4500 későbbi eredménye felülírta.** A
+natív bemeneti út akkori vizsgálata még nem volt összekötve a
+`PreviewHandler`-rel. A `ytWindow::vftable` (`0x00cd87fc`)
 üzenetkezelője a `0x00984970`; a `0x201`–`0x208` Win32 egérüzeneteket
 `0x00984a10`–`0x009850da` között táblás ágakkal választja szét, és a
 `0x00985324` bájttábla két közös útra tereli őket. A látható balgomb-lenyomási
@@ -175,31 +172,64 @@ sem bizonyított.
 | | Eredeti | Nálunk | Teendő |
 |---|---|---|---|
 | videó-előnézet (`ytDSMovie`) | `[CThumbUI+0x30a6] == 0` mellett `SingleClickExit=0`: balgombos dupla kattintás (`WM_LBUTTONDBLCLK`, `0x203`, belső kód `3`); `=1`: balgomb-lenyomás (`WM_LBUTTONDOWN`, `0x201`, belső kód `1`). Mindkettő a `thumbui/albumview` parancshoz vezet (`0x0054c540`, `0x00595fe0`). | A `VideoExitGestureArea` köti a `controller.singleClickExitEnabled` értéket a videó kilépési gesztusához (`VideoPlayerView.qml:120–124`). | A #4449 videós útja megfelel az eredeti beállításnak. |
-| állóképes előnézet (`editpanel/preview`) | A `PreviewHandler` beolvassa a `SingleClickExit` értéket. `=1` esetén a balgomb-lenyomásként azonosított `1` kód, `=0` esetén az `0x0d` eseménykód ága vezethet a `thumbui/albumview` parancshoz, a kezelő ágkapui és az előnézet láthatósági feltétele mellett (`0x00564bac`, `0x005c24c0`, `0x00566270`). Az `0x0d` fizikai gesztusa nyitott. | A `PhotoViewer.qml` nem olvassa a `singleClickExitEnabled` értéket; a `viewerPanArea` nagyított, nem vágás, nem videó állapotban aktív, és dupla kattintásra `viewer.zoomFit()`-et hív (`3730–3808`). A külön `viewerBackButton` a `viewer.kerBezaras()`-t hívja (`1495–1505`). | A #4493 csak a binárisból bizonyított gesztussal bővítse a beállítást: `=1` mellett az állóképes előnézet balgomb-lenyomása lépjen vissza, az átfedő szerkesztőeszközök és a húzás védelmével. `=0` mellett előbb az `0x0d` fizikai jelentését kell megállapítani, és azt kell megőrizni; dupla kattintást nem szabad feltételezni. Ha az `0x0d` dupla kattintásnak bizonyul, a jelenlegi `zoomFit()` gesztus ütközését fel kell oldani, a nagyítás-illesztést más, látható vezérlőn megtartva. A `Back to Library` gomb maradjon működő. |
+| állóképes előnézet (`editpanel/preview`) | `=1` esetén a balgomb-lenyomás `1` kódja, `=0` esetén a billentyű-eseményosztályban a `VK_RETURN` (`0x0d`) vezethet a `thumbui/albumview` parancshoz, ha a `CThumbUI+0x31ac` mező nulla és az előnézet látható (`0x00564bac`, `0x005c24c0`, `0x00566270`). Az `0x0d` tehát nem egérgesztus. | A `PhotoViewer.qml` a `singleClickExitEnabled` értéket olvassa. `=1` mellett a bal kattintás visszalép; `=0` mellett Enterre a könyvtárba tér vissza, az aktív szerkesztőeszköz saját Enter-útját megtartva. Mindkét állásban a dupla kattintás nagyítás-illesztés marad, a `Back to Library` gomb pedig a `viewer.kerBezaras()`-t használja. | `=1` mellett a már bekötött bal kattintás lépjen vissza; `=0` mellett az állóképes néző Enter billentyűje térjen vissza a könyvtárba. Az Enter ne vegye el az aktív szerkesztőeszköz (különösen a sorozat-vágás) saját eseményét. A dupla kattintás maradjon nagyítás-illesztés, a `Back to Library` gomb pedig működő. |
 
-**Fejlesztői teendő a nyitott leképezés után:**
+**Fejlesztői teendő a #4500-as leképezés után:**
 
-1. Kösd a `singleClickExitEnabled` beállítást az állóképes előnézet megfelelő
-   balgombos eseményéhez. Bekapcsolt értéknél a bizonyított balgomb-lenyomás
-   hívja a meglévő `viewer.kerBezaras()` visszalépést.
-2. A kikapcsolt értékhez csak az `0x0d` bináris leképezésének igazolása után
-   rendeld hozzá a fizikai gesztust. Ha ez dupla kattintás, oldd fel az
-   ütközést a `viewer.zoomFit()`-tel, és tartsd elérhetően a nagyítás
-   illesztését külön vezérlőn.
-3. Az eseménykezelés ne vegye el az aktív szerkesztőeszköz, a képi átfedés,
-   illetve a pásztázó húzás eseményeit; a meglévő `viewerBackButton` maradjon
-   használható.
+1. Bekapcsolt értéknél a bizonyított balgomb-lenyomás hívja a meglévő
+   `viewer.kerBezaras()` visszalépést.
+2. Kikapcsolt értéknél a `VK_RETURN`-nek megfelelő Enter billentyűje hívja a
+   `viewer.kerBezaras()` visszalépést; a dupla kattintás maradjon
+   `viewer.zoomFit()`.
+3. Az Enter-kezelés ne vegye el az aktív szerkesztőeszköz saját útját
+   (különösen a Vágás „alkalmazás és következő kép” sorozatát), és a meglévő
+   `viewerBackButton` maradjon használható.
 
-**Kész, ha:** a bináris vagy célzott futóprogram-mérés az `0x0d` fizikai
-gesztusát azonosította; `SingleClickExit=1` mellett az állóképes előnézetből
-balgomb-lenyomásra visszalép; `=0` mellett a bizonyított alternatív gesztus
-lép vissza; a húzás és az aktív eszközök nem indítanak kilépést; a
-nagyítás-illesztés és a `Back to Library` vezérlő továbbra is elérhető.
+**Kész, ha:** az `0x0d` billentyűkód bizonyítéka a specben áll; `SingleClickExit=1`
+mellett az állóképes előnézetből balgomb-lenyomásra visszalép; `=0` mellett
+Enterre visszalép; az aktív szerkesztőeszköz megtartja saját Enter-útját; a
+dupla kattintás nagyítás-illesztés marad; a `Back to Library` vezérlő továbbra
+is elérhető.
 
-**Nyitott:** az `0x0d` fizikai egérüzenethez/kattintásszámhoz kötése, valamint az üres szerkesztőfelület viselkedése.
+**Nyitott:** az üres szerkesztőfelület viselkedése; ez a #4500 Enter-következtetését nem érinti.
 
-- `Ghidra-kör kell: 0x005c24c0 — kövesd vissza a PreviewHandler esemény +8 mezőjének 0x0d-re állítását a natív bemenetig, azonosítsd a hozzá vezető WM_* / gesztust, és igazold, hogy a 0x00984970 ytWindow út része-e ennek. [blokkoló]`
+- ~~`Ghidra-kör kell: 0x005c24c0 — kövesd vissza a PreviewHandler esemény +8 mezőjének 0x0d-re állítását a natív bemenetig`.~~ **Lezárva (#4500):** az `0x0d` a billentyűesemény `+0x10` mezőjében a `VK_RETURN`; nem egérgesztus, ezért a `WM_*` egérüzenet leképezését nem kell hozzá keresni.
 
+#### #4500 — az `0x0d` a Return billentyű, nem egérgesztus (2026-10-12)
+
+A `0x005c24c0` (`PreviewHandler`) eseményrekordján belül két külön mező
+azonosítja az eseményt: a `+0x08` az eseményosztály, a `+0x10` pedig a
+billentyűkód. A kezelő a `0x17` billentyűosztályt külön ágon választja ki,
+majd annak `+0x10` mezőjét vizsgálja; az `0x0d` ezen a mezőn a Win32
+`VK_RETURN` (Enter). Tehát a korábbi `0x0d = egérkattintás` feltevés téves:
+nem a `WM_*` egérüzenetből származó osztálykódot, hanem a Return billentyűt
+jelenti. A bizonyíték közvetlenül a handler két mezőjének külön olvasata és
+összevetése; a `0x00984970` `ytWindow` egérútja ettől független, és nem
+szükséges az Enter azonosításához.
+
+A `CThumbUI` `SingleClickExit` mezője a `+0x31ac` eltoláson van. A Return
+ág csak nulla értéknél engedi tovább a visszalépési utat; az `0x00566270`
+ellenőrzi az `editpanel/preview` láthatóságát, majd a
+`thumbui/albumview` parancshoz vezet. A handler belső kapui tehát itt is
+érvényesek, de az esemény fizikai jelentése már nem feltételes: **Enter**.
+
+**Nálunk (#4500 előtt):** a `PhotoViewer.qml` Enter-kötése minden nem
+szövegmező-fókusznál a következő képre léptetett. A kikapcsolt beállítás
+Enter-kilépését ez a jegy pótolja. A beállított egykattintásos bal kattintás
+és a `viewerBackButton` meglévő útja változatlan; dupla kattintásra továbbra is
+`zoomFit()` fut. A Vágás eszköz `CropOverlay.qml`-beli Enter-kezelése külön
+„alkalmazás és következő kép” sorozatot végez, ezért annak eseményét a
+nézőből kilépő ág nem foghatja el.
+
+**Bizonyosság: magas.** A `+0x08 == 0x17` billentyű-eseményosztály és a
+`+0x10 == VK_RETURN (0x0d)` virtuális billentyűkód együtt közvetlenül
+azonosítja az eseményt; nincs szükség a mozgás-/kattintásüzenetek belső
+kódra fordításának feltételezésére. A #4493 korábbi, nyitott gesztusleírása
+és a #4500 korábbi „nem azonosított” következtetése ezzel felülírt állapot.
+
+**Nyitott marad:** az üres szerkesztőfelület viselkedése. Ez nem változtat
+azon, hogy az állóképes előnézet `SingleClickExit=0` melletti bizonyított
+Return-útja Enter.
 ## 2. szint — lap bezárása (projekt), HÁROM választással
 
 A kollázs- és a filmszerkesztő **lapként** viselkedik, és a lap bezárásakor —

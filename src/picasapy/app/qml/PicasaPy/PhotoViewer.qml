@@ -1554,7 +1554,25 @@ Rectangle {
     }
     Keys.onEscapePressed: if (!viewer.textEntryHasFocus) viewer.handleEscape()
     Keys.onRightPressed: if (!viewer.textEntryHasFocus) next()
-    Keys.onReturnPressed: if (!viewer.textEntryHasFocus) next()
+    function handleReturnPressed() {
+        if (viewer.textEntryHasFocus)
+            return
+        // #4500: a kikapcsolt SingleClickExit az állóképes előnézetben
+        // Enterrel lép vissza a könyvtárba. Az aktív eszközök saját Enter-
+        // útját (pl. sorozat-vágás), a videót és a kettős nézetet meghagyjuk.
+        if (!viewer.singleClickExitEnabled
+                && !viewer.isCurrentVideo
+                && viewer.layoutMode === "1up"
+                && !editorPanel.modeToolActive
+                && !editorPanel.tiltActive
+                && !editorPanel.paramPanelActive
+                && !viewer.facesEditMode) {
+            viewer.kerBezaras()
+            return
+        }
+        viewer.next()
+    }
+    Keys.onReturnPressed: viewer.handleReturnPressed()
     Keys.onLeftPressed: if (!viewer.textEntryHasFocus) previous()
     // szóköz: videónál lejátszás/szünet (#14) — Picasa-viselkedés
     Keys.onSpacePressed: {
