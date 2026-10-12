@@ -39,15 +39,15 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 _KEEPALIVE: list[object] = []
 
 #: A tulajdonos naplójából vett, valódi alakok.
-WINDOWSOS = "C:\\Users\\attila.virag\\OneDrive - centralmediacsoport\\Képek\\AI"
+WINDOWSOS = "C:\\Users\\felhasznalo\\OneDrive - Ceg\\Képek\\AI"
 HALOZATI = "\\\\ds215j\\lemez\\My Pictures\\PicasaPy meroszett"
 
 
 class TestANormalizalas:
     def test_a_KODOLT_visszaper_feloldva(self):
         assert (
-            normalizald_az_azonositot("C:%5CUsers%5Cattila.virag%5CKépek%5CAI")
-            == "C:\\Users\\attila.virag\\Képek\\AI"
+            normalizald_az_azonositot("C:%5CUsers%5Cfelhasznalo%5CKépek%5CAI")
+            == "C:\\Users\\felhasznalo\\Képek\\AI"
         )
 
     def test_a_kisbetus_alak_is(self):
