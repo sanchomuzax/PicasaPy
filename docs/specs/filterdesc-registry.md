@@ -4286,7 +4286,7 @@ eleje.
 | `HSVGradientMap` | `0x008f03ec` | `0x00bbc190` | `0x00bb7c80` (435 b) | `0x00bbc260` (1448 b) | hueOffset@0x44 |
 | `IR` | `0x008f0a14` | `0x00bc3d80` | `0x00bc3f50` (395 b) | — | greenglow@0x2c, greenglowalpha@0x34, redweight@0x3c |
 | `ImageOperation` *(ős)* | `0x008f0b0c` | `0x00c07709` | `0x00c07709` (42 b) | — | — |
-| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34 |
+| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34; gyerekek: +0x3c Blur(R,R,q3), +0x40/+0x44 MultiplyColorMatrix(S). Az alkalmazó routingja natívan mérve (#4907, 5 eset); a pixel-kimenet NINCS mérve (ld. 2a. pont) |
 | `MultiplyColorMatrix` | `0x008f0024` | `0x00bb7730` | `0x00bc16b0` (428 b) | `0x00bb77a0` (165 b) | multiplier@0x28 |
 | `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
 | `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
@@ -4828,6 +4828,47 @@ bináris futtatása qemu-i386 alatt, egyező pixelbájtokkal. A felsorolt
 szintetikus mérések nem fedik le a teljes `filterdesc.xml` LocalContrast
 láncot, annak blur-/blend-határait vagy export-goldenét; ez a nagyobb effekt
 szintjén nyitott marad.
+
+### 2a. `LocalContrastImageOperation` — az alkalmazó és a gyerek-gráf (#4907, 2026-10-12)
+
+**Bizonyítottsági fok: részleges.** A paraméter-útvonal natívan mérve (QEMU-ban, öt beállításon). A pixel-kimenet **nincs** mérve: a lánc képpontos futtatója ebben a harnessben nem fut, ezért nincs bájtos összevetés az `xml_local_contrast`-tal. A #4907 „Kész, ha” feltétele nyitva.
+
+#### Az alkalmazó (`0x00bc4730`, 220 b, a 6. rés) — utasításszintű olvasás
+
+Hívás: thiscall (`ecx` = this), 3 stack-argumentum, `ret 0xc`. A lépések a szétszedésből (`glimmer-apply.c:461` dekompilátuma ezzel egyezik):
+
+1. Ha `this+0x3c`, `+0x40` vagy `+0x44` nulla → `eax = 4` és kilépés.
+2. `Strength` ← a `this+0x2c` attribútum (olvasó: `0x008ef520`). Ha az olvasó nem ad értéket, az alapérték **1,0** (nem a `filterdesc.xml` 1,5-ös alapja).
+3. `Radius` ← a `this+0x34` attribútum. Ha nincs érték, az alapérték **1,0**.
+4. Négy mezőbeírás (`0x008ef2b0`, double-argumentum):
+   - `this+0x3c` (Blur-gyerek) `+0x24` ← R, `+0x2c` ← R, tehát `xblur = yblur = R`;
+   - `this+0x40` (MultiplyColorMatrix) `+0x28` ← S;
+   - `this+0x44` (MultiplyColorMatrix) `+0x28` ← S.
+5. `0x009a8ca0` (ref-számlált fogantyú-másolás, `ret 4`) átadja a láncot; `eax = 0`.
+
+Az építő `0x00bc41e0` (statikus olvasat, nem futtatva): a `push 3`-mal hívott `0x00bb4c40` a `quality = 3` blur-gyereket (`+0x3c`) hozza létre, a `0x00bc1420` két példányban (`+0x40`, `+0x44`) szerepel. A keverési gráf (Subtract/Add-bekötés, `SetVar`/`GetVar`) **nincs** végigkövetve. Az építő belső ágait nem vezettem le.
+
+A routing tehát: **Blur(R, R, q3)** és **két Multiply(S)**. Ez összhangban van az `xml_local_contrast` modelljével (`elm = blur(R)`, `ki = elm + C·(be − elm)`, a telítő lépésekkel), C = S = Contrast. Az algebra: `elm + C(be − elm) = be + (C − 1)(be − elm)`, vagyis a #688 `Strength = Contrast − 1` és a #3520 `C = Contrast` alakja **azonos**, nem ellentmond egymásnak. A telítő lépések (negatív különbség → 0) nélkül ez az egyenlőség nem áll.
+
+#### Natív QEMU-mérés (`drv_lc.py`, #4907)
+
+Harness: `qemu_harness/w1.py` (`make_image`) és `hb.build_elf`, futtatás `qemu-i386`-tal. Kézzel épített `this`: a `+0x2c`/`+0x34` mezők és a `+0x3c`/`+0x40`/`+0x44` gyerekek nem nullák (üres test-objektumok). Hookolva: `0x008ef520` (olvasó: a beállított R/S-t adja, `eax = 0`), `0x008ef2b0` (beíró: rögzíti a címet és az értéket), `0x009a8ca0` (`ret 4`). **A valódi olvasó és beíró nem futott**: a mérés az apply saját routingját és visszatérési kódját méri.
+
+| R (Radius) | S (Strength) | eset | eax | A+0x24 = A+0x2c | B+0x28 | C+0x28 |
+|---:|---:|---|---:|---:|---:|---:|
+| 1,3 | 1,0 | teljes | 0 | 1,3 | 1,0 | 1,0 |
+| 15 | 1,5 | teljes | 0 | 15 | 1,5 | 1,5 |
+| 40 | 3,0 | teljes | 0 | 40 | 3,0 | 3,0 |
+| 2 | 2,0 | teljes | 0 | 2 | 2,0 | 2,0 |
+| 15 | 1,5 | `+0x44` nulla | 4 | — | — | — |
+
+Eredmény: a routing öt beállításon bitre egyezik a fenti leírással (a double-értékek pontosan R és S), a hiányzó gyerek kilépése `4`.
+
+#### Pixel-összevetés: NEM mért
+
+A `0x009a8ca0` csak a láncfogantyút másolja. A képpontokat a lánc futtatója viszi végig, és ez a harness nem futtatja. Nem mértük: (a) a Blur-gyerek natív pixelútját R-en és q3-on a teljes láncban; (b) a Subtract-blend 8 bites telítését; (c) a két Multiply-gyerek sorrendjét a láncban. Ezért **nincs** bájtos összevetés az `xml_local_contrast`-tal.
+
+**Kész, ha (nyitva):** natív képpontfutás a teljes láncon legalább három (R, S) párra, bájtos összevetéssel az `xml_local_contrast`-tal. Előfeltétel: a lánc képpontos végrehajtójának azonosítása a Ghidra-kötegből, és a valódi `0x008ef520` / `0x008ef2b0` futtatása a hookok helyett.
 
 ### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
 
