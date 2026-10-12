@@ -8,6 +8,12 @@ ikon nélkül** maradt; a felhasználó ezt jelentette.
 
 A `FolderPane.qml` kommentje kifejezetten az ellenkezőjét ígérte:
 „Ha nincs borító (kép nélküli mappa), a sor visszaesik a mappaikonra."
+
+#4876: a null kép helyett ismét 1 × 1 átlátszó JELÖLŐ jön, mert a null képre
+a Qt minden kérésnél hibasort írt, és a kérést ismételte. A #2215 hibája nem
+tér vissza: a `boritoLatszik` feltétele azóta a szélességet is nézi
+(`implicitWidth > 1`) — ezt a `test_mappa_borito_indulas_4876.py` forrás-őre
+rögzíti.
 """
 
 from __future__ import annotations
@@ -29,29 +35,29 @@ def ures_mappa(tmp_path: Path) -> Path:
 class TestANincsBoritoEsetNemSikeresKep:
     """A „nincs borító" nem lehet megkülönböztethetetlen a sikerestől."""
 
-    def test_kep_nelkuli_mappara_NULL_kep_jon(self, qt_app, ures_mappa):
+    def test_kep_nelkuli_mappara_JELOLO_jon(self, qt_app, ures_mappa):
         szolgaltato = FolderCoverProvider(lambda _m: [])
         kep = szolgaltato.requestImage(str(ures_mappa), None, None)
-        assert kep.isNull(), (
-            "a szolgáltató nem-null képet adott borító nélküli mappára — "
-            "a QML ezt sikeresnek hiszi, és elrejti a mappaikont"
+        assert (kep.width(), kep.height()) == (1, 1), (
+            "borító nélküli mappára nem az 1 képpontos jelölő jött — a QML "
+            "`implicitWidth > 1` feltétele ebből tudja, hogy mappaikon kell"
         )
 
-    def test_a_HIBARA_futo_lekerdezo_is_NULL_kepet_ad(self, qt_app, ures_mappa):
-        """A kivétel sem szökhet ki, de a válasz akkor sem lehet »sikeres«."""
+    def test_a_HIBARA_futo_lekerdezo_is_JELOLOT_ad(self, qt_app, ures_mappa):
+        """A kivétel sem szökhet ki, és a válasz akkor sem lehet »borító«."""
 
         def robban(_mappa):
             raise RuntimeError("szándékos teszt-hiba")
 
         szolgaltato = FolderCoverProvider(robban)
         kep = szolgaltato.requestImage(str(ures_mappa), None, None)
-        assert kep.isNull()
+        assert (kep.width(), kep.height()) == (1, 1)
 
-    def test_a_NULL_kep_nem_1x1(self, qt_app, ures_mappa):
-        """Az 1×1 volt a régi, hazug válasz — ne térhessen vissza."""
+    def test_a_jelolo_ATLATSZO(self, qt_app, ures_mappa):
+        """Ha valahol mégis kirajzolódna, ne hagyjon látható pöttyöt."""
         szolgaltato = FolderCoverProvider(lambda _m: [])
         kep = szolgaltato.requestImage(str(ures_mappa), None, None)
-        assert (kep.width(), kep.height()) != (1, 1)
+        assert kep.pixelColor(0, 0).alpha() == 0
 
 
 class TestAValodiBoritoTovabbraIsMukodik:

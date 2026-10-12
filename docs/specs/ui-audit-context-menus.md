@@ -930,10 +930,195 @@ nézet `+0x2c0` mezőjén át közvetlenül nem követtük végig).
 - a „Hozzáadás az albumhoz” felirat — **LEZÁRVA** (D.1);
 - a törlés billentyűnevének honosítása — **LEZÁRVA** (D.4);
 - a maszk `0x10` bitjének pontos jelentése (a D.3 feliratcseréje) —
-  **HATÓKÖRÖN KÍVÜL**: a rács menüjét nem érinti, és a mi nézőnk helyi
-  menüje nem tárgya a jegynek (340. kör döntése).
+  a 340. kör **hatókörön kívülre** tette (a rács menüjét nem érinti), a
+  #4621 viszont épp a néző helyi menüjét kérdezi: **LEZÁRVA** a D.7-ben
+  (a bit = „a jelenlegi gyűjtemény album, és nem a Keresési eredmények”;
+  a törlés-parancs ugyanezen a feltételen ágazik el).
 
-`0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+### D.7 ⭐ A néző `Ctrl+Delete`-je és „Törlés” tétele albumból: ELTÁVOLÍT, nem töröl (2026-10-11, #4621)
+
+*Forrás: a parancsdiszpécser ugrótáblája (`0x005cb990`: `0x005cba5d`–`0x005cba75`,
+index `0x005cdb34`, cél `0x005cd9fc`) · a `0x9c9a` kezelője `0x005cbaef`–`0x005cbb14`
+· a törlő/eltávolító `0x005c9b00` · a megerősítés-szövegező `0x005c9930` és
+`0x005fdc30` (3.3.1, `picasa-fen-dialogs.md`) · a megerősítő ablak `0x005fd670`
+· a lemezes törlés `0x009929b0` · a maszk-építő `0x005cb1a0` (`0x005cb642`–`0x005cb806`)
+· a feliratcsere `0x0056d664`–`0x0056d7c5` · RTTI: `CThumbUI::vftable` `0x00c906f4`
+· `stringres-en-hu.tsv`.*
+
+#### D.7.1 A néző helyi menüje a `CThumbUI` része — a parancs ugyanoda fut
+
+A néző (OneUp) helyi menüjének gazdája a `0x00595fe0` (építő `0x007327a0`,
+kontextus `0x8a`, B.4 tábla). Ez a függvény a **`CThumbUI` egyik másodlagos
+vtáblájának** (`0x00c906f4`) egyetlen tétele (index `rtti` tábla), és a menüt
+ugyanazon a `0x005e7c20` → `0x0056c5a0` láncon dolgozza fel, mint a rács. A
+`CThumbUI` fő vtáblájában ül a parancsdiszpécser `0x005cb990`, amely a
+`0x9c42`–`0x9d3c` tartományt ugrótáblával osztja szét:
+
+```
+0x005cba5d  lea eax, [esi - 0x9c42]
+0x005cba6e  movzx edx, byte [eax + 0x5cdb34]   ; 0x9c9a → index 0x58 → 24
+0x005cba75  jmp dword [edx*4 + 0x5cd9fc]        ; → 0x005cbaef
+```
+
+A `0x9c9a` (`ID_FILE_DELETEFROMDISK` — menüsáv `Delete`, helyi menük
+`Ctrl+Delete`, `picasa-gyorsbillentyuk.md` 3.3, 4.) kezelője **nem nézi,
+melyik felületről jött a parancs**:
+
+```
+0x005cbaef  cmp byte [0xd67849], 0      ; billentyűzet-kapu (gyorsbillentyuk 12.2)
+0x005cbafc  push 0x10 / call [0xc406f8] ; Shift lenyomva?
+0x005cbb0b  sete al                     ; al = NEM Shift
+0x005cbb0e  push 1 / push 1 / push al / push ebx
+0x005cbb14  call 0x005c9b00             ; (ui, lomtárba = !Shift, megerősít = 1, egész tároló = 1)
+```
+
+⇒ A néző `Ctrl+Delete`-je, a néző helyi menüjének törlés-tétele és a
+menüsáv Fájl ▸ Törlés tétele **ugyanazt** a `0x005c9b00(ui, !Shift, 1, 1)`
+hívást váltja ki, mint a rácsé. Hogy eltávolítás vagy lemezes törlés lesz-e,
+azt **kizárólag a `0x005c9b00`** dönti el, a `CThumbUI` állapotából.
+
+#### D.7.2 A döntés a `0x005c9b00` elején
+
+A két kijelölés-mutató (`picasa-eger-es-kijeloles.md` 10.2): `+0xea8` = az
+aktív kijelölés-csomópont, `+0xeac` = ugyanez, ha **album-/mappa-csomópont**
+(`0x0056bc10`: `+0xea8 = esi`, `+0xeac = dynamic_cast<CAlbumSelectionNode>(esi)`,
+`0x0056bc52`–`0x0056bd43`; ha az aktív csomópont a tálcáé, `+0xea4`, a `+0xeac`
+nem változik).
+
+| lépés | cím | feltétel → ág |
+|---|---|---|
+| nincs kijelölés-csomópont | `0x005c9b2d`–`0x005c9b3b` | `+0xea8 == 0` → kilép (`-1`) |
+| a gyűjtemény azonosítója | `0x005c9b40`–`0x005c9b52` | `ebp = [+0xeac]+0x3c0`, vagy `-1` |
+| a kijelölés NEM a jelenlegi gyűjteményé (pl. tálca) | `0x005c9b55` | `+0xea8 != +0xeac` → **lemezes ág** (`0x005c9ca3`) |
+| maga a gyűjtemény van kijelölve, kép nélkül | `0x005c9b70`–`0x005c9b98` | 4. arg ≠ 0 → album/mappa törlése (`0x005ed240`) |
+| mappa | `0x005c9bd5` `call 0x004461a0` = 0 | → **lemezes ág** |
+| album, token `]ignoreface` (Mellőzött emberek) | `0x005c9c17`–`0x005c9c4f` | → kilép `0xf4242`, **semmi nem történik** |
+| album, token `]search` (Keresési eredmények) | `0x005c9c5c`–`0x005c9c97` | jelző `[esp+0x27] = 1` → **lemezes ág** |
+| minden más album | `0x005c9c8d` → `0x005c9d4d` | → **eltávolító ág** |
+
+A `0x004461a0` = „a gyűjtemény album-e (szemben a mappával)” — független
+keresztellenőrzéssel: `picasa-keptalca.md` 20.3. A token a `[db+0x48]`
+objektum `+0x28` slotjából jön (`0x005c9bf5`), a két összevetett literál
+`0x00c80e58` = `]ignoreface`, `0x00c817a8` = `]search` (kiolvasva).
+
+**Az eltávolító ág** (`0x005c9de4`–`0x005c9e3a`): ha a 3. arg (megerősítés) nem
+nulla, a `0x005c9930(ui, lista, 0, albumid, 1, 1, 0, &dlg)` szövegezi a kérdést.
+Ennek 5. argja `1` ⇒ **fajta = 1 (album)** (`0x005c9931`–`0x005c9946`); ezt
+felülírja a `0x00448c90` (Emberek-album → 2, `0x005c9957`–`0x005c9960`) és a
+`0x00448a10(db, id, 0)` (névtelen emberek → 3, `0x005c9971`–`0x005c997a`). A
+dialógus-változat: `[dlg+0xc] = 5` (`0x005c9aca`, ha egyik kijelölt képnek
+sincs online másolata — a `0x005fd160` a `[db+0x48]` `+0xac` predikátumát
+futtatja minden kijelölt elemre; igaz esetén az `1`-es, online-másolatos
+változat jön). A fájl **a lemezen marad**.
+
+**A lemezes ág** (`0x005ca13d`–`0x005ca206`): `0x005fdc30` fajta = 0
+(`0x005ca1dd xor edi, edi`), „egész tároló” = 0 (`0x005ca1df xor al, al`), a
+„lomtár elérhető” bemenet a **2. arg = NEM Shift** (`0x005ca1c7`). A
+dialógus-változat `4` (online másolat nélkül, `0x005ca1e6`–`0x005ca1f6`); a
+`]search`-jelzőnél `0` (`0x005ca1fc`). A törlés maga a `0x009929b0(lista,
+!Shift)` (`0x005cac91`–`0x005caca3`): `SHFILEOPSTRUCT` `wFunc = 3`
+(`FO_DELETE`), `fFlags = 0x414 | (!Shift ? 0x40 : 0)` (`0x00992a07`–`0x00992a2f`)
+— a `0x40` a `FOF_ALLOWUNDO`, azaz **Shift nélkül Lomtárba, Shifttel
+véglegesen**.
+
+#### D.7.3 A megerősítő ablak — változatonként
+
+A `0x005fd670` a `[dlg+0xc]` szerint választ „Ne kérdezzen újból” beállítást
+(`0x005fd79e`–`0x005fd7c7`); ha a beállítás be van kapcsolva, kérdés nélkül
+igazzal tér vissza (`0x005fd7ea`–`0x005fd81b`):
+
+| `[dlg+0xc]` | beállításkulcs (`Preferences`) | jelölőnégyzet |
+|---:|---|---|
+| 4 | `DoNotConfirmDeleteFromDisk` | `IDS_CONFIRM_REMOVE_CHECK_MESSAGE` — *Ne kérdezzen újból, mindig távolítsa el* |
+| 5 | `DoNotConfirmRemoveFromAlbum` | ugyanaz |
+| 7 | `DoNotConfirmRemoveFromPeople` | ugyanaz |
+| 8 | `DoNotConfirmRemoveFromUnknown` | `ThumbUI::ConfirmUnknownCheckbox` — *Don't ask again, always move* |
+| 0 | — (nincs jelölő, sima „Confirm” ablak `0x009bac20`) | — |
+| 1, 2, 3, 6 | — | online-másolat törlése (megszűnt szolgáltatás) |
+
+**A kérdés szövege** (a 3.3.1 tábla soraiból, hivatalos magyarral):
+
+| eset | cím | kérdés (egy kép) | igen-gomb |
+|---|---|---|---|
+| albumból (fajta 1) | Elemek eltávolítása | *Biztosan eltávolítja a kijelölt képet a jelenlegi albumból?* (`RemoveSingle`) | Kép eltávolítása |
+| albumból, több kép | Elemek eltávolítása | *Biztosan eltávolítja a kijelölt %d képet a jelenlegi albumból?* (`RemoveMultiple`) | Képek eltávolítása |
+| mappából, Shift nélkül | Elemek törlése | *Biztosan a Kukába szeretné küldeni a kijelölt fájlt? (Így az összes olyan albumból is el fog tűnni, amelyben eddig látható volt.)* (`DeleteSingle`) | Kép törlése |
+| mappából, Shifttel | Elemek törlése | *Biztosan végleg törli a kijelölt fájlt? (A művelet nem vonható vissza.)* (`NoUndoSingle`) | Fájl törlése |
+
+#### D.7.4 A felirat ugyanezt a feltételt mutatja
+
+A maszk `0x10` bitje (`0x005cb1a0`): ha van `+0xeac` (`0x005cb642`–`0x005cb64a`),
+a `[db+0x48]` `+0x14` slotja a gyűjtemény **mappa-útvonalát** adja
+(`0x005cb663`–`0x005cb674`; ugyanez a hívás a `0x004461a0` törzse). Nem üres
+útvonal (= mappa) → a bit **nem** áll be (`0x005cb733`–`0x005cb7e5`). Üres
+útvonal (= album) → a token (`+0x28`, `0x005cb6fb`) összevetése a `]search`-csel
+(`0x005cb720`–`0x005cb72c`); ha **nem** az (vagy nincs token) → `or [mask], 0x10`
+(`0x005cb806`).
+
+⇒ **A bit jelentése: „a jelenlegi gyűjtemény album, és nem a Keresési
+eredmények”.** A D.3 feliratcseréje ezzel a néző (`0x8a`) és az album-kép
+(`0xa4`) menüjében `IDS_REMOVE_FROM_LABEL` = **„Eltávolítás az albumból”**,
+egyébként `IDS_DELETE_FROM_DISK` = **„Törlés a lemezről”** (`0x0056d67c`–`0x0056d6ff`;
+`0x00c8f324` / `0x00c8f33c`, kiolvasva). A felirat és a művelet tehát
+**ugyanazon a két feltételen** (album-e, `]search`-e) ágazik el.
+
+#### D.7.5 A válasz
+
+| hol nyitották meg a képet | a néző helyi menüjének tétele | `Ctrl+Delete` (és Fájl ▸ Törlés) | megerősítés |
+|---|---|---|---|
+| **album** | **Eltávolítás az albumból**\tCtrl+Törlés | albumtagság le, **a fájl marad** | „Elemek eltávolítása” / `RemoveSingle`, jelölő → `DoNotConfirmRemoveFromAlbum` |
+| **mappa** | Törlés a lemezről\tCtrl+Törlés | **Lomtárba** | „Elemek törlése” / `DeleteSingle`, jelölő → `DoNotConfirmDeleteFromDisk` |
+| mappa, **Shift**+Ctrl+Delete | (ugyanaz) | **végleges törlés** | `NoUndoSingle` |
+| Keresési eredmények (`]search`) | Törlés a lemezről | Lomtárba (Shifttel véglegesen) | `DeleteSingle`, **jelölő nélküli** sima ablak (változat 0) |
+| Emberek-album | Eltávolítás az albumból (a néző csak a két `IDS_` feliratot ismeri) | arc-eltávolítás az Emberek albumból, fájl marad | `RemoveSinglePeople`, jelölő → `DoNotConfirmRemoveFromPeople` |
+| Csillagozott fotók (`]star` token) | Eltávolítás az albumból | a D.7.2 ágtábla szerint **az eltávolító ágra** esik (csak `]ignoreface` és `]search` kivétel): a csillag levétele, **a fájl marad** | `RemoveSingle` / `DoNotConfirmRemoveFromAlbum` |
+| Névtelen emberek | Eltávolítás az albumból | áthelyezés a Mellőzött emberek albumba | `RemoveSingleUnknown`, jelölő → `DoNotConfirmRemoveFromUnknown` |
+| Mellőzött emberek (`]ignoreface`) | Eltávolítás az albumból | **semmi** (`0xf4242`) | — |
+
+Albumban a Shift **nem számít**: a 2. arg csak a lemezes ágon olvasódik
+(`0x005ca1c7`, `0x005cac91`).
+
+*A Csillagozott-sor bizonyítottsági foka:* **következtetett**, nem közvetlenül
+követett. A `0x005c9b00` ágtáblája (D.7.2) csak a `]ignoreface` és a `]search`
+tokent veszi ki, minden más album az eltávolító ágra megy; a `]star` token
+külön literálját és a csillag levételét végző hívást nem követtem utasításszinten.
+Nálunk a `showStarred` a `("starred", "")` nézetmódot állítja, tehát a
+`currentAlbumToken` üres, és a Csillagozott nézetből megnyitott képen a
+parancs ma **lemezről töröl** — ez eltér a binárisból várttól. Itt NEM
+változtattunk; a folytatás: **#4883**.
+
+*Bizonyítottsági fok:* a diszpécser-cél, a kezelő argumentumai, a
+`0x005c9b00` ágválasztása, a szövegező fajtája, a beállításkulcsok és a
+`SHFileOperation` jelzői **megerősítettek** (utasításszinten, a literálok
+programmal kiolvasva). **Erős**, de nem közvetlenül követett: hogy a
+nézőben a `+0xea8` és a `+0xeac` az albumból megnyitott képnél azonos
+csomópont. A felirat-kód (`0x8a`-ban) ugyanabból a `+0xeac`-ból számol, és a
+`+0xea8`-at csak az öt író egyike állítja (`0x005643e0`, `0x0056bc10`,
+`0x005733f0`, `0x00576a20`, `0x005e9bb0`; bájtmintás pásztázás
+`89 /r a8 0e 00 00`, indextől független); a néző megnyitása (`0x9ca0` →
+`0x005cbd26`: `thumbui/fullview` gomb-kattintás) egyiket sem hívja közvetlenül.
+Közvetlen igazolás: Colab-végrehajtós viselkedési próba (`tipus:behavior`,
+tulajdonosi `jovahagyva` kell) — albumból megnyitott kép, `Ctrl+Delete`, a
+megjelenő ablak címe. A tálcáról megnyitott néző esete (ott `+0xea8 = +0xea4
+≠ +0xeac`, tehát lemezes ág) nem tárgya a jegynek.
+
+#### D.7.6 Nálunk (a #4621 javítása UTÁN, 2026-10-11)
+
+| belépő | mit tesz albumból megnyitott képen | hol |
+|---|---|---|
+| néző `Ctrl+Delete` (Main.qml) | `picasaMenuBar.activateDeleteCommand()` → eltávolít az albumból (mappában Lomtár) | `Main.qml` `shortcutDeleteFromDiskViewer` |
+| néző `Ctrl+Delete` (a néző saját billentyűkezelője) | `deleteRequested()` → ugyanaz a közös elágazás | `PhotoViewer.qml` `Keys.onPressed` |
+| néző helyi menü | a felirat „Eltávolítás az albumból” / „Törlés lemezről” (`removesFromAlbum`), a művelet ugyanaz a közös elágazás; A\|B módban az aktív fél képére vonatkozik az egész menü | `ViewerContextMenu.qml` `viewerMenuDelete`, `PhotoViewer.qml` `_aktivUt()` |
+| menüsáv `Delete` / Fájl ▸ | `activateDeleteCommand()` (#1608) | `PicasaMenuBar.qml` |
+| rács `Ctrl+Delete` | `activateDeleteCommand()` (#1619) | `Main.qml` `shortcutDeleteFromDiskGrid` |
+| `Shift+Ctrl+Delete` | **egyik úton sincs kezelve** (a `Ctrl+Delete` `Shift`-tel nem egyezik a kötéssel). Az eredetiben albumban eltávolít (a Shift nem számít), mappában véglegesen töröl — a viselkedést itt nem változtattuk | — |
+
+⇒ A néző három belépője és a menüsáv/rács ugyanazon az elágazáson megy át; az
+albumból (és Emberek-albumból) megnyitott képen eltávolít, a fájl marad. Őrteszt:
+`tests/app/qml_functional/test_nezo_ctrl_delete_album_4621.py`. Nyitott: a
+Csillagozott nézet (fent, #4883) és a `Shift+Ctrl+Delete`.
 
 ### D.8 ⭐ A Csillagozott fotók (`]star`) gyűjteményben a törlés a CSILLAGOT veszi le, a fájl marad (2026-10-11, #4883)
 
@@ -1193,7 +1378,7 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | OneUp | FolderPhotoWin::ID_FILE_LOCATEONDISK | Keresés a lemezen; eredeti állapotban lapos, visszaállítható képnél almenü | objectName=viewerMenuLocate vagy objectName=viewerMenuLocateMenuItem | **megvan és működik** | tests/app/qml_functional/test_viewer_original_locate_4462.py |
 | OneUp | CThumbUI::locateondiskmenu | A feltételes almenü Fájl a lemezen tétele | objectName=viewerMenuLocateFile | **megvan és működik** | tests/app/qml_functional/test_viewer_original_locate_4462.py |
 | OneUp | CThumbUI::locateorigondiskmenu_win | A feltételes almenü Eredeti a lemezen tétele | objectName=viewerMenuLocateOriginal | **megvan és működik** | tests/app/qml_functional/test_viewer_original_locate_4462.py |
-| OneUp | FolderPhoto::ID_FILE_DELETEFROMDISK | Törlés a lemezről | objectName=viewerMenuDelete | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | FolderPhoto::ID_FILE_DELETEFROMDISK | Törlés a lemezről; albumból megnyitott képen „Eltávolítás az albumból” (D.7) | objectName=viewerMenuDelete | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py; album-ág és mindhárom belépő: tests/app/qml_functional/test_nezo_ctrl_delete_album_4621.py |
 | OneUp | AlbumPhoto::ID_COPY_PATH | Teljes elérési út másolása | objectName=viewerMenuCopyFullPath | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
 | OneUp | OneUp::QuickUpload | Gyors feltöltés | objectName=viewerMenuQuickUpload | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja az online szolgáltatásokat |
 | OneUp | AlbumPhoto::ID_SUPPRESS | Feltöltés tiltása | objectName=viewerMenuBlockUpload | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja az online szolgáltatásokat |
