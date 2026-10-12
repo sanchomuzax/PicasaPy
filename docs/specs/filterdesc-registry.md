@@ -3504,6 +3504,85 @@ olvasat + az eredeti worker QEMU-futtatása és attól független Python-bájt
 alapján. A projekt `native_dot_mask` pixelmagja ettől továbbra sem tekinthető
 bájtpontosnak: a korábbi 7×7 összevetés 20/49 eltérő bájtot talált.
 
+#### `CircularGradientImageMask` — az előállító natív mérése (2026-10-12, #4905)
+
+A `0x00bc2a50` (stdcall, `arg1` = maszk-objektum, `arg2` = ctx) **valódi
+kódja** futott `qemu-i386` alatt, a CRT-heap shimmel (`install_crt_shims`).
+A bemenet a `this` objektum mezőire íródott, a mezőszerepek a szétszedésből
+adódtak, és a futás igazolta őket (a téglalap és az alfa egyezett):
+
+| `this` eltolás | mező | megjegyzés |
+|---|---|---|
+| `+0x00`, `+0x04` | `width`, `height` (int) | a klippelő téglalap felső határa (`0x00bd0540`) |
+| `+0x08` | `aspectRatio` (float) | a téglalap x-kiterjedése `2·R·aspect` |
+| `+0x0c`, `+0x10` | `innerRadius`, `outerRadius` (float) | `R = max(inner, outer)` |
+| `+0x14`, `+0x18` | `innerAlpha`, `outerAlpha` (float) | az alfa-tábla két végpontja |
+| `+0x1c`, `+0x20` | `xCenter`, `yCenter` (float) | a körközéppont |
+| `+0x24`–`+0x40` | klippelő/gyorsítótár (int, `-1` = nincs) | `-1`-re állítva a lebegőpontos ág fut |
+
+**A kimenet** a ctx 40 bájtos `Ref`-fogantyú: `[1]` = sorhossz (pixel),
+`[2]` = szélesség, `[3]` = magasság, `[4]` = adatpointer. A pixel **4 bájtos
+BGRA**, a `B`, `G`, `R` csatorna nulla, az `A` csatorna a maszk. A kimenet a
+kör **befoglaló téglalapjára** vágott, a `W`/`H` határra klippelve. A
+befoglaló téglalap négy egész számát a futás után a `this+0x24`–`+0x30` mutatja
+(mért esetek: 64×48, 10/30, (32,24) → `(2,0,62,48)`; 64×48, 20/12, (32,24) → `(12,4,52,44)`).
+
+**Összevetés.** A PicasaPy `circular_gradient_mask` képlete ellen (a
+`_kormaszk_megallo_tabla` + `_kormaszk_pozicio` spec-útvonal, a Python
+kemény-lépcső ágát kihagyva), a natív alfa-csatornára, a befoglaló téglalapon:
+
+| eset (W×H, sugár, alfa, középpont, aspect) | `[0xd695d2]=1` | `[0xd695d2]=0` (harness-alap) |
+|---|---|---|
+| 64×48, 10/30, 0/1, (32,24), 1,0 | **egyezik** (0/2880) | 8/2880 eltér, max Δ=1 |
+| 64×48, 10/30, 0,25/0,8, (32,24) | **egyezik** (0/2880) | 8/2880, max Δ=1 |
+| 64×48, 10/30, 1/0 (fordított), (32,24) | **egyezik** (0/2880) | 12/2880, max Δ=1 |
+| 64×48, 15/15 (egyenlő), (32,24) | **egyezik** (0/900) | egyezik (0/900) |
+| 64×48, 5/40, (10,40) (klippelt) | **egyezik** (0/2400) | 8/2400, max Δ=1 |
+| 64×48, 20/12 (`outer < inner`), (32,24) | **egyezik** (0/1600) a spec-úttal | 14/1600, max Δ=1 |
+| 37×23, 3/19, (18,5; 11,5) — **páratlan W/H, félegész középpont** | 773/851 eltér, max Δ≤12 | ugyanaz |
+| 64×48, 7,3/21,9, (32,24) — **nem egész sugár** | 1172/1936 eltér, max Δ≤3 | ugyanaz |
+| 64×48, 10/30, (31,5; 23,5) — **félegész középpont** | 2163/2880 eltér, max Δ≤10 | ugyanaz |
+| 64×48, 10/30, aspect 0,7 | 1713/2016 eltér, max Δ ≤ 115 | 1722/2016 |
+
+Az egész-bemenetű eseteknél a `[0xd695d2]=1` kimenet **bájtra egyezik** a spec-képlettel;
+a `=0` ág 8–14 pixelen egy egységgel tér el (a 15/15-ös esetben nem). **Ez a spec „a két ág bájtra
+azonos” állításával ellentétes** (az a 7×7-es csempe-próbára szólt). A
+`[0xd695d2]` bájtot a kód abszolút címen **nem írja** (a `.text`-ben csak
+olvasások vannak: `0x008f3b14`, `0x008f25c1`…); a PE-fájl `.data` szakaszából a kezdőérték
+nem olvasható ki (nyers mérete nem fedi), a harness nullán indul. **Hogy a valódi futásban melyik érték
+áll ott, ez nincs megmérve** — a referencia-ág kijelölése ezért nyitott.
+
+**Ellentmondás (ÁLLJ MEG, nem illesztettünk):** nem egész középpont vagy nem
+egész sugár esetén a spec-képlet (`u = (x−cx)·65280/R`, `p₁ = csonk(255·inner/R)`,
+a `trunc`/`rint` lépések) **nem** adja vissza a natív bájtokat, és ez nem
+float32-bemeneti pontosság-hiba: a bemenetet előbb float32-re kerekítve is
+ugyanazt a számot kaptuk (1172/1936, 2163/2880). Ezért a spec szövegét nem
+módosítjuk, és nem illesztünk konstanst a nem egész esetre. A `W/2` középpont
+páratlan `W`-nél tört, tehát a mai alapértelmezett `cx = W/2` pont ebbe a nyitott
+tartományba esik.
+
+**Két további eltérés, ami NEM a kör-domain:**
+1. A Python `circular_gradient_mask` `outer ≤ inner` ága (kemény lépcső) **nem**
+   egyezik a natív úttal (`s_outin` 61/1600 eltér); a spec-úttal igen. Az
+   effektekben `inner = R·h/101 < outer = R·(2−h/101)` mindig teljesül (h ≤ 100),
+   tehát ez az ág nem érhető el.
+2. `aspect ≠ 1,0`: a natív téglalap x-kiterjedése `2·R·aspect` (a 42 px-es
+   mérés `R=30`, `aspect=0,7`), de az alfa már nem a kör-képlet (1722 eltérés).
+   A négy használatban az `aspect` **1,0** (a `filterdesc.xml` elhagyja), tehát a
+   „kör” állítás erre a négy effektre érvényes marad.
+
+**Bizonyítottsági fok:** a natív futás és a bájtos összevetés **megerősített**
+az egész bemenetű, `aspect = 1,0`, `[0xd695d2]=1` esetre (6 eset, 0 eltérés). A
+nem egész középpontra/sugárra, a `[0xd695d2]=0` ágra és az `aspect ≠ 1,0`-ra
+**nincs** zárt képlet: ezek a „Kész, ha” nyitott tételei.
+
+**Kész, ha (a nyitott rész):** (a) a `[0xd695d2]` valódi futási értéke és a hozzá
+tartozó ág kimenete megmérve (a teljes valódi indítási rutin, nem a harness-alap);
+(b) nem egész `xCenter`/`innerRadius`/`outerRadius` mellett a natív bájtok és a
+spec-képlet összevetése, és az eltérés forrásának (kerekítés vagy középpont-
+eltolás) **spec-szövegből** való megnevezése — illesztés nélkül; (c) `aspect ≠ 1,0`
+pixelképletének mérése, ha valamelyik effekt valaha ilyet ad át.
+
 #### `EdgeDetectionSobel` — a kernel teljesen megvan
 
 A `glimmer::EdgeDetectionSobelImageOperation` 6. slotja (`0x00bb6620`) egy
@@ -4383,7 +4462,7 @@ kezdőállapota megmarad.
 | `BW` | `filtercolor` | `NULL` | `0x00bb31f0`, inline | S |
 | `Blur` | `xblur`, `yblur`, `quality` | `NULL` | `0x00bb31f0`, inline | S |
 | `Border` | `outercolor`, `innercolor`, `cornerradius`, `innerthickness`, `outerthickness`, `captionheight` | `NULL` | `0x00bbdf10` | S |
-| `CircularGradientImageMask` | `width`, `height`, `xCenter`, `yCenter`, `innerRadius`, `outerRadius`, `innerAlpha`, `outerAlpha` | `NULL` | `0x00bc29b0` | S |
+| `CircularGradientImageMask` | `width`, `height`, `xCenter`, `yCenter`, `innerRadius`, `outerRadius`, `innerAlpha`, `outerAlpha` | `NULL` | `0x00bc29b0` (előállító: `0x00bc2a50`) | S; natív mérés #4905 (2026-10-12): egész bemenet bájtra egyezik, nem egész középpont/sugár és `aspect ≠ 1` nyitott, ld. a 4.11 alatti szakaszt |
 | `ColorMatrix` | `Matrix`; XML-ben `UseAlpha` | `Matrix=NULL`; a saját olvasó `Matrix`-ot és közös attribútumokat kezel; `+0x20` a `maskWithSourceAlpha`, `+0x24` a Matrix | `0x00bc1570` | Q; a pixelmag `UseAlpha`-tól független, a leíróflag kapcsolata nyitott (4.9) |
 | `Crop` | `x`, `y`, `width`, `height` | `NULL` | `0x00bbd880` | S |
 | `DropShadow` | `distance`, `angle`, `blurX`, `blurY`, `strength`, `quality`, `shadowColor`, `shadowAlpha`, `backgroundColor` | `NULL` | `0x00bbb120` | Q |
