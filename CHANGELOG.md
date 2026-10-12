@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.75] – 2026-10-12
+
+- Fejlesztőknek: a háttérkép-tesztek nem indíthatnak valódi asztali háttérkép-programot — a teszt képe többé nem kerülhet az asztalra (#4892).
+
 ## [0.9.74] – 2026-10-12
 
 - Fejlesztőknek: a tesztek, a spec és egy kódkomment Windows-útvonal-példái helyettesítő felhasználónevet és mappanevet használnak (#4877).
