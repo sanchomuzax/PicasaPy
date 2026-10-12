@@ -200,6 +200,65 @@ nagyítás-illesztés és a `Back to Library` vezérlő továbbra is elérhető.
 
 - `Ghidra-kör kell: 0x005c24c0 — kövesd vissza a PreviewHandler esemény +8 mezőjének 0x0d-re állítását a natív bemenetig, azonosítsd a hozzá vezető WM_* / gesztust, és igazold, hogy a 0x00984970 ytWindow út része-e ennek. [blokkoló]`
 
+#### #4500 — a `0x0d` ág: mit igazoltunk, mit nem (2026-10-12)
+
+Ez a szakasz a `0x005c24c0` kezelő utasításszintű olvasata (capstone, az eredeti
+`Picasa3.exe` `.text`-je). A `WM_*` → belső kód leképezés **nincs** megtalálva.
+Futtatásos (qemu-harness) út nem készült.
+
+**Igazolt (a kezelő belső szerkezete):**
+
+- Az eseményosztályt a rekord `+0x08` mezője adja. A kapcsoló sorrendje: `mov eax,[edi+8]`
+  (`0x005c2558`), `cmp eax,0x17` (`0x005c255b`), majd a nem-`0x17` ág `cmp eax,1`
+  (`0x005c2898`); ha nem `1`, `jne 0x005c2b03`, és a `0x005c2b03` `cmp eax,0xd` ugyanerről
+  a `+0x08`-as értékről dönt (eax közben nem íródik újra).
+- A `+0x10` mezőt CSAK a `0x17` osztály belső kapcsolója használja (`0x005c25c9`, a
+  `0x005c275b` `cmp 0xd` és a `0x005c2850` `cmp 0x70` ágak). Vagyis a belső `0x0d` és az
+  osztály `0x0d` két külön kód; a kettőt nem szabad összekeverni.
+- A `0x0d` ág kapuja: `[[this+0x28]+0x31ac]` (a `CThumbUI` `SingleClickExit` mezője), a
+  `0x005c2b0f` `cmp byte,0` / `0x005c2b16` `jne 0x005c2c42`. Csak `0` mellett fut tovább
+  (`0x005c2b1c`). Ez egyezik a fenti `0x005c2b03–0x005c2b0f` leírással.
+- A `0x0d` ágban ezután a rekord koordinátái (`+0x54`, `+0x58` küszöbök; a rekord
+  `+0x00`, `+0x04`, `+0x08`, `+0x0c` mezői) téglalap-próbát futtatnak (`0x005c2b4a`
+  virtuális hívás után, `0x005c2b5a–0x005c2b90`). Ez a kattintás **helyét** vizsgálja,
+  a gesztust nem azonosítja.
+
+**Nem igazolt:**
+
+- **Ki állítja a rekord `+0x08` mezőjét `0x0d`-re.** A `.text` közvetlen tárolási
+  mintáira (`mov [r+8],0xd`, `c7 4x 08 0d 00 00 00`, SIB-forma) **0 találat**. A
+  `0xd` konstans közeli tárolás-párosítása 11 találatot adott, ezek mind téves
+  (például `0x005a701b`: a `0x00985ff0` sztring-hozzáfűző hívásának előkészítése, nem
+  eseménykészítés). A `+0x08` értéke tehát regiszteren vagy táblán át áll elő; a termelő
+  nincs azonosítva.
+- **A `WM_*` → osztálykód leképezés.** A `0x00984970` ytWindow-ág a `0x201` (balgomb-
+  lenyomás) üzenetből helyi rekordot épít (`esp+0x90…0xb4`, `0x00984d35–0x00984d80`), és
+  a `[0xc40884]` hívás / a `+0x2c` metódus felé viszi. Ebben a közeli kódban nincs `+0x08 = 0x0d`
+  íródás. A `0x00985324` bájttábla nem ad `0x0d` osztálykódot. Ez az út **nincs** a
+  `PreviewHandler`-hez kötve.
+- A `0x0d` és a `WM_LBUTTONDBLCLK` (`0x203`) közötti kapcsolat: nincs igazolva. A
+  videó-előnézet `treedouble`-ága (`0x00ab3ff0`) és a `WM_LBUTTONDBLCLK → 3` leképezés
+  (`0x0054c7d0`) nem bizonyítja az állóképes ág gesztusát.
+
+**Következtetés (feltételes fok: alacsony).** A `0x0d` ág fizikai gesztusa **nem
+azonosított**. A „dupla kattintás” feltevés nincs igazolva, ezért ebből a jegyből
+**nem** készül Codex-kész fejlesztői teendő a kikapcsolt ágra. A `=0` mellett a
+visszalépés gesztusa nyitott marad.
+
+**Spec–kód eltérés (nem javítva, megállás-jelzés):** a fenti „Nálunk” oszlop szerint a
+`PhotoViewer.qml` nem olvassa a `singleClickExitEnabled` értéket, a dupla kattintás pedig
+`zoomFit()`. A jelenlegi kód más:
+
+- a still-képes `viewerPanArea` (`PhotoViewer.qml:4175`) olvassa a
+  `singleClickExitEnabled` értéket (`4187`, `4306`, `4317`);
+- `SingleClickExit = 1` mellett a dupla kattintás kilépést indít (`onDoubleClicked` →
+  `exitAfterDoubleClick` → `onReleased` → `kerBezaras()`, `4316–4340`), különben `zoomFit()`.
+
+Vagyis a dupla kattintás–nagyítás ütközés a kódban már benne van, és a táblázat elavult.
+Ezt a #4499 oldja fel. A táblázatban a `CThumbUI` mezőcím is ellentmondó: a videó sorban
+`+0x30a6`, a kezelő-szakaszban `+0x31ac` szerepel; a `0x005c2b0f` olvasata a `+0x31ac`-et
+igazolja.
+
 ## 2. szint — lap bezárása (projekt), HÁROM választással
 
 A kollázs- és a filmszerkesztő **lapként** viselkedik, és a lap bezárásakor —
