@@ -1506,6 +1506,98 @@ rajzolása), a `0x007753f0` hívója, és hogy az ablak `ShowWindow`-zal látszi
 `0x007753f0` hívóinak és a `0x00774bc0`/`0x009842d0` dumpja, valamint a
 `ShowWindow`-hívás keresése a `0x00571a80`-ban.
 
+### 10.24 #4699 — 2. kör: a PopDisplay vtábla és az Alt-jelző hatása (2026-10-12)
+
+**Módszer.** A `pe_dis.py` capstone-os diszasszembléje (scratch-venv, memóriakapuval),
+a PE import-tábla feloldása (675 IAT-slot, így az API-nevek mérve vannak), és a
+hivatkozások keresése a `.text`-ben (`E8 rel32` és `imm32`) és a teljes fájlban.
+**Natív futtatás nem történt:** a gépen nincs Wine.
+
+**Vtábla `0x00cb36c4` (9 slot), mért célok.** Az eltolás az objektum (`this`)
+vtábla-mutatójához képest értendő.
+
+| slot | eltolás | cél | mit csinál (bájtból) |
+|---:|---|---|---|
+| 0 | `+0x00` | `0x00774ad0` | skaláris destruktor (`flag & 1` → operator delete) |
+| 1 | `+0x04` | `0x005abe20` | `[this+0x6c] != 0` (van-e HWND) |
+| 2 | `+0x08` | `0x00983840` | Show(bool): ha van HWND, és (nem látszik, vagy minimalizált) → `ShowWindow(h, arg ? 5 : 8)` |
+| 3 | `+0x0c` | `0x00775390` | **Hide**: `[this+0xc8] = [this+0xcc] = 0`, `ShowWindow(h, SW_HIDE)` |
+| 4 | `+0x10` | `0x00aa5760` | `MoveWindow(h, x, y, w−x, h−y, 1)` a kapott téglalapból |
+| 5 | `+0x14` | `0x00983270` | Close(bool): `arg = 0` → `EnumThreadWindows` vagy `PostMessage(WM_CLOSE)`; `arg ≠ 0` → a törlő ág |
+| 6 | `+0x18` | `0x009842d0` | **húzás**, nem rajzolás: `ReleaseCapture`; ha a fő gomb le van nyomva → `SendMessage(WM_SYSCOMMAND, 0xF012)` (SC_MOVE\|HTCAPTION) és kattintás-szimuláció |
+| 7 | `+0x1c` | `0x00774bc0` | **WndProc** (ld. alább) |
+| 8 | `+0x20` | `0x00985550` | a gyermek (`[this+0x64]`) slot 12-jét hívja; gyermek nélkül `1000001` (0xF4241). Nem azonosítva. |
+
+**A WndProc (slot 7) ágai:** `WM_DESTROY` (2) → a szülő `[+0x31a8]` mutatóját nullázza.
+`WM_PAINT` (0xF) → `BeginPaint` → ha `rcPaint` nem üres, **`0x009aa720(obj = [this+0x8c], rect)`** → `EndPaint`.
+`WM_KEYDOWN`/`WM_SYSKEYDOWN` (0x100/0x104) `VK_RIGHT` (0x27) → `+1`, `VK_LEFT` (0x25) → `−1`;
+`WM_MOUSEWHEEL` (0x20A) → a görgetés irányával; mindkettő a `0x774cf0` léptetőbe megy (index a `[this+0xb8]`-ban,
+lista `[this+0xc0]`-ban). Minden más üzenet a `0x00984970`-re.
+
+**A rajzoló (`0x009aa720`, bájtból).** `CreateCompatibleDC`, majd a `[obj+0x24]` bitmap kiválasztása, és
+**`BitBlt(hdc, x, y, w, h, memdc, …, SRCCOPY 0xCC0020)`**. A keretrajzolás (`GetStockObject(NULL_BRUSH)`,
+`CreatePen(PS_INSIDEFRAME, 2)`, `Rectangle`, `Sleep(10)`) csak akkor fut, ha a
+`[0x00d6fc4e]` jelző igaz; a jelzőt a `HKCU…\Preferences` alatti **`Debug Blt`** érték adja
+(`0x004019b0`, a kulcsnevek `0x00c7eafc` = `Preferences`, `0x00cd951c` = `Debug Blt`).
+Tehát a popup **kész bitmapet másol ki**, a keret csak diagnosztikai kapcsolóval jelenik meg.
+Az alapértelmezett érték nincs megállapítva.
+
+**`[child+0xb4]` (Alt-jelző): író, olvasó, hatás.**
+
+- **Író: `0x00774d60`** (frissítő). Hívói: `0x00571dfa` (az ankerező `0x00571a80`-ban) és
+  `0x00774d4f` (a `0x774cf0` léptetőben). Ha `[0x00d67849] ≠ 0` (a spec szerint: „Picasa az előtérben"),
+  `b4 = !(GetAsyncKeyState(VK_MENU) & 0x8000)`; különben `b4 = 1`. Utána `GetClientRect`,
+  a `[owner+0x270]` vtábla +0x0C slotja (az elem lekérése a `[this+0xb8]` indexről), `0x9b49c0`,
+  `0x9aabf0`, és **`InvalidateRect` + `UpdateWindow`** (→ WM_PAINT). A frissítő **nem** hív `ShowWindow`-t.
+- **Olvasó: `0x007753f0`** — a hover-tick (`edi` = a PopDisplay). Közvetlen hívója a `0x00775550`
+  wrapper (`QueryPerformanceCounter`-rel időbélyeg, majd `call 0x7753f0`). A wrapper pointere a
+  `0x00cb36f0` táblában áll, slot 0-ként; ehhez a táblához `.text`-ben nincs `imm32` író, az
+  objektum-típus **nem azonosított**.
+- **A tick döntési fája** (ha `IsWindowVisible(hwnd)` igaz; különben `100`-zal kilép):
+  1. `SetCursor(LoadCursor(NULL, 0x7F89))` — **IDC_HAND** (32649 = 0x7F89, a `winuser.h` szerint; ez a név
+     a headerből jön, nem a bináris azonosításából). Ez az ág minden ticknél lefut.
+  2. **`b4 ≠ 0`:** `fg = 0` → kilép (`10`). `fg = 1` → ha a fő egérgomb (`GetSystemMetrics(SM_SWAPBUTTON)`
+     szerint `VK_LBUTTON` vagy `VK_RBUTTON`) **nincs** lenyomva → kilép (`10`); lenyomva → HOVER.
+  3. **`b4 = 0`:** `fg = 0` → HOVER; `fg = 1` → ha `VK_MENU` (Alt) **most is** le van nyomva → kilép (`10`);
+     különben HOVER.
+  4. **HOVER (`0x007754b0`):** `0x009805e0` (PeekMessage-ciklus a `0x100–0x109` tartományra, `PM_REMOVE`:
+     a billentyű-üzeneteket kiveszi a sorból; ESC esetén `1`-et ad, a visszatérését itt nem használja),
+     majd az elem-ág, és **minden ág végén a vtábla slot 3 = Hide** (`0x00775525`).
+- A kódban **nincs Ctrl-vizsgálat**: a tickben és a frissítőben csak `VK_MENU` (0x12) szerepel.
+  A „Ctrl+Alt" név a spec-ből (`#4699`) jön, a bináris csak az Alt-ot nézi.
+
+**Ellentmondás a 10.23-mal (jelentve, nem írtam át).** A 10.23 szerint a tick Alt nélkül
+„egyébként a `0x007754b0`-ágra megy". A mért fa szerint `b4 ≠ 0` mellett a HOVER csak a fő egérgomb
+lenyomva tartásakor fut; gomb nélkül kilép. A 10.23 `+0x18` = „rajzolás" címkéje is téves: a slot 6 a
+húzás, a rajzoló a slot 7 WM_PAINT-ága.
+
+**Mit lát a felhasználó Ctrl+Alt (Alt) lenyomásakor — mi bizonyított:**
+
+- Alt lenyomva tartva, ha az utolsó frissítés is Alt-tal történt (`b4 = 0`) és a Picasa az előtérben van: a tick
+  korán kilép, a HOVER-rejtés nem fut. **A popup marad ott, ahol van**, a kurzor kéz-alakú. Az Alt
+  elengedése után a tick HOVER-ágra megy, gomb nélkül is.
+- Alt nélkül (`b4 = 1`): a HOVER csak a fő egérgomb lenyomva tartásakor fut.
+- **Nem bizonyított:**
+  (a) mi jelenik meg a popupban: a `[obj+0x24]` bitmap forrása és a `0x9aabf0` / `0x9b49c0` betöltés nincs végig követve;
+  (b) mikor látszik a popup: a slot 2 (Show) hívói nincsenek azonosítva;
+  (c) a kiváltó billentyű-üzenet: a `0x005e65dc` egy switch-ágban van, az ugrótábla (`0x005e6617` hivatkozás)
+  nincs dekódolva, így nem tudjuk, hogy a lenyomás és az elengedés is frissít-e;
+  (d) a popup az Alt-tartás közben mutat-e bármit: ez a rejtés elmaradásából következik, de nem látható.
+
+**Nálunk (grep: `src/picasapy/app`, `qml`):** nincs `EnableHover`, `PopDisplay`, és nincs Alt-tartású
+hover-popup. Az Alt-használat: Alt+Enter (Tulajdonságok), kollázs Alt-húzás (`CollageSheet`, `CollageNode`),
+arc-kijelölés (`FacesOverlay`), a `PhotoViewer` Alt-kattintása (sor 3958, nem vizsgáltam részletesen).
+
+**Kész, ha: nincs.** A látható hatás (a popup tartalma, megjelenése, az Alt-kiváltás) nincs bizonyítva,
+ezért a „hiányzik nálunk" állítás nem alapozható meg. A rejtés-gátlás bizonyított, de önmagában nem
+elég egy jegy megnyitásához.
+
+**Következő lépés (ebben a sorrendben):**
+1. A `0x005e65dc` switch-tábla dekódolása (az `ugrótábla` és a case üzenetkód), hogy kiderüljön a kiváltó üzenet.
+2. A `0x00cb36f0` vtábla objektumának konstruktora (lea-alapú hivatkozás a `.text`-ben).
+3. A `0x009aabf0` / `0x009b49c0` (bitmap-betöltés) és a slot 2 (Show) hívóinak felsorolása.
+4. A `Preferences\Debug Blt` alapértelmezésének meghatározása (a registry-alapérték, `0x004019b0`).
+
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
 A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.
