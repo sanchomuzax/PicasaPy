@@ -62,7 +62,15 @@ a = Analysis(
     #: (függvényen belüli) importokat a PyInstaller nem látja, és a
     #: csomagból kimaradt modul csak a felület adott pontján, élesben
     #: derülne ki (#4913: `picasapy.app.edit_preview` hiányzott).
-    hiddenimports=collect_submodules("picasapy"),
+    #: A külön folyamatként indított munkások belépői név szerint is
+    #: (a forrás-őrök ezt keresik); mellettük a teljes csomag.
+    hiddenimports=[
+        "picasapy.app",
+        "picasapy.printing.poster_worker",
+        "picasapy.thumbs.cache",
+        "picasapy.thumbs.video_decode_worker",
+    ]
+    + collect_submodules("picasapy"),
     hookspath=[],
     runtime_hooks=[],
     excludes=["tkinter", "pytest"],
