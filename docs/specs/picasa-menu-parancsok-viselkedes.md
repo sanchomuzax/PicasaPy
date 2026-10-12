@@ -61,7 +61,12 @@ metaadat-tulajdonságot állítja be (`0x004906f7`/`0x004906fe` és
 `0x00490d3c`/`0x00490d43`). A tulajdonságtábla szerint a `0x37` az EXIF
 `DateTimeOriginal` (`0x9003`), ld. `picasa-metaadat-tulajdonsagok.md`, §3.
 Ezután mindkét worker a `[esp+0xac] == 2` feltételt vizsgálja
-(`0x0049070a`, `0x00490d4f`). Ha teljesül, meghívja a `0x009ed330` íróutat;
+(`0x0049070a`, `0x00490d4f`). A `[esp+0xac]` a worker keretében `0`-ról indul
+(`0x00490602`, `0x00490c92`), és közvetlen írás nincs rá más helyen. A `2`
+a `[esp+0x94]`-es kimeneti szerkezet `+0x18` mezőjéből jöhet: a `0x00490cc6`–
+`0x00490cd2` hívás a `[obj+0x48]` objektum vtable-jának `+0xc4` metódusát
+hívja ezzel a címmel. Ez a metódus nincs azonosítva, ezért a `2` jelentése
+**nyitott**. Ha teljesül, meghívja a `0x009ed330` íróutat;
 annak nullától eltérő visszatérése a fallback nélküli worker-ágra visz
 (`0x00490725`–`0x00490736`, `0x00490d69`–`0x00490d7b`), de a visszatérési
 kódok jelentését a disassembly nem nevezi meg. A `2` érték C++-oldali
@@ -91,10 +96,14 @@ helyreállítással; a tényleges fájlrendszer-állapot ezért a fájlcsere és
 API-hívások sikerétől is függ.
 
 Ha a `[esp+0xac] == 2` feltétel nem teljesül, vagy a `0x009ed330` nullát ad
-vissza, a worker a közvetlen `0x00992780` ágra jut
-(`0x00490900`, `0x00490f40`). Ez a segéd a `SetFileTime` importot hívja
-(`0x0092234c`); a `0` jelző mellett csak a létrehozásiidő-mutató nem null
-(`0x009927e9`–`0x009927f9`). Ebben az ágban tehát a fájl létrehozási idejét
+vissza, a worker a fallback-ágra jut: az első workerben a `0x004908cd`-n át,
+a másodikban a `0x00490f0d`-n át a `0x00992780` hívásához (`0x00490900`,
+`0x00490f40`); a `0x004908cd`–`0x00490900` közti átmenet nincs végig követve. Ez a segéd a `SetFileTime`-ot hívja
+(`0x009927f9`, import-slot `0xc40474`; a korábbi `0x0092234c` cím téves volt:
+a `.text` közepébe esik, nem hívás). A hívóhelyek `push 0`-val adják át a
+jelzőt (`bl` = 0), így a `SetFileTime` argumentumai: létrehozási idő = az új
+dátum (`SystemTimeToFileTime`, `0x009927e3`), hozzáférési és utolsó írási idő
+= NULL (`neg bl` / `sbb` / `and` maszk, `0x009927e9`–`0x009927f7`). Ebben az ágban tehát a fájl létrehozási idejét
 a beállított új dátumra állítja; a hozzáférési és utolsó módosítási időt ez a
 hívás nem adja át, így azokat nem módosítja.
 
@@ -119,6 +128,91 @@ EXIF `DateTimeOriginal` értékét, és a sikeres írás után a mappát újraol
 hogy az index, a rácssorrend és a Tulajdonságok-panel az új EXIF-értéket
 mutassa. A korábbi, #4332-es indexfelülírásos út ettől eltért; a jelenlegi
 menüparancs már nem hoz létre `taken_at_override` értéket.
+
+### Kérdés-válasz és összevetés (#4646, 2026-10-12)
+
+A lenti állításokat a `Picasa3.exe` disassembly-je és a címekre épülő
+imm32-keresés igazolja (eszközök: `pefile`, `capstone`, nincs indexfüggő
+lépés). Ahol a bináris nem dönt el valamit, ott **NYITOTT** áll.
+
+**Mit ír az eredeti, és mikor**
+
+| kérdés | válasz | bizonyíték | állapot |
+|---|---|---|---|
+| EXIF-mező | `0x37` = `DateTimeOriginal` (`0x9003`), az új dátumra | `push 0x37` + a `0x0049c640` setter: `0x004906f7`, `0x00490d3c` | igazolt |
+| EXIF-fájlírás | a forrásfájl `.tmp`-n át íródik, csere a `0x00994400`-zal | `r+b` (`0x009eb3e5`), `wb` (`0x009eb5c8`), csere `0x009eb70b`; hívás: `0x009ed39a` → `0x009eb290` | igazolt (a csere belseje nincs) |
+| az EXIF-ág feltétele | `[esp+0xac] == 2` **és** a `0x009ed330` nem nullát ad | `0x0049070a`, `0x00490d4f`, `0x00490734`–`0x00490736` | a `2` jelentése NYITOTT |
+| hozzáférési és utolsó írási idő | a `DateTime` (`0x1c`, EXIF `0x0132`) értéke, helyi időből UTC-re | `0x009eb34b`–`0x009eb37d`; `0x00ab35e0`: `or [edi+0x18], 6`, `+0x08`, `+0x10` | a `0x1c` forrása NYITOTT (1. nyitott pont) |
+| létrehozási idő az EXIF-ágban | **érintetlen** (mentve, visszaírva) | `0x00ab35e0` nem írja a `+0x00`-t | igazolt |
+| fallback (nem EXIF, vagy íráshiba) | csak a létrehozási idő := az új dátum; hozzáférés és írás NULL | `push 0` a hívóknál (`0x00490900`, `0x00490f40`); `SetFileTime` `0x009927f9` | igazolt |
+| `.picasa.ini` | a láncban nincs hivatkozás | sztring `0x00c80a6c`; kb. 70 imm32-találat a `.text`-ben, egyik sincs a láncban | csak a láncra igaz |
+| JPEG / nem-JPEG / videó | a láncban nincs formátum-ellenőrzés; a `2` lehet a formátum-osztály | — | NYITOTT |
+
+**A mentett rekord és a visszaírás.** `0x00ab3320` a rekordot nullázza, a
+jelzőket `-1`-re állítja (`0x00ab3325`), majd `0x00ab3350` a `GetFileTime`-mal
+tölti (`0x00ab3495`). A rekord: `+0x00` létrehozás, `+0x08` hozzáférés,
+`+0x10` utolsó írás, `+0x18` jelzőbitek (1 = létrehozás, 2 = hozzáférés,
+4 = írás). A visszaírás `0x00ab34d0`-ban a jelzőbitek alapján választja ki, mely
+időt adja át a `SetFileTime`-nak (`0x00ab3582`–`0x00ab35a7`).
+
+**A `0x1c` kérdés (a fő nyitott pont).** A worker csak a `0x37`-et állítja.
+A fájlidőt a `0x009eb290` a metaadat-objektum `0x1c` (EXIF `DateTime`) tulajdonságából
+olvassa vissza, és a worker-láncban nincs `0x1c`-t beállító hívás (a
+`0x0049c640` setterhez a láncban csak a `0x37` kulcs érkezik). Ezért a
+visszaírt érték az objektumban eleve meglévő `DateTime`. Ha ez a forrás
+eredeti EXIF `DateTime`-ja, az eredeti **nem** az új dátumot írja a fájl
+időbélyegébe. A bináris ezt nem dönti el: a `0x009eb290` 1. argumentumának
+(az objektumnak) a hívóoldali azonosítása nincs kész.
+
+**A fallback-ág.** `0x00992780` a `bl` jelzőt a `[esp+0x34]`-ről veszi. A
+megnyitás a `[0xd69520]` indirekt hívással történik, argumentumai egy
+`CreateFileW`-hívásra utalnak (hozzáférés `0x100` = FILE_WRITE_ATTRIBUTES,
+megosztás 3, OPEN_EXISTING, `0x2000000` = BACKUP_SEMANTICS). A cél címe
+futásidőben töltődik, importtal nem igazolt.
+
+**Összevetés a PicasaPy mai kódjával** (`src/picasapy/app/timestamp_controller.py`,
+`_adjust_photo_file_date`):
+
+| pont | eredeti (bináris) | PicasaPy | eltérés |
+|---|---|---|---|
+| EXIF DateTimeOriginal | `0x37` az új dátumra | `_write_exif_datetime_original`, `.tmp`-csere (JPEG) | nincs (JPEG) |
+| hozzáférési és írási idő EXIF-írás után | a `DateTime` (`0x1c`) értéke | a régi fájlidő + (új − `read_exif_details(...).datetime_modified`), `os.utime` | **van**, ha a `0x1c` forrás-érték igazolódik |
+| létrehozási idő EXIF-írás után | érintetlen | visszaírja a régi `st_ctime`-ot (csak Windows) | nincs |
+| fallback (íráshiba) | létrehozási idő := új dátum | `_set_creation_time_ns(source, target)` — csak `win32`, POSIX-on nincs hatás | **van** Linuxon (#4885) |
+| `.picasa.ini` | nem írja (a láncban) | nem írja | nincs |
+| nem-JPEG | fallback (creation) | `_jpeg_segments` → `ValueError` → fallback | a feltétel nincs igazolva |
+
+A meglévő tesztek: `tests/app/test_timestamp_controller_4693.py` (a sikeres
+ágnál az `atime`/`mtime` eltolását rögzíti, nem a `DateTime`-értéket),
+`tests/app/qml_functional/test_adjust_timestamp_4332.py`,
+`tests/index/test_datum_feluliras_megmarad_4332.py`. A jegy által nevezett
+`tests/app/test_adjust_timestamp_4332.py` nincs a fában.
+
+**Kész, ha (a megvalósításhoz, #4646 és #4885)**
+
+- [ ] **Windows-mérés** (mért, nem becsült): egy JPEG-en, amelynek ismert a
+  `ftCreation` / `ftLastAccess` / `ftLastWrite` értéke és ismert az EXIF
+  `DateTime` és `DateTimeOriginal`, a párbeszéd után kiolvasni a három időt és
+  az EXIF-mezőket. Ebből eldől, hogy a fájlidő a `DateTime`-ból vagy az új
+  dátumból jön. Az eredmény táblázatban kerüljön ide.
+- [ ] Ugyanez nem-JPEG-en (ha a Picasa engedi), a `2` feltétel igazolásához.
+- [ ] Ha a mérés a `DateTime`-ot igazolja: az `os.utime`-eltolást a `DateTime`
+  visszaírására kell cserélni, és a
+  `test_sikeres_exif_iras_datetime_alapjan_modositja_a_fajlidoket` tesztet ehhez
+  igazítani (jelenleg az eltolást rögzíti).
+- [ ] Linux: a creation-only fallback ne legyen hallgatólagos no-op. Vagy ír
+  valamit, vagy a felület kimondja a korlátot (#4885).
+- [ ] A jegy hivatkozásai frissítendők: a menüpont most
+  `PicasaMenuBar.qml:2385`–`2388` (a `:2022` elavult); a tesztnév a fentiek szerint.
+
+**Nyitott pontok, és honnan szerezhető meg**
+
+1. A `0x1c` forrása: Windows-mérés (fent). Bináris úton a `0x009eb290` 1.
+   argumentumának hívóoldali azonosítása a `0x009ed39a` körül.
+2. A `[esp+0xac] == 2` jelentése: a `[obj+0x48]` vtable `+0xc4` metódusának
+   azonosítása (a `0x00490cc6`–`0x00490cd2` hívás célja).
+3. A `0x00994400` (csere) és a `0x009eb820` belső hatása: nincs végig bejárva.
+4. A `[0xd69520]` cél: futásidőben töltődik, importtal nem igazolt.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
