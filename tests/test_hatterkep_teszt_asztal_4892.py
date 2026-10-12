@@ -10,6 +10,7 @@ tulajdonos fizikai kijelzőjének háttere lett. A gyökér-`conftest.py`
 from __future__ import annotations
 
 import subprocess
+import types
 
 import pytest
 
@@ -20,8 +21,16 @@ def _tilos(*_args, **_kwargs):
 
 @pytest.fixture
 def alfolyamat_tiltva(monkeypatch):
-    monkeypatch.setattr(subprocess, "Popen", _tilos)
-    monkeypatch.setattr(subprocess, "run", _tilos)
+    """A `wallpaper` modul SAJÁT `subprocess`-fogantyúját cseréli (#1375:
+    globális standard modult tesztből átírni tilos)."""
+    from picasapy.app import wallpaper
+
+    al = types.SimpleNamespace(
+        **{nev: getattr(subprocess, nev) for nev in dir(subprocess) if not nev.startswith("_")}
+    )
+    al.Popen = _tilos
+    al.run = _tilos
+    monkeypatch.setattr(wallpaper, "subprocess", al)
 
 
 @pytest.mark.parametrize(
