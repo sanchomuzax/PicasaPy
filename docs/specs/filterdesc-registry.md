@@ -4293,7 +4293,7 @@ eleje.
 | `PaletteMap` | `0x008f00d0` | `0x00bb7900` | `0x00bb7c80` (435 b) | `0x00bb7e40` (1093 b) | — *(a `ColorMaps` tömb más úton)* |
 | `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
 | `QuantizePalette` | `0x008eff58` | `0x00bb5a30` | `0x00bb5ad0` (139 b) | — | Steps@0x24, Depth@0x2c |
-| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | amount@0x34 |
+| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | x@0x24, y@0x2c, amount@0x34 (#4906) |
 | `Resize` | `0x008f0908` | `0x00bc3370` | `0x00bc3650` (407 b) | — | width@0x24, height@0x2c, smoothing@0x34 |
 | `Rotate` | `0x008efefc` | `0x00bb5270` | `0x00bb5640` (239 b) | — | radAngle@0x24, degAngle@0x2c, borderColor@0x34, flipH@0x3c, flipV@0x44, padBorder@0x4c |
 | `Shader` | `0x008eff2c` | `0x00bb5830` | `0x00bb58d0` (202 b) | — | — |
@@ -4399,7 +4399,7 @@ kezdőállapota megmarad.
 | `Noise` | `randomSeed`, `low`, `high`, `channelOptions`, `grayScale` | `NULL` | `0x00bbed20` | S |
 | `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` | S |
 | `QuantizePalette` | `Steps`, `Depth` | nyers tagmezők `0` | `0x00bb31f0`, inline | S |
-| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; a további mezők nyitottak |
+| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; x/y/amount olvasó: `0x00bc2420`; `Mask` közös mező (`0x00bc4900`); `ignoreObjects` nyitott (#4906) |
 | `Resize` | `width`, `height`, `smoothing`; `ignoreObjects` | a három művelettag 0/NULL; `ignoreObjects` nincs a típus tagtáblájában | `0x00bb31f0`, inline | S |
 | `Rotate` | `radAngle`, `degAngle`, `borderColor`, `flipH`, `flipV`, `padBorder` | `NULL` | `0x00bb50f0` | S |
 | `SetVar` | `Name` | `NULL` | `0x00bb31f0`, inline | S |
@@ -4555,6 +4555,69 @@ ellenőrizve), **megerősített** a hét Q-val jelölt konstruktor nyers
 mezőkezdeteire; **feltételes** a közös olvasó jelenléti kapujára; **nyitott** a teljes
 XML-kiértékelésre, a szöveges szín/gradiens grammatikára és a felsorolt
 végrehajtói fallbackoktól eltérő, még nem vizsgált getterekre.*
+
+---
+
+### `RadialBlurImageOperation` — pixelmag és natív összevetés (#4906, 2026-10-12)
+
+**Alkalmazó és paraméterek.** RTTI: `glimmer::RadialBlurImageOperation::vftable` `0x00cf07fc`; a vtable `+0x18` rése (0-alapú 6. slot) az alkalmazó: `0x00bc24e0` (169 bájt), amely a `0x00bcf4b0` magot hívja. Az attribútumolvasó `0x00bc2420` a `x` nevet `this+0x24`-be, `y`-t `this+0x2c`-be, `amount`-ot `this+0x34`-be írja, majd meghívja a közös olvasót (`0x00bc4900`). Az apply float32 x/y képpontkoordinátát ad át; a double amount-ot `0x008eea90` egészre csonkolja.
+
+**Pixelképlet a gépi kódból.** A mag a forrásképet másolja a célakkumulátorba, majd `k=N…1` sorrendben fut:
+
+```
+N = min(amount + 5, 30)                 ; 0x00bcf4e0–0x00bcf4f7
+D = floor(W · amount / 200)             ; 0x00bcf4cb–0x00bcf4dd
+off_k = floor(k · D / N)                 ; 0x00bcf58a–0x00bcf58e
+                                         ; következő lépés: k←k−1, számláló←számláló−D
+```
+
+A `D`-hez a mag `0x51eb851f` konstans szorzását és `>>6`-ot használja. Az `off_k` a legnagyobb eltolástól csökken. A mátrixépítő (`0x00bcf51d`–`0x00bcf6e9`) `W−x`, `H−y`, a dimenziók és `off_k` alapján készíti a cél→forrás leképezést. A korábbi `filters-decoded.md` §3883-ban gépi kódból levezetett magas szintű alak:
+
+```
+sx = W / (W + off_k)     tx = off_k · x / W
+sy = H / (H + off_k)     ty = off_k · y / H
+u  = (X + 0,5) · sx + tx
+v  = (Y + 0,5) · sy + ty
+```
+
+A mintavevő float32-be írja a koordinátát (`0x00bcf20c`–`0x00bcf23c`), `65536`-tal skálázza (`0x00cf3cb0`), majd az egész konverziós segédút (`0x00c0b1e0` → `0x00c29990`) adja a 16.16-os indexet; a forráspixel az index felső 16 bitjéből jön. Ez pontmintavétel, interpoláció nélkül. Az SSE2-ág mintánként egész bájtokon számol:
+
+```
+acc = floor((38 · sample + 217 · acc) / 256)
+```
+
+A 38 és 217 súlyok a `0x00bcf0f9`–`0x00bcf0fe` utasításokból jönnek; a mag a BGRA alfát is feldolgozza. Az SSE2-sávhiba és a mintán kívüli célpixel kihagyása a `filters-decoded.md` „A FocalZoom zoom-kernele teljesen” szakaszában szerepel. A mátrix x87 köztes műveleteinek pontos kerekítési sorrendje feltételes: a közvetlen mérések nem minden esetben egyeztek a mai `focal.py` modelljével.
+
+**Natív mérés és összevetés (`qemu-i386`, valódi SSE2-ág).** Az eredeti `0x00bc24e0` apply és `0x00bcf4b0` mag futott; a getter mezőoffset alapján visszaadó stub, a nézetek kézzel épültek. A BGRA bemenet `random.Random(seed).randrange(256)` sorozatából készült. `[0xd695d2]=1`; más CPU-jelzőt a futtató nem állított. A `focal.zoom_blur` normalizált `x/W, y/H` értéket kapott. Az első három bájtot közvetlenül, az alfát külön, ismételt alfa-csatornás bemeneten vetettük össze. A táblázat bájtszintű eltéréseket mutat.
+
+| W×H; (x,y) pixel; seed | amount | színbájt eltér / összes; max abs. | alfabájt eltér / összes; max abs. |
+|---|---:|---:|---:|
+| 24×20; (7,2; 14); 4906 | 1, 5, 10, 25, 25,7 | mindegyik 0/1440; 0 | mindegyik 0/480; 0 |
+| 24×20; (7,2; 14); 4906 | 50 | 40/1440; 3 | 4/480; 1 |
+| 24×20; (7,2; 14); 4906 | 75 | 272/1440; 5 | 91/480; 5 |
+| 24×20; (7,2; 14); 4906 | 100 | 405/1440; 9 | 126/480; 8 |
+| 24×20; (12,4; 10,3); 4907 | 50 | 0/1440; 0 | 0/480; 0 |
+| 24×20; (0,25; 0,75); 4908 | 50 | 0/1440; 0 | 0/480; 0 |
+| 48×20; (14,4; 14); 4909 | 100 | 1415/2880; 30 | 478/960; 30 |
+| 24×1; (7,2; 0,5); 4910 | 50 | 48/72; 44 | 15/24; 29 |
+
+Ez 12 külön natív futás eredménye. Az `amount=25` és `25,7` teljes kimenete azonos; mindkettő SHA-256-a `0ee38b71deef72a1f287cf2544cc68941d8db3ae624e97028487bfca1e54f1ca`. A próba igazolja az amount csonkolását és több koordinátás kontrollt, de cáfolja az általános „mai `focal.py` minden paraméternél bájtazonos” állítást. Az eltérés oka **NINCS MEG**; értéket nem illesztettünk és képletet nem módosítottunk.
+
+**`Mask` és `ignoreObjects`.** A `runtime/filterdesc.xml:898–902` `_msk` néven `CircularGradientImageMask`-ot hoz létre, majd a RadialBlur gyerek `Mask="{_msk}"` attribútumára köti; ugyanott `ignoreObjects="true"` is szerepel. A `0x00bc2420` a három numerikus mező után `0x00bc4900`-t hívja; ez a `Mask` értéket a közös `this+0x14` mezőbe olvassa. A közös műveletfordító saját utasítás után fűzi a maszkoló utasítást (`0x00bc4ae0`, `MaskInstruction` ág), tehát a maszk az apply fölötti utasításrétegben érvényesül. Az apply törzse nem olvassa. Az `ignoreObjects` fogyasztója és láncbeli hatása **NINCS MEG**.
+
+**Bizonyítottsági fok: feltételes.** Az alkalmazó, attribútumoffszetek, pozitív amount csonkolása, ciklusszám/eltolássorozat és SSE2-keverési súlyok utasításszinten kiolvashatók; a natív QEMU-próba több esetben bájtra igazol. A teljes koordinátaképlet pontos x87-kerekítési sorrendje és a `focal.py` eltérésének oka nyitott. A `Mask` közös láncútja igazolt; az `ignoreObjects` nyitott.
+
+**A #4906 készültsége:**
+
+- Alkalmazó, `amount`/`x`/`y`: igazolt (`0x00bc24e0`; mezők `+0x34`, `+0x24`, `+0x2c`; amount csonkolva, x/y pixelben float32).
+- Mintaszám, eltolás, súlyozás és kerekítés: utasításszinten leírva (`N`, `D`, `off`, 16.16 pontminta, 38/217 egész keverés).
+- `Mask`: igazoltan a közös utasításrétegben, az apply fölött (`filterdesc.xml:898–902`, `0x00bc2420`, `0x00bc4900`, közös fordító).
+- `ignoreObjects`: nyitott; a mező fogyasztója nincs azonosítva.
+- Mai kóddal összevetés: elvégezve, de nem minden esetben egyező; lásd a bájteredményeket.
+
+**Cáfoló próba (15.2).** A „mai `zoom_blur` a natív apply pontos modellje” állítást a 24×20-as `(7,2;14)` esetre amount 50/75/100 mellett próbáltuk cáfolni. A bájtonkénti összevetés rendre 40/272/405 eltérő színbájtot talált; a max abszolút eltérés 3/5/9. Kontrollként amount 25 és 25,7 kimenete a modellhez és egymáshoz is egyezett. A cáfolatot ugyanazzal az összevetéssel ellenőriztük; a teljes képletet nem minősítjük megerősítettnek.
+
+**Nyitott:** az x87 mátrixépítés pontos köztes kerekítési sora; a mai kód eltérésének oka; az `ignoreObjects` láncbeli fogyasztója. Ghidra-kör kell: `0x00bcf4b0` — a `0x00bcf51d`–`0x00bcf6e9` x87-veremből a mátrix float32 elemeinek pontos kifejezése és kerekítési sorrendje [blokkoló]. Ezután az abból kapott, szabad paraméter nélküli modell új QEMU-futtatása szükséges azonos bemenetekkel.
 
 ---
 
