@@ -1054,7 +1054,7 @@ Képek\AI\
 Képek\lake\
 Képek\Picasa\
 Képek\wallpapers\
-C:\Users\attila.virag\Pictures\
+C:\Users\felhasznalo\Pictures\
 ```
 
 Három szabály olvasható ki:
@@ -1065,7 +1065,7 @@ Három szabály olvasható ki:
    4.3).
 2. **A megjelenítés vegyes**: ismert gyökér alatti mappák **relatív**
    alakban, záró `\`-sel (`Képek\AI\`), a többi **abszolút** útvonalként
-   (`C:\Users\attila.virag\Pictures\`). A `Videók` záró `\` nélkül áll — ez
+   (`C:\Users\felhasznalo\Pictures\`). A `Videók` záró `\` nélkül áll — ez
    a Windows-könyvtár (library) bejegyzés alakja.
 3. **A lista tartalmazhat olyan mappát, ami a fában nem is látszik**: a
    `Videók` nem szerepel a fa gyökerei közt (Asztal / Képek / Dokumentumok

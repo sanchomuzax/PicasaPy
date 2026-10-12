@@ -25,6 +25,7 @@ from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.folder_hierarchy_wiring import wire_folder_hierarchy
 from support.print_wiring import wire_passport, wire_print
 from support.jpeg_factory import make_jpeg
+from support import keep_burkok
 
 
 @pytest.fixture(autouse=True)
@@ -49,6 +50,44 @@ def qml_warnings():
     yield from qml_warning_guard()
 
 
+def _teardown_qml_app(engine, qt_app, *, keep_modul=None):
+    """Biztonságosan leállítja az appot, majd elengedi a QML-burkokat."""
+    from PySide6.QtCore import QCoreApplication, QEvent
+
+    from picasapy.app.worker_thread import (
+        elo_valaszok,
+        running_background_workers,
+        wait_for_all_background_workers,
+    )
+
+    # ⚠️ Itt SZÁNDÉKOSAN nincs állítás, csak napló. A QML-fa MÉG ÉL, ezért a
+    # látszó képekhez tartozó válaszok jogosan létezhetnek. A szám önmagában
+    # lelet a #1457-hez.
+    maradek = elo_valaszok()
+    if maradek:
+        print(f"[#1457] élő aszinkron válasz a lebontás előtt: {maradek}")
+    assert wait_for_all_background_workers(30.0), (
+        "háttérmunka nem állt le a teardownban (#430/#438/#988/#999): "
+        + ", ".join(running_background_workers())
+    )
+
+    # #1193: a háttérmunkák után töröljük a motort, majd valóban
+    # feldolgozzuk a DeferredDelete eseményt, mielőtt a vezérlők elengednek.
+    engine.deleteLater()
+    qt_app.processEvents()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    qt_app.processEvents()
+
+    # #4880/#4897: a hívó teszt és a betöltött tesztsegédek listáiban maradt
+    # elavult burkokat csak a motor törlése után érvénytelenítjük.
+    import sys
+
+    modulok = list(sys.modules.values())
+    if keep_modul is not None:
+        modulok.append(keep_modul)
+    keep_burkok.tesztmodulok_listait_elenged(modulok)
+
+
 @pytest.fixture(scope="module")
 def _module_qml_warnings():
     """A modul-fixture teljes setup/teardownja alatt aktív QML-hiba-őr."""
@@ -70,6 +109,7 @@ def _build_qml_app(
     valodi_belyegkep: bool = False,
     email_vezerlo: bool = False,
     show_only_big_images: bool | None = False,
+    keep_modul=None,
 ):
     """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
 
@@ -89,12 +129,7 @@ def _build_qml_app(
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.app.timeline_controller import TimelineController
     from picasapy.thumbs import ThumbnailCache
-    from PySide6.QtCore import QCoreApplication, QEvent, QSettings
-    from picasapy.app.worker_thread import (
-        running_background_workers,
-        elo_valaszok,
-        wait_for_all_background_workers,
-    )
+    from PySide6.QtCore import QSettings
     from PySide6.QtQml import QQmlApplicationEngine
 
     lib = tmp_path / "kepek"
@@ -343,27 +378,13 @@ def _build_qml_app(
     # A szám viszont ÖNMAGÁBAN lelet: a rács-bélyegképeknél nem marad
     # semmi, az effekt-bélyegképeknél viszont tucatnyi — ez a #1457-en
     # rögzített nyitott kérdés (szivárog-e, vagy csak a fa élettartama).
-    maradek = elo_valaszok()
-    if maradek:
-        print(f"[#1457] élő aszinkron válasz a lebontás előtt: {maradek}")
-    assert wait_for_all_background_workers(30.0), (
-        "háttérmunka nem állt le a teardownban (#430/#438/#988/#999): "
-        + ", ".join(running_background_workers())
-    )
-    # #1193: csak a háttérmunkák után szabad elengedni a motort. Az
-    # EffectThumbnailProvider QRunnable-je a végén Qt `finished` jelzést küld;
-    # Windows alatt hozzáférési hibát okoz, ha a válasz QML-tulajdonosa addigra
-    # már megsemmisült.
-    engine.deleteLater()
-    qt_app.processEvents()
-    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-    qt_app.processEvents()
+    _teardown_qml_app(engine, qt_app, keep_modul=keep_modul)
 
 
 @pytest.fixture
-def qml_app(qt_app, tmp_path):
+def qml_app(qt_app, tmp_path, request):
     """Teljes app tesztenként, funkció-szintű állapot-izolációval."""
-    yield from _build_qml_app(qt_app, tmp_path)
+    yield from _build_qml_app(qt_app, tmp_path, keep_modul=request.module)
 
 
 @pytest.fixture
