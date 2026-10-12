@@ -2831,10 +2831,58 @@ az utasításszintű, külön szorzatonkénti `sar 9`-cel is egyezik.
 
 | művelet | pixelképlet | `UseAlpha` | összesített állapot |
 |---|---|---|---|
-| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a művelet közvetlen attribútumolvasója nem kezeli a `UseAlpha`-t; esetleges külső node/kompozitáló hatása nincs igazolva | **feltételes** |
+| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a művelet közvetlen attribútumolvasója nem kezeli a `UseAlpha`-t; esetleges külső node/kompozitáló hatása nincs igazolva (2026-10-12: ld. alább, a `usealpha` egyetlen kódhelye) | **feltételes** |
 
 Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyasztójának
 és a többi #626 műveletnek a feltárását nem zárja le.
+
+#### #626 — `ColorMatrix.UseAlpha`: a sztring és a fogyasztó-kódhely (2026-10-12, statikus; natív mérés NEM sikerült)
+
+**Kérdés.** Van-e a `UseAlpha="true"` attribútumnak (`filterdesc.xml:797`, `:811`)
+olyan fogyasztója a binárisban, amely a `ColorMatrix` működését megváltoztatja?
+
+**Statikus lelet (a `string_xrefs` index, a Picasa3.exe).**
+
+- A `usealpha` sztring (kisbetűs, `0x00c7caf4`) **egyetlen** függvényből hivatkozott:
+  `0x009ca5e0`. Kis- és nagybetűre nézve sem találtam más `UseAlpha`/`usealpha`
+  sztringet az indexben.
+- A `0x009ca5e0` nem a `ColorMatrix` olvasója. Ugyanabban a függvényben a
+  `Tooltip`, `Help`, `Label`, `Text`, `MaintainOffset`, `MaintainRatio`,
+  `XConstraint`, `YConstraint`, `AbsXConstraint`, `Property`, `break`, `dither`
+  nevek is szerepelnek: ez **elrendezési (UI-) elemek attribútum-diszpécsere**.
+- A diszpécser a `usealpha` egyezésnél a 0x20a eltolású bájtot írja. Az
+  objektum típusát nem azonosítottam. Két másik függvény (`0x00618050`,
+  `0x0053fe30`, a dekompilált kötegekben) ugyanezt az eltolást olvassa, de
+  ott egy `ytBitmapNode`-jellegű objektumra és egy 511 bájtos pufferre utal;
+  egyiket sem kötöttem a `ColorMatrix`-hoz.
+- A `ColorMatrix` olvasója (`0x00bc1620`, a közös `0x00bc4900`) nevei között
+  nincs `usealpha` (a 4.9 szakasz felsorolása szerint).
+
+**Következtetés (csak ebből a statikus leletből).** A `UseAlpha` név a bináris
+egyetlen függvényében él, az pedig egy UI-elem diszpécser. Ebből az következik,
+hogy a Glimmer-művelet attribútumútjában a flagnek nincs ismert fogyasztója. Ez
+**nem** bizonyítja, hogy nincs hatása: az indexben a táblázatos vagy adat-szintű
+hivatkozások (nem kód-immediate) nem látszanak.
+
+**Natív próba (2026-10-12, `qemu-i386`, `0x009ca5e0`).** A harnessel a diszpécsert
+egy nullázott, 0x400 bájtos objektummal és a `usealpha`/`UseAlpha` névvel
+hívtam. **Nem sikerült:** a `memcmp`-ekkel (`0x00bf5616`) ellenőrzött
+elágazás után a futás egy CRT-hibaágra (`0x00bef7xx`) ment, így a
+`usealpha`-ágat nem mértem. A hívási keret (melyik argumentum a név, melyik
+az érték, és milyen objektumot vár a `0x009cc01d`-es ág) még nincs
+igazolva. **A natív mérés tehát ebben a körben nem történt meg.**
+
+**Kész, ha** (a következő körhöz): (1) a `0x009ca5e0` keretének dekompilált
+argumentum-szerepe — a `memcmp`-ek hívási sorrendje alapján —, és egy olyan
+objektum, amelyen a `usealpha`-ág ténylegesen lefut; (2) a `0x20a` bájt
+fogyasztójának azonosítása a `ColorMatrix` objektumtípusán (vagy a
+kizárása); (3) ha (2) negatív, a `UseAlpha`-ra csak az (1) natív eredménye
+alapján lehet a `ColorMatrix` leírójának hatását kimondani.
+
+*Bizonyítottsági fok: **megerősített** a sztring-index egyetlen találatára
+(a `string_xrefs.csv`, a Picasa3.exe-ben); **feltételes** a `0x009ca5e0`
+UI-diszpécser-jellegére (a sibling-nevek és a `memcmp` hívás alapján);
+**nyitott** a `0x20a` objektumtípusa és a `ColorMatrix`-hatás. Natív mérés nincs.*
 
 #### Eredeti / nálunk / teendő
 
