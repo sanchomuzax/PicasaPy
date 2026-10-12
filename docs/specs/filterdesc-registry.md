@@ -11669,18 +11669,24 @@ csak `(255,0,0)` (a külső szín) — ez a `draw_border()` viselkedésével egy
   `(3,9, 0,9) → 2`, és `arány = 1` mellett minden érték változatlan. Az `arány`
   definícióját a `_elonezeti_arany`-ban külön, `imageWidth / fullResImageWidth`
   ellenőrzéssel kell igazolni (ez még nincs mérve).
-- **K2 (E2).** A `draw_border()` R = 0 ágában a belső sáv két alsó sarokképpontját
-  a natív `(96,0,159)` / `(104,0,151)` értékre kell állítani a `255,0,0` külső és
-  `0,0,255` belső mellett. Kész, ha a 4 mért konfiguráció (9×8, 9×11, 41×40,
-  15×18) **bájtra** egyezik. A képletet még nem vezettük le (lásd 5. pont), így
-  ez nem írható elő általánosan; a 4 eseten túl nincs igazolás.
+- **K2 (E2) — KÉPLETRE ÍRVA (3. kör, lásd lent; NEM implementálva).** A `draw_border()`
+  R = 0 ágában nem konstans a két alsó sarokpixel, hanem a külső ív K = 1 rácsának
+  fedése és a kétrétegű keverés adja: `C = 160` (bal-alsó), `C = 152` (jobb-alsó).
+  A `(96,0,159)` / `(104,0,151)` ebből következik. Kész, ha: (1) a `sugar == 0`
+  korai visszatérés helyett a K = 1 külső ív fut (a forrásív nem), `K = 0`-nál
+  kimarad; (2) a 8 mért eset (lent) bájtra egyezik; (3) a K = 0 és R > 0 esetekre
+  külön mérés készül (lásd 5. pont).
 
 **5. Nyitott, és mi zárná le.**
 
-- **O1 — az R = 0 alsó-sarok képlete.** Nem vezettük le, miért csak az alsó
-  sarkok keverednek, és miért nem a felsők, illetve hogy a `96`/`104` (`255·0,376`
-  illetve `255·0,408`) a fedettségből jön-e. Zárná: `0x00aa1840` R = 0 ágának
-  kiolvasása, és a külső/belső szín megváltoztatásával végzett mérés.
+- **O1 — ZÁRVA (3. kör).** Az R = 0 alsó sarkainak képlete lent, a 3. körös
+  szakaszban. Két kiegészítő tény: a `96`/`104` a `C = 160`/`152` fedettségből
+  jön, és a külső/belső szín megváltoztatásával végzett mérés igazolta.
+- **O4 — K = 0 eset (új).** `W + 2B < 2` vagy `H + 2B < 2` (pl. `W = 1`, `B = 0`):
+  nincs mérés, a lent megadott képlet ott nem érvényes.
+- **O5 — R > 0 sarokkeverés (új).** A `draw_border()` R > 0 ágának sarokkeveréséhez
+  a `_kever_rgb_fedessel` egylépéses képletét használja, nem a kétrétegűt. Színpárra
+  `(200,100,50)`/`(10,220,90)` ±1 eltér (lent). Színes R > 0 QEMU-futás kell.
 - **O2 — nem mért méret-tartomány** R > 0 és arány ≠ 1 kombinációban.
 - **O3 — más `skalazott_vastagsag`-hívók.** A `chain_geometry.py:132`, `:133`,
   `:146`, `:147` ugyanazt a képletet használja; ezekre nem mértünk.
@@ -11690,6 +11696,90 @@ futtatott érték) `megerősített`; a munkavégző méret- és feliratsáv-szí
 `megerősített` (4 eset, R = 0); a float32-sorrend és az előbb-csonkítás
 `megerősített` (4 mért eset); a 2 képpontos R = 0 eltérés `megerősített`, az
 okát (O1) `NYITOTT`.
+
+#### ⭐ Border — az R = 0 alsó sarkainak zárt képlete (2026-10-12, 3. kör, #626)
+
+*Módszer: (a) utasításszintű olvasás: a `0x00aa1840` teljes, 813 bájtos függvénye
+(capstone, `pdis.py`) és a hívója, a `0x00aa13b0`; (b) a részleges fedés
+pixelművelete (`0x00aa1a61`–`0x00aa1ae1`) 32 bites regiszter-szintű másolata,
+ellenőrzésre; (c) natív QEMU-futás a `0x00bbe570` munkavégzőre, színes és más
+méretű bemenettel. A szkriptek és a kimenetek ideiglenesek:
+`/tmp/claude-1000/kd-r626/col/`.*
+
+**Az O1 válasza: miért csak az alsó sarkok.** R = 0 mellett `N = 0`, ezért
+`K = min(1, ⌊(W+2B)/2⌋, ⌊(H+2B)/2⌋)`. Ha `W+2B ≥ 2` és `H+2B ≥ 2`, akkor `K = 1`.
+Ekkor a külső ív rácsa mindig `2×2`, és ezért a mért konfigurációkban mindig 2
+képpont tér el. A rács (`q = 256·(x²+y²) − 240·x`, `rᵢ² = 64`, `rₒ² = 576`,
+`Δ = 512`, `K' = 2²⁴/512 = 32768`):
+
+```text
+q = [   0    16 ]        C = [ 256  256 ]     C = 256: teljes belső szín
+    [ 256   272 ]            [ 160  152 ]     köztes sáv: C = (576 − q) >> 1
+```
+
+A felső sor `q ≤ rᵢ² = 64`, ezért teljes fedés: a felső sarkok a belső szín,
+a kimenet ott nem változik. Az alsó sor `q ≥ 256 > 64`, ezért köztes fedés
+(160, 152). A bal–jobb aszimmetriát a `−240·x` tag adja (160 ≠ 152).
+
+Elhelyezés (`O` a külső, `B` a belső vastagság): bal-felső `C(0,0)` a
+`(y,x) = (O, O)` pixelen; jobb-felső `C(1,0)` a `(O, O+W+2B−1)` pixelen; bal-alsó
+`C(0,1)` a `(O+H+2B−1, O)` pixelen; jobb-alsó `C(1,1)` a
+`(O+H+2B−1, O+W+2B−1)` pixelen. Ezt a 8 mért eset igazolja.
+
+**A K2 képlete — keverés.** Köztes sarokpixelre (`C < 256`), csatornánként, a
+külső szín `Co`, a belső szín `Ci`:
+
+```text
+A   = (255·C) >> 8                      ; a helyi réteg alfája
+out = ((Co · (256 − A)) >> 8) + ((Ci · C) >> 8)
+```
+
+Ez a `0x00aa1840` részleges ágának (`D = 0` átlátszó kezdőérték, `S = Ci`) és a
+`0x009ab410` „over” kompozitjának együttes eredménye. A nulla kezdőértéket a
+kimenet igazolja (8/8 eset); a `0x009a8a30` és `0x009a9b30` kezdőérték-írását
+nem olvastam ki.
+
+A kép sarka R = 0-nál nem rajzolódik: a forrásív `Δ = 0`, az `aa1840` a
+`cmp esi,ecx` / `je 0xaa1b61` ágon kilép. A kép a sarkokat takarja; B = 0
+esetén is (mért).
+
+**Igazolás — natív QEMU, bájtos összevetés.** Az összevetés 8 esetre készült:
+4 régi golden (2. kör) és 4 új QEMU-futás.
+
+| eset | W×H | B | O | F | külső szín | belső szín | kimenet | eltérő képpont |
+|---|---|---|---|---|---|---|---|---|
+| w9x8 (2. kör) | 3×2 | 1 | 2 | 0 | 255,0,0 | 0,0,255 | 9×8 | 0 |
+| w9x11_cap3 (2. kör) | 3×2 | 1 | 2 | 3 | 255,0,0 | 0,0,255 | 9×11 | 0 |
+| ratio07 (2. kör; arány 0,7 → B=6, O=13) | 3×2 | 6 | 13 | 0 | 255,0,0 | 0,0,255 | 41×40 | 0 |
+| w15x18_cap5 (2. kör) | 5×3 | 2 | 3 | 5 | 255,0,0 | 0,0,255 | 15×18 | 0 |
+| új szín | 3×2 | 1 | 2 | 0 | 200,100,50 | 10,220,90 | 9×8 | 0 |
+| új méret | 5×7 | 3 | 1 | 2 | 30,140,220 | 250,240,20 | 13×17 | 0 |
+| új méret | 2×2 | 1 | 1 | 0 | 0,0,0 | 255,0,255 | 6×6 | 0 |
+| B = 0 | 4×3 | 0 | 2 | 0 | 12,200,99 | 240,30,60 | 8×7 | 0 |
+
+A 8 eset minden képpontja egyezik. A `0,0,0`/`255,0,255` esetben a sarokpixel
+`(0,0,0)`-ból és `(255,0,255)`-ből keveredik; a fenti képlet ezt is bájtra adja.
+
+**Mit NEM igazol ez a szakasz (nyitott).**
+
+- **K = 0** (`W+2B < 2` vagy `H+2B < 2`): nincs mérés.
+- **R > 0 ág:** a `draw_border()` sarokkeveréséhez a `_kever_rgb_fedessel`
+  egylépéses képletét használja. A `(200,100,50)`/`(10,220,90)` párra a
+  sarokpixel `(81,174,75)` és `(87,170,73)`, a natív `(81,174,74)` és
+  `(87,171,73)`. A régi R > 0 goldenek (piros/kék, fekete/fehér) ezt nem
+  zárják ki. A kétrétegű képletet az R > 0 ágra csak színes R > 0 futás után
+  szabad átvinni.
+- **Az `aa13b0` alablak-kiosztása:** a négy sarok `C`-hozzárendelését a 8 eset
+  igazolja, de az `aa13b0` sarok-ablakának utasításait (`0x00aa1514`–
+  `0x00aa1641`) nem olvastam végig.
+- **A kétrétegű lánc:** a `0x009ab410` kompozitor belső ágát nem olvastam
+  végig; az „over” alak a mért bájtokból következik, nem a kompozitor kódjából.
+
+**Bizonyítottsági fok (ez a szakasz):** a 2×2 rács és a négy sarok helye
+`megerősített` (a q-képletből és 8 natív esetből); a keverési képlet
+`megerősített` a 8 bájtos egyezésre; a kétrétegű szerkezet és a nulla kezdőérték
+csak kimenetből `megerősített` (kódolvasás nélkül); a K = 0, az R > 0 és az
+`aa13b0` alablak-kiosztása `NYITOTT`.
 
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
