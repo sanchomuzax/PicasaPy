@@ -11519,7 +11519,7 @@ hívóhelyének újraszétszedése (`pdis.py`, capstone); a 9 × 9 natív golden
 prológusa (`0x00bbe570`–`0x00bbe5a8`): `T = arg5 + arg6`, a kimenet szélessége
 `W + 2T` (`eax = arg5 + arg6` → `lea ebp,[eax+ecx]`, majd `lea eax,[ecx+ebp*2]`),
 magassága `H + 2T + arg7` (`lea edx,[edx+ebp*2]`, majd `add edx,[esp+0x18c]`).
-Ahol a `W`/`H` a `arg3` forrásrekord `+0x08`/`+0x0c` mezője (`mov ecx,[eax+8]`,
+Ahol a `W`/`H` a `arg1` forrásrekord `+0x08`/`+0x0c` mezője (*helyesbítve: nem arg3; lásd a 2026-10-12, 2. kör szakaszt*) (`mov ecx,[eax+8]`,
 `mov edx,[eax+0xc]`). Tehát: **arg5/arg6 a két vastagság, arg7 a feliratsáv**.
 Ez egyezik az I.4/b és a 4. szakasz leírásával.
 
@@ -11554,11 +11554,11 @@ feliratsáv egész-csonkítása a `dinamikus_csuszka.felirat_sorok()`-ban
   `fmul dword` (32 bites szorzó) és a PicasaPy `trunc(v · arány)` (double) között
   a float32 kerekítés eltérhet a csonkítási határon. Ezt egy `arány` ≠ 1 esetű
   natív futás tudja eldönteni; ma nincs rá adat.
-- **Arg-térkép — részleges.** Az arg3 (forrásrekord), arg5, arg6, arg7 megvan.
-  Az arg1, arg2, arg4 és arg8–arg9 jelentése (színek, sugár, kimeneti rekord)
-  ebben a körben NEM lett rögzítve; a caption-QEMU-futáshoz ezt előbb kell.
+- **Arg-térkép — (ebben a körben LEZÁRVA, lásd a 2. kör szakaszt lent).** A
+  nyolc push forrása és értéke megvan; a munkavégző 8 stack-argumentumot kap
+  (`ret 0x20`), arg9 nincs.
 
-**Következő lépés (a Border-on belül, nevesített):** (a) az `0x00bbe320` hívóhelyének
+**Következő lépés (a Border-on belül, nevesített) — a 2. körben MINDHÁROM lezárva, lásd lent:** (a) az `0x00bbe320` hívóhelyének
 (`0x00bbe41c`, nyolc `push` a `0x00bbe401`–`0x00bbe41b` sorban; a két érték tényleges típusa és a hívott `ret 0xc` cleanup-egyezése még nincs kiolvasva) argumentum-sorrendjének teljes kiolvasása; (b)
 QEMU-futás a `caption = 2` (vagy 3) és `R = 0` eseteken, a `draw_border()` ellenében;
 (c) egy `arány` ≠ 1 eset a `0x00bbe4d0`/`0x00bbe51b` float32-os szorzóra.
@@ -11572,11 +11572,124 @@ float32-szorzó `NYITOTT`.
 
 | művelet | pixelképlet | méret / skála | felirat (caption) | összesített állapot |
 |---|---|---|---|---|
-| `Border` | **megerősített** (`0x00bbe570`, `0x00aa13b0`, `0x00aa1840`; 3 QEMU-golden + ma újraellenőrizve) | **megerősített** (`W+2T`, `H+2T+felirat`; a vastagság-skála a PicasaPy-ban is él) | **nyitott** a natív rajzolóban (színe és futás nélkül); a magasság export-mért | **feltételes** |
+| `Border` | **R > 0**: megerősített (3 QEMU-golden). **R = 0**: **eltér** (mért: 2 képpont/keret) | **méret megerősített** (`W+2(inner+outer)`, `H+2(inner+outer)+felirat`); **skála eltér** (mért: float32 arány + előbb-csonkítás) | **külső szín** (mért, 2. kör) | **eltérés** — javítási jegy a K1–K2 pontokra (lásd 2. kör) |
 
 A sor állapota **nem** „lezárt”: a feliratsáv natív pixelútja és a
 float32-es szorzó nyitott. A 2026-10-06-os „teljes egyezés” a `caption = 0`
 mintákra igaz, és így marad megnevezve.
+
+#### ⭐ Border — a nyolc push forrása, a valódi munkavégző futtatása, három mért eltérés (2026-10-12, 2. kör, #626)
+
+*Módszer: (a) statikus: az `0x00bbe320` alkalmazó és a `0x00bbe430`, `0x008f1490`
+olvasata utasításszinten (capstone); (b) dinamikus: az eredeti alkalmazó QEMU-ban
+fut, a `qemu_harness/hb.py` generikus harnessre épülve (`make_image`, és a
+munkavégzőnél `install_crt_shims`). Stubok: `0x008ef520` (attribútum-olvasó: a
+`this` mezőjéből 8 bájtot ad az arg2 mutatóra, eax=0), `0x008e4d10`
+(változókereső: 0. index). A munkavégzőt először **rekorder** helyettesíti (8 arg
+kiolvasása), majd a valódi `0x00bbe570` fut. A stub-konvenció (az arg2-mutatóra
+írja a double-t) a `0x008f1490` `fld [esp]` olvasatából következik. Ideiglenes
+fájlok: `/tmp/claude-1000/kd-r626/`.*
+
+**Helyesbítések az 1. körhöz.** (a) A `W`/`H` forrásrekord az **arg1**, nem arg3:
+a munkavégző belépése után `[E+4]`-et olvassa (arg1). (b) Nincs arg9: a
+munkavégző `ret 0x20`, azaz nyolc stack-argumentum. (c) Az `apply_border_op`
+(`chain_glimmer_handlers.py:206`) SKÁLÁZ a `skalazott_vastagsag`-gal; a 2026-09-19-es
+C-tábla „nincs teljes felbontású tényező” sora elavult.
+
+**1. Az arg-térkép — TELJES, és futtatással is egyezik.** A `X` az `esp` a
+`0x00bbe32f` előtt (`sub esp,0x34` + három push után); a `[X+off]` olvasások
+ugyanebben az `X`-ben futnak (a `0x00bbe3f6` előtt a `0x00bbe430` hívás ret 0xc-vel
+visszaadja az `esp`-t).
+
+| arg | push-cím | forrás | írója (cím) | mért érték |
+|---|---|---|---|---|
+| **arg1** | `0x00bbe41b` | `[ebp+8]` = a hívó 1. paramétere | a hívó; a munkavégző `+8`/`+0xc` (W/H) olvassa, `0x00bbe597`–`0x00bbe59a` | a forrásrekord |
+| **arg2** | `0x00bbe41a` | `[X+0x28]` | `0x00bbe368` `mov [esp+0x30],eax` a `0x008eea90` (trunc) után; alfa `0x00bbe36f`; attribútum: `this=edi+0x24` (`0x00bbe33c`), olvasó `0x008ef520` (`0x00bbe350`), out-mutató `X+0x38` | külső szín, alfa=ff (`0x00ff0000` → `0xffff0000`) |
+| **arg3** | `0x00bbe419` | `[X+0x24]` | `0x00bbe3a6` `mov [esp+0x2c],eax` (trunc); alapértelmezés `ff000000` `0x00bbe37d`; `this=edi+0x2c` (`0x00bbe37a`); alfa `0x00bbe3ad` | belső szín (`255` → `0xff0000ff`) |
+| **arg4** | `0x00bbe415` | `[X+0x2c]` | `0x00bbe3da` `mov [esp+0x2c],eax` (trunc); alapértelmezés `0` `0x00bbe3bb`; `this=edi+0x34` (`0x00bbe3b8`) | sugár, **nem skálázott** (`2` → `2`) |
+| **arg5** | `0x00bbe410` | `[X+0x38]` | `0x008f1490` a `0x00bbe4bd` hívásban (`this=edi+0x3c`, out = `X+0x38`); utána helyben `fild` · `fmul` · `fistp` (`0x00bbe4c2`–`0x00bbe4f9`) | belső vastagság = trunc( trunc(attr) · float32(arány) ) |
+| **arg6** | `0x00bbe40b` | `[X+0x34]` | `0x008f1490` a `0x00bbe508` hívásban (`this=object+0x44`, out = `push edi` a `0x00bbe4d4`-nél); `fmul` `0x00bbe51b`; `mov [edi],eax` `0x00bbe542` | külső vastagság, skálázott |
+| **arg7** | `0x00bbe406` | `[X+0x30]` | `0x00bbe553` `call 0x008f1490` (`this=object+0x4c`, out = `[ebp+0x10]` = `X+0x30`); **nincs `fmul`** | feliratsáv magasság, **nem skálázott** (`20` → `20`) |
+| **arg8** | `0x00bbe401` | `[ebp+0x10]` | a hívó | kimeneti rekord |
+
+Az arány: `float32(imageWidth / fullResImageWidth)`; a `0x00bbe4b9` `fstp dword`
+tárolja (a `fdivr` után), a `0x00bbe4d0`/`0x00bbe51b` `fmul dword` szorzóként
+használja. A `this` és a kimeneti mutató a `0x00bbe430` belsejében több helyen
+újratöltődik; a táblában a `push`-hoz tartozó érték szerepel.
+
+**2. A munkavégző valódi futtatása (`0x00bbe570`, CRT-shim).** Forrás: 5 × 5
+helyett kisebb, egyszínű `0xff204060` (RGB `20,40,60`); külső szín `0x00ff0000`
+(RGB `255,0,0`), belső szín `0x000000ff` (RGB `0,0,255`), sugár `0`, alfa `ff` a
+kimeneten. Összevetés a `draw_border()`-rel (`glimmer_frame_ops.py:217`), azonos
+bemeneti vastagságokkal és feliratsávval:
+
+| eset (W×H, belső, külső, felirat) | natív méret | `draw_border` méret | eltérő képpont |
+|---|---|---|---|
+| 3×2, 1, 2, 0 | 9 × 8 | 9 × 8 | **2 / 72** |
+| 3×2, 1, 2, 3 | 9 × 11 | 9 × 11 | **2 / 99** |
+| 3×2, 6, 13 (arány 0,7 után), 0 | 41 × 40 | 41 × 40 | **2 / 1640** |
+| 5×3, 2, 3, 5 | 15 × 18 | 15 × 18 | **2 / 270** |
+
+Minden eltérés **két képpont**: a belső sáv **utolsó sorának bal és jobb széle**,
+azaz `y = kulso + H + 2·belso − 1`, `x = kulso` és `x = kulso + W + 2·belso − 1`
+(a 9×8 esetben `(5,2)` és `(5,6)`). Natív: `(96,0,159)` bal,
+`(104,0,151)` jobb; `draw_border`: `(0,0,255)`. A többi belső képpont, köztük a
+felső sarkok, egyezik. Az alfa minden esetben `ff`.
+
+**A feliratsáv színe — megmérve: KÜLSŐ.** A natív kimenet alsó 3, illetve 5 sora
+csak `(255,0,0)` (a külső szín) — ez a `draw_border()` viselkedésével egyezik. A
+2. körben nyitott „belső vagy külső” kérdés így lezárva (R = 0 eseteken mérve).
+
+**3. Mért eltérések.**
+
+- **E1 — skála-kerekítés (arány ≠ 1).** A PicasaPy `skalazott_vastagsag(v)` =
+  `math.trunc(v · arány)` dupla pontossággal (`elonezeti_arany.py:60`). A natív:
+  előbb `trunc(attr)`, majd `· float32(arány)`, majd `trunc`. Mért:
+
+  | attr | arány | natív (mért) | PicasaPy (`skalazott_vastagsag`) |
+  |---|---|---|---|
+  | 10 | 0,7 | **6** | 7 |
+  | 20 | 0,7 | **13** | 14 |
+  | 20 | 0,9 | **17** | 18 |
+  | 3,9 | 0,9 | **2** | 3 |
+
+  A két forrás az `arány` valódi (nem egész) értékein tér el. A PicasaPy `arány`
+  előállítása (`_elonezeti_arany`, `edit_preview.py:441`) NINCS még ellenőrizve,
+  hogy `imageWidth / fullResImageWidth`-szel azonos-e.
+- **E2 — sugár = 0 eset.** A `draw_border()` `sugar == 0`-nál azonnal visszatér
+  (`glimmer_frame_ops.py`, a `vaszon` returnje). A natív ettől függetlenül
+  kiszámolja a belső sáv alsó sarkait: 2 képpont/keret eltér (lásd 2. pont). A
+  `apply_border_op` alapértelmezett sugara `0`, tehát ez az alapbeállítást érinti.
+
+**4. Kész, ha — a megvalósításhoz (NEM implementálva ebben a körben).**
+
+- **K1 (E1).** `skalazott_vastagsag` és az `arány`-előállítás: a szorzást
+  `trunc(float32(arány) · trunc(v))` sorrendben kell végezni. Kész, ha ezek a
+  tesztek zöldek: `(10, 0,7) → 6`, `(20, 0,7) → 13`, `(20, 0,9) → 17`,
+  `(3,9, 0,9) → 2`, és `arány = 1` mellett minden érték változatlan. Az `arány`
+  definícióját a `_elonezeti_arany`-ban külön, `imageWidth / fullResImageWidth`
+  ellenőrzéssel kell igazolni (ez még nincs mérve).
+- **K2 (E2).** A `draw_border()` R = 0 ágában a belső sáv két alsó sarokképpontját
+  a natív `(96,0,159)` / `(104,0,151)` értékre kell állítani a `255,0,0` külső és
+  `0,0,255` belső mellett. Kész, ha a 4 mért konfiguráció (9×8, 9×11, 41×40,
+  15×18) **bájtra** egyezik. A képletet még nem vezettük le (lásd 5. pont), így
+  ez nem írható elő általánosan; a 4 eseten túl nincs igazolás.
+
+**5. Nyitott, és mi zárná le.**
+
+- **O1 — az R = 0 alsó-sarok képlete.** Nem vezettük le, miért csak az alsó
+  sarkok keverednek, és miért nem a felsők, illetve hogy a `96`/`104` (`255·0,376`
+  illetve `255·0,408`) a fedettségből jön-e. Zárná: `0x00aa1840` R = 0 ágának
+  kiolvasása, és a külső/belső szín megváltoztatásával végzett mérés.
+- **O2 — nem mért méret-tartomány** R > 0 és arány ≠ 1 kombinációban.
+- **O3 — más `skalazott_vastagsag`-hívók.** A `chain_geometry.py:132`, `:133`,
+  `:146`, `:147` ugyanazt a képletet használja; ezekre nem mértünk.
+
+**Bizonyítottsági fok (ez a szakasz):** az arg-térkép (nyolc push, forrás,
+futtatott érték) `megerősített`; a munkavégző méret- és feliratsáv-színe
+`megerősített` (4 eset, R = 0); a float32-sorrend és az előbb-csonkítás
+`megerősített` (4 mért eset); a 2 képpontos R = 0 eltérés `megerősített`, az
+okát (O1) `NYITOTT`.
 
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
