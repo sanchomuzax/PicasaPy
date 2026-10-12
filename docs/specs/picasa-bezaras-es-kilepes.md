@@ -221,11 +221,13 @@ Enter-kilépését ez a jegy pótolja. A beállított egykattintásos bal kattin
 „alkalmazás és következő kép” sorozatot végez, ezért annak eseményét a
 nézőből kilépő ág nem foghatja el.
 
-**Bizonyosság: magas.** A `+0x08 == 0x17` billentyű-eseményosztály és a
-`+0x10 == VK_RETURN (0x0d)` virtuális billentyűkód együtt közvetlenül
-azonosítja az eseményt; nincs szükség a mozgás-/kattintásüzenetek belső
-kódra fordításának feltételezésére. A #4493 korábbi, nyitott gesztusleírása
-és a #4500 korábbi „nem azonosított” következtetése ezzel felülírt állapot.
+**Bizonyosság: feltételes (egy út).** A `+0x10 == VK_RETURN (0x0d)` a
+dekompilált kódból (`referencia/ghidra-koteg-2026-10-12/005c24c0.c`, #23)
+közvetlenül kiolvasható; a `+0x08 == 0x17` billentyű-eseményosztály viszont
+következtetés, mert a `+8` mező írója még nincs megtalálva. Második,
+független út (a `+8` író azonosítása vagy natív futtatás a kezelőn) zárná le.
+A #4493 korábbi gesztusleírása és a #4500 „nem azonosított” következtetése
+ehhez képest elavult.
 
 **Nyitott marad:** az üres szerkesztőfelület viselkedése. Ez nem változtat
 azon, hogy az állóképes előnézet `SingleClickExit=0` melletti bizonyított
