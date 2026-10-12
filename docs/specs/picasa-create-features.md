@@ -4488,3 +4488,45 @@ Tehát `A` és `B` **egész pixel-értékek**, a valós képkeret- és szövegke
 - **Írógép (11):** a G.6.7 képlete változatlan, de blokkolva: (i) a `t` nulla pontja (G.7.4), (ii) `L` és `d` fájlértéke (G.7.3), (iii) a desc-blokk összekötése a factory `ctx+0x1a8`-jával (G.7.2). Karakter/s = `len / d` csak lineáris `P`-nél, és `d` most csak az alapértékből (1,0 s) ismert: **nem mondható ki számként.**
 - **Gördülő (8):** blokkolva: `A`, `B` (G.7.5), `dur` fájlértéke (G.7.3), a desc-összekötés (G.7.2). A görgetés teljes útja `A − B` (a `S(p)` smoothstep 0-tól 1-ig fut), az átlagsebesség `(A − B) / dur` px/s; a számértékek most sem adhatók meg.
 - **Nincs implementáció:** a `slideshow.py` változatlan; a jegy megvalósítása a fenti (i)–(iii) és G.7.5 mérése után indulhat.
+
+#### G.7.7 5. kör (2026-10-12): a `desc` írói, a `+0x298` típusa, a vtábla-hívó — mi dőlt el
+
+*Állapot: (b) a **trans-attribútumok írói és a desc-leképezés** eldőlt (kódból, utasításszinten); a `+0x298` típusa **float**. A (b) film-oldali összekötése (desc = `ctx+0x1a8`) és a (a) `t` nulla pontja **nyitott**. Számérték továbbra sincs: nincs futtatás.*
+
+##### G.7.7.1 (b) A `desc` = a TimelineXML-objektum `+0x50` blokkja
+
+- A **TimelineXML** vtáblája `0xcbddb8` (RTTI: `.?AVTimelineXML@@`, COL `0xd0f634`); a konstruktor `0x8151c0`, a vtábla-írás `0x8151e2`.
+- A `0x8162f0` (vtábla 1. slot) a `trans` / `defaulttrans` nevű elemre a `this+0x50`-et alapértékkel tölti (`0x816326`–`0x81634c`): `+0xe8 = 4,0`, `+0xe4 = 2`, `+0xec = 1,0`, `+0xf0 = 0,0`, `+0xf4 = 0,0`. Ez azonos a G.7.2 layoutjával, tehát **`desc = this+0x50`**.
+- A `0x8152f0` (vtábla 2. slot, `ret 4`, az attribútum neve az argumentum) az attribútum-dispatch. A `trans` attribútumai:
+
+| attribútum (`.rdata`) | írás (`this+…`) | desc-mező | érték |
+|---|---|---|---|
+| `transition` (`0xcbda2c`) | `+0x134` (`0x815978`, sztring-lookup) | `+0xe4` | egész / enum |
+| `advanceinterval` (`0xcbda38`) | `fstp [+0x138]` (`0x815a06`) | `+0xe8` | float |
+| `transitiontime` (`0xcbda48`) | `fstp [+0x13c]` (`0x815a7a`) | `+0xec` | float |
+| `blacktime` (`0xcbda58`) | `fstp [+0x140]` (`0x815aea`) | `+0xf0` | float |
+
+- A float-olvasó `0x50a830`: a sztring-objektum `+4` mezőjét hívja (`0xc080d7`), üres érték esetén `fldz`. Tehát a fájlból érkező érték **float**.
+- A `desc+0xf4` (`this+0x144`) **nincs** attribútumhoz kötve a dispatchben: csak az alapérték írja (0,0). Így `L = f0 + f4 = blacktime`.
+- Az attribútum-dispatch nem csak a `trans`-t kezeli: ugyanabban a függvényben van `type`, `bkcolor`, `index`, `text`, `filename`, `showflags`, `fontname`, `size`, `color`, `weight`, `italic`, `outline`, `styleid`, `facerect*`, `facemoviesrc`. Tehát a `trans` attribútumait egy közös elem-rekord fogadja, és a `trans`-hez tartozást az elemnév (`0x8162f0`) jelöli.
+
+##### G.7.7.2 (b) A `+0x298` típusa: **float** (döntés)
+
+- A desc `+0xf0` (= `blacktime`) float-ként íródik (`fstp dword`), és a gyár is float-ként olvassa (`fld dword [ebx+0xf4]`, `fadd dword [ebx+0xf0]`, G.7.2). Ha `desc = ctx+0x1a8`, akkor `ctx+0x298` = `blacktime`, float.
+- A `0x8122f1` int-írás (`mov [esi+0x298], edx`) a G.7.1 szerint a **render-objektumé**, nem a desc-é. Ez nem ellentmondás.
+- **Nyitott összekötés:** hogy a TimelineXML (vagy a `CTransitionInfo`) a film `ctx+0x158`-ában él-e (ahonnan `desc = ctx+0x1a8`). A TimelineXML-konstruktor hívói (`0x617140`, `0x617c15`, `0x618b7b`, `0x814250`-ből / `0x814337`-ből) **verem- vagy tag-objektumot** építenek (`lea esi,[esp+…]`), tehát a desc-et valahol másolni kell a `ctx+0x1a8`-ba. A másoló **nincs azonosítva**.
+- A film `+0x290..+0x29c` (= desc `+0xe8..+0xf4`) **teljes író-listája**: 366 tároló-utasítás a `.text`-ben (`[reg+0x290|0x294|0x298|0x29c]`). Ezek túlnyomó része más objektum; a film-típusú szűrés **nincs kész**, ezért nem sorolom ide.
+
+##### G.7.7.3 (a) A `0x80c230` — a vtábla azonosítása zsákutca, de a szűkítés megvan
+
+- `0x80c230` (`ret 8`, `this` = `ecx`, a `t` a `[ebp+8]` double): a `0xcbdd60` vtábla 0. slotja. Eseményrekordot épít (`0x809a10`, `ytUIEvent`, típus `0x13`), és ha `this+0x150` nem nulla, átadja (`0x9e4630`).
+- **A `0xcbdd60` vtábla nem azonosítható RTTI-vel:** a `vt[-1]` (`0x52d480`) nem COL (a `signature` mező nem 0/1).
+- **A `0xcbdd60` vtábla-pointer sehol nincs kiírva:** sem `.text`-ben (nincs imm32 `0xcbdd60`), sem `.data`/`.rdata`-ban. Ezért a `0x80c230` objektuma nem egy ismert konstruktorban épül, és a közvetlen E8-hívója sincs. A `0x80c230`-at csak egy még nem azonosított vtábla-pointer érheti el.
+- **Szűkítés:** a `.text`-ben 2094 `mov reg,[X]; …; call reg` (slot-0) hívás van; ebből **18** fogad double-argumentumot (`fstp qword [esp…]` a hívás előtt). Ezek a jelöltek (`0x58a0f7`, `0x662890`, `0x662b4a`, `0x6bb802`, `0x6f7772`, `0x6f7ac1`, `0x6fbfe6`, `0x7036fb`, `0x703b4f`, `0x88ec1c`, `0x88ec2a`, `0x890f0a`, `0x890f1c`, `0x89208a`, `0x89209a`, `0x95781f`, `0x958ad7`, `0xa54c08`), de **egyiket sem kötöttem a `0xcbdd60`-hoz**.
+- **Megszerzés:** (1) a jelöltek hívott objektumának ctor-ja (a vtábla-pointer írása a jelöltek `this`-ének konstruktorában); vagy (2) a `this+0x150` objektum írása, mert az a `0x80c230` célpontja; vagy (3) futtatás (a DirectShow-lánc nem fut a harnessben).
+
+##### G.7.7.4 Kész, ha — változás a G.7.6-hoz képest
+
+- **Írógép (11):** `L`-re a G.7.7.1 mezőket megadja: `L = blacktime (+f0) + f4 (=0)`; a `d = transitiontime (+ec)`, **fájlérték**, és `advanceinterval` (`+e8`) a `e8/3` ágat fedi. Blokkolva maradt: (i) a `t` nulla pontja (G.7.7.3), (ii) a film–desc összekötés (G.7.7.2).
+- **Gördülő (8):** a `dur = advanceinterval (+e8)` **fájlérték-forrása most megvan** (G.7.7.1). Blokkolva: `A`, `B` (G.7.5), és a desc-összekötés (G.7.7.2).
+- A `slideshow.py` változatlan: az implementáció a (ii) összekötés és a `t` nulla pontja után indulhat.
