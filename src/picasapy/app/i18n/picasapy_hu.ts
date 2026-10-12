@@ -7811,6 +7811,24 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A mappa nem jeleníthető meg újra, amíg nem érhető el (például lecsatolt meghajtó). A mappa rejtett marad.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A mappa rejtve van, de a Picasa számára nem sikerült megjelölni (a .picasa.ini nem írható).</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>A hidden folder cannot be moved into a collection. Show it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rejtett mappa nem helyezhető át gyűjteménybe. Előbb jelenítse meg.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Áthelyezés új személyhez</translation>

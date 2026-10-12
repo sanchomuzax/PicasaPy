@@ -53,6 +53,7 @@ from picasapy.scanner import (
 )
 from picasapy.scanner.filetypes import RAW_EXTENSIONS
 
+from .hidden_carry import carry_pending_hidden
 from .busy_registry import get_app_busy_registry
 from .filetype_preferences import (
     enabled_filetypes as enabled_filetype_groups,
@@ -1757,6 +1758,9 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         # hely egyetlen gyökér alá sem esne, tehát a `_on_folders_dirty`
         # némán kihagyná.
         self._kovesd_a_gyoker_athelyezeset(regi, uj)
+        # #4597: a még ini-be nem írt (2-es) rejtés az új útvonalra költözik
+        with open_index(self._db_path) as conn:
+            carry_pending_hidden(conn, regi, uj)
         mappak = _dedupe_paths(
             (*self._reszfa_a_lemezen(uj), *self._reszfa_az_indexbol(regi))
         )

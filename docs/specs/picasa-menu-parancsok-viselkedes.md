@@ -1234,6 +1234,11 @@ vagy egyéni gyűjteményből elrejtett mappa tehát megjelenítés után a
   (szóköz-eltávolítás) a hasonlítóban nincs. ⇒ `hidden folders` is a
   `Hidden Folders` gyűjteménybe sorol.
 
+- **Ismert maradék kockázat (PicasaPy-oldal, #4597):** index újraépítése és
+  egyúttal tartósan olvashatatlan `.picasa.ini` esetén a mappa rejtett jelölése
+  nem állítható vissza az ini-ből, ezért a mappa látható marad, amíg az ini
+  olvashatóvá nem válik (a szinkron addig minden körben újrapróbálja).
+
 ### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
 
 A determinisztikus sor három tétele mérés után rendben találtatott:

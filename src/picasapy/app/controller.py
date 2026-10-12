@@ -28,6 +28,7 @@ from PySide6.QtCore import (
 from picasapy.hidden_password import egyezik as jelszo_egyezik
 from picasapy.hidden_password import modern_lenyomat, picasa_lenyomat
 from picasapy.index import (
+    hidden_folders,
     album_photos,
     albums_in_index,
     all_photos,
@@ -264,7 +265,8 @@ class AppController(
     # megmaradnak, csak az eredeti fájlok nem érhetők el most.
     folderUnavailable = Signal(str)
     # #4597: a mappa rejtése/megjelenítése nem ment át: (útvonal, ok) —
-    # ok: "offline-unhide" | "write-failed-unhide"
+    # ok: "offline-unhide" | "write-failed-unhide" |
+    # "write-failed-hide" | "hidden-move"
     folderHideFailed = Signal(str, str)
 
     def __init__(
@@ -974,6 +976,7 @@ class AppController(
                     self.folderHideFailed.emit(path, "write-failed-unhide")
                     return
                 set_folder_hidden(conn, path, True, ini_pending=True)
+                self.folderHideFailed.emit(path, "write-failed-hide")
             else:
                 # Offline mappánál a rejtés az indexben vár (2), a mappa
                 # visszatérésekor a szinkron beírja az ini-be.
@@ -991,6 +994,25 @@ class AppController(
             self._view_mode = ("folder", "")
             self._show(())
         self._reload_folders()
+        self._gyujtemenyek_ujrarajzolasa()
+
+    def _hidden_folder_paths(self) -> frozenset[str]:
+        """A hasábokból kiszűrendő rejtett mappák (#4597): üres, ha a
+        rejtettek megjelenítése be van kapcsolva."""
+        if self.showHidden:
+            return frozenset()
+        with open_index(self._db_path) as conn:
+            return frozenset(hidden_folders(conn))
+
+    def _folder_is_hidden(self, folder_path: str) -> bool:
+        with open_index(self._db_path) as conn:
+            return is_folder_hidden(conn, folder_path)
+
+    def _gyujtemenyek_ujrarajzolasa(self) -> None:
+        """Az egyéni gyűjtemények és a Projektek listája is a rejtettséget
+        követi — mindkettő a `folders.hidden`-ből szűr."""
+        self.customCollectionsChanged.emit()
+        self.projectFoldersChanged.emit()
 
     # -- rejtett képek (#17) -------------------------------------------------
 
@@ -1120,6 +1142,7 @@ class AppController(
         self._get_settings().setValue("view/showHidden", bool(show))
         self._refresh_view()
         self._reload_folders()
+        self._gyujtemenyek_ujrarajzolasa()
         self.statusChanged.emit()
 
     @Slot()

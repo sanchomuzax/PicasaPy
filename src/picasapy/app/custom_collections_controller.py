@@ -47,12 +47,26 @@ class CustomCollectionsMixin:
 
     customCollectionsChanged = Signal()
 
+    def _hidden_folder_paths(self) -> frozenset[str]:
+        """A kiszűrendő rejtett mappák — az `AppController` felülírja (#4597)."""
+        return frozenset()
+
+    def _folder_is_hidden(self, folder_path: str) -> bool:
+        """Rejtett-e a mappa — az `AppController` felülírja (#4597)."""
+        return False
+
     @Property("QVariant", notify=customCollectionsChanged)
     def customCollections(self) -> list[dict]:
         """A gyűjtemények QML-nek adott alakja: `[{name, folders, closed}, ...]` —
         mindig `list`/`dict` (a projekt szabálya, sosem `tuple`)."""
+        # #4597: az elrejtett mappa a rejtettek megjelenítése nélkül nem látszik
+        hidden = self._hidden_folder_paths()
         return [
-            {"name": c.name, "folders": list(c.folders), "closed": c.closed}
+            {
+                "name": c.name,
+                "folders": [f for f in c.folders if f not in hidden],
+                "closed": c.closed,
+            }
             for c in self._load_custom_collections()
         ]
 
@@ -251,6 +265,10 @@ class CustomCollectionsMixin:
         előbb kikerül minden meglévőből, aztán (nem üres célnál) beillesztjük
         az újba. Üres `collection_name` a "Mappák" alap-nézetbe helyezi
         vissza (kikerül minden egyéni gyűjteményből)."""
+        if self._folder_is_hidden(folder_path):
+            # #4597: rejtett mappa nem helyezhető át gyűjteménybe
+            self.folderHideFailed.emit(folder_path, "hidden-move")
+            return
         current = self._load_custom_collections()
         target = next(
             (c.name for c in current if c.name.casefold() == collection_name.casefold()),
