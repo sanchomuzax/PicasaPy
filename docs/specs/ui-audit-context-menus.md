@@ -1105,3 +1105,100 @@ eredeti hely esetén jöhet szóba).
       és a visszaolvasás-teszt, és egy kattintásos QML-próba.
 - [ ] A menüszöveg nem változik; ha változna, a `picasapy_hu.ts` forró fájl
       (szerializálás).
+
+### 2. kör (2026-10-12): utasításszintű olvasat — a tárolás helye NINCS bizonyítva
+
+Módszer: capstone-os szétszedés a PE-ből (`pefile`+`capstone`, külön venv a
+`/tmp/claude-1000/kd-r4536/` alatt); a vtábla-hívásokat a szétszedésből
+olvastam ki, nem az xref-indexből. Natív QEMU-futtatás NEM történt (ld. lent).
+
+#### Dispatch (mért)
+
+- `0x005e0f70` — parancsnév-szerinti elosztó (`repe cmpsb`).
+- `set_thumbnail` (`0x00c96fc8`, 14 bájt): egyezés a `0x005e1806–0x005e1836`
+  blokkban, majd `call 0x603660` a `0x005e183d`-on. A hívás argumentuma a
+  dispatcher `[esp+0x14]`-e (a `this`-objektum).
+- **Eltérés a táblától (ld. a 1022. tétel 23. sorát):** `create_face_movie`
+  (`0x00c96fb4`, 18 bájt) egyezése a `0x005e17c5–0x005e17fa` blokkban van, és
+  az ág `push 0x9d59` → `0x005e11da`-ra megy, **nem** a `0x603660`-ra. Az xref-
+  index a `create_face_movie` sztringet a `0x005e0f70` és a `0x0074bcc0` alól
+  listázza, de a 23. sor címe (`0x00603660`) a kódban nem igazolódik. A sort a
+  tulajdonos dönti el; ebben a körben nem javítottam a táblát.
+
+#### `0x00603660` (set_thumbnail kezelő, mért)
+
+- `stdcall`, egy stack-argumentum (`ret 4`), ez a `this` (`ebp`).
+- **Ebben a függvényben nincs vtábla-hívás** (`call reg`/`call [reg+…]`): minden
+  hívása közvetlen. A vtábla-hívások a `0x603420`-ban vannak (lent).
+- Mezők: `[this+0xeac]` (alobjektum; a `+0x3c4` bájtja a feltétel, a `+0x3c0`
+  dword a `faceicon`-kulcs azonosítója), `[this+0x2bc]` (alobjektum, `+0x2428`,
+  `+0xf8`, `+0x4c`), `[this+0xea0]`, `[this+0x2c0]`, `[this+0xeb0]` (X).
+- Sikeres ág (`0x60372d` és azután): `0x4115c0` → `0x74c110` →
+  `0x9d2c80`.
+  - `0x4115c0`: pixelpuffer-foglaló, `w·h·4+8` bájt (`[esi+8]·[esi+0xc]`,
+    `0x97c5d0` a foglaló).
+  - `0x74c110`: a `albumheader/%x/%d/faceicon` kulcsot formázza
+    (`0xcb1218`), és ezután kép-előállító/-lekérő kódot futtat (többek közt
+    `call edx`, `call eax`). **Ez a kulcs gyorsítótár-kulcs, nem mentési
+    hely**: a függvény a kép elkészítésére és lekérésére szolgál. A tárolási
+    végpontja nincs mérve.
+  - `0x9d2c80` (X): `X[+0x294][idx·8+4] |= 1`, `X+0x291 = 1`, `X+8 |= 2`; ha az argumentum
+    alsó bájtja nem nulla, `|= 0x1000` is. **Az argumentum forrása nem egyértelmű**
+    (a `[ebp+0xeac]` mutatóját látszik átadni, ez valószínűleg nem szándékolt);
+    ezt a jelzést ne vegyük függőségnek, amíg nincs újraolvasva.
+
+#### `0x00603420` (a Preferences-olvasó; mért)
+
+- `stdcall`, `ret 8`; a kapcsoló neve: `Preferences` (`0xc7eafc`) +
+  `PeopleAlbumUseFaceSrc` (`0xc8f570`), a `0x407a20` hívással.
+- **Vtábla-hívások (ezek a kérdésben szereplő „vtábla-hívások”):**
+  - `0x6034d3`: `call edx`, a cél `[[this+0x2bc]+0x4c]` vtábla `+8` slotja;
+    argumentumok: a `fistp qword` érték (a `0xd35808` float-konstansból),
+    `esi` (kimeneti objektum), `edi`.
+  - `0x6034ed`: `call edx`, ugyanazon objektum `+0` slotja (akkor, ha a kimenet
+    `[esi+8] == 0`).
+  - A visszatérési érték: `0` ha `[esi+8] ≠ 0`, különben `9`.
+- Az objektum osztálya és a slotok célja **nincs igazolva** (nincs RTTI-
+  megfeleltetés; a `[this+0x2bc]+0x4c` objektum konstruktorát nem követtem).
+- A kapcsoló a `0x603420`-ban olvasásnak látszik (`0x4019b0` után `sete bl`);
+  írása a `0x603660`-ból nincs, és az írási irány a `0x407a20`-on belül sem
+  igazolt.
+
+#### Tárolási jelöltek — az eredmény
+
+| jelölt | mit mutat a kód | állapot |
+|---|---|---|
+| `albumheader/%x/%d/faceicon` | a `0x74c110` kulcsa; kép-előállító/lekérő függvény | **gyorsítótár-kulcs**; a mentési végpontja nincs mérve |
+| X (`[this+0xeb0]`) rekordtömbje (`+0x294`, 8 bájt/rekord, `+0x291` dirty) | `0x9d2c80` megjelöli a rekordot; a `0x9d1555` törli a dirty-jelzőt | **a mentés-ciklus tagja**, de a célfájl/-tábla nincs megnevezve |
+| `Preferences\PeopleAlbumUseFaceSrc` | csak olvasás látszik a `0x603420`-ban | **nem** a választott kép tárolója |
+| `.picasa.ini`, `contacts.xml`, db3 | nincs közvetlen íráshívás a `0x603660`/`0x603420` útjában | NYITOTT — a X mentési ciklusáig kell követni |
+
+X-osztály: a `0x9d1xxx`–`0x9d2cxx` tartomány azonos mezőkiosztást használ
+(`+0x284`, `+0x288`, `+0x290/0x291`, `+0x294/0x298`, `+0x2ac`, `+0x328`,
+`+0x350/0x358`). Az azonos offset még nem azonos osztály; RTTI-vel nincs
+igazolva. A `0x9d1xxx` mentési ciklus hívott függvényei: `0x9a5210`,
+`0x40a050`, `0x9e5e70`, `0x9e5e20`, `0x9e02a0`, `0x9d1130`; ezek közül egyik
+sincs még végigkövetve egy fájlírásig.
+
+#### Nyitott kérdés (a tárolási döntés előtt)
+
+Hová kerül a választott indexkép: a X mentési ciklusa melyik fájlba/táblába
+ír, és a `faceicon` gyorsítótárból újraindítás után honnan töltődik vissza?
+
+Megszerzés útja (sorrendben):
+1. A `0x9d1xxx` mentési ciklus hívottjainak (`0x9a5210`, `0x40a050`,
+   `0x9e5e70`, `0x9e5e20`, `0x9e02a0`, `0x9d1130`) követése fájlírásig
+   (`CreateFile`/`WriteFile` import, vagy `.picasa.ini`/db3-sztring).
+2. X osztályának azonosítása: `rtti.csv`-ben a `0x9d2c80` vagy a `0x9d1555`
+   címet tartalmazó vtábla keresése (`method_addrs`).
+3. A `[this+0x2bc]+0x4c` objektum vtábla-slotjainak célja (`0x6034d3`,
+   `0x6034ed`): az objektum konstruktora, RTTI-val.
+4. Csak 1–3 után: natív QEMU-futtatás a `qemu_harness/hb.py` harnessszel (a
+   `this` objektumok kézzel épülnek; ezt a futtatás eredményében ki kell
+   mondani).
+5. Futásidejű mérés (a 2026-10-09-i kommentben javasolt diff): indexkép-váltás
+   személy-albumban, előtte–utána diff a `.picasa.ini`-re, `contacts.xml`-re és
+   db3-ra.
+
+Addig nincs „Kész, ha” lista a tárolási döntés alapján: a fenti 1022. tétel
+„Kész, ha” listája a tárolási hely bizonyítása után érvényes.
