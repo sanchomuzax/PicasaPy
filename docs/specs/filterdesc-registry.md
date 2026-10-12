@@ -4291,7 +4291,7 @@ eleje.
 | `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
 | `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
 | `PaletteMap` | `0x008f00d0` | `0x00bb7900` | `0x00bb7c80` (435 b) | `0x00bb7e40` (1093 b) | — *(a `ColorMaps` tömb más úton)* |
-| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — (rés-adat: `0x00d1bfa0`; a mag `0x00bcdf10` közvetlen hívás, ld. 5/e) | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
+| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — (rés-adat: `0x00d1bfa0`; a mag `0x00bcdf10` közvetlen hívás, ld. 5/e). ⚠️ A `Pixelate` **effekt** ezt NEM használja: `ResizeImageOperation`-pár (vtábla `0x008f0908`, alkalmazó `0x00bc3650`), ld. 5/e.1 | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
 | `QuantizePalette` | `0x008eff58` | `0x00bb5a30` | `0x00bb5ad0` (139 b) | — | Steps@0x24, Depth@0x2c |
 | `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | amount@0x34 |
 | `Resize` | `0x008f0908` | `0x00bc3370` | `0x00bc3650` (407 b) | — | width@0x24, height@0x2c, smoothing@0x34 |
@@ -5560,6 +5560,101 @@ A vtábla 8. rése `0x00d1bfa0`: ez **adat** (nullák), nem kód. A `PixelateIma
 - `effects_artistic.apply_pixelate` (`effects_artistic.py:122`): cv2-alapú közelítés (`INTER_AREA` + `INTER_NEAREST`, blokk = a rövidebb oldal %-a). A chain nem hívja.
 
 **Visszavonás.** Ebben a körben egy előzetes megállapításom szerint a natív `ceil(W/pw)` rács eltérhet a `Pixelate` effekt `round(W/Impact)` láncától. Ez **téves volt**: a natív mag nem a `Pixelate` effekté. A `Pixelate` effekt összevetését a 5/c és 5/d szakasz végzi.
+
+### 5/e.1. A `Pixelate` effekt tényleges láncának natív kiolvasása (#4908, 2. kör, 2026-10-12)
+
+**Jegy-premissza pontosítva.** A `Pixelate` effekt (`filterdesc.xml:1191`) **nem**
+`PixelateImageOperation`-t használ, hanem `ResizeImageOperation`-párt:
+`Resize(imagewidth/Impact)` simítva, majd `Resize(imagewidth, smoothing="false")`.
+A `PixelateImageOperation` (`0x00bcdf10` mag) a `Comicize`-é. A jegy címe ezért így
+pontosítandó: „Pixelate: Resize-pár (kicsinyítés simítva, nagyítás legközelebbi
+szomszéd) — nem a PixelateImageOperation”.
+
+**RTTI és vtábla (natív olvasás a `Picasa3.exe`-ből, nem kézi feltételezés):**
+
+| vtábla (VA) | COL | típusnév (TypeDescriptor) | slot 1 (attribútum) | slot 6 (alkalmazó) |
+|---|---|---|---|---|
+| `0x00cf0908` | `0x00d1c57c` | `.?AVResizeImageOperation@glimmer@@` | `0x00bc3370` | **`0x00bc3650`** (407 b, ecx = op) |
+| `0x00cf04f4` | `0x00d1bf50` | `.?AVPixelateImageOperation@glimmer@@` | `0x00bbd050` | `0x00bbd150` |
+
+A COL a vtábla előtti `[vt−4]` dword. A Resize-sor 6. rése tehát azonosított:
+a `0x00bc3650` a `ResizeImageOperation` alkalmazója.
+
+**Az alkalmazó (`0x00bc3650`) utasításszinten** (a 0x00bc3650–0x00bc37d6 szakasz):
+
+1. **Célméret.** A `slot 4` (`0x00bc3400`) a `width` (op `+0x24`) és `height`
+   (op `+0x2c`) értékét a `0x008ef520` property-kiolvasóval double-ként veszi,
+   majd `+0,5`-öt ad hozzá (`[0x00c72150]`), és csonkol (fpu-vezérlő `or 0xc00`,
+   `fistp`). Ha az eredmény `< 1`, 1 lesz (`cmp eax,1` / `jae`). Vagyis
+   **célméret = trunc(v + 0,5), min. 1** — pozitív értékre félfelé kerekítés.
+2. **Simítás.** A `0x008ef520(op + 0x34)` bool (alap `1`), a `0x00c29990`
+   (`cvttsd2si`) egész → `bVar2` (`0x00bc36c5` `setne`).
+3. **Mátrix.** Identitás (`[esp+0x50..0x70]`: 1,0,0 / 0,1,0 / 0,0,1 sorfolytonos
+   kiosztással), a skála `m00 = forrás_W / cél_W`, `m11 = forrás_H / cél_H`
+   (`fild` + `fidiv`, float32-ben tárolva), majd `0x009e6340` összevonás.
+4. **Wrapper `0x00bcb5e0`.** `eax` = cél-kép; a verem: forrás-kép, mátrix-mutató,
+   simítás-bájt. A cél-kép `[+8]`/`[+0xc]` a cél W/H (`edi` a wrapperben).
+   - `smoothing=false` (`bl = 0`, `je 0x00bcb6b8`): `0x009e6df0` — a 16.16-os
+     legközelebbi-szomszéd mintavevő (lásd 5/d). Ez a `Pixelate` második lépése.
+   - `smoothing=true`: `0x009e6da0` (tengelyhez igazított mátrix-ellenőrzés),
+     majd a mód-választás (`0x00bcb63f`–`0x00bcb655`, ld. 5/c), `0x00a3f490`,
+     és az építés `0x00a42c20`-szal. Ez a `Pixelate` első lépése.
+
+**Új megállapítás — kerekítési döntetlen (KÓDBÓL OLVASVA, NEM natívan mérve).**
+Az (1) pont szerint a célméret `trunc(v + 0,5)`. A PicasaPy `apply_pixelate`
+(`src/picasapy/render/glimmer_artistic.py:94–95`) `round(width / impact)`-et
+használ, a Python `round` viszont páros (bankár) kerekítésű. Az eltérés **csak a
+pontos `.5` értéknél** jelentkezik:
+
+| bemenet | natív (a kódból olvasott szabály) | Python `round` |
+|---|---|---|
+| `W = 105`, `Impact = 2` (`52,5`) | **53** (várható) | 52 |
+| `W = 101`, `Impact = 2` (`50,5`) | **51** (várható) | 50 |
+
+Ez **várakozás, nem mérés**: a `0x008ef520` kiolvasót nem futtattuk le, így az
+egyik oldal sem natívan igazolt. Ha a `imagewidth/Impact` kifejezés double-ként
+adódik a property-kiolvasónak, a táblázat szerint a `Pixelate` a köztes kép
+szélességét (vagy magasságát) 1 képponttal eltérően választja meg, ami a
+blokkrácsot is eltolja. Ellenőrzéshez: natív futás a `0x008ef520`-ra egy
+ismert `v` értékkel (ld. a blokkoló pontokat alább).
+
+**Natív futás: NEM sikerült** (a 2. kör nem ad bájtos összevetést). Hol akadt el:
+
+- **Op-objektum:** az alkalmazó a `width`/`height`/`smoothing` értékét a
+  `0x008ef520` property-kiolvasóból kapja; a slot-4 hívó első argumentumát
+  (`ebx`) ez a kiolvasó kapja meg, és a `this` a `width`-mező címe (`op+0x24`).
+  Hogy ez az argumentum mire való (kifejezés-kontextus), és a kiolvasó belső
+  szerkezete nincs kiolvasva.
+- **Kép-objektum pixelpuffere:** a `W = [+8]`, `H = [+0xc]` ismert, de a pixelpuffer
+  mutatója nincs azonosítva. A wrapper és a `0x009e6df0` a képet a
+  `0x00a4a140`, `0x00a4a240`, `0x00a4a520` accessorokon át éri el; ezek nincsenek
+  kiolvasva.
+- **CRT-heap:** a `0x009a8a30`, `0x009a8ca0`, `0x009a8bc0` és `0x00a42c20`
+  allokál. A `hb.py` `install_crt_shims` nem fedi a `HeapReAlloc`-ot (ugyanúgy, mint
+  a 2. köri próbánál, ld. 5/e).
+
+**Mi kellene hozzá:** (1) a `0x008ef520`, `0x00a4a140` és `0x00a4a240` kiolvasása
+és egy kézzel épített property-objektum; (2) a kép-pixelpuffer mutatójának és
+sorstride-jának offsetje; (3) egy `HeapReAlloc`/`HeapSize` arena-shim a `hb.py`-ba.
+Ezután a `0x00bc3650` futtatható egy 4×4-es forrással, és a `smoothing=false` ág
+bájtosan összevethető a `resize_image(..., smoothing=False)`-szal.
+
+**PicasaPy mai megvalósítása (grep, `src/picasapy/render`):**
+- `Pixelate` effekt: `chain.py:874` → `chain_glimmer_handlers.apply_pixelate_op`
+  (`:190`) → `glimmer_artistic.apply_pixelate` (`:74`): `small_w = max(1, round(W/Impact))`
+  (`:94`), `resize_image(…, smoothing=True)` (`:96`), `resize_image(…, W, H,
+  smoothing=False)` (`:97`).
+- `resize_image` (`glimmer_ops.py:1332`): `smoothing=False` ág a 16.16-os
+  középpontos legközelebbi szomszéd (5/d); a `width` `int(round(width))`-szal
+  veszi (`:1366`), ami a 2. kör szerint **eltér** a natív `trunc(v+0,5)`-tól pontos
+  `.5`-nél, ha a bemenet nem egész (a `Pixelate` esetén `W/Impact`).
+
+⚠️ **Nem mért, csak olvasott:** a `width` `round` és `trunc(v+0,5)` különbsége,
+a simítás mód-választása a `0x00bcb63f`–`0x00bcb655` szerint (5/c), és a
+`0x009e6df0` klip-ága. A bájtos összevetés nincs meg.
+
+**Leltár-sor:** a `Pixelate` sor (`0x008f04f4`, 4294. sor) a `PixelateImageOperation`
+vtáblája; a `Pixelate` effekt ezt nem használja (ld. 5/e.1).
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
