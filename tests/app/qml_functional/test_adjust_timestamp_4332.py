@@ -172,7 +172,7 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
 ):
     window, controller, _engine = timestamp_app
     window.setHeight(window.height() + ablakmagassag_eltolas)
-    controller.setFolderPhotoSort("date")
+    assert controller.sortFolderBy(controller.currentFolder, "date")
     qt_app.processEvents()
     window.setProperty("selectedIndexes", [0, 2])
     window.setProperty("selectedIndex", 0)
@@ -276,14 +276,14 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
     }
     assert all(photo.taken_at_override is None for photo in kijeloltek.values())
 
-    # A modell dátummezője is az EXIF-ből szinkronizált értéket adja, és az aktív
-    # dátumrendezés a befejezett köteg után a módosított képekhez igazodik.
+    # A modell dátummezője az EXIF-ből szinkronizált értéket adja. A korábban
+    # egyszer elmentett mappasorrend a dátummódosítás után is változatlan marad.
     rows = {photo.name: row for row, photo in enumerate(controller.photos.photos)}
     assert controller.photos.itemAt(rows["a.jpg"])["takenAt"] == vart["a.jpg"]
     assert tuple(photo.name for photo in controller.photos.photos) == (
-        ("b.jpg", "a.jpg", "c.jpg")
-        if mod == "relative"
-        else ("b.jpg", "a.jpg", "c.jpg")
+        "a.jpg",
+        "b.jpg",
+        "c.jpg",
     )
 
     tulajdonsagok = controller.propertiesOf(rows["a.jpg"])

@@ -715,12 +715,12 @@ class AppController(
         | beállítás | mit rendez | honnan |
         |---|---|---|
         | `folderSort` (ez) | a mappa-blokkokat a RÁCSON | Mappa ▸ Rendezés |
-        | `folderPhotoSort` (#1436) | a mappa KÉPEIT | mappa-jobbklikk |
+        | kézi sorrend (#4890) | a mappa KÉPEIT, mappánként | mappa-jobbklikk |
         | `paneSort` (#461/3) | a BAL HASÁB sorait | a hasáb helyi menüje |
 
         A #1595 kutatása épp azért vont le téves következtetést, mert a
         korábbi docstring („a RÁCS rendezése") alapján úgy tűnt, hogy ez
-        és a `folderPhotoSort` ugyanaz kétféle felirattal — az összevonás
+        és a kézi sorrend ugyanaz kétféle felirattal — az összevonás
         egy működő szempontot („legutóbbi változtatások") vett volna el.
 
         #1454: a Nézet ▸ Mappanézet almenü — ahonnan ez korábban szintén

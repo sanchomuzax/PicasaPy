@@ -60,10 +60,9 @@ def coerce_ui_preference_flag(value, default: bool) -> bool:
 class AppearanceMixin(FolderPhotoSortMixin):
     """`darkTheme` kapcsoló — perzisztens, jelzéssel a QML-kötéseknek.
 
-    #1436: a mappán belüli képsorrend szelete (`FolderPhotoSortMixin`) is
-    innen kapcsolódik az `AppController`-hez — mindkettő `view/` névtérbeli,
-    perzisztens nézet-beállítás, és az `AppController` bázislistája a forró
-    `controller.py`-ban él (a `CollageMixin` ugyanígy hozza a szeleteit).
+    #1436/#4890: a mappánkénti kézi sorrend szelete
+    (`FolderPhotoSortMixin`) is innen kapcsolódik az `AppController`-hez;
+    a sorrend a mappa `.picasa.ini`-jében él, nem a `view/` beállításban.
     """
 
     darkThemeChanged = Signal()

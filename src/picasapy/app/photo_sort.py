@@ -24,13 +24,13 @@ from pathlib import Path
 from picasapy.index.photo_date import datum_kulcs as _datum_kulcs_kozos
 from picasapy.index.photo_date import photo_date as _photo_date
 
-# QSettings-kulcsok — a `view/` névtér a többi nézet-beállításé is
-# (folderSort, paneSort, thumbCaption, showHidden).
+# Korábbi, globális QSettings-kulcsok (#1436). A #4890 induláskor eltávolítja
+# őket; a mappa sorrendje az ini `priority=` értékeiben él.
 FOLDER_PHOTO_SORT_KEY = "view/folderPhotoSort"
 FOLDER_PHOTO_SORT_REVERSE_KEY = "view/folderPhotoSortReverse"
 
-# A menü szempontjai (spec 6.3: Dátum · Név · Méret · Fordított sorrend) —
-# a „legutóbbi változtatás" a BAL HASÁB menüjéé, ide nem való.
+# A rács belső rendezési szempontjai; a mappa menüje ezeket egyszeri
+# átrendezéshez használja, a módot nem tárolja.
 #
 # #467: a NEGYEDIK a szín. Az eredeti rendezés-motorja ismerte
 # (`CSelectionNode` → `SortColor`, „Rendezés szín alapján"), de a menübe
