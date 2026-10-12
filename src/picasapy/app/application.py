@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import ctypes
+import importlib
 import logging
 import math
 import os
@@ -61,11 +62,7 @@ from picasapy.scanner import (
 )
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
-from .confirm_settings_bridge import ConfirmSettingsBridge
-from .camera_capture_controller import CameraCaptureController
-from .gombsav_bridge import GombsavBridge
 from .folder_cover_provider import FolderCoverProvider, borito_belyegkepe
-from .controller import AppController
 from .data_location import read_data_root, read_pending_root
 from . import display_photo_provider
 from .error_log import error_log_path, install_error_log, rotate_if_large
@@ -74,26 +71,11 @@ from .exported_folders import (
     existing_exported_folders,
     registered_exported_folders,
 )
-from .compact_controller import CompactController
-from .picasa_import_controller import PicasaImportController
-from .relocate_controller import RelocateController
 from .startup_relocate import (
     IndulasiKoltozo,
     KoltozesEredmeny,
     KoltozesHid,
 )
-from . import collage_output, collage_prefs
-from .backup_controller import BackupController
-from .dedup_controller import DedupController
-from .email_controller import EmailController
-from .discovery_controller import DiscoveryController
-from .drop_import_controller import DropImportController
-from .edit_controller import EditController
-from .second_preview import SecondPreview
-from .edit_preview import EditPreviewProvider
-from .effect_thumbnails import EffectThumbnailProvider
-from .face_scan_controller import FaceScanController
-from .faces_helper import FacesHelper
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 from .i18n_build import forditsd
 from .language_controller import (
@@ -106,25 +88,6 @@ from .language_controller import (
 from .startup_language_prompt import (
     ask_startup_language_prompt as _ask_first_run_language,
 )
-from .color_management_controller import wire_color_management
-from .display_mode_controller import wire_display_mode
-from .fileops_controller import FileOpsController
-from .folder_hierarchy_controller import FolderHierarchyController
-from .folder_tree_controller import FolderTreeController
-from .import_source_controller import ImportSourceController
-from .models import sorted_folder_rows
-from .passport_controller import PassportPhotoController
-
-# #1472: a nyomtatás vezérlője. Az import VÉDETT, mert a
-# `print_controller` a `PySide6.QtPrintSupport`-ra épül, azt pedig a
-# Debian/Ubuntu-féle rendszercsomag KÜLÖN modulba teszi (a pip-es wheel —
-# és így a CI — mindent hoz, ld. #664). Egy csupasz import ilyen gépen az
-# egész alkalmazás indulását megölné egy nyomtatás miatt; a felület a
-# hiányt nem hallgatja el, ld. `PrintDialog.qml` `openForRows`.
-try:
-    from .print_controller import PrintController
-except ImportError:  # pragma: no cover — csak a hiányos Qt-telepítésen fut
-    PrintController = None
 from .platform_check import hianyzo_wayland_bovitmeny
 from .platform_storage import (
     MigrationNotice,
@@ -141,10 +104,77 @@ from .startup_diagnostics import (
     runtime_version_messages,
     write_console,
 )
-from .thumbnail_provider import ThumbnailProvider
-from .timeline_controller import TimelineController
-from .webexport_controller import WebExportController
 from .window_geometry import virtual_desktop_rect, wire_window_geometry
+
+
+_LAZY_APP_SYMBOLS = {
+    "AppController": ".controller",
+    "BackupController": ".backup_controller",
+    "CameraCaptureController": ".camera_capture_controller",
+    "CompactController": ".compact_controller",
+    "ConfirmSettingsBridge": ".confirm_settings_bridge",
+    "DedupController": ".dedup_controller",
+    "DiscoveryController": ".discovery_controller",
+    "DropImportController": ".drop_import_controller",
+    "EditController": ".edit_controller",
+    "EditPreviewProvider": ".edit_preview",
+    "EffectThumbnailProvider": ".effect_thumbnails",
+    "EmailController": ".email_controller",
+    "FaceScanController": ".face_scan_controller",
+    "FacesHelper": ".faces_helper",
+    "FileOpsController": ".fileops_controller",
+    "FolderHierarchyController": ".folder_hierarchy_controller",
+    "FolderTreeController": ".folder_tree_controller",
+    "GombsavBridge": ".gombsav_bridge",
+    "ImportSourceController": ".import_source_controller",
+    "PassportPhotoController": ".passport_controller",
+    "PicasaImportController": ".picasa_import_controller",
+    "PrintController": ".print_controller",
+    "RelocateController": ".relocate_controller",
+    "SecondPreview": ".second_preview",
+    "ThumbnailProvider": ".thumbnail_provider",
+    "TimelineController": ".timeline_controller",
+    "WebExportController": ".webexport_controller",
+    "sorted_folder_rows": ".models",
+    "wire_color_management": ".color_management_controller",
+    "wire_display_mode": ".display_mode_controller",
+}
+_LAZY_APP_MODULES = {
+    "collage_output": ".collage_output",
+    "collage_prefs": ".collage_prefs",
+}
+
+
+def _lazy_app_symbol(name: str):
+    """Az alkalmazásritkán használt hídjait csak kéréskor importálja (#4913).
+
+    A globális névteret ellenőrizzük először, így a régi teszt-fogantyúk
+    (`monkeypatch.setattr(application, ...)`) továbbra is működnek.
+    """
+    if name in globals():
+        return globals()[name]
+    if name in _LAZY_APP_MODULES:
+        module = importlib.import_module(_LAZY_APP_MODULES[name], __package__)
+        globals()[name] = module
+        return module
+    try:
+        module = importlib.import_module(_LAZY_APP_SYMBOLS[name], __package__)
+        value = getattr(module, name)
+    except ImportError:
+        if name != "PrintController":
+            raise
+        # A print_controller a QtPrintSupport-ot igényli, ami nem minden
+        # rendszer-Qt csomag része (#1472). A hiányt a QML jelzi a használatkor.
+        value = None
+    globals()[name] = value
+    return value
+
+
+def __getattr__(name: str):
+    """A korábbi modul-szintű importútvonalakat lustán tartja kompatibilisen."""
+    if name in _LAZY_APP_SYMBOLS or name in _LAZY_APP_MODULES:
+        return _lazy_app_symbol(name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 #: A `shutil.which` és a `subprocess.run` MODULSZINTŰ fogantyúja (#1375) —
 #: a teszt EZEKET cserélje.
@@ -220,6 +250,9 @@ class _StartupSmokeProbe(QObject):
 
 
 if TYPE_CHECKING:
+    from .controller import AppController
+    from .dedup_controller import DedupController
+    from .fileops_controller import FileOpsController
     from .screensaver_mode import ScreensaverRunBridge
 
 # a `screensaver_idle.SCREENSAVER_FLAG` másolata — az import nélkül olvasható
@@ -281,6 +314,9 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
     indulást —, de NAPLÓZVA: a #1075 másik fele éppen az volt, hogy a néma
     ág miatt vakon álltunk."""
     try:
+        collage_output = _lazy_app_symbol("collage_output")
+        collage_prefs = _lazy_app_symbol("collage_prefs")
+
         mappa = collage_output.output_dir(settings.value(collage_prefs.OUTPUT_DIR_KEY))
         if not mappa.is_dir():
             return
@@ -405,6 +441,9 @@ def _kollazs_gyoker(settings: QSettings) -> tuple[str, ...]:
     kollázsmappa sorai sem eshetnek ki emiatt.
     """
     try:
+        collage_output = _lazy_app_symbol("collage_output")
+        collage_prefs = _lazy_app_symbol("collage_prefs")
+
         return (str(collage_output.output_dir(settings.value(collage_prefs.OUTPUT_DIR_KEY))),)
     except Exception:  # noqa: BLE001 — a takarítás soha nem hiúsulhat meg tőle
         logging.getLogger(__name__).warning(
@@ -998,7 +1037,12 @@ def _indexelt_kepszamok(data_dir: Path) -> tuple[int, ...]:
     Hibánál üres sorozat: egy diagnosztika nem dönthet el egy indulást."""
     try:
         with open_index(data_dir / "index.db") as conn:
-            return tuple(int(count) for _name, _path, count, *_rest in sorted_folder_rows(conn))
+            return tuple(
+                int(count)
+                for _name, _path, count, *_rest in _lazy_app_symbol(
+                    "sorted_folder_rows"
+                )(conn)
+            )
     except sqlite3.DatabaseError:
         logging.getLogger(__name__).warning(
             "a könyvtárméret leolvasása hibára futott", exc_info=True
@@ -1300,7 +1344,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         size=cache_size,
         max_bytes=_THUMB_CACHE_LIMIT_BYTES,
     )
-    provider = ThumbnailProvider(thumb_cache)
+    provider = _lazy_app_symbol("ThumbnailProvider")(thumb_cache)
+    AppController = _lazy_app_symbol("AppController")
     controller = AppController(
         data_dir / "index.db",
         roots,
@@ -1316,7 +1361,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     # szerkesztő-előnézet (#19): a provider a filters= láncot alkalmazva
     # rendereli a képet; a hidat az EditController adja a QML-nek
-    edit_preview = EditPreviewProvider()
+    edit_preview = _lazy_app_symbol("EditPreviewProvider")()
+    EditController = _lazy_app_symbol("EditController")
     edit_controller = EditController(edit_preview)
     # #3187: a kettős nézet MÁSODIK felének önálló szerkesztési állapota. A
     # rekesz (`slot`) miatt ugyanarra a fotóra is két független lánc állhat a
@@ -1325,6 +1371,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # parancsai továbbra is az elsőn dolgoznak (a parancs-irányítás a jegy
     # következő lépése).
     edit_controller_masodik = EditController(edit_preview, slot="masodik")
+    SecondPreview = _lazy_app_symbol("SecondPreview")
     second_preview = SecondPreview(edit_controller_masodik)
     controller.set_edit_controllers(edit_controller, edit_controller_masodik)
     # #3649: a két „aa"-fél összekötése — a fókuszváltás (`swapAaFocus`)
@@ -1353,9 +1400,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # effekt-gomb bélyegképek (#338): a meglévő thumbnail-provider
     # regisztrációját (a teljes könyvtár fotóit) használja fel útvonal-
     # feloldásra, saját aszinkron poollal renderel
-    effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
+    effect_thumb_provider = _lazy_app_symbol("EffectThumbnailProvider")(
+        provider.photo_record
+    )
 
     # fájlműveletek (#15): kontextusmenü/F2 híd + resync a műveletek után
+    FileOpsController = _lazy_app_symbol("FileOpsController")
     fileops_controller = FileOpsController()
     wire_fileops(fileops_controller, controller)
 
@@ -1365,29 +1415,35 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #3837: a kettős nézet MÁSODIK vezérlője (`@masodik` rekesz) is
     # frissüljön módváltáskor — enélkül a második fél a régi (jelöletlen)
     # képet mutatta tovább.
-    _display_mode_bridge = wire_display_mode(
+    _display_mode_bridge = _lazy_app_symbol("wire_display_mode")(
         controller, edit_controller, edit_preview, edit_controller_masodik
     )
 
     # színkezelés (#1725): a `Nézet ▸ Színkezelés használata` kapcsoló a
     # beágyazott ICC-profil érvényesítéséig. Ugyanaz a névre kötés, mint
     # fentebb — a bekötés a motor életében éljen.
-    _color_management_bridge = wire_color_management(controller, edit_controller, edit_preview)
+    _color_management_bridge = _lazy_app_symbol("wire_color_management")(
+        controller, edit_controller, edit_preview
+    )
 
     # #367: az általános ConfirmDialog "Ne kérdezze meg újra" tára — a
     # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír
+    ConfirmSettingsBridge = _lazy_app_symbol("ConfirmSettingsBridge")
     confirm_settings = ConfirmSettingsBridge()
     # #4137: a webkamerapanelhez tartozó beállítások és kimeneti útvonalak.
+    CameraCaptureController = _lazy_app_symbol("CameraCaptureController")
     camera_capture_controller = CameraCaptureController(
         QSettings("PicasaPy", "PicasaPy")
     )
 
     # #1792: az album-fejléc gombsorának összeállítása — ugyanabba a
     # közös QSettings("PicasaPy", "PicasaPy")-ba ír, mint a fenti híd
+    GombsavBridge = _lazy_app_symbol("GombsavBridge")
     gombsav = GombsavBridge()
 
     # meglévő Picasa-telepítés átvétele (#146): felderítés + a kijelölt
     # mappák hozzáadása a meglévő addWatchedFolder úton
+    DiscoveryController = _lazy_app_symbol("DiscoveryController")
     discovery_controller = DiscoveryController(
         add_folder=controller.addWatchedFolder,
         # #1622: az induláskori felajánlás EGYSZER fut le — a jelölőt a
@@ -1398,16 +1454,21 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     # kép/mappa ablakra ejtése (#237): a kép mappája (vagy maga a mappa)
     # figyelt gyökér lesz — az ImportDropArea.qml hídja
-    drop_import_controller = DropImportController(add_folder=controller.addWatchedFolder)
+    DropImportController = _lazy_app_symbol("DropImportController")
+    drop_import_controller = DropImportController(
+        add_folder=controller.addWatchedFolder
+    )
 
     # Mappakezelő fa-nézete (#231): a helyi fájlrendszer LUSTA, háttérszálas
     # listázása — a FolderManagerDialog.qml hídja
+    FolderTreeController = _lazy_app_symbol("FolderTreeController")
     folder_tree_controller = FolderTreeController()
 
     # A bal hasáb fa-mappanézete (#702): az INDEXELT mappák hierarchiája,
     # részfa-összegzett darabszámmal — a FolderHierarchyView.qml hídja.
     # Nem téveszthető össze a fenti `folder_tree_controller`-rel: az a
     # Mappakezelő dialógus fájlrendszer-böngészője, ez az indexé.
+    FolderHierarchyController = _lazy_app_symbol("FolderHierarchyController")
     folder_hierarchy_controller = FolderHierarchyController()
     #: #1407: az „Egyszerűsített fanézet" a FIGYELT mappák ágaira szűkíti a
     #: fát — a vezérlőnek tudnia kell, melyek azok.
@@ -1426,7 +1487,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                 folder_hierarchy_controller.setFolders(
                     [
                         {"path": path, "count": count}
-                        for _name, path, count, *_rest in sorted_folder_rows(conn)
+                        for _name, path, count, *_rest in _lazy_app_symbol(
+                            "sorted_folder_rows"
+                        )(conn)
                     ]
                 )
         except sqlite3.DatabaseError:
@@ -1444,14 +1507,17 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # providert kapja, hogy a bélyegkép-URL-ek nála is regisztrálva
     # legyenek. Háttér-szinkron után a nézet friss adatot mutasson, ha
     # épp nyitva van — a TimelineView.qml a megnyitáskor is újratölt.
+    TimelineController = _lazy_app_symbol("TimelineController")
     timeline_controller = TimelineController(data_dir / "index.db", provider)
     controller.syncFinished.connect(timeline_controller.reload)
     # #440: a mentés-készletek hídja. A jelölteket a FIGYELT GYÖKEREK
     # alól szedi (a szűrést a készlet fájlszűrője végzi).
+    BackupController = _lazy_app_symbol("BackupController")
     backup_controller = BackupController(data_dir / "index.db", tuple(roots))
     # Duplikátum-kezelő (#287): a picasapy.dedup mag fölötti UI-híd —
     # a DedupDialog.qml-nek adja a csoportokat, a thumbnail-providernél
     # regisztrálja az érintett fotókat
+    DedupController = _lazy_app_symbol("DedupController")
     dedup_controller = DedupController(data_dir / "index.db", provider)
     # #1539: a feloldás után a forrás- ÉS a célmappa is célzott
     # újraolvasást kap — enélkül a „Duplikátumok" mappa képei eltűnnek
@@ -1475,13 +1541,20 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     def _talca_fotok():
         return controller._tray_records()
 
-    email_controller = EmailController(photo_source=_lathato_fotok, tray_source=_talca_fotok)
-    web_export_controller = WebExportController(photo_source=_lathato_fotok)
+    EmailController = _lazy_app_symbol("EmailController")
+    email_controller = EmailController(
+        photo_source=_lathato_fotok, tray_source=_talca_fotok
+    )
+    WebExportController = _lazy_app_symbol("WebExportController")
+    web_export_controller = WebExportController(
+        photo_source=_lathato_fotok
+    )
     # #1472: a nyomtatás vezérlője — UGYANARRA a `photo_source`-ra épül
     # (a `printRows`/`renderPrintPreviewPdf` sorindexei a látható fotók
     # listájába mutatnak). Ez a vezérlő 213 sor kész kóddal és két
     # tesztfájllal SOHA nem jött létre a futó alkalmazásban, ezért a
     # Ctrl+P és a képtálca „Nyomtatás" gombja halott volt.
+    PrintController = _lazy_app_symbol("PrintController")
     print_controller = (
         PrintController(photo_source=_lathato_fotok, tray_source=_talca_fotok)
         if PrintController is not None
@@ -1492,6 +1565,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # másolása/áthelyezése a könyvtárba — a thumbnail-providerrel adja az
     # előnézetet, sikeres import után az addWatchedFolder úton a cél-mappa
     # a könyvtár része lesz
+    ImportSourceController = _lazy_app_symbol("ImportSourceController")
     import_source_controller = ImportSourceController(
         provider,
         add_folder=controller.addWatchedFolder,
@@ -1566,20 +1640,22 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #1401: az Útlevélkép — arcfelismerés + kivágás háttérszálon; a kivágott
     # képet a `Main.qml` a MEGLÉVŐ nyomtatási nézetnek adja
     # (`PrintDialog.openForPassport` → `printController.setPassportSource`).
+    PassportPhotoController = _lazy_app_symbol("PassportPhotoController")
     passport_controller = PassportPhotoController(photo_source=_lathato_fotok)
     engine.rootContext().setContextProperty("passportController", passport_controller)
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
-    relocate_controller = RelocateController(
-        data_dir / "index.db", cache_dir / "thumbs", config_dir
-    )
+    RelocateController = _lazy_app_symbol("RelocateController")
+    relocate_controller = RelocateController(data_dir / "index.db", cache_dir / "thumbs", config_dir)
     engine.rootContext().setContextProperty("relocateController", relocate_controller)
     # #449: adatbázis-tömörítés — a CompactDatabaseDialog.qml hídja
+    CompactController = _lazy_app_symbol("CompactController")
     compact_controller = CompactController(
         data_dir / "index.db", writer_queue=controller._index_iro_sor
     )
     engine.rootContext().setContextProperty("compactController", compact_controller)
     # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
+    PicasaImportController = _lazy_app_symbol("PicasaImportController")
     picasa_import_controller = PicasaImportController()
     engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
     engine.rootContext().setContextProperty("importSourceController", import_source_controller)
@@ -1587,12 +1663,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # faces=/Contacts2 az ini-ből, a névtelen felismerések az indexből jönnek.
     # A helyi változóban tartás megakadályozza, hogy a Python GC a
     # context property mögül idő előtt eltüntesse a QObject-et.
+    FacesHelper = _lazy_app_symbol("FacesHelper")
     faces_helper = FacesHelper(data_dir / "index.db")
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     # #26 (3. lépcső): a SAJÁT arcfelismerés bekötése — a `FaceScanController`
     # (1–2. lépcső) eddig sehol nem volt elérve a QML-ből. A `faces_helper`
     # átadása a tömeges névadáshoz kell (`assignNameToFaces` a MEGLÉVŐ
     # `FacesHelper.addFace()` úton ír, ld. `face_scan_controller.py`).
+    FaceScanController = _lazy_app_symbol("FaceScanController")
     face_scan_controller = FaceScanController(
         data_dir / "index.db",
         faces_helper=faces_helper,
