@@ -4293,7 +4293,7 @@ eleje.
 | `PaletteMap` | `0x008f00d0` | `0x00bb7900` | `0x00bb7c80` (435 b) | `0x00bb7e40` (1093 b) | — *(a `ColorMaps` tömb más úton)* |
 | `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
 | `QuantizePalette` | `0x008eff58` | `0x00bb5a30` | `0x00bb5ad0` (139 b) | — | Steps@0x24, Depth@0x2c |
-| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | amount@0x34 |
+| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | x@0x24, y@0x2c, amount@0x34 (az apply: 6. vtábla-rés; #4906) |
 | `Resize` | `0x008f0908` | `0x00bc3370` | `0x00bc3650` (407 b) | — | width@0x24, height@0x2c, smoothing@0x34 |
 | `Rotate` | `0x008efefc` | `0x00bb5270` | `0x00bb5640` (239 b) | — | radAngle@0x24, degAngle@0x2c, borderColor@0x34, flipH@0x3c, flipV@0x44, padBorder@0x4c |
 | `Shader` | `0x008eff2c` | `0x00bb5830` | `0x00bb58d0` (202 b) | — | — |
@@ -4399,7 +4399,7 @@ kezdőállapota megmarad.
 | `Noise` | `randomSeed`, `low`, `high`, `channelOptions`, `grayScale` | `NULL` | `0x00bbed20` | S |
 | `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` | S |
 | `QuantizePalette` | `Steps`, `Depth` | nyers tagmezők `0` | `0x00bb31f0`, inline | S |
-| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; a további mezők nyitottak |
+| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; az apply x `+0x24`, y `+0x2c`, amount `+0x34` mezőt olvas, `Mask`/`ignoreObjects`-et nem (#4906); a pixelképlet NYITOTT |
 | `Resize` | `width`, `height`, `smoothing`; `ignoreObjects` | a három művelettag 0/NULL; `ignoreObjects` nincs a típus tagtáblájában | `0x00bb31f0`, inline | S |
 | `Rotate` | `radAngle`, `degAngle`, `borderColor`, `flipH`, `flipV`, `padBorder` | `NULL` | `0x00bb50f0` | S |
 | `SetVar` | `Name` | `NULL` | `0x00bb31f0`, inline | S |
@@ -4555,6 +4555,89 @@ ellenőrizve), **megerősített** a hét Q-val jelölt konstruktor nyers
 mezőkezdeteire; **feltételes** a közös olvasó jelenléti kapujára; **nyitott** a teljes
 XML-kiértékelésre, a szöveges szín/gradiens grammatikára és a felsorolt
 végrehajtói fallbackoktól eltérő, még nem vizsgált getterekre.*
+
+---
+
+### `RadialBlurImageOperation` — apply, paraméterek, natív mérés (#4906, 2026-10-12)
+
+**Az alkalmazó függvény.** A `glimmer::RadialBlurImageOperation::vftable` RTTI-val
+azonosítva: VA `0x00cf07fc` (RVA = fájl-offset `0x008f07fc`). Az ImageOperation-
+vtáblákban a 6. rés (`+0x18`) következetesen az apply: a dekompilált `_APPLY` címekkel
+23 vtábla-egyezés van, ellentmondás nincs. Itt ez `0x00bc24e0` (`GLIMMER_RadialBlur_APPLY`,
+169 bájt). Az 1. rés (`0x00bc2420`) nem az apply.
+
+**Az apply paraméterei** (utasításszint, `0x00bc24e0`–`0x00bc2586`):
+
+- `ECX` = a művelet-objektum. Mezők: `+0x24` → `x`, `+0x2c` → `y`, `+0x34` → `amount`.
+  Hiányzó attribútumnál `x`/`y` = 0, `amount` = 0.
+- `x` és `y` float32-ként, **pixelben** adódik át a magnak (`0x00bcf4b0`, a
+  2. és 3. verem-argumentum). A tört → pixel váltás (`· szélesség`, `· magasság`)
+  az apply FELETT történik; a mért összevetés ezt igazolja: a natív `x = 7,2`,
+  `y = 14` (= `0,3·24`, `0,7·20`) bájtra egyezik a `focal.zoom_blur(0,3; 0,7)`-ral.
+- `amount` double-ként érkezik, `0x008eea90` csonkolja egészre, és ECX-ben megy a magnak.
+  A csonkolás natívan igazolva: `25,7` ≡ `25`.
+- `Mask` és `ignoreObjects`: az apply törzse NEM olvassa. Hol alkalmazódnak: nyitott.
+- 1. argumentum (`[ebp+8]`) a forrásnézet; 3. (`[ebp+0x10]`) a célnézet, ide ír a mag
+  (a célnézetbe másol a `0x009a8fe0`). A visszatérés `ret 0xc`.
+
+**Mintaszám és eltolás** (`0x00bcf4b0`, a mag eleje). `N = min(amount+5, 30)`
+(`lea eax,[ecx+5]; cmp 0x1e`), `D = ⌊W·amount/200⌋` (`mul 0x51eb851f` + `shr 6`: a
+`0x51eb851f / 2^32 ≈ 0,32` szorzó és a `>> 6` egészben pontosan `⌊x/200⌋`), `off_k = ⌊k·D/N⌋`
+(`div ecx`, `k = N…1`).
+Ez egyezik a `focal.py` `zoom_sample_count`/`zoom_max_offset`/`zoom_offsets` függvényeivel.
+
+**Mintakoordináta** (`0x00bcf58a`–`0x00bcf6dd`, x87) — **NINCS még pontosan visszafejtve.**
+A blokk a forrás szélességét/magasságát és a `W − x`, `H − y` értékeket (qword
+`[esp+0xe0]`, `[esp+0xe8]`) osztásokkal és szorzásokkal alakítja mintakoordinátává.
+A `focal.zoom_sample_indices` (`u = (X+0,5)·L/(L+off) + off·f/L`, float32) ezt NEM
+fedi le: nem triviális eltolásnál eltér (lásd lent).
+
+**Natív mérés** (QEMU-harness, `apply_drv.py`, ideiglenes a `/tmp/claude-1000/kd-r4906/`;
+összevetés a `focal.zoom_blur`-ral, csatornánként RGB, az alfa külön):
+
+| eset | eredmény |
+|---|---|
+| `W=8 H=6`, `amount=10` (D=0) | egyezik |
+| `W=24 H=20`, px `(12,4; 10,3)`, `amount` 25/50/100 | egyezik (0 eltérés) |
+| `W=24 H=20`, px `(7,2; 14)`, `amount=25` | egyezik |
+| `W=24 H=20`, px `(7,2; 14)`, `amount` 50/100 | eltér (28, illetve 397 px) |
+| `W=24 H=20`, px `(12; 10)`, `amount` 25/50/100 | eltér (55–377 px, max 41) |
+| `W=21 H=7`, px `(10,5; 3,5)`, `amount` 25/50 | egyezik; 100-nál eltér |
+| `W=24 H=1`, px `(7,2; 0,5)`, `amount` 25/50/100 | eltér (30/55/66 px az 72-ből, max 87) |
+| `W=48 H=1`, px `(14,4; 0,5)`, `amount` 50/100 | eltér (134/140 px az 144-ből) |
+
+Az egyező 11/36 eset többsége kis `D`-nél vagy egész-határértékhez közel van; az
+eltérés a **vízszintes** mintakoordinátában van (a `H=1` esetek triviálisan függőlegesek,
+és mind eltérnek). Az összevetés 0/6 a `H=1` eseteken.
+
+**Az SSE2-ág.** A `[0xd695d2]` jelző a CPUID leaf 1 EDX 26. bitje (SSE2), a
+`0x00c33d30` írja. A mag törzsében (`0x00bcf4b0`–`0x00bcfda0`) csak ez a jelző szerepel;
+`[0xd695d0]` (MMX) és `[0xd695d4]` (SSE-prefetch) nem. Az ágválasztás `0x00bcf6ee`:
+`sse2 = 1` → `0x00bcf6f6` (ott `0x00bcefb0` hívás, `push 0x26`, eredménykód-ellenőrzéssel); `sse2 = 0` → `0x00bcf74e`.
+Valódi x86-on `sse2 = 1`, ez a referencia. Mért: a skalár ág (`sse2 = 0`) és az SSE2-ág
+ugyanazon a bemeneten **1832 bájtban** tér el (max 212); a `focal.py` az SSE2-ágat modellezi.
+
+**Mérési korlát (kimondva).**
+
+1. Az attribútumolvasót (`0x008ef520`) stub helyettesíti: a mezőt az ECX-offsetből
+   választja. A getter belső útja natívan nincs mérve; a `lea ecx,[esi+off]` kódolvasáson alapul.
+2. A forrás- és célnézet kézzel épül (stride, szélesség, magasság, adat, origó).
+3. A `_malloc`/`_free` a `install_crt_shims` harness-arénája (`0x0097c5d0` a Picasa-allokátor).
+4. BGRA (4 bájt/pixel); az alfa a mért eltérés szerint is keveredik.
+
+**Mi NINCS igazolva:** a mintakoordináta-blokk, a skalár ág modellje, `Mask`/`ignoreObjects`
+szerepe, a célnézet és az alfa kezelése. A `focal.py` `zoom_sample_indices` docstringje
+a képletet a natív képletnek tulajdonítja (#3883); a `H=1` mérés ezt nem igazolja.
+
+**Kész, ha** (a #4906 lezárásához):
+
+- [ ] a `0x00bcf58a`–`0x00bcf6dd` mintakoordináta-blokk utasításszintű leírása (a `W − x`,
+  `H − y` szerepe, az osztók, a float/double pontosság), és ebből a
+  `zoom_sample_indices` javítása **illesztés nélkül**;
+- [ ] a `apply_drv.py`-os összevetés 0 eltéréssel egyezik: `H ∈ {1, 20}`, `W ∈ {8, 16, 21, 24, 48}`,
+  `amount ∈ {1, 5, 10, 25, 50, 100}`, egész és tört pixel-fókusz, `sse2 = 1`;
+- [ ] a skalár ág (`0x00bcf74e`) mintakoordinátái leírva és mérve (`sse2 = 0`);
+- [ ] `Mask`, `ignoreObjects` és a célnézet (3. argumentum) szerepe a láncban.
 
 ---
 
