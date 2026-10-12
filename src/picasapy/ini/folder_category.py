@@ -81,6 +81,20 @@ def read_folder_category(document: IniDocument) -> str | None:
     return None
 
 
+def read_explicit_folder_category(document: IniDocument) -> str | None:
+    """Csak a `P2category` kulcs értéke — a régi `category` tartalék NÉLKÜL.
+
+    Az író ezzel dönti el, van-e már kimondott besorolás: a Picasa 2-örökség
+    `category=Folders on Disk` nem akadályozhatja meg a `P2category` beírását
+    (#791, #4597)."""
+    section = document.section(FOLDER_SECTION)
+    if section is None:
+        return None
+    value = section.get(CATEGORY_KEY)
+    stripped = value.strip() if value is not None else ""
+    return stripped or None
+
+
 def with_folder_category(document: IniDocument, value: str) -> IniDocument:
     """Új dokumentum a mappa gyűjtemény-besorolásával.
 
