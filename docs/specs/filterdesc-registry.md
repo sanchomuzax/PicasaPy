@@ -12097,3 +12097,141 @@ képekre (10×10-től 51×49-ig, valamint 3×3 és 9×6); **feltételes** a 6×5
 - A keverő és a kvantáló rekordjainak `+0x14`, `+0x08` mezői szemantikailag
   nyitottak (ld. a 2026-10-04-es szakaszt); a driver a spec táblázata szerint
   tölti őket.
+
+## #626 leltár — `QuantizePalette` sor, 3. kör (2026-10-12)
+
+A 2. kör nyitott kérdése (6×5 és 7×4: 1–3 szint eltérés a paletta-színekben)
+**megvan, és nem a mintavevő indexaritmetikájában, nem a leveles átlagban van.**
+A különbség a 50×50-es minta **sorhatárában** van: a natív kód a forrás
+magasságából számolt határ fölötti sorokat **nem mintavételezi**, akkor sem, ha
+a forrás-index a képen belül esne. A PicasaPy `mintakep` / `pontminta_racs`
+ezt nem tudja (`src/picasapy/render/quantize_palette.py`, `pontminta_racs`:
+`jo_sor = sorok < magassag`).
+
+Ideiglenes driverek: `/tmp/claude-1000/kd-r626q/` (`samp_drv.py`, `minta_drv.py`,
+`natv_model.py`, `verify_full.py`, `picasapy_vs_nat.py`, …); a kör után törlendők.
+A harness-futtatások a `qemu_harness/` mappában `run_r626q_*.elf` fájlokat hagytak;
+ezeket a kör végén törölni kell.
+
+### 1. A mintavevő (`0x009e7420`): gépi kódból levezetve, bájtra egyezik
+
+Belépés: `esi` = mátrix (`a,b,c,d,e,f` float32, `+0`…`+0x14`), stack: `arg1` =
+cél-rekord (`+4` stride, `+0x10` mutató), `arg2` = forrás-rekord (`+8` W, `+0xc` H,
+`+0x10` mutató), `arg3` = téglalap (`x0,y0,x1,y1`), `ret 0xc`.
+
+- Pixelközéppont: `u = x + 0.5`, `v = y + 0.5` (`0x009e7492`–`0x009e74a5`, a
+  `0xc72150` = 0.5 konstanssal).
+- Forrás-koordináta: `X' = a·u + b·v + c`, `Y' = d·u + e·v + f` (`0x009e7492`–
+  `0x009e74f0`). A `float32`-re kerekítés (`fstp dword`) után `×65536`, majd
+  `0x00c29990` (`cvttsd2si`, csonkítás).
+- **Oszloponként léptetés:** `X16` a sor elején egyszer számolódik
+  (`trunc(f32(X')·65536)`), utána oszloponként `+= trunc(a·65536)`
+  (`0x009e7541`–`0x009e7543`); `Y16` soronként újraszámolódik, `+= trunc(d·65536)`
+  oszloponként (`0x009e7547`–`0x009e7549`). A forrás-index `>> 16`.
+- Ha a forrás-index kívül esik (`sx ≥ W` vagy `sy ≥ H`), a cél-pixel **nem íródik**
+  (`0x009e7556`–`0x009e7560`, `jae`).
+- `0x00c0b1e0` = **floor** (mérve: 0.5→0, 1.5→1, 2.75→2); `0x00c29990` =
+  **trunc** (mérve: 65535.9999→65535). A `[0xda1424]`/`[0xda1428]` jelzők a
+  harnessben 1 (`make_image`), azaz az SSE-ág fut.
+
+Bizonyíték: a mintavevőt önállóan, diag(lép, lép) mátrixszal, 6×5 forrásra
+futtatva (`samp_drv.py`): **0 / 2500** eltérés a képlettől és a PicasaPy
+`pontminta_racs`-tól.
+
+### 2. A leveles átlag (`0x00bcbaa0`): a PicasaPy-val azonos
+
+Az összeg és a darabszám hányadosa `float32`-ben kerül a `0x00c0b1e0`-be (floor),
+majd `0x00c29990`-nel (trunc) egész. Ez `⌊f32(Σ/n)⌋`. A PicasaPy `_atlag` `Σ // n`:
+a két érték azonos, mert `n ≤ 2500` és `Σ ≤ 2500·255`, így a `float32` kerekítési hiba
+(≤ 1.5·10⁻⁵) kisebb a legkisebb nem-nulla törtrésznél (≥ 1/n ≥ 4·10⁻⁴).
+A 3. kör 15 mérete (lent) bájtra egyezik ezzel a levezetéssel, tehát a
+palettaépítés (oktree, redukció, 3-3-2 LUT) nincs a hibában.
+
+### 3. A hiba oka: a cél-téglalap sorhatára
+
+A `0x009e6df0` (a hívó) a cél-téglalapot a forrás határának inverz-leképezésével
+vágja (`0x00a4a140` inverz, `0x00a4a240` pontátvitel). Mért eredmény a
+`0x009e7420` futásából és a natív 50×50-es minta bájtjaiból (`minta_drv.py`):
+
+- **Oszlopok:** mindig a teljes `0…49` tartomány van mintavételezve (13 mért
+  szélesség, köztük 85 és 121, ahol `⌊W/lép⌋` 49 lenne).
+- **Sorok:** `j < Y1` van mintavételezve,
+  **`Y1 = min(50, ⌊f32(H · f32(1/lép))⌋)`**, `lép = f32(W/50)`.
+  A `Y1` feletti sorok nullák (fekete), még akkor is, ha a `sy < H` teljesülne.
+
+Ez a PicasaPy-tól való eltérés forrása: a PicasaPy a sort a `sy < H` feltétellel
+dönti el, a natív a `Y1`-gyel. A kettő akkor különbözik, ha `H/lép` törtrésze
+> 0,5 (és `H/lép < 50`). Mért PicasaPy-eltérés (`kvantal`, pixel; Steps 8, kivéve a 17×5 S30, a 21×8 S2, a 30×40 S16 és a 121×3 S16 sort):
+
+| W×H | H/lép | PicasaPy ≠ natív | előrejelzés |
+|---|---|---|---|
+| 6×5 | 41.67 | 16 / 30 | igen |
+| 7×4 | 28.57 | 20 / 28 | igen |
+| 13×9 | 34.62 | 103 / 117 | igen |
+| 17×5 | 14.71 | 49 / 85 | igen |
+| 11×7 | 31.82 | 58 / 77 | igen |
+| 9×6 | 33.33 | 0 / 54 | nem |
+| 85×4 | 2.35 | 0 / 340 | nem |
+| 121×3 | 1.24 | 0 / 363 | nem |
+| 21×8 | 19.05 | 0 / 168 | nem |
+| 5×11 | 110 (≥50) | 0 / 55 | nem |
+| 30×40 | 66.67 (≥50) | 0 / 1200 | nem |
+| 51×49 | 48.04 | 0 / 2499 | nem |
+| 20×2 | ≈5 (4.9999998) | 0 / 40 | nem (a határeset: mindkét oldal 5 sort ad) |
+
+### 4. Bizonyítás: a levezetett modell bájtra egyezik a natívval
+
+`verify_full.py` (`natv_model.py` + PicasaPy `oktree_epit`/`paletta_lut`):
+a kimeneti pixelek eltérése a natív futástól **0** minden alábbi esetben:
+
+- 6×5: Steps 2, 8, 30 · 7×4: Steps 8, 16
+- új, nem-négyzetes méretek: 5×11 (S8), 13×9 (S8), 17×5 (S30), 21×8 (S2), 30×40 (S16),
+  11×7 (S8), 85×4 (S8), 121×3 (S16), 20×2 (S8)
+- négyzetes és nagy kontroll: 5×5, 3×3, 10×10, 51×49 (S8)
+- összesen 18 futás, 15 különböző méret, **0 eltérő kimeneti pixel**.
+
+### 5. Mi NINCS levezetve (őszintén)
+
+- **A `Y1` pontos kerekítése.** A `0x00a4a140` → `0x00a4a240` láncot a gépi kódból
+  követve (det = `a·e·i` float32-ben, `inv = f32(1/det)`, `o = f32(cof·inv)`) a
+  10×10 esetre `Y1 = 49`-et adna, a natív viszont 50-et ad. A lánc tehát **nem** az,
+  ami a natívban fut (vagy a hívó más mátrixot ad át). A `Y1 = ⌊f32(H·f32(1/lép))⌋`
+  szabály a mért esetekre illeszkedik, de a mechanizmusa nyitott. Ez a rész
+  **mért, nem levezetett**.
+- **Miért nincs oszlop-vágás.** A `⌊f32(W·f32(1/lép))⌋` 85-re és 121-re 49 lenne,
+  a natív 50-et mintavételez. Az okát nem találtam meg; a `X1 = 50` szabály mért.
+- **A minta nullázása.** A `Y1` feletti sorok feketék a harnessben, ahol a puffer
+  nulla (a `verify_full.py` ezt a nullát használja; a natív és a képlet ezen egyezik). A valódi Picasában a puffer nullázását (`0x009a8d80`?) nem mértük.
+- **A hívási kép.** A `0x009e6ffa` hívás argumentumait a horgos futás nem
+  rögzítette megbízhatóan (a stub-olvasás ellentmondott a futásnak), ezért a
+  mintavevő paramétereit a közvetlen futtatásból és a minta bájtjaiból
+  következtettem, nem a hívás-helyről.
+- **AutoFix.** A `glimmer_ops.py:420` ugyanazt a `pontminta_racs`-t használja
+  (`nW`/`nH` a képből). Nem mértük, hogy az AutoFix sorhatára is a natív
+  `Y1`-et követi-e. Ne terjesszük ki a javítást az AutoFixre mérés nélkül.
+
+### 6. Leltár-sor (a fok változott)
+
+| művelet | pixelképlet | CPU-ág | összesített állapot |
+|---|---|---|---|
+| `QuantizePalette` | mintavevő (`0x009e7420`): **megerősített** (gépi kódból, 6×5 önállóan 0/2500); leveles átlag (`0x00bcbaa0`): **megerősített** (`⌊f32(Σ/n)⌋` = PicasaPy `Σ//n`); keverő (`0x009dc4b0`): **megerősített** (2. kör); cél-téglalap sora: **mért**, `Y1 = min(50,⌊f32(H·f32(1/lép))⌋)`, `X1 = 50`; a kiadási képlet **mért** 18 futáson (15 méret), 0 eltéréssel | nincs flag-függés a kvantálónál; a jelzők a harnessben 1 (SSE-ág) | **feltételes** (a `Y1` mechanizmusa nyitott, a kimenet bájtra egyezik a mért méreteken) |
+
+### 7. Kész, ha (3. kör)
+
+1. A `mintakep` (vagy a `kvantal` előtti lépés) a natív sorhatárt használja:
+   `Y1 = min(50, ⌊f32(H·f32(1/lép))⌋)` sorok, `X1 = 50` oszlop; a többi sor/oszlop
+   nulla. **A PicasaPy-minta bájtra egyezik a natív mintával** a 6×5, 7×4, 13×9,
+   17×5, 11×7 képeken (most 16–103 pixel tér el).
+2. A `kvantal` kimenete **bájtra egyezik** a natív `0x00bb5b60`-nal a fenti 20
+   méreten, Steps 2/8/16/30 mellett.
+3. A `Y1` kerekítése gépi kódból levezetve (a `0x00a4a140`–`0x00a4a240` lánc
+   szerint), vagy mérési indoklással, miért tér el a lánc a natívtól (10×10 → 49
+   vs. 50).
+4. Az AutoFix (`glimmer_ops.py:420`) sorhatárát külön mérni, mielőtt bármit
+   változtatunk rajta.
+
+#### Ez a kör nem implementált
+
+Kódhoz nem nyúltam; a PicasaPy-források változatlanok. A 2. kör §5 „Kész, ha”
+pontja a 3. körben pótolt; a 2. kör §3 „a mintavételben (`_oszlop_indexek` /
+`_sor_indexek`) vagy a leveles átlagban” feltételezését a 3. kör cáfolja.
