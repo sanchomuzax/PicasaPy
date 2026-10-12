@@ -142,7 +142,7 @@ lépés). Ahol a bináris nem dönt el valamit, ott **NYITOTT** áll.
 | EXIF-mező | `0x37` = `DateTimeOriginal` (`0x9003`), az új dátumra | `push 0x37` + a `0x0049c640` setter: `0x004906f7`, `0x00490d3c` | igazolt |
 | EXIF-fájlírás | a forrásfájl `.tmp`-n át íródik, csere a `0x00994400`-zal | `r+b` (`0x009eb3e5`), `wb` (`0x009eb5c8`), csere `0x009eb70b`; hívás: `0x009ed39a` → `0x009eb290` | igazolt (a csere belseje nincs) |
 | az EXIF-ág feltétele | `[esp+0xac] == 2` **és** a `0x009ed330` nem nullát ad | `0x0049070a`, `0x00490d4f`, `0x00490734`–`0x00490736` | a `2` jelentése NYITOTT |
-| hozzáférési és utolsó írási idő | a `DateTime` (`0x1c`, EXIF `0x0132`) értéke, helyi időből UTC-re | `0x009eb34b`–`0x009eb37d`; `0x00ab35e0`: `or [edi+0x18], 6`, `+0x08`, `+0x10` | a `0x1c` forrása NYITOTT (1. nyitott pont) |
+| hozzáférési és utolsó írási idő | a worker-objektumban nincs `0x1c` (EXIF `DateTime`), ezért a `0x009f05c0` keresés nem talál → nincs `0x00ab35e0`-hívás → a mentett eredeti hármas íródik vissza (nincs eltolás) | `0x009eb34b`–`0x009eb37d` (`eax = 9`, `jne 0x9eb382`); `0x00ab34d0` a jelzőket (`-1`) használja | igazolt (statikus; natív futtatás nincs) |
 | létrehozási idő az EXIF-ágban | **érintetlen** (mentve, visszaírva) | `0x00ab35e0` nem írja a `+0x00`-t | igazolt |
 | fallback (nem EXIF, vagy íráshiba) | csak a létrehozási idő := az új dátum; hozzáférés és írás NULL | `push 0` a hívóknál (`0x00490900`, `0x00490f40`); `SetFileTime` `0x009927f9` | igazolt |
 | `.picasa.ini` | a láncban nincs hivatkozás | sztring `0x00c80a6c`; kb. 70 imm32-találat a `.text`-ben, egyik sincs a láncban | csak a láncra igaz |
@@ -155,14 +155,28 @@ tölti (`0x00ab3495`). A rekord: `+0x00` létrehozás, `+0x08` hozzáférés,
 4 = írás). A visszaírás `0x00ab34d0`-ban a jelzőbitek alapján választja ki, mely
 időt adja át a `SetFileTime`-nak (`0x00ab3582`–`0x00ab35a7`).
 
-**A `0x1c` kérdés (a fő nyitott pont).** A worker csak a `0x37`-et állítja.
-A fájlidőt a `0x009eb290` a metaadat-objektum `0x1c` (EXIF `DateTime`) tulajdonságából
-olvassa vissza, és a worker-láncban nincs `0x1c`-t beállító hívás (a
-`0x0049c640` setterhez a láncban csak a `0x37` kulcs érkezik). Ezért a
-visszaírt érték az objektumban eleve meglévő `DateTime`. Ha ez a forrás
-eredeti EXIF `DateTime`-ja, az eredeti **nem** az új dátumot írja a fájl
-időbélyegébe. A bináris ezt nem dönti el: a `0x009eb290` 1. argumentumának
-(az objektumnak) a hívóoldali azonosítása nincs kész.
+**A `0x1c` kérdés (2026-10-12, statikusan feloldva).** A `0x009ed330` 1.
+argumentuma (P) a worker keretének lokális hash-táblája (`0x00490580`:
+`[esp+0x74]`; a táblamezők nullázása `0x004906b8`–`0x004906ce`), amelybe
+egyetlen beszúrás érkezik: a `0x37` (`0x004906fe`; a `0x00490c10`-ben
+`0x00490d43`). A bucket-szám és a fej beállítását az első beszúrásnál a
+`0x0049e810` végzi (ezt nem követtem végig; a getter csak a bucket-számot,
+a bucketeket és a csomópont-kulcsot olvassa). Más beszúrás a láncban nincs, és P-t a `0x009ed330` csak
+átadja. A `0x009eb290` `0x1c`-t keres P-ben (`0x009eb34b`, `0x009f05c0`);
+mivel a `0x1c` nincs a táblában, a getter `eax = 9`-et ad (nem talált ág
+`0x009f0600`), a `jne 0x9eb382` átugorja a `0x00ab35e0`-t. Tehát a
+DateTime **sem a régi, sem az új** értéke nem kerül be a láncba: a
+„hiányzik" ág érvényes. Ebben az ágban a sikeres EXIF-csere után a
+`0x00ab34d0` a `0x00ab3320` által `-1`-re állított jelzőkkel mindhárom
+mentett eredeti időt visszaírja (létrehozás, hozzáférés, utolsó írás), tehát
+a fájl időbélyegei nem változnak. A `0x0077d05a` és a `0x0077d07e` hívóhelyek a
+`0x0077cfd0`-kezdetű függvényben vannak (a spec szerint ez a SettingDates szál);
+innen csak a két workert hívják, `0x1c`-t nem állítanak.
+A teljes `.text` `0x1c` immediate-jeiből a `push 0x1c` + `0x009efe80` + `0x009ed330`
+mintázat még négy helyen fordul elő (`0x004386ee`, `0x00456440`,
+`0x00478399`, `0x004854e8`); ezek más függvények, és nem a dátumszál közvetlen
+hívásai. Azt nem igazoltam, hogy más úton nem érhetők-e el. A PicasaPy-nak
+ezek a helyek nem változtatják meg a fenti következtetést.
 
 **A fallback-ág.** `0x00992780` a `bl` jelzőt a `[esp+0x34]`-ről veszi. A
 megnyitás a `[0xd69520]` indirekt hívással történik, argumentumai egy
@@ -176,7 +190,7 @@ futásidőben töltődik, importtal nem igazolt.
 | pont | eredeti (bináris) | PicasaPy | eltérés |
 |---|---|---|---|
 | EXIF DateTimeOriginal | `0x37` az új dátumra | `_write_exif_datetime_original`, `.tmp`-csere (JPEG) | nincs (JPEG) |
-| hozzáférési és írási idő EXIF-írás után | a `DateTime` (`0x1c`) értéke | a régi fájlidő + (új − `read_exif_details(...).datetime_modified`), `os.utime` | **van**, ha a `0x1c` forrás-érték igazolódik |
+| hozzáférési és írási idő EXIF-írás után | **eredeti** (nincs eltolás; a `0x1c` nincs a worker-objektumban) | a régi fájlidő + (új − `read_exif_details(...).datetime_modified`), `os.utime` | **van** (igazolt, statikus): az eredeti nem tolja el a `atime`/`mtime`-ot |
 | létrehozási idő EXIF-írás után | érintetlen | visszaírja a régi `st_ctime`-ot (csak Windows) | nincs |
 | fallback (íráshiba) | létrehozási idő := új dátum | `_set_creation_time_ns(source, target)` — csak `win32`, POSIX-on nincs hatás | **van** Linuxon (#4885) |
 | `.picasa.ini` | nem írja (a láncban) | nem írja | nincs |
@@ -196,10 +210,11 @@ A meglévő tesztek: `tests/app/test_timestamp_controller_4693.py` (a sikeres
   az EXIF-mezőket. Ebből eldől, hogy a fájlidő a `DateTime`-ból vagy az új
   dátumból jön. Az eredmény táblázatban kerüljön ide.
 - [ ] Ugyanez nem-JPEG-en (ha a Picasa engedi), a `2` feltétel igazolásához.
-- [ ] Ha a mérés a `DateTime`-ot igazolja: az `os.utime`-eltolást a `DateTime`
-  visszaírására kell cserélni, és a
-  `test_sikeres_exif_iras_datetime_alapjan_modositja_a_fajlidoket` tesztet ehhez
-  igazítani (jelenleg az eltolást rögzíti).
+- [ ] A bináris (2026-10-12) szerint a sikeres EXIF-ágban a `atime`/`mtime`
+  az eredeti marad (nincs `DateTime`-alapú beállítás). Ezért az `os.utime`-eltolást
+  el kell távolítani, és a `test_sikeres_exif_iras_datetime_alapjan_modositja_a_fajlidoket`
+  tesztet ehhez igazítani (jelenleg az eltolást rögzíti). A Windows-mérés
+  (fent) ezt erősítse meg, mielőtt a teszt átíródik.
 - [ ] Linux: a creation-only fallback ne legyen hallgatólagos no-op. Vagy ír
   valamit, vagy a felület kimondja a korlátot (#4885).
 - [ ] A jegy hivatkozásai frissítendők: a menüpont most
@@ -207,8 +222,8 @@ A meglévő tesztek: `tests/app/test_timestamp_controller_4693.py` (a sikeres
 
 **Nyitott pontok, és honnan szerezhető meg**
 
-1. A `0x1c` forrása: Windows-mérés (fent). Bináris úton a `0x009eb290` 1.
-   argumentumának hívóoldali azonosítása a `0x009ed39a` körül.
+1. A `0x1c` forrása: bináris úton feloldva (2026-10-12): a worker-láncban nincs
+   `0x1c`, ezért a „hiányzik" ág él. A Windows-mérés (fent) a végső megerősítés.
 2. A `[esp+0xac] == 2` jelentése: a `[obj+0x48]` vtable `+0xc4` metódusának
    azonosítása (a `0x00490cc6`–`0x00490cd2` hívás célja).
 3. A `0x00994400` (csere) és a `0x009eb820` belső hatása: nincs végig bejárva.
