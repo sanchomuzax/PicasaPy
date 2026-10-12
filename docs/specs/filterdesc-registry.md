@@ -4286,7 +4286,7 @@ eleje.
 | `HSVGradientMap` | `0x008f03ec` | `0x00bbc190` | `0x00bb7c80` (435 b) | `0x00bbc260` (1448 b) | hueOffset@0x44 |
 | `IR` | `0x008f0a14` | `0x00bc3d80` | `0x00bc3f50` (395 b) | — | greenglow@0x2c, greenglowalpha@0x34, redweight@0x3c |
 | `ImageOperation` *(ős)* | `0x008f0b0c` | `0x00c07709` | `0x00c07709` (42 b) | — | — |
-| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34; gyerekek: +0x3c Blur(R,R,q3), +0x40/+0x44 MultiplyColorMatrix(S). Az alkalmazó routingja natívan mérve (#4907, 5 eset); a pixel-kimenet NINCS mérve (ld. 2a. pont) |
+| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34; gyerekek: +0x3c Blur(R,R,q3), +0x40/+0x44 MultiplyColorMatrix(S). Az alkalmazó routingja natívan mérve (#4907, 5 eset; 2. körben újramérve, egyező); a pixel-kimenet NINCS mérve, a lánc-futtató nincs azonosítva (ld. 2a. pont és „2a/2. kör”) |
 | `MultiplyColorMatrix` | `0x008f0024` | `0x00bb7730` | `0x00bc16b0` (428 b) | `0x00bb77a0` (165 b) | multiplier@0x28 |
 | `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
 | `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
@@ -4869,6 +4869,27 @@ Eredmény: a routing öt beállításon bitre egyezik a fenti leírással (a dou
 A `0x009a8ca0` csak a láncfogantyút másolja. A képpontokat a lánc futtatója viszi végig, és ez a harness nem futtatja. Nem mértük: (a) a Blur-gyerek natív pixelútját R-en és q3-on a teljes láncban; (b) a Subtract-blend 8 bites telítését; (c) a két Multiply-gyerek sorrendjét a láncban. Ezért **nincs** bájtos összevetés az `xml_local_contrast`-tal.
 
 **Kész, ha (nyitva):** natív képpontfutás a teljes láncon legalább három (R, S) párra, bájtos összevetéssel az `xml_local_contrast`-tal. Előfeltétel: a lánc képpontos végrehajtójának azonosítása a Ghidra-kötegből, és a valódi `0x008ef520` / `0x008ef2b0` futtatása a hookok helyett.
+
+#### 2a/2. kör (2026-10-12, #4907): a lánc-futtató keresése — NEM sikerült
+
+Az útvonal-mérés újrafuttatva (`drv_lc.py`, ugyanaz a harness, ugyanaz az öt eset): a számok **bitre egyeznek** az előző körrel (R, S és a két szorzó mezője; a hiányzó `+0x44` gyereknél `eax = 4`). A pixel-mérés nem indult el, mert a láncot képponton végigvivő függvényt nem azonosítottuk.
+
+**Mit sikerült megállapítani (binary-index + szétszedés, nem futtatva):**
+
+- A `BlurImageOperation` vtable (`0x00cefe98`) nyolc slotja: `0x00bb4c20`, `0x00bb4d50`, `0x00bc24b0`, `0x00bc4ae0`, `0x00bc5160`, `0x00bc5180`, `0x00bb4de0`, `0x00bc51d0`. A `BlendImageOperation` vtable (`0x00cf0b2c`) ugyanazokat a közös slotokat tartalmazza: `0x00bc4ae0`, `0x00bc5160`, `0x00bc5180`, `0x00bc51d0` (a 3., 4., 5. és 7. helyen). Ezek az `ImageOperation` alaposztály közös implementációi, nem a Blur saját kernelje.
+- A `0x00bc4ae0` (1660 b) a `this` mezőiből és az argumentumból dolgozik, és a `[vtbl+0x1c]` virtuális hívás után `0x00bc5156`-ra ugrik, ha az eredmény nem nulla. Ez a generikus képpontút látszik; a teljes ága nincs végigkövetve, és a `[vtbl+0x1c]` célja nincs azonosítva.
+- A `0x00bc41e0` builder (1302 b) a blur-gyereket `0x00bb4c40`-nel hozza létre (`push 3`), és további hívásai vannak: `0x00bc1420` (legalább 6 hívás, valószínűleg a gyerek-csatolás), `0x00bc25d0`, `0x00bbf740`, `0x00bb7680`, `0x00bc1250`, `0x008eedc0`, `0x008f1490`, `0x008e8f30`, `0x008eb210`. A **Subtract/Add-keverők ezek közül melyik** — nincs eldöntve; a fenti listában több nem-Blur hívás van, mint az előző kör három gyereke (Blur + 2×Multiply).
+- A `0x00bc4730` apply-ban nincs olvasás a `[0xd695d0]` (MMX) vagy `[0xd695d4]` (SSE) jelzőről (0 találat a 220 bájtban). A builder és a láncfutó **nincs** ellenőrizve erre, ezért a CPU-jelző kérdése nyitva.
+
+**Miért nem jutott el a pixel-futásig:** a lánc képpontos végrehajtója (a `this` gyerekeit bejáró és a képet sorban átadó függvény) nincs azonosítva. Az `0x009a8ca0` csak a fogantyút másolja, és a keverési gráf (melyik gyerek kapja a bemenetet és az elmosottat) a builder hívásaiból még nem olvasható ki. Enélkül a QEMU-s futtatáshoz hand-épített objektumok valódi vtable-jei és a `BitmapT<uchar>` elrendezése hiányoznának, és a kimenet nem lenne bizonyíték.
+
+**Mi kell hozzá (következő kör):**
+1. A `0x00bc41e0` builder szétszedése a `0x00bc1420` hívásokig, és annak eldöntése, melyik hívás hoz létre Subtract/Add keveréket (vtable-ellenőrzéssel, RTTI-ból).
+2. A `[vtbl+0x1c]` célja a `0x00bc4ae0`-ban — ez adja a képpontút, vagy annak hívóláncát.
+3. A `BitmapT<uchar>` mezőelrendezése a Blur valódi bemeneti objektumához (a `0x00bb4c40` hívásából).
+4. Csak ezután: natív futás három (R, S) párra, bájtos összevetés az `xml_local_contrast`-tal.
+
+**Bizonyítottsági fok (2. kör):** változatlan — **részleges**. Az útvonal újramérve, a pixel-kimenet nincs mérve. A `Kész, ha` feltétel nyitva.
 
 ### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
 
