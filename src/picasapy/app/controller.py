@@ -9,6 +9,7 @@ változatlan."""
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime
 from pathlib import Path
@@ -26,7 +27,11 @@ from PySide6.QtCore import (
 
 from picasapy.hidden_password import egyezik as jelszo_egyezik
 from picasapy.hidden_password import modern_lenyomat, picasa_lenyomat
+from picasapy.index.hidden_scope import visible_folder_sql
+from picasapy.index.people import FaceDataCollector
 from picasapy.index import (
+    hidden_folders,
+    set_hidden_folders_visible,
     album_photos,
     albums_in_index,
     all_photos,
@@ -41,7 +46,13 @@ from picasapy.index import (
     video_photos,
     sync_tree,
 )
-from picasapy.ini import load_or_empty, update_document
+from picasapy.ini import (
+    FOLDERS_ON_DISK_CATEGORY,
+    HIDDEN_FOLDERS_CATEGORY,
+    load_or_empty,
+    set_folder_hidden_in_ini,
+    update_document,
+)
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
@@ -96,6 +107,8 @@ from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+
+_log = logging.getLogger(__name__)
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 _SLIDESHOW_TRANSITIONS = (
@@ -155,6 +168,17 @@ FOLDER_PANE_WIDTH_MAX = 4000
 
 def _clamp_folder_pane_width(width: int) -> int:
     return max(FOLDER_PANE_WIDTH_MIN, min(FOLDER_PANE_WIDTH_MAX, width))
+
+
+def _mappaban_megnevezett_arc(path: str) -> bool:
+    """Van-e a mappa ini-jében megnevezett arc (#4887) — EGY ini olvasása,
+    hogy a mappa elrejtése ne indítson fölöslegesen teljes Emberek-söprést."""
+    gyujto = FaceDataCollector()
+    try:
+        gyujto(path, load_or_empty(Path(path) / PICASA_INI_NAME))
+    except (OSError, ValueError):
+        return True  # bizonytalan: inkább frissítsünk
+    return bool(gyujto.rows)
 
 
 class AppController(
@@ -254,6 +278,10 @@ class AppController(
     # kihúzott lemez). NEM hiba — tájékoztatás: a mappa és a bélyegképei
     # megmaradnak, csak az eredeti fájlok nem érhetők el most.
     folderUnavailable = Signal(str)
+    # #4597: a mappa rejtése/megjelenítése nem ment át: (útvonal, ok) —
+    # ok: "offline-unhide" | "write-failed-unhide" |
+    # "write-failed-hide" | "hidden-move"
+    folderHideFailed = Signal(str, str)
 
     def __init__(
         self,
@@ -360,6 +388,8 @@ class AppController(
         # #1029: a Projektek gyűjtemény kezdeti (üres) állapota — a
         # `_reload()` tölti fel az indexből, a mappalistával együtt
         self._init_project_folders()
+        # #4887: az index a tényleges „rejtettek megjelenítése” értékkel indul
+        self._rejtett_lathatosag_kozlese()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
@@ -942,12 +972,92 @@ class AppController(
             return
         with open_index(self._db_path) as conn:
             rejtve = is_folder_hidden(conn, path)
-            set_folder_hidden(conn, path, not rejtve)
+            van_mappa = Path(path).is_dir()
+            if rejtve and not van_mappa:
+                # Offline mappa ini-je nem írható: a megjelenítés nem
+                # engedett (a rejtett mappa nem válhat láthatóvá úgy, hogy
+                # az ini még „Hidden Folders" — a Picasa újra elrejtené).
+                self.folderHideFailed.emit(path, "offline-unhide")
+                return
+            # #4597: az igazságforrás a mappa ini-je (P2category) — előbb az
+            # ini. Elrejtésnél írási hibára a mappa AZONNAL rejtett (2-es
+            # jelölés, a szinkron pótolja); megjelenítésnél hibára rejtett
+            # marad, és a felület jelzést kap.
+            try:
+                if van_mappa:
+                    set_folder_hidden_in_ini(path, not rejtve)
+            except (OSError, RuntimeError, ValueError):
+                _log.warning("A mappa rejtése nem írható az ini-be: %s", path, exc_info=True)
+                if rejtve:
+                    self.folderHideFailed.emit(path, "write-failed-unhide")
+                    return
+                set_folder_hidden(conn, path, True, ini_pending=True)
+                self.folderHideFailed.emit(path, "write-failed-hide")
+            else:
+                # Offline mappánál a rejtés az indexben vár (2), a mappa
+                # visszatérésekor a szinkron beírja az ini-be.
+                set_folder_hidden(
+                    conn, path, not rejtve, ini_pending=not van_mappa
+                )
+                if van_mappa:
+                    self._init_custom_collections()
+                    self._set_cached_folder_category(
+                        path,
+                        FOLDERS_ON_DISK_CATEGORY if rejtve else HIDDEN_FOLDERS_CATEGORY,
+                    )
         if not rejtve and not self.showHidden and self._current_folder == path:
             self._current_folder = ""
             self._view_mode = ("folder", "")
             self._show(())
+        # #4887: a mappa képei a többi nézetből (feed, szűrők, Emberek) is
+        # azonnal tűnjenek el / térjenek vissza. Az Emberek-lista teljes
+        # ini-söprést kér (NAS-on drága) — csak akkor, ha a mappában van
+        # megnevezett arc, tehát a darabszám egyáltalán változhat.
+        self._rejtett_lathatosag_valtozott(
+            emberek=_mappaban_megnevezett_arc(path)
+        )
+
+    def _rejtett_lathatosag_kozlese(self) -> None:
+        """#4887: a tényleges `showHidden` közlése az indexszel — EZ az egy
+        pont, ahonnan a rejtett mappák képeinek láthatósága minden
+        lekérdezéshez eljut (keresés, szűrők, Emberek, idővonal, albumok,
+        térkép, diavetítés, képernyővédő; ld. `index/hidden_scope.py`)."""
+        set_hidden_folders_visible(self._db_path, self.showHidden)
+
+    def _rejtett_lathatosag_valtozott(self, *, emberek: bool = True) -> None:
+        """A tényleges `showHidden` (kapcsoló, jelszó, feloldás) változása
+        után: közlés az indexszel, majd minden ebből élő nézet frissítése."""
+        self._rejtett_lathatosag_kozlese()
+        self._refresh_view()
         self._reload_folders()
+        self._gyujtemenyek_ujrarajzolasa()
+        # Az Emberek névsor-darabszámai is a láthatóságot követik
+        if emberek:
+            with open_index(self._db_path) as conn:
+                self._load_people(conn)
+        # A tálca a más mappából tartott képeket gyorstárazza — ürüljön,
+        # hogy a rejtett mappa képe az exportba/kollázsba se jusson be
+        if getattr(self, "_tray_wired", False):
+            self._tray_photos_changed()
+        self.statusChanged.emit()
+
+    def _hidden_folder_paths(self) -> frozenset[str]:
+        """A hasábokból kiszűrendő rejtett mappák (#4597): üres, ha a
+        rejtettek megjelenítése be van kapcsolva."""
+        if self.showHidden:
+            return frozenset()
+        with open_index(self._db_path) as conn:
+            return frozenset(hidden_folders(conn))
+
+    def _folder_is_hidden(self, folder_path: str) -> bool:
+        with open_index(self._db_path) as conn:
+            return is_folder_hidden(conn, folder_path)
+
+    def _gyujtemenyek_ujrarajzolasa(self) -> None:
+        """Az egyéni gyűjtemények és a Projektek listája is a rejtettséget
+        követi — mindkettő a `folders.hidden`-ből szűr."""
+        self.customCollectionsChanged.emit()
+        self.projectFoldersChanged.emit()
 
     # -- rejtett képek (#17) -------------------------------------------------
 
@@ -978,6 +1088,12 @@ class AppController(
 
     # #1476: nem `Slot` — a felület a `setHiddenPassword`-öt hívja, ez a
     # NYERS lenyomat útja (átvétel, teszt). A QML-nek nincs dolga vele.
+    def adoptHiddenPasswordHash(self, hash_value: str) -> None:
+        """Picasából átvett lenyomat (#4597): csak ha még nincs jelszónk —
+        a meglévőt az átvétel sosem írja felül."""
+        if not self.hiddenPasswordHash:
+            self.setHiddenPasswordHash(hash_value)
+
     def setHiddenPasswordHash(self, hash_value: str) -> None:
         """A LENYOMAT közvetlen beállítása (import, teszt). A feloldás
         állapotát nullázza — új jelszó után újra kérni kell."""
@@ -1006,8 +1122,14 @@ class AppController(
     def unlockHidden(self, password: str) -> bool:
         """Feloldás a beírt jelszóval. Csak a munkamenetre szól."""
         if jelszo_egyezik(self.hiddenPasswordHash, password):
+            elotte = self.showHidden
             self._hidden_unlocked = True
-            self.statusChanged.emit()
+            # #4887: ha a kapcsoló már be volt kapcsolva, a feloldás azonnal
+            # láthatóvá teszi a rejtett mappák képeit
+            if self.showHidden != elotte:
+                self._rejtett_lathatosag_valtozott()
+            else:
+                self.statusChanged.emit()
             return True
         return False
 
@@ -1016,15 +1138,15 @@ class AppController(
     # sincs „zárd vissza most" parancs; ha egyszer mérve lesz, kaphat.
     def lockHidden(self) -> None:
         """Visszazárás: a kapcsoló is visszaáll, hogy a rejtettek eltűnjenek."""
+        elotte = self.showHidden
         self._hidden_unlocked = False
-        if self._get_settings().value("view/showHidden", "false") in (
-            True,
-            "true",
-            "1",
-        ):
+        if self._show_hidden_setting():
             self._get_settings().setValue("view/showHidden", False)
-            self._refresh_view()
-            self._reload_folders()
+        if elotte:
+            self._rejtett_lathatosag_valtozott()
+            return
+        self._rejtett_lathatosag_kozlese()
+        self._gyujtemenyek_ujrarajzolasa()
         self.statusChanged.emit()
 
     @Property(bool, notify=statusChanged)
@@ -1032,11 +1154,21 @@ class AppController(
         """Fel van-e oldva EBBEN a munkamenetben."""
         return bool(getattr(self, "_hidden_unlocked", False))
 
-    @Property(bool, notify=statusChanged)
-    def showHidden(self):
-        """Nézet → Rejtett képek: látszanak-e a rejtettek (halványítva)."""
+    def _show_hidden_setting(self) -> bool:
+        """A TÁROLT kapcsoló (újraindítás után is megmarad)."""
         value = self._get_settings().value("view/showHidden", "false")
         return value in (True, "true", "1")
+
+    @Property(bool, notify=statusChanged)
+    def showHidden(self):
+        """Nézet → Rejtett képek: látszanak-e a rejtettek (halványítva).
+
+        TÉNYLEGES érték (#4597): a tárolt kapcsoló csak akkor számít, ha nincs
+        jelszó, vagy ebben a munkamenetben fel van oldva — a feloldás nem
+        marad meg újraindítás után, a kapcsoló viszont igen."""
+        return self._show_hidden_setting() and (
+            not self.hiddenPasswordSet or self.hiddenUnlocked
+        )
 
     @Property(bool, notify=statusChanged)
     def showOnlyBigImages(self):  # noqa: N802 — QML-konvenció
@@ -1069,9 +1201,7 @@ class AppController(
             self.statusChanged.emit()
             return
         self._get_settings().setValue("view/showHidden", bool(show))
-        self._refresh_view()
-        self._reload_folders()
-        self.statusChanged.emit()
+        self._rejtett_lathatosag_valtozott()
 
     @Slot()
     def toggleShowHidden(self) -> None:
@@ -1092,7 +1222,11 @@ class AppController(
         with open_index(self._db_path) as conn:
             paths = [
                 row["path"]
-                for row in conn.execute("SELECT path FROM folders ORDER BY path")
+                # #4887: rejtett mappa nem állhat vissza jelenlegi mappának
+                for row in conn.execute(
+                    "SELECT path FROM folders f"
+                    f" WHERE {visible_folder_sql(conn)} ORDER BY path"
+                )
             ]
         if saved and saved in paths:
             self.selectFolder(saved)

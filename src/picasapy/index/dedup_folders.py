@@ -191,6 +191,12 @@ def _merge_loser_into_keeper(
         "folders WHERE id = ?)) WHERE id = ?",
         (loser_id, keeper_id),
     )
+    # #4597: a rejtés (0/1/2) nem veszhet el összevonáskor — privát tartalom
+    conn.execute(
+        "UPDATE folders SET hidden = MAX(hidden, (SELECT hidden FROM "
+        "folders WHERE id = ?)) WHERE id = ?",
+        (loser_id, keeper_id),
+    )
     conn.execute("DELETE FROM folders WHERE id = ?", (loser_id,))
 
 

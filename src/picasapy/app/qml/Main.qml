@@ -4187,6 +4187,25 @@ ApplicationWindow {
             errorBanner.notice = true
             errorBannerText.text = qsTr("This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.")
         }
+        // #4597: a mappa rejtése/megjelenítése/áthelyezése nem ment át
+        function onFolderHideFailed(path, reason) {
+            // az ini-írás kudarca nem hiba, hanem tájékoztatás — kivéve, ha a
+            // megjelenítés maradt el és a mappa rejtett maradt
+            errorBanner.notice = reason !== "write-failed-unhide"
+            if (reason === "offline-unhide") {
+                //: #4597: elérhetetlen (offline) mappa megjelenítése nem engedett
+                errorBannerText.text = qsTr("The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.")
+            } else if (reason === "write-failed-hide") {
+                //: #4597: a mappa rejtve van, de a .picasa.ini nem írható
+                errorBannerText.text = qsTr("The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).")
+            } else if (reason === "hidden-move") {
+                //: #4597: rejtett mappa gyűjteménybe mozgatása nem engedett
+                errorBannerText.text = qsTr("A hidden folder cannot be moved into a collection. Unhide it first.")
+            } else {
+                //: #4597: a megjelenítés ini-írása elbukott, a mappa rejtett marad
+                errorBannerText.text = qsTr("The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.")
+            }
+        }
         //: #1403: az XMP-arcírás EGY összegzést ad a köteg végén (kiírt ·
         //: kihagyott · első hiba). A csak olvasható fájl az eredetiben is
         //: megnevezett hibaeset, ezért az okot kiírjuk.

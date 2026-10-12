@@ -27,7 +27,8 @@ from picasapy.ini import IniDocument, contacts_of, parse_faces
 from picasapy.ini.faces import Face
 
 from .folder_ini import sweep_folder_inis
-from .queries import _SELECT, PhotoRecord, _records
+from .hidden_scope import excluded_folder_paths
+from .queries import PhotoRecord, _records, _select
 
 
 @dataclass(frozen=True)
@@ -96,7 +97,9 @@ def people_in_index(
     viselkedés változatlan: maga söpör."""
     counts: dict[str, int] = {}
     for _folder_path, names, faces_by_file in (
-        _iter_face_data(conn) if face_data is None else face_data
+        _iter_face_data(conn)
+        if face_data is None
+        else _lathato_arcadat(conn, face_data)
     ):
         for faces in faces_by_file.values():
             seen: set[str] = set()
@@ -162,7 +165,7 @@ def person_photos(conn: sqlite3.Connection, name: str) -> tuple[PhotoRecord, ...
     clause = " OR ".join(["(f.path = ? AND p.name = ? COLLATE NOCASE)"] * len(pairs))
     params = [value for pair in pairs for value in pair]
     rows = conn.execute(
-        f"{_SELECT} WHERE {clause} ORDER BY f.path, p.name", params
+        f"{_select(conn)} WHERE {clause} ORDER BY f.path, p.name", params
     )
     return _records(rows)
 
@@ -208,7 +211,7 @@ def person_movie_photos(
         )
         params = [value for pair in pairs for value in pair]
         rows = conn.execute(
-            f"{_SELECT} WHERE {clause} ORDER BY f.path, p.name", params
+            f"{_select(conn)} WHERE {clause} ORDER BY f.path, p.name", params
         )
         result.extend(_records(rows))
     return tuple(result)
@@ -237,7 +240,7 @@ def photos_with_faces(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     clause = " OR ".join(["(f.path = ? AND p.name = ? COLLATE NOCASE)"] * len(parok))
     params = [value for pair in parok for value in pair]
     rows = conn.execute(
-        f"{_SELECT} WHERE {clause} ORDER BY f.path, p.name", params
+        f"{_select(conn)} WHERE {clause} ORDER BY f.path, p.name", params
     )
     return _records(rows)
 
@@ -289,4 +292,18 @@ def _iter_face_data(
     könyvtár másik folyamat általi éppen-írása ne omlassza össze a listát)."""
     collector = FaceDataCollector()
     sweep_folder_inis(conn, (collector,))
-    return tuple(collector.rows)
+    return _lathato_arcadat(conn, tuple(collector.rows))
+
+
+def _lathato_arcadat(
+    conn: sqlite3.Connection, face_data: tuple[FaceData, ...]
+) -> tuple[FaceData, ...]:
+    """#4887: a rejtett mappák arc-adata kimarad (névsor-darabszám, „kivel
+    szerepel"), hacsak a felület nem közölte, hogy a rejtettek látszhatnak.
+
+    Az ini-söprés maga NEM szűkül: ugyanabból a menetből élnek a Projektek
+    és az egyéni gyűjtemények is, amelyek a rejtett mappát maguk kezelik."""
+    kizart = excluded_folder_paths(conn)
+    if not kizart:
+        return face_data
+    return tuple(sor for sor in face_data if sor[0] not in kizart)
