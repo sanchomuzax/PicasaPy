@@ -637,9 +637,15 @@ nélkül.*
 | `[ebp+0x3188]` (ShowHidden) | `0x9c9e` |
 | `Preferences\Show only big images` | `0x9cd8` |
 | `Preferences\EnableColorManagement` | **`0x9d72`** |
-| `editpanel/preview`-feltétel | `0x9d2a` |
-| a `searchcontainer/searchbutton`-feltétel | `0x9d2b` |
-| `thumbui/fullview`-feltétel | `0x9c8f` |
+| `editpanel/preview`-feltétel | `0x9d2a` — ⚠️ **`EnableMenuItem`**, nem pipa (lásd lent) |
+| a `searchcontainer/searchbutton`-feltétel | `0x9d2b` — ⚠️ **`EnableMenuItem`**, nem pipa |
+| `thumbui/fullview`-feltétel | `0x9c8f` — ⚠️ **`EnableMenuItem`**, nem pipa |
+
+> ⛔ **HELYESBÍTVE (2026-10-12, #4641):** a `0x005c91ff` `mov edi, [0xc40818]`
+> után az utolsó három sor **`EnableMenuItem`** (szürkítés), nem
+> `CheckMenuItem`; a `0x9d2b` pipáját a `CThumbUI` menüsor-frissítője
+> (`0x0056e1c0`, `0x0056f01d`) írja. Részletek:
+> `picasa-menu-parancsok-viselkedes.md`, „`ID_VIEW_SEARCHVIEW`" szakasz.
 
 **❗ Két váratlan melléklelet — óvatosan a menü-felirat ↔ ID párosítással:**
 
@@ -690,12 +696,14 @@ checkable, és a pipa azon a soron jelenik meg.
 
 | ID | bit | kezelő | tartalom |
 |---|---|---|---|
-| `0x9c8f` | 68 | `0x5cbb50` | `searchcontainer/searchbutton` → `0x5c90f0` |
+| `0x9c8f` | 17 | `0x5cbb7a` | `thumbui/fullview` → `0x5c90f0` *(helyesbítve 2026-10-12, #4641 — korábban tévesen a 68-as sor)* |
+| `0x9d2b` | 68 | `0x5cbb50` | `searchcontainer/searchbutton` → `0x5c90f0` (Keresési opciók) |
+| `0x9d2a` | 67 | `0x5cbb65` | `thumbui/albumview` → `0x5c90f0` (Könyvtárnézet) |
 | `0x9c9e` | 9 | `0x5cbbad` | **`0x5c9300` = ShowHidden** |
 | `0x9cd8` | 55 | `0x5cbbb9` | `0x5c94e0` = Show only big images |
 | `0x9d1f` | 65 | `0x5cbc3e` | AUTO (átalakító-setter, lásd 6. szakasz) |
-| `0x9d2a` | – | – | SMALLTHUMBNAILS (pipa-szinkron, 0x5c90f0) |
-| `0x9d2b` | – | – | SMALL (pipa-szinkron) |
+| ~~`0x9d2a`~~ | – | – | ~~SMALLTHUMBNAILS~~ — téves: a `0x9d2a` az `ID_VIEW_LIGHTBOXVIEW` (lásd fent) |
+| ~~`0x9d2b`~~ | – | – | ~~SMALL~~ — téves: a `0x9d2b` az `ID_VIEW_SEARCHVIEW` (lásd fent) |
 | `0x9d72` | – | – | **Display Mode felirat / EnableColorManagement pipa** |
 
 *2. switch (byte-tábla `0x5cde04`, dword-tábla `0x5cdc30`, lefedés 0x9d44–0xa02c — a teljes menüsáv-diszpécser):*

@@ -279,10 +279,11 @@ Bekapcsolva: **monitor ICM-profil** (`GetICMProfileA`, 1 hívó) + a képbe
 
 ---
 
-## Ami még hátra van (20 tétel)
+## Ami még hátra van (19 tétel)
 
-**Nézet (5):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
-`ID_VIEW_SEARCHVIEW` · `ID_VIEW_AUTO`
+**Nézet (4):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
+`ID_VIEW_AUTO` *(az `ID_VIEW_SEARCHVIEW` 2026-10-12-én lezárva — „Keresési
+opciók" szakasz a lap végén, #4641)*
 **Fájl (4):** `ID_FILE_EMAIL` · `ID_FILE_EPROCESS` · `ID_FILE_OPEN` ·
 `ID_FILE_OPENINANEDITOR`
 **Eszközök (4):** `ID_TOOLS_BUTTONMGR` · `ID_TOOLS_CONFIG_SCREENSAVER` ·
@@ -6519,3 +6520,154 @@ történik, nem itt. Ez a `changeloc`/`defaultloc` kezelőben (`0x007d16b0`,
 címekre; `0x007d1900` (168 b), `0x006db040` (1175 b); a beállítás-hármas
 `0x00407630` / `0x004078e0` / `0x00407760`, hívószámok a bináris index
 `xrefs` táblájából.*
+
+## ⛳ `ID_VIEW_SEARCHVIEW` — a „Keresési opciók" a TALÁLATI SÁV kapcsolója (2026-10-12, #4641)
+
+*Forrás-horgonyok: `searchcontainer.tre:19` (`searchcontainer/searchbutton`) · `thumbui.tre:554` (`thumbui/searchgroupcontainer`) · `searchoptions.tre:47` (`searchoptions/searchbackground`).*
+
+**A kérdés:** a Nézet ▸ Keresési opciók (`eMenuView::ID_VIEW_SEARCHVIEW`,
+„Search &Options", parancsazonosító **`0x9d2b`**, menürekord `0xd6e0b8` —
+`picasa-menu-parancsok.csv:178`, `referencia/felulet-terkep/menuk.json`)
+mit nyit vagy kapcsol, milyen vezérlőkkel, és megmarad-e az állapota.
+
+**A válasz egy mondatban:** a parancs **a rejtett `searchcontainer/searchbutton`
+kapcsológombra kattint**; a gomb lenyomva a **`thumbui/searchgroupcontainer`**-t
+mutatja — ebbe van kivágva a `searchoptions` réteg, vagyis a **találati sáv**
+(„Back to View All" gomb + találat-szöveg + az arc-/másodpéldány-mód jelzője) —,
+és a tartalmat **27 képponttal lejjebb tolja**. Felengedve a sáv eltűnik, és
+**mind a hat szűrő kikapcsol** (ugyanaz a végállapot, mint a „Back to View
+All"-é). Az állapot **nem tárolódik**, indításkor ki van kapcsolva. A mi
+`searchOptionsPopup`-unkhoz és a szűrőcsúszkához/csillag-, arc-, videó-,
+geo-gombokhoz **nincs köze**: azok a mindig látható `searchcontainer` sávon
+ülnek.
+
+### A. Bizonyítási terv és atlasz
+
+🗺️ Atlasz (`atlasz_keres.py`, a kör elején):
+- `0x005d4a20` (függvény 0x005d4a20–0x005d4a90): nincs találat — ÚJ terület
+- `0x005cbb50` (a diszpécser `0x005cb990`–`0x005cd9f3`): 60+ szakasz, köztük `binaris-regeszet-modszertan.md` „Rádiócsoport-pásztázás"
+- `0x0056efef` (`0x0056e1c0`–`0x0056f8f0`): `jobb-fiok-meretek.md` „A négy menütétel", `picasa-menu-parancsok-viselkedes.md` 31.2, 36.1–36.2
+- `0x005c921d` (`0x005c90f0`–`0x005c92fb`): `picasa-megjelenitesi-modok.md` 5.12, `paritas-ellenorzes.md` 1.
+- `0x009cd8a0`: `picasa-gyorsbillentyuk.md` (közvetlen vezérlő-kattintás, vtábla `+0x78`)
+
+Terv: (1) a `0x9d2b` minden közvetlen előfordulása a `.text`-ben (bájtpásztázás
+`push 0x9d2b`-re); (2) a diszpécser ugrótáblájából a kezelő; (3) a kezelő
+által megnevezett vezérlő `.tre`-definíciója; (4) a vezérlő kattintás-ága a
+keresőbeállítás-kezelőben (`0x005d8810`) és ami onnan hívódik; (5) a
+`Preferences`-író hívások keresése a láncban. Cáfolná: ha a kezelő
+`Preferences`-t írna, vagy ha a `0x9d2b` egy panelt (`rightdrawerpanel/*`)
+nyitna. Tulajdonostól semmi nem kell.
+
+### B. A lánc — címekkel
+
+| lépés | cím | mit mutat |
+|---|---|---|
+| a `0x9d2b` a teljes fájlban **háromszor** fordul elő `push`-ként | `0x0056f003`, `0x0056f01d`, `0x005c9262` | bájtpásztázás (`68 2b 9d 00 00`), index-független |
+| diszpécser-ugrótábla | `0x005cba5d`: `lea eax,[esi−0x9c42]`, bájttábla `0x5cdb34`, dword-tábla `0x5cd9fc` | `0x9d2b` → index **68** → **`0x005cbb50`** |
+| a kezelő (3 utasítás) | `0x005cbb50` `mov edx,0xc8f448` · `call 0x009cd8a0` · `push ebx; call 0x005c90f0` | `0xc8f448` = **`searchcontainer/searchbutton`**; a `0x009cd8a0` megkeresi a vezérlőt, `ytButtonNode`-dá kasztolja (RTTI `0xd3b8d8`), és a vtábla **`+0x78`**-at hívja = **kattintás**; utána menü-szinkron |
+| a gomb definíciója | `searchcontainer.tre:19–28` | `Property mousedown 1` (kapcsoló), **`Property showtarget thumbui/searchgroupcontainer`**, **`Handler varbutton searchtop 62`**, `Property hiddentimer 1`, `m_hidden` |
+| mit mutat | `thumbui.tre:554` (`searchgroupcontainer`, `m_hidden`) + `respack.yt`: `clip(searchoptions): searchgroupcontainer` (223, 38), **577 × 25** (`konyvtar-ablak-meretek.md`, fő eszköztár) | a `searchoptions` réteg élő elemei (`searchoptions.tre`): `viewallbutton` („Back to View All"), `label_searchresult` (rejtett), `searchresult`, `label_search1`, `facesearch` és `dupesearch` (rejtett jelzők) |
+| a tartalom eltolása | `thumbui.tre:509` `searchtop=35` → a gomb lenyomva **62** | az `albumsback`, `hlistsizer`, `right_drawer` felső kényszere a `searchtop` (`thumbui.tre:509–536`) ⇒ **+27 px** lefelé |
+| a kattintás-ág | `0x005d8810`: `repe cmpsb` a `searchcontainer/searchbutton`-ra (`0x005d883b`, hossz `0x1d`) → `call 0x005d4a20` (`0x005d88b0`) | — |
+| `0x005d4a20` (112 b) | `SetFocus([panel+0xf48])` (`0x005d4a27`, import `0xc408a4`), majd a gomb **`+0x359`** bájtja szerint két ág (`0x005d4a6e`) | `+0x359` = a gomb lenyomott állapota (a `0x009cd8f0` állapot-beállító ugyanezt a bájtot veti össze, `0x009cd929`) |
+| ↳ lenyomva → `0x005d4a90` | `Preferences\SupportMovies` olvasás (`0x004019b0`) → `searchoptions/moviesearch` láthatóság | a `searchoptions/moviesearch` **nincs** a `searchoptions.tre`-ben ⇒ a keresés NULL, az ág ebben a buildben hatástalan (`0x005d4afb`/`0x005d4b3d`) |
+| ↳ felengedve → `0x005d47e0(panel, 1, 1)` | `0x005d48aa`–`0x005d48f6`: hat `0x009cd8f0(név, 0)` | **kikapcsol:** `starsearch`, `facesearch`, `moviesearch`, `searchoptions/dupesearch`, `webview`, `geotagsearch`; a `timeslider/scaleslider` → `0.0` (`0x005d4914 fldz`); a két `1`-es argumentum miatt **újrafuttatja a nézetet** (`0x005d49eb call 0x0065b840`, `0x005d4a01 call 0x005fa430`) |
+| a „Back to View All" ugyanide visz | `0x005d9574`: `0x005d47e0(panel,0,0)`, majd ha a `searchbutton` lenyomva, **kattint rá** (`0x005d958a`–`0x005d959b`, vtábla `+0x78`) | ⇒ a Keresési opciók kikapcsolása és a „Back to View All" **ugyanabba az állapotba** visz |
+
+### C. A pipa és az engedélyezés
+
+| író | cím | szabály |
+|---|---|---|
+| a `CThumbUI` menüsor-frissítője (vtábla `0x00c9052c` `+0x34` = `0x0056e1c0`; a Nézet almenü a `0x005628c0(2)` ágon, `0x0056ef8e`) | `0x0056eff4`–`0x0056f023` | `EnableMenuItem(0x9d2b, gomb nincs ? MF_GRAYED : 0)`; **`CheckMenuItem(0x9d2b, gomb+0x359 ? MF_CHECKED : 0)`** — a pipa = a sáv látszik |
+| a parancs utáni szinkron (`0x005c90f0`) | `0x005c91ff`–`0x005c9268` | `EnableMenuItem` (`0xc40818`) — szürke, ha a gomb lenyomva **vagy** `[CThumbUI+0x34a4] ≠ 0` |
+
+⚠️ A két író **ellentmond** a lenyomott állapotban (a frissítő engedélyez, a
+szinkron szürkít). Hogy a megnyitott menüben melyik látszik, a `+0x34` slot
+hívási időpontjától függ — ez **NINCS MEG** (index-hívó nincs, vtáblás slot).
+Megszerzés: Colab-felmérés az eredetin — `python3 eszkozok/colab_felmero.py
+menu "View" "Search Options"`, majd a Nézet menü képe (a tétel szürke-e és
+pipás-e). A megvalósítást **nem blokkolja**: a pipát egyedül a frissítő írja, a
+gomb `+0x359` bájtja szerint.
+
+⭐ **Helyesbítés a `picasa-megjelenitesi-modok.md` 5.12-höz:** az ott közölt
+„pipa-szinkron" tábla a `0x9d2a`/`0x9d2b`/`0x9c8f` sorokat `CheckMenuItem`-nek
+írta — a `0x005c91ff` `mov edi,[0xc40818]` után ezek **`EnableMenuItem`**
+hívások; a diszpécser-táblában pedig a `0x5cbb50` a **`0x9d2b`** kezelője
+(index 68), nem a `0x9c8f`-é (az a `0x5cbb7a`, index 17, `thumbui/fullview`).
+A lapon javítva.
+
+### D. Ki kapcsolja még be — a sáv a keresés saját része
+
+A `searchbutton` állapotát a menün kívül is állítják: a színcímke-keresés
+(`0x0065b7fa`, érték 1), a másodpéldány-mód (`0x005ccc14`, érték 1), és a
+`0x00600b4f` a `0x005c65e0` eredménye szerint; kattintásként a `Ctrl+F`
+(`0x005e63bb`) és az `F3` (`0x005e69a4`) — `picasa-gyorsbillentyuk.md`.
+⇒ **Keresés/szűrés indításakor a sáv magától megjelenik**, és a menü pipája
+ezt követi. Szerkesztő nézetbe lépéskor az `m_albumtoggle` makró elrejti a
+`thumbui/searchgroup`-ot és a `thumbui/searchcontainer`-t (`macros.tre:211`).
+
+### E. Megmarad-e
+
+**NEM.** A lánc egyik függvénye sem hív `Preferences`-írót: a `0x00407760`,
+`0x00401900`, `0x00407630` hívások száma a `0x005d4a20`, `0x005d4a90`,
+`0x005d47e0` törzsében **0 – 0 – 0** (diszasszemblálással számolva); a
+`0x005d4a90` egyetlen beállítás-hozzáférése **olvasás** (`SupportMovies`). A
+`searchgroupcontainer` `m_hidden`, a `searchbutton`-on nincs `setpressed` ⇒
+indításkor a sáv rejtve, a pipa üres.
+
+### F. Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (mérve, a munkafa `origin/main`-je) | teendő |
+|---|---|---|---|
+| menütétel | kapcsoló, pipával | `PicasaMenuBar.qml:1159` **`placeholder: true`**, hatása nincs | **fejlesztés** |
+| a kapcsolt felület | a találati sáv (`searchoptions`: „Back to View All" + eredmény + mód-jelzők), 577 × 25 | megvan a **zöld eredménysáv** (`Main.qml` ~3275, 26 px, „Back to View All" = `searchBackToViewAll`), de **csak `controller.filterActive` alatt** látszik | a sáv láthatósága legyen kézzel is kapcsolható |
+| tartalom-eltolás | `searchtop` 35 → 62 | a sáv a `ColumnLayout`-ban ül, tehát megjelenéskor már most lejjebb tolja a rácsot | — (ellenőrizni) |
+| kikapcsolás | = „Back to View All": 6 szűrő ki, csúszka 0, nézet újra | a „Back to View All" `controller.clearFilter()` | a menü kikapcsoló ága ugyanezt hívja |
+| automatikus bekapcsolás kereséskor | igen (D.) | a sáv `filterActive`-ra megjelenik | a pipa kövesse |
+| tárolás | nincs | — | ne tároljuk |
+| a `searchbutton` | **rejtett** kapcsoló, nincs saját popupja | látható „⌄" gomb, `searchOptionsPopup` arc/másodpéldány gombokkal (`MainToolbar.qml:840–930`) | **eltérés, NEM ennek a jegynek a tárgya** — külön döntés |
+
+### G. A megvalósítandó eltérés — „Kész, ha"
+
+- [ ] A Nézet ▸ „Keresési opciók" **nem helyfoglaló**: `checkable`, és a
+      könyvtárnézetben mindig engedélyezett.
+- [ ] A pipa **pontosan akkor** áll, amikor a találati sáv (a zöld sáv
+      „Back to View All"-lal) látszik — akár kézzel, akár keresés/szűrés
+      kapcsolta be.
+- [ ] Bekapcsolva szűrő nélkül is megjelenik a sáv, és a rács teteje a sáv
+      magasságával lejjebb kerül (kirajzolt teszttel mérve, nem számolva).
+- [ ] Kikapcsolva a sáv eltűnik, és **ugyanaz történik, mint a „Back to View
+      All" kattintásakor** (`controller.clearFilter()` útja): minden szűrő ki,
+      az idő-csúszka alaphelyzetben, a teljes nézet visszajön.
+- [ ] Az állapot **nem** kerül `QSettings`-be; indításkor ki van kapcsolva.
+- [ ] Szerkesztő nézetben a sáv nem látszik.
+- [ ] QML-funkcionális teszt **valódi menükattintással** (nem metódushívással):
+      be → sáv látszik + pipa; ki → sáv eltűnik, szűrők törölve; a szomszéd
+      (rács, bal lista teteje) helye a két állapotban mérve. A teszt a
+      javítás nélkül bukjon.
+- [ ] A `Ctrl+F`, a „⌄" gomb és a `searchOptionsPopup` viselkedése **változatlan**
+      (a popup ↔ rejtett gomb eltérés külön jegy tárgya).
+
+### H. Nyitott kérdések mérlege
+
+```
+Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 „csak nyitva"
+```
+
+- **LEZÁRVA:** a kezelő és a vezérlő (B.); mit mutat és mennyivel tol (B.);
+  a kikapcsolás hatása és azonossága a „Back to View All"-lal (B.); a
+  megmaradás — nem tárolódik (E.).
+- **BLOKKOLT (saját):** a lenyomott állapotú tétel szürke-e a megnyitott
+  menüben (C.). Mi kell: egy Colab-menüfelvétel az eredetin (gépi, a
+  tulajdonos nem kell). A megvalósítást nem blokkolja.
+
+### Amit KIZÁRTAM
+
+- **„A Keresési opciók a keresőmező alatti szűrőket (csillag, arc, videó,
+  geo, idő-csúszka) mutatja"** — megdőlt: azok a `searchcontainer` sávon
+  vannak (`searchcontainer.tre:31–92`), a gomb `showtarget`-je a
+  `searchgroupcontainer` (`searchcontainer.tre:23`); a parancs a szűrőket
+  csak **kikapcsolja** (felengedéskor).
+- **„Panelt nyit a jobb fiókban"** — megdőlt: a kezelő egyetlen vezérlőnevet
+  hivatkozik (`0x005cbb50`), és az a `searchcontainer/searchbutton`.
+- **„Megjegyzi az állapotát"** — megdőlt (E.).
