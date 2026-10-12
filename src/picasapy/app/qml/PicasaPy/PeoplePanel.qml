@@ -66,6 +66,10 @@ Rectangle {
     // a szerkesztő (néző) példánya: az eredetiben az `editpanel/preview`
     // láthatósága, ilyenkor mindig az egyképes ág fut
     property bool editorView: false
+    // A fejléc „van személy” jelzője a teljes panelfrissítés pillanatát
+    // őrzi. A sorlista ettől függetlenül élőben frissülhet névadás után.
+    property string headerRefreshKey: ""
+    property bool headerHasPeopleSnapshot: false
     // #3585 (spec 9/b–9/d): a „Név nélküliek" album nyitva van, és a
     // fejléc váltógombja csoportosított állapotban áll
     property bool unnamedAlbumMode: false
@@ -119,6 +123,18 @@ Rectangle {
 
     readonly property string ignoreConfirmKey: "ignoreFaces"
 
+    function refreshHeaderPeopleSnapshot(hasNamedPerson) {
+        panel.headerHasPeopleSnapshot = typeof hasNamedPerson === "boolean"
+            ? hasNamedPerson : panel.hasPeople
+    }
+
+    Component.onCompleted: {
+        panel.refreshHeaderPeopleSnapshot()
+        Qt.callLater(function() { panel.refreshHeaderPeopleSnapshot() })
+    }
+    onHeaderRefreshKeyChanged:
+        Qt.callLater(function() { panel.refreshHeaderPeopleSnapshot() })
+
     function assignNameToFace(faceId, name) {
         if (!panel.faceScanController || !name || !String(name).trim())
             return false
@@ -126,6 +142,10 @@ Rectangle {
             [faceId], String(name).trim())
         if (assigned && typeof controller !== "undefined" && controller)
             controller.refreshCollections()
+        if (assigned && panel.unnamedAlbumMode)
+            Qt.callLater(function() {
+                panel.refreshHeaderPeopleSnapshot(true)
+            })
         return assigned
     }
 
@@ -135,6 +155,10 @@ Rectangle {
         var accepted = panel.faceScanController.acceptSuggestion(faceId)
         if (accepted && typeof controller !== "undefined" && controller)
             controller.refreshCollections()
+        if (accepted && panel.unnamedAlbumMode)
+            Qt.callLater(function() {
+                panel.refreshHeaderPeopleSnapshot(true)
+            })
         return accepted
     }
 
@@ -217,15 +241,16 @@ Rectangle {
             ? qsTr("Sorting face data, %1%").arg(panel.sortingPercent)
             : panel.singlePhotoBranch
             ? (panel.loadingShown ? qsTr("Loading faces for file...")
-               : panel.hasPeople ? qsTr("In this photo:")
+               : panel.headerHasPeopleSnapshot ? qsTr("In this photo:")
                : panel.hasPhotos ? qsTr("Who is in these photos?")
                : "")
             : panel.loadingShown
             ? (panel.personAlbum ? qsTr("Looking for other people...")
                : qsTr("Loading faces for %1 files...").arg(panel.selectionCount))
-            : panel.personAlbum && !panel.editorView && !panel.hasPeople
+            : panel.personAlbum && !panel.editorView
+              && !panel.headerHasPeopleSnapshot
             ? ""
-            : (panel.hasPeople
+            : (panel.headerHasPeopleSnapshot
                ? (panel.personAlbum ? qsTr("Also in these photos:")
                                     : qsTr("People in these photos:"))
                : panel.hasPhotos

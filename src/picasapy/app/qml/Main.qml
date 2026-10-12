@@ -3617,6 +3617,11 @@ ApplicationWindow {
                                 window.facesAlbumMode = "ignored"
                             onShowUnnamedRequested:
                                 window.facesAlbumMode = "unnamed"
+                            onNamedSuggestionAccepted: Qt.callLater(
+                                function() {
+                                    peoplePanel.refreshHeaderPeopleSnapshot(true)
+                                }
+                            )
                         }
                     }
                 }
@@ -3767,10 +3772,22 @@ ApplicationWindow {
     // EGY lista (#3566): a kijelölt képek nevesített emberei; a fejlécet
     // a panel választja a spec 9/b fája szerint.
     PeoplePanel {
+        id: peoplePanel
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
         manualAddActive: window.viewerOpen && photoViewer.facesEditMode
+        headerRefreshKey: controller
+            ? [window.selectedRows().join(","),
+               window.unnamedFacesOpen
+                   ? unnamedFacesView.selectedCount : 0,
+               window.unnamedFacesOpen ? window.peopleFaceRevision : 0,
+               window.unnamedFacesOpen, window.facesAlbumMode,
+               window.activeDrawerTab, window.viewerOpen, window.timelineOpen,
+               controller.searchActive, controller.currentPersonName,
+               unnamedFacesView.grouped, window._selectionPending > 0]
+                  .join("|")
+            : ""
         // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
