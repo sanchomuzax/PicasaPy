@@ -8,9 +8,19 @@ behozhatod a képeket.
 Indítás: az eszköztár **Importálás** gombja, vagy **Fájl ▸ Importálás
 forrása…** (Ctrl+M).
 
-A párbeszéd felül a **Forrás** mappát kéri (a **Tallózás…** gombbal
-választható, és a legutóbbi forrásokat is felkínálja), alatta megjelenik,
-mit talált: hány kép és videó van benne.
+A párbeszéd felül a **Forrást** kéri (a legutóbbi forrásokat is
+felkínálja), alatta megjelenik, mit talált: hány kép és videó van benne.
+
+A **Tallózás…** gomb egy kis menüt nyit:
+
+- **Mappa…** — egy egész mappát választasz forrásnak;
+- **Fájlok…** — egy mappán belül egyes fájlokat jelölsz ki (a
+  **Fájlok/mappa importálása** ablakban több fájl is kijelölhető). A
+  választó szűrője **Kép- és filmfájlok**, **Képfájlok** vagy **Minden
+  fájl** lehet. Ilyenkor a forrás mezőjében az első fájl neve áll, mellette
+  zárójelben, hány további fájlt választottál. A kijelölésből csak a
+  létező kép- és filmfájlok kerülnek az importálandók közé, a **Fájltípusok**
+  beállításnak megfelelően.
 
 Ha memóriakártya vagy USB-meghajtó van a géphez csatlakoztatva, a
 forrás mellett egy **Cserélhető meghajtók** lista is megjelenik (Windowson

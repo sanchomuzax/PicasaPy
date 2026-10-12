@@ -19,6 +19,8 @@ A csillag a gyors megjelölésre való. Csillagot adni és elvenni így tudsz:
 
 - a képtálca **Csillag hozzáadása/eltávolítása** gombjával (a kijelölés
   minden képére hat),
+- az **F4** billentyűvel, ami ugyanazt teszi, mint a tálca gombja (a
+  könyvtárban és a nézőben is; ha a gomb szürke, az F4 sem csinál semmit),
 - diavetítés közben a vezérlősáv csillag-gombjával.
 
 A csillagozott képeket a bal hasáb **Csillagozott képek** albuma
