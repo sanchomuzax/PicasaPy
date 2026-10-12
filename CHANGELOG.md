@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.74] – 2026-10-12
+
+- Fejlesztőknek: a tesztek, a spec és egy kódkomment Windows-útvonal-példái helyettesítő felhasználónevet és mappanevet használnak (#4877).
+
 ## [0.9.73] – 2026-10-11
 
 - Fejlesztőknek: a QML-tesztek életben tartott burkai a motorral együtt elengednek, így nincs több pelyhes bukás elavult objektum miatt (#4880).
