@@ -25,6 +25,7 @@ from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.folder_hierarchy_wiring import wire_folder_hierarchy
 from support.print_wiring import wire_passport, wire_print
 from support.jpeg_factory import make_jpeg
+from support import keep_burkok
 
 
 @pytest.fixture(autouse=True)
@@ -70,6 +71,7 @@ def _build_qml_app(
     valodi_belyegkep: bool = False,
     email_vezerlo: bool = False,
     show_only_big_images: bool | None = False,
+    keep_modul=None,
 ):
     """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
 
@@ -358,12 +360,19 @@ def _build_qml_app(
     qt_app.processEvents()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     qt_app.processEvents()
+    # #4880: a teszt modulja `_KEEP…` listáiban tartott burkok a motorral
+    # együtt elavultak — a törlés UTÁN érvénytelenítjük és kiürítjük őket,
+    # különben címújrahasznosításkor a következő teszt objektuma helyett ők
+    # jönnek vissza. A törlés ELŐTT semmilyen objektumhoz nem nyúlunk: az a
+    # #4882 CI-n SIGSEGV-t okozott a DeferredDelete-ben.
+    if keep_modul is not None:
+        keep_burkok.modul_listait_elenged(keep_modul)
 
 
 @pytest.fixture
-def qml_app(qt_app, tmp_path):
+def qml_app(qt_app, tmp_path, request):
     """Teljes app tesztenként, funkció-szintű állapot-izolációval."""
-    yield from _build_qml_app(qt_app, tmp_path)
+    yield from _build_qml_app(qt_app, tmp_path, keep_modul=request.module)
 
 
 @pytest.fixture
