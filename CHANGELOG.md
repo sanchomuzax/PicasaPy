@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.78] – 2026-10-12
+
+- A tömeges átnevezésnél a „Dátum" jelölő a felvétel dátumát és idejét is a fájlnévbe teszi (a rendszer területi beállítása szerint, a fájlnévben tiltott jelek helyett kötőjellel), a névmezőbe nem írható be tiltott fájlnév-karakter, és a két jelölő („Dátum", „Képfelbontás") állása megmarad a következő megnyitásig (#4879).
+
 ## [0.9.77] – 2026-10-12
 
 - Albumból megnyitott képen a Ctrl+Delete és a nagy kép helyi menüjének törlés-tétele már nem a lemezről töröl, hanem eltávolítja a képet az albumból (a fájl megmarad); a menütétel felirata is „Eltávolítás az albumból”. Mappából megnyitott képen minden változatlan (#4621).
