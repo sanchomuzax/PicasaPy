@@ -11508,6 +11508,76 @@ ez kizárja a legközelebbi-egészű osztást.
 és azok goldenjeinek ellenőrzése ettől még a fejlesztői feladat része; ez a
 mérés csak a dokumentált 5 × 5 → 9 × 9 mintát zárja le.
 
+#### ⭐ Border — állapot-felülvizsgálat és a nyitott pontok (2026-10-12, #626)
+
+*Módszer: a `0x00bbe570` munkavégző prológusának és a `0x00bbe320` alkalmazó
+hívóhelyének újraszétszedése (`pdis.py`, capstone); a 9 × 9 natív golden
+összevetése a jelenlegi `draw_border()`-rel a fenti 4. szakasz bájtjaiból.
+Új QEMU-futás NINCS ebben a körben — ld. a „Nyitott” részt.*
+
+**1. A méret és a két ív — újra kiolvasva (megerősített).** A munkavégző
+prológusa (`0x00bbe570`–`0x00bbe5a8`): `T = arg5 + arg6`, a kimenet szélessége
+`W + 2T` (`eax = arg5 + arg6` → `lea ebp,[eax+ecx]`, majd `lea eax,[ecx+ebp*2]`),
+magassága `H + 2T + arg7` (`lea edx,[edx+ebp*2]`, majd `add edx,[esp+0x18c]`).
+Ahol a `W`/`H` a `arg3` forrásrekord `+0x08`/`+0x0c` mezője (`mov ecx,[eax+8]`,
+`mov edx,[eax+0xc]`). Tehát: **arg5/arg6 a két vastagság, arg7 a feliratsáv**.
+Ez egyezik az I.4/b és a 4. szakasz leírásával.
+
+**2. Az egész 9 × 9 golden újraszámolása (megerősített, ma ellenőrizve).**
+Az 5 × 5 `0xff204060` forrás, külső `0xff000000`, belső `0xffffffff`, `R=2`,
+`inner=outer=1`, caption 0 mintára a natív 9 × 9 RGB-tábla (fenti 4. szakasz,
+9 sor) és `draw_border(...)` kimenete: **0 / 81 képpont, 0 / 243 csatorna**
+különbség. Mérő: `/tmp/claude-1000/kd-r626/border_golden_check.py` (a golden
+sorait a spec szövegéből olvassa). Ez a 4. szakasz állítását ismétli meg; új
+natív adatot nem ad.
+
+**3. A PicasaPy-oldal elavult sora.** A 2026-09-19-es „A `Border` négy
+attribútumának EGYSÉGE” szakasz C-táblájában a PicasaPy-oszlop szerint
+„nincs teljes felbontású tényező”. Ez **ma már nem igaz**: a vastagság-skálát
+`elonezeti_arany.skalazott_vastagsag()` végzi (`× arány`, majd `trunc`), és az
+`chain_glimmer_handlers.apply_border_op()` hívja (#3377). A sarok (`cornerradius`)
+és a feliratsáv (`captionheight`) az elvárás szerint nem skálázódik; a
+feliratsáv egész-csonkítása a `dinamikus_csuszka.felirat_sorok()`-ban
+(`H/6` tartomány, `63`-at ad 640 magasságon) egyezik a 377. kör mérésével.
+
+**4. Nyitott pontok (a Border feltételes marad).**
+- **Feliratsáv a natív rajzolóban — NEM mérve.** Minden natív golden
+  `caption = 0`. A feliratsáv egész magassága (`captionheight` → `0x00bbe553`,
+  csonkítás `0x008eea90`) és a kitöltése csak a Picasa-exportból ismert
+  (`border__max`: 1360 × 1103, a felirat 63 sor). A sáv **színét** (külső vagy
+  belső) egyik forrás sem mondja ki; a PicasaPy `draw_border()` a vásznat
+  külső színnel tölti ki, a belső téglalap a felirat előtt véget ér. Ezt a
+  natív caption-futás nélkül NEM lehet bizonyítani.
+- **Általános méret/sugár-tartomány** — továbbra sincs mérve (csak az 5×5, 7×7,
+  9×8 esetek).
+- **A vastagság-szorzó pontossága — NYITOTT.** A `0x00bbe4d0`/`0x00bbe51b`
+  `fmul dword` (32 bites szorzó) és a PicasaPy `trunc(v · arány)` (double) között
+  a float32 kerekítés eltérhet a csonkítási határon. Ezt egy `arány` ≠ 1 esetű
+  natív futás tudja eldönteni; ma nincs rá adat.
+- **Arg-térkép — részleges.** Az arg3 (forrásrekord), arg5, arg6, arg7 megvan.
+  Az arg1, arg2, arg4 és arg8–arg9 jelentése (színek, sugár, kimeneti rekord)
+  ebben a körben NEM lett rögzítve; a caption-QEMU-futáshoz ezt előbb kell.
+
+**Következő lépés (a Border-on belül, nevesített):** (a) az `0x00bbe320` hívóhelyének
+(`0x00bbe41c`, nyolc `push` a `0x00bbe401`–`0x00bbe41b` sorban; a két érték tényleges típusa és a hívott `ret 0xc` cleanup-egyezése még nincs kiolvasva) argumentum-sorrendjének teljes kiolvasása; (b)
+QEMU-futás a `caption = 2` (vagy 3) és `R = 0` eseteken, a `draw_border()` ellenében;
+(c) egy `arány` ≠ 1 eset a `0x00bbe4d0`/`0x00bbe51b` float32-os szorzóra.
+
+**Bizonyítottsági fok (ez a szakasz):** a 9 × 9 újraellenőrzés `megerősített`
+(ismételhető, a spec bájtjaiból); a prológus-arg-térkép `megerősített` a
+három megnevezett argumentumra; a feliratsáv színe, az általános tartomány és a
+float32-szorzó `NYITOTT`.
+
+#### #626 leltár — `Border` sor frissítése (2026-10-12)
+
+| művelet | pixelképlet | méret / skála | felirat (caption) | összesített állapot |
+|---|---|---|---|---|
+| `Border` | **megerősített** (`0x00bbe570`, `0x00aa13b0`, `0x00aa1840`; 3 QEMU-golden + ma újraellenőrizve) | **megerősített** (`W+2T`, `H+2T+felirat`; a vastagság-skála a PicasaPy-ban is él) | **nyitott** a natív rajzolóban (színe és futás nélkül); a magasság export-mért | **feltételes** |
+
+A sor állapota **nem** „lezárt”: a feliratsáv natív pixelútja és a
+float32-es szorzó nyitott. A 2026-10-06-os „teljes egyezés” a `caption = 0`
+mintákra igaz, és így marad megnevezve.
+
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
 *A 12. szakasz kimérte a binárisból, hogy az eredeti nem rendez át: a
