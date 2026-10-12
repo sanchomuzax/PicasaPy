@@ -170,19 +170,64 @@ pipái függetlenek.
 | 5 | Keresés a lemezen `Ctrl+Enter` · Eltávolítás a Picasából… |
 | 6 | Áthelyezés… · Törlés… |
 
-**#4644 — az F2 „Átnevezés…” rekord nem a Mappa menü része.** A Mappa
-főtömbje `0x00d6e1c0`-nál kezdődik, és `0x0055b28f` pontosan 17 rekorddal
-adja át a `0x005590c0` menüépítőnek. A `0x00d6e318` című F2 rekord a tömbön
-kívül van: a Kép menü „Csoportos szerkesztés” elemének `0x00d6e4b8`
-gyermekmutatója erre a címre mutat, a gyerekszám pedig `0x13` (19). Tehát
-az F2 a **Kép ▸ Csoportos szerkesztés** almenü első rekordja; a Mappa
-főmenü 12 tétele + 5 elválasztója ezzel összhangban van.
+**#4644 — az F2 „Átnevezés…” rekord nem a Mappa menü része (mért, 2026-10-12).**
+A Mappa főtáblája `0x00d6e1c0`-nál kezdődik. A `0x0055b289`–`0x0055b28f`
+hívás (`push 0x11`, `push 0x00d6e1c0`) pontosan 17 rekordot ad át a
+`0x005590c0` menüépítőnek. A 17 rekord mezőnkénti visszafejtése (rekordméret
+20 bájt; `+0x00` felirat-mutató — ha nulla, a tétel elválasztó; `+0x04`
+gyorsbillentyű-szöveg; `+0x08` jelzők; `+0x0a` parancsazonosító; `+0x0c`
+almutató; `+0x10` almenü-darabszám):
 
-A rekordot építő ágban a `0x0055b29c`–`0x0055b2a8` közötti
-`[0x00da03a8] & 0x200` ellenőrzés egyszeri menüinicializálási kapu, nem
-kijelölés- vagy nézetfeltétel. A rekord megjelenése az almenü
-megnyitásához kötött; az aktivált/szürke állapot kijelölésfüggését ez a
-vizsgálat nem állapítja meg.
+| k | cím | típus | parancs | megjegyzés |
+|---|---|---|---|---|
+| 0 | `0xd6e1c0` | tétel | `0x9c69` | |
+| 1 | `0xd6e1d4` | tétel | `0x9c6d` | Ctrl+4 |
+| 2 | `0xd6e1e8` | elválasztó | — | |
+| 3 | `0xd6e1fc` | tétel | `0x9c5e` | |
+| 4 | `0xd6e210` | tétel, almenü | — | almutató `0xd6e170`; darabszám `edi` (futásidőben kapott, nem mért) |
+| 5 | `0xd6e224` | elválasztó | — | |
+| 6 | `0xd6e238` | tétel | `0x9c72` | |
+| 7 | `0xd6e24c` | tétel | `0x9cd0` | |
+| 8 | `0xd6e260` | elválasztó | — | |
+| 9 | `0xd6e274` | tétel | `0x9c94` | Ctrl+Shift+P |
+| 10 | `0xd6e288` | tétel | `0x9c95` | |
+| 11 | `0xd6e29c` | elválasztó | — | |
+| 12 | `0xd6e2b0` | tétel | `0x9cba` | Ctrl+Enter |
+| 13 | `0xd6e2c4` | tétel | `0x9cce` | |
+| 14 | `0xd6e2d8` | elválasztó | — | |
+| 15 | `0xd6e2ec` | tétel | `0x9df4` | |
+| 16 | `0xd6e300` | tétel | `0x9d44` | |
+
+Ez 12 tétel + 5 elválasztó = 17, hat csoport — a fenti tétellistával
+egyezik. A tábla írása egyenes kódrész: a rekordokat nem jelző vagy feltétel
+választja ki. A `0x0055b2a2` ugrása (`[0x00da03a8] & 0x200`, egyszeri
+inicializálási kapu) a `0x0055b75b`-re a Csoportos-tábla írásait
+(`0x0055b2c9`–`0x0055b5b2`) hagyja ki; ez nem nézet- vagy kijelölésfüggő.
+
+**Az F2 rekord** (`0x00d6e318`) a *Kép ▸ Csoportos szerkesztés* gyermektáblája:
+19 rekord, 14 tétel + 5 elválasztó. A szülő a Kép-tábla `0x00d6e4ac`
+rekordja: `+0x0c` = `0x00d6e318`, `+0x10` = `0x13`. A `cmd 0x9d4f` két
+rekordban szerepel — Fájl ▸ Átnevezés… (`0x00d6da28`) és Kép ▸ Csoportos
+szerkesztés ▸ Átnevezés… (`0x00d6e318`). A Mappa/Album táblában nincs, és
+`RemoveMenu` sem törli.
+
+**Engedélyezés (nem láthatóság).** Az `EnableMenuItem(…, 0x9d4f, …)` két
+helyen szerepel (`0x0056e46f`, `0x0056e6e9`), egy frissítő függvényben,
+amely a `0x9c9a` (Fájl ▸ Törlés) és `0x9c97` (E-mail) azonosítókat is
+kezeli; ezért valószínűleg a Fájl popupot frissíti. A szürkítés feltétele:
+- `0x0056e46f`: engedélyezett, ha `[esp+0x12] ≠ 0` és `[edi+0x34a4] = 0`;
+- `0x0056e6e9`: engedélyezett, ha `[edi+0x34a4] = 0` és a `0x0057d430` hamis.
+  A `0x0057d430` = `[ecx+0xeac] ≠ 0` és `0x004ac8f0` igaz.
+
+Nem bizonyított: a `[esp+0x12]` és `[edi+0x34a4]` jelentése, a `0x004ac8f0`
+predikátum jelentése (mappa-e a kijelölt elem), és hogy a Kép ▸ Csoportos
+szerkesztés F2-tételének engedélyezését melyik frissítő kezeli.
+
+**Törlés a Mappa-táblából:** a kilenc `RemoveMenu`-hívás közül hét statikus
+azonosítóval fut (`0x9ca4`, `0x9ca5`, `0x9de1`, `0x9e10`, `0xa0b5`, `0xa0cb`
+kétszer); egyik sem a Mappa-tábla 12 tétele. Két hívás (`0x0056da6f`,
+`0x007a6336`) azonosítója dinamikus, nem fejtettem vissza, ezért ez a
+kijelentés csak a statikus hívásokra igaz.
 
 ### Kép — 7 tétel, 5 csoport
 
@@ -193,6 +238,14 @@ vizsgálat nem állapítja meg.
 | 3 | Elrejtés (i) · Megjelenítés (i) |
 | 4 | Arcok alaphelyzetbe állítása |
 | 5 | Tulajdonságok `Alt+Enter` |
+
+**Tábla-bizonyíték (mért, 2026-10-12, #4644).** A Kép-tábla `0x00d6e498`-nál
+kezdődik, 11 rekord (`0x0055ba4e`-nél, darabszám `0xb`): 7 tétel + 4
+elválasztó, öt csoport. A `Csoportos szerkesztés ▸` (`0x00d6e4ac`) gyermek-
+táblája a `0x00d6e318`-on kezdődik, 19 rekord = 14 tétel + 5 elválasztó.
+A Forgatás jobbra/balra (`0x9ca2`, `0x9ca3`) a gyermektáblában van, nem a
+főmenüben. Az F2 és a Forgatás táblázatbeli menü-oszlopát a
+`picasa-gyorsbillentyuk.md` §3.3 ennek megfelelően javítja.
 
 ### Létrehozás — 8 tétel, 3 csoport
 

@@ -313,11 +313,13 @@ sorozatból.
 | `0xd6e274` | Mappa/Album | Indexképek nyomtatása… | `Ctrl+Shift+P` | `0x9c94` |
 | `0xd6e2b0` | Mappa/Album | Keresés a lemezen | `Ctrl+Enter` | `0x9cba` |
 | `0xd6e318` | Kép ▸ Csoportos szerkesztés | Átnevezés… | `F2` | `0x9d4f` |
-| `0xd6e340` | Kép | Forgatás jobbra | `Ctrl+R` | `0x9ca2` |
-| `0xd6e354` | Kép | Forgatás balra | `Ctrl+Shift+R` | `0x9ca3` |
+| `0xd6e340` | Kép ▸ Csoportos szerkesztés | Forgatás jobbra | `Ctrl+R` | `0x9ca2` |
+| `0xd6e354` | Kép ▸ Csoportos szerkesztés | Forgatás balra | `Ctrl+Shift+R` | `0x9ca3` |
 | `0xd6e498` | Kép | Megjelenítés és szerkesztés | `Ctrl+3` | `0x9ca0` |
 | `0xd6e560` | Kép | Tulajdonságok | `Alt+Enter` | `0x9ca8` |
 | `0xd6e9b8` | Súgó | Súgó – tartalom és tárgymutató | `F1` | `0x9cac` |
+
+**#4644 (mért, 2026-10-12):** a `0xd6e318` (F2) és a `0xd6e340`, `0xd6e354` (Forgatás jobbra/balra) a *Kép ▸ Csoportos szerkesztés* gyermektáblájában van (19 rekord, 14 tétel + 5 elválasztó), nem a Kép főmenüben. A Mappa/Album tábla (`0xd6e1c0`, 17 rekord) egyiket sem tartalmazza. Részletek: `picasa-menusor-csoportok.md`, Mappa és Kép szakasz.
 
 **Amiben ez több, mint egy lista:** a `cmd` oszlop miatt látszik, hogy
 **három billentyű két-két külön parancsot** takar attól függően, melyik
