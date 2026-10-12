@@ -105,7 +105,7 @@ class TestSikeresAtvetel:
         kesz = _Fogo()
         v.importFinished.connect(kesz)
         _lefut(v, qt_app)
-        assert kesz.tetelek == [(3, 12, 4, 7, 2, 0)]
+        assert kesz.tetelek == [(3, 12, 4, 7, 2, 0, 0)]
 
     def test_futas_kozben_a_running_IGAZ_utana_hamis(self, vezerlo_gyar, qt_app, tmp_path):
         db3 = tmp_path / "Picasa2"
@@ -166,7 +166,7 @@ class TestIndexLepes:
 
         def vd(rekordok, ut):
             kapott.append((tuple(rekordok), ut))
-            return AtvetelJelentes(videodatum=3)
+            return AtvetelJelentes(videodatum=3, videodatum_hiba=2)
 
         v = self._vezerlo(tmp_path, vd)
         kesz, datum = _Fogo(), _Fogo()
@@ -176,7 +176,7 @@ class TestIndexLepes:
         v.waitForBackgroundWorkers(5.0)
         qt_app.processEvents()
         assert kapott == [(("r1",), tmp_path / "index.db")]
-        assert kesz.tetelek == [(1, 0, 1, 0, 0, 3)]
+        assert kesz.tetelek == [(1, 0, 1, 0, 0, 3, 2)]
         assert datum.tetelek, "a felület nem kapott frissítést"
 
     def test_az_index_lepes_az_iro_soron_fut(self, qt_app, tmp_path):

@@ -115,7 +115,7 @@ class _HamisVezerlo(QObject):
 
     from PySide6.QtCore import Property, Signal
 
-    importFinished = Signal(int, int, int, int, int, int)
+    importFinished = Signal(int, int, int, int, int, int, int)
     importFailed = Signal(str)
     noInstallationFound = Signal()
     runningChanged = Signal()
@@ -196,7 +196,7 @@ class TestAzELOFelulet:
     def test_a_JELENTES_szamai_megjelennek_a_feluleten(self, qt_app):
         parbeszed, vezerlo = _parbeszed(qt_app)
         QMetaObject.invokeMethod(parbeszed, "open", Qt.ConnectionType.DirectConnection)
-        vezerlo.importFinished.emit(3, 12, 4, 7, 2, 5)
+        vezerlo.importFinished.emit(3, 12, 4, 7, 2, 5, 1)
         qt_app.processEvents()
         eredmeny = _elem(parbeszed, "picasaImportResult").property("text")
         for szam in ("3", "12", "4", "7"):
@@ -207,14 +207,18 @@ class TestAzELOFelulet:
         videok = _elem(parbeszed, "picasaImportVideoDates")
         assert videok.property("visible") is True
         assert "5" in videok.property("text")
+        hiba = _elem(parbeszed, "picasaImportVideoDatesFailed")
+        assert hiba.property("visible") is True
+        assert "1" in hiba.property("text")
 
     def test_ha_nincs_kihagyott_a_sor_sem_latszik(self, qt_app):
         parbeszed, vezerlo = _parbeszed(qt_app)
         QMetaObject.invokeMethod(parbeszed, "open", Qt.ConnectionType.DirectConnection)
-        vezerlo.importFinished.emit(1, 1, 0, 0, 0, 0)
+        vezerlo.importFinished.emit(1, 1, 0, 0, 0, 0, 0)
         qt_app.processEvents()
         assert _elem(parbeszed, "picasaImportSkipped").property("visible") is False
         assert _elem(parbeszed, "picasaImportVideoDates").property("visible") is False
+        assert _elem(parbeszed, "picasaImportVideoDatesFailed").property("visible") is False
 
     def test_a_nincs_adat_eset_SZOVEGET_kap_nem_nullakat(self, qt_app):
         parbeszed, vezerlo = _parbeszed(qt_app)

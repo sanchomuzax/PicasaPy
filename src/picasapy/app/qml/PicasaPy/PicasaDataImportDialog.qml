@@ -44,6 +44,7 @@ Window {
     property int arc: 0
     property int kihagyott: 0
     property int videodatum: 0
+    property int videodatumHiba: 0
 
     function open() {
         importWindow.finished = false
@@ -55,6 +56,7 @@ Window {
         importWindow.arc = 0
         importWindow.kihagyott = 0
         importWindow.videodatum = 0
+        importWindow.videodatumHiba = 0
         importWindow.visible = true
     }
 
@@ -86,13 +88,14 @@ Window {
     Connections {
         target: (typeof picasaImportController !== "undefined")
             ? picasaImportController : null
-        function onImportFinished(mappak, kulcsszo, hely, arc, kihagyott, videodatum) {
+        function onImportFinished(mappak, kulcsszo, hely, arc, kihagyott, videodatum, videodatumHiba) {
             importWindow.mappak = mappak
             importWindow.kulcsszo = kulcsszo
             importWindow.hely = hely
             importWindow.arc = arc
             importWindow.kihagyott = kihagyott
             importWindow.videodatum = videodatum
+            importWindow.videodatumHiba = videodatumHiba
             importWindow.finished = true
         }
         function onImportFailed(message) {
@@ -217,6 +220,18 @@ Window {
             //: a Picasában módosított videó-dátumok átvétele (%1 videó)
             text: qsTr("%1 video date(s) taken over from Picasa.")
                 .arg(importWindow.videodatum)
+        }
+
+        Label {
+            objectName: "picasaImportVideoDatesFailed"
+            visible: importWindow.finished && importWindow.lastError === ""
+                && importWindow.videodatumHiba > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            color: Theme.ink
+            //: a videó-dátumok átvétele az indexbe nem sikerült (%1 videó); a kulcsszavak és helyek átvétele ettől még megtörtént
+            text: qsTr("%1 video date(s) could not be taken over; try again later.")
+                .arg(importWindow.videodatumHiba)
         }
 
         Label {

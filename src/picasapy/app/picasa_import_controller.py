@@ -63,10 +63,10 @@ _MANUAL_MAPPING_REQUIRED = "picasapy-manual-mapping-required"
 class PicasaImportController(BackgroundWorkerMixin, QObject):
     """`Eszközök ▸ Import a Picasából…` — a db3 adatainak átvétele."""
 
-    #: (mappák, kulcsszó, hely, arc, kihagyott, videódátum) — a felhasználónak
+    #: (mappák, kulcsszó, hely, arc, kihagyott, videódátum, videódátum-hiba) — a felhasználónak
     #: szóló számok. A `kihagyott` azt mondja meg, hány fotón volt db3-adat, de az
     #: ini-ben már állt érték: ott SZÁNDÉKOSAN nem nyúltunk hozzá.
-    importFinished = Signal(int, int, int, int, int, int)
+    importFinished = Signal(int, int, int, int, int, int, int)
     #: #4591: a videók dátuma az indexbe került — a rács/mappalista frissítendő
     datesApplied = Signal()
     #: a db3 olvasása vagy az írás hibára futott — a szöveg a felhasználóé
@@ -166,6 +166,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
             jelentes.arc,
             jelentes.kihagyott,
             jelentes.videodatum,
+            jelentes.videodatum_hiba,
         )
         if jelentes.videodatum:
             self.datesApplied.emit()

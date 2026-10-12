@@ -12,6 +12,7 @@ megváltoztathatja.
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
@@ -21,6 +22,8 @@ from picasapy.ini.io import load_or_empty
 from picasapy.ini.names import INI_NAME
 from picasapy.paths import path_key
 
+_log = logging.getLogger(__name__)
+
 #: (mappa útvonala, fájlnév, helyi ISO dátum)
 AtvettDatum = tuple[str, str, str]
 
@@ -29,6 +32,7 @@ def _mappa_azonosito(
     conn: sqlite3.Connection,
     mappa: str,
     kulcsok: dict[str, tuple[int, str]],
+    felepitve: list[bool],
 ) -> tuple[int, str] | None:
     """A mappa indexbeli (id, tárolt útvonal) párja; előbb pontos egyezés,
     aztán `path_key` alapon (más betűzés / szimbolikus útvonal). A kulcstáblát
@@ -38,10 +42,10 @@ def _mappa_azonosito(
     ).fetchone()
     if sor is not None:
         return sor["id"], sor["path"]
-    if not kulcsok:
+    if not felepitve[0]:
+        felepitve[0] = True
         for tarolt in conn.execute("SELECT id, path FROM folders"):
             kulcsok.setdefault(path_key(tarolt["path"]), (tarolt["id"], tarolt["path"]))
-        kulcsok.setdefault("", (0, ""))  # jelző: felépítve
     return kulcsok.get(path_key(mappa))
 
 
@@ -60,8 +64,9 @@ def atvett_datumokat_beir(
     beirt = 0
     erintett: dict[int, str] = {}
     kulcsok: dict[str, tuple[int, str]] = {}
+    felepitve = [False]  # a kulcstábla felépült-e (üres index is „felépült")
     for mappa, nev, datum in tetelek:
-        azon = _mappa_azonosito(conn, mappa, kulcsok)
+        azon = _mappa_azonosito(conn, mappa, kulcsok, felepitve)
         if azon is None:
             continue
         folder_id, tarolt_ut = azon
@@ -75,8 +80,17 @@ def atvett_datumokat_beir(
             beirt += db
             erintett[folder_id] = tarolt_ut
     for folder_id, ut in erintett.items():
-        sync_folder_date(
-            conn, folder_id, load_or_empty(Path(ut) / INI_NAME)
-        )
+        try:
+            dokumentum = load_or_empty(Path(ut) / INI_NAME)
+        except (OSError, ValueError) as hiba:
+            # olvashatatlan ini: a mappa dátumát a következő szinkron
+            # számolja újra; az átvett fotódátum így is bent marad
+            _log.warning(
+                "A mappa ini-je nem olvasható, a mappa dátuma nem frissült (%s): %s",
+                ut,
+                hiba,
+            )
+            continue
+        sync_folder_date(conn, folder_id, dokumentum)
     conn.commit()
     return beirt

@@ -21,7 +21,7 @@ import pytest
 from picasapy.index.database import open_index
 from picasapy.index.sync import sync_tree
 from picasapy.pmpimport import PathRemapper, iter_photo_records
-from picasapy.pmpimport.db3_atvetel import rekordokat_atvesz
+from picasapy.pmpimport.db3_atvetel import rekordokat_atvesz, videodatumokat_atvesz
 from picasapy.pmpimport.videodatum import atveendo_datum, filetime_helyi_iso
 from support.pmp_factory import build_pmp_column, build_thumb_index
 
@@ -104,7 +104,7 @@ def _override(index_ut, nev):
 
 def test_mp4_eltero_filetime_atveszi(tmp_path, fotomappa, index_ut):
     db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     assert _override(index_ut, "film.mp4") == _helyi(MODOSITOTT)
     assert jelentes.videodatum == 1
     # a videófájl és a .picasa.ini érintetlen
@@ -114,7 +114,7 @@ def test_mp4_eltero_filetime_atveszi(tmp_path, fotomappa, index_ut):
 
 def test_az_atvett_datum_a_picasa_modositotta_helyi_ido(tmp_path, fotomappa, index_ut):
     db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
-    rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     vart = (
         datetime(2023, 11, 12, 8, 9, 10, tzinfo=UTC)
         .astimezone()
@@ -126,14 +126,14 @@ def test_az_atvett_datum_a_picasa_modositotta_helyi_ido(tmp_path, fotomappa, ind
 
 def test_mp4_egyenlo_filetime_nem_ir(tmp_path, fotomappa, index_ut):
     db3 = _db3(tmp_path, [("film.mp4", MP4, FAJLIDO, FAJLIDO)])
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     assert _override(index_ut, "film.mp4") is None
     assert jelentes.videodatum == 0
 
 
 def test_jpg_eltero_filetime_nem_ir(tmp_path, fotomappa, index_ut):
     db3 = _db3(tmp_path, [("kep.jpg", JPEG, MODOSITOTT, FAJLIDO)])
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     assert _override(index_ut, "kep.jpg") is None
     assert jelentes.videodatum == 0
 
@@ -152,7 +152,7 @@ def test_meglevo_override_nem_ir_felul(tmp_path, fotomappa, index_ut):
             ("film2.mp4", MP4, MODOSITOTT, FAJLIDO),
         ],
     )
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     assert _override(index_ut, "film.mp4") == "2000-01-01T00:00:00"
     assert _override(index_ut, "film2.mp4") == _helyi(MODOSITOTT)
     assert jelentes.videodatum == 1
@@ -160,7 +160,7 @@ def test_meglevo_override_nem_ir_felul(tmp_path, fotomappa, index_ut):
 
 def test_a_szinkron_megtartja_az_atvett_datumot(tmp_path, fotomappa, index_ut):
     db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
-    rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     (fotomappa / "film.mp4").write_bytes(b"xyz")  # a fájl változik
     with open_index(index_ut) as conn:
         sync_tree(conn, fotomappa.parent)
@@ -218,7 +218,8 @@ def test_hibas_index_mellett_az_ini_atvetel_lefut(tmp_path, fotomappa):
         [("film.mp4", MP4, MODOSITOTT, FAJLIDO)],
         hely={1: (47.497912, 19.040235)},
     )
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=rossz)
+    rekordok = _rekordok(db3, fotomappa)
+    jelentes = rekordokat_atvesz(rekordok) + videodatumokat_atvesz(rekordok, rossz)
     ini = (fotomappa / ".picasa.ini").read_text(encoding="utf-8")
     assert "geotag=47.497912,19.040235" in ini
     assert jelentes.hely == 1
@@ -229,7 +230,7 @@ def test_hibas_index_mellett_az_ini_atvetel_lefut(tmp_path, fotomappa):
 def test_a_mappa_datuma_az_atvett_datum_lesz(tmp_path, fotomappa, index_ut):
     """J2: a mappa dátuma a legrégebbi fotó effektív dátuma."""
     db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
-    rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     with open_index(index_ut) as conn:
         datum = conn.execute("SELECT date FROM folders").fetchone()[0]
     assert datum == _helyi(MODOSITOTT)
@@ -243,7 +244,7 @@ def test_a_mappa_datum_kezi_felulirasa_megmarad(tmp_path, fotomappa, index_ut):
         sync_tree(conn, fotomappa.parent)
         elotte = conn.execute("SELECT date FROM folders").fetchone()[0]
     db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
-    rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     with open_index(index_ut) as conn:
         utana = conn.execute("SELECT date FROM folders").fetchone()[0]
     assert elotte == "2001-02-03"
@@ -259,7 +260,7 @@ def test_metaadat_datumos_nem_jpeg_nem_kap_felulirast(tmp_path, fotomappa, index
         )
         conn.commit()
     db3 = _db3(tmp_path, [("kep.jpg", 6, MODOSITOTT, FAJLIDO)])  # 6 = nem JPEG
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     assert _override(index_ut, "kep.jpg") is None
     assert jelentes.videodatum == 0
 
@@ -271,7 +272,7 @@ def test_eltero_taken_at_mellett_a_videodatum_ir(tmp_path, fotomappa, index_ut):
         )
         conn.commit()
     db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     assert _override(index_ut, "film.mp4") == _helyi(MODOSITOTT)
     assert jelentes.videodatum == 1
 
@@ -295,7 +296,7 @@ def test_a_mappa_nem_pontos_utegyezessel_is_megtalalhato(tmp_path, fotomappa, in
         conn.execute("UPDATE folders SET path = path || '/.'")
         conn.commit()
     db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
-    jelentes = rekordokat_atvesz(_rekordok(db3, fotomappa), index_path=index_ut)
+    jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
     assert _override(index_ut, "film.mp4") == _helyi(MODOSITOTT)
     assert jelentes.videodatum == 1
 
@@ -313,3 +314,23 @@ def test_a_helyi_ido_atalakitas_hibaja_naplozva(tmp_path, fotomappa, caplog, mon
     with caplog.at_level("WARNING"):
         assert vd.atveendo_datum(rek) is None
     assert "helyi időre" in caplog.text
+
+
+def test_olvashatatlan_ini_mellett_a_jelentes_megmarad(
+    tmp_path, fotomappa, index_ut, caplog, monkeypatch
+):
+    """Ú2: a mappa ini-je nem olvasható — a dátum-átvétel jelentése megmarad,
+    nem dobódik kivétel, a mappa dátuma a következő szinkronra marad."""
+    import picasapy.index.atvett_datum as ad
+
+    def nem_olvashato(_ut):
+        raise PermissionError("nincs olvasási jog")
+
+    monkeypatch.setattr(ad, "load_or_empty", nem_olvashato)
+    db3 = _db3(tmp_path, [("film.mp4", MP4, MODOSITOTT, FAJLIDO)])
+    with caplog.at_level("WARNING"):
+        jelentes = videodatumokat_atvesz(_rekordok(db3, fotomappa), index_ut)
+    assert "nem olvasható" in caplog.text
+    assert jelentes.videodatum == 1
+    assert jelentes.videodatum_hiba == 0
+    assert _override(index_ut, "film.mp4") == _helyi(MODOSITOTT)

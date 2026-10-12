@@ -9563,6 +9563,11 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
             <translation>%1 videó dátuma átvéve a Picasából.</translation>
         </message>
         <message>
+            <source>%1 video date(s) could not be taken over; try again later.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 videó dátumát nem sikerült átvenni; próbáld meg később újra.</translation>
+        </message>
+        <message>
             <source>%1 photo(s) were left untouched because they already had data.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 fotóhoz nem nyúltunk hozzá, mert azoknál már volt adat.</translation>

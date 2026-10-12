@@ -48,9 +48,9 @@ A db3 beolvasása (`importer.iter_photo_records` dolga).
 ⚠️ Új függőség: a `pmpimport` az `index/` csomagot is használja (a videódátum
 az indexbe megy, `index/atvett_datum.py`) — eddig csak az `ini/`-t.
 
-Az `index_path` megadásakor a nem-JPEG rekordok Picasában módosított
-dátuma (az 1. FILETIME, ha eltér a 2.-tól) a `photos.taken_at_override`-ba
-kerül az `index/` API-n át; a `.picasa.ini` és a fájl érintetlen. Az
+A `videodatumokat_atvesz` a nem-JPEG rekordok Picasában módosított
+dátumát (az 1. FILETIME, ha eltér a 2.-tól) a `photos.taken_at_override`-ba
+írja az `index/` API-n át; a `.picasa.ini` és a fájl érintetlen. Az
 indexben még nem szereplő fotó kimarad.
 
 ⚠️ **A futtatónak MA sincs hívója a felületről**: a `rekordokat_atvesz`-t
@@ -299,7 +299,6 @@ def rekordokat_atvesz(
     rekordok: Iterable[PhotoRecord],
     *,
     backup: bool = True,
-    index_path: Path | None = None,
 ) -> AtvetelJelentes:
     """A beolvasott db3-rekordok kulcsszavainak és helyadatának kiírása.
 
@@ -311,7 +310,6 @@ def rekordokat_atvesz(
     másik gépre mutat), a mappa kimarad — az import CSAK OLVAS a db3-ból, a
     fotók mellé viszont nem talál ki könyvtárat.
     """
-    rekordok = tuple(rekordok)
     osszes = AtvetelJelentes()
     for mappa, tetelek in _mappankent(rekordok).items():
         if not mappa.is_dir():
@@ -337,9 +335,6 @@ def rekordokat_atvesz(
             arc=vegso.arc,
             kihagyott=vegso.kihagyott,
         )
-    if index_path is not None:
-        # az ini-ciklus UTÁN: az index hibája nem viheti el az ini-átvételt
-        osszes = osszes + videodatumokat_atvesz(rekordok, Path(index_path))
     return osszes
 
 
