@@ -23,7 +23,14 @@ _LISTA_ELOTAG = "_KEEP"
 
 def keep_listak(modulok: Iterable[object] | None = None) -> list[list]:
     """A betöltött modulok `_KEEP…` nevű, modulszintű listái."""
-    modulok = list(sys.modules.values()) if modulok is None else modulok
+    if modulok is None:
+        # CSAK a tesztmodulok: a `sys.modules` teljes bejárása (`vars()`) a
+        # PySide6 lusta almoduljait is megérinti, és a motor bontása közben
+        # összeomlást okozott (#4882 CI, SIGSEGV a DeferredDelete-ben)
+        modulok = [
+            modul for nev, modul in list(sys.modules.items())
+            if nev.rsplit(".", 1)[-1].startswith("test_")
+        ]
     listak = []
     for modul in modulok:
         try:
