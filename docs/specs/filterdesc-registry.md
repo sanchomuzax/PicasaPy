@@ -4286,7 +4286,7 @@ eleje.
 | `HSVGradientMap` | `0x008f03ec` | `0x00bbc190` | `0x00bb7c80` (435 b) | `0x00bbc260` (1448 b) | hueOffset@0x44 |
 | `IR` | `0x008f0a14` | `0x00bc3d80` | `0x00bc3f50` (395 b) | — | greenglow@0x2c, greenglowalpha@0x34, redweight@0x3c |
 | `ImageOperation` *(ős)* | `0x008f0b0c` | `0x00c07709` | `0x00c07709` (42 b) | — | — |
-| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34 |
+| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34; +0x3c Blur(R,R,q3), +0x40/+0x44 Multiply(S); a teljes kimenet feltétele nyitott, ld. 2a |
 | `MultiplyColorMatrix` | `0x008f0024` | `0x00bb7730` | `0x00bc16b0` (428 b) | `0x00bb77a0` (165 b) | multiplier@0x28 |
 | `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
 | `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
@@ -4828,6 +4828,83 @@ bináris futtatása qemu-i386 alatt, egyező pixelbájtokkal. A felsorolt
 szintetikus mérések nem fedik le a teljes `filterdesc.xml` LocalContrast
 láncot, annak blur-/blend-határait vagy export-goldenét; ez a nagyobb effekt
 szintjén nyitott marad.
+
+### 2a. `LocalContrastImageOperation` — a builder feloldva, a teljes exportmérés nyitott (#4907, 2026-10-12)
+
+**Bizonyítottsági fok: `nyitott` a jegy teljes kimeneti feltételére.** A builder
+gyerekosztályait és az utasítás-összeállító hívást a bináris megerősíti; a 684-es
+Picasa-export két aktív HDR-beállítást ad, a harmadik HDR-export viszont
+`Fade=100`-zal nem méri a natív művelet látható kimenetét. Nincs három aktív
+natív kimenet bájtszintű összevetése.
+
+**Builder és hívási határ (helyi diszasszemblálás + RTTI).** A
+`LocalContrastImageOperation` vtáblája `0x00cf0a7c`; a `+0x1c` slot értéke
+`0x00bc4810`. A builder (`0x00bc41e0`) a `0x00bc1250` Nested-konstruktort,
+`0x00bb7680` MultiplyColorMatrix-konstruktort és `0x00bbf780` GetVar-konstruktort
+hívja. A konstruktorok által beírt végső vtábla-címeket az RTTI nevei azonosítják:
+`0x00cf0774` = `NestedImageOperation`, `0x00cf0024` =
+`MultiplyColorMatrixImageOperation`, `0x00cf06f0` = `GetVarImageOperation`.
+A `0x00bbf780` a `BlendImageOperation` alaprészt (`0x00cf0b2c`) is inicializálja,
+majd a végső GetVar-vtáblát írja be. A vtable-adatok közvetlen kiolvasása
+megegyezik az RTTI-táblával. A builder teljes Add/Subtract sorrendje és az
+alkalmazó által frissített Blur/Multiply mezők a
+`docs/specs/filters-decoded.md` „HDR” szakaszban, a mód-sorszámok e lap
+`BlendInstruction` szakaszában vannak rögzítve.
+
+A `0x00bc4ae0` `[vtbl+0x1c]` hívása ezen a vtáblán `0x00bc4810`-ra érkezik.
+Ez az `ApplyInstruction`-t (`0x00bc51d0`, vtable `0x00cf0f18`) fűzi az
+utasításlistához, majd a `0x00bc13e0` végigjárja a gyerekeket és azok
+`vtable+0x0c` metódusát hívja. Ez az utasítások összeállítása, nem képpontfutás.
+A képpont-végrehajtás az `ApplyInstruction` `0x00bd0cc0` metódusán át az adott
+művelet `vtable+0x18` munkavégzőjéhez kerül; a `BlendInstruction` keverője
+`0x00bd0700`. Tehát a `0x00bc4810` nem a teljes lánc egyetlen képpont-futtatója.
+Az utasításlista legfelső szintű végrehajtójának hívója és hívási szerződése
+ebben a körben nem lett visszakövetve.
+
+**Picasa-export összevetés (684-es készlet).** Az `.picasa.ini`-ben rögzített
+HDR-paraméterek (`hdr__min.jpg`, `hdr__alap.jpg`) és exportjaik alapján a két
+Fade=0 eset aktív natív lánc. A ΔE a dekódolt RGB-pufferek CIE76 átlagos
+eltérése; a táblázatban hat tizedesre kerekítve szerepel. Az egyező bájtok
+száma az 960×640×3 bájtos pufferekre vonatkozik, nem nyers natív kimeneti fájlra.
+
+| HDR-beállítás (R, S, Fade) | `hdr_local_contrast` ↔ Picasa-export, ΔE | `xml_local_contrast` ↔ Picasa HDR-export, ΔE | XML-egyező bájt |
+|---|---:|---:|---:|
+| min (1,3; 1; 0) | 0,187638 | 1,120346 | 732 550 / 1 843 200 |
+| alap (20; 3; 0) | 0,264679 | 1,416554 | 695 673 / 1 843 200 |
+
+A `hdr_local_contrast`-tal végzett oszlop a mai renderer és az eredeti
+Picasa-export összevetése, nem az eredeti gépi kód közvetlen futtatása. A
+`LocalContrast` XML-effekt saját három export-goldenje a `xml_local_contrast`
+modellel rendre 0,120932 (R=1,3/S=1), 0,159203 (R=15/S=1,5) és 0,257918
+(R=40/S=3) ΔE-t ad; ezek az XML-effektet ellenőrzik, nem a natív
+HDR-műveletet.
+
+| HDR-beállítás | forrás ↔ Picasa-export, ΔE | átlagos előjeles csatornaeltolódás |
+|---|---:|---:|
+| max (80; 7; 100) | 0,120932 | 0,002686 |
+
+A max export beállítása a mérési fájlban `HDR=1,80,7,100`; a szállított
+`filterdesc.xml` `BlendAlpha=1-(Fade/100)` kifejezése Fade=100-nál nulla.
+Ezért a max sor nem harmadik aktív natív (Radius, Strength) pixelmérés.
+
+**Cáfoló kísérlet (15.2).** A hipotézis, hogy a natív művelet és az XML-es
+`LocalContrast` a közös min-beállításon (R=1,3/S=1) ugyanazt a képet adja,
+megbukik: a `xml_local_contrast` C=1-nél a bemenetet hagyja változatlanul,
+míg a Picasa HDR min export forrástól mért ΔE-je 1,120346, átlagos
+csatornaeltolódása 0,479735. Kontrollként ugyanennek a 684-es forrásnak a
+Picasa `LocalContrast` min exportja 0,120932 ΔE-re van a forrástól, és az
+XML-modell is 0,120932 ΔE-re van attól az exporttól. A páros exportkontroll
+azt mutatja, hogy a HDR min eltérése meghaladja az ugyanazon forrás
+újramentési zaját; ez a cáfolat az aktív min-beállításra szól, nem teljes
+bájtpontos natív láncfuttatás.
+
+**Kész, ha — továbbra is nyitva:** legyen legalább három különböző, Fade=0-s
+natív HDR-export vagy eredeti gépi kóddal futtatott teljes lánckimenet, és
+mindegyiket a megfelelő bemeneten számolt `xml_local_contrast` dekódolt
+képpontbájtjaival kell összevetni. A meglévő harmadik paraméterpárhoz a
+684-es készlet LocalContrast-max értéke (R=40/S=3) ad pontos összehasonlító
+beállítást; natív HDR-export ehhez **NINCS MEG**. A JPEG-export miatt a fájl
+nyers bájtjainak egyezése önmagában nem pixelbizonyíték.
 
 ### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
 
