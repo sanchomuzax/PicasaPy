@@ -209,6 +209,21 @@ def _grouped_paths(report) -> list[str]:
     return list(seen)
 
 
+
+# A duplikátum-algoritmus csak tényleges kereséskor kell; a főablak
+# vezérlőinek felállítása ne töltse be a képfeldolgozó magot (#4913). A két
+# modulszintű név megmarad, hogy a tesztek fogantyúként cserélhessék.
+def compute_dhash(path):
+    from picasapy.dedup.phash import compute_dhash as _compute_dhash
+
+    return _compute_dhash(path)
+
+
+def find_duplicates(*args, **kwargs):
+    from picasapy.dedup import find_duplicates as _find_duplicates
+
+    return _find_duplicates(*args, **kwargs)
+
 class DedupController(BackgroundWorkerMixin, QObject):
     """A `DedupDialog.qml` háttér-hídja: keresés indítása és a csoportok
     feloldása (áthelyezés vagy törlés)."""
@@ -383,11 +398,6 @@ class DedupController(BackgroundWorkerMixin, QObject):
         Ugyanez a gyorstár szolgálja ki a PONTOS réteg Picasa-gyorskulcsát
         is (#1494, `originfast`): a második körben a változatlan képek
         fájlvégeit sem kell újra beolvasni."""
-        # A duplikátum-algoritmus csak tényleges kereséskor kell; a főablak
-        # vezérlőinek felállítása ne töltse be a képfeldolgozó magot (#4913).
-        from picasapy.dedup import find_duplicates
-        from picasapy.dedup.phash import compute_dhash
-
         keys = _fajl_azonossagok(photos)
         cached = load_dhashes(conn, tuple(keys.values()))
         pending: list[tuple[str, int, int, int]] = []
