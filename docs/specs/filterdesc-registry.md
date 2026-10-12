@@ -2831,10 +2831,143 @@ az utasításszintű, külön szorzatonkénti `sar 9`-cel is egyezik.
 
 | művelet | pixelképlet | `UseAlpha` | összesített állapot |
 |---|---|---|---|
-| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a művelet közvetlen attribútumolvasója nem kezeli a `UseAlpha`-t; esetleges külső node/kompozitáló hatása nincs igazolva | **feltételes** |
+| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a művelet közvetlen attribútumolvasója nem kezeli a `UseAlpha`-t; a `usealpha` írása (`0x009cb3fa`) a `+0x20a` mezőt érinti, de a ColorMatrix-példány 0x28 bájtos, így ez a mező nem lehet annak tagja; az usealpha-ág natív futása a #4909 körben nem sikerült (ld. „#4909”) | **feltételes** |
 
 Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyasztójának
 és a többi #626 műveletnek a feltárását nem zárja le.
+
+#### #626 — `ColorMatrix.UseAlpha`: a sztring és a fogyasztó-kódhely (2026-10-12, statikus; natív mérés NEM sikerült)
+
+**Kérdés.** Van-e a `UseAlpha="true"` attribútumnak (`filterdesc.xml:797`, `:811`)
+olyan fogyasztója a binárisban, amely a `ColorMatrix` működését megváltoztatja?
+
+**Statikus lelet (a `string_xrefs` index, a Picasa3.exe).**
+
+- A `usealpha` sztring (kisbetűs, `0x00c7caf4`) **egyetlen** függvényből hivatkozott:
+  `0x009ca5e0`. Kis- és nagybetűre nézve sem találtam más `UseAlpha`/`usealpha`
+  sztringet az indexben.
+- A `0x009ca5e0` nem a `ColorMatrix` olvasója. Ugyanabban a függvényben a
+  `Tooltip`, `Help`, `Label`, `Text`, `MaintainOffset`, `MaintainRatio`,
+  `XConstraint`, `YConstraint`, `AbsXConstraint`, `Property`, `break`, `dither`
+  nevek is szerepelnek: ez **elrendezési (UI-) elemek attribútum-diszpécsere**.
+- A diszpécser a `usealpha` egyezésnél a 0x20a eltolású bájtot írja. Az
+  objektum típusát nem azonosítottam. Két másik függvény (`0x00618050`,
+  `0x0053fe30`, a dekompilált kötegekben) ugyanezt az eltolást olvassa, de
+  ott egy `ytBitmapNode`-jellegű objektumra és egy 511 bájtos pufferre utal;
+  egyiket sem kötöttem a `ColorMatrix`-hoz.
+- A `ColorMatrix` olvasója (`0x00bc1620`, a közös `0x00bc4900`) nevei között
+  nincs `usealpha` (a 4.9 szakasz felsorolása szerint).
+
+**Következtetés (csak ebből a statikus leletből).** A `UseAlpha` név a bináris
+egyetlen függvényében él, az pedig egy UI-elem diszpécser. Ebből az következik,
+hogy a Glimmer-művelet attribútumútjában a flagnek nincs ismert fogyasztója. Ez
+**nem** bizonyítja, hogy nincs hatása: az indexben a táblázatos vagy adat-szintű
+hivatkozások (nem kód-immediate) nem látszanak.
+
+**Natív próba (2026-10-12, `qemu-i386`, `0x009ca5e0`).** A harnessel a diszpécsert
+egy nullázott, 0x400 bájtos objektummal és a `usealpha`/`UseAlpha` névvel
+hívtam. **Nem sikerült:** a `memcmp`-ekkel (`0x00bf5616`) ellenőrzött
+elágazás után a futás egy CRT-hibaágra (`0x00bef7xx`) ment, így a
+`usealpha`-ágat nem mértem. A hívási keret (melyik argumentum a név, melyik
+az érték, és milyen objektumot vár a `0x009cc01d`-es ág) még nincs
+igazolva. **A natív mérés tehát ebben a körben nem történt meg.**
+
+**Kész, ha** (a következő körhöz): (1) a `0x009ca5e0` keretének dekompilált
+argumentum-szerepe — a `memcmp`-ek hívási sorrendje alapján —, és egy olyan
+objektum, amelyen a `usealpha`-ág ténylegesen lefut; (2) a `0x20a` bájt
+fogyasztójának azonosítása a `ColorMatrix` objektumtípusán (vagy a
+kizárása); (3) ha (2) negatív, a `UseAlpha`-ra csak az (1) natív eredménye
+alapján lehet a `ColorMatrix` leírójának hatását kimondani.
+
+*Bizonyítottsági fok: **megerősített** a sztring-index egyetlen találatára
+(a `string_xrefs.csv`, a Picasa3.exe-ben); **feltételes** a `0x009ca5e0`
+UI-diszpécser-jellegére (a sibling-nevek és a `memcmp` hívás alapján);
+**nyitott** a `0x20a` objektumtípusa és a `ColorMatrix`-hatás. Natív mérés nincs.*
+
+#### #4909 — a usealpha-ág natív próbája és a `+0x20a` mező (2026-10-12, qemu-i386): a célág NEM futott le
+
+**Kérdés (a jegyből).** Lefut-e natívan a `0x009ca5e0` usealpha-ága, és a
+`+0x20a` mező olvasói közül melyik esik ColorMatrix-objektumra? Hat-e a Comicize
+két `UseAlpha="true"` attribútuma a pixelekre?
+
+**Eredmény röviden.** A `usealpha`-ág (`0x009cb3fa`–`0x009cb474`) natív futtatása
+**nem sikerült**: a tizenhat próba egyike sem érte el a `0x009cb3fa` címet.
+Statikusan két dolog igazolható: (1) a flag **nem lehet a ColorMatrix-példány
+mezője** (a példány 0x28 bájtos, a `+0x20a` mező kívül esik rajta); (2) a flag
+célobjektuma legalább 0x20b bájtos. A pixelhatás **nyitott**. Kész, ha: NEM
+teljesült. Becsült érték és illesztett képlet nincs.
+
+**A hívási keret** (a hívó `0x009cc5d0`, a hívás a `0x009ccb59`-nél; a diszpécser
+elejének `memcmp`-jei és a `mov esi, edx` alapján):
+
+- `ecx` (= `edi`): a sor, amelynek elején az elemnév áll (`break`, `Property`,
+  `Tooltip`, `Help`, `Label`, `Text` összevetésével döntődik el az ág);
+- `edx` (= `esi`): az attribútumnév, amelyet a `0x009cb3fa` ág a `usealpha`
+  literállal vet össze;
+- veremargumentum: a `CELL` címe; `[CELL]` a célobjektum mutatója (`mov eax, [ebp]`).
+
+**Ágak a diszpécser elején** (qemu-trace szerint):
+
+- `break` → `call [0xc4053c]`, majd kilépés (`0x009cc4a9`);
+- `Property` → `0x009ca6d9`, az érték-elemző `0x009c82c0` (lásd lent);
+- `Label` → `0x009c98a0`;
+- egyéb sor (pl. `Foo`) → `0x009cc01d` → `0x009c7ee0` → hibaág (`0x009c3270`).
+
+**A `0x009c82c0` bemenete.** A `Property` szó után **kötelezően szóköz** áll:
+a `strchr(sor, ' ')` (`0x00bf7fa0`) NULL-t ad szóköz nélkül, és az azt követő
+`mov cl, [eax]` olvasás összeomlik (a `Property`-próbánál a `0x009c82f2`-n).
+Utána `[A-Za-z0-9.-]` karakterekből álló azonosító következik.
+
+**Az usealpha-ág írása** (`0x009cb448`–`0x009cb474`, a disassembly alapján): ha
+a név `usealpha`, és `[CELL]` nem nulla, a kód a `[obj+0x20a]` bájtot
+összeveti a `[esp+0x1c]` alsó bájtjával; ha különbözik, OR-olja a `[obj+8]`-at,
+majd a `[obj+0x20a]`-ba az alsó bájtot írja. Ha `[CELL]` null, `4`-gyel tér vissza
+(`0x009cb453`). A `[esp+0x1c]` forrása (a `Property`-érték elemzésének melyik
+kimenete) és a `[obj+8]` OR-maszkja (`edi`) a környezetben nincs azonosítva.
+
+**Natív próbák** (qemu-i386; a driverek és a naplók a
+`/tmp/claude-1000/kd-r4909/` alatt, a kör végén törölve):
+
+| # | sor (`ecx`) | név (`edx`) | shim | eredmény |
+|---|---|---|---|---|
+| A | `Label`, `ColorMatrix`, `Comicize`, `Foo` | `usealpha` | nincs | SIGSEGV a `0x100021c0` IAT-stubnál (`GetModuleFileNameA`); `Foo`: `0x009cc01d` → hibaág `0x009c3270` |
+| B | `Property`, `Text`, `Tooltip`, `break` | `usealpha` | nincs | SIGSEGV; `Property`: `0x009c82f2`-nél (nincs szóköz) |
+| C | `Property usealpha true`, `Property fontsize 12`, `Property ColorMatrix true` | `usealpha` (és `true`) | nincs | SIGSEGV a `0x100021c0` stubnál |
+| D | `Label`, `Property usealpha true`, `Property ColorMatrix true`, `Property usealpha 1` | `usealpha` | van + harness-helperek | SIGSEGV `0x00bef903`-nál |
+
+A `0x00bef903` egy `push dword [edi*8 + 0xd24014]` utasítás: az `edi` indexet
+a driver nem inicializálja, a `0xd24014` tábla pedig globális, amelyet a
+futtatott kód nem tölt fel. A `GetModuleFileNameA` shim (`extra_iat`, a harness
+`.org 0x1000` blokkjában) a `0x100021c0` stubot megszünteti, de a w1-harness
+alapértelmezett segédrutinjai nélkül a futás a `0x10000300`-on összeomlik; az
+egyedi `asm` paraméterrel a harness `.org 0x100`+ blokkját meg kell tartani.
+
+**A `+0x20a` olvasóinak szűrése ColorMatrix-objektumra.** A ColorMatrix-példányt a
+`0x00bb3461` helyen `push 0x28`-cal foglalja (allokáció `0x00c0769f`), a
+konstruktor (`0x00bc1570`) a `+0x00`–`+0x24` mezőket tölti fel (vtable
+`0x00cf0798`). Mivel a példány 0x28 bájtos, egyik olvasó sem olvashat
+ColorMatrix-példányról `+0x20a`-t érvényes mezőként. Ez a szűrés **üres
+halmazt** ad, feltéve, hogy nincs más ColorMatrix-allokációs hely: a
+konstruktor hívóit csak a `0x00bb31f0` ágon ellenőriztem, a teljes hívólistát
+nem.
+
+**Nyitott jelölt, nem igazolt.** A konstruktor a `[obj+0x20]` bájtot nullázza
+(`mov byte [eax+0x20], cl`). Ez lehet egy logikai mező, de **nem azonosítottam
+UseAlpha-ként**; a `0x00bc4900` közös olvasó a `maskWithSourceAlpha`-t kezeli, és
+a két név viszonya nincs megvizsgálva.
+
+**Mi kellene a natív futáshoz (következő kör):**
+
+1. a hívó `0x009cc5d0` valódi bemenete: dinamikus trace a Comicize betöltéséről,
+   hogy a sor és a `CELL` tartalma tényleges legyen;
+2. a `0xd24014` tábla és a `[edi*8 + …]` index előzetes feltöltése (globális
+   állapot), vagy a `0x00bef8c0` környezetének visszafejtése;
+3. a `0x0053fe30` és a `0x004e5740` Ghidra-köre (a korábbi blokkoló tételek).
+
+**Bizonyítottsági fok:** **megerősített** a hívási keret és az usealpha-ág írási
+művelete (disassembly + qemu-trace); **megerősített** a ColorMatrix-példány 0x28
+bájtos mérete (a `0x00bb3461`-es allokáció); **nyitott** a `+0x20a` célobjektum
+pontos típusa és a `UseAlpha` pixelhatása.
 
 #### Eredeti / nálunk / teendő
 
@@ -6134,6 +6267,90 @@ ad minden indexen.
 
 
 ---
+
+### #626 leltár — a `HSVGradientMap` sora frissítve (2026-10-12)
+
+**Kiválasztás.** A 2026-10-03-as leltár nem megerősített, nem kizárt műveletei:
+`HSVGradientMap` (1 effekt: HeatMap), `TwoTone`/`GradientMap` (2 effekt),
+`ColorMatrix` és `Tiled` (csak a Comicize-hoz kötve). A `Border`,
+`QuantizePalette` és `Comicize` más ágon zárult, ezért kizárva. A `TwoTone`/
+`GradientMap` több effektet érint, de a pixelképletük a fenti szakaszok szerint
+már megerősített (2026-10-04/06); ami nyitott, a `gradientArray` szöveges
+beolvasása, az a pixelmatematikán kívül esik. Ezért a `HSVGradientMap` maradt
+a nyitott, pixelszintű kérdés.
+
+| elem | állapot | forrás |
+|---|---|---|
+| `position` = float32 LUT-index, 0…255 skála | megerősített | „#626 pozícióskála” szakasz (2026-10-06) |
+| rövidebb hue-ív, `±360°` eltolás | megerősített | „Az interpoláció” szakasz, c) pont |
+| LUT-építés, piros indexcsatorna | megerősített | d) pont |
+| HSV→RGB konverter (`0x00bbbe20`) x87-kerekítése | **megerősített** (2026-10-12) — a jelenlegi `_hsv_rgb_lut_f32` 0 bájtot tér el a natív konvertertől 9509 bemeneten, a HeatMap-láncon 768/768 | „2. kör — mérés” szakasz, 2026-10-12 |
+
+**Elavultság.** A 2026-10-06-os 5/768-as eltérés a `glimmer_ops.py` akkori
+állapotán (878–886. sor) futott. A jelenlegi `_hsv_rgb_lut_f32` (865. sor) már
+float64-es köztes ágat és float32-es tárolást használ (docstring szerint
+#3814/#4309). A 2026-10-12-i újramérés (lent) a jelenlegi kódon 0/768: a
+5/768 megszűnt. A 350→10-es próba (#3814, 254/256 eltérés) a #3814 előtti
+`np.interp`-os kódról szólt; a jelenlegi kódon ugyanez a próba 0/768.
+
+**Kész, ha** (a megvalósításhoz, ha az újramérés eltérést ad): a HeatMap-stoplista
+(`0`, `31,875`, `127,5`, `223,125`, `255`; `filterdesc.xml` 952. sor) 256 × 3
+LUT-bájtja egyezik a qemu-i386-on futtatott `0x00bbbcf0` → `0x00bbbbf0` →
+`0x00bbbe20` lánc kimenetével, azaz 768/768 bájt.
+
+### 2. kör — mérés (2026-10-12, #626)
+
+**A) Gépi kód, utasításszinten (`0x00bbbe20`, `0x00bbbf40` után is végig).**
+- Belépés: cdecl, három float32. A `sub esp,0x20` után `h` = `[esp+0x24]`,
+  `s` = `[esp+0x28]`, `v` = `[esp+0x2c]`; a hívó oldalán ez `[esp]` = h,
+  `[esp+4]` = s, `[esp+8]` = v (a visszatérési cím a `[esp]`-n kívül esik).
+- Visszatérés: `eax` = `0xFFRRGGBB` (alfa 255; R a 16–23., G a 8–15., B a 0–7.
+  bitben). A három csatornát a szektor-ágak a `[esp]`, `[esp+4]`, `[esp+8]`
+  ideiglenesekbe töltik; utána `csonk(x·255)` (`or 0xc00` + `fistp`), nincs +0,5.
+- Szektor-ugrótábla: `jmp [eax*4+0xbbc0c4]`, hat bejegyzés (`i = 0…5`). Az
+  `i > 5` ág (`ja 0xbbc02c`) nem tölti fel a csatornákat, így a `[esp…]` régi
+  tartalmával számol tovább. Ez csak akkor fordul elő, ha `h/360·6` float32-ben
+  6,0-ra kerekedik; a lenti méréskor ilyen bemenet nem volt (a 360⁻ körüli
+  négy float32-es érték 5,99999…-re kerekedett).
+- CPU-jelzők: a `0x00bbbbf0`–`0x00bbc0c0` teljes kódja (keverő, stopkereső,
+  konverter) nem hivatkozik a `0xd695d0` (MMX) és `0xd695d4` (SSE) címekre, így
+  csak egy ágat kell mérni.
+
+**B) Natív mérés (QEMU-i386, az eredeti függvények; a `_hsv_rgb_lut_f32` és a
+`hsv_gradient_map` a jelenlegi PicasaPy-kód).**
+
+| mérés | bemenet | eltérés |
+|---|---|---|
+| konverter önmagában (`0x00bbbe20`): a spec-példa `(200,100,100)`; `h` = 0…359 egész × `s` ∈ {0,25,50,75,100} × `v` ∈ {0,50,100}; 4000 véletlen float32 | 9401 | 0 bájt |
+| konverter, negatív és ≥360 `h` (−720 … 1080,25) × `s`, `v` mintái | 108 | 0 bájt |
+| `h` 360⁻ körül (4 legnagyobb float32 < 360) × `s`, `v` mintái | 24 | 0 bájt |
+| HeatMap-stoplista, a teljes lánc (`0x00bbbcf0` → `0x00bbbbf0` → `0x00bbbe20`), 256 × 3 bájt, `hueOffset` = 0 | 768 | 0 bájt; a `hsv_gradient_map` végponti összevetése is 0 |
+| HeatMap-stoplista, `hueOffset` −180, −33,3, 33,3, 180, 359 | 5 × 768 | 0 bájt |
+| 350→10 stoplista (`[0,350,100,100]`, `[255,10,100,100]`), `hueOffset` 0 és −180, −33,3, 33,3, 180, 359 | 6 × 768 | 0 bájt |
+
+A natív láncban a stopkeresést az eredeti `0x00bbbcf0` végzi, a keverést a
+benne hívott `0x00bbbbf0`; a hue/s/v-t nem a Python számolja. A worker-ciklust
+(`0x00bbc510`–`0x00bbc568`) a meghajtó utánozza: `x` = 0…255, a `hueOffset`
+float32-ben hozzáadva, az eredmény `0xFFRRGGBB`.
+
+**Korlát (ki kell mondani).** A HeatMap-stoplista `position` értékei (`0`,
+`31,875`, `127,5`, `223,125`, `255`) a spec szerint a `filterdesc.xml` 952.
+sorából valók, de az XML nem érhető el a mérés megengedett útvonalain. A stopok
+`h`/`s`/`v`-értékei ezért a `src/picasapy/render/glimmer_tone.py`
+`_HEATMAP_STOPS`-ából jöttek (`240/100/50`, `240/100/100`, `120/100/100`,
+`0/100/100`, `0/100/50`). Ezeket az XML 952. sora ellen még nem ellenőriztük.
+
+**Eredmény.** Egyezés: a konverter és a HeatMap-lánc is bájtra egyezik a
+jelenlegi kóddal. A 2026-10-06-os 5/768 eltérés a régi kódhoz tartozott, ma
+nem reprodukálható.
+
+**Kész, ha — részben teljesült.** A 768/768 teljesül a `_HEATMAP_STOPS` h/s/v-
+értékeivel. A „Kész, ha” az XML 952. sorának h/s/v-jét is megköveteli; ezt ebben
+a körben nem tudtam ellenőrizni, ezért ez a rész nyitva marad.
+
+**Bizonyítottsági fok (konverter x87-kerekítése): megerősített** — A út: a fenti
+utasításszintű leírás; B út: a natív konverter és a natív lánc futtatása, bájtos
+összevetéssel. A stopok h/s/v-jére a B út csak a kódbeli értékekre igaz.
 
 ## `ExposureImageOperation` — KÉT görbe, mindkettő számszerűen (2026-09-04, #2211)
 
