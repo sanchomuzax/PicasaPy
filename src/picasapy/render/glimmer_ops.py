@@ -953,30 +953,25 @@ def circular_gradient_mask(
     center: tuple[float, float] | None = None,
     inner_alpha: float = 0.0,
     outer_alpha: float = 1.0,
+    aspect_ratio: float = 1.0,
 ) -> np.ndarray:
     """`CircularGradient`: (H, W) float32 [0,1] maszk — `inner_alpha` az
     `inner_radius`-on belül (védett, „éles" zóna), `outer_alpha` az
     `outer_radius`-on túl, lineárisan a kettő között. `center` alapból a kép
     közepe, pixel-egységben.
 
-    #3958: a maszk az eredeti szerint 16 bites pozícióval, egész
-    koordinátával és megálló-táblával számol (`R = max(inner, outer)`), a
-    kimenet egész bájtokból (`alfa / 255`) áll. `outer <= inner` esetén a
-    spec képlete is érvényes (`R = max` miatt `p₁ = 255`, a fordított alfa
-    `trunc`-kal csonkol); a korábbi kemény lépcsőt csak azért tartjuk meg,
-    mert `inner = outer = 0` mellett az új út nullával osztana. Egyedül a
-    páratlan méret középpontja (`cx = W/2`) nem rögzített.
+    #3958/#4905: a 16 bites pozíció az eredeti egész befoglaló dobozából és
+    az aspect-függő skálából számolódik; a kimenet egész alfa-bájtokból
+    (`alfa / 255`) áll. A méret és a bal/felső él külön, nearest-even
+    kerekítést kap, ahogy a natív x87 FISTP.
 
     #788: a két alfa a natív `CircularGradientImageMask`
     `innerAlpha`/`outerAlpha` attribútuma; az alapértékek a KIOLVASOTT
     tartalékok (`0,0` → `1,0`), tehát az alapeset változatlan. A natív olvasó
     mindkettőt `[0,1]`-re vágja (`0x00bd0391`, `0x00bd03e1`).
 
-    ⚠️ **`aspectRatio` SZÁNDÉKOSAN nem paraméter.** A 283. kutatói kör
-    kimérte, hogy a tartaléka `1,0`, és a `filterdesc.xml` mind a négy
-    használatban elhagyja — a maszk tehát KÖR, és a `np.hypot` helyes. A nem
-    1,0-s eset geometriája NINCS kimérve, ezért egy ilyen paraméter csak
-    találgatást hordozhatna (`docs/specs/filters-decoded.md`).
+    `aspect_ratio` a natív `aspectRatio` mezője; a meglévő hívók változatlanul
+    körmaszkot kérnek az alapértelmezett `1.0` értékkel.
     """
     cx, cy = center if center is not None else (width / 2.0, height / 2.0)
     belso = float(np.clip(inner_alpha, 0.0, 1.0))
@@ -990,7 +985,15 @@ def circular_gradient_mask(
         arany = (dist >= inner_radius).astype(np.float32)
         return (np.float32(belso) + arany * np.float32(kulso - belso)).astype(np.float32)
     tabla = _kormaszk_megallo_tabla(inner_radius, outer_radius, belso, kulso)
-    pozicio = _kormaszk_pozicio(height, width, cx, cy, outer_radius)
+    pozicio = _kormaszk_doboz_pozicio(
+        height,
+        width,
+        cx,
+        cy,
+        inner_radius,
+        outer_radius,
+        aspect_ratio,
+    )
     rekesz = pozicio >> 8
     tort = pozicio & 0xFF
     alfa = (tabla[rekesz + 1] * tort + tabla[rekesz] * (256 - tort)) >> 8
@@ -1049,6 +1052,47 @@ def _kormaszk_pozicio(
     eltérhet."""
     tavolsag = _kormaszk_tavolsag(height, width, cx, cy, sugar)
     return np.minimum(np.rint(tavolsag), _KORMASZK_POZICIO_MAX).astype(np.int64)
+
+
+def _kormaszk_doboz_pozicio(
+    height: int,
+    width: int,
+    cx: float,
+    cy: float,
+    inner_radius: float,
+    outer_radius: float,
+    aspect_ratio: float,
+) -> np.ndarray:
+    """A tört paraméterek natív dobozából számolt SSE2 pozíció (#4905).
+
+    A `0x00bd05f0` a méretet és a bal/felső élt külön x87 `FISTP`-vel,
+    nearest-even módon egészíti ki. A pixelút a lekerekített, még nem
+    klippelt doboz közepét és méretét használja (`0x00cf47f0` és
+    `0x00cf48f0` konstansokkal), majd az SSE2 `sqrtps`/`cvtps2dq` ága adja a
+    16 bites pozíciót.
+    """
+    f32 = np.float32
+    radius = max(f32(inner_radius), f32(outer_radius))
+    height_f = f32(f32(2.0) * radius)
+    width_f = f32(f32(aspect_ratio) * height_f)
+
+    box_width = int(np.rint(width_f))
+    box_height = int(np.rint(height_f))
+    left = int(np.rint(f32(f32(cx) - f32(width_f * f32(0.5)))))
+    top = int(np.rint(f32(f32(cy) - f32(height_f * f32(0.5)))))
+    box_center_x = f32(left + f32(box_width * f32(0.5)))
+    box_center_y = f32(top + f32(box_height * f32(0.5)))
+
+    flash_scale = f32(1638.4000244140625)
+    inverse_affine_scale = f32(79.6875)
+    scale_x = f32(f32(flash_scale / f32(box_width)) * inverse_affine_scale)
+    scale_y = f32(f32(flash_scale / f32(box_height)) * inverse_affine_scale)
+    u = (np.arange(width, dtype=np.float32) - box_center_x) * scale_x
+    v = (np.arange(height, dtype=np.float32) - box_center_y) * scale_y
+    distance = np.sqrt(
+        v[:, np.newaxis] * v[:, np.newaxis] + u[np.newaxis, :] * u[np.newaxis, :]
+    )
+    return np.minimum(np.rint(distance), _KORMASZK_POZICIO_MAX).astype(np.int64)
 
 
 def tint_multiply(image: np.ndarray, color: tuple[int, int, int], alpha: float) -> np.ndarray:
