@@ -24,6 +24,7 @@ from picasapy.fileops import (
     conflicting_names,
     copy_photos,
     create_folder_for_move,
+    create_unique_split_folder,
     delete_photo_permanently,
     delete_photo_to_trash,
     delete_to_trash,
@@ -38,7 +39,15 @@ from picasapy.fileops import (
 )
 from picasapy.fileops import open_with
 from picasapy.fileops.move_folder import FolderMoveError
-from picasapy.ini import IniConflictError, IniSaveError
+from picasapy.ini import (
+    IniConflictError,
+    IniSaveError,
+    update_document,
+    with_folder_date_override,
+    with_folder_music,
+)
+from picasapy.fileops.safe_move import safe_move
+from picasapy.scanner import PICASA_INI_NAME
 
 from .controller import _to_local_path
 from .formatting import to_local_path
@@ -221,6 +230,65 @@ class FileOpsController(QObject):
             self.operationFailed.emit("move_to_new_folder", str(error))
             return
         self._run_batch("move", move_photos, paths, str(target), RENAME)
+
+    @Slot(list, str, str, str, str, bool, str)
+    def splitFolderHere(
+        self,
+        paths: list,
+        name: str,
+        iso_date: str,
+        location: str,
+        description: str,
+        use_music: bool,
+        music_file: str,
+    ) -> None:
+        """A mappában kijelölt képtől a csoport végéig új testvérmappába tesz (#4534)."""
+        if not paths:
+            return
+        source_paths = [Path(_to_local_path(str(path)) or str(path)) for path in paths]
+        source_folder = source_paths[0].parent
+        if any(path.parent != source_folder for path in source_paths):
+            return
+        try:
+            target = create_unique_split_folder(source_folder.parent, name)
+
+            def write_folder_metadata(document):
+                result = with_folder_date_override(document, iso_date)
+                result = with_folder_music(
+                    result, use_music, to_local_path(music_file)
+                )
+                result = (
+                    result.with_value("Picasa", "location", location)
+                    if location.strip()
+                    else result.with_removed("Picasa", "location")
+                )
+                return (
+                    result.with_value("Picasa", "description", description)
+                    if description.strip()
+                    else result.with_removed("Picasa", "description")
+                )
+
+            update_document(target / PICASA_INI_NAME, write_folder_metadata)
+            for source in source_paths:
+                destination = move_photo(source, target)
+                self.photoMoved.emit(str(source), str(destination))
+            # A `.THM` kísérő a vele azonos nevű fájllal költözik — de csak ha
+            # a forrásmappában nem marad azonos nevű másik fájl, amelyhez
+            # szintén tartozhat (pl. a helyben maradó videó).
+            for source in source_paths:
+                for extension in (".THM", ".thm", ".Thm", ".tHm"):
+                    companion = source.with_suffix(extension)
+                    if not companion.is_file():
+                        continue
+                    marado = [
+                        item for item in source_folder.iterdir()
+                        if item.stem == source.stem and item != companion
+                    ]
+                    if not marado:
+                        safe_move(str(companion), str(target / companion.name))
+                    break
+        except _OPERATION_ERRORS as error:
+            self.operationFailed.emit("split_folder", str(error))
 
     def _run_batch(self, operation, function, paths, dest_folder, policy) -> None:
         dest = Path(_to_local_path(dest_folder))
