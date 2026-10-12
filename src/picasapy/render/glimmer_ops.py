@@ -971,8 +971,11 @@ def circular_gradient_mask(
     mindkettőt `[0,1]`-re vágja (`0x00bd0391`, `0x00bd03e1`).
 
     `aspect_ratio` a natív `aspectRatio` mezője; a meglévő hívók változatlanul
-    körmaszkot kérnek az alapértelmezett `1.0` értékkel.
+    körmaszkot kérnek az alapértelmezett `1.0` értékkel. Nem pozitív értéknél
+    `ValueError` (a natív viselkedés nincs kimérve, a csendes maszk hibás lenne).
     """
+    if aspect_ratio <= 0:
+        raise ValueError(f"Az aspectRatio pozitívnak kell lennie: {aspect_ratio}")
     cx, cy = center if center is not None else (width / 2.0, height / 2.0)
     belso = float(np.clip(inner_alpha, 0.0, 1.0))
     kulso = float(np.clip(outer_alpha, 0.0, 1.0))
@@ -1025,35 +1028,6 @@ def _kormaszk_megallo_tabla(
     return tabla
 
 
-def _kormaszk_tavolsag(
-    height: int, width: int, cx: float, cy: float, sugar: float
-) -> np.ndarray:
-    """A pozíció kerekítés előtti értéke, `√(u²+v²)`, float32-ben (`sqrtps`,
-    egyszeres pontosság — a spec rögzíti). Az `u`/`v` float64-ben képződik,
-    és float32-re csonkul; az `u²+v²` összeg és a gyök már float32."""
-    skala = _KORMASZK_POZICIO_MAX / sugar
-    u = ((np.arange(width, dtype=np.float64) - cx) * skala).astype(np.float32)
-    v = ((np.arange(height, dtype=np.float64) - cy) * skala).astype(np.float32)
-    return np.sqrt(v[:, np.newaxis] * v[:, np.newaxis] + u[np.newaxis, :] * u[np.newaxis, :])
-
-
-def _kormaszk_pozicio(
-    height: int, width: int, cx: float, cy: float, sugar: float
-) -> np.ndarray:
-    """A 16 bites pozíció (`0x008f3970`, #3957): `u = (x−cx)·65280/R` EGÉSZ
-    képpontindexből (nincs `+0,5`), `P = min(round(√(u²+v²)), 0xff00)` —
-    az SSE2-ág (`sqrtps` + `cvtps2dq`) legközelebbire kerekít.
-
-    Rögzített (spec): a `√` egyszeres pontosságú (float32), a `rint` a
-    float32 eredményen fut. NEM rögzített: az `u`/`v` képzésének pontos alakja
-    (a bináris a befoglaló téglalapot a `1638,4`-es Flash-egységre képezi, és
-    `79,6875`-tel szoroz; mi `(x−cx)·65280/R`-t használunk float64-ben, majd
-    float32-re váltunk). A két alak néhány ezer képpontban egy egységgel
-    eltérhet."""
-    tavolsag = _kormaszk_tavolsag(height, width, cx, cy, sugar)
-    return np.minimum(np.rint(tavolsag), _KORMASZK_POZICIO_MAX).astype(np.int64)
-
-
 def _kormaszk_doboz_pozicio(
     height: int,
     width: int,
@@ -1078,6 +1052,12 @@ def _kormaszk_doboz_pozicio(
 
     box_width = int(np.rint(width_f))
     box_height = int(np.rint(height_f))
+    if box_width < 1 or box_height < 1:
+        # A 0-s méret osztást (inf/NaN maszk) adna: hibát dobunk helyette.
+        raise ValueError(
+            f"A körmaszk doboza nullára kerekedne (aspectRatio={aspect_ratio}, "
+            f"sugár={float(radius)})"
+        )
     left = int(np.rint(f32(f32(cx) - f32(width_f * f32(0.5)))))
     top = int(np.rint(f32(f32(cy) - f32(height_f * f32(0.5)))))
     box_center_x = f32(left + f32(box_width * f32(0.5)))

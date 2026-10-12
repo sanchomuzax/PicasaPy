@@ -188,3 +188,30 @@ def test_tort_geometria_bajtra_egyezik_a_nativ_sse2_goldenhez(
         (y, x, int(alpha[y, x])) for y, x, _ in samples
     )
     assert actual_samples == samples, name
+    # A natív csak a vágott téglalapot adja ki, a többi képpontot nem mértük:
+    # itt csak az a tartomány-ellenőrzés áll, hogy az alfa a két végpont közt marad.
+    savok = (int(255 * inner_alpha), int(255 * outer_alpha))
+    kivul = np.ones(mask.shape, dtype=bool)
+    kivul[y0:y1, x0:x1] = False
+    kivul_bajt = np.rint(mask[kivul] * np.float32(255.0))
+    assert np.all((kivul_bajt >= min(savok)) & (kivul_bajt <= max(savok))), name
+
+
+class TestErvenytelenAspect:
+    """A nem pozitív `aspectRatio` hibát ad, nem csendes hibás maszkot
+    (ld. `effects_creative.py`: `aspect_ratio <= 0` → `ValueError`). A
+    natív viselkedés erre nincs kimérve, a spec nem mondja meg."""
+
+    @pytest.mark.parametrize("aspect", [0.0, -1.0])
+    def test_nem_pozitiv_aspect_hibat_dob(self, aspect):
+        with pytest.raises(ValueError, match="aspectRatio"):
+            circular_gradient_mask(48, 64, 10.0, 30.0, aspect_ratio=aspect)
+
+    def test_a_nullara_kerekedo_doboz_hibat_dob(self):
+        """`aspect · 2R < 0,5` → a doboz szélessége 0, az osztás inf-et adna."""
+        with pytest.raises(ValueError, match="doboz"):
+            circular_gradient_mask(48, 64, 10.0, 30.0, aspect_ratio=0.001)
+
+    def test_a_nullara_kerekedo_magassag_is_hibat_dob(self):
+        with pytest.raises(ValueError, match="doboz"):
+            circular_gradient_mask(48, 64, 0.1, 0.2)
