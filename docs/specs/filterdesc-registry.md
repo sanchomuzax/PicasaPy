@@ -11995,3 +11995,105 @@ fenti gépezeten már egyenként olvashatók.
   (`psrld 0x18`);
 - „a `PartialMask` a téglalapon kívül is a maszk értékével kever” — egyetlen
   küszöbölt szám dönt (felső vagy alsó).
+
+## #626 leltár — `QuantizePalette` sor, 2. kör (2026-10-12)
+
+A Border-kör szerint következő, feltételes műveletet mértük: a kvantáló
+munkavégzőjét (`0x00bb5b60`) és a Fade-keverőt (`0x009dc4b0`), natív QEMU-
+futással, kis bemeneteken, bájtos összevetéssel a PicasaPy mai kódjával.
+Ideiglenes driverek: `/tmp/claude-1000/kd-r626q/` (`blend_drv.py`,
+`quant_drv.py`, `cmp_blend.py`, `cmp_quant.py`); a kör után törlendők.
+
+### 1. A keverő ága a `[0xd695d4]` jelzőtől függ
+
+A `0x009dc4b0` a `0x009dc58d`-ban olvassa a `[0xd695d4]` bájtot: `0` esetén a
+`0x009dc716` ágra ugrik (skalár út), különben az MMX-ciklusra (`0x009dc5a6`–
+`0x009dc63a`). A jelzőt a `0x00c33d60` írja a CPU-képesség-lekérdezés
+eredményéből (`mov byte ptr [0xd695d4], al`), ezért a valódi, SSE-s gépen
+futó Picasa az MMX-ágat futtatja. A QEMU-harness alapból `0`-t lát, ezért
+mindkét ágat külön mértük (`F4=1`, `F4=0`).
+
+A páratlan szélességű sorok utolsó oszlopát a `0x009dc646`–`0x009dc6fb` ág
+kapja, az MMX-ciklus után, a szélesség paritása szerint (`[ebp-0x10]`).
+
+### 2. Keverő: mért, egyezik
+
+96 futás: szélesség 4–9, magasság 3, nyers súly `arg` ∈ {1, 2, 64, 128, 129,
+204, 254, 255} (a keverő maga vonja le az 1-et), `F4` ∈ {0, 1}, véletlen
+BGRA-bemenet (seed 626). A BGR-csatornákon **0 eltérő bájt** a PicasaPy
+`glimmer_ops.alpha_blend` kimenetéhez képest, mindkét ágon, páros és páratlan
+szélességen is. Az alfa-csatornát nem hasonlítottuk össze.
+
+Páratlan szélesség kontroll (W = 5, 7, 9; 3024 bájt): ha az utolsó oszlop a
+páros képletet kapja, 395 bájt tér el; a `t + ((b − t) · w >> 8)` farokképlettel
+az utolsó oszlop 432/432 egyezik. A PicasaPy `alpha_blend` mai kódja már ezt a
+farokágat tartalmazza. Ez felülírja a korábbi „a páratlan szélesség hatását nem
+mértük” megjegyzéseket (a páratlan szélességről szóló sorok: kb. 1186., 2709–2710. és 3925. sor).
+
+Nem mértük: `arg = 0` (a `0x00bd0700` hívó ilyenkor nem hívja a keverőt), és a
+`0x00bd0700` hívó maga.
+
+**Bizonyítottsági fok (keverő): megerősített**, mindkét CPU-ágon, páros és
+páratlan szélességen, nyers súly 1–255 tartományban.
+
+### 3. Kvantáló: mért, részben egyezik
+
+Hívás: stdcall `(kép-rekord, Steps, Depth = 4, cél-rekord)`, `ret 0x10`. A
+rekordokat a spec táblázata szerint töltöttem ki; a kimenetet a cél-rekord
+`+0x10` mutatójából olvastam ki a futás után. A `0x00bb5b60` törzsében
+(`0x00bb5b60`–`0x00bb6146`) nincs `[0xd695d0]` vagy `[0xd695d4]` olvasás, tehát
+nincs CPU-ág. Összevetés: `quantize_palette.kvantal()` RGB-bemeneten.
+
+| bemenet (W×H) | Steps 2 | Steps 8 | Steps 16 | Steps 30 |
+|---|---|---|---|---|
+| 3×3 | 0/27 | 0/27 | 0/27 | 0/27 |
+| 9×6 | 0/162 | 0/162 | 0/162 | 0/162 |
+| 10×10 | — | 0/300 | — | 0/300 |
+| 12×12 | — | 0/432 | — | 0/432 |
+| 25×25 | — | 0/1875 | — | 0/1875 |
+| 50×50 | — | 0/7500 | — | 0/7500 |
+| 51×49 | — | 0/7497 | — | 0/7497 |
+| **6×5** | **60/90** (max 2) | **56/90** (max 3) | **25/90** (max 2) | **11/90** (max 2) |
+| **7×4** | **62/84** (max 2) | **37/84** (max 3) | **16/84** (max 2) | **2/84** (max 1) |
+
+(Eltérő RGB-bájt / összes RGB-bájt.)
+
+A 6×5 és a 7×4 esetben az eltérés a **paletta-színekben** van: a natív és a
+PicasaPy palettája ugyanannyi színből áll, de néhány szín 1–2 szinttel tér el
+(pl. 6×5, Steps 30: natív `(74, 196, 164)`, PicasaPy `(74, 197, 164)`). A
+3-3-2 kereső a két oldalon azonos palettával dolgozik, ezért a különbség a
+palettaépítésben van: a mintavételben (`_oszlop_indexek` / `_sor_indexek`,
+`0x009e7420`) vagy a leveles átlagban (`0x00bcbaa0`). Ez **nem igazolt ok**.
+Csak azt tudjuk, hogy a 9×6 és a 3×3 egyezik, tehát nem egyszerűen a
+mintalépték (`W / 50`) határa dönt.
+
+Az eltérés magyarázatára nem illesztettünk: a PicasaPy kódja változatlan.
+
+**Bizonyítottsági fok (kvantáló): megerősített** a négyzetes és a nagy
+képekre (10×10-től 51×49-ig, valamint 3×3 és 9×6); **feltételes** a 6×5 és a
+7×4 képen, ahol a palettaszínek 1–3 szinttel eltérnek.
+
+### 4. Leltár-sor
+
+| művelet | pixelképlet | CPU-ág | összesített állapot |
+|---|---|---|---|
+| `QuantizePalette` | a keverő (`0x009dc4b0`): **megerősített**, mindkét ágon, páros és páratlan szélességen; a kvantáló (`0x00bb5b60`): **megerősített** nagy és négyzetes képen, **nyitott** 6×5 és 7×4 képen (1–3 szint, paletta-szín) | nincs flag-függés a kvantálónál; a keverőnél mindkét ág egyezik | **feltételes** |
+
+### 5. Kész, ha (a kvantáló kis téglalap-esetére)
+
+- A 6×5 és a 7×4 képen a `quantize_palette.kvantal()` Steps 2/8/16/30 mellett
+  bájtra egyezik a natív `0x00bb5b60` kimenetével, miközben a 3×3, 9×6, 10×10,
+  12×12, 25×25, 50×50 és 51×49 esetek is 0 eltérést adnak.
+- Az eltérés okát a `0x009e7420` mintavevő oszlop- és sorindex-számításából
+  (a `0x00c29990` átalakítóval együtt) és a leveles átlag (`0x00bcbaa0`) gépi
+  kódjából kell levezetni, és utána újra mérni; a számokra illesztés nem
+  elfogadható.
+
+### 6. Nem mért
+
+- A teljes lánc (elmosás → kvantálás → keverés → JPEG-kiírás) együttes
+  összevetése nincs; a 2026-10-06-os ΔE-maradék továbbra is nyitott.
+- A `Depth` más értékei: csak `Depth = 4` mért.
+- A keverő és a kvantáló rekordjainak `+0x14`, `+0x08` mezői szemantikailag
+  nyitottak (ld. a 2026-10-04-es szakaszt); a driver a spec táblázata szerint
+  tölti őket.
