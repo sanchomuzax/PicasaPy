@@ -26,6 +26,7 @@ import PySide6
 from PySide6.QtCore import (
     QCoreApplication,
     QEventLoop,
+    QLocale,
     QLockFile,
     QObject,
     QSettings,
@@ -977,6 +978,12 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
     maguk angolok — ezért ott nem telepítünk fordítót.
     """
     code = coerce_language(language) if language else _startup_language()
+    # #4881: a Quick Controls párbeszédeinek szabványos gombjai (OK, Mégse…)
+    # az alapértelmezett QLocale-ból töltik a Qt saját fordítását — enélkül a
+    # rendszer nyelvén jelennének meg a választott felületi nyelv helyett.
+    # ADR-004 (nyelv ≠ területi beállítás): a NYELV a felületé, a TERÜLET
+    # (tizedesjel, időformátum, mértékegység) marad a rendszeré.
+    QLocale.setDefault(QLocale(QLocale(code).language(), QLocale.system().territory()))
     if code == DEFAULT_LANGUAGE:
         return None
     # #4817: forrásból indítva a `.qm` itt készül el a `.ts`-ből

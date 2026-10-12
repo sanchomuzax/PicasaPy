@@ -26,6 +26,10 @@ def _vezerlo(tmp_path, nyelv: str | None, monkeypatch, meresi_rendszer):
     class HelyettesitettQLocale:
         MeasurementSystem = QLocale.MeasurementSystem
 
+        @classmethod
+        def system(cls):
+            return cls()
+
         def measurementSystem(self):
             return meresi_rendszer
 

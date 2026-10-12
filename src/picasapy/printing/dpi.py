@@ -187,8 +187,12 @@ HUVELYK_ALAPMERETEK: tuple[NyomatMeret, ...] = (
 
 
 def _metrikus_teruleti_meres() -> bool:
-    """A rendszer területi mértékegysége metrikus-e."""
-    return QLocale().measurementSystem() == QLocale.MeasurementSystem.MetricSystem
+    """A rendszer területi mértékegysége metrikus-e.
+
+    A `QLocale.system()`-ből olvas, nem az alapértelmezésből: az utóbbit az
+    alkalmazás a felületi nyelvhez igazítja (#4881), a mértékegység viszont
+    a területi beállításé (ADR-004)."""
+    return QLocale.system().measurementSystem() == QLocale.MeasurementSystem.MetricSystem
 
 
 def keszlet_teruleti_mereshez() -> tuple[NyomatMeret, ...]:

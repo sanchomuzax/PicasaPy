@@ -9,7 +9,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PySide6.QtCore import QLocale, Qt, Signal, Slot
+from PySide6.QtCore import Qt, Signal, Slot
+
+from picasapy.printing import dpi
 
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
@@ -97,7 +99,7 @@ class PosterMixin(BackgroundWorkerMixin):
     @Slot(result=list)
     def posterPaperSizes(self) -> list[str]:  # noqa: N802
         """A rendszer területi beállításához tartozó két eredeti méret."""
-        if QLocale().measurementSystem() == QLocale.MeasurementSystem.MetricSystem:
+        if dpi._metrikus_teruleti_meres():
             return ["10x15", "20x25"]
         return ["4x6", "8.5x11"]
 
