@@ -72,10 +72,28 @@ class PhotoRecord:
     manual_priority: float | None = None
 
 
+@dataclass(frozen=True)
+class Db3Beolvasas:
+    """Egy db3 könyvtár beolvasásának eredménye."""
+
+    rekordok: tuple[PhotoRecord, ...]
+    #: #4889: a wordhash-mappalisták kihagyott elemei (nem fájl, nem
+    #: oldható fel, duplikált sor) — az átvételi jelentés számolja.
+    wordhash_kihagyott: int = 0
+
+
 def iter_photo_records(
     db3_dir: Path, remapper: PathRemapper
 ) -> tuple[PhotoRecord, ...]:
     """A db3 könyvtár fotó-rekordjai, sorrendhelyesen.
+
+    A részletek és a kihagyott wordhash-elemek száma: `beolvas_db3`.
+    """
+    return beolvas_db3(db3_dir, remapper).rekordok
+
+
+def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
+    """A db3 könyvtár fotó-rekordjai, a kihagyott wordhash-elemek számával.
 
     A thumbindex fájl-bejegyzésein megy végig (könyvtár-, arc- és törölt
     bejegyzések kihagyva); a remap nélküli útvonalak szintén kimaradnak.
@@ -92,7 +110,9 @@ def iter_photo_records(
     entries = read_thumb_index(index_path)
     table = read_table(db3_dir, "imagedata")
     csillagos = _read_starlist(db3_dir)
-    manual_priorities = _folder_manual_priorities(db3_dir, entries, remapper)
+    manual_priorities, wordhash_kihagyott = _folder_manual_priorities(
+        db3_dir, entries, remapper
+    )
 
     records = []
     for entry in entries:
@@ -142,14 +162,16 @@ def iter_photo_records(
                 manual_priority=manual_priorities.get(entry.index),
             )
         )
-    return tuple(records)
+    return Db3Beolvasas(
+        rekordok=tuple(records), wordhash_kihagyott=wordhash_kihagyott
+    )
 
 
 def _folder_manual_priorities(
     db3_dir: Path,
     entries: tuple[ThumbIndexEntry, ...],
     remapper: PathRemapper,
-) -> dict[int, float]:
+) -> tuple[dict[int, float], int]:
     """A `category=2` mappák wordhash-listáit thumbindex-sorokra oldja fel.
 
     A hibás, csonka vagy hiányzó wordhash nem állíthatja le a többi db3-adat
@@ -158,7 +180,7 @@ def _folder_manual_priorities(
     """
     wordhash_path = _find_wordhash(db3_dir)
     if wordhash_path is None:
-        return {}
+        return {}, 0
     try:
         album_lists = read_wordhash(
             wordhash_path, expected_entity_count=len(entries)
@@ -169,7 +191,7 @@ def _folder_manual_priorities(
             "nem olvasható: %s",
             exc,
         )
-        return {}
+        return {}, 0
 
     try:
         albumdata = read_table(db3_dir, "albumdata")
@@ -179,9 +201,10 @@ def _folder_manual_priorities(
             "olvasható: %s",
             exc,
         )
-        return {}
+        return {}, 0
 
     priorities: dict[int, float] = {}
+    kihagyott_osszes = 0
     for album_row in range(albumdata.row_count):
         if albumdata.value("category", album_row) != 2:
             continue
@@ -221,6 +244,7 @@ def _folder_manual_priorities(
             priorities[row] = float(position)
             position += 1
 
+        kihagyott_osszes += skipped
         if skipped:
             logger.warning(
                 "A wordhash.dat %s mappalistájából %d kihagyott elem "
@@ -228,7 +252,7 @@ def _folder_manual_priorities(
                 token,
                 skipped,
             )
-    return priorities
+    return priorities, kihagyott_osszes
 
 
 def _find_wordhash(db3_dir: Path) -> Path | None:

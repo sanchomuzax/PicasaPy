@@ -176,3 +176,26 @@ def test_csonka_wordhash_fajlt_format_hibakent_elutasitja(tmp_path):
 
     with pytest.raises(WordHashFormatError):
         read_wordhash(path, expected_entity_count=7)
+
+
+def test_a_beolvasas_megszamolja_a_wordhash_kihagyott_elemeit(tmp_path, remapper):
+    from picasapy.pmpimport.importer import beolvas_db3
+
+    _rendezett_db3(tmp_path)
+
+    beolvasas = beolvas_db3(tmp_path, remapper)
+
+    # sor 4: arcrekord, sor 99: nincs a thumbindexben — a kettő kihagyva
+    assert beolvasas.wordhash_kihagyott == 2
+    assert len(beolvasas.rekordok) == 3
+
+
+def test_a_jelentes_osszeadodik_a_wordhash_kihagyott_szamlalojaval():
+    from picasapy.pmpimport.db3_atvetel import AtvetelJelentes
+
+    osszes = AtvetelJelentes(wordhash_kihagyott=2) + AtvetelJelentes(
+        wordhash_kihagyott=1, kihagyott=4
+    )
+
+    assert osszes.wordhash_kihagyott == 3
+    assert osszes.kihagyott == 4

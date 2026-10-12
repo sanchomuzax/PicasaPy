@@ -38,7 +38,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 
 from picasapy.pmpimport.db3_atvetel import AtvetelJelentes, rekordokat_atvesz
-from picasapy.pmpimport.importer import iter_photo_records
+from picasapy.pmpimport.importer import beolvas_db3
 from picasapy.pmpimport.remap import PathRemapper
 from picasapy.scanner import discover_installations
 
@@ -58,10 +58,12 @@ _MANUAL_MAPPING_REQUIRED = "picasapy-manual-mapping-required"
 class PicasaImportController(BackgroundWorkerMixin, QObject):
     """`Eszközök ▸ Import a Picasából…` — a db3 adatainak átvétele."""
 
-    #: (mappák, kulcsszó, hely, arc, kihagyott) — a felhasználónak szóló
-    #: számok. A `kihagyott` azt mondja meg, hány fotón volt db3-adat, de az
-    #: ini-ben már állt érték: ott SZÁNDÉKOSAN nem nyúltunk hozzá.
-    importFinished = Signal(int, int, int, int, int)
+    #: (mappák, kulcsszó, hely, arc, kihagyott, wordhash_kihagyott) — a
+    #: felhasználónak szóló számok. A `kihagyott` azt mondja meg, hány fotón
+    #: volt db3-adat, de az ini-ben már állt érték: ott SZÁNDÉKOSAN nem
+    #: nyúltunk hozzá. A `wordhash_kihagyott` (#4889) a mappasorrend-listák
+    #: kihagyott elemeit számolja.
+    importFinished = Signal(int, int, int, int, int, int)
     #: a db3 olvasása vagy az írás hibára futott — a szöveg a felhasználóé
     importFailed = Signal(str)
     #: nincs mit átvenni: nem találtunk db3-könyvtárat. ⚠️ Ez NEM hiba —
@@ -80,7 +82,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
     ) -> None:
         super().__init__(parent)
         self._felderito = felderito or discover_installations
-        self._olvaso = olvaso or iter_photo_records
+        self._olvaso = olvaso or beolvas_db3
         self._atvevo = atvevo or rekordokat_atvesz
         self._remapper = remapper or _ALAP_REMAP
         self._running = False
@@ -159,14 +161,21 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
                     return
                 osszes = AtvetelJelentes()
                 for db3 in konyvtarak:
-                    rekordok = tuple(self._olvaso(db3, remapper))
-                    osszes = osszes + self._atvevo(rekordok)
+                    beolvasas = self._olvaso(db3, remapper)
+                    osszes = (
+                        osszes
+                        + self._atvevo(beolvasas.rekordok)
+                        + AtvetelJelentes(
+                            wordhash_kihagyott=beolvasas.wordhash_kihagyott
+                        )
+                    )
                 self.importFinished.emit(
                     osszes.mappak,
                     osszes.kulcsszo,
                     osszes.hely,
                     osszes.arc,
                     osszes.kihagyott,
+                    osszes.wordhash_kihagyott,
                 )
             except Exception as hiba:  # a felhasználónak szól, nem elnyeljük
                 _log.exception("A Picasa-import elakadt")

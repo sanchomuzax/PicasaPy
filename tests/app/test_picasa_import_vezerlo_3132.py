@@ -19,6 +19,7 @@ import pytest
 
 from picasapy.app.picasa_import_controller import PicasaImportController
 from picasapy.pmpimport.db3_atvetel import AtvetelJelentes
+from picasapy.pmpimport.importer import Db3Beolvasas
 from picasapy.scanner.discovery import PicasaInstallation
 
 
@@ -52,7 +53,7 @@ def vezerlo_gyar(qt_app):
         def olvaso(db3_dir, remapper):
             if hiba is not None:
                 raise hiba
-            return tuple(rekordok)
+            return Db3Beolvasas(rekordok=tuple(rekordok))
 
         def atvevo(rek, *, backup=True):
             return jelentes if jelentes is not None else AtvetelJelentes()
@@ -105,7 +106,7 @@ class TestSikeresAtvetel:
         kesz = _Fogo()
         v.importFinished.connect(kesz)
         _lefut(v, qt_app)
-        assert kesz.tetelek == [(3, 12, 4, 7, 2)]
+        assert kesz.tetelek == [(3, 12, 4, 7, 2, 0)]
 
     def test_futas_kozben_a_running_IGAZ_utana_hamis(self, vezerlo_gyar, qt_app, tmp_path):
         db3 = tmp_path / "Picasa2"

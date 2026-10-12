@@ -159,6 +159,10 @@ class AtvetelJelentes:
     kihagyott: int = 0
     #: #4889: hány képre vettük át a Picasa mappasorrendjét
     sorrend: int = 0
+    #: #4889: a `wordhash.dat` mappalistáiból kihagyott elemek (nem fájl,
+    #: nem oldható fel, duplikált sor). Nem a `kihagyott`: az a „már volt
+    #: adat" számláló. A beolvasó számolja (`importer.beolvas_db3`).
+    wordhash_kihagyott: int = 0
 
     def __add__(self, masik: "AtvetelJelentes") -> "AtvetelJelentes":
         return AtvetelJelentes(
@@ -168,6 +172,9 @@ class AtvetelJelentes:
             arc=self.arc + masik.arc,
             sorrend=self.sorrend + masik.sorrend,
             kihagyott=self.kihagyott + masik.kihagyott,
+            wordhash_kihagyott=(
+                self.wordhash_kihagyott + masik.wordhash_kihagyott
+            ),
         )
 
 
