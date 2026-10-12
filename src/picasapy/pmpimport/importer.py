@@ -10,13 +10,17 @@ oszthatja ki (CONTRIBUTING.md).
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 from .deferredregion import DeferredFace, parse_deferred_region
 from .remap import PathRemapper
 from .table import read_table
-from .thumbindex import read_thumb_index, resolve_path
+from .thumbindex import ThumbIndexEntry, read_thumb_index, resolve_path
+from .wordhash import WordHashFormatError, read_wordhash
+
+logger = logging.getLogger(__name__)
 
 # az importban hasznosított imagedata-oszlopok (mind opcionális/sparse)
 #: #2336: a `tags`, `lat` és `long` a valódi adatbázisban 342, illetve
@@ -64,6 +68,8 @@ class PhotoRecord:
     latitude: float | None
     longitude: float | None
     faces: tuple[DeferredFace, ...]
+    #: #4889: a Picasa mappalistájából átvett kézi pozíció, ha van.
+    manual_priority: float | None = None
 
 
 def iter_photo_records(
@@ -86,6 +92,7 @@ def iter_photo_records(
     entries = read_thumb_index(index_path)
     table = read_table(db3_dir, "imagedata")
     csillagos = _read_starlist(db3_dir)
+    manual_priorities = _folder_manual_priorities(db3_dir, entries, remapper)
 
     records = []
     for entry in entries:
@@ -132,9 +139,104 @@ def iter_photo_records(
                     table.value("long", entry.index), geoview_jelzo
                 ),
                 faces=faces,
+                manual_priority=manual_priorities.get(entry.index),
             )
         )
     return tuple(records)
+
+
+def _folder_manual_priorities(
+    db3_dir: Path,
+    entries: tuple[ThumbIndexEntry, ...],
+    remapper: PathRemapper,
+) -> dict[int, float]:
+    """A `category=2` mappák wordhash-listáit thumbindex-sorokra oldja fel.
+
+    A hibás, csonka vagy hiányzó wordhash nem állíthatja le a többi db3-adat
+    importját. A lista nem fájl vagy fel nem oldható elemeit kihagyjuk és
+    számmal naplózzuk.
+    """
+    wordhash_path = _find_wordhash(db3_dir)
+    if wordhash_path is None:
+        return {}
+    try:
+        album_lists = read_wordhash(
+            wordhash_path, expected_entity_count=len(entries)
+        )
+    except (OSError, WordHashFormatError) as exc:
+        logger.warning(
+            "A wordhash.dat kézi mappasorrendje kimarad, a fájl hibás vagy "
+            "nem olvasható: %s",
+            exc,
+        )
+        return {}
+
+    try:
+        albumdata = read_table(db3_dir, "albumdata")
+    except (OSError, ValueError) as exc:
+        logger.warning(
+            "A wordhash.dat mappasorrendje kimarad, az albumdata nem "
+            "olvasható: %s",
+            exc,
+        )
+        return {}
+
+    priorities: dict[int, float] = {}
+    for album_row in range(albumdata.row_count):
+        if albumdata.value("category", album_row) != 2:
+            continue
+        token = albumdata.value("token", album_row)
+        filename = albumdata.value("filename", album_row)
+        if not isinstance(token, str) or not token.startswith("]album:"):
+            continue
+        if not isinstance(filename, str) or not filename:
+            continue
+        album_rows = album_lists.get(token)
+        if album_rows is None:
+            continue
+        local_folder = remapper.remap(filename)
+        if local_folder is None:
+            continue
+        folder_path = Path(local_folder)
+
+        skipped = 0
+        seen: set[int] = set()
+        position = 0
+        for row in album_rows:
+            if row >= len(entries):
+                skipped += 1
+                continue
+            entry = entries[row]
+            if entry.is_directory or entry.is_face_record or not entry.name:
+                skipped += 1
+                continue
+            local_path = remapper.remap(resolve_path(entries, entry))
+            if local_path is None or Path(local_path).parent != folder_path:
+                skipped += 1
+                continue
+            if row in seen:
+                skipped += 1
+                continue
+            seen.add(row)
+            priorities[row] = float(position)
+            position += 1
+
+        if skipped:
+            logger.warning(
+                "A wordhash.dat %s mappalistájából %d kihagyott elem "
+                "nem fájl vagy nem oldható fel thumbindex-útvonalra",
+                token,
+                skipped,
+            )
+    return priorities
+
+
+def _find_wordhash(db3_dir: Path) -> Path | None:
+    """A `wordhash.dat` feloldása kis-nagybetű-tűrően."""
+    for path in db3_dir.iterdir():
+        if path.name.casefold() == "wordhash.dat":
+            return path
+    return None
 
 
 _THUMB_INDEX_NAME = "thumbindex.db"

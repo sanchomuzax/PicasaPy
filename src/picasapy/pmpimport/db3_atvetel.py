@@ -57,6 +57,7 @@ from pathlib import Path
 
 from picasapy.ini.document import IniDocument
 from picasapy.ini.io import load_or_empty, update_document
+from picasapy.ini.priority import prioritassal
 from picasapy.metadata.gps import format_geotag
 from picasapy.pmpimport.arcatvetel import arcokat_atvesz, atveendo_arcok
 from picasapy.pmpimport.importer import PhotoRecord
@@ -156,6 +157,8 @@ class AtvetelJelentes:
     arc: int = 0
     #: hány fotón volt db3-adat, de az ini-ben már állt érték (nem nyúltunk hozzá)
     kihagyott: int = 0
+    #: #4889: hány képre vettük át a Picasa mappasorrendjét
+    sorrend: int = 0
 
     def __add__(self, masik: "AtvetelJelentes") -> "AtvetelJelentes":
         return AtvetelJelentes(
@@ -163,6 +166,7 @@ class AtvetelJelentes:
             kulcsszo=self.kulcsszo + masik.kulcsszo,
             hely=self.hely + masik.hely,
             arc=self.arc + masik.arc,
+            sorrend=self.sorrend + masik.sorrend,
             kihagyott=self.kihagyott + masik.kihagyott,
         )
 
@@ -177,7 +181,7 @@ def mappa_atvetel(
     le.
     """
     eredmeny = document
-    kulcsszo = hely = arc = kihagyott = 0
+    kulcsszo = hely = arc = sorrend = kihagyott = 0
     for rekord in rekordok:
         nev = Path(rekord.local_path).name
         volt_kulcsszo = bool(atveendo_kulcsszavak(rekord.tags)) and _van_erteke(
@@ -208,8 +212,30 @@ def mappa_atvetel(
         hely += int(irt_hely)
         arc += int(irt_arc)
         kihagyott += int(volt_kulcsszo or volt_hely or volt_arc)
+
+    # A teljes mappa meglévő kézi rendje előnyt élvez. Egy részleges,
+    # felhasználó által írt `priority=` készletet sem egészítünk ki importtal.
+    van_meglevo_sorrend = any(
+        section.get("priority") is not None for section in eredmeny.file_sections()
+    )
+    if not van_meglevo_sorrend:
+        feldolgozott_nevek: set[str] = set()
+        for rekord in rekordok:
+            if rekord.manual_priority is None:
+                continue
+            nev = Path(rekord.local_path).name
+            if nev in feldolgozott_nevek:
+                continue
+            feldolgozott_nevek.add(nev)
+            eredmeny = prioritassal(eredmeny, nev, rekord.manual_priority)
+            sorrend += 1
     return eredmeny, AtvetelJelentes(
-        mappak=0, kulcsszo=kulcsszo, hely=hely, arc=arc, kihagyott=kihagyott
+        mappak=0,
+        kulcsszo=kulcsszo,
+        hely=hely,
+        arc=arc,
+        sorrend=sorrend,
+        kihagyott=kihagyott,
     )
 
 
@@ -262,7 +288,7 @@ def rekordokat_atvesz(
         # Enélkül az `update_document` változatlan tartalmat is kimentene,
         # ami üres `.picasa.ini`-t hozna létre és képfájl-mtime-ot érintene.
         _, proba = mappa_atvetel(load_or_empty(ut), tetelek)
-        if not (proba.kulcsszo or proba.hely or proba.arc):
+        if not (proba.kulcsszo or proba.hely or proba.arc or proba.sorrend):
             osszes = osszes + AtvetelJelentes(kihagyott=proba.kihagyott)
             continue
 
@@ -276,6 +302,7 @@ def rekordokat_atvesz(
             kulcsszo=vegso.kulcsszo,
             hely=vegso.hely,
             arc=vegso.arc,
+            sorrend=vegso.sorrend,
             kihagyott=vegso.kihagyott,
         )
     return osszes

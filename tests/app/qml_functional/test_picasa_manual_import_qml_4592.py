@@ -61,7 +61,7 @@ def _minta_db3(db3: Path) -> None:
     (db3 / "thumbindex.db").write_bytes(
         build_thumb_index(
             [
-                (r"C:\Users\anna\Pictures", None),
+                (r"C:\Users\felhasznalo\Pictures", None),
                 ("IMG_0001.jpg", 0),
             ]
         )
@@ -148,7 +148,7 @@ def test_kattintassal_importal_kezzel_valasztott_mappabol_es_terkepezessel(
             "a kiválasztott Picasa2 mappa nem került a mezőbe",
         )
 
-        _szoveget_beallit(window, drive, r"C:\Users\anna\Pictures", qt_app)
+        _szoveget_beallit(window, drive, r"C:\Users\felhasznalo\Pictures", qt_app)
         _szoveget_beallit(window, local, str(helyi_kepek), qt_app)
         _kattint(window, import_button, qt_app)
         _varj(
