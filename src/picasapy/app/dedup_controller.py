@@ -49,8 +49,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from picasapy.dedup import find_duplicates
-from picasapy.dedup.phash import compute_dhash
 from picasapy.fileops import (
     CompanionLeftBehindError,
     delete_photo_to_trash,
@@ -385,6 +383,11 @@ class DedupController(BackgroundWorkerMixin, QObject):
         Ugyanez a gyorstár szolgálja ki a PONTOS réteg Picasa-gyorskulcsát
         is (#1494, `originfast`): a második körben a változatlan képek
         fájlvégeit sem kell újra beolvasni."""
+        # A duplikátum-algoritmus csak tényleges kereséskor kell; a főablak
+        # vezérlőinek felállítása ne töltse be a képfeldolgozó magot (#4913).
+        from picasapy.dedup import find_duplicates
+        from picasapy.dedup.phash import compute_dhash
+
         keys = _fajl_azonossagok(photos)
         cached = load_dhashes(conn, tuple(keys.values()))
         pending: list[tuple[str, int, int, int]] = []
