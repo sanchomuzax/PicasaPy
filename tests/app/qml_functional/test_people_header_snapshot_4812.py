@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import os
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
@@ -25,6 +25,12 @@ from test_people_panel_new_person_4522 import (
     _prepare_panel as _prepare_one_photo_panel,
     _select_photos,
 )
+
+
+def _pump_events(qt_app, ms=100):
+    """A Qt.callLater-es frissítések lefutnak, mielőtt „nem változik" állítunk."""
+    QTest.qWait(ms)
+    qt_app.processEvents()
 
 
 def _prepare_two_photos(qml_app_valodi_belyegkep, qt_app, tmp_path):
@@ -101,12 +107,14 @@ def test_naming_keeps_header_until_selection_refresh_and_then_updates(
         lambda: _named_item(panel, f"peoplePanelRow_{_EXISTING_NAME}") is not None,
         3.0,
     )
+    _pump_events(qt_app)
     assert header.property("text") == "Who is in these photos?"
 
-    screenshot = window.grabWindow()
-    assert not screenshot.isNull()
-    output = Path(__file__).resolve().parents[3] / "kep-4812.png"
-    assert screenshot.save(str(output), "PNG")
+    capture_path = os.environ.get("PICASAPY_CAPTURE_4812")
+    if capture_path:
+        screenshot = window.grabWindow()
+        assert not screenshot.isNull()
+        assert screenshot.save(capture_path, "PNG")
 
     _select_photos(window, controller, qt_app, [second_path])
     assert varj_feltetelre(
@@ -245,3 +253,76 @@ def test_accepting_a_face_name_suggestion_in_album_refreshes_header_immediately(
         lambda: header.property("text") == "In this photo:",
         3.0,
     )
+
+
+def test_typed_name_in_unnamed_album_keeps_header_until_selection_refresh(
+    qml_app_valodi_belyegkep, qt_app, tmp_path
+):
+    library = tmp_path / "kepek"
+    library.mkdir(exist_ok=True)
+    (library / ".picasa.ini").write_text(
+        "[Contacts2]\n"
+        f"{_CONTACT_ID}={_EXISTING_NAME};;\n",
+        encoding="utf-8",
+    )
+    window, _controller, panel, _library, _photo, _row, face_ids = (
+        _prepare_one_photo_panel(qml_app_valodi_belyegkep, qt_app, tmp_path)
+    )
+    _rejected_id, accepted_id = face_ids
+    panel.setProperty("unnamedAlbumMode", True)
+    assert varj_feltetelre(
+        qt_app, lambda: panel.property("unnamedAlbumMode") is True, 3.0
+    )
+    _pump_events(qt_app)
+
+    header = _child(panel, "peoplePanelHeader")
+    assert header.property("text") == "Who is in these photos?"
+    field = _named_item(panel, f"peoplePanelAddName_{accepted_id}")
+    assert field is not None and field.isVisible()
+    _enter_name(window, qt_app, field, _EXISTING_NAME)
+    assert varj_feltetelre(
+        qt_app,
+        lambda: _named_item(panel, f"peoplePanelAddName_{accepted_id}") is None,
+        3.0,
+    )
+    _pump_events(qt_app)
+    assert header.property("text") == "Who is in these photos?"
+
+
+def test_overlay_naming_of_unnamed_face_keeps_editor_header(
+    qml_app_valodi_belyegkep, qt_app, tmp_path
+):
+    from PySide6.QtCore import QMetaObject, Q_ARG
+
+    window, _controller, panel, _library, _photo, photo_row, _face_ids = (
+        _prepare_one_photo_panel(qml_app_valodi_belyegkep, qt_app, tmp_path)
+    )
+    viewer = window.findChild(QObject, "photoViewer")
+    window.setProperty("viewerOpen", True)
+    viewer.setProperty("currentIndex", photo_row)
+    qt_app.processEvents()
+    QMetaObject.invokeMethod(viewer, "toggleFacesEdit")
+    _pump_events(qt_app, 300)
+    vpanel = window.findChild(QObject, "viewerPeoplePanel")
+    overlay = window.findChild(QQuickItem, "facesOverlay")
+    assert varj_feltetelre(qt_app, lambda: len(overlay.property("faces")) == 2, 3.0)
+    assert vpanel.property("headerText") == "Who is in these photos?"
+
+    face = overlay.property("faces")[0]
+    QMetaObject.invokeMethod(
+        overlay, "openEditorForDetected", Qt.ConnectionType.DirectConnection,
+        Q_ARG("QVariant", face["left"]), Q_ARG("QVariant", face["top"]),
+        Q_ARG("QVariant", face["right"]), Q_ARG("QVariant", face["bottom"]),
+        Q_ARG("QVariant", face["faceId"]),
+    )
+    _pump_events(qt_app)
+    field = window.findChild(QObject, "faceNameField")
+    field.setProperty("text", _EXISTING_NAME)
+    QMetaObject.invokeMethod(overlay, "commitEditor", Qt.ConnectionType.DirectConnection)
+    assert varj_feltetelre(
+        qt_app,
+        lambda: overlay.property("faces")[0]["name"] == _EXISTING_NAME,
+        3.0,
+    )
+    _pump_events(qt_app)
+    assert vpanel.property("headerText") == "Who is in these photos?"

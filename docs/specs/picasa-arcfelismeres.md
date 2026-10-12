@@ -759,7 +759,7 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 | „Név nélküliek” mód, 0 kijelölés | instructions 2 (Text3) | ✅ (#3566) |
 | „Név nélküliek” mód, üres gyűjtemény | üres fejléc, instructions 0/1 (Text1/Text2) | ⛔ nincs: a két szöveg nincs meg nálunk; Text3 áll helyette |
 | a szerkesztőben | mindig az egyképes ág; a nézett személy is szerepel | ✅ a néző panelje (`editorView`), szűrés nélkül (#3566, #3678) |
-| névadás után, a panel sorában vagy a kép alatti mezőben | a fejléc „van személy” bemenete (`+0x364`) **nem frissül**: a szerkesztőben „Who is in these photos?” marad, amíg a panel teljes frissítése (pl. kijelölésváltás) le nem fut — **9/g** | ⛔ nálunk azonnal „In this photo:” lesz (a `peopleHere` élő kötés) — fejlesztés: #4812 |
+| névadás után, a panel sorában vagy a kép alatti mezőben | a fejléc „van személy” bemenete (`+0x364`) **nem frissül**: a szerkesztőben „Who is in these photos?” marad, amíg a panel teljes frissítése (pl. kijelölésváltás) le nem fut — **9/g** | ✅ #4812: a begépelt névadás nem frissíti a fejlécet; a sor élőben frissül |
 
 *A #4045 „Nálunk” összevetése forrásolvasással és helyi QML-teszttel ellenőrzött;
 az eredeti kétképes Colab-mérés továbbra sincs meg. A `Main.qml` normál
@@ -1038,9 +1038,9 @@ A `0x00647df0` tehát a régi `+0x364 = 0` értéket olvassa (`0x00648082`). A s
 
 ⇒ **A kép újranyitása után „In this photo:” áll.** Az újranyitás kijelölésváltás, ezért a teljes frissítés fut: a gyűjtő megtalálja a most már `personalbumid`-del bíró arcot (9/c), a `+0x364` 1 lesz, és a szerkesztő egysoros ága az InThis feliratot adja. A #4522 „In this photo:” tesztje (megnevezett arc, frissen betöltve) tehát ezt az állapotot írja le helyesen.
 
-**Nálunk (forrásolvasással, `origin/main`).** A `PeoplePanel.qml` `baseHeaderText`-je a `hasPeople`-ből számol (`people.length > 0`). A `peopleHere` élő kötés: `(peopleFaceRevision, photos.revision, controller.peopleOfRows(…))` (`Main.qml:3799`, `PhotoViewer.qml:4889`). A `nameFaceFromPanel` → `assignNameToFace` → `assignNameToFaces` után az új sor azonnal megjelenik (#4522 tesztje), ezzel a `hasPeople` igaz lesz, és a fejléc **azonnal** „In this photo:”-ra vált. ⇒ **Eltér az eredetitől.**
+**Nálunk (forrásolvasással, `origin/main`).** A `PeoplePanel.qml` `baseHeaderText`-je a `hasPeople`-ből számol (`people.length > 0`). A `peopleHere` élő kötés: `(peopleFaceRevision, photos.revision, controller.peopleOfRows(…))` (`Main.qml:3799`, `PhotoViewer.qml:4889`). A `nameFaceFromPanel` → `assignNameToFace` → `assignNameToFaces` után az új sor azonnal megjelenik (#4522 tesztje), ezzel a `hasPeople` igaz lesz, és a fejléc **azonnal** „In this photo:”-ra vált. ⇒ **Eltért az eredetitől** (a `origin/main`-en); a javítás után a begépelt névadás nem frissíti a fejlécet (✅ #4812).
 
-**Teendő (#4812):** a fejléc „van személy” bemenete legyen **pillanatkép**. A pillanatképet csak az eredeti teljes frissítésének megfelelő események veszik fel újra; a panel sorai és a sorszám (`resultRowCount`) továbbra is élőben frissüljenek. A pontos feltételeket a jegy „Kész, ha” listája tartalmazza.
+**✅ Megoldva (#4812):** a fejléc „van személy” bemenete pillanatkép. A begépelt névadás (a sor és a kép alatti mező) nem veszi fel újra, így a szerkesztőben „Who is in these photos?” marad; a panel sorai és a sorszám (`resultRowCount`) élőben frissülnek. Az elfogadott javaslat útja változatlan: a Név nélküliek albumban frissít.
 
 *Bizonyítottsági fok: **megerősített**, hogy a sorban és a kép alatti mezőben végzett névadás a fejlécet elavult `+0x364`-gyel számolja újra. A véglegesítő útja és a `0x00642c10` → `0x00647df0` hívás utasításszinten olvasva; a `0x00645350` nem ír `+0x364`-et; az élő #113 felvétel egyezik. **Erős:** az újranyitás utáni „In this photo:”, mert a `selection_changed` → `peoplepanel/update` → `0x0064c340` út statikusan olvasva, élő felvétel nincs róla. **Hatókör:** a `+0x364` írói a `0x00630000`–`0x00660000` tartomány 410 indexelt függvényében pásztázva; a modulon kívüli, a panelmutatót argumentumként kapó író nincs kizárva. Az ellenőrzésre egy egylépéses Colab-felvétel elég: a #113 lépései után egy kép-váltás oda-vissza.*
 

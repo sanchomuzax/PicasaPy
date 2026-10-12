@@ -138,14 +138,12 @@ Rectangle {
     function assignNameToFace(faceId, name) {
         if (!panel.faceScanController || !name || !String(name).trim())
             return false
+        // spec 9/g: a begépelt névadás a fejléc pillanatképét NEM frissíti
+        // (a Név nélküliek albumban sem); a sor élőben frissül
         var assigned = panel.faceScanController.assignNameToFaces(
             [faceId], String(name).trim())
         if (assigned && typeof controller !== "undefined" && controller)
             controller.refreshCollections()
-        if (assigned && panel.unnamedAlbumMode)
-            Qt.callLater(function() {
-                panel.refreshHeaderPeopleSnapshot(true)
-            })
         return assigned
     }
 
