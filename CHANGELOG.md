@@ -9,6 +9,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.9.80] – 2026-10-13
 
+- A README kétnyelvű, verziófüggetlen leírást ad a képességekről és a telepítésről (#4915).
 - A Nézet menü indexkép-pipa tesztje megvárja a menü felépülését, és stabil QML-objektumokat használ (#4916).
 
 ## [0.9.79] – 2026-10-12
