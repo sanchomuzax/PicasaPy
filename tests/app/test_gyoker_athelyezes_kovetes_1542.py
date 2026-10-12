@@ -47,6 +47,7 @@ kimarad) — csak naplózunk.
 
 from __future__ import annotations
 
+import gc
 import time
 from pathlib import Path
 
@@ -146,6 +147,10 @@ def _vezerlot_epit(qt_app, tmp_path, library, *, watcher: bool, lekerdezes: bool
         settings=settings,
         watched_file=tmp_path / "WatchedFolders.txt",
     )
+    # #4896: az előző teszt lebontott vezérlőjének ciklikus maradékát
+    # most véglegesítjük, mielőtt a háttér-szinkron elindul — különben a GC
+    # a futó szinkronszál mellett bont le Qt-objektumot (CI: exit -11).
+    gc.collect()
     ctl.start()
     # #1457: a nem kért figyelőt/időzítőt AZONNAL leállítjuk, még az első
     # várakozás ELŐTT. Korábban a sorrend fordított volt, és a CI-n
@@ -241,6 +246,7 @@ class TestAGyokerKovetese:
         yield ctl, fileops, library, tmp_path
         ctl.shutdown()
         assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
+        gc.collect()
 
     def test_a_roots_az_uj_helyre_mutat(self, egyseg, qt_app):
         ctl, fileops, library, tmp_path = egyseg
@@ -337,6 +343,7 @@ class TestProdukciosIdozitokkel:
         yield ctl, fileops, library, tmp_path
         ctl.shutdown()
         assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
+        gc.collect()
 
     def test_a_konyvtar_nem_urul_ki(self, egyseg, qt_app):
         ctl, fileops, library, tmp_path = egyseg
@@ -385,6 +392,7 @@ class TestHaMasMappaAllARegiHelyen:
             settings=settings,
             watched_file=tmp_path / "WatchedFolders.txt",
         )
+        gc.collect()  # #4896: lásd `_vezerlot_epit`
         ctl.start()
         assert _var(qt_app, lambda: not ctl._sync_running), (
             "#2408: a szinkron nem állt le időben"
@@ -406,6 +414,7 @@ class TestHaMasMappaAllARegiHelyen:
         yield ctl, fileops, library, tmp_path
         ctl.shutdown()
         assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
+        gc.collect()
 
     def test_nem_irjuk_at_a_horgonyt(self, egyseg, qt_app):
         ctl, fileops, library, tmp_path = egyseg

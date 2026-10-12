@@ -7,11 +7,24 @@ import time
 import pytest
 from PySide6.QtCore import QObject
 
+from tests.app.qml_functional import test_photo_menu_commands as menu_commands
 from tests.app.qml_functional.test_photo_menu_commands import (
     _batch_menu_item_names,
     _click_item,
     _picture_menu_item,
 )
+
+# A qml_app teardown a hívó tesztmodul `_KEEP…` listáit üríti. A menüsegédek
+# saját modul-listáját is tegye láthatóvá neki, mert itt onnan használjuk őket.
+_KEEP_QML_OBJECTS = menu_commands._KEEP_QML_OBJECTS
+
+
+@pytest.fixture(autouse=True)
+def _previous_menu_helpers_released_their_wrappers():
+    """A segédmodulban gyűjtött burkokat is takarítsa el a qml_app-fixture."""
+    assert not menu_commands._KEEP_QML_OBJECTS, (
+        "a qml_app-fixture nem ürítette ki az importált menüsegéd burkait"
+    )
 
 
 def _varj(qt_app, feltetel, timeout=3.0):

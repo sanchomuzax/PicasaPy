@@ -12,6 +12,7 @@ from PySide6.QtCore import QObject
 
 from picasapy.index import open_index, sync_tree
 from support.jpeg_factory import make_jpeg
+from tests.app.qml_functional.conftest import _teardown_qml_app
 
 
 class TestEditorWiring:
@@ -697,7 +698,7 @@ class TestViewerFolderBoundedNavigation:
     át a szomszéd mappába."""
 
     @pytest.fixture
-    def qml_app_multi_folder(self, qt_app, tmp_path):
+    def qml_app_multi_folder(self, qt_app, tmp_path, request):
         """Két mappa csillagozott képekkel, egyetlen (mappaátlépő) rács-
         listában betöltve — ahogy a csillag-szűrő is összefésüli őket."""
         import picasapy.app.application as app_module
@@ -799,8 +800,7 @@ class TestViewerFolderBoundedNavigation:
         controller.showStarred()
         qt_app.processEvents()
         yield window, controller, engine
-        engine.deleteLater()
-        qt_app.processEvents()
+        _teardown_qml_app(engine, qt_app, keep_modul=request.module)
 
     def _open_viewer(self, window, qt_app, index):
         window.setProperty("viewerOpen", True)
