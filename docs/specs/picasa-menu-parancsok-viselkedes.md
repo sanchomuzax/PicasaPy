@@ -2192,6 +2192,117 @@ film-/People Albums másik hívási láncában szerepel
 - `Ghidra-kör kell: 0x007fda00 — a Timeline gomb átmenetének tényleges vizuális tartalma, kezdő/végállapota és időzítése. [blokkoló]`
 - A tényleges kártyakép, Timeline sáv állapota, a billentyűk és Exit célja: **NINCS MEG**. A statikus kör után az eredeti Picasa futó módjában célzott billentyű-/húzáspróba és képernyőkép kell; QEMU-harness csak akkor használható, ha a Picasa felületet ezen a képen megjeleníti és az inputot továbbítja.
 
+#### 38.2.2 Futó felmérés az eredeti Picasán (colab #102) — mit mutat a bemutató (#4443, 3. szelet)
+
+**Forrás.** `sanchomuzax/picasa-colab-jobs` #102 (`tipus:ui_capture`,
+eredeti angol Picasa 3.9.141, Wine, 1280×1024; futás 2026-10-06T22:33Z,
+151 mp), a `job-102` kiadás 14 képernyőképe és `allapot.json`-ja. A
+könyvtárban **egyetlen mappa** volt („PicasaTeszt”, 24 kép, a fejléce
+szerint `Oct 6, 2026`) és egyetlen album (`Recently Updated (24)`)
+(`kepernyo__01.png`). Lépéssor: 2 mp várakozás → `ctrl+5` → 8 mp →
+`Right` → 3 → `Right` → 3 → `Left` → 3 → `space` → 6 → `Escape` → 4.
+Az alábbi koordináták a `kepernyo__03.png` pixeleiből mérve (küszöb:
+bármely csatorna ≥ 1, a felismert elem befoglaló téglalapja).
+
+| Állítás | Forrás |
+|---|---|
+| A `Ctrl+5` után **külön felső szintű ablak** jelenik meg `qshow` címmel; a 3–14. lépésben végig megvan (`windows: ["Picasa 3","qshow"]`). | `mérés (colab #102, allapot.json 3–14. lépés)` |
+| A `qshow` szót a binárisban a `0x008037e0` hivatkozza — ugyanaz a függvény, amely a `oneup/timeline`, `oneup/transtype`, `BigSlideshow2` és `Preferences` sztringeket is (38.2.1). A mért ablak tehát a `oneup`/diavetítő-útvonal ablaka. | `bináris (0x00cbd544 → 0x008037e0; string_xrefs.csv)` + `mérés (ablakcím)` |
+| A teljes képernyő fekete; a tartalom a képernyő közepén egy `640×480`-as mezőben ül (lásd a sáv mérését). Mappa-/albumnév és hónap-év felirat: **„PicasaTeszt”** (`x 743–849, y 384–405`) és alatta **„October 2026”** (`x 759–849, y 414–430`), jobbra igazítva (mindkét sor jobb széle `x = 849`). | `mérés (kepernyo__03.png)` |
+| A felirat formája: a mappanév + a mappa dátumának **hónapja és éve** (a fő ablakban ugyanez a mappa `Oct 6, 2026`). A nap nem jelenik meg. | `mérés (kepernyo__01.png ↔ kepernyo__03.png)` |
+| A felirat alatt **két képhalom**: bal `x 694–776, y 585–679` — a mappa képei egymásra dobva, enyhén elforgatva (felül a színtábla és a szürke átmenet látszik); jobb `x 796–869, y 583–665` — egy másik kép(halom). A feliratról egy **pontozott ív** fut le a bal halomhoz (10 apró pont `x 740–843, y 452–564`). | `mérés (kepernyo__03.png, 28× világosítva)` |
+| Hogy a jobb halom ugyanannak a mappának a része, a következő idő-elem, vagy a `Recently Updated` album — **NINCS MEG** (egyetlen mappa mellett ebből a képből nem dönthető el). | `NINCS MEG` |
+| Alsó vezérlősor, balról jobbra: **kilépő gomb** (rács-ikon + balra nyíl) `x 348–390, y 676–703`; **előző** (kerek, balra nyíl) `x 569–595, y 677–704`; **indítás** (diavetítés-ikon + lejátszás-háromszög) `x 619–661, y 676–703`; **következő** (kerek, jobbra nyíl) `x 684–719, y 668–704`. A középső hármas középpontja `x ≈ 640` = a képernyő közepe. | `mérés (kepernyo__03.png)` |
+| A gombok egyezése a `0x007fb210` overlay-neveivel: `exit` ↔ kilépő, `left`/`right` ↔ előző/következő, `startbutton` ↔ indítás. Az ikonok és a nevek egyeznek; a hozzárendelés a kép és az erőforrásnév összevetése, kódbeli kötés nincs mellette. | `bináris (0x007fb210)` + `mérés` — **feltételes** |
+| **Időskála-vonal:** `x 525–769` (**245 px**), `y 733–739` (**7 px**) — pontosan az `overlays/timeline` forrás-rect mérete (`(197,461,442,468)` = `245×7`, 38.2.1). Rajta a **`sliderthumb`** fogantyú `x 591–606, y 729–745` (a küszöb fölötti mag; a forrásgrafika `25×23`). | `mérés` ↔ `bináris (respack.yt 0x00248b99, 0x00248be7)` |
+| Az overlay **1:1 méretben** rajzolódik (nem skálázódik a 1280×1024-re). Függőlegesen a `640×480`-as vászon középre kerül: a vonal forrás-`y` értéke `461`, a képernyőn `733`, a különbség `272 = (1024−480)/2`. Vízszintesen a különbség `525−197 = 328`, nem `320` — a `0x007fb210` futásbeli x-skálázása (38.2.1); a pontos x-szabály **NINCS MEG**. | `mérés` + `bináris (rect)` |
+| Fényerő: a teljes kép legvilágosabb pixele RGB `9/255`; a 3–14. képkocka **bájtra azonos** (azonos md5, `dhash` csupa nulla). A bemutató e felvételen nagyon sötét és mozdulatlan: hogy ez beúszó animáció elakadt első képkockája, a Wine-alatti képernyőrögzítés korlátja, vagy a valódi megjelenés, **NINCS MEG**. | `mérés (12 azonos PNG, md5 7b503c61…)` |
+| A `Right`/`Left`/`space`/`Escape` lenyomása után a kép **nem változott**, az `Escape` után a `qshow` ablak **megmaradt**. ⛔ Ez **nem** billentyű-lelet: az aktív ablak végig a `Picasa 3` maradt (`active.title`), tehát a billentyűk nem bizonyíthatóan a `qshow` ablakhoz mentek. | `mérés (allapot.json, active.title 1–14.)` |
+| Az időskála két végének évszám-/hónapfeliratai: a mostani felvételen (egyetlen hónap) **nincsenek**. A #1903 jegytörzs a tulajdonos (a leltárba nem került) képernyőképéről „időskála `2009. április`–`2026. december`, pontokkal és csúszkafejjel” és „görbe mentén, térben távolodó képek; nagy elmosott háttér” leírást ad. Ez **másodlagos** forrás: a kép maga nincs meg (`referencia/kepek-leltar.md`: „Időrend … nincs kép”). | `mérés (kepernyo__03.png)` + #1903 törzs — **feltételes** |
+
+**A két független út.**
+*A — futó felmérés:* a `Ctrl+5` egy `qshow` nevű teljes képernyős ablakot
+nyit, benne mappanév + hónap-év felirat, képhalmok, pontozott ív, négy gomb
+és egy vonal fogantyúval. *B — bináris/erőforrás:* a `qshow` szót ugyanaz a
+`0x008037e0` hivatkozza, amely a `oneup/timeline`-t és a `BigSlideshow2`-t; a
+mért vonal pontosan `245×7` px, mint az `overlays/timeline` forrás-rectje, és
+függőlegesen pontosan ott ül, ahová egy középre tett `640×480`-as vászon teszi.
+A két út egymástól függetlenül ugyanazt a felületet írja le.
+
+**Cáfoló kísérlet.** (1) Azt próbáltam cáfolni, hogy a `qshow` ablak a
+diavetítés volna, nem az Időrend: a képen nincs teljes képernyős fotó, van
+viszont mappanév + hónap-év felirat, képhalom és időskála — a diavetítés
+`oneup.tre` vezérlőkészletéből (forgatás, csillag, átmenet, kijelzési idő)
+egyik sem látszik. ⇒ Ez az Időrend-állapot. (2) Azt, hogy a billentyűk
+„nem csinálnak semmit”: a mérés ezt nem támasztja alá, mert a fókusz a
+`Picasa 3` ablakon maradt — a lelet érvénytelen, nem negatív.
+(3) Azt, hogy az overlay a képernyőhöz skálázódik: a `245×7` px-es mért
+vonal kizárja (1280/640 = 2× skálánál `490` px volna).
+
+**Bizonyítottsági fok: megerősített** a felület összetételére (ablak,
+felirat-forma, halom, ív, négy gomb, 1:1 méretű vonal + fogantyú, középre tett
+640×480-as vászon); **feltételes** a gombok overlay-névhez rendelésére;
+**NINCS MEG** a billentyűkre, a gombok műveletére, az animációra, a kilépés
+céljára és a jobb halom szerepére.
+
+##### Eredeti | Nálunk | Teendő (a 38.2.1 táblájának pontosítása)
+
+| Eredeti (mérve) | Nálunk (mérve) | Teendő |
+|---|---|---|
+| `Ctrl+5` → külön, teljes képernyős fekete `qshow` ablak, a `oneup`/`BigSlideshow2` útvonalon. | `TimelineView.qml` ablakon belüli év/hónap-rács (`Main.qml:3026`, `anchors.fill: parent`); a menü (`PicasaMenuBar.qml:1151–1156`) és a `Ctrl+5` (`Main.qml:1680–1684`) `enabled: false`. | Teljes képernyős, fekete hátterű Időrend-mód; a menü és a `Ctrl+5` újra aktív. |
+| Időrend-elemenként: mappanév + **hónap és év** (`October 2026`), jobbra igazítva a képhalom fölött. | Csoportfejléc `2026. szeptember (1)` alakban, fotók rácsban. | Az elem felirata: mappanév, alatta a mappadátum hónap-éve (magyarul a meglévő locale-hónapnévvel). |
+| A mappa képei **egymásra dobott, enyhén elforgatott halomban**; a felirattól pontozott ív vezet a halomhoz. | Lapos bélyegkép-rács. | Halom-megjelenítés + pontozott ív; a halom képszáma, a forgatási szögek és az ív görbéje **NINCS MEG** — ezekhez nem szabad becsült értéket beégetni. |
+| Alul négy gomb: kilépés (rács + balra nyíl), előző, indítás (diavetítés + lejátszás), következő; középre igazítva. | `✕ Bezárás` a fejlécben; más gomb nincs. | A négy gomb a mért helyen és sorrendben, a `respack.yt` `overlays/exit`, `left`, `right`, `startbutton` grafikáival. |
+| Alatta `245×7` px-es időskála-vonal `25×23`-as fogantyúval, 1:1 méretben, a `640×480`-as vászon `y 461–468` sávjában. | Nincs. | A vonal + fogantyú a mért mérettel és függőleges helyen. A fogantyú húzhatósága és a pontok (`timelinedot`) jelentése **NINCS MEG** — addig csak megjelenítés, húzásos funkció nélkül. |
+| A diavetítés (`oneup.tre`) vezérlői közt van **`Timeline`** gomb (38.2.1, `oneuptext.tre`). | A `SlideshowView.qml` vezérlősávjában nincs Időrend-gomb (`slideshowExitButton`…`slideshowTimePlus`). | Külön tétel; csak a gomb működésének (`0x007fda00`) feltárása után. |
+
+##### A megvalósítandó eltérések — „Kész, ha”
+
+Most **megvalósítható** (bizonyított):
+
+- [ ] a Nézet ▸ Időrend és a `Ctrl+5` egy **teljes képernyős, fekete hátterű** módot nyit (nem az ablakon belüli rácsot), kattintásos és billentyűs teszttel;
+- [ ] a mód mappánként egy elemet mutat: **mappanév** és alatta a mappadátum **hónap + év** felirata, jobbra igazítva, a nap nélkül;
+- [ ] a mappa képei **halomban** jelennek meg a felirat alatt, a felirattól a halomig pontozott ívvel;
+- [ ] alul középen **előző · indítás · következő**, bal oldalt a **kilépés** gomb, az eredeti `respack.yt` grafikáival;
+- [ ] alattuk a `245×7` px-es vonal és a `25×23` px-es fogantyú, **1:1 méretben** (nem skálázva), a középre tett `640×480`-as vászon `y 461–468` sávjában;
+- [ ] képernyőkép-összevetés a `job-102` `kepernyo__03.png`-vel (a sötétítés nélküli elrendezés: elemek helye és mérete, mért eltéréssel).
+
+**Csak a nyitott kérdések lezárása után** (addig NEM implementálható):
+
+- a halom képszáma, elforgatása, az ív alakja, a jobb halom szerepe;
+- a fogantyú húzása, a `timelinedot` pontok jelentése, a skálavég-feliratok;
+- a billentyűk (nyilak, szóköz, `Escape`) és a gombok művelete; a kilépés célja;
+- az animáció (beúszás, lapozási átmenet, `CTransTimeline`-kapcsolat) és a „Preparing timeline…” megjelenése;
+- a beállítások hatása (a `0x008037e0` a `Preferences` és `BigSlideshow2` sztringet is hivatkozza — hogy a diavetítés-beállítások az Időrendre hatnak-e, **NINCS MEG**).
+
+##### Nyitott — a következő pontos lépés
+
+A billentyű- és gombpróbák egyetlen akadálya a **fókusz**: a #102-ben a
+billentyűk nem a `qshow` ablakhoz mentek. A következő Colab-feladat ezért
+előbb a `qshow` ablak üres, fekete részére kattint, és a gombokat a fent mért
+középpontjukon nyomja meg. Javasolt feladat (a végrehajtó v3-as sémájában,
+legfeljebb 40 lépés):
+
+```json
+{"v": 3, "tipus": "ui_capture",
+ "cel": "Időrend: fókusz a qshow ablakon, majd billentyű- és gombpróba (PicasaPy #4443)",
+ "indulas": "alapallapot",
+ "lepesek": [{"var": 2}, {"billentyu": "ctrl+5"}, {"var_ablak": "qshow", "mp": 30}, {"var": 15},
+             {"kattint": [640, 150]}, {"var": 3},
+             {"billentyu": "Right"}, {"var": 3}, {"billentyu": "Left"}, {"var": 3},
+             {"kattint": [701, 686]}, {"var": 3}, {"kattint": [582, 690]}, {"var": 3},
+             {"kattint": [640, 690]}, {"var": 8}, {"billentyu": "Escape"}, {"var": 4},
+             {"billentyu": "ctrl+5"}, {"var_ablak": "qshow", "mp": 30}, {"var": 15},
+             {"kattint": [640, 150]}, {"var": 2}, {"kattint": [369, 690]}, {"var": 4}],
+ "kimenet": ["kepernyokep", "allapot"], "keret": {"perc": 10}}
+```
+
+A hosszabb (15 mp) várakozás a sötét, mozdulatlan képkocka okát is
+eldönti: ha a kép később kivilágosodik, beúszás volt. Egy második mappa
+(eltérő hónappal) a jobb halom és a skálavég-feliratok kérdését is
+lezárná — ehhez a végrehajtó tesztkészletén kell egy második, más dátumú
+mappa (a `picasa-colab-jobs` mestermásolata).
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
@@ -2222,22 +2333,25 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
-| `ID_VIEW_TIMELINE` (`0x9ccc`) | `0x005e8a70` a `oneup`/overlay bemutatóutat indítja, „Preparing timeline…” szöveget ad át; a `thumbui/timelinebutton` erőforrás rejtett (`thumbui.tre`, `m_hidden`). A képi tartalom és animáció **NINCS MEG**. | A legacy `TimelineView.qml` év/hónap-rács megmaradt, de a Nézet-menü (`PicasaMenuBar.qml:941`) és `Ctrl+5` (`Main.qml:1406`) `enabled: false`; a fejlécgomb eltávolított. | A rács helyett a bizonyított `oneup` útvonalat kell specifikálni; a dátum-/kártyamodell, animáció és billentyűk Ghidra + eredeti futó felületi bizonyíték után implementálhatók. A főablaki eszköztárgomb láthatóságát ne vegyük át automatikusan: a csomagolt erőforrás rejtettnek jelöli. |
+| `ID_VIEW_TIMELINE` (`0x9ccc`) | `0x005e8a70` a `oneup`/overlay bemutatóutat indítja, „Preparing timeline…” szöveget ad át; a `thumbui/timelinebutton` erőforrás rejtett (`thumbui.tre`, `m_hidden`). **Futva mérve (colab #102, 38.2.2):** külön, teljes képernyős fekete `qshow` ablak; mappanév + hónap-év felirat, képhalom, pontozott ív, négy gomb (kilépés · előző · indítás · következő) és 1:1 méretű `245×7` px-es időskála fogantyúval. Billentyűk, animáció, kilépési cél **NINCS MEG**. | A legacy `TimelineView.qml` év/hónap-rács megmaradt, de a Nézet-menü (`PicasaMenuBar.qml:1151–1156`) és `Ctrl+5` (`Main.qml:1680–1684`) `enabled: false`; a fejlécgomb eltávolított. | A 38.2.2 „Kész, ha” listájának bizonyított része most megvalósítható (teljes képernyős mód, felirat, halom, gombsor, vonal + fogantyú); a billentyűk, gombműveletek és animáció a következő Colab-próba után. A főablaki eszköztárgomb láthatóságát ne vegyük át automatikusan: a csomagolt erőforrás rejtettnek jelöli. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
 
 ```
-Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 5 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a három parancsazonosító (38. bevezető); a `ShowHidden`
   tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
-  Időrend `oneup`/overlay belépési útja (38.2.1); a háttérkép teljes írási
+  Időrend `oneup`/overlay belépési útja (38.2.1); az Időrend futó felületének
+  összetétele (38.2.2, colab #102); a háttérkép teljes írási
   lánca, a stílusértékekkel együtt (38.3).
-- **NYITVA (`#4443`):** az Időrend tényleges bemeneti modellje, dátumkártyái,
-  animációja, billentyűi és kilépési célja (38.2.1). A pontos, célzott
-  Ghidra-kérések fent.
+- **NYITVA (`#4443`):** az Időrend billentyűi, gombjainak művelete, a
+  fogantyú húzása, a halom/ív geometriája, az animáció és a kilépés célja
+  (38.2.2). A felület összetétele (ablak, felirat, halom, gombsor, vonal +
+  fogantyú) a colab #102 futó felmérésével **lezárva**. A következő lépés a
+  38.2.2-ben megadott, fókuszt is adó Colab-feladat.
 - **BLOKKOLT:** hogy a jelszó-ajánlat a BE- vagy a KIkapcsoláskor jön-e.
   A `0x005cb990` két hívóhelye statikusan nem különbözteti meg őket.
   **Mi kell hozzá:** egy megfigyelés élő Picasán — a „Nézet ▸ Rejtett
