@@ -198,3 +198,28 @@ class TestAzUjrainditasNemOrziAGlobalModot:
             "c_2018.jpg",
             "a_2024.jpg",
         ]
+
+
+class TestAKeresesSorindexeiAPriorityraMutatnak:
+    """A keresési találatok sorindexei a rács valódi soraira mutatnak.
+
+    A mappa-menü `priority`-alapú rendezése a lemezre írt kézi sorrendet
+    módosítja; a keresési találatok sorindexeinek ettől továbbra is
+    egyezniük kell azzal, amit a rács ténylegesen mutat.
+    """
+
+    def test_a_keresesi_talalatok_sorindexei_a_racs_soraira_mutatnak(
+        self, controller, library
+    ):
+        assert controller.sortFolderBy(str(library / "nyaralas"), "date") is True
+        controller.search("nyaralas")
+        racs = controller.photos.photos
+        assert len(racs) == 3
+        parok = [
+            (elem["row"], elem["name"])
+            for csoport in controller.searchGroups
+            for elem in csoport["photos"]
+        ]
+        assert len(parok) == 3
+        for row, name in parok:
+            assert racs[row].name == name

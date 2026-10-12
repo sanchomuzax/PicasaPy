@@ -77,3 +77,87 @@ def test_nev_szerint_termeszetes_mappankenti_sorrend_tarolodik(
     assert _photos(controller, target) == ["kep1.jpg", "kep2.jpg", "kep10.jpg"]
     controller.selectFolder(str(other))
     assert _photos(controller, other) == ["masik10.jpg", "masik2.jpg"]
+
+
+def _rendezo_vezerlo(tmp_path, root):
+    from picasapy.app.controller import AppController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.thumbs import ThumbnailCache
+
+    db = tmp_path / "index.db"
+    with open_index(db) as conn:
+        sync_tree(conn, root)
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    controller = AppController(
+        db,
+        (str(root),),
+        ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32)),
+        settings=settings,
+        watched_file=tmp_path / "WatchedFolders.txt",
+    )
+    controller._reload()
+    controller.selectFolder(str(root / "cel"))
+    return controller
+
+
+def _kezi_sorrend_a_lemezen(folder: Path) -> dict[str, float]:
+    ini = folder / ".picasa.ini"
+    if not ini.exists():
+        return {}
+    return olvasd_a_prioritasokat(
+        parse_document(ini.read_text(encoding="utf-8"))
+    )
+
+
+def test_forditott_sorrend_a_tarolt_kezi_helyeket_forditja_meg(qt_app, tmp_path):
+    root = tmp_path / "kepek"
+    cel = root / "cel"
+    cel.mkdir(parents=True)
+    for nev in ("a.jpg", "b.jpg", "c.jpg"):
+        make_jpeg(cel / nev, size=(8, 6), taken_at="2024:01:01 10:00:00")
+    # Részben kézi mappa: a és b van kézi helyen, c nincs.
+    (cel / ".picasa.ini").write_text(
+        "[a.jpg]\npriority=1.0\n[b.jpg]\npriority=2.0\n", encoding="utf-8"
+    )
+    controller = _rendezo_vezerlo(tmp_path, root)
+
+    assert controller.sortFolderBy(str(cel), "reverse") is True
+
+    assert _kezi_sorrend_a_lemezen(cel) == {
+        "c.jpg": 1.0,
+        "b.jpg": 2.0,
+        "a.jpg": 3.0,
+    }
+    assert _photos(controller, cel) == ["c.jpg", "b.jpg", "a.jpg"]
+
+
+def test_szinindex_nelkul_a_szinrendezes_nem_ir_sorrendet(qt_app, tmp_path):
+    root = tmp_path / "kepek"
+    cel = root / "cel"
+    cel.mkdir(parents=True)
+    for nev in ("a.jpg", "b.jpg", "c.jpg"):
+        make_jpeg(cel / nev, size=(8, 6))
+    controller = _rendezo_vezerlo(tmp_path, root)
+
+    assert controller.sortFolderBy(str(cel), "color") is False
+
+    assert _kezi_sorrend_a_lemezen(cel) == {}
+
+
+def test_hianyos_szinadatnal_a_szinrendezes_nem_ir_sorrendet(
+    qt_app, tmp_path, monkeypatch
+):
+    root = tmp_path / "kepek"
+    cel = root / "cel"
+    cel.mkdir(parents=True)
+    for nev in ("a.jpg", "b.jpg", "c.jpg"):
+        make_jpeg(cel / nev, size=(8, 6))
+    controller = _rendezo_vezerlo(tmp_path, root)
+    stat = (cel / "a.jpg").stat()
+    # Csak az a.jpg színe van meg; b és c még nincs indexelve.
+    csak_egy = {(str(cel / "a.jpg"), stat.st_mtime_ns, stat.st_size): 120.0}
+    monkeypatch.setattr(controller, "_folder_photo_hues", lambda photos: csak_egy)
+
+    assert controller.sortFolderBy(str(cel), "color") is False
+
+    assert _kezi_sorrend_a_lemezen(cel) == {}

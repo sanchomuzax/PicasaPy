@@ -928,7 +928,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not photos:
             return False
 
-        from .photo_sort import sort_folder_blocks
+        from .photo_sort import sort_folder_blocks, szin_adat_hiany
 
         prioritasok = mappa_prioritasai(folder)
         if mode in SORT_MODES:
@@ -945,9 +945,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             else:
                 ordered = sorted_album(photos, mode)
         elif mode == "color":
-            ordered = sort_folder_blocks(
-                photos, mode, hues=self._folder_photo_hues(photos)
-            )
+            hues = self._folder_photo_hues(photos)
+            if szin_adat_hiany(photos, hues):
+                # A színindex még nem kész: a fájlnév-sorrend ilyenkor
+                # véglegesen kiíródna, ezért nem rendezünk és nem írunk.
+                return False
+            ordered = sort_folder_blocks(photos, mode, hues=hues)
         else:
             ordered = sort_folder_blocks(
                 photos,

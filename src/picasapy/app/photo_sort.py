@@ -100,6 +100,15 @@ def szin_kulcs(record, hues) -> tuple:
     return (SZINES, hue, record.name.casefold())
 
 
+def szin_adat_hiany(records, hues) -> bool:
+    """Igaz, ha a képek közül legalább egynek még nincs indexelt színe (#4890).
+
+    Ilyenkor a szín szerinti sorrend nem végleges: a hiányzó képek a lista
+    végére esnének, és a rendezés kiírná őket az ini-be.
+    """
+    return any(szin_kulcs(record, hues)[0] == NINCS_ADAT for record in records)
+
+
 #: #1721: a kézi hely nélküli képek osztálya — a lista VÉGE (az ADR
 #: szabálya). A színnél is ez a minta (`NINCS_ADAT`).
 VAN_KEZI_HELY, NINCS_KEZI_HELY = 0, 1
