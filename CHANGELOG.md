@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.80] – 2026-10-13
+
+- A README kétnyelvű, verziófüggetlen leírást ad a képességekről és a telepítésről (#4915).
+- A Nézet menü indexkép-pipa tesztje megvárja a menü felépülését, és stabil QML-objektumokat használ (#4916).
+
 ## [0.9.79] – 2026-10-12
 
 - Az elrejtett mappák az index újraépítése után is rejtettek maradnak: az elrejtés mostantól a mappa .picasa.ini fájljába kerül (mint a Picasában), a Picasában elrejtett mappák rejtve jelennek meg, és a Picasában beállított rejtett-mappa jelszó átvehető az importkor (#4597).
