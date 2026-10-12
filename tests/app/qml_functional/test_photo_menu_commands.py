@@ -98,6 +98,11 @@ def _picture_menu_item(qt_app, window, object_name):
         if "MenuBarItem" in item.metaObject().className()
         and item.property("text") in titles
     )
+    if not isinstance(header, QQuickItem):
+        raise TypeError(
+            "a Picture menü fejléce QQuickItem helyett "
+            f"{type(header).__name__} típusú"
+        )
     _KEEP_QML_OBJECTS.extend((menu_bar, menu, header))
     center = header.mapToScene(
         QPointF(header.width() / 2, header.height() / 2)
@@ -180,9 +185,26 @@ def _menu_item_info(menu, object_name, window, *, text=None):
     result, error = expression.evaluate()
     assert not error, expression.error()
     assert result is not None, f"{object_name} nincs a menüben"
-    item = shiboken6.wrapInstance(
-        shiboken6.getCppPointer(result)[0], QQuickItem
-    )
+    if not isinstance(result, QObject):
+        raise TypeError(
+            f"{object_name} menüeleme QObject helyett "
+            f"{type(result).__name__} típusú"
+        )
+    if not shiboken6.isValid(result):
+        raise RuntimeError(f"{object_name} menüeleme már felszabadult")
+    if isinstance(result, QQuickItem):
+        item = result
+    else:
+        item = shiboken6.wrapInstance(
+            shiboken6.getCppPointer(result)[0], QQuickItem
+        )
+    if not isinstance(item, QQuickItem):
+        raise TypeError(
+            f"{object_name} menüeleme QQuickItem helyett "
+            f"{type(item).__name__} típusú"
+        )
+    if not shiboken6.isValid(item):
+        raise RuntimeError(f"{object_name} menüeleme már felszabadult")
     center = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     _KEEP_QML_OBJECTS.append(item)
     item_window = item.window()
