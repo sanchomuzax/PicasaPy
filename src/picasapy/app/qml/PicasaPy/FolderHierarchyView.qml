@@ -68,6 +68,10 @@ Item {
     readonly property alias rowCount: list.count
 
     signal folderChosen(string path)
+    // A képes mappák a FolderPane teljes mappa-menüjét használják; az
+    // indexen kívüli, saját képet nem tartalmazó köztes sorok maradnak a
+    // HierFolder rövid menüjénél.
+    signal folderContextMenuRequested(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
     // gazdában van (`FUN_00733a40`): a komponens csak jelez, nem cselekszik.
     signal locateOnDiskRequested(string path)
@@ -222,13 +226,13 @@ Item {
                     height: root.rowHeight - 4
                     anchors.verticalCenter: parent.verticalCenter
 
-                    // #2215: a `Ready` ÖNMAGÁBAN nem elég. A szolgáltató
-                    // korábban 1×1 átlátszó képet adott, ha nincs borító —
-                    // az sikeresen betöltődik, tehát ez a feltétel igaz
-                    // lett, és a mappaikon elrejtőzött: a sor üresen
-                    // maradt. A szolgáltató ma null képet ad (`Error`), a
-                    // méret-ellenőrzés pedig második védelem arra az
-                    // esetre, ha valaki visszahozná a helyettesítő képet.
+                    // #2215/#4876: a `Ready` ÖNMAGÁBAN nem elég. A
+                    // szolgáltató borító nélkül SZÁNDÉKOSAN 1×1 átlátszó,
+                    // érvényes jelölőt ad (null képre a Qt minden kérésnél
+                    // hibasort írna) — az sikeresen betöltődik, ezért a
+                    // méretfeltétel (`implicitWidth > 1`) az ELSŐDLEGES
+                    // védelem: enélkül a mappaikon elrejtőzne, és a sor
+                    // üresen maradna.
                     readonly property bool boritoLatszik:
                         borito.status === Image.Ready
                         && borito.implicitWidth > 1
@@ -320,7 +324,13 @@ Item {
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onClicked: function (mouse) {
                     if (mouse.button === Qt.RightButton) {
-                        if (!row.isRoot) root.openContextMenu(row.modelData.path)
+                        if (!row.isRoot) {
+                            if (row.modelData.own > 0)
+                                root.folderContextMenuRequested(
+                                    row.modelData.path)
+                            else
+                                root.openContextMenu(row.modelData.path)
+                        }
                         return
                     }
                     // #3681: mentés-szűrő módban a mentetlen sor egy pipa —

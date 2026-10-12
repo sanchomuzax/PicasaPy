@@ -40,6 +40,9 @@ Rectangle {
     signal searchEdited(string text)
     // a törlő × gomb: a mező már üres, a nézet álljon vissza
     signal searchCleared()
+    // A nyitott javaslatlista billentyűit a Main.qml fordítja műveletre.
+    property bool searchSuggestionsVisible: false
+    signal searchSuggestionKeyPressed(int key)
     // #23: az "Import" gomb — a megnyitást a Main.qml végzi (ImportSourceDialog)
     signal importRequested()
     //: #1421: az eredeti `newalbum` gombja — ugyanaz a párbeszéd,
@@ -473,7 +476,7 @@ Rectangle {
                 y: 9
                 spacing: 3
 
-                // szűrő-kapcsolók (kézikönyv 09): ★ ☺ ⚲ ▤ + csúszka;
+                // szűrő-kapcsolók (kézikönyv 09): ★ ☺ ⚲ + csúszka;
                 // a bekapcsolt szűrő tónusa jelölő kék
                 Rectangle {
                     // #305: null-őr — a controller a QML-engine
@@ -481,8 +484,8 @@ Rectangle {
                     // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
                     // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
                     readonly property bool ctlFilterActive:
-                        (controller && controller.filterActive !== undefined)
-                            ? controller.filterActive : false
+                        (controller && controller.viewModeName !== undefined)
+                            ? controller.viewModeName === "starred" : false
                     objectName: "starFilterButton"
                     width: 22; height: 20; radius: 2
                     //: #839: a MÉRT állapotok — aktívan ZÖLD gomb fehér
@@ -509,7 +512,7 @@ Rectangle {
                     TapHandler {
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed) {
-                            controller.filterActive
+                            parent.ctlFilterActive
                                 ? controller.clearFilter()
                                 : controller.showStarred()
                         }
@@ -664,6 +667,22 @@ Rectangle {
                     width: 22; height: 20
                     readonly property bool ctlHasGeo:
                         controller ? controller.geoMarkerCount > 0 : false
+                    readonly property bool ctlCanShowGeo:
+                        ctlHasGeo || (controller && controller.filterActive !== undefined
+                                      ? controller.filterActive : false)
+                    readonly property bool aktiv:
+                        (controller && controller.viewModeName !== undefined)
+                            ? controller.viewModeName === "geo" : false
+                    Rectangle {
+                        objectName: "geoFilterBackground"
+                        anchors.fill: parent
+                        radius: 2
+                        color: parent.aktiv
+                               ? Theme.szuroHatterAktiv
+                               : (geoFilterHover.hovered
+                                  ? Theme.szuroHatterRamutat : "transparent")
+                        border.width: 0
+                    }
                     // #361: saját helyjelölő-tű SVG a korábbi "⚲"
                     // unicode-glif helyett (a hover/inaktív állapotot most
                     // opacity vezérli — a piros tű már önmagában "geo"-
@@ -674,30 +693,28 @@ Rectangle {
                         anchors.margins: 3
                         source: "icons/geo-pin.svg"
                         fillMode: Image.PreserveAspectFit
-                        opacity: parent.ctlHasGeo
-                                 ? (geoFilterHover.hovered ? 1.0 : 0.85)
-                                 : 0.35
+                        opacity: parent.aktiv
+                                 ? 1.0
+                                 : (parent.ctlHasGeo
+                                    ? (geoFilterHover.hovered ? 1.0 : 0.85)
+                                    : 0.35)
                     }
                     // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: geoFilterHover }
                     TapHandler {
-                        enabled: parent.ctlHasGeo
+                        enabled: parent.ctlCanShowGeo
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed) {
-                            controller.filterActive
+                            parent.aktiv
                                 ? controller.clearFilter()
                                 : controller.showGeotagged()
                         }
                     }
                 }
-                Text {   // mozgókép / méret
-                    width: 22; height: 20
-                    text: "▤"; font.pixelSize: 12; color: Theme.placeholderText
-                    opacity: 0.45
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
+                // #4532: a korábbi kezelő nélküli „▤" jel innen kikerült —
+                // az eredeti szűrőkeresőben nincs ilyen elem, a mozgófilm
+                // a saját gombján van (`movieFilter`).
                 Item { width: 6; height: 1 }
                 //: #1830: az idő-csúszka — az eredeti `timeslider`.
                 //:
@@ -711,6 +728,7 @@ Rectangle {
                 //: A nulla NEM „nagyon régi", hanem „nincs szűrés" — a
                 //: vezérlő nulla értéknél kikapcsolja a szűrőt.
                 PicasaSlider {
+                    id: ageFilterSlider
                     objectName: "dateRangeFilterSlider"
                     width: 90; height: 20
                     from: 0.0
@@ -725,6 +743,13 @@ Rectangle {
                     //: `moved` az elengedésre/lépésre szól, a `valueChanged`
                     //: minden képpontnyi vonszolásra lekérdezné az indexet
                     onMoved: if (controller) controller.setAgeFilter(value)
+                }
+                Connections {
+                    target: controller
+                    function onStatusChanged() {
+                        if (controller && controller.viewModeName !== "age")
+                            ageFilterSlider.value = 0.0
+                    }
                 }
             }
         }
@@ -783,6 +808,19 @@ Rectangle {
                     verticalAlignment: TextInput.AlignVCenter
                     selectByMouse: true
                     onTextEdited: toolbar.searchEdited(text)
+                    Keys.priority: Keys.BeforeItem
+                    Keys.onPressed: function (event) {
+                        if (!toolbar.searchSuggestionsVisible)
+                            return
+                        if (event.key === Qt.Key_Down
+                                || event.key === Qt.Key_Up
+                                || event.key === Qt.Key_Return
+                                || event.key === Qt.Key_Enter
+                                || event.key === Qt.Key_Escape) {
+                            toolbar.searchSuggestionKeyPressed(event.key)
+                            event.accepted = true
+                        }
+                    }
                     Text {
                         visible: searchField.text.length === 0
                                  && !searchField.activeFocus

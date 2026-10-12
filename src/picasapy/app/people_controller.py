@@ -24,7 +24,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
-from picasapy.index import all_photos, open_index
+from picasapy.index import all_photos, open_index, unnamed_faces_for_photos
 from picasapy.index.faces_detected import (
     suggested_album_photos,
     suggested_faces_for,
@@ -46,6 +46,7 @@ from picasapy.ini import (
     ensure_contact,
     find_contact_id,
     load_contacts_xml,
+    ini_source_path,
     load_document,
     parse_faces,
     save_contacts_xml,
@@ -59,10 +60,19 @@ from picasapy.ini import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .models import _thumb_url
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
 # és a lemezhiba is KEZELT hiba, nem néma adatvesztés
 _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
+
+
+
+def _load_ini(ini_path: Path):
+    """Olvasáshoz: a `.picasa.ini`, hiányában a régi `Picasa.ini` (#4819).
+
+    A `load_document` modulszintű név marad (a tesztek ezt számolják)."""
+    return load_document(ini_source_path(ini_path) or ini_path)
 
 
 class PeopleMixin:
@@ -165,7 +175,7 @@ class PeopleMixin:
 
         for folder_path, folder_photos in by_folder.items():
             try:
-                document = load_document(Path(folder_path) / PICASA_INI_NAME)
+                document = _load_ini(Path(folder_path) / PICASA_INI_NAME)
             except (OSError, ValueError):
                 continue
             contacts = tuple(
@@ -359,7 +369,7 @@ class PeopleMixin:
             for folder_path, _folder_photos in sorted(by_folder.items()):
                 ini_path = Path(folder_path) / PICASA_INI_NAME
                 try:
-                    current = load_document(ini_path)
+                    current = _load_ini(ini_path)
                 except (OSError, ValueError):
                     continue
                 if not any(
@@ -596,7 +606,7 @@ class PeopleMixin:
             kulcs = str(photo.folder_path)
             if kulcs not in dokumentumok:
                 try:
-                    dokumentumok[kulcs] = load_document(
+                    dokumentumok[kulcs] = _load_ini(
                         Path(photo.folder_path) / PICASA_INI_NAME
                     )
                 except (OSError, ValueError):
@@ -615,12 +625,14 @@ class PeopleMixin:
 
     @Slot(list, result="QVariantList")
     def peopleOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
-        """A megadott sorokon NÉVVEL szereplő emberek: `[{name, count}]`.
+        """A megadott sorokon NÉVVEL szereplő emberek: `[{name, count,
+        photo_id, rect, thumbUrl}]`.
 
         A `count` azt mondja, a kijelölés hány képén szerepel az illető; a
         főnézetben minden rekord egy megjelenő személy-sort ad a panelnek
-        (#4045)."""
-        counts: dict[str, int] = {}
+        (#4045). Több fotón előforduló személynél az első kijelölt fotó
+        arcát használjuk az ikonképhez."""
+        people: dict[str, dict] = {}
         # ⚠️ #1146: MAPPÁNKÉNT olvasunk ini-t, nem képenként. A régi ág
         # soronként hívott `load_document()`-et — 2 002 soros kijelölésnél
         # 6 006 ini-beolvasás egyetlen billentyűleütésre, hálózati
@@ -631,7 +643,7 @@ class PeopleMixin:
             kulcs = str(folder)
             if kulcs not in dokumentumok:
                 try:
-                    dokumentumok[kulcs] = load_document(folder / PICASA_INI_NAME)
+                    dokumentumok[kulcs] = _load_ini(folder / PICASA_INI_NAME)
                 except OSError:
                     dokumentumok[kulcs] = None
             document = dokumentumok[kulcs]
@@ -650,19 +662,81 @@ class PeopleMixin:
                 faces = parse_faces(raw)
             except ValueError:
                 continue
-            on_photo = {
-                names[face.contact_id.casefold()]
-                for face in faces
-                if face.is_identified and face.contact_id.casefold() in names
-            }
-            for name in on_photo:
-                counts[name] = counts.get(name, 0) + 1
+            on_photo = {}
+            for face in faces:
+                name = names.get(face.contact_id.casefold())
+                if face.is_identified and name and name not in on_photo:
+                    on_photo[name] = face
+            for name, face in on_photo.items():
+                entry = people.setdefault(
+                    name,
+                    {
+                        "name": name,
+                        "count": 0,
+                        "photo_id": photo.id,
+                        "rect": None,
+                        "thumbUrl": "",
+                    },
+                )
+                entry["count"] += 1
+                if entry["rect"] is None:
+                    rect = (
+                        face.rect.left,
+                        face.rect.top,
+                        face.rect.right,
+                        face.rect.bottom,
+                    )
+                    entry["photo_id"] = photo.id
+                    entry["rect"] = list(rect)
+                    entry["thumbUrl"] = _thumb_url(photo, arc=rect)
         return [
-            {"name": name, "count": count}
-            for name, count in sorted(
-                counts.items(), key=lambda kv: (-kv[1], kv[0].casefold())
+            person
+            for person in sorted(
+                people.values(),
+                key=lambda entry: (-entry["count"], entry["name"].casefold()),
             )
         ]
+
+    @Slot(list, result="QVariantList")
+    def unnamedFacesOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
+        """A kijelölt fotók saját, még névtelen arcai a jobb oldali panelhez.
+
+        A névadás és mellőzés meglévő `FaceScanController`-műveleteihez
+        szükséges `faceId`-t és a közös bélyegkép-szolgáltató URL-jét adja.
+        A fotó sorrendje a kijelölést követi, az azonos fotón lévő arcoké
+        felülről, majd balról lefelé determinisztikus.
+        """
+        photos = self._rows_to_photos(rows)
+        by_id = {photo.id: photo for photo in photos}
+        if not by_id:
+            return []
+        photo_order = {photo.id: index for index, photo in enumerate(photos)}
+        with open_index(self._db_path) as conn:
+            faces = unnamed_faces_for_photos(conn, by_id)
+
+        result = []
+        for face in sorted(
+            faces,
+            key=lambda item: (
+                photo_order[item.photo_id],
+                item.rect[1] if item.rect else 1.0,
+                item.rect[0] if item.rect else 1.0,
+                item.id,
+            ),
+        ):
+            photo = by_id.get(face.photo_id)
+            if photo is None or face.rect is None:
+                continue
+            result.append(
+                {
+                    "faceId": face.id,
+                    "photo_id": face.photo_id,
+                    "rect": list(face.rect),
+                    "thumbUrl": _thumb_url(photo, arc=face.rect),
+                    "suggestedName": face.suggested_name or "",
+                }
+            )
+        return result
 
     def _refresh_people_view(self, mode: str, param: str) -> bool:
         """A `_refresh_view()` "person" ágának kiszervezett teste — igazat ad

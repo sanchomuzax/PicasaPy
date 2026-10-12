@@ -64,7 +64,6 @@ class TestMukodoMenuItemekValtozatlanok:
             "menuFileExport",
             "menuFileLocate",
             "menuEditCopyEffects",
-            "menuViewDarkTheme",
         ):
             item = window.findChild(QObject, name)
             assert item is not None, name
@@ -72,3 +71,14 @@ class TestMukodoMenuItemekValtozatlanok:
             assert not item.property("placeholder")
             dot = item.findChild(QObject, "placeholderDot")
             assert dot is None, name
+
+    def test_sajat_mukodo_tetelen_nincs_lathato_pont(self, qml_app):
+        """#4638: a Sötét téma SAJÁT tétel (`PicasaMenuItem`, `sajat`), így
+        a sablonja a pontot is tartalmazza — de a működő tételen az nem
+        látszik. Ez a látható állapotot őrzi, nem a belső fa alakját."""
+        window, _controller, _engine = qml_app
+        item = window.findChild(QObject, "menuViewDarkTheme")
+        assert item is not None
+        assert item.property("placeholder") is False
+        dot = item.findChild(QObject, "placeholderDot")
+        assert dot is None or dot.property("visible") is False

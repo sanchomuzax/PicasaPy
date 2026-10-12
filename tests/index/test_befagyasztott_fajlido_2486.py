@@ -273,7 +273,12 @@ class TestMigracio:
             #: #2902: a friss séma már tartalmazza — a v16 nem
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             #: #4332: a felvételi dátum felülírása a v20-ban érkezik
+            "DROP INDEX IF EXISTS idx_photos_video_metadata_missing;\n"
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
+            #: #4580: a videómezők csak a v21-ben érkeznek
+            "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photos DROP COLUMN frame_rate;\n"
+            "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "PRAGMA user_version = 16;"
         )
         raw.execute("INSERT INTO folders(id, path, has_ini) VALUES (1, '/kepek', 0)")

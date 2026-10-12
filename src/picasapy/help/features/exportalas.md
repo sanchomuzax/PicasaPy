@@ -16,14 +16,25 @@ Beállítható:
   oldal képpontban mért méretét. A csúszka mellett a program megírja,
   mire számíts (kisebb fájl és némi minőségromlás, vagy nagy fájl és
   minden részlet).
-- **Képminőség**: Minimum, Normál, Maximum, vagy az eredeti minőség
-  megőrzése.
+- **Képminőség**: **Automatikus** (megőrzi az eredeti képminőséget),
+  **Normál** (a minőség és a méret megfelelő egyensúlya), **Maximum**
+  (nagyon nagy fájl, az apró részleteket is megőrzi), **Minimum**
+  (legkisebb fájl, némi minőségvesztéssel), vagy **Egyéni (N)** — ilyenkor
+  csúszkával magad állítod be a minőséget. A **Maximum** teljes
+  színfelbontású (4:4:4) JPEG-et ír; az **Automatikus** a forrás
+  JPEG-jének színfelbontását megtartja.
 - **Filmek exportálása**: **Első képkocka** képként, vagy **Teljes film
   (nincs átméretezés)**.
 - **Vízjel hozzáadása** — a képekre rábélyegezhető a neved, egy webcím
   vagy egy szerzői jogi közlemény.
 - **Számok hozzáadása a fájlnevekhez** — így a sorrend megmarad, ha a
   célmappát máshol névsorban nyitják meg.
+
+Az exportált képbe a program frissíti a metaadatokat: a módosítás
+ideje az export ideje lesz, a kép mérete a kimenet tényleges mérete, a
+hiányzó szerző- és készítésidő-mezők pótlódnak, a fényképezőgép saját
+adatai pedig megmaradnak. A 300 képpontnál nagyobb JPEG-be a program kis
+beágyazott előnézetet is tesz, ahogy az eredeti Picasa.
 
 Ha a célmappa már létezik, a program megkérdezi, felülírja-e.
 
@@ -46,8 +57,19 @@ Beállítható:
   csak a **Létrehozás** gombra kattintva hozza létre, és bármikor
   átírhatod.
 - **Sablon** — a kész oldal kinézete, kis előnézeti rajzzal,
-- **Bélyegkép mérete** és **Kép mérete** (vagy eredeti méret),
-- **Árnyékolt bélyegképek** és **Árnyékolt képek**.
+- **Képek exportálása innen:** — a nagy képek mérete: **Eredeti méret**,
+  **1024 képpont (nagy képernyőkhöz)**, **800 képpont (nagyméretű
+  weboldalakhoz)**, **640 képpont (weboldalakhoz)** — ez az alapérték —
+  vagy **320 képpont (e-mailhez)**. Az indexképek méretét és az esetleges
+  árnyékot a választott sablon adja, ezeket külön nem állítod.
+- **Mozgófilmek exportálása:** — **Első képkocka**: a film első kockája
+  állóképként kerül az oldalra, mint egy fénykép; **Teljes mozgófilm**: az
+  indexkép az első kocka, rákattintva pedig maga a film nyílik meg (a
+  program a filmfájlt változatlanul másolja az oldal mellé). Az a film,
+  amelyet a program nem tud beolvasni, kimarad az oldalról.
+
+A méretet és a mozgófilm-módot a program megjegyzi a következő
+exportálásig.
 
 A **Létrehozás** gomb után a program megírja, hány fájlt írt és hova.
 
@@ -67,6 +89,24 @@ Hat galéria-sablon van: három háttérszín, mindegyik kétféle csempével.
 A hetedik, az **XML (gépi)**, nem weboldal: egyetlen `album.xml` fájlt ír
 az album és a képek adataival. Akkor jó, ha az adatokat egy másik program
 dolgozza fel; böngészőben nem lesz belőle galéria.
+
+### Saját sablonok
+
+A gyári sablonok mellett a saját `.tpl`-sablonjaidat is használhatod. Tedd
+őket a saját (felhasználói) mappádon belül a
+`.local/share/picasapy/webexport/templates` mappába — Windowson is ezen a
+néven, a felhasználói mappád alatt —, sablononként egy külön almappába. Az almappában legyen egy `index.tpl`
+fájl; ha mellette van egy `preview.svg`, az lesz a sablon kis
+előnézeti rajza.
+
+A következő megnyitáskor a saját sablonok a gyáriak **után**, a sablonlistában
+jelennek meg, és ugyanúgy kiválaszthatók. A listában a neve a sablon
+fejlécében megadott név; ha nincs ilyen, az almappa neve. Ha egy saját
+sablon almappája ugyanazt a nevet viseli, mint egy gyári sablon, a gyári
+marad meg, a saját nem jelenik meg.
+
+Az ablak a tartalmához igazodik, ezért a **Létrehozás** gomb alapméretben is
+látszik.
 
 ## Arcinformációk kísérőfájlba
 

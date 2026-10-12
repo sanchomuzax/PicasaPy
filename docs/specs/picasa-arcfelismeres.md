@@ -94,6 +94,21 @@ elválasztó vonal.
 | `PplAlbumPhoto::ID_PEOPLEALBUMS` | **0xa0cd** | ugyanott, idx 2 | *&Move to People Album* / **Hozzáadás az Emberek albumhoz** |
 | `PplAlbumPhoto::ID_SETPEOPLEALBUMCOVER` | **0x9e39** | ugyanott, idx 4 | *&Set as People Album Thumbnail* / **Beállítás az Emberek album indexképeként** |
 
+**A két `Album::ID_ALBUM_FILTERFACES` helyi menübeli működése (#4535).** A
+„Névcímkék hozzáadása” a jobbklikkelt **mappa közvetlen képein**, illetve az
+album **adott tokenhez tartozó tagképein** indítja el a saját, háttérben futó
+arckeresést. A már azonosított, korábban vizsgált vagy mappaszinten kizárt
+képekre a szokásos keresési szabályok vonatkoznak; az új, névtelen találatok a
+„Névtelenek” albumba kerülnek.
+
+**Bináris bizonyíték és határa:** a mappa- és albummenü-építő (`0x007319f0`,
+`0x00732160`) is a `0x9e1c` parancsot teszi a menü végére; a közös popup-út
+(`0x005d3290`) a kiválasztott parancsazonosítót `WM_COMMAND`-ként továbbítja
+(`0x005d43c5`). A statikus xref-vizsgálat a további műveletkezelőt nem
+azonosította. A fenti hatókört ezért a #4535 jegyben megadott eredeti
+viselkedés rögzíti; a bináris a két parancs belépési pontját erősíti meg, nem
+a szűrés részleteit.
+
 **Gyorsbillentyű: egyiknek sincs** — mind a tíz rekord `+0x04` mezője 0.
 *(Menüszinten bizonyított. A program futásidőben `CreateAcceleratorTableA`-val
 is épít gyorsítótáblát (`0x0092321a`); annak a tartalma nincs feltárva,
@@ -1589,7 +1604,7 @@ gombkészlete. Szerkezeti horgony: `unknownfaceheaderpanel.tre:38`
 |---|---|---|
 | a fejlécsáv | **három** változat (`headerpanel`, `faceheaderpanel`, `unknownfaceheaderpanel`) | **egy**, általános: `LightboxHeader.qml` |
 | gombok a fejlécen | 25 parancs (15.2) | **öt**: `headerPlayButton` (162), `headerSelectStarredButton` (177), `headerSaveEditsButton` (189), `headerCollageButton` (209), `headerUploadButton` (229) |
-| javaslat-vezérlők | `faceheaderpanel/confirmsug`, `faceheaderpanel/confirmsel`, `faceheaderpanel/removesel`, `faceheaderpanel/moresug`, `faceheaderpanel/sug_filter`, `faceheaderpanel/selectsug`, `faceheaderpanel/addname`, `faceheaderpanel/ignore` | **öt megvan** (mérve 2026-09-25, `LightboxHeader.qml`): `confirmsug` és `confirmsel` ugyanazon a gombon váltakozva (`headerConfirmSuggestionsButton`; „Jóváhagyás”, ha a kijelölésen van e személyre szóló javaslat), `removesel` (`headerRemoveSuggestionsButton`; kijelölt javaslatnál a kijelöltekre, különben mindre), `moresug` (`headerMoreSuggestionsButton`), `sug_filter` (`headerSuggestionFilterButton`). **Nincs még:** `selectsug`, `addname`, `ignore` |
+| javaslat-vezérlők | `faceheaderpanel/confirmsug`, `faceheaderpanel/confirmsel`, `faceheaderpanel/removesel`, `faceheaderpanel/moresug`, `faceheaderpanel/sug_filter`, `faceheaderpanel/selectsug`, `faceheaderpanel/addname`, `faceheaderpanel/ignore` | **hat megvan**: `confirmsug` és `confirmsel` ugyanazon a gombon váltakozva (`headerConfirmSuggestionsButton`; kijelölt javaslatnál a kijelöltekre), `removesel` (`headerRemoveSuggestionsButton`; kijelölt javaslatnál a kijelöltekre, különben mindre), `moresug` (`headerMoreSuggestionsButton`), `sug_filter` (`headerSuggestionFilterButton`), `selectsug` (`headerSelectSuggestionsButton`; a jelenlegi személy függő javaslatait tartalmazó képeket jelöli ki, #4588). **Nincs még:** `addname`, `ignore` |
 | arc-nagyítás váltó | `faceheaderpanel/face_zoom` ↔ `faceheaderpanel/picture_zoom` | **megvan** (2026-09-26, #2187): `headerFaceZoomButton` ↔ `headerPictureZoomButton`, 2 × 35 × 21, a fejléc jobb felső sarkában; arc-módban a bélyegkép-URL `&fz=` keretet kap, és a szolgáltató négyzetesen, az arc kétszeresére vág (`app/arc_nagyitas_url.py`). ⚠️ Az eredeti ALAPÁLLÁSA nincs mérve — nálunk a teljes kép |
 | a küszöb-lazítás | `FRSuggestionThreshold/100 − 0,1` | **megvan** — nálunk a LÉPCSŐ csökken tízzel (`FaceScanController.moreSuggestions`, #3237); a vezérlőt vettük át, nem a számot |
 

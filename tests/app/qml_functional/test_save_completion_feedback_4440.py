@@ -85,6 +85,12 @@ def _szuro_szerkesztés(controller, window, qt_app, út: Path) -> QQuickItem:
     window.setProperty("viewerOpen", True)
     néző = window.findChild(QQuickItem, "photoViewer")
     assert néző is not None
+    szerkesztő = néző.property("editCtl")
+    assert szerkesztő is not None
+    # Az éles alkalmazás az application.py-ban regisztrálja a két aktív
+    # szerkesztő-vezérlőt; itt is be kell kötni, hogy a lemezművelet utáni
+    # előnézetfrissítés ugyanazt a munkamenetet frissítse.
+    controller.set_edit_controllers(szerkesztő)
     néző.setProperty("currentIndex", 0)
     assert _vár(qt_app, lambda: controller.photos.photos[0].filters == "bw=1;")
     kép = _elem(window, "viewerImage")

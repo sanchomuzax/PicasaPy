@@ -44,6 +44,7 @@ import concurrent.futures
 import json
 import atexit
 import os
+import re
 import shutil
 import subprocess
 import importlib
@@ -1470,29 +1471,61 @@ def _kiegyensulyozott_darab(
     darabba. Enélkül a darabok egyenetlenek, és a leglassabb határozza meg a
     kör végét — a felosztás fele haszna elveszne.
 
-    Ismeretlen egységre a MEDIÁN időt vesszük, nem nullát: egy új tesztfájl
-    így nem torzítja a kiosztást azzal, hogy „ingyen van"."""
+    Ismeretlen egységre KONZERVATÍV becslést veszünk (`becsult_idok`), nem
+    nullát: egy új tesztfájl így nem torzítja a kiosztást azzal, hogy
+    „ingyen van"."""
     if darab <= 1:
         return set(egysegek)
-    idok = _mert_idok()
-    ismert = sorted(idok[nev] for nev in egysegek if nev in idok)
-    median = ismert[len(ismert) // 2] if ismert else 1.0
+    idok = becsult_idok(egysegek)
     terhelés = [0.0] * darab
     kiosztas: list[list[str]] = [[] for _ in range(darab)]
-    for nev in sorted(egysegek, key=lambda n: -idok.get(n, median)):
+    for nev in sorted(egysegek, key=lambda n: -idok[n]):
         cel = min(range(darab), key=lambda i: terhelés[i])
         kiosztas[cel].append(nev)
-        terhelés[cel] += idok.get(nev, median)
+        terhelés[cel] += idok[nev]
     return set(kiosztas[sorszam - 1])
+
+
+#: A mérés nélküli egység becslése: az ismert idők ennyiedik percentilise.
+#: #4825: korábban a medián volt — de a hiányzó mérés az új, jellemzően
+#: QML-es (tehát lassabb) fájloké, a medián tehát alulbecsült. A 90.
+#: percentilis felülről közelít: a darab inkább hamarabb ér véget.
+BECSLESI_PERCENTILIS = 0.9
+
+
+def becsult_idok(egysegek: list[str]) -> dict[str, float]:
+    """Minden egység ideje: a mért, vagy ha nincs, a konzervatív becslés.
+
+    #4825: a hiányzó mérés NEM blokkolhatja a PR-eket. 2026-10-09–10-én a
+    lefedettségi őr minden PR-t megbuktatott, mert az új fájlok windowsos
+    mérése egy ütemezett futásra várt, ami el sem indult (8 óra kiesés). A
+    hiányzó egység ezért jelölt becslést kap (`becsult_egysegek`), a
+    pótlás a CI-naplókból később jön; az egyensúly- és határidő-őrök a
+    becsléssel együtt számolnak, tehát a garanciájuk megmarad."""
+    idok = _mert_idok()
+    ismert = sorted(idok[nev] for nev in egysegek if nev in idok)
+    becsles = (
+        ismert[min(len(ismert) - 1, int(len(ismert) * BECSLESI_PERCENTILIS))]
+        if ismert
+        else 1.0
+    )
+    return {nev: idok.get(nev, becsles) for nev in egysegek}
+
+
+def becsult_egysegek(egysegek: list[str]) -> list[str]:
+    """A mérés nélküli (becsült idejű) egységek — a pótlás listája."""
+    idok = _mert_idok()
+    return sorted(nev for nev in egysegek if nev not in idok)
 
 
 def _mert_idok() -> dict[str, float]:
     """A commitolt futásidő-térkép; hiányában üres (minden egység medián).
 
     ⚠️ **#3117: a tábla a SOROS futás WINDOWS-idejeit tartalmazza**, és ez
-    szándékos — ott van a 40 perces job-korláthoz legközelebb a leghosszabb
-    darab. A #2848 sorosra állítása után a régi, PÁRHUZAMOS időkkel töltött
-    tábla elcsúszott, és a **lefedettsége** is hiányos volt: 271 bejegyzés
+    szándékos — ott van a 60 perces windowsos job-korláthoz legközelebb a
+    leghosszabb darab. A #2848 sorosra állítása után a régi, PÁRHUZAMOS
+    időkkel töltött tábla elcsúszott, és a **lefedettsége** is hiányos volt:
+    271 bejegyzés
     659 egységre (41%), a többi mediánt kapott.
 
     Mérve (main `4e2c6dd6`, 2026-09-15), a tényleges windows-terhelés:
@@ -1556,6 +1589,26 @@ def kornyezet_sorai() -> list[str]:
     ]
 
 
+def qt_eltérés_sorai() -> list[str]:
+    """A futtató PySide6-ja vs. a CI rögzített verziója (#4834).
+
+    Üres, ha egyezik (a CI-n nem zajlunk). Sosem dönti le a futást.
+    """
+    try:
+        if str(Path(__file__).resolve().parent) not in sys.path:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import ci_kornyezet  # noqa: PLC0415
+
+        return ci_kornyezet.figyelmeztetes_a_futora()
+    except Exception:  # noqa: BLE001 — az összevetés nem dönthet le semmit
+        return []
+
+
+def _ird_ki_a_qt_eltérést() -> None:
+    for sor in qt_eltérés_sorai():
+        print(sor, flush=True)
+
+
 def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
     """A bukott részfutások + a KÖRNYEZET, amiben történtek (#2264).
 
@@ -1584,8 +1637,30 @@ def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
         print(f"  {sor}", flush=True)
 
 
+#: PR-en e fölött az érintett app-tesztfájl-szám fölött négy darab fut.
+_EGY_DARAB_MAX = 60
+
+
+def _darabszam_kimenet() -> int:
+    """`--darabszam`: a PR CI-jának darabszáma GITHUB_OUTPUT-formában."""
+    app_dir = _ROOT / "tests" / "app"
+    app = [str(p.relative_to(_ROOT)) for p in sorted(app_dir.glob("test_*.py"))
+           + sorted((app_dir / "qml_functional").glob("test_*.py"))]
+    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
+    valasztott = erintett_app_tesztek(
+        app, _valtozott_fajlok(alap) if alap else None,
+        lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+    )
+    egy = len(valasztott) <= _EGY_DARAB_MAX
+    print(f"darabok={'[1]' if egy else '[1,2,3,4]'}")
+    print(f"darabszam={'1' if egy else '4'}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--darabszam" in argv:
+        return _darabszam_kimenet()
     cov = "--cov" in argv
 
     if cov:
@@ -1618,6 +1693,8 @@ def main(argv: list[str] | None = None) -> int:
     plafon_sor = _plafon_sor()
     if plafon_sor:
         print(plafon_sor, flush=True)
+    # #4834: nem CI-azonos Qt-nél a futás ELEJÉN és a VÉGÉN is jelzünk.
+    _ird_ki_a_qt_eltérést()
 
     # #1360: a harmadik egyidejű futás VÁRJON, ne induljon el. A gép
     # négymagos; a túlterhelésből valódi hiba nélküli bukások lesznek.
@@ -1646,7 +1723,9 @@ def main(argv: list[str] | None = None) -> int:
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     _jelold_a_futast(basetemp)
     try:
-        return _futtat(cov, basetemp, sorszam=sorszam, darab=darab)
+        visszater = _futtat(cov, basetemp, sorszam=sorszam, darab=darab)
+        _ird_ki_a_qt_eltérést()
+        return visszater
     finally:
         # a takarítás nem függhet attól, zöld volt-e a futás, és attól sem,
         # hogy megszakították-e (#677)
@@ -1656,6 +1735,81 @@ def main(argv: list[str] | None = None) -> int:
 
 #: A nem-app készlet egyetlen egységként szerepel a kiosztásban.
 _NEM_APP = "tests --ignore=tests/app"
+
+#: PR-en a változás által ÉRINTETT app-tesztek futnak (a nem-app készlet
+#: mindig teljesen). A teljes készlet a main-re érkező push után fut.
+#: 2026-10-09: 41 nyitott PR állt, mert minden PR négy darabban a TELJES
+#: készletet futtatta (darabonként 15–22 perc, PR-enként ~70 futtatóperc).
+_ERINTETT_ALAP_VALTOZO = "PICASAPY_ERINTETT_ALAP"
+
+#: Ha ezek közül bármi változik, nem szűkítünk (a hatásuk nem követhető
+#: fájlnév szerint): közös tesztsegédek, a forrás nem-app része, a függőségek.
+#: (A futtató és a workflow változása NEM ilyen: az app-tesztek nem függnek
+#: tőlük, a futtató saját tesztjei a mindig teljesen futó nem-app készletben
+#: vannak.)
+_TELJES_KESZLET_ELOTAGOK = (
+    "tests/app/conftest.py", "tests/app/qml_functional/conftest.py",
+    "tests/conftest.py", "tests/support/", "pyproject.toml",
+)
+
+#: Az érintett-kiválasztás e fölött a hányad fölött a teljes készletet adja.
+_SZUKITES_MAX_HANYAD = 0.6
+
+
+def _valtozott_fajlok(alap: str) -> list[str] | None:
+    """A PR változott fájljai az alaphoz képest; `None`, ha nem állapítható meg."""
+    try:
+        kimenet = subprocess.run(
+            ["git", "diff", "--name-only", f"{alap}...HEAD"],
+            cwd=_ROOT, check=True, capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return [sor.strip() for sor in kimenet.splitlines() if sor.strip()]
+
+
+def erintett_app_tesztek(
+    app_tesztek: list[str], valtozott: list[str] | None, olvas: Callable[[str], str]
+) -> list[str]:
+    """A változás által érintett app-tesztfájlok (relatív utak).
+
+    Érintett: a változott tesztfájl maga, és minden app-teszt, amely szövegében
+    megnevezi egy változott app-forrásfájl törzsnevét (pl. `PhotoViewer`,
+    `edit_controller`) vagy — fordítás-változásnál — a fordítási katalógust.
+    Ha a változás közös segédet, nem-app forrást vagy függőséget érint, vagy a
+    kiválasztás a készlet nagy része lenne, a teljes listát adja vissza."""
+    if not valtozott:
+        return list(app_tesztek)
+    kulcsok: set[str] = set()
+    sajat: set[str] = set()
+    for ut in valtozott:
+        if ut.startswith(_TELJES_KESZLET_ELOTAGOK):
+            return list(app_tesztek)
+        if ut.startswith("tests/app/"):
+            nev = ut.rsplit("/", 1)[-1]
+            if nev.startswith("test_"):
+                sajat.add(ut)
+            elif nev.endswith(".py"):
+                # közös segédmodul (pl. _fomenu_4420_menu): az importálói futnak
+                kulcsok.add(Path(ut).stem)
+        elif ut.startswith("src/picasapy/app/i18n/"):
+            kulcsok.update({"picasapy_hu", "qsTr", "i18n"})
+        elif ut.startswith("src/") and ut.endswith((".py", ".qml")):
+            # app-forrás vagy a felületen kívüli modul: az app-tesztek közül azok
+            # futnak, amelyek a modult NÉV szerint említik (a modul saját
+            # tesztjei a mindig teljesen futó nem-app készletben vannak)
+            kulcsok.add(Path(ut).stem)
+    # #4809: egész szóra illeszt, különben a `sync` minden `async`-ra is talál
+    minta = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(kulcsok))) + r")\b") \
+        if kulcsok else None
+    valasztott = [
+        t for t in app_tesztek
+        if t in sajat or (minta is not None and minta.search(olvas(t)))
+    ]
+    if len(valasztott) > _SZUKITES_MAX_HANYAD * len(app_tesztek):
+        return list(app_tesztek)
+    return valasztott
 
 
 def _futtat(
@@ -1671,7 +1825,20 @@ def _futtat(
     app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
         (app_dir / "qml_functional").glob("test_*.py")
     )
-    egysegek = [_NEM_APP] + [str(p.relative_to(_ROOT)) for p in app_test_files]
+    app_utak = [str(p.relative_to(_ROOT)) for p in app_test_files]
+    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
+    if alap:
+        teljes = len(app_utak)
+        app_utak = erintett_app_tesztek(
+            app_utak, _valtozott_fajlok(alap),
+            lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+        )
+        if len(app_utak) == teljes and _valtozott_fajlok(alap) is None:
+            print(f"⚠️ PR-szűkítés: a változás NEM állapítható meg az alaphoz ({alap[:8]}) "
+                  "képest (hiányzó git-történet?) — teljes készlet fut.", flush=True)
+        print(f"PR-szűkítés: {len(app_utak)} érintett app-tesztfájl a {teljes}-ből "
+              f"(alap: {alap[:8]}); a teljes készlet a main-en fut.", flush=True)
+    egysegek = [_NEM_APP] + app_utak
     enyem = _kiegyensulyozott_darab(egysegek, sorszam, darab)
     if darab > 1:
         print(

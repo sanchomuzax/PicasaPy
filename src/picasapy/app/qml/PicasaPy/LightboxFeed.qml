@@ -886,6 +886,17 @@ ListView {
                     sorok.push(kezdet + i)
                 grid.appWindow.openCollageFromRows(sorok)
             }
+            //: #4539: a mappa-fejléc film-gombja — a kollázzsal azonos
+            //: halmazt adja át (a csoport sorait), nem a kijelölést.
+            onMovieRequested: {
+                if (!grid.appWindow || !grid.appWindow.openMovieFromRows)
+                    return
+                var sorok = []
+                var kezdet = groupCol.modelData.start
+                for (var i = 0; i < groupCol.modelData.count; ++i)
+                    sorok.push(kezdet + i)
+                grid.appWindow.openMovieFromRows(sorok)
+            }
             onPersonMovieRequested: {
                 if (grid.appWindow && grid.appWindow.openPersonAlbumMovie)
                     grid.appWindow.openPersonAlbumMovie()
@@ -906,6 +917,10 @@ ListView {
             selectedSuggestionCount: grid.appWindow
                 && grid.appWindow.personSelectedSuggestionIds !== undefined
                 ? grid.appWindow.personSelectedSuggestionIds.length : 0
+            onSelectSuggestionsRequested: {
+                if (grid.appWindow && grid.appWindow.selectPersonSuggestions)
+                    grid.appWindow.selectPersonSuggestions()
+            }
             onConfirmSuggestionsRequested: {
                 if (grid.appWindow && grid.appWindow.confirmPersonSuggestions)
                     grid.appWindow.confirmPersonSuggestions()
@@ -1104,6 +1119,10 @@ ListView {
                         dragMimeData: ({
                             "text/uri-list": grid.selectedFileUriList()
                         })
+                        dragRows: grid.appWindow
+                            && grid.appWindow.selectedIndexes
+                            ? grid.appWindow.selectedIndexes.slice()
+                            : [slot.row]
                         // #85/#83: a megjelenő kép a névleges
                         // méretre plafonozott, a kiegyenlítés
                         // többlete a térközbe megy.

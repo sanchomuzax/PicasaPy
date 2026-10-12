@@ -52,6 +52,12 @@ Item {
 
     readonly property bool hasProjectTabs: root.projectTabs.length > 0
     readonly property bool libraryActive: root.activeTabId === root.libraryTabId
+    // #4639: a súgó a tényleges Shortcut.sequence értékeket olvassa.
+    readonly property var keyboardShortcutSequences: [
+        closeTabOnEscape.sequence, closeTabOnCtrlW.sequence,
+        nextTabOnCtrlTab.sequence, previousTabOnCtrlShiftTab.sequence,
+        nextTabOnCtrlRight.sequence, previousTabOnCtrlLeft.sequence
+    ]
 
     // A sáv üresen SEM látszik, SEM helyet nem foglal. A magasságot azért is
     // kimondjuk (nem csak a `visible`-t), mert a `visible` öröklődik a
@@ -140,6 +146,7 @@ Item {
     // tényleg van zárható, aktív lap — és nem akkor, amikor már a kérdés áll
     // a képernyőn (ott az Esc a Mégse útja).
     Shortcut {
+        id: closeTabOnEscape
         sequence: "Esc"
         enabled: !root.textEntryHasFocus
                  && root.hasProjectTabs && !root.libraryActive
@@ -155,6 +162,7 @@ Item {
     // nem külön ágon: a piszkos lap kérdését így nem kerüli meg — ugyanaz
     // a megfontolás, mint az `Esc`-nél (a fájl 3. invariánsa).
     Shortcut {
+        id: closeTabOnCtrlW
         sequence: "Ctrl+W"
         enabled: !root.textEntryHasFocus
                  && root.hasProjectTabs && !root.libraryActive
@@ -162,24 +170,28 @@ Item {
         onActivated: root.requestCloseActive()
     }
     Shortcut {
+        id: nextTabOnCtrlTab
         sequence: "Ctrl+Tab"
         enabled: !root.textEntryHasFocus
                  && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(1)
     }
     Shortcut {
+        id: previousTabOnCtrlShiftTab
         sequence: "Ctrl+Shift+Tab"
         enabled: !root.textEntryHasFocus
                  && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(-1)
     }
     Shortcut {
+        id: nextTabOnCtrlRight
         sequence: "Ctrl+Right"
         enabled: !root.textEntryHasFocus
                  && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(1)
     }
     Shortcut {
+        id: previousTabOnCtrlLeft
         sequence: "Ctrl+Left"
         enabled: !root.textEntryHasFocus
                  && root.hasProjectTabs && !closeConfirm.visible

@@ -3,6 +3,17 @@
 Ezek a parancsok a **lemezen lévő fájlokra** hatnak, nem csak a
 nézetre. A PicasaPy minden ilyen műveletnél rákérdez.
 
+## Megnyitás külső szerkesztőben
+
+**Fájl ▸ Fájl(ok) megnyitása szerkesztőben** (Ctrl+Shift+O) a kijelölt
+képeket a **rendszer alapértelmezett programjában** nyitja meg — ugyanabban,
+amelyik a fájlkezelőben a képre duplán kattintva is megnyílna. Külön
+szerkesztőprogramot a PicasaPy nem kér. Több képnél fájlonként nyit
+ablakot. Ha valamelyik fájlt nem sikerült megnyitni, egy üzenet megmondja,
+hányat a kijelölt fájlok közül: „A rendszer alapértelmezett alkalmazása nem
+tudta megnyitni a kijelölt fájlok *N*/*M* részét." A menüpont szürke, amíg
+nincs kijelölt kép.
+
 ## Átnevezés
 
 **Fájl ▸ Átnevezés…** (F2), vagy a kép helyi menüjéből.
@@ -11,6 +22,14 @@ nézetre. A PicasaPy minden ilyen műveletnél rákérdez.
 program sorszámozza őket. A párbeszédben bekapcsolhatod, hogy a névbe
 kerüljön bele a **Dátum** és a **Képfelbontás** is; alul példát mutat,
 hogyan fog kinézni a kész név.
+
+Az ütközéseket a program **előre** ellenőrzi: ha a kész nevek valamelyike
+már foglalt, vagy kettő megegyezne, egyetlen fájl sem változik. Ha viszont
+a művelet **menet közben** akad el (például az egyik fájl zárolt), a már
+átnevezett fájlok **a helyükön maradnak**, és a hibaüzenet **megnevezi az
+elkészült fájlokat**, valamint azt, amelyiknél leállt — ennek és a kívánt
+új nevének az állapotát érdemes ellenőrizni. A nézet ilyenkor is
+frissül, tehát azt látod, ami a lemezen van.
 
 ## Áthelyezés
 
@@ -23,7 +42,9 @@ mutatja, hányadik fájlnál tart.
 
 Ha a célmappában már van azonos nevű fájl, választhatsz: **Másodpéldányok
 átnevezése** (a bevitt fájlok új nevet kapnak) vagy **Másodpéldányok
-kihagyása**.
+kihagyása**. Egy már létező célfájlt a program **soha nem ír felül és nem
+töröl** — se az áthelyezés, se a félbemaradt művelet visszagörgetése: az
+utóbbi is csak azt takarítja el, amit maga hozott létre.
 
 A képpel együtt költözik a **mentéskor készült biztonsági másolata** is,
 tehát a **Visszaállítás** az új helyen is működik — lásd
@@ -90,7 +111,9 @@ A megerősítést a **Beállítások ▸ Általános** lapon ki lehet kapcsolni
 ## Keresés a lemezen
 
 **Fájl ▸ Keresés a lemezen** (Ctrl+Enter) megnyitja a fájlkezelőben azt
-a mappát, ahol a kép van.
+a mappát, ahol a kép van. Ha **nincs kijelölt kép**, a Ctrl+Enter a
+megnyitott mappát mutatja meg a fájlkezelőben (albumban és személyalbumban
+ilyenkor nem csinál semmit).
 
 A kép helyi menüjében ugyanez a **Keresés a lemezen** (Ctrl+Enter). Ha
 **egyetlen** képet jelöltél ki, és annak a program megőrizte a szerkesztés
@@ -110,6 +133,13 @@ ott a kép már a saját mappájában látszik.
 A helyi menüben ezen kívül:
 
 - **Fájl megnyitása** — a rendszer alapértelmezett programjával,
+- **Társítás** — te választod ki, melyik programmal nyíljon meg a kép.
+  Windowson a rendszer saját „Megnyitás ezzel" ablaka jön elő. Linuxon a
+  **Társítás...** ablak a képtípushoz társított programokat sorolja fel:
+  válassz egyet, és a **Megnyitás** gombbal abban nyílik meg a kép. Ha
+  egyetlen program sincs a típushoz társítva, az ablak ezt írja: „Ehhez a
+  fájltípushoz nincs társított alkalmazás." (A néző helyi menüjének
+  **Társítás** tétele még nem működik.)
 - **Teljes elérési út másolása** — a vágólapra teszi az útvonalat.
 
 ## Mappák

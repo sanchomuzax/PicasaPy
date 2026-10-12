@@ -23,6 +23,7 @@ teljes SHA-256) — ugyanaz a mérce, mint a Duplikátum-kezelőé (#287)."""
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -250,6 +251,41 @@ def scan_source(
     return tuple(sorted(candidates, key=lambda candidate: str(candidate.path)))
 
 
+def scan_files(
+    paths: Iterable[str | Path],
+    media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES,
+) -> SourceScan:
+    """#4596: a forrás KIJELÖLT FÁJLOK listája (mappa helyett) — ugyanazok a
+    jelöltek, mint a mappás úton: csak létező, a szűrő szerinti médiafájl
+    kerül be (a nem média és a hiányzó fájl kimarad), ismétlés nélkül,
+    útvonal szerint rendezve. Idegen (nem felismert) fájl itt nincs: a
+    „minden törlése" is csak a kijelölt fájlokat érinti, ezért az
+    `unrecognized` mindig 0."""
+    kinds = _FILTER_KINDS.get(
+        media_filter, _FILTER_KINDS[MEDIA_FILTER_PICTURES_AND_MOVIES]
+    )
+    candidates: dict[Path, ImportCandidate] = {}
+    for raw in paths:
+        path = Path(raw)
+        if path in candidates or media_kind_of(path.name) not in kinds:
+            continue
+        try:
+            if not path.is_file():
+                continue
+            mtime_ns = path.stat().st_mtime_ns
+        except OSError:
+            continue
+        candidates[path] = ImportCandidate(
+            path=path, date=_resolve_file_date(path, mtime_ns)
+        )
+    return SourceScan(
+        candidates=tuple(
+            sorted(candidates.values(), key=lambda candidate: str(candidate.path))
+        ),
+        unrecognized=0,
+    )
+
+
 def _resolve_file_date(path: Path, mtime_ns: int) -> date | None:
     """A csoportosítás/sablon dátuma: EXIF `taken_at`, ennek hiányában
     fájl-mtime (`picasapy.timeline.resolve_date`, #24 mintája)."""
@@ -281,6 +317,37 @@ def destination_subpath(
     return Path(*parts) if parts else Path(".")
 
 
+_FORBIDDEN_FOLDER_NAME_CHARS = frozenset('<>:"|?*/\\')
+
+
+_WINDOWS_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL"}
+    | {f"COM{n}" for n in range(1, 10)}
+    | {f"LPT{n}" for n in range(1, 10)}
+)
+
+
+def is_valid_folder_name(name: str) -> bool:
+    """A kézi importmappanév (#4837) EGYETLEN, biztonságos útvonal-elem-e.
+
+    Elutasítja az üres/csak-szóköz nevet, a `.`/`..` nevet, az elválasztókat
+    (`/`, `\\`), a meghajtóbetűt/abszolút utat (`:`), a Windowson tiltott
+    `<>:"|?*` karaktereket és a vezérlőkaraktereket. A szóközökkel körbevett
+    nevet a hívó `strip()`-pel használja, ezért itt is azt vizsgáljuk."""
+    stripped = name.strip()
+    if not stripped or stripped in {".", ".."}:
+        return False
+    # Windowson a záró pont/szóköz lekopik ("..." a célgyökér, "foo." = "foo")
+    if stripped.endswith((".", " ")) or set(stripped) <= {".", " "}:
+        return False
+    if stripped.split(".")[0].rstrip(" ").upper() in _WINDOWS_RESERVED_NAMES:
+        return False
+    return not any(
+        char in _FORBIDDEN_FOLDER_NAME_CHARS or unicodedata.category(char) == "Cc"
+        for char in stripped
+    )
+
+
 def destination_subpath_for_mode(
     candidate_date: date | None,
     mode: str,
@@ -292,7 +359,8 @@ def destination_subpath_for_mode(
 
     - `NAMING_MANUAL`: egyetlen, felhasználó által megadott mappanév
       (`manual_name`) — MINDEN jelölt ugyanoda kerül. Üres/csak
-      szóközökből álló névnél a cél-mappa gyökere (`Path(".")`).
+      szóközökből álló névnél `ValueError` (#4595): cím nélkül az
+      importálás nem indul, a cél-mappa gyökerébe nem másolunk.
     - `NAMING_BY_DATE`: felvétel dátuma szerint, "ÉÉÉÉ-HH-NN" mappánként
       külön (a `candidate_date`-et a hívó a `resolve_date`/`scan_source`
       mintájával állapította meg) — ismeretlen dátumnál
@@ -305,7 +373,11 @@ def destination_subpath_for_mode(
     `NAMING_*` konstans egyikét adja át."""
     if mode == NAMING_MANUAL:
         name = manual_name.strip()
-        return Path(name) if name else Path(".")
+        if not name:
+            raise ValueError("manual naming requires a folder name (#4595)")
+        if not is_valid_folder_name(name):
+            raise ValueError("manual folder name must be a single path element (#4837)")
+        return Path(name)
     if mode == NAMING_TODAY:
         chosen = today if today is not None else date.today()
         return Path(chosen.isoformat())

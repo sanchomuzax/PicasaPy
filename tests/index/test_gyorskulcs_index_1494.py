@@ -64,7 +64,12 @@ class TestMigracio:
             # #2902: a tükrözés jelzője a v19-ben
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             # #4332: a felvételi dátum felülírása a v20-ban érkezik
+            "DROP INDEX IF EXISTS idx_photos_video_metadata_missing;\n"
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
+            # #4580: a videómezők csak a v21-ben érkeznek
+            "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photos DROP COLUMN frame_rate;\n"
+            "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "DROP TABLE photo_hashes;\n"
             "CREATE TABLE photo_hashes ("
             " path TEXT PRIMARY KEY,"

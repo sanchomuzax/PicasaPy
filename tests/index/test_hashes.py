@@ -11,13 +11,14 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v20: a kézzel beállított felvételi dátum index-felülírása (#4332)
+        # v21: videóformátum, képkockasebesség és hossz (#4580)
+        # v20: a felvételi dátum index-felülírása (#4332)
         # v19: a tükrözés jelzője (#2902) — `photos.flip_flags`
         # (v18: az „arc-detektálás lefutott" nyom, #2519 — `face_scan`;
         # v17: a befagyasztott, első látáskori fájlidő, #2486 —
         # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
         # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
-        assert SCHEMA_VERSION == 20
+        assert SCHEMA_VERSION == 21
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -58,6 +59,11 @@ class TestSchema:
             )
             # #4332: a dátumfelülírás a v20-ban érkezik
             conn.execute("ALTER TABLE photos DROP COLUMN taken_at_override")
+            # #4580: a videómezők csak a v21-ben érkeznek
+            conn.execute("DROP INDEX idx_photos_video_metadata_missing")
+            conn.execute("ALTER TABLE photos DROP COLUMN movie_format")
+            conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
+            conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
             conn.commit()
         with open_index(db) as conn:
             assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION

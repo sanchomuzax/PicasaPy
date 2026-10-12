@@ -37,6 +37,25 @@ class TestCompactController:
         assert not hasattr(controller, "compactStarted")
         assert not hasattr(controller, "compactProgress")
 
+    def test_compaction_is_submitted_to_the_shared_index_writer_queue(self, tmp_path):
+        class CapturingQueue:
+            def __init__(self):
+                self.jobs = []
+
+            def submit(self, worker, *, name):
+                self.jobs.append((worker, name))
+                return True
+
+        queue = CapturingQueue()
+        db = _wasteful_db(tmp_path / "index.db", rows=100)
+        controller = CompactController(db, writer_queue=queue)
+
+        controller.startCompact()
+
+        assert len(queue.jobs) == 1
+        assert queue.jobs[0][1] == "picasapy-compact"
+        assert controller.running is True
+
     def test_it_finishes_and_reports_the_saved_space(self, qt_app, tmp_path):
         controller = CompactController(_wasteful_db(tmp_path / "index.db"))
         saved = []

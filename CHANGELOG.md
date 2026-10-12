@@ -7,6 +7,288 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.77] – 2026-10-12
+
+- Albumból megnyitott képen a Ctrl+Delete és a nagy kép helyi menüjének törlés-tétele már nem a lemezről töröl, hanem eltávolítja a képet az albumból (a fájl megmarad); a menütétel felirata is „Eltávolítás az albumból”. Mappából megnyitott képen minden változatlan (#4621).
+
+## [0.9.76] – 2026-10-12
+
+- A bal hasáb indexképei (a mappák kis borítóképei) induláskor gyorsan megjelennek: a program a már elkészült bélyegképeket használja, nem dekódolja újra minden indításkor az eredeti fotókat; a fotó nélküli mappák csendben a mappaikont kapják, és a konzolon nem ismétlődik többé a „Failed to get image from provider” hiba (#4876).
+- Megbízhatóbb lett a kötegelt átnevezés menütesztje (#4893).
+- Fejlesztőknek: a QML-tesztek a motor törlésekor a betöltött segédmodulok burkait is elengedik, így a szerkesztő tesztfájlja lebontási hiba nélkül fut (#4897).
+
+## [0.9.75] – 2026-10-12
+
+- Fejlesztőknek: a háttérkép-tesztek nem indíthatnak valódi asztali háttérkép-programot — a teszt képe többé nem kerülhet az asztalra (#4892).
+
+## [0.9.74] – 2026-10-12
+
+- Fejlesztőknek: a tesztek, a spec és egy kódkomment Windows-útvonal-példái helyettesítő felhasználónevet és mappanevet használnak (#4877).
+- Fejlesztőknek: a gyökér-áthelyezés tesztje a háttér-szinkron indulása előtt és a lebontás után lefuttatja a szemétgyűjtést, így a CI-n nem omlik össze (#4896).
+
+## [0.9.73] – 2026-10-11
+
+- Fejlesztőknek: a QML-tesztek életben tartott burkai a motorral együtt elengednek, így nincs több pelyhes bukás elavult objektum miatt (#4880).
+
+## [0.9.72] – 2026-10-11
+
+- A windowsos CI szövegrajzoló próbái üres betűadatbázis mellett a renderelő saját betűfájljait kapják, globális beállítás nélkül (#4506).
+
+## [0.9.71] – 2026-10-11
+
+- Fejlesztőknek: a QML-funkcionális tesztek lebontása már ténylegesen felszabadítja a QML-motort (a `deleteLater` esemény-ciklus nélkül nem futott le, tesztenként ~88 MB szivárgott), így a nagy tesztfájlok a memóriaplafon alatt futnak (#4871).
+
+## [0.9.70] – 2026-10-11
+
+- A windowsos CI-láb tesztjei ismét a betűkönyvtár-kiegészítés nélkül futnak: a globális QT_QPA_FONTDIR a rács- és nyomtatáspróbák rajzolását is megváltoztatta (#4506).
+
+## [0.9.69] – 2026-10-11
+
+- A képernyővédő a gép tétlenségekor magától is elindulhat: a Képernyővédő konfigurálása ablakban bekapcsolható, hány perc tétlenség után induljon. A wlroots-alapú Wayland-asztalokon (például a Raspberry Pi OS labwc-asztalán) működik a swayidle programmal; más környezetben a program megírja, miért nem érhető el (#4613).
+
+## [0.9.68] – 2026-10-11
+
+- Fejlesztőknek: a windowsos CI-láb betűtípus- és MAPI-próbái a valódi viselkedést mérik (offscreen betűkönyvtár, modulszintű MAPI-fogantyú) (#4506).
+
+## [0.9.67] – 2026-10-11
+
+- Fejlesztőknek: a `PySide6<6.12` korlát indoklása rögzítve — a 6.12-es összeomlás a PySide hibája, nem a programé (#4671).
+- A Tulajdonságok panel videósora magyarul „Képkockasebesség” feliratot kap a félrevezető „Mozgófilm minősítése” helyett (#4855).
+
+## [0.9.66] – 2026-10-11
+
+- A nem magyar nyelvű felületen is megjelennek a legutóbb hozzáadott feliratok fordításai (#4863).
+
+## [0.9.65] – 2026-10-11
+
+- A weboldal-export párbeszédben nincs többé „Árnyékolt bélyegképek” és „Árnyékolt képek” jelölőnégyzet, mert az eredetiben sincs: az árnyékolást a sablon adja (#4849).
+
+## [0.9.64] – 2026-10-11
+
+- A filmelőnézet szöveges diájának szerkesztése után a kocka azonnal frissül: a dia a nézőke méretén készül, és egy billentyűleütés legfeljebb egy előnézet-kérést indít (#4852).
+
+## [0.9.63] – 2026-10-11
+
+- A szerkesztő fülikonjainak rajza az eredeti iránya és formája szerinti: a csavarkulcs feje bal fent, az ecset sörtéje bal lent, a nap korongjának jobb fele üres, a 4–5. fülön tájképes négyzet + ecset (#4846).
+
+## [0.9.62] – 2026-10-11
+
+- A weboldal-exportálásban az eredeti Picasához hasonlóan egyetlen méretválasztó van (alapból 640 képpont, a bélyegkép méretét a sablon adja), és a mozgófilmek első képkockaként vagy teljes mozgófilmként is exportálhatók (#4610).
+
+## [0.9.61] – 2026-10-11
+
+- Az F3 a keresőmezőre viszi a fókuszt (mint a Ctrl+F), az F4 a kijelölt kép csillagát kapcsolja, ha a csillag-gomb engedélyezett (#4600).
+- Fejlesztőknek: a tesztfuttató figyelmeztet, ha a helyi Qt-verzió eltér a CI-étől, és egy paranccsal (`python3 scripts/ci_venv.py`) CI-azonos környezet készíthető (#4834).
+
+## [0.9.60] – 2026-10-11
+
+- Az Emberek panel a háttér-arckeresés közben mutatja a betöltés-, az ellenőrizetlen fájlok és az adatrendezés állapotát az eredeti szövegekkel, és a keresés közben frissül (#4586).
+
+## [0.9.59] – 2026-10-11
+
+- Az importálás forrásaként mostantól egyes fájlok is kijelölhetők: a Tallózás… gomb menüjében a Mappa… és a Fájlok… közül lehet választani (#4596).
+
+## [0.9.58] – 2026-10-11
+
+- A szerkesztő fülsávjának ikonjai most az eredeti Picasa mért méretét kapják (15×16-tól 25×19-ig), a fülön belül középre igazítva (#4552).
+
+## [0.9.57] – 2026-10-11
+
+- Ha az effektek fülén lenyomod a Shiftet, a kilenc kétmódú effekt csempéjén nemcsak a felirat, hanem a bélyegkép is a másodlagos effektet mutatja, és a Shift felengedésekor visszaáll (#4558).
+
+## [0.9.56] – 2026-10-11
+
+- A filmelőnézet már a kiválasztott átmenetet játssza le a kész film geometriájával (#4820).
+
+## [0.9.55] – 2026-10-11
+
+- Az egyéni méretarány felvételekor a párbeszéd a hivatalos feliratokat és mintasort mutatja, a legördülőben „Egyéni méretarányok” szakaszcím áll, a törlés pedig a legördülő melletti kukával megy (#4550).
+
+## [0.9.54] – 2026-10-11
+
+- A biztonsági mentés és az áthelyező műveletek a régi Picasa.ini adatait is megőrzik (#4839).
+
+## [0.9.53] – 2026-10-10
+
+- A Nyomtatás ablak a tartalomhoz igazodó magassággal nyílik, a Nyomtatás és Bezárás gomb mindig látszik, kis képernyőn a tartalom görgethető (#4795).
+
+## [0.9.52] – 2026-10-10
+
+- Az importálás kézi mappaneve csak egyetlen mappanév lehet: a `../`, az abszolút útvonal és a tiltott karakterek nem engedik elindítani az importot (#4837).
+
+## [0.9.51] – 2026-10-10
+
+- A régi Picasa.ini bejegyzései megmaradnak az első módosítás mentésekor (#4819).
+
+## [0.9.50] – 2026-10-10
+
+- A vágott videóklip Windows és macOS rendszeren exportálható; Linuxon megmarad az eredeti tiltóüzenet (#4564).
+
+## [0.9.49] – 2026-10-10
+
+- Az importálás kézi mappanév-módban mappanév nélkül nem indul el; a felület jelzi, mit kell megadni (#4595).
+- Windowson az e-mail küldés a kijelölt képeket mellékletként csatolja: a levelezőprogram MAPI-n át nyílik meg a csatolmányokkal, és a küldés előtt a szerkesztőben látszik a levél (#4607).
+
+## [0.9.48] – 2026-10-10
+
+- A Mappa tulajdonságai Dátum mezője mellett naptár nyílik: a kiválasztott nap a mezőbe kerül, a dátum a nyelvi beállítás szerinti alakban látszik (#4494).
+- A mappanézet menüjében már elérhető a személyek rendezése és a Gyorsbillentyűk almenü (#4528).
+- Szöveges keresés után a zöld sávon megjelenik a „Vissza az összes megtekintéséhez” gomb, amely visszaállítja a teljes nézetet (#4531).
+- A szűrősáv végéről eltűnt a működés nélküli „▤” jel, amely gombnak látszott, de nem csinált semmit (#4532).
+- A fotó helyi menüjének „Társítás” tétele a képhez társított programok listáját kínálja, és a kiválasztottal nyitja meg a képet (#4533).
+- A szerkesztő eszközeihez és effektcsempéihez megjelentek az eredeti, magyar súgóbuborékok. (#4540).
+- A vörösszem-eszköz négyzettel jelöli az automatikusan javított szemeket is; ezek egyenként visszavonhatók, a Reset pedig az automatikus javítást is visszaveszi (#4541).
+- A Vörösszem panel figyelmeztet, ha a fotó kiegyenesítve van. (#4542).
+- Több szövegdoboz adható hozzá, kattintással kiválasztható és szerkeszthető (#4545).
+- A szövegeszköz most a telepített rendszerbetűket kínálja, a kiválasztott betűcsalád pedig a képen és a beállításokban is megmarad (#4546).
+- A szöveg, a körvonal és az effekt színei színskáláról választhatók, az előzményekkel együtt (#4548).
+- A vágó panelről eltűntek az eredetiben nem létező „Bal felső”, „Fekvő” és „Álló” gyorsvágás-gombok; a három bélyegképes javaslat maradt (#4551).
+- A Képregény panel csúszkái az eredeti feliratokat viselik: Színes ecset, Pontsűrűség, Ponthalványítás (#4556).
+- A Színátmenet effekt Lágy perem csúszkájának alapértéke az eredetihez igazodva 0,25, a Fókuszos FF csúszkája pedig Méret néven szerepel (#4559).
+- A néző ◀ és ▶ gombja nyomva tartva folyamatosan léptet, felengedéskor megáll (#4563).
+- A diavetítés átmenetválasztója mind a 22 specifikáció szerinti átmenetet kínálja és lejátssza. (#4567).
+- A nagyított fotó navigátorablakában követhető és húzással pásztázható a látható rész (#4568).
+- Az eredeti rejtett AutoPlayMovies beállítása szerint a videó megnyitáskor magától elindul; kikapcsolva áll, és a lejátszás gombra indul (#4570).
+- A kijelölt fotó névtelen arcainak névjavaslata az Emberek panelben jóváhagyható és elvethető. (#4573).
+- Az Emberek panelben megjelent a kézi személyfelvétel gombja és a hozzá tartozó útmutató. (#4574).
+- A címkepanel „+” és fogaskerék gombja súgót mutat, a gyorscímke-sor felirata pedig „Gyorscímkék:” (#4577).
+- A Tulajdonságok panel címkepárbeszéde bélyegképet, nevet és dátumot mutat, címkéket szerkeszt, és megőrzi az EXIF nélküli képek dátumát (#4578).
+- A Tulajdonságok panel videóknál már a formátumot, a képkockasebességet és a hosszt is megjeleníti (#4580).
+- A Tulajdonságok panel jobbklikk-menüjéből megnyitható a Címkék panel (#4581).
+- A Helyek térképjelölői bélyegképet és műveleti buborékot jelenítenek meg (#4582).
+- A képeket a Helyek térképére húzva megerősítés után geocímkézheted (#4583).
+- A Helyek térképe betöltés közben „Térkép betöltése...” jelzést, internetkapcsolat nélkül pedig érthető hibaüzenetet mutat (#4584).
+- Üres Név nélküliek album az eredeti útmutató szövegét mutatja, nem a „még nem találtunk embereket” üzenetet (#4585).
+- A személy helyi menüjéből megerősítéssel törölhető és szerkeszthető az Emberek-album (#4587).
+- A csatolt memóriakártyák és USB-meghajtók Linuxon és Windowson is forrásként választhatók az importálásnál. (#4590).
+- A Picasa-adatok kézzel megadott Picasa2-mappából, egyedi meghajtó-leképezéssel is átvehetők (#4592).
+- A program a korai Picasa.ini fájlból is beolvassa a fotók csillagait és feliratait (#4594).
+- Az albummenüből megerősítés után minden érintett mappából törölhető az album, miközben a képek és a többi album megmarad. (#4598).
+- A telepítő javasolja a nyomtatáshoz és az e-mail-melléklethez szükséges csomagokat, a nyomtatás-párbeszéd pedig nyomtató nélkül kimondja, mit kell tenni (#4608).
+- Indításkor törlődnek az e-mailhez korábban készült átméretezett képmásolatok, így nem halmozódnak a lemezen (#4609).
+- A weboldal-exportban a saját .tpl-sablonok is megjelennek és exportálhatók; a Létrehozás gomb alapméretben is látszik (#4611).
+- Mentési mappából vagy lemezképből visszaállíthatók a képek. (#4614).
+- A Nézet menü Kis indexképek, Normál indexképek és Szerkesztési nézet tétele pipával jelzi a beállított nézetet (#4623).
+- Az alsó kimeneti gombsor jobb kattintásos menüjéből elérhető a Gombok konfigurálása párbeszéd. (#4637).
+- A Nézet menü Sötét téma, az Eszközök menü Arcok keresése… és a Súgó menü Teljesítmény-monitor tétele kék jelölést kap, mert a PicasaPy saját parancsai (#4638).
+- A Súgó ▸ Billentyűkódok a helyi súgóban, a működő gyorsbillentyűk csoportos listáját nyitja meg. (#4639).
+- A Fotónéző „Teljes képernyős indítás” beállítása most már hat: bekapcsolva a néző teljes képernyőn nyílik, és bezáráskor visszaáll az ablak korábbi állapota (#4656).
+- A Kép ▸ Csoportos szerkesztés almenü az eredeti sorrendet és csoportokat követi, az Átnevezés is elérhető a kijelölt képekhez (#4701).
+- Megbízhatóbbá váltak a Windowsos felületi ellenőrzések átméretezés és menünyitás után (#4784).
+- A szövegeszközzel felvett, mentett szövegdoboz újranyitáskor betűtípus nélkül is a rendszer alapértelmezett betűcsaládjával töltődik be, nem hibával (#4545).
+- Forrásból indítva a program a nyelvi fordításokat induláskor maga készíti el, ha hiányoznak vagy elavultak; a telepített csomag ezeket már készen tartalmazza (#4817).
+- A kiadás csomagjai mindig a kiadott kódverzióból készülnek: egy beolvadás már nem építi újra a legutóbbi kiadást, és a main minden commitja saját tesztfutást kap (#4825).
+- Egy új tesztfájl hiányzó futásidő-mérése többé nem állítja meg a többi változás ellenőrzését: a mérésig óvatos becslést kap (#4825).
+
+## [0.9.47] – 2026-10-09
+
+- A szűrősáv mindig az aktív szűrőt jelöli, a kor-szűrő pedig nézetváltáskor alaphelyzetbe áll (#4526).
+- A tálca csillagának súgója a csillag fölött jelenik meg, nem a „További lehetőségek…” gomb fölött (#4527).
+- A mappa és az album helyi menüjéből célzott arckeresés indítható (#4535).
+- A „További lehetőségek…” gomb a ki nem férő kimeneti gombokat függőleges oszlopban, ikonnal és felirattal kínálja, az eredeti Picasához hasonlóan (#4537).
+- A mappa fejlécében a kollázs-gomb mellett megjelent a film-gomb, amely a mappa képeivel nyitja meg a Filmkészítőt (#4539).
+- A retusáló ecset köre követi az egeret, és a cél- és forráspont köre is látható marad a képen (#4543).
+- A szöveg-igazító gombok három, egymástól eltérő ikont mutatnak (balra, középre, jobbra igazítást), nem azonos jelet (#4547).
+- A vágó méretarány-választója megjeleníti a kijelölt vágat és az eredeti kép pixelméretét. (#4549).
+- Shift-tel kattintva a Ragyogás effekt csúszkás panelt nyit Intenzitás és Sugár csúszkával, ahogy az eredetiben (#4557).
+- A Sixties, a Polaroid és a Lekerekített szél színmintájának felirata most „Háttérszín”, ahogy az eredeti Picasában (#4560).
+- A szerkesztő filmszalagja hét rögzített férőhelyen, középre igazított képpel és kétszínű kerettel jelenik meg (#4562).
+- Videó megnyitásakor a bal oldalon a fülsáv helyén a videópanel áll: a kezdés és befejezés visszaállítása (megerősítéssel, ahogy az eredetiben), a pillanatfelvétel és a klip exportálása (#4566).
+- A képnézőben az F11 teljes képernyőre vált, újabb F11 pedig visszaáll ablakos módba (#4569).
+- A nézőben kattintással megnevezhető a felismert, névtelen arc; a keret megjelenik, a név pedig elmentődik. (#4572).
+- A Helyek térképjelölőjére kattintva a geocímkézett képek szűrt rácsnézete nyílik meg, a „Back to View All” pedig visszaállítja a teljes nézetet (#4575).
+- A Helyek panel keresője a helyjelölőkhöz tartozó képeket szűri, ezért a felirat címkeresés helyett „Keresés”-t jelez. (#4576).
+- Az album diavetítése és filmje az albumhoz beállított zenét használja. (#4601).
+- A háttérként beállított kép helyesen áll, és a mentett szerkesztések is látszanak rajta (#4604).
+- A filmkészítő előnézetében az átmenetek és a szöveges diák is megjelennek, a hangsáv szól, és a hangerő-csúszka szabályozza (#4617).
+- Album-nézetben a képernyővédőhöz adás megerősítést kér, és a hozzáadott képek számát akkor is jelzi, ha ez nulla (#4618).
+- Az Eszközök ▸ Kísérleti almenü tételei az eredeti Picasa sorrendjében állnak; az „Adatbázis helyének kiválasztása” a nyolcadik helyre került (#4635).
+- A Súgó ▸ Frissítések keresése tétel szürke, mert a megszűnt Google-szolgáltatásra épült; nem ígér működést (#4640).
+- Album- és személynézetben a Mappa menü Elrejtés és Megjelenítés parancsa szürke, nem rejti el a korábban nézett mappát (#4741).
+- Az automatikus vörösszem-javítás nem bukik el többé, ha az arcfelismerő ritkán értelmetlen szemhelyet ad vissza (#4759).
+- Windowson is működik a személyalbum javaslatainak kijelölése; a windowsos ellenőrzés négy bukó tesztje rendbe téve (#4763).
+- A felső menü ellenőrzései témánként külön fájlokban futnak, csökkentve a CI memóriaigényét (#4764).
+
+## [0.9.46] – 2026-10-09
+
+- A fanézet képes mappasorain mostantól a teljes, a köztes sorokon a rövid helyi menü nyílik meg (#4529).
+- A keresősáv javaslatai már billentyűzettel is kiválaszthatók. (#4530).
+- A fókuszos effektek fókuszpontja a képen húzható, a Színátmenet iránya együtt fordul (#4553).
+- Az Árnyalás színét mostantól kiválaszthatod, és a beállítás megmarad a képen és a szerkesztési adatokban (#4554).
+- A Ceruzarajz csúszkái a specifikáció szerinti Sugár, Erősség és Fokozat neveket, tartományokat és alapértékeket használják (#4555).
+- Az effektcsempék előnézete minden alkalmazott effekt után a frissített szerkesztési láncot mutatja (#4561).
+- A személyalbum fejlécén most egy kattintással kijelölhetők a javasolt képek (#4588).
+- A mappák saját gyűjteményhez sorolása a .picasa.ini-ben tárolódik és onnan töltődik vissza (#4589).
+- A nyomtatás a szerkesztett, helyesen tájolt képet és a RAW-fotókat is kezeli (#4602).
+- A Poszter az EXIF-tájolást és a mentett szerkesztéseket követő képből készíti a lapokat (#4603).
+- KDE Plasma és labwc/wlroots asztalon is a helyi háttérkép-kezelő állítja be az asztal hátterét (#4605).
+- Küldési hibaüzenet jelenik meg, ha nincs beállított levelezőprogram (#4606).
+- Film újraexportálásakor választható a korábbi film cseréje vagy egy új fájl létrehozása. (#4612).
+- A film a Picasa-feliratot jeleníti meg, ennek hiányában az EXIF-leírást használja (#4616).
+- Bekapcsolt javaslatoknál a sikeres arcfelismerés után a program automatikusan csoportosít és névjavaslatokat készít (#4619).
+- Az XMP-arcinformációk kiírása előtt választható a kijelölt, arcos vagy összes kép (#4634).
+- Az e-mail címzett mező Automatikus kitöltés menüpontja most pipás, és a beállítás újraindítás után is megmarad (#4636).
+- A fotónéző dupla kattintásos kilépési próbája már naplózza az esemény célpontját és a lenyomáskezelés állapotát (#4683).
+- Windows induláskor naplózza a megállás szakaszát, és jelzi a nem támogatott PySide6-verziót (#4687).
+- Az Eszközök keresési almenüje már a fekete-fehér képekre is keres. (#4689).
+- A Dátum és idő beállítása a képfájl EXIF-dátumát és a mért fájlidőket módosítja, a `.picasa.ini` érintése nélkül (#4693).
+- A szerkesztőnézetben a Ctrl+9 kapcsolja a bal fiókot. (#4696).
+- Az F5 újraolvassa az aktuális mappát, és frissíti a keresési találatokat (#4697).
+
+## [0.9.45] – 2026-10-08
+
+- A Létrehozás ▸ Film menüből már az összes nem üres Emberek-album képeiből is indítható film (#4633).
+- A fotónéző a gyors dupla kattintásra akkor is kilép, ha a Windows eseménye nem jut el a QML-kezelőhöz (#4679).
+
+## [0.9.44] – 2026-10-08
+
+- Albumnézetben a Mappa menü Album menüvé válik, az Albumleírás szerkesztése pedig a megnyitott album adatait nyitja meg (#4630).
+- A windowsos tesztdarabok 60 perces időkorlátot kapnak a megszakítások elkerülésére (#4667).
+- A videónéző-próba elkülöníti a QTest-kattintásokat, és minden gesztus állapotát naplózza (#4674).
+
+## [0.9.43] – 2026-10-08
+
+- A Kép ▸ Arcok alaphelyzetbe állítása Ctrl-kattintásra minden arcadatot töröl és újrakeresést indít, Shift-kattintásra pedig törli a személyalbumokat és névtelenné teszi az arcokat (#4627).
+- Kijelölés nélkül a Ctrl+Enter most az aktuális mappát nyitja meg a fájlkezelőben. (#4631).
+- A Ctrl+Shift+P kijelölés nélkül is elindítja az aktuális mappa indexképlapjának nyomtatását (#4632).
+- A videónéző-próba kattintásai között kivárja a rendszer duplakattintási idejét (#4666).
+- A PySide6 a 6.11-es soron marad, mert a 6.12.0-val a program felülete összeomolhat (#4669).
+
+## [0.9.42] – 2026-10-08
+
+- A Nézet ▸ Könyvtárnézet menüpont visszavisz a könyvtárba a nézőből, és ott inaktív marad (#4622).
+- A Kép ▸ Csoportos szerkesztés almenüben mostantól a Szépia és a Fekete-fehér is alkalmazható a kijelölt képekre (#4624).
+- A Kép ▸ Elrejtés már rejtett kijelölést sem jelenít meg (#4626).
+- Windows alatt a kisbetűs mappaátnevezés és a kijelölt képek arcadatainak törlése is helyesen működik (#4653).
+- A mentés után a nyitott néző a lemezre írt állapotot mutatja, az egykattintásos néző pedig dupla kattintásra is bezárva marad. (#4655).
+- Az állóképes néző dupla kattintás után bezárul, a Windows-útvonalpróba pedig kevert elválasztókkal fut (#4660).
+
+## [0.9.41] – 2026-10-08
+
+- Az Emberek panel névvel ellátott arcainál is megjelenik az X, az új személy pedig csak a People párbeszéd jóváhagyása után jön létre. (#4522).
+- Kettős nézetben a lapozás, a felirat, a törlés és a tükrözés a kijelölt képre hat (#4525).
+- Albumnézetben a Mappa menü mappaműveletei letiltódnak, így nem érintik az előzőleg megnyitott mappát. (#4620).
+- A felirat beillesztése rákérdez a meglévő képfelirat cseréjére (#4628).
+- A nyitott képen a Fájl, Szerkesztés és Kép menü műveletei most a megnyitott fotóra hatnak. (#4629).
+
+## [0.9.40] – 2026-10-08
+
+- A kijelölt képek megnevezett és névtelen arcai arcképpel jelennek meg az Emberek panelen. (#4511).
+- Az arcok csoportosítása és névjavaslata a csomagolt SFace-modellel tiszta telepítésen, letöltés nélkül működik (#4513).
+
+## [0.9.39] – 2026-10-07
+
+- Import közbeni mappaszinkron és arcfelismerés nem tartja hosszan az adatbázis zárát; ütközéskor az érintett mappák késleltetve újrapróbálódnak. (#4509).
+- Az Arcok alaphelyzetbe állítása után a kijelölt képek arcait a program automatikusan újrakeresi, és a hiányzó modellről útmutatót mutat. (#4510).
+- Ha az arcfelismerés nem tud elindulni, az oka a hibanaplóba kerül (#4517).
+
+## [0.9.38] – 2026-10-07
+
+- A Mappa tulajdonságai párbeszéd Név mezőjével átnevezhetők a mappák; foglalt vagy érvénytelen névnél hibaüzenet jelenik meg. (#4482).
+- Bekapcsolt egykattintásos kilépésnél az állóképes előnézet egy kattintással visszalép a könyvtárba. (#4499).
+- A Mappa tulajdonságai párbeszéd OK és Mégse gombja ismét működik (#4503).
+- A mappatulajdonságok felirata és a Windows alatti útvonal- és QML-próbák platformfüggetlenek lettek (#4506).
+
 ## [0.9.37] – 2026-10-07
 
 - A főmenü-bejáró az új arcfilmes parancsot is ellenőrzi, és minden parancs után visszaállítja a nézetet (#4433).

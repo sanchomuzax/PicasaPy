@@ -52,9 +52,11 @@ Flickable {
         case "Blur Radius": return qsTr("Blur Radius")
         case "Brightness": return qsTr("Brightness")
         case "Color Mix": return qsTr("Color Mix")
-        case "Edge Strength": return qsTr("Edge Strength")
-        case "Posterize": return qsTr("Posterize")
-        case "Smoothness": return qsTr("Smoothness")
+        //: #4556: a Képregény csúszkái — az eredeti `ImageFilters::BlurXY`,
+        //: `DotContrast` és `DotFade` feliratai (ld. picasa-effekt-feliratok.md)
+        case "Color Brush": return qsTr("Color Brush")
+        case "Dot Density": return qsTr("Dot Density")
+        case "Dot Fade": return qsTr("Dot Fade")
         case "Width": return qsTr("Width")
         case "Border Width": return qsTr("Border Width")
         case "Angle": return qsTr("Angle")
@@ -88,6 +90,7 @@ Flickable {
         case "Detail": return qsTr("Detail")
         case "First Color": return qsTr("First Color")
         case "Second Color": return qsTr("Second Color")
+        case "Tint Color": return qsTr("Tint Color")
         case "Rounded Corners": return qsTr("Rounded Corners")
         case "Edge Hardness": return qsTr("Edge Hardness")
         // #717: az `ansel`/`tint`/`dir_tint`/`radtint` (és a `finetune*`/
@@ -273,7 +276,12 @@ Flickable {
                     from: paramRow.modelData.minimum
                     to: paramRow.modelData.maximum
                     stepSize: paramRow.modelData.step
-                    value: paramRow.modelData.default
+                    // A képen húzott fókuszpuck is ugyanazt a paraméterlistát
+                    // írja, ezért a csúszka a pillanatnyi értéket kövesse.
+                    value: panel.paramEffectValues
+                           && panel.paramEffectValues.length > paramRow.index
+                        ? panel.paramEffectValues[paramRow.index]
+                        : paramRow.modelData.default
                     // húzás/kattintás közben élő előnézet (#316) — a
                     // programozott kezdőérték-beállítás NEM vált ki `moved`
                     // jelet, csak a valódi felhasználói interakció
@@ -286,6 +294,14 @@ Flickable {
                     text: panel.paramLabel(paramRow.modelData.label)
                     checked: paramRow.modelData.default !== 0
                     onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
+                }
+                EditorSliderCaption {
+                    objectName: "effectParamColorLabel" + paramRow.index
+                    Layout.fillWidth: false
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: effectParamColumn.width
+                    visible: paramRow.controlKind === "color"
+                    text: panel.paramLabel(paramRow.modelData.label)
                 }
                 TextColorSwatches {
                     id: paramColorSwatches
@@ -369,6 +385,7 @@ Flickable {
             PanelButton {
                 objectName: "effectParamApplyButton"
                 label: qsTr("Apply")
+                tooltip: qsTr("Apply Changes")
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.applyParamPanel()
@@ -383,6 +400,7 @@ Flickable {
             PanelButton {
                 objectName: "effectParamCancelButton"
                 label: qsTr("Cancel")
+                tooltip: qsTr("Cancel Changes")
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.cancelParamPanel()

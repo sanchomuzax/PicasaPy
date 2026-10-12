@@ -255,6 +255,29 @@ Rectangle {
         folderPropertiesDialog.open()
     }
 
+    //: #4630: az Album menü az éppen megnyitott album tulajdonságait nyitja.
+    function openAlbumDescription(token, name) {
+        if (!token)
+            return
+        var adat = (controller && controller.albumProperties)
+            ? controller.albumProperties(token) : {}
+        folderPropertiesDialog.mode = "album"
+        folderPropertiesDialog.albumToken = token
+        folderPropertiesDialog.albumName =
+            adat.name !== undefined ? adat.name : (name || "")
+        folderPropertiesDialog.currentDate =
+            adat.date !== undefined ? adat.date : ""
+        folderPropertiesDialog.albumLocation =
+            adat.location !== undefined ? adat.location : ""
+        folderPropertiesDialog.currentDescription =
+            adat.description !== undefined ? adat.description : ""
+        folderPropertiesDialog.currentMusicEnabled =
+            adat.use_music !== undefined ? adat.use_music : false
+        folderPropertiesDialog.currentMusicFile =
+            adat.music_file !== undefined ? adat.music_file : ""
+        folderPropertiesDialog.open()
+    }
+
     function openFolderContextMenu(path) {
         folderContextMenu.folderPath = path
         folderContextMenu.customCollections = pane.customCollectionsModel
@@ -293,6 +316,14 @@ Rectangle {
         albumContextMenu.albumToken = token
         albumContextMenu.albumName = name
         albumContextMenu.popup()
+    }
+    function _askDeleteAlbum(token, name) {
+        if (!token) return
+        deleteAlbumConfirm.pendingToken = token
+        deleteAlbumConfirm.ask(
+            "",
+            qsTr("Are you sure you want to delete the album \"%1\"?")
+                .replace("%1", name))
     }
     function openPeopleAlbumContextMenu(name) {
         peopleAlbumContextMenu.personName = name
@@ -933,10 +964,13 @@ Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             opacity: offline ? 0.45 : 1.0
 
-                            // #2215: a `Ready` önmagában nem elég — a
-                            // szolgáltató korábban 1×1 átlátszó képet adott
-                            // borító hiányában, ami sikeresen betöltődik,
-                            // tehát elrejtette a mappaikont is.
+                            // #2215/#4876: a `Ready` önmagában nem elég —
+                            // a szolgáltató borító hiányában SZÁNDÉKOSAN 1×1
+                            // átlátszó, érvényes jelölőt ad (null képre a Qt
+                            // minden kérésnél hibasort írna), ami sikeresen
+                            // betöltődik. A szélességfeltétel (`> 1`) az
+                            // ELSŐDLEGES védelem: ettől látszik ilyenkor a
+                            // mappaikon.
                             readonly property bool boritoLatszik:
                                 pane.albumThumbs
                                 && folderRowCoverImage.status === Image.Ready
@@ -1102,6 +1136,9 @@ Rectangle {
                     pane.mentesPipaldKert(mappa, be)
                 }
                 onFolderChosen: function(path) { pane.folderChosen(path) }
+                onFolderContextMenuRequested: function(path) {
+                    pane.openFolderContextMenu(path)
+                }
 
                 // A `HierFolder` menü három tétele, aminek a rétege a
                 // gazdában van — ugyanazokra a hívásokra kötve, mint a
@@ -1250,6 +1287,10 @@ Rectangle {
 
     AlbumContextMenu {
         id: albumContextMenu
+        onAddNameTagsRequested: function(token) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanAlbum(token)
+        }
         onSelectAllRequested:
             if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
         onClearSelectionRequested:
@@ -1265,37 +1306,87 @@ Rectangle {
         onExportAsHtmlRequested:
             if (pane.appWindow && pane.appWindow.openWebExport)
                 pane.appWindow.openWebExport()
-        //: #3173: az album tulajdonságai — UGYANAZ a párbeszéd, mint a
-        //: mappáé (`album.fen`), csak album módban: ott a név és a helyszín
-        //: is szerkeszthető.
-        onEditDescriptionRequested: {
-            var adat = (controller && controller.albumProperties)
-                ? controller.albumProperties(albumContextMenu.albumToken) : {}
-            folderPropertiesDialog.mode = "album"
-            folderPropertiesDialog.albumToken = albumContextMenu.albumToken
-            folderPropertiesDialog.albumName =
-                adat.name !== undefined ? adat.name : albumContextMenu.albumName
-            folderPropertiesDialog.currentDate =
-                adat.date !== undefined ? adat.date : ""
-            folderPropertiesDialog.albumLocation =
-                adat.location !== undefined ? adat.location : ""
-            folderPropertiesDialog.currentDescription =
-                adat.description !== undefined ? adat.description : ""
-            folderPropertiesDialog.currentMusicEnabled =
-                adat.use_music !== undefined ? adat.use_music : false
-            folderPropertiesDialog.currentMusicFile =
-                adat.music_file !== undefined ? adat.music_file : ""
-            folderPropertiesDialog.open()
+        //: #3173: a helyi menü ugyanarra az albumtulajdonság-útvonalra megy.
+        onEditDescriptionRequested: pane.openAlbumDescription(
+            albumContextMenu.albumToken, albumContextMenu.albumName)
+        onDeleteAlbumRequested: pane._askDeleteAlbum(
+            albumContextMenu.albumToken, albumContextMenu.albumName)
+    }
+
+    ConfirmDialog {
+        id: deleteAlbumConfirm
+        namePrefix: "deleteAlbum"
+        title: qsTr("Delete Album")
+        yesText: qsTr("Delete Album")
+        property string pendingToken: ""
+        onConfirmed: {
+            if (controller && pendingToken)
+                controller.deleteAlbum(pendingToken)
+            pendingToken = ""
         }
+        onDenied: pendingToken = ""
+        onCanceled: pendingToken = ""
     }
 
     PeopleAlbumContextMenu {
         id: peopleAlbumContextMenu
+        onDeleteRequested: function(name) {
+            peopleAlbumDeleteConfirmation.personName = name
+            peopleAlbumDeleteConfirmation.open()
+        }
+        onEditRequested: function(name) {
+            if (pane.appWindow && pane.appWindow.openPeopleManagerForPerson)
+                pane.appWindow.openPeopleManagerForPerson(name)
+        }
         onSelectAllRequested:
             if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
         onClearSelectionRequested:
             if (pane.appWindow && pane.appWindow.clearSelection)
                 pane.appWindow.clearSelection()
+    }
+
+    Dialog {
+        id: peopleAlbumDeleteConfirmation
+        objectName: "peopleAlbumDeleteConfirmation"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        title: qsTr("Delete Person")
+        property string personName: ""
+        // #1599/#1748: rögzített szélesség, különben a tördelő felirat és a
+        // Dialog egymás szélességéből számolna (kötési hurok)
+        implicitWidth: 380 + leftPadding + rightPadding
+
+        contentItem: Label {
+            width: 380
+            text: qsTr("Are you sure you want to delete the people album \"%1\"?")
+                .arg(peopleAlbumDeleteConfirmation.personName)
+            wrapMode: Text.WordWrap
+        }
+
+        footer: RowLayout {
+            spacing: 8
+
+            Item { Layout.fillWidth: true }
+
+            Button {
+                objectName: "peopleAlbumDeleteConfirmButton"
+                text: qsTr("Yes")
+                onClicked: peopleAlbumDeleteConfirmation.accept()
+            }
+            Button {
+                objectName: "peopleAlbumDeleteCancelButton"
+                text: qsTr("No")
+                onClicked: peopleAlbumDeleteConfirmation.reject()
+            }
+        }
+
+        onAccepted: {
+            if (controller)
+                controller.savePeopleManagerChanges([
+                    {action: "delete", oldName: peopleAlbumDeleteConfirmation.personName}
+                ])
+        }
     }
 
     FolderListContextMenu {
@@ -1350,7 +1441,11 @@ Rectangle {
 
     FolderContextMenu {
         id: folderContextMenu
-        // #457: „Mappa áthelyezése…" — a célmappát a rendszer
+        onAddNameTagsRequested: function(path) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanFolder(path)
+        }
+        // #457: „Mappa áthelyezése…” — a célmappát a rendszer
         // mappaválasztójával kérjük be, a mozgatás a kísérőfájlokkal
         // együtt megy (a `.picasa.ini` nálunk az igazságforrás)
         onMoveFolderRequested: {

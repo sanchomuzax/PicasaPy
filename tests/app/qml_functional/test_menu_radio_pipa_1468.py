@@ -33,9 +33,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 from tests.support.qml_blokk import blokkok_tipusra
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from tests.app.qml_functional._fomenu_4420_menu import (
+    _kattints_qobject,
+    _megnyit,
+)
 
 _QML_ROOT = (
     Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "qml"
@@ -409,19 +414,40 @@ class TestNyelvvalasztas(_KizaroCsoportProba):
 
 
 class TestKonyvtarNezetAllandoPipaja:
-    """A `Nézet ▸ Könyvtár` pipája ÁLLANDÓ — a kattintás nem veheti le."""
+    """A Könyvtárnézet pipa- és visszatérési viselkedése (#4622)."""
 
-    def test_kattintasra_is_marad_a_pipa(self, qml_app, qt_app):
+    def test_a_konyvtarban_pipalt_es_inaktiv(self, qml_app):
         window, _controller, _engine = qml_app
         item = _child(window, "menuViewLibraryView")
         assert item.property("checked") is True
+        assert window.property("viewerOpen") is False
+        assert item.property("enabled") is False
 
-        _trigger(window, "menuViewLibraryView")
+    @pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))
+    def test_valodi_menukattintas_visszater_a_nezobol(
+        self, qml_app, qt_app, magassag_eltolas
+    ):
+        window, _controller, _engine = qml_app
+        window.resize(window.width(), window.height() + magassag_eltolas)
+        window.setProperty("viewerOpen", True)
+        qt_app.processEvents()
+        assert window.property("viewerOpen") is True
+
+        menu_bar = window.property("menuBar")
+        assert menu_bar is not None
+        menu = _megnyit(menu_bar, qt_app, "View")
+        item = _child(window, "menuViewLibraryView")
+        assert item.property("enabled") is True
+        assert item.property("checked") is True
+
+        _kattints_qobject(qt_app, item)
         qt_app.processEvents()
 
-        assert item.property("checked") is True, (
-            "a Könyvtár nézet pipája egyetlen kattintásra véglegesen eltűnt"
+        assert window.property("viewerOpen") is False, (
+            "a Nézet ▸ Könyvtárnézet kattintása nem zárta be a nézőt"
         )
+        assert item.property("checked") is True, "a Könyvtárnézet pipája eltűnt"
+        assert menu.property("opened") is False
 
 
 class TestBalHasabHelyiMenuje:

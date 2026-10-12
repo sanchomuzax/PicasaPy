@@ -34,22 +34,33 @@ import logging
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QSettings, Signal, Slot
 
 from picasapy.fileops import has_enough_free_space, required_bytes_for
 from picasapy.index import PhotoRecord
 from picasapy.webexport import (
     AlbumExportData,
     WebExportSettings,
-    list_bundled_templates,
+    list_templates,
     run_web_export,
 )
 from picasapy.webexport.images import prepare_photo_exports
+from picasapy.webexport.sizes import (
+    DEFAULT_SIZE_INDEX,
+    SIZE_CHOICES,
+    image_size_for_index,
+    settings_for_template,
+)
 
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
+
+#: #4610: az eredeti `Preferences\WebExportSize` / `WebExportMovie` párja —
+#: a választó INDEXE és a mozgókép-mód (spec 6.1).
+SIZE_SETTINGS_KEY = "webexport/size"
+MOVIE_FULL_SETTINGS_KEY = "webexport/movieFull"
 
 
 class WebExportController(BackgroundWorkerMixin, QObject):
@@ -67,12 +78,34 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         self,
         photo_source: Callable[[], Sequence[PhotoRecord]],
         parent: QObject | None = None,
+        settings=None,
     ) -> None:
         """`photo_source`: hívható, ami a jelenleg kiválasztott mappa/album
         `PhotoRecord`-jait adja vissza — az integrátor köti a meglévő
-        fotó-modellhez (ld. a modul docstringje)."""
+        fotó-modellhez (ld. a modul docstringje). `settings`: `value()`/
+        `setValue()` páros (tesztekhez); alapból `QSettings`."""
         super().__init__(parent)
         self._photo_source = photo_source
+        self._settings = settings
+
+    def _get_settings(self):
+        """Lusta alapértelmezés — a `controller.py` mintájára."""
+        if self._settings is None:
+            self._settings = QSettings("PicasaPy", "PicasaPy")
+        return self._settings
+
+    @Slot(result="QVariantMap")
+    def webExportPrefs(self) -> dict:  # noqa: N802
+        r"""A méretválasztó és a mozgókép-mód megőrzött állása (#4610).
+
+        Az eredeti a `Preferences\WebExportSize` (alap 3 → 640 képpont) és a
+        `WebExportMovie` (alap 0 → „Első képkocka") kulcsból indul
+        (`0x007f5310`, `0x007f5355`). Hibás tárolt érték az alapra esik."""
+        settings = self._get_settings()
+        return {
+            "sizeIndex": _size_index(settings.value(SIZE_SETTINGS_KEY)),
+            "movieFull": _truthy(settings.value(MOVIE_FULL_SETTINGS_KEY)),
+        }
 
     def exportRunning(self) -> bool:
         """Fut-e éppen exportáló háttérszál? (a mixin nyilvántartásán át)."""
@@ -109,7 +142,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
                     else ""
                 ),
             }
-            for info in list_bundled_templates()
+            for info in list_templates()
         ]
 
     #: #534: az eredeti alapértelmezett kimeneti mappája
@@ -131,22 +164,28 @@ class WebExportController(BackgroundWorkerMixin, QObject):
 
         return str(pictures_dir() / self.HTML_EXPORT_MAPPA)
 
-    @Slot(str, str, str, int, int, bool, bool)
+    @Slot(str, str, str, int, bool)
     def generateWebExport(
         self,
         target_dir: str,
         template_id: str,
         album_name: str,
-        thumbnail_max: int,
-        image_max: int,
-        shadowed_thumbnails: bool,
-        shadowed_images: bool,
+        size_index: int,
+        movie_full: bool,
     ) -> None:
-        """A webexport indítása HÁTTÉRSZÁLON. `thumbnail_max`/`image_max`
-        `<=0` = eredeti méret (a `webexport.fen` "0 = original" mintája,
-        az `export.fen`-nel egyező konvenció). `album_name` a cím-mező
+        """A webexport indítása HÁTTÉRSZÁLON. `album_name` a cím-mező
         (`webexport.fen` "edit") tartalma — a generált oldalak
         `<%albumName%>`-je ez lesz.
+
+        #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): `size_index`
+        a `webexport.fen` EGYETLEN méretválasztójának indexe (`SIZE_CHOICES`,
+        a nagy kép mérete); a bélyegkép méretét a sablon adja (hiányában
+        144). `movie_full`: „Teljes mozgófilm" (True) / „Első képkocka".
+        Az árnyékolás (`shadowedThumbnails`, alapérték 1;
+        `shadowedImages`, alapérték 0) nem a párbeszédből jön: a sablon
+        `define`-ja adja, hiányában az alapérték (#4849).
+        Mindkettő megmarad a következő megnyitásig, de csak elinduló
+        exportnál — az eredeti is az elfogadáskor ment.
 
         #1539: célzott index-újraolvasás SZÁNDÉKOSAN nincs. A kimenet egy
         WEBOLDAL (HTML + `thumbnail/` és `image/` segédmappák), amit a
@@ -159,7 +198,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             self.webExportFailed.emit(self.tr("Choose a target folder first."))
             return
         template = next(
-            (info for info in list_bundled_templates() if info.id == template_id), None
+            (info for info in list_templates() if info.id == template_id), None
         )
         if template is None:
             self.webExportFailed.emit(
@@ -186,12 +225,12 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             ))
             return
 
-        settings = WebExportSettings(
-            thumbnail_max_dimension=thumbnail_max if thumbnail_max > 0 else None,
-            image_max_dimension=image_max if image_max > 0 else None,
-            shadowed_thumbnails=shadowed_thumbnails,
-            shadowed_images=shadowed_images,
+        settings = settings_for_template(
+            template.path,
+            image_size_for_index(_size_index(size_index)),
+            WebExportSettings(movie_full=bool(movie_full)),
         )
+        self._remember_choice(size_index, movie_full)
         self.webExportStarted.emit()
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         # — a busy-bejelentkezés is ITT, a mixinben történik automatikusan
@@ -200,6 +239,12 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             args=(Path(target), template.path, photos, album_name, settings),
             name="picasapy-webexport",
         )
+
+    def _remember_choice(self, size_index: int, movie_full: bool) -> None:
+        """A választás megőrzése (#4610, `0x007f5ffe`/`0x007f6020`)."""
+        settings = self._get_settings()
+        settings.setValue(SIZE_SETTINGS_KEY, _size_index(size_index))
+        settings.setValue(MOVIE_FULL_SETTINGS_KEY, bool(movie_full))
 
     def _run_export(
         self,
@@ -226,3 +271,22 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             self.webExportFailed.emit(str(error))
             return
         self.webExportFinished.emit(str(target_dir), len(report.output_files))
+
+
+def _size_index(value) -> int:
+    """Tárolt/kapott méretindex ellenőrizve: hiányzó, nem szám vagy a
+    táblán kívüli érték az alapra (3 → 640) esik. (A tárolt index a mi
+    kulcsunk, nem az eredeti `WebExportSize` enumja, ezért a táblán kívüli
+    értéket hibásnak tekintjük, és nem az eredeti 0-ra ejtését követjük.)"""
+    try:
+        index = int(value)
+    except (TypeError, ValueError):
+        return DEFAULT_SIZE_INDEX
+    return index if 0 <= index < len(SIZE_CHOICES) else DEFAULT_SIZE_INDEX
+
+
+def _truthy(value) -> bool:
+    """A QSettings logikai értéke (INI-ben szövegként jön vissza)."""
+    if isinstance(value, str):
+        return value.strip().lower() not in ("", "0", "false")
+    return bool(value)

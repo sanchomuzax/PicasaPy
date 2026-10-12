@@ -60,6 +60,13 @@ A tömörítés megszakítható, és nem veszélyes: ha félbeszakítod, „A
 tömörítés megszakítva. Az adatbázis változatlan." Ha nincs mit
 felszabadítani, a program szól: „Az adatbázis már tömör — nincs teendő."
 
+## Ha az adatbázis éppen foglalt
+
+Előfordul, hogy egy mappa frissítésekor az adatbázist egy másik munka —
+például az arcfelismerés vagy a tömörítés — épp használja. A program ilyenkor
+nem hibázik el: kiírja, hogy „*N* mappa szinkronizálása később folytatódik.",
+és pár másodperc múlva magától újra megpróbálja. Nem kell tenned semmit.
+
 ## Ha az adatbázis megsérül
 
 A képeidet nem fenyegeti veszély: minden fontos adat a `.picasa.ini`

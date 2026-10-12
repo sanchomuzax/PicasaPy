@@ -10,6 +10,19 @@ egyik tétele**, ahogy az eredeti Picasában is.
 Jelöld ki a képeket, majd **Fájl ▸ Nyomtatás…** (Ctrl+P), vagy a képtálca
 **Nyomtatás** gombja.
 
+A nyomatra a kép **szerkesztett** változata kerül — vágással,
+forgatással, effektekkel —, és a fényképezőgép által megjelölt tájolás
+szerint helyesen állva. Ugyanazt kapod, mint exportáláskor.
+
+A párbeszéd a tartalmához illő magassággal nyílik, és a **Nyomtatás** meg
+a **Bezárás** gomb mindig látszik. Kis képernyőn a beállítások görgethetők.
+
+Ha a gépen **egyetlen nyomtató sincs telepítve**, a párbeszéd tetején ez
+áll: „A nyomtatáshoz telepítsen nyomtatót." Ez csak tájékoztatás: PDF-be
+ilyenkor is nyomtathatsz. Linuxon a nyomtatáshoz a rendszer
+nyomtatókezelője (CUPS) kell; ha a PicasaPy-t telepítőcsomagból tetted
+fel, a csomagkezelő ajánlja is.
+
 A párbeszédben beállítható:
 
 - **Nyomtató** — a rendszeren elérhető nyomtatók listájából. A
@@ -19,16 +32,22 @@ A párbeszédben beállítható:
   lapbeállító ablakát nyitja meg (papírméret, tájolás, margók). Amit ott
   elfogadsz, azt a következő nyomtatás használni fogja. PDF-be
   nyomtatásnál a gomb szürke: ott nincs nyomtató, amit beállíts.
-- **Nyomatméret** — magyar felületen nyolc, angol felületen kilenc tétel.
-  Magyar felületen hét méret metrikus:
-  **5 × 8 cm**, **9 × 13 cm**, **10 × 15 cm**, **13 × 18 cm**,
-  **15 × 20 cm**, **20 × 25 cm** és a **FullPage** (a teljes oldal);
-  angol felületen nyolc méret jelenik meg (**Tárcaméret**, 3 × 4,
-  3,5 × 5, 4 × 5, 4 × 6, 5 × 7, 8 × 10 és a FullPage). Az **Indexképek**
-  mindkét listában a méretválasztó további tétele — ez
+- **Nyomatméret** — a méretlista a számítógéped **területi
+  mértékegysége** szerint metrikus vagy hüvelykes (nem a felület nyelvétől
+  függ). Metrikus környezetben: **5 × 8 cm**, **9 × 13 cm**,
+  **10 × 15 cm**, **13 × 18 cm**, **15 × 20 cm**, **20 × 25 cm** és a
+  **FullPage** (a teljes oldal). Hüvelykes környezetben: **Tárcaméret**,
+  3 × 4, 3,5 × 5, 4 × 5, 4 × 6, 5 × 7, 8 × 10 és a **FullPage**. Az
+  **Indexképek** mindkét listában a méretválasztó további tétele — ez
   nem méret, hanem a sok kis kép egy lapra (lásd lentebb). A lista
   **alapból a FullPage**-en áll; a választásod megmarad a következő
   nyomtatásig.
+
+  A lista alatt hat **gyorsgomb** áll: öt tetszőleges méret és a
+  **FullPage**. Az ötöt a **Beállítások ▸ Nyomtatás** fülön te
+  választod meg ([Beállítások](beallitasok.md)); alapból metrikus
+  környezetben 5 × 8, 9 × 13, 10 × 15, 13 × 18 és 20 × 25 cm, hüvelykesben
+  Tárcaméret, 3,5 × 5, 4 × 6, 5 × 7 és 8 × 10.
 
   A **FullPage** felirata magyar felületen is angolul áll: az eredeti
   Picasa is így írta, és ezen nem változtatunk.
@@ -58,6 +77,29 @@ képminőségről: **Legkisebb kép: *N* képpont/hüvelyk**, és új sorban vag
 **Nézze át nyomtatás előtt.** és hogy hány kis kép van. Egy kép akkor
 számít kicsinek, ha a választott nyomatméretre kevesebb mint **150
 képpont jut hüvelykenként**.
+
+### Minőségellenőrzés
+
+Ha van kis kép, mellette egy **Ellenőrzés** gomb jelenik meg. Rákattintva
+egy lista mutatja **minden** nyomtatandó képet, a legrosszabbal elöl,
+a felbontásával és minősítésével:
+
+- **Legjobb minőség** — legalább 150 képpont/hüvelyk,
+- **Jó minőség** — 100 és 149 között,
+- **Gyenge minőség** — 100 alatt.
+
+A lap szövege: „Néhány kép túl kicsi a jó minőségű nyomtatáshoz."
+Három kimenet közül választasz:
+
+- **eltávolítod** a képeket: a **Kijelölt elemek eltávolítása** a listában
+  kijelölt képet, a **Gyenge minőségű képek eltávolítása** az összes
+  gyengét kiveszi a nyomtatásból (a képfájl nem törlődik);
+- **mégis kinyomtatod** őket: az **OK**;
+- vagy **megszakítod** a **Mégse** gombbal, és más nyomatméretet
+  választasz.
+
+Ha minden kép rendben van, a lista ezt írja: „Az összes kép készen áll a
+nyomtatásra."
 
 Ha a beállításokból nem jön ki érvényes nyomtatás, a program megnevezi a
 hibát: **Érvénytelen nyomtatási beállítás:** és utána, mi a baj.
@@ -125,7 +167,8 @@ gomb nem indít újabb feladatot.
 ## Indexképek nyomtatása
 
 **Mappa ▸ Indexképek nyomtatása…** (Ctrl+Shift+P) egy lapra sok kis képet
-tesz. Az **Oszlopok** mezővel állítod, hány kép legyen egy sorban.
+tesz. A Ctrl+Shift+P kijelölés nélkül is működik: ilyenkor a megnyitott
+mappa képeiből készít indexképes nyomtatást. Az **Oszlopok** mezővel állítod, hány kép legyen egy sorban.
 
 Ugyanide jutsz a szokásos nyomtatási párbeszédből is: válaszd a
 **Nyomatméret** lista utolsó tételét, az **Indexképek**-et. Ilyenkor

@@ -25,7 +25,11 @@ Window {
     property string helpTopic: "features/exportalas.md"
     WindowHelp { tema: webExportWindow.helpTopic }
     width: 520
-    height: exporting || lastOutputFolder.length > 0 || lastError.length > 0 ? 420 : 360
+    //: #4611: a tartalomhoz igazodik. A rögzített 360/420 px-es magasságnál a
+    //: „Létrehozás" gomb a 435. képpontnál kezdődött, azaz az ablakon kívül
+    //: esett, és sablontól függetlenül nem volt kattintható.
+    readonly property real fitHeight: mainColumn.implicitHeight + 2 * mainColumn.anchors.margins
+    height: Math.max(webExportWindow.minimumHeight, webExportWindow.fitHeight)
     minimumWidth: 460
     minimumHeight: 320
     color: Theme.canvasBg
@@ -71,6 +75,13 @@ Window {
                 webExportWindow.targetFolder =
                     webExportController.defaultWebExportTarget()
             }
+            // #4610: a legutóbbi választásból indul, ahogy az eredeti is
+            // a `WebExportSize`/`WebExportMovie` kulcsból
+            if (typeof webExportController.webExportPrefs === "function") {
+                var prefs = webExportController.webExportPrefs()
+                sizeBox.currentIndex = prefs.sizeIndex
+                movieBox.currentIndex = prefs.movieFull ? 1 : 0
+            }
         }
         webExportWindow.visible = true
     }
@@ -83,10 +94,8 @@ Window {
             webExportWindow.targetFolder,
             webExportWindow.templateId,
             webExportWindow.albumTitle,
-            thumbSizeBox.sizeOptions[thumbSizeBox.currentIndex],
-            imageSizeBox.sizeOptions[imageSizeBox.currentIndex],
-            shadowThumbsCheck.checked,
-            shadowImagesCheck.checked)
+            sizeBox.currentIndex,
+            movieBox.currentIndex === 1)
     }
 
     Connections {
@@ -112,6 +121,7 @@ Window {
     }
 
     ColumnLayout {
+        id: mainColumn
         anchors.fill: parent
         anchors.margins: 12
         spacing: 10
@@ -211,59 +221,50 @@ Window {
             }
         }
 
-        // -- méretek ------------------------------------------------------------
-        RowLayout {
+        // -- méret és mozgókép-mód -----------------------------------------------
+        // #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): az eredeti
+        // `webexport.fen` EGY méretválasztót ad (`sizeradio`, a nagy kép
+        // mérete) — a bélyegkép méretét a sablon szabja meg (hiányában 144
+        // képpont). Mellette a mozgókép-mód (`moviesradio`). Az elemek
+        // sorrendje és angol forrásszövege a FEN-é, a magyar felirat a
+        // hivatalos katalógusé (`webexport/itemN`); a címke+legördülő
+        // rács elrendezése a miénk. A képpont-táblát a vezérlő tartja
+        // (`SIZE_CHOICES`), a QML csak az indexet adja át.
+        GridLayout {
             Layout.fillWidth: true
-            spacing: 16
+            columns: 2
+            columnSpacing: 8
+            rowSpacing: 6
             enabled: !webExportWindow.exporting
-            ColumnLayout {
-                spacing: 2
-                Text {
-                    text: qsTr("Thumbnail size:")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                }
-                PicasaComboBox {
-                    id: thumbSizeBox
-                    objectName: "webExportThumbSizeBox"
-                    readonly property var sizeOptions: [0, 100, 160, 200, 320]
-                    Layout.preferredWidth: 160
-                    model: [qsTr("Original size"), "100 px", "160 px", "200 px", "320 px"]
-                    currentIndex: 3
-                }
+            Text {
+                text: qsTr("Export pictures at:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
             }
-            ColumnLayout {
-                spacing: 2
-                Text {
-                    text: qsTr("Picture size:")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                }
-                PicasaComboBox {
-                    id: imageSizeBox
-                    objectName: "webExportImageSizeBox"
-                    readonly property var sizeOptions: [0, 640, 800, 1024, 1600]
-                    Layout.preferredWidth: 160
-                    model: [qsTr("Original size"), "640 px", "800 px", "1024 px", "1600 px"]
-                    currentIndex: 2
-                }
+            PicasaComboBox {
+                id: sizeBox
+                objectName: "webExportSizeBox"
+                Layout.fillWidth: true
+                model: [qsTr("Original Size"),
+                        qsTr("1024 pixels (for large monitors)"),
+                        qsTr("800 pixels (for large Web pages)"),
+                        qsTr("640 pixels (for Web pages)"),
+                        qsTr("320 pixels (for email)")]
+                // `Preferences\WebExportSize` alapértéke → 640 képpont
+                currentIndex: 3
             }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 16
-            enabled: !webExportWindow.exporting
-            CheckBox {
-                id: shadowThumbsCheck
-                objectName: "webExportShadowThumbsCheck"
-                text: qsTr("Shadow thumbnails")
-                checked: true
+            Text {
+                text: qsTr("Export movies using:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
             }
-            CheckBox {
-                id: shadowImagesCheck
-                objectName: "webExportShadowImagesCheck"
-                text: qsTr("Shadow pictures")
+            PicasaComboBox {
+                id: movieBox
+                objectName: "webExportMovieBox"
+                Layout.fillWidth: true
+                model: [qsTr("First frame"), qsTr("Full movie")]
+                // `Preferences\WebExportMovie` alapértéke → Első képkocka
+                currentIndex: 0
             }
         }
 

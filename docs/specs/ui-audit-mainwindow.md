@@ -569,11 +569,9 @@ jobbra:
 - **Hiányzik**: a `+📁` gyors-album gomb és a két nézetváltó ikon +
   lenyíló nyíl (4.1/2–4. pont) — ezek a mai `MainToolbar.qml`-ben
   nincsenek jelen.
-- A négy szűrő-ikon közül csak a ★ (csillag) és a ⚲ (geo) aktív
-  ténylegesen (`TapHandler`-rel bekötve); a ☺ (arc-szűrő, 3. fázisra
-  utalva a kódkommentben) és a ▤ (méret/mozgókép) `opacity: 0.45`,
-  vizuálisan inaktívak — ez tudatos, fázisokra bontott hiányosság
-  (dokumentálva a kódban), nem hűség-hiba.
+- A ★ (csillag), ☺ (arc), ⚲ (hely) és ▶ (film) gombok `TapHandler`-rel
+  kapcsolják a saját szűrőjüket; egyszerre csak a megfelelő gomb aktív.
+  A külön ▤ jel továbbra is szürke, inaktív helyfoglaló.
 - A verziószám-felirat (`versionLabel`) az eredetiben nem létezik —
   fejlesztői/debug célú kiegészítés, nem Picasa-elem.
 - A „Bejelentkezés Google Fiókkal" hivatkozás (menüsor jobb széle,

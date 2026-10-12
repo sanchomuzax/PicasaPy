@@ -86,8 +86,16 @@ class TestAmitAFelhasznaloLAT:
 
 # --- ÉLŐ mérés: a betöltött felületen és a valódi párbeszéden -------------
 
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl  # noqa: E402
+from PySide6.QtCore import (  # noqa: E402
+    QMetaObject,
+    QObject,
+    QPoint,
+    QPointF,
+    Qt,
+    QUrl,
+)
 from PySide6.QtQml import QQmlComponent, QQmlEngine  # noqa: E402
+from PySide6.QtTest import QTest  # noqa: E402
 
 import picasapy.app.application as app_module  # noqa: E402
 
@@ -156,9 +164,32 @@ class TestAzELOFelulet:
             "az import menüpontja le van tiltva — a felhasználó nem éri el"
         )
 
-    def test_a_megnyitas_ELINDITJA_az_atvetelt(self, qt_app):
+    def test_a_gomb_kattintasa_ELINDITJA_az_atvetelt(self, qt_app):
+        """A konfiguráció megnyitása önmagában még nem indít íróműveletet."""
         parbeszed, vezerlo = _parbeszed(qt_app)
         QMetaObject.invokeMethod(parbeszed, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert vezerlo.inditasok == 0, "az átvétel a felhasználó kérése előtt elindult"
+        gomb = _elem(parbeszed, "picasaImportStartButton")
+        eredeti_magassag = parbeszed.height()
+        for elteres in (-5, 0, 5):
+            parbeszed.resize(parbeszed.width(), eredeti_magassag + elteres)
+            qt_app.processEvents()
+            assert gomb.property("visible") is True
+            assert gomb.property("enabled") is True
+            teteje = gomb.mapToScene(QPointF(0, 0)).y()
+            assert teteje >= 0 and teteje + gomb.property("height") <= parbeszed.height()
+        parbeszed.resize(parbeszed.width(), eredeti_magassag)
+        qt_app.processEvents()
+        kozep = gomb.mapToScene(
+            QPointF(gomb.property("width") / 2, gomb.property("height") / 2)
+        )
+        QTest.mouseClick(
+            parbeszed,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(kozep.x()), round(kozep.y())),
+        )
         qt_app.processEvents()
         assert vezerlo.inditasok == 1, "a párbeszéd megnyílt, de nem indult import"
 

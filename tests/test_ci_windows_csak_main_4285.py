@@ -1,4 +1,5 @@
-"""#4285: a windowsos tesztkészlet PR-on nem fut, csak a main-re érkező pushon."""
+"""#4285: a windowsos tesztkészlet PR-on nem fut; 2026-10-09 óta main-pushon sem,
+csak ütemezve (éjszaka) és kézi indításra."""
 from pathlib import Path
 
 CI = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
@@ -19,3 +20,10 @@ def test_a_windowsos_darabok_pr_on_kimaradnak():
 
 def test_a_windowsos_osszesito_pr_on_nem_buktat():
     assert "github.event_name != 'pull_request'" in _blokk("test-windows")
+
+
+def test_a_windowsos_darabok_a_main_pushon_futnak():
+    """Az ütemezett futást a GitHub nem indította el (2026-10-10), így a
+    futásidő-tábla windowsos mérés nélkül maradt — a main-pushon futnia kell."""
+    blokk = _blokk("darabok-windows")
+    assert "github.event_name != 'push'" not in blokk

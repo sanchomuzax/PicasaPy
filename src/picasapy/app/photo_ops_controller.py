@@ -61,8 +61,9 @@ from picasapy.fileops import (
 )
 from picasapy.index import (
     open_index,
-    photos_with_keyword,
     photo_by_id,
+    photos_with_faces,
+    photos_with_keyword,
     search_photos,
     update_photo_fields,
 )
@@ -70,7 +71,7 @@ from picasapy.ini import (
     FilterWriteError,
     IniConflictError,
     IniSaveError,
-    load_document,
+    load_existing,
     update_document,
 )
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
@@ -80,6 +81,7 @@ from picasapy.ini.albums import (
     with_album,
     with_album_fields,
     without_album,
+    without_album_everywhere,
 )
 from picasapy.metadata import write_iptc_caption
 from picasapy.render.flip import (
@@ -90,6 +92,7 @@ from picasapy.render.flip import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 
+from . import formatting
 from .worker_thread import BackgroundWorkerMixin
 
 # #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
@@ -175,6 +178,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
     #: eljut a menühöz, nem csak a sajátunk.
     captionClipboardChanged = Signal()
+    #: #4628: a kijelölt képek valamelyikének már van felirata, ezért a
+    #: vágólapról beillesztés előtt a QML megerősítést kér.
+    captionPasteConfirmationRequested = Signal()
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
@@ -569,7 +575,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         """A vágólap szövege a KIJELÖLT képek feliratába („Paste Text").
 
         Az eredetiben a parancs a kijelölésre hat, nem egy képre. Visszaadja,
-        hány képre indult írás.
+        hány képre indult írás. Ha a kijelölésben van már feliratozott kép,
+        a QML előbb megerősítést kér; az írás csak a `confirmCaptionPaste`
+        hívásakor indul.
 
         ⚠️ ÜRES vágólapra nem tesz semmit: a meglévő feliratok letörlése néma
         adatvesztés lenne — a törlésre a felirat-szerkesztő van."""
@@ -588,6 +596,25 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not kijeloles:
             return 0
 
+        # #4628: a kérdésre várva rögzítjük a célképeket és a szöveget. Így
+        # egy másik vágólap- vagy rácsváltozás nem módosítja a felhasználó
+        # által épp jóváhagyott műveletet.
+        if getattr(self, "_caption_paste_pending", None) is not None:
+            return 0
+        if any((photo.caption or "").strip() for photo in kijeloles):
+            self._caption_paste_pending = (
+                [photo.id for photo in kijeloles],
+                szoveg,
+            )
+            self.captionPasteConfirmationRequested.emit()
+            return 0
+
+        return self._write_caption_text(kijeloles, szoveg)
+
+    def _write_caption_text(self, kijeloles, szoveg: str) -> int:
+        """A már jóváhagyott vagy üres képekre menő feliratköteg."""
+        if not kijeloles or not szoveg:
+            return 0
         # #2915: EGY soros köteg, nem képenként egy szál — ugyanabba az
         # ini-be és indexbe írás párhuzamosan versenyhelyzet volt.
         azonositok = [photo.id for photo in kijeloles]
@@ -601,6 +628,27 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             after=utomunka,
         )
         return len(kijeloles)
+
+    @Slot(result=int)
+    def confirmCaptionPaste(self) -> int:  # noqa: N802
+        """A felhasználó jóváhagyta a függő felirat-beillesztést."""
+        pending = getattr(self, "_caption_paste_pending", None)
+        self._caption_paste_pending = None
+        if pending is None:
+            return 0
+        photo_ids, szoveg = pending
+        photos_by_id = {photo.id: photo for photo in self._photos.photos}
+        kijeloles = [
+            photos_by_id[photo_id]
+            for photo_id in photo_ids
+            if photo_id in photos_by_id
+        ]
+        return self._write_caption_text(kijeloles, szoveg)
+
+    @Slot()
+    def cancelCaptionPaste(self) -> None:  # noqa: N802
+        """A felhasználó elutasította a függő felirat-beillesztést."""
+        self._caption_paste_pending = None
 
     @Slot(int, str)
     def setCaption(self, row: int, text: str) -> None:
@@ -769,6 +817,38 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         self._write_album_batch(valid, mutate)
 
+    @Slot(str, result=bool)
+    def deleteAlbum(self, token: str) -> bool:  # noqa: N802
+        """Egy album teljes törlése minden érintett mappa ini-jéből (#4598).
+
+        A törlés a `[.album:<token>]` definíciót és a képek `albums=`
+        hivatkozásait is kiveszi. A képfájlok és a többi album érintetlenek
+        maradnak. Visszatérés: legalább egy albumot ismerő mappába írtunk-e.
+        """
+        token = (token or "").strip()
+        if not token:
+            return False
+        erintett = list(self._album_dokumentumok(token))
+        if not erintett:
+            return False
+
+        try:
+            with open_index(self._db_path) as conn:
+                for ini_ut, _document in erintett:
+                    update_document(
+                        ini_ut,
+                        lambda document: without_album_everywhere(document, token),
+                        backup=True,
+                    )
+                    self._sync_tree(conn, str(ini_ut.parent))
+                self._load_albums(conn)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(str(error))
+            return False
+
+        self._refresh_view()
+        return True
+
     # -- Album-tulajdonságok (#3173) -------------------------------------------
 
     @Slot(str, result="QVariantMap")
@@ -794,6 +874,34 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     "music_file": album.music_file or "",
                 }
         return {}
+
+    def albumMusicFile(self, token: str) -> str:  # noqa: N802
+        """Az engedélyezett albumzene meglévő, helyi fájlútvonala."""
+        token = (token or "").strip()
+        if not token:
+            return ""
+        for ini_path, document in self._album_dokumentumok(token):
+            for album in albums_of(document):
+                if album.token != token:
+                    continue
+                if not album.use_music or not album.music_file:
+                    return ""
+                local_path = formatting.to_local_path(album.music_file)
+                if not local_path:
+                    return ""
+                music_path = Path(local_path).expanduser()
+                if not music_path.is_absolute():
+                    music_path = ini_path.parent / music_path
+                try:
+                    return str(music_path.resolve()) if music_path.is_file() else ""
+                except OSError:
+                    return ""
+        return ""
+
+    def albumMusicTrackUrls(self, token: str) -> list:  # noqa: N802
+        """Az album egyetlen kiválasztott zeneszáma file-URL-ként."""
+        music_path = self.albumMusicFile(token)
+        return [formatting.to_file_url(music_path)] if music_path else []
 
     @Slot(str, str, str, str, str, result=bool)
     def editAlbumProperties(  # noqa: N802
@@ -902,7 +1010,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         for mappa in mappak:
             ut = Path(mappa) / PICASA_INI_NAME
             try:
-                dokumentum = load_document(ut)
+                dokumentum = load_existing(ut)
             except (OSError, ValueError):
                 continue
             if dokumentum.section(szakasz) is not None:
@@ -1011,9 +1119,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if esemeny is not None:
             esemeny.set()
 
-    @Slot()
-    def writeFacesToXmp(self) -> None:
-        """A LÁTOTT mappa képeinek XMP-sidecarja, arcrégiókkal (#1403).
+    @Slot(str, "QVariantList")
+    def writeFacesToXmp(self, scope: str, rows) -> None:
+        """A kiválasztott hatókör XMP-sidecarjai arcrégiókkal (#1403, #4634).
 
         Az eredeti parancsa (`eMenuTools::ID_WRITE_XMP_FACES`, `.fen`
         `write_all_facetags`) kötegelt munkaként fut, és a HÁROM állapotát
@@ -1032,10 +1140,33 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         nem az index — így a frissen elnevezett arc is bekerül, mielőtt a
         szinkron végigfut.
         """
-        utak = [
-            Path(photo.folder_path) / photo.name
-            for photo in self._photos.photos
-        ]
+        photos = self._photos.photos
+        if scope == "selected":
+            kijelolt_sorok: set[int] = set()
+            for nyers in rows or ():
+                try:
+                    sor = int(nyers)
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= sor < len(photos):
+                    kijelolt_sorok.add(sor)
+            photos = [photo for i, photo in enumerate(photos) if i in kijelolt_sorok]
+        elif scope == "faces":
+            with open_index(self._db_path) as conn:
+                arcot_tartalmazo_azonositok = {
+                    photo.id for photo in photos_with_faces(conn)
+                }
+            photos = [
+                photo
+                for photo in photos
+                if photo.id in arcot_tartalmazo_azonositok
+            ]
+        elif scope != "all":
+            # Ismeretlen hatókörrel ne lehessen véletlenül a teljes nézetet írni.
+            self.xmpFacesFinished.emit(0, 0, "")
+            return
+
+        utak = [Path(photo.folder_path) / photo.name for photo in photos]
         if not utak:
             self.xmpFacesFinished.emit(0, 0, "")
             return

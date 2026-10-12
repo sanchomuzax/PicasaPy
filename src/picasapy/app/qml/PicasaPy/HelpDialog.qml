@@ -27,6 +27,9 @@ Dialog {
     //: A megnyitandó fejezet. A Shift+F1 ezt állítja a mutató alatti
     //: elem `helpTopic`-jára; F1-re a főoldal nyílik.
     property string topic: ""
+    // #4639: a főablak a tényleges QML Shortcut-okból adja át a listát.
+    property string keyboardShortcutTitle: ""
+    property var keyboardShortcutGroups: []
 
     //: #3544: a vezérlő `typeof`-őrrel (#3005) — a súgó a külön ablakos
     //: párbeszédekből is felépül (`HelpWindow.qml`), és vezérlő nélkül sem
@@ -48,6 +51,31 @@ Dialog {
     property bool _visszalepesFolyamatban: false
 
     readonly property bool lehetVissza: helpDialog.elozmeny.length > 0
+
+    function shortcutMarkdown() {
+        var lines = ["# " + helpDialog.keyboardShortcutTitle]
+        var groups = helpDialog.keyboardShortcutGroups || []
+        for (var i = 0; i < groups.length; ++i) {
+            var group = groups[i]
+            if (!group || !group.sequences || group.sequences.length === 0)
+                continue
+            lines.push("", "## " + group.title)
+            for (var j = 0; j < group.sequences.length; ++j) {
+                var sequence = String(group.sequences[j] || "").trim()
+                if (sequence.length > 0)
+                    lines.push("- `" + sequence + "`")
+            }
+        }
+        return lines.join("\n")
+    }
+
+    function szovegFejezethez(fejezet) {
+        if (fejezet === "features/billentyuk.md"
+                && helpDialog.keyboardShortcutGroups.length > 0)
+            return helpDialog.shortcutMarkdown()
+        return helpDialog._vezerlo
+            ? helpDialog._vezerlo.helpTopicText(fejezet) : ""
+    }
 
     function nyisdMeg(fejezet) {
         // Új megnyitás = tiszta lap: a korábbi böngészés előzménye már nem
@@ -89,7 +117,7 @@ Dialog {
             helpDialog.elozmeny = verem
         }
         helpDialog._elozoTopic = helpDialog.topic
-        szovegNezo.text = helpDialog._vezerlo.helpTopicText(helpDialog.topic)
+        szovegNezo.text = helpDialog.szovegFejezethez(helpDialog.topic)
         szovegGorgeto.contentY = 0
     }
 

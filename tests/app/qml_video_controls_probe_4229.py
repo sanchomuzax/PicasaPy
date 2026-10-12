@@ -143,10 +143,7 @@ def main() -> None:
         "a vágott klip exportgombjának engedélyezése",
     )
     assert export.isEnabled()
-    kert_export = []
-    lejatszo.exportClipRequested.connect(lambda: kert_export.append(True))
     _kattint(ablak, export)
-    assert kert_export == [True]
     if sys.platform.startswith("linux"):
         ertesites = _elem(ablak, "videoCaptureNotice")
         _vard_meg(

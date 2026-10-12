@@ -41,9 +41,11 @@ szerkesztő fülei ugyanott vannak.
 - [Útlevélkép](features/utlevelkep.md)
 - [Küldés e-mailben](features/email.md)
 - [Kollázs](features/kollazs.md)
+- [Poszter](features/poszter.md)
 - [Ajándék CD](features/ajandek-cd.md)
 - [Mozgófilm](features/mozgofilm.md)
 - [Asztali háttérkép](features/hatterkep.md)
+- [Képernyővédő](features/kepernyovedo.md)
 
 ## Beállítás és karbantartás
 

@@ -14,6 +14,11 @@ import QtQuick.Layouts
 // Amint előkerül egy képernyőkép a Picasa 3. effekt-füléről (#464 4. pont),
 // az itt szereplő effektek a helyükre kerülhetnek — addig ez a fül tartja
 // őket egyben, elveszés nélkül.
+// #4558: a kétmódú csempék BÉLYEGKÉPE is a Shift szerinti szűrőé
+// — az eredeti a csempe erőforrás-nevét a `_mod%s` utótaggal képzi,
+// tehát a másodlagos előnézetét mutatja. Mindkét kép előre betöltődik
+// (`thumbSource` + `thumbSourceAlt`), a Shift csak a láthatóságot váltja
+// (`thumbAltActive`) — ld. a holtpont-indoklást a PanelButton.qml-ben.
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -59,6 +64,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectMatte"
             label: qsTr("Matte")
+            tooltip: qsTr("Add a light glow to the edges of your photo")
             onButtonClicked: if (!panel.tryOpenParamPanel("matte", label)) panel.effectRequested("matte")
             thumbSource: panel.effectThumbSource("matte")
             badge: panel.hasBadge("matte")
@@ -66,6 +72,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectNightVision"
             label: qsTr("Night Vision")
+            tooltip: qsTr("Mimics infrared night-vision cameras")
             onButtonClicked: if (!panel.tryOpenParamPanel("nightvision", label)) panel.effectRequested("nightvision")
             thumbSource: panel.effectThumbSource("nightvision")
             badge: panel.hasBadge("nightvision")
@@ -73,6 +80,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectLocalContrast"
             label: qsTr("Local Contrast")
+            tooltip: qsTr("Brings out image details")
             onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast", label)) panel.effectRequested("localcontrast")
             thumbSource: panel.effectThumbSource("localcontrast")
             badge: panel.hasBadge("localcontrast")
@@ -82,6 +90,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRoundedEdges"
             label: qsTr("Rounded Edges")
+            tooltip: qsTr("Give your photo rounded corners")
             onButtonClicked: if (!panel.tryOpenParamPanel("roundededges", label)) panel.effectRequested("roundededges")
             thumbSource: panel.effectThumbSource("roundededges")
             badge: panel.hasBadge("roundededges")
@@ -90,19 +99,16 @@ ColumnLayout {
             objectName: "effectPicnikGrain"
             label: panel.shiftMasodlagos
                    ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Adds film grain") : qsTr("Simulate film grain")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
             //: az eredeti csempe-táblája (picnikgrain -> grain)
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "grain" : "picnikgrain"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("picnikgrain")
+            thumbSourceAlt: panel.effectThumbSource("grain")
+            thumbAltActive: panel.shiftMasodlagos
             badge: panel.hasBadge(szuro)
         }
     }

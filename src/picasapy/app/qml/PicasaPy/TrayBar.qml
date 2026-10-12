@@ -37,6 +37,11 @@ import "infosav.js" as InfoSav
 Column {
     id: tray
 
+    // #4639: a súgó a tálca valódi Shortcut.sequence értékét olvassa.
+    readonly property var keyboardShortcutSequences: [
+        trayKeepSelectionShortcut.sequence
+    ]
+
     // #1367: a sáv MÉRT szélesség-igénye — a `Main.qml` erre köti az ablak
     // `minimumWidth`-ét. A gyökéren át érhető el, mert a főablak a
     // komponenst látja, nem a belső `trayMainBar`-t.
@@ -66,6 +71,8 @@ Column {
     // print_controller.py/email_controller.py docstringje).
     signal printRequested()
     signal emailRequested()
+    // #4637: a kimeneti gombsor jobbklikkje a gazda közös gombmenüjét kéri.
+    signal configureButtonsContextMenuRequested(var anchorItem, real x, real y)
 
     // #2564: a SZERKESZTŐ nagyítás-hármasa ebben a sávban él, a könyvtár
     // bélyegkép-csúszkájának a helyén — mérve (`editpanel.tre:1288–1324` +
@@ -85,12 +92,24 @@ Column {
     signal zoomActualRequested()
     signal zoomValueRequested(real ertek)
 
+    // #4600: az `F4` a csillag-gomb kattintása, ha a gomb engedélyezett
+    // (az eredetiben `[eax+0x20e] == 0` őr) — tiltottan nem tesz semmit.
+    function kapcsoldACsillagot() {
+        if (tray.visible && trayStar.enabled) trayStar.clicked()
+    }
+
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayStar.targetRow
 
     // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
+    // A `photoInfo`/`viewerInfo` invokálható függvény eredménye nem QML-
+    // kötésfüggőség önmagában. A címkeírás utáni model-változásnak ezért
+    // külön újra kell értékeltetnie az alsó infósávot.
+    readonly property int photoRevision:
+        tray.ctl && typeof tray.ctl.photos !== "undefined" && tray.ctl.photos
+        ? tray.ctl.photos.revision : 0
 
     // #718: a kijelölés VÉDETT olvasata. A leépítésnek van egy köztes
     // állapota, amikor az `appWindow` már létezik, a `selectedIndexes`
@@ -143,6 +162,7 @@ Column {
     // #4329: a Ctrl+H ugyanazt a jelzést küldi, mint a helyi menü
     // „Hold Selection” tétele; így egyetlen út tartja meg a kijelölést.
     Shortcut {
+        id: trayKeepSelectionShortcut
         objectName: "trayKeepSelectionShortcut"
         sequence: "Ctrl+H"
         enabled: !!tray.appWindow
@@ -220,10 +240,13 @@ Column {
     //: műveletsor a tálca tartalmán dolgozik, tehát a darabszámnak, a
     //: dátumtartománynak és az összméretnek is azt kell összesítenie —
     //: a más mappából tartott képekkel együtt, amiket a rács nem is mutat.
+    // A rekord mezőinek módosulása nem változtatja a `trayCount`-ot; a
+    // modellverzió a tálca adatait is újra lekéri (pl. új címkék után).
     readonly property string trayInfoText:
-        (tray.trayCount > 0 && tray.ctl
-         && typeof tray.ctl.trayInfo === "function")
-            ? tray.ctl.trayInfo() : ""
+        (tray.photoRevision,
+         (tray.trayCount > 0 && tray.ctl
+          && typeof tray.ctl.trayInfo === "function")
+             ? tray.ctl.trayInfo() : "")
 
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
     //
@@ -361,17 +384,22 @@ Column {
             /** A sáv szövege LEÉPÜLÉS NÉLKÜL — ebből dolgozik az InfoSav. */
             readonly property string nyersSzoveg:
                   (!tray.ctl || !tray.appWindow) ? ""
-                  : (tray.ctl.collageRendering === true ? tray.collageWaitText
-                  : (tray.appWindow.viewerOpen
-                  ? (typeof tray.ctl.viewerInfo === "function"
-                     ? tray.ctl.viewerInfo(tray.viewerIndex) : "")
-                  : (tray.trayInfoText !== "" ? tray.trayInfoText
-                  : (tray.appWindow.selectedIndexes.length === 1
-                     ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
-                     : (tray.appWindow.selectedIndexes.length > 1
-                        && typeof tray.ctl.selectionInfo === "function"
-                        ? tray.ctl.selectionInfo(tray.appWindow.selectedIndexes)
-                        : tray.ctl.statusText)))))
+                  : (tray.photoRevision,
+                     (tray.ctl.collageRendering === true
+                      ? tray.collageWaitText
+                      : (tray.appWindow.viewerOpen
+                         ? (typeof tray.ctl.viewerInfo === "function"
+                            ? tray.ctl.viewerInfo(tray.viewerIndex) : "")
+                         : (tray.trayInfoText !== "" ? tray.trayInfoText
+                            : (tray.appWindow.selectedIndexes.length === 1
+                               ? tray.ctl.photoInfo(
+                                     tray.appWindow.selectedIndex)
+                               : (tray.appWindow.selectedIndexes.length > 1
+                                  && typeof tray.ctl.selectionInfo
+                                      === "function"
+                                  ? tray.ctl.selectionInfo(
+                                        tray.appWindow.selectedIndexes)
+                                  : tray.ctl.statusText))))))
             color: Theme.infoBarText
             font.pixelSize: Theme.fontSize
             font.bold: true
@@ -1174,7 +1202,7 @@ Column {
                         //: szó szerint (`referencia/ui-leltar.csv`). Eddig
                         //: nem volt súgója.
                         ToolTip.text: qsTr("Add/Remove Star")
-                        ToolTip.visible: trayMoreBtn.hovered
+                        ToolTip.visible: trayStar.hovered
                         ToolTip.delay: Theme.tooltipDelay
                         // #718: null-őr — ld. a fenti `ctl` docstringje;
                         // appWindow hiányában a célsor -1 (nincs cél).
@@ -1826,6 +1854,19 @@ Column {
             Row {
                 id: trayActionRow
                 objectName: "trayActionRow"
+                // #4637: a testreszabható alsó gombsor jobb klikkjére a
+                // gazda ugyanazt a menüt nyitja, mint az Eszközök menü.
+                TapHandler {
+                    objectName: "trayConfigureButtonsContextMenuHandler"
+                    acceptedButtons: Qt.RightButton
+                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                    onSingleTapped: function (point) {
+                        tray.configureButtonsContextMenuRequested(
+                            trayActionRow,
+                            point.position.x,
+                            point.position.y)
+                    }
+                }
                 // a 40 képpontos cellák a zöld gomb 44-es helyére
                 // függőlegesen középre: 36 + (44 − 40) / 2 = 38
                 x: trayMainBar.outputsOffset
@@ -1895,6 +1936,22 @@ Column {
                 //: viszont ellenőrizhető.
                 readonly property var rejtettFeliratok:
                     trayActionRow.gombFeliratok.slice(trayActionRow.kiferoCellak)
+                // a ki nem férő gombok ikonja és engedélyezettsége — a
+                // felugró ugyanazt mutatja, mint a sávbeli gomb (#4537)
+                readonly property var gombIkonok: [
+                    trayPrintBtn.iconSource, trayEmailBtn.iconSource,
+                    trayExportBtn.iconSource, trayCollageBtn.iconSource,
+                    trayMovieBtn.iconSource
+                ]
+                readonly property var gombEngedelyezett: [
+                    trayPrintBtn.enabled, trayEmailBtn.enabled,
+                    trayExportBtn.enabled, trayCollageBtn.enabled,
+                    trayMovieBtn.enabled
+                ]
+                readonly property var rejtettIkonok:
+                    trayActionRow.gombIkonok.slice(trayActionRow.kiferoCellak)
+                readonly property var rejtettEngedelyezett:
+                    trayActionRow.gombEngedelyezett.slice(trayActionRow.kiferoCellak)
 
                 //: a hívó cellák ezzel kérdezik meg, látszanak-e
                 function cellaLatszik(index) {
@@ -2146,9 +2203,9 @@ Column {
                     //: a `.tre` 50 / 52, `outputlayout.tre:143–150`).
                     //:
                     //: ⇒ A felugró listánk **ugyanazt a fajtát** adja, amit az
-                    //: eredeti mutat: a rejtett gombok függőleges listában,
+                    //: eredeti mutat: a rejtett gombok függőleges oszlopban,
                     //: egymás alatt. Az eltérés a MEGVALÓSÍTÁSBAN van (nálunk
-                    //: menü, ott a konténer saját oszlopa), nem abban, amit a
+                    //: felugró, ott a konténer saját oszlopa), nem abban, amit a
                     //: felhasználó lát — ez tehát MÉRT döntés, nem feltevés.
                     //:
                     //: ⚠️ Ami továbbra sincs mérve: a nyílás iránya (le- vagy
@@ -2179,7 +2236,7 @@ Column {
                         iconObjectName: "trayMoreIcon"
                         labelObjectName: "trayMoreLabel"
                         enabled: true
-                        onClicked: trayMoreMenu.popup()
+                        onClicked: trayMoreMenu.open()
                         //: `Click here for more options`
                         ToolTip.text: qsTr("Click here for more options")
                         ToolTip.visible: trayMoreBtn.hovered
@@ -2188,19 +2245,44 @@ Column {
                 }
             }
 
-            // #2191: a rejtett tételek listája. ⚠️ A felugró PONTOS
-            // kinézete NINCS mérve — a `respack.yt` csak a gombot adja, a
-            // tartalom futásidőben épül —, ezért a legegyszerűbb, a
-            // többi helyi menünkkel egyező alakot használjuk.
-            Menu {
+            // #2191: a rejtett tételek listája. #4537: a felugró a MÉRT
+            // formát követi — függőleges oszlop, a sávbeli gombokkal azonos
+            // 55 × 36-os gombok, ikonnal és felirattal. A nyílás iránya
+            // NINCS mérve (`picasa-keptalca.md` 23.5); a tálca az ablak alján
+            // ül, ezért fölfelé nyílik, hogy a látható területen maradjon.
+            Popup {
                 id: trayMoreMenu
                 objectName: "trayMoreMenu"
+                parent: trayMoreBtn
+                x: 0
+                y: -height - 2
+                padding: 0
+                // a gombok mért 36-os lépésben, egymás alatt állnak
+                width: trayActionRow.cellaSzelesseg
+                height: trayActionRow.rejtettFeliratok.length * 36
+                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+                background: Rectangle {
+                    color: Theme.trayPanelBg
+                    border.color: Theme.trayBorder
+                }
                 Repeater {
                     model: trayActionRow.rejtettFeliratok
-                    delegate: MenuItem {
+                    delegate: TrayActionButton {
                         objectName: "trayMoreItem"
+                        x: 0
+                        y: index * 36
+                        width: trayActionRow.cellaSzelesseg
+                        height: 36
                         text: modelData
-                        onTriggered: trayActionRow.rejtettMuveletInditasa(index)
+                        // a modell és a tömbök átmenetileg eltérhetnek
+                        // (a cellaszám változásakor): a hiányzó érték
+                        // ne törje el a kötést
+                        iconSource: trayActionRow.rejtettIkonok[index] || ""
+                        enabled: trayActionRow.rejtettEngedelyezett[index] === true
+                        onClicked: {
+                            trayMoreMenu.close()
+                            trayActionRow.rejtettMuveletInditasa(index)
+                        }
                     }
                 }
             }

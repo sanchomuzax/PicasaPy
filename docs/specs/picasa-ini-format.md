@@ -2810,7 +2810,7 @@ szekció. Helyi korpusz-másolatból (NAS-hozzáférés nélkül).
 | `crop` | 761 | ✅ (`rect64`) |
 | `name` | 713 | ✅ (`[contacts2]`) |
 | `albums` | 620 | ✅ |
-| **`P2category`** | 615 | Picasa 2-örökség, de ma is ÉL: a mappa gyűjtemény-hovatartozása. A `Projects (internal)` értékű mappákat a bal hasáb **Projektek** gyűjteménye listázza (#1029, `picasapy.index.project_folders`); a többi érték (`Folders on Disk` stb.) egyelőre csak megőrzött |
+| **`P2category`** | 615 | Picasa 2-örökség, de ma is ÉL: a mappa gyűjtemény-hovatartozása. A `Projects (internal)` értékű mappákat a bal hasáb **Projektek** gyűjteménye listázza (#1029, `picasapy.index.project_folders`); az ismert beépített kategóriákat és az egyéni gyűjtemények mappáit a bal hasáb ugyanazon ini-söprésből olvassa (#4589). A korpuszban 139 egyéni besorolás van. |
 | `date` | 579 | ✅ |
 | `onlinechecksum` | 380 | ✅ |
 | `caption` | 208 | ✅ |

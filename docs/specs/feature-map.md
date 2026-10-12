@@ -63,7 +63,9 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
 - Geocímke: Helyek-panel térképpel, geo-szűrő, `geotag=` írás (kész, #30)
 - Duplikátum-keresés
 - Linuxos képernyővédő-vetítés a kiválasztott mappákból, albumokból vagy
-  képekből (#4259); az asztali környezet tétlenségi jelére indítás külön feladat.
+  képekből (#4259); indítás a gép tétlenségekor a `picasapy --screensaver`
+  belépési ponttal, wlroots-alapú Wayland-asztalokon (labwc, sway, Wayfire)
+  a `swayidle`-on át; GNOME, KDE és X11 alatt nem támogatott (#4613).
 - (Később mérlegelendő: nyomtatás, e-mail küldés — az eredeti Picasa
   funkciói, alacsony prioritás)
 

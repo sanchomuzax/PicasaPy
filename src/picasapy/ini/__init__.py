@@ -30,6 +30,8 @@ from .faces import (
     UNIDENTIFIED_CONTACT,
     Face,
     parse_faces,
+    remove_all_face_data,
+    reset_all_faces,
     serialize_faces,
     with_face,
     with_reassigned_face,
@@ -63,9 +65,15 @@ from .eye_strokes import (
     serialize_reanimated_eye_color,
 )
 from .folder_category import (
+    DOWNLOADED_ALBUMS_PREFIX,
+    EXPORTED_PICTURES_CATEGORY,
+    FOLDERS_ON_DISK_CATEGORY,
+    OTHER_STUFF_CATEGORY,
     PROJECTS_CATEGORY,
+    is_custom_collection_category,
     is_projects_category,
     read_folder_category,
+    with_folder_category,
 )
 from .folder_date import (
     is_valid_folder_date,
@@ -77,11 +85,15 @@ from .folder_music import read_folder_music, with_folder_music
 from .io import (
     IniConflictError,
     IniSaveError,
+    has_ini_source,
+    ini_source_path,
     load_document,
+    load_existing,
     load_or_empty,
     save_document,
     update_document,
 )
+from .names import INI_NAME, LEGACY_INI_NAME
 from .photo_crop import PhotoCropReader
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
@@ -94,6 +106,8 @@ __all__ = [
     "ContactXmlEntry",
     "Face",
     "EyeStroke",
+    "EXPORTED_PICTURES_CATEGORY",
+    "FOLDERS_ON_DISK_CATEGORY",
     "FilterOp",
     "FilterWriteError",
     "IniConflictError",
@@ -104,6 +118,8 @@ __all__ = [
     "Line",
     "NO_SOURCE_FILE",
     "PROJECTS_CATEGORY",
+    "OTHER_STUFF_CATEGORY",
+    "DOWNLOADED_ALBUMS_PREFIX",
     "Rect64",
     "RawStroke",
     "ReanimatedEyeColor",
@@ -122,10 +138,16 @@ __all__ = [
     "ensure_contact",
     "find_contact_id",
     "is_projects_category",
+    "is_custom_collection_category",
     "is_valid_folder_date",
     "load_contacts_xml",
     "load_document",
+    "load_existing",
     "load_or_empty",
+    "has_ini_source",
+    "ini_source_path",
+    "INI_NAME",
+    "LEGACY_INI_NAME",
     "max_param_count",
     "parse_album_refs",
     "parse_contacts_xml",
@@ -138,6 +160,8 @@ __all__ = [
     "read_folder_category",
     "read_folder_music",
     "read_folder_date_override",
+    "remove_all_face_data",
+    "reset_all_faces",
     "save_document",
     "serialize_album_refs",
     "serialize_faces",
@@ -148,6 +172,7 @@ __all__ = [
     "validate_op_for_write",
     "with_face",
     "with_folder_date_override",
+    "with_folder_category",
     "with_folder_music",
     "with_contact",
     "with_reassigned_face",

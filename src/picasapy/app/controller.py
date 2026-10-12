@@ -41,13 +41,14 @@ from picasapy.index import (
     video_photos,
     sync_tree,
 )
-from picasapy.ini import load_document, update_document
+from picasapy.ini import load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
 from .viewer_startup_controller import ViewerStartupMixin
 from .frame_capture_controller import FrameCaptureMixin
+from .movie_clip_export_controller import MovieClipExportMixin
 from .movie_trim_controller import MovieTrimMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
@@ -97,6 +98,30 @@ from .thumbnail_provider import ThumbnailProvider
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+_SLIDESHOW_TRANSITIONS = (
+    "cut",
+    "dissolve",
+    "dissolveblack",
+    "dissolvewhite",
+    "wipeleft",
+    "wiperight",
+    "wipeup",
+    "wipedown",
+    "diagwipeul",
+    "diagwipeur",
+    "diagwipedl",
+    "diagwipedr",
+    "pushleft",
+    "pushright",
+    "pushtop",
+    "pushdown",
+    "circlein",
+    "circleout",
+    "rect",
+    "kenburns",
+    "kenburnsaoi",
+    "timelapse",
+)
 _FILETYPE_SNAPSHOT_UNSET = object()
 
 #: A bal oldali mappapanel szélessége (#322) — a felhasználó húzhatja, az
@@ -179,6 +204,8 @@ class AppController(
     ColorManagementMixin,
     ViewerStartupMixin,
     MovieTrimMixin,
+    # #4564: a `movieeditpanel/export_movie` klipet készít a vágáspontokból.
+    MovieClipExportMixin,
     # #1838: a `capture_frame` — a vágás-szelet `_vago_sor` kapuját használja
     FrameCaptureMixin,
     LanguageMixin,
@@ -492,10 +519,9 @@ class AppController(
     def setSlideshowTransition(self, value: str) -> None:  # noqa: N802
         """A vetítés-átmenet megőrzése (#433).
 
-        Ismeretlen kulcsot NEM tárolunk: a választó csak a megvalósított
-        ötöt sorolja fel, és egy elgépelt érték némán átmenet nélküli
-        vetítést adna."""
-        if value not in ("cut", "dissolve", "dissolveblack", "dissolvewhite", "kenburns"):
+        Ismeretlen kulcsot NEM tárolunk; az eredeti 22 kulcsos készlet a
+        `picasa-create-features.md` vetítési specifikációját követi (#4567)."""
+        if value not in _SLIDESHOW_TRANSITIONS:
             return
         self._get_settings().setValue("view/slideshowTransition", value)
         self.statusChanged.emit()
@@ -599,7 +625,12 @@ class AppController(
 
     @Property(list, notify=statusChanged)
     def slideshowMusicTrackUrls(self):  # noqa: N802
-        """A mappához rendelt zene, vagy a közös diavetítési zenemappa."""
+        """Az album-, mappa- vagy közös diavetítési zeneforrás."""
+        mode, token = self._view_mode
+        if mode == "album":
+            tracks = self.albumMusicTrackUrls(token)
+            if tracks:
+                return tracks
         if self._current_folder and self.folderMusicEnabled(self._current_folder):
             return self.folderMusicTrackUrls(self._current_folder)
         folder = Path(self.slideshowMusicFolder).expanduser()
@@ -1201,9 +1232,7 @@ class AppController(
     def _read_folder_description(folder_path: str) -> str:
         """A mappa `[Picasa]/description` kulcsának beolvasása az ini-ből."""
         ini_path = Path(folder_path) / PICASA_INI_NAME
-        if not ini_path.exists():
-            return ""
-        section = load_document(ini_path).section("Picasa")
+        section = load_or_empty(ini_path).section("Picasa")
         return (section.get("description") if section else None) or ""
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület a mappát is átadó
@@ -1519,17 +1548,21 @@ class AppController(
         """Az aktuális nézet újratöltése az indexből (mód szerint)."""
         mode, param = self._view_mode
         if mode == "search":
+            started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 records = search_photos(conn, param)
             self._show_search_pane(records)
-            self._show(records)
+            # #4531: a zöld sáv (és a visszalépő gomb) a frissítésnél sem tűnhet el
+            self._show_search_results(records, time.perf_counter() - started)
         elif mode == "search-folder":
             query, folder = param
+            started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 all_matches = search_photos(conn, query)
             self._show_search_pane(all_matches)
-            self._show(
-                tuple(r for r in all_matches if r.folder_path == folder)
+            self._show_search_results(
+                tuple(r for r in all_matches if r.folder_path == folder),
+                time.perf_counter() - started,
             )
         elif mode == "starred":
             started = time.perf_counter()
@@ -1632,6 +1665,11 @@ class AppController(
             self.restoreSession()
 
     def _show(self, records) -> None:
+        # #4526: a kor-szűrő felirata és csúszkája csak a kor-nézethez
+        # tartozik. Bármely más nézet betöltése törölje, így a szűrőgombok,
+        # keresések és mappaváltások után sem maradhat régi kor-felirat.
+        if self._view_mode[0] != "age" and self._age_filter_days is not None:
+            self._age_filter_days = None
         # #17: a rejtett képek alapból sehol nem látszanak (rács, keresés,
         # csillag-szűrő) — a Nézet → Rejtett képek kapcsolóval igen
         if not self.showHidden:

@@ -15,6 +15,16 @@ on:
         description: A futtató platformja (ubuntu-latest / windows-latest)
         required: true
         type: string
+      darabok:
+        description: A futó darabok JSON-listája (PR-en kevés érintett tesztnél [1])
+        required: false
+        default: "[1,2,3,4]"
+        type: string
+      darabszam:
+        description: A darabok száma (a --shard N/darabszam nevezője)
+        required: false
+        default: "4"
+        type: string
       cov:
         # #1156: a lefedettség-mérés ALAPÉRTELMEZÉSBEN KI van kapcsolva.
         # A `--cov` minden részfutást `coverage run -p` alá tesz, ami a
@@ -27,41 +37,48 @@ on:
 
 jobs:
   darab:
-    name: Test (${{ inputs.os }} ${{ matrix.shard }}/4)
+    name: Test (${{ inputs.os }} ${{ matrix.shard }}/${{ inputs.darabszam }})
     runs-on: ${{ inputs.os }}
     # Korlát nélkül egy beragadt (#53 GIL-deadlock) pytest 6 órán át
     # foglalná a runnert, és eldugítaná a teljes Actions-sort (2026-07-19-en
     # 19 beragadt futás állította le a release-automatikát).
     #
-    # 2026-08-13: 20 percről 40-re emelve. A készlet azóta jelentősen nőtt:
-    # az Ubuntu-futás ~12–13 perc, a Windows ~1,6-szorosa — az a 20 percbe
-    # SZÁMÍTÁSSAL futott bele, és a rendszer levágta (két mért futás:
-    # 20:04 és 20:06). Ez nem elméleti kockázat: a Windows-ág aznap három
-    # valódi, Windows-specifikus hibát fogott meg (Path.home() a
-    # USERPROFILE-t olvassa; a rendszermappa-védelem POSIX-utakra épült;
-    # a time.monotonic() ~15 ms-os felbontása) — ha az ág levágódik, az
-    # ilyenek átcsúsznak. A korlát célja a BERAGADT futás elvágása marad,
-    # nem az egészségesé.
-    timeout-minutes: 40
+    # 2026-08-13: 20 percről 40-re emelve. #4667: a windows 1/4 job
+    # 40 percnél megszakadt, így a sikeres teljes futásidő nem ismert.
+    # A `scripts/teszt_idok.json` aktuális felosztása 30,1–30,2 percet jelez
+    # tesztfutásra; a job időkorlátja a telepítést is beleszámítja. A
+    # windows-láb ezért 60 percet kap, ami 20 percet ad a megfigyelt
+    # megszakítási határ fölé. Az Ubuntu 40 perce és a négyes mátrix marad.
+    timeout-minutes: ${{ inputs.os == 'windows-latest' && 60 || 40 }}
     strategy:
       fail-fast: false
       matrix:
         # #1127: a készletet NÉGY futtatóra osztjuk platformonként. A
         # kiosztás mért futásidők szerint megy (`scripts/teszt_idok.json`),
-        # ezért a négy darab egyenlő — mérve 732/732/732/732 mp, arány 1,00×.
+        # a becsült tesztidők darabonként 30,1–30,2 percet adnak. Ez nem
+        # tartalmazza a job telepítési idejét.
         #
         # ⚠️ Ez NEM a gépen belüli párhuzamosítás. Azt 2026-08-19-én
         # kipróbáltuk (#1030/#1031), és CPU-éhezésben a főágat pirosra vitte
         # — vissza kellett venni (#1037/#1038). Itt minden darab SAJÁT
         # futtatón fut, magában: a fájlonkénti izoláció (#53) és a
         # `/tmp`-korlát (#677) garanciái érintetlenek.
-        shard: [1, 2, 3, 4]
+        shard: ${{ fromJSON(inputs.darabok) }}
     env:
       QT_QPA_PLATFORM: offscreen
+      # PR-en csak az érintett app-tesztek futnak (`run_tests.py`,
+      # `erintett_app_tesztek`); push esetén üres → teljes készlet.
+      PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # az érintett-kiválasztás a PR alapjához hasonlít (git diff alap...HEAD)
+          # ⚠️ a `0` a kifejezésnyelvben HAMIS (`&& 0 || 1` mindig 1-et adna, és a
+          # PR alapja nélkül a szűkítés a teljes készletre esne vissza — 2026-10-09
+          # így futott le egy darabban 40 percig): ezért szöveg.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -99,7 +116,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install $(python scripts/print_dependencies.py --all)
+          pip install -c packaging/ci-constraints.txt $(python scripts/print_dependencies.py --all)
 
       - name: Run tests
         # darabolt futtatás (#53): a teljes készlet egy processzben a
@@ -138,7 +155,7 @@ jobs:
         # hozzáadása is megoldotta volna, de az a tesztek futtatókörnyezetét
         # cserélné le egy kapcsoló kedvéért; a kifejezés a parancssort
         # állítja össze, a shellhez nem nyúl.
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4 ${{ inputs.cov && '--cov' || '' }}
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} ${{ inputs.cov && '--cov' || '' }}
 
       - name: Lefedettségi adatfájl feltöltése
         # #1156: a darab `.coverage`-e melléktermékként megy tovább. A

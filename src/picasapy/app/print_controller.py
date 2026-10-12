@@ -65,8 +65,13 @@ from PySide6.QtGui import (
 )
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
+from picasapy.export import render_photo_pixels
+from picasapy.export.exporter import _decode_image
 from picasapy.app.busy_registry import get_app_busy_registry
+from picasapy.ini import PhotoCropReader
+from picasapy.ini.filters import parse_filters_prefix
 from picasapy.index import PhotoRecord
+from picasapy.lazy_cv2 import cv2
 from picasapy.printing.contact_sheet import (
     DEFAULT_COLUMNS,
     header_rect,
@@ -94,6 +99,7 @@ from picasapy.printing.layout import (
     PrintOrientation,
     compute_print_layout,
 )
+from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.printing.resample import lanczos_resize
 from picasapy.printing.options import (
     BORDER_SIZE_MAX,
@@ -105,6 +111,8 @@ from picasapy.printing.options import (
     save_print_options,
     update_print_option,
 )
+from picasapy.render import normalize_crop_ops
+from picasapy.scanner import PICASA_INI_NAME
 
 from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_local_path
@@ -186,6 +194,7 @@ class PrintController(QObject):
         `PhotoRecord`-jait adja vissza (ld. a modul docstringje)."""
         super().__init__(parent)
         self._photo_source = photo_source
+        self._crop_reader = PhotoCropReader()
         #: #1671: a KÉPTÁLCA rekordjai. Ha nem üres, ŐK a forrás — a rács
         #: pillanatnyi kijelölése és a látott mappa nem számít. Az eredeti
         #: súgója is így fogalmaz: „Print photos in the Photo Tray". A
@@ -757,6 +766,62 @@ class PrintController(QObject):
             for record in self._resolve_records(rows)
         ]
 
+    def _render_photo(self, record: PhotoRecord) -> QImage:
+        """A rácson látott szerkesztett fotó képpontjai QImage-ként (#4602)."""
+        path = Path(record.folder_path) / record.name
+        if getattr(record, "kind", "") == "video" or path.suffix.lower() in VIDEO_EXTENSIONS:
+            return QImage()
+        filters = getattr(record, "filters", None)
+        ops = parse_filters_prefix(filters) if filters else ()
+        crop, crop_ini_readable = (
+            self._crop_reader.read(path.parent / PICASA_INI_NAME, path.name)
+            if ops
+            else (None, True)
+        )
+        ops = normalize_crop_ops(
+            ops,
+            crop,
+            crop_ini_readable=crop_ini_readable,
+            warning_key=str(path),
+        )
+        try:
+            image = render_photo_pixels(
+                path,
+                ops,
+                rotate_steps=int(getattr(record, "rotate_steps", 0) or 0),
+                flip_flags=int(getattr(record, "flip_flags", 0) or 0),
+            )
+        except (OSError, ValueError) as error:
+            _log.warning(
+                "nyomtatás: nem dekódolható kép — kihagyva: %s (%s)", path, error
+            )
+            return QImage()
+
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        height, width = rgb.shape[:2]
+        return QImage(
+            rgb.data,
+            width,
+            height,
+            int(rgb.strides[0]),
+            QImage.Format.Format_RGB888,
+        ).copy()
+
+    @staticmethod
+    def _is_printable(record: PhotoRecord) -> bool:
+        """A teljes dekóderrel ellenőrzi, hogy nyomtatható-e a forrás."""
+        path = Path(record.folder_path) / record.name
+        if getattr(record, "kind", "") == "video" or path.suffix.lower() in VIDEO_EXTENSIONS:
+            return False
+        try:
+            _decode_image(path)
+        except (OSError, ValueError) as error:
+            _log.warning(
+                "nyomtatás: nem dekódolható kép — kihagyva: %s (%s)", path, error
+            )
+            return False
+        return True
+
     @Slot(list, str, str, str, result=bool)
     @Slot(list, str, str, str, int, result=bool)
     def renderPrintPreviewPdf(
@@ -965,7 +1030,7 @@ class PrintController(QObject):
         maradok: list[PhotoRecord] = []
         skipped: list[str] = []
         for record, path in zip(records, paths, strict=True):
-            image = QImage(str(path))
+            image = self._render_photo(record)
             if image.isNull():
                 _log.warning("indexkép: nem dekódolható kép — kihagyva: %s", path)
                 skipped.append(path.name)
@@ -1123,7 +1188,7 @@ class PrintController(QObject):
         job_records: list[PhotoRecord] = []
         skipped: list[str] = []
         for record, path in zip(records, paths, strict=True):
-            image = QImage(str(path))
+            image = self._render_photo(record)
             if image.isNull():
                 _log.warning("nyomtatás: nem dekódolható kép — kihagyva: %s", path)
                 skipped.append(path.name)
@@ -1430,11 +1495,10 @@ class PrintController(QObject):
         target = to_local_path(output_path)
         if not target:
             return False
-        paths = self._resolve_paths(rows)
         records = self._resolve_records(rows)
         kep_parok = []
-        for record, path in zip(records, paths, strict=True):
-            kep = QImage(str(path))
+        for record in records:
+            kep = self._render_photo(record)
             if not kep.isNull():
                 kep_parok.append((kep, record))
         darab = max(1, int(copies or 1))
@@ -1522,8 +1586,8 @@ class PrintController(QObject):
         DEKÓDOLHATÓ képek kapnak cellát: a kihagyott (videó, sérült) fájlok
         lapot sem kapnak."""
         darab = 0
-        for path in self._resolve_paths(rows):
-            if not QImage(str(path)).isNull():
+        for record in self._resolve_records(rows):
+            if self._is_printable(record):
                 darab += 1
         count = darab * max(1, int(copies or 1))
         if count < 1:
@@ -1564,8 +1628,8 @@ class PrintController(QObject):
         mert egy lapon sok kép van, nincs „a kép tájolása" (ld. ott a
         megjegyzést)."""
         darab = 0
-        for path in self._resolve_paths(rows):
-            if not QImage(str(path)).isNull():
+        for record in self._resolve_records(rows):
+            if self._is_printable(record):
                 darab += 1
         if darab < 1:
             return 0

@@ -119,10 +119,12 @@ Az alábbi lépések a **fejlesztéshez** kellenek, nem a használathoz — ahog
 Windowson is futtatja.
 
 1. Telepíts Python 3.12+-t a [python.org](https://www.python.org/) oldalról.
-2. Telepítsd a függőségeket:
+2. A támogatott PySide6-verzió **6.12 alatti**. A 6.12-es sorozat jelenleg
+   nem támogatott; forrásból indításkor a program ezt a verziót és a Qt
+   futtatókörnyezetét is kiírja. Telepítsd a függőségeket:
 
    ```powershell
-   pip install PySide6 opencv-python pillow piexif watchdog
+   pip install "PySide6<6.12" opencv-python pillow piexif watchdog
    ```
 3. Klónozd a repót, majd indítsd:
 

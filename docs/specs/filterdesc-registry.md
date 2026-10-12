@@ -551,7 +551,7 @@ a #2456 helyesbítése (a hetes alakkal még nem mértünk) érvényben marad.
 | `RoundedEdges` | szín Outer (#fff), CornerRadius 0–min(W,H)/2 (min(W,H)/10) |
 | `Sixties` | Rounded jelölő (be), szín Outer (#fff), Fade 0–100 (20) |
 | `Soften` | Impact 0–100 (50), Fade 0–100 (50) + festhető maszk |
-| `PicnikTint` | szín (#80cfff), Fade 0–100 (0) + festhető maszk |
+| `PicnikTint` | szín (#80cfff), Fade 0–100 (0); az effekt az egész képre hat, nem festhető (#3541 helyesbítés). |
 | `TwoTone` | szín Black (#004488), szín White (#ffff00), Brightness −95–95 (0), Contrast 0–100 (20), Fade 0–100 (0) |
 | `Vignette` | Blur 0–50 (35), Strength 1–2 (1,4), szín (#000), Fade 0–100 (0) |
 

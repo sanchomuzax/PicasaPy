@@ -270,8 +270,7 @@ class TestBelepesAReferenciaSzerint:
 
 
 class TestLapozasUtanKetKulonbozoKep:
-    """▶ után a két fél két KÜLÖNBÖZŐ, szomszédos kép, képtartalommal —
-    mindkét fókusszal."""
+    """▶ után a kijelölt fél lép, a másik fél képe változatlan marad."""
 
     def test_bal_fokusznal(self, huszonnegy_kep, qt_app):
         window = huszonnegy_kep[0]
@@ -289,7 +288,7 @@ class TestLapozasUtanKetKulonbozoKep:
 
         _klikk(qt_app, window, _gyerek(window, "viewerNextButton"))
 
-        assert _ket_fel(window, qt_app) == (BELEPESI_SOR + 1, BELEPESI_SOR + 2)
+        assert _ket_fel(window, qt_app) == (BELEPESI_SOR, BELEPESI_SOR + 2)
         assert "(9 / 24)" in _sav(window), _sav(window)
 
     def test_jobb_fokusznal_ketszer(self, huszonnegy_kep, qt_app):
@@ -301,14 +300,14 @@ class TestLapozasUtanKetKulonbozoKep:
         _klikk(qt_app, window, _gyerek(window, "viewerNextButton"))
         _klikk(qt_app, window, _gyerek(window, "viewerNextButton"))
 
-        assert _ket_fel(window, qt_app) == (BELEPESI_SOR + 2, BELEPESI_SOR + 3)
+        assert _ket_fel(window, qt_app) == (BELEPESI_SOR, BELEPESI_SOR + 3)
 
-    def test_jobb_fokusznal_rogzitett_masik_keppel_a_bal_lapoz(
+    def test_jobb_fokusznal_rogzitett_masik_keppel_a_jobb_lapoz(
         self, huszonnegy_kep, qt_app
     ):
         """Jobb fókusznál a filmszalagról választott jobb kép rögzített
-        (`masodikIndex`) — ▶ után a bal fél (a második rekesz) a következő
-        képet rajzolja ki, a jobb helyben marad."""
+        (`masodikIndex`) — ▶ után a jobb fél lép, a bal oldali currentIndex
+        és annak képe változatlan marad."""
         window = huszonnegy_kep[0]
         _ab_modba_a_7_kepnel(window, qt_app)
         _klikk(qt_app, window, _gyerek(window, "viewerImage"))
@@ -317,5 +316,5 @@ class TestLapozasUtanKetKulonbozoKep:
 
         _klikk(qt_app, window, _gyerek(window, "viewerNextButton"))
 
-        assert _ket_fel(window, qt_app) == (BELEPESI_SOR + 1, 4)
-        assert "(5 / 24)" in _sav(window), _sav(window)
+        assert _ket_fel(window, qt_app) == (BELEPESI_SOR, 5)
+        assert "(6 / 24)" in _sav(window), _sav(window)

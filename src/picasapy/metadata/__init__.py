@@ -19,6 +19,7 @@ from .reader import (
     megjelenitett_meret,
     read_file_metadata,
 )
+from .video import EMPTY_VIDEO_METADATA, VideoMetadata, read_video_metadata
 
 __all__ = [
     "GeoPoint",
@@ -36,4 +37,7 @@ __all__ = [
     "read_file_metadata",
     "write_iptc_caption",
     "write_iptc_keywords",
+    "EMPTY_VIDEO_METADATA",
+    "VideoMetadata",
+    "read_video_metadata",
 ]

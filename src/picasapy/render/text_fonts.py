@@ -1,4 +1,4 @@
-"""TrueType-betűtípusok a szöveg-eszközhöz (#450).
+"""Betűcsaládok a szöveg-eszközhöz (#450, #4546).
 
 **Miért kellett:** a szöveg-overlay eddig az OpenCV **Hershey**-készletével
 rajzolt. Abban nincs betűcsalád, nincs félkövér/dőlt, nincs aláhúzás, és a
@@ -6,16 +6,15 @@ betűkép sem hasonlít a Picasa TrueType-betűire — vagyis a jegy hátralév�
 vezérlői (betűtípus · méret · B/I/U · igazítás) egyszerűen nem voltak
 megvalósíthatók. A Pillow (már függőség) FreeType-rajzolója mindezt tudja.
 
-**A családok leképezése.** A Picasa a Windows rendszer-betűit kínálta
-(Arial, Times New Roman, Courier New…). Linuxon ezek jellemzően nincsenek
-meg, viszont a **Liberation**-készlet METRIKUSAN kompatibilis velük
-(ugyanaz a betűszélesség, ezért a tördelés is egyezik) — ezt használjuk
-helyettesítőnek. A keresés fájlnév-jelöltek listáján megy, nem
-fontconfig-on: így determinisztikus, és a tesztek is ellenőrizhetik.
+**A családok forrása.** Aktív Qt-felületen a lenyíló a Qt által látott
+rendszerbetű-családokat sorolja. A képi előnézet QPainterrel rajzol, így a
+kiválasztott családot ugyanaz a rendszer-betűkészlet kezeli, mint a QML.
+Qt-alkalmazás nélküli hívóknál megmarad a korábbi Pillow-betűkészlet, hogy a
+renderelő önálló próbái és a régi használók továbbra is működjenek.
 
-**Ha egyetlen TrueType sem található**, a hívó a régi Hershey-úton rajzol
-tovább (ld. `render.text_overlay`) — a szöveg-eszköz sosem eshet ki, csak a
-tipográfia lesz szegényebb.
+Qt-alkalmazás nélküli, csak Pillow-s hívásnál, ha a gépen egyetlen
+használható TrueType-fájl sincs, a hívó a régi Hershey-úton rajzol tovább
+(ld. `render.text_overlay`).
 """
 
 from __future__ import annotations
@@ -58,10 +57,9 @@ class FontFamily(NamedTuple):
     bold_italic: tuple[str, ...]
 
 
-#: A felkínált családok. Szándékosan RÖVID lista: a Picasa is a rendszer
-#: betűit sorolta, de a hűség szempontjából az számít, hogy a három
-#: klasszikus osztály (talpatlan · talpas · írógép) elérhető legyen, és
-#: hogy a leképezés metrikusan pontos maradjon.
+#: Qt nélküli használatnál a korábbi Pillow-út kompatibilitási családjai.
+#: Aktív Qt-felületen a választó és a rajzoló a rendszer saját listáját
+#: használja; a három bejegyzés csak Qt nélküli régi hívóknak marad.
 FONT_FAMILIES: tuple[FontFamily, ...] = (
     FontFamily(
         "arial", "Arial",
@@ -97,8 +95,58 @@ _FAMILY_BY_KEY = {family.key: family for family in FONT_FAMILIES}
 
 
 def family_labels() -> list[dict[str, str]]:
-    """A felület lenyílójának adata: `key` + megjelenő `label`."""
+    """A felület lenyílójának adata: `key` + megjelenő `label`.
+
+    A Qt-adatbázis csak már létrejött `QGuiApplication` mellett kérdezhető
+    le. Az appban ezért a telepített családok adják a listát; önálló, Qt
+    nélküli renderelő-hívásnál megmarad a Pillow-kompatibilitási lista.
+    """
+    try:
+        from PySide6.QtGui import QFontDatabase, QGuiApplication
+
+        if QGuiApplication.instance() is not None:
+            families = sorted(
+                set(QFontDatabase.families()),
+                key=lambda family: (family.casefold(), family),
+            )
+            return [{"key": family, "label": family} for family in families]
+    except ImportError:  # Qt nélküli, csak Pillow-t használó hívó
+        pass
     return [{"key": f.key, "label": f.label} for f in FONT_FAMILIES]
+
+
+def default_family() -> str:
+    """A felület alapértelmezett családja, ha már fut a Qt alkalmazás."""
+    available = {item["key"].casefold(): item["key"] for item in family_labels()}
+    for preferred in ("Arial", "Liberation Sans", "DejaVu Sans"):
+        if preferred.casefold() in available:
+            return available[preferred.casefold()]
+    if available:
+        return next(iter(family_labels()))["key"]
+    return DEFAULT_FAMILY
+
+
+def qt_font_for(
+    family_name: str,
+    size_px: int,
+    *,
+    bold: bool = False,
+    italic: bool = False,
+    underline: bool = False,
+):
+    """QFont a telepített családhoz; Qt alkalmazás nélkül `None`."""
+    try:
+        from PySide6.QtGui import QFont, QGuiApplication
+    except ImportError:  # Qt nélküli, csak Pillow-t használó hívó
+        return None
+    if QGuiApplication.instance() is None:
+        return None
+    font = QFont(family_name)
+    font.setPixelSize(size_px)
+    font.setBold(bold)
+    font.setItalic(italic)
+    font.setUnderline(underline)
+    return font
 
 
 def _candidate_files(family: FontFamily, bold: bool, italic: bool) -> tuple[str, ...]:
@@ -171,7 +219,9 @@ __all__ = [
     "DEFAULT_FAMILY",
     "FONT_FAMILIES",
     "FontFamily",
+    "default_family",
     "family_labels",
     "font_path_for",
     "load_font",
+    "qt_font_for",
 ]

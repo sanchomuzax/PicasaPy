@@ -1,0 +1,36 @@
+# Mergify beolvasztási sor (picasapy-agent#186, 2026-10-09).
+#
+# Miért: 41 PR állt, és 9 órán át nem volt kiadás — a PR-ek egyenként olvadtak
+# be, minden beolvadás újraindította a main CI-t, így a main sosem futott végig
+# zölden. A GitHub saját merge queue-ja személyes fióknál nem érhető el.
+#
+# A sor a PR-eket kötegeli (egy CI-futás több PR-re), és a friss main-re
+# frissítve teszteli őket, így a main mindig tesztelt állapotba kerül.
+#
+# ⛔ Automatikusan CSAK a saját botunk PR-jei kerülnek a sorba: idegen
+# beadványt tilos automatikusan beolvasztani (PicasaPy CLAUDE.md).
+
+queue_rules:
+  - name: default
+    queue_conditions:
+      - base=main
+      - -draft
+      - author=picasapy-claude-agent[bot]
+      - check-success=Test (ubuntu-latest)
+    merge_conditions:
+      - check-success=Test (ubuntu-latest)
+    merge_method: squash
+    update_method: merge
+    batch_size: 6
+    batch_max_wait_time: 5 min
+
+pull_request_rules:
+  - name: a bot PR-jei zöld ellenőrzés után a sorba kerülnek
+    conditions:
+      - base=main
+      - -draft
+      - author=picasapy-claude-agent[bot]
+      - label!=nem-olvaszthato
+    actions:
+      queue:
+        name: default

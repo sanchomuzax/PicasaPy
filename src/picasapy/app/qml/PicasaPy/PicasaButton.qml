@@ -126,6 +126,7 @@ Button {
     //: `Button` is látná, a felengedéskor MÁSODSZOR is elsülne a jelzés —
     //: egy fülváltó kétszer váltana, egy léptető kettőt lépne.
     MouseArea {
+        id: lenyomoTerulet
         anchors.fill: parent
         enabled: control.lenyomasra && control.enabled
         visible: enabled
@@ -134,6 +135,32 @@ Button {
         acceptedButtons: Qt.LeftButton
         onPressed: function (esemeny) {
             esemeny.accepted = true
+            control.clicked()
+            //: #4563: nyomva tartva ismétel (`m_autorepeat`). Ez a `Button`
+            //: beépített `autoRepeat`-je nem lehet: az ő lenyomás-ágát ez a
+            //: terület nyeli el, tehát a Qt ismétlője sosem indul.
+            if (control.autoRepeat) {
+                ismetlo.interval = control.autoRepeatDelay
+                ismetlo.start()
+            }
+        }
+        onReleased: ismetlo.stop()
+        onCanceled: ismetlo.stop()
+    }
+
+    //: #4563: a lenyomás-ág ismétlője — a Qt `Button`-jéhez hasonlóan
+    //: első késleltetés után, aztán a rövidebb ismétlési időközzel.
+    Timer {
+        id: ismetlo
+        repeat: true
+        onTriggered: {
+            //: tiltott gombnál (pl. a mappa végén) azonnal leáll
+            if (!control.enabled || !control.autoRepeat
+                    || !lenyomoTerulet.pressed) {
+                ismetlo.stop()
+                return
+            }
+            ismetlo.interval = control.autoRepeatInterval
             control.clicked()
         }
     }

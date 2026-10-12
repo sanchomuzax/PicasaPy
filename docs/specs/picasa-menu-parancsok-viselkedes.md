@@ -42,7 +42,7 @@ A **szöveg**-beillesztés viszont a rendszer-vágólapról jön, **lecseréli**
 feliratot, megerősítést kér (`CTextEditNode::confirm`, gomb: `Replace`), és
 kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
 
-## 3. „Dátum és idő beállítása” — KÉT mód; a mentési cél részben nyitott
+## 3. „Dátum és idő beállítása” — KÉT mód; feltételes EXIF-írás
 
 `offsettime.fen`: bélyegkép-előnézet · „Current photo date" (dátum+idő) ·
 „New photo date" (dátum+idő) · **rádiócsoport**:
@@ -54,45 +54,71 @@ Több képre megy: az ablakcím szó szerint **`Adjust Photo Date - %d items`**
 (`0x00cb40ac`, xref: `0x0077c7c0`); a futásjelzés **`Setting photo dates`**
 (`0x00cb4120`, xref: `0x0077cfd0`, `AdjustTimeThread::SettingDates`).
 
-### A worker mit állít be — és mit nem bizonyít ez a híváslánc
+### A worker és a forrásfájl írása (2026-10-08, #4646)
 
 A két dátumfeldolgozó út (`0x00490580`, `0x00490c10`) egyaránt a `0x37`
 metaadat-tulajdonságot állítja be (`0x004906f7`/`0x004906fe` és
-`0x00490d3c`/`0x00490d43`). A tulajdonság-táblában a `0x37` az EXIF
-`DateTimeOriginal`-nak felel meg (ld. `picasa-metaadat-tulajdonsagok.md`, §3),
-de ez a Picasa metaadat-objektum tulajdonságát azonosítja; **önmagában nem
-bizonyítja, hogy a worker a képfájl EXIF-szegmensébe is kiírja**.
+`0x00490d3c`/`0x00490d43`). A tulajdonságtábla szerint a `0x37` az EXIF
+`DateTimeOriginal` (`0x9003`), ld. `picasa-metaadat-tulajdonsagok.md`, §3.
+Ezután mindkét worker a `[esp+0xac] == 2` feltételt vizsgálja
+(`0x0049070a`, `0x00490d4f`). Ha teljesül, meghívja a `0x009ed330` íróutat;
+annak nullától eltérő visszatérése a fallback nélküli worker-ágra visz
+(`0x00490725`–`0x00490736`, `0x00490d69`–`0x00490d7b`), de a visszatérési
+kódok jelentését a disassembly nem nevezi meg. A `2` érték C++-oldali
+jelentése szintén nincs meg; ezért itt a nyers feltétel rögzíthető.
 
-Mindkét worker meghívja a `0x00992780` segédfüggvényt (`0x00490900`,
-`0x00490f40`). A függvény a `SetFileTime` API-t hívja (`0x0092234c` import;
-az index ezt a `0x00992780` hívójához rendeli). A worker `0` jelzője mellett a
-segéd a kiszámított időmutatót a `SetFileTime` második paraméterébe teszi,
-és nullát ad a harmadik/negyedik paraméternek (`0x009927e9`–`0x009927f9`). A
-Win32 paramétersorrend szerint ez **a fájl létrehozási idejét** állítja; ez a
-hívás nem állítja a hozzáférési vagy utolsó módosítási időt.
+Az `0x009ed330` hívja a `0x009eb290`-et, amelynek tempfájlos íróágán a
+kiválasztott
+képfájl útvonalát olvassa, `.tmp` fájlt ír (`"r+b"`/`"wb"`,
+`0x009eb3e0`, `0x009eb5c8`), majd a `0x00994400` útján lecseréli a forrásfájlt
+(`0x009eb70b`). A worker által előzőleg beállított `0x37` így a forrásfájl
+EXIF `DateTimeOriginal` mezőjébe kerül.
 
-⛔ **A teljes művelet célja még nyitott.** A bináris itt bizonyítja a `0x37`
-metaadat-objektum beállítását és a létrehozási idő állítására vezető ágat,
-de nem bizonyítja, hogy a `DateTimeOriginal` ténylegesen a képfájlba vagy a
-`.picasa.ini`-be íródik-e, illetve hogy egy későbbi metaadat-mentés módosítja-e
-a fájl utolsó módosítási idejét. Ehhez Windowsos mérés kell: egy teszt-JPEG
-EXIF `DateTimeOriginal`, a mappa `.picasa.ini`-jének bájtjai és fájl-`mtime`
-előtte/utána összevetése egyetlen képen, Picasában az új dátum beállítása után.
-Ebben a környezetben nincs Windows futtató/QEMU-rendszeremulátor, ezért ez a
-mérés **NINCS MEG**. A korábbi állítás — miszerint a kezelők hiánya a
-`SetFileTime` közvetlen hívólistájából kizárja a fájlrendszer-idő módosítását
-— **hibás negatív következtetés** volt: a kezelő a háttér-workerhez jut el,
-amely a segédfüggvényt hívja.
+A sikeres csere a fájlrendszer-időket is kezeli. A `0x009eb290` előbb
+elmenti mindhárom időt (`0x00ab3320` → `0x00ab3350` → `GetFileTime`). Ha a
+metaadat-objektumban olvasható és dátummá alakítható a `0x1c` tulajdonság
+(EXIF `DateTime`, `0x0132`; `0x009eb34b`–`0x009eb37d`), a `0x00ab35e0` az
+eredeti `FILETIME`-szerkezetben a hozzáférési és utolsó módosítási idő mezőket
+erre az értékre állítja (`or [edi+0x18], 6`, `+8`, `+0x10`); a
+létrehozási idő mezője érintetlen marad. A `0x00994400` fájlcsere-segéd
+sikeres visszatérése után a worker a `0x009eb4af` ágra jut, amely a
+`0x009eb4c1` címen hívja a `0x00ab34d0`-t; a cserehibás ág is megpróbálja ezt
+a visszaírást (`0x009eb738`). Ha a `DateTime` hiányzik vagy nem alakítható
+dátummá, a szerkezetben mindhárom eredeti idő marad, így a kód az eredeti
+hármast próbálja visszaírni. A `0x00ab35e0`-ban a két időkonverziós API
+visszatérését, a `0x00ab34d0`-ban pedig a `SetFileTime` eredményét nem kezeli
+helyreállítással; a tényleges fájlrendszer-állapot ezért a fájlcsere és az
+API-hívások sikerétől is függ.
+
+Ha a `[esp+0xac] == 2` feltétel nem teljesül, vagy a `0x009ed330` nullát ad
+vissza, a worker a közvetlen `0x00992780` ágra jut
+(`0x00490900`, `0x00490f40`). Ez a segéd a `SetFileTime` importot hívja
+(`0x0092234c`); a `0` jelző mellett csak a létrehozásiidő-mutató nem null
+(`0x009927e9`–`0x009927f9`). Ebben az ágban tehát a fájl létrehozási idejét
+a beállított új dátumra állítja; a hozzáférési és utolsó módosítási időt ez a
+hívás nem adja át, így azokat nem módosítja.
+
+A teljes `.text` indexfüggetlen pásztázása (`paszta.py`,
+`memoria_kapu()`-val indítva; 2 884 879 utasítás) a `.picasa.ini`-re mutató
+adat-hivatkozásokat a program más részein találta, nem a fenti worker/EXIF-író
+hívásláncban. E művelet nem ír `.picasa.ini`-kulcsot. Ez nem állítás a Picasa
+program egészének `.picasa.ini`-írásairól.
 
 ### PicasaPy tárolási döntése (#4332)
 
 A dátummódosító a kijelölt fotók dátumát az SQLite-index `photos.taken_at_override`
-mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. A Picasa
-forrásfájl EXIF-szegmensének módosulása továbbra sem bizonyított; a PicasaPy
-ezért a forrás JPEG `DateTimeOriginal` mezőjét érintetlenül hagyja. Exportált
-JPEG-en viszont a `DateTimeOriginal` az indexben felülírt dátumot kapja, a #451
-Colab-mérésével egyezően. A rács, a dátum szerinti rendezés és a Tulajdonságok
-panel a felülírt értéket mutatja.
+mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. *(A #4693 ELŐTTI állapot:)* A PicasaPy
+forrásfájl EXIF-szegmensét nem írta át: a forrás JPEG `DateTimeOriginal` mezője
+érintetlen maradt; exportált JPEG-en viszont a `DateTimeOriginal` az indexben
+felülírt dátumot kapja, a #451 Colab-mérésével egyezően. Ez a #4646 által
+feltárt eredeti viselkedéstől eltér. A rács, a dátum szerinti rendezés és a
+Tulajdonságok panel a felülírt értéket mutatta.
+
+**A PicasaPy megvalósítása (#4693):** A művelet `.picasa.ini`-kulcsot nem ír. A PicasaPy a forrásképen módosítja az
+EXIF `DateTimeOriginal` értékét, és a sikeres írás után a mappát újraolvassa,
+hogy az index, a rácssorrend és a Tulajdonságok-panel az új EXIF-értéket
+mutassa. A korábbi, #4332-es indexfelülírásos út ettől eltért; a jelenlegi
+menüparancs már nem hoz létre `taken_at_override` értéket.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
@@ -142,6 +168,96 @@ az online páros — hatókörön kívül.
 **`webexport.fen`** — **sablon-alapú**: öt export-méret (`Original Size` ·
 1024 · 800 · 640 · 320, célmegjelöléssel), mozgókép-mód (első kocka / teljes),
 oldalcím, célmappa, **sablonlista + leírás + élő előnézet**, „Export".
+
+### 6.1 `webexport.fen` — a méretválasztó és a mozgókép-mód (#4610)
+
+Források: a helyi telepítés (`research/copy_Picasa_3_7/Picasa3/`)
+`runtime/webexport.fen`, `web/templates/*`, `web/documentation/index.html`,
+a hivatalos magyar katalógus (`referencia/i18n-hu/webexport.xml`), és a
+`Picasa3.exe` diszasszemblátuma (`eszkozok/binaris/picasa_dis.py`).
+
+**Egy méretválasztó van, nem kettő.** A párbeszédnek egyetlen
+`popup name="sizeradio"` vezérlője van („Export pictures at:",
+`webexport.fen` 2–10. sor), és ez a **nagy kép** méretét adja. Bélyegkép-
+méret választó **nincs**: a bélyegkép méretét a sablon `define
+thumbnailWidth`/`thumbnailHeight` sora szabja meg (`greyfrm/index.tpl`
+38–39. sor: 120; `whitefrm/index.tpl` 36–37.: 120; a `*bg` sablonokban a
+sor ki van kommentezve, pl. `blackbg/index.tpl` 38–39.).
+
+| index | `webexport.fen` elem | hivatalos magyar felirat (`webexport/itemN`) | képpont | `WebExportSize` érték |
+|---|---|---|---|---|
+| 0 | `Original Size` (4. sor) | Eredeti méret (`item4`) | 0 = eredeti | 0 |
+| 1 | `1024 pixels (for large monitors)` (5.) | 1024 képpont (nagy képernyőkhöz) (`item5`) | 1024 | 5 |
+| 2 | `800 pixels (for large Web pages)` (6.) | 800 képpont (nagyméretű weboldalakhoz) (`item6`) | 800 | 4 |
+| 3 | `640 pixels (for Web pages)` (7.) | 640 képpont (weboldalakhoz) (`item7`) | 640 | 3 |
+| 4 | `320 pixels (for email)` (8.) | 320 képpont (e-mailhez) (`item8`) | 320 | 1 |
+
+- **Alapérték: 640 képpont (3. index).** A párbeszéd-init (`0x007f52b0`) a
+  `Preferences\WebExportSize`-t **3-as alapértékkel** olvassa
+  (`0x007f5310 mov [esp+0x20], 3` → `0x007f5318 call 0x407a20`), a tárolt
+  érték → index leképezés az ugrótábla `0x7f5bf0` (`0x007f55a6`): 0→0, 1→4,
+  3→3, 4→2, 5→1, minden más (2, >5) → 0. A mentés (`0x007f5e80`) a fordítottja
+  (`0x7f61f8`: index 0→0, 1→5, 2→4, 3→3, 4→1), és mindkét kulcsot a
+  `Preferences` alá írja (`0x007f5ffe`, `0x007f6020`) — a választás tehát
+  **megmarad** a következő megnyitásig.
+- **A sablon felülírhatja.** A `define imageWidth/imageHeight` a
+  felhasználó választását írja felül (`blackbg/index.tpl` 31–34. sor
+  megjegyzése; `web/documentation` „Command Variables"). A képgeneráló
+  (`0x0086bce0`) a változótáblából olvas, és ha a sablon nem adta meg:
+  `imageWidth`/`imageHeight` = a párbeszéd választása (`[exp+0xae0]`/
+  `[exp+0xae4]`, `0x0086c207`–`0x0086c222`; a mentés ide írja,
+  `0x007f6070`–`0x007f6089`), **`thumbnailWidth`/`thumbnailHeight` = 144**
+  (`0x0086c125 push 0x90`, `0x0086c136 push 0x90`), `shadowedThumbnails` = 1
+  (`0x0086c117`).
+- **Árnyék-jelölőnégyzet nincs.** A `webexport.fen` egyetlen jelölőnégyzetet
+  vagy kapcsolót sem tartalmaz az árnyékoláshoz: a bélyegképek árnyéka a
+  sablon `define shadowedThumbnails` sorából jön (alapérték 1), a képeké a
+  `shadowedImages`-ből (alapérték 0, `web/documentation` „Command
+  Variables"). A PicasaPy ezért nem kínál árnyék-választót (#4849).
+
+**A mozgókép-mód** — `popup name="moviesradio"` („Export movies using:",
+`webexport.fen` 11–16. sor), két elem: **`First frame`** („Első képkocka",
+`item11`) és **`Full movie`** („Teljes mozgófilm", `item12`); a csoport
+címkéje „Mozgófilmek exportálása:" (`labelgroup9`).
+
+- **Alapérték: Első képkocka.** `Preferences\WebExportMovie` alapértéke 0
+  (`0x007f5355 mov [esp+0x20], esi`, ahol `esi = 0` a `0x007f52e9` óta); a
+  mentés nem nulla indexre 1-et ír (`0x007f5f67`–`0x007f5f75`).
+- **Mit jelent:** a mentés a választást az exportáló objektum `+0xae8`
+  bájtjába teszi (`0x007f60aa`–`0x007f60b9`: `[dlg+0xbb0]` = `[exp+0xae8]`,
+  mert `exp = dlg+0xc8`, `0x007f6076`). A sablonfeltételek ebből és a
+  fájltípusból jönnek (`0x0086db20`); film = a hét filmkód egyike (8, 9, 10,
+  11, 12, 0x17, 0x1D — ugyanaz a lista, mint az `export-parbeszed.md`-ben):
+  - `isImage` = **nem film, VAGY Első képkocka** (`0x0086efe6`–`0x0086f043`);
+  - `isSimpleEmbed` = film ÉS Teljes mozgófilm ÉS típuskód 10
+    (`0x0086ee82`–`0x0086eec9`);
+  - `isExtendedEmbed` = film ÉS Teljes mozgófilm ÉS típuskód ≠ 10
+    (`0x0086ef36`–`0x0086ef73`).
+
+  A gyári sablonok `targetlistelement.html`-je (mind a hat HTML-sablon,
+  pl. `blackbg/targetlistelement.html` 8–25. sor) az `isSimpleEmbed` ágon
+  `<embed src="<%itemLargeImage%>">`-et, az `isExtendedEmbed` ágon Windows
+  Media Player `<OBJECT>`-et, az `isImage` ágon `<img>`-et ad ⇒ **Teljes
+  mozgófilmnél az `itemLargeImage` maga a filmfájl**, Első képkockánál a film
+  állóképként szerepel a galériában.
+
+**Nyitott:**
+
+- melyik kiterjesztés a 10-es típuskód (tehát melyik film kap `<embed>`-et
+  és melyik `<OBJECT>`-et). Nálunk minden teljes film `isSimpleEmbed`
+  (termékdöntés: a mai böngészőkben az ActiveX `<OBJECT>` nem játszik le,
+  az `<embed>` igen) — ez NEM az eredeti leképezése;
+- a teljes film bélyegképe és a filmfájl kimeneti neve az `image/` alatt
+  (a fájlokból nem olvasható ki); nálunk a bélyegkép az első kocka, a film
+  bájthű másolat;
+- hogy a `moviesradio` tiltott-e film nélküli kijelölésnél (a `webexport`
+  init-jében nem kerestük; az `export.fen`-é igen, ld. `export-parbeszed.md`).
+- a gyári sablonok al-sablonjainak `define`-jai (pl. `blackbg/imagetarget.tpl`
+  29–30. sor `define imageWidth 600`, `greyfrm/framebase.tpl` 31–32. sor
+  `define thumbnailWidth 120`) **nálunk hatástalanok** a képgenerálásra: a
+  képek a futtatás előtt készülnek, és csak az `index.tpl` saját `define`-jait
+  olvassuk ki előre (`webexport/sizes.py`). Hogy az eredetiben ezek hatnak-e
+  a képméretre, a fájlokból nem dönthető el.
 
 ## 7. Színkezelés — és a beállítások TÁROLÁSI HELYE
 
@@ -369,12 +485,20 @@ azonosítók a `[+0x08]`…`[+0x16]` mezőkben.
 ⇒ **fájlokat** tesz a vágólapra (nem képadatot), és a Kivágás/Másolás
 különbségét a `Preferred DropEffect` hordozza. Jegy: **#1526**.
 
-### 20. A hat színcímke — `ID_S_RED` · `ID_S_ORANGE` · `ID_S_YELLOW` · `ID_S_GREEN` · `ID_S_BLUE` · `ID_S_PURPLE`
+### 20. A Keresés… almenü hét színkeresője — hat `ID_S_*` és `ID_VIEW_BW`
 
 Névtér: **`eMenuTools`** (az **Eszközök** menü, nem a Nézet).
 
-Mind a hat ugyanazt hívja (`0x005ccc41`–`0x005ccca2`), más tokennel:
+A `Searchfor` rekord hét gyerekre mutat: a mutató `0x00d6e708`
+(`0x0055c36f`), a darabszám **7** (`0x0055c379`). Az első hat elem a
+`ID_S_RED` · `ID_S_ORANGE` · `ID_S_YELLOW` · `ID_S_GREEN` · `ID_S_BLUE` ·
+`ID_S_PURPLE`; mind ugyanazt a kezelőt hívja (`0x005ccc41`–`0x005ccca2`),
+más tokennel:
 `mov edx, "color:<szín>"; call 0x0065b7b0`.
+
+| gyerek | feliratkulcs / alapfelirat | parancs | hatás |
+|---|---|---:|---|
+| 7. | `eMenuView::ID_VIEW_BW` / `&Black and White` (`&Fekete-fehér`) | `0x9da9` | `color:black` |
 
 A `0x0065b7b0` (131 b) **hat lépése**:
 
@@ -384,9 +508,15 @@ A `0x0065b7b0` (131 b) **hat lépése**:
 5. `SendMessage(mező, 0xB1 = EM_SETSEL, 0xFFFF, 0xFFFF)` — kurzor a végére (`0x0065b81d`)
 6. `0x0065b840(this,0,0,1)` — a lista újraépítése
 
-⇒ **A menüpont beírja a tokent a keresőmezőbe és elsüti a keresést** —
-nincs külön szűrő-modell. Van **hetedik** kezelő (`color:black`,
-`0x005ccca7`), de **nincs hozzá menüfelirat**. Jegy: **#1399**.
+⇒ A hét menüpont beírja a saját `color:<szín>` tokenjét a keresőmezőbe és
+elsüti a keresést; nincs külön szűrő-modell. A hetedik rekord a
+`0x00d6e780` címen áll, parancsa `0x9da9`. A diszpécser táblája
+(`0x005cde04`, `0x005cdc30`) ezt a parancsot a `0x005ccca7` kezelőre
+irányítja; az `0xc950fc` címen tárolt `color:black` tokent adja át a közös
+`0x0065b7b0` keresőmező-kezelőnek. **Helyesbítés (#4642):** a korábbi
+„nincs hozzá menüfelirat” állítás téves volt; a bináris `ID_VIEW_BW`
+feliratkulcsa és `&Black and White` alapfelirata ezen a rekordon is jelen
+van. Jegy: **#1399**, kutatási helyesbítés: **#4642**.
 
 ### 21. A mentés-család — `ID_FILE_SAVEAS` · `ID_FILE_SAVEACOPY` · `ID_FILE_EXIT`
 
@@ -931,7 +1061,7 @@ Forrás: `0x007319f0` **szűretlen** sztringlistája + `stringres-en-hu.tsv`.
 | 15 | `ID_ALBUM_DELETE` | &Delete Folder… | &Mappa törlése… | ❌ **`placeholder: true`** (`:222`) |
 | 16 | `ID_ONLINE_ACTIONS` | Online Actions (almenü) | — | ⚠️ nálunk laposan, csoport nélkül |
 | 17 | `ID_ALBUM_MAKE_WEB` | E&xport as HTML Page… | — | ✅ `:241` (#534 szerint a funkció hiányzik) |
-| 18 | `ID_ALBUM_FILTERFACES` | &Add name tags | — | ❌ `placeholder: true` (`:247`) — #26 |
+| 18 | `ID_ALBUM_FILTERFACES` | &Add name tags | — | ✅ a kiválasztott mappa képein indít név-címkézést (#4535) |
 
 Az `Online Actions` almenü alatt: `ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS`,
 `ID_UPLOAD_ALBUM_TO_LIGHTHOUSE`, `ID_ALBUM_MAKE_WEB`. Nálunk az `AlbumContextMenu.qml:107`
@@ -965,17 +1095,34 @@ Továbbá a `ShowHidden` beállítás (`0x00440af0`, `0x005643e0`, `0x005c9300`,
 
 **Vagyis az elrejtés adatvédelmi funkció**, nem csak nézeti szűrő.
 
-**Nálunk (mérve):** a fotó-szintű `hidden` oszlop megvan
-(`index/schema.py:225`), a `showHidden` beállítás is
-(`app/controller.py:500`), sőt a lemezes elrejtés kérdése is
-(`photo_ops_controller.py:105`, #459 — „Fájlok elrejtése"). **Mappa-szintű
-elrejtés viszont sehol nincs** (`grep hide_folder|folder_hidden` a `src/`-ben:
-üres), és a menütétel néma.
+**Nálunk (#4597 kódvizsgálat):** a fotó-szintű `photos.hidden` mellett a
+mappa-szintű `folders.hidden` is létezik (`index/schema.py:377`, `:501–515`).
+A `toggleFolderHidden` ezt az SQLite-mezőt olvassa és írja
+(`app/controller.py:897–914`); a láthatóságot a `showHidden` kapcsoló vezérli.
+A mező alapértéke új indexben `0`, ezért a jelenlegi rejtés nem rendelkezik
+az indexen kívüli forrással.
 
-*Bizonyítottsági fok: **megerősített** a 18 tétel, a feliratok és a három
-elrejtés-réteg. **Nincs mérve**, hogy a mappa elrejtése a `.picasa.ini`-be, az
-adatbázisba vagy mindkettőbe ír-e — ehhez a `0x0040cd10` környékének
-diszasszemblálása kell.*
+*Bizonyítottsági fok: **megerősített** a menüleltár, a feliratok és a három
+elrejtés-réteg. **Nincs mérve**, hogy az eredeti mappaszintű Hide/Unhide
+állapot milyen tartós mezőbe kerül.*
+
+### 32.3.1. #4597 — a mappaszintű jelölés tárolása nyitott
+
+**Bináris lelet:** `0x007319f0` építi a `&Hide Folder` / `&Unhide Folder`
+menüt, és tartalmazza a `Folder::ID_HIDEENTIREALBUM` /
+`Folder::ID_UNHIDEENTIREALBUM` parancsneveket. Ez a menü meglétét bizonyítja,
+az írási útvonalat nem. A `0x005d3290` eseménykezelőn át vezető parancs és a
+tartós írási cél még nincs végigkövetve.
+
+A `.picasa.ini`-ben talált `hidden=yes` nem használható mappajelölésként:
+`0x00710080` a képfájlok rekordjainak `star` / `hidden` jelzőit szerializálja,
+míg `0x00456610` a képszintű `hidden` állapotot a belső `]hidden` tokenhez
+kapcsolja. A `0x0040cd10` cím szintén nem Hide Folder rutin: a sérült képek
+`Hide Files` párbeszédét kezeli (`CThumbUI::GetBadImages`).
+
+**Eredmény:** az eredeti mappaszintű állapot pontos tárolási helye **NINCS
+MEG**; a fenti képszintű `.picasa.ini` út nem bizonyítja azt. A teljes
+Hide/Unhide írási útvonal Ghidra-köre szükséges.
 
 ### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
 
@@ -1316,6 +1463,8 @@ A két könyvtárszintű ág a `peoplepanel/resetfaces` névparancsot ereszti
 > Shift-ágat másolta le — dokumentált SAJÁT döntés maradhat, de az
 > eredeti három ágát a jegy rögzíti.
 
+A felület 2026-10-08 óta a táblázat szerinti három ágat követi (#4627).
+
 ### 34.5 Az elrejtés/megjelenítés — a `hidden` kulcs
 
 A `0x005e7d90(param)` ágai: `param=1` (Hide) a `]hidden` belső tokenet
@@ -1340,7 +1489,7 @@ webalbum nélkül nálunk nincs miről átvenni.
 | Forgatás jobbra/balra | fix 90/270°, háttérszálon; nincs kijelölés → őr-szöveg; típus-hiba → üzenet | `_rotate_many`: `rotate(0..3)`, videó hallgatólagosan kihagyva | vegyes kijelölésnél az `IDS_ROT_TYPEFAILED` üzenet (kis jegy) |
 | Undo All Edits | megerősítés (egy/több/film külön szöveg), régió-tokenek + `filters=` törlés | `openRevert` → `revertConfirmDialog`, `filters=` törlés | az egy/több szövegkülönböztetés a párbeszédben |
 | Unhide/Hide | `hidden` kulcs írása/törlése + frissítés | **egyezik** (`hidePhotosByIds`, `with_removed`) | — |
-| Reset Faces | sima = kijelölés (nincs kérdés); Ctrl/Shift = könyvtárszintű FIGYELEM-párbeszéd | mindig kérdez, ResetAllFaces-szöveg (#422 SAJÁT döntés) | a három ág megvalósítása vagy tudatos eltérés rögzítése |
+| Reset Faces | sima = kijelölés (nincs kérdés); Ctrl = `RemoveAllFaceData`; Shift = `ResetAllFaces` | a három ág az eredeti szerint, mindkét könyvtárszintű művelet megerősítéssel és ini-/index-frissítéssel | — |
 
 ### Nyitott kérdések mérlege (34.)
 
@@ -5772,6 +5921,15 @@ honnan veszi a korábbi címeket) tehát NINCS MEG** — a megszerzés útja: a
 
 ⇒ **A tiltási feltételek mind a hat tiltható tételnél egyeznek** — ezt eddig senki nem
 mérte, most igazolt. Egyedül az **Automatikus kitöltés** üres nálunk.
+
+### 23.7 Megvalósítás (#4636, 2026-10-08)
+
+A 23.6 táblázat a 2026-09-06-i állapotot rögzíti. A #4636 ezt követően
+bekötötte a pipás menütételt az e-mail címzett mezőbe: a beállítás a
+`mail/EmailAutocomplete` QSettings-kulcsban marad meg, alapértéke `true`.
+Az eredeti mérés szerint ez a beállítás a pipát és az értéket tárolja, a
+javaslómotort nem vezérli; a keresőmező külön `SearchSuggestions` útja ezért
+független marad.
 
 ## 24. adag (2026-09-06) — az automatikus kiegészítés FORRÁSA, és a kapcsoló, amit SENKI NEM OLVAS
 

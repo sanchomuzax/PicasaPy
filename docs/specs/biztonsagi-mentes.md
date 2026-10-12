@@ -1110,13 +1110,31 @@ hivatkozás, és a valódi mintában sem szerepel. A beolvasó ugyanitt ismer eg
 `"2."` előtag-ellenőrzést (a `version="2.1"`-hez) és a `Linux` / `Wine`
 platformneveket.
 
-### 13.6 MIT AD MA a mi kódunk
+### 13.6 A megvalósítás állapota (frissítve #4614, 2026-10-09)
 
-**Semmit.** Mérve (`grep -rn "files\.txt\|PicasaManifest\|shouldRestore\|hiddenFiles"
-src/ tests/`): egyetlen találat sincs a mentés-funkcióra — a `badfiles.txt`
-találatai a mappapásztázóhoz tartoznak (#1998). A `src/picasapy/` alatt nincs
-`backup`/`burn` modul. ⇒ A biztonsági mentés **teljes egészében megépítendő**;
-a #440 megvalósítási listája ezzel a két nyelvtannal most már hiánytalan.
+A 2026-09-04-i „nincs `backup`/`burn` modul" mérés az akkori állapotot írja le;
+azóta elavult. A mentés ma a `src/picasapy/backup/` és
+`src/picasapy/burn/` csomagban működik: mappába másol, Joliet ISO-képeket ír,
+és mindkét kimenethez leltárt készít (`backup/futtatas.py`,
+`backup/lemezkep.py`).
+
+**A #4614 visszaállítása:**
+
+- Mappás készletnél a PicasaPy tabos `files.txt` leltárát, illetve az eredeti
+  Picasa háromsoros `files.txt` rekordjait olvassa.
+- ISO-készletnél a PicasaPy `files.txt` leltárát és az eredeti
+  `PicasaManifest.xml` `shouldRestore` / `[P]` szabályait kezeli. Joliet
+  könyvtárfából másol, az azonos előtagú sorszámozott képekből a teljes
+  lemezkészletet beolvassa.
+- Fényképeket és RAW-fájlokat állít vissza; a mellettük lévő `.picasa.ini`
+  fájlt is magával viszi. Meglévő célfájlt nem ír felül.
+- A felületet a `BackupHost.qml` adja, a munkát háttérben a
+  `BackupController` futtatja. A kattintásos ellenőrzés mindkét készletfajtán
+  bájtra egyező fájlokat mér
+  (`tests/app/qml_functional/test_visszaallitas_klikk_4614.py`).
+
+Az 5–6. szakasz táblázata és az eredeti 2026-09-04-i grep továbbra is
+történeti mérés; a fenti állapot a jelenlegi kódot írja le.
 
 ---
 

@@ -121,7 +121,9 @@ def test_ures_darabkonyvtar_nem_valtoztat_a_korabbi_kimeneten(tmp_path):
     (tmp_path / "changelog.d").mkdir()
 
     assert auto_bump.zard_le_a_changelogot(c, "0.8.29", "2026-08-21") is True
-    assert c.read_bytes() == (
+    # Path.write_text() emits CRLF on Windows; preserve every byte except
+    # the platform-native spelling of line breaks.
+    assert c.read_bytes().replace(b"\r\n", b"\n") == (
         "# Változásnapló\n\n"
         "## [Nem kiadott]\n\n"
         "## [0.8.29] – 2026-08-21\n\n"

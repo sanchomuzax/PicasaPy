@@ -36,6 +36,7 @@ from picasapy.fileops import (
     trash_available,
     validate_folder_name,
 )
+from picasapy.fileops import open_with
 from picasapy.fileops.move_folder import FolderMoveError
 from picasapy.ini import IniConflictError, IniSaveError
 
@@ -609,6 +610,56 @@ class FileOpsController(QObject):
             return
         if not QDesktopServices.openUrl(QUrl.fromLocalFile(local)):
             self.operationFailed.emit("open", f"nem sikerült megnyitni: {local}")
+
+    @Slot(result=bool)
+    def hasNativeOpenWith(self) -> bool:  # noqa: N802 — QML-név
+        """#4533: Windowson a héj saját „Megnyitás ezzel" párbeszéde van, nem
+        a mi választónk. A QML ilyenkor a `openWithNative`-ot hívja."""
+        return open_with.has_native_open_with()
+
+    @Slot(str)
+    def openWithNative(self, path: str) -> None:
+        """#4533: a Windows héj „Megnyitás ezzel" párbeszédét nyitja a fájlra."""
+        local = _to_local_path(path)
+        if not local or not Path(local).is_file():
+            self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
+            return
+        try:
+            open_with.open_with_dialog_windows(Path(local))
+        except OSError:
+            self.operationFailed.emit("open", self.tr("Unable to open application"))
+
+    @Slot(str, result="QVariantList")
+    def openWithChoices(self, path: str) -> list[dict]:
+        """#4533: a fájltípushoz társított alkalmazások a „Társítás…" választónak
+        (`id`, `name`). Nem létező fájlnál üres lista."""
+        local = _to_local_path(path)
+        if not local or not Path(local).is_file():
+            return []
+        return [
+            {"id": app.app_id, "name": app.name}
+            for app in open_with.apps_for_file(Path(local))
+        ]
+
+    @Slot(str, str)
+    def openWithApp(self, path: str, app_id: str) -> None:
+        """#4533: a kijelölt alkalmazással nyitja meg a fájlt. A listát újra
+        lekérdezi, így a választó nem tart a lemezen kívül állapotot."""
+        local = _to_local_path(path)
+        if not local or not Path(local).is_file():
+            self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
+            return
+        app = next(
+            (a for a in open_with.apps_for_file(Path(local)) if a.app_id == app_id),
+            None,
+        )
+        if app is None:
+            self.operationFailed.emit("open", self.tr("Unable to open application"))
+            return
+        try:
+            open_with.launch_app(app, Path(local))
+        except OSError:
+            self.operationFailed.emit("open", self.tr("Unable to open application"))
 
     @Slot(list)
     def openPhotosInDefaultEditor(self, paths: list[str]) -> None:

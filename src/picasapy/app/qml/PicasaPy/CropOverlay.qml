@@ -94,32 +94,6 @@ Item {
         overlay.applyAspect(overlay.selH / overlay.selW)
     }
 
-    // Gyorsvágás (Picasa három bélyegképe): bal-felső / fekvő / álló.
-    // Rögzített aránynál azt tartja; szabad aránynál 4:3-at (ill. 3:4-et).
-    function selectPreset(kind) {
-        var boxAspect = overlay.width / Math.max(1, overlay.height)
-        var ratio = overlay.aspectRatio
-        if (kind === "landscape")
-            ratio = (ratio > 0 && ratio >= 1) ? ratio
-                  : (ratio > 0 ? 1 / ratio : 4 / 3)
-        else if (kind === "portrait")
-            ratio = (ratio > 0 && ratio < 1) ? ratio
-                  : (ratio > 0 ? 1 / ratio : 3 / 4)
-        else if (ratio <= 0)
-            ratio = boxAspect   // bal-felső, szabad arány: a teljes kép
-
-        // a legnagyobb, arányos téglalap a dobozban (relatív egységben)
-        var w, h
-        if (ratio >= boxAspect) { w = 1; h = boxAspect / ratio }
-        else { h = 1; w = ratio / boxAspect }
-        // Picasa: a gyorsvágás kicsit beljebb kezd, hogy látszódjon a keret
-        w *= 0.85; h *= 0.85
-        var x = kind === "topleft" ? 0 : (1 - w) / 2
-        var y = kind === "topleft" ? 0 : (1 - h) / 2
-        overlay.cropRect = Qt.rect(x, y, w, h)
-        overlay.hasSelection = true
-    }
-
     // pixel-koordináták a belső elrendezéshez (a cropRect relatív értékeiből)
     readonly property real selX: overlay.width > 0 ? cropRect.x * overlay.width : 0
     readonly property real selY: overlay.height > 0 ? cropRect.y * overlay.height : 0

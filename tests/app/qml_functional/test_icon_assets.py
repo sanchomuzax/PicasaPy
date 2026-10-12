@@ -76,6 +76,9 @@ _EXPECTED_ICONS = (
     # #2537: a „További lehetőségek…" gomb ikonja
     # (`outputlayout/export7_icon`, MÉRVE 13 × 7)
     "tray-more.svg",
+    # #4550: a vágópanel egyéni méretarány-törlő kukája (saját rajz a
+    # `editpanel/crop_delete_custom` mérése alapján, 14 × 14)
+    "crop-delete-custom.svg",
     # #1420: a képtálca harmadik gombja („Albumhoz adás") ikon-only lett,
     # ahogy az eredetiben (`thumbui/addtobuttcon`: `dropup_icon` + `addto_arrow`)
     "tray-addto.svg",

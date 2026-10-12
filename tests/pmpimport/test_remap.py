@@ -68,3 +68,11 @@ class TestPathRemapper:
             remapper.remap("C:\\Straße\\Straße\\alma.jpg")
             == "/mnt/nas/alma.jpg"
         )
+
+    def test_windowsos_cel_windowsos_elvalasztoval_fuzodik(self):
+        # #4831: a kézi átvételnél Windowson a cél windowsos útvonal; a
+        # POSIX-összefűzés `C:\\cel/kep.jpg` vegyes alakot adott
+        remapper = PathRemapper.from_dict({"D:\\Fotok": "C:\\Users\\a\\kepek"})
+        assert remapper.remap("D:\\Fotok\\2024\\kep.jpg") == (
+            "C:\\Users\\a\\kepek\\2024\\kep.jpg"
+        )

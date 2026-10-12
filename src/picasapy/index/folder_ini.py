@@ -37,7 +37,7 @@ import sqlite3
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
-from picasapy.ini import IniDocument, load_document
+from picasapy.ini import IniDocument, ini_source_path, load_document
 from picasapy.scanner import PICASA_INI_NAME
 
 #: Egy fogyasztó: `(mappa útvonala, beolvasott dokumentum)` párt kap.
@@ -61,7 +61,9 @@ def sweep_folder_inis(
     for row in conn.execute("SELECT path FROM folders WHERE has_ini = 1"):
         folder_path = row["path"]
         try:
-            document = load_document(Path(folder_path) / PICASA_INI_NAME)
+            ini_path = Path(folder_path) / PICASA_INI_NAME
+            # #4819: a régi `Picasa.ini` is forrás, ha nincs `.picasa.ini`
+            document = load_document(ini_source_path(ini_path) or ini_path)
         except (OSError, ValueError):
             continue
         for consume in sinks:

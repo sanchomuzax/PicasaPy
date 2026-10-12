@@ -98,6 +98,7 @@ ApplicationWindow {
     // önmagára kötne (kötési hurok) — ez az álnév oldja fel, egy helyen.
     readonly property var appController: controller
 
+    property string pendingPeopleManagerPersonName: ""
     property int thumbSize: 144
     //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
     //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
@@ -116,6 +117,17 @@ ApplicationWindow {
         selectedSet = s
     }
     property bool viewerOpen: false
+    // #4656: a néző saját megjelenítési módot kap, bezáráskor visszaáll az
+    // előző ablakállapot. A valódi megnyitás külön belépőn fut át, így a
+    // közvetlen állapotbeállítások (például a QML-próbapadban) nem váltanak módot.
+    property int visibilityBeforeViewer: Window.Windowed
+    property bool viewerVisibilityManaged: false
+    onViewerOpenChanged: {
+        if (!window.viewerOpen && window.viewerVisibilityManaged) {
+            window.visibility = window.visibilityBeforeViewer
+            window.viewerVisibilityManaged = false
+        }
+    }
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
@@ -184,19 +196,53 @@ ApplicationWindow {
     //: szerkesztés" parancs: a kijelölt képet a nézőben nyitja meg, ahol a
     //: szerkesztő panel is ül. Egy belépő, több hívó — a tálca helyi
     //: menüje (#1917) is ezt hívja.
+    // #4656: minden tényleges nézőnyitás ezt használja. A teljes képernyő
+    // vagy ablakos mód a mentett jelölőt követi; bezáráskor a korábbi
+    // ablakállapot áll vissza.
+    function openPhotoViewer(row) {
+        if (!window.viewerOpen) {
+            window.visibilityBeforeViewer = window.visibility
+            var fullscreenStartup = controller
+                && controller.viewerFullscreenStartup !== undefined
+                ? controller.viewerFullscreenStartup : true
+            window.visibility = fullscreenStartup
+                ? Window.FullScreen : Window.Windowed
+            window.viewerVisibilityManaged = true
+            window.viewerOpen = true
+        }
+        photoViewer.show(row)
+    }
+
     function nezdEsSzerkeszd() {
+        if (window.viewerOpen) return
         var sorok = window.selectedRows()
         if (sorok.length === 0) return
-        window.viewerOpen = true
-        photoViewer.show(sorok[0])
+        window.openPhotoViewer(sorok[0])
     }
 
     // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt
     // képeket teszi láthatóvá. A toggleHiddenRows csak a rejtett sorokat
     // kapja meg, ezért a vegyes kijelölés látható képei nem rejtődnek el.
+    // #4626: a Kép ▸ Hide mindig rejtve hagyja a kijelölést. A már rejtett
+    // sorokat kihagyjuk, így a váltó művelet csak látható képeket rejt el.
+    // A helyi menük külön megőrzik a Hide/Unhide váltó viselkedést.
+    function hideSelection() {
+        if (!controller) return
+        var rows = window.photoActionRows()
+        if (rows.length === 0) return
+        var visibleRows = []
+        for (var i = 0; i < rows.length; ++i) {
+            var row = Number(rows[i])
+            var photo = controller.photos.itemAt(row)
+            if (photo && photo.hidden !== true) visibleRows.push(row)
+        }
+        if (visibleRows.length > 0) controller.toggleHiddenRows(visibleRows)
+        if (!window.viewerOpen) window.clearSelection()
+    }
+
     function unhideHiddenSelection() {
         if (!controller) return
-        var rows = window.selectedRows()
+        var rows = window.photoActionRows()
         var hiddenRows = []
         for (var i = 0; i < rows.length; ++i) {
             var row = Number(rows[i])
@@ -205,7 +251,7 @@ ApplicationWindow {
         }
         if (hiddenRows.length === 0) return
         controller.toggleHiddenRows(hiddenRows)
-        window.clearSelection()
+        if (!window.viewerOpen) window.clearSelection()
     }
 
     //: #2163: a `Ctrl+F7` az eredetiben a `searchoptions/loadsim`-et
@@ -256,6 +302,43 @@ ApplicationWindow {
     // #26: melyik arc-album van nyitva — „unnamed" vagy „ignored"
     // (`CAlbumLabel::Ignored` = „Mellőzött emberek")
     property string facesAlbumMode: "unnamed"
+    // A névadás után a fotókijelölés nem változik, ezért külön frissítőjel
+    // kell az Emberek-panel sorlistáinak újraolvasásához.
+    property int peopleFaceRevision: 0
+    // #4586: csak az `unnamedFacesHere` frissítéséhez (keresés közben)
+    property int unnamedFaceRevision: 0
+    Timer {
+        id: unnamedFaceRefreshTimer
+        interval: 500
+        onTriggered: window.unnamedFaceRevision++
+    }
+    // nyitáskor az arc-lista friss: a nyitott-panel kapu miatt a zárt panel
+    // alatt érkezett `facesStored` jelek kimaradtak
+    onPeoplePanelOpenChanged: if (window.peoplePanelOpen) unnamedFaceRevision++
+    Connections {
+        target: photoViewer
+        function onPeopleOpenChanged() {
+            if (photoViewer.peopleOpen) window.unnamedFaceRevision++
+        }
+    }
+    // a kijelölt képek közül a futó keresés által még nem ellenőrzöttek
+    // száma — csak nyitott panelnél és nem a Név nélküliek albumban számolunk
+    readonly property int _selectionPending:
+        (window.peoplePanelOpen && !window.unnamedFacesOpen)
+            ? window.selectionPendingCount() : 0
+
+    // #4586: a kijelölt képek közül hányat nem vizsgált még át a futó
+    // háttér-arckeresés (`PeoplePanel` betöltés / ellenőrizetlen fájlok)
+    function selectionPendingCount() {
+        var scan = window._faceScanController
+        if (!scan || !controller)
+            return 0
+        // a függés az `uncheckedFiles`-en: a keresés haladására újraszámol
+        var remaining = scan.uncheckedFiles
+        if (remaining <= 0)
+            return 0
+        return scan.pendingAmong(window.selectedPaths())
+    }
     // #1236: külön ablak-szintű név kell. Az UnnamedFacesView azonos nevű
     // property-jének jobb oldalán a `faceScanController` önmagára oldódna.
     readonly property var _faceScanController:
@@ -355,6 +438,13 @@ ApplicationWindow {
         documentTabStrip.activateTab(window.collageTabId)
     }
 
+    //: #4539: a mappa-fejléc film-gombja — a csoport sorait a meglévő
+    //: Filmkészítőbe adja (a kijelölés nem számít, mint a kollázsnál).
+    function openMovieFromRows(rows) {
+        if (!controller || rows.length === 0) return
+        createDialogs.ensure().openMovieForRows(rows)
+    }
+
     function openCollageTab() {
         if (!controller) return
         if (!window.aaKapu(window.openCollageTab)) return
@@ -412,7 +502,7 @@ ApplicationWindow {
         window.selectedIndex = sorok[0]
         window.selectedIndexes = sorok
         createDialogs.ensure().openMovieProject(
-            projekt.seconds, projekt.burstmodethresh)
+            projekt.seconds, projekt.burstmodethresh, cel)
     }
 
     function openSavedCollage(path) {
@@ -515,8 +605,7 @@ ApplicationWindow {
         documentTabStrip.activateTab(documentTabStrip.libraryTabId)
         window.selectedIndex = sor
         window.selectedIndexes = [sor]
-        window.viewerOpen = true
-        photoViewer.show(sor)
+        window.openPhotoViewer(sor)
     }
 
     // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
@@ -524,6 +613,51 @@ ApplicationWindow {
     function selectedRows() {
         return Selection.effectiveRows(
             window.selectedIndexes, window.selectedIndex)
+    }
+
+    // A fotóhoz kötött menük célpontja nézőben a szerkesztett oldal, a
+    // könyvtárban pedig a kijelölés. A kijelölés megmarad a néző mögött,
+    // ezért ott nem használható a menü célpontjának.
+    function photoActionRows() {
+        if (window.viewerOpen) {
+            var sor = Number(photoViewer._kijeloltSort())
+            return sor >= 0 ? [sor] : []
+        }
+        return window.selectedRows()
+    }
+
+    function photoActionIndex() {
+        if (window.viewerOpen) return Number(photoViewer._kijeloltSort())
+        if (window.selectedIndex >= 0) return window.selectedIndex
+        var sorok = window.selectedRows()
+        return sorok.length > 0 ? Number(sorok[0]) : -1
+    }
+
+    function photoActionPaths() {
+        var rows = window.photoActionRows()
+        var paths = []
+        if (!controller) return paths
+        for (var k = 0; k < rows.length; ++k) {
+            var path = controller.photos.filePathAt(Number(rows[k]))
+            if (path.length > 0) paths.push(path)
+        }
+        return paths
+    }
+
+    function addPhotosToScreensaver(paths) {
+        var added = controller ? controller.addScreensaverPhotos(paths) : 0
+        errorBanner.notice = true
+        errorBannerText.text = qsTr("Added %1 pictures to Screensaver.")
+                .arg(added)
+    }
+
+    function requestAddToScreensaver() {
+        var paths = window.photoActionPaths()
+        if (controller && controller.currentAlbumToken !== "") {
+            screensaverAlbumConfirmLoader.ensure().openFor(paths)
+            return
+        }
+        window.addPhotosToScreensaver(paths)
     }
 
     // #4271: az eredeti megerősítési küszöb 30 fölött van; a kijelölést
@@ -557,6 +691,10 @@ ApplicationWindow {
         if (window._faceScanController.resetFacesForPhotos(paths) > 0) {
             if (controller) controller.refreshCollections()
             photoViewer.facesEditRevision += 1
+            // A hiányzó modellről a meglévő Arckeresés ablak ad érthető
+            // okot és letöltési lehetőséget; reset után ne maradjon néma.
+            if (!window._faceScanController.isAvailable())
+                faceScanDialog.open()
         }
     }
 
@@ -729,6 +867,12 @@ ApplicationWindow {
     // annak tárolt sorrendjében; nem csak az éppen nyitott album sorai.
     function openPersonAlbumMovie() {
         if (!controller || window.personAlbumName === "") return
+        window.openPeopleAlbumsMovie()
+    }
+    // #4633: ID_FACESRANDOM ugyanazt a már meglévő, #4391-es forráslistát
+    // használja, de a Létrehozás menüből személyalbum nézet nélkül is indul.
+    function openPeopleAlbumsMovie() {
+        if (!controller) return
         var forrasok = controller.personMovieSourceUrls()
         if (forrasok.length === 0) return
         createDialogs.ensure().openMovieForSources(forrasok)
@@ -739,6 +883,34 @@ ApplicationWindow {
             return 0
         return window._faceScanController.personSuggestionCount(
             window.personAlbumName)
+    }
+    //: #4588: a `selectsug` a jelenlegi személy függő javaslatait
+    //: tartalmazó fotósorokat jelöli ki. A meglévő jóváhagyás és eltávolítás
+    //: ezután a kijelölt fotókon levő, e személyhez tartozó arcokra szűkít.
+    function selectPersonSuggestions() {
+        if (!window._faceScanController || window.personAlbumName === ""
+                || !controller || !controller.photos)
+            return
+        var utak = window._faceScanController.personSuggestionPaths(
+            window.personAlbumName)
+        var javaslatSorok = ({})
+        for (var j = 0; j < utak.length; ++j) {
+            // A vezérlő Path-sztringje Windowson natív `\\` elválasztót
+            // tartalmazhat, míg a PhotoGridModel.filePathAt `/`-t ad.
+            // Az útvonal-azonosítást a modell platformfüggő rowOfPath API-ja
+            // végzi, ne QML-ben hasonlítsuk össze a nyers szövegeket.
+            var sor = Number(controller.photos.rowOfPath(String(utak[j])))
+            if (sor >= 0)
+                javaslatSorok[sor] = true
+        }
+        var sorok = []
+        var darab = Number(controller.photos.rowCount())
+        for (var i = 0; i < darab; ++i) {
+            if (javaslatSorok[i])
+                sorok.push(i)
+        }
+        window.selectedIndexes = sorok
+        window.selectedIndex = sorok.length > 0 ? sorok[0] : -1
     }
     //: #2187: a kijelölt hatókör (`confirmsel`, `removesel`) — a
     //: KIJELÖLT fotókon ülő, e személyre szóló függő javaslatok arcai. A
@@ -863,8 +1035,7 @@ ApplicationWindow {
         if (slideshow.visible)
             return slideshow.currentIndex >= 0 ? [slideshow.currentIndex] : []
         if (window.viewerOpen)
-            return photoViewer.currentIndex >= 0
-                ? [photoViewer.currentIndex] : []
+            return window.photoActionRows()
         return window.selectedRows()
     }
     function openPrint() { printDialog.ensure().openForRows(window.printTargetRows()) }
@@ -888,6 +1059,23 @@ ApplicationWindow {
         var target = path && path.length > 0
             ? path : (controller ? controller.currentFolder : "")
         if (target.length > 0) folderPane.openFolderContextMenu(target)
+    }
+    // #4637: az alsó kimeneti gombsor helyi menüje.
+    function openConfigureButtonsContextMenu(anchorItem, x, y) {
+        if (!anchorItem) return
+        configureButtonsContextMenu.popup(anchorItem, x, y)
+    }
+
+    // A helyi gombsor-menü az ApplicationWindow része, nem a PicasaMenuBaré:
+    // így a főmenü szerkezete és bejárási útvonalai változatlanok maradnak.
+    Menu {
+        id: configureButtonsContextMenu
+        objectName: "configureButtonsContextMenu"
+        MenuItem {
+            objectName: "configureButtonsContextMenuItem"
+            text: qsTr("Configure Buttons...")
+            onTriggered: picasaMenuBar.configureButtonsRequested()
+        }
     }
 
     // #135: a háttér-frissítés (5 perces rescan, watcher-jelzés) a
@@ -929,6 +1117,7 @@ ApplicationWindow {
     //: #2163: az eredeti könyvtárnézeti kezelője (`0x005e60d0`) 34
     //: billentyűt kezel; ez a három a leképezhetők közül való.
     Shortcut {
+        id: shortcutToggleRightDrawer
         objectName: "toggleRightDrawerShortcut"
         sequence: "Ctrl+0"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -936,6 +1125,7 @@ ApplicationWindow {
         onActivated: window.billentsdAFiokot()
     }
     Shortcut {
+        id: shortcutSearch
         objectName: "searchShortcut"
         sequence: "Ctrl+F"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -945,6 +1135,44 @@ ApplicationWindow {
         onActivated: window.fokuszAKeresore()
     }
     Shortcut {
+        id: shortcutSearchF3
+        objectName: "searchF3Shortcut"
+        sequence: "F3"
+        //: A keresősáv a nézőben nincs jelen (ld. `fokuszAKeresore`), ezért
+        //: az F3 a könyvtári őrön marad; diavetítés alatt nem fut.
+        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+                 && !window.slideshowRunning
+        //: #4600: `0x005e69a4` — módosító nélküli ág, ugyanaz a
+        //: `searchcontainer/searchbutton`, mint a `Ctrl+F`-é.
+        onActivated: window.fokuszAKeresore()
+    }
+    Shortcut {
+        id: shortcutStarToggle
+        objectName: "starToggleShortcut"
+        sequence: "F4"
+        //: A kezelő a könyvtárban ÉS a szerkesztőben közös (spec 10.11/10.13),
+        //: ezért a nézőben is él; a gomb saját őrét a `kapcsoldACsillagot` adja.
+        enabled: !window._szovegmezoneVanFokusz && !window.slideshowRunning
+        //: #4600: `0x005e696c` — a `thumbui/startoggle`-t kattintja, ha az
+        //: nem tiltott; a tálca gombja ugyanezt a kijelölést/nézőt követi.
+        onActivated: trayBar.kapcsoldACsillagot()
+    }
+    Shortcut {
+        id: shortcutRefreshCurrentFolder
+        objectName: "refreshCurrentFolderShortcut"
+        sequence: "F5"
+        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+                 && documentTabStrip.libraryActive
+                 && controller && controller.currentFolder.length > 0
+        //: #4697: a mért eredeti F5-ág a mappa frissítési jelzőjét állítja
+        //: (`picasa-gyorsbillentyuk.md`, 10.10); az idle út utána frissíti
+        //: a listát. A mappapontos szinkron a lemez változásait is felveszi,
+        //: majd a syncFinished meglévő útja újratölti a nézetet és a
+        //: keresési állapotot. Ez nem teljes újraolvasás (`controller.rescan()`).
+        onActivated: controller.resyncFolder(controller.currentFolder)
+    }
+    Shortcut {
+        id: shortcutTagsPanelAlt
         objectName: "tagsPanelAltShortcut"
         sequence: "Ctrl+K"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -952,6 +1180,7 @@ ApplicationWindow {
         onActivated: window.valtsFiokLapot("tags")
     }
     Shortcut {
+        id: shortcutEditView
         objectName: "editViewShortcut"
         sequence: "Ctrl+3"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -961,6 +1190,7 @@ ApplicationWindow {
         onActivated: window.nezdEsSzerkeszd()
     }
     Shortcut {
+        id: shortcutDuplicateSearch
         objectName: "dupeSearchShortcut"
         sequence: "Ctrl+F6"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -969,6 +1199,7 @@ ApplicationWindow {
         onActivated: window.masodpeldanyokMutatasa()
     }
     Shortcut {
+        id: shortcutFindSimilar
         objectName: "findSimilarShortcut"
         sequence: "Ctrl+F7"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -976,6 +1207,7 @@ ApplicationWindow {
         onActivated: window.keressHasonlot()
     }
     Shortcut {
+        id: shortcutClearSimilar
         objectName: "clearSimilarShortcut"
         sequence: "Ctrl+F8"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -983,6 +1215,7 @@ ApplicationWindow {
         onActivated: window.torolAHasonlosagMintat()
     }
     Shortcut {
+        id: shortcutBatchBlackWhite
         objectName: "batchBwShortcut"
         sequence: "Ctrl+Shift+B"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -992,6 +1225,7 @@ ApplicationWindow {
         onActivated: window.kotegEffekt("bw")
     }
     Shortcut {
+        id: shortcutBatchEnhance
         objectName: "batchEnhanceShortcut"
         sequence: "Ctrl+Shift+E"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -1011,6 +1245,7 @@ ApplicationWindow {
         [folderManager, importSourceDialog, optionsDialog, webExportDialog,
          printDialog].some(function (d) { return d.item !== null && d.item.visible })
     Shortcut {
+        id: shortcutHelp
         objectName: "helpShortcut"
         sequence: "F1"
         enabled: !window._szovegmezoneVanFokusz
@@ -1018,6 +1253,7 @@ ApplicationWindow {
         onActivated: helpDialog.ensure().nyisdMeg("")
     }
     Shortcut {
+        id: shortcutHelpContext
         objectName: "helpContextShortcut"
         sequence: "Shift+F1"
         enabled: !window._szovegmezoneVanFokusz
@@ -1091,16 +1327,19 @@ ApplicationWindow {
     }
 
     Shortcut {
+        id: shortcutSelectAll
         sequence: "Ctrl+A"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: window.selectAll()
     }
     Shortcut {
+        id: shortcutClearSelection
         sequence: "Ctrl+D"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: window.clearSelection()
     }
     Shortcut {
+        id: shortcutInvertSelection
         sequence: "Ctrl+I"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: window.invertSelection()
@@ -1109,9 +1348,10 @@ ApplicationWindow {
     // (a menü-audit teszt épp ezt kéri számon). Kijelölés nélkül nem tesz
     // semmit: a `openSave` üres listára visszatér.
     Shortcut {
+        id: shortcutSave
         sequence: "Ctrl+S"
         enabled: !window._szovegmezoneVanFokusz
-        onActivated: saveDialogs.ensure().openSave(window.selectedIndexes)
+        onActivated: saveDialogs.ensure().openSave(window.photoActionRows())
     }
 
     // #1526/#1571: a fájl-vágólap billentyűi — FÓKUSZ-ÉRZÉKENYEN.
@@ -1139,16 +1379,20 @@ ApplicationWindow {
         // szerint Ctrl+C-t hirdet, tehát az ígéret is szó szerinti.
         // (⚠️ A komment maga sem tartalmazhatja a keresett mintát: az
         // első változatom épp ezzel vezette félre a mérést.)
+        id: shortcutCopyFiles
         sequence: "Ctrl+C"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+        enabled: !window._szovegmezoneVanFokusz
+                 && window.photoActionRows().length > 0
         onActivated: fileOpsController.copyFilesToClipboard(
-            window.selectedPaths())
+            window.photoActionPaths())
     }
     Shortcut {
+        id: shortcutCutFiles
         sequence: "Ctrl+X"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+        enabled: !window._szovegmezoneVanFokusz
+                 && window.photoActionRows().length > 0
         onActivated: fileOpsController.cutFilesToClipboard(
-            window.selectedPaths())
+            window.photoActionPaths())
     }
     //: #1406: `ID_SEARCHTOKEN` — a megadott címke tartalmából rendes album.
     //: A HÁROM szöveg mind a saját helyén: a menüfelirat a menüsorban, a cím
@@ -1265,7 +1509,7 @@ ApplicationWindow {
     //: egyetlen zárójel-szintet lát, ezért a logika függvényben áll.
     function masoldAFeliratot() {
         if (!controller) return
-        var sorok = window.selectedRows()
+        var sorok = window.photoActionRows()
         if (sorok.length === 0) return
         controller.copyCaptionText(sorok[0])
     }
@@ -1275,7 +1519,7 @@ ApplicationWindow {
     //: ilyenkor amúgy is szürke).
     function illesdBeAFeliratot() {
         if (!controller) return
-        var sorok = window.selectedRows()
+        var sorok = window.photoActionRows()
         if (sorok.length === 0) return
         controller.pasteCaptionText(sorok)
     }
@@ -1291,6 +1535,7 @@ ApplicationWindow {
         //: #1526: a Beillesztés billentyűje — ugyanaz a fókusz-kapu, mint a
         //: másoláson: szövegmezőben a mezőé a billentyű (különben átnevezés
         //: közben nem lehetne beilleszteni a szövegbe).
+        id: shortcutPasteFiles
         sequence: "Ctrl+V"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: window.beillesztAVagolaprol()
@@ -1319,6 +1564,7 @@ ApplicationWindow {
         return true
     }
     Shortcut {
+        id: shortcutRotateRight
         sequence: "Ctrl+R"
         enabled: !window._szovegmezoneVanFokusz
         onActivated: {
@@ -1327,6 +1573,7 @@ ApplicationWindow {
         }
     }
     Shortcut {
+        id: shortcutRotateLeft
         sequence: "Ctrl+Shift+R"
         enabled: !window._szovegmezoneVanFokusz
         onActivated: {
@@ -1343,16 +1590,18 @@ ApplicationWindow {
     //: A cél a KIJELÖLÉS (az eredeti ága is a panelre hat); nézőben a
     //: megnyitott kép, a forgatás `rotateTargetRow` mintája szerint.
     function tukrozesiSorok() {
-        if (window.viewerOpen) return [photoViewer.currentIndex]
+        if (window.viewerOpen) return [photoViewer._kijeloltSort()]
         return window.selectedRows()
     }
     Shortcut {
+        id: shortcutFlipHorizontal
         objectName: "flipHorizontalShortcut"
         sequence: "Ctrl+Shift+H"
         enabled: !window._szovegmezoneVanFokusz
         onActivated: controller.flipHorizontalMany(window.tukrozesiSorok())
     }
     Shortcut {
+        id: shortcutFlipVertical
         objectName: "flipVerticalShortcut"
         sequence: "Ctrl+Shift+V"
         enabled: !window._szovegmezoneVanFokusz
@@ -1361,12 +1610,14 @@ ApplicationWindow {
 
     // #8: Ctrl+4 — diavetítés (Picasa-billentyű)
     Shortcut {
+        id: shortcutSlideshow
         sequence: "Ctrl+4"
         enabled: !window._szovegmezoneVanFokusz
         onActivated: window.startSlideshow(-1)
     }
     // #12: Ctrl+T — Címkék-panel (Picasa-billentyű); a könyvtár-nézetben él
     Shortcut {
+        id: shortcutTagsPanel
         sequence: "Ctrl+T"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: if (!window.viewerOpen)
@@ -1377,6 +1628,7 @@ ApplicationWindow {
     }
     // #13: Alt+Enter — Tulajdonságok-panel (Picasa-billentyű)
     Shortcut {
+        id: shortcutPropertiesPanel
         sequence: "Alt+Return"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: if (!window.viewerOpen)
@@ -1397,6 +1649,29 @@ ApplicationWindow {
         timelineController.reload()
         window.timelineOpen = true
     }
+
+    // #4569: az eredeti F11 a képnéző teljes képernyős módját kapcsolja.
+    // A diavetítés saját teljes képernyős állapotát ez a parancs nem írhatja felül.
+    property int visibilityBeforeViewerFullscreen: Window.Windowed
+    function toggleViewerFullscreen() {
+        if (!window.viewerOpen || slideshow.visible) return
+        if (window.visibility === Window.FullScreen) {
+            window.visibility =
+                window.visibilityBeforeViewerFullscreen === Window.FullScreen
+                    ? Window.Windowed : window.visibilityBeforeViewerFullscreen
+        } else {
+            window.visibilityBeforeViewerFullscreen = window.visibility
+            window.visibility = Window.FullScreen
+        }
+    }
+    Shortcut {
+        id: shortcutViewerFullscreen
+        objectName: "viewerFullscreenShortcut"
+        sequence: "F11"
+        enabled: window.viewerOpen && !slideshow.visible
+        onActivated: window.toggleViewerFullscreen()
+    }
+
     // #1903: a `Ctrl+5` NEM sül el, amíg a valódi Időrend nincs kész — a
     // menütétel is inaktív. A billentyű így nem kerülhet meg egy szürke
     // menüpontot (a #1686 fordított esete: ott a billentyű MŰKÖDÖTT,
@@ -1455,12 +1730,14 @@ ApplicationWindow {
     }
     // Picasa: F2 = átnevezés, Ctrl+Shift+S = exportálás mappába
     Shortcut {
+        id: shortcutRename
         sequence: "F2"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: if (!window.viewerOpen && window.selectedIndex >= 0)
                          fileOpsDialogs.ensure().openRename(window.selectedIndex)
     }
     Shortcut {
+        id: shortcutExportSelection
         sequence: "Ctrl+Shift+S"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: if (!window.viewerOpen) exportDialogs.ensure().openForSelection()
@@ -1469,6 +1746,7 @@ ApplicationWindow {
     // törléshez (spec 3.) — a billentyű eddig nem élt, csak a Fájl menü
     // `Delete`-je (ld. ui-audit-menus.md). Mindkettő ugyanoda vezet.
     Shortcut {
+        id: shortcutDeleteFromDiskGrid
         objectName: "shortcutDeleteFromDiskGrid"
         sequence: "Ctrl+Delete"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -1479,9 +1757,10 @@ ApplicationWindow {
         // lemezről töröl (spec 5.); mappában változatlanul töröl.
         onActivated: picasaMenuBar.activateDeleteCommand()
     }
-    // #422: a nézőben PUSZTA Delete törli a lemezről (spec 3.) — ott nincs
-    // ütközés, mert a rács album-parancsai nem élnek
+    // #422/#4621: a nézőben `Ctrl+Delete` (#1418; a puszta `Delete` nem
+    // töröl) — nézetfüggő: mappában lemezről töröl, albumban eltávolít
     Shortcut {
+        id: shortcutDeleteFromDiskViewer
         objectName: "shortcutDeleteFromDiskViewer"
         // #1418: a nézőben (jobbklikk-menüs felület) `Ctrl+Delete` a helyes,
         // nem a puszta `Delete` — a #1154 mérése szerint a `0x9c9a` parancs
@@ -1490,11 +1769,10 @@ ApplicationWindow {
         // volt.
         sequence: "Ctrl+Delete"
         enabled: window.viewerOpen && !window._szovegmezoneVanFokusz
-                 && photoViewer.currentIndex >= 0
-        onActivated: {
-            var p = controller.photos.filePathAt(photoViewer.currentIndex)
-            if (p.length > 0) fileOpsDialogs.ensure().openDelete([p])
-        }
+                 && photoViewer._kijeloltSort() >= 0
+        // #4621: a nézőben is a KÖZÖS, nézetfüggő elágazáson megy át
+        // (albumból megnyitott képen eltávolít, nem lemezről töröl)
+        onActivated: picasaMenuBar.activateDeleteCommand()
     }
 
     // #922: a képtálca tartalma ÁLLAPOTKÉNT, nem közvetlen kötésként. Egy
@@ -1509,6 +1787,56 @@ ApplicationWindow {
             window.trayHasPictures = controller.heldCount > 0
         }
     }
+    // #4639: a Súgó ▸ Billentyűkódok listájának adatforrása a működő
+    // Shortcut-objektumok sequence tulajdonsága. Kötésváltozás után a súgó
+    // automatikusan az új értéket mutatja.
+    readonly property var keyboardShortcutGroups: [
+        {
+            title: picasaMenuBar.keyboardShortcutGroupTitles.file,
+            sequences: picasaMenuBar.keyboardShortcutSequences.file.concat([
+                shortcutSave.sequence, shortcutRename.sequence,
+                shortcutExportSelection.sequence, shortcutDeleteFromDiskGrid.sequence,
+                shortcutOpenInEditor.sequence, shortcutEmail.sequence
+            ])
+        },
+        {
+            title: picasaMenuBar.keyboardShortcutGroupTitles.edit,
+            sequences: [shortcutSelectAll.sequence, shortcutClearSelection.sequence,
+                shortcutInvertSelection.sequence, shortcutCopyFiles.sequence,
+                shortcutCutFiles.sequence, shortcutPasteFiles.sequence]
+        },
+        {
+            title: picasaMenuBar.keyboardShortcutGroupTitles.view,
+            sequences: picasaMenuBar.keyboardShortcutSequences.view.concat([
+                shortcutToggleRightDrawer.sequence, shortcutSearch.sequence,
+                shortcutSearchF3.sequence, shortcutStarToggle.sequence,
+                shortcutTagsPanelAlt.sequence, shortcutEditView.sequence,
+                shortcutDuplicateSearch.sequence, shortcutFindSimilar.sequence,
+                shortcutClearSimilar.sequence, shortcutSlideshow.sequence,
+                shortcutTagsPanel.sequence, shortcutPropertiesPanel.sequence,
+                shortcutViewerFullscreen.sequence
+            ]).concat(documentTabStrip.keyboardShortcutSequences)
+                .concat(photoViewer.keyboardShortcutSequences)
+        },
+        {
+            title: picasaMenuBar.keyboardShortcutGroupTitles.folder,
+            sequences: picasaMenuBar.keyboardShortcutSequences.folder.concat([
+                shortcutRefreshCurrentFolder.sequence
+            ])
+        },
+        {
+            title: picasaMenuBar.keyboardShortcutGroupTitles.picture,
+            sequences: [shortcutRotateRight.sequence, shortcutRotateLeft.sequence,
+                shortcutFlipHorizontal.sequence, shortcutFlipVertical.sequence,
+                shortcutBatchBlackWhite.sequence, shortcutBatchEnhance.sequence]
+                .concat(trayBar.keyboardShortcutSequences)
+        },
+        {
+            title: picasaMenuBar.keyboardShortcutGroupTitles.help,
+            sequences: [shortcutHelp.sequence, shortcutHelpContext.sequence]
+        }
+    ]
+
     menuBar: PicasaMenuBar {
         textEntryHasFocus: window._szovegmezoneVanFokusz
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
@@ -1523,19 +1851,25 @@ ApplicationWindow {
         onEmailRequested: window.sendSelectionByEmail()
         onOpenInEditorRequested: window.openSelectionInDefaultEditor()
         onViewAndEditRequested: window.nezdEsSzerkeszd()
+        // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
+        // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
+        onReturnToLibraryRequested: photoViewer.kerBezaras()
         onUnhideRequested: window.unhideHiddenSelection()
-        onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
+        onWriteXmpFacesDialogRequested:
+            xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
+        onResetFacesRequested: resetFacesForPaths(window.photoActionPaths())
         // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
         // frissítjük, mert az index nem jelzi a `textactive=` változását.
         onTextOverlayStatesRefreshRequested: {
-            var rows = window.selectedRows()
+            var rows = window.photoActionRows()
             picasaMenuBar.textOverlayShowEnabled = controller
                 ? controller.hasTextOverlayStateInSelection(rows, false) : false
             picasaMenuBar.textOverlayHideEnabled = controller
                 ? controller.hasTextOverlayStateInSelection(rows, true) : false
         }
-        photoActionsEnabled: !window.viewerOpen
-                             && window.selectedIndexes.length > 0
+        photoActionsEnabled: window.photoActionRows().length > 0
+        libraryPhotoActionsEnabled: !window.viewerOpen
+                                    && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
         //: szerkesztő-előnézet él. Nálunk a szerkesztőpanel a nézőben
         //: lakik, tehát a nyitott néző a megfelelője.
@@ -1554,9 +1888,9 @@ ApplicationWindow {
         // #1526: a fájl-vágólap — a kijelölt képek fájljai kerülnek fel,
         // így egy fájlkezelőbe közvetlenül beilleszthetők
         onCopyFilesRequested: fileOpsController.copyFilesToClipboard(
-            window.selectedPaths())
+            window.photoActionPaths())
         onCutFilesRequested: fileOpsController.cutFilesToClipboard(
-            window.selectedPaths())
+            window.photoActionPaths())
         //: #1526: a Beillesztés célmappája a KIVÁLASZTOTT mappa. Ha a
         //: vágólap közben kiürült (más program írta át), a művelet nem
         //: indul el, és a sávon üzenetet adunk — némán nem tűnik el.
@@ -1595,16 +1929,10 @@ ApplicationWindow {
         onConfigureButtonsRequested: configureButtonsDialog.open()
         onConfigureScreensaverRequested: screensaverDialog.open()
         onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
-        onAddToScreensaverRequested: {
-            var added = controller
-                ? controller.addScreensaverPhotos(window.selectedPaths()) : 0
-            if (added > 0) {
-                errorBanner.notice = true
-                errorBannerText.text = qsTr(
-                    "Added %1 pictures to Screensaver.").arg(added)
-            }
-        }
+        onAddToScreensaverRequested: window.requestAddToScreensaver()
         onThumbSizePreset: function(size) { window.thumbSize = size }
+        // #4623: a Nézet menü rádiócsoportja ebből számolja a pipát
+        thumbSize: window.thumbSize
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
         onSelectStarredRequested: window.selectStarred()
@@ -1640,13 +1968,13 @@ ApplicationWindow {
         //: #1775: a KIJELÖLÉS ELSŐ képe lesz a háttér — a parancs egy képre
         //: szól (az eredeti is egyet tesz háttérképnek).
         onWallpaperRequested: {
-            var sorok = window.selectedIndexes
+            var sorok = window.photoActionRows()
             if (sorok.length > 0)
                 controller.setPhotoAsDesktopBackground(sorok[0])
         }
         // #4268: a Picasa poszterpárbeszéde a kijelölés első képéből indul.
         onPosterRequested: {
-            var paths = window.selectedPaths()
+            var paths = window.photoActionPaths()
             if (paths.length > 0)
                 createDialogs.ensure().openPoster(String(paths[0]))
         }
@@ -1663,6 +1991,14 @@ ApplicationWindow {
         onOptionsRequested: optionsDialog.open()
         //: #2054
         onHelpRequested: function (topic) { helpDialog.ensure().nyisdMeg(topic) }
+        // #4639: a billentyűk listája ugyanebben a helyi súgóban jelenik
+        // meg, és a kulcsokat a tényleges QML Shortcut-okból veszi.
+        onKeyboardShortcutsRequested: {
+            var sugo = helpDialog.ensure()
+            sugo.keyboardShortcutTitle = picasaMenuBar.keyboardShortcutsTitle
+            sugo.keyboardShortcutGroups = window.keyboardShortcutGroups
+            sugo.nyisdMeg("features/billentyuk.md")
+        }
         // #351: Exportálás weboldalként
         onWebExportRequested: webExportDialog.open()
         // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
@@ -1671,11 +2007,11 @@ ApplicationWindow {
         onEarthViewRequested: exportDialogs.ensure().openGoogleEarth(true)
         //: #1404: a menüpont is a MEGERŐSÍTÉSEN át töröl
         onClearGeotagRequested:
-            clearGeotagDialog.ensure().openFor(window.selectedRows())
+            clearGeotagDialog.ensure().openFor(window.photoActionRows())
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
-        onRenameRequested: window.selectedIndexes.length > 1
-            ? fileOpsDialogs.ensure().openRenameMany(window.selectedIndexes)
-            : fileOpsDialogs.ensure().openRename(window.selectedIndex)
+        onRenameRequested: window.photoActionRows().length > 1
+            ? fileOpsDialogs.ensure().openRenameMany(window.photoActionRows())
+            : fileOpsDialogs.ensure().openRename(window.photoActionIndex())
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
         //: #3504: a kiadás-panel mentés-üzemmódja a könyvtár alján — a
@@ -1687,10 +2023,10 @@ ApplicationWindow {
         //: #1401: az Útlevélkép — a KIJELÖLÉS ELSŐ képére szól (az eredeti
         //: is egyre), a `wallpaperRequested` mintájára.
         onPassportPhotoRequested: {
-            var sorok = window.selectedIndexes
+            var sorok = window.photoActionRows()
             if (sorok.length > 0
                     && typeof passportController !== "undefined" && passportController)
-                passportController.preparePassportPhoto(sorok[0])
+                passportController.preparePassportPhoto(Number(sorok[0]))
         }
         // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
         onPicasaDataImportRequested: picasaDataImportDialog.open()
@@ -1705,14 +2041,16 @@ ApplicationWindow {
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.ensure().openMovie()
         onFaceMovieRequested: createDialogs.ensure().openFaceMovie()
+        onPeopleAlbumsMovieRequested: window.openPeopleAlbumsMovie()
         //: #3503: a kiadás-panel Ajándék-CD üzemmódja a könyvtár alján
         onGiftCdRequested: giftCdHost.nyisd()
-        onExportRequested: exportDialogs.ensure().openForSelection()
+        onExportRequested: exportDialogs.ensure().openForSelection(
+            window.viewerOpen ? window.photoActionRows() : undefined)
         // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
         // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
         // helyi menü példányán)
-        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
+        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.photoActionRows())
         // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
         // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
         onImportSourceRequested: importSourceDialog.open()
@@ -1722,16 +2060,18 @@ ApplicationWindow {
         // csak a NEVET kéri, a kijelölés útvonalait a hívás pillanatában
         // gyűjtjük (ugyanaz a minta, mint a `Move…`/`Törlés…` tételeknél).
         onMoveToNewFolderRequested:
-            fileOpsDialogs.ensure().openMoveToNewFolder(window.selectedPaths())
+            fileOpsDialogs.ensure().openMoveToNewFolder(window.photoActionPaths())
         // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
         onPrintRequested: window.openPrint()
         // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
         onPrintContactSheetRequested: window.openContactSheetPrint()
         onLocateRequested: {
-            var p = controller.photos.filePathAt(window.selectedIndex)
+            var p = controller.photos.filePathAt(window.photoActionIndex())
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
-        onDeleteRequested: fileOpsDialogs.ensure().openDelete(window.selectedPaths())
+        onDeleteRequested: fileOpsDialogs.ensure().openDelete(
+            window.viewerOpen ? window.photoActionPaths()
+                              : window.selectedPaths())
         // #1608: a `Delete` NÉZETFÜGGŐ — albumban/Emberek-albumban nem
         // lemezről töröl, csak kiveszi onnan (a helyi menü már meglévő
         // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)
@@ -1741,47 +2081,54 @@ ApplicationWindow {
         // confirmation" beállítással elnyomható (`removeFromAlbumDialog`)
         onRemoveFromAlbumRequested: {
             if (controller) removeFromAlbumDialog.ensure().openFor(
-                window.selectedRows(), controller.currentAlbumToken)
+                window.photoActionRows(), controller.currentAlbumToken)
         }
         onRemoveFromPeopleAlbumRequested: {
             if (controller) removePeopleFacesDialog.ensure().openFor(
-                window.selectedRows(), controller.currentPersonName)
+                window.photoActionRows(), controller.currentPersonName)
         }
         // #444: a nem-destruktív mentés három fokozata — a megerősítések és
         // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban
         hasSavedBackup: controller
-            ? controller.hasSavedBackup(window.selectedIndexes) : false
+            ? controller.hasSavedBackup(window.photoActionRows()) : false
         // #4332: a dátummódosítás kizárólag az indexben tárolt felülírást írja.
         onAdjustTimestampRequested:
-            createDialogs.ensure().openTimestamp(window.selectedIndexes)
-        onSaveRequested: saveDialogs.ensure().openSave(window.selectedIndexes)
-        onRevertRequested: saveDialogs.ensure().openRevert(window.selectedIndexes)
+            createDialogs.ensure().openTimestamp(window.photoActionRows())
+        onSaveRequested: saveDialogs.ensure().openSave(window.photoActionRows())
+        onRevertRequested: saveDialogs.ensure().openRevert(window.photoActionRows())
         // #1527: a mentés-család két új tagja
-        onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.selectedIndex)
-        onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.selectedIndexes)
+        onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.photoActionIndex())
+        onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.photoActionRows())
         onSlideshowRequested: window.startSlideshow(-1)
-        // #3460: Mappa ▸ Leírás szerkesztése… — a helyi menüével azonos párbeszéd
+        // #3460/#4630: a Mappa/Album menü a megnyitott hely leírását szerkeszti
         currentFolder: controller ? controller.currentFolder : ""
-        onEditFolderDescriptionRequested:
-            if (controller) folderPane.openFolderDescription(controller.currentFolder)
+        onEditFolderDescriptionRequested: {
+            if (controller) {
+                if (controller.currentAlbumToken !== "")
+                    folderPane.openAlbumDescription(controller.currentAlbumToken)
+                else
+                    folderPane.openFolderDescription(controller.currentFolder)
+            }
+        }
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.valtsFiokLapot("tags")
         peoplePanelOpen: window.peoplePanelOpen
         onPeoplePanelRequested: window.valtsFiokLapot("people")
         placesPanelOpen: window.placesPanelOpen
         onPlacesPanelRequested: window.valtsFiokLapot("places")
-        onHideToggleRequested: window.toggleHiddenSelection()
+        onHideToggleRequested: window.hideSelection()
         propertiesPanelOpen: window.propertiesPanelOpen
         onPropertiesPanelRequested: window.valtsFiokLapot("properties")
-        // #426: „Az összes effektus másolása/beillesztése" — a kijelölésre
-        // hat, a rács sorindexein keresztül (window.selectedRows() a
+        // #426: „Az összes effektus másolása/beillesztése" — a menü
+        // célképére, a rácsban pedig a kijelölésre hat
+        // (window.photoActionRows() a
         // meglévő mintát követi, ld. toggleHiddenSelection). A
         // `photo_ops_controller.PhotoOpsMixin`-t hívja, NEM a #152-es
         // `effects_controller`-t (az a crop64-et is átvinné).
         // #305: null-őr — ld. fenti Connections
         hasAllEffectsClipboard: controller ? controller.hasAllEffectsClipboard : false
-        onCopyAllEffectsRequested: controller.copyAllEffects(window.selectedRows())
-        onPasteAllEffectsRequested: controller.pasteAllEffects(window.selectedRows())
+        onCopyAllEffectsRequested: controller.copyAllEffects(window.photoActionRows())
+        onPasteAllEffectsRequested: controller.pasteAllEffects(window.photoActionRows())
         // #1475: a két kötegelt visszavonás — a Szerkesztés menü élén álló
         // tételek. Kijelölés-független: a köteg a SAJÁT, művelet idején
         // rögzített képlistáját állítja vissza.
@@ -1799,20 +2146,32 @@ ApplicationWindow {
         // visszavonása" tételén megy (#1475) — a forgatás NEM kerül a
         // kötegelt undo-verembe, mert a rotate= külön kulcs.
         onBatchApplyEffectRequested: (name) => {
-            if (name === "rotate_cw") controller.rotateRightMany(window.selectedRows())
-            else if (name === "rotate_ccw") controller.rotateLeftMany(window.selectedRows())
-            else controller.applyEffectMany(window.selectedRows(), name)
+            if (window.viewerOpen) {
+                if (photoViewer.selectMenuEffect(name)) return
+                var row = window.photoActionIndex()
+                if (row < 0) return
+                if (name === "rotate_cw") controller.rotateRight(row)
+                else if (name === "rotate_ccw") controller.rotateLeft(row)
+                else controller.applyEffectMany([row], name)
+            } else if (name === "rotate_cw") {
+                controller.rotateRightMany(window.selectedRows())
+            } else if (name === "rotate_ccw") {
+                controller.rotateLeftMany(window.selectedRows())
+            } else {
+                controller.applyEffectMany(window.selectedRows(), name)
+            }
         }
         // #4335: mindkét parancs ugyanazt a kötegelt INI-utat használja,
         // a különbség a kért végállapot.
         onTextOverlayVisibilityRequested: (visible) => {
             controller.setTextOverlayVisibleMany(
-                window.selectedRows(), visible)
+                window.photoActionRows(), visible)
         }
         // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
         // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
-        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(window.selectedRows())
+        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(
+            window.photoActionRows())
         // #3555: nyelvváltás — a menütétel csak jelez (a `ConfirmDialog` nem
         // fér el a MenuBar gyermekeként), a kérdés és a `setLanguage`-hívás
         // itt fut ki.
@@ -1961,6 +2320,74 @@ ApplicationWindow {
         }
     }
 
+    // A térképre ejtés az eredeti Picasa szerint mindig külön megerősítést
+    // kér; az elfogadás ugyanazt az INI-író utat hívja, mint a panel helye.
+    DeferredDialog {
+        id: dropGeotagDialog
+        objectName: "dropGeotagDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            Dialog {
+                id: dialog
+                objectName: "dropGeotagConfirm"
+                modal: true
+                focus: true
+                anchors.centerIn: parent ? Overlay.overlay : undefined
+                property var rows: []
+                property real latitude: 0
+                property real longitude: 0
+                property string message: ""
+
+                function futtasd(rowList, lat, lon) {
+                    if (!rowList || rowList.length === 0) return
+                    rows = rowList.slice()
+                    latitude = lat
+                    longitude = lon
+                    var moving = controller.geotaggedCount(rows) > 0
+                    if (rows.length === 1) {
+                        message = moving ? qsTr("Move photo here?")
+                                         : qsTr("Put photo here?")
+                    } else {
+                        var template = moving
+                            ? qsTr("Move %d photos here?")
+                            : qsTr("Put %d photos here?")
+                        message = template.replace("%d", String(rows.length))
+                    }
+                    open()
+                }
+
+                onAccepted: controller.setGeotagRows(rows, latitude, longitude)
+
+                ColumnLayout {
+                    spacing: 12
+                    Text {
+                        objectName: "dropGeotagMessage"
+                        Layout.preferredWidth: 320
+                        text: dialog.message
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 8
+                        PicasaButton {
+                            objectName: "dropGeotagYesButton"
+                            text: qsTr("(OK)")
+                            accent: Theme.picasaGreen
+                            onClicked: dialog.accept()
+                        }
+                        PicasaButton {
+                            objectName: "dropGeotagCancelButton"
+                            text: qsTr("Cancel")
+                            onClicked: dialog.reject()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     //: #1612: halasztva — a Helyek panel törlés-megerősítése csak onnan nyílik
     DeferredDialog {
         id: panelClearGeotagDialog
@@ -2069,10 +2496,10 @@ ApplicationWindow {
     // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést
     // ürítjük — az elrejtett sorok kiesnek a rácsból, az indexek eltolódnak
     function toggleHiddenSelection() {
-        var rows = window.selectedRows()
+        var rows = window.photoActionRows()
         if (rows.length === 0) return
         controller.toggleHiddenRows(rows)
-        window.clearSelection()
+        if (!window.viewerOpen) window.clearSelection()
     }
 
     // #1798: a kijelölés elküldése levélben. A tárgyat és a szöveget
@@ -2081,7 +2508,7 @@ ApplicationWindow {
     function sendSelectionByEmail() {
         if (typeof emailController === "undefined" || !emailController)
             return
-        var sorok = window.selectedRows()
+        var sorok = window.photoActionRows()
         if (sorok.length === 0)
             return
         var csatolmanyok = emailController.prepareAttachments(
@@ -2097,12 +2524,13 @@ ApplicationWindow {
     // adja a rendszer alapértelmezett fájlmegnyitójának.
     function openSelectionInDefaultEditor() {
         if (!fileOpsController) return
-        var paths = window.selectedPaths()
+        var paths = window.photoActionPaths()
         if (paths.length > 0)
             fileOpsController.openPhotosInDefaultEditor(paths)
     }
 
     Shortcut {
+        id: shortcutOpenInEditor
         objectName: "openInEditorShortcut"
         sequence: "Ctrl+Shift+O"
         enabled: !!picasaMenuBar && picasaMenuBar.photoActionsEnabled
@@ -2113,6 +2541,7 @@ ApplicationWindow {
     // #4329: a billentyűnek ugyanaz a kijelölési kapuja és kezelője, mint a
     // Fájl ▸ E-Mail menüpontnak.
     Shortcut {
+        id: shortcutEmail
         objectName: "emailShortcut"
         sequence: "Ctrl+E"
         enabled: !!picasaMenuBar && picasaMenuBar.photoActionsEnabled
@@ -2183,6 +2612,18 @@ ApplicationWindow {
         }
     }
 
+    // #4533: Társítás… — a fájltípushoz társított alkalmazások választója (Linux)
+    DeferredDialog {
+        id: openWithDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            OpenWithDialog {
+                objectName: "openWithDialog"
+                onAccepted: fileOpsController.openWithApp(photoPath, selectedAppId)
+            }
+        }
+    }
+
     // #1720: halasztott példányosítás — a párbeszéd csak az első
     // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
     DeferredDialog {
@@ -2190,6 +2631,17 @@ ApplicationWindow {
         anchors.fill: parent
         sourceComponent: Component { FolderManagerDialog { } }
     }
+
+    function openPeopleManagerForPerson(name) {
+        var targetName = String(name || "").trim()
+        if (peopleManagerLoader.status === Loader.Ready) {
+            peopleManagerLoader.item.openForPerson(targetName)
+        } else {
+            window.pendingPeopleManagerPersonName = targetName
+            peopleManagerLoader.active = true
+        }
+    }
+
     // #4334: a komponens csak az első menükattintásra töltődik be; a
     // külön fájl miatt a forró Main.qml-ben csak a bekötés marad.
     Loader {
@@ -2199,7 +2651,12 @@ ApplicationWindow {
         source: Qt.resolvedUrl("PicasaPy/PeopleManagerDialog.qml")
         onLoaded: {
             item.controller = controller
-            item.open()
+            var targetName = window.pendingPeopleManagerPersonName
+            window.pendingPeopleManagerPersonName = ""
+            if (targetName.length > 0)
+                item.openForPerson(targetName)
+            else
+                item.open()
         }
     }
     // Duplikátum-kezelő (#287): a SAJÁT kezelő-párbeszéd. #1398 óta a
@@ -2230,6 +2687,27 @@ ApplicationWindow {
             ScreensaverDialog {
                 saverController: controller
                 onPreviewRequested: window.startScreensaverPreview()
+            }
+        }
+    }
+    //: #4618: album-nézetben az eredeti rákérdez (`addtosaver::warning`);
+    //: halasztva (#1612), a közös megerősítő párbeszéddel
+    DeferredDialog {
+        id: screensaverAlbumConfirmLoader
+        objectName: "screensaverAlbumConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                namePrefix: "screensaverAlbumConfirm"
+                title: qsTr("Confirm")
+                property var pendingPaths: []
+                function openFor(paths) {
+                    pendingPaths = paths ? paths.slice() : []
+                    if (pendingPaths.length > 0)
+                        ask("", qsTr("Are you sure you want to add all of the"
+                                     + " selected album's images?"))
+                }
+                onConfirmed: window.addPhotosToScreensaver(pendingPaths)
             }
         }
     }
@@ -2308,6 +2786,17 @@ ApplicationWindow {
         // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) — a
         // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
         visible: !window.viewerOpen && window.libraryFrameVisible
+        searchSuggestionsVisible: searchSuggestionsBox.visible
+        onSearchSuggestionKeyPressed: function(key) {
+            if (key === Qt.Key_Down)
+                searchSuggestionsBox.moveSelection(1)
+            else if (key === Qt.Key_Up)
+                searchSuggestionsBox.moveSelection(-1)
+            else if (key === Qt.Key_Return || key === Qt.Key_Enter)
+                searchSuggestionsBox.chooseSelected()
+            else if (key === Qt.Key_Escape)
+                searchSuggestionsBox.dismiss()
+        }
         onSearchEdited: function(text) {
             window.clearSelection()
             controller.search(text)
@@ -2474,6 +2963,7 @@ ApplicationWindow {
         // egy parancs, egy út.
         onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
         onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onDropGeotagRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
         // #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár rácsát
         // cseréli le, amit a néző eltakarna — ezért előbb ZÁRUL a néző.
         // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
@@ -2522,9 +3012,12 @@ ApplicationWindow {
             Qt.callLater(grid.applyRevealAfterViewer)
         }
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
-        // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
-        // megerősítő dialógus itt él (a menü maga a PhotoViewer-ben)
-        onDeleteRequested: function(path) { fileOpsDialogs.ensure().openDelete([path]) }
+        // #422: a néző kontextusmenüjének törlés-tétele — a megerősítő
+        // dialógusok itt élnek (a menü maga a PhotoViewer-ben)
+        // #4621: a néző saját `Ctrl+Delete`-je és a helyi menü tétele is a
+        // menüsáv KÖZÖS, nézetfüggő elágazásán megy át
+        deleteRemovesFromAlbum: picasaMenuBar.deleteRemovesFromAlbum
+        onDeleteRequested: picasaMenuBar.activateDeleteCommand()
     }
 
     // #24: Időrend nézet (Ctrl+5) — a teljes könyvtár korszak-áttekintése;
@@ -2545,8 +3038,7 @@ ApplicationWindow {
             controller.selectFolder(folderPath)
             var row = controller.photos.rowOfId(photoId)
             if (row >= 0) {
-                window.viewerOpen = true
-                photoViewer.show(row)
+                window.openPhotoViewer(row)
             }
         }
     }
@@ -2795,6 +3287,9 @@ ApplicationWindow {
                         anchors.leftMargin: 8
                         spacing: 10
                         Rectangle {
+                            // #4531: a keresés után is látszik (az eredetiben
+                            // a keresősáv `viewallbutton`-ja)
+                            objectName: "searchBackToViewAll"
                             Layout.preferredHeight: 18
                             Layout.preferredWidth: viewAllText.width + 20
                             radius: 9
@@ -2811,7 +3306,21 @@ ApplicationWindow {
                                 font.bold: true
                                 color: "#3b8f00"
                             }
-                            TapHandler { onTapped: controller.clearFilter() }
+                            TapHandler {
+                                // #4531: keresésből a mező is ürüljön, és a bal
+                                // hasáb is álljon vissza a teljes mappalistára —
+                                // ugyanaz az út, mint a keresőmező ✕ gombja
+                                onTapped: {
+                                    if (toolbar.searchText.trim().length > 0) {
+                                        toolbar.clearSearch()
+                                        window.clearSelection()
+                                        controller.search("")
+                                        searchSuggestionsBox.suggestions = []
+                                    } else {
+                                        controller.clearFilter()
+                                    }
+                                }
+                            }
                         }
                         Text {
                             // #305: null-őr
@@ -2980,8 +3489,7 @@ ApplicationWindow {
                             mentesToltodnek: backupHost.mappakToltodnek
                             mentesVanKeszlet: backupHost.kivalasztott >= 0
                             onOpenRequested: function(row) {
-                                window.viewerOpen = true
-                                photoViewer.show(row)
+                                window.openPhotoViewer(row)
                             }
                             onSlideshowRequested: function(startRow) {
                                 window.startSlideshow(startRow)
@@ -3068,6 +3576,10 @@ ApplicationWindow {
                                               : false
                                         isHidden: modelData.hidden === true
                                         index: modelData.row
+                                        dragRows: window.selectedIndexes
+                                            && window.selectedIndexes.length
+                                            ? window.selectedIndexes.slice()
+                                            : [modelData.row]
                                         keywords: modelData.keywords
                                         resolution: modelData.resolution
                                         // #305: null-őr
@@ -3079,8 +3591,7 @@ ApplicationWindow {
                                             window.handleThumbClick(i, mods)
                                         }
                                         onOpened: function(i) {
-                                            window.viewerOpen = true
-                                            photoViewer.show(i)
+                                            window.openPhotoViewer(i)
                                         }
                                         onContextMenuRequested: function(i, cx, cy) {
                                             window.openPhotoContextMenu(
@@ -3217,6 +3728,7 @@ ApplicationWindow {
         //: kérdez. A menüpont változatlanul azon megy át.
         onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
         onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onPhotosDroppedRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
         visible: window.placesPanelOpen
         anchors.fill: parent
         appWindow: window
@@ -3224,6 +3736,11 @@ ApplicationWindow {
         onPhotoActivated: function(row) {
             window.selectedIndexes = [row]
             window.selectedIndex = row
+        }
+        onMarkerSearchRequested: function(rows) {
+            if (!rows || rows.length === 0) return
+            window.selectedIndexes = rows.slice(0)
+            window.selectedIndex = rows[0]
         }
     }
 
@@ -3234,6 +3751,9 @@ ApplicationWindow {
         visible: window.propertiesPanelOpen
         anchors.fill: parent
         hasSelection: window.selectedIndex >= 0
+        appController: controller
+        selectedRows: window.selectedRows()
+        focusRow: window.selectedIndex
         // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
         // #305: null-őr
         entries: controller
@@ -3241,6 +3761,7 @@ ApplicationWindow {
                controller.propertiesOf(window.selectedIndex))
             : []
         onCloseRequested: window.ureseidAFiokot()
+        onEditTagsRequested: window.valtsFiokLapot("tags")
     }
 
     // Emberek-panel (#26): a jobb fiók negyedik panelje. EGY fejléc és
@@ -3250,13 +3771,26 @@ ApplicationWindow {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
+        manualAddActive: window.viewerOpen && photoViewer.facesEditMode
         // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
             ? unnamedFacesView.selectedCount : window.selectedRows().length
+        faceScanController: window._faceScanController
+        // #4586: a háttér-arckeresés állapota (spec 9/b: betöltés, ellenőrizetlen
+        // fájlok, adatok rendezése)
+        // A kapu a KIJELÖLÉSRE vonatkozik: csak a még nem átvizsgált
+        // kijelölt képek számítanak (egy már átvizsgált képnél nincs betöltés).
+        loading: window._selectionPending > 0
+        uncheckedCount: window._selectionPending
+        sortingPercent: window._faceScanController
+            ? window._faceScanController.sortingPercent : -1
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
+        // #4585: a Névtelenek GYŰJTEMÉNYE üres (az Ignored album nem ide tartozik)
+        unnamedCollectionEmpty: window.facesAlbumMode === "unnamed"
+                                && unnamedFacesView.groupsModel.length === 0
         // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a
         // `currentPersonName` az előző személyé marad — az albumban nincs
         // „nézett személy", tehát a „Szintén" lista sem
@@ -3264,8 +3798,13 @@ ApplicationWindow {
             ? controller.currentPersonName : ""
         // a photos.revision-nel együtt kötve: arc-írás után frissül
         peopleHere: controller
-            ? (controller.photos.revision,
+            ? (window.peopleFaceRevision, controller.photos.revision,
                controller.peopleOfRows(window.selectedRows()))
+            : []
+        unnamedFacesHere: controller && !window.unnamedFacesOpen
+            ? (window.peopleFaceRevision, window.unnamedFaceRevision,
+               controller.photos.revision,
+               controller.unnamedFacesOfRows(window.selectedRows()))
             : []
         onPersonChosen: function(name) {
             if (!controller) return
@@ -3273,6 +3812,11 @@ ApplicationWindow {
             window.unnamedFacesOpen = false
             controller.showPerson(name)
         }
+        onManualAddRequested: {
+            if (!window.viewerOpen) window.nezdEsSzerkeszd()
+            if (window.viewerOpen) photoViewer.beginManualFaceAdd()
+        }
+        onManualCancelRequested: photoViewer.cancelManualFaceAdd()
         onCloseRequested: window.ureseidAFiokot()
     }
     }
@@ -3426,6 +3970,20 @@ ApplicationWindow {
                 //: `IBackgroundNotify::canceltitle` — az eredeti szövege (#3573)
                 title: qsTr("Want to Cancel?")
                 onConfirmed: controller.cancelActivity()
+            }
+        }
+    }
+
+    //: #4634: halasztott (#1720) — csak az Eszközök menüpontra épül fel.
+    DeferredDialog {
+        id: xmpFacesWriteDialog
+        objectName: "xmpFacesWriteDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            XmpFacesWriteDialog {
+                onWriteRequested: function (scope, rows) {
+                    if (controller) controller.writeFacesToXmp(scope, rows)
+                }
             }
         }
     }
@@ -3683,6 +4241,14 @@ ApplicationWindow {
     //: volt, csak az XMP nem, ezért nem nyeljük el.
     Connections {
         target: window._faceScanController
+        function onUnnamedCountChanged() { window.peopleFaceRevision++ }
+        // #4586: a keresés közben is frissül a panel névtelen-arc listája —
+        // összevonva, és csak nyitott panel mellett
+        function onFacesStored() {
+            if (window.peoplePanelOpen || photoViewer.peopleOpen)
+                { if (!unnamedFaceRefreshTimer.running) unnamedFaceRefreshTimer.start() }
+        }
+        function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false
             errorBannerText.text = qsTr("Face data could not be written to XMP: %1").arg(reason)
@@ -3801,6 +4367,10 @@ ApplicationWindow {
         // vászon kapja meg.
         visible: window.libraryFrameVisible
         appWindow: window
+        // #4637: a testreszabható alsó kimeneti gombsor közös helyi menüje.
+        onConfigureButtonsContextMenuRequested: function(anchorItem, x, y) {
+            window.openConfigureButtonsContextMenu(anchorItem, x, y)
+        }
         //: #3756: a `currentIndex` MINDIG a jobb/alsó félé (ld.
         //: `PhotoViewer.qml` `photo` `source`-a) — kettős nézetben bal
         //: fókusznál a sávnak a KIJELÖLT (`aktivSor`) képet kell mutatnia.
@@ -3921,14 +4491,22 @@ ApplicationWindow {
         }
         // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
         onOpenRequested: {
-            window.viewerOpen = true
-            photoViewer.show(window.fileOpTargetRow)
+            window.openPhotoViewer(window.fileOpTargetRow)
         }
         onRotateRightRequested: controller.rotateRightMany(window.selectedRows())
         onRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
         onOpenFileRequested: {
             var target = controller.photos.filePathAt(window.fileOpTargetRow)
             if (target.length > 0) fileOpsController.openPhoto(target)
+        }
+        // #4533: Társítás… — Windowson a héj saját párbeszéde, Linuxon a mi választónk
+        onOpenWithRequested: {
+            var target = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (target.length === 0) return
+            if (fileOpsController.hasNativeOpenWith())
+                fileOpsController.openWithNative(target)
+            else
+                openWithDialog.ensure().openFor(target)
         }
         onCopyFullPathRequested: {
             var full = controller.photos.filePathAt(window.fileOpTargetRow)
@@ -4319,6 +4897,12 @@ ApplicationWindow {
             // `ensure()` KÖTELEZŐ — különben némán elmaradna a visszajelzés.
             if (createDialogs.item)
                 createDialogs.item.frissitsdAzElonezetet(revision)
+        }
+        function onMovieTransitionPreviewReady(source, generation) {
+            // Mint a kollázs-előnézet: csak a NYITOTT párbeszédnek szól,
+            // felépíteni fölösleges (nincs film-előnézet, ha nem áll).
+            if (createDialogs.item)
+                createDialogs.item.jelezdAFilmAtmenetElonezetet(source, generation)
         }
         function onCollageFinished(path, used, skipped, missing) {
             createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)

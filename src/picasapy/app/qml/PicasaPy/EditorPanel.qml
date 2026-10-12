@@ -124,13 +124,16 @@ Rectangle {
     signal retouchUndoPatchRequested()
     signal retouchRedoPatchRequested()
     signal retouchResetRequested()
-    // #445: Vörösszem — a hívó (PhotoViewer) tölti a controllerből a kézi
-    // régiók számát, a régiónkénti Visszavonás elérhetőségét és az
-    // automatika találat-számát (-1: még nem futott). A
-    // `redeyeHideOutlines` tisztán NÉZET-állapot: csak a kijelölő-
+    // #445/#4541: a hívó (PhotoViewer) tölti a controllerből az automatikus
+    // és kézi keretek számát, a régiónkénti Visszavonást, a Reset
+    // elérhetőségét, az Auto újraalkalmazhatóságát és az állapotüzenetet.
+    // A `redeyeHideOutlines` tisztán NÉZET-állapot: csak a kijelölő-
     // négyzetek rajzát kapcsolja ki, a javításon nem változtat.
     property int redeyeRegionCount: 0
     property bool canUndoRedeyeRegion: false
+    property bool redeyeResetAvailable: false
+    property bool canReapplyRedeyeAuto: false
+    property bool redeyeAutoReset: false
     property int redeyeFoundCount: -1
     property bool redeyeHideOutlines: false
     signal redeyeAutoRequested()
@@ -232,6 +235,12 @@ Rectangle {
 
     // a kép aktuális szélesség/magasság aránya ("Jelenlegi méretarány"-hoz)
     property real imageAspect: 4 / 3
+    // A vágó méretarány-sorai az eredeti, megjelenített kép pixeleiből
+    // számolnak; a `cropRect` relatív értékeit ezekre vetítjük (#4549).
+    property int imagePixelWidth: 0
+    property int imagePixelHeight: 0
+    property rect cropRect: Qt.rect(0, 0, 0, 0)
+    property bool cropHasSelection: false
 
     // #448: a Kiegyenesítés-figyelmeztetés bekapcsolója — a hívó (PhotoViewer)
     // tölti az `editController.tiltParam !== 0` állapotból (a panel maga NEM
@@ -364,12 +373,12 @@ Rectangle {
         panel.activeTab = tabIndex
     }
 
-    // #338: az effekt-gombok bélyegképéhez (image://effectthumb/<id>/<effekt>)
+    // #338: az effekt-gombok bélyegképéhez
+    // (image://effectthumb/<id>/<effekt>?filters=<lánc>)
     // szükséges fotó-azonosító. Nincs rá külön EditController-property — az
     // editController.previewSource ("image://editpreview/<id>?rev=<n>") már
-    // tartalmazza, innen olvassuk ki, hogy ne kelljen az EditController
-    // felületét bővíteni (a feladat scope-ja csak ezt a fájlt + a Python
-    // bélyegkép-providert engedi). Üres, ha nincs aktív szerkesztés — ekkor
+    // tartalmazza, innen olvassuk ki a fotóazonosítót. Az effektláncot külön
+    // effectChain property adja át. Üres, ha nincs aktív szerkesztés — ekkor
     // az effekt-gombok a korábbi, sima kinézetüket mutatják (thumbSource "").
     readonly property string effectThumbPhotoId: {
         if (!panel.hasEffectController()) return ""
@@ -444,7 +453,6 @@ Rectangle {
     signal undoRequested()
     signal redoRequested()
     // vágás-mód jelei a hívónak
-    signal quickCropRequested(string kind)   // "topleft"|"landscape"|"portrait"
     signal cropRotateRequested()
     signal cropPreviewHold(bool held)
     signal cropResetRequested()
@@ -586,6 +594,32 @@ Rectangle {
 
     readonly property var aspectFullList: {
         var list = panel.aspectPresets.slice()
+        if (panel.imagePixelWidth > 0 && panel.imagePixelHeight > 0) {
+            var manual = list[0]
+            var manualLabel = manual.label
+            if (panel.cropHasSelection) {
+                manualLabel = qsTr("Manual") + ": "
+                    + panel.formatCropPixelSize(
+                        Math.round(panel.cropRect.width * panel.imagePixelWidth),
+                        Math.round(panel.cropRect.height * panel.imagePixelHeight))
+            }
+            list[0] = {
+                key: manual.key,
+                label: manualLabel,
+                note: manual.note,
+                ratio: manual.ratio
+            }
+
+            var current = list[1]
+            list[1] = {
+                key: current.key,
+                label: qsTr("Current ratio") + ": "
+                    + panel.formatCropPixelSize(
+                        panel.imagePixelWidth, panel.imagePixelHeight),
+                note: current.note,
+                ratio: current.ratio
+            }
+        }
         for (var i = 0; i < panel.customAspectRatios.length; i++) {
             var c = panel.customAspectRatios[i]
             list.push({
@@ -599,6 +633,13 @@ Rectangle {
             })
         }
         return list
+    }
+
+    //: Az eredeti `AspectRatioList:Format` és `AspectRatioList::CurrentAspect`
+    //: erőforrások szövege; a fordítás a Picasa hivatalos méretformátuma.
+    function formatCropPixelSize(width, height) {
+        return qsTr("%1$d x %2$d")
+            .replace("%1$d", width).replace("%2$d", height)
     }
 
     // az aktuálisan kiválasztott tétel — védve az esetleges (törlés utáni)
@@ -642,11 +683,11 @@ Rectangle {
     // Cancel/vágás-gombak sose adnak meg ilyet), a gomb a korábbi, sima
     // kinézetét mutatja, VÁLTOZATLANUL — ez a legtöbb PanelButton-hívó.
 
-    // #450: kitöltés/körvonal szín-választó — rögzített, PicasaPy-saját
-    // színpaletta (nincs a projektben natív ColorDialog-használat, ld.
-    // #450 jelentés), a kijelölt szín kék kerettel jelölt. A `currentColor`
-    // a controller mentett/piszkozat értékét tükrözi, `colorPicked` viszi
-    // vissza a kattintást a hívóhoz.
+    // #450/#4548: kitöltés/körvonal szín-választó — PicasaPy-saját
+    // palettával, spektrumválasztóval és előzmény-sorral (natív
+    // ColorDialog nélkül). A kijelölt szín kék kerettel jelölt; a
+    // `currentColor` a controller mentett/piszkozat értékét tükrözi,
+    // `colorPicked` viszi vissza a kattintást a hívóhoz.
 
     // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
     // 4. effekt-fül / 5. effekt-fül (#20, #328) — csak "tools" módban,

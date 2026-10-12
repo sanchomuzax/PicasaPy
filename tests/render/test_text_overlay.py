@@ -120,6 +120,7 @@ class TestOutlineAndFill:
         )
         np.testing.assert_array_equal(result, image)
 
+    @pytest.mark.usefixtures("renderelo_betuk")
     def test_opacity_csak_a_szoveg_pixeleit_erinti(self) -> None:
         image = np.full((60, 100, 3), 40, dtype=np.uint8)
         result = apply_text_overlay(

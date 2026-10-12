@@ -128,13 +128,16 @@ ezek az **almenü-fejlécek**:
 |---|---|---|
 | `Experimental` | **Kísérleti** | — |
 | `Geotag` | **Geocímke** | `ID_PICTURE_GEOTAG`, `ID_PICTURE_GEOUNTAG`, `ID_EXPORT_EARTH`, `ID_VIEW_EARTH` |
-| `Searchfor` | **Keresés…** | a hat `ID_S_<szín>`, `ID_SAVESEARCH`, `ID_SEARCHTOKEN`, `ID_DUPES` |
+| `Searchfor` | **Keresés…** | a hat `ID_S_<szín>` és az `ID_VIEW_BW` (`0x9da9`, fekete keresés) |
 | `Upload` | **Feltöltés** | `ID_TOOLS_UPLOAD`, `ID_TOOLS_UPLOAD_ES`, `ID_TOOLS_BATCH_UPLOAD`, `ID_TOOLS_YOUTUBE`, `ID_TOOLS_COLLAB` |
 
 ⚠️ A képernyőkép-alapú audit ezt az **almenü-szerkezetet** nem rögzítette.
 
-*A hozzárendelés bizonyítottsági foka: **erős** — a felirat-szemantikából és
-a névterek együtt-tárolásából; a menüépítő kódban nincs végigkövetve.*
+*A menüfejlécek általános hozzárendelésének bizonyítottsági foka: **erős** —
+a felirat-szemantikából és a névterek együtt-tárolásából. A `Searchfor`
+almenü hozzárendelése külön megerősített: a menüépítő `0x00d6e708`
+gyerek-táblát és 7 elemet állít be (`0x0055c36f`, `0x0055c379`; lásd a
+7. szakaszt).*
 
 ## 6. A hat `ID_S_<szín>` = KERESÉS SZÍN SZERINT
 
@@ -146,6 +149,10 @@ jelölt, mert a „Kék"/„Piros" szó máshol előfordul a fordításunkban):
 | `ID_S_BLUE` | Kék | | `ID_S_PURPLE` | Lila |
 | `ID_S_GREEN` | Zöld | | `ID_S_RED` | Piros |
 | `ID_S_ORANGE` | Narancssárga | | `ID_S_YELLOW` | Sárga |
+
+Ez a hat `ID_S_*` parancs; a Keresés… almenü leltára nem teljes velük:
+külön hetedik gyerek az `ID_VIEW_BW` kulcsú, `0x9da9` azonosítójú fekete
+keresés. A menüépítő mérését lásd a 7. szakaszban.
 
 **Ez nem színcímkézés, hanem keresés**: a `Searchfor` („Keresés…") almenü
 alatt ülnek, és a binárisban ott van hozzá az **`ImageColorSwatch`**
@@ -267,6 +274,17 @@ hogy három külön parancsról van szó. A `push`-olt sztring tehát **fordít�
 kulcs**, nem parancsnév: a „Fekete-fehér" feliratot három menü használja
 újra. A CSV maga is három `eMenuView,ID_VIEW_BW` sort tartalmaz — ezért
 ezek a sorok **üresen maradnak**: nem tudjuk, melyik sor melyik menüé.
+
+**A harmadik rekord a Keresés… almenü hetedik gyereke** — nem pusztán egy
+felirat nélküli diszpécserág. A `CMenuBar` a `Searchfor` rekordhoz a
+`0x0055c36f` utasításnál `0x00d6e708` gyerek-táblát, a `0x0055c379`-nél
+pedig **7** gyereket állít be. A `0x00d6e780` rekord a tábla hetedik,
+`0x14` bájtos lépésű eleme; a `0x0055c212`/`0x0055c217` a
+`eMenuView::ID_VIEW_BW` kulcsot és az `&Black and White` alapfeliratot,
+a `0x0055c269` pedig a `0x9da9` parancsazonosítót rendeli hozzá. A magyar
+felirat `&Fekete-fehér`. A korábbi „nincs hozzá menüfelirat” állítás
+helyesbítve: a feliratkulcs közös más menüpozíciókkal, de ezen a rekordon
+is van címke.
 
 Három ilyen ütközés van (`ID_VIEW_BW`, `ID_CAPTAG`, `ID_PICTURE_UNHIDE`),
 összesen 7 CSV-sort érintve.
@@ -435,10 +453,9 @@ billentyűnevek: `Delete` és háromszor `Enter`.
 | `0x00d6e560` | `0x9ca8` | `Propert&ies` | `Enter` | 6 |
 | `0x00d6e9b8` | `0x9cac` | `&Help Contents and Index` | `F1` | — |
 
-*(A `&Rename...` és a `&Locate on Disk` **kétszer** szerepel — a fő menüben
-és egy helyi menüben —, és a két példány mezői eltérnek: a `&Rename...`
-csak az egyik helyen kap ikont. A `Propert&ies` az egyetlen, amely
-gyorsbillentyűt ÉS ikont is visel.)*
+*(A `&Rename...` két rekordja a **Fájl** menüben és a **Kép ▸ Csoportos
+szerkesztés** almenüben van; mindkettő billentyűje `F2`, parancsa `0x9d4f`.
+A `&Locate on Disk` két rekordja a **Fájl** és a **Mappa** főmenüben.)*
 
 > ⛔ **2026-09-09, MÁSODIK MENET (#2821): A MEZŐ NEM IKON.** A `+0x08` a
 > **gyorsítóbillentyű-módosítók bitmaszkja** (`Ctrl+` / `Shift+` / `Alt+`).
@@ -1054,6 +1071,39 @@ kezdőcíme:
 ⇒ A `picasa-menu-parancsok.csv` kulcsrendű listája helyett **ez** a sorrend a
 mérvadó a menüsor felépítéséhez.
 
+### 10.1/a A Kép ▸ Csoportos szerkesztés almenüje
+
+A Kép menü `Batch Edit` rekordja (`0x00d6e4ac`) a `0x00d6e318` című
+gyerektáblára mutat; a gyerekszám **19** (`0x00d6e4bc`), az elválasztókat is
+beleértve. A 20 bájtos rekordok sorrendje és az üres rekordok adják az
+almenü sorrendjét és öt csoporthatárát:
+
+| # | rekord | angol felirat | parancsazonosító |
+|---:|---|---|---|
+| 1 | `0x00d6e318` | `&Rename...` (`F2`) | `0x9d4f` |
+| 2 | `0x00d6e32c` | — *(elválasztó)* | — |
+| 3 | `0x00d6e340` | `R&otate Clockwise` | `0x9ca2` |
+| 4 | `0x00d6e354` | `Rotate &Counterclockwise` | `0x9ca3` |
+| 5 | `0x00d6e368` | — *(elválasztó)* | — |
+| 6 | `0x00d6e37c` | `A&uto Contrast` | `0x9d49` |
+| 7 | `0x00d6e390` | `&Auto Color` | `0x9d48` |
+| 8 | `0x00d6e3a4` | `I'm Feeling &Lucky` | `0x9d5e` |
+| 9 | `0x00d6e3b8` | — *(elválasztó)* | — |
+| 10 | `0x00d6e3cc` | `&Sepia` | `0x9d4a` |
+| 11 | `0x00d6e3e0` | `S&harpen` | `0x9d4b` |
+| 12 | `0x00d6e3f4` | `&Warmify` | `0x9d4d` |
+| 13 | `0x00d6e408` | `&Film Grain` | `0x9d4e` |
+| 14 | `0x00d6e41c` | `&Black and White` | `0x9d4c` |
+| 15 | `0x00d6e430` | — *(elválasztó)* | — |
+| 16 | `0x00d6e444` | `Auto Red Eye Correction` | `0x9df1` |
+| 17 | `0x00d6e458` | — *(elválasztó)* | — |
+| 18 | `0x00d6e46c` | `Show Text` | `0x9deb` |
+| 19 | `0x00d6e480` | `Hide Text` | `0x9dec` |
+
+**14 művelet + 5 elválasztó.** A feliratkulcsok között van a fájlmenüből
+újrahasznált `eMenuFile::ID_FILE_RENAME`; a parancsazonosítója és az F2
+gyorsbillentyűje ettől a helytől is a meglévő átnevező párbeszédre vezet.
+
 ### 10.2 Feltételes tétel: `ID_TOOLS_DOWNLOAD_FACES`
 
 A „Download Name Tags from Picasa Web Albums” rekordja a Tools-tömbben ott
@@ -1083,4 +1133,3 @@ A „View and Edit” és az „Edit View” kép nélkül egy **Info** ablakot 
 „You must select an image to edit.” A többi tétel üres könyvtárral nem ad
 látható hatást (nincs kijelölés, nincs mit vetíteni), a Súgó webes tételei
 pedig böngészőt nyitnának.
-

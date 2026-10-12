@@ -22,6 +22,13 @@ def _gyerek(gyoker, nev):
     return elem
 
 
+#: A Repeater-delegáltak Python-burkolóit a teszt végéig életben tartjuk: a
+#: burkoló átmeneti megszűnése a windowsos CI-n „Internal C++ object
+#: (QQuickItem) already deleted" hibát adott a már lekért elemen
+#: (hipotézis: PySide-tulajdonjog / GC-időzítés, a QML-fa maga statikus).
+_ELO_DELEGALTAK: list = []
+
+
 def _ismetlo_elem(gyoker, qt_app, ismetlo_nev, index, gyerek_nev):
     ismetlo = _gyerek(gyoker, ismetlo_nev)
     kifejezes = QQmlExpression(
@@ -39,6 +46,7 @@ def _ismetlo_elem(gyoker, qt_app, ismetlo_nev, index, gyerek_nev):
         f"a(z) {ismetlo_nev} {index}. delegáltja nem épült fel"
     )
     delegalt = _delegalt_elkeszult.delegalt
+    _ELO_DELEGALTAK.append(delegalt)
     elem = (
         delegalt
         if delegalt.objectName() == gyerek_nev
@@ -362,6 +370,49 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     )
 
 
+def _meret_combo_geometriak(options, tab, qt_app, kiserletek=5):
+    """Az öt méretválasztó geometriája a méretrácshoz képest.
+
+    Egy kísérleten belül minden elemet ÚJRA lekérünk a fa gyökeréből; ha a
+    lekért burkoló közben érvénytelenné vált (RuntimeError), az egész mérést
+    megismételjük. Az utolsó hiba a diagnosztikával együtt kerül elő — a
+    hiba nem nyelődik el."""
+    utolso_hiba = None
+    for kiserlet in range(1, kiserletek + 1):
+        index = -1
+        try:
+            meret_racs = _gyerek(tab, "optionsPrintSizeGrid")
+            geometriak = []
+            for index in range(5):
+                combo = _ismetlo_elem(
+                    options, qt_app, "optionsPrintSizeRepeater", index,
+                    f"optionsPrintSizeCombo{index}",
+                )
+                cimke = _ismetlo_elem(
+                    options, qt_app, "optionsPrintSizeRepeater", index,
+                    f"optionsPrintSizeLabel{index}",
+                )
+                assert cimke.property("visible") is False, (
+                    "a méretválasztó fölösleges sorszámcímkéje látható maradt"
+                )
+                geometriak.append(
+                    (
+                        combo.mapToItem(meret_racs, QPointF(0, 0)),
+                        float(combo.width()),
+                        float(combo.height()),
+                    )
+                )
+            return geometriak
+        except RuntimeError as hiba:
+            utolso_hiba = f"{kiserlet}. kísérlet, {index}. delegált: {hiba}"
+            qt_app.processEvents()
+            time.sleep(0.1)
+    raise AssertionError(
+        f"a méretválasztók burkolója {kiserletek} kísérletre sem maradt "
+        f"érvényes: {utolso_hiba}"
+    )
+
+
 @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
 def test_nyomtatas_ful_ketoszlopos_elrendezese_a_referencia_szerint(
     qml_app, qt_app, magassag_elteres, tmp_path
@@ -392,32 +443,8 @@ def test_nyomtatas_ful_ketoszlopos_elrendezese_a_referencia_szerint(
         lambda: meret_racs.width() > 0 and beallitas_racs.width() > 0,
     ), "a nyomtatási beállítások rácsa nem rendeződött el"
 
-    combo_geometriak = []
-    for index in range(5):
-        combo = _ismetlo_elem(
-            options,
-            qt_app,
-            "optionsPrintSizeRepeater",
-            index,
-            f"optionsPrintSizeCombo{index}",
-        )
-        cimke = _ismetlo_elem(
-            options,
-            qt_app,
-            "optionsPrintSizeRepeater",
-            index,
-            f"optionsPrintSizeLabel{index}",
-        )
-        assert cimke.property("visible") is False, (
-            "a méretválasztó fölösleges sorszámcímkéje látható maradt"
-        )
-        combo_geometriak.append(
-            (
-                combo.mapToItem(meret_racs, QPointF(0, 0)),
-                float(combo.width()),
-                float(combo.height()),
-            )
-        )
+    combo_geometriak = _meret_combo_geometriak(options, tab, qt_app)
+    meret_racs = _gyerek(tab, "optionsPrintSizeGrid")
 
     pontok = [adat[0] for adat in combo_geometriak]
     meret_racs_kozepe = meret_racs.mapToScene(

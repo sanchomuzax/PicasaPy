@@ -23,7 +23,7 @@ from picasapy.fileops.originals import (
     copy_preserved_originals,
     originals_slot_free,
 )
-from picasapy.ini import Section, load_or_empty, update_document
+from picasapy.ini import Section, has_ini_source, load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
 
@@ -88,7 +88,7 @@ def copy_photo(path: Path, dest_folder: Path) -> Path:
 
     source_ini = path.parent / PICASA_INI_NAME
     source_section = (
-        load_or_empty(source_ini).section(path.name) if source_ini.exists() else None
+        load_or_empty(source_ini).section(path.name) if has_ini_source(source_ini) else None
     )
     if source_section is not None:
         _copy_ini_section(source_section, target, dest_folder)

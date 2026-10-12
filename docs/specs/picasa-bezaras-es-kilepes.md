@@ -488,7 +488,7 @@ parancs-forgalmazón át), nem ablaküzenet. A teljes leltár:
 | **főablak X** (egyéni címsor gomb) | `WM_SYSCOMMAND, SC_CLOSE` | WndProc `0x005e4d87` | a kilépési kapu fut le (kb. lépései) |
 | **lap X** (kollázs/film fül) | `<lapid>/close` — a gomb az azonosítóból építi: `"%x" + "/close"` (`0x005b2553`–`0x005b2565`) | `0x005b2410` | egy projekt-lap, háromválasztós megerősítéssel |
 | **jobb fiók X** (szerkesztőben) | `rightdrawerpanel/close` | `0x0057bb50` | a jobb oldali információsáv |
-| **nav X** | `nav/close` | `0x005de8e0` | a bal navigációs hasáb (keresőkonténer) |
+| **navigátor X** | `nav/close` | `0x005de8e0` | a szerkesztői nagyítás-navigátor lebegőablaka (`nav.tre`) |
 | **toys X** | `toys/close` | `0x005d56e0` | az egyszerű javítások panel eszköze |
 | **modális párbeszéd X** | `CloseModal` névparancs, vagy `WM_CLOSE` | `0x00983140` | az aktuális modális ablak |
 | **miniböngésző (Helyek)** X | `geo::close_tip` = „Ablak bezárása" | `0x00651580` | a geo/miniböngésző ablak |

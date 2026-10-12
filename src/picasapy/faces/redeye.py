@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import lru_cache
-from math import hypot
+from math import hypot, isfinite
 
 import numpy as np
 
@@ -62,6 +62,20 @@ def eye_circles_from_faces(
     return tuple(circles)
 
 
+def _circle_is_valid_for_image(
+    circle: EyeCircle, width: int, height: int
+) -> bool:
+    """A detektor pixeles körét csak érvényes `eye64`-adattá engedi tovább."""
+    return (
+        isfinite(circle.x)
+        and isfinite(circle.y)
+        and isfinite(circle.radius)
+        and 0.0 <= circle.x <= width
+        and 0.0 <= circle.y <= height
+        and 0.0 < circle.radius <= min(width, height)
+    )
+
+
 def detect_eye_circles(
     image_rgb: np.ndarray,
     detector: FaceDetector | None = None,
@@ -91,4 +105,9 @@ def detect_eye_circles(
             )
             for detection in detections
         )
-    return eye_circles_from_faces(detections)
+    height, width = image_rgb.shape[:2]
+    return tuple(
+        circle
+        for circle in eye_circles_from_faces(detections)
+        if _circle_is_valid_for_image(circle, width, height)
+    )

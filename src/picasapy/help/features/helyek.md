@@ -14,6 +14,41 @@ Hely megadása: jelöld ki a képeket a rácsban, majd **kattints jobb
 gombbal a térképen** arra a pontra, ahova tartoznak. A kijelölés minden
 képe megkapja a helyet.
 
+Ha a térképen egy **jelölőre kattintasz**, a kép kijelölődik, a rács pedig
+átvált a **helyhez kötött képek** nézetére — ugyanarra, mint az eszköztár
+földgömb-szűrője. A rács fölötti zöld sávon a **Vissza az összes
+megtekintéséhez** gomb (vagy a földgömb-szűrő újabb megnyomása) visszahozza
+a teljes nézetet.
+
+A jelölők a hely **egyik képének bélyegképét** mutatják. A jelölőre
+kattintva egy buborék is felnyílik („1 fotó itt:", illetve „*N* fotó
+itt:"), benne két gombbal:
+
+- **Ezen fotók keresése a Picasában** — a rácson kijelöli az ezen a
+  helyen lévő képeket;
+- **Helyadatok törlése** — ezekről a képekről leszedi a helyet (ötnél
+  több képnél előbb rákérdez, lásd lentebb).
+
+A jelölőre újra kattintva a buborék bezárul.
+
+### Kép húzása a térképre
+
+Helyet úgy is adhatsz, hogy a képeket a rácsból **a térképre húzod**, és
+ott elengeded. A program mindig rákérdez: „Ide teszi a képet?" — vagy ha
+a képnek már van helye, „Áthelyezi ide a képet?" (több képnél „Ide teszi
+mind a *N* képet?", illetve „Áthelyezi ide mind a *N* képet?"). Az
+**(OK)** gombbal a képek megkapják az elengedés helyét, a **Mégse**
+semmit nem változtat. Ha a kijelölésből húzol, a kijelölés összes képe
+megy.
+
+### Betöltés és internetkapcsolat
+
+A térkép csempéit a program az internetről tölti le. Amíg a térkép
+betöltődik, a panelen „Térkép betöltése..." áll. Ha nincs
+internetkapcsolat, és a térkép nem tud betöltődni, ezt írja ki: „A Picasa
+nem tudta inicializálni a Google Térképet. Ellenőrizze, hogy van-e
+internetkapcsolat." (A felirat az eredeti Picasáé.)
+
 A **Geocímkék törlése** gomb a kijelölt képekről leszedi a helyet; a
 gomb kiírja, hány képet érint. Ugyanez elérhető az **Eszközök ▸ Geocímke
 ▸ Geocímkék törlése** menüpontból is.
@@ -33,6 +68,23 @@ Kevesebb képnél a művelet kérdés nélkül lefut.
 > térkép helyett ezt írja ki: „A térkép-komponens (QtLocation) nem érhető
 > el. A geocímkék így is szerkeszthetők." A meglévő geocímkék ilyenkor is
 > olvashatók és törölhetők.
+
+### Keresés a helyek között és térképtípus
+
+A panelen a **Keresés** felirat alatt egy keresőmező és egy **Keresés**
+nagyító-gomb áll. **Ez nem címkereső** (ezért a felirata is egyszerűen
+*Keresés*): nem kérdez le térképszolgáltatást, és hálózati kérést sem
+küld. Amit beírsz, azt a program a **helyhez kötött képeid** között
+keresi: a fájlnévben, a feliratban, a címkékben és a mappa nevében. A
+térképen csak a találatok jelölői maradnak, és a „*N* kép rendelkezik
+hellyel" szám is ehhez igazodik. Entert nyomva vagy a gombra kattintva
+indul a szűrés; ha a mezőt kiürítve újra keresel, minden jelölő
+visszajön. Hely megadására (a térképen jobb gombbal) ez nem alkalmas.
+
+A képek számát mutató sor mellett egy **térképtípus-választó** áll: a térképszolgáltató által
+kínált típusok közül választhatsz. Hogy milyen típusok vannak, a
+rendszeren elérhető térkép-komponenstől függ; ha nincs választható típus,
+a választó csak a **Térkép** feliratot mutatja.
 
 ## Szűrés helyre
 

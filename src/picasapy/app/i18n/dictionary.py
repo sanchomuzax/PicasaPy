@@ -92,6 +92,18 @@ def normalise_original_text(value: str) -> str:
     return re.sub(r"[.:…]+$", "", cleaned).casefold()
 
 
+def trailing_punctuation(value: str) -> str:
+    """A záró írásjel osztálya: `…` és `...` azonos, a többi külön (`.`, `:`, üres)."""
+    cleaned = unicodedata.normalize("NFC", value).replace("&", "").strip()
+    found = re.search(r"[.:…]+$", cleaned)
+    if found is None:
+        return ""
+    marks = found.group()
+    if marks.endswith(":"):
+        return ":"
+    return "..." if marks.endswith("…") or marks.count(".") >= 2 else "."
+
+
 def index_original_texts(originals: dict[str, str]) -> dict[str, tuple[str, ...]]:
     """Normalizált szöveg → eredeti kulcsok; a nagy katalógushoz egyszer épül."""
     by_text: dict[str, list[str]] = defaultdict(list)
@@ -111,13 +123,24 @@ def match_original_translation(
 
     A normalizált magyar szöveg lehet több eredeti kulcs értéke is. Ilyenkor
     csak akkor párosítunk, ha minden jelölt kulcs megvan a célnyelvben, és
-    mindegyik ugyanazt a célnyelvi szöveget adja. Máskülönben `None` marad,
+    mindegyik ugyanazt a célnyelvi szöveget adja. Eltérő, kiírt záró írásjelű
+    jelölt (`...` vs `:`) nem számít jelöltnek. Máskülönben `None` marad,
     hogy a hívó unfinished állapotot írjon.
     """
     normal = normalise_original_text(hungarian_translation)
     if hungarian_index is None:
         hungarian_index = index_original_texts(hungarian_originals)
     keys = hungarian_index.get(normal, ())
+    # #4866: két különböző, kiírt záró írásjel (pl. „Fájlok..." és „Fájlok:") más
+    # elem; a „nincs írásjel" és a „van írásjel" párosítása továbbra is megengedett.
+    own = trailing_punctuation(hungarian_translation)
+    if own:
+        keys = tuple(
+            key
+            for key in keys
+            if key not in hungarian_originals
+            or trailing_punctuation(hungarian_originals[key]) in {"", own}
+        )
     if not keys or any(key not in target_originals for key in keys):
         return None
     target_values = {target_originals[key] for key in keys}

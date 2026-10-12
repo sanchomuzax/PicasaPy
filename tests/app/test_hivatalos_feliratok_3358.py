@@ -36,6 +36,9 @@ HIVATALOS = {
         "Tags::ID_APPLYTHISTAGTOSELECTION"),
     # #2921, második kör: a mappa-fejléc szinkron-felirata és az
     # adatbázis-áthelyező mappaválasztó címe
+    # #4596: a fájlválasztó ABLAKCÍME (a forrás-tallózó menüje: segédszöveg)
+    "Import Files/Folder": (
+        "Fájlok/mappa importálása", "CAcquireUI::importfilestitle"),
     "Sync to Web": ("Szinkronizálás az internettel", "SyncLabel::Off"),
     "Choose database location...": (
         "Adatbázis helyének kiválasztása…", "eMenuTools::ID_MOVE_DATABASE"),
@@ -43,6 +46,9 @@ HIVATALOS = {
     "This image's orientation has been modified by the Straighten tool and might not crop accurately.\nIf you encounter difficulty cropping this image, try undoing the Straighten fix, then recrop, and Straighten again if necessary.": (
         'A kép irányát megváltoztatta a „Kiegyenesítés” eszközzel, ami pontatlanságokat okozhat a vágás alkalmazásakor.\nHa nem sikerül a kép vágása, vonja vissza a „Kiegyenesítés” eszközzel végzett javítást, majd ismételje meg a vágást és - ha szükséges - a kiegyenesítést.',
         "IDS_WARN_CROP_ACCURACY"),
+    "This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.\nIf your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.": (
+        'A kép irányát megváltoztatta a „Kiegyenesítés” eszközzel, ami pontatlanságokat okozhat a vörösszemjavító négyszögek kiválasztásakor.\nHa a vörösszemjavítások igazítása helytelennek (vagy nem létezőnek) tűnik, vonja vissza a „Kiegyenesítés” eszközzel végzett javítást, majd ismételje meg a vörösszemjavításokat és - ha szükséges - a kiegyenesítést.',
+        "IDS_WARN_REDEYE_ACCURACY"),
     'Picasa has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that Picasa may have missed.': (
         'A Picasa vörösszem-effektusokat talált a képen, és kijavította őket.\n\nMegjegyzés: a keretbe kattintva visszavonhatja a változást.\n\nA Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan kijelölheti és kijavíthatja.',
         "RedEye::AutoFixedMessage"),
@@ -75,6 +81,10 @@ HIVATALOS = {
     "Use music for Slideshow and Movie presentation:": (
         "Zene használata diavetítéshez és mozgófilmes prezentációhoz:", "folderprops"),
     "Enter Folder Title": ("Mappa nevének megadása", "iCAcquireUI::SubFolder"),
+    # #4595: a célmappa-tipp (nem a rádiófelirat) — a katalógus szó szerint
+    "Enter new folder title or choose existing folder to continue": (
+        "A folytatáshoz írjon be egy új mappanevet, vagy válasszon egy létező mappát",
+        "acquirepanel/importtiptext"),
     "Date Taken (YYYY-MM-DD)": (
         "Készítés dátuma (ÉÉÉÉ. HH. NN.)", "iCAcquireUI::AutoDate"),
     "%1 (Today)": ("%1 (ma)", "iCAcquireUI::TodayDate"),
@@ -115,6 +125,17 @@ HIVATALOS = {
         "PeoplePanel::UnnamedCluster"),
     "Unnamed groups of people:": (
         "Név nélküli személycsoportok:", "PeoplePanel::Unnamed"),
+    # #4586: az Emberek panel állapot-feliratai (a %d helyén %1)
+    "Loading faces for file...": (
+        "Arcok betöltése a fájlhoz...", "PeoplePanel::Loading1"),
+    "Loading faces for %1 files...": (
+        "Arcok betöltése %1 fájlhoz...", "PeoplePanel::Loading2"),
+    "Looking for other people...": (
+        "További személyek keresése...", "PeoplePanel::Looking"),
+    "Sorting face data, %1%": (
+        "Arcok adatainak rendezése, %1%", "PeoplePanel::SortingData"),
+    ", %1 files unchecked.": (
+        ", %1 ellenőrizetlen fájl.", "PeoplePanel::Unchecked"),
 }
 
 #: a Gyorscímkék-útmutató (a két szóköz a mondatok között az eredetié)
@@ -137,7 +158,11 @@ ELOFORDULASOK = {
         "Select someone you know and add a name.",
         "Select someone you know and add a name"],
     "PicasaPy/PeoplePanel.qml": [
-        "Unnamed people in these photos:", "Unnamed groups of people:"],
+        "Unnamed people in these photos:", "Unnamed groups of people:",
+        # #4586
+        "Loading faces for file...", "Looking for other people...",
+        "Sorting face data, %1%", "Loading faces for %1 files...",
+        ", %1 files unchecked."],
     "PicasaPy/PicasaMenuBar.qml": ["From Faces in Selection..."],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
@@ -147,7 +172,8 @@ ELOFORDULASOK = {
         "Description (optional):", "Place taken (optional):",
         "Use music for Slideshow and Movie presentation:"],
     "PicasaPy/ImportSourceDialog.qml": [
-        "Enter Folder Title", "Date Taken (YYYY-MM-DD)", "%1 (Today)"],
+        "Enter Folder Title", "Date Taken (YYYY-MM-DD)", "%1 (Today)",
+        "Enter new folder title or choose existing folder to continue"],
     "PicasaPy/MoveDatabaseDialog.qml": [
         "Choose database location...", "Current database location:",
         "New database location:"],
@@ -170,8 +196,7 @@ ELAVULT = (
     "Align right",
     "Preserve Color",
     " s",
-    # #3575
-    "Enter new folder title or choose existing folder to continue",
+    # #3575: a szöveg rádiófeliratként volt hibás; tippként (#4595) helyes.
     "Import into separate folders for each date taken",
     "Import into folder with today's date",
     "Collection name:",

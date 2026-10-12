@@ -53,13 +53,44 @@ Window {
     // `addWatchedFolder`-jének mintája); a felület a megjelenítéshez
     // egyszerűen lehántja a "file://" előtagot.
     property string sourceFolder: ""
+    // #4596: a forrás kijelölt FÁJLOK listája is lehet (file:// URL-ek) —
+    // ekkor a `sourceFolder` üres. Mappa-választás törli.
+    property var sourceFiles: []
+    readonly property bool hasSource:
+        importSourceWindow.sourceFolder.length > 0
+        || importSourceWindow.sourceFiles.length > 0
     property string destFolder: ""
+
+    // A Qt által észlelt, csatolt kártyák és USB-meghajtók. A
+    // forrásfajta feliratát itt fordítjuk; a vezérlő csak útvonalat és
+    // kötetcímkét ad vissza.
+    readonly property var mountedSourceOptions: {
+        if (typeof importSourceController === "undefined"
+                || !importSourceController
+                || importSourceController.mountedSources === undefined)
+            return []
+        var sources = importSourceController.mountedSources
+        var options = []
+        for (var i = 0; i < sources.length; i++) {
+            options.push({
+                "path": sources[i].path,
+                "label": qsTr("Removable Drive (%1)").arg(sources[i].name)
+            })
+        }
+        return options
+    }
 
     // #441: a HÁROM célmappa-elnevezési mód — a `picasapy.importsource.
     // NAMING_*` konstansaival egyező string. A dátum szerinti bontás a
     // Picasa import-munkafolyamatának lelke, ezért ez az alapértelmezés.
     property string namingMode: "date"
     property string manualFolderName: ""
+    // #4837: a kézi név egyetlen, biztonságos útvonal-elem-e (Python dönt)
+    readonly property bool manualNameValid:
+        manualFolderName.trim().length > 0
+        && (!importSourceController
+            || importSourceController.isValidFolderName === undefined
+            || importSourceController.isValidFolderName(manualFolderName))
 
     // #441: "After Copying:" — a `picasapy.app.import_source_controller.
     // AFTER_COPY_*` konstansaival egyező string.
@@ -109,15 +140,31 @@ Window {
 
     property string lastError: ""
 
+    onVisibleChanged: {
+        if (visible
+                && typeof importSourceController !== "undefined"
+                && importSourceController
+                && importSourceController.refreshMountedSources !== undefined)
+            importSourceController.refreshMountedSources()
+    }
+
     //: #1629: a megjelenített útvonal OS-NATÍV alakban. A szöveges
     //: `file://`-levágás Windowson `/C:/Users/…`-t hagyott maga után; a
     //: helyes átalakítás csak Python-oldalon végezhető el (`to_local_path`,
     //: #1626). A null-őr a #305/#1572 mintája: a párbeszéd önálló
     //: próbákban is betöltődik, ahol a vezérlő nincs regisztrálva.
-    readonly property string sourceFolderDisplay:
-        (typeof fileOpsController !== "undefined" && fileOpsController)
-            ? fileOpsController.toLocalPath(importSourceWindow.sourceFolder)
-            : importSourceWindow.sourceFolder.replace(/^file:\/\//, "")
+    readonly property string sourceFolderDisplay: {
+        var toLocal = function (url) {
+            return (typeof fileOpsController !== "undefined" && fileOpsController)
+                ? fileOpsController.toLocalPath(url)
+                : url.replace(/^file:\/\//, "")
+        }
+        var files = importSourceWindow.sourceFiles
+        if (files.length > 0)
+            return toLocal(files[0])
+                + (files.length > 1 ? " (+" + (files.length - 1) + ")" : "")
+        return toLocal(importSourceWindow.sourceFolder)
+    }
     readonly property string destFolderDisplay:
         (typeof fileOpsController !== "undefined" && fileOpsController)
             ? fileOpsController.toLocalPath(importSourceWindow.destFolder)
@@ -148,9 +195,24 @@ Window {
         importSourceWindow.selectedPreviewIndex = 0
         importSourceWindow.lastCopiedCount = -1
         importSourceWindow.lastFailedCount = -1
-        if (importSourceWindow.sourceFolder.length === 0) return
+        if (!importSourceWindow.hasSource) return
         importSourceWindow.scanning = true
-        importSourceController.scanSource(importSourceWindow.sourceFolder)
+        if (importSourceWindow.sourceFiles.length > 0)
+            importSourceController.scanFiles(importSourceWindow.sourceFiles)
+        else
+            importSourceController.scanSource(importSourceWindow.sourceFolder)
+    }
+
+    // #4596: a fájlválasztó kijelölése lesz a forrás. Külön függvény, hogy a
+    // natív választó megkerülésével is tesztelhető legyen (AddFileDialog
+    // `addSelectedFiles` mintája).
+    function useSelectedFiles(fileUrls) {
+        if (!fileUrls || fileUrls.length === 0) return
+        importSourceWindow.sourceFolder = ""
+        importSourceWindow.sourceFiles = fileUrls.map(function (url) {
+            return url.toString()
+        })
+        importSourceWindow.scanCurrentSource()
     }
 
     // #441: a másolás tényleges indítása — a kétlépcsős megerősítés (ld.
@@ -169,6 +231,9 @@ Window {
     function requestImport() {
         if (importSourceWindow.destFolder.length === 0) return
         if (importSourceWindow.includedCount === 0) return
+        // #4595: kézi módban cím nélkül nincs import (és nincs megerősítés sem)
+        if (importSourceWindow.namingMode === "manual"
+                && !importSourceWindow.manualNameValid) return
         if (importSourceWindow.afterCopying === "leave") {
             importSourceWindow.runImportNow()
             return
@@ -267,21 +332,56 @@ Window {
                        ? importSourceController.recentSources : []
                 displayText: qsTr("Recent sources")
                 onActivated: {
+                    importSourceWindow.sourceFiles = []
                     importSourceWindow.sourceFolder = model[currentIndex]
                     importSourceWindow.scanCurrentSource()
                 }
             }
+            PicasaComboBox {
+                objectName: "importSourceMountedSourcesBox"
+                Layout.preferredWidth: 170
+                visible: count > 0
+                textRole: "label"
+                displayText: qsTr("Removable drives")
+                model: importSourceWindow.mountedSourceOptions
+                onActivated: {
+                    var source = model[currentIndex]
+                    if (!source) return
+                    importSourceWindow.sourceFiles = []
+                    importSourceWindow.sourceFolder = source.path
+                    importSourceWindow.scanCurrentSource()
+                }
+            }
+            // #4596: a „Tallózás…” kételemű menüt nyit: mappa vagy fájlok
+            // (az eredeti tallózó „Fájlok/mappa importálása” ablaka mindkettőt
+            // kínálta)
             PicasaButton {
+                id: chooseSourceButton
                 objectName: "importSourceChooseSourceButton"
                 text: qsTr("Browse...")
-                onClicked: sourceFolderDialog.open()
+                onClicked: chooseSourceMenu.popup(chooseSourceButton, 0,
+                                                  chooseSourceButton.height)
+            }
+            PicasaMenu {
+                id: chooseSourceMenu
+                objectName: "importSourceChooseMenu"
+                MenuItem {
+                    objectName: "importSourceChooseFolderItem"
+                    text: qsTr("Folder...")
+                    onTriggered: sourceFolderDialog.open()
+                }
+                MenuItem {
+                    objectName: "importSourceChooseFilesItem"
+                    text: qsTr("Files...")
+                    onTriggered: sourceFilesDialog.open()
+                }
             }
         }
 
         // #441: fájltípus-szűrő — az eredeti tallózó három szűrőt kínált
         // („Picture and Movie Files" / „Picture Files" / „All Files").
-        // Nálunk a forrás mindig MAPPA, ezért ugyanez a három fokozat a
-        // BEOLVASÁSRA vonatkozik: mi számítson importálandó jelöltnek.
+        // Ugyanez a három fokozat a BEOLVASÁSRA is vonatkozik (mappánál és
+        // fájllistánál egyaránt): mi számítson importálandó jelöltnek.
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
@@ -308,7 +408,7 @@ Window {
                     importSourceController.setMediaFilter(filterKeys[currentIndex])
                     // a szűrő a KÖVETKEZŐ beolvasásra érvényes — ha már van
                     // kiválasztott forrás, azonnal újraolvassuk
-                    if (importSourceWindow.sourceFolder.length > 0)
+                    if (importSourceWindow.hasSource)
                         importSourceWindow.scanCurrentSource()
                 }
             }
@@ -417,7 +517,7 @@ Window {
         Text {
             objectName: "importSourceEmptyText"
             visible: !importSourceWindow.scanning
-                     && importSourceWindow.sourceFolder.length > 0
+                     && importSourceWindow.hasSource
                      && importSourceWindow.previewCount === 0
                      && importSourceWindow.lastError.length === 0
             text: qsTr("No pictures or videos found in this folder.")
@@ -715,9 +815,23 @@ Window {
                 Layout.leftMargin: 24
                 enabled: importSourceWindow.namingMode === "manual"
                 text: importSourceWindow.manualFolderName
+                onTextEdited: importSourceWindow.manualFolderName = text
                 onEditingFinished: importSourceWindow.manualFolderName = text
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
+            }
+            // #4595: cím nélkül nincs import — a tipp ezt mondja ki
+            Text {
+                objectName: "importSourceManualTipText"
+                Layout.fillWidth: true
+                Layout.leftMargin: 24
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                visible: importSourceWindow.namingMode === "manual"
+                         && importSourceWindow.manualFolderName.trim().length === 0
+                //: #4595: `acquirepanel/importtiptext` (Text1)
+                text: qsTr("Enter new folder title or choose existing folder to continue")
             }
             RadioButton {
                 objectName: "importSourceNamingByDateRadio"
@@ -836,6 +950,8 @@ Window {
                 enabled: importSourceWindow.includedCount > 0
                          && importSourceWindow.destFolder.length > 0
                          && !importSourceWindow.importing
+                         && (importSourceWindow.namingMode !== "manual"
+                             || importSourceWindow.manualNameValid)
                 onClicked: importSourceWindow.requestImport()
             }
             PicasaButton {
@@ -848,11 +964,44 @@ Window {
 
     FolderDialog {
         id: sourceFolderDialog
+        objectName: "importSourceFolderDialog"
         title: qsTr("Choose source folder...")
         onAccepted: {
+            importSourceWindow.sourceFiles = []
             importSourceWindow.sourceFolder = selectedFolder.toString()
             importSourceWindow.scanCurrentSource()
         }
+    }
+
+    // #4596: kijelölt fájlok a forrás. A szűrők az eredeti tallózóéi
+    // („Picture and Movie Files” / „Picture Files” / „All Files”).
+    FileDialog {
+        id: sourceFilesDialog
+        objectName: "importSourceFilesDialog"
+        title: qsTr("Import Files/Folder")
+        fileMode: FileDialog.OpenFiles
+        // az eredeti három szűrője (picsmovfilter / picsfilter /
+        // allfilesfilter); a kiterjesztések az AddFileDialog (#2929) és a
+        // `scanner/filetypes.py` halmaza, a RAW is a „kép” része, mint a
+        // beolvasás `_FILTER_KINDS`-ében
+        readonly property string pictureGlobs:
+            "*.bmp *.gif *.jpe *.jpeg *.jpg *.png *.psd *.tga *.tif "
+            + "*.tiff *.webp "
+            + "*.3fr *.arw *.cr2 *.crw *.dcr *.dng *.kdc *.mrw "
+            + "*.nef *.nrw *.orf *.pef *.raf *.raw *.rw2 *.sr2 *.srf *.x3f"
+        readonly property string movieGlobs:
+            "*.3g2 *.3gp *.asf *.avi *.divx *.m2t *.m2ts *.m2v *.m4v "
+            + "*.mkv *.mmv *.mod *.mov *.mp4 *.mpeg *.mpg *.mts *.ogg "
+            + "*.ogv *.tod *.tp *.ts *.ty *.wmv"
+        nameFilters: [
+            qsTr("Picture and Movie Files")
+                + " (" + pictureGlobs + " " + movieGlobs + ")",
+            qsTr("Picture Files") + " (" + pictureGlobs + ")",
+            qsTr("All Files") + " (*)"
+        ]
+        onAccepted: importSourceWindow.useSelectedFiles(
+            selectedFiles.length > 0 ? selectedFiles
+            : (selectedFile.toString().length > 0 ? [selectedFile] : []))
     }
 
     FolderDialog {

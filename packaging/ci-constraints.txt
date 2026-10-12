@@ -1,0 +1,14 @@
+# A CI pontos Qt-verziója — EGYETLEN hely (#4834).
+#
+# A `pyproject.toml` `PySide6<6.12` korlátja (#4671) TARTOMÁNY: a CI ma 6.11.2-t
+# kap, a fejlesztői gép rendszer-PySide6-ja viszont 6.8.2 volt, QtLocation nélkül,
+# ezért sok hiba csak a CI-n jött ki. Ez a fájl a tartományon belül EGY pontos
+# verziót rögzít; a CI (`pip install -c packaging/ci-constraints.txt …`),
+# a `scripts/ci_venv.py` és a `scripts/run_tests.py` ugyanezt olvassa.
+#
+# Csak `név==verzió` sorok. A PySide6 három csomagja és a shiboken6 mindig
+# azonos verzión jár — együtt léptetendők. Frissítés: itt, egy helyen.
+PySide6==6.11.2
+PySide6_Essentials==6.11.2
+PySide6_Addons==6.11.2
+shiboken6==6.11.2

@@ -142,7 +142,8 @@ def test_photo_viewer_settings_component_loads_without_controller(qt_app):
 
 
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
-def test_fullscreen_startup_checkbox_saves_and_leaves_the_library_viewer_windowed(
+# rontás-kontroll: Main.qml.openPhotoViewer = hiányzik → 3 failed
+def test_fullscreen_startup_checkbox_controls_the_viewer_visibility(
     qml_app, qt_app, height_delta
 ):
     window, controller, _engine = qml_app
@@ -201,6 +202,10 @@ def test_fullscreen_startup_checkbox_saves_and_leaves_the_library_viewer_windowe
     assert int(saved.value("ViewerFullscreenStartup")) == 1
     QTest.keyClick(window, Qt.Key.Key_Escape)
     assert varj_feltetelre(qt_app, lambda: not dialog.property("opened"), 3.0)
+    window.showMaximized()
+    assert varj_feltetelre(
+        qt_app, lambda: window.visibility() == window.Visibility.Maximized, 3.0
+    ), "a tesztablak nem állt maximalizált állapotba"
 
     mouse_area = _lathato_elem(
         window, lambda elem: elem.objectName() == "thumbMouseArea"
@@ -210,9 +215,13 @@ def test_fullscreen_startup_checkbox_saves_and_leaves_the_library_viewer_windowe
     assert varj_feltetelre(qt_app, lambda: window.property("viewerOpen"), 3.0)
     assert varj_feltetelre(
         qt_app,
-        # #4432: a beállítás az eredeti ÖNÁLLÓ Fotónézőé (PicasaPhotoViewer.exe);
-        # a könyvtár beépített nézője bekapcsolt állapotban sem vált teljes
-        # képernyőre — ez működő viselkedés, nem írhatja felül.
-        lambda: window.visibility() == window.Visibility.Windowed,
+        lambda: window.visibility() == window.Visibility.FullScreen,
         3.0,
     )
+
+    vissza = _gyerek(window, "viewerBackButton")
+    _kattintas(vissza.window(), qt_app, vissza)
+    assert varj_feltetelre(qt_app, lambda: not window.property("viewerOpen"), 3.0)
+    assert varj_feltetelre(
+        qt_app, lambda: window.visibility() == window.Visibility.Maximized, 3.0
+    ), "a néző bezárása nem állította vissza az ablak korábbi állapotát"

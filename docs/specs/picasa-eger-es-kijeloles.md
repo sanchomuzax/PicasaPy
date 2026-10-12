@@ -144,6 +144,23 @@ A parszer **hexaként** olvassa, **`0x7F000000`** alapértelmezéssel:
 **A kijelölésen kívüli terület tehát nem kioltódik, hanem halványul** — a
 levágandó rész kontúrjai olvashatók maradnak.
 
+## 4/e A szerkesztői nagyítás-navigátor — `nav.tre` (#4568)
+
+A `nav/floater` lebegő ablak áttekintő bélyegképet (`nav/overview`) és
+nagyításfeliratot (`nav/zoom`) tartalmaz. A `nav/nav` réteg a `nav/navback`
+képen a `editpanel/previewimage` és `previewimage2` elemekhez kapcsolódik;
+a `Handler selectiondrag` ezért a látható képrész keretének húzását követi.
+A bélyegképen a kijelölt rész marad világos, a többit a
+`Property negativemode 8f2f2f2f` sötétíti. A `nav/close` bezárja a lebegő
+ablakot. A `nav/zoom` felirata az eredeti `ytZoomString::Value` szöveg:
+„Zoomed to %3.0f%%” (magyarul: „Nagyítás: %3.0f%%”); a százalék a fotó
+tényleges képpontméretéhez viszonyított nagyítás.
+
+Megvalósításkor a keret mérete és helye a fókuszban lévő kép és a látható
+képterület leképezéséből adódik; húzás a meglévő nagyítás-pásztázás állapotát
+módosítja. A nézetillesztésnél a keret a teljes képet fedi, nagyításnál pedig
+csak a képernyőn látható részt.
+
 ## 2. A 49 vezérlő, ami LENYOMÁSRA sül el
 
 *Forrás: `acquirepanel.tre:210` (`acquirepanel/sync_options_button`) · `compose_mail.tre:139` (`compose_mail/ltr`) · `compose_share.tre:129` (`compose_share/ltr`) — és további 12 elem ugyanott.*

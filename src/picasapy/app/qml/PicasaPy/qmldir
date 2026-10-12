@@ -9,12 +9,15 @@ MenuCimke 1.0 MenuCimke.qml
 PicasaMenu 1.0 PicasaMenu.qml
 LightboxHeader 1.0 LightboxHeader.qml
 PhotoViewer 1.0 PhotoViewer.qml
+ZoomNavigator 1.0 ZoomNavigator.qml
+EffectFocalPuck 1.0 EffectFocalPuck.qml
 FolderIcon 1.0 FolderIcon.qml
 PicasaComboBox 1.0 PicasaComboBox.qml
 AlbumIcon 1.0 AlbumIcon.qml
 SpecialAlbumIcon 1.0 SpecialAlbumIcon.qml
 ProjectIcon 1.0 ProjectIcon.qml
 LabelIcon 1.0 LabelIcon.qml
+AlignIcon 1.0 AlignIcon.qml
 FolderManagerDialog 1.0 FolderManagerDialog.qml
 FolderTreeItem 1.0 FolderTreeItem.qml
 FolderHierarchyView 1.0 FolderHierarchyView.qml
@@ -37,6 +40,7 @@ VideoPlayerView 1.0 VideoPlayerView.qml
 VideoPlayerControls 1.0 VideoPlayerControls.qml
 VideoViewport 1.0 VideoViewport.qml
 VideoExitGestureArea 1.0 VideoExitGestureArea.qml
+VideoEditPanel 1.0 VideoEditPanel.qml
 SlideshowView 1.0 SlideshowView.qml
 ScreensaverDialog 1.0 ScreensaverDialog.qml
 PhotoViewerSettingsDialog 1.0 PhotoViewerSettingsDialog.qml
@@ -47,6 +51,7 @@ EndEditModalityDialog 1.0 EndEditModalityDialog.qml
 RightDrawer 1.0 RightDrawer.qml
 DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
+KeywordsDialog 1.0 KeywordsDialog.qml
 QuickTagsConfigDialog 1.0 QuickTagsConfigDialog.qml
 PropertiesPanel 1.0 PropertiesPanel.qml
 PeoplePanel 1.0 PeoplePanel.qml
@@ -62,13 +67,16 @@ TrayActionSeparator 1.0 TrayActionSeparator.qml
 TrayAlbumToken 1.0 TrayAlbumToken.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
 EmailChoiceDialog 1.0 EmailChoiceDialog.qml
+OpenWithDialog 1.0 OpenWithDialog.qml
 SaveDialogs 1.0 SaveDialogs.qml
 InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml
 CreateDialogs 1.0 CreateDialogs.qml
 AdjustTimestampDialog 1.0 AdjustTimestampDialog.qml
 MovieTitleDialog 1.0 MovieTitleDialog.qml
+MoviePreviewFrame 1.0 MoviePreviewFrame.qml
 PlacesPanel 1.0 PlacesPanel.qml
+PlacesMarker 1.0 PlacesMarker.qml
 AboutDialog 1.0 AboutDialog.qml
 HelpDialog 1.0 HelpDialog.qml
 HelpWindow 1.0 HelpWindow.qml
@@ -76,6 +84,7 @@ WindowHelp 1.0 WindowHelp.qml
 ImportProgressPanel 1.0 ImportProgressPanel.qml
 BatchEditProgressPanel 1.0 BatchEditProgressPanel.qml
 XmpFacesProgressPanel 1.0 XmpFacesProgressPanel.qml
+XmpFacesWriteDialog 1.0 XmpFacesWriteDialog.qml
 SaveProgressPanel 1.0 SaveProgressPanel.qml
 PerfMonitorPanel 1.0 PerfMonitorPanel.qml
 PicasaImportDialog 1.0 PicasaImportDialog.qml
@@ -109,6 +118,7 @@ ProjectsSection 1.0 ProjectsSection.qml
 TagContextMenu 1.0 TagContextMenu.qml
 TrayContextMenu 1.0 TrayContextMenu.qml
 FolderPropertiesDialog 1.0 FolderPropertiesDialog.qml
+DateCalendarPopup 1.0 DateCalendarPopup.qml
 NewCollectionDialog 1.0 NewCollectionDialog.qml
 AddCustomAspectRatioDialog 1.0 AddCustomAspectRatioDialog.qml
 OptionsDialog 1.0 OptionsDialog.qml
@@ -129,6 +139,7 @@ UnnamedFacesView 1.0 UnnamedFacesView.qml
 ToolTile 1.0 ToolTile.qml
 PanelButton 1.0 PanelButton.qml
 TextColorSwatches 1.0 TextColorSwatches.qml
+ColorSpectrumPicker 1.0 ColorSpectrumPicker.qml
 EditorCropPanel 1.0 EditorCropPanel.qml
 EditorTextPanel 1.0 EditorTextPanel.qml
 EditorRetouchPanel 1.0 EditorRetouchPanel.qml

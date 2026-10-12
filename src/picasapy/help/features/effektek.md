@@ -6,9 +6,18 @@ bármikor visszavonható, és az eredeti fájlt nem érinti.
 Ha egy effektnek csúszkái vannak, azok a gomb megnyomása után jelennek
 meg a panelben; az **Alkalmaz** véglegesíti, a **Mégse** elveti.
 
+Az effektek hatása az eredeti Picasa számolását követi, ezért a mostani
+változatban több effekt — például a **Neon**, a **Lomo-szerű**, a **Helyi
+kontraszt** és a **HDR-szerű** — az eredetihez hűbben néz ki. Ha egy
+korábbi PicasaPy-verzióban szerkesztett képen ezeknél apró árnyalatbeli
+eltérést látsz, ez az oka; a beállításaid nem változtak.
+
 A csempe sarkában látható **kék jelvény** azt jelenti, hogy az az effekt
 **egy kattintással** hat: nincs mit állítani rajta, azonnal rákerül a
 képre.
+
+A **Polaroid**, a **60-as évek** és a **Kerekített élek** színválasztója
+**Háttérszín** néven szerepel: ez a kép köré kerülő háttér színe.
 
 Néhány effektnek **színválasztója** is van a csúszkák mellett — például a
 **Neon**é, ahol te adod meg, milyen színnel világítsanak a kontúrok
@@ -16,7 +25,9 @@ Néhány effektnek **színválasztója** is van a csúszkák mellett — példá
 
 A csempék kis előnézete a képed **mostani állapotát** mutatja: ha már
 tettél rá effektet — mondjuk fekete-fehérré alakítottad —, akkor minden
-csempe alapja is az, és a csempe csak a saját hatását teszi rá. Így
+csempe alapja is az, és a csempe csak a saját hatását teszi rá. Az
+előnézetek minden effekt **Alkalmaz**-a után azonnal a frissített
+állapotot mutatják. Így
 látod előre, mi lesz az eredmény, nem pedig azt, hogy hogyan hatna az
 effekt a nyers fotóra.
 
@@ -29,13 +40,13 @@ effekt a nyers fotóra.
 | Fekete-fehér | a színek elvétele |
 | Melegítés | a bőrtónusok melegebbé tétele |
 | Filmszemcse | filmes szemcsézettség, csúszkával állítható |
-| Árnyalás | egyszínű árnyalat a képre |
+| Árnyalás | egyszínű árnyalat a képre — a **Tinta színe** választóval (alapból világoskék) és a **Fokozat** csúszkával |
 | Telítettség | a színek erőssége |
 | Lágy fókusz | lágy, elmosott kép középen éles ponttal |
 | Ragyogás | fénylő, álmodozó hatás |
 | Szűrt FF | fekete-fehér, színszűrővel |
-| Fókuszos FF | egy pontot színesen hagy, a többit fekete-fehérré teszi |
-| Színátmenet | színes átmenet a kép egyik széle felől |
+| Fókuszos FF | egy pontot színesen hagy, a többit fekete-fehérré teszi — a **Méret** és az **Élesség** csúszkával |
+| Színátmenet | színes átmenet a kép egyik széle felől — a **Lágy perem** csúszka alapértéke 0,25 |
 
 ## Kreatív (4. fül)
 
@@ -71,12 +82,12 @@ mielőtt a színeket kiválasztja, ahogy az eredeti Picasa is tette.
 |---|---|
 | Felpörgetés | erősebb színek és kontraszt |
 | Szegély | keret a kép köré |
-| Képregény | rajzolt, képregényes hatás |
+| Képregény | rajzolt, képregényes, pontrácsos hatás — a **Színes ecset**, a **Pontsűrűség** és a **Ponthalványítás** csúszkával |
 | Árnyékvetés | árnyék a kép mögé |
 | Fókusznagyítás | egy pont felnagyítása, sugaras elmosással — a **Suhanás** és a **Fókuszméret** csúszkával |
 | Múzeumi matt | képkeret-szerű paszpartu |
 | Neon | világító kontúrok, választható színben |
-| Ceruzarajz | ceruzavázlat hatás |
+| Ceruzarajz | ceruzavázlat hatás — a **Sugár**, az **Erősség** és a **Fokozat** csúszkával |
 | Képpontnagyítás | durva képpontokra bontás — a **Képpontméret**, a **Keverési mód** és az **Elhalványítás** csúszkával |
 | Polaroid | fehér polaroid keret, megdöntve |
 | Lágyítás | lágy, elmosott kép — a **Lágyítás** és az **Elhalványítás** csúszkával |
@@ -89,7 +100,7 @@ köré — oldalt keskenyet, alul szélesebbet —, árnyékot vet alá, és meg
 A **Forgatás** csúszka pozitív értékénél a kép az **óramutató járása
 szerint** dől.
 
-A **Külső szín** nem a keretet festi: azt a hátteret adja, ami a megdöntött
+A **Háttérszín** nem a keretet festi: azt a hátteret adja, ami a megdöntött
 kép köré kerül, és amelyen az árnyék látszik. A keret fehér marad, bármit
 állítasz be — az eredeti Picasa is így csinálta.
 
@@ -146,6 +157,20 @@ erőssége attól függ, **hol áll a korong vízszintesen** — ha csak
 fel-le mozgatod, a középvonalon hagyva, az effekt nem mos. Az eredeti
 Picasa is így viselkedik.
 
+## A fókuszpont húzása a képen
+
+A pontra összpontosító effekteknél — **Lágy fókusz**, **Fókuszos FF**,
+**Színátmenet**, **Sugaras árnyalás**, **Fókusznagyítás** és
+**Képpontnövelés** — a hatás középpontját **a képen is megfoghatod**.
+Amíg az effekt csúszkás panelje nyitva van, a képen egy fehér karikás
+jelölő mutatja a fókuszpontot, és az egérmutató célkereszt. Kattints
+vagy húzz a bal egérgombbal oda, ahová a középpontot szeretnéd: a
+jelölő odaugrik, és a panel **Középpont X** és **Középpont Y** csúszkája
+követi.
+
+A **Színátmenet**nél a jelölőn egy rövid vonal is látszik: ez az átmenet
+irányát mutatja, és a pont vízszintes helyével együtt kissé el is fordul.
+
 ## Csúszkák, amiknek a felső vége a képmérethez igazodik
 
 Öt csúszka felső vége nem fix szám, hanem **a kép méretéhez** igazodik:
@@ -179,8 +204,8 @@ Picasában szerkesztett képnél. Részletek: [A szerkesztő](szerkeszto.md).
 ## Rejtett párok: a Shift billentyű
 
 Tíz csempe **másik effektet ad, ha a Shift billentyűt lenyomva tartod,
-amikor átváltasz az adott fülre**. A felirat is átvált, tehát látod, mit
-kapsz. Ezt az eredeti Picasa is így csinálta.
+amikor átváltasz az adott fülre**. A felirat és a kis előnézet is átvált,
+tehát látod, mit kapsz. Ezt az eredeti Picasa is így csinálta.
 
 | fül | a csempe alapból | Shifttel |
 |---|---|---|
@@ -194,6 +219,9 @@ kapsz. Ezt az eredeti Picasa is így csinálta.
 | Művészi | Szegély | Kerekített élek |
 | Művészi | Képpontnagyítás | Képpontnövelés |
 | További effektek | Filmszemcse | Régi filmszemcse |
+
+A **Ragyogás (régi)** csúszkás panelt nyit, mint a többi effekt: az
+**Intenzitás** és a **Sugár** csúszkával állíthatod.
 
 A **Képpontnövelés** nem az egész képet bontja durva képpontokra, hanem
 **csak a kör körül** — a kép egy pontja körüli folt éles marad, kifelé
@@ -211,8 +239,8 @@ nyílik**, mint a többi effektnél:
 A váltás **azonnali**: elég lenyomni a Shiftet, miközben az effekt-fülön
 állsz, és a tíz csempe felirata átvált; elengedve visszaáll.
 
-A csempe **kis előnézete az alap effekté marad**, csak a felirat és a
-hatás vált.
+A felirattal együtt a csempe **kis előnézete is átvált**: Shift alatt a
+másik effekt mintaképét mutatja, elengedve az alapét.
 
 A többi csempén a Shiftnek nincs hatása.
 

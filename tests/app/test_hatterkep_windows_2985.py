@@ -102,6 +102,7 @@ class TestALinuxAgErintetlen:
         nev = wallpaper.set_desktop_background(
             tmp_path / "k.bmp",
             platform="linux",
+            desktop="",
             runner=fut,
             which=lambda nev: "/usr/bin/" + nev if nev == "feh" else None,
         )

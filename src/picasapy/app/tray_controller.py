@@ -94,7 +94,7 @@ class TrayMixin:
         #: a MÁS mappából tartott képek rekordjai (a jelenlegi mappa
         #: rekordjai mindig a friss modellből jönnek, ld. `_tray_records`)
         self._tray_foreign: dict[int, object] = {}
-        self._tray_records_cache: tuple[int, list] | None = None
+        self._tray_records_cache: tuple[tuple[int, int], list] | None = None
         #: #1153: a tálca rekordjai a RÁCS modelljéből jönnek, de eddig
         #: csak a tálca SAJÁT változására frissültek. Egy szerkesztés (vagy
         #: bármely külső felülírás) új `mtime_ns`-t ad, tehát új
@@ -179,7 +179,11 @@ class TrayMixin:
         """
         self._ensure_tray_wired()
         gyorstar = self._tray_records_cache
-        if gyorstar is not None and gyorstar[0] == self._tray_revision:
+        cache_key = (
+            self._tray_revision,
+            int(getattr(self._photos, "revision", 0)),
+        )
+        if gyorstar is not None and gyorstar[0] == cache_key:
             return gyorstar[1]
         ids = tray.photo_ids(self._tray)
         aktualis = {photo.id: photo for photo in self._photos.photos}
@@ -199,7 +203,7 @@ class TrayMixin:
             for photo_id in ids
         ]
         rekordok = [record for record in rekordok if record is not None]
-        self._tray_records_cache = (self._tray_revision, rekordok)
+        self._tray_records_cache = (cache_key, rekordok)
         return rekordok
 
     # -- lekérdezések a felület felé --------------------------------------

@@ -11,16 +11,20 @@ bekötés (öröklés-lista/context-property, Main.qml gomb, a bal hasáb
 `PeopleMixin` is önállóan, host-osztályos teszttel készült (#397), és a
 `controller.py`-beli bekötésére vár.
 
-MODELL NÉLKÜL a szkennelés TISZTÁN kikapcsol: a `modelUnavailable` jelzés
-megy ki, a meglévő index/alkalmazás-működés érintetlen (ld.
-`picasapy.faces.detector` modul-docstringje — a CI-ben nincs garantált
-hálózat és a modellfájl nincs jelen).
+Ha valamelyik modell nincs sem a csomagban, sem a felhasználói
+modellmappában, a szkennelés TISZTÁN kikapcsol: a `modelUnavailable`
+jelzés megy ki, a meglévő index/alkalmazás-működés érintetlen. A szokásos
+telepítés mindkét modellt tartalmazza, így ehhez nem kell hálózat.
 
 IMPORTNÁL A PICASA DÖNTÉSEI SZENTEK: a saját detektorunk KIHAGYJA azokat a
 fotókat, amelyeken már van EMBER ÁLTAL adott névcímke (`faces=` legalább
 egy azonosított bejegyzéssel) — ezeket SOHA nem értékeljük újra.
 
-#26 (2. lépcső): a `computeEmbeddings()` külön, alacsonyabb prioritású sor. Az SFace az első csoportosítási kéréskor automatikusan letöltődik, a csoportosítás pedig a betöltés után a háttérben folytatódik.
+#26 (2. lépcső): a `computeEmbeddings()` külön, alacsonyabb prioritású sor.
+Az SFace a csomagból töltődik be; ha onnan és a felhasználói
+modellmappából is hiányzik, az első csoportosítási kérés elindítja a
+tartalék letöltést, majd a csoportosítás a betöltés után a háttérben
+folytatódik.
 
 #26 (3. lépcső, bekötés): `unnamedGroups()` adja a „Névtelenek" album
 CSOPORTOSÍTOTT nézetét (Picasa „Group by face"/„Expand groups"), az
@@ -32,11 +36,13 @@ jövőbeli csoportosítás ne értékelje újra."""
 from __future__ import annotations
 
 import logging
+import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Property, QLocale, QObject, Signal, Slot
+from PySide6.QtCore import QSettings, Property, QLocale, QObject, Qt, Signal, Slot
+from PySide6.QtGui import QGuiApplication
 
 from picasapy.cvimage import dekodolj_forrast, scale_down
 from picasapy.faces import detector as detector_module
@@ -52,7 +58,10 @@ from picasapy.faces.clustering import (
 )
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
+    PhotoRecord,
+    album_photos,
     all_photos,
+    clear_faces,
     faces_for_photo,
     faces_missing_embedding,
     ignored_faces,
@@ -66,9 +75,12 @@ from picasapy.index import (
     unignore_faces,
     mark_faces_named,
     open_index,
+    photos_in_folder,
     face_scan_done,
+    forget_face_scan,
     mark_face_scan,
     replace_faces,
+    reset_all_faces as reset_all_faces_in_index,
     store_embedding,
     sync_tree,
     unnamed_album_photos,
@@ -87,6 +99,7 @@ from .face_ignore_ini import (
     parse_ini_face_key,
     quantize_rect,
 )
+from .arc_nagyitas_url import arc_cimke
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 from .faces_helper import FacesHelper
 from .worker_thread import BackgroundWorkerMixin
@@ -100,10 +113,6 @@ _log = logging.getLogger(__name__)
 # szkennelést). A YuNet kis felbontáson is jól teljesít (issue #26).
 _DETECT_MAX_DIMENSION = detector_module.MAX_DETECTION_DIMENSION
 
-# Ennyi feldolgozott fotónként commitolunk — a dedup-hash-scan mintáját
-# követve (megszakított futás munkája sem vész el, ld. dedup_controller.py).
-_COMMIT_BATCH_SIZE = 50
-
 # #26 (3. lépcső): egy csoportban ennyi arcot mutatunk „Expand groups"
 # kikapcsolt állapotban — a teljes csoport a bekapcsolt állapotban látszik
 # (ld. `unnamedGroups()`). Csak megjelenítési korlát, a kijelölés/névadás
@@ -112,6 +121,11 @@ _COMMIT_BATCH_SIZE = 50
 # szándékosan: „Expand groups" nélkül a felhasználó a reprezentatív
 # részhalmazt nevezi el, ami a Picasa csoport-előnézetének felel meg).
 _COLLAPSED_GROUP_PREVIEW = 12
+
+
+def _path_key(path: str | Path) -> str:
+    """A fájlútvonal platformhelyes összehasonlító alakja."""
+    return os.path.normcase(os.path.normpath(str(path)))
 
 
 class FaceScanController(BackgroundWorkerMixin, QObject):
@@ -130,6 +144,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # A modell hiányzik/nem tölthető be — a szkennelés el sem indul, ez
     # NEM hiba (a funkció tervezett, hiánytűrő kikapcsolása).
     modelUnavailable = Signal()
+    _scanWorkerStopped = Signal()
 
     # #26 (2. lépcső): lenyomat-számítás + csoportosítás — a detektálásnál
     # ALACSONYABB PRIORITÁSÚ, KÜLÖN indítható sor (ld. osztály-docstring).
@@ -144,6 +159,12 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # csoportosítás, vagy sikeres tömeges névadás után) — a bal hasáb
     # sorának darabszáma ezt figyeli.
     unnamedCountChanged = Signal()
+    # A függő név-javaslat változott; a főnézet erre frissíti a panelt és a
+    # személy-album fejlécének javaslatszámát.
+    faceSuggestionsChanged = Signal()
+
+    # #4627: a menüsor és a helyi menük Ctrl/Shift ágának megerősítése.
+    faceResetConfirmationRequested = Signal(str)
 
     # #449: a háttér-beolvasás haladása az ALBUMLISTÁBAN jelenik meg
     # („Scanning for faces… %d%% complete"), nem modális ablakban — semmi
@@ -151,6 +172,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # bal hasáb sorának DEKLARATÍV kötés kell, ezért a százalék NOTIFY-
     # property is (−1 = épp nem fut).
     scanPercentChanged = Signal()
+    #: #4586: az Emberek panel állapot-sora (spec 9/b) ezekből él — a futó
+    #: keresés hátralévő fájljainak száma és a lenyomat-számítás haladása.
+    uncheckedFilesChanged = Signal()
+    sortingPercentChanged = Signal()
+    #: #4586: a keresés új arcot mentett — a panel listája frissülhet a
+    #: keresés KÖZBEN, nem csak a végén.
+    facesStored = Signal()
 
     # #1496: a modellfájl LETÖLTÉSE a felületről. A #1473 óta a párbeszéd
     # megmondja, mi hiányzik — de a felhasználó (aki nem programozó) ettől
@@ -211,15 +239,36 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         #: keresés vége frissíti.
         self._ini_ignored_cache: tuple[IniIgnoredFace, ...] | None = None
         self._stop_event: threading.Event | None = None
+        #: #4517: a modellhiány oka munkamenetenként egyszer kerül a naplóba.
+        self._unavailable_logged = False
         self._automatic_scan = False
+        self._pending_face_reset_paths: list[str] = []
+        self._resume_scan_after_reset = False
+        self._resume_face_reset_force_scan = False
+        self._scanWorkerStopped.connect(self._finish_reset_after_scan)
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
         self._scan_percent = -1
+        #: #4586: a futó keresés hátralévő (még nem ellenőrzött) fájljai
+        self._unchecked_files = 0
+        #: #4586: a futó keresés által ténylegesen detektálandó, még nem
+        #: kész fotók (`_path_key`); a szálak között `_pending_lock` védi
+        self._pending_paths: set[str] = set()
+        self._pending_lock = threading.Lock()
+        #: #4586: a lenyomat-számítás haladása százalékban, −1 ha nem fut
+        self._sorting_percent = -1
         #: #1496: a futó modell-letöltés haladása, −1 ha nem fut
         self._model_download_percent = -1
         self._model_download_stop_event: threading.Event | None = None
         self._embedding_after_download = False
         self._embedding_options_after_download: tuple[bool, int, int] | None = None
+        # #4619: a sikeres detektálás után a második lépés automatikusan
+        # indul, ha a névjavaslatok be vannak kapcsolva. A scan-jelzés a
+        # workerből érkezik; a kifejezetten sorba tett kapcsolat a GUI-szálra
+        # viszi vissza a beállítások olvasását és a következő worker indítását.
+        self.scanFinished.connect(
+            self._auto_group_after_scan, Qt.ConnectionType.QueuedConnection
+        )
 
     @Slot(result=bool)
     def isAvailable(self) -> bool:
@@ -376,6 +425,82 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             self._scan_percent = percent
             self.scanPercentChanged.emit()
 
+    @Property(int, notify=uncheckedFilesChanged)
+    def uncheckedFiles(self) -> int:  # noqa: N802 — QML-property-stílus
+        """#4586: a futó keresés még nem ellenőrzött fájljainak száma
+        (`PeoplePanel::Unchecked`); 0, ha nem fut."""
+        return self._unchecked_files
+
+    def _set_unchecked_files(self, count: int) -> None:
+        if count != self._unchecked_files:
+            self._unchecked_files = count
+            self.uncheckedFilesChanged.emit()
+
+    @Slot("QVariantList", result=int)
+    def pendingAmong(self, paths) -> int:  # noqa: N802 — QML-slot-stílus
+        """#4586: a megadott fotóútvonalak közül hányat fog még detektálni a
+        futó keresés (`PeoplePanel` betöltés / ellenőrizetlen fájlok). Az
+        Emberek panel kapuja a KIJELÖLÉSRE vonatkozik, nem a könyvtárra:
+        egy már átvizsgált képnél nincs „betöltés". Nem futó keresésnél 0."""
+        keys = [_path_key(str(path)) for path in paths]
+        with self._pending_lock:
+            if not self._pending_paths:
+                return 0
+            return sum(1 for key in keys if key in self._pending_paths)
+
+    def _build_pending(self, conn, photos) -> set[str]:
+        """A worker átlépési feltételei szerint a ciklus ELŐTT felépített
+        halmaz: engedélyezett mappa, nem videó, nincs lefutott keresés, és
+        nincs azonosított arc az ini-ben."""
+        pending: set[str] = set()
+        ini_cache: dict = {}
+        for photo in photos:
+            photo_path = Path(photo.folder_path) / photo.name
+            if not self._face_detection_enabled(str(photo_path.parent)):
+                continue
+            if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
+                continue
+            if face_scan_done(
+                conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+            ):
+                continue
+            if any(
+                face.is_identified
+                for face in ini_faces_of(photo_path, ini_cache)
+            ):
+                continue
+            pending.add(_path_key(photo_path))
+        return pending
+
+    def _owns_scan(self, stop_event: threading.Event) -> bool:
+        """Ez a szál a JELENLEGI keresés (vagy nincs másik futó)? A
+        `_pending_lock` alatt hívandó. Egy újabb keresés a régi szál
+        megszakítása után indul, ezért a régi szál `finally`-je és haladása
+        nem írhat az újabb állapotába (#4586)."""
+        return self._stop_event is None or self._stop_event is stop_event
+
+    def _mark_checked(self, photo_path: Path, stop_event: threading.Event) -> None:
+        """A kép kikerül a függők közül — de CSAK a saját keresésének
+        halmazából: egy újabb keresés halmazát a régi szál nem bántja."""
+        key = _path_key(photo_path)
+        with self._pending_lock:
+            if not self._owns_scan(stop_event):
+                return
+            self._pending_paths.discard(key)
+            remaining = len(self._pending_paths)
+        self._set_unchecked_files(remaining)
+
+    @Property(int, notify=sortingPercentChanged)
+    def sortingPercent(self) -> int:  # noqa: N802 — QML-property-stílus
+        """#4586: az arc-lenyomatok számításának haladása (0–100), −1 ha nem
+        fut (`PeoplePanel::SortingData`)."""
+        return self._sorting_percent
+
+    def _set_sorting_percent(self, percent: int) -> None:
+        if percent != self._sorting_percent:
+            self._sorting_percent = percent
+            self.sortingPercentChanged.emit()
+
     # -- #1496: a modellfájl beszerzése a felületről ------------------------
 
     @Property(int, notify=modelDownloadPercentChanged)
@@ -424,9 +549,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def downloadModels(self) -> None:  # noqa: N802 — QML-slot-stílus
         """A hiányzó arcfelismerő modellek letöltése — háttérszálon.
 
-        A felhasználó kérésére vagy az SFace-csoportosítás első indításakor
-        indul. A YuNet csomagolt modell, így normál telepítésen csak az
-        SFace kerül a letöltési sorba."""
+        A felhasználó kérésére indul, illetve tartalék útként akkor, ha a
+        csoportosításhoz hiányzik az SFace. Normál telepítésen mindkét
+        modell csomagolt, ezért nincs letöltési feladat."""
         if self._model_download_percent >= 0:
             return  # már fut — a második kattintás ne indítson újat
         if not model_download.missing_specs():
@@ -582,8 +707,34 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         tarthatja."""
         self._start_face_scan(automatic=False)
 
-    def _start_face_scan(self, *, automatic: bool) -> None:
+    @Slot(str)
+    def scanFolder(self, folder_path: str) -> None:  # noqa: N802 — QML-slot-stílus
+        """A helyi mappamenüből csak a megadott mappa képeit vizsgálja."""
+        with open_index(self._db_path) as conn:
+            photos = photos_in_folder(conn, folder_path)
+        self._start_face_scan(automatic=False, photos=photos)
+
+    @Slot(str)
+    def scanAlbum(self, token: str) -> None:  # noqa: N802 — QML-slot-stílus
+        """A helyi albummenüből csak az adott album tagképeit vizsgálja."""
+        with open_index(self._db_path) as conn:
+            photos = album_photos(conn, token)
+        self._start_face_scan(automatic=False, photos=photos)
+
+    def _start_face_scan(
+        self,
+        *,
+        automatic: bool,
+        photos: tuple[PhotoRecord, ...] | None = None,
+    ) -> None:
         if not self._detector.available:
+            # #4517: a felület jelzése mellett a hibanaplóba is kerüljön,
+            # különben a „nem talál arcot” okát semmi nem rögzíti.
+            if not self._unavailable_logged:
+                self._unavailable_logged = True
+                _log.warning(
+                    "az arcfelismerés nem indul: %s", self.unavailableReason()
+                )
             self.modelUnavailable.emit()
             return
         if automatic and self._stop_event is not None:
@@ -595,7 +746,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._set_scan_percent(0)
         self.scanStarted.emit()
         self._start_background(
-            self._run_scan, args=(stop_event,), name="picasapy-face-scan"
+            self._run_scan, args=(stop_event, photos), name="picasapy-face-scan"
         )
 
     @Slot()
@@ -608,6 +759,18 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if not self.automaticDetectionEnabled() or self._stop_event is not None:
             return
         self._start_face_scan(automatic=True)
+
+    @Slot(int, int)
+    def _auto_group_after_scan(self, _found: int, _scanned: int) -> None:
+        """Sikeres keresés után automatikusan indítja a 2. lépést (#4619).
+
+        Az eredeti `FRAddSuggesetions` kapcsolója az egész csoportosítási/
+        javaslati lépést kapuzza. A kézi csoportosítás változatlanul elérhető
+        kikapcsolt beállítás mellett; az automatikus út a küszöböket a már
+        meglévő `computeEmbeddings()` híváson keresztül veszi át.
+        """
+        if self.suggestionsEnabled():
+            self.computeEmbeddings()
 
     @Slot()
     def cancelScan(self) -> None:
@@ -731,7 +894,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 all_ok = False
         if written_ids:
             with open_index(self._db_path) as conn:
-                mark_faces_named(conn, written_ids)
+                mark_faces_named(conn, written_ids, clean_name)
                 # a `people_in_index` a `folders.has_ini` alapján dönt,
                 # melyik mappa `.picasa.ini`-jét olvassa (ld.
                 # `index/people.py`) — az ÚJONNAN írt ini (első névadás egy
@@ -798,7 +961,26 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             name = row["suggested_name"] if row is not None else None
         if not name:
             return False
-        return self.assignNameToFaces([int(face_id)], name)
+        accepted = self.assignNameToFaces([int(face_id)], name)
+        if accepted:
+            self.faceSuggestionsChanged.emit()
+        return accepted
+
+    @Slot(int, result=bool)
+    def rejectSuggestion(self, face_id: int) -> bool:  # noqa: N802
+        """Egyetlen arc név-javaslatának elvetése, az arc mellőzése nélkül."""
+        azonosito = int(face_id)
+        with open_index(self._db_path) as conn:
+            row = conn.execute(
+                "SELECT suggested_name FROM face WHERE id = ?", (azonosito,)
+            ).fetchone()
+            if row is None or not row["suggested_name"]:
+                return False
+            set_suggested_name(conn, azonosito, None)
+            conn.commit()
+        self.unnamedCountChanged.emit()
+        self.faceSuggestionsChanged.emit()
+        return True
 
     @Slot(str, result=int)
     def personSuggestionCount(self, name: str) -> int:  # noqa: N802
@@ -811,6 +993,21 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             return 0
         with open_index(self._db_path) as conn:
             return len(suggested_faces_for(conn, name))
+
+    @Slot(str, result="QVariantList")
+    def personSuggestionPaths(self, name: str) -> list[str]:  # noqa: N802
+        """A személy függő javaslatait tartalmazó fotók útvonala (#4588).
+
+        A fejléc egy fotósor-kijelölésen keresztül éri el a javaslatokat;
+        ugyanazon a fotón több egyező arc is lehet, ezért az útvonalak
+        egyediek. Az üres név nem tartozik személy-albumhoz.
+        """
+        if not name:
+            return []
+        with open_index(self._db_path) as conn:
+            return list(dict.fromkeys(
+                str(arc.photo_path) for arc in suggested_faces_for(conn, name)
+            ))
 
     def _szemely_javaslatai(
         self, name: str, face_ids: list | None
@@ -981,19 +1178,138 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     @Slot(list, result=int)
     def resetFacesForPhotos(self, image_paths) -> int:  # noqa: N802 — QML-slot-stílus
-        """A kijelölt képek Picasa-féle arc-téglalapjainak törlése (#4258).
+        """A kijelölt képek arcadatainak törlése és újrakeresése (#4510).
 
         A `.picasa.ini` írása kizárólag a `FacesHelper`/`ini` API-n megy.
-        A függvény nem végez könyvtárszintű műveletet; visszatérési értéke
-        a sikeresen kezelt képek száma."""
-        if self._faces_helper is None or not image_paths:
+        Az index saját találatai és átnézettségi jelölése az `index/`
+        API-ján keresztül törlődik. A következő keresés a már meglévő
+        automatikus háttérúton fut; futó keresés esetén annak biztonságos
+        leállása után indul újra.
+
+        Visszatérési értéke a kijelölt, érvényes útvonalak száma."""
+        if not image_paths:
             return 0
         paths = tuple(dict.fromkeys(str(path) for path in image_paths if path))
-        completed = 0
+        if not paths:
+            return 0
+
+        modifiers = QGuiApplication.keyboardModifiers()
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            self.faceResetConfirmationRequested.emit("removeAllFaceData")
+            return 0
+        if modifiers & Qt.KeyboardModifier.ShiftModifier:
+            self.faceResetConfirmationRequested.emit("resetAllFaces")
+            return 0
+
         for image_path in paths:
-            if self._faces_helper.removeAllFaces(image_path):
-                completed += 1
-        return completed
+            if self._faces_helper is not None:
+                self._faces_helper.removeAllFaces(image_path)
+
+        return self._schedule_face_reset(paths)
+
+    @Slot(result=int)
+    def removeAllFaceData(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """A Ctrl-ág: teljes ini-/index-törlés, majd teljes újra-arcfelismerés."""
+        paths = self._all_photo_paths()
+        if not paths:
+            return 0
+        if self._faces_helper is not None and not self._faces_helper.removeAllFaceData(
+            paths
+        ):
+            return 0
+        self._ini_ignored_cache = None
+        self._schedule_face_reset(paths, force_scan=True)
+        return len(paths)
+
+    @Slot(result=int)
+    def resetAllFaces(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """A Shift-ág: a névhozzárendeléseket törli, az arcokat megtartja."""
+        paths = self._all_photo_paths()
+        if self._faces_helper is not None and not self._faces_helper.resetAllFaces(
+            paths
+        ):
+            return 0
+        with open_index(self._db_path) as conn:
+            affected = reset_all_faces_in_index(conn)
+            conn.commit()
+        self._ini_ignored_cache = None
+        self.unnamedCountChanged.emit()
+        return affected
+
+    def _all_photo_paths(self) -> tuple[str, ...]:
+        """A jelenleg indexelt könyvtár összes fotójának abszolút útvonala."""
+        with open_index(self._db_path) as conn:
+            return tuple(
+                str(Path(photo.folder_path) / photo.name) for photo in all_photos(conn)
+            )
+
+    def _schedule_face_reset(
+        self, paths: tuple[str, ...], *, force_scan: bool = False
+    ) -> int:
+        """Az index törlése és az érintett fotók újra-arcfelismerése."""
+        if self._stop_event is not None or self._pending_face_reset_paths:
+            self._pending_face_reset_paths.extend(
+                path
+                for path in paths
+                if path not in self._pending_face_reset_paths
+            )
+            self._resume_scan_after_reset = True
+            self._resume_face_reset_force_scan |= force_scan
+            self.cancelScan()
+            return len(paths)
+
+        self._reset_index_faces(paths)
+        if not self._detector.available:
+            self.modelUnavailable.emit()
+        elif force_scan:
+            self._start_face_scan(automatic=False)
+        else:
+            self.scanNewFaces()
+        return len(paths)
+
+    def _reset_index_faces(self, image_paths: tuple[str, ...] | list[str]) -> int:
+        """A kijelölt fotók származtatott arcadatait üríti az `index/` API-val."""
+        with open_index(self._db_path) as conn:
+            photos_by_path = {
+                _path_key(Path(photo.folder_path) / photo.name): photo.id
+                for photo in all_photos(conn)
+            }
+            photo_ids = {
+                photos_by_path[_path_key(path)]
+                for path in image_paths
+                if _path_key(path) in photos_by_path
+            }
+            if photo_ids and photo_ids == set(photos_by_path.values()):
+                # A teljes könyvtár resetjénél a korábbi klaszter-centroidok
+                # is elavulnak. Az index API előbb leválasztja és törli őket;
+                # a részleges, kijelöléses ág érintetlen marad.
+                reset_all_faces_in_index(conn)
+            for photo_id in photo_ids:
+                clear_faces(conn, photo_id)
+                forget_face_scan(conn, photo_id=photo_id)
+            conn.commit()
+        if photo_ids:
+            self._ini_ignored_cache = None
+            self.unnamedCountChanged.emit()
+        return len(photo_ids)
+
+    @Slot()
+    def _finish_reset_after_scan(self) -> None:
+        """A futó szkennelés után érvényesíti a függő reseteket és újraindít."""
+        if not self._resume_scan_after_reset:
+            return
+        paths = tuple(self._pending_face_reset_paths)
+        self._pending_face_reset_paths.clear()
+        self._resume_scan_after_reset = False
+        force_scan = self._resume_face_reset_force_scan
+        self._resume_face_reset_force_scan = False
+        self._reset_index_faces(paths)
+        if not self._detector.available:
+            self.modelUnavailable.emit()
+        elif force_scan:
+            self._start_face_scan(automatic=False)
+        else:
+            self.scanNewFaces()
 
     @Slot(result=int)
     def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus
@@ -1080,7 +1396,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def computeEmbeddings(self) -> None:
         """Lenyomat-számítás (SFace) a még lenyomat nélküli arcokon, majd a
         névtelen arcok inkrementális csoportosítása — KÜLÖN, a detektálásnál
-        alacsonyabb prioritású sor. Ha csak az SFace hiányzik, elindítja a
+        alacsonyabb prioritású sor. Ha az SFace a csomagból és a
+        felhasználói modellmappából is hiányzik, elindítja a
         háttér-letöltést, majd automatikusan folytatja a csoportosítást."""
         grouping_options = self._csoportositasi_beallitasok()
         if not self._embedder.available:
@@ -1126,11 +1443,22 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     # -- worker-szál törzse -------------------------------------------------
 
-    def _run_scan(self, stop_event: threading.Event) -> None:
+    def _run_scan(
+        self,
+        stop_event: threading.Event,
+        scoped_photos: tuple[PhotoRecord, ...] | None = None,
+    ) -> None:
         try:
             with open_index(self._db_path) as conn:
-                photos = all_photos(conn)
+                photos = all_photos(conn) if scoped_photos is None else scoped_photos
                 total = len(photos)
+                pending = self._build_pending(conn, photos)
+                with self._pending_lock:
+                    if not self._owns_scan(stop_event):
+                        # közben újabb keresés indult: az övé a halmaz
+                        pending = set()
+                    self._pending_paths = pending
+                self._set_unchecked_files(len(pending))
                 found = 0
                 scanned = 0
                 for done, photo in enumerate(photos, start=1):
@@ -1138,44 +1466,54 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         conn.commit()
                         self.scanCancelled.emit()
                         return
-                    photo_path = Path(photo.folder_path) / photo.name
-                    if not self._face_detection_enabled(str(photo_path.parent)):
-                        self._report_scan(done, total)
-                        continue
-                    ini_faces = ini_faces_of(photo_path)
-                    if any(face.is_identified for face in ini_faces):
-                        # a Picasa döntése szent — nem értékeljük újra
-                        self._report_scan(done, total)
-                        continue
-                    if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
-                        self._report_scan(done, total)
-                        continue
-                    # #2519: már lefutott ezen a fájlállapoton — a `face`
-                    # tábla ürességéből ez nem látszana (arc nélküli fotó =
-                    # nulla sor), ezért kell a külön nyom. A `kizarva`
-                    # jelölést a fájl változása sem oldja fel.
-                    if face_scan_done(
-                        conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
-                    ):
-                        # #3670: a Picasa a mi keresésünk UTÁN is mellőzhette
+                    try:
+                        photo_path = Path(photo.folder_path) / photo.name
+                        if not self._face_detection_enabled(str(photo_path.parent)):
+                            self._report_scan(done, total)
+                            continue
+                        ini_faces = ini_faces_of(photo_path)
+                        if any(face.is_identified for face in ini_faces):
+                            # a Picasa döntése szent — nem értékeljük újra
+                            self._report_scan(done, total)
+                            continue
+                        if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
+                            self._report_scan(done, total)
+                            continue
+                        # #2519: már lefutott ezen a fájlállapoton — a `face`
+                        # tábla ürességéből ez nem látszana (arc nélküli fotó =
+                        # nulla sor), ezért kell a külön nyom. A `kizarva`
+                        # jelölést a fájl változása sem oldja fel.
+                        if face_scan_done(
+                            conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+                        ):
+                            # #3670: a Picasa a mi keresésünk UTÁN is mellőzhette
+                            _mark_previously_ignored(conn, photo.id, ini_faces)
+                            conn.commit()
+                            self._report_scan(done, total)
+                            continue
+                        faces = self._detect(
+                            photo_path,
+                            source_width=photo.width,
+                            source_height=photo.height,
+                        )
+                        replace_faces(conn, photo.id, faces)
                         _mark_previously_ignored(conn, photo.id, ini_faces)
-                        self._report_scan(done, total)
-                        continue
-                    faces = self._detect(
-                        photo_path,
-                        source_width=photo.width,
-                        source_height=photo.height,
-                    )
-                    replace_faces(conn, photo.id, faces)
-                    _mark_previously_ignored(conn, photo.id, ini_faces)
-                    mark_face_scan(
-                        conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
-                    )
-                    found += len(faces)
-                    scanned += 1
-                    if scanned % _COMMIT_BATCH_SIZE == 0:
+                        mark_face_scan(
+                            conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+                        )
+                        found += len(faces)
+                        scanned += 1
+                        # A következő kép detektálása több másodperc lehet; ne
+                        # tartsa addig az SQLite írási zárát.
                         conn.commit()
-                    self._report_scan(done, total)
+                        self._mark_checked(photo_path, stop_event)
+                        if faces:
+                            # a commit UTÁN: a panel már a mentett arcot látja
+                            self.facesStored.emit()
+                        self._report_scan(done, total)
+                    finally:
+                        # a `continue` ágak is kivéve a függők közül (#4586)
+                        self._mark_checked(photo_path, stop_event)
                 conn.commit()
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
             _log.exception("arc-detektálás hiba: %s", self._db_path)
@@ -1183,12 +1521,19 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             return
         finally:
             self._ini_ignored_cache = None
-            if self._stop_event is stop_event:
-                self._stop_event = None
-                self._automatic_scan = False
-            # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
-            # hibára futott (#449)
-            self._set_scan_percent(-1)
+            with self._pending_lock:
+                owner = self._owns_scan(stop_event)
+                if owner:
+                    self._stop_event = None
+                    self._automatic_scan = False
+                    self._pending_paths = set()
+            if owner:
+                # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
+                # hibára futott (#449). Egy közben indult ÚJABB keresés
+                # állapotát (százalék, függők) a régi szál nem bántja.
+                self._set_scan_percent(-1)
+                self._set_unchecked_files(0)
+            self._scanWorkerStopped.emit()
         self.unnamedCountChanged.emit()
         self.scanFinished.emit(found, scanned)
 
@@ -1209,6 +1554,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 pending = faces_missing_embedding(conn)
                 total = len(pending)
                 embedded = 0
+                self._set_sorting_percent(0)
                 for done, face in enumerate(pending, start=1):
                     if stop_event.is_set():
                         conn.commit()
@@ -1231,8 +1577,10 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     if embedding is not None:
                         store_embedding(conn, face.id, embedding)
                         embedded += 1
-                    if done % _COMMIT_BATCH_SIZE == 0:
-                        conn.commit()
+                    # Az SFace következő futása szintén a tranzakción kívül
+                    # történjen.
+                    conn.commit()
+                    self._set_sorting_percent(round(100 * done / total))
                     self.embeddingProgress.emit(done, total)
                 conn.commit()
                 grouped = group_unnamed_faces(
@@ -1249,6 +1597,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         finally:
             if self._embedding_stop_event is stop_event:
                 self._embedding_stop_event = None
+            self._set_sorting_percent(-1)
         self.embeddingFinished.emit(embedded, grouped)
 
     def _detect(
@@ -1298,21 +1647,26 @@ def _group_payload(faces, label: str) -> dict:
     buster NÉLKÜL (a Névtelenek albumban ez nem kritikus)."""
     return {
         "label": label,
-        "faces": [
-            {
-                "faceId": face.id,
-                # #1656: a megjelenítési mód cimkéje
-                "thumbUrl": (
-                    f"image://thumbs/{face.photo_id}"
-                    f"{current_display_mode_suffix()}"
-                ),
-                # #26 (4. lépcső): a MÉG EL NEM DÖNTÖTT név-javaslat. Az
-                # eredeti kérdésként vetette fel (`PeoplePanel::
-                # SuggestionFmt` = „%s?"), pipa/x gombbal.
-                "suggestedName": face.suggested_name or "",
-            }
-            for face in faces
-        ],
+        "faces": [_face_tile_payload(face) for face in faces],
+    }
+
+
+def _face_tile_payload(face) -> dict:
+    """Egy névtelen csempe URL-je arc-kivágással, a közös thumb-provideren."""
+    thumb_url = f"image://thumbs/{face.photo_id}"
+    if face.rect is not None:
+        # A `?&fz=` mellett a provider a PhotoRecordból veszi az elforgatást;
+        # nem írunk rá mesterséges `r=0` értéket. A megjelenítési mód marad
+        # a szokásos URL-rész, ahogy a teljes képes csempén is volt.
+        thumb_url += f"?{arc_cimke(face.rect)}"
+    thumb_url += current_display_mode_suffix()
+    return {
+        "faceId": face.id,
+        "thumbUrl": thumb_url,
+        # #26 (4. lépcső): a MÉG EL NEM DÖNTÖTT név-javaslat. Az eredeti
+        # kérdésként vetette fel (`PeoplePanel::SuggestionFmt` = „%s?"),
+        # pipa/x gombbal.
+        "suggestedName": face.suggested_name or "",
     }
 
 

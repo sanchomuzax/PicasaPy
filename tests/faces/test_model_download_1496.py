@@ -358,24 +358,26 @@ class TestMegszakitas:
 class TestHianyzoModellek:
     """`missing_specs()` — a felület ebből tudja, van-e mit letölteni."""
 
-    def test_ures_felhasznaloi_mappaban_csak_az_sface_hianyzik(
+    def test_ures_felhasznaloi_mappaban_a_csomagolt_modellek_miatt_nincs_hiany(
         self, tmp_path, monkeypatch
     ):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
         monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
         monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
-        assert {spec.key for spec in missing_specs()} == {"embedder"}
-        assert total_missing_bytes() == EMBEDDER_SPEC.size_bytes
+        assert missing_specs() == ()
+        assert total_missing_bytes() == 0
 
-    def test_a_meglevo_modell_kimarad(self, tmp_path, monkeypatch):
+    def test_a_csomagolt_modellek_mellett_nincs_felhasznaloi_mappabeli_hiany(
+        self, tmp_path, monkeypatch
+    ):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
         monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
         monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
         mappa = tmp_path / "picasapy" / "models"
         mappa.mkdir(parents=True)
         (mappa / DETECTOR_SPEC.filename).write_bytes(b"mar-megvan")
-        assert {spec.key for spec in missing_specs()} == {"embedder"}
-        assert total_missing_bytes() == EMBEDDER_SPEC.size_bytes
+        assert missing_specs() == ()
+        assert total_missing_bytes() == 0
 
 
 class TestEgyuttesLetoltes:
@@ -400,8 +402,10 @@ class TestEgyuttesLetoltes:
         monkeypatch.setattr(
             "picasapy.faces.model_download.MODEL_SPECS", tuple(specek)
         )
-        # #4315: a detektor a csomaggal érkezik, így csak a felismerő hiányzik.
-        letoltendo = [spec for spec in specek if spec.key != "detector"]
+        # Külön szimulált tartalék eset: mindkét csomagmodell hiányzik.
+        monkeypatch.setattr("picasapy.faces.detector.bundled_model_path", lambda: None)
+        monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
+        letoltendo = list(specek)
         osszes = sum(spec.size_bytes for spec in letoltendo)
         haladas: list[tuple[int, int]] = []
 
@@ -428,6 +432,8 @@ class TestEgyuttesLetoltes:
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
         monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
         monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+        monkeypatch.setattr("picasapy.faces.detector.bundled_model_path", lambda: None)
+        monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
         eredmenyek = download_missing(
             base_url="http://127.0.0.1:1/nincs", timeout=1.0
         )

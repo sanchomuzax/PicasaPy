@@ -37,6 +37,7 @@ from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from pathlib import Path
 
+from picasapy.ini.names import INI_NAME, LEGACY_INI_NAME
 from picasapy.paths import normalize_path
 
 from .filetypes import media_kind_if_enabled, media_kind_of
@@ -44,11 +45,11 @@ from .name_filters import NameFilters, default_name_filters
 
 logger = logging.getLogger(__name__)
 
-PICASA_INI_NAME = ".picasa.ini"
+PICASA_INI_NAME = INI_NAME
 # Korai Picasa-verziók vezető pont nélküli, nagybetűs néven írták az init
 # (ld. docs/specs/picasa-ini-format.md) — a bejárás ezt is ini-jelenlétnek
 # tekinti, hogy a mappa ne maradjon ki tévesen ini nélkülinek.
-PICASA_INI_LEGACY_NAME = "Picasa.ini"
+PICASA_INI_LEGACY_NAME = LEGACY_INI_NAME
 
 # Kihagyás-döntés (#143): (mappa, mappa-mtime_ns, ini-mtime_ns vagy None)
 # → True, ha a mappa fájljainak stat-olása kihagyható (a mappa változatlan).

@@ -133,11 +133,14 @@ class _HamisLenyomatolo:
 
 @pytest.fixture
 def modell_mappa(tmp_path, monkeypatch):
-    """Üres, IDEIGLENES modell-mappa — a felhasználó valódi mappájához
-    (`~/.local/share/picasapy/models`) egyetlen teszt sem nyúlhat."""
+    """Hiányzó-modell tesztekhez izolált, IDEIGLENES modellmappa.
+
+    A tesztek külön szimulálják azt a tartalék esetet, amikor a csomagolt
+    modell nincs jelen; a felhasználó valódi mappájához nem nyúlnak."""
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
     monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
     monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+    monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
     return tmp_path / "xdg" / "picasapy" / "models"
 
 
@@ -199,11 +202,8 @@ def _parbeszed(qt_app, vezerlo):
 class TestAutomatikusSfaceFolyamatjelzes:
     @pytest.mark.parametrize("height_offset", [-5, 0, 5])
     def test_automatikus_letoltes_lathato_folyamatot_mutat(
-        self, qt_app, tmp_path, monkeypatch, height_offset
+        self, qt_app, tmp_path, modell_mappa, monkeypatch, height_offset
     ):
-        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
-        monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
-        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
         vezerlo = _vezerlo(
             tmp_path,
             _HamisDetektor(available=True),
@@ -523,6 +523,15 @@ class TestLetoltesUtanElo:
             uzenet="a modellbetöltés hibája után beragadt a párbeszéd",
         )
         assert vezerlo.waitForBackgroundWorkers(15.0)
+        # A vezérlő a `finally`-ben előbb a százalékot állítja −1-re (ettől
+        # hamis a `downloading`), és csak UTÁNA küldi a befejező jelet; a
+        # szál bevárása után a sorba állított jelet még kézbesíteni kell (#4825).
+        _var(
+            qt_app,
+            lambda: bool(parbeszed.property("statusText")),
+            masodperc=5.0,
+            uzenet="a letöltés befejező üzenete nem érkezett meg",
+        )
 
         assert betoltott_fajlok.get("detector") == tartalom[
             "/" + specek[0].relative_url

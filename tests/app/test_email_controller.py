@@ -374,6 +374,7 @@ class TestSendRows:
         with patch(
             "picasapy.app.email_controller._which", return_value="/usr/bin/xdg-email"
         ), patch("picasapy.app.email_controller._popen") as popen:
+            popen.return_value.wait.return_value = 0
             ok = controller.sendWithDefaultClient(
                 ["/tmp/a.jpg"], "Tárgy", "Szöveg", False
             )
@@ -384,6 +385,24 @@ class TestSendRows:
         assert "--attach" in argv
         # Windowson a Path backslash-formát ad — az elvárás is azzal számol
         assert str(Path("/tmp/a.jpg")) in argv
+
+    def test_nonzero_xdg_email_exit_emits_failure(self, qt_app, tmp_path):
+        controller = _kuldo_controller([], tmp_path)
+        events = []
+        controller.emailFailed.connect(events.append)
+        with patch(
+            "picasapy.app.email_controller._which", return_value="/usr/bin/xdg-email"
+        ), patch("picasapy.app.email_controller._popen") as popen:
+            popen.return_value.wait.return_value = 3
+            ok = controller.sendWithDefaultClient(
+                ["/tmp/a.jpg"], "Tárgy", "Szöveg", False
+            )
+
+        assert ok is False
+        assert events == [controller.tr("No email program was found.")]
+        popen.return_value.wait.assert_called_once_with(
+            timeout=email_controller_module._XDG_EMAIL_VARAKOZAS_S
+        )
 
     def test_popen_failure_emits_email_failed(self, qt_app, tmp_path):
         controller = _kuldo_controller([], tmp_path)
