@@ -127,17 +127,18 @@ class TestAlbumContextMenu:
 
 
 class TestPeopleAlbumContextMenu:
-    """A `PplAlbum` osztály négy tétele — ezek a dokumentumban név szerint
-    mind szerepelnek, tehát a lista teljes."""
+    """A mért PplAlbum-tételsor bekötött része, a #4599 rendezés nélkül."""
 
     EXPECTED = [
-        "peopleAlbumMenuDelete",
         "peopleAlbumMenuEdit",
         "peopleAlbumMenuSelectAll",
         "peopleAlbumMenuClearSelection",
+        "peopleAlbumMenuInvertSelection",
+        "peopleAlbumMenuRefreshThumbnails",
+        "peopleAlbumMenuDelete",
     ]
 
-    def test_all_four_commands_are_present_in_order(self, qml_engine):
+    def test_all_six_commands_are_present_in_order(self, qml_engine):
         menu = _load(qml_engine, "PeopleAlbumContextMenu")
         found = [
             child.objectName()
@@ -171,6 +172,11 @@ class TestPeopleAlbumContextMenu:
         [
             ("peopleAlbumMenuSelectAll", "selectAllRequested"),
             ("peopleAlbumMenuClearSelection", "clearSelectionRequested"),
+            ("peopleAlbumMenuInvertSelection", "invertSelectionRequested"),
+            (
+                "peopleAlbumMenuRefreshThumbnails",
+                "refreshThumbnailsRequested",
+            ),
         ],
     )
     def test_trigger_emits_matching_signal(

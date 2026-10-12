@@ -1016,6 +1016,9 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | PplAlbum | PplAlbum::ID_EDITALBUM | Emberek-album szerkesztése | objectName=peopleAlbumMenuEdit | **megvan és működik** | A People Manager a kattintott személyt jelöli ki: tests/app/qml_functional/test_people_album_context_menu_4587.py |
 | PplAlbum | PplAlbum::ID_SELECTALL | Összes kijelölése | objectName=peopleAlbumMenuSelectAll | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
 | PplAlbum | PplAlbum::ID_CLEARSELECTION | Kijelölés törlése | objectName=peopleAlbumMenuClearSelection | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| PplAlbum | Album::ID_SELECT_INVERT | Kiválasztás megfordítása | objectName=peopleAlbumMenuInvertSelection | **megvan és működik** | tests/app/qml_functional/test_people_album_menu_4645.py |
+| PplAlbum | Album::ID_REFRESH_THUMB | Indexképek frissítése | objectName=peopleAlbumMenuRefreshThumbnails | **megvan és működik** | tests/app/qml_functional/test_people_album_menu_4645.py |
+| PplAlbum | Album::SortAlbumBy | Album rendezésének alapja almenü | — | **hiányzik — a #4599 után kötjük be** | A #4599 része; ebben a körben a tétel kimarad |
 | PplAlbumPhoto | PplAlbumPhoto::ID_DELETEFROMPEOPLEALBUM | Eltávolítás az Emberek albumból | objectName=contextMenuRemoveFromPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_PEOPLEALBUMS | Hozzáadás egy meglévő Emberek-albumhoz | objectName=contextMenuAddToPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_MOVETONEWPERSON | Áthelyezés új személyhez | objectName=contextMenuMoveToNewPerson | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
