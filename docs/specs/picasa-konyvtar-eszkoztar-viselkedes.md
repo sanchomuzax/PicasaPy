@@ -72,6 +72,12 @@ felület minden `thumbui/<név>` kattintását ide vezeti; innen ágazik el az
   névbekérő ablak**. A `0x0065b840` nem párbeszéd, hanem a könyvtárnézet
   frissítése (a `searchcontainer/*` elemeket kezeli), a `+0x166` pedig nem
   „album készül" jelző, hanem egy **általános újrarajzolás-jelző**.
+> ⚠️ **Megkérdőjelezve (2026-10-12, #4534):** a `0x006dc030` új leírónál
+> (`+0x08` = −1) mindig felépíti a `CEditAlbum` párbeszédet, és csak OK-ra ad
+> igazat; az `…, 1, 0` argumentum az „Album tulajdonságai” címet választja.
+> A „párbeszéd nélkül” állítás tehát nem áll meg — a bizonyíték:
+> `picasa-menu-parancsok-viselkedes.md`, „`FolderPhoto::ID_PICTURE_SPLITALBUMHERE`”
+> szakasz, 11. pont.
 - **Menüegyenérték:** **IGEN** — a `0x005cb990` menü-parancstáblában
   (a korábbi körben már feltárt View/Album parancs-diszpécser) van olyan
   ág, ami ugyanide, a `"thumbui/newalbum"` néven szimulált kattintáson
