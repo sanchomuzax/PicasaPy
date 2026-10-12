@@ -195,6 +195,66 @@ def test_egy_meglevo_albumhely_minden_tagon_megakadalyozza_az_atvetelt(
     assert document.section("c.jpg").get("albumorder") is None
 
 
+def _album_rekord(ut, places):
+    from picasapy.pmpimport.importer import PhotoRecord
+
+    return PhotoRecord(
+        local_path=str(ut),
+        windows_path="C:\\\\nincs",
+        row=0,
+        caption=None,
+        rotate=None,
+        star=False,
+        filters=None,
+        crop64=None,
+        tags=(),
+        latitude=None,
+        longitude=None,
+        faces=(),
+        manual_album_places=places,
+    )
+
+
+def test_masik_mappa_tagjai_nem_kapnak_albumhelyet_ha_az_album_mmar_mashol_elfoglalt(
+    tmp_path,
+):
+    """A globális őr: az album egyik tagjának mappájában már van hely."""
+    from picasapy.ini.document import parse_document
+    from picasapy.pmpimport.db3_atvetel import rekordokat_atvesz
+
+    elso = tmp_path / "elso"
+    masodik = tmp_path / "masodik"
+    elso.mkdir()
+    masodik.mkdir()
+    for ut in (elso / "a.jpg", elso / "b.jpg", masodik / "c.jpg"):
+        ut.write_bytes(b"")
+    (elso / ".picasa.ini").write_text(
+        f"[a.jpg]\nalbums={_ALBUM_ID}\nalbumorder={_ALBUM_ID}:40.0\n"
+        f"[b.jpg]\nalbums={_ALBUM_ID}\n",
+        encoding="utf-8",
+    )
+    (masodik / ".picasa.ini").write_text(
+        f"[c.jpg]\nalbums={_ALBUM_ID}\n", encoding="utf-8"
+    )
+
+    rekordokat_atvesz(
+        [
+            _album_rekord(elso / "a.jpg", ((_ALBUM_ID, 1.0),)),
+            _album_rekord(elso / "b.jpg", ((_ALBUM_ID, 2.0),)),
+            _album_rekord(masodik / "c.jpg", ((_ALBUM_ID, 3.0),)),
+        ],
+        backup=False,
+    )
+
+    elso_dok = parse_document((elso / ".picasa.ini").read_text(encoding="utf-8"))
+    masodik_dok = parse_document(
+        (masodik / ".picasa.ini").read_text(encoding="utf-8")
+    )
+    assert elso_dok.section("a.jpg").get("albumorder") == f"{_ALBUM_ID}:40.0"
+    assert elso_dok.section("b.jpg").get("albumorder") is None
+    assert masodik_dok.section("c.jpg").get("albumorder") is None
+
+
 def test_a_meglevo_mappasorrendet_teljesen_erintetlenul_hagyja(
     tmp_path, remapper
 ):
