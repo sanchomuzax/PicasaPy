@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.79] – 2026-10-12
+
+- Az elrejtett mappák az index újraépítése után is rejtettek maradnak: az elrejtés mostantól a mappa .picasa.ini fájljába kerül (mint a Picasában), a Picasában elrejtett mappák rejtve jelennek meg, és a Picasában beállított rejtett-mappa jelszó átvehető az importkor (#4597).
+- Az elrejtett mappák képei a mappán kívül sem látszanak többé: a keresés, a csillag-, film-, arc- és korszűrő, az Emberek (névsor-darabszámok, személyalbumok, arcjavaslatok), az idővonal, az albumok, a térkép, a hasonló képek és másodpéldányok keresése, a diavetítés, a képernyővédő és a tálca is kihagyja őket — kivéve, ha a Nézet ▸ Rejtett képek be van kapcsolva (jelszó esetén feloldás után) (#4887).
+- A ritkán használt funkciók moduljai csak az első használatkor töltődnek be (#4913).
+
 ## [0.9.78] – 2026-10-12
 
 - A tömeges átnevezésnél a „Dátum" jelölő a felvétel dátumát és idejét is a fájlnévbe teszi (a rendszer területi beállítása szerint, a fájlnévben tiltott jelek helyett kötőjellel), a névmezőbe nem írható be tiltott fájlnév-karakter, és a két jelölő („Dátum", „Képfelbontás") állása megmarad a következő megnyitásig (#4879).
