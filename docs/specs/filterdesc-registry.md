@@ -3388,6 +3388,55 @@ igazolt 23×17 teljes csemperács-golden változatlan marad. A #4383-as probe
 eredeti LUT-forrásának végső besorolása addig nyitott, amíg annak nyers
 kimenete vagy futtatható leírása elő nem kerül.
 
+##### Tiled — a 7×7 natív kontroll állása és a leltár-sor (2026-10-12, #626)
+
+**Állapot: feltételes, nyitott.** A pixelképlet és a 23×17 csemperács-golden
+a fenti szakaszok szerint megerősített. A 7×7-es `native_dot_mask`-kontroll
+viszont két egymásnak ellentmondó jegyzetben szerepel, és ebben a körben
+natív újramérés nem futott le.
+
+**Mért tény (Python, a munkafán, nem natív):** a jelenlegi
+`native_dot_mask(7,7,7,0.5,0.5)` kimenete `uint8`-ra vetítve 49 bájt, csúcs
+`189`, alfa-hash `32b278756b32a68b5c9dd5efffa21c8b108a114c8c24dd16b8cdc6d806fea658`.
+Ez a 3262–3364. sorokban „eredeti golden"-ként szereplő érték, nem a
+lineáris LUT-kontroll (`562cf71d…cbf7eea`).
+
+**Ellentmondás:**
+
+- a fenti #4383-as alszakasz szerint a `32b27875…` golden **érvénytelen**
+  eredeti bináris-golden, és a `native_dot_mask` a `562cf71d…` értéket adja
+  (25/49 egyezés az eredeti workerrel);
+- a jelenlegi kód (`c12ae2f70`, #4326) „az eredeti kerekítésével és
+  alfa-táblájával" készül, és éppen a `32b27875…` hash-t adja.
+
+Tehát a kód ma az #4383 szerint érvénytelennek minősített kimenetet adja.
+Hogy melyik a valódi natív viselkedés, csak natív futtatással dönthető el.
+A „20/49 eltérő bájt” állítás (a csemperács-szakasz végén) régebbi kódra
+vonatkozik; a jelenlegi kódra már nem igaz.
+
+**Natív futás: nem indult el.** Akadályok:
+
+- A `tiled_probe.py` próba (#4368/#4383) törölve; a 7×7-es hívási rekord
+  nincs meg (`NINCS MEG`).
+- A `0x00bba670` wrapper `stdcall` (`ret 0xc`). A paraméter-struktúra
+  (`[ebp]`, `[ebp+4]`) és a harmadik argumentum (`[esp+0x8c]`) a
+  disassemblyből nem olvasható ki; a hívóhelyet ebben a körben nem
+  azonosítottam.
+- A `0x00bba670` wrapper a `0x009a8a30`, `0x009a8ca0`, `0x009a8bc0`,
+  `0x009a8d80` Picasa-függvényeket hívja a saját objektumain; ezekhez
+  kézzel felépített objektum vagy shim kell.
+
+**Ami kell hozzá:** (1) a 7×7 hívás argumentum-térképe a hívóhelyről;
+(2) a `CImage`-objektum felépítése vagy a shimek; (3) a `0x008e5660` /
+`0x008e5490` cache-útvonal helyettesítése, ahogy a 23×17 goldenben volt;
+(4) futtatás `qemu-i386` alatt, a 49 kimeneti bájt kiírásával.
+
+**Leltár-sor (4.5 táblához):**
+
+| művelet | db | állapot (2026-10-12) |
+|---|---:|---|
+| `TiledImageMask` (maszk, nem `ImageOperation`) | 2 | **feltételes**: a pixelképlet és a 23×17 golden megerősített; a 7×7 `native_dot_mask`-kontroll nyitott (ellentmondó hash-ek), natív újramérés NINCS MEG |
+
 ##### A teljes csemperács QEMU-goldenje (2026-10-06)
 
 A változatlan eredeti EXE (`SHA-256:
