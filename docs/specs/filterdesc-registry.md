@@ -6135,6 +6135,42 @@ ad minden indexen.
 
 ---
 
+### #626 leltár — a `HSVGradientMap` sora frissítve (2026-10-12)
+
+**Kiválasztás.** A 2026-10-03-as leltár nem megerősített, nem kizárt műveletei:
+`HSVGradientMap` (1 effekt: HeatMap), `TwoTone`/`GradientMap` (2 effekt),
+`ColorMatrix` és `Tiled` (csak a Comicize-hoz kötve). A `Border`,
+`QuantizePalette` és `Comicize` más ágon zárult, ezért kizárva. A `TwoTone`/
+`GradientMap` több effektet érint, de a pixelképletük a fenti szakaszok szerint
+már megerősített (2026-10-04/06); ami nyitott, a `gradientArray` szöveges
+beolvasása, az a pixelmatematikán kívül esik. Ezért a `HSVGradientMap` maradt
+a nyitott, pixelszintű kérdés.
+
+| elem | állapot | forrás |
+|---|---|---|
+| `position` = float32 LUT-index, 0…255 skála | megerősített | „#626 pozícióskála” szakasz (2026-10-06) |
+| rövidebb hue-ív, `±360°` eltolás | megerősített | „Az interpoláció” szakasz, c) pont |
+| LUT-építés, piros indexcsatorna | megerősített | d) pont |
+| HSV→RGB konverter (`0x00bbbe20`) x87-kerekítése | **nyitott** — a 2026-10-06-os mérés 5/768 bájteltérést adott a HeatMap-listán (`x = 207, 210, 216, 219, 222`) | „Eredeti / nálunk / teendő” táblázat, 2026-10-06 |
+
+**Elavultság.** A 2026-10-06-os 5/768-as eltérés a `glimmer_ops.py` akkori
+állapotán (878–886. sor) futott. A jelenlegi `_hsv_rgb_lut_f32` (865. sor) már
+float64-es köztes ágat és float32-es tárolást használ (docstring szerint
+#3814/#4309). Ezért a 5/768 újramérés nélkül sem fennállónak, sem megszűntnek
+nem tekinthető. A 350→10-es próba (#3814, 254/256 eltérés) régi kódon készült,
+ebben a körben nem ismételtük meg.
+
+**Kész, ha** (a megvalósításhoz, ha az újramérés eltérést ad): a HeatMap-stoplista
+(`0`, `31,875`, `127,5`, `223,125`, `255`; `filterdesc.xml` 952. sor) 256 × 3
+LUT-bájtja egyezik a qemu-i386-on futtatott `0x00bbbcf0` → `0x00bbbbf0` →
+`0x00bbbe20` lánc kimenetével, azaz 768/768 bájt.
+
+**Nem történt új mérés ebben a körben.** Az újramérés menete: a `0x00bbbe20`
+belépési argumentumait (`[esp+0x24..0x2c]` a `sub esp,0x20` után) és a
+visszatérési formát a függvény végéig (`0x00bbbf40` után) igazolni kell, majd a
+harness `hb.py`-jával a 256 indexet futtatni. A Python-oldali hue/s/v interpolációt
+ugyanúgy a `0x00bbbcf0`-n át kell venni, nem újraszámolni.
+
 ## `ExposureImageOperation` — KÉT görbe, mindkettő számszerűen (2026-09-04, #2211)
 
 Ezzel a **#2211** tízes listájának utolsó művelete is horgonyt kapott —
