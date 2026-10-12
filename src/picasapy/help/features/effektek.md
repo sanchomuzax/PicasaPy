@@ -204,8 +204,8 @@ Picasában szerkesztett képnél. Részletek: [A szerkesztő](szerkeszto.md).
 ## Rejtett párok: a Shift billentyű
 
 Tíz csempe **másik effektet ad, ha a Shift billentyűt lenyomva tartod,
-amikor átváltasz az adott fülre**. A felirat is átvált, tehát látod, mit
-kapsz. Ezt az eredeti Picasa is így csinálta.
+amikor átváltasz az adott fülre**. A felirat és a kis előnézet is átvált,
+tehát látod, mit kapsz. Ezt az eredeti Picasa is így csinálta.
 
 | fül | a csempe alapból | Shifttel |
 |---|---|---|
@@ -239,8 +239,8 @@ nyílik**, mint a többi effektnél:
 A váltás **azonnali**: elég lenyomni a Shiftet, miközben az effekt-fülön
 állsz, és a tíz csempe felirata átvált; elengedve visszaáll.
 
-A csempe **kis előnézete az alap effekté marad**, csak a felirat és a
-hatás vált.
+A felirattal együtt a csempe **kis előnézete is átvált**: Shift alatt a
+másik effekt mintaképét mutatja, elengedve az alapét.
 
 A többi csempén a Shiftnek nincs hatása.
 

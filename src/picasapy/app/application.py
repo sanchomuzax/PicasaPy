@@ -64,7 +64,7 @@ from picasapy.version import version_string
 from .confirm_settings_bridge import ConfirmSettingsBridge
 from .camera_capture_controller import CameraCaptureController
 from .gombsav_bridge import GombsavBridge
-from .folder_cover_provider import FolderCoverProvider, borito_fajljai
+from .folder_cover_provider import FolderCoverProvider, borito_belyegkepe
 from .controller import AppController
 from .data_location import read_data_root, read_pending_root
 from . import display_photo_provider
@@ -1295,13 +1295,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     timeline.mark("index előkészítése — utómunka")
     progress_log.mark("Index utómunkája elkezdődött")
     cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
-    provider = ThumbnailProvider(
-        ThumbnailCache(
-            cache_dir / "thumbs",
-            size=cache_size,
-            max_bytes=_THUMB_CACHE_LIMIT_BYTES,
-        )
+    thumb_cache = ThumbnailCache(
+        cache_dir / "thumbs",
+        size=cache_size,
+        max_bytes=_THUMB_CACHE_LIMIT_BYTES,
     )
+    provider = ThumbnailProvider(thumb_cache)
     controller = AppController(
         data_dir / "index.db",
         roots,
@@ -1528,11 +1527,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # INDEXBŐL veszi a mappa fotóit, névsorban — a kupacba a lista első
     # legfeljebb négy eleme kerül (`0x004237ab`), tehát a sorrend
     # látszik is a képen.
-    # #2984: a lekérdezés MODUL-SZINTŰ (`folder_cover_provider.borito_fajljai`),
+    # #2984: a lekérdezés MODUL-SZINTŰ (`folder_cover_provider.borito_belyegkepe`),
     # hogy őr tudjon rá futni — lezárásként évekig hibásan állt, és a
     # `lambda`-val hívott őrök nem látták.
+    # #4876: a borító a rács bélyegkép-tárából jön — meleg tárral az eredeti
+    # fotót nem dekódoljuk újra minden indításkor.
     folder_cover_provider = FolderCoverProvider(
-        lambda mappa: borito_fajljai(data_dir / "index.db", mappa)
+        lambda mappa: borito_belyegkepe(data_dir / "index.db", mappa, thumb_cache)
     )
     engine.addImageProvider("foldercover", folder_cover_provider)
     engine.addImportPath(str(_APP_DIR / "qml"))

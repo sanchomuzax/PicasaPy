@@ -1757,8 +1757,8 @@ ApplicationWindow {
         // lemezről töröl (spec 5.); mappában változatlanul töröl.
         onActivated: picasaMenuBar.activateDeleteCommand()
     }
-    // #422: a nézőben PUSZTA Delete törli a lemezről (spec 3.) — ott nincs
-    // ütközés, mert a rács album-parancsai nem élnek
+    // #422/#4621: a nézőben `Ctrl+Delete` (#1418; a puszta `Delete` nem
+    // töröl) — nézetfüggő: mappában lemezről töröl, albumban eltávolít
     Shortcut {
         id: shortcutDeleteFromDiskViewer
         objectName: "shortcutDeleteFromDiskViewer"
@@ -1770,11 +1770,9 @@ ApplicationWindow {
         sequence: "Ctrl+Delete"
         enabled: window.viewerOpen && !window._szovegmezoneVanFokusz
                  && photoViewer._kijeloltSort() >= 0
-        onActivated: {
-            var sor = photoViewer._kijeloltSort()
-            var p = controller.photos.filePathAt(sor)
-            if (p.length > 0) fileOpsDialogs.ensure().openDelete([p])
-        }
+        // #4621: a nézőben is a KÖZÖS, nézetfüggő elágazáson megy át
+        // (albumból megnyitott képen eltávolít, nem lemezről töröl)
+        onActivated: picasaMenuBar.activateDeleteCommand()
     }
 
     // #922: a képtálca tartalma ÁLLAPOTKÉNT, nem közvetlen kötésként. Egy
@@ -3014,9 +3012,12 @@ ApplicationWindow {
             Qt.callLater(grid.applyRevealAfterViewer)
         }
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
-        // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
-        // megerősítő dialógus itt él (a menü maga a PhotoViewer-ben)
-        onDeleteRequested: function(path) { fileOpsDialogs.ensure().openDelete([path]) }
+        // #422: a néző kontextusmenüjének törlés-tétele — a megerősítő
+        // dialógusok itt élnek (a menü maga a PhotoViewer-ben)
+        // #4621: a néző saját `Ctrl+Delete`-je és a helyi menü tétele is a
+        // menüsáv KÖZÖS, nézetfüggő elágazásán megy át
+        deleteRemovesFromAlbum: picasaMenuBar.deleteRemovesFromAlbum
+        onDeleteRequested: picasaMenuBar.activateDeleteCommand()
     }
 
     // #24: Időrend nézet (Ctrl+5) — a teljes könyvtár korszak-áttekintése;

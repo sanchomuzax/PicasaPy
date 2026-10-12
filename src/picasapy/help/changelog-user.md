@@ -4,6 +4,43 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-12
+
+**Billentyűk**
+
+- Az **F3** a kereső mezőre ugrik (mint a Ctrl+F), az **F4** csillagot ad
+  a kijelölt képekre, vagy elveszi róluk. Lásd
+  [Billentyűparancsok](features/billentyuk.md).
+
+**Importálás és exportálás**
+
+- Az importálás forrása most **egyes fájlok** is lehetnek: a **Tallózás…**
+  gomb menüjében a **Mappa…** és a **Fájlok…** közül választhatsz. Lásd
+  [Importálás](features/importalas.md).
+- A HTML-oldal exportálásakor egyetlen méretválasztó van (alapból 640
+  képpont), és a mozgófilmek **első képkockaként** vagy **teljes
+  mozgófilmként** kerülhetnek az oldalra. Az árnyékolás két
+  jelölőnégyzete megszűnt, az árnyékot a sablon adja. Lásd
+  [Exportálás](features/exportalas.md).
+
+**Szerkesztés**
+
+- Az effektek fülén a Shift lenyomására a kétféle effektet adó csempék
+  kis előnézete is átvált. Lásd [Effektek](features/effektek.md).
+- Az **Egyéni méretarány hozzáadása** ablak az eredeti feliratait kapta;
+  a saját arányok az **Egyéni méretarányok** cím alatt állnak, és a
+  lista melletti kukával törölhetők. Lásd [A szerkesztő](features/szerkeszto.md).
+- A szerkesztő fülsávjának ikonjai az eredeti méretét és rajzát követik.
+
+**Emberek és film**
+
+- Az Emberek panel fejléce mutatja, ha a háttérben még tart az
+  arckeresés a kijelölt képeken, és hány fájl ellenőrizetlen még. Lásd
+  [Emberek](features/emberek.md).
+- A filmkészítő előnézete a kiválasztott **átmenet** mozgását is
+  lejátssza, és a szöveges dia gépelés közben frissül. Lásd
+  [Mozgófilm](features/mozgofilm.md).
+
 ## 2026-10-11
 
 **Néző és diavetítés**

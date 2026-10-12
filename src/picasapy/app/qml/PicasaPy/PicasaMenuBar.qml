@@ -452,8 +452,13 @@ MenuBar {
             : (bar.currentAlbumToken !== ""
                 ? qsTr("Remove from Album")
                 : qsTr("Delete from Disk"))
+    // #4621: a parancs „album-ági” (a fájl marad) — a néző helyi menüjének
+    // felirata ugyanebből a feltételből jön, mint az alábbi elágazás.
+    readonly property bool deleteRemovesFromAlbum:
+        bar.currentPersonName !== "" || bar.currentAlbumToken !== ""
     // A `Delete` billentyű és a Fájl ▸ tétel KÖZÖS belépője (#1608) — így
-    // a kettő nem tud különböző dolgot csinálni.
+    // a kettő nem tud különböző dolgot csinálni. #4621: a néző három
+    // belépője (ablak-szintű és saját `Ctrl+Delete`, helyi menü) is ide fut.
     function activateDeleteCommand() {
         if (bar.currentPersonName !== "")
             bar.removeFromPeopleAlbumRequested()

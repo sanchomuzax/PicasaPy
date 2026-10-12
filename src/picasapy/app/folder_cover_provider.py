@@ -20,20 +20,32 @@ látszik, ahány sor, mindegyik EGY kis képből áll, és a kész ikont
 gyorstárazzuk. A szinkron ág ezért olcsóbb — és nincs szükség az
 aszinkron providernél kimért élettartam-tánchoz (#1457).
 
-Hibatűrés (#66): a rajzolásból kivétel SOHA nem szökhet ki — hibánál üres
-képet adunk vissza, és a sor a szokásos mappaikonjára esik vissza.
+Hibatűrés (#66): a rajzolásból kivétel SOHA nem szökhet ki — hibánál a
+„nincs borító" jelölőt adjuk vissza, és a sor a szokásos mappaikonjára esik
+vissza.
+
+## #4876: a borító a rács bélyegkép-tárából jön
+
+Mérve (offscreen, 20 mappa × 250 kép, meleg tár): a borítók SORBAN készültek
+(a Qt egyetlen képolvasó szálán), mappánként ~100 ms-ig, mert minden
+indításkor az eredeti fotót dekódoltuk. A `borito_belyegkepe` ezért a
+`ThumbnailCache` kész kis szintjét adja: meleg tárral egy kis JPEG
+beolvasása, hideg tárral egyszer elkészül, és onnantól a rács is használja.
 """
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Callable, Sequence
+from typing import TYPE_CHECKING, Callable, Sequence
 
 import numpy as np
 
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
+
+if TYPE_CHECKING:
+    from picasapy.thumbs.cache import ThumbnailCache
 
 
 _log = logging.getLogger(__name__)
@@ -64,31 +76,53 @@ def normalizald_az_azonositot(id: str) -> str:
     for kodolt, karakter in _KODOLT_ELVALASZTOK:
         id = id.replace(kodolt, karakter)
     return id
+
+
 #: A kupacba kerülő fotók száma — a natív összeállító is az első
 #: `min(N, 4)` fotót veszi (`0x004237ab`), névsorban.
 BORITO_FOTOK_MAXIMUMA = 4
 
 
-def borito_fajljai(index_db: Path, mappa: str) -> list[Path]:
-    """A mappa első legfeljebb négy fotójának ÚTVONALA, névsorban.
+def borito_belyegkepe(
+    index_db: Path, mappa: str, tar: "ThumbnailCache"
+) -> list[Path]:
+    """A mappa sor-ikonjának forrásai a bélyegkép-TÁRBÓL (#4876).
 
-    ⚠️ **#2984 — ez a függvény azért MODUL-SZINTŰ, hogy legyen mit
-    tesztelni.** Korábban az `application.py` belsejében élő lezárás volt,
-    és `rekord.path`-t olvasott — a `PhotoRecord`-nak viszont nincs ilyen
-    mezője (`folder_path` + `name` van). MINDEN mappán `AttributeError`-t
-    dobott, amit a szolgáltató „nincs borító"-vá nyelt, tehát a bal hasáb
-    bekapcsolt kapcsolóval is mappaikont mutatott. A meglévő őrök
-    `lambda`-val hívták a szolgáltatót, ezért a hibás lezárás **zölden
-    átcsúszott**. Ugyanez a hiba volt a #1589 (Earth-export) — a közös
-    segéd (`export.earth.record_path`) onnan származik.
+    Az első legfeljebb négy fotó közül az ÖSSZES, amelynek a tár kis szintje
+    kész (vagy elkészül), névsorban; ha egy sem, `[]`. A hívó
+    (`keszits_mappa_boritot`) az első olvashatót használja, tehát ha a
+    tárfájl olvasása `OSError`-ral bukik, a következőre lép. A tár a kulcsot
+    az index `mtime`/méret adatából számolja, tehát meleg tárral az eredeti
+    fájlhoz nem nyúlunk.
+
+    Egy hibás fotó (a tár kivételt dob) nem zárja ki a többit: rekordonként
+    naplózunk és továbbmegyünk.
+
+    A videót kihagyjuk: az eredeti fájl dekódolása sem adott belőle ikont,
+    a tár viszont külön folyamatban bontaná ki a képkockát — egy csak
+    videós mappán (pl. „Filmek") ez minden indításkor lassú lenne.
     """
     from picasapy.export.earth import record_path
     from picasapy.index import open_index
     from picasapy.index.queries import photos_in_folder
+    from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
     with open_index(index_db) as conn:
         rekordok = photos_in_folder(conn, mappa)[:BORITO_FOTOK_MAXIMUMA]
-    return [record_path(rekord) for rekord in rekordok]
+    szint = tar.level_for(IKON_MERET)
+    keszek: list[Path] = []
+    for rekord in rekordok:
+        forras = record_path(rekord)
+        if forras.suffix.lower() in VIDEO_EXTENSIONS:
+            continue
+        try:
+            kesz = tar.get_or_create(forras, rekord.mtime_ns, rekord.size, szint)
+        except Exception:  # noqa: BLE001 — egy hibás fotó ne zárja ki a többit
+            _log.warning("a borító bélyegképe nem készült el: %s", forras, exc_info=True)
+            continue
+        if kesz is not None:
+            keszek.append(kesz)
+    return keszek
 
 
 #: A sor-ikon leghosszabb oldala képpontban. A felület ennél kisebb helyre
@@ -160,6 +194,20 @@ def keszits_mappa_boritot(mappa: str, fajlok: Sequence[Path]):
     return None
 
 
+def _nincs_borito() -> QImage:
+    """A „nincs borító" jelölő: 1 × 1 átlátszó, de ÉRVÉNYES kép (#4876).
+
+    Null képre a Qt minden kérésnél „Failed to get image from provider"
+    sort ír, és a sikertelen betöltést nem tárolja — a sor minden
+    újrarajzoláskor újra kérte. Az érvényes kép betöltődik és a Qt
+    gyorstárába kerül; a `FolderPane.qml` `boritoLatszik` feltétele a
+    szélességet is nézi (`implicitWidth > 1`, #2215), tehát a sor a
+    mappaikont mutatja."""
+    kep = QImage(1, 1, QImage.Format.Format_ARGB32)
+    kep.fill(0)
+    return kep
+
+
 class FolderCoverProvider(QQuickImageProvider):
     """`image://foldercover/<mappa útvonala>`."""
 
@@ -181,7 +229,11 @@ class FolderCoverProvider(QQuickImageProvider):
         if size is not None:
             size.setWidth(kesz.width())
             size.setHeight(kesz.height())
-        if requestedSize is not None and requestedSize.isValid():
+        if (
+            requestedSize is not None
+            and requestedSize.isValid()
+            and kesz.width() > 1
+        ):
             return kesz.scaled(
                 requestedSize,
                 aspectMode=1,  # Qt.KeepAspectRatio
@@ -197,13 +249,7 @@ class FolderCoverProvider(QQuickImageProvider):
             _log.exception("a mappa-borító előállítása elszállt: %s", mappa)
             borito = None
         if borito is None:
-            # #2215: ÜRES (null) kép — NEM 1×1 átlátszó. A különbség a
-            # felületen dől el: az 1×1-es kép sikeresen betöltődik, ezért a
-            # QML `Image.status`-a `Ready` lesz, a fasor `boritoLatszik`
-            # feltétele igaz, és a mappaikon ELREJTŐZIK — a sor teljesen
-            # üresen marad. A null kép `Error` státuszt ad, tehát a sor
-            # visszaesik a mappaikonra, ahogy a `FolderPane.qml` ígéri.
-            return QImage()
+            return _nincs_borito()
         magassag, szelesseg = borito.shape[:2]
         # A tömb BGRA sorrendű (OpenCV); a Qt `Format_ARGB32` little-endian
         # gépen ugyanezt a bájtsorrendet várja.
