@@ -118,7 +118,11 @@ Tulajdonságok panel a felülírt értéket mutatta.
 EXIF `DateTimeOriginal` értékét, és a sikeres írás után a mappát újraolvassa,
 hogy az index, a rácssorrend és a Tulajdonságok-panel az új EXIF-értéket
 mutassa. A korábbi, #4332-es indexfelülírásos út ettől eltért; a jelenlegi
-menüparancs már nem hoz létre `taken_at_override` értéket.
+menüparancs JPEG-nél már nem hoz létre `taken_at_override` értéket.
+Ha az EXIF-írás nem sikerül (videó, nem-JPEG, hibás vagy írásvédett JPEG), a
+dátum a `taken_at_override`-ba kerül (#4885), Windowson emellett a fájl
+létrehozási ideje is; hibás vagy írásvédett JPEG-nél ez csendes, katalógusbeli
+dátum.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
