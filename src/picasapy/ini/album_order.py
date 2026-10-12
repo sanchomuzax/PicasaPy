@@ -82,8 +82,7 @@ def places_of_section(section) -> dict[str, float]:
 
     Érvényes az a pár, amelynek tokenje a kép `albums=` kulcsában is szerepel
     (a tagságot az `albums=` adja). Az olvasó, aki már megtalálta a szakaszt
-    (kis-nagybetű-független névkereséssel), ezt hívja — a szakasznévvel
-    kulcsolt `places_of` eltérő betűzésnél nem találná meg.
+    (kis-nagybetű-független névkereséssel), ezt hívja.
     """
     raw = section.get(KEY)
     if raw is None:
@@ -94,29 +93,6 @@ def places_of_section(section) -> dict[str, float]:
         for token, place in parse_places(raw).items()
         if token in members
     }
-
-
-def places_of(document: IniDocument) -> dict[str, dict[str, float]]:
-    """Fájlnév (a szakasz neve) → {token → hely}, csak az ÉRVÉNYES párokkal.
-
-    Hely nélküli kép nem szerepel. Fájlnévvel keresni a `places_of_section`
-    (a `document.section(név)` találatán) a helyes: a szakasznév betűzése
-    eltérhet a lemezen lévő fájlnévétől.
-    """
-    result: dict[str, dict[str, float]] = {}
-    for section in document.file_sections():
-        valid = places_of_section(section)
-        if valid:
-            result[section.name] = valid
-    return result
-
-
-def _write_places(
-    document: IniDocument, photo_name: str, places: Mapping[str, float]
-) -> IniDocument:
-    if not places:
-        return document.with_removed(photo_name, KEY)
-    return document.with_value(photo_name, KEY, serialize_places(places))
 
 
 def with_album_places(
@@ -158,13 +134,27 @@ def _replace_raw_pair(raw: str | None, token: str, place: float) -> str:
     return ",".join([*pairs, new_pair])
 
 
+def _remove_raw_pair(raw: str, token: str) -> str | None:
+    """A nyers `albumorder=` szövegből CSAK a `token` párját veszi ki.
+
+    A `_replace_raw_pair` tükörpárja: a többi nyers pár (romlott, elárvult,
+    nem kanonikus alakú) bájtra érintetlen marad. `None`, ha nincs ilyen pár.
+    """
+    pairs = raw.split(",")
+    for index, pair in enumerate(pairs):
+        if token in parse_places(pair):
+            return ",".join([*pairs[:index], *pairs[index + 1 :]])
+    return None
+
+
 def without_album_place(
     document: IniDocument, photo_name: str, token: str
 ) -> IniDocument:
     """Az album helyének (az `albumorder=` párjának) kivétele egy képről.
 
-    Ha nincs ilyen pár, a dokumentum VÁLTOZATLAN marad (a kulcs más párjai és
-    sorrendje, valamint a nem érintett képek bájtra azonosak).
+    Csak a `token` nyers párja távozik; a többi nyers darab (romlott,
+    elárvult, nem kanonikus) bájtra marad. A kulcs akkor törlődik, ha nem
+    maradt nyers darab. Ha nincs ilyen pár, a dokumentum VÁLTOZATLAN.
     """
     section = document.section(photo_name)
     if section is None:
@@ -172,11 +162,12 @@ def without_album_place(
     raw = section.get(KEY)
     if raw is None:
         return document
-    current = parse_places(raw)
-    if token not in current:
+    remaining = _remove_raw_pair(raw, token)
+    if remaining is None:
         return document
-    del current[token]
-    return _write_places(document, photo_name, current)
+    if not any(piece for piece in remaining.split(",")):
+        return document.with_removed(photo_name, KEY)
+    return document.with_value(photo_name, KEY, remaining)
 
 
 class AlbumOrderWriteError(IniSaveError):

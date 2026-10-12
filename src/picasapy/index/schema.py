@@ -599,7 +599,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
     # indul minden meglévő sor — „nincs kézi hely", tehát a meglévő albumok
     # sorrendje változatlan (mappa útvonala, fájlnév); a következő szinkron
     # tölti fel az ini-ből, újraindexelés nem kell.
-    # A scan-állapot érvénytelenítése is idetartozik: a változatlan ini-t a
+    # A scan-állapot érvénytelenítése (CSAK az albumtagot tartalmazó mappákra) is
+    # idetartozik: a változatlan ini-t a
     # szinkron a `folder_scan_state` miatt kihagyná, így a meglévő
     # `albumorder=` sosem jutna be a `place`-be. A tábla DDL-je a
     # `sync._SCAN_STATE_DDL`-lel egyezik (tisztán eldobható gyorsítótár; a
@@ -612,6 +613,10 @@ CREATE TABLE IF NOT EXISTS folder_scan_state (
     ini_mtime_ns INTEGER,
     filetype_signature TEXT
 );
-DELETE FROM folder_scan_state;
+DELETE FROM folder_scan_state WHERE path IN (
+    SELECT DISTINCT f.path FROM folders f
+    JOIN photos p ON p.folder_id = f.id
+    JOIN photo_albums a ON a.photo_id = p.id
+);
 """,
 }

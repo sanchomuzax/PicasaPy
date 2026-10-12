@@ -445,6 +445,25 @@ class TestAlbumPlaceMigration:
         with open_index(self._v21_database(tmp_path)) as conn:
             assert [r.name for r in album_photos(conn, "tok")] == ["a.jpg", "b.jpg"]
 
+    def test_csak_az_albumos_mappa_pecsetje_torlodik(self, tmp_path):
+        path = self._v21_database(tmp_path)
+        raw = sqlite3.connect(path)
+        raw.executescript(
+            "CREATE TABLE IF NOT EXISTS folder_scan_state ("
+            " path TEXT PRIMARY KEY, mtime_ns INTEGER NOT NULL,"
+            " ini_mtime_ns INTEGER, filetype_signature TEXT);"
+            "INSERT INTO folders (id, path) VALUES (2, '/album-nelkul');"
+            "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
+            " VALUES (3, 2, 'x.jpg', 'image', 10, 1);"
+            "INSERT INTO folder_scan_state (path, mtime_ns) VALUES"
+            " ('/kepek', 5), ('/album-nelkul', 6);"
+        )
+        raw.commit()
+        raw.close()
+        with open_index(path) as conn:
+            rows = [r[0] for r in conn.execute("SELECT path FROM folder_scan_state")]
+        assert rows == ["/album-nelkul"]
+
     def test_a_valtozatlan_ini_albumorder_kulcsa_a_migracio_utan_is_bekerul(
         self, tmp_path
     ):

@@ -15,9 +15,18 @@ from PySide6.QtCore import QPoint, QPointF, QObject, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.index import album_photos, open_index, sync_tree
-from picasapy.ini.album_order import places_of
+from picasapy.ini.album_order import places_of_section
 from picasapy.ini.document import parse_document
 from support.jpeg_factory import make_jpeg
+
+
+def places_of(document):
+    """Teszt-segéd: fájlnév → érvényes {token → hely}."""
+    return {
+        section.name: valid
+        for section in document.file_sections()
+        if (valid := places_of_section(section))
+    }
 
 _TOKEN = "4599" * 8
 _OTHER = "e" * 32
@@ -186,7 +195,8 @@ def test_kattintasra_nev_szerint_rendez_es_a_sorrend_tartos(qml_app, qt_app, tmp
     # minden más sor (sorvégekkel együtt) BÁJTRA azonos: az `albumorder=`
     # sorok kivételével a fájl nem változott
     assert _albumorder_nelkul(root / ".picasa.ini") == szomszed_elotte
-    assert b"\r\n" in (root / ".picasa.ini").read_bytes()
+    adat = (root / ".picasa.ini").read_bytes()
+    assert b"\n" not in adat.replace(b"\r\n", b"")
     # újraindítás (új index) után is ez a sorrend
     assert _ujranyitott_index(tmp_path, root) == varhato
 

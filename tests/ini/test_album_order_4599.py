@@ -11,7 +11,6 @@ import pytest
 from picasapy.ini.album_order import (
     AlbumOrderWriteError,
     parse_places,
-    places_of,
     places_of_section,
     serialize_places,
     with_album_places,
@@ -19,10 +18,20 @@ from picasapy.ini.album_order import (
     write_album_places,
 )
 from picasapy.ini.albums import with_album, without_album, without_album_everywhere
-from picasapy.ini.document import parse_document
+from picasapy.ini.document import IniDocument, parse_document
 
 _A = "604c294a68b0de9cc9222c4714f289d5"
 _B = "1f2e3d4c5b6a79880123456789abcdef"
+
+
+def places_of(document: IniDocument) -> dict[str, dict[str, float]]:
+    """Teszt-segéd: fájlnév → érvényes {token → hely}."""
+    result = {}
+    for section in document.file_sections():
+        valid = places_of_section(section)
+        if valid:
+            result[section.name] = valid
+    return result
 
 
 class TestFormat:
@@ -276,3 +285,26 @@ class TestUjFelvetelArvaParjaKiesik:
     def test_mar_tag_kepnel_nem_nyul_a_helyhez(self):
         document = parse_document(f"[a.jpg]\nalbums={_A}\nalbumorder={_A}:4.0\n")
         assert with_album(document, "a.jpg", _A) is document
+
+
+class TestKivetelNyersParokatNemNormalizal:
+    def test_with_album_arva_agon_a_romlott_es_nem_kanonikus_szomszed_bajtra_marad(self):
+        document = parse_document(
+            f"[a.jpg]\nalbums={_B}\nalbumorder={_A}:4,T:x,{_B}:2,zz:1\n"
+        )
+        updated = with_album(document, "a.jpg", _A)
+        assert updated.section("a.jpg").get("albumorder") == f"T:x,{_B}:2,zz:1"
+
+    def test_without_album_a_romlott_es_nem_kanonikus_szomszed_bajtra_marad(self):
+        document = parse_document(
+            f"[a.jpg]\nalbums={_A},{_B}\nalbumorder={_A}:4,T:x,{_B}:2,zz:1\n"
+        )
+        updated = without_album(document, "a.jpg", _A)
+        assert updated.section("a.jpg").get("albumorder") == f"T:x,{_B}:2,zz:1"
+
+    def test_a_kulcs_csak_akkor_torlodik_ha_nem_maradt_nyers_darab(self):
+        document = parse_document(
+            f"[a.jpg]\nalbums={_A},{_B}\nalbumorder={_A}:4,T:x\n"
+        )
+        updated = without_album(document, "a.jpg", _A)
+        assert updated.section("a.jpg").get("albumorder") == "T:x"
