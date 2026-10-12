@@ -6151,25 +6151,73 @@ a nyitott, pixelszintű kérdés.
 | `position` = float32 LUT-index, 0…255 skála | megerősített | „#626 pozícióskála” szakasz (2026-10-06) |
 | rövidebb hue-ív, `±360°` eltolás | megerősített | „Az interpoláció” szakasz, c) pont |
 | LUT-építés, piros indexcsatorna | megerősített | d) pont |
-| HSV→RGB konverter (`0x00bbbe20`) x87-kerekítése | **nyitott** — a 2026-10-06-os mérés 5/768 bájteltérést adott a HeatMap-listán (`x = 207, 210, 216, 219, 222`) | „Eredeti / nálunk / teendő” táblázat, 2026-10-06 |
+| HSV→RGB konverter (`0x00bbbe20`) x87-kerekítése | **megerősített** (2026-10-12) — a jelenlegi `_hsv_rgb_lut_f32` 0 bájtot tér el a natív konvertertől 9509 bemeneten, a HeatMap-láncon 768/768 | „2. kör — mérés” szakasz, 2026-10-12 |
 
 **Elavultság.** A 2026-10-06-os 5/768-as eltérés a `glimmer_ops.py` akkori
 állapotán (878–886. sor) futott. A jelenlegi `_hsv_rgb_lut_f32` (865. sor) már
 float64-es köztes ágat és float32-es tárolást használ (docstring szerint
-#3814/#4309). Ezért a 5/768 újramérés nélkül sem fennállónak, sem megszűntnek
-nem tekinthető. A 350→10-es próba (#3814, 254/256 eltérés) régi kódon készült,
-ebben a körben nem ismételtük meg.
+#3814/#4309). A 2026-10-12-i újramérés (lent) a jelenlegi kódon 0/768: a
+5/768 megszűnt. A 350→10-es próba (#3814, 254/256 eltérés) a #3814 előtti
+`np.interp`-os kódról szólt; a jelenlegi kódon ugyanez a próba 0/768.
 
 **Kész, ha** (a megvalósításhoz, ha az újramérés eltérést ad): a HeatMap-stoplista
 (`0`, `31,875`, `127,5`, `223,125`, `255`; `filterdesc.xml` 952. sor) 256 × 3
 LUT-bájtja egyezik a qemu-i386-on futtatott `0x00bbbcf0` → `0x00bbbbf0` →
 `0x00bbbe20` lánc kimenetével, azaz 768/768 bájt.
 
-**Nem történt új mérés ebben a körben.** Az újramérés menete: a `0x00bbbe20`
-belépési argumentumait (`[esp+0x24..0x2c]` a `sub esp,0x20` után) és a
-visszatérési formát a függvény végéig (`0x00bbbf40` után) igazolni kell, majd a
-harness `hb.py`-jával a 256 indexet futtatni. A Python-oldali hue/s/v interpolációt
-ugyanúgy a `0x00bbbcf0`-n át kell venni, nem újraszámolni.
+### 2. kör — mérés (2026-10-12, #626)
+
+**A) Gépi kód, utasításszinten (`0x00bbbe20`, `0x00bbbf40` után is végig).**
+- Belépés: cdecl, három float32. A `sub esp,0x20` után `h` = `[esp+0x24]`,
+  `s` = `[esp+0x28]`, `v` = `[esp+0x2c]`; a hívó oldalán ez `[esp]` = h,
+  `[esp+4]` = s, `[esp+8]` = v (a visszatérési cím a `[esp]`-n kívül esik).
+- Visszatérés: `eax` = `0xFFRRGGBB` (alfa 255; R a 16–23., G a 8–15., B a 0–7.
+  bitben). A három csatornát a szektor-ágak a `[esp]`, `[esp+4]`, `[esp+8]`
+  ideiglenesekbe töltik; utána `csonk(x·255)` (`or 0xc00` + `fistp`), nincs +0,5.
+- Szektor-ugrótábla: `jmp [eax*4+0xbbc0c4]`, hat bejegyzés (`i = 0…5`). Az
+  `i > 5` ág (`ja 0xbbc02c`) nem tölti fel a csatornákat, így a `[esp…]` régi
+  tartalmával számol tovább. Ez csak akkor fordul elő, ha `h/360·6` float32-ben
+  6,0-ra kerekedik; a lenti méréskor ilyen bemenet nem volt (a 360⁻ körüli
+  négy float32-es érték 5,99999…-re kerekedett).
+- CPU-jelzők: a `0x00bbbbf0`–`0x00bbc0c0` teljes kódja (keverő, stopkereső,
+  konverter) nem hivatkozik a `0xd695d0` (MMX) és `0xd695d4` (SSE) címekre, így
+  csak egy ágat kell mérni.
+
+**B) Natív mérés (QEMU-i386, az eredeti függvények; a `_hsv_rgb_lut_f32` és a
+`hsv_gradient_map` a jelenlegi PicasaPy-kód).**
+
+| mérés | bemenet | eltérés |
+|---|---|---|
+| konverter önmagában (`0x00bbbe20`): a spec-példa `(200,100,100)`; `h` = 0…359 egész × `s` ∈ {0,25,50,75,100} × `v` ∈ {0,50,100}; 4000 véletlen float32 | 9401 | 0 bájt |
+| konverter, negatív és ≥360 `h` (−720 … 1080,25) × `s`, `v` mintái | 108 | 0 bájt |
+| `h` 360⁻ körül (4 legnagyobb float32 < 360) × `s`, `v` mintái | 24 | 0 bájt |
+| HeatMap-stoplista, a teljes lánc (`0x00bbbcf0` → `0x00bbbbf0` → `0x00bbbe20`), 256 × 3 bájt, `hueOffset` = 0 | 768 | 0 bájt; a `hsv_gradient_map` végponti összevetése is 0 |
+| HeatMap-stoplista, `hueOffset` −180, −33,3, 33,3, 180, 359 | 5 × 768 | 0 bájt |
+| 350→10 stoplista (`[0,350,100,100]`, `[255,10,100,100]`), `hueOffset` 0 és −180, −33,3, 33,3, 180, 359 | 6 × 768 | 0 bájt |
+
+A natív láncban a stopkeresést az eredeti `0x00bbbcf0` végzi, a keverést a
+benne hívott `0x00bbbbf0`; a hue/s/v-t nem a Python számolja. A worker-ciklust
+(`0x00bbc510`–`0x00bbc568`) a meghajtó utánozza: `x` = 0…255, a `hueOffset`
+float32-ben hozzáadva, az eredmény `0xFFRRGGBB`.
+
+**Korlát (ki kell mondani).** A HeatMap-stoplista `position` értékei (`0`,
+`31,875`, `127,5`, `223,125`, `255`) a spec szerint a `filterdesc.xml` 952.
+sorából valók, de az XML nem érhető el a mérés megengedett útvonalain. A stopok
+`h`/`s`/`v`-értékei ezért a `src/picasapy/render/glimmer_tone.py`
+`_HEATMAP_STOPS`-ából jöttek (`240/100/50`, `240/100/100`, `120/100/100`,
+`0/100/100`, `0/100/50`). Ezeket az XML 952. sora ellen még nem ellenőriztük.
+
+**Eredmény.** Egyezés: a konverter és a HeatMap-lánc is bájtra egyezik a
+jelenlegi kóddal. A 2026-10-06-os 5/768 eltérés a régi kódhoz tartozott, ma
+nem reprodukálható.
+
+**Kész, ha — részben teljesült.** A 768/768 teljesül a `_HEATMAP_STOPS` h/s/v-
+értékeivel. A „Kész, ha” az XML 952. sorának h/s/v-jét is megköveteli; ezt ebben
+a körben nem tudtam ellenőrizni, ezért ez a rész nyitva marad.
+
+**Bizonyítottsági fok (konverter x87-kerekítése): megerősített** — A út: a fenti
+utasításszintű leírás; B út: a natív konverter és a natív lánc futtatása, bájtos
+összevetéssel. A stopok h/s/v-jére a B út csak a kódbeli értékekre igaz.
 
 ## `ExposureImageOperation` — KÉT görbe, mindkettő számszerűen (2026-09-04, #2211)
 
