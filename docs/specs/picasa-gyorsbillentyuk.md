@@ -1310,7 +1310,7 @@ munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok
 
 | billentyű / ág | cél és kiolvasott hatás | független megerősítés | fok |
 |---|---|---|---|
-| `Ctrl+6` | `0x005e6294` → `0x00530ad0`: az `AdvancedFeatures` beállítást olvassa, majd a `timeslicer` vezérlő/panel útjára lép. | Az `AdvancedFeatures` és `timeslicer` bináris karakterlánc-hivatkozásai ugyanahhoz a célhoz vezetnek; a teljes létrehozási/felületi hatás futtatás nélkül nincs kimérve. | feltételes |
+| `Ctrl+6` | `0x005e6294` → `0x00530ad0`: az `AdvancedFeatures` beállítást olvassa, majd a `timeslicer` vezérlő/panel útjára lép. ⚠️ A kapu-kulcs ellentmondásban áll a 2026-10-12b köteggel — lásd 10.25. | Az `AdvancedFeatures` és `timeslicer` bináris karakterlánc-hivatkozásai ugyanahhoz a célhoz vezetnek; a teljes létrehozási/felületi hatás futtatás nélkül nincs kimérve. | feltételes |
 | `Ctrl+8` | `0x005e6584` → `0x005e81e0(panel, 2)`: a kijelölt képek `]star` állapotát váltja; a `stars/yes` és `stars/no` ágak közül választ, majd frissíti a nézeti állapotot. | A célfüggvény további hívói és külön string-xref rekordjai ugyanazt a csillagvezérlőt és a két állapotot azonosítják. | megerősített |
 | `Ctrl+9` | `0x005e629f`: a `0x00579330` szerkesztő-előnézeti őr után kattint az `editpanel/toggle_left_drawer` elemre. | A mai `PhotoViewer.qml` ugyanezt az objektumnevet és az `editorControlsVisible` állapotot tartalmazza; a `PicasaMenuBar.qml` „Show Edit Controls” tétele ugyanezt az állapotot olvassa/állítja. | megerősített |
 | `Ctrl+G` | Külön módosító nélkül az ág nem indít műveletet. | A kezelő módosító-ágainak közvetlen kiolvasása; külön második út ehhez a no-ophoz nincs. | feltételes |
@@ -1606,6 +1606,11 @@ képernyőn látható fával? *[blokkoló a hatáshoz]*
 az `AdvancedFeatures` értékének szemantikája (mely nem-nulla érték kapcsolja be).
 *[blokkoló a gate polaritásához]*
 
+⚠️ **10.25 (3. kör):** a Ctrl+6 saját kapu-kulcsa ELLENTMONDÁSBAN áll a 2026-10-12b
+köteggel (a `Preferences/UITransitions` a `00a54b70`-ben és a `005e5ec0`-ben van, a
+`00530ad0` törzse nincs a kötegben). Az `AdvancedFeatures` állítás sem igazolt, sem
+cáfolt; a 10.25 szerint nyitott.
+
 #### 10.24.2 `Ctrl+8` — `0x005e6584` → `0x005e81e0(panel, 2)`
 
 | lépés | cím | mit csinál |
@@ -1679,6 +1684,9 @@ nem illik az InterlockedIncrement szignatúrájához — az IAT-feloldás helyes
 `GetDeviceCaps`/`GetAsyncKeyState` kontroll egyezik), de a hívás célja nincs
 megmagyarázva. Nem blokkolja a fenti állítást, de a Ghidra-körben ellenőrizni kell.
 
+⚠️ **10.25 (3. kör): nem cél (rejtett funkció).** A helyi webszerver megépítése nem
+követelmény; az alábbi lista csak a láncszint leírása, nem „Kész, ha".
+
 **Kész, ha — Ctrl+Shift+L** (a termékdöntés, hogy a Picasa-webszervert megépítjük-e,
 a jegy dolga; a bináris ezt nem dönti el):
 - [ ] a könyvtárnézetben, **Shift** lenyomva, a Ctrl+Shift+L a helyi webalbum-szerver
@@ -1748,6 +1756,10 @@ láncra megerősíti.)
 melyik objektum és melyik képkocka/rajz a céljuk, és a `0x00a54b70` `+0x9a8bc0`
 hívás mit indít el (képernyő-animáció, időzítő)? *[blokkoló a hatáshoz]*
 
+⚠️ **10.25 (3. kör): nem cél (rejtett funkció).** A 2026-10-12b köteg szerint a
+`0x00a54b70` rajzolása NEM igazolt (a törzs `+0x3c` slotot hív); a „rajzol" állítás
+visszavonva.
+
 #### 10.24.6 Videó-billentyűk: `/` (VK `0xbf`), `,` (VK `0xbc`), `.` (VK `0xbe`)
 
 **Negatív, mért:** a teljes `.text` (**2 884 879 utasítás**) `capstone`-pásztázása
@@ -1793,7 +1805,7 @@ tartalmaz-e `0xbc`/`0xbe`/`0xbf` bejegyzést? *[blokkoló a videó-hatáshoz]*
 
 | billentyű | cél | mit látunk a binárisban | nálunk | fok |
 |---|---|---|---|---|
-| `Ctrl+6` | `0x005e6294` → `0x00530ad0` | `AdvancedFeatures`-őr → `timeslicer` panel (`ytBGNode`) | NINCS | láncszint bizonyított; hatás NYITOTT (Q5, Q6) |
+| `Ctrl+6` | `0x005e6294` → `0x00530ad0` | `AdvancedFeatures`-őr → `timeslicer` panel (`ytBGNode`) — ⚠️ a kapu-kulcs ellentmondásban áll a 2026-10-12b köteggel (10.25) | NINCS | láncszint bizonyított; hatás NYITOTT (Q5, Q6) |
 | `Ctrl+8` | `0x005e6584` → `0x005e81e0(panel,2)` | kijelölés-ciklus: vtábla-lekérdezés + negált vtábla-írás | NINCS (csillag: F4) | célazonosítás bizonyított; hatás RÉSZBEN (Q7) |
 | `Ctrl+Shift+L` | `0x005e658e` → `0x004cce10` + `0x004cd010` | `ytHTTPd` indítása, `http://localhost:%d/%s/`, `ShellExecuteA` | HIÁNYZIK | megnyitás bizonyított; tartalom NYITOTT |
 | `Ctrl+Shift+U` | `0x005e6557` → `0x0047ca60` → `0x006b8710` ×2 | zárolt memória-törlés két almemórián | HIÁNYZIK | memória bizonyított; lemez és látható hatás NYITOTT (Q8) |
@@ -1820,6 +1832,59 @@ Ctrl+Shift+U-ra a Ghidra-kérdés 8 lezárása után. A `Ctrl+6`, `Ctrl+8`, `Ctr
 
 **Nem ellenőrzött:** a független újralevezetés (`ujralevezetes.py`) NEM futott: a kör
 alügynököt nem indíthatott.
+
+### 10.25 #4643 — 3. kör: a 2026-10-12b Ghidra-köteg (#29–#32) és a 10.24 frissítése (2026-10-12)
+
+**Forrás:** `~/picasapy-agent/referencia/ghidra-koteg-2026-10-12b/` — `osszefoglalo.md`
+és a dekompilátumok (`00530040.c`, `004019b0.c`, `00982bf0.c`, `00983430.c`,
+`00a54b70.c`, `005e5ec0.c`, `005e81e0.c`, `006b8710.c`, `009a8bc0.c`, `009dec60.c`,
+`009deca0.c`, `009debd0.c`). Becslés nincs. A `Picasa3.exe` sem a munkafán, sem az
+agent-repóban nincs meg, ezért a köteg bináris újraolvasással nem ellenőrizhető; a
+`0x00530ad0` törzse sincs a kötegben. Ghidra-futtatás és binárisfuttatás ebben a körben
+nem történt; alügynököt nem indítottam.
+
+**⛔ Ellentmondás, NYITVA — a Ctrl+6 kapuja.** A kérés szerint a Ctrl+6 kapuja
+`Preferences/UITransitions`. A köteg viszont ezt mutatja: a `Preferences`/`UITransitions`
+párost a `00a54b70.c:152` (közös átmenet-/animációsegéd) és a `005e5ec0.c:664`
+(Ctrl+Shift+Y) állítja elő. A `004019b0` hívói között a `00530ad0` is szerepel, de annak
+törzse nincs a kötegben, így azt a köteg NEM mutatja, melyik kulcsot nyitja. A 10.24.1
+`AdvancedFeatures`-állítása ezért sem nem igazolt, sem nem cáfolt. A 10.22 és a 10.24
+`AdvancedFeatures`-sorait NEM írtam át; a helyesbítés a `0x00530ad0` dekompilátumával
+dönthető el.
+
+**Billentyűnkénti mérleg (a 10.24 frissítése):**
+
+| billentyű | bizonyított (köteg) | nyitott | nálunk | „Kész, ha" |
+|---|---|---|---|---|
+| `Ctrl+6` | 640×480-as `ytBGNode` építése (`00530040`); `004019b0` visszatérése = objektum `+0xC`; a `00a54b70` UITransitions-kapuja: eredmény nulla → átmeneti idő 0,0 | a Ctrl+6 saját kapu-kulcsa (Q6); a panel tartalma és a `+0xc4`/`+0x20` slotok célja (Q5); a `timeslicer` név nincs a kötegben | NINCS | **NEM** (a hatás nincs kimondva) |
+| `Ctrl+8` | kijelölt elemeken ciklus; `+0xcc` `char`-lekérdezés, `+0xc8` írás a lekérdezés negáltjával (`005e81e0`) | a két vtábla osztálya és slotjai (Q7, nincs `rtti.csv`); hogy a lekérdezett érték a csillag-e | csillag-váltás van **F4**-en (`Main.qml:1150`), Ctrl+8 nincs | **NEM** (Q7 lezáratlan) |
+| `Ctrl+Shift+L` | (10.24.3 láncszint) | — | NINCS | **nem cél (rejtett funkció)** |
+| `Ctrl+Shift+U` | a célban és az első 15 közvetlen hívottban nincs fájl-API (`006b8710`) | `call eax` célok `0x006b876c`, `0x006b8aa5`; `0xd6957c`/`0xd694bc`/`0xd694c0` kitöltése; lemez-érintetlenség (Q8) | NINCS | **NEM** (Q8 lezáratlan) |
+| `Ctrl+Shift+Y` | őr, `overlays/egg` keresés, 0x354-es objektum, `rand`-paraméterek; a három setter állapotot ír és piszkos bitet állít, rajzolást nem hív (`005e5ec0`, `009dec60`, `009deca0`, `009debd0`) | `00a54b70` rajzolása nem igazolt (`+0x3c` slot); az egg képe és helye (Q9) | NINCS | **nem cél (rejtett funkció)** |
+| `/`, `,`, `.` | — (a köteg nem fedi le; a `00a53b00` táblavezérlő nincs benne) | a táblavezérelt út és a fogadó ablak (Q10) | NINCS | **NEM** (Q10 lezáratlan) |
+
+**Ctrl+8 és a csillag — van-e nálunk megfelelő.** Nálunk a csillag-váltás F4-en van
+(`Main.qml:1150`, `shortcutStarToggle`); Ctrl+8 nincs kötve. A Ctrl+8 célfüggvénye
+(`005e81e0`) kijelölt elemekre lekérdezést és írást végez, és az írt érték a lekérdezés
+negáltja. Ez csillag-váltásra hasonlít, de nincs igazolva: a vtábla osztálya, a slotok
+implementációja és a `stars/yes|no` címke (a 10.24.2-ben) nem szerepel a kötegben.
+Amíg a Q7 nincs lezárva, a „Ctrl+8 = csillag-váltás" nem adható ki.
+
+**Ctrl+6 kapuja, nálunk.** A `view/uiTransitions` kulcs létezik (`appearance_controller.py:23`).
+A névazonosság nem bizonyítja, hogy a `Preferences/UITransitions` ugyanez; a köteg szerint
+ez a kulcs a `00a54b70` átmenet-kapuja, nem a Ctrl+6 kapuja.
+
+**Nyitott kérdések állapota (Q5–Q10):**
+- **Q5 (Ctrl+6, panel-tartalom):** RÉSZBEN — a `00530040` és a `00983430` olvasva; a tartalom nyitott.
+- **Q6 (Ctrl+6, kapu és `+0xC`):** RÉSZBEN — a UITransitions-kapu a `00a54b70`-ben bizonyított, a Ctrl+6-ra nem; a `+0xC` forrása (`FUN_009a4b20`) nyitott.
+- **Q7 (Ctrl+8, RTTI és slotok):** NYITOTT — nincs `rtti.csv`.
+- **Q8 (Ctrl+Shift+U, lemez):** RÉSZBEN — fájl-API nincs a célban és az első 15 hívottban; az indirekt hívások nyitottak.
+- **Q9 (Ctrl+Shift+Y, rajzolás):** RÉSZBEN — a setterek olvasva; a rajzolás nyitott; rejtett funkció, nem cél.
+- **Q10 (videó-billentyűk):** NYITOTT — a köteg nem tartalmazza a fogadó ablak dispatcherét.
+
+**Kész, ha — összesítve (2026-10-12):** egyik billentyűre sem adható ki új „Kész, ha"
+a 3. körben, mert a felhasználói hatás egyiknél sincs teljesen kimondva. A Ctrl+Shift+L
+és a Ctrl+Shift+Y „nem cél (rejtett funkció)".
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
