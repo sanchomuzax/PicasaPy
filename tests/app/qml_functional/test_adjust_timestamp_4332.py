@@ -26,7 +26,8 @@ def _kepek(lib: Path) -> None:
         ("c.jpg", "2020:01:04 12:00:00", "2020:01:04 12:00:00", 4),
     ):
         path = make_jpeg(lib / nev, taken_at=taken_at, datetime_0th=datetime_0th)
-        atime = datetime(2019, 12, nap, 1, 2, 3).timestamp()
+        # A mappa újraolvasása ne módosítsa az atime-ot relatime fájlrendszeren.
+        atime = datetime(2019, 12, nap, 6, 7, 8).timestamp()
         mtime = datetime(2019, 12, nap, 4, 5, 6).timestamp()
         os.utime(path, (atime, mtime))
 
@@ -160,7 +161,7 @@ def _ido_beallitasa(window, qt_app, ertek: str) -> None:
         ),
     ],
 )
-def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
+def test_valodi_eszközmenüvel_mindket_mod_az_exifet_irja_es_fajlidot_megoriz(
     timestamp_app,
     qt_app,
     tmp_path,
@@ -254,17 +255,9 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
         if name in kijelolt_nevek
     }
     for path in forrasok:
-        regi_exif = datetime.strptime(
-            {"a.jpg": "2020:01:01 12:00:00", "c.jpg": "2020:01:04 12:00:00"}[
-                path.name
-            ],
-            "%Y:%m:%d %H:%M:%S",
-        )
-        uj_exif = datetime.fromisoformat(vart[path.name])
-        delta_ns = round((uj_exif - regi_exif).total_seconds() * 1_000_000_000)
         most = path.stat()
-        assert most.st_atime_ns == regi_fajlidok[path.name].st_atime_ns + delta_ns
-        assert most.st_mtime_ns == regi_fajlidok[path.name].st_mtime_ns + delta_ns
+        assert most.st_atime_ns == regi_fajlidok[path.name].st_atime_ns
+        assert most.st_mtime_ns == regi_fajlidok[path.name].st_mtime_ns
         if os.name == "nt":
             assert most.st_ctime_ns == regi_fajlidok[path.name].st_ctime_ns
         assert path.read_bytes() != elotte[path.name]

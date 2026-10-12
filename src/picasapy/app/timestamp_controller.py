@@ -11,7 +11,6 @@ from pathlib import Path
 from PySide6.QtCore import Slot
 
 from picasapy.index import open_index, sync_tree
-from picasapy.metadata import read_exif_details
 from picasapy.metadata.tiff_helyben import (
     Valtozas,
     ascii_ertek,
@@ -173,33 +172,22 @@ def _set_creation_time_ns(path: str | Path, timestamp_ns: int) -> None:
 
 
 def _adjust_photo_file_date(path: str | Path, target: datetime) -> bool:
-    """EXIF-írás és a mért DateTime/fájlrendszeridő ágak.
+    """EXIF-írás, siker esetén az eredeti fájlidők megőrzésével.
 
     Visszatérés: sikerült-e a DateTimeOriginal kiírása. Írási hiba esetén az
     eredeti tartalékág kizárólag a létrehozási időt állítja.
     """
     source = Path(path)
     before = source.stat()
-    modified_at = read_exif_details(source).datetime_modified
     try:
         _write_exif_datetime_original(source, target)
     except Exception:  # noqa: BLE001 — az eredeti tartalékág csak fájlidőt ír
         _set_creation_time_ns(source, round(target.timestamp() * 1_000_000_000))
         return False
 
-    try:
-        old_datetime = datetime.fromisoformat(modified_at) if modified_at else None
-    except (TypeError, ValueError):
-        old_datetime = None
-    delta_ns = (
-        round((target - old_datetime).total_seconds() * 1_000_000_000)
-        if old_datetime is not None
-        else 0
-    )
-    os.utime(
-        source,
-        ns=(before.st_atime_ns + delta_ns, before.st_mtime_ns + delta_ns),
-    )
+    # A .tmp-fájl cseréje új fájlrendszer-időket hoz létre; az eredeti
+    # hozzáférési és módosítási időt közvetlenül a csere után visszaállítjuk.
+    os.utime(source, ns=(before.st_atime_ns, before.st_mtime_ns))
     _set_creation_time_ns(source, before.st_ctime_ns)
     return True
 
