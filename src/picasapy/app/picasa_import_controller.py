@@ -40,7 +40,6 @@ from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 from picasapy.pmpimport.db3_atvetel import AtvetelJelentes, rekordokat_atvesz
 from picasapy.pmpimport.importer import iter_photo_records
 from picasapy.pmpimport.remap import PathRemapper
-from picasapy.pmpimport.rejtett_jelszo import read_hidden_password_hash
 from picasapy.scanner import discover_installations
 
 from .worker_thread import BackgroundWorkerMixin
@@ -55,6 +54,14 @@ _ALAP_REMAP = PathRemapper.from_dict({"Z:\\": "/"})
 _MANUAL_SOURCE_REQUIRED = "picasapy-manual-source-required"
 _MANUAL_MAPPING_REQUIRED = "picasapy-manual-mapping-required"
 
+
+
+def _read_hidden_password_hash(*args, **kwargs):
+    """Lusta betöltés: az átvétel-ág modulja ne kerüljön az indulási
+    importláncba (#1653 plafon)."""
+    from picasapy.pmpimport.rejtett_jelszo import read_hidden_password_hash
+
+    return read_hidden_password_hash(*args, **kwargs)
 
 class PicasaImportController(BackgroundWorkerMixin, QObject):
     """`Eszközök ▸ Import a Picasából…` — a db3 adatainak átvétele."""
@@ -89,7 +96,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         self._olvaso = olvaso or iter_photo_records
         self._atvevo = atvevo or rekordokat_atvesz
         self._remapper = remapper or _ALAP_REMAP
-        self._jelszo_olvaso = jelszo_olvaso or read_hidden_password_hash
+        self._jelszo_olvaso = jelszo_olvaso or _read_hidden_password_hash
         self._running = False
 
     def _set_running(self, ertek: bool) -> None:
