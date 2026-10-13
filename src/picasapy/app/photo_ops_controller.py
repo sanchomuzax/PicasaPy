@@ -93,6 +93,7 @@ from picasapy.render.flip import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .appearance_controller import coerce_ui_preference_flag
 from .worker_thread import BackgroundWorkerMixin
 
 # #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
@@ -156,6 +157,13 @@ def tukrozes_mutacio(document, nev: str, flags: int):
     if volt_sor:
         return document.with_value(nev, "flipped", "")
     return document.with_removed(nev, "flipped")
+
+
+# #4879: a `rename.fen` két jelölőnégyzetének állása (az eredeti
+# `RenameUseDate` / `RenameUseSize` beállításkulcsa) — a következő
+# megnyitásig megmarad.
+RENAME_USE_DATE_KEY = "RenameUseDate"
+RENAME_USE_SIZE_KEY = "RenameUseSize"
 
 
 class PhotoOpsMixin(BackgroundWorkerMixin):
@@ -698,6 +706,25 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         return photo.id, perform
 
     # -- tömeges átnevezés (#366, rename.fen paritás) ------------------------
+
+    @Slot(result=bool)
+    def renameUseDate(self) -> bool:
+        """A „Date” jelölőnégyzet mentett állása (alap: ki)."""
+        return coerce_ui_preference_flag(
+            self._get_settings().value(RENAME_USE_DATE_KEY), False)
+
+    @Slot(result=bool)
+    def renameUseSize(self) -> bool:
+        """Az „Image resolution” jelölőnégyzet mentett állása (alap: ki)."""
+        return coerce_ui_preference_flag(
+            self._get_settings().value(RENAME_USE_SIZE_KEY), False)
+
+    @Slot(bool, bool)
+    def setRenameUseFlags(self, use_date: bool, use_size: bool) -> None:
+        """A két jelölőnégyzet állásának mentése (QSettings)."""
+        settings = self._get_settings()
+        settings.setValue(RENAME_USE_DATE_KEY, "true" if use_date else "false")
+        settings.setValue(RENAME_USE_SIZE_KEY, "true" if use_size else "false")
 
     @Slot(list, str, bool, bool, result=str)
     def renamePreview(

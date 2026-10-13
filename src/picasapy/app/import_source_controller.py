@@ -305,9 +305,11 @@ def _preview_photo_record(index: int, candidate: ImportCandidate) -> PhotoRecord
 
 def _library_paths(conn: sqlite3.Connection) -> tuple[Path, ...]:
     """A jelenleg indexelt könyvtár teljes fájl-útvonalai (#441 duplikátum-
-    kizárás forrása)."""
+    kizárás forrása). #4887: a rejtett mappák képei is — ez nem
+    megjelenítés, hanem a „már a könyvtárban van-e” döntés."""
     return tuple(
-        Path(record.folder_path) / record.name for record in all_photos(conn)
+        Path(record.folder_path) / record.name
+        for record in all_photos(conn, include_hidden_folders=True)
     )
 
 

@@ -55,6 +55,14 @@ _MANUAL_SOURCE_REQUIRED = "picasapy-manual-source-required"
 _MANUAL_MAPPING_REQUIRED = "picasapy-manual-mapping-required"
 
 
+
+def _read_hidden_password_hash(*args, **kwargs):
+    """Lusta betöltés: az átvétel-ág modulja ne kerüljön az indulási
+    importláncba (#1653 plafon)."""
+    from picasapy.pmpimport.rejtett_jelszo import read_hidden_password_hash
+
+    return read_hidden_password_hash(*args, **kwargs)
+
 class PicasaImportController(BackgroundWorkerMixin, QObject):
     """`Eszközök ▸ Import a Picasából…` — a db3 adatainak átvétele."""
 
@@ -68,6 +76,10 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
     #: külön jelzés, mert a felületnek mást kell mondania rá.
     noInstallationFound = Signal()
     runningChanged = Signal()
+    #: #4597: a db3 `catdata` `Hidden Folders` sorának jelszó-lenyomata. A
+    #: háttérszálból megy ki; az átvételt (csak ha nincs saját jelszó) a
+    #: fogadó végzi a fő szálon.
+    hiddenPasswordFound = Signal(str)
 
     def __init__(
         self,
@@ -77,12 +89,14 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         olvaso: Callable[..., Iterable] | None = None,
         atvevo: Callable[..., AtvetelJelentes] | None = None,
         remapper: PathRemapper | None = None,
+        jelszo_olvaso: Callable[[Path], str | None] | None = None,
     ) -> None:
         super().__init__(parent)
         self._felderito = felderito or discover_installations
         self._olvaso = olvaso or iter_photo_records
         self._atvevo = atvevo or rekordokat_atvesz
         self._remapper = remapper or _ALAP_REMAP
+        self._jelszo_olvaso = jelszo_olvaso or _read_hidden_password_hash
         self._running = False
 
     def _set_running(self, ertek: bool) -> None:
@@ -142,6 +156,17 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
             remapper=PathRemapper.from_dict({forras: cel}),
         )
 
+    def _jelszot_jelez(self, db3: Path) -> None:
+        """#4597: a rejtett-jelszó átvétele mellékág — hibája csak naplózódik,
+        az import többi része (és a jelentés) ettől még lefut."""
+        try:
+            lenyomat = self._jelszo_olvaso(db3)
+        except Exception:
+            _log.warning("A rejtett-jelszó nem olvasható: %s", db3, exc_info=True)
+            return
+        if lenyomat:
+            self.hiddenPasswordFound.emit(lenyomat)
+
     def _start_import(
         self, *, db3_konyvtar: Path | None, remapper: PathRemapper
     ) -> None:
@@ -161,6 +186,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
                 for db3 in konyvtarak:
                     rekordok = tuple(self._olvaso(db3, remapper))
                     osszes = osszes + self._atvevo(rekordok)
+                    self._jelszot_jelez(db3)
                 self.importFinished.emit(
                     osszes.mappak,
                     osszes.kulcsszo,

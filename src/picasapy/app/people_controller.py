@@ -360,8 +360,10 @@ class PeopleMixin:
             if changed_central:
                 save_contacts_xml(central_path, tuple(entries))
 
+            # #4887: az átnevezés/törlés a rejtett mappák ini-jébe is írjon —
+            # ez nem megjelenítés, a név különben ott elavulna
             with open_index(self._db_path) as conn:
-                photos = all_photos(conn)
+                photos = all_photos(conn, include_hidden_folders=True)
             by_folder: dict[str, list] = {}
             for photo in photos:
                 by_folder.setdefault(photo.folder_path, []).append(photo)
