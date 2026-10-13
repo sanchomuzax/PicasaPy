@@ -2493,6 +2493,11 @@ forrás-módját **5**-re, illetve **6**-ra a szokásos 1–4/7 helyett
 bármelyik áll-e (`0x0061823c`). *Bizalmi fok: **erős** — a jelentést a
 rájuk épülő kapu szövege adja, a jelzők nevét nem olvastuk ki.*
 
+> ⚠️ **2026-10-13 (G/3, 2. pont):** a `0x618050` dekompilátuma szerint a mód-7
+> építés maga is 1-re állítja a `+0x4f0` bájtot. Ezért a „függőben lévő módosítás”
+> jelentés nem egyedül áll: a `+0x4f0` a mód-7 utáni újraépítés kiválasztója is.
+> A fok **feltételes**, amíg utasításszinten nincs megerősítve (G/3, 6. pont, 1. tétel).
+
 #### G) A készítési idő küszöbe: szomszédos csoportosítás, ordering-függő kiválasztás (#4194)
 
 **2026-10-07, 4. kör — a kiválasztási ág azonosítva; a paraméternevek
@@ -3175,6 +3180,89 @@ forrása **NYITOTT**.
 - A `[obj+0x720]/[obj+0x728]` határtáblák nem-sentinel írói és a `ordering=1/2` költségút külön nyitottak maradnak.
 
 **Új kutatási jegyjavaslatok:** nincs; a nyitott pontok a #4194 és a már jelzett #181 natív UI-mérés folytatásai.
+
+#### G/3. Módválasztás, horgonyforrás és a Neven-kapu — a hívási gráf és a dekompilátum (2026-10-13, #4194 8. kör)
+
+**Módszer és határ.** Az EXE nincs a gépen, ezért utasításszintű újraolvasás
+nem futott (a Codespace hálózatot igényelne). Három adatforrás:
+(a) a bináris index `xrefs.csv` **pozitív** közvetlen hívási élei (a
+vtábla-hívások nem látszanak, negatív találatra nem építek); (b) a
+`ghidra-koteg-2026-10-06b/` `00618050.c`, `00699cd0.c`, `00824090.c`,
+`008223e0.c` dekompilátuma; (c) a `ghidra-koteg-2026-10-12c/008226e0.c`.
+A (b) és (c) egyetlen dekompilátumforrás, ezért a horgony **utasításszintű**
+íráslánca (`0x8242f0`) önálló második útként **nem** számít.
+
+**1. Hívási élek (`xrefs.csv`, pozitív).**
+
+| hívó → hívott | megjegyzés |
+|---|---|
+| `0x006175c0` → `0x0081b800` | az egyetlen közvetlen hívó; a G-ben szereplő `0x617810` hívóhely ennek a függvénynek a belsejében van |
+| `0x00699cd0` → `0x00824090`, `0x00699cd0` → `0x006999c0` | a `0x699cd0` módkiosztó ágai |
+| `0x00824090` → `0x008223e0`, `0x00824090` → `0x008226e0`, `0x00824090` → `0x006999c0` | mindhárom közvetlen él |
+
+A `0x618050` → `0x699cd0` él vtábla-hívás (a `+0x4b4` objektum 0. slotja),
+ezért az indexben nem látszik; a dekompilátum adja (b).
+
+**2. A mód kiválasztása (`0x618050`, dekompilátum 96–125. sor; ⚠️ egy forrás).**
+A `param_1` `int *`, ezért `param_1[0x13c]` a `+0x4f0` bájt, `(int)param_1 + 0x4f1`
+a `+0x4f1`. Az alapmód 1 vagy 4 (`+0x134 ≠ -1`), vagy 7 (`FUN_00617110`, ha a
+`+0x135` objektum szerint igaz). Ezután: `+0x4f0 ≠ 0` → **5**; különben
+`+0x4f1 ≠ 0` → **6**. Mellékhatás: ha az alapmód 7 és `+0x4f1 = 0`, a
+`+0x4f0` bájt **1-re áll** (`00618050.c` 124. sor), és ez a
+következő építéseknél megmarad.
+
+- `0x699cd0(1..4)` → `0x68c880` (0x498 bájtos objektum);
+- `0x699cd0(7)` → `0x6999c0` (0x770 bájtos objektum, ctor, a horgony kezdőértéke `-1`);
+- `0x699cd0(5|6)` → `0x824090` (listaépítő, a horgonyág ide tartozik).
+
+⚠️ **Ütközés a 2.5/F-fel:** a 2.5/F szerint a `+0x4f0`/`+0x4f1` „függőben lévő,
+még nem alkalmazott Opciók-állapot”. A dekompilátum szerint a mód-7 építés
+maga is beállítja a `+0x4f0`-t, tehát a „függőben” jelentés nem egyedül áll.
+Ezt utasításszinten kell megerősíteni (nyitott).
+
+**3. A horgony (`0x824090` / `0x8223e0` / `0x8226e0`, dekompilátum).**
+- A `0x824090` `param_2` bájtja szerint: `0` → `0x8223e0`, nem nulla → `0x8226e0`.
+  Ezt a bájtot a `0x699cd0` hívóhelye adja át; a dekompilátum argumentum nélkül
+  mutatja a hívást, ezért a flag forrása **nyitott**.
+- A `0x8223e0` 2. argumentuma `[+0xeac] → +0x3c0`, az album-azonosító (alap `-1`).
+  A horgony-lokálist (`param_1`, a `0x824090` 44. sora) a `0x8223e0` a saját
+  kimeneti vektorának **0. elemével** tölti (`*param_3 = *puVar3`,
+  `008223e0.c` 122–123. sor); üres vektornál a `-1` marad (`uVar6 >> 1 == 0`).
+- A `0x8226e0` nem tölti a horgony-lokálist; a `&local_28` vektort adja. A
+  horgony így `-1`, azaz a 0. rekord.
+- A `0x824090` dekompilátumában a horgony-lokál **csak íródik**, olvasása nem
+  látszik. Az a `0x8242f0` `movl %edx,0x738(%ebp)` íráson át jut a `0x81c9b0`-ba,
+  és ezt a dekompilátum nem mutatja (G/2c, utasításszint).
+
+**4. A Neven-kapu (új a G/2c-hez képest).** A `0x824090` dekompilátuma szerint
+a Neven-súly (`_DAT_00c7c838`) akkor kerül be, ha (i) a
+`Preferences\SmartMultiPersonTrans` igaz, **és** (ii) a `+0x6f4` bájt
+(`piVar6[0x1bd]`) nem nulla. A `+0x6f4` csak akkor lesz 1, ha a `0x448c90` /
+`0x448a10` ellenőrzés hamis (a találatnál korai `goto` kihagyja), vagy a
+`0x8226e0` ágon fut. A G/2c csak az (i) feltételt említi. ⚠️ Egy dekompilátumon alapul.
+
+**5. Mit ad ez a kiválasztási szabályhoz.** Fotóindex nem jött ki; a
+„melyik marad” kérdés változatlan. Feltételes hipotézisek (nem bizonyítékok):
+- mód-7 első építésnél a horgony `-1`, a spirál a 0. rekordtól indul (a
+  `0x6999c0` ctor kezdőértékére támaszkodva; a rekordlista feltöltése nincs olvasva);
+- mód-5 `flag = 0` esetén a horgony az album-vektor 0. eleme, ha az nem üres.
+
+**6. Nyitott — a következő konkrét kör.**
+1. A `0x699cd0` hívóhelye a `0x824090` flag-argumentumával (melyik horgonyág fut).
+2. A `0x6999c0` törzse: a `0x4e0` lista feltöltése, a `+0x738 = -1` kezdőérték, és hogy a 7-es mód ezt használja-e.
+3. A `0x618050` 96–125. sorának utasításszintű megerősítése: íródik-e a `+0x4f0` a mód-7 ágban (2.5/F ütközés).
+4. A `0x8242f0` körüli utasítások és a `0x81c9b0` `+0x738`-olvasása: a horgonykapcsolat utasításszintű igazolása.
+
+**Bizonyítottsági fok (G/3):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| A `0x6175c0` → `0x81b800`, `0x699cd0` → `0x824090`/`0x6999c0`, `0x824090` → `0x8223e0`/`0x8226e0` élek | bináris index (pozitív élek) | **megerősített** |
+| A mód 5/6/7 kiosztása és a `+0x4f0` mód-7 általi beállítása | dekompilátum (`00618050.c`) | **feltételes** (egy forrás); ellentmond a 2.5/F „függőben” jelentésének |
+| A horgony a `0x8223e0` vektorának 0. eleme, üres/`0x8226e0` esetén `-1` | dekompilátum (`008223e0.c`, `008226e0.c`) | **feltételes**; a `0x738` lépés csak utasításszinten |
+| A Neven-súly a `+0x6f4` kapuval is feltétel | dekompilátum (`00824090.c` 52–79. sor) | **feltételes** |
+| A `0x824090` flag-argumentuma | — | **NYITOTT** |
+| A konkrét megtartott fotóindex | — | **NYITOTT** |
 
 #### Bizonyítottsági fok
 
