@@ -104,7 +104,7 @@ def test_a_helyi_menu_tabla_minden_eredeti_kontextust_es_tetelt_orzi():
         "Indexkép": 23,
         "Album": 12,
         "OneUp": 19,
-        "PplAlbum": 4,
+        "PplAlbum": 7,
         "PplAlbumPhoto": 4,
     }
     assert Counter(s[0] for s in sorok) == Counter(vart_darabszamok)

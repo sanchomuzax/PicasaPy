@@ -334,6 +334,13 @@ szerkesztése… · Az összes kijelölése · Kijelölés törlése; képen: El
 az Emberek albumból · Hozzáadás az Emberek albumhoz · **Áthelyezés új
 személyhez…** · Beállítás az Emberek album indexképeként.
 
+> ⛔ **HELYESBÍTVE (2026-10-12, #4645):** a `PplAlbum::` névtér négy kulcsa
+> NEM a teljes menü. Az építő (`0x007359e0`) hét tételt tesz ki, ebből hármat
+> más névtérből kölcsönöz: **Kiválasztás megfordítása** (`Album::ID_SELECT_INVERT`),
+> **Indexképek frissítése** (`Album::ID_REFRESH_THUMB`) és **Album
+> rendezésének alapja ▸** (`Album::SortAlbumBy`). A sorrend sem a fenti:
+> a szerkesztés az első, a törlés az utolsó. Részletek: **F**.
+
 **`Slingshot` — Windows Intéző héj-menü (8 tétel):** Szerkesztés a
 Picasában · Másolás · E-mail · Blog · Nyomtatás · Keresés a lemezen · Gyors
 feltöltés · Képfeliratok megjelenítése. Ez az az integráció, amitől a Picasa
@@ -1307,6 +1314,249 @@ megmaradását `Path.exists()`-szel, a csillag levételét pedig az ini-modellen
 ellenőrzi. A `kep-4883.png` a Csillagozott néző-helyi menüjét és a
 megerősítőt mutatja offscreen renderben.
 
+## F. ⛳ Az Emberek-album helyi menüje a binárisból: VAN „Kiválasztás megfordítása”, mindig engedélyezett (2026-10-12, #4645)
+
+*(A szakasz szándékosan az E. előtt áll: az E. táblázatát a
+`tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py` a fejezetcímtől
+a fájl végéig olvassa, így az utána álló táblák is beleszámítanának.)*
+
+*Forrás: az építő `0x007359e0`–`0x00735c89` · a tételhozzáfűző `0x00a6aee0`
+és az elválasztó-ág `0x00a6b120` · a közös rendezés-almenü `0x007318a0` · a
+hívó `0x005e7650` · a belépési pont `0x005e7c20` · az utófeldolgozó
+`0x0056c5a0` · a parancs-szétosztó `0x005cb990` · a kezelő `0x005e5370` · a
+megfordító mag `0x00716600` · a menüsáv-előkészítő `0x0056e1c0` és
+`0x005628c0`. Minta: a C.5-ben azonosított `Picasa3.exe` (3.9.141.259).*
+
+**A kérdés (#4645):** a gyorsbillentyű-lap (`picasa-gyorsbillentyuk.md` 4.)
+szerint a `0x007359e0` három billentyűs rekordot ír (Ctrl+A, Ctrl+D,
+Ctrl+I), a `PplAlbum::` névtérben viszont nincs megfordító kulcs. Van-e
+tehát „Kiválasztás megfordítása” a menüben, mit fordít meg, és mikor
+engedélyezett?
+
+### F.1 A rekordtábla — globális címeken, csúszás nélkül
+
+Ez az építő a menüsáv-építőhöz hasonlóan **globális** rekordtömböt tölt
+(`0xd6f9a8`-tól, lépésköz `0x14`), és a végén `0x00a6aee0(hMenu,
+0xd6f9a8, 0x0a)`-val **tíz** rekordot ad át (`0x00735c69`–`0x00735c75`).
+Mivel minden mező saját abszolút címre íródik, a B.5-ben leírt
+„következő rekord blokkjában írja ki” csúszás itt nem téveszt: a mező
+a címe alapján tartozik a rekordhoz. A rekord-alak a
+`picasa-eger-es-kijeloles.md` 11.1-é (`+0x00` felirat, `+0x04`
+gyorsbillentyű-betű, `+0x0a` parancs, `+0x0c` almenü-tábla, `+0x10`
+almenü-darabszám).
+
+| # | rekord | felirat-kulcs (cím) | EN alapértelmezés | HU (`stringres-en-hu.tsv`) | billentyű `+0x04` | parancs `+0x0a` |
+|---:|---|---|---|---|---|---|
+| 1 | `0xd6f9a8` | `PplAlbum::ID_ALBUM_EDITCAPTIONS` (`0xcaf334`) | &Edit People Album... | Az &Emberek album szerkesztése... | — | `0x9c69` (`0x00735a56`) |
+| 2 | `0xd6f9bc` | **nincs** (`0x00735a5f`: `mov [0xd6f9bc], esi`, `esi = 0`) | — | — | — | elválasztó |
+| 3 | `0xd6f9d0` | `PplAlbum::ID_ALBUM_SELECTALLPICTURES` (`0xcaf30c`) | Select &All | Az ö&sszes kijelölése | `"A"` (`0xc8c878`) | `0x9cb8` (`0x00735aaa`) |
+| 4 | `0xd6f9e4` | `PplAlbum::ID_CLEAR_SELECTION` (`0xcaf2ec`) | &Clear Selection | &Kijelölés törlése | `"D"` (`0xc7eae0`) | `0x9c90` (`0x00735af8`) |
+| 5 | `0xd6f9f8` | **`Album::ID_SELECT_INVERT`** (`0xcae188`) | &Invert Selection | **Kiválasztás &megfordítása** | **`"I"`** (`0xc8c818`) | **`0x9c47`** (`0x00735b5a`) |
+| 6 | `0xd6fa0c` | **nincs** (`0x00735b63`) | — | — | — | elválasztó |
+| 7 | `0xd6fa20` | `Album::ID_REFRESH_THUMB` (`0xcae414`) | &Refresh Thumbnails | Indexképek &frissítése | — | `0x9c5e` (`0x00735baa`) |
+| 8 | `0xd6fa34` | `Album::SortAlbumBy` (`0xcae43c`) | Sort &Album By | &Album rendezésének alapja... | — | almenü: `+0x0c` = `0x007318a0` visszatérése (`0x00735bea`), `+0x10` = `4` (`0x00735c0f`) |
+| 9 | `0xd6fa48` | **nincs** (`0x00735c19`) | — | — | — | elválasztó |
+| 10 | `0xd6fa5c` | `PplAlbum::ID_ALBUM_DELETE` (`0xcaf2b8`) | &Delete People Album | Az Emberek &album törlése | — | `0x9d44` (`0x00735c4c`) |
+
+Három rész-mérés zárja a táblát:
+
+- **Az üres felirat elválasztó.** A `0x00a6aee0` a `[rekord+0] == 0`
+  esetben (`0x00a6af04`–`0x00a6af20`) a `0x00a6b120`-at hívja `0xffff`
+  azonosítóval, az pedig szöveg nélkül `fMask = 0x10`, `fType = 0x800`
+  értéket ír (`0x00a6b140`–`0x00a6b148`) — ez a `MIIM_TYPE` +
+  `MFT_SEPARATOR`.
+- **A 8. rekord almenü.** Nem nulla `+0x0c` esetén a `0x00a6aee0` új
+  felugró menüt kér (`[0xc408f0]`, `0x00a6af3c`), és önmagát hívja a
+  `+0x0c` tömbre `+0x10` darabszámmal (`0x00a6af5c`). A `0x007318a0`
+  a `0xd6ead8` tömböt adja vissza (`0x007319e2`), benne négy rekorddal:
+  `Sort::ID_NAMESORT` `0x9cd3` · `Sort::ID_DATESORT` `0x9cd4` ·
+  `Sort::ID_SIZESORT` `0x9cd5` · `Sort::ID_REVERSESORT` `0xa0d0`, ebben a
+  sorrendben. Ugyanezt a függvényt hívja a mappa-menü (`0x00731cea`) és az
+  album-menü (`0x00732338`) is — független `E8`-pásztázás, pontosan három
+  hívó —, tehát ez **ugyanaz** a rendezés-almenü, mint az album
+  „Album rendezésének alapja ▸” tétele.
+- **A parancsazonosítók** egyeznek a `picasa-menu-parancsok.csv`
+  soraival: `0x9cb8` = `ID_ALBUM_SELECTALLPICTURES`, `0x9c90` =
+  `ID_CLEAR_SELECTION`, `0x9c47` = `ID_SELECT_INVERT`, `0x9d44` =
+  `ID_ALBUM_DELETE`, `0x9c69` = `ID_ALBUM_EDITCAPTIONS`, `0x9cd3`/`0xa0d0` =
+  `ID_NAMESORT`/`ID_REVERSESORT`.
+
+⇒ **A menü hét tétele** (három elválasztóval): Az Emberek album
+szerkesztése… · ― · Az összes kijelölése `Ctrl+A` · Kijelölés törlése
+`Ctrl+D` · **Kiválasztás megfordítása `Ctrl+I`** · ― · Indexképek
+frissítése · Album rendezésének alapja ▸ (Név · Dátum · Méret · Fordított
+sorrend) · ― · Az Emberek album törlése.
+
+A „Kiválasztás megfordítása” **nem saját `PplAlbum::` kulcs**, hanem az
+`Album::ID_SELECT_INVERT` kölcsönzése — ezért nem látszott az A.2-es
+névtér-leltárban. A felirat tehát az album-menüével azonos.
+
+### F.2 Melyik menü ez — a hívó és a kontextus
+
+A `0x007359e0`-t két hely hívja (független `E8`-pásztázás: `0x005d4366`
+és `0x005e76f2`). A `0x005e7650`-ben az ág választása:
+
+```
+0x005e76d3  call 0x4461a0      ; hamis → 0x005e7731 call 0x7319f0  (mappa-menü)
+0x005e76e5  call 0x448c90      ; hamis → 0x005e771e call 0x732160  (album-menü)
+0x005e76f2  call 0x7359e0      ; igaz  → Emberek-album menü
+```
+
+A `0x00448c90` a személy-album kérdezője (`picasa-arcfelismeres.md` 9/e:
+`0x0064d1ab call 0x448c90 ; nem személy-album`). Az építő a C.3 szerint a
+`0x13c` kontextust írja (`0x00735c7a push 0x13c` → `0x00a6ae90`). A
+három menü tehát ugyanabból a hívóból, az album fajtája szerint
+választva épül.
+
+### F.3 Mit fordít meg — a kezelő és a mag
+
+A kiválasztott parancs a `0x005e77dc`–`0x005e7800` helyen `WM_COMMAND`-ként
+(`0x111`) megy tovább, a nézet-objektum vtáblájának `+0x5c` rekeszén át.
+Ez a rekesz a `0x005cb990`: a konstruktor `0x00564507`-nél a `0x00c9052c`
+vtáblát írja az objektumba, és a `0x00c9052c + 0x5c = 0x00c90588` rekesz
+tartalma a fájlban `0x005cb990` (a `0x005cb990` egyetlen abszolút
+előfordulása a PE-ben). A rács parancs-szétosztója (`0x005cb990`,
+`picasa-eger-es-kijeloles.md` 11.2) a `0x9c47 − 0x9c42 = 5` indexet a
+`0x005cdb34` bájttérképen át az `1`-es ágra viszi, az ugrótábla
+(`0x005cd9fc`) célja `0x005cbd03`: `push ebx · call 0x005e5370`.
+*(Kontroll ugyanezzel az olvasóval: a `0x9cb8` → 118. bejegyzés → 39. ág
+→ `0x005cbcec`, ahogy a 11.2 is írja.)*
+
+A kezelő (`0x005e5370`):
+
+```
+0x005e5377  mov esi, [ebx + 0xeac]   ; ugyanaz a csomópont, mint a Ctrl+A / Ctrl+D kezelőjénél
+0x005e5382  call 0x716600            ; megfordítás
+0x005e53ad  call 0xa54b70            ; egyetlen teljes-felület érvénytelenítés
+```
+
+A mag (`0x00716600`) az `[esi+0x32c]` elemtömbön megy végig
+(`[esi+0x330] >> 1` darab):
+
+| az elem állapota | mit tesz | cím |
+|---|---|---|
+| kijelölt (`+0x5d ≠ 0`) | `+0x5d = 0`; a `+0x59` változásjelző csak ha `+0x5a == 0`; „volt levétel” jelző be | `0x00716631`–`0x00716644` |
+| nem kijelölt | `+0x5d = 1`; a `+0x59` csak ha `+0x5a == 0`; a horgony `[esi+0x390]` = az elem `+0xb4` azonosítója | `0x00716648`–`0x00716668` |
+| üres rekesz (`NULL`) | kihagyja | `0x00716626` |
+
+Utána a megfigyelőket (`[esi+0x31c]`, `vt[1]`) **csak akkor** értesíti,
+ha volt levétel (`0x0071667c test dl, dl`) — a hívó teljes-felület
+érvénytelenítése ettől függetlenül lefut.
+
+Három, ebből következő tény:
+
+1. **A hatókör azonos az „Az összes kijelölése” tételével**: mindkét
+   kezelő a `[CThumbUI+0xeac]` csomópont elemtömbjén dolgozik
+   (`0x005e5070` → `0x00716f40`, `0x005e5370` → `0x00716600`), és mindkettő
+   a `+0x5d` kijelölésbájtot írja. Ugyanabban a menüben a megfordítás tehát
+   pontosan azt a halmazt fordítja meg, amit a Ctrl+A kijelöl — azaz az
+   Emberek-album rácsban látható elemeit, nem külön arc- vagy
+   személy-listát.
+2. **Eltérés a Ctrl+A-tól:** a `0x00716f40` a `+0x5a` jelzős elemet
+   **soha** nem jelöli ki (11.3), a `0x00716600` viszont a `+0x5a`-t csak
+   a `+0x59` írásánál nézi, a `+0x5d`-t nem — vagyis megfordításkor az
+   ilyen elem is kijelölt lesz. A `+0x5a` jelentése **örökölt nyitott
+   kérdés** (`picasa-kollazs-felulet.md`, „a `+0x5a` jelentését NEM nevezem
+   meg biztosnak”); a PicasaPy kijelölési modelljében nincs megfelelője, a
+   megvalósítást nem érinti.
+3. **A horgony az UTOLSÓ újonnan kijelölt elem** — a ciklus minden
+   kijelöléskor felülírja a `[esi+0x390]`-t. (A Ctrl+A az elsőt teszi
+   horgonnyá, 11.3.)
+
+### F.4 Mikor engedélyezett — mindig
+
+A menü megjelenítése előtt a `0x005e7c20` a `0x0056c5a0` utófeldolgozót
+hívja (`0x005e7c99`), kontextusként a menü `dwMenuData`-jával (`0x13c`):
+
+```
+0x0056c5d0  call [0xc408c4]          ; tételszám
+0x0056c5e0  push 0x400 / push esi / push hMenu
+0x0056c5e9  call [0xc40818]          ; EnableMenuItem(hMenu, i, MF_BYPOSITION|MF_ENABLED) — MINDEN tétel
+0x0056c5f6  cmp ebp, 0xa6 ; ja       ; 0x13c > 0xa6
+0x0056c61a  cmp ebp, 0x127 / 0x13d / -1  ; egyik sem
+0x0056c62d  jne 0x56e04a             ; → xor eax, eax ; ret — semmi további
+```
+
+A visszatérő `0` miatt a `0x005e7c20` nem lép ki (`0x005e7c9e cmp eax,
+0xf4242`), és a menüt `TrackPopupMenu` (`[0xc407c4]`, `0x005e7cd7`) teszi
+ki. A `0x13c` kontextusban tehát **minden tétel engedélyezve**, semmi nem
+szürkül és semmi nem törlődik — a kijelölés állapotától függetlenül.
+
+**A tiltó ág kizárása, indextől függetlenül:** a teljes `.text`
+bájtpásztázása a `0x9c47` minden előfordulását megadja (32 és 16 bites
+közvetlen érték): menüsáv-építő `0x00559bfa`, mappa-menü `0x00731bde`,
+album-menü `0x007322a2`, Emberek-menü `0x00735b5b`, és **két szürkítő**
+hely, mindkettő a `0x0056e1c0`-ban: `0x0056e781` (egy négyes
+tételcsoport `EnableMenuItem`-je `MF_GRAYED`-del) és `0x0056ebea`
+(`[edi+0x34a4] ≠ 0` esetén szürkít). A maradék két találat nem utasítás
+része (`0x004b9af5` egy `call` eltolása, `0x00bd9cdb` egy `0x00bd9c47`
+mutató). A `0x0056e1c0` azonban **nem a felugró menüt** szerkeszti: a
+menüfogantyút a `0x005628c0`-tól kapja, ami
+`GetSubMenu(GetMenu([0xd67850]), n)` — ugyanaz a `[0xc408dc]` /
+`[0xc408cc]` importpár, amit a `picasa-menu-parancsok-viselkedes.md` a
+`0x00574b81`–`0x00574b8a` helyen `GetMenu`/`GetSubMenu`-ként azonosít —,
+vagyis a **menüsáv** Szerkesztés menüjét. A felugró menü fogantyúját maga
+az építő kéri (`0x00735c63 call [0xc408f0]` = `CreatePopupMenu`), és az
+csak a `0x005e7c20`-ba jut tovább, a `0x0056e1c0`-ba nem.
+
+⇒ **Az Emberek-album helyi menüjének „Kiválasztás megfordítása” tétele
+mindig engedélyezett.** (A menüsáv Szerkesztés ▸ Kiválasztás megfordítása
+szürkítése külön kérdés, ez a szakasz nem dönti el.)
+
+### F.5 Eredeti / nálunk / teendő
+
+Mai `PeopleAlbumContextMenu.qml` (`origin/main`, 2026-10-12): Az Emberek
+album törlése · Az Emberek album szerkesztése… · ― · Az összes kijelölése
+· Kijelölés törlése — billentyűfelirat nélkül.
+
+| eltérés | eredeti | nálunk |
+|---|---|---|
+| **Kiválasztás megfordítása** | megvan, `Ctrl+I`, mindig engedélyezett, a Ctrl+A hatókörén | **hiányzik** |
+| Indexképek frissítése | megvan (`0x9c5e`) | hiányzik |
+| Album rendezésének alapja ▸ | megvan, a közös négytételes almenü | hiányzik |
+| billentyűfeliratok | `Ctrl+A`, `Ctrl+D`, `Ctrl+I` | nincs |
+| sorrend | szerkesztés első, törlés utolsó, három elválasztó | törlés első, egy elválasztó |
+
+A PicasaPy oldalon a hatókör már adott: a `Main.qml` `invertSelection()`
+és `selectAll()` ugyanazt a `_groupRows()` halmazt használja, tehát a
+megfordítás bekötése ugyanaz, mint az album-menüé (`FolderPane.qml`,
+`onInvertSelectionRequested`).
+
+**A megvalósítandó eltérés — „Kész, ha”** (fejlesztési jegy tárgya):
+
+- [ ] Az Emberek-album helyi menüjében a tételsor az F.1 szerinti: Az
+      Emberek album szerkesztése… · ― · Az összes kijelölése · Kijelölés
+      törlése · Kiválasztás megfordítása · ― · Indexképek frissítése ·
+      Album rendezésének alapja ▸ · ― · Az Emberek album törlése.
+- [ ] A három kijelölő tétel mellett a billentyűfelirat `Ctrl+A`,
+      `Ctrl+D`, `Ctrl+I` (a `FolderContextMenu.qml` mintájára).
+- [ ] A „Kiválasztás megfordítása” mindig engedélyezett, és ugyanazt a
+      halmazt fordítja meg, amit ugyanebben a menüben az „Az összes
+      kijelölése” kijelöl — valódi kattintásos QML-próba bizonyítja egy
+      részleges kijelölésen (előtte/utána kijelölt sorok).
+- [ ] Az „Indexképek frissítése” és az „Album rendezésének alapja ▸” vagy
+      működik az album-menü megfelelőjével azonos módon, vagy — ha ott sincs
+      mögötte réteg (E. táblázat: `Album::SortAlbumBy` **hiányzik**) — a
+      jegy kimondja, és a tétel ugyanúgy viselkedik, mint az album-menüben.
+- [ ] Az E. táblázat `PplAlbum` sorai kiegészülnek a három új tétellel, és
+      a `test_paritas_gyorsbillentyu_helyi_menuk_4462.py` várt darabszáma
+      `PplAlbum: 7`-re nő; az A.2-re hivatkozó
+      `tests/app/test_stage4_context_menus_422.py` tételsora is az F.1-et
+      követi.
+
+### F.6 Nyitott kérdések mérlege
+
+- van-e „Kiválasztás megfordítása”, mi a billentyűje — **LEZÁRVA** (F.1:
+  van, `Ctrl+I`, `0x9c47`, kölcsönzött `Album::` kulcs);
+- mit fordít meg — **LEZÁRVA** (F.3: a Ctrl+A-val azonos csomópont
+  elemtömbjét);
+- engedélyezett-e mindig — **LEZÁRVA** (F.4);
+- a teljes tételsor és sorrend — **LEZÁRVA** (F.1);
+- a `+0x5a` jelző jelentése — **örökölt**, nem e kör kérdése
+  (`picasa-kollazs-felulet.md`).
+
+`0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
 ## E. #4462 — helyi menük: eredeti tétel → mai kód
 
 A táblázat a fenti specifikáció eredeti feliratait és menüosztályait tekinti mércének. A rejtett/állapotfüggő tételeket külön sorban tartja, akkor is, ha a felületen ugyanazt a sort használják. Az album osztály eredeti 13 parancsazonosítója 12 különböző feliratot ad; a két feltöltési felirat több azonosítón osztozik, ezért a táblázat látható tételeket sorol.
@@ -1388,6 +1638,9 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | PplAlbum | PplAlbum::ID_EDITALBUM | Emberek-album szerkesztése | objectName=peopleAlbumMenuEdit | **megvan és működik** | A People Manager a kattintott személyt jelöli ki: tests/app/qml_functional/test_people_album_context_menu_4587.py |
 | PplAlbum | PplAlbum::ID_SELECTALL | Összes kijelölése | objectName=peopleAlbumMenuSelectAll | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
 | PplAlbum | PplAlbum::ID_CLEARSELECTION | Kijelölés törlése | objectName=peopleAlbumMenuClearSelection | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| PplAlbum | Album::ID_SELECT_INVERT | Kiválasztás megfordítása | objectName=peopleAlbumMenuInvertSelection | **megvan és működik** | tests/app/qml_functional/test_people_album_menu_4645.py |
+| PplAlbum | Album::ID_REFRESH_THUMB | Indexképek frissítése | objectName=peopleAlbumMenuRefreshThumbnails | **megvan és működik** | tests/app/qml_functional/test_people_album_menu_4645.py |
+| PplAlbum | Album::SortAlbumBy | Album rendezésének alapja almenü | — | **hiányzik — a #4599 után kötjük be** | A #4599 része; ebben a körben a tétel kimarad |
 | PplAlbumPhoto | PplAlbumPhoto::ID_DELETEFROMPEOPLEALBUM | Eltávolítás az Emberek albumból | objectName=contextMenuRemoveFromPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_PEOPLEALBUMS | Hozzáadás egy meglévő Emberek-albumhoz | objectName=contextMenuAddToPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_MOVETONEWPERSON | Áthelyezés új személyhez | objectName=contextMenuMoveToNewPerson | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |

@@ -15549,7 +15549,8 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         </message>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15571,7 +15572,8 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         </message>
         <message>
             <source>&amp;Refresh Thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
             <translation>Indexképek &amp;frissítése</translation>
         </message>
         <message>
@@ -15668,7 +15670,8 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         </message>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Folder::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15858,7 +15861,8 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
         <name>PeopleAlbumContextMenu</name>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PplAlbum::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15874,8 +15878,21 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>Az &amp;Emberek album szerkesztése...</translation>
         </message>
         <message>
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT</extracomment>
+            <translation>Kiválasztás &amp;megfordítása</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
+            <translation>Indexképek &amp;frissítése</translation>
+        </message>
+        <message>
             <source>Select &amp;All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <translation>Az ö&amp;sszes kijelölése</translation>
         </message>
     </context>

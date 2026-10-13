@@ -1343,6 +1343,13 @@ Rectangle {
         onClearSelectionRequested:
             if (pane.appWindow && pane.appWindow.clearSelection)
                 pane.appWindow.clearSelection()
+        onInvertSelectionRequested:
+            if (pane.appWindow && pane.appWindow.invertSelection)
+                pane.appWindow.invertSelection()
+        // Ugyanaz a frissítési út, mint az album-menüben: az aktív mappa
+        // újraszinkronja újratölti a látható rácsot.
+        onRefreshThumbnailsRequested:
+            if (controller) controller.resyncFolder(controller.currentFolder)
     }
 
     Dialog {
