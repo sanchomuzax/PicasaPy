@@ -9,6 +9,8 @@ változatlan.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import time
 
 from PySide6.QtCore import QPoint, QPointF, QObject, Qt
@@ -144,7 +146,7 @@ def _albumorder_nelkul(ini):
 
 
 def _racs(controller):
-    return [(p.folder_path.rsplit("/", 1)[-1], p.name) for p in controller._photos.photos]
+    return [(Path(p.folder_path).name, p.name) for p in controller._photos.photos]
 
 
 def _lemez(root):
@@ -159,7 +161,7 @@ def _lemez(root):
 def _ujranyitott_index(tmp_path, root):
     with open_index(tmp_path / "ujra.db") as conn:
         sync_tree(conn, root)
-        return [(r.folder_path.rsplit("/", 1)[-1], r.name) for r in album_photos(conn, _TOKEN)]
+        return [(Path(r.folder_path).name, r.name) for r in album_photos(conn, _TOKEN)]
 
 
 def test_kattintasra_nev_szerint_rendez_es_a_sorrend_tartos(qml_app, qt_app, tmp_path):

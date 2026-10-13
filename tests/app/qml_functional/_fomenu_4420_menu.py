@@ -28,7 +28,7 @@ _MENUK = (
     ("File", "&File"),
 )
 _MENU_UTVONAL_DARAB = {
-    "View": 50,
+    "View": 51,
     "Folder": 15,
     "Picture": 20,
     "Edit": 13,
@@ -39,8 +39,8 @@ _MENU_UTVONAL_DARAB = {
 }
 # #4528: hét új bejárható parancs került a Mappanézetbe (3 személyrendezés,
 # 4 Shortcuts-gyökér); maga az almenücím nem külön parancsútvonal.
-assert sum(_MENU_UTVONAL_DARAB.values()) == 199
-_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 30, "mappanezet": 20}
+assert sum(_MENU_UTVONAL_DARAB.values()) == 200
+_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 31, "mappanezet": 20}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
 ]

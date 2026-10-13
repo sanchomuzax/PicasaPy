@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.86] – 2026-10-13
+
+- A Nézet ▸ Keresési opciók menüpont ugyanúgy nyitja és zárja a keresési beállításokat, mint a keresőmező melletti gomb, a menüben pedig a pipa jelzi, ha nyitva vannak (#4641).
+
 ## [0.9.85] – 2026-10-13
 
 - Az album helyi menüjének „Album rendezésének alapja” almenüje működik: az album képei dátum, név vagy méret szerint egyszer átrendezhetők (Shifttel csökkenő sorrendben), a sorrend pedig megfordítható; az új sorrend a képek .picasa.ini-jében tárolódik, ezért újraindítás után is megmarad, és csak az adott albumot érinti (#4599).
