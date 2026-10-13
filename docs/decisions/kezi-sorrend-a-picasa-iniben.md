@@ -2,6 +2,26 @@
 
 Dátum: 2026-09-16 · Státusz: ELFOGADVA · jegy: #1721
 
+> ## ⚠️ A PREMISSZA MEGDŐLT — ld. ADR-016 (2026-10-12, #4884, #4599)
+>
+> Az alábbi „A helyzet” szakasz szerint az eredeti a kézi sorrendet a
+> `db3/albums_0.db`-ben tartja. **Ez nem igaz**: a #4591 kimérte, hogy a
+> fájl tartalma borító-raszter, a #4884 pedig megtalálta a valódi helyet —
+> a keresőindex szótárát (`db3\wordhash.dat`), ahol minden mappa és album
+> egy szó, és a szó rekordindex-listájának sorrendje maga a megjelenítési
+> sorrend (`docs/specs/album-sorrend.md`).
+>
+> **A döntés ettől érvényben marad**, mint SAJÁT döntés: a `wordhash.dat` is
+> központi, bináris `db3`-fájl, tehát az 1. érv („a `db3` írása aránytalan
+> kockázat”) rá ugyanúgy áll, a 2. és a 3. érv pedig a premisszától
+> független. A szöveget történeti okból nem írtuk át.
+>
+> Az **album** sorrendjét az ADR-016
+> (`docs/decisions/album-sorrend-a-kep-szakaszaban.md`) rendezi: külön
+> kulcs (`albumorder=`), mert a mappa és az album sorrendje az eredetiben is
+> két független lista. Az ott felsorolt nyitott kérdések (NY1, NY2) a
+> `priority=`-re ugyanúgy vonatkoznak.
+
 ## A helyzet
 
 A rács sorrendjét ma kizárólag szabályok adják (`date` · `name` · `size` ·

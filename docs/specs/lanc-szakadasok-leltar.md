@@ -135,6 +135,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 |---|---|---|
 | `FolderListModel` | `app/models.py` | BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt |
 | `PhotoGridModel` | `app/models.py` | BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt |
+| `StartupMaintenance` | `app/startup_maintenance.py` | BELSŐ — az application.py belső indulási munkasora; a QML csak a fordított állapotüzenetet kapja |
 
 <!-- KEPESSEG_OR:VEGE -->
 

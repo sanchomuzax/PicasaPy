@@ -27,6 +27,8 @@ import PySide6
 from PySide6.QtCore import (
     QCoreApplication,
     QEventLoop,
+    QLocale,
+    QLibraryInfo,
     QLockFile,
     QObject,
     QSettings,
@@ -99,6 +101,7 @@ from .platform_storage import (
     default_storage_paths,
 )
 from .startup_status import StartupStatus
+from .startup_maintenance import StartupMaintenance, StartupMaintenanceStep
 from .startup_diagnostics import (
     StartupProgressLog,
     runtime_version_messages,
@@ -490,26 +493,21 @@ def _ottragadt_mappak_takaritasa(
     (a figyelt gyökereken kívülre került) mappákat takarít, ami a felület
     megjelenése UTÁN ugyanúgy elvégezhető.
 
-    ## Versenyhelyzet a háttér-szinkronnal (#1716)
+    ## Versenyhelyzet a háttér-szinkronnal (#1716/#4687)
 
-    ⚠️ A `_start_and_finish` ezt a lépést a `_start_initial_scan` (tehát a
-    `controller.start()` → `rescan()`) ELŐTT hívja, és ez a sorrend a
-    SZINKRONPONT — nem zár. A `rescan()` saját SQLite-kapcsolattal futó
-    HÁTTÉRSZÁLAT indít (`_sync_worker`, ld. `library_controller.py`), ami
-    ugyanazokat a táblákat írja. Ha a takarítás ezután (vagy azzal egy
-    időben) futna, a törlés versenyhelyzetbe kerülne a szál írásával: egy
-    épp szinkronizált mappa sora eltűnhetne a lába alól. Mivel a takarítás
-    a FŐSZÁLON, egyetlen tranzakcióban fut és `commit()`-tal lezárul,
-    MIELŐTT a `controller.start()` egyáltalán meghívná a `rescan()`-t, a
-    háttérszál a takarítás befejezése előtt még nem is létezik — a
-    sorrend tehát garantálja a kizárást, zár nélkül. Az elhelyezés-őr
-    (`tests/perf/test_takaritas_utrol_1716.py`) ezt a sorrendet fagyasztja
-    be: ha a hívás a `_start_initial_scan` MÖGÉ kerülne, az őr bukik.
+    ⚠️ Ez a lépés a `_start_initial_scan` (tehát a `controller.start()` →
+    `rescan()`) ELŐTT fut, a soros `StartupMaintenance` munkacsoportban.
+    A `rescan()` saját SQLite-kapcsolattal futó HÁTTÉRSZÁLAT indít
+    (`_sync_worker`, ld. `library_controller.py`), ami ugyanazokat a
+    táblákat írja. A takarítás tranzakciója a munkafüggvény visszatérésekor
+    már commitolt; a sor csak ezután lép tovább a mappafa- és exportcél-
+    frissítésre, majd a `batchFinished` jelzés indítja a könyvtárszinkront.
+    Így a két író nem fut egyszerre, a fő szál pedig közben eseményeket
+    dolgoz fel. Az elhelyezés-őr (`tests/perf/test_takaritas_utrol_1716.py`)
+    ezt a sorrendet fagyasztja be.
 
-    A bal hasáb mappafája (`_reload_folder_hierarchy`) a takarítás ELŐTT,
-    az első képkocka előtt egyszer már feltöltődött — a takarítás után
-    ezért a hívó azonnal újratölti, hogy a nézet ne mutasson egy már
-    törölt, ottragadt mappát a következő szinkron végéig.
+    A bal hasáb mappafája a takarítás után, ugyanebben a soros munkacsoportban
+    töltődik fel, így nem mutat ottragadt mappát a következő szinkronig.
 
     A hiba nyelt (a takarítás soha nem hiúsulhat meg tőle), de naplózva."""
     try:
@@ -1009,6 +1007,24 @@ def _startup_language(
     return resolve_startup_language(settings)
 
 
+def _install_qt_translator(app: QGuiApplication) -> None:
+    """A Qt saját (`qtbase_*.qm`) fordítója — a Quick Controls szabványos
+    gombjai (Mégse, Abbrechen…) ebből jönnek. A PicasaPy `.qm`-jei ezt nem
+    hozzák, és a Qt nem tölti be magától; a default QLocale csak a nyelvet
+    választja ki, a fájlt nekünk kell betölteni (#4881).
+
+    Hiányzó fájlnál (a `qt6-translations-l10n` csomag nélkül) hangos
+    figyelmeztetés, és az angol gombfeliratok maradnak."""
+    tr = QTranslator(app)
+    if tr.load(QLocale(), "qtbase", "_", QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)):
+        app.installTranslator(tr)
+    else:
+        logging.getLogger(__name__).warning(
+            "a Qt fordítása (qtbase_%s.qm) nem található — a szabványos gombok angolul maradnak",
+            QLocale().name(),
+        )
+
+
 def _install_translator(app: QGuiApplication, language: str | None = None) -> QTranslator | None:
     """A `language` (vagy a beállított) nyelv fordítójának telepítése.
 
@@ -1016,8 +1032,15 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
     maguk angolok — ezért ott nem telepítünk fordítót.
     """
     code = coerce_language(language) if language else _startup_language()
+    # #4881: a Quick Controls párbeszédeinek szabványos gombjai (OK, Mégse…)
+    # az alapértelmezett QLocale-ból töltik a Qt saját fordítását — enélkül a
+    # rendszer nyelvén jelennének meg a választott felületi nyelv helyett.
+    # ADR-004 (nyelv ≠ területi beállítás): a NYELV a felületé, a TERÜLET
+    # (tizedesjel, időformátum, mértékegység) marad a rendszeré.
+    QLocale.setDefault(QLocale(QLocale(code).language(), QLocale.system().territory()))
     if code == DEFAULT_LANGUAGE:
         return None
+    _install_qt_translator(app)
     # #4817: forrásból indítva a `.qm` itt készül el a `.ts`-ből
     forditsd(_I18N_DIR / f"picasapy_{code}.ts")
     translator = QTranslator(app)
@@ -1474,33 +1497,60 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     #: fát — a vezérlőnek tudnia kell, melyek azok.
     folder_hierarchy_controller.setWatchedRoots(list(roots))
 
-    def _reload_folder_hierarchy() -> None:
-        """A fa-nézet mappalistájának újratöltése az indexből.
+    startup_maintenance = StartupMaintenance(progress_log, parent=app)
+    startup_maintenance.statusChanged.connect(
+        startup_status.report, Qt.ConnectionType.QueuedConnection
+    )
 
-        Ugyanaz az esemény frissíti, mint az időrendet (`syncFinished`): a
-        fa és a lapos lista UGYANABBÓL a `folders` táblából él, csak más
-        alakban. A vezérlő a kinyitott ágakat megőrzi, tehát a szinkron nem
-        csukja össze a felhasználó alatt a fát.
-        """
+    def _maintenance_step_finished(key: str, result, error_type: str) -> None:
+        if error_type:
+            logging.getLogger(__name__).warning(
+                "az indulási karbantartás egyik lépése hibára futott (%s): %s",
+                key,
+                error_type,
+            )
+            return
+        if key == "folder_hierarchy" and result is not None:
+            folder_hierarchy_controller.setFolders(result)
+
+    startup_maintenance.stepFinished.connect(
+        _maintenance_step_finished, Qt.ConnectionType.QueuedConnection
+    )
+
+    def _mappafa_sorai() -> list[dict[str, object]] | None:
+        """Az indexelt mappafa sorai, a Qt-modell módosítása nélkül."""
         try:
             with open_index(data_dir / "index.db") as conn:
-                folder_hierarchy_controller.setFolders(
-                    [
-                        {"path": path, "count": count}
-                        for _name, path, count, *_rest in _lazy_app_symbol(
-                            "sorted_folder_rows"
-                        )(conn)
-                    ]
-                )
+                return [
+                    {"path": path, "count": count}
+                    for _name, path, count, *_rest in _lazy_app_symbol(
+                        "sorted_folder_rows"
+                    )(conn)
+                ]
         except sqlite3.DatabaseError:
-            # a hasáb lapos listája külön úton frissül — egy sérült index
-            # miatt a fa maradjon a korábbi tartalmán, ne dőljön el a
-            # `syncFinished` jelzés kiszolgálása
-            logging.getLogger(__name__).exception("a fa-mappanézet frissítése hibára futott")
+            logging.getLogger(__name__).exception(
+                "a fa-mappanézet frissítése hibára futott"
+            )
+            return None
 
-    controller.syncFinished.connect(_reload_folder_hierarchy)
-    with timeline.phase("a bal hasáb mappafájának betöltése"):
-        _reload_folder_hierarchy()
+    def _reload_folder_hierarchy() -> None:
+        """Az indexelt mappafa újratöltése soros háttérmunkaként."""
+        startup_maintenance.enqueue(
+            "folder-hierarchy-refresh",
+            (
+                StartupMaintenanceStep(
+                    key="folder_hierarchy",
+                    name="A mappafa frissítése",
+                    status_text=None,
+                    work=_mappafa_sorai,
+                ),
+            ),
+        )
+
+    startup_maintenance.set_refresh_handler(_reload_folder_hierarchy)
+    controller.syncFinished.connect(
+        startup_maintenance.request_refresh, Qt.ConnectionType.QueuedConnection
+    )
 
     # Időrend nézet (#24, Ctrl+5): a teljes könyvtár év/hónap szerinti
     # csoportosítása — a MEGLÉVŐ (AppControllerrel közös) thumbnail-
@@ -1656,7 +1706,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
     PicasaImportController = _lazy_app_symbol("PicasaImportController")
-    picasa_import_controller = PicasaImportController()
+    picasa_import_controller = PicasaImportController(
+        index_path=data_dir / "index.db",
+        writer_queue=controller._index_iro_sor,
+    )
+    # #4591: az átvett videódátumok után a rács/mappalista újratöltése
+    picasa_import_controller.datesApplied.connect(controller._reload_after_sync)
     engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
     # #4597: a Picasában beállított rejtett-jelszó átvétele (csak ha nálunk
     # még nincs) — sorba állított hívás, hogy a fő szálon fusson.
@@ -1734,30 +1789,56 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         else None
     )
     splash_state = {"started": False}
+    startup_state = {"first_frame_at": None}
 
     def _start_and_finish() -> None:
-        first_frame_at = time.monotonic()
-        # #1667/#1716: az induláskori indexkarbantartás NEM a kritikus
-        # úton — az ablak már látszik, mire ez elindul. A takarítás (#58)
-        # ELŐBB fut, mint a `_start_initial_scan` (`controller.start()` →
-        # `rescan()`): az utóbbi indítja a háttér-szinkron szálat, ami
-        # SAJÁT kapcsolattal írja ugyanazt az indexet. Amíg ez a sorrend
-        # áll, a háttérszál a takarítás `commit()`-ja UTÁN keletkezik —
-        # tehát a kettő SOHA nem ír egyszerre (ld. `_ottragadt_mappak_
-        # takaritasa` docstringje a versenyhelyzet indoklásáért).
-        with timeline.phase("ottragadt mappák takarítása (#58)"):
-            _ottragadt_mappak_takaritasa(data_dir / "index.db", roots, QSettings())
-        # a bal hasáb mappafája az első képkocka ELŐTT, még a takarítatlan
-        # indexből töltődött fel (ld. lent) — a takarítás után azonnal
-        # újratöltjük, hogy ne mutasson ottragadt mappát a következő
-        # szinkron végéig.
-        _reload_folder_hierarchy()
-        with timeline.phase("exportcélok visszavétele (#1565)"):
-            _exportcelok_visszavetele(data_dir / "index.db", QSettings())
+        startup_state["first_frame_at"] = time.monotonic()
+        # #4687: a három induláskori karbantartás külön háttérszálon, de
+        # egymás után fut. Így a lassú hálózati stat nem fogja a Qt főszálat,
+        # a takarítás mégis a könyvtárszinkron ELŐTT commitol.
+        startup_maintenance.enqueue(
+            "initial",
+            (
+                StartupMaintenanceStep(
+                    key="orphan_cleanup",
+                    name="Mappák ellenőrzése",
+                    status_text=QCoreApplication.translate(
+                        "startup", "Checking folders…"
+                    ),
+                    work=lambda: _ottragadt_mappak_takaritasa(
+                        data_dir / "index.db", roots, QSettings()
+                    ),
+                ),
+                StartupMaintenanceStep(
+                    key="folder_hierarchy",
+                    name="A mappafa frissítése",
+                    status_text=QCoreApplication.translate(
+                        "startup", "Refreshing folder list…"
+                    ),
+                    work=_mappafa_sorai,
+                ),
+                StartupMaintenanceStep(
+                    key="exported_folders",
+                    name="Exportmappák ellenőrzése",
+                    status_text=QCoreApplication.translate(
+                        "startup", "Checking export folders…"
+                    ),
+                    work=lambda: _exportcelok_visszavetele(
+                        data_dir / "index.db", QSettings()
+                    ),
+                ),
+            ),
+        )
+
+    def _maintenance_batch_finished(batch_key: str) -> None:
+        if batch_key != "initial":
+            return
         progress_log.mark("Induláskori könyvtárszinkron indítása")
         with timeline.phase("könyvtár betöltése (a vezérlő indítása)"):
             _start_initial_scan(startup_status, controller, storage_bootstrap.migration_notice)
-        elapsed_ms = (time.monotonic() - first_frame_at) * 1000
+        elapsed_ms = (
+            time.monotonic() - startup_state["first_frame_at"]
+        ) * 1000
         _jelentsd_az_idovonalat(
             timeline,
             lambda: _indexelt_kepszamok(data_dir),
@@ -1769,6 +1850,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             progress_log.mark("A splash állapota készre váltott")
 
         QTimer.singleShot(_remaining_splash_ms(elapsed_ms), _finish_splash)
+
+    startup_maintenance.batchFinished.connect(
+        _maintenance_batch_finished, Qt.ConnectionType.QueuedConnection
+    )
 
     def _on_first_frame() -> None:
         # a frameSwapped minden képkockánál jön — csak az első számít
@@ -1786,6 +1871,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     exit_code = app.exec()
     if smoke_probe is not None:
         smoke_probe._timer.stop()
+    startup_maintenance.cancel()
+    startup_maintenance.waitForBackgroundWorkers(2.0)
     controller.shutdown()
     # #547: a szerkesztő háttér-renderét külön kell lezárni — az
     # `edit_controller` önálló objektum, nem része a `controller.shutdown()`

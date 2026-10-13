@@ -274,6 +274,22 @@ class TestSlideshowEntryPoints:
         assert button.property("enabled") is True
 
 
+def _atrendez(controller, qt_app, uj_sorrend):
+    """Átrendezés a valódi úton (#4890): a mappa képsorrendje a kézi
+    sorrend (`priority=`), a rács modellje ebből rendez — egy közvetlenül
+    átadott más sorrendet visszarendezne."""
+    modell = controller.photos
+    rend = {(p.folder_path, p.name): i for i, p in enumerate(uj_sorrend)}
+    modell.set_folder_photo_sort(
+        "priority",
+        False,
+        is_active=modell._folder_photo_sort_active,
+        prioritasok=lambda _photos: rend,
+    )
+    qt_app.processEvents()
+    assert [p.name for p in modell.photos] == [p.name for p in uj_sorrend]
+
+
 def _negy_kep(controller, lib, qt_app):
     """A fixture két képe (a, b) mellé c és d — négy kép, hogy a „következő"
     és az „előző" kép különbözzön (két képnél a kettő egybeesik)."""
@@ -372,8 +388,7 @@ class TestSlideshowModelFollows:
         _torol(controller, qt_app, "a.jpg")           # rejtve: b, c, d
         show = _start_szunetelve(window, qt_app, 1)   # c.jpg
         b, c, d = controller.photos.photos
-        controller.photos.set_photos((d, b, c))
-        qt_app.processEvents()
+        _atrendez(controller, qt_app, (d, b, c))
         assert show.property("currentIndex") == 2
         assert "c.jpg" in _lathato(window)
         _invoke(qt_app, show, "stop")
@@ -418,8 +433,7 @@ class TestSlideshowModelFollows:
         show = _start_szunetelve(window, qt_app, 0)   # a.jpg
         assert show.property("currentIndex") == 0
         atrendezve = tuple(reversed(controller.photos.photos))   # b, a
-        controller.photos.set_photos(atrendezve)
-        qt_app.processEvents()
+        _atrendez(controller, qt_app, atrendezve)
         assert show.property("currentIndex") == 1
         assert "a.jpg" in _lathato(window)
         _nincs_atmenet(window)
@@ -436,8 +450,7 @@ class TestSlideshowModelFollows:
         elotolto = _child(window, "slideshowPreloadImage")
         assert "b.jpg" in elotolto.property("source").toString()
         a, b, c, d = controller.photos.photos
-        controller.photos.set_photos((a, c, b, d))
-        qt_app.processEvents()
+        _atrendez(controller, qt_app, (a, c, b, d))
         assert show.property("currentIndex") == 0
         assert "c.jpg" in elotolto.property("source").toString()
         _invoke(qt_app, show, "stop")

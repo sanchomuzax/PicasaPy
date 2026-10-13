@@ -50,7 +50,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from picasapy.cvimage import read_image_bytes  # noqa: E402
-from picasapy.ini.filters import FilterOp, parse_filters  # noqa: E402
+from picasapy.ini.filters import FilterOp, parse_filters, parse_filters_prefix  # noqa: E402
 from picasapy.render import apply_filters  # noqa: E402
 from picasapy.render.curves import apply_lut, lut_ramp, validate_image  # noqa: E402
 from picasapy.render.tone import apply_neutral_pipette, parse_neutral_argb  # noqa: E402
@@ -463,7 +463,7 @@ def compare_pair(
     """Egyetlen pár: eredeti kép + filters-lánc renderelve vs Picasa-export."""
     original = _read_rgb(Path(original_path))
     golden = _read_rgb(Path(golden_path))
-    ops = parse_filters(filters_value)
+    ops = parse_filters_prefix(filters_value)  # #4942: mint az export
     rendered, skipped, lut_ops = render_chain(original, ops, luts)
     result_verdict, metrics, note = compare_images(rendered, golden, thresholds)
     return ComparisonResult(

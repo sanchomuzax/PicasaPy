@@ -47,6 +47,7 @@ def test_a_v20_as_index_videofelvetele_incrementalis_szinkronnal_frissul(
         # miközben a változatlan mappa inkrementális kihagyási pecsétje él.
         conn.execute("DROP INDEX idx_photos_video_metadata_missing")
         conn.execute("ALTER TABLE photos DROP COLUMN movie_format")
+        conn.execute("ALTER TABLE photo_albums DROP COLUMN place")
         conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
         conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
         conn.execute("PRAGMA user_version = 20")

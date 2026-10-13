@@ -55,8 +55,10 @@ jobs:
     outputs:
       kod: ${{ steps.d.outputs.kod }}
       docs: ${{ steps.d.outputs.docs }}
-      darabok: ${{ steps.n.outputs.darabok || '[1,2,3,4]' }}
-      darabszam: ${{ steps.n.outputs.darabszam || '4' }}
+      darabok: ${{ steps.n.outputs.darabok || '[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]' }}
+      darabszam: ${{ steps.n.outputs.darabszam || '16' }}
+      windows_darabok: ${{ steps.nw.outputs.darabok || '[]' }}
+      windows_darabszam: ${{ steps.nw.outputs.darabszam || '0' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,38 +76,42 @@ jobs:
         # kap-e egyáltalán tesztfutást. A hiba iránya néma: nem piros CI,
         # hanem KIMARADT mérés, zöld pipával.
         run: python3 scripts/ci_valtozas.py
-      # 2026-10-09: PR-en, ha kevés app-tesztet érint a változás, EGY darab fut
-      # négy helyett — a Free csomag 20 egyidejű jobjából így kétszer annyi PR
-      # fér el. Push a main-re: mindig négy darab, teljes készlet.
+      # #4922: a két platform tesztlistája külön darabszámot kap. PR-en a
+      # mért 3 perces cél legfeljebb 20 ubuntu-darabot enged; mainen 16 marad.
       - id: n
-        if: ${{ github.event_name == 'pull_request' }}
         env:
           PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
-        run: python3 scripts/run_tests.py --darabszam >> "$GITHUB_OUTPUT"
+          PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && steps.d.outputs.kod == 'true' && '1' || '' }}
+        run: python3 scripts/teszt_valasztas.py --darabszam >> "$GITHUB_OUTPUT"
+      - id: nw
+        env:
+          PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
+          PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && steps.d.outputs.kod == 'true' && '1' || '' }}
+        run: python3 scripts/teszt_valasztas.py --darabszam --windows >> "$GITHUB_OUTPUT"
 
   # A két platform KÜLÖN hívás — ld. a `teszt-darabok.yml` fejlécét: egyetlen
   # közös mátrix eredménye egyben látszik, és egy bukó windows-darab a
   # kötelező ubuntu-ellenőrzést is pirosra vitte (mérve a #1257-en).
   darabok-ubuntu:
     needs: valtozas
-    if: ${{ needs.valtozas.outputs.kod == 'true' }}
+    if: ${{ needs.valtozas.outputs.darabszam != '0' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: ubuntu-latest
       darabok: ${{ needs.valtozas.outputs.darabok }}
       darabszam: ${{ needs.valtozas.outputs.darabszam }}
 
-  # #4285: a windowsos tesztkészlet (a falióra-idő fő tétele, 26–30 perc)
-  # PR-on NEM fut, csak a main-re érkező pushon — a PR-t az ubuntus készlet
-  # kapuzza, a windowsos eltérés a beolvadás után a main körén derül ki.
+  # #4922: PR-en csak a kiválasztott, Windows-érzékeny tesztek futnak ezen a
+  # lábon; main-pushon és kézi/ütemezett futáskor továbbra is a teljes lista.
+  # Külön mátrixszáma van, ezért kevés windowsos próba kevés futtatót foglal.
   darabok-windows:
     needs: valtozas
-    # 2026-10-10: a main-pushon ÚJRA fut — csak éjszakára ütemezve a GitHub
-    # el sem indította, és a futásidő-tábla windowsos mérés nélkül maradt
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' || needs.valtozas.outputs.windows_darabszam != '0' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: windows-latest
+      darabok: ${{ needs.valtozas.outputs.windows_darabok }}
+      darabszam: ${{ needs.valtozas.outputs.windows_darabszam }}
 
   # #1863: a `docs/`-ot OLVASÓ őrök — csak-dokumentációs PR-en ez fut a
   # kihagyott mátrix helyett. A listát a `scripts/docs_olvaso_tesztek.py`
@@ -167,8 +173,8 @@ jobs:
   # várja kötelező ellenőrzésként. Az soha nem érkezik meg — minden PR
   # örökre „Waiting for status to be reported" állapotban ragad.
   #
-  # Ez a két job a régi NÉVVEL jelent, és csak akkor zöld, ha MIND A NÉGY
-  # darab zöld. Így a védelem beállításához nem kell hozzányúlni, és a
+  # Ez a két job a régi NÉVVEL jelent, és csak akkor zöld, ha MINDEN
+  # kiválasztott darab zöld. Így a védelem beállításához nem kell hozzányúlni, és a
   # felosztás haszna is megmarad.
   # ⚠️ #1127: a VERZIÓEMELŐ ág gyorsútja is ITT van, nem külön fájlban.
   #
@@ -188,11 +194,10 @@ jobs:
     needs: [valtozas, darabok-ubuntu, docs-orok]
     if: always()
     steps:
-      - name: A kód futását nem érintő PR — a mátrix kimaradt
-        if: ${{ needs.valtozas.outputs.kod != 'true' }}
+      - name: A tesztválasztó nem talált futtatandó tesztet
+        if: ${{ needs.valtozas.outputs.darabszam == '0' }}
         run: |
-          echo "A diff csak dokumentációt/verziósort érint (ld. a"
-          echo "Változás-elemzés jobot) — a mátrix kimarad."
+          echo "A tesztválasztó nem talált futtatandó tesztet."
 
       # #1863: itt kap FOGAT a dokumentáció-őr. A `docs-orok` job önmagában
       # nem blokkolna (nem kötelező ellenőrzés) — a bukását EZ a lépés
@@ -206,8 +211,8 @@ jobs:
             exit 1
           fi
 
-      - name: A négy ubuntu-darab mind zöld
-        if: ${{ needs.valtozas.outputs.kod == 'true' }}
+      - name: Az ubuntu-tesztdarabok mind zöldek
+        if: ${{ needs.valtozas.outputs.darabszam != '0' }}
         run: |
           if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-ubuntu.result }}"
@@ -245,9 +250,8 @@ jobs:
     needs: [valtozas, darabok-windows]
     if: always()
     steps:
-      - name: A négy windows-darab mind zöld
-        # ha a mátrix nem futott, nincs mit ellenőrizni
-        if: ${{ github.event_name != 'pull_request' && github.event_name != 'push' }}
+      - name: A Windows-mátrix összes darabja zöld
+        if: ${{ always() && needs.darabok-windows.result != 'skipped' }}
         run: |
           if [ "${{ needs.darabok-windows.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-windows.result }}"

@@ -52,8 +52,9 @@ _FAROK_FEJ = struct.Struct("<QQIIB")
 def build_thumb_index(entries) -> bytes:
     """A `read_thumb_index`-szel olvasható bájtsorozat.
 
-    `entries`: (név, szülőindex) párok, vagy (név, szülőindex, kind, valid)
-    négyesek. A szülőindex `None` = könyvtár (0xffffffff).
+    `entries`: (név, szülőindex) párok, (név, szülőindex, kind, valid)
+    négyesek, vagy (név, szülőindex, kind, valid, creation, modified)
+    hatosok (#4591: a két FILETIME). A szülőindex `None` = könyvtár (0xffffffff).
 
     ⚠️ **A `kind`/`valid` alapértéke NEM nulla** (#2404). Korábban a gyár 26
     nullát írt, tehát minden szintetikus bejegyzés `valid=0` és `kind=0`
@@ -68,17 +69,21 @@ def build_thumb_index(entries) -> bytes:
     entries = list(entries)
     blob = struct.pack("<II", THUMB_INDEX_MAGIC, len(entries))
     for entry in entries:
+        creation = modified = 0
         if len(entry) == 2:
             name, parent = entry
             kind = 1 if parent is None else 2
             valid = 1
-        else:
+        elif len(entry) == 4:
             name, parent, kind, valid = entry
+        else:
+            # #4591: hatos alak — az 1. és 2. FILETIME is megadható
+            name, parent, kind, valid, creation, modified = entry
         parent_index = _NO_PARENT if parent is None else parent
         blob += (
             name.encode("utf-8")
             + b"\x00"
-            + _FAROK_FEJ.pack(0, 0, 0, kind, 0)
+            + _FAROK_FEJ.pack(creation, modified, 0, kind, 0)
             + bytes([valid])
             + struct.pack("<I", parent_index)
         )

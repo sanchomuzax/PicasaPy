@@ -27,13 +27,14 @@ Dialog {
         nameField.text = ""
         widthField.forceActiveFocus()
         standardButton(Dialog.Ok).enabled = Qt.binding(function() {
-            return Number(widthField.text) > 0 && Number(heightField.text) > 0
+            return root.canAccept()
         })
     }
     onAccepted: {
-        var w = Number(widthField.text)
-        var h = Number(heightField.text)
-        if (w > 0 && h > 0) root.created(w, h, nameField.text.trim())
+        var w = root.parseDimension(widthField.text)
+        var h = root.parseDimension(heightField.text)
+        if (w >= root.minDimension && h >= root.minDimension)
+            root.created(w, h, nameField.text.trim())
     }
 
     // #4550: kétoszlopos űrlap a referencia szerint (jobbra igazított
@@ -57,10 +58,7 @@ Dialog {
                 id: widthField
                 objectName: "customAspectWidthField"
                 Layout.preferredWidth: 46
-                validator: DoubleValidator {
-                    bottom: 0.01
-                    notation: DoubleValidator.StandardNotation
-                }
+                validator: root.dimensionValidator
                 onAccepted: if (root.canAccept()) root.accept()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
@@ -74,10 +72,7 @@ Dialog {
                 id: heightField
                 objectName: "customAspectHeightField"
                 Layout.preferredWidth: 46
-                validator: DoubleValidator {
-                    bottom: 0.01
-                    notation: DoubleValidator.StandardNotation
-                }
+                validator: root.dimensionValidator
                 onAccepted: if (root.canAccept()) root.accept()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
@@ -122,6 +117,20 @@ Dialog {
     }
 
     function canAccept() {
-        return Number(widthField.text) > 0 && Number(heightField.text) > 0
+        return parseDimension(widthField.text) >= minDimension
+            && parseDimension(heightField.text) >= minDimension
+    }
+
+    // #4891: a tizedes elválasztó vessző (magyar) és pont egyaránt jó,
+    // a felület nyelvétől függetlenül — a `DoubleValidator` a nyelv
+    // szerinti jelet fogadta el, a `Number()` viszont csak a pontot ismeri.
+    // Egyetlen helyen alakítjuk át; érvénytelen szövegre NaN-t ad.
+    function parseDimension(text) {
+        return Number(String(text).replace(",", "."))
+    }
+
+    readonly property real minDimension: 0.01
+    readonly property RegularExpressionValidator dimensionValidator: RegularExpressionValidator {
+        regularExpression: /^[0-9]*[.,]?[0-9]*$/
     }
 }

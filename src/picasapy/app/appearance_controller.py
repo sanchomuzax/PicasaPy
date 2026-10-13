@@ -13,7 +13,7 @@ alapértelmezés" elvének mintájára).
 
 from __future__ import annotations
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, Property, Qt, Signal, Slot
 
 from .folder_photo_sort_controller import FolderPhotoSortMixin
 
@@ -26,6 +26,10 @@ SINGLE_CLICK_EXIT_KEY = "view/singleClickExit"
 # #4570: az eredeti `Preferences/AutoPlayMovies` kapcsolója — megnyitáskor
 # magától lejátssza-e a videót. Alapállapot: igen (a Picasa így működött).
 AUTO_PLAY_MOVIES_KEY = "view/autoPlayMovies"
+# #4949: a Ctrl+Alt felugró előnézet saját kapcsolója (az eredeti
+# `Preferences\EnableHover`). Független a buboréksúgótól. Alapállapot: igen,
+# mert a mai viselkedés is alapból mutatja az előnézetet.
+ENABLE_HOVER_KEY = "view/enableHover"
 
 # Igaznak számító mentett értékek (a QSettings platformonként bool-t vagy
 # szöveget ad vissza ugyanarra az írásra).
@@ -60,16 +64,17 @@ def coerce_ui_preference_flag(value, default: bool) -> bool:
 class AppearanceMixin(FolderPhotoSortMixin):
     """`darkTheme` kapcsoló — perzisztens, jelzéssel a QML-kötéseknek.
 
-    #1436: a mappán belüli képsorrend szelete (`FolderPhotoSortMixin`) is
-    innen kapcsolódik az `AppController`-hez — mindkettő `view/` névtérbeli,
-    perzisztens nézet-beállítás, és az `AppController` bázislistája a forró
-    `controller.py`-ban él (a `CollageMixin` ugyanígy hozza a szeleteit).
+    #1436/#4890: a mappánkénti kézi sorrend szelete
+    (`FolderPhotoSortMixin`) is innen kapcsolódik az `AppController`-hez;
+    a sorrend a mappa `.picasa.ini`-jében él, nem a `view/` beállításban.
     """
 
     darkThemeChanged = Signal()
     uiTransitionsEnabledChanged = Signal()
     showTooltipsEnabledChanged = Signal()
+    ctrlAltHeldChanged = Signal()
     autoPlayMoviesChanged = Signal()
+    enableHoverChanged = Signal()
     singleClickExitEnabledChanged = Signal()
 
     def _init_appearance(self) -> None:
@@ -83,13 +88,54 @@ class AppearanceMixin(FolderPhotoSortMixin):
         self._show_tooltips_enabled = coerce_ui_preference_flag(
             settings.value(SHOW_TOOLTIPS_KEY, True), default=True
         )
+        self._enable_hover = coerce_ui_preference_flag(
+            settings.value(ENABLE_HOVER_KEY, True), default=True
+        )
         self._single_click_exit_enabled = coerce_ui_preference_flag(
             settings.value(SINGLE_CLICK_EXIT_KEY, False), default=False
         )
         self._auto_play_movies = coerce_ui_preference_flag(
             settings.value(AUTO_PLAY_MOVIES_KEY, True), default=True
         )
+        self._hover_preview_pressed: set[int] = set()
+        self._ctrl_alt_held = False
         self._init_folder_photo_sort()  # #1436
+
+    @Property(bool, notify=ctrlAltHeldChanged)
+    def ctrlAltHeld(self) -> bool:  # noqa: N802 — QML-property
+        return self._ctrl_alt_held
+
+    @Slot(QObject)
+    def attachHoverPreviewKeyState(self, target: QObject) -> None:  # noqa: N802
+        """A főablak valódi Ctrl/Alt eseményeit figyelje, de ne nyelje el."""
+        target.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event) -> bool:  # noqa: N802
+        event_type = event.type()
+        if event_type in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+            key = event.key()
+            if (
+                key in (Qt.Key.Key_Control, Qt.Key.Key_Alt)
+                and not event.isAutoRepeat()
+            ):
+                if event_type == QEvent.Type.KeyPress:
+                    self._hover_preview_pressed.add(key)
+                else:
+                    self._hover_preview_pressed.discard(key)
+                self._set_ctrl_alt_held(
+                    Qt.Key.Key_Control in self._hover_preview_pressed
+                    and Qt.Key.Key_Alt in self._hover_preview_pressed
+                )
+        elif event_type == QEvent.Type.WindowDeactivate:
+            self._hover_preview_pressed.clear()
+            self._set_ctrl_alt_held(False)
+        return False
+
+    def _set_ctrl_alt_held(self, held: bool) -> None:
+        if held == self._ctrl_alt_held:
+            return
+        self._ctrl_alt_held = held
+        self.ctrlAltHeldChanged.emit()
 
     @Property(bool, notify=darkThemeChanged)
     def darkTheme(self) -> bool:
@@ -142,6 +188,22 @@ class AppearanceMixin(FolderPhotoSortMixin):
             AUTO_PLAY_MOVIES_KEY, "true" if enabled else "false"
         )
         self.autoPlayMoviesChanged.emit()
+
+    @Property(bool, notify=enableHoverChanged)
+    def enableHover(self) -> bool:
+        """A Ctrl+Alt felugró előnézet kapcsolója (#4949, `EnableHover`)."""
+        return self._enable_hover
+
+    # Nem `@Slot`: az eredetiben rejtett kulcs, a felületről nem állítható (#4949)
+    def setEnableHover(self, enabled: bool) -> None:  # noqa: N802
+        enabled = bool(enabled)
+        if enabled == self._enable_hover:
+            return
+        self._enable_hover = enabled
+        self._get_settings().setValue(
+            ENABLE_HOVER_KEY, "true" if enabled else "false"
+        )
+        self.enableHoverChanged.emit()
 
     @Property(bool, notify=showTooltipsEnabledChanged)
     def showTooltipsEnabled(self) -> bool:

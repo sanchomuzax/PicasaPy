@@ -49,12 +49,14 @@ from picasapy.index import (
 from picasapy.ini import (
     FOLDERS_ON_DISK_CATEGORY,
     HIDDEN_FOLDERS_CATEGORY,
+    STAR_ALBUM_TOKEN,
     load_or_empty,
     set_folder_hidden_in_ini,
     update_document,
 )
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
+from .contact_names import central_contacts_path
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
 from .viewer_startup_controller import ViewerStartupMixin
@@ -440,6 +442,8 @@ class AppController(
     def currentAlbumToken(self):
         """Az aktív album token-je (#9) — a bal hasáb kijelöléséhez."""
         mode, param = self._view_mode
+        if mode == "starred_album":
+            return STAR_ALBUM_TOKEN
         return param if mode == "album" else ""
 
     @Property(str, notify=statusChanged)
@@ -745,12 +749,12 @@ class AppController(
         | beállítás | mit rendez | honnan |
         |---|---|---|
         | `folderSort` (ez) | a mappa-blokkokat a RÁCSON | Mappa ▸ Rendezés |
-        | `folderPhotoSort` (#1436) | a mappa KÉPEIT | mappa-jobbklikk |
+        | kézi sorrend (#4890) | a mappa KÉPEIT, mappánként | mappa-jobbklikk |
         | `paneSort` (#461/3) | a BAL HASÁB sorait | a hasáb helyi menüje |
 
         A #1595 kutatása épp azért vont le téves következtetést, mert a
         korábbi docstring („a RÁCS rendezése") alapján úgy tűnt, hogy ez
-        és a `folderPhotoSort` ugyanaz kétféle felirattal — az összevonás
+        és a kézi sorrend ugyanaz kétféle felirattal — az összevonás
         egy működő szempontot („legutóbbi változtatások") vett volna el.
 
         #1454: a Nézet ▸ Mappanézet almenü — ahonnan ez korábban szintén
@@ -1473,7 +1477,10 @@ class AppController(
         if not 0 <= row < len(photos):
             return []
         entries = formatting.properties_entries(
-            photos[row], QLocale(), formatting.fordit
+            photos[row],
+            QLocale(),
+            formatting.fordit,
+            central_contacts_path(self._db_path),
         )
         return [{"label": label, "value": value} for label, value in entries]
 
@@ -1516,12 +1523,25 @@ class AppController(
         )
         return sablon.format(current=aktualis, total=osszes)
 
-    # -- csillag-szűrő -------------------------------------------------------
+    # -- csillag-szűrő és különleges album ----------------------------------
 
     @Slot()
     def showStarred(self) -> None:
-        """Csillag-szűrő be — a mappa-kontextus megmarad a visszaváltáshoz."""
-        self._view_mode = ("starred", "")
+        """A ★ eszköztári szűrője — megőrzi a mappa-kontextust."""
+        self._show_starred_photos("starred")
+
+    @Slot()
+    def showStarredAlbum(self) -> None:  # noqa: N802
+        """A bal oldali Csillagozott különleges albumát nyitja meg (#4883).
+
+        A tartalma ugyanazokból a csillagozott képekből áll, mint a ★ szűrőé,
+        de a `]star` album-tokent is hordozza, így a törlés csak a csillagot
+        veszi le. A két belépő nézete és törlési szemantikája külön marad.
+        """
+        self._show_starred_photos("starred_album")
+
+    def _show_starred_photos(self, mode: str) -> None:
+        self._view_mode = (mode, "")
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
             records = starred_photos(conn)
@@ -1698,7 +1718,7 @@ class AppController(
                 tuple(r for r in all_matches if r.folder_path == folder),
                 time.perf_counter() - started,
             )
-        elif mode == "starred":
+        elif mode in ("starred", "starred_album"):
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 records = starred_photos(conn)

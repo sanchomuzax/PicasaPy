@@ -83,10 +83,15 @@ FELIRATOK: dict[str, dict[str, tuple[str, str]]] = {
         ),
         "albumMenuAddNameTags": ("&Add name tags", "Album::ID_ALBUM_FILTERFACES"),
         "albumMenuSelectAll": (
-            "Select &All Pictures", "Album::ID_ALBUM_SELECTALLPICTURES"
+            "Select &All Pictures\tCtrl+A",
+            "Album::ID_ALBUM_SELECTALLPICTURES",
         ),
-        "albumMenuClearSelection": ("&Clear Selection", "Album::ID_CLEAR_SELECTION"),
-        "albumMenuInvertSelection": ("&Invert Selection", "Album::ID_SELECT_INVERT"),
+        "albumMenuClearSelection": (
+            "&Clear Selection\tCtrl+D", "Album::ID_CLEAR_SELECTION"
+        ),
+        "albumMenuInvertSelection": (
+            "&Invert Selection\tCtrl+I", "Album::ID_SELECT_INVERT"
+        ),
         "albumMenuRefreshThumbnails": (
             "&Refresh Thumbnails", "Album::ID_REFRESH_THUMB"
         ),
@@ -153,10 +158,16 @@ FELIRATOK: dict[str, dict[str, tuple[str, str]]] = {
             "&Edit People Album...", "PplAlbum::ID_ALBUM_EDITCAPTIONS"
         ),
         "peopleAlbumMenuSelectAll": (
-            "Select &All", "PplAlbum::ID_ALBUM_SELECTALLPICTURES"
+            "Select &All\tCtrl+A", "PplAlbum::ID_ALBUM_SELECTALLPICTURES"
         ),
         "peopleAlbumMenuClearSelection": (
-            "&Clear Selection", "PplAlbum::ID_CLEAR_SELECTION"
+            "&Clear Selection\tCtrl+D", "PplAlbum::ID_CLEAR_SELECTION"
+        ),
+        "peopleAlbumMenuInvertSelection": (
+            "&Invert Selection\tCtrl+I", "Album::ID_SELECT_INVERT"
+        ),
+        "peopleAlbumMenuRefreshThumbnails": (
+            "&Refresh Thumbnails", "Album::ID_REFRESH_THUMB"
         ),
     },
 }

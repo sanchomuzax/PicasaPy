@@ -239,6 +239,7 @@ Rectangle {
             return
         //: #3173: a párbeszéd két használatú — a mappa-ág visszaállítja
         folderPropertiesDialog.mode = "folder"
+        folderPropertiesDialog.newFolderCreation = false
         folderPropertiesDialog.folderPath = path
         folderPropertiesDialog.folderName =
             path.substring(path.lastIndexOf("/") + 1)
@@ -246,12 +247,32 @@ Rectangle {
             controller ? controller.folderDateOverride(path) : ""
         folderPropertiesDialog.currentDescription =
             controller ? controller.folderDescriptionOf(path) : ""
+        folderPropertiesDialog.folderLocation = ""
         folderPropertiesDialog.currentMusicEnabled =
             controller && controller.folderMusicEnabled
                 ? controller.folderMusicEnabled(path) : false
         folderPropertiesDialog.currentMusicFile =
             controller && controller.folderMusicFile
                 ? controller.folderMusicFile(path) : ""
+        folderPropertiesDialog.open()
+    }
+
+    // #4534: a rács „Mappa felosztása itt” parancsa ugyanazt a
+    // tulajdonságablakot használja, de új testvérmappa metaadatait kéri.
+    function openSplitFolderHere(paths, isoDate) {
+        if (!paths || paths.length === 0 || !isoDate)
+            return
+        folderPropertiesDialog.mode = "folder"
+        folderPropertiesDialog.newFolderCreation = true
+        folderPropertiesDialog.splitPaths = paths.slice()
+        folderPropertiesDialog.folderPath = ""
+        folderPropertiesDialog.folderName =
+            folderPropertiesDialog.untitledFolderName
+        folderPropertiesDialog.folderLocation = ""
+        folderPropertiesDialog.currentDate = isoDate
+        folderPropertiesDialog.currentDescription = ""
+        folderPropertiesDialog.currentMusicEnabled = false
+        folderPropertiesDialog.currentMusicFile = ""
         folderPropertiesDialog.open()
     }
 
@@ -262,6 +283,7 @@ Rectangle {
         var adat = (controller && controller.albumProperties)
             ? controller.albumProperties(token) : {}
         folderPropertiesDialog.mode = "album"
+        folderPropertiesDialog.newFolderCreation = false
         folderPropertiesDialog.albumToken = token
         folderPropertiesDialog.albumName =
             adat.name !== undefined ? adat.name : (name || "")
@@ -281,12 +303,7 @@ Rectangle {
     function openFolderContextMenu(path) {
         folderContextMenu.folderPath = path
         folderContextMenu.customCollections = pane.customCollectionsModel
-        // #1436: a pipák a mappa TARTALMÁNAK rendezését mutatják — ez a
-        // menü (`Folder::SortFolderBy`) a mappa képeit rendezi, nem a
-        // mappákat (azt a Mappa ▸ Rendezés `folderSort`-ja állítja, #1454).
         if (controller) {
-            folderContextMenu.sortMode = controller.folderPhotoSort
-            folderContextMenu.sortReverse = controller.folderPhotoSortReverse
             // #1637: a tétel felirata állapotfüggő („Mappa elrejtése" ↔
             // „Megjelenítés"), tehát a menü NYITÁSAKOR kell megkérdezni.
             // A `!== undefined` a #1572-őr mintája.
@@ -1311,6 +1328,11 @@ Rectangle {
             albumContextMenu.albumToken, albumContextMenu.albumName)
         onDeleteAlbumRequested: pane._askDeleteAlbum(
             albumContextMenu.albumToken, albumContextMenu.albumName)
+        //: #4599: „Sort Album By" — az album tárolt sorrendjének átrendezése
+        onSortAlbumRequested: function(mode) {
+            if (controller)
+                controller.sortAlbum(albumContextMenu.albumToken, mode)
+        }
     }
 
     ConfirmDialog {
@@ -1343,6 +1365,13 @@ Rectangle {
         onClearSelectionRequested:
             if (pane.appWindow && pane.appWindow.clearSelection)
                 pane.appWindow.clearSelection()
+        onInvertSelectionRequested:
+            if (pane.appWindow && pane.appWindow.invertSelection)
+                pane.appWindow.invertSelection()
+        // Ugyanaz a frissítési út, mint az album-menüben: az aktív mappa
+        // újraszinkronja újratölti a látható rácsot.
+        onRefreshThumbnailsRequested:
+            if (controller) controller.resyncFolder(controller.currentFolder)
     }
 
     Dialog {
@@ -1505,14 +1534,14 @@ Rectangle {
 
         onRefreshThumbnailsRequested:
             if (controller) controller.resyncFolder(folderContextMenu.folderPath)
-        // #1436: a mappa TARTALMÁT rendezi (a képeket), nem a mappákat. A
-        // korábbi `setFolderSort` a rács MAPPA-sorrendjét állította, ezért
-        // tett a menüpont mást, mint amit a neve ígért.
+        // #4890: egyszer átrendezi a célmappát, és a kézi sorrendjét menti.
         onSortModeRequested: function(mode) {
-            if (controller) controller.setFolderPhotoSort(mode)
+            if (controller)
+                controller.sortFolderBy(folderContextMenu.folderPath, mode)
         }
         onSortReverseRequested:
-            if (controller) controller.toggleFolderPhotoSortReverse()
+            if (controller)
+                controller.sortFolderBy(folderContextMenu.folderPath, "reverse")
 
         onLocateRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController)
@@ -1607,6 +1636,13 @@ Rectangle {
         onFolderMusicAccepted: function(path, useMusic, musicFile) {
             if (controller && controller.setFolderMusic)
                 controller.setFolderMusic(path, useMusic, musicFile)
+        }
+        onSplitFolderAccepted: function(paths, name, isoDate, location,
+                                        description, useMusic, musicFile) {
+            if (typeof fileOpsController !== "undefined" && fileOpsController)
+                fileOpsController.splitFolderHere(
+                    paths, name, isoDate, location, description,
+                    useMusic, musicFile)
         }
         //: #3173: album módban az ini-írás a `photo_ops_controller`-en megy,
         //: MINDEN olyan mappába, ahol az albumnak van tagja

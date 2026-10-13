@@ -43,7 +43,7 @@ class TestAHaromRendezesKulon:
     def test_a_docstring_megnevezi_MINDHAROM_rendezest(self):
         """Az összemosás ellen: aki ezt olvassa, lássa a másik kettőt is."""
         szoveg = _doc("setFolderSort")
-        for tars in ("folderPhotoSort", "paneSort"):
+        for tars in ("kézi sorrend", "paneSort"):
             assert tars in szoveg, f"nincs megnevezve a párja: {tars}"
 
     def test_a_regi_felrevezeto_mondat_ELTUNT(self):

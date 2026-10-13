@@ -2335,3 +2335,203 @@ az érvényes crop64 crop= nélkül módosított állapot.
 nincs közvetlen mérőpár. A regressziós teszt a két 684-es fájlon ellenőrzi a
 méretet, a DQT-t, a SOF-ot, az APP-markereket, a dekódolt képpontokat és az
 Interop IFD.*
+
+## 17. ⛳ Öt panelsor: Fájl dátuma, CCD szélessége, Rekesz, JPEG minőség, Személycímkék (2026-10-11, #4579)
+
+*Forrás: a `properties.xml` név → kulcs leképezője (`0x00633210`), a panel
+sorformázója (`0x00a00120`, ugrótábla `0x00a344b4`), a közös
+érték → szöveg átalakító (`0x0040fed0`), a panel-adatgyűjtő (`0x006befa0`,
+hívja `0x006be770` ← a panelfrissítő `0x00636f80`), a JPEG-marker diszpécser
+(`0x009ea6c0`) DQT- és SOF-ága, a metaadat-utófeldolgozó (`0x00a34b00`), az
+XMP-régióolvasó (`0x00baa500`) és a panel listaeleme (`PropertiesListItem`).
+Minden cím `pe_dis.py`/capstone-nal olvasva; a szám → szöveg kerekítés az
+eredeti CRT `_vsnprintf`-jének (`0x00c08769`) **futtatásával** mérve
+(`qemu_harness`, 2026-10-11). A feliratok a `referencia/stringres-en-hu.tsv`-ből.*
+
+### A) A közös gépezet
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| név → kulcs | `0x00633210` | `FileDate` → **314** (`0x13a`, `0x00634f95`) · `CCDWidth` → **317** (`0x13d`, `0x00634fdd`) · `ApertureValue` → **60** (`0x3c`, `0x006337c5`) · `Quality` → **320** (`0x140`, `0x00635025`) · `Regions` → **305** (`0x131`, `0x00634ebd`) |
+| felirat + érték | `0x00a00120` ágai | felirat: `0x009ae560(alapszöveg, szövegtár-azonosító)`; érték: a kulcs értékei szöveggé (`0x009f1d60` → elemenként `0x0040fed0`) |
+| sorrend | `0x006372f8`–`0x006374d3` | csak a `properties.xml` láncán, abban a sorrendben (15. szakasz) |
+| üres érték | `0x006365d5`–`0x0063660d` | ha a formázó hibát ad vagy az első érték üres, **nincs sor** |
+| több érték | `0x00636650`–`0x006368c1` | értékenként: ha már van ilyen feliratú sor, hozzáfűzi (`0x00632640`: azonos szövegnél a darabszámot növeli), különben új sort nyit (`0x00632400`) |
+| a sor rajzolása | `0x00632930`, `0x006322c0` | egy érték: a szöveg; azonos érték N-szer: **`"%s (%d)"`** (`0x00c8f494`). Egynél több értéknél kinyitó-ikon (`0x00632a64`–`0x00632a8d`: becsukva `arrows2/right`, `0x00637bcb`; kinyitva a belőle képzett második kép, `0x00637c14`); **kinyitva minden érték külön szövegsor, 16 képpont lépéssel** (`0x00632b9d`), becsukva csak az első |
+| a panel kérése | `0x006371f7` | a panelfrissítő a gyűjtőt **`0xffffffff`** jelzőkkel hívja ⇒ minden opcionális olvasás (JPEG-minőség, arcok) bekapcsolva |
+
+**A `0x0040fed0` átalakító** (változattípus `[+8]`, ugrótábla `0x0040fff4`):
+1 = előjel nélküli racionális (`0x00493100`), 2 = előjeles (`0x00493140`),
+3 = `double` — mindhárom: **`"%.3g"`, ha 0,01 ≤ v ≤ 999** (`0x00cf40b8` = 0.01,
+`0x00cf4c40` = 999.0), különben **`"%g"`**; **nulla nevezőnél hiba ⇒ nincs
+sor** (`0x0040ff0f`). 4 = egész → `"%I64d"` (`0x0049ffa0`); 5 = szöveg;
+6 = objektum → a saját `vtbl[6]`-ja.
+
+**A CRT kerekítése (futtatva, `0x00c08769`):** a pontos fél érték **a nullától
+el** kerekedik — `22.25 → "22.3"`, `1.125 → "1.13"`, `0.03125 → "0.0313"`
+(a Python `format(x, ".3g")` ezekre `22.2` / `1.12` / `0.0312`-t ad). A kitevős
+alak **háromjegyű**: `1e+003`, `1e+006`. Nem félértéknél nincs eltérés
+(`4.97`, `5`, `22.35 → 22.4`, `998.6 → 999`).
+
+### B) A sorok, `properties.xml`-sorrendben
+
+| # | elem | felirat (en / hu) | szövegtár-azonosító | forrás | formátum | mikor van sor |
+|---:|---|---|---|---|---|---|
+| 9. | `FileDate` | File Date / **Fájl dátuma** | `ytImageMetadata::FileDate` (`0x00a30ecb`) | a kép **indexbeli 1. időbélyege** (lásd C) | `VarBstrFromDate` — a felhasználó területi beállítása | a fájl elérhető (lásd C) |
+| 15. | `CCDWidth` | CCD Width / **CCD szélessége** | `ytImageMetadata::CCDWidth` (`0x00a316fa`) | **számított** (lásd D) | `double`, `%.3g`, **mértékegység nélkül** | mind a négy bemenet megvan, és az eredmény ≠ 0 |
+| 17. | `ApertureValue` | Aperture / **Rekesz** | `EXIF::ApertureValue` (`0x00a09bde`) | EXIF **`0x9202` ApertureValue** (RATIONAL) | a **nyers APEX-érték**, `%.3g`, előtag és mértékegység nélkül (a formátum-sztring üres, `0x00a00896` → `0x00a00090` nem alakít) | a mező megvan, nevező ≠ 0 |
+| 28. | `Quality` | JPEG Quality / **JPEG minőség** | `ytImageMetadata::Quality` (`0x00a31f0a`) | **becsült** a JPEG DQT-ből (lásd E) | egész szám (`%I64d`) + mintavétel-utótag | JPEG, és a becslés ≠ 0 |
+| 30. | `Regions` | People Tags / **Személycímkék** | `XMP::Regions` (`0x00a2f67a`) | a képen megjelölt **személyek neve** (lásd F) | név szerint; több név = több érték (A, „több érték”) | legalább egy nem üres név |
+
+⚠️ A jegy címében álló „CCD-szélesség”, „Apertúra érték”, „Minőség”,
+„Régiók” **nem** az eredeti szövege; a panel a fenti magyar feliratokat írja.
+
+### C) Fájl dátuma — NEM a fájlrendszer mai ideje
+
+A gyűjtő (`0x006befa0`) a kép indexrekordjának másolatát kéri
+(`[vtbl+0xc4]`, `0x006bf046`, a másolat `esp+0x40`-től), és annak
+**`+0x04`** mezőjét alakítja `DATE`-té (`0x006bf0cb` → `0x0098b650`,
+`0x006bf0d4`: `esp+0xe8`). A rekord a `thumbindex` rekordja: `+0x00` út,
+`+0x04` 1. időbélyeg, `+0x0c` 2. időbélyeg, `+0x18` típus — a gyűjtő a
+`+0x18`-at a 8…12 (videó) típusokkal veti össze (`0x006bf085`–`0x006bf0b9`),
+ami a fájltípus-tábla videó-ágaival egyezik (`pmp-database.md`). ⇒ **A Fájl
+dátuma a `pmp-database.md` 10.3 szerinti 1. időbélyeg: a beolvasáskor
+rögzített EXIF `DateTimeOriginal`, ennek hiányában a fájl akkori
+módosítási ideje** (10.4, *erős*).
+
+| lépés | cím |
+|---|---|
+| FILETIME → helyi idő → `DATE` | `0x0098b650`: `FileTimeToSystemTime` → `SystemTimeToTzSpecificLocalTime(NULL)` → `SystemTimeToVariantTime` (OLEAUT32 #184); nulla FILETIME-nál az őrszem **949998.0** (= 4501-01-01) |
+| `DATE` → szöveg | `0x0098c470`: **`VarBstrFromDate(dátum, 0x400 = LOCALE_USER_DEFAULT, 0)`** (OLEAUT32 #114, `0x0098c49c`), majd UTF-8 (`WideCharToMultiByte(0xfde9)`) |
+| beírás | `0x006bfc0e` (`0x0049c640(…, 0x13a, …)`), a jelzők 31. bitjének ágán (`0x006bf818`) |
+| feltétel | előtte `0x00a61e10` = `GetFileAttributesEx` a fájlra (`0x006bfbb5`); csak ha ez kitölti az útvonal-puffert (`0x006bfbba`–`0x006bfbd0`), kerül be a **Fájl mérete** (`0x139`) és a **Fájl dátuma** — elérhetetlen fájlnál egyik sincs |
+
+A formátum a `VarBstrFromDate` szerződése: rövid dátum + hosszú idő a
+felhasználó területi beállításával, és **éjfélkor (00:00:00) csak a dátum**.
+*A konkrét karakterlánc a Windows-területi adat, nem a binárisé.*
+
+### D) CCD szélessége — számított érték (`0x00a34b50`)
+
+A metaadat-utófeldolgozó (`0x00a34b00`) első lépése:
+
+```
+ha a 317-es kulcs már létezik → kihagy                         (0x00a34b58–0x00a34b86)
+egység_mm = { 1: 25.4, 2: 25.4, 3: 10.0, 4: 1.0, 5: 0.001 }[FocalPlaneResolutionUnit]
+            más / hiányzó → 0 → kihagy                         (0x00a34aa0, tábla 0x00a34ae8;
+                                                               0x00cf4930 / 0x00cf3b18 / 0x00cf3db0)
+W = RelatedImageWidth (Interop 0x1001, kulcs 173), ha nincs: PixelXDimension (0xa002, kulcs 77)
+H = RelatedImageLength (Interop 0x1002, kulcs 174), ha nincs: PixelYDimension (0xa003, kulcs 78)
+W = 0 vagy H = 0 → kihagy                                      (0x00a34ba4–0x00a34bfc)
+xres = FocalPlaneXResolution (0xa20e, kulcs 83); 0 → kihagy     (0x00a34bfe–0x00a34c1e)
+CCD = max(W, H) · egység_mm / xres                             (0x00a34c20–0x00a34c3c, fdivrp = DE F1)
+CCD = 0 → kihagy; különben double-ként a 317-es kulcsba         (0x00a34c4b → 0x00a390e0, típus 3)
+```
+
+Csak a **vízszintes** felbontást használja (az `0xa20f` Y-felbontást nem), és
+a nagyobbik oldallal szoroz. Mintaérték: W = 3888, H = 2592, egység = 2
+(hüvelyk), xres = 3888000/876 → 22.2504… → **„22.3”**.
+
+### E) JPEG minőség — becslés a kvantálótáblából (`0x009ea1e0`)
+
+A marker-diszpécser (`0x009ea6c0`) a **`0xFFDB`** (DQT) szegmenst adja ide
+(`0x009ea831`). Kapu: a beolvasási jelzők 12. bitje (`0x009ea21e`) — a panel
+`0xffffffff`-fel kér, tehát ott be van kapcsolva.
+
+```
+a szegmens < 64 bájt → nincs érték                                   (0x009ea235–0x009ea25e)
+táblánként (Pq/Tq bájt, 64 elem; Pq ≠ 0 → 16 bites elemek):
+    std = IJG-alaptábla Tq szerint (Tq < 2): 0x00c7c610 (fényesség), 0x00c7c710 (szín),
+          cikcakk-sorrendben                                        (0x009ea2be, 0x00d3379c)
+    r_i = 100 · q_i / std_i;  átlag = Σr_i / 64                      (0x009ea33c–0x009ea37f)
+    ha minden q_i = 1 → 100                                          (0x009ea38b)
+    különben: átlag > 100 → 5000 / átlag;  egyébként (200 − átlag) · 0,5
+                                                                     (0x009ea395–0x009ea3ac;
+                                                                     0x00cf4cf0 = 5000, 0x00cf3cc0 = 200)
+    float-tá, majd fistp (kerekítés a legközelebbi egészre)            (0x009ea3b2–0x009ea3be)
+a szegmens UTOLSÓ táblájának értéke, ha ≠ 0 → egészként a 320-as kulcsba (0x009ea3d5–0x009ea3eb,
+                                                                     0x0049dbb0 felülíró beállító)
+```
+
+⇒ Több DQT szegmensnél az utolsó nem nulla becslés marad; a szokásos
+fájlban ez a **színtábla** (Tq = 1) becslése.
+
+⚠️ **Az eredeti saját hibája:** az elemeket `movsx`-szel olvassa
+(`0x009ea2f0`, `0x009ea310`), tehát a **≥ 128-as 8 bites elem negatív**, amit
+a `0x009ea343` `+2³²`-vel óriási pozitívvá tesz ⇒ az ilyen táblára a becslés
+0, és nem íródik be. IJG-táblákon (a kiolvasott utasítások átiratával
+számolva, nem futtatva) ez a színtáblánál **Q ≤ 38**-nál következik be ⇒ ott
+nincs JPEG minőség sor.
+
+**Nálunk (#4579): szándékos eltérés** — az előjeles olvasási hibát NEM vesszük
+át, ok: ez az eredeti hibája, nem megfigyelhető szándékos viselkedés, és
+nálunk így minden minőségre (Q ≤ 38-ra is) van sor.
+
+**A mintavétel-utótag** (`0x009ff490`): a 321-es kulcsot (`ComponentInfo`)
+a SOF-ág (`0x009e9cd0`, ugyanazzal a 12. bites kapuval, `0x009ea1a9`) írja a
+komponensek mintavételi tényezőiből (`H` = `esp+0x28…`, `V` = `esp+0x38…`):
+
+| komponens | mintavétel | kód | utótag (`0x009ff4f4`–`0x009ff50c`, tábla `0x009ff828`) |
+|---|---|---:|---|
+| 1 (szürke) | bármi | 1 | ` (444)` |
+| 3 vagy 4 | mind 1×1 | 1 | ` (444)` |
+| 3 vagy 4 | Y = 2×1, a többi 1×1 (4-nél a 4. is 2×1) | 2 | ` (422)` |
+| 3 | Y = 1×2, a többi 1×1 | 3 | ` (422)` |
+| 3 vagy 4 | Y = 2×2, a többi 1×1 (4-nél a 4. is 2×2) | 4 | ` (411)` ⚠️ a 4:2:0-t az eredeti „411”-nek írja |
+| más | — | nincs kulcs | nincs utótag |
+
+Mintaértékek (IJG-táblák, a fenti képlet átiratával): Q = 75 → **„75”**,
+Q = 90 4:2:0-val → **„90 (411)”**, Q = 95 4:4:4-gyel → **„95 (444)”**,
+minden elem 1 → **„100”**.
+
+### F) Személycímkék — a megnevezett arcok nevei
+
+**Az adatbázisból** (`0x006befa0`, a jelzők 7. bitjén, `0x006bf754`): a kép
+arclistája (`0x004858e0`, az adatbázis `[vtbl+0xdc]`-je), és minden archoz a
+névjegy kikeresése a 64 bites személyazonosítóval (`0x005863f0`). **Üres
+nevű (meg nem nevezett) arc kimarad** (`0x004859de`–`0x004859fa`). Ha van
+legalább egy név, a 305-ös kulcsot törli (`0x009f1b70` = kulcs-eltávolító, `0x006bf792`), és
+arconként egy `RegionInfo` objektumot fűz hozzá (RTTI `.?AURegionInfo@@`,
+vtábla `0x00c81e60`, `0x006bf7e1`). A `RegionInfo` szövege a `+0x18`-as név
+(`vtbl[6]` = `0x004105b0`). A sorrend az adatbázis arclistájáé.
+
+**A fájl XMP-jéből** (`0x00baa500`): régiónként, ha a név nem üres, a téglalap
+nem elfajult (`+0x54 > +0x4c` és `+0x58 > +0x50`), és a típus hiányzik vagy
+`Face` (kis-nagybetű nélkül, `0x00baa61d`–`0x00baa66c`) → `RegionInfo` a
+305-ös kulcsba (`0x00baa717`). A név az MWG `Name` (`0x00bad695`) vagy az MP
+`PersonDisplayName` (`0x00bad5f7`) — mindkettő a `0x00baa990`-on át a
+`+0x5c`-be. **Az MWG-régió kiszorítja az MP-t** (`0x00baa54a`–`0x00baa565`:
+az első MWG-régió törli a kulcsot; MWG után az MP-régiót kihagyja).
+⇒ Ha az adatbázisban van megnevezett arc, az **felülírja** a fájl XMP-régióit;
+ha nincs, a fájlé látszik.
+
+Megjelenítés (A): egy név = egy érték; két név → kinyitható sor, becsukva az
+első, kinyitva mindkettő külön sorban; ugyanaz a név kétszer → **„Név (2)”**.
+
+### G) Eredeti / nálunk / teendő
+
+| sor | eredeti | nálunk (`app/formatting.py` `exif_entries`, `metadata/reader.py`) |
+|---|---|---|
+| Fájl dátuma | a „Modified Date” (8.) és az „Orientation” (10.) között | **nincs** |
+| CCD szélessége | a „Focal Length in 35mm Film” (14.) és az „Exposure Time” (16.) között | **nincs**; a négy bemenő mezőt (`0xa210`, `0xa20e`, `0xa002`/`0xa003`, Interop `0x1001`/`0x1002`) a reader nem olvassa |
+| Rekesz | az „Exposure Time” és az „F Number” (18.) között | **nincs**; `0x9202`-t a reader nem olvassa |
+| JPEG minőség | az „Embedded Thumbnail” (27.) és a „Keywords” (29.) között | **nincs** |
+| Személycímkék | a „Keywords” és a „GPS Latitude” (31.) között | **nincs** |
+
+A Fájl dátumához a termékben **már megvan** a pontos megfelelő:
+`app/photo_sort.photo_date(record)` — EXIF felvételi idő, ennek hiányában a
+befagyasztott első-látáskori fájlidő (#2486, `pmp-database.md` 10.3–10.4).
+
+**Nyitott: nem-pontos félértékek.** A `%.3g`/`%g` kerekítés a nem pontosan
+ábrázolható félértékeknél (1.005, 2.675, 9.995, 99.95) még nincs qemu-harnessel
+mérve és rögzítő teszttel lezárva; a Python `round`/formázás és az eredeti CRT
+itt eltérhet.
+
+*Bizonyítottsági fok: **megerősített** az öt kulcsra, feliratra, a sorrendre,
+a CCD-képletre és feltételeire, a minőségbecslő képletére és a
+mintavétel-utótagokra, a Személycímkék két forrására és elsőbbségére, a
+`%.3g`/`%g` küszöbökre és a CRT kerekítésére (futtatva); **erős** arra, hogy a
+`[vtbl+0xc4]` másolat a `thumbindex`-rekord (öt egyező mezőeltolás, a
+videótípus-összevetés), és arra, hogy az 1. időbélyeg dátum híján a
+fájlidővel egyenlő (`pmp-database.md` 10.4). A minőség mintaértékei a
+kiolvasott utasítások Python-átiratából számoltak, nem a függvény
+futtatásából.*

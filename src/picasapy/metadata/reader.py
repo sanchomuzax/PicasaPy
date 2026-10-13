@@ -27,8 +27,10 @@ from PIL import Image
 from PIL.IptcImagePlugin import getiptcinfo
 
 from .gps import gps_from_exif
+from .jpeg_quality import jpeg_quality_text
 from .makernote import canon_camera_settings, nikon_objektiv_mezok, tiff_blokk
 from .objektiv import canon_talalat, nikon_talalat
+from .xmp_people import xmp_person_names
 
 _BOMB_EXCEPTIONS = (
     OSError,
@@ -60,6 +62,17 @@ _EXPOSURE_PROGRAM_TAG = 34850
 _COLOR_SPACE_TAG = 40961
 _COMPRESSION_TAG = 259
 _IMAGE_UNIQUE_ID_TAG = 42016
+# #4579: a CCD-szélesség bemenetei és a Rekesz (spec 17. D)
+_APERTURE_VALUE_TAG = 37378
+_FOCAL_PLANE_X_RESOLUTION_TAG = 0xA20E
+_FOCAL_PLANE_RESOLUTION_UNIT_TAG = 0xA210
+_PIXEL_X_DIMENSION_TAG = 0xA002
+_PIXEL_Y_DIMENSION_TAG = 0xA003
+_INTEROP_IFD = 0xA005
+_RELATED_IMAGE_WIDTH_TAG = 0x1001
+_RELATED_IMAGE_LENGTH_TAG = 0x1002
+#: FocalPlaneResolutionUnit -> mm (az eredeti tábla; más érték: nincs sor)
+_FOCAL_PLANE_UNIT_MM = {1: 25.4, 2: 25.4, 3: 10.0, 4: 1.0, 5: 0.001}
 _GPS_IFD = 0x8825
 _GPS_ALTITUDE_TAG = 6
 _IPTC_KEYWORDS = (2, 25)
@@ -155,6 +168,13 @@ class ExifDetails:
     latitude: float | None = None
     longitude: float | None = None
     altitude_m: float | None = None
+    # #4579: Rekesz (nyers APEX-érték), CCD szélessége (számított, a
+    # panelen mértékegység nélkül), JPEG minőség (szöveg + mintavétel-
+    # utótag) és az XMP-régiók személynevei
+    aperture_apex: float | None = None
+    ccd_width: float | None = None
+    jpeg_quality: str | None = None
+    xmp_people: tuple[str, ...] = ()
 
 
 EMPTY_EXIF_DETAILS = ExifDetails()
@@ -299,7 +319,45 @@ def _properties_extra(exif, ifd, path: str | Path) -> dict:
         "latitude": point.latitude if point else None,
         "longitude": point.longitude if point else None,
         "altitude_m": altitude,
+        "aperture_apex": _rational(ifd.get(_APERTURE_VALUE_TAG)),
+        "ccd_width": _ccd_width(exif, ifd),
+        "jpeg_quality": jpeg_quality_text(path),
+        "xmp_people": xmp_person_names(xmp),
     }
+
+
+def _egesz(value) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _interop_ifd(exif, ifd) -> dict:
+    """Az Interop-IFD, vagy üres szótár (a Pillow KeyError-t dob, ha nincs)."""
+    if _INTEROP_IFD not in ifd:
+        return {}
+    try:
+        return exif.get_ifd(_INTEROP_IFD)
+    except (KeyError, ValueError, SyntaxError):
+        return {}
+
+
+def _ccd_width(exif, ifd) -> float | None:
+    """A CCD szélessége: max(W, H) · egység_mm / FocalPlaneXResolution
+    (spec 17. D, `0x00a34b50`). Bármelyik bemenet hiánya vagy nullája, vagy
+    ismeretlen egység: nincs érték."""
+    egyseg = _FOCAL_PLANE_UNIT_MM.get(
+        ifd.get(_FOCAL_PLANE_RESOLUTION_UNIT_TAG), 0.0
+    )
+    interop = _interop_ifd(exif, ifd)
+    szeles = _egesz(interop.get(_RELATED_IMAGE_WIDTH_TAG))
+    if szeles is None:
+        szeles = _egesz(ifd.get(_PIXEL_X_DIMENSION_TAG))
+    magas = _egesz(interop.get(_RELATED_IMAGE_LENGTH_TAG))
+    if magas is None:
+        magas = _egesz(ifd.get(_PIXEL_Y_DIMENSION_TAG))
+    felbontas = _rational(ifd.get(_FOCAL_PLANE_X_RESOLUTION_TAG))
+    if not egyseg or not szeles or not magas or not felbontas:
+        return None
+    return max(szeles, magas) * egyseg / felbontas or None
 
 
 _XMP_AUX = "{http://ns.adobe.com/exif/1.0/aux/}"

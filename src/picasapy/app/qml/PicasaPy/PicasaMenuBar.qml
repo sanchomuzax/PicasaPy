@@ -25,6 +25,9 @@ MenuBar {
         (typeof folderHierarchyController !== "undefined")
         ? folderHierarchyController : null
 
+    property bool searchOptionsOpen: false
+    signal searchOptionsToggleRequested()
+
     // #3555: a nyelvváltás megerősítő kérdése a Main.qml-ben él (a
     // ConfirmDialog nem fér el egy MenuBar gyermekeként — annak a default
     // property-je `list<Menu>`). A menütétel csak jelez, ha a választás
@@ -1161,7 +1164,17 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit): keresési opciók
-        PicasaMenuItem { text: qsTr("Search &Options"); placeholder: true }
+        PicasaMenuItem {
+            objectName: "menuViewSearchOptions"
+            text: qsTr("Search &Options")
+            placeholder: false
+            checkable: true
+            checked: bar.searchOptionsOpen
+            onTriggered: {
+                bar.searchOptionsToggleRequested()
+                checked = Qt.binding(function() { return bar.searchOptionsOpen })
+            }
+        }
         // #4346: az eredeti `Show only big images` láthatósági kapcsolója.
         PicasaMenuItem {
             objectName: "menuViewThumbnailsOnly"
@@ -1893,8 +1906,13 @@ MenuBar {
             text: bar.currentAlbumToken !== ""
                 ? qsTr("&Edit Album Description...")
                 : qsTr("&Edit Description...")
+            // #4883: a Csillagozott album (`]star`) nem létező album, nincs
+            // `[.album:]star]` szakasza — leírása nincs (spec D.8). Album-
+            // nézetben a mappa-ág nem érvényesül: a controller a mappát
+            // album-nézetben is megőrzi.
             enabled: bar.currentAlbumToken !== ""
-                || (bar.currentFolder !== "" && bar.currentPersonName === "")
+                ? bar.currentAlbumToken !== "]star"
+                : (bar.currentFolder !== "" && bar.currentPersonName === "")
             onTriggered: bar.editFolderDescriptionRequested()
         }
         MenuItem {

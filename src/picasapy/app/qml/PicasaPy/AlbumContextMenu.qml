@@ -46,6 +46,10 @@ PicasaMenu {
     signal refreshThumbnailsRequested()
     signal exportAsHtmlRequested()
     signal addNameTagsRequested(string albumToken)
+    //: #4599: az album egyszeri átrendezése — `mode`: date | name | size |
+    //: reverse. A Shift (csökkenő sorrend) állapotát a vezérlő olvassa a
+    //: kiválasztás pillanatában (a QML-nek nincs rá API-ja).
+    signal sortAlbumRequested(string mode)
 
     // -- 1. blokk: album-műveletek ----------------------------------------
 
@@ -72,17 +76,17 @@ PicasaMenu {
 
     MenuItem {
         objectName: "albumMenuSelectAll"
-        text: qsTr("Select &All Pictures")
+        text: qsTr("Select &All Pictures") + "\tCtrl+A"
         onTriggered: menu.selectAllRequested()
     }
     MenuItem {
         objectName: "albumMenuClearSelection"
-        text: qsTr("&Clear Selection")
+        text: qsTr("&Clear Selection") + "\tCtrl+D"
         onTriggered: menu.clearSelectionRequested()
     }
     MenuItem {
         objectName: "albumMenuInvertSelection"
-        text: qsTr("&Invert Selection")
+        text: qsTr("&Invert Selection") + "\tCtrl+I"
         onTriggered: menu.invertSelectionRequested()
     }
     MenuSeparator {}
@@ -94,17 +98,38 @@ PicasaMenu {
         text: qsTr("&Refresh Thumbnails")
         onTriggered: menu.refreshThumbnailsRequested()
     }
-    // #757: az `Album::SortAlbumBy` a mappa-menü „Mappa rendezésének
-    // alapja ▸" almenüjének album-párja. Az `ID_` előtag hiánya itt is
-    // almenü-CÍMRE utal (a `Folder::SortFolderBy` nálunk is almenü), de az
-    // album-rendezés mögött MÉG NINCS réteg: a `setFolderSort` a MAPPÁK
-    // sorrendjét állítja, albumra a vezérlőnek nincs megfelelője. Ezért
-    // egyelőre helyfoglaló sor — a réteg elkészültekor almenüvé nyílik,
-    // ugyanazzal a négy `Sort::` tétellel, mint a mappa-menüé.
-    PicasaMenuItem {
+    // #757, #4599: az `Album::SortAlbumBy` — az eredetiben a mappa-menü
+    // almenüjének (`Sort::`) album-párja, UGYANAZZAL a négy tétellel
+    // (`0x007318a0`): Dátum · Név · Méret · Fordított sorrend. Egyszeri
+    // átrendezés, nem tartós nézetmód (ezért nincs pipa): a kezelő a tárolt
+    // sorrendet írja át (`PhotoOpsController.sortAlbum`, ADR-016). A Shift a
+    // három kulcsnál csökkenővé teszi (a "Fordított" Shift nélkül és Shifttel
+    // is megfordít). A tételek az eredeti funkciót adják, ezért NEM kapnak
+    // kék saját-funkció jelölést — csak a tárolás helye saját (`ini/album_order.py`).
+    PicasaMenu {
         objectName: "albumMenuSortAlbumBy"
-        text: qsTr("Sort &Album By")
-        placeholder: true
+        title: qsTr("Sort &Album By")
+
+        MenuItem {
+            objectName: "albumMenuSortByDate"
+            text: qsTr("&Date")
+            onTriggered: menu.sortAlbumRequested("date")
+        }
+        MenuItem {
+            objectName: "albumMenuSortByName"
+            text: qsTr("&Name")
+            onTriggered: menu.sortAlbumRequested("name")
+        }
+        MenuItem {
+            objectName: "albumMenuSortBySize"
+            text: qsTr("&Size")
+            onTriggered: menu.sortAlbumRequested("size")
+        }
+        MenuItem {
+            objectName: "albumMenuSortReverse"
+            text: qsTr("&Reverse order")
+            onTriggered: menu.sortAlbumRequested("reverse")
+        }
     }
     MenuSeparator {}
 

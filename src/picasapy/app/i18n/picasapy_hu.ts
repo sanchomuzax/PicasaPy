@@ -2529,6 +2529,13 @@ picasapy-origin-key: stringres:EXIF::DateTime</extracomment>
         </message>
         <message>
             <location filename="../formatting.py" />
+            <source>File Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FileDate</extracomment>
+            <translation>Fájl dátuma</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
             <source>Orientation</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
@@ -2554,6 +2561,13 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::FocalLengthIn35mmFilm</extracomment>
             <translation>Fókusztávolság 35 mm-es filmen</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>CCD Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::CCDWidth</extracomment>
+            <translation>CCD szélessége</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2624,10 +2638,24 @@ picasapy-origin-key: stringres:EXIF::ColorSpace</extracomment>
         </message>
         <message>
             <location filename="../formatting.py" />
+            <source>JPEG Quality</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::Quality</extracomment>
+            <translation>JPEG minőség</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
             <source>Keywords</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
             <translation>Kulcsszavak</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>People Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:XMP::Regions</extracomment>
+            <translation>Személycímkék</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -8755,8 +8783,9 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
         </message>
         <message>
             <source>Split Folder Here...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mappa felosztása itt…</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(contextMenuSplitFolder)</extracomment>
+            <translation>M&amp;appa felosztása itt...</translation>
         </message>
         <message>
             <source>Open File</source>
@@ -9580,6 +9609,16 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
             <source>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 mappa frissült: %2 kulcsszó, %3 hely, %4 név.</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) taken over from Picasa.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 videó dátuma átvéve a Picasából.</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) could not be taken over; try again later.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 videó dátumát nem sikerült átvenni; próbáld meg később újra.</translation>
         </message>
         <message>
             <source>%1 photo(s) were left untouched because they already had data.</source>
@@ -11958,6 +11997,24 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <translation>Képtár betöltése…</translation>
         </message>
         <message>
+            <location filename="../application.py" />
+            <source>Checking folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mappák ellenőrzése…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Refreshing folder list…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mappalista frissítése…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Checking export folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Exportmappák ellenőrzése…</translation>
+        </message>
+        <message>
             <location filename="../application.py" line="416" />
             <source>Scanning folders…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -12790,6 +12847,13 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     </context>
     <context>
         <name>FolderPropertiesDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(folderPropertiesNameField)</extracomment>
+            <translation>Névtelen</translation>
+        </message>
         <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa
@@ -15511,8 +15575,14 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         </message>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
+        </message>
+        <message>
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Dátum</translation>
         </message>
         <message>
             <source>&amp;Delete Album</source>
@@ -15532,9 +15602,26 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
             <translation>Kiválasztás &amp;megfordítása</translation>
         </message>
         <message>
-            <source>&amp;Refresh Thumbnails</source>
+            <source>&amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Név</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
             <translation>Indexképek &amp;frissítése</translation>
+        </message>
+        <message>
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>&amp;Fordított sorrend</translation>
+        </message>
+        <message>
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Méret</translation>
         </message>
         <message>
             <source>E&amp;xport as HTML Page...</source>
@@ -15630,7 +15717,8 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         </message>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Folder::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15820,7 +15908,8 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
         <name>PeopleAlbumContextMenu</name>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PplAlbum::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15836,8 +15925,21 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>Az &amp;Emberek album szerkesztése...</translation>
         </message>
         <message>
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT</extracomment>
+            <translation>Kiválasztás &amp;megfordítása</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
+            <translation>Indexképek &amp;frissítése</translation>
+        </message>
+        <message>
             <source>Select &amp;All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <translation>Az ö&amp;sszes kijelölése</translation>
         </message>
     </context>

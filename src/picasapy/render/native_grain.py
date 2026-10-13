@@ -8,9 +8,9 @@ erősségű oneclick pár (#347, #3927). A nyolc lépés, egész aritmetikával:
 1. zajpuffer W×H×32 bit;
 2. generátor: **helyi MT19937**, ugyanazzal a magvető-függvénnyel
    (`0x00aa28f0`, szorzó `0x19660D` = 1664525), mint a `NoiseImageOperation`
-   (`nativ_noise.picasa_mt19937`) — csak a mag más (a Picasában három
-   egymást követő CRT-`rand()`-ból; nálunk a hívó adja meg, mert a natív mag
-   hívásonként változik, tehát úgysem reprodukálható bájtra, #3927 4. jegyzet);
+   (`nativ_noise.picasa_mt19937`) — a magot a Picasa CRT-folyamából
+   három egymást követő `rand()` adja; a `grain_seed` ezt a renderbeli
+   sorszámból reprodukálja (#4936);
 3. erősség: `a = 0,5` ⇒ `k = trunc(256 − 256·a) = 128`;
 4. első zajmező, képpontonként egy MT-szó, csatornánként (R = 2., G = 1.,
    B = 0. bájt, mint a `nativ_noise.noise_layer`-ben) a 127 felé húzva
@@ -45,6 +45,7 @@ oszlopát visszaadja, ld. a fenti szakaszt a teljes táblázatért.
 from __future__ import annotations
 
 import numpy as np
+import operator
 
 from picasapy.render.nativ_noise import picasa_mt19937
 
@@ -64,6 +65,32 @@ _Y_R, _Y_G, _Y_B = 77, 151, 28
 #: A középtónus-súlyozás csúcsa (`c = 128`-nál 160/256).
 _KOZEPTONUS_CSUCS = 160
 _KOZEPTONUS_KOZEP = 128
+
+
+def grain_seed(ordinal: int) -> int:
+    """A renderlánc ``ordinal``-edik szemcséjének Picasa-magja.
+
+    A Picasa az MSVC CRT `rand()`-folyamából három egymást követő értéket
+    vesz minden szemcse-művelethez. A folyam új rendernél az alapállapotból
+    (1) indul; a sorszám renderenként értendő, és nem globális állapot.
+    ``mag = r3 ^ ((r2 ^ (r1 << 12)) << 12)`` 32 bites eredménnyel.
+    """
+    if isinstance(ordinal, bool):
+        raise TypeError("a grain-sorszám egész szám legyen")
+    try:
+        index = operator.index(ordinal)
+    except TypeError as exc:
+        raise TypeError("a grain-sorszám egész szám legyen") from exc
+    if index < 0:
+        raise ValueError("a grain-sorszám nem lehet negatív")
+
+    state = 1
+    values: list[int] = []
+    for _ in range(3 * index + 3):
+        state = (state * 0x343FD + 0x269EC3) & 0xFFFFFFFF
+        values.append((state >> 16) & 0x7FFF)
+    r1, r2, r3 = values[-3:]
+    return (r3 ^ ((r2 ^ (r1 << 12)) << 12)) & 0xFFFFFFFF
 
 
 def _bajtok_rgb(szavak: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -128,8 +155,8 @@ def apply_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
 
     `image` RGB `uint8` (H, W, 3) — a hívó felel az alakellenőrzésért
     (`picasapy.render.curves.validate_image`). `seed` a helyi MT19937
-    magja: a Picasában hívásonként más (nem reprodukálható), itt a hívó
-    adja meg — rögzített maggal determinisztikus.
+    magja: a lánc a Picasa CRT-folyamából, renderenkénti sorszámmal adja.
+    Rögzített bemeneti kép és lánc így determinisztikus.
     """
     height, width = image.shape[:2]
     szavak = picasa_mt19937(seed, 2 * height * width).reshape(2, height, width)
@@ -169,4 +196,4 @@ def apply_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
     return kimenet.astype(np.uint8)
 
 
-__all__ = ["apply_native_grain"]
+__all__ = ["apply_native_grain", "grain_seed"]

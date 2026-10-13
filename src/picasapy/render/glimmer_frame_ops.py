@@ -180,20 +180,15 @@ def _raszterez_kor(
 
 
 def _kever_rgb_fedessel(cel: np.ndarray, forras: np.ndarray, fedes: np.ndarray) -> np.ndarray:
-    """RGB színek keverése a natív fedési súlyok csatornasorrendjével."""
+    """Az eredeti Border-MMX-ág RGB keverése, külön csatornacsonkításokkal."""
     cel_u32 = np.asarray(cel, dtype=np.uint32)
     forras_u32 = np.asarray(forras, dtype=np.uint32)
     fedes_u32 = np.asarray(fedes, dtype=np.uint32)[..., np.newaxis]
-    alfa_resz = (255 * fedes_u32) >> 8
-    inverz = 255 - alfa_resz
-    reszleges_rb = (cel_u32 * inverz + forras_u32 * fedes_u32) >> 8
-    reszleges_g = ((cel_u32[..., 1:2] * inverz) >> 8) + (
-        (forras_u32[..., 1:2] * fedes_u32) >> 8
-    )
-    reszleges = np.concatenate(
-        (reszleges_rb[..., 0:1], reszleges_g, reszleges_rb[..., 2:3]), axis=-1
-    )
-    reszleges = np.clip(reszleges, 0, 255).astype(np.uint8)
+    alfa = (255 * fedes_u32) >> 8
+    reszleges = np.minimum(
+        255,
+        ((cel_u32 * (255 - alfa)) >> 8) + ((forras_u32 * fedes_u32) >> 8),
+    ).astype(np.uint8)
     return np.where(
         fedes_u32 == 0,
         cel_u32.astype(np.uint8),
@@ -225,10 +220,10 @@ def draw_border(
 ) -> np.ndarray:
     """`BorderImageOperation` a natív külön külső- és forrássarok-ráccsal.
 
-    A két élsimított ív a `docs/specs/filterdesc-registry.md` I.4 képleteit
-    követi. A keretsáv q-rácsa külön a kép sarkainál fut; a forrás q-rácsa
-    csak a négy forrássarok-pixelblokkot kompozitálja. A feliratsáv magassága
-    továbbra is csonkított egész (`0x008eea90`).
+    A keretsáv csempéje az eredeti, valódi SSE-s CPU-n futó MMX-ág külön-külön
+    csonkított és telített RGB-keverését használja. A négy csempe a kép előtt
+    készül; a kép sarkai ezután a csempe értékére kompozitálódnak (`//255`).
+    A feliratsáv magassága továbbra is csonkított egész (`0x008eea90`).
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -239,19 +234,22 @@ def draw_border(
     keret = kulso + belso
     vaszon = np.empty((height + 2 * keret + felirat, width + 2 * keret, 3), dtype=image.dtype)
     vaszon[:] = np.asarray(outer_color, dtype=image.dtype)
-    vaszon[kulso : kulso + height + 2 * belso, kulso : kulso + width + 2 * belso] = np.asarray(
-        inner_color, dtype=image.dtype
-    )
-    vaszon[keret : keret + height, keret : keret + width] = image
-    if sugar == 0:
-        return vaszon
+    if belso > 0:
+        vaszon[
+            kulso : kulso + height + 2 * belso,
+            kulso : kulso + width + 2 * belso,
+        ] = np.asarray(inner_color, dtype=image.dtype)
 
-    n = sugar + belso
-    kulso_sugar = min(
-        int(np.float32(n) + np.float32(1.0)),
-        (width + 2 * belso) // 2,
-        (height + 2 * belso) // 2,
-    )
+    if belso == 0:
+        kulso_sugar = 0
+    elif sugar == 0:
+        kulso_sugar = min(1, (width + 2 * belso) // 2, (height + 2 * belso) // 2)
+    else:
+        kulso_sugar = min(
+            int(sugar + belso + 1),
+            (width + 2 * belso) // 2,
+            (height + 2 * belso) // 2,
+        )
     if kulso_sugar > 0:
         kulso_q = _border_q_racs(kulso_sugar)
         kulso_ri2 = 256 * kulso_sugar**2 - 256 * kulso_sugar + 64
@@ -275,30 +273,36 @@ def draw_border(
                     bal : bal + kulso_sugar,
                 ] = kulso_folt[y_racs, x_racs]
 
-    source_q = _border_q_racs(sugar)
-    source_ri2 = 256 * (sugar - 1) ** 2
-    source_ro2 = 256 * sugar**2
-    source_fedes = _sarok_fedes(source_q, source_ri2, source_ro2)
-    for y_canvas, y_source, y_racs in (
-        (keret, slice(0, sugar), slice(0, sugar)),
-        (keret + height - sugar, slice(height - sugar, height), slice(sugar, 2 * sugar)),
-    ):
-        for x_canvas, x_source, x_racs in (
+    cel_sarkok = {}
+    if sugar > 0:
+        for y_canvas in (keret, keret + height - sugar):
+            for x_canvas in (keret, keret + width - sugar):
+                cel_sarkok[(y_canvas, x_canvas)] = vaszon[
+                    y_canvas : y_canvas + sugar,
+                    x_canvas : x_canvas + sugar,
+                ].copy()
+
+    vaszon[keret : keret + height, keret : keret + width] = image
+
+    if sugar > 0:
+        source_q = _border_q_racs(sugar)
+        source_ri2 = 256 * (sugar - 1) ** 2
+        source_ro2 = 256 * sugar**2
+        source_fedes = _sarok_fedes(source_q, source_ri2, source_ro2)
+        for y_canvas, y_source, y_racs in (
             (keret, slice(0, sugar), slice(0, sugar)),
-            (keret + width - sugar, slice(width - sugar, width), slice(sugar, 2 * sugar)),
+            (keret + height - sugar, slice(height - sugar, height), slice(sugar, 2 * sugar)),
         ):
-            # A natív `9ab410` a forrássarkot a már kirajzolt vászonra
-            # kompozitálja. Az átlátszó forrásfedésnek meg kell őriznie az
-            # alatta levő külső ív részleges színét a sarkok átfedésénél.
-            cel = vaszon[
-                y_canvas : y_canvas + sugar,
-                x_canvas : x_canvas + sugar,
-            ]
-            kep_sarok = image[y_source, x_source]
-            vaszon[
-                y_canvas : y_canvas + sugar,
-                x_canvas : x_canvas + sugar,
-            ] = _kompozital_forrassarok(cel, kep_sarok, source_fedes[y_racs, x_racs])
+            for x_canvas, x_source, x_racs in (
+                (keret, slice(0, sugar), slice(0, sugar)),
+                (keret + width - sugar, slice(width - sugar, width), slice(sugar, 2 * sugar)),
+            ):
+                cel = cel_sarkok[(y_canvas, x_canvas)]
+                kep_sarok = image[y_source, x_source]
+                vaszon[
+                    y_canvas : y_canvas + sugar,
+                    x_canvas : x_canvas + sugar,
+                ] = _kompozital_forrassarok(cel, kep_sarok, source_fedes[y_racs, x_racs])
     return vaszon
 
 

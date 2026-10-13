@@ -26,6 +26,8 @@ from pathlib import Path
 #: mappanév véletlenül (vagy szándékosan) egy MÁSIK könyvtárba mutasson.
 _TILTOTT_KARAKTEREK = '<>:"/\\|?*'
 _TILTOTT_MINTA = re.compile("[" + re.escape(_TILTOTT_KARAKTEREK) + "]")
+_SPLIT_TILTOTT = frozenset('\\/:*?"<>|')
+_SPLIT_SUFFIX = re.compile(r"_(\d+)$")
 
 
 class InvalidFolderNameError(ValueError):
@@ -88,8 +90,45 @@ def create_folder_for_move(parent: Path, name: str) -> Path:
     return target
 
 
+def sanitize_split_folder_name(name: str) -> str:
+    """A Picasa „Mappa felosztása itt” fájlnév-tisztítója (#4534)."""
+    characters = []
+    for character in str(name):
+        if ord(character) < 32 or character in _SPLIT_TILTOTT:
+            continue
+        characters.append(" " if character.isspace() else character)
+    cleaned = re.sub(r" +", " ", "".join(characters)).lstrip(" .").rstrip(" .")
+    if not cleaned:
+        return "album"
+    if cleaned.casefold() in {"aux", "con", "nul", "prn"}:
+        cleaned += "_"
+    return cleaned
+
+
+def create_unique_split_folder(parent: Path, name: str) -> Path:
+    """Új testvérmappa atomikus lefoglalása `_1`…`_4095` ütközési névvel."""
+    parent = Path(parent)
+    if not parent.is_dir():
+        raise FileNotFoundError(f"A szülőmappa nem létezik: {parent}")
+    cleaned = sanitize_split_folder_name(name)
+    suffix = _SPLIT_SUFFIX.search(cleaned)
+    has_nonzero_suffix = suffix and any(digit != "0" for digit in suffix.group(1))
+    base = cleaned[: suffix.start()] if has_nonzero_suffix else cleaned
+    candidates = [cleaned, *(f"{base}_{number}" for number in range(1, 4096))]
+    for candidate in candidates:
+        target = parent / candidate
+        try:
+            target.mkdir()
+        except FileExistsError:
+            continue
+        return target
+    raise FileExistsError(f"Nem található szabad mappanév: {parent / base}")
+
+
 __all__ = [
     "InvalidFolderNameError",
+    "create_unique_split_folder",
     "create_folder_for_move",
+    "sanitize_split_folder_name",
     "validate_folder_name",
 ]

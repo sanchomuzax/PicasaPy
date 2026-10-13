@@ -91,12 +91,11 @@ class TestFelosztas:
         import run_tests
 
         gyoker = run_tests._ROOT
-        app = sorted((gyoker / "tests" / "app").glob("test_*.py")) + sorted(
-            (gyoker / "tests" / "app" / "qml_functional").glob("test_*.py")
+        fajlok = sorted(
+            str(ut.relative_to(gyoker)).replace("\\", "/")
+            for ut in (gyoker / "tests").rglob("test_*.py")
         )
-        return run_tests, [run_tests._NEM_APP] + [
-            str(p.relative_to(gyoker)) for p in app
-        ]
+        return run_tests, fajlok
 
     def test_minden_egyseg_PONTOSAN_egy_darabba_kerul(self):
         """Sem kimaradás, sem kétszeres futtatás."""
@@ -104,7 +103,11 @@ class TestFelosztas:
         darab = 4
         osszes: list[str] = []
         for i in range(1, darab + 1):
-            osszes += sorted(run_tests._kiegyensulyozott_darab(egysegek, i, darab))
+            osszes += sorted(
+                run_tests._kiegyensulyozott_darab(
+                    egysegek, i, darab, teljes=True
+                )
+            )
         assert sorted(osszes) == sorted(egysegek), (
             "a felosztás egységet veszített vagy duplázott"
         )
@@ -113,12 +116,14 @@ class TestFelosztas:
         """A leghosszabb/legrövidebb arány 2× alatt — különben a felosztás
         fele haszna elveszik a leglassabb darabon."""
         run_tests, egysegek = self._egysegek()
-        idok = run_tests._mert_idok()
+        idok = run_tests.becsult_idok(egysegek, teljes=True)
         if not idok:
             pytest.skip("nincs mért futásidő-térkép")
         terhek = []
         for i in range(1, 5):
-            resz = run_tests._kiegyensulyozott_darab(egysegek, i, 4)
+            resz = run_tests._kiegyensulyozott_darab(
+                egysegek, i, 4, teljes=True
+            )
             terhek.append(sum(idok.get(nev, 0.0) for nev in resz))
         assert min(terhek) > 0
         assert max(terhek) / min(terhek) < 2.0, f"egyenetlen darabok: {terhek}"
@@ -126,7 +131,9 @@ class TestFelosztas:
     def test_a_mert_tabla_LEFEDI_az_egysegeket(self):
         """#3117: a tábla ismerje a futtatandó egységek túlnyomó részét.
 
-        A hiányzó egységek a MEDIÁNT kapják — ha ez a többségre igaz, a
+        A hiányzó app-fájlok a P90 becslést kapják; a teljes nem-app készlet
+        összesített mérése pedig a nem-app fájlok között oszlik el. Ha az app
+        mérések többsége hiányzik, a
         „mért futásidők szerinti" kiosztás valójában találgatás, és a
         `test_a_darabok_kiegyensulyozottak` is **vakon** zöld marad: az a
         saját (hiányos) táblája szerint számol, nem a valódi idők szerint.
@@ -139,18 +146,23 @@ class TestFelosztas:
         idok = run_tests._mert_idok()
         if not idok:
             pytest.skip("nincs mért futásidő-térkép")
-        ismert = sum(1 for nev in egysegek if nev in idok)
-        arany = ismert / len(egysegek)
+        app_egysegek = [nev for nev in egysegek if nev.startswith("tests/app/")]
+        ismert_app = sum(1 for nev in app_egysegek if nev in idok)
+        mert_nem_app_osszesites = run_tests._NEM_APP in run_tests._mert_idok()
+        ismert = ismert_app + int(mert_nem_app_osszesites)
+        arany = ismert / (len(app_egysegek) + 1)
         assert arany >= 0.9, (
-            f"a futásidő-tábla csak az egységek {arany:.0%}-át ismeri "
-            f"({ismert}/{len(egysegek)}) — a többi mediánt kap, és a "
-            "kiegyensúlyozás elveszti az értelmét (#3117)"
+            f"a futásidő-tábla csak a mérési egységek {arany:.0%}-át ismeri "
+            f"({ismert}/{len(app_egysegek) + 1}) — az app-fájlok "
+            "a kiegyensúlyozás elveszti az értelmét (#3117)"
         )
 
     def test_egy_darab_eseten_MINDEN_fut(self):
         """`--shard 1/1` (és a hiányzó kapcsoló) a teljes készletet adja."""
         run_tests, egysegek = self._egysegek()
-        assert run_tests._kiegyensulyozott_darab(egysegek, 1, 1) == set(egysegek)
+        assert run_tests._kiegyensulyozott_darab(
+            egysegek, 1, 1, teljes=True
+        ) == set(egysegek)
         assert run_tests._shard_parameter([]) == (1, 1)
         assert run_tests._shard_parameter(["--shard", "3/4"]) == (3, 4)
         assert run_tests._shard_parameter(["--shard=2/4"]) == (2, 4)

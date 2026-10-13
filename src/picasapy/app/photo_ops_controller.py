@@ -45,7 +45,8 @@ import secrets
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, Qt, Signal, Slot
+from PySide6.QtGui import QGuiApplication
 
 from picasapy.export import export_sidecar_for_photo
 from picasapy.edit.effect_clipboard import (
@@ -59,9 +60,12 @@ from picasapy.fileops import (
     preview_name,
     rename_photos_many,
 )
+from picasapy.app.kezi_sorrend import mappa_prioritasai, mentsd_a_prioritasokat
 from picasapy.index import (
+    album_photos,
     open_index,
     photo_by_id,
+    photos_in_folder,
     photos_with_faces,
     photos_with_keyword,
     search_photos,
@@ -71,9 +75,11 @@ from picasapy.ini import (
     FilterWriteError,
     IniConflictError,
     IniSaveError,
+    STAR_ALBUM_TOKEN,
     load_existing,
     update_document,
 )
+from picasapy.ini.album_order import AlbumOrderWriteError, write_album_places
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
 from picasapy.ini.albums import (
     albums_of,
@@ -83,6 +89,7 @@ from picasapy.ini.albums import (
     without_album,
     without_album_everywhere,
 )
+from picasapy.index.album_sort import SORT_MODES, new_places, sorted_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.render.flip import (
     FLIP_HORIZONTAL,
@@ -215,6 +222,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: a vezérlő csak a tényt jelenti, ahogy a `saveCopyReady` is.
     rotationTypeFailed = Signal(int)   # hány elem maradt ki
     rotationNeedsSelection = Signal()
+
+    @Slot(int, result=str)
+    def hoverPreviewFileUrlAt(self, row: int) -> str:  # noqa: N802 — QML-hívás
+        """A rács egy sorának eredeti képe, URL-kódolva az előnézeti ablaknak."""
+        path = self._photos.filePathAt(row)
+        return formatting.to_file_url(path).toString()
     # #366: a tömeges átnevezés (fájlrendszer-írás, lehet lassú NAS-on)
     # háttérszálon fut; ez a jelzés tereli a resync/refresh-t vissza a
     # GUI-szálra, a `_photoFieldUpdated` mintája szerint.
@@ -409,7 +422,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: Ha itt állunk, a csillag ki/be kapcsolása nem egy sor megjelenését
     #: változtatja, hanem a lista TARTALMÁT — a nézetet újra le kell
     #: kérdezni. A mappa-nézetben ellenben a sornak maradnia kell.
-    _CSILLAG_SZURT_NEZETEK = ("starred",)
+    _CSILLAG_SZURT_NEZETEK = ("starred", "starred_album")
 
     def _refresh_if_star_filtered(self) -> None:
         """Újralekérdezés, ha a csillag a jelen nézet tagságát dönti el.
@@ -831,7 +844,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     @Slot(list, str)
     def removeRowsFromAlbum(self, rows, token: str) -> None:
         """A kijelölés kivétele egy albumból (a definíció, `[.album:token]`,
-        a mappában marad — csak a tagság törlődik, ahogy a Picasa is teszi)."""
+        a mappában marad — csak a tagság törlődik, ahogy a Picasa is teszi).
+
+        A `]star` különleges albumnál a tagság az INI `star` kulcsa, ezért
+        annak levétele nem az `albums=` CSV-t módosítja (#4883).
+        """
         token = (token or "").strip()
         if not token:
             return
@@ -839,8 +856,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not valid:
             return
 
-        def mutate(document, photo):
-            return without_album(document, photo.name, token)
+        if token == STAR_ALBUM_TOKEN:
+            def mutate(document, photo):
+                return document.with_removed(photo.name, "star")
+        else:
+            def mutate(document, photo):
+                return without_album(document, photo.name, token)
 
         self._write_album_batch(valid, mutate)
 
@@ -873,6 +894,125 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             self.albumWriteFailed.emit(str(error))
             return False
 
+        self._refresh_view()
+        return True
+
+    @Slot(str, str, result=bool)
+    def sortAlbum(self, token: str, mode: str) -> bool:  # noqa: N802
+        """Az album „Sort Album By" almenüje (#4599, ADR-016): az album képeinek
+        TÁROLT sorrendjét egyszer átrendezi — `date` / `name` / `size` kulcs
+        szerint, vagy `reverse`: megfordítja. A Shift (a kiválasztás
+        pillanatában lenyomva) a három kulcsnál csökkenővé teszi, ahogy az
+        eredeti kezelő (`GetKeyState(VK_SHIFT)`, `0x005cc09d`); a `reverse`
+        Shifttel is megfordít."""
+        shift = bool(
+            QGuiApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
+        )
+        return self.sortAlbumBy(token, mode, descending=shift)
+
+    def sortAlbumBy(  # noqa: N802
+        self, token: str, mode: str, *, descending: bool = False
+    ) -> bool:
+        """A `sortAlbum` magja, a Shift állapotától függetlenül (#4599).
+
+        A mód nem tárolódik: minden tag új helyet kap (`1.0 … n`) az
+        `albumorder=` kulcsban, mappánként EGY ini-írással. Több mappára szóró
+        albumnál a tagok mappákon át összefésülve rendeződnek. Bukott írásnál
+        a hiba megnevezi a mappát (`albumWriteFailed`), és a művelet
+        megismételhető. Visszatérés: kiírtuk-e az egész új sorrendet.
+        """
+        token = (token or "").strip()
+        if not token or mode not in SORT_MODES:
+            return False
+        with open_index(self._db_path) as conn:
+            tarolt = album_photos(conn, token)
+        if not tarolt:
+            return False
+        rendezett = sorted_album(tarolt, mode, descending=bool(descending))
+        helyek = new_places(rendezett)
+        mappankent: dict[str, dict[str, float]] = {}
+        for (mappa, nev), hely in helyek.items():
+            mappankent.setdefault(mappa, {})[nev] = hely
+
+        try:
+            with open_index(self._db_path) as conn:
+                write_album_places(
+                    token,
+                    (
+                        (Path(mappa) / PICASA_INI_NAME, places)
+                        for mappa, places in mappankent.items()
+                    ),
+                    on_written=lambda ini_ut: self._sync_tree(
+                        conn, str(ini_ut.parent)
+                    ),
+                )
+        except (AlbumOrderWriteError, *_WRITE_ERRORS) as error:
+            self.albumWriteFailed.emit(str(error))
+            self._refresh_view()
+            return False
+        self._refresh_view()
+        return True
+
+    @Slot(str, str, result=bool)
+    def sortFolderBy(self, folder: str, mode: str) -> bool:  # noqa: N802
+        """Egyszer átrendezi a célmappa listáját, és elmenti a kézi sorrendet.
+
+        A rendezési mód nem tárolódik. A névrendezés az album-rendezés
+        természetes összevetését használja; a fordított művelet a már
+        eltárolt kézi sorrendet fordítja meg.
+        """
+        folder = str(folder or "")
+        supported = (*SORT_MODES, "color", "priority")
+        if not folder or not folder.strip() or mode not in supported:
+            return False
+        with open_index(self._db_path) as conn:
+            photos = photos_in_folder(conn, folder)
+        if not photos:
+            return False
+
+        from .photo_sort import sort_folder_blocks, szin_adat_hiany
+
+        prioritasok = mappa_prioritasai(folder)
+        if mode in SORT_MODES:
+            if mode == "reverse":
+                stored_order = sort_folder_blocks(
+                    photos,
+                    "priority",
+                    prioritasok={
+                        (folder, name): value
+                        for name, value in prioritasok.items()
+                    },
+                )
+                ordered = sorted_album(stored_order, mode)
+            else:
+                ordered = sorted_album(photos, mode)
+        elif mode == "color":
+            hues = self._folder_photo_hues(photos)
+            if szin_adat_hiany(photos, hues):
+                # A színindex még nem kész: a fájlnév-sorrend ilyenkor
+                # véglegesen kiíródna, ezért nem rendezünk és nem írunk.
+                return False
+            ordered = sort_folder_blocks(photos, mode, hues=hues)
+        else:
+            ordered = sort_folder_blocks(
+                photos,
+                "priority",
+                prioritasok={
+                    (folder, name): value for name, value in prioritasok.items()
+                },
+            )
+
+        places = {
+            photo.name: float(position)
+            for position, photo in enumerate(ordered, start=1)
+        }
+        try:
+            mentsd_a_prioritasokat(folder, places)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(
+                f"A mappa sorrendje nem menthető ({folder}): {error}"
+            )
+            return False
         self._refresh_view()
         return True
 

@@ -333,6 +333,7 @@ Rectangle {
     // az ini-módosítást a photosModel/index NEM látja, ez a kényszerített
     // újraértékelés-kapcsoló a facesFor() friss lekérdezéséhez
     property int facesEditRevision: 0
+    property int manualFaceAddRevision: 0
     Connections {
         target: viewer.appWindow
             ? viewer.appWindow._faceScanController : null
@@ -1558,7 +1559,25 @@ Rectangle {
     }
     Keys.onEscapePressed: if (!viewer.textEntryHasFocus) viewer.handleEscape()
     Keys.onRightPressed: if (!viewer.textEntryHasFocus) next()
-    Keys.onReturnPressed: if (!viewer.textEntryHasFocus) next()
+    function handleReturnPressed() {
+        if (viewer.textEntryHasFocus)
+            return
+        // #4500: a kikapcsolt SingleClickExit az állóképes előnézetben
+        // Enterrel lép vissza a könyvtárba. Az aktív eszközök saját Enter-
+        // útját (pl. sorozat-vágás), a videót és a kettős nézetet meghagyjuk.
+        if (!viewer.singleClickExitEnabled
+                && !viewer.isCurrentVideo
+                && viewer.layoutMode === "1up"
+                && !editorPanel.modeToolActive
+                && !editorPanel.tiltActive
+                && !editorPanel.paramPanelActive
+                && !viewer.facesEditMode) {
+            viewer.kerBezaras()
+            return
+        }
+        viewer.next()
+    }
+    Keys.onReturnPressed: viewer.handleReturnPressed()
     Keys.onLeftPressed: if (!viewer.textEntryHasFocus) previous()
     // szóköz: videónál lejátszás/szünet (#14) — Picasa-viselkedés
     Keys.onSpacePressed: {
@@ -3578,7 +3597,16 @@ Rectangle {
                         //: ennek a sorába ír (`currentFaces` ugyanígy)
                         imagePath: viewer.photosModel && viewer.aktivSor >= 0
                             ? viewer.photosModel.filePathAt(viewer.aktivSor) : ""
-                        onEdited: viewer.facesEditRevision += 1
+                        onEdited: function(manualAdded) {
+                            viewer.facesEditRevision += 1
+                            if (viewer.controllerReady)
+                                controller.refreshCollections()
+                            if (manualAdded) {
+                                if (viewer.appWindow)
+                                    viewer.appWindow.peopleFaceRevision += 1
+                                viewer.manualFaceAddRevision += 1
+                            }
+                        }
                         onManualCancelRequested: viewer.facesEditMode = false
                     }
                     Connections {
@@ -4880,6 +4908,13 @@ Rectangle {
                 //: A nézett kép nevesített emberei.
                 sourceComponent: PeoplePanel {
                     objectName: "viewerPeoplePanel"
+                    headerRefreshKey: [viewer.drawerRows.join(","),
+                        viewer.currentIndex, viewer.peopleOpen,
+                        viewer.facesEditMode,
+                        viewer.manualFaceAddRevision,
+                        viewer.controllerReady
+                            ? controller.currentPersonName : "",
+                        pendingCount() > 0].join("|")
                     selectionCount: viewer.drawerRows.length
                     faceScanController: viewer.appWindow
                         ? viewer.appWindow._faceScanController : null

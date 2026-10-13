@@ -490,12 +490,15 @@ class TestBalHasabHelyiMenuje:
 
 
 class TestMappaHelyiMenuje:
-    """`FolderContextMenu` — a mappa KÉPEINEK rendezése (`folderPhotoSort`)."""
+    """A mappa rendezési menüje egyszeri parancsokat tartalmaz (#4890)."""
 
     nevek = (
         "folderMenuSortByDate",
         "folderMenuSortByName",
         "folderMenuSortBySize",
+        "folderMenuSortByColor",
+        "folderMenuSortByPriority",
+        "folderMenuSortReverse",
     )
 
     @staticmethod
@@ -508,17 +511,14 @@ class TestMappaHelyiMenuje:
         )
         qt_app.processEvents()
 
-    def test_a_mar_aktiv_tetelre_ujra_kattintva_marad_a_pipa(self, qml_app, qt_app):
-        window, controller, _engine = qml_app
-        path = controller.property("currentFolder") or ""
+    def test_a_rendezesek_nem_tarolnak_modot_vagy_iranyt(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        path = _controller.property("currentFolder") or ""
         self._ujranyit(window, qt_app, path)
-
-        _trigger(window, "folderMenuSortByName")
-        qt_app.processEvents()
-        self._ujranyit(window, qt_app, path)
-        _egyetlen_pipa(window, self.nevek, "folderMenuSortByName")
-
-        _trigger(window, "folderMenuSortByName")  # MÁSODSZOR
-        qt_app.processEvents()
-        self._ujranyit(window, qt_app, path)
-        _egyetlen_pipa(window, self.nevek, "folderMenuSortByName")
+        menu = _child(window, "folderContextMenu")
+        assert menu.property("sortMode") is None
+        assert menu.property("sortReverse") is None
+        for name in self.nevek:
+            item = _child(window, name)
+            assert item.property("checkable") is False
+            assert item.property("checked") is False

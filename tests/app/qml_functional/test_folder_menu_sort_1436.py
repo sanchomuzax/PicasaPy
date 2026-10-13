@@ -10,7 +10,12 @@ kötés ne maradhasson zölden.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+
+from picasapy.ini.document import parse_document
+from picasapy.ini.priority import olvasd_a_prioritasokat
 
 
 def _child(root, name):
@@ -19,10 +24,10 @@ def _child(root, name):
     return obj
 
 
-def _open_menu(window):
+def _open_menu(window, path):
     QMetaObject.invokeMethod(
         window, "openFolderContextMenu", Qt.ConnectionType.DirectConnection,
-        Q_ARG("QVariant", ""),
+        Q_ARG("QVariant", path),
     )
 
 
@@ -35,33 +40,60 @@ def _trigger(window, name):
 
 
 class TestSortMenuItemsAreWiredToTheFolderContents:
-    def test_date_item_sets_the_photo_order(self, qml_app, qt_app):
+    def test_date_item_saves_only_the_target_folders_order(self, qml_app, qt_app):
         window, controller, _engine = qml_app
+        path = controller.currentFolder
+        assert path
         folders_before = controller.folderSort
-        _open_menu(window)
+        _open_menu(window, path)
         qt_app.processEvents()
         _trigger(window, "folderMenuSortByDate")
         qt_app.processEvents()
-        # a KÉPEK rendezése váltott…
-        assert controller.folderPhotoSort == "date"
-        # …a MAPPÁK sorrendje viszont érintetlen
+        ini = Path(path) / ".picasa.ini"
+        priorities = olvasd_a_prioritasokat(
+            parse_document(ini.read_text(encoding="utf-8"))
+        )
+        target_names = {
+            photo.name
+            for photo in controller.photos.photos
+            if photo.folder_path == path
+        }
+        assert set(priorities) == target_names
         assert controller.folderSort == folders_before
 
-    def test_size_item_sets_the_photo_order(self, qml_app, qt_app):
+    def test_size_item_saves_a_complete_order(self, qml_app, qt_app):
         window, controller, _engine = qml_app
-        _open_menu(window)
+        path = controller.currentFolder
+        assert path
+        _open_menu(window, path)
         qt_app.processEvents()
         _trigger(window, "folderMenuSortBySize")
         qt_app.processEvents()
-        assert controller.folderPhotoSort == "size"
+        priorities = olvasd_a_prioritasokat(
+            parse_document((Path(path) / ".picasa.ini").read_text(encoding="utf-8"))
+        )
+        assert sorted(priorities.values()) == list(
+            map(float, range(1, len(priorities) + 1))
+        )
 
-    def test_reverse_item_flips_the_photo_order(self, qml_app, qt_app):
+    def test_reverse_item_saves_the_reversed_order(self, qml_app, qt_app):
         window, controller, _engine = qml_app
-        before = controller.folderPhotoSortReverse
+        path = controller.currentFolder
+        assert path
+        before = [
+            photo.name
+            for photo in controller.photos.photos
+            if photo.folder_path == path
+        ]
         reverse_before = controller.folderSortReverse
-        _open_menu(window)
+        _open_menu(window, path)
         qt_app.processEvents()
         _trigger(window, "folderMenuSortReverse")
         qt_app.processEvents()
-        assert controller.folderPhotoSortReverse is not before
+        priorities = olvasd_a_prioritasokat(
+            parse_document((Path(path) / ".picasa.ini").read_text(encoding="utf-8"))
+        )
+        assert [
+            name for name, _place in sorted(priorities.items(), key=lambda pair: pair[1])
+        ] == before[::-1]
         assert controller.folderSortReverse == reverse_before

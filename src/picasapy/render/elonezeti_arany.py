@@ -30,6 +30,7 @@ blokkot, tehát a Polaroid forgatása is a gyors mintavevőre vált húzás köz
 from __future__ import annotations
 
 import math
+import struct
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -61,6 +62,18 @@ def skalazott_vastagsag(vastagsag: float) -> int:
     """A keret-vastagság a munkavászonra: `× arány`, majd csonkítás (az
     eredeti `fldcw`-vel váltott kerekítési módja)."""
     return max(0, math.trunc(vastagsag * jelenlegi_arany()))
+
+
+def skalazott_border_vastagsag(vastagsag: float) -> int:
+    """Border: előbb az attribútum csonkul, majd a float32 aránnyal szorzódik.
+
+    A natív munkavégző a vastagságot egészre alakítja, a skálát pedig
+    float32-ként használja a szorzáshoz (#4894). Más keretek továbbra is a
+    `skalazott_vastagsag` régi számítását használják.
+    """
+    attr_egesz = math.trunc(vastagsag)
+    arany_float32 = struct.unpack("<f", struct.pack("<f", jelenlegi_arany()))[0]
+    return max(0, math.trunc(attr_egesz * arany_float32))
 
 
 def gyors_elonezet_aktiv() -> bool:

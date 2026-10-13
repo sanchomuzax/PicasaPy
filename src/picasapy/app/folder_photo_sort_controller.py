@@ -1,15 +1,15 @@
-"""#1436: a „Mappa rendezésének alapja ▸" vezérlő-szelete.
+"""#4890: mappánkénti kézi sorrend a rácsban.
 
 A menü a mappa TARTALMÁT rendezi (`Folder::SortFolderBy`, spec
-`ui-audit-context-menus.md` 6.3) — korábban tévesen a rács MAPPA-sorrendjét
+`docs/specs/album-sorrend.md` 2.4) — korábban tévesen a rács MAPPA-sorrendjét
 állító `setFolderSort`-ra volt kötve, ezért a menüpont mást tett, mint amit
 a neve ígért.
 
-Két, egymástól független beállítás marad tehát a rácson:
+Két, egymástól független sorrend marad tehát a rácson:
 
-| beállítás | mit rendez | honnan állítható |
+| sorrend | mit rendez | hol él |
 |---|---|---|
-| `folderPhotoSort` (ez a szelet) | a mappa KÉPEIT | mappa-jobbklikk ▸ Mappa rendezésének alapja |
+| kézi sorrend (`priority=`) | a mappa KÉPEIT | a mappa `.picasa.ini`-jében |
 | `folderSort` (#321) | a MAPPÁK sorrendjét | Mappa ▸ Rendezés |
 
 #1454: a `folderSort` sora korábban a Nézet ▸ Mappanézet menüre
@@ -17,9 +17,9 @@ mutatott. Az az almenü az eredetiben NEM rendez, hanem a bal hasáb
 szerkezetét állítja (`docs/specs/picasa-mappanezet.md`) — a mappák
 sorrendje a Mappa ▸ Rendezés és a bal hasáb helyi menüje alatt van.
 
-A tényleges átrendezést a `PhotoGridModel` végzi (`photo_sort.sort_folder_blocks`),
-mert a rács sorrendje a modellé; ez a szelet a BEÁLLÍTÁST tartja, menti és
-tolja a modellbe.
+A mappa menüje egyszer rendezi a célmappát, a sorrendet a `priority=`
+értékek tárolják. A rács ezeket mappánként visszaolvassa; az elavult
+globális rendezési beállítás nem marad érvényben.
 
 A szelet az `AppearanceMixin`-en át kapcsolódik az `AppController`-hez (a
 bázislista a forró `controller.py`-ban él, amihez nem nyúlunk) — ugyanaz a
@@ -33,7 +33,7 @@ from pathlib import Path
 
 import logging
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Slot
 
 from picasapy.color import avgcolor_to_rgb, pixel_hue
 from picasapy.index import open_index
@@ -50,61 +50,22 @@ from .kezi_sorrend import (
 from .photo_sort import (
     FOLDER_PHOTO_SORT_KEY,
     FOLDER_PHOTO_SORT_REVERSE_KEY,
-    SORT_MODES,
-    coerce_reverse_flag,
-    coerce_sort_mode,
 )
 
 
 class FolderPhotoSortMixin:
-    """A mappán belüli képsorrend — perzisztens, jelzéssel a QML-pipáknak."""
-
-    folderPhotoSortChanged = Signal()
+    """A mappán belüli kézi sorrend olvasása a rács modelljéhez."""
 
     def _init_folder_photo_sort(self) -> None:
         """Az `AppearanceMixin._init_appearance()` hívja (a mixinek nem
         definiálnak saját `__init__`-et — a repó konvenciója)."""
         settings = self._get_settings()
-        self._folder_photo_sort = coerce_sort_mode(
-            settings.value(FOLDER_PHOTO_SORT_KEY)
-        )
-        self._folder_photo_sort_reverse = coerce_reverse_flag(
-            settings.value(FOLDER_PHOTO_SORT_REVERSE_KEY, False)
-        )
+        # #4890: a korábbi globális nézetmód elavult. A régi kulcsokat
+        # töröljük, hogy frissítés után se rendezzen minden mappát az
+        # előző munkamenet beállítása szerint.
+        settings.remove(FOLDER_PHOTO_SORT_KEY)
+        settings.remove(FOLDER_PHOTO_SORT_REVERSE_KEY)
         self._apply_folder_photo_sort()
-
-    @Property(str, notify=folderPhotoSortChanged)
-    def folderPhotoSort(self) -> str:
-        """A mappa KÉPEINEK rendezése: date / name / size."""
-        return self._folder_photo_sort
-
-    @Property(bool, notify=folderPhotoSortChanged)
-    def folderPhotoSortReverse(self) -> bool:
-        """Fordított sorrend — az alapérték mindhárom szempontnál növekvő."""
-        return self._folder_photo_sort_reverse
-
-    @Slot(str)
-    def setFolderPhotoSort(self, mode: str) -> None:
-        """A mappa képsorrendjének váltása; ismeretlen szempont = nincs hatás."""
-        if mode not in SORT_MODES or mode == self._folder_photo_sort:
-            return
-        self._folder_photo_sort = mode
-        self._get_settings().setValue(FOLDER_PHOTO_SORT_KEY, mode)
-        self._apply_folder_photo_sort()
-        self.folderPhotoSortChanged.emit()
-        self._refresh_view()
-
-    @Slot()
-    def toggleFolderPhotoSortReverse(self) -> None:
-        """A „Fordított sorrend" tétel: a kiválasztott szempont megfordítása."""
-        self._folder_photo_sort_reverse = not self._folder_photo_sort_reverse
-        self._get_settings().setValue(
-            FOLDER_PHOTO_SORT_REVERSE_KEY,
-            "true" if self._folder_photo_sort_reverse else "false",
-        )
-        self._apply_folder_photo_sort()
-        self.folderPhotoSortChanged.emit()
-        self._refresh_view()
 
     def _apply_folder_photo_sort(self) -> None:
         """A beállítás átadása a rács-modellnek.
@@ -125,8 +86,8 @@ class FolderPhotoSortMixin:
         if grid is None:
             return
         grid.set_folder_photo_sort(
-            self._folder_photo_sort,
-            self._folder_photo_sort_reverse,
+            "priority",
+            False,
             is_active=lambda: getattr(self, "_view_mode", ("", ""))[0] == "folder",
             hues=self._folder_photo_hues,
             prioritasok=self._folder_photo_prioritasok,
@@ -153,16 +114,10 @@ class FolderPhotoSortMixin:
         `rows`: a MOZGATOTT képek sorindexei (a kijelölés), `target_row`: a
         beszúrás helye — ELÉ kerül a blokk. A `-1` a mappa végét jelenti.
 
-        Három dolgot tesz, ebben a sorrendben:
+        Két dolgot tesz, ebben a sorrendben:
 
         1. kiszámolja az új sorrendet a mappa MAI (megjelenített) rendjéből;
-        2. kiírja a szükséges `priority=` kulcsokat (ld. `kezi_sorrend`);
-        3. a rendezést „kézi sorrend"-re állítja.
-
-        ⚠️ A 3. lépés SAJÁT döntés, és kimondva: ha a felhasználó név szerint
-        rendezett rácson húz, a művelet látszólag visszaugrana, mert a
-        megjelenítést továbbra is a név adná. A húzás szándéka viszont
-        egyértelműen a kézi sorrend — ezért váltunk rá.
+        2. kiírja a szükséges `priority=` kulcsokat (ld. `kezi_sorrend`).
 
         Mappahatárt nem lép át (#1219): ha a kijelölés több mappát érint, a
         művelet ELMARAD, és semmit nem írunk.
@@ -196,11 +151,8 @@ class FolderPhotoSortMixin:
         except (OSError, IniConflictError) as hiba:
             _log.warning("a kézi sorrend mentése nem sikerült: %s", hiba)
             return
-        if self._folder_photo_sort != "priority":
-            self.setFolderPhotoSort("priority")
-        else:
-            self._apply_folder_photo_sort()
-            self._refresh_view()
+        self._apply_folder_photo_sort()
+        self._refresh_view()
 
     def _folder_photo_hues(self, records) -> dict:
         """#467: fájl-azonosság → színezet a szín-rendezéshez.

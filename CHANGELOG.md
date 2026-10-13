@@ -7,6 +7,63 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.90] – 2026-10-13
+
+- A hiányos paraméterű Fókuszpixelezés a Picasához hasonlóan változatlanul hagyja a képet, nem alapértékekkel pixelez (#4941).
+- A paritáslap most már a 7. réteg Picasa-exportokhoz mért effektkimeneteit és eltéréseit is tartalmazza (#4317).
+- A Szemcse effekt az eredeti Picasa véletlenmag-sorát követi, így az export a Picasáéval képpontra egyező szemcsét ad (#4936).
+- A paritásmérő a saját kimenetünket a Picasa-referencia JPEG-kódolásával és az export láncolvasójával hasonlítja; a Hőtérkép, Éjjellátó, Színezés, Kéttónusú és Keret+Vinyetta látszólagos eltérése ezzel eltűnt (#4940).
+
+## [0.9.89] – 2026-10-13
+
+- Ctrl+Alt nyomva tartásakor a képrács kurzor alatti fotója nagy, külön előnézeti ablakban jelenik meg (#4928).
+
+## [0.9.88] – 2026-10-13
+
+- A teljes tesztkészlet tesztfájlonként oszlik el, a főmenü tesztesetei kisebb fájlokba kerülnek (#4932).
+
+## [0.9.87] – 2026-10-13
+
+- Dokumentációváltozáskor a kapcsolódó tesztek is lefutnak, és a kiválasztott tesztek PR-en Windows alatt is futnak (#4922).
+- A hálózati mappák ellenőrzése közben is használható marad a főablak, és láthatóvá válik az indulás aktuális lépése (#4687).
+- A mappa menüje egyszeri, mappánkénti rendezést végez, természetes névösszevetéssel (#4890).
+
+## [0.9.86] – 2026-10-13
+
+- A Nézet ▸ Keresési opciók menüpont ugyanúgy nyitja és zárja a keresési beállításokat, mint a keresőmező melletti gomb, a menüben pedig a pipa jelzi, ha nyitva vannak (#4641).
+
+## [0.9.85] – 2026-10-13
+
+- Az album helyi menüjének „Album rendezésének alapja” almenüje működik: az album képei dátum, név vagy méret szerint egyszer átrendezhetők (Shifttel csökkenő sorrendben), a sorrend pedig megfordítható; az új sorrend a képek .picasa.ini-jében tárolódik, ezért újraindítás után is megmarad, és csak az adott albumot érinti (#4599).
+- A „Dátum és idő beállítása” az EXIF mentése után változatlanul hagyja a fájl időbélyegeit. (#4646).
+- A szerkesztő funkcionális tesztjei témák szerint külön fájlokban futnak, így egyik fájl sem lépi túl a helyi futási célt (#4901).
+
+## [0.9.84] – 2026-10-13
+
+- A „Mappa felosztása itt…” a kijelölt képtől új testvérmappába helyezi a mappa hátralévő képeit. (#4534).
+- Az Emberek-album helyi menüje megfordítja a kijelölést, frissíti az indexképeket, és mutatja a Ctrl+A/D/I gyorsbillentyűket (#4645).
+- Az Emberek panel fejléce névadás után csak teljes frissítéskor vált (#4812).
+
+## [0.9.83] – 2026-10-13
+
+- Pontosabb lett az Időrend eredeti bemutatójának dokumentációja (#4443).
+- Kikapcsolt egykattintásos kilépésnél az Enter visszalép az állóképes nézőből a könyvtárba (#4500).
+- A Tulajdonságok panel mostantól mutatja a Fájl dátuma, a CCD szélessége, a Rekesz, a JPEG minőség és a Személycímkék sort is, az eredeti Picasa sorrendjében (#4579).
+- A Picasa-átvétel mostantól a videók Picasában módosított dátumát is átveszi (a fotók dátuma és a rendezés ezt használja), a videók helyadata pedig a .picasa.ini-be kerül (#4591).
+- A párbeszédek szabványos gombjai (OK, Mégse stb.) most a választott felületi nyelven jelennek meg, nem a rendszer nyelvén (#4881).
+- A Csillagozott nézetből törlés leveszi a csillagot, a képfájlt pedig a lemezen hagyja (#4883).
+- A videók (és minden olyan fájl, amelybe nem lehet dátumot írni) módosított dátuma mostantól Linuxon és macOS-en is megmarad: a Dátum és idő beállítása parancs a katalógusban tárolja, újraindítás és újraolvasás után is (#4885).
+- Az Egyéni méretarány felvétele párbeszédben magyar felületen a tizedes érték vesszővel (1,5) és ponttal (1.5) is megadható, és helyesen tárolódik; korábban a vesszős érték miatt az OK gomb nem kapcsolt be (#4891).
+- A Border-keret előnézeti vastagsága a Picasa eredeti float32-skálázását követi. (#4894).
+- A Border keret és a Lekerekített sarkok színes sarkai az eredeti Picasa MMX-keverési képletével és rajzolási sorrendjével készülnek (#4895).
+- Kis, nem négyzetes képeken a Poszterizálás palettája az eredeti sorhatár szerint készül (#4899).
+- A körmaszk tört középponttal és eltérő képaránnyal is bájtra követi a Picasa alfaátmenetét. (#4905).
+- A Pixelate effekt célmérete pontos fél értéknél felfelé kerekít, ahogy az eredeti Picasa (#4912).
+
+## [0.9.82] – 2026-10-13
+
+- A pull requestek a módosított kódhoz tartozó teszteket választják, a főág pedig 16 darabra bontja a teljes készletet (#4922).
+
 ## [0.9.81] – 2026-10-13
 
 - A README képernyőképe egyszer, rögtön a lap tetején jelenik meg (#4915).

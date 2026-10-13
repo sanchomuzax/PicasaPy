@@ -33,6 +33,9 @@ def _regi_index(db, gyoker, rejtett):
         conn.execute("UPDATE folders SET hidden = 1 WHERE path = ?", (str(rejtett),))
         conn.commit()
     kapcsolat = sqlite3.connect(db)
+    # a v21-es alakhoz a későbbi (#4599, v23) oszlop sem tartozik hozzá —
+    # különben a 22→23 átállítás egy már meglévő oszlopot venne fel
+    kapcsolat.execute("ALTER TABLE photo_albums DROP COLUMN place")
     kapcsolat.execute("PRAGMA user_version=21")
     kapcsolat.commit()
     kapcsolat.close()

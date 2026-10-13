@@ -18,7 +18,7 @@ hozható ki belőle a védelem gyengítése nélkül.
 ## A megoldás: ODÉBB, nem OLCSÓBB
 
 Pontosan a #1667 mintája: a takarítás az első kirajzolt képkocka UTÁN fut
-(`_start_and_finish` → `_ottragadt_mappak_takaritasa`), nem a kritikus úton.
+(`_start_and_finish` → soros háttérmunka), nem a kritikus úton.
 
 ## Miért DARABSZÁMOT mér ez az őr, nem időt
 
@@ -31,14 +31,14 @@ path`-hívások száma (a #1706 mérőszáma) viszont determinisztikus.
 1. **munkamennyiség** — a `run()` MOST már takarítás nélküli, első
    index-megnyitó blokkja NULLA útvonalat old fel; a takarítás (ahol ez
    ténylegesen megtörténik) pozitív számot ad, ha van védendő gyökér;
-2. **elhelyezés** — a takarítás az első kirajzolt képkocka UTÁN fut
-   (`_start_and_finish`), és a megkerülő út (a nyers `prune_foreign_
-   folders` közvetlen hívása) is zárva;
-3. **versenyhelyzet** — a takarítás a `_start_initial_scan` (tehát a
-   `controller.start()` → `rescan()` háttérszál-indítás) ELŐTT fejeződik
-   be. Ez a sorrend a szinkronpont: amíg ez áll, a háttér-szinkron szál a
-   takarítás `commit()`-ja UTÁN keletkezik, tehát a kettő SOHA nem írja
-   egyszerre ugyanazt az indexet.
+2. **elhelyezés** — a takarítás az első kirajzolt képkocka UTÁN kerül a
+   háttérmunkasorba, és a megkerülő út (a nyers `prune_foreign_folders`
+   közvetlen hívása) is zárva;
+3. **versenyhelyzet** — az indulási munkacsoport takarítási, mappafa- és
+   exportcél-lépése csak a `batchFinished` jelzés után indítja el a
+   `_start_initial_scan`-t. Így a háttér-szinkron szál a takarítás
+   `commit()`-ja UTÁN keletkezik, tehát a kettő SOHA nem írja egyszerre az
+   indexet.
 
 A takarítás FUNKCIÓJA (mit töröl, mit véd) változatlan — azt a meglévő #58
 őrök fedik (`tests/index/test_sync.py::TestPruneForeignFolders`,
@@ -265,9 +265,8 @@ class TestATakaritasNincsAKritikusUton:
         )
 
     def test_a_start_and_finish_hivja_a_takaritast(self):
-        """Pozitív kontroll: a `_start_and_finish` TÉNYLEG hívja a
-        takarítást — a fenti nulla nem azért van, mert a hívás egyáltalán
-        eltűnt a forrásból."""
+        """Pozitív kontroll: a `_start_and_finish` a takarítást a
+        háttérmunkába sorolja, nem hagyja el a #58 funkciót."""
         start_and_finish_fa = self._start_and_finish_fa()
         assert self._hivasok(start_and_finish_fa, "_ottragadt_mappak_takaritasa"), (
             "a `_start_and_finish` nem hívja a `_ottragadt_mappak_"
@@ -275,34 +274,50 @@ class TestATakaritasNincsAKritikusUton:
         )
 
     def test_a_takaritas_a_hatterszinkron_elott_fejezodik_be(self):
-        """(3) A versenyhelyzet-állítás — a #1716 SZINKRONPONTJA.
+        """(3) A soros háttérmunkacsoport zárja a #1716 szinkronpontját.
 
-        A `_start_initial_scan` hívja a `controller.start()`-ot, ami a
-        `rescan()`-on át HÁTTÉRSZÁLAT indít (`_sync_worker`, saját SQLite-
-        kapcsolattal). Amíg a takarítás hívása a `_start_and_finish`-ben
-        MEGELŐZI a `_start_initial_scan` hívását, a háttérszál csak a
-        takarítás `commit()`-ja UTÁN keletkezik — a kettő SOHA nem írja
-        egyszerre az indexet, zár nélkül is. Ha ez a sorrend felcserélődik,
-        a takarítás DELETE-jei versenyhelyzetbe kerülhetnek a szál épp
-        folyamatban lévő INSERT/UPDATE-jeivel (pl. egy frissen szinkroni-
-        zált mappa sora eltűnhet a szál keze alól)."""
+        A takarítás `commit()`-ja előtt nem indulhat el a
+        `_start_initial_scan`, amely a `controller.start()` → `rescan()`
+        útján saját SQLite-kapcsolatos háttérszálat indít."""
         start_and_finish_fa = self._start_and_finish_fa()
-
-        takaritas_hivasok = self._hivasok(
-            start_and_finish_fa, "_ottragadt_mappak_takaritasa"
+        run_fa = self._run_fa()
+        batch_finished = next(
+            node
+            for node in ast.walk(run_fa)
+            if isinstance(node, ast.FunctionDef)
+            and node.name == "_maintenance_batch_finished"
         )
-        scan_hivasok = self._hivasok(start_and_finish_fa, "_start_initial_scan")
+        scan_hivasok = self._hivasok(batch_finished, "_start_initial_scan")
+        assert scan_hivasok, "a munkacsoport-befejezés nem indítja el a könyvtárszinkront"
 
-        assert takaritas_hivasok, "nincs takarítás-hívás a `_start_and_finish`-ben"
-        assert scan_hivasok, "nincs `_start_initial_scan` hívás a `_start_and_finish`-ben"
-
-        legkesobbi_takaritas = max(node.lineno for node in takaritas_hivasok)
-        legkorabbi_scan = min(node.lineno for node in scan_hivasok)
-
-        assert legkesobbi_takaritas < legkorabbi_scan, (
-            "a takarítás hívása a `_start_initial_scan` (tehát a "
-            "`controller.start()` → háttér-szinkron szál indítása) UTÁN "
-            "vagy azzal egy sorban áll — a #1716 szinkronpontja ez a "
-            "sorrend, elvétele versenyhelyzetet nyit a takarítás DELETE-jei "
-            "és a háttérszál egyidejű írásai között"
+        enqueue_hivasok = [
+            node
+            for node in ast.walk(start_and_finish_fa)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "enqueue"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "initial"
+        ]
+        assert enqueue_hivasok, "az első képkocka után nincs indulási karbantartási munkacsoport"
+        lepesek = [
+            node
+            for node in ast.walk(enqueue_hivasok[0])
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "StartupMaintenanceStep"
+        ]
+        kulcsok = [
+            next(
+                keyword.value.value
+                for keyword in step.keywords
+                if keyword.arg == "key"
+                and isinstance(keyword.value, ast.Constant)
+            )
+            for step in lepesek
+        ]
+        assert kulcsok == ["orphan_cleanup", "folder_hierarchy", "exported_folders"], (
+            "a takarítás, a mappafa-frissítés és az exportcélok ellenőrzése "
+            "nem a szinkron előtt, ebben a sorrendben fut"
         )

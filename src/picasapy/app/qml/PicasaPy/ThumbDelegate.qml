@@ -70,6 +70,7 @@ Item {
     // jelölt területről továbbra is lasszó lesz, különben elveszne a
     // rács legfontosabb kijelölő gesztusa)
     signal photoDragStarted(int index)
+    signal hoverChanged(int index, bool hovered)
 
     readonly property string captionText: {
         switch (cell.captionMode) {
@@ -324,6 +325,8 @@ Item {
         objectName: "thumbMouseArea"
         anchors.fill: parent
         hoverEnabled: true
+        onEntered: cell.hoverChanged(cell.index, true)
+        onExited: cell.hoverChanged(cell.index, false)
         preventStealing: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         property bool lassoing: false

@@ -709,6 +709,46 @@ ApplicationWindow {
         photoContextMenu.popup(item, x, y)
     }
 
+    // #4534: a mappacsoport aktuális rácssorrendjében a legelső kijelölt
+    // képtől a csoport végéig kijelöl, majd megnyitja a mappa tulajdonságait.
+    function splitFolderHere() {
+        if (!controller || controller.currentFolder === ""
+                || controller.currentAlbumToken !== ""
+                || controller.currentPersonName !== "")
+            return
+        var rows = window.selectedRows()
+        if (rows.length === 0) return
+        var currentFolder = controller.currentFolder
+        var first = -1
+        for (var i = 0; i < rows.length; ++i) {
+            var row = Number(rows[i])
+            var path = controller.photos.filePathAt(row)
+            if (path.substring(0, path.lastIndexOf("/")) === currentFolder
+                    && (first < 0 || row < first))
+                first = row
+        }
+        if (first < 0) return
+        var range = controller.photos.groupRange(first)
+        if (range.length !== 2) return
+        var paths = []
+        var selected = []
+        for (var row = first; row <= Number(range[1]); ++row) {
+            var imagePath = controller.photos.filePathAt(row)
+            if (imagePath.substring(0, imagePath.lastIndexOf("/"))
+                    !== currentFolder)
+                return
+            paths.push(imagePath)
+            selected.push(row)
+        }
+        if (paths.length === 0) return
+        var photo = controller.photos.itemAt(first)
+        var date = photo && photo.takenAt ? photo.takenAt.substring(0, 10) : ""
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
+        window.selectedIndexes = selected
+        window.selectedIndex = first
+        folderPane.openSplitFolderHere(paths, date)
+    }
+
     // Kijelölés-logika (Picasa): sima katt = egy kép; Ctrl = hozzávesz/
     // elvesz; Shift = tartomány a horgonytól. (Számítás: selection.js)
     function handleThumbClick(index, modifiers) {
@@ -1839,6 +1879,7 @@ ApplicationWindow {
 
     menuBar: PicasaMenuBar {
         textEntryHasFocus: window._szovegmezoneVanFokusz
+        searchOptionsOpen: toolbar.searchOptionsOpen
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
         //: contentItem nem kapja meg a teljes ablakot.
         visible: !window.slideshowRunning
@@ -1849,6 +1890,7 @@ ApplicationWindow {
         // #4329: a felső Fájl ▸ E-Mail ugyanazt a küldési kaput hívja, mint
         // a tálca emailRequested jelzése.
         onEmailRequested: window.sendSelectionByEmail()
+        onSearchOptionsToggleRequested: toolbar.toggleSearchOptions()
         onOpenInEditorRequested: window.openSelectionInDefaultEditor()
         onViewAndEditRequested: window.nezdEsSzerkeszd()
         // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
@@ -2750,6 +2792,8 @@ ApplicationWindow {
     // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
     Component.onCompleted: {
+        if (controller && controller.attachHoverPreviewKeyState)
+            controller.attachHoverPreviewKeyState(window)
         //: #598: a kezdő cellaméret átadása a bélyegkép-tárnak — enélkül az
         //: induló rács a felső szintről dolgozna, pedig a 144-es fokozat a
         //: kisebb szintből tízszer olcsóbban áll elő.
@@ -3203,7 +3247,7 @@ ApplicationWindow {
                 toolbar.clearSearch()
                 window.clearSelection()
                 window.unnamedFacesOpen = false
-                controller.showStarred()
+                controller.showStarredAlbum()
             }
             onAlbumChosen: function(token) {
                 if (!controller) return
@@ -3618,6 +3662,11 @@ ApplicationWindow {
                                 window.facesAlbumMode = "ignored"
                             onShowUnnamedRequested:
                                 window.facesAlbumMode = "unnamed"
+                            onNamedSuggestionAccepted: Qt.callLater(
+                                function() {
+                                    peoplePanel.refreshHeaderPeopleSnapshot(true)
+                                }
+                            )
                         }
                     }
                 }
@@ -3768,10 +3817,22 @@ ApplicationWindow {
     // EGY lista (#3566): a kijelölt képek nevesített emberei; a fejlécet
     // a panel választja a spec 9/b fája szerint.
     PeoplePanel {
+        id: peoplePanel
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
         manualAddActive: window.viewerOpen && photoViewer.facesEditMode
+        headerRefreshKey: controller
+            ? [window.selectedRows().join(","),
+               window.unnamedFacesOpen
+                   ? unnamedFacesView.selectedCount : 0,
+               window.unnamedFacesOpen ? window.peopleFaceRevision : 0,
+               window.unnamedFacesOpen, window.facesAlbumMode,
+               window.activeDrawerTab, window.viewerOpen, window.timelineOpen,
+               controller.searchActive, controller.currentPersonName,
+               unnamedFacesView.grouped, window._selectionPending > 0]
+                  .join("|")
+            : ""
         // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
@@ -4535,6 +4596,8 @@ ApplicationWindow {
         // #9 (2. lépés): albumtagság — #305 null-őr
         albums: controller ? controller.albums : []
         currentAlbumToken: controller ? controller.currentAlbumToken : ""
+        currentFolder: controller ? controller.currentFolder : ""
+        onSplitFolderRequested: window.splitFolderHere()
         onAddToAlbumRequested: function(token) {
             if (controller) controller.addRowsToAlbum(window.selectedRows(), token)
         }

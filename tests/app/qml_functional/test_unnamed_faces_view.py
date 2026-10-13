@@ -24,6 +24,10 @@ class _StubController(QObject):
     def setCollectionCollapsed(self, name, collapsed):
         pass
 
+    @Slot()
+    def refreshCollections(self):
+        pass
+
 
 def _make_pane(qt_app, initial_properties=None):
     import picasapy.app.application as app_module
@@ -290,6 +294,22 @@ class TestNameSuggestion:
         qt_app.processEvents()
 
         assert ("acceptSuggestion", 12) in stub.calls
+
+    def test_accepting_emits_the_people_header_refresh_signal(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        refreshes = []
+        view.namedSuggestionAccepted.connect(lambda: refreshes.append(True))
+
+        QMetaObject.invokeMethod(
+            view,
+            "acceptSuggestion",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 12),
+        )
+        qt_app.processEvents()
+
+        assert refreshes == [True]
 
     def test_the_x_on_a_suggested_face_ignores_it(self, qt_app):
         """#3670: az „x" a mellőzés (`PeopleAlbum::ConfirmText`: „press

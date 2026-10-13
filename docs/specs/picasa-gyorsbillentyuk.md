@@ -1019,12 +1019,13 @@ kimaradt.** Bekötve: `Ctrl+0` (jobb fiók), `Ctrl+F` (keresés), `Ctrl+K`
 és törlése, #1833), `Ctrl+Shift+B` / `Ctrl+Shift+E` (a `bw` és az `enhance`
 szűrő a kijelölésre, a köteg-szerkesztés útján).
 
-Kimaradt a PicasaPyból: `Ctrl+6`, `Ctrl+8`, `Ctrl+9`, `Ctrl+G`,
+Kimaradt a PicasaPyból (2026-10-13 állapot): `Ctrl+6`, `Ctrl+8`, `Ctrl+G`,
 `Ctrl+Shift+L`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`, `Ctrl+F9`. Az eredeti ágak
 hatása a #4643 mérésével részben feltárt; a mai bekötési irányt és a nyitott
 részeket a **10.22** rögzíti. **Helyesbítés:** a bal szerkesztőfiók nálunk
 létezik (`PhotoViewer.qml`: `editorControlsVisible`, `toggle_left_drawer`;
-`PicasaMenuBar.qml`: „Show Edit Controls”), csak a Ctrl+9 kötés hiányzik.
+`PicasaMenuBar.qml`: „Show Edit Controls”). A Ctrl+9 kötés időközben bekerült
+(#4696, 0.9.46), az F5 is (#4697) — lásd 10.23.
 `Ctrl+Shift+H` / `Ctrl+Shift+V` (tükrözés — a művelet a kódbázisban NINCS
 meg; külön jegy). A soronkénti elszámolás a #2163 kommentjében áll, a gépi őr a
 `tests/app/test_gyorsbillentyu_agak_2163.py`: az bukik, ha olyan billentyűt
@@ -1075,7 +1076,7 @@ A `0x005e6814` `jg`-je alatt, `WM_KEYDOWN`-ra (`cmp [ebx+4], 0x100`,
 | **F2** | `0x005e68fd` | öt őr után (`0x0056c420`, `0x0056c110`, `0x00562d00`, `0x005f2650`, `0x0057c430(4)`) az átnevezés útja: `[edi+0xeac]` → `0x007166c0`, `0x0057d430`, `0x00532ec0` |
 | **F3** | `0x005e69a4` | **kattint: `searchcontainer/searchbutton`** (`0x00c8f448`) — ugyanaz az elem, mint a `Ctrl+F` |
 | **F4** | `0x005e696c` | `0x009cd110(`**`thumbui/startoggle`**`)` feloldás; ha `[eax+0x20e] == 0`, **kattint** rá (vtable `+0x78`) |
-| **F5** | `0x005e6869` | időbélyeg- és állapotfrissítés, `[adatobjektum+0x166] = 1` frissítési kérés, majd kereső-/nézeti frissítés (`0x0065b840`; 10.22) |
+| **F5** | `0x005e6869` | időbélyeg- és állapotfrissítés, `[adatobjektum+0x166] = 1` frissítési kérés, majd kereső-/nézeti frissítés (`0x0065b840`; 10.22) a lánc a lemezt olvasó `0x009a5fa0`-ig megy (10.26) |
 | **F11** | `0x005e68a0` | vtable `+0x24` kétszer, `[eax+0x3e]` billentése, majd `0x00983fc0` |
 | **F12** | `0x005e69c2` | `call 0x005e60d0` — de az F12 a Ctrl-tábla tartományán **kívül** esik (10.6), tehát ott nem történik semmi |
 
@@ -1332,7 +1333,7 @@ munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok
 | `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: feloldja az `overlays/egg` elemet, inicializálja a hozzá tartozó objektumot és aktiváló jelzőt állít. | A `overlays/egg` string-xref és a Ctrl-ág egyetlen célfüggvénye egyezik; a pontos látható animáció futtatás nélkül nincs kimérve. | feltételes |
 | `Ctrl+F9` | A `0x005e60d0` billentyűkezelő Ctrl+`0x78` (F9) táblabejegyzése a `0x005e6329` ágra jut. A konstruktor `0x00564b2e` alaphelyzetben 0-ra állítja a `[panel+0xdc4]` bájtot; a `0x005e6329`–`0x005e6333` ág ezt 0/1 között billenti. Ha a `0x00571e50` útján létezik az `editpanel/preview`, annak `[+0x20c]` mezője 0, a kapcsoló 1, és a kijelölési út érvényes értéket ad, akkor ezt összeveti a `[this+0xe64]` aktuális képként használt értékével. Eltéréskor a `CThumbUI` `+0x2c` virtuális metódusát 0 argumentummal hívja; ez a `0x005f89a0`-en át az `editpanel/preview`-hoz tartozó aktuális kép felirat-/törlésállapotának és vezérlőállapotának frissítését kéri. A bináris nem bizonyítja, hogy ez a kijelölt képre váltja-e az előnézeti képet, vagy csak a meglévő előnézet UI-állapotát rajzolja újra. A kapcsoló 0 állásában ez az eltérésre induló frissítő ág kimarad. | A teljes `.text` pásztázás pontosan négy `[reg+0xdc4]` találatot adott (két írás, két olvasás). A `CThumbUI` RTTI/vtábla-útján a slot `0x00578dc0`-hoz vezet; ennek 0 argumentumos ága a `0x005f89a0`-et hívja, amely az `[this+0xe64]` mezőt olvassa. A külön `0x0056a260` szerkesztőút is aktuális képként kezeli ezt a mezőt (`ui-audit-editor.md`, 3. pont). | feltételes |
 | `F5` | `0x005e6869`: időbélyeg-frissítés (`0x004a46e0`), állapotfrissítő hívás (`0x00579480(0,1)`), `[adatobjektum+0x166]=1`, majd `0x0065b840` keresővezérlő-frissítés. Az idle út `0x004afcb0` ezt a jelzőt a `0x004aae90` lista-/nézeti állapotfrissítéshez viszi, majd törli. Ez nem bizonyít teljes fájlrendszer-rescant. | A külön `+0x166` olvasó/ürítő út és a `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5 leírása is frissítési kérelemként azonosítja a jelzőt. | megerősített |
-| `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. A teljes `.text` pásztázás az `+0xe78` egyetlen olvasójaként ezt a kaput találta. A cél létrehozza/újrahasználja a `[panel+0x31a8]` gyerekobjektumot, beállítja a bélyegkép-azonosítót, majd a `0x00774d60` frissíti annak geometriáját; ez a függvény a VK `0x12` állapotát olvassa és ablakfrissítést kér. A megjelenített tartalom pontos hatása nyitott. | A `PreviewHandler` külön eseményútja (`0x005c24c0`) szintén a `0x00571a80`-at hívja; a `0x00774cf0` testvér callback listabeli azonosítóváltás után ugyanazt a `0x00774d60` frissítőt hívja. Ez az objektumfrissítést támasztja alá, de a látható tartalmat nem nevezi meg. | nyitott |
+| `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. A teljes `.text` pásztázás az `+0xe78` egyetlen olvasójaként ezt a kaput találta. A cél létrehozza/újrahasználja a `[panel+0x31a8]` gyerekobjektumot, beállítja a bélyegkép-azonosítót, majd a `0x00774d60` frissíti annak geometriáját. A VK `0x12` állapotát a `0x00774d60` olvassa (nem a `0x00571a80`, ahogy az `osszefoglalo.md` #26 írja), és onnan kér ablakmegjelenítést és újrarajzolást. A gyerekobjektum egy `PopDisplay` (nem CThumbUI): felugró ablak. Részletek: 10.28. | A `PreviewHandler` külön eseményútja (`0x005c24c0`) szintén a `0x00571a80`-at hívja; a `0x00774cf0` testvér callback listabeli azonosítóváltás után ugyanazt a `0x00774d60` frissítőt hívja. A `0x00774d60` a `GetAsyncKeyState(0x12)` alapján rögzíti az Alt-állapotot, majd `ShowWindow(SW_SHOW)` (`0x00775320`) és `InvalidateRect`/`UpdateWindow` következik, ha a gyerek kliensszélessége > 1024 px. A rajzolás (WM_PAINT) egy úton igazolt. | megerősített (két út); a kép tartalma és az Alt-elengedés útja nyitott — 10.28 |
 | Videó: `/`, `,`, `.` | A `CThumbUI` közvetlen VK-ágában nincs ilyen összevetés; az általános eseménylánc a fókuszált gyereknek továbbít. A központi kezelőből nem állítható, hogy ezek lejátszanak vagy keresnek. | A 10.19 szerinti teljes `.text` pontos `cmp ax,0xbc/0xbe/0xbf` keresése nulla találatot adott; a lánc/fókusz továbbítását a 10.18–10.19 külön méri. | feltételes — a videóvezérlő saját hatása nyitott |
 
 **A Ctrl+F9 két független útja.** **A — állapotút:** a teljes `.text`
@@ -1396,14 +1397,17 @@ keretkiemelés elnevezését nem támasztja alá. A `picasa-linux-mod.md`
 
 **Nyitott:**
 
-- `Ghidra-kör kell: 0x00571e50 — a [panel+0xdc4] kapcsoló pontos, felhasználó által látható hatása az előnézet kijelölt képpel való szinkronizálására. [blokkoló]`
+- `0x00571e50` — a [panel+0xdc4] kapcsoló felhasználói hatása: **lezárva a 10.23-ban** (a kapcsoló nem szinkronizálja a kijelölést az előnézettel; a felirat-/törlésállapot-frissítés látható része futásteszt nélkül nyitott).
 - `Ghidra-kör kell: 0x00774d60 — a [CThumbUI+0x31a8] gyerekobjektum pontos kirajzolt tartalma és az Alt-állapot [objektum+0xb4] látható következménye. [blokkoló]`
-- `Ghidra-kör kell: 0x00571a80 — a Ctrl+Alt/VK 0x12 ágban az EnableHover és az érvényes elemazonosító mellett végrehajtott felhasználói művelet. [blokkoló]`
-- `Ghidra-kör kell: 0x005f89a0 — a Ctrl+F9 eltérési ágának 0 argumentumos célja ténylegesen kijelölt képre váltja-e az előnézeti képet, vagy csak a jelenlegi [this+0xe64] kép UI-állapotát frissíti. [blokkoló]`
+- ✅ Lezárva a 10.28-ban: a Ctrl+Alt (VK `0x12`) hatása a `PopDisplay`-felugró ablak megjelenítése (EnableHover + előtérben + >1024 px mellett). Maradék nyitott pontok: a kép forrása, az Alt-elengedés útja, az EnableHover alapértéke.
+- `0x005f89a0` — a Ctrl+F9 eltérési ágának 0 argumentumos célja: **lezárva a 10.23-ban** — nem vált képet; a jelenlegi `[this+0xe64]` kép felirat-/törlésállapotát frissíti, és csak akkor, ha a felirat-mező `+0x2c4` jelzője piszkos.
 - A `Ctrl+6` timeslicer felületének futás közbeni állapota és a Ctrl+Shift+Y `overlays/egg` látható animációja: **NINCS MEG**; célzott eredeti-program próba kell.
 - A `/`, `,`, `.` esetleges videóvezérlő-hatása: **NINCS MEG**; a fókuszált gyermek eseményfogadójának útját kell követni, a globális kezelőben nincs saját ág.
 
-**Fejlesztési következmény:** a Ctrl+9-hez külön bekötési jegy javasolható:
+⚠️ *2026-10-13: elavult — a Ctrl+9 (#4696) és az F5 (#4697) bekötése a 0.9.46
+kiadásban megvan, lásd 10.23.*
+
+**Fejlesztési következmény (2026-10-08-as állapot):** a Ctrl+9-hez külön bekötési jegy javasolható:
 a meglévő `PhotoViewer.toggleEditorDrawer` kapjon `Ctrl+9` billentyűutat,
 kizárólag a szerkesztőnézetben, a `0x00579330` őrnek megfelelő állapotban.
 Az F5-höz külön jegy javasolható: a könyvtár aktuális nézeti/lista-frissítési
@@ -1419,6 +1423,569 @@ el, kell-e külön fejlesztői jegy.
 **Bizalmi fok:** a fenti táblában soronkénti. Összesítve **feltételes**, mert
 a Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
 gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem történt.
+
+### 10.23 #4643 — második kör (2026-10-13): független kiolvasás, a kódállapot és a maradék nyitott pont
+
+**Kiinduló helyzet.** A jegy (menü-audit, #4317) szerint a Ctrl+9 „nálunk nem létezik”, és a Ctrl+G / F5 hatása ismeretlen. A 10.22 óta két dolog változott: a Ctrl+9 (#4696) és az F5 (#4697) bekötése bekerült a 0.9.46 kiadásba (`ced175cd6`, a `01ccd4e44` beolvasással), a Ctrl+G nincs bekötve.
+
+**Módszer.** (1) A bináris SHA-256-ja `644b7bec…dc96`, ami egyezik az index `meta.json` `binary_sha256` mezőjével; a vizsgált példány `research/copy_Picasa_3_7/Picasa3/Picasa3.exe`. (2) A bájtokat `eszkozok/pe_dis.py`-vel olvastam ki (capstone a `~/picasapy-agent/.venv`-ből; hálózatot nem használtam). (3) A billentyűtábla közvetlenül olvasva: indextábla `0x005e66a4`, ugrótábla `0x005e6614`, a VK `0x0D`-tól indexelve (a 10.1 szerinti elrendezés). (4) Bájt-szintű pásztázás a `.text` és `.rdata` teljes tartalmán (`call`/`jmp rel32` és abszolút 32 bites hivatkozás). A két, egymástól független út minden állításnál külön szerepel. Futtatás nem történt.
+
+| billentyű | 1. út (billentyűtábla / közvetlen kód) | 2. út (független) | hatás | fok |
+|---|---|---|---|---|
+| **Ctrl+9** | VK `0x39` → index 10 → ugrótábla → `0x005e629f`: `call 0x579330` (őr); `test al,al; je 0x5e65f7`; `mov edx, 0xc7fe30` (`editpanel/toggle_left_drawer`); `call 0x9cd8a0` (kattintás) | menü: a `0x0065ab50` `cmp eax, 0x9d6e` ágon (ID_VIEW_EDIT, „Show Edit Controls”) ugyanaz a `0xc7fe30` + `0x9cd8a0`. A menü-CSV és a `picasa-menu-parancsok-viselkedes.md` 37.3 (menühíd) ugyanezt adja. | **a bal szerkesztőfiók átkapcsolása** (a menüpont és a billentyű ugyanazt az objektumot kattintja) | művelet: **megerősített**; az őr pontos jelentése: **nyitott** (lásd alább) |
+| **Ctrl+G** (módosító nélkül) | VK `0x47` → index 17 → `0x005e6518`: `cmp [esp+0x12],0` (Alt); `je 0x5e653a`; `cmp [esp+0x11],0` (Shift); `je 0x5e65f7` → nincs hívás | a Shift-ág (`0x600580`, Ctrl+Shift+G) és az Alt+Shift-ág (`0x57b050`) ugyanezekből a bitekből válik szét (10.22 szerint); a Ctrl+G no-op útja nem hív továbbító-függvényt (a `0x5e65f0`→`0x571a80` hívás csak a VK `0x12` ágban van). | **a kezelő ágában nincs művelet** | a kezelő ágán: **megerősített**; a visszatérési kód után a lánc többi tagja: **nyitott** (lásd alább) |
+| **F5** | közvetlen kód: `0x005e6869`: `cmp ax, 0x74`; `mov eax,[edi+0x2c0]`; `call 0x4a46e0` (időbélyeg); `call 0x579480(0,1)`; `mov byte [ecx+0x166], 1`; `call 0x65b840` (nézetfrissítés) | vtábla: a `CThumbUI::vftable` (`0x00c9052c`) 12. slotja (`0x00c9055c`) = `0x005e6710`, a fő kezelő; a billentyűtábla F5-re a közös kilépést adja, tehát az F5 a fő kezelőben él | **a `+0x166` jelző beállítása és a nézet/keresősáv frissítése**; az idle-út (`0x004afcfd`: `cmp byte [esi+0x166],0`) `0x4aae90`-nel frissíti a listát, majd `mov byte [esi+0x166],0` (`0x004afd41`) | **megerősített** (a jelző és a hívások); a teljes lemezrescan: **nem igazolt** (lásd alább) |
+
+**A Ctrl+9 őre (`0x005e629f` előtt).** A `0x579330` három feltételt néz: a `0xd67914` globális jelző nem nulla (`cmp dword [0xd67914], 0`, `0x00579330`); az `editpanel/preview` objektum (sztring `0x00c88a2c`, a `0x009c2fc0` keresése) létezik; és a visszatérés `sete` ⇒ **`[objektum+0x20c] == 0`** (`0x0057934a`–`0x00579354`). Ezt a mai kód `enabled: viewer.visible` feltétele közelíti (lásd a mai kódot), de nem azonos vele. A `0xd67914` jelentése és a `+0x20c` bájt szerepe **nincs megfejtve**: a `.text`-ben a `0xd67914` címre **1712** bájt-hivatkozás van, főleg olvasás, és ezt a kört nem tudta szűkíteni.
+
+**A Ctrl+G közös kilépése.** Minden ág a `0x005e65f7` közös kilépésre fut, amely csak a visszatérési kódot állítja: `[esp+0x24] != 0` ⇒ `0xf4240` (kezelve), különben `0xf4241` (tovább). A 10.13 szerint a kezelőlánc többi tagja ezt a kódot olvassa. Azt, hogy a Ctrl+G a `0xf4241` után a láncban kap-e műveletet, **ebben a körben nem követtem végig**. A Ctrl+9 és az F5 is ugyanerre a kilépésre fut, de a műveletük az ágban megtörténik, ezért nem függ ettől.
+
+**A mai kód (2026-10-13, ez a worktree):**
+
+| billentyű | mai kód | teszt | egyezés a bináris hatásával |
+|---|---|---|---|
+| Ctrl+9 | `PhotoViewer.qml:213` — `Shortcut { sequence: "Ctrl+9"; enabled: viewer.visible; onActivated: viewer.toggleEditorDrawer() }` (#4696) | `tests/app/qml_functional/test_ctrl9_left_drawer_4696.py` (a könyvtárnézetben nincs hatása, a keresőmező fókusza megmarad) | **egyezik** a művelettel; a feltétel (`viewer.visible`) **nem azonos** a binárisban mért őrrel |
+| Ctrl+G | nincs `Shortcut` (`grep` a `src/picasapy/app/` alatt: nulla találat) | — | **egyezik** a no-op ággal (a kezelő ágában nincs művelet) |
+| F5 | `Main.qml:1163` — `Shortcut { sequence: "F5"; enabled: … könyvtárnézet …; onActivated: controller.resyncFolder(controller.currentFolder) }` (#4697) | `tests/app/qml_functional/test_f5_konyvtar_frissites_4697.py` (a lemezről törölt és az új fájl is felkerül / eltűnik a keresés után) | **a műveleti irány egyezik** (frissítés); **a lemezszinkron TÖBB**, mint amit a bináris jelzőből igazoltunk (lásd alább) |
+
+**Összegzés (következtetés).**
+
+- **Ctrl+9:** a bináris szerint a bal szerkesztőfiókot kapcsolja, a menüpont és a billentyű ugyanazt az objektumot kattintja. A mai kód ezt bekötötte (#4696). **Nincs külön fejlesztési jegy szükség a bekötésre.** Az őr pontos feltétele nyitott, de a mai kód működése ettől nem változik.
+- **F5:** a bináris szerint a `+0x166` frissítési jelzőt állítja, és a nézetet/keresősávot frissíti. A mai kód ezt bekötötte (#4697), és lemezszinkront is végez. **A lemezszinkron ellenőrizetlen a binárisból.** Ha kiderül, hogy az eredeti nem szinkronizál lemezt, a mai viselkedés eltér tőle; ez döntés kérdése, nem bizonyítás.
+- **Ctrl+G:** a `0x005e60d0` Ctrl-tábla ágában nincs művelet, és a mai kód sem köti be. ⛔ A lánc 5. tagja (`0x00a53b00`) ezt a billentyűt **előbb** kapja meg, és továbbítja: a hatás a 10.24 szerint **nyitott**, nem „nincs művelet”.
+
+**Nyitott pontok** (nevesítve, a kör nem zárta le őket; sajátok, ezért a munkasorba kerülnek):
+
+- `Ctrl+9 őr`: a `0xd67914` globális jelző és az `editpanel/preview+0x20c` bájt jelentése. Következő lépés: a `0xd67914` íróinak és a `+0x20c` íróinak szűkítése (az 1712 találat szűrése a `cmp`-okról az írásokra), és a két eredmény összevetése a mai `viewer.visible` feltétellel.
+- `F5 lemezszinkron`: a `0x0065b840` és a `0x004aae90` mélyebb hívási lánca. Ha van benne lemez-bejárás (`FindFirstFile`/`FindNext` vagy ezek belső burkolója), az igazolja a mai szinkront; ha nincs, a mai eltérés dokumentált. Az indexben nincs közvetlen fájlbejárási import ezekben a függvényekben, de ez az index negatív találata, nem bizonyíték.
+- `Ctrl+G lánc`: a `0xf4241` után a kezelőlánc következő tagjai (10.13 szerint `0x00a53b00`, `0x005b2390`) kapnak-e Ctrl+G-t. Ez a mai kódban nem számít (nincs Ctrl+G kötés), az eredeti hatás viszont nincs teljesen kizárva.
+- **Kimondva:** a fenti három nyitott pont a kutatói szabály szerint nem zárt állapot. Ebben a körben nem volt bizonyíték-költség-keret mindháromra, és egyiket sem tudtam „LEZÁRVA / BLOKKOLT / HATÓKÖRÖN KÍVÜL” állapotba tenni. Ezt a jelentés is kimondja.
+
+**Bizonyítottsági fok (ez a kör):** Ctrl+9 művelet — megerősített (két út); Ctrl+G no-op a kezelő ágában — megerősített (két út); F5 jelző és hívások — megerősített (két út); Ctrl+9 őr jelentése, F5 lemezszinkron, Ctrl+G lánc — nyitott.
+
+**„Kész, ha” (a jegyhez, mérhető feltételekkel):**
+
+- [x] Ágankénti táblázat (kód + bájt, két úton): 10.23 táblázata.
+- [x] A Ctrl+9 és az F5 külön fejlesztési jegy: **nem kell**, mert #4696 és #4697 megvalósult (0.9.46). Ez a jegy-kérdés lezárva.
+- [x] A §10.7 elavult mondata javítva; a 10.22 „Fejlesztési következmény” elavultként jelölve.
+- [ ] A `0xd67914` és a `+0x20c` jelentése két úton kiolvasva (író- és olvasócímekkel), és a mai `viewer.visible` feltétel ehhez igazítva vagy az eltérés indokolva.
+- [ ] Az F5 lemezszinkron igazolva a `0x0065b840` láncán, vagy a mai eltérés nevesítve a jegyben mint döntendő.
+- [ ] A Ctrl+G `0xf4241` utáni lánc végigkövetve, vagy nevesítve mint nem vizsgált.
+
+### 10.24 #4643 — harmadik kör (2026-10-13): a három nyitott pont, és egy javított állítás
+
+**Kiinduló helyzet.** A 10.23 három nyitott pontot hagyott: a Ctrl+9 őrének jelentését, az F5 lemezszinkronját és a Ctrl+G lánc többi tagját. Ez a kör mindhárommal foglalkozott, két független úton ahol lehetett.
+
+**Módszer.** (1) Teljes `.text`-pásztázás csupasz capstone-nal, index nélkül (`eszkozok/binaris/paszta.py`, darabolt, memóriakapuval): minden memóriaoperandus, amelynek a címe vagy eltolása a keresett érték; minden `call`/`jmp` célja; minden sztring-hivatkozás (`push`/`mov` immediate). (2) A `functions.csv` alapján a függvénykeretek. (3) A `pe_dis.py` disassembly ugyanazokra a bájtokra. Az xref-index negatív találatait nem használtam bizonyítéknak.
+
+**Ctrl+9 őre (`0x00579330`).** A függvény három feltételt néz, sorrendben:
+
+1. `cmp dword [0xd67914], 0` — a `0xd67914` globális mutató nem nulla;
+2. `call 0x9c2fc0` a `"editpanel/preview"` sztringgel (VA `0xc88a2c`) — a találat nem nulla;
+3. `cmp byte [obj+0x20c], 0; sete al` — az eredmény a `[obj+0x20c] == 0`.
+
+*A `0xd67914` jelentése (megerősített, két út):*
+- **Mi:** a Picasa UI-gyökér / név szerinti objektumregiszter singletonja. A `0x9c2fc0` egy sztring-kulcsú hash-keresés ezen: a bucket-tömb a `[reg+0xc]`-n, a bucket-szám a `[reg+4]`-en áll (`0x409df0` a moduló), a láncot a `0x6f9890` sztring-összehasonlítással járja.
+- **Élettartam, az összes `.text`-hivatkozásból:** a teljes pásztázás 1712 utasítás-operandust talált a `0xd67914`-re, ebből **pontosan kettő író** (`W`). `0x009c3a36` (`0x9c3860`, a `[0xd67910]` számláló 0→1 átmenetén) állítja be az objektumot; `0x009c3bae` (`0x9c3a80`, a számláló 1→0 átmenetén, a `0x97caf0` hívás után) nullázza. A többi 1710 hivatkozás olvasás. Ezt a kettőt a `0x9c3860`/`0x9c3a80` `jne` ágai szabják meg, nem becslés.
+- **Következtetés:** az őr első tagja azt nézi, hogy a regiszter **épp élő-e** (nem tört le). Ez nem nézetfüggő feltétel.
+
+*A `[obj+0x20c]` bájt (megerősített, két út):*
+- **Első út (teljes pásztázás):** minden memóriaoperandus, amelynek az eltolása `0x20c` (bármilyen bázisregiszterrel, így a `[reg+0x20c]` és a `[reg+ecx*k+0x20c]` alakok is), **két írás** a teljes `.text`-ben: `0x00c1762a` (`mov [eax+0x20c], ecx`, a `0x00c175d6` függvényben) és `0x00c17812` (`and dword [eax+0x20c], 0`, a `CallCatchBlock` `0x00c17771` kivételkezelő ágában).
+- **Második út (a két író kontextusa):** mindkettő a `0xbf0583` hívása után dolgozik, és az a függvény az indexben `__getptd` (az MSVC CRT szálankénti adatblokkja). A `0x00c175d6` egy MSVC C++-kivétel-kódot (`0xe06d7363`, `0x19930520`) ellenőriz, és a szálblokk `+0x20c` mezőjét 1-re állítja; a `CallCatchBlock` visszaállítja 0-ra. **Ezek tehát nem az `editpanel/preview` objektumot írják.**
+- **Következtetés:** az `editpanel/preview` objektumán a kód **nem írja** a `+0x20c` bájtot. Ha az objektum létrehozásakor nullázódik (a konstruktor vagy a memória-inicializálás), az őr ettől függetlenül igaz. Ez a nullázás **nincs igazolva**: a konstruktort nem találtam meg. Ezért a `+0x20c` jelentése (a „0 = engedélyezett” értelmezésen túl) **nyitott**.
+- **Eltérés a mai kódtól:** a mai `enabled: viewer.visible` feltétel a nézet láthatóságától függ. A binárisban mért őrben nincs ilyen feltétel: ott a regiszter élése és a preview-objektum léte számít, plusz a `+0x20c` bájt. Így a két feltétel eltér: a bináris szerint a fiók átkapcsolható lehet a könyvtárnézetből is, ha a preview-objektum létezik. Ezt nem mértük, mert a könyvtárnézetben a preview-objektum léte nincs igazolva. Ez döntés kérdése, ha a konstruktor-nullázás nem igazolódik.
+
+**F5 lemezszinkronja (`0x0065b840`, `0x004aae90`) — nyitott, de szűkebb.** ⛔ A következő három pont (a mutató-táblák, a „nem oldható fel” és a „3 ugrásig nincs enum”) **a 10.26 szerint elavult**: a táblák feloldva, a lemezbejárás a `0x009a5fa0`-ban megerősített, a nyitott kapuk a 10.26 5. pontjában vannak.
+
+- **Közvetlen hívási lánc (megerősített, a pásztázott `call`-okból):** az F5 kezelője (`0x005e6869`) `call 0x65b840`; a `0x65b840` közvetlen hívása `0x662b20`; onnan `0x67d020` → `0x66f470` → `0x66fae0` → `0x66f810` → **`0x9a5fa0`**.
+- **A `0x9a5fa0` egy `"<útvonal>\*.*"` mintát épít:** a `"*.*"` sztring (VA `0xc88d6c`) három helyen hivatkozott (`0x520bce`, `0x9a600b`, `0xa61d12`); a láncban csak a `0x9a600b` (`push 0xc88d6c`, a `0x9a5fa0` függvényben) van, így az F5 útjában lévő, mintát építő függvény ez.
+- **Ami nincs igazolva:** a `0x9a5fa0` közvetlen hívásai (`0x401000`, `0x408760`, `0x40eb10`, `0x4139e0`, `0x5c2100`, `0x69d7f0`, `0x97c810`, `0x97caf0`, `0x985af0`, `0x985ff0`, `0x9a51b0`, `0x9a5210`, `0xbef10a`) 3 ugrásig **nem érnek el** FindFirstFile/FindNextFile/SHFileOperation-t. Ugyanakkor a `0x9a5fa0` számos hívása **mutató-táblán** keresztül megy: `call dword [0xc40284]`, `[0xc4055c]`, `[0xc402a8]`, `[0xc40298]`, `[0xc402d0]`, `[0xc4025c]`, `[0xc408fc]`. Ezek célját nem tudtam feloldani: a táblák értékei nem igazodnak utasításhatárra, tehát nem egyszerű függvénymutatók. A 6 ugrásos körben 1670 (a 0x65b840-nél) és 147 (a 0x4aae90-nél) ilyen nem követett hívás van.
+- **Következtetés:** a `"\*.*"` minta épülése erős jel arra, hogy az F5 könyvtárat olvas, de ez **nem bizonyítja a lemezbejárást**. A bizonyítás a mutató-táblák célfüggvényének feloldása; amíg az nincs meg, az F5 lemezszinkron **nyitott**. A 10.23 „az indexben nincs fájlbejárási import” megállapítása index-negatív volt, ezért nem bizonyíték.
+
+**Ctrl+G — a 10.23 állítása javítva.** ⛔ A 10.23 („a kezelő ágában nincs művelet”) a `0x005e60d0` Ctrl-tábla ágára igaz, de a lánc sorrendje miatt **a Ctrl+G nem ér el oda először**:
+
+1. A `0x005e67e5` a `0x005b2390`-et hívja (a #4 tag, csak `[panel+0xccc]` esetén; a G-kódot nem vizsgálja, megerősítve).
+2. A `0x005e67f4` a `0x00a53b00`-t hívja (a #5 tag, **mindig**). Ennek a belépésénél: `cmp dword [eax+0x20], 0` (nem nulla ⇒ `0xf4241`), és `cmp dword [0xd67858], 0` (nem nulla ⇒ `0xf4240`, kezeltként, művelet nélkül). A kulcskód-ág a `0x00a53b63`-tól egy VK-indexelt táblából ugrik (`[0xa53ba8]`, bájt-index `[0xa53bb4 + VK-8]`); a VK `0x47` (G) és `0x09` (Tab) ugyanazt az ágat kapja (`0xa53b8a`).
+3. A `0xa53b8a` ágban, ha a `[eax+0x10]` 4-es bit (Ctrl) be van állítva, és a VK `0x41`–`0x5a` (betű) közé esik, ugrik a `0xa53b7d`-re: `call 0xa582f0`. **Ez a Ctrl+betű továbbítás.** A `0xa582f0` egy billentyű-eseményt épít (`0x9dd770` konstruktor, a vtábla `0xc8b4b0`), majd:
+   - `[ebp+0x150]` objektum: `call 0x9e4630`; ha `0xf4240` (kezelt), visszatér kezeltként;
+   - `[ebp+0x15c]` (az aktív nézet): `call dword [vtábla+0x74]` (virtuális billentyűkezelő), és a gyermeklista (`[ebp+0x164]`, darabszám `[ebp+0x168]`) elemeire `call 0x9e42b0`. Ha `0xf4240` jön vissza, kezeltként zár.
+4. Csak ha mindez `0xf4241`-et ad (a `0x005e67f4` után `0xf4240`/`0xf4246` nélkül), folytatódik a `0x005e680f`: `test al,4` (Ctrl) ⇒ `0x005e69cc`, a 10.13 szerinti #7 tag, a `0x005e60d0` tábla (a `0x005e69cc` belsejét nem néztem végig).
+
+**Következtetés Ctrl+G-re:** a hatás **nem** a 0x5e60d0 Ctrl-táblából dől el, hanem a 3. lépés virtuális billentyűkezelőjéből (a `[ebp+0x15c]` nézet vtábla `+0x74` slotja, és a gyermekei). Ennek a célfüggvénye **nincs feloldva**; ezért a Ctrl+G hatása **nyitott**.
+
+**Másik út, ami NEM dönt:** a `picasa-menu-parancsok.csv` és a `referencia/` alatti adatok közt nincs `Ctrl+G` gyorsbillentyű-definíció (nulla találat). Ez arra utal, hogy nincs menüparancs, amely a Ctrl+G-t kötné, de a billentyű a nézet virtuális kezelőjében is végződhet, ezért ez önmagában nem bizonyíték.
+
+**Bizonyítottsági fok (ez a kör):**
+
+| állítás | út 1 | út 2 | fok |
+|---|---|---|---|
+| `0xd67914` = élő UI-regiszter, két író (0→1, 1→0) | teljes `.text`-pásztázás (W-szűrés) | a `0x9c3860`/`0x9c3a80` `jne`-ágai és a `0xd67910` számláló | **megerősített** |
+| `[obj+0x20c]`-t a preview-objektum nem írja | teljes pásztázás: 2 író, mindkettő `__getptd` kontextus | a két író függvénykerete (`0xc175d6`, `CallCatchBlock`) | **megerősített** (a *preview-objektumra* vonatkozóan); a konstruktor-nullázás **nyitott** |
+| F5 hívási lánca `0x65b840` → `0x9a5fa0` (`\*.*` minta) | a `call` gráf pásztázása, 7 lépés | a `"*.*"` sztring-hivatkozásai (3 db) | **megerősített** |
+| F5 tényleges lemezbejárása | a 3 ugrásos körben nincs közvetlen enum-import | a mutató-táblák (`[0xc40284]` stb.) **nem oldhatók fel** | **nyitott** |
+| Ctrl+G: a Ctrl-tábla (`0x5e60d0`) ágában nincs művelet | a `0x5e60d0` VK-ágainak kiolvasása | — | **megerősített**, de csak erre az ágra |
+| Ctrl+G: a láncban kap-e műveletet | a 3. lépés vtábla `+0x74` és gyermekei | — | **nyitott** |
+
+**Mai kód (változatlan ebben a körben):** Ctrl+9 (`PhotoViewer.qml:213`, `viewer.visible` feltétellel) és F5 (`Main.qml:1163`) bekötve (#4696, #4697); Ctrl+G nincs bekötve.
+
+**Nyitott pontok (munkasorba):**
+
+- `Ctrl+9 konstruktor`: az `editpanel/preview` objektum konstruktorának megtalálása, és annak igazolása, hogy a `+0x20c` nullázódik. Ha igen, a bináris őr „a preview létezik és él” szintre egyszerűsödik; ha nem, a `+0x20c` jelentése nyitott.
+- `F5 mutató-táblák`: a `[0xc40284]`, `[0xc4055c]`, `[0xc402a8]`, `[0xc40298]`, `[0xc402d0]`, `[0xc4025c]`, `[0xc408fc]` célfüggvényeinek feloldása (az `.rdata` táblák szerkezetének igazolásával), majd a `0x9a5fa0` körének enum-hívás-kereséssel. Ha a tábla célja `FindFirstFile*`/`FindNextFile`, a lemezszinkron igazolt.
+- `Ctrl+G nézet-kezelő`: a `[ebp+0x15c]` nézet vtábla `+0x74` slotjának célfüggvénye, és a `0x9e42b0` gyermekkezelő. Ha ez `0xf4240`-et ad Ctrl+G-re, a hatás megvan; ha `0xf4241`, a 0x5e60d0 ág is végigfut.
+- `#5 flag`: a `[0xd67858]` és a `[eax+0x20]` jelentése (a #5 tag korai kilépése).
+
+**Kész, ha (a jegyhez, mérhető feltételekkel):**
+
+- [x] A `0xd67914` élettartama és a név szerinti keresés két úton igazolva (10.24).
+- [x] A `[obj+0x20c]` írói teljesen felsorolva, és elkülönítve az `__getptd` írásaitól (10.24).
+- [ ] A preview-objektum konstruktora és a `+0x20c` nullázása igazolva, vagy a bináris őr eltérése a mai `viewer.visible` feltételtől döntésként nevesítve.
+- [ ] Az F5 mutató-táblái feloldva, és a lemezbejárás igazolva vagy kizárva.
+- [ ] A Ctrl+G `[ebp+0x15c]` nézet-kezelője feloldva (vtábla +0x74 és `0x9e42b0`), vagy a Ctrl+G hatása nevesítve „nem vizsgált”.
+- [x] A 10.23 Ctrl+G „no-op” állítása javítva; a 10.23 Ctrl+G mondata a 10.24-re hivatkozik. (A 10.7 nem módosult, mert ott a Ctrl+G „kimaradt” a mai kódra vonatkozik, nem a binárisra.)
+
+### 10.25 #4698 — a Ctrl+F9 `[panel+0xdc4]` jelzőjének felhasználói hatása (2026-10-13)
+
+**Kérdés:** ki olvassa a jelzőt, és mit kapcsol a felületen? A kiindulás a
+10.22 Ctrl+F9 sora és a két „Ghidra-kör kell” nyitott tétel volt.
+
+**Módszer.** (1) A teljes `.text` helyett a bináris-index 20 607 függvénytörzsét
+söpörtem végig `capstone`-nal (2 556 882 utasítás), és a `[reg+0xdc4]`,
+illetve `[reg+0xe64]` operandusokat gyűjtöttem; a lineáris `.text`-söprés
+a `0x0050d53d`-nál kiesett, ezért azt nem használtam. (2) A
+`referencia/ghidra-koteg-2026-10-12/00571e50.c` dekompilált kódját
+összevetettem az utasításszintű olvasatokkal. (3) A vtable-slotokat és az
+IAT-címkéket a PE-fájlból olvastam ki. Futtatás nem történt.
+
+**Lépésenkénti bizonyíték**
+
+| # | Hely | Mit mutat | Független út | Fok |
+|---|---|---|---|---|
+| 1 | `0x005e61de`–`0x005e61f1` | A billentyűkód-index `vk-0xd`; a `0x78` (F9) indexe `0x6b`, a bájttábla `0x5e66a4+0x6b` = 34, a `0x5e6614` ugrótábla 34. bejegyzése `0x005e6329`. (A F8 `0x005e631d`, a F10 nem ide tartozik.) | a PE-ből számolva (`pefile` + bájttábla); a 10.22 táblázatával egyezik | megerősített |
+| 2 | `0x005e6168`–`0x005e6181` | A `[esi+0x10]` módosító-bájt 4-es bitje nélkül a `jle` kilép `0x005e6603`-ba; így F9 csak ezzel a bittel jut el a jelzőig. A bit jelentését (Ctrl) **nem** igazoltam külön. | utasításszint | feltételes |
+| 3 | `0x005e6329`–`0x005e6333` | `cmp [ebp+0xdc4],0; sete cl; mov [ebp+0xdc4],cl` — a jelző 0/1 közt billen. | a függvénytörzs-söprés: ez a 2 írás/olvasás egyike | megerősített |
+| 4 | `0x005643eb`, `0x00564b2e` | Az ebx=0 (`0x005643eb`), majd `mov [ebp+0xdc4],bl` → alaphelyzet 0. | utasításszint | megerősített |
+| 5 | `0x00572078` (fv. `0x00571e50`) | `cmp [ebx+0xdc4],0` — az egyetlen olvasó a `0x00571e50`-ben. | **Ghidra** `00571e50.c` 125. sora (`param_1[0x371]`) **és** capstone-söprés: két külön eszköz ugyanazt adja | megerősített |
+| 6 | `0x00571e50` feltételei | `editpanel/preview` létezik (`0x009c2fc0`), `[+0x20c]==0`; a `0x006cfe10(this+0x2bc+0x346c)` érték ≠ `[this+0xe64]`. | Ghidra + asm | megerősített (de lásd nyitott) |
+| 7 | `0x005720af`–`0x005720c0` | `[this+0x2a4]` vtable `+0x2c` hívása, argumentum `push 0`. A vtable `0xc90754` (a konstruktor utolsó `+0x2a4` írása `0x005645da`), a `+0x2c` slot a `0x00578dc0`. | a slotot a PE-fájlból olvastam ki | megerősített |
+| 8 | `0x00578dc0` | `[ebp+8]==0` ágon `0x00578e79`: `call 0x005f89a0`. Az argumentum nem nulla ága hívja a `0x005d1300`-at (képváltás) — ezt a 0 argumentumú hívás **nem** éri el. | utasításszint | megerősített |
+| 9 | `0x005f89a0` | Csak ha `editpanel/preview` látszik; a `editpanel/caption` (`0x00c07db2`) objektum `[+0x2c4]` jelzőjét kell hogy legyen; ha igen: törli, majd a `[this+0x2bc]+0x48` vtable `+0x50` hívásával a `[this+0xe64]` kép rekordját kéri, `editpanel/captiontrash` állapotot állít, a `[this+0x2ac]+8` callbacket a `[this+0xe64]`-gyel hívja, végül `0x00579480(1,0)`. **Nem ír `[this+0xe64]`-et.** | utasításszint | megerősített (a callback célja nyitott) |
+| 10 | a `+0xe64` írói | A teljes függvénytörzs-söprésben a `[reg+0xe64]` írása csak két helyen van: a konstruktor (`0x00564cc7`) és `0x005e8c2d` (`0x005e8a70`). A `0x005e8a70` a képváltó út; a 10.22-ben ez már `feltételes` volt. | függvénytörzs-söprés | megerősített |
+
+**Következtetés.** A Ctrl+F9 nem szinkronizálja a kijelölést az előnézettel.
+A jelző egy kapcsoló: bekapcsolt állapotban a felület idle-frissítése minden
+ciklusban, amikor a kijelölt-azonosító eltér a jelenleg előnézetben lévő kép
+indexétől, meghívja a `0x005f89a0`-t. Az a felirat-mező piszkos jelzőjére
+frissíti a jelenlegi előnézeti kép felirat- és törlésállapotát. A kép
+váltása ezen az úton **nem** történik: a hívás 0 argumentummal megy, a
+képváltó `0x005d1300` nem fut, és a `[this+0xe64]` nem íródik. A kapcsoló
+0 állásában az eltérési frissítés kimarad.
+
+**Fok:** a kapcsoló, a hívási lánc és az, hogy nem vált képet — **megerősített**
+(két független eszköz). A látható felirat-állapot-változás, és az, hogy a
+piszkos jelző mikor áll be — **feltételes**, futtatás nélkül nem mérhető.
+
+**Nyitott:**
+
+- A `0x006cfe10` visszatérési értéke: a `[obj+0x60]`/`[obj+0x68]` ágon a `[[obj+0x68]+0x3c]`, különben a `GetCurrentThreadId` érték. A „kijelölt-azonosító” jelentése ebből **nem igazolt**; a `0x006cfe10` zárolt, újrabelépő állapotolvasó (`EnterCriticalSection`/`LeaveCriticalSection`), nem egyszerű kijelölés-lekérdezés. Ha az ágon a szálazonosító jön vissza, az eltérés minden ciklusban fennáll — ez a feltétel-ág is futtatást kíván.
+- A `[this+0x2ac]+8` callback célja (a konstruktor végső `+0x2ac` értéke `0xc907ac`) és a `0x00c07db2` (`editpanel/caption`) objektum `+0x2c4` írói: **nyitott**.
+- A `0x005e8a70` hívóinak billentyű-hozzárendelése (`0x005e625e`, `0x005e6279` ágak): **nyitott** — ez a képváltó út gazdája.
+- A módosító-bit 4 (`[esi+0x10]`) név szerinti megfelelése (Ctrl): **nem igazolt külön**; a 10.22 szerinti Ctrl-hozzárendelés erre épül.
+- A látható felirat-/törlésállapot-változás eredeti Picasán való futtatása: **NINCS MEG**; célzott próba kell.
+- Az `editpanel/captiontrash` állapot szöveges/vizuális jelentése a QML-oldalon nincs leltározva.
+
+**Gyorsbillentyű-kötés (kódban).** A `src/picasapy/app/` alatt nincs `Ctrl+F9`
+kötés (10.22). A binárisból igazolt hatás nem ad elég bizonyítékot egy
+felhasználói funkcióhoz: a kapcsoló csak a felirat-frissítés idle-útját
+szabályozza. **Fejlesztői al-jegy nem javasolt** a futásteszt és a
+`0x005f89a0` callback-célja nélkül.
+
+### 10.31 #4698 — harmadik kör: a Ctrl+F9 jelzőjének felhasználói hatása, és a 0x04 bit forrása (2026-10-13)
+
+**Kérdés:** (1) a `[panel+0xdc4]` jelzőt a Ctrl+F9 billenti; a jelzőt olvasó `0x00572078` kapuban a „0x04 bit” a Ctrl-állapot-e? (2) a `0x00571e50` frissítő mit rajzol/rendez újra a jelző igaz és hamis ágán?
+
+**Helyesbítés a jegy premisszájára.** A `0x00572078` NEM bitteszt. Az `cmp byte ptr [ebx+0xdc4], 0` egy bájt-összehasonlítás (0/1). A „0x04 bit” a billentyű-eseményobjektum `[+0x10]` módosító-bájtjában van (`test byte ptr [esi+0x10], 4` a `0x005e6178`-nál), a két mező külön.
+
+**Módszer.** Minimális PE-olvasó + `capstone` (a venvben nincs `pefile`, csomagot nem telepítettem). Az import-slotokat a `.rdata`-ból oldottam fel (`call dword ptr [slot]`), és a `binary-index/imports.csv`-vel ellenőriztem. Futtatás nem történt.
+
+**Lépésenkénti bizonyíték**
+
+| # | Hely | Mit mutat | Fok |
+|---|---|---|---|
+| 1 | `0x005e6329`–`0x005e6333` | `cmp byte [ebp+0xdc4],0; sete cl; mov [ebp+0xdc4],cl` — a jelző billen. | megerősített |
+| 2 | `0x005e6178`–`0x005e6181` | F9 (`0x78`) csak akkor jut a `0x005e6329`-ig, ha `test byte [esi+0x10],4` igaz (`jle 0x5e6603` kilép). | megerősített |
+| 3 | `0x005e69cf` (fv. `0x005e6710` láncán belül) | `call 0x005e60d0` a `Ctrl`-ágon; a `0x005e60d0` a `[esi+0x10]&4`-ot vizsgálja. | megerősített |
+| 4 | `0x005e6756` | `push 0x10; call [0xc406f8]` = `GetAsyncKeyState(VK_SHIFT)` a láncban (Shift-csempe, 10.12). **Nem** Ctrl. | megerősített |
+| 5 | `0x00a53b8a` | `test byte [eax+0x10],4` — a `0x00a53b00` lánc betű-ága csak bit 4 mellett továbbít (Ctrl+A…Z). A bit jelentését a kód Ctrl-ként használja. | feltételes (a forrás nincs igazolva) |
+| 6 | `0x006fe3fa` (fv. `0x006fe3e0`) | `GetKeyState(VK_CONTROL=0x11)` — **a Ctrl-lekérdezés egyetlen IAT-hívása**, de a `0x006fe3e0` másik függvény (`WM_KEYDOWN` + `0x4e`, `WM_SYSCOMMAND` + `0xf060`), nem az eseményobjektum-építő. | megerősített (a függvény másik) |
+| 7 | `0x005726a8`–`0x005726c3` (fv. `0x00571e50`) | `push 0x17; call [0xc40840]` = `GetSystemMetrics(SM_MOUSEPRESENT)`, majd `GetAsyncKeyState(VK 1 vagy 0)` (`VK_LBUTTON`). Ha az egér-gomb le van nyomva (`test ax,0x8000`), a `0x572738`-ra ugrik. **Nem Ctrl.** | megerősített |
+| 8 | `0x00572078`–`0x005720c0` | `dc4 != 0` ágon: ha az `editpanel/preview` létezik és `[+0x20c]==0`, a `0x006cfe10(this+0x2bc+0x346c)` ≠ `-1` és ≠ `[this+0xe64]` esetén `[this+0x2a4]` vtable `+0x2c` hívása, arg. 0. | megerősített (a feltételek) |
+| 9 | `0x006cfe10` | Újrabelépő zár-segéd: `GetCurrentThreadId` (`[0xc40284]` → `0x921a3e`) + `EnterCriticalSection` (`[0xc4055c]` → `0x921b04`). Visszatérés: `[[obj+0x68]+0x3c]`, ha `[obj+0x60]` és `[obj+0x68]` nem nulla; különben a szál-azonosító. **Nem kijelölés-lekérdezés.** | megerősített |
+| 10 | `0x005f89a0` (a `+0x2c` slot célja, 10.25 szerint) | Ha az `editpanel/preview` látszik és a `caption` objektum `[+0x2c4]` jelzője be van állítva: törli, a `[this+0x2bc]` vtable-jével frissíti a `[this+0xe64]` képrekordot, a `[this+0x2ac]+8` callbacket `[this+0xe64]`-gyel hívja, végül `0x00579480`. **Nem ír `[this+0xe64]`-et, nem hív `0x005d1300`-at (képváltás).** | megerősített (utasításszint) |
+
+**Következtetés (1).** A 0x04 bit a billentyű-eseményobjektum módosító-bájtjának bitje, és a billentyűlánc Ctrl-jelentéssel használja (5. tétel). Hogy a bitet ki állítja be, a binárisból **nem igazoltam**. Két eszköz is kizárja a 0x6fe3fa-t és a 0x571e50 `GetAsyncKeyState`-jét (6. és 7. tétel): egyik sem az eseményobjektum építője.
+
+**Következtetés (2).** A Ctrl+F9 nem szinkronizálja a kijelölést az előnézettel (a 10.25 eredményét megerősítem). A jelző egy kapcsoló a `0x00571e50` idle-frissítőben: bekapcsolva, az előnézet felirat-/törlésállapotát frissíti a `0x005f89a0`, és **nem vált képet**. A kijelölés-azonosító (`0x006cfe10`) jelentése ettől független: a visszatérés vagy szál-azonosító, vagy egy `[obj+0x68]` mező. Ha szál-azonosító, a feltétel minden ciklusban igaz, és a frissítés minden tick-ben lefut — ez az ág nincs lemérve.
+
+**Fok:** a kapcsoló, a hívási lánc és a „nem vált képet” állítás — **megerősített** (két független eszköz: utasításszintű olvasat és a slot-feloldás). A látható felirat-/törlésállapot-változás, a gyakoriság, és a `0x006cfe10` visszatérési értékének jelentése — **feltételes / NYITOTT**.
+
+**Nyitott (NEM LEZÁRT, a mérleg szerint):**
+
+1. **N1 — a 0x04 bit forrása.** Kell: az eseményobjektumot építő függvény (a `0x005e6710` láncának hívója; a `0x00a582f0` továbbító előtte). Próba: `mov byte ptr [reg+0x10], …` írások a `.text`-ben, és a VK 0x11 lekérdezés minden helye (`push 0x11` + `call [0xc406f8]` — a 2026-10-13-i szűrés 32 találatot adott, ezeket nem néztem végig). **Blokkoló:** nincs; olcsó, de nem fért bele a körbe.
+2. **N2 — a `[[obj+0x68]+0x3c]` jelentése.** Kell: a `[obj+0x68]` objektum típusa és a `+0x3c` mező írói. Ettől dől el, hogy a 0x572078 feltétele mikor igaz (kijelölés-eltérés vs. folyamatos).
+3. **N3 — a látható hatás.** Kell: Picasa 3.9 (angol, Wine) futtatása Colab-gépen, a Ctrl+F9 kétszer, a felirat-/törlésállapot képernyőképe. Ez `picasa-colab-jobs` feladat (`tipus:…`), nem ebből a körből.
+
+**Amit KIZÁRTAM:**
+- a `0x00572078` nem bitteszt (a 0/1 bájt-kapu);
+- a `0x006fe3fa` GetKeyState(VK_CONTROL) nem az eseményépítő (másik függvény);
+- a `0x00571e50` GetAsyncKeyState-je nem Ctrl (VK_LBUTTON, egérgomb-kapu);
+- a `0x006cfe10` nem kijelölés-lekérdezés (zár-segéd, GetCurrentThreadId).
+
+**Kész, ha** (csak ha N1–N3 után megvalósítandó lesz; most NEM javasolt fejlesztői al-jegy):
+- [ ] a Colab-futtatásban a Ctrl+F9 után az előnézet felirat-/törlésállapota változik (kép vs. kép), kétszer mérve;
+- [ ] N1: a 0x04 bit beállító útja megnevezve, címmel;
+- [ ] N2: a `0x006cfe10` visszatérési érték jelentése igazolva, címmel.
+
+### 10.26 #4643 — negyedik kör (2026-10-13): az F5 lemezbejárása
+
+**Kiinduló helyzet.** A 10.24 az F5 lemezszinkronját nyitottnak hagyta, mert a `0x9a5fa0` hívásainak mutató-táblái (`[0xc40284]`, `[0xc4055c]`, `[0xc402a8]`, `[0xc40298]`, `[0xc402d0]`, `[0xc4025c]`, `[0xc408fc]`, és a `[0xd694c4]`/`[0xd694c8]`/`[0xd694cc]`) nem voltak feloldva.
+
+> ⛔ **HELYESBÍTÉS a 10.24-hez.** A 10.24 „a táblák értékei nem igazodnak utasításhatárra, tehát nem egyszerű függvénymutatók” megállapítása **téves** volt. A `.rdata`-beli érték a betöltés *előtti* IAT-tartalom (a loader felülírja), nem függvénycím. A nevet az import-könyvtárból kell venni, nem a fájl bájtjából. A 10.24 „3 ugrásig nincs FindFirstFile” állítása ezért index-negatív volt, és nem bizonyíték.
+
+**Módszer.** (1) A `.rdata` IAT-bejegyzéseket az import-könyvtár (`IMAGE_IMPORT_DESCRIPTOR`, `OriginalFirstThunk` neve) alapján oldottuk fel, nem a fájlbeli értékből. (2) A futásidőben töltött `.data`-slotok íróit a `.text` teljes capstone-pásztázásával kerestük (`eszkozok/binaris/paszta.py`, memóriakapuval), `mov`/`call` operandusra szűrve. (3) A hívási láncot direkt `CALL`-ok szerint, utasításonként ellenőriztük, és a `functions`/`xrefs` index csak kiegészítő volt. (4) A kézzel dekódolt szakaszok `pe_dis.py`-n át olvastak.
+
+**1. A hét IAT-slot (megerősített, két út: import-könyvtár és index-`imports`).**
+
+| slot (VA) | API |
+|---|---|
+| `0x00c40284` | `KERNEL32!GetCurrentThreadId` |
+| `0x00c4055c` | `KERNEL32!EnterCriticalSection` |
+| `0x00c402a8` | `KERNEL32!LeaveCriticalSection` |
+| `0x00c40298` | `KERNEL32!QueryPerformanceCounter` |
+| `0x00c402d0` | `KERNEL32!Sleep` |
+| `0x00c4025c` | `KERNEL32!GetLastError` |
+| `0x00c408fc` | `USER32!EndPaint` |
+
+A `0x9a5fa0` ezekkel a kritikus szakaszt és az időzítést kezeli (a `GetCurrentThreadId`/`Enter`/`LeaveCriticalSection` párosok), tehát **nem** fájlművelet.
+
+**2. A futásidőben töltött `.data`-slotok (megerősített).** A `[0xd694c4]`, `[0xd694c8]`, `[0xd694cc]` a `.data` virtuális, fájlban nem inicializált része; írójuk **egyedül** a `0x00c326b0` függvény (`0x00c32c2a`–`0x00c32cba`), és mindhárom egy `GetVersion` elágazással dönt (`cmp [0xd6fc58], 0x80000000; jae`):
+
+| slot | NT-ág (`GetVersion` high bit = 0) | 9x-ág (high bit = 1) |
+|---|---|---|
+| `[0xd694c4]` (keresés kezdete) | `0x009aed50` (UTF-8 → UTF-16, `MultiByteToWideChar` CP 65001, majd `FindFirstFileW`) | `FindFirstFileA` (`0x00c40428`) |
+| `[0xd694c8]` (keresés kezdete, kiterjesztett) | `0x009aee90` (ugyanaz, majd `FindFirstFileExW`) | `FindFirstFileExA` (`0x00c404a8`) |
+| `[0xd694cc]` (következő elem) | `0x009aeff0` (`FindNextFileW`, `0x00c404b4`) | `FindNextFileA` (`0x00c404bc`) |
+
+**3. Az enumerátor (`0x009a5fa0`, 3608 bájt; megerősített).** Hívásai a `.text`-ből:
+- `0x009a6099`: `call [0xd694c4]` — a sima `FindFirstFile*` ág (két argumentum);
+- `0x009a6079`: `call [0xd694c8]` — a `FindFirstFileEx*` ág (hat argumentum), csak ha az `arg3 == 0x0040eed0`, és a `[0xd689ec] < 0x80000000` (ezt a jelzőt nem azonosítottuk); egyébként a sima ág fut;
+- `0x009a6d4b`: `call [0xd694cc]` — `FindNext*`;
+- `0x009a6d5e`: `call [0xc403a8]` — `FindClose`;
+- `0x009a60a8`: `GetLastError` hibaágon.
+
+A `0x009a600b` a `"*.*"` sztringet (VA `0x00c88d6c`) fűzi a bemeneti úthoz a `0x00985af0` hívással. Az elválasztó (`\`) beillesztését a `0x00985af0`-ban nem néztem végig.
+
+**4. Az F5 hívási lánca (megerősített, minden hop direkt `CALL`).**
+
+| lépés | hely | cél |
+|---|---|---|
+| F5 ág | `0x005e6869` (`cmp ax, 0x74`, VK_F5) | |
+| flag | `0x005e6892`: `mov byte [obj+0x166], 1` | a frissítési jelző |
+| 1 | `0x005e6899` | `0x0065b840` |
+| 2 | `0x0065bb1b` | `0x00662b20` |
+| 3 | `0x0066315b` | `0x0067d020` |
+| 4 | `0x0067d240` | `0x0066f470` |
+| 5 | `0x0066f76d` | `0x0066fae0` (feltétel: §5) |
+| 6 | `0x0066fba2` | `0x0066f810` (a `0x66fb7d`/`0x66fb84` ugrások is ide érnek) |
+| 7 | `0x0066f8b8` | `0x009a5fa0` |
+
+A `0x0066f810` a `0x992ed0` kapuval védi a hívást (`0x0066f88d`): ez attribútum-jellegű lekérdezés (`call [0xd694bc]`, `cmp eax, -1`, `setne`), a `[0xd694bc]` célja **nincs azonosítva**.
+
+**5. Nyitott kapuk (az F5 csak akkor olvas lemezt, ha ezek átmennek).**
+- `0x0066f470` → `0x0066fae0` (`0x0066f73e`, `0x0066f768`): az `ebx` a `0x004019b0` visszatérési értéke (`0x0066f6c5`, 211 bájtos segédfüggvény, sztring-objektumot épít). Az F5-nél felvett érték **nem igazolt**.
+- `0x00992ed0` → `[0xd694bc]`: a célfüggvény nincs azonosítva; a `setne` eredmény olvasása igazolt.
+- A `[obj+0x166]` jelző egyetlen olvasója a `0x004afcfd` (`0x004afcb0`, időzítő-jellegű függvény: `QueryPerformanceCounter` az elején), amely törli (`0x004afd41`). A jelző ~70 helyen íródik. Hogy a `0x004aae90`/`0x004a8a30` ág újraépíti-e a listát, nincs követve.
+
+**Következtetés (F5 lemezszinkron).** A kód **lemezről olvas** az F5 útján: a lánc végén `FindFirstFileW` vagy `FindFirstFileA` (a `GetVersion` szerint), `FindNextFile*`, `FindClose`, a `<bemeneti út>` + `*.*` mintán. Ez a `0x9a5fa0` megerősített tulajdonsága, nem index-következtetés. **Nincs bizonyítva**, hogy minden F5-nél átmegy mind a `0x66f470` ebx-feltétel, mind a `0x992ed0` kapu, és hogy a találatok a listát újraépítik. Ezért a helyes megfogalmazás: „az F5 a mappát a lemezről olvasásra kényszeríti, ha a két kapu átmegy; a kapuk feloldása nyitott”.
+
+**Bizonyítottsági fok (ez a kör):**
+
+| állítás | út 1 | út 2 | fok |
+|---|---|---|---|
+| hét IAT-slot neve (`KERNEL32`/`USER32`) | import-könyvtár bejárása | index `imports` tábla | **megerősített** |
+| `[0xd694c4/c8/cc]` írói: `0x00c326b0` (`GetVersion` ág) | capstone `.text`-pásztázás (`mov`/`call` operandus) | a három író disassembly-je | **megerősített** |
+| NT-/9x-wrapperek célja (FindFirst W/ExW/Next W, A-ág) | wrapper disassembly (`call` célok) | IAT-nevek | **megerősített** |
+| `0x009a5fa0` hívásai (FindFirst*, FindNext*, FindClose) | `call`-pásztázás `[abs]` operandusokra | IAT-nevek | **megerősített** |
+| F5 → `0x009a5fa0` hét direkt hívás | index `xrefs` (CALL-élek) | utasítás-szintű ellenőrzés minden hopnál | **megerősített** |
+| `[obj+0x166]=1` az F5 ágban | disassembly `0x005e6892` | a `0x0065b840` argumentumai | **megerősített** |
+| `0x66f470 → 0x66fae0` feltétel (`ebx`) | — | — | **nyitott** |
+| `[0xd694bc]` (a `0x992ed0` kapu célja) | — | — | **nyitott** |
+| F5 után a lista ténylegesen újraépül | — | — | **nyitott** |
+
+**Mai kód:** `Main.qml:1163` az F5-öt köti (#4697). A bináris lemezolvasása és a mai viselkedés egyezése nincs mérve.
+
+**Nyitott pontok (munkasorba):**
+- `0x004019b0` visszatérési értéke F5-nél: statikus visszafejtés (sztring-objektum-másoló) vagy futtatás (QEMU-harness, a `kutatoi-allitast-futtatassal-is-ellenorizd` szerint).
+- `[0xd694bc]` célja (várhatóan `GetFileAttributes*`) és írói: ugyanaz a `.text`-pásztázás, mint 2. pont.
+- A `[obj+0x166]` olvasójának (`0x004afcb0` → `0x004aae90`) hatása: újraépíti-e a listát.
+- Dinamikus megerősítés: F5 alatt futó Picasában a `FindFirstFile*` hívásszám > 0 (harness-mérés).
+
+**Kész, ha (F5-re, mérhető):**
+- [x] A hét mutató-slot neve két úton igazolva (10.25, 1. pont).
+- [x] A `.data`-slotok írói (`0x00c326b0`) és a wrapperek célja igazolva (10.25, 2–3. pont).
+- [x] Az F5 → `0x009a5fa0` hívási lánc utasításszinten igazolva (10.25, 4. pont).
+- [ ] A `0x66f470` ebx-feltétel és a `0x992ed0` kapu F5-re igazolva (10.25, 5. pont).
+- [ ] A `[obj+0x166]` hatása a listára igazolva.
+- [ ] Dinamikus mérés: F5 → `FindFirstFile*` hívás a futó Picasában (vagy a kijelentés „csak statikus” jelzéssel marad).
+
+### 10.27 #4643 — ötödik kör (2026-10-13): a Ctrl+G nézetlánca
+
+**Kiinduló helyzet.** A 10.24 szerint a Ctrl+G hatása a `[C+0x15c]` aktív nézet vtábla `+0x74` slotjától és a `0x009e42b0` gyermekkezelőtől függ (`C` = a kulcsszűrő `this`-e, `0x00a582f0` első argumentuma). Ez a kör ezt a láncot követte végig, a 10.26 (F5) mellett.
+
+**Módszer.** (1) A `0x00a53b00`, `0x00a582f0`, `0x009e42b0`, `0x009e4630` és `0x00a576f0` törzsének utasításszintű kiolvasása (capstone, `picasapy-agent` venv). (2) A `+0x15c` mezőt író/olvasó utasítások és a `0x00d67858` globális hivatkozásainak teljes pásztázása, függvényenként (nem index-alapon). (3) A VK `0x47` immediate-ű `cmp`/`sub`/`test` utasításainak teljes pásztázása. (4) A `ytUIDialog`, `CThumbUI`, `SliceUI` vtábla-slotjainak olvasása a vtábla-memóriából (nem a RTTI-listából).
+
+**Láncleírás (a Ctrl+G = VK `0x47`, Ctrl, Shift nélkül, `0x100` keydown).**
+
+1. `0x00a53b00` (a `ytUIDialog` 12. slotja, a `CThumbUI::OnKey` `0x005e6710` és a `SliceUI` `0x0052ece0` ezt hívja): ha `[event+0x20] != 0` ⇒ `0xf4241` (nem kezelt); ha `[0x00d67858] != 0` ⇒ `1000000` (kezelt, a billentyű elnyelődik); egyébként a `default` ág: a Ctrl-bit (`[event+0x10] & 4`) és `0x40 < kód < 0x5b` ⇒ `0x00a582f0`.
+2. `0x00a582f0`: ha Shift és Ctrl együtt ⇒ `0xf4241`, nem megy tovább. Egyébként az esemény `0x17` (keydown/char) vagy `0x18` (keyup) típusú ytUIEvent-tet épít (`0x009dd770` konstruktor, vtábla `0x00c8b4b0`), majd:
+   - `P = [C+0x150]` (ha nem nulla): `0x009e4630(event)`; ha `0xf4240`, kezelt.
+   - `V = [C+0x15c]`: ha `V == 0` ⇒ `return 0`. Ha `[V+0x20e] == 0`: a Ctrl-bit beállítása az eseményen, majd `0x009e42b0(V)`; ha `0xf4240`/`0xf4246` jön vissza, az ág ezzel zár. Különben `V.vtbl[+0x74](V, event, flag)`.
+   - Ha még nem kezelt: `C` gyermeklistája (`[C+0x164]`, darabszám `[C+0x168] >> 1`), a `V`-t és a `[child+0x20e] != 0` elemeket kihagyva: elemenként `child.vtbl[+4]()`, `child.vtbl[+0x74](child, event, flag)`, `child.vtbl[+8]()`.
+   - `0xf4240` esetén a `0x00a54b70` értesítés (`C`, két egész, egy float), és a kezelt kilépés.
+3. `0x009e42b0(this)`: a `[this+0x1a0]` tömb elemeire (darabszám `[this+0x1a4] >> 1`, csak ha ≥ 2) `elem.vtbl[+0xc](elem, arg1, arg2)`; `0xf4240`/`0xf4246`-nál megáll, különben `0xf4241`.
+4. `0x00a576f0` (SetActiveView-jelölt, a `ytUIDialog` 31. slotja = `+0x7c`): `[C+0x15c]`-t írja (`mov [edi+0x15c], ebx`, `0x00a57886`), a régi nézetet deaktiválja (`vtbl[+8]`), az újat aktiválja (`vtbl[+4]`, `vtbl[+8]`), közben `0x009e42b0`-t és `vtbl[+0x74]`-et hív. A `0x00a58600` a `[C+0x15c]`-t nullázza.
+
+| állítás | fok |
+|---|---|
+| A Ctrl+G a `0x00a53b00` default ágán át a `0x00a582f0`-re megy (Ctrl-bit és `0x40 < kód < 0x5b`) | **megerősített**: Ghidra `ghidra-koteg-2026-10-06/00a53b00.c` és a disassembly, két út |
+| `0x00a53b00`: `[event+0x20] != 0` ⇒ `0xf4241`; `[0xd67858] != 0` ⇒ `1000000` | **megerősített**: Ghidra-dekompilát és a `0x00a53b13` `cmp dword [0xd67858], 0` |
+| `0x00a582f0`: Shift+Ctrl ⇒ `0xf4241`, nincs nézet-továbbítás | **megerősített**: disassembly (`test bl,1` / `test bl,4` / `jle`) |
+| `V = [C+0x15c]`, `V.vtbl[+0x74]` hívás, `[V+0x20e]` őr | **megerősített**: disassembly `0x00a5841c`–`0x00a5854e` |
+| `0x009e42b0`: gyermektömb `[this+0x1a0]`, `vtbl[+0xc]`, megállás `0xf4240`/`0xf4246`-nál | **megerősített**: disassembly (`0x009e42b0`, 91 bájt) |
+| C-gyermeklista (`[C+0x164]`, `[C+0x168]`): `vtbl[+4]`, `[+0x74]`, `[+8]` | **megerősített**: disassembly `0x00a58533`–`0x00a58578` |
+| A `ytUIDialog`/`CThumbUI`/`SliceUI` vtábla-slotjai: 12. = kulcsszűrő (`a53b00` / `5e6710` / `52ece0`), 31. = `a576f0` (ytUIDialog, SliceUI), `5fa760` (CThumbUI) | **megerősített**: a vtábla-memória olvasása (`0x00c93f64`, `0x00c9052c`, `0x00c8b97c`), nem csak a RTTI-lista |
+| `[C+0x15c]`-t a `0x00a576f0` és a `0x00a58600` írja | **megerősített** a teljes `.text`-pásztázás (84 író a +0x15c-re, függvényenként); a `0x00a58600` hívóit nem néztem végig |
+| `[0x00d67858]`: számláló, 35 hivatkozás (≈ 15 növelő/csökkentő pár), olvasói a `0x00a53b00`, `0x00a52890` és más ytUI-függvények | **megerősített** az író/olvasó lista; a számláló *neve* és a pár-szerkezet (pl. `0x00512030`: `sub`, nullánál `IsWindow([0xd6784c])`) **nyitott** |
+| `[event+0x20]`: a `0x009dd770` konstruktor 0-ra állítja (`mov [eax+0x20], ecx`, `ecx = 0`) | **megerősített**; a 0-tól eltérő külső írók **nyitottak** |
+| VK `0x47` közvetlen összehasonlítása a `.text`-ben: 12 `0x47`-immediate `cmp`/`sub`/`test`; ezek közül a `0x005de810` és `0x0060f1b0` ablaküzenet-kezelő (`case 5`, `0x11`, `0x16`, `0x47` = `WM_WINDOWPOSCHANGED`), a `0x008509d0` és `0x0059c410` típusmező, a `0x00986d40`/`0x00986f00` kisbetű-konverzió (`sub 0x61`, `cmp 0x19`, `sub 0x47`), a `0x004cc9e0` és `0x00ad1040` szövegillesztés | **megerősített** mint *nincs közvetlen VK-0x47 kezelő* a vizsgált hét eset alapján; a `0x0054c540`, `0x007360b0`, `0x007a5c10`, `0x00a99620` **nincs végigolvasva** |
+| `P = [C+0x150]` és a `0x009e4630` pre-filter Ctrl+G-re | mechanika **megerősített**; a `P` objektum azonosítása **nyitott** |
+| `V.vtbl[+0x74]` célja a könyvtárnézetben | **nyitott**: a `V` osztálya nincs azonosítva |
+
+**Következtetés.** ⛔ **A Ctrl+G könyvtárnézeti hatásáról NEM mondható ki, hogy hatástalan.** A lánc utolsó eleme (`V.vtbl[+0x74]` és a gyermekek kezelői) nem oldható fel, mert az aktív nézet osztálya (`V`) nincs azonosítva. Ami igazolt:
+
+- a Ctrl+G-nek nincs közvetlen kezelője (a vizsgált VK-összehasonlítások között nincs `0x47`);
+- minden Ctrl+betű (`0x41`–`0x5a`) ugyanezen a `0x00a582f0` láncon megy, tehát a Ctrl+G hatása csak egy általános (tábla- vagy tartomány-alapú) Ctrl+betű-kezelőből jöhet, és ilyet ebben a körben nem találtunk;
+- a `0x00d67858` számláló nem nulla állapotban a Ctrl+G-t (és minden más billentyűt) a `0x00a53b00` elnyeli, mielőtt bármelyik nézet látná.
+
+A 10.24 „Ctrl+G nyitott” állítása ezzel pontosítva: a lánc megvan, a végpont (V osztálya és kezelője) nyitott.
+
+**Nyitott pontok (munkasorba):**
+
+- `V` azonosítása: a `0x00a576f0` virtuális hívóinak (`call [reg+0x7c]`) argumentum-forrása a könyvtárnézetben; a `CThumbUI` saját `+0x7c` (`0x005fa760`) és a `SliceUI` `0x00a576f0`-ja közti különbség.
+- `V.vtbl[+0x74]` célja a `V` osztályától függően, és a gyermekei (`0x009e42b0` → `vtbl[+0xc]`, C-lista → `+4`/`+0x74`/`+8`).
+- `P = [C+0x150]` azonosítása, és a `0x009e4630` ága Ctrl+G-re.
+- `[event+0x20]` külső írói (a nem-konstruktor úton érkező eseményeknél).
+- `[0x00d67858]` neve és a párok szerepe (`0x00520fa0` növelő, `0x00512030` csökkentő).
+- A négy nem-végigolvasott VK-összehasonlítás (`0x0054c540`, `0x007360b0`, `0x007a5c10`, `0x00a99620`).
+- Dinamikus mérés: futó Picasában a könyvtárnézetben Ctrl+G, és ellenőrizni, történik-e bármi (új nézet, kijelölés, figyelmeztetés). Ez az egyetlen út, amely a „hatástalan” kijelentést statikus nélkül is igazolná.
+
+**Kész, ha (Ctrl+G):**
+
+- [x] A Ctrl+G dispatch-lánc (`0x00a53b00` → `0x00a582f0` → `0x009e4630` / `0x009e42b0` / `V.vtbl[+0x74]` / C-lista) utasításszinten igazolva.
+- [x] A `[0x00d67858]` és a `[event+0x20]` szerepe a láncban igazolva (a nevük nyitott).
+- [x] A VK-0x47 közvetlen kezelő-keresés elvégezve; a negatív eredmény a vizsgált eseteken igazolt.
+- [ ] A `V` (könyvtárnézeti aktív nézet) osztálya azonosítva.
+- [ ] A `V.vtbl[+0x74]` és a gyermekek Ctrl+G-kezelése igazolva, vagy a teljes lánc `0xf4241`-et ad (kódúton igazolva).
+- [ ] Dinamikus mérés: Ctrl+G a könyvtárnézetben, a változás rögzítve.
+- Csak ha mindhárom nyitott pont negatív: „a Ctrl+G a könyvtárnézetben hatástalan”.
+
+### 10.28 #4699 — a Ctrl+Alt (VK `0x12`) látható hatása: felugró `PopDisplay`-ablak (2026-10-13)
+
+**Kérdés:** mi látszik Ctrl+Alt (Alt, VK `0x12`) lenyomásakor? A #4643 szerint a `0x00571a80` a gyerekobjektumot „CThumbUI”-ként frissíti; ez pontatlan.
+
+**Módszer.** A Picasa 3.9.141.259 bináris (`644b7bec…dc96`) helyi példányán, futtatás nélkül. A bináris-index `functions` tábláját függvényenként söpörtem capstone-nal: a `.text` egyetlen lineáris söprése a `0x0050d53d` körül megszakad, ezért ott nem használtam. Az IAT-névhez nem volt index-bejegyzés; az API-t az argumentumok alakjából jelölöm (pl. `0x7F89` = IDC_HAND, `0x17` = SM_SWAPBUTTON, `0x12` = VK_MENU), és ezt külön jelzem. Egy korábbi kör (`d164c968f`, a 10.25 szakasz, #4698/#4699) ugyanezt a láncot részben már bejárta; az ellentmondásait lent jelzem.
+
+**Lépésenkénti bizonyíték**
+
+| # | Hely | Mit mutat | Független út | Fok |
+|---|---|---|---|---|
+| 1 | `0x005e65dc` | `cmp byte [panel+0xe78],0` → `je`; `eax = [panel+0xe70]`; `cmp eax,-1` → `je`; `push eax; push panel; call 0x571a80`. Ez a kapu. | a `+0xe78` egyetlen olvasója a `.text`-ben (szkennelve) | megerősített |
+| 2 | `0x00564cd3`, `0x00564d1a` | `push "EnableHover"` (`0xc8e624`), `call 0x4019b0` (HKCU registry-olvasó a `Preferences` ágon), `mov [panel+0xe78], al`. | a `0x005643e0` string-xref-listájában ott van az `EnableHover` (és a `ShowHidden`, `captionmode` stb.) | megerősített; **alapértéke nyitott** (a `0x00564d00` `mov [esp+0x70],1` gyanítható, nem igazolt) |
+| 3 | `0x0056b6f0` | ha az új index ≠ `-1` és ≠ `[panel+0xe64]` (aktuális kép), akkor `[panel+0xe70] := [panel+0xe64]`. | az `[+0xe64]` írói (10.25): csak a konstruktor és `0x005e8c2d`, tehát a `0x0056b6f0` nem írja | megerősített (az asm); **a jelentése** („az aktuális kép”) feltételes |
+| 4 | `0x00571a80` | `[child+0xb8] := id` (a kapott azonosító); ankerezés (`0x00aa5760` = slot 4, MoveWindow-alak); majd `0x00774d60(child)`. **Nem olvassa a VK `0x12`-t** (a callee-listában nincs `GetAsyncKeyState`). | decompile + asm | megerősített |
+| 5 | `0x00774d60` | `GetAsyncKeyState(0x12)` csak `DAT_00d67849 ≠ 0` mellett; `[child+0xb4] := (Alt nincs lenyomva)`; utána `GetClientRect(child)`. | decompile (a callee-lista tartalmazza a `GetAsyncKeyState`-t) + asm (`0x774d60`-on belül) | megerősített |
+| 6 | `0x00774f95`–`0x00774f9d` | `cmp [esp+0x24], 0x400` → `jbe 0x7750f8`: **a megjelenítő ág csak ha a gyerek kliensszélessége > 1024 px**. Az `[esp+0x24]` a step-5 `GetClientRect` `right` mezője. | asm + decompile (`if (0x400 < right)`) | megerősített |
+| 7 | `0x007750ca` → `0x00775320` | `call 0x775320`: `push 5; push hwnd; call [0xc40890]` = `ShowWindow(hwnd, SW_SHOW)` (feltétel: két ellenőrzés, `0xc40894`, `0xc4088c`). Utána `InvalidateRect(hwnd,0,0)` és `UpdateWindow` (`0x007750d2`). | a vtábla slot 2 (`0x00983840`, `ShowWindow(h, arg?5:8)`, `d164c968f`) ugyanazt az IAT-slotot használja; a `0x775390` `push 0` változata (SW_HIDE) is | megerősített (két út) |
+| 8 | `0x00774d60` → owner `+0x260` | a betöltés és a megjelenítés (step 7) csak akkor fut, ha a `FUN_006cfe10` index ≠ `[child+0xb8]`, vagy a téglalap változott (`0x00774fba`–`0x00774ffd`; egyezés esetén a `je 0x7750f8` kihagyja a blokkot). Ha fut: `call [vtbl+0x0]` az `owner+0x260` objektumon `(id, &rect, 0)`-val. Ez a kép betöltésének helye. | asm | megerősített (feltétel és hívás); **a betöltő objektum típusa nyitott** |
+| 9 | `0x00774bc0` (WndProc, vtábla slot 7) | `WM_PAINT` (`0xF`) → `0x009aa720`; a `BitBlt`-alakú másolás a `[obj+0x24]` bitképből (`d164c968f`). | egy út (`d164c968f`); ebben a körben nem követtem végig a `0x9aa720`-at | **feltételes** |
+| 10 | `0x00cb36ec` (`ytCallback<PopDisplay>`) | periodikus visszahívás: a `0x00775590` konstruktor írja a vtáblát (`0x007755cd`); a vtábla slot 1 = `0x00775550`, amely időbélyeget olvas (8 bájt) és a `0x007753f0`-t hívja (`0x00775572`). | vtábla-szkennelés (`0x00cb36f0`) + asm | megerősített; **a timer-regisztráció** (`0x0097d150`) **nyitott** |
+| 11 | `0x007753f0` (a „tick”) | olvassa `[child+0xb4]`-et (`0x0077543c`, `0x00775495`) és `DAT_00d67849`-et (`0x0077544a`, `0x0077549d`); `LoadCursor(NULL, 0x7F89)` + `SetCursor` (IDC_HAND); a fő egérgomb VK-ját a `GetSystemMetrics(0x17)`-ből (cache: `0xd4a490`). Ha nem lép ki, a végén `call [vtbl+0xc]` = slot 3 = `0x00775390`. | asm; a `d164c968f` ugyanezt a döntési fát adja | megerősített (két út) |
+| 12 | `0x00775390` (slot 3) | `[child+0xc8] = [child+0xcc] = 0`; `ShowWindow(hwnd, 0)` = **elrejtés** (ugyanaz az IAT-slot, mint a step-7 SW_SHOW). | asm + a vtábla slot-listája | megerősített |
+| 13 | `0x00a52e66` | `DAT_00d67849 := wParam ≠ 0` a `0x1C` (WM_ACTIVATEAPP) ágban — ez az „a Picasa az előtérben van” jelző. A `0x005760e0` a főablak létrehozásakor `1`-re állítja (`0x00576419`). | asm + a `00-index.md` #2224 | megerősített (két út) |
+
+**Összefüggő szabályok (a tick-ből, asm szerint):**
+
+- `[child+0xb4] = 0` (az utolsó frissítés Alt-tal történt) és az Alt élőben is le van nyomva → a tick **kilép**: a felugró ablak marad.
+- `[child+0xb4] = 0` és az Alt már nincs lenyomva → a tick **elrejt** (slot 3).
+- `[child+0xb4] = 1` (az utolsó frissítés Alt nélkül történt) → a tick csak akkor rejt el, ha a fő egérgombot lenyomják.
+- A `DAT_00d67849 = 0` (a Picasa nincs az előtérben) → a tick nem enged „kilépést” a rejtés elől (fg=0 ágak).
+
+**Következtetés.** A Ctrl+Alt (VK `0x12`) látható hatása: **felugró `PopDisplay`-ablak** (külön HWND, `ShowWindow(SW_SHOW)`), amely az `[panel+0xe70]` azonosítójú képet rajzolja. Feltételei: (1) a `EnableHover` beállítás be van kapcsolva, (2) az `[e70]` nem `-1`, (3) a Picasa az előtérben van, (4) a gyerekablak kliensszélessége > 1024 px. Alt tartására az ablak marad, a kurzor a felugró ablak fölött kéz-alakú (IDC_HAND). Elrejtés: Alt-elengedés után a tick (ha az utolsó frissítés Alt-tal volt), vagy a fő egérgomb lenyomása (ha Alt nélkül frissítettünk). **Ez nem a rács bélyegképének hover-keretére vonatkozik**: a `design-guide.md` 187–188. sorának „nincs látványos hover-effekt” megállapítása a rácsra szól, és a két jelenség nem ütközik. A `picasa-linux-mod.md` „egér-alatti kiemelés” sora (`EnableHover`) ezzel szemben a PopDisplay-ablakra vonatkozhat; ez utóbbi nincs külön igazolva.
+
+**Egyezés a `d164c968f`-es 10.24-gyel:** a tick döntési fája (`b4`, `DAT_00d67849`, az egérgomb- és Alt-ág) ugyanaz. A `d164c968f` a `0x774d60` frissítőt jelölte az Alt-állapot írójának (`GetAsyncKeyState(VK_MENU)`); ez egyezik a step-5 eredményemmel. Az `osszefoglalo.md` #26 ezzel szemben a `0x00571a80`-nak tulajdonítja a VK `0x12` olvasását: ez téves.
+
+**Fok:** a megjelenítési lánc (kapu → EnableHover → 0x571a80 → 0x774d60 → ShowWindow) és a rejtési szabály **megerősített**, két úton. A kép tartalma (step 8–9) **feltételes**. A futásbeli viselkedés (ablakpozíció, időzítő-periódus) **nincs megmérve**: a gépen nincs Wine, és nem indítottam el a binárist.
+
+**Nyitott:**
+
+- A `EnableHover` alapértéke (ha a kulcs hiányzik): nincs igazolva; a `0x00564d00` `mov [esp+0x70],1` jelölt, de a `0x407a20` konvenciója nincs végigkövetve.
+- Az `[e70]` jelentése: a `0x0056b6f0` az aktuális képet (`[e64]`) másolja oda; hogy ez az a kép, amit a felhasználó lát, vagy a legutóbbi előző, **nem dőlt el** (futtatás kell).
+- A betöltő objektum az `owner+0x260`-on (step 8): típus és slot 0 nincs azonosítva; így a popup pontos tartalma (méret, átméretezés) **nyitott**.
+- Az Alt-elengedés útja: a `WM_KEYUP` eléri-e a `0x005e65dc` kaput? A VK-ugrótábla (`0x005e6617` hivatkozás) nincs dekódolva. Ha nem éri el, a popup a tick-szabályok szerint az Alt-elengedés után is maradhat, amíg a fő egérgombot nem nyomják.
+- A `0x0097d150` (a periodikus tick regisztrálása): nincs igazolva, hogy milyen időközzel fut.
+- A `0x00774b60` hívója `0x0077524a`-nál: a második `ShowWindow`-útnak nincs azonosított argumentuma (`[esp+0x20]`).
+- Futásbeli próba (az eredeti Picasa): **NINCS MEG**; a látható tartalom és az időzítés csak célzott próbával mérhető.
+
+**Megvalósítás-állapot (#4928 → 0.9.89, #4935, `e30b6d5b4`):** lásd a 10.32-t — a fő látványelem megvan, de a feltételrendszer és az elhelyezés nem egyezik a fenti binárisbeli lánccal.
+
+**Kész, ha (ha megépítjük, nem most).** A jegy csak akkor nyitható fejlesztői al-jegynek, ha az első három nyitott pont (EnableHover alapérték, `[e70]` jelentése, Alt-elengedés útja) lezárva van. Addig a feature nem specifikált. Javasolt feltételek:
+
+- [ ] `EnableHover` alapértéke igazolva (a `0x407a20` és a `0x4019b0` alapértékének két független olvasata).
+- [ ] Az `[e70]` jelentése igazolva: az Alt-lenyomás pillanatában megjelenő kép azonosítója, két úton (asm + eredeti Picasa futtatás).
+- [ ] Alt-elengedés útja igazolva (WM_KEYUP → `0x005e65dc`, vagy annak hiánya).
+- [ ] A popup-kép forrása (owner `+0x260` objektum) azonosítva, és a `WM_PAINT`→`BitBlt` út végigkövetve.
+- [ ] Megvalósításkor: a billentyű-kötés a `PhotoViewer`/`Main` fókuszkapujával egyezzen; a popup csak akkor jelenjen meg, ha mind a négy feltétel (EnableHover, `[e70]` érvényes, az előtérben, >1024 px) teljesül. Teszt: a feltételek bármelyikének hiányában nincs popup.
+
+### 10.30 #4643 — ötödik kör, második rész (2026-10-13): V, a `+0x74` slot, a négy VK-összehasonlítás
+
+**Kiinduló helyzet.** A 10.27 három nyitott pontja: (1) `V` osztálya, (2) `V.vtbl[+0x74]` célja, (3) a négy nem végigolvasott VK-összehasonlítás (`0x0054c540`, `0x007360b0`, `0x007a5c10`, `0x00a99620`). Ez a rész mindhármat megvizsgálta.
+
+⛔ **Javítás a 10.26-hoz.** A 10.26 nyitott pontjában szereplő „`call [reg+0x7c]`" keresés csak a közvetlen alakot kereste. Ebben a binárisban a virtuális hívás MSVC-módon gyakran kétlépéses: `mov R,[X+0x7c]` … `call R`. Közvetlen alak: **1** találat (`00b50c7f call [esp+0x7c]`, verem-indirekt, nem vtábla). Kétlépéses alak: **154** találat. A vtábla-hívók tehát a kétlépésesek között vannak, a közvetlen keresés erről nem ad képet.
+
+**Módszer.** (a) `.text` függvényenkénti capstone-pásztázás (20 608 függvény, nem egyben): közvetlen `call [R+0x7c]`, kétlépéses `mov R,[X+0x7c]` + `call R` (6 utasításos ablak), közvetlen `call 0x00a576f0`. (b) A `0x00a576f0` vtábla-előfordulásainak keresése a `.rdata`-ban (DWORD-keresés), slot-index és RTTI-név párosítás. (c) A hívási helyek törzsének kiolvasása, és a hívó `this`-ének meghatározása a prológus alapján. (d) A `V`-jelölt osztályok `+0x74` slotjának kiolvasása a vtábla-memóriából. (e) A négy VK-összehasonlító függvény teljes kiolvasása.
+
+**(1) A `0x00a576f0` a ytUIDialog-család SetActiveView-je.** 18 vtáblában szerepel, mindegyikben a 31. slot (`+0x7c`): `SliceUI` (`0x00c8b97c`), `ytUIDialog` (`0x00c93f64`), `CInitialScanDialog`, `ChooseEmailDialog`, `CCollabDialog`, `CBuzzUploadDialog`, `CBaseUploadDialog`, `CFolderMgrDialog`, `CUploadManagerDialog`, `CButtonManagerDialog`, `OneUpUI`, `CTransTimeline::UI`, `QuickTagConfigDlg`, `ComposeDialog`, `CGeoLocateDialog`, `CPrintOptionsDialog`, `CCaptureMoviePanelPopup`, `ytDrawUI`. A `CThumbUI` (`0x00c9052c`) `+0x7c` slotja **`0x005fa760`**, nem a `0x00a576f0`.
+
+Működés (utasításszintű, a 10.26 kiegészítése): `thiscall`, egy verem-argumentum (az új nézet, `ebx`), `ecx` = a konténer `C`. `ebx == 0`: a nézet törlése. `ebx == -1`: a `[C+0x164]` verem tetejére lépés, ha `([C+0x168] & ~1) != 0`. Egyébként `[C+0x15c] := ebx`, a régi nézet `vtbl[+8]`, az új `vtbl[+4]` és `vtbl[+8]` hívása, közben `0x009e42b0` és `vtbl[+0x74]` (a régi nézetre, `(0, ptr, ptr)` aláírással).
+
+**(2) A hívók argumentum-forrása.** A kétlépésesek közül a hívási helyeket a hívó metódusa szerint néztem:
+
+| hívási hely | a hívó | a hívott `+0x7c` | argumentum-forrás | fok |
+|---|---|---|---|---|
+| `0x00a589aa`/`0x00a589af` | a SliceUI-metódus `0x00a58930` (slot 33; `esi` = a `this`) | `0x00a576f0` | `**[esi+0x164]` (ha `[esi+0x168] & ~1 ≠ 0`), különben `-1` | **megerősített**: utasítások `0x00a58970`–`0x00a589b1` |
+| `0x005fca25`–`0x005fca2e` | a CThumbUI-metódus `0x005fa770` (slot 33); `edi` = `[esp+0x1c]`, egy verem-paraméter (konténer) | a `edi` osztályától függ; SliceUI esetén `0x00a576f0` | literál `-1`: vissza az előző nézetre | **megerősített** az argumentum; a `edi` osztálya **nyitott** |
+| `0x005dec98` | a CThumbUI-metódus `0x005de8e0` (slot 22); `esi` = `[esp+0x10]` = a `this` (a prológusban `mov [esp+0x10], ecx`) | CThumbUI `+0x7c` = `0x005fa760` | `eax` = 0 (a nyomkövetés kikapcsolva) vagy egy nyomkövető-objektum | **valószínű**: a `this` azonosítása a prológusból, a verem-mélység végig nem ellenőrizve; a célfüggvény ettől **nem** a `0x00a576f0` |
+| `0x005df888` | ugyanaz a `0x005de8e0` | a `RTDynamicCast`-ból kapott `ytBasePanel*` `+0x7c` = `0x009e08b0` | `ebx` | **megerősített**: a `dynamic_cast` típusai `ytDrawNode` → `ytBasePanel` (a `0xd3b8a0` és `0xd3b914` TypeDescriptor-nevei); a célfüggvény nem a `0x00a576f0` |
+
+A maradék ~149 kétlépéses hívási hely **nem** lett végigolvasva; osztályuk nyitott.
+
+**Következmény a `V`-re.** A vizsgált hívók között nincs olyan, amely a könyvtárnézetet (CThumbUI-t vagy más nézetet) `this`-ként adná a konténer `SetActiveView`-nek. A `V` osztálya így **nyitott**: a `SliceUI`-beli `-1`/verem-visszalépés és a CThumbUI-beli `-1` nem azonosítja, melyik nézet áll a `[C+0x15c]`-ben a könyvtárnézetben.
+
+**(3) `V.vtbl[+0x74]`.** A `+0x74` slot osztályonként más függvény, és a két hívási alak eltér: a `0x00a576f0`-ban `(0, ptr, ptr)`, a `0x00a582f0`-ban `(event, flag)`. A lehetséges `V`-osztályok `+0x74` célja:
+
+| osztály (`vtbl`) | `+0x74` | méret | mit csinál (részleges olvasás) | VK-összehasonlítás |
+|---|---|---|---|---|
+| CThumbUI (`0x00c9052c`) | `0x00571e50` | 2352 B | `GetAsyncKeyState` a `DAT_00d4a490` (= 1 vagy 2, a `GetSystemMetrics(0x17)` alapján): **egérgomb**-állapot | nincs `0x47`/`0x39`/`0x74` |
+| SliceUI (`0x00c8b97c`) | `0x0052fe80` | 260 B | `double` értékbeállító (`fcomp`/`fstp` `[esi+0x340]`) | nincs |
+| ytUIDialog (`0x00c93f64`) | `0x00a54050` | 2839 B | méret-/elrendezés-számítás (`fst [esi+0x188]`) | nincs |
+
+Egyik ismert jelölt sem billentyűkezelő a részleges olvasás alapján. Mivel `V` osztálya nyitott, a `V.vtbl[+0x74]` célja **nyitott**; a három jelölt kizárása nem a teljes `V`-kizárás.
+
+**(4) A négy VK-összehasonlítás.**
+
+| függvény | méret | a `cmp` tárgya | ítélet |
+|---|---|---|---|
+| `0x0054c540` | 753 | `ebx` = **üzenetkód**: `0x14` (WM_ERASEBKGND), `0x18`, `0x47` (WM_WINDOWPOSCHANGED), `0x0f` (WM_PAINT), `0x200`–`0x204` (egér) | nem billentyű — **negatív** |
+| `0x007a5c10` | 247 | `esi` = **üzenetkód**: `0x05` (WM_SIZE), `0x19`, `0x47`, `0x133` (WM_CTLCOLOREDIT) | nem billentyű — **negatív** |
+| `0x007360b0` | 1489 | `esi` = üzenet. A `0x100` (WM_KEYDOWN) ágon csak a `0x2e` (VK_DELETE) van kezelve; minden más VK a `0x00984970` alap-kezelőnek megy | a `0x47` nem billentyű; `0x39`/`0x74` nincs összehasonlítva — **negatív**, de a `0x00984970` belső hívásai (`0x982bd0`, `0x983140`, `0x9839a0`, `0x983a60`, `0x984660`) **nem** lettek követve |
+| `0x00a99620` | 660 | `cmp byte [esp+0x1a], 0x47` a `'T'`, `'A'`, `'G'` (`0x54`, `0x41`, `0x47`) szövegegyezésben | szövegillesztés, nem billentyű — **negatív** |
+
+Összesen: a 12 ismert `0x47`-immediate összehasonlításból mind a 12 **nem** VK-összehasonlítás (ablaküzenet, típusmező, kisbetű-konverzió, szöveg). `0x39` (Ctrl+9) és `0x74` (F5) egyik négy vizsgált függvényben sincs.
+
+**Következtetés.**
+
+- A Ctrl+G **nincs közvetlen VK-0x47 kezelőben** a teljes listán (12/12 vizsgálva). Ez a kizárás **nem** elég: egy tartomány- vagy táblázat-alapú Ctrl-betű-kezelő a `0x00a582f0` láncon át működne, és annak két végpontja (`V.vtbl[+0x74]`, a C-gyermekek) nyitott.
+- Ctrl+9 és F5: a négy vizsgált függvényben nincs kezelő. A `0x00984970` alap-kezelő és a `V`-végpont nyitott.
+- A könyvtárnézeti hatás: **nyitott**. Sem kimondható hatás, sem kizárás nincs.
+
+**Bizonyíték-táblázat (összefoglaló)**
+
+| állítás | fok |
+|---|---|
+| `0x00a576f0` = a ytUIDialog-család slot 31 (`+0x7c`) SetActiveView-je, 18 vtáblában | megerősített (vtábla-memória, DWORD-keresés) |
+| `CThumbUI +0x7c = 0x005fa760` | megerősített (vtábla-memória) |
+| 154 kétlépéses + 1 verem-indirekt hívási hely; direkt `call 0x00a576f0` nincs | megerősített (pásztázás) |
+| SliceUI-hívó `0x00a58930`: argumentum `**[this+0x164]` vagy `-1` | megerősített (disassembly) |
+| CThumbUI-hívó `0x005fa770`: `[edi+0x7c](edi, -1)` | megerősített az argumentum; `edi` osztálya **nyitott** |
+| CThumbUI `0x005de8e0`: a saját `+0x7c` (`0x005fa760`) és a `ytBasePanel +0x7c` (`0x009e08b0`) — nem a `0x00a576f0` | valószínű (a `this` a prológusból); a `ytBasePanel` megerősített |
+| `V` osztálya | **nyitott** |
+| `V.vtbl[+0x74]` célja | **nyitott**; a három jelölt (CThumbUI, SliceUI, ytUIDialog) nem billentyűkezelő a részleges olvasás szerint |
+| `0x0054c540`, `0x007a5c10`: üzenetkód-kapcsoló | megerősített (disassembly) |
+| `0x007360b0`: WM_KEYDOWN-ág, csak VK_DELETE; a többi a `0x00984970`-re | megerősített; a `0x984970` belseje **nyitott** |
+| `0x00a99620`: `'T','A','G'` szövegegyezés | megerősített |
+
+**Nyitott pontok (munkasorba):**
+
+- `V` osztálya: a 149 nem végigolvasott kétlépéses hívási hely osztályának azonosítása; vagy annak a konstruktornak / beállító kódnak a megtalálása, amely a könyvtárnézet nézetét a `[C+0x15c]`-be teszi.
+- `V.vtbl[+0x74]`: a `V` osztályától függően; a `CThumbUI +0x74` (`0x00571e50`) teljes törzse.
+- `0x00984970` (`0x007360b0` alap-kezelője): a belső hívásainak (`0x982bd0`, `0x983140`, `0x9839a0`, `0x983a60`, `0x984660`) követése, Ctrl-betű-ágra.
+- Dinamikus mérés (az egyetlen út a „hatástalan” igazolására): futó Picasában a könyvtárnézetben Ctrl+G, Ctrl+9, F5.
+
+**Kész, ha (Ctrl+G, a 10.26 + 10.27 együtt):**
+
+- [x] A dispatch-lánc utasításszinten igazolva (10.26).
+- [x] `[0xd67858]` és `[event+0x20]` szerepe a láncban igazolva (10.26).
+- [x] A VK-0x47 összehasonlítások mind a 12 vizsgálva; egyik sem billentyű-kezelő (10.27).
+- [x] A négy nem-végigolvasott VK-összehasonlítás vizsgálva (10.27).
+- [ ] `V` osztálya azonosítva.
+- [ ] `V.vtbl[+0x74]` célja és a gyermekei igazolva, vagy kódúton `0xf4241`.
+- [ ] Dinamikus mérés a könyvtárnézetben.
+- Csak ha mindhárom nyitott pont negatív: „a Ctrl+G a könyvtárnézetben hatástalan”.
+
+### 10.32 #4699 / #4928 — lefedi-e a megvalósítás a 10.28 hatását? (2026-10-13)
+
+**Kérdés:** a `#4928` (0.9.89, `e30b6d5b4` / PR #4935) a jegy kérdését — a Ctrl+Alt látható hatását — lefedi-e, és ha nem, mi a különbség.
+
+**Következtetés:** a **fő látványelem** egyezik: Ctrl+Alt lenyomva tartva felugró nagy előnézet jelenik meg az egér alatti rácselemről, elengedésre eltűnik (`tests/app/qml_functional/test_ctrl_alt_hover_preview_4928.py`, a `ctrlAltHoverPreviewWindow` objektum). **Nem fedi le** a 10.28 feltételrendszerét és elhelyezését: a kapcsoló rossz (buboréksúgó, nem `EnableHover`), a méretküszöb más objektumon van, a kép kiválasztása a 10.28 3. lépésével ellentmond, és az elrejtés késleltetése hiányzik. A #4928 jegy törzse ezt állítja (`EnableHover` + „a spec feltételeit követi”), a kód nem teljesíti.
+
+**Bizonyíték — összevetés (eredeti Picasa 3.9.141 bináris ↔ #4935 kód):**
+
+| Szempont | Bináris (eredeti) | #4935 megvalósítás | Egyezik? |
+|---|---|---|---|
+| Kapcsoló | `Preferences\EnableHover`, HKCU-olvasás: `push 0xc8e624` (`EnableHover`), `push 0xc7eafc` (`Preferences`), `call 0x4019b0` @ `0x564cd3`–`0x564d16` — **megerősített** | `showTooltipsEnabled` (`appearance_controller.py:185`, kulcs `view/showTooltips`, #4449 Általános fül buboréksúgó); a teszt is ezt kapcsolgatja (`setShowTooltipsEnabled`) | **NEM** — másik beállítás |
+| Kapcsoló alapértéke | **NINCS MEG.** A `0x564d00` `mov [esp+0x70],1` a `0x407a20` bemenete; a `0x407a20` hiányzó-kulcs ága nincs végigkövetve. A `0x4019b0` a `RegOpenKeyEx`-burkoló (`0xf003f`), nem ad alapértéket. | nincs összevetve | — |
+| Ctrl+Alt bemenet | VK `0x12` + Ctrl-ág `0x005e65dc` (10.22) | Ctrl és Alt együtt a Qt-eseményszűrőben (`eventFilter`, `ctrlAltHeld`) | **egyezik** |
+| Előtér | feltétel (10.28) | `grid.appWindow.active` (`LightboxFeed.qml`) | **egyezik** (feltételes) |
+| Méretküszöb | a **gyerekablak** kliensszélessége > 1024 px (`GetClientRect(child)`, 10.28 5. lépés) | a **popup-ablak** szélessége > 1024 px (`LightboxFeed.qml`, `visible: … width > 1024`); a popup szélessége a képből jön (≤ 1200 + 24) | **NEM** — más objektum, más szám |
+| Kép kiválasztása | `[panel+0xe70]`; a 10.28 3. lépése szerint `[e70] := [e64]`, vagyis az **aktuális kép** indexe (a jelentés feltételes) | `onHoverChanged` → `hoverPreviewRow`: a **kurzor alatti** rácselem | **NEM** — a kurzor-alatti azonosítás a láncból **nem következik**; ez a #4928 premisszája, és a 10.28 3. lépésével ellentmond |
+| Elhelyezés | ankerezés a 4. slotra, `MoveWindow`-alak (`0x571a80`, `0x aa5760`); a koordináta **NINCS MEG** | a főablak közepére igazítva | **nem igazolt** |
+| Alt-elengedés | Alt-tartás alatt marad; elengedés után a következő tick-en rejt, ha az utolsó frissítés Alt-tal volt (10.28 — a tick-periódus **NINCS MEG**, `0x0097d150`) | `requested` a `ctrlAltHeld`-hez kötött → az elengedés **azonnal** rejt | **NEM** — a tick-késleltetés hiányzik |
+| Kurzor | `IDC_HAND` (`0x7f89`) Alt-tartás alatt (10.28) | nincs | **NEM** |
+| Egérgomb-elrejtés (Alt nélkül) | fő gomb lenyomása rejt (`0x7754b0`, 10.28) | nincs | **NEM** |
+| Videó | **NINCS MEG** | kizárva (`isVideo`) | nincs összevetve |
+
+**Mit jelent a különbség a felhasználónak:** (a) `EnableHover` kikapcsolt eredeti Picasában a popup nem jelenik meg; nálunk a buboréksúgó-kapcsolótól függ — a két kapcsoló független, tehát a viselkedés eltér mindkét irányban; (b) a kép forrása (kurzor vs. aktuális kép) nem igazolt, és ez a legfontosabb nyitott pont a „mit lát a felhasználó” szempontjából.
+
+**Fok:** a fő megjelenés (Ctrl+Alt → felugró kép, elengedésre eltűnik) **megerősített** két úton (bináris: 10.28; kód + teszt: #4935). A feltételrendszer (kapcsoló, méretküszöb) és a képforrás a binárissal **nem egyezik**, ezért az #4935 ezen a ponton eltér a bináris láncától. Az elhelyezés, a tick-késleltetés, a kurzor és a videó **nyitott**.
+
+**Nyitott kérdések mérlege (10.27):**
+
+- `NYITOTT — EnableHover alapértéke` — blokkoló a kapcsoló helyes bekötéséhez. Módszer: a `0x407a20` hiányzó-kulcs ágának végigkövetése (a `0x407a20` `[esp+0x20]`-as paramétere a `DefaultValue` mutató-e), és a `0x4019b0` hívói között egy másik `EnableHover`-olvasó keresése; második út: célzott eredeti-program próba `EnableHover` törölt kulccsal (Wine nincs a gépen, ezért `picasa-colab-jobs` kell, `felhasználóra-vár` nélkül).
+- `NYITOTT — a kép forrása: [e70] = aktuális kép vagy kurzor alatti kép` — a `0x56b6f0` / `0x00571a80` lánc egy célzott Colab-próbával dönthető el (Alt-tartás, egér két különböző rácselemen).
+- `NYITOTT — Alt-elengedés tick-késleltetése` — a `0x0097d150` periódusa és a `0x0077524a` `ShowWindow`-argumentuma.
+- `NYITOTT — elhelyezés` — a `0x00aa5760` slot-geometria kiszámítása `respack`-ből nem adódik; eredeti-program képernyőkép kell.
+- `HATÓKÖRÖN KÍVÜL` — nincs tétel. Lezárva: a fő megjelenés (10.28, #4935). Nyitva marad a fenti négy pont.
+
+**Kész, ha — a #4928 eltéréseinek javítása** (fejlesztői al-jegy, ha a két blokkoló pont — EnableHover alapérték, képforrás — eldőlt):
+
+- [ ] a popup-kapcsoló `Preferences\EnableHover` (HKCU, alapérték a bizonyított), nem `view/showTooltips`; a buboréksúgó-kapcsoló nem érinti;
+- [ ] `EnableHover` kikapcsolva → nincs popup (teszt a `test_ctrl_alt_hover_preview_4928.py` mintájára);
+- [ ] a képforrás a bizonyított azonosító (`[e70]` jelentése szerint), és a teszt két különböző rácselemen ellenőrzi;
+- [ ] Alt-elengedés után a késleltetés a mért tick-periódus, nem azonnali;
+- [ ] a popup-küszöb (>1024 px) a bizonyított objektumon (gyerekablak), nem a kép méretén;
+- [ ] renderelt képernyőkép az eredeti Picasa képével összevetve (a `felhasználóra-vár` csak akkor, ha a Colab-próba nem ad képet).
+
+**Módszertani megjegyzés:** a #4928 jegy a 10.28 feltételeit idézte, de a megvalósítás a `showTooltips` kapcsolót használta, a bináris `EnableHover`-jét nem. A jövőben a megvalósítás-jegy az `EnableHover` olvasóját nevezze meg, és a `test_` fájl egy `EnableHover`-kikapcsolt esetet is tartalmazzon.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 

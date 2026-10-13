@@ -132,16 +132,22 @@ class TestFolderContextMenu:
         # #4535: a Névcímkék hozzáadása tényleges mappa-keresést indít.
         assert menu.findChild(QObject, "folderMenuAddNameTags").property("enabled")
 
-    def test_sort_submenu_checks_the_current_mode(self, qml_engine, qt_app):
-        """A „Mappa rendezésének alapja ▸" almenü az `Sort` menüosztály
-        négy tétele (spec A.2), a jelenlegi rendezés pipálva."""
+    def test_sort_submenu_items_are_one_off_commands(self, qml_engine, qt_app):
+        """A rendezés egyszeri művelet, a menü nem mutat tartós módot."""
         menu = self._make_menu(qml_engine)
-        menu.setProperty("sortMode", "name")
-        menu.setProperty("sortReverse", True)
         qt_app.processEvents()
-        assert menu.findChild(QObject, "folderMenuSortByName").property("checked")
-        assert not menu.findChild(QObject, "folderMenuSortByDate").property("checked")
-        assert menu.findChild(QObject, "folderMenuSortReverse").property("checked")
+        for name in (
+            "folderMenuSortByDate",
+            "folderMenuSortByName",
+            "folderMenuSortBySize",
+            "folderMenuSortByColor",
+            "folderMenuSortByPriority",
+            "folderMenuSortReverse",
+        ):
+            item = menu.findChild(QObject, name)
+            assert item is not None
+            assert item.property("checkable") is False
+            assert item.property("checked") is False
 
     def test_new_collection_trigger_emits_signal(self, qml_engine, qt_app):
         menu = self._make_menu(qml_engine)

@@ -68,6 +68,7 @@ class TestMigracio:
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             # #4580: a videómezők csak a v21-ben érkeznek
             "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
             "ALTER TABLE photos DROP COLUMN frame_rate;\n"
             "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "DROP TABLE photo_hashes;\n"

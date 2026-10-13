@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Window
 import "groups.js" as Groups
 import "lasso.js" as Lasso
 import "scroll.js" as Scroll
@@ -22,6 +23,20 @@ ListView {
     signal openRequested(int row)
     // zöld ▸ a mappa-fejlécen: vetítés a csoport első képétől
     signal slideshowRequested(int startRow)
+
+    // Ctrl+Alt alatt a kurzor alatti, valódi képfájl lesz a külön
+    // PopDisplay-ablak képe; a rács egyetlen indexe jelöli a hover célját.
+    property int hoverPreviewRow: -1
+    readonly property var hoverPreviewPhoto: {
+        if (!grid.ctl || !grid.ctl.photos || grid.hoverPreviewRow < 0)
+            return ({})
+        return grid.ctl.photos.itemAt(grid.hoverPreviewRow)
+    }
+    readonly property string hoverPreviewSource: {
+        if (!grid.ctl || !grid.ctl.photos || grid.hoverPreviewRow < 0)
+            return ""
+        return grid.ctl.hoverPreviewFileUrlAt(grid.hoverPreviewRow)
+    }
 
     // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
@@ -63,6 +78,71 @@ ListView {
     // képernyőnyi háttérmunkát, nem minden képpontra külön.
     property real prefetchLastContentY: 0
     property int prefetchScrollDirection: 1
+
+    Window {
+        id: hoverPreviewWindow
+        objectName: "ctrlAltHoverPreviewWindow"
+        transientParent: grid.appWindow
+        flags: Qt.ToolTip | Qt.WindowDoesNotAcceptFocus
+                | Qt.WindowTransparentForInput
+        modality: Qt.NonModal
+        color: Theme.lightboxBg
+
+        readonly property var photoSize: {
+            const dimensions = (grid.hoverPreviewPhoto.resolution || "")
+                .split("x")
+            return {
+                width: Number(dimensions[0]) || 0,
+                height: Number(dimensions[1]) || 0
+            }
+        }
+        readonly property real imageScale: {
+            if (photoSize.width <= 0 || photoSize.height <= 0) return 0
+            return Math.min(1, 1200 / photoSize.width, 760 / photoSize.height)
+        }
+        readonly property int previewWidth: Math.round(
+            photoSize.width * imageScale)
+        readonly property int previewHeight: Math.round(
+            photoSize.height * imageScale)
+        readonly property int previewImageStatus: previewImage.status
+        readonly property bool requested: grid.appWindow.active
+            && grid.ctl
+            && grid.ctl.enableHover !== undefined
+            && grid.ctl.enableHover === true
+            && grid.ctl.ctrlAltHeld === true
+            && grid.hoverPreviewRow >= 0
+            && grid.hoverPreviewPhoto.isVideo !== true
+            && previewWidth > 0 && previewHeight > 0
+
+        width: previewWidth + 24
+        height: previewHeight + 24
+        x: Math.round(grid.appWindow.x + (grid.appWindow.width - width) / 2)
+        y: Math.round(grid.appWindow.y + (grid.appWindow.height - height) / 2)
+        visible: requested && width > 1024
+                 && previewImage.status === Image.Ready
+
+        Rectangle {
+            anchors.fill: parent
+            color: Theme.thumbCard
+            border.color: Theme.thumbBorder
+            border.width: 1
+
+            Image {
+                id: previewImage
+                objectName: "ctrlAltHoverPreviewImage"
+                anchors.fill: parent
+                anchors.margins: 12
+                source: hoverPreviewWindow.requested
+                       && hoverPreviewWindow.width > 1024
+                       ? grid.hoverPreviewSource : ""
+                sourceSize.width: hoverPreviewWindow.previewWidth
+                sourceSize.height: hoverPreviewWindow.previewHeight
+                fillMode: Image.PreserveAspectFit
+                asynchronous: Qt.platform.pluginName !== "offscreen"
+                cache: true
+            }
+        }
+    }
 
     clip: true
     model: grid.ctl ? grid.ctl.feedGroups : []
@@ -1115,6 +1195,13 @@ ListView {
                         isHidden: slot.info.hidden === true
                         keywords: slot.info.keywords || ""
                         resolution: slot.info.resolution || ""
+                        onHoverChanged: function(row, hovered) {
+                            if (hovered) {
+                                grid.hoverPreviewRow = row
+                            } else if (grid.hoverPreviewRow === row) {
+                                grid.hoverPreviewRow = -1
+                            }
+                        }
                         captionMode: grid.ctl ? grid.ctl.thumbCaptionMode : "none"
                         dragMimeData: ({
                             "text/uri-list": grid.selectedFileUriList()

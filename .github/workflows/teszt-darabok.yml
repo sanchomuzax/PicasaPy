@@ -3,7 +3,7 @@
 # ⚠️ MIÉRT külön hívás, és nem egyetlen kétdimenziós mátrix (MÉRVE, PR #1257):
 # egy mátrix-job eredménye EGYBEN látszik a `needs.<job>.result`-ban. Amíg a
 # két platform egyetlen mátrixban futott, egy bukó WINDOWS-darab a KÖTELEZŐ
-# `Test (ubuntu-latest)` ellenőrzést is pirosra vitte — pedig mind a négy
+# `Test (ubuntu-latest)` ellenőrzést is pirosra vitte — pedig az összes
 # ubuntu-darab zöld volt. A projekt szabálya szerint a windows-láb nem
 # blokkol; ez a szétválasztás teszi ezt igazzá a gyakorlatban is.
 name: Teszt-darabok
@@ -16,14 +16,14 @@ on:
         required: true
         type: string
       darabok:
-        description: A futó darabok JSON-listája (PR-en kevés érintett tesztnél [1])
+        description: A futó darabok JSON-listája
         required: false
-        default: "[1,2,3,4]"
+        default: "[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]"
         type: string
       darabszam:
         description: A darabok száma (a --shard N/darabszam nevezője)
         required: false
-        default: "4"
+        default: "16"
         type: string
       cov:
         # #1156: a lefedettség-mérés ALAPÉRTELMEZÉSBEN KI van kapcsolva.
@@ -48,15 +48,13 @@ jobs:
     # A `scripts/teszt_idok.json` aktuális felosztása 30,1–30,2 percet jelez
     # tesztfutásra; a job időkorlátja a telepítést is beleszámítja. A
     # windows-láb ezért 60 percet kap, ami 20 percet ad a megfigyelt
-    # megszakítási határ fölé. Az Ubuntu 40 perce és a négyes mátrix marad.
+        # megszakítási határ fölé. Az Ubuntu 40 perce és a 16-os mátrix marad.
     timeout-minutes: ${{ inputs.os == 'windows-latest' && 60 || 40 }}
     strategy:
       fail-fast: false
       matrix:
-        # #1127: a készletet NÉGY futtatóra osztjuk platformonként. A
-        # kiosztás mért futásidők szerint megy (`scripts/teszt_idok.json`),
-        # a becsült tesztidők darabonként 30,1–30,2 percet adnak. Ez nem
-        # tartalmazza a job telepítési idejét.
+        # #4922: PR-en a kiválasztó 20-ra korlátozza a dinamikus mátrixot,
+        # main-pushon a teljes készlet továbbra is legfeljebb 16 darab.
         #
         # ⚠️ Ez NEM a gépen belüli párhuzamosítás. Azt 2026-08-19-én
         # kipróbáltuk (#1030/#1031), és CPU-éhezésben a főágat pirosra vitte
@@ -66,9 +64,9 @@ jobs:
         shard: ${{ fromJSON(inputs.darabok) }}
     env:
       QT_QPA_PLATFORM: offscreen
-      # PR-en csak az érintett app-tesztek futnak (`run_tests.py`,
-      # `erintett_app_tesztek`); push esetén üres → teljes készlet.
+      # A kiválasztó által írt fájllista fut; main-pushon a teljes készlet.
       PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
+      PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && '1' || '' }}
 
     steps:
       - name: Checkout
@@ -118,6 +116,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -c packaging/ci-constraints.txt $(python scripts/print_dependencies.py --all)
 
+      - name: Select test files
+        env:
+          PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
+          PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && '1' || '' }}
+        # Windows PR-en ugyanazt a diffet szűkítjük a Windows-érzékeny
+        # tesztekre; mainen a --teljes felülírja ezt, és minden teszt megmarad.
+        run: python scripts/teszt_valasztas.py --lista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.os == 'windows-latest' && github.event_name == 'pull_request' && '--windows' || '' }}
+
       - name: Run tests
         # darabolt futtatás (#53): a teljes készlet egy processzben a
         # Windows-runneren rendszeresen GIL-deadlockba ragadt — a script
@@ -155,7 +161,7 @@ jobs:
         # hozzáadása is megoldotta volna, de az a tesztek futtatókörnyezetét
         # cserélné le egy kapcsoló kedvéért; a kifejezés a parancssort
         # állítja össze, a shellhez nem nyúl.
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} ${{ inputs.cov && '--cov' || '' }}
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} --fajllista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.cov && '--cov' || '' }}
 
       - name: Lefedettségi adatfájl feltöltése
         # #1156: a darab `.coverage`-e melléktermékként megy tovább. A
@@ -188,7 +194,7 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## ⚠️ A windows-láb elbukott — ${{ matrix.shard }}/4 darab"
+            echo "## ⚠️ A windows-láb elbukott — ${{ matrix.shard }}/${{ inputs.darabszam }} darab"
             echo
             echo "Ez a láb **nem blokkol** (kísérleti), de a bukása"
             echo "lefedettség-vesztést jelent: az itt elbukó állítások"
