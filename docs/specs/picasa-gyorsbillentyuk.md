@@ -1600,6 +1600,52 @@ felhasználói funkcióhoz: a kapcsoló csak a felirat-frissítés idle-útját
 szabályozza. **Fejlesztői al-jegy nem javasolt** a futásteszt és a
 `0x005f89a0` callback-célja nélkül.
 
+### 10.31 #4698 — harmadik kör: a Ctrl+F9 jelzőjének felhasználói hatása, és a 0x04 bit forrása (2026-10-13)
+
+**Kérdés:** (1) a `[panel+0xdc4]` jelzőt a Ctrl+F9 billenti; a jelzőt olvasó `0x00572078` kapuban a „0x04 bit” a Ctrl-állapot-e? (2) a `0x00571e50` frissítő mit rajzol/rendez újra a jelző igaz és hamis ágán?
+
+**Helyesbítés a jegy premisszájára.** A `0x00572078` NEM bitteszt. Az `cmp byte ptr [ebx+0xdc4], 0` egy bájt-összehasonlítás (0/1). A „0x04 bit” a billentyű-eseményobjektum `[+0x10]` módosító-bájtjában van (`test byte ptr [esi+0x10], 4` a `0x005e6178`-nál), a két mező külön.
+
+**Módszer.** Minimális PE-olvasó + `capstone` (a venvben nincs `pefile`, csomagot nem telepítettem). Az import-slotokat a `.rdata`-ból oldottam fel (`call dword ptr [slot]`), és a `binary-index/imports.csv`-vel ellenőriztem. Futtatás nem történt.
+
+**Lépésenkénti bizonyíték**
+
+| # | Hely | Mit mutat | Fok |
+|---|---|---|---|
+| 1 | `0x005e6329`–`0x005e6333` | `cmp byte [ebp+0xdc4],0; sete cl; mov [ebp+0xdc4],cl` — a jelző billen. | megerősített |
+| 2 | `0x005e6178`–`0x005e6181` | F9 (`0x78`) csak akkor jut a `0x005e6329`-ig, ha `test byte [esi+0x10],4` igaz (`jle 0x5e6603` kilép). | megerősített |
+| 3 | `0x005e69cf` (fv. `0x005e6710` láncán belül) | `call 0x005e60d0` a `Ctrl`-ágon; a `0x005e60d0` a `[esi+0x10]&4`-ot vizsgálja. | megerősített |
+| 4 | `0x005e6756` | `push 0x10; call [0xc406f8]` = `GetAsyncKeyState(VK_SHIFT)` a láncban (Shift-csempe, 10.12). **Nem** Ctrl. | megerősített |
+| 5 | `0x00a53b8a` | `test byte [eax+0x10],4` — a `0x00a53b00` lánc betű-ága csak bit 4 mellett továbbít (Ctrl+A…Z). A bit jelentését a kód Ctrl-ként használja. | feltételes (a forrás nincs igazolva) |
+| 6 | `0x006fe3fa` (fv. `0x006fe3e0`) | `GetKeyState(VK_CONTROL=0x11)` — **a Ctrl-lekérdezés egyetlen IAT-hívása**, de a `0x006fe3e0` másik függvény (`WM_KEYDOWN` + `0x4e`, `WM_SYSCOMMAND` + `0xf060`), nem az eseményobjektum-építő. | megerősített (a függvény másik) |
+| 7 | `0x005726a8`–`0x005726c3` (fv. `0x00571e50`) | `push 0x17; call [0xc40840]` = `GetSystemMetrics(SM_MOUSEPRESENT)`, majd `GetAsyncKeyState(VK 1 vagy 0)` (`VK_LBUTTON`). Ha az egér-gomb le van nyomva (`test ax,0x8000`), a `0x572738`-ra ugrik. **Nem Ctrl.** | megerősített |
+| 8 | `0x00572078`–`0x005720c0` | `dc4 != 0` ágon: ha az `editpanel/preview` létezik és `[+0x20c]==0`, a `0x006cfe10(this+0x2bc+0x346c)` ≠ `-1` és ≠ `[this+0xe64]` esetén `[this+0x2a4]` vtable `+0x2c` hívása, arg. 0. | megerősített (a feltételek) |
+| 9 | `0x006cfe10` | Újrabelépő zár-segéd: `GetCurrentThreadId` (`[0xc40284]` → `0x921a3e`) + `EnterCriticalSection` (`[0xc4055c]` → `0x921b04`). Visszatérés: `[[obj+0x68]+0x3c]`, ha `[obj+0x60]` és `[obj+0x68]` nem nulla; különben a szál-azonosító. **Nem kijelölés-lekérdezés.** | megerősített |
+| 10 | `0x005f89a0` (a `+0x2c` slot célja, 10.25 szerint) | Ha az `editpanel/preview` látszik és a `caption` objektum `[+0x2c4]` jelzője be van állítva: törli, a `[this+0x2bc]` vtable-jével frissíti a `[this+0xe64]` képrekordot, a `[this+0x2ac]+8` callbacket `[this+0xe64]`-gyel hívja, végül `0x00579480`. **Nem ír `[this+0xe64]`-et, nem hív `0x005d1300`-at (képváltás).** | megerősített (utasításszint) |
+
+**Következtetés (1).** A 0x04 bit a billentyű-eseményobjektum módosító-bájtjának bitje, és a billentyűlánc Ctrl-jelentéssel használja (5. tétel). Hogy a bitet ki állítja be, a binárisból **nem igazoltam**. Két eszköz is kizárja a 0x6fe3fa-t és a 0x571e50 `GetAsyncKeyState`-jét (6. és 7. tétel): egyik sem az eseményobjektum építője.
+
+**Következtetés (2).** A Ctrl+F9 nem szinkronizálja a kijelölést az előnézettel (a 10.25 eredményét megerősítem). A jelző egy kapcsoló a `0x00571e50` idle-frissítőben: bekapcsolva, az előnézet felirat-/törlésállapotát frissíti a `0x005f89a0`, és **nem vált képet**. A kijelölés-azonosító (`0x006cfe10`) jelentése ettől független: a visszatérés vagy szál-azonosító, vagy egy `[obj+0x68]` mező. Ha szál-azonosító, a feltétel minden ciklusban igaz, és a frissítés minden tick-ben lefut — ez az ág nincs lemérve.
+
+**Fok:** a kapcsoló, a hívási lánc és a „nem vált képet” állítás — **megerősített** (két független eszköz: utasításszintű olvasat és a slot-feloldás). A látható felirat-/törlésállapot-változás, a gyakoriság, és a `0x006cfe10` visszatérési értékének jelentése — **feltételes / NYITOTT**.
+
+**Nyitott (NEM LEZÁRT, a mérleg szerint):**
+
+1. **N1 — a 0x04 bit forrása.** Kell: az eseményobjektumot építő függvény (a `0x005e6710` láncának hívója; a `0x00a582f0` továbbító előtte). Próba: `mov byte ptr [reg+0x10], …` írások a `.text`-ben, és a VK 0x11 lekérdezés minden helye (`push 0x11` + `call [0xc406f8]` — a 2026-10-13-i szűrés 32 találatot adott, ezeket nem néztem végig). **Blokkoló:** nincs; olcsó, de nem fért bele a körbe.
+2. **N2 — a `[[obj+0x68]+0x3c]` jelentése.** Kell: a `[obj+0x68]` objektum típusa és a `+0x3c` mező írói. Ettől dől el, hogy a 0x572078 feltétele mikor igaz (kijelölés-eltérés vs. folyamatos).
+3. **N3 — a látható hatás.** Kell: Picasa 3.9 (angol, Wine) futtatása Colab-gépen, a Ctrl+F9 kétszer, a felirat-/törlésállapot képernyőképe. Ez `picasa-colab-jobs` feladat (`tipus:…`), nem ebből a körből.
+
+**Amit KIZÁRTAM:**
+- a `0x00572078` nem bitteszt (a 0/1 bájt-kapu);
+- a `0x006fe3fa` GetKeyState(VK_CONTROL) nem az eseményépítő (másik függvény);
+- a `0x00571e50` GetAsyncKeyState-je nem Ctrl (VK_LBUTTON, egérgomb-kapu);
+- a `0x006cfe10` nem kijelölés-lekérdezés (zár-segéd, GetCurrentThreadId).
+
+**Kész, ha** (csak ha N1–N3 után megvalósítandó lesz; most NEM javasolt fejlesztői al-jegy):
+- [ ] a Colab-futtatásban a Ctrl+F9 után az előnézet felirat-/törlésállapota változik (kép vs. kép), kétszer mérve;
+- [ ] N1: a 0x04 bit beállító útja megnevezve, címmel;
+- [ ] N2: a `0x006cfe10` visszatérési érték jelentése igazolva, címmel.
+
 ### 10.26 #4643 — negyedik kör (2026-10-13): az F5 lemezbejárása
 
 **Kiinduló helyzet.** A 10.24 az F5 lemezszinkronját nyitottnak hagyta, mert a `0x9a5fa0` hívásainak mutató-táblái (`[0xc40284]`, `[0xc4055c]`, `[0xc402a8]`, `[0xc40298]`, `[0xc402d0]`, `[0xc4025c]`, `[0xc408fc]`, és a `[0xd694c4]`/`[0xd694c8]`/`[0xd694cc]`) nem voltak feloldva.
