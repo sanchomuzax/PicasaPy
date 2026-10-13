@@ -39,7 +39,7 @@ from picasapy.pmpimport.thumbindex import ThumbIndexFormatError
 #: A tulajdonos valódi katalógusa — gitignore-olt. A próba KIHAGYJA magát, ha
 #: nincs ott; útvonalat sosem ír a kimenetbe (magánadat).
 _VALODI = Path(
-    "/home/sancho/Documents/PicasaPy/research/testdata/Picasa2-arcok/Picasa2/db3"
+    Path.home() / "Documents/PicasaPy/research/testdata/Picasa2-arcok/Picasa2/db3"
 )
 
 

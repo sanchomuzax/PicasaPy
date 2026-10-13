@@ -6,8 +6,8 @@ from picasapy.scanner import find_watched_folders_file, read_watched_folders
 class TestReadWatchedFolders:
     def test_one_path_per_line(self, tmp_path):
         f = tmp_path / "WatchedFolders.txt"
-        f.write_text("/home/sancho/Kepek\n/mnt/nas/fotok\n", encoding="utf-8")
-        assert read_watched_folders(f) == ("/home/sancho/Kepek", "/mnt/nas/fotok")
+        f.write_text("/home/felhasznalo/Kepek\n/mnt/nas/fotok\n", encoding="utf-8")
+        assert read_watched_folders(f) == ("/home/felhasznalo/Kepek", "/mnt/nas/fotok")
 
     def test_windows_paths_and_crlf(self, tmp_path):
         # Importnál az eredeti (Windows-os) fájlt is olvasnunk kell.
@@ -32,8 +32,8 @@ class TestReadWatchedFolders:
         from picasapy.scanner import write_watched_folders
 
         f = tmp_path / "WatchedFolders.txt"
-        write_watched_folders(f, ("/mnt/nas/fotok", "/home/sancho/Képek"))
-        assert read_watched_folders(f) == ("/mnt/nas/fotok", "/home/sancho/Képek")
+        write_watched_folders(f, ("/mnt/nas/fotok", "/home/felhasznalo/Képek"))
+        assert read_watched_folders(f) == ("/mnt/nas/fotok", "/home/felhasznalo/Képek")
 
     def test_write_creates_parent_dir(self, tmp_path):
         from picasapy.scanner import write_watched_folders

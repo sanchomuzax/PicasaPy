@@ -3133,7 +3133,7 @@ Nincs felülmintavételezés. A SIMD-ág `CVTPS2DQ`-t, a skalár `FISTP`-t
 használ; a lent rögzített próbamintán a két ág bájtra azonos.
 
 **Korábbi izolált pixel-golden, eredeti gépi kódból állítólag mérve.** A privát QEMU-i386
-harness (`/home/sancho/picasapy-agent/eszkozok/qemu_harness/hb.py`,
+harness (`~/picasapy-agent/eszkozok/qemu_harness/hb.py`,
 `install_crt_shims`) az eredeti, változatlan EXE (`SHA-256:
 644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
 `0x008f3840` →
@@ -5715,7 +5715,7 @@ a Codex-munkamenetben nem állt rendelkezésre.*
 
 *Forrás: skalár `ytResampler` `0x00a40e40` (méret 1443 bájt); SIMD
 `0x00a413f0` (méret 1565 bájt); a dispatch `0x00a426a0`; futtatott
-QEMU-harness: `/home/sancho/picasapy-agent/eszkozok/qemu_harness/`.*
+QEMU-harness: `~/picasapy-agent/eszkozok/qemu_harness/`.*
 
 | út | négyes főciklus | függőleges maradékág |
 |---|---|---|

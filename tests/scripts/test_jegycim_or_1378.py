@@ -155,7 +155,7 @@ class TestBotEszkoz:
         "gh",
         "gh-bot",
         "./eszkozok/gh-bot",
-        "/home/sancho/picasapy-agent/eszkozok/gh-bot",
+        "/home/felhasznalo/picasapy-agent/eszkozok/gh-bot",
         "~/picasapy-agent/eszkozok/gh-bot",
     ])
     def test_minden_irasmod_BLOKKOL(self, monkeypatch, program: str) -> None:

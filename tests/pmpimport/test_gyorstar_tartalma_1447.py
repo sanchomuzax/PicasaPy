@@ -39,7 +39,7 @@ from picasapy.pmpimport import (
 )
 
 _VALODI = Path(
-    "/home/sancho/Documents/PicasaPy/research/testdata/Picasa2-arcok/Picasa2/db3"
+    Path.home() / "Documents/PicasaPy/research/testdata/Picasa2-arcok/Picasa2/db3"
 )
 
 pytestmark = pytest.mark.skipif(
