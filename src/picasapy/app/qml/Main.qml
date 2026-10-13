@@ -1879,6 +1879,7 @@ ApplicationWindow {
 
     menuBar: PicasaMenuBar {
         textEntryHasFocus: window._szovegmezoneVanFokusz
+        searchOptionsOpen: toolbar.searchOptionsOpen
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
         //: contentItem nem kapja meg a teljes ablakot.
         visible: !window.slideshowRunning
@@ -1889,6 +1890,7 @@ ApplicationWindow {
         // #4329: a felső Fájl ▸ E-Mail ugyanazt a küldési kaput hívja, mint
         // a tálca emailRequested jelzése.
         onEmailRequested: window.sendSelectionByEmail()
+        onSearchOptionsToggleRequested: toolbar.toggleSearchOptions()
         onOpenInEditorRequested: window.openSelectionInDefaultEditor()
         onViewAndEditRequested: window.nezdEsSzerkeszd()
         // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő

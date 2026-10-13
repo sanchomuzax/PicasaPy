@@ -9,6 +9,15 @@ import QtQuick.Layouts
 Rectangle {
     id: toolbar
 
+    readonly property bool searchOptionsOpen: searchOptionsPopup.opened
+
+    function toggleSearchOptions() {
+        if (searchOptionsPopup.opened)
+            searchOptionsPopup.close()
+        else
+            searchOptionsPopup.open()
+    }
+
     //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) a
     //: mezőre viszi a fókuszt és megnyitja a keresési beállításokat. A
     //: gazdának NEM kell ismernie az eszköztár belső elemeit — ez a függvény
@@ -849,9 +858,7 @@ Rectangle {
                     font.pixelSize: 14
                     horizontalPadding: 0
                     Accessible.name: qsTr("Search")
-                    onClicked: searchOptionsPopup.opened
-                               ? searchOptionsPopup.close()
-                               : searchOptionsPopup.open()
+                    onClicked: toolbar.toggleSearchOptions()
                 }
                 Rectangle {   // törlő gomb, csak ha van mit törölni
                     objectName: "searchClear"

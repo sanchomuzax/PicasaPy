@@ -290,10 +290,10 @@ Bekapcsolva: **monitor ICM-profil** (`GetICMProfileA`, 1 hívó) + a képbe
 
 ---
 
-## Ami még hátra van (20 tétel)
+## Ami még hátra van (19 tétel)
 
-**Nézet (5):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
-`ID_VIEW_SEARCHVIEW` · `ID_VIEW_AUTO`
+**Nézet (4):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
+`ID_VIEW_AUTO`
 **Fájl (4):** `ID_FILE_EMAIL` · `ID_FILE_EPROCESS` · `ID_FILE_OPEN` ·
 `ID_FILE_OPENINANEDITOR`
 **Eszközök (4):** `ID_TOOLS_BUTTONMGR` · `ID_TOOLS_CONFIG_SCREENSAVER` ·
@@ -445,6 +445,13 @@ található** — nincs hozzá `Preferences` kulcs.
 igével megy (`ShellExecuteW`, `0x0050a740`). Az **`edit` ige a binárisban
 NEM létezik** — ahogy az `explore`/`runas`/`openas` sem. ⇒ nincs külön
 „szerkesztésre megnyitás", és **nem kell szerkesztő-beállítás**.
+
+**„Keresési opciók" (`ID_VIEW_SEARCHVIEW`, `eMenuView`, parancsazonosító `0x9d2b`, #4641):**
+a `searchcontainer/searchbutton` gombot aktiválja (`0x005cbb50` → `0x009cd8a0`),
+vagyis a keresőmező melletti gomb **opciócsoportját nyitja és zárja**. A
+találati sávot **nem** kapcsolja (a korábbi `0x9c8f` párosítás hibás: az a
+`thumbui/fullview` kezelője). A pipa a nyitott állapotot követi. Nálunk: a
+`menuViewSearchOptions` a `MainToolbar.qml` `searchOptionsPopup`-ját kapcsolja.
 
 **„Kis képek" (`ID_VIEW_SMALL`, `eMenuView`, parancsazonosító `0x9cd8`):**
 **láthatósági kapcsoló a CThumbUI könyvtári bélyegképnézetének Nézet

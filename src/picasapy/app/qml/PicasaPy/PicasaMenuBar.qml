@@ -25,6 +25,9 @@ MenuBar {
         (typeof folderHierarchyController !== "undefined")
         ? folderHierarchyController : null
 
+    property bool searchOptionsOpen: false
+    signal searchOptionsToggleRequested()
+
     // #3555: a nyelvváltás megerősítő kérdése a Main.qml-ben él (a
     // ConfirmDialog nem fér el egy MenuBar gyermekeként — annak a default
     // property-je `list<Menu>`). A menütétel csak jelez, ha a választás
@@ -1161,7 +1164,14 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit): keresési opciók
-        PicasaMenuItem { text: qsTr("Search &Options"); placeholder: true }
+        PicasaMenuItem {
+            objectName: "menuViewSearchOptions"
+            text: qsTr("Search &Options")
+            placeholder: false
+            checkable: true
+            checked: bar.searchOptionsOpen
+            onTriggered: bar.searchOptionsToggleRequested()
+        }
         // #4346: az eredeti `Show only big images` láthatósági kapcsolója.
         PicasaMenuItem {
             objectName: "menuViewThumbnailsOnly"
