@@ -755,6 +755,9 @@ def _apply_focal_pixelate_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     #3596: a `Radius` SZÁZALÉK, tartománya `10 … min(W, H)/2` (az
     `Impact` statikus csúszka, az nyers érték marad).
     """
+    # #4941: a hiányos lánc (pl. `PicnikFocalPixelate=1,20.000000;`): a Picasa csendben kihagyja, nem alapértékkel fut.
+    if len(op.params) < 8:
+        return image
     height, width = image.shape[:2]
     return apply_focal_pixelate(
         image,
