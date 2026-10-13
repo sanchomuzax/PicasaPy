@@ -1348,7 +1348,11 @@ Rectangle {
         editorPanel.textFillEnabled = editController.textFillEnabled
         editorPanel.textOpacity = editController.textOpacity
         // #450 (2. lépcső): tipográfia — betűcsalád, méret, B/I/U, igazítás
-        editorPanel.fontFamilyCatalogue = editController.textFontFamilies
+        // #4966: a katalógus állandó, ezért egyszer kapja meg. A másolat
+        // JS-tömböt ad: a nyers hozzárendelés Python-hoz kötött QVariant-ot
+        // tárolna, és minden későbbi olvasás újrahívná a getter-t.
+        if (editorPanel.fontFamilyCatalogue.length === 0)
+            editorPanel.fontFamilyCatalogue = editController.textFontFamilies.slice()
         editorPanel.textFontFamily = editController.textFontFamily
         editorPanel.textFontSize = editController.textFontSize
         editorPanel.fontSizeChoices = editController.fontSizeChoices
