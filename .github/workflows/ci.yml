@@ -55,8 +55,8 @@ jobs:
     outputs:
       kod: ${{ steps.d.outputs.kod }}
       docs: ${{ steps.d.outputs.docs }}
-      darabok: ${{ steps.n.outputs.darabok || '[1,2,3,4]' }}
-      darabszam: ${{ steps.n.outputs.darabszam || '4' }}
+      darabok: ${{ steps.n.outputs.darabok || '[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]' }}
+      darabszam: ${{ steps.n.outputs.darabszam || '16' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,14 +74,13 @@ jobs:
         # kap-e egyáltalán tesztfutást. A hiba iránya néma: nem piros CI,
         # hanem KIMARADT mérés, zöld pipával.
         run: python3 scripts/ci_valtozas.py
-      # 2026-10-09: PR-en, ha kevés app-tesztet érint a változás, EGY darab fut
-      # négy helyett — a Free csomag 20 egyidejű jobjából így kétszer annyi PR
-      # fér el. Push a main-re: mindig négy darab, teljes készlet.
+      # #4922: PR-en az importgráf/QML-kötés szerinti tesztlista adja a
+      # darabszámot; main-pushon a teljes készlet legfeljebb 16 darabra oszlik.
       - id: n
-        if: ${{ github.event_name == 'pull_request' }}
         env:
           PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
-        run: python3 scripts/run_tests.py --darabszam >> "$GITHUB_OUTPUT"
+          PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && steps.d.outputs.kod == 'true' && '1' || '' }}
+        run: python3 scripts/teszt_valasztas.py --darabszam >> "$GITHUB_OUTPUT"
 
   # A két platform KÜLÖN hívás — ld. a `teszt-darabok.yml` fejlécét: egyetlen
   # közös mátrix eredménye egyben látszik, és egy bukó windows-darab a
@@ -167,7 +166,7 @@ jobs:
   # várja kötelező ellenőrzésként. Az soha nem érkezik meg — minden PR
   # örökre „Waiting for status to be reported" állapotban ragad.
   #
-  # Ez a két job a régi NÉVVEL jelent, és csak akkor zöld, ha MIND A NÉGY
+  # Ez a két job a régi NÉVVEL jelent, és csak akkor zöld, ha MIND A 16
   # darab zöld. Így a védelem beállításához nem kell hozzányúlni, és a
   # felosztás haszna is megmarad.
   # ⚠️ #1127: a VERZIÓEMELŐ ág gyorsútja is ITT van, nem külön fájlban.
@@ -206,7 +205,7 @@ jobs:
             exit 1
           fi
 
-      - name: A négy ubuntu-darab mind zöld
+      - name: Az ubuntu-tesztdarabok mind zöldek
         if: ${{ needs.valtozas.outputs.kod == 'true' }}
         run: |
           if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
@@ -245,7 +244,7 @@ jobs:
     needs: [valtozas, darabok-windows]
     if: always()
     steps:
-      - name: A négy windows-darab mind zöld
+      - name: A Windows-mátrix összes darabja zöld
         # ha a mátrix nem futott, nincs mit ellenőrizni
         if: ${{ github.event_name != 'pull_request' && github.event_name != 'push' }}
         run: |
