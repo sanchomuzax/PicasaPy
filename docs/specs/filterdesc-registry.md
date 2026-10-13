@@ -5527,6 +5527,11 @@ smoothing=False)` a `cv2.INTER_NEAREST`-et hívja (`src/picasapy/render/glimmer_
 koordinátalépés és a QEMU-összevetés a 5/d pontban szerepel; a korábbi
 „mechanizmus egyezik” állítás itt visszavonva.
 
+> ⛔ **Helyesbítés (2026-10-13, #4908):** a fenti „nálunk” bekezdés a #4188
+> előtti állapotot írja le (`b5e056bdb`). Ma a `resize_image(smoothing=False)`
+> a 5/d képletét követi (16.16-os fixpontos koordináta, középponthoz igazítva);
+> a cv2-os `INTER_NEAREST` már nincs a fő úton. Ld. 5/d és 5/f.
+
 ### 5/b. A mag kicsinyítéskor a léptékkel nyúlik — LEZÁRVA
 
 A korábbi nyitott kérdés („a 3-as mód magja kicsinyítéskor szélesedik-e?”)
@@ -5859,7 +5864,7 @@ szélen kívüli minta viselkedése itt a közös affine munkavégzőé.
 
 | | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`) | teendő |
 |---|---|---|---|
-| `smoothing=false` mintakoordináta | középpont + float32 → 16.16 csonkolás; az egész lépés ismételt hozzáadása; `sar 16` | `cv2.INTER_NEAREST`; a négy mért méretpárból négy eltér | az OpenCV-hívást cserélni a fenti, bájtra specifikált koordinátamenetre; a négy QEMU-eset legyen bitpontos referencia |
+| `smoothing=false` mintakoordináta | középpont + float32 → 16.16 csonkolás; az egész lépés ismételt hozzáadása; `sar 16` | ⛔ elavult sor (#4188 előtt: `cv2.INTER_NEAREST`). Ma: 16.16-os fixpontos koordináta (`glimmer_ops.resize_image`). Ellenőrizve 2026-10-13: a két QEMU-koordinátasor (5×3→3×2, 4×2→7×5) reprodukálódik | nincs koordináta-teendő. Nincs tárolt pixelszintű natív kimenet a négy méretpárra; ha kell, a `hb.py` harnessben újra kell futtatni |
 | `smoothing=false` súly | egy érvényes BGRA-pixel, súly 1 | egy legközelebbi pixel, de a koordinátatérkép eltér | azonos pixel kiválasztása a natív koordinátából |
 | képen kívüli affine-minta | írás kihagyása, célpuffer változatlan | a tiszta Resize nem hoz létre ilyen koordinátát; ez a függvény nem vizsgálja az affine ági képszél-kitöltést | a hívói célpuffer-inicializálás vizsgálata, mielőtt általános affine-határviselkedést ugyanide emelünk |
 | `smoothing=true` | 5/c: fixpontos doboz/Mitchell-súlyok | négy QEMU-méretpáron bájtra egyezik | nincs mért teendő |
@@ -5968,6 +5973,58 @@ mező-/tulajdonosi kapcsolata [blokkoló]
 - `effects_artistic.apply_pixelate` (`effects_artistic.py:122`): cv2-alapú közelítés (`INTER_AREA` + `INTER_NEAREST`, blokk = a rövidebb oldal %-a). A chain nem hívja.
 
 **Visszavonás.** Ebben a körben egy előzetes megállapításom szerint a natív `ceil(W/pw)` rács eltérhet a `Pixelate` effekt `round(W/Impact)` láncától. Ez **téves volt**: a natív mag nem a `Pixelate` effekté. A `Pixelate` effekt összevetését a 5/c és 5/d szakasz végzi.
+
+### 5/f. ⭐ A `Pixelate` effekt Resize-párja, végig (#4908, 2026-10-13)
+
+*Bizonyítottsági fok: lépésenként, lent. Összkép: **nyitott** — nincs olyan natív futás, amely a két Resize-t egymás után, bájtra, a teljes `Pixelate` láncon mérte.*
+
+**A lánc** (`filterdesc.xml:1191`, a `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml` fájlból, szó szerint):
+
+```xml
+<NestedImageOperation BlendAlpha="{1-(_sldrFade.value/100)}" BlendMode="{_sldrBlendMode.value}" ...>
+  <ResizeImageOperation width="{imagewidth/_sldrImpact.value}" height="{imageheight/_sldrImpact.value}" ignoreObjects="true"/>
+  <ResizeImageOperation width="{imagewidth}" height="{imageheight}" smoothing="false" ignoreObjects="true"/>
+</NestedImageOperation>
+```
+
+`_sldrImpact` 2–150, alap 20; `_sldrBlendMode` 0–9, alap 9; `_sldrFade` 0–100, alap 0.
+
+**Lépések:**
+
+**A. Célméret (Impact → egész).** A két méretparaméter float (`imagewidth/Impact`). A kerekítés: `trunc(v + 0,5)` — pontos `.5`-nél felfelé (#4912, `a6de59e4e`). **Bizonyíték: egy út** (a #4912 kiolvasása és a `tests/render/test_pixelate_kerekites_4912.py`). A QEMU-harness nem mérte: az 5/d harness a Resize-munkavégzőt közvetlenül hívta, a méretkonverziót megkerülte. ⇒ **nyitott** (második út kell).
+
+**B. Első Resize — `smoothing=true`, kicsinyítés (doboz).** Mód: a vízszintes cél/forrás `1/Impact ≤ 1` → 0-s doboz (5/c.1). Súlyok: `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé (5/c.2–3). Alkalmazó: `(Σ w·p + 255) >> 14`, vízszintes menet elöl (5/c.4).
+- Út 1 (statikus): `0x00bcb629`–`0x00bcb659`, `0x00a3f660`, `0x00a426a0` (5/c).
+- Út 2 (QEMU): négy méretpárra a `smoothing=true` bájtra egyezik (5/d.B).
+⇒ **megerősített** (két út). Kiegészítés: a Picasa-exporttal a 48×32-es kicsinyítésen a blokkközepek **94,4%-a** bitre egyezik, a többi 5,6% oka **nincs megnevezve** ⇒ **nyitott**.
+
+**C. Második Resize — `smoothing=false`, nagyítás (legközelebbi szomszéd).** A képlet: 5/d.A. A forráskoordináta:
+`q_x(0) = trunc(float32(0,5·s_x)·65536)`, `dx = trunc(s_x·65536)`, `q_x(i) = q_x(0) + i·dx`, `src_x = q_x >> 16`; y-ra `q_y(y) = trunc(float32((y+0,5)·s_y)·65536)`, `src_y = q_y >> 16`. Súly 1, nincs clamp; a képen kívüli index kimarad.
+- Út 1 (statikus): 5/d.A.
+- Út 2 (QEMU): a 5/d.B két mért koordinátasora (5×3→3×2: `x=[0,2,4]`, `y=[0,2]`; 4×2→7×5: `x=[0,0,1,1,2,3,3]`, `y=[0,0,1,1,1]`).
+- Ellenőrzés 2026-10-13: a `resize_image(..., smoothing=False)` (`glimmer_ops.py`, #4188) mindkét sort reprodukálja (Python-próba a munkafán).
+⇒ **megerősített koordináta-szinten.** A pixelszintű natív kimenet a négy méretpárra nincs tárolva; a bitpontos összevetés nyitott.
+
+**D. Láncolás.** A második Resize bemenete az első kimenete (`small`). Ez a két lépés együtt **nincs natívan mérve**. ⇒ **nyitott.**
+
+**E. Kimenet, BlendMode, Fade.** A `glimmer_artistic.apply_pixelate` (`glimmer_artistic.py`) a `BLEND_MODE_BY_INDEX` táblával és a `fade_alpha`-val keveri a bemenettel. A blendmód-tábla a #3443 mérése, nem a Pixelate-lánc natív bájtos mérése. ⇒ **nyitott** a teljes láncra.
+
+#### Eredeti / nálunk / teendő
+
+| lépés | eredeti | nálunk (`glimmer_artistic.apply_pixelate`) | státusz / teendő |
+|---|---|---|---|
+| A. célméret | `trunc(v+0,5)` (#4912) | `int(width / impact + 0.5)` | egy út; natív mérés kell a konverzióra |
+| B. 1. Resize | doboz, `16383`-súlyok, csonkolás | `resize_image(smoothing=True)` | megerősített (két út); export-egyezés 94,4% — 5,6% oka nyitott |
+| C. 2. Resize | 16.16 középpont, csonkolás, súly 1 | `resize_image(smoothing=False)` | megerősített koordináta-szinten (két út) |
+| D. láncolás | nincs natív mérés | két egymás utáni hívás | nyitott |
+| E. BlendMode/Fade | blend-tábla (#3443) | `apply_blend_mode` + `fade_alpha` | nyitott a teljes láncra |
+
+**Nem a Pixelate-lánc:** `effects_artistic.apply_pixelate` (`INTER_AREA` + `INTER_NEAREST`, blokk = a rövidebb oldal %-a) nem a `Pixelate` effekt. A chain a `glimmer_artistic.apply_pixelate`-et hívja (`chain_glimmer_handlers.py:17,195`). A `effects_artistic.apply_pixelate` csak tesztekből hívott.
+
+**Kész, ha (javasolt, a #4908 eredeti „Kész ha”-ja helyett, mert az a `PixelateImageOperation`/Comicize magjára mutat):**
+- [ ] QEMU-futás (`hb.py` harness, a korlát kimondva: a Resize-objektumok kézzel épülnek): a két Resize egymás után, 24×16 és 5×3 képen, `Impact ∈ {2, 3, 4, 20}`, bájtos összevetés `glimmer_artistic.apply_pixelate` előtti `resize_image`-láncával.
+- [ ] Egy `.5`-ös határeset natívan: `W = 5`, `Impact = 2` (2,5) → a natív célméret 3, nem 2.
+- [ ] Export-egyezés: a 5,6%-os blokkeltérés legalább egy okának megnevezése.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
