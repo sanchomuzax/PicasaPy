@@ -98,6 +98,13 @@ vissza, a worker a közvetlen `0x00992780` ágra jut
 a beállított új dátumra állítja; a hozzáférési és utolsó módosítási időt ez a
 hívás nem adja át, így azokat nem módosítja.
 
+⭐ **2026-10-11 (#4591) — a nem-EXIF ág a katalógust is írja.** A
+`[esp+0xac]` a `thumbindex`-rekord másolatának `+0x18` mezője, a **fájltípus**
+(a másoló: `IThumbDB` `+0xc4` → `0x0043c3f0` → `0x004edf60`); a `== 2` tehát
+„JPEG". Minden más típusnál (videó: 8/10/11) a `SetFileTime` mellett a
+`0x004ef3c0` (eltolás) ill. `0x004ef5a0` (abszolút) a rekord **1. FILETIME-ját**
+is átírja és piszkosnak jelöli. Részletek és mérés: `pmp-database.md` 15.1–15.2.
+
 A teljes `.text` indexfüggetlen pásztázása (`paszta.py`,
 `memoria_kapu()`-val indítva; 2 884 879 utasítás) a `.picasa.ini`-re mutató
 adat-hivatkozásokat a program más részein találta, nem a fenti worker/EXIF-író
@@ -5877,8 +5884,9 @@ rögzített, fájlonként eltérő** időt használ.
 ✅ **LEZÁRVA (2026-09-05, #2304):** hogy az 1. FILETIME a fájl létrehozási
 vagy módosítási ideje-e a forrásrendszeren, és hogy a Picasa frissíti-e
 újraolvasáskor. **Egyik sem:** a kép **metaadat-dátuma**, a beolvasás
-pillanatában rögzítve (egyetlen író: `0x004eeb10`, egyetlen hívó:
-`0x00427898`), és a pásztázó **soha nem frissíti** — az csak a 2. mezőt
+pillanatában rögzítve (beolvasáskori író: `0x004eeb10`, egyetlen hívó:
+`0x00427898`; ⛔ 2026-10-11, #4591: a Dátum és idő beállítása nem-JPEG ága
+is írja — `0x004ef3c0`/`0x004ef5a0`, `pmp-database.md` 15.1), és a pásztázó **soha nem frissíti** — az csak a 2. mezőt
 (a fájl **módosítási** idejét) és a méretet írja felül. A teljes levezetés
 és a mérés: `pmp-database.md` 10. szakasz.
 

@@ -1683,7 +1683,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
     PicasaImportController = _lazy_app_symbol("PicasaImportController")
-    picasa_import_controller = PicasaImportController()
+    picasa_import_controller = PicasaImportController(
+        index_path=data_dir / "index.db",
+        writer_queue=controller._index_iro_sor,
+    )
+    # #4591: az átvett videódátumok után a rács/mappalista újratöltése
+    picasa_import_controller.datesApplied.connect(controller._reload_after_sync)
     engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
     # #4597: a Picasában beállított rejtett-jelszó átvétele (csak ha nálunk
     # még nincs) — sorba állított hívás, hogy a fő szálon fusson.
