@@ -188,6 +188,24 @@ def test_tooltip_kapcsolo_kattintasra_elrejti_es_visszahozza(
     )
 
 
+def _figyeld_az_eltolast(viewer) -> list[float]:
+    """A fiók-eltolás minden változása (#4449 — pelyhes volt Windowson).
+
+    A korábbi őr 50 ms-onként mintavételezett, és lassú gépen két minta
+    között az egész átmenet lefuthatott, így köztes értéket sosem látott.
+    A változásjelzés minden animációs képkockán szól, tehát a köztes érték
+    akkor is rögzül, ha a mintavétel lemaradna."""
+    ertekek: list[float] = []
+    viewer.editorDrawerOffsetChanged.connect(
+        lambda: ertekek.append(viewer.property("editorDrawerOffset"))
+    )
+    return ertekek
+
+
+def _volt_koztes(ertekek: list[float]) -> bool:
+    return any(-279 < e < 0 for e in ertekek)
+
+
 @pytest.mark.parametrize("magassageltolas", (-5, 0, 5))
 def test_ui_atmenet_kapcsolo_ki_es_be_kattinthatoan_vezerli_a_fiok_atmenetet(
     qml_app, qt_app, magassageltolas
@@ -205,20 +223,18 @@ def test_ui_atmenet_kapcsolo_ki_es_be_kattinthatoan_vezerli_a_fiok_atmenetet(
     fiok = _elem(ablak, "toggle_left_drawer")
 
     assert controller.uiTransitionsEnabled is True
+    ertekek = _figyeld_az_eltolast(viewer)
     _kattints(ablak, qt_app, fiok)
     assert controller.editorControlsVisible is False, (
         "a szerkesztőfiók valódi gombja nem váltotta az állapotot"
     )
     assert _varj(
         qt_app,
-        lambda: -279 < viewer.property("editorDrawerOffset") < 0,
-    ), (
-        "bekapcsolt átmenet mellett a szerkesztőfiók nem animálódott"
-    )
-    assert _varj(
-        qt_app,
         lambda: viewer.property("editorDrawerOffset") == -279,
     ), "a szerkesztőfiók átmenete nem ért véget"
+    assert _volt_koztes(ertekek), (
+        f"bekapcsolt átmenet mellett a szerkesztőfiók nem animálódott: {ertekek}"
+    )
 
     _kapcsold_at(ablak, qt_app, "optionsUiTransitionsCheck")
     assert controller.uiTransitionsEnabled is False
@@ -227,10 +243,8 @@ def test_ui_atmenet_kapcsolo_ki_es_be_kattinthatoan_vezerli_a_fiok_atmenetet(
 
     _kapcsold_at(ablak, qt_app, "optionsUiTransitionsCheck")
     assert controller.uiTransitionsEnabled is True
+    ertekek.clear()
     _kattints(ablak, qt_app, fiok)
-    assert _varj(
-        qt_app,
-        lambda: -279 < viewer.property("editorDrawerOffset") < 0,
-    ), (
-        "a visszakapcsolt átmenet nem indult el"
+    assert _varj(qt_app, lambda: _volt_koztes(ertekek)), (
+        f"a visszakapcsolt átmenet nem indult el: {ertekek}"
     )
