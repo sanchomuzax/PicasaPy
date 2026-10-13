@@ -399,7 +399,21 @@ def _legfelso_talalat(item, pont):
     return item
 
 
-def _vorosszem_diagnosztika(window, terulet, gomb) -> str:
+def _latszik_es_meretes(item) -> bool:
+    return (item.isVisible() and item.isEnabled()
+            and item.width() > 0 and item.height() > 0)
+
+
+def _osok_lathatosaga(item) -> str:
+    """Az elemtől a gyökérig: név és láthatóság (+ látszik, - nem látszik)."""
+    lanc = []
+    while item is not None:
+        lanc.append(f"{_nev(item)}:{'+' if item.isVisible() else '-'}")
+        item = item.parentItem()
+    return ">".join(lanc)
+
+
+def _vorosszem_diagnosztika(window, terulet, gomb, edit) -> str:
     """A húzás utáni, Apply előtti állapot: a Windows-bukás okának kiderítéséhez (#4929)."""
     grab = window.mouseGrabberItem()
     kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
@@ -407,6 +421,12 @@ def _vorosszem_diagnosztika(window, terulet, gomb) -> str:
     return (
         f"mouseGrabberItem={_nev(grab) if grab is not None else 'None'}, "
         f"redeyeDragArea.dragging={terulet.property('dragging')}, "
+        f"redeyeDragArea.selW={terulet.property('selW')}, "
+        f"redeyeDragArea.selH={terulet.property('selH')}, "
+        f"régiószám={edit.redeyeRegionCount}, "
+        f"effectChain={edit.effectChain!r}, "
+        f"redeyeApplyButton.isVisible={gomb.isVisible()}, "
+        f"Apply-ősök=[{_osok_lathatosaga(gomb)}], "
         f"Apply-középpont=({kozep.x():.1f}, {kozep.y():.1f}), "
         f"ablak={window.width():.0f}x{window.height():.0f}, "
         f"hit-test={_nev(talalat) if talalat is not None else 'None'}."
@@ -422,7 +442,10 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
         _kattint(window, qt_app, "toggle_left_drawer")
     _kattint(window, qt_app, "editToolRedeye")
     terulet = _elem(window, "redeyeDragArea")
-    assert terulet.isEnabled() and terulet.width() > 0 and terulet.height() > 0
+    gomb = _elem(window, "redeyeApplyButton")
+    assert _var(qt_app, lambda: _latszik_es_meretes(terulet) and _latszik_es_meretes(gomb)), (
+        "a vörösszem húzási területe vagy az Alkalmaz gomb nem látszik a húzás előtt"
+    )
     p0 = terulet.mapToScene(QPointF(terulet.width() * 0.46, terulet.height() * 0.46))
     p1 = terulet.mapToScene(QPointF(terulet.width() * 0.54, terulet.height() * 0.54))
     cel = terulet.window()
@@ -434,7 +457,14 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
                        Qt.KeyboardModifier.NoModifier,
                        QPoint(round(p1.x()), round(p1.y())))
     qt_app.processEvents()
-    diag.append(_vorosszem_diagnosztika(window, terulet, _elem(window, "redeyeApplyButton")))
+    diag.append(_vorosszem_diagnosztika(window, terulet, gomb, edit))
+    assert terulet.property("selW") > 0 and terulet.property("selH") > 0, (
+        "a vörösszem-húzás nem adott kijelölést (selW/selH nulla)"
+    )
+    assert edit.redeyeRegionCount >= 1, "a vörösszem-húzás nem hozott létre régiót"
+    assert _var(qt_app, lambda: _latszik_es_meretes(gomb)), (
+        "az Alkalmaz gomb nem látszik a húzás után"
+    )
     _kattint(window, qt_app, "redeyeApplyButton")
     assert _var(qt_app, lambda: "redeye" in edit.effectChain.casefold()), (
         "a vörösszem-kijelölés alkalmazása nem került a szerkesztési láncba"
