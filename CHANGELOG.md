@@ -7,7 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.90] – 2026-10-13
+
 - A hiányos paraméterű Fókuszpixelezés a Picasához hasonlóan változatlanul hagyja a képet, nem alapértékekkel pixelez (#4941).
+- A paritáslap most már a 7. réteg Picasa-exportokhoz mért effektkimeneteit és eltéréseit is tartalmazza (#4317).
+- A Szemcse effekt az eredeti Picasa véletlenmag-sorát követi, így az export a Picasáéval képpontra egyező szemcsét ad (#4936).
+- A paritásmérő a saját kimenetünket a Picasa-referencia JPEG-kódolásával és az export láncolvasójával hasonlítja; a Hőtérkép, Éjjellátó, Színezés, Kéttónusú és Keret+Vinyetta látszólagos eltérése ezzel eltűnt (#4940).
 
 ## [0.9.89] – 2026-10-13
 
