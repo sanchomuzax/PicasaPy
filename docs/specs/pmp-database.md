@@ -4248,16 +4248,35 @@ beállító a vtábla 48. rése, `0x0071c4f0`):
 | 3 | „… létrehozási dátum alapján" — kulcs: a rekord **1. FILETIME-ja** | `0x0071c59d`; `0x006b9be0` (`[+4]`,`[+8]`) |
 | 5 | „… méret alapján" — kulcs: `+0x14` | `0x0071c5a9`; `0x006b9b69` |
 | 6 | „… név alapján" — kulcs: a név (`+0`) | `0x0071c5b5`; `0x006b9c28` |
-| 8 | „… szín alapján" | `0x0071c5c1`; a rekord-hasonlítóban nincs kulcs (`0x004efd74`: csak 2–7) |
-| **11** | **„Rendezés prioritás szerint"** | `0x0071c5cd`; a rekord-hasonlítóban **nincs kulcs** |
+| 8 | „… szín alapján” | `0x0071c5c1`; a rekord-hasonlítóban nincs kulcs (`0x004efd74`, `0x004efdac`: csak 2–7) |
+| **11** | **„Rendezés prioritás szerint”** | `0x0071c5cd`; a rekord-hasonlítóban **nincs kulcs** |
 | 12 | fordított bejárás, rendezés nélkül | `0x0071c689`, `0x0071c8a7` |
 
-A rekord-hasonlító (`0x004efce0`, hívói `0x0071f220`/`0x0071f270`, az
-összefésülő rendező `0x0071f030`) a 2–7. módokra a `0x006b9b50`
-ugrótábláján (`0x006b9db8`) ágazik; a 8. és a 11. mód ebben **állandó
-`−1`-et** kap. A szín-rendezésnek viszont van kulcsa (`avgcolor`), tehát a
-8. és a 11. mód kulcsa **ezen a hasonlítón kívül** képződik — a 11. mód
-kulcsának forrása ebből nem olvasható ki.
+**A vizsgált bináris út nem a 8-as/11-es kulcsképző.** A `0x0071c4f0`
+beállító a kiválasztott módot a rendezőállapotba írja (`[this+0x2c0]`, illetve
+ha a kontextus elérhető, a hasonlító kontextusában `[ctx+0x554]`). A
+`0x0071c650` a 0. és 12. módon
+kívüli esetekben a képelemek `[item+0xb4]` értékeiből RAM-listát épít, majd
+meghívja a `0x0071f030` általános összefésülő rendezőt. Annak összehasonlítója
+(`0x0071f220`) a nem nulla módokat elérhető kontextus esetén a `0x004efce0`
+rekord-hasonlítóhoz küldi.
+Ez a `[ctx+0x554]-2` választóval kizárólag a 2–7. módot (`0..5`) irányítja a
+`0x006b9b50` ugrótáblára (`0x006b9db8`); a 8. és a 11. mód ágán a hasonlító
+alapértéke `−1` (a fordított irány jelzője ezt `+1`-re fordítja). Ezen a
+láncon tehát **sem a szín-, sem a prioritásmód kulcsa nem olvasható ki**.
+Ez nem bizonyítja, hogy más kódút nem készít vagy tárol ilyen kulcsot.
+
+**Független upstream kontroll:** a `CSelectionNode` `0x00715280` metódusa
+az új bejegyzésnél az argumentumot az elem `[+0xb4]` mezőjébe írja, az elemet
+pedig a `[this+0x32c]` memóriatömb végére fűzi (`0x0071538b`–`0x00715473`);
+a darabszámot a `[this+0x330]` tartja. Az osztály többi metódusában is van
+hozzáférés ezekhez a tömbmezőkhöz (`offset_map.py CSelectionNode`, többek
+között `0x007155b0`, `0x00715880`). Ez külön producer útból megerősíti, hogy
+a vizsgált rendező bemenete futásidejű lista.
+
+A megvizsgált rendezőfüggvények RAM-listát és ideiglenes tömböt használnak;
+ezekben a rutinokban tartós fájlírás nem látszik. Ez nem teljes bináris
+negatív bizonyíték íróra vagy olvasóra.
 
 **Kizárva (a #1645 nyolc helye mellé):** a 859 fájlos `.picasa.ini`-korpusz
 `[Picasa]` és `[.album:…]` szakaszainak egyetlen kulcsa sem sorrend
@@ -4271,18 +4290,21 @@ rendezésimód-oszlop.
 
 ⇒ **A kézi sorrend tárolási helye NINCS MEG**, és az sem mért, hogy egy
 újraindítást túlél-e (a #1645 ezt a tulajdonostól kérte, majd a kérést
-visszavonta). A megszerzés útja — ebben a sorrendben:
+visszavonta). A korábbi bináris hipotézis — hogy a `0x0071c650` →
+`0x0071f030` láncban a 8-as kulcs mellett megtalálható a 11-es kulcsképző —
+**cáfolódott**: a lánc eléri az általános rendezőt, de annak összehasonlító
+8/11 módban kulcsot nem választ. A megszerzés útja — ebben a sorrendben:
 
-1. **bináris:** a 11. mód kulcsképzője. Horgony: a `0x0071c650` (a
-   `CSelectionNode` vtábla 49. rése) a 0. és 12. módon kívül a
-   `[this+0x358]` listát a `0x0071f030`-cal rendezi; a 8. mód
-   (`avgcolor`) kulcsképzőjét megtalálva a 11.-é mellette lesz. Ha a kulcs
-   egy perzisztált mezőből jön, az a tároló; ha az elemek pillanatnyi
-   helyéből, a sorrend munkamenetre szól;
+1. **bináris, író és olvasó út:** a 11-es módhoz rendelt érték íróját,
+   olvasóját és az adatmező/kulcs pontos jelentését kell azonosítani a
+   megvizsgált rendezőláncon kívüli kódban; a negatív állítást indextől
+   független, célzott bináris pásztázással kell alátámasztani.
 2. **viselkedés:** a Colab-os végrehajtón új lépéssor — két kép átrendezése,
-   a Picasa bezárása és újraindítása, utána képernyőkép és a `db3` mappa
-   kiadása. (Ma a végrehajtó kimenete `export`/`picasa_ini`/`kepernyokep`/
-   `ablakmeret` lehet, `db3` nem — a katalógust bővíteni kell.)
+   Picasa bezárása, a db3 kiadása, majd újraindítás után ismételt db3-kiadás
+   és képernyőkép; a két db3-t össze kell vetni, az újraindítás utáni
+   sorrendet pedig ellenőrizni kell. A jelenlegi mérőadat-archívum nem
+   tartalmaz ehhez db3-pillanatképeket. A végrehajtó kimeneti katalógusát
+   `db3`-kiadással bővíteni kell.
 
 ### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
 
@@ -4290,7 +4312,7 @@ visszavonta). A megszerzés útja — ebben a sorrendben:
 |---|---|---|---|
 | **videó dátuma** | `thumbindex.db` 1. FILETIME + NTFS létrehozási idő (15.1) | **NEM veszi át**: a `thumbindex.read_thumb_index` beolvassa a `creation_filetime`-ot, de az `importer.PhotoRecord` nem viszi tovább, és a `db3_atvetel` sem ír dátumot | videónál nincs `taken_at` (`index/sync.py` `_upsert_photo`: `EMPTY_METADATA`), a dátum a befagyasztott első fájlidő (`first_seen_mtime_ns`); a `photos.taken_at_override` oszlop él, a lekérdezések előnyben részesítik (`index/queries.py:22`, `sync.py:1034`), szinkronkor megmarad (`sync.py:1091`), de ma **semmi nem írja**. ⚠️ A saját dátummódosítónk (`app/timestamp_controller.py`) videónál az EXIF-írás hibája után csak Windowson állít létrehozási időt — POSIX-on a módosítás **nem tárolódik sehol** |
 | **videó geotagje** | `imagedata` `lat`/`long`/`geoview` (15.3) | **átveszi**: az `importer.iter_photo_records` típusszűrés nélkül minden fájlrekordot ad, a `db3_atvetel.helyet_atvesz` a hiányzó `geotag=` kulcsot írja (#2336) | `.picasa.ini` `geotag=` (`photos.geotag_ini`), minden médiára |
-| **egyedi sorrend** | **NINCS MEG** (15.4) | nincs mit átvenni | `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — szándékos eltérés |
+| **egyedi sorrend** | **NINCS MEG** (15.4; a vizsgált rendezőlánc nem adja meg a kulcsot) | nincs mit átvenni | `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — az eredetitől való eltérés ténye nincs igazolva |
 
 ### 15.6 A megvalósítandó viselkedés — „Kész, ha"
 
@@ -4329,8 +4351,9 @@ visszavonta). A megszerzés útja — ebben a sorrendben:
 **Egyedi sorrend** — ⛔ **nem megvalósítható, amíg a forrás nincs meg**:
 
 - [ ] a #4591 első „Kész, ha" pontja a sorrendre a 15.4 megszerzési útjának
-      (1. bináris, 2. viselkedés) eredményéig vár; ha az eredmény az, hogy a
-      sorrend munkamenetre szól, a pont **tárgytalan** (nincs mit átvenni).
+      (1. bináris író/olvasó, 2. viselkedés db3 előtte/utána/újraindítás után)
+      eredményéig vár; ha a mérés igazolja, hogy a sorrend csak munkamenetre
+      szól, a pont **tárgytalan** (nincs mit átvenni).
 
 ### 15.7 Nyitott kérdések mérlege (15.)
 
@@ -4342,9 +4365,12 @@ visszavonta). A megszerzés útja — ebben a sorrendben:
 | melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
 | milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
 | hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
-| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645) — az `albums_0.db` kizárva; út: 15.4 (1. a 11. mód kulcsképzője, 2. Colab-lépéssor) |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után) |
 
 *Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
 importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
 **megerősített** az `albums_0.db` kizárására (41/41 + 37/37 méret-azonosság);
-**kódszintű** a videó-geotag átvételére (valódi minta nincs).*
+**kódszintű** a videó-geotag átvételére (valódi minta nincs). A kézi sorrend
+tárolási helye és újraindítás-állósága **nyitott**; a vizsgált rendezőlánc
+utasításszintű lelete csak ezt az útvonalat zárja ki kulcsképzőként, és nem
+bizonyítja a teljes programban író/olvasó hiányát.*
