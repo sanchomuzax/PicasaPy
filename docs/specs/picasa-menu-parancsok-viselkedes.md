@@ -279,10 +279,10 @@ Bekapcsolva: **monitor ICM-profil** (`GetICMProfileA`, 1 hívó) + a képbe
 
 ---
 
-## Ami még hátra van (20 tétel)
+## Ami még hátra van (19 tétel)
 
-**Nézet (5):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
-`ID_VIEW_SEARCHVIEW` · `ID_VIEW_AUTO`
+**Nézet (4):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
+`ID_VIEW_AUTO`
 **Fájl (4):** `ID_FILE_EMAIL` · `ID_FILE_EPROCESS` · `ID_FILE_OPEN` ·
 `ID_FILE_OPENINANEDITOR`
 **Eszközök (4):** `ID_TOOLS_BUTTONMGR` · `ID_TOOLS_CONFIG_SCREENSAVER` ·
@@ -6639,3 +6639,80 @@ történik, nem itt. Ez a `changeloc`/`defaultloc` kezelőben (`0x007d16b0`,
 címekre; `0x007d1900` (168 b), `0x006db040` (1175 b); a beállítás-hármas
 `0x00407630` / `0x004078e0` / `0x00407760`, hívószámok a bináris index
 `xrefs` táblájából.*
+
+
+## `ID_VIEW_SEARCHVIEW` — a keresési opciócsoportot kapcsolja, nem a találati sávot (#4641, 2026-10-13)
+
+### Az azonosító és a kezelő
+
+A menüépítő (`0x00559150`) a `eMenuView::ID_VIEW_SEARCHVIEW` rekordjához a
+`0x9d2b` parancsazonosítót rendeli; a rekord parancsmezője a
+`0x00d6e0c2` címen áll. A `0x005cb990` diszpécser a `0x5cdb34` bájttáblából
+veszi a slotot, majd a `0x5cd9fc` dword-táblából a kezelőt:
+
+| menüazonosító | slot | kezelő | művelet |
+|---|---:|---|---|
+| `0x9d2b` | 68 | `0x005cbb50` | `searchcontainer/searchbutton` aktiválása, majd állapotszinkron (`0x005c90f0`) |
+| `0x9c8f` | 17 | `0x005cbb7a` | `thumbui/fullview` aktiválása, majd állapotszinkron (`0x005c90f0`) |
+
+A `0x005cbb50` ág a `0x00c8f448` címen lévő `searchcontainer/searchbutton`
+nevet adja át a `0x009cd8a0` gombaktiváló segédnek, majd meghívja a
+`0x005c90f0` menüállapot-frissítőt. A segéd a `ytButtonNode` vtable `+0x78`
+slotján át a `0x00a65170` metódust hívja; ez a gomb futásidejű
+`[this+0x359]` rejtettségi flagjét váltja. A frissítő a `0x9d2b` pipáját a
+`searchcontainer/searchbutton` csomópont `+0x359` rejtettségi állapotából
+számolja; a `0x9c8f` pipája ezzel szemben a `thumbui/fullview` csomóponttól
+függ. Ez a két külön kódrészlet megerősíti a menüépítő azonosítóját és a
+diszpécser útvonalát.
+
+### Mit nyit meg, és milyen állapotot tart
+
+A `searchcontainer.tre:19–28` szerint a `searchcontainer/searchbutton`
+alapból rejtett gomb; `Property showtarget thumbui/searchgroupcontainer`
+kapcsolja hozzá a keresési opciócsoportot. A
+`thumbui.tre:554–556` a `thumbui/searchgroupcontainer` elemet szintén
+alapból rejtettként definiálja. A menüparancs tehát a gomb műveletét futtatja,
+amely ezt a keresési szűrőcsoportot nyitja/zárja. A menü pipaállapota a gomb
+futásidejű rejtettségi állapotát követi; a megvizsgált gombkezelő útvonal
+`0x005cbb50` → `0x009cd8a0` → `0x00a65170` nem olvas vagy ír
+`Preferences`-kulcsot.
+
+Ez **nem** a keresési találati sáv kapcsolója. A találati sáv a különálló,
+gyökérhez kötött `searchoptions/searchbackground`; a `Search Result:` felirat
+és a találatszöveg a `searchoptions_text.tre` / `searchoptions.tre` elemei.
+Ezekre a `0x9d2b` kezelőág nem hivatkozik.
+
+**Bizonyítottsági fok: megerősített.** A menüépítő azonosítója, a binárisból
+kiolvasott diszpécsertáblák és a `0x005c90f0` pipaszinkronja egymástól
+független útvonalon ugyanazt a `0x9d2b` → `searchcontainer/searchbutton`
+kapcsolatot adják; a `.tre` erőforrás megnevezi a gomb célcsoportját.
+
+### Cáfoló próba és a korábbi spec helyesbítése
+
+A korábbi táblázat hibásan a `0x9c8f`-et kötötte a keresőgombhoz, és a
+`0x9d2b`-t SMALL pipaállapotként sorolta be. A bináris tábláinak újraolvasása
+ezt megcáfolja: `0x9c8f` → slot 17 → `0x005cbb7a` (`thumbui/fullview`),
+míg `0x9d2b` → slot 68 → `0x005cbb50` (`searchcontainer/searchbutton`).
+A `0x005c90f0` pipa-frissítője ugyanezt a párosítást adja. A javított kezelő-
+térkép a `picasa-megjelenitesi-modok.md` táblájában van.
+
+### Eredeti / nálunk / teendő
+
+| | Eredeti | PicasaPy | Teendő |
+|---|---|---|---|
+| Parancs | `ID_VIEW_SEARCHVIEW`, `0x9d2b`; a `searchcontainer/searchbutton` műveletét hívja | A `PicasaMenuBar.qml` „Search Options” tétele még `placeholder: true` (`1164. sor`) | A menüpontot kösd a meglévő `MainToolbar.qml` `searchOptionsPopup` állapotához |
+| Hatás | A keresési opciócsoport nyitása/zárása; a pipa a futásidejű gombállapotot követi | A felső eszköztár gombja már nyitja/zárja a `searchOptionsPopup`-ot (`852–854. sor`) | Ugyanazt a popupot és egyetlen `opened` állapotot használja a menü és az eszköztár |
+| Találati sáv | Külön `searchoptions/searchbackground`; nem ezt kapcsolja a menü | A találati összefoglaló a popup tartalmában van | A menü ne vezessen be külön találatisáv-kapcsolót; a találatszöveg a lekérdezésből frissüljön |
+
+**Javasolt fejlesztési jegy címe:** Nézet ▸ Keresési opciók menüpont bekötése a meglévő keresési popuphoz.
+
+**Kész, ha:**
+
+1. A Nézet ▸ Keresési opciók a felső eszköztár gombjával azonos popupot nyitja és zárja.
+2. A menüpont pipája minden belépési útról (menü, eszköztárgomb, fókuszsegéd) a popup `opened` állapotát mutatja.
+3. A keresési találat-összefoglaló a popup tartalma marad; a menüpont nem törli a keresést és nem kapcsol külön találati sávot.
+4. Az állapot futásidejű; a megvalósítás nem vezet be hozzá új tartós beállításkulcsot.
+
+A #4641 találatisáv-kapcsolóra vonatkozó hipotézise negatív eredménnyel
+lezárható: a `0x9d2b` parancs a keresési opciócsoportot kapcsolja. A
+placeholder menüpont meglévő popuphoz kötése a fenti című fejlesztési munka.

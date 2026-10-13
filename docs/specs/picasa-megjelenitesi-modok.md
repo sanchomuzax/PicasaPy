@@ -688,15 +688,14 @@ checkable, és a pipa azon a soron jelenik meg.
 
 *1. switch (byte-tábla `0x5cdb34`, dword-tábla `0x5cd9fc`, lefedés 0x9c42–0x9d40):*
 
-| ID | bit | kezelő | tartalom |
+| ID | slot | kezelő | tartalom |
 |---|---|---|---|
-| `0x9c8f` | 68 | `0x5cbb50` | `searchcontainer/searchbutton` → `0x5c90f0` |
+| `0x9c8f` | 17 | `0x5cbb7a` | `thumbui/fullview` → `0x5c90f0` |
 | `0x9c9e` | 9 | `0x5cbbad` | **`0x5c9300` = ShowHidden** |
 | `0x9cd8` | 55 | `0x5cbbb9` | `0x5c94e0` = Show only big images |
 | `0x9d1f` | 65 | `0x5cbc3e` | AUTO (átalakító-setter, lásd 6. szakasz) |
-| `0x9d2a` | – | – | SMALLTHUMBNAILS (pipa-szinkron, 0x5c90f0) |
-| `0x9d2b` | – | – | SMALL (pipa-szinkron) |
-| `0x9d72` | – | – | **Display Mode felirat / EnableColorManagement pipa** |
+| `0x9d2a` | 67 | `0x5cbb65` | `thumbui/albumview` → `0x5c90f0` |
+| `0x9d2b` | 68 | `0x5cbb50` | `searchcontainer/searchbutton` → `0x5c90f0` |
 
 *2. switch (byte-tábla `0x5cde04`, dword-tábla `0x5cdc30`, lefedés 0x9d44–0xa02c — a teljes menüsáv-diszpécser):*
 
