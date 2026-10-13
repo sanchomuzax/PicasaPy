@@ -9,6 +9,7 @@ készletet indít. A Python-importoknál az AST a függvények törzsét is bej�
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import math
 import os
@@ -50,11 +51,27 @@ MAX_PR_SHARDS = 20
 # Mérés nélküli projektnél az ismert készletből választott konzervatív
 # fájlszám. A tényleges időt ilyenkor nem becsüljük meg.
 FILES_PER_SHARD_WITHOUT_TIMINGS = 30
-MAX_SELECTED_FRACTION = 0.6
 # A nem-app fájlok korábbi teljes futásának összesített mérési kulcsa.
 # Teljes készletnél ez a súlyozást és a darabszámot segíti, nem futtatási egység.
 NON_APP_UNIT = "tests --ignore=tests/app"
-_FULL_TRIGGER_FILES = frozenset({"pyproject.toml"})
+# Ezek a fájlok minden tesztet érintenek: a függőséglista és a választó maga
+# (a választó hibája minden további kiválasztást elronthatna).
+_FULL_TRIGGER_FILES = frozenset({
+    "pyproject.toml",
+    "packaging/qt-runtime-deps.txt",
+    "scripts/teszt_valasztas.py",
+    "scripts/teszt_valasztas_importok.py",
+})
+# A visszakeresésnél ezeket a mappákat nem olvassuk: nem futtatható kódot
+# tartalmaznak, és a fájlnév-hivatkozás itt nem jelent futási függést.
+_HIVATKOZAS_KIHAGYOTT_UTAK = frozenset({".git", "docs", "changelog.d"})
+_HIVATKOZAS_KIHAGYOTT_MAPPAK = frozenset({"__pycache__", ".venv", "venv", "node_modules"})
+# A futásidő-tábla a tesztneveket mérési adatként tartalmazza, és csak a
+# darabolást befolyásolja; a benne szereplő név nem futási függés.
+_HIVATKOZAS_KIHAGYOTT_FAJLOK = frozenset({"scripts/teszt_idok.json"})
+_HIVATKOZAS_MAX_BAJT = 1_000_000
+# Ahol egy ismeretlen fájl hatása nem követhető, ott marad a teljes készlet.
+_TELJES_HA_NEM_HIVATKOZOTT = ("src/", "scripts/", "packaging/", ".github/")
 WINDOWS_SENSITIVE_TESTS = frozenset({
     # Tényleges Windows-futtatásban eltérő QML-geometria, útvonal vagy
     # natív fájlművelet.
@@ -190,12 +207,143 @@ def windows_only_tests(
 
 
 
+def _mappa_tesztjei(all_tests: Sequence[str], mappa: str) -> set[str]:
+    """A megadott mappa alatti tesztek; üres mappa a teljes készlet."""
+    prefix = f"{mappa}/" if mappa else ""
+    return {test for test in all_tests if test.startswith(prefix)}
+
+
+def _conftest_tesztjei(all_tests: Sequence[str], path: str) -> set[str]:
+    """A conftest.py hatóköre pytest szerint: a mappája alatti tesztek."""
+    mappa = Path(path).parent.as_posix()
+    return _mappa_tesztjei(all_tests, "" if mappa == "." else mappa)
+
+
+def _szovegfajlok(root: Path) -> Iterable[tuple[str, str]]:
+    """A repó (dokumentáció nélküli) szövegfájljai: relatív útvonal és tartalom."""
+    for dirpath, dirnames, filenames in os.walk(root):
+        mappa = Path(dirpath).relative_to(root).as_posix()
+        mappa = "" if mappa == "." else mappa
+        dirnames[:] = [
+            nev for nev in dirnames
+            if nev not in _HIVATKOZAS_KIHAGYOTT_MAPPAK
+            and f"{mappa}/{nev}".lstrip("/") not in _HIVATKOZAS_KIHAGYOTT_UTAK
+        ]
+        for nev in filenames:
+            rel = f"{mappa}/{nev}".lstrip("/")
+            fajl = root / rel
+            try:
+                if fajl.stat().st_size > _HIVATKOZAS_MAX_BAJT:
+                    continue
+                szoveg = fajl.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            yield rel, szoveg
+
+
+def _import_nevek(node: ast.AST) -> list[str]:
+    """Az import-utasítás modulneveinek és importált neveinek listája."""
+    if isinstance(node, ast.Import):
+        return [alias.name for alias in node.names]
+    if isinstance(node, ast.ImportFrom):
+        return [node.module or ""] + [alias.name for alias in node.names]
+    return []
+
+
+def _kodban_hivatkozik(szoveg: str, needles: set[str]) -> bool:
+    """Python-forrásban igaz, ha a nevet import vagy futási szövegkonstans hozza.
+
+    A komment és a docstring („a `tools/golden/compare_render.py` mércéjével”)
+    nem futási függés, ezért nem számít. Ha a fájl nem olvasható, óvatosságból igaz.
+    """
+    try:
+        fa = ast.parse(szoveg)
+    except SyntaxError:
+        return True
+    dokumentumok = {
+        id(node.body[0].value)
+        for node in ast.walk(fa)
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.body and isinstance(node.body[0], ast.Expr)
+        and isinstance(node.body[0].value, ast.Constant)
+    }
+    for node in ast.walk(fa):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if id(node) not in dokumentumok and any(n in node.value for n in needles):
+                return True
+        for nev in _import_nevek(node):
+            if any(n in nev for n in needles):
+                return True
+    return False
+
+
+def _hivatkozo_fajlok(root: Path, path: str) -> list[str]:
+    """A nevét vagy útvonalát futásban említő fájlok (a fájl maga nélkül)."""
+    needles = {path, Path(path).name}
+    if path.endswith(".py"):
+        needles.add(Path(path).stem)
+    talalt = []
+    for rel, szoveg in _szovegfajlok(root):
+        if rel in _HIVATKOZAS_KIHAGYOTT_FAJLOK or rel == path:
+            continue
+        if not any(n in szoveg.replace("\\", "/") for n in needles):
+            continue
+        # A Python-forrást eredeti szövegén elemezzük: a per-jel átírás törné az AST-t.
+        if rel.endswith(".py") and not _kodban_hivatkozik(szoveg, needles):
+            continue
+        talalt.append(rel)
+    return sorted(talalt)
+
+
+def _teszt_mappa_dontes(path: str, all_tests: Sequence[str]) -> Selection:
+    """Tesztmappában hivatkozás nélküli fájl: a .py-t nem tölti be pytest, az adatot a mappa."""
+    if path.endswith(".py"):
+        return Selection((), False, f"nem betöltött tesztsegéd vagy törölt teszt: {path}")
+    for mappa in Path(path).parents:
+        nev = mappa.as_posix()
+        if nev in {"tests", "."}:
+            break
+        local = _mappa_tesztjei(all_tests, nev)
+        if local:
+            return Selection(tuple(sorted(local)), False, f"tesztadat a mappájának tesztjei: {path}")
+    return Selection(tuple(all_tests), True, f"tesztadat, amelynek nincs fogyasztója: {path}")
+
+
+def _passziv_fajl(
+    root: Path,
+    path: str,
+    all_tests: Sequence[str],
+    kiserult: frozenset[str],
+) -> Selection:
+    """Import-gráfon kívüli fájl: a nevét említő tesztek és szövegfájlok.
+
+    Ha egy hivatkozó fájl maga teljes készletet kér (pl. conftest), az
+    öröklődik. Hivatkozás nélkül a fájl nem tölthető be, ezért csak a
+    teljes készlet ott marad, ahol a kód ismeretlen módon olvashatja.
+    """
+    tests = set(_test_files_referencing(root, all_tests, path))
+    refs = [rel for rel in _hivatkozo_fajlok(root, path) if rel not in kiserult]
+    if refs:
+        alsz = select_tests(root, refs, _kiserult=kiserult | {path})
+        if alsz.teljes:
+            return alsz
+        tests.update(alsz.fajlok)
+    if tests:
+        return Selection(tuple(sorted(tests)), False, f"nevét említő fájlok: {path}")
+    if path.startswith("tests/"):
+        return _teszt_mappa_dontes(path, all_tests)
+    if "/" not in path or path.startswith(_TELJES_HA_NEM_HIVATKOZOTT):
+        return Selection(tuple(all_tests), True, f"nem hivatkozott fájl, hatása nem követhető: {path}")
+    return Selection((), False, f"nem hivatkozott, futásra nem hat: {path}")
+
+
 def select_tests(
     root: Path,
     changed: Sequence[str] | None,
     *,
     pyproject_version_only: bool = False,
     force_full: bool = False,
+    _kiserult: frozenset[str] = frozenset(),
 ) -> Selection:
     """Válassza ki a diff által érintett teszteket; bizonytalanságnál mindet."""
     all_tests = discover_tests(root)
@@ -208,11 +356,9 @@ def select_tests(
 
     selected: set[str] = set(smoke)
     modules: set[str] = set()
+    module_paths: dict[str, str] = {}
     direct_consumers: dict[str, set[str]] = {}
     qml_paths: list[str] = []
-    source_files = 0
-    uncertainty: list[str] = []
-    actionable = False
 
     for raw in changed:
         path = raw.replace("\\", "/").removeprefix("./")
@@ -220,25 +366,24 @@ def select_tests(
             if path == "pyproject.toml" and pyproject_version_only:
                 continue
             return Selection(tuple(all_tests), True, f"teljes készletet kiváltó fájl: {path}")
-        if path.endswith("/conftest.py") or path == "conftest.py":
-            return Selection(tuple(all_tests), True, f"közös pytest-beállítás változott: {path}")
-        if path.startswith("tests/support/"):
-            return Selection(tuple(all_tests), True, "a tests/support közös segédei változtak")
+        if path == "conftest.py" or path.endswith("/conftest.py"):
+            hatokor = _conftest_tesztjei(all_tests, path)
+            if hatokor == all_set:
+                return Selection(tuple(all_tests), True, f"közös pytest-beállítás változott: {path}")
+            selected.update(hatokor)
+            continue
         if path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml")):
             readers = _test_files_referencing(root, all_tests, path)
             if readers:
                 selected.update(readers)
-                actionable = True
                 continue
             return Selection(
                 tuple(all_tests), True,
                 f"CI-fájlhoz nem található közvetlen tesztőr: {path}",
             )
-        if path.startswith((".github/", "packaging/")):
-            return Selection(tuple(all_tests), True, f"közös CI/csomagolási fájl változott: {path}")
+        if path.startswith(".github/"):
+            return Selection(tuple(all_tests), True, f"közös CI-fájl változott: {path}")
         if path == "CHANGELOG.md" or path.startswith("changelog.d/"):
-            continue
-        if path == "pyproject.toml" and pyproject_version_only:
             continue
         if path.startswith("docs/"):
             fajlnev = Path(path).name
@@ -251,28 +396,15 @@ def select_tests(
                     continue
                 if path in content or fajlnev in content:
                     selected.add(test)
-                    actionable = True
             continue
         if path in {"README.md", "LICENSE", "CONTRIBUTING.md"}:
             continue
         if path in all_set:
             selected.add(path)
-            actionable = True
-            continue
-        if path.startswith("tests/") and path.endswith(".py"):
-            module = _module_name(path, root_kind="tests")
-            if module:
-                modules.add(module)
-                modules.add(Path(path).stem)
-                actionable = True
-                continue
-            uncertainty.append(path)
             continue
         if path.startswith("src/picasapy/"):
             if path.endswith(".qml"):
                 qml_paths.append(path)
-                source_files += 1
-                actionable = True
                 continue
             if path.startswith("src/picasapy/app/i18n/") and path.endswith((".ts", ".qm")):
                 selected.update(test for test in I18N_TESTS if test in all_set)
@@ -284,14 +416,12 @@ def select_tests(
                         continue
                     if Path(path).name in content:
                         selected.add(test)
-                actionable = True
                 continue
             if path.startswith("src/picasapy/help/") and path.endswith(".md"):
                 help_tests = {test for test in HELP_TESTS if test in all_set}
                 if not help_tests:
                     return Selection(tuple(all_tests), True, "a súgó tartalmához nem található őrteszt")
                 selected.update(help_tests)
-                actionable = True
                 continue
             if path.startswith("src/picasapy/help/") and Path(path).name in {
                 ".last_documented_commit", ".update.log"
@@ -299,59 +429,43 @@ def select_tests(
                 helper_test = "tests/scripts/test_kiadas_szukseges_1319.py"
                 if helper_test in all_set:
                     selected.add(helper_test)
-                    actionable = True
                     continue
             if path.endswith(".py"):
                 module = _module_name(path, root_kind="source")
                 if module:
                     modules.add(module)
+                    module_paths[module] = path
                     direct_consumers[module] = _test_files_referencing(
                         root, all_tests, path
                     )
-                    source_files += 1
-                    actionable = True
                     continue
-            uncertainty.append(path)
-            continue
         if path.startswith("scripts/") and path.endswith(".py"):
             module = _module_name(path, root_kind="scripts")
             if module:
                 modules.add(module)
+                module_paths[module] = path
                 direct_consumers[module] = _test_files_referencing(
                     root, all_tests, path
                 )
-                source_files += 1
-                actionable = True
                 continue
-        if path.startswith("scripts/"):
-            readers = _test_files_referencing(root, all_tests, path)
-            if readers:
-                selected.update(readers)
-                actionable = True
-                continue
-        # A fentieken kívüli adat, beállítás vagy új forrásfajta hatását nem
-        # lehet megbízhatóan az importgráfból követni.
-        uncertainty.append(path)
-
-    if uncertainty:
-        return Selection(
-            tuple(all_tests), True,
-            "nem követhető fájltípus vagy útvonal: " + ", ".join(uncertainty[:4]),
-            tuple(uncertainty),
-        )
-    if source_files >= 20:
-        return Selection(tuple(all_tests), True, "nagy, legalább 20 forrásfájlos átalakítás")
+        alsz = _passziv_fajl(root, path, all_tests, _kiserult)
+        if alsz.teljes:
+            return alsz
+        selected.update(alsz.fajlok)
 
     if modules:
         try:
             for module, consumers in _dependento_tesztek(root, modules).items():
                 consumers.update(direct_consumers.get(module, ()))
-                if not consumers:
-                    return Selection(
-                        tuple(all_tests), True,
-                        f"a forrás importgráfjában nincs biztos tesztfogyasztó: {module}",
-                    )
-                selected.update(consumers & all_set)
+                if consumers:
+                    selected.update(consumers & all_set)
+                    continue
+                # Egyetlen teszt sem importálja (közvetve sem): csak név szerinti
+                # hivatkozás futtathatja, azt keressük.
+                alsz = _passziv_fajl(root, module_paths[module], all_tests, _kiserult)
+                if alsz.teljes:
+                    return alsz
+                selected.update(alsz.fajlok)
         except ValueError as exc:
             return Selection(tuple(all_tests), True, f"az AST-importgráf bizonytalan: {exc}")
     if qml_paths:
@@ -385,14 +499,8 @@ def select_tests(
                 "QML-változáshoz nem található közvetlen fogyasztóteszt",
             )
         selected.update(qml_tests)
-        actionable = True
-
-    if not actionable:
-        # Ismert dokumentáció-/változásnapló-diffnél csak a rövid füstkészlet
-        # marad. Minden más útvonal fent már teljes készletre esett vissza.
-        return Selection(tuple(smoke), False, "csak dokumentáció/verzió/változásnapló")
-    if len(selected) > MAX_SELECTED_FRACTION * len(all_tests):
-        return Selection(tuple(all_tests), True, "a kiválasztás a készlet több mint 60%-át érinti")
+    if selected == set(smoke):
+        return Selection(tuple(smoke), False, "nincs tesztet érintő változás: csak a füstkészlet")
     return Selection(tuple(sorted(selected)), False, "érintett tesztek + füstkészlet")
 
 

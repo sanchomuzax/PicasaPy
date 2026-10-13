@@ -102,10 +102,10 @@ def test_qml_valtozasnal_a_teljes_qml_funkcionalis_keszlet_fut(repo: Path) -> No
     "ut",
     [
         "tests/conftest.py",
-        "tests/app/conftest.py",
-        "tests/app/qml_functional/conftest.py",
-        "tests/support/segitseg.py",
+        "conftest.py",
         "scripts/run_tests.py",
+        "scripts/teszt_valasztas.py",
+        "scripts/teszt_valasztas_importok.py",
         ".github/workflows/ci.yml",
         ".github/workflows/teszt-darabok.yml",
         "packaging/qt-runtime-deps.txt",
@@ -116,6 +116,171 @@ def test_kozos_beallitasok_valtozasanal_teljes_keszletet_valaszt(repo, ut: str) 
 
     assert dontes.teljes, ut
     assert set(dontes.fajlok) == set(tv.discover_tests(repo))
+
+
+def test_mappa_conftestje_csak_a_mappaja_alatti_teszteket_valasztja(repo: Path) -> None:
+    dontes = tv.select_tests(repo, ["tests/app/qml_functional/conftest.py"])
+
+    assert not dontes.teljes
+    assert "tests/app/qml_functional/test_nev.py" in dontes.fajlok
+    assert "tests/app/test_nem_qml.py" not in dontes.fajlok
+
+
+def test_tesztsegedet_a_nevevel_hivatkozo_teszt_valasztja_nem_a_teljes_keszletet(
+    repo: Path,
+) -> None:
+    (repo / "tests/support").mkdir(exist_ok=True)
+    (repo / "tests/support/segitseg.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "tests/test_hasznalja.py").write_text(
+        "from tests.support.segitseg import x\n", encoding="utf-8"
+    )
+
+    dontes = tv.select_tests(repo, ["tests/support/segitseg.py"])
+
+    assert not dontes.teljes
+    assert "tests/test_hasznalja.py" in dontes.fajlok
+    assert "tests/test_kozvetlen.py" not in dontes.fajlok
+
+
+def test_hivatkozas_nelkuli_tesztsegedet_nem_tolt_be_pytest_ezert_nem_teljes(
+    repo: Path,
+) -> None:
+    (repo / "tests/helper_nincs.py").write_text("x = 1\n", encoding="utf-8")
+
+    dontes = tv.select_tests(repo, ["tests/helper_nincs.py"])
+
+    assert not dontes.teljes
+    assert set(dontes.fajlok) == set(tv.SMOKE_TESTS)
+
+
+def test_torolt_teszt_neve_a_meresi_tablaban_nem_teljes_keszlet(repo: Path) -> None:
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts/teszt_idok.json").write_text(
+        '{"tests/test_torolt.py": 4.0}\n', encoding="utf-8"
+    )
+
+    dontes = tv.select_tests(repo, ["tests/test_torolt.py"])
+
+    assert not dontes.teljes
+    assert set(dontes.fajlok) == set(tv.SMOKE_TESTS)
+
+
+def test_docs_emlites_nem_szamit_tesztsegednel(repo: Path) -> None:
+    (repo / "tests/support").mkdir(exist_ok=True)
+    (repo / "tests/support/magany.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "docs").mkdir()
+    (repo / "docs/leiras.md").write_text("A magany.py segédet említi.\n", encoding="utf-8")
+
+    dontes = tv.select_tests(repo, ["tests/support/magany.py"])
+
+    assert not dontes.teljes
+    assert set(dontes.fajlok) == set(tv.SMOKE_TESTS)
+
+
+def test_docstringben_emlitett_eszkoz_nem_huzza_be_a_forrast(repo: Path) -> None:
+    (repo / "tools").mkdir()
+    (repo / "tools/eszkoz_4922.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "src/picasapy/leiras.py").write_text(
+        '"""A mércéje: `tools/eszkoz_4922.py` (# komment is)."""\n'
+        "# tools/eszkoz_4922.py\n"
+        "x = 1\n",
+        encoding="utf-8",
+    )
+
+    dontes = tv.select_tests(repo, ["tools/eszkoz_4922.py"])
+
+    assert not dontes.teljes
+    assert set(dontes.fajlok) == set(tv.SMOKE_TESTS)
+
+
+def test_kodbeli_szovegreferencia_a_forrast_es_a_tesztjeit_is_behuzza(repo: Path) -> None:
+    (repo / "tools").mkdir()
+    (repo / "tools/eszkoz_4922.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "src/picasapy/futtato.py").write_text(
+        'SZKRIPT = "tools/eszkoz_4922.py"\n', encoding="utf-8"
+    )
+    (repo / "tests/test_futtato.py").write_text(
+        "from picasapy import futtato\n", encoding="utf-8"
+    )
+
+    dontes = tv.select_tests(repo, ["tools/eszkoz_4922.py"])
+
+    assert not dontes.teljes
+    assert "tests/test_futtato.py" in dontes.fajlok
+
+
+def test_tesztadat_a_nevet_hivatkozo_teszttel_fut(repo: Path) -> None:
+    adat = "tests/app/qml_functional/data/minta_4922.json"
+    (repo / adat).parent.mkdir(parents=True)
+    (repo / adat).write_text("{}\n", encoding="utf-8")
+    (repo / "tests/app/test_adat_nev.py").write_text(
+        'ADAT = "minta_4922.json"\n', encoding="utf-8"
+    )
+
+    dontes = tv.select_tests(repo, [adat])
+
+    assert not dontes.teljes
+    assert "tests/app/test_adat_nev.py" in dontes.fajlok
+    assert "tests/app/test_nem_qml.py" not in dontes.fajlok
+
+
+def test_nevtelen_tesztadat_a_mappaja_tesztjeit_futtatja(repo: Path) -> None:
+    adat = "tests/app/qml_functional/data/nevtelen_4922.json"
+    (repo / adat).parent.mkdir(parents=True)
+    (repo / adat).write_text("{}\n", encoding="utf-8")
+
+    dontes = tv.select_tests(repo, [adat])
+
+    assert not dontes.teljes
+    assert "tests/app/qml_functional/test_nev.py" in dontes.fajlok
+    assert "tests/app/test_nem_qml.py" not in dontes.fajlok
+
+
+def test_eszkozkonfiguracio_hivatkozas_nelkul_nem_teljes(repo: Path) -> None:
+    (repo / ".codex").mkdir()
+    (repo / ".codex/hooks.json").write_text("{}\n", encoding="utf-8")
+
+    dontes = tv.select_tests(repo, [".codex/hooks.json"])
+
+    assert not dontes.teljes
+    assert set(dontes.fajlok) == set(tv.SMOKE_TESTS)
+
+
+def test_nev_nelkul_nem_importalt_forrasmodul_teljes_keszlet(repo: Path) -> None:
+    # Dinamikus import (`import_module(f"...{nev}")`) nem látszik a gráfban,
+    # ezért a név nélküli, senki által nem importált modul marad teljes.
+    (repo / "src/picasapy/elszigetelt.py").write_text("x = 1\n", encoding="utf-8")
+
+    dontes = tv.select_tests(repo, ["src/picasapy/elszigetelt.py"])
+
+    assert dontes.teljes
+
+
+def test_nev_szerint_inditott_forrasmodult_a_nevet_emlito_teszt_futtatja(repo: Path) -> None:
+    (repo / "src/picasapy/elszigetelt.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "tests/test_inditja.py").write_text(
+        'SZAMITOGEP = ["python", "-m", "picasapy.elszigetelt"]\n', encoding="utf-8"
+    )
+
+    dontes = tv.select_tests(repo, ["src/picasapy/elszigetelt.py"])
+
+    assert not dontes.teljes
+    assert "tests/test_inditja.py" in dontes.fajlok
+
+
+def test_tobb_mint_hatvan_szazalekot_erinto_modul_a_pontos_fogyasztoit_adja(
+    repo: Path,
+) -> None:
+    # 26 teszt közül 17 (= 2 + 15) importálja a modult: a 60%-os határ fölött.
+    sokan = [f"tests/test_sok_{i}.py" for i in range(15)]
+    for ut in sokan:
+        (repo / ut).write_text("from picasapy import forras\n", encoding="utf-8")
+
+    dontes = tv.select_tests(repo, ["src/picasapy/forras.py"])
+
+    assert not dontes.teljes
+    assert set(sokan) <= set(dontes.fajlok)
+    assert "tests/app/test_nem_qml.py" not in dontes.fajlok
 
 
 def test_pyproject_csak_verziosora_es_a_changelogokra_fustkeszletet_valaszt(
