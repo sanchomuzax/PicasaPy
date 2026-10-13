@@ -201,10 +201,22 @@ def mintakep(kep: np.ndarray) -> np.ndarray:
 
     A `QuantizePalette` hívója (`0x00bb5bd0`) a lépték MINDKÉT irányban
     `W / 50` — ez a kép saját quirkje, nem a `pontminta_racs` szabálya
-    (ld. ott a `diag(lepes_x, lepes_y)` megjegyzést)."""
-    szelesseg = kep.shape[1]
-    leptek = float(np.float32(szelesseg / float(MINTA_OLDAL)))
-    return pontminta_racs(kep, MINTA_OLDAL, MINTA_OLDAL, leptek, leptek)
+    (ld. ott a `diag(lepes_x, lepes_y)` megjegyzést). A natív cél-téglalap
+    a sormagasságot is külön korlátozza: `Y1 = min(50, floor(float32(H *
+    float32(1 / leptek))))`. Ez a határ a forrásindex érvényességétől
+    függetlenül nullázza az utána következő mintasorokat."""
+    magassag, szelesseg = kep.shape[:2]
+    lepes = np.float32(szelesseg / float(MINTA_OLDAL))
+    leptek = float(lepes)
+    minta = pontminta_racs(kep, MINTA_OLDAL, MINTA_OLDAL, leptek, leptek)
+
+    reciprok = np.float32(np.float32(1.0) / lepes)
+    sorhatar = min(
+        MINTA_OLDAL,
+        int(np.floor(float(np.float32(magassag) * reciprok))),
+    )
+    minta[sorhatar:] = 0
+    return minta
 
 
 def oktree_epit(minta: np.ndarray, steps: int, melyseg: int = MELYSEG) -> _Csomopont:
