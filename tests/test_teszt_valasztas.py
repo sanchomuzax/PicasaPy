@@ -223,12 +223,32 @@ def test_teljes_keszlet_merese_a_nem_app_osszesitett_idot_is_beszamitja(
     tmp_path: Path,
 ) -> None:
     fajlok = ["tests/test_a.py", "tests/app/test_b.py"]
-    idok = {"tests/test_a.py": 488.53, "tests/app/test_b.py": 7206.0}
+    idok = {tv.NON_APP_UNIT: 488.53, "tests/app/test_b.py": 7206.0}
 
     terv = tv.tervezz_darabokat(fajlok, idok, teljes=True)
 
     assert terv.darabszam == 16
     assert terv.mert_masodperc == pytest.approx(7694.53)
+    assert terv.ismeretlen_fajlok == ("tests/test_a.py",)
+
+
+def test_teljes_keszletben_a_nem_app_fajlok_kulon_darabokba_kerulnek() -> None:
+    fajlok = ["tests/test_a.py", "tests/test_b.py", "tests/app/test_c.py"]
+    idok = {
+        tv.NON_APP_UNIT: 120.0,
+        "tests/app/test_c.py": 30.0,
+    }
+
+    darabok = [
+        tv.darab_fajljai(fajlok, idok, sorszam, 2, teljes=True)
+        for sorszam in (1, 2)
+    ]
+
+    assert set().union(*map(set, darabok)) == set(fajlok)
+    assert set(darabok[0]).isdisjoint(darabok[1])
+    assert sum("tests/test_a.py" in darab for darab in darabok) == 1
+    assert sum("tests/test_b.py" in darab for darab in darabok) == 1
+    assert ("tests/test_a.py" in darabok[0]) != ("tests/test_b.py" in darabok[0])
 
 
 def test_a_valodi_main_meres_tizenhat_darabot_ad() -> None:
@@ -236,9 +256,17 @@ def test_a_valodi_main_meres_tizenhat_darabot_ad() -> None:
     idok = json.loads((_ROOT / "scripts/teszt_idok.json").read_text(encoding="utf-8"))
 
     terv = tv.tervezz_darabokat(fajlok, idok, teljes=True)
+    nem_app_meresek = sum(
+        idok[ut]
+        for ut in fajlok
+        if not ut.startswith("tests/app/") and ut in idok
+    )
+    mert_osszeg = sum(idok[ut] for ut in fajlok if ut in idok) + max(
+        0.0, idok[tv.NON_APP_UNIT] - nem_app_meresek
+    )
 
     assert terv.darabszam == 16
-    assert terv.mert_masodperc == pytest.approx(128.2 * 60, abs=5)
+    assert terv.mert_masodperc == pytest.approx(mert_osszeg)
 
 
 def test_a_ci_a_valasztot_listat_futtatja_a_kotelezo_nev_megtartasaval() -> None:

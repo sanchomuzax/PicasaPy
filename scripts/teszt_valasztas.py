@@ -47,6 +47,8 @@ MAX_SHARDS = 16
 # fájlszám. A tényleges időt ilyenkor nem becsüljük meg.
 FILES_PER_SHARD_WITHOUT_TIMINGS = 30
 MAX_SELECTED_FRACTION = 0.6
+# A nem-app fájlok korábbi teljes futásának összesített mérési kulcsa.
+# Teljes készletnél ez a súlyozást és a darabszámot segíti, nem futtatási egység.
 NON_APP_UNIT = "tests --ignore=tests/app"
 _FULL_TRIGGER_FILES = frozenset({"pyproject.toml", "scripts/run_tests.py"})
 _VERSION_LINE = re.compile(
@@ -582,17 +584,23 @@ def tervezz_darabokat(
     all_files = tuple(sorted(set(files)))
     non_app = tuple(path for path in all_files if not path.startswith("tests/app/"))
     has_non_app_total = teljes and bool(non_app) and NON_APP_UNIT in timings
+    ismert_nem_app = sum(
+        float(timings[path]) for path in non_app if path in timings
+    )
     known = sum(float(timings[path]) for path in all_files if path in timings)
     if has_non_app_total:
-        known += float(timings[NON_APP_UNIT])
-    unknown = tuple(
-        path for path in all_files
-        if path not in timings and not (has_non_app_total and path in non_app)
+        # A teljes készlet mért ideje továbbra is beleszámít a darabszámba,
+        # de az egyedi nem-app fájlok idejét nem mérte külön.
+        known += max(0.0, float(timings[NON_APP_UNIT]) - ismert_nem_app)
+    unknown = tuple(path for path in all_files if path not in timings)
+    becslendo = tuple(
+        path for path in unknown
+        if not (has_non_app_total and path in non_app)
     )
     measured_file_times = sorted(
         float(value)
         for name, value in timings.items()
-        if name.startswith("tests/") and name != NON_APP_UNIT and value > 0
+        if name in all_files and value > 0
     )
     if measured_file_times:
         # A futtató is a mért idők 90. percentilisével tervez a hiányzó
@@ -601,8 +609,10 @@ def tervezz_darabokat(
         ismeretlen_becsles = measured_file_times[
             min(len(measured_file_times) - 1, int(len(measured_file_times) * 0.9))
         ]
-        becsult_osszeg = known + len(unknown) * ismeretlen_becsles
+        becsult_osszeg = known + len(becslendo) * ismeretlen_becsles
         count = math.ceil(becsult_osszeg / cel_masodperc)
+    elif known > 0:
+        count = math.ceil((known + len(becslendo)) / cel_masodperc)
     else:
         # A teljesen mérés nélküli repónál nincs miből időt becsülni.
         count = math.ceil(len(all_files) / FILES_PER_SHARD_WITHOUT_TIMINGS)
@@ -616,18 +626,16 @@ def tervezz_darabokat(
 
 def _shard_units(
     files: Sequence[str], timings: Mapping[str, float], *, teljes: bool
-) -> tuple[list[str], dict[str, tuple[str, ...]], dict[str, float]]:
+) -> tuple[list[str], dict[str, float]]:
     all_files = tuple(sorted(set(files)))
-    groups: dict[str, tuple[str, ...]] = {}
-    if teljes and any(not path.startswith("tests/app/") for path in all_files):
-        other = tuple(path for path in all_files if not path.startswith("tests/app/"))
-        groups[NON_APP_UNIT] = other
-        units = [NON_APP_UNIT] + [p for p in all_files if p.startswith("tests/app/")]
-    else:
-        units = list(all_files)
+    non_app = tuple(path for path in all_files if not path.startswith("tests/app/"))
+    missing_non_app = tuple(path for path in non_app if path not in timings)
+    has_non_app_total = (
+        teljes and bool(non_app) and NON_APP_UNIT in timings
+    )
     measured = [
         float(timings[name])
-        for name in units
+        for name in all_files
         if name in timings and float(timings[name]) > 0
     ]
     measured.sort()
@@ -635,13 +643,25 @@ def _shard_units(
         measured[min(len(measured) - 1, int(len(measured) * 0.9))]
         if measured else 1.0
     )
+    non_app_known = sum(
+        float(timings[name]) for name in non_app if name in timings
+    )
+    non_app_fajl_atlag = (
+        max(0.0, float(timings[NON_APP_UNIT]) - non_app_known)
+        / len(missing_non_app)
+        if has_non_app_total and missing_non_app else 0.0
+    )
     weights: dict[str, float] = {}
-    for unit in units:
-        if unit == NON_APP_UNIT:
-            weights[unit] = float(timings.get(NON_APP_UNIT, fallback))
+    for unit in all_files:
+        if unit in timings:
+            weights[unit] = float(timings[unit])
+        elif has_non_app_total and unit in missing_non_app:
+            # A fájlokat külön futtatjuk, ezért az összesített mérést az
+            # egyedi, még nem mért fájlok között osztjuk szét a kiosztáshoz.
+            weights[unit] = non_app_fajl_atlag
         else:
-            weights[unit] = float(timings.get(unit, fallback))
-    return units, groups, weights
+            weights[unit] = fallback
+    return list(all_files), weights
 
 
 def darab_fajljai(
@@ -655,17 +675,14 @@ def darab_fajljai(
     """Mohó, leghosszabb-először kiosztás; az egységek pontosan egyszer futnak."""
     if count < 1 or not 1 <= shard <= count:
         raise ValueError("a darabszám és a darab sorszáma érvénytelen")
-    units, groups, weights = _shard_units(files, timings, teljes=teljes)
+    units, weights = _shard_units(files, timings, teljes=teljes)
     loads = [0.0] * count
     assigned: list[list[str]] = [[] for _ in range(count)]
     for unit in sorted(units, key=lambda name: (-weights[name], name)):
         target = min(range(count), key=lambda idx: (loads[idx], idx))
         assigned[target].append(unit)
         loads[target] += weights[unit]
-    chosen: list[str] = []
-    for unit in assigned[shard - 1]:
-        chosen.extend(groups.get(unit, (unit,)))
-    return tuple(sorted(chosen))
+    return tuple(sorted(assigned[shard - 1]))
 
 
 def _changed_files(root: Path, base: str, head: str) -> list[str] | None:
