@@ -4723,3 +4723,56 @@ Mérés (a Colab-os Picasa-export, G.7.8.6 utolsó pontja) továbbra is szüksé
 
 - Nem következik: a seed értéke, a `t` nulla pontja, a Gördülő `A`/`B`, a „Jó napom van” `H+0x2c` végpontja, és az Írógép karakter/s-értéke. Egyik sem lett számmá.
 - Az xref-index negatív találata (a `0x74d970`-nek nincs E8-hívója) **nem** bizonyíték a seed-író hiányára; a vtábla-hívásokat az index nem látja (G.7.8.8 6. pont).
+
+##### G.8.6 9. kör (2026-10-13, #4615): a három Ghidra-jelölt utasításszinten; a `+0x108` teljes pásztázás; az időalap-lánc (G.8.1 bővítés)
+
+*Bemenet: `~/picasapy-agent/referencia/ghidra-koteg-2026-10-13d/` (`0074d5d0.c`, `0054b440.c`, `008287b0.c`), és a lokális `Picasa3.exe` közvetlen dekódolása (nincs futtatás, hálózat vagy NAS). Eredmény: **a seed-író NINCS MEG**; a `t` nulla pontja a kódból most már követhető láncra szűkült, de a seed értéke nincs meg; numerikus „Kész, ha” nem állítható.*
+
+**Módszer (újraellenőrizhető).** Az `objdump` nem olvas PE-t (nincs `pei-i386`), a `gdb` ezen az aarch64 gépen nem dekódol x86-ot. Ezért: (1) a PE-szekciók alapján a fájlofszet = VA − 0x400000 (minden szekciónál igaz); (2) a bájtok `.org <VA>` + `.byte` alakban `llvm-mc -triple=i386-pc-windows-msvc`-vel COFF-ba fordulnak; (3) `llvm-objdump -d -M intel`. A kimenet VA-kat ad. A teljes `.text` lineáris dekódolása 2 885 043 sor; az IAT-neveket a PE import-táblából oldottam fel.
+
+**1. A három jelölt (utasításszinten)**
+
+| függvény (hívók) | állítás | eredmény |
+|---|---|---|
+| `0x74d5d0` (`0x74d1c0`, `0x74d8a0`) | nem ír `+0x108/+0x10c`-et | **Igazolt: nem a seed-író.** Írásai `this+0x174…0x1e4`, `+0x188`, `+0x1d0`; a `0xab99d0` (CoTaskMemAlloc) friss blokkjaiba `memset`/`memcpy` (`0xbf37c0`, `0xbf2350`). A `+0x108/+0x10c` csak olvasódik, a `0x74d981`-ben (reset). |
+| `0x54b440` (`0x555a30`) | `this+0x74`-be QI | **Igazolt: nem a seed-író.** `0x545010`, `0x54cdd0`, `0x54b730` hívások; QueryInterface a `[this+0x4c]` objektumon, IID `0xc43400`, kimenet `this+0x74`. Nincs `+0x108`-írás. |
+| `0x8287b0` (`0x620880`, `0x625175`) | a seed-író? | **Igazolt: nem a seed-író.** `0x97c5d0(0x8f8)` + `memset`, `0x625ec0` konstrukció, `0x74e670` szűrőgyár; az eredmény `+0x880`/`+0x8b0`-ba. Nincs `+0x108`-írás. |
+
+**2. Teljes pásztázás: a `+0x108/+0x10c` memória-célú írásai a binárisban**
+
+- A `[reg+0x108]` / `[reg+0x10c]` írások (verem-bázis nélkül): **178**, 93 függvénykezdetben. (A függvénykezdeteket a padding-határokból becsültem.)
+- A CDXSlideshowPin kódja (`0x74c000–0x750000`) **egyetlen `+0x108/+0x10c`-írást sem tartalmaz**. Ott `+0x100/+0x104`, `+0x110/+0x114` és `+0x118/+0x11c` íródik; `+0x108/+0x10c` csak olvasódik (`0x74d981`).
+- `0x763150`: tag+érték párt ír (`0x7653ef`, `0x7653f7`, `0x76540a`), de a vtábla-azonosítás (`0xcb2898` slot 1, RTTI `.?AVCAlbumList@@`) szerint ez `CAlbumList`, nem pin.
+- A 93 függvény közül vtábla-tagként azonosított osztályok: `CPVRenderer` (`0xab8f70`, `0xab8ae0`), `CAlbumList`, `ResumableStream`, `LHUserXML`, `GDataUserXML`, `CPrintDlg`, `CCollabDialog`, `CSearchEditBox` és mások. A többi (`class=-`) nincs vtáblához kötve, ezért az osztályuk **NINCS AZONOSÍTVA**.
+- ⚠️ Korlát: pin-mutatón keresztül egy külső hívó is írhatná `+0x108`-at. Ezt a pásztázás nem zárja ki; a 93 névtelen függvény pin-azonosítása a 5. pont első lépése.
+
+**3. Az időalap-lánc (igazolt, a `0x74d8a0` / `0x610c30` / `0xc299c6` / `0x74e1e8` körül)**
+
+- **`0x74d8a0`** (hívó `0x74e74c`) és párja **`0x74d920`** (hívó `0x74e782`): `EnterCriticalSection(this+0x228)`; `this+0x308 := parent` (a `0x74d920` ezt olvassa vissza); `S := 0x610c30(parent+0x48)`; `A := int64(S × 10 000 000)`. A szorzó `[0xcf3e88]` = **10 000 000.0** (ellenőrizve); a konverzió `0xc299c6` (CRT-féle double→int64, a kerekítési mód nincs végig kikövetve). `A` íródik `+0x100/+0x104`-be és `+0x110/+0x114`-be. Az `edi`-ben kapott `parent` hívóláncát nem követtem végig.
+- **`0x610c30`** (`this = parent+0x48`):
+  - (a) rekurzív zár: `GetCurrentThreadId` (IAT szerint `[0xc40284]`), tulajdonos-TID `+0x20`, számláló `+0x24`;
+  - (b) ciklus: rekordok bázisa `parent+0x90`, darabszám `[parent+0x94] >> 1`, lépés `0xf8`. Minden rekordra **`rec+0xf4 := S_i`** (addig összegzett idő), majd `S_{i+1} = S_i + rec+0xe8 + rec+0xf0`;
+  - (c) visszatérés: `S_n + [parent+0x1a4]`, float-ban.
+- **Következmény:** a `+0xf4` mező a betöltés után **kumulatív kezdőidőt** tartalmaz, és minden `0x610c30`-hívás felülírja. A G.7.7-ben írt „extra” jelentés ezért nem elég. A rekordlista azonossága a `parent+0x90/+0x94` egyezés miatt szerkezeti, nem közvetlenül igazolt.
+- **`A` jelentése:** a film teljes hossza (másodperc × 10⁷, feltételezett 100 ns-es egység), **nem nulla pont**. Erre utal, hogy a pin a `+0x110/+0x114`-et négy összehasonlításban használja (`0x74e01a`, `0x74e02a`, `0x74e3e2`, `0x74e3f2`). Az ágirányt nem követtem végig: ez erős jelzés, nem zárt állítás.
+- **`T` (kimeneti időalap):** a reset (`0x74d970`) a seedet másolja `+0x208/+0x20c`-be (aktuális minta), `+0x4b0/+0x4b4`-be (T) és `+0x4b8/+0x4bc`-be. A `0x74e10a`–`0x74e1e2` szakaszban T int64-ként `add/adc`-vel növekszik a `+0x208` és `+0x218` különbségével (a részletes aritmetika nincs végig kikövetve). A `0x74e1e8` `fild qword [+0x4b0]` T-t int64-ből float-ra konvertálja; a további osztás/szorzás nincs igazolva.
+- Ebből: **a `t` nulla pontja T kezdőértéke, azaz a seed `B` (`+0x108/+0x10c`)**. Mivel a pin kódja `B`-t nem írja, `B` értéke **NINCS MEG**. A `B = 0` feltevés nem igazolt.
+
+**4. Ami ebből NEM következik**
+
+- A seed `B` írója és értéke: NINCS MEG (a pin kódja nem írja; a 93 névtelen függvény pin-azonosítása hiányzik).
+- A Gördülő A/B pixelei és az Írógép `d`/`L` fájlértékei: NINCS MEG. A `0x74d5d0` a puffermérethez a `+0x13c/+0x140/+0x146` mezőket használja, a pixel-végpontokat nem adja.
+- A `0x74d5d0` által másolt `.rdata` négyesek (`0xc431b0…`, `0xc432f0…`, `0xc43300…`): dword-ként és float-ként sem adnak értelmes számot; geometriai konstansnak nem használhatók.
+- A „Jó napom van” `H+0x2c` végpontja: ez a kör nem érintette.
+- Referencia-mérés (Picasa 3.9 filmexport) hiányzik. Futtatás (Wine) ezen a gépen nincs.
+
+**5. Következő kör (szűkített)**
+
+1. A 93 névtelen író-függvény pin-azonosítása: melyik kapja a pin-mutatót (`filter+0x78`), és melyik ír utána `+0x108`-at.
+2. A `parent` (edi) hívóláncának és a `parent+0x1a4` (`+0x15c`) forrásának kikövetése: a film hossza hogyan áll össze.
+3. A `0x74e01a`–`0x74e3f2` összehasonlítások ágirányának kikövetése: a film végét méri-e a `+0x110`.
+4. Referencia-mérés (Colab, Picasa 3.9 filmexport): `A` és `B` ellenőrzése a kimenetben.
+
+**6. „Kész, ha” — állapot**
+
+Numerikus „Kész, ha” most sem állítható. A `t`-lánc (`A = int64(S·10⁷)`, `T` init = `B`) igazolt, de `B` értéke és a Gördülő A/B, Írógép `d`, H+0x2c végpontok nincsenek meg.
