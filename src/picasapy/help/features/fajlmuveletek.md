@@ -23,6 +23,16 @@ program sorszámozza őket. A párbeszédben bekapcsolhatod, hogy a névbe
 kerüljön bele a **Dátum** és a **Képfelbontás** is; alul példát mutat,
 hogyan fog kinézni a kész név.
 
+- A **Dátum** a felvétel **dátumát és idejét** (másodpercre) teszi a
+  névbe, a számítógéped területi beállítása szerinti formában. A
+  fájlnévben nem használható jelek (például a kettőspont vagy a
+  perjel) helyén kötőjel áll. Ha egy képnek nincs felvételi dátuma, a
+  neve dátum nélkül készül.
+- A névmezőbe nem írhatók (és nem is illeszthetők be) a fájlnévben
+  tiltott karakterek: `\ / : * ? " < > |`.
+- A két jelölőnégyzet állását a program **megjegyzi**, a következő
+  megnyitáskor úgy találod őket, ahogy hagytad.
+
 Az ütközéseket a program **előre** ellenőrzi: ha a kész nevek valamelyike
 már foglalt, vagy kettő megegyezne, egyetlen fájl sem változik. Ha viszont
 a művelet **menet közben** akad el (például az egyik fájl zárolt), a már
@@ -83,7 +93,8 @@ a szövegbe illeszt be, nem fájlt.
 ## Törlés
 
 **Fájl ▸ Törlés lemezről** (Delete), vagy a kép helyi menüjéből; a
-nézőben **Ctrl+Delete**.
+nézőben **Ctrl+Delete** (albumból megnyitott képen ez is csak az
+albumból veszi ki, lásd lent).
 
 Ez a menüpont **attól függ, hol állsz**: album nézetében **Eltávolítás az
 albumból**, egy Emberek albumban **Eltávolítás az Emberek albumból** a
