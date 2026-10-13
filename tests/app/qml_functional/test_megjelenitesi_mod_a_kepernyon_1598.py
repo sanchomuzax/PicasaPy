@@ -42,6 +42,7 @@ a képernyőre jusson.
 
 from __future__ import annotations
 
+import functools
 import time
 
 import cv2
@@ -221,40 +222,57 @@ def _szinek(folt: np.ndarray) -> set[tuple[int, int, int]]:
     return {tuple(int(c) for c in p) for p in np.unique(folt.reshape(-1, 3), axis=0)}
 
 
-def _spec_szemcsezes(rgb: np.ndarray) -> np.ndarray:
-    """Független, egyszerű referencia a spec 5.3 + 5.3/b képleteire."""
+@functools.cache
+def _spec_szemcse_ertekek(darab: int) -> np.ndarray:
+    """A spec 5.3 MT19937-húzásainak első `darab` tempered értéke.
+
+    A húzások sorrendje a képpontok sorfolytonos bejárása (egy húzás
+    képpontonként), tehát a darabszám csak a hosszt szabja meg. A
+    képpontonkénti Python-ciklus volt a teszt legdrágább része (~12 s/eset);
+    a tömböt a függvény mérethez kötve megjegyzi, így az azonos méretű
+    futások (és a visszatérő hívások) nem számolják újra."""
     allapot = [0] * 624
     allapot[0] = 0x80AE2D6C
     for index in range(1, 624):
         elozo = allapot[index - 1]
         allapot[index] = (0x0019660D * (elozo ^ (elozo >> 30)) + index) & 0xFFFFFFFF
     index = 624
-    eredmeny = rgb.copy()
+    ertekek = []
 
-    for y in range(rgb.shape[0]):
-        for x in range(rgb.shape[1]):
-            if index == 624:
-                for i in range(624):
-                    osszefuzes = (allapot[i] & 0x80000000) | (
-                        allapot[(i + 1) % 624] & 0x7FFFFFFF
-                    )
-                    allapot[i] = (
-                        allapot[(i + 397) % 624]
-                        ^ (osszefuzes >> 1)
-                        ^ (0x9908B0DF if osszefuzes & 1 else 0)
-                    ) & 0xFFFFFFFF
-                index = 0
+    for _ in range(darab):
+        if index == 624:
+            for i in range(624):
+                osszefuzes = (allapot[i] & 0x80000000) | (
+                    allapot[(i + 1) % 624] & 0x7FFFFFFF
+                )
+                allapot[i] = (
+                    allapot[(i + 397) % 624]
+                    ^ (osszefuzes >> 1)
+                    ^ (0x9908B0DF if osszefuzes & 1 else 0)
+                ) & 0xFFFFFFFF
+            index = 0
 
-            tempered = allapot[index]
-            index += 1
-            tempered ^= tempered >> 11
-            tempered = (tempered ^ ((tempered & 0xFF3A58AD) << 7)) & 0xFFFFFFFF
-            tempered = (tempered ^ ((tempered & 0xFFFFDF8C) << 15)) & 0xFFFFFFFF
-            tempered ^= tempered >> 18
+        tempered = allapot[index]
+        index += 1
+        tempered ^= tempered >> 11
+        tempered = (tempered ^ ((tempered & 0xFF3A58AD) << 7)) & 0xFFFFFFFF
+        tempered = (tempered ^ ((tempered & 0xFFFFDF8C) << 15)) & 0xFFFFFFFF
+        tempered ^= tempered >> 18
+        ertekek.append(tempered)
+    return np.array(ertekek, dtype=np.int64)
 
-            eredmeny[y, x, 0] = min(255, int(rgb[y, x, 0]) + ((tempered >> 16) & 7))
-            eredmeny[y, x, 1] = min(255, int(rgb[y, x, 1]) + ((tempered >> 8) & 3))
-            eredmeny[y, x, 2] = min(255, int(rgb[y, x, 2]) + (tempered & 7))
+
+def _spec_szemcsezes(rgb: np.ndarray) -> np.ndarray:
+    """Független, egyszerű referencia a spec 5.3 + 5.3/b képleteire."""
+    magassag, szelesseg = rgb.shape[0], rgb.shape[1]
+    tempered = _spec_szemcse_ertekek(magassag * szelesseg).reshape(
+        magassag, szelesseg
+    )
+    kimenet = rgb.astype(np.int64)
+    eredmeny = np.empty_like(rgb)
+    eredmeny[..., 0] = np.minimum(255, kimenet[..., 0] + ((tempered >> 16) & 7))
+    eredmeny[..., 1] = np.minimum(255, kimenet[..., 1] + ((tempered >> 8) & 3))
+    eredmeny[..., 2] = np.minimum(255, kimenet[..., 2] + (tempered & 7))
     return eredmeny
 
 
