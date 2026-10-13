@@ -12,12 +12,15 @@ _MENUNKENTI_TESZTEK = {
     "test_fomenuk_4420_folder.py": ("Folder", "F&older"),
     "test_fomenuk_4420_picture.py": ("Picture", "&Picture"),
     "test_fomenuk_4420_edit.py": ("Edit", "&Edit"),
-    "test_fomenuk_4420_tools.py": ("Tools", "&Tools"),
+    # #4932: a Tools- és a File-bejárás ablakmagasságonként két fájlra bomlott
+    "test_fomenuk_4420_tools_minusz5.py": ("Tools", "&Tools"),
+    "test_fomenuk_4420_tools_plusz5.py": ("Tools", "&Tools"),
     "test_fomenuk_4420_tools_language.py": ("Tools", "&Tools"),
     "test_fomenuk_4420_tools_language_masodik.py": ("Tools", "&Tools"),
     "test_fomenuk_4420_create.py": ("Create", "&Create"),
     "test_fomenuk_4420_help.py": ("Help", "&Help"),
-    "test_fomenuk_4420_file.py": ("File", "&File"),
+    "test_fomenuk_4420_file_minusz5.py": ("File", "&File"),
+    "test_fomenuk_4420_file_plusz5.py": ("File", "&File"),
 }
 
 

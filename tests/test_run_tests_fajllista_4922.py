@@ -32,19 +32,41 @@ def test_a_fajllista_jsonbol_olvassa_a_fajlokat_es_a_teljes_jelzot(tmp_path: Pat
     assert indok == "próba"
 
 
-def test_teljes_futas_a_nem_app_keszletet_egy_mert_egyseggel_kezel() -> None:
+def test_teljes_futas_a_nem_app_fajlokat_is_kulon_egysegre_oszt() -> None:
     fajlok = ["tests/test_alpha.py", "tests/app/test_beta.py"]
 
-    assert run_tests._fajlokbol_egysegek(fajlok, teljes=True) == [
-        run_tests._NEM_APP,
-        "tests/app/test_beta.py",
-    ]
+    assert run_tests._fajlokbol_egysegek(fajlok) == sorted(fajlok)
 
 
 def test_reszleges_futas_minden_kivalasztott_fajlt_kulon_egysegre_oszt() -> None:
     fajlok = ["tests/test_alpha.py", "tests/app/test_beta.py"]
 
-    assert run_tests._fajlokbol_egysegek(fajlok, teljes=False) == sorted(fajlok)
+    assert run_tests._fajlokbol_egysegek(fajlok) == sorted(fajlok)
+
+
+def test_a_teljes_futas_a_nem_app_fajlokat_kulon_inditja(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    inditasok: list[list[str]] = []
+
+    def fake_run(args, _timeout_s, **_kwargs):
+        inditasok.append(args)
+        return 0
+
+    monkeypatch.setattr(run_tests, "_run_pytest", fake_run)
+    monkeypatch.setattr(run_tests, "_PARHUZAM", 1)
+
+    run_tests._futtat(
+        False,
+        tmp_path,
+        fajlok=["tests/test_alpha.py", "tests/test_beta.py"],
+        teljes=True,
+    )
+
+    # Windowson a futtató `\\`-es útvonalat ad tovább
+    assert [[Path(a).as_posix() for a in i] for i in inditasok] == [
+        ["tests/test_alpha.py"], ["tests/test_beta.py"]
+    ]
 
 
 def test_a_fajllista_nem_engedi_a_tests_konyvtaron_kivuli_utvonalat(
