@@ -3837,6 +3837,116 @@ korábbi jegyzet 18-at említett, és a felsorolásból hiányzott a **`rect`**
 *Bizonyítottsági fok: megerősített* (a beállítás-olvasó függvény, a
 `slideshowctrls.tre` teljes tartalma, és a 22 erőforrás-bejegyzés).
 
+### #4856 — `kenburnsaoi`: a binárisban talált arcút és a nyitva maradt képkockák (2026-10-13)
+
+**A regisztráció megerősített.** A `CTransitions::kenburnsaoi` sztring
+(`0x00cb2f00`) és a „Pan and Zoom - face" felirat (`0x00cb2a90`) a
+`0x00771a10` átmenet-regisztrálóban szerepel. A `0x00d34188` táblában a
+20. indexű, 16 bájtos rekord címe `0x00d342c8`; első mezője `0x0a`. A
+`0x00771e60` a `0x0a` csoporthoz a `0x0076ed30`-as
+`ytDoubleAffineAOITransitionNode` konstruktorát választja. Kontrollként az
+1. indexű `kenburns` rekord csoportja `1`, amelyhez a
+`ytDoubleAffineTransitionNode` (`0x0076e100`) tartozik. A RTTI-vtáblák
+mindkettőnél a `0x0076e880` renderelőt adják; az AOI-változat
+`0x0076ee50`-et, az általános változat `0x0076e4e0`-t használ célterület
+építésére. Forrás: bináris `0x00771a10`, `0x00771e60`, `0x00d34188`,
+`0x00cb320c`, `0x00cb313c`.
+
+**A filmkészítő útján van arc-régió lekérés.** A `0x00813330` a
+`0x00813593` környezetében ellenőrzi, hogy az átmenet indexe `0x14`
+(20); csak ezen az ágon hívja a `0x00813c50` segédet. A segéd elfogadott
+bemeneti rekordjánál `[rekord] == 3` és `[rekord+8] != -1` feltételt
+ellenőriz, majd a `+0x2d8` objektum vtbl `+0x58` és `+0xa0` metódusán
+keresztül lekéri az azonosítóhoz tartozó adatot, a téglalapot a kép
+határaihoz igazítja, és a `+0x2c5` jelző szerint választ illesztő ágat. Ez azt
+mutatja, hogy a filmkészítő út egy előre átadott, azonosítóval megadott
+régióból képez célterületet. A hívó `ESI`-je a `this+0x1a8` rekordra mutat
+(`0x008134b5`, a segédhívás `0x008135c5`); a régióazonosítót a segéd a
+rekord `+0x8` mezőjéből olvassa, vagyis az objektum `+0x1b0` címéről.
+A segéd nem választ több arc közül, hanem az átadott azonosítót használja.
+Az azonosító közvetlen runtime forrása megvan: a `0x00812470` a `this+0x48`
+időzített sávból hívja a `0x00610d30` mintavevőt, majd a mintát a
+`this+0x1a8` rekordba másolja (`0x00612350`; az alaprekord `+0x8` mezőjét a
+`0x006123d0` is másolja). A mintavevő a sáv 0xf8 bájtos rekordjai közül az
+aktuális időponthoz tartozó rekordot dolgozza fel. Azt viszont ezek az
+utasítások nem mutatják meg, hogy a sávrekord honnan kerül a memóriába, vagy
+hogy az azonosító a `.picasa.ini` `faces=` mezőjéből származik-e; a több arc
+közötti választás is a rekord előállításának nyitott része. Forrás: bináris
+`0x00812470`,
+`0x00610d30`, `0x00612350`, `0x006123d0`, `0x00813330`, `0x00813c50`.
+
+A `+0x1a8`/`+0x1b0` eltolások teljes `.text`-pásztázása sok találatot adott,
+köztük verem-lokális és objektummezőnek látszó címzéseket is; az eltolás
+egyezését ezért nem tekintettem íróazonosításnak. A `0x00812470` hívási
+útjának követése adott pozitív láncot a mintavevőtől a rekordmásolásig.
+
+**A gyár két azonos négyelemű téglalapot ad az AOI-konstruktornak, majd a
+filmút az egyik jelöltet felülírja.** A `0x00771dc0` a beolvasott
+`(x0,y0,x1,y1)` négy dwordöt kétszer másolja a `0x00771e60`-nak; a 10-es
+csoport a `0x0076ed30` konstruktort választja (`0x00772221`–`0x00772286`).
+A filmkészítő az arcsegéd eredményét később az objektum `+0x4b0…+0x4bc`
+mezőibe írja (`0x008137b0`–`0x008137d2`). A két bemeneti halmaz tehát az
+AOI-osztályban külön mezőpár, de ezek „kezdő”/„vég” képkockához rendelése
+nem olvasható ki ebből az adatláncból. Ez az utasításszintű út nem bizonyítja,
+hogy a két mező melyik képre hat.
+
+**A cél-téglalap számítása mért, de ez még nem a képkocka-mozgás.** A
+`0x0076ed30` két, egyenként 4 floatos téglalap-jelöltet kap; a
+`0x00cf3ed0`-n lévő `−1.0` a hiányjelző. Ha az első jelölt érvényes,
+`0x0076ee50` kiszámolja; ha a második négy értéke nem mind `−1.0`, az
+`ee50` újra lefut, és felülírja az első eredményét. Ha a második teljes
+sentinel, az első eredménye marad. A cél `+0x448…+0x454`
+mezőbe kerül. A `0x0076ee50` modellje előző helyi körben QEMU-i386 alatt
+10/10 eseten egyezett a natív kimenettel. A mért képlet: érvényes
+`(x0,y0,x1,y1)` esetén a befoglaló cél `rne(x0−0.5, y0−0.5, x1+0.5,
+y1+0.5)`; a `0.5` konstans címe `0x00c72150`. A forrásméretre a
+`0x009b4b60` lefedő illesztése fut, majd a kód eltolja a téglalapot a kép
+határáig úgy, hogy a méretét megtartja. Ez a mérés a célterület-építőt
+ellenőrzi, nem az eredeti program képkockáját.
+
+**A renderelő simított paramétert használ, a végpontok jelentése nyitott.**
+A `0x0076e880` a `0x0076eb40`-et hívja; az utóbbi a
+`0x0076dd10` interpolátort kétszer futtatja, `(t+1)×0.5` és `t×0.5`
+paraméterrel. A `0x0076dd10` paraméterét `[0,1]` közé korlátozza, majd a
+`u²×(3−2u)` simítófüggvényt alkalmazza. A `3.0` bináris konstans címe
+`0x00cf39f8`, az `0.5`-é `0x00c72150`. Ez egyutas disassembly-olvasat;
+QEMU-mérés és renderelt frame-összehasonlítás nem készült erre az
+interpolátorra. A két tömb (`+0x414`, `+0x438`), a képpárhoz való
+hozzárendelésük, az időparaméter tényleges tartománya, valamint a kezdő- és
+végképkocka pontos képi jelentése ezért **nem tekinthető megállapítottnak**.
+
+**A teljes képernyős vetítés útja továbbra sincs összekötve az AOI-renderelővel.**
+A `0x005e8a70` a `Preferences/BigSlideshow2` beállítást olvassa
+(`0x005e93f8`–`0x005e9415`). A cáfoló keresés közben előkerült egy másik,
+korábban nem dokumentált közösgyár-használat: a `0x00760b00` függvény a
+`ThumbUISlideShow::transition` beállítást írja, majd hívja a `0x00760d50`
+függvényt; ez a `0x00771e60` gyárat használja. A `0x00760d50` azonban
+kifejezetten az `editpanel/previewclip` objektumot kéri le (`0x00760d6b`–
+`0x00760d9f`), és ennek `%x-transition` tulajdonságához rendeli az elkészült
+csomópontot. Ez az út tehát az előnézetet bizonyítja, nem a
+`BigSlideshow2` renderelését.
+
+Az index közvetlen hivatkozásai és a `paszta.py` memóriakapun át futtatott
+teljes `.text`-pásztázása egyaránt a gyár következő közvetlen hívásait
+találta: `0x0057c9f4`, `0x00760eac`, `0x00771e2c`. A pásztázás nem talált
+közvetlen gyárhívást a `0x005e8a70` függvényben; ez az indirekt, virtuális vagy
+esemény-visszahívásos bekötést nem zárja ki. A keresés cáfolta a „gyárat csak
+a filmkészítő használja” munkahipotézist, de nem döntötte el a
+`BigSlideshow2` útját. A jelenlegi `SlideshowView.qml` mindkét Ken Burns
+kulcsot ugyanabba a középpontos animációba viszi, és csak a végső skálát
+különbözteti meg (`SlideshowView.qml:752–761`). A vetítési súgó is csak azt
+írja, hogy az „arc” változat erősebben nagyít
+(`src/picasapy/help/features/nezegetes.md:303–324`).
+
+**Nyitott, a fejlesztést blokkoló kérdések:**
+
+- `Ghidra-kör kell: 0x00812470 — honnan kerül a this+0x48 időzített sáv memóriájába a 0xf8 bájtos rekord, ki állítja be a +0x8-as régióazonosítót, és igazolható-e .picasa.ini faces= kapcsolat vagy többarcos kiválasztás? [blokkoló]`
+- `Ghidra-kör kell: 0x005e8a70 — a BigSlideshow2 hogyan köti a teljes képernyős renderelőt a ThumbUISlideShow::transition beállításhoz; eljut-e a kiválasztott átmenet a ytDoubleAffineAOITransitionNode osztályhoz? [blokkoló]`
+- `Ghidra-kör kell: 0x0076ed30 — a két négyfloatos AOI-paraméter melyik bemeneti kép célterületét állítja, és hogyan kerül ez a +0x414 / +0x438 interpolált képkockákra? [blokkoló]`
+- `Ghidra-kör kell: 0x0076eb40 — a +0x414 és +0x438 interpolált tömb melyik bemeneti képkockához tartozik, mi a t tartománya, és melyik a renderelt kezdő-/végállapot? [blokkoló]`
+
+**Bizonyítottság:** a név- és osztályregisztráció megerősített (regisztráló, statikus rekord és RTTI-vtáblák); a filmkészítő arc-lekérési út feltételes (utasításszintű olvasat, de az azonosító forrása nyitott); a vetítés teljes viselkedése nyitott. A `kenburnsaoi` tényleges, archoz tartó vetítési képkockáihoz renderelt ellenőrzés szükséges.
+
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
 A korábbi szakasz a `slideshowctrls.tre`-t idézte (két elem). **Az igazi
