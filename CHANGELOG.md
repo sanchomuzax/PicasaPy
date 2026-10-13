@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.82] – 2026-10-13
+
+- A pull requestek a módosított kódhoz tartozó teszteket választják, a főág pedig 16 darabra bontja a teljes készletet (#4922).
+
+## [0.9.81] – 2026-10-13
+
+- A README képernyőképe egyszer, rögtön a lap tetején jelenik meg (#4915).
+- Tiszta profilon, hálózat nélkül ellenőrizhetők a fő képkönyvtári, szerkesztési és exportműveletek. (#4317).
+
 ## [0.9.80] – 2026-10-13
 
 - A README kétnyelvű, verziófüggetlen leírást ad a képességekről és a telepítésről (#4915).
