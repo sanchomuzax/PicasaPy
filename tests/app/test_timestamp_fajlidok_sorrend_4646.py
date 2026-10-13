@@ -81,7 +81,7 @@ def test_os_utime_hibaja_naplozodik_es_a_koteg_folytatodik(
     def utime_hiba(*_args, **_kwargs):
         raise OSError("nincs jogosultság")
 
-    monkeypatch.setattr(timestamp_controller.os, "utime", utime_hiba)
+    monkeypatch.setattr(timestamp_controller, "_utime", utime_hiba)
     caplog.set_level(logging.WARNING, logger=timestamp_controller.__name__)
 
     _Controller(tmp_path / "index.sqlite")._reindex_folder_keeping_times(

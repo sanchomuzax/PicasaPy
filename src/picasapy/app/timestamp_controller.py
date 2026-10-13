@@ -20,6 +20,8 @@ from picasapy.metadata.tiff_helyben import (
 
 
 _log = logging.getLogger(__name__)
+#: modulszintű fogantyú — a teszt ezt cseréli, nem a globális `os.utime`-ot (#1375)
+_utime = os.utime
 
 _JPEG_SOI = b"\xff\xd8"
 _EXIF_APP1_PREFIX = b"Exif\x00\x00"
@@ -200,7 +202,7 @@ def _restore_photo_file_times(path: str | Path, before: os.stat_result) -> None:
     os.utime hibáját naplózzuk, és nem szakítjuk meg a köteget.
     """
     try:
-        os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+        _utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
     except OSError:
         _log.warning("a fájlidők visszaállítása sikertelen: %s", path, exc_info=True)
     _set_creation_time_ns(path, before.st_ctime_ns)
