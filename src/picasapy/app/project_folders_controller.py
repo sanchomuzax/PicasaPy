@@ -24,6 +24,10 @@ class ProjectFoldersMixin:
 
     projectFoldersChanged = Signal()
 
+    def _hidden_folder_paths(self) -> frozenset[str]:
+        """A kiszűrendő rejtett mappák — az `AppController` felülírja (#4597)."""
+        return frozenset()
+
     def _init_project_folders(self) -> None:
         """A konstruktorból hívandó kezdeti állapot (`_init_people` mintája)."""
         self._project_folders: tuple = ()
@@ -44,6 +48,7 @@ class ProjectFoldersMixin:
 
         Az „Exportált képek" (#457) sorai ettől FÜGGETLENEK: azok a
         beállításokban élnek, ez itt a könyvtárban talált projekt-mappa."""
+        hidden = self._hidden_folder_paths()
         return [
             {
                 "path": folder.path,
@@ -51,4 +56,5 @@ class ProjectFoldersMixin:
                 "count": folder.photo_count,
             }
             for folder in getattr(self, "_project_folders", ())
+            if folder.path not in hidden
         ]

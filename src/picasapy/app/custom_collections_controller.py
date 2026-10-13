@@ -18,6 +18,8 @@ from PySide6.QtCore import Property, Signal, Slot
 from picasapy.ini import (
     FOLDERS_ON_DISK_CATEGORY,
     is_custom_collection_category,
+    is_hidden_folders_category,
+    read_folder_category,
     update_document,
     with_folder_category,
 )
@@ -45,12 +47,26 @@ class CustomCollectionsMixin:
 
     customCollectionsChanged = Signal()
 
+    def _hidden_folder_paths(self) -> frozenset[str]:
+        """A kiszűrendő rejtett mappák — az `AppController` felülírja (#4597)."""
+        return frozenset()
+
+    def _folder_is_hidden(self, folder_path: str) -> bool:
+        """Rejtett-e a mappa — az `AppController` felülírja (#4597)."""
+        return False
+
     @Property("QVariant", notify=customCollectionsChanged)
     def customCollections(self) -> list[dict]:
         """A gyűjtemények QML-nek adott alakja: `[{name, folders, closed}, ...]` —
         mindig `list`/`dict` (a projekt szabálya, sosem `tuple`)."""
+        # #4597: az elrejtett mappa a rejtettek megjelenítése nélkül nem látszik
+        hidden = self._hidden_folder_paths()
         return [
-            {"name": c.name, "folders": list(c.folders), "closed": c.closed}
+            {
+                "name": c.name,
+                "folders": [f for f in c.folders if f not in hidden],
+                "closed": c.closed,
+            }
             for c in self._load_custom_collections()
         ]
 
@@ -123,8 +139,9 @@ class CustomCollectionsMixin:
             for folder in collection.folders:
                 if not Path(folder).is_dir():
                     continue
-                if self._write_folder_category(folder, collection.name):
-                    self._set_cached_folder_category(folder, collection.name)
+                effective = self._write_folder_category(folder, collection.name)
+                if effective is not None:
+                    self._set_cached_folder_category(folder, effective)
                 else:
                     failed_paths.append(folder)
             migrated.append(
@@ -143,13 +160,29 @@ class CustomCollectionsMixin:
             )
             settings.sync()
 
-    def _write_folder_category(self, folder_path: str, category: str) -> bool:
-        """Egyetlen mappabesorolás mentése az ini round-trip API-ján át."""
+    def _write_folder_category(
+        self, folder_path: str, category: str, *, overwrite_hidden: bool = False
+    ) -> str | None:
+        """Egyetlen mappabesorolás mentése az ini round-trip API-ján át.
+
+        Visszatérés: a ténylegesen érvényes besorolás, `None` írási hibánál.
+        #4597: az elrejtett mappa `Hidden Folders` besorolását átnevezés,
+        törlés vagy migráció nem írja felül (csak a kifejezett
+        `overwrite_hidden=True`, a mappa gyűjteménybe mozgatása)."""
+        effective = category
+
+        def mutate(document):
+            nonlocal effective
+            current = read_folder_category(document)
+            if not overwrite_hidden and is_hidden_folders_category(current):
+                effective = current
+                return document
+            effective = category
+            return with_folder_category(document, category)
+
         try:
             update_document(
-                Path(folder_path) / PICASA_INI_NAME,
-                lambda document: with_folder_category(document, category),
-                backup=True,
+                Path(folder_path) / PICASA_INI_NAME, mutate, backup=True
             )
         except (OSError, RuntimeError, ValueError):
             logger.warning(
@@ -157,8 +190,8 @@ class CustomCollectionsMixin:
                 folder_path,
                 exc_info=True,
             )
-            return False
-        return True
+            return None
+        return effective
 
     def _set_cached_folder_category(self, folder_path: str, category: str) -> None:
         """A lokális ini-pillanatképet az imént sikeres íráshoz igazítja."""
@@ -206,8 +239,9 @@ class CustomCollectionsMixin:
         new = next((c for c in renamed if c.name == new_name.strip()), None)
         if old is not None and new is not None:
             for folder in old.folders:
-                if self._write_folder_category(folder, new.name):
-                    self._set_cached_folder_category(folder, new.name)
+                effective = self._write_folder_category(folder, new.name)
+                if effective is not None:
+                    self._set_cached_folder_category(folder, effective)
         self._save_custom_collections(renamed)
 
     @Slot(str)
@@ -218,10 +252,11 @@ class CustomCollectionsMixin:
         deleted = next((c for c in current if c.name == name), None)
         if deleted is not None:
             for folder in deleted.folders:
-                if self._write_folder_category(folder, FOLDERS_ON_DISK_CATEGORY):
-                    self._set_cached_folder_category(
-                        folder, FOLDERS_ON_DISK_CATEGORY
-                    )
+                effective = self._write_folder_category(
+                    folder, FOLDERS_ON_DISK_CATEGORY
+                )
+                if effective is not None:
+                    self._set_cached_folder_category(folder, effective)
         self._save_custom_collections(delete_collection(current, name))
 
     @Slot(str, str)
@@ -230,13 +265,22 @@ class CustomCollectionsMixin:
         előbb kikerül minden meglévőből, aztán (nem üres célnál) beillesztjük
         az újba. Üres `collection_name` a "Mappák" alap-nézetbe helyezi
         vissza (kikerül minden egyéni gyűjteményből)."""
+        if self._folder_is_hidden(folder_path):
+            # #4597: rejtett mappa nem helyezhető át gyűjteménybe
+            self.folderHideFailed.emit(folder_path, "hidden-move")
+            return
         current = self._load_custom_collections()
         target = next(
             (c.name for c in current if c.name.casefold() == collection_name.casefold()),
             "",
         )
         category = target or FOLDERS_ON_DISK_CATEGORY
-        if not self._write_folder_category(folder_path, category):
+        if (
+            self._write_folder_category(
+                folder_path, category, overwrite_hidden=True
+            )
+            is None
+        ):
             return
         self._set_cached_folder_category(folder_path, category)
         self._save_custom_collections(current)

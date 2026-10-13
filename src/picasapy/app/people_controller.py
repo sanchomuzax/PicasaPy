@@ -60,6 +60,7 @@ from picasapy.ini import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .contact_names import central_contacts_path
 from .models import _thumb_url
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
@@ -231,7 +232,7 @@ class PeopleMixin:
 
     def _people_contacts_path(self) -> Path:
         """A PicasaPy központi tárának contacts/contacts.xml fájlja."""
-        return Path(self._db_path).parent / "contacts" / "contacts.xml"
+        return central_contacts_path(self._db_path)
 
     @Slot("QVariantList", result=bool)
     def savePeopleManagerChanges(self, changes) -> bool:  # noqa: N802
@@ -360,8 +361,10 @@ class PeopleMixin:
             if changed_central:
                 save_contacts_xml(central_path, tuple(entries))
 
+            # #4887: az átnevezés/törlés a rejtett mappák ini-jébe is írjon —
+            # ez nem megjelenítés, a név különben ott elavulna
             with open_index(self._db_path) as conn:
-                photos = all_photos(conn)
+                photos = all_photos(conn, include_hidden_folders=True)
             by_folder: dict[str, list] = {}
             for photo in photos:
                 by_folder.setdefault(photo.folder_path, []).append(photo)

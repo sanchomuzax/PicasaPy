@@ -18,7 +18,9 @@ from PySide6.QtCore import QCoreApplication, QDate, QDateTime, QLocale, QUrl
 
 from picasapy.metadata import read_exif_details
 
+from .crt_g_format import picasa_szam
 from .photo_sort import photo_date
+from .tulajdonsag_sorok import file_date_text, person_tags_text
 
 #: A modul szövegeinek fordítási kontextusa — a `.ts` névtelen kontextusa,
 #: ahová a `pyside6-lupdate` a modulszintű `tr("...")` hívásokat gyűjti.
@@ -410,7 +412,7 @@ _ORIENTATION_LABELS = {
 }
 
 
-def properties_entries(photo, locale: QLocale, tr) -> list:
+def properties_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     """A Tulajdonságok-panel (#13/#529) sorai: (címke, érték) párok.
 
     A sorrend a Picasa saját `runtime/properties.xml`-jét követi (#529) — a
@@ -429,7 +431,7 @@ def properties_entries(photo, locale: QLocale, tr) -> list:
     if photo.kind != "photo":
         entries.extend(_movie_entries(photo, locale, tr))
         return entries
-    entries.extend(exif_entries(photo, locale, tr))
+    entries.extend(exif_entries(photo, locale, tr, contacts_xml))
     return entries
 
 
@@ -473,7 +475,7 @@ def _compression_entry(value, tr) -> str | None:
     return tr(label) if label else value
 
 
-def exif_entries(photo, locale: QLocale, tr) -> list:
+def exif_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     """A `properties.xml` EXIF-eredetű mezői, EREDETI SORRENDBEN (#529).
 
     Az adat nélküli mező kimarad. A felsorolt értékek (fénymérés,
@@ -503,6 +505,7 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
     )
     add("Digitized Date", date(details.datetime_digitized))
     add("Modified Date", date(details.datetime_modified))
+    add("File Date", file_date_text(photo, locale))
     if details.orientation in _ORIENTATION_LABELS:
         add("Orientation", tr(_ORIENTATION_LABELS[details.orientation]))
     if details.flash_fired is not None:
@@ -517,11 +520,16 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
             "Focal Length in 35mm Film",
             _millimetres(float(details.focal_35mm), _EXIF_LOCALE, tr),
         )
+    if details.ccd_width:
+        add("CCD Width", picasa_szam(details.ccd_width))
     if details.exposure_seconds:
         add(
             "Exposure Time",
             format_exposure(details.exposure_seconds, _EXIF_LOCALE),
         )
+    # #4579: a NYERS APEX-érték, `%.3g`, előtag nélkül (spec 17. B)
+    if details.aperture_apex is not None:
+        add("Aperture", picasa_szam(details.aperture_apex))
     if details.f_number:
         add("F Number", f"f/{_EXIF_LOCALE.toString(details.f_number, 'g', 3)}")
     if details.subject_distance_m:
@@ -549,6 +557,7 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
         add("ICC Profile", tr("Embedded"))
     if details.has_embedded_thumbnail:
         add("Embedded Thumbnail", tr("Yes"))
+    add("JPEG Quality", details.jpeg_quality)
     if photo.keywords:
         keywords = (
             keyword.strip()
@@ -556,6 +565,7 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
             if keyword.strip()
         )
         add("Keywords", ", ".join(keywords))
+    add("People Tags", person_tags_text(photo, details.xmp_people, contacts_xml))
     # a koordináta a Picasában is mindig pontos (`.picasa.ini`
     # `geotag=33.770556,-84.293055`, KML `<longitude>%f`): vesszős
     # tizedesjellel egy koordinátapár olvashatatlan volna

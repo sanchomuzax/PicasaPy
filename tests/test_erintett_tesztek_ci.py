@@ -1,4 +1,6 @@
-"""PR-en csak az érintett app-tesztek futnak (`run_tests.erintett_app_tesztek`).
+"""A régi app-teszt-szűkítő segédfüggvény kompatibilitási próbái.
+
+Az aktív CI-választást már a `scripts/teszt_valasztas.py` végzi.
 
 2026-10-09: 41 nyitott PR állt, mert minden PR a teljes készletet futtatta
 négy darabban (PR-enként ~70 futtatóperc). A teljes készlet a main-en fut.
