@@ -513,6 +513,51 @@ class TestALecsatoltNasAlmappai:
         )
 
 
+def _athelyezes_utan(qt_app, workdir: Path, *, watcher: bool):
+    """Kétszintű könyvtár áthelyezése a fájlkezelőn át, majd egy valódi
+    lekérdezési kör — a kiinduló és a végállapotot adja vissza."""
+    library = _konyvtarat_epit(workdir)
+    ctl = _vezerlot_epit(qt_app, workdir, library, watcher=watcher)
+    try:
+        ctl.selectFolder(str(library / "album"))
+        assert _var(qt_app, lambda: not ctl._sync_running), (
+            "#2408: a szinkron nem állt le időben"
+        )
+        elotte = _index_allapot(workdir / "index.db")
+        assert elotte == (
+            (
+                str(library),
+                str(library / "album"),
+                str(library / "album" / "alalbum"),
+            ),
+            3,
+        ), f"a kiindulás nem 3 mappa / 3 fotó: {elotte}"
+
+        # a felhasználó FÁJLKEZELŐVEL helyezi át — nincs `folderMoved`
+        shutil.move(str(library), str(workdir / "mashol" / "kepek"))
+        _pumpal(qt_app, 15.0)
+        assert _var(qt_app, lambda: not ctl._dirty_running, 10.0), (
+            "#2408: a célzott szinkron nem állt le 10 s alatt"
+        )
+
+        return ctl, library, _index_allapot(workdir / "index.db")
+    finally:
+        ctl.shutdown()
+        assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
+
+
+@pytest.fixture(scope="module")
+def athelyezett_figyelovel(qt_app, tmp_path_factory):
+    """A három OLVASÓ teszt közös, egyszer lefutó forgatókönyve (#1560).
+
+    Mindhárom teszt csak olvassa az eredményt, és ugyanazt a ~15 s-os
+    valós idejű pörgetést igényli. Tesztenként futtatva ez háromszor
+    fizetődne ki; modul-szintű fixture-ként egyszer."""
+    workdir = tmp_path_factory.mktemp("athelyezes-figyelovel")
+    ctl, library, allapot = _athelyezes_utan(qt_app, workdir, watcher=True)
+    return ctl, library, allapot, workdir
+
+
 class TestAFajlkezelovelAthelyezettGyoker:
     """A jegy végponti mérése: valódi vezérlő, produkciós `FOLDER_POLL_MS`.
 
@@ -521,38 +566,8 @@ class TestAFajlkezelovelAthelyezettGyoker:
     szerint a javítás nélkül az index 9,2–9,3 s alatt kiürült, ezért a
     tesztek 15 s valós időt pörgetnek: két lekérdezési kör bőven belefér."""
 
-    def _mero(self, qt_app, tmp_path, *, watcher: bool):
-        library = _konyvtarat_epit(tmp_path)
-        ctl = _vezerlot_epit(qt_app, tmp_path, library, watcher=watcher)
-        try:
-            ctl.selectFolder(str(library / "album"))
-            assert _var(qt_app, lambda: not ctl._sync_running), (
-                "#2408: a szinkron nem állt le időben"
-            )
-            elotte = _index_allapot(tmp_path / "index.db")
-            assert elotte == (
-                (
-                    str(library),
-                    str(library / "album"),
-                    str(library / "album" / "alalbum"),
-                ),
-                3,
-            ), f"a kiindulás nem 3 mappa / 3 fotó: {elotte}"
-
-            # a felhasználó FÁJLKEZELŐVEL helyezi át — nincs `folderMoved`
-            shutil.move(str(library), str(tmp_path / "mashol" / "kepek"))
-            _pumpal(qt_app, 15.0)
-            assert _var(qt_app, lambda: not ctl._dirty_running, 10.0), (
-                "#2408: a célzott szinkron nem állt le 10 s alatt"
-            )
-
-            return ctl, library, _index_allapot(tmp_path / "index.db")
-        finally:
-            ctl.shutdown()
-            assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
-
-    def test_az_index_nem_urul_ki_figyelovel(self, qt_app, tmp_path):
-        _ctl, library, (mappak, fotok) = self._mero(qt_app, tmp_path, watcher=True)
+    def test_az_index_nem_urul_ki_figyelovel(self, athelyezett_figyelovel):
+        _ctl, library, (mappak, fotok), _workdir = athelyezett_figyelovel
 
         assert (mappak, fotok) == (
             (
@@ -569,33 +584,35 @@ class TestAFajlkezelovelAthelyezettGyoker:
     def test_az_index_nem_urul_ki_figyelo_nelkul(self, qt_app, tmp_path):
         """Figyelő nélkül egyedül a #1275 lekérdezés dolgozik — a mérés
         szerint ez volt az, amelyik kiürítette az indexet."""
-        _ctl, library, (mappak, fotok) = self._mero(qt_app, tmp_path, watcher=False)
+        _ctl, library, (mappak, fotok) = _athelyezes_utan(
+            qt_app, tmp_path, watcher=False
+        )
 
         assert len(mappak) == 3 and fotok == 3, (
             "a #1275 lekérdezés kiürítette az indexet: "
             f"{len(mappak)} mappa / {fotok} fotó"
         )
 
-    def test_a_bal_hasab_es_a_horgony_megmarad(self, qt_app, tmp_path):
+    def test_a_bal_hasab_es_a_horgony_megmarad(self, athelyezett_figyelovel):
         """A felhasználó felé: a bal hasáb nem ürül ki, és a figyelt mappák
         fájlja sem lesz üres vagy hiányos (a horgony átállítása — az új hely
         megkeresése — SZÁNDÉKOSAN nem ennek a jegynek a dolga)."""
-        ctl, library, _allapot = self._mero(qt_app, tmp_path, watcher=True)
+        ctl, library, _allapot, workdir = athelyezett_figyelovel
 
         assert len(_mappa_utak(ctl)) == 3, (
             f"a bal hasáb kiürült: {sorted(_mappa_utak(ctl))}"
         )
         assert list(ctl.watchedFolders) == [str(library)]
-        assert (tmp_path / "WatchedFolders.txt").read_text(encoding="utf-8").split() == [str(library)]
+        assert (workdir / "WatchedFolders.txt").read_text(encoding="utf-8").split() == [str(library)]
 
-    def test_a_mappak_offline_jelolest_kapnak(self, qt_app, tmp_path):
+    def test_a_mappak_offline_jelolest_kapnak(self, athelyezett_figyelovel):
         """DÖNTÉS (ld. a modul docstringjét): a felhasználó nem néma
         várakozást kap — a sorok a meglévő #459/5 jelölést viselik."""
-        _ctl, library, _allapot = self._mero(qt_app, tmp_path, watcher=True)
+        _ctl, library, _allapot, workdir = athelyezett_figyelovel
 
         from picasapy.index import open_index
 
-        with open_index(Path(tmp_path) / "index.db") as conn:
+        with open_index(workdir / "index.db") as conn:
             offline = {
                 sor["path"]
                 for sor in conn.execute("SELECT path FROM folders WHERE offline = 1")
