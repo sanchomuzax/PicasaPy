@@ -67,10 +67,10 @@ class TestANormalizalas:
 
         A Qt a `%`-ot már feloldotta (`%25` → `%`), tehát a teljes
         `fromPercentEncoding` itt MÁSODSZOR dekódolna."""
-        assert normalizald_az_azonositot("/home/sancho/a%41b") == "/home/sancho/a%41b"
+        assert normalizald_az_azonositot("/home/felhasznalo/a%41b") == "/home/felhasznalo/a%41b"
 
     def test_a_szokozos_ekezetes_utvonal_valtozatlan(self):
-        ut = "/home/sancho/Képek/nyaralás 2024"
+        ut = "/home/felhasznalo/Képek/nyaralás 2024"
         assert normalizald_az_azonositot(ut) == ut
 
     def test_URES_azonosito(self):

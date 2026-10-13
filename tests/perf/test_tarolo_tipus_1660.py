@@ -174,9 +174,9 @@ class TestNincsBenneHely:
             idovonal_jelentes="(idővonal)",
             fejlec={},
             meret=KonyvtarMeret(1, 1),
-            tarolo={"a program helye": "/home/sancho/PicasaPy"},
+            tarolo={"a program helye": "/home/felhasznalo/PicasaPy"},
         )
-        assert "/home/sancho" not in szoveg
+        assert "/home/felhasznalo" not in szoveg
 
     def test_a_windowsos_ag_sem_irja_ki_a_meghajtot(self):
         """A visszaadott érték a TÍPUS neve, nem a betűjel."""

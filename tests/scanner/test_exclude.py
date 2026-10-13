@@ -7,9 +7,9 @@ from picasapy.scanner import find_exclude_folders_file, is_excluded, read_exclud
 class TestReadExcludeFolders:
     def test_one_path_per_line(self, tmp_path):
         f = tmp_path / "FRExcludeFolders.txt"
-        f.write_text("/home/sancho/Privat\n/mnt/nas/titkos\n", encoding="utf-8")
+        f.write_text("/home/felhasznalo/Privat\n/mnt/nas/titkos\n", encoding="utf-8")
         assert read_exclude_folders(f) == (
-            "/home/sancho/Privat",
+            "/home/felhasznalo/Privat",
             "/mnt/nas/titkos",
         )
 
@@ -27,10 +27,10 @@ class TestWriteExcludeFolders:
         from picasapy.scanner import write_exclude_folders
 
         f = tmp_path / "FRExcludeFolders.txt"
-        write_exclude_folders(f, ("/mnt/nas/privat", "/home/sancho/Titkos"))
+        write_exclude_folders(f, ("/mnt/nas/privat", "/home/felhasznalo/Titkos"))
         assert read_exclude_folders(f) == (
             "/mnt/nas/privat",
-            "/home/sancho/Titkos",
+            "/home/felhasznalo/Titkos",
         )
 
     def test_write_creates_parent_dir(self, tmp_path):
