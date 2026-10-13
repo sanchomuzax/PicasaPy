@@ -1397,10 +1397,10 @@ keretkiemelés elnevezését nem támasztja alá. A `picasa-linux-mod.md`
 
 **Nyitott:**
 
-- `Ghidra-kör kell: 0x00571e50 — a [panel+0xdc4] kapcsoló pontos, felhasználó által látható hatása az előnézet kijelölt képpel való szinkronizálására. [blokkoló]`
+- `0x00571e50` — a [panel+0xdc4] kapcsoló felhasználói hatása: **lezárva a 10.23-ban** (a kapcsoló nem szinkronizálja a kijelölést az előnézettel; a felirat-/törlésállapot-frissítés látható része futásteszt nélkül nyitott).
 - `Ghidra-kör kell: 0x00774d60 — a [CThumbUI+0x31a8] gyerekobjektum pontos kirajzolt tartalma és az Alt-állapot [objektum+0xb4] látható következménye. [blokkoló]`
 - `Ghidra-kör kell: 0x00571a80 — a Ctrl+Alt/VK 0x12 ágban az EnableHover és az érvényes elemazonosító mellett végrehajtott felhasználói művelet. [blokkoló]`
-- `Ghidra-kör kell: 0x005f89a0 — a Ctrl+F9 eltérési ágának 0 argumentumos célja ténylegesen kijelölt képre váltja-e az előnézeti képet, vagy csak a jelenlegi [this+0xe64] kép UI-állapotát frissíti. [blokkoló]`
+- `0x005f89a0` — a Ctrl+F9 eltérési ágának 0 argumentumos célja: **lezárva a 10.23-ban** — nem vált képet; a jelenlegi `[this+0xe64]` kép felirat-/törlésállapotát frissíti, és csak akkor, ha a felirat-mező `+0x2c4` jelzője piszkos.
 - A `Ctrl+6` timeslicer felületének futás közbeni állapota és a Ctrl+Shift+Y `overlays/egg` látható animációja: **NINCS MEG**; célzott eredeti-program próba kell.
 - A `/`, `,`, `.` esetleges videóvezérlő-hatása: **NINCS MEG**; a fókuszált gyermek eseményfogadójának útját kell követni, a globális kezelőben nincs saját ág.
 
@@ -1543,6 +1543,62 @@ gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem tö
 - [ ] Az F5 mutató-táblái feloldva, és a lemezbejárás igazolva vagy kizárva.
 - [ ] A Ctrl+G `[ebp+0x15c]` nézet-kezelője feloldva (vtábla +0x74 és `0x9e42b0`), vagy a Ctrl+G hatása nevesítve „nem vizsgált”.
 - [x] A 10.23 Ctrl+G „no-op” állítása javítva; a 10.23 Ctrl+G mondata a 10.24-re hivatkozik. (A 10.7 nem módosult, mert ott a Ctrl+G „kimaradt” a mai kódra vonatkozik, nem a binárisra.)
+
+### 10.25 #4698 — a Ctrl+F9 `[panel+0xdc4]` jelzőjének felhasználói hatása (2026-10-13)
+
+**Kérdés:** ki olvassa a jelzőt, és mit kapcsol a felületen? A kiindulás a
+10.22 Ctrl+F9 sora és a két „Ghidra-kör kell” nyitott tétel volt.
+
+**Módszer.** (1) A teljes `.text` helyett a bináris-index 20 607 függvénytörzsét
+söpörtem végig `capstone`-nal (2 556 882 utasítás), és a `[reg+0xdc4]`,
+illetve `[reg+0xe64]` operandusokat gyűjtöttem; a lineáris `.text`-söprés
+a `0x0050d53d`-nál kiesett, ezért azt nem használtam. (2) A
+`referencia/ghidra-koteg-2026-10-12/00571e50.c` dekompilált kódját
+összevetettem az utasításszintű olvasatokkal. (3) A vtable-slotokat és az
+IAT-címkéket a PE-fájlból olvastam ki. Futtatás nem történt.
+
+**Lépésenkénti bizonyíték**
+
+| # | Hely | Mit mutat | Független út | Fok |
+|---|---|---|---|---|
+| 1 | `0x005e61de`–`0x005e61f1` | A billentyűkód-index `vk-0xd`; a `0x78` (F9) indexe `0x6b`, a bájttábla `0x5e66a4+0x6b` = 34, a `0x5e6614` ugrótábla 34. bejegyzése `0x005e6329`. (A F8 `0x005e631d`, a F10 nem ide tartozik.) | a PE-ből számolva (`pefile` + bájttábla); a 10.22 táblázatával egyezik | megerősített |
+| 2 | `0x005e6168`–`0x005e6181` | A `[esi+0x10]` módosító-bájt 4-es bitje nélkül a `jle` kilép `0x005e6603`-ba; így F9 csak ezzel a bittel jut el a jelzőig. A bit jelentését (Ctrl) **nem** igazoltam külön. | utasításszint | feltételes |
+| 3 | `0x005e6329`–`0x005e6333` | `cmp [ebp+0xdc4],0; sete cl; mov [ebp+0xdc4],cl` — a jelző 0/1 közt billen. | a függvénytörzs-söprés: ez a 2 írás/olvasás egyike | megerősített |
+| 4 | `0x005643eb`, `0x00564b2e` | Az ebx=0 (`0x005643eb`), majd `mov [ebp+0xdc4],bl` → alaphelyzet 0. | utasításszint | megerősített |
+| 5 | `0x00572078` (fv. `0x00571e50`) | `cmp [ebx+0xdc4],0` — az egyetlen olvasó a `0x00571e50`-ben. | **Ghidra** `00571e50.c` 125. sora (`param_1[0x371]`) **és** capstone-söprés: két külön eszköz ugyanazt adja | megerősített |
+| 6 | `0x00571e50` feltételei | `editpanel/preview` létezik (`0x009c2fc0`), `[+0x20c]==0`; a `0x006cfe10(this+0x2bc+0x346c)` érték ≠ `[this+0xe64]`. | Ghidra + asm | megerősített (de lásd nyitott) |
+| 7 | `0x005720af`–`0x005720c0` | `[this+0x2a4]` vtable `+0x2c` hívása, argumentum `push 0`. A vtable `0xc90754` (a konstruktor utolsó `+0x2a4` írása `0x005645da`), a `+0x2c` slot a `0x00578dc0`. | a slotot a PE-fájlból olvastam ki | megerősített |
+| 8 | `0x00578dc0` | `[ebp+8]==0` ágon `0x00578e79`: `call 0x005f89a0`. Az argumentum nem nulla ága hívja a `0x005d1300`-at (képváltás) — ezt a 0 argumentumú hívás **nem** éri el. | utasításszint | megerősített |
+| 9 | `0x005f89a0` | Csak ha `editpanel/preview` látszik; a `editpanel/caption` (`0x00c07db2`) objektum `[+0x2c4]` jelzőjét kell hogy legyen; ha igen: törli, majd a `[this+0x2bc]+0x48` vtable `+0x50` hívásával a `[this+0xe64]` kép rekordját kéri, `editpanel/captiontrash` állapotot állít, a `[this+0x2ac]+8` callbacket a `[this+0xe64]`-gyel hívja, végül `0x00579480(1,0)`. **Nem ír `[this+0xe64]`-et.** | utasításszint | megerősített (a callback célja nyitott) |
+| 10 | a `+0xe64` írói | A teljes függvénytörzs-söprésben a `[reg+0xe64]` írása csak két helyen van: a konstruktor (`0x00564cc7`) és `0x005e8c2d` (`0x005e8a70`). A `0x005e8a70` a képváltó út; a 10.22-ben ez már `feltételes` volt. | függvénytörzs-söprés | megerősített |
+
+**Következtetés.** A Ctrl+F9 nem szinkronizálja a kijelölést az előnézettel.
+A jelző egy kapcsoló: bekapcsolt állapotban a felület idle-frissítése minden
+ciklusban, amikor a kijelölt-azonosító eltér a jelenleg előnézetben lévő kép
+indexétől, meghívja a `0x005f89a0`-t. Az a felirat-mező piszkos jelzőjére
+frissíti a jelenlegi előnézeti kép felirat- és törlésállapotát. A kép
+váltása ezen az úton **nem** történik: a hívás 0 argumentummal megy, a
+képváltó `0x005d1300` nem fut, és a `[this+0xe64]` nem íródik. A kapcsoló
+0 állásában az eltérési frissítés kimarad.
+
+**Fok:** a kapcsoló, a hívási lánc és az, hogy nem vált képet — **megerősített**
+(két független eszköz). A látható felirat-állapot-változás, és az, hogy a
+piszkos jelző mikor áll be — **feltételes**, futtatás nélkül nem mérhető.
+
+**Nyitott:**
+
+- A `0x006cfe10` visszatérési értéke: a `[obj+0x60]`/`[obj+0x68]` ágon a `[[obj+0x68]+0x3c]`, különben a `GetCurrentThreadId` érték. A „kijelölt-azonosító” jelentése ebből **nem igazolt**; a `0x006cfe10` zárolt, újrabelépő állapotolvasó (`EnterCriticalSection`/`LeaveCriticalSection`), nem egyszerű kijelölés-lekérdezés. Ha az ágon a szálazonosító jön vissza, az eltérés minden ciklusban fennáll — ez a feltétel-ág is futtatást kíván.
+- A `[this+0x2ac]+8` callback célja (a konstruktor végső `+0x2ac` értéke `0xc907ac`) és a `0x00c07db2` (`editpanel/caption`) objektum `+0x2c4` írói: **nyitott**.
+- A `0x005e8a70` hívóinak billentyű-hozzárendelése (`0x005e625e`, `0x005e6279` ágak): **nyitott** — ez a képváltó út gazdája.
+- A módosító-bit 4 (`[esi+0x10]`) név szerinti megfelelése (Ctrl): **nem igazolt külön**; a 10.22 szerinti Ctrl-hozzárendelés erre épül.
+- A látható felirat-/törlésállapot-változás eredeti Picasán való futtatása: **NINCS MEG**; célzott próba kell.
+- Az `editpanel/captiontrash` állapot szöveges/vizuális jelentése a QML-oldalon nincs leltározva.
+
+**Gyorsbillentyű-kötés (kódban).** A `src/picasapy/app/` alatt nincs `Ctrl+F9`
+kötés (10.22). A binárisból igazolt hatás nem ad elég bizonyítékot egy
+felhasználói funkcióhoz: a kapcsoló csak a felirat-frissítés idle-útját
+szabályozza. **Fejlesztői al-jegy nem javasolt** a futásteszt és a
+`0x005f89a0` callback-célja nélkül.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
