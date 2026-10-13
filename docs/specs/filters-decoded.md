@@ -6488,7 +6488,12 @@ A `HDR` leírója egyetlen natív műveletet hív (`<LocalContrastImageOperation
 | 5 | `NestedImageOperation` (`0x00bc1250`) **`Add`** (0, `0x00bc4520`): `BlendImageOperation blur` **`Subtract`** (8; `0x00bbf780`, vtábla `0x00cf0b2c`), `MultiplyColorMatrixImageOperation` (`0x00bb7680`) → `+0x40` | `0x00bc4460`–`0x00bc4524` | `+ C·max(be − elm, 0)` |
 | 6 | `NestedImageOperation` **`Subtract`** (8, `0x00bc46ab`): `GetVarImageOperation blur`, `BlendImageOperation orig` **`Subtract`**, `MultiplyColorMatrixImageOperation` → `+0x44` | `0x00bc454f`–`0x00bc46b0` | `− C·max(elm − be, 0)` |
 
-Az apply (`0x00bc4730`) a `Strength`-et (`+0x2c`, alapérték 1) mindkét szorzó `+0x28`-ába írja, a `Radius`-t (`+0x34`, alapérték 1) az elmosás `+0x24`/`+0x2c`-jébe (x és y). Ezután lefuttatja a láncot (`0x00bc47fd call 0x009a8ca0`).
+Az apply (`0x00bc4730`) a `Strength`-et (`+0x2c`, alapérték 1) mindkét
+szorzó `+0x28`-ába írja, a `Radius`-t (`+0x34`, alapérték 1) az elmosás
+`+0x24`/`+0x2c`-jébe (x és y). Végül a `0x00bc47fd` a bemeneti 40 bájtos
+képleírót másolja a kimeneti rekordba a `0x009a8ca0` segítségével; ez nem
+futtatja le a gyerekutasításokat. A teljes utasításlistát meghajtó külső hívó
+és a hozzá tartozó képleíró-verem ABI nyitott.
 
 ```
 HDR:            ki = be  + C·(be − elm)      (8 bites, lépésenként vágva)
