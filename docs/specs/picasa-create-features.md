@@ -4622,6 +4622,41 @@ Nyitva:
 
 **3. Mit nem lehet ebből még állítani.** Az animáció képkockánkénti értéke (`t_k`, a `k↔t` leképezés, a Gördülő pixel-végpontjai, a „Jó napom van” `H+0x2c` végpontja) a seed és a parser-szülő azonossága nélkül nem zárható le. A referencia-mérés (Picasa 3.9 filmexport) szintén hiányzik. A jegy „Kész, ha” pontjai ezért nem teljesíthetők ebből a körből.
 
+##### G.7.8.8 7. kör (2026-10-13): a seed-író keresése a pin létrehozási láncában — NYITOTT, jelöltekkel
+
+*Bemenet: `~/picasapy-agent/referencia/ghidra-koteg-2026-10-13b/0074e580.c` (teljes törzs) és `0074e670.c`; `ghidra-koteg-2026-10-12/00555a30.c` (a `0x555a30` törzse, a `0x6d…`-`0x74…` callee-k nélkül); `ghidra-koteg-2026-10-06c/00619010.c`; a bináris index `xrefs`/`functions` táblái. A bináris a gépen nincs, a Ghidra-futtatás Codespace-ben, hálózat nélkül nem indítható.*
+
+**1. A pin konstruktora nem írja a seedet — megerősítve a teljes törzsön.**
+
+- A `0x74e580` a szűrőt építi (`IPVCommunicate` + `CDXSlideshowFilter` vtábla), és a pint a `0x74d1c0`-nak adja. A pin-mutató a szűrő `+0x78` mezőjébe (`unaff_ESI[0x1e]`) kerül.
+- A `0x74d1c0` törzsének **minden** indexelt írását végigolvastam: a `[0x40]`, `[0x41]` (= `+0x100/+0x104`) és a `[0x44]`, `[0x45]` (= `+0x110/+0x114`) nullázódik; `[0x42]`/`[0x43]` (= `+0x108/+0x10c`) **nem** szerepel. A `_memset`-ek `[0x59]`, `[0x6b]`, `[0x4e]` kezdetű blokkokat nulláznak, a `0x108`-as mező egyikbe sem esik.
+- A pin-objektumot a `0x00c0769f` adja, ami egy `malloc`-burkoló (`_malloc`, sikertelenségnél `__callnewh` / `bad_alloc`), **nincs memset**. Következtetés: a `+0x108/+0x10c` a konstruktor után határozatlan, amíg valami nem írja. Ez az állítás a törzsekből következik, és nem mért.
+
+**2. A szűrő-gyár (`0x74e670`) sem ír seedet.** `FUN_00c0769f(0x80)` foglalja a szűrőobjektumot (a `0x74e580` ezt `unaff_ESI`-ként kapja, a Ghidra nem nevezi meg), majd a `0x74e580`-t hívja, és a `+8` interfészre `QueryInterface(&DAT_00c43490, param_1)`-t hajt végre. A seedhez nincs köze.
+
+**3. A hívó render-objektum (`0x555a30`) sem írja közvetlenül a `pin+0x108`-at.** A `0x218` bájtos objektum (`0x0097c5d0(0x218)` + memset) a `+0x184` mezőbe a `param_5`-öt, a `+0x18a`-ba `0xff`-et, a `+0x80`-ba `3`-at ír, majd `0x74e670(obj+0x1bc)`, `IPVCommunicate` QI, és `0x0054b440(obj+0x1b8, param_4)`. A `param_4` a `0x619010`-ből jön (lásd 5.).
+
+**4. A seed-író jelöltjei — mindegyik NINCS dekompilálva a kötegben:**
+
+| jelölt | miért jöhet szóba | állapot |
+|---|---|---|
+| `0x0074d5d0` (511 B, 3 xref-hívó) | a `0x74d1c0` a `+0x100/+0x104` nullázása után, a vtábla-hívások előtt hívja; a pin-init közvetlen része | NYITOTT — dekompiláció kell |
+| `0x0054b440` (123 B) | a `0x555a30` ide adja `obj+0x1b8`-nak a `param_4`-et; ha az időalap a `param_4`-ből jön, a szűrőbe ez viszi | NYITOTT — dekompiláció kell |
+| `0x619010` `param_4`-e: `[param_1+0x4b4]` objektum `vtbl+0xc` hívásának eredménye, `param_1+0x294` argumentummal | ez a `0x555a30` 4. argumentuma, tehát az export-paraméter-forrás | NYITOTT — a `vtbl+0xc` célját kell azonosítani |
+| `0x008287b0` (hívói `0x61df10`, `0x625000`) | a második gyárhívó; nincs dumpja | NYITOTT |
+| `0x006d4a00` (192 B), `0x0074d0a0` (18 B), `0x00abb720` (279 B) | a `0x74d1c0` többi callee-ja; a `0x74d1c0` hívja | NYITOTT — csak a `0x74d5d0` után érdemes |
+
+**5. A `0x619010`** (`ghidra-koteg-2026-10-06c/00619010.c`, a `0x555a30` egyetlen hívója a kötegben) a `0x555a30` 4. argumentumát a `[param_1+0x4b4]` objektum `vtbl+0xc` hívásából kapja, a `param_1+0x294` címmel. Ez a hívás a törzsben nincs tovább követve; a célfüggvénye nincs megnevezve.
+
+**6. Az xref-index állítása.** A `0x74e670` hívói (`0x555a30`, `0x8287b0`) és a `0x74e580` hívója (`0x74e670`) pozitív xref-ek. A seed-író hiánya az indexből **nem** következik: a vtábla-hívásokat az index nem látja, a `0x74d970` például nulla E8-xrefet kap.
+
+**Eredmény:**
+
+- **Exportkori seed értéke: NINCS MEG.** Az író nincs azonosítva, így sem az értéke, sem a forrása (időbélyeg, nulla, a `param_4`-ből származó érték) nem igazolt. A `0`-ra állítás **nem** igazolt.
+- **Pin-konstruktor:** a `+0x108/+0x10c` seedet NEM írja (bináris, teljes törzs). Ez zárva.
+- **Mi kell a lezáráshoz (konkrét kérés a Codespace-es Ghidrának):** dekompiláció a `0x0074d5d0`, `0x0054b440`, a `0x619010` `[param_1+0x4b4]` objektumának `vtbl+0xc` célja, és a `0x008287b0`. Ezek után a seed-író, ha van, a `0x74d5d0`/`0x54b440`/`vtbl+0xc` egyikében keresendő; a seed értékét az író írt operandusa adja.
+- **A `k↔t` leképezés, a Gördülő A/B végpontja, a „Jó napom van” `H+0x2c`, a referenciafilm:** továbbra sem zárható le, a seed nélkül. A jegy „Kész, ha” pontjai változatlanok, és ebből a körből nem teljesíthetők.
+
 #### G.7.9 Értékjegyzék a #4615 átadáshoz
 
 | érték vagy állítás | forrás |
@@ -4638,6 +4673,9 @@ Nyitva:
 | Írógép natív üteme `len/d` bájt/s; `d=transitiontime`, nem pozitív esetén `advanceinterval/3` | bináris (`0x8104b9`–`0x8104dc`; G.6.3/G.6.7) |
 | Gördülő interpoláció `3p²−2p³`, időmező `advanceinterval` | bináris (`0x818cf0`; `0x810fe5`; G.6.4/G.7.5) |
 | `textstyle1` alfa `0→255`, lineáris; `d` input `desc+0xec`, nem pozitív értéknél `desc+0xe8/3`; `H+0x08`-ba kerül | bináris (`0x8104b9`–`0x8104dc`, `0x8107a0`–`0x8107b2`, `0x809c50`, `0x809cd0`, `0x809af0`) |
+| szűrő-gyár `0x74e670` és render-objektum `0x555a30` nem ír `pin+0x108/+0x10c`-et (teljes törzsek) | bináris (`0074e670.c`, `ghidra-koteg-2026-10-12/00555a30.c`, G.7.8.8) |
+| pin-objektum `0x4c0` bájt, `malloc`-burkolóval foglalt, nincs memset → a seed a konstruktor után határozatlan (következtetés, nem mért) | bináris (`0x00c0769f`, `0x74d1c0`); G.7.8.8 |
+| exportkori seed-író és értéke: jelöltek `0x74d5d0`, `0x54b440`, `0x619010` `vtbl+0xc`, `0x8287b0` | NINCS MEG (G.7.8.8 §4) |
 | export seed tényleges értéke, parser-szülő és render-context azonossága, `k↔t` leképezés | NINCS MEG |
 | Gördülő tényleges pixeles A/B és textstyle1 `H+0x2c` mozgásvégpont/időszemantika | NINCS MEG |
 | referenciafilm képkockái, a három stílus natív mérési táblája, kimeneti képteszt | NINCS MEG |
