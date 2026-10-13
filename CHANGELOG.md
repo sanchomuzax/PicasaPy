@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.93] – 2026-10-14
+
+- A PR-ek ellenőrzése ritkábban futtatja feleslegesen a teljes tesztkészletet; az utolsó 30 beolvadásból 13 helyett már csak 4 esetben (#4922).
+
 ## [0.9.92] – 2026-10-13
 
 - A Sugaras elmosás (RadialBlur) képpontra az eredeti Picasa kimenetét adja, a kép szélein is (#4906).
