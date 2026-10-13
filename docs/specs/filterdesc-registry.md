@@ -4745,9 +4745,22 @@ A 12 alapállapotú futás nyers BGRA kimenete és esettáblája: [2026-10-13-ra
 
 Ebben a forced kontrollban az amount 25 és 25,7 teljes kimenete azonos; SHA-256 mindkettőre `0ee38b71deef72a1f287cf2544cc68941d8db3ae624e97028487bfca1e54f1ca`. A `focal.py` jelenlegi `zoom_blur`-ja az első öt amountot és a két 24×20-as koordinátakontrollt bájtra egyezően adja; 50/75/100-nál a fenti eltérések megmaradnak. Az eltérés oka **NINCS MEG**; értéket nem illesztettünk és képletet nem módosítottunk.
 
+**Kiegészítő közvetlen magmérés (#4906, 2026-10-13).** A QEMU-harness közvetlenül a `0x00bcf4b0` magot hívta, a `0x00bc24e0` apply diszasszemblálásával egyező argumentumsorrenddel. ABI-kontrollként a közvetlen `d695d2=0` kimenet bájtra egyezett a korábbi apply-mérés kimenetével 24×20-on, `(x,y)=(7,2;14)`, amount=1 és 50 esetén (a régi kimenetek SHA-256-a rendre `9a54896b6f7c65c5efeb38a5d20b7293bcf1965915d8eafe9e842424dfc0a565` és `8d6701c9b0f79f537ed879564e94beea661a68aaa92b2c31858a5b3d9c9a70f0`). A teszt 16×16 és 33×17 képeken, négy középponttal, amount 0/1/10/25/25,7/50/100 értékekkel futott; `d695d2=0` az eredeti általános ág, `d695d2=1` a kényszerített SSE2-ág. Az összevetés a jelenlegi `src/picasapy/render/focal.py::zoom_blur` modellel készült. A `0x027f` x87 vezérlőszó és a harness `da1424/da1428=1` állapota rögzített. A részletes, bájtszintű bemenetek, mindkét natív ág és a PicasaPy-kimenet hex/base64/SHA-256 adatai, valamint valamennyi eltérő pixel koordinátája a [2026-10-13-radialblur-4906-mag.json](../benchmarks/2026-10-13-radialblur-4906-mag.json) fájlban vannak.
+
+**ABI-cáfoló próba.** A közvetlen hívás első paramétersorrend-változatát a korábbi apply-mérés amount=50-es, 24×20-as kimenete cáfolta: a kimeneti hash nem egyezett; a két float argumentum megfelelő stackhelyre igazítása után pontos egyezés lett. A hibás első futás nem része a nyers mérési fájlnak. A végleges argumentumsorrendet ugyanazon apply-adat amount=1 és 50 kimenetével külön is ellenőriztük.
+
+| W×H; `(x,y)` pixel | SSE2 eltérő pixelek amount `0, 1, 10, 25/25,7, 50, 100` sorrendben | maximum csatornaeltérés amount `25,7, 50, 100` sorrendben |
+|---|---|---|
+| 16×16; `(8,8)` | `0, 0, 0, 57, 86, 131` | `6, 17, 36` |
+| 16×16; `(0,0)` | `0, 0, 0, 66, 140, 201` | `23, 53, 71` |
+| 33×17; `(16,5;8,5)` | `0, 0, 0, 0, 0, 0` | `0, 0, 0` |
+| 33×17; `(0,5;16)` | `0, 0, 0, 27, 105, 384` | `19, 61, 112` |
+
+A 25 és 25,7 natív kimeneti hash-e mind a négy középpontnál azonos. Az általános ág mind a 28 esetben minden pixelnél eltér a `zoom_blur`-től. A forced SSE2-ág eltérései a 16×16 `(8,8)` esetben amount=25-nél a `x=4…15, y=0…15` tartományban, a 16×16 `(0,0)` esetben szintén `x=4…15, y=0…15` tartományban jelentkeznek; a 33×17 `(0,5;16)` szélső esetben amount=25-nél csak az alsó sor `y=16, x=5…32` tér el. Minden pontos koordináta és mindkét BGRA-pixelérték a nyers JSON-ban szerepel. A 33×17 `(16,5;8,5)` középponti eset mind a hét amountnál bájtra egyezik. Az eltérés oka **NINCS MEG**: e mérések nem választják szét az x87 mátrixműveleti sorrendjét és a mintavételezési pozíció eltérését.
+
 **`Mask` és `ignoreObjects`.** A `runtime/filterdesc.xml:898–902` `_msk` néven `CircularGradientImageMask`-ot hoz létre, majd a RadialBlur gyerek `Mask="{_msk}"` attribútumára köti; ugyanott `ignoreObjects="true"` is szerepel. A `0x00bc2420` a három numerikus mező után `0x00bc4900`-t hívja; ez a `Mask` értéket a közös `this+0x14` mezőbe olvassa. A közös műveletfordító saját utasítás után fűzi a maszkoló utasítást (`0x00bc4ae0`, `MaskInstruction` ág), tehát a maszk az apply fölötti utasításrétegben érvényesül. Az apply törzse nem olvassa. A közös olvasó diszasszemblálásában nincs `ignoreObjects`-lekérés; a bináris ASCII és UTF-16LE literal-keresése sem talált ilyen sztringet. Ez nem zárja ki, hogy a külső XML-/objektumcső használja; a fogyasztó és a láncbeli hatás **NINCS MEG**.
 
-**Bizonyítottsági fok: feltételes.** A vtable/app út és az attribútumoffszetek utasításszintű bizonyítéka egyezik az XML-kötéssel és a natív futással; a forced SSE2-kimenetek függetlenül reprodukálják a korábbi táblát. A QEMU alapállapotú általános ág és a forced SSE2-ág külön eredményt ad; a teljes x87 mátrixműveletsor, a `zoom_blur` nagy amount-eltéréseinek oka és az `ignoreObjects` külső fogyasztója nyitott.
+**Bizonyítottsági fok: feltételes.** A vtable/app út és az attribútumoffszetek utasításszintű bizonyítéka egyezik az XML-kötéssel; a közvetlen maghívás korábbi apply-kimenetekkel való egyezése két amountnál ellenőrzi a hívási ABI-t. A forced SSE2-eredmények több képméreten és középponton bájtszinten összevethetők a mai kóddal, és a 25/25,7 kontroll az amount csonkolását méri. A teljes x87 mátrixműveletsor, a helyfüggő eltérések oka, az általános ág részletes pixelképlete és az `ignoreObjects` külső fogyasztója nyitott.
 
 **A #4906 készültsége:**
 
@@ -4755,7 +4768,7 @@ Ebben a forced kontrollban az amount 25 és 25,7 teljes kimenete azonos; SHA-256
 - Mintaszám, eltolás, súlyozás és kerekítés: ✅ `N`, `D`, `off`, 16.16 pontminta, 38/217 egész keverés; a QEMU x87 vezérlőszava és az egészkonverzió útja is rögzítve. A teljes x87 műveleti sorrend nyitott.
 - `Mask`: ✅ igazoltan a közös utasításrétegben, az apply fölött (`filterdesc.xml:898–902`, `0x00bc2420`, `0x00bc4900`, közös fordító).
 - `ignoreObjects`: ⛔ nyitott; a külső fogyasztó nincs azonosítva.
-- Mai kóddal összevetés: ✅ elvégezve; a QEMU alapállapotú általános út eltér, a forced SSE2-ág kis amountokon egyezik, nagy amountokon eltér.
+- Mai kóddal összevetés: ✅ 28 eseten bájtszinten elvégezve; az SSE2-eredmény a 16×16 középponti és sarokesetekben amount=25-től, a 33×17 alsó szélső középpontnál amount=25-től eltér; a 33×17 belső középpont mind a hét amountnál egyezik. Az általános ág minden vizsgált pixelnél eltér.
 
 **Cáfoló próba (15.2).** Azt próbáltuk cáfolni, hogy a korábbi 0 eltérésű táblázat a QEMU-harness változatlan alapállapotát írja le. Ugyanazon seedelt 24×20 bemeneten kizárólag `d695d2` változott: érintetlen 0 mellett amount 1-nél 1334/1440 színbájt tért el; forced 1 mellett a modell és a natív kimenet bájtra azonos lett. `d695d4` 0→1 változtatása forced SSE2 mellett amount 1/50/100 esetén nem módosította a kimeneti hashét. A cáfolatot azonos bájtösszehasonlítással végeztük; a régi `amount=1 → 1417` számot egyik ág sem adta.
 
