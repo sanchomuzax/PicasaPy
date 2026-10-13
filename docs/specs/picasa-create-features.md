@@ -3947,6 +3947,74 @@ különbözteti meg (`SlideshowView.qml:752–761`). A vetítési súgó is csak
 
 **Bizonyítottság:** a név- és osztályregisztráció megerősített (regisztráló, statikus rekord és RTTI-vtáblák); a filmkészítő arc-lekérési út feltételes (utasításszintű olvasat, de az azonosító forrása nyitott); a vetítés teljes viselkedése nyitott. A `kenburnsaoi` tényleges, archoz tartó vetítési képkockáihoz renderelt ellenőrzés szükséges.
 
+### #4856 — 3. kör: a `kenburnsaoi` útja, és mi NEM igazolt (2026-10-13)
+
+**Kérdés:** a teljes képernyős diavetítés (`BigSlideshow2`) a `kenburnsaoi` AOI-átmenetet használja-e; honnan jön az arc-régió; mi a kezdő- és végkép képlete.
+
+**Röviden.** (1) Az arc-ág feltétele bizonyított: a képkocka-függvény (`0x00813330`) a `this+0x28c == 0x14` (`kenburnsaoi`) esetén hívja az arcsegédet (`0x00813c50`). (2) A régió-rekord a `0x0074dfc0` képkocka-metódusból jön (`0x00812470` → mintavevő a `this+0x48` sávból), de hogy ez `.picasa.ini faces=` adat-e, nem igazolt. (3) A `kenburnsaoi`-t tényleg használó út a **film-/diaszerkesztő** (`MakeMoviePanel`), nem a `BigSlideshow2`. (4) A `BigSlideshow2` útja **nyitott**. (5) A kezdő/végkép képlete **nyitott**: nincs renderelt végpont.
+
+#### 3.1 Az arc-ág (bizonyított, dekompilált `0x00813330`)
+
+Forrás: `~/picasapy-agent/referencia/ghidra-koteg-2026-10-13/008127b0.c`, a `CALLEE FUN_00813330` blokk (1069–1275. sor).
+
+- A `0x00813330` a `this+0x28c` átmenet-indexet olvassa; a `0x00812aa0(this, this+0x1a8, this+0x7ec, …)` hívás után, de az AOI-csomópont építése előtt: `if (*(int*)(this+0x28c) == 0x14) FUN_00813c50();`.
+- Ha már van átmeneti csomópont (`this+0x560`) és típusa `0x14`, a csomópont `+0x4b0…+0x4bc` mezőit a `_DAT_00cf3ed0` konstanssal (−1.0 hiányjelző) írja felül.
+- Ha nincs csomópont, a `0x00771dc0(this+0x7c4, this+0x7ec, …)` hívás építi az AOI-csomópontot két téglalappal: `this+0x7c4` és `this+0x7ec`.
+- A `0x00812aa0` törzse ebben a körben **nincs** dekompilálva; a `this+0x7ec` kitöltése a `this+0x1a8` rekordból csak a hívási mintából következik.
+
+#### 3.2 A régió-rekord forrása (részben bizonyított)
+
+- `0x0074dfc0` a `CDXSlideshowPin` vtábla bejegyzése (`rtti.csv`, `CDXSlideshowPin::vftable`, `0x00cb1a08`, 5. oszlop) — a bináris-indexben ez a pin-osztály egyik virtuális metódusa. Közvetlen hívója nincs (vtábla-hívás nem látszik az xref-indexben).
+- `0x0074dfc0` közvetlenül hívja: `0x00812470` és `0x008127b0` (`xrefs.csv`). Ezek hívják a `0x00813330`-at.
+- `0x00812470` a `this+0x48` időzített sáv rekordját mintavevővel (`0x00610d30`) olvassa, és a `this+0x1a8` rekordba másolja (`0x00612350`, `0x006123d0`) — az előző körök szerint.
+- Ami NINCS: a sáv 0xf8 bájtos rekordjainak fájlbeli forrása, és hogy az azonosító (`+0x8`) `faces=` adat-e. Több arc közti választás: nincs a láncban bizonyítva.
+
+#### 3.3 Melyik út használja a `kenburnsaoi`-t (hívási gráf, xref-index)
+
+Ez a szakasz a közvetlen `call`-élekre támaszkodik (`xrefs.csv`, kind = `call` — más típus nincs). Pozitív lánc, nem negatív bizonyíték.
+
+| # | Lépés | Bizonyíték |
+|---|---|---|
+| 1 | `0x005de8e0` (szerkesztőpanel-dispatcher) hívja `0x005d59f0`-t | xref |
+| 2 | `0x005d59f0` tartalmazza az `editpanel/editslideshow` sztringet (0x005d59f0 string-xref) | string_xrefs |
+| 3 | `0x005d59f0` → `0x00689f40` (`MakeMoviePanel::autosave` sztring) → `0x00625000` (`IPicasaApp`) | xref + string_xrefs |
+| 4 | `0x00625000` → `0x008287b0` (`IPVCommunicate`, `CTransTimeline` sztring) | xref + string_xrefs |
+| 5 | `0x008287b0` → `0x0074e670` (72 bájtos függvény; a szomszédos `0x0074e710` a `CTransTimeline` sztringet és a filter-vtábla-tagok közül is egyet tartalmaz — a `0x0074e670` szerepe nincs dekompilálva) | xref + string_xrefs |
+| 6 | `0x0074e670` → … → a `CDXSlideshowPin` példány vtábla-hívása → `0x0074dfc0` | `0x0074dfc0` a pin-vtábla tagja (rtti); a 5→6 él NEM látszik xrefben |
+| 7 | `0x0074dfc0` → `0x00812470`/`0x008127b0` → `0x00813330` (arc-ág) | xref |
+
+A 6. lépés a gyenge pont: a pin-példány létrehozását és a vtábla-hívást az xref-index nem látja. Ezt a lépést a `0x0074e670` dekompilált törzsének olvasása döntené el (nincs még a körben).
+
+#### 3.4 A `BigSlideshow2` útja (NYITOTT)
+
+- `0x005e8a70` olvassa a `BigSlideshow2` beállítást; a sztringjei: `BigSlideshow2`, `Flipbook`, `CThumbUI::MakeFlip`, `Preparing timeline...`, `CThumbUI::MakeTimeline`.
+- A beállítás-betöltő `0x008037e0`: `Preferences`, `BigSlideshow2`, `oneup/timeline`, `qshow`, `oneup/transtype`. A `oneup/transtype` a teljes képernyős nézet átmenet-vezérlője.
+- Hívási gráf (közvetlen `call`-élek, mélység ≤ 6): `0x005e8a70` **nem éri el** sem a gyárat (`0x00771e60`), sem `0x00760b00`-t, sem a `CTransTimeline`/pin láncot (`0x008287b0`, `0x0074e670`, `0x0074dfc0`, `0x00813330`). Ez a 0x005e8a70 gráfja — nem zárja ki a vtábla-, indirekt- vagy esemény-visszahívásos bekötést, ezért **nem negatív bizonyíték**.
+- Nyitott kérdés: a `CThumbUI::MakeTimeline` (a `BigSlideshow2` builder) ugyanazt a `CTransTimeline` objektumot hozza-e létre, mint a `MakeMoviePanel` — ez a kör nem döntötte el.
+
+#### 3.5 A szerkesztő átmenet-választója (bizonyított, de nem a vetítés)
+
+- `0x005d3290` (`editoneup/transtype`) → `0x00760b00` (`ThumbUISlideShow::transition`) → `0x00760d50` (`editpanel/previewclip`, `%x-transition`) → `0x00771e60` (gyár). Ez az **előnézeti** csomópont (a `editpanel/previewclip` a szerkesztő előnézete), nem bizonyított, hogy a teljes képernyős lejátszás ugyanezt használja.
+- A `0x0075d810` (szintén `ThumbUISlideShow::transition` sztring) hívója a `0x005733f0`.
+
+#### 3.6 A kezdő- és végkép (NYITOTT)
+
+Kódból ismert, renderelt ellenőrzés nincs:
+
+- A célterület-mérés (`0x0076ee50`, 10/10 QEMU-egyezés, előző kör): érvényes `(x0,y0,x1,y1)` esetén `rne(x0−0.5, y0−0.5, x1+0.5, y1+0.5)`, majd a forrásméretre illesztés a `0x009b4b60` szerint, a kép határára tolva (méret-megtartással).
+- Az interpolátor (`0x0076eb40`, csak disasm, 10-12c szakasz): a `0x0076dd10`-et kétszer hívja, `(t+1)×0.5` és `t×0.5` paraméterrel; a paramétert `[0,1]`-re szorítja, és `u²×(3−2u)` simítást alkalmaz. A `+0x414` és `+0x438` tömbök hozzárendelése a kezdő/végképkockához **nyitott**.
+- Nincs renderelt kezdő- és végkép. A jelenlegi QML (`SlideshowView.qml:752–761`) ezt nem fedi le.
+
+Nem becsültem a képletet: a fenti két tömb és a `t` tartománya kimondottan nyitott.
+
+#### 3.7 Nyitott pontok (ebben a körben)
+
+- [blokkoló] `0x0074e670` dekompilálása: a pin-példány létrehozása és a vtábla-beállítás (3.3 6. lépés).
+- [blokkoló] `0x005e8a70` és `0x008037e0` vtábla-/indirekt hívásai: a `BigSlideshow2` tényleg a `CTransTimeline`/pin-ágon megy-e (3.4).
+- `0x00812aa0` dekompilálása: a `this+0x7ec` és a `this+0x1a8` közti pontos leképezés.
+- `0x00813c50` dekompilálása: a `+0x4b0…+0x4bc` írói, és hogy a face-régió `faces=`-eredetű-e.
+- Renderelt végpont: még egyetlen kezdő- vagy végképkocka sincs.
+
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
 A korábbi szakasz a `slideshowctrls.tre`-t idézte (két elem). **Az igazi
