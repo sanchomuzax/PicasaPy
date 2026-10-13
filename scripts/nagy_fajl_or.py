@@ -50,6 +50,10 @@ KIVETELEK: dict[str, str] = {
         "tiszta telepítésen letöltés nélkül működjön (#4513; 38,7 MB, "
         "SHA-256 a faces/model_download.py-ban)"
     ),
+    "docs/benchmarks/2026-10-13-radialblur-4906-mag.json": (
+        "a #4906 teljes, 28 esetes natív BGRA-mérése, bemenetekkel, mindkét "
+        "natív ággal, PicasaPy-kimenettel és eltérő pixelekkel (2,3 MB)"
+    ),
 }
 
 
