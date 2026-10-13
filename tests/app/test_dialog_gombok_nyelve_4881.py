@@ -51,6 +51,9 @@ def _futtasd(nyelv: str, monkeypatch) -> dict[str, str]:
     monkeypatch.setenv("LANG", "hu_HU.UTF-8")
     monkeypatch.setenv("LC_ALL", "hu_HU.UTF-8")
     monkeypatch.setenv("PYTHONPATH", os.pathsep.join(sys.path))
+    # Windowson a gyermek stdout-ja különben a konzol kódlapján (cp1252)
+    # menne ki, és az ékezet a UTF-8 olvasáskor elveszne.
+    monkeypatch.setenv("PYTHONIOENCODING", "utf-8")
     futas = subprocess.run(
         [sys.executable, "-c", _PROBA],
         capture_output=True,
