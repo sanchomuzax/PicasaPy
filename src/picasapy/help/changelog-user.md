@@ -4,6 +4,75 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-13
+
+**Rejtett mappák**
+
+- Az elrejtett mappa a mappa saját `.picasa.ini` fájljába kerül, mint a
+  Picasában: rejtett marad akkor is, ha a program újraolvassa a
+  könyvtárat, és a Picasában elrejtett mappák itt is rejtve jelennek
+  meg.
+- A rejtett mappák képei a mappán kívül sem látszanak: a keresés, a
+  szűrők, az Emberek nézet, az idővonal, az albumok, a térkép, a
+  diavetítés, a képernyővédő és a képtálca is kihagyja őket — kivéve, ha
+  a **Nézet ▸ Rejtett képek** be van kapcsolva. Lásd
+  [A könyvtár](features/konyvtar.md).
+- Az **Import a Picasából** a régi Picasa rejtett-mappa jelszavát is
+  átveszi, ha itt még nincs saját jelszavad. Lásd
+  [Importálás](features/importalas.md).
+
+**Fájlműveletek**
+
+- Tömeges átnevezésnél a **Dátum** a felvétel dátumát és idejét is a
+  névbe teszi, a tiltott jelek helyén kötőjellel; a névmezőbe nem írható
+  tiltott fájlnév-karakter, és a két jelölőnégyzet állása megmarad. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- A nézőben albumból vagy Emberek albumból megnyitott képen a
+  **Ctrl+Delete** és a helyi menü tétele már nem a lemezről töröl, hanem
+  csak az albumból veszi ki a képet. Lásd [Nézegetés](features/nezegetes.md).
+
+**Könyvtár**
+
+- A bal hasáb mappáinak kis indexképei induláskor gyorsabban jelennek
+  meg.
+
+## 2026-10-12
+
+**Billentyűk**
+
+- Az **F3** a kereső mezőre ugrik (mint a Ctrl+F), az **F4** csillagot ad
+  a kijelölt képekre, vagy elveszi róluk. Lásd
+  [Billentyűparancsok](features/billentyuk.md).
+
+**Importálás és exportálás**
+
+- Az importálás forrása most **egyes fájlok** is lehetnek: a **Tallózás…**
+  gomb menüjében a **Mappa…** és a **Fájlok…** közül választhatsz. Lásd
+  [Importálás](features/importalas.md).
+- A HTML-oldal exportálásakor egyetlen méretválasztó van (alapból 640
+  képpont), és a mozgófilmek **első képkockaként** vagy **teljes
+  mozgófilmként** kerülhetnek az oldalra. Az árnyékolás két
+  jelölőnégyzete megszűnt, az árnyékot a sablon adja. Lásd
+  [Exportálás](features/exportalas.md).
+
+**Szerkesztés**
+
+- Az effektek fülén a Shift lenyomására a kétféle effektet adó csempék
+  kis előnézete is átvált. Lásd [Effektek](features/effektek.md).
+- Az **Egyéni méretarány hozzáadása** ablak az eredeti feliratait kapta;
+  a saját arányok az **Egyéni méretarányok** cím alatt állnak, és a
+  lista melletti kukával törölhetők. Lásd [A szerkesztő](features/szerkeszto.md).
+- A szerkesztő fülsávjának ikonjai az eredeti méretét és rajzát követik.
+
+**Emberek és film**
+
+- Az Emberek panel fejléce mutatja, ha a háttérben még tart az
+  arckeresés a kijelölt képeken, és hány fájl ellenőrizetlen még. Lásd
+  [Emberek](features/emberek.md).
+- A filmkészítő előnézete a kiválasztott **átmenet** mozgását is
+  lejátssza, és a szöveges dia gépelés közben frissül. Lásd
+  [Mozgófilm](features/mozgofilm.md).
+
 ## 2026-10-11
 
 **Néző és diavetítés**

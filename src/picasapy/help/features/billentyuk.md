@@ -28,7 +28,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+Enter | Keresés a lemezen — kijelölés nélkül a megnyitott mappát mutatja a fájlkezelőben |
 | F2 | Átnevezés |
 | Delete | Törlés lemezről a rácsban — albumban és Emberek albumban ehelyett kiveszi a képet az összeállításból |
-| Ctrl+Delete | Törlés lemezről (a nézőben) |
+| Ctrl+Delete | Törlés lemezről (a nézőben) — albumból vagy Emberek albumból megnyitott képen ehelyett kiveszi a képet az összeállításból |
 
 ## Szerkesztés és kijelölés
 
@@ -73,6 +73,8 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+0 | A jobb oldali panel be- és kikapcsolása |
 | Ctrl+3 | A kijelölt kép megnyitása a nézőben |
 | Ctrl+F | A kereső mezőre ugrik |
+| F3 | A kereső mezőre ugrik (ugyanaz, mint a Ctrl+F); a nézőben nem működik |
+| F4 | Csillag adása vagy elvétele a kijelölt képeken, mint a képtálca csillag-gombja; a nézőben is működik, diavetítés alatt és gépelés közben nem |
 | Ctrl+F6 | Váltás a másodpéldányok nézetére |
 | Ctrl+F7 | Keresés hasonló képekre |
 | Ctrl+F8 | A hasonlóság-minta törlése |

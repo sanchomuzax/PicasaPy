@@ -27,7 +27,11 @@ felulet.md` 9.1/b) — ettől jelenik meg az album a Projektek gyűjtőben.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from .document import IniDocument
+from .io import update_document
+from .names import INI_NAME
 
 #: A besorolást hordozó kulcs és a mappaszintű szekció neve. Nyilvános:
 #: az írók (kollázs-/film-kimenet) is EZT használják, hogy a kulcsnév
@@ -41,6 +45,11 @@ PROJECTS_CATEGORY = "Projects (internal)"
 FOLDERS_ON_DISK_CATEGORY = "Folders on Disk"
 OTHER_STUFF_CATEGORY = "Other Stuff"
 EXPORTED_PICTURES_CATEGORY = "Exported Pictures"
+#: #4597: a „Mappa elrejtése" ide sorolja át a mappát (`0x005ee2a0`); a
+#: megjelenítés `Folders on Disk`-et ír vissza.
+HIDDEN_FOLDERS_CATEGORY = "Hidden Folders"
+#: A Picasa 2-örökség kulcs: üres `P2category` mellett ez érvényes.
+LEGACY_CATEGORY_KEY = "category"
 DOWNLOADED_ALBUMS_PREFIX = "Downloaded Albums~"
 
 _BUILTIN_CATEGORIES = frozenset(
@@ -49,6 +58,7 @@ _BUILTIN_CATEGORIES = frozenset(
         PROJECTS_CATEGORY.casefold(),
         OTHER_STUFF_CATEGORY.casefold(),
         EXPORTED_PICTURES_CATEGORY.casefold(),
+        HIDDEN_FOLDERS_CATEGORY.casefold(),
     }
 )
 
@@ -57,14 +67,31 @@ def read_folder_category(document: IniDocument) -> str | None:
     """A mappa `P2category` értéke, körülvevő szóközök nélkül.
 
     NEM szűr és nem értelmez: a hívó dönti el, melyik gyűjteménybe sorolja.
-    Hiányzó szekció, hiányzó kulcs és üres érték egyaránt `None`."""
+    Üres vagy hiányzó `P2category` esetén a régi `category` kulcs érvényes
+    (az eredeti olvasója is így tesz, #4597). Hiányzó szekció, hiányzó kulcs
+    és üres érték egyaránt `None`."""
+    section = document.section(FOLDER_SECTION)
+    if section is None:
+        return None
+    for key in (CATEGORY_KEY, LEGACY_CATEGORY_KEY):
+        value = section.get(key)
+        stripped = value.strip() if value is not None else ""
+        if stripped:
+            return stripped
+    return None
+
+
+def read_explicit_folder_category(document: IniDocument) -> str | None:
+    """Csak a `P2category` kulcs értéke — a régi `category` tartalék NÉLKÜL.
+
+    Az író ezzel dönti el, van-e már kimondott besorolás: a Picasa 2-örökség
+    `category=Folders on Disk` nem akadályozhatja meg a `P2category` beírását
+    (#791, #4597)."""
     section = document.section(FOLDER_SECTION)
     if section is None:
         return None
     value = section.get(CATEGORY_KEY)
-    if value is None:
-        return None
-    stripped = value.strip()
+    stripped = value.strip() if value is not None else ""
     return stripped or None
 
 
@@ -105,3 +132,29 @@ def is_projects_category(value: str | None) -> bool:
     if not value:
         return False
     return value.strip().casefold() == PROJECTS_CATEGORY.casefold()
+
+
+def is_hidden_folders_category(value: str | None) -> bool:
+    """A `P2category` érték a **Hidden Folders** (elrejtett mappa) jelölése-e.
+
+    Az eredeti gyűjtemény-keresése csak az ASCII betűkre kis-nagybetű-tűrő,
+    vágás nélkül hasonlít (`0x00453970`, #4597); a `casefold` ezt a
+    magyar ékezetes betűkre is kiterjesztené, de a `Hidden Folders` név
+    csupa ASCII, így a két viselkedés itt azonos."""
+    if value is None:
+        return False
+    return value.strip().casefold() == HIDDEN_FOLDERS_CATEGORY.casefold()
+
+
+def set_folder_hidden_in_ini(folder: str | Path, hidden: bool) -> None:
+    """A mappa elrejtése/megjelenítése a mappa `.picasa.ini`-jében (#4597).
+
+    Elrejtéskor `[Picasa] P2category=Hidden Folders`, megjelenítéskor
+    `P2category=Folders on Disk` — az eredetihez híven NEM állítja vissza az
+    elrejtés előtti gyűjteményt. A többi kulcs változatlan; ini nélküli
+    mappánál létrejön a fájl."""
+    value = FOLDERS_ON_DISK_CATEGORY if not hidden else HIDDEN_FOLDERS_CATEGORY
+    update_document(
+        Path(folder) / INI_NAME,
+        lambda document: with_folder_category(document, value),
+    )

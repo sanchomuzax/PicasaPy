@@ -6,8 +6,9 @@ kódlapjáé, a QML az utat betű szerint adja át. Ez a próba VALÓDI QML
 `Image`-en át kéri a borítót — nem közvetlen `requestImage`-hívással —,
 tehát a Qt URL-kezelését is lefedi.
 
-A figyelmeztetés tehát csak fotó nélküli mappánál jelenik meg, ahol a
-null kép szándékos (#2215: a sor a mappaikonra esik vissza).
+A figyelmeztetés tehát csak fotó nélküli mappánál jelent meg, ahol a
+null kép szándékos volt (#2215: a sor a mappaikonra esik vissza). #4876 óta
+ott is érvényes, 1 × 1-es jelölő jön, tehát a sor sem jelenik meg többé.
 """
 
 from __future__ import annotations
@@ -16,8 +17,9 @@ from pathlib import Path
 
 import pytest
 
-from picasapy.app.folder_cover_provider import FolderCoverProvider, borito_fajljai
+from picasapy.app.folder_cover_provider import FolderCoverProvider, borito_belyegkepe
 from picasapy.index import open_index, sync_tree
+from picasapy.thumbs.cache import ThumbnailCache
 from support.jpeg_factory import make_jpeg
 
 _WINDOWS_UT = "C:\\Users\\X\\OneDrive - Cég Kft\\Képek\\teszt"
@@ -58,7 +60,8 @@ def ekezetes_mappa(tmp_path: Path):
 
 def test_az_ekezetes_indexelt_mappa_boritoja_BETOLTODIK(qt_app, tmp_path, ekezetes_mappa):
     db, mappa = ekezetes_mappa
-    assert _statusz(qt_app, tmp_path, lambda m: borito_fajljai(db, m), str(mappa)) == _READY
+    tar = ThumbnailCache(tmp_path / "thumbs", size=144)
+    assert _statusz(qt_app, tmp_path, lambda m: borito_belyegkepe(db, m, tar), str(mappa)) == _READY
 
 
 def test_a_windowsos_ut_BETU_SZERINT_er_a_szolgaltatohoz(qt_app, tmp_path, ekezetes_mappa):

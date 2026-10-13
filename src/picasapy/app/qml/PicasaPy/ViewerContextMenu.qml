@@ -53,6 +53,9 @@ PicasaMenu {
     property bool hasEdits: false
     property bool hasBackup: false
     property bool hasOriginalOnDisk: false
+    // #4621: albumból megnyitott képen a törlés-tétel az albumból eltávolít
+    // (felirat és művelet ugyanabból a feltételből, a gazdától)
+    property bool removesFromAlbum: false
     readonly property bool _keresesAlmenu: menu.hasOriginalOnDisk
     // a felhasználó albumai: {token, name} elemek (a PhotoContextMenu
     // `albums` tulajdonságának mintája)
@@ -239,7 +242,8 @@ PicasaMenu {
         // #1418: itt is Ctrl+Delete, ugyanúgy mint a rácsban (spec 4.,
         // ld. a fájl fejlécének megjegyzését) — a valódi billentyű a
         // PhotoViewer.qml Keys.onPressed-jében él.
-        text: qsTr("Delete from Disk") + "\tCtrl+Delete"
+        text: (menu.removesFromAlbum ? qsTr("Remove from Album")
+                                     : qsTr("Delete from Disk")) + "\tCtrl+Delete"
         onTriggered: menu.triggerDelete()
     }
     MenuItem {

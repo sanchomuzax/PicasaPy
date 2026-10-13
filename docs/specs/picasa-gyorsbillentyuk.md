@@ -855,6 +855,17 @@ lemez-szintű), a „soha ne törölj" változattal 5 mappa-nézeti teszt.
 rács-menü `\tDelete`-je és a kép helyi menüje `Ctrl+Delete`-je közti
 pontos felület-határ.
 
+### A NÉZŐ ága — a binárisból kiolvasva, nálunk követi (#4621, 2026-10-11)
+
+A `0x9c9a` diszpécser-kezelője (`0x005cbaef`) felülettől függetlenül a
+`0x005c9b00(ui, !Shift, 1, 1)`-et hívja, és a néző helyi menüje is a
+`CThumbUI`-é (`0x00595fe0`, vtábla `0x00c906f4`). A nézetfüggés tehát a
+nézőre **ugyanúgy** érvényes: albumból megnyitott képen a `Ctrl+Delete`
+**eltávolít az albumból** („Elemek eltávolítása” megerősítéssel), mappában
+Lomtárba tesz, `Shift`-tel véglegesen töröl; a néző helyi menüjének felirata
+is ugyanezen a feltételen vált; nálunk mindhárom néző-belépő a közös elágazáson megy át. Részletek és címek:
+`ui-audit-context-menus.md` **D.7**.
+
 ---
 
 ## 10. A `D` forrás: a könyvtárnézet SAJÁT billentyűkezelője (#442, 2026-09-03)
