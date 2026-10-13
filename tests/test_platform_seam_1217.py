@@ -471,6 +471,12 @@ _ENGEDETT_GLOBALIS = {
     ("sys", "stdin"),
     ("sys", "stdout"),
     ("sys", "stderr"),
+    # #4317: TAGADÓ teszt („tiszta profilon SEHOL nincs hálózati próbálkozás”) —
+    # a hálózattiltásnak szándékosan az egész folyamatra kell hatnia; egy
+    # modulszintű fogantyú csak egy modulra állítana (ld. a fenti táblázatot).
+    ("socket", "connect"),
+    ("socket", "connect_ex"),
+    ("socket", "getaddrinfo"),
 }
 
 #: A rögzítő hívások, amiket nézünk. A `monkeypatch` mellett a
