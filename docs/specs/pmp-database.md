@@ -4387,6 +4387,46 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
 - [ ] ha a sorrend csak munkamenetre szól: a 15.5 „egyedi sorrend” sora és a
       15.6 „Egyedi sorrend” pontja lezárva tárgytalanként.
 
+### 15.4c Harmadik kör (2026-10-13, #4884): a producer és a mód-beállító friss dekompilátuma
+
+**Kérdések:** ki hívja a `0x00715280` producert; honnan jön a 3. argumentuma; van-e tartós írás (`ini` / `db3` / `albums.db`) a láncban.
+**Forrás:** Ghidra 12.1.2 (`DecompileTargetsCallees`), a `ghidra-koteg-2026-10-13/` kötegből (`00715280.c`, `0071c4f0.c`, `0074d970.c`, `008127b0.c`) és a bináris-index. A hívói és a láncbeli kérdéseket **indextől független** bájtpásztázással és a capstone-os diszasszemblálással is ellenőriztem (`Picasa3.exe`, SHA-256 `644b7bec…dc96`).
+
+| állítás | bizonyíték | bizottság |
+|---|---|---|
+| A `0x00715280` producernek **nincs direkt hívója**: a teljes `.text` E8/E9 pásztázásában 0 találat | bájtpásztázás (indextől független) | igazolt |
+| A `0x0071c4f0` mód-beállítónak sincs direkt hívója | bájtpásztázás | igazolt |
+| A két függvényre 3-3 **absztrakt** (vtábla-) hivatkozás van, mindhárom a `CSelectionNode`-családban: `CSelectionNode` (`0xcad5b4`), `CAlbumSelectionNode` (`0xcb46f4`), `CFoundFaceSelectionNode` (`0xcb483c`); a COL-ból olvasott osztálynév | `.rdata` dword-pásztázás + RTTI (COL → TypeDescriptor) | igazolt |
+| A producer a vtábla **40.** (`+0xa0`), a mód-beállító a **48.** (`+0xc0`) rése; a három osztályban a 40/44/48 rés azonos (nincs felülírás) | vtábla-kiolvasás | igazolt |
+| A producer hívói **virtuális hívások**; az objektum statikus típusa nincs megnevezve, így a hívó nem azonosítható | fenti két tény együtt; a közvetlen `call [reg+0xa0]` bájtminta (`FF 90–97 A0 00 00 00`) 0 találat; a `A0 00 00 00` bájtsor 1 675 helyen áll, de a hívó-objektumhoz nem köthető | **nyitott** |
+| A 3. argumentum a producerben `[item+0xb4]`-be íródik, és továbbmegy: `FUN_00715090(item, arg3)`, `FUN_00714fb0(arg3)` (memóriatömb-hozzáfűzés), `FUN_007220b0` → vtábla `+0x18` hívása a `[item+0x34]` objektumon `(arg3, item+0x64)` argumentumokkal | dekompilátum, `00715280.c` 60–156. sor; `007220b0` a `00715280.c` 427. sortól | a **forrása** nyitott (a hívó nincs meg) |
+| A `[item+0x34]` egy kulcsot kap és visszaad egy egész értéket, amelyet a `[item+0xb8]` cache-el; ez elemkulcs/index jellegű, **nem bizonyíték az értékre** | `007220b0` logikája | igazolt szerep, érték nincs |
+| A direkt hívási gráf a két gyökérből (`0x715280`, `0x71c4f0`, plusz a `0x714510` slot-44 függvény) **126 függvény**; importok közt: heap, kritikus szakasz, TLS, GDI bitmap (`CreateDIBSection`, `GetDC`/`ReleaseDC`), CRT-kilépés. **Nincs** fájl-, ini-, sqlite- vagy registry-író | `closure.py`: PE import-tábla feloldás + capstone, direkt `call`/`jmp` bejárás | igazolt a **direkt** gráfra |
+| A gráf **nyitott vtábla-lyukakat** tartalmaz (lásd lent), ezért a „nincs tartós írás" csak a direkt hívásokra érvényes | `closure.py` 85 feloldatlan hely | nyitott |
+
+**Nyitott vtábla-lyukak** (a direkt gráfból kimaradó hívások):
+
+1. A producer 5× `call eax`: a `[*(this+…)+0x244]` láncon talált objektum zárja/nyitja magát a `+0x18` / `+0x1c` slotokon (`piVar1[3]` = nem-kritikus-szakasz ág). Az objektum típusa nincs megnevezve.
+2. `007220b0`: a `[item+0x34]` objektum `+0x18` és `+0xc` slotja (a layout-/kulcs-objektum). Ez a **legfontosabb lyuk**: ha ez írna lemezre, a lánc tartóssá válna.
+3. A mód-beállító: `(*param_1)+0xb0` (= `0x714510`, a derivált osztályokban azonos; a többi osztályban nincs ellenőrizve) és a dinamikus cast-olt csomópont `+0x14`.
+4. `0x007184e0` (a `ytDrawUI` → `IDSContainer` cast eredménye, a `+0x2c4` mezőben cache-elve): `(**puVar2)()` hívás.
+
+**Következtetés (a kérdésekre):**
+
+- **Ki hívja a producert?** Nem direkt hívás. A három `CSelectionNode`-családi vtábla-bejegyzésen keresztül hívható; a konkrét hívó nincs azonosítva.
+- **Honnan jön a 3. argumentum?** Nyitott. A szerepe az elemkulcs, a forrása a hívóban van.
+- **Van-e tartós írás a láncban?** A direkt hívási gráfban **nincs** (126 függvény, nincs fájl/db API). A **vtábla-lyukakon** (lent) viszont nem zárható ki: a `+0x34` objektum és a lock-objektum típusa a döntő.
+
+**Kész, ha** (a 15.6 „Kész, ha" listáját ez konkretizálja; a 15.4 nyitott kérdésére):
+
+- [ ] a `[item+0x34]` objektum konstruktora és osztálya megnevezve, a `+0x18`/`+0xc` slot implementációja dekompilálva (tartós írás van-e)
+- [ ] a lock-objektum `+0x18`/`+0x1c` slotjainak implementációja dekompilálva
+- [ ] a producer hívója (a `CSelectionNode`-családi objektumon) megnevezve, a 3. argumentum forrása bizonyítva
+- [ ] a `0x714510` (slot 44) felülírása a többi derivált osztályban ellenőrizve
+- [ ] db3-pillanatkép (két átrendezés, újraindítás előtt/után) — csak ha a fenti négy pont nem zárja le a tartósságot
+
+*Bizonyítottsági fok:* a direkt gráf és a vtábla-hivatkozások **megerősített** (két független út: bájtpásztázás és dekompilátum). A hívó, a 3. argumentum forrása és a vtábla-lyukak tartalma **nyitott**. Nincs becsült érték.
+
 ### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
 
 | tétel | az eredeti tárolása (mérve) | a PicasaPy átvétele ma (`pmpimport/`) | a PicasaPy saját tárolása ma |
@@ -4446,7 +4486,7 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
 | melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
 | milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
 | hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
-| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után); 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után); 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben; 3. kör (2026-10-13): **15.4c** — a producernek nincs direkt hívója (csak 3 vtábla-hivatkozás, `CSelectionNode`-család), a direkt hívási gráfban nincs fájl/db-író (126 függvény); a hívó, a 3. argumentum forrása és a `+0x34` objektum / lock-objektum vtábla-slotjai nyitva |
 
 *Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
 importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
