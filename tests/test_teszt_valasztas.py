@@ -161,6 +161,46 @@ def test_sugo_tartalom_valtozasnal_a_minden_lapot_olvaso_tesztek_futnak(
     assert set(tv.HELP_TESTS) <= set(dontes.fajlok)
 
 
+def test_docs_valtozasnal_a_teljes_utvonalat_vagy_alapnevet_emlito_teszt_is_fut(
+    repo: Path,
+) -> None:
+    utvonalas = "tests/test_spec_utvonal.py"
+    alapneves = "tests/test_spec_alapnev.py"
+    masik = "tests/test_spec_masik.py"
+    (repo / utvonalas).write_text(
+        'SPEC = "docs/specs/picasa-format.md"\n', encoding="utf-8"
+    )
+    (repo / alapneves).write_text(
+        'SPEC = "picasa-format.md"\n', encoding="utf-8"
+    )
+    (repo / masik).write_text('SPEC = "masik.md"\n', encoding="utf-8")
+
+    dontes = tv.select_tests(repo, ["docs/specs/picasa-format.md"])
+
+    assert not dontes.teljes
+    assert utvonalas in dontes.fajlok
+    assert alapneves in dontes.fajlok
+    assert masik not in dontes.fajlok
+    assert set(tv.SMOKE_TESTS) <= set(dontes.fajlok)
+
+
+def test_a_gyorsbillentyu_spec_dokumentacios_valtozasnal_kivalasztja_a_regresszios_orot() -> None:
+    dontes = tv.select_tests(
+        _ROOT, ["docs/specs/picasa-gyorsbillentyuk.md"]
+    )
+
+    assert "tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py" in dontes.fajlok
+
+
+def test_a_docs_only_kivalasztott_tesztjei_elinditjak_az_ubuntu_darabot() -> None:
+    ci = (_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    ubuntu = ci.split("\n  darabok-ubuntu:", 1)[1].split("\n  darabok-windows:", 1)[0]
+    kotelezo = ci.split("\n  test-ubuntu:", 1)[1].split("\n  test-windows:", 1)[0]
+
+    assert "needs.valtozas.outputs.darabszam != '0'" in ubuntu
+    assert "needs.valtozas.outputs.darabszam != '0'" in kotelezo
+
+
 def test_forditasi_katalogus_valtozasnal_az_i18n_orok_futnak(repo: Path) -> None:
     dontes = tv.select_tests(
         repo, ["src/picasapy/app/i18n/picasapy_hu.ts"]
