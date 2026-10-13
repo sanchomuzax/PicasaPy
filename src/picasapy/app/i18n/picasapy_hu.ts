@@ -7805,6 +7805,30 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A mappát nem sikerült újra megjeleníteni, mert a .picasa.ini fájlja nem írható. A mappa rejtett marad.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A mappa nem jeleníthető meg újra, amíg nem érhető el (például lecsatolt meghajtó). A mappa rejtett marad.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A mappa rejtett, de a Picasa számára nem sikerült rejtettként megjelölni (a .picasa.ini nem írható).</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rejtett mappa nem helyezhető át gyűjteménybe. Előbb szüntesse meg a rejtését.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Áthelyezés új személyhez</translation>

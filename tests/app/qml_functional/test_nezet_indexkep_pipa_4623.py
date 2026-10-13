@@ -30,14 +30,31 @@ _SZERKESZTES_NEV = "menuViewEditView"
 _EGYEDI_ARANY = 0.26
 
 
+class _TesztQmlElem(QObject):
+    def __init__(self, nev, tulajdonsagok, osztaly="", szulo=None):
+        super().__init__(szulo)
+        self.setObjectName(nev)
+        self._tulajdonsagok = tulajdonsagok
+        self._osztaly = osztaly
+
+    def property(self, nev):
+        return self._tulajdonsagok.get(nev)
+
+    def inherits(self, nev):
+        return self._osztaly == nev
+
+
+class _TesztNezetAblak(QObject):
+    def property(self, nev):
+        if nev == "menuBar":
+            # A PySide wrapper-cache hibáját utánozza: a QObject property
+            # olvasása QMetaObject wrapperrel tér vissza.
+            return QMetaObject()
+        return super().property(nev)
+
+
 def _objektum(window, nev):
-    for gyoker in (window, window.property("menuBar")):
-        if gyoker is None or not hasattr(gyoker, "findChild"):
-            continue
-        elem = gyoker.findChild(QObject, nev)
-        if elem is not None:
-            return elem
-    return None
+    return window.findChild(QObject, nev)
 
 
 _NEZET_FELIRATOK = {"&View", "&Nézet"}
@@ -45,6 +62,25 @@ _NEZET_FELIRATOK = {"&View", "&Nézet"}
 # (GC) a QML-fa elemeit is megsemmisítette (a következő lépésnél „already
 # deleted"), ezért a menüelemeket ide tesszük, mint a _fomenu_4420_menu.py.
 _QML_ELEMEK: list = []
+
+
+def test_nezet_menu_keresese_turi_a_menu_bar_property_qmetaobject_valaszat(
+    qt_app,
+):
+    window = _TesztNezetAblak()
+    menu = _TesztQmlElem(
+        "menuView", {"title": "&View", "opened": True}, szulo=window
+    )
+    _TesztQmlElem(
+        "viewHeader",
+        {"text": "&View"},
+        osztaly="QQuickMenuBarItem",
+        szulo=window,
+    )
+
+    _nezet_menu(window, qt_app)
+
+    assert menu.property("opened") is True
 
 
 def _kattints(qt_app, elem) -> None:
@@ -61,25 +97,36 @@ def _kattints(qt_app, elem) -> None:
 
 
 def _nezet_menu(window, qt_app) -> None:
-    """A felső Nézet menü megnyitása, a mostani QML-fából (gyorsítótár nélkül).
+    """A felső Nézet menü megnyitása, a QML-fa kész állapotára várva.
 
-    ⚠️ A `menuBar` wrappert NEM adjuk vissza: egy eldobott Python-referencia
-    a PySide-ban az ablakot is megsemmisítette (a teszt a következő lépésnél
-    „already deleted"-tel állt meg).
+    A `menuBar` QML property PySide-olvasása a QML-engine-ek újraépülése
+    után elavult `QMetaObject` wrappert adhat vissza. A menü és a fejléce
+    név/típus alapján közvetlenül az ablak objektumfájából kereshető; így nem
+    használjuk a bizonytalan property-wrappert, és nem hagyunk életben
+    `metaObject()` burkot sem.
     """
-    menu_bar = window.property("menuBar")
-    _QML_ELEMEK.append(menu_bar)
-    menu = next(
-        item
-        for item in menu_bar.findChildren(QObject)
-        if item.property("title") in _NEZET_FELIRATOK
+    talalat = [None, None]
+
+    def menu_es_fejlec_elkeszult() -> bool:
+        menu = _objektum(window, "menuView")
+        fejlec = next(
+            (
+                item
+                for item in window.findChildren(QObject)
+                if item.inherits("QQuickMenuBarItem")
+                and item.property("text") in _NEZET_FELIRATOK
+            ),
+            None,
+        )
+        if menu is None or fejlec is None:
+            return False
+        talalat[:] = [menu, fejlec]
+        return True
+
+    assert _varj(qt_app, menu_es_fejlec_elkeszult), (
+        "a Nézet menü vagy a fejléce nem épült fel"
     )
-    fejlec = next(
-        item
-        for item in menu_bar.findChildren(QObject)
-        if "MenuBarItem" in item.metaObject().className()
-        and item.property("text") in _NEZET_FELIRATOK
-    )
+    menu, fejlec = talalat
     _QML_ELEMEK.extend((menu, fejlec))
     if menu.property("opened") is not True:
         _kattints(qt_app, fejlec)
@@ -89,19 +136,21 @@ def _nezet_menu(window, qt_app) -> None:
 
 
 def _zarj_nezet_menut(window, qt_app) -> None:
-    menu_bar = window.property("menuBar")
-    for menu in menu_bar.findChildren(QObject):
-        if menu.property("title") in _NEZET_FELIRATOK and menu.property("opened"):
-            QMetaObject.invokeMethod(menu, "close", Qt.ConnectionType.DirectConnection)
+    menu = _objektum(window, "menuView")
+    if menu is not None and menu.property("opened"):
+        QMetaObject.invokeMethod(menu, "close", Qt.ConnectionType.DirectConnection)
     qt_app.processEvents()
 
 
 def _pipak(window, qt_app) -> dict[str, bool]:
     """A három tétel pipája a Nézet menü ÚJRA-megnyitása után."""
     _nezet_menu(window, qt_app)
-    allapot = {
-        nev: _objektum(window, nev).property("checked") is True
+    elemek = {
+        nev: _nezet_menupont(window, qt_app, nev)
         for nev in (_KIS_NEV, _NORMAL_NEV, _SZERKESZTES_NEV)
+    }
+    allapot = {
+        nev: elem.property("checked") is True for nev, elem in elemek.items()
     }
     _zarj_nezet_menut(window, qt_app)
     return allapot
@@ -109,8 +158,25 @@ def _pipak(window, qt_app) -> dict[str, bool]:
 
 def _kattints_nezet(window, qt_app, nev: str) -> None:
     _nezet_menu(window, qt_app)
-    _kattints(qt_app, _objektum(window, nev))
+    _kattints(qt_app, _nezet_menupont(window, qt_app, nev))
     _zarj_nezet_menut(window, qt_app)
+
+
+def _nezet_menupont(window, qt_app, nev: str):
+    elem = [None]
+
+    def menupont_lathato() -> bool:
+        talalat = _objektum(window, nev)
+        if talalat is None or talalat.property("visible") is not True:
+            return False
+        elem[0] = talalat
+        return True
+
+    assert _varj(qt_app, menupont_lathato), (
+        f"a {nev} menüpont nem jelent meg a megnyitott menüben"
+    )
+    _QML_ELEMEK.append(elem[0])
+    return elem[0]
 
 
 def _magassag(window, offset: int) -> None:
