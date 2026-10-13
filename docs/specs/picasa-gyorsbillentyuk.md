@@ -1846,6 +1846,8 @@ A 10.24 „Ctrl+G nyitott” állítása ezzel pontosítva: a lánc megvan, a v�
 - A `0x00774b60` hívója `0x0077524a`-nál: a második `ShowWindow`-útnak nincs azonosított argumentuma (`[esp+0x20]`).
 - Futásbeli próba (az eredeti Picasa): **NINCS MEG**; a látható tartalom és az időzítés csak célzott próbával mérhető.
 
+**Megvalósítás-állapot (#4928 → 0.9.89, #4935, `e30b6d5b4`):** lásd a 10.32-t — a fő látványelem megvan, de a feltételrendszer és az elhelyezés nem egyezik a fenti binárisbeli lánccal.
+
 **Kész, ha (ha megépítjük, nem most).** A jegy csak akkor nyitható fejlesztői al-jegynek, ha az első három nyitott pont (EnableHover alapérték, `[e70]` jelentése, Alt-elengedés útja) lezárva van. Addig a feature nem specifikált. Javasolt feltételek:
 
 - [ ] `EnableHover` alapértéke igazolva (a `0x407a20` és a `0x4019b0` alapértékének két független olvasata).
@@ -1939,6 +1941,51 @@ Egyik ismert jelölt sem billentyűkezelő a részleges olvasás alapján. Mivel
 - [ ] `V.vtbl[+0x74]` célja és a gyermekei igazolva, vagy kódúton `0xf4241`.
 - [ ] Dinamikus mérés a könyvtárnézetben.
 - Csak ha mindhárom nyitott pont negatív: „a Ctrl+G a könyvtárnézetben hatástalan”.
+
+### 10.32 #4699 / #4928 — lefedi-e a megvalósítás a 10.28 hatását? (2026-10-13)
+
+**Kérdés:** a `#4928` (0.9.89, `e30b6d5b4` / PR #4935) a jegy kérdését — a Ctrl+Alt látható hatását — lefedi-e, és ha nem, mi a különbség.
+
+**Következtetés:** a **fő látványelem** egyezik: Ctrl+Alt lenyomva tartva felugró nagy előnézet jelenik meg az egér alatti rácselemről, elengedésre eltűnik (`tests/app/qml_functional/test_ctrl_alt_hover_preview_4928.py`, a `ctrlAltHoverPreviewWindow` objektum). **Nem fedi le** a 10.28 feltételrendszerét és elhelyezését: a kapcsoló rossz (buboréksúgó, nem `EnableHover`), a méretküszöb más objektumon van, a kép kiválasztása a 10.28 3. lépésével ellentmond, és az elrejtés késleltetése hiányzik. A #4928 jegy törzse ezt állítja (`EnableHover` + „a spec feltételeit követi”), a kód nem teljesíti.
+
+**Bizonyíték — összevetés (eredeti Picasa 3.9.141 bináris ↔ #4935 kód):**
+
+| Szempont | Bináris (eredeti) | #4935 megvalósítás | Egyezik? |
+|---|---|---|---|
+| Kapcsoló | `Preferences\EnableHover`, HKCU-olvasás: `push 0xc8e624` (`EnableHover`), `push 0xc7eafc` (`Preferences`), `call 0x4019b0` @ `0x564cd3`–`0x564d16` — **megerősített** | `showTooltipsEnabled` (`appearance_controller.py:185`, kulcs `view/showTooltips`, #4449 Általános fül buboréksúgó); a teszt is ezt kapcsolgatja (`setShowTooltipsEnabled`) | **NEM** — másik beállítás |
+| Kapcsoló alapértéke | **NINCS MEG.** A `0x564d00` `mov [esp+0x70],1` a `0x407a20` bemenete; a `0x407a20` hiányzó-kulcs ága nincs végigkövetve. A `0x4019b0` a `RegOpenKeyEx`-burkoló (`0xf003f`), nem ad alapértéket. | nincs összevetve | — |
+| Ctrl+Alt bemenet | VK `0x12` + Ctrl-ág `0x005e65dc` (10.22) | Ctrl és Alt együtt a Qt-eseményszűrőben (`eventFilter`, `ctrlAltHeld`) | **egyezik** |
+| Előtér | feltétel (10.28) | `grid.appWindow.active` (`LightboxFeed.qml`) | **egyezik** (feltételes) |
+| Méretküszöb | a **gyerekablak** kliensszélessége > 1024 px (`GetClientRect(child)`, 10.28 5. lépés) | a **popup-ablak** szélessége > 1024 px (`LightboxFeed.qml`, `visible: … width > 1024`); a popup szélessége a képből jön (≤ 1200 + 24) | **NEM** — más objektum, más szám |
+| Kép kiválasztása | `[panel+0xe70]`; a 10.28 3. lépése szerint `[e70] := [e64]`, vagyis az **aktuális kép** indexe (a jelentés feltételes) | `onHoverChanged` → `hoverPreviewRow`: a **kurzor alatti** rácselem | **NEM** — a kurzor-alatti azonosítás a láncból **nem következik**; ez a #4928 premisszája, és a 10.28 3. lépésével ellentmond |
+| Elhelyezés | ankerezés a 4. slotra, `MoveWindow`-alak (`0x571a80`, `0x aa5760`); a koordináta **NINCS MEG** | a főablak közepére igazítva | **nem igazolt** |
+| Alt-elengedés | Alt-tartás alatt marad; elengedés után a következő tick-en rejt, ha az utolsó frissítés Alt-tal volt (10.28 — a tick-periódus **NINCS MEG**, `0x0097d150`) | `requested` a `ctrlAltHeld`-hez kötött → az elengedés **azonnal** rejt | **NEM** — a tick-késleltetés hiányzik |
+| Kurzor | `IDC_HAND` (`0x7f89`) Alt-tartás alatt (10.28) | nincs | **NEM** |
+| Egérgomb-elrejtés (Alt nélkül) | fő gomb lenyomása rejt (`0x7754b0`, 10.28) | nincs | **NEM** |
+| Videó | **NINCS MEG** | kizárva (`isVideo`) | nincs összevetve |
+
+**Mit jelent a különbség a felhasználónak:** (a) `EnableHover` kikapcsolt eredeti Picasában a popup nem jelenik meg; nálunk a buboréksúgó-kapcsolótól függ — a két kapcsoló független, tehát a viselkedés eltér mindkét irányban; (b) a kép forrása (kurzor vs. aktuális kép) nem igazolt, és ez a legfontosabb nyitott pont a „mit lát a felhasználó” szempontjából.
+
+**Fok:** a fő megjelenés (Ctrl+Alt → felugró kép, elengedésre eltűnik) **megerősített** két úton (bináris: 10.28; kód + teszt: #4935). A feltételrendszer (kapcsoló, méretküszöb) és a képforrás a binárissal **nem egyezik**, ezért az #4935 ezen a ponton eltér a bináris láncától. Az elhelyezés, a tick-késleltetés, a kurzor és a videó **nyitott**.
+
+**Nyitott kérdések mérlege (10.27):**
+
+- `NYITOTT — EnableHover alapértéke` — blokkoló a kapcsoló helyes bekötéséhez. Módszer: a `0x407a20` hiányzó-kulcs ágának végigkövetése (a `0x407a20` `[esp+0x20]`-as paramétere a `DefaultValue` mutató-e), és a `0x4019b0` hívói között egy másik `EnableHover`-olvasó keresése; második út: célzott eredeti-program próba `EnableHover` törölt kulccsal (Wine nincs a gépen, ezért `picasa-colab-jobs` kell, `felhasználóra-vár` nélkül).
+- `NYITOTT — a kép forrása: [e70] = aktuális kép vagy kurzor alatti kép` — a `0x56b6f0` / `0x00571a80` lánc egy célzott Colab-próbával dönthető el (Alt-tartás, egér két különböző rácselemen).
+- `NYITOTT — Alt-elengedés tick-késleltetése` — a `0x0097d150` periódusa és a `0x0077524a` `ShowWindow`-argumentuma.
+- `NYITOTT — elhelyezés` — a `0x00aa5760` slot-geometria kiszámítása `respack`-ből nem adódik; eredeti-program képernyőkép kell.
+- `HATÓKÖRÖN KÍVÜL` — nincs tétel. Lezárva: a fő megjelenés (10.28, #4935). Nyitva marad a fenti négy pont.
+
+**Kész, ha — a #4928 eltéréseinek javítása** (fejlesztői al-jegy, ha a két blokkoló pont — EnableHover alapérték, képforrás — eldőlt):
+
+- [ ] a popup-kapcsoló `Preferences\EnableHover` (HKCU, alapérték a bizonyított), nem `view/showTooltips`; a buboréksúgó-kapcsoló nem érinti;
+- [ ] `EnableHover` kikapcsolva → nincs popup (teszt a `test_ctrl_alt_hover_preview_4928.py` mintájára);
+- [ ] a képforrás a bizonyított azonosító (`[e70]` jelentése szerint), és a teszt két különböző rácselemen ellenőrzi;
+- [ ] Alt-elengedés után a késleltetés a mért tick-periódus, nem azonnali;
+- [ ] a popup-küszöb (>1024 px) a bizonyított objektumon (gyerekablak), nem a kép méretén;
+- [ ] renderelt képernyőkép az eredeti Picasa képével összevetve (a `felhasználóra-vár` csak akkor, ha a Colab-próba nem ad képet).
+
+**Módszertani megjegyzés:** a #4928 jegy a 10.28 feltételeit idézte, de a megvalósítás a `showTooltips` kapcsolót használta, a bináris `EnableHover`-jét nem. A jövőben a megvalósítás-jegy az `EnableHover` olvasóját nevezze meg, és a `test_` fájl egy `EnableHover`-kikapcsolt esetet is tartalmazzon.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
