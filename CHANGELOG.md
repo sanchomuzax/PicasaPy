@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.91] – 2026-10-13
+
+- A Pixelate natív kimenetével egyező kicsinyítést és középre igazított visszanagyítást ad (#4908).
+- A PR-ek tesztjei a módosításhoz kapcsolódó ellenőrzésekre szűkülnek, Windows alatt pedig csak a Windows-érzékeny tesztek futnak (#4922).
+- A Ctrl+Alt felugró előnézet már nem a buboréksúgó kapcsolóját követi, hanem a saját beállítását, amely alapból be van kapcsolva (#4949).
+- A forráskódból és a tesztadatokból kikerültek a fejlesztőgép helyi felhasználói útvonalai (#4952).
+
 ## [0.9.90] – 2026-10-13
 
 - A hiányos paraméterű Fókuszpixelezés a Picasához hasonlóan változatlanul hagyja a képet, nem alapértékekkel pixelez (#4941).
