@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.88] – 2026-10-13
+
+- A teljes tesztkészlet tesztfájlonként oszlik el, a főmenü tesztesetei kisebb fájlokba kerülnek (#4932).
+
 ## [0.9.87] – 2026-10-13
 
 - Dokumentációváltozáskor a kapcsolódó tesztek is lefutnak, és a kiválasztott tesztek PR-en Windows alatt is futnak (#4922).
