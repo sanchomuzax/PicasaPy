@@ -9,6 +9,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.9.87] – 2026-10-13
 
+- Dokumentációváltozáskor a kapcsolódó tesztek is lefutnak, és a kiválasztott tesztek PR-en Windows alatt is futnak (#4922).
 - A hálózati mappák ellenőrzése közben is használható marad a főablak, és láthatóvá válik az indulás aktuális lépése (#4687).
 - A mappa menüje egyszeri, mappánkénti rendezést végez, természetes névösszevetéssel (#4890).
 
