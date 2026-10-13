@@ -8085,13 +8085,18 @@ termékkódot ebben a körben nem módosítottam.
 `test_comicize_maszk_kuszob_2476.py` fájlokon.*
 
 
-#### ⛳ A körmaszk képpontonként: egész koordináta, SIMD-kerekítés, 16 bites pozíció — a Lomo és a Holga bitre egyezik (2026-09-29, 410. kör, #3957)
+#### ⛳ A körmaszk képpontonként: egész koordináta, SIMD-kerekítés, 16 bites pozíció — egész paraméterekre (2026-09-29, 410. kör, #3957; tört paraméterek pontosítása: #4905)
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten, és a Picasa-exporttal bitre egyezik. Független újralevezetés (#3957): EGYEZIK, ugyanazokkal a képpontértékekkel. A fenti bájt-út (#3390) áll; ez a szakasz a `CircularGradientImageMask` koordinátáit, a SIMD-ág kerekítését és a mi eltérésünket teszi hozzá.*
 
 **A megálló-tábla** a `CircularGradientImageMask`-hoz (`0x00bc2a50`, ld. „A körmaszk alakja kiolvasva”, #3583): `R = max(inner, outer)`, az első megálló `p₁ = csonk(255·inner/R)` alfa `csonk(255·innerAlpha)`, a második 255-nél `csonk(255·outerAlpha)`. A rekeszek a `0x008f3700` szerint `T[i] = trunc(a₀ + (a₁ − a₀)·f32((i − p₁)/(255 − p₁)))`; `p₁` előtt `a₀`, 255-től 256-ig `a₁` (`rep stosd`, `0x008f39d2`, `0x008f3aba`) — 257 elem.
 
-**A pozíció** (`0x008f3970`):
+**A pozíció** (`0x008f3970`). Az alábbi rövid képlet az egész
+`xCenter/yCenter`, egész sugarak és `aspectRatio=1` esetén igazolt alak; a
+tört bemenetekre nem általánosítható. A #4905 nyolc QEMU-goldenje az
+eredeti maszkot bájtra visszaadó befoglaló-doboz-transzformációt igazolta;
+annak rögzített képlete és bemenetei a `filterdesc-registry.md` 4.11-es
+szakaszában vannak.
 
 ```
 u = (x − cx) · 65280 / R,   v = (y − cy) · 65280 / R      ; x, y EGÉSZ képpontindex (0-tól, fldz @ 0x008f3b67), nincs +0,5
@@ -8101,7 +8106,7 @@ i = P >> 8,  f = P & 0xff
 alfa = (T[i+1]·f + T[i]·(256 − f)) >> 8                     ; 0x008f4086–0x008f411d (skalár), 0x008f3d44–0x008f3df1 (SIMD)
 ```
 
-A lépték: a `0x008f3840` a befoglaló téglalapot (`0x00bd05f0`: `2R × 2R`, bal felső sarok `(cx − R, cy − R)`) a Flash-színátmenet `1638,4`-es egységére képezi (`[0xcf47f0]`), ennek inverzét (`0x00a4a140`) a `[0xcf48f0] = 79,6875 = 65280/819,2` szorozza (`0x008f3b1f`) — együtt `65280 / R` képpontonként. A SIMD-ágat az SSE2-jelző választja (`[0xd695d2]`, a `0x00c33d30` állítja be CPUID EDX 26-ból; `0x008f3b14`, `je 0x008f3fe7` a skalár ágra). A két ág ritkán eltér: a (0, 320) képpontnál `√ = 43 519,996` → SIMD 43 520 (alfa 127), skalár 43 519 (alfa 126).
+Az egész paraméterű, `aspectRatio=1` esetre a `0x00bd05f0` doboza `2R × 2R`, bal felső sarka `(cx−R, cy−R)`, ezért a `0x008f3840` (`[0xcf47f0]`) és az inverz-affin szorzó (`[0xcf48f0] = 79,6875`) együtt `65280/R` képpontonkénti skálára egyszerűsödik. **Ez nem általános képlet tört középpontra/sugárra vagy más aspectre:** a helper a négy dobozértéket külön `FISTP`-vel egészíti ki, a skálázás pedig e kerekített doboz méretétől függ (részletek a 4.11-es szakaszban). A `[0xd695d2]` jelző `1`-es értéke az SSE2-ágat választja (`0x008f3b14`, `je 0x008f3fe7` a skalár ágra); a #4905 nyolc goldenje ezt az értéket kényszerítette. A két ág ritkán eltér: a (0, 320) képpontnál `√ = 43 519,996` → SIMD 43 520 (alfa 127), skalár 43 519 (alfa 126).
 
 **Példa** — 960 × 640, Lomo `Blur = 50` (`inner = 240`, `outer = R = 720`, `p₁ = 85`):
 
@@ -8123,9 +8128,9 @@ A lépték: a `0x008f3840` a befoglaló téglalapot (`0x00bd05f0`: `2R × 2R`, b
 
 A `holga__alap` a #3931/#3951 után maradt 0,010-e is 0,000. Más golden-pár nem változik (a fókuszos effektek saját maszkfüggvényt használnak).
 
-**Nálunk:** `render/glimmer_ops.py::circular_gradient_mask` (folytonos float maszk, képpontközéppel) → fejlesztés: #3958.
+**Nálunk:** `render/glimmer_ops.py::circular_gradient_mask` a paraméter-középpontból és sugárból közvetlenül számolja a skálát; a tört bemenetek natív dobozkerekítését és az aspectet nem modellezi.
 
-**✅ Megvalósítva (2026-09-29, #3958):** `circular_gradient_mask` a fenti megálló-táblával, egész koordinátával és 16 bites, legközelebbire kerekített pozícióval számol (a `u²+v²` összeg és a `√` float32, a `rint` a float32 eredményen — ezt a spec rögzíti; az `u`/`v` alakja NEM rögzített: nálunk `(x−cx)·65280/R` float64-ben, majd float32-re; a tábla törtje float32; a kimenet `alfa/255`). Mérve a 684-es készleten, Picasa-kvantálótáblákkal (előtte → utána): `lomo__alap` 0,0633 → 0,00003; `lomo__min` 0,0327 → 0,0000; `holga__alap` 0,0096 → 0,00005; `holga__min` 0,0027 → 0,00001; `lomo__max`, `holga__max` 0,0000 → 0,0000 (a kimenet bájtra azonos). A négy példaérték (480,320)→0, (0,320)→127, (0,0)→178, (100,100)→105 egységteszttel őrzött. ⚠️ Az `outer ≤ inner` esetre a spec képlete is érvényes (`R = max` miatt `p₁ = 255`, `trunc`-csonkolás); a korábbi kemény lépcső azért maradt, mert `inner = outer = 0` mellett az új út nullával osztana. A hívók oda nem jutnak. Egyedül a páratlan méret középpontja (`cx = W/2`) nem rögzített.
+**✅ Megvalósítva (2026-09-29, #3958), tört bemenetekhez pontosításra vár:** `circular_gradient_mask` a fenti megálló-táblával, egész koordinátával és 16 bites, legközelebbire kerekített pozícióval számol; jelenlegi közvetlen `(x−cx)·65280/R` normalizálása bájtra egyezik az itt rögzített egész paraméterű esettel. A 684-es készleten mért export-hasonlósági javulás megmarad (előtte → utána): `lomo__alap` 0,0633 → 0,00003; `lomo__min` 0,0327 → 0,0000; `holga__alap` 0,0096 → 0,00005; `holga__min` 0,0027 → 0,00001; `lomo__max`, `holga__max` 0,0000 → 0,0000. Ez az összevont exportmérés nem helyettesíti a nyers maszk-goldent: a #4905 mérései szerint a mai függvény az itt megadott tört középpont/sugár és `aspectRatio≠1` esetekben eltér; a natív doboz-transzformációt a 4.11 írja le. A páratlan méretből adódó tört képpontközéppont ezért szintén a #4905 javítási körébe tartozik.
 
 ## A Comicize ágának két lépése a binárisból: a BW NEM küszöböl, a maszkos GetVar pontosan `PartialMask` (2026-09-23, #3507)
 

@@ -20,7 +20,7 @@ def _photo(folder, name):
 
     return SimpleNamespace(
         name=name, folder_path=str(folder), size=1024, width=4, height=4,
-        taken_at=None, kind="photo", keywords=(),
+        taken_at=None, kind="photo", keywords=(), sort_mtime_ns=0,
     )
 
 

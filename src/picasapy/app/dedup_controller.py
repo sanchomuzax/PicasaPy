@@ -49,8 +49,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from picasapy.dedup import find_duplicates
-from picasapy.dedup.phash import compute_dhash
 from picasapy.fileops import (
     CompanionLeftBehindError,
     delete_photo_to_trash,
@@ -210,6 +208,21 @@ def _grouped_paths(report) -> list[str]:
             seen.setdefault(str(path), None)
     return list(seen)
 
+
+
+# A duplikátum-algoritmus csak tényleges kereséskor kell; a főablak
+# vezérlőinek felállítása ne töltse be a képfeldolgozó magot (#4913). A két
+# modulszintű név megmarad, hogy a tesztek fogantyúként cserélhessék.
+def compute_dhash(path):
+    from picasapy.dedup.phash import compute_dhash as _compute_dhash
+
+    return _compute_dhash(path)
+
+
+def find_duplicates(*args, **kwargs):
+    from picasapy.dedup import find_duplicates as _find_duplicates
+
+    return _find_duplicates(*args, **kwargs)
 
 class DedupController(BackgroundWorkerMixin, QObject):
     """A `DedupDialog.qml` háttér-hídja: keresés indítása és a csoportok

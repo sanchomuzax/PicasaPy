@@ -28,7 +28,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+Enter | Keresés a lemezen — kijelölés nélkül a megnyitott mappát mutatja a fájlkezelőben |
 | F2 | Átnevezés |
 | Delete | Törlés lemezről a rácsban — albumban és Emberek albumban ehelyett kiveszi a képet az összeállításból |
-| Ctrl+Delete | Törlés lemezről (a nézőben) |
+| Ctrl+Delete | Törlés lemezről (a nézőben) — albumból vagy Emberek albumból megnyitott képen ehelyett kiveszi a képet az összeállításból |
 
 ## Szerkesztés és kijelölés
 
