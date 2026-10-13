@@ -133,6 +133,10 @@ def test_metrikus_terulet_ot_alapmerete_a_nyomtatas_fulon_latszik(
     class MetrikusQLocale:
         MeasurementSystem = QLocale.MeasurementSystem
 
+        @classmethod
+        def system(cls):
+            return cls()
+
         def measurementSystem(self):
             return QLocale.MeasurementSystem.MetricSystem
 
