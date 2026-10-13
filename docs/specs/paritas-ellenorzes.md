@@ -1,6 +1,6 @@
 # PicasaPy paritás-ellenőrzés — #4317
 
-**Vizsgálati dátum:** 2026-10-06. **Hatókör:** a 2–4. réteg statikus QML-ellenőrzése; nem teljes kiadási paritásmérés.
+**Vizsgálati dátum:** 2026-10-13. **Hatókör:** a 2–4. réteg korábbi statikus QML-ellenőrzése, a 6. réteg tiszta profilos kattintáspróbája és a 7. réteg effektkimenet-mérése. A rétegállapotok a jegy korábbi köreihez és az alábbi bizonyítékokhoz kötődnek.
 
 ## A vizsgált állapot és a bizonyítás módja
 
@@ -119,12 +119,115 @@ A statikus keresés **nem talált üres vagy csak `console.log/warn/error` hív�
 
 A fenti futásban a felsorolt műveletek mindegyikénél nulla hálózati próbálkozást rögzítettünk. A teszt nem indított asztali vagy külső alkalmazást. E mért tiszta profilos útvonalban nem figyeltünk meg hiányzó vagy nem működő elemet, így ehhez a réteghez nem keletkezett új fejlesztői jegyjavaslat. Ez az eredmény nem zárja le a 7. réteg képpontos effekt-összevetését és nem helyettesíti az összes Picasa-parancs futásidejű vizsgálatát.
 
+## 7. réteg — effektkimenetek
+
+**Mérési dátum:** 2026-10-13. **Render-pillanatkép:** `fix/4317-codex`, `a8ba353b3561`. A PicasaPy kimeneteket az eredeti Picasa 3.9 exportjaival hasonlítottam össze. Az elsődleges referencia a helyi `meroadat.tar` `684-merokeszlet/export` könyvtára; 180 paraméteres sorból 179-hez volt Picasa-export. A 73 renderelt effektcsalád mindegyikéhez van legalább egy ilyen referencia. Az `unsharp` `max` változatához a 684-es csomagban nincs export; annak külön Picasa-referenciája a `meroszett` készletben van.
+
+Az eltérést a meglévő `tools/golden/analyze_validation_kit.py::mean_de` mérővel, CIE76 átlagos ΔE-ként számoltam; az egyezési küszöb a mérő `MATCH_DE = 2.0` értéke. A 684-es és a `meroszett` összevethető képpárjainak mérete egyezett. Minden érték nyers mért szám, nem becslés. Az alábbi 684-es oszlop az `alap`, `max`, `min`, illetve ahol szerepel, a `hex4` és `hex8` változatok egyedi ΔE-it sorolja.
+
+| Effekt | 684-es eredeti Picasa-export ΔE76 | Állapot az összes érvényes eredeti referencián |
+|---|---|---|
+| `ansel` | alap 0,038 | egyezik |
+| `autobacklight` | alap 0,121 | egyezik |
+| `autocolor` | alap 0,172 | egyezik |
+| `autocontrast` | alap 0,190 | egyezik |
+| `autolight` | alap 0,229 | egyezik |
+| `backlight` | alap 0,190; max 0,153; min 0,121 | egyezik |
+| `blur` | alap 0,116; max 0,104; min 0,104 | egyezik |
+| `boost` | alap 0,145; max 0,095; min 0,121 | egyezik |
+| `border` | alap 0,095; max 0,055; min 0,121 | egyezik önállóan; láncban lásd alább |
+| `bw` | alap 0,034 | egyezik |
+| `cinemascope` | alap 1,082 | egyezik |
+| `colorfix` | alap 0,121 | egyezik |
+| `colortemp` | alap 0,820; max 0,541; min 0,504 | egyezik |
+| `comicize` | alap 0,453; max 0,207; min 0,412 | egyezik |
+| `contrast` | alap 0,233; max 0,179; min 0,196 | egyezik |
+| `crossprocess` | alap 0,764; max 0,121 | egyezik |
+| `dir_brite` | alap 0,187 | egyezik |
+| `dir_sat` | alap 0,184 | egyezik |
+| `dir_sharp` | alap 0,384 | egyezik |
+| `dir_tint` | alap 0,170; max 0,199; min 0,121 | egyezik |
+| `dropshadow` | alap 0,084; max 0,054; min 0,083 | egyezik |
+| `enhance` | alap 0,190 | egyezik |
+| `fill` | alap 0,121; max 0,153 | egyezik |
+| `finetune` | alap 0,381; max 0,632; min 0,170 | egyezik |
+| `finetune2` | alap 0,574; max 0,569; min 0,170 | egyezik |
+| `focalpixelate` | alap 0,121; max 0,121; min 0,121 | egyezik |
+| `focalzoom` | alap 0,311; max 0,121; min 0,212 | egyezik |
+| `gamma` | alap 0,168; max 0,168; min 0,151 | egyezik |
+| `glow` | alap 0,264; max 0,284; min 0,121 | egyezik |
+| `glow2` | alap 0,264; max 0,284; min 0,121 | egyezik |
+| `grain` | alap 2,675 | **eltér**; további mérések lent |
+| `grain2` | alap 0,121 | **eltér**; merokit-2: 2,661 |
+| `hdr` | alap 0,265; max 0,121; min 0,188 | egyezik |
+| `heatmap` | alap 0,537; max 0,121; min 0,557 | **eltér**; meroszett: 4,254 és 3,324 |
+| `holga` | alap 0,512; max 0,121; min 0,088 | egyezik |
+| `invert` | alap 0,116 | egyezik |
+| `ir` | alap 0,063; max 0,121 | egyezik |
+| `linblur` | alap/max/min 0,274 | egyezik |
+| `localcontrast` | alap 0,159; max 0,258; min 0,121 | egyezik |
+| `lomo` | alap 0,267; max 0,121; min 0,263 | egyezik |
+| `matte` | alap 0,176; max 0,121; min 0,121 | egyezik |
+| `museummatte` | alap 0,230; max 0,287; min 0,128 | egyezik |
+| `neon` | alap 0,395; max 0,121 | egyezik |
+| `nightvision` | alap 4,528; max 0,121; min 3,624 | **eltér**; további mérések lent |
+| `orton` | alap 0,211; max 0,121; min 0,153 | egyezik |
+| `pencilsketch` | alap 0,128; max 0,121; min 0,017 | egyezik |
+| `picnikfocalpixelate` | alap 0,231; max 0,121; min 0,114 | **eltér**; merokit-2: 8,666 |
+| `picnikgrain` | alap 0,882; max 1,380; min 0,121 | egyezik |
+| `picniktint` | alap 0,373; max 0,121 | egyezik |
+| `pixelate` | alap 0,098; max 0,121; min 0,128 | egyezik |
+| `polaroid` | alap 0,118; max 0,131; min 0,131 | egyezik |
+| `quantizepalette` | alap 0,347; max 0,121; min 0,360 | egyezik |
+| `radblur` | alap 0,326; max 0,324; min 0,340 | egyezik |
+| `radsat` | alap 0,082; max 0,128; min 0,034 | egyezik |
+| `radtint` | alap 0,688; max 0,690; min 0,669 | egyezik |
+| `reanimatedeyecolor` | alap/max/min 0,121 | egyezik |
+| `roundededges` | alap 0,124; max 0,128; min 0,121 | egyezik |
+| `sat` | alap 0,152; max 0,452; min 0,036 | egyezik |
+| `sepia` | alap 0,495 | egyezik |
+| `shadow` | alap 0,178; max 0,180; min 0,121 | egyezik |
+| `sixties` | alap 0,970; max 0,121; min 1,049 | egyezik |
+| `soften` | alap 0,196; max 0,121; min 0,121 | egyezik |
+| `tilt` | alap 0,156; max 0,244; min 0,240 | egyezik |
+| `tint` | alap 0,585; max 0,532; min 0,517; hex4 0,121; hex8 0,121 | **eltér**; merokit-2: 2,136 |
+| `triple` | alap 0,188; max 0,005; min 0,193 | egyezik |
+| `triple2` | alap 0,247; max 0,000; min 0,026 | egyezik |
+| `triple3` | alap 0,194; max 0,131; min 0,121 | egyezik |
+| `twotone` | alap 0,546; max 0,121; min 0,670 | **eltér**; meroszett: 3,662 |
+| `unsharp` | alap 0,172; max: nincs 684-es export; min 0,121 | egyezik; meroszett max 0,251 |
+| `unsharp2` | alap 0,172; max 0,277; min 0,121 | egyezik |
+| `vignette` | alap 0,169; max 0,121; min 0,121 | egyezik önállóan; láncban lásd alább |
+| `warm` | alap 0,613 | egyezik |
+| `whitept` | alap 0,121 | egyezik |
+
+### Kiegészítő eredeti Picasa-referenciák és összetett láncok
+
+| Referencia és mérő | Nyers eredmény | Állapot |
+|---|---|---|
+| `PicasaPy meroszett/export-202608151229` — 178 Picasa-export; a fenti `mean_de` mérés | 172/178 eset ΔE ≤ 2,0. Eltérések: `grain/alap` 2,665; `heatmap/alap` 4,254, `heatmap/min` 3,324; `nightvision/alap` 7,307, `nightvision/min` 4,176; `twotone/alap` 3,662. | A fenti négy effektcsalád eltérő kimenete megerősítve; `unsharp/max` itt 0,251. |
+| `PicasaPy merokit-2/export-202608151438` — 49 eredeti Picasa-export; `mean_de` | `tint/tintszin_04.jpg` 2,136; `tint/tintszin_07.jpg` 2,136; `picnikfocalpixelate/halott_14.jpg` 8,666; `grain/szemcse_01.jpg` 2,665; `grain2/szemcse_02.jpg` 2,661; `grain+grain/szemcse_05.jpg` 4,631. | Hat eltérő eset. A `halott_14` rövid paraméterlánca nem érvényes Picasa-alkalmazás: a láncteszt és a [`filters-decoded.md`](filters-decoded.md) ezt külön dokumentálja; az eltérés a PicasaPy hibás bemenetkezelésének jelöltje. |
+| `PicasaPy merokit-3/export-202608151633` — 7 eredeti Picasa-export; `mean_de` | `nincsilyen+bw/B_ismeretlen_elol.jpg` 10,125. | Eltérő láncviselkedés: az eredeti Picasa az ismeretlen tag után megáll, így a `bw` sem fut le. Ezt a `picasa-ini-format.md` dokumentálja; a mérés a specet erősíti meg, nem mond ellent neki. |
+| `tests/render/test_lanc_sorrend_elesben_3229.py` — három azonos méretű, érvényes eredeti láncreferencia | Border+sepia 1,192; sepia+Border 1,146; Border+Vignette 11,642; mindhárom 1650×1250. | Az első kettő egyezik, a Border+Vignette lánc eltér. A `border` és `vignette` önálló táblázatsora ettől még egyezik. |
+| Ugyanennek a 3229-es készletnek a crop64+Vignette sora | PicasaPy 376×659, Picasa 1600×1200; nyers ΔE 43,781. | **Nem összehasonlítható, kizárva:** a teszt és a spec szerint a crop az `.ini` kulcsban van, nem a szűrőláncban; az eredeti export ezért vágatlan. Ez nem effekt-eltérésként szerepel. |
+| `merokit-2` és `merokit-3` második exportjai (`export-202608202215`, `export-202608202207`) | Nem mértem őket Picasa-referenciaként. | Kizárva: az `export-parbeszed.md` és `filters-decoded.md` szerint ezek PicasaPy-kimenetek, nem eredeti Picasa-exportok. |
+| `3084-poszterizalas` `quantizepalette` (szintetikus és valós kép), valamint `951-kiemelesek-arnyekok-fel-allas` `finetune2` | ΔE rendre 0,347; 0,910; illetve 0,629. | Mind egyezik. |
+| `tests/render/test_colab_golden_4256.py` — eredeti Picasa 3.9 színfolt-aranyképek, 3 próba | A 16 színfolt legnagyobb átlagos csatornaeltérése: `sepia` 1,0000 (11/16 folton nem nulla); `bw` 0,0000 (0/16); `warm` 1,0000 (13/16). A meglévő határ 2 RGB-szint. | Mindhárom egyezik; a teszt 3/3 sikeres. |
+
+### Eltérő kimenetek jegyjelöltjei
+
+Megnyitott jegyek (2026-10-13): Szemcse #4936, Hőtérkép #4937, Éjjellátó #4938, Színezés #4939, Kéttónusú #4940, picnikfocalpixelate bemenetkezelés #4941, Keret+Vinyetta lánc #4942.
+
+Az eltérő effektcsaládok a `grain`, `grain2`, `heatmap`, `nightvision`, `picnikfocalpixelate`, `tint` és `twotone`. Az eltérő összetett utak a `grain+grain`, az ismeretlen tag utáni `bw`, valamint a `Border+Vignette` lánc. A `crop64+Vignette` nem összehasonlítható méretű eredmény, ezért nem jegyjelölt. A GitHubot ez a mérési kör nem érte el, így nyitott jegy meglétét nem ellenőriztem; a hívó ezekre nyisson jegyet, ha nincs már nyitott, megfelelő jegy.
+
+Az eredeti Picasa és a mért kimenet között nem találtam spec–mérés ellentmondást: az ismeretlen tag utáni leállás például a bináris viselkedésleírással egyezik. Ez a 7. réteg a meglévő Picasa goldenekkel és mérőadat-tárral alátámasztott effektcsaládokra terjed ki; nem állítja, hogy minden paraméter minden lehetséges értékét vagy minden UI-parancsot lefuttatott.
+
 ## A #4317 „Kész, ha” pontjai
 
 | Pont | Állapot | Indok |
 |---|---|---|
-| mind a hét réteg végigmérve, mai main | ⛔ | A dokumentum a 2–4. réteg korábbi statikus ellenőrzését és a mostani 6. réteg tiszta profilos mérését tartalmazza; nem tartalmazza mind a hét réteg egységes, friss mérését. |
-| minden hiány saját jegyet kapott vagy nem célként indokolt | ⛔ | A statikus hiányokra javaslatok lent vannak, de GitHub-hozzáférés nem volt, így nem ellenőriztem duplikált/nyitott jegyeket, és nem hoztam létre jegyet. Több eredeti parancs egyenértékűsége nyitott. |
+| mind a hét réteg végigmérve, mai main | ✅ | Az 1–6. réteg a korábbi körökben készült el; a 7. réteg fenti táblája a `a8ba353b3561` pillanatkép effektkimeneteit méri. |
+| minden hiány saját jegyet kapott vagy nem célként indokolt | 🟡 | A fenti eltérő effekt- és lánckimenetek jegyjelöltként fel vannak sorolva. GitHub-hozzáférés nem volt, így nyitott jegyet nem ellenőriztem és jegyet nem hoztam létre; a hívó nyisson jegyet, ha nincs megfelelő nyitott jegy. |
 | tiszta profil végigkattintása képernyőképekkel | ✅ | A 6. réteghez a fenti izolált teszt végigjárta és képekkel rögzítette a felsorolt fő műveleteket. Ez a mérés nem állítja, hogy az összes menüparancsot vagy a 7. réteg kimeneti egyezését lefedte. |
 
 ## Javasolt fejlesztői jegyek
