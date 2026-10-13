@@ -1400,3 +1400,238 @@ Ghidra-kör kell: 0x0074ad40 — a `faceheaderpanel` olvasó `[header+0x2a0]` ku
 
 Mérés kell: eredeti Picasa-profilon előtte/utána fájldiff és újraindításos
 ellenőrzés; az érintett próbaadat NINCS MEG.
+
+### 5. kör (2026-10-13): a `0x603420` vtábla `CThumbDB`; a választási kulcs nyitott
+
+Módszer: az indexben rögzített függvényméretek szerinti célzott Capstone-
+diszasszemblálás, RTTI/vtábla-adat ellenőrzés, valamint a `+0x4c` vtáblatárolók
+teljes `.text`-beli keresése kizárólag a `paszta.py`-val, első műveletként
+`paszta.memoria_kapu()`-val. A pásztázás mért csúcs-RSS-e 100.8 MiB. A bináris
+SHA-256-a változatlan (`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`).
+Natív Picasa-futtatás és profil-diff nem történt.
+
+#### A `0x603420` virtuális hívásai — az osztály és a célok azonosítva
+
+- **A út — utasítás és konstruktor:** a `0x00603420` a kezelő
+  `[this+0x2bc]` objektumának `+0x4c` mezőjében lévő vtáblát olvassa; a
+  `0x6034ac` a `+8` slotot, a `0x6034e4` az alap (`+0`) slotot tölti be. A
+  hívás ECX-je az objektum `+0x4c`-re eltolt alobjektuma (`0x6034af`). A
+  `paszta.py` találata szerint a `0x00415790` konstruktor `0x0041580b` címen
+  `0x00c820a8` értéket ír a `[this+0x4c]` mezőbe; az elsődleges vtábla címe
+  ugyanitt `0x00c81f78`.
+- **B út — RTTI és vtábla-adat, az A út feltételezése nélkül:** az index
+  RTTI-rekordja a `0x00c820a8` címet `CThumbDB::vftable`-ként nevezi meg; a
+  rekord taglistája `0x00424640` és `0x00424b10` címeket tartalmaz. A bináris
+  vtábla közvetlen dword-kiolvasása megerősíti, hogy a `+0` cél `0x00424640`,
+  a `+8` cél pedig `0x00424b10`. A két független út tehát egyezik: a
+  `0x603420` eltolással kapott `CThumbDB` alobjektum vtábláján hív.
+- A célok utasításolvasata olvasási irányt mutat: a `0x00424640` ága
+  `0x004290e0`-n át a `0x006b6a50` olvasóhoz és `ReadFile`-hoz vezet; a
+  `0x00424b10` meghívja a `0x006b67c0`-t, amely szintén a `0x006b6a50`
+  olvasóhoz jut. Ez a két virtuális cél nem azonosítja a kiválasztott fotó
+  mentését; a mentő ág továbbra is a 4. körben leírt `0x4115c0` út.
+
+#### A tár neve és a személyválasztás kulcsa külön kérdés
+
+- A konstruktor `0x00415790` a `CThumbDB` `+0x2428` tagjához `albums.db`
+  logikai alapnevet regisztrálja (ld. `pmp-database.md` 6.1). A
+  `0x006b6070` az `_index` utótagot, a `0x006b61e0` a `_%d` blokksorszámot
+  képezi. A mintában mért fizikai fájlpár `albums_index.db` és
+  `albums_0.db` (`pmp-database.md` 5. tárolóleírás). Ez a logikai név és a
+  blokktár fizikai fájlneve közti feloldás; nem ellentmondás, és önmagában
+  nem bizonyít személyenkénti választásrekordot.
+- A `0x0074ad40` fejlécépítő `0x74b490`–`0x74b4a5` között összeveti a
+  `[header+0x2a0]` értéket a `[header+0x2b4]+0x3c0` mezővel, majd eltéréskor
+  oda másolja. A `faceheaderpanel` olvasója a `[header+0x2a0]` kulccsal kér a
+  `+0x2428` tárból (`0x74b692`–`0x74b6ac`). A `set_thumbnail` esemény
+  diszpécsere (`0x005e0f70`, `0x5e1838`–`0x5e183d`) viszont a
+  `0x00603660`-at hívja; az a `[this+0xeac]+0x3c0` értéket adja át a
+  `0x4115c0`-nak. Az utasítások különböző bázismutatókat mutatnak. Nem
+  bizonyított, hogy a `[header+0x2b4]` és a `[this+0xeac]` ugyanaz az objektum,
+  ezért a két `+0x3c0` érték azonossága sem állítható.
+- Következésképp továbbra is csak az bizonyított, hogy a képbájtok a
+  `CThumbDB` lemez-cache-ébe kerülnek, és a személy-fejléc ugyanebből a
+  cache-ből olvas. **A kiválasztott fotó személyhez rendelése, e választás
+  újraindítás utáni visszaállítása, illetve ennek esetleges külön adatbázis-,
+  ini- vagy registry-helye nincs meg.**
+
+#### Cáfoló kör és mérleg
+
+Megpróbáltam cáfolni azt a feltevést, hogy a `0x603420` virtuális hívásai
+írják le a kiválasztott képet: mindkét vtábla-cél utasításait a fenti RTTI-
+azonosítástól függetlenül követtem, és mindkettő a `ReadFile`-os olvasóhoz
+jut, míg a `WriteFile`-os út a `0x4115c0`-ból indul. Ez cáfolja, hogy e két
+virtuális cél közvetlenül a megfigyelt mentő hívás lenne; nem bizonyítja, hogy
+az általuk hívott segédek semmilyen más állapotot nem módosítanak. Ellenőrző
+mérceként a `ReadFile` és `WriteFile` importcélokat a bináris utasításaival
+vetettem össze, ugyanazzal a címalapú módszerrel.
+
+A kulcsazonosság ellenpróbájában a két `+0x3c0` mezőnél az objektum-bázisokat
+is követtem: a fejlécfrissítő `esi=[ebx+0x2b4]` bázisra ír, a kezelő pedig
+`[this+0xeac]` bázist olvas. A közös mezőeltolás nem teszi azonossá a két
+objektumot. A vizsgálat nem tudta kizárni, hogy a mutatók végül közös
+objektumra mutatnak; ez a kapcsolat nyitott marad.
+
+- **Bizonyítottsági fok:** feltételes a jegy célállítására. Két független út
+  megerősíti a `0x603420`-ból elért `CThumbDB` vtáblát és a slotcélokat;
+  egyik sem igazolja a kiválasztás kulcsazonosságát vagy újraindítás utáni
+  visszaállását.
+- **Következő döntő lépés:** Ghidra-körben a `0x00603660` kulcsának és a
+  `0x0074ad40` fejléc-kulcsának szemantikai azonosítása, a két mutató
+  kapcsolatának követése; utána eredeti Picasa-profilon előtte/utána db3-
+  diff és újraindításos képernyőmérés. A rendelkezésre álló mérőadat-archívum
+  nem tartalmazott ehhez használható People/db3 profilmintát; Wine nem
+  érhető el, teljes natív munkafolyamatot nem futtattam.
+
+#### Nyitott
+
+Ghidra-kör kell: 0x00603660 — a `[this+0xeac]+0x3c0` érték szemantikai azonosítása, és annak követése, hogy a `0x005e0f70` eseményhívásban ez hogyan kapcsolódik a személyhez [blokkoló]
+
+Ghidra-kör kell: 0x0074ad40 — a `[header+0x2a0]` olvasókulcs, a `[header+0x2b4]+0x3c0` másolat és a beállító kulcsának objektum-/értékazonossága [blokkoló]
+
+Mérés kell: eredeti Picasa-profilon előtte/utána `Picasa2/db3` fájldiff és újraindításos visszaolvasás; az érintett próbaadat NINCS MEG.
+
+### 6. kör (2026-10-13): a kulcsút összeér; a képadat lemezre kerül
+
+Módszer: célzott, index szerinti Capstone-diszasszemblálás; RTTI/vtábla-
+ellenőrzés; teljes .text-pásztázás kizárólag paszta.py-val,
+paszta.memoria_kapu() első műveletként. A bináris SHA-256 változatlan:
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96.
+Eredeti Picasa-profilon újraindításos próba nem történt.
+
+#### A beállító és a fejléc kulcsa azonos
+
+A korábbi kör nyitva hagyta, hogy a két +0x3c0 ugyanaz-e. A teljes
+objektum- és eseményút követése összeköti őket:
+
+1. A 0x005e0f70 set_thumbnail ága a 0x00603660 kezelőt hívja
+   (0x005e1838–0x005e183d). A kezelő az arg+0xeac mező CAlbumSelectionNode
+   objektumának +0x3c0 kulcsát adja át a 0x004115c0 írónak
+   (0x00603669–0x00603677, 0x0060372d–0x0060374c).
+2. Az objektumtípust a 0x0056bc10 dinamikus castja azonosítja:
+   CSelectionNode → CAlbumSelectionNode; a forrás- és cél-típusleíró
+   címe 0x00d3e720 és 0x00d3db90. A CThumbUI ezt az objektumot tárolja
+   +0xeac-ban (0x0056bc43–0x0056bc52, 0x0056bd2e–0x0056bd50).
+3. A faceheaderpanel selectedbyheader útja a fejléc +0x2a0 kulcsát
+   továbbítja a CThumbUI +0x2a4 alobjektuma +0x44 virtuális helyére
+   (0x005df245–0x005df26b). A CThumbUI konstruktor a +0x2a4 mezőhöz
+   0x00c90754 vtáblát ír (0x005645da és 0x005653da); a RTTI-lista
+   +0x44 slotja a 0x006dc190.
+4. A 0x006dc190 a kapott kulcsot esi-be veszi, az aktuális
+   CAlbumSelectionNode +0x3c0 mezőjével hasonlítja össze, és eltéréskor
+   ugyanezt az esi-t adja a 0x00766860-nak (0x006dc199–0x006dc1a0,
+   0x006dc24b–0x006dc266). A 0x00766860 ebből készít CAlbumLabel-t;
+   a 0x00746ef0 a kulcsot a címke +0x2a0 mezőjébe írja (0x00746fa6).
+5. A 0x0074ad40 a címke +0x2a0 kulcsát a hozzá tartozó
+   CAlbumSelectionNode +0x3c0 mezőjébe írja (0x0074b490–0x0074b4a5),
+   majd ugyanezzel a +0x2a0 kulccsal olvas a +0x2428 albumtárból
+   (0x0074b692–0x0074b6ac). A címke selected eseményében szereplő
+   CAlbumSelectionNode a 0x005de8e0 selected ágán át kerül vissza a
+   CThumbUI +0xeac mezőjébe.
+
+Rövid, nyers utasításleletek:
+
+| cím | diszasszemblált művelet |
+|---|---|
+| 0x005df245–0x005df24b | mov eax, [ebp+8]; mov ecx, [eax+0x24]; mov eax, [ecx+0x2a0] |
+| 0x005df255–0x005df26b | mov ecx, [esp+0x10]; mov edx, [ecx+0x2a4]; call [edx+0x44] |
+| 0x006dc24b–0x006dc266 | cmp [eax+0x3c0], esi; eltéréskor mov eax, esi; call 0x00766860 |
+| 0x0074b490–0x0074b4a5 | mov esi, [ebx+0x2b4]; mov edi, [ebx+0x2a0]; mov [esi+0x3c0], edi |
+| 0x0060372d–0x0060374c | mov edx, [ebp+0xeac]; mov eax, [edx+0x3c0]; call 0x004115c0 |
+| 0x0074b692–0x0074b6ac | mov ecx, [ebx+0x2a0]; call 0x004114e0 |
+
+Ez esemény- és típuskapcsolat, nem pusztán azonos eltolás. A személy-
+album fejléc kulcsa állítja be a CThumbUI aktuális albumkiválasztását;
+a beállító ennek a CAlbumSelectionNode-nak a +0x3c0 mezőjét írja, a
+fejléc pedig a címke +0x2a0 mezőjéből ugyanazzal a kulccsal olvas.
+
+#### A kulcs a személy-album sorindexe; a képadat tartós cache-be kerül
+
+A picasa-arcfelismeres.md 3.4/b mérésében a ]facealbum:N N értéke az
+albumdata saját sorindexe, és az imagedata_personalbumid is ezt az
+indexet használja. Ez az eseményúttól független adatmodell-bizonyíték;
+egyezik a fejléc és a beállító kulcsával.
+
+A 0x00603660 a CAlbumSelectionNode +0x3c0 kulcsot és a CThumbDB
++0x2428 albumtárat adja a 0x004115c0-nak. A kép a
+0x006b75f0 → 0x006b71b0 → 0x0099df20 útvonalon WriteFile-hívással
+kerül a blokktárba; a 0x006b6620 FlushFileBuffers-t hív. A
+0x00415790 a +0x2428 mezőhöz az albums.db logikai tárat rendeli; a
+fizikai blokktár neve albums_index.db és albums_0.db.
+
+A fejléc ugyanazon CThumbDB-ből, ugyanazon kulccsal olvas:
+0x0074ad40 → 0x004114e0 → 0x006b6a50 → ReadFile. A feltárt pozitív
+útban a kiválasztott fotó képbájtjai kerülnek a személy-album sorindexéhez
+rendelt cache-slotba; külön választásrekordot ez az út nem mutat. A bináris
+tartós lemezírást és azonos kulcsú visszaolvasást tartalmaz. Más tárolási
+út meglétét ez a kör nem zárta ki.
+
+#### Cáfoló kör: általános albumborító-újraépítés
+
+Az ellenhipotézis az volt, hogy az automatikus borító-ellenőrzés a kézi
+képet érvényteleníti. A 0x00423300 általános albumborító-út a tárolt
+bélyeget az albumból számított értékkel hasonlítja össze, eltéréskor a
+0x00423500 újraépítést hívja. A set_thumbnail harmadik argumentuma
+nulla; a 0x006b75f0 ezt a CThumbDB +0x54 bélyegvektorába írja,
+a 0x006b66c0 pedig ugyanezt a vektort olvassa. Ha a 0x00423300 út
+ugyanazt a személyalbum-sort dolgozná fel, a cache újraépülhetne.
+
+A személy-fejléc és a Személyek panel (0x0064ae90) viszont közvetlenül
+a 0x004114e0 olvasót hívja, és nem futtatja a 0x00423300 ellenőrzést.
+Nem találtam bizonyítékot arra, hogy ez az általános újraépítő út
+személyalbum-sort dolgoz fel; a mintaprofil és a natív újraindításos
+mérés hiánya miatt a lehetséges háttér-újraépítés nincs kizárva. Ezért
+a bináris a tartós tárolási útvonalat megerősíti, a tényleges
+újraindítás utáni képernyőeredmény feltételes marad.
+
+#### Mai PicasaPy és fejlesztési követelmény
+
+- A PhotoContextMenu.qml sor letiltott placeholder.
+- A PersonRecord csak nevet és képszámot tárol; a peopleOfRows az aktuális
+  sorokból választ ideiglenes photo_id/thumbUrl értéket. Nincs tartós
+  személy–fotó hozzárendelés.
+- Az eredeti Picasa tárhelye albums.db. A PicasaPy-implementáció javasolt
+  helye a tartós SQLite index új, per-személy választásrekordja, az
+  index/ API-ján keresztül; az app/ csak olvasson, a .picasa.ini-t ne
+  bővítsük nem szabványos kulccsal. A személy-kulcs a People-modell
+  tartós azonossága legyen; a mappánként eltérő Contacts2 ID nem
+  használható globális kulcsként. A rekord tárolja a választott fotó
+  indexelt azonosítóját vagy kanonikus útvonalát.
+
+#### Bizonyítottság és a jegy „Kész, ha” pontjai
+
+- **Bizonyítottsági fok: feltételes a teljes újraindításos viselkedésre.**
+  Két független út egyezik a sorindex-kulcsról és a CThumbDB tár
+  használatáról; az eredeti bináris a képbájtokat lemezre írja, majd
+  ugyanazon kulccsal olvassa vissza. Profil-diff és újraindításos
+  képernyőmérés nem történt, az általános cache-újraépítő lehetséges
+  hatása nincs lezárva.
+- A korábbi 0x00603660 és 0x0074ad40 kulcsazonossági Ghidra-kérések
+  lezárhatók a fenti statikus eseményúttal; a 0x00763150 útvonal kérdése
+  külön nyitott marad.
+- ⛔ A választás újraindítás után látszik: az eredeti bináris adatútja
+  megvan, de PicasaPy menüje letiltott, tényleges újraindításos próba nincs.
+- ✅ A tárolási hely megnevezhető: eredetiben albums.db, PicasaPy-ban
+  javasoltan a tartós SQLite index új per-személy rekordja.
+- ⛔ Kattintásos teszt: nem futott, mert ez kutatási kör volt, kód nem változott.
+
+PicasaPy fejlesztői készfeltételek:
+
+1. A fotó helyi menüje a kiválasztott photo_id-t és a jelenlegi
+   személy-kulcsot adja át.
+2. Az index API a választást tartós SQLite rekordba menti; az új
+   személy-fejléc ugyanebből a rekordból tölti be a választott fotót.
+3. A mentés után a fejléc azonnal frissül; az alkalmazás újraindítása
+   után ugyanaz a fotó jelenik meg. Hiányzó fotónál a megjelenítés a
+   meglévő elsőfotó-tartalékra tér vissza.
+4. Kattintásos teszt ellenőrzi a menüpontot, a megjelenített fotót és
+   az újraindítás utáni visszaállást.
+
+#### Nyitott
+
+Mérés kell: eredeti Picasa-profil előtte/utána Picasa2/db3 diff és
+újraindításos faceheaderpanel-ellenőrzés; az érintett minta NINCS MEG.
+
+Ghidra-kör kell: 0x00763150 — a CAlbumList általános borítóútja
+feldolgozza-e a ]facealbum sort, és újraépítheti-e a nullás bélyegű
+kézi képet [blokkoló].
