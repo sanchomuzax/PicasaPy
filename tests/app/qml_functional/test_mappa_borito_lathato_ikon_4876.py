@@ -12,6 +12,7 @@ nézzük: a lapos lista (`FolderPane`: `folderRowIcon`) és a fa
 from __future__ import annotations
 
 import time
+from urllib.parse import unquote
 
 import pytest
 from PySide6.QtCore import QUrl
@@ -67,8 +68,9 @@ def _lapos_borito_kep(pane, nev: str):
     """A lapos lista azon sorának borító-`Image`-e, amely a `nev` mappát kéri."""
     for elem in _walk(pane):
         if elem.objectName() == "folderRowCoverImage":
-            # Windowson az útvonal `\` elválasztóval végződik (#4914).
-            forras = str(elem.property("source").toString()).replace("\\", "/")
+            # Windowson az útvonal `\` elválasztóval végződik, és a QML az
+            # URL-ben `%5C`-ként kódolja (#4914).
+            forras = unquote(str(elem.property("source").toString())).replace("\\", "/")
             if forras.endswith("/" + nev):
                 return elem
     return None
@@ -130,13 +132,23 @@ def megjelenit(qt_app, tmp_path):
     return _epit
 
 
+def _lapos_diag(pane) -> str:
+    """A lapos lista borító-képeinek állapota a hibaüzenetbe (#4914, Windows)."""
+    sorok = [
+        f"{e.property('source').toString()!r} w={e.property('implicitWidth')}"
+        for e in _walk(pane)
+        if e.objectName() == "folderRowCoverImage"
+    ]
+    return f"albumThumbs={pane.property('albumThumbs')} képek={sorok}"
+
+
 class TestLaposLista:
     def test_borito_nelkul_a_mappaikon_LATSZIK(self, megjelenit, qt_app):
         pane, _utak = megjelenit(fa=False)
         assert _var(
             qt_app,
             lambda: _betoltott(_lapos_borito_kep(pane, _BORITO_NELKUL_NEV)),
-        ), "a borító nélküli sor jelölő-képe nem töltődött be"
+        ), "a borító nélküli sor jelölő-képe nem töltődött be; " + _lapos_diag(pane)
         kep = _lapos_borito_kep(pane, _BORITO_NELKUL_NEV)
         tarolo = kep.parentItem()
         ikon = next(
@@ -155,7 +167,7 @@ class TestLaposLista:
             and _lapos_borito_kep(pane, _BORITOS_NEV)
             .parentItem()
             .property("boritoLatszik"),
-        ), "a valódi borító nem jelent meg"
+        ), "a valódi borító nem jelent meg; " + _lapos_diag(pane)
         kep = _lapos_borito_kep(pane, _BORITOS_NEV)
         ikon = next(
             gy for gy in _walk(kep.parentItem()) if gy.objectName() == "folderRowIcon"
