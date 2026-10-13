@@ -2747,31 +2747,23 @@ még nincs valódi fotórekorddal natívan megmérve. A mezők tartalma
 **NINCS MEG**; „minőség”, „pontszám” vagy más szemantikus címke nem
 következtethető ki az eltolásból.
 
-**A rekordmezők íróinak pásztázása — pontos eltolás, a célrekord írója nyitott
-(2026-10-05, #4194 folytatás).** A teljes `.text` `+0x30/+0x34` írásainak
-pásztázása több, egymástól eltérő rekord- és objektumtípust talált; az
-eltolás egyezése önmagában nem azonosít típust. A releváns jelölt
-`0x00823620`: `0x823b3b`-nél a saját, `0x38` bájtos kimeneti rekord
-`+0x30` mezőjébe egy bemeneti dword-vektor elemét, `0x823b4b`-nél a
-`+0x34` mezőjébe egy másik bemeneti vektor elemét írja. Ugyanebben a
-függvényben a rekord `+0x30` értékével egy táblázatot indexel
-(`0x823b92`–`0x823bb0`), a `+0x34` értékét pedig egy virtuális metódusnak
-adja át (`0x823c53`–`0x823c69`); a rekord további mezőit a
-`conf/pan/leye/reye/mouth` szövegannotáció köti arcjellemzőkhöz
-(`0x823c41`).
+**A rekordmezők íróinak pásztázása — a korábbi `0x00823620` jelölt
+visszavonva (2026-10-12, #4194 6. kör).** A 2026-10-05-i olvasat azt
+állította, hogy a `0x00823620` a rekord `+0x30/+0x34` mezőit tölti. A teljes
+utasításszintű újraolvasás ezt nem támasztotta alá: a `0x00823620` 0x38
+bájtos elemeket mozgató vektor-assign, de benne nincs rekordbázishoz
+viszonyított `+0x30` hozzáférés; a talált `0x30` displacementek
+`%esp`-relatívak. A korábbi mezőírás-állítás ezért **helyesbítve**:
+`0x00823620` nem igazolt írója a Filmkészítő rekordmezőknek.
 
-Ezt az írót a `0x00824090` közvetlen hívása kapcsolja egy
-`[this+0x4e0]` kimenethez (`0x824164`–`0x824181`). A Filmkészítő útján
-`0x006175c0` hívja a `0x0081b800`-at, amely szintén `[this+0x4e0]`-t
-használ. A két, azonos eltolású lista objektumazonossága
-**nincs bizonyítva**. A teljes írópásztázás más ütközést is talált:
-`0x004e41f0` egy beágyazott `0x38` bájtos alobjektum `+0x30/+0x34`
-mezőit nullázza (`0x4e438c`–`0x4e43cd`), miközben ugyanazon külső objektum
-`+0x4e0` listáját külön inicializálja (`0x4e4510`–`0x4e4516`). Ezért a
-Filmkészítő rekordjának tényleges írója és a `+0x30/+0x34` szemantikája
-**NINCS MEG**; az `0x00823620` archoz kötött adatútja nem bizonyítja, hogy
-a Filmkészítő rekordjában a mezők arcszámot, arcméretet vagy pontszámot
-tárolnak.
+A `[obj+0x4e0]` vektorhoz tartozó lehetséges előkészítő út a
+`0x00824090` (`0x824164`–`0x824181`), amely a `0x00823620` vektor-assignet
+hívja; a teljes rekordtartalom forrását és a `+0x30/+0x34` mezők íróját
+azonban ez nem zárja le. A korábbi `0x004e41f0` találat egy beágyazott,
+0x38 bájtos alobjektum mezőinek nullázása (`0x4e438c`–`0x4e43cd`), nem
+bizonyított Filmkészítő-rekordírás. A rekordíró és a mezők szemantikája
+**NINCS MEG**; az eltolás- vagy listaméret-egyezés önmagában nem azonosít
+rekordtípust.
 
 **A `0x00874320` hívási adatai — a két út mezői azonosítva, az elemek
 jelentése nyitott (2026-10-05, #4194 folytatás).** A `0x0081b800` két
@@ -2805,30 +2797,384 @@ A korábbi QEMU-próba a szintetikus `[0,2]` adattartalmú bemeneti vektorral nu
 valódi gyűjteményrekord-indexekkel végzett futás, ezért nem igazolja a
 vektorelemeket vagy a megtartott fotót.
 
-**Bizonyítottsági határ:** a `0x008781a0` reducer minimum- és döntetlenszabálya
-**megerősített**: A) utasításszintű olvasat; B) külön natív QEMU-futtatás.
-A kiválasztási algoritmus ága és döntési szabálya szintén **megerősített**:
-`ordering=0` alatt súlyozott getterminimum, `ordering=1/2` alatt minimális
-összköltségű gráfút. A HOG/Neven nevesítése és súlyainak hozzárendelése
-**feltételes** (utasításszintű bizonyíték). A csoport konkrét fotójának
-indexe, a gettermezők szemantikája és a gráf-élek pontos költségképzése **NINCS MEG**. Ezért az
-„első”, „utolsó” vagy „jobb minőségű” fotó minden csoportra érvényes állítása
-nem tehető; csak a nulla `ordering` pontozott útján bizonyított, hogy nem
-mindig az első nyer.
+**Bizonyítottsági határ:** a `0x008781a0` reducer minimum- és
+döntetlenszabálya **megerősített**: A) utasításszintű olvasat; B) külön
+natív QEMU-futtatás. A küszöb alatti csoportosítás szintén
+**megerősített** a `0x0081ae10` utasításai és a pontos időbélyegű QEMU-mérés
+alapján. A megtartási utak mechanikája viszont **feltételes**: az
+`ordering=0` súlyozott getter-minimumát és az `ordering=1/2`
+minimális-költségű útját a diszasszembly, illetve a hívási/RTTI/vtable
+visszakötés ugyanabba az irányba mutatja, de a teljes képlista egyik útja
+sem adott vissza fotóindexet. A konkrét kép, a rekordmezők jelentése és a
+gráfélek pontos költségképzése **NINCS MEG**. Ezért nem bizonyított, hogy a
+valódi Picasa egy adott küszöbcsoportból melyik képet tartja meg; az
+„első”, „utolsó” vagy „jobb minőségű” általános szabály sem állítható.
 
 **Fejlesztési átvezetés a #4182-höz:**
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Az eredeti bináris a szomszédos idők között `delta >= T` esetén új csoportot kezd. `ordering=0` súlyozott getterminimumot választ; a feltételes scorerazonosítás szerint ez HOG `1.0` súlyú és beállítástól függő Neven `0.4f` súlyú értékeit összegzi. `ordering=1/2` minimumköltségű gráfútvonalat választ. A `+0x30/+0x34` rekordmezők használata ismert, a rekordírójuk és szemantikájuk, a gráfélek pontos költsége és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` tárolódik és átadódik a QML/controller rétegen; az `src/` alatti hivatkozásokban nincs képszűrési fogyasztó. Az `ordering` 0/1/2 és a `removelowresfaces` mező átadása megvan. | A #4182-ben a `delta >= T` szomszédos csoportosítás implementálható. A megtartási algoritmusban `ordering=0`-nál reprodukáld a getterek súlyozott minimumát, `ordering=1/2`-nél a költségminimumú útvonalat; ne nevezd a minimális pontszámot képi minőségnek. A fotórekord mezőinek előállítását és a gráf-élek költségét csak az alább nyitott rekordíró/index-visszakötés tisztázása után implementáld. `Kész, ha`: (1) #4182 implementációja ugyanazt az időcsoportot adja a QEMU-s `[0,3240,6480]` és `[0,3600,7200]` esetekre; (2) `ordering=0` két valós rekordos etalonban a súlyozott getterminimumot és döntetlennél az első bejárt jelöltet adja; (3) `ordering=1/2` valódi rekord-indexű etalonjai a minimális összköltségű útvonalat és döntetlen esetén a korábbi elődöt adják; (4) az etalonok kimeneti fotóindexe diszasszemblálással vagy natív futással függetlenül egyezik. |
+| Az eredeti bináris a szomszédos, egész másodpercre kerekített idők között `delta >= T` esetén új csoportot kezd (megerősített). A kiválasztási utak statikus mechanikája `ordering`-függő, de a tényleges fotóindex **NINCS MEG**; a getterek képi jelentése, a rekordíró és a gráf-élek teljes költsége nyitott. | A `burstmodethresh` csúszkaérték tárolódik és átadódik, de nincs képszűrési fogyasztó (`CreateDialogs.qml:70–80, 496–497, 1035`; `create_controller.py:727–729, 806–807, 872`; `mxf.py:125–126, 202–203, 322–323`). `slideshow.py:624–637`: `ordering=0` színátlag-közelségű lánc, `ordering=1` bemeneti sorrend, `ordering=2` `st_mtime`-rendezés. | **#4182:** implementáld a bizonyított csoportosítást: csak `T>0` esetén, a bemeneti lista szomszédos elemei között, egész másodpercre kerekített időkkel, `delta >= T` határral. A megtartási algoritmust ne jelöld eredetihűnek és ne igazítsd a statikus minimumleíráshoz addig, amíg a #181 szerinti eredeti Picasa-kimenet nem ad fotóindex-etalonokat, és egy attól független bináris/QEMU-út nem egyezik velük. `Kész, ha`: (1) `T=0` nem csoportosít; (2) a `[0,3240,6480]→[0,0,0]`, `[0,3600,7200]→[0,1,2]` és `[0,3240,7200]→[0,0,1]` pontos etalonok teljesülnek; (3) a tényleges képmegtartás csak eredeti Picasa-méréssel és függetlenül egyező bináris/QEMU-eredménnyel kerül eredetihűként elfogadásra. |
 
 Nyitott: melyik konkrét fotórekord-index felel meg egy kiválasztott
 jelöltnek; ki írja a Filmkészítő `[obj+0x4e0]` rekordlistáját; mit jelentenek
 a `+0x30/+0x34` mezők; hogyan áll elő a `ordering=1/2` gráf minden élének
 költsége. Célzott következő kör:
-`Ghidra-kör kell: 0x00823620 — a Filmkészítő [obj+0x4e0] lista 0x38 bájtos rekordjának írója, a +0x30/+0x34 mezők forrása és jelentése [blokkoló]`
+`Ghidra-kör kell: 0x00824090 — a Filmkészítő [obj+0x4e0] lista rekordforrása, valamint a +0x30/+0x34 mezőket előállító upstream írók [blokkoló]`
 `Ghidra-kör kell: 0x00874320 — a nyolcbájtos kimeneti elemek mezői/indexei hogyan kötődnek a fotórekordokhoz, és mi a 0x00877c50 teljes bemeneti szerződése? [blokkoló]`
 `Ghidra-kör kell: 0x00877c50 — az ordering=1/2 út minden élköltsége mely rekordadatokból áll elő, és hogyan lesz a végső útból fotóindex? [blokkoló]`
+
+#### G/2. A megtartott kép kiválasztása `ordering = 0`-n — utasításszintű olvasat (2026-10-12, #4194 5. kör)
+
+**Módszer és határ.** A kör a `0x0081b800`–`0x0081d9e0` tartományt
+utasításszinten olvasta (capstone-szétszedés az eredeti EXE-ből, a
+`ghidra-kimenet/2026-10-07/` dekompilátumával összevetve). Az
+`ordering = 0` ág mechanikája ezúttal részletesen megvan; a **getterek
+jelentése és a két horgony (ablakhatár, anchor) írója nyitott**. **Natív
+QEMU-futtatás ebben a körben NEM történt** (lásd lent az okát). A
+`ordering = 1/2` ágra ez a szakasz nem terjed ki; ott a G szakasz áll.
+
+**Hívási lánc (0x0081b800).**
+
+- A csoportosító (`0x0081ae10`) csak akkor fut, ha a `burstmodethresh`
+  nem nulla (`0x0081b8be`–`0x0081b8ca`). Nulla küszöbnél a csoportazonosító
+  nincs, a kizárás csak a kiválasztottakra vonatkozik.
+- A kimenet darabszáma `K = clamp(hossz, 2, N)` (`uStack_30` a
+  dekompilátum 26–40. során), `N = [obj+0x139] >> 1`.
+- `ordering = 0` esetén `0x0081c9b0(gyűjtemény, K, zárt-jelzők, csoportok, 0)`
+  fut (`0x0081b925`→`0x0081c925`; dekompilátum 83–99. sor), és az
+  utómunka az `0x0081b800` 780. sorától a `0x0081c980` címkére ugrik.
+  Az `ordering = 0` ág ezért nem használja a `0x00874320` gráfépítőt.
+
+**A horgony (első kiválasztott kép) — deterministikus, nem pontszám.**
+`0x0081c9b0` első lépése (`0x0081ca05`–`0x0081ca33`): ha `[obj+0x738] ≠ -1`,
+a horgony az a rekord, amelynek `+0x30` mezője egyezik vele (ciklus a
+`[obj+0x4e0]` listán, 0x38 bájtonként); különben a horgony a 0. elem. A
+horgonyt a `[esp+0x48]` kiválasztott-tömbben `1`-re állítja (`0x0081caaf`),
+és ő lesz az aktuális középpont (`[esp+0x14]`, `0x0081cab3`).
+
+**Egy kiválasztási lépés (`0x0081d298`–`0x0081d4e9`, `0x0081d730`–`0x0081d7db`,
+pick-zárás `0x0081d803`–`0x0081d8a0`).**
+
+1. **Jelöltlista — kifelé haladó spirál a középpont körül.** Az eltolások
+   sorrendje `+1, −1, +2, −2, +3, −3, …` (a `[esp+0x28]` számláló
+   előjelváltása `0x0081d4ca`–`0x0081d4d8`). Egy `j` jelölt, ha
+   (a) `0 ≤ j < N`; (b) még nincs kiválasztva (`[esp+0x48][j] = 0`,
+   `0x0081d400`–`0x0081d408`); (c) a `[obj+0x10]`-ből hivatkozott
+   zárt-jelző tömbben `0` (`0x0081d40e`–`0x0081d417`); (d) **a csoportja
+   különbözik a középpont csoportjától** (`0x0081d41d`–`0x0081d428`, a
+   csoporttömb `[obj+0x14]`). A lista legfeljebb **100** jelöltet tartalmaz
+   (`(EBX & ~1) == 0xc8`, `0x0081d4e4`); az oldalhatárok és az oldal-kimerülés
+   kilépési ágai `0x0081d3xx`–`0x0081d4ef`. A pontszám a ciklusba nem szól
+   bele (a korábbi megállapítás marad).
+2. **Pontszám — elemenként súlyozott összeg.** A regisztrált getterek
+   (`[obj+0x504]` lista, `[obj+0x508]` darabszám) jelöltenként egy-egy
+   floatot adnak (`0x0081d74d`, `call 0x873170`); a súlyok `[obj+0x50c]`.
+   Elemenként: `pont[i] += súly[g] · getter_g[i]` (`0x0081d730`–`0x0081d78c`).
+   Ez a teljes összeg, nem egyetlen getter eredménye.
+3. **Választás — szigorú minimum, 1e8 küszöbbel.** A kezdő legjobb érték
+   a `0xc7da00` konstans: **100 000 000,0** (`0x0081d792`). Egy jelölt
+   csak akkor nyer, ha pontszáma **szigorúan kisebb** a legjobbnál
+   (`0x0081d7b0`–`0x0081d7c4`, `fcompp` + `test ah,0x41`). Egyenlőségnél a
+   korábban bejárt marad. **Ezért a 1e8-nál nagyobb vagy azzal egyenlő
+   pontszámú jelölt soha nem nyer.**
+4. **Tartalék.** Ha nincs nyertes (az összes jelölt ≥ 1e8, vagy a
+   `[esp+0x3c]>>1` darabszám 0), a nyertes a **jelöltlista első eleme**
+   (`0x0081d7d5`–`0x0081d7d9`) — vagyis a spirál első találata, nem „az első
+   kép” a bemeneti sorrendben. Üres lista esetén a kód nincs ellenőrizve
+   (az olvasás a `[esp+0x30]` nullmutatón menne; ezt a futtatás nem mérte).
+5. **Pick-zárás.** A nyertes `j` jelölve (`[esp+0x48][j] = 1`); a `+0x30`
+   dword a kimeneti tömbbe kerül (`0x0081d832`), a `+0x34` dword egy
+   virtuális hívásnak megy (`0x0081d873`); az új középpont `j`
+   (`0x0081d8a0`). Az irányjelző (`[esp+0x10]`) a `j` oldalától függően
+   törlődik (`0x0081d7e0`–`0x0081d7fe`). A ciklus `[obj+0x500] == K`-ig
+   (`0x0081d8bf`) fut; a horgony ebbe a számlálóba beleszámít-e, a
+   kilépés pontos egyenlőségi feltétele ebben a körben **nincs
+   visszaellenőrizve**.
+
+**Igazolt, a G szakasz eddigi leírásán túl (utasításszint):**
+
+- **1e8 küszöb** (új): a 1e8 feletti jelölt sosem választódik; a
+  tartalék a spirál első eleme.
+- **Spirál-sorrend** (új): a holtverseny és a tartalék is a spirál
+  sorrendjéhez kötődik, nem a bemeneti sorrendhez.
+- **Csoportkizárás a középponthoz képest** (megerősít): a következő
+  kiválasztás csak az **előző kiválasztott kép** csoportját zárja ki; a
+  korábbi csoportok újra választhatók.
+- **Horgony** (új): az első kiválasztott kép nem pontszámmal dől el.
+
+**NYITOTT (ebben a körben nem lezárható):**
+
+- a `[obj+0x720]` / `[obj+0x728]` táblák írója (a `0x0081d2c1`–`0x0081d2e5`
+  ágban a spirál oldalhatárait adják a középponttól függően) és a
+  `[obj+0x738]` írója — ez adja a horgonyt;
+- a getterek **jelentése** (a HOG és a Neven getter fotómezői; a `+0x30`
+  / `+0x34` szemantikája). A „legkisebb összeg” ezért **nem nevezhető**
+  „legjobb minőségnek”;
+- a `0x0081c9b0` 5. argumentumának (`[ebp+0x18]`, mode-0 hívásban `0`) és
+  a `[obj+0x13e]` indirekciónak a szerepe;
+- a kimeneti darabszám pontos lezárása (a horgony a `K`-ba beleszámít-e).
+
+**Natív QEMU-út — NEM futtatva.** Az `ordering = 0` spirálciklus kilépése a
+`[obj+0x720]`/`[+0x728]` ablaktáblától és a `[obj+0x738]` horgonytól függ.
+Egyik korábbi szintetikus próba sem töltötte fel ezeket valódi
+rekordokkal; a 2. körben a futás a `0x0081d310` ciklusban elakadt. Egy
+értelmes második út előfeltétele tehát a táblák írójának visszakötése
+(Ghidra-kör), nem újabb futtatás. Ez nyitott kérdés, nem bizonyíték.
+
+**CPU-jelzők (`0xd695d0` MMX, `0xd695d4` SSE).** A fenti függvények és a
+hozzájuk tartozó segédek tartományai (`0x008773d0`, `0x00877820`,
+`0x008781a0`, `0x00877370`, `0x0081b150`, `0x0081e220`, `0x0081e3a0`,
+`0x0081e5a0`, `0x00873e40`, `0x008742a0`, `0x00873cb0`, `0x00873170`,
+`0x0081fab0`, `0x00824090`, `0x004edf60`, `0x0048c440`) szétszedésében
+nincs `0xd695xx` hivatkozás. A tartományok végei nem függvényhatárok (nem
+ellenőriztük), ezért ez csak annyit állít: ezekben a tartományokban a
+CPU-jelzőtől való ágazás nem látszik. Ha a lánc mégis ágazik, a valódi
+MMX/SSE-ágat a valódi gépen kell mérni — ez nem történt meg.
+
+**Bizonyítottsági fok (G/2):** a spirál, a szigorú minimum, az 1e8 küszöb,
+a tartalék és a pick-zárás **feltételes**: ezekhez egyetlen, utasításszintű
+út készült; független natív eredmény nem volt. A getterek jelentése, a
+horgony forrása és a darabszám-lezárás akkor még **NYITOTT** volt; a G/2c
+ezek közül több pontot pontosít, de a kiválasztott fotóindexet továbbra sem
+méri.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A készítési idő szerinti csoportosítás: szomszédos delta, `delta >= T` új csoport, egész másodpercre kerekítve; csak nem nulla küszöbnél fut (G, megerősített). | `burstmodethresh` csak tárolódik és átadódik (`src/picasapy/movie/slideshow.py:75`, `mxf.py:126`, `app/create_controller.py:728`, `:807`). A `src/` alatt nincs csoportosító vagy szűrő (`grep -i burst` a `movie/` alatt). | #4182: a szomszédos csoportosítás implementálható (a QEMU-s három esetet tesztnek). |
+| `ordering = 0` (sima sorrend, rádió: `smart_order_radio`): horgony, spirál-jelöltlista a középponttól, csoportkizárás, súlyozott getter-összeg, szigorú minimum 1e8 küszöbbel, tartalék a spirál első eleme. | `slideshow.py:626`–`637`: a következő, színátlagban legközelebbi kép (`np.linalg.norm`). Nincs horgony, spirál, csoport, getter. | **Eltér**: a szín-alapú láncolás nem az eredeti szabály. A szabályhoz a getter-semantika (HOG/Neven) kell; addig nem implementálható hitelesen. A jelenlegi színes ág jelölendő „nem eredeti”-ként. |
+| `ordering = 1` (album, `album_order_radio`): `0x0875ee0` (ha `[obj+0x1da]` nulla), jelölt-indirekció `[obj+0x13e]`-n át. | `slideshow.py`: a bemeneti (album) sorrend marad, nincs kiválasztó (nincs rendezés). | A szabály nyitott (graph-út nem visszafejtett); a jelenlegi album-sorrend egyezhet a kimenettel, de ezt nem igazolta semmi. |
+| `ordering = 2` (időrend, `chronological_order_radio`): a `0x0874e40` gráfút (nem időrendezés). | `slideshow.py:624`–`625`: `st_mtime` szerinti rendezés. | **Eltér**: a fájl-mtime nem az eredeti kulcs, és a kiválasztás sem időrend. A graph-út visszafejtése (`0x00877c50`) a teendő. |
+| Alapérték: a rádió-csoport kézi kezelése, az `.mxf` `<ordering>` mezőjéhez. | `movie/mxf.py:125` alapja `0`, `movie/slideshow.py:74` alapja `1`. | **Egyeztetni** a két alapértéket az eredeti rádió-alapjával (a UI-alapértelmezés ebben a körben nincs visszaellenőrizve). |
+
+#### G/2b. A 6. kör (2026-10-12): a költségfüggvény, az írók és ami még hiányzik
+
+**Módszer.** A teljes `.text` szétszedése `llvm-objdump`-pal (az `objdump`
+ezen a gépen csak arm/aarch64 célt tud; a `llvm-objdump` x86-ot és PE-t olvas).
+A képcím ImageBase `0x400000`, a `.text` VA `0x401000`; a címek egyeznek a
+Ghidra-kötegével. A függvényhatárokat MSVC `int3`-kitöltésből becsültük, nem
+Ghidra-határból. Hívóhelyekhez a teljes `.text` végigolvasása, íróhelyekhez
+displacement-keresés (`0x4e0`, `0x720`, `0x728`, `0x738`) és az indexelt
+írások keresése (`(%reg,%reg,4)`). Natív futtatás nem történt.
+
+**1. A `0x00874320` NEM költségfüggvény.** Utasításszinten vektor- és
+tömbméretezés: az MSVC-s `max_size`-határok (`0x7fffffff`, `0x2492492`), elemenként
+8 bájtos inicializálás (`0x4010e0`, `push 8`), a végén bájtmaszk-írás
+(`movb $1,(%edx,%esi)`). Lebegőpontos művelet csak az egész→float konverzió
+(`fildl`/`fadds 0xcf39e4`, ahol a mért konstans 2^32) és a 2-hatvány kerekítés
+(`shrl $0x17`). Költségre utaló `fmul`/`fadd` nincs. Hívói: `0x874e70` (a
+`0x874e40` gráfútból) és `0x875f22` (a `0x875ed9` utáni függvényben, amelyet
+nem olvastunk végig). A `0x00874320` „költségfüggvény” címkéje az
+összefoglaló #22/#24 pontjában tehát téves.
+
+**Mode ≠ 0 lánc (mért).** A `0x81b925` `cmpl $0,0x4c(%esp)` után `je 0x81c925`
+(mode = 0 → `0x81c9b0`, ez a G/2 eredeti állítása). A nem-nulla ág a
+fall-through-ban van: `0x81bbac calll 0x874e40`, a `0x504`-es getter-listával
+és további `0x6f8`/`0x708`/`0x744` argumentumokkal. A `0x81b930`–`0x81bbac`
+közti ágazást nem követtük végig. **A mode ≠ 0 költségképzése tehát a
+`0x874e40`-ben van, nem a `0x874320`-ban.**
+
+**A `0x00874e40` (4249 bájt, `0x874e40`–`0x875ed9`) mért részei:**
+- `calll 0x873170` (`0x875653`) egy getter-hívás a `0x504`-listáról;
+- a float-tömb `rep stosl 0x3f800000` kitöltése (1,0f) alapértékkel
+  (`0x87562f`–`0x875634`);
+- elemenként `flds (%edx,%eax,4)`, majd bájtflag (`cmpb $0,(%ecx,%edx)`) mellett
+  `fmull 0xcf4968`. A konstans a `.rdata`-ból kiolvasva: **−1,0842·10⁻¹⁹
+  (= −2⁻⁶³)**. Hogy ez miért szorzó, és mit jelent a flag, **NYITOTT**: költség-
+  szorzónak nem természetes, lehet kiolvasási vagy kódolási hiba is;
+- `calll 0x878760` (3×) a rekordpárokra és `calll 0x874ac0` (2×);
+- időkülönbség nem látszik a függvényben (csak az int→float konverzió).
+
+**2. Az írók (mért).**
+
+| Mező | Ki írja (cím, mit) | Megjegyzés |
+|---|---|---|
+| `[obj+0x4e0]` — 56 bájtos rekordvektor | `0x823620` vektor-assign (`pushl $0x38`, `addl $0x38`, darabhatár `0x2492492`); hívja `0x824090` a `0x82417d`-nél. | A `0x823620`-ban **nincs** rekord `+0x30`-hoz való hozzáférés (a `0x30(` találatok mind `%esp`-relatívak). Az összefoglaló #24 „+0x30-at másol egész-tömbbe" állítása ezzel nem igazolódott; ezt a spec nem veszi át. A `+0x30` olvasása a `0x81c9b0`-ban és `0x81d2xx`-ben van. Közvetlen pointer-író még: `0x6999ec` (ctor `0x6999c0`), `0x81a439` (`0x81a130`), `0x820793`/`0x820ed1` (`0x81fc30`), `0x821ec1` (`0x8218a0`); ezek törzsét nem olvastuk végig. |
+| `[obj+0x4e8]` — rekordindex-tömb | `0x81c9b0` `0x81d88a`: `movl %eax,(%edx,%ecx,4)`, `edx=[obj+0x4e8]`, `ecx=[obj+0x500]`, `eax=[obj+0x4f0][j]`. Újraallokáció `0x81d05a`–`0x81d1f1`. | — |
+| `[obj+0x70]` — kimeneti azonosító-puffer | `0x81c9b0` `0x81d832`: `movl %edx,(%edi,%ecx,4)`, `edx=[0x4e0][j].+0x30`. | Megerősíti a G/2 állítását, hogy a kimenet a `+0x30` azonosító. |
+| `[obj+0x738]` — horgony | **Egyetlen direkt író a teljes `.text`-ben:** `0x824090` `0x8242f0`: `movl %edx,0x738(%ebp)`, `edx=[esp+0x40]`. A `[esp+0x40]` kezdőértéke `-1` (`0x8240f6`); a `0x8223e0` vagy `0x8226e0` írja out-paraméterként (`leal 0x40(%esp)`, `leal 0x14(%esp)`). | A két writer törzsét nem olvastuk végig. A horgony-keresés megerősítve: `[obj+0x738] ≠ -1` esetén a `0x4e0` rekordjain (0x38-as lépés) a `+0x30`-at egyezteti (`0x81ca05`–`0x81ca33`), és az egyezés **indexét** (nem azonosítóját) menti; `-1` esetén index 0. |
+| `[obj+0x720]`, `[obj+0x728]` — int-tömbök (méret: `[+0x724]`/`[+0x72c]` = 2n\|jelző) | `0x81e5a0` új elemeket tölt: `0x720 ← -1` (`0x81f026`), `0x728 ← n` (`0x81f1e8`), `0x718 ← n` (`0x81ee68`); a pointer-csere displacement-íróval (`0x81ee9e`–`0x81f1bb`). A ctor `0x6999c0` a kezdőértéket (`0x699ae7`, `0x699af3`) állítja. `0x81a130`: `0x81a1f6` (0x728), `0x81a215` (0x720) pointer-csere. | **Nem-sentinel (ablakhatár-indexű) értéket író utasítást nem találtunk.** Az indexelt-írás keresés a `0x81c9b0`, `0x81e220`, `0x81e5a0`, `0x824090` és `0x81a130` függvényekben csak a `-1`/`n` kitöltést és a rekordindex-írást adta. `rep movs/stos` a vizsgált függvényekben nincs. |
+
+**3. A „melyik kép marad” szabály: mi új és mi hipotézis.**
+
+- *Megerősített (mért):* a `0x81c9b0` ordering=0 magja a G/2 szerint működik:
+  a horgony-keresés, a `0x720[pos]`/`0x728[pos]` olvasás (`0x81d2b2`–`0x81d2e5`,
+  sentinel `-1` és `n` összehasonlítással), a pick-zárás (`0x81d803`–`0x81d8a0`),
+  a `+0x34`-es virtuális hívás (`0x81d873`), a `[obj+0x500] == K` feltétel
+  (`0x81d8bf`), és a `0xc7da00` = **100 000 000,0** (a 1e8 küszöb).
+- *Hipotézis (nem bizonyíték):* mivel a `0x720`/`0x728` táblák csak sentinelre
+  íródnak, a spirál oldalhatárai alapértelmezésben a teljes listát fedik. Ezt csak
+  az írók megtalálása vagy egy valódi rekordokkal végzett mérés dönti el.
+- *Nyitott, de mért nyom:* a `0x81e5a0` farkában a `+0x34` mezőt 64 bites
+  értékként kezeli (`adcl`), a `0x4c4b40` (5 000 000), a `0x989680`
+  (10 000 000) és a `0x15180` (86 400) konstansokkal. Ez összhangban lehet a G
+  egész-másodperces csoportosításával, de nem bizonyított. A `0xc7ccf8` double
+  konstans mért értéke 949998.0; szerepe nyitott.
+- *Nyitott:* a `0x81c9b0` `0x81c9d3` ágában, ha a `0x504`-lista egy eleme null,
+  a függvény `0x81e0f2`-re ugrik (korai kilépés). Az ág értelmét nem olvastuk
+  végig.
+
+**4. Mi maradt nyitva.**
+1. A `0x720`/`0x728` nem-sentinel értékeinek írója (ha nincs, a 3. pont
+   hipotézise igaz).
+2. A getterek jelentése: `0x873170`, `0x878760`, `0x4edf60`, `0x98b650` törzse
+   nincs olvasva.
+3. A `0xcf4968` (−2⁻⁶³) szorzó és a bájtflag szerepe a `0x874e40`-ben.
+4. A horgony forrása: a `0x8223e0` és `0x8226e0` törzse.
+5. A `0x81c9b0` 5. argumentuma (mode) és a `0x81b930`–`0x81bbac` ágazás.
+6. Natív mérés: nem történt; a 2. kör állapota változatlan.
+
+**Bizonyítottsági fok (G/2b):** a fenti, egyetlen utasításszintű útra épülő
+állítások **feltételesek**, amíg nincs velük egyező független mérés vagy
+adatút. A getterek, a `+0x34` mező és a horgony forrásának pontosítását a
+G/2c tartalmazza; a `0x720`/`0x728` teljes íróútja és a nem-nulla mód
+költsége továbbra is nyitott.
+
+#### G/2c. Getterek, horgony és a megtartás szabálya (2026-10-12, 7. kör)
+
+**Módszer és határ.** Célzott Capstone-olvasat készült az eredeti EXE
+`0x0081c9b0`, `0x0081e220`, `0x0081e5a0`, `0x00824090`, `0x00873e40`,
+`0x00873cb0`, `0x008742a0`, `0x00873170`, `0x00878760`, `0x0048c440`,
+`0x004edf60`, `0x0098b650`, `0x00448fb0` és `0x00448c90` címein. A külön
+út az RTTI-adatbázis, a vtable-slotok, a hívási xrefek/importok, valamint a
+`0x0081b800`, `0x008223e0`, `0x008226e0` és `0x00824090` korábban készült
+Ghidra-dekompilátumainak olvasata volt. A teljes `.text`-et ebben a körben
+nem pásztáztam.
+
+**A megtartás `ordering = 0` esetén.** A küszöb nem azt mondja meg, hogy a
+csoportból időben az első vagy az utolsó kép maradjon. A `0x0081c9b0` előbb
+horgonyt választ: ha `[obj+0x738]` nem `-1`, a `[obj+0x4e0]` rekordok
+`+0x30` kulcsai között keresi; ha `-1`, a 0. rekordot használja
+(`0x0081ca05`–`0x0081ca33`). Utána minden új választás az aktuális középpont
+körül, `+1, −1, +2, −2, …` eltolásokkal bejárt jelöltekből indul
+(`0x0081d298`–`0x0081d4e9`). Jelölt csak akkor kerülhet a pontozásba, ha
+nincs kiválasztva, nincs lezárva, és csoportja eltér az aktuális középpont
+csoportjától (`0x0081d400`–`0x0081d428`). A lista legfeljebb 100 jelöltet
+tartalmaz (`0x0081d4e4`). Ez nem külön-külön „legjobb kép csoportonként”
+eljárás: minden lépés csak az előző középpont csoportját zárja ki.
+
+A jelöltek pontja a regisztrált getterek eredményének súlyozott összege;
+`0x0081fab0` regisztrálja a mérőobjektumot és a súlyt, `0x00824090` pedig
+HOG-ot `1.0` súllyal, továbbá a `SmartMultiPersonTrans` beállítás igaz
+ágában Neven-mérőt a `0x00c7c838` bináris float-konstanssal. A választó a
+legkisebb pontot keresi, de csak a `0x00c7da00` konstansnál szigorúan kisebb
+érték nyer; az egyenlőség a korábban bejárt jelöltnél marad
+(`0x0081d730`–`0x0081d7c4`). Ha a nem üres jelöltlistán nincs ilyen pont,
+a spirál első jelöltje a tartalék (`0x0081d7d5`–`0x0081d7d9`). A nyertes
+lesz az új középpont (`0x0081d8a0`), és a folyamat a kért darabszámig fut.
+Az objektum létrehozásakor `[obj+0x500] = 1` (`0x00699b95`), az
+`0x0081e220` pedig minden további választásnál növeli; tehát a horgony
+**beleszámít** a kimeneti darabszámba.
+
+**Mit mérnek a getterek.** Az RTTI két külön mérőosztályt és a
+`vtable+8`-slotokat azonosítja: `HOGSimilarityComputer` → `0x00873e40`,
+`NevenSimilarityComputer` → `0x008742a0`. A `0x00873170` közös diszpécser,
+amely a mérőobjektum slotját hívja; nem önálló képjellemző. A HOG-út a
+rekord `+0x30` és `+0x34` mezőjét adja át a jellemzők lekérésének
+(`0x00873e40`, `0x00873cb0`), majd ezekből párértéket számít. A Neven-út
+`+0x30` kulcsokat ad a `0x0048c440` segédnek, és 0/1 floatot képez a
+segéd logikai eredményéből (`0x008742a0`). Az igaz eredmény és az egyező,
+nem-null cache-kulcs 0-t, a hamis eredmény 1-et ad. A segéd logikai
+eredményének pontos fotórekord-jelentése, valamint a `+0x30/+0x34` mezők
+emberi/formatumbeli neve **NINCS MEG**; ezért az összeg nem nevezhető
+„képminőségnek”.
+
+A korábban nyitott `0x00878760` nem getter: 12 bájtos elemeket fűz egy
+vektorhoz. A `0x004edf60` kulcs alapján metaadatot olvas; a
+`0x0081e5a0` a rekord `+0x34` értékét átadja neki, majd a kapott két dwordöt
+a `0x0098b650`-nek adja. Utóbbi az importtábla szerint
+`FileTimeToSystemTime`-ot hív. Ez alátámasztja, hogy a `+0x34` a
+készítési-idő/metaadat-útban is szerepel, de a konkrét metaadatnév továbbra
+sem azonosított.
+
+**A horgony forrása.** A `0x006999c0` konstruktor `[obj+0x738]` kezdőértéke
+`-1`; a célzottan olvasott direkt író a `0x00824090` (`0x008242f0`). Az
+író egyedisége ebben a körben nem lett teljes bináris-pásztázással
+újraellenőrizve. Ennél a hívó flagjétől függően a
+`0x008223e0` írja a `+0x40` out-paramétert, vagy a `0x008226e0` egy külön
+vektorkimenetet tölt. Az első úton kapott érték kerül a horgonyba; a második
+úton a `-1` marad, ezért a selector a rekord 0-t választja. A `0x008223e0`
+`0x00448c90`/`0x00448a10` ellenőrzéseket használ; a `0x00448fb0` a
+`[obj+0x2748]` indexelt 8 bájtos párját vagy a `+0x60/+0x64` tartalékpárt
+adja. Hogy e két bemeneti ág melyike felel meg a Filmkészítő adott
+felhasználói állapotának, és milyen képet jelöl a visszaadott kulcs, **NINCS
+MEG**.
+
+**Két út és fok.**
+
+- **A — utasításszintű út:** a `0x0081c9b0` jelöltbejárása, súlyozása,
+  minimuma és pick-zárása; a gettertörzsek és az `0x0081e220` darabszámíró.
+- **B — független visszakötés:** a Ghidra-dekompilátum a `0x0081b800`-ban
+  megerősíti, hogy `ordering=0` a `0x0081c9b0`-ba jut; az RTTI/vtable és a
+  ctor/hívóút külön azonosítja a HOG/Neven slotokat, a horgony beállítását
+  és a dátum-metaadat hívásláncát. Ez az út az osztály- és horgonyadatokkal
+  egyezik, de önmagában nem méri meg, melyik jelölt nyer.
+- A natív QEMU-próba szintetikus rekordokkal a `0x0081c9b0` jelöltvizsgáló
+  részéig jutott, majd `SIGSEGV`-vel megállt `0x0081d404`-nél. A hám a
+  `0x00873170` pontozó diszpécsert szándékosan stubolta, és az objektum
+  jelöltmaszkja nem volt hitelesen felépítve; kimeneti fotóindex nem keletkezett.
+  Ez **nem** független megerősítő mérés. A mérőadat-csomagban nem volt
+  `4194`-hez címkézett natív próba; eredeti Picasa UI-mérés nem történt.
+
+**Kiegészítő közvetlen QEMU-próba (2026-10-13; érvénytelen hám, nincs
+kiválasztási eredmény).** A lokális harness közvetlenül hívta a
+`0x0081c9b0`-at szintetikus, négy rekordos objektummal (`K=2`, csoportok
+`[0,0,1,1]`), majd a `0x00873170` helyére konstans pontszámot visszaadó
+helyettesítőt tett. Mindhárom próbaváltozat (későbbi alacsonyabb pont,
+holtverseny, 1e8 feletti tartalék) eljutott a helyettesítőig, de az a
+hívás negyedik argumentumát `0x10`-nek olvasta pontozókimeneti mutatóként,
+és saját írásánál `SIGSEGV`-vel leállt. Ez a helyettesítő hívási szerződését
+nem utánozta; a crash a hám hibája, nem a Picasa választóé. A próba ezért
+nem szolgáltat pontszámcserés cáfoló eredményt, jelöltindexet vagy független
+viselkedési bizonyítékot. Pontos pontszám-/rekord-hozzárendelés és a
+selector natív kimenete **NINCS MEG**.
+
+| Állítás/érték | Forrás |
+|---|---|
+| Horgony-keresés, spirál és aktuális csoport kizárása | bináris (`0x0081c9b0`, `0x0081d298`–`0x0081d428`) |
+| Jelöltlista legfeljebb 100 eleme | bináris (`0x0081d4e4`, `0xc8` darabszámjelző) |
+| Súlyozott összeg, szigorú minimum és tartalék | bináris (`0x0081d730`–`0x0081d7d9`) |
+| Minimumhatár `100000000.0` | bináris (`0x00c7da00`) |
+| HOG / Neven vtable-slot | bináris (RTTI `0x00cbdec4` / `0x00cbded4`; slotok `0x00873e40` / `0x008742a0`) |
+| Horgony kezdőértéke és növekvő kiválasztásszám | bináris (`0x00699b95`, `0x0081e220`) |
+| `+0x34` metaadat- és FileTime-út | bináris (`0x0081f270`–`0x0081f2a9`, import `FileTimeToSystemTime` `0x0092210a`) |
+| QEMU-hám leállásának címe | mérés (szintetikus objektum: `SIGSEGV` `0x0081d404`; 2026-10-13-i hibás scorer-helyettesítő: írás `0x10` címre; kiválasztott index egyikből sem jött létre) |
+| Eredeti Picasa által megtartott konkrét fotóindex | NINCS MEG |
+| `+0x30/+0x34` formátumbeli mezőnév és a Neven-logika fotószemantikája | NINCS MEG |
+
+**Cáfoló kísérlet.** Azt a feltevést próbáltam cáfolni, hogy az első
+bemeneti kép mindig nyer. Az utasításút ellenpéldát ad a statikus
+mechanikára: ha egy későbbi, bejárt jelölt pontja szigorúan kisebb az
+aktuális minimumnál, a `0x0081d7b0`–`0x0081d7c4` ág lecseréli a nyertest.
+A dinamikus ellenpróbához három szintetikus esetet futtattam (későbbi
+alacsonyabb pont, holtverseny, 1e8 feletti tartalék); a hibás scorer-
+helyettesítő `0x10` címen összeomlott, mielőtt pontszámot adott volna.
+Ugyanazzal a bizonyítási mércével ez a QEMU-próba **nem** érvényes cáfoló
+mérés: nincs kimeneti fotóindex vagy mért győztes. A „mindig első” állítás
+statikus selector-mechanikai szinten cáfolt, a tényleges Picasa-kimenet
+továbbra is **NINCS MEG**.
+
+**Bizonyítottsági fok (G/2c):** a `ordering=0` választó **feltételes** — a
+mechanika egy utasításszintű úton megvan, a második út a hívási szerződést,
+a getterosztályokat és a horgony felállítását erősíti meg, de a valódi
+jelöltkimenetet nem. A küszöbön belüli konkrét megtartott képek,
+`+0x30/+0x34` rekordjelentése és a horgony felhasználói állapot szerinti
+forrása **NYITOTT**.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `ordering=0`: horgony, kifelé spirál, aktuális csoport kizárása, súlyozott getter-minimum, szigorú `0x00c7da00` határ és spirálelső tartalék. | A `slideshow.py` színátlagos legközelebbi képet választ; nincs igazolt HOG/Neven-megfeleltetés vagy azonos horgonyforrás. | **#4182:** a csoportosítás külön implementálható a G szerinti etalonokkal. A megtartási algoritmust ne jelöljük eredetihűnek a getterek, a horgonyforrás és legalább egy eredeti Picasa-mérőmappa lezárásáig; ezután valós fotóindex-etalonokkal implementáljuk a fenti `ordering=0` lépéseket. `Kész, ha`: (1) 4–6 ismert időbélyegű fotón, legalább két csúszkaállásban egyezik az eredeti Picasa kimeneti fotóindexe; (2) a döntetlen/tartalék esetek is a spirálsorrendet adják; (3) az anchor a Picasából visszanyert bemenettel egyezik. |
+
+**Nyitott.**
+
+- `Ghidra-kör kell: 0x00824090 — a [obj+0x4e0] rekordlista forrása és a +0x30/+0x34 mezők tényleges upstream írói [blokkoló]`
+- `Ghidra-kör kell: 0x008223e0 — a +0x738 horgonyként visszaadott kulcs forrása, és mely Filmkészítő állapotból ered [blokkoló]`
+- `Ghidra-kör kell: 0x008226e0 — a második horgony-előkészítő ág kimeneti vektorának viszonya a +0x738 horgonyhoz [blokkoló]`
+- `Ghidra-kör kell: 0x0048c440 — a Neven getter 0/1 értékének fotórekord-szemantikája [blokkoló]`
+- Az eredeti Picasa Colab UI-futtatása 4–6 ismert készítési idejű képen, legalább két csúszkaállással; a konkrét nyertes fotóindex **NINCS MEG**. A hozzáférési út a jegy szerint a #181 videó-visszaadása.
+- A `[obj+0x720]/[obj+0x728]` határtáblák nem-sentinel írói és a `ordering=1/2` költségút külön nyitottak maradnak.
+
+**Új kutatási jegyjavaslatok:** nincs; a nyitott pontok a #4194 és a már jelzett #181 natív UI-mérés folytatásai.
 
 #### Bizonyítottsági fok
 
@@ -2842,11 +3188,14 @@ visszatérési érték, a két külön preferencia-kulcs.
 
 **Megerősített, a G szakaszra korlátozva:** a készítési idő szerinti
 szomszédos csoportosítás, az egész másodpercre kerekítés és a `delta >= T`
-határ (utasításszintű olvasat + natív QEMU-mérés); továbbá az `ordering=0`
-súlyozott minimum- és az `ordering=1/2` gráfút-választási mechanizmusa
-(Ghidra-dekompilátum + utasításszintű olvasat). **Nyitott:** a kiválasztott
-gráfjelölt pontos fotóindexe, a `+0x30/+0x34` mezők szemantikája és a
-gráfélek teljes költségképzése.
+határ (utasításszintű olvasat + natív QEMU-mérés). Az `ordering=0`
+súlyozott minimumának útja és a getterek bekötése **feltételes** a G/2c
+szerint: az utasításolvasatot a Ghidra-hívási lánc és a vtable/RTTI
+azonosítás támasztja alá, de a kiválasztott indexet egyik független út sem
+állapította meg. Az `ordering=1/2` gráfút-választási mechanizmusát a
+Ghidra-dekompilátum és az utasításszintű olvasat támasztja alá.
+**Nyitott:** a konkrét nyertes fotóindex, a `+0x30/+0x34` mezők szemantikája
+és a gráfélek teljes költségképzése.
 
 **Erős**: a `[panel+0x4f0]`/`[+0x4f1]` jelzők jelentése.
 
