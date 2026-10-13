@@ -140,7 +140,9 @@ class TestNyomvaTartasLeptetes:
         assert _var(qt_app, lambda: gomb.isVisible() and gomb.property("enabled"))
 
         _lenyom(gomb, qt_app)
-        _varj(qt_app, _TARTAS_MS)
+        # A lassú (windowsos) futón a fix 1,2 s alatt csak 2 lépés fért bele
+        # (main-CI, 2026-10-14): a hármadik lépést nyomva tartva várjuk ki.
+        _var(qt_app, lambda: viewer.property("currentIndex") - start >= 3, seconds=6.0)
         _felenged(gomb, qt_app)
 
         lepesek = viewer.property("currentIndex") - start
@@ -179,7 +181,7 @@ class TestNyomvaTartasLeptetes:
         assert _var(qt_app, lambda: gomb.isVisible() and gomb.property("enabled"))
 
         _lenyom(gomb, qt_app)
-        _varj(qt_app, _TARTAS_MS)
+        _var(qt_app, lambda: _start + 20 - viewer.property("currentIndex") >= 3, seconds=6.0)
         _felenged(gomb, qt_app)
 
         lepesek = _start + 20 - viewer.property("currentIndex")
