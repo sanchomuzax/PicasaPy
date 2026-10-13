@@ -35,7 +35,7 @@ hibára fordul.
 
 Az `explorer /select,<út>` alakot az Intéző **egy** argumentumként várja,
 a vessző után **szóköz nélkül**. A `subprocess` listás alakja a szóközös,
-ékezetes útvonalat (`OneDrive - centralmediacsoport\Képek`) így is
+ékezetes útvonalat (`OneDrive - Ceg\Képek`) így is
 helyesen adja át.
 """
 
@@ -88,7 +88,7 @@ def _parancs(cel: Path, *, kijelol: bool) -> list[str] | str:
         # függvényből (`0x00981280`).
         #
         # Idézőjel nélkül a SZÓKÖZÖS útvonal elhasal — a tulajdonosé
-        # ilyen (`OneDrive - centralmediacsoport`), és az Intéző emiatt
+        # ilyen (`OneDrive - Ceg`), és az Intéző emiatt
         # az alapértelmezett mappát nyitotta meg helyette.
         #
         # ⚠️ SZTRINGET adunk vissza, nem listát: listánál a Windows a

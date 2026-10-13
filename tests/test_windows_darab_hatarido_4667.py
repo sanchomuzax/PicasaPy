@@ -10,14 +10,14 @@ _WORKFLOW = _ROOT / ".github" / "workflows" / "teszt-darabok.yml"
 
 
 def test_a_windows_hatarido_60_perc_az_ubuntu_40_marad() -> None:
-    """A Windows kapjon 20 perc többletet, a közös négydarabos mátrix maradjon."""
+    """A Windows kapjon 20 perc többletet, mindkét láb 16 darabra oszlik."""
     forras = _WORKFLOW.read_text(encoding="utf-8")
     talalat = re.search(r"(?m)^\s*timeout-minutes:\s*(.+?)\s*$", forras)
     # 2026-10-09 (#4805): a mátrix a `darabok` bemenetből jön; az alapértéke
-    # (push, és minden windowsos futás) a négydarabos lista.
+    # (push, és minden windowsos futás) a 16 darabos lista.
     matrix = re.search(r'(?ms)^\s*darabok:.*?default:\s*"\[([^]]+)\]"', forras)
 
     assert talalat is not None, "hiányzik a teszt-job időkorlátja"
     assert talalat.group(1) == "${{ inputs.os == 'windows-latest' && 60 || 40 }}"
     assert matrix is not None, "hiányzik a darabmátrix"
-    assert [int(elem.strip()) for elem in matrix.group(1).split(",")] == [1, 2, 3, 4]
+    assert [int(elem.strip()) for elem in matrix.group(1).split(",")] == list(range(1, 17))

@@ -54,6 +54,10 @@ keret** (kék, benne világosszürke) jelöli. A szalagot nem húzhatod; egy
 bélyegképre kattintva az a kép nyílik meg.
 
 A **Ctrl+Delete** a lemezről törli az éppen látott képet (rákérdezéssel).
+Ha a képet egy **albumból** vagy **Emberek albumból** nyitottad meg,
+akkor nem töröl a lemezről, hanem csak az albumból veszi ki a képet — a
+fájl megmarad. A nagy kép helyi menüjében ilyenkor a tétel felirata is
+**Eltávolítás az albumból**.
 
 A **Nézet ▸ Könyvtárnézet** is visszavisz a könyvtárba; a könyvtárban ez
 a tétel szürke.

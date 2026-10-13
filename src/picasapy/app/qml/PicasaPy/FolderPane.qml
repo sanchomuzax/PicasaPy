@@ -964,10 +964,13 @@ Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             opacity: offline ? 0.45 : 1.0
 
-                            // #2215: a `Ready` önmagában nem elég — a
-                            // szolgáltató korábban 1×1 átlátszó képet adott
-                            // borító hiányában, ami sikeresen betöltődik,
-                            // tehát elrejtette a mappaikont is.
+                            // #2215/#4876: a `Ready` önmagában nem elég —
+                            // a szolgáltató borító hiányában SZÁNDÉKOSAN 1×1
+                            // átlátszó, érvényes jelölőt ad (null képre a Qt
+                            // minden kérésnél hibasort írna), ami sikeresen
+                            // betöltődik. A szélességfeltétel (`> 1`) az
+                            // ELSŐDLEGES védelem: ettől látszik ilyenkor a
+                            // mappaikon.
                             readonly property bool boritoLatszik:
                                 pane.albumThumbs
                                 && folderRowCoverImage.status === Image.Ready

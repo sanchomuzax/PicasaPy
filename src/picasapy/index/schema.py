@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 22
+SCHEMA_VERSION = 23
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -145,7 +145,7 @@ END;
 # újraírhatja a saját sorait, és az ini-ből törölt album magától kiesik —
 # akkor is, ha másik mappa még hivatkozik rá.
 # ⚠️ **TÖRTÉNETI ALAK — CSAK a `MIGRATIONS[7]`-é** (a `place` oszlop nélkül).
-# A tábla MAI alakja az `_ALBUMS_DDL`; a `place` oszlopot a `MIGRATIONS[21]`
+# A tábla MAI alakja az `_ALBUMS_DDL`; a `place` oszlopot a `MIGRATIONS[22]`
 # adja a már migrált indexeknek (#4599).
 _ALBUMS_V7_DDL = """
 CREATE TABLE IF NOT EXISTS albums (
@@ -595,17 +595,23 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
     ON photos(folder_id)
     WHERE kind = 'video' AND movie_format IS NULL;
 """,
+    # #4597: EGYSZERI ÁTÁLLÍTÁS. A `folders.hidden` eddig csak az indexben
+    # élt (0/1); az új kód az ini `P2category=Hidden Folders` sorából
+    # származtatja. A régi 1-es sorok 2-re („rejtett, az ini-be még nincs
+    # beírva”) állnak át: az első szinkron beírja őket az ini-be, és CSAK
+    # EZUTÁN számít az ini az igazságforrásnak. Az offline mappa 2-esen
+    # marad, és visszatérésekor pótlódik — rejtés nem veszhet el.
+    21: """
+UPDATE folders SET hidden = 2 WHERE hidden = 1;
+""",
     # #4599 (ADR-016): az album-tagság kézi helye (`albumorder=`). NULL-lal
     # indul minden meglévő sor — „nincs kézi hely", tehát a meglévő albumok
     # sorrendje változatlan (mappa útvonala, fájlnév); a következő szinkron
     # tölti fel az ini-ből, újraindexelés nem kell.
-    # A scan-állapot érvénytelenítése (CSAK az albumtagot tartalmazó mappákra) is
-    # idetartozik: a változatlan ini-t a
-    # szinkron a `folder_scan_state` miatt kihagyná, így a meglévő
-    # `albumorder=` sosem jutna be a `place`-be. A tábla DDL-je a
-    # `sync._SCAN_STATE_DDL`-lel egyezik (tisztán eldobható gyorsítótár; a
-    # hiányzó `filetype_signature` oszlopot a `_ensure_scan_state` pótolja).
-    21: """
+    # A scan-állapot érvénytelenítése csak az albumtagot tartalmazó mappákra
+    # terjed ki: változatlan ini esetén a szinkron különben kihagyná a már
+    # indexelt mappát, így az albumorder nem jutna be a place oszlopba.
+    22: """
 ALTER TABLE photo_albums ADD COLUMN place REAL;
 CREATE TABLE IF NOT EXISTS folder_scan_state (
     path TEXT PRIMARY KEY,

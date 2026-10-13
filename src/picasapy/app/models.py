@@ -23,6 +23,7 @@ from PySide6.QtCore import (
 
 from picasapy.metadata import megjelenitett_meret
 from picasapy.index import PhotoRecord
+from picasapy.index.hidden_scope import show_hidden_folders
 from picasapy.paths import flat_key
 
 from .display_mode_paint import (
@@ -51,7 +52,7 @@ def sorted_folder_rows(
     sort_mode: str = "date",
     reverse: bool = False,
     *,
-    include_hidden: bool = False,
+    include_hidden: bool | None = None,
 ) -> list[tuple[str, str, int, str, int, int, bool, bool, bool]]:
     """A mappák (név, útvonal, darabszám, dátum, méret, változás, offline,
     rejtett, olvasatlan) sorai a kért rendezésben.
@@ -63,6 +64,10 @@ def sorted_folder_rows(
     """
     # #1637: a REJTETT mappák alapból kimaradnak — ugyanaz a Nézet ▸
     # Rejtett képek kapcsoló hozza vissza őket, ami a rejtett fotókat.
+    # #4887: `None` = a felület által az indexszel közölt láthatóság
+    # (képernyővédő-forráslista, feed-sorrend).
+    if include_hidden is None:
+        include_hidden = show_hidden_folders(conn)
     rejtett_szuro = "" if include_hidden else " WHERE f.hidden = 0"
     db_rows = conn.execute(
         "SELECT f.path, f.date, f.offline, f.hidden, f.unread,"

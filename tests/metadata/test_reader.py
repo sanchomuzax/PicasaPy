@@ -1,5 +1,7 @@
 """EXIF/IPTC olvasó: dátum, orientáció, méret, felirat, kulcsszavak."""
 
+from dataclasses import replace
+
 import piexif
 
 from picasapy.metadata import (
@@ -209,7 +211,10 @@ class TestExifDetails:
 
         path = tmp_path / "sima.jpg"
         Image.new("RGB", (4, 4), "red").save(path, "JPEG")
-        assert read_exif_details(path) == EMPTY_EXIF_DETAILS
+        details = read_exif_details(path)
+        # #4579: a JPEG-minőség a DQT-ből jön, EXIF nélkül is
+        assert details.jpeg_quality == "75 (411)"
+        assert replace(details, jpeg_quality=None) == EMPTY_EXIF_DETAILS
 
     def test_flash_not_fired_and_manual_wb(self, tmp_path):
         photo = _jpeg_with_exif(

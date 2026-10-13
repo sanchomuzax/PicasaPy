@@ -269,6 +269,36 @@ _FACE_LANDMARKS = FaceLandmarks(
 )
 
 
+def _nezet_mozog(window) -> bool:
+    """A Névtelenek nézet még dolgozik: csoportosít, vagy a lista/rács mozog."""
+    view = _child(window, "unnamedFacesView")
+    if view.property("groupingInProgress"):
+        return True
+    for item in _walk(view):
+        if item.objectName() in ("unnamedGroupsList", "unnamedFaceGrid") and (
+            item.property("moving") or item.property("flicking")
+        ):
+            return True
+    return False
+
+
+def _var_nyugalomra(window, qt_app, timeout: float = 5.0) -> None:
+    """Determinisztikus szinkronpont a kattintás előtt (#4886): a nézet
+    300 ms-ig egyhuzamban nyugalomban van (futó arckeresés mellett a
+    csoportosítás és a lista-újraépülés aszinkron)."""
+    deadline = time.monotonic() + timeout
+    nyugodt_ota = None
+    while time.monotonic() < deadline:
+        qt_app.processEvents()
+        if _nezet_mozog(window):
+            nyugodt_ota = None
+        elif nyugodt_ota is None:
+            nyugodt_ota = time.monotonic()
+        elif time.monotonic() - nyugodt_ota >= 0.3:
+            return
+        QTest.qWait(20)
+
+
 def _click_diagnosis(window, target: str, center) -> str:
     """A CI-n időnként hatástalan arc-kattintás (#4870) okának kiírása: mi
     van a kattintás pontján, és mi a nézet/panel állapota."""
@@ -290,6 +320,8 @@ def _click_diagnosis(window, target: str, center) -> str:
         f" ablak={window.width()}x{window.height()}"
         f" selectedCount={view.property('selectedCount')}"
         f" grouped={view.property('grouped')}"
+        f" csoportosít={view.property('groupingInProgress')}"
+        f" mozog={_nezet_mozog(window)}"
         f" csoportok={len(view.property('groupsModel') or [])}"
         f" {target}-példány={tiles}"
         f" fejléc.visible={label.property('visible')}"
@@ -343,6 +375,7 @@ class TestUnnamedAlbum:
         át érhetők el, `findChild`-dal NEM (MEMORY 2026-07-31, ld. a
         `test_unnamed_faces_view.py` modul-docstringje)."""
         target = f"faceTile_{face_id}"
+        _var_nyugalomra(window, qt_app)
         for item in _walk(window.contentItem()):
             if item.objectName() == target and item.isVisible():
                 center = item.mapToScene(item.boundingRect().center())

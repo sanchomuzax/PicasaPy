@@ -108,7 +108,9 @@ A **Nézet ▸ Mappanézet ▸ Indexképek megjelenítése a könyvtárban**
 bekapcsolásával a hasáb sorain a kék mappaikon helyett a mappa egyik
 fotójának kis bélyegképe látszik. Ugyanaz a mappa mindig ugyanazt a képet
 kapja, futások között is. Alapból kikapcsolva indul, és a választásod
-megmarad.
+megmarad. Induláskor ezek a kis képek gyorsan megjelennek, mert a program
+a már elkészült bélyegképeket használja. Ha egy mappában nincs fotó, a
+sorában a mappaikon marad.
 
 **A fanézetben ez mindig látszik**, a kapcsolótól függetlenül — ott ezért
 a menüpont szürke. A kapcsoló az egyszerű, egyszintű listára vonatkozik.
@@ -533,6 +535,24 @@ a mappa helyi menüjének **Mappa megjelenítése** tételével: ehhez
 előbb kapcsold be a **Nézet ▸ Rejtett képek** pontot, és jelöld ki a mappát a
 **Rejtett mappák** között. A mappa ugyanúgy a
 lemezen marad.
+
+A rejtett mappa **képei máshol sem bukkannak fel**: a keresés, a szűrők
+(csillag, film, arc, kor), az Emberek nézet, az idővonal, az albumok, a
+térkép, a hasonló képek és a másodpéldányok keresése, a diavetítés, a
+képernyővédő és a képtálca is kihagyja őket. Csak akkor látszanak, ha a
+**Nézet ▸ Rejtett képek** be van kapcsolva (jelszó esetén a feloldás
+után).
+
+Az elrejtés a **mappa saját `.picasa.ini` fájljába** íródik, ugyanúgy,
+ahogy a Picasa tette. Ezért a mappa akkor is rejtett marad, ha a program
+újraolvassa a könyvtárat, és a régi Picasában elrejtett mappák itt is
+rejtve jelennek meg. Ha a `.picasa.ini` nem írható, a program szól: a
+mappa ilyenkor nálunk rejtett, de a Picasa nem fogja rejtettnek látni.
+Egy **nem elérhető** mappát (például lecsatolt meghajtón) nem lehet
+újra megjeleníteni, amíg vissza nem tér; addig rejtett marad.
+
+Rejtett mappát **gyűjteménybe sem tehetsz át** — előbb szüntesd meg a
+rejtését.
 
 ### A rejtett mappák jelszava
 

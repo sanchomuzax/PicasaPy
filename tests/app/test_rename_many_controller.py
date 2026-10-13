@@ -3,6 +3,9 @@
 átnevezés, háttérszálon + resync)."""
 
 import pytest
+from PySide6.QtCore import QLocale
+
+from picasapy.fileops.rename import format_taken_at
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import wait_for_photo_op
@@ -61,6 +64,13 @@ def _rows_by_name(controller, *names) -> list:
     return [by_name[name] for name in names]
 
 
+def _stamp(controller, name) -> str:
+    """A fájl felvételi dátum-idő utótagja, a rendszer területi beállításával."""
+    photo = next(p for p in controller.photos.photos if p.name == name)
+    assert photo.taken_at, "a próbakép dátuma hiányzik"
+    return format_taken_at(photo.taken_at, QLocale.system())
+
+
 def _do_rename(controller, action) -> None:
     wait_for_photo_op(controller, action)
 
@@ -74,7 +84,19 @@ class TestRenamePreview:
     def test_date_and_size_suffix(self, controller):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
         preview = controller.renamePreview(rows, "nyaralas", True, True)
-        assert preview == "nyaralas 2025-05-01 800x600.jpg"
+        # dátum ÉS idő (nem csak az ISO-nap), majd a felbontás
+        assert preview == f"nyaralas {_stamp(controller, 'a.jpg')} 800x600.jpg"
+        assert len(_stamp(controller, "a.jpg")) > len("2025-05-01")
+
+    def test_flags_default_off_and_persist(self, controller):
+        assert controller.renameUseDate() is False
+        assert controller.renameUseSize() is False
+        controller.setRenameUseFlags(True, False)
+        assert controller.renameUseDate() is True
+        assert controller.renameUseSize() is False
+        controller.setRenameUseFlags(False, True)
+        assert controller.renameUseDate() is False
+        assert controller.renameUseSize() is True
 
     def test_empty_base_name_gives_empty_preview(self, controller):
         rows = _rows_by_name(controller, "a.jpg")
@@ -111,13 +133,15 @@ class TestRenamePhotosMany:
         assert document.section("nyaralas-1.jpg").get("caption") == "nyar"
 
     def test_date_and_size_suffix_end_to_end(self, controller, library):
+        stamp_a = _stamp(controller, "a.jpg")
+        stamp_b = _stamp(controller, "b.jpg")
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
         _do_rename(
             controller,
             lambda: controller.renamePhotosMany(rows, "nyar", True, True),
         )
-        assert (library / "nyar 2025-05-01 800x600.jpg").exists()
-        assert (library / "nyar 2025-06-02 1024x768-1.jpg").exists()
+        assert (library / f"nyar {stamp_a} 800x600.jpg").exists()
+        assert (library / f"nyar {stamp_b} 1024x768-1.jpg").exists()
 
     def test_collision_reports_failure_without_renaming(self, controller, library):
         # az "a.jpg" célneve ("b.jpg", sorszám nélkül) ütközik a köteg

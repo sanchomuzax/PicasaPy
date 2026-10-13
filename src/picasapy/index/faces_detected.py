@@ -22,7 +22,8 @@ import numpy as np
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
 
-from .queries import _SELECT, PhotoRecord, _records
+from .hidden_scope import visible_folder_sql
+from .queries import PhotoRecord, _records, _select
 
 
 def replace_faces(
@@ -268,14 +269,26 @@ def faces_for_photo(conn: sqlite3.Connection, photo_id: int) -> tuple[UnnamedFac
     UTÁN, melyik ÚJ találat esik egybe egy már a `.picasa.ini`-ben
     mellőzöttként (`faces=…,ffffffffffffffff`) jelölt régióval, hogy azt ne
     dobja vissza javaslatként."""
-    return _faces_where(conn, "WHERE f.photo_id = ?", (photo_id,))
+    # #4887: belső szkennelési út (nem megjelenítés) — a rejtett mappa
+    # képén is dolgozik
+    return _faces_where(
+        conn, "WHERE f.photo_id = ?", (photo_id,), include_hidden_folders=True
+    )
 
 
 def _faces_where(
-    conn: sqlite3.Connection, where_sql: str, params: tuple
+    conn: sqlite3.Connection,
+    where_sql: str,
+    params: tuple,
+    *,
+    include_hidden_folders: bool | None = None,
 ) -> tuple[UnnamedFace, ...]:
     """A közös lekérdezés-test: a `WHERE`-ág és a paraméterei jönnek
-    kívülről, ÉRTÉKKÉNT (nem szövegbe fűzve)."""
+    kívülről, ÉRTÉKKÉNT (nem szövegbe fűzve).
+
+    #4887: a rejtett mappák arcai a közös kapu szerint maradnak ki
+    (Névtelenek, Mellőzöttek, javaslatok)."""
+    lathato = visible_folder_sql(conn, "fo", include_hidden_folders)
     rows = conn.execute(
         "SELECT f.id, f.photo_id, f.rect_left, f.rect_top, f.rect_right, "
         "f.rect_bottom, f.group_id, f.suggested_name, f.state, "
@@ -283,7 +296,7 @@ def _faces_where(
         "p.width AS width, p.height AS height "
         "FROM face f "
         "JOIN photos p ON p.id = f.photo_id "
-        "JOIN folders fo ON fo.id = p.folder_id "
+        f"JOIN folders fo ON fo.id = p.folder_id AND {lathato} "
         f"{where_sql} "
         "ORDER BY (f.group_id IS NULL), f.group_id, f.id",
         params,
@@ -471,7 +484,7 @@ def suggested_album_photos(
     if not name:
         return ()
     rows = conn.execute(
-        f"{_SELECT} WHERE p.id IN ("
+        f"{_select(conn)} WHERE p.id IN ("
         "SELECT DISTINCT photo_id FROM face "
         "WHERE state = 'unnamed' AND suggested_name IS NOT NULL "
         "AND suggested_name = ? COLLATE NOCASE"
@@ -481,13 +494,25 @@ def suggested_album_photos(
     return _records(rows)
 
 
+def unnamed_photo_count(conn: sqlite3.Connection) -> int:
+    """Hány LÁTHATÓ fotón van még névtelen saját találat — a „Névtelenek"
+    album hasáb-darabszáma (#4887: a rejtett mappák képei nem számítanak)."""
+    row = conn.execute(
+        "SELECT COUNT(DISTINCT fa.photo_id) AS n FROM face fa "
+        "JOIN photos p ON p.id = fa.photo_id "
+        f"JOIN folders f ON f.id = p.folder_id AND {visible_folder_sql(conn)} "
+        "WHERE fa.state = 'unnamed'"
+    ).fetchone()
+    return int(row["n"]) if row is not None else 0
+
+
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """A „Névtelenek" album (issue #26, javasolt 1. lépcső): minden fotó,
     amelyen a SAJÁT detektorunk legalább egy arcot talált — csoportosítás
     és névfeloldás NÉLKÜL (azok a terv 2–3. lépcsője). A `state` oszlop itt
     mindig 'unnamed', mert ez a lépcső még nem ír más állapotot."""
     rows = conn.execute(
-        f"{_SELECT} WHERE p.id IN ("
+        f"{_select(conn)} WHERE p.id IN ("
         "SELECT DISTINCT photo_id FROM face WHERE state = 'unnamed'"
         ") ORDER BY f.path, p.name"
     )
