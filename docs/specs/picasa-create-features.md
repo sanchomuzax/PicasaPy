@@ -4364,6 +4364,36 @@ Nem becsültem a képletet: a fenti két tömb és a `t` tartománya kimondottan
 - `0x00813c50` dekompilálása: a `+0x4b0…+0x4bc` írói, és hogy a face-régió `faces=`-eredetű-e.
 - Renderelt végpont: még egyetlen kezdő- vagy végképkocka sincs.
 
+#### 3.8 4. kör: a pin-hívó és az arcsegéd dekompilálva, a vetítési kapcsolat nyitott (2026-10-13)
+
+**Eredmény.** A három új Ghidra-kivonat két részletet tisztáz: a `0x0074e670` egy indirekt vtbl-hívás előtt felépíti a `CDXSlideshowFilter` objektumot; a `0x00813c50` bemeneti rekordból és egy azonosítóból téglalap-kimenetet képez, amelyet a `0x00813330` a meglévő AOI-csomópont `+0x4b0…+0x4bc` mezőibe ír. Egyik eredmény sem köti össze a `BigSlideshow2` teljes képernyős útját ezzel az AOI-csomóponttal, és egyik sem mutatja meg a rekord `.picasa.ini`-beli eredetét. A kezdő-/végképkocka képlete és a renderelt ellenőrzés továbbra sincs meg.
+
+**Az új bináris olvasat.** A `0x0074e670` a `0x0074e580` létrehozó segédet hívja; a segéd `CDXSlideshowFilter`-t állít be, `0x4c0` bájtos objektumot foglal és meghívja a `0x0074d1c0` konstruktort. Ezután a `0x0074e670` a kapott objektum vtbl-jén indirekt metódust hív az `&DAT_00c43490` argumentummal és a hívótól kapott paraméterrel. Ez a filter-/pin-út helyi felépítését támasztja alá, de a virtuális cél és a teljes képernyős vetítéstől való elérése ebből a kivonatból nem következik. Forrás: bináris `0x0074e670`, `0x0074e580`, `0x0074d1c0`; a `0x00c43490` argumentum jelentése: **NINCS MEG**.
+
+A `0x00813c50` a hívótól kapott, `EAX`-ban mutatott rekord első és harmadik dwordjét vizsgálja: az elsőnek `3`-nak, a harmadiknak `−1`-től különbözőnek kell lennie. Ezután a `this+0x2d8` objektum virtuális `+0x58` és `+0xa0` metódusát hívja az azonosítóval, és négy floatot ír a kimeneti pufferbe. Sikertelenségkor a négy kimeneti floatot előbb a `0x00cf3ed0` sentinelértékre állítja. A `0x00813330` a kapott négy floatot egy már létező, megfelelő RTTI-típusú AOI-csomópont `+0x4b0…+0x4bc` mezőibe másolja (`0x008137b8`–`0x008137d2`). A vizsgált függvényekben nincs `.picasa.ini`-olvasás; a rekord előállítási helye és az azonosító `faces=`-hez kötése **NINCS MEG**. A `+0x4b0…+0x4bc` mezőket nem azonosítottuk kezdő-/végképkocka-mezőként. Forrás: bináris `0x00813c50`, `0x00813330`, `0x008137b8`–`0x008137d2`, `0x00cf3ed0`.
+
+**Két külön út összevetése.**
+
+| Út | Pozitív bizonyíték | Mit nem dönt el |
+|---|---|---|
+| A — teljes képernyős bemutatás | A `0x005e8a70` út a `0x008037e0` beállítás-/nézetépítőhöz vezet; a kód a `BigSlideshow2`, `oneup/timeline` és `oneup/transtype` bemutatási beállításokat használja. Forrás: bináris `0x005e8a70`, `0x008037e0`. | A kiválasztott `oneup/transtype` csomópontja, illetve az AOI-gyár/pin felé vezető konkrét kapcsolat: **NINCS MEG**. |
+| B — filter- és AOI-részletek | Két külön pozitív részlet ismert: a `0x0074e670` létrehozza a filter-objektumot és vtbl-hívást végez; a `0x00813330` → `0x00813c50` út rekordból AOI-téglalapot készít és ír. Forrás: bináris `0x0074e670`, `0x00813330`, `0x00813c50`; xref `0x008287b0` → `0x0074e670`, `0x0074dfc0` → `0x00812470`/`0x008127b0`. | A két részlet közötti virtuális kapcsolat, a filter-hívás konkrét célja és az A útba való becsatlakozás: **NINCS MEG**. |
+
+A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja, hogy a teljes képernyős vetítés nem használ AOI-t: a hiányzó él lehet virtuális vagy esemény-visszahívásos. A bináris-index negatív találatát nem tekintettem cáfolatnak. A független újraolvasás — a három dekompilált függvényből kiindulva, a korábbi következtetések nélkül — ugyanerre jutott; az xref-adatokkal összevetve a pozitív élek egyeznek, a vetítési összekötő él továbbra sem ismert.
+
+**Cáfoló kísérlet.** Azt a hipotézist próbáltam cáfolni, hogy a `BigSlideshow2` a már ismert timeline/AOI utat használja: a teljes képernyős bemutatási ágat a filter/pin út ismert hívóihoz és az AOI-íróhoz követtem. A teljes képernyős ág `oneup/transtype`-ot választ, a másik ág filter-vtábla-hívást és a timeline rekord/AOI írói láncot mutat; a vizsgált bizonyíték nem ad köztük összekötő élt. Ez a hipotézist **nem erősíti meg**, de az indirekt hívás lehetősége miatt **nem is cáfolja**. Ellenőrzésként a két útból külön indított újraolvasás és az xref-lánc egyezett a fenti pozitív részletekben; a negatív kapcsolat hiányát egyik sem kezeli leletként.
+
+**A megmaradt nyitott kérdések.**
+
+- `Ghidra-kör kell: 0x008037e0 — a oneup/transtype által kiválasztott teljes képernyős átmenet mely konstruktor-/frissítő útba jut, és elérheti-e a 0x00771e60 vagy a 0x0074e670 útját? [blokkoló]`
+- `Ghidra-kör kell: 0x008287b0 — mi a 0x0074e670 által használt interfész-vtábla-hívás konkrét célja, és milyen objektumot ad át a pin/AOI út következő szakaszának? [blokkoló]`
+- `Ghidra-kör kell: 0x00812470 — mi tölti fel a this+0x48 időzített sáv rekordjait, és ki állítja be a rekord +0x8 régióazonosítóját; van-e bizonyítható faces= adatút? [blokkoló]`
+- `Ghidra-kör kell: 0x00812aa0 — hogyan képeződik le pontosan a this+0x1a8 időzített rekord a this+0x7ec téglalapra, és melyik téglalap melyik átmeneti végállapothoz tartozik? [blokkoló]`
+- `Ghidra-kör kell: 0x0076e880 — a +0x414 és +0x438 tömbökből milyen bemeneti képkocka lesz, és hogyan jut el a két végállapot a renderelőhöz? [blokkoló]`
+- Renderelt frame-pár vagy frame-sorozat, amely az arc nélküli és arcos dián a tényleges induló-/végállapotot igazolja: **NINCS MEG**. A célterület-mérés (3. kör) önmagában nem ilyen mérés.
+
+**Bizonyítottsági fok ebben a körben: nyitott.** Az egyedi függvényutasítások a fenti címeken olvashatók, de a `BigSlideshow2` → AOI kapcsolat, a `faces=` eredet és a renderelt mozgás nincs két független úttal megerősítve. Következésképp nincs átadható, eredeti Picasa-viselkedést leíró kezdő-/végképlet vagy küszöb.
+
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
 A korábbi szakasz a `slideshowctrls.tre`-t idézte (két elem). **Az igazi
