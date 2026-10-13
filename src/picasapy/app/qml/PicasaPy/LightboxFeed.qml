@@ -107,8 +107,8 @@ ListView {
         readonly property int previewImageStatus: previewImage.status
         readonly property bool requested: grid.appWindow.active
             && grid.ctl
-            && grid.ctl.showTooltipsEnabled !== undefined
-            && grid.ctl.showTooltipsEnabled === true
+            && grid.ctl.enableHover !== undefined
+            && grid.ctl.enableHover === true
             && grid.ctl.ctrlAltHeld === true
             && grid.hoverPreviewRow >= 0
             && grid.hoverPreviewPhoto.isVideo !== true
