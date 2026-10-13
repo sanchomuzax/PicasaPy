@@ -67,7 +67,9 @@ def _lapos_borito_kep(pane, nev: str):
     """A lapos lista azon sorának borító-`Image`-e, amely a `nev` mappát kéri."""
     for elem in _walk(pane):
         if elem.objectName() == "folderRowCoverImage":
-            if str(elem.property("source").toString()).endswith("/" + nev):
+            # Windowson az útvonal `\` elválasztóval végződik (#4914).
+            forras = str(elem.property("source").toString()).replace("\\", "/")
+            if forras.endswith("/" + nev):
                 return elem
     return None
 

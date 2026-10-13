@@ -6,17 +6,12 @@ A `FolderContextMenu` „Mappa elrejtése" tétele **látszott, kattintható
 volt, és nem csinált semmit** (`placeholder: true`) — mappa-szintű
 elrejtés a Pythonban sehol nem létezett.
 
-## ⚠️ A jelölés SZÁNDÉKOSAN csak az indexben van
+## A jelölés tárolója (#4597)
 
-Az eredeti a `]hidden` tokennel és a „Rejtett mappák" gyűjteménnyel
-dolgozik, de hogy a jelölés a `.picasa.ini`-be, az adatbázisba vagy
-mindkettőbe kerül-e, **nincs mérve** — a jegy ezt hatókörön kívülinek
-mondja.
-
-Egy **találgatott kulcsot nem írunk** a felhasználó valódi ini-fájljaiba:
-a kétirányú ini-kompatibilitás a projekt központi ígérete, és egy rossz
-kulcs csendben rontaná el. Amíg a valódi tároló nincs megmérve, a jelölés
-az indexben él.
+A felületi elrejtés a mappa `.picasa.ini`-jébe írja a `[Picasa]
+P2category=Hidden Folders` sort; a `folders.hidden` ennek az index-beli
+másolata (ld. `test_rejtett_mappa_ujraepites_4597.py`). Ez a fájl az
+index-réteg `set_folder_hidden` / `is_folder_hidden` primitívjeit méri.
 """
 
 from __future__ import annotations

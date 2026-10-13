@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from picasapy.ini import IniDocument, is_projects_category, read_folder_category
 
 from .folder_ini import sweep_folder_inis
+from .hidden_scope import excluded_folder_paths
 
 
 @dataclass(frozen=True)
@@ -56,8 +57,10 @@ def project_folders_from_paths(
     """A begyűjtött projekt-útvonalakból a hasáb sorai, névre rendezve.
 
     Az ini-olvasás itt már megtörtént (`ProjectFolderCollector`); ez a
-    függvény csak az index-beli darabszámot teszi mellé."""
+    függvény csak az index-beli darabszámot teszi mellé. A rejtett
+    mappákat (#4887) a közös láthatósági kapu szűri ki."""
     counts = _photo_counts(conn)
+    kizart = excluded_folder_paths(conn)
     folders = [
         ProjectFolder(
             path=path,
@@ -65,6 +68,7 @@ def project_folders_from_paths(
             photo_count=counts.get(path, 0),
         )
         for path in paths
+        if path not in kizart
     ]
     return tuple(sorted(folders, key=lambda folder: folder.name.casefold()))
 
