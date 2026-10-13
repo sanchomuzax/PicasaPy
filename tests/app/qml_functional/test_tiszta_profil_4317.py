@@ -370,7 +370,37 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
     _kattint(dialog, qt_app, "faceScanCloseButton")
 
 
-def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app):
+def _nev(item) -> str:
+    return item.objectName() or type(item).__name__
+
+
+def _legfelso_talalat(item, pont):
+    """A pontnál legfelül álló elem; rekurzív, mert a childAt csak a közvetlen gyerekeket nézi."""
+    if not item.contains(item.mapFromScene(pont)):
+        return None
+    for gyerek in sorted(item.childItems(), key=lambda g: g.z(), reverse=True):
+        if gyerek.isVisible():
+            talalat = _legfelso_talalat(gyerek, pont)
+            if talalat is not None:
+                return talalat
+    return item
+
+
+def _vorosszem_diagnosztika(window, terulet, gomb) -> str:
+    """A húzás utáni, Apply előtti állapot: a Windows-bukás okának kiderítéséhez (#4929)."""
+    grab = window.mouseGrabberItem()
+    kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
+    talalat = _legfelso_talalat(window.contentItem(), kozep)
+    return (
+        f"mouseGrabberItem={_nev(grab) if grab is not None else 'None'}, "
+        f"redeyeDragArea.dragging={terulet.property('dragging')}, "
+        f"Apply-középpont=({kozep.x():.1f}, {kozep.y():.1f}), "
+        f"ablak={window.width():.0f}x{window.height():.0f}, "
+        f"hit-test={_nev(talalat) if talalat is not None else 'None'}."
+    )
+
+
+def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     app = tiszta_app
     window, edit = app["window"], app["edit"]
     _nyisd_meg_a_nezot(window, qt_app)
@@ -391,6 +421,7 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app):
                        Qt.KeyboardModifier.NoModifier,
                        QPoint(round(p1.x()), round(p1.y())))
     qt_app.processEvents()
+    diag.append(_vorosszem_diagnosztika(window, terulet, _elem(window, "redeyeApplyButton")))
     _kattint(window, qt_app, "redeyeApplyButton")
     assert _var(qt_app, lambda: "redeye" in edit.effectChain.casefold()), (
         "a vörösszem-kijelölés alkalmazása nem került a szerkesztési láncba"
@@ -399,9 +430,25 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app):
     assert not app["attempts"], f"vörösszem-javítás közben hálózati próbálkozás történt: {app['attempts']}"
 
 
-def _ellenorizd_kepernyokepek_meretet():
+def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
+    """Windowson a bukás diagnosztikával kihagyásra fut (#4929); Linuxon szigorú marad.
+
+    Visszaad egy skip-indokot, ha a lépés kihagyásra futott, különben None.
+    A hálózati próbálkozás mindig valódi bukás.
+    """
+    diag = []
+    try:
+        _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag)
+    except AssertionError as hiba:
+        if sys.platform != "win32" or tiszta_app["attempts"]:
+            raise
+        return f"#4929 diag: {hiba} | {' '.join(diag) or 'a húzás előtt bukott'}"
+    return None
+
+
+def _ellenorizd_kepernyokepek_meretet(varhato: int):
     kepek = sorted(_KEPMENTES.glob("*.png"))
-    assert len(kepek) == 3, f"nem készült el mindhárom képernyőkép: {kepek}"
+    assert len(kepek) == varhato, f"nem készült el mind a {varhato} képernyőkép: {kepek}"
     osszesen = sum(kep.stat().st_size for kep in kepek)
     assert osszesen < 1_000_000, f"a képernyőképek együtt {osszesen} bájtosak"
 
@@ -419,6 +466,7 @@ def test_tiszta_profil_funkciok_valodi_kattintassal(
     _lep_auto_kontraszt_es_visszavonas(tiszta_app, qt_app)
     _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory)
     _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app)
-    if sys.platform != "win32":  # #4929: Windowson a húzás nem kerül a láncba
-        _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app)
-    _ellenorizd_kepernyokepek_meretet()
+    skip_indok = _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app)
+    _ellenorizd_kepernyokepek_meretet(varhato=2 if skip_indok else 3)
+    if skip_indok:
+        pytest.skip(skip_indok)
