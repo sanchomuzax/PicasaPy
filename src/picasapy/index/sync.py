@@ -1000,7 +1000,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
     # mappa-szinkron mindegyiket itt látja meg.
     forget_origin_keys_outside(conn, scan.path, nevek)
     _sync_albums(conn, folder_id, document)
-    _sync_folder_date(conn, folder_id, document)
+    sync_folder_date(conn, folder_id, document)
     # #1644: „olvasatlan" jelölő — a mappába ÚJ kép került. A `new_count` a
     # #209 óta pontosan ezt számolja (az indexben eddig nem szereplő
     # fotókat), tehát nincs szükség külön észlelésre.
@@ -1019,7 +1019,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
     return _FolderSyncResult(new_count, scan.has_ini and document is None)
 
 
-def _sync_folder_date(
+def sync_folder_date(
     conn: sqlite3.Connection, folder_id: int, document: IniDocument | None
 ) -> None:
     """Mappa-dátum (#320): a `.picasa.ini` `[Picasa]` `date=` kézi
@@ -1394,9 +1394,9 @@ _TARGETED_UPDATE_COLUMNS = {
     # frissíthető. A #2976 óta ini-eredetű is: a mappa-resync a `flipped(N)`
     # kulcsból tölti, tehát az ini az igazságforrás, nem az index.
     "flip_flags",
-    # #4332/#4693: a korábbi menüút indexfelülírást hozott létre; az aktuális
-    # út a forrás EXIF-ét írja. A mező a korábbi indexek kompatibilitásáért
-    # marad írható.
+    # #4332/#4693/#4885: a dátummódosítás a forrás EXIF-ét írja; ha ez nem
+    # lehetséges (videó, nem-JPEG, hibás vagy írásvédett JPEG), a dátum ebbe a
+    # mezőbe kerül.
     "taken_at_override",
 }
 

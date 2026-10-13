@@ -193,8 +193,8 @@ class TestSelectionStability:
 class TestSelectStarred:
     """#426: „Csillagozottak kijelölése" (Picasa `ID_SELECTSTAR`, Szerkesztés
     menü) — a JELENLEGI nézet csillagos képeit jelöli ki, NEM a Mappák panel
-    „Csillagozott" nézet-szűrőjét váltja (az utóbbi külön, meglévő út,
-    `controller.showStarred()`, a bal oldali fa „Starred" bejegyzésén)."""
+    „Csillagozott" nézetét váltja (az utóbbi külön út,
+    `controller.showStarredAlbum()`, a bal oldali fa „Starred" bejegyzésén)."""
 
     @staticmethod
     def _indexes(window):

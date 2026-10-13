@@ -64,6 +64,13 @@ class PhotoRecord:
     latitude: float | None
     longitude: float | None
     faces: tuple[DeferredFace, ...]
+    #: #4591: a `thumbindex` rekord TÍPUSA (`kind`; 2 = JPEG) és a két
+    #: FILETIME. Együtt döntik el, hogy a videó dátumát a felhasználó
+    #: módosította-e a Picasában (`pmpimport/videodatum.py`,
+    #: `docs/specs/pmp-database.md` 15.). Alapértékük a „nincs adat".
+    entry_kind: int = 0
+    creation_filetime: int = 0
+    modified_filetime: int = 0
 
 
 def iter_photo_records(
@@ -132,6 +139,9 @@ def iter_photo_records(
                     table.value("long", entry.index), geoview_jelzo
                 ),
                 faces=faces,
+                entry_kind=entry.kind,
+                creation_filetime=entry.creation_filetime,
+                modified_filetime=entry.modified_filetime,
             )
         )
     return tuple(records)

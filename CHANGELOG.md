@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.83] – 2026-10-13
+
+- Pontosabb lett az Időrend eredeti bemutatójának dokumentációja (#4443).
+- Kikapcsolt egykattintásos kilépésnél az Enter visszalép az állóképes nézőből a könyvtárba (#4500).
+- A Tulajdonságok panel mostantól mutatja a Fájl dátuma, a CCD szélessége, a Rekesz, a JPEG minőség és a Személycímkék sort is, az eredeti Picasa sorrendjében (#4579).
+- A Picasa-átvétel mostantól a videók Picasában módosított dátumát is átveszi (a fotók dátuma és a rendezés ezt használja), a videók helyadata pedig a .picasa.ini-be kerül (#4591).
+- A párbeszédek szabványos gombjai (OK, Mégse stb.) most a választott felületi nyelven jelennek meg, nem a rendszer nyelvén (#4881).
+- A Csillagozott nézetből törlés leveszi a csillagot, a képfájlt pedig a lemezen hagyja (#4883).
+- A videók (és minden olyan fájl, amelybe nem lehet dátumot írni) módosított dátuma mostantól Linuxon és macOS-en is megmarad: a Dátum és idő beállítása parancs a katalógusban tárolja, újraindítás és újraolvasás után is (#4885).
+- Az Egyéni méretarány felvétele párbeszédben magyar felületen a tizedes érték vesszővel (1,5) és ponttal (1.5) is megadható, és helyesen tárolódik; korábban a vesszős érték miatt az OK gomb nem kapcsolt be (#4891).
+- A Border-keret előnézeti vastagsága a Picasa eredeti float32-skálázását követi. (#4894).
+- A Border keret és a Lekerekített sarkok színes sarkai az eredeti Picasa MMX-keverési képletével és rajzolási sorrendjével készülnek (#4895).
+- Kis, nem négyzetes képeken a Poszterizálás palettája az eredeti sorhatár szerint készül (#4899).
+- A körmaszk tört középponttal és eltérő képaránnyal is bájtra követi a Picasa alfaátmenetét. (#4905).
+- A Pixelate effekt célmérete pontos fél értéknél felfelé kerekít, ahogy az eredeti Picasa (#4912).
+
 ## [0.9.82] – 2026-10-13
 
 - A pull requestek a módosított kódhoz tartozó teszteket választják, a főág pedig 16 darabra bontja a teljes készletet (#4922).

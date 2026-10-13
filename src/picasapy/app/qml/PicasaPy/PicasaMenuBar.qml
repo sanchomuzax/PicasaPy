@@ -1893,8 +1893,13 @@ MenuBar {
             text: bar.currentAlbumToken !== ""
                 ? qsTr("&Edit Album Description...")
                 : qsTr("&Edit Description...")
+            // #4883: a Csillagozott album (`]star`) nem létező album, nincs
+            // `[.album:]star]` szakasza — leírása nincs (spec D.8). Album-
+            // nézetben a mappa-ág nem érvényesül: a controller a mappát
+            // album-nézetben is megőrzi.
             enabled: bar.currentAlbumToken !== ""
-                || (bar.currentFolder !== "" && bar.currentPersonName === "")
+                ? bar.currentAlbumToken !== "]star"
+                : (bar.currentFolder !== "" && bar.currentPersonName === "")
             onTriggered: bar.editFolderDescriptionRequested()
         }
         MenuItem {

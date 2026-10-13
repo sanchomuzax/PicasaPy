@@ -27,6 +27,8 @@ import PySide6
 from PySide6.QtCore import (
     QCoreApplication,
     QEventLoop,
+    QLocale,
+    QLibraryInfo,
     QLockFile,
     QObject,
     QSettings,
@@ -1009,6 +1011,24 @@ def _startup_language(
     return resolve_startup_language(settings)
 
 
+def _install_qt_translator(app: QGuiApplication) -> None:
+    """A Qt saját (`qtbase_*.qm`) fordítója — a Quick Controls szabványos
+    gombjai (Mégse, Abbrechen…) ebből jönnek. A PicasaPy `.qm`-jei ezt nem
+    hozzák, és a Qt nem tölti be magától; a default QLocale csak a nyelvet
+    választja ki, a fájlt nekünk kell betölteni (#4881).
+
+    Hiányzó fájlnál (a `qt6-translations-l10n` csomag nélkül) hangos
+    figyelmeztetés, és az angol gombfeliratok maradnak."""
+    tr = QTranslator(app)
+    if tr.load(QLocale(), "qtbase", "_", QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)):
+        app.installTranslator(tr)
+    else:
+        logging.getLogger(__name__).warning(
+            "a Qt fordítása (qtbase_%s.qm) nem található — a szabványos gombok angolul maradnak",
+            QLocale().name(),
+        )
+
+
 def _install_translator(app: QGuiApplication, language: str | None = None) -> QTranslator | None:
     """A `language` (vagy a beállított) nyelv fordítójának telepítése.
 
@@ -1016,8 +1036,15 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
     maguk angolok — ezért ott nem telepítünk fordítót.
     """
     code = coerce_language(language) if language else _startup_language()
+    # #4881: a Quick Controls párbeszédeinek szabványos gombjai (OK, Mégse…)
+    # az alapértelmezett QLocale-ból töltik a Qt saját fordítását — enélkül a
+    # rendszer nyelvén jelennének meg a választott felületi nyelv helyett.
+    # ADR-004 (nyelv ≠ területi beállítás): a NYELV a felületé, a TERÜLET
+    # (tizedesjel, időformátum, mértékegység) marad a rendszeré.
+    QLocale.setDefault(QLocale(QLocale(code).language(), QLocale.system().territory()))
     if code == DEFAULT_LANGUAGE:
         return None
+    _install_qt_translator(app)
     # #4817: forrásból indítva a `.qm` itt készül el a `.ts`-ből
     forditsd(_I18N_DIR / f"picasapy_{code}.ts")
     translator = QTranslator(app)
@@ -1656,7 +1683,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
     PicasaImportController = _lazy_app_symbol("PicasaImportController")
-    picasa_import_controller = PicasaImportController()
+    picasa_import_controller = PicasaImportController(
+        index_path=data_dir / "index.db",
+        writer_queue=controller._index_iro_sor,
+    )
+    # #4591: az átvett videódátumok után a rács/mappalista újratöltése
+    picasa_import_controller.datesApplied.connect(controller._reload_after_sync)
     engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
     # #4597: a Picasában beállított rejtett-jelszó átvétele (csak ha nálunk
     # még nincs) — sorba állított hívás, hogy a fő szálon fusson.

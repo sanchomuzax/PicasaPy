@@ -3203,7 +3203,7 @@ ApplicationWindow {
                 toolbar.clearSearch()
                 window.clearSelection()
                 window.unnamedFacesOpen = false
-                controller.showStarred()
+                controller.showStarredAlbum()
             }
             onAlbumChosen: function(token) {
                 if (!controller) return
