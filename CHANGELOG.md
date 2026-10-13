@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.92] – 2026-10-13
+
+- A Sugaras elmosás (RadialBlur) képpontra az eredeti Picasa kimenetét adja, a kép szélein is (#4906).
+
 ## [0.9.91] – 2026-10-13
 
 - A Pixelate natív kimenetével egyező kicsinyítést és középre igazított visszanagyítást ad (#4908).
