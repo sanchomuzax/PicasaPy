@@ -1808,6 +1808,92 @@ A 10.24 „Ctrl+G nyitott” állítása ezzel pontosítva: a lánc megvan, a v�
 - [ ] A popup-kép forrása (owner `+0x260` objektum) azonosítva, és a `WM_PAINT`→`BitBlt` út végigkövetve.
 - [ ] Megvalósításkor: a billentyű-kötés a `PhotoViewer`/`Main` fókuszkapujával egyezzen; a popup csak akkor jelenjen meg, ha mind a négy feltétel (EnableHover, `[e70]` érvényes, az előtérben, >1024 px) teljesül. Teszt: a feltételek bármelyikének hiányában nincs popup.
 
+### 10.30 #4643 — ötödik kör, második rész (2026-10-13): V, a `+0x74` slot, a négy VK-összehasonlítás
+
+**Kiinduló helyzet.** A 10.27 három nyitott pontja: (1) `V` osztálya, (2) `V.vtbl[+0x74]` célja, (3) a négy nem végigolvasott VK-összehasonlítás (`0x0054c540`, `0x007360b0`, `0x007a5c10`, `0x00a99620`). Ez a rész mindhármat megvizsgálta.
+
+⛔ **Javítás a 10.26-hoz.** A 10.26 nyitott pontjában szereplő „`call [reg+0x7c]`" keresés csak a közvetlen alakot kereste. Ebben a binárisban a virtuális hívás MSVC-módon gyakran kétlépéses: `mov R,[X+0x7c]` … `call R`. Közvetlen alak: **1** találat (`00b50c7f call [esp+0x7c]`, verem-indirekt, nem vtábla). Kétlépéses alak: **154** találat. A vtábla-hívók tehát a kétlépésesek között vannak, a közvetlen keresés erről nem ad képet.
+
+**Módszer.** (a) `.text` függvényenkénti capstone-pásztázás (20 608 függvény, nem egyben): közvetlen `call [R+0x7c]`, kétlépéses `mov R,[X+0x7c]` + `call R` (6 utasításos ablak), közvetlen `call 0x00a576f0`. (b) A `0x00a576f0` vtábla-előfordulásainak keresése a `.rdata`-ban (DWORD-keresés), slot-index és RTTI-név párosítás. (c) A hívási helyek törzsének kiolvasása, és a hívó `this`-ének meghatározása a prológus alapján. (d) A `V`-jelölt osztályok `+0x74` slotjának kiolvasása a vtábla-memóriából. (e) A négy VK-összehasonlító függvény teljes kiolvasása.
+
+**(1) A `0x00a576f0` a ytUIDialog-család SetActiveView-je.** 18 vtáblában szerepel, mindegyikben a 31. slot (`+0x7c`): `SliceUI` (`0x00c8b97c`), `ytUIDialog` (`0x00c93f64`), `CInitialScanDialog`, `ChooseEmailDialog`, `CCollabDialog`, `CBuzzUploadDialog`, `CBaseUploadDialog`, `CFolderMgrDialog`, `CUploadManagerDialog`, `CButtonManagerDialog`, `OneUpUI`, `CTransTimeline::UI`, `QuickTagConfigDlg`, `ComposeDialog`, `CGeoLocateDialog`, `CPrintOptionsDialog`, `CCaptureMoviePanelPopup`, `ytDrawUI`. A `CThumbUI` (`0x00c9052c`) `+0x7c` slotja **`0x005fa760`**, nem a `0x00a576f0`.
+
+Működés (utasításszintű, a 10.26 kiegészítése): `thiscall`, egy verem-argumentum (az új nézet, `ebx`), `ecx` = a konténer `C`. `ebx == 0`: a nézet törlése. `ebx == -1`: a `[C+0x164]` verem tetejére lépés, ha `([C+0x168] & ~1) != 0`. Egyébként `[C+0x15c] := ebx`, a régi nézet `vtbl[+8]`, az új `vtbl[+4]` és `vtbl[+8]` hívása, közben `0x009e42b0` és `vtbl[+0x74]` (a régi nézetre, `(0, ptr, ptr)` aláírással).
+
+**(2) A hívók argumentum-forrása.** A kétlépésesek közül a hívási helyeket a hívó metódusa szerint néztem:
+
+| hívási hely | a hívó | a hívott `+0x7c` | argumentum-forrás | fok |
+|---|---|---|---|---|
+| `0x00a589aa`/`0x00a589af` | a SliceUI-metódus `0x00a58930` (slot 33; `esi` = a `this`) | `0x00a576f0` | `**[esi+0x164]` (ha `[esi+0x168] & ~1 ≠ 0`), különben `-1` | **megerősített**: utasítások `0x00a58970`–`0x00a589b1` |
+| `0x005fca25`–`0x005fca2e` | a CThumbUI-metódus `0x005fa770` (slot 33); `edi` = `[esp+0x1c]`, egy verem-paraméter (konténer) | a `edi` osztályától függ; SliceUI esetén `0x00a576f0` | literál `-1`: vissza az előző nézetre | **megerősített** az argumentum; a `edi` osztálya **nyitott** |
+| `0x005dec98` | a CThumbUI-metódus `0x005de8e0` (slot 22); `esi` = `[esp+0x10]` = a `this` (a prológusban `mov [esp+0x10], ecx`) | CThumbUI `+0x7c` = `0x005fa760` | `eax` = 0 (a nyomkövetés kikapcsolva) vagy egy nyomkövető-objektum | **valószínű**: a `this` azonosítása a prológusból, a verem-mélység végig nem ellenőrizve; a célfüggvény ettől **nem** a `0x00a576f0` |
+| `0x005df888` | ugyanaz a `0x005de8e0` | a `RTDynamicCast`-ból kapott `ytBasePanel*` `+0x7c` = `0x009e08b0` | `ebx` | **megerősített**: a `dynamic_cast` típusai `ytDrawNode` → `ytBasePanel` (a `0xd3b8a0` és `0xd3b914` TypeDescriptor-nevei); a célfüggvény nem a `0x00a576f0` |
+
+A maradék ~149 kétlépéses hívási hely **nem** lett végigolvasva; osztályuk nyitott.
+
+**Következmény a `V`-re.** A vizsgált hívók között nincs olyan, amely a könyvtárnézetet (CThumbUI-t vagy más nézetet) `this`-ként adná a konténer `SetActiveView`-nek. A `V` osztálya így **nyitott**: a `SliceUI`-beli `-1`/verem-visszalépés és a CThumbUI-beli `-1` nem azonosítja, melyik nézet áll a `[C+0x15c]`-ben a könyvtárnézetben.
+
+**(3) `V.vtbl[+0x74]`.** A `+0x74` slot osztályonként más függvény, és a két hívási alak eltér: a `0x00a576f0`-ban `(0, ptr, ptr)`, a `0x00a582f0`-ban `(event, flag)`. A lehetséges `V`-osztályok `+0x74` célja:
+
+| osztály (`vtbl`) | `+0x74` | méret | mit csinál (részleges olvasás) | VK-összehasonlítás |
+|---|---|---|---|---|
+| CThumbUI (`0x00c9052c`) | `0x00571e50` | 2352 B | `GetAsyncKeyState` a `DAT_00d4a490` (= 1 vagy 2, a `GetSystemMetrics(0x17)` alapján): **egérgomb**-állapot | nincs `0x47`/`0x39`/`0x74` |
+| SliceUI (`0x00c8b97c`) | `0x0052fe80` | 260 B | `double` értékbeállító (`fcomp`/`fstp` `[esi+0x340]`) | nincs |
+| ytUIDialog (`0x00c93f64`) | `0x00a54050` | 2839 B | méret-/elrendezés-számítás (`fst [esi+0x188]`) | nincs |
+
+Egyik ismert jelölt sem billentyűkezelő a részleges olvasás alapján. Mivel `V` osztálya nyitott, a `V.vtbl[+0x74]` célja **nyitott**; a három jelölt kizárása nem a teljes `V`-kizárás.
+
+**(4) A négy VK-összehasonlítás.**
+
+| függvény | méret | a `cmp` tárgya | ítélet |
+|---|---|---|---|
+| `0x0054c540` | 753 | `ebx` = **üzenetkód**: `0x14` (WM_ERASEBKGND), `0x18`, `0x47` (WM_WINDOWPOSCHANGED), `0x0f` (WM_PAINT), `0x200`–`0x204` (egér) | nem billentyű — **negatív** |
+| `0x007a5c10` | 247 | `esi` = **üzenetkód**: `0x05` (WM_SIZE), `0x19`, `0x47`, `0x133` (WM_CTLCOLOREDIT) | nem billentyű — **negatív** |
+| `0x007360b0` | 1489 | `esi` = üzenet. A `0x100` (WM_KEYDOWN) ágon csak a `0x2e` (VK_DELETE) van kezelve; minden más VK a `0x00984970` alap-kezelőnek megy | a `0x47` nem billentyű; `0x39`/`0x74` nincs összehasonlítva — **negatív**, de a `0x00984970` belső hívásai (`0x982bd0`, `0x983140`, `0x9839a0`, `0x983a60`, `0x984660`) **nem** lettek követve |
+| `0x00a99620` | 660 | `cmp byte [esp+0x1a], 0x47` a `'T'`, `'A'`, `'G'` (`0x54`, `0x41`, `0x47`) szövegegyezésben | szövegillesztés, nem billentyű — **negatív** |
+
+Összesen: a 12 ismert `0x47`-immediate összehasonlításból mind a 12 **nem** VK-összehasonlítás (ablaküzenet, típusmező, kisbetű-konverzió, szöveg). `0x39` (Ctrl+9) és `0x74` (F5) egyik négy vizsgált függvényben sincs.
+
+**Következtetés.**
+
+- A Ctrl+G **nincs közvetlen VK-0x47 kezelőben** a teljes listán (12/12 vizsgálva). Ez a kizárás **nem** elég: egy tartomány- vagy táblázat-alapú Ctrl-betű-kezelő a `0x00a582f0` láncon át működne, és annak két végpontja (`V.vtbl[+0x74]`, a C-gyermekek) nyitott.
+- Ctrl+9 és F5: a négy vizsgált függvényben nincs kezelő. A `0x00984970` alap-kezelő és a `V`-végpont nyitott.
+- A könyvtárnézeti hatás: **nyitott**. Sem kimondható hatás, sem kizárás nincs.
+
+**Bizonyíték-táblázat (összefoglaló)**
+
+| állítás | fok |
+|---|---|
+| `0x00a576f0` = a ytUIDialog-család slot 31 (`+0x7c`) SetActiveView-je, 18 vtáblában | megerősített (vtábla-memória, DWORD-keresés) |
+| `CThumbUI +0x7c = 0x005fa760` | megerősített (vtábla-memória) |
+| 154 kétlépéses + 1 verem-indirekt hívási hely; direkt `call 0x00a576f0` nincs | megerősített (pásztázás) |
+| SliceUI-hívó `0x00a58930`: argumentum `**[this+0x164]` vagy `-1` | megerősített (disassembly) |
+| CThumbUI-hívó `0x005fa770`: `[edi+0x7c](edi, -1)` | megerősített az argumentum; `edi` osztálya **nyitott** |
+| CThumbUI `0x005de8e0`: a saját `+0x7c` (`0x005fa760`) és a `ytBasePanel +0x7c` (`0x009e08b0`) — nem a `0x00a576f0` | valószínű (a `this` a prológusból); a `ytBasePanel` megerősített |
+| `V` osztálya | **nyitott** |
+| `V.vtbl[+0x74]` célja | **nyitott**; a három jelölt (CThumbUI, SliceUI, ytUIDialog) nem billentyűkezelő a részleges olvasás szerint |
+| `0x0054c540`, `0x007a5c10`: üzenetkód-kapcsoló | megerősített (disassembly) |
+| `0x007360b0`: WM_KEYDOWN-ág, csak VK_DELETE; a többi a `0x00984970`-re | megerősített; a `0x984970` belseje **nyitott** |
+| `0x00a99620`: `'T','A','G'` szövegegyezés | megerősített |
+
+**Nyitott pontok (munkasorba):**
+
+- `V` osztálya: a 149 nem végigolvasott kétlépéses hívási hely osztályának azonosítása; vagy annak a konstruktornak / beállító kódnak a megtalálása, amely a könyvtárnézet nézetét a `[C+0x15c]`-be teszi.
+- `V.vtbl[+0x74]`: a `V` osztályától függően; a `CThumbUI +0x74` (`0x00571e50`) teljes törzse.
+- `0x00984970` (`0x007360b0` alap-kezelője): a belső hívásainak (`0x982bd0`, `0x983140`, `0x9839a0`, `0x983a60`, `0x984660`) követése, Ctrl-betű-ágra.
+- Dinamikus mérés (az egyetlen út a „hatástalan” igazolására): futó Picasában a könyvtárnézetben Ctrl+G, Ctrl+9, F5.
+
+**Kész, ha (Ctrl+G, a 10.26 + 10.27 együtt):**
+
+- [x] A dispatch-lánc utasításszinten igazolva (10.26).
+- [x] `[0xd67858]` és `[event+0x20]` szerepe a láncban igazolva (10.26).
+- [x] A VK-0x47 összehasonlítások mind a 12 vizsgálva; egyik sem billentyű-kezelő (10.27).
+- [x] A négy nem-végigolvasott VK-összehasonlítás vizsgálva (10.27).
+- [ ] `V` osztálya azonosítva.
+- [ ] `V.vtbl[+0x74]` célja és a gyermekei igazolva, vagy kódúton `0xf4241`.
+- [ ] Dinamikus mérés a könyvtárnézetben.
+- Csak ha mindhárom nyitott pont negatív: „a Ctrl+G a könyvtárnézetben hatástalan”.
+
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
 A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.
