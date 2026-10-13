@@ -7,7 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-- A paritásmérő a saját kimenetünket a Picasa-referencia JPEG-kódolásával hasonlítja; a Hőtérkép, Éjjellátó, Színezés és Kéttónusú látszólagos eltérése ezzel eltűnt (#4937, #4938, #4939, #4940).
+- A hiányos paraméterű Fókuszpixelezés a Picasához hasonlóan változatlanul hagyja a képet, nem alapértékekkel pixelez (#4941).
 
 ## [0.9.89] – 2026-10-13
 
