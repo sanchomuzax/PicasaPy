@@ -4248,16 +4248,35 @@ beállító a vtábla 48. rése, `0x0071c4f0`):
 | 3 | „… létrehozási dátum alapján" — kulcs: a rekord **1. FILETIME-ja** | `0x0071c59d`; `0x006b9be0` (`[+4]`,`[+8]`) |
 | 5 | „… méret alapján" — kulcs: `+0x14` | `0x0071c5a9`; `0x006b9b69` |
 | 6 | „… név alapján" — kulcs: a név (`+0`) | `0x0071c5b5`; `0x006b9c28` |
-| 8 | „… szín alapján" | `0x0071c5c1`; a rekord-hasonlítóban nincs kulcs (`0x004efd74`: csak 2–7) |
-| **11** | **„Rendezés prioritás szerint"** | `0x0071c5cd`; a rekord-hasonlítóban **nincs kulcs** |
+| 8 | „… szín alapján” | `0x0071c5c1`; a rekord-hasonlítóban nincs kulcs (`0x004efd74`, `0x004efdac`: csak 2–7) |
+| **11** | **„Rendezés prioritás szerint”** | `0x0071c5cd`; a rekord-hasonlítóban **nincs kulcs** |
 | 12 | fordított bejárás, rendezés nélkül | `0x0071c689`, `0x0071c8a7` |
 
-A rekord-hasonlító (`0x004efce0`, hívói `0x0071f220`/`0x0071f270`, az
-összefésülő rendező `0x0071f030`) a 2–7. módokra a `0x006b9b50`
-ugrótábláján (`0x006b9db8`) ágazik; a 8. és a 11. mód ebben **állandó
-`−1`-et** kap. A szín-rendezésnek viszont van kulcsa (`avgcolor`), tehát a
-8. és a 11. mód kulcsa **ezen a hasonlítón kívül** képződik — a 11. mód
-kulcsának forrása ebből nem olvasható ki.
+**A vizsgált bináris út nem a 8-as/11-es kulcsképző.** A `0x0071c4f0`
+beállító a kiválasztott módot a rendezőállapotba írja (`[this+0x2c0]`, illetve
+ha a kontextus elérhető, a hasonlító kontextusában `[ctx+0x554]`). A
+`0x0071c650` a 0. és 12. módon
+kívüli esetekben a képelemek `[item+0xb4]` értékeiből RAM-listát épít, majd
+meghívja a `0x0071f030` általános összefésülő rendezőt. Annak összehasonlítója
+(`0x0071f220`) a nem nulla módokat elérhető kontextus esetén a `0x004efce0`
+rekord-hasonlítóhoz küldi.
+Ez a `[ctx+0x554]-2` választóval kizárólag a 2–7. módot (`0..5`) irányítja a
+`0x006b9b50` ugrótáblára (`0x006b9db8`); a 8. és a 11. mód ágán a hasonlító
+alapértéke `−1` (a fordított irány jelzője ezt `+1`-re fordítja). Ezen a
+láncon tehát **sem a szín-, sem a prioritásmód kulcsa nem olvasható ki**.
+Ez nem bizonyítja, hogy más kódút nem készít vagy tárol ilyen kulcsot.
+
+**Független upstream kontroll:** a `CSelectionNode` `0x00715280` metódusa
+az új bejegyzésnél az argumentumot az elem `[+0xb4]` mezőjébe írja, az elemet
+pedig a `[this+0x32c]` memóriatömb végére fűzi (`0x0071538b`–`0x00715473`);
+a darabszámot a `[this+0x330]` tartja. Az osztály többi metódusában is van
+hozzáférés ezekhez a tömbmezőkhöz (`offset_map.py CSelectionNode`, többek
+között `0x007155b0`, `0x00715880`). Ez külön producer útból megerősíti, hogy
+a vizsgált rendező bemenete futásidejű lista.
+
+A megvizsgált rendezőfüggvények RAM-listát és ideiglenes tömböt használnak;
+ezekben a rutinokban tartós fájlírás nem látszik. Ez nem teljes bináris
+negatív bizonyíték íróra vagy olvasóra.
 
 **Kizárva (a #1645 nyolc helye mellé):** a 859 fájlos `.picasa.ini`-korpusz
 `[Picasa]` és `[.album:…]` szakaszainak egyetlen kulcsa sem sorrend
@@ -4271,18 +4290,185 @@ rendezésimód-oszlop.
 
 ⇒ **A kézi sorrend tárolási helye NINCS MEG**, és az sem mért, hogy egy
 újraindítást túlél-e (a #1645 ezt a tulajdonostól kérte, majd a kérést
-visszavonta). A megszerzés útja — ebben a sorrendben:
+visszavonta). A korábbi bináris hipotézis — hogy a `0x0071c650` →
+`0x0071f030` láncban a 8-as kulcs mellett megtalálható a 11-es kulcsképző —
+**cáfolódott**: a lánc eléri az általános rendezőt, de annak összehasonlító
+8/11 módban kulcsot nem választ. A megszerzés útja — ebben a sorrendben:
 
-1. **bináris:** a 11. mód kulcsképzője. Horgony: a `0x0071c650` (a
-   `CSelectionNode` vtábla 49. rése) a 0. és 12. módon kívül a
-   `[this+0x358]` listát a `0x0071f030`-cal rendezi; a 8. mód
-   (`avgcolor`) kulcsképzőjét megtalálva a 11.-é mellette lesz. Ha a kulcs
-   egy perzisztált mezőből jön, az a tároló; ha az elemek pillanatnyi
-   helyéből, a sorrend munkamenetre szól;
+1. **bináris, író és olvasó út:** a 11-es módhoz rendelt érték íróját,
+   olvasóját és az adatmező/kulcs pontos jelentését kell azonosítani a
+   megvizsgált rendezőláncon kívüli kódban; a negatív állítást indextől
+   független, célzott bináris pásztázással kell alátámasztani.
 2. **viselkedés:** a Colab-os végrehajtón új lépéssor — két kép átrendezése,
-   a Picasa bezárása és újraindítása, utána képernyőkép és a `db3` mappa
-   kiadása. (Ma a végrehajtó kimenete `export`/`picasa_ini`/`kepernyokep`/
-   `ablakmeret` lehet, `db3` nem — a katalógust bővíteni kell.)
+   Picasa bezárása, a db3 kiadása, majd újraindítás után ismételt db3-kiadás
+   és képernyőkép; a két db3-t össze kell vetni, az újraindítás utáni
+   sorrendet pedig ellenőrizni kell. A jelenlegi mérőadat-archívum nem
+   tartalmaz ehhez db3-pillanatképeket. A végrehajtó kimeneti katalógusát
+   `db3`-kiadással bővíteni kell.
+
+### 15.4b Második kör (2026-10-13, #4884): író és olvasó két független úton
+
+**Eredmény: NEM igazolt.** Sem az író, sem a tárolási hely nincs meg; a
+negatívok alábbi hatóköre pontosan le van írva. Ami új: a sorrend-kulcs
+**literál-szinten** sehol nincs az EXE-ben (indextől független bájtpásztázás),
+és a vtábla-hívók az xref-indexben láthatatlanok.
+
+**A. út — olvasó (a rendezőlánc, körön belül újra ellenőrizve a vtáblával).**
+A `CSelectionNode` vtáblája `0x00cad5b4` (`rtti.csv`), a `CAlbumSelectionNode`
+vtáblája is ugyanazokat a slotokat használja: a `0x0071c4f0` (mód-beállító) a
+**48.** rés (`+0xc0`), a `0x00715280` (elem-producer, `[item+0xb4]`-be ír) a
+**40.** rés (`+0xa0`), a `0x0071c650` (RAM-lista) az **49.** rés (`+0xc4`).
+A mód-beállító sztringjei (`0x0071c4f0`, az index szerint az egyetlen
+sztring-hivatkozó): `Sorting by priority` (`0xcad54c`), a debug-név
+`CSelectionNode::SortPrior` (`0xcad560`), a többi mód a `SortColor`/`SortName`/
+`SortSize`/`SortDateA`/`SortDateC` (`0xcad46c`–`0xcad530`). A lánc többi
+lépése a 15.4 szerinti; 8-as és 11-es módban a hasonlító nem választ kulcsot.
+
+**B. út — író/tároló, indextől független bájtpásztázás a `Picasa3.exe`-n.**
+
+| mit néztem | találat | mit zár ki |
+|---|---|---|
+| `priorit` (kis-nagy betű nem számít) az egész EXE-ben | 17 | Picasa-kontextusban csak 2: a `0xcad54c` UI-felirat és a `0xcad560` debug-név; a többi EXIF (`Aperture/Shutter Priority`), HTTP-cookie (`Priority`) és `EnvelopePriority` |
+| `order=` literál | 27 | a találatok nagy része a `border=` részsztring; valódi: `0xc83210` (`order=`) és `0xc83221` (`,order=0`) |
+| `sortorder`, `albumorder`, `picorder`, `manualorder`, `position=`, `rank=` | 0 | — |
+| `catpri` | 1 (`0xc80d54`) | a kategória-oszlop regisztrálója (`0x00415790`), ld. 1559. sor |
+
+- **Az `order=` literál nem helyi ini-kulcs.** A `0xc83210`-et a `0x004aa180`
+  olvassa egy `size=%d,access=%d%s` · `token=` · `order=` paraméterláncból:
+  az `access=` utáni számjegy `0..3` (különben `4`) lesz, az `order=` értéke
+  `0`-tól különbözőként `1`, `0`-ként `0` (hiányzó kulcsnál `2`), a `token=`
+  sztringként másolódik. A `,order=0` alapértéket a `0x004aa300` írja.
+  Mindkettő Web Albums-feltöltési paraméterlánc, nem a `.picasa.ini`.
+- **Az ini fotószakasz-írója** (`0x007d55f0`, sztringjei: `caption`,
+  `keywords`, `geotag`, `faces`, `originhash`, `onlinechecksum`, `photoid`,
+  `origloc`; a `rotate` a `0x007d8a50`-ben) nem ír sorrend-kulcsot — ezt a
+  pásztázás (`priority`/`order` literál hiánya) is megerősíti.
+- **A db3 képoszlopai:** a `0x004127c0` 37 oszlopot regisztrál (`caption`,
+  `parent`, `filetype`, … `backuphash`, `imagedata`); közöttük nincs
+  sorrend-oszlop. A helyi `research/testdata/Picasa2/db3` `imagedata_*.pmp`
+  33 fájlja ugyanezt a készletet adja (mintakészlet, nem teljes séma).
+- **A `catdata_catpri` a KATEGÓRIÁÉ** (1559. sor) — nem kép-sorrend, de
+  a rendezési mód ugyanabban a regisztrált rekordban él (a `catdata`
+  mellett); a két dolog összekapcsolása **nincs igazolva**.
+- **Online csatorna (nem a helyi tároló):** a binárisban van a Web Albums
+  sorrend-protokoll (`gd:ordering rel='comesAfter'`, VA `0xcd4fce`), és a
+  `PWASyncOrder` (alapérték `1`, `picasa-fo-ablak-elrendezes.md` 305. sor)
+  „webalbum: sorrend szinkronizálása”. Egy kézi átrendezés tehát az online
+  albumban tükröződhet; ez a helyi tárolást nem igazolja.
+
+**Vtábla-hívók (az xref-index negatív, ezért nem bizonyíték).** A
+`0x0071c4f0`-nak és a `0x00715280`-nak az indexben **0** hívója van: a vtábla-
+hívás nem látszik. Bájtmintával (`ff /2` `disp32=0xc0`/`0xa0`, és a
+`mov reg,[r+disp32]` + `call reg` alak) **40 illetve 59** hely található, több
+osztályban (a slot-szám más vtáblákban is kiosztott). Az osztály
+azonosítása nélkül egyik sem attribuálható — ezért a hívó nyitott.
+
+**Mit NEM állítunk:** hogy a kézi sorrend a `thumbindex` sorindexe lenne,
+vagy hogy a db3 rekordsorrendjében él. A `0x00715280` 3. argumentumának
+forrása (a rács sorindexe-e) nincs megmérve; ez volt a következő bináris lépés.
+
+**Megvalósítási konzekvencia (ma):** a `.picasa.ini`-ben `priority=` kulcs
+**nincs az eredeti írójában** (literál-szinten nincs az EXE-ben). A
+`docs/decisions/kezi-sorrend-a-picasa-iniben.md` (ADR-014) premisszája
+(„a db3/albums_0.db-ben van”) már a 15.4 szerint megdőlt; a döntés státuszát
+ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
+
+#### Kész, ha (a következő kör feltétele — tartós tárolás bizonyítására)
+
+- [ ] a `0x00715280` és a `0x0071c4f0` vtábla-hívóinak osztályhoz kötött
+      azonosítása (a hívó függvény vtábla-betöltése), és a producer
+      3. argumentumának forrása megnevezve;
+- [ ] Picasa-viselkedés: két kép kézi átrendezése, bezárás, db3-pillanatkép,
+      újraindítás, újabb pillanatkép; a két db3 összevetése megnevezi, melyik
+      fájl/oszlop változott (a registrált képoszlopok között sorrend nincs,
+      így a változás más helyen várható);
+- [ ] az online sorrend (`gd:ordering`) szerepének tisztázása csak a
+      tulajdonos jóváhagyásával (hálózat, külső szolgáltatás);
+- [ ] ha a sorrend csak munkamenetre szól: a 15.5 „egyedi sorrend” sora és a
+      15.6 „Egyedi sorrend” pontja lezárva tárgytalanként.
+
+### 15.4c Harmadik kör (2026-10-13, #4884): a producer és a mód-beállító friss dekompilátuma
+
+**Kérdések:** ki hívja a `0x00715280` producert; honnan jön a 3. argumentuma; van-e tartós írás (`ini` / `db3` / `albums.db`) a láncban.
+**Forrás:** Ghidra 12.1.2 (`DecompileTargetsCallees`), a `ghidra-koteg-2026-10-13/` kötegből (`00715280.c`, `0071c4f0.c`, `0074d970.c`, `008127b0.c`) és a bináris-index. A hívói és a láncbeli kérdéseket **indextől független** bájtpásztázással és a capstone-os diszasszemblálással is ellenőriztem (`Picasa3.exe`, SHA-256 `644b7bec…dc96`).
+
+| állítás | bizonyíték | bizottság |
+|---|---|---|
+| A `0x00715280` producernek **nincs direkt hívója**: a teljes `.text` E8/E9 pásztázásában 0 találat | bájtpásztázás (indextől független) | igazolt |
+| A `0x0071c4f0` mód-beállítónak sincs direkt hívója | bájtpásztázás | igazolt |
+| A két függvényre 3-3 **absztrakt** (vtábla-) hivatkozás van, mindhárom a `CSelectionNode`-családban: `CSelectionNode` (`0xcad5b4`), `CAlbumSelectionNode` (`0xcb46f4`), `CFoundFaceSelectionNode` (`0xcb483c`); a COL-ból olvasott osztálynév | `.rdata` dword-pásztázás + RTTI (COL → TypeDescriptor) | igazolt |
+| A producer a vtábla **40.** (`+0xa0`), a mód-beállító a **48.** (`+0xc0`) rése; a három osztályban a 40/44/48 rés azonos (nincs felülírás) | vtábla-kiolvasás | igazolt |
+| A producer hívói **virtuális hívások**; az objektum statikus típusa nincs megnevezve, így a hívó nem azonosítható | fenti két tény együtt; a közvetlen `call [reg+0xa0]` bájtminta (`FF 90–97 A0 00 00 00`) 0 találat; a `A0 00 00 00` bájtsor 1 675 helyen áll, de a hívó-objektumhoz nem köthető | **nyitott** |
+| A 3. argumentum a producerben `[item+0xb4]`-be íródik, és továbbmegy: `FUN_00715090(item, arg3)`, `FUN_00714fb0(arg3)` (memóriatömb-hozzáfűzés), `FUN_007220b0` → vtábla `+0x18` hívása a `[item+0x34]` objektumon `(arg3, item+0x64)` argumentumokkal | dekompilátum, `00715280.c` 60–156. sor; `007220b0` a `00715280.c` 427. sortól | a **forrása** nyitott (a hívó nincs meg) |
+| A `[item+0x34]` egy kulcsot kap és visszaad egy egész értéket, amelyet a `[item+0xb8]` cache-el; ez elemkulcs/index jellegű, **nem bizonyíték az értékre** | `007220b0` logikája | igazolt szerep, érték nincs |
+| A direkt hívási gráf a két gyökérből (`0x715280`, `0x71c4f0`, plusz a `0x714510` slot-44 függvény) **126 függvény**; importok közt: heap, kritikus szakasz, TLS, GDI bitmap (`CreateDIBSection`, `GetDC`/`ReleaseDC`), CRT-kilépés. **Nincs** fájl-, ini-, sqlite- vagy registry-író | `closure.py`: PE import-tábla feloldás + capstone, direkt `call`/`jmp` bejárás | igazolt a **direkt** gráfra |
+| A gráf **nyitott vtábla-lyukakat** tartalmaz (lásd lent), ezért a „nincs tartós írás" csak a direkt hívásokra érvényes | `closure.py` 85 feloldatlan hely | nyitott |
+
+**Nyitott vtábla-lyukak** (a direkt gráfból kimaradó hívások):
+
+1. A producer 5× `call eax`: a `[*(this+…)+0x244]` láncon talált objektum zárja/nyitja magát a `+0x18` / `+0x1c` slotokon (`piVar1[3]` = nem-kritikus-szakasz ág). Az objektum típusa nincs megnevezve.
+2. `007220b0`: a `[item+0x34]` objektum `+0x18` és `+0xc` slotja (a layout-/kulcs-objektum). Ez a **legfontosabb lyuk**: ha ez írna lemezre, a lánc tartóssá válna.
+3. A mód-beállító: `(*param_1)+0xb0` (= `0x714510`, a derivált osztályokban azonos; a többi osztályban nincs ellenőrizve) és a dinamikus cast-olt csomópont `+0x14`.
+4. `0x007184e0` (a `ytDrawUI` → `IDSContainer` cast eredménye, a `+0x2c4` mezőben cache-elve): `(**puVar2)()` hívás.
+
+**Következtetés (a kérdésekre):**
+
+- **Ki hívja a producert?** Nem direkt hívás. A három `CSelectionNode`-családi vtábla-bejegyzésen keresztül hívható; a konkrét hívó nincs azonosítva.
+- **Honnan jön a 3. argumentum?** Nyitott. A szerepe az elemkulcs, a forrása a hívóban van.
+- **Van-e tartós írás a láncban?** A direkt hívási gráfban **nincs** (126 függvény, nincs fájl/db API). A **vtábla-lyukakon** (lent) viszont nem zárható ki: a `+0x34` objektum és a lock-objektum típusa a döntő.
+
+**Kész, ha** (a 15.6 „Kész, ha" listáját ez konkretizálja; a 15.4 nyitott kérdésére):
+
+- [ ] a `[item+0x34]` objektum konstruktora és osztálya megnevezve, a `+0x18`/`+0xc` slot implementációja dekompilálva (tartós írás van-e)
+- [ ] a lock-objektum `+0x18`/`+0x1c` slotjainak implementációja dekompilálva
+- [ ] a producer hívója (a `CSelectionNode`-családi objektumon) megnevezve, a 3. argumentum forrása bizonyítva
+- [ ] a `0x714510` (slot 44) felülírása a többi derivált osztályban ellenőrizve
+- [ ] db3-pillanatkép (két átrendezés, újraindítás előtt/után) — csak ha a fenti négy pont nem zárja le a tartósságot
+
+*Bizonyítottsági fok:* a direkt gráf és a vtábla-hivatkozások **megerősített** (két független út: bájtpásztázás és dekompilátum). A hívó, a 3. argumentum forrása és a vtábla-lyukak tartalma **nyitott**. Nincs becsült érték.
+
+### 15.4d Negyedik kör (2026-10-13, #4884): a `+0x34` hívás, a lock-objektum és a 3. argumentum
+
+**Kérdések:** (1) a `007220b0` teljes utasításszintű olvasata: mit kap és mit ad vissza a `[item+0x34]` slot-18 és slot-12 hívása; (2) a lock-objektum (`[node+0x244]`) mezői és hogyan zárja; (3) mi a 3. argumentum szerepe a `00715090`-ben; (4) van-e a `+0x34` objektum osztálya, és hol íródik a `+0x34` mező.
+**Forrás:** `Picasa3.exe` (SHA-256 `644b7bec…dc96`), capstone-os diszasszemblálás (`007220b0`–`007221db`), a `ghidra-koteg-2026-10-13/00715280.c` dekompilátuma (`00714040`, `00714fb0`, `00715090`, `00721f20` callee-k), és bájtpásztázás a `+0x34` és `+0x324` mezőkre.
+
+| állítás | bizonyíték | bizottság |
+|---|---|---|
+| `007220b0` a `[item+0x34]` objektumon, **thiscall**, a slot-18 (`+0x18`) hívást `(kulcs = [item+0xb4], méret = [item+0x64] vagy 0x200)` argumentumokkal végzi; a visszatérési értéket `[item+0xb8]`-ban tárolja (cache), eltérés esetén `[item+0x59] = 1`, `[item+0xb8] = 0`, és GDI/heap-segédhívás | disasm `0x7220b8`–`0x722151` | igazolt (szerep); a slot-18 **implementációja nincs** |
+| a `[item+0x58]` ágon nincs vtábla-hívás: a méret `(item+0x64)·9 >> 5` a `[item+0x3c]`/`[item+0x40]` mezőkbe kerül | disasm `0x722157`–`0x722169` | igazolt |
+| a `[item+0x34]` slot-12 (`+0xc`) hívása `(kulcs, &[item+0x3c], &[item+0x40], méret)` argumentumokkal: az objektum **a két mezőt kitölti** (méretszámítás, nem fájl) | disasm `0x722174`–`0x72219b` | igazolt (szerep); a slot-12 **implementációja nincs** |
+| ha `[item+0x34] == 0`, a méretet a `[item+0xc]`, `[item+0x10]` mezőkből számolja, és `0x00a97e30`-at hív `[item+0x2c]`, `[item+0x30]` argumentumokkal | disasm `0x72219f`–`0x7221db` | igazolt; a `0xa97e30` nincs vizsgálva |
+| a `[item+0x34]` **nem** ír fájlt a saját kódjában: a `007220b0` direkt hívásai GDI/heap/belső segédek (`0x9a8a30`, `0x9a8ca0` → `InterlockedIncrement`, `0x9a8bc0` → `DeleteObject`), fájl-API nincs | disasm + `closure2.json` import-feloldás | igazolt a direkt hívásokra; a **vtábla-hívás** (slot 18/12) tartalma nyitott |
+| a lock-objektum (`piVar1 = [node+0x244]`): bájt a `+0xc`-n; ha 0, a `+0x18`/`+0x1c` vtábla-slotok a zár/nyit; ha nem 0, `EnterCriticalSection`/`LeaveCriticalSection` a `+0x28`-on; tulajdonos-szál a `+0x20`-on, rekurzió-számláló a `+0x24`-en | `00715280.c` 16–35. és ~110–160. sor (dekompilátum) | igazolt a mezőkre; a **lock-osztály és a `+0x18`/`+0x1c` slotok nincsenek megnevezve** — nyitott |
+| a 3. argumentum (`param_3`) a `00715090`-ben **indexként** működik: `arr[param_3] = item`, az `arr` (`this+0x324`) szükség szerint nő; ha ez nem sikerül, a `00714fb0` a `this+0x36c` tömb végére fűz | dekompilátum `00715090` (`00715280.c` 291–390. sor) és `00714fb0` (236–290. sor) | igazolt (dekompilátum); **nem** bizonyítja, hogy az index tartós |
+| a `this+0x324` tömbnek **egyetlen írója** a `00715090`; olvasója **54 függvény** (`mov r, [reg+0x324]` bájtminta) | bájtpásztázás; a 54 olvasó közvetlen hívásai között **nincs** fájl/registry/ini/sqlite-import | igazolt a direkt hívásokra; a vtábla-hívások nyitottak |
+| az `[item+0x34]` **osztálya nincs megnevezve**: a `+0x34`-re `mov [reg+0x34], reg` írást és `.rdata` vtábla-immediate-et együtt tartalmazó 71 függvényből a vtábla-nevek (RTTI) zömmel nem kapcsolódnak a kiválasztási lánchoz (pl. `glimmer::*ImageOperation`, `CSmartCrop`, `CWebHostSite`); a csoport nem szűkíthető konstruktor-dataflow nélkül | `ctor34.py` + `vtnames.py` (RTTI COL → TypeDescriptor) | **nyitott** (a jelölt-halmaz túl széles, nem azonosított) |
+
+**Következtetés (a négy kérdésre):**
+
+- **Mit kap a `+0x34` objektum?** A kulcsot (`[item+0xb4]`, a producer 3. argumentuma) és a méretet. Visszaad egy értéket, amelyet a `[item+0xb8]` cache-el, és kitölti a `[item+0x3c]`/`[item+0x40]` méretmezőket. Ez **méretezés / cache-érvényesség** szerep, nem sorrend-tárolás; a rendezés-kulcs a `+0x324` tömbben van.
+- **A lock:** a `+0x244` lánc egy zár-objektum, amely lehet kritikus szakasz vagy vtábla-zár. A zár osztálya nyitott.
+- **A 3. argumentum:** a producer a **`+0x324` tömbbe** indexel: `arr[arg3] = item`. Ez az első dekompilátum-alapú bizonyíték arra, hogy a 3. argumentum pozíció-index. Ez **nem** dönti el a tartósságot: a tömbnek nincs közvetlen fájl-írója a direkt gráfban.
+- **Tartósság:** a direkt gráfban továbbra sincs fájl-, ini-, sqlite- vagy registry-író (a 15.4c 126 függvényén túl a 54 `+0x324`-olvasót is ellenőriztem). A döntő lyuk a **vtábla-hívás** (`+0x34` slot-18/12 implementációja, a zár osztálya, és a `+0x324` tömb olvasóinak vtábla-hívásai).
+
+**Nyitott pontok (a 15.4c-ből maradt + új):**
+
+1. A `+0x34` objektum osztálya és konstruktora (dataflow a `FUN_00721f20` pool-elemétől, vagy a `+0x34` írók tényleges szűkítése).
+2. A `+0x34` slot-18 és slot-12 implementációja.
+3. A lock-objektum osztálya és `+0x18`/`+0x1c` slotjai.
+4. A `+0x324` tömb olvasóinak vtábla-hívásai (a 54-ből a nagy függvények: `0x781680`, `0x787dd0`, `0x780230`).
+5. A producer hívója a `CSelectionNode`-családi objektumon, és a 3. argumentum értéke a hívóban.
+
+**Kész, ha** (a 15.4c listáját kiegészíti):
+
+- [ ] a `+0x34` objektum osztálya és konstruktora megnevezve (konstruktor-dataflow vagy RTTI-alapú szűkítés, ellenőrzött hivatkozással)
+- [ ] a `+0x34` slot-18 és slot-12 implementációja dekompilálva, megnevezve, hogy írnak-e lemezre
+- [ ] a lock-objektum osztálya és `+0x18`/`+0x1c` slotjai dekompilálva
+- [ ] a `+0x324` tömb olvasóinak vtábla-hívásai megvizsgálva (különösen `0x781680`, `0x787dd0`, `0x780230`), fájl/db/registry-írás kizárva vagy megnevezve
+- [ ] a producer hívója megnevezve, a 3. argumentum értéke bizonyítva
+- [ ] db3-pillanatkép — csak ha a fenti pontok nem zárják le a tartósságot
+
+*Bizottság:* a disasszemblált `007220b0`, a dekompilált `00715090`/`00714fb0`, és a bájtpásztázás **megerősített** két független úton. A `+0x34` és a lock osztálya, a slot-implementációk és a 3. argumentum forrása **nyitott**. Nincs becsült érték.
 
 ### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
 
@@ -4290,7 +4476,7 @@ visszavonta). A megszerzés útja — ebben a sorrendben:
 |---|---|---|---|
 | **videó dátuma** | `thumbindex.db` 1. FILETIME + NTFS létrehozási idő (15.1) | **NEM veszi át**: a `thumbindex.read_thumb_index` beolvassa a `creation_filetime`-ot, de az `importer.PhotoRecord` nem viszi tovább, és a `db3_atvetel` sem ír dátumot | videónál nincs `taken_at` (`index/sync.py` `_upsert_photo`: `EMPTY_METADATA`), a dátum a befagyasztott első fájlidő (`first_seen_mtime_ns`); a `photos.taken_at_override` oszlop él, a lekérdezések előnyben részesítik (`index/queries.py:22`, `sync.py:1034`), szinkronkor megmarad (`sync.py:1091`), de ma **semmi nem írja**. ⚠️ A saját dátummódosítónk (`app/timestamp_controller.py`) videónál az EXIF-írás hibája után csak Windowson állít létrehozási időt — POSIX-on a módosítás **nem tárolódik sehol** |
 | **videó geotagje** | `imagedata` `lat`/`long`/`geoview` (15.3) | **átveszi**: az `importer.iter_photo_records` típusszűrés nélkül minden fájlrekordot ad, a `db3_atvetel.helyet_atvesz` a hiányzó `geotag=` kulcsot írja (#2336) | `.picasa.ini` `geotag=` (`photos.geotag_ini`), minden médiára |
-| **egyedi sorrend** | **NINCS MEG** (15.4) | nincs mit átvenni | `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — szándékos eltérés |
+| **egyedi sorrend** | **NINCS MEG** (15.4; a vizsgált rendezőlánc nem adja meg a kulcsot) | nincs mit átvenni | `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — az eredetitől való eltérés ténye nincs igazolva |
 
 ### 15.6 A megvalósítandó viselkedés — „Kész, ha"
 
@@ -4329,8 +4515,9 @@ visszavonta). A megszerzés útja — ebben a sorrendben:
 **Egyedi sorrend** — ⛔ **nem megvalósítható, amíg a forrás nincs meg**:
 
 - [ ] a #4591 első „Kész, ha" pontja a sorrendre a 15.4 megszerzési útjának
-      (1. bináris, 2. viselkedés) eredményéig vár; ha az eredmény az, hogy a
-      sorrend munkamenetre szól, a pont **tárgytalan** (nincs mit átvenni).
+      (1. bináris író/olvasó, 2. viselkedés db3 előtte/utána/újraindítás után)
+      eredményéig vár; ha a mérés igazolja, hogy a sorrend csak munkamenetre
+      szól, a pont **tárgytalan** (nincs mit átvenni).
 
 ### 15.7 Nyitott kérdések mérlege (15.)
 
@@ -4342,9 +4529,12 @@ visszavonta). A megszerzés útja — ebben a sorrendben:
 | melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
 | milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
 | hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
-| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645) — az `albums_0.db` kizárva; út: 15.4 (1. a 11. mód kulcsképzője, 2. Colab-lépéssor) |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után); 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben; 3. kör (2026-10-13): **15.4c** — a producernek nincs direkt hívója (csak 3 vtábla-hivatkozás, `CSelectionNode`-család), a direkt hívási gráfban nincs fájl/db-író (126 függvény); a hívó, a 3. argumentum forrása és a `+0x34` objektum / lock-objektum vtábla-slotjai nyitva; 4. kör (2026-10-13): **15.4d** — a 3. argumentum a `+0x324` tömbbe indexel (dekompilátum), a `+0x324` 54 olvasójának közvetlen hívásai között nincs fájl-API, a `+0x34` slot-18/12 és a lock-osztály még nyitott |
 
 *Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
 importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
 **megerősített** az `albums_0.db` kizárására (41/41 + 37/37 méret-azonosság);
-**kódszintű** a videó-geotag átvételére (valódi minta nincs).*
+**kódszintű** a videó-geotag átvételére (valódi minta nincs). A kézi sorrend
+tárolási helye és újraindítás-állósága **nyitott**; a vizsgált rendezőlánc
+utasításszintű lelete csak ezt az útvonalat zárja ki kulcsképzőként, és nem
+bizonyítja a teljes programban író/olvasó hiányát.*
