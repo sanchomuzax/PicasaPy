@@ -52,7 +52,7 @@ import sys
 import tempfile
 import time
 from datetime import datetime
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 #: A `subprocess.run`, az `os.kill` és a `shutil.rmtree` MODULSZINTŰ
@@ -1537,11 +1537,10 @@ def _mert_idok() -> dict[str, float]:
 
     Az ubuntu-láb ugyanezzel a kiosztással 10,4 perc (1,31×).
 
-    ⛔ A `teszt-darabok.yml` fejlécében álló „a négy darab egyenlő — mérve
-    732/732/732/732 mp, arány 1,00×" mondat a SOROS módra **elavult**; a
-    fenti számok a mértek. (A workflow-fájlt a gépi munkamenet nem
-    módosíthatja — `workflows` jogosultság kell hozzá —, ezért áll a
-    helyesbítés itt.)
+    A #4922 óta a teljes készlet legfeljebb 16 darabra oszlik; a jelenlegi
+    mért összeg 128,2 perc, így a leglassabb darab mérési összege nagyjából
+    8 perc. A táblázat a fájlonkénti kiosztás alapja, nem garantálja a
+    telepítéssel együtt mért faliórát.
 
     A lefedettséget a `tests/test_ci_kor_ideje_1127.py`
     `test_a_mert_tabla_LEFEDI_az_egysegeket` őrzi: 90% alatt bukik.
@@ -1637,30 +1636,78 @@ def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
         print(f"  {sor}", flush=True)
 
 
-#: PR-en e fölött az érintett app-tesztfájl-szám fölött négy darab fut.
-_EGY_DARAB_MAX = 60
-
-
 def _darabszam_kimenet() -> int:
-    """`--darabszam`: a PR CI-jának darabszáma GITHUB_OUTPUT-formában."""
-    app_dir = _ROOT / "tests" / "app"
-    app = [str(p.relative_to(_ROOT)) for p in sorted(app_dir.glob("test_*.py"))
-           + sorted((app_dir / "qml_functional").glob("test_*.py"))]
-    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
-    valasztott = erintett_app_tesztek(
-        app, _valtozott_fajlok(alap) if alap else None,
-        lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+    """A régi belépési pontot az új, mért tesztválasztóhoz irányítja."""
+    if str(_ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(_ROOT / "scripts"))
+    import teszt_valasztas  # noqa: PLC0415
+
+    return teszt_valasztas.main(["--root", str(_ROOT), "--darabszam"])
+
+
+def _fajllista_argumentum(argv: Sequence[str]) -> Path | None:
+    """A `--fajllista út` és `--fajllista=út` alakot is elfogadja."""
+    for index, argument in enumerate(argv):
+        if argument == "--fajllista":
+            if index + 1 >= len(argv):
+                raise SystemExit("a --fajllista után fájlútvonal kell")
+            return Path(argv[index + 1])
+        if argument.startswith("--fajllista="):
+            return Path(argument.partition("=")[2])
+    return None
+
+
+def _olvas_fajllista(
+    ut: Path, *, root: Path = _ROOT
+) -> tuple[list[str], bool, str]:
+    """Olvassa és ellenőrzi a választó JSON-fájlját."""
+    try:
+        adat = json.loads(ut.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise SystemExit(f"nem olvasható a tesztfájllista: {exc}") from exc
+    if not isinstance(adat, dict) or not isinstance(adat.get("fajlok"), list):
+        raise SystemExit("a tesztfájllista hibás: `fajlok` tömb szükséges")
+    fajlok: list[str] = []
+    for raw in adat["fajlok"]:
+        if not isinstance(raw, str):
+            raise SystemExit("a tesztfájllista minden eleme szöveg legyen")
+        rel = raw.replace("\\", "/")
+        cel = (root / rel).resolve()
+        try:
+            cel.relative_to((root / "tests").resolve())
+        except ValueError:
+            raise SystemExit(f"csak tests/ alatti fájl futhat: {raw}") from None
+        if not rel.startswith("tests/") or not cel.is_file():
+            raise SystemExit(f"nem létező tesztfájl a listában: {raw}")
+        fajlok.append(rel)
+    if not fajlok:
+        raise SystemExit("a tesztfájllista üres")
+    return (
+        sorted(set(fajlok)),
+        bool(adat.get("teljes", False)),
+        str(adat.get("indok", "")),
     )
-    egy = len(valasztott) <= _EGY_DARAB_MAX
-    print(f"darabok={'[1]' if egy else '[1,2,3,4]'}")
-    print(f"darabszam={'1' if egy else '4'}")
-    return 0
+
+
+def _fajlokbol_egysegek(fajlok: Sequence[str], *, teljes: bool) -> list[str]:
+    """A teljes nem-app készlet a régi, külön mért egység marad."""
+    rendezett = sorted(set(fajlok))
+    nem_app = [ut for ut in rendezett if not ut.startswith("tests/app/")]
+    if teljes and nem_app:
+        return [_NEM_APP, *(ut for ut in rendezett if ut.startswith("tests/app/"))]
+    return rendezett
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if "--darabszam" in argv:
         return _darabszam_kimenet()
+    fajllista_ut = _fajllista_argumentum(argv)
+    fajlok: list[str] | None = None
+    teljes = False
+    indok = ""
+    if fajllista_ut is not None:
+        fajlok, teljes, indok = _olvas_fajllista(fajllista_ut)
     cov = "--cov" in argv
 
     if cov:
@@ -1723,7 +1770,10 @@ def main(argv: list[str] | None = None) -> int:
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     _jelold_a_futast(basetemp)
     try:
-        visszater = _futtat(cov, basetemp, sorszam=sorszam, darab=darab)
+        visszater = _futtat(
+            cov, basetemp, sorszam=sorszam, darab=darab,
+            fajlok=fajlok, teljes=teljes, indok=indok,
+        )
         _ird_ki_a_qt_eltérést()
         return visszater
     finally:
@@ -1736,8 +1786,9 @@ def main(argv: list[str] | None = None) -> int:
 #: A nem-app készlet egyetlen egységként szerepel a kiosztásban.
 _NEM_APP = "tests --ignore=tests/app"
 
-#: PR-en a változás által ÉRINTETT app-tesztek futnak (a nem-app készlet
-#: mindig teljesen). A teljes készlet a main-re érkező push után fut.
+#: #4922: CI-ben a `--fajllista` a módosított forrás importfájából számított,
+#: érintett teszteket és a füstkészletet futtatja; a main-push teljes listát ad.
+#: Az alábbi régi környezeti változós szűkítés csak kompatibilitási belépő.
 #: 2026-10-09: 41 nyitott PR állt, mert minden PR négy darabban a TELJES
 #: készletet futtatta (darabonként 15–22 perc, PR-enként ~70 futtatóperc).
 _ERINTETT_ALAP_VALTOZO = "PICASAPY_ERINTETT_ALAP"
@@ -1813,7 +1864,14 @@ def erintett_app_tesztek(
 
 
 def _futtat(
-    cov: bool, basetemp: Path, *, sorszam: int = 1, darab: int = 1
+    cov: bool,
+    basetemp: Path,
+    *,
+    sorszam: int = 1,
+    darab: int = 1,
+    fajlok: list[str] | None = None,
+    teljes: bool = False,
+    indok: str = "",
 ) -> int:
     """A tényleges részfutás-sorozat; a basetemp életciklusa a hívóé.
 
@@ -1826,19 +1884,24 @@ def _futtat(
         (app_dir / "qml_functional").glob("test_*.py")
     )
     app_utak = [str(p.relative_to(_ROOT)) for p in app_test_files]
-    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
-    if alap:
-        teljes = len(app_utak)
-        app_utak = erintett_app_tesztek(
-            app_utak, _valtozott_fajlok(alap),
-            lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+    if fajlok is None:
+        # Régi helyi hívásoknál megmarad az eredeti viselkedés. A CI explicit
+        # fájllistát ad, így ott a nem-app PR-tesztek sem futnak teljesen.
+        alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
+        if alap:
+            app_utak = erintett_app_tesztek(
+                app_utak, _valtozott_fajlok(alap),
+                lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+            )
+        egysegek = [_NEM_APP] + app_utak
+    else:
+        app_utak = [ut for ut in fajlok if ut.startswith("tests/app/")]
+        egysegek = _fajlokbol_egysegek(fajlok, teljes=teljes)
+        print(
+            f"Tesztválasztás: {len(fajlok)} fájl; teljes={teljes}; "
+            f"indok={indok or 'nincs megadva'}.",
+            flush=True,
         )
-        if len(app_utak) == teljes and _valtozott_fajlok(alap) is None:
-            print(f"⚠️ PR-szűkítés: a változás NEM állapítható meg az alaphoz ({alap[:8]}) "
-                  "képest (hiányzó git-történet?) — teljes készlet fut.", flush=True)
-        print(f"PR-szűkítés: {len(app_utak)} érintett app-tesztfájl a {teljes}-ből "
-              f"(alap: {alap[:8]}); a teljes készlet a main-en fut.", flush=True)
-    egysegek = [_NEM_APP] + app_utak
     enyem = _kiegyensulyozott_darab(egysegek, sorszam, darab)
     if darab > 1:
         print(
@@ -1861,8 +1924,13 @@ def _futtat(
     # KÜLÖN processzben, hogy egy fájlon belüli sok engine-életciklus se
     # torlódjon egyetlen processzbe.
     app_test_files = [
-        p for p in app_test_files if str(p.relative_to(_ROOT)) in enyem
+        _ROOT / ut for ut in app_utak if ut in enyem
     ]
+    if fajlok is not None and not teljes:
+        app_test_files.extend(
+            _ROOT / ut for ut in fajlok
+            if not ut.startswith("tests/app/") and ut in enyem
+        )
     kihagyott = [p for p in app_test_files
                  if str(p.relative_to(_ROOT)).replace("\\", "/")
                  in _KIHAGYOTT_APP_FAJLOK]

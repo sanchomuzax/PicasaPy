@@ -91,8 +91,10 @@ def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0, blend_mode: i
     if mode is None:
         raise ValueError(f"A Pixelate keverési módja 0 és 9 közé esik: {blend_mode}")
     height, width = image.shape[:2]
-    small_w = max(1, round(width / impact))
-    small_h = max(1, round(height / impact))
+    # Az eredeti `trunc(v + 0,5)` (#4912): pontos .5-nél felfelé kerekít,
+    # a `round()` párosra (bankár-kerekítés) eltérne.
+    small_w = max(1, int(width / impact + 0.5))
+    small_h = max(1, int(height / impact + 0.5))
     small = resize_image(image, small_w, small_h, smoothing=True)
     pixelated = resize_image(small, width, height, smoothing=False)
     return to_uint8(apply_blend_mode(to_float(image), to_float(pixelated), mode, fade_alpha(fade)))

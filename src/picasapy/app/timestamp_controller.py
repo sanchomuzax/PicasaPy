@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Slot
 
-from picasapy.index import open_index, sync_tree
+from picasapy.index import open_index, sync_tree, update_photo_fields
 from picasapy.metadata.tiff_helyben import (
     Valtozas,
     ascii_ertek,
@@ -184,7 +184,10 @@ def _write_photo_exif_date(path: str | Path, target: datetime) -> os.stat_result
     try:
         _write_exif_datetime_original(source, target)
     except Exception:  # noqa: BLE001 — az eredeti tartalékág csak fájlidőt ír
-        _set_creation_time_ns(source, round(target.timestamp() * 1_000_000_000))
+        try:
+            _set_creation_time_ns(source, round(target.timestamp() * 1_000_000_000))
+        except OSError:
+            pass  # a katalógusbeli dátum így is tárolódik (#4885)
         return None
     return before
 
@@ -277,13 +280,25 @@ class TimestampAdjustmentMixin:
             def write_file(photo=photo, value=value, index=index):
                 source = Path(photo.folder_path) / photo.name
                 before = _write_photo_exif_date(source, value)
-                if before is not None:
+                exif_ok = before is not None
+                if exif_ok:
                     befores.setdefault(photo.folder_path, {})[source] = before
+                # #4885: ahol az EXIF-írás nem lehetséges (videó, nem-JPEG,
+                # hibás/írásvédett JPEG), a dátum az indexben tartósan
+                # megmarad (a szinkron is megőrzi); EXIF-írás után a fájl
+                # maga a forrás.
+                override = None if exif_ok else value.isoformat(timespec="seconds")
+                if override is not None:
+                    # a mappa dátuma a szinkronkor számolódik: az override
+                    # a szinkron ELŐTT kell a lemezre kerüljön
+                    with open_index(self._db_path) as conn:
+                        update_photo_fields(conn, photo.id, taken_at_override=override)
                 if last_folder_photo[photo.folder_path] == index:
+                    # az utolsó kép után újraszkennelés, majd a fájlidők visszaállítása (#4646)
                     self._reindex_folder_keeping_times(
                         photo.folder_path, befores.pop(photo.folder_path, {})
                     )
-                return {"taken_at_override": None}
+                return {"taken_at_override": override}
 
             jobs.append((photo.id, write_file))
         # A teljes újraszkennelés az EXIF-ből olvassa vissza a dátumot, a

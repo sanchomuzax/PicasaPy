@@ -17,7 +17,12 @@ okozott a DeferredDelete-ben.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from pathlib import Path
+import sys
+
 _LISTA_ELOTAG = "_KEEP"
+_TESZTEK_GYOKER = Path(__file__).resolve().parents[1]
 
 
 def modul_listak(modul: object) -> list[list]:
@@ -45,4 +50,41 @@ def modul_listait_elenged(modul: object) -> int:
                 pass
             db += 1
         lista.clear()
+    return db
+
+
+def tesztmodulok_listait_elenged(modulok: Iterable[object] | None = None) -> int:
+    """A betöltött teszt- és tesztsegédmodulok `_KEEP…` listáit üríti.
+
+    A PySide-burkokat megosztó segédmodul saját listája is életben maradhat
+    akkor, ha egy másik tesztmodul hívta meg. A QML-motor törlése után ezért
+    minden, a `tests/` alatt betöltött modul listáját elengedjük, nem csak a
+    fixture-t használó tesztmodulét.
+    """
+    if modulok is None:
+        modulok = sys.modules.values()
+
+    db = 0
+    latott: set[int] = set()
+    for modul in tuple(modulok):
+        azon = id(modul)
+        if azon in latott:
+            continue
+        latott.add(azon)
+
+        try:
+            fajl = vars(modul).get("__file__")
+        except TypeError:
+            continue
+        if not fajl:
+            continue
+        utvonal = Path(fajl)
+        if not utvonal.is_absolute():
+            utvonal = Path.cwd() / utvonal
+        try:
+            utvonal.relative_to(_TESZTEK_GYOKER)
+        except ValueError:
+            continue
+
+        db += modul_listait_elenged(modul)
     return db

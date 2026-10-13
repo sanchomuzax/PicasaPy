@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -63,7 +64,19 @@ def test_all_languages_have_one_ts_and_runtime_qm():
         )
 
 
-def test_selected_language_qm_is_installed_by_the_startup_path(monkeypatch):
+@pytest.fixture
+def _locale_visszaallitasa():
+    """#4881: a `_install_translator` az alapértelmezett QLocale-t is állítja."""
+    from PySide6.QtCore import QLocale
+
+    eredeti = QLocale()
+    yield
+    QLocale.setDefault(eredeti)
+
+
+def test_selected_language_qm_is_installed_by_the_startup_path(
+    monkeypatch, _locale_visszaallitasa
+):
     from PySide6.QtCore import QCoreApplication
 
     from picasapy.app import application

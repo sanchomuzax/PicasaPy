@@ -86,7 +86,8 @@ from picasapy.index import (
     unnamed_album_photos,
     unnamed_faces,
 )
-from picasapy.index.faces_detected import UnnamedFace
+from picasapy.index.faces_detected import UnnamedFace, unnamed_photo_count
+from picasapy.index.hidden_scope import hidden_folders_visible
 from picasapy.index.ignored_ini_faces import IniIgnoredFace
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
@@ -797,10 +798,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         sor rejtve marad — modell nélkül ez a szám mindig 0, a szkennelés
         el sem indul, ld. `scanForFaces`)."""
         with open_index(self._db_path) as conn:
-            row = conn.execute(
-                "SELECT COUNT(DISTINCT photo_id) AS n FROM face WHERE state = 'unnamed'"
-            ).fetchone()
-        return int(row["n"]) if row is not None else 0
+            return unnamed_photo_count(conn)
 
     @Slot(bool, bool, result="QVariantList")
     def unnamedGroups(self, group_by_face: bool, expand_groups: bool) -> list[dict]:
@@ -1239,8 +1237,10 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def _all_photo_paths(self) -> tuple[str, ...]:
         """A jelenleg indexelt könyvtár összes fotójának abszolút útvonala."""
         with open_index(self._db_path) as conn:
+            # #4887: belső (nem megjelenítő) út — a rejtett mappák is
             return tuple(
-                str(Path(photo.folder_path) / photo.name) for photo in all_photos(conn)
+                str(Path(photo.folder_path) / photo.name)
+                for photo in all_photos(conn, include_hidden_folders=True)
             )
 
     def _schedule_face_reset(
@@ -1272,7 +1272,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         with open_index(self._db_path) as conn:
             photos_by_path = {
                 _path_key(Path(photo.folder_path) / photo.name): photo.id
-                for photo in all_photos(conn)
+                for photo in all_photos(conn, include_hidden_folders=True)
             }
             photo_ids = {
                 photos_by_path[_path_key(path)]
@@ -1315,10 +1315,17 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus
         """Hány arc van a „Mellőzött emberek" albumban — a saját indexben
         mellőzöttek és az eredeti Picasa által mellőzöttek (#3670) együtt."""
+        # #4887: a gyorstár a rejtett mappák láthatóságához kötött — a
+        # kapcsoló átváltása után a darabszám nem maradhat a régin
+        lathato = hidden_folders_visible(self._db_path)
         with open_index(self._db_path) as conn:
             own = ignored_faces(conn)
-            if self._ini_ignored_cache is None:
+            if (
+                self._ini_ignored_cache is None
+                or getattr(self, "_ini_ignored_lathato", None) != lathato
+            ):
                 self._ini_ignored_cache = ignored_ini_faces(conn)
+                self._ini_ignored_lathato = lathato
         return len(own) + len(_ini_only(own, self._ini_ignored_cache))
 
     @Slot(result="QVariantList")
@@ -1338,6 +1345,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         with open_index(self._db_path) as conn:
             faces = [face for face in ignored_faces(conn) if face.rect is not None]
             self._ini_ignored_cache = ignored_ini_faces(conn)
+            self._ini_ignored_lathato = hidden_folders_visible(self._db_path)
         extra = _ini_only(faces, self._ini_ignored_cache)
         total = len(faces) + len(extra)
         if not total:
@@ -1450,7 +1458,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     ) -> None:
         try:
             with open_index(self._db_path) as conn:
-                photos = all_photos(conn) if scoped_photos is None else scoped_photos
+                # #4887: a szkennelés a rejtett mappák képein is fut (az
+                # eredménye a megjelenítéskor szűrődik)
+                photos = (
+                    all_photos(conn, include_hidden_folders=True)
+                    if scoped_photos is None
+                    else scoped_photos
+                )
                 total = len(photos)
                 pending = self._build_pending(conn, photos)
                 with self._pending_lock:

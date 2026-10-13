@@ -37,11 +37,16 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 
-from picasapy.pmpimport.db3_atvetel import AtvetelJelentes, rekordokat_atvesz
+from picasapy.pmpimport.db3_atvetel import (
+    AtvetelJelentes,
+    rekordokat_atvesz,
+    videodatumokat_atvesz,
+)
 from picasapy.pmpimport.importer import iter_photo_records
 from picasapy.pmpimport.remap import PathRemapper
 from picasapy.scanner import discover_installations
 
+from .index_writer_queue import IndexWriterQueue
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
@@ -55,19 +60,33 @@ _MANUAL_SOURCE_REQUIRED = "picasapy-manual-source-required"
 _MANUAL_MAPPING_REQUIRED = "picasapy-manual-mapping-required"
 
 
+
+def _read_hidden_password_hash(*args, **kwargs):
+    """Lusta betöltés: az átvétel-ág modulja ne kerüljön az indulási
+    importláncba (#1653 plafon)."""
+    from picasapy.pmpimport.rejtett_jelszo import read_hidden_password_hash
+
+    return read_hidden_password_hash(*args, **kwargs)
+
 class PicasaImportController(BackgroundWorkerMixin, QObject):
     """`Eszközök ▸ Import a Picasából…` — a db3 adatainak átvétele."""
 
-    #: (mappák, kulcsszó, hely, arc, kihagyott) — a felhasználónak szóló
-    #: számok. A `kihagyott` azt mondja meg, hány fotón volt db3-adat, de az
+    #: (mappák, kulcsszó, hely, arc, kihagyott, videódátum, videódátum-hiba) — a felhasználónak
+    #: szóló számok. A `kihagyott` azt mondja meg, hány fotón volt db3-adat, de az
     #: ini-ben már állt érték: ott SZÁNDÉKOSAN nem nyúltunk hozzá.
-    importFinished = Signal(int, int, int, int, int)
+    importFinished = Signal(int, int, int, int, int, int, int)
+    #: #4591: a videók dátuma az indexbe került — a rács/mappalista frissítendő
+    datesApplied = Signal()
     #: a db3 olvasása vagy az írás hibára futott — a szöveg a felhasználóé
     importFailed = Signal(str)
     #: nincs mit átvenni: nem találtunk db3-könyvtárat. ⚠️ Ez NEM hiba —
     #: külön jelzés, mert a felületnek mást kell mondania rá.
     noInstallationFound = Signal()
     runningChanged = Signal()
+    #: #4597: a db3 `catdata` `Hidden Folders` sorának jelszó-lenyomata. A
+    #: háttérszálból megy ki; az átvételt (csak ha nincs saját jelszó) a
+    #: fogadó végzi a fő szálon.
+    hiddenPasswordFound = Signal(str)
 
     def __init__(
         self,
@@ -77,12 +96,23 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         olvaso: Callable[..., Iterable] | None = None,
         atvevo: Callable[..., AtvetelJelentes] | None = None,
         remapper: PathRemapper | None = None,
+        index_path: Path | None = None,
+        videodatum_atvevo: Callable[..., AtvetelJelentes] | None = None,
+        writer_queue: IndexWriterQueue | None = None,
+        jelszo_olvaso: Callable[[Path], str | None] | None = None,
     ) -> None:
         super().__init__(parent)
+        #: #4591: az index útvonala — a videók módosított dátuma ide megy
+        self._index_path = index_path
+        self._videodatum_atvevo = videodatum_atvevo or videodatumokat_atvesz
+        #: az index írója — ha van, az index-lépés a soron fut (egyetlen
+        #: íróként, mint a tömörítés), különben a saját háttérszálon
+        self._writer_queue = writer_queue
         self._felderito = felderito or discover_installations
         self._olvaso = olvaso or iter_photo_records
         self._atvevo = atvevo or rekordokat_atvesz
         self._remapper = remapper or _ALAP_REMAP
+        self._jelszo_olvaso = jelszo_olvaso or _read_hidden_password_hash
         self._running = False
 
     def _set_running(self, ertek: bool) -> None:
@@ -142,12 +172,37 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
             remapper=PathRemapper.from_dict({forras: cel}),
         )
 
+    def _befejez(self, jelentes: AtvetelJelentes) -> None:
+        self.importFinished.emit(
+            jelentes.mappak,
+            jelentes.kulcsszo,
+            jelentes.hely,
+            jelentes.arc,
+            jelentes.kihagyott,
+            jelentes.videodatum,
+            jelentes.videodatum_hiba,
+        )
+        if jelentes.videodatum:
+            self.datesApplied.emit()
+
+    def _jelszot_jelez(self, db3: Path) -> None:
+        """#4597: a rejtett-jelszó átvétele mellékág — hibája csak naplózódik,
+        az import többi része (és a jelentés) ettől még lefut."""
+        try:
+            lenyomat = self._jelszo_olvaso(db3)
+        except Exception:
+            _log.warning("A rejtett-jelszó nem olvasható: %s", db3, exc_info=True)
+            return
+        if lenyomat:
+            self.hiddenPasswordFound.emit(lenyomat)
+
     def _start_import(
         self, *, db3_konyvtar: Path | None, remapper: PathRemapper
     ) -> None:
         self._set_running(True)
 
         def worker() -> None:
+            lezart = False
             try:
                 konyvtarak = (
                     (db3_konyvtar,)
@@ -158,20 +213,42 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
                     self.noInstallationFound.emit()
                     return
                 osszes = AtvetelJelentes()
+                osszes_rekord: list = []
                 for db3 in konyvtarak:
                     rekordok = tuple(self._olvaso(db3, remapper))
+                    osszes_rekord.extend(rekordok)
                     osszes = osszes + self._atvevo(rekordok)
-                self.importFinished.emit(
-                    osszes.mappak,
-                    osszes.kulcsszo,
-                    osszes.hely,
-                    osszes.arc,
-                    osszes.kihagyott,
-                )
+                    self._jelszot_jelez(db3)
+                if self._index_path is None:
+                    self._befejez(osszes)
+                    return
+                # #4591: az index-lépés az ini-átvétel UTÁN, az index
+                # írósorán (ha van): a videódátum hibája az ini-t nem viszi el
+
+                def index_lepes() -> None:
+                    try:
+                        jelentes = osszes + self._videodatum_atvevo(
+                            osszes_rekord, self._index_path
+                        )
+                        self._befejez(jelentes)
+                    except Exception as hiba:  # a felhasználónak szól
+                        _log.exception("A Picasa-import elakadt")
+                        self.importFailed.emit(str(hiba))
+                    finally:
+                        self._set_running(False)
+
+                if self._writer_queue is None:
+                    index_lepes()
+                else:
+                    self._writer_queue.submit(
+                        index_lepes, name="picasapy-db3-import-index"
+                    )
+                lezart = True  # a futás jelzőjét innentől az index_lepes zárja
             except Exception as hiba:  # a felhasználónak szól, nem elnyeljük
                 _log.exception("A Picasa-import elakadt")
                 self.importFailed.emit(str(hiba))
             finally:
-                self._set_running(False)
+                if not lezart:
+                    self._set_running(False)
 
         self._start_background(worker, name="picasapy-db3-import")
