@@ -12,6 +12,10 @@ from dataclasses import dataclass
 from .document import ALBUM_SECTION_PREFIX, IniDocument
 from .folder_music import read_music_settings, with_music_settings
 
+# A Picasa különleges, virtuális Csillagozott albuma. A tag az INI `star`
+# kulcsának felel meg, nem az `albums=` listában szereplő saját albumnak.
+STAR_ALBUM_TOKEN = "]star"
+
 
 @dataclass(frozen=True)
 class Album:

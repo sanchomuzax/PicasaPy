@@ -49,6 +49,7 @@ from picasapy.index import (
 from picasapy.ini import (
     FOLDERS_ON_DISK_CATEGORY,
     HIDDEN_FOLDERS_CATEGORY,
+    STAR_ALBUM_TOKEN,
     load_or_empty,
     set_folder_hidden_in_ini,
     update_document,
@@ -441,6 +442,8 @@ class AppController(
     def currentAlbumToken(self):
         """Az aktív album token-je (#9) — a bal hasáb kijelöléséhez."""
         mode, param = self._view_mode
+        if mode == "starred_album":
+            return STAR_ALBUM_TOKEN
         return param if mode == "album" else ""
 
     @Property(str, notify=statusChanged)
@@ -1520,12 +1523,25 @@ class AppController(
         )
         return sablon.format(current=aktualis, total=osszes)
 
-    # -- csillag-szűrő -------------------------------------------------------
+    # -- csillag-szűrő és különleges album ----------------------------------
 
     @Slot()
     def showStarred(self) -> None:
-        """Csillag-szűrő be — a mappa-kontextus megmarad a visszaváltáshoz."""
-        self._view_mode = ("starred", "")
+        """A ★ eszköztári szűrője — megőrzi a mappa-kontextust."""
+        self._show_starred_photos("starred")
+
+    @Slot()
+    def showStarredAlbum(self) -> None:  # noqa: N802
+        """A bal oldali Csillagozott különleges albumát nyitja meg (#4883).
+
+        A tartalma ugyanazokból a csillagozott képekből áll, mint a ★ szűrőé,
+        de a `]star` album-tokent is hordozza, így a törlés csak a csillagot
+        veszi le. A két belépő nézete és törlési szemantikája külön marad.
+        """
+        self._show_starred_photos("starred_album")
+
+    def _show_starred_photos(self, mode: str) -> None:
+        self._view_mode = (mode, "")
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
             records = starred_photos(conn)
@@ -1702,7 +1718,7 @@ class AppController(
                 tuple(r for r in all_matches if r.folder_path == folder),
                 time.perf_counter() - started,
             )
-        elif mode == "starred":
+        elif mode in ("starred", "starred_album"):
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 records = starred_photos(conn)

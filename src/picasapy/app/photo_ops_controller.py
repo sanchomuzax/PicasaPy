@@ -71,6 +71,7 @@ from picasapy.ini import (
     FilterWriteError,
     IniConflictError,
     IniSaveError,
+    STAR_ALBUM_TOKEN,
     load_existing,
     update_document,
 )
@@ -409,7 +410,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: Ha itt állunk, a csillag ki/be kapcsolása nem egy sor megjelenését
     #: változtatja, hanem a lista TARTALMÁT — a nézetet újra le kell
     #: kérdezni. A mappa-nézetben ellenben a sornak maradnia kell.
-    _CSILLAG_SZURT_NEZETEK = ("starred",)
+    _CSILLAG_SZURT_NEZETEK = ("starred", "starred_album")
 
     def _refresh_if_star_filtered(self) -> None:
         """Újralekérdezés, ha a csillag a jelen nézet tagságát dönti el.
@@ -831,7 +832,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     @Slot(list, str)
     def removeRowsFromAlbum(self, rows, token: str) -> None:
         """A kijelölés kivétele egy albumból (a definíció, `[.album:token]`,
-        a mappában marad — csak a tagság törlődik, ahogy a Picasa is teszi)."""
+        a mappában marad — csak a tagság törlődik, ahogy a Picasa is teszi).
+
+        A `]star` különleges albumnál a tagság az INI `star` kulcsa, ezért
+        annak levétele nem az `albums=` CSV-t módosítja (#4883).
+        """
         token = (token or "").strip()
         if not token:
             return
@@ -839,8 +844,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not valid:
             return
 
-        def mutate(document, photo):
-            return without_album(document, photo.name, token)
+        if token == STAR_ALBUM_TOKEN:
+            def mutate(document, photo):
+                return document.with_removed(photo.name, "star")
+        else:
+            def mutate(document, photo):
+                return without_album(document, photo.name, token)
 
         self._write_album_batch(valid, mutate)
 
