@@ -87,24 +87,24 @@ jobs:
   # kötelező ubuntu-ellenőrzést is pirosra vitte (mérve a #1257-en).
   darabok-ubuntu:
     needs: valtozas
-    if: ${{ needs.valtozas.outputs.kod == 'true' }}
+    if: ${{ needs.valtozas.outputs.darabszam != '0' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: ubuntu-latest
       darabok: ${{ needs.valtozas.outputs.darabok }}
       darabszam: ${{ needs.valtozas.outputs.darabszam }}
 
-  # #4285: a windowsos tesztkészlet (a falióra-idő fő tétele, 26–30 perc)
-  # PR-on NEM fut, csak a main-re érkező pushon — a PR-t az ubuntus készlet
-  # kapuzza, a windowsos eltérés a beolvadás után a main körén derül ki.
+  # #4922: PR-en ugyanaz a kiválasztott tesztlista fut Windows alatt is.
+  # A láb kísérleti marad: a hibáját a Test (windows-latest) összesítő jelzi,
+  # de a kötelező ubuntu-ellenőrzés nem vár rá.
   darabok-windows:
     needs: valtozas
-    # 2026-10-10: a main-pushon ÚJRA fut — csak éjszakára ütemezve a GitHub
-    # el sem indította, és a futásidő-tábla windowsos mérés nélkül maradt
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' || needs.valtozas.outputs.darabszam != '0' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: windows-latest
+      darabok: ${{ needs.valtozas.outputs.darabok }}
+      darabszam: ${{ needs.valtozas.outputs.darabszam }}
 
   # #1863: a `docs/`-ot OLVASÓ őrök — csak-dokumentációs PR-en ez fut a
   # kihagyott mátrix helyett. A listát a `scripts/docs_olvaso_tesztek.py`
@@ -187,11 +187,10 @@ jobs:
     needs: [valtozas, darabok-ubuntu, docs-orok]
     if: always()
     steps:
-      - name: A kód futását nem érintő PR — a mátrix kimaradt
-        if: ${{ needs.valtozas.outputs.kod != 'true' }}
+      - name: A tesztválasztó nem talált futtatandó tesztet
+        if: ${{ needs.valtozas.outputs.darabszam == '0' }}
         run: |
-          echo "A diff csak dokumentációt/verziósort érint (ld. a"
-          echo "Változás-elemzés jobot) — a mátrix kimarad."
+          echo "A tesztválasztó nem talált futtatandó tesztet."
 
       # #1863: itt kap FOGAT a dokumentáció-őr. A `docs-orok` job önmagában
       # nem blokkolna (nem kötelező ellenőrzés) — a bukását EZ a lépés
@@ -206,7 +205,7 @@ jobs:
           fi
 
       - name: Az ubuntu-tesztdarabok mind zöldek
-        if: ${{ needs.valtozas.outputs.kod == 'true' }}
+        if: ${{ needs.valtozas.outputs.darabszam != '0' }}
         run: |
           if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-ubuntu.result }}"
@@ -245,8 +244,7 @@ jobs:
     if: always()
     steps:
       - name: A Windows-mátrix összes darabja zöld
-        # ha a mátrix nem futott, nincs mit ellenőrizni
-        if: ${{ github.event_name != 'pull_request' && github.event_name != 'push' }}
+        if: ${{ always() && needs.darabok-windows.result != 'skipped' }}
         run: |
           if [ "${{ needs.darabok-windows.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-windows.result }}"

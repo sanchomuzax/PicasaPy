@@ -432,7 +432,20 @@ def select_tests(
             continue
         if path == "pyproject.toml" and pyproject_version_only:
             continue
-        if path.startswith(("docs/",)) or path in {"README.md", "LICENSE", "CONTRIBUTING.md"}:
+        if path.startswith("docs/"):
+            fajlnev = Path(path).name
+            for test in all_tests:
+                try:
+                    content = (root / test).read_text(
+                        encoding="utf-8", errors="replace"
+                    ).replace("\\", "/")
+                except OSError:
+                    continue
+                if path in content or fajlnev in content:
+                    selected.add(test)
+                    actionable = True
+            continue
+        if path in {"README.md", "LICENSE", "CONTRIBUTING.md"}:
             continue
         if path in all_set:
             selected.add(path)
