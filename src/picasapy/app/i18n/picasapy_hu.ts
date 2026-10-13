@@ -15608,6 +15608,11 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         </message>
         <message>
             <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Név</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
             <translation>Indexképek &amp;frissítése</translation>
