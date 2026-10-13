@@ -4291,7 +4291,7 @@ eleje.
 | `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
 | `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
 | `PaletteMap` | `0x008f00d0` | `0x00bb7900` | `0x00bb7c80` (435 b) | `0x00bb7e40` (1093 b) | — *(a `ColorMaps` tömb más úton)* |
-| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
+| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — (rés-adat: `0x00d1bfa0`; a mag `0x00bcdf10` közvetlen hívás, ld. 5/e) | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
 | `QuantizePalette` | `0x008eff58` | `0x00bb5a30` | `0x00bb5ad0` (139 b) | — | Steps@0x24, Depth@0x2c |
 | `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | amount@0x34 |
 | `Resize` | `0x008f0908` | `0x00bc3370` | `0x00bc3650` (407 b) | — | width@0x24, height@0x2c, smoothing@0x34 |
@@ -4397,7 +4397,7 @@ kezdőállapota megmarad.
 | `MultiplyColorMatrix` | `Multiplier` | `NULL` | `0x00bb7680` | S |
 | `Nested` | közös `Blend`-mezők; `id` | közös mezők 0/NULL; hiányzó `id` esetén nincs névvel ellátott regiszter | `0x00bb31f0`, inline | S |
 | `Noise` | `randomSeed`, `low`, `high`, `channelOptions`, `grayScale` | `NULL` | `0x00bbed20` | S |
-| `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` | S |
+| `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` (konstruktor; az osztály, nem a `Pixelate` effekt; ld. 5/e) | S |
 | `QuantizePalette` | `Steps`, `Depth` | nyers tagmezők `0` | `0x00bb31f0`, inline | S |
 | `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; a további mezők nyitottak |
 | `Resize` | `width`, `height`, `smoothing`; `ignoreObjects` | a három művelettag 0/NULL; `ignoreObjects` nincs a típus tagtáblájában | `0x00bb31f0`, inline | S |
@@ -5521,6 +5521,45 @@ szélen kívüli minta viselkedése itt a közös affine munkavégzőé.
 Nincs mérve valódi Picasa-exportból származó külön Resize-golden; a fenti
 pixelértékek a natív gépi kód QEMU-futtatásából és a PicasaPy-függvény
 azonos bemeneteiből származnak.
+
+### 5/e. ⭐ `Pixelate` és `PixelateImageOperation`: két külön út — a natív mag bájtos összevetése NYITOTT (#4908, 2026-10-12)
+
+**Két dolog, ugyanazzal a névvel.**
+- A `Pixelate` **effekt** (`filterdesc.xml:1191`) egy `NestedImageOperation`-ben két `ResizeImageOperation`-t használ: `Resize(imagewidth/Impact)` (simítva), majd `Resize(imagewidth, smoothing="false")`. **Nem** használ `PixelateImageOperation`-t. Az 5/c és 5/d szakasz ezt a láncot méri (ΔE 0,098 az alapállásra).
+- A `PixelateImageOperation` (vtábla RVA `0x008f04f4`, VA `0x00cf04f4`) a `filterdesc.xml`-ben **csak a `Comicize` szűrőben** fordul elő, két példányban (`pixelWidth=_nDotSize`). Az `0x00bcdf10` ennek a magja.
+
+Ezért a #4908 kiinduló megfogalmazása („`PixelateImageOperation` (1 effekt)”) pontatlan: a natív mag a Comicize-é, a `Pixelate` effekt más láncon fut.
+
+**Állapot.** Az `0x00bcdf10` és a `effects_artistic.pixelate_centered` bájtos összevetése **nyitott**. A hívási lánc kiolvasva és igazolva; a natív futás eddig nem adott pixelkimenetet.
+
+**A lánc (gépi kód, `pdis` a `Picasa3.exe`-ből):**
+
+| lépés | cím | szerep | ellenőrzés |
+|---|---|---|---|
+| vtábla 1. rés | `0x00bbd050` | attribútumolvasó: `pixelWidth` `+0x24`, `pixelHeight` `+0x2c`, `offsetX` `+0x34`, `offsetY` `+0x3c` | vtábla-olvasás (`0x00cf04f4 + 4`) |
+| vtábla 6. rés | `0x00bbd150` | alkalmazó, 199 bájt, `ret 0xc`, `ecx` = az op | vtábla-olvasás (`+0x18`) |
+| közvetlen hívás | `0x00bbd207` → `0x00bcdf10` | a mag, cdecl: `(img, pw, ph, dst)` | `0x00bbd1ed`–`0x00bbd207` |
+| inicializáló | `0x00bbcf30` | konstruktor: nullázza a mezőket, a vtáblát `0x00cf04f4`-re állítja | `pdis` |
+
+A vtábla 8. rése `0x00d1bfa0`: ez **adat** (nullák), nem kód. A `PixelateImageOperation`-nek tehát nincs munkavégző-rése; a magot az alkalmazó hívja közvetlenül.
+
+**Paraméterek.** Az alkalmazó a `+0x24`/`+0x2c` mezőt float-ként veszi; ha ≤ 0, `1,0` (`fcomp` a `0xc7e328`-cal, majd `fld1`). A magban `W = [img+8]`, `H = [img+0xc]`; a `W/pw` és `H/ph` float-osztás után a `0x00529e10` hívás áll. A `pixelate_centered` docstringje szerint ez `⌈W/pw⌉`; ezt a natív futás **nem igazolta**.
+
+**Natív futás (QEMU, `qemu-i386`, a `hb.py` harness; 24×16 BGRA, `pw = ph = 4`):**
+1. A CRT-indulás a `HeapReAlloc` importnál (IAT 64. slot, `0x10002400`) állt meg: az `install_crt_shims` nem shimmeli. Egy ideiglenes arena-shim (`HeapReAlloc`, `HeapSize`) került a driverbe; ez a repóban nincs meg.
+2. Ezután a mag lefut: `0x00bcdf10` → `0x00bcb5e0` (worker-hívás, szerepe nincs azonosítva) → visszatérési érték `eax = 4`, a `0x00bce146` ágon. A `dst+0x10` ellenőrzés (`0x00bce27d`) nem fut le.
+3. A célpufferbe (`DST_PIXELS`, 1536 bájt) nem íródott semmi; a célobjektum a futás végén érintetlen.
+
+**Eredmény: nincs bájtos összevetés.** Sem egyezés, sem eltérés nem állítható, mert a vizsgált csatornán nincs natív kimenet. A `0x00bcb5e0` kimeneti csatornája nincs azonosítva.
+
+**Mi kell hozzá:** a `0x00bcb5e0` (és `0x00bcb6a0`) kiolvasása: honnan olvassa a bemeneti pixelt, hova írja a kimenetet. A bemeneti `img` objektumot a valódi elrendezés szerint kell felépíteni; a kézzel épített objektum nem elég (a `wq.py` a `0x00bcb2f0`-nál már elszállt).
+
+**A PicasaPy mai megvalósítása (grep, `src/picasapy/render`):**
+- `Pixelate` effekt: `chain.py:874` → `chain_glimmer_handlers.apply_pixelate_op` → `glimmer_artistic.apply_pixelate` (`glimmer_artistic.py:74`): `Resize(W/Impact)` simítva, majd `Resize(W, smoothing=false)`, utána `BlendMode` és `Fade`. Ez követi a `filterdesc.xml` láncát.
+- `PixelateImageOperation`: `effects_artistic.pixelate_centered` (`effects_artistic.py:198`) a natív mag portja. **Csak a `Comicize` hívja** (`effects_artistic.py:392`).
+- `effects_artistic.apply_pixelate` (`effects_artistic.py:122`): cv2-alapú közelítés (`INTER_AREA` + `INTER_NEAREST`, blokk = a rövidebb oldal %-a). A chain nem hívja.
+
+**Visszavonás.** Ebben a körben egy előzetes megállapításom szerint a natív `ceil(W/pw)` rács eltérhet a `Pixelate` effekt `round(W/Impact)` láncától. Ez **téves volt**: a natív mag nem a `Pixelate` effekté. A `Pixelate` effekt összevetését a 5/c és 5/d szakasz végzi.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
