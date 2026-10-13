@@ -205,6 +205,9 @@ def test_regi_override_sikeres_exif_iras_utan_torlodik(
         assert photo_by_id(conn, kep.id).taken_at_override is None
 
 
+@pytest.mark.skipif(
+    os.name != "posix", reason="#1864: Windowson a chmod nem érvényesíti a POSIX-biteket"
+)
 def test_irasvedett_jpeg_override_et_kap_a_fajl_valtozatlan(
     controller, qt_app, tmp_path, library
 ):

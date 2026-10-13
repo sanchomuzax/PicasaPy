@@ -2325,6 +2325,8 @@ film-/People Albums másik hívási láncában szerepel
 
 #### 38.2.2 Futó felmérés az eredeti Picasán (Colab #102) — mit mutat a bemutató (#4443)
 
+**Horgony:** a mai megfelelő nézet `src/picasapy/app/qml/PicasaPy/TimelineView.qml:1`; a menüparancs `ID_VIEW_TIMELINE` (`0x9ccc`, 38.2).
+
 **Forrás:** eredeti angol Picasa 3.9.141, Wine, 1280×1024; futás 2026-10-06 22:33 UTC. A `job-102` 14 képernyőképe és `allapot.json`-ja egy „PicasaTeszt” mappát (24 kép, október 6-i mappadátum) és egy `Recently Updated (24)` albumot tartalmaz. A koordináták a `kepernyo__03.png` képpontjaiból származnak; ez a fájl és az `allapot.json` nem található meg a helyi mérőadat-archívumban, az eredmények a korábbi kutatási ágból vannak átvéve.
 
 | Eredeti (mért) | Nálunk (forrásból ellenőrizve) | Teendő |
