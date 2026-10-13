@@ -1332,7 +1332,7 @@ munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok
 | `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: feloldja az `overlays/egg` elemet, inicializálja a hozzá tartozó objektumot és aktiváló jelzőt állít. | A `overlays/egg` string-xref és a Ctrl-ág egyetlen célfüggvénye egyezik; a pontos látható animáció futtatás nélkül nincs kimérve. | feltételes |
 | `Ctrl+F9` | A `0x005e60d0` billentyűkezelő Ctrl+`0x78` (F9) táblabejegyzése a `0x005e6329` ágra jut. A konstruktor `0x00564b2e` alaphelyzetben 0-ra állítja a `[panel+0xdc4]` bájtot; a `0x005e6329`–`0x005e6333` ág ezt 0/1 között billenti. Ha a `0x00571e50` útján létezik az `editpanel/preview`, annak `[+0x20c]` mezője 0, a kapcsoló 1, és a kijelölési út érvényes értéket ad, akkor ezt összeveti a `[this+0xe64]` aktuális képként használt értékével. Eltéréskor a `CThumbUI` `+0x2c` virtuális metódusát 0 argumentummal hívja; ez a `0x005f89a0`-en át az `editpanel/preview`-hoz tartozó aktuális kép felirat-/törlésállapotának és vezérlőállapotának frissítését kéri. A bináris nem bizonyítja, hogy ez a kijelölt képre váltja-e az előnézeti képet, vagy csak a meglévő előnézet UI-állapotát rajzolja újra. A kapcsoló 0 állásában ez az eltérésre induló frissítő ág kimarad. | A teljes `.text` pásztázás pontosan négy `[reg+0xdc4]` találatot adott (két írás, két olvasás). A `CThumbUI` RTTI/vtábla-útján a slot `0x00578dc0`-hoz vezet; ennek 0 argumentumos ága a `0x005f89a0`-et hívja, amely az `[this+0xe64]` mezőt olvassa. A külön `0x0056a260` szerkesztőút is aktuális képként kezeli ezt a mezőt (`ui-audit-editor.md`, 3. pont). | feltételes |
 | `F5` | `0x005e6869`: időbélyeg-frissítés (`0x004a46e0`), állapotfrissítő hívás (`0x00579480(0,1)`), `[adatobjektum+0x166]=1`, majd `0x0065b840` keresővezérlő-frissítés. Az idle út `0x004afcb0` ezt a jelzőt a `0x004aae90` lista-/nézeti állapotfrissítéshez viszi, majd törli. Ez nem bizonyít teljes fájlrendszer-rescant. | A külön `+0x166` olvasó/ürítő út és a `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5 leírása is frissítési kérelemként azonosítja a jelzőt. | megerősített |
-| `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. A teljes `.text` pásztázás az `+0xe78` egyetlen olvasójaként ezt a kaput találta. A cél létrehozza/újrahasználja a `[panel+0x31a8]` gyerekobjektumot, beállítja a bélyegkép-azonosítót, majd a `0x00774d60` frissíti annak geometriáját; ez a függvény a VK `0x12` állapotát olvassa és ablakfrissítést kér. A megjelenített tartalom pontos hatása nyitott. | A `PreviewHandler` külön eseményútja (`0x005c24c0`) szintén a `0x00571a80`-at hívja; a `0x00774cf0` testvér callback listabeli azonosítóváltás után ugyanazt a `0x00774d60` frissítőt hívja. Ez az objektumfrissítést támasztja alá, de a látható tartalmat nem nevezi meg. | nyitott |
+| `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. A teljes `.text` pásztázás az `+0xe78` egyetlen olvasójaként ezt a kaput találta. A cél létrehozza/újrahasználja a `[panel+0x31a8]` gyerekobjektumot, beállítja a bélyegkép-azonosítót, majd a `0x00774d60` frissíti annak geometriáját. A VK `0x12` állapotát a `0x00774d60` olvassa (nem a `0x00571a80`, ahogy az `osszefoglalo.md` #26 írja), és onnan kér ablakmegjelenítést és újrarajzolást. A gyerekobjektum egy `PopDisplay` (nem CThumbUI): felugró ablak. Részletek: 10.26. | A `PreviewHandler` külön eseményútja (`0x005c24c0`) szintén a `0x00571a80`-at hívja; a `0x00774cf0` testvér callback listabeli azonosítóváltás után ugyanazt a `0x00774d60` frissítőt hívja. A `0x00774d60` a `GetAsyncKeyState(0x12)` alapján rögzíti az Alt-állapotot, majd `ShowWindow(SW_SHOW)` (`0x00775320`) és `InvalidateRect`/`UpdateWindow` következik, ha a gyerek kliensszélessége > 1024 px. A rajzolás (WM_PAINT) egy úton igazolt. | megerősített (két út); a kép tartalma és az Alt-elengedés útja nyitott — 10.26 |
 | Videó: `/`, `,`, `.` | A `CThumbUI` közvetlen VK-ágában nincs ilyen összevetés; az általános eseménylánc a fókuszált gyereknek továbbít. A központi kezelőből nem állítható, hogy ezek lejátszanak vagy keresnek. | A 10.19 szerinti teljes `.text` pontos `cmp ax,0xbc/0xbe/0xbf` keresése nulla találatot adott; a lánc/fókusz továbbítását a 10.18–10.19 külön méri. | feltételes — a videóvezérlő saját hatása nyitott |
 
 **A Ctrl+F9 két független útja.** **A — állapotút:** a teljes `.text`
@@ -1398,7 +1398,7 @@ keretkiemelés elnevezését nem támasztja alá. A `picasa-linux-mod.md`
 
 - `Ghidra-kör kell: 0x00571e50 — a [panel+0xdc4] kapcsoló pontos, felhasználó által látható hatása az előnézet kijelölt képpel való szinkronizálására. [blokkoló]`
 - `Ghidra-kör kell: 0x00774d60 — a [CThumbUI+0x31a8] gyerekobjektum pontos kirajzolt tartalma és az Alt-állapot [objektum+0xb4] látható következménye. [blokkoló]`
-- `Ghidra-kör kell: 0x00571a80 — a Ctrl+Alt/VK 0x12 ágban az EnableHover és az érvényes elemazonosító mellett végrehajtott felhasználói művelet. [blokkoló]`
+- ✅ Lezárva a 10.26-ban: a Ctrl+Alt (VK `0x12`) hatása a `PopDisplay`-felugró ablak megjelenítése (EnableHover + előtérben + >1024 px mellett). Maradék nyitott pontok: a kép forrása, az Alt-elengedés útja, az EnableHover alapértéke.
 - `Ghidra-kör kell: 0x005f89a0 — a Ctrl+F9 eltérési ágának 0 argumentumos célja ténylegesen kijelölt képre váltja-e az előnézeti képet, vagy csak a jelenlegi [this+0xe64] kép UI-állapotát frissíti. [blokkoló]`
 - A `Ctrl+6` timeslicer felületének futás közbeni állapota és a Ctrl+Shift+Y `overlays/egg` látható animációja: **NINCS MEG**; célzott eredeti-program próba kell.
 - A `/`, `,`, `.` esetleges videóvezérlő-hatása: **NINCS MEG**; a fókuszált gyermek eseményfogadójának útját kell követni, a globális kezelőben nincs saját ág.
@@ -1419,6 +1419,61 @@ el, kell-e külön fejlesztői jegy.
 **Bizalmi fok:** a fenti táblában soronkénti. Összesítve **feltételes**, mert
 a Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
 gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem történt.
+
+### 10.26 #4699 — a Ctrl+Alt (VK `0x12`) látható hatása: felugró `PopDisplay`-ablak (2026-10-13)
+
+**Kérdés:** mi látszik Ctrl+Alt (Alt, VK `0x12`) lenyomásakor? A #4643 szerint a `0x00571a80` a gyerekobjektumot „CThumbUI”-ként frissíti; ez pontatlan.
+
+**Módszer.** A Picasa 3.9.141.259 bináris (`644b7bec…dc96`) helyi példányán, futtatás nélkül. A bináris-index `functions` tábláját függvényenként söpörtem capstone-nal: a `.text` egyetlen lineáris söprése a `0x0050d53d` körül megszakad, ezért ott nem használtam. Az IAT-névhez nem volt index-bejegyzés; az API-t az argumentumok alakjából jelölöm (pl. `0x7F89` = IDC_HAND, `0x17` = SM_SWAPBUTTON, `0x12` = VK_MENU), és ezt külön jelzem. Egy korábbi kör (`d164c968f`, 10.24 #4699, ez a branch még nem tartalmazza) ugyanezt a láncot részben már bejárta; az ellentmondásait lent jelzem.
+
+**Lépésenkénti bizonyíték**
+
+| # | Hely | Mit mutat | Független út | Fok |
+|---|---|---|---|---|
+| 1 | `0x005e65dc` | `cmp byte [panel+0xe78],0` → `je`; `eax = [panel+0xe70]`; `cmp eax,-1` → `je`; `push eax; push panel; call 0x571a80`. Ez a kapu. | a `+0xe78` egyetlen olvasója a `.text`-ben (szkennelve) | megerősített |
+| 2 | `0x00564cd3`, `0x00564d1a` | `push "EnableHover"` (`0xc8e624`), `call 0x4019b0` (HKCU registry-olvasó a `Preferences` ágon), `mov [panel+0xe78], al`. | a `0x005643e0` string-xref-listájában ott van az `EnableHover` (és a `ShowHidden`, `captionmode` stb.) | megerősített; **alapértéke nyitott** (a `0x00564d00` `mov [esp+0x70],1` gyanítható, nem igazolt) |
+| 3 | `0x0056b6f0` | ha az új index ≠ `-1` és ≠ `[panel+0xe64]` (aktuális kép), akkor `[panel+0xe70] := [panel+0xe64]`. | az `[+0xe64]` írói (10.25): csak a konstruktor és `0x005e8c2d`, tehát a `0x0056b6f0` nem írja | megerősített (az asm); **a jelentése** („az aktuális kép”) feltételes |
+| 4 | `0x00571a80` | `[child+0xb8] := id` (a kapott azonosító); ankerezés (`0x00aa5760` = slot 4, MoveWindow-alak); majd `0x00774d60(child)`. **Nem olvassa a VK `0x12`-t** (a callee-listában nincs `GetAsyncKeyState`). | decompile + asm | megerősített |
+| 5 | `0x00774d60` | `GetAsyncKeyState(0x12)` csak `DAT_00d67849 ≠ 0` mellett; `[child+0xb4] := (Alt nincs lenyomva)`; utána `GetClientRect(child)`. | decompile (a callee-lista tartalmazza a `GetAsyncKeyState`-t) + asm (`0x774d60`-on belül) | megerősített |
+| 6 | `0x00774f95`–`0x00774f9d` | `cmp [esp+0x24], 0x400` → `jbe 0x7750f8`: **a megjelenítő ág csak ha a gyerek kliensszélessége > 1024 px**. Az `[esp+0x24]` a step-5 `GetClientRect` `right` mezője. | asm + decompile (`if (0x400 < right)`) | megerősített |
+| 7 | `0x007750ca` → `0x00775320` | `call 0x775320`: `push 5; push hwnd; call [0xc40890]` = `ShowWindow(hwnd, SW_SHOW)` (feltétel: két ellenőrzés, `0xc40894`, `0xc4088c`). Utána `InvalidateRect(hwnd,0,0)` és `UpdateWindow` (`0x007750d2`). | a vtábla slot 2 (`0x00983840`, `ShowWindow(h, arg?5:8)`, `d164c968f`) ugyanazt az IAT-slotot használja; a `0x775390` `push 0` változata (SW_HIDE) is | megerősített (két út) |
+| 8 | `0x00774d60` → owner `+0x260` | a betöltés és a megjelenítés (step 7) csak akkor fut, ha a `FUN_006cfe10` index ≠ `[child+0xb8]`, vagy a téglalap változott (`0x00774fba`–`0x00774ffd`; egyezés esetén a `je 0x7750f8` kihagyja a blokkot). Ha fut: `call [vtbl+0x0]` az `owner+0x260` objektumon `(id, &rect, 0)`-val. Ez a kép betöltésének helye. | asm | megerősített (feltétel és hívás); **a betöltő objektum típusa nyitott** |
+| 9 | `0x00774bc0` (WndProc, vtábla slot 7) | `WM_PAINT` (`0xF`) → `0x009aa720`; a `BitBlt`-alakú másolás a `[obj+0x24]` bitképből (`d164c968f`). | egy út (`d164c968f`); ebben a körben nem követtem végig a `0x9aa720`-at | **feltételes** |
+| 10 | `0x00cb36ec` (`ytCallback<PopDisplay>`) | periodikus visszahívás: a `0x00775590` konstruktor írja a vtáblát (`0x007755cd`); a vtábla slot 1 = `0x00775550`, amely időbélyeget olvas (8 bájt) és a `0x007753f0`-t hívja (`0x00775572`). | vtábla-szkennelés (`0x00cb36f0`) + asm | megerősített; **a timer-regisztráció** (`0x0097d150`) **nyitott** |
+| 11 | `0x007753f0` (a „tick”) | olvassa `[child+0xb4]`-et (`0x0077543c`, `0x00775495`) és `DAT_00d67849`-et (`0x0077544a`, `0x0077549d`); `LoadCursor(NULL, 0x7F89)` + `SetCursor` (IDC_HAND); a fő egérgomb VK-ját a `GetSystemMetrics(0x17)`-ből (cache: `0xd4a490`). Ha nem lép ki, a végén `call [vtbl+0xc]` = slot 3 = `0x00775390`. | asm; a `d164c968f` ugyanezt a döntési fát adja | megerősített (két út) |
+| 12 | `0x00775390` (slot 3) | `[child+0xc8] = [child+0xcc] = 0`; `ShowWindow(hwnd, 0)` = **elrejtés** (ugyanaz az IAT-slot, mint a step-7 SW_SHOW). | asm + a vtábla slot-listája | megerősített |
+| 13 | `0x00a52e66` | `DAT_00d67849 := wParam ≠ 0` a `0x1C` (WM_ACTIVATEAPP) ágban — ez az „a Picasa az előtérben van” jelző. A `0x005760e0` a főablak létrehozásakor `1`-re állítja (`0x00576419`). | asm + a `00-index.md` #2224 | megerősített (két út) |
+
+**Összefüggő szabályok (a tick-ből, asm szerint):**
+
+- `[child+0xb4] = 0` (az utolsó frissítés Alt-tal történt) és az Alt élőben is le van nyomva → a tick **kilép**: a felugró ablak marad.
+- `[child+0xb4] = 0` és az Alt már nincs lenyomva → a tick **elrejt** (slot 3).
+- `[child+0xb4] = 1` (az utolsó frissítés Alt nélkül történt) → a tick csak akkor rejt el, ha a fő egérgombot lenyomják.
+- A `DAT_00d67849 = 0` (a Picasa nincs az előtérben) → a tick nem enged „kilépést” a rejtés elől (fg=0 ágak).
+
+**Következtetés.** A Ctrl+Alt (VK `0x12`) látható hatása: **felugró `PopDisplay`-ablak** (külön HWND, `ShowWindow(SW_SHOW)`), amely az `[panel+0xe70]` azonosítójú képet rajzolja. Feltételei: (1) a `EnableHover` beállítás be van kapcsolva, (2) az `[e70]` nem `-1`, (3) a Picasa az előtérben van, (4) a gyerekablak kliensszélessége > 1024 px. Alt tartására az ablak marad, a kurzor a felugró ablak fölött kéz-alakú (IDC_HAND). Elrejtés: Alt-elengedés után a tick (ha az utolsó frissítés Alt-tal volt), vagy a fő egérgomb lenyomása (ha Alt nélkül frissítettünk). **Ez nem a rács bélyegképének hover-keretére vonatkozik**: a `design-guide.md` 187–188. sorának „nincs látványos hover-effekt” megállapítása a rácsra szól, és a két jelenség nem ütközik. A `picasa-linux-mod.md` „egér-alatti kiemelés” sora (`EnableHover`) ezzel szemben a PopDisplay-ablakra vonatkozhat; ez utóbbi nincs külön igazolva.
+
+**Egyezés a `d164c968f`-es 10.24-gyel:** a tick döntési fája (`b4`, `DAT_00d67849`, az egérgomb- és Alt-ág) ugyanaz. A `d164c968f` a `0x774d60` frissítőt jelölte az Alt-állapot írójának (`GetAsyncKeyState(VK_MENU)`); ez egyezik a step-5 eredményemmel. Az `osszefoglalo.md` #26 ezzel szemben a `0x00571a80`-nak tulajdonítja a VK `0x12` olvasását: ez téves.
+
+**Fok:** a megjelenítési lánc (kapu → EnableHover → 0x571a80 → 0x774d60 → ShowWindow) és a rejtési szabály **megerősített**, két úton. A kép tartalma (step 8–9) **feltételes**. A futásbeli viselkedés (ablakpozíció, időzítő-periódus) **nincs megmérve**: a gépen nincs Wine, és nem indítottam el a binárist.
+
+**Nyitott:**
+
+- A `EnableHover` alapértéke (ha a kulcs hiányzik): nincs igazolva; a `0x00564d00` `mov [esp+0x70],1` jelölt, de a `0x407a20` konvenciója nincs végigkövetve.
+- Az `[e70]` jelentése: a `0x0056b6f0` az aktuális képet (`[e64]`) másolja oda; hogy ez az a kép, amit a felhasználó lát, vagy a legutóbbi előző, **nem dőlt el** (futtatás kell).
+- A betöltő objektum az `owner+0x260`-on (step 8): típus és slot 0 nincs azonosítva; így a popup pontos tartalma (méret, átméretezés) **nyitott**.
+- Az Alt-elengedés útja: a `WM_KEYUP` eléri-e a `0x005e65dc` kaput? A VK-ugrótábla (`0x005e6617` hivatkozás) nincs dekódolva. Ha nem éri el, a popup a tick-szabályok szerint az Alt-elengedés után is maradhat, amíg a fő egérgombot nem nyomják.
+- A `0x0097d150` (a periodikus tick regisztrálása): nincs igazolva, hogy milyen időközzel fut.
+- A `0x00774b60` hívója `0x0077524a`-nál: a második `ShowWindow`-útnak nincs azonosított argumentuma (`[esp+0x20]`).
+- Futásbeli próba (az eredeti Picasa): **NINCS MEG**; a látható tartalom és az időzítés csak célzott próbával mérhető.
+
+**Kész, ha (ha megépítjük, nem most).** A jegy csak akkor nyitható fejlesztői al-jegynek, ha az első három nyitott pont (EnableHover alapérték, `[e70]` jelentése, Alt-elengedés útja) lezárva van. Addig a feature nem specifikált. Javasolt feltételek:
+
+- [ ] `EnableHover` alapértéke igazolva (a `0x407a20` és a `0x4019b0` alapértékének két független olvasata).
+- [ ] Az `[e70]` jelentése igazolva: az Alt-lenyomás pillanatában megjelenő kép azonosítója, két úton (asm + eredeti Picasa futtatás).
+- [ ] Alt-elengedés útja igazolva (WM_KEYUP → `0x005e65dc`, vagy annak hiánya).
+- [ ] A popup-kép forrása (owner `+0x260` objektum) azonosítva, és a `WM_PAINT`→`BitBlt` út végigkövetve.
+- [ ] Megvalósításkor: a billentyű-kötés a `PhotoViewer`/`Main` fókuszkapujával egyezzen; a popup csak akkor jelenjen meg, ha mind a négy feltétel (EnableHover, `[e70]` érvényes, az előtérben, >1024 px) teljesül. Teszt: a feltételek bármelyikének hiányában nincs popup.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
