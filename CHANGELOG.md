@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.85] – 2026-10-13
+
+- Az album helyi menüjének „Album rendezésének alapja” almenüje működik: az album képei dátum, név vagy méret szerint egyszer átrendezhetők (Shifttel csökkenő sorrendben), a sorrend pedig megfordítható; az új sorrend a képek .picasa.ini-jében tárolódik, ezért újraindítás után is megmarad, és csak az adott albumot érinti (#4599).
+- A „Dátum és idő beállítása” az EXIF mentése után változatlanul hagyja a fájl időbélyegeit. (#4646).
+- A szerkesztő funkcionális tesztjei témák szerint külön fájlokban futnak, így egyik fájl sem lépi túl a helyi futási célt (#4901).
+
 ## [0.9.84] – 2026-10-13
 
 - A „Mappa felosztása itt…” a kijelölt képtől új testvérmappába helyezi a mappa hátralévő képeit. (#4534).

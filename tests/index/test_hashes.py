@@ -11,6 +11,7 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
+        # v23: albumtagság kézi helye az indexben (#4599)
         # v22: a régi rejtett mappák átállítása az ini-re (#4597)
         # v21: videóformátum, képkockasebesség és hossz (#4580)
         # v20: a felvételi dátum index-felülírása (#4332)
@@ -19,7 +20,7 @@ class TestSchema:
         # v17: a befagyasztott, első látáskori fájlidő, #2486 —
         # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
         # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
-        assert SCHEMA_VERSION == 22
+        assert SCHEMA_VERSION == 23
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -63,6 +64,7 @@ class TestSchema:
             # #4580: a videómezők csak a v21-ben érkeznek
             conn.execute("DROP INDEX idx_photos_video_metadata_missing")
             conn.execute("ALTER TABLE photos DROP COLUMN movie_format")
+            conn.execute("ALTER TABLE photo_albums DROP COLUMN place")
             conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
             conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
             conn.commit()

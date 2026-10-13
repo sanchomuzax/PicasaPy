@@ -46,11 +46,22 @@ print("METRIKUS=" + str(dpi.keszlet_teruleti_mereshez() == dpi.METRIKUS_KESZLET)
 """
 
 
+#: A „magyar rendszer” a LANG/LC_ALL környezeti változóval utánzott; Windowson
+#: a Qt a területi beállítást az operációs rendszerből veszi, ezért ott ez a
+#: próba nem a mért helyzetet állítaná elő.
+_CSAK_POSIX_LOCALE = pytest.mark.skipif(
+    sys.platform == "win32", reason="Windowson a LANG nem állítja a Qt területi beállítását"
+)
+
+
 def _futtasd(nyelv: str, monkeypatch) -> dict[str, str]:
     monkeypatch.setenv("PICASAPY_LANG", nyelv)
     monkeypatch.setenv("LANG", "hu_HU.UTF-8")
     monkeypatch.setenv("LC_ALL", "hu_HU.UTF-8")
     monkeypatch.setenv("PYTHONPATH", os.pathsep.join(sys.path))
+    # Windowson a gyermek stdout-ja különben a konzol kódlapján (cp1252)
+    # menne ki, és az ékezet a UTF-8 olvasáskor elveszne.
+    monkeypatch.setenv("PYTHONIOENCODING", "utf-8")
     futas = subprocess.run(
         [sys.executable, "-c", _PROBA],
         capture_output=True,
@@ -69,6 +80,7 @@ def _futtasd(nyelv: str, monkeypatch) -> dict[str, str]:
     return ertekek
 
 
+@_CSAK_POSIX_LOCALE
 @pytest.mark.parametrize(
     ("nyelv", "varhato"),
     [("de", "Abbrechen"), ("hu", "Mégse"), ("en", "Cancel")],
@@ -79,6 +91,7 @@ def test_a_cancel_gomb_a_valasztott_nyelven_van_magyar_rendszeren(
     assert _futtasd(nyelv, monkeypatch)["FELIRAT"] == varhato
 
 
+@_CSAK_POSIX_LOCALE
 def test_angol_felulet_magyar_rendszeren_a_teruleti_beallitast_megtartja(monkeypatch):
     from PySide6.QtCore import QLocale
 
@@ -90,6 +103,7 @@ def test_angol_felulet_magyar_rendszeren_a_teruleti_beallitast_megtartja(monkeyp
     assert ertekek["METRIKUS"] == "True"
 
 
+@_CSAK_POSIX_LOCALE
 def test_nemet_felulet_magyar_rendszeren_de_de_nevet_kap(monkeypatch):
     assert _futtasd("de", monkeypatch)["NEV"] == "de_DE"
 

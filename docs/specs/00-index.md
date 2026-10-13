@@ -595,6 +595,10 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
    **LEZÁRVA** (6.7): saját MODÁLIS ablak, bezárásra −1 a rekeszbe, az
    indulás `0xF4242`-vel megszakad.
 
+### [album-sorrend.md](album-sorrend.md) — 2 NYITOTT mellékkérdés (ÚJ lap, 2026-10-12, #4884)
+
+⭐ **A mappák és albumok képsorrendjének tárolási helye MEGVAN:** a keresőindex `]album:<token>` szavának rekordindex-listája a `db3\wordhash.dat`-ban (`CSlice` `0x004406f0` → `CIndexer` `0x004dca40`; a sorrend-érzékeny ellenőrzőösszeg `0x006cb4b0`/`0x006cb520` jelöl, az író `0x004db4f0`). A kézi húzás (`0x00784100`) és a „Sort Album/Folder By” (`0x005e5ce0`) EGYSZERI átrendezéssel ezt a listát írja át; album-szintű rendezési mód nincs. A 11-es „prioritás” mód nem a kézi sorrend. Nyitott: a `[0x00d67849]` jelentése, és ki állítja a rács 11-es módját.
+
 ### [picasa-mappanezet.md](picasa-mappanezet.md) — nincs nyitott kérdés
 
 ### [picasa-mappakezelo.md](picasa-mappakezelo.md) — nincs BLOKKOLT tétel (a hatókörön kívüli Apple-ágon felül; 2026-09-05: mindkettő lezárult, a `Type = 25` negatívan)

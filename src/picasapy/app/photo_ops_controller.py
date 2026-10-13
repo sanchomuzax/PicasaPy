@@ -45,7 +45,8 @@ import secrets
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, Qt, Signal, Slot
+from PySide6.QtGui import QGuiApplication
 
 from picasapy.export import export_sidecar_for_photo
 from picasapy.edit.effect_clipboard import (
@@ -60,6 +61,7 @@ from picasapy.fileops import (
     rename_photos_many,
 )
 from picasapy.index import (
+    album_photos,
     open_index,
     photo_by_id,
     photos_with_faces,
@@ -75,6 +77,7 @@ from picasapy.ini import (
     load_existing,
     update_document,
 )
+from picasapy.ini.album_order import AlbumOrderWriteError, write_album_places
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
 from picasapy.ini.albums import (
     albums_of,
@@ -84,6 +87,7 @@ from picasapy.ini.albums import (
     without_album,
     without_album_everywhere,
 )
+from picasapy.index.album_sort import SORT_MODES, new_places, sorted_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.render.flip import (
     FLIP_HORIZONTAL,
@@ -882,6 +886,62 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             self.albumWriteFailed.emit(str(error))
             return False
 
+        self._refresh_view()
+        return True
+
+    @Slot(str, str, result=bool)
+    def sortAlbum(self, token: str, mode: str) -> bool:  # noqa: N802
+        """Az album „Sort Album By" almenüje (#4599, ADR-016): az album képeinek
+        TÁROLT sorrendjét egyszer átrendezi — `date` / `name` / `size` kulcs
+        szerint, vagy `reverse`: megfordítja. A Shift (a kiválasztás
+        pillanatában lenyomva) a három kulcsnál csökkenővé teszi, ahogy az
+        eredeti kezelő (`GetKeyState(VK_SHIFT)`, `0x005cc09d`); a `reverse`
+        Shifttel is megfordít."""
+        shift = bool(
+            QGuiApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
+        )
+        return self.sortAlbumBy(token, mode, descending=shift)
+
+    def sortAlbumBy(  # noqa: N802
+        self, token: str, mode: str, *, descending: bool = False
+    ) -> bool:
+        """A `sortAlbum` magja, a Shift állapotától függetlenül (#4599).
+
+        A mód nem tárolódik: minden tag új helyet kap (`1.0 … n`) az
+        `albumorder=` kulcsban, mappánként EGY ini-írással. Több mappára szóró
+        albumnál a tagok mappákon át összefésülve rendeződnek. Bukott írásnál
+        a hiba megnevezi a mappát (`albumWriteFailed`), és a művelet
+        megismételhető. Visszatérés: kiírtuk-e az egész új sorrendet.
+        """
+        token = (token or "").strip()
+        if not token or mode not in SORT_MODES:
+            return False
+        with open_index(self._db_path) as conn:
+            tarolt = album_photos(conn, token)
+        if not tarolt:
+            return False
+        rendezett = sorted_album(tarolt, mode, descending=bool(descending))
+        helyek = new_places(rendezett)
+        mappankent: dict[str, dict[str, float]] = {}
+        for (mappa, nev), hely in helyek.items():
+            mappankent.setdefault(mappa, {})[nev] = hely
+
+        try:
+            with open_index(self._db_path) as conn:
+                write_album_places(
+                    token,
+                    (
+                        (Path(mappa) / PICASA_INI_NAME, places)
+                        for mappa, places in mappankent.items()
+                    ),
+                    on_written=lambda ini_ut: self._sync_tree(
+                        conn, str(ini_ut.parent)
+                    ),
+                )
+        except (AlbumOrderWriteError, *_WRITE_ERRORS) as error:
+            self.albumWriteFailed.emit(str(error))
+            self._refresh_view()
+            return False
         self._refresh_view()
         return True
 

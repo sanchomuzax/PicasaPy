@@ -247,3 +247,11 @@ hamis biztonságérzetet ad.*
 - **Státusz:** ELFOGADVA
 - **Megvalósítja:** `scripts/check_protected_features.py`
 - **Őrzi:** `tests/tools/test_check_protected_features_1187.py`
+- `src/picasapy/ini/album_order.py` (#4599, ADR-016) — az album képeinek
+  sorrendje a kép saját `.picasa.ini`-szakaszában, `albumorder=<token>:<hely>`
+  alakban. A *funkció* (tárolt, átrendezhető album-sorrend, „Sort Album By")
+  az eredetiben is megvan, a menütételek ezért NEM kapnak kék jelölést; a
+  *tárolás* helye viszont saját: az eredeti a központi keresőindex
+  szólistájába (`wordhash.dat`) írja, mi azt nem írjuk. Nem mérve, hogy az
+  eredeti megőrzi-e az ismeretlen képszakasz-kulcsot (NY1/NY2, ADR-016).
+  Indoklás: `docs/decisions/album-sorrend-a-kep-szakaszaban.md`.
