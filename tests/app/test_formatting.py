@@ -29,6 +29,7 @@ def _photo(folder, name, *, width, height, size=1024, kind="photo"):
         width=width,
         height=height,
         taken_at=None,
+        sort_mtime_ns=0,
         kind=kind,
         keywords=(),
     )

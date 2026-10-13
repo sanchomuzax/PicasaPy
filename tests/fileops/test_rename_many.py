@@ -4,10 +4,69 @@ mintájú sorszámozás (`név`, `név-1`, `név-2`…), ütközés-kezelés, é
 egyfájlos `rename_photo` (ini-átvitel!) újrafelhasználása fájlonként."""
 
 import pytest
+from PySide6.QtCore import QLocale
 
 import picasapy.fileops.rename as rename_module
-from picasapy.fileops.rename import RenameItem, preview_name, rename_photos_many
+from picasapy.fileops.rename import (
+    RenameItem,
+    format_taken_at,
+    preview_name,
+    rename_photos_many,
+)
 from picasapy.ini import load_document
+
+EN_US = QLocale("en_US")
+HU_HU = QLocale("hu_HU")
+DE_DE = QLocale("de_DE")
+
+
+class TestFormatTakenAt:
+    """#4879: a felvétel dátuma + ideje a területi beállítás szerint, a
+    tiltott fájlnév-karakterek `-`-re cserélve (rename.fen)."""
+
+    def test_en_us_matches_spec_shape(self):
+        assert format_taken_at("2004-08-01T14:30:45", EN_US) == "8-1-2004 2-30-45 PM"
+
+    def test_hu_hu(self):
+        assert format_taken_at("2004-08-01T14:30:45", HU_HU) == "2004. 08. 01. 14-30-45"
+
+    def test_de_de(self):
+        assert format_taken_at("2004-08-01T14:30:45", DE_DE) == "01.08.2004 14-30-45"
+
+    def test_date_only_when_time_missing(self):
+        assert format_taken_at("2004-08-01", EN_US) == "8-1-2004"
+        assert format_taken_at("2004-08-01", HU_HU) == "2004. 08. 01."
+
+    def test_result_has_no_forbidden_characters_or_nbsp(self):
+        for locale in (EN_US, HU_HU, DE_DE):
+            text = format_taken_at("2004-08-01T14:30:45", locale)
+            assert not set(text) & set('\\/:*?"<>|\u202f\u00a0')
+
+    def test_arabic_locale_has_no_bidi_marks_and_ascii_digits(self):
+        text = format_taken_at("2004-08-01T14:30:45", QLocale("ar_EG"))
+        assert not set(text) & set("\u200e\u200f\u061c\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069")
+        assert "2004" in text
+        assert all(not c.isdigit() or c.isascii() for c in text)
+
+    def test_persian_locale_digits_are_ascii(self):
+        text = format_taken_at("2004-08-01T14:30:45", QLocale("fa_IR"))
+        assert all(not c.isdigit() or c.isascii() for c in text)
+        assert "2004" in text
+
+    def test_trailing_dot_of_date_only_is_kept(self):
+        assert format_taken_at("2004-08-01", HU_HU) == "2004. 08. 01."
+
+    def test_dot_of_am_pm_marker_is_kept(self):
+        assert format_taken_at("2004-08-01T14:30:45", QLocale("en_CA")).endswith("p.m.")
+
+    def test_seconds_separator_follows_the_minutes_separator(self):
+        assert format_taken_at("2004-08-01T14:30:45", QLocale("fi_FI")) == "1.8.2004 14.30.45"
+
+    def test_seconds_added_even_with_single_digit_minutes_pattern(self):
+        assert format_taken_at("2004-08-01T14:30:45", QLocale("yo_NG")) == "1-8-2004 14-30-45"
+
+    def test_unparsable_text_falls_back_to_first_ten_chars(self):
+        assert format_taken_at("valami", EN_US) == "valami"
 
 
 class TestPreviewName:
@@ -26,9 +85,9 @@ class TestPreviewName:
         assert (
             preview_name(
                 "nyaralas", item, include_date=True, include_size=False,
-                sequence=0, ext=".jpg",
+                sequence=0, ext=".jpg", locale=EN_US,
             )
-            == "nyaralas 2025-05-01.jpg"
+            == "nyaralas 5-1-2025 7-00-00 AM.jpg"
         )
 
     def test_with_size_suffix(self):
@@ -46,9 +105,9 @@ class TestPreviewName:
         assert (
             preview_name(
                 "nyaralas", item, include_date=True, include_size=True,
-                sequence=0, ext=".jpg",
+                sequence=0, ext=".jpg", locale=EN_US,
             )
-            == "nyaralas 2025-05-01 800x600.jpg"
+            == "nyaralas 5-1-2025 800x600.jpg"
         )
 
     def test_missing_metadata_is_silently_skipped(self):
@@ -68,6 +127,22 @@ class TestPreviewName:
         assert preview_name("nev", item, sequence=0, ext=".jpg") == "nev.jpg"
         assert preview_name("nev", item, sequence=1, ext=".jpg") == "nev-1.jpg"
         assert preview_name("nev", item, sequence=2, ext=".jpg") == "nev-2.jpg"
+
+
+class TestTrailingDotOfWholeName:
+    def test_no_extension_strips_trailing_dot_and_space(self):
+        item = RenameItem(path=None, date="2004-08-01", width=None, height=None)
+        name = preview_name(
+            "nev", item, include_date=True, sequence=0, ext="", locale=HU_HU
+        )
+        assert name == "nev 2004. 08. 01"
+
+    def test_with_extension_dot_is_kept(self):
+        item = RenameItem(path=None, date="2004-08-01", width=None, height=None)
+        name = preview_name(
+            "nev", item, include_date=True, sequence=0, ext=".jpg", locale=HU_HU
+        )
+        assert name == "nev 2004. 08. 01..jpg"
 
 
 class TestRenamePhotosMany:
@@ -100,11 +175,11 @@ class TestRenamePhotosMany:
             RenameItem(path=b, date="2025-06-02", width=1024, height=768),
         ]
         results = rename_photos_many(
-            items, "nyar", include_date=True, include_size=True
+            items, "nyar", include_date=True, include_size=True, locale=EN_US,
         )
         assert results == [
-            tmp_path / "nyar 2025-05-01 800x600.jpg",
-            tmp_path / "nyar 2025-06-02 1024x768-1.jpg",
+            tmp_path / "nyar 5-1-2025 800x600.jpg",
+            tmp_path / "nyar 6-2-2025 1024x768-1.jpg",
         ]
 
     def test_ini_sections_follow_each_renamed_file(self, tmp_path):

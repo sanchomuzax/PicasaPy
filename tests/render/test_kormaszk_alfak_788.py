@@ -32,8 +32,7 @@ import pytest
 
 from picasapy.render.focal import apply_focal_pixelate, focal_mask
 from picasapy.render.glimmer_ops import (
-    _kormaszk_pozicio,
-    _kormaszk_tavolsag,
+    _kormaszk_doboz_pozicio,
     circular_gradient_mask,
 )
 
@@ -145,29 +144,28 @@ class TestKormaszkKepponkent3958:
                 assert round(float(maszk[y, x]) * 255.0) == alfa, (x, y)
 
     def test_a_gyok_egyszeres_pontossagu(self):
-        """A spec: `sqrtps` (float32). A (0, 320) képpontban `u = −43 520`,
-        `v = 0`, így `√ = 43 520`, `P = 43 520`; a float32-es köztes érték
-        float32 típusú. (A spec `43 519,996`-ja az `u` más alakjából jön —
-        az `u`/`v` alakja nem rögzített, ld. a docstringet.)"""
-        tavolsag = _kormaszk_tavolsag(640, 960, 480.0, 320.0, 720.0)
-        assert tavolsag.dtype == np.float32
-        assert float(tavolsag[320, 0]) == pytest.approx(43520.0, abs=0.01)
-        assert _kormaszk_pozicio(640, 960, 480.0, 320.0, 720.0)[320, 0] == int(
-            np.rint(tavolsag[320, 0])
-        )
+        """A spec: `sqrtps` (float32). A (0, 320) képpontban a doboz közepe
+        (480, 320), `u = −43 520`, `v = 0`, így `P = 43 520`. (A spec
+        `43 519,996`-ja az `u` más alakjából jön — az `u`/`v` alakja nem
+        rögzített, ld. a `circular_gradient_mask` docstringjét.)"""
+        assert _kormaszk_doboz_pozicio(640, 960, 480.0, 320.0, 720.0, 720.0, 1.0)[
+            320, 0
+        ] == 43520
 
     def test_a_pozicio_a_float32_gyok_kerekitese_nem_a_float64e(self):
-        """A (347, 0) és (613, 0) képpontban a float32-es és a float64-es
-        `√` MÁS egészre kerekít; a kód a float32-eset adja. Float64-es `√`-nél
-        ez piros."""
-        u = ((np.arange(960) - 480.0) * (65280 / 720.0)).astype(np.float32)
-        v = ((np.arange(640) - 320.0) * (65280 / 720.0)).astype(np.float32)
-        p32 = np.rint(np.sqrt(v[:, None] * v[:, None] + u[None, :] * u[None, :]))
+        """A doboz-úton: a float32-es és a float64-es `√` MÁS egészre kerekít
+        egyes képpontokban; a kód a float32-eset adja. Float64-es `√`-nél ez
+        piros. A `u`/`v` a doboz-skálával (`f32(f32(1638,4/Bw)·79,6875)`) képződik."""
+        f32 = np.float32
+        scale = f32(f32(f32(1638.4000244140625) / f32(1440.0)) * f32(79.6875))
+        u = (np.arange(960, dtype=f32) - f32(480.0)) * scale
+        v = (np.arange(640, dtype=f32) - f32(320.0)) * scale
+        p32 = np.minimum(np.rint(np.sqrt(v[:, None] * v[:, None] + u[None, :] * u[None, :])), 0xFF00)
         u64, v64 = u.astype(np.float64), v.astype(np.float64)
-        p64 = np.rint(np.sqrt(v64[:, None] ** 2 + u64[None, :] ** 2))
+        p64 = np.minimum(np.rint(np.sqrt(v64[:, None] ** 2 + u64[None, :] ** 2)), 0xFF00)
         kulonbseg = p32 != p64
         assert kulonbseg.any()
-        pozicio = _kormaszk_pozicio(640, 960, 480.0, 320.0, 720.0)
+        pozicio = _kormaszk_doboz_pozicio(640, 960, 480.0, 320.0, 720.0, 720.0, 1.0)
         assert np.array_equal(pozicio[kulonbseg], p32[kulonbseg].astype(np.int64))
         assert not np.array_equal(pozicio[kulonbseg], p64[kulonbseg].astype(np.int64))
 

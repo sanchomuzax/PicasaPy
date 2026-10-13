@@ -20,7 +20,11 @@ from picasapy.render import glimmer_focal as focal
 from picasapy.render import glimmer_frames as frames
 from picasapy.render import glimmer_tone as tone
 from picasapy.render.dinamikus_csuszka import dinamikus_csuszka_ertek, fel_rovidebb_el, felirat_maximum
-from picasapy.render.elonezeti_arany import gyors_elonezet_aktiv, skalazott_vastagsag
+from picasapy.render.elonezeti_arany import (
+    gyors_elonezet_aktiv,
+    skalazott_border_vastagsag,
+    skalazott_vastagsag,
+)
 from picasapy.render.tinting import parse_rgb_hex
 
 
@@ -212,8 +216,8 @@ def apply_border_op(image, op: FilterOp):
     height, width = image.shape[:2]
     return frames.apply_border(
         image,
-        outer_thickness=skalazott_vastagsag(_float_at(op, 0, 20.0)),
-        inner_thickness=skalazott_vastagsag(_float_at(op, 1, 5.0)),
+        outer_thickness=skalazott_border_vastagsag(_float_at(op, 0, 20.0)),
+        inner_thickness=skalazott_border_vastagsag(_float_at(op, 1, 5.0)),
         corner_radius=dinamikus_csuszka_ertek(_float_at(op, 2, 0.0), 0.0, fel_rovidebb_el(height, width)),
         outer_color=_color_at(op, 3, (0, 0, 0)),
         inner_color=_color_at(op, 4, (255, 255, 255)),

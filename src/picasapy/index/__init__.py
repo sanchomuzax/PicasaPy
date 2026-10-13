@@ -21,6 +21,7 @@ from .face_groups import (
     javaslatokat_ujraszamol,
     lazitott_lepcso,
 )
+from .hidden_scope import hidden_folders_visible, set_hidden_folders_visible
 from .ignored_ini_faces import IniIgnoredFace, ignored_ini_faces
 from .faces_detected import (
     PendingEmbeddingFace,
@@ -43,6 +44,7 @@ from .faces_detected import (
     reset_all_faces,
     store_embedding,
     unnamed_album_photos,
+    unnamed_photo_count,
     set_suggested_name,
     suggested_faces,
     suggested_faces_for,
@@ -130,8 +132,10 @@ __all__ = [
     "folder_scan_stamps",
     "geotagged_photos",
     "hidden_folders",
+    "hidden_folders_visible",
     "is_folder_hidden",
     "set_folder_hidden",
+    "set_hidden_folders_visible",
     "photos_up_to_age",
     "photos_with_keyword",
     "video_photos",
@@ -154,6 +158,7 @@ __all__ = [
     "person_photos",
     "photo_by_id",
     "unnamed_album_photos",
+    "unnamed_photo_count",
     "photos_in_folder",
     "photos_under_folder",
     "folder_has_collage",

@@ -1,6 +1,12 @@
 """.picasa.ini olvasás/írás — kétirányú Picasa 3.x kompatibilitás."""
 
-from .albums import Album, albums_of, parse_album_refs, serialize_album_refs
+from .albums import (
+    STAR_ALBUM_TOKEN,
+    Album,
+    albums_of,
+    parse_album_refs,
+    serialize_album_refs,
+)
 from .contacts import (
     Contact,
     contacts_of,
@@ -68,11 +74,15 @@ from .folder_category import (
     DOWNLOADED_ALBUMS_PREFIX,
     EXPORTED_PICTURES_CATEGORY,
     FOLDERS_ON_DISK_CATEGORY,
+    HIDDEN_FOLDERS_CATEGORY,
     OTHER_STUFF_CATEGORY,
     PROJECTS_CATEGORY,
     is_custom_collection_category,
+    is_hidden_folders_category,
     is_projects_category,
+    read_explicit_folder_category,
     read_folder_category,
+    set_folder_hidden_in_ini,
     with_folder_category,
 )
 from .folder_date import (
@@ -98,6 +108,7 @@ from .photo_crop import PhotoCropReader
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
 __all__ = [
+    "STAR_ALBUM_TOKEN",
     "CANONICAL_FILTER_NAMES",
     "MAX_PARAM_COUNTS",
     "Album",
@@ -157,7 +168,11 @@ __all__ = [
     "parse_faces",
     "parse_filters",
     "parse_reanimated_eye_color",
+    "read_explicit_folder_category",
     "read_folder_category",
+    "set_folder_hidden_in_ini",
+    "is_hidden_folders_category",
+    "HIDDEN_FOLDERS_CATEGORY",
     "read_folder_music",
     "read_folder_date_override",
     "remove_all_face_data",

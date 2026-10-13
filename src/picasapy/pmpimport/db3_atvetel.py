@@ -43,6 +43,16 @@ futtató a db3 → `.picasa.ini` átvétel közös helye.
 
 A db3 beolvasása (`importer.iter_photo_records` dolga).
 
+## #4591: a videó módosított dátuma
+
+⚠️ Új függőség: a `pmpimport` az `index/` csomagot is használja (a videódátum
+az indexbe megy, `index/atvett_datum.py`) — eddig csak az `ini/`-t.
+
+A `videodatumokat_atvesz` a nem-JPEG rekordok Picasában módosított
+dátumát (az 1. FILETIME, ha eltér a 2.-tól) a `photos.taken_at_override`-ba
+írja az `index/` API-n át; a `.picasa.ini` és a fájl érintetlen. Az
+indexben még nem szereplő fotó kimarad.
+
 ⚠️ **A futtatónak MA sincs hívója a felületről**: a `rekordokat_atvesz`-t
 semmi nem szólítja meg a `src/` alatt — az a **#3132** (a db3-import
 felhasználói kiváltója). Amíg az nincs meg, az adat a felhasználónál nem
@@ -51,16 +61,23 @@ mozdul; ez a modul viszont készen áll rá.
 
 from __future__ import annotations
 
+import logging
+import sqlite3
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from picasapy.index.atvett_datum import atvett_datumokat_beir
+from picasapy.index.database import open_index
 from picasapy.ini.document import IniDocument
 from picasapy.ini.io import load_or_empty, update_document
 from picasapy.metadata.gps import format_geotag
 from picasapy.pmpimport.arcatvetel import arcokat_atvesz, atveendo_arcok
 from picasapy.pmpimport.importer import PhotoRecord
+from picasapy.pmpimport.videodatum import atveendo_datum
 from picasapy.scanner.walker import PICASA_INI_NAME
+
+_log = logging.getLogger(__name__)
 
 #: a `.picasa.ini` kulcsai, amikbe az átvétel ír
 _KULCSSZO_KULCS = "keywords"
@@ -156,6 +173,12 @@ class AtvetelJelentes:
     arc: int = 0
     #: hány fotón volt db3-adat, de az ini-ben már állt érték (nem nyúltunk hozzá)
     kihagyott: int = 0
+    #: #4591: hány videó (nem-JPEG) módosított dátumát vettük át az indexbe
+    #: (`taken_at_override`) — külön számolva, nem az ini-kulcsok között
+    videodatum: int = 0
+    #: #4591: hány videódátum-átvétel bukott az indexen (zárolt/hibás index);
+    #: az ini-átvételt ez nem érinti
+    videodatum_hiba: int = 0
 
     def __add__(self, masik: "AtvetelJelentes") -> "AtvetelJelentes":
         return AtvetelJelentes(
@@ -164,6 +187,8 @@ class AtvetelJelentes:
             hely=self.hely + masik.hely,
             arc=self.arc + masik.arc,
             kihagyott=self.kihagyott + masik.kihagyott,
+            videodatum=self.videodatum + masik.videodatum,
+            videodatum_hiba=self.videodatum_hiba + masik.videodatum_hiba,
         )
 
 
@@ -240,8 +265,40 @@ def _mutato(
     return _mutate
 
 
+def videodatumokat_atvesz(
+    rekordok: Iterable[PhotoRecord], index_path: Path
+) -> AtvetelJelentes:
+    """#4591: a Picasában módosított videódátumok az indexbe.
+
+    Csak a nem-JPEG, eltérő FILETIME-ú rekordok (`videodatum.atveendo_datum`);
+    az `index/` API-n át, a meglévő `taken_at_override`-ot nem írja felül.
+    Az index hibája (zárolt, sérült, újabb séma) NEM dobódik tovább: a
+    jelentés `videodatum_hiba` mezője számolja, hogy az ini-átvétel ne
+    vesszen el miatta.
+    """
+    tetelek = [
+        (str(Path(r.local_path).parent), Path(r.local_path).name, datum)
+        for r in rekordok
+        if (datum := atveendo_datum(r)) is not None
+    ]
+    if not tetelek:
+        return AtvetelJelentes()
+    try:
+        with open_index(index_path) as conn:
+            return AtvetelJelentes(videodatum=atvett_datumokat_beir(conn, tetelek))
+    except (sqlite3.Error, RuntimeError) as hiba:
+        _log.warning(
+            "A videódátumok átvétele az indexbe nem sikerült (%d tétel): %s",
+            len(tetelek),
+            hiba,
+        )
+        return AtvetelJelentes(videodatum_hiba=len(tetelek))
+
+
 def rekordokat_atvesz(
-    rekordok: Iterable[PhotoRecord], *, backup: bool = True
+    rekordok: Iterable[PhotoRecord],
+    *,
+    backup: bool = True,
 ) -> AtvetelJelentes:
     """A beolvasott db3-rekordok kulcsszavainak és helyadatának kiírása.
 
@@ -288,4 +345,5 @@ __all__ = [
     "kulcsszavakat_atvesz",
     "mappa_atvetel",
     "rekordokat_atvesz",
+    "videodatumokat_atvesz",
 ]

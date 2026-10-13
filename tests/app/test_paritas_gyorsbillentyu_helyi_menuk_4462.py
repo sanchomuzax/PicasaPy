@@ -35,6 +35,9 @@ def _fejezet_tabla(utvonal: Path, kezdo: str) -> list[list[str]]:
     szoveg = utvonal.read_text(encoding="utf-8")
     assert kezdo in szoveg, f"hiányzik a #4462 táblázat: {kezdo}"
     resz = szoveg.split(kezdo, 1)[1]
+    # Csak a saját fejezet tábláját olvassa; a későbbi fejezetek táblái ne
+    # keveredjenek bele az ellenőrzésbe.
+    resz = resz.split("\n## ", 1)[0]
     return _tabla_sorok(resz)
 
 

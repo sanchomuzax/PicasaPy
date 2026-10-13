@@ -452,8 +452,13 @@ MenuBar {
             : (bar.currentAlbumToken !== ""
                 ? qsTr("Remove from Album")
                 : qsTr("Delete from Disk"))
+    // #4621: a parancs „album-ági” (a fájl marad) — a néző helyi menüjének
+    // felirata ugyanebből a feltételből jön, mint az alábbi elágazás.
+    readonly property bool deleteRemovesFromAlbum:
+        bar.currentPersonName !== "" || bar.currentAlbumToken !== ""
     // A `Delete` billentyű és a Fájl ▸ tétel KÖZÖS belépője (#1608) — így
-    // a kettő nem tud különböző dolgot csinálni.
+    // a kettő nem tud különböző dolgot csinálni. #4621: a néző három
+    // belépője (ablak-szintű és saját `Ctrl+Delete`, helyi menü) is ide fut.
     function activateDeleteCommand() {
         if (bar.currentPersonName !== "")
             bar.removeFromPeopleAlbumRequested()
@@ -1888,8 +1893,13 @@ MenuBar {
             text: bar.currentAlbumToken !== ""
                 ? qsTr("&Edit Album Description...")
                 : qsTr("&Edit Description...")
+            // #4883: a Csillagozott album (`]star`) nem létező album, nincs
+            // `[.album:]star]` szakasza — leírása nincs (spec D.8). Album-
+            // nézetben a mappa-ág nem érvényesül: a controller a mappát
+            // album-nézetben is megőrzi.
             enabled: bar.currentAlbumToken !== ""
-                || (bar.currentFolder !== "" && bar.currentPersonName === "")
+                ? bar.currentAlbumToken !== "]star"
+                : (bar.currentFolder !== "" && bar.currentPersonName === "")
             onTriggered: bar.editFolderDescriptionRequested()
         }
         MenuItem {

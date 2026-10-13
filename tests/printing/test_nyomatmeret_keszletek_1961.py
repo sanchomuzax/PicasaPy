@@ -128,6 +128,10 @@ class TestATeruletiMeresValasztas:
         class HelyettesitettQLocale:
             MeasurementSystem = QLocale.MeasurementSystem
 
+            @classmethod
+            def system(cls):
+                return cls()
+
             def measurementSystem(self):
                 return rendszer
 

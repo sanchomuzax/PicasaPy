@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from picasapy.index.album_sort import natural_name_key
 from picasapy.index.photo_date import datum_kulcs as _datum_kulcs_kozos
 from picasapy.index.photo_date import photo_date as _photo_date
 
@@ -153,7 +154,7 @@ def _sort_key(sort_mode: str, hues=None, prioritasok=None):
         #: rács vagy egy futásfüggő sorrend rosszabb lenne
         helyek = {} if prioritasok is None else prioritasok
         return lambda r: prioritas_kulcs(r, helyek)
-    return lambda r: r.name.casefold()
+    return lambda r: natural_name_key(r.name)
 
 
 def sort_folder_blocks(

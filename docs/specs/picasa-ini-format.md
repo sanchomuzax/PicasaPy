@@ -49,7 +49,7 @@ jelzi, hogy a fájl tartalma UTF-8 kódolású. A PicasaPy-nak meg kell őriznie
 |---|---|---|
 | `name` | `Foo Bar birthday` | album neve |
 | `category` | `Folders on Disk` | lokális album kategória — **Picasa 2-örökség**, a `P2category` elődje. A korpuszban **179** sor; a kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
-| `P2category` | `Downloaded Albums~otheruserid`, `Projects (internal)` | **gyűjtemény-hovatartozás** (nem csak letöltött album!) — a Picasa a kollázs/film kimeneti mappájába is ezt írja `Projects (internal)` értékkel; igazolva valódi `.cxf`-minta mellől (2026-08-07, #436) |
+| `P2category` | `Downloaded Albums~otheruserid`, `Projects (internal)` | **gyűjtemény-hovatartozás** (nem csak letöltött album!) — a Picasa a kollázs/film kimeneti mappájába is ezt írja `Projects (internal)` értékkel; igazolva valódi `.cxf`-minta mellől (2026-08-07, #436) · **`Hidden Folders`** = a mappa **el van rejtve** (Mappa elrejtése: `0x005ee2a0` → `0x00445b80` → `0x0045c0a0`; megjelenítéskor `Folders on Disk` íródik vissza — #4597, `picasa-menu-parancsok-viselkedes.md` 32.3.1). Olvasáskor üres `P2category` mellett a `category` kulcs érvényes (`0x004420fd`) |
 | `<user>_lh` | `joedoe_lh=5620038667642797505` | feltöltött album web-azonosítója |
 | `contactsversion` | — | globális verziószám (kontakt-adatbázis); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
 | `frversion` | — | globális verziószám (feltehetően arcfelismerés); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |

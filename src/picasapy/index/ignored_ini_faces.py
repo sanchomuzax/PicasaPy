@@ -19,6 +19,7 @@ from pathlib import Path
 from picasapy.ini import UNIDENTIFIED_CONTACT, IniDocument, parse_faces
 
 from .folder_ini import sweep_folder_inis
+from .hidden_scope import visible_folder_sql
 
 
 @dataclass(frozen=True)
@@ -61,11 +62,13 @@ def ignored_ini_faces(conn: sqlite3.Connection) -> tuple[IniIgnoredFace, ...]:
     collector = _Collector()
     sweep_folder_inis(conn, (collector,))
     result: list[IniIgnoredFace] = []
+    lathato = visible_folder_sql(conn)
     for folder_path in sorted(collector.by_folder):
         rects_by_name = collector.by_folder[folder_path]
         rows = conn.execute(
-            "SELECT p.id, p.name FROM photos p JOIN folders f ON f.id = p.folder_id "
-            "WHERE f.path = ? ORDER BY p.name",
+            # #4887: a rejtett mappa képei a „Mellőzött emberek" albumban sem
+            "SELECT p.id, p.name FROM photos p JOIN folders f ON f.id = p.folder_id"
+            f" AND {lathato} WHERE f.path = ? ORDER BY p.name",
             (folder_path,),
         )
         for row in rows:

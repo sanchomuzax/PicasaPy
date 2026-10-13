@@ -60,11 +60,11 @@ def test_hianyzo_vagy_hibas_datetime_megoriz_minden_fajlidot(
     assert not path.with_suffix(path.suffix + ".tmp").exists()
 
 
-def test_sikeres_exif_iras_datetime_alapjan_modositja_a_fajlidoket(tmp_path):
+def test_sikeres_exif_iras_utan_a_fajlidok_valtozatlanok(tmp_path):
     path = make_jpeg(
         tmp_path / "kep.jpg",
         taken_at="2019:02:03 04:05:06",
-        datetime_0th="2020:01:01 04:05:06",
+        datetime_0th=REGI_DATUM.strftime("%Y:%m:%d %H:%M:%S"),
     )
     _fajlido_beallitasa(
         path,
@@ -72,13 +72,11 @@ def test_sikeres_exif_iras_datetime_alapjan_modositja_a_fajlidoket(tmp_path):
         datetime(2018, 2, 3, 4, 5, 6),
     )
     before = _fajlido(path)
-    delta = CEL_DATUM - REGI_DATUM
-
-    timestamp_controller._adjust_photo_file_date(path, CEL_DATUM)
+    sikerult = timestamp_controller._adjust_photo_file_date(path, CEL_DATUM)
 
     after = _fajlido(path)
-    assert after[0] == before[0] + round(delta.total_seconds() * 1_000_000_000)
-    assert after[1] == before[1] + round(delta.total_seconds() * 1_000_000_000)
+    assert sikerult is True
+    assert after[:2] == before[:2]
     if os.name == "nt":
         assert after[2] == before[2]
     exif = piexif.load(str(path))
