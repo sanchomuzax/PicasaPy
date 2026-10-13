@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.84] – 2026-10-13
+
+- A „Mappa felosztása itt…” a kijelölt képtől új testvérmappába helyezi a mappa hátralévő képeit. (#4534).
+- Az Emberek-album helyi menüje megfordítja a kijelölést, frissíti az indexképeket, és mutatja a Ctrl+A/D/I gyorsbillentyűket (#4645).
+- Az Emberek panel fejléce névadás után csak teljes frissítéskor vált (#4812).
+
 ## [0.9.83] – 2026-10-13
 
 - Pontosabb lett az Időrend eredeti bemutatójának dokumentációja (#4443).
