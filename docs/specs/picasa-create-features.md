@@ -3548,6 +3548,139 @@ rekordokkal a kiválasztó a végső indexig nem jut el).
 5. A csoportkizárás: a `0x81d41d`–`0x81d428` ág melyik csoportot zárja ki.
 6. Natív viselkedésmérés: Windows-gép kell (Wine alatt a Picasa nem készít filmet, picasa-colab-jobs #106).
 
+#### G/3d. A 11. kör (2026-10-13): a getterek iránya, a csoportkizárás, a rendező stabilitása, a mód-5 forrásvektor (#4194)
+
+**Módszer és határ.** Utasításszintű olvasat az EXE-n (`research/copy_Picasa_3_7/Picasa3/Picasa3.exe`,
+capstone + pefile; a segédszkriptek a scratchpadban vannak, a repóba nem kerültek). A kiválasztó
+ágait a G/3c óta újraolvastam. Második út: a `ghidra-koteg-2026-10-12/00823620.c` és a `0081b800.c`
+dekompilátuma (a kiíró ciklus és a hívási argumentumok). Natív futás nem készült. A getterek
+(HOG, Neven) és a rekognáló törzse csak az EXE-ből olvasott, egy úton állnak.
+
+**1. A getterek iránya — MEGERŐSÍTVE: mindkettő TÁVOLSÁG (kisebb = hasonlóbb).**
+
+- **HOG** (`0x00873e40`, argumentumok `a`, `b`, `this` = `ecx`): a `[this+0x4c]` jelzőtömb szerint
+  kiszámolja a két rekord vektorát (`0x873cb0`), majd a visszatérési érték
+  `Σ_j (A_j − B_j)² / (A_j + B_j + ε)`, `ε = 1e-8` (a `0xcf4bd8` double). A vektor hossza
+  `[+0x4] >> 1`, az elemek `float`-ok. A `0x873e40` törzsében nincs `fsqrt`: ez χ²-típusú
+  **távolság** (hisztogram-összehasonlítás), azonos vektornál 0.
+- **Neven** (`0x008742a0`): kiindulás `1.0`. (i) Ha a `[this+0x34]` klaszter-azonosítók
+  megegyeznek és nem nullák, a visszatérés `1 − 1.0 = 0` (korai ág `0x8742c2`). (ii) Egyébként
+  `0x48c440` (rekognáló). Hiba vagy arc-hiány esetén a kimenet 0, így a visszatérés `1.0`
+  (maximális távolság). Sikernél a `0x48c440` kimeneti paramétere lesz `x` (a `0x3c`-es vtábla-slot
+  írja, a törzsét nem olvastam), és a visszatérés `1 − x`. Tehát Neven = `1 − hasonlóság`,
+  kisebb = hasonlóbb. ⚠️ A `0x3c` slot törzse nincs igazolva, ezért a „hasonlóság” jelleg feltételes.
+- **Következmény:** a `0x81d7b0` minimum-választója (legkisebb súlyozott összeg) a **legkisebb
+  távolságú** jelöltet viszi, azaz a középponthoz legjobban hasonlítót. Súlyok: HOG `1.0`,
+  Neven `0.4f` (`0xc7c838`, kétszer ellenőrizve), a Neven-kapu a G/3 4. pontja szerint.
+
+**2. A csoportkizárás — MEGERŐSÍTVE: a KÖZÉPPONT csoportja.** (A G/3c 5. nyitott pontja lezárva.)
+
+- `0x81d41d`–`0x81d428`: `esi = G[j]` (a jelölt csoportja), `if (esi == G[c]) → 0x81d4ca` (kihagyás).
+  Itt `ecx = c` végig: a `0x81d3d4`/`0x81d3d8` és a `0x81d3a2`/`0x81d3a6` ágak is a `c`-t töltik.
+- `G` = `*[ebp+0x14]` = `[this+0x6cc]`. A `0x81b800` (`piVar10 = this+0x1b3` ha `param_4 ≠ 0`) adja át,
+  és a csoport-azonosítót a `0x81ae10` írja (`0x81ae48`, `0x81ae96`: `mov [esi+0x6cc], …`).
+- Ugyanebben a szakaszban további kizárások: a már kiválasztott jelölt (`[esp+0x48]` bájt, `0x81d404`) és
+  a zászlós elem (`*[ebp+0x10]`, `0x81d40e`), ahol a zászló a `[this+0x6dc]`/`[this+0x6e4]` mögött áll.
+- ⚠️ **Nyitott:** a `0x81d338`–`0x81d390` határ-ellenőrzés a `[this+0x708]` tömböt olvassa. Ez a 0x6999c0
+  konstruktorban `0`-ra áll (`mov [edi+0x708], ecx`, `ecx = 0`), és ordering 0 ágon nem látszik írója
+  (a `0x874e40` írja, de csak nem nulla ordering ágon fut). Ha az ág elérhető, null-olvasás lenne; ezt
+  futás nem igazolta, ezért **nyitott**.
+
+**3. Egyenlő dátumkulcs — MEGERŐSÍTVE: a rendező stabil, nincs másodlagos kulcs.**
+
+- A kulcs 64-bit előjel nélküli dátum (`0x4edf60`). A `0x819570` összehasonlító `−1`-et ad, ha `k1 < k2`
+  (a `0x8195ab`–`0x8195dc` ágak: a magas dword `ja`/`jb`, alacsony `jae`), **egyenlőnél `+1`**.
+- A `0x825930` összefésülés a jobb futamelemet csak akkor veszi előre, ha `cmp(jobb, bal) < 0`
+  (`0x825962` `jl`); egyenlőnél a **bal** (korábbi) marad.
+- A páronkénti kezdő lépés (`0x825740`–`0x825771`) csak `cmp(második, első) < 0` esetén cserél.
+- **Következmény:** egyenlő dátumnál a forrásvektor eredeti sorrendje marad. A másodlagos kulcs tehát
+  a **forrásvektor pozíciója**, nincs más kulcs. Ez a forrás-generátortól függ (G/3d 4. pont), ezért a
+  „melyik marad” kérdésben a sorrend a forrás ismeretéig nyitott.
+- Feltételes: az `0x8256a0` futamszintű ciklusai (`0x825790`, `0x825801`) nincsenek végigkövetve, csak a
+  két összefésülési szabály igazolt.
+
+**4. A mód-5 forrásvektor töltője — MEGERŐSÍTVE a töltő, RÉSZBEN a tartalom. (A G/3c 3. nyitott pontja.)**
+
+- **Helyesbítés G/3c-hez:** a `0x8223e0` MEGKAP vektor-kimenetet. A `0x8240fe` `lea eax,[esp+0x14]`
+  után a `0x824114` hívás (mód 5, `flag == 0`) `eax`-ban hagyja a címet, így `0x8223e0` `edi = eax` a
+  forrásvektor (`{ptr, size}`). Mód 6-nál a `0x8226e0` ugyanezt `push eax`-szal kapja.
+- A `0x8223e0` kitöltési ágai (`0x822402`–`0x822521`), sorrendben:
+  (a) ha `[builder+0xeac]` album-objektum és `[album+0x3c9] ≠ 0`: a vtábla `[0xdc]` slotja (`push 1; push edi`);
+  (b) különben ha `[builder+0xea8] ≠ 0`: `0x7166c0(…, 1)`; nulla visszatérésnél és nem üres vektornál tovább;
+  (c) különben, ha a vektor üres, a zászlóbit `0`, és `[builder+0xe64] ≠ −1`: **egyetlen elem**, a
+  `[builder+0xe68]` (`0x822506`–`0x822521`).
+  Ha a vektor üres marad, `0x822524` → `eax = 9`, a horgony nem áll be, és `0x824090` nem épít listát.
+- **Horgony:** nem üres vektornál és `TID ≠ 0` esetén (`0x82265f`) a horgony `vec[0]`, a `+0x30` kulcs
+  szerint keresve (G/2c). A `TID` a `GetCurrentThreadId` (G/3c 2. pont).
+- ⚠️ **Nyitott:** (a) az album-slot `0xdc` törzse (melyik fotók), (b) a `0x7166c0` törzse, (c) a
+  `[builder+0xe68]` és `[builder+0xe64]` értelme. Ezek döntik el, mi kerül a mód-5 listába.
+
+**5. A rendezés kimenete — MEGERŐSÍTVE (utasítás + Ghidra `00823620.c` 262–300. sor).**
+
+- A `0x8256a0` a forrás-indexlistát rendezi a dátumkulcs szerint (3. pont). Az `s = sorted[p]` kiíró
+  ciklus (`00823620.c` 268–277. sor): `inv[s] = p` a `[obj+0x4f8]`-ba; a `dst[p]` 0x38 bájtos rekordba
+  `+0x30 = forrás-kulcs[s]` és `+0x34 = local_80[s]`; majd `0x446610`-hívás.
+- Tehát a `[obj+0x4e0]` lista a dátum szerint rendezett, és a jelöltindex a **rendezett pozíció**.
+
+**6. A ordering 0 kiválasztási lánc, összefoglalva (a G/3c 5. pontjának részletezése).**
+
+- **Darabszám:** `k` = a `0x81b800` `uStack_30` (a `hossz` argumentum 2…n közé szorítva, `param_2 < 3 → 2`,
+  `n < k → n`). A ciklus `[this+0x500] < k` mellett fut, minden lépésben egy nyertest vesz fel.
+- **Kezdő középpont `c`:** mód 5 és a horgony megtalálva → annak indexe; különben index 0 (mód 6, vagy üres).
+- **Jelöltek:** spirál `c+1, c−1, c+2, c−2, …` (`0x81d298`–`0x81d4df`), legfeljebb 100 rögzített
+  jelölt (`0x81d4e4`, `ebx & ~1 == 0xc8`). Jelölt, ha nincs még nyertes, nincs zászlózva, és
+  `G[j] ≠ G[c]`.
+- **Pontszám:** `score(j) = Σ_k w_k · G_k(j, c)`. A `0x873170` a `(g_k, c, &vec, &cnt, flag)` argumentumokkal
+  minden listaelemre a `g_k` objektum vtábla `+0x8` slotját hívja (`call edx`, `ecx = g_k`, `0x8733d1`–`0x8733f6`),
+  és a visszatérést `fstp`-pel az elem vektorába írja (`0x8733f8`). A súlyozott összeget a hívó képzi:
+  `out_i += w_k · vec_k[i]` a `0x81d75e`–`0x81d77d` ágban, `w_k = [this+0x50c][k]`. A getter argumentum-sorrendje `(jelölt, c)`.
+- **Választás:** a `0x81d7b0`-ban a legkisebb `score`, szigorú `<`, az 1e8 kezdőhatár alatt; döntetlennél
+  a korábban bejárt (G/2c). Ha egy sem éri el az 1e8-at, a spirál első eleme.
+- **Nyertes:** `+0x30` kulcs a kimenetbe (`0x81d832`), a jelölés, és új középpont (`0x81d8a0`).
+- **Következmény a küszöbön belüli képekre:** (i) a nyertes csoportja a következő lépésben ki van zárva, tehát
+  **két egymást követő választás nem lehet azonos csoportból**; (ii) egy csoport képviselője az a tagja,
+  amelyik a legkisebb `HOG-χ² + 0,4·Neven` távolságot adja az **előző választotthoz**. Nem az első, nem az
+  utolsó, és nem a minőség alapján dől el. Ez a mechanizmus; a konkrét fotóindex futás nélkül nem adható meg.
+
+**7. Mód 7 (`0x699cd0(7)` → `0x6999c0`).** A `0x6999c0` ctor a 0x770 bájtos objektumot `[+0x4e0] = 0`,
+`[+0x738] = −1`, `[+0x708] = 0` állapotban hagyja. Mód 7 nem hívja a `0x824090`-et, így a lista üres és a
+`0x81c9b0` korai kilépéssel tér vissza (G/3b). Ez azt jelenti, hogy mód 7-nél nincs küszöbszűrés. ⚠️ Ez a
+G/3b feltételes olvasata, mert a mód-7 objektum további használata nincs végigkövetve.
+
+**Bizonyítottsági fok (G/3d):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| HOG = `Σ (A−B)²/(A+B+1e-8)`, távolság (kisebb = hasonlóbb) | utasítás (`0x873e40`–`0x874003`), konstans `0xcf4bd8` | **megerősített** (egy út) |
+| Neven = `1 − x`, azonos klaszter → 0, rekognáló-hiba → 1 | utasítás (`0x8742a0`–`0x874314`, `0x48c440`) | **megerősített**; az `x` a `0x3c` slotból **feltételes** |
+| Neven súly `0.4f` | `0xc7c838` (olvasott érték) | **megerősített** |
+| Csoportkizárás: a jelölt csoportja = a középpont csoportja → kihagy | utasítás (`0x81d41d`–`0x81d428`), `ecx = c` ellenőrizve | **megerősített** |
+| `G` = `[this+0x6cc]`, írója `0x81ae10` | utasítás (`0x81ae48`, `0x81ae96`), `0x81b800` argumentum | **megerősített** |
+| `[this+0x708]` határ-ellenőrzés írója és null-kockázata | — | **NYITOTT** |
+| Egyenlő dátum: a rendező stabil, másodlagos kulcs a forrásvektor pozíciója | utasítás (`0x819570`, `0x825930`, `0x825740`) + Ghidra `00823620.c` | **megerősített** (összefésülési szabály); a futamszintű sorrend **feltételes** |
+| Mód-5 forrásvektor töltője: `0x8223e0` (`eax = &[esp+0x14]`) | utasítás (`0x8240fe`, `0x824114`) | **megerősített** (a G/3c helyesbítve) |
+| A `0x8223e0` ágai (album `0xdc`, `0x7166c0`, egyelemű `[+0xe68]`) | utasítás (`0x822402`–`0x822521`) | **megerősített** az ágszerkezet; a `0xdc` és a `0x7166c0` törzse **NYITOTT** |
+| Horgony = `vec[0]`, ha `TID ≠ 0` | utasítás (`0x82265f`–`0x822675`) | **megerősített** |
+| `0x8256a0` kimenete a `[obj+0x4e0]` rendezett listája; `inv` és `+0x30/+0x34` | utasítás + Ghidra `00823620.c` 268–277. sor | **megerősített** (két út) |
+| Választási lánc: spirál, 100 jelölt, `G[j] ≠ G[c]`, `argmin Σ w·távolság` | utasítás (`0x81d298`–`0x81d8a0`, `0x81d7b0`) | **megerősített** |
+| Konkrét megtartott fotóindex | — | **NYITOTT** (futás nélkül) |
+
+**Nyitott pontok, és mi zárná le őket.**
+
+1. `[this+0x708]`: a határ-tömb írója ordering 0 ágon, és az, hogy az ág elérhető-e nullpointerrel. Lezárja: a `0x81d338` ág futás-mérése vagy a `0x874e40` ordering 0 előfeltételének igazolása.
+2. `0x8223e0` `0xdc` (album fotólista) és `0x7166c0` törzse, valamint `[builder+0xe68]`/`[+0xe64]` értelme. Lezárja: a két virtuális törzs olvasása és a `0x6175c0` hívóhely visszakövetése.
+3. A HOG-vektor forrása (`0x873cb0`) és a Neven `0x3c` slot törzse (a hasonlóság skálája). Lezárja: a két törzs olvasása.
+4. A `hossz` argumentum (`0x6175c0` `param_2`) forrása: mit jelent a darabszám a film szempontjából. Lezárja: a hívó visszakövetése.
+5. Natív viselkedésmérés: Windows-gép kell (Wine alatt a Picasa nem készít filmet, picasa-colab-jobs #106). Lezárja: 4–6 képes, ismert időbélyegű mappa a Filmkészítő csúszkájával.
+
+**Kész, ha (a #4194 jegy szerint) — állapot: NEM teljesül.** A mechanizmus most már utasításszinten áll
+(csoport, rendezés, horgony, spirál, `argmin` súlyozott távolsággal), de a konkrét megtartott fotóhoz két
+nyitott bemenet kell: a 1. (`[this+0x708]`) és a 2. (mód-5 forrás) pont. A jegy nem zárható.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Dátum szerint rendezett lista, küszöb alatti csoport (Δ<T szomszéd), horgony (album első eleme vagy 0. index), spirál (+1, −1, +2 …, ≤100 jelölt, más csoport), `argmin Σ w·távolság` (HOG χ² + 0,4·Neven), láncos választás. | `slideshow.py` színátlag szerinti legközelebbi képet választ; burst-szűrő nincs. | **#4182:** a csoportosítás (G) és a rendezés (G/3d 3. pont) implementálható. A pontszámhoz arc-leíró kell (HOG-szerű χ² és Neven-szerű távolság); enélkül a „melyik marad” nem egyezik az eredetivel. A megtartási lépést csak az 1–2. nyitott pont lezárása után szabad eredetihűnek nevezni. |
+
 #### Bizonyítottsági fok
 
 **Megerősített** (utasításszinten olvasva): a négy tálcagomb ága és
