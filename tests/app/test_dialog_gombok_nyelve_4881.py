@@ -80,6 +80,10 @@ def test_a_cancel_gomb_a_valasztott_nyelven_van_magyar_rendszeren(
 
 
 def test_angol_felulet_magyar_rendszeren_a_teruleti_beallitast_megtartja(monkeypatch):
+    from PySide6.QtCore import QLocale
+
+    if QLocale(QLocale.Language.English, QLocale.Country.Hungary).name() != "en_HU":
+        pytest.skip("ennek a Qt-nek nincs en_HU területi adata (pl. a rendszer Qt 6.8-a)")
     ertekek = _futtasd("en", monkeypatch)
     assert ertekek["TIZEDESJEL"] == ","
     assert ertekek["NEV"] == "en_HU"
