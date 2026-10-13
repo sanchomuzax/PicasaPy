@@ -33,6 +33,7 @@ from picasapy.render.color import (
     apply_sepia,
     apply_warm,
 )
+from picasapy.render.native_grain import grain_seed
 from picasapy.render.effects import (
     GLOW_V1_INTENSITY,
     GLOW_V1_RADIUS,
@@ -476,11 +477,10 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     return apply_native_colortemp(kozbenso, temperature, 0.0)
 
 
-def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # A szemcse sztochasztikus (véletlen mag); az élő előnézetben viszont
-    # rögzített maggal futtatjuk (seed=0), hogy egy változatlan lánc újra-
-    # renderelésekor a szemcse ne "villogjon" — a spec elfogadási teszthez
-    # (statisztikai) ez nem szükséges, csak az UI-élmény miatt választott mag.
+def _apply_grain_op(image: np.ndarray, op: FilterOp, ordinal: int) -> np.ndarray:
+    # A Picasa CRT rand()-folyamából származó magot a renderlánc helyi
+    # sorszáma adja. Nincs globális számláló: ugyanaz a lánc így ismételten
+    # ugyanazt a determinisztikus képet adja.
     #
     # Ugyanez a handler szolgálja ki a `grain` (v1) bejegyzést is (#347
     # lezáró audit, 2026-08-06, megerősítve #3927-ben): a natív callback
@@ -489,7 +489,7 @@ def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # NEM közelítés: a `grain` (v1) és a `grain2` egyaránt ugyanazt a
     # kiolvasott, nyolc lépéses natív algoritmust futtatja
     # (`native_grain.apply_native_grain`, #3928).
-    return apply_grain(image, seed=0)
+    return apply_grain(image, seed=grain_seed(ordinal))
 
 
 def _effect_float(op: FilterOp, index: int, default: float) -> float:
@@ -961,9 +961,9 @@ def apply_filters(
     `picasapy.ini.retouch` docsztring) — valódi Picasa-eredetű, régió nélküli
     `retouch=1;` bejegyzésnél no-op.
 
-    A `grain2` rögzített maggal (seed=0) renderel (#20): a Picasa szemcséje
-    véletlen magos, pixelhűen nem reprodukálható — a determinisztikus mag az
-    előnézet-villogást kerüli el, statisztikailag a spec szerinti a kimenet.
+    A `grain`/`grain2` a Picasa CRT `rand()`-folyamából kapja a magját,
+    három értéket fogyasztva műveletenként. A sorszám renderenként nulláról
+    indul, így a lánc determinisztikus, az ismételt előnézet nem villog.
 
     A nem támogatott (ismeretlen nevű) szűrőket szándékosan némán kihagyja
     (részleges előnézet). Ismert nevű, de hibás/hiányos paraméterű bejegyzés
@@ -1030,6 +1030,7 @@ def apply_filters(
     LÁNCBAN SZEREPLŐ (nemcsak a ténylegesen renderelt) nevek alapján.
     """
     result = image
+    grain_ordinal = 0
     # #3229: a MÉRT sorrend ága követi, hova került a forrás — `hely_matrix` a
     # (vágás utáni) forrásból a jelenlegi képbe, `eredeti_*` pedig az eredeti
     # méret, amire a `crop64` koordinátái vonatkoznak (#330).
@@ -1143,13 +1144,18 @@ def apply_filters(
         range_warnings.extend(op_warnings)
         elotte_h, elotte_w = result.shape[:2]
         try:
-            result = handler(result, op)
+            if key in {"grain", "grain2"}:
+                result = handler(result, op, grain_ordinal)
+            else:
+                result = handler(result, op)
         except Exception:
             # Ismert nevű, de hibás paraméterű bejegyzés: a lánc többi tagja
             # ettől még lefusson (#301) — a hiba nem tűnik el nyomtalanul.
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
         else:
+            if key in {"grain", "grain2"}:
+                grain_ordinal += 1
             if mert_sorrend:
                 # #3229: a TÉNYLEGESEN lefutott op leképezését fűzzük a
                 # lánchoz — a hibára futott (kihagyott) op nem mozdít semmit

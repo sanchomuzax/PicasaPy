@@ -28,6 +28,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from support.meroadat_kit import extract_meroadat_files
+from picasapy.render import native_grain
 from picasapy.render.color import apply_grain
 
 
@@ -167,11 +169,7 @@ class TestApplyGrainCsomosSzemcse:
         assert shift > -3.0, f"átlagos eltolás {shift:.3f} irreálisan nagy"
 
 
-#: A 684-es mérőkészlet NAS-os elérése — a session csak ezt az egy,
-#: névvel ismert mappát nyitja meg (a NAS más ága nem járható be).
-_KIT = Path("/mnt/nas/My Pictures/684-merokeszlet")
-
-#: A jegy „kiolvasott algoritmus" oszlopa (0–40 / 40–90 / 90–170 / 170–215 /
+#: A jegy „kiolvasott algoritmus” oszlopa (0–40 / 40–90 / 90–170 / 170–215 /
 #: 215–255 tónussáv), a szomszéd-korreláció és az átlagos eltolás.
 _VART_SZORAS_SAVONKENT = (2.5, 4.4, 5.5, 4.4, 2.4)
 _SAVOK = ((0, 40), (40, 90), (90, 170), (170, 215), (215, 255))
@@ -186,7 +184,7 @@ _TURES_SZORAS = 0.3
 _TURES_KORRELACIO = 0.03
 _TURES_KORR_KULONBSEG = 0.03
 _TURES_ELTOLAS = 0.1
-_VART_DE_HATAR = 2.70
+_VART_DE_HATAR = 1.60
 
 
 def _golden_eszkozok():
@@ -199,21 +197,36 @@ def _golden_eszkozok():
     return load, mean_de
 
 
-@pytest.mark.skipif(not _KIT.is_dir(), reason="a 684-merokeszlet NAS-os mérőkészlet nem elérhető")
-class TestApplyGrain684Merokeszlet:
-    """A jegy „Kész, ha" pontjai a valódi `grain__alap` Picasa-exporttal."""
+@pytest.fixture(scope="module")
+def grain_kit(tmp_path_factory):
+    files = extract_meroadat_files(
+        (
+            "684-merokeszlet/grain__alap.jpg",
+            "684-merokeszlet/export/grain__alap.jpg",
+        ),
+        tmp_path_factory.getbasetemp() / "grain-684",
+    )
+    if files is None:
+        pytest.skip("a helyi mérőadat-archívum nem tartalmazza a 684-es szemcsemintát")
+    return files
 
-    def test_delta_e_legfeljebb_2_70(self) -> None:
+
+class TestApplyGrain684Merokeszlet:
+    """A `grain__alap` Picasa-exportja és az algoritmus statisztikái."""
+
+    def test_delta_e_legfeljebb_1_60(self, grain_kit) -> None:
         load, mean_de = _golden_eszkozok()
-        forras = load(_KIT / "grain__alap.jpg")
-        export = load(_KIT / "export" / "grain__alap.jpg")
-        eredmeny = apply_grain(forras, seed=0)
+        forras = load(grain_kit["684-merokeszlet/grain__alap.jpg"])
+        export = load(grain_kit["684-merokeszlet/export/grain__alap.jpg"])
+        seed_for = getattr(native_grain, "grain_seed", None)
+        assert callable(seed_for), "hiányzik a render-sorszámhoz tartozó grain_seed"
+        eredmeny = apply_grain(forras, seed=seed_for(0))
         de = mean_de(eredmeny, export)
         assert de <= _VART_DE_HATAR, f"ΔE {de:.3f} > {_VART_DE_HATAR}"
 
-    def test_tonussavonkenti_szoras_es_korrelacio_es_eltolas(self) -> None:
+    def test_tonussavonkenti_szoras_es_korrelacio_es_eltolas(self, grain_kit) -> None:
         load, _ = _golden_eszkozok()
-        forras = load(_KIT / "grain__alap.jpg")
+        forras = load(grain_kit["684-merokeszlet/grain__alap.jpg"])
         eredmeny = apply_grain(forras, seed=0)
         diff = _diff_mean_channels(eredmeny, forras)
         src_luma = forras.astype(np.float64).mean(axis=2)
