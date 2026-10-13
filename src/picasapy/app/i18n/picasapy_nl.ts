@@ -12740,6 +12740,12 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>FolderPropertiesDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Folder::ID_ALBUM_EDITCAPTIONS</extracomment>
