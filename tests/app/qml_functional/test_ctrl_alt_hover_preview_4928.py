@@ -195,12 +195,30 @@ def test_ctrl_alt_a_mutato_alatti_kepet_mutatja_es_elengedesre_elrejti(
         QTest.keyRelease(window, Qt.Key.Key_Control)
 
     controller.setShowTooltipsEnabled(False)
+    QTest.mouseMove(window, QPoint(1, 1))
+    QTest.mouseMove(window, nagy_pont, delay=10)
+    assert _varj(
+        qt_app,
+        lambda: grid.property("hoverPreviewRow")
+        == nagy_area.parentItem().property("index"),
+    ), "a nagy képcella lebegtetése nem jutott el a könyvtár-rácsig"
+    QTest.keyPress(window, Qt.Key.Key_Control)
+    QTest.keyPress(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
+    assert _varj(qt_app, lambda: popup.isVisible()), (
+        "a buboréksúgó kikapcsolása elrejtette az előnézetet (#4949)"
+    )
+    QTest.keyRelease(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
+    QTest.keyRelease(window, Qt.Key.Key_Control)
+    assert _varj(qt_app, lambda: not popup.isVisible())
+
+    controller.setEnableHover(False)
     QTest.keyPress(window, Qt.Key.Key_Control)
     QTest.keyPress(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
     assert not popup.isVisible(), (
-        "a kikapcsolt mutató-beállítás mellett megjelent az előnézet"
+        "a kikapcsolt EnableHover mellett megjelent az előnézet"
     )
     QTest.keyRelease(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
     QTest.keyRelease(window, Qt.Key.Key_Control)
 
+    controller.setEnableHover(True)
     controller.setShowTooltipsEnabled(True)
