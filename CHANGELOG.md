@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.89] – 2026-10-13
+
+- Ctrl+Alt nyomva tartásakor a képrács kurzor alatti fotója nagy, külön előnézeti ablakban jelenik meg (#4928).
+
 ## [0.9.88] – 2026-10-13
 
 - A teljes tesztkészlet tesztfájlonként oszlik el, a főmenü tesztesetei kisebb fájlokba kerülnek (#4932).
