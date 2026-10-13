@@ -4776,3 +4776,41 @@ Mérés (a Colab-os Picasa-export, G.7.8.6 utolsó pontja) továbbra is szüksé
 **6. „Kész, ha” — állapot**
 
 Numerikus „Kész, ha” most sem állítható. A `t`-lánc (`A = int64(S·10⁷)`, `T` init = `B`) igazolt, de `B` értéke és a Gördülő A/B, Írógép `d`, H+0x2c végpontok nincsenek meg.
+
+##### G.8.7 10. kör (2026-10-13, #4615): a `+0x108/+0x10c` írói a pin vtábláiból pásztázva — a seed-író NINCS MEG
+
+*Állapot: **nincs új számérték, és a seed-írót sem sikerült megnevezni.** A kör a lokális `Picasa3.exe` `.text`-jét dekódolta (`llvm-objdump -d -M intel` a PE-fájlon, 2 885 029 utasítás), a pin-hozzárendelést pedig a `CDXSlideshowPin` vtábláiból indította. A G.8.6 „pin-kódban nincs írás” állítását a vtábla-bejárás megerősíti; a pin-mutatót kapó jelöltek egy része nyitva maradt.*
+
+**Módszer (újraellenőrizhető).**
+
+1. **Pin-vtáblák.** A `0x74d1c0` konstruktor írja a pin vtábláit: `[ebp]` = `0xcb1a08`, `+0x48` = `0xcb1a2c`, `+0x54` = `0xcb1a8c`, `+0x58` = `0xcb1ad8`, `+0xf0` = `0xcb1af4`, `+0xf4` = `0xcb1b54`. Mind a hat RTTI-je ugyanaz a típus: `.?AVCDXSlideshowPin@@` (COL → TD `0xd42530`). A slotok száma: 8, 23, 18, 5, 23, 4.
+2. **Írók.** A memóriacélú írás (`mov`, `fst`/`fstp`, `add`/`sub`/`and`/`or`/`xor`, a cél `[reg + 0x108]` vagy `[reg + 0x10c]`, verem-bázis nélkül): **163** utasítás, **88** függvényben. A bázisregiszterek: esi 86, edi 33, ebp 22, ebx 14, eax 5, edx 3. Verem-bázissal együtt 291 utasítás, 155 függvény. A G.8.6 178/93 számát ebből nem sikerült visszaadni (a függvényhatár-becslés és a bázisszűrés eltér); a továbbiakban a 163/88 érvényes.
+3. **Szűrés a pin felé.**
+   - **a)** A hat pin-vtábla minden slotjának törzse (a kódra mutató bejegyzések, a vtáblaterület végéig): **0 író**.
+   - **b)** A pin-slotok közvetlen hívottjai, három szintig: **1 író**, a `0x00a56510`.
+   - **c)** A `0x74c000–0x750000` pin-kód: **0 írás**.
+   - **d)** A `filter+0x78` (a pin-mutató, `unaff_ESI[0x1e]` a `0x74e580`-ben) olvasásával rendelkező hívók, amelyek egy írót is hívnak: **26 hívó–író pár, 16 író**. A hívási argumentumok útja nincs végigkövetve (lásd 4. pont, nyitott).
+
+**Az egyetlen közvetlen jelölt: `0x00a56510`, és nem a pin.**
+
+- Hívó: `0x74dfc0` (a pin slot 2 metódusa, `this` = `esi` = pin): `0x74e297`–`0x74e2a4`: `edi = [pin+0x308] + 0x2e8`, az argumentum `pin+0x35c`.
+- Így az írt mezők `[edi+0x108]` és `[edi+0x10c]` a `pin+0x308` (a szülő) `+0x2e8` objektumán vannak, tehát a szülő `+0x3f0/+0x3f4`-én, **nem** a pin `+0x108/+0x10c`-én.
+- Az írt érték: `and [edi+0x10c], 1`, majd `mov [edi+0x108], esi`, ahol `esi` = 0 (`xor esi, esi` a függvényben). Előtte, ha `[edi+0x108] ≠ 0`, `call 0x97caf0` fut. A `0x97caf0` nincs azonosítva; az, hogy a mezőt nullától eltérő esetben „felszabadítják”, azt jelzi, hogy ennél az objektumnál a `+0x108` nem egyszerű int64-időbélyeg. Ez a szülő objektumra szól, a pinre nem bizonyított.
+- Két másik hívó (`0x00812aa0`: `edi = this+0x568`; `0x0088ae30`: `edi` a veremből) egyike sem pin-hívás igazolt módon.
+
+**Ami ebből a körből NEM következik**
+
+- A seed-író megnevezése: NINCS MEG. A pin saját metódusai és közvetlen hívottjai között nincs `pin+0x108/+0x10c`-író.
+- Az írt érték (a seed forrása: konstans, rekordmező vagy időbélyeg): NINCS MEG. A `0x00a56510` értéke (`0`) a szülő objektumé, nem a pinnek szóló.
+- A 16 jelölt közül egyik sem igazolt pin-mutatót kapó író.
+
+**Korlát (negatív állításhoz).** A hívógráf csak a közvetlen `call 0x…` hívásokat látja. Az indirekt hívások (`call dword ptr [reg + off]`, vtábla-hívás) nem szerepelnek benne, ezért a „nincs pin-hívó” állítás csak a közvetlen hívásokra áll. A pin-mutató továbbadása vtábla-hívással a 16 jelölten kívül is történhetett.
+
+**Nyitott pontok (következő kör)**
+
+1. A 16 jelölt hívóinak argumentum-útja: melyik hívónál kerül a `filter+0x78` (pin) a író `this`- vagy argumentum-regiszterébe. Hívásonként kézzel, a `0x74e2a4`-hez hasonlóan.
+2. A `0x97caf0` azonosítása (felszabadító vagy destruktor?), és a szülő `+0x3f0`-mező típusa.
+3. A `0x74e670` (szűrőgyár) és a `0x8287b0` hívói: a pin-mutató későbbi továbbadása indirekt hívással nem látszik a hívógráfban; ehhez a `[reg+0x78]`-olvasók körét kell kiterjeszteni.
+4. A referencia-mérés (Picasa 3.9 filmexport, Colab) továbbra is szükséges a számokhoz.
+
+**„Kész, ha” állapot.** Numerikus „Kész, ha” most sem állítható. A seed-író és az írt érték nincs megnevezve, ezért a `t` nulla pontja, a Gördülő `A`/`B`, az Írógép `d`/`L` és a „Jó napom van” `H+0x2c` végpontja változatlanul nyitott.
