@@ -1,19 +1,10 @@
-"""#1436: a „Mappa rendezésének alapja ▸" a mappa TARTALMÁT rendezi.
+"""#4890: a mappa rendezése egyszeri, a rács a kézi sorrendet olvassa.
 
-A tulajdonos éles használatban jelezte, hogy a menüpont nálunk „mintha a
-MAPPÁKAT rendezné, nem a mappa TARTALMÁT". A mérés igazolta: a menü a
-`setFolderSort`-ot hívta, ami a rács MAPPA-sorrendjét állítja (#321) — a
-mappán belüli képsorrend MINDEN beállításnál fájlnév szerinti maradt.
-
-Ez a fájl az az ŐR, amelyik KIMONDJA a hatókört és az irányt, hogy a
-„mappa vs. tartalom" tévesztés ne tudjon csendben visszatérni:
-
-* HATÓKÖR — a `Folder::SortFolderBy` menü a mappa KÉPEIT rendezi; a mappák
-  egymáshoz viszonyított sorrendjét NEM mozdítja (azt a Mappa ▸ Rendezés
-  `folderSort`-ja és a bal hasáb `paneSort`-ja állítja).
-* IRÁNY — az alapérték NÖVEKVŐ: dátumnál a legrégebbi elöl, a LEGÚJABB a
-  VÉGÉN (a tulajdonos megfigyelése a Picasa 3-ról); a „Fordított sorrend"
-  fordítja meg.
+A régi globális rendezési QSettings-kulcsok elavultak, az AppController
+nem teszi többé QML-ből állíthatóvá őket. A „Rendezés alapja” menü
+`sortFolderBy` parancsa egyszer rendezi át a célmappát, majd az ini
+`priority=` értékeiben tárolja az eredményt. A tesztek a régi kulcsok
+eltávolítását és a belső rácsmodell mappa-feedre korlátozott működését őrzik.
 """
 
 from __future__ import annotations
@@ -77,130 +68,6 @@ def _photo_names(controller, folder: str) -> list[str]:
         for photo in controller.photos.photos
         if Path(photo.folder_path).name == folder
     ]
-
-
-def _folder_order(controller) -> list[str]:
-    """A MAPPÁK sorrendje a rácsban — ehhez a menünek NEM szabad nyúlnia."""
-    seen: list[str] = []
-    for photo in controller.photos.photos:
-        name = Path(photo.folder_path).name
-        if name not in seen:
-            seen.append(name)
-    return seen
-
-
-class TestAHatokorAMappaTartalma:
-    """A menü a mappa KÉPEIT rendezi, nem a mappákat."""
-
-    def test_a_datum_a_mappa_KEPEIT_rendezi(self, controller):
-        controller.setFolderPhotoSort("date")
-        # a legrégebbi (2010) elöl, a LEGÚJABB (2024) a VÉGÉN
-        assert _photo_names(controller, "nyaralas") == [
-            "b_2010.jpg",
-            "c_2018.jpg",
-            "a_2024.jpg",
-        ]
-
-    def test_a_datum_a_MAPPAK_sorrendjet_nem_mozditja(self, controller):
-        before = _folder_order(controller)
-        controller.setFolderPhotoSort("date")
-        assert _folder_order(controller) == before
-        controller.setFolderPhotoSort("size")
-        assert _folder_order(controller) == before
-
-    def test_a_nev_a_mappa_kepeit_rendezi_novekvo_sorrendben(self, controller):
-        # a dátumon ÁT vissza a névre — így a próba tényleg a váltást méri,
-        # nem az alapállapotot
-        controller.setFolderPhotoSort("date")
-        controller.setFolderPhotoSort("name")
-        assert _photo_names(controller, "nyaralas") == [
-            "a_2024.jpg",
-            "b_2010.jpg",
-            "c_2018.jpg",
-        ]
-
-    def test_a_meret_a_mappa_kepeit_rendezi_a_legkisebbtol(self, controller):
-        controller.setFolderPhotoSort("size")
-        sizes = [
-            photo.size
-            for photo in controller.photos.photos
-            if Path(photo.folder_path).name == "nyaralas"
-        ]
-        assert sizes == sorted(sizes)
-
-
-class TestAzIranyNovekvo:
-    """Az alapérték NÖVEKVŐ; a „Fordított sorrend" fordítja meg."""
-
-    def test_a_datum_alapbol_a_legujabbat_teszi_a_VEGERE(self, controller):
-        controller.setFolderPhotoSort("date")
-        assert _photo_names(controller, "nyaralas")[-1] == "a_2024.jpg"
-
-    def test_a_forditott_sorrend_a_legujabbat_hozza_ELORE(self, controller):
-        controller.setFolderPhotoSort("date")
-        controller.toggleFolderPhotoSortReverse()
-        assert _photo_names(controller, "nyaralas") == [
-            "a_2024.jpg",
-            "c_2018.jpg",
-            "b_2010.jpg",
-        ]
-
-    def test_a_forditas_sem_mozditja_a_MAPPAK_sorrendjet(self, controller):
-        controller.setFolderPhotoSort("date")
-        before = _folder_order(controller)
-        controller.toggleFolderPhotoSortReverse()
-        assert _folder_order(controller) == before
-
-
-class TestAKetRendezesFuggetlen:
-    """A mappa-menü (tartalom) és a Mappanézet (mappák) két külön beállítás."""
-
-    def test_a_kepsorrend_valtasa_nem_irja_at_a_folderSortot(self, controller):
-        before = controller.folderSort
-        controller.setFolderPhotoSort("date")
-        assert controller.folderSort == before
-
-    def test_a_mappanezet_valtasa_nem_irja_at_a_kepsorrendet(self, controller):
-        controller.setFolderPhotoSort("date")
-        controller.setFolderSort("name")
-        assert controller.folderPhotoSort == "date"
-        assert _photo_names(controller, "nyaralas") == [
-            "b_2010.jpg",
-            "c_2018.jpg",
-            "a_2024.jpg",
-        ]
-
-
-class TestAHatokorNemLepiTulAMappaFeedet:
-    """A mappa-menü rendezése a rácsra (mappa-feed) szól — máshova nem.
-
-    A keresési találatoknál ez nem ízlés kérdése: a `groups_to_qml` a
-    sorindexeket a rendezetlen rekordokból számolja, tehát ha a modell
-    átrendezné a találatokat, a néző MÁS képet nyitna meg, mint amire a
-    felhasználó kattintott.
-    """
-
-    def test_a_keresesi_talalatok_sorrendjet_nem_irja_at(self, controller):
-        controller.setFolderPhotoSort("date")
-        # a mappanévre keresve a mappa MINDEN képe találat — így a
-        # dátum- és a névsorrend eltérése tényleg látszana
-        controller.search("nyaralas")
-        nevek = [photo.name for photo in controller.photos.photos]
-        assert nevek == ["a_2024.jpg", "b_2010.jpg", "c_2018.jpg"]
-
-    def test_a_kereses_sorindexei_a_racs_soraira_mutatnak(self, controller):
-        controller.setFolderPhotoSort("date")
-        controller.search("nyaralas")
-        racs = controller.photos.photos
-        assert len(racs) == 3
-        parok = [
-            (elem["row"], elem["name"])
-            for csoport in controller.searchGroups
-            for elem in csoport["photos"]
-        ]
-        assert len(parok) == 3
-        for row, name in parok:
-            assert racs[row].name == name
 
 
 class TestARacsModellKapuja:
@@ -268,12 +135,17 @@ def _minta_kepek() -> tuple:
     )
 
 
-class TestAzUjrainditasMegorziABeallitast:
-    def test_a_kepsorrend_a_kovetkezo_inditaskor_is_ervenyes(
+class TestAzUjrainditasNemOrziAGlobalModot:
+    def test_a_globalis_racsmod_vezerlopontok_megszuntek(self, controller):
+        assert not hasattr(controller, "folderPhotoSort")
+        assert not hasattr(controller, "folderPhotoSortReverse")
+        assert not hasattr(controller, "setFolderPhotoSort")
+        assert not hasattr(controller, "toggleFolderPhotoSortReverse")
+
+    def test_a_regi_globalis_mod_nem_rendezi_at_minden_mappat(
         self, qt_app, tmp_path, library
     ):
-        """A menüpont hatása perzisztens — különben minden indítás után
-        visszaesne a fájlnév-sorrendre."""
+        """A sorrend a priority értékekben él, a régi nézetmód kulcsai elavultak."""
         from picasapy.app.controller import AppController
         from picasapy.app.thumbnail_provider import ThumbnailProvider
         from picasapy.index import open_index, sync_tree
@@ -282,6 +154,10 @@ class TestAzUjrainditasMegorziABeallitast:
         with open_index(tmp_path / "index.db") as conn:
             sync_tree(conn, library)
         beallitas_fajl = str(tmp_path / "settings.ini")
+        settings = QSettings(beallitas_fajl, QSettings.Format.IniFormat)
+        settings.setValue("view/folderPhotoSort", "date")
+        settings.setValue("view/folderPhotoSortReverse", True)
+        settings.sync()
 
         def _uj_vezerlo():
             ctl = AppController(
@@ -300,15 +176,50 @@ class TestAzUjrainditasMegorziABeallitast:
             return ctl
 
         elso = _uj_vezerlo()
-        elso.setFolderPhotoSort("date")
-        elso.toggleFolderPhotoSortReverse()
+        assert settings.value("view/folderPhotoSort") is None
+        assert settings.value("view/folderPhotoSortReverse") is None
+        assert _photo_names(elso, "nyaralas") == [
+            "a_2024.jpg",
+            "b_2010.jpg",
+            "c_2018.jpg",
+        ]
+        assert elso.sortFolderBy(str(library / "nyaralas"), "date") is True
+        assert _photo_names(elso, "nyaralas") == [
+            "b_2010.jpg",
+            "c_2018.jpg",
+            "a_2024.jpg",
+        ]
 
         masodik = _uj_vezerlo()
-        assert masodik.folderPhotoSort == "date"
-        assert masodik.folderPhotoSortReverse is True
-        # a legújabb elöl — a fordított irány is visszatért
+        assert settings.value("view/folderPhotoSort") is None
+        assert settings.value("view/folderPhotoSortReverse") is None
         assert _photo_names(masodik, "nyaralas") == [
-            "a_2024.jpg",
-            "c_2018.jpg",
             "b_2010.jpg",
+            "c_2018.jpg",
+            "a_2024.jpg",
         ]
+
+
+class TestAKeresesSorindexeiAPriorityraMutatnak:
+    """A keresési találatok sorindexei a rács valódi soraira mutatnak.
+
+    A mappa-menü `priority`-alapú rendezése a lemezre írt kézi sorrendet
+    módosítja; a keresési találatok sorindexeinek ettől továbbra is
+    egyezniük kell azzal, amit a rács ténylegesen mutat.
+    """
+
+    def test_a_keresesi_talalatok_sorindexei_a_racs_soraira_mutatnak(
+        self, controller, library
+    ):
+        assert controller.sortFolderBy(str(library / "nyaralas"), "date") is True
+        controller.search("nyaralas")
+        racs = controller.photos.photos
+        assert len(racs) == 3
+        parok = [
+            (elem["row"], elem["name"])
+            for csoport in controller.searchGroups
+            for elem in csoport["photos"]
+        ]
+        assert len(parok) == 3
+        for row, name in parok:
+            assert racs[row].name == name

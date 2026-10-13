@@ -30,6 +30,7 @@ from picasapy.ini import (
     set_folder_hidden_in_ini,
 )
 from picasapy.ini.names import INI_NAME
+from picasapy.ini.album_order import places_of_section
 from picasapy.ini.albums import albums_of, parse_album_refs
 from picasapy.metadata import (
     EMPTY_METADATA,
@@ -1260,6 +1261,8 @@ def _sync_albums(conn, folder_id: int, document) -> None:
             ),
         )
 
+    # #4599 (ADR-016): az album kézi helye (`albumorder=`) — az index csak
+    # gyorsítótárazza, az igazságforrás az ini.
     for name, photo_id in photo_ids.items():
         section = document.section(name)
         if section is None:
@@ -1267,11 +1270,12 @@ def _sync_albums(conn, folder_id: int, document) -> None:
         refs = section.get("albums")
         if not refs:
             continue
+        photo_places = places_of_section(section)
         for token in parse_album_refs(refs):
             conn.execute(
-                "INSERT OR IGNORE INTO photo_albums (photo_id, token)"
-                " VALUES (?, ?)",
-                (photo_id, token),
+                "INSERT OR IGNORE INTO photo_albums (photo_id, token, place)"
+                " VALUES (?, ?, ?)",
+                (photo_id, token, photo_places.get(token)),
             )
     _prune_albums(conn)
 

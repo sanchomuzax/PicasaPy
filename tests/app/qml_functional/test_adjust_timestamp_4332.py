@@ -20,15 +20,12 @@ DATUMOK = ("2020:01:01 12:00:00", "2020:01:03 12:00:00")
 
 
 def _kepek(lib: Path) -> None:
-    for nev, taken_at, datetime_0th, nap in (
-        ("a.jpg", DATUMOK[0], "2020:01:01 12:00:00", 1),
-        ("b.jpg", DATUMOK[1], "2020:01:03 12:00:00", 3),
-        ("c.jpg", "2020:01:04 12:00:00", "2020:01:04 12:00:00", 4),
+    for nev, taken_at, datetime_0th in (
+        ("a.jpg", DATUMOK[0], "2020:01:01 12:00:00"),
+        ("b.jpg", DATUMOK[1], "2020:01:03 12:00:00"),
+        ("c.jpg", "2020:01:04 12:00:00", "2020:01:04 12:00:00"),
     ):
-        path = make_jpeg(lib / nev, taken_at=taken_at, datetime_0th=datetime_0th)
-        atime = datetime(2019, 12, nap, 1, 2, 3).timestamp()
-        mtime = datetime(2019, 12, nap, 4, 5, 6).timestamp()
-        os.utime(path, (atime, mtime))
+        make_jpeg(lib / nev, taken_at=taken_at, datetime_0th=datetime_0th)
 
 
 def _ns(value: str) -> int:
@@ -160,7 +157,7 @@ def _ido_beallitasa(window, qt_app, ertek: str) -> None:
         ),
     ],
 )
-def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
+def test_valodi_eszközmenüvel_mindket_mod_az_exifet_irja_es_fajlidot_megoriz(
     timestamp_app,
     qt_app,
     tmp_path,
@@ -172,7 +169,7 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
 ):
     window, controller, _engine = timestamp_app
     window.setHeight(window.height() + ablakmagassag_eltolas)
-    controller.setFolderPhotoSort("date")
+    assert controller.sortFolderBy(controller.currentFolder, "date")
     qt_app.processEvents()
     window.setProperty("selectedIndexes", [0, 2])
     window.setProperty("selectedIndex", 0)
@@ -244,6 +241,14 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
         == vart,
         "az indexben a két új dátum",
     )
+    # Az atime-ot itt nem mérjük: a módosítás után a nézet újratölti a képet
+    # (bélyegkép-dekódolás), és relatime alatt ez a valódi olvasás frissíti.
+    # A visszaállítás sorrendjét a test_timestamp_fajlidok_sorrend_4646.py méri.
+    for path in forrasok:
+        most = path.stat()
+        assert most.st_mtime_ns == regi_fajlidok[path.name].st_mtime_ns
+        if os.name == "nt":
+            assert most.st_ctime_ns == regi_fajlidok[path.name].st_ctime_ns
     assert (forras_ini.read_bytes() if forras_ini.exists() else None) == ini_elotte
     assert {
         path.name: piexif.load(str(path))["Exif"][piexif.ExifIFD.DateTimeOriginal]
@@ -254,19 +259,6 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
         if name in kijelolt_nevek
     }
     for path in forrasok:
-        regi_exif = datetime.strptime(
-            {"a.jpg": "2020:01:01 12:00:00", "c.jpg": "2020:01:04 12:00:00"}[
-                path.name
-            ],
-            "%Y:%m:%d %H:%M:%S",
-        )
-        uj_exif = datetime.fromisoformat(vart[path.name])
-        delta_ns = round((uj_exif - regi_exif).total_seconds() * 1_000_000_000)
-        most = path.stat()
-        assert most.st_atime_ns == regi_fajlidok[path.name].st_atime_ns + delta_ns
-        assert most.st_mtime_ns == regi_fajlidok[path.name].st_mtime_ns + delta_ns
-        if os.name == "nt":
-            assert most.st_ctime_ns == regi_fajlidok[path.name].st_ctime_ns
         assert path.read_bytes() != elotte[path.name]
 
     kijeloltek = {
@@ -276,14 +268,14 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_es_fajlidot_irja(
     }
     assert all(photo.taken_at_override is None for photo in kijeloltek.values())
 
-    # A modell dátummezője is az EXIF-ből szinkronizált értéket adja, és az aktív
-    # dátumrendezés a befejezett köteg után a módosított képekhez igazodik.
+    # A modell dátummezője az EXIF-ből szinkronizált értéket adja. A korábban
+    # egyszer elmentett mappasorrend a dátummódosítás után is változatlan marad.
     rows = {photo.name: row for row, photo in enumerate(controller.photos.photos)}
     assert controller.photos.itemAt(rows["a.jpg"])["takenAt"] == vart["a.jpg"]
     assert tuple(photo.name for photo in controller.photos.photos) == (
-        ("b.jpg", "a.jpg", "c.jpg")
-        if mod == "relative"
-        else ("b.jpg", "a.jpg", "c.jpg")
+        "a.jpg",
+        "b.jpg",
+        "c.jpg",
     )
 
     tulajdonsagok = controller.propertiesOf(rows["a.jpg"])

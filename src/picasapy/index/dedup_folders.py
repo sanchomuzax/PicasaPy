@@ -144,8 +144,8 @@ def _merge_photo_into(
     # Album-tagság áthelyezése a CASCADE-törlés elé (#9) — az azonos
     # (photo_id, token) párt az INSERT OR IGNORE csendben kihagyja.
     conn.execute(
-        "INSERT OR IGNORE INTO photo_albums(photo_id, token) "
-        "SELECT ?, token FROM photo_albums WHERE photo_id = ?",
+        "INSERT OR IGNORE INTO photo_albums(photo_id, token, place) "
+        "SELECT ?, token, place FROM photo_albums WHERE photo_id = ?",
         (keeper_photo_id, loser_photo["id"]),
     )
     conn.execute("DELETE FROM photos WHERE id = ?", (loser_photo["id"],))

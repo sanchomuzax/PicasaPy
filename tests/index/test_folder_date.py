@@ -85,6 +85,7 @@ class TestMigrationV3:
         # #4580: a videómezők csak a v21-ben érkeznek
         raw.execute("DROP INDEX idx_photos_video_metadata_missing")
         raw.execute("ALTER TABLE photos DROP COLUMN movie_format")
+        raw.execute("ALTER TABLE photo_albums DROP COLUMN place")
         raw.execute("ALTER TABLE photos DROP COLUMN frame_rate")
         raw.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
         # #26: a face/face_group táblákat is eldobjuk, hogy a 8→9→10

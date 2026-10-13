@@ -1879,6 +1879,7 @@ ApplicationWindow {
 
     menuBar: PicasaMenuBar {
         textEntryHasFocus: window._szovegmezoneVanFokusz
+        searchOptionsOpen: toolbar.searchOptionsOpen
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
         //: contentItem nem kapja meg a teljes ablakot.
         visible: !window.slideshowRunning
@@ -1889,6 +1890,7 @@ ApplicationWindow {
         // #4329: a felső Fájl ▸ E-Mail ugyanazt a küldési kaput hívja, mint
         // a tálca emailRequested jelzése.
         onEmailRequested: window.sendSelectionByEmail()
+        onSearchOptionsToggleRequested: toolbar.toggleSearchOptions()
         onOpenInEditorRequested: window.openSelectionInDefaultEditor()
         onViewAndEditRequested: window.nezdEsSzerkeszd()
         // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
@@ -2790,6 +2792,8 @@ ApplicationWindow {
     // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
     Component.onCompleted: {
+        if (controller && controller.attachHoverPreviewKeyState)
+            controller.attachHoverPreviewKeyState(window)
         //: #598: a kezdő cellaméret átadása a bélyegkép-tárnak — enélkül az
         //: induló rács a felső szintről dolgozna, pedig a 144-es fokozat a
         //: kisebb szintből tízszer olcsóbban áll elő.

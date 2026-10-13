@@ -161,6 +161,46 @@ def test_sugo_tartalom_valtozasnal_a_minden_lapot_olvaso_tesztek_futnak(
     assert set(tv.HELP_TESTS) <= set(dontes.fajlok)
 
 
+def test_docs_valtozasnal_a_teljes_utvonalat_vagy_alapnevet_emlito_teszt_is_fut(
+    repo: Path,
+) -> None:
+    utvonalas = "tests/test_spec_utvonal.py"
+    alapneves = "tests/test_spec_alapnev.py"
+    masik = "tests/test_spec_masik.py"
+    (repo / utvonalas).write_text(
+        'SPEC = "docs/specs/picasa-format.md"\n', encoding="utf-8"
+    )
+    (repo / alapneves).write_text(
+        'SPEC = "picasa-format.md"\n', encoding="utf-8"
+    )
+    (repo / masik).write_text('SPEC = "masik.md"\n', encoding="utf-8")
+
+    dontes = tv.select_tests(repo, ["docs/specs/picasa-format.md"])
+
+    assert not dontes.teljes
+    assert utvonalas in dontes.fajlok
+    assert alapneves in dontes.fajlok
+    assert masik not in dontes.fajlok
+    assert set(tv.SMOKE_TESTS) <= set(dontes.fajlok)
+
+
+def test_a_gyorsbillentyu_spec_dokumentacios_valtozasnal_kivalasztja_a_regresszios_orot() -> None:
+    dontes = tv.select_tests(
+        _ROOT, ["docs/specs/picasa-gyorsbillentyuk.md"]
+    )
+
+    assert "tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py" in dontes.fajlok
+
+
+def test_a_docs_only_kivalasztott_tesztjei_elinditjak_az_ubuntu_darabot() -> None:
+    ci = (_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    ubuntu = ci.split("\n  darabok-ubuntu:", 1)[1].split("\n  darabok-windows:", 1)[0]
+    kotelezo = ci.split("\n  test-ubuntu:", 1)[1].split("\n  test-windows:", 1)[0]
+
+    assert "needs.valtozas.outputs.darabszam != '0'" in ubuntu
+    assert "needs.valtozas.outputs.darabszam != '0'" in kotelezo
+
+
 def test_forditasi_katalogus_valtozasnal_az_i18n_orok_futnak(repo: Path) -> None:
     dontes = tv.select_tests(
         repo, ["src/picasapy/app/i18n/picasapy_hu.ts"]
@@ -223,12 +263,32 @@ def test_teljes_keszlet_merese_a_nem_app_osszesitett_idot_is_beszamitja(
     tmp_path: Path,
 ) -> None:
     fajlok = ["tests/test_a.py", "tests/app/test_b.py"]
-    idok = {"tests/test_a.py": 488.53, "tests/app/test_b.py": 7206.0}
+    idok = {tv.NON_APP_UNIT: 488.53, "tests/app/test_b.py": 7206.0}
 
     terv = tv.tervezz_darabokat(fajlok, idok, teljes=True)
 
     assert terv.darabszam == 16
     assert terv.mert_masodperc == pytest.approx(7694.53)
+    assert terv.ismeretlen_fajlok == ("tests/test_a.py",)
+
+
+def test_teljes_keszletben_a_nem_app_fajlok_kulon_darabokba_kerulnek() -> None:
+    fajlok = ["tests/test_a.py", "tests/test_b.py", "tests/app/test_c.py"]
+    idok = {
+        tv.NON_APP_UNIT: 120.0,
+        "tests/app/test_c.py": 30.0,
+    }
+
+    darabok = [
+        tv.darab_fajljai(fajlok, idok, sorszam, 2, teljes=True)
+        for sorszam in (1, 2)
+    ]
+
+    assert set().union(*map(set, darabok)) == set(fajlok)
+    assert set(darabok[0]).isdisjoint(darabok[1])
+    assert sum("tests/test_a.py" in darab for darab in darabok) == 1
+    assert sum("tests/test_b.py" in darab for darab in darabok) == 1
+    assert ("tests/test_a.py" in darabok[0]) != ("tests/test_b.py" in darabok[0])
 
 
 def test_a_valodi_main_meres_tizenhat_darabot_ad() -> None:
@@ -236,9 +296,17 @@ def test_a_valodi_main_meres_tizenhat_darabot_ad() -> None:
     idok = json.loads((_ROOT / "scripts/teszt_idok.json").read_text(encoding="utf-8"))
 
     terv = tv.tervezz_darabokat(fajlok, idok, teljes=True)
+    nem_app_meresek = sum(
+        idok[ut]
+        for ut in fajlok
+        if not ut.startswith("tests/app/") and ut in idok
+    )
+    mert_osszeg = sum(idok[ut] for ut in fajlok if ut in idok) + max(
+        0.0, idok[tv.NON_APP_UNIT] - nem_app_meresek
+    )
 
     assert terv.darabszam == 16
-    assert terv.mert_masodperc == pytest.approx(128.2 * 60, abs=5)
+    assert terv.mert_masodperc == pytest.approx(mert_osszeg)
 
 
 def test_a_ci_a_valasztot_listat_futtatja_a_kotelezo_nev_megtartasaval() -> None:

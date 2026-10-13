@@ -89,8 +89,7 @@ class TestASzempont:
         blokk = _MENU[kezd : kezd + 400]
         assert 'text: qsTr("&Color")' in blokk
         assert 'menu.sortModeRequested("color")' in blokk
-        #: a #1468-as minta: a jelzés után visszakötjük a pipát
-        assert "Qt.binding" in blokk
+        assert "checkable: false" in blokk
 
 
 class TestAKulcs:
@@ -232,10 +231,6 @@ class TestAVezerloIntegracio:
             ),
             watched_file=tmp_path / "WatchedFolders.txt",
         )
-
-    def test_a_szin_szempont_tarolhato(self, vezerlo):
-        vezerlo.setFolderPhotoSort("color")
-        assert vezerlo.folderPhotoSort == "color"
 
     def test_a_vezerlo_az_INDEXBOL_adja_a_szinezetet(self, vezerlo, tmp_path):
         #: A kulcs útvonalát UGYANÚGY állítjuk elő, ahogy a termékkód

@@ -122,6 +122,7 @@ class TestMigrationV20TakenAtOverride:
             conn.execute("DROP INDEX idx_photos_video_metadata_missing")
             conn.execute("ALTER TABLE photos DROP COLUMN taken_at_override")
             conn.execute("ALTER TABLE photos DROP COLUMN movie_format")
+            conn.execute("ALTER TABLE photo_albums DROP COLUMN place")
             conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
             conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
             conn.execute("PRAGMA user_version = 19")
@@ -281,6 +282,7 @@ class TestFaceMigration:
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             # #4580: a videómezők csak a v21-ben érkeznek
             "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
             "ALTER TABLE photos DROP COLUMN frame_rate;\n"
             "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "PRAGMA user_version = 8;"
@@ -349,6 +351,7 @@ class TestFaceEmbeddingMigration:
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             # #4580: a videómezők csak a v21-ben érkeznek
             "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
             "ALTER TABLE photos DROP COLUMN frame_rate;\n"
             "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "PRAGMA user_version = 9;"
@@ -402,3 +405,131 @@ class TestFaceEmbeddingMigration:
                 )
             }
             assert "face_group" in tables
+
+
+class TestAlbumPlaceMigration:
+    """#4599 (séma v23): a `photo_albums.place` az album-tagság kézi helye."""
+
+    def _legacy_database(self, tmp_path, version, *, hidden=None, scan_state=True):
+        path = tmp_path / f"regi-v{version}.db"
+        raw = sqlite3.connect(path)
+        raw.executescript(DDL)
+        raw.executescript(
+            "ALTER TABLE photo_albums DROP COLUMN place;"
+        )
+        if scan_state:
+            raw.executescript(
+                "CREATE TABLE folder_scan_state ("
+                " path TEXT PRIMARY KEY, mtime_ns INTEGER NOT NULL,"
+                " ini_mtime_ns INTEGER, filetype_signature TEXT);"
+            )
+        if hidden is None:
+            hidden = 1 if version == 21 else 2
+        raw.execute(
+            "INSERT INTO folders (id, path, hidden) VALUES (1, '/kepek', ?)",
+            (hidden,),
+        )
+        raw.execute(
+            "INSERT INTO folders (id, path, hidden)"
+            " VALUES (2, '/album-nelkul', ?)",
+            (hidden,),
+        )
+        raw.executemany(
+            "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
+            " VALUES (?, ?, ?, 'image', 10, 1)",
+            [(1, 1, "b.jpg"), (2, 1, "a.jpg"), (3, 2, "x.jpg")],
+        )
+        raw.executemany(
+            "INSERT INTO photo_albums (photo_id, token) VALUES (?, 'tok')",
+            [(1,), (2,)],
+        )
+        if scan_state:
+            raw.executemany(
+                "INSERT INTO folder_scan_state (path, mtime_ns) VALUES (?, ?)",
+                [("/kepek", 5), ("/album-nelkul", 6)],
+            )
+        raw.execute(f"PRAGMA user_version = {version}")
+        raw.commit()
+        raw.close()
+        return path
+
+    @pytest.mark.parametrize(("version", "expected_hidden"), [(21, 2), (22, 2)])
+    def test_v21_es_v22_adatbazisbol_is_v23_ra_migrál_es_megtartja_adatokat(
+        self, tmp_path, version, expected_hidden
+    ):
+        path = self._legacy_database(tmp_path, version)
+        with open_index(path) as conn:
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == 23
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(photo_albums)")}
+            assert "place" in columns
+            rows = conn.execute("SELECT photo_id, place FROM photo_albums").fetchall()
+            assert sorted((row[0], row[1]) for row in rows) == [(1, None), (2, None)]
+            folders = dict(conn.execute("SELECT path, hidden FROM folders"))
+            assert folders == {"/kepek": expected_hidden, "/album-nelkul": expected_hidden}
+            scan_paths = [row[0] for row in conn.execute(
+                "SELECT path FROM folder_scan_state ORDER BY path"
+            )]
+            assert scan_paths == ["/album-nelkul"]
+
+    def test_v22_migracio_letrehozza_a_hianyzo_scan_allapot_tablat(self, tmp_path):
+        path = self._legacy_database(tmp_path, 22, scan_state=False)
+        with open_index(path) as conn:
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            assert "folder_scan_state" in tables
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == 23
+
+    def test_hely_nelkuli_album_a_mai_rendben_all(self, tmp_path):
+        from picasapy.index.albums import album_photos
+
+        with open_index(self._legacy_database(tmp_path, 21, hidden=0)) as conn:
+            assert [r.name for r in album_photos(conn, "tok")] == ["a.jpg", "b.jpg"]
+
+    def test_a_valtozatlan_ini_albumorder_kulcsa_a_migracio_utan_is_bekerul(
+        self, tmp_path
+    ):
+        # a scan-állapot miatt a változatlan ini-t a szinkron kihagyná: a
+        # migrációnak érvényteleníteni kell, különben a meglévő `albumorder=`
+        # sosem jut az indexbe
+        from picasapy.index import sync_tree
+        from picasapy.index.albums import album_photos
+        from support.jpeg_factory import make_jpeg
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        make_jpeg(root / "b.jpg")
+        token = "604c294a68b0de9cc9222c4714f289d5"
+        (root / ".picasa.ini").write_text(
+            f"[.album:{token}]\nname=X\ntoken={token}\n"
+            f"[a.jpg]\nalbums={token}\nalbumorder={token}:2.0\n"
+            f"[b.jpg]\nalbums={token}\nalbumorder={token}:1.0\n",
+            encoding="utf-8",
+        )
+        # a frissességi védőablak (2 s) miatt a fájlokat "megöregítjük" —
+        # különben a szinkron amúgy sem hagyná ki a mappát
+        import os
+
+        regi = 1_700_000_000
+        for utvonal in (root, *root.iterdir()):
+            os.utime(utvonal, (regi, regi))
+        db = tmp_path / "index.db"
+        with open_index(db) as conn:
+            sync_tree(conn, root)
+        # visszalépés v22-re: az album-migráció előtti oszlop nincs meg,
+        # a scan-állapot viszont igen
+        raw = sqlite3.connect(db)
+        raw.executescript(
+            "ALTER TABLE photo_albums DROP COLUMN place;\n"
+            "PRAGMA user_version = 22;"
+        )
+        raw.commit()
+        raw.close()
+
+        with open_index(db) as conn:
+            sync_tree(conn, root)  # az ini változatlan
+            assert [r.name for r in album_photos(conn, token)] == ["b.jpg", "a.jpg"]

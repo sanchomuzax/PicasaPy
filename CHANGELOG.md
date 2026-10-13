@@ -7,6 +7,32 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A hiányos paraméterű Fókuszpixelezés a Picasához hasonlóan változatlanul hagyja a képet, nem alapértékekkel pixelez (#4941).
+
+## [0.9.89] – 2026-10-13
+
+- Ctrl+Alt nyomva tartásakor a képrács kurzor alatti fotója nagy, külön előnézeti ablakban jelenik meg (#4928).
+
+## [0.9.88] – 2026-10-13
+
+- A teljes tesztkészlet tesztfájlonként oszlik el, a főmenü tesztesetei kisebb fájlokba kerülnek (#4932).
+
+## [0.9.87] – 2026-10-13
+
+- Dokumentációváltozáskor a kapcsolódó tesztek is lefutnak, és a kiválasztott tesztek PR-en Windows alatt is futnak (#4922).
+- A hálózati mappák ellenőrzése közben is használható marad a főablak, és láthatóvá válik az indulás aktuális lépése (#4687).
+- A mappa menüje egyszeri, mappánkénti rendezést végez, természetes névösszevetéssel (#4890).
+
+## [0.9.86] – 2026-10-13
+
+- A Nézet ▸ Keresési opciók menüpont ugyanúgy nyitja és zárja a keresési beállításokat, mint a keresőmező melletti gomb, a menüben pedig a pipa jelzi, ha nyitva vannak (#4641).
+
+## [0.9.85] – 2026-10-13
+
+- Az album helyi menüjének „Album rendezésének alapja” almenüje működik: az album képei dátum, név vagy méret szerint egyszer átrendezhetők (Shifttel csökkenő sorrendben), a sorrend pedig megfordítható; az új sorrend a képek .picasa.ini-jében tárolódik, ezért újraindítás után is megmarad, és csak az adott albumot érinti (#4599).
+- A „Dátum és idő beállítása” az EXIF mentése után változatlanul hagyja a fájl időbélyegeit. (#4646).
+- A szerkesztő funkcionális tesztjei témák szerint külön fájlokban futnak, így egyik fájl sem lépi túl a helyi futási célt (#4901).
+
 ## [0.9.84] – 2026-10-13
 
 - A „Mappa felosztása itt…” a kijelölt képtől új testvérmappába helyezi a mappa hátralévő képeit. (#4534).
