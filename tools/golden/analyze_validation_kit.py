@@ -34,6 +34,7 @@ from picasapy.ini.filters import parse_filters  # noqa: E402
 from picasapy.render.chain import apply_filters  # noqa: E402
 
 from compare_render import _read_rgb, delta_e_cie76, ssim  # noqa: E402
+from jpeg_reference import encode_like_reference  # noqa: E402
 
 #: Amin belül „nem történt semmi" — JPEG-újratömörítés ennyit simán mozdít.
 NOOP_DE = 1.0
@@ -137,7 +138,9 @@ def main() -> int:
 
         try:
             report = apply_filters(source, parse_filters(row["lanc"]))
-            ours = report.image
+            ours_raw = report.image
+            # A Picasa-export JPEG: a mi képünket is ugyanúgy tömörítjük (#4940).
+            ours = encode_like_reference(ours_raw, export / row["fajl"])
         except Exception as error:  # noqa: BLE001 — a hiba maga az eredmény
             results.append(
                 {**row, "verdikt": "RENDER_HIBA", "hiba": str(error)[:200]}
@@ -156,6 +159,7 @@ def main() -> int:
                 "eltolodas_mienk": round(mean_shift(source, ours), 3),
                 "de_picasa_vs_eredeti": round(mean_de(source, golden), 3),
                 "de_mienk_vs_picasa": round(mean_de(golden, ours), 3),
+                "de_mienk_vs_picasa_nyers": round(mean_de(golden, ours_raw), 3),
                 "de_mienk_vs_eredeti": round(mean_de(source, ours), 3),
                 "ssim": round(ssim(golden, ours), 4)
                 if golden.shape == ours.shape else None,

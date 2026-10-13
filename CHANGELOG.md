@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A paritásmérő a saját kimenetünket a Picasa-referencia JPEG-kódolásával hasonlítja; a Hőtérkép, Éjjellátó, Színezés és Kéttónusú látszólagos eltérése ezzel eltűnt (#4937, #4938, #4939, #4940).
+
 ## [0.9.89] – 2026-10-13
 
 - Ctrl+Alt nyomva tartásakor a képrács kurzor alatti fotója nagy, külön előnézeti ablakban jelenik meg (#4928).
