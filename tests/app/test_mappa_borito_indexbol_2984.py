@@ -11,7 +11,7 @@ nem érintette.
 ⛔ **Miért csúszott át zölden:** a #2049 és a #2215 őre egyaránt
 `lambda`-val adta be a fájllistát, tehát a VALÓDI lekérdezés sosem
 futott le tesztben. Ezért került a lezárás modul-szintre
-(`folder_cover_provider.borito_fajljai`), és ezért mér ez a fájl
+(`folder_cover_provider.borito_belyegkepe`), és ezért mér ez a fájl
 indexből — nem kitalált rekordokból.
 """
 
@@ -24,9 +24,11 @@ import pytest
 from picasapy.app.folder_cover_provider import (
     BORITO_FOTOK_MAXIMUMA,
     FolderCoverProvider,
-    borito_fajljai,
+    borito_belyegkepe,
 )
+from picasapy.export.earth import record_path
 from picasapy.index import open_index, photos_in_folder, sync_tree
+from picasapy.thumbs.cache import ThumbnailCache
 from support.jpeg_factory import make_jpeg
 
 
@@ -40,14 +42,14 @@ def indexelt(tmp_path: Path):
     db = tmp_path / "index.db"
     with open_index(db) as conn:
         sync_tree(conn, tmp_path / "kepek")
-    return db, mappa
+    return db, mappa, ThumbnailCache(tmp_path / "thumbs", size=144)
 
 
 class TestARekordbolLESZUtvonal:
     """A `PhotoRecord`-nak nincs `path` mezője — ezt a teszt kimondja."""
 
     def test_a_PhotoRecord_nem_ismeri_a_path_mezot(self, indexelt):
-        db, mappa = indexelt
+        db, mappa, tar = indexelt
         with open_index(db) as conn:
             rekord = photos_in_folder(conn, str(mappa))[0]
         assert not hasattr(rekord, "path"), (
@@ -57,21 +59,31 @@ class TestARekordbolLESZUtvonal:
         assert rekord.folder_path and rekord.name
 
     def test_a_lekerdezes_LETEZO_fajlokat_ad(self, indexelt):
-        db, mappa = indexelt
-        utvonalak = borito_fajljai(db, str(mappa))
+        db, mappa, tar = indexelt
+        utvonalak = borito_belyegkepe(db, str(mappa), tar)
         assert utvonalak, "a lekérdezés üres listát adott egy öt fotós mappára"
         for ut in utvonalak:
             assert ut.is_file(), f"a lekérdezés nem létező útvonalat adott: {ut}"
 
     def test_legfeljebb_negy_fajl_es_NEVSORBAN(self, indexelt):
-        db, mappa = indexelt
-        utvonalak = borito_fajljai(db, str(mappa))
+        db, mappa, tar = indexelt
+        utvonalak = borito_belyegkepe(db, str(mappa), tar)
         assert len(utvonalak) == BORITO_FOTOK_MAXIMUMA
-        assert [u.name for u in utvonalak] == ["k0.jpg", "k1.jpg", "k2.jpg", "k3.jpg"]
+        # a tárfájl neve kivonat, ezért a sorrendet a tár saját válaszával
+        # vetjük össze, az index névsorában (k0…k3)
+        with open_index(db) as conn:
+            rekordok = photos_in_folder(conn, str(mappa))[:BORITO_FOTOK_MAXIMUMA]
+        assert [r.name for r in rekordok] == ["k0.jpg", "k1.jpg", "k2.jpg", "k3.jpg"]
+        szint = tar.level_for(64)
+        vart = [
+            tar.get_or_create(record_path(r), r.mtime_ns, r.size, szint)
+            for r in rekordok
+        ]
+        assert utvonalak == vart
 
     def test_ismeretlen_mappara_ures_lista(self, indexelt, tmp_path):
-        db, _mappa = indexelt
-        assert borito_fajljai(db, str(tmp_path / "nincs-ilyen")) == []
+        db, _mappa, tar = indexelt
+        assert borito_belyegkepe(db, str(tmp_path / "nincs-ilyen"), tar) == []
 
 
 class TestAFELULETENIsMEGJELENIK:
@@ -80,8 +92,8 @@ class TestAFELULETENIsMEGJELENIK:
     def test_a_szolgaltato_VALODI_kepet_ad_indexelt_mappara(
         self, qt_app, indexelt
     ):
-        db, mappa = indexelt
-        szolgaltato = FolderCoverProvider(lambda m: borito_fajljai(db, m))
+        db, mappa, tar = indexelt
+        szolgaltato = FolderCoverProvider(lambda m: borito_belyegkepe(db, m, tar))
         kep = szolgaltato.requestImage(str(mappa), None, None)
         assert not kep.isNull(), (
             "a szolgáltató NULL képet adott egy öt fotós, indexelt mappára — "
@@ -90,20 +102,22 @@ class TestAFELULETENIsMEGJELENIK:
         )
         assert kep.width() > 1 and kep.height() > 1
 
-    def test_MAGVETES_ha_a_lekerdezes_hibas_a_kep_NULL_lesz(
+    def test_MAGVETES_ha_a_lekerdezes_hibas_nincs_borito(
         self, qt_app, indexelt
     ):
         """A #2984 hibájának pontos utánzata — ennek BUKNIA kell tudni.
 
         Ha a lekérdezés a nem létező `path` mezőt olvassa, a szolgáltató
-        néma null képet ad. Ez a próba rögzíti, hogy a fenti sikeres eset
+        a „nincs borító" jelölőt adja (#4876 óta 1 × 1-es kép, korábban
+        null). Ez a próba rögzíti, hogy a fenti sikeres eset
         tényleg a lekérdezésen múlik, nem véletlenül zöld.
         """
-        db, mappa = indexelt
+        db, mappa, tar = indexelt
 
         def hibas(m):
             with open_index(db) as conn:
                 return [Path(r.path) for r in photos_in_folder(conn, m)[:4]]
 
         szolgaltato = FolderCoverProvider(hibas)
-        assert szolgaltato.requestImage(str(mappa), None, None).isNull()
+        kep = szolgaltato.requestImage(str(mappa), None, None)
+        assert (kep.width(), kep.height()) == (1, 1)

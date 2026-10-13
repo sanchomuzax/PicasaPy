@@ -1,251 +1,140 @@
 <p align="center">
-  <img src="docs/assets/logo-card.svg" alt="PicasaPy logó" width="181">
+  <img src="docs/assets/logo-card.svg" alt="PicasaPy" width="181">
 </p>
 
-<p align="center"><em>Google Picasa szellemében, modern Python/Qt alapokon.</em></p>
+<p align="center"><em>Photo management and editing inspired by Google Picasa.</em></p>
 
 <p align="center">
   <a href="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml"><img src="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
-  <a href="https://github.com/sanchomuzax/PicasaPy/releases"><img src="https://img.shields.io/github/v/release/sanchomuzax/PicasaPy?color=orange&label=version" alt="Legfrissebb kiadás"></a>
+  <a href="https://github.com/sanchomuzax/PicasaPy/releases"><img src="https://img.shields.io/github/v/release/sanchomuzax/PicasaPy?color=orange&label=version" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
-## Mi ez?
-
-A PicasaPy a **Google Picasa** fotókezelő és -szerkesztő program nyílt forráskódú újraírása Python nyelven. A Picasát a Google 2016-ban kivezette, de sokan a mai napig használják gyors böngészés, csillagozás, feliratozás és nem-destruktív szerkesztés miatt. A PicasaPy célja egy modern, keresztplatformos utód, amely **kétirányúan kompatibilis** a Picasa `.picasa.ini` formátumával — a régi és az új szoftver ugyanazon a fotótáron használható. ⚠️ Egy korlátot érdemes tudni: az **éppen futó** Picasa nem olvassa újra a `.picasa.ini`-t, ezért amit a PicasaPy-ben módosít, abban a Picasában csak a mappa újraolvasása vagy újraindítás után jelenik meg (a másik irány azonnal működik). Ezt kimértük, nem feltevés. Python nyelven, PySide6 (Qt 6) / QML felülettel készül; a fejlesztés Linux-first (Raspberry Pi 5-ön épül és tesztelődik), licence **GPL-3.0**. A projekt még **korai fejlesztési fázisban** van (0.x), messze az 1.0-tól — hibák és hiányzó funkciók még előfordulhatnak.
-
 <p align="center">
-  <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy fő ablak rács nézetben" width="700">
+  <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy – photo grid / képrács" width="700">
 </p>
 
----
+<p align="center"><a href="#english">English</a> · <a href="#magyar">Magyar</a></p>
 
-## Fő képességek
+# English
 
-A fejlesztés túllépett az 1. fázis (kezelő + néző) MVP-jén, és mélyen a 2.
-fázisban (szerkesztő) jár. A ténylegesen kész funkciók fázisonként:
+## What is PicasaPy?
 
-**Kezelő + néző (1. fázis)**
+PicasaPy is an open-source photo manager and editor built with Python, PySide6, and Qt Quick. It is designed as a modern successor to Google Picasa and reads and writes the same `.picasa.ini` format, so both applications can work with the same photo folders. PicasaPy updates the modification time of edited photos so a running Picasa can refresh them, but Picasa may overwrite external edits the next time it writes its own changes. The shared format therefore does not provide conflict-safe live synchronization.
 
-- **`.picasa.ini` byte-egzakt round-trip parser** — amit a PicasaPy nem ismer fel egy `.picasa.ini` fájlban, azt változtatás nélkül visszaírja. Az írás ütközésbiztos: ha a Picasa közben belenyúlt a fájlba, a módosítás a friss tartalomra játszódik újra, nem felül rajta. Ide tartozik a virtuális albumok (`[.album:…]` szekciók) round-trip olvasása/megőrzése is — böngésző UI-juk még nincs.
-- **Mappa-bejárás (scanner)** a támogatott képformátumokra, watched-folders kezeléssel.
-- **SQLite + FTS5 alapú index** a gyors kereséshez és szűréshez.
-- **EXIF/IPTC metaadat-olvasás**, valamint **IPTC felirat (caption) írás** JPEG fájlokba.
-- **Miniatűr-gyorsítótár (thumbnail cache)** OpenCV-vel.
-- **PySide6/QML fő ablak**, Picasa-hű dizájnnal (rács nézet, csillagsáv, tálca).
-- **Magyar lokalizáció.**
-- **Egyképes néző (viewer)** léptetéssel, valamint **Időrend nézet** (év/hónap szerinti csoportosítás, Ctrl+5).
-- **Csillagozás, nem-destruktív forgatás, felirat-szerkesztés.**
-- **Többes kijelölés, szűrés, keresés.**
-- **Import forrásból** (kártya/mappa beolvasása, dátum-alapú mappa-sablon, másolás vagy áthelyezés).
-- **Meglévő Picasa-telepítés átvétele** (Wine-os/NAS-ra másolt `WatchedFolders.txt` felismerése és path-remap-elt átvétele).
-- **Export** célmappába (forgatás és `filters=` lánc beégetésével, EXIF/IPTC-megőrzéssel).
-- **XMP-export** sidecar fájlba (digiKam/Lightroom-kompatibilis).
-- **Duplikátum-kezelő** (egzakt és hasonlósági keresés, nem-destruktív feloldás).
+## Features
 
-**Szerkesztő (2. fázis)**
+- **Library management and browsing:** scan and watch folders, browse albums and collections, search and filter photos, import from folders or removable devices, organize files, and manage stars, captions, and tags.
+- **Photo viewer:** view photos and videos, move between items, and run slideshows.
+- **Editor and effects:** make non-destructive edits stored in `.picasa.ini`; crop and straighten photos, remove red eye, retouch, add text overlays, adjust light and color, and apply image effects.
+- **Metadata, faces, and places:** read photo metadata and write captions to image files; detect and group faces, assign names, and view or edit geotags on a map.
+- **Export and sharing:** export edited photos and videos, create HTML galleries and XMP sidecar files, and prepare photo attachments in the system email application.
+- **Movies, collages, and printing:** create movies from photos and compose collages; print photos and contact sheets or split an image across pages for a poster.
 
-- **Nem-destruktív szerkesztő munkamenet** (Visszaállítás, undo) a `.picasa.ini` `filters=` láncára építve.
-- **20+ szűrő/effekt** (pl. autolight, autocolor, fill, finetune, unsharp, grain, vignette, glow, tint, sepia, bw, radblur/radsat, irányított tónusozás) — a teljes lista a render-motor kapcsolótáblájában (`src/picasapy/render/chain.py`).
-- **Vágás (crop) átfedő eszközzel**, hisztogram, effekt-vágólap (másolás/beillesztés több képre).
-- **PMP/db3 olvasó réteg** (PMP-oszlopok, thumbindex, deferredregion, path-remap) — tesztelt, de a tényleges *indexbe* import még nyitott ([#1](https://github.com/sanchomuzax/PicasaPy/issues/1)).
+## Installation and running
 
-Azóta elkészült (a lista korábban ezeket még hiányzóként sorolta):
+- **Windows:** download the `PicasaPy-Setup-….exe` installer from [Releases](https://github.com/sanchomuzax/PicasaPy/releases) and run it. Python is not required.
+- **Linux:** run PicasaPy from source, as described below.
 
-- **Retusálás és szöveg-eszköz** a szerkesztőben ([#148](https://github.com/sanchomuzax/PicasaPy/issues/148)).
-- **Kollázs és mozgófilm készítés** ([#29](https://github.com/sanchomuzax/PicasaPy/issues/29)).
-- **Geocímke: térkép-nézet és szerkesztés** ([#30](https://github.com/sanchomuzax/PicasaPy/issues/30)).
-- **A Picasa 3.9-es effekt-fülei** dekódolva ([#190](https://github.com/sanchomuzax/PicasaPy/issues/190)).
-- **Arcfelismerés és -csoportosítás**: arc-detektálás, beágyazás és klaszterezés, **Emberek panel**, valamint a felismert régiók `faces=` visszaírása a `.picasa.ini`-be ([#26](https://github.com/sanchomuzax/PicasaPy/issues/26) részben).
-- **Sötét téma**: kapcsolható és megjegyzett megjelenés (a korábbi „mindig világos" állítás elavult).
+### Run from source on Linux
 
-Amit **még nem** tud:
-
-- **`contacts.xml` generálása** ([#26](https://github.com/sanchomuzax/PicasaPy/issues/26)) — a Picasa névjegyzékét olvasni tudjuk, írni még nem; a db3-importból örökölt „ignorált arcok" kezelése is nyitott.
-- **PMP/db3-import az indexbe** ([#1](https://github.com/sanchomuzax/PicasaPy/issues/1)) — az olvasó réteg kész, a tényleges import még nem.
-
-## Állapot
-
-⚠️ **Korai fejlesztési fázisban** van (a mindenkori verziót a fenti jelvény és a [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldal mutatja), messze az 1.0-tól. A projekt túl van az 1. fázis (kezelő + néző) MVP-jén, és mélyen a **2. fázisban** (nem-destruktív szerkesztő) jár. A formátum-kompatibilitás és az alapvető könyvtárkezelés stabil, de az API és a fájlformátum-részletek még változhatnak.
-
-## Hogyan készült?
-
-A fejlesztést alapos **formátum- és algoritmus-kutatás** előzte meg: NotebookLM-tudásbázis 30 forrással, referencia-repók auditja, valódi 140 ezer képes Picasa-adatbázison végzett validálás és „golden-image" mérések az eredeti Picasa 3.9-cel. A kutatás történetét és eredményeit — egy összefoglaló infografikával együtt — a [Hogyan készült a kutatás?](docs/research-story.md) dokumentum mutatja be.
-
-## Telepítés és futtatás Linuxon
-
-Debian/Raspberry Pi OS (trixie) rendszercsomagokkal ajánlott, mert a PySide6 és az OpenCV apt-csomagjai jól működnek RPi5-ön:
+Install Git and Python 3.12 or newer, then run:
 
 ```bash
-sudo apt install \
-  python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtqml \
-  python3-pyside6.qtquick python3-pyside6.qtquickcontrols2 python3-pyside6.qtwidgets \
-  python3-pyside6.qtmultimedia \
-  python3-opencv python3-pil python3-piexif python3-watchdog \
-  qml6-module-qtquick qml6-module-qtquick-controls \
-  qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window \
-  qml6-module-qtmultimedia
-```
-
-> **Videó-lejátszás:** a nézőbeli lejátszáshoz ([#14](https://github.com/sanchomuzax/PicasaPy/issues/14)) a `qml6-module-qtmultimedia`
-> és a `python3-pyside6.qtmultimedia` csomag kell. Ha hiányzik, a PicasaPy
-> attól még fut — a videóknál egy figyelmeztető szöveg jelenik meg a néző
-> lejátszó-felülete helyett. (Pip-es telepítésnél a `PySide6` csomag ezt
-> már tartalmazza; Linuxon a rendszer `libpulse0` csomagja is kell hozzá.)
-
-```bash
-
 git clone https://github.com/sanchomuzax/PicasaPy.git
 cd PicasaPy
-./picasapy ~/Kepek
+sudo apt-get install -y $(python3 scripts/print_dependencies.py --apt)
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install .
+picasapy ~/Pictures
 ```
 
-## Telepítés Windowson
+### Run from source on Windows
 
-**A rendes út: a telepítő.** A
-[Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon minden
-kiadásnál ott van a `PicasaPy-Setup-<verzió>.exe` — egy fájl, letöltés,
-indítás. Pythont **nem** kell telepíteni: a program a saját
-futtatókörnyezetét hozza magával. A telepítő Start menü bejegyzést és (ha
-kéred) asztali ikont ad, és a Programok és szolgáltatások alól
-eltávolítható ([#3021](https://github.com/sanchomuzax/PicasaPy/issues/3021)).
+Install Git and Python 3.12 or newer, then run these commands in PowerShell:
 
-### Fejlesztői út (Windows)
+```powershell
+git clone https://github.com/sanchomuzax/PicasaPy.git
+cd PicasaPy
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install .
+picasapy "C:\Users\felhasznalo\Pictures"
+```
 
-Az alábbi lépések a **fejlesztéshez** kellenek, nem a használathoz — ahogy a
-`packaging/windows/install.bat` is fejlesztői eszköz. Windows-os támogatás
-**kísérleti**: a fejlesztés Linuxon (RPi5) folyik, de a tesztkészletet a CI
-Windowson is futtatja.
+The `picasapy` command opens the photo folder passed to it. The package dependencies are declared in `pyproject.toml` and are installed by `pip install .`.
 
-1. Telepíts Python 3.12+-t a [python.org](https://www.python.org/) oldalról.
-2. A támogatott PySide6-verzió **6.12 alatti**. A 6.12-es sorozat jelenleg
-   nem támogatott; forrásból indításkor a program ezt a verziót és a Qt
-   futtatókörnyezetét is kiírja. Telepítsd a függőségeket:
+## Documentation
 
-   ```powershell
-   pip install "PySide6<6.12" opencv-python pillow piexif watchdog
-   ```
-3. Klónozd a repót, majd indítsd:
+Project specifications are in [`docs/specs/`](docs/specs/), and design decisions are in [`docs/decisions/`](docs/decisions/). Version-specific changes are listed in the [CHANGELOG](CHANGELOG.md).
 
-   ```powershell
-   git clone https://github.com/sanchomuzax/PicasaPy.git
-   cd PicasaPy
-   python picasapy C:\Kepek
-   ```
+## Contributing
 
-## Tesztek futtatása
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development setup and contribution guidelines.
 
-A teljes tesztkészlet **egyetlen** `pytest`-processzben futtatva Qt/GIL-
-deadlockba ragadhat ([#53](https://github.com/sanchomuzax/PicasaPy/issues/53), [#155](https://github.com/sanchomuzax/PicasaPy/issues/155)) — ezért a darabolt `scripts/run_tests.py`
-az elsődleges út: a nem-Qt teszteket egy processzben, a `tests/app` alatti
-QML-teszteket pedig fájlonként, külön processzben, kemény timeouttal
-futtatja, így egy beragadó fájl sem viszi el az egész futást.
+## License
 
-A futtató alapból **sorosan** dolgozik. Ha egyedül vagy a gépen és sietős,
-`PICASAPY_TESZT_PARHUZAM=4` bekapcsolja a párhuzamos futást (jóval gyorsabb,
-de terhelés alatt az időzítésre érzékeny tesztek hamisan bukhatnak —
-[#1038](https://github.com/sanchomuzax/PicasaPy/issues/1038)).
+PicasaPy is licensed under [GPL-3.0](LICENSE).
 
-Linuxon és Windowson (PowerShell) egyaránt:
+# Magyar
+
+## Mi a PicasaPy?
+
+A PicasaPy nyílt forráskódú fotókezelő és képszerkesztő Python, PySide6 és Qt Quick alapokon. A Google Picasa modern utódjának készül, és ugyanazt a `.picasa.ini` formátumot olvassa és írja, így a két program ugyanazokkal a fotómappákkal használható. A PicasaPy a módosított képek fájlidejét is frissíti, hogy a már futó Picasa észlelhesse a változást, de a Picasa egy későbbi saját írásakor felülírhatja a külső módosításokat. A közös formátum ezért nem jelent ütközésbiztos, élő szinkronizálást.
+
+## Funkciók
+
+- **Könyvtárkezelés és böngészés:** mappák beolvasása és figyelése, albumok és gyűjtemények böngészése, keresés és szűrés, importálás mappákból vagy cserélhető adathordozóról, fájlrendezés, csillagok, feliratok és címkék kezelése.
+- **Néző:** fényképek és videók megtekintése, léptetés közöttük és diavetítés indítása.
+- **Szerkesztő és effektek:** nem destruktív módosítások mentése a `.picasa.ini` fájlba; vágás és kiegyenesítés, vörösszem-javítás, retusálás, szöveg ráhelyezése, fény- és színbeállítások, valamint képeffektek.
+- **Metaadatok, arcok és helyek:** fotómetaadatok olvasása és képfeliratok fájlba írása; arcok felismerése és csoportosítása, elnevezése, valamint geocímkék megtekintése és szerkesztése térképen.
+- **Exportálás és megosztás:** szerkesztett fényképek és videók exportálása, HTML-galériák és XMP-kísérőfájlok készítése, valamint fényképek előkészítése a rendszer levelezőprogramjához.
+- **Filmek, kollázsok és nyomtatás:** fényképekből film készítése és kollázsok összeállítása; fényképek és indexképlapok nyomtatása, illetve poszter több lapra bontása.
+
+## Telepítés és futtatás
+
+- **Windows:** töltsd le a `PicasaPy-Setup-….exe` telepítőt a [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalról, és indítsd el. Pythont nem kell külön telepítened.
+- **Linux:** a PicasaPy forrásból futtatható, az alábbiak szerint.
+
+### Futtatás forrásból Linuxon
+
+Telepítsd a Gitet és a Python 3.12-es vagy újabb változatát, majd futtasd:
 
 ```bash
-pip install $(python scripts/print_dependencies.py --dev)
-python scripts/run_tests.py
+git clone https://github.com/sanchomuzax/PicasaPy.git
+cd PicasaPy
+sudo apt-get install -y $(python3 scripts/print_dependencies.py --apt)
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install .
+picasapy ~/Pictures
 ```
 
-Lefedettség-összesítővel ([#300](https://github.com/sanchomuzax/PicasaPy/issues/300)):
+### Futtatás forrásból Windowson
 
-```bash
-python scripts/run_tests.py --cov
+Telepítsd a Gitet és a Python 3.12-es vagy újabb változatát, majd PowerShellben futtasd:
+
+```powershell
+git clone https://github.com/sanchomuzax/PicasaPy.git
+cd PicasaPy
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install .
+picasapy "C:\Users\felhasznalo\Pictures"
 ```
 
-Gyors, célzott ellenőrzéshez (nem a végső, teljes futás helyett) a nem-Qt
-tesztek közvetlenül, egy processzben is futtathatók:
+A `picasapy` parancs a megadott fotómappát nyitja meg. A futáshoz szükséges Python-csomagokat a `pyproject.toml` sorolja fel; a `pip install .` telepíti őket.
 
-```bash
-python3 -m pytest tests --ignore=tests/app -q
-```
+## Dokumentáció
 
-Megjegyzések Windowshoz:
+A projekt specifikációi a [`docs/specs/`](docs/specs/) mappában, a tervezési döntések a [`docs/decisions/`](docs/decisions/) alatt találhatók. A kiadásonkénti változásokat a [CHANGELOG](CHANGELOG.md) sorolja fel.
 
-- Fej nélküli környezetben (pl. CI, távoli shell) a Qt-nek offscreen platform
-  kell: `$env:QT_QPA_PLATFORM = "offscreen"`.
-- Két teszt platform-okokból kimarad (skip): a POSIX-jogosultságokra épülő
-  chmod-tesztek Windowson nem értelmezhetők.
-- A törött-symlink teszt jogosultság híján (se Developer Mode, se admin)
-  szintén skippel — ez normális, nem hiba.
+## Közreműködés
 
-## Hordozhatósági tanulságok (Windows)
-
-A tesztkészlet Linuxon és Windowson is fut (CI: `ubuntu-latest` +
-`windows-latest`). A port közben rögzített szabályok:
-
-- **Atomikus fájlcsere:** az `os.replace()` Windowson is atomikus, ezért az
-  `.picasa.ini`-írás (temp fájl + csere) mindkét platformon biztonságos. A
-  könyvtár-fsync viszont csak POSIX-on lehetséges — Windowson kihagyjuk
-  (`src/picasapy/ini/io.py`).
-- **`chmod` szemantika:** Windowson a `chmod` csak a read-only bitet kezeli,
-  a `chmod(0)` nem tesz olvashatatlanná egy fájlt. A jogosultság-alapú
-  tesztek ezért `os.name == "posix"` skip-markert vagy `os.access()`-őrt
-  használnak.
-- **Symlink jogosultsághoz kötött:** Windowson symlinket csak Developer
-  Mode-dal vagy adminként lehet létrehozni — a symlinkes tesztek `OSError`
-  esetén skippelnek, sosem buknak emiatt.
-- **Útvonal-szeparátor:** minden útvonal-hasítás a `[/\\]` regexszel vagy
-  `pathlib.Path`-szal történik; `"/"`-re string-splitelni tilos. A QML felé
-  `QUrl.fromLocalFile()` adja a `file://` URL-t (Windowson `file:///C:/…`).
-- **Qt offscreen:** a CI mindkét lábon `QT_QPA_PLATFORM=offscreen`-nel fut,
-  így a QML-tesztek kijelző nélkül is működnek.
-- **Fájlfigyelés:** a `watchdog` Windowson más backendet használ
-  (`ReadDirectoryChangesW`), az eseménysorrend eltérhet — a figyelő-tesztek
-  eseményre várnak (timeoutos `Event.wait`), nem fix időzítésre építenek.
-- **OpenCV:** CI-ban az `opencv-python-headless` csomag kell (GUI-függőségek
-  nélkül); asztali gépen a sima `opencv-python` is jó.
-
-## Architektúra röviden
-
-- `src/picasapy/ini/` — a `.picasa.ini` fájlformátum parsere és írója (round-trip elv).
-- `src/picasapy/scanner/` — mappa-bejárás, figyelt mappák, támogatott fájltípusok.
-- `src/picasapy/index/` — SQLite + FTS5 index, sémakezelés, szinkronizáció.
-- `src/picasapy/metadata/` — EXIF/IPTC olvasás és IPTC felirat-írás.
-- `src/picasapy/thumbs/` — miniatűr-gyorsítótár OpenCV-vel.
-- `src/picasapy/edit/` — nem-destruktív szerkesztő munkamenet (session, mentés, Visszaállítás).
-- `src/picasapy/render/` — a `filters=` lánc szűrőinek/effektjeinek render-motorja.
-- `src/picasapy/export/` — export célmappába és XMP sidecar-export.
-- `src/picasapy/dedup/` — duplikátum-kereső (egzakt és hasonlósági).
-- `src/picasapy/pmpimport/` — PMP/db3 olvasó réteg (a tényleges indexbe-import nyitott, [#1](https://github.com/sanchomuzax/PicasaPy/issues/1)).
-- `src/picasapy/app/` — PySide6/QML alkalmazás (kontroller, modellek, QML nézetek, lokalizáció).
-
-## Kompatibilitás
-
-- **`.picasa.ini`**: csillag, forgatás, felirat, szűrők (filters mátrix) és virtuális albumok round-trip olvasása és írása, Picasa 3.x formátumban.
-- **IPTC felirat**: JPEG fájlokba beírt IPTC caption mező kezelése.
-- **XMP**: fotónkénti sidecar-export (digiKam/Lightroom-kompatibilis).
-- **PMP/db3**: az olvasó réteg (PMP-oszlopok, thumbindex, deferredregion, path-remap) kész és tesztelt; a tényleges *indexbe* import még nyitott ([#1](https://github.com/sanchomuzax/PicasaPy/issues/1)).
-
-## Verziózás
-
-A projekt [Semantic Versioning](https://semver.org/)-t követ. A `0.x` verziók **instabilak**, a köztük lévő API- és formátum-változások nincsenek garantálva visszafelé kompatibilisnek. Lásd a [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalt.
-
-## Az arcfelismerő modellek
-
-Az arcfelismerés két **ONNX-modellfájlt** használ, amelyek **nincsenek benne a csomagban** (együtt ~37 MB, és nem a mi művünk). A programon belül az **Eszközök ▸ Arcok keresése…** ablak **Modell letöltése** gombja hozza le őket; kézzel is elhelyezhetők, de nem kell.
-
-| modell | fájl | méret | licenc |
-| --- | --- | --- | --- |
-| **YuNet** — arc-detektálás | `face_detection_yunet_2023mar.onnx` | 232 589 bájt (~227 KB) | [MIT](https://github.com/opencv/opencv_zoo/blob/main/models/face_detection_yunet/LICENSE) |
-| **SFace** — arc-lenyomat, csoportosítás | `face_recognition_sface_2021dec.onnx` | 38 696 353 bájt (~36,9 MB) | [Apache-2.0](https://github.com/opencv/opencv_zoo/blob/main/models/face_recognition_sface/LICENSE) |
-
-- **Forrás**: az [OpenCV Zoo](https://github.com/opencv/opencv_zoo) projekt (`models/` mappa, `main` ág). Mindkét licenc permisszív, tehát a projekt GPL-3.0 licencével összefér.
-- **Hova kerül**: `$XDG_DATA_HOME/picasapy/models/` (alapból `~/.local/share/picasapy/models/`). A `PICASAPY_FACE_MODEL`, illetve `PICASAPY_FACE_EMBED_MODEL` környezeti változóval máshová is mutathat.
-- **Épség-ellenőrzés**: a letöltött fájl **méretét és SHA-256 ellenőrzőösszegét** a program összeveti a kódban rögzített értékkel, és csak egyezés esetén teszi a helyére. Csonka modellel az arckeresés némán *rosszul* működne, ezért a hibás fájlt eldobja. (A modellek Git LFS-ben élnek: a `raw.githubusercontent.com` a fájl helyett egy 131 bájtos szövegmutatót ad — az ellenőrzés ezt is kifogja.)
-- **Más forrás** (pl. zárt hálózaton belüli tükör) a `PICASAPY_MODEL_BASE_URL` környezeti változóval adható meg; a modellek relatív útvonala ehhez fűződik hozzá.
+A fejlesztői környezet és a közreműködés tudnivalóit a [`CONTRIBUTING.md`](CONTRIBUTING.md) ismerteti.
 
 ## Licenc
 
-[GPL-3.0](LICENSE) — szabadon megosztható és módosítható; a GPL-es referencia-repókból portolt kódrészletek attribúcióval szerepelnek.
-
-## Köszönet
-
-Köszönet az eredeti **Google Picasa** csapatának a program megalkotásáért — a PicasaPy dizájn-referenciája a **Picasa 3.9**.
+A PicasaPy a [GPL-3.0](LICENSE) licenc alatt érhető el.

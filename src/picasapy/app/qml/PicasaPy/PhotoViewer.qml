@@ -239,10 +239,14 @@ Rectangle {
     signal editCollageRequested(string path)
     //: #2114: a film forrásprojektjének újranyitása
     signal editMovieRequested(string path)
-    // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
-    // megerősítő dialógus a Main.qml-ben él (FileOpsDialogs), ezért a
-    // kérés jelként megy kifelé
-    signal deleteRequested(string path)
+    // #422/#4621: a néző törlés-parancsa (Ctrl+Delete és a helyi menü
+    // tétele) — a nézetfüggő elágazás (lemezről törlés vagy eltávolítás az
+    // albumból) és a megerősítők a Main.qml-ben élnek, ezért a kérés
+    // jelként megy kifelé; a célt (az aktív kép sorát) a gazda adja
+    signal deleteRequested()
+    // #4621: albumból megnyitott képen a törlés-parancs az albumból
+    // eltávolít — a helyi menü felirata ezt mutatja (a gazda köti)
+    property bool deleteRemovesFromAlbum: false
     // #422: a mentés-szemantika parancsai a nézőből — a gazda (Main.qml)
     // ugyanazokat a megerősítéseket nyitja, mint a rácsban
     signal saveRequested(int row)
@@ -1569,8 +1573,8 @@ Rectangle {
     //
     // #1418: a törlés a nézőben — akárcsak a rácsban — Ctrl+Delete (a
     // helyi menük rekordjai, docs/specs/picasa-gyorsbillentyuk.md 4.).
-    // Ugyanazt az utat hívja, mint a jobbklikk-menü "Törlés lemezről"
-    // tétele (onDeleteRequested lent).
+    // Ugyanazt az utat hívja, mint a jobbklikk-menü törlés-tétele
+    // (onDeleteRequested lent): a gazda nézetfüggő elágazása (#4621).
     //
     // A `Main.qml` `shortcutDeleteFromDiskViewer`-e ezzel egy irányba
     // mutat: ott is `Ctrl+Delete` (#1418). A korábbi, puszta `Delete`
@@ -1586,8 +1590,8 @@ Rectangle {
             event.accepted = true
         } else if (event.key === Qt.Key_Delete
                    && event.modifiers === Qt.ControlModifier) {
-            if (viewer.currentPath.length > 0)
-                viewer.deleteRequested(viewer.currentPath)
+            if (viewer._aktivUt().length > 0)
+                viewer.deleteRequested()
             event.accepted = true
         }
     }
@@ -4951,10 +4955,20 @@ Rectangle {
         && viewer.currentIndex >= 0
         ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
 
+    //: #4621: az AKTÍV (kijelölt) fél képének útja — A|B módban jobb
+    //: fókusszal nem a `currentPath` (bal kép). A helyi menü minden tétele
+    //: ezt használja, hogy az egész menü EGY képre vonatkozzon, a törlés
+    //: (`_kijeloltSort()`) is. FÜGGVÉNY, mert imperatív kezelők hívják (#218).
+    function _aktivUt() {
+        var sor = viewer._kijeloltSort()
+        return viewer.photosModel && sor >= 0
+            ? viewer.photosModel.filePathAt(sor) : ""
+    }
+
     //: #1612: a menü HALASZTOTT — az `ensure()` az első jobbklikkre építi
     //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
     //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
-    function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer.currentPath, typeof fileOpsController !== "undefined" ? fileOpsController : null) }
+    function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer._aktivUt(), typeof fileOpsController !== "undefined" ? fileOpsController : null) }
 
     //: #4566: a `movieeditpanel/reset_trim` megerősítése — az eredeti
     //: `CThumbUI::UndomovieEdits` kérdése és `IDS_CONFIRMREVERT_YES_BUTTON`
@@ -4987,6 +5001,7 @@ Rectangle {
         sourceComponent: Component {
         ViewerContextMenu {
         id: viewerMenu
+        removesFromAlbum: viewer.deleteRemovesFromAlbum
         // a revision-nel együtt kötve, hogy a menü újranyitáskor friss
         // rejtett-állapotot mutasson (a PhotoContextMenu mintája)
         hidden: viewer.photosModel && viewer.currentIndex >= 0
@@ -5042,22 +5057,22 @@ Rectangle {
         }
         onOpenFileRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController
-                && viewer.currentPath.length > 0)
-                fileOpsController.openPhoto(viewer.currentPath)
+                && viewer._aktivUt().length > 0)
+                fileOpsController.openPhoto(viewer._aktivUt())
         }
         onLocateRequested: function(original) {
-            if (typeof fileOpsController !== "undefined" && fileOpsController && viewer.currentPath.length > 0)
-                original ? fileOpsController.revealOriginal(viewer.currentPath)
-                    : fileOpsController.revealPhoto(viewer.currentPath)
+            if (typeof fileOpsController !== "undefined" && fileOpsController && viewer._aktivUt().length > 0)
+                original ? fileOpsController.revealOriginal(viewer._aktivUt())
+                    : fileOpsController.revealPhoto(viewer._aktivUt())
         }
         onCopyFullPathRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController
-                && viewer.currentPath.length > 0)
-                fileOpsController.copyFullPath(viewer.currentPath)
+                && viewer._aktivUt().length > 0)
+                fileOpsController.copyFullPath(viewer._aktivUt())
         }
         onDeleteRequested: {
-            if (viewer.currentPath.length > 0)
-                viewer.deleteRequested(viewer.currentPath)
+            if (viewer._aktivUt().length > 0)
+                viewer.deleteRequested()
         }
         onPropertiesRequested: {
             // #1773: a helyi menü a fiók Tulajdonságok lapjára VÁLT (az

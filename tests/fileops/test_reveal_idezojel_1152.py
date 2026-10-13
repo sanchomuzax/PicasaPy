@@ -21,7 +21,7 @@ Mindkettőt ugyanaz a függvény hivatkozza (`0x00981280`).
 
 ⚠️ **Az útvonal IDÉZŐJELBEN van.** A mi kódunk idézőjel nélkül adta át
 (`/select,{path}`), és a tulajdonos útvonalában SZÓKÖZ van
-(`OneDrive - centralmediacsoport`) — az Intéző így nem tudta értelmezni,
+(`OneDrive - Ceg`) — az Intéző így nem tudta értelmezni,
 és az alapértelmezett mappát nyitotta meg.
 """
 
@@ -41,7 +41,7 @@ def _parancs_windowson(monkeypatch, ut: Path, *, kijelol: bool = True):
 
 def test_a_kijelolo_parancs_IDEZOJELEZI_az_utvonalat(monkeypatch):
     """⚠️ A jegy magja: idézőjel nélkül a szóközös útvonal elhasal."""
-    ut = Path(r"C:\Users\attila.virag\OneDrive - centralmediacsoport\Képek\AI19.jpg")
+    ut = Path(r"C:\Users\felhasznalo\OneDrive - Ceg\Képek\AI19.jpg")
 
     parancs = _parancs_windowson(monkeypatch, ut)
 

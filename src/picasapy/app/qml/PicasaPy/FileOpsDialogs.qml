@@ -178,8 +178,11 @@ Item {
             if (!rowList || rowList.length === 0) return
             rows = rowList
             renameManyField.text = ""
-            includeDateCheck.checked = false
-            includeSizeCheck.checked = false
+            // #4879: a két jelölő állása megmarad (RenameUseDate/RenameUseSize)
+            var useDate = controller ? controller.renameUseDate() : false
+            var useSize = controller ? controller.renameUseSize() : false
+            includeDateCheck.checked = useDate
+            includeSizeCheck.checked = useSize
             updatePreview()
             open()
             renameManyField.forceActiveFocus()
@@ -194,6 +197,11 @@ Item {
                 : ""
         }
         property string previewText: ""
+        function saveFlags() {
+            if (controller)
+                controller.setRenameUseFlags(
+                    includeDateCheck.checked, includeSizeCheck.checked)
+        }
         onAccepted: {
             var base = renameManyField.text.trim()
             if (base.length > 0 && controller)
@@ -221,6 +229,14 @@ Item {
                 objectName: "renameManyField"
                 width: 300
                 font.pixelSize: Theme.fontSize
+                // #4879: a fájlnév hossza korlátos (a Windows 255 karakter)
+                maximumLength: 200
+                // #4879: rename.fen `filter="filename"` — tiltott fájlnév-
+                // karakter (\ / : * ? " < > |) nem gépelhető be, nem is
+                // illeszthető be
+                validator: RegularExpressionValidator {
+                    regularExpression: /^[^\\\/:*?"<>|]*$/
+                }
                 onTextChanged: renameManyDialog.updatePreview()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
@@ -238,12 +254,14 @@ Item {
                     objectName: "renameManyDateCheck"
                     text: qsTr("Date")
                     onCheckedChanged: renameManyDialog.updatePreview()
+                    onToggled: renameManyDialog.saveFlags()
                 }
                 CheckBox {
                     id: includeSizeCheck
                     objectName: "renameManySizeCheck"
                     text: qsTr("Image resolution")
                     onCheckedChanged: renameManyDialog.updatePreview()
+                    onToggled: renameManyDialog.saveFlags()
                 }
             }
             Text {

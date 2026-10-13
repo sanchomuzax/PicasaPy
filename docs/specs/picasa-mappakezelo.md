@@ -1054,7 +1054,7 @@ Képek\AI\
 Képek\lake\
 Képek\Picasa\
 Képek\wallpapers\
-C:\Users\attila.virag\Pictures\
+C:\Users\felhasznalo\Pictures\
 ```
 
 Három szabály olvasható ki:
@@ -1065,7 +1065,7 @@ Három szabály olvasható ki:
    4.3).
 2. **A megjelenítés vegyes**: ismert gyökér alatti mappák **relatív**
    alakban, záró `\`-sel (`Képek\AI\`), a többi **abszolút** útvonalként
-   (`C:\Users\attila.virag\Pictures\`). A `Videók` záró `\` nélkül áll — ez
+   (`C:\Users\felhasznalo\Pictures\`). A `Videók` záró `\` nélkül áll — ez
    a Windows-könyvtár (library) bejegyzés alakja.
 3. **A lista tartalmazhat olyan mappát, ami a fában nem is látszik**: a
    `Videók` nem szerepel a fa gyökerei közt (Asztal / Képek / Dokumentumok
@@ -2860,17 +2860,18 @@ felhasználónak, valódi adatvédelmet ígér ott, ahol nincs.
 
 ### Ami NINCS mérve
 
-- **Hol perzisztálódik** a `state` / `info` érték: a `0x005eb910` jelszóút
-  eléri a gyűjtemény `state` / `info` adatát, de ez csak az állapotobjektum
-  módosítását mutatja; a szerializáló és a lemezbeli cél nincs végigkövetve.
-  A tulajdonos valódi adatbázisában (302 `.pmp`) nincs jelszó-oszlop, de ez
-  önmagában nem zárja ki a külön profilfájlt vagy más tárolót. A megadott
-  `meroadat.tar` nem tartalmazott releváns `.pmp`, adatbázis- vagy
-  registry-mintát.
-- **A teljes mappa Hide/Unhide állapotának tárolása:** `0x007319f0` csak a
-  menüt építi fel; az írási útvonal nincs azonosítva. A `0x00710080`
-  `.picasa.ini`-út képszintű `hidden=yes` jelzője nem bizonyít mappaszintű
-  tárolást. A 32.3.1 szakasz rögzíti a részleteket.
+- ✅ **Hol perzisztálódik** a lenyomat (#4597, 2026-10-11): a db3
+  **`catdata`** táblájában (`CThumbDB+0x760`, regisztrálja `0x00415861`–
+  `0x0041586d`), a `Hidden Folders` sor **`info`** oszlopában
+  (`0x005ebc52`: `push "info"` · `call 0x006a63f0`). A `state` ugyanennek a
+  táblának egy másik oszlopa (`catdata_state.pmp`, a helyi mintában 20 sor).
+  ⇒ A jelszó **nem** az ini-ben él: a db3 törlésével elvész. A helyi
+  mintában `catdata_info.pmp` nincs (jelszót sosem állítottak be) — a fájl
+  neve a `<tábla>_<oszlop>.pmp` konvencióból következik, mintán nem látott.
+- ✅ **A teljes mappa Hide/Unhide állapotának tárolása** (#4597): a mappa
+  `.picasa.ini`-jének `[Picasa] P2category=Hidden Folders` sora, megjelenítéskor
+  `P2category=Folders on Disk`. A teljes lánc címekkel:
+  `picasa-menu-parancsok-viselkedes.md`, 32.3.1.
 - **Milyen kódolással** megy a nem ASCII jelszó az MD5-be: a hossz NUL-ig
   számolódik (`0x00a4cdd0`), tehát bájtsorozatról van szó, de a kódolás nem
   igazolt. ASCII jelszónál ez közömbös; ékezetesnél a kompatibilitás nem
@@ -2881,6 +2882,6 @@ felhasználónak, valódi adatvédelmet ígér ott, ahol nincs.
 hex-ábécé közvetlenül olvasva, a hívási lánc diszasszemblálva. A tárolás
 HELYE és a nem ASCII kódolás: **nem vizsgálva**, ld. fent.*
 
-**#4597 kutatási állapot:** az eredeti mappaszintű Hide/Unhide-állapot és a
-jelszó lemezbeli helye továbbra is nyitott. A `state` / `info` mező puszta
-beállítása nem bizonyít perzisztenciát.
+**#4597 kutatási állapot (2026-10-11):** megfejtve — a mappa rejtése az ini
+`P2category` mezőjében, a jelszó a db3 `catdata` `info` oszlopában él
+(`picasa-menu-parancsok-viselkedes.md`, 32.3.1).
