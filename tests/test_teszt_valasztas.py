@@ -30,6 +30,7 @@ def repo(tmp_path: Path) -> Path:
         "from picasapy import forras\n", encoding="utf-8"
     )
     (tmp_path / "tests/app/qml_functional/test_nev.py").write_text(
+        'QML_FILE = "PhotoViewer.qml"\n'
         "def test_nev():\n    assert True\n", encoding="utf-8"
     )
     (tmp_path / "tests/app/test_nem_qml.py").write_text(
@@ -320,3 +321,173 @@ def test_a_ci_a_valasztot_listat_futtatja_a_kotelezo_nev_megtartasaval() -> None
     assert "scripts/teszt_valasztas.py --lista" in chunks
     assert "--fajllista" in chunks
     assert "inputs.darabszam" in chunks
+
+
+def test_a_windows_pr_lista_csak_a_kivalasztott_windows_erzekeny_tesztekbol_all(
+    repo: Path,
+) -> None:
+    windows_teszt = "tests/app/test_windows_csapdak_1082.py"
+    altalanos_teszt = "tests/test_fogyaszto.py"
+    (repo / windows_teszt).parent.mkdir(parents=True, exist_ok=True)
+    (repo / windows_teszt).write_text("def test_win(): pass\n", encoding="utf-8")
+    kiv = tv.Selection(
+        (windows_teszt, altalanos_teszt, *tv.SMOKE_TESTS), False, "próba"
+    )
+
+    windows = tv.windows_only_tests(repo, kiv, force_full=False)
+
+    # A startup smoke próba a kötelező füstkészlet része, Windows alatt is fut.
+    assert windows.fajlok == (
+        windows_teszt,
+        "tests/app/test_startup_smoke_4687.py",
+    )
+    assert windows.teljes is False
+
+
+def test_a_main_windows_laba_a_teljes_keszletet_kapja(repo: Path) -> None:
+    teljes = tv.windows_only_tests(
+        repo, tv.Selection(tuple(tv.discover_tests(repo)), True, "main"),
+        force_full=True,
+    )
+
+    assert teljes.fajlok == tuple(tv.discover_tests(repo))
+    assert teljes.teljes is True
+
+
+def test_a_windows_seged_tesztlista_ures_lehet() -> None:
+    assert tv.windows_only_tests(
+        _ROOT, tv.Selection(("tests/test_teszt_valasztas.py",), False, "pr"),
+        force_full=False,
+    ).fajlok == ()
+
+
+def test_a_windows_erzekeny_lista_minden_utvonala_letezik() -> None:
+    assert tv.WINDOWS_SENSITIVE_TESTS
+    assert set(tv.WINDOWS_SENSITIVE_TESTS) <= set(tv.discover_tests(_ROOT))
+
+
+def test_a_windows_agat_orzo_tesztek_rajta_vannak_a_pr_listan(
+    repo: Path,
+) -> None:
+    windows_agak = {
+        "tests/app/qml_functional/test_adjust_timestamp_4332.py",
+        "tests/app/qml_functional/test_earth_megtekintes_1589.py",
+        "tests/app/qml_functional/test_eredeti_geometria_racs_2494.py",
+        "tests/app/qml_functional/test_maradek_arc_video_4229.py",
+        "tests/app/qml_functional/test_tiszta_profil_4317.py",
+        "tests/app/qml_functional/test_video_panel_4566.py",
+        "tests/app/test_application.py",
+        "tests/app/test_eltunt_gyoker_vedelme_1560.py",
+        "tests/app/test_fileops_controller.py",
+        "tests/app/test_folder_hierarchy.py",
+        "tests/app/test_indulasi_fusteszt_699.py",
+        "tests/app/test_kepernyovedo_tetlenseg_4613.py",
+        "tests/app/test_mentes_gyoker_feloldas_3776.py",
+        "tests/app/test_qml_video.py",
+        "tests/app/test_startup_smoke_4687.py",
+        "tests/app/test_timestamp_controller_4693.py",
+        "tests/app/test_timestamp_video_4885.py",
+        "tests/export/test_export_hibaagak_1617.py",
+        "tests/fileops/test_move_folder.py",
+        "tests/index/test_sync.py",
+        "tests/metadata/test_iptc_writer.py",
+        "tests/perf/test_exportcel_utvonalfeloldas_2483.py",
+        "tests/perf/test_tarolo_tipus_1660.py",
+        "tests/test_ioutil.py",
+        "tests/test_paths.py",
+        "tests/test_run_tests_maradek_eletjel_1358.py",
+        "tests/test_run_tests_osszeomlas_diagnosztika_1457.py",
+    }
+    posix_only = "tests/app/test_folder_dedup_repro.py"
+    selection = tv.Selection(tuple(sorted(windows_agak | {posix_only})), False, "PR")
+
+    windows = tv.windows_only_tests(repo, selection, force_full=False)
+
+    assert set(windows.fajlok) == windows_agak
+
+
+def test_ci_es_futtato_valtozasnal_a_fogyaszto_tesztcsoport_fut(repo: Path) -> None:
+    olvasok = {
+        ".github/workflows/ci.yml": "tests/test_ci_fogyaszto.py",
+        "scripts/run_tests.py": "tests/test_futtato_fogyaszto.py",
+        "scripts/kepesseg_or_baseline.txt": "tests/tools/test_kepesseg_or_1476.py",
+    }
+    for ut, teszt in olvasok.items():
+        (repo / ut).parent.mkdir(parents=True, exist_ok=True)
+        (repo / ut).write_text("", encoding="utf-8")
+        (repo / teszt).parent.mkdir(parents=True, exist_ok=True)
+        needle = Path(ut).name if ut.endswith(".yml") or ut.endswith(".txt") else "run_tests"
+        (repo / teszt).write_text(f"# {needle}\n", encoding="utf-8")
+
+    for ut, teszt in olvasok.items():
+        dontes = tv.select_tests(repo, [ut])
+
+        assert dontes.teljes is False, ut
+        assert teszt in dontes.fajlok, ut
+        assert set(tv.SMOKE_TESTS) <= set(dontes.fajlok), ut
+
+
+def test_ismeretlen_ci_fajl_tovabbra_is_teljes_keszletet_valaszt(repo: Path) -> None:
+    assert tv.select_tests(repo, [".github/workflows/ismeretlen.yml"]).teljes
+
+
+@pytest.mark.parametrize(
+    ("ut", "fogyaszto"),
+    [
+        (".github/workflows/ci.yml", "tests/test_teszt_valasztas.py"),
+        (".github/workflows/teszt-darabok.yml", "tests/test_ci_kor_ideje_1127.py"),
+        ("scripts/run_tests.py", "tests/test_run_tests_fajllista_4922.py"),
+        (
+            "scripts/kepesseg_or_baseline.txt",
+            "tests/tools/test_kepesseg_or_1476.py",
+        ),
+    ],
+)
+def test_a_teljes_keszletre_visszaeso_valodi_utvonalak_szukuleteset_orzik(
+    ut: str, fogyaszto: str,
+) -> None:
+    dontes = tv.select_tests(_ROOT, [ut])
+
+    assert dontes.teljes is False, ut
+    assert fogyaszto in dontes.fajlok, ut
+
+
+def test_qml_valtozas_csak_a_nev_szerint_hivatkozo_teszteket_valaszt(
+    repo: Path,
+) -> None:
+    cel = "tests/app/qml_functional/test_photoviewer.py"
+    masik = "tests/app/qml_functional/test_masik.py"
+    (repo / cel).write_text('QML = "PhotoViewer.qml"\n', encoding="utf-8")
+    (repo / masik).write_text("def test_masik(): assert True\n", encoding="utf-8")
+
+    dontes = tv.select_tests(repo, ["src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"])
+
+    assert cel in dontes.fajlok
+    assert masik not in dontes.fajlok
+
+
+def test_a_pr_darabok_szama_a_mereshez_igazodik_mainen_tizenhat_a_plafon() -> None:
+    fajlok = [f"tests/test_{i}.py" for i in range(80)]
+    idok = {ut: 57.225 for ut in fajlok}  # összesen 76,3 perc, a mért PR-minta
+
+    pr = tv.ci_shard_plan(fajlok, idok, teljes=False, main_run=False)
+    main = tv.ci_shard_plan(fajlok, idok, teljes=True, main_run=True)
+
+    assert pr.darabszam == 20
+    assert main.darabszam == 16
+    kiosztas = [
+        set(tv.darab_fajljai(fajlok, idok, sorszam, pr.darabszam))
+        for sorszam in range(1, pr.darabszam + 1)
+    ]
+    assert set().union(*kiosztas) == set(fajlok)
+    assert sum(map(len, kiosztas)) == len(fajlok)
+    teljes_pr = tv.ci_shard_plan(fajlok, idok, teljes=True, main_run=False)
+    teljes_kiosztas = [
+        tv.darab_fajljai(
+            fajlok, idok, sorszam, teljes_pr.darabszam, teljes=True
+        )
+        for sorszam in range(1, teljes_pr.darabszam + 1)
+    ]
+    assert teljes_pr.darabszam == 20
+    assert set().union(*map(set, teljes_kiosztas)) == set(fajlok)
+    assert sum(map(len, teljes_kiosztas)) == len(fajlok)
