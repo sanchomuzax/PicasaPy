@@ -1170,7 +1170,10 @@ MenuBar {
             placeholder: false
             checkable: true
             checked: bar.searchOptionsOpen
-            onTriggered: bar.searchOptionsToggleRequested()
+            onTriggered: {
+                bar.searchOptionsToggleRequested()
+                checked = Qt.binding(function() { return bar.searchOptionsOpen })
+            }
         }
         // #4346: az eredeti `Show only big images` láthatósági kapcsolója.
         PicasaMenuItem {
