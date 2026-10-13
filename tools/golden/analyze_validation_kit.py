@@ -30,7 +30,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from picasapy.ini.filters import parse_filters  # noqa: E402
+from picasapy.ini.filters import parse_filters_prefix  # noqa: E402
 from picasapy.render.chain import apply_filters  # noqa: E402
 
 from compare_render import _read_rgb, delta_e_cie76, ssim  # noqa: E402
@@ -137,7 +137,8 @@ def main() -> int:
             continue
 
         try:
-            report = apply_filters(source, parse_filters(row["lanc"]))
+            # #4942: az export olvasója — a Picasa az első hibás tagnál elvágja a láncot.
+            report = apply_filters(source, parse_filters_prefix(row["lanc"]))
             ours_raw = report.image
             # A Picasa-export JPEG: a mi képünket is ugyanúgy tömörítjük (#4940).
             ours = encode_like_reference(ours_raw, export / row["fajl"])
