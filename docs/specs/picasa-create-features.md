@@ -4679,3 +4679,47 @@ Nyitva:
 | export seed tényleges értéke, parser-szülő és render-context azonossága, `k↔t` leképezés | NINCS MEG |
 | Gördülő tényleges pixeles A/B és textstyle1 `H+0x2c` mozgásvégpont/időszemantika | NINCS MEG |
 | referenciafilm képkockái, a három stílus natív mérési táblája, kimeneti képteszt | NINCS MEG |
+
+#### G.8 8. kör (2026-10-13, #4615): a `0074e580` nem a seed-író; az időalap-korrekció; a három stílus állapota
+
+*Állapot: **nincs új számérték.** A kör a `~/picasapy-agent/referencia/ghidra-koteg-2026-10-13b/0074e580.c` teljes törzsét ellenőrizte, és a `0080c230` eseménykiírót a `ghidra-koteg-2026-10-12c/0080c230.c`-ben. A három nyitott pont közül egyik sem záródott le. A bináris a gépen van, de futtatás (Wine) nincs, ezért a film értékei nem olvashatók ki.*
+
+##### G.8.1 A `0074e580` a pin LÉTREHOZÓJA, nem a seed-írója
+
+- A `0x74e580` a szűrőt építi (`IPVCommunicate`, `CSource`, `CDXSlideshowFilter` vtáblák), majd a pint a `0x74d1c0` konstruktorral hozza létre (`unaff_ESI[0x1e]` = a pin-mutató). A seed `+0x108/+0x10c` mezőit (indexben `[0x42]`/`[0x43]`) **nem írja**.
+- A `0x74d1c0` törzsében (a `0074e580.c` callee-szekciója) az indexelt írások: `[0x40]`, `[0x41]` (= `+0x100/+0x104`), `[0x44]`, `[0x45]` (= `+0x110/+0x114`), `[0x4a]`–`[0x4d]`, `[0x59]`–`[0x5c]`, `[0x6b]`–`[0x6e]`, `[0x7d]`–`[0x81]`, `[0x82]`–`[0x85]`, `[0x9c]`–`[0xc2]` stb. A `[0x42]` és `[0x43]` **egyike sem**. Ez megerősíti a G.7.8.8 1. pontját, most a teljes törzsön ellenőrizve.
+- **Új, eddig nem rögzített tény:** a `0x74d1c0` a `QueryPerformanceCounter`-rel egy double-t ír a `pin+0x2c8` (`param_1[0xb2]`) mezőbe. Ez egy **másik** mező (nem a seed), és a konstruktor időbélyege; hogy a `pin+0x108/+0x10c` seedhez és a natív `t` nulla pontjához van-e köze, **nincs igazolva**. Kódból csak annyi látszik, hogy a konstruktor a saját óráját indítja.
+- A `0x74d1c0` hívja a `0x74d5d0`-t (a `[0x40]`–`[0x45]` nullázása ELŐTT, a `0x74d1c0` vtábla-hívásai előtt). Ez a G.7.8.8 1. jelöltje; a törzse nincs a kötegben.
+
+##### G.8.2 A `0x80c230` (eseménykiíró): a `t` átmegy, nincs nulla-korrekció
+
+- A `ghidra-koteg-2026-10-12c/0080c230.c` szerint a függvény a kapott double-t **változatlanul** adja a `0x809a10`-nak (`ytUIEvent`, `[+8] = 0x13`). Nincs hozzáadott vagy kivont időeltolás a függvényben.
+- A `local_b4 = 0` egy második argumentum a `0x9e4630`-nak, és csak akkor fut, ha `this+0x150 != 0`. Ez a G.7.8.1-ben már jelzett „helyi változó” megfejtése: **nem** a `t` nulla pontja.
+- **Korrekció a jegy szövegéhez:** a „`0xcbdd60` vtábla 0. slotja” már elavult. A `0x80c230` a `CTransTimeline::UI` vtáblájának (`0xcbdcec`) **29.** slotja (`+0x74`), a G.7.7.3 és a G.7.8.4 szerint; a `0xcbdd60` csak ennek a bejegyzésnek a címe.
+- Ebből a `t` nulla pontja a pin seedjétől függ (G.7.8.1), tehát az továbbra is **NINCS MEG**.
+
+##### G.8.3 A három stílus: animált-e, és mivel — a kérdés állása
+
+| stílus | animált? | bizonyított szerkezet | nincs meg |
+|---|---|---|---|
+| **8** Gördülő stáblista | **igen** (`FadeMove`, idővonal + `smoothstep` `3p²−2p³`) | `dur = desc+0xe8` (`advanceinterval`); `X2 = B + S(p)·(A−B)`, `p = clamp((t+0,02−L)/dur, 0, 1)` (G.6.4, G.7.5) | `A`, `B` pixelértékei (`0x9e51a0` és a `E`-vtábla kimenete), iránya, a desc–film összekötés |
+| **11** Képfelirat – Írógép | **igen** (`TypeWriter`, bájtszám-alapú karakterszám) | `n(t) = max(1, trunc(len·clamp((t+0,02−L)/d, 0, 1) + 0,5))`, `d = transitiontime`, nem pozitív esetén `advanceinterval/3` (G.6.3, G.7.7.4) | `t` nulla pontja, `L`/`d` fájlértéke, bájt vs. glyph, kurzor |
+| **1** „Jó napom van” | **igen** (alfa 0→255 lineáris + egy komponens `smoothstep`) | `FadeMove` ág, `d` ugyanaz, mint az Írógépnél; a `dia+0x14c` mező (G.7.8.3) | a `H+0x2c` mozgásvégpont forrása (vtábla-hívás, `0x810761`–`0x810771`), a tengely, a `H+0x08` időeltolás szerepe |
+
+- A „**animált-e**” kérdésre a válasz tehát: **mind a három igen**, a kódból. A „milyen paraméterrel” kérdésre a képletek és a mezőnevek megvannak; **a számértékek nincsenek**.
+- A `tests/movie/test_mxf_projektfajl_3191.py` `advanceinterval=4.0`, `transitiontime=1.5` értékei **szintetikus** tesztadatok, nem Picasa-mentés; film-referenciaként nem használhatók.
+
+##### G.8.4 Mi kell a következő körből (szűkített Ghidra-kérés)
+
+A jegy „Kész, ha” pontjai csak akkor teljesíthetők, ha ezek közül legalább az első kettő megjön:
+
+1. **Seed-író:** dekompiláció a `0x0074d5d0`, `0x0054b440`, a `0x619010` `[param_1+0x4b4]` objektumának `vtbl+0xc` célja, és a `0x008287b0` (G.7.8.8 4. pont). A `0x0074d5d0` a legerősebb jelölt, mert a pin-konstruktorból hívódik.
+2. **Pin-vcall és a DirectShow-határ:** a `0x0074dfc0` (a `CDXSlideshowPin` 2. slotja, a `[ctx+0x2e8]` `+0x74` hívása, `0x74e232`–`0x74e251`), mert ez mondja meg, hogy a `t` a seedelt órából jön-e.
+3. **Parser-szülő:** a `0x00814330` és a `0x00816360` (G.7.8.7 2. pont), hogy a `this+0x50` rekord szülőpointere exportkor a render-`ctx`-re mutat-e.
+
+Mérés (a Colab-os Picasa-export, G.7.8.6 utolsó pontja) továbbra is szükséges a számokhoz; a natív futtatás ettől független.
+
+##### G.8.5 Ami ebből a körből NEM következik
+
+- Nem következik: a seed értéke, a `t` nulla pontja, a Gördülő `A`/`B`, a „Jó napom van” `H+0x2c` végpontja, és az Írógép karakter/s-értéke. Egyik sem lett számmá.
+- Az xref-index negatív találata (a `0x74d970`-nek nincs E8-hívója) **nem** bizonyíték a seed-író hiányára; a vtábla-hívásokat az index nem látja (G.7.8.8 6. pont).
