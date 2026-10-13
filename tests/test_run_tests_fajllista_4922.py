@@ -63,7 +63,10 @@ def test_a_teljes_futas_a_nem_app_fajlokat_kulon_inditja(
         teljes=True,
     )
 
-    assert inditasok == [["tests/test_alpha.py"], ["tests/test_beta.py"]]
+    # Windowson a futtató `\\`-es útvonalat ad tovább
+    assert [[Path(a).as_posix() for a in i] for i in inditasok] == [
+        ["tests/test_alpha.py"], ["tests/test_beta.py"]
+    ]
 
 
 def test_a_fajllista_nem_engedi_a_tests_konyvtaron_kivuli_utvonalat(

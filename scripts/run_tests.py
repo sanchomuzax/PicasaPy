@@ -1136,6 +1136,20 @@ def _faulthandlerrel(kornyezet: dict[str, str]) -> dict[str, str]:
     return kornyezet
 
 
+#: a pytest kilépési kódja, ha a futásban egyetlen teszt sem futott le
+_NINCS_TESZT_KOD = 5
+
+
+def _nincs_teszt_nem_bukas(args: list[str], returncode: int) -> int:
+    """#4932: fájlonkénti futásnál egy fájl teljes egészében kimaradhat (pl.
+    `pytest.importorskip` egy, a gépen hiányzó csomagra) — a pytest ilyenkor
+    5-tel lép ki. Ez nem tesztbukás: egyben futtatva a többi fájl elfedte."""
+    if returncode == _NINCS_TESZT_KOD:
+        print(f"  (nem futott teszt: {' '.join(args)} — kihagyva, nem bukás)", flush=True)
+        return 0
+    return returncode
+
+
 def _run_pytest(
     args: list[str], timeout_s: int, *, cov: bool, basetemp: Path,
     kornyezet: dict[str, str] | None = None, csendben: bool = False,
@@ -1186,15 +1200,15 @@ def _run_pytest(
         print(f"$ {' '.join(command)}", flush=True)
     try:
         if not csendben:
-            return _run(
+            return _nincs_teszt_nem_bukas(args, _run(
                 command, cwd=_ROOT, timeout=timeout_s, env=kornyezet
-            ).returncode
+            ).returncode)
         eredmeny = _run(
             command, cwd=_ROOT, timeout=timeout_s, env=kornyezet,
             capture_output=True, text=True, errors="replace",
         )
         _KIMENET[" ".join(args)] = (eredmeny.stdout or "") + (eredmeny.stderr or "")
-        return eredmeny.returncode
+        return _nincs_teszt_nem_bukas(args, eredmeny.returncode)
     except subprocess.TimeoutExpired as kivetel:
         if csendben:
             _KIMENET[" ".join(args)] = _szoveggé(kivetel.stdout)
