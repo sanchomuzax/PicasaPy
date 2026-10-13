@@ -35,6 +35,9 @@ def _fejezet_tabla(utvonal: Path, kezdo: str) -> list[list[str]]:
     szoveg = utvonal.read_text(encoding="utf-8")
     assert kezdo in szoveg, f"hiányzik a #4462 táblázat: {kezdo}"
     resz = szoveg.split(kezdo, 1)[1]
+    # csak a saját fejezet: a következő `## ` címnél vége (a később
+    # hozzáfűzött szakaszok táblázatai ne keveredjenek bele)
+    resz = resz.split("\n## ", 1)[0]
     return _tabla_sorok(resz)
 
 
@@ -104,7 +107,7 @@ def test_a_helyi_menu_tabla_minden_eredeti_kontextust_es_tetelt_orzi():
         "Indexkép": 23,
         "Album": 12,
         "OneUp": 19,
-        "PplAlbum": 4,
+        "PplAlbum": 7,
         "PplAlbumPhoto": 4,
     }
     assert Counter(s[0] for s in sorok) == Counter(vart_darabszamok)

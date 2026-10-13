@@ -6673,3 +6673,239 @@ történik, nem itt. Ez a `changeloc`/`defaultloc` kezelőben (`0x007d16b0`,
 címekre; `0x007d1900` (168 b), `0x006db040` (1175 b); a beállítás-hármas
 `0x00407630` / `0x004078e0` / `0x00407760`, hívószámok a bináris index
 `xrefs` táblájából.*
+## ⛳ `FolderPhoto::ID_PICTURE_SPLITALBUMHERE` — „Mappa felosztása itt…”: mit csinál az adattal (2026-10-12, #4534)
+
+*Forrás: a mappa-nézet helyi menüjének építője `0x00730790` (a felirat
+`0x00730a5e`/`0x00730a63`) · a főablak-diszpécser `0x005cb990` bájttérképe
+(`0x005cdb34`) és ugrótáblája (`0x005cd9fc`) · a kezelő `0x005e8570`
+(1272 b) · a „Mappa tulajdonságai” párbeszéd (`CEditAlbum`, vtábla
+`0x00ca9544`): `0x006dc030`, `0x006db4e0`, `0x008496c0`, `0x00849750`,
+`0x00849dc0` · a név- és útképzés `0x009946f0`, `0x00993bb0`, `0x009a3b50`,
+`0x009a3db0` · a mozgatás `0x005ea420` → `0x00479870` → `0x00478780` · a
+szürkítés `0x0056c5a0` (`0x0056d8f6`–`0x0056d962`) → `0x004ac8f0`.
+Mérés (Colab) NINCS: a végrehajtó az áthelyező menüpontot elutasítja
+(skill 1/d), ezért minden állítás utasításszintű.*
+
+### 1. A parancsazonosító és a kezelő
+
+A rekordtábla csúszás-szabálya szerint (a rekord kezdete a felirat
+`mov dword ptr [REK], eax` címe, a `+0x0a` mezőt a KÖVETKEZŐ blokk írja):
+
+| felirat | rekord (`esp+…`) | cmd | írás helye | ág a diszpécserben | kezelő |
+|---|---|---|---|---|---|
+| Áthelyezés új mappába… (`FolderPhoto::ID_ALBUM_NEW`) | `0xe8` | **`0x9cb6`** | `0x00730a77` | `0x005cbce0` | `0x005e9bb0` (`push 0`) |
+| **Mappa felosztása itt…** (`FolderPhoto::ID_PICTURE_SPLITALBUMHERE`) | `0xfc` | **`0x9ca6`** | `0x00730ac9` | `0x005cbd6d` | **`0x005e8570`** |
+
+**Független kontroll:** (1) a `0x9cb6` ága a `0x005e9bb0`, amit a
+`ui-audit-mainwindow.md` a `thumbui/newfolder` akciójaként ismer — tehát a
+párosítás nem csúszott el; (2) ugyanaz a táblaolvasás a 34.1 ismert
+értékeit adja vissza (`0x9ca2`→`0x005cbd35`, `0x9ca5`→`0x005cbd5f`).
+A tétel **csak a mappa-nézet** (`0x00730790`, kontextus `0x70`) menüjében
+van; az album-nézet építője (`0x00731050`) nem tartalmazza
+(`ui-audit-context-menus.md` D.1).
+
+### 2. A lépéssor — a `0x005e8570` sorrendjében
+
+| # | mit tesz | cím |
+|---|---|---|
+| 1 | ha a nézetnek nincs aktuális mappa-csomópontja (`[this+0xea8]` = 0) → semmi | `0x005e859b` |
+| 2 | köteg kezdete, felület-frissítés elnyomva (`[0xd6793c]`++) | `0x005e85b3`, `0x005e85b8` |
+| 3 | a kijelölt elemek listája (`0x005c76b0` → `0x007166c0`: a csomópont elemein **sorban** halad, és a kijelölt, nem elnyomott elemek azonosítóját gyűjti) | `0x005e85d3` |
+| 4 | **üres kijelölés → csendes kilépés** (nincs üzenet) | `0x005e862f` |
+| 5 | a csomópont **teljes kijelölésének törlése** (`0x00718a50`) | `0x005e8692` |
+| 6 | **új kijelölés: a 3. lépés ELSŐ eleme és a lista VÉGE között** — `0x00716ae0(csomópont, első, −1, 1)`; a tartomány azonosítói egy kimeneti tömbbe is kerülnek | `0x005e86d1` |
+| 7 | a rács újrarajzolása (`0x00a54b70(this,1,1,0.0,{−1…},1)`) — **a felhasználó a párbeszéd előtt LÁTJA, mely képek mennek át** | `0x005e8702` |
+| 8 | üres tartomány → kilépés | `0x005e8707` |
+| 9 | a vágópont-kép (a tartomány első eleme) **dátuma** (`0x005c6460` → `0x004edf60` + `0x0098b650`); ha a képrekordnak nincs érvényes dátuma, a függvény `−1`-et ad, és a kezelő **csendben kilép** | `0x005e873c`, `0x005e8753` |
+| 10 | új mappa-leíró: név = `IDS_DEFAULT_ALBUM_NAME` (**„Untitled” / „Névtelen”**), dátum = a 9. lépés dátuma (`0x0055ce70`, a név `0x0055cea7`, a dátum `+0x28`) | `0x005e8778` |
+| 11 | a JELENLEGI mappa elérési útja (`[this+0xeac]` → album-azonosító `+0x3c0` → `[[db+0x48]]+0x14`), majd annak **szülőmappája** (`0x009a3b50`: a záró `\` levágása után az utolsó `\` előtti rész) | `0x005e87af`, `0x005e87df` |
+| 12 | **„Mappa tulajdonságai” párbeszéd** — `0x006dc030(leíró, 0, 1)`; a 2. argumentum `0` a `CEditAlbum+0xcc`-be kerül (`0x008496e1`), és ez választja a címet: `CEditAlbum::folderTitle` = **„Folder Properties” / „Mappa tulajdonságai”** (`0x0084978f`–`0x008497a8`). Mezők az `album.fen` szerint: Név · Dátum (+ „Automatikus dátum”) · Zene · Felvétel helye · Leírás (`picasa-fen-dialogs.md` 3.2). **Mégse → semmi nem jön létre**, a 7. lépés kijelölése viszont megmarad | `0x005e8869`, `0x005e8870` |
+| 13 | a mappanév: a párbeszéd Név-mezője a **fájlnév-tisztítón** át (`0x009946f0`, ld. 3.); ha a tisztított név üres, a tartalék a `CThumbUI::albumname` = **„album”** (angolul és magyarul is) | `0x005e88b9`–`0x005e88fb` |
+| 14 | **egyedi út a szülőmappában** (`0x00993bb0`, ld. 3.), majd **mappa létrehozása** (`0x009a3db0`); csak siker esetén lesz az út a mozgatás célja | `0x005e891f`, `0x005e892e` |
+| 15 | a cél-tároló azonosítójának kikérése (`0x005eb660`); hiba → kilépés | `0x005e896f` |
+| 16 | az új mappa felvétele a katalógusba (`0x0055d120(leíró, út, 0, 0)`); hiba → kilépés | `0x005e89b9` |
+| 17 | újrarajzolás-jelző (`[[this+0x2c0]+0x166]` = 1, `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5) | `0x005e89df` |
+| 18 | **a tartomány minden képének áthelyezése** az új mappába (`0x005ea420`, ld. 4.) — csak ha a 14. lépés mappát hozott létre | `0x005e89f3` |
+| 19 | könyvtárnézet-frissítés (`0x0065b840(this,0,0,1)`), majd a `[this+0x2a4]` felület `+0x44` rekesze az új mappa azonosítójával (`1,1,0`) — ugyanez a hívás zárja az „Áthelyezés új mappába…” kezelőjét is (`0x005e9e57`) | `0x005e89fd`, `0x005e8a1b` |
+
+⇒ **A „Mappa felosztása itt…” az „Áthelyezés új mappába…” testvére**: a
+kettő ugyanazt a láncot hívja (leíró `0x0055ce70` → párbeszéd `0x006dc030` →
+tisztító `0x009946f0` → egyedi út `0x00993bb0` → `0x009a3db0` → `0x005eb660`
+→ `0x0055d120` → `0x005ea420`; az utóbbinál a `0x005ea770`-ben,
+`0x005ea7c9`–`0x005eaa63`). **Az egyetlen különbség a képkészlet:** a
+felosztás nem a kijelölést viszi, hanem **az első kijelölt képtől a mappa
+végéig mindent**.
+
+### 3. A név és a hely — pontosan
+
+**Hely: a jelenlegi mappa TESTVÉRE** (a szülőmappájában jön létre, nem
+almappaként) — 2. táblázat 11. sor. Az „Áthelyezés új mappába…” ugyanígy
+számol (`0x005e9d3d call 0x009a3b50`).
+
+**A név-tisztító `0x009946f0`:**
+
+1. a vezető szóközök kimaradnak; minden szóköz-jellegű karakter és az
+   U+3000 egy sima szóközre cserélődik (`0x009947ba`);
+2. a 0x20 alatti vezérlőkarakterek és a `\ / : * ? " < > |` halmaz
+   (`0x00cd8d24`) **kimarad** (nem cserélődik);
+3. az elejéről a `.` és a szóköz, a végéről a szóköz és a `.` levágódik
+   (`0x009947d6`–`0x00994820`);
+4. ha semmi nem maradt → `−1`, és a kimenet a hívó tartaléka marad
+   (itt: „album”);
+5. a fenntartott nevek — `aux`, `con`, `nul`, `prn` (`0x00cd8d80`–
+   `0x00cd8d8c`, kis-nagybetű-független) — **`_` utótagot** kapnak
+   (`0x009949dc`).
+
+**Az egyediesítő `0x00993bb0(szülő, kimenet)`:**
+
+1. ha a szülőmappa nem létezik → `−1` (`0x00993bcc`);
+2. az **alapnév** a név, a végéről levágva egy `_<nem nulla egész>`
+   utótagot (`0x00986600` utolsó `_`, `atol` ≠ 0 → csonkítás, `0x00993c57`–
+   `0x00993c92`);
+3. első jelölt: **a név változatlanul**; ha az út létezik, sorban
+   `<alap>_1`, `<alap>_2`, … (`"%s_%d"`, `0x00cd8d78`), **legfeljebb
+   4095-ig** (`cmp ebx, 0x1000`, `0x00993d19`), utána `−1`.
+
+⇒ Példa: a párbeszédben hagyott „Névtelen” név mellett, ha a szülőben már
+van `Névtelen`, az új mappa `Névtelen_1` lesz. **Ütközés miatt nincs
+hibaüzenet és nincs újrakérdezés.**
+
+**A mappa saját metaadata** a párbeszédből jön (név, dátum = a vágópont-kép
+dátuma, ha a felhasználó nem írta át, hely, leírás, zene). A régi mappa
+mappaszintű `[Picasa]` kulcsai **nem** másolódnak át — a kezelő semmilyen
+régi-mappa-leírót nem olvas, csak az útját.
+
+### 4. A képek mozgatása és a `.picasa.ini` — `0x005ea420`
+
+1. a cél útja az új album-azonosítóból; üres vagy nem létező → `9`-es hiba
+   (`0x005ea4a0`);
+2. folyamatjelző: `CThumbUI::MoveProgress` = **„Moving Files” / „Fájlok
+   áthelyezése”** (`0x005ea50d`), a darabszám a tartomány hossza;
+3. képenként: rekord (`0x004edf60`); ha a forrásfájl nem létezik → átugorja
+   (`0x005ea5e5`); a célnév a fájlnév a célmappához fűzve (`0x009a37b0`), az
+   egyediesítő (`0x00993030`, `%s%lu` minta) nem nullát ad → átugorja;
+   különben **`0x00479870(db, azonosító, 0, 0, folyamat)`** — a 3. argumentum
+   `0` = **áthelyezés, nem másolás**;
+4. a `0x00479870` csak média-rekordtípust mozgat (`0x00479905`–`0x00479940`:
+   2, 3, 6–0x12, 0x15–0x18, 0x1a, 0x1b–0x1d, 0x1f, 0x3e9), és a
+   `0x00478780`-at hívja, amely **mindkét mappa `.picasa.ini`-jét megnyitja**
+   (`0x0047886b`, `0x004788ee`), a kép szakaszát a forrásból a célba írja
+   (`0x0063e5b0`, `0x005ab100`), és — csak az áthelyezés-ágon (`[esp+0x2994]`
+   = 0, `0x0047896f`) — a forrás-inin is dolgozik (`0x00478993 call
+   0x005aafd0`), ami a szakasz eltávolításának felel meg. Ugyanez a
+   függvény hivatkozik a **`.picasaoriginals`** mappára (`0x00479108`) és
+   a 8-as és 0x12-es rekordtípusnál a **`.THM`** kísérőfájlra (`0x004789c3`).
+
+⇒ **A kép teljes szakasza (csillag, szerkesztések, arcok, `albums=`
+tokenek) a képpel költözik**, az albumtagság tehát megmarad. *(Bizalmi fok:
+erős — a két ini megnyitása, a szakaszmásolás és a forrás-törlés hívása
+címmel megvan; a mezőszintű másolást nem követtem végig.)*
+
+### 5. Mi NEM mozdul
+
+- **Nem kép fájlok** (szöveg, kísérőfájl, ismeretlen típus): a tartomány
+  a mappa-csomópont **elemeiből** áll (`0x00716ae0`), abban csak a katalógus
+  elemei vannak — a többi fájl a régi mappában marad. A `.THM` kísérőfájl
+  kivétel (4. pont).
+- **A régi mappa** a lemezen és a katalógusban is megmarad, akkor is, ha
+  kiürült (a kezelőben nincs törlő hívás). Ha a vágópont a mappa ELSŐ képe,
+  **minden kép átkerül**, a régi mappa üres lesz — ez ellen nincs őr.
+- Elnyomott (`+0x5a`) elemek: a tartomány-mag ezeket **nem szűri** ki a
+  kimeneti tömbből (`0x00716bba`–`0x00716bc8`) — hogy a felületen mi számít
+  elnyomottnak, ld. a nyitott kérdéseket.
+
+### 6. Megerősítés, szürkítés, visszavonás
+
+- **Külön megerősítő ablak nincs** — a „Mappa tulajdonságai” párbeszéd OK-ja
+  maga a jóváhagyás, a Mégse a visszalépés.
+- **Szürke**, ha az aktuális mappa egy **iPhoto- vagy Apple Photos-könyvtár**
+  `Masters`/`Originals` ágában van: a menü utófeldolgozója a kontextus
+  `0x70`/`0x8a` ágán `EnableMenuItem(…, MF_GRAYED)`-et hív (`0x00c40818`
+  `USER32!EnableMenuItem`) **három** parancsra egyszerre — `0x9c9a` (Törlés a
+  lemezről), `0x9cb6` (Áthelyezés új mappába), `0x9ca6` (Mappa felosztása) —,
+  ha a `0x004ac8f0` igazat ad; az utóbbi a mappa útját az
+  `iPhoto Library` / `Photos Library` útvonalaihoz méri (`0x0047cea0`,
+  `0x0047cfc0` → `0x0099bce0`/`0x0099bf40`, előtag-teszt `0x00987030`).
+  Windowson/Linuxon ilyen könyvtár nincs ⇒ **a gyakorlatban mindig aktív**;
+  az üres kijelölést nem szürkítés, hanem csendes kilépés kezeli (2./4. sor).
+- **Visszavonás nincs**: a programban nincs könyvtár-szintű Visszavonás
+  (`eMenuEdit::ID_UNDO` halott bejegyzés, `picasa-menusor-csoportok.md`,
+  #1795), és a kezelő sem rögzít visszaállítási adatot. Visszacsinálni csak
+  kézi visszamozgatással lehet.
+
+### 7. Eredeti / nálunk / teendő
+
+**Nálunk (mérve, 2026-10-12):** `PhotoContextMenu.qml:316–319` —
+`PicasaMenuItem { objectName: "contextMenuSplitFolder"; placeholder: true }`:
+szürke helyfoglaló, `onTriggered` nélkül, és **minden** helyi-menü
+kontextusban látszik (album- és személy-nézetben is). A `src/` alatt
+`splitFolder`/`split_folder` nincs. A testvérparancs nálunk:
+`FileOpsController.moveSelectionToNewFolder` (`fileops_controller.py`,
+#1614) — csak nevet kér, a célt a kijelölés első képének mappája ALÁ teszi,
+ütközésnél hibát ad.
+
+| szempont | eredeti | nálunk | teendő |
+|---|---|---|---|
+| belépési pont | csak a mappa-nézet képének helyi menüje | helyfoglaló, album-/személy-nézetben is | bekötni; album- és személy-kontextusban elrejteni |
+| képkészlet | az első kijelölt képtől (a rács sorrendjében) a mappa végéig, a kijelölt is | — | ugyanígy, a rács aktuális rendezése szerint |
+| előnézet | a tartomány a párbeszéd ELŐTT kijelölődik | — | ugyanígy |
+| párbeszéd | „Mappa tulajdonságai”: Név „Névtelen”, Dátum = vágópont-kép dátuma, hely, leírás | — | ugyanez a párbeszéd, mappa-címmel |
+| hely | a jelenlegi mappa **testvére** | (a testvérparancs: almappa) | testvér |
+| név | tisztítás (3.), üresen „album”, ütközésnél `_1`, `_2`… | (a testvérparancs: hiba ütközésnél) | a 3. szabályai |
+| ini | a képszakaszok átköltöznek, a forrásból törlődnek | `fileops.move.move_photo` már ezt teszi | a meglévő mozgató útját használni |
+| nem kép fájl | marad | — | marad |
+| megerősítés / visszavonás | nincs külön / nincs | — | nincs külön / nincs |
+
+### 8. Bizonyítottsági fok
+
+- cmd és kezelő (1.): **megerősített** (két független kontroll).
+- a lépéssor, a képkészlet, a testvér-hely, a név- és ütközésszabály, a
+  párbeszéd címe (2.–3.): **erős** (utasításszint, minden lépés címmel).
+- az ini-átköltözés (4.): **erős** a hívási mintára, **feltételes** a
+  mezőszintű részletekre.
+- a szürkítés (6.): **erős**.
+
+### 9. Nyitott kérdések mérlege
+
+| kérdés | állapot | a megszerzés útja |
+|---|---|---|
+| a 9. lépés dátuma EXIF-felvételi idő vagy fájlidő? | **NYITOTT** | a `0x004edf60` kimeneti rekord `+0x04` mezőjének írója; a gyakorlatban a rács dátum-rendezésének kulcsa (69. tétel: `thumbindex` 1. FILETIME) a jelölt |
+| az új mappa `.picasa.ini`-jébe a párbeszéd mely mezői kerülnek (`name=`, `date=`, `location=`, `description=`)? | **NYITOTT** | a `0x0055d120` → `0x0055d320` ág követése a `date=%f` íróig (`0x0068ac80`) |
+| a `+0x5a` „elnyomott” elem melyik felületi állapot (rejtett kép, szűrő)? | **NYITOTT** | a `+0x5a` írói (`tagkereso.py 0x5a`) |
+| a `[this+0x2a4]+0x44` rekesz pontos hatása (az új mappára ugrik-e a nézet) | **NYITOTT** | a `CMultiAlbumNode` második táblájának `+0x44` eleme (`picasa-eger-es-kijeloles.md` 12.1 táblázat bővítése) |
+| a `[.album:<token>]` definíciós szakaszok sorsa (ha a régi mappa ini-jében vannak) | **NYITOTT** | a `0x00478780` szakasz-másolójának teljes olvasása |
+
+Mérleg: 5 nyitott · 0 blokkolt · 0 hatókörön kívül. Egyik sem akadálya a
+megvalósításnak: a #4534 „Kész, ha” pontjai a 2.–6. szakasz megerősített és
+erős állításaira épülnek; a nyitottak a meglévő saját mechanizmusainkkal
+(rács-dátum, mappaszintű `[Picasa]` írás, mozgató) helyettesíthetők.
+
+### 10. Amit KIZÁRTAM
+
+- **„A kijelölt kép a RÉGI mappában marad”** — kizárva: a tartomány a
+  kijelölt képpel KEZDŐDIK (`0x00716ae0`, `idA` = első kijelölt, és az
+  elem a tartomány része).
+- **„Fájlnév vagy dátum szerint vág”** — kizárva: a csomópont elemsorrendjén
+  halad (`0x007166c0`, `0x00716ae0` a `+0xb4`/`+0xb8` rekeszeken), vagyis a
+  rácsban látott sorrend szerint.
+- **„Almappát hoz létre”** — kizárva: a cél a szülőmappa alá kerül
+  (`0x009a3b50`).
+- **„Külön megerősítést kér”** — kizárva: a kezelő egyetlen párbeszéde a
+  `CEditAlbum`.
+
+### 11. ⚠️ Melléklelet — két korábbi állítás, amit ez a kör megkérdőjelez
+
+1. **`picasa-konyvtar-eszkoztar-viselkedes.md` 2./6.:** „a gomb egy Névtelen
+   albumot hoz létre azonnal, párbeszéd nélkül”. A `0x006dc030` az új
+   leírónál (`+0x08` = −1, `0x0055ce7f`) **mindig** felépíti és megnyitja a
+   `CEditAlbum` párbeszédet (`0x006dc07d`, `0x006dc09d`, majd a
+   párbeszéd-objektum `+0x40` virtuális hívása `0x006dc0d5`), és csak a
+   `[esp+0xb0]` = 0 ágon (OK) ad igazat; az `Új album` hívása
+   (`…, 1, 0`) a `+0xcc` = 1 ágon az **„Album tulajdonságai”** címet kapja.
+   ⇒ az „Új album” is párbeszédet nyit, „Névtelen” előtöltéssel.
+2. **„Áthelyezés új mappába…” (#1614):** az eredeti a jelenlegi mappa
+   **testvérét** hozza létre a „Mappa tulajdonságai” párbeszéddel és
+   `_N`-es ütközéskezeléssel (`0x005e9d3d`, `0x005ea770`); nálunk almappa,
+   csak névvel, ütközésnél hiba.
+
+Mindkettő külön jegy tárgya; itt csak a bizonyíték áll.

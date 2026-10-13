@@ -59,6 +59,7 @@ PicasaMenu {
     // és az aktív album tokent (#305 null-őr, ld. ott).
     property var albums: []
     property string currentAlbumToken: ""
+    property string currentFolder: ""
     //: a jelenleg mutatott személy neve (üres, ha nem személy-album)
     property string personName: ""
     //: #3464: a meglévő személyek (`[{name, count}, ...]`, a
@@ -96,6 +97,7 @@ PicasaMenu {
     signal rotateLeftRequested()
     signal hideToggleRequested()
     signal moveRequested()
+    signal splitFolderRequested()
     signal openFileRequested()
     //: #4533: a „Társítás…" választót kéri a kijelölt képre
     signal openWithRequested()
@@ -314,10 +316,14 @@ PicasaMenu {
         text: qsTr("Move to New Folder...")
         onTriggered: menu.moveRequested()
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "contextMenuSplitFolder"
         text: qsTr("Split Folder Here...")
-        placeholder: true
+        visible: menu.currentFolder !== ""
+                 && menu.currentAlbumToken === ""
+                 && menu.personName === ""
+        height: visible ? implicitHeight : 0
+        onTriggered: menu.splitFolderRequested()
     }
     MenuSeparator {}
 

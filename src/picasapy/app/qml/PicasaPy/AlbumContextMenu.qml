@@ -72,17 +72,17 @@ PicasaMenu {
 
     MenuItem {
         objectName: "albumMenuSelectAll"
-        text: qsTr("Select &All Pictures")
+        text: qsTr("Select &All Pictures") + "\tCtrl+A"
         onTriggered: menu.selectAllRequested()
     }
     MenuItem {
         objectName: "albumMenuClearSelection"
-        text: qsTr("&Clear Selection")
+        text: qsTr("&Clear Selection") + "\tCtrl+D"
         onTriggered: menu.clearSelectionRequested()
     }
     MenuItem {
         objectName: "albumMenuInvertSelection"
-        text: qsTr("&Invert Selection")
+        text: qsTr("&Invert Selection") + "\tCtrl+I"
         onTriggered: menu.invertSelectionRequested()
     }
     MenuSeparator {}
