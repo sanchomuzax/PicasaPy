@@ -55,6 +55,7 @@ from picasapy.ini import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
+from .contact_names import central_contacts_path
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
 from .viewer_startup_controller import ViewerStartupMixin
@@ -1473,7 +1474,10 @@ class AppController(
         if not 0 <= row < len(photos):
             return []
         entries = formatting.properties_entries(
-            photos[row], QLocale(), formatting.fordit
+            photos[row],
+            QLocale(),
+            formatting.fordit,
+            central_contacts_path(self._db_path),
         )
         return [{"label": label, "value": value} for label, value in entries]
 
