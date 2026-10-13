@@ -6026,6 +6026,23 @@ mező-/tulajdonosi kapcsolata [blokkoló]
 - [ ] Egy `.5`-ös határeset natívan: `W = 5`, `Impact = 2` (2,5) → a natív célméret 3, nem 2.
 - [ ] Export-egyezés: a 5,6%-os blokkeltérés legalább egy okának megnevezése.
 
+#### 5/g. Mag-összevetés újrapróba (#4908, 2026-10-13, második kör) — nincs bájtos eredmény
+
+*Bizonyítottsági fok: a kódolvasás és a harness-hiba megerősített; a bájtos összevetés **nem készült el** (nincs natív pixelkimenet, sem egyezés, sem eltérés).*
+
+**Mit csináltunk.** A `qemu-i386` harnessben (`eszkozok/qemu_harness/wpix4908.py`, a `hb.py`-ra épülve) a `0x00bcdf10` magot cdecl `(img, pw, ph, dst)` alakban hívtuk, 5 × 3-as véletlen BGRA-képpel, rögzített maggal, `pw = ph = 2` mellett. A `pixelate_centered` összevetéshez nem futott le, mert a mag nem adott pixelkimenetet.
+
+**Megállapítások (kódolvasásból, `pdis`):**
+- A mag törzse (`0x00bcdf10`–`0x00bce2e4`) **nem tartalmaz MMX-utasítást**; a skalár/SIMD ágat a hívott resampler dönti el, azt ebben a körben nem mértük.
+- A `dst` (4. argumentum) egy ImageInfo-szerű objektum. Ha `[dst+0x10] == 0`, a mag `0x00bce27d`–`0x00bce292` úton **azonnal `eax = 4`-gyel tér vissza, és nem ír a célpufferbe**. Ez magyarázhatja az előző kör érintetlen `0xA5` pufferét, ha a dst-mező nulla volt; a benchmark JSON a dst-mezőket nem rögzíti, ezt nem tudtuk ellenőrizni.
+- A mag `0x00bcb5e0` wrapperen át egy átméretező-objektumot épít (`0x009bd2e0`, `0x00a422xx`); ennek a belső objektumának mezőit (`[ebp+0x6c…0x90]`) a harness nem építi fel.
+
+**Harness-hiba, amit megtaláltunk:** a `HeapReAlloc` import (`KERNEL32`, IAT-index 64) a harnessben nem volt kezelve, ezért a `iat_common` (`0x10000300`) kilépett `99`-cel. A wpix4908.py ehhez egy bump-arénás `HeapReAlloc` shimet ad (`0x3a0`, a `CRT_SHIM_ASM` arénájával).
+
+**Ami után a futás még összeomlik:** a shim után a futás `SIGSEGV`-vel áll meg a `0x00a422xx` átméretező-ágban (a `0x009bd2e0` hívás után). A `dst` stride-mező (`+0x14`) bájt- és elemszám-változatán is ugyanez a hiba. A `wq.py` (QuantizePalette, a #626-os előző kör) szintén `SIGSEGV`-vel omlik össze, más címen (`0x00bcb2f0`); hogy ez ugyanaz a hiba, nem bizonyított.
+
+**Következő lépés (blokkoló, nem kutatás-kimerülés):** a `0x00bcb5e0` wrapper `this`/`ebp` objektumának pontos felépítése (a `0x009a8b60`/`0x009a8ca0`/`0x009a8bc0` inicializálók és a `dst`-objektum élettartama) — ehhez Ghidra-kör vagy a `0x00a422xx` átméretező-objektum kódolvasása kell. A három kész-feltétel közül a `.5`-határeset és az export-egyezés ebben a körben nem változott; a natív `0x00bcdf10` bájtos összevetés **nyitott**.
+
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
 A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
