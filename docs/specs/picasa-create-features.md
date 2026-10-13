@@ -3762,6 +3762,81 @@ A megtartott index tesztjéhez az (a) elem tartalma és a (b) album-ág kell.
 követése a `0x81e5a0`-t hívó `0x8242c7`-ből felfelé, és a `0x81d338`-as blokk `esi`-határa), valamint a
 `0x7166c0` `+0xb4`/`+0xb8` vtábla-törzsei. Natív QEMU-próba előtt ezek kellenek, különben kitalált vtáblát mérne.
 
+#### G/3f. A 13. kör (2026-10-13): a [this+0x708] írói, a nearest-flag kitöltő — NEM ZÁRULT LE (#4194)
+
+**Eredmény egy mondatban:** a `[this+0x708]` elemeinek íróját nem találtam meg; a `0x7166c0` vtábla-törzseit
+és a `0xdc` album-slotot ebben a körben nem olvastam; a megtartási szabály tehát továbbra sem zárható le.
+Új, utasításszinten igazolt rész: a `0x874ac0` szomszédos-jelölt (nearest-flag) kitöltője (2. pont).
+
+**Módszer.** Capstone 5.0.7 (`~/picasapy-agent/.venv`), a teljes `.text` szkennelése szinkron-újraindítással
+(érvénytelen bájtnál egy bájttal tovább), a `0x708` minden operandusalakja (`0x708]`, `add`, `push` stb.).
+Segédszkriptek a scratchpadban (`g3f/`), a repóba nem kerültek. Ghidra: `ghidra-koteg-2026-10-12/0081b800.c`.
+Natív futás nem készült. A `00874e40`/`00874320`/`00874ac0` dekompilátuma nincs a referencia-kötegekben.
+
+**1. A `[this+0x708]` teljes hozzáférés-listája.**
+
+- A teljes szkennelés a G/3e 29 találatát adja (`0x708]` alak), plusz egy `lea` (`0x81bb95`) és a
+  konstruktor-írás (`0x699ac3`). Más alak nincs (sem `add reg, 0x708`, sem `push`).
+- **Csak a mutatót írják** (újraallokálás): `0x81a272`, `0x81e916`, `0x81e98f`, `0x81e99e`, `0x81e9c3`,
+  `0x81e9c9`, `0x81ea91`, `0x81eaa0`. Ezek a `0x81e8e0` realloc/free ágai; a méret a `+0x70c`-ben van,
+  `(n << 1) | flag` alakban.
+- **Olvasó helyek:** `0x81d353`/`0x81d382` (szomszédos egyenlőség, `arr[k] != arr[k∓1]` megszakítja a
+  spirált; a 0x81b800 Ghidra-kimenetének ~1799–1803. sora); `0x81f3c8`–`0x81f52a` (különbség és
+  `cmp ebx, 0x16e`); a `0x874e40` a3-argumentumán át (`arr[edi] - arr[edx] ≤ 0x16e` ablak).
+- **Elemíró: NEM TALÁLTAM.** A 29 hozzáférési hely blokkjaiban nincs `[reg+idx*4]` írás. A `0x874e40`
+  `[ebx+esi]`-írásai a `0x97c810`-zel frissen foglalt lokális bufferbe mennek (`0x874f9c`), nem a `+0x708`-ba.
+- **Ellentmondás — NYITVA.** A `0x874320` (a `0x874e56`-ban a3-at kapja `eax`-ben) `[eax]` → `[ecx]` → vtábla
+  `+0xc` láncot követ, ami objektumra utal, nem int-tömbre. A3 verem-offszete (`[E+0xc]`) és ez a lánc
+  nincs összeegyeztetve. Amíg ez nincs, a „a3 int-tömb” olvasat is csak feltételes.
+
+**2. A `0x874ac0` — nearest-flag kitöltő (utasításszinten megerősítve).**
+
+- Signatúra: `0x874ac0(src, Lki, Rki)`. `src` = bájt-jelzővektor (`{ptr, (n<<1)|flag}`), `Lki`/`Rki` = int-vektorok
+  (`0x874ac0` eleje: `[esp+4]` = src, `mov esi,[eax+4]; shr esi,1` = n).
+- A `0x874e40` a `src`-nek a `+0x6f8` mezőt adja (`0x874e75`: `ecx = [esp+0x98]`, a4 = `p1+0x1be`), az
+  `Lki`/`Rki` a saját lokálisai (`[esp+0x78]`, `[esp+0x6c]`).
+- Működés (`0x874c8c`–`0x874e2f`, a kitöltő ciklusa):
+  - `L[i]` = az i-nél **korábbi** legnagyobb `j`, amelyre `src[j] ≠ 0`; ha nincs, `-1`.
+  - `R[i]` = az i-nél **későbbi** legkisebb `j`, amelyre `src[j] ≠ 0`; ha nincs, `n`.
+  - Az `L[i]` a `[edx+ecx*4]` írásból és az `edi = ecx` frissítésből, az `R[k]` a `[edx+eax*4]` írásból
+    (`eax = n−1−ecx`) és az `esi = eax` frissítésből jön.
+- **Teszteset (a kódból levezetve):** `src = [0,1,0,0,1,0]`, n = 6 → `L = [-1,-1,1,1,1,4]`,
+  `R = [1,4,4,4,6,6]`.
+- **Kapcsolat a spirálhoz NEM igazolt.** A 0x81b800 Ghidra-kimenetében a spirál határait a `param_1+0x720`
+  (balra) és `+0x728` (jobbra) táblákból olvassa (~1763–1771. sor). A G/2b szerint ezekbe csak szentinel kerül
+  (`0x81e5a0`: `-1`, `n`). A `0x874ac0` szomszédot ír, nem szentinelt. Hogy a `0x874e40` lokálisai eljutnak-e
+  a `+0x720/+0x728` mezőkbe, nem láttam. **A G/2b szentinel-állítás ezért nyitott.**
+
+**3. A `0x7166c0` vtábla-törzsei és a `0xdc` album-slot — ebben a körben NEM olvastam.** A G/3e (b) nyitott marad.
+
+**4. A 2. KÖR tételei** (`0x699cd0` hívóhely, `0x824090` flag, `0x6999c0`, `0x618050` mód-7, `0x8242f0`,
+`0x81c9b0`): ezek a G/3b–G/3d szakaszban már le vannak írva, ebben a körben nem ismételtem meg. Csak a
+`0x8242f0` `mov [ebp+0x738], edx` írását ellenőriztem (egyezik a G/3b-vel).
+
+**Megtartási szabály (G/3f) — állapot:**
+
+| Lépés | Állapot |
+|---|---|
+| Csoportosítás: szomszédos `delta < T` → ugyanaz a csoport | **megerősített** (G, natív QEMU) |
+| Rendezés dátum szerint | **megerősített** (G/3d 3. pont) |
+| Spirál `c±k`, ≤ 100 jelölt | **megerősített** (G/2c) |
+| Pontszám, argmin, 1e8 kezdőhatár | szerkezet **megerősített**; a Neven-skála **feltételes** |
+| `[this+0x708]` tartalma és írója | **NYITOTT** (írót nem találtam; ellentmondás a `0x874320` láncban) |
+| `+0x720/+0x728` írója (a `0x874ac0` kimenete?) | **NYITOTT** (az összekötés nincs igazolva) |
+| `0x7166c0` vtábla-törzsek, `0xdc` album-ág | **NYITOTT** (ebben a körben nem vizsgált) |
+| Konkrét megtartott fotóindex | **NYITOTT** |
+
+**Tesztesetek (G/3f).** Megtartott indexet nem adok: nincs igazolva. Amit a bizonyíték már megenged:
+
+- csoportosítás (G): `[0, 3240, 6480]`, `T = 3600` → `[0, 0, 0]`; `[0, 3600, 7200]` → `[0, 1, 2]`;
+- nearest-flag kitöltő (G/3f 2. pont, függvényszintű): `src = [0,1,0,0,1,0]` → `L = [-1,-1,1,1,1,4]`,
+  `R = [1,4,4,4,6,6]`. A spirálhoz való kapcsolata nincs igazolva.
+
+**Kész, ha — állapot: NEM teljesül.** A jegy nyitva marad. Lezáró lépés, két független úton:
+(a) a `+0x708` írója: a `0x874e40` a3 verem-offszetének és a `0x874320` vtábla-láncának összevetése
+(utasítás + egy Ghidra-dekompilátum a `00874e40`-re, ami még nincs a kötegben);
+(b) a `0x874e40` kimeneti másolása: hova kerül a `Lki`/`Rki` (`+0x720`/`+0x728`?).
+
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
 *A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
