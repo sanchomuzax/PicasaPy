@@ -164,6 +164,11 @@ Két fontos tulajdonsága van:
   kulcsszó, hely vagy arc, azt érintetlenül hagyja.
 - **Bármikor megismételhető** — a kimaradt mappákkal folytatja.
 
+Ha a régi Picasában **jelszót** állítottál be a rejtett mappákra, az
+átvétel ezt a jelszót is hozza — de csak akkor, ha a PicasaPy-ban még nem
+adtál meg saját jelszót. A sajátodat nem írja felül. A jelszóról
+[A könyvtár](konyvtar.md) fejezet „A rejtett mappák jelszava” része szól.
+
 Ha a program nem talál régi Picasa-adatot a gépen, ezt írja ki: „Nem
 találtunk Picasa-adatokat ezen a gépen."
 

@@ -25,13 +25,19 @@ indul gyorsabban, mint az egyfájlos, mert nincs kicsomagolás minden
 indításkor).
 """
 
+import sys
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 #: a repó gyökere — a spec a `packaging/windows/` alatt él
 GYOKER = Path(SPECPATH).resolve().parents[1]
 APP = GYOKER / "src" / "picasapy" / "app"
+
+#: ⚠️ A `collect_*` segédek IMPORTÁLJÁK a csomagot; a `pathex` csak az
+#: elemzésre hat. Enélkül a CI-n „'picasapy' … is not a package” mellett
+#: üres listát adtak, és a csomagból modulok és adatfájlok maradtak ki.
+sys.path.insert(0, str(GYOKER / "src"))
 
 #: a QML-fa, a fordítás, az ikonok és a súgó: adatok, nem importok
 adatok = [
@@ -52,12 +58,19 @@ a = Analysis(
     pathex=[str(GYOKER / "src")],
     binaries=[],
     datas=adatok,
+    #: ⚠️ A saját csomag MINDEN modulja: az indulást gyorsító lusta
+    #: (függvényen belüli) importokat a PyInstaller nem látja, és a
+    #: csomagból kimaradt modul csak a felület adott pontján, élesben
+    #: derülne ki (#4913: `picasapy.app.edit_preview` hiányzott).
+    #: A külön folyamatként indított munkások belépői név szerint is
+    #: (a forrás-őrök ezt keresik); mellettük a teljes csomag.
     hiddenimports=[
         "picasapy.app",
         "picasapy.printing.poster_worker",
         "picasapy.thumbs.cache",
         "picasapy.thumbs.video_decode_worker",
-    ],
+    ]
+    + collect_submodules("picasapy"),
     hookspath=[],
     runtime_hooks=[],
     excludes=["tkinter", "pytest"],
