@@ -222,6 +222,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: a vezérlő csak a tényt jelenti, ahogy a `saveCopyReady` is.
     rotationTypeFailed = Signal(int)   # hány elem maradt ki
     rotationNeedsSelection = Signal()
+
+    @Slot(int, result=str)
+    def hoverPreviewFileUrlAt(self, row: int) -> str:  # noqa: N802 — QML-hívás
+        """A rács egy sorának eredeti képe, URL-kódolva az előnézeti ablaknak."""
+        path = self._photos.filePathAt(row)
+        return formatting.to_file_url(path).toString()
     # #366: a tömeges átnevezés (fájlrendszer-írás, lehet lassú NAS-on)
     # háttérszálon fut; ez a jelzés tereli a resync/refresh-t vissza a
     # GUI-szálra, a `_photoFieldUpdated` mintája szerint.
