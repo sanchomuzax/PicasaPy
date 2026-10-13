@@ -26,6 +26,10 @@ SINGLE_CLICK_EXIT_KEY = "view/singleClickExit"
 # #4570: az eredeti `Preferences/AutoPlayMovies` kapcsolója — megnyitáskor
 # magától lejátssza-e a videót. Alapállapot: igen (a Picasa így működött).
 AUTO_PLAY_MOVIES_KEY = "view/autoPlayMovies"
+# #4949: a Ctrl+Alt felugró előnézet saját kapcsolója (az eredeti
+# `Preferences\EnableHover`). Független a buboréksúgótól. Alapállapot: igen,
+# mert a mai viselkedés is alapból mutatja az előnézetet.
+ENABLE_HOVER_KEY = "view/enableHover"
 
 # Igaznak számító mentett értékek (a QSettings platformonként bool-t vagy
 # szöveget ad vissza ugyanarra az írásra).
@@ -70,6 +74,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
     showTooltipsEnabledChanged = Signal()
     ctrlAltHeldChanged = Signal()
     autoPlayMoviesChanged = Signal()
+    enableHoverChanged = Signal()
     singleClickExitEnabledChanged = Signal()
 
     def _init_appearance(self) -> None:
@@ -82,6 +87,9 @@ class AppearanceMixin(FolderPhotoSortMixin):
         )
         self._show_tooltips_enabled = coerce_ui_preference_flag(
             settings.value(SHOW_TOOLTIPS_KEY, True), default=True
+        )
+        self._enable_hover = coerce_ui_preference_flag(
+            settings.value(ENABLE_HOVER_KEY, True), default=True
         )
         self._single_click_exit_enabled = coerce_ui_preference_flag(
             settings.value(SINGLE_CLICK_EXIT_KEY, False), default=False
@@ -180,6 +188,22 @@ class AppearanceMixin(FolderPhotoSortMixin):
             AUTO_PLAY_MOVIES_KEY, "true" if enabled else "false"
         )
         self.autoPlayMoviesChanged.emit()
+
+    @Property(bool, notify=enableHoverChanged)
+    def enableHover(self) -> bool:
+        """A Ctrl+Alt felugró előnézet kapcsolója (#4949, `EnableHover`)."""
+        return self._enable_hover
+
+    # Nem `@Slot`: az eredetiben rejtett kulcs, a felületről nem állítható (#4949)
+    def setEnableHover(self, enabled: bool) -> None:  # noqa: N802
+        enabled = bool(enabled)
+        if enabled == self._enable_hover:
+            return
+        self._enable_hover = enabled
+        self._get_settings().setValue(
+            ENABLE_HOVER_KEY, "true" if enabled else "false"
+        )
+        self.enableHoverChanged.emit()
 
     @Property(bool, notify=showTooltipsEnabledChanged)
     def showTooltipsEnabled(self) -> bool:
