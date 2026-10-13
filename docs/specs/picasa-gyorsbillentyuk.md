@@ -1636,6 +1636,67 @@ A `0x0066f810` a `0x992ed0` kapuval védi a hívást (`0x0066f88d`): ez attribú
 - [ ] A `[obj+0x166]` hatása a listára igazolva.
 - [ ] Dinamikus mérés: F5 → `FindFirstFile*` hívás a futó Picasában (vagy a kijelentés „csak statikus” jelzéssel marad).
 
+### 10.26 #4643 — ötödik kör (2026-10-13): a Ctrl+G nézetlánca
+
+**Kiinduló helyzet.** A 10.24 szerint a Ctrl+G hatása a `[C+0x15c]` aktív nézet vtábla `+0x74` slotjától és a `0x009e42b0` gyermekkezelőtől függ (`C` = a kulcsszűrő `this`-e, `0x00a582f0` első argumentuma). Ez a kör ezt a láncot követte végig, a 10.25 (F5) mellett.
+
+**Módszer.** (1) A `0x00a53b00`, `0x00a582f0`, `0x009e42b0`, `0x009e4630` és `0x00a576f0` törzsének utasításszintű kiolvasása (capstone, `picasapy-agent` venv). (2) A `+0x15c` mezőt író/olvasó utasítások és a `0x00d67858` globális hivatkozásainak teljes pásztázása, függvényenként (nem index-alapon). (3) A VK `0x47` immediate-ű `cmp`/`sub`/`test` utasításainak teljes pásztázása. (4) A `ytUIDialog`, `CThumbUI`, `SliceUI` vtábla-slotjainak olvasása a vtábla-memóriából (nem a RTTI-listából).
+
+**Láncleírás (a Ctrl+G = VK `0x47`, Ctrl, Shift nélkül, `0x100` keydown).**
+
+1. `0x00a53b00` (a `ytUIDialog` 12. slotja, a `CThumbUI::OnKey` `0x005e6710` és a `SliceUI` `0x0052ece0` ezt hívja): ha `[event+0x20] != 0` ⇒ `0xf4241` (nem kezelt); ha `[0x00d67858] != 0` ⇒ `1000000` (kezelt, a billentyű elnyelődik); egyébként a `default` ág: a Ctrl-bit (`[event+0x10] & 4`) és `0x40 < kód < 0x5b` ⇒ `0x00a582f0`.
+2. `0x00a582f0`: ha Shift és Ctrl együtt ⇒ `0xf4241`, nem megy tovább. Egyébként az esemény `0x17` (keydown/char) vagy `0x18` (keyup) típusú ytUIEvent-tet épít (`0x009dd770` konstruktor, vtábla `0x00c8b4b0`), majd:
+   - `P = [C+0x150]` (ha nem nulla): `0x009e4630(event)`; ha `0xf4240`, kezelt.
+   - `V = [C+0x15c]`: ha `V == 0` ⇒ `return 0`. Ha `[V+0x20e] == 0`: a Ctrl-bit beállítása az eseményen, majd `0x009e42b0(V)`; ha `0xf4240`/`0xf4246` jön vissza, az ág ezzel zár. Különben `V.vtbl[+0x74](V, event, flag)`.
+   - Ha még nem kezelt: `C` gyermeklistája (`[C+0x164]`, darabszám `[C+0x168] >> 1`), a `V`-t és a `[child+0x20e] != 0` elemeket kihagyva: elemenként `child.vtbl[+4]()`, `child.vtbl[+0x74](child, event, flag)`, `child.vtbl[+8]()`.
+   - `0xf4240` esetén a `0x00a54b70` értesítés (`C`, két egész, egy float), és a kezelt kilépés.
+3. `0x009e42b0(this)`: a `[this+0x1a0]` tömb elemeire (darabszám `[this+0x1a4] >> 1`, csak ha ≥ 2) `elem.vtbl[+0xc](elem, arg1, arg2)`; `0xf4240`/`0xf4246`-nál megáll, különben `0xf4241`.
+4. `0x00a576f0` (SetActiveView-jelölt, a `ytUIDialog` 31. slotja = `+0x7c`): `[C+0x15c]`-t írja (`mov [edi+0x15c], ebx`, `0x00a57886`), a régi nézetet deaktiválja (`vtbl[+8]`), az újat aktiválja (`vtbl[+4]`, `vtbl[+8]`), közben `0x009e42b0`-t és `vtbl[+0x74]`-et hív. A `0x00a58600` a `[C+0x15c]`-t nullázza.
+
+| állítás | fok |
+|---|---|
+| A Ctrl+G a `0x00a53b00` default ágán át a `0x00a582f0`-re megy (Ctrl-bit és `0x40 < kód < 0x5b`) | **megerősített**: Ghidra `ghidra-koteg-2026-10-06/00a53b00.c` és a disassembly, két út |
+| `0x00a53b00`: `[event+0x20] != 0` ⇒ `0xf4241`; `[0xd67858] != 0` ⇒ `1000000` | **megerősített**: Ghidra-dekompilát és a `0x00a53b13` `cmp dword [0xd67858], 0` |
+| `0x00a582f0`: Shift+Ctrl ⇒ `0xf4241`, nincs nézet-továbbítás | **megerősített**: disassembly (`test bl,1` / `test bl,4` / `jle`) |
+| `V = [C+0x15c]`, `V.vtbl[+0x74]` hívás, `[V+0x20e]` őr | **megerősített**: disassembly `0x00a5841c`–`0x00a5854e` |
+| `0x009e42b0`: gyermektömb `[this+0x1a0]`, `vtbl[+0xc]`, megállás `0xf4240`/`0xf4246`-nál | **megerősített**: disassembly (`0x009e42b0`, 91 bájt) |
+| C-gyermeklista (`[C+0x164]`, `[C+0x168]`): `vtbl[+4]`, `[+0x74]`, `[+8]` | **megerősített**: disassembly `0x00a58533`–`0x00a58578` |
+| A `ytUIDialog`/`CThumbUI`/`SliceUI` vtábla-slotjai: 12. = kulcsszűrő (`a53b00` / `5e6710` / `52ece0`), 31. = `a576f0` (ytUIDialog, SliceUI), `5fa760` (CThumbUI) | **megerősített**: a vtábla-memória olvasása (`0x00c93f64`, `0x00c9052c`, `0x00c8b97c`), nem csak a RTTI-lista |
+| `[C+0x15c]`-t a `0x00a576f0` és a `0x00a58600` írja | **megerősített** a teljes `.text`-pásztázás (84 író a +0x15c-re, függvényenként); a `0x00a58600` hívóit nem néztem végig |
+| `[0x00d67858]`: számláló, 35 hivatkozás (≈ 15 növelő/csökkentő pár), olvasói a `0x00a53b00`, `0x00a52890` és más ytUI-függvények | **megerősített** az író/olvasó lista; a számláló *neve* és a pár-szerkezet (pl. `0x00512030`: `sub`, nullánál `IsWindow([0xd6784c])`) **nyitott** |
+| `[event+0x20]`: a `0x009dd770` konstruktor 0-ra állítja (`mov [eax+0x20], ecx`, `ecx = 0`) | **megerősített**; a 0-tól eltérő külső írók **nyitottak** |
+| VK `0x47` közvetlen összehasonlítása a `.text`-ben: 12 `0x47`-immediate `cmp`/`sub`/`test`; ezek közül a `0x005de810` és `0x0060f1b0` ablaküzenet-kezelő (`case 5`, `0x11`, `0x16`, `0x47` = `WM_WINDOWPOSCHANGED`), a `0x008509d0` és `0x0059c410` típusmező, a `0x00986d40`/`0x00986f00` kisbetű-konverzió (`sub 0x61`, `cmp 0x19`, `sub 0x47`), a `0x004cc9e0` és `0x00ad1040` szövegillesztés | **megerősített** mint *nincs közvetlen VK-0x47 kezelő* a vizsgált hét eset alapján; a `0x0054c540`, `0x007360b0`, `0x007a5c10`, `0x00a99620` **nincs végigolvasva** |
+| `P = [C+0x150]` és a `0x009e4630` pre-filter Ctrl+G-re | mechanika **megerősített**; a `P` objektum azonosítása **nyitott** |
+| `V.vtbl[+0x74]` célja a könyvtárnézetben | **nyitott**: a `V` osztálya nincs azonosítva |
+
+**Következtetés.** ⛔ **A Ctrl+G könyvtárnézeti hatásáról NEM mondható ki, hogy hatástalan.** A lánc utolsó eleme (`V.vtbl[+0x74]` és a gyermekek kezelői) nem oldható fel, mert az aktív nézet osztálya (`V`) nincs azonosítva. Ami igazolt:
+
+- a Ctrl+G-nek nincs közvetlen kezelője (a vizsgált VK-összehasonlítások között nincs `0x47`);
+- minden Ctrl+betű (`0x41`–`0x5a`) ugyanezen a `0x00a582f0` láncon megy, tehát a Ctrl+G hatása csak egy általános (tábla- vagy tartomány-alapú) Ctrl+betű-kezelőből jöhet, és ilyet ebben a körben nem találtunk;
+- a `0x00d67858` számláló nem nulla állapotban a Ctrl+G-t (és minden más billentyűt) a `0x00a53b00` elnyeli, mielőtt bármelyik nézet látná.
+
+A 10.24 „Ctrl+G nyitott” állítása ezzel pontosítva: a lánc megvan, a végpont (V osztálya és kezelője) nyitott.
+
+**Nyitott pontok (munkasorba):**
+
+- `V` azonosítása: a `0x00a576f0` virtuális hívóinak (`call [reg+0x7c]`) argumentum-forrása a könyvtárnézetben; a `CThumbUI` saját `+0x7c` (`0x005fa760`) és a `SliceUI` `0x00a576f0`-ja közti különbség.
+- `V.vtbl[+0x74]` célja a `V` osztályától függően, és a gyermekei (`0x009e42b0` → `vtbl[+0xc]`, C-lista → `+4`/`+0x74`/`+8`).
+- `P = [C+0x150]` azonosítása, és a `0x009e4630` ága Ctrl+G-re.
+- `[event+0x20]` külső írói (a nem-konstruktor úton érkező eseményeknél).
+- `[0x00d67858]` neve és a párok szerepe (`0x00520fa0` növelő, `0x00512030` csökkentő).
+- A négy nem-végigolvasott VK-összehasonlítás (`0x0054c540`, `0x007360b0`, `0x007a5c10`, `0x00a99620`).
+- Dinamikus mérés: futó Picasában a könyvtárnézetben Ctrl+G, és ellenőrizni, történik-e bármi (új nézet, kijelölés, figyelmeztetés). Ez az egyetlen út, amely a „hatástalan” kijelentést statikus nélkül is igazolná.
+
+**Kész, ha (Ctrl+G):**
+
+- [x] A Ctrl+G dispatch-lánc (`0x00a53b00` → `0x00a582f0` → `0x009e4630` / `0x009e42b0` / `V.vtbl[+0x74]` / C-lista) utasításszinten igazolva.
+- [x] A `[0x00d67858]` és a `[event+0x20]` szerepe a láncban igazolva (a nevük nyitott).
+- [x] A VK-0x47 közvetlen kezelő-keresés elvégezve; a negatív eredmény a vizsgált eseteken igazolt.
+- [ ] A `V` (könyvtárnézeti aktív nézet) osztálya azonosítva.
+- [ ] A `V.vtbl[+0x74]` és a gyermekek Ctrl+G-kezelése igazolva, vagy a teljes lánc `0xf4241`-et ad (kódúton igazolva).
+- [ ] Dinamikus mérés: Ctrl+G a könyvtárnézetben, a változás rögzítve.
+- Csak ha mindhárom nyitott pont negatív: „a Ctrl+G a könyvtárnézetben hatástalan”.
+
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
 A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.
