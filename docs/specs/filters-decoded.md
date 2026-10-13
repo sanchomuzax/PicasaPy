@@ -6184,36 +6184,46 @@ pixelesítésben is** el van tolva.
 
 `alphaMin="0.0"` kimondott; az `alphaMax` hiányzik → alapértelmezett.
 
-### ⚠️ Ami EZUTÁN is nyitva marad: a `FocalZoom` sugaras elmosásának pereme
+### A `FocalZoom` korábban nyitott peremkérdése — a régi kóddal
 
 A `FocalZoom` a leíró szerint **nem** nagyítás, hanem
 `RadialBlurImageOperation` egy `CircularGradientImageMask` alatt
 (`filterdesc.xml` 888. sortól) — ezt a megvalósításunk helyesen követi
 (`src/picasapy/render/focal.py`, halmozott nagyító-menetek).
 
-A halmozás **perem-módja** viszont a natív magban (`0xbcf4b0`) van, nem a
-leíróban. Nálunk ma `cv2.BORDER_REPLICATE` (`focal.py:141`) — **dokumentált
-feltevés**, nem mérés. Ez marad nyitva.
+A halmozás **perem-módja** a natív magban (`0xbcf4b0`) van, nem a
+leíróban. Ez a bekezdés a #4906 előtti állapotot rögzíti: a régi szimuláció
+`cv2.BORDER_REPLICATE`-et használt. A #4906 ezt az utat natív cél-ROI-val és
+16.16-os mintavételi táblával váltotta fel.
 
 *Bizonyítottsági fok: a paraméterkészlet és a mezőeltolások **megerősítettek**
 (diszasszemblálva); a `Comicize` peremszabálya **megerősített** (a szállított
-`filterdesc.xml` közvetlen olvasása). A `FocalZoom` perem-módja
-**feltételes** — nincs se dekompilálva, se mérve.*
+`filterdesc.xml` közvetlen olvasása). A `FocalZoom` natív peremkezelése a
+#4906 óta **utasításszinten levezetett és 28 közvetlen SSE2-párral mért**.*
 
-### A `FocalZoom` perem-módja — LEZÁRVA MÉRÉSSEL: NEM SZÁMÍT (2026-08-24)
+### Korábbi OpenCV-peremkontroll (2026-08-24); a natív modellhez a #4906 az irányadó
 
-Az előző szakasz nyitva hagyta a `FocalZoom` halmozott nagyító-meneteinek
-perem-módját, azzal, hogy a natív magban (`0xbcf4b0`) van. **Nem kellett
-visszafejteni: a kérdés geometriailag el van döntve, és mérés igazolja.**
+Az előző szakasz nyitva hagyta a natív pixelrács peremkezelését. A korábbi
+geometriai érv az ideális, középpont körüli nagyításra vonatkozott; önmagában
+nem írja le a natív, float32 mátrixból épített 16.16-os táblát és annak
+cél-ROI-ját. Ezt a #4906 utasításszintű visszafejtés zárta le.
 
-#### A geometriai érv
+#### Az ideális geometria és a natív pixeltábla
 
-A halmozás **kizárólag nagyít** (`zoom ≥ 1`) egy `C` fókuszpont körül. Egy
-`p` kimeneti képponthoz tartozó forráspont `C + (p − C) / zoom`, ami mindig
-**`C` és `p` között** van. Ha tehát `C` és `p` is a képen belül van, a minta
-is belül esik ⇒ **a perem-mód sosem kerül szóba**.
+A képletsor folytonos cél→forrás leképezést ad. A tényleges SSE2-minta a
+float32 mátrixelemekből képzett 16.16 kezdőértéket és egyszer csonkolt
+lépésközt egész összeadással folytatja; a forrástéglalap inverz vetülete
+határozza meg a cél-ROI-t. Így a geometriai képletből önmagában nem következik,
+hogy minden célpixel érvényes mintát ad, vagy hogy a peremreplikálás helyes.
+Az utasításcímeket és a levezetett képletet a
+[`filterdesc-registry.md` #4906 szakasza](filterdesc-registry.md) és a
+2026-10-13-as natív párok rögzítik.
 
-#### A mérés — 240 × 360 zajkép, négy perem-mód, négy fókuszpont, három erősség
+#### Korábbi OpenCV-peremkontroll — nem a natív tábláról
+
+Az alábbi 240 × 360 zajképes eredmény négy `warpAffine` perem-módot hasonlít
+össze a régi szimulációban. Ez a kontroll nem azonosítja a natív táblát vagy
+a natív cél-ROI-t; az eredeti mérés történeti adatként marad meg.
 
 Maximális |Δ| a `BORDER_REPLICATE`-hez képest:
 
@@ -6226,14 +6236,10 @@ Maximális |Δ| a `BORDER_REPLICATE`-hez képest:
 | | 50 | 25,43 | **0,00** | 20,70 |
 | | 100 | 43,97 | **0,00** | 30,30 |
 
-⇒ **A képen belüli fókuszpontra a négy mód bitre azonos kimenetet ad.**
-Csak akkor tér el bármi, ha a fókuszpont **pontosan a képhatáron** ül (ott
-az interpoláció fél képponttal kilóg) — és **ott is egyezik a `REPLICATE` a
-`REFLECT`-tel**.
-
-> **A mai `cv2.BORDER_REPLICATE` (`src/picasapy/render/focal.py:141`)
-> helyes, és a választás nem befolyásolja az eredményt.** A korábbi
-> „dokumentált feltevés" megjelölés levehető.
+⇒ E számok kizárólag a korábbi `warpAffine`-szimuláció négy perem-módját
+hasonlítják össze. A mai `zoom_blur` nem `warpAffine`-t vagy
+`cv2.BORDER_REPLICATE`-et használ: a natív cél-ROI-n belül épített
+16.16-os indexekkel mintáz, és elhagyja a képen kívüli mintájú célpixeleket.
 
 #### Mellékleletek: a natív mag IGAZOLJA a két képletünket
 
@@ -8434,9 +8440,9 @@ ki[4g+2] = (38·s[4g+2] + 217·acc[4g])   >> 8
 ki[4g+3] = (38·s[4g+3] + 217·acc[4g+1]) >> 8
 ```
 
-A sor végi maradék (≤ 3 képpont, `0x00bcf444`) helyes. A csoport a sor első
-érvényes képpontjától indul (a nagyítás mindig a képen belül mintáz, tehát a
-`0`-tól). Ettől lesz a Picasa kimenetén a négyes periódusú, képpontszintű minta
+A sor végi maradék (≤ 3 képpont, `0x00bcf444`) helyes. A csoport a levágott
+cél-ROI bal szélétől indul; ez nem feltétlenül a kép `0` oszlopa. Ettől lesz
+a Picasa kimenetén a négyes periódusú, képpontszintű minta
 (pl. egy sötét sávban `157 230 156 229`).
 
 ### 5. A két peremeset: a képen túli minta és a `D = 0` (2026-09-28, 398. kör, #3893)
@@ -8467,9 +8473,9 @@ farok (`0x00bcf444`–`0x00bcf47c`) helyesen, a saját akkumulátorával keveri 
 
 ⇒ Egy fekvő képen a függőleges eltolás is `off`-fal nő, ezért magas `y` fókusz
 és nagy Impact mellett az alsó sorok az erős (nagy `off`-ú) lépéseket
-**kihagyják**, és csak a gyengébbeket kapják meg. Szélső képpontra szorítva
-(ahogy ma a megvalósítás, `zoom_sample_indices`) ezek a sorok a kép utolsó
-sorából mintáznak — ez más kép.
+**kihagyják**, és csak a gyengébbeket kapják meg. A #4906 implementációja
+az inverz transzformációval kapott cél-ROI-n belül építi a 16.16-os táblát;
+a képen kívüli minta nem kerül szélső képpontra szorításra.
 
 **`D = 0` — nincs korai kilépés.** A hívó (`0x00bc24e0`) feltétel nélkül hívja
 a magot; a mag egyetlen kilépése `N = 0` (`0x00bcf517` `jbe`), `N = amount + 5`
@@ -8481,8 +8487,10 @@ minta pontosan az adott képpont (az eredeti forrásból). Lépésenként
 2 → 1, 1 → 0 (az alfára is). A sávhiba itt is hat: a csoport 2–3. képpontja a
 0–1. képpont akkumulátorával kever.
 
-**Nálunk** (#3884, PR #3892): a képen túli mintát a szélső képpontra szorítjuk,
-`D = 0`-nál a képet változatlanul hagyjuk — mindkettő eltér.
+**A #3884 régi implementációja** a képen túli mintát szélső képpontra
+szorította, és `D = 0`-nál kihagyta a mintaciklust. A #4906 ezt javítja:
+`zoom_blur` a natív ROI-t és a 16.16-os táblát használja, az
+`apply_focal_zoom` pedig `D = 0` mellett is lefuttatja az `N` keverést.
 
 Fejlesztés: a **#3884** kiegészül ezzel a két szabállyal (komment).
 

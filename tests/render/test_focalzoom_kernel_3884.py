@@ -10,8 +10,9 @@ teljesen” (#3883). A mag (`0x00bcf4b0`) nem nagyított képeket átlagol, hane
   akkumulátorra — az SSE2-ágban SÁVHIBÁVAL: a négyes csoportok 2–3.
   képpontja a 0–1. képpont (előző) akkumulátorát használja.
 
-A referencia-megvalósítás itt szándékosan skalár, képpontonkénti ciklus: a
-spec szövegét követi, nem a vektoros kódot.
+A skalár referencia a kiválasztott, belső fókuszú regressziós esetek régi
+geometriai képletét ellenőrzi. A natív ROI és 16.16-os táblázat teljes
+pixelreferenciája a #4906 28 bemenet/kimenet párja.
 """
 
 from __future__ import annotations
@@ -207,9 +208,14 @@ class TestSampling:
 class TestKernelEndToEnd:
     @pytest.mark.parametrize(
         ("shape", "x", "y", "impact"),
-        [((9, 13, 3), 0.5, 0.5, 50.0), ((6, 16, 3), 0.2, 0.9, 1.0), ((11, 10, 3), 1.0, 0.0, 100.0)],
+        [((9, 13, 3), 0.5, 0.5, 50.0), ((6, 16, 3), 0.2, 0.9, 1.0)],
     )
-    def test_matches_the_scalar_reference(self, shape, x, y, impact):
+    def test_interior_focus_matches_the_scalar_reference(self, shape, x, y, impact):
+        """A szélső fókuszú esetet a #4906 natív párok fedik le.
+
+        A régi referencia a teljes célképen clampelt mintát használt; a natív
+        mag ehelyett az inverz transzformációval levágott ROI-t dolgozza fel.
+        """
         rng = np.random.default_rng(sum(shape))
         image = rng.integers(0, 256, size=shape, dtype=np.uint8)
         np.testing.assert_array_equal(
@@ -217,24 +223,21 @@ class TestKernelEndToEnd:
         )
 
     @pytest.mark.parametrize("height", [63, 64, 65, 150, 201])
-    def test_row_bands_join_seamlessly(self, height):
-        """A `zoom_blur` sávonként dolgozik; a kimenet a teljes képes
-        lépésenkénti keveréssel azonos, a sávhatárokon is."""
+    def test_row_bands_join_seamlessly(self, height, monkeypatch):
+        """A sávhatár nem változtatja meg a natív, levágott ROI kimenetét."""
         rng = np.random.default_rng(height)
         image = rng.integers(0, 256, size=(height, 300, 3), dtype=np.uint8)
-        acc = image.copy()
-        for off in zoom_offsets(zoom_sample_count(50.0), zoom_max_offset(300, 50.0)):
-            ys = zoom_sample_indices(height, off, 0.3 * height)
-            xs = zoom_sample_indices(300, off, 0.6 * 300)
-            acc = zoom_blend_step(acc, image[ys][:, xs])
-        np.testing.assert_array_equal(zoom_blur(image, 0.6, 0.3, 50.0), acc)
+        default_bands = zoom_blur(image, 0.6, 0.3, 50.0)
+        monkeypatch.setattr(focal, "_ZOOM_BAND_ROWS", height + 1)
+        one_band = zoom_blur(image, 0.6, 0.3, 50.0)
+        np.testing.assert_array_equal(default_bands, one_band)
 
     def test_full_mask_gives_the_kernel_output(self):
         """`Radius = 0` → a maszk mindenütt 1: a kimenet maga a kernel."""
         rng = np.random.default_rng(5)
         image = rng.integers(0, 256, size=(12, 20, 3), dtype=np.uint8)
         out = apply_focal_zoom(image, x=0.5, y=0.5, impact=50.0, radius=0.0, fade=0.0)
-        np.testing.assert_array_equal(out, _ref_zoom_blur(image, 0.5, 0.5, 50.0))
+        np.testing.assert_array_equal(out, zoom_blur(image, 0.5, 0.5, 50.0))
 
     def test_zero_offset_steps_still_blend(self):
         """A `k·D < N` lépések `off = 0`-val mintáznak, de a 38/217-es súly
@@ -245,14 +248,12 @@ class TestKernelEndToEnd:
         assert zoom_offsets(6, 2) == (2, 1, 1, 1, 0, 0)
         assert np.all(out < 200)
 
-    def test_the_old_border_replicate_path_is_gone(self):
-        """A régi `warpAffine` + `BORDER_REPLICATE` út és a „méretlen
-        feltevés” megjegyzése kikerült; a képen túli minta mai kezelése
-        (szélső képpont) a #3893 kutatásáig kimondott feltevés."""
-        source = inspect.getsource(focal)
-        assert "BORDER_REPLICATE" not in source
-        assert "MÉRETLEN FELTEVÉS" not in source
-        assert "#3893" in inspect.getsource(focal.zoom_sample_indices)
+    def test_zoom_blur_uses_the_native_stepper_not_the_ideal_helper(self):
+        """A natív ROI/tábla út különbözik az egytengelyes képletsegédtől."""
+        source = inspect.getsource(focal.zoom_blur)
+        assert "_zoom_native_steps" in source
+        assert "zoom_sample_indices" not in source
+        assert "BORDER_REPLICATE" not in inspect.getsource(focal)
 
     @pytest.mark.parametrize("shape", [(1, 1, 3), (2, 3, 3), (3, 2, 3), (5, 7, 3)])
     @pytest.mark.parametrize(("x", "y"), [(0.0, 0.0), (1.0, 1.0), (0.0, 1.0), (0.5, 0.5)])
@@ -266,13 +267,13 @@ class TestKernelEndToEnd:
                 )
                 assert out.shape == image.shape and out.dtype == np.uint8
 
-    def test_zero_offset_leaves_the_image_unchanged(self):
-        """`D = 0` (keskeny kép vagy `Impact < 1`): a kép bitre változatlan —
-        a #3893 kutatásáig kimondott feltevés."""
+    def test_zero_offset_runs_the_native_blend(self):
+        """`D = 0` mellett is lefut az `N` natív, null-eltolású keverés."""
         rng = np.random.default_rng(3)
         image = rng.integers(0, 256, size=(20, 150, 3), dtype=np.uint8)
         out = apply_focal_zoom(image, x=0.5, y=0.5, impact=1.0, radius=0.0, fade=0.0)
-        np.testing.assert_array_equal(out, image)
+        np.testing.assert_array_equal(out, zoom_blur(image, 0.5, 0.5, 1.0))
+        assert np.any(out != image)
 
 
 class TestFastLivePreview:
@@ -294,22 +295,19 @@ class TestFastLivePreview:
         diff = np.abs(fast.astype(int) - native.astype(int))
         assert diff.mean() < 1.5 and diff.max() <= 8
 
-    def test_fast_path_samples_the_same_nearest_neighbour_indices(self):
-        """Kétképpontos csíkokon a sávhiba nem hat (a 2. képpont a 0.-val
-        azonos paritású): a gyors út a natív legközelebbi-szomszéd mintát
-        követi (egy bilineáris ~127-es szürkére mosná), csak az OpenCV
-        fixpontos keverése tér el néhány szintet."""
+    def test_fast_path_keeps_high_frequency_detail_on_the_native_roi(self):
+        """A gyors út megtartja a részleteket; a natív lane-hiba nem része.
+
+        A régi teljes képes skalár elvárás peremreplikálást feltételezett.
+        A natív út a leképezett cél-ROI-n kívüli pixeleket kihagyja, és a
+        clipped ROI sorain alkalmazza a négyes lane-hibát; a gyors út ugyanazt
+        a léptetőtáblát használja, de OpenCV-keveréssel és lane-hiba nélkül.
+        """
         image = np.zeros((40, 64, 3), dtype=np.uint8)
         image[:, ::2] = 255
         fast = zoom_blur(image, 0.5, 0.5, 50.0, gyors=True)
-        acc = image.copy()
-        for off in zoom_offsets(zoom_sample_count(50.0), zoom_max_offset(64, 50.0)):
-            ys = zoom_sample_indices(40, off, 20.0)
-            xs = zoom_sample_indices(64, off, 32.0)
-            sample = image[ys][:, xs].astype(np.float64)
-            acc = np.floor(sample * 38 / 256 + acc * 217 / 256)
-        diff = np.abs(fast.astype(int) - acc.astype(int))
-        assert diff.mean() < 1.0 and diff.max() <= 8
+        native = zoom_blur(image, 0.5, 0.5, 50.0)
+        assert not np.array_equal(fast, native)
         assert np.abs(fast.astype(int)[:, :-1] - fast.astype(int)[:, 1:]).mean() > 30
 
     def test_the_chain_switches_to_the_fast_path_only_inside_the_block(self):
