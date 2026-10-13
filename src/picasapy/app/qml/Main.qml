@@ -2792,6 +2792,8 @@ ApplicationWindow {
     // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
     Component.onCompleted: {
+        if (controller && controller.attachHoverPreviewKeyState)
+            controller.attachHoverPreviewKeyState(window)
         //: #598: a kezdő cellaméret átadása a bélyegkép-tárnak — enélkül az
         //: induló rács a felső szintről dolgozna, pedig a 144-es fokozat a
         //: kisebb szintből tízszer olcsóbban áll elő.

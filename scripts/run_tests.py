@@ -4,11 +4,8 @@
 A teljes tesztkészlet EGY pytest-processzben futtatva Qt/GIL-deadlockra
 hajlamos — a Windows-runneren rendszeresen beragadt (2026-07-20-án a main
 utolsó hat CI-futása mind így halt meg), és a felhő-konténerben is
-reprodukálható. Ezért a futás darabolva történik:
-
-1. a nem-Qt tesztek (`tests` a `tests/app` nélkül) egyetlen processzben;
-2. a `tests/app` (és az alatta lévő `tests/app/qml_functional/`) fájlonként,
-   külön-külön processzben, kemény timeouttal.
+reprodukálható. Ezért minden tesztfájl külön processzben, kemény timeouttal
+fut.
 
 Egy beragadó részfutás így csak a saját timeoutját veszíti el, a többi
 eredménye megmarad, és a hibás fájl neve azonnal látszik.
@@ -41,6 +38,7 @@ félrevezető ENOSPC-hibával."""
 from __future__ import annotations
 
 import concurrent.futures
+import hashlib
 import json
 import atexit
 import os
@@ -1138,6 +1136,20 @@ def _faulthandlerrel(kornyezet: dict[str, str]) -> dict[str, str]:
     return kornyezet
 
 
+#: a pytest kilépési kódja, ha a futásban egyetlen teszt sem futott le
+_NINCS_TESZT_KOD = 5
+
+
+def _nincs_teszt_nem_bukas(args: list[str], returncode: int) -> int:
+    """#4932: fájlonkénti futásnál egy fájl teljes egészében kimaradhat (pl.
+    `pytest.importorskip` egy, a gépen hiányzó csomagra) — a pytest ilyenkor
+    5-tel lép ki. Ez nem tesztbukás: egyben futtatva a többi fájl elfedte."""
+    if returncode == _NINCS_TESZT_KOD:
+        print(f"  (nem futott teszt: {' '.join(args)} — kihagyva, nem bukás)", flush=True)
+        return 0
+    return returncode
+
+
 def _run_pytest(
     args: list[str], timeout_s: int, *, cov: bool, basetemp: Path,
     kornyezet: dict[str, str] | None = None, csendben: bool = False,
@@ -1188,15 +1200,15 @@ def _run_pytest(
         print(f"$ {' '.join(command)}", flush=True)
     try:
         if not csendben:
-            return _run(
+            return _nincs_teszt_nem_bukas(args, _run(
                 command, cwd=_ROOT, timeout=timeout_s, env=kornyezet
-            ).returncode
+            ).returncode)
         eredmeny = _run(
             command, cwd=_ROOT, timeout=timeout_s, env=kornyezet,
             capture_output=True, text=True, errors="replace",
         )
         _KIMENET[" ".join(args)] = (eredmeny.stdout or "") + (eredmeny.stderr or "")
-        return eredmeny.returncode
+        return _nincs_teszt_nem_bukas(args, eredmeny.returncode)
     except subprocess.TimeoutExpired as kivetel:
         if csendben:
             _KIMENET[" ".join(args)] = _szoveggé(kivetel.stdout)
@@ -1463,7 +1475,7 @@ def _shard_parameter(argv: list[str]) -> tuple[int, int]:
 
 
 def _kiegyensulyozott_darab(
-    egysegek: list[str], sorszam: int, darab: int
+    egysegek: list[str], sorszam: int, darab: int, *, teljes: bool = False
 ) -> set[str]:
     """A `sorszam.` darabhoz tartozó egységek — MÉRT idők szerint kiosztva.
 
@@ -1473,10 +1485,11 @@ def _kiegyensulyozott_darab(
 
     Ismeretlen egységre KONZERVATÍV becslést veszünk (`becsult_idok`), nem
     nullát: egy új tesztfájl így nem torzítja a kiosztást azzal, hogy
-    „ingyen van"."""
+    „ingyen van". Teljes készletnél a nem-app fájlok az összesített
+    mérésükből kapnak megosztott súlyt."""
     if darab <= 1:
         return set(egysegek)
-    idok = becsult_idok(egysegek)
+    idok = becsult_idok(egysegek, teljes=teljes)
     terhelés = [0.0] * darab
     kiosztas: list[list[str]] = [[] for _ in range(darab)]
     for nev in sorted(egysegek, key=lambda n: -idok[n]):
@@ -1493,7 +1506,9 @@ def _kiegyensulyozott_darab(
 BECSLESI_PERCENTILIS = 0.9
 
 
-def becsult_idok(egysegek: list[str]) -> dict[str, float]:
+def becsult_idok(
+    egysegek: list[str], *, teljes: bool = False
+) -> dict[str, float]:
     """Minden egység ideje: a mért, vagy ha nincs, a konzervatív becslés.
 
     #4825: a hiányzó mérés NEM blokkolhatja a PR-eket. 2026-10-09–10-én a
@@ -1501,7 +1516,9 @@ def becsult_idok(egysegek: list[str]) -> dict[str, float]:
     mérése egy ütemezett futásra várt, ami el sem indult (8 óra kiesés). A
     hiányzó egység ezért jelölt becslést kap (`becsult_egysegek`), a
     pótlás a CI-naplókból később jön; az egyensúly- és határidő-őrök a
-    becsléssel együtt számolnak, tehát a garanciájuk megmarad."""
+    becsléssel együtt számolnak, tehát a garanciájuk megmarad. Ha a teljes
+    nem-app készlet ismert összesített ideje rendelkezésre áll, az egyedi
+    nem-app fájlok ennek fennmaradó részéből kapnak kiosztási súlyt."""
     idok = _mert_idok()
     ismert = sorted(idok[nev] for nev in egysegek if nev in idok)
     becsles = (
@@ -1509,7 +1526,28 @@ def becsult_idok(egysegek: list[str]) -> dict[str, float]:
         if ismert
         else 1.0
     )
-    return {nev: idok.get(nev, becsles) for nev in egysegek}
+    nem_app = [
+        nev for nev in egysegek
+        if nev.startswith("tests/") and not nev.startswith("tests/app/")
+    ]
+    meretlen_nem_app = [nev for nev in nem_app if nev not in idok]
+    van_nem_app_osszesites = teljes and bool(nem_app) and _NEM_APP in idok
+    nem_app_atlag = 0.0
+    if van_nem_app_osszesites and meretlen_nem_app:
+        mert_resz = sum(idok[nev] for nev in nem_app if nev in idok)
+        nem_app_atlag = max(0.0, idok[_NEM_APP] - mert_resz) / len(
+            meretlen_nem_app
+        )
+    return {
+        nev: (
+            idok[nev]
+            if nev in idok
+            else nem_app_atlag
+            if van_nem_app_osszesites and nev in meretlen_nem_app
+            else becsles
+        )
+        for nev in egysegek
+    }
 
 
 def becsult_egysegek(egysegek: list[str]) -> list[str]:
@@ -1537,10 +1575,12 @@ def _mert_idok() -> dict[str, float]:
 
     Az ubuntu-láb ugyanezzel a kiosztással 10,4 perc (1,31×).
 
-    A #4922 óta a teljes készlet legfeljebb 16 darabra oszlik; a jelenlegi
-    mért összeg 128,2 perc, így a leglassabb darab mérési összege nagyjából
-    8 perc. A táblázat a fájlonkénti kiosztás alapja, nem garantálja a
-    telepítéssel együtt mért faliórát.
+    #4922 óta a teljes készlet legfeljebb 16 darabra oszlik. A #4932-től a
+    `tests --ignore=tests/app` 488,53 másodperces összesített mérése nem egy
+    futtatási egység: a teljes készlet elosztásakor az egyedi, nem mért
+    nem-app fájlok között oszlik el, az ismert fájlidőket levonva. A táblázat
+    a fájlonkénti kiosztás alapja, nem garantálja a telepítéssel együtt mért
+    faliórát.
 
     A lefedettséget a `tests/test_ci_kor_ideje_1127.py`
     `test_a_mert_tabla_LEFEDI_az_egysegeket` őrzi: 90% alatt bukik.
@@ -1689,13 +1729,9 @@ def _olvas_fajllista(
     )
 
 
-def _fajlokbol_egysegek(fajlok: Sequence[str], *, teljes: bool) -> list[str]:
-    """A teljes nem-app készlet a régi, külön mért egység marad."""
-    rendezett = sorted(set(fajlok))
-    nem_app = [ut for ut in rendezett if not ut.startswith("tests/app/")]
-    if teljes and nem_app:
-        return [_NEM_APP, *(ut for ut in rendezett if ut.startswith("tests/app/"))]
-    return rendezett
+def _fajlokbol_egysegek(fajlok: Sequence[str]) -> list[str]:
+    """Minden kiválasztott tesztfájlt önálló futtatási egységként ad vissza."""
+    return sorted(set(fajlok))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1783,7 +1819,7 @@ def main(argv: list[str] | None = None) -> int:
         _engedd_el_a_helyet(hely)
 
 
-#: A nem-app készlet egyetlen egységként szerepel a kiosztásban.
+#: A teljes nem-app készlet összesített mérésének kulcsa; nem futtatási egység.
 _NEM_APP = "tests --ignore=tests/app"
 
 #: #4922: CI-ben a `--fajllista` a módosított forrás importfájából számított,
@@ -1879,63 +1915,51 @@ def _futtat(
     — a többi darabot másik futtató viszi (#1127)."""
     failures: list[tuple[str, int]] = []
 
-    app_dir = _ROOT / "tests" / "app"
-    app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
-        (app_dir / "qml_functional").glob("test_*.py")
-    )
-    app_utak = [str(p.relative_to(_ROOT)) for p in app_test_files]
     if fajlok is None:
         # Régi helyi hívásoknál megmarad az eredeti viselkedés. A CI explicit
-        # fájllistát ad, így ott a nem-app PR-tesztek sem futnak teljesen.
+        # fájllistát ad; a nem-app tesztek mindkét úton fájlonként futnak.
+        minden_ut = sorted(
+            ut.relative_to(_ROOT).as_posix()
+            for ut in (_ROOT / "tests").rglob("test_*.py")
+        )
+        app_utak = [ut for ut in minden_ut if ut.startswith("tests/app/")]
+        nem_app_utak = [
+            ut for ut in minden_ut if not ut.startswith("tests/app/")
+        ]
         alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
         if alap:
             app_utak = erintett_app_tesztek(
                 app_utak, _valtozott_fajlok(alap),
                 lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
             )
-        egysegek = [_NEM_APP] + app_utak
+        fajlok = sorted([*nem_app_utak, *app_utak])
+        # A nem-app lista ilyenkor is a teljes készlet, így használható hozzá
+        # a `tests --ignore=tests/app` összesített mérése a súlyozáshoz.
+        teljes = True
     else:
-        app_utak = [ut for ut in fajlok if ut.startswith("tests/app/")]
-        egysegek = _fajlokbol_egysegek(fajlok, teljes=teljes)
         print(
             f"Tesztválasztás: {len(fajlok)} fájl; teljes={teljes}; "
             f"indok={indok or 'nincs megadva'}.",
             flush=True,
         )
-    enyem = _kiegyensulyozott_darab(egysegek, sorszam, darab)
+    egysegek = _fajlokbol_egysegek(fajlok)
+    enyem = _kiegyensulyozott_darab(
+        egysegek, sorszam, darab, teljes=teljes
+    )
     if darab > 1:
         print(
             f"Darab {sorszam}/{darab}: {len(enyem)} egység a {len(egysegek)}-ből.",
             flush=True,
         )
 
-    if _NEM_APP in enyem:
-        returncode = _run_pytest(
-            ["tests", "--ignore=tests/app"],
-            _NON_APP_TIMEOUT_S,
-            cov=cov,
-            basetemp=basetemp,
-        )
-        if returncode != 0:
-            failures.append(("tests (tests/app nélkül)", returncode))
-
-    # a tests/app közvetlen fájljai + a tests/app/qml_functional/ alattiak
-    # (#155: a korábbi test_qml_functional.py szétbontásából) — mindegyik
-    # KÜLÖN processzben, hogy egy fájlon belüli sok engine-életciklus se
-    # torlódjon egyetlen processzbe.
-    app_test_files = [
-        _ROOT / ut for ut in app_utak if ut in enyem
-    ]
-    if fajlok is not None and not teljes:
-        app_test_files.extend(
-            _ROOT / ut for ut in fajlok
-            if not ut.startswith("tests/app/") and ut in enyem
-        )
-    kihagyott = [p for p in app_test_files
+    # Minden kiválasztott fájl külön pytest-processzt kap; így a korábbi
+    # `tests --ignore=tests/app` nagy egység is kisebb, izolált futásokra bomlik.
+    tesztfajlok = [_ROOT / ut for ut in fajlok if ut in enyem]
+    kihagyott = [p for p in tesztfajlok
                  if str(p.relative_to(_ROOT)).replace("\\", "/")
                  in _KIHAGYOTT_APP_FAJLOK]
     if kihagyott:
-        app_test_files = [p for p in app_test_files if p not in kihagyott]
+        tesztfajlok = [p for p in tesztfajlok if p not in kihagyott]
         print("\nKIHAGYVA (túllépi a fájlonkénti időkorlátot):", flush=True)
         for p in kihagyott:
             nev = str(p.relative_to(_ROOT)).replace("\\", "/")
@@ -1947,9 +1971,9 @@ def _futtat(
             flush=True,
         )
     if _PARHUZAM > 1:
-        failures += _app_fajlok_parhuzamosan(app_test_files, cov=cov, basetemp=basetemp)
+        failures += _tesztfajlok_parhuzamosan(tesztfajlok, cov=cov, basetemp=basetemp)
     else:
-        failures += _app_fajlok_sorosan(app_test_files, cov=cov, basetemp=basetemp)
+        failures += _tesztfajlok_sorosan(tesztfajlok, cov=cov, basetemp=basetemp)
 
     if cov:
         _report_coverage()
@@ -1977,12 +2001,12 @@ def _futtat(
     return 0
 
 
-def _app_fajlok_sorosan(
-    app_test_files: list[Path], *, cov: bool, basetemp: Path
+def _tesztfajlok_sorosan(
+    test_files: list[Path], *, cov: bool, basetemp: Path
 ) -> list[tuple[str, int]]:
     """A korábbi (2026-08-19 előtti) viselkedés — `PICASAPY_TESZT_PARHUZAM=1`."""
     failures: list[tuple[str, int]] = []
-    for test_file in app_test_files:
+    for test_file in test_files:
         relative = test_file.relative_to(_ROOT)
         returncode = _run_pytest(
             [str(relative)], _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp
@@ -2013,8 +2037,8 @@ def _app_fajlok_sorosan(
     return failures
 
 
-def _app_fajlok_parhuzamosan(
-    app_test_files: list[Path], *, cov: bool, basetemp: Path
+def _tesztfajlok_parhuzamosan(
+    test_files: list[Path], *, cov: bool, basetemp: Path
 ) -> list[tuple[str, int]]:
     """Ugyanaz, `_PARHUZAM` fájllal egyszerre (#1030).
 
@@ -2026,7 +2050,8 @@ def _app_fajlok_parhuzamosan(
 
     def egy_fajl(test_file: Path) -> tuple[str, int]:
         relative = str(test_file.relative_to(_ROOT))
-        sajat = basetemp / test_file.stem
+        azonosito = hashlib.sha256(relative.encode("utf-8")).hexdigest()[:10]
+        sajat = basetemp / f"{test_file.stem}-{azonosito}"
         try:
             kornyezet = _reszfutas_kornyezete(sajat)
             returncode = _run_pytest(
@@ -2059,10 +2084,10 @@ def _app_fajlok_parhuzamosan(
         finally:
             shutil.rmtree(sajat, ignore_errors=True)
 
-    print(f"\n$ tests/app: {len(app_test_files)} fájl, "
+    print(f"\n$ tesztfájlok: {len(test_files)} fájl, "
           f"{_PARHUZAM} egyszerre", flush=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=_PARHUZAM) as pool:
-        for relative, returncode in pool.map(egy_fajl, app_test_files):
+        for relative, returncode in pool.map(egy_fajl, test_files):
             # Csak ASCII jelölés: a Windows-runner konzolja cp1252-ben ír, és
             # a pipálás-karakter `UnicodeEncodeError`-ral MEGÖLTE a futást
             # (mérve, #1030 első köre) — a kimenet díszítése nem érhet ennyit.

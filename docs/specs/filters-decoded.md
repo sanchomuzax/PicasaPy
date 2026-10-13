@@ -274,11 +274,13 @@ A `warm` modellje a natív `0x0090c040` munkafüggvény beégetett,
 szürke-közelítést a #611 óta a pontos tábla váltotta fel. A #4256 Colab-golden
 16 foltján a legnagyobb csatornaátlag-eltérés 1 szint.
 
-### `grain2` — sztochasztikus, pixelhűen NEM reprodukálható
+### `grain` / `grain2` — azonos, fix erősségű effekt
 
-Átlagban identitás (meredekség 1,000, eltolás −2,7), zérus körüli additív
-zaj véletlen maggal. Elfogadási teszt: statisztikai (zaj-σ, spektrum),
-nem pixel-diff. A round-trip elvet nem érinti (a filters-sztring őrzendő).
+Átlagban közel identitás (meredekség 1,000); a részletes algoritmust és a
+reprodukálható, renderenként sorszámozott CRT-magot lásd az alábbi
+„`grain` / `grain2` — fix erősség” és „A szemcsemag CRT-folyama (#4936)”
+szakaszban. A két token ugyanazt a munkafüggvényt hívja. A `filters=`
+sztring round-trip módon őrzendő.
 
 ### `sat` — gain-tábla (HSV S-térben, klippeletlen pixeleken mérve)
 
@@ -3250,12 +3252,12 @@ lánc minden száma a binárisból jön.*
 
 ### ⛳ `grain` / `grain2` — a munkafüggvény kiolvasva: MT19937-zaj, háromszoros kétirányú simítás, középtónus-súlyozás (2026-09-28, 402. kör, #3927)
 
-*Bizonyítottsági fok: **megerősített**, utasításszinten, emulációval és statisztikai golden-méréssel. Független újralevezetés (#3927): EGYEZIK. ⛔ Az alábbi régi szakasz („MSVC `rand()`, majd vízszintes simítás”) zajforrása és simítása TÉVES; a „mag képenként más” következtetése áll.*
+*Bizonyítottsági fok: **megerősített**, utasításszinten, emulációval és golden-méréssel. Független újralevezetés (#3927): EGYEZIK. A #3927-es következtetés, hogy a mag nem reprodukálható, a #4936 CRT-folyam-mérésével helyesbült; ld. lent.*
 
 A callback (`0x008f88e0`) a képet `0x009aabf0`-val a célba másolja, és `0x0090a2e0(dst, 0,5f)`-et hív (`[0xc7dafc]`). A munkafüggvény lépései:
 
 1. **Zajpuffer** W × H × 32 bit (`0x0090a331` → `0x009a8a30`).
-2. **Generátor: helyi MT19937** (`0x0090a341` a 0x9cc bájtos állapotot nullázza a veremben). Mag = `r3 ^ ((r2 ^ (r1 << 12)) << 12)`, ahol `r1..r3` három egymást követő CRT-`rand()` (`0x0090a349`–`0x0090a364`), az inicializáló a `0x00aa28f0` (szorzó `0x19660D`, ld. `picasa-megjelenitesi-modok.md` 5.3/b), a twist a `0x00aa2930`, a temperálás a szabványos (`0x9d2c5680`, `0xefc60000` maszk, `0x0090a3f9`–`0x0090a41f`). A `rand()` folyama nem áll vissza, ezért a mag hívásonként más.
+2. **Generátor: helyi MT19937** (`0x0090a341` a 0x9cc bájtos állapotot nullázza a veremben). Mag = `r3 ^ ((r2 ^ (r1 << 12)) << 12)`, ahol `r1..r3` három egymást követő CRT-`rand()` (`0x0090a349`–`0x0090a364`), az inicializáló a `0x00aa28f0` (szorzó `0x19660D`, ld. `picasa-megjelenitesi-modok.md` 5.3/b), a twist a `0x00aa2930`, a temperálás a szabványos (`0x9d2c5680`, `0xefc60000` maszk, `0x0090a3f9`–`0x0090a41f`). A CRT-folyam a műveletek között folytatódik. A #4936 által vizsgált renderláncban a sorszám renderenként indul: az `n`-edik grain a kezdőállapotból számolt 3n–3n+2. `rand()`-értékekből kap magot.
 3. **Erősség:** `a = min(a, 1)` (`0x0090a36f`–`0x0090a388`), `k = trunc(256 − 256·a)` (`[0xcf39d8]` = 256,0; `or 0xc00` csonkoló `fistp`, `0x0090a3b9`) — `a = 0,5`-nél **`k = 128`**.
 4. **Első zajmező**, képpontonként egy MT-szó, sorfolytonosan: `v = t | 0xff000000`, és csatornánként (32 bites, két csatornát egyszerre kezelő egész aritmetikával, `0x0090a427`–`0x0090a464`):
    ```
@@ -3293,7 +3295,7 @@ A callback (`0x008f88e0`) a képet `0x009aabf0`-val a célba másolja, és `0x00
 | R–B csatorna-korreláció | 0,93 | 0,87 | 1,00 |
 | ΔE a Picasa-exporthoz | — | **2,67** | 3,23 |
 
-Két független emuláció egymáshoz mért ΔE-je 2,81: a 2,67 a véletlen mag okozta alsó határon van, ennél közelebb képpontra nem lehet jutni. A Picasa nagyobb szórása és kisebb szomszéd-korrelációja az export JPEG-zaja.
+Két független emuláció egymáshoz mért ΔE-je 2,81 volt; a 2,67-es értéket korábban a véletlen mag alsó határának tulajdonítottuk. A #4936 kimutatta, hogy ez a következtetés hibás: a különbséget a rögzített `seed=0` okozta, a Picasa-kimenethez tartozó CRT-maggal a nyers ΔE 1,509. A Picasa nagyobb szórásának egy része az export JPEG-zaja.
 
 Ezzel lezárul a régi szakasz feltételes pontja (egyenlő vízszintes és függőleges korreláció): a simítás kétirányú. A Picasa `−1,97`-es átlagos sötétítését az emuláció magától, illesztés nélkül visszaadja (`−1,96`); a mai kódunk átlaga 0.
 
@@ -3309,63 +3311,45 @@ Az 5. pont mindkét menete pillanatkép-alapú, NEM rekurzív, ugyanazzal a kép
 | R–B csatorna-korreláció | 0,87 | **0,87** |
 | ΔE a Picasa-exporthoz | 2,67 | **2,674** |
 
-A mag (`seed`) a hívó felelőssége: az élő előnézetben rögzített (`seed=0`, hogy a szemcse ne „villogjon"), az elfogadás statisztikai — a Picasa natív magja úgyis hívásonként más, bájtra pontos reprodukció nincs.
+*A fenti „mai kódunk” értéke a #4936 előtti, rögzített `seed=0`-s állapot
+archív mérése; nem a javított render magjának elvárt kimenete.*
 
-### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
+## A szemcsemag CRT-folyama (#4936, 2026-10-13)
 
-> ⛔ **HELYESBÍTVE (2026-09-28, #3927):** a zajforrás MT19937 (a `rand()` csak a magot adja), a simítás háromszoros és KÉTIRÁNYÚ, a képre középtónus-súlyozással kerül — ld. a fenti ⛳ szakaszt. A „mag képenként más” mérés és következtetés áll.
+A fenti algoritmus a zajt és a szűrést írja le; a Picasa magja a binárisból
+visszafejtett MSVC CRT `rand()`-folyam aktuális állásából készül. Egy szemcse
+három egymást követő értéket fogyaszt:
 
-A callback konstans `0.5f`-fel hív (`FUN_0090a2e0(dst, 0.5f)`), amiből
-`keveres = round(256 − 0,5·256) = 128`. A zajmező az **MSVC szabványos
-`rand()`-jából** jön (LCG: `seed = seed*0x343fd + 0x269ec3`, kimenet
-`(seed >> 16) & 0x7fff`), **három bemelegítő hívás** után. A nyers zajra
-ezután egy 1:3 súlyú, soronként balról jobbra futó simítás megy:
-
-```c
-uj = (3 * kovetkezo + jelenlegi) >> 2;     // csatornankent
+```text
+state = (state * 0x343FD + 0x269EC3) & 0xFFFFFFFF
+r = (state >> 16) & 0x7FFF
+mag = r3 ^ ((r2 ^ (r1 << 12)) << 12)
 ```
 
-Ez adja a szemcse „csomós" jellegét — fehér zajból nem jönne ki.
-*Bizonyítottsági fok: erős* (a `rand()` azonosítása megerősített; a simítás
-iránya és a 128-as keverés a dekompilátumból olvasva).
+A vizsgált renderlánc modellje a folyamot `state=1` kezdőállapotból,
+renderenként nulláról sorszámozza. Az `n`-edik szemcse az első `3n` érték
+elfogyasztása után következő hármasból kap magot. Így
+`grain_seed(0) = 0x2D8228BE`, `grain_seed(1) = 0x80AE2D6C`. Ez reprodukálható
+és megakadályozza, hogy az eredmény globális renderelési sorrendtől függjön.
 
-#### A mag kérdése LEZÁRVA: a szemcse képenként MÁS (2026-08-15)
+**A korábbi „mag képenként más, bájtra nem reprodukálható” következtetés
+helyesbítve:** a `grain` és `grain2` algoritmusa nem véletleníti újra a magot;
+az eltérés a kód által korábban minden műveletnek adott `seed=0` volt.
+`grain` és `grain2` együtt egy láncban rendre a következő sorszámokat kapják.
 
-**Ez volt a szakasz nyitott pontja, és eldőlt — méréssel és kódból is.**
+Mért adatok (a `mean_de` nyers CIE76 mérővel):
 
-**A mérés a döntő.** Az öt `grain2=1;` golden-pár (`golden-kit/05-tone` →
-`golden-kit-result/export/05-tone`) különbségmezőit összevetve:
+| eset | renderbeli sorszám | ΔE | megjegyzés |
+|---|---:|---:|---|
+| 684 `grain__alap` | k=0 | **1,509** | megfelel a grain ≤1,6 elfogadásnak |
+| merokit-2 `szemcse_02` (`grain2`) | k=0 | **2,661** | eltér a Picasa munkameneti k=1 magjától; nincs ≤2,0 elfogadási küszöb |
+| merokit-2 `szemcse_02` (`grain2`) | k=1 | **1,447** | a rögzített exportban használt mag |
+| merokit-2 `szemcse_05` (`grain+grain`) | k=0,1 | **3,679** | renderenként nulláról induló lánc |
+| merokit-2 `szemcse_05` (`grain+grain`) | k=2,3 | **1,866** | a vizsgált Picasa-munkamenet korábbi hívásai után |
 
-| összevetés | korreláció |
-|---|---:|
-| `photo01` vs `photo04` (**mindkettő 1920×1080**) | **−0,0012** |
-| `chart_color` vs `chart_ramp` (**mindkettő 1600×1200**) | **+0,0019** |
-| a többi hét páros | −0,017 … +0,002 |
-
-**Az azonos méretű párok a döntők:** ott a zajmező elhelyezése is azonos
-lenne, tehát rögzített mag mellett a két különbségmezőnek **egyeznie kellene**.
-A korreláció nulla.
-
-Hogy ez nem mérési zaj, azt a kontroll adja: a `00-base` mappa
-**effekt nélküli** exportjain a puszta JPEG-újratömörítés szórása
-**0,27–1,35** szint, a `grain2`-párokén **4,0–5,4** — a szemcse tehát
-bőven kiemelkedik a zajból, mégsem korrelál.
-
-**A kód ugyanezt mondja.** Az MSVC `rand()` (`0x00c08221`) a magot a
-**szálankénti** CRT-blokkból veszi (`[ptd + 0x14]`, LCG:
-`mag = mag·0x343fd + 0x269ec3`, kimenet `(mag >> 16) & 0x7fff`). Az `srand`
-(`0x00c08214`: `_getptd(); ptd[0x14] = arg`) az egész binárisban **10 helyről**
-hívódik, és **egyik sem a szemcse-munkafüggvény** (`0x0090a2e0`) — az csak
-`_rand`-ot hív. A generátor tehát **nem áll vissza képenként**: a folyam megy
-tovább, és minden kép a sorozat más szakaszát kapja.
-
-*Bizonyítottsági fok: megerősített* (a mérés önmagában eldönti) · a pontos ok
-(folytatódó folyam vs. máshol beültetett mag) **erős**, de nem elkülönített.
-
-> ⚠️ **Következmény a tesztelésre: a `grain`/`grain2` kimenete elvileg sem
-> reprodukálható bájtra.** Golden-összevetésben ezeket **statisztikailag** kell
-> mérni (szórás, sávonkénti erősség), nem képpontonként. Aki képpont-egyezést
-> vár tőlük, olyan tesztet ír, ami sosem lesz zöld.
+Ezek mérési dokumentációk, nem küszöbök. A régi `grain2`-párok közti közel
+nulla korreláció azt igazolja, hogy külön exportok eltérő zajmezőt kaphattak;
+önmagában nem bizonyítja, hogy egy adott render magja nem reprodukálható.
 
 #### A szemcse JELLEGE — amit utánozni kell (mérve, 5 golden-páron)
 
@@ -6488,7 +6472,12 @@ A `HDR` leírója egyetlen natív műveletet hív (`<LocalContrastImageOperation
 | 5 | `NestedImageOperation` (`0x00bc1250`) **`Add`** (0, `0x00bc4520`): `BlendImageOperation blur` **`Subtract`** (8; `0x00bbf780`, vtábla `0x00cf0b2c`), `MultiplyColorMatrixImageOperation` (`0x00bb7680`) → `+0x40` | `0x00bc4460`–`0x00bc4524` | `+ C·max(be − elm, 0)` |
 | 6 | `NestedImageOperation` **`Subtract`** (8, `0x00bc46ab`): `GetVarImageOperation blur`, `BlendImageOperation orig` **`Subtract`**, `MultiplyColorMatrixImageOperation` → `+0x44` | `0x00bc454f`–`0x00bc46b0` | `− C·max(elm − be, 0)` |
 
-Az apply (`0x00bc4730`) a `Strength`-et (`+0x2c`, alapérték 1) mindkét szorzó `+0x28`-ába írja, a `Radius`-t (`+0x34`, alapérték 1) az elmosás `+0x24`/`+0x2c`-jébe (x és y). Ezután lefuttatja a láncot (`0x00bc47fd call 0x009a8ca0`).
+Az apply (`0x00bc4730`) a `Strength`-et (`+0x2c`, alapérték 1) mindkét
+szorzó `+0x28`-ába írja, a `Radius`-t (`+0x34`, alapérték 1) az elmosás
+`+0x24`/`+0x2c`-jébe (x és y). Végül a `0x00bc47fd` a bemeneti 40 bájtos
+képleírót másolja a kimeneti rekordba a `0x009a8ca0` segítségével; ez nem
+futtatja le a gyerekutasításokat. A teljes utasításlistát meghajtó külső hívó
+és a hozzá tartozó képleíró-verem ABI nyitott.
 
 ```
 HDR:            ki = be  + C·(be − elm)      (8 bites, lépésenként vágva)

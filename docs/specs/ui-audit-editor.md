@@ -100,7 +100,7 @@ képi/exportált bizonyítékkal alátámasztott**, csak a fül-hovatartozás
 | Szépia (Sepia) | `sepia` | ✅ | ✅ (mért 3-csatornás LUT) | ❌ |
 | Fekete-fehér (B&W) | `bw` | ✅ | ✅ (pixelhű, Rec.601) | ❌ |
 | Melegítés (Warmify) | `warm` | ✅ | ✅ (mért LUT) | ❌ |
-| Filmszemcse (Film Grain) | `grain2` | ✅ | ✅ (statisztikai, nem pixelhű — sztochasztikus) | ❌ |
+| Filmszemcse (Film Grain) | `grain2` | ✅ | ✅ (renderenként sorszámozott CRT-mag; grain/alap nyers ΔE 1,509) | ❌ |
 | Árnyalás (Tint) | `tint` | ✅ | ⚠️ implementálva, de **legrosszabb golden-egyezés (ΔE 20,6)** — a színparaméter-formátum tisztázatlan (Nyitva 4) | ❌ (a színt gomb nem kínálja fel, csak alapértelmezett) |
 | Telítettség (Saturation) | `sat` | ✅ | ⚠️ negatív irány jó, pozitív irány romlik (ΔE 0,7–12,7) | ❌ |
 | Lágy fókusz (Soft Focus) | `radblur` | ✅ | ⚠️ eltér (ΔE 3,2) | ❌ |

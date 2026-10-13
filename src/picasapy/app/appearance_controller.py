@@ -13,7 +13,7 @@ alapértelmezés" elvének mintájára).
 
 from __future__ import annotations
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, Property, Qt, Signal, Slot
 
 from .folder_photo_sort_controller import FolderPhotoSortMixin
 
@@ -68,6 +68,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
     darkThemeChanged = Signal()
     uiTransitionsEnabledChanged = Signal()
     showTooltipsEnabledChanged = Signal()
+    ctrlAltHeldChanged = Signal()
     autoPlayMoviesChanged = Signal()
     singleClickExitEnabledChanged = Signal()
 
@@ -88,7 +89,45 @@ class AppearanceMixin(FolderPhotoSortMixin):
         self._auto_play_movies = coerce_ui_preference_flag(
             settings.value(AUTO_PLAY_MOVIES_KEY, True), default=True
         )
+        self._hover_preview_pressed: set[int] = set()
+        self._ctrl_alt_held = False
         self._init_folder_photo_sort()  # #1436
+
+    @Property(bool, notify=ctrlAltHeldChanged)
+    def ctrlAltHeld(self) -> bool:  # noqa: N802 — QML-property
+        return self._ctrl_alt_held
+
+    @Slot(QObject)
+    def attachHoverPreviewKeyState(self, target: QObject) -> None:  # noqa: N802
+        """A főablak valódi Ctrl/Alt eseményeit figyelje, de ne nyelje el."""
+        target.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event) -> bool:  # noqa: N802
+        event_type = event.type()
+        if event_type in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+            key = event.key()
+            if (
+                key in (Qt.Key.Key_Control, Qt.Key.Key_Alt)
+                and not event.isAutoRepeat()
+            ):
+                if event_type == QEvent.Type.KeyPress:
+                    self._hover_preview_pressed.add(key)
+                else:
+                    self._hover_preview_pressed.discard(key)
+                self._set_ctrl_alt_held(
+                    Qt.Key.Key_Control in self._hover_preview_pressed
+                    and Qt.Key.Key_Alt in self._hover_preview_pressed
+                )
+        elif event_type == QEvent.Type.WindowDeactivate:
+            self._hover_preview_pressed.clear()
+            self._set_ctrl_alt_held(False)
+        return False
+
+    def _set_ctrl_alt_held(self, held: bool) -> None:
+        if held == self._ctrl_alt_held:
+            return
+        self._ctrl_alt_held = held
+        self.ctrlAltHeldChanged.emit()
 
     @Property(bool, notify=darkThemeChanged)
     def darkTheme(self) -> bool:
