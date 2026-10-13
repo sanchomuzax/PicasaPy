@@ -4427,6 +4427,49 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
 
 *Bizonyítottsági fok:* a direkt gráf és a vtábla-hivatkozások **megerősített** (két független út: bájtpásztázás és dekompilátum). A hívó, a 3. argumentum forrása és a vtábla-lyukak tartalma **nyitott**. Nincs becsült érték.
 
+### 15.4d Negyedik kör (2026-10-13, #4884): a `+0x34` hívás, a lock-objektum és a 3. argumentum
+
+**Kérdések:** (1) a `007220b0` teljes utasításszintű olvasata: mit kap és mit ad vissza a `[item+0x34]` slot-18 és slot-12 hívása; (2) a lock-objektum (`[node+0x244]`) mezői és hogyan zárja; (3) mi a 3. argumentum szerepe a `00715090`-ben; (4) van-e a `+0x34` objektum osztálya, és hol íródik a `+0x34` mező.
+**Forrás:** `Picasa3.exe` (SHA-256 `644b7bec…dc96`), capstone-os diszasszemblálás (`007220b0`–`007221db`), a `ghidra-koteg-2026-10-13/00715280.c` dekompilátuma (`00714040`, `00714fb0`, `00715090`, `00721f20` callee-k), és bájtpásztázás a `+0x34` és `+0x324` mezőkre.
+
+| állítás | bizonyíték | bizottság |
+|---|---|---|
+| `007220b0` a `[item+0x34]` objektumon, **thiscall**, a slot-18 (`+0x18`) hívást `(kulcs = [item+0xb4], méret = [item+0x64] vagy 0x200)` argumentumokkal végzi; a visszatérési értéket `[item+0xb8]`-ban tárolja (cache), eltérés esetén `[item+0x59] = 1`, `[item+0xb8] = 0`, és GDI/heap-segédhívás | disasm `0x7220b8`–`0x722151` | igazolt (szerep); a slot-18 **implementációja nincs** |
+| a `[item+0x58]` ágon nincs vtábla-hívás: a méret `(item+0x64)·9 >> 5` a `[item+0x3c]`/`[item+0x40]` mezőkbe kerül | disasm `0x722157`–`0x722169` | igazolt |
+| a `[item+0x34]` slot-12 (`+0xc`) hívása `(kulcs, &[item+0x3c], &[item+0x40], méret)` argumentumokkal: az objektum **a két mezőt kitölti** (méretszámítás, nem fájl) | disasm `0x722174`–`0x72219b` | igazolt (szerep); a slot-12 **implementációja nincs** |
+| ha `[item+0x34] == 0`, a méretet a `[item+0xc]`, `[item+0x10]` mezőkből számolja, és `0x00a97e30`-at hív `[item+0x2c]`, `[item+0x30]` argumentumokkal | disasm `0x72219f`–`0x7221db` | igazolt; a `0xa97e30` nincs vizsgálva |
+| a `[item+0x34]` **nem** ír fájlt a saját kódjában: a `007220b0` direkt hívásai GDI/heap/belső segédek (`0x9a8a30`, `0x9a8ca0` → `InterlockedIncrement`, `0x9a8bc0` → `DeleteObject`), fájl-API nincs | disasm + `closure2.json` import-feloldás | igazolt a direkt hívásokra; a **vtábla-hívás** (slot 18/12) tartalma nyitott |
+| a lock-objektum (`piVar1 = [node+0x244]`): bájt a `+0xc`-n; ha 0, a `+0x18`/`+0x1c` vtábla-slotok a zár/nyit; ha nem 0, `EnterCriticalSection`/`LeaveCriticalSection` a `+0x28`-on; tulajdonos-szál a `+0x20`-on, rekurzió-számláló a `+0x24`-en | `00715280.c` 16–35. és ~110–160. sor (dekompilátum) | igazolt a mezőkre; a **lock-osztály és a `+0x18`/`+0x1c` slotok nincsenek megnevezve** — nyitott |
+| a 3. argumentum (`param_3`) a `00715090`-ben **indexként** működik: `arr[param_3] = item`, az `arr` (`this+0x324`) szükség szerint nő; ha ez nem sikerül, a `00714fb0` a `this+0x36c` tömb végére fűz | dekompilátum `00715090` (`00715280.c` 291–390. sor) és `00714fb0` (236–290. sor) | igazolt (dekompilátum); **nem** bizonyítja, hogy az index tartós |
+| a `this+0x324` tömbnek **egyetlen írója** a `00715090`; olvasója **54 függvény** (`mov r, [reg+0x324]` bájtminta) | bájtpásztázás; a 54 olvasó közvetlen hívásai között **nincs** fájl/registry/ini/sqlite-import | igazolt a direkt hívásokra; a vtábla-hívások nyitottak |
+| az `[item+0x34]` **osztálya nincs megnevezve**: a `+0x34`-re `mov [reg+0x34], reg` írást és `.rdata` vtábla-immediate-et együtt tartalmazó 71 függvényből a vtábla-nevek (RTTI) zömmel nem kapcsolódnak a kiválasztási lánchoz (pl. `glimmer::*ImageOperation`, `CSmartCrop`, `CWebHostSite`); a csoport nem szűkíthető konstruktor-dataflow nélkül | `ctor34.py` + `vtnames.py` (RTTI COL → TypeDescriptor) | **nyitott** (a jelölt-halmaz túl széles, nem azonosított) |
+
+**Következtetés (a négy kérdésre):**
+
+- **Mit kap a `+0x34` objektum?** A kulcsot (`[item+0xb4]`, a producer 3. argumentuma) és a méretet. Visszaad egy értéket, amelyet a `[item+0xb8]` cache-el, és kitölti a `[item+0x3c]`/`[item+0x40]` méretmezőket. Ez **méretezés / cache-érvényesség** szerep, nem sorrend-tárolás; a rendezés-kulcs a `+0x324` tömbben van.
+- **A lock:** a `+0x244` lánc egy zár-objektum, amely lehet kritikus szakasz vagy vtábla-zár. A zár osztálya nyitott.
+- **A 3. argumentum:** a producer a **`+0x324` tömbbe** indexel: `arr[arg3] = item`. Ez az első dekompilátum-alapú bizonyíték arra, hogy a 3. argumentum pozíció-index. Ez **nem** dönti el a tartósságot: a tömbnek nincs közvetlen fájl-írója a direkt gráfban.
+- **Tartósság:** a direkt gráfban továbbra sincs fájl-, ini-, sqlite- vagy registry-író (a 15.4c 126 függvényén túl a 54 `+0x324`-olvasót is ellenőriztem). A döntő lyuk a **vtábla-hívás** (`+0x34` slot-18/12 implementációja, a zár osztálya, és a `+0x324` tömb olvasóinak vtábla-hívásai).
+
+**Nyitott pontok (a 15.4c-ből maradt + új):**
+
+1. A `+0x34` objektum osztálya és konstruktora (dataflow a `FUN_00721f20` pool-elemétől, vagy a `+0x34` írók tényleges szűkítése).
+2. A `+0x34` slot-18 és slot-12 implementációja.
+3. A lock-objektum osztálya és `+0x18`/`+0x1c` slotjai.
+4. A `+0x324` tömb olvasóinak vtábla-hívásai (a 54-ből a nagy függvények: `0x781680`, `0x787dd0`, `0x780230`).
+5. A producer hívója a `CSelectionNode`-családi objektumon, és a 3. argumentum értéke a hívóban.
+
+**Kész, ha** (a 15.4c listáját kiegészíti):
+
+- [ ] a `+0x34` objektum osztálya és konstruktora megnevezve (konstruktor-dataflow vagy RTTI-alapú szűkítés, ellenőrzött hivatkozással)
+- [ ] a `+0x34` slot-18 és slot-12 implementációja dekompilálva, megnevezve, hogy írnak-e lemezre
+- [ ] a lock-objektum osztálya és `+0x18`/`+0x1c` slotjai dekompilálva
+- [ ] a `+0x324` tömb olvasóinak vtábla-hívásai megvizsgálva (különösen `0x781680`, `0x787dd0`, `0x780230`), fájl/db/registry-írás kizárva vagy megnevezve
+- [ ] a producer hívója megnevezve, a 3. argumentum értéke bizonyítva
+- [ ] db3-pillanatkép — csak ha a fenti pontok nem zárják le a tartósságot
+
+*Bizottság:* a disasszemblált `007220b0`, a dekompilált `00715090`/`00714fb0`, és a bájtpásztázás **megerősített** két független úton. A `+0x34` és a lock osztálya, a slot-implementációk és a 3. argumentum forrása **nyitott**. Nincs becsült érték.
+
 ### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
 
 | tétel | az eredeti tárolása (mérve) | a PicasaPy átvétele ma (`pmpimport/`) | a PicasaPy saját tárolása ma |
@@ -4486,7 +4529,7 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
 | melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
 | milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
 | hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
-| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után); 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben; 3. kör (2026-10-13): **15.4c** — a producernek nincs direkt hívója (csak 3 vtábla-hivatkozás, `CSelectionNode`-család), a direkt hívási gráfban nincs fájl/db-író (126 függvény); a hívó, a 3. argumentum forrása és a `+0x34` objektum / lock-objektum vtábla-slotjai nyitva |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után); 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben; 3. kör (2026-10-13): **15.4c** — a producernek nincs direkt hívója (csak 3 vtábla-hivatkozás, `CSelectionNode`-család), a direkt hívási gráfban nincs fájl/db-író (126 függvény); a hívó, a 3. argumentum forrása és a `+0x34` objektum / lock-objektum vtábla-slotjai nyitva; 4. kör (2026-10-13): **15.4d** — a 3. argumentum a `+0x324` tömbbe indexel (dekompilátum), a `+0x324` 54 olvasójának közvetlen hívásai között nincs fájl-API, a `+0x34` slot-18/12 és a lock-osztály még nyitott |
 
 *Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
 importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
