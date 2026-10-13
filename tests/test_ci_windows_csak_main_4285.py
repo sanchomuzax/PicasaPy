@@ -18,10 +18,10 @@ def test_a_windowsos_darabok_pr_on_a_kivalasztott_fajllistat_futtatjak():
 
     assert (
         "github.event_name != 'pull_request' || "
-        "needs.valtozas.outputs.darabszam != '0'"
+        "needs.valtozas.outputs.windows_darabszam != '0'"
     ) in blokk
-    assert "needs.valtozas.outputs.darabok" in blokk
-    assert "needs.valtozas.outputs.darabszam" in blokk
+    assert "needs.valtozas.outputs.windows_darabok" in blokk
+    assert "needs.valtozas.outputs.windows_darabszam" in blokk
 
 
 def test_a_windows_osszesito_pr_on_is_jelzi_a_darabok_bukasat():
@@ -36,3 +36,11 @@ def test_a_windowsos_darabok_a_main_pushon_futnak():
     futásidő-tábla windowsos mérés nélkül maradt — a main-pushon futnia kell."""
     blokk = _blokk("darabok-windows")
     assert "github.event_name != 'push'" not in blokk
+
+
+def test_a_windows_pr_laba_a_windows_erzekeny_szurot_hivja():
+    workflow = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "teszt-darabok.yml"
+    szoveg = workflow.read_text(encoding="utf-8")
+
+    assert "--windows" in szoveg
+    assert "inputs.os == 'windows-latest'" in szoveg

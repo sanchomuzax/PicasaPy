@@ -53,8 +53,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # #4922: az érintett PR-tesztek mért futásideje alapján legfeljebb
-        # 16 futtatóra oszlanak; a main mind a 16-ot használja.
+        # #4922: PR-en a kiválasztó 20-ra korlátozza a dinamikus mátrixot,
+        # main-pushon a teljes készlet továbbra is legfeljebb 16 darab.
         #
         # ⚠️ Ez NEM a gépen belüli párhuzamosítás. Azt 2026-08-19-én
         # kipróbáltuk (#1030/#1031), és CPU-éhezésben a főágat pirosra vitte
@@ -64,7 +64,7 @@ jobs:
         shard: ${{ fromJSON(inputs.darabok) }}
     env:
       QT_QPA_PLATFORM: offscreen
-      # PR-en a kiválasztó által írt fájllista fut; main-pushon a teljes készlet.
+      # A kiválasztó által írt fájllista fut; main-pushon a teljes készlet.
       PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
       PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && '1' || '' }}
 
@@ -120,7 +120,9 @@ jobs:
         env:
           PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
           PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && '1' || '' }}
-        run: python scripts/teszt_valasztas.py --lista "${{ runner.temp }}/picasapy-test-list.json"
+        # Windows PR-en ugyanazt a diffet szűkítjük a Windows-érzékeny
+        # tesztekre; mainen a --teljes felülírja ezt, és minden teszt megmarad.
+        run: python scripts/teszt_valasztas.py --lista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.os == 'windows-latest' && github.event_name == 'pull_request' && '--windows' || '' }}
 
       - name: Run tests
         # darabolt futtatás (#53): a teljes készlet egy processzben a
