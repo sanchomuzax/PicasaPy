@@ -3019,7 +3019,7 @@ A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiért
 (`<<16`, `<<8`, `<<0`) — ugyanaz a „csak OR-ozni kell" minta, mint az
 `AdjustCurves`-nél (4.8).
 
-### 4.11 `Tiled`, `EdgeDetectionB` és a Sobel-változat (2026-08-14, #626)
+### 4.11 `CircularGradientImageMask`, `Tiled`, `EdgeDetectionB` és a Sobel-változat (2026-08-14, 2026-10-12; #626, #4905)
 
 Két célzott kör futott ezekre párhuzamosan (nyers kimenet:
 `referencia/dekompilalt-pakolo/script-DecompileTiled.log`, `-Edge.log`).
@@ -3503,6 +3503,128 @@ olvasat + az eredeti worker QEMU-futtatása és attól független Python-bájt
 **megerősített** a fenti wrapper-golden és a vak, független QEMU-kontroll
 alapján. A projekt `native_dot_mask` pixelmagja ettől továbbra sem tekinthető
 bájtpontosnak: a korábbi 7×7 összevetés 20/49 eltérő bájtot talált.
+
+#### `CircularGradientImageMask` — tört bemenetek natív goldenje (2026-10-12, #4905)
+
+A `0x00bc2a50` (stdcall, `arg1` = maszk-objektum, `arg2` = ctx) teljes
+előállítóját futtattuk az eredeti, változatlan Picasa3.exe-ben (`SHA-256:
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
+`qemu-i386` alatt. A hívási rekord mezői és az alfa-végpontok az előző, #4905-es
+kutatási ágból átvett mérési szakasz szerintiek; a jelen folytatás a tört
+középpontot, sugarat és aspectet vizsgálja. A `[0xd695d2]=1` út **SSE2**
+(XMM, nem MMX): az elágazás `0x008f3b14`, a vektoros távolság és
+`CVTPS2DQ` útja `0x008f3cf0`–`0x008f3cfd`.
+
+| `this` eltolás | mező | típus / szerep |
+|---|---|---|
+| `+0x00`, `+0x04` | `width`, `height` | int; klippelési határ |
+| `+0x08` | `aspectRatio` | float |
+| `+0x0c`, `+0x10` | `innerRadius`, `outerRadius` | float |
+| `+0x14`, `+0x18` | `innerAlpha`, `outerAlpha` | float |
+| `+0x1c`, `+0x20` | `xCenter`, `yCenter` | float |
+
+A hívás utáni ctx egy 40 bájtos `Ref`: `[1]` sorhossz (pixel), `[2]`
+szélesség, `[3]` magasság, `[4]` pixeladat-pointer. A pixel BGRA, a szín
+nulla, az alfa a maszk. A kimeneti méret és a `this`-en visszakapott négy
+koordináta a képpel metszett, jobb/alsó kizáró téglalap; a táblázat alatt
+ezeket a mért koordinátákat adjuk meg.
+
+**A natív egész befoglaló doboza.** A `0x00bd05f0` a két sugár közül a
+nagyobbat veszi (`0x00bd0621`–`0x00bd0646`), kétszerezi, majd az aspecttel
+szorozza a szélességhez (`0x00bd064a`–`0x00bd065b`). A szélességet és
+magasságot külön `FISTP` alakítja egészre (`0x00bd065f`–`0x00bd066f`). A
+bal/felső él a bemeneti középpontból mínusz a lebegő dobozméret fele, és
+szintén külön `FISTP` kerekíti (`0x00bd0673`–`0x00bd06bd`). A QEMU-próbákban
+az x87 control word `0x027f` volt; ezért itt a `FISTP` kerekítése
+nearest-even. Jelölje `f32` a binárisban tárolt float32 köztes értéket,
+`RN-even` pedig ezt a mért `FISTP`-kerekítést:
+
+```text
+R  = max(f32(innerRadius), f32(outerRadius))
+hF = f32(2 · R)
+wF = f32(aspectRatio · hF)
+Bw = RN-even(wF)                    # x87 FISTP
+Bh = RN-even(hF)                    # x87 FISTP
+L  = RN-even(f32(xCenter − f32(wF · 0.5)))  # x87 FISTP
+T  = RN-even(f32(yCenter − f32(hF · 0.5)))  # x87 FISTP
+```
+
+Az `RN-even` az x87 `FISTP` nearest-even kerekítése a mért control word
+mellett. A jobb és alsó kizáró végpont rendre `L+Bw`, `T+Bh`; nem a
+`center+radius` külön kerekítése. A befoglaló doboz középpontja **és mérete**
+ebből a négy külön kerekített egészből jön:
+
+```text
+boxCenterX = L + Bw/2       boxCenterY = T + Bh/2
+```
+
+Ez nem a paraméterközéppont csonkolása, és nem képpontközépre (`x+0,5`,
+`y+0,5`) mintavételezés. A `0x00bd0540` ezután a dobozt a kép határaira
+klippeli; a transzformáció az **előtte** rögzített, nem vágott `Bw/Bh` és
+`boxCenterX/Y` értékeket használja.
+
+**A pixelmag mért transzformációja.** A `0x008f3840` által előkészített
+transzformációban az eredeti bináris qword konstansok:
+`[0x00cf47f0] = 1638.4000244140625` és
+`[0x00cf48f0] = 79.6875`. A nyolc natív kimenetet bájtra visszaadó
+float32-újraszámítás effektív skálái és pixelindexei:
+
+```text
+sx = f32(f32(1638.4000244140625 / Bw) · 79.6875)
+sy = f32(f32(1638.4000244140625 / Bh) · 79.6875)
+u  = f32((x − boxCenterX) · sx)
+v  = f32((y − boxCenterY) · sy)      # x,y: egész, nullától induló képpontindex
+p  = min(CVTPS2DQ(sqrtps(u·u + v·v)), 0xff00)
+```
+
+Az `aspectRatio` tehát a méretezett doboz szélességét és így az x-skálát is
+alakítja; a sugárértékek a doboz kiválasztásán túl az alfa-megállókhoz
+kerülnek. Az alfa-stopok és a két-stopos LUT interpolációja a fenti
+`0x008f3700` / `0x008f3970` leírás szerinti; a mostani QEMU-próbák az
+alfa-végpontokat is változtatták. A teljes képletet ugyanazzal a meglévő
+`_kormaszk_megallo_tabla`-val összerakva a következő nyers QEMU alfa-bájtok
+mind egyeztek. Minden sorban `flag=1`; `régi` a mai
+`circular_gradient_mask` bájt-összevetése, `doboz` a fenti befoglaló doboz
+és skálák szerinti újraszámítás:
+
+| eset | rögzített QEMU-bemenet `(W×H; cx,cy; Ri,Ro; αi,αo; aspect)` | natív vágott téglalap | régi eltérés | doboz eltérés |
+|---|---|---:|---:|---:|
+| `cx_half` | `64×48; 31.5,24; 10,30; 0,1; 1` | `(2,0,62,48)` | `2144/2880`, max Δ=7 | `0/2880`, max Δ=0 |
+| `cy_half` | `64×48; 32,23.5; 10,30; 0,1; 1` | `(2,0,62,48)` | `2074/2880`, max Δ=7 | `0/2880`, max Δ=0 |
+| `center_quarters` | `64×48; 31.25,22.75; 8,24; 0.125,0.875; 1` | `(7,0,55,47)` | `1495/2256`, max Δ=5 | `0/2256`, max Δ=0 |
+| `radius_halves` | `64×48; 32,24; 7.5,21.5; 0.25,0.75; 1` | `(10,2,53,45)` | `1221/1849`, max Δ=7 | `0/1849`, max Δ=0 |
+| `radius_quarters` | `64×48; 31.5,23.5; 7.25,21.75; 0.125,0.875; 1` | `(10,2,54,46)` | `1331/1936`, max Δ=13 | `0/1936`, max Δ=0 |
+| `aspect_075` | `64×48; 32,24; 10,30; 0,1; 0.75` | `(10,0,55,48)` | `1790/2160`, max Δ=102 | `0/2160`, max Δ=0 |
+| `aspect_125` | `64×48; 31.5,23.5; 10,30; 0,1; 1.25` | `(0,0,64,48)` | `2602/3072`, max Δ=76 | `0/3072`, max Δ=0 |
+| `all_fractional` | `37×23; 18.5,11.25; 3.25,18.75; 0.25,0.75; 0.75` | `(4,0,32,23)` | `603/644`, max Δ=41 | `0/644`, max Δ=0 |
+
+**Cáfoló kör.** Ugyanezeken a natív bájtokon a pixelindexhez adott
+`(+0.5,+0.5)` eltolás, a bemeneti középpont nulla felé csonkolása, valamint
+az aspect elhagyása nem ad általánosan egyező eredményt: például
+`cx_half` esetén rendre `2163/2880` (max Δ=10) és `2206/2880` (max Δ=13)
+eltérés; `aspect_075` esetén aspect nélkül `1803/2160` (max Δ=96). A
+`all_fractional` mintában a középpontcsonkolás véletlenül egyezett, ezért a
+`cx_half` és `radius_quarters` ellenpróbák is lefutottak: a teljes mintakészlet
+nem egyezik a csonkolási hipotézissel.
+
+**Eredeti / nálunk / teendő.** Eredeti: `0x00bc2a50` →
+`0x008f3840` → `0x008f3970`; a geometriai dobozt a `0x00bd05f0` állítja
+elő. Nálunk: `src/picasapy/render/glimmer_ops.py::circular_gradient_mask`
+az eredeti tört középpontot és a sugarat közvetlenül normalizálja, és nem
+kap aspectet; a fenti méréseken bájtra eltér. Teendő a külön fejlesztési
+jegyben: a doboz egészre kerekített geometriáját és aspect-függő skáláját
+átvezetni, a nyolc mérésben egyező `_kormaszk_megallo_tabla`-t megtartani,
+majd a táblázat mind a nyolc esetét nyers alfa-bájtonként egyeztetni. Ez a
+szakasz csak a `[0xd695d2]=1` SSE2-ágat bizonyítja.
+
+**Bizonyítottsági fok: megerősített** a `[0xd695d2]=1` SSE2-ágra, a
+megadott QEMU futtatási környezetben (x87 CW=`0x027f`, SSE
+`CVTPS2DQ`-val): a geometria utasításszintű olvasata, a független
+index/xref-lánc és a nyolc, törteket, két aspectet, változó
+alfa-végpontokat tartalmazó bájtos QEMU-összevetés egyezik. A korábbi
+`MMX` megnevezés helytelen volt; a mért flag az SSE2-ágat választja. Nyitott
+a `[0xd695d2]=0` skalárút és a valódi alkalmazás induláskori flag-értéke; ez
+a nyolc új goldenre nem vonatkozik.
 
 #### `EdgeDetectionSobel` — a kernel teljesen megvan
 
