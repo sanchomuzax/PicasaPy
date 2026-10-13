@@ -12824,6 +12824,12 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>FolderPropertiesDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Untitled</translation>
+        </message>
+        <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Folder::ID_ALBUM_EDITCAPTIONS</extracomment>
@@ -15888,6 +15894,17 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_DELETE</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>&amp;Edit People Album...</translation>
+        </message>
+        <message>
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>&amp;Invert Selection</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Refresh Thumbnails</translation>
         </message>
         <message>
             <source>Select &amp;All</source>

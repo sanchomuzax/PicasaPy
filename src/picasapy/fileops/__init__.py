@@ -23,7 +23,9 @@ from .move import move_photo
 from .move_folder import FolderMoveError, move_folder
 from .new_folder import (
     InvalidFolderNameError,
+    create_unique_split_folder,
     create_folder_for_move,
+    sanitize_split_folder_name,
     validate_folder_name,
 )
 from .originals import (
@@ -64,6 +66,7 @@ __all__ = [
     "RenameItem",
     "TrashUnavailableError",
     "conflicting_names",
+    "create_unique_split_folder",
     "copy_photo",
     "copy_photos",
     "create_folder_for_move",
@@ -90,6 +93,7 @@ __all__ = [
     "preview_name",
     "rename_photo",
     "rename_photos_many",
+    "sanitize_split_folder_name",
     "open_folder_in_file_manager",
     "required_bytes_for",
     "reveal_in_file_manager",

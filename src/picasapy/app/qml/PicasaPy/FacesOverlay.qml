@@ -36,7 +36,7 @@ Item {
 
     // sikeres írás után a hívó (PhotoViewer) ezt figyelve olvashatja újra
     // a facesFor()-t (a modell maga nem tudja, hogy az ini megváltozott)
-    signal edited()
+    signal edited(bool manualAdded)
     signal manualCancelRequested()
 
     function refreshKnownNames() {
@@ -349,6 +349,7 @@ Item {
     function commitEditor() {
         if (!overlay.hasHelper) { overlay.closeEditor(); return }
         var r = overlay.pendingRect
+        var manualAdded = overlay.pendingIsNew
         var name = (nameField.text || "").trim()
         var ok
         if (overlay.pendingIsNew && !name) {
@@ -368,12 +369,12 @@ Item {
         else
             ok = facesHelper.renameFace(overlay.imagePath, r.x, r.y, r.x + r.width, r.y + r.height, name)
         overlay.closeEditor()
-        if (ok) overlay.edited()
+        if (ok) overlay.edited(manualAdded)
     }
     function removeFace(relLeft, relTop, relRight, relBottom) {
         if (!overlay.hasHelper) return
         var ok = facesHelper.removeFace(overlay.imagePath, relLeft, relTop, relRight, relBottom)
-        if (ok) overlay.edited()
+        if (ok) overlay.edited(false)
     }
 
     Rectangle {

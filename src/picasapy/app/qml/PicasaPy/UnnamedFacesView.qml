@@ -18,6 +18,7 @@ ColumnLayout {
     property var faceScanController: null
     signal showIgnoredRequested()
     signal showUnnamedRequested()
+    signal namedSuggestionAccepted()
     // #26: „unnamed" = a Névtelenek album, „ignored" = a Mellőzött emberek
     // album (`CAlbumLabel::Ignored`). Az eredetiben ez két ALBUM volt
     // ugyanabban a listában, ezért ugyanaz a nézet szolgálja ki — csak a
@@ -483,6 +484,7 @@ ColumnLayout {
             root.reload()
             if (typeof controller !== "undefined" && controller)
                 controller.refreshCollections()
+            root.namedSuggestionAccepted()
         }
         return ok
     }

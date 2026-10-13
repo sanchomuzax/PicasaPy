@@ -759,6 +759,7 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 | „Név nélküliek” mód, 0 kijelölés | instructions 2 (Text3) | ✅ (#3566) |
 | „Név nélküliek” mód, üres gyűjtemény | üres fejléc, instructions 0/1 (Text1/Text2) | ⛔ nincs: a két szöveg nincs meg nálunk; Text3 áll helyette |
 | a szerkesztőben | mindig az egyképes ág; a nézett személy is szerepel | ✅ a néző panelje (`editorView`), szűrés nélkül (#3566, #3678) |
+| névadás után, a panel sorában vagy a kép alatti mezőben | a fejléc „van személy” bemenete (`+0x364`) **nem frissül**: a szerkesztőben „Who is in these photos?” marad, amíg a panel teljes frissítése (pl. kijelölésváltás) le nem fut — **9/g** | ✅ #4812: a begépelt névadás nem frissíti a fejlécet; a sor élőben frissül |
 
 *A #4045 „Nálunk” összevetése forrásolvasással és helyi QML-teszttel ellenőrzött;
 az eredeti kétképes Colab-mérés továbbra sincs meg. A `Main.qml` normál
@@ -978,6 +979,70 @@ A felvett arcból egyelemű csoport lesz (`0x006c48c5`, `0x006c4974`), és `0x00
 ⛔ **Helyesbítés a 3.1 és a 18.2 szakaszhoz (erős):** a `Preferences\FRWriteFaceDataINI` kapcsoló (`0x00484dcf`/`0x00484e1d`) csak a **`facedata`** kulcsot kapuzza; a `faces=` MINDEN esetben kiíródik (`0x0048516d`). A „pozícióhű `0`-kitöltés” (`0x00484f28`–`0x00484f64`, `push 0x30` `0x00484f38`) a `facedata` értékét építi, nem a `faces=`-t.
 
 *Bizonyítottsági fok: **megerősített** — az élő mérés (a nézőben nincs keret/felirat a mellőzött arcon; a nem mellőzöttön van), a `]ignoreface`-szűrés (`0x00483ff0`), a személy-mező értékkészlete az írón és az olvasón, a kézi hozzáadás névtelen négyszögének nem-mentése; **két egymástól független olvasat egyezik** (az első a specekkel, a második a specek és az első válasz nélkül, friss Opus-ügynök). **Erős:** az `ffff` arc a `]unknownface`-ben is benne marad; a `FRWriteFaceDataINI` csak a `facedata`-t kapuzza (egy olvasat). **NINCS MÉRVE:** a mellőzött arc megjelenése a Névtelenek albumban/People-nézetben (`0x00474630`, `0x004755d0` a következő lépés); az arckeretek megjelenítési módja nálunk; a Colab-végrehajtó húzás-lépése nélkül kézi négyszög élőben nem rajzolható.*
+
+#### 9/g Névadás után a fejléc „van személy” bemenete NEM frissül — a sor igen (2026-10-12, #4812)
+
+*Forrás: élő mérés (eredeti angol Picasa 3.9, `picasa-colab-jobs` #113, `job-113` `kepernyo__07`–`__21`) · `0x006443e0` · `0x00644010` · `0x00645350` · `0x00642c10` (`0x00642c2a`) · `0x00647df0` · `0x0063f970` · `0x006022a0` · `0x005c78d0` · a `+0x364` írói a `0x00630000`–`0x00660000` tartományban (pásztázás).*
+
+**Kérdés (#4812, a #4522 maradéka):** a 9/b fája szerint a szerkesztőben, megnevezett arcnál a fejléc „In this photo:”. A #113 felvételén viszont névadás után „Who is in these photos?” látszik. Melyik a helyes, és mikor vált a fejléc?
+
+**Válasz — mindkettő, más-más időpontban.** A panel sorában vagy a kép alatti mezőben végzett névadás után az eredeti **újraszámolja** a fejlécet, de a „van megnevezett személy” jelzőt (`+0x364`, 9/c) **a névadás előtti értéken hagyja**. Ezért a szerkesztőben a fejléc „Who is in these photos?” marad, a sorban viszont már a név áll. Az „In this photo:” csak a panel következő **teljes frissítésekor** jelenik meg, például kijelölésváltáskor vagy a kép újranyitásakor.
+
+**Az élő mérés (#113).** A szerkesztőben egy névtelen arc van. A panel sorában „Add a name” → „Teszt Elek” + Enter → People párbeszéd → New Person → OK. Mit mutatnak a képkockák:
+
+| képkocka | sor | fejléc |
+|---|---|---|
+| `__07`–`__12` (névadás előtt) | arcbélyeg + „Add a name” | „Who is in these photos?” |
+| `__15` (a párbeszéd nyitva) | üres mező | „Who is in these photos?” |
+| `__19`, `__21` (OK után, további 5 + 3 mp várakozással) | **„Teszt Elek”** | **„Who is in these photos?”** |
+
+**A mechanizmus.** A `0x006443e0` a panel szerkesztőmezőinek véglegesítője. Azt, hogy melyik mezőről van szó, a vezérlő neve dönti el:
+
+| jelző | vezérlő | cím |
+|---|---|---|
+| `[esp+0xd]` | `peoplepanel/manual_add_editbox` | `0x0064442e` |
+| `[esp+0xc]` | `peoplepanel/overlayeditbox` (a kép alatti „Type a name”) | `0x00644477` |
+| `[esp+0xe]` | `peoplepanel/editbox` (a sor „Add a name” mezője) | `0x006444c0` |
+| `[esp+0xf]` | `peoplepanel/header_editbox` | `0x00644509` |
+
+A sor és a kép alatti mező útja:
+
+```
+0x0064460e  call 0x64d7d0          ; névfeloldás; ismeretlen névnél a kontakt-párbeszéd
+                                   ;   ("contacts"/"search"/"fullname", 0x7b8f80); mégse → 0xf4241
+0x00644615  jne 0x644708           ;   → nincs hozzárendelés (a takarító rész így is lefut)
+0x006446f8  call 0x645350          ; (panel, [panel+0x374] = a szerkesztett sor, kontakt)
+0x00644725  mov [esi+0x374], -1
+0x00644774  call [vtbl+0x68]       ; listac_parent / overlay_parent elrejtése
+0x00644798 / 0x006447b7  call 0x642c10   ; al = 0
+0x00642c2a  call 0x647df0          ; (panel, 0) → a 9/b fája, „nem tölt”
+```
+
+A `0x00645350` (4419 bájt) a `+0x344`/`+0x348` sorvektort építi újra (9/b), a **`+0x364`-hez viszont nem nyúl**. A tartomány pásztázása szerint a `+0x364`-et csak három hely írja:
+
+- `0x0064c272`: a `0x0064bb70` gyűjtője, amelyet csak a teljes frissítő (`0x0064c340`) hív;
+- `0x0064c489`: nullázás a `0x0064c340`-ben;
+- `0x0064d7a9`: a háttérgyűjtés eredményének átvétele (`0x0064d660`).
+
+A `0x00647df0` tehát a régi `+0x364 = 0` értéket olvassa (`0x00648082`). A szerkesztőben az előnézet látszik, így az egysoros ág fut, és a sor megvan → **Who** (`0x00648070`–`0x006480cb`). Ez pontosan a #113 képe.
+
+**Mikor frissül mégis.** A teljes frissítő (`0x0064c340` → `0x0064bb70` → `+0x364`) hívói:
+
+| esemény | út |
+|---|---|
+| `peoplepanel/update` | `0x0063f970` (a PeoplePanel vtáblájának `0x00ca16d0` rekesze) → `0x0063fac8` (ha `[panel+0x20c] == 0`; különben a `0x0064c2e0` csak a `+0x2ad`-t állítja) |
+| `peoplepanel/forceupdate` | ugyanott → `0x0063fb49` |
+| a fenti kettő küldője | a `0x006022a0`, a **`selection_changed`** szórója a jobb oldali fiók paneljeinek (`0x006022e9`–`0x006022f0`); ezen kívül a `0x005796c0` (`il_RefreshThumbs`) és a `0x0074cc00` (a Névtelenek fejlécének parancskezelője, 9/d) |
+| kézi hozzáadás névvel | `0x006446cd` `0x644900` → `0x006446d8` `0x64c340`; az automatikus kiegészítésből: `0x006441d4` → `0x006441dc` `0x6442f0` → `0x006443cd` `0x64c340` |
+| név választása az automatikus kiegészítés listájából, a sorban | `0x00644010`, a `PeoplePanel::AutoCompleteProvider` vtábla (`0x00ca1774`) `0x00ca1778`-as bejegyzése: `0x00644203` `0x645350`, majd **csak akkor** `0x0064423c` `0x64c340`, ha a `0x005c78d0` igaz. Ez a `0x00448a10`-et hívja `0`-s jelzővel (9/c), tehát akkor igaz, ha a nézett album a **Név nélküliek vagy a Figyelmen kívül hagyva**. Különben `0x0064425f` `0x642c10` jön, vagyis ugyanaz az elavult jelző |
+
+⇒ **A kép újranyitása után „In this photo:” áll.** Az újranyitás kijelölésváltás, ezért a teljes frissítés fut: a gyűjtő megtalálja a most már `personalbumid`-del bíró arcot (9/c), a `+0x364` 1 lesz, és a szerkesztő egysoros ága az InThis feliratot adja. A #4522 „In this photo:” tesztje (megnevezett arc, frissen betöltve) tehát ezt az állapotot írja le helyesen.
+
+**Nálunk (forrásolvasással, `origin/main`).** A `PeoplePanel.qml` `baseHeaderText`-je a `hasPeople`-ből számol (`people.length > 0`). A `peopleHere` élő kötés: `(peopleFaceRevision, photos.revision, controller.peopleOfRows(…))` (`Main.qml:3799`, `PhotoViewer.qml:4889`). A `nameFaceFromPanel` → `assignNameToFace` → `assignNameToFaces` után az új sor azonnal megjelenik (#4522 tesztje), ezzel a `hasPeople` igaz lesz, és a fejléc **azonnal** „In this photo:”-ra vált. ⇒ **Eltért az eredetitől** (a `origin/main`-en); a javítás után a begépelt névadás nem frissíti a fejlécet (✅ #4812).
+
+**✅ Megoldva (#4812):** a fejléc „van személy” bemenete pillanatkép. A begépelt névadás (a sor és a kép alatti mező) nem veszi fel újra, így a szerkesztőben „Who is in these photos?” marad; a panel sorai és a sorszám (`resultRowCount`) élőben frissülnek. Az elfogadott javaslat útja változatlan: a Név nélküliek albumban frissít.
+
+*Bizonyítottsági fok: **megerősített**, hogy a sorban és a kép alatti mezőben végzett névadás a fejlécet elavult `+0x364`-gyel számolja újra. A véglegesítő útja és a `0x00642c10` → `0x00647df0` hívás utasításszinten olvasva; a `0x00645350` nem ír `+0x364`-et; az élő #113 felvétel egyezik. **Erős:** az újranyitás utáni „In this photo:”, mert a `selection_changed` → `peoplepanel/update` → `0x0064c340` út statikusan olvasva, élő felvétel nincs róla. **Hatókör:** a `+0x364` írói a `0x00630000`–`0x00660000` tartomány 410 indexelt függvényében pásztázva; a modulon kívüli, a panelmutatót argumentumként kapó író nincs kizárva. Az ellenőrzésre egy egylépéses Colab-felvétel elég: a #113 lépései után egy kép-váltás oda-vissza.*
 
 ---
 

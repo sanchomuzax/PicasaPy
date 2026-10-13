@@ -8783,8 +8783,9 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
         </message>
         <message>
             <source>Split Folder Here...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mappa felosztása itt…</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(contextMenuSplitFolder)</extracomment>
+            <translation>M&amp;appa felosztása itt...</translation>
         </message>
         <message>
             <source>Open File</source>
@@ -12829,6 +12830,13 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>FolderPropertiesDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(folderPropertiesNameField)</extracomment>
+            <translation>Névtelen</translation>
+        </message>
+        <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Folder::ID_ALBUM_EDITCAPTIONS</extracomment>
@@ -15549,7 +15557,8 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         </message>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15581,7 +15590,8 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         </message>
         <message>
             <source>&amp;Refresh Thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
             <translation>Indexképek &amp;frissítése</translation>
         </message>
         <message>
@@ -15689,7 +15699,8 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         </message>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Folder::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15879,7 +15890,8 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
         <name>PeopleAlbumContextMenu</name>
         <message>
             <source>&amp;Clear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PplAlbum::ID_CLEAR_SELECTION</extracomment>
             <translation>&amp;Kijelölés törlése</translation>
         </message>
         <message>
@@ -15895,8 +15907,21 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>Az &amp;Emberek album szerkesztése...</translation>
         </message>
         <message>
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT</extracomment>
+            <translation>Kiválasztás &amp;megfordítása</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
+            <translation>Indexképek &amp;frissítése</translation>
+        </message>
+        <message>
             <source>Select &amp;All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <translation>Az ö&amp;sszes kijelölése</translation>
         </message>
     </context>
