@@ -3837,6 +3837,135 @@ Natív futás nem készült. A `00874e40`/`00874320`/`00874ac0` dekompilátuma n
 (utasítás + egy Ghidra-dekompilátum a `00874e40`-re, ami még nincs a kötegben);
 (b) a `0x874e40` kimeneti másolása: hova kerül a `Lki`/`Rki` (`+0x720`/`+0x728`?).
 
+#### G/3g. A 14. kör (2026-10-13): a 0x874e40 interfésze, a 0x874320 a3-ja, a 0x7166c0 szűrője, a [this+0x708] sorsa — RÉSZLEGES (#4194)
+
+**Eredmény egy mondatban:** a G/3f négy kérdéséből három megválaszolódott (a 0x874320 a3-ja; a 0x874e40
+Lki/Rki-jának célja: NEM a `+0x720/+0x728`; a 0x7166c0 mód-5 szűrője), a negyedik (a `[this+0x708]` elemeinek
+írója) részben: az írót nem találtam. A megtartási szabály ezért továbbra is **NYITOTT**.
+
+**Módszer.** Capstone 5.0.7 + pefile (`~/picasapy-agent/.venv`), a `.text` teljes szkennelése
+(store- és load-minták `+0x708`, `+0x720`, `+0x728` elmozdulásra), Ghidra-kötegek:
+`ghidra-koteg-2026-10-13c/` (`00874320.c`, `00874e40.c`, `007166c0.c`) és `ghidra-koteg-2026-10-12/0081b800.c`.
+A segédszkriptek a scratchpadban (`g3g/`) vannak, a repóba nem kerültek. Natív futás nem készült.
+
+**A 2. kör tételei** (`0x699cd0` hívóhely, `0x824090` flag, `0x6999c0`, `0x618050`, `0x8242f0`, `0x81c9b0`):
+ezek a G/3b–G/3f szakaszban már le vannak írva; ebben a körben nem futtattam újra őket, új bizonyítékot nem
+adtak. A kiválasztott fotóindex ezért nem zárult le.
+
+**1. A `0x874e40` hívási felülete (utasítás, `0x81bb85`–`0x81bbac` és a `0x874e40` prológusa).**
+
+A `0x81b800` a hét argumentumot pusholja (utolsótól az elsőig); a `0x874e40` ebből:
+
+| arg | forrás (0x81b800-ban) | `0x874e40` paraméter | szerep |
+|---|---|---|---|
+| 1 | `esi = [this+0x744]` | `param_1` | kimeneti rekordszerkezet (`[0]` darabszám, `+0xc`/`+0x14` rekordtömbök, `+8` kész-jelző) |
+| 2 | `edx = this+0x504` | `param_2` | a `0x874320` EAX-bemenete |
+| 3 | `lea ecx,[this+0x708]` | `param_3` | int-vektor `{ptr, (n<<1)\|flag}`; csak olvasott a `0x874e40`-ben (`0x16e`-os ablak) |
+| 4 | `lea eax,[this+0x6f8]` | `param_4` | bájt-jelzővektor (a `0x874ac0` `src`-ja) |
+| 5 | `[this+0x6cc]` vagy `[+0x6d4]` (`[esp+0x50]` szerint) | `param_5` | csoportkulcs-vektor (`G`) |
+| 6 | `[this+0x6dc]` vagy `[+0x6e4]` (`[esp+0x54]` szerint) | `param_6` | kizárt-elem bájtjelzők |
+| 7 | `[esp+0x20]` | `param_7` | egész (`iVar13 = local_74 + param_7`) |
+
+- A `0x874e40` `ecx = arg5` (`0x874e5e`), `eax = arg2` (`0x874e56`), és a `0x874e40` **saját belépési EAX-át**
+  `push eax`-szal (`0x874e55`) adja a `0x874320` 3. verem-argumentumaként.
+- A `0x81b800` a belépési EAX-ot `lea eax,[esp+0x54]` (`0x81bba4`) adja: ez a `0x81b800` **helyi
+  vektora**, amelyet a `0x875ee0` ugyanígy kap meg (`0x81bb3c`). Hogy a `0x875ee0` mit tölt bele, nincs
+  végigkövetve.
+
+**2. A `0x874320` a3-ja — MEGERŐSÍTVE: az index-vektor pointere; a G/3f ellentmondás két különböző bemenet összemosása volt.**
+
+- `ret 0xc` (`0x874abc`): a hívott **3** verem-argumentumot vesz fel; nincs 4. verem-argumentum. A Ghidra
+  `param_4` (`int *`) a 3. verem-argumentum (`[F+0xc]`), a `param_3` (`undefined4`) a 2. és dead.
+- **ECX = a 874e40 `param_5`** (`mov edi,ecx` `0x874328`): `{ptr, (n<<1)|flag}`, `[edi+4]>>1` = n, a `param_2[1]`
+  = utolsó elem − `0x877370()` + 1.
+- **1. verem-argumentum** = kimeneti struktúra (`mov ebp,[esp+0xc]` `0x874322`); `[ebp+0x1c]` = bájtbuffer,
+  `0x97c810`-zel foglalva.
+- **2. verem-argumentum** = dead: a `mov edx,[esp+0x18]` (`0x874331`) után a `call 0x877370` felülírja, és
+  a törzs többi része nem olvassa.
+- **3. verem-argumentum = az INDEX-VEKTOR POINTERE** (utasítás, `0x874a8e`–`0x874aa8`):
+  `ecx=[esp+0x1c]`; `test [ecx+4],0xfffffffe`; `edx=[ecx]`; `edx=[edx+eax*4]` (az index); `byte [buf+edx] = 1`, ahol `buf = [ebp+0x1c]`.
+  Tehát minden listázott indexhez egy jelzőbájt `1` lesz a kimeneti buffer-ben. A 3. argumentum `int *`, de
+  **nem** közvetlen int-tömb: az `{int* data, méret}` objektum címe.
+- **EAX bemenet** (a 874e40 `param_2`, `this+0x504`): `ecx=[eax]; edx=[ecx]; eax=[edx+0xc]; out[0] := eax`
+  (`0x87432a`–`0x874335`). Ez az a „`[eax]→[ecx]→+0xc`” lánc, amelyet a G/3f a 3. argumentumnak tulajdonított.
+  Tehát a G/3f „a3 valódi típusa” kérdésében a **belépési EAX** és a **3. verem-argumentum** keveredett.
+  A helyes állítás: a 3. verem-argumentum index-vektor pointer; az EAX-bemenet a `out[0]`-t adja.
+- Jelentés a függvény szintjén: a `0x874320` a kimeneti struktúra `[0]`/`[1]` mezőit számolja, és a 3.
+  argumentum indexeinek megfelelő jelzőbájtokat állítja 1-re. Nem választ és nem rendez.
+
+**3. A `0x874e40` Lki/Rki-ja — NEM a `+0x720/+0x728`: a hipotézis elvetve (literál-elmozdulású íráson át).**
+
+- `call 0x874ac0` (`0x874e9d`): argumentumok `(param_4, &local_1c+2, &local_1c)` (lea-val a 874e40 verem-lokálisaira).
+  A Lki/Rki tehát a 874e40 **verem-lokálisai**, amelyeket a `0x874ac0` tölt és a 874e40 ciklusa olvas
+  (decompile 103–186. sor).
+- **Store-szkennelés** (`.text`, `mov … [reg + 0x720|0x728], …`): 16 találat, mind a `0x81a1f6`–`0x81f1bb`
+  tartományban. Ezek: (a) a rekord-visszaállító (`0x81a1dd`–`0x81a215`: régi buffer `free`, majd `ebx`-re állítás);
+  (b) a méretező (`0x81ee9e`–`0x81f1bb`): a `+0x720` új elemeit **−1**-re (`0x81f026`), a `+0x728` új elemeit
+  **n**-re (`0x81f1e8`, `ebp` = az új méret) tölti. Egyik találat sincs a `0x874xxx` tartományban.
+- **Load-szkennelés**: olvasók a `0x81d2b2`/`0x81d2c9` (a 0x81b800 spirálja, `ecx` = this) és a
+  `0x81f3b1`–`0x81f532` (differencia-olvasók). Írás a spirálon belül nincs.
+- **Ítélet:** a Lki/Rki → `+0x720/+0x728` állítás **HAMIS** a literál-elmozdulású írásokra nézve. Közvetett
+  (betöltött mutatón keresztüli) írást a szkennelés nem zár ki. Ha minden írás a sentinel-kitöltés, akkor a
+  spirál `+0x720/+0x728` határai a teljes listát jelölik — ez a G/2b hipotézis **feltételes** marad.
+
+**4. A `0x7166c0` (mód-5 forrásvektor) — utasításszinten megerősítve: szűrt gyűjtemény-kivonat.**
+
+- Belépés: `(src, flag)`, `ret 8`. Elején `cmp byte [src+0x2cc],0` → ha nem nulla, `call [vtbl+0xc4]`
+  (frissítés). A gyűjtemény `[vtbl+0xb4]` = darabszám, `[vtbl+0xb8](i)` = i-edik elem.
+- **1. kör:** elem kell, ha `byte [e+0x5d] ≠ 0` **és** `byte [e+0x5a] = 0`. Érték: `dword [e+0xb4]`.
+- **2. kör** (csak ha `flag ≠ 0` és az első kör kimenete üres): elem kell, ha `byte [e+0x5a] = 0`.
+- A kimenet `{ptr, (n<<1)|flag}`, kapacitás-kettőhatvány, a `0x97c810`/`0x97caf0` kezeli. Visszatérés `0`,
+  foglalási hibánál `4`.
+- Hívó: a `0x8223e0` (b) ága, `[builder+0xea8]`, `flag = 1` (G/3e). A `+0x5d`, `+0x5a` és `+0xb4` jelentése
+  **NYITOTT**; a vtábla osztálya nincs azonosítva (ezért a mezőneveket sem adom meg).
+- **Következmény:** a mód-5 forrás tartalma a gyűjtemény sorrendjében a „kijelölt (`+0x5d`), nem rejtett
+  (`+0x5a`)” elemek `+0xb4` kulcsai; ha nincs ilyen, az összes nem rejtett elem. A **dátumrendezés** ezután
+  jön (a `0x823620`/`0x8256a0`, lásd G/3d 3. és 5. pont), tehát a szűrő nem rendez.
+
+**5. A `[this+0x708]` tömb — az írója NEM került elő.**
+
+- A `0x81e5a0` hármas-méretező (`+0x700`/`+0x708`/`+0x710`) a `+0x708` tömböt **újraallokálja**, de nem tölti ki:
+  a `+0x710` új elemeit −1-re tölti (`0x81eca6`), a `+0x708`-hoz nincs kitöltő ciklus (`0x81e5a0`–`0x81ecb4`).
+- Elem-író `[reg+idx*4]` alakban **nincs** a `0x81e5a0`–`0x81ecb4`, a `0x81e3a0`, a `0x819370` és a `0x824090`
+  tartományban (`0x8242c7` előtt: `call 0x81e5a0`, `0x81e3a0`, `0x819370`).
+- A teljes `.text`-ben a `+0x708` 29 találatából az írások (G/3f) csak mutató-írások (újraallokálás); a
+  közvetett elem-írók így nem azonosíthatók ezzel a módszerrel.
+- **Olvasó:** `0x874e40` (`*param_3 + i*4` különbség ≤ `0x16e`, a decompile 90., 111., 204. sorában),
+  `0x81d353`/`0x81d382`.
+- **Ítélet: NYITOTT.** A tartalom forrása (a `0x16e` = 366 egység) nincs igazolva. Lezáró lépés: a `0x824090`
+  hívóláncának (a `0x81b800` felől) követése és a `[this+0x708]`-t betöltő mutató-írók keresése.
+
+**Bizonyítottsági fok (G/3g):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| `0x874320` 3 verem-argumentumot vesz fel (`ret 0xc`) | utasítás (`0x874abc`) | **megerősített** |
+| `0x874320` 3. verem-argumentuma = index-vektor pointer, a jelzőbájtokat `1`-re állítja | utasítás (`0x874a8e`–`0x874aa8`) | **megerősített** |
+| `0x874320` EAX-bemenete = 874e40 `param_2` (`this+0x504`), `out[0]` = `[[[eax]]+0xc]` | utasítás (`0x87432a`–`0x874335`) | **megerősített** (a jelentése **nyitott**) |
+| A G/3f „a3 = `[eax]→…→+0xc`” állítás összemosás | utasítás + a két fenti bizonyíték | **helyesbítve** |
+| `0x874e40` Lki/Rki verem-lokális, a `0x874ac0` tölti | utasítás (`0x874e9d`) + decompile | **megerősített** |
+| Lki/Rki → `+0x720/+0x728` | store-szkennelés (16 találat, egyik sem `0x874xxx`) | **elvetve** (literál-elmozdulásra) |
+| `+0x720` sentinel −1, `+0x728` sentinel n (új elemek) | utasítás (`0x81f026`, `0x81f1e8`) | **megerősített** (a G/2b „−1, n” állítás a kitöltésre igaz) |
+| `+0x720`/`+0x728` nem sentinel tartalma | — | **NYITOTT** (közvetett írás nem zárható ki) |
+| `0x7166c0` szűrő: `+0x5d ≠ 0 ∧ +0x5a = 0`, fallback `flag` esetén `+0x5a = 0`, érték `+0xb4` | utasítás (`0x716727`–`0x716855`, `ret 8`) | **megerősített** (a mezők jelentése **nyitott**) |
+| `[this+0x708]` tartalma és írója | — | **NYITOTT** |
+| Konkrét megtartott fotóindex | — | **NYITOTT** |
+
+**Tesztesetek, amelyek már megírhatók** (függvény-szint, a fenti utasításokból levezetve):
+
+- `0x874320` jelölés: a3 = `[2, 4]`, a kimeneti buffer n = 6 → jelzőbájtok `[0,0,1,0,1,0]`.
+- `0x874ac0` szomszéd-kitöltő (G/3f 2. pont, ismét ellenőrizve): `src = [0,1,0,0,1,0]` → `L = [-1,-1,1,1,1,4]`,
+  `R = [1,4,4,4,6,6]`. A spirálhoz való kapcsolata nincs igazolva.
+- `0x7166c0` szűrő: elemek `(5d, 5a, b4)` = `(1,0,10)`, `(0,0,20)`, `(1,1,30)` → `flag = 0`: `[10]`.
+  Elemek `(0,0,20)`, `(0,1,30)` (nincs kijelölt): `flag = 1` → `[20]`; `flag = 0` → `[]`.
+- Csoportosítás (G): `[0, 3240, 6480]`, `T = 3600` → `[0,0,0]`; `[0, 3600, 7200]` → `[0, 1, 2]`.
+
+**Kész, ha — állapot: NEM teljesül.** A jegy nyitva marad. Lezáró lépések:
+(a) a `[this+0x708]` elem-írója (a `0x824090` hívóláncának és a mutató-írók követése);
+(b) a `0x8223e0` `0xdc` (album) ága, és a `0x7166c0` `+0x5d`, `+0x5a`, `+0xb4` mezőinek azonosítása vtábla-törzsből;
+(c) a `+0x720`/`+0x728` nem sentinel írói, ha vannak (közvetett írás).
+Amíg (a) nincs, a megtartott index tesztjét nem adom meg; kitalált értékkel nem töltöm ki.
+
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
 *A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
