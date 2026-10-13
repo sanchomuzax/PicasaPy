@@ -3441,6 +3441,113 @@ olvastam.
 |---|---|---|
 | Mód 5/6 horgony, `0x81c9b0` spirál, szigorú minimum, `+0x4f0` mód-7 beállítás. | A `slideshow.py` színátlagos legközelebbi képet választ; a film-szűrés nincs. | **#4182:** a csoportosítás (G) és a horgony-szabály (G/3b) implementálható; a megtartási lépést csak az 1–3. nyitott pont lezárása után szabad eredetihűnek nevezni. |
 
+#### G/3c. A 10. kör (2026-10-13): a [obj+0x4e0] rendezése, a horgony-feltétel, a `+0x4f0/+0x4f1` írói, az IAT-név (#4194)
+
+**Módszer.** Utasításszintű olvasat az EXE-n (`research/copy_Picasa_3_7/Picasa3/Picasa3.exe`,
+capstone a `~/picasapy-agent/.venv`-ben, `pefile` a PE-fejhez és az importtáblához).
+Bájt-pásztázás a teljes `.text`-en (index-független). A segédszkriptek a scratchpadban
+vannak, a repóba nem kerültek. Natív QEMU-futás nem készült (a G/2c szerint a szintetikus
+rekordokkal a kiválasztó a végső indexig nem jut el).
+
+**1. A `[obj+0x4e0]` lista feltöltése és rendezése.**
+
+- Egyetlen közvetlen hívó: `0x00824090` → `0x00823620` a `0x0082417d`-ön (E8-pásztázás).
+- Argumentumok (`0x823620` belépési stackje): arg1 = a helyi forrásvektor (`lea eax,[esp+0x18]`),
+  arg2 = `&[obj+0x4e0]` (cél; a darabszám `[+4]>>1`, elemméret `0x38`), arg3 = `&[obj+0x4f8]`.
+  A `0x823620` a `0x82368e`-hez közel a `0x8256a0` rendezőt hívja a helyi `[esp+0x3c]` vektoron.
+- `0x8256a0`: alulról felfelé összefésülő rendezés (`0x825930` az összefésülés), a
+  comparátor a `0x819570`.
+- `0x819570`: a két elem kulcsát a `0x4edf60` olvassa (zárolt gyorsítótáras kulcsolvasó; a
+  kimenet a bejegyzés `+4…+0x10` dwordjeit másolja, a 8 bájtos kulcs az `+0xc/+0x10`-en van).
+  A kulcs összehasonlítása **előjel nélküli 64 bites** (`ja`/`jb`/`jae`): −1, ha `k1 < k2`,
+  különben +1. A rendező csak `< 0` esetén cserél ⇒ a sorrend **dátum szerint növekvő**.
+- A kulcs azonossága: ugyanaz a `0x4edf60` dátumolvasó, amelyet a G-szakasz `0x0081ae10`
+  csoportosítója használ (`+0x34` mező). A „FILETIME” azonosítás a G-szakaszban mért
+  (QEMU-s) tény; itt csak a rendező kulcsának típusát és irányát igazoltam.
+- **Nem követtem végig:** a `0x8256a0` kimenetének `arg2`-be jutását (a `0x823620` 0x82392e–0x823b76
+  tartománya). Ezért a „a lista tényleg rendezett” állítás **feltételes**.
+- **Nyitott:** egyenlő dátumnál a sorrend (a comparátor `+1`-et ad egyenlőségnél; a
+  összefésülés stabilitása nincs ellenőrizve).
+
+**2. Horgony-feltétel: a `call [0xc40284]` azonosítva.**
+
+- A `0x00c40284` IAT-slot neve: **KERNEL32.dll!GetCurrentThreadId** (pefile-lel, az importtáblából).
+- Hívóhelyek: `0x008225cb` (a `0x8223e0` belsejében), `0x004edf71` (a `0x4edf60`-ban),
+  `0x00823b53` (a `0x823620`-ban). Mindhárom a szál-azonosítót a tulajdonos-ellenőrző
+  mintához használja (`[obj+0x20]` / `[esp+0x38]` tulajdonos, `+0x24` / `+0x3c` számláló).
+- A `0x8223e0` horgony-ága (`0x822668`): `test esi,esi` után, ha `esi ≠ 0`, a horgony a
+  `this`-vektor 0. eleme (`mov eax,[edi]; mov ecx,[eax]`, `edi = this`). A szál-azonosító
+  felhasználói szálon nem nulla, tehát a gyakorlatban a feltétel mindig teljesül; üres
+  vektornál a `-1` marad. Ezzel a G/3b „`[0xc40284]` nyitott” pontja lezárult.
+
+**3. A `+0x4f0` / `+0x4f1` bájtok írói (bájt-pásztázás, `mov byte [reg+disp]` alakok).**
+
+| cím | művelet | kontextus | fok |
+|---|---|---|---|
+| `0x0057cc69` | `[ebx+0x4f0] := 1` | a `cmp ebp,0x9d59` ág (`0x57cc61`) | erős (utasítás) |
+| `0x0057cc7a` | `[ebx+0x4f1] := 1` | a `cmp ebp,0x9d5a` ág (`0x57cc72`) | erős (utasítás) |
+| `0x00612aa4`, `0x00612aaa` | `[edi+0x4f0] := bl`, `[edi+0x4f1] := bl` (bl = 0) | a `0x612a80` nullázó (a `+0x4e0` mellett) | erős (utasítás) |
+| `0x00618270` | `[ebp+0x4f0] := 1` | mód-7 mellékhatás (G/3b) | erős (utasítás) |
+| `0x004ec587` | `[reg+0x4f0] := 1` | nem azonosított osztály | feltételes |
+| `0x004ec027`, `0x004f6a8f` | `[reg+0x4f0] := 0` | nem azonosított osztály | feltételes |
+| `0x004e4550` | `[ebx+0x4f0] := bl` | nem azonosított | feltételes |
+
+- A `0x9d59` / `0x9d5a` azonosítók a **makemoviepanel vezérlő-azonosítói**: a `0x0056f7a0`
+  állapotfrissítő a `0x56f830` ágban ugyanezekkel az azonosítókkal hívja a `call ebx`-et
+  (a `0x9d30`, `0x9d62`, `0x9d5c`, `0x9d58` társaságában). Ezért a `+0x4f0` / `+0x4f1` nem
+  számított állapot, hanem **egy vezérlő bekapcsolt állapotából** íródik.
+- **Nyitott:** melyik vezérlő a `0x9d59` és a `0x9d5a` (a felirat). A fájlban nincs MENU-erőforrás;
+  a dialógus-leírás a REGISTRY-erőforrásban vagy a `.tre`-ben lehet — nincs megnézve.
+- A mód-választás (`0x618209`–`0x618236`) így: `[+0x4f0] ≠ 0` → 5, különben `[+0x4f1] ≠ 0` → 6.
+  Ez utasításszinten megerősített, de a bejövő érték **vezérlőből** jön, nem számításból.
+
+**4. A kiválasztó összehasonlítása (`0x81d7b0`–`0x81d7d9`, megerősített).**
+
+- A `fcompp` a `best` és a `v` (jelölt-összeg) között hasonlít; csak `best > v` esetén cserél
+  (`test ah,0x41` ⇒ `best ≤ v` esetén marad). **A kisebb összegű jelölt nyer**, döntetlennél a
+  korábbi marad. Ez a G/2c „szigorú minimum” állítását megerősíti.
+- **Nyitott:** a getterek (HOG `0x00873e40`, Neven `0x008742a0`, a `0x00873170` összegző) iránya:
+  távolság (a kisebb = hasonlóbb) vagy hasonlóság (a kisebb = kevésbé hasonló). A minimum
+  mindkét esetben a kisebbet választja, tehát a **választás iránya** a getter jelentésétől függ,
+  és azt ebben a körben nem fejtettem vissza.
+- **Nyitott:** a csoportkizárás iránya. A G-szakasz szerint a spirál csak „a középponttól eltérő
+  csoportból” vesz jelöltet, a `0x81d41d`–`0x81d428` ág viszont az aktuális jelölt csoportjával
+  egyezőt hagyja ki. Hogy ez a középpont vagy a jelölt csoportja, nincs egyértelműen igazolva.
+
+**5. A szabály állása (feltételes, nem zárt).**
+
+1. Csoport: a küszöb alatti szomszédos csoportosítás (G, megerősített).
+2. Rendezés: a `[obj+0x4e0]` dátum szerint növekvő (feltételes, lásd 1.).
+3. Középpont (`ordering = 0`): mód 5 (`0x9d59`) → a `this`-vektor 0. eleme, ha nem üres; mód 6 (`0x9d5a`) vagy üres → index 0 (a legkorábbi dátumú rekord, feltételes).
+4. Jelöltsor: kifelé spirál (+1, −1, +2, −2 …), legfeljebb 100 jelölt (G/2c).
+5. Pontszám: a getterek súlyozott összege; a kisebb nyer, szigorú minimum, döntetlenre a korábbi (megerősített); a getter-irány **nyitott**.
+6. Kimenet: a nyertes rekord `+0x30` kulcsa (G/2c).
+
+**Bizonyítottsági fok (G/3c):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| `call [0xc40284]` = `KERNEL32.dll!GetCurrentThreadId` | import-tábla (pefile) | **megerősített** |
+| A `0x823620` egyetlen közvetlen hívója a `0x824090` (`0x82417d`) | E8-pásztázás | **megerősített** (vtábla-hívás nincs kizárva) |
+| A `[obj+0x4e0]` feltöltő rendezője 64 bites előjel nélküli, dátum-kulcsú összefésülés, növekvő irány | utasítás (`0x819570`, `0x8256a0`, `0x825930`) | **megerősített** a comparátorra; **feltételes** a lista végső sorrendjére |
+| A horgony a `this`-vektor 0. eleme, ha a TID ≠ 0 | utasítás (`0x822668`) | **megerősített** |
+| `+0x4f1 := 1` a `0x9d5a` ágon (`0x57cc7a`) | utasítás | **megerősített** (a vezérlő neve **nyitott**) |
+| `+0x4f0`, `+0x4f1` többi írója | bájt-pásztázás | **feltételes** (zajos minta) |
+| `0x81d7b0` szigorú minimum | utasítás | **megerősített** |
+| Getter-irány (távolság vagy hasonlóság) | — | **NYITOTT** |
+| Csoportkizárás iránya | — | **NYITOTT** |
+| Egyenlő dátum sorrendje | — | **NYITOTT** |
+| Konkrét megtartott fotóindex | — | **NYITOTT** |
+
+**Nyitott pontok és a lezárásuk útja.**
+
+1. A getter-irány: a `0x873170` → `0x873e40` (HOG) és `0x8742a0` (Neven) törzse; a visszatérési érték jelentése (a kisebb = hasonlóbb?).
+2. A `0x9d59`/`0x9d5a` vezérlő felirata: a makemoviepanel dialógus-leírása (REGISTRY-erőforrás vagy `.tre`).
+3. A `0x8223e0` mód-5 forrásvektora: a `[esp+0x14]` kitöltője mód 5-nél nincs igazolva (a `0x8223e0` nem kap vektor-kimenetet).
+4. Egyenlő dátumú rekordok sorrendje: a `0x8256a0` összefésülés stabilitása, vagy a `0x825930` ágai.
+5. A csoportkizárás: a `0x81d41d`–`0x81d428` ág melyik csoportot zárja ki.
+6. Natív viselkedésmérés: Windows-gép kell (Wine alatt a Picasa nem készít filmet, picasa-colab-jobs #106).
+
 #### Bizonyítottsági fok
 
 **Megerősített** (utasításszinten olvasva): a négy tálcagomb ága és
