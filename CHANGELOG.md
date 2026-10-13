@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.81] – 2026-10-13
+
+- Tiszta profilon, hálózat nélkül ellenőrizhetők a fő képkönyvtári, szerkesztési és exportműveletek. (#4317).
+
 ## [0.9.80] – 2026-10-13
 
 - A README kétnyelvű, verziófüggetlen leírást ad a képességekről és a telepítésről (#4915).
