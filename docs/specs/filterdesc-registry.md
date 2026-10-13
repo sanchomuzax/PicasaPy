@@ -5034,13 +5034,15 @@ szintetikus mérések nem fedik le a teljes `filterdesc.xml` LocalContrast
 láncot, annak blur-/blend-határait vagy export-goldenét; ez a nagyobb effekt
 szintjén nyitott marad.
 
-### 2a. `LocalContrastImageOperation` — a builder feloldva, a teljes exportmérés nyitott (#4907, 2026-10-12)
+### 2a. `LocalContrastImageOperation` — három XML-export-golden mérve; a natív QEMU-lánc nyitott (#4907, 2026-10-13)
 
-**Bizonyítottsági fok: `nyitott` a jegy teljes kimeneti feltételére.** A builder
-gyerekosztályait és az utasítás-összeállító hívást a bináris megerősíti; a 684-es
-Picasa-export két aktív HDR-beállítást ad, a harmadik HDR-export viszont
-`Fade=100`-zal nem méri a natív művelet látható kimenetét. Nincs három aktív
-natív kimenet bájtszintű összevetése.
+**Bizonyítottsági fok: `feltételes` a teljes natív pixelkimenetre.** A
+`LocalContrast` három Picasa-exportját összevetettem a mai
+`xml_local_contrast` RGB-kimenetével; mindháromra van pontos CIE76-mérés, így a
+jegy export-golden alternatívája teljesül. Az export JPEG, ezért ez nem nyers
+natív bájtazonosság. A teljes `LocalContrastImageOperation` QEMU-futtatóútja
+sem állt össze: az utasításlista külső végrehajtójának hívója és szerződése
+`NINCS MEG`.
 
 **Builder és hívási határ (helyi diszasszemblálás + RTTI).** A
 `LocalContrastImageOperation` vtáblája `0x00cf0a7c`; a `+0x1c` slot értéke
@@ -5063,8 +5065,28 @@ utasításlistához, majd a `0x00bc13e0` végigjárja a gyerekeket és azok
 A képpont-végrehajtás az `ApplyInstruction` `0x00bd0cc0` metódusán át az adott
 művelet `vtable+0x18` munkavégzőjéhez kerül; a `BlendInstruction` keverője
 `0x00bd0700`. Tehát a `0x00bc4810` nem a teljes lánc egyetlen képpont-futtatója.
-Az utasításlista legfelső szintű végrehajtójának hívója és hívási szerződése
-ebben a körben nem lett visszakövetve.
+Az `0x00bc4730` alkalmazó végén a `0x00bc47fd` hívás a 40 bájtos
+képreceptort másolja a kimeneti rekordba (`0x009a8ca0`: tíz `dword` másolása,
+refcount-kezeléssel); ez nem a gyerekutasítások képpontfuttatása.
+
+**Cáfoló pásztázás és QEMU-határ (2026-10-13).** A teljes `.text`-et a
+`paszta.py` darabolt pásztázójával jártam be, első műveletként
+`paszta.memoria_kapu(512)` hívással, 8 KiB-os darabokkal. Az ismert pozitív
+kontroll (`0x0040265e`, vtable `+0x0c` indirekt hívás) megjelent. A vtable-betöltés
+→ `+0x0c` slot-betöltés → regiszteres `call` alakból 977 helyet talált a
+pásztázás; a `0x00bb`–`0x00bc` tartományban az azonosítható találatok
+utasításépítők (`0x00bb41c0`, `0x00bc13e0`, `0x00bc4ae0`), nem az
+utasításlista képpontfuttatója.
+A közvetlen `call [reg+0x0c]` alakra nulla találat volt. Ez a cáfoló kör nem
+zárja ki a más ABI-t vagy más hívásalakot, ezért a külső listafuttató címe és
+a képleírók verem-/argumentum-ABI-ja továbbra is `NINCS MEG`.
+
+A korábbi qemu-harness README `0x00bcb2f0` próbája `SIGSEGV`-vel végződött,
+kézzel épített, más belépőjű bemenettel; nem tekintettem LocalContrast-mérésnek.
+Ebben a körben nem futott a teljes lánc qemu-i386 alatt, ezért nincs natív
+képpontpuffer és nincs `docs/benchmarks/`-ba mentett QEMU-golden. A tervezett
+`hb.py` futás a brief szerint skalár ágat mérne; itt nem keletkezett skalár
+LocalContrast-kimenet, és SIMD-ág-egyezésre sincs bizonyíték.
 
 **Picasa-export összevetés (684-es készlet).** Az `.picasa.ini`-ben rögzített
 HDR-paraméterek (`hdr__min.jpg`, `hdr__alap.jpg`) és exportjaik alapján a két
@@ -5079,10 +5101,28 @@ száma az 960×640×3 bájtos pufferekre vonatkozik, nem nyers natív kimeneti f
 
 A `hdr_local_contrast`-tal végzett oszlop a mai renderer és az eredeti
 Picasa-export összevetése, nem az eredeti gépi kód közvetlen futtatása. A
-`LocalContrast` XML-effekt saját három export-goldenje a `xml_local_contrast`
-modellel rendre 0,120932 (R=1,3/S=1), 0,159203 (R=15/S=1,5) és 0,257918
-(R=40/S=3) ΔE-t ad; ezek az XML-effektet ellenőrzik, nem a natív
-HDR-műveletet.
+`LocalContrast` XML-effekt saját három export-goldenje az alábbi mérés.
+
+**LocalContrast XML export-golden (684-es készlet).** A `.picasa.ini` pontos
+paraméterei: `min` R=1,3/C=1,0; `alap` R=15/C=1,5; `max` R=40/C=3,0
+(`mérés (684-es archívum, .picasa.ini)`). Mindhárom forrás és export 960×640
+RGB (`mérés (684-es JPEG-ek dekódolása)`); a gyökérforrás SHA-256-a
+`170510965b768d685ceef017859c51acc6ce848c2d22be192a53ece49096f55e`
+(`mérés (684-es forrásfájl)`). A `ΔE` a dekódolt RGB-pufferek átlagos CIE76
+eltérése, azonos méreten; a pixel-egyezés a 960×640 RGB-pixelekre vonatkozik.
+Az `xml kimenet SHA-256` a mai `xml_local_contrast` nyers, sorfolytonos RGB
+bufferén készült; a Picasa-cél a JPEG fájlhash-e.
+
+| beállítás | `Radius` / `Contrast` | `xml_local_contrast` ↔ Picasa LocalContrast-export, átlag ΔE | pontos RGB-pixel | Picasa JPEG SHA-256 | XML-nyers RGB SHA-256 |
+|---|---:|---:|---:|---|---|
+| min | 1,3 / 1,0 | 0,120932434898 | 86,858724% | `cf2e5d181fb6ea67a705670c0bc0d9b5d954180320af923e9cd5019cd05ffff2` | `013624f5638d9e037c6a5a4963932ac73972f65d6472b726d0bc4861e589824a` |
+| alap | 15 / 1,5 | 0,159202738267 | 77,107259% | `cb3df97d6d2da3fb47f3172188f09c3e8af2f3e91cfec613c557e7fa4944d782` | `556d06df8af4950c76e9af2d3c6387daf9cd9705457a5e053afa2e346698a1b5` |
+| max | 40 / 3,0 | 0,257917673364 | 58,535970% | `ffcd23e658e66ca366d5a61475db80ccf23c697ac5b0afde3ec6c5dc6424defe` | `4bf112c4a4377daf3f38b41ae29c1412424caba057fdb78ec59ca51bbb4e8504` |
+
+Forrás mindhárom sornál: `mérés (684-es Picasa-export ↔
+src/picasapy/render/glimmer_ops.py:xml_local_contrast; CIE76,
+analyze_validation_kit.mean_de)`. Ezek export-goldenek, nem a natív
+QEMU-pixelpuffer eredményei.
 
 | HDR-beállítás | forrás ↔ Picasa-export, ΔE | átlagos előjeles csatornaeltolódás |
 |---|---:|---:|
@@ -5092,24 +5132,37 @@ A max export beállítása a mérési fájlban `HDR=1,80,7,100`; a szállított
 `filterdesc.xml` `BlendAlpha=1-(Fade/100)` kifejezése Fade=100-nál nulla.
 Ezért a max sor nem harmadik aktív natív (Radius, Strength) pixelmérés.
 
-**Cáfoló kísérlet (15.2).** A hipotézis, hogy a natív művelet és az XML-es
-`LocalContrast` a közös min-beállításon (R=1,3/S=1) ugyanazt a képet adja,
-megbukik: a `xml_local_contrast` C=1-nél a bemenetet hagyja változatlanul,
-míg a Picasa HDR min export forrástól mért ΔE-je 1,120346, átlagos
-csatornaeltolódása 0,479735. Kontrollként ugyanennek a 684-es forrásnak a
-Picasa `LocalContrast` min exportja 0,120932 ΔE-re van a forrástól, és az
-XML-modell is 0,120932 ΔE-re van attól az exporttól. A páros exportkontroll
-azt mutatja, hogy a HDR min eltérése meghaladja az ugyanazon forrás
-újramentési zaját; ez a cáfolat az aktív min-beállításra szól, nem teljes
-bájtpontos natív láncfuttatás.
+**Cáfoló kísérlet (15.2).** Megpróbáltam cáfolni azt, hogy a mai XML-modell
+három LocalContrast-exportot jól közelít: ugyanazon forrásra kiszámoltam a
+natív `LocalContrastImageOperation` HDR-út jelenlegi modelljét
+(`hdr_local_contrast`) is. Ennek exporttól mért ΔE-je min/alap/max sorrendben
+1,106937 / 1,813364 / 2,209803 (`mérés (hdr_local_contrast ↔ ugyanazon három
+Picasa-export)`), az XML-modell 0,120932 / 0,159203 / 0,257918 értékeivel
+szemben. A próba azt cáfolja, hogy a natív HDR-út és az XML-es LocalContrast
+felcserélhető volna; az XML-modell/export közeli eredményét nem cáfolta. A
+falszifikációt ugyanazzal a CIE76/RGB-dekódolási mércével ellenőriztem.
+Külön kontrollként a Picasa HDR min export forrástól mért ΔE-je 1,120346,
+átlagos csatornaeltolódása 0,479735; a LocalContrast min export forrástól
+0,120932 ΔE-re van (`mérés (684-es exportok)`). Min állásban a jelenlegi XML-
+modell a bemenettel azonos, ezért ott a mért ΔE a JPEG újramentési alapzaja.
+Ez a kontroll nem magyarázza a max állás maradék ΔE-jét; bájtazonosság nem
+állítható.
 
-**Kész, ha — továbbra is nyitva:** legyen legalább három különböző, Fade=0-s
-natív HDR-export vagy eredeti gépi kóddal futtatott teljes lánckimenet, és
-mindegyiket a megfelelő bemeneten számolt `xml_local_contrast` dekódolt
-képpontbájtjaival kell összevetni. A meglévő harmadik paraméterpárhoz a
-684-es készlet LocalContrast-max értéke (R=40/S=3) ad pontos összehasonlító
-beállítást; natív HDR-export ehhez **NINCS MEG**. A JPEG-export miatt a fájl
-nyers bájtjainak egyezése önmagában nem pixelbizonyíték.
+**Kész, ha — export-golden alternatíva: ✅ teljesült.** Három Radius/Contrast
+beállításon a Picasa `LocalContrast` exportját a megfelelő forrásra futtatott
+`xml_local_contrast` eredménnyel hasonlítottam össze; a mért ΔE-értékek és
+hash-ek a fenti táblában vannak. Ez a jegyszövegben megadott export-golden
+feltételt teljesíti. **Natív QEMU teljes lánc: ⛔ nincs meg.** A helyi
+QEMU-harness a skalár ágat mérő környezet; ez a kör nem ért el az
+utasításlistát futtató külső hívóig, ezért nem készült natív LocalContrast
+nyers QEMU-puffer, és SIMD-ág-egyezést sem igazol. A következő konkrét lépés a
+`0x00bc4ae0`/`0x00bc4810` által összerakott utasításlista külső végrehajtójának
+hívóját, képköteg-ABI-ját és belépő veremállapotát visszakövetni, majd azt a
+`hb.py`-val futtatni három beállításon. A nyers QEMU-kimenet címe és hash-e:
+`NINCS MEG`.
+
+**Nyitott, blokkoló Ghidra-kérdés a natív futtatáshoz:**
+`Ghidra-kör kell: 0x00cf0f18 — az ApplyInstruction vtable +0x0c slotját hívó külső utasításlista-futtató és a 40 bájtos képleíró verem-/argumentum-ABI azonosítása [blokkoló]`.
 
 ### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
 
