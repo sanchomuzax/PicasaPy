@@ -1076,7 +1076,7 @@ A `0x005e6814` `jg`-je alatt, `WM_KEYDOWN`-ra (`cmp [ebx+4], 0x100`,
 | **F2** | `0x005e68fd` | öt őr után (`0x0056c420`, `0x0056c110`, `0x00562d00`, `0x005f2650`, `0x0057c430(4)`) az átnevezés útja: `[edi+0xeac]` → `0x007166c0`, `0x0057d430`, `0x00532ec0` |
 | **F3** | `0x005e69a4` | **kattint: `searchcontainer/searchbutton`** (`0x00c8f448`) — ugyanaz az elem, mint a `Ctrl+F` |
 | **F4** | `0x005e696c` | `0x009cd110(`**`thumbui/startoggle`**`)` feloldás; ha `[eax+0x20e] == 0`, **kattint** rá (vtable `+0x78`) |
-| **F5** | `0x005e6869` | időbélyeg- és állapotfrissítés, `[adatobjektum+0x166] = 1` frissítési kérés, majd kereső-/nézeti frissítés (`0x0065b840`; 10.22) |
+| **F5** | `0x005e6869` | időbélyeg- és állapotfrissítés, `[adatobjektum+0x166] = 1` frissítési kérés, majd kereső-/nézeti frissítés (`0x0065b840`; 10.22); a lánc a lemezt olvasó `0x009a5fa0`-ig megy (10.25) |
 | **F11** | `0x005e68a0` | vtable `+0x24` kétszer, `[eax+0x3e]` billentése, majd `0x00983fc0` |
 | **F12** | `0x005e69c2` | `call 0x005e60d0` — de az F12 a Ctrl-tábla tartományán **kívül** esik (10.6), tehát ott nem történik semmi |
 
@@ -1495,7 +1495,7 @@ gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem tö
 - **Következtetés:** az `editpanel/preview` objektumán a kód **nem írja** a `+0x20c` bájtot. Ha az objektum létrehozásakor nullázódik (a konstruktor vagy a memória-inicializálás), az őr ettől függetlenül igaz. Ez a nullázás **nincs igazolva**: a konstruktort nem találtam meg. Ezért a `+0x20c` jelentése (a „0 = engedélyezett” értelmezésen túl) **nyitott**.
 - **Eltérés a mai kódtól:** a mai `enabled: viewer.visible` feltétel a nézet láthatóságától függ. A binárisban mért őrben nincs ilyen feltétel: ott a regiszter élése és a preview-objektum léte számít, plusz a `+0x20c` bájt. Így a két feltétel eltér: a bináris szerint a fiók átkapcsolható lehet a könyvtárnézetből is, ha a preview-objektum létezik. Ezt nem mértük, mert a könyvtárnézetben a preview-objektum léte nincs igazolva. Ez döntés kérdése, ha a konstruktor-nullázás nem igazolódik.
 
-**F5 lemezszinkronja (`0x0065b840`, `0x004aae90`) — nyitott, de szűkebb.**
+**F5 lemezszinkronja (`0x0065b840`, `0x004aae90`) — nyitott, de szűkebb.** ⛔ A következő három pont (a mutató-táblák, a „nem oldható fel” és a „3 ugrásig nincs enum”) **a 10.25 szerint elavult**: a táblák feloldva, a lemezbejárás a `0x009a5fa0`-ban megerősített, a nyitott kapuk a 10.25 5. pontjában vannak.
 
 - **Közvetlen hívási lánc (megerősített, a pásztázott `call`-okból):** az F5 kezelője (`0x005e6869`) `call 0x65b840`; a `0x65b840` közvetlen hívása `0x662b20`; onnan `0x67d020` → `0x66f470` → `0x66fae0` → `0x66f810` → **`0x9a5fa0`**.
 - **A `0x9a5fa0` egy `"<útvonal>\*.*"` mintát épít:** a `"*.*"` sztring (VA `0xc88d6c`) három helyen hivatkozott (`0x520bce`, `0x9a600b`, `0xa61d12`); a láncban csak a `0x9a600b` (`push 0xc88d6c`, a `0x9a5fa0` függvényben) van, így az F5 útjában lévő, mintát építő függvény ez.
@@ -1543,6 +1543,98 @@ gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem tö
 - [ ] Az F5 mutató-táblái feloldva, és a lemezbejárás igazolva vagy kizárva.
 - [ ] A Ctrl+G `[ebp+0x15c]` nézet-kezelője feloldva (vtábla +0x74 és `0x9e42b0`), vagy a Ctrl+G hatása nevesítve „nem vizsgált”.
 - [x] A 10.23 Ctrl+G „no-op” állítása javítva; a 10.23 Ctrl+G mondata a 10.24-re hivatkozik. (A 10.7 nem módosult, mert ott a Ctrl+G „kimaradt” a mai kódra vonatkozik, nem a binárisra.)
+
+### 10.25 #4643 — negyedik kör (2026-10-13): az F5 lemezbejárása
+
+**Kiinduló helyzet.** A 10.24 az F5 lemezszinkronját nyitottnak hagyta, mert a `0x9a5fa0` hívásainak mutató-táblái (`[0xc40284]`, `[0xc4055c]`, `[0xc402a8]`, `[0xc40298]`, `[0xc402d0]`, `[0xc4025c]`, `[0xc408fc]`, és a `[0xd694c4]`/`[0xd694c8]`/`[0xd694cc]`) nem voltak feloldva.
+
+> ⛔ **HELYESBÍTÉS a 10.24-hez.** A 10.24 „a táblák értékei nem igazodnak utasításhatárra, tehát nem egyszerű függvénymutatók” megállapítása **téves** volt. A `.rdata`-beli érték a betöltés *előtti* IAT-tartalom (a loader felülírja), nem függvénycím. A nevet az import-könyvtárból kell venni, nem a fájl bájtjából. A 10.24 „3 ugrásig nincs FindFirstFile” állítása ezért index-negatív volt, és nem bizonyíték.
+
+**Módszer.** (1) A `.rdata` IAT-bejegyzéseket az import-könyvtár (`IMAGE_IMPORT_DESCRIPTOR`, `OriginalFirstThunk` neve) alapján oldottuk fel, nem a fájlbeli értékből. (2) A futásidőben töltött `.data`-slotok íróit a `.text` teljes capstone-pásztázásával kerestük (`eszkozok/binaris/paszta.py`, memóriakapuval), `mov`/`call` operandusra szűrve. (3) A hívási láncot direkt `CALL`-ok szerint, utasításonként ellenőriztük, és a `functions`/`xrefs` index csak kiegészítő volt. (4) A kézzel dekódolt szakaszok `pe_dis.py`-n át olvastak.
+
+**1. A hét IAT-slot (megerősített, két út: import-könyvtár és index-`imports`).**
+
+| slot (VA) | API |
+|---|---|
+| `0x00c40284` | `KERNEL32!GetCurrentThreadId` |
+| `0x00c4055c` | `KERNEL32!EnterCriticalSection` |
+| `0x00c402a8` | `KERNEL32!LeaveCriticalSection` |
+| `0x00c40298` | `KERNEL32!QueryPerformanceCounter` |
+| `0x00c402d0` | `KERNEL32!Sleep` |
+| `0x00c4025c` | `KERNEL32!GetLastError` |
+| `0x00c408fc` | `USER32!EndPaint` |
+
+A `0x9a5fa0` ezekkel a kritikus szakaszt és az időzítést kezeli (a `GetCurrentThreadId`/`Enter`/`LeaveCriticalSection` párosok), tehát **nem** fájlművelet.
+
+**2. A futásidőben töltött `.data`-slotok (megerősített).** A `[0xd694c4]`, `[0xd694c8]`, `[0xd694cc]` a `.data` virtuális, fájlban nem inicializált része; írójuk **egyedül** a `0x00c326b0` függvény (`0x00c32c2a`–`0x00c32cba`), és mindhárom egy `GetVersion` elágazással dönt (`cmp [0xd6fc58], 0x80000000; jae`):
+
+| slot | NT-ág (`GetVersion` high bit = 0) | 9x-ág (high bit = 1) |
+|---|---|---|
+| `[0xd694c4]` (keresés kezdete) | `0x009aed50` (UTF-8 → UTF-16, `MultiByteToWideChar` CP 65001, majd `FindFirstFileW`) | `FindFirstFileA` (`0x00c40428`) |
+| `[0xd694c8]` (keresés kezdete, kiterjesztett) | `0x009aee90` (ugyanaz, majd `FindFirstFileExW`) | `FindFirstFileExA` (`0x00c404a8`) |
+| `[0xd694cc]` (következő elem) | `0x009aeff0` (`FindNextFileW`, `0x00c404b4`) | `FindNextFileA` (`0x00c404bc`) |
+
+**3. Az enumerátor (`0x009a5fa0`, 3608 bájt; megerősített).** Hívásai a `.text`-ből:
+- `0x009a6099`: `call [0xd694c4]` — a sima `FindFirstFile*` ág (két argumentum);
+- `0x009a6079`: `call [0xd694c8]` — a `FindFirstFileEx*` ág (hat argumentum), csak ha az `arg3 == 0x0040eed0`, és a `[0xd689ec] < 0x80000000` (ezt a jelzőt nem azonosítottuk); egyébként a sima ág fut;
+- `0x009a6d4b`: `call [0xd694cc]` — `FindNext*`;
+- `0x009a6d5e`: `call [0xc403a8]` — `FindClose`;
+- `0x009a60a8`: `GetLastError` hibaágon.
+
+A `0x009a600b` a `"*.*"` sztringet (VA `0x00c88d6c`) fűzi a bemeneti úthoz a `0x00985af0` hívással. Az elválasztó (`\`) beillesztését a `0x00985af0`-ban nem néztem végig.
+
+**4. Az F5 hívási lánca (megerősített, minden hop direkt `CALL`).**
+
+| lépés | hely | cél |
+|---|---|---|
+| F5 ág | `0x005e6869` (`cmp ax, 0x74`, VK_F5) | |
+| flag | `0x005e6892`: `mov byte [obj+0x166], 1` | a frissítési jelző |
+| 1 | `0x005e6899` | `0x0065b840` |
+| 2 | `0x0065bb1b` | `0x00662b20` |
+| 3 | `0x0066315b` | `0x0067d020` |
+| 4 | `0x0067d240` | `0x0066f470` |
+| 5 | `0x0066f76d` | `0x0066fae0` (feltétel: §5) |
+| 6 | `0x0066fba2` | `0x0066f810` (a `0x66fb7d`/`0x66fb84` ugrások is ide érnek) |
+| 7 | `0x0066f8b8` | `0x009a5fa0` |
+
+A `0x0066f810` a `0x992ed0` kapuval védi a hívást (`0x0066f88d`): ez attribútum-jellegű lekérdezés (`call [0xd694bc]`, `cmp eax, -1`, `setne`), a `[0xd694bc]` célja **nincs azonosítva**.
+
+**5. Nyitott kapuk (az F5 csak akkor olvas lemezt, ha ezek átmennek).**
+- `0x0066f470` → `0x0066fae0` (`0x0066f73e`, `0x0066f768`): az `ebx` a `0x004019b0` visszatérési értéke (`0x0066f6c5`, 211 bájtos segédfüggvény, sztring-objektumot épít). Az F5-nél felvett érték **nem igazolt**.
+- `0x00992ed0` → `[0xd694bc]`: a célfüggvény nincs azonosítva; a `setne` eredmény olvasása igazolt.
+- A `[obj+0x166]` jelző egyetlen olvasója a `0x004afcfd` (`0x004afcb0`, időzítő-jellegű függvény: `QueryPerformanceCounter` az elején), amely törli (`0x004afd41`). A jelző ~70 helyen íródik. Hogy a `0x004aae90`/`0x004a8a30` ág újraépíti-e a listát, nincs követve.
+
+**Következtetés (F5 lemezszinkron).** A kód **lemezről olvas** az F5 útján: a lánc végén `FindFirstFileW` vagy `FindFirstFileA` (a `GetVersion` szerint), `FindNextFile*`, `FindClose`, a `<bemeneti út>` + `*.*` mintán. Ez a `0x9a5fa0` megerősített tulajdonsága, nem index-következtetés. **Nincs bizonyítva**, hogy minden F5-nél átmegy mind a `0x66f470` ebx-feltétel, mind a `0x992ed0` kapu, és hogy a találatok a listát újraépítik. Ezért a helyes megfogalmazás: „az F5 a mappát a lemezről olvasásra kényszeríti, ha a két kapu átmegy; a kapuk feloldása nyitott”.
+
+**Bizonyítottsági fok (ez a kör):**
+
+| állítás | út 1 | út 2 | fok |
+|---|---|---|---|
+| hét IAT-slot neve (`KERNEL32`/`USER32`) | import-könyvtár bejárása | index `imports` tábla | **megerősített** |
+| `[0xd694c4/c8/cc]` írói: `0x00c326b0` (`GetVersion` ág) | capstone `.text`-pásztázás (`mov`/`call` operandus) | a három író disassembly-je | **megerősített** |
+| NT-/9x-wrapperek célja (FindFirst W/ExW/Next W, A-ág) | wrapper disassembly (`call` célok) | IAT-nevek | **megerősített** |
+| `0x009a5fa0` hívásai (FindFirst*, FindNext*, FindClose) | `call`-pásztázás `[abs]` operandusokra | IAT-nevek | **megerősített** |
+| F5 → `0x009a5fa0` hét direkt hívás | index `xrefs` (CALL-élek) | utasítás-szintű ellenőrzés minden hopnál | **megerősített** |
+| `[obj+0x166]=1` az F5 ágban | disassembly `0x005e6892` | a `0x0065b840` argumentumai | **megerősített** |
+| `0x66f470 → 0x66fae0` feltétel (`ebx`) | — | — | **nyitott** |
+| `[0xd694bc]` (a `0x992ed0` kapu célja) | — | — | **nyitott** |
+| F5 után a lista ténylegesen újraépül | — | — | **nyitott** |
+
+**Mai kód:** `Main.qml:1163` az F5-öt köti (#4697). A bináris lemezolvasása és a mai viselkedés egyezése nincs mérve.
+
+**Nyitott pontok (munkasorba):**
+- `0x004019b0` visszatérési értéke F5-nél: statikus visszafejtés (sztring-objektum-másoló) vagy futtatás (QEMU-harness, a `kutatoi-allitast-futtatassal-is-ellenorizd` szerint).
+- `[0xd694bc]` célja (várhatóan `GetFileAttributes*`) és írói: ugyanaz a `.text`-pásztázás, mint 2. pont.
+- A `[obj+0x166]` olvasójának (`0x004afcb0` → `0x004aae90`) hatása: újraépíti-e a listát.
+- Dinamikus megerősítés: F5 alatt futó Picasában a `FindFirstFile*` hívásszám > 0 (harness-mérés).
+
+**Kész, ha (F5-re, mérhető):**
+- [x] A hét mutató-slot neve két úton igazolva (10.25, 1. pont).
+- [x] A `.data`-slotok írói (`0x00c326b0`) és a wrapperek célja igazolva (10.25, 2–3. pont).
+- [x] Az F5 → `0x009a5fa0` hívási lánc utasításszinten igazolva (10.25, 4. pont).
+- [ ] A `0x66f470` ebx-feltétel és a `0x992ed0` kapu F5-re igazolva (10.25, 5. pont).
+- [ ] A `[obj+0x166]` hatása a listára igazolva.
+- [ ] Dinamikus mérés: F5 → `FindFirstFile*` hívás a futó Picasában (vagy a kijelentés „csak statikus” jelzéssel marad).
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
