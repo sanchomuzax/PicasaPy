@@ -8783,8 +8783,9 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
         </message>
         <message>
             <source>Split Folder Here...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mappa felosztása itt…</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(contextMenuSplitFolder)</extracomment>
+            <translation>M&amp;appa felosztása itt...</translation>
         </message>
         <message>
             <source>Open File</source>
@@ -12828,6 +12829,13 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     </context>
     <context>
         <name>FolderPropertiesDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(folderPropertiesNameField)</extracomment>
+            <translation>Névtelen</translation>
+        </message>
         <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa

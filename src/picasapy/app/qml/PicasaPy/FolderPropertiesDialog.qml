@@ -56,6 +56,11 @@ Dialog {
     // a szerkesztett mappa — a hívó állítja be open() előtt
     property string folderPath: ""
     property string folderName: ""
+    property bool newFolderCreation: false
+    property var splitPaths: []
+    property string folderLocation: ""
+    //: IDS_DEFAULT_ALBUM_NAME — a hivatalos alak „Névtelen”.
+    readonly property string untitledFolderName: qsTr("Untitled")
     // a jelenlegi kézi dátum-felülírás ISO-alakban ("" = nincs, a mappa a
     // legrégebbi képe dátumát használja)
     //: album módban az album neve (a prefillhez)
@@ -91,12 +96,50 @@ Dialog {
         if (reszek) {
             mezok = { y: reszek[1], M: reszek[2], d: reszek[3] }
         } else {
-            var szamok = be.match(/\d+/g)
+            // A rövid dátumalak a területi beállítástól függően hónapnevet
+            // is tartalmazhat („3 May 2025”). Ezt a saját numerikus parser
+            // nem tudja visszaolvasni, ezért a Qt helyi hónapneveivel bontjuk.
             var sorrend = root._dateFormat().match(/y+|M+|d+/g)
-            if (!szamok || !sorrend || szamok.length !== 3 || sorrend.length !== 3)
+            var honapToken = sorrend ? sorrend.find(function(token) {
+                return /^M{3,}$/.test(token)
+            }) : null
+            var maradek = be
+            if (honapToken) {
+                var helyi = be.toLocaleLowerCase()
+                for (var honap = 1; honap <= 12; ++honap) {
+                    var fajta = honapToken.length >= 4
+                        ? Locale.LongFormat : Locale.ShortFormat
+                    var nevek = [Qt.locale().monthName(honap - 1, fajta),
+                                 Qt.locale().standaloneMonthName(honap - 1)]
+                    for (var n = 0; n < nevek.length; ++n) {
+                        var nev = String(nevek[n] || "")
+                        var kezdet = helyi.indexOf(nev.toLocaleLowerCase())
+                        if (nev && kezdet >= 0) {
+                            mezok.M = honap
+                            maradek = be.slice(0, kezdet)
+                                + be.slice(kezdet + nev.length)
+                            break
+                        }
+                    }
+                    if (mezok.M !== undefined) break
+                }
+            }
+            var vanHelyiHonap = mezok.M !== undefined
+            var numerikusSorrend = sorrend
+                ? (vanHelyiHonap
+                    ? sorrend.filter(function(token) {
+                        return !/^M+$/.test(token)
+                    })
+                    : sorrend)
+                : []
+            var szamok = maradek.match(/\d+/g)
+            if (!szamok || !sorrend
+                    || szamok.length !== numerikusSorrend.length
+                    || numerikusSorrend.length + (vanHelyiHonap ? 1 : 0)
+                        !== sorrend.length)
                 return null
-            for (var i = 0; i < 3; ++i)
-                mezok[sorrend[i].charAt(0)] = szamok[i]
+            for (var i = 0; i < numerikusSorrend.length; ++i)
+                mezok[numerikusSorrend[i].charAt(0)] = szamok[i]
         }
         if (!mezok.y || mezok.y.length !== 4 || !mezok.M || !mezok.d)
             return null
@@ -127,12 +170,16 @@ Dialog {
     signal albumPropertiesAccepted(string token, string name, string isoDate,
                                    string location, string description)
     signal folderMusicAccepted(string folderPath, bool useMusic, string musicFile)
+    signal splitFolderAccepted(var paths, string name, string isoDate,
+                               string location, string description,
+                               bool useMusic, string musicFile)
     signal albumMusicAccepted(string token, bool useMusic, string musicFile)
 
     onOpened: {
         nameField.text = root.albumMode ? root.albumName : root.folderName
         dateField.text = root._isoToField(root.currentDate)
-        locationField.text = root.albumMode ? root.albumLocation : ""
+        locationField.text = root.albumMode ? root.albumLocation
+            : (root.newFolderCreation ? root.folderLocation : "")
         descriptionField.text = root.currentDescription
         musicCheck.checked = root.currentMusicEnabled
         musicPathField.text = root.currentMusicFile
@@ -150,6 +197,13 @@ Dialog {
                 root.albumToken, musicCheck.checked, musicPathField.text)
             return
         }
+        if (root.newFolderCreation) {
+            root.splitFolderAccepted(
+                root.splitPaths, nameField.text, root._datumIso(),
+                locationField.text, descriptionField.text,
+                musicCheck.checked, musicPathField.text)
+            return
+        }
         root.folderPropertiesAccepted(
             root.folderPath, root._datumIso(), descriptionField.text)
         root.folderMusicAccepted(
@@ -161,7 +215,8 @@ Dialog {
             return
         // Változatlan névnél nincs átnevezés — a dátum/leírás/zene mentése
         // átnevező nélkül is működjön (#4503 OK-tesztje).
-        if (!root.albumMode && nameField.text !== root.folderName) {
+        if (!root.albumMode && !root.newFolderCreation
+                && nameField.text !== root.folderName) {
             if (typeof root.renameFolderHandler !== "function") {
                 root.renameError = qsTr("Folder renaming is unavailable.")
                 renameErrorDialog.open()
@@ -530,9 +585,9 @@ Dialog {
                 Layout.maximumHeight: 26
                 font.pixelSize: Theme.fontSize
                 onAccepted: root._saveProperties()
-                //: #3173: ALBUM módban menthető (`location=` az album
-                //: definíciójában); mappánál nincs mögötte réteg.
-                enabled: root.albumMode
+                //: #4534: mappa létrehozásakor a hely a célmappa `[Picasa]`
+                //: szekciójába kerül; meglévő mappánál az eredeti mód marad.
+                enabled: root.albumMode || root.newFolderCreation
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
             }

@@ -709,6 +709,46 @@ ApplicationWindow {
         photoContextMenu.popup(item, x, y)
     }
 
+    // #4534: a mappacsoport aktuális rácssorrendjében a legelső kijelölt
+    // képtől a csoport végéig kijelöl, majd megnyitja a mappa tulajdonságait.
+    function splitFolderHere() {
+        if (!controller || controller.currentFolder === ""
+                || controller.currentAlbumToken !== ""
+                || controller.currentPersonName !== "")
+            return
+        var rows = window.selectedRows()
+        if (rows.length === 0) return
+        var currentFolder = controller.currentFolder
+        var first = -1
+        for (var i = 0; i < rows.length; ++i) {
+            var row = Number(rows[i])
+            var path = controller.photos.filePathAt(row)
+            if (path.substring(0, path.lastIndexOf("/")) === currentFolder
+                    && (first < 0 || row < first))
+                first = row
+        }
+        if (first < 0) return
+        var range = controller.photos.groupRange(first)
+        if (range.length !== 2) return
+        var paths = []
+        var selected = []
+        for (var row = first; row <= Number(range[1]); ++row) {
+            var imagePath = controller.photos.filePathAt(row)
+            if (imagePath.substring(0, imagePath.lastIndexOf("/"))
+                    !== currentFolder)
+                return
+            paths.push(imagePath)
+            selected.push(row)
+        }
+        if (paths.length === 0) return
+        var photo = controller.photos.itemAt(first)
+        var date = photo && photo.takenAt ? photo.takenAt.substring(0, 10) : ""
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
+        window.selectedIndexes = selected
+        window.selectedIndex = first
+        folderPane.openSplitFolderHere(paths, date)
+    }
+
     // Kijelölés-logika (Picasa): sima katt = egy kép; Ctrl = hozzávesz/
     // elvesz; Shift = tartomány a horgonytól. (Számítás: selection.js)
     function handleThumbClick(index, modifiers) {
@@ -4552,6 +4592,8 @@ ApplicationWindow {
         // #9 (2. lépés): albumtagság — #305 null-őr
         albums: controller ? controller.albums : []
         currentAlbumToken: controller ? controller.currentAlbumToken : ""
+        currentFolder: controller ? controller.currentFolder : ""
+        onSplitFolderRequested: window.splitFolderHere()
         onAddToAlbumRequested: function(token) {
             if (controller) controller.addRowsToAlbum(window.selectedRows(), token)
         }
