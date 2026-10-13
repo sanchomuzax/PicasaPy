@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import errno
+import os
 import socket
 import time
 from pathlib import Path
@@ -25,6 +26,11 @@ from tests.app.qml_functional.conftest import _build_qml_app
 _REPO = Path(__file__).resolve().parents[3]
 _KEPMENTES = _REPO / "docs" / "assets" / "paritas-tiszta-profil"
 _QML_REFS = []
+
+# Kapcsoló: a dokumentációs képek (docs/assets/paritas-tiszta-profil/) csak
+# akkor íródnak felül, ha PICASAPY_DOKUKEPEK=1 be van állítva. Alapból a
+# képernyőképek a tmp_path alá kerülnek, így a futás nem piszkítja a munkafát.
+_DOKUKEPEK_KAPCSOLO = "PICASAPY_DOKUKEPEK"
 
 
 def _var(qt_app, feltetel, masodperc: float = 8.0) -> bool:
@@ -101,8 +107,14 @@ def _nyisd_meg_a_nezot(window, qt_app):
     )
 
 
-def _kepernyokep(window, fajlnev: str):
-    _KEPMENTES.mkdir(parents=True, exist_ok=True)
+def _kepmappa(tmp_path_factory) -> Path:
+    if os.environ.get(_DOKUKEPEK_KAPCSOLO) == "1":
+        return _KEPMENTES
+    return tmp_path_factory.mktemp("kepernyokepek")
+
+
+def _kepernyokep(window, mappa: Path, fajlnev: str):
+    mappa.mkdir(parents=True, exist_ok=True)
     image = window.grabWindow()
     assert not image.isNull(), "az alkalmazásablakról nem készült kép"
     if image.width() > 600:
@@ -110,7 +122,7 @@ def _kepernyokep(window, fajlnev: str):
             600, Qt.TransformationMode.SmoothTransformation
         )
     image = image.convertToFormat(QImage.Format.Format_Grayscale8)
-    cel = _KEPMENTES / fajlnev
+    cel = mappa / fajlnev
     iro = QImageWriter(str(cel), b"png")
     iro.setCompression(9)
     assert iro.write(image), f"a képernyőkép nem menthető: {iro.errorString()}"
@@ -188,7 +200,7 @@ def qml_tiszta_app(tiszta_profil_kornyezet, qt_app, tmp_path, request):
 
 
 @pytest.fixture
-def tiszta_app(qml_tiszta_app, tiszta_profil_kornyezet):
+def tiszta_app(qml_tiszta_app, tiszta_profil_kornyezet, tmp_path_factory):
     window, controller, engine = qml_tiszta_app
     profil, probalkozasok = tiszta_profil_kornyezet
     app = {
@@ -198,6 +210,7 @@ def tiszta_app(qml_tiszta_app, tiszta_profil_kornyezet):
         "edit": engine.rootContext().contextProperty("editController"),
         "profile": profil,
         "attempts": probalkozasok,
+        "kepek": _kepmappa(tmp_path_factory),
     }
     assert not (profil / "data" / "picasapy" / "models").exists()
     return app
@@ -217,7 +230,7 @@ def _lep_mappa_betoltes_es_indexkep_racs(tiszta_app, qt_app):
     )
     grid = _elem(window, "photoGrid")
     assert grid.isVisible() and grid.property("count") == 1
-    _kepernyokep(window, "01-racs.png")
+    _kepernyokep(window, app["kepek"], "01-racs.png")
     assert not app["attempts"], f"indításkor hálózati próbálkozás történt: {app['attempts']}"
 
 
@@ -346,7 +359,7 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
         f"(visible={dialog.isVisible()}, "
         f"attempts={app['attempts']})"
     )
-    _kepernyokep(dialog, "02-arcfelismeres.png")
+    _kepernyokep(dialog, app["kepek"], "02-arcfelismeres.png")
     assert dialog.property("detectorAvailable") is True, (
         "a tiszta profilban nincs elérhető arcdetektor; a felület letöltést kér"
     )
@@ -394,12 +407,12 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app):
     assert _var(qt_app, lambda: "redeye" in edit.effectChain.casefold()), (
         "a vörösszem-kijelölés alkalmazása nem került a szerkesztési láncba"
     )
-    _kepernyokep(window, "03-vorosszem.png")
+    _kepernyokep(window, app["kepek"], "03-vorosszem.png")
     assert not app["attempts"], f"vörösszem-javítás közben hálózati próbálkozás történt: {app['attempts']}"
 
 
-def _ellenorizd_kepernyokepek_meretet():
-    kepek = sorted(_KEPMENTES.glob("*.png"))
+def _ellenorizd_kepernyokepek_meretet(mappa: Path):
+    kepek = sorted(mappa.glob("*.png"))
     assert len(kepek) == 3, f"nem készült el mindhárom képernyőkép: {kepek}"
     osszesen = sum(kep.stat().st_size for kep in kepek)
     assert osszesen < 1_000_000, f"a képernyőképek együtt {osszesen} bájtosak"
@@ -408,8 +421,14 @@ def _ellenorizd_kepernyokepek_meretet():
 def test_tiszta_profil_funkciok_valodi_kattintassal(
     tiszta_app, qt_app, tmp_path_factory,
 ):
-    """A teljes felhasználói útvonal egy valós, izolált QML-appban fut."""
-    for regi in _KEPMENTES.glob("*.png"):
+    """A teljes felhasználói útvonal egy valós, izolált QML-appban fut.
+
+    A képernyőképek a tmp_path alá kerülnek. Dokumentációs frissítéshez
+    PICASAPY_DOKUKEPEK=1 kell; ekkor a docs/assets/paritas-tiszta-profil/
+    régi PNG-it a teszt előbb törli, és felülírja az újakkal.
+    """
+    mappa = tiszta_app["kepek"]
+    for regi in mappa.glob("*.png"):
         regi.unlink()
     _lep_mappa_betoltes_es_indexkep_racs(tiszta_app, qt_app)
     _lep_csillag_valodi_kattintassal(tiszta_app, qt_app)
@@ -419,4 +438,4 @@ def test_tiszta_profil_funkciok_valodi_kattintassal(
     _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory)
     _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app)
     _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app)
-    _ellenorizd_kepernyokepek_meretet()
+    _ellenorizd_kepernyokepek_meretet(mappa)
