@@ -406,6 +406,7 @@ def legalabb_ket_betucsalad(qt_app, tmp_path_factory):
     """
     from PySide6.QtGui import QFontDatabase
 
+    from picasapy.render.text_fonts import clear_family_cache
     from support.betucsalad import atnevezett_betu
 
     from support.betucsalad import BETU_FORRAS
@@ -421,11 +422,14 @@ def legalabb_ket_betucsalad(qt_app, tmp_path_factory):
         )
         azonositok.append(QFontDatabase.addApplicationFont(str(masolat)))
     assert all(a >= 0 for a in azonositok), "a próbabetű nem tölthető be"
+    # #4964: a regisztráció megváltoztatta a családlistát, a gyorsítótár régi
+    clear_family_cache()
     try:
         yield
     finally:
         for azonosito in azonositok:
             QFontDatabase.removeApplicationFont(azonosito)
+        clear_family_cache()
 
 
 @pytest.fixture
@@ -440,7 +444,11 @@ def renderelo_betuk(qt_app):
     """
     from PySide6.QtGui import QFont, QFontDatabase
 
-    from picasapy.render.text_fonts import FONT_FAMILIES, font_path_for
+    from picasapy.render.text_fonts import (
+        FONT_FAMILIES,
+        clear_family_cache,
+        font_path_for,
+    )
     from support.betucsalad import betufajlok_regisztralasa, potlando_betufajlok
 
     jeloltek = [
@@ -464,6 +472,8 @@ def renderelo_betuk(qt_app):
             helyettesitesek[csalad.key] = nevek[0]
     for kulcs, csaladnev in helyettesitesek.items():
         QFont.insertSubstitution(kulcs, csaladnev)
+    # #4964: a regisztráció megváltoztatta a családlistát, a gyorsítótár régi
+    clear_family_cache()
     try:
         yield
     finally:
@@ -471,3 +481,4 @@ def renderelo_betuk(qt_app):
             QFont.removeSubstitutions(kulcs)
         for azonosito in regisztralt.values():
             QFontDatabase.removeApplicationFont(azonosito)
+        clear_family_cache()

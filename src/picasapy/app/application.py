@@ -54,6 +54,7 @@ from picasapy.perf.tesztuzem import (
     tarolo_tipusa,
     tesztuzem_bekapcsolva,
 )
+from picasapy.render.text_fonts import clear_family_cache
 from picasapy.scanner import (
     EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME,
@@ -755,6 +756,9 @@ def _install_ui_font(app: QGuiApplication) -> None:
         font_id = QFontDatabase.addApplicationFont(str(path))
         if font_id >= 0:
             families.extend(QFontDatabase.applicationFontFamilies(font_id))
+    # #4964: a betű-regisztráció megváltoztatta a családlistát, a korábbi
+    # lenyíló-gyorsítótár már nem stimmel
+    clear_family_cache()
     if _UI_FONT_FAMILY not in families:
         return
     font = app.font()
