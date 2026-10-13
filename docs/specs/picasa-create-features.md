@@ -4597,6 +4597,31 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 - Ghidra-kör kell: `0x00810420` — a `textstyle1` `d` (`desc+0xec`, nem pozitív értéknél `desc+0xe8/3`) pontos időszemantikája, valamint a `0x809c50` hívásban a `H+0x2c`-t adó virtuális geometriai eredmény forrása? [blokkoló]
 - Mérés kell: eredeti Picasa 3.9 filmexport mindhárom stílussal, kockánkénti timestamp/pozíció/alfa/karakter-kiolvasással. A helyi `meroadat.tar` releváns film- vagy szövegdia-exportmintát nem tartalmazott; a referenciakockák és a natív ütem ezért `NINCS MEG`.
 
+##### G.7.8.7 6. kör (2026-10-13): a két blokkoló Ghidra-pont — mi dőlt el, mi nem
+
+*Bemenet: `~/picasapy-agent/referencia/ghidra-koteg-2026-10-13/0074d970.c` és `008127b0.c` (a `0x813330`, `0x80a930`, `0x611320`, `0x612350` callee-törzsekkel). A kötegben lévő `00715280.c` és `0071c4f0.c` a `+0x108/+0x10c` és a `+0x1a8` mezőt nem említi (szövegesen ellenőrizve), ezért nem releváns. A `0x74e580` és a `0x812470` dekompilátuma ebben a körben nincs meg.*
+
+**1. A seed forrása (`CDXSlideshowPin+0x108/+0x10c`) — NYITOTT maradt.**
+
+- Új, teljes reset-törzs (`0074d970.c`): `EnterCriticalSection(this+0x228)` alatt a `+0x108/+0x10c` qwordot **olvassa**, és ebből másol: `+0x208/+0x20c`, `+0x4b0/+0x4b4`, `+0x4b8/+0x4bc`. Nullázza: `+0x1fc`, `+0x4a8/+0x4ac`, `+0x218/+0x21c`. Visszatérési érték 0. A G.7.8.1 `[this+0x4b0]`/`[this+0x4b8]` másolása megerősítve; a `+0x208/+0x20c` másolás új.
+- A reset **nem ír** a seedbe, az író tehát nincs ebben a fájlban. A seed írója a `0x74e580` (a pin létrehozója) vagy az exporthívási út egy eleme; ennek dekompilátuma nincs a kötegben. Az exportkori seed tehát továbbra is `NINCS MEG`. Ezt nem lehet következtetéssel pótolni, és a `0`-ra való beállítás sem igazolt.
+
+**2. A TimelineXML → render-desc másolási út — RÉSZBEN zárva.**
+
+Zárva (a `008127b0.c` / `0x813330` törzsében látszik):
+
+- A factory desc-argumentuma a `ctx+0x1a8`: `008127b0.c:52`, `:69`, `:83` (`FUN_00810420(param_1, param_1 + 0x1a8)`).
+- A `0x813330` ugyanezt a desc-et adja a `0x812aa0`-nak (`FUN_00812aa0(param_1, param_1 + 0x1a8, …)`), és a `*(int *)(param_1 + 0x1a8) == 4` ellenőrzéssel a `ctx+0x1432` jelzőt állítja be. A desc első dword-je tehát típusmező.
+- A másoló-segéd (`0x612350`) a `[ESI+0xe4 … 0xf4]` öt dword-öt a `[EDI+0xe4 … 0xf4]`-ből másolja. Ez pontosan a factory által olvasott időblokk: `+0xe8` advanceinterval, `+0xec` transitiontime, `+0xf0` blacktime, `+0xf4` extra. A cél (ESI) és a forrás (EDI) a hívás előtt regiszterben van.
+- A rekordlépés `0xf8`: a `0x813330` a `ctx+0x90` bázisból és a `ctx+0x94 >> 1` darabszámból számolja az utolsó rekord végidejét (`rec[+0xe8] + rec[+0xf0] + rec[+0xf4]`). A `0x611320` és a `0x80a930` ugyanezt a darabszámot az objektum `+0x4c`-jéről olvassa (`>> 1`), az indexet `+0x148`-ról. Ha az objektum `ctx+0x48`, ez egybevág a `ctx+0x90/+0x94` olvasásával (`obj+0x48` bázis, `obj+0x4c` darabszám). **Ez szerkezeti egyezés, nem bizonyíték** az objektum azonosságára: a `008127b0`-ban az EAX-ban lévő `this` értéke nem látszik.
+
+Nyitva:
+
+- A `008127b0` melyik objektumból (EAX) és melyik rekordból (EDI) másol `0x612350`-nel `ctx+0x1a8`-ba. A `.c`-ben a hívások argumentumai nem látszanak (`FUN_00611320();`, `FUN_00612350();`). A „`ctx+0x48` → `ctx+0x1a8`” állítás a korábbi asm-olvasatra támaszkodik (`0x812553`–`0x81258c`, `0x8129c1`–`0x8129e2`), amelyet ez a kör nem tudott újraellenőrizni.
+- A parser-szülő azonossága: a TimelineXML `this+0x4c` szülőpointere exportkor ugyanaz-e, mint a render `ctx` — `NINCS MEG`.
+
+**3. Mit nem lehet ebből még állítani.** Az animáció képkockánkénti értéke (`t_k`, a `k↔t` leképezés, a Gördülő pixel-végpontjai, a „Jó napom van” `H+0x2c` végpontja) a seed és a parser-szülő azonossága nélkül nem zárható le. A referencia-mérés (Picasa 3.9 filmexport) szintén hiányzik. A jegy „Kész, ha” pontjai ezért nem teljesíthetők ebből a körből.
+
 #### G.7.9 Értékjegyzék a #4615 átadáshoz
 
 | érték vagy állítás | forrás |
@@ -4606,7 +4631,9 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 | timestamp átváltó osztó `10 000 000` | bináris (`0x00989680`, operandus `0x74e1ee`) |
 | `+0.02` időeltolás | mérés (G.6.2 szintetikus natív ellenőrzés; literál `0x00cf48a8`) |
 | `CTransTimeline::UI::vftable = 0x00cbdcec`, `0x80c230` slot = 29 / vcall offset `0x74` | bináris (`RTTI 0xcbdcec`; `0x74e248`–`0x74e251`) |
-| render factory desc pointere `ctx+0x1a8` | bináris (`0x8128a2`–`0x8128aa`; `0x813804`–`0x81380c`) |
+| render factory desc pointere `ctx+0x1a8` | bináris (`0x8128a2`–`0x8128aa`; `0x813804`–`0x81380c`; `008127b0.c:52,69,83`; `0x813330` → `0x812aa0`) |
+| reset (`0x74d970`) olvassa a seedet, és másolja `+0x208/+0x20c`, `+0x4b0`, `+0x4b8`-ba; nullázza `+0x1fc`, `+0x4a8`, `+0x218`-at | bináris, teljes dekompilátum (`0074d970.c`, G.7.8.7) |
+| film-végidő és darabszám: `ctx+0x90` bázis, `ctx+0x94>>1` darabszám, `0xf8` lépés | bináris (`0x813330`, a `008127b0.c` callee-törzse); az objektum azonossága `ctx+0x48` szerkezeti egyezés, nem bizonyíték |
 | TimelineXML `this+0x50` → szülő `+0x48` lista, majd render `ctx+0x48` → `ctx+0x1a8` rekordmásolás | bináris (`0x8152f0`, `0x816360`, `0x80a460`, `0x812470`, `0x8127b0`, `0x612350`); a szülőpointer és render-context azonossága nyitott |
 | Írógép natív üteme `len/d` bájt/s; `d=transitiontime`, nem pozitív esetén `advanceinterval/3` | bináris (`0x8104b9`–`0x8104dc`; G.6.3/G.6.7) |
 | Gördülő interpoláció `3p²−2p³`, időmező `advanceinterval` | bináris (`0x818cf0`; `0x810fe5`; G.6.4/G.7.5) |
