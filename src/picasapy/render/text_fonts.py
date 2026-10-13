@@ -19,6 +19,7 @@ használható TrueType-fájl sincs, a hívó a régi Hershey-úton rajzol továb
 
 from __future__ import annotations
 
+import functools
 import os
 from collections.abc import Iterable
 from pathlib import Path
@@ -94,22 +95,43 @@ DEFAULT_FAMILY = "arial"
 _FAMILY_BY_KEY = {family.key: family for family in FONT_FAMILIES}
 
 
+@functools.lru_cache(maxsize=1)
+def _installed_families() -> tuple[str, ...]:
+    """A Qt által látott családok, rendezve; futás alatt egyszer kérdezzük le.
+
+    #4964: a lista futás közben nem változik, ezért nem kell minden
+    lenyíló-hívásnál újra lekérdezni a rendszert.
+    """
+    from PySide6.QtGui import QFontDatabase
+    return tuple(
+        sorted(
+            set(QFontDatabase.families()),
+            key=lambda family: (family.casefold(), family),
+        )
+    )
+
+
+def clear_family_cache() -> None:
+    """Üríti a családlista gyorsítótárát (tesztekhez, betű-regisztráció után)."""
+    _installed_families.cache_clear()
+
+
 def family_labels() -> list[dict[str, str]]:
     """A felület lenyílójának adata: `key` + megjelenő `label`.
 
     A Qt-adatbázis csak már létrejött `QGuiApplication` mellett kérdezhető
     le. Az appban ezért a telepített családok adják a listát; önálló, Qt
     nélküli renderelő-hívásnál megmarad a Pillow-kompatibilitási lista.
+    Minden hívás friss dict-listát ad, így a hívó módosítása nem rontja el
+    a következő hívás eredményét.
     """
     try:
-        from PySide6.QtGui import QFontDatabase, QGuiApplication
+        from PySide6.QtGui import QGuiApplication
 
         if QGuiApplication.instance() is not None:
-            families = sorted(
-                set(QFontDatabase.families()),
-                key=lambda family: (family.casefold(), family),
-            )
-            return [{"key": family, "label": family} for family in families]
+            return [
+                {"key": family, "label": family} for family in _installed_families()
+            ]
     except ImportError:  # Qt nélküli, csak Pillow-t használó hívó
         pass
     return [{"key": f.key, "label": f.label} for f in FONT_FAMILIES]
@@ -219,6 +241,7 @@ __all__ = [
     "DEFAULT_FAMILY",
     "FONT_FAMILIES",
     "FontFamily",
+    "clear_family_cache",
     "default_family",
     "family_labels",
     "font_path_for",
