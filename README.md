@@ -11,6 +11,10 @@
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
+<p align="center">
+  <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy – photo grid / képrács" width="700">
+</p>
+
 <p align="center"><a href="#english">English</a> · <a href="#magyar">Magyar</a></p>
 
 # English
@@ -27,12 +31,6 @@ PicasaPy is an open-source photo manager and editor built with Python, PySide6, 
 - **Metadata, faces, and places:** read photo metadata and write captions to image files; detect and group faces, assign names, and view or edit geotags on a map.
 - **Export and sharing:** export edited photos and videos, create HTML galleries and XMP sidecar files, and prepare photo attachments in the system email application.
 - **Movies, collages, and printing:** create movies from photos and compose collages; print photos and contact sheets or split an image across pages for a poster.
-
-## Screenshot
-
-<p align="center">
-  <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy library window showing a photo grid" width="700">
-</p>
 
 ## Installation and running
 
@@ -94,12 +92,6 @@ A PicasaPy nyílt forráskódú fotókezelő és képszerkesztő Python, PySide6
 - **Metaadatok, arcok és helyek:** fotómetaadatok olvasása és képfeliratok fájlba írása; arcok felismerése és csoportosítása, elnevezése, valamint geocímkék megtekintése és szerkesztése térképen.
 - **Exportálás és megosztás:** szerkesztett fényképek és videók exportálása, HTML-galériák és XMP-kísérőfájlok készítése, valamint fényképek előkészítése a rendszer levelezőprogramjához.
 - **Filmek, kollázsok és nyomtatás:** fényképekből film készítése és kollázsok összeállítása; fényképek és indexképlapok nyomtatása, illetve poszter több lapra bontása.
-
-## Képernyőkép
-
-<p align="center">
-  <img src="docs/assets/screenshot-fo-ablak.png" alt="A PicasaPy könyvtára képrács-nézetben" width="700">
-</p>
 
 ## Telepítés és futtatás
 
