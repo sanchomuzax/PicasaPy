@@ -2747,31 +2747,23 @@ még nincs valódi fotórekorddal natívan megmérve. A mezők tartalma
 **NINCS MEG**; „minőség”, „pontszám” vagy más szemantikus címke nem
 következtethető ki az eltolásból.
 
-**A rekordmezők íróinak pásztázása — pontos eltolás, a célrekord írója nyitott
-(2026-10-05, #4194 folytatás).** A teljes `.text` `+0x30/+0x34` írásainak
-pásztázása több, egymástól eltérő rekord- és objektumtípust talált; az
-eltolás egyezése önmagában nem azonosít típust. A releváns jelölt
-`0x00823620`: `0x823b3b`-nél a saját, `0x38` bájtos kimeneti rekord
-`+0x30` mezőjébe egy bemeneti dword-vektor elemét, `0x823b4b`-nél a
-`+0x34` mezőjébe egy másik bemeneti vektor elemét írja. Ugyanebben a
-függvényben a rekord `+0x30` értékével egy táblázatot indexel
-(`0x823b92`–`0x823bb0`), a `+0x34` értékét pedig egy virtuális metódusnak
-adja át (`0x823c53`–`0x823c69`); a rekord további mezőit a
-`conf/pan/leye/reye/mouth` szövegannotáció köti arcjellemzőkhöz
-(`0x823c41`).
+**A rekordmezők íróinak pásztázása — a korábbi `0x00823620` jelölt
+visszavonva (2026-10-12, #4194 6. kör).** A 2026-10-05-i olvasat azt
+állította, hogy a `0x00823620` a rekord `+0x30/+0x34` mezőit tölti. A teljes
+utasításszintű újraolvasás ezt nem támasztotta alá: a `0x00823620` 0x38
+bájtos elemeket mozgató vektor-assign, de benne nincs rekordbázishoz
+viszonyított `+0x30` hozzáférés; a talált `0x30` displacementek
+`%esp`-relatívak. A korábbi mezőírás-állítás ezért **helyesbítve**:
+`0x00823620` nem igazolt írója a Filmkészítő rekordmezőknek.
 
-Ezt az írót a `0x00824090` közvetlen hívása kapcsolja egy
-`[this+0x4e0]` kimenethez (`0x824164`–`0x824181`). A Filmkészítő útján
-`0x006175c0` hívja a `0x0081b800`-at, amely szintén `[this+0x4e0]`-t
-használ. A két, azonos eltolású lista objektumazonossága
-**nincs bizonyítva**. A teljes írópásztázás más ütközést is talált:
-`0x004e41f0` egy beágyazott `0x38` bájtos alobjektum `+0x30/+0x34`
-mezőit nullázza (`0x4e438c`–`0x4e43cd`), miközben ugyanazon külső objektum
-`+0x4e0` listáját külön inicializálja (`0x4e4510`–`0x4e4516`). Ezért a
-Filmkészítő rekordjának tényleges írója és a `+0x30/+0x34` szemantikája
-**NINCS MEG**; az `0x00823620` archoz kötött adatútja nem bizonyítja, hogy
-a Filmkészítő rekordjában a mezők arcszámot, arcméretet vagy pontszámot
-tárolnak.
+A `[obj+0x4e0]` vektorhoz tartozó lehetséges előkészítő út a
+`0x00824090` (`0x824164`–`0x824181`), amely a `0x00823620` vektor-assignet
+hívja; a teljes rekordtartalom forrását és a `+0x30/+0x34` mezők íróját
+azonban ez nem zárja le. A korábbi `0x004e41f0` találat egy beágyazott,
+0x38 bájtos alobjektum mezőinek nullázása (`0x4e438c`–`0x4e43cd`), nem
+bizonyított Filmkészítő-rekordírás. A rekordíró és a mezők szemantikája
+**NINCS MEG**; az eltolás- vagy listaméret-egyezés önmagában nem azonosít
+rekordtípust.
 
 **A `0x00874320` hívási adatai — a két út mezői azonosítva, az elemek
 jelentése nyitott (2026-10-05, #4194 folytatás).** A `0x0081b800` két
@@ -2805,28 +2797,30 @@ A korábbi QEMU-próba a szintetikus `[0,2]` adattartalmú bemeneti vektorral nu
 valódi gyűjteményrekord-indexekkel végzett futás, ezért nem igazolja a
 vektorelemeket vagy a megtartott fotót.
 
-**Bizonyítottsági határ:** a `0x008781a0` reducer minimum- és döntetlenszabálya
-**megerősített**: A) utasításszintű olvasat; B) külön natív QEMU-futtatás.
-A kiválasztási algoritmus ága és döntési szabálya szintén **megerősített**:
-`ordering=0` alatt súlyozott getterminimum, `ordering=1/2` alatt minimális
-összköltségű gráfút. A HOG/Neven nevesítése és súlyainak hozzárendelése
-**feltételes** (utasításszintű bizonyíték). A csoport konkrét fotójának
-indexe, a gettermezők szemantikája és a gráf-élek pontos költségképzése **NINCS MEG**. Ezért az
-„első”, „utolsó” vagy „jobb minőségű” fotó minden csoportra érvényes állítása
-nem tehető; csak a nulla `ordering` pontozott útján bizonyított, hogy nem
-mindig az első nyer.
+**Bizonyítottsági határ:** a `0x008781a0` reducer minimum- és
+döntetlenszabálya **megerősített**: A) utasításszintű olvasat; B) külön
+natív QEMU-futtatás. A küszöb alatti csoportosítás szintén
+**megerősített** a `0x0081ae10` utasításai és a pontos időbélyegű QEMU-mérés
+alapján. A megtartási utak mechanikája viszont **feltételes**: az
+`ordering=0` súlyozott getter-minimumát és az `ordering=1/2`
+minimális-költségű útját a diszasszembly, illetve a hívási/RTTI/vtable
+visszakötés ugyanabba az irányba mutatja, de a teljes képlista egyik útja
+sem adott vissza fotóindexet. A konkrét kép, a rekordmezők jelentése és a
+gráfélek pontos költségképzése **NINCS MEG**. Ezért nem bizonyított, hogy a
+valódi Picasa egy adott küszöbcsoportból melyik képet tartja meg; az
+„első”, „utolsó” vagy „jobb minőségű” általános szabály sem állítható.
 
 **Fejlesztési átvezetés a #4182-höz:**
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Az eredeti bináris a szomszédos idők között `delta >= T` esetén új csoportot kezd. `ordering=0` súlyozott getterminimumot választ; a feltételes scorerazonosítás szerint ez HOG `1.0` súlyú és beállítástól függő Neven `0.4f` súlyú értékeit összegzi. `ordering=1/2` minimumköltségű gráfútvonalat választ. A `+0x30/+0x34` rekordmezők használata ismert, a rekordírójuk és szemantikájuk, a gráfélek pontos költsége és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` tárolódik és átadódik a QML/controller rétegen; az `src/` alatti hivatkozásokban nincs képszűrési fogyasztó. Az `ordering` 0/1/2 és a `removelowresfaces` mező átadása megvan. | A #4182-ben a `delta >= T` szomszédos csoportosítás implementálható. A megtartási algoritmusban `ordering=0`-nál reprodukáld a getterek súlyozott minimumát, `ordering=1/2`-nél a költségminimumú útvonalat; ne nevezd a minimális pontszámot képi minőségnek. A fotórekord mezőinek előállítását és a gráf-élek költségét csak az alább nyitott rekordíró/index-visszakötés tisztázása után implementáld. `Kész, ha`: (1) #4182 implementációja ugyanazt az időcsoportot adja a QEMU-s `[0,3240,6480]` és `[0,3600,7200]` esetekre; (2) `ordering=0` két valós rekordos etalonban a súlyozott getterminimumot és döntetlennél az első bejárt jelöltet adja; (3) `ordering=1/2` valódi rekord-indexű etalonjai a minimális összköltségű útvonalat és döntetlen esetén a korábbi elődöt adják; (4) az etalonok kimeneti fotóindexe diszasszemblálással vagy natív futással függetlenül egyezik. |
+| Az eredeti bináris a szomszédos, egész másodpercre kerekített idők között `delta >= T` esetén új csoportot kezd (megerősített). A kiválasztási utak statikus mechanikája `ordering`-függő, de a tényleges fotóindex **NINCS MEG**; a getterek képi jelentése, a rekordíró és a gráf-élek teljes költsége nyitott. | A `burstmodethresh` csúszkaérték tárolódik és átadódik, de nincs képszűrési fogyasztó (`CreateDialogs.qml:70–80, 496–497, 1035`; `create_controller.py:727–729, 806–807, 872`; `mxf.py:125–126, 202–203, 322–323`). `slideshow.py:624–637`: `ordering=0` színátlag-közelségű lánc, `ordering=1` bemeneti sorrend, `ordering=2` `st_mtime`-rendezés. | **#4182:** implementáld a bizonyított csoportosítást: csak `T>0` esetén, a bemeneti lista szomszédos elemei között, egész másodpercre kerekített időkkel, `delta >= T` határral. A megtartási algoritmust ne jelöld eredetihűnek és ne igazítsd a statikus minimumleíráshoz addig, amíg a #181 szerinti eredeti Picasa-kimenet nem ad fotóindex-etalonokat, és egy attól független bináris/QEMU-út nem egyezik velük. `Kész, ha`: (1) `T=0` nem csoportosít; (2) a `[0,3240,6480]→[0,0,0]`, `[0,3600,7200]→[0,1,2]` és `[0,3240,7200]→[0,0,1]` pontos etalonok teljesülnek; (3) a tényleges képmegtartás csak eredeti Picasa-méréssel és függetlenül egyező bináris/QEMU-eredménnyel kerül eredetihűként elfogadásra. |
 
 Nyitott: melyik konkrét fotórekord-index felel meg egy kiválasztott
 jelöltnek; ki írja a Filmkészítő `[obj+0x4e0]` rekordlistáját; mit jelentenek
 a `+0x30/+0x34` mezők; hogyan áll elő a `ordering=1/2` gráf minden élének
 költsége. Célzott következő kör:
-`Ghidra-kör kell: 0x00823620 — a Filmkészítő [obj+0x4e0] lista 0x38 bájtos rekordjának írója, a +0x30/+0x34 mezők forrása és jelentése [blokkoló]`
+`Ghidra-kör kell: 0x00824090 — a Filmkészítő [obj+0x4e0] lista rekordforrása, valamint a +0x30/+0x34 mezőket előállító upstream írók [blokkoló]`
 `Ghidra-kör kell: 0x00874320 — a nyolcbájtos kimeneti elemek mezői/indexei hogyan kötődnek a fotórekordokhoz, és mi a 0x00877c50 teljes bemeneti szerződése? [blokkoló]`
 `Ghidra-kör kell: 0x00877c50 — az ordering=1/2 út minden élköltsége mely rekordadatokból áll elő, és hogyan lesz a végső útból fotóindex? [blokkoló]`
 
@@ -3122,6 +3116,19 @@ MEG**.
   Ez **nem** független megerősítő mérés. A mérőadat-csomagban nem volt
   `4194`-hez címkézett natív próba; eredeti Picasa UI-mérés nem történt.
 
+**Kiegészítő közvetlen QEMU-próba (2026-10-13; érvénytelen hám, nincs
+kiválasztási eredmény).** A lokális harness közvetlenül hívta a
+`0x0081c9b0`-at szintetikus, négy rekordos objektummal (`K=2`, csoportok
+`[0,0,1,1]`), majd a `0x00873170` helyére konstans pontszámot visszaadó
+helyettesítőt tett. Mindhárom próbaváltozat (későbbi alacsonyabb pont,
+holtverseny, 1e8 feletti tartalék) eljutott a helyettesítőig, de az a
+hívás negyedik argumentumát `0x10`-nek olvasta pontozókimeneti mutatóként,
+és saját írásánál `SIGSEGV`-vel leállt. Ez a helyettesítő hívási szerződését
+nem utánozta; a crash a hám hibája, nem a Picasa választóé. A próba ezért
+nem szolgáltat pontszámcserés cáfoló eredményt, jelöltindexet vagy független
+viselkedési bizonyítékot. Pontos pontszám-/rekord-hozzárendelés és a
+selector natív kimenete **NINCS MEG**.
+
 | Állítás/érték | Forrás |
 |---|---|
 | Horgony-keresés, spirál és aktuális csoport kizárása | bináris (`0x0081c9b0`, `0x0081d298`–`0x0081d428`) |
@@ -3131,15 +3138,21 @@ MEG**.
 | HOG / Neven vtable-slot | bináris (RTTI `0x00cbdec4` / `0x00cbded4`; slotok `0x00873e40` / `0x008742a0`) |
 | Horgony kezdőértéke és növekvő kiválasztásszám | bináris (`0x00699b95`, `0x0081e220`) |
 | `+0x34` metaadat- és FileTime-út | bináris (`0x0081f270`–`0x0081f2a9`, import `FileTimeToSystemTime` `0x0092210a`) |
-| QEMU-hám leállásának címe | mérés (szintetikus objektum, `SIGSEGV` `0x0081d404`; kiválasztott index nem jött létre) |
+| QEMU-hám leállásának címe | mérés (szintetikus objektum: `SIGSEGV` `0x0081d404`; 2026-10-13-i hibás scorer-helyettesítő: írás `0x10` címre; kiválasztott index egyikből sem jött létre) |
 | Eredeti Picasa által megtartott konkrét fotóindex | NINCS MEG |
 | `+0x30/+0x34` formátumbeli mezőnév és a Neven-logika fotószemantikája | NINCS MEG |
 
-**Cáfoló kísérlet.** Azt a kézenfekvő feltevést próbáltam cáfolni, hogy az
-első bemeneti kép mindig nyer. Az utasításút ezt cáfolja: ha egy későbbi,
-bejárt jelölt pontja szigorúan kisebb az aktuális minimumnál, a
-`0x0081d7b0`–`0x0081d7c4` ág lecseréli a nyertest. A QEMU-próba nem ért el
-pontozást, ezért nem állítok hozzá mért képet vagy pontértéket.
+**Cáfoló kísérlet.** Azt a feltevést próbáltam cáfolni, hogy az első
+bemeneti kép mindig nyer. Az utasításút ellenpéldát ad a statikus
+mechanikára: ha egy későbbi, bejárt jelölt pontja szigorúan kisebb az
+aktuális minimumnál, a `0x0081d7b0`–`0x0081d7c4` ág lecseréli a nyertest.
+A dinamikus ellenpróbához három szintetikus esetet futtattam (későbbi
+alacsonyabb pont, holtverseny, 1e8 feletti tartalék); a hibás scorer-
+helyettesítő `0x10` címen összeomlott, mielőtt pontszámot adott volna.
+Ugyanazzal a bizonyítási mércével ez a QEMU-próba **nem** érvényes cáfoló
+mérés: nincs kimeneti fotóindex vagy mért győztes. A „mindig első” állítás
+statikus selector-mechanikai szinten cáfolt, a tényleges Picasa-kimenet
+továbbra is **NINCS MEG**.
 
 **Bizonyítottsági fok (G/2c):** a `ordering=0` választó **feltételes** — a
 mechanika egy utasításszintű úton megvan, a második út a hívási szerződést,
@@ -3154,7 +3167,7 @@ forrása **NYITOTT**.
 
 **Nyitott.**
 
-- `Ghidra-kör kell: 0x00823620 — a 0x38 bájtos rekord +0x30/+0x34 mezőjének upstream írói és pontos fotórekord-szemantikája [blokkoló]`
+- `Ghidra-kör kell: 0x00824090 — a [obj+0x4e0] rekordlista forrása és a +0x30/+0x34 mezők tényleges upstream írói [blokkoló]`
 - `Ghidra-kör kell: 0x008223e0 — a +0x738 horgonyként visszaadott kulcs forrása, és mely Filmkészítő állapotból ered [blokkoló]`
 - `Ghidra-kör kell: 0x008226e0 — a második horgony-előkészítő ág kimeneti vektorának viszonya a +0x738 horgonyhoz [blokkoló]`
 - `Ghidra-kör kell: 0x0048c440 — a Neven getter 0/1 értékének fotórekord-szemantikája [blokkoló]`
