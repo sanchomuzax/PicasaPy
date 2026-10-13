@@ -4693,7 +4693,7 @@ off_k = floor(k · D / N)                 ; 0x00bcf58a–0x00bcf58e
                                          ; következő lépés: k←k−1, számláló←számláló−D
 ```
 
-A `D`-hez a mag `0x51eb851f` konstans szorzását és `>>6`-ot használja. Az `off_k` a legnagyobb eltolástól csökken. A mátrixépítő (`0x00bcf51d`–`0x00bcf6e9`) `W−x`, `H−y`, a dimenziók és `off_k` alapján készíti a cél→forrás leképezést. A korábbi `filters-decoded.md` §3883-ban gépi kódból levezetett magas szintű alak:
+A `D`-hez a mag `0x51eb851f` konstans szorzását és `>>6`-ot használja. Az `off_k` a legnagyobb eltolástól csökken. A mátrixépítő (`0x00bcf51d`–`0x00bcf6e9`) `W−x`, `H−y`, a dimenziók és `off_k` alapján készíti a cél→forrás leképezést. A folytonos, ideális geometriai alak:
 
 ```
 sx = W / (W + off_k)     tx = off_k · x / W
@@ -4702,15 +4702,63 @@ u  = (X + 0,5) · sx + tx
 v  = (Y + 0,5) · sy + ty
 ```
 
-A mintavevő float32-be írja a koordinátát (`0x00bcf20c`–`0x00bcf23c`), `65536`-tal skálázza (`0x00cf3cb0`), majd az egész konverziós segédút (`0x00c0b1e0` → `0x00c29990`) adja a 16.16-os indexet; a forráspixel az index felső 16 bitjéből jön. Ez pontmintavétel, interpoláció nélkül. Az SSE2-ág mintánként egész bájtokon számol:
+Az utasításokban a mátrixelemek float32-ként tárolódnak. A tényleges
+kerekítési pontok (az `fx`, `fy` az apply függvény float32 képpontkoordinátája):
+
+```
+sx = float32(1 / float32((W + off) / W))
+sy = float32(1 / float32((H + off) / H))
+tx = float32(off - float32(off · (W - fx) / W))
+ty = float32(off - float32(off · (H - fy) / H))
+```
+
+Ez a sor a folytonos geometriai leképezést írja le; az egyes pixeleket a
+natív SSE2-út nem lebegőpontos képlet-újraszámolással, hanem az alábbi
+16.16-os léptetőtáblával mintázza:
+
+1. A transzformáló (`0x00bcefb0`) a float32 `m00`/`m10` együtthatót
+   `65536`-tal szorozza, majd a `0x00c0b1e0` → `0x00c29990` segédúton
+   nullához csonkolt egész lépést készít (`CVTTSD2SI`, `da1428=1`):
+   `step_x = trunc(m00 · 65536)`, `step_y = trunc(m10 · 65536)`.
+2. A forrástéglalapot az affine mátrix inverzével cél-ROI-vá alakítja
+   (`0x00a4a140`, `0x00a4a240`), a határokból `0,499`-et levon, x87
+   `FISTP` nearest-even kerekítéssel egész célhatárokat képez, majd a
+   `0x009aaae0` lépéssel metszi őket a célképpel. Az üres ROI kimarad.
+3. Az első célpixel-középből float32 forráskoordinátát készít; annak
+   `65536`-szorosát nullához csonkolja. A vízszintes pozíciók egész
+   hozzáadással készülnek:
+
+   ```
+   base_x = trunc(float32(m00·(x0+0,5) + m01·(y+0,5) + m02) · 65536)
+   Ux(j) = base_x + j · step_x
+   Uy(y) = trunc(float32(m10·(x0+0,5) + m11·(y+0,5) + m12) · 65536)
+   ```
+
+   A négylane-es SSE2-csoport `[base, base+step, base+2·step,
+   base+3·step]`; a következő csoport a `4·step` egész hozzáadásával indul
+   (`0x00bcf0f4`–`0x00bcf1d5`). RadialBlur esetén `m01=m10=0`, tehát a
+   függőleges 16.16 koordináta egy soron belül állandó.
+4. A 16.16 koordináta felső 16 bitje adja a forrás `x`/`y` indexet
+   (`psrld 16`, `0x00bcf355`/`0x00bcf35a`); a sorfolytonos indexet a
+   `pmaddwd [1,W]` képezi (`0x00bcf36b`). A sor jobb széléről a mag elhagyja
+   azt a célpixelt, amelynek mintája kívülre esne (`0x00bcf2a2`–`0x00bcf2e9`).
+
+Így a geometriai képletsor és a pixelszintű mintavétel külön réteg: utóbbi
+a float32 kezdőértékből, egyszer csonkolt 16.16 lépésből és egész
+léptetésből áll. A táblát az utasításokból vezettük le; a trace csak
+ellenőrző adat, nem a képlet forrása. A hat 16×16-os trace-visszajátszás
+bájtra reprodukálta a natív kimenetet.
+
+Ez pontmintavétel, interpoláció nélkül. Az SSE2-ág mintánként egész
+bájtokon számol:
 
 ```
 acc = floor((38 · sample + 217 · acc) / 256)
 ```
 
-A 38 és 217 súlyok a `0x00bcf0f9`–`0x00bcf0fe` utasításokból jönnek; a mag a BGRA alfát is feldolgozza. Az SSE2-sávhiba és a mintán kívüli célpixel kihagyása a `filters-decoded.md` „A FocalZoom zoom-kernele teljesen” szakaszában szerepel. A használt x87-kerekítési mód a QEMU-futásban ismert; a mátrixépítés teljes köztes műveletsorrendje még nyitott.
+A 38 és 217 súlyok a `0x00bcf0f9`–`0x00bcf0fe` utasításokból jönnek; a mag a BGRA alfát is feldolgozza. Az SSE2-sávhiba és a mintán kívüli célpixel kihagyása a `filters-decoded.md` „A FocalZoom zoom-kernele teljesen” szakaszában szerepel. A használt x87-kerekítési mód a QEMU-futásban ismert.
 
-**x87- és egészkonverzió.** A helyi QEMU-harness `0x027f` vezérlőszót ír be, majd `FLDCW`-vel betölti: RC=`00` (legközelebbi, páros döntés), PC=`10` (53 bites pontosság). Az apply az `x`/`y` double gettereredményt `FSTP m32`-vel float32 képpontkoordinátává írja (`0x00bc250c`–`0x00bc2530`); a kerekítés a vezérlőszó szerinti nearest. Az `amount`-ot a `0x008eea90` segéd `FNSTCW` → `OR 0x0c00` → `FLDCW` → `FISTP` útja csonkolja nullához, majd visszaállítja a korábbi vezérlőszót; ezen az úton nincs `FRNDINT`. A koordináta 16.16-ra alakításánál a harness beállítása mellett a `0x00c29990` `CVTTSD2SI`-t használ, ami szintén nullához csonkol. Ha a `0xda1428` gyorssegéd-jelző 0, a `0x00c299c6` fallback `FISTP qword`-ot és előjel szerinti korrekciót használ; `FRNDINT` ebben az útban sincs. Kontrollmérésben, `0x027f` mellett, a gyorssegéd-jelzők (`0xda1424/0xda1428`) 1↔0 kapcsolása az amount 1 és 50 kimeneti hashét nem változtatta; amount 50-nél az RC=down (`0x067f`) viszont megváltoztatta a hashét. Ez a vezérlőszó érzékenységét mutatja, nem adja meg a mátrixépítés teljes x87 műveleti sorrendjét.
+**x87- és egészkonverzió.** A helyi QEMU-harness `0x027f` vezérlőszót ír be, majd `FLDCW`-vel betölti: RC=`00` (legközelebbi, páros döntés), PC=`10` (53 bites pontosság). Az apply az `x`/`y` double gettereredményt `FSTP m32`-vel float32 képpontkoordinátává írja (`0x00bc250c`–`0x00bc2530`); a kerekítés a vezérlőszó szerinti nearest. Az `amount`-ot a `0x008eea90` segéd `FNSTCW` → `OR 0x0c00` → `FLDCW` → `FISTP` útja csonkolja nullához, majd visszaállítja a korábbi vezérlőszót; ezen az úton nincs `FRNDINT`. A koordináta 16.16-ra alakításánál a harness beállítása mellett a `0x00c29990` `CVTTSD2SI`-t használ, ami szintén nullához csonkol. Ha a `0xda1428` gyorssegéd-jelző 0, a `0x00c299c6` fallback `FISTP qword`-ot és előjel szerinti korrekciót használ; `FRNDINT` ebben az útban sincs. Kontrollmérésben, `0x027f` mellett, a gyorssegéd-jelzők (`0xda1424/0xda1428`) 1↔0 kapcsolása az amount 1 és 50 kimeneti hashét nem változtatta; amount 50-nél az RC=down (`0x067f`) viszont megváltoztatta a hashét. Ez a vezérlőszó érzékenységét mutatja; a mátrix műveletsorrendjét és táblaképzését a fenti, utasításszintű levezetés rögzíti.
 
 **Natív mérés, QEMU-harness alapállapot (`d695d2` érintetlenül 0; általános ág).** Az eredeti `0x00bc24e0` apply és `0x00bcf4b0` mag futott; a getter mezőoffset alapján visszaadó stub, a nézetek kézzel épültek. Az eredeti bináris kezdeti `0x00d695d2` bájtja 0; a harness nem hívja a CPUID-jelzőt beállító `0x00c33d30` függvényt. A mag `0x00bcf6ee` ezért a `0x009dc3d0` általános transzformációs útra ágazik. Ez a QEMU-mérés a jegyben skalár ágnak nevezett út; nem a `focal.py`-ban modellezett speciális SSE2-ág. A generikus út belső blend segédje MMX utasításokat használ, tehát a „skalár” itt az ág megnevezése, nem az összes belső utasításkészlet leírása. A valódi gépen futó SSE2/MMX-út összevetésére a külön `d695d2=1` kontroll szolgál. A másik jelző (`0x00d695d4`) is érintetlenül maradt. A harness saját matematikai segédjelzői `0xda1424/0xda1428=1`, az x87 vezérlőszava `0x027f`. A BGRA bemenet `random.Random(seed).randrange(256)` sorozatából készült. A `focal.zoom_blur` normalizált `x/W, y/H` értéket kapott. A színeredmény az első három csatornán, az alfaeredmény ugyanazon BGRA-bemenet negyedik csatornáján mért bájtszintű eltérés.
 
@@ -4743,23 +4791,38 @@ A 12 alapállapotú futás nyers BGRA kimenete és esettáblája: [2026-10-13-ra
 | 48×20; (14,4; 14); 4909 | 100 | 1415/2880; 30 | 478/960; 30 |
 | 24×1; (7,2; 0,5); 4910 | 50 | 48/72; 44 | 15/24; 29 |
 
-Ebben a forced kontrollban az amount 25 és 25,7 teljes kimenete azonos; SHA-256 mindkettőre `0ee38b71deef72a1f287cf2544cc68941d8db3ae624e97028487bfca1e54f1ca`. A `focal.py` jelenlegi `zoom_blur`-ja az első öt amountot és a két 24×20-as koordinátakontrollt bájtra egyezően adja; 50/75/100-nál a fenti eltérések megmaradnak. Az eltérés oka **NINCS MEG**; értéket nem illesztettünk és képletet nem módosítottunk.
+Ebben a forced kontrollban az amount 25 és 25,7 teljes kimenete azonos; SHA-256 mindkettőre `0ee38b71deef72a1f287cf2544cc68941d8db3ae624e97028487bfca1e54f1ca`. Az itt közölt `zoom_blur`-eltérések a 16.16-os natív léptetőtábla megvalósítása előtti kódállapotot rögzítik; a friss 28 páros összevetés alább található.
+
+**Kiegészítő közvetlen magmérés (#4906, 2026-10-13).** A QEMU-harness közvetlenül a `0x00bcf4b0` magot hívta, a `0x00bc24e0` apply diszasszemblálásával egyező argumentumsorrenddel. ABI-kontrollként a közvetlen `d695d2=0` kimenet bájtra egyezett a korábbi apply-mérés kimenetével 24×20-on, `(x,y)=(7,2;14)`, amount=1 és 50 esetén (a régi kimenetek SHA-256-a rendre `9a54896b6f7c65c5efeb38a5d20b7293bcf1965915d8eafe9e842424dfc0a565` és `8d6701c9b0f79f537ed879564e94beea661a68aaa92b2c31858a5b3d9c9a70f0`). A teszt 16×16 és 33×17 képeken, négy középponttal, amount 0/1/10/25/25,7/50/100 értékekkel futott; `d695d2=0` az eredeti általános ág, `d695d2=1` a kényszerített SSE2-ág. Az összevetés a jelenlegi `src/picasapy/render/focal.py::zoom_blur` modellel készült. A `0x027f` x87 vezérlőszó és a harness `da1424/da1428=1` állapota rögzített. A részletes, bájtszintű bemenetek, mindkét natív ág és a PicasaPy-kimenet hex/base64/SHA-256 adatai, valamint valamennyi eltérő pixel koordinátája a [2026-10-13-radialblur-4906-mag.json](../benchmarks/2026-10-13-radialblur-4906-mag.json) fájlban vannak.
+
+**Natív 16.16-tábla és 28/28 páregyezés (2026-10-13, #4906).** A `src/picasapy/render/focal.py::zoom_blur` most a fenti, utasításszinten levezetett ROI- és léptetőtábla-képletet használja, és a `D=0` eseteket is végigfuttatja. A `tests/render/data/radialblur-4906-pairs.json` 28 közvetlen natív SSE2-bemenet/kimenet párt tartalmaz: 16×16 és 33×17 méretet, hét amountot (0, 1, 10, 25, 25,7, 50, 100), közép- és szélső fókuszokat. A `tests/render/test_radialblur_native_4906.py` mind a 28 kimenetet bájtra ellenőrzi; **28/28 egyezett**. A tesztpárok bemeneti SHA-k szerint deduplikáltak; a léptető köztes adatai és a tömörített trace ellenőrzési hash-e a [2026-10-13-radialblur-4906-koztes.json](../benchmarks/2026-10-13-radialblur-4906-koztes.json) fájlban van. A trace hat 16×16-os visszajátszása bájtra reprodukálta a natív kimenetet; a képletet a disassemblyből vezettük le.
+
+**ABI-cáfoló próba.** A közvetlen hívás első paramétersorrend-változatát a korábbi apply-mérés amount=50-es, 24×20-as kimenete cáfolta: a kimeneti hash nem egyezett; a két float argumentum megfelelő stackhelyre igazítása után pontos egyezés lett. A hibás első futás nem része a nyers mérési fájlnak. A végleges argumentumsorrendet ugyanazon apply-adat amount=1 és 50 kimenetével külön is ellenőriztük.
+
+| W×H; `(x,y)` pixel | SSE2 eltérő pixelek amount `0, 1, 10, 25/25,7, 50, 100` sorrendben | maximum csatornaeltérés amount `25,7, 50, 100` sorrendben |
+|---|---|---|
+| 16×16; `(8,8)` | `0, 0, 0, 57, 86, 131` | `6, 17, 36` |
+| 16×16; `(0,0)` | `0, 0, 0, 66, 140, 201` | `23, 53, 71` |
+| 33×17; `(16,5;8,5)` | `0, 0, 0, 0, 0, 0` | `0, 0, 0` |
+| 33×17; `(0,5;16)` | `0, 0, 0, 27, 105, 384` | `19, 61, 112` |
+
+A 25 és 25,7 natív kimeneti hash-e mind a négy középpontnál azonos. Az általános ág mind a 28 esetben minden pixelnél eltér a korábbi `zoom_blur`-től. A forced SSE2-ág eltérései a 16×16 `(8,8)` esetben amount=25-nél a `x=4…15, y=0…15` tartományban, a 16×16 `(0,0)` esetben szintén `x=4…15, y=0…15` tartományban jelentkeznek; a 33×17 `(0,5;16)` szélső esetben amount=25-nél csak az alsó sor `y=16, x=5…32` tér el. Ezek a régi modell összevetését dokumentálják; a friss implementáció 28/28 SSE2-párra egyezik.
 
 **`Mask` és `ignoreObjects`.** A `runtime/filterdesc.xml:898–902` `_msk` néven `CircularGradientImageMask`-ot hoz létre, majd a RadialBlur gyerek `Mask="{_msk}"` attribútumára köti; ugyanott `ignoreObjects="true"` is szerepel. A `0x00bc2420` a három numerikus mező után `0x00bc4900`-t hívja; ez a `Mask` értéket a közös `this+0x14` mezőbe olvassa. A közös műveletfordító saját utasítás után fűzi a maszkoló utasítást (`0x00bc4ae0`, `MaskInstruction` ág), tehát a maszk az apply fölötti utasításrétegben érvényesül. Az apply törzse nem olvassa. A közös olvasó diszasszemblálásában nincs `ignoreObjects`-lekérés; a bináris ASCII és UTF-16LE literal-keresése sem talált ilyen sztringet. Ez nem zárja ki, hogy a külső XML-/objektumcső használja; a fogyasztó és a láncbeli hatás **NINCS MEG**.
 
-**Bizonyítottsági fok: feltételes.** A vtable/app út és az attribútumoffszetek utasításszintű bizonyítéka egyezik az XML-kötéssel és a natív futással; a forced SSE2-kimenetek függetlenül reprodukálják a korábbi táblát. A QEMU alapállapotú általános ág és a forced SSE2-ág külön eredményt ad; a teljes x87 mátrixműveletsor, a `zoom_blur` nagy amount-eltéréseinek oka és az `ignoreObjects` külső fogyasztója nyitott.
+**Bizonyítottsági fok: megerősített a natív SSE2-ágra.** A vtable/app út, a paraméteroffszetek, a float32 mátrix, az inverz ROI-vágás, a kezdőérték, a csonkolt 16.16 lépés és az egész lane-léptetés utasításszinten levezetett; a 28 közvetlen SSE2-pár bájtra egyezik. A `Mask` közös utasításrétegbeli viselkedése igazolt. A `d695d2=0` általános ág pixelképlete és az `ignoreObjects` külső fogyasztója továbbra is nyitott.
 
 **A #4906 készültsége:**
 
 - Alkalmazó, `amount`/`x`/`y`: ✅ (`0x00bc24e0`; mezők `+0x34`, `+0x24`, `+0x2c`; amount `0x008eea90`-nél nullához csonkolt, x/y pixelben float32).
-- Mintaszám, eltolás, súlyozás és kerekítés: ✅ `N`, `D`, `off`, 16.16 pontminta, 38/217 egész keverés; a QEMU x87 vezérlőszava és az egészkonverzió útja is rögzítve. A teljes x87 műveleti sorrend nyitott.
+- Mintaszám, eltolás, súlyozás és kerekítés: ✅ `N`, `D`, `off`, float32 mátrix, ROI-határ, 16.16 kezdőérték/lépés/lane-sorrend és 38/217 egész keverés utasításszinten levezetve.
 - `Mask`: ✅ igazoltan a közös utasításrétegben, az apply fölött (`filterdesc.xml:898–902`, `0x00bc2420`, `0x00bc4900`, közös fordító).
 - `ignoreObjects`: ⛔ nyitott; a külső fogyasztó nincs azonosítva.
-- Mai kóddal összevetés: ✅ elvégezve; a QEMU alapállapotú általános út eltér, a forced SSE2-ág kis amountokon egyezik, nagy amountokon eltér.
+- Mai kóddal összevetés: ✅ a natív SSE2-ág 28/28 esetben bájtra egyezik a 16×16 és 33×17 méretű bemeneteken, amount 0–100 között. Az általános ág korábbi eltérő kódállapotot rögzítő mérése marad nyitott.
 
 **Cáfoló próba (15.2).** Azt próbáltuk cáfolni, hogy a korábbi 0 eltérésű táblázat a QEMU-harness változatlan alapállapotát írja le. Ugyanazon seedelt 24×20 bemeneten kizárólag `d695d2` változott: érintetlen 0 mellett amount 1-nél 1334/1440 színbájt tért el; forced 1 mellett a modell és a natív kimenet bájtra azonos lett. `d695d4` 0→1 változtatása forced SSE2 mellett amount 1/50/100 esetén nem módosította a kimeneti hashét. A cáfolatot azonos bájtösszehasonlítással végeztük; a régi `amount=1 → 1417` számot egyik ág sem adta.
 
-**Nyitott:** az x87 mátrixépítés pontos köztes kifejezése és a `zoom_blur` nagy amount-eltérésének oka; az általános `0x009dc3d0` út részletes pixelhatása; az `ignoreObjects` külső fogyasztója. Ghidra-kör kell: `0x00bcf4b0` — a `0x00bcf51d`–`0x00bcf6e9` x87-veremből a mátrix float32 elemeinek pontos kifejezése és műveleti sorrendje [blokkoló]. Ghidra-kör kell: `0x009dc3d0` — a `d695d2=0` általános út és a `0x009dc040` blend helper tényleges mintavételezési/akkumulációs képlete [blokkoló]. Ghidra-kör kell: `0x00bc4ae0` — az általános műveletfordító hogyan továbbítja (ha továbbítja) az `ignoreObjects` XML-attribútumot a külső objektumkompozitornak [blokkoló].
+**Nyitott:** a `d695d2=0` általános `0x009dc3d0` út részletes pixelhatása és az `ignoreObjects` külső fogyasztója. Ghidra-kör kell: `0x009dc3d0` — a `d695d2=0` általános út és a `0x009dc040` blend helper tényleges mintavételezési/akkumulációs képlete [blokkoló]. Ghidra-kör kell: `0x00bc4ae0` — az általános műveletfordító hogyan továbbítja (ha továbbítja) az `ignoreObjects` XML-attribútumot a külső objektumkompozitornak [blokkoló].
 
 ---
 
