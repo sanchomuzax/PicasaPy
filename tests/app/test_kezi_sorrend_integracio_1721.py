@@ -2,8 +2,7 @@
 
 A `test_kezi_sorrend_1721.py` a számítást méri Qt nélkül; ez a fájl azt,
 hogy a lánc a végén ÖSSZEÁLL: a `reorderPhotos` hívás után a mappa
-`.picasa.ini`-jében ott a `priority=`, a rács SORRENDJE a húzást követi, és
-a rendezés „kézi sorrend"-re állt.
+`.picasa.ini`-jében ott a `priority=`, a rács SORRENDJE pedig a húzást követi.
 
 A fixture a `test_folder_photo_sort_1436.py` mintája (valódi index, valódi
 JPEG-ek, valódi ini — mock nélkül).
@@ -80,11 +79,6 @@ class TestAHuzasHatasa:
             "az első húzás a mappát kézi rendbe teszi (bootstrap)"
         )
         assert prioritasok["c.jpg"] < prioritasok["a.jpg"] < prioritasok["b.jpg"]
-
-    def test_a_rendezes_kezi_sorrendre_all(self, controller):
-        controller.reorderPhotos([2], 0)
-
-        assert controller.folderPhotoSort == "priority"
 
     def test_a_masodik_huzas_MAR_csak_egy_kulcsot_ir(self, controller, library):
         """Az ADR szabálya: egy áthelyezés nem írja át az egész mappát. A

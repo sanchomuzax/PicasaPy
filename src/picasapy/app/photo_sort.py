@@ -21,16 +21,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from picasapy.index.album_sort import natural_name_key
 from picasapy.index.photo_date import datum_kulcs as _datum_kulcs_kozos
 from picasapy.index.photo_date import photo_date as _photo_date
 
-# QSettings-kulcsok — a `view/` névtér a többi nézet-beállításé is
-# (folderSort, paneSort, thumbCaption, showHidden).
+# Korábbi, globális QSettings-kulcsok (#1436). A #4890 induláskor eltávolítja
+# őket; a mappa sorrendje az ini `priority=` értékeiben él.
 FOLDER_PHOTO_SORT_KEY = "view/folderPhotoSort"
 FOLDER_PHOTO_SORT_REVERSE_KEY = "view/folderPhotoSortReverse"
 
-# A menü szempontjai (spec 6.3: Dátum · Név · Méret · Fordított sorrend) —
-# a „legutóbbi változtatás" a BAL HASÁB menüjéé, ide nem való.
+# A rács belső rendezési szempontjai; a mappa menüje ezeket egyszeri
+# átrendezéshez használja, a módot nem tárolja.
 #
 # #467: a NEGYEDIK a szín. Az eredeti rendezés-motorja ismerte
 # (`CSelectionNode` → `SortColor`, „Rendezés szín alapján"), de a menübe
@@ -100,6 +101,15 @@ def szin_kulcs(record, hues) -> tuple:
     return (SZINES, hue, record.name.casefold())
 
 
+def szin_adat_hiany(records, hues) -> bool:
+    """Igaz, ha a képek közül legalább egynek még nincs indexelt színe (#4890).
+
+    Ilyenkor a szín szerinti sorrend nem végleges: a hiányzó képek a lista
+    végére esnének, és a rendezés kiírná őket az ini-be.
+    """
+    return any(szin_kulcs(record, hues)[0] == NINCS_ADAT for record in records)
+
+
 #: #1721: a kézi hely nélküli képek osztálya — a lista VÉGE (az ADR
 #: szabálya). A színnél is ez a minta (`NINCS_ADAT`).
 VAN_KEZI_HELY, NINCS_KEZI_HELY = 0, 1
@@ -144,7 +154,7 @@ def _sort_key(sort_mode: str, hues=None, prioritasok=None):
         #: rács vagy egy futásfüggő sorrend rosszabb lenne
         helyek = {} if prioritasok is None else prioritasok
         return lambda r: prioritas_kulcs(r, helyek)
-    return lambda r: r.name.casefold()
+    return lambda r: natural_name_key(r.name)
 
 
 def sort_folder_blocks(

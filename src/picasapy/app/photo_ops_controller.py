@@ -60,10 +60,12 @@ from picasapy.fileops import (
     preview_name,
     rename_photos_many,
 )
+from picasapy.app.kezi_sorrend import mappa_prioritasai, mentsd_a_prioritasokat
 from picasapy.index import (
     album_photos,
     open_index,
     photo_by_id,
+    photos_in_folder,
     photos_with_faces,
     photos_with_keyword,
     search_photos,
@@ -941,6 +943,69 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         except (AlbumOrderWriteError, *_WRITE_ERRORS) as error:
             self.albumWriteFailed.emit(str(error))
             self._refresh_view()
+            return False
+        self._refresh_view()
+        return True
+
+    @Slot(str, str, result=bool)
+    def sortFolderBy(self, folder: str, mode: str) -> bool:  # noqa: N802
+        """Egyszer átrendezi a célmappa listáját, és elmenti a kézi sorrendet.
+
+        A rendezési mód nem tárolódik. A névrendezés az album-rendezés
+        természetes összevetését használja; a fordított művelet a már
+        eltárolt kézi sorrendet fordítja meg.
+        """
+        folder = str(folder or "")
+        supported = (*SORT_MODES, "color", "priority")
+        if not folder or not folder.strip() or mode not in supported:
+            return False
+        with open_index(self._db_path) as conn:
+            photos = photos_in_folder(conn, folder)
+        if not photos:
+            return False
+
+        from .photo_sort import sort_folder_blocks, szin_adat_hiany
+
+        prioritasok = mappa_prioritasai(folder)
+        if mode in SORT_MODES:
+            if mode == "reverse":
+                stored_order = sort_folder_blocks(
+                    photos,
+                    "priority",
+                    prioritasok={
+                        (folder, name): value
+                        for name, value in prioritasok.items()
+                    },
+                )
+                ordered = sorted_album(stored_order, mode)
+            else:
+                ordered = sorted_album(photos, mode)
+        elif mode == "color":
+            hues = self._folder_photo_hues(photos)
+            if szin_adat_hiany(photos, hues):
+                # A színindex még nem kész: a fájlnév-sorrend ilyenkor
+                # véglegesen kiíródna, ezért nem rendezünk és nem írunk.
+                return False
+            ordered = sort_folder_blocks(photos, mode, hues=hues)
+        else:
+            ordered = sort_folder_blocks(
+                photos,
+                "priority",
+                prioritasok={
+                    (folder, name): value for name, value in prioritasok.items()
+                },
+            )
+
+        places = {
+            photo.name: float(position)
+            for position, photo in enumerate(ordered, start=1)
+        }
+        try:
+            mentsd_a_prioritasokat(folder, places)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(
+                f"A mappa sorrendje nem menthető ({folder}): {error}"
+            )
             return False
         self._refresh_view()
         return True
