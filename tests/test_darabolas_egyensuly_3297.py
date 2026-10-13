@@ -69,20 +69,12 @@ def idok() -> dict[str, float]:
 
 
 def _egysegek() -> list[str]:
-    """A futtató SAJÁT egységei — nem minden tesztfájl.
-
-    ⚠️ A `tests/app`-on kívüli készlet EGYETLEN részfutás
-    (`_NEM_APP`), nem fájlonkénti: a táblában ezért nem szerepel az 1176
-    tesztfájl mind. A lefedettséget tehát a futtató egységlistájához kell
-    mérni, különben az őr a saját téves nevezőjén bukik (mérve: 468
-    „hiányzó" fájl, holott egyik sem külön egység)."""
+    """A futtató minden tesztfájlja önálló kiosztási egység."""
     gyoker = run_tests._ROOT
-    app = sorted((gyoker / "tests" / "app").glob("test_*.py")) + sorted(
-        (gyoker / "tests" / "app" / "qml_functional").glob("test_*.py")
+    return sorted(
+        str(ut.relative_to(gyoker)).replace("\\", "/")
+        for ut in (gyoker / "tests").rglob("test_*.py")
     )
-    return [run_tests._NEM_APP] + [
-        str(ut.relative_to(gyoker)).replace("\\", "/") for ut in app
-    ]
 
 
 def _terhelesek(idok: dict[str, float]) -> list[float]:
@@ -90,11 +82,14 @@ def _terhelesek(idok: dict[str, float]) -> list[float]:
     számít (nem nullával) — az egyensúly és a határidő így a becsült
     egységekkel együtt is őrzött."""
     egysegek = _egysegek()
-    becsult = run_tests.becsult_idok(egysegek)
+    becsult = run_tests.becsult_idok(egysegek, teljes=True)
     return [
-        sum(becsult[nev] for nev in run_tests._kiegyensulyozott_darab(
-            egysegek, i, DARABOK
-        ))
+        sum(
+            becsult[nev]
+            for nev in run_tests._kiegyensulyozott_darab(
+                egysegek, i, DARABOK, teljes=True
+            )
+        )
         for i in range(1, DARABOK + 1)
     ]
 
@@ -112,13 +107,22 @@ class TestATablaFRISS:
         az egyensúly-őrök azzal együtt számolnak — ez az őr már csak a
         TARTÓS lemaradást fogja meg, hogy a pótlás ne maradjon el."""
         tablaban = {nev.replace("\\", "/") for nev in idok}
+        app_egysegek = [nev for nev in _egysegek() if nev.startswith("tests/app/")]
+        ismert_app = sum(nev in tablaban for nev in app_egysegek)
+        mert_nem_app_osszesites = run_tests._NEM_APP in tablaban
+        ismert = ismert_app + int(mert_nem_app_osszesites)
+        meresi_egysegek = len(app_egysegek) + 1
 
-        hianyzo = sorted(nev for nev in _egysegek() if nev not in tablaban)
-        egysegek = _egysegek()
-
-        assert len(hianyzo) <= len(egysegek) * 0.10, (
-            f"{len(hianyzo)} egység hiányzik a futásidő-táblából "
-            f"({len(egysegek)}-ből): " + ", ".join(hianyzo[:8])
+        assert mert_nem_app_osszesites, (
+            "a teljes nem-app készlet mért összesített ideje hiányzik"
+        )
+        assert run_tests._NEM_APP not in _egysegek(), (
+            "az összesített nem-app mérés nem lehet futtatási egység"
+        )
+        assert ismert / meresi_egysegek >= 0.9, (
+            f"a futásidő-tábla csak a mérési egységek "
+            f"{ismert / meresi_egysegek:.0%}-át ismeri "
+            f"({ismert}/{meresi_egysegek})"
         )
 
 

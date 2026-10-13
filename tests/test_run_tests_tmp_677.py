@@ -41,6 +41,7 @@ class TestBasetempAtadasa:
             return _Eredmeny()
 
         monkeypatch.setattr(run_tests, "_run", _rogzit)
+        monkeypatch.setattr(run_tests, "_systemd_scope_elerheto", lambda: False)
         monkeypatch.setattr(run_tests, "_ROOT", Path(run_tests._ROOT))
 
         basetemp = tmp_path / "kozos"
@@ -69,7 +70,9 @@ class TestBasetempAtadasa:
         assert latott, "nem indult részfutás"
         assert len(set(latott)) == 1, f"részfutásonként eltérő basetemp: {set(latott)}"
 
-    def test_parhuzamosan_kulon_de_azonnal_takaritott_mappak(self, monkeypatch):
+    def test_parhuzamosan_kulon_de_azonnal_takaritott_mappak(
+        self, monkeypatch, capsys
+    ):
         """PÁRHUZAMOS módban részfutásonként KÜLÖN mappa kell — de nyomtalanul.
 
         A #677 tilalma tartalmilag az, hogy a futás ne hagyjon maga után
@@ -94,21 +97,21 @@ class TestBasetempAtadasa:
         # (a kifejezett kérés a CI-ben is nyer), különben ez a teszt a
         # felhő-körben nem azt méri, amit a neve mond.
         monkeypatch.setenv("PICASAPY_TESZT_PARHUZAM", "4")
-        # A PR-CI az érintett-szűkítés alapját beállítja; itt a teljes app-készlet kell.
+        # A PR-CI az érintett-szűkítés alapját beállítja; itt a teljes tesztkészlet kell.
         monkeypatch.delenv("PICASAPY_ERINTETT_ALAP", raising=False)
         monkeypatch.setattr(run_tests, "_PARHUZAM", 4)
         monkeypatch.setattr(run_tests, "_run_pytest", _rogzit_pytest)
         monkeypatch.setattr(run_tests, "_takarits_regi_maradekot", lambda: None)
 
         assert run_tests.main([]) == 0
-        app_futasok = [ut for ut in latott if ut.name == "pytest"]
-        assert len(app_futasok) > 1, "nem indult több app-részfutás"
-        assert len(set(app_futasok)) == len(app_futasok), (
+        capsys.readouterr()
+        assert len(latott) > 1, "nem indult több teszt-részfutás"
+        assert len(set(latott)) == len(latott), (
             "a párhuzamos részfutások OSZTOZTAK a basetempen — ez törli "
             "egymás ideiglenes fájljait"
         )
         assert all(volt_sajat_mappa), "a részfutás nem kapott saját mappát"
-        assert not [ut for ut in app_futasok if ut.exists()], (
+        assert not [ut for ut in latott if ut.exists()], (
             "a részfutás mappája a futás után is megmaradt (#677)"
         )
 

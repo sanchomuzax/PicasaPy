@@ -138,7 +138,7 @@ class TestAzOsszeomlasNYOMAmegmarad:
 
         modul._run_pytest = hamis_run_pytest
         modul._OSSZEOMLAS_UJRAPROBA.clear()
-        bukasok = modul._app_fajlok_parhuzamosan(
+        bukasok = modul._tesztfajlok_parhuzamosan(
             [fajl], cov=False, basetemp=tmp_path
         )
         kimenet = capsys.readouterr().out
@@ -170,7 +170,7 @@ class TestAzOsszeomlasNYOMAmegmarad:
 
         modul._run_pytest = hamis_run_pytest
         modul._OSSZEOMLAS_UJRAPROBA.clear()
-        modul._app_fajlok_parhuzamosan([fajl], cov=False, basetemp=tmp_path)
+        modul._tesztfajlok_parhuzamosan([fajl], cov=False, basetemp=tmp_path)
         kimenet = capsys.readouterr().out
         assert kimenet.index("Fatal Python error") < kimenet.index("ÚJRAPRÓBÁLÁS")
 
@@ -188,7 +188,7 @@ class TestAzOsszeomlasNYOMAmegmarad:
 
         modul._run_pytest = hamis_run_pytest
         modul._OSSZEOMLAS_UJRAPROBA.clear()
-        modul._app_fajlok_sorosan([fajl], cov=False, basetemp=tmp_path)
+        modul._tesztfajlok_sorosan([fajl], cov=False, basetemp=tmp_path)
         kimenet = capsys.readouterr().out
         assert "ÖSSZEOMLÁS" in kimenet, (
             "a soros ág nem jelöli meg, hol kezdődik az összeomlás nyoma"
