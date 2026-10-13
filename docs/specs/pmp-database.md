@@ -4306,6 +4306,87 @@ visszavonta). A korábbi bináris hipotézis — hogy a `0x0071c650` →
    tartalmaz ehhez db3-pillanatképeket. A végrehajtó kimeneti katalógusát
    `db3`-kiadással bővíteni kell.
 
+### 15.4b Második kör (2026-10-13, #4884): író és olvasó két független úton
+
+**Eredmény: NEM igazolt.** Sem az író, sem a tárolási hely nincs meg; a
+negatívok alábbi hatóköre pontosan le van írva. Ami új: a sorrend-kulcs
+**literál-szinten** sehol nincs az EXE-ben (indextől független bájtpásztázás),
+és a vtábla-hívók az xref-indexben láthatatlanok.
+
+**A. út — olvasó (a rendezőlánc, körön belül újra ellenőrizve a vtáblával).**
+A `CSelectionNode` vtáblája `0x00cad5b4` (`rtti.csv`), a `CAlbumSelectionNode`
+vtáblája is ugyanazokat a slotokat használja: a `0x0071c4f0` (mód-beállító) a
+**48.** rés (`+0xc0`), a `0x00715280` (elem-producer, `[item+0xb4]`-be ír) a
+**40.** rés (`+0xa0`), a `0x0071c650` (RAM-lista) az **49.** rés (`+0xc4`).
+A mód-beállító sztringjei (`0x0071c4f0`, az index szerint az egyetlen
+sztring-hivatkozó): `Sorting by priority` (`0xcad54c`), a debug-név
+`CSelectionNode::SortPrior` (`0xcad560`), a többi mód a `SortColor`/`SortName`/
+`SortSize`/`SortDateA`/`SortDateC` (`0xcad46c`–`0xcad530`). A lánc többi
+lépése a 15.4 szerinti; 8-as és 11-es módban a hasonlító nem választ kulcsot.
+
+**B. út — író/tároló, indextől független bájtpásztázás a `Picasa3.exe`-n.**
+
+| mit néztem | találat | mit zár ki |
+|---|---|---|
+| `priorit` (kis-nagy betű nem számít) az egész EXE-ben | 17 | Picasa-kontextusban csak 2: a `0xcad54c` UI-felirat és a `0xcad560` debug-név; a többi EXIF (`Aperture/Shutter Priority`), HTTP-cookie (`Priority`) és `EnvelopePriority` |
+| `order=` literál | 27 | a találatok nagy része a `border=` részsztring; valódi: `0xc83210` (`order=`) és `0xc83221` (`,order=0`) |
+| `sortorder`, `albumorder`, `picorder`, `manualorder`, `position=`, `rank=` | 0 | — |
+| `catpri` | 1 (`0xc80d54`) | a kategória-oszlop regisztrálója (`0x00415790`), ld. 1559. sor |
+
+- **Az `order=` literál nem helyi ini-kulcs.** A `0xc83210`-et a `0x004aa180`
+  olvassa egy `size=%d,access=%d%s` · `token=` · `order=` paraméterláncból:
+  az `access=` utáni számjegy `0..3` (különben `4`) lesz, az `order=` értéke
+  `0`-tól különbözőként `1`, `0`-ként `0` (hiányzó kulcsnál `2`), a `token=`
+  sztringként másolódik. A `,order=0` alapértéket a `0x004aa300` írja.
+  Mindkettő Web Albums-feltöltési paraméterlánc, nem a `.picasa.ini`.
+- **Az ini fotószakasz-írója** (`0x007d55f0`, sztringjei: `caption`,
+  `keywords`, `geotag`, `faces`, `originhash`, `onlinechecksum`, `photoid`,
+  `origloc`; a `rotate` a `0x007d8a50`-ben) nem ír sorrend-kulcsot — ezt a
+  pásztázás (`priority`/`order` literál hiánya) is megerősíti.
+- **A db3 képoszlopai:** a `0x004127c0` 37 oszlopot regisztrál (`caption`,
+  `parent`, `filetype`, … `backuphash`, `imagedata`); közöttük nincs
+  sorrend-oszlop. A helyi `research/testdata/Picasa2/db3` `imagedata_*.pmp`
+  33 fájlja ugyanezt a készletet adja (mintakészlet, nem teljes séma).
+- **A `catdata_catpri` a KATEGÓRIÁÉ** (1559. sor) — nem kép-sorrend, de
+  a rendezési mód ugyanabban a regisztrált rekordban él (a `catdata`
+  mellett); a két dolog összekapcsolása **nincs igazolva**.
+- **Online csatorna (nem a helyi tároló):** a binárisban van a Web Albums
+  sorrend-protokoll (`gd:ordering rel='comesAfter'`, VA `0xcd4fce`), és a
+  `PWASyncOrder` (alapérték `1`, `picasa-fo-ablak-elrendezes.md` 305. sor)
+  „webalbum: sorrend szinkronizálása”. Egy kézi átrendezés tehát az online
+  albumban tükröződhet; ez a helyi tárolást nem igazolja.
+
+**Vtábla-hívók (az xref-index negatív, ezért nem bizonyíték).** A
+`0x0071c4f0`-nak és a `0x00715280`-nak az indexben **0** hívója van: a vtábla-
+hívás nem látszik. Bájtmintával (`ff /2` `disp32=0xc0`/`0xa0`, és a
+`mov reg,[r+disp32]` + `call reg` alak) **40 illetve 59** hely található, több
+osztályban (a slot-szám más vtáblákban is kiosztott). Az osztály
+azonosítása nélkül egyik sem attribuálható — ezért a hívó nyitott.
+
+**Mit NEM állítunk:** hogy a kézi sorrend a `thumbindex` sorindexe lenne,
+vagy hogy a db3 rekordsorrendjében él. A `0x00715280` 3. argumentumának
+forrása (a rács sorindexe-e) nincs megmérve; ez volt a következő bináris lépés.
+
+**Megvalósítási konzekvencia (ma):** a `.picasa.ini`-ben `priority=` kulcs
+**nincs az eredeti írójában** (literál-szinten nincs az EXE-ben). A
+`docs/decisions/kezi-sorrend-a-picasa-iniben.md` (ADR-014) premisszája
+(„a db3/albums_0.db-ben van”) már a 15.4 szerint megdőlt; a döntés státuszát
+ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
+
+#### Kész, ha (a következő kör feltétele — tartós tárolás bizonyítására)
+
+- [ ] a `0x00715280` és a `0x0071c4f0` vtábla-hívóinak osztályhoz kötött
+      azonosítása (a hívó függvény vtábla-betöltése), és a producer
+      3. argumentumának forrása megnevezve;
+- [ ] Picasa-viselkedés: két kép kézi átrendezése, bezárás, db3-pillanatkép,
+      újraindítás, újabb pillanatkép; a két db3 összevetése megnevezi, melyik
+      fájl/oszlop változott (a registrált képoszlopok között sorrend nincs,
+      így a változás más helyen várható);
+- [ ] az online sorrend (`gd:ordering`) szerepének tisztázása csak a
+      tulajdonos jóváhagyásával (hálózat, külső szolgáltatás);
+- [ ] ha a sorrend csak munkamenetre szól: a 15.5 „egyedi sorrend” sora és a
+      15.6 „Egyedi sorrend” pontja lezárva tárgytalanként.
+
 ### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
 
 | tétel | az eredeti tárolása (mérve) | a PicasaPy átvétele ma (`pmpimport/`) | a PicasaPy saját tárolása ma |
@@ -4365,7 +4446,7 @@ visszavonta). A korábbi bináris hipotézis — hogy a `0x0071c650` →
 | melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
 | milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
 | hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
-| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után) |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után); 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben |
 
 *Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
 importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
