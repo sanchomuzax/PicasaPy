@@ -3704,6 +3704,64 @@ Ghidra-dekompilátum és az utasításszintű olvasat támasztja alá.
 
 **Erős**: a `[panel+0x4f0]`/`[+0x4f1]` jelzők jelentése.
 
+#### G/3e. A 12. kör (záró, 2026-10-13): a [this+0x708] tömb és a mód-5 forrás — RÉSZLEGES, a szabály NEM zárult le (#4194)
+
+**Eredmény egy mondatban:** a megtartási szabály utasításszinten sem lett teljes; a két nyitott pont
+közül az elsőt szűkítettem, a másodikat csak a fordítási ág elején tudtam olvasni. A „Kész, ha" lista
+ezért **nem írható meg konkrét megtartott indexekkel** — nem akarok kitalált teszteseteket adni.
+
+**Módszer.** Utasításszintű olvasat (capstone 4 + pefile, `~/picasapy-agent/.venv`), lineáris szkennelés
+a `.text` egészén (`0x708]` operandus-minta és `call 0x81e…` hívók). Segédszkriptek a scratchpadban
+(`g3e/scan.py`, `g3e/dis.py`), a repóba nem kerültek. Natív futás nem készült.
+
+**(a) `[this+0x708]` — szűkítve.**
+
+- **Nem határlista.** A `0x81e5a0` (`this` = `eax`) a `[this+0x4e4] >> 1` = a rekordszám `n` alapján
+  átméretezi a **három** int-tömböt: `[+0x700]` (méret-jelző `+0x704`), `[+0x708]` (`+0x70c`) és
+  `[+0x710]` (`+0x714`). A `[+0x708]` mérete tehát **n**, rekordonként egy elem — nem időcsoportonként.
+  A `0x81e8e0`-es átméretező (`0x97c810` realloc, `0x97caf0` free, `(n << 1) | flag` a méret-szóban) a
+  közös tömb-kezelő.
+- **Hívási hely:** a `0x8242c7` (`mov eax, ebp; call 0x81e5a0`), a `0x824090`-es lista-építő után, a
+  `0x81e3a0` és `0x819370` előtt. Tehát a ordering-0 ág rekordlistájának építésekor a tömb mindig n elemű.
+  Ez azt jelenti, hogy a `0x81d353`/`0x81d382` olvasásánál a null-pointer-kockázat az n = 0 esetre szűkül,
+  és ott a határ-ellenőrzés (`cmp eax, esi; jge`) megakadályozza az olvasást.
+- **Nem igazolt:** a tömb ELEM-tartalma. Az elemek írása közvetett (betöltött mutatón keresztül), ezért a
+  `0x6`-os mintás szkennelés nem találta meg. A `0x81d338`-as ág `esi`-határa (a `cmp eax, esi`-t megelőző
+  töltés) sem lett végigkövetve. Tehát: a tömb neve „határ" csak feltételes; a tartalma **NYITOTT**.
+
+**(b) Mód-5 forrásvektor — részben.**
+
+- **`0x7166c0`** (`esi` = a kimeneti vektor `{ptr, size}`, `ebx` = a forrásobjektum, `[esp+8]`): először
+  felszabadítja a kimeneti vektor régi bufferét, majd a `[ebx]` vtábla `+0xb4`/`+0xb8` slotjait hívja
+  (az első a darabszám, a második az elem), és a `[ebx+0x2cc]` jelzőre a `+0xc4` slot is fut. Ez egy
+  **gyűjteményből vektort építő** rutin. Hogy a `+0xb4`/`+0xb8` pontosan mit ad (album-sorrend, kijelölés),
+  a vtábla-törzsekből nem igazoltam — **feltételes**.
+- **`0x8223e0`-ban** a `0xdc` album-slot törzse nincs olvasva; a `0x7166c0` a `[builder+0xea8]` ágon hívódik.
+  A két ág kiválasztása (album `[+0x3c9]`, `[builder+0xea8]`) a G/3d 4. pontjában leírt.
+- **Következmény:** a mód-5 lista tartalmát (az album kézi sorrendjét vagy a kijelölést) még **nem** tudom
+  megállapítani; ezért a 0x7166c0-ág eredménye sem zárható le.
+
+**Megtartási szabály (G/3e) — összefoglaló, ami igazolt és ami nem:**
+
+| Lépés | Állapot |
+|---|---|
+| Csoportosítás: szomszédos `delta < T` → ugyanaz a csoport | **megerősített** (G, natív QEMU) |
+| Rendezés dátum szerint, egyenlőnél a forrásvektor pozíciója | **megerősített** (G/3d 3. pont) |
+| Horgony = `vec[0]` (mód 5, `TID ≠ 0`), különben index 0 | **megerősített** (G/3d 4. pont), a `vec` tartalma **NYITOTT** |
+| Spirál `c+1, c−1, c+2, …`, ≤ 100 jelölt, `G[j] ≠ G[c]` | **megerősített** (G/2c) |
+| Pontszám `Σ w · távolság` (HOG χ², Neven `1 − x`, súly 0,4), argmin, 1e8 kezdőhatár | **megerősített** a szerkezetben; a Neven `x` skálája **feltételes** |
+| `[this+0x708]` mint „határ-tömb" | **CSÖKKENT** — per-rekord int tömb, hossza n; tartalma **NYITOTT** |
+| Mód-5 album-ág (`0xdc`) és `0x7166c0` tartalma | **NYITOTT** |
+| Konkrét megtartott fotóindex | **NYITOTT** (natív futás nélkül nem adható meg) |
+
+**Kész, ha — állapot: NEM teljesül.** A jegy nem zárható. Ami most megírható tesztként: a csoportosítás
+(már mérve: `[0, 3240, 6480]`, `T = 3600` → mind egy csoport, `[0,0,0]`; `[0, 3600, 7200]` → `[0, 1, 2]`).
+A megtartott index tesztjéhez az (a) elem tartalma és a (b) album-ág kell.
+
+**Következő, lezáró lépés (csak ha van rá erőforrás):** a `[this+0x708]` elem-írója (közvetett mutató
+követése a `0x81e5a0`-t hívó `0x8242c7`-ből felfelé, és a `0x81d338`-as blokk `esi`-határa), valamint a
+`0x7166c0` `+0xb4`/`+0xb8` vtábla-törzsei. Natív QEMU-próba előtt ezek kellenek, különben kitalált vtáblát mérne.
+
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
 *A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
