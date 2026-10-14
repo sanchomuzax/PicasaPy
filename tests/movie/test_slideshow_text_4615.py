@@ -61,6 +61,34 @@ def test_fade_move_text_slides_change_in_the_exported_frames(monkeypatch, tmp_pa
         assert np.array_equal(frames[0][0, 0], frames[-1][0, 0])
 
 
+def test_feeling_lucky_elso_kockaja_atlatszo_az_utolso_szovegszinu(
+    monkeypatch, tmp_path
+):
+    dia = {
+        "text": "Szöveges dia",
+        "font": "DejaVuSans",
+        "size": 36,
+        "style": 1,
+        "textColor": "#ffffff",
+        "backgroundColor": "#123456",
+    }
+    frames, settings = _export_text_slide(monkeypatch, tmp_path, dia)
+    hatter = np.array((0x56, 0x34, 0x12), dtype=np.uint8)  # BGR: #123456
+    statikus = render_text_slide({**dia, "style": 0}, settings)
+    szovegmaszk = np.any(statikus != hatter, axis=2)
+
+    elso_elteres = np.abs(frames[0][szovegmaszk].astype(np.int16) - hatter).max()
+    assert elso_elteres <= 10, (
+        "a Jó napom van első képkockájának szövege nem áttetsző: "
+        f"legnagyobb eltérés a háttértől {elso_elteres}"
+    )
+
+    szovegszin = np.array((255, 255, 255), dtype=np.uint8)
+    assert np.any(np.all(frames[-1] == szovegszin, axis=2)), (
+        "a Jó napom van utolsó képkockáján nem jelent meg teljes színű szöveg"
+    )
+
+
 def test_typewriter_uses_utf8_bytes_without_drawing_a_partial_character(
     monkeypatch, tmp_path
 ):

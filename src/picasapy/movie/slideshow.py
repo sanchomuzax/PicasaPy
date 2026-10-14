@@ -509,7 +509,9 @@ def _szovegdia(
     kitoltes = (*betuszín, alfa) if alfa < 255 else betuszín
     kontur_szin = (0, 0, 0) if betuszín != (0, 0, 0) else (255, 255, 255)
     kontur_kitoltes = (*kontur_szin, alfa) if alfa < 255 else kontur_szin
-    rajz.multiline_text(
+    szoveg_reteg = Image.new("RGBA", kep.size, (0, 0, 0, 0)) if alfa < 255 else None
+    szoveg_rajz = ImageDraw.Draw(szoveg_reteg) if szoveg_reteg is not None else rajz
+    szoveg_rajz.multiline_text(
         (x, y),
         rajzolando_szoveg,
         font=font,
@@ -517,6 +519,8 @@ def _szovegdia(
         stroke_width=max(1, meret // 18) if kontur or slide.get("bold") else 0,
         stroke_fill=kontur_kitoltes,
     )
+    if szoveg_reteg is not None:
+        kep = Image.alpha_composite(kep.convert("RGBA"), szoveg_reteg).convert("RGB")
     return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
 
 
