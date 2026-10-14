@@ -1331,7 +1331,7 @@ munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok
 | `Ctrl+Shift+L` | `0x005e658e` a szerverobjektumot a `0x004cce10`-nek adja; a LAN-jelszó és a fix `picasaserver` felhasználó mellett a `0x004cd010` `http://localhost:%d/%s/` URL-t épít, amelyet a handler böngészővel nyit meg. | A webserver-spec külön méri a `LANPassword`, a `picasaserver` felhasználónevet és az URL-alakot (`picasa-beepitett-webszerver.md` 1.). | megerősített |
 | `Ctrl+Shift+U` | `0x005e6557` → `0x0047ca60` → `0x006b8710`: üríti/újrainicializálja a két átadott bélyegképtár memóriabeli állapotát. | A hívó tageltolásai a `pmp-database.md` szerint `m_bigThumbs` (`bigthumbs.db`) és `m_previewThumbs` (`previews.db`); a cél belső mutatókat szabadít fel és nulláz. A fájlok törlését nem állítjuk. | megerősített |
 | `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: feloldja az `overlays/egg` elemet, inicializálja a hozzá tartozó objektumot és aktiváló jelzőt állít. | A `overlays/egg` string-xref és a Ctrl-ág egyetlen célfüggvénye egyezik; a pontos látható animáció futtatás nélkül nincs kimérve. | feltételes |
-| `Ctrl+F9` | A `0x005e60d0` billentyűkezelő Ctrl+`0x78` (F9) táblabejegyzése a `0x005e6329` ágra jut. A konstruktor `0x00564b2e` alaphelyzetben 0-ra állítja a `[panel+0xdc4]` bájtot; a `0x005e6329`–`0x005e6333` ág ezt 0/1 között billenti. Ha a `0x00571e50` útján létezik az `editpanel/preview`, annak `[+0x20c]` mezője 0, a kapcsoló 1, és a kijelölési út érvényes értéket ad, akkor ezt összeveti a `[this+0xe64]` aktuális képként használt értékével. Eltéréskor a `CThumbUI` `+0x2c` virtuális metódusát 0 argumentummal hívja; ez a `0x005f89a0`-en át az `editpanel/preview`-hoz tartozó aktuális kép felirat-/törlésállapotának és vezérlőállapotának frissítését kéri. A bináris nem bizonyítja, hogy ez a kijelölt képre váltja-e az előnézeti képet, vagy csak a meglévő előnézet UI-állapotát rajzolja újra. A kapcsoló 0 állásában ez az eltérésre induló frissítő ág kimarad. | A teljes `.text` pásztázás pontosan négy `[reg+0xdc4]` találatot adott (két írás, két olvasás). A `CThumbUI` RTTI/vtábla-útján a slot `0x00578dc0`-hoz vezet; ennek 0 argumentumos ága a `0x005f89a0`-et hívja, amely az `[this+0xe64]` mezőt olvassa. A külön `0x0056a260` szerkesztőút is aktuális képként kezeli ezt a mezőt (`ui-audit-editor.md`, 3. pont). | feltételes |
+| `Ctrl+F9` | A `0x005e60d0` Ctrl+F9 ága a `0x005e6329`-nél 0/1 között billenti a `[panel+0xdc4]` jelzőt. Bekapcsolva, látható `editpanel/preview` mellett a `0x00571e50` eltérő rekordazonosító esetén hívja a `0x005f89a0`-et. Ez a caption-mező `[+0x2c4]` piszkos jelzőjének beálltakor frissíti az előnézet felirat-/törlésállapotát, majd a `CThumbUI` callbackjén keresztül egyező rekordnál a rács belső kijelölési mutatóját az előnézet rekordjára állítja. Az irány előnézet → rácskijelölés; `[this+0xe64]` nem íródik, tehát ez az út nem vált előnézeti képet. QEMU-ban az eredeti callback kód találatkor a szintetikus kijelölési mutatót a bélyegképre állította, eltérő azonosítónál érintetlenül hagyta. Az eredeti Picasa képernyőn látható kiemelés és a felirat-/törlésvezérlő megjelenése nem futott. | A teljes `.text` pásztázás a `[reg+0xdc4]` pontos íróit/olvasóit rögzíti; az utasításszintű hívási lánc feloldja a `0x005f89a0`-ből a `CThumbUI` callbackig vezető utat. Ettől független QEMU-próba az eredeti `0x0057d520`/`0x0057d600` kódon, szintetikus listával igazolta a találati és nem-találati ág kijelölésmutatóra gyakorolt hatását. A `0x005e6178` bit 4-et tesztel, de az eseményobjektum bitjének előállítója nyitott. | feltételes (a kijelölési ág igazolt; a dirty feltétel és a látható hatás nyitott) |
 | `F5` | `0x005e6869`: időbélyeg-frissítés (`0x004a46e0`), állapotfrissítő hívás (`0x00579480(0,1)`), `[adatobjektum+0x166]=1`, majd `0x0065b840` keresővezérlő-frissítés. Az idle út `0x004afcb0` ezt a jelzőt a `0x004aae90` lista-/nézeti állapotfrissítéshez viszi, majd törli. Ez nem bizonyít teljes fájlrendszer-rescant. | A külön `+0x166` olvasó/ürítő út és a `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5 leírása is frissítési kérelemként azonosítja a jelzőt. | megerősített |
 | `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. A teljes `.text` pásztázás az `+0xe78` egyetlen olvasójaként ezt a kaput találta. A cél létrehozza/újrahasználja a `[panel+0x31a8]` gyerekobjektumot, beállítja a bélyegkép-azonosítót, majd a `0x00774d60` frissíti annak geometriáját. A VK `0x12` állapotát a `0x00774d60` olvassa (nem a `0x00571a80`, ahogy az `osszefoglalo.md` #26 írja), és onnan kér ablakmegjelenítést és újrarajzolást. A gyerekobjektum egy `PopDisplay` (nem CThumbUI): felugró ablak. Részletek: 10.28. | A `PreviewHandler` külön eseményútja (`0x005c24c0`) szintén a `0x00571a80`-at hívja; a `0x00774cf0` testvér callback listabeli azonosítóváltás után ugyanazt a `0x00774d60` frissítőt hívja. A `0x00774d60` a `GetAsyncKeyState(0x12)` alapján rögzíti az Alt-állapotot, majd `ShowWindow(SW_SHOW)` (`0x00775320`) és `InvalidateRect`/`UpdateWindow` következik, ha a gyerek kliensszélessége > 1024 px. A rajzolás (WM_PAINT) egy úton igazolt. | megerősített (két út); a kép tartalma és az Alt-elengedés útja nyitott — 10.28 |
 | Videó: `/`, `,`, `.` | A `CThumbUI` közvetlen VK-ágában nincs ilyen összevetés; az általános eseménylánc a fókuszált gyereknek továbbít. A központi kezelőből nem állítható, hogy ezek lejátszanak vagy keresnek. | A 10.19 szerinti teljes `.text` pontos `cmp ax,0xbc/0xbe/0xbf` keresése nulla találatot adott; a lánc/fókusz továbbítását a 10.18–10.19 külön méri. | feltételes — a videóvezérlő saját hatása nyitott |
@@ -1341,16 +1341,22 @@ pásztázás a konstruktor alapérték-írását (`0x00564b2e`), a billentyű-á
 olvasását/írását (`0x005e6329`, `0x005e6333`) és a `CThumbUI` frissítési
 útjának olvasását (`0x00572078`) találta. A `0x00571e50` közvetlen
 utasításszintű olvasata szerint az aktív jelző, érvényes és az előnézettől
-eltérő kijelölés esetén a `[this+0x2a4]` vtable `+0x2c` metódusát 0-val hívja.
+eltérő rekord esetén a `[this+0x2a4]` vtable `+0x2c` metódusát 0-val hívja.
 **B — a flagtől független célút:** a konstruktorban a `[this+0x2a4]`
 mezőbe írt `0x00c90754` vtable `+0x2c` bejegyzése `0x00578dc0`; ennek 0
 argumentumos ága a `0x005f89a0`-et hívja. Ez az `[this+0xe64]` aktuális
 képként használt értékből frissíti az előnézethez tartozó felirat-/törlés-
 és vezérlőállapotot. Ettől külön a `0x0056a260` szerkesztőút is aktuális
-képként kezeli az `[this+0xe64]` mezőt (`ui-audit-editor.md`, 3. pont). A két
-út egyezik abban, hogy eltéréskor előnézet-UI frissítés indul; az nem dőlt el,
-hogy a kijelölt képet tölti-e be, vagy csak a meglévő előnézet állapotát
-frissíti.
+képként kezeli az `[this+0xe64]` mezőt (`ui-audit-editor.md`, 3. pont). A
+callback folytatásának utasításszintű követése szerint a 0 argumentumos ág
+az előnézet felirat-/törlésállapotának frissítése után a bélyegképrácsban
+megkeresi az `[e64]`-gyel egyező rekordot, és találatkor a rács belső
+kijelölési mutatóját arra állítja. Ettől független QEMU-próba az eredeti
+callback kódon egyező és nem egyező azonosítót futtatott: találatkor a
+kijelölési mutató a bélyegképre változott, találat nélkül az eredeti értékén
+maradt. A két út egyezik: a Ctrl+F9 a belső kijelölést az előnézetben lévő
+rekordhoz igazítja, azaz előnézet → rácskijelölés irányban szinkronizál.
+Az eredeti program látható keretkiemelése nem volt megfigyelhető.
 
 A többi sor független megerősítése: Google Earth menüparancs-út,
 `ginormous.jpg` nyomtatási lelet, webserver konfiguráció/URL-spec, PMP
@@ -1397,10 +1403,10 @@ keretkiemelés elnevezését nem támasztja alá. A `picasa-linux-mod.md`
 
 **Nyitott:**
 
-- `0x00571e50` — a [panel+0xdc4] kapcsoló felhasználói hatása: **lezárva a 10.23-ban** (a kapcsoló nem szinkronizálja a kijelölést az előnézettel; a felirat-/törlésállapot-frissítés látható része futásteszt nélkül nyitott).
+- `0x00571e50` — a `[panel+0xdc4]` kapcsoló belső hatása **lezárva a 10.34-ben**: egyező rekord esetén a belső rácskijelölést az előnézet rekordjához igazítja; a tényleges képernyőn látható keretkiemelés és a felirat-/törlésvezérlő eredeti Picasa-megjelenése futáspróbát igényel.
 - `Ghidra-kör kell: 0x00774d60 — a [CThumbUI+0x31a8] gyerekobjektum pontos kirajzolt tartalma és az Alt-állapot [objektum+0xb4] látható következménye. [blokkoló]`
 - ✅ Lezárva a 10.28-ban: a Ctrl+Alt (VK `0x12`) hatása a `PopDisplay`-felugró ablak megjelenítése (EnableHover + előtérben + >1024 px mellett). Maradék nyitott pontok: a kép forrása, az Alt-elengedés útja, az EnableHover alapértéke.
-- `0x005f89a0` — a Ctrl+F9 eltérési ágának 0 argumentumos célja: **lezárva a 10.23-ban** — nem vált képet; a jelenlegi `[this+0xe64]` kép felirat-/törlésállapotát frissíti, és csak akkor, ha a felirat-mező `+0x2c4` jelzője piszkos.
+- `0x005f89a0` — a Ctrl+F9 eltérési ágának 0 argumentumos célja **lezárva a 10.34-ben** — a jelenlegi `[this+0xe64]` rekord felirat-/törlésállapotát frissíti, majd az egyező rácsrekord belső kijelölésére állít; nem vált előnézeti képet. Az eredeti képernyőn látható kiemelés nyitott.
 - A `Ctrl+6` timeslicer felületének futás közbeni állapota és a Ctrl+Shift+Y `overlays/egg` látható animációja: **NINCS MEG**; célzott eredeti-program próba kell.
 - A `/`, `,`, `.` esetleges videóvezérlő-hatása: **NINCS MEG**; a fókuszált gyermek eseményfogadójának útját kell követni, a globális kezelőben nincs saját ág.
 
@@ -1414,11 +1420,12 @@ Az F5-höz külön jegy javasolható: a könyvtár aktuális nézeti/lista-friss
 útját és keresővezérlőit indítsa, a bizonyított `+0x166` frissítési
 kérelemhez igazítva; teljes könyvtári rescan nem következik a binárisból.
 A Ctrl+F9-höz a kódban nincs billentyűkötés (`Ctrl+F9`-keresés a
-`src/picasapy/app/` QML/Python fájljaiban); a `PhotoViewer.qml` a
-`currentIndex` alapján indít szerkesztést (`beginEditCurrent`). A binárisból
-igazolt preview-UI frissítőág és a lehetséges képváltás iránya között nincs
-elég bizonyíték a hű megvalósítási jegyhez; a Ghidra-kör lezárása után dönthető
-el, kell-e külön fejlesztői jegy.
+`src/picasapy/app/` QML/Python fájljaiban); a `PhotoViewer.qml` rácsa és
+nézője közös `currentIndex` állapotot használ. A 10.34-ben bizonyított belső
+előnézet → kijelölés egyeztetés ezért a jelenlegi szerkezetben már közös
+állapotú, felhasználói felületre lefordítható külön műveletet nem indokol.
+Fejlesztői al-jegy nem javasolt; a látható Picasa-kiemelés pontos megfigyelése
+marad nyitva.
 
 **Bizalmi fok:** a fenti táblában soronkénti. Összesítve **feltételes**, mert
 a Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
@@ -1546,6 +1553,8 @@ gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem tö
 
 ### 10.25 #4698 — a Ctrl+F9 `[panel+0xdc4]` jelzőjének felhasználói hatása (2026-10-13)
 
+> **Felülírva a 10.34-ben (2026-10-14):** az akkori „nem szinkronizálja a kijelölést” következtetés hiányos volt. A callback folytatása a rács belső kijelölését az előnézet rekordjához igazítja; a QEMU-próba ezt találati/nem-találati kontrollal ellenőrizte. A lock-helper visszatérési ágát és a callbacket a 10.34 pontosítja.
+
 **Kérdés:** ki olvassa a jelzőt, és mit kapcsol a felületen? A kiindulás a
 10.22 Ctrl+F9 sora és a két „Ghidra-kör kell” nyitott tétel volt.
 
@@ -1569,11 +1578,13 @@ IAT-címkéket a PE-fájlból olvastam ki. Futtatás nem történt.
 | 6 | `0x00571e50` feltételei | `editpanel/preview` létezik (`0x009c2fc0`), `[+0x20c]==0`; a `0x006cfe10(this+0x2bc+0x346c)` érték ≠ `[this+0xe64]`. | Ghidra + asm | megerősített (de lásd nyitott) |
 | 7 | `0x005720af`–`0x005720c0` | `[this+0x2a4]` vtable `+0x2c` hívása, argumentum `push 0`. A vtable `0xc90754` (a konstruktor utolsó `+0x2a4` írása `0x005645da`), a `+0x2c` slot a `0x00578dc0`. | a slotot a PE-fájlból olvastam ki | megerősített |
 | 8 | `0x00578dc0` | `[ebp+8]==0` ágon `0x00578e79`: `call 0x005f89a0`. Az argumentum nem nulla ága hívja a `0x005d1300`-at (képváltás) — ezt a 0 argumentumú hívás **nem** éri el. | utasításszint | megerősített |
-| 9 | `0x005f89a0` | Csak ha `editpanel/preview` látszik; a `editpanel/caption` (`0x00c07db2`) objektum `[+0x2c4]` jelzőjét kell hogy legyen; ha igen: törli, majd a `[this+0x2bc]+0x48` vtable `+0x50` hívásával a `[this+0xe64]` kép rekordját kéri, `editpanel/captiontrash` állapotot állít, a `[this+0x2ac]+8` callbacket a `[this+0xe64]`-gyel hívja, végül `0x00579480(1,0)`. **Nem ír `[this+0xe64]`-et.** | utasításszint | megerősített (a callback célja nyitott) |
+| 9 | `0x005f89a0` | Csak ha `editpanel/preview` látszik; a `editpanel/caption` (`0x00c07db2`) objektum `[+0x2c4]` jelzője esetén törli azt, a `[this+0x2bc]+0x48` vtable `+0x50` hívásával lekéri a `[this+0xe64]` rekordot, frissíti a `captiontrash` állapotát, majd a `[this+0x2ac]+8` callbacket hívja ezzel a rekorddal. A callback célja `0x0057d520` → `0x0057d600` (10.34); egyező rekord esetén a rács belső kijelölését az előnézethez igazítja. **Nem ír `[this+0xe64]`-et.** | utasításszint + QEMU callback-próba | megerősített (belső mutató; látható kiemelés nyitott) |
 | 10 | a `+0xe64` írói | A teljes függvénytörzs-söprésben a `[reg+0xe64]` írása csak két helyen van: a konstruktor (`0x00564cc7`) és `0x005e8c2d` (`0x005e8a70`). A `0x005e8a70` a képváltó út; a 10.22-ben ez már `feltételes` volt. | függvénytörzs-söprés | megerősített |
 
-**Következtetés.** A Ctrl+F9 nem szinkronizálja a kijelölést az előnézettel.
-A jelző egy kapcsoló: bekapcsolt állapotban a felület idle-frissítése minden
+**A korábbi következtetés helyesbítése.** A közvetlenül követett `0x005f89a0`
+nem vált előnézeti képet, de a callbacken át a rács belső kijelölési mutatóját
+az előnézet rekordjára állítja (részletek: 10.34). A jelző egy kapcsoló:
+bekapcsolt állapotban a felület idle-frissítése minden
 ciklusban, amikor a kijelölt-azonosító eltér a jelenleg előnézetben lévő kép
 indexétől, meghívja a `0x005f89a0`-t. Az a felirat-mező piszkos jelzőjére
 frissíti a jelenlegi előnézeti kép felirat- és törlésállapotát. A kép
@@ -1587,20 +1598,24 @@ piszkos jelző mikor áll be — **feltételes**, futtatás nélkül nem mérhet
 
 **Nyitott:**
 
-- A `0x006cfe10` visszatérési értéke: a `[obj+0x60]`/`[obj+0x68]` ágon a `[[obj+0x68]+0x3c]`, különben a `GetCurrentThreadId` érték. A „kijelölt-azonosító” jelentése ebből **nem igazolt**; a `0x006cfe10` zárolt, újrabelépő állapotolvasó (`EnterCriticalSection`/`LeaveCriticalSection`), nem egyszerű kijelölés-lekérdezés. Ha az ágon a szálazonosító jön vissza, az eltérés minden ciklusban fennáll — ez a feltétel-ág is futtatást kíván.
-- A `[this+0x2ac]+8` callback célja (a konstruktor végső `+0x2ac` értéke `0xc907ac`) és a `0x00c07db2` (`editpanel/caption`) objektum `+0x2c4` írói: **nyitott**.
+- A `0x006cfe10` visszatérési értékének szemantikája és a hiányzó nested pointer ága: **pontosítva a 10.34-ben**. QEMU kontrollal a beállított `[[obj+0x68]+0x3c]` érték tér vissza, hiányzó nested pointer esetén `-1`; a zársegéd szerepe önmagában nem azonosítja a mező üzleti jelentését.
+- A `[this+0x2ac]+8` callback célja: **lezárva a 10.34-ben**, a cél `0x0057d520`, amely a bélyegképrács callbackjét (`0x0057d600`) hívja. A `0x00c07db2` felirat-mező `+0x2c4` íróinak teljes készlete és futásbeli piszkosjelző-oka nyitott marad.
 - A `0x005e8a70` hívóinak billentyű-hozzárendelése (`0x005e625e`, `0x005e6279` ágak): **nyitott** — ez a képváltó út gazdája.
-- A módosító-bit 4 (`[esi+0x10]`) név szerinti megfelelése (Ctrl): **nem igazolt külön**; a 10.22 szerinti Ctrl-hozzárendelés erre épül.
+- A módosító-bit 4 (`[esi+0x10]`) előállítója, illetve annak bizonyítása, hogy az eredeti eseményépítőben a Ctrl állítja be: **nyitott**; a downstream billentyűlánc Ctrl-ként használja (lásd 10.31 és 10.34).
 - A látható felirat-/törlésállapot-változás eredeti Picasán való futtatása: **NINCS MEG**; célzott próba kell.
-- Az `editpanel/captiontrash` állapot szöveges/vizuális jelentése a QML-oldalon nincs leltározva.
+- Az `editpanel/captiontrash` erőforrás neve és felirat-törlés funkciója a respackban szerepel; a pontos látható állapot eredeti Picasa-futtatásban **NINCS MEG**.
 
 **Gyorsbillentyű-kötés (kódban).** A `src/picasapy/app/` alatt nincs `Ctrl+F9`
-kötés (10.22). A binárisból igazolt hatás nem ad elég bizonyítékot egy
-felhasználói funkcióhoz: a kapcsoló csak a felirat-frissítés idle-útját
-szabályozza. **Fejlesztői al-jegy nem javasolt** a futásteszt és a
-`0x005f89a0` callback-célja nélkül.
+kötés (10.22). A 10.34 az eredeti callback szintjén bizonyította, hogy a
+piszkos felirat-jelzőtől függő frissítőág előnézet → rácskijelölés irányban
+állítja a belső kiválasztott rekordot. A mai `PhotoViewer.qml` a rács és a
+néző közös `currentIndex` állapotát használja; a hű UI-út külön megvalósítását
+ez nem indokolja. **Fejlesztői al-jegy nem javasolt.** Az eredeti programon
+látható kiemelés és a felirat/törlés pontos képernyőállapota nyitott.
 
 ### 10.31 #4698 — harmadik kör: a Ctrl+F9 jelzőjének felhasználói hatása, és a 0x04 bit forrása (2026-10-13)
+
+> **Felülírva/pontosítva a 10.34-ben (2026-10-14):** a 10.31 „nem szinkronizálja a kijelölést” megállapítása csak a közvetlen `0x005f89a0` törzsre vonatkozott, nem vette végig az általa hívott callbacket. A callback a rács belső kijelölését az előnézet rekordjához állítja. A `0x006cfe10` hiányzó nested pointer ága `-1`, nem a thread ID.
 
 **Kérdés:** (1) a `[panel+0xdc4]` jelzőt a Ctrl+F9 billenti; a jelzőt olvasó `0x00572078` kapuban a „0x04 bit” a Ctrl-állapot-e? (2) a `0x00571e50` frissítő mit rajzol/rendez újra a jelző igaz és hamis ágán?
 
@@ -1620,20 +1635,20 @@ szabályozza. **Fejlesztői al-jegy nem javasolt** a futásteszt és a
 | 6 | `0x006fe3fa` (fv. `0x006fe3e0`) | `GetKeyState(VK_CONTROL=0x11)` — **a Ctrl-lekérdezés egyetlen IAT-hívása**, de a `0x006fe3e0` másik függvény (`WM_KEYDOWN` + `0x4e`, `WM_SYSCOMMAND` + `0xf060`), nem az eseményobjektum-építő. | megerősített (a függvény másik) |
 | 7 | `0x005726a8`–`0x005726c3` (fv. `0x00571e50`) | `push 0x17; call [0xc40840]` = `GetSystemMetrics(SM_MOUSEPRESENT)`, majd `GetAsyncKeyState(VK 1 vagy 0)` (`VK_LBUTTON`). Ha az egér-gomb le van nyomva (`test ax,0x8000`), a `0x572738`-ra ugrik. **Nem Ctrl.** | megerősített |
 | 8 | `0x00572078`–`0x005720c0` | `dc4 != 0` ágon: ha az `editpanel/preview` létezik és `[+0x20c]==0`, a `0x006cfe10(this+0x2bc+0x346c)` ≠ `-1` és ≠ `[this+0xe64]` esetén `[this+0x2a4]` vtable `+0x2c` hívása, arg. 0. | megerősített (a feltételek) |
-| 9 | `0x006cfe10` | Újrabelépő zár-segéd: `GetCurrentThreadId` (`[0xc40284]` → `0x921a3e`) + `EnterCriticalSection` (`[0xc4055c]` → `0x921b04`). Visszatérés: `[[obj+0x68]+0x3c]`, ha `[obj+0x60]` és `[obj+0x68]` nem nulla; különben a szál-azonosító. **Nem kijelölés-lekérdezés.** | megerősített |
+| 9 | `0x006cfe10` | Újrabelépő zár-segéd: a `GetCurrentThreadId` a zárolás tulajdonosának kezelésére szolgál. A visszatérési érték a beállított `[obj+0x60]`/`[obj+0x68]` ágon `[[obj+0x68]+0x3c]`; hiányzó nested pointer esetén `-1` (QEMU-kontroll, 10.34). A nested mező üzleti jelentése továbbra sem azonosított. | utasításszint + QEMU kontroll | megerősített (visszatérési ágak); nested mező jelentése nyitott |
 | 10 | `0x005f89a0` (a `+0x2c` slot célja, 10.25 szerint) | Ha az `editpanel/preview` látszik és a `caption` objektum `[+0x2c4]` jelzője be van állítva: törli, a `[this+0x2bc]` vtable-jével frissíti a `[this+0xe64]` képrekordot, a `[this+0x2ac]+8` callbacket `[this+0xe64]`-gyel hívja, végül `0x00579480`. **Nem ír `[this+0xe64]`-et, nem hív `0x005d1300`-at (képváltás).** | megerősített (utasításszint) |
 
 **Következtetés (1).** A 0x04 bit a billentyű-eseményobjektum módosító-bájtjának bitje, és a billentyűlánc Ctrl-jelentéssel használja (5. tétel). Hogy a bitet ki állítja be, a binárisból **nem igazoltam**. Két eszköz is kizárja a 0x6fe3fa-t és a 0x571e50 `GetAsyncKeyState`-jét (6. és 7. tétel): egyik sem az eseményobjektum építője.
 
-**Következtetés (2).** A Ctrl+F9 nem szinkronizálja a kijelölést az előnézettel (a 10.25 eredményét megerősítem). A jelző egy kapcsoló a `0x00571e50` idle-frissítőben: bekapcsolva, az előnézet felirat-/törlésállapotát frissíti a `0x005f89a0`, és **nem vált képet**. A kijelölés-azonosító (`0x006cfe10`) jelentése ettől független: a visszatérés vagy szál-azonosító, vagy egy `[obj+0x68]` mező. Ha szál-azonosító, a feltétel minden ciklusban igaz, és a frissítés minden tick-ben lefut — ez az ág nincs lemérve.
+**A korábbi következtetés helyesbítése (2).** A `0x005f89a0` nem vált képet, de a hívott callback a rács belső kijelölését az előnézet rekordjára állítja; lásd 10.34. A `0x006cfe10` visszatérési értéke nem thread ID: a lock a thread ID-t tulajdonoskezelésre használja, az üres nested pointer út `-1`-et ad. A nested `+0x3c` mező jelentése továbbra is nyitott, ezért a tick-frekvenciát ebből nem állítjuk.
 
-**Fok:** a kapcsoló, a hívási lánc és a „nem vált képet” állítás — **megerősített** (két független eszköz: utasításszintű olvasat és a slot-feloldás). A látható felirat-/törlésállapot-változás, a gyakoriság, és a `0x006cfe10` visszatérési értékének jelentése — **feltételes / NYITOTT**.
+**Fok (a 10.31-ben elérhető bizonyíték szerint).** A kapcsoló és a közvetlen callback út utasításszinten igazolt; a kijelölési hatás és a lock-visszatérési ágak teljes tesztje a 10.34-ben szerepel. A felirat-/törlésállapot tényleges képernyőképe, a nested `+0x3c` üzleti jelentése és a tick-frekvencia továbbra is nyitott.
 
 **Nyitott (NEM LEZÁRT, a mérleg szerint):**
 
 1. **N1 — a 0x04 bit forrása.** Kell: az eseményobjektumot építő függvény (a `0x005e6710` láncának hívója; a `0x00a582f0` továbbító előtte). Próba: `mov byte ptr [reg+0x10], …` írások a `.text`-ben, és a VK 0x11 lekérdezés minden helye (`push 0x11` + `call [0xc406f8]` — a 2026-10-13-i szűrés 32 találatot adott, ezeket nem néztem végig). **Blokkoló:** nincs; olcsó, de nem fért bele a körbe.
-2. **N2 — a `[[obj+0x68]+0x3c]` jelentése.** Kell: a `[obj+0x68]` objektum típusa és a `+0x3c` mező írói. Ettől dől el, hogy a 0x572078 feltétele mikor igaz (kijelölés-eltérés vs. folyamatos).
-3. **N3 — a látható hatás.** Kell: Picasa 3.9 (angol, Wine) futtatása Colab-gépen, a Ctrl+F9 kétszer, a felirat-/törlésállapot képernyőképe. Ez `picasa-colab-jobs` feladat (`tipus:…`), nem ebből a körből.
+2. **N2 — a `[[obj+0x68]+0x3c]` üzleti jelentése.** A visszatérési ágakat a 10.34 QEMU-val ellenőrizte; a nested objektum típusa és a `+0x3c` mező írói nyitottak. Ettől függ, milyen esemény/adat engedélyezi a frissítést; a tick-frekvenciára ebből még nem következtetünk.
+3. **N3 — a látható hatás.** Eredeti Picasa UI futtatás kell: Ctrl+F9-et két állapotban végrehajtani, és rögzíteni a rács kijelölési kiemelését, a captiontrash vezérlőt, valamint a caption szöveget. Ebben a környezetben Wine nem érhető el, QEMU nem rajzol GUI-t.
 
 **Amit KIZÁRTAM:**
 - a `0x00572078` nem bitteszt (a 0/1 bájt-kapu);
@@ -1641,10 +1656,7 @@ szabályozza. **Fejlesztői al-jegy nem javasolt** a futásteszt és a
 - a `0x00571e50` GetAsyncKeyState-je nem Ctrl (VK_LBUTTON, egérgomb-kapu);
 - a `0x006cfe10` nem kijelölés-lekérdezés (zár-segéd, GetCurrentThreadId).
 
-**Kész, ha** (csak ha N1–N3 után megvalósítandó lesz; most NEM javasolt fejlesztői al-jegy):
-- [ ] a Colab-futtatásban a Ctrl+F9 után az előnézet felirat-/törlésállapota változik (kép vs. kép), kétszer mérve;
-- [ ] N1: a 0x04 bit beállító útja megnevezve, címmel;
-- [ ] N2: a `0x006cfe10` visszatérési érték jelentése igazolva, címmel.
+**A #4698 „Kész, ha” állapota.** A kérdés belső működési része két úton lezárult (10.34), és ez a spec frissült. A Picasa-vizuális megfigyelés és a kiegészítő módosító-bit forrása nyitott; ezek nem akadályozzák a megállapított belső kijelölési irányt. Fejlesztői al-jegy a jelenlegi közös `currentIndex` állapot alapján nem indokolt.
 
 ### 10.26 #4643 — negyedik kör (2026-10-13): az F5 lemezbejárása
 
@@ -2016,6 +2028,48 @@ Egyik ismert jelölt sem billentyűkezelő a részleges olvasás alapján. Mivel
 - [ ] Elengedéskor az elrejtés az eredeti visszahívás következő tickjén történjen; aktív callback-periódus `10 ms` (`0x007753f0` → `0x0097fc30`). A valós falióra-késésre ne állítson a fejlesztői jegy mérést, mert az **NINCS MEG**.
 
 **A 10.28 és 10.32 státuszának kezelése.** A 10.28/10.32 alatti, e négy pontra vonatkozó „nyitott” bejegyzések a korábbi kutatási pillanatképet őrzik; azok eredményét ez a 10.33-as szakasz váltja fel. A 10.32-ben nyitva hagyott popup-elhelyezés, a `WM_PAINT`/`BitBlt` teljes képútja, a második `ShowWindow` út és a kurzor viselkedése e körnek nem volt kérdése, továbbra is külön nyitott.
+
+### 10.34 #4698 — negyedik kör: Ctrl+F9 kijelölési iránya és callbackje (2026-10-14)
+
+**Kérdés.** A `[panel+0xdc4]` összes írója/olvasója és a `0x00571e50` ág után a Ctrl+F9 a rács kijelölését vagy az előnézetet változtatja-e; mit tesz a callback, és mit igazol a zár-segéd visszatérési értéke?
+
+**Módszer.** A `[reg+0xdc4]` teljes `.text`-beli íróit/olvasóit a `paszta.py`-n keresztül pásztáztam; a script első művelete `paszta.memoria_kapu()` volt. Nem az xref-indexből következtettem. A releváns függvényeket, vtable-t és hívási argumentumokat utasításszinten követtem. A `qemu-i386` próbák a qemu harness mintáját használták, az eredeti binárisbeli függvénytörzsekkel; csak a környezethez szükséges kiosztó/felszabadító és nem vizsgált segédek kaptak stubot. Minden próbafájl a munkafa `.bt/` könyvtárába került.
+
+| Hely / kérdés | Bizonyíték | Forrás és fok |
+|---|---|---|
+| `[panel+0xdc4]` összes közvetlen hivatkozása | A pásztázás pontosan négy találatot adott: konstruktor alapérték-írás `0x00564b2e`; billentyűág 0/1 billentése `0x005e6329`–`0x005e6333`; olvasók `0x00572078` és a billentyűág összevetése. Az első egy írói/olvasói felsorolás a teljes `.text`-re, nem index-találat. | bináris (`0x00564b2e`, `0x005e6329`, `0x00572078`); négy találat mérése (`paszta.py`) |
+| `0x00571e50` elágazása | A `dc4 != 0` és látható preview kapu után a `0x006cfe10` eredményét az `[this+0xe64]`-hez hasonlítja. Eltérésnél a `[this+0x2a4]` vtable `+0x2c` slotját 0 argumentummal hívja (`0x005720be`). A függvény másik ága `GetAsyncKeyState(VK_LBUTTON)`-t kérdez (`0x005726a8`–`0x005726c3`); ez egérgomb, nem a Ctrl bit. | bináris (`0x00572078`–`0x005720c0`, `0x005726a8`–`0x005726c3`) |
+| `0x005f89a0` folytatása | A preview/caption útján a `caption` objektum `[+0x2c4]` dirty jelzője kell a feliratállapot frissítő részhez. A `0x005f89a0` a `[this+0x2ac]` vtable `+8` callbackjét a `[this+0xe64]` rekordazonosítóval hívja; az `[e64]` mezőt nem írja, és az arg. 0 ágban nem hívja a képváltó `0x005d1300`-at. A constructor által beállított callback tábla `0xc907ac`, `+8` slotja `0x0057d520`; ez a `0x0057d600` listakeresőbe jut. | bináris (`0x005f89a0`, `0x0057d520`, `0x0057d600`) |
+| Callback eredménye | A `0x0057d600` a kapott rekordazonosítót a bélyegképek `[+0x3bc]` azonosítóival keresi. Találatkor az érvényes ág a rács belső kiválasztott elem-mutatóját frissíti (`[thumb+0x2ac]`, másik flag-ágban `[thumb+0x344]`); nem találatnál nem ír kijelölést. Ez a belső irány előnézet → rácskijelölés. | bináris (`0x0057d600`); QEMU-mérés lent |
+| `0x006cfe10` visszatérési ág | A segéd a thread ID-t lock-tulajdonos kezelésére használja. Beállított `[obj+0x60]`/`[obj+0x68]` esetén az eredmény `[[obj+0x68]+0x3c]`; hiányzó nested pointer ágon az eredmény `0xffffffff` (`-1`). A `+0x3c` mező üzleti jelentése ettől nem derül ki. | bináris (`0x006cfe10`); QEMU-mérés lent |
+| Módosító-bájt | A F9 ág a billentyűesemény `[+0x10]` mezőjének `0x04` bitjét teszteli (`0x005e6178`). Egy másik betű-billentyű ág ugyanazt a bitet Ctrl-kapu szerepben használja (`0x00a53b8a`). Az eseményobjektum első létrehozója / a bit beállítója továbbra sincs meg. | bináris (`0x005e6178`, `0x00a53b8a`); a bit eredete: NINCS MEG |
+| Felületi megfeleltetés | Az eredeti UI erőforrás tartalmazza az `editpanel/caption`, `captiontrash`, `captionbutton` objektumokat és a `hidetarget` kapcsolatokat. A PicasaPy `PhotoViewer.qml` a caption törlésvezérlőt a caption tartalmához köti; a rács és néző közös `currentIndex`-et használ. Ezek alátámasztják a felirat/törlés és a kijelölés fogalmát, de nem mutatják meg az eredeti Picasa konkrét keretkiemelését. | bináris erőforrás (`tre:editpanel`); helyi forrás (`src/picasapy/app/qml/PicasaPy/PhotoViewer.qml`); eredeti képernyőkép: NINCS MEG |
+
+**QEMU-próbák pontos eredménye.** A lock-segédnél a szintetikus nested `+0x3c` bemenet `0x76543210` volt, a visszatérés ugyanez; nested pointer nélkül `0xffffffff` jött vissza. A selector tesztben a szintetikus azonosító `0x12345678`, a listában talált bélyegkép címe `0xabcdef01`, a kezdeti kiválasztott pointer `0x0badc0de` volt. Találat után a mutató `0xabcdef01` lett; másik rekordazonosítónál `0x0badc0de` maradt, és nem történt resolver-hívás. Ezek mérési bemenetek/kimenetek, nem a binárisban talált állandók. A QEMU a selector függvényeket eredeti kódként futtatta, nem rajzolt Windows-felületet.
+
+**Következtetés.** A Ctrl+F9 bekapcsolt idle ága nem az előnézetet állítja át a rács kijelölésére; a `0x005f89a0` callback útja az előnézetben lévő rekordhoz igazítja a rács belső kijelölését. Ez csak a `0x00571e50` feltételei és a caption dirty kapu mellett jut el a callbackig. Az `[e64]` nem íródik, tehát ezen az úton nincs előnézetváltás. A pontos felhasználói láthatóság — a rács kiemelése és a captiontrash állapota eredeti Picasában — futtatás nélkül nyitott.
+
+**Bizonyítottsági fok:** a feltételes belső kijelölés-egyeztetés **megerősített**: az utasításszintű hívási lánc és a külön, eredeti callback-kódot futtató QEMU-találat/nem-találat próba egyezik. A Ctrl+F9 feltétel nélküli, látható felhasználói hatása **feltételes**, mert a `+0x2c4` dirty jelző beállási oka és az eredeti UI-kép nincs mérve.
+
+**A két független út.** **A — bináris:** a teljes pásztázás azonosítja a flag olvasóját; a közvetlen ág, slotfeloldás és `0x005f89a0`–`0x0057d520`–`0x0057d600` utasításszintű követése a rekordkeresést és a belső kijelölésmutató írását mutatja. **B — futtatás:** az eredeti `0x0057d520`/`0x0057d600` callback QEMU-ban egyező rekordnál a szintetikus kijelölési pointert a talált bélyegképre állította, eltérő rekordnál változatlanul hagyta. A két út a belső hatásban egyezik; egyik sem bizonyítja önmagában az eredeti Picasa kirajzolt megjelenését vagy a dirty jelző forrását.
+
+**Cáfoló kísérlet (15.2).** A következtetés lehetséges túláltalánosítását — „a Ctrl+F9 minden eltérésnél mindig kijelöli az előnézeti képet” — a nem található rekord kontrolljával próbáltam cáfolni. A QEMU-próbában a resolver nem talált egyező rekordot; a pointer `0x0badc0de` maradt, és a resolver nem hívódott meg. Ez cáfolja a feltétel nélküli állítást, de nem cáfolja a megfogalmazott, találathoz és a hívó kapuihoz kötött belső hatást. A negatív kontrollt ugyanazzal a mércével ellenőriztem: az eredeti `0x0057d600` ág csak azonosító-egyezés után jut el a pointeríráshoz, és a QEMU-kimenet ezt az elágazást reprodukálta. A lock segédnél ugyancsak az üres nested pointer kontroll `-1` eredménye egyezett a statikus ág feltételével.
+
+**A jegy „Kész, ha” pontjai:**
+
+- [x] A felhasználói hatás megnevezve két független bizonyítékkal: belső kijelölés-egyeztetés, előnézet → rács irányban, a felsorolt kapukkal.
+- [x] A `picasa-gyorsbillentyuk.md` §10.22 frissítve, a korábbi 10.25/10.31 megállapítások felülírva.
+- [x] Fejlesztői al-jegy mérlegelve: **nem javasolt**, mert a PicasaPy rácsa és nézője közös `currentIndex` állapotot használ; az eredeti Picasa belső callback viselkedésének külön leképezése ehhez nem szükséges.
+
+**Nyitott.**
+
+- Eredeti Picasa UI-futtatás: Ctrl+F9 előtt/után a bélyegkép látható kijelölése, caption szöveg és törlésvezérlő állapotának képrögzítése. Wine nem volt elérhető; QEMU nem ad UI-t.
+- A `caption` `[+0x2c4]` dirty flag írói és az, hogy Ctrl+F9 milyen felhasználói helyzetben állítja be.
+- A `[[obj+0x68]+0x3c]` nested mező jelentése és írói; az üres ág `-1`-je ismert, de a nem üres érték üzleti jelentése nem.
+- A billentyűesemény `[+0x10]` bit `0x04` forrása. Az esemény másolása/átadása (`0x009dd770`, `0x005de640`, `0x00a582f0`) látható, az első író nincs meg. Következő út: teljes `paszta.py` mintás pásztázás a `+0x10`-es byte írásokra, majd a hívólánc követése.
+- `Ghidra-kör kell: 0x004039f0 — a `[ebx+0x1034]` objektum és a `[this+0x2bc]+0x346c` nested lock-adat `+0x3c` mezőjének típusa/írói, hogy az érték felhasználási jelentése eldőljön. [blokkoló]`
+
+**Fejlesztői al-jegy „Kész, ha” (csak ha későbbi eredeti UI-megfigyelés eltérést mutat):** a Ctrl+F9 fókusz- és preview-kapuihoz igazított QML-út közös `currentIndex`-et használjon; a viselkedést bizonyító meglévő UI-próba ellenőrizze, hogy érvényes előnézeti rekord és caption dirty állapot esetén a rács kijelölése erre a rekordra vált, nem pedig az előnézeti kép. Ezt most nem nyitjuk külön fejlesztői jegyként, mert a közös állapot már rendelkezésre áll.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
