@@ -1024,8 +1024,10 @@ Kimaradt a PicasaPyból (2026-10-13 állapot): `Ctrl+6`, `Ctrl+8`, `Ctrl+G`,
 hatása a #4643 mérésével részben feltárt; a mai bekötési irányt és a nyitott
 részeket a **10.22** rögzíti. **Helyesbítés:** a bal szerkesztőfiók nálunk
 létezik (`PhotoViewer.qml`: `editorControlsVisible`, `toggle_left_drawer`;
-`PicasaMenuBar.qml`: „Show Edit Controls”). A Ctrl+9 kötés időközben bekerült
-(#4696, 0.9.46), az F5 is (#4697) — lásd 10.23.
+`PicasaMenuBar.qml`: „Show Edit Controls”). A Ctrl+9 kötés (#4696) csak a
+szerkesztőnézőben aktív; az F5 (#4697) csak a könyvtárnézetben frissíti az
+aktuális mappát. A 2026-10-14-i eredeti programfutás és a mai kód viselkedése
+a **10.34**-ben szerepel.
 `Ctrl+Shift+H` / `Ctrl+Shift+V` (tükrözés — a művelet a kódbázisban NINCS
 meg; külön jegy). A soronkénti elszámolás a #2163 kommentjében áll, a gépi őr a
 `tests/app/test_gyorsbillentyu_agak_2163.py`: az bukik, ha olyan billentyűt
@@ -1796,7 +1798,7 @@ A 10.24 „Ctrl+G nyitott” állítása ezzel pontosítva: a lánc megvan, a v�
 - [x] A VK-0x47 közvetlen kezelő-keresés elvégezve; a negatív eredmény a vizsgált eseteken igazolt.
 - [ ] A `V` (könyvtárnézeti aktív nézet) osztálya azonosítva.
 - [ ] A `V.vtbl[+0x74]` és a gyermekek Ctrl+G-kezelése igazolva, vagy a teljes lánc `0xf4241`-et ad (kódúton igazolva).
-- [ ] Dinamikus mérés: Ctrl+G a könyvtárnézetben, a változás rögzítve.
+- [x] Dinamikus mérés: a Ctrl+G könyvtárnézetben és szerkesztőnézőben sem okozott látható változást (Colab, job-121/122, 2026-10-14; 10.34).
 - Csak ha mindhárom nyitott pont negatív: „a Ctrl+G a könyvtárnézetben hatástalan”.
 
 ### 10.28 #4699 — a Ctrl+Alt (VK `0x12`) látható hatása: felugró `PopDisplay`-ablak (2026-10-13)
@@ -2016,6 +2018,43 @@ Egyik ismert jelölt sem billentyűkezelő a részleges olvasás alapján. Mivel
 - [ ] Elengedéskor az elrejtés az eredeti visszahívás következő tickjén történjen; aktív callback-periódus `10 ms` (`0x007753f0` → `0x0097fc30`). A valós falióra-késésre ne állítson a fejlesztői jegy mérést, mert az **NINCS MEG**.
 
 **A 10.28 és 10.32 státuszának kezelése.** A 10.28/10.32 alatti, e négy pontra vonatkozó „nyitott” bejegyzések a korábbi kutatási pillanatképet őrzik; azok eredményét ez a 10.33-as szakasz váltja fel. A 10.32-ben nyitva hagyott popup-elhelyezés, a `WM_PAINT`/`BitBlt` teljes képútja, a második `ShowWindow` út és a kurzor viselkedése e körnek nem volt kérdése, továbbra is külön nyitott.
+
+### 10.34 #4643 — Picasa 3.9 dinamikus próba és a mai kötéseink (2026-10-14)
+
+**Mérés.** Az eredeti Picasa 3.9-et Colabban, a `job-121` és `job-122`
+futásban vizsgáltuk, pozitív kontrollal. A felhasználói felületen látható
+eredmény:
+
+| billentyű | bináris ág / cél | Picasa 3.9 — könyvtárnézet | Picasa 3.9 — szerkesztőnéző |
+|---|---|---|---|
+| `Ctrl+9` | `0x005e629f` → `0x00579330` szerkesztő-előnézeti őr → kattintás az `editpanel/toggle_left_drawer` elemre (10.23) | nincs látható hatás | ki- és bekapcsolja a bal oldali szerkesztőfiókot; a képterület kitölti a felszabaduló helyet |
+| `Ctrl+G` | nincs közvetlen VK-ág; a Ctrl-betű továbbítás `0x00a53b00` → `0x00a582f0` → az aktív nézet `vtbl[+0x74]` kezelője felé megy; a végpont nyitott (10.27) | nincs látható változás | nincs látható változás |
+| `F5` | `0x005e6869`: beállítja a `+0x166` frissítési jelzőt és meghívja a `0x0065b840`-et; az idle-út listafrissítést indít. A lemezolvasási lánc kapui feltételesek (10.22, 10.26). | nincs látható változás | nincs látható változás |
+
+**Mai PicasaPy-kód és bizonyíték.**
+
+| billentyű | jelenlegi kötés | mért jelenlegi működés |
+|---|---|---|
+| `Ctrl+9` | `PhotoViewer.qml`: `enabled: viewer.visible`, majd `toggleEditorDrawer()`; `editorDrawerOffset` `0` és `-279` között vált, a bal fiók szélessége `280 + editorDrawerOffset`, a mellette levő nézet tölti ki a maradék helyet | A `test_ctrl9_left_drawer_4696.py` valódi billentyűeseménnyel méri a nyitást/zárást és a könyvtárnézeti hatástalanságot, három ablakmagasságon. A kapcsoló csak a nézőben él. |
+| `Ctrl+G` | Nincs `Ctrl+G`-re kötött `Shortcut` a `src/picasapy/app/qml/` alatt | A kódban nincs külön látható művelete. Az eredeti futásban sem látszott változás egyik nézetben sem. Ez nem bizonyítja, hogy a bináris belső billentyűláncának minden ága művelet nélküli; a könyvtárnézeti virtuális kezelő végpontja továbbra is nyitott (10.27). |
+| `F5` | `Main.qml`: a `resyncFolder(currentFolder)` csak érvényes, aktív könyvtárnézetben fut; a nézőben a `libraryActive` feltétel letiltja | A `test_f5_konyvtar_frissites_4697.py` valódi F5-leütéssel igazolja, hogy a könyvtárban a lemezről eltűnt és újonnan megjelent fájl, valamint a keresési találat frissül, három ablakmagasságon. A nézőben az F5 kötése letiltott. |
+
+Az eredeti mérésben nem jelent meg látható F5-változás. A #4697 korábbi
+megvalósítása célzottan a megváltozott mappatartalom újraolvasását és a
+keresési eredmények frissítését kérte; ezt az `a814e1e8f` commit és a
+`changelog.d/4697.md` rögzíti. A két futás eredménye eltérő: a #4697 tesztje
+fájlváltozást idéz elő, míg a Colab-mérés csak a leütés utáni látható
+eredményt rögzíti. A statikus bináriselemzés is igazolja a `+0x166` frissítési
+jelzőt és a lemezolvasás útját (10.22, 10.26), de nem igazolja, hogy minden
+F5-re látható változásnak kell történnie. A korábbi #4697 viselkedés ezért
+megmarad; a mérés nem indokolja az eltávolítását.
+
+A `Ctrl+G` eredményét „a két vizsgált nézetben nem látható változásként” kell
+idézni, nem teljes binárisbeli no-opként. Ezzel a 10.27 dinamikus mérési
+feladata teljesült; a statikus végpont és a teljes belső hatás továbbra is
+nyitott. A `Ctrl+9` eredménye megerősíti a 10.23-ban kiolvasott
+`editpanel/toggle_left_drawer` műveletet, és elavulttá teszi a 10.7-ben korábban
+szereplő „a bal fiók nálunk nem létezik” állítást.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
