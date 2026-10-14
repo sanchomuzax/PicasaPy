@@ -5718,8 +5718,8 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 
 **Írógép (`textstyle11`)**
 
-- A stílus-11 factory-ág a `0x00809fe0` kezelőt és a `0x0080a030` építőt használja; a `len` a szöveg bájthossza. A `d` értéke `desc+0xec` (`transitiontime`); ha nem pozitív, `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). A kezdőpont `L=desc+0xf0+desc+0xf4` (`0x810453`–`0x810464`), ahol a parserben `+0xf0=blacktime`, a `+0xf4` mezőnek nincs XML-attribútuma és alapértéke 0 (`0x8162f0`, `0x8152f0`).
-- A kockafüggvény képlete a G.6.3/G.6.7 szerint: `n(t)=max(1, trunc(len·clamp((t+0.02−L)/d,0,1)+0.5))`. A lineáris rész szerinti ütem `len/d` bájt/s, tehát a szövegdia teljes `advanceinterval`-je csak akkor határozza meg a karakterütemet, ha `transitiontime` nem pozitív és a `d=advanceinterval/3` visszaesés aktiválódik.
+- A stílus-11 factory-ág a `0x00809fe0` kezelőt és a `0x0080a030` építőt használja; a `len` a szöveg bájthossza. A `d` értéke `desc+0xec` (`transitiontime`); ha ez pontosan nulla, `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). Negatív `d`-t a factory nem helyettesít, és a kezelő `d>0` feltétele miatt az animáció nem frissül. A kezdőpont `L=desc+0xf0+desc+0xf4` (`0x810453`–`0x810464`), ahol a parserben `+0xf0=blacktime`, a `+0xf4` mezőnek nincs XML-attribútuma és alapértéke 0 (`0x8162f0`, `0x8152f0`).
+- A kockafüggvény képlete a G.6.3/G.6.7 szerint: `n(t)=max(1, trunc(len·clamp((t+0.02−L)/d,0,1)+0.5))`, ha `d>0`. A lineáris rész szerinti ütem `len/d` bájt/s; az `advanceinterval/3` visszaesés csak nulla `transitiontime` esetén aktiválódik, és csak pozitív eredményű `d` mellett frissül a kezelő.
 - A képlet a **bájtszámot** bizonyítja, nem azt, hogy a natív rajzoló egy több-bájtos UTF-8 karaktert hány látható karakterként kezel. A glyph-szintű ütem és a kurzor kérdése továbbra is mérendő.
 
 **Gördülő stáblista (`textstyle8`)**
@@ -5733,7 +5733,7 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 - A factory 1-es stílusága a `FadeMove` konstruktort (`0x00809c50`, `0x8107a7`) és építőt (`0x00809cd0`, `0x8107ba`) hívja. A kezelő a lineáris alfa- és a smoothstep pozíció-idővonalat is bekapcsolja (`H+0x48=1`, `H+0x49=1`, `0x809cb9`–`0x809cbc`).
 - A gyár `AL=0xff` értéket ad át (`0x81079a`); a konstruktor alfa-kezdőértéke 0 (`0x809c68`), végértékét `H+0x0d` tárolja. Az alfa-építő a lineáris `0x00809ae0` interpolátort adja a `0x009e6010` szegmensnek (`0x809eb0`), tehát a kódból olvasható alfaút 0→255.
 - A pozícióút a `H+0x28`→`H+0x2c` végpontokat smoothstep-pel interpolálja; a stílus-1 hívásban `H+0x28=0`, a `H+0x2c` végpontot a hívó stackadja adja, forrása nyitott. Az 1-es jelző miatt a `dia+0x14c` mezőt írja (`0x809cd0`, `0x809d20`). A gyár a közös `L=desc+0xf0+desc+0xf4` kezdőértéket adja át (`0x810453`–`0x810464`, `0x8107b2`).
-- A stílus-1 ág `0x8107a0` betöltése a factory által korábban kiszámított `d` lokális értéket használja: `d=desc+0xec`, ha pozitív, különben `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). Ezt az értéket a factory a `0x809c50` konstruktor első argumentumaként adja át, ahol `H+0x08` mezőbe kerül; az alfaág `0x809af0` hívása is ugyanezt a `d`-t kapja. A `0x809cd0` a bemenő időhöz hozzáadja `H+0x08`-at, ezért a számforrás ismert, de a natív időtengelyen betöltött szerepét nem szabad pusztán „mozgás-időtartamnak” nevezni.
+- A stílus-1 ág `0x8107a0` betöltése a factory által korábban kiszámított `d` lokális értéket használja: `d=desc+0xec`, ha nem nulla, egyébként `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). Ezt az értéket a factory a `0x809c50` konstruktor első argumentumaként adja át, ahol `H+0x08` mezőbe kerül; az alfa- és pozíció-idővonal is ezt használja. A negatív `d` nem vált ki visszaesést, és a kezelő `d>0` kapuja miatt nem frissít. A `0x809cd0` a pozíciószegmenst `[L,L+H+0x08]` időintervallumra építi, tehát itt `H+0x08` a szegmens időtartama; a kockaidőből számolt arányt a közös kiértékelő állítja elő.
 - **Nyitott:** a pozíció-végpont forrása nincs teljesen lezárva. A gyár a kiválasztott szövegobjektum `+4` alobjektumának `vtable+0x30` metódusát hívja (`0x810761`–`0x810771`), majd egy visszaadott egész értéket előjellel megfordítva floatként a konstruktor stackterületére ír (`0x810783`–`0x81079c`). A helper–argumentum–`H+0x2c` kapcsolatot és a koordinátatengelyt a helyi diszasszemblálás nem dönti el; ezekre nincs pixelérték vagy becslés.
 
 ##### G.7.8.4 Két ellenőrzési út és cáfoló kör
@@ -5749,7 +5749,7 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 - [ ] A szövegdia képkockája a kimeneti ciklusban, a dia helyi `k` indexével épül; az egyszeri `text_frames` előrenderelés megszűnik. A kockaszám és a fotók tartási ideje nem változik.
 - [ ] A natív időbélyeg és a helyi kocka indexének leképezése rögzítve van. `t_k=k/fps` önmagában **nem igazolt**: a natív `t` a pin 100 ns-os órájából származik, a reset seedje `+0x108/+0x10c`.
 - [ ] A 11-es stílus a G.7.8.3 képletét alkalmazza a mentett `trans` mezőkkel; a több-bájtos próbaszöveg kimenetén eldől, hogy a byte-index és a látható glyph-index hogyan felel meg.
-- [ ] A 8-as stílus `advanceinterval`-hosszú smoothstep útja `B→A`, a 1-es stílus 0→255 lineáris alfája és egykomponensű smoothstep mozgása kockánként renderelődik. A textstyle1 `d` bemenete binárisan `desc+0xec`, nem pozitív értéknél `desc+0xe8/3`; a `H+0x08` időeltolás tényleges szerepe és a `H+0x2c` geometriai végpont exportkori értéke pontosan feloldandó vagy referenciából mérendő, becslés nélkül.
+- [ ] A 8-as stílus `advanceinterval`-hosszú smoothstep útja `B→A`, a 1-es stílus 0→255 lineáris alfája és egykomponensű smoothstep mozgása kockánként renderelődik. A textstyle1 `d` bemenete binárisan `desc+0xec`, nulla értéknél `desc+0xe8/3`; negatív értéknél a kezelő nem frissít. A `H+0x08` időeltolás tényleges szerepe és a `H+0x2c` geometriai végpont exportkori értéke pontosan feloldandó vagy referenciából mérendő, becslés nélkül.
 - [ ] A Picasa 3.9 referenciából mindhárom stílus kockái `k` szerint dokumentálva; a kimeneti teszt kiválasztott kockái a referencia képkockáival összevetve. A tolerancia a mérésből származik, nem előre beállított érték.
 
 ##### G.7.8.6 Nyitott — a konkrét megszerzési út
@@ -5759,7 +5759,7 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 - Ghidra-kör kell: `0x00814330` — a `.mxf`/TimelineXML `this+0x50` rekord szülőobjektuma a filmexportban hogyan jut el a `0x812470/0x8127b0` render-`ctx+0x48` listájához? Az objektumazonosságot kell eldönteni. [blokkoló]
 - Ghidra-kör kell: `0x00816360` — a TimelineXML `this+0x4c` szülőpointere exportkor ugyanarra a kontextusra mutat-e, amelynek `+0x48` listáját a render-helper olvassa? [blokkoló]
 - Ghidra-kör kell: `0x008127b0` — a `ctx+0x48` mintavételezett rekordjának `ctx+0x1a8`-ba másolása mely exportágon történik, és hogyan kapcsolódik az előző XML-parser szülőjéhez? [blokkoló]
-- Ghidra-kör kell: `0x00810420` — a `textstyle1` `d` (`desc+0xec`, nem pozitív értéknél `desc+0xe8/3`) pontos időszemantikája, valamint a `0x809c50` hívásban a `H+0x2c`-t adó virtuális geometriai eredmény forrása? [blokkoló]
+- Ghidra-kör kell: `0x00810420` — a `0x809c50` hívásban a `H+0x2c`-t adó virtuális geometriai eredményt melyik konkrét osztály és mező állítja elő, és mi a koordinátajelentése/mértékegysége? [blokkoló]
 - Mérés kell: eredeti Picasa 3.9 filmexport mindhárom stílussal, kockánkénti timestamp/pozíció/alfa/karakter-kiolvasással. A helyi `meroadat.tar` releváns film- vagy szövegdia-exportmintát nem tartalmazott; a referenciakockák és a natív ütem ezért `NINCS MEG`.
 
 ##### G.7.8.7 6. kör (2026-10-13): a két blokkoló Ghidra-pont — mi dőlt el, mi nem
@@ -5800,9 +5800,9 @@ Nyitva:
 | reset (`0x74d970`) olvassa a seedet, és másolja `+0x208/+0x20c`, `+0x4b0`, `+0x4b8`-ba; nullázza `+0x1fc`, `+0x4a8`, `+0x218`-at | bináris, teljes dekompilátum (`0074d970.c`, G.7.8.7) |
 | film-végidő és darabszám: `ctx+0x90` bázis, `ctx+0x94>>1` darabszám, `0xf8` lépés | bináris (`0x813330`, a `008127b0.c` callee-törzse); az objektum azonossága `ctx+0x48` szerkezeti egyezés, nem bizonyíték |
 | TimelineXML `this+0x50` → szülő `+0x48` lista, majd render `ctx+0x48` → `ctx+0x1a8` rekordmásolás | bináris (`0x8152f0`, `0x816360`, `0x80a460`, `0x812470`, `0x8127b0`, `0x612350`); a szülőpointer és render-context azonossága nyitott |
-| Írógép natív üteme `len/d` bájt/s; `d=transitiontime`, nem pozitív esetén `advanceinterval/3` | bináris (`0x8104b9`–`0x8104dc`; G.6.3/G.6.7) |
+| Írógép natív üteme `len/d` bájt/s; `d=transitiontime`, nulla esetén `advanceinterval/3`, negatív esetén nincs frissítés | bináris (`0x8104b9`–`0x8104dc`, `0x80a080`; G.6.3/G.6.7) |
 | Gördülő interpoláció `3p²−2p³`, időmező `advanceinterval` | bináris (`0x818cf0`; `0x810fe5`; G.6.4/G.7.5) |
-| `textstyle1` alfa `0→255`, lineáris; `d` input `desc+0xec`, nem pozitív értéknél `desc+0xe8/3`; `H+0x08`-ba kerül | bináris (`0x8104b9`–`0x8104dc`, `0x8107a0`–`0x8107b2`, `0x809c50`, `0x809cd0`, `0x809af0`) |
+| `textstyle1` alfa `0→255`, lineáris; `d` input `desc+0xec`, nulla értéknél `desc+0xe8/3`; negatív értéknél a kezelő nem frissít | bináris (`0x8104b9`–`0x8104dc`, `0x8107a0`–`0x8107b2`, `0x809c50`, `0x809cd0`, `0x809af0`, `0x809d20`) |
 | export seed tényleges értéke, parser-szülő és render-context azonossága, `k↔t` leképezés | NINCS MEG |
 | Gördülő tényleges pixeles A/B és textstyle1 `H+0x2c` mozgásvégpont/időszemantika | NINCS MEG |
 | referenciafilm képkockái, a három stílus natív mérési táblája, kimeneti képteszt | NINCS MEG |
@@ -5821,3 +5821,39 @@ Nyitva:
 
 - [ ] A három stílus animációja a natív filmben és képkockás referencia-összevetése — **NINCS MEG**; Picasa 3.9 export és képkockánkénti mérés kell.
 - [ ] A helyi kimenet képkocka-tesztje — **NINCS MEG**; ez fejlesztői és tesztmunka, nem kutatási lelet.
+
+#### G.7.11 #4615 célzott bináris kör: kockaidő, pozíció és írógép-hossz (2026-10-14)
+
+*Bizonyítottsági fok: **feltételes**. A factory → kezelő út és a kezelők idővonal-kiértékelése utasításszinten leolvasható; az RTTI és a nyers vtábla ettől függetlenül megerősíti a slot–függvény azonosságot. A képletekhez nincs külön Picasa 3.9 képkockamérés, és a lehetséges későbbi pozíció-felülírás, valamint az exportkori objektumazonosság nyitott. Ezért a binárisból következő képlet nem bizonyítja önmagában, hogy ugyanaz az érték látható a film kimenetében.*
+
+**Képkockaidő és arány a két kezelőben.** A `TextFadeMoveHandler` slot 3 függvénye (`0x00809d20`) és a `TextTypeWriterHandler` slot 3 függvénye (`0x0080a080`) a `0x13` eseményből a qword időbélyeget olvassa (`event+0x10`). Mindkettő a kezelőhöz épített idővonalat adja a `0x009e5e20` kapunak, majd a `0x009e5e70` kiértékelőnek. A kapu csak pozitív `H+0x08` időtartamnál enged frissítést. Az idővonal-kiértékelő a `t+0.02` értéket használja, a szegmens startját (`L`) kivonja, majd az eredményt az `end−start` időtartammal osztja és `[0,1]` közé korlátozza. Így `p=clamp((t+0.02−L)/d,0,1)`. A `0.02` konstans címe `0x00cf48a8`; az esemény időbélyegének magasabb szintű, filmkockaindexhez viszonyított leképezése itt nincs bizonyítva.
+
+- A Gördülő stáblista (`textstyle8`) `d=desc+0xe8` (`advanceinterval`), és `L=desc+0xf0+desc+0xf4`. A pozíció interpolátora `S(p)=3p²−2p³`, ezért a kezelt komponens `P=B+S(p)(A−B)`. A kezelő `H+0x49=0` jelzője miatt a `dia+0x150` komponenst (Y) írja; `H+0x48=0` miatt alfát nem animál. A factory által beállított végpontok: `B=h_b`, `A=0.5·(h_a−(E+0x54−E+0x4c))`. `h_a` a szövegdia téglalapjának alsó–felső különbsége, `h_b` a háttérdia téglalapjának alsó–felső különbsége, `E+0x4c/+0x54` a szövegobjektum metódusa által visszaadott függőleges pár. Az induló és végső érték tehát futásidejű geometriai képlet, nem rögzített pixelkonstans; konkrét exportérték **NINCS MEG**.
+- A „Jó napom van” (`textstyle1`) `d=desc+0xec` (`transitiontime`), ha ez nem nulla; pontosan nulla esetén `d=desc+0xe8/3`. Negatív `transitiontime` esetén a factory megtartja a negatív értéket, de a kezelő pozitív-időtartam kapuja nem frissít. Az idővonal kezdete `L=desc+0xf0+desc+0xf4`; az alfa- és a pozíció-idővonal is a `[L,L+d]` intervallumot használja, ezért `d` ezek időtartama. A kockaidőből számolt arány `p=clamp((t+0.02−L)/d,0,1)`. A lineáris alfa `0→255`; a pozíció smoothstep útjának kezdete `H+0x28=0`, vége `H+0x2c=−M`, és az X komponenst (`dia+0x14c`) írja. `M` a kiválasztott szövegobjektum `vtable+0x30` metódusának visszatérési értéke; a metódus pontos osztálya, `M` geometriai jelentése, egysége és exportkori értéke **NINCS MEG**.
+- Az Írógép (`textstyle11`) az időarányt ugyanezzel a `p` képlettel kapja. `d=desc+0xec`, ha nem nulla; nulla esetén `d=desc+0xe8/3`; negatív `d` mellett nincs frissítés. A timeline értéke `len·p`; a kezelő ehhez `0.5`-et ad, egészre csonkítja, és legalább `1`-et ír a dia `+0x34c` mezőjébe. Ez bájtindex, nem bizonyított Unicode-karakterindex.
+
+**Az írógép hosszának egysége.** A `0x00811d9e` körüli factory-ciklus a `+4`-es szövegadat-pointert bájtonként növeli, az első NUL bájtnál áll meg, és a terminátor nélküli pointerkülönbséget adja a `0x00809fe0` konstruktornak. A konstruktor ezt a bájthosszt tárolja `H+0x0c`-ban; a `0x0080a030` építő ezt a mezőt teszi az idővonal végértékévé. Ez a vizsgált út keskeny, NUL-terminált karaktertárat és bájtszámot bizonyít, nem UTF-16 kódosegység- vagy Unicode-kódpontszámot. Az adattár pontos kódolása (MBCS, UTF-8 vagy más), illetve a több-bájtos karakter részleges megjelenítése **NINCS MEG**.
+
+| érték vagy állítás | forrás |
+|---|---|
+| `TextFadeMoveHandler` slot 3 = `0x00809d20`; `TextTypeWriterHandler` slot 3 = `0x0080a080` | bináris (`RTTI 0x00cbdb94`, `0x00cbdbbc`; nyers PE-vtábla-dwordok ugyanott; factory-ágak `0x810fee`, `0x811d9e`) |
+| Az esemény típusa `0x13`, időbélyege qword `event+0x10` | bináris (`0x809d20`, `0x80a080`) |
+| Időkapu `H+0x08>0`; kiértékelési arány `clamp((t+0.02−L)/d,0,1)` | bináris (`0x9e5e20`, `0x9e5e70`); `0.02` literál: `0x00cf48a8` |
+| `textstyle8`: `d=desc+0xe8`, `L=desc+0xf0+desc+0xf4`, `B=h_b`, `A=0.5·(h_a−(E+0x54−E+0x4c))`, Y-írás; smoothstep `3p²−2p³` | bináris (`0x810ed0`–`0x811009`, `0x809cd0`, `0x809d20`, `0xc72150`, `0x818cf0`; geometriához G.7.5 és `0x9e51a0`) |
+| `textstyle1`: `d=desc+0xec`, pontosan nulla esetén `desc+0xe8/3`; negatív d-nél nincs frissítés; `L` közös; alfa `0→255`; X út `0→−M` | bináris (`0x8104b9`–`0x8104dc`, `0x8107a7`–`0x8107b2`, `0x809c50`, `0x809cd0`, `0x809eb0`, `0x809d20`) |
+| `textstyle1` `M` metódusának szemantikája/egysége és futásidejű értéke | NINCS MEG |
+| `textstyle11` bájthossza és az idővonal végértéke | bináris (`0x811d9e`–`0x811db7`, `0x809fe0`, `0x80a030`, `0x80a080`) |
+| Az írógép-adat pontos kódolása és a bájtindex glyph-megjelenítési hatása | NINCS MEG |
+| Diahelyi kockaindex ↔ esemény-időbélyeg, referenciakockák, exportkori geometriai számok | NINCS MEG; a helyi `meroadat.tar` tagnevei között nem volt film-/szövegdia-minta, így nem bontottam ki mérőadatot |
+
+**A két független út.**
+
+- **A út — utasításszintű adatfolyam:** a `0x00810420` factory stíluságai a desc mezőket a megfelelő konstruktoroknak/építőknek adják; a `0x809cd0` és `0x80a030` a startot, végidőt és végértéket állítja be; a két slot 3 függvény az esemény időbélyegével meghívja a közös időkaput és kiértékelőt. Ez az út adja a fenti arányt és a stílusmezőket.
+- **B út — RTTI és nyers vtable:** az index RTTI-bejegyzései és a PE-ben közvetlenül kiolvasott négy dword egyaránt a `0x00cbdb94`/`0x00cbdbbc` vtáblák 3. elemét köti a két slot 3 függvényhez. Ez egyezik a factory által létrehozott kezelőtípusokkal, de önmagában nem méri vagy bizonyítja az időképletet. A négy kérdés képlet-szintű állításai ezért **feltételesek**: a B út a függvényazonosságot ellenőrzi, nem egy második, független képletmérést.
+
+**Cáfoló kísérlet — a pozíció későbbi felülírása.** Azt próbáltam cáfolni, hogy a `TextFadeMoveHandler` által írt pozíció biztosan a kimeneti képkockán marad. A `ytFlyingNode::vftable` RTTI-sora a `0x00819040` metódushoz vezet; az offset-térkép a `+0x14c/+0x150` olvasását és írását, illetve a `+0x388/+0x38c` mezők írását mutatja; a metódus utasításai összevetik a két mezőpárt, és eltéréskor a `+0x388/+0x38c` párból visszaírják a dia pozícióját. **Az ellenőrzés ugyanazzal a mércével:** az RTTI azonosítja a metódust, az offset-térkép és az utasítások alátámasztják a mezőkapcsolatot, de nincs bizonyíték arra, hogy ez ugyanaz az objektum, és a metódus a handler után, a filmkocka mentése előtt fut. Ez valódi lehetséges felülírás, de nem bizonyítja és nem is cáfolja a látható animációt; a kimeneti képkocka-mérés továbbra is szükséges.
+
+**A #4615 „Kész, ha” pontjai a kutatás után.**
+
+- [ ] A három stílus animál a filmben, mért kép-összevetés a referenciával — **NINCS MEG**. A bináris út animációs kezelőket és képleteket igazol, de nincs eredeti Picasa 3.9 kockamérés, referencia-összevetés vagy exportkori érték.
+- [ ] Kimenet-teszt a képkockákra — **NINCS MEG**. Ez implementációs és tesztfeladat; a jelen kutatási kör nem módosított kódot vagy tesztet.
