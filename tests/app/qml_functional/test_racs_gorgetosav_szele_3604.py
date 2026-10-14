@@ -114,7 +114,7 @@ def _fiok_animaciora_var(qt_app, window, nyitva: bool) -> None:
     """Határidővel várja meg a jobb fiók mért szélességét (#3035)."""
     fiok = _elem(window, "rightDrawer")
     elvart = fiok.property("alapSzelesseg") if nyitva else 0
-    assert _var(qt_app, lambda: abs(fiok.width() - elvart) <= 0.25, 3.0)
+    assert _var(qt_app, lambda: abs(fiok.width() - elvart) <= 0.25)
 
 
 def _geometria(sav, fogo) -> tuple[float, float, float, float]:
@@ -243,7 +243,7 @@ class TestARacsGorgetosavSzele:
 
             _katt(window, fogo)
             assert _var(
-                qt_app, lambda: window.property("activeDrawerTab") != "", 3.0
+                qt_app, lambda: window.property("activeDrawerTab") != ""
             ), "a fogóra kattintás nem nyitotta ki a jobb fiókot"
             _fiok_animaciora_var(qt_app, window, True)
 
@@ -262,7 +262,7 @@ class TestARacsGorgetosavSzele:
             # visszazárjuk — a teardown csukott fiókot vár
             _katt(window, fogo)
             assert _var(
-                qt_app, lambda: window.property("activeDrawerTab") == "", 3.0
+                qt_app, lambda: window.property("activeDrawerTab") == ""
             ), "a fogóra kattintás nem zárta be a jobb fiókot"
             _fiok_animaciora_var(qt_app, window, False)
         finally:

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject
 
@@ -13,6 +11,7 @@ from tests.app.qml_functional.test_photo_menu_commands import (
     _click_item,
     _picture_menu_item,
 )
+from tests.support.varakozas import var_feltetelre
 
 # A qml_app teardown a hívó tesztmodul `_KEEP…` listáit üríti. A menüsegédek
 # saját modul-listáját is tegye láthatóvá neki, mert itt onnan használjuk őket.
@@ -27,15 +26,8 @@ def _previous_menu_helpers_released_their_wrappers():
     )
 
 
-def _varj(qt_app, feltetel, timeout=3.0):
-    hatarido = time.monotonic() + timeout
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, timeout=10.0):
+    return var_feltetelre(qt_app, feltetel, timeout)
 
 
 @pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))

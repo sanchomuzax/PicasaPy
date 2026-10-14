@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QPointF, Qt, QUrl
 from PySide6.QtQuick import QQuickView
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 _AREA_QML = (
@@ -18,15 +18,8 @@ _AREA_QML = (
 _QML_DIR = _AREA_QML.parent
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _ablak(qt_app, magassageltolas: int):

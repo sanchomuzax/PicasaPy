@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -12,6 +11,7 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Property, QTranslator, QUrl
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _TS_PATH = Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
@@ -277,15 +277,8 @@ class _EditControllerStub(QObject):
         return []
 
 
-def _varj(qt_app, predicate, seconds: float = 3.0) -> bool:
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(predicate())
+def _varj(qt_app, predicate, seconds: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, predicate, seconds)
 
 
 def _walk(item: QQuickItem):

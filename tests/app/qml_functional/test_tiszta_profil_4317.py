@@ -328,7 +328,7 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
     assert _var(qt_app, lambda: export.property("opened") is False), (
         "az export befejeződött, de a párbeszéd nyitva maradt"
     )
-    assert _var(qt_app, lambda: export.property("visible") is False, 3.0), (
+    assert _var(qt_app, lambda: export.property("visible") is False), (
         "az export párbeszéd bezáró animációja nem ért véget"
     )
     assert not app["attempts"], f"exportálás közben hálózati próbálkozás történt: {app['attempts']}"
