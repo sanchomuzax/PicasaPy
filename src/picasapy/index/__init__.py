@@ -79,6 +79,13 @@ from .people import (
     people_with,
     person_photos,
 )
+from .person_thumbnails import (
+    PersonThumbnail,
+    person_thumbnail,
+    person_thumbnail_face,
+    person_thumbnails,
+    set_person_thumbnail,
+)
 from .project_folders import ProjectFolder, project_folders
 from .relocate import (
     RelocationCancelled,
@@ -111,6 +118,7 @@ __all__ = [
     "PendingEmbeddingFace",
     "UnnamedFace",
     "PersonRecord",
+    "PersonThumbnail",
     "PhotoRecord",
     "ProjectFolder",
     "RelocationCancelled",
@@ -156,6 +164,9 @@ __all__ = [
     "photos_with_faces",
     "people_with",
     "person_photos",
+    "person_thumbnail",
+    "person_thumbnail_face",
+    "person_thumbnails",
     "photo_by_id",
     "unnamed_album_photos",
     "unnamed_photo_count",
@@ -184,6 +195,7 @@ __all__ = [
     "save_colors",
     "save_dhashes",
     "save_fast_keys",
+    "set_person_thumbnail",
     "SearchSuggestion",
     "search_photos",
     "search_suggestions",

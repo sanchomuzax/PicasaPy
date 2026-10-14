@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.97] – 2026-10-14
+
+- A személy-album indexképe a fotó helyi menüjéből beállítható, és az SQLite index megőrzi. (#4536).
+
+## [0.9.96] – 2026-10-14
+
+- A Picasa-átvétel megőrzi a mappák és albumok kézi képsorrendjét. (#4889).
+
 ## [0.9.95] – 2026-10-14
 
 - A Ctrl+Alt előnézet a kijelölt képet mutatja, és csak 1024 képpontnál szélesebb tartalomnézetben jelenik meg (#4949).
