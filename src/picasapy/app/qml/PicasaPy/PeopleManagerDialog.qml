@@ -330,6 +330,7 @@ Dialog {
                                 visible: source !== ""
                                 fillMode: Image.PreserveAspectCrop
                                 smooth: true
+                                mipmap: true
                                 asynchronous: true
                             }
                             Label {

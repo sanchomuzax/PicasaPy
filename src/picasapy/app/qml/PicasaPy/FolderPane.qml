@@ -619,6 +619,7 @@ Rectangle {
                             source: modelData.thumbUrl || ""
                             fillMode: Image.PreserveAspectCrop
                             smooth: true
+                            mipmap: true
                             asynchronous: true
                             visible: source !== ""
                         }
