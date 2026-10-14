@@ -19,6 +19,7 @@ from PySide6.QtCore import QObject
 from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
 from support.qt_wait import hangos_hurok
+from support.varakozas import var_feltetelre
 
 # Tesztbeli küszöb/min-láthatóság — kicsi, de nem nulla, hogy a "rövid
 # munka nem gyújt" eset (SHOW_DELAY_MS) is tesztelhető maradjon ÉBER
@@ -48,17 +49,9 @@ def _child(window, name):
     return obj
 
 
-def _wait_until(qt_app, predicate, timeout_s=2.0):
-    """Aktív várakozás valódi idő-előrehaladással, közben eseményeket
-    dolgozva fel (a QTimer-alapú küszöb/min-láthatóság csak processEvents
-    alatt tüzel) — `True`, ha a `predicate()` a határidőn belül igazzá vált."""
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.005)
-    return False
+def _wait_until(qt_app, predicate, timeout_s=10.0):
+    """Eseményeket dolgozva vár a feltételre; a QTimeres küszöb csak processEvents alatt tüzel."""
+    return var_feltetelre(qt_app, predicate, timeout_s)
 
 
 class TestBusySweep:

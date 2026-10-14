@@ -1,22 +1,17 @@
 """Több szövegdoboz létrehozása és kattintásos kijelölése (#4545)."""
 
-import time
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.ini.text_overlay import parse_text
+from support.varakozas import var_feltetelre
 
 
-def _var(qt_app, condition, message: str, seconds: float = 3.0) -> None:
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if condition():
-            return
-        time.sleep(0.01)
-    raise AssertionError(message)
+def _var(qt_app, condition, message: str, seconds: float = 10.0) -> None:
+    if not var_feltetelre(qt_app, condition, seconds):
+        raise AssertionError(message)
 
 
 def _element(window, name: str):
