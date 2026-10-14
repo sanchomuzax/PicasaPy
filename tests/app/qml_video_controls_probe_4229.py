@@ -17,7 +17,7 @@ from PySide6.QtTest import QTest
 from app.qml_functional.conftest import _build_qml_app
 from support.jpeg_factory import make_jpeg
 from support.video_factory import make_mp4
-from tests.support.varakozas import var_feltetelre
+from support.varakozas import var_feltetelre
 
 
 def _elem(ablak, nev: str):

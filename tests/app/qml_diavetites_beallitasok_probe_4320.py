@@ -13,7 +13,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
-from tests.support.varakozas import var_feltetelre
+from support.varakozas import var_feltetelre
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("QT_QUICK_BACKEND", "software")
