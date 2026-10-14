@@ -1459,14 +1459,15 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | PplAlbumPhoto | PplAlbumPhoto::ID_DELETEFROMPEOPLEALBUM | Eltávolítás az Emberek albumból | objectName=contextMenuRemoveFromPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_PEOPLEALBUMS | Hozzáadás egy meglévő Emberek-albumhoz | objectName=contextMenuAddToPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_MOVETONEWPERSON | Áthelyezés új személyhez | objectName=contextMenuMoveToNewPerson | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
-| PplAlbumPhoto | PplAlbumPhoto::ID_SETASPEOPLEALBUMTHUMBNAIL | Beállítás az Emberek album indexképeként | objectName=contextMenuSetAsPeopleAlbumThumbnail | **hiányzik — javasolt jegycím: Lehessen indexképet választani minden Emberek-albumhoz** | Nincs személyenkénti indexkép-adat a tárolóban |
+| PplAlbumPhoto | PplAlbumPhoto::ID_SETASPEOPLEALBUMTHUMBNAIL | Beállítás az Emberek album indexképeként | objectName=contextMenuSetAsPeopleAlbumThumbnail | **a sor jelen van, de letiltott helyőrző** | PicasaPy-ban nincs tartós személy–fotó választás |
 
 Az állapotok ismételhető ellenőrzése a tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py fájlban fut. A két új valódi kattintásos QML-próba az AlbumList bélyegkép-kapcsolóját és Asztal almenüjét, valamint a OneUp „Eredeti a lemezen” útját ellenőrzi.
 
 ## 1022. tétel részletezése — személy-album indexképe (#4536)
 
 Állapot: 2026-10-12, a `research/4536-szemely-indexkep` ágon mért. Csak
-kutatás, kód nem változott. A táblázat 1022. sora („hiányzik") helyes.
+kutatás, kód nem változott. A mai kódban a menüsor jelen van, de letiltott
+helyőrző; a funkció hiányzik.
 
 ### Mai kód (mért)
 
@@ -2030,29 +2031,35 @@ a bináris a tartós tárolási útvonalat megerősíti, a tényleges
 - A PersonRecord csak nevet és képszámot tárol; a peopleOfRows az aktuális
   sorokból választ ideiglenes photo_id/thumbUrl értéket. Nincs tartós
   személy–fotó hozzárendelés.
-- Az eredeti Picasa tárhelye albums.db. A PicasaPy-implementáció javasolt
-  helye a tartós SQLite index új, per-személy választásrekordja, az
-  index/ API-ján keresztül; az app/ csak olvasson, a .picasa.ini-t ne
-  bővítsük nem szabványos kulccsal. A személy-kulcs a People-modell
-  tartós azonossága legyen; a mappánként eltérő Contacts2 ID nem
-  használható globális kulcsként. A rekord tárolja a választott fotó
-  indexelt azonosítóját vagy kanonikus útvonalát.
+- Az eredeti Picasa tárhelye `albums.db`. A PicasaPy-implementáció javasolt
+  helye a tartós SQLite index, az `index/` API-ján keresztül; az `app/`
+  csak az API-t használja, a `.picasa.ini`-t ne bővítsük nem szabványos
+  kulccsal. A jelenlegi `PersonRecord`-nak nincs tartós azonossága: csak
+  név és képszám van benne, a személyek összesítése név szerint történik.
+  A mappánként eltérő `[Contacts2]` ID és a Picasa album-sorindexe sem
+  használható globális tartós kulcsként. Előbb a személy stabil kulcsát
+  kell megtervezni az `index/` rétegben; a fotóazonosító újraindítás és
+  újraindexelés utáni feloldhatóságát szintén rögzíteni kell. Új tábla,
+  kulcs vagy rekordalak még nincs meghatározva.
 
 #### Bizonyítottság és a jegy „Kész, ha” pontjai
 
 - **Bizonyítottsági fok: feltételes a teljes újraindításos viselkedésre.**
-  Két független út egyezik a sorindex-kulcsról és a CThumbDB tár
-  használatáról; az eredeti bináris a képbájtokat lemezre írja, majd
-  ugyanazon kulccsal olvassa vissza. Profil-diff és újraindításos
-  képernyőmérés nem történt, az általános cache-újraépítő lehetséges
-  hatása nincs lezárva.
+  Az író- és olvasóút ugyanarra a `CThumbDB`-tárra, valamint azonos
+  `albumheader/%x/%d/faceicon` kulcsformára mutat. A független újraolvasás
+  a kulcsnév egyezését megerősítette, de a két út formázófüggvényének
+  numerikus argumentum-azonosságát nem; a sorindex-szemantika ezért nem
+  tekinthető két független úttal megerősítettnek. Profil-diff és
+  újraindításos képernyőmérés nem történt, az általános cache-újraépítő
+  lehetséges hatása nincs lezárva.
 - A korábbi 0x00603660 és 0x0074ad40 kulcsazonossági Ghidra-kérések
   lezárhatók a fenti statikus eseményúttal; a 0x00763150 útvonal kérdése
   külön nyitott marad.
 - ⛔ A választás újraindítás után látszik: az eredeti bináris adatútja
   megvan, de PicasaPy menüje letiltott, tényleges újraindításos próba nincs.
-- ✅ A tárolási hely megnevezhető: eredetiben albums.db, PicasaPy-ban
-  javasoltan a tartós SQLite index új per-személy rekordja.
+- ✅ A tárolási hely kutatása dokumentált: eredetiben `albums.db`,
+  PicasaPy-ban javasoltan a tartós SQLite index `index/` API-ja; a konkrét
+  rekord és stabil személy/fotó kulcs még tervezendő.
 - ⛔ Kattintásos teszt: nem futott, mert ez kutatási kör volt, kód nem változott.
 
 PicasaPy fejlesztői készfeltételek:
@@ -2075,3 +2082,137 @@ Mérés kell: eredeti Picasa-profil előtte/utána Picasa2/db3 diff és
 Ghidra-kör kell: 0x00763150 — a CAlbumList általános borítóútja
 feldolgozza-e a ]facealbum sort, és újraépítheti-e a nullás bélyegű
 kézi képet [blokkoló].
+
+### 7. kör (2026-10-14): a mai menüsor letiltott, az eredeti újraindításos eredménye nyitott
+
+Módszer: a mai QML- és Python-forrás célzott olvasata; a bináris-index
+függvényméreteivel célzott `annot_disasm.py` diszasszemblálás; független
+újraolvasás egy másik elemzővel, a korábbi spec és a mai forrás megmutatása
+nélkül. Teljes `.text`-pásztázás nem történt. A mérőadat-archívumhoz nem
+találtam People/db3 mintát; fájlt nem bontottam ki, a korábban létrejött
+`.bt` könyvtár üres maradt. Wine nem érhető el, eredeti Picasa-profilon
+újraindításos mérés nem történt.
+
+#### A jegyben leírt mai állapot — helyesbítve
+
+- `PhotoContextMenu.qml:250–270`: a `contextMenuSetAsPeopleAlbumThumbnail`
+  tétel ténylegesen jelen van; `personName` mellett látható, de
+  `placeholder: true`. A `PicasaMenuItem.qml:67` emiatt letiltja. Nincs
+  `onTriggered` és nincs személy-indexkép mentésére szolgáló jelzés.
+- `people.py:34–40`: a `PersonRecord` mezői `name` és `photo_count`; tartós
+  személyazonosítója nincs. A `people.py` modulösszesítése a mappák közötti
+  `[Contacts2]` azonosítók helyett név szerint gyűjt.
+- `people_controller.py:630–694`: a `peopleOfRows` az aktuális kijelölt
+  sorokból állítja elő a `photo_id`, arc-rect és `thumbUrl` értékeket; az
+  első érintett fotó adja az ikont. A PeoplePanel ezt a `thumbUrl`-t rajzolja
+  (`PeoplePanel.qml:295–304`). Ez a kijelölt sorokból képzett pillanatnyi
+  kép, nem mentett személy-album választás.
+- A célzott `app/` és `index/` keresésben nem találtam tartós
+  személy–fotó választási mezőt vagy API-t. Így a jegy „Nálunk ma” része
+  két külön dolgot mosott össze: a menüpont helyőrzőként létezik; a
+  személyenkénti tárolás valóban hiányzik. Az Arcfelismerés-specifikáció
+  „megvan” megállapítása az eredeti Picasa parancsára vonatkozik, nem a
+  PicasaPy aktív kattintási útjára.
+
+#### Két út, és a független ellenőrzés határa
+
+**A út — a parancs és a lemezíró.** A `set_thumbnail` literál
+(`0x00c96fc8`) a `0x005e0f70` diszpécserben a `0x00603660` kezelőre visz
+(`0x005e1838–0x005e183d`). A sikeres ág a `CAlbumSelectionNode +0x3c0`
+kulcsát és a `CThumbDB +0x2428` tárat adja a `0x004115c0`-nak. A hívási
+lánc a `0x006b75f0 → 0x006b71b0 → 0x0099df20` fájlíró burkon át a
+`WriteFile` importot éri el; a `0x006b6620` a `FlushFileBuffers`-t hívja.
+A `0x00415790` a `+0x2428` tagot `albums.db`-ként regisztrálja; a
+`WriteFile` és `FlushFileBuffers` importhelye rendre `[0xc40240]` és
+`[0xc40468]`.
+
+**B út — a fejléc olvasója.** A külön `0x0074ad40` faceheader-építő a
+fejléc `+0x2a0` kulcsával a `+0x2428` tárból hívja a `0x004114e0`-et;
+az olvasólánc `0x006b6a50`-en át a `[0xc4042c]` `ReadFile` importot hívja.
+A helyi diszasszemblálás a `0x00cb1218` címen lévő
+`albumheader/%x/%d/faceicon` kulcsformát is megmutatja. Az
+eredeti adatréteg specifikációjának mért modellje szerint a
+`]facealbum:<N>` N-je az `albumdata` saját sorindexe; a `[Contacts2]` ID és
+ez a sorindex telepítés-/újraindexelés-függő, nem globális PicasaPy-kulcs
+(`picasa-arcfelismeres.md` 3.4/b).
+
+Az első út a fájlba írást, a második külön fogyasztói úton a fájlból
+olvasást igazolja. A független újraolvasás külön is megtalálta a diszpécser
+és a faceheader `albumheader/%x/%d/faceicon` kulcsformáját, de nem bizonyította,
+hogy a két formázóhívás numerikus argumentumai azonosak. Ezért a
+kulcsformátum és a lemez-cache használata alátámasztott; a kiválasztott
+személy-sor kulcsának két független úttal való azonossága és a felhasználó
+által látott újraindításos eredmény nem megerősített.
+
+#### Cáfoló kísérlet
+
+Az ellenhipotézis: az általános album-borító-ellenőrzés újraépíti a kézi
+képet, ezért az újraindítás után nem marad kiválasztottként. A
+`0x00423300` általános út bélyeget számol az album tartalmából, eltérésnél
+`0x00423500`-at hív; a közvetlen faceheader- és Személyek-panel-olvasó
+viszont `0x004114e0`-et hív, nem ezt az ellenőrzőt. Ez a cáfoló azt mutatja,
+hogy az ismert közvetlen fejléc-olvasás nem építi újra a képet. Azt nem
+zárja ki, hogy az indulás vagy a `CAlbumList` más útja ugyanezt megtegye;
+az ellenhipotézis ezért nem dőlt meg teljesen. A cáfoló mércéje bináris
+utasításolvasat és a `pmp-database.md` 6.3–6.4 útvonala; teljes `.text`
+negatív keresés nem történt.
+
+#### PicasaPy-tárolási hely és fejlesztési követelmény
+
+Az eredetiben a kiválasztott kép bájtjai a `CThumbDB` `albums.db`
+lemez-cache-ébe kerülnek; ez nem bizonyítja, hogy a cache önmagában
+felhasználói beállításként túléli az összes induláskori újraépítő utat.
+PicasaPy-ban a javasolt adattár a tartós SQLite index, módosítása csak az
+`index/` API-ján keresztül. Az új rekord/tábla még nincs meghatározva. A
+fejlesztés előtt az `index/` rétegben stabil személy-kulcsot kell
+meghatározni; a mappánként eltérő `[Contacts2]` ID és a Picasa
+`albumdata`-sorindex nem alkalmas erre. A fotóhoz is olyan index-azonosító
+kell, amelyet az alkalmazás újraindításkor fel tud oldani; a mostani
+`photo_id` tartósságát nem bizonyítottam. A `.picasa.ini` nem bővítendő
+nem szabványos választáskulccsal.
+
+#### Bizonyítottság és a jegy „Kész, ha” pontjai
+
+- **Bizonyítottsági fok: feltételes.** A bináris megerősíti, hogy a
+  `set_thumbnail` út képbájtokat ír a fájl-alapú `albums.db` tárba, és a
+  faceheader külön útja ugyanebből a tárból olvas. A keresztút kulcsának
+  numerikus azonosságát az önálló második olvasat nem erősítette meg; az
+  újraindítás utáni UI-eredményről nincs natív mérés.
+- **A két független út:** A = parancs/kezelő → `WriteFile` az `albums.db`
+  tárhoz; B = faceheader → `ReadFile` ugyanabból a tárból, azonos
+  kulcsformátummal. Egyeznek a tár és a kulcs alakjában; az argumentumok
+  azonossága és a látható újraindításos eredmény nyitott.
+- **Cáfoló kísérlet:** az ismert általános újraépítő út képes a cache
+  tartalmát újraszámolni; a közvetlen faceheader-út ezt nem hívja. A teljes
+  indulási/albumlista-út nincs kizárva, tehát a cáfoló nem zárja le a
+  kérdést.
+- ⛔ A személy-album indexképe választható és újraindítás után megmarad:
+  a PicasaPy menüsora letiltott, nincs tároló és nincs natív
+  újraindításos mérés.
+- ✅ A tárolás helye a specifikációban kutatva: eredetiben `albums.db`;
+  PicasaPy-ban javaslatként a tartós SQLite index `index/` API-ja szerepel.
+  Az új séma és a stabil kulcsok még nincsenek megtervezve.
+- ⛔ Kattintásos teszt: nincs aktív kattintási út; ebben a kutatói körben
+  nem módosult kód, teszt nem futott.
+
+PicasaPy fejlesztői készfeltételek:
+
+1. Az `index/` réteg adjon tartós személy-kulcsot és újraindításkor
+   feloldható fotóazonosítót; egyik se legyen a mappánkénti `[Contacts2]`
+   ID vagy a Picasa `albumdata`-sorindex.
+2. Az index API mentse és olvassa a személy–fotó választást; a QML csak a
+   controlleren át kérdezze és módosítsa.
+3. A helyi menü aktív tételének kattintása mentse a kiválasztott fotót,
+   majd frissítse a személy-album fejlécét.
+4. Kattintásos próba ellenőrizze a mentést, az azonnali megjelenést és az
+   alkalmazás-újraindítás utáni visszaállást.
+
+#### Nyitott
+
+Mérés kell: eredeti Picasa-profilon választás előtti/utáni `Picasa2/db3`
+diff, majd újraindítás után a faceheader tényleges képének ellenőrzése; a
+megfelelő mérőadat NINCS MEG, Wine nem érhető el.
+
+Ghidra-kör kell: 0x00763150 — a CAlbumList általános borítóútja feldolgozza-e
+a `]facealbum` sort, és az induláskori cache-ellenőrzés lecserélheti-e a
+kézi indexképet [blokkoló].
