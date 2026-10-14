@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, Qt
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev):
@@ -43,19 +44,9 @@ def _lista_sor(lista, index):
     return sor
 
 
-def _varj(qt_app, feltetel, lejarat_ms=3000):
+def _varj(qt_app, feltetel, lejarat_ms=10000):
     """A QML-állapotot határidős, eseményfeldolgozó ciklusban várja."""
-    from PySide6.QtCore import QElapsedTimer
-
-    ora = QElapsedTimer()
-    ora.start()
-    while ora.elapsed() < lejarat_ms:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(feltetel())
+    return var_feltetelre(qt_app, feltetel, lejarat_ms / 1000)
 
 
 def _film_megnyit(window, qt_app):

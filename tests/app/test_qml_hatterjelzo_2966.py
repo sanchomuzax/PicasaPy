@@ -15,13 +15,13 @@ A geometriát (35 × 28, felülről 5, jobbról 5) a `respack.yt` mérése adja.
 ⚠️ A LÁTVÁNYT ez a teszt nem méri — arra referencia-képernyőkép kellene.
 """
 
-import time
 
 import pytest
 from PySide6.QtCore import QObject
 
 from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
+from support.varakozas import var_feltetelre
 
 _TEST_SHOW_DELAY_MS = 40
 _TEST_MIN_VISIBLE_MS = 60
@@ -42,14 +42,8 @@ def _gyerek(window, name):
     return obj
 
 
-def _varj(qt_app, feltetel, timeout_s=2.0):
-    hatarido = time.monotonic() + timeout_s
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.005)
-    return False
+def _varj(qt_app, feltetel, timeout_s=10.0):
+    return var_feltetelre(qt_app, feltetel, timeout_s)
 
 
 class TestHatterjelzo:

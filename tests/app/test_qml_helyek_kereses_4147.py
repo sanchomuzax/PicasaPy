@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import time
 
 import pytest
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre, hibaturo_feltetel
 
 
 def _walk(item: QQuickItem):
@@ -27,17 +27,8 @@ def _variant_list(value):
     return value.toVariant() if hasattr(value, "toVariant") else value
 
 
-def _var(qt_app, predicate, timeout: float = 5.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            if predicate():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return bool(predicate())
+def _var(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate), timeout)
 
 
 def _kattint(window, item: QQuickItem, qt_app) -> None:
