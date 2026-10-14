@@ -611,11 +611,24 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left; anchors.leftMargin: 16
                         spacing: 5
+                        Image {
+                            objectName: "personThumbnailImage_" + modelData.name
+                            width: source !== "" ? 18 : 0
+                            height: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                            source: modelData.thumbUrl || ""
+                            fillMode: Image.PreserveAspectCrop
+                            smooth: true
+                            mipmap: true
+                            asynchronous: true
+                            visible: source !== ""
+                        }
                         Rectangle {
                             width: 10; height: 10
                             radius: 5
                             anchors.verticalCenter: parent.verticalCenter
                             color: Theme.picasaGreen
+                            visible: !modelData.thumbUrl
                         }
                         Text {
                             text: modelData.name + " (" + modelData.count + ")"

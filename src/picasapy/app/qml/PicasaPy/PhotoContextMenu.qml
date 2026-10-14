@@ -54,6 +54,8 @@ PicasaMenu {
     // Az inaktív tétel LÁTSZIK, csak szürke (az eredeti szabálya).
     property bool hasEdits: false
     property bool hasBackup: false
+    // #4536: az aktuális személy arca szerepel-e a kijelölt fotón.
+    property bool peopleThumbnailFaceAvailable: false
 
     // #9: albumtagság — a Main.qml köti be a `controller.albums` listáját
     // és az aktív album tokent (#305 null-őr, ld. ott).
@@ -89,6 +91,7 @@ PicasaMenu {
     // a `personName`-et a `peopleController.currentPersonName`-ből; üres
     // string = a rács nem személy-albumot mutat, a tételek rejtve maradnak
     signal removeFromPeopleAlbumRequested()
+    signal setPeopleAlbumThumbnailRequested()
     signal moveToNewPersonRequested()
     //: #3464: az arc egy MEGLÉVŐ személyhez kerül
     signal moveToPersonRequested(string name)
@@ -247,10 +250,7 @@ PicasaMenu {
         height: visible ? implicitHeight : 0
         onTriggered: menu.moveToNewPersonRequested()
     }
-    // A negyedik `PplAlbumPhoto` parancs („Beállítás az Emberek album
-    // indexképeként") HELYŐRZŐ: a személyenkénti indexkép-választásnak nincs
-    // tárolója (sem a `.picasa.ini`-ben, sem az indexünkben), tehát a
-    // bekötése nem UI-, hanem adatmodell-kérdés (#26).
+    // #4536: személyenkénti, az SQLite indexben tárolt album-indexkép.
     PicasaMenuItem {
         objectName: "contextMenuSetAsPeopleAlbumThumbnail"
         text: qsTr("Set as People Album Thumbnail")
@@ -266,7 +266,9 @@ PicasaMenu {
         ToolTip.delay: Theme.tooltipDelay
         visible: menu.personName !== ""
         height: visible ? implicitHeight : 0
-        placeholder: true
+        enabled: menu.peopleThumbnailFaceAvailable
+        placeholder: false
+        onTriggered: menu.setPeopleAlbumThumbnailRequested()
     }
     MenuSeparator {}
 

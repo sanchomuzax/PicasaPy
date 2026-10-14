@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 23
+SCHEMA_VERSION = 24
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -394,6 +394,16 @@ CREATE TABLE IF NOT EXISTS face_scan (
 CREATE INDEX IF NOT EXISTS idx_face_scan_ok ON face_scan(ok);
 """
 
+# #4536: a személyenként választott album-indexkép. A Contacts2 azonosító
+# mappánként lokális, ezért a tárolt kulcs a személy casefoldolt neve. A fotó
+# törlésekor a választás is kiesik; a felület a személy első arcára esik vissza.
+_PERSON_THUMBNAILS_DDL = """
+CREATE TABLE IF NOT EXISTS person_thumbnails (
+    person_key TEXT PRIMARY KEY,
+    photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE
+);
+"""
+
 
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
@@ -458,6 +468,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
 {_FACE_NAME_DDL}
 
 {_FACE_SCAN_DDL}
+
+{_PERSON_THUMBNAILS_DDL}
 
 {_RESOLVED_ROOT_DDL}
 
@@ -625,4 +637,7 @@ DELETE FROM folder_scan_state WHERE path IN (
     JOIN photo_albums a ON a.photo_id = p.id
 );
 """,
+    # #4536: a személyenként választott indexkép táblája. A meglévő arcokból
+    # nincs kiválasztás kikövetkeztethető, ezért üresen indul.
+    23: _PERSON_THUMBNAILS_DDL,
 }
