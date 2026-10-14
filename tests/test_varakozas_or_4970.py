@@ -5,15 +5,23 @@ A feltételre váró helyi segédek (`_var*`, `_wait*` előtaggal) korlátja leg
 windowsos CI lassú futásai nem adnak hamis bukást, és a szorzó
 (`PICASAPY_TESZT_IDOSZORZO`) a helyi korlátokon is hat.
 
-A még át nem írt fájlok a `KIVETEL` listán vannak. A lista csak csökkenhet:
-ha egy fájl átíródott, a kivételt törölni kell (a stale bejegyzés bukik), és
-új fájl nem kerülhet fel rá (`KIVETEL_PLAFON`).
+A kulcsszavas idő (`timeout_ms`, `timeout`, `masodperc`, `seconds`, `ms`) is
+őrzött: bármely `tests/app` hívás, amely ilyen argumentumban 10 s alatti literált
+kap (a `QTest.qWait` és a `time.sleep` kivételével), jelzésre vagy feltételre
+vár. Az ilyen találat a `KIVETEL_KULCSSZO` listán kivételezhető, ha negatív
+ablakról van szó.
+
+A még át nem írt fájlok a `KIVETEL` és a `KIVETEL_KULCSSZO` listán vannak. A
+listák csak csökkenhetnek: ha egy fájl átíródott, a kivételt törölni kell (a
+stale bejegyzés bukik), és új fájl nem kerülhet fel rájuk (`KIVETEL_PLAFON`,
+`KIVETEL_KULCSSZO_PLAFON`).
 """
 
 from __future__ import annotations
 
 import ast
 import re
+import functools
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -45,6 +53,20 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/test_qml_splash.py",  # negatív: `assert not _wait_until(..., timeout_ms=600)`
     }
 )
+# Kulcsszavas idők (`timeout_ms=`, `masodperc=` … hívásban). A pillanatnyi
+# hossz a `KIVETEL_KULCSSZO_PLAFON`-nál nem lehet nagyobb; csak csökkenhet.
+KIVETEL_KULCSSZO_PLAFON = 3
+KIVETEL_KULCSSZO: frozenset[str] = frozenset(
+    {
+        "tests/app/test_gorgetes_szinkronpont_3399.py",  # negatív: `_wait_for_scroll_settled(..., timeout_ms=120)` a „sosem indul el" ágon
+        "tests/app/test_hangos_veszfek_1467.py",  # negatív: a vészfék lejártát mérik (`timeout_ms=120`, `=60` ×2)
+        "tests/app/test_qml_splash.py",  # negatív: `assert not _wait_until(..., timeout_ms=600)`
+    }
+)
+KULCSSZO_NEVEK = frozenset({"timeout_ms", "timeout", "masodperc", "seconds", "ms"})
+KULCSSZO_MS_NEVEK = frozenset({"timeout_ms", "ms"})
+# Fix idejű várakozók: ezek a hívások nem jelzésre várnak.
+FIX_IDO_HIVASOK = frozenset({"qWait", "sleep"})
 
 
 @dataclass(frozen=True)
@@ -169,6 +191,7 @@ def _eltresek(forrasok: dict[str, str]) -> list[Eltres]:
     for rel, fa in fak.items():
         helyi_nevek = {n.name for n in ast.walk(fa) if isinstance(n, ast.FunctionDef)}
         modulok, importalt = _importok(fa, set(forrasok))
+        eredmeny.extend(_kulcsszo_eltresei(rel, fa))
         for node in ast.walk(fa):
             if not isinstance(node, ast.Call):
                 continue
@@ -192,6 +215,42 @@ def _hivas_eltresei(rel: str, hivas: ast.Call, h: Helper) -> list[Eltres]:
     return talalt
 
 
+def _hivas_neve(hivas: ast.Call) -> str:
+    fn = hivas.func
+    if isinstance(fn, ast.Attribute):
+        return fn.attr
+    if isinstance(fn, ast.Name):
+        return fn.id
+    return ast.unparse(fn)
+
+
+def _kulcsszo_eltresei(rel: str, fa: ast.Module) -> list[Eltres]:
+    """Bármely hívás, amely kulcsszavas időben 10 s alatti literált kap.
+
+    A nevek alapján dől el: a `timeout_ms`/`timeout` jelzésvárókhoz tartozik, a
+    `masodperc`/`seconds`/`ms` ugyanígy. A `QTest.qWait` és a `time.sleep` fix
+    idejű várakozás, ezért kimarad."""
+    talalt = []
+    for node in ast.walk(fa):
+        if not isinstance(node, ast.Call) or _hivas_neve(node) in FIX_IDO_HIVASOK:
+            continue
+        for kw in node.keywords:
+            ertek = _szam(kw.value)
+            if kw.arg not in KULCSSZO_NEVEK or ertek is None:
+                continue
+            ms = kw.arg in KULCSSZO_MS_NEVEK
+            if _korlat_alatt(ertek, ms):
+                talalt.append(
+                    Eltres(rel, node.lineno, "kulcsszo", f"{_hivas_neve(node)}({kw.arg}={ertek:g}) (korlát {'ms' if ms else 's'})")
+                )
+    return talalt
+
+
+def _kulcsszo_serto(forrasok: dict[str, str], kivetel: frozenset[str]) -> list[Eltres]:
+    return [e for e in _eltresek(forrasok) if e.tipus == "kulcsszo" and e.fajl not in kivetel]
+
+
+@functools.cache
 def _beolvas() -> dict[str, str]:
     return {
         p.relative_to(TESZT_GYOKER.parent).as_posix(): p.read_text(encoding="utf-8")
@@ -199,8 +258,14 @@ def _beolvas() -> dict[str, str]:
     }
 
 
+
+@functools.cache
+def _osszes_eltres() -> tuple:
+    """Egyszer elemzett eltéréslista: a forrásfa a futás alatt nem változik."""
+    return tuple(_eltresek(_beolvas()))
+
 def test_a_helyi_segedek_korlata_legalabb_tiz_masodperc():
-    eltresek = [e for e in _eltresek(_beolvas()) if e.tipus == "helyi" and e.fajl not in KIVETEL]
+    eltresek = [e for e in _osszes_eltres() if e.tipus == "helyi" and e.fajl not in KIVETEL]
     assert not eltresek, "10 s alatti helyi várakozás:\n" + "\n".join(
         f"  {e.fajl}:{e.sor} {e.leiras}" for e in eltresek
     )
@@ -208,7 +273,7 @@ def test_a_helyi_segedek_korlata_legalabb_tiz_masodperc():
 
 def test_a_hivasok_nem_adnak_tiz_masodperc_alatti_literalt():
     hivas_sertesek = [
-        e for e in _eltresek(_beolvas()) if e.tipus == "hivas" and e.fajl not in KIVETEL
+        e for e in _osszes_eltres() if e.tipus == "hivas" and e.fajl not in KIVETEL
     ]
     assert not hivas_sertesek, "10 s alatti literál a várakozó hívásban:\n" + "\n".join(
         f"  {e.fajl}:{e.sor} {e.leiras}" for e in hivas_sertesek
@@ -216,13 +281,59 @@ def test_a_hivasok_nem_adnak_tiz_masodperc_alatti_literalt():
 
 
 def test_kivetellista_csak_csokkenhet():
-    alap = {e.fajl for e in _eltresek(_beolvas())}
+    alap = {e.fajl for e in _osszes_eltres()}
     elavult = sorted(KIVETEL - alap)
     assert not elavult, "ezek már át vannak írva, töröld a KIVETEL-ből: " + ", ".join(elavult)
     print(f"\nKIVETEL hossza: {len(KIVETEL)} (plafon: {KIVETEL_PLAFON})")
     assert len(KIVETEL) <= KIVETEL_PLAFON, (
         f"a KIVETEL nőtt: {len(KIVETEL)} > {KIVETEL_PLAFON}; új fájl nem kerülhet fel"
     )
+
+
+def test_a_kulcsszavas_idok_nem_adnak_tiz_masodperc_alatti_literalt():
+    serte = _kulcsszo_serto(_beolvas(), KIVETEL_KULCSSZO)
+    assert not serte, "10 s alatti literál kulcsszavas várakozási időben:\n" + "\n".join(
+        f"  {e.fajl}:{e.sor} {e.leiras}" for e in serte
+    )
+
+
+def test_kivetel_kulcsszo_csak_csokkenhet():
+    alap = {e.fajl for e in _osszes_eltres() if e.tipus == "kulcsszo"}
+    elavult = sorted(KIVETEL_KULCSSZO - alap)
+    assert not elavult, "ezek már át vannak írva, töröld a KIVETEL_KULCSSZO-ból: " + ", ".join(elavult)
+    print(f"\nKIVETEL_KULCSSZO hossza: {len(KIVETEL_KULCSSZO)} (plafon: {KIVETEL_KULCSSZO_PLAFON})")
+    assert len(KIVETEL_KULCSSZO) <= KIVETEL_KULCSSZO_PLAFON, (
+        f"a KIVETEL_KULCSSZO nőtt: {len(KIVETEL_KULCSSZO)} > {KIVETEL_KULCSSZO_PLAFON}; új fájl nem kerülhet fel"
+    )
+
+
+_KULCSSZO_ROSSZ = '''
+def teszt(qt_app, sig):
+    hangos_hurok(sig, timeout_ms=2000)
+    seged(seconds=3)
+'''
+
+_KULCSSZO_JO = '''
+def teszt(qt_app, sig):
+    QTest.qWait(300)
+    time.sleep(0.1)
+    hangos_hurok(sig, timeout_ms=10000)
+    seged(masodperc=10)
+'''
+
+
+def test_az_or_eszleli_a_rovid_kulcsszavas_idot():
+    eltresek = _kulcsszo_serto({"tests/app/minta.py": _KULCSSZO_ROSSZ}, frozenset())
+    assert [(e.tipus, e.sor) for e in eltresek] == [("kulcsszo", 3), ("kulcsszo", 4)]
+
+
+def test_az_or_nem_jelez_a_tiz_masodperces_kulcsszora_es_a_fix_varakozasra():
+    assert _kulcsszo_serto({"tests/app/minta.py": _KULCSSZO_JO}, frozenset()) == []
+
+
+def test_az_or_kivetellistas_fajlt_nem_jelez():
+    minta = {"tests/app/minta.py": _KULCSSZO_ROSSZ}
+    assert _kulcsszo_serto(minta, frozenset({"tests/app/minta.py"})) == []
 
 
 _ROSSZ = '''
@@ -312,4 +423,8 @@ def test_az_or_eszleli_a_modul_aliason_at_hivott_segedet():
             "def teszt(qt_app):\n    _seg._var(qt_app, lambda: True, ms=3000)\n"
         ),
     }
-    assert [(e.fajl, e.tipus) for e in _eltresek(minta)] == [("tests/app/b_teszt.py", "hivas")]
+    # a segéd-szabály és a kulcsszó-szabály egymástól függetlenül látja a hívást
+    assert sorted((e.fajl, e.tipus) for e in _eltresek(minta)) == [
+        ("tests/app/b_teszt.py", "hivas"),
+        ("tests/app/b_teszt.py", "kulcsszo"),
+    ]

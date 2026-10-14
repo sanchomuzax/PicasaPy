@@ -77,7 +77,7 @@ class TestCancelSignal:
             # worker-szálon fut: megvárja, míg a főszál eltávolítja a
             # gyökeret, majd mappánként kérdezi a progress visszatérését
             started.set()
-            assert resume.wait(timeout=5)
+            assert resume.wait(timeout=10)
             for i in range(50):
                 processed.append(i)
                 if progress is not None and progress(
@@ -88,7 +88,7 @@ class TestCancelSignal:
         monkeypatch.setattr(controller_module, "sync_tree", fake_sync_tree)
         loop = hangos_hurok(controller.syncFinished)
         controller.rescan()
-        assert started.wait(timeout=5)
+        assert started.wait(timeout=10)
         controller.removeWatchedFolder(str(library))  # főszál: cancel-jelzés
         resume.set()
         loop.exec()

@@ -315,7 +315,7 @@ class TestResetFacesForPhotos:
         arrived, _args = _run(
             ctl.modelUnavailable,
             lambda: ctl.resetFacesForPhotos([str(photo_path)]),
-            timeout_ms=2000,
+            timeout_ms=20000,
         )
 
         assert arrived is True
