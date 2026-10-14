@@ -68,7 +68,7 @@ def _latvanyelemek(root):
 
 def _mappasor(window, path: Path):
     for item in _latvanyelemek(window.contentItem()):
-        if item.property("kind") == "folder" and item.property("path") == str(path):
+        if item.property("kind") == "folder" and Path(item.property("path") or "") == path:
             return item
     raise AssertionError(f"A mappasor nem található: {path}")
 
@@ -90,7 +90,7 @@ def _mappat_kivalaszt(window, controller, qt_app, path: Path) -> None:
     )
     _varj(
         qt_app,
-        lambda: controller.currentFolder == str(path),
+        lambda: Path(controller.currentFolder or "") == path,
         f"a kiválasztott mappa {path} legyen",
     )
 
@@ -100,7 +100,7 @@ def _elso_kep_kijelolese(
 ) -> Path:
     _mappat_kivalaszt(window, controller, qt_app, source)
     kep = source / "atvitt-a.jpg"
-    assert controller.photos.filePathAt(0) == str(kep)
+    assert Path(controller.photos.filePathAt(0)) == kep
     kijelolt_sorok = [0] if rows is None else rows
     window.setProperty("selectedIndexes", kijelolt_sorok)
     qt_app.processEvents()
@@ -108,9 +108,9 @@ def _elso_kep_kijelolese(
     return kep
 
 
-def _racs_utvonalai(controller) -> list[str]:
+def _racs_utvonalai(controller) -> list[Path]:
     photos = controller.photos
-    return [photos.filePathAt(row) for row in range(photos.rowCount())]
+    return [Path(photos.filePathAt(row)) for row in range(photos.rowCount())]
 
 
 def _fileops(engine):
@@ -257,7 +257,7 @@ class TestMappasorraHuzas:
             qt_app,
             lambda: controller.photos.revision > revision
             and all(
-                path.as_posix() not in _racs_utvonalai(controller)
+                path not in _racs_utvonalai(controller)
                 for path in source_photos
             ),
             "a fájlművelet után a rács frissüljön",
@@ -283,11 +283,11 @@ class TestFajlVagolap:
         _varj(
             qt_app,
             lambda: target_photo.exists()
-            and target_photo.as_posix() in _racs_utvonalai(controller),
+            and target_photo in _racs_utvonalai(controller),
             "a Ctrl+V másolja a képet és a rács frissül",
         )
         assert source_photo.exists(), "a Ctrl+C/Ctrl+V nem mozgathatja el a forrást"
-        assert target_photo.as_posix() in _racs_utvonalai(controller)
+        assert target_photo in _racs_utvonalai(controller)
         assert controller.currentFolder == str(target)
 
     def test_masolas_es_beillesztes_menuponttal_is_fajlt_masol(
@@ -309,9 +309,9 @@ class TestFajlVagolap:
         _varj(
             qt_app,
             lambda: target_photo.exists()
-            and target_photo.as_posix() in _racs_utvonalai(controller),
+            and target_photo in _racs_utvonalai(controller),
             "a Szerkesztés ▸ Beillesztés másol és a rács frissül",
         )
         assert source_photo.exists(), "a menüs másolásnak meg kell őriznie a forrást"
-        assert target_photo.as_posix() in _racs_utvonalai(controller)
+        assert target_photo in _racs_utvonalai(controller)
         assert controller.currentFolder == str(target)
