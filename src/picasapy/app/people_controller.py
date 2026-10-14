@@ -24,7 +24,15 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
-from picasapy.index import all_photos, open_index, unnamed_faces_for_photos
+from picasapy.index import (
+    all_photos,
+    open_index,
+    photo_by_id,
+    person_thumbnail_face,
+    person_thumbnails,
+    set_person_thumbnail,
+    unnamed_faces_for_photos,
+)
 from picasapy.index.faces_detected import (
     suggested_album_photos,
     suggested_faces_for,
@@ -88,16 +96,38 @@ class PeopleMixin:
 
     @Property("QVariant", notify=peopleChanged)
     def people(self):
-        """A bal hasábnak: `[{name, count}, ...]` — LISTA, nem tuple (#232,
-        a QML-ben a tuple nem tömb), a `albums` property mintájára."""
+        """A bal hasáb személy-sorai névvel, darabszámmal és arcképpel."""
         # #1767: a rendezés a MEGJELENÍTÉSNÉL történik, nem a
         # begyűjtésnél — az `people_in_index` eredményét a Projektek
         # gyűjtemény is használja (`index/side_pane.py`), és annak a
         # sorrendje nem a hasáb beállításától függ.
-        return [
-            {"name": person.name, "count": person.photo_count}
-            for person in rendezd_szemelyeket(self._people, self.peopleSort)
-        ]
+        people = rendezd_szemelyeket(self._people, self.peopleSort)
+        with open_index(self._db_path) as conn:
+            saved = person_thumbnails(conn, (person.name for person in people))
+            result = []
+            for person in people:
+                thumbnail = saved.get(person.name.casefold())
+                photo_id = (
+                    thumbnail.photo_id
+                    if thumbnail is not None
+                    else person.thumbnail_photo_id
+                )
+                rect = (
+                    thumbnail.rect
+                    if thumbnail is not None
+                    else person.thumbnail_rect
+                )
+                photo = photo_by_id(conn, photo_id) if photo_id is not None else None
+                result.append(
+                    {
+                        "name": person.name,
+                        "count": person.photo_count,
+                        "thumbUrl": _thumb_url(photo, arc=rect)
+                        if photo is not None and rect is not None
+                        else "",
+                    }
+                )
+        return result
 
     @Slot(result="QVariantList")
     def personMovieSourceUrls(self):  # noqa: N802 — QML-slot-stílus
@@ -226,9 +256,20 @@ class PeopleMixin:
                 for name in names_on_photo:
                     contacts_by_name[name]["photoCount"] += 1
 
-        return sorted(
+        contacts = sorted(
             contacts_by_name.values(), key=lambda contact: contact["name"].casefold()
         )
+        thumbnail_urls = {}
+        if hasattr(self, "_people"):
+            thumbnail_urls = {
+                person["name"].casefold(): person["thumbUrl"]
+                for person in self.people
+            }
+        for contact in contacts:
+            contact["thumbUrl"] = thumbnail_urls.get(
+                contact["name"].casefold(), ""
+            )
+        return contacts
 
     def _people_contacts_path(self) -> Path:
         """A PicasaPy központi tárának contacts/contacts.xml fájlja."""
@@ -511,6 +552,32 @@ class PeopleMixin:
         self._show(records)
         self._arc_nagyitas_atvezetese(name, records)
 
+    @Slot(int, str, result=bool)
+    def canSetPersonThumbnail(self, photo_id: int, person_name: str) -> bool:  # noqa: N802
+        """Csak az aktuális személy arcát tartalmazó fotó választható."""
+        if (
+            not person_name
+            or self.currentPersonName.casefold() != person_name.strip().casefold()
+        ):
+            return False
+        with open_index(self._db_path) as conn:
+            return person_thumbnail_face(conn, person_name, photo_id) is not None
+
+    @Slot(int, str, result=bool)
+    def setPersonThumbnail(self, photo_id: int, person_name: str) -> bool:  # noqa: N802
+        """A jelenlegi személy albumképének beállítása, indexbe mentve."""
+        if (
+            not person_name
+            or self.currentPersonName.casefold() != person_name.strip().casefold()
+        ):
+            return False
+        with open_index(self._db_path) as conn:
+            if not set_person_thumbnail(conn, person_name, photo_id):
+                return False
+            conn.commit()
+        self.peopleChanged.emit()
+        return True
+
     @staticmethod
     def _osszefuzve(
         megerositett: tuple, javasolt: tuple
@@ -692,13 +759,29 @@ class PeopleMixin:
                     entry["photo_id"] = photo.id
                     entry["rect"] = list(rect)
                     entry["thumbUrl"] = _thumb_url(photo, arc=rect)
-        return [
+        result = [
             person
             for person in sorted(
                 people.values(),
                 key=lambda entry: (-entry["count"], entry["name"].casefold()),
             )
         ]
+        if result:
+            with open_index(self._db_path) as conn:
+                saved = person_thumbnails(
+                    conn, (person["name"] for person in result)
+                )
+                for person in result:
+                    thumbnail = saved.get(person["name"].casefold())
+                    if thumbnail is None:
+                        continue
+                    photo = photo_by_id(conn, thumbnail.photo_id)
+                    if photo is None:
+                        continue
+                    person["photo_id"] = thumbnail.photo_id
+                    person["rect"] = list(thumbnail.rect)
+                    person["thumbUrl"] = _thumb_url(photo, arc=thumbnail.rect)
+        return result
 
     @Slot(list, result="QVariantList")
     def unnamedFacesOfRows(self, rows):  # noqa: N802 — QML-slot-stílus

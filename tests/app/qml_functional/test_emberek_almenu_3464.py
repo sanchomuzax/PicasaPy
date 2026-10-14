@@ -140,15 +140,16 @@ def test_szemelyek_nelkul_az_almenu_tiltott(qml_app, qt_app, tmp_path):
         _bezar(window, qt_app)
 
 
-def test_az_indexkep_tetel_helyorzo(qml_app, qt_app, tmp_path):
-    """A személyenkénti indexképnek nincs tárolója (#26): a tétel helyőrző
-    (szürke, nem kattintható), nem néma kattintható pont."""
+def test_az_indexkep_tetel_az_arcot_tartalmazo_foton_aktiv(
+    qml_app, qt_app, tmp_path
+):
+    """#4536: az Anna arcát tartalmazó fotó indexképként választható."""
     window, controller, _engine = qml_app
     _szemely_nezet(window, controller, qt_app, tmp_path)
     _megnyit(window, qt_app)
     try:
         tetel = _child(window, "contextMenuSetAsPeopleAlbumThumbnail")
-        assert tetel.property("placeholder") is True
-        assert tetel.property("enabled") is False
+        assert tetel.property("placeholder") is False
+        assert tetel.property("enabled") is True
     finally:
         _bezar(window, qt_app)

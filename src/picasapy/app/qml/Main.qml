@@ -4515,6 +4515,11 @@ ApplicationWindow {
             // #3468: a „Keresés" almenü csak EGY kijelölt képnél jelenik meg
             var db = window.selectedRows().length
             photoContextMenu.kijeloltKepekSzama = db > 0 ? db : 1
+            photoContextMenu.peopleThumbnailFaceAvailable = controller
+                ? controller.canSetPersonThumbnail(
+                    Number(controller.photos.idAt(window.fileOpTargetRow)),
+                    controller.currentPersonName)
+                : false
         }
         // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
         // együtt kötve, hogy a menü újranyitáskor friss legyen)
@@ -4625,6 +4630,12 @@ ApplicationWindow {
         onMoveToNewPersonRequested: {
             if (controller) moveToNewPersonDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
+        }
+        onSetPeopleAlbumThumbnailRequested: {
+            if (controller && controller.setPersonThumbnail(
+                    Number(controller.photos.idAt(window.fileOpTargetRow)),
+                    controller.currentPersonName))
+                window.peopleFaceRevision++
         }
     }
 
