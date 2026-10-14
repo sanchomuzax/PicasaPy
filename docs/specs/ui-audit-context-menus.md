@@ -1459,7 +1459,7 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | PplAlbumPhoto | PplAlbumPhoto::ID_DELETEFROMPEOPLEALBUM | Eltávolítás az Emberek albumból | objectName=contextMenuRemoveFromPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_PEOPLEALBUMS | Hozzáadás egy meglévő Emberek-albumhoz | objectName=contextMenuAddToPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | PplAlbumPhoto | PplAlbumPhoto::ID_MOVETONEWPERSON | Áthelyezés új személyhez | objectName=contextMenuMoveToNewPerson | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
-| PplAlbumPhoto | PplAlbumPhoto::ID_SETASPEOPLEALBUMTHUMBNAIL | Beállítás az Emberek album indexképeként | objectName=contextMenuSetAsPeopleAlbumThumbnail | **a sor jelen van, de letiltott helyőrző** | PicasaPy-ban nincs tartós személy–fotó választás |
+| PplAlbumPhoto | PplAlbumPhoto::ID_SETASPEOPLEALBUMTHUMBNAIL | Beállítás az Emberek album indexképeként | objectName=contextMenuSetAsPeopleAlbumThumbnail | hiányzik: a sor jelen van, de letiltott helyőrző (#4536) | PicasaPy-ban nincs tartós személy–fotó választás |
 
 Az állapotok ismételhető ellenőrzése a tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py fájlban fut. A két új valódi kattintásos QML-próba az AlbumList bélyegkép-kapcsolóját és Asztal almenüjét, valamint a OneUp „Eredeti a lemezen” útját ellenőrzi.
 
