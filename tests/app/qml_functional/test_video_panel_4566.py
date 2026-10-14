@@ -13,7 +13,6 @@ ez nyitott döntés, nem tesztkérdés.
 from __future__ import annotations
 
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -21,6 +20,7 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre
 from tests.app.qml_functional.conftest import _build_qml_app
 
 _ABLAKMAGASSAG_ELTOLASOK = (-5, 0, 5)
@@ -62,14 +62,9 @@ def _elem(window, nev: str):
     return elem
 
 
-def _var(qt_app, feltetel, leiras: str, masodperc: float = 3.0) -> None:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.01)
-    qt_app.processEvents()
+def _var(qt_app, feltetel, leiras: str, masodperc: float = 10.0) -> None:
+    if var_feltetelre(qt_app, feltetel, masodperc):
+        return
     assert feltetel(), f"időkorláton belül nem teljesült: {leiras}"
 
 

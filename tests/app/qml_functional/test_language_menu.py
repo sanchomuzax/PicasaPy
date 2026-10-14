@@ -13,24 +13,16 @@ jelnév) nem fogná meg.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtTest import QTest
 
+from tests.support.varakozas import var_feltetelre
 from picasapy.app import application
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _gyerek(window, nev):

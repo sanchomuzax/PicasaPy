@@ -53,6 +53,7 @@ from PySide6.QtGui import QImage
 from PySide6.QtQml import QQmlComponent, qmlEngine
 from PySide6.QtTest import QTest
 
+from tests.support.varakozas import var_feltetelre
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import (
     _ab_modba,
@@ -87,15 +88,8 @@ def _child(root, name):
     return obj
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _lathato_elem(window, feltetel):

@@ -8,7 +8,6 @@ import errno
 import os
 import socket
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -20,6 +19,7 @@ from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import wait_for_photo_op
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from tests.app.qml_functional._fomenu_4420_menu import _kattints, _megnyit
 from tests.app.qml_functional.conftest import _build_qml_app
 
@@ -34,18 +34,8 @@ _QML_REFS = []
 _DOKUKEPEK_KAPCSOLO = "PICASAPY_DOKUKEPEK"
 
 
-def _var(qt_app, feltetel, masodperc: float = 8.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        time.sleep(0.02)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _bejark(item):

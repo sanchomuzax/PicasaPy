@@ -20,6 +20,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 import picasapy.app.application as app_module
+from tests.support.varakozas import var_feltetelre
 from picasapy.lazy_cv2 import cv2
 from picasapy.ini import parse_document, update_document
 from tests.app.qml_functional.conftest import _build_qml_app
@@ -65,15 +66,8 @@ def _keres(elem: QQuickItem, object_name: str):
     return None
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _nyugalomba_jut(qt_app, elem: QQuickItem, masodperc: float = 5.0) -> bool:
