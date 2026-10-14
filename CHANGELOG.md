@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.95] – 2026-10-14
+
+- A Ctrl+Alt előnézet a kijelölt képet mutatja, és csak 1024 képpontnál szélesebb tartalomnézetben jelenik meg (#4949).
+
 ## [0.9.94] – 2026-10-14
 
 - A szerkesztő betűcsalád-listája futás közben egyszer olvassa be a rendszer betűtípusait, nem minden lekérdezéskor (#4964).
