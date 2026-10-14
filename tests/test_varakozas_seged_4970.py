@@ -13,7 +13,12 @@ from types import SimpleNamespace
 import pytest
 
 from tests.support import varakozas
-from tests.support.varakozas import IDOSZORZO_ENV, idoszorzo, var_feltetelre
+from tests.support.varakozas import (
+    IDOSZORZO_ENV,
+    hibaturo_feltetel,
+    idoszorzo,
+    var_feltetelre,
+)
 
 
 class _HamisOra:
@@ -130,3 +135,14 @@ def test_az_esemenyciklus_porog_kozben_pörög(monkeypatch, ora):
     var_feltetelre(qt_app, lambda: False, masodperc=0.1)
 
     assert qt_app.esemenyciklusok >= 1
+
+
+def test_hibaturo_feltetel_a_hibat_hamisnak_veszi(monkeypatch, ora):
+    monkeypatch.delenv(IDOSZORZO_ENV, raising=False)
+
+    def hibas() -> bool:
+        raise AttributeError("a widget még nincs kész")
+
+    assert hibaturo_feltetel(hibas)() is False
+    assert hibaturo_feltetel(lambda: True)() is True
+    assert var_feltetelre(_HamisQtApp(), hibaturo_feltetel(hibas), masodperc=1.0) is False

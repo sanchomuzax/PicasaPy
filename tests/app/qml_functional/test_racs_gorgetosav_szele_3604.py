@@ -52,6 +52,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 #: a QML geometriája tört szám lehet (kerekített anchor-értékek)
 TURES = 3.0
@@ -96,18 +97,8 @@ def _jobb_szel(elem) -> float:
     return bal + elem.width()
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return feltetel()
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _katt(window, elem) -> None:

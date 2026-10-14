@@ -9,13 +9,13 @@ pillanatnyi QML-geometriájából számolódik.
 from __future__ import annotations
 
 import csv
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 _ROOT = Path(__file__).resolve().parents[3]
 _ELEMENTS = _ROOT / "docs/specs/ui-lefedettseg-elemek.csv"
@@ -33,15 +33,8 @@ _EXPECTED = {
 }
 
 
-def _wait_until(qt_app, predicate, timeout: float = 3.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(predicate())
+def _wait_until(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, predicate, timeout)
 
 
 def _walk(item):

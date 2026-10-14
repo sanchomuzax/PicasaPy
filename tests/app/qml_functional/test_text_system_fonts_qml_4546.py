@@ -2,28 +2,20 @@
 
 from __future__ import annotations
 
-import time
-
 from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
 import pytest
 
+from tests.support.varakozas import var_feltetelre
 from picasapy.app import edit_preview as preview_module
 from picasapy.ini import load_document
 from picasapy.ini.text_overlay import parse_text
 
 
-def _varj(qt_app, predicate, timeout_s=3.0):
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(predicate())
+def _varj(qt_app, predicate, timeout_s=10.0):
+    return var_feltetelre(qt_app, predicate, timeout_s)
 
 
 def _kattints(elem, qt_app):

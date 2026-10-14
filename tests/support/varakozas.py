@@ -39,6 +39,22 @@ def idoszorzo() -> float:
     return ertek
 
 
+def hibaturo_feltetel(feltetel: Callable[[], bool]) -> Callable[[], bool]:
+    """A feltételt úgy csomagolja, hogy a még nem kész widgetre hivatkozó hiba hamisnak számítson.
+
+    A QML-elemek betöltés közben `AttributeError`, `TypeError` vagy `RuntimeError`
+    hibát adhatnak; a várakozás ilyenkor egyszerűen még nem teljesült.
+    """
+
+    def _ellenorzes() -> bool:
+        try:
+            return bool(feltetel())
+        except (AttributeError, TypeError, RuntimeError):
+            return False
+
+    return _ellenorzes
+
+
 def var_feltetelre(
     qt_app,
     feltetel: Callable[[], bool],
