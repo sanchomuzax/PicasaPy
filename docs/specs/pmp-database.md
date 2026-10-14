@@ -297,17 +297,18 @@ felhasználásra kerül).
 ## DB3-adatok és nyitott átviteli jelöltek — import szempontból kritikus
 
 - Ignorált arcok listája
-- Képek egyedi sorrendje mappákban/albumokban — ⚠️ **a tárolási helye
-  NINCS MEG**; az újraindítás utáni fennmaradása egy mérésben igazolt
-  (2026-10-14, #4884), de a `job-135` egyetlen, kilépés utáni db3-kivonata
-  nem azonosítja a forrást. Az `albums_0.db`-jelölt megdőlt; ld. 15.4.
+- Képek egyedi sorrendje mappákban/albumokban — ✅ **a tárolási helye
+  megvan**: a `db3/wordhash.dat` `]album:<uid>` bejegyzésének rendezett
+  `thumbindex`-sorazonosító-listája (2026-10-14, #4884, 15.4h). Az
+  `albums_0.db` borító-raszter, nem sorrendlista. A PMP-import ezt a forrást
+  még nem veszi át; az átvételi specifikáció a 15.5–15.6-ban van.
 - Videók „date taken" / geotag módosításai — ✅ **MEGVAN** (2026-10-11,
   #4591): a dátum a `thumbindex.db` rekordjának **1. FILETIME-ja**
   (+ a fájl NTFS létrehozási ideje), a hely az `imagedata_lat`/`_long`/
   `_geoview` oszlop — ld. a 15.1–15.3 szakaszt
-- → A bizonyított PMP/db3-adatokat a PMP-importnak kell kinyernie; az egyedi
-  sorrend forrását előbb azonosítani kell, ezért arra még nincs átviteli
-  specifikáció.
+- → A bizonyított PMP/db3-adatokat a PMP-importnak kell kinyernie. Az
+  egyedi sorrend forrása már azonosított; a még hiányzó munka az átvétel
+  megvalósítása a 15.6 szerinti ellenőrzésekkel.
 
 ## Ismert hibamódok (az eredeti Picasában)
 
@@ -4236,7 +4237,7 @@ oldalán a lánc kódszinten típusfüggetlen (15.5), ezért a hiányzó minta a
 átvétel helyességét nem befolyásolja — szintetikus db3-mintával kell
 igazolni (15.6).
 
-### 15.4 Az egyedi (kézi) sorrend — amit a bináris kimond, és ami NINCS MEG
+### 15.4 Az egyedi (kézi) sorrend — bináris adatszerkezet és nyitott részek
 
 **Megdőlt jelölt:** az `albums_0.db` (ld. a „kézi sorrend tárolási helye"
 szakasz 2026-10-11-i helyesbítését): élő tartalma 41/41 borító-raszter.
@@ -4291,27 +4292,7 @@ oszlopa (az átrendezés utáni `db3`-ban) (`albumcontactids`, `albumpeoplecheck
 `name`, `<fiók>_lh`, `token`, `uid`, `unread`) között sincs sorrend- vagy
 rendezésimód-oszlop.
 
-⇒ **A kézi sorrend tárolási helye NINCS MEG.** A 2026-10-14-i #4884-mérés
-szerint az átrendezés szabályos kilépés és újraindítás után is megmarad
-(`gray_ramp.jpg`: 1. → 10. hely; `.picasa.ini` nem keletkezett). Ez a
-tartósságot igazolja, a fájlt vagy mezőt nem: a begyűjtött `job-135` db3
-állapot csak kilépés utáni pillanatkép; nincs előtte-állapot és nincs
-újraindítás utáni db3-másolat, amelyhez a képernyőn látható sorrend köthető.
-A korábbi bináris hipotézis — hogy a `0x0071c650` →
-`0x0071f030` láncban a 8-as kulcs mellett megtalálható a 11-es kulcsképző —
-**cáfolódott**: a lánc eléri az általános rendezőt, de annak összehasonlító
-8/11 módban kulcsot nem választ. A megszerzés útja — ebben a sorrendben:
-
-1. **bináris, író és olvasó út:** a 11-es módhoz rendelt érték íróját,
-   olvasóját és az adatmező/kulcs pontos jelentését kell azonosítani a
-   megvizsgált rendezőláncon kívüli kódban; a negatív állítást indextől
-   független, célzott bináris pásztázással kell alátámasztani.
-2. **viselkedés:** a #4884 végrehajtó már kiadta a `job-135` db3-fájlokat,
-   és a képernyőmérés igazolja az újraindítás utáni sorrendet. A tároló
-   azonosításához még kell egy második, másik átrendezéses mérés, amely a
-   teljes Picasa-profilról és a db3-ról is ad pillanatképet az átrendezés
-   előtt, szabályos kilépés után és újraindítás után; a jelenlegi egyetlen
-   kilépés utáni db3-pillanatkép nem mutat változási különbséget.
+⇒ **A kézi sorrend tartós helye megvan: `db3/wordhash.dat`.** A `]album:<uid>` kulcs bejegyzésének rendezett `thumbindex`-sorazonosító-listája adja a kézi pozíciókat; a kontroll és két külön átrendezés listája a képernyőn látott, újraindítás után is megmaradó sorrenddel egyezik (15.4h). A `0x0071c650` → `0x0071f030` lánc 11-es módú kulcsválasztójának hiánya nem cáfolja ezt: az ottani RAM-rendezés külön út, a tartós postinglista viszont mért és binárisan kiírt sorrendet hordoz. A tárolási kérdés lezárult; a listának a futásidejű `[item+0xb4]` mezőhöz vezető pontos hívási útja nem kellett a tárolóhely eldöntéséhez, és nincs megfejtve.
 
 ### 15.4b Második kör (2026-10-13, #4884): író és olvasó két független úton
 
@@ -4709,20 +4690,74 @@ valamint a virtuális író/olvasó célok maradnak nyitva:
 
 `Ghidra-kör kell: 0x00715280 — melyik CSelectionNode-vtábla-hívó tölti ki a `[item+0xb4]` értékét, és melyik tartós író/olvasó használja? [blokkoló]`
 
+### 15.4h Nyolcadik kör (2026-10-14, #4884): a `wordhash.dat` album-bejegyzése őrzi az egyedi sorrendet
+
+Ez a kör felülírja a 15.4g végén rögzített nyitott állapotot; a korábbi `[blokkoló]` Ghidra-tétel a tárolóhely megállapításához már nem blokkoló. A három teljes `db3`-pillanatkép külön Colab-futásból, szabályos kilépés után készült; az A kontroll, a B és C két külön átrendezés. A fájlok a külső mérőanyagban maradtak, a repóba nem kerültek.
+
+| futás | képernyőn mért pozíció | album-token | `wordhash.dat` albumrekord abszolút fájleltolása | token fájleltolása (pool-relatív) |
+|---|---|---|---:|---:|
+| A, `job-146` | `gray_ramp.jpg`: 1.; `rgb_gradient.jpg`: 3. | `]album:92f0106cdfc8b49cccf985131ab863c7` | `0x10594` | `0x290` (`0x27c`) |
+| B, `job-147` | `gray_ramp.jpg`: 10.; `rgb_gradient.jpg`: 2. | `]album:d03cb3db0fa261a776437e1c6585c205` | `0x10168` | `0x9b` (`0x87`) |
+| C, `job-148` | `gray_ramp.jpg`: 1.; `rgb_gradient.jpg`: 22. | `]album:df38530fd18fa5bf2f902e590dff40ee` | `0x105d0` | `0x2b9` (`0x2a5`) |
+
+A B áthúzását a `job-147/kepernyo__03.png` és a kilépés/újraindítás utáni `__04.png` mutatja. A C áthúzását külön ellenőriztem: a `job-148/kepernyo__03.png` a `rgb_gradient.jpg`-et a 4. sor 4. oszlopában, azaz 22. pozícióban mutatja; a `__04.png` újraindítás után ugyanott mutatja. A kontrollt a `job-146/kepernyo__01.png` adja. Ez a három képernyőkép nem a bájtokból következtetett mérés.
+
+**A fájl szerkezete, mérve.** Mindhárom `wordhash.dat` pontosan **68 116 B**. A fejlécben a `0x00` mező `float32=1.6`; a `uint32` mezők `0x04`, `0x08`, `0x0c`, `0x10` címen rendre `36`, `1`, `65536`, `1179`. A `0x14` címtől a **65 536 B** kapacitású, NUL-terminált szövegpool kezdődik; a 65 536-os méretet a bináris olvasó is ellenőrzi (`0x004db720`). A 1179 érték a mintában használt pool-bájtok száma; a `36` és az `1` fejlécmezők jelentése nincs megállapítva. A poolban futásonként **160** különböző sztring van. A futásonként változó album-token eltávolítása után a többi **159** sztring és sorrendjük mindhárom fájlban azonos; a normalizált pool SHA-256-ja `8220f26569d5a647f1a0ddd228d1d482dea9b492094b0d30e858b35ddd9134eb`.
+
+A `0x10014` címen álló `uint32` aktív bejegyzésszám **151**. Minden bejegyzés kódolása: `poolbeli_sztringeltolás:uint32`, `azonosító_db:uint32`, majd ennyi `thumbindex_sor:uint32`. Mind a 151 bejegyzés kulcsa poolbeli sztringkezdetre mutat; a rekordok a fájl végéig pontosan elfogyasztják a fájl hátralévő **2560 B**-ját (a darabszámmezővel együtt). A `]album:<uid>` bejegyzés darabszáma **24**. A lista n-edik eleme (nullától indexelve) a bejegyzés kezdetétől számított `0x08 + 4×n` bájton van; a megfigyelt albumrácsban ez az n-edik kép pozíciója `n+1`.
+
+Az album-postinglisták teljes, little-endian `thumbindex`-sorazonosító-sorozata:
+
+- A: `[5,2,8,10,14,15,9,17,18,20,19,13,11,12,16,21,22,23,24,25,3,4,6,7]`
+- B: `[2,8,10,14,15,9,17,18,20,5,19,13,11,12,16,21,22,23,24,25,3,4,6,7]`
+- C: `[5,2,10,14,15,9,17,18,20,19,13,11,12,16,21,22,23,24,25,3,4,8,6,7]`
+
+A futásazonosítót a `]album:<uid>` poolsztring értékével és annak változó
+poolhelyével normalizáltam; a 159 közös sztring változatlan marad. A normalizált
+album-listák eltérő 32 bites mezői pontosan: A↔B `n=0..9` (10 mező), A↔C
+`n=2..21` (20 mező), B↔C `n=0,1,9,21` (4 mező). Ezek a listában elfoglalt
+helyek; a bájthely képlete rekordkezdet `+0x08+4×n`. A nyers fájlok bájtkülönbség-
+száma A↔B **867**, A↔C **127**, B↔C **934**; ezekben együtt szerepel a futás-
+UID tartalma, annak poolbeli elhelyezése és a poolrelatív kulcsoffset, valamint a
+fenti sorrendi mezőváltozás. Ezért a nyers fájlkülönbség nem azonos a sorrendi
+változás bájtszámával.
+
+A `thumbindex.db`-ben a `gray_ramp.jpg` az 5. sor, a `rgb_gradient.jpg` a 8. sor; mindkét rekord minden futásban azonos. Így B-ben az 5-ös azonosító a 10. postinghelyen áll (`0x10168 + 0x08 + 4×9 = 0x10194`), C-ben a 8-as a 22. helyen (`0x105d0 + 0x08 + 4×21 = 0x1062c`). A kontrollban ugyanezek az azonosítók az 1. és 3. postinghelyen vannak. B-ben tíz, A↔C között húsz 32 bites listaelem változik, pontosan a képernyőn mért áthelyezésnek megfelelő eltolással; a másik 150 szövegbejegyzés postinglistája mindhárom fájlban változatlan. Az albumtokent tartalmazó sztringpool-hely futásonként változik, ezért a rekord abszolút fájleltolása nem állandó formátumkonstans.
+
+**Bináris út.** A CIndexer `0x004db4f0` címen hivatkozik a `wordhash.dat` írójára; a `0x004db55d` környezetében a fájl `"wbS"` módban nyílik meg. A `0x00704500` szerializáló a rekord `[esi+4]` darabszámát és a `[esi+8]` címen kezdődő azonosítólistát írja ki, az elemeket sorrendben a `0x99c1e0` segítségével. A `0x004db720` a fájlt olvasó/validáló út; az adatot a `0x007046e0` deszerializálja. Ez függetlenül igazolja, hogy a mért postinglista sorrendje kiírt, majd visszaolvasott adat, nem a parser által hozzáadott rendezés.
+
+A 11-es rendezési mód kulcsára vonatkozó korábbi bináris eredmény változatlan: a `0x004efce0` csak a 2–7. módot küldi a `0x006b9b50` kulcsválasztóba; a 11-es módnak ezen az összehasonlító-ágon nincs külön kulcsa. A most dekódolt tartós listát nem ezen a kulcsválasztón keresztül találtam. A postinglista és az `[item+0xb4]` közötti futásidejű útvonal egyelőre nincs azonosítva, de nem blokkolja a tartós fájl/mező/adatszerkezet megállapítását.
+
+**A többi vizsgált db3-adat normalizálva.**
+
+| fájl/mező | három futás közti, sorrendre vonatkozó eredmény |
+|---|---|
+| `albumdata_token.pmp`, `albumdata_uid.pmp` | A/B/C-ben a `PicasaTeszt` 2. sorának `]album:<uid>` tokenje és `uid` suffixe egyezik; az értékek feladatfutásonként változnak. Ez az albumrekord azonosítója, nem pozíció. A `PicasaTeszt` dátuma stabil; a rendszeralbumok dátuma futásidővel változik. |
+| `thumbindex.db` | 32 bejegyzés; a képfájlok sorai és minden mezőjük azonosak, kivéve a `C:\` gyökérsor futásonként változó `creation_filetime` mezőjét. Az 5-ös és 8-as sor nem követi a kézi pozíciót. |
+| `imagedata` | A thumbindex-sorhoz kötve egyik képrekord mezője sem változott; nincs külön kézi hely mező. |
+| `albums_index.db`, `albums_0.db` | A kontrollban nincs aktív album-slot. B-ben az album slotja `offset=4`, a blokk 98×116 BGRA, az index `size=45480`; C-ben 98×111 BGRA, `size=43520`. Ezek borítókép-gyorstárak, nem a 24 soros lista. |
+| `bigthumbs_index.db`, `previews_index.db` | A B/C kivonatokban a változás cache-offsetekre korlátozódik; a kapcsolódó `_0.db` fájlok 4 B-osak, az indexek nem üres tartományai kívülre mutatnak. Ebből képsorrend nem dekódolható. |
+| `imagedata_redo.pmp`, `imagedata_revertable.pmp` | B/C-ben jelen vannak, mindkettő rekordszáma 0. |
+
+**A két független út.** **A — viselkedési/mérési út:** a kontroll és két eltérő áthúzás `wordhash.dat`-jának album-tokenhez tartozó sorlistája a `thumbindex` stabil sorazonosítóira oldódik; a két célkép pontos új helye és a szabályos újraindítás utáni sorrend külön képernyőképen igazolt. **B — bináris út:** a CIndexer azonosított írója ugyanazt a számlált, sorrendi `uint32`-listát szerializálja, a megnevezett olvasó pedig visszaolvassa. A két út egyezik: az album postinglistájának tömbsorrendje tartósan a kézi pozíciót hordozza.
+
+**Cáfoló kísérlet (15.2; a cáfolatot is ellenőriztem).** Azt az alternatívát próbáltam cáfolni, hogy a postinglista csak tagsági halmaz vagy a `thumbindex` természetes sorrendjét tükröző cache. A sorozatok nem növekvő sorazonosítók; a két áthelyezéskor a thumbindex 5/8 sorai rögzítettek, miközben az album-postinglistában pontosan a 10., illetve 22. helyre kerültek; a képernyők ezt újraindítás után is mutatják. A másik 150 postinglista és a `color:gray` általános keresőlista (`[5,6]`) változatlan marad. A parser ellenőrzése a 151 bejegyzést, poolbeli kulcscímeket, érvényes sorazonosítókat és fájlvégig érő dekódolást ellenőrizte; a külön képernyőmérés kizárja, hogy pusztán belső index-permutációt nevezzek látható pozíciónak. A cáfoló alternatíva nem állja meg a helyét.
+
+*Bizonyítottsági fok: **megerősített** a tartós tárolási helyre és a postinglista sorrendjének jelentésére — a három kontrollált db3-mérés/képernyőút és a CIndexer író/olvasó bináris útja egymástól függetlenül alátámasztja. Nem állítom, hogy a `[item+0xb4]` futásidejű mező előállítási útja is megfejtett; ez külön, jelen következtetést nem blokkoló mechanikai kérdés.*
+
+**Nyitott, nem blokkoló mellékkérdés.** A wordhash fejléc `0x04` (`36`) és `0x08` (`1`) mezőjének jelentése: **NINCS MEG**; a 15.4h formátummérése a `1.6` verziójú mintára vonatkozik. A postinglista és a futásidejű `[item+0xb4]` közötti pontos hívási kapcsolat szintén nincs követve; ez nem változtat a fájlszintű tárolási eredményen.
+
+`Ghidra-kör kell: 0x00715280 — melyik CSelectionNode-vtábla-hívó adja át a producer 3. argumentumát, és honnan származik az érték?`
+
 ### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
 
 | tétel | az eredeti tárolása (mérve) | a PicasaPy átvétele ma (`pmpimport/`) | a PicasaPy saját tárolása ma |
 |---|---|---|---|
 | **videó dátuma** | `thumbindex.db` 1. FILETIME + NTFS létrehozási idő (15.1) | **NEM veszi át**: a `thumbindex.read_thumb_index` beolvassa a `creation_filetime`-ot, de az `importer.PhotoRecord` nem viszi tovább, és a `db3_atvetel` sem ír dátumot | videónál nincs `taken_at` (`index/sync.py` `_upsert_photo`: `EMPTY_METADATA`), a dátum a befagyasztott első fájlidő (`first_seen_mtime_ns`); a `photos.taken_at_override` oszlop él, a lekérdezések előnyben részesítik (`index/queries.py:22`, `sync.py:1034`), szinkronkor megmarad (`sync.py:1091`), de ma **semmi nem írja**. ⚠️ A saját dátummódosítónk (`app/timestamp_controller.py`) videónál az EXIF-írás hibája után csak Windowson állít létrehozási időt — POSIX-on a módosítás **nem tárolódik sehol** |
 | **videó geotagje** | `imagedata` `lat`/`long`/`geoview` (15.3) | **átveszi**: az `importer.iter_photo_records` típusszűrés nélkül minden fájlrekordot ad, a `db3_atvetel.helyet_atvesz` a hiányzó `geotag=` kulcsot írja (#2336) | `.picasa.ini` `geotag=` (`photos.geotag_ini`), minden médiára |
-| **egyedi sorrend** | **NINCS MEG** (15.4g): újraindítás után fennmarad; az `albums_0.db` az album sorindexéhez rendelt 98×116 BGRA-borítókép, a thumbindex-sorindex nem rácspozíció; a külön job-146/job-147 db3-kivonatok nem azonosítanak tartós sorrendmezőt | az eredeti sorrendet nem veszi át; nincs igazolt forrásmező vagy leképezés a `pmpimport/`-ban | a PicasaPy saját kézi sorrendje `.picasa.ini` `priority=` kulcsokat használ (`ini/priority.py`, `folder_photo_sort_controller.py`); ez nem bizonyítja, hogy az eredeti Picasa is így tárol |
+| **egyedi sorrend** | `db3/wordhash.dat`: a `]album:<uid>` bejegyzés 24 little-endian `thumbindex`-sorazonosítóból álló postinglistája a kézi albumrács-sorrend (15.4h). A pozíció a listabeli sorszám; az `albums_0.db` borító-raszter, nem sorrendlista. | **NEM veszi át**: `pmpimport.importer.iter_photo_records` a `thumbindex.db` és az `imagedata` táblát olvassa; `wordhash.dat`-olvasó nincs a PMP-importban | albumonként a kép-szakasz `.picasa.ini` `albumorder=<token>:<hely>` párja → `photo_albums.place` (#4599). Ez a PicasaPy saját tárolása; a `priority=` más saját rendezési mező, nem az eredeti Picasa kulcsa |
 
-**ADR-014 premisszája felülvizsgálandó:** a `ini/priority.py` modul
-megjegyzése az eredeti Picasa tárolójaként az `albums_0.db` tagsági
-sorrendjét állítja; a 15.4 ezt a jelöltet borító-raszterként cáfolja.
-Az eredeti tartós forrás továbbra is ismeretlen, ezért a PicasaPy saját
-`.picasa.ini`-formátuma az eredetitől való eltérésként sem tekinthető
-bizonyítottnak.
+**ADR-014 premisszájának pontosítása.** Az eredeti sorrend `wordhash.dat`-beli helye most már mért és a bináris szerializálással is alátámasztott; az `albums_0.db`-t tagsági listának nevező régi állítás nem érvényes. A PicasaPy saját `.picasa.ini`-formátuma továbbra is saját formátum, de az átvételkor a bizonyított eredeti sorrendet a már létező `albumorder=` / `photo_albums.place` szerződéshez kell leképezni. Az `ini/priority.py` eredeti Picasa-tárolóról szóló régi megjegyzése és az ADR-014 szövege fejlesztői feladatként frissítendő; e kutatási körben kódhoz/döntési laphoz nem nyúltam.
 
 ### 15.6 A megvalósítandó viselkedés — „Kész, ha"
 
@@ -4758,20 +4793,29 @@ bizonyítottnak.
       `lat`/`long`-gal és nem üres `geoview`-val → a mappa `.picasa.ini`-jében
       a videó szakaszában `geotag=<lat>,<long>` (6 tizedes, vesszős alak).
 
-**Egyedi sorrend** — ⛔ **az eredeti tároló ismerete nélkül nincs igazolt átvételi specifikáció**:
+**Egyedi sorrend** — a forrás bizonyított, a PMP-import átvétele még nincs megvalósítva:
 
-- [x] a tartósságot egy mérés igazolta: a kézi sorrend szabályos kilépés és
-      újraindítás után megmarad (`gray_ramp.jpg`: 1. → 10.; 15.4e, 15.4g).
-- [ ] az eredeti tároló fájlja/mezője/adatszerkezete, írója és olvasója
-      két független bizonyítékúttal azonosítva; a teljes előtte/kilépés
-      utáni/újraindítás utáni profil- és db3-diff a bináris út eredményével
-      egyezik.
-- [ ] a beolvasási leképezés és az ütköző/hiányzó sorrendértékek kezelése
-      specifikálva; csak ezután készíthető fejlesztési jegy a PMP-importhoz.
+- [x] a tartósságot három mérés igazolja: A kontroll, B `gray_ramp.jpg` 1. →
+      10., C `rgb_gradient.jpg` 3. → 22.; a két drag szabályos kilépés és
+      újraindítás után is megmaradt (15.4h);
+- [x] az eredeti tároló és kódolás azonosítva: `wordhash.dat`, a `]album:<uid>`
+      rekord 24 darab, sorrendben tárolt `thumbindex`-sorazonosítója; a
+      CIndexer írója/olvasója és a három mért lista egyezik (15.4h);
+- [ ] a PMP-import a postinglistát az albumtokenhez rendeli, a sorazonosítókat
+      az adott futás `thumbindex`-rekordjaira oldja, majd a bizonyított sorrendet
+      a meglévő `.picasa.ini` `albumorder=` / `photo_albums.place` modellbe
+      veszi át; az ismeretlen/törölt sorazonosítókat és sérült bejegyzést
+      biztonságosan kezeli;
+- [ ] szintetikus `wordhash.dat`-teszt: ellenőrzött pool-token, 24-es posting-
+      darabszám, azonosítók sorrendje, `thumbindex`-leképezése, valamint a
+      hibás/truncated rekord viselkedése; átvételi próba igazolja, hogy az
+      albumrács megtartja a B/C szerinti pozíciókat;
+- [ ] az `ini/priority.py` és ADR-014 elavult állítása az eredeti
+      `albums_0.db`-tárolóról a bizonyított `wordhash.dat`-ra frissül.
 
 ### 15.7 Nyitott kérdések mérlege (15.)
 
-`1 nyílt (örökölt) · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
@@ -4779,13 +4823,12 @@ bizonyítottnak.
 | melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
 | milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
 | hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
-| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **RÉSZBEN NYITOTT, örökölt** (#1645/#4884): az újraindítás utáni fennmaradás képernyőmérésből igazolt (15.4e, 15.4f, 15.4g); a fájl/mező/adatszerkezet, író és olvasó nyitott. A 15.4g teljes pillanatképpárjában az `albums_0.db` aktív blokkja pontosan 98×116 BGRA-raszter, az `albums_index.db` a `PicasaTeszt` album 2. sorára mutat; nem 24 elemű tagsági lista. Mindkét thumbindexben a `gray_ramp.jpg` indexe 5, a képernyőn 10. helyen áll; `imagedata_filename.pmp` nincs a két pillanatképben. A drag-futás `redo`/`revertable` PMP-jei 0 rekordosak. A bigthumbs/previews indexek nem üres slotjai a 4 B-os `_0.db` fájlokon kívülre mutatnak, ezért tartalmuk nem értelmezhető. A `0x0071c650` → `0x0071f030` lánc memóriabeli `[item+0xb4]` értékeket rendez, a `0x004efce0` kulcsválasztója csak 2–7. módra ágazik; ez a tartós tárolót nem azonosítja. 2–7. kör: **15.4b–15.4g** — literálpásztázás, producer/összehasonlító út és db3-mérések. A következő döntő mérés azonos futású, átrendezés előtti/kilépés utáni/újraindítás utáni teljes profil + db3 + registry diff; a producer virtuális író/olvasó útja is nyitva. |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **LEZÁRVA** — `db3/wordhash.dat` albumtoken-record 24-es ordered postinglistája; control + két drag, újraindítási képernyők, CIndexer writer/reader (15.4h). `albums_0.db` a borítókép-cache. Az importer még nem veszi át; ez megvalósítási feladat, nem nyitott tárolási kérdés. |
 
 *Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
 importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
 **megerősített** az `albums_0.db` kizárására (41/41 + 37/37 méret-azonosság);
 **kódszintű** a videó-geotag átvételére (valódi minta nincs). A kézi sorrend
-újraindítás utáni fennmaradását egy Colab-mérés igazolja; a tárolási hely,
-mező/adatszerkezet és író/olvasó út **nyitott**. A vizsgált rendezőlánc
-utasításszintű lelete csak ezt az útvonalat zárja ki kulcsképzőként, és nem
-bizonyítja a teljes programban író/olvasó hiányát.*
+forrása és kódolása **megerősített**: a három kontrollált db3-mérés és
+képernyőkép, valamint a független CIndexer szerializáló/deszerializáló út
+egyezik (15.4h). A PicasaPy PMP-import átvétele még nincs megvalósítva.*
