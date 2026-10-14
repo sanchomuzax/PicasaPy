@@ -26,7 +26,20 @@ on:
   # rekurzióvédelem, amit a `package.yml` fejléce is leír a release-nél).
   # Ilyenkor ez az ág adja meg a lehetőséget, hogy az ágon MÉGIS legyen
   # valódi CI-bizonyíték, ne csak helyi futás.
-  workflow_dispatch: {}
+  # #187: kézi indításkor választható, melyik platform tesztdarabjai fussanak.
+  # A `mindketto` a régi viselkedés. Ütemezett és main-push futásnál nincs
+  # bemenet, ezért ott mindkét platform fut, mint eddig.
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Melyik platform tesztdarabjai fussanak (kézi indításkor)
+        type: choice
+        options:
+          - mindketto
+          - windows
+          - ubuntu
+        default: mindketto
+        required: false
   # 2026-10-09: a windowsos készlet éjszaka fut (és kézzel indítható), nem minden
   # main-pushon — 4 futtatóhelyet foglalt ~30 percig minden beolvadás után, a Free
   # csomag 20 helyéből, miközben az eredménye nem blokkol.
@@ -94,7 +107,8 @@ jobs:
   # kötelező ubuntu-ellenőrzést is pirosra vitte (mérve a #1257-en).
   darabok-ubuntu:
     needs: valtozas
-    if: ${{ needs.valtozas.outputs.darabszam != '0' }}
+    # #187: kézi indításkor a `platform` bemenet szűr (windows esetén kimarad).
+    if: ${{ needs.valtozas.outputs.darabszam != '0' && (github.event_name != 'workflow_dispatch' || inputs.platform != 'windows') }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: ubuntu-latest
@@ -106,7 +120,15 @@ jobs:
   # Külön mátrixszáma van, ezért kevés windowsos próba kevés futtatót foglal.
   darabok-windows:
     needs: valtozas
-    if: ${{ github.event_name != 'pull_request' || needs.valtozas.outputs.windows_darabszam != '0' }}
+    # #187: kézi indításkor a `platform` bemenet szűr (ubuntu esetén kimarad).
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.platform != 'ubuntu') && (github.event_name != 'pull_request' || needs.valtozas.outputs.windows_darabszam != '0') }}
+    # #187: main-pushon egy újabb commit megszakítja a régebbi, még futó
+    # windowsos futást. Minden más eseményre egyedi csoport jár (a run_id),
+    # így a PR, az ütemezett és a kézi futás nem ütközik, a viselkedésük
+    # változatlan. Az ubuntu-láb ebből nincs kizárva, minden commiton lefut.
+    concurrency:
+      group: ci-windows-${{ github.event_name == 'push' && 'main' || github.run_id }}
+      cancel-in-progress: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: windows-latest
@@ -212,7 +234,9 @@ jobs:
           fi
 
       - name: Az ubuntu-tesztdarabok mind zöldek
-        if: ${{ needs.valtozas.outputs.darabszam != '0' }}
+        # #187: kézi windows-indításkor az ubuntu-darabok szándékosan kimaradnak.
+        # Ez nem bukás, a többi eset szigorúan változatlan.
+        if: ${{ needs.valtozas.outputs.darabszam != '0' && !(github.event_name == 'workflow_dispatch' && inputs.platform == 'windows') }}
         run: |
           if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-ubuntu.result }}"
@@ -253,6 +277,12 @@ jobs:
       - name: A Windows-mátrix összes darabja zöld
         if: ${{ always() && needs.darabok-windows.result != 'skipped' }}
         run: |
+          # #187: a főágon a régebbi windowsos futást az újabb commit megszakítja.
+          # Ez nem bukás, a piros jelzés pedig e-mailt küldene a tulajdonosnak.
+          if [ "${{ needs.darabok-windows.result }}" = "cancelled" ] && [ "${{ github.event_name }}" = "push" ]; then
+            echo "::notice::A windowsos láb egy újabb main-commit miatt megszakadt (#187)."
+            exit 0
+          fi
           if [ "${{ needs.darabok-windows.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-windows.result }}"
             exit 1
