@@ -81,7 +81,7 @@ def _find_visual(root, name: str, *, predicate=None):
 
 def _folder_row(window, path: Path):
     for item in _walk(window.contentItem()):
-        if item.property("kind") == "folder" and item.property("path") == str(path):
+        if item.property("kind") == "folder" and Path(item.property("path") or "") == path:
             return item
     raise AssertionError(f"A mappasor nem található: {path}")
 
@@ -312,7 +312,7 @@ def test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys(
     )
     reordered = varj_feltetelre(
         qt_app,
-        lambda: controller.photos.filePathAt(row_b) == str(photo_a),
+        lambda: Path(controller.photos.filePathAt(row_b)) == photo_a,
         10.0,
     )
     assert reordered, (
@@ -438,7 +438,7 @@ def test_album_drag_rewrites_albumorder_through_the_ini_api(
     )
     _wait(
         qt_app,
-        lambda: controller.photos.filePathAt(1) == str(paths[0]),
+        lambda: Path(controller.photos.filePathAt(1)) == paths[0],
         "az album kézi húzása nem rendezte át a rácsot",
     )
     assert [Path(controller.photos.filePathAt(row)).name for row in range(3)] == [
