@@ -13,12 +13,12 @@ ablakmagassággal nézik, hogy az üzenet látszik-e és nem vágódik-e le.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import picasapy.app as app_csomag
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 REPO = Path(__file__).resolve().parents[3]
 CONTROL = REPO / "packaging" / "debian" / "control.template"
@@ -58,17 +58,8 @@ def _elem(root, nev):
     return obj
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _nyisd_meg(window, qt_app):

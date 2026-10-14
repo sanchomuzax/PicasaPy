@@ -32,7 +32,6 @@ a négy panelt (#1773), és a gombok ezt tükrözik.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, Qt
@@ -40,6 +39,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 import picasapy.app
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 _TRAYBAR = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
@@ -61,17 +61,8 @@ def _elem(window, nev: str):
     return window.findChild(QObject, nev)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _kattints(window, elem, qt_app):

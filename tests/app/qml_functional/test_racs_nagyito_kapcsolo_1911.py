@@ -25,7 +25,6 @@ van-e a fájlban.
 """
 from __future__ import annotations
 
-import time
 import re
 from pathlib import Path
 
@@ -35,6 +34,7 @@ from PySide6.QtTest import QTest
 
 import picasapy.app
 from tests.support.qml_blokk import blokk_horgonyra
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 _TRAYBAR = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
@@ -59,17 +59,8 @@ def _elem(window, nev: str):
     return window.findChild(QObject, nev)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _kattints(window, elem, qt_app):

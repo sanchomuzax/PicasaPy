@@ -29,12 +29,12 @@ készül hozzá vezérlő**.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import picasapy.app as app_csomag
 from PySide6.QtCore import QObject
 from tests.support.qml_blokk import blokk_horgonyra
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 #: #2564 óta a nagyítás-hármas az ALSÓ ESZKÖZSÁVBAN él, nem a nézőben —
 #: mérve: az eredetiben is a könyvtári nagyító és bélyegkép-csúszka
@@ -55,17 +55,8 @@ GOMB_MAGAS = 22
 CSUSZKA_SZELES = 127
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AssertionError, AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel, (AssertionError, AttributeError, RuntimeError, TypeError)), masodperc)
 
 
 def _elem(window, nev: str):

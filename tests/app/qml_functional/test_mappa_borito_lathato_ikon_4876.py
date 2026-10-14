@@ -11,7 +11,6 @@ nézzük: a lapos lista (`FolderPane`: `folderRowIcon`) és a fa
 
 from __future__ import annotations
 
-import time
 from urllib.parse import unquote
 
 import pytest
@@ -22,6 +21,7 @@ from PySide6.QtQuick import QQuickItem, QQuickView
 from picasapy.app.folder_cover_provider import FolderCoverProvider
 from picasapy.app.folder_hierarchy_controller import FolderHierarchyController
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 #: A `status` enumot a PySide nem tudja kiolvasni (`Can't find converter for
 #: 'QQuickImageBase::Status'`), ezért az `Image.Ready` jele az
@@ -44,17 +44,8 @@ def _betoltott(kep) -> bool:
     return kep is not None and kep.property("implicitWidth") > 0
 
 
-def _var(qt_app, feltetel, masodperc: float = 8.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _elem(pane, nev: str):

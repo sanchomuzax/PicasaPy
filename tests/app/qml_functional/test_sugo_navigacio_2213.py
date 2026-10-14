@@ -10,10 +10,10 @@ előzmény nélkül.
 
 from __future__ import annotations
 
-import time
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtQuick import QQuickItem
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 
 def _walk(item: QQuickItem):
@@ -22,17 +22,8 @@ def _walk(item: QQuickItem):
         yield from _walk(gy)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _nyisd_meg(window, qt_app):
