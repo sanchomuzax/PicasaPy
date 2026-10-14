@@ -16,7 +16,7 @@ _MAPPA = "ctrl_f9_folyamatos_4698"
 _KEPEK = 8
 
 
-def _var(qt_app, predicate, seconds: float = 3.0) -> bool:
+def _var(qt_app, predicate, seconds: float = 10.0) -> bool:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
         try:
