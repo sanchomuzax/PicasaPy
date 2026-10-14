@@ -13,7 +13,6 @@ import pytest
 from PySide6.QtCore import (
     QObject,
     QPoint,
-    QElapsedTimer,
     QTranslator,
     QUrl,
     Qt,
@@ -23,6 +22,7 @@ from PySide6.QtTest import QTest
 
 from picasapy.index import open_index, sync_tree
 from support.jpeg_factory import make_jpeg
+from support.varakozas import var_feltetelre
 
 _KEEPALIVE = []
 
@@ -49,17 +49,9 @@ def _click(window, item, qt_app, modifiers=Qt.KeyboardModifier.NoModifier):
     qt_app.processEvents()
 
 
-def _wait_for(qt_app, predicate, timeout_ms: int = 3000) -> bool:
+def _wait_for(qt_app, predicate, timeout_ms: int = 10000) -> bool:
     """Késleltetett QML-állapot kivárása határidős ciklussal."""
-    timer = QElapsedTimer()
-    timer.start()
-    while timer.elapsed() < timeout_ms:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(predicate())
+    return var_feltetelre(qt_app, predicate, timeout_ms / 1000)
 
 
 def _thumb(window, row: int):

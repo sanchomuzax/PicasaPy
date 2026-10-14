@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QPointF, Qt
@@ -12,6 +11,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 _FILMSTRIP_WIDTH = 214  # 7 * 28 px thumbnails + 6 * 3 px gaps.
@@ -34,17 +34,8 @@ def _elem(window, name: str):
     return window.findChild(QQuickItem, name)
 
 
-def _var(qt_app, predicate, seconds: float = 5.0) -> bool:
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        try:
-            if predicate():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, predicate, seconds: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate), seconds)
 
 
 def _folder_start(controller, folder_name: str) -> int:

@@ -39,17 +39,25 @@ def idoszorzo() -> float:
     return ertek
 
 
-def hibaturo_feltetel(feltetel: Callable[[], bool]) -> Callable[[], bool]:
+ALAP_HIBAK = (AttributeError, TypeError, RuntimeError)
+
+
+def hibaturo_feltetel(
+    feltetel: Callable[[], bool],
+    hibak: tuple[type[BaseException], ...] = ALAP_HIBAK,
+) -> Callable[[], bool]:
     """A feltételt úgy csomagolja, hogy a még nem kész widgetre hivatkozó hiba hamisnak számítson.
 
     A QML-elemek betöltés közben `AttributeError`, `TypeError` vagy `RuntimeError`
-    hibát adhatnak; a várakozás ilyenkor egyszerűen még nem teljesült.
+    hibát adhatnak; a várakozás ilyenkor egyszerűen még nem teljesült. Ahol a
+    hívó más kivételt is türelemmel kezel (pl. `AssertionError`), azt a `hibak`
+    adja meg.
     """
 
     def _ellenorzes() -> bool:
         try:
             return bool(feltetel())
-        except (AttributeError, TypeError, RuntimeError):
+        except hibak:
             return False
 
     return _ellenorzes

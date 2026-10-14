@@ -146,3 +146,14 @@ def test_hibaturo_feltetel_a_hibat_hamisnak_veszi(monkeypatch, ora):
     assert hibaturo_feltetel(hibas)() is False
     assert hibaturo_feltetel(lambda: True)() is True
     assert var_feltetelre(_HamisQtApp(), hibaturo_feltetel(hibas), masodperc=1.0) is False
+
+
+def test_hibaturo_feltetel_megadott_hibakat_is_elnyel(monkeypatch, ora):
+    monkeypatch.delenv(IDOSZORZO_ENV, raising=False)
+
+    def assertelo() -> bool:
+        raise AssertionError("még nem jó")
+
+    assert hibaturo_feltetel(assertelo, (AssertionError,))() is False
+    with pytest.raises(AssertionError):
+        hibaturo_feltetel(assertelo)()

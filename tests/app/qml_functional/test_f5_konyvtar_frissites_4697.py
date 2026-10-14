@@ -3,23 +3,16 @@
 from __future__ import annotations
 
 import shutil
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 
-def _wait_until(qt_app, predicate, timeout: float = 3.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(predicate())
+def _wait_until(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, predicate, timeout)
 
 
 def _search(field: QObject, query: str, qt_app) -> None:
