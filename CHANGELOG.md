@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.98] – 2026-10-14
+
+- A nézőben a Ctrl+F9 folyamatosan léptet a mappa végéig, kézi lapozásra és bezáráskor megáll (#4698).
+
 ## [0.9.97] – 2026-10-14
 
 - A személy-album indexképe a fotó helyi menüjéből beállítható, és az SQLite index megőrzi. (#4536).
