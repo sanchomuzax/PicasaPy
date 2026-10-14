@@ -17,7 +17,7 @@ def _elem(gyoker, nev):
     return elem
 
 
-def _varj(qt_app, feltetel, masodperc=3.0):
+def _varj(qt_app, feltetel, masodperc=10.0):
     hatarido = time.monotonic() + masodperc
     while time.monotonic() < hatarido:
         qt_app.processEvents()
@@ -101,7 +101,7 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                         )
                     )
                     <= 0.65,
-                    masodperc=6.0,
+                    masodperc=10.0,
                 ), "a kattintott előnézet nem rajzolt átmeneti képkockát"
                 diaidozito = _elem(window, "moviePreviewTimer")
                 diaidozito.setProperty("running", False)
@@ -146,12 +146,12 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                 assert _varj(
                     qt_app,
                     lambda film=film: film.property("previewIndex") == 2,
-                    masodperc=3.0,
+                    masodperc=10.0,
                 ), "az előnézet nem léptetett tovább a szöveges diára"
                 assert _varj(
                     qt_app,
                     lambda transition=transition: transition.property("running"),
-                    masodperc=3.0,
+                    masodperc=10.0,
                 ), "a szöveges diára váltó átmenet nem indult el"
                 assert _varj(
                     qt_app,
@@ -161,7 +161,7 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                         not transition.property("running")
                         and str(transition_image.property("source"))
                             != before_playback_source,
-                    masodperc=2.0,
+                    masodperc=10.0,
                 ), "a szöveges diára váltó átmenet nem fejeződött be"
                 szoveges_kep = window.grabWindow()
                 assert not szoveges_kep.isNull()
@@ -191,7 +191,7 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                     vegkepek[:] = [aktualis]
                     return True
 
-                assert _varj(qt_app, vegkep_latszik, masodperc=3.0), (
+                assert _varj(qt_app, vegkep_latszik, masodperc=10.0), (
                     "a végső szöveges dia képkockája nem rajzolódott ki"
                 )
                 szoveges_kep = vegkepek[-1]

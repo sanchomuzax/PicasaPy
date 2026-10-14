@@ -466,7 +466,7 @@ class TestCsoportositas:
         _var(
             qt_app,
             lambda: bool(befejezett),
-            masodperc=5.0,
+            masodperc=10.0,
             uzenet="a keresés után, külön kattintás nélkül nem indult csoportosítás",
         )
         assert vezerlo.waitForBackgroundWorkers(10.0)

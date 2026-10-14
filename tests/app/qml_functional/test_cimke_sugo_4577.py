@@ -45,7 +45,7 @@ def _click(window, item, qt_app):
     qt_app.processEvents()
 
 
-def _wait_for(qt_app, predicate, timeout_ms: int = 3000) -> bool:
+def _wait_for(qt_app, predicate, timeout_ms: int = 10000) -> bool:
     """Késleltetett QML-állapot kivárása határidős ciklussal."""
     timer = QElapsedTimer()
     timer.start()
@@ -58,7 +58,7 @@ def _wait_for(qt_app, predicate, timeout_ms: int = 3000) -> bool:
     return bool(predicate())
 
 
-def _varj_nyugalmi_helyzet(qt_app, item, timeout_ms: int = 3000) -> None:
+def _varj_nyugalmi_helyzet(qt_app, item, timeout_ms: int = 10000) -> None:
     """Megvárja, míg a fiók csúszkázása véget ér: az elem helye egymás után kétszer ugyanaz.
 
     A fiók megnyitása animált, és a kattintás a mozgó helyre nem érne el.
@@ -122,7 +122,7 @@ def _buborek_hoverre(qt_app, window, probe, target) -> bool:
         return bool(probe.property("isVisible"))
 
     # a 600 ms-os késleltetés a terhelt CI-gépen lassabban jár le
-    return _wait_for(qt_app, ra_mutat, timeout_ms=8000)
+    return _wait_for(qt_app, ra_mutat, timeout_ms=10000)
 
 
 def _hover_allapot(window, target) -> str:

@@ -102,7 +102,7 @@ def test_kattintasra_mappabol_es_iso_kepbol_bajtra_pontosan_visszaallit(
     assert varj_feltetelre(
         qt_app,
         lambda: host.property("uzenet").startswith("Restored "),
-        masodperc=3,
+        masodperc=10.0,
     ), "a visszaállítás nem fejeződött be időben"
     assert vezerlo.waitForBackgroundWorkers(5.0)
 

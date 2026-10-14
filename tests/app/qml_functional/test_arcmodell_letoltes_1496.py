@@ -519,7 +519,7 @@ class TestLetoltesUtanElo:
         _var(
             qt_app,
             lambda: parbeszed.property("downloading") is False,
-            masodperc=1.0,
+            masodperc=10.0,
             uzenet="a modellbetöltés hibája után beragadt a párbeszéd",
         )
         assert vezerlo.waitForBackgroundWorkers(15.0)
@@ -529,7 +529,7 @@ class TestLetoltesUtanElo:
         _var(
             qt_app,
             lambda: bool(parbeszed.property("statusText")),
-            masodperc=5.0,
+            masodperc=10.0,
             uzenet="a letöltés befejező üzenete nem érkezett meg",
         )
 

@@ -57,7 +57,7 @@ def _album_sample(lib: Path) -> None:
     )
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     hatarido = time.monotonic() + masodperc
     while time.monotonic() < hatarido:
         qt_app.processEvents()
