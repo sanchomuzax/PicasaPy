@@ -19,6 +19,7 @@ import pytest
 
 from picasapy.app.picasa_import_controller import PicasaImportController
 from picasapy.pmpimport.db3_atvetel import AtvetelJelentes
+from picasapy.pmpimport.importer import Db3Beolvasas
 from picasapy.scanner.discovery import PicasaInstallation
 
 
@@ -105,7 +106,24 @@ class TestSikeresAtvetel:
         kesz = _Fogo()
         v.importFinished.connect(kesz)
         _lefut(v, qt_app)
-        assert kesz.tetelek == [(3, 12, 4, 7, 2, 0, 0)]
+        assert kesz.tetelek == [(3, 12, 4, 7, 2, 0, 0, 0)]
+
+    def test_a_wordhashbol_kihagyott_sorok_szama_a_jelentesbe_kerul(
+        self, qt_app, tmp_path
+    ):
+        db3 = tmp_path / "Picasa2"
+        db3.mkdir()
+        v = PicasaImportController(
+            felderito=lambda: (_telepites(db3),),
+            olvaso=lambda _db3, _remapper: Db3Beolvasas(("r1",), 2),
+            atvevo=lambda _rekordok: AtvetelJelentes(mappak=1, sorrend=1),
+        )
+        kesz = _Fogo()
+        v.importFinished.connect(kesz)
+
+        _lefut(v, qt_app)
+
+        assert kesz.tetelek == [(1, 0, 0, 0, 0, 0, 0, 2)]
 
     def test_futas_kozben_a_running_IGAZ_utana_hamis(self, vezerlo_gyar, qt_app, tmp_path):
         db3 = tmp_path / "Picasa2"
@@ -176,7 +194,7 @@ class TestIndexLepes:
         v.waitForBackgroundWorkers(5.0)
         qt_app.processEvents()
         assert kapott == [(("r1",), tmp_path / "index.db")]
-        assert kesz.tetelek == [(1, 0, 1, 0, 0, 3, 2)]
+        assert kesz.tetelek == [(1, 0, 1, 0, 0, 3, 2, 0)]
         assert datum.tetelek, "a felület nem kapott frissítést"
 
     def test_az_index_lepes_az_iro_soron_fut(self, qt_app, tmp_path):
