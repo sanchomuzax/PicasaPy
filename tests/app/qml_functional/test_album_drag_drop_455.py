@@ -116,7 +116,11 @@ class TestDropTargets:
         window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [0])
 
-        _emit(_child(window, "folderPane"), "newAlbumDropped")
+        _emit(
+            _child(window, "folderPane"),
+            "newAlbumPhotosDropped",
+            Q_ARG("QVariant", [0]),
+        )
         qt_app.processEvents()
 
         assert [a["name"] for a in controller.albums] == ["Untitled"]
@@ -125,7 +129,11 @@ class TestDropTargets:
         window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [])
 
-        _emit(_child(window, "folderPane"), "newAlbumDropped")
+        _emit(
+            _child(window, "folderPane"),
+            "newAlbumPhotosDropped",
+            Q_ARG("QVariant", []),
+        )
         qt_app.processEvents()
 
         assert controller.albums == []
@@ -144,6 +152,7 @@ class TestDropTargets:
             _child(window, "folderPane"),
             "photosDroppedOnAlbum",
             Q_ARG("QString", token),
+            Q_ARG("QVariant", [1]),
         )
         qt_app.processEvents()
 

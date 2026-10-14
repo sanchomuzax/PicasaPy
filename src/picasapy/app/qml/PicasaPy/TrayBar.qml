@@ -73,6 +73,8 @@ Column {
     signal emailRequested()
     // #4637: a kimeneti gombsor jobbklikkje a gazda közös gombmenüjét kéri.
     signal configureButtonsContextMenuRequested(var anchorItem, real x, real y)
+    // #5008: a rácsból húzott képeket rögzítjük a képtálcán.
+    signal photosDroppedOnTray(var rows)
 
     // #2564: a SZERKESZTŐ nagyítás-hármasa ebben a sávban él, a könyvtár
     // bélyegkép-csúszkájának a helyén — mérve (`editpanel.tre:1288–1324` +
@@ -775,6 +777,22 @@ Column {
                         // A rács húzóforrásával azonos MIME-szerződés, de a
                         // tálca saját kiválasztott elemeiből összeállítva.
                         readonly property string payload: "photos"
+                        readonly property var photoRows: {
+                            if (!tray.ctl || !tray.ctl.photos) return []
+                            var items = tray.ctl.trayItems || []
+                            var indexes = tray.traySelectedIndexes
+                            var rows = []
+                            for (var i = 0; i < indexes.length; ++i) {
+                                var index = Number(indexes[i])
+                                if (index < 0 || index >= items.length
+                                        || !items[index].path)
+                                    continue
+                                var row = tray.ctl.photos.rowOfPath(
+                                    String(items[index].path))
+                                if (row >= 0) rows.push(row)
+                            }
+                            return rows
+                        }
                         Drag.active: trayDragHandler.active
                         Drag.dragType: Drag.Automatic
                         Drag.mimeData: ({
@@ -885,6 +903,24 @@ Column {
                             anchors.margins: 2
                         }
                     }
+                }
+            }
+
+            DropArea {
+                objectName: "trayDropArea"
+                x: trayScratchStrip.x
+                y: trayScratchStrip.y
+                width: trayScratchStrip.width
+                height: trayScratchStrip.height
+                enabled: trayScratchBack.albumTokenCount === 0
+                onDropped: function(drop) {
+                    var source = drop.source
+                    if (!source || source.payload !== "photos"
+                            || !source.photoRows
+                            || source.photoRows.length === 0)
+                        return
+                    drop.accept()
+                    tray.photosDroppedOnTray(source.photoRows.slice())
                 }
             }
 
