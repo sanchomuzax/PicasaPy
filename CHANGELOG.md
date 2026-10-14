@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.99] – 2026-10-14
+
+- A Jó napom van, a Gördülő stáblista és az Írógép stílusú szöveges diák animálódnak a filmben. (#4615).
+
 ## [0.9.98] – 2026-10-14
 
 - A nézőben a Ctrl+F9 folyamatosan léptet a mappa végéig, kézi lapozásra és bezáráskor megáll (#4698).
