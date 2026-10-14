@@ -38,7 +38,7 @@ import pytest
 
 from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 #: 0 ms küszöb + bőkezű (200 ms) minimális láthatóság: a valódi háttérmunka
 #: (2 apró teszt-JPEG) néhány ezredmásodperc alatt lefuthat. A 0 ms küszöb

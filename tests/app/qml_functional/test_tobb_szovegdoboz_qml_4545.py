@@ -6,7 +6,7 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.ini.text_overlay import parse_text
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 def _var(qt_app, condition, message: str, seconds: float = 10.0) -> None:

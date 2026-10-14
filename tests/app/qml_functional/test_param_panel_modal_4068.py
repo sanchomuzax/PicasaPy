@@ -7,7 +7,7 @@ import pytest
 from PySide6.QtCore import QObject, QPointF, QRect, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 _TOOLS = (
@@ -27,8 +27,7 @@ def _item(window, name: str):
 
 
 def _wait_until(qt_app, condition, description: str, timeout_s: float = 10.0):
-    var_feltetelre(qt_app, condition, timeout_s)
-    assert condition(), description
+    assert var_feltetelre(qt_app, condition, timeout_s), description
 
 
 def _click(window, item, qt_app):

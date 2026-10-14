@@ -16,7 +16,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 @pytest.fixture

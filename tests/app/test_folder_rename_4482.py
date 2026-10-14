@@ -23,15 +23,11 @@ from picasapy.ini import (
 from picasapy.thumbs import ThumbnailCache
 
 from support.jpeg_factory import make_jpeg
-from support.varakozas import var_feltetelre, hibaturo_feltetel
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 def _var(qt_app, condition, seconds=10.0):
-    return var_feltetelre(
-        qt_app,
-        hibaturo_feltetel(condition, (AttributeError, RuntimeError, sqlite3.Error)),
-        seconds,
-    )
+    return var_feltetelre(qt_app, hibaturo_feltetel(condition, (AttributeError, RuntimeError, sqlite3.Error)), seconds)
 
 
 @pytest.fixture

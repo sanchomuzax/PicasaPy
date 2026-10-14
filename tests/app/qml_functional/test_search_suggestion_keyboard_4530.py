@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 def _wait_until(qt_app, predicate, timeout: float = 10.0) -> bool:

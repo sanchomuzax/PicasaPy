@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 GYOKER = Path(__file__).resolve().parents[3]
 ELEMEK = GYOKER / "docs" / "specs" / "ui-lefedettseg-elemek.csv"

@@ -27,7 +27,7 @@ from picasapy.ini.text_overlay import (
     serialize_text,
 )
 from picasapy.scanner import PICASA_INI_NAME
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 # A QML által birtokolt Popup/menüpont-wrappert a PySide6 teszt közben

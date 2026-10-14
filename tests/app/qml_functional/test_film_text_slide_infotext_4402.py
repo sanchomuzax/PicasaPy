@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, Qt
 from PySide6.QtTest import QTest
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev):
@@ -45,7 +45,6 @@ def _lista_sor(lista, index):
 
 
 def _varj(qt_app, feltetel, lejarat_ms=10000):
-    """A QML-állapotot határidős, eseményfeldolgozó ciklusban várja."""
     return var_feltetelre(qt_app, feltetel, lejarat_ms / 1000)
 
 

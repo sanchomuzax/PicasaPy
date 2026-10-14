@@ -11,7 +11,7 @@ from PySide6.QtTest import QTest
 from picasapy.lazy_cv2 import cv2
 from picasapy.movie.mxf import read_mxf
 from picasapy.movie.slideshow import _ffmpeg_exe
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev):
@@ -33,7 +33,6 @@ def _kattintas(window, qt_app, item):
 
 
 def _var(qt_app, feltetel, lejarat_ms=10000):
-    """Határidős ciklus időzített Qt/QML-állapotokhoz."""
     return var_feltetelre(qt_app, feltetel, lejarat_ms / 1000)
 
 

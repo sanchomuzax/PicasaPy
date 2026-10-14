@@ -11,7 +11,7 @@ from PySide6.QtTest import QTest
 
 from picasapy.index import open_index, sync_tree
 from picasapy.ini import contacts_of, load_document
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 _PERSON_ID = "aaaaaaaaaaaaaaaa"
 _FACE_RECT = "1e00280045006e00"

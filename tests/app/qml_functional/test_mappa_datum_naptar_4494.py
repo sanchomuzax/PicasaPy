@@ -14,7 +14,7 @@ from PySide6.QtTest import QTest
 
 from picasapy.index import open_index, sync_tree
 from support.jpeg_factory import make_jpeg
-from support.varakozas import var_feltetelre, hibaturo_feltetel
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def hu_locale():
 
 
 def _wait(qt_app, condition, seconds=10.0):
-    return var_feltetelre(qt_app, hibaturo_feltetel(condition), seconds)
+    return var_feltetelre(qt_app, hibaturo_feltetel(condition, (AttributeError, RuntimeError)), seconds)
 
 
 def _click(window, item):

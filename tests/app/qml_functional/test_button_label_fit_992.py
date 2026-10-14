@@ -41,6 +41,7 @@ import pytest
 from PySide6.QtCore import Property, QObject, QTranslator, QUrl, Slot
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 #: Tűrés képpontban. A QML geometriája tört szám lehet (a `Text.Fit`
 #: pontosan a doboz széléig nyújtja a feliratot), ezért a fél képpont
@@ -69,24 +70,8 @@ def magyar_forditas(qt_app):
     qt_app.removeTranslator(translator)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    """Esemény-pörgetés, amíg a feltétel teljesül (vagy lejár az idő).
-
-    #918: fejnélküli környezetben az elrendezés késik — egyetlen
-    `processEvents()` után a méretek még a kezdeti állapotot mutatják."""
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _geometria_ujjlenyomat(gyoker: QQuickItem) -> tuple:

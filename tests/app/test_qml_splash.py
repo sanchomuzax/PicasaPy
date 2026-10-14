@@ -6,10 +6,11 @@ itt, a komponens szintjén ellenőrizhető: megjelenik, a statusText változása
 látszik, és `ready=true`-ra kifakulva eltűnik.
 """
 
-from PySide6.QtCore import QElapsedTimer, QObject, QUrl
+from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent
 
 import picasapy.app.application as app_module
+from tests.support.varakozas import var_feltetelre
 
 # A létrehozott QQmlComponent-eket életben kell tartani a teszt végéig: ha a
 # komponens felszabadul (a segédfüggvényből kilépve), a belőle létrehozott
@@ -35,16 +36,8 @@ def _make_splash(engine, **props):
     return splash
 
 
-def _wait_until(qt_app, predicate, timeout_ms=2000):
-    """Valós idő-alapú várakozás: addig pörgeti az eseményhurkot, amíg a
-    feltétel teljesül vagy lejár az idő (az opacity-Behavior animációhoz)."""
-    timer = QElapsedTimer()
-    timer.start()
-    while timer.elapsed() < timeout_ms:
-        qt_app.processEvents()
-        if predicate():
-            return True
-    return False
+def _wait_until(qt_app, predicate, timeout_ms=10000):
+    return var_feltetelre(qt_app, predicate, timeout_ms / 1000)
 
 
 class TestSplashScreen:

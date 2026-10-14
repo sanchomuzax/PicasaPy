@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QTranslator
 from PySide6.QtTest import QTest
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 _I18N_DIR = (
@@ -37,9 +37,7 @@ def _item(window, name: str):
 
 
 def _wait_until(qt_app, condition, description: str, timeout_s: float = 10.0) -> None:
-    """Határidőig eseményeket dolgoz fel, és állapotváltozásra vár."""
-    var_feltetelre(qt_app, condition, timeout_s)
-    assert condition(), description
+    assert var_feltetelre(qt_app, condition, timeout_s), description
 
 
 def _click(window, item, qt_app) -> None:

@@ -19,7 +19,7 @@ from picasapy.ini import (
     load_document,
     parse_faces,
 )
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 _PERSON_ID = "aaaaaaaaaaaaaaaa"
 _FACE_RECT = "1e00280045006e00"

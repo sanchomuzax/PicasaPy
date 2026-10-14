@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 from PySide6.QtCore import QEvent, QObject, QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 _AUTO_EYES = ((0.25, 0.4, 0.1), (0.7, 0.6, 0.05))
 

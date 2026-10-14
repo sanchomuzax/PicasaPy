@@ -7,7 +7,7 @@ import pytest
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
-from support.varakozas import var_feltetelre, hibaturo_feltetel
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 def _walk(item: QQuickItem):
@@ -28,7 +28,7 @@ def _variant_list(value):
 
 
 def _var(qt_app, predicate, timeout: float = 10.0) -> bool:
-    return var_feltetelre(qt_app, hibaturo_feltetel(predicate), timeout)
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate, (AttributeError, RuntimeError, TypeError)), timeout)
 
 
 def _kattint(window, item: QQuickItem, qt_app) -> None:

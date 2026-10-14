@@ -9,7 +9,7 @@ from support.qt_wait import hangos_hurok, wait_for_photo_op
 from PIL import Image
 
 from support.jpeg_factory import make_jpeg
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 # #505: a `TestBusyAndBackgroundResync` a küszöbölt/min-láthatóságú
 # `AppBusyRegistry`-t (`busy_registry.py`) gyakorolja — apró (nem nulla)
@@ -32,7 +32,6 @@ def _small_busy_timings(monkeypatch):
 
 
 def _wait_until(qt_app, predicate, timeout_s=10.0):
-    """Aktív várakozás eseményfeldolgozással: a küszöbölt busy-jelzés QTimeren tüzel."""
     return var_feltetelre(qt_app, predicate, timeout_s)
 
 

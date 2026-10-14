@@ -10,7 +10,7 @@ from PySide6.QtCore import QPointF, QObject
 
 from picasapy.index import open_index, sync_tree
 from support.jpeg_factory import make_jpeg
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 
 def _feed_cell_rows(grid) -> set[int]:

@@ -17,7 +17,7 @@ from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
 from picasapy.app import worker_thread
 from picasapy.app.worker_thread import BackgroundWorkerMixin
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 _TEST_SHOW_DELAY_MS = 30
 _TEST_MIN_VISIBLE_MS = 50

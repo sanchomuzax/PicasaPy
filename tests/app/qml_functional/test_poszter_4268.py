@@ -13,7 +13,7 @@ from PySide6.QtTest import QSignalSpy, QTest
 import picasapy.printing.dpi as dpi
 from picasapy.lazy_cv2 import cv2
 from tests.app.qml_functional.conftest import _build_qml_app
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 _DIALOG_PARENTS: list[QObject] = []
 

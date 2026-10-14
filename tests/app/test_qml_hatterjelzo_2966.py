@@ -21,7 +21,7 @@ from PySide6.QtCore import QObject
 
 from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
-from support.varakozas import var_feltetelre
+from tests.support.varakozas import var_feltetelre
 
 _TEST_SHOW_DELAY_MS = 40
 _TEST_MIN_VISIBLE_MS = 60

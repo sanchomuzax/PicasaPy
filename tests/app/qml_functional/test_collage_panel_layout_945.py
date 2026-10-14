@@ -22,6 +22,8 @@ from PySide6.QtCore import Property, QObject, QPoint, Qt, QUrl, Slot
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
+from PySide6.QtCore import QCoreApplication
 
 _KEEPALIVE: list[object] = []
 
@@ -136,26 +138,12 @@ def _ablakban(item: QQuickItem) -> tuple[float, float, float, float]:
     return (bal_felso.x(), bal_felso.y(), item.width(), item.height())
 
 
-def _var(feltetel, ms: int = 3000) -> bool:
-    """Esemény-pörgetés HATÁRIDŐVEL, amíg a feltétel teljesül — #1463.
-
-    A fali órás `QTest.qWait(N)` arra fogad, hogy N ezredmásodperc alatt
-    megtörténik valami; egy terhelt, négymagos gépen ez hamis pirosat ad. Ez
-    a poll a VALÓDI feltételt figyeli, és amint teljesül, azonnal
-    továbbenged. (A `test_collage_output_ui_949._var` mintája.)"""
-    eltelt = 0
-    while eltelt < ms:
-        try:
-            if feltetel():
-                return True
-        except (AssertionError, AttributeError, TypeError, RuntimeError):
-            pass
-        QTest.qWait(25)
-        eltelt += 25
-    try:
-        return bool(feltetel())
-    except (AssertionError, AttributeError, TypeError, RuntimeError):
-        return False
+def _var(feltetel, ms: int = 10000) -> bool:
+    return var_feltetelre(
+        QCoreApplication.instance(),
+        hibaturo_feltetel(feltetel, (AssertionError, AttributeError, TypeError, RuntimeError)),
+        ms / 1000,
+    )
 
 
 # --- 1. A törvény: a hasáb fix, a vászon nyúlik -----------------------------
