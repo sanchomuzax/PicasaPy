@@ -25,7 +25,6 @@ kékesnek tűnő részletéből következtetni ahelyett, hogy megmérnénk.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -33,6 +32,7 @@ from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from tests.support.qml_blokk import blokk_horgonyra
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 #: `globalbuttons/lfs_n` / `rfs_n`
 LEPTETO_MERET = (30.0, 31.0)
@@ -53,17 +53,8 @@ def _elem(window, nev: str):
     return window.findChild(QObject, nev)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _forras() -> str:

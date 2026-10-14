@@ -15,19 +15,12 @@ import time
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QRectF, Qt
 from PySide6.QtTest import QTest
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
-def _var(qt_app, feltetel, uzenet: str, masodperc: float = 3.0) -> None:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        time.sleep(0.01)
-    raise AssertionError(uzenet)
+def _var(qt_app, feltetel, uzenet: str, masodperc: float = 10.0) -> None:
+    if not var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc):
+        raise AssertionError(uzenet)
 
 
 def _elem(window, nev: str):

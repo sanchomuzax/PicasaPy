@@ -38,8 +38,6 @@ stb.) reagál, amiket itt közvetlenül állítunk elő a `message` property és
 
 from __future__ import annotations
 
-import time
-
 from PySide6.QtCore import (
     Property,
     QObject,
@@ -50,6 +48,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
+from support.varakozas import var_feltetelre
 
 _KEEPALIVE: list[object] = []
 
@@ -96,7 +95,7 @@ class _ControllerStub(QObject):
         pass
 
 
-def _wait_for(qt_app, feltetel, masodperc: float = 3.0) -> bool:
+def _wait_for(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     """Esemény-pörgetés, amíg a feltétel teljesül (vagy lejár az idő).
 
     A `Dialog` megnyitása után az elrendezés NEM azonnal fut le: egyetlen
@@ -105,13 +104,7 @@ def _wait_for(qt_app, feltetel, masodperc: float = 3.0) -> bool:
     viszont nem — a #918 első köre pontosan ezen bukott el mindkét CI-lábon
     (a magasság 12–14 px maradt, azaz egyetlen sor).
     """
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        if feltetel():
-            return True
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return feltetel()
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _view(qt_app, qml: str, width: int = 800, height: int = 600):

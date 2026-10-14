@@ -7,7 +7,6 @@ vezérlőket. A súgók láthatóságára legfeljebb három másodpercet várnak
 from __future__ import annotations
 
 import csv
-import time
 from pathlib import Path
 
 import pytest
@@ -26,6 +25,7 @@ from PySide6.QtTest import QTest
 
 from conftest import _build_qml_app
 from support.jpeg_factory import make_jpeg
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 GYOKER = Path(__file__).resolve().parents[3]
 ELEM_CSV = GYOKER / "docs" / "specs" / "ui-lefedettseg-elemek.csv"
@@ -37,21 +37,8 @@ def _elem(gyoker, nev: str):
     return elem
 
 
-def _var(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    try:
-        return bool(feltetel())
-    except (AttributeError, RuntimeError, TypeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _pont(elem) -> QPoint:

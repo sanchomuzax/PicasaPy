@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import time
 from pathlib import Path
 
 import pytest
@@ -11,6 +10,7 @@ from PySide6.QtCore import QObject, QPoint, QUrl, Qt
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 _PROBA_TERKEP = '''import QtQuick
@@ -66,20 +66,8 @@ def _qml_lista(value) -> list:
     return list(value)
 
 
-def _varj(qt_app, predicate, timeout: float = 5.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        try:
-            if predicate():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        time.sleep(0.005)
-    try:
-        return bool(predicate())
-    except (AttributeError, RuntimeError, TypeError):
-        return False
+def _varj(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate), timeout)
 
 
 def _scene_center(item: QQuickItem) -> QPoint:

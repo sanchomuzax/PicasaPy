@@ -32,13 +32,12 @@ elrendezéssel VETJÜK ÖSSZE — így a mérés platformfüggetlen marad
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject, QPoint, Qt, QUrl
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 #: A Qt a Python-oldali referenciák elfogyásakor lebontaná az ablakot és a
 #: gyökérelemet — a #651-es minta szerint életben tartjuk őket.
@@ -104,19 +103,13 @@ def _maybe_child(root: QQuickItem, name: str):
     return root.findChild(QObject, name)
 
 
-def _wait_for(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+def _wait_for(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     """Esemény-pörgetés, amíg a feltétel teljesül (vagy lejár az idő).
 
     #918: fejnélküli környezetben az elrendezés késik — egyetlen
     `processEvents()` után a méretek még a kezdeti állapotot mutatják.
     """
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        if feltetel():
-            return True
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return bool(feltetel())
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _log(root: QQuickItem, name: str) -> list:

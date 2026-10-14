@@ -26,50 +26,22 @@ KORLAT_MS = 10_000.0
 HELYI_PREFIX = re.compile(r"^_(var|wait)")
 IDOS_NEV = re.compile(r"(masodperc|timeout|seconds|hatarido|lejarat|ezred|^ido$|^ms$|_ms$|_mp$|_s$|^s$)")
 MS_NEV = re.compile(r"(^ms$|_ms$|ezred)")
-# A pillanatnyi lista hossza (110 fájl); csak csökkenhet.
-KIVETEL_PLAFON = 110
+# A pillanatnyi lista hossza (82 fájl); csak csökkenhet.
+KIVETEL_PLAFON = 82
 KIVETEL: frozenset[str] = frozenset(
     {
         "tests/app/qml_album_zene_probe_4601.py",
         "tests/app/qml_diavetites_beallitasok_probe_4320.py",
         "tests/app/qml_functional/_fomenu_4420_akciok.py",
         "tests/app/qml_functional/test_ajandek_cd_bekotes_3503.py",
-        "tests/app/qml_functional/test_button_bar_context_menu_4637.py",
         "tests/app/qml_functional/test_button_label_fit_992.py",
-        "tests/app/qml_functional/test_cimke_panel_4271.py",
         "tests/app/qml_functional/test_collage_background_1009.py",
         "tests/app/qml_functional/test_collage_clips_tab_949.py",
         "tests/app/qml_functional/test_collage_panel_layout_945.py",
         "tests/app/qml_functional/test_collage_panel_wiring_985.py",
         "tests/app/qml_functional/test_collage_ring_fade_1000.py",
-        "tests/app/qml_functional/test_color_spectrum_4548.py",
-        "tests/app/qml_functional/test_create_result_dialog_binding_loop_918.py",
-        "tests/app/qml_functional/test_crop_meret_4549.py",
-        "tests/app/qml_functional/test_document_tab_strip_944.py",
-        "tests/app/qml_functional/test_editor_maradek_4183.py",
-        "tests/app/qml_functional/test_f5_konyvtar_frissites_4697.py",
-        "tests/app/qml_functional/test_fanezet_belyegkep_2989.py",
-        "tests/app/qml_functional/test_fejlec_film_gomb_4539.py",
-        "tests/app/qml_functional/test_fejlec_geometria_1993.py",
-        "tests/app/qml_functional/test_fejlec_kollazs_gomb_1006.py",
-        "tests/app/qml_functional/test_felirat_kapcsolo_2587.py",
-        "tests/app/qml_functional/test_felirat_sav_renderelt_2608.py",
-        "tests/app/qml_functional/test_film_panel_4182.py",
         "tests/app/qml_functional/test_film_text_slide_infotext_4402.py",
-        "tests/app/qml_functional/test_film_ujraexport_4612.py",
-        "tests/app/qml_functional/test_filmszalag_kozepre_4562.py",
-        "tests/app/qml_functional/test_filmszalag_mappa_1905.py",
-        "tests/app/qml_functional/test_folder_pane_custom_collections_476.py",
-        "tests/app/qml_functional/test_folder_pane_scroll_730_731_732.py",
-        "tests/app/qml_functional/test_folder_rename_qml_4482.py",
         "tests/app/qml_functional/test_general_ui_settings_4449.py",
-        "tests/app/qml_functional/test_gyorsbillentyuk_2163.py",
-        "tests/app/qml_functional/test_hasab_gyoker_menu_1407.py",
-        "tests/app/qml_functional/test_hely_jelolo_buborek_4582.py",
-        "tests/app/qml_functional/test_helyek_terkep_drop_4583.py",
-        "tests/app/qml_functional/test_hold_jelveny_1918.py",
-        "tests/app/qml_functional/test_jegy_4150_ui.py",
-        "tests/app/qml_functional/test_kepalairas_sav_2565.py",
         "tests/app/qml_functional/test_keptalca_455.py",
         "tests/app/qml_functional/test_kimeneti_tulcsordulas_2191.py",
         "tests/app/qml_functional/test_klipek_ful_bekotes_1153.py",
