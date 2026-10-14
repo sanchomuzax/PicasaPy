@@ -279,7 +279,8 @@ class TestPosterWorkerProcessFailure:
         arrived, args = _run(
             controller.posterFinished,
             lambda: controller.createPoster(str(source), 200, "4x6", False),
-            timeout_ms=5000,
+            # A poszter-alfolyamat a terhelt futón 5 s fölé nyúlt (main-CI, 2026-10-14).
+            timeout_ms=20000,
         )
 
         assert arrived
@@ -329,7 +330,7 @@ class TestPosterWorkerProcessFailure:
         arrived, args = _run(
             controller.posterFailed,
             lambda: controller.createPoster(str(source), 200, "4x6", False),
-            timeout_ms=2000,
+            timeout_ms=20000,
         )
 
         assert arrived and args == ("synthetic poster process failure",)
@@ -416,7 +417,7 @@ class TestPosterWorkerProcessFailure:
         arrived, args = _run(
             controller.posterFailed,
             lambda: controller.createPoster(str(source), 200, "4x6", False),
-            timeout_ms=2000,
+            timeout_ms=20000,
         )
 
         assert arrived
