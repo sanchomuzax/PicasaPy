@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.100] – 2026-10-15
+
+- A kijelölt képek a mappasorra húzva átkerülnek, a Másolás és Beillesztés pedig a kiválasztott mappába másolja őket (#5007).
+
 ## [0.9.99] – 2026-10-14
 
 - A Jó napom van, a Gördülő stáblista és az Írógép stílusú szöveges diák animálódnak a filmben. (#4615).
