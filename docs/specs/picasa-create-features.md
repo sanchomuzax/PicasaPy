@@ -5806,3 +5806,18 @@ Nyitva:
 | export seed tényleges értéke, parser-szülő és render-context azonossága, `k↔t` leképezés | NINCS MEG |
 | Gördülő tényleges pixeles A/B és textstyle1 `H+0x2c` mozgásvégpont/időszemantika | NINCS MEG |
 | referenciafilm képkockái, a három stílus natív mérési táblája, kimeneti képteszt | NINCS MEG |
+
+#### G.7.10 7. kör (2026-10-14): célzott újraellenőrzés a #4615 átadáshoz
+
+*Bizonyítottsági fok: **feltételes** arra, hogy az animáció ténylegesen látszik a film exportjában. A factory és a kockakezelők animációs útját két külön bináris nézet támasztja alá; a natív kimenet és az esetleges későbbi pozíció-felülírás nincs képkockán mérve.*
+
+**A út — a factory hívási ágai és a kockakezelők.** A stíluslista neveit a `referencia/stringres-en-hu.tsv:456,458,465` rendeli a `textstyle1`, `textstyle11`, illetve `textstyle8` beállításhoz. A `0x00810420` film-factory kódjában az 1-es ág (`0x00810656`) a `TextFadeMove` konstruktort és építőt hívja (`0x008107a7` → `0x00809c50`; `0x008107ba` → `0x00809cd0`); a 8-as ág (`0x00810ed0`) ugyanezt a kezelőt hívja (`0x00810fee`, `0x0081100d`), majd a `+0x48/+0x49` jelzőket nullázza (`0x00811005`–`0x00811009`). A 11-es ág (`0x00811cd8`) a `TextTypeWriter` kezelőt hívja (`0x00811db7` → `0x00809fe0`). A `0x00809d20` kockakezelő az `0x13` eseményen, az esemény `[+0x10]` időbélyegéből frissíti a dia `+0x14c/+0x150` pozícióját a `0x009debd0` híváson át; a `0x0080a080` az idővonal értékét egész karakterhosszként írja a dia `+0x34c` mezőjébe, és változáskor újrarajzolást kér. Forrás: célzott diszasszemblálás a hivatkozott címeken.
+
+**B út — RTTI-vtáblák, az első út nélkül újraolvasva.** A bináris-index RTTI-táblájában a `TextFadeMoveHandler::vftable` (`0x00cbdb94`) 3. slotja `0x00809d20`, a `TextTypeWriterHandler::vftable` (`0x00cbdbbc`) 3. slotja `0x0080a080`; a beágyazott `TextFadeHandler::vftable` (`0x00cbdb80`) 3. slotja `0x00809b40`. Ez a külön RTTI→slot út a factory által elért kezelők per-frame függvényeit azonosítja, és egyezik az utasításszintű leolvasással. A két út a kezelőstruktúra meglétét támasztja alá; önmagában egyik sem képkockamérés.
+
+**Cáfoló kísérlet — lehetséges pozíció-visszaírás.** A `ytFlyingNode::vftable` RTTI-sora tartalmazza a `0x00819040` metódust. Ennek célzott diszasszemblálása szerint a metódus a dia `+0x14c/+0x150` mezőit a `+0x388/+0x38c` mezőkkel veti össze, eltéréskor pedig a `0x009debd0`-val visszaírja az utóbbi párt. Ez valódi lehetséges cáfoló út a Gördülő pozíciójára. A célobjektum azonossága és az exportkori meghívás nincs bizonyítva, ezért a keresés nem cáfolta, de nem is igazolta a filmben látható mozgást; a `+0x388/+0x38c` tartalma **NINCS MEG**.
+
+**Mérőanyag és a #4615 elfogadási pontjai.** A helyi mérőarchívum tagneveiben nem találtam film-/szövegdia-/MXF-hivatkozást, és videófájl-kiterjesztésű tagot sem; a repóban nincs `research/testdata/` könyvtár. Semmit nem bontottam ki. A meglévő `slideshow.py` útja továbbra is állóképet ír: a 623. sor egyszer hozza létre a `text_frames` listát, a 640. sor fűzi ezt a filmbe, a 697–699. sorok pedig ugyanazt a képkockát írják ki a tartási ciklusban.
+
+- [ ] A három stílus animációja a natív filmben és képkockás referencia-összevetése — **NINCS MEG**; Picasa 3.9 export és képkockánkénti mérés kell.
+- [ ] A helyi kimenet képkocka-tesztje — **NINCS MEG**; ez fejlesztői és tesztmunka, nem kutatási lelet.
