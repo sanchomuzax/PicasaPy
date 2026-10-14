@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.97] – 2026-10-14
+
+- A személy-album indexképe a fotó helyi menüjéből beállítható, és az SQLite index megőrzi. (#4536).
+
 ## [0.9.96] – 2026-10-14
 
 - A Picasa-átvétel megőrzi a mappák és albumok kézi képsorrendjét. (#4889).
