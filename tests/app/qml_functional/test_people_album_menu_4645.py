@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import time
 from pathlib import Path
 
 import pytest
@@ -14,6 +13,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from picasapy.index import open_index, sync_tree
+from support.varakozas import var_feltetelre
 
 _PERSON_ID = "aaaaaaaaaaaaaaaa"
 _FACE_RECT = "1e00280045006e00"
@@ -64,15 +64,8 @@ def _load_menu(engine):
     return menu
 
 
-def _wait(qt_app, condition, seconds: float = 3.0) -> bool:
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if condition():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(condition())
+def _wait(qt_app, condition, seconds: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, condition, seconds)
 
 
 def _find(root, object_name):

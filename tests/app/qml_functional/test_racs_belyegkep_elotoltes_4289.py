@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import math
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QPointF, QObject
-from PySide6.QtTest import QTest
 
 from picasapy.index import open_index, sync_tree
 from support.jpeg_factory import make_jpeg
+from support.varakozas import var_feltetelre
 
 
 def _feed_cell_rows(grid) -> set[int]:
@@ -43,15 +42,8 @@ def _cache_contains(provider, photo) -> bool:
     )
 
 
-def _wait_for(qt_app, predicate, timeout: float = 8.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        QTest.qWait(20)
-    qt_app.processEvents()
-    return bool(predicate())
+def _wait_for(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, predicate, timeout)
 
 
 @pytest.mark.parametrize("height_delta", (-5, 0, 5))
