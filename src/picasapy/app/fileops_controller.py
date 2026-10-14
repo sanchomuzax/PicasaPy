@@ -140,6 +140,24 @@ class FileOpsController(QObject):
     #: #1638: a lomtárba tett MAPPA útja — az index innen tudja, mit vegyen ki
     folderDeleted = Signal(str)
 
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self._vagolap_adat = None
+        # A Menü Beillesztés tétele a jelzésből tudja, hogy a vágólap
+        # tartalma megváltozott. Külső program másolását is követjük, a
+        # fej nélküli tesztplatformon viszont nem kérdezzük le a Qt-vágólapot.
+        if (
+            QGuiApplication.instance() is not None
+            and QGuiApplication.platformName() not in ("offscreen", "minimal")
+        ):
+            clipboard = QGuiApplication.clipboard()
+            if clipboard is not None:
+                clipboard.dataChanged.connect(self._clipboard_data_changed)
+
+    @Slot()
+    def _clipboard_data_changed(self) -> None:
+        self.clipboardFilesChanged.emit()
+
     @Slot(str, str)
     def renamePhoto(self, path: str, new_name: str) -> None:
         """Átnevezés (F2): a célnév- vagy forrás-hibákat `operationFailed`
@@ -550,6 +568,7 @@ class FileOpsController(QObject):
         # A művelet így sem lesz néma: a `_vagolap_adat` mindig elkészül,
         # tehát az őr azt méri, AMIT feltennénk — a valódi vágólapra írás
         # pedig ott történik meg, ahol van vágólap.
+        self.clipboardFilesChanged.emit()
         if QGuiApplication.platformName() in ("offscreen", "minimal"):
             return
         vagolap = QGuiApplication.clipboard()
@@ -571,11 +590,12 @@ class FileOpsController(QObject):
     def _vagolap_adata(self):
         """A vágólap tartalma — a próbák EZT a metódust térítik el.
 
-        Fej nélküli környezetben (`offscreen`/`minimal`) `None`: ott nincs
-        vágólap-tulajdonos, és a Qt-hívás a CI-n SZEGMENSHIBÁVAL állította
-        meg a tesztfájlt (ld. a `_tegyd_a_vagolapra` figyelmeztetését)."""
+        Fej nélküli környezetben (`offscreen`/`minimal`) a saját, legutóbb
+        létrehozott MIME-adatot olvassuk vissza. A Qt-rendszervágólaphoz nem
+        nyúlunk: ott nincs tulajdonos, és a natív lekérdezés a CI-n
+        szegmenshibát okozott."""
         if QGuiApplication.platformName() in ("offscreen", "minimal"):
-            return None
+            return self._vagolap_adat
         vagolap = QGuiApplication.clipboard()
         return None if vagolap is None else vagolap.mimeData()
 

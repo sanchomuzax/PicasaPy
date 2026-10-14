@@ -3296,6 +3296,23 @@ ApplicationWindow {
                 if (controller && window.selectedIndexes.length > 0)
                     controller.addRowsToAlbum(window.selectedIndexes, token)
             }
+            // #5007: a rácsból mappára húzott kijelölés áthelyezése. A
+            // DropArea a forrássorokat még a célmappa megnyitása előtt
+            // pillanatfelvételként adja át; a fájlokat és a .picasa.ini-t a
+            // FileOpsController meglévő kötegelt útja mozgatja.
+            onPhotosDroppedOnFolder: function(path, rows) {
+                if (!controller || !fileOpsController || !path
+                        || !rows || rows.length === 0)
+                    return
+                var paths = []
+                for (var i = 0; i < rows.length; ++i) {
+                    var photoPath = controller.photos.filePathAt(
+                        Number(rows[i]))
+                    if (photoPath.length > 0) paths.push(photoPath)
+                }
+                if (paths.length > 0)
+                    fileOpsController.movePhotos(paths, path, "rename")
+            }
             // #3681: a mentés-panel közös szűrő-szerződése (ld.
             // `FolderPane.qml`) — amíg a mentés-panel LÁTSZIK, a hasáb a
             // MÉG EL NEM MENTETT mappákra szűkül, pipával. A `visible`

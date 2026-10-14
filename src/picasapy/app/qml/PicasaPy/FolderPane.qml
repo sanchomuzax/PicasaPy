@@ -190,6 +190,9 @@ Rectangle {
     // kijelölés is ott van).
     signal newAlbumDropped()
     signal photosDroppedOnAlbum(string token)
+    // #5007: a kijelölt rácsképek útvonalaihoz tartozó sorok ejtése egy
+    // mappára. A gazda a lemezműveletet a FileOpsControllerre bízza.
+    signal photosDroppedOnFolder(string path, var rows)
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -916,9 +919,10 @@ Rectangle {
                     // #384: hover ≠ kijelölés (ld. AlbumsSection.qml) —
                     // a "year" sorok nem kattinthatók, a MouseArea rájuk
                     // enabled: false, így containsMouse mindig false marad.
-                    color: isSelectedFolder ? Theme.panelSelectionActive
+                    color: folderDropArea.containsDrag ? Theme.listDragTarget
+                           : (isSelectedFolder ? Theme.panelSelectionActive
                            : (kind === "folder" && folderRowMouse.containsMouse
-                              ? Theme.panelSelection : "transparent")
+                              ? Theme.panelSelection : "transparent"))
 
                     // évszám-elválasztó: arányos betűs címke + vékony
                     // vízszintes elválasztó vonal a panel széléig (audit:
@@ -1055,7 +1059,8 @@ Rectangle {
                             //: A megnyitáskor áll vissza.
                             font.bold: unread
                             opacity: offline ? 0.55 : 1.0
-                            color: isSelectedFolder || folderRowMouse.containsMouse
+                            color: folderDropArea.containsDrag
+                                   || isSelectedFolder || folderRowMouse.containsMouse
                                    ? Theme.panelSelectionText : Theme.ink
                         }
                     }
@@ -1131,6 +1136,27 @@ Rectangle {
                                 return
                             }
                             pane.folderChosen(path)
+                        }
+                    }
+                    // #5007: csak a rács saját fotóhúzását fogadjuk el; a
+                    // külső fájlok importálása továbbra is az ImportDropArea
+                    // útján történik. A forrás sorait még a mappaváltás
+                    // előtt adjuk át, mert a sorra engedés meg is nyithatja
+                    // a célmappát.
+                    DropArea {
+                        id: folderDropArea
+                        objectName: "folderDropArea_" + path
+                        anchors.fill: parent
+                        enabled: kind === "folder"
+                        onDropped: function(drop) {
+                            var source = drop.source
+                            if (!source || source.payload !== "photos"
+                                    || !source.photoRows
+                                    || source.photoRows.length === 0)
+                                return
+                            drop.accept()
+                            pane.photosDroppedOnFolder(
+                                path, source.photoRows.slice())
                         }
                     }
                 }
