@@ -15,10 +15,11 @@ kezel; nálunk húsz hiányzott. Ez a kör a leképezhetőket köti be:
 | `Ctrl+Shift+B` | `0x005fe370(panel, "bw")` (`0x005e6370`) | fekete-fehér a kijelölésre |
 | `Ctrl+Shift+E` | `0x005fe370(panel, "enhance")` (`0x005e638b`) | „Jó napom van" a kijelölésre |
 
-⚠️ A `Ctrl+9` (`editpanel/toggle_left_drawer`) SZÁNDÉKOSAN kimarad: az
-eredetiben a szerkesztő-panel bal fiókját billenti, nálunk a szerkesztő
-külön nézet, fiók nélkül — nincs mit billenteni. A jegy soronkénti
-indoklása ezt rögzíti.
+⚠️ A `Ctrl+9` (`editpanel/toggle_left_drawer`) SZÁNDÉKOSAN kimarad a
+könyvtárnézeti ágak közül: a szerkesztőnéző bal fiókja nálunk is létezik,
+és a #4696 óta a billentyű kizárólag ott aktív. Ezt a külön
+`test_ctrl9_left_drawer_4696.py` méri valódi billentyűeseménnyel; ez a fájl
+a könyvtárnézeti gyorsbillentyűket ellenőrzi.
 
 A próbák a `Shortcut` elem `activated` JELÉT bocsátják ki — ezt adja a
 valódi billentyűleütés is.
