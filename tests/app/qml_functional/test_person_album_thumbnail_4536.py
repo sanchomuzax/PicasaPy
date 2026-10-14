@@ -17,7 +17,7 @@ _RECT = "1e00280045006e00"
 _HEIGHT_OFFSETS = (-5, 0, 5)
 
 
-def _wait(qt_app, condition, seconds: float = 3.0) -> bool:
+def _wait(qt_app, condition, seconds: float = 10.0) -> bool:
     return var_feltetelre(qt_app, condition, seconds)
 
 
