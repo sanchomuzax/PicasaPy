@@ -42,7 +42,7 @@ from picasapy.pmpimport.db3_atvetel import (
     rekordokat_atvesz,
     videodatumokat_atvesz,
 )
-from picasapy.pmpimport.importer import iter_photo_records
+from picasapy.pmpimport.importer import Db3Beolvasas, beolvas_db3
 from picasapy.pmpimport.remap import PathRemapper
 from picasapy.scanner import discover_installations
 
@@ -71,10 +71,10 @@ def _read_hidden_password_hash(*args, **kwargs):
 class PicasaImportController(BackgroundWorkerMixin, QObject):
     """`Eszközök ▸ Import a Picasából…` — a db3 adatainak átvétele."""
 
-    #: (mappák, kulcsszó, hely, arc, kihagyott, videódátum, videódátum-hiba) — a felhasználónak
-    #: szóló számok. A `kihagyott` azt mondja meg, hány fotón volt db3-adat, de az
-    #: ini-ben már állt érték: ott SZÁNDÉKOSAN nem nyúltunk hozzá.
-    importFinished = Signal(int, int, int, int, int, int, int)
+    #: (mappák, kulcsszó, hely, arc, kihagyott, videódátum, videódátum-hiba,
+    #: wordhash_kihagyott) — a `kihagyott` az ini-ben már meglévő adat, a
+    #: `wordhash_kihagyott` a nem fájl vagy fel nem oldható sorrendelem.
+    importFinished = Signal(int, int, int, int, int, int, int, int)
     #: #4591: a videók dátuma az indexbe került — a rács/mappalista frissítendő
     datesApplied = Signal()
     #: a db3 olvasása vagy az írás hibára futott — a szöveg a felhasználóé
@@ -93,7 +93,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         parent: QObject | None = None,
         *,
         felderito: Callable[[], Iterable] | None = None,
-        olvaso: Callable[..., Iterable] | None = None,
+        olvaso: Callable[..., Iterable | Db3Beolvasas] | None = None,
         atvevo: Callable[..., AtvetelJelentes] | None = None,
         remapper: PathRemapper | None = None,
         index_path: Path | None = None,
@@ -109,7 +109,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         #: íróként, mint a tömörítés), különben a saját háttérszálon
         self._writer_queue = writer_queue
         self._felderito = felderito or discover_installations
-        self._olvaso = olvaso or iter_photo_records
+        self._olvaso = olvaso or beolvas_db3
         self._atvevo = atvevo or rekordokat_atvesz
         self._remapper = remapper or _ALAP_REMAP
         self._jelszo_olvaso = jelszo_olvaso or _read_hidden_password_hash
@@ -181,6 +181,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
             jelentes.kihagyott,
             jelentes.videodatum,
             jelentes.videodatum_hiba,
+            jelentes.wordhash_kihagyott,
         )
         if jelentes.videodatum:
             self.datesApplied.emit()
@@ -215,9 +216,19 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
                 osszes = AtvetelJelentes()
                 osszes_rekord: list = []
                 for db3 in konyvtarak:
-                    rekordok = tuple(self._olvaso(db3, remapper))
+                    beolvasas = self._olvaso(db3, remapper)
+                    if isinstance(beolvasas, Db3Beolvasas):
+                        rekordok = beolvasas.rekordok
+                        wordhash_kihagyott = beolvasas.wordhash_kihagyott
+                    else:
+                        rekordok = tuple(beolvasas)
+                        wordhash_kihagyott = 0
                     osszes_rekord.extend(rekordok)
-                    osszes = osszes + self._atvevo(rekordok)
+                    osszes = (
+                        osszes
+                        + self._atvevo(rekordok)
+                        + AtvetelJelentes(wordhash_kihagyott=wordhash_kihagyott)
+                    )
                     self._jelszot_jelez(db3)
                 if self._index_path is None:
                     self._befejez(osszes)
