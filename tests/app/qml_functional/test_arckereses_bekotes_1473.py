@@ -466,7 +466,8 @@ class TestCsoportositas:
         _var(
             qt_app,
             lambda: bool(befejezett),
-            masodperc=10.0,
+            # A lenyomatképzés a windowsos futón 5 s fölé nyúlt (main-CI, 2026-10-14).
+            masodperc=20.0,
             uzenet="a keresés után, külön kattintás nélkül nem indult csoportosítás",
         )
         assert vezerlo.waitForBackgroundWorkers(10.0)
