@@ -294,17 +294,20 @@ a kulcs írásmódja megmarad), új személyt nem hoz létre (azt az
 arc-hozzárendelés, `faces_helper.py`, teszi meg, amikor tényleg
 felhasználásra kerül).
 
-## Csak a db-ben élő (újraépítéskor elvesző) adatok — import szempontból kritikus
+## DB3-adatok és nyitott átviteli jelöltek — import szempontból kritikus
 
 - Ignorált arcok listája
 - Képek egyedi sorrendje mappákban/albumokban — ⚠️ **a tárolási helye
-  NINCS MEG** (2026-10-11, #4591): az `albums_0.db`-jelölt mérve megdőlt,
-  ld. a 15.4 szakaszt
+  NINCS MEG**; az újraindítás utáni fennmaradása egy mérésben igazolt
+  (2026-10-14, #4884), de a `job-135` egyetlen, kilépés utáni db3-kivonata
+  nem azonosítja a forrást. Az `albums_0.db`-jelölt megdőlt; ld. 15.4.
 - Videók „date taken" / geotag módosításai — ✅ **MEGVAN** (2026-10-11,
   #4591): a dátum a `thumbindex.db` rekordjának **1. FILETIME-ja**
   (+ a fájl NTFS létrehozási ideje), a hely az `imagedata_lat`/`_long`/
   `_geoview` oszlop — ld. a 15.1–15.3 szakaszt
-- → Ezeket a PMP-importnak KELL kinyernie, mert az ini-ből nem pótolhatók.
+- → A bizonyított PMP/db3-adatokat a PMP-importnak kell kinyernie; az egyedi
+  sorrend forrását előbb azonosítani kell, ezért arra még nincs átviteli
+  specifikáció.
 
 ## Ismert hibamódok (az eredeti Picasában)
 
@@ -4288,9 +4291,13 @@ oszlopa (az átrendezés utáni `db3`-ban) (`albumcontactids`, `albumpeoplecheck
 `name`, `<fiók>_lh`, `token`, `uid`, `unread`) között sincs sorrend- vagy
 rendezésimód-oszlop.
 
-⇒ **A kézi sorrend tárolási helye NINCS MEG**, és az sem mért, hogy egy
-újraindítást túlél-e (a #1645 ezt a tulajdonostól kérte, majd a kérést
-visszavonta). A korábbi bináris hipotézis — hogy a `0x0071c650` →
+⇒ **A kézi sorrend tárolási helye NINCS MEG.** A 2026-10-14-i #4884-mérés
+szerint az átrendezés szabályos kilépés és újraindítás után is megmarad
+(`gray_ramp.jpg`: 1. → 10. hely; `.picasa.ini` nem keletkezett). Ez a
+tartósságot igazolja, a fájlt vagy mezőt nem: a begyűjtött `job-135` db3
+állapot csak kilépés utáni pillanatkép; nincs előtte-állapot és nincs
+újraindítás utáni db3-másolat, amelyhez a képernyőn látható sorrend köthető.
+A korábbi bináris hipotézis — hogy a `0x0071c650` →
 `0x0071f030` láncban a 8-as kulcs mellett megtalálható a 11-es kulcsképző —
 **cáfolódott**: a lánc eléri az általános rendezőt, de annak összehasonlító
 8/11 módban kulcsot nem választ. A megszerzés útja — ebben a sorrendben:
@@ -4299,12 +4306,12 @@ visszavonta). A korábbi bináris hipotézis — hogy a `0x0071c650` →
    olvasóját és az adatmező/kulcs pontos jelentését kell azonosítani a
    megvizsgált rendezőláncon kívüli kódban; a negatív állítást indextől
    független, célzott bináris pásztázással kell alátámasztani.
-2. **viselkedés:** a Colab-os végrehajtón új lépéssor — két kép átrendezése,
-   Picasa bezárása, a db3 kiadása, majd újraindítás után ismételt db3-kiadás
-   és képernyőkép; a két db3-t össze kell vetni, az újraindítás utáni
-   sorrendet pedig ellenőrizni kell. A jelenlegi mérőadat-archívum nem
-   tartalmaz ehhez db3-pillanatképeket. A végrehajtó kimeneti katalógusát
-   `db3`-kiadással bővíteni kell.
+2. **viselkedés:** a #4884 végrehajtó már kiadta a `job-135` db3-fájlokat,
+   és a képernyőmérés igazolja az újraindítás utáni sorrendet. A tároló
+   azonosításához még kell egy második, másik átrendezéses mérés, amely a
+   teljes Picasa-profilról és a db3-ról is ad pillanatképet az átrendezés
+   előtt, szabályos kilépés után és újraindítás után; a jelenlegi egyetlen
+   kilépés utáni db3-pillanatkép nem mutat változási különbséget.
 
 ### 15.4b Második kör (2026-10-13, #4884): író és olvasó két független úton
 
@@ -4378,14 +4385,18 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
 - [ ] a `0x00715280` és a `0x0071c4f0` vtábla-hívóinak osztályhoz kötött
       azonosítása (a hívó függvény vtábla-betöltése), és a producer
       3. argumentumának forrása megnevezve;
-- [ ] Picasa-viselkedés: két kép kézi átrendezése, bezárás, db3-pillanatkép,
-      újraindítás, újabb pillanatkép; a két db3 összevetése megnevezi, melyik
-      fájl/oszlop változott (a registrált képoszlopok között sorrend nincs,
-      így a változás más helyen várható);
+- [x] Picasa-viselkedés: a kézi sorrend szabályos kilépés és újraindítás
+      után is megmaradt a 2026-10-14-i mérésben (gray_ramp.jpg: 1. → 10.;
+      15.4e). Ez egyetlen viselkedési mérés, nem azonosítja a tárolót.
+- [ ] két különböző átrendezés előtt, szabályos kilépés után és újraindítás
+      után teljes db3- és profil-pillanatkép összevetése; azonosítsa a
+      változó fájlt/oszlopot vagy más adatszerkezetet;
 - [ ] az online sorrend (`gd:ordering`) szerepének tisztázása csak a
       tulajdonos jóváhagyásával (hálózat, külső szolgáltatás);
-- [ ] ha a sorrend csak munkamenetre szól: a 15.5 „egyedi sorrend” sora és a
-      15.6 „Egyedi sorrend” pontja lezárva tárgytalanként.
+- [ ] a tartós sorrend pontos tárolójának és író/olvasó útjának azonosítása
+      (a 15.4e-ben leírt teljes profil-, db3- és registry-méréssel, illetve
+      célzott bináris vizsgálattal); addig az eredeti sorrend átvétele nincs
+      specifikálva.
 
 ### 15.4c Harmadik kör (2026-10-13, #4884): a producer és a mód-beállító friss dekompilátuma
 
@@ -4470,13 +4481,79 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
 
 *Bizottság:* a disasszemblált `007220b0`, a dekompilált `00715090`/`00714fb0`, és a bájtpásztázás **megerősített** két független úton. A `+0x34` és a lock osztálya, a slot-implementációk és a 3. argumentum forrása **nyitott**. Nincs becsült érték.
 
+### 15.4e Ötödik kör (2026-10-14, #4884): az újraindítás-állóság megvan, a tároló nincs
+
+**A. út — Colab-viselkedés és a meglévő db3-olvasó.** A tulajdonos
+2026-10-14-i mérésében a `PicasaTeszt` 24 képes mappában a `gray_ramp.jpg`
+az első helyről a tizedikre került; szabályos kilépés után, újraindításkor
+is a tizedik helyen maradt. A `.picasa.ini` nem keletkezett. A helyi
+képernyőképek (`job-135/kepernyo__01.png`, `__03.png`, `__04.png`) az
+átrendezés előtti és utáni rácsot mutatják.
+
+A Colab-kivonatot a meglévő `pmpimport.thumbindex.read_thumb_index`,
+`pmpimport.table.read_table` és `pmpimport.thumbindex.read_slot_index`
+olvasta be (`job-135`, kilépés utáni fájlok):
+
+| fájl / tábla | mért adat | mit mutat a sorrendről |
+|---|---|---|
+| `thumbindex.db` | 32 rekord; a `PicasaTeszt` mappa indexe 1; a 24 képfájl indexe 2–25; `gray_ramp.jpg` indexe **5** | A fájl-/rekordsor nem azonos a látható pozícióval: a rácson az átrendezés után a 10. helyen áll. A thumbindex önmagában nem tárolja ezt a 10-es helyet. |
+| `albumdata_name.pmp` / `albumdata_filename.pmp` | 3 sor; a 2. sor neve `PicasaTeszt`, fájlja `C:\PicasaTeszt\`; az `albumdata`-tábla 14, a kivonatban elérhető oszlopból áll | A mapparekord megvan, képlistát vagy pozíciómezőt nem ad. |
+| `imagedata_*.pmp` | 32 sor és 32, a kivonatban szereplő oszlop; `gray_ramp.jpg` thumbindex-sora 5, `filetype=2`, `width=1024`, `height=256`, `avgcolor=4286479998` | A beolvasott mezőnevek között nincs `sort` / `order` / `priority` / `position` / `rank` oszlop; egyetlen kilépés utáni pillanatkép értékei nem rendelik hozzá a 10-es rácspozíciót egy mezőhöz. A `db3__imagedata_filename.pmp` nem része a kivonatnak; a neveket a `thumbindex.db` adta. |
+| `albums_index.db` + `albums_0.db` | 3 slot: a 0. és 1. üres; a 2. slot eltolása 4, mérete 45 480 bájt; fejlécméret 98×116, `8 + 98×116×4 = 45 480` | A 2. slot méretezett raszterblokk, nem 24 elemű tagsági/sorrendlista. Ez összhangban van az `albums_0.db` korábbi, 41/41 borító-raszter mérésével. |
+
+**B. út — helyi bináris diszasszemblálás, az adatbázis-olvasástól
+függetlenül.** A `0x0071c4f0` a `SortPrior` feliratot adja a 11-es módhoz
+(`0x0071c5cd`, sztringcím `0x00cad560`). A `0x0071c650` az elemek
+`[item+0xb4]` értékeiből memóriabeli listát épít, majd a `0x71c8b3`-nál
+hívja a `0x0071f030`-at; ez a `0x0071f220` összehasonlítóját használja.
+Ha a rendezési kontextus a `0x004efce0`-hoz vezet, ott a
+`mode - 2 <= 5` feltétel a 2–7. módra választ kulcsot
+(`0x004efd6b`–`0x004efd81`); a 8-as és 11-es mód kívül esik ezen, és ezen
+az úton nem kap kulcsválasztást. A diszasszemblálás a lánc működését írja
+le, a tárolási helyet nem.
+
+**A két út eredménye:** egyezik abban, hogy az eddig vizsgált rendezőlánc
+és a `job-135` db3-kivonat nem nevezi meg a tartós sorrend forrását. A
+képernyőmérés külön igazolja a tartósságot; ebből nem következik, hogy a
+sorrend munkamenet-állapot volna vagy hogy a db3-on kívül tárolódik.
+
+**Cáfoló kísérlet.** A „`thumbindex.db` indexe maga a kézi sorrend” jelöltet
+ellenőriztem: az olvasó `gray_ramp.jpg`-hez 5-ös indexet ad, a rácskép
+pedig 10-es pozíciót mutat. Az „`albums_0.db` tartalmazza a 24 elemű listát”
+jelöltet is ellenőriztem: az aktív slot bájtszáma pontosan a 98×116 BGRA-
+raszter mérete; lista-adatszerkezetre nincs adat. Mindkét jelölt elesik;
+ez a két vizsgálat nem terjed ki a kivonatból hiányzó profilfájlokra vagy
+registry-állapotra.
+
+**A megmaradt jelöltek és a döntő mérés:**
+
+| jelölt | jelenlegi állapot | mi dönti el |
+|---|---|---|
+| `thumbindex.db` sorindexe | **kizárva** mint a látható pozíció közvetlen hordozója: 5-ös rekord kontra 10-es rácspozíció | egy másik átrendezés előtte/utána fájl-diffje megmutatja, változik-e a rekordok sorrendje |
+| `imagedata` / `albumdata` PMP-oszlop vagy `albums_0.db` tagsági lista | **nem található** a mostani kivonatban; az album-gyorstár raszter | másik átrendezés előtti és utáni teljes db3-diff, a PMP-olvasóval azonosított oszlopértékekkel |
+| a db3-on kívüli helyi Picasa-állapot (profilfájl vagy registry) | **nincs megvizsgálva**; a `job-135` csak db3-fájlokat tartalmaz | ugyanabban a második mérésben teljes `Picasa2`/`Picasa2Albums` profil-pillanatkép és a Picasához tartozó registry-értékek mentése az átrendezés előtt, kilépés után és újraindítás után |
+
+**Nyitva marad:** a kézi sorrend pontos fájlja, mezője/adatszerkezete és a
+betöltő/kiíró út. A következő méréshez a `gray_ramp.jpg` egy második,
+eltérő helyre mozgatása adjon három állapotot (előtte, kilépés után,
+újraindítás után); a teljes profil- és registry-diff megkülönbözteti a
+három jelöltosztályt. A `job-135` mintát és a screenshotokat nem másoltam a
+repóba.
+
 ### 15.5 Eredeti / PicasaPy-átvétel / PicasaPy saját tárolása
 
 | tétel | az eredeti tárolása (mérve) | a PicasaPy átvétele ma (`pmpimport/`) | a PicasaPy saját tárolása ma |
 |---|---|---|---|
 | **videó dátuma** | `thumbindex.db` 1. FILETIME + NTFS létrehozási idő (15.1) | **NEM veszi át**: a `thumbindex.read_thumb_index` beolvassa a `creation_filetime`-ot, de az `importer.PhotoRecord` nem viszi tovább, és a `db3_atvetel` sem ír dátumot | videónál nincs `taken_at` (`index/sync.py` `_upsert_photo`: `EMPTY_METADATA`), a dátum a befagyasztott első fájlidő (`first_seen_mtime_ns`); a `photos.taken_at_override` oszlop él, a lekérdezések előnyben részesítik (`index/queries.py:22`, `sync.py:1034`), szinkronkor megmarad (`sync.py:1091`), de ma **semmi nem írja**. ⚠️ A saját dátummódosítónk (`app/timestamp_controller.py`) videónál az EXIF-írás hibája után csak Windowson állít létrehozási időt — POSIX-on a módosítás **nem tárolódik sehol** |
 | **videó geotagje** | `imagedata` `lat`/`long`/`geoview` (15.3) | **átveszi**: az `importer.iter_photo_records` típusszűrés nélkül minden fájlrekordot ad, a `db3_atvetel.helyet_atvesz` a hiányzó `geotag=` kulcsot írja (#2336) | `.picasa.ini` `geotag=` (`photos.geotag_ini`), minden médiára |
-| **egyedi sorrend** | **NINCS MEG** (15.4; a vizsgált rendezőlánc nem adja meg a kulcsot) | nincs mit átvenni | `.picasa.ini` `priority=` (ADR-014, `ini/priority.py`) — az eredetitől való eltérés ténye nincs igazolva |
+| **egyedi sorrend** | **NINCS MEG** (15.4e): újraindítás után fennmarad, de az egyetlen kilépés utáni db3-kivonat nem mutatja meg a tárolómezőt | az eredeti sorrendet nem veszi át; nincs igazolt forrásmező vagy leképezés a `pmpimport/`-ban | a PicasaPy saját kézi sorrendje `.picasa.ini` `priority=` kulcsokat használ (`ini/priority.py`, `folder_photo_sort_controller.py`); ez nem bizonyítja, hogy az eredeti Picasa is így tárol |
+
+**ADR-014 premisszája felülvizsgálandó:** a `ini/priority.py` modul
+megjegyzése az eredeti Picasa tárolójaként az `albums_0.db` tagsági
+sorrendjét állítja; a 15.4 ezt a jelöltet borító-raszterként cáfolja.
+Az eredeti tartós forrás továbbra is ismeretlen, ezért a PicasaPy saját
+`.picasa.ini`-formátuma az eredetitől való eltérésként sem tekinthető
+bizonyítottnak.
 
 ### 15.6 A megvalósítandó viselkedés — „Kész, ha"
 
@@ -4512,12 +4589,16 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
       `lat`/`long`-gal és nem üres `geoview`-val → a mappa `.picasa.ini`-jében
       a videó szakaszában `geotag=<lat>,<long>` (6 tizedes, vesszős alak).
 
-**Egyedi sorrend** — ⛔ **nem megvalósítható, amíg a forrás nincs meg**:
+**Egyedi sorrend** — ⛔ **az eredeti tároló ismerete nélkül nincs igazolt átvételi specifikáció**:
 
-- [ ] a #4591 első „Kész, ha" pontja a sorrendre a 15.4 megszerzési útjának
-      (1. bináris író/olvasó, 2. viselkedés db3 előtte/utána/újraindítás után)
-      eredményéig vár; ha a mérés igazolja, hogy a sorrend csak munkamenetre
-      szól, a pont **tárgytalan** (nincs mit átvenni).
+- [x] a tartósságot egy mérés igazolta: a kézi sorrend szabályos kilépés és
+      újraindítás után megmarad (`gray_ramp.jpg`: 1. → 10.; 15.4e).
+- [ ] az eredeti tároló fájlja/mezője/adatszerkezete, írója és olvasója
+      két független bizonyítékúttal azonosítva; a teljes előtte/kilépés
+      utáni/újraindítás utáni profil- és db3-diff a bináris út eredményével
+      egyezik.
+- [ ] a beolvasási leképezés és az ütköző/hiányzó sorrendértékek kezelése
+      specifikálva; csak ezután készíthető fejlesztési jegy a PMP-importhoz.
 
 ### 15.7 Nyitott kérdések mérlege (15.)
 
@@ -4529,12 +4610,13 @@ ezért felül kell vizsgálni — ezt a szakasz nem dönti el.
 | melyik fájltípus kap EXIF-írást, melyik nem | **LEZÁRVA** — csak a 2-es típus (JPEG), `0x0049070a`/`0x00490d4f` |
 | milyen időzónában áll az új dátum | **LEZÁRVA** — helyi → UTC, mint a beolvasáskor (`0x0077cbe0`) |
 | hol él a videó geotagje | **LEZÁRVA** — `imagedata` `lat`/`long`/`geoview`; az átvétel típusfüggetlen |
-| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **NYITOTT, örökölt** (#1645/#4884) — az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot; út: 15.4 (író/olvasó bináris út, majd Colab db3 előtte/utána/újraindítás után); 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben; 3. kör (2026-10-13): **15.4c** — a producernek nincs direkt hívója (csak 3 vtábla-hivatkozás, `CSelectionNode`-család), a direkt hívási gráfban nincs fájl/db-író (126 függvény); a hívó, a 3. argumentum forrása és a `+0x34` objektum / lock-objektum vtábla-slotjai nyitva; 4. kör (2026-10-13): **15.4d** — a 3. argumentum a `+0x324` tömbbe indexel (dekompilátum), a `+0x324` 54 olvasójának közvetlen hívásai között nincs fájl-API, a `+0x34` slot-18/12 és a lock-osztály még nyitott |
+| hol tárolja a Picasa a kézi sorrendet, és túléli-e az újraindítást | **RÉSZBEN NYITOTT, örökölt** (#1645/#4884): újraindítás utáni fennmaradás egy mérésben igazolt (15.4e); a fájl/mező/adatszerkezet, író és olvasó nyitott. Az `albums_0.db` kizárva; a `0x0071c650` → `0x0071f030` lánc nem adja meg a 8/11 kulcsot. 2. kör (2026-10-13): **15.4b** — író/olvasó nem igazolt, a sorrend-kulcs literál-szinten nincs az EXE-ben; 3. kör: **15.4c** — a producernek nincs direkt hívója (3 vtábla-hivatkozás, `CSelectionNode`-család), a direkt hívási gráfban nincs fájl/db-író (126 függvény); a hívó, a 3. argumentum forrása és a `+0x34` objektum / lock-objektum vtábla-slotjai nyitva; 4. kör: **15.4d** — a 3. argumentum a `+0x324` tömbbe indexel, a `+0x324` 54 olvasójának közvetlen hívásai között nincs fájl-API, a `+0x34` slot-18/12 és a lock-osztály még nyitott; 5. kör (2026-10-14): **15.4e** — a tulajdonosi Colab-mérés a tartósságot igazolja, a kilépés utáni db3-kivonat a forrásmezőt nem mutatja; thumbindex-index 5, miközben gray_ramp.jpg a rács 10. helyén áll. Következő: teljes profil/db3/registry előtte–kilépés után–újraindítás után diff és célzott író/olvasó vizsgálat. |
 
 *Bizonyítottsági fok: **megerősített** a 15.1 teljes láncára (utasításszint,
 importtábla-feloldás `pefile`-lal) és a 15.2 mérésére (2 712 rekord);
 **megerősített** az `albums_0.db` kizárására (41/41 + 37/37 méret-azonosság);
 **kódszintű** a videó-geotag átvételére (valódi minta nincs). A kézi sorrend
-tárolási helye és újraindítás-állósága **nyitott**; a vizsgált rendezőlánc
+újraindítás utáni fennmaradását egy Colab-mérés igazolja; a tárolási hely,
+mező/adatszerkezet és író/olvasó út **nyitott**. A vizsgált rendezőlánc
 utasításszintű lelete csak ezt az útvonalat zárja ki kulcsképzőként, és nem
 bizonyítja a teljes programban író/olvasó hiányát.*
