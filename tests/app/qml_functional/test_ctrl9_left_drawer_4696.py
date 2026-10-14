@@ -2,22 +2,14 @@
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
-def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 3.0) -> None:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.05)
-    qt_app.processEvents()
-    assert feltetel(), uzenet
+def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 10.0) -> None:
+    assert var_feltetelre(qt_app, feltetel, masodperc), uzenet
 
 
 def _elem(window, nev: str):

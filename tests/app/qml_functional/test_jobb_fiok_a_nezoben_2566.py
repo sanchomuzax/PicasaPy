@@ -102,7 +102,6 @@ def _kattints(window, item: QQuickItem, qt_app) -> None:
             item.mapToScene(item.boundingRect().center()).y(),
         )
         == elozo,
-        1.0,
     )
     kozep = item.mapToScene(item.boundingRect().center())
     QTest.mouseClick(

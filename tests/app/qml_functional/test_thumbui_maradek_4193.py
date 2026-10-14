@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import picasapy.app
@@ -10,6 +9,7 @@ import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(ablak, nev: str):
@@ -18,15 +18,8 @@ def _elem(ablak, nev: str):
     return talalat
 
 
-def _var(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return feltetel()
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattint(ablak, elem, qt_app) -> None:

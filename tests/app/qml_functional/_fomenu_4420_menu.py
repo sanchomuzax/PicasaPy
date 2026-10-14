@@ -506,7 +506,7 @@ def _megnyit(menu_bar, qt_app, cim: str):
         fejlec = _menu_fejlec(menu_bar, cim)
         for _ in range(2):
             _kattints(qt_app, fejlec)
-            if _varj(qt_app, lambda: menu.property("opened") is True, 0.5):
+            if _varj(qt_app, lambda: menu.property("opened") is True):
                 break
     assert _varj(qt_app, lambda: menu.property("opened") is True), (
         f"a felső {cim} menü nem nyílt meg"

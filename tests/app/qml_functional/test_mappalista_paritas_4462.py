@@ -2,25 +2,17 @@
 
 from __future__ import annotations
 
-import time
-
 import shiboken6
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _gyerek(gyoker, nev: str):

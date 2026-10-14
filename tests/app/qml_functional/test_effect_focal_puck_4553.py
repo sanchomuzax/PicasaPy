@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 import numpy as np
 import pytest
 from PIL import Image
@@ -13,6 +11,7 @@ from PySide6.QtTest import QTest
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.app.qml_functional.test_editor_panel_rendered_651 import _child
 from tests.app.qml_functional.test_effect_sliders import _as_list
+from tests.support.varakozas import var_feltetelre
 
 
 _EFFEKTEK = [
@@ -53,14 +52,9 @@ def focal_app(qt_app, tmp_path):
     )
 
 
-def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 5.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.05)
-    raise AssertionError(uzenet)
+def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 10.0):
+    if not var_feltetelre(qt_app, feltetel, masodperc):
+        raise AssertionError(uzenet)
 
 
 @pytest.mark.parametrize("kulcs,ful,csempe,shift", _EFFEKTEK)

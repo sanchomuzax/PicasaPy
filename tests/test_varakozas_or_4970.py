@@ -26,21 +26,16 @@ KORLAT_MS = 10_000.0
 HELYI_PREFIX = re.compile(r"^_(var|wait)")
 IDOS_NEV = re.compile(r"(masodperc|timeout|seconds|hatarido|lejarat|ezred|^ido$|^ms$|_ms$|_mp$|_s$|^s$)")
 MS_NEV = re.compile(r"(^ms$|_ms$|ezred)")
-# A pillanatnyi lista hossza (138 fájl); csak csökkenhet.
-KIVETEL_PLAFON = 138
+# A pillanatnyi lista hossza (110 fájl); csak csökkenhet.
+KIVETEL_PLAFON = 110
 KIVETEL: frozenset[str] = frozenset(
     {
         "tests/app/qml_album_zene_probe_4601.py",
         "tests/app/qml_diavetites_beallitasok_probe_4320.py",
-        "tests/app/qml_functional/_felsomenupontok_helpers_4329.py",
         "tests/app/qml_functional/_fomenu_4420_akciok.py",
-        "tests/app/qml_functional/test_adjust_timestamp_4332.py",
         "tests/app/qml_functional/test_ajandek_cd_bekotes_3503.py",
-        "tests/app/qml_functional/test_album_menu_mappa_elrejtes_4741.py",
-        "tests/app/qml_functional/test_batch_edit_menu_4701.py",
         "tests/app/qml_functional/test_button_bar_context_menu_4637.py",
         "tests/app/qml_functional/test_button_label_fit_992.py",
-        "tests/app/qml_functional/test_caption_paste_confirmation_4628.py",
         "tests/app/qml_functional/test_cimke_panel_4271.py",
         "tests/app/qml_functional/test_collage_background_1009.py",
         "tests/app/qml_functional/test_collage_clips_tab_949.py",
@@ -50,13 +45,8 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/qml_functional/test_color_spectrum_4548.py",
         "tests/app/qml_functional/test_create_result_dialog_binding_loop_918.py",
         "tests/app/qml_functional/test_crop_meret_4549.py",
-        "tests/app/qml_functional/test_ctrl9_left_drawer_4696.py",
-        "tests/app/qml_functional/test_ctrl_alt_hover_preview_4928.py",
         "tests/app/qml_functional/test_document_tab_strip_944.py",
         "tests/app/qml_functional/test_editor_maradek_4183.py",
-        "tests/app/qml_functional/test_editor_tooltips_4540.py",
-        "tests/app/qml_functional/test_effect_focal_puck_4553.py",
-        "tests/app/qml_functional/test_emberek_album_film_menu_4633.py",
         "tests/app/qml_functional/test_f5_konyvtar_frissites_4697.py",
         "tests/app/qml_functional/test_fanezet_belyegkep_2989.py",
         "tests/app/qml_functional/test_fejlec_film_gomb_4539.py",
@@ -78,12 +68,9 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/qml_functional/test_hely_jelolo_buborek_4582.py",
         "tests/app/qml_functional/test_helyek_terkep_drop_4583.py",
         "tests/app/qml_functional/test_hold_jelveny_1918.py",
-        "tests/app/qml_functional/test_import_destination_beallitas_4450.py",
-        "tests/app/qml_functional/test_import_fajlforras_kattintas_4596.py",
         "tests/app/qml_functional/test_jegy_4150_ui.py",
         "tests/app/qml_functional/test_kepalairas_sav_2565.py",
         "tests/app/qml_functional/test_keptalca_455.py",
-        "tests/app/qml_functional/test_kereses_vissza_gomb_4531.py",
         "tests/app/qml_functional/test_kimeneti_tulcsordulas_2191.py",
         "tests/app/qml_functional/test_klipek_ful_bekotes_1153.py",
         "tests/app/qml_functional/test_klipgyujto_csoport_kozepen_3605.py",
@@ -94,8 +81,6 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/qml_functional/test_mappa_borito_ikon_2215.py",
         "tests/app/qml_functional/test_mappa_borito_lathato_ikon_4876.py",
         "tests/app/qml_functional/test_mappa_datum_naptar_4494.py",
-        "tests/app/qml_functional/test_mappa_menu_elrejt_megjelenit_4416.py",
-        "tests/app/qml_functional/test_mappalista_paritas_4462.py",
         "tests/app/qml_functional/test_maradek_arc_video_4229.py",
         "tests/app/qml_functional/test_nagyitas_alsosav_2564.py",
         "tests/app/qml_functional/test_nagyitas_sav_2311.py",
@@ -108,21 +93,15 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/qml_functional/test_param_panel_modal_4068.py",
         "tests/app/qml_functional/test_people_album_context_menu_4587.py",
         "tests/app/qml_functional/test_people_album_menu_4645.py",
-        "tests/app/qml_functional/test_people_album_thumbnail_tooltip_4138.py",
         "tests/app/qml_functional/test_people_manager_kattintas_4334.py",
         "tests/app/qml_functional/test_photo_menu_commands.py",
-        "tests/app/qml_functional/test_photo_viewer_enter_exit_4500.py",
         "tests/app/qml_functional/test_places_loading_offline_4584.py",
         "tests/app/qml_functional/test_places_marker_showphotos_4575.py",
         "tests/app/qml_functional/test_poszter_4268.py",
         "tests/app/qml_functional/test_properties_panel_context_menu_4581.py",
-        "tests/app/qml_functional/test_publish_fomenu_meret_4212.py",
-        "tests/app/qml_functional/test_publish_sugok_4177.py",
         "tests/app/qml_functional/test_racs_belyegkep_elotoltes_4289.py",
         "tests/app/qml_functional/test_racs_nagyito_kapcsolo_1911.py",
-        "tests/app/qml_functional/test_redeye_straighten_warning_4542.py",
         "tests/app/qml_functional/test_rejtett_jelszo_menu_3461.py",
-        "tests/app/qml_functional/test_retouch_brush_overlay_4543.py",
         "tests/app/qml_functional/test_search_suggestion_keyboard_4530.py",
         "tests/app/qml_functional/test_shift_csempe_belyegkep_4558.py",
         "tests/app/qml_functional/test_shortcut_focus_4398.py",
@@ -136,16 +115,11 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/qml_functional/test_talca_kijeloles_ui_2039.py",
         "tests/app/qml_functional/test_talca_mappa_token_bekotes_1919.py",
         "tests/app/qml_functional/test_talca_vizjel_2179.py",
-        "tests/app/qml_functional/test_thumbui_maradek_4193.py",
         "tests/app/qml_functional/test_titledialog_4198.py",
         "tests/app/qml_functional/test_tobb_szovegdoboz_qml_4545.py",
-        "tests/app/qml_functional/test_tray_csillag_sugo_4527.py",
         "tests/app/qml_functional/test_tulcsordulas_fuggoleges_4537.py",
         "tests/app/qml_functional/test_ui_maradek_4214.py",
         "tests/app/qml_functional/test_ures_racs_uzenet_1945.py",
-        "tests/app/qml_functional/test_view_options_people_shortcuts_4528.py",
-        "tests/app/qml_functional/test_viewer_escape_key_4462.py",
-        "tests/app/qml_functional/test_viewer_fullscreen_4569.py",
         "tests/app/qml_functional/test_visszavonas_alkalmazas_4063.py",
         "tests/app/qml_functional/test_voros_auto_undo_4541.py",
         "tests/app/qml_video_controls_probe_4229.py",
@@ -166,8 +140,6 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/test_qml_options_dialog.py",
         "tests/app/test_qml_splash.py",
         "tests/app/test_qml_timeline.py",
-        "tests/app/test_startup_maintenance_4687.py",
-        "tests/app/test_video_exit_gesture_area_4449.py",
     }
 )
 
@@ -189,9 +161,11 @@ class Eltres:
 
 
 def _feltetel_tipusu(fn: ast.FunctionDef) -> bool:
-    """Feltételre vár: a törzsében a paraméterét vagy egy belső függvényét hívja."""
+    """Feltételre vár: a törzsében a paraméterét, egy belső függvényét, vagy a
+    közös `var_feltetelre`-t hívja (a vékony burkoló is ilyen)."""
     hivhatok = {a.arg for a in fn.args.args}
     hivhatok |= {n.name for n in ast.walk(fn) if isinstance(n, ast.FunctionDef) and n is not fn}
+    hivhatok.add("var_feltetelre")
     return any(
         isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in hivhatok
         for n in ast.walk(fn)
@@ -298,7 +272,10 @@ def test_kivetellista_csak_csokkenhet():
     alap = {e.fajl for e in _eltresek(_beolvas())}
     elavult = sorted(KIVETEL - alap)
     assert not elavult, "ezek már át vannak írva, töröld a KIVETEL-ből: " + ", ".join(elavult)
-    assert len(KIVETEL) <= KIVETEL_PLAFON, f"a KIVETEL nőtt: {len(KIVETEL)} > {KIVETEL_PLAFON}"
+    print(f"\nKIVETEL hossza: {len(KIVETEL)} (plafon: {KIVETEL_PLAFON})")
+    assert len(KIVETEL) <= KIVETEL_PLAFON, (
+        f"a KIVETEL nőtt: {len(KIVETEL)} > {KIVETEL_PLAFON}; új fájl nem kerülhet fel"
+    )
 
 
 _ROSSZ = '''
@@ -332,3 +309,21 @@ def test_az_or_maga_eszleli_a_rovid_korlatot():
 
 def test_az_or_nem_jelez_a_tiz_masodperces_korlatra_es_a_fix_varakozasra():
     assert _eltresek({"tests/app/minta.py": _JO}) == []
+
+
+_BURKOLO = '''
+from tests.support.varakozas import var_feltetelre
+
+
+def _var(qt_app, feltetel, masodperc: float = 3.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
+
+
+def teszt(qt_app):
+    _var(qt_app, lambda: True, 2.0)
+'''
+
+
+def test_az_or_eszleli_a_kozos_segedet_hivo_burkolot():
+    eltresek = _eltresek({"tests/app/minta.py": _BURKOLO})
+    assert {(e.tipus, e.sor) for e in eltresek} == {("helyi", 5), ("hivas", 10)}
