@@ -10,13 +10,26 @@ oszthatja ki (CONTRIBUTING.md).
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 from .deferredregion import DeferredFace, parse_deferred_region
 from .remap import PathRemapper
 from .table import read_table
-from .thumbindex import read_thumb_index, resolve_path
+from .thumbindex import (
+    ThumbIndexEntry,
+    read_thumb_index,
+    resolve_path,
+)
+from .wordhash import WordHashFormatError, read_wordhash
+
+_ALBUM_WORD_PREFIX = "]album:"
+# Mért albumdata-kategóriák: 0 = album, 2 = mappa.
+_ALBUM_CATEGORY = 0
+_FOLDER_CATEGORY = 2
+
+logger = logging.getLogger(__name__)
 
 # az importban hasznosított imagedata-oszlopok (mind opcionális/sparse)
 #: #2336: a `tags`, `lat` és `long` a valódi adatbázisban 342, illetve
@@ -71,6 +84,18 @@ class PhotoRecord:
     entry_kind: int = 0
     creation_filetime: int = 0
     modified_filetime: int = 0
+    #: #4889: a Picasa mappalistájából átvett priority= hely.
+    manual_priority: float | None = None
+    #: #4900: albumtoken és albumorder= hely páronként.
+    manual_album_places: tuple[tuple[str, float], ...] = ()
+
+
+@dataclass(frozen=True)
+class Db3Beolvasas:
+    """Egy db3 olvasásának fotóadatai és kihagyott sorrendelemei."""
+
+    rekordok: tuple[PhotoRecord, ...]
+    wordhash_kihagyott: int = 0
 
 
 def iter_photo_records(
@@ -78,9 +103,17 @@ def iter_photo_records(
 ) -> tuple[PhotoRecord, ...]:
     """A db3 könyvtár fotó-rekordjai, sorrendhelyesen.
 
+    A wordhashből kihagyott elemek számát a beolvas_db3 adja vissza.
+    """
+    return beolvas_db3(db3_dir, remapper).rekordok
+
+
+def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
+    """A fotó-rekordok és a wordhashből kihagyott elemek beolvasása.
+
     A thumbindex fájl-bejegyzésein megy végig (könyvtár-, arc- és törölt
     bejegyzések kihagyva); a remap nélküli útvonalak szintén kimaradnak.
-    A `row` a thumbindex-index — az imagedata-oszlopok 1:1 ehhez
+    A row a thumbindex-index — az imagedata-oszlopok 1:1 ehhez
     igazodnak (éles validálás: a leghosszabb oszlop hossza == thumbindex
     bejegyzésszám).
 
@@ -93,6 +126,9 @@ def iter_photo_records(
     entries = read_thumb_index(index_path)
     table = read_table(db3_dir, "imagedata")
     csillagos = _read_starlist(db3_dir)
+    manual_priorities, manual_album_places, wordhash_kihagyott = (
+        _wordhash_manual_orders(db3_dir, entries, remapper)
+    )
 
     records = []
     for entry in entries:
@@ -142,9 +178,124 @@ def iter_photo_records(
                 entry_kind=entry.kind,
                 creation_filetime=entry.creation_filetime,
                 modified_filetime=entry.modified_filetime,
+                manual_priority=manual_priorities.get(entry.index),
+                manual_album_places=manual_album_places.get(entry.index, ()),
             )
         )
-    return tuple(records)
+    return Db3Beolvasas(
+        rekordok=tuple(records), wordhash_kihagyott=wordhash_kihagyott
+    )
+
+
+def _wordhash_manual_orders(
+    db3_dir: Path,
+    entries: tuple[ThumbIndexEntry, ...],
+    remapper: PathRemapper,
+) -> tuple[dict[int, float], dict[int, tuple[tuple[str, float], ...]], int]:
+    """A mappa- és albumlisták sorait útvonalra és kézi helyre oldja fel."""
+    wordhash_path = _find_wordhash(db3_dir)
+    if wordhash_path is None:
+        return {}, {}, 0
+    try:
+        word_lists = read_wordhash(wordhash_path)
+    except (OSError, WordHashFormatError) as exc:
+        logger.warning(
+            "A wordhash.dat kézi sorrendje kimarad, a fájl hibás vagy "
+            "nem olvasható: %s",
+            exc,
+        )
+        return {}, {}, 0
+
+    try:
+        albumdata = read_table(db3_dir, "albumdata")
+    except (OSError, ValueError) as exc:
+        logger.warning(
+            "A wordhash.dat kézi sorrendje kimarad, az albumdata nem "
+            "olvasható: %s",
+            exc,
+        )
+        return {}, {}, 0
+
+    priorities: dict[int, float] = {}
+    album_places: dict[int, list[tuple[str, float]]] = {}
+    skipped_total = 0
+    for album_row in range(albumdata.row_count):
+        category = albumdata.value("category", album_row)
+        if category not in (_ALBUM_CATEGORY, _FOLDER_CATEGORY):
+            continue
+        token = albumdata.value("token", album_row)
+        if not isinstance(token, str) or not token.startswith(_ALBUM_WORD_PREFIX):
+            continue
+        rows = word_lists.get(token)
+        if rows is None:
+            continue
+
+        folder_path = None
+        if category == _FOLDER_CATEGORY:
+            filename = albumdata.value("filename", album_row)
+            if not isinstance(filename, str) or not filename:
+                continue
+            local_folder = remapper.remap(filename)
+            if local_folder is None:
+                continue
+            folder_path = Path(local_folder)
+
+        position = 0 if category == _FOLDER_CATEGORY else 1
+        seen: set[int] = set()
+        skipped = 0
+        for row in rows:
+            if row >= len(entries):
+                skipped += 1
+                continue
+            entry = entries[row]
+            if (
+                entry.is_directory
+                or entry.kind in {1, 5}
+                or entry.is_face_record
+                or not entry.name
+            ):
+                skipped += 1
+                continue
+            local_path = remapper.remap(resolve_path(entries, entry))
+            if local_path is None:
+                skipped += 1
+                continue
+            if folder_path is not None and Path(local_path).parent != folder_path:
+                skipped += 1
+                continue
+            if row in seen:
+                skipped += 1
+                continue
+            seen.add(row)
+
+            if category == _FOLDER_CATEGORY:
+                priorities[row] = float(position)
+            else:
+                album_places.setdefault(row, []).append(
+                    (token.removeprefix(_ALBUM_WORD_PREFIX), float(position))
+                )
+            position += 1
+
+        skipped_total += skipped
+        if skipped:
+            logger.warning(
+                "A wordhash.dat %s listájából %d kihagyott elem nem fájl "
+                "vagy nem oldható fel thumbindex-útvonalra",
+                token,
+                skipped,
+            )
+
+    return priorities, {
+        row: tuple(places) for row, places in album_places.items()
+    }, skipped_total
+
+
+def _find_wordhash(db3_dir: Path) -> Path | None:
+    """A wordhash.dat kis-nagybetű-tűrő feloldása."""
+    for path in sorted(db3_dir.iterdir()):
+        if path.name.casefold() == "wordhash.dat":
+            return path
+    return None
 
 
 _THUMB_INDEX_NAME = "thumbindex.db"
