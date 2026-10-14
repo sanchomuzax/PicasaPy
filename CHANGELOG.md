@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.101] – 2026-10-15
+
+- A rácsból képeket lehet a tálcára húzni, az albumok kézi sorrendjét, a mappák helyét és az arcok személyhez rendelését húzással módosítani. (#5008).
+
 ## [0.9.100] – 2026-10-15
 
 - A kijelölt képek a mappasorra húzva átkerülnek, a Másolás és Beillesztés pedig a kiválasztott mappába másolja őket (#5007).
