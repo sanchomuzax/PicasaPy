@@ -404,7 +404,11 @@ class _Vaszon(NamedTuple):
 
 
 def _szovegdia(
-    slide: dict[str, object], settings: MovieSettings | _Vaszon, skala: float = 1.0
+    slide: dict[str, object],
+    settings: MovieSettings | _Vaszon,
+    skala: float = 1.0,
+    *,
+    ido: float | None = None,
 ) -> np.ndarray:
     """Képkockát készít a Szöveg fülön felvett dia beállításaiból.
 
@@ -454,18 +458,64 @@ def _szovegdia(
         x, y = settings.width - szoveg_szeles - marg, (settings.height - szoveg_magas) // 2
     else:
         x, y = (settings.width - szoveg_szeles) // 2, (settings.height - szoveg_magas) // 2
+
+    rajzolando_szoveg = szoveg
+    alfa = 255
+    if ido is not None and stilus in (1, 8, 11):
+        # A felületről létrehozott MXF-dia blacktime és extra időeltolása 0.
+        # Az időtengely a helyi filmrenderelésé: kockaindex / fps.
+        kezdet = 0.0
+        if stilus == 8:
+            idotartam = settings.seconds_per_photo
+        else:
+            idotartam = settings.transition_seconds
+            if idotartam == 0:
+                idotartam = settings.seconds_per_photo / 3
+        if idotartam > 0:
+            arany = max(0.0, min(1.0, (ido + 0.02 - kezdet) / idotartam))
+            simitott = 3 * arany**2 - 2 * arany**3
+            if stilus == 1:
+                # A TextFadeMove X-eltolása 0-ról -M-re tart; M a saját
+                # render geometriájából számolt szövegdoboz-balél.
+                x = round(x - simitott * x)
+                alfa = round(255 * arany)
+            elif stilus == 8:
+                # B a vászon alsó éle, A a középre igazított szövegdoboz.
+                also = settings.height
+                kozep = 0.5 * (settings.height - szoveg_magas)
+                y = round(also + simitott * (kozep - also))
+            else:
+                # A timeline a szöveg UTF-8 bájthosszát lépteti. Csak a
+                # teljes karakterek rajzolhatók, a fél UTF-8 karakter nem.
+                hossz = len(szoveg.encode("utf-8"))
+                bajtlimit = max(1, int(hossz * arany + 0.5))
+                lathato = []
+                felhasznalt = 0
+                for karakter in szoveg:
+                    karakterbajtok = len(karakter.encode("utf-8"))
+                    if felhasznalt + karakterbajtok > bajtlimit:
+                        break
+                    lathato.append(karakter)
+                    felhasznalt += karakterbajtok
+                rajzolando_szoveg = "".join(lathato)
+                if not rajzolando_szoveg:
+                    return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
+
     if stilus in (4, 5, 6, 7):
         sav = (0, 0, 0, 180) if stilus in (4, 6) else (255, 255, 255, 180)
         rajz.rectangle((0, y - marg // 2, settings.width, y + szoveg_magas + marg // 2), fill=sav)
         betuszín = (255, 255, 255) if stilus in (4, 6) else (0, 0, 0)
     kontur = bool(slide.get("outline")) or stilus in (3, 11)
+    kitoltes = (*betuszín, alfa) if alfa < 255 else betuszín
+    kontur_szin = (0, 0, 0) if betuszín != (0, 0, 0) else (255, 255, 255)
+    kontur_kitoltes = (*kontur_szin, alfa) if alfa < 255 else kontur_szin
     rajz.multiline_text(
         (x, y),
-        szoveg,
+        rajzolando_szoveg,
         font=font,
-        fill=betuszín,
+        fill=kitoltes,
         stroke_width=max(1, meret // 18) if kontur or slide.get("bold") else 0,
-        stroke_fill=(0, 0, 0) if betuszín != (0, 0, 0) else (255, 255, 255),
+        stroke_fill=kontur_kitoltes,
     )
     return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
 
@@ -603,7 +653,7 @@ def export_movie(
     target = Path(target)
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    decoded: list[tuple[Path | None, np.ndarray]] = []
+    decoded: list[tuple[Path | None, np.ndarray, dict[str, object] | None]] = []
     ini_documents: dict[Path, IniDocument | None] = {}
     for path in paths:
         if not path.exists():
@@ -618,9 +668,20 @@ def export_movie(
             skipped.append(path)
             reasons.append(str(error))
             continue
-        decoded.append((path, frame))
+        decoded.append((path, frame, None))
 
-    text_frames = [(None, _szovegdia(slide, settings)) for slide in settings.text_slides]
+    text_frames = [
+        (
+            None,
+            _szovegdia(
+                slide,
+                settings,
+                ido=settings.frames_per_photo / settings.fps,
+            ),
+            slide,
+        )
+        for slide in settings.text_slides
+    ]
     if settings.ordering == 2:
         decoded.sort(key=lambda entry: entry[0].stat().st_mtime if entry[0] else float("inf"))
     elif settings.ordering == 0 and len(decoded) > 1:
@@ -685,17 +746,36 @@ def export_movie(
             alap_tartas, maradek = divmod(osszes_tartas, len(decoded))
             holds = [alap_tartas] * len(decoded)
             holds[-1] += maradek
-        for index, (path, frame) in enumerate(decoded):
+        for index, (path, frame, text_slide) in enumerate(decoded):
             if index and settings.transition_frames:
                 previous = decoded[index - 1][1]
                 for step in range(1, settings.transition_frames + 1):
                     weight = step / (settings.transition_frames + 1)
+                    incoming = (
+                        _szovegdia(
+                            text_slide,
+                            settings,
+                            ido=(step - 1) / settings.fps,
+                        )
+                        if text_slide is not None
+                        else frame
+                    )
                     writer.write(_atmeneti_kocka(
-                        previous, frame, settings.transition_type, weight
+                        previous, incoming, settings.transition_type, weight
                     ))
                     frames_written += 1
-            for _ in range(holds[index]):
-                writer.write(frame)
+            for local_frame in range(holds[index]):
+                kocka = (
+                    _szovegdia(
+                        text_slide,
+                        settings,
+                        ido=(local_frame + (settings.transition_frames if index else 0))
+                        / settings.fps,
+                    )
+                    if text_slide is not None
+                    else frame
+                )
+                writer.write(kocka)
                 frames_written += 1
             if path is not None:
                 used.append(path)
