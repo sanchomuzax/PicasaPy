@@ -23,6 +23,15 @@ ListView {
     signal openRequested(int row)
     // zöld ▸ a mappa-fejlécen: vetítés a csoport első képétől
     signal slideshowRequested(int startRow)
+    // #5008: a forrásból érkező képsorokat rendezzük, ne a pillanatnyi
+    // kijelölést; album-feedben ugyanez az albumorder kulcsot írja.
+    signal photoRowsDroppedOnReorder(
+        int start, int count, real flowWidth, real x, real y, var photoRows)
+    onPhotoRowsDroppedOnReorder: function(
+        start, count, flowWidth, x, y, photoRows) {
+        grid.ejtsdAzAtrendezest(
+            start, count, flowWidth, x, y, photoRows)
+    }
 
     // Ctrl+Alt alatt a kijelölt (aktuális) kép lesz a külön PopDisplay-ablak
     // képe. A mutató alatti cella nem módosítja ezt a képforrást.
@@ -803,12 +812,20 @@ ListView {
 
     /** Az ejtés végrehajtása: a kijelölt képek a cél ELÉ kerülnek, és a
         vezérlő kiírja az új kézi sorrendet a mappa `.picasa.ini`-jébe. */
-    function ejtsdAzAtrendezest(start, count, flowWidth, x, y) {
-        if (!grid.ctl || typeof grid.ctl.reorderPhotos !== "function") return
-        var sorok = appWindow.selectedIndexes
+    function ejtsdAzAtrendezest(start, count, flowWidth, x, y, photoRows) {
+        if (!grid.ctl) return
+        var sorok = photoRows
+        if (!sorok || sorok.length === 0)
+            sorok = appWindow.selectedIndexes
         if (!sorok || sorok.length === 0) return
-        grid.ctl.reorderPhotos(sorok, grid.ejtesiCelSor(
-            start, count, flowWidth, x, y))
+        var celSor = grid.ejtesiCelSor(start, count, flowWidth, x, y)
+        if (grid.ctl.currentAlbumToken) {
+            if (typeof grid.ctl.reorderAlbumPhotos === "function")
+                grid.ctl.reorderAlbumPhotos(sorok, celSor)
+            return
+        }
+        if (typeof grid.ctl.reorderPhotos === "function")
+            grid.ctl.reorderPhotos(sorok, celSor)
     }
 
     function beginLasso() {
@@ -1142,9 +1159,10 @@ ListView {
                 onDropped: function(drop) {
                     if (!grid.acceptsPhotoDrag(drop)) return
                     drop.accept()
-                    grid.ejtsdAzAtrendezest(
+                    grid.photoRowsDroppedOnReorder(
                         groupCol.modelData.start, groupCol.modelData.count,
-                        groupFlow.width, drop.x, drop.y)
+                        groupFlow.width, drop.x, drop.y,
+                        drop.source.photoRows ? drop.source.photoRows.slice() : [])
                 }
             }
             Repeater {

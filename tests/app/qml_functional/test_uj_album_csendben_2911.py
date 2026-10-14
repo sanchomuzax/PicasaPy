@@ -22,7 +22,7 @@ Nincs számozás és nincs dátum — minden alkalommal ugyanaz a név.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
 
 def _elem(gyoker, nev):
@@ -79,8 +79,9 @@ class TestANegyBelepo:
 
         QMetaObject.invokeMethod(
             _elem(window, "folderPane"),
-            "newAlbumDropped",
+            "newAlbumPhotosDropped",
             Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0]),
         )
         qt_app.processEvents()
 

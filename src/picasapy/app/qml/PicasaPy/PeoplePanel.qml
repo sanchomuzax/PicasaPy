@@ -302,6 +302,9 @@ Rectangle {
                 personName: modelData.name
                 photoUrl: modelData.thumbUrl
                 onChosen: panel.personChosen(modelData.name)
+                onFaceDropped: function(faceId, name) {
+                    panel.assignNameToFace(faceId, name)
+                }
             }
         }
         Repeater {

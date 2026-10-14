@@ -188,11 +188,12 @@ Rectangle {
     // #455: fogd-és-vidd az albumlistára — új album, illetve meglévőbe
     // sorolás. A tényleges munkát a gazda végzi (a névkérő párbeszéd és a
     // kijelölés is ott van).
-    signal newAlbumDropped()
-    signal photosDroppedOnAlbum(string token)
+    signal newAlbumPhotosDropped(var photoRows)
+    signal photosDroppedOnAlbum(string token, var photoRows)
     // #5007: a kijelölt rácsképek útvonalaihoz tartozó sorok ejtése egy
     // mappára. A gazda a lemezműveletet a FileOpsControllerre bízza.
     signal photosDroppedOnFolder(string path, var rows)
+    signal folderDroppedOnFolder(string sourcePath, string targetPath)
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -575,9 +576,11 @@ Rectangle {
                 onAlbumContextMenuRequested: function(token, name) {
                     pane.openAlbumContextMenu(token, name)
                 }
-                onNewAlbumDropped: pane.newAlbumDropped()
-                onPhotosDroppedOnAlbum: function(token) {
-                    pane.photosDroppedOnAlbum(token)
+                onNewAlbumPhotosDropped: function(photoRows) {
+                    pane.newAlbumPhotosDropped(photoRows)
+                }
+                onPhotosDroppedOnAlbum: function(token, photoRows) {
+                    pane.photosDroppedOnAlbum(token, photoRows)
                 }
             }
 
@@ -1111,6 +1114,7 @@ Rectangle {
                     ToolTip.delay: Theme.tooltipDelay
                     MouseArea {
                         id: folderRowMouse
+                        objectName: "folderRowMouse"
                         // #3461: a Rejtett mappák fejléce is kap egeret, de
                         // CSAK a jobb gombra (helyi menü) — kijelölni nem lehet
                         enabled: kind === "folder" || kind === "hidden"
@@ -1118,6 +1122,40 @@ Rectangle {
                         anchors.fill: parent
                         acceptedButtons: kind === "hidden"
                             ? Qt.RightButton : (Qt.LeftButton | Qt.RightButton)
+                        property bool draggingFolder: false
+                        property bool didDragFolder: false
+                        property real dragPressX: 0
+                        property real dragPressY: 0
+                        readonly property string payload: "folders"
+                        readonly property string folderPath: path
+                        Drag.active: kind === "folder" && draggingFolder
+                        Drag.dragType: Drag.Automatic
+                        Drag.supportedActions: Qt.MoveAction
+                        Drag.hotSpot.x: dragPressX
+                        Drag.hotSpot.y: dragPressY
+                        onPressed: function(mouse) {
+                            if (kind !== "folder" || mouse.button !== Qt.LeftButton)
+                                return
+                            dragPressX = mouse.x
+                            dragPressY = mouse.y
+                            draggingFolder = false
+                            didDragFolder = false
+                        }
+                        onPositionChanged: function(mouse) {
+                            if (!pressed || kind !== "folder") return
+                            if (Math.abs(mouse.x - dragPressX)
+                                    + Math.abs(mouse.y - dragPressY) > 8) {
+                                draggingFolder = true
+                                didDragFolder = true
+                            }
+                        }
+                        onReleased: function(mouse) {
+                            if (draggingFolder) {
+                                folderRowMouse.Drag.drop()
+                                draggingFolder = false
+                                didDragFolder = true
+                            }
+                        }
                         onClicked: function(mouse) {
                             if (kind === "hidden") {
                                 pane.openHiddenCollectionContextMenu(name)
@@ -1126,6 +1164,10 @@ Rectangle {
                             folderList.forceActiveFocus()   // kurzorgombokhoz (#77)
                             if (mouse.button === Qt.RightButton) {
                                 pane.openFolderContextMenu(path)
+                                return
+                            }
+                            if (didDragFolder) {
+                                didDragFolder = false
                                 return
                             }
                             // #3681: mentés-szűrő módban a sor egy pipa —
@@ -1150,10 +1192,17 @@ Rectangle {
                         enabled: kind === "folder"
                         onDropped: function(drop) {
                             var source = drop.source
-                            if (!source || source.payload !== "photos"
-                                    || !source.photoRows
-                                    || source.photoRows.length === 0)
+                            if (!source)
                                 return
+                            if (source.payload === "folders") {
+                                if (!source.folderPath || source.folderPath === path)
+                                    return
+                                drop.accept()
+                                pane.folderDroppedOnFolder(source.folderPath, path)
+                                return
+                            }
+                            if (source.payload !== "photos" || !source.photoRows
+                                    || source.photoRows.length === 0) return
                             drop.accept()
                             pane.photosDroppedOnFolder(
                                 path, source.photoRows.slice())
@@ -1192,6 +1241,9 @@ Rectangle {
                     pane.mentesPipaldKert(mappa, be)
                 }
                 onFolderChosen: function(path) { pane.folderChosen(path) }
+                onFolderDroppedOnFolder: function(sourcePath, targetPath) {
+                    pane.folderDroppedOnFolder(sourcePath, targetPath)
+                }
                 onFolderContextMenuRequested: function(path) {
                     pane.openFolderContextMenu(path)
                 }
