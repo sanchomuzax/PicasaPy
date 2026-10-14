@@ -2056,6 +2056,14 @@ nyitott. A `Ctrl+9` eredménye megerősíti a 10.23-ban kiolvasott
 `editpanel/toggle_left_drawer` műveletet, és elavulttá teszi a 10.7-ben korábban
 szereplő „a bal fiók nálunk nem létezik” állítást.
 
+### 10.35 #4698 — a Ctrl+F9 a nézőben: futásidejű mérés (2026-10-14)
+
+*Bizonyítottsági fok: **megerősített** a látható hatásra (három Colab-futás az eredeti Picasa 3.9-cel: job-122, job-123, job-149); a nézőt léptető kódút **nyitott**.*
+
+A PicasaTeszt mappa 24 képén, a néző az 1. képen: Ctrl+F9 után a néző folyamatosan, képenként azonnal továbblép, és a mappa utolsó képén megáll. A job-149-ben a második Ctrl+F9 0,5 s után érkezett; a következő felvételen a lapozás a mappa közepén (kb. 16. kép) járt, egy másodperccel később az utolsó képen állt, tehát **az ismételt lenyomás nem állítja meg**. Az ütem legalább kb. 15 kép/s; a másodperces mintavétel finomabbat nem ad. A könyvtárnézetben a billentyűnek nincs látható hatása (#4698 kommentjei).
+
+**Viszony a 10.23/10.25/10.31 megállapításához.** Az ott olvasott `[panel+0xdc4]` kapcsoló és a `0x005f89a0` útja valóban nem vált képet; a mérés szerint azonban a nézőben a Ctrl+F9 képet vált. A két állítás nem ellentmondás, hanem két különböző kezelő: a statikus olvasat a könyvtár/előnézet panelé, a néző Ctrl+F9-kezelőjét még nem azonosítottuk. A megvalósítás a **mért** viselkedést követi: Ctrl+F9 a nézőben a mappa végéig léptet, ismételt lenyomásra nem áll meg.
+
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 
 A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.

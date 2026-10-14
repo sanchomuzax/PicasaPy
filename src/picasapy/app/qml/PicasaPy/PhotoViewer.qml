@@ -222,6 +222,45 @@ Rectangle {
         && viewer.editCtl && viewer.editCtl.gpuPrefixSource !== ""
 
     property int currentIndex: -1
+    // #4698: Ctrl+F9 az eredeti Picasában a nézőt folyamatosan lépteti.
+    // A Timer minden betöltött kép után, a következő eseményciklusban hívja
+    // a szokásos `next()` utat. A jelző megkülönbözteti ezt a lépést a kézi
+    // lapozástól, amely leállítja az időzítőt.
+    property bool ctrlF9AutoStep: false
+    function stopCtrlF9AutoAdvance() {
+        ctrlF9AutoAdvanceTimer.stop()
+    }
+    function startCtrlF9AutoAdvance() {
+        if (!viewer.visible || !viewer.photosModel || !viewer.hasNext())
+            return
+        if (!ctrlF9AutoAdvanceTimer.running)
+            ctrlF9AutoAdvanceTimer.start()
+    }
+    Timer {
+        id: ctrlF9AutoAdvanceTimer
+        objectName: "ctrlF9AutoAdvanceTimer"
+        interval: 1
+        repeat: true
+        onTriggered: {
+            if (!viewer.visible) {
+                stop()
+                return
+            }
+            // Csak akkor váltunk, ha az aktuális kép már betöltődött. Így a
+            // 0/1 ms-os eseményközi ütemezés nem ugorja át a képkockákat.
+            if (viewer.isCurrentVideo
+                    ? videoLoader.status === Loader.Loading
+                    : photo.status === Image.Loading)
+                return
+            if (!viewer.hasNext()) {
+                stop()
+                return
+            }
+            viewer.ctrlF9AutoStep = true
+            viewer.next()
+            viewer.ctrlF9AutoStep = false
+        }
+    }
     // a ListView.count reaktív — a rowCount() hívást a QML nem követné
     property int photoCount: filmstrip.count
     // #14: az aktuális elem videó-e — a néző ekkor a lejátszó-nézetet
@@ -386,6 +425,10 @@ Rectangle {
     //: szerint), hogy a mód bekapcsolva azonnal KÉT KÜLÖNBÖZŐ képet adjon
     //: — ez a mód buboréksúgójának ígérete.
     property int masodikIndex: -1
+    onMasodikIndexChanged: {
+        if (ctrlF9AutoAdvanceTimer.running && !ctrlF9AutoStep)
+            stopCtrlF9AutoAdvance()
+    }
 
     //: #3014: a KIJELÖLT oldal rács-sora — a „Kijelölve" jelvény ezt
     //: mutatja, és a válogató parancsok (albumba tétel) erre hatnak.
@@ -1367,6 +1410,7 @@ Rectangle {
             beginEditCurrent()
             frissitsdAMasodikSzerkesztest()   // #3187
         } else {
+            stopCtrlF9AutoAdvance()
             // a cropActive/retouchActive/textActive lenullázása ELŐBB (még
             // aktív szerkesztés alatt) fut, hogy az onXActiveChanged->
             // exitXTool() még érvényes munkameneten hívódjon; utána zárja
@@ -1387,6 +1431,8 @@ Rectangle {
         }
     }
     onCurrentIndexChanged: {
+        if (ctrlF9AutoAdvanceTimer.running && !ctrlF9AutoStep)
+            stopCtrlF9AutoAdvance()
         if (visible) {
             // #3924: a Picasa lapozáskor lezárja a Kiegyenesítést; a rács
             // csak az eszköz nyitott állapotában látszik.
@@ -1488,6 +1534,8 @@ Rectangle {
     // határán a jelenlegi indexet adja vissza, tehát nem lép tovább. #4525:
     // kettős nézetben a „Kijelölve” oldalt léptetjük, a másik sort hagyjuk.
     function next() {
+        if (!viewer.ctrlF9AutoStep)
+            viewer.stopCtrlF9AutoAdvance()
         if (!photosModel) return
         var sor = viewer._kijeloltSort()
         if (sor < 0) return
@@ -1498,6 +1546,7 @@ Rectangle {
             viewer.currentIndex = cel
     }
     function previous() {
+        viewer.stopCtrlF9AutoAdvance()
         if (!photosModel) return
         var sor = viewer._kijeloltSort()
         if (sor < 0) return
@@ -1605,7 +1654,12 @@ Rectangle {
     Keys.onPressed: function(event) {
         if (viewer.textEntryHasFocus)
             return
-        if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
+        if (event.key === Qt.Key_F9
+                && event.modifiers === Qt.ControlModifier) {
+            if (!event.isAutoRepeat)
+                viewer.startCtrlF9AutoAdvance()
+            event.accepted = true
+        } else if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
             viewer.toggleFaces()
             event.accepted = true
         } else if (event.key === Qt.Key_F && event.modifiers === Qt.ShiftModifier) {
