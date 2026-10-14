@@ -5857,3 +5857,38 @@ Nyitva:
 
 - [ ] A három stílus animál a filmben, mért kép-összevetés a referenciával — **NINCS MEG**. A bináris út animációs kezelőket és képleteket igazol, de nincs eredeti Picasa 3.9 kockamérés, referencia-összevetés vagy exportkori érték.
 - [ ] Kimenet-teszt a képkockákra — **NINCS MEG**. Ez implementációs és tesztfeladat; a jelen kutatási kör nem módosított kódot vagy tesztet.
+
+#### G.7.12 #4615: a textstyle1 X-végpontja és az írógép szövegkódolása (2026-10-14)
+
+*Bizonyítottsági fok: mindkét kérdésre **feltételes**. A bináris két külön útja egyezik az M geometriájáról és az UTF-8 belső szövegkezelésről; a futásidejű objektum pontos típusa/exportértéke, illetve egy ékezetes `.mxf` mintafájl bájtsorozata nem áll rendelkezésre. A következtetés nem képkockamérés.*
+
+**1. `textstyle1` („Jó napom van”): M a transzformált szövegdoboz X-minimuma.** A `0x00810761`–`0x00810771` a kiválasztott objektum `vtable+0x30` metódusát hívja egy négyelemű kimeneti téglalappal. A visszaadott téglalap első egész mezőjét a factory `0x00810783` olvassa, előjelét megfordítja (`neg ecx`), majd a `0x00809c50` konstruktorba adja; így az idővonal végpontja `H+0x2c=−M`. A dia X koordinátáját (`dia+0x14c`) író kezelő ezt a végpontot használja.
+
+A `0x009e08b0` ismert text-node megvalósítása előbb a saját `vtable+0x28` téglalap-metódusát hívja. Érvénytelen/üres téglalapnál a `+0x244` gyermek téglalapját is felhasználhatja; a `0x009de880`-nal lekéri az objektum és ősei transzformációját, a `0x00a4a240` pedig a helyi téglalap négy sarkát transzformálja, majd a befoglaló X/Y-minimumot és maximumot egész téglalapként adja vissza. A `ytMultiTextNode` RTTI-táblájában a `vtable+0x30` erre a `0x009e08b0` metódusra mutat; a `vtable+0x28` (`0x009e0ad0`) gyorsítótár esetén az objektum `+0x188/+0x18c/+0x190/+0x194` mezőiből olvassa a helyi téglalapot, máskülönben a `vtable+0x20` metódusra delegál. A geometriai képlet tehát:
+
+`R=[x0,y0,x1,y1]` a szövegobjektum helyi téglalapja; `T(x,y)=(m0·x+m1·y+m2, m3·x+m4·y+m5)` a hat floatból álló összegzett affin mátrix; `M` a `T` által transzformált négy sarok X-koordinátájának minimuma, a kódban az `0x00cf4160`-ból olvasott `0.499` levonása és `fistp` egészkonverziója után. Ez a szövegdoboz téglalapjától és az objektum/ősök transzformációjától függ; közvetlen, önálló dia-szélesség-képletet a vizsgált ág nem olvas. A konkrét exportkori `R`, mátrix, `M` és koordinátaegység (képpont vagy más exportegység) **NINCS MEG**. Az `0x00809eb0` nem M-kiértékelő: az alfa idővonalát építi az alfa-bájtos mezőkből (`+0x0c/+0x0d`), ezért nem ez szolgáltatja az X-végpontot.
+
+**2. Írógép (`textstyle11`): bájtszám, UTF-8 belső szövegút.** A G.7.11-ben rögzített factory-ciklus (`0x00811d9e`–`0x00811db7`) a `+4` pointert bájtonként lépteti az első NUL-ig, a bájthosszt a `0x00809fe0` konstruktornak adja; ez nem UTF-16 kódosegység-számolás. Az azonos factory közeli stringsegédje (`0x008106a9`–`0x008106bf` → `0x009863f0`) UTF-8-szerű vezetőbájt-hosszakat léptet: ASCII bájt 1, `0xc0`–`0xdf` 2, `0xe0`–`0xef` 3, `0xf0`–`0xf7` 4, és ellenőrzi a folytató bájtok `0x80` alsó határát. Az MXF `text` XML-elemének dispatch ága (`0x00815c48`–`0x00815cb1`) a szöveget stringobjektummá olvassa, majd a propertybe másolja. Egy ettől különálló Windows-határfüggvény (`0x009affb0`) a `MultiByteToWideChar` importot `0xfde9` kódlappal, azaz CP_UTF8-ként hívja.
+
+Ez az út a film szövegének keskeny bájttárolójára és az alkalmazás UTF-8-kezelésére mutat. A magyar ékezetes betűk UTF-8 alakja 2 bájt (az ASCII karakteré 1); a típusról azonban a bájtonkénti NUL-keresés önmagában nem döntene. A konkrét MXF fájlba írt kódolás és egy ékezetes szöveg tényleges bájtsora **NINCS MEG**, mert helyi `.mxf`/`.pxc` minta nem volt elérhető.
+
+| érték vagy állítás | forrás |
+|---|---|
+| `textstyle1` M-et a kiválasztott objektum `vtable+0x30` metódusától kapja; `H+0x2c=−M`; a dia X mezője `+0x14c` | bináris (`0x00810761`–`0x008107a7`, `0x00809c50`, `0x00809d20`) |
+| Az ismert text-node getter a helyi RECT-et az objektum/ősök mátrixával befoglaló téglalappá alakítja; M annak X-minimuma, `0x00cf4160=0.499` korrekcióval egészítve | bináris (`0x009e08b0`, `0x009de880`, `0x00a4a240`, adat `0x00cf4160`; RTTI: `ytMultiTextNode::vftable`, `0x009e08b0`; helyi RECT: `0x009e0ad0`) |
+| A `ytMultiTextNode` gyorsítótárazott helyi RECT mezői `+0x188/+0x18c/+0x190/+0x194`; az érvényesség jelzője `+0x20f` | bináris (`ytMultiTextNode` RTTI és offset-térkép; `0x009e0ad0`) |
+| A factory bájthosszt ad az írógép-konstruktornak; az ékezetes betűk belső UTF-8 bájtszáma 2 | bináris (`0x00811d9e`–`0x00811db7`, `0x00809fe0`, UTF-8 léptető `0x009863f0`); fájlszintű példa: **NINCS MEG** |
+| Az MXF `text` mező stringobjektumba kerül; az app egyik több-bájtos → UTF-16 határa CP_UTF8-at választ | bináris (`0x00815c48`–`0x00815cb1`, `0x009affb0`, import: `MultiByteToWideChar`) |
+| Exportkori helyi RECT, transzformációs mátrix, `M` és koordinátaegység; konkrét ékezetes MXF bájtsor | **NINCS MEG**; Picasa 3.9-es minta/export és célzott kockamérés kell |
+
+**A két független út.**
+
+- **A út — közvetlen adatfolyam:** a `0x00810761` vtable-hívás kimeneti téglalapjának első mezője kerül negálva `H+0x2c`-ba. A `0x009e08b0` és `0x00a4a240` utasításai visszavezetik ezt a mezőt a text-node RECT-re és a transzformált sarkok X-minimumára. A string oldalon a factoryban hívott `0x009863f0` a több-bájtos karakterek UTF-8 vezetőbájtjai alapján léptet.
+- **B út — RTTI/adatmezők és külön kódolási határ:** az RTTI a `ytMultiTextNode` `+0x30` slotját `0x009e08b0`-hoz, a `+0x28` slotját `0x009e0ad0`-hoz köti; az offset-térkép és a mezőolvasások külön igazolják a lokális RECT-forrást. A másik kódolási út az MXF `text`-dispatcher stringobjektum-másolása és a független `0x009affb0` CP_UTF8 hívása. Mindkét pár ugyanabba az irányba mutat; a konkrét exportpéldát egyik sem helyettesíti.
+
+**Cáfoló kísérlet.** M-re azt az alternatívát próbáltam igazolni, hogy a végpont közvetlenül a dia szélessége vagy egy rögzített `desc` érték. A factory közvetlenül egy objektum-vtábla `+0x30` slotját hívja, a getter pedig RECT-et és összegzett transzformációt olvas; az RTTI-s slotkötés és az offset-térkép ezt külön ellenőrzi. Az alternatíva nem állja ki ugyanazt az utasításszintű mércét. Kódolásnál az ANSI/CP_ACP lehetőséget a bájtonkénti ciklus önmagában nem cáfolja; a külön UTF-8 léptető és a CP_UTF8 hívás az alkalmazáson belüli UTF-8 értelmezést támasztja alá. A fájlszintű alternatíva a hiányzó MXF-minta miatt nyitva marad.
+
+**A #4615 „Kész, ha” pontjai.**
+
+- [ ] A három stílus animál a filmben, mért kép-összevetés a referenciával — **NINCS MEG**; az M geometriai bináris útja és a korábbi G.7.11 képletei nem helyettesítik a Picasa 3.9 referenciaexportot és a kockánkénti mérést.
+- [ ] Kimenet-teszt a képkockákra — **NINCS MEG**; ez kód- és tesztmunka, ebben a kutatási körben nem készült.
