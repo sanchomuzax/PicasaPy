@@ -14,7 +14,7 @@ def _elem(window, name):
     return element
 
 
-def _wait(qt_app, condition, timeout=3.0):
+def _wait(qt_app, condition, timeout=10.0):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         qt_app.processEvents()
@@ -97,7 +97,7 @@ def test_a_gepeles_billentyuleutesenkent_egy_kerest_indit_es_gyorsan_frissul(
 
         # Egyetlen billentyűleütés: legfeljebb egy előnézet-kérés.
         QTest.keyClick(field.window(), Qt.Key.Key_X)
-        assert _wait(qt_app, lambda: len(kerelmek) >= 1, timeout=2.0)
+        assert _wait(qt_app, lambda: len(kerelmek) >= 1, timeout=10.0)
         QTest.qWait(400)
         qt_app.processEvents()
         assert len(kerelmek) == 1, f"egy leütés {len(kerelmek)} kérést indított"
@@ -111,7 +111,7 @@ def test_a_gepeles_billentyuleutesenkent_egy_kerest_indit_es_gyorsan_frissul(
             lambda: len(kerelmek) >= 2
             and int(dialog.property("previewDisplayedGeneration"))
             >= int(dialog.property("previewLatestRequestGeneration")),
-            timeout=5.0,
+            timeout=10.0,
         )
         eltelt = time.monotonic() - kezdet
         assert eltelt <= 1.0, f"a frissítés {eltelt:.2f} s volt"

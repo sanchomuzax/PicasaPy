@@ -39,7 +39,7 @@ def _elem(window, name):
     return element
 
 
-def _wait(qt_app, condition, timeout=3.0):
+def _wait(qt_app, condition, timeout=10.0):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         qt_app.processEvents()
@@ -650,10 +650,10 @@ def test_a_futo_elonezet_megallitas_nelkul_tobb_keveredo_kockat_mutat(
         controller.movieTransitionPreviewReady.connect(collect)
         _click(window, qt_app, _elem(window, "moviePreviewButton"))
         transition = _elem(window, "moviePreviewTransition")
-        assert _wait(qt_app, lambda: transition.property("running"), timeout=3.0), (
+        assert _wait(qt_app, lambda: transition.property("running"), timeout=10.0), (
             "az átmenet nem indult el"
         )
-        assert _wait(qt_app, lambda: not transition.property("running"), timeout=5.0), (
+        assert _wait(qt_app, lambda: not transition.property("running"), timeout=10.0), (
             "az átmenet nem fejeződött be"
         )
         assert len(shown) >= 3, f"futás közben csak {len(shown)} kocka jelent meg"

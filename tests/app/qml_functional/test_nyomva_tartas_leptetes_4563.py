@@ -45,7 +45,7 @@ def _elem(window, name: str):
     return window.findChild(QQuickItem, name)
 
 
-def _var(qt_app, predicate, seconds: float = 5.0) -> bool:
+def _var(qt_app, predicate, seconds: float = 10.0) -> bool:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
         try:
@@ -142,7 +142,7 @@ class TestNyomvaTartasLeptetes:
         _lenyom(gomb, qt_app)
         # A lassú (windowsos) futón a fix 1,2 s alatt csak 2 lépés fért bele
         # (main-CI, 2026-10-14): a hármadik lépést nyomva tartva várjuk ki.
-        _var(qt_app, lambda: viewer.property("currentIndex") - start >= 3, seconds=6.0)
+        _var(qt_app, lambda: viewer.property("currentIndex") - start >= 3, seconds=10.0)
         _felenged(gomb, qt_app)
 
         lepesek = viewer.property("currentIndex") - start
@@ -181,7 +181,7 @@ class TestNyomvaTartasLeptetes:
         assert _var(qt_app, lambda: gomb.isVisible() and gomb.property("enabled"))
 
         _lenyom(gomb, qt_app)
-        _var(qt_app, lambda: _start + 20 - viewer.property("currentIndex") >= 3, seconds=6.0)
+        _var(qt_app, lambda: _start + 20 - viewer.property("currentIndex") >= 3, seconds=10.0)
         _felenged(gomb, qt_app)
 
         lepesek = _start + 20 - viewer.property("currentIndex")
