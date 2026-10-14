@@ -953,6 +953,79 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self._refresh_view()
         return True
 
+    @Slot("QVariantList", int, result=bool)
+    def reorderAlbumPhotos(self, rows, target_row: int) -> bool:  # noqa: N802
+        """Húzással átrendezi az aktív album képeit (#5008).
+
+        A `rows` a rácsmodell aktuális sorai, a cél elé kerülnek. Az album
+        teljes tárolt sorrendjéből indulunk ki, és mappánként az `ini` API
+        albumorder-íróján keresztül mentünk; az `albums=` tagság nem változik.
+        """
+        token = str(self.currentAlbumToken or "").strip()
+        if not token:
+            return False
+        with open_index(self._db_path) as conn:
+            ordered = list(album_photos(conn, token))
+        grid_rows = list(getattr(self._photos, "_photos", ()) or ())
+        selected_indexes = sorted(
+            {int(row) for row in rows if 0 <= int(row) < len(grid_rows)}
+        )
+        if not ordered or not selected_indexes:
+            return False
+
+        def key(photo):
+            return (photo.folder_path, photo.name)
+
+        selected_keys = {key(grid_rows[index]) for index in selected_indexes}
+        album_keys = {key(photo) for photo in ordered}
+        selected_keys.intersection_update(album_keys)
+        if not selected_keys:
+            return False
+
+        moved = [photo for photo in ordered if key(photo) in selected_keys]
+        remaining = [photo for photo in ordered if key(photo) not in selected_keys]
+        destination = (
+            grid_rows[int(target_row)]
+            if 0 <= int(target_row) < len(grid_rows)
+            else None
+        )
+        destination_key = key(destination) if destination is not None else None
+        if destination_key in selected_keys:
+            return True
+        insertion = (
+            next(
+                (index for index, photo in enumerate(remaining)
+                 if key(photo) == destination_key),
+                len(remaining),
+            )
+            if destination_key is not None
+            else len(remaining)
+        )
+        reordered = [*remaining[:insertion], *moved, *remaining[insertion:]]
+        placements = new_places(reordered)
+        by_folder: dict[str, dict[str, float]] = {}
+        for (folder, name), place in placements.items():
+            by_folder.setdefault(folder, {})[name] = place
+
+        try:
+            with open_index(self._db_path) as conn:
+                write_album_places(
+                    token,
+                    (
+                        (Path(folder) / PICASA_INI_NAME, places)
+                        for folder, places in by_folder.items()
+                    ),
+                    on_written=lambda ini_path: self._sync_tree(
+                        conn, str(ini_path.parent)
+                    ),
+                )
+        except (AlbumOrderWriteError, *_WRITE_ERRORS) as error:
+            self.albumWriteFailed.emit(str(error))
+            self._refresh_view()
+            return False
+        self._refresh_view()
+        return True
+
     @Slot(str, str, result=bool)
     def sortFolderBy(self, folder: str, mode: str) -> bool:  # noqa: N802
         """Egyszer átrendezi a célmappa listáját, és elmenti a kézi sorrendet.
