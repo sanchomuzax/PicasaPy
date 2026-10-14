@@ -142,6 +142,13 @@ def _valts_ket_kepre(window, qt_app):
     nezo = _elem(window, "photoViewer")
     nezo.setProperty("layoutMode", "ab")
     qt_app.processEvents()
+    # a Row az újonnan látható gombokat csak a következő elrendezési körben
+    # helyezi el; addig a bal szélen (a lejátszó helyén) állnak
+    _var(
+        qt_app,
+        lambda: _bal_x(_elem(window, "viewerSwapLayout"))
+        > _bal_x(_elem(window, "viewerLayoutAa")),
+    )
 
 
 class TestAVezerlokSorrendje:
