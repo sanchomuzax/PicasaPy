@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import logging
 import struct
 
@@ -21,6 +23,11 @@ _INDEX_ENTRIES = 32
 # A #4884 szerinti, három Colab-pillanatképből kiemelt postinglisták.
 _B_ROWS = (2, 8, 10, 14, 15, 9, 17, 18, 20, 5, 19, 13, 11, 12, 16, 21, 22, 23, 24, 25, 3, 4, 6, 7)
 _C_ROWS = (5, 2, 10, 14, 15, 9, 17, 18, 20, 19, 13, 11, 12, 16, 21, 22, 23, 24, 25, 3, 4, 8, 6, 7)
+
+
+def _nev(local_path: str) -> str:
+    """A fájlnév platformfüggetlenül (Windowson a rekord útja `\\`-t használ)."""
+    return re.split(r"[\\/]", local_path)[-1]
 
 
 def _wordhash_bytes(entries: tuple[tuple[str, tuple[int, ...]], ...]) -> bytes:
@@ -129,7 +136,7 @@ def test_a_mappa_kezi_sorrendje_a_mert_wordhash_poziciot_orzi(
         tmp_path, ((_FOLDER_TOKEN, rows),)
     )
     beolvasas = beolvas_db3(db3, remapper)
-    records = {record.local_path.rsplit("/", 1)[-1]: record for record in beolvasas.rekordok}
+    records = {_nev(record.local_path): record for record in beolvasas.rekordok}
 
     assert beolvasas.wordhash_kihagyott == 0
     assert records[photo_name].manual_priority == place
@@ -153,7 +160,7 @@ def test_az_album_sorrendje_a_4599_albumorder_kulcsaba_kerul(tmp_path):
     assert {
         name: places
         for record in beolvasas.rekordok
-        for name, places in [(record.local_path.rsplit("/", 1)[-1], record.manual_album_places)]
+        for name, places in [(_nev(record.local_path), record.manual_album_places)]
         if places
     } == {
         "rgb_gradient.jpg": ((_ALBUM_ID, 1.0),),
@@ -225,7 +232,7 @@ def test_ismeretlen_es_ismetelt_sorazonositot_kihagy_de_a_listat_atveszi(
     )
 
     beolvasas = beolvas_db3(db3, remapper)
-    records = {record.local_path.rsplit("/", 1)[-1]: record for record in beolvasas.rekordok}
+    records = {_nev(record.local_path): record for record in beolvasas.rekordok}
 
     assert beolvasas.wordhash_kihagyott == 2
     assert records["photo-02.jpg"].manual_priority == 0.0
