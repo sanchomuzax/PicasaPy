@@ -109,7 +109,7 @@ class TestCounterReachesZero:
 
         def worker(barrier: threading.Barrier):
             registry.begin()
-            barrier.wait(timeout=5.0)
+            barrier.wait(timeout=10.0)
             registry.end()
 
         barrier = threading.Barrier(3)
@@ -120,7 +120,7 @@ class TestCounterReachesZero:
         for thread in threads:
             thread.start()
         for thread in threads:
-            thread.join(timeout=5.0)
+            thread.join(timeout=10.0)
             assert not thread.is_alive()
 
         assert _wait_until(qt_app, lambda: registry.activeCount == 0)

@@ -279,7 +279,6 @@ class TestPosterWorkerProcessFailure:
         arrived, args = _run(
             controller.posterFinished,
             lambda: controller.createPoster(str(source), 200, "4x6", False),
-            # A poszter-alfolyamat a terhelt futón 5 s fölé nyúlt (main-CI, 2026-10-14).
             timeout_ms=20000,
         )
 
