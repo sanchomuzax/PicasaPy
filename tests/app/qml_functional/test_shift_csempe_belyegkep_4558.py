@@ -20,8 +20,6 @@ NEM méri (nincs ilyen képernyőkép); a renderelt pár-eltérést a
 
 from __future__ import annotations
 
-import time
-
 import numpy as np
 import pytest
 from PIL import Image
@@ -29,6 +27,7 @@ from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
 
+from tests.support.varakozas import var_feltetelre
 from tests.app.qml_functional.conftest import (
     _build_qml_app,
     _module_qml_warnings,  # noqa: F401 — modul-fixture
@@ -95,14 +94,9 @@ def app(qt_app, tmp_path_factory, _module_qml_warnings, _module_user_folder_guar
     generator.close()
 
 
-def _varj(qt_app, feltetel, uzenet, masodperc=8.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.02)
-    raise AssertionError(uzenet)
+def _varj(qt_app, feltetel, uzenet, masodperc=10.0):
+    if not var_feltetelre(qt_app, feltetel, masodperc):
+        raise AssertionError(uzenet)
 
 
 def _kulcs(kep) -> str:
