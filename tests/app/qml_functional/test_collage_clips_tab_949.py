@@ -28,6 +28,8 @@ from support.collage_canvas_harness import (
     keszits_kepeket,
     nyitott_vezerlo,
 )
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
+from PySide6.QtCore import QCoreApplication
 
 #: A spec 4.3 táblája: `objectName` → (x, y, szélesség, magasság) a
 #: `collageClipsTab` bal-felső sarkához mérve. Ez a SZERZŐDÉS.
@@ -73,30 +75,12 @@ def panel(controller):
     return root
 
 
-def _var(feltetel, ms: int = 3000) -> bool:
-    """Esemény-pörgetés HATÁRIDŐVEL, amíg a feltétel teljesül — #1463.
-
-    A fali órás `QTest.qWait(N)` arra fogad, hogy N ezredmásodperc alatt
-    megtörténik valami; egy terhelt, négymagos gépen ez hamis pirosat ad. Ez
-    a poll a VALÓDI feltételt figyeli, és amint teljesül, azonnal
-    továbbenged — így gyorsabb IS, meg megbízhatóbb IS.
-
-    (A `test_collage_output_ui_949._var` mintája. Az `AssertionError` azért
-    van elkapva, mert a `_child()` nem-létező elemre azzal jelez, és a
-    keresett csempe a poll elején még hiányozhat.)"""
-    eltelt = 0
-    while eltelt < ms:
-        try:
-            if feltetel():
-                return True
-        except (AssertionError, AttributeError, TypeError, RuntimeError):
-            pass
-        QTest.qWait(25)
-        eltelt += 25
-    try:
-        return bool(feltetel())
-    except (AssertionError, AttributeError, TypeError, RuntimeError):
-        return False
+def _var(feltetel, ms: int = 10000) -> bool:
+    return var_feltetelre(
+        QCoreApplication.instance(),
+        hibaturo_feltetel(feltetel, (AssertionError, AttributeError, TypeError, RuntimeError)),
+        ms / 1000,
+    )
 
 
 def _klipek_lapra(panel):

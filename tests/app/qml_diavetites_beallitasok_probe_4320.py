@@ -11,26 +11,16 @@ import importlib.util
 import json
 import os
 import sys
-import time
 import traceback
 from pathlib import Path
+from tests.support.varakozas import var_feltetelre
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("QT_QUICK_BACKEND", "software")
 
 
-def _wait(app, condition, timeout_s: float = 3.0) -> bool:
-    from PySide6.QtCore import QEventLoop, QTimer
-
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        if condition():
-            return True
-        app.processEvents()
-        loop = QEventLoop()
-        QTimer.singleShot(10, loop.quit)
-        loop.exec()
-    return bool(condition())
+def _wait(app, condition, timeout_s: float = 10.0) -> bool:
+    return var_feltetelre(app, condition, timeout_s)
 
 
 def _child(root, name: str):

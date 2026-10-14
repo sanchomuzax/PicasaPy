@@ -1,13 +1,13 @@
 """#4068: a hat csúszkás effektpanel zárolja a bal panel tartalmát."""
 
 from pathlib import Path
-from time import monotonic
 
 import numpy as np
 import pytest
 from PySide6.QtCore import QObject, QPointF, QRect, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 _TOOLS = (
@@ -26,13 +26,8 @@ def _item(window, name: str):
     return item
 
 
-def _wait_until(qt_app, condition, description: str, timeout_s: float = 3.0):
-    deadline = monotonic() + timeout_s
-    while not condition() and monotonic() < deadline:
-        qt_app.processEvents()
-        QTest.qWait(10)
-    qt_app.processEvents()
-    assert condition(), description
+def _wait_until(qt_app, condition, description: str, timeout_s: float = 10.0):
+    assert var_feltetelre(qt_app, condition, timeout_s), description
 
 
 def _click(window, item, qt_app):

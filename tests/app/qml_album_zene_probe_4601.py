@@ -5,22 +5,15 @@ from __future__ import annotations
 import importlib.util
 import os
 import sys
-import time
 from pathlib import Path
+from tests.support.varakozas import var_feltetelre
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("QT_QUICK_BACKEND", "software")
 
 
-def _wait(app, condition, timeout_s: float = 3.0) -> bool:
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        app.processEvents()
-        if condition():
-            return True
-        time.sleep(0.01)
-    app.processEvents()
-    return bool(condition())
+def _wait(app, condition, timeout_s: float = 10.0) -> bool:
+    return var_feltetelre(app, condition, timeout_s)
 
 
 def _child(root, name: str):

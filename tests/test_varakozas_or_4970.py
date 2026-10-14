@@ -26,64 +26,23 @@ KORLAT_MS = 10_000.0
 HELYI_PREFIX = re.compile(r"^_(var|wait)")
 IDOS_NEV = re.compile(r"(masodperc|timeout|seconds|hatarido|lejarat|ezred|^ido$|^ms$|_ms$|_mp$|_s$|^s$)")
 MS_NEV = re.compile(r"(^ms$|_ms$|ezred)")
-# A pillanatnyi lista hossza (54 fájl); csak csökkenhet.
-KIVETEL_PLAFON = 54
+# A pillanatnyi lista hossza (9 fájl); csak csökkenhet.
+KIVETEL_PLAFON = 9
+# Szándékosan a listán maradó fájlok: negatív ablakot („nem jelenik meg") vagy
+# fix idejű várakozást (`lambda: False`) mérnek. Ezek a korlátját nem emelhetjük,
+# különben a negatív állítás vagy a fix várakozás lassulna. A feltétel-várakozó
+# segédjük már a közös var_feltetelre-t hívja.
 KIVETEL: frozenset[str] = frozenset(
     {
-        "tests/app/qml_album_zene_probe_4601.py",
-        "tests/app/qml_diavetites_beallitasok_probe_4320.py",
-        "tests/app/qml_functional/_fomenu_4420_akciok.py",
-        "tests/app/qml_functional/test_ajandek_cd_bekotes_3503.py",
-        "tests/app/qml_functional/test_button_label_fit_992.py",
-        "tests/app/qml_functional/test_collage_background_1009.py",
-        "tests/app/qml_functional/test_collage_clips_tab_949.py",
-        "tests/app/qml_functional/test_collage_panel_layout_945.py",
-        "tests/app/qml_functional/test_collage_panel_wiring_985.py",
-        "tests/app/qml_functional/test_film_text_slide_infotext_4402.py",
-        "tests/app/qml_functional/test_general_ui_settings_4449.py",
-        "tests/app/qml_functional/test_kimeneti_tulcsordulas_2191.py",
-        "tests/app/qml_functional/test_left_pane_757.py",
-        "tests/app/qml_functional/test_mappa_borito_ikon_2215.py",
-        "tests/app/qml_functional/test_mappa_datum_naptar_4494.py",
-        "tests/app/qml_functional/test_maradek_arc_video_4229.py",
-        "tests/app/qml_functional/test_nyomtatas_ablakmeret_4795.py",
-        "tests/app/qml_functional/test_param_panel_modal_4068.py",
-        "tests/app/qml_functional/test_people_album_context_menu_4587.py",
-        "tests/app/qml_functional/test_people_album_menu_4645.py",
-        "tests/app/qml_functional/test_people_manager_kattintas_4334.py",
-        "tests/app/qml_functional/test_photo_menu_commands.py",
-        "tests/app/qml_functional/test_places_loading_offline_4584.py",
-        "tests/app/qml_functional/test_places_marker_showphotos_4575.py",
-        "tests/app/qml_functional/test_poszter_4268.py",
-        "tests/app/qml_functional/test_properties_panel_context_menu_4581.py",
-        "tests/app/qml_functional/test_racs_belyegkep_elotoltes_4289.py",
-        "tests/app/qml_functional/test_search_suggestion_keyboard_4530.py",
-        "tests/app/qml_functional/test_shortcut_focus_4398.py",
-        "tests/app/qml_functional/test_single_click_exit_4449.py",
-        "tests/app/qml_functional/test_titledialog_4198.py",
-        "tests/app/qml_functional/test_tobb_szovegdoboz_qml_4545.py",
-        "tests/app/qml_functional/test_tulcsordulas_fuggoleges_4537.py",
-        "tests/app/qml_functional/test_ui_maradek_4214.py",
-        "tests/app/qml_functional/test_visszavonas_alkalmazas_4063.py",
-        "tests/app/qml_functional/test_voros_auto_undo_4541.py",
-        "tests/app/qml_video_controls_probe_4229.py",
-        "tests/app/test_busy_integration.py",
-        "tests/app/test_busy_registry.py",
-        "tests/app/test_controller.py",
-        "tests/app/test_ertesito_csuszas_2157.py",
-        "tests/app/test_exportcel_indexelese_1565.py",
-        "tests/app/test_folder_rename_4482.py",
-        "tests/app/test_kimenet_resync_1539.py",
-        "tests/app/test_kollazs_szal_hid_988.py",
-        "tests/app/test_mappa_athelyezes_resync_1538.py",
-        "tests/app/test_projekt_mappa_figyeles_1123.py",
-        "tests/app/test_qml_busy.py",
-        "tests/app/test_qml_editor_panel.py",
-        "tests/app/test_qml_hatterjelzo_2966.py",
-        "tests/app/test_qml_helyek_kereses_4147.py",
-        "tests/app/test_qml_options_dialog.py",
-        "tests/app/test_qml_splash.py",
-        "tests/app/test_qml_timeline.py",
+        "tests/app/qml_functional/test_general_ui_settings_4449.py",  # negatív: `assert not _varj(..., 0.9)`
+        "tests/app/qml_functional/test_kimeneti_tulcsordulas_2191.py",  # fix idő: `_var(lambda: False, 0.3)`
+        "tests/app/qml_functional/test_mappa_borito_ikon_2215.py",  # fix idő: `_var(lambda: False, 1.0)` ×2
+        "tests/app/qml_functional/test_nyomtatas_ablakmeret_4795.py",  # fix idő: `_var(lambda: False, 0.3)` ×2
+        "tests/app/qml_functional/test_tulcsordulas_fuggoleges_4537.py",  # fix idő: `_var(lambda: False, 1.0)`
+        "tests/app/test_exportcel_indexelese_1565.py",  # negatív: `assert not _var(..., 3.0)`
+        "tests/app/test_kimenet_resync_1539.py",  # negatív: `assert not _var(..., 3.0)`
+        "tests/app/test_mappa_athelyezes_resync_1538.py",  # fix idő: `_var(lambda: False, 0.5)`
+        "tests/app/test_qml_splash.py",  # negatív: `assert not _wait_until(..., timeout_ms=600)`
     }
 )
 
@@ -146,6 +105,55 @@ def _korlat_alatt(ertek: float, ms: bool) -> bool:
     return ertek < (KORLAT_MS if ms else KORLAT_MP)
 
 
+def _importok(fa: ast.Module, forrasok: set[str]) -> tuple[dict[str, str], dict[str, tuple[str, str]]]:
+    """A fájl importjai a vizsgált (`forrasok`) fájlokra képezve.
+
+    Visszatér: (modul-aliasok: alias -> fájl, név-importok: alias -> (fájl, eredeti név)).
+    A `tests/support` és más, nem vizsgált modul nem kerül be: a neve nem
+    üteközhet a vizsgált helyi segédekkel."""
+    modulok: dict[str, str] = {}
+    nevek: dict[str, tuple[str, str]] = {}
+    for node in ast.walk(fa):
+        if not (isinstance(node, ast.ImportFrom) and node.module and node.level == 0):
+            continue
+        alap = node.module.replace(".", "/")
+        for a in node.names:
+            alias = a.asname or a.name
+            if f"{alap}/{a.name}.py" in forrasok:
+                modulok[alias] = f"{alap}/{a.name}.py"
+            elif f"{alap}.py" in forrasok:
+                nevek[alias] = (f"{alap}.py", a.name)
+    return modulok, nevek
+
+
+def _hivott_segedek(
+    hivas: ast.Call,
+    rel: str,
+    helyi_nevek: set[str],
+    modulok: dict[str, str],
+    importalt: dict[str, tuple[str, str]],
+    nevek: dict[str, list[Helper]],
+) -> list[Helper]:
+    """Melyik segédet hívja a hívás: a fájl saját definícióját, vagy az import szerintit.
+
+    A nevek egyezése önmagában nem elég: két modul is adhat `_var`-t, és csak
+    az számít, amelyiket a fájl ténylegesen importálja."""
+    fn = hivas.func
+    if isinstance(fn, ast.Name):
+        if fn.id in helyi_nevek:
+            return [h for h in nevek.get(fn.id, []) if h.fajl == rel]
+        if fn.id in importalt:
+            fajl, eredeti = importalt[fn.id]
+            return [h for h in nevek.get(eredeti, []) if h.fajl == fajl]
+        return []
+    if isinstance(fn, ast.Attribute):
+        if isinstance(fn.value, ast.Name) and fn.value.id in modulok:
+            fajl = modulok[fn.value.id]
+            return [h for h in nevek.get(fn.attr, []) if h.fajl == fajl]
+        return [h for h in nevek.get(fn.attr, []) if h.fajl == rel]
+    return []
+
+
 def _eltresek(forrasok: dict[str, str]) -> list[Eltres]:
     """Minden forrásfájl (relatív út -> szöveg) sértését megadja, egyszer."""
     fak = {rel: ast.parse(szoveg) for rel, szoveg in forrasok.items()}
@@ -155,21 +163,16 @@ def _eltresek(forrasok: dict[str, str]) -> list[Eltres]:
         for _index, nev, ms, alap in h.idoparamok:
             if alap is not None and _korlat_alatt(alap, ms):
                 eredmeny.append(Eltres(h.fajl, h.sor, "helyi", f"{h.nev}: {nev}={alap:g} (korlát {'ms' if ms else 's'})"))
-    nevek = {}
+    nevek: dict[str, list[Helper]] = {}
     for h in helperek:
         nevek.setdefault(h.nev, []).append(h)
     for rel, fa in fak.items():
         helyi_nevek = {n.name for n in ast.walk(fa) if isinstance(n, ast.FunctionDef)}
+        modulok, importalt = _importok(fa, set(forrasok))
         for node in ast.walk(fa):
             if not isinstance(node, ast.Call):
                 continue
-            cel = node.func.id if isinstance(node.func, ast.Name) else getattr(node.func, "attr", None)
-            if cel in helyi_nevek:
-                # a fájl saját definíciója árnyékolja a másik modulbelit
-                jeloltek = [h for h in nevek.get(cel, []) if h.fajl == rel]
-            else:
-                jeloltek = nevek.get(cel, [])
-            for h in jeloltek:
+            for h in _hivott_segedek(node, rel, helyi_nevek, modulok, importalt, nevek):
                 eredmeny.extend(_hivas_eltresei(rel, node, h))
     egyedi: dict[tuple[str, int, str], Eltres] = {}
     for e in eredmeny:
@@ -271,3 +274,42 @@ def teszt(qt_app):
 def test_az_or_eszleli_a_kozos_segedet_hivo_burkolot():
     eltresek = _eltresek({"tests/app/minta.py": _BURKOLO})
     assert {(e.tipus, e.sor) for e in eltresek} == {("helyi", 5), ("hivas", 10)}
+
+
+_SEGED = '''
+def _var(qt_app, feltetel, ms: int = 10000) -> bool:
+    return feltetel()
+'''
+
+
+def test_az_or_nem_keveri_a_masik_modul_azonos_nevu_segedjet():
+    minta = {
+        "tests/app/a_seged.py": _SEGED,
+        "tests/app/b_teszt.py": (
+            "from tests.support.collage_wiring_985 import _var\n\n\n"
+            "def teszt(qt_app):\n    _var(qt_app, lambda: True, 30.0)\n"
+        ),
+    }
+    assert _eltresek(minta) == []
+
+
+def test_az_or_eszleli_az_importalt_segedet_rovid_literallal():
+    minta = {
+        "tests/app/a_seged.py": _SEGED,
+        "tests/app/b_teszt.py": (
+            "from tests.app.a_seged import _var\n\n\n"
+            "def teszt(qt_app):\n    _var(qt_app, lambda: True, 3000)\n"
+        ),
+    }
+    assert [(e.fajl, e.tipus) for e in _eltresek(minta)] == [("tests/app/b_teszt.py", "hivas")]
+
+
+def test_az_or_eszleli_a_modul_aliason_at_hivott_segedet():
+    minta = {
+        "tests/app/a_seged.py": _SEGED,
+        "tests/app/b_teszt.py": (
+            "from tests.app import a_seged as _seg\n\n\n"
+            "def teszt(qt_app):\n    _seg._var(qt_app, lambda: True, ms=3000)\n"
+        ),
+    }
+    assert [(e.fajl, e.tipus) for e in _eltresek(minta)] == [("tests/app/b_teszt.py", "hivas")]

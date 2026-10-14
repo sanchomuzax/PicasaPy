@@ -12,12 +12,12 @@ import os
 import socket
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 GYOKER = Path(__file__).resolve().parents[3]
 ELEMEK = GYOKER / "docs" / "specs" / "ui-lefedettseg-elemek.csv"
@@ -43,14 +43,9 @@ def _elem(ablak, nev: str, kotelezo: bool = True):
     return talalat
 
 
-def _vard_meg(feltetel, qt_app, leiras: str, hatarido: float = 3.0):
-    vege = time.monotonic() + hatarido
-    while time.monotonic() < vege:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.05)
-    raise AssertionError(f"időkorláton belül nem teljesült: {leiras}")
+def _vard_meg(feltetel, qt_app, leiras: str, hatarido: float = 10.0):
+    if not var_feltetelre(qt_app, feltetel, hatarido):
+        raise AssertionError(f"időkorláton belül nem teljesült: {leiras}")
 
 
 def _kattint(ablak, elem, x_arany: float = 0.5) -> None:
