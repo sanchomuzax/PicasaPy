@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.94] – 2026-10-14
+
+- A szerkesztő betűcsalád-listája futás közben egyszer olvassa be a rendszer betűtípusait, nem minden lekérdezéskor (#4964).
+- A szerkesztés megnyitása gyorsabb: a néző a betűcsalád-listát csak egyszer tölti be, nem minden megnyitáskor (#4966).
+
 ## [0.9.93] – 2026-10-14
 
 - A PR-ek ellenőrzése ritkábban futtatja feleslegesen a teljes tesztkészletet; az utolsó 30 beolvadásból 13 helyett már csak 4 esetben (#4922).
