@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.109] – 2026-10-15
+
+- Teljessé vált a thai felület fordítása (#5090).
+- A hindi felület mind az 1 413 saját felirata mostantól hindiül jelenik meg (#5092).
+- Minden PicasaPy-saját felirat elérhető filippínó fordítást kapott. (#5095).
+- Teljessé vált az arab felület fordítása, a többes számú feliratok mind a hat alakjával. (#5097).
+- A PicasaPy perzsa felületének eddig hiányzó feliratai most már teljesen le vannak fordítva (#5099).
+- A héber felület korábban fordítatlan PicasaPy-feliratai teljes héber fordítást kaptak. (#5101).
+
 ## [0.9.108] – 2026-10-15
 
 - Teljessé vált a PicasaPy lett felületének fordítása (#5077).
