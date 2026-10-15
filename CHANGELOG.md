@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.103] – 2026-10-15
+
+- Az angol (brit) felületen minden PicasaPy-saját felirat teljes, brit helyesírású fordítással jelenik meg (#5018).
+- Die deutsche Oberfläche ist jetzt vollständig übersetzt (#5020).
+- A francia felületen minden PicasaPy-saját felirat lefordítva jelenik meg, a helyőrzők és gyorsbillentyűk megőrzésével (#5021).
+- A spanyol felületen minden PicasaPy-felirat teljes, spanyol fordítással jelenik meg (#5023).
+- Az olasz felületen minden PicasaPy-saját felirat teljes olasz fordítással jelenik meg (#5025).
+- A brazíliai portugál felületen minden PicasaPy-saját felirat lefordítva jelenik meg, a helyőrzők és gyorsbillentyűk megőrzésével (#5028).
+- A holland felületen most minden PicasaPy-saját felirat holland fordítással jelenik meg (#5030).
+
 ## [0.9.102] – 2026-10-15
 
 - A retusálás a forrás gradienseit átültető Poisson-gyógyítással a cél környezetébe olvasztja a foltot (#4544).
