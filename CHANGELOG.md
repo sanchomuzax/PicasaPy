@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.104] – 2026-10-15
+
+- Uzupełniono polskie tłumaczenia interfejsu PicasaPy (#5033).
+- Az orosz felületen minden PicasaPy-saját felirat teljes orosz fordítással jelenik meg, megőrizve a helyőrzőket, gyorsbillentyűket és mindhárom többes alakot (#5035).
+- A japán felületen mostantól minden felirat le van fordítva (#5037).
+- A kínai (egyszerűsített) felületen minden korábban fordítatlan felirat most kínai fordítással jelenik meg (#5039).
+- A koreai felület hiányzó feliratai teljes körű koreai fordítást kaptak. (#5042).
+- A hagyományos kínai felületen lefordítottuk a PicasaPy feliratait, gyorsbillentyűit és formátumjelölőit. (#5044).
+
 ## [0.9.103] – 2026-10-15
 
 - Az angol (brit) felületen minden PicasaPy-saját felirat teljes, brit helyesírású fordítással jelenik meg (#5018).
