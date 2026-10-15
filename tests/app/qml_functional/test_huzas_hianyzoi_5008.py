@@ -341,7 +341,7 @@ def test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys(
     qt_app.processEvents()
     file_ops = engine.rootContext().contextProperty("fileOpsController")
     copy_mime = file_ops._vagolap_adat
-    assert [url.toLocalFile() for url in copy_mime.urls()] == [str(photo_to_copy)]
+    assert [Path(url.toLocalFile()) for url in copy_mime.urls()] == [photo_to_copy]
     assert any(
         bytes(copy_mime.data(fmt)).startswith(b"copy\n")
         for fmt in copy_mime.formats()
@@ -374,7 +374,7 @@ def test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys(
     qt_app.processEvents()
     cut_mime = file_ops._vagolap_adat
     assert cut_mime.hasUrls()
-    assert [url.toLocalFile() for url in cut_mime.urls()] == [str(photo_to_cut)]
+    assert [Path(url.toLocalFile()) for url in cut_mime.urls()] == [photo_to_cut]
     assert any(
         bytes(cut_mime.data(fmt)).startswith(b"cut\n")
         for fmt in cut_mime.formats()

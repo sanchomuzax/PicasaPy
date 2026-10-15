@@ -126,8 +126,8 @@ def _median_ido(fuggveny, ismetles: int = 3) -> float:
 
 class TestAGyorsUtTenylegGyorsabb:
     """Relatív mérés, nem abszolút: a CI-gépek sebessége ingadozik, a két
-    út aránya viszont nem. A mért arány a célgépen ~20×; a próba csak 3×-t
-    követel, hogy a zaj ne buktassa."""
+    út aránya viszont nem. A mért arány a célgépen ~20×; a próba csak 2×-t
+    követel, hogy a zaj ne buktassa (Windowson 2,7× is előfordult)."""
 
     KEP = np.random.default_rng(5).integers(0, 256, size=(854, 1280, 3), dtype=np.uint8)
 
@@ -135,7 +135,7 @@ class TestAGyorsUtTenylegGyorsabb:
         lutok = _lutok(1)
         uj = _median_ido(lambda: apply_channel_luts(self.KEP, lutok))
         regi = _median_ido(lambda: _regi_apply_channel_luts(self.KEP, lutok))
-        assert uj * 3 < regi, f"új {uj*1000:.1f} ms, régi {regi*1000:.1f} ms"
+        assert uj * 2 < regi, f"új {uj*1000:.1f} ms, régi {regi*1000:.1f} ms"
 
     def test_a_colortemp(self):
         uj = _median_ido(lambda: apply_native_colortemp(self.KEP, 0.125, 0.5))
