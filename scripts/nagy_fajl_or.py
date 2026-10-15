@@ -31,6 +31,7 @@ lista nőni kezd, az nem a küszöb hibája, hanem jelzés.
 
 from __future__ import annotations
 
+import fnmatch
 import subprocess
 import sys
 from pathlib import Path
@@ -56,6 +57,21 @@ KIVETELEK: dict[str, str] = {
     ),
 }
 
+#: Mintára illő kivételek (fnmatch) — útvonalminta → indok.
+KIVETEL_MINTAK: dict[str, str] = {
+    "src/picasapy/app/i18n/picasapy_*.ts": (
+        "a 41 nyelv teljes fordítási katalógusa (#2979): minden új felülati "
+        "szöveggel nő, a hivatalos Picasa-sorokkal együtt ~1 MB nyelvenként"
+    ),
+}
+
+
+def kivetel(rel: str) -> bool:
+    """Kimondott kivétel-e az útvonal (pontos vagy mintára illő)."""
+    return rel in KIVETELEK or any(
+        fnmatch.fnmatch(rel, minta) for minta in KIVETEL_MINTAK
+    )
+
 
 def _utf8_kimenet() -> None:
     """#2077: a Windows-konzol cp1252-je nem tudja a `✅`-t."""
@@ -64,6 +80,36 @@ def _utf8_kimenet() -> None:
             folyam.reconfigure(encoding="utf-8", errors="replace")
         except (AttributeError, OSError, ValueError):
             pass
+
+
+def blob_meretek() -> dict[str, int]:
+    """#5105: a követett fájlok GITBEN tárolt mérete. A munkafa-méret
+    platformfüggő (Windowson a CRLF-átalakítás megnöveli a szövegfájlokat),
+    a blob-méret nem — így Linuxon és Windowson ugyanaz a döntés."""
+    lista = subprocess.run(
+        ["git", "ls-files", "-s"],
+        cwd=GYOKER, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", check=False,
+    ).stdout
+    utak: dict[str, str] = {}
+    for sor in lista.splitlines():
+        fej, _, rel = sor.partition("\t")
+        reszek = fej.split()
+        if len(reszek) >= 2 and rel:
+            utak[reszek[1]] = rel
+    if not utak:
+        return {}
+    meretek = subprocess.run(
+        ["git", "cat-file", "--batch-check=%(objectname) %(objectsize)"],
+        cwd=GYOKER, input="\n".join(utak) + "\n", capture_output=True,
+        text=True, encoding="utf-8", errors="replace", check=False,
+    ).stdout
+    eredmeny: dict[str, int] = {}
+    for sor in meretek.splitlines():
+        reszek = sor.split()
+        if len(reszek) == 2 and reszek[0] in utak and reszek[1].isdigit():
+            eredmeny[utak[reszek[0]]] = int(reszek[1])
+    return eredmeny
 
 
 def kovetett_fajlok() -> list[str]:
@@ -82,13 +128,14 @@ def main() -> int:
     _utf8_kimenet()
     hibak: list[str] = []
     ellenorzott = 0
+    meretek = blob_meretek()
     for rel in kovetett_fajlok():
         p = GYOKER / rel
         if not p.is_file():
             continue
         ellenorzott += 1
-        meret = p.stat().st_size
-        if meret <= KUSZOB or rel in KIVETELEK:
+        meret = meretek.get(rel, p.stat().st_size)
+        if meret <= KUSZOB or kivetel(rel):
             continue
         hibak.append(f"{rel}: {meret:,} bájt (küszöb: {KUSZOB:,})")
 

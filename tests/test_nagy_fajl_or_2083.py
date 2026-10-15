@@ -104,3 +104,35 @@ class TestKivetelek:
         for ut, indok in modul.KIVETELEK.items():
             assert indok.strip(), f"{ut}: üres indoklás"
             assert len(indok) > 20, f"{ut}: az indoklás túl szűkszavú"
+
+
+def _modul():
+    from importlib.util import module_from_spec, spec_from_file_location
+
+    spec = spec_from_file_location("nagy_fajl_or", OR)
+    modul = module_from_spec(spec)
+    spec.loader.exec_module(modul)
+    return modul
+
+
+class TestPlatformfuggetlenMeres:
+    """#5105: Windowson a CRLF megnöveli a szövegfájlt; az őr a gitben
+    tárolt méretet méri, és a nyelvi katalógusok kimondott kivételek."""
+
+    def test_a_nyelvi_katalogus_mintara_illo_kivetel(self):
+        modul = _modul()
+        assert modul.kivetel("src/picasapy/app/i18n/picasapy_hi.ts")
+        assert not modul.kivetel("src/picasapy/app/egy_masik.ts")
+
+    def test_minden_mintanak_van_indoklasa(self):
+        modul = _modul()
+        for minta, indok in modul.KIVETEL_MINTAK.items():
+            assert len(indok.strip()) >= 20, minta
+
+    def test_a_meret_a_git_blobbol_jon(self):
+        modul = _modul()
+        meretek = modul.blob_meretek()
+        rel = "pyproject.toml"
+        assert rel in meretek
+        tartalom = (GYOKER / rel).read_bytes().replace(b"\r\n", b"\n")
+        assert meretek[rel] == len(tartalom)
