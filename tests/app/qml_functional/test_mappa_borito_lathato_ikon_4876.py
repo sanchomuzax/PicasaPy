@@ -62,7 +62,7 @@ def _lapos_borito_kep(pane, nev: str):
             # Windowson az útvonal `\` elválasztóval végződik, és a QML az
             # URL-ben `%5C`-ként kódolja (#4914).
             forras = unquote(str(elem.property("source").toString())).replace("\\", "/")
-            if forras.endswith("/" + nev):
+            if forras.replace("\\", "/").endswith("/" + nev):
                 return elem
     return None
 
