@@ -230,8 +230,10 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
             "a valódi egérhúzás ledobása nem érte el a térképet"
         )
         assert delivered_drops[-1][0] == drag_rows
+        # #5105: a valódi ledobás pontja platformonként ±1 képpontot
+        # kerekít (Windowson mérve); a próbatérképen 1 képpont = 1e-4 fok
         assert delivered_drops[-1][1:] == pytest.approx(
-            (expected_lat, expected_lon)
+            (expected_lat, expected_lon), abs=3e-4
         )
         assert _varj(qt_app, lambda: _elem(window, "dropGeotagConfirm") is not None
                      and _elem(window, "dropGeotagConfirm").property("visible") is True), (
