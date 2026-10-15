@@ -812,6 +812,19 @@ ListView {
 
     /** Az ejtés végrehajtása: a kijelölt képek a cél ELÉ kerülnek, és a
         vezérlő kiírja az új kézi sorrendet a mappa `.picasa.ini`-jébe. */
+    // #5105: a húzott képeket a saját helyükre (vagy közvetlenül az
+    // összefüggő blokk mögé) ejtve a sorrend nem változik — különben egy
+    // kis elhúzás és felengedés véletlenül átrendezne.
+    function sajatHelyereEjtes(sorok, celSor) {
+        var szamok = []
+        for (var i = 0; i < sorok.length; ++i) szamok.push(Number(sorok[i]))
+        szamok.sort(function(a, b) { return a - b })
+        if (szamok.indexOf(celSor) >= 0) return true
+        var osszefuggo =
+            szamok[szamok.length - 1] - szamok[0] === szamok.length - 1
+        return osszefuggo && celSor === szamok[szamok.length - 1] + 1
+    }
+
     function ejtsdAzAtrendezest(start, count, flowWidth, x, y, photoRows) {
         if (!grid.ctl) return
         var sorok = photoRows
@@ -819,6 +832,7 @@ ListView {
             sorok = appWindow.selectedIndexes
         if (!sorok || sorok.length === 0) return
         var celSor = grid.ejtesiCelSor(start, count, flowWidth, x, y)
+        if (grid.sajatHelyereEjtes(sorok, celSor)) return
         if (grid.ctl.currentAlbumToken) {
             if (typeof grid.ctl.reorderAlbumPhotos === "function")
                 grid.ctl.reorderAlbumPhotos(sorok, celSor)
