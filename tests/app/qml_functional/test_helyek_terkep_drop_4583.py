@@ -89,8 +89,20 @@ def _egerhuzas(window, qt_app, source: QQuickItem, target: QQuickItem,
         offset = QPoint()
     assert _varj(qt_app, lambda: source.width() > 0 and source.height() > 0)
     assert _varj(qt_app, lambda: target.width() > 0 and target.height() > 0)
+    # #5105: az oldalpanel becsúszik — a célpontot csak a nyugalmi
+    # helyzetében mérjük, különben az ablakon kívülre húznánk
+    elozo = None
+    for _ in range(100):
+        most = _scene_center(target)
+        if most == elozo:
+            break
+        elozo = most
+        QTest.qWait(30)
     start = _scene_center(source)
     end = _scene_center(target) + offset
+    assert 0 <= end.x() < window.width() and 0 <= end.y() < window.height(), (
+        f"a térkép célpontja az ablakon kívül esik: {end}"
+    )
     proxy = _huzas_forras(window, source)
     attached_drag = next(
         child for child in proxy.children()
@@ -104,7 +116,7 @@ def _egerhuzas(window, qt_app, source: QQuickItem, target: QQuickItem,
     # `Automatic`, ami Windowson a fájlkezelő felé is húzható; a teszt az
     # egérrel indított húzás belső QML-ágát választja ki, hogy az offscreen
     # futtató natív OLE/QDrag hurka ne vegye át a pointert.
-    attached_drag.setProperty("dragType", internal_drag_type)
+    # #5105: a termék húzási módját a teszt nem írja át
     QTest.mouseMove(window, start)
     QTest.mousePress(window, Qt.MouseButton.LeftButton, pos=start)
     delta = end - start
@@ -203,10 +215,8 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
             window, qt_app, source_mouse, drop_area,
             internal_drag_type, offset,
         )
-        # A tesztelő Qt offscreen platform aktiválja a QML Drag-et egérből,
-        # de nem továbbít belső QQuick DropArea eseményt. A térkép nyilvános
-        # ejtési jelét ugyanazzal a képpontból származtatott ponttal adjuk át;
-        # a produkciós DropArea onDropped ágát külön forrásőr védi.
+        # #5105: a ledobást a térkép DropArea-jának kell elkapnia — a jelet
+        # a teszt nem hívja közvetlenül.
         drop_point = drop_area.mapFromScene(
             _scene_center(drop_area) + offset
         )
@@ -216,7 +226,9 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
             _huzas_forras(window, source_mouse).property("photoRows")
         )
         assert drag_rows == [0]
-        map_item.photosDropped.emit(drag_rows, expected_lat, expected_lon)
+        assert _varj(qt_app, lambda n=lepes + 1: len(delivered_drops) == n), (
+            "a valódi egérhúzás ledobása nem érte el a térképet"
+        )
         assert delivered_drops[-1][0] == drag_rows
         assert delivered_drops[-1][1:] == pytest.approx(
             (expected_lat, expected_lon)
