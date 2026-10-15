@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import (
-    Q_ARG,
     QPoint,
     QPointF,
     QMetaObject,
@@ -178,13 +177,8 @@ class TestMappasorraHuzas:
             for item in _latvanyelemek(window.contentItem())
             if item.objectName() == f"folderDropArea_{target}"
         )
-        # Az offscreen platform nem indít natív QDrag műveletet. A valódi
-        # QTest egérhúzást belső Drag módban végezzük; a termék forrása
-        # továbbra is Drag.Automatic marad az asztali fájlhúzáshoz.
-        drag_attached = _attached_drag(drag_proxy)
-        assert drag_attached.setProperty(
-            "dragType", _internal_drag_type(engine)
-        )
+        # #5105: a termék húzási módját a teszt NEM írja át — pontosan azt
+        # húzzuk, amit a felhasználó.
         start = _ablakpont(window, mouse_area)
         end = _ablakpont(window, _mappasor(window, target))
 
@@ -220,22 +214,8 @@ class TestMappasorraHuzas:
         assert drop_area.property("enabled") is True
         QTest.mouseRelease(window, Qt.MouseButton.LeftButton, pos=end)
 
-        # A Qt offscreen platform az egér-eseményeket és a Drag.active
-        # állapotot kezeli, de nem küld belső QQuick DropArea eseményt (a
-        # térképes húzás tesztje is ezt a korlátot méri). A valódi QTest
-        # húzás után ezért a DropArea által kibocsátott publikus QML-jelet
-        # hívjuk meg: ez ugyanazt a Main.qml → FileOpsController utat járja,
-        # és a teszt a tényleges fájlműveletet ellenőrzi.
-        folder_pane = window.findChild(QObject, "folderPane")
-        assert folder_pane is not None
-        assert QMetaObject.invokeMethod(
-            folder_pane,
-            "photosDroppedOnFolder",
-            Qt.ConnectionType.DirectConnection,
-            Q_ARG("QString", str(target)),
-            Q_ARG("QVariant", photo_rows),
-        ), "a mappasori ejtési jel nem hívható"
-
+        # #5105: a ledobást a DropArea-nak kell elkapnia — a jelet a teszt
+        # nem hívja közvetlenül.
         _varj(
             qt_app,
             lambda: all(path.exists() for path in target_photos)

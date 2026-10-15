@@ -297,7 +297,7 @@ Item {
             cell.dragRows && cell.dragRows.length
                 ? cell.dragRows : [cell.index]
         Drag.active: mouse.dragging
-        Drag.dragType: Drag.Automatic
+        Drag.dragType: Drag.Internal  // #5105: programon belüli húzás, a rendszer-DnD Waylandon nem adja le a DropArea-nak
         Drag.mimeData: cell.dragMimeData
         Drag.supportedActions: Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
         Drag.hotSpot.x: 0
