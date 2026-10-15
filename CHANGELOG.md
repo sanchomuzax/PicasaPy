@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.102] – 2026-10-15
+
+- A retusálás a forrás gradienseit átültető Poisson-gyógyítással a cél környezetébe olvasztja a foltot (#4544).
+
 ## [0.9.101] – 2026-10-15
 
 - A rácsból képeket lehet a tálcára húzni, az albumok kézi sorrendjét, a mappák helyét és az arcok személyhez rendelését húzással módosítani. (#5008).
