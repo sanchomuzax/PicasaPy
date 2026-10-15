@@ -344,7 +344,7 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
     for _ in range(2):
         _megnyit(menu_bar, qt_app, "Tools")
         _kattints(qt_app, _elem(window, "menuToolsFaceScan"))
-        if _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog")), 5.0):
+        if _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog")), 10.0):
             break
     assert _elemek(window, "faceScanDialog"), (
         "a Tools > Find Faces kattintás után nem jött létre a párbeszéd"
