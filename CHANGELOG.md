@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.107] – 2026-10-15
+
+- A horvát felületen minden felirat kapott horvát fordítást (#5070).
+- A szlovák felületen most már a PicasaPy feliratai is lefordítva jelennek meg. (#5071).
+- Teljessé vált a szlovén felület fordítása (#5073).
+- Elkészült a litván felület fordítása, a többes szám mindhárom alakjával (#5075).
+
 ## [0.9.106] – 2026-10-15
 
 - A görög felületen minden felirat görög fordítást kapott. (#5059).
