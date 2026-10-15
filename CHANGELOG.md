@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.106] – 2026-10-15
+
+- A görög felületen minden felirat görög fordítást kapott. (#5059).
+- Az ukrán felületen mind a 2845 felirat lefordított, a Picasa ukrán terminológiáját követő alakban jelenik meg. (#5061).
+- A román felületen mind az 1411 fordítatlan felirat román fordítást kapott, a Picasa terminológiájához igazítva (#5064).
+- Teljessé vált a bolgár felület fordítása. (#5066).
+
 ## [0.9.105] – 2026-10-15
 
 - A török felületen most már minden PicasaPy-felirat lefordítva jelenik meg. (#5046).
