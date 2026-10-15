@@ -339,9 +339,14 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
     window, engine = app["window"], app["engine"]
     menu_bar = window.property("menuBar")
     _QML_REFS.append(menu_bar)
-    _megnyit(menu_bar, qt_app, "Tools")
-    _kattints(qt_app, _elem(window, "menuToolsFaceScan"))
-    assert _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog"))), (
+    # Windowson a felugró menü elhelyezése késhet, és az első kattintás a
+    # még mozgó menüpont mellé eshet; ilyenkor egyszer újranyitjuk a menüt.
+    for _ in range(2):
+        _megnyit(menu_bar, qt_app, "Tools")
+        _kattints(qt_app, _elem(window, "menuToolsFaceScan"))
+        if _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog")), 5.0):
+            break
+    assert _elemek(window, "faceScanDialog"), (
         "a Tools > Find Faces kattintás után nem jött létre a párbeszéd"
     )
     dialog = _elem(window, "faceScanDialog")
