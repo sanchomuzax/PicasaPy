@@ -1,0 +1,1 @@
+- A nagy-fájl őr a gitben tárolt méretet méri (Windowson sem bukik a CRLF miatt), a nyelvi katalógusok kimondott kivételek (#5105)
