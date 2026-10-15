@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.105] – 2026-10-15
+
+- A török felületen most már minden PicasaPy-felirat lefordítva jelenik meg. (#5046).
+- A svéd felületen minden korábban fordítatlan felirat svéd fordítással jelenik meg, megőrizve a Picasa-terminológiát és a helyőrzőket (#5048).
+- Lefordítottuk a cseh felületen eddig fordítatlan feliratokat (#5051).
+- Teljessé vált a dán felület fordítása. (#5053).
+- Teljessé vált a finn felület fordítása (#5055).
+- A norvég felület PicasaPy-saját feliratai teljes bokmål-fordítást kaptak (#5057).
+
 ## [0.9.104] – 2026-10-15
 
 - Uzupełniono polskie tłumaczenia interfejsu PicasaPy (#5033).
