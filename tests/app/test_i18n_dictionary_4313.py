@@ -127,7 +127,7 @@ def test_hungarian_catalog_marks_inherited_picasa_text_with_its_origin():
     )
 
 
-def test_untranslated_picasa_row_keeps_its_origin_in_the_target_catalog():
+def test_translated_picasa_row_keeps_its_origin_in_the_target_catalog():
     from picasapy.app.i18n.dictionary import message_origin
 
     root = ET.parse(_I18N / "picasapy_ro.ts").getroot()
@@ -136,7 +136,8 @@ def test_untranslated_picasa_row_keeps_its_origin_in_the_target_catalog():
         for message in root.iter("message")
         if message.findtext("source") == "Close"
     )
-    assert message.find("translation").get("type") == "unfinished"
+    assert message.findtext("translation") == "Închideţi"
+    assert message.find("translation").get("type") is None
     assert message_origin(message) == "picasa"
     origin_keys = (message.findtext("extracomment") or "").partition(
         "picasapy-origin-key: "
