@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.110] – 2026-10-16
+
+- A kijelölt képek egérrel a bal sáv mappájára, albumára, a tálcára húzva ténylegesen átkerülnek; mappa és arc húzása is működik (#5105).
+- A kijelölt képek kis elhúzása és elengedése a saját helyükre már nem rendezi át őket (#5105).
+- A nagy-fájl őr a gitben tárolt méretet méri (Windowson sem bukik a CRLF miatt), a nyelvi katalógusok kimondott kivételek (#5105).
+
 ## [0.9.109] – 2026-10-15
 
 - Teljessé vált a thai felület fordítása (#5090).
