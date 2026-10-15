@@ -71,7 +71,7 @@ Rectangle {
         readonly property string payload: "face"
         readonly property int draggedFaceId: row.faceId
         Drag.active: faceDragMouse.dragging
-        Drag.dragType: Drag.Automatic
+        Drag.dragType: Drag.Internal  // #5105: programon belüli húzás, a rendszer-DnD Waylandon nem adja le a DropArea-nak
         Drag.supportedActions: Qt.MoveAction
         Drag.hotSpot.x: 0
         Drag.hotSpot.y: 0

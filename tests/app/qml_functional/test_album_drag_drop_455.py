@@ -74,7 +74,13 @@ class TestDropTargets:
         expected_tray = controller.fileUriList(
             [controller.trayItems[1]["path"]]
         )
-        assert _attached_drag(tray_thumb).property("mimeData") == {
+        # #5105: a húzás az egeret követő belső elemen él
+        tray_proxy = next(
+            item
+            for item in _visual_items(tray_thumb)
+            if item.objectName() == "trayDragProxy"
+        )
+        assert _attached_drag(tray_proxy).property("mimeData") == {
             "text/uri-list": expected_tray
         }
 
@@ -90,7 +96,7 @@ class TestDropTargets:
                 assert _attached_drag(proxy).property("mimeData") == {
                     "text/uri-list": expected_grid
                 }
-                assert _attached_drag(tray_thumb).property("mimeData") == {
+                assert _attached_drag(tray_proxy).property("mimeData") == {
                     "text/uri-list": expected_tray
                 }
         finally:

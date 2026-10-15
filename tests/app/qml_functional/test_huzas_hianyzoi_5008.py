@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Q_ARG, QPoint, QPointF, QMetaObject, QObject, Qt, QUrl
+from PySide6.QtCore import QPoint, QPointF, QMetaObject, QObject, Qt, QUrl
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtTest import QTest
 
@@ -124,7 +124,6 @@ def _internal_drag_type(engine) -> int:
 
 def _real_drag(window, qt_app, engine, source, start_item, end_item) -> None:
     drag = _attached_drag(source)
-    assert drag.setProperty("dragType", _internal_drag_type(engine))
     start = _point_in_window(window, start_item)
     end = _point_in_window(window, end_item)
     if not (0 <= start.x() < window.width() and 0 <= start.y() < window.height()):
@@ -263,13 +262,12 @@ def test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys(
         "a rácsbeli forrás nem került a nézőtérre görgetés után: "
         f"y={source_in_grid.y()}, height={photo_grid.height()}"
     )
-    tray_bar = _child(window, "trayBar")
+
     tray_area = _find_visual(window, "trayDropArea")
     tray_strip = _child(window, "trayScratchStrip")
     assert tray_area.property("enabled") is True
 
     _real_drag(window, qt_app, engine, source_proxy, source_mouse, tray_strip)
-    _invoke(tray_bar, "photosDroppedOnTray", Q_ARG("QVariant", [row_a]))
     _wait(
         qt_app,
         lambda: bool(controller.isHeldAt(row_a)),
@@ -294,22 +292,12 @@ def test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys(
         "thumbMouseArea",
         predicate=lambda item: int(item.parentItem().property("index")) == row_c,
     )
-    _real_drag(window, qt_app, engine, tray_thumb, tray_thumb, grid_mouse_c)
+    tray_proxy = next(
+        item for item in _walk(tray_thumb) if item.objectName() == "trayDragProxy"
+    )
+    _real_drag(window, qt_app, engine, tray_proxy, tray_thumb, grid_mouse_c)
     reorder_area = _find_visual(window, "feedReorderDropArea")
     assert reorder_area.property("enabled") is True
-    start, count, flow_width, x, y = _reorder_drop_arguments(
-        window, controller, row_c
-    )
-    _invoke(
-        _child(window, "photoGrid"),
-        "photoRowsDroppedOnReorder",
-        Q_ARG("int", start),
-        Q_ARG("int", count),
-        Q_ARG("double", flow_width),
-        Q_ARG("double", x),
-        Q_ARG("double", y),
-        Q_ARG("QVariant", tray_drag_rows),
-    )
     reordered = varj_feltetelre(
         qt_app,
         lambda: Path(controller.photos.filePathAt(row_b)) == photo_a,
@@ -319,7 +307,6 @@ def test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys(
         "a tálcáról a rácsra dobott kép nem a cél elé került: "
         f"rows={(row_a, row_b, row_c)}, "
         f"order={[Path(controller.photos.filePathAt(row)).name for row in range(3)]}, "
-        f"drop={(start, count, flow_width, x, y)}, "
         f"grid={(photo_grid.width(), photo_grid.height(), photo_grid.property('contentY'))}"
     )
     assert [Path(controller.photos.filePathAt(row)).name for row in range(3)] == [
@@ -423,19 +410,6 @@ def test_album_drag_rewrites_albumorder_through_the_ini_api(
     )
     _real_drag(window, qt_app, engine, source, source_mouse, target_mouse)
 
-    start, count, flow_width, x, y = _reorder_drop_arguments(
-        window, controller, row_c
-    )
-    _invoke(
-        _child(window, "photoGrid"),
-        "photoRowsDroppedOnReorder",
-        Q_ARG("int", start),
-        Q_ARG("int", count),
-        Q_ARG("double", flow_width),
-        Q_ARG("double", x),
-        Q_ARG("double", y),
-        Q_ARG("QVariant", [row_a]),
-    )
     _wait(
         qt_app,
         lambda: Path(controller.photos.filePathAt(1)) == paths[0],
@@ -481,19 +455,16 @@ def test_folder_drag_moves_directory_in_flat_and_tree_views(
         window,
         "folderDropArea_" + str(target_path),
     )
-    target_row = _folder_row(window, target_path)
+
     source_mouse = next(
         item for item in _walk(source_row) if item.objectName() == "folderRowMouse"
     )
     assert target_drop.property("enabled") is True
-    _real_drag(window, qt_app, engine, source_mouse, source_mouse, target_row)
-    folder_pane = _child(window, "folderPane")
-    _invoke(
-        folder_pane,
-        "folderDroppedOnFolder",
-        Q_ARG("QString", str(source_path)),
-        Q_ARG("QString", str(target_path)),
+    folder_proxy = next(
+        item for item in _walk(source_row) if item.objectName() == "folderDragProxy"
     )
+    _real_drag(window, qt_app, engine, folder_proxy, source_mouse, target_drop)
+    folder_pane = _child(window, "folderPane")
     moved = target_path / source_path.name
     _wait(
         qt_app,
@@ -547,13 +518,7 @@ def test_folder_drag_moves_directory_in_flat_and_tree_views(
     _real_drag(
         window, qt_app, engine, tree_drag_proxy, tree_source_mouse, tree_target_row
     )
-    hierarchy_view = _child(window, "folderHierarchyView")
-    _invoke(
-        hierarchy_view,
-        "folderDroppedOnFolder",
-        Q_ARG("QString", str(tree_source_path)),
-        Q_ARG("QString", str(tree_target_path)),
-    )
+
     _wait(
         qt_app,
         lambda: (tree_target_path / tree_source_path.name).is_dir()
@@ -633,12 +598,6 @@ def test_unnamed_face_dragged_onto_person_is_assigned_in_the_ini(
     assert target_drop.property("enabled") is True
     _real_drag(window, qt_app, engine, source, source_area, target)
 
-    _invoke(
-        target,
-        "faceDropped",
-        Q_ARG("int", face_id),
-        Q_ARG("QString", _PERSON_NAME),
-    )
     _wait(
         qt_app,
         lambda: not any(
@@ -654,3 +613,53 @@ def test_unnamed_face_dragged_onto_person_is_assigned_in_the_ini(
     assert contacts is not None
     assert (contacts.get(_CONTACT_ID) or "").casefold().startswith(_PERSON_NAME)
     assert document.section(photo_path.name).get("faces")
+
+
+@pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
+def test_photo_dragged_onto_album_row_joins_the_album(
+    dnd_qml_app, qt_app, height_delta
+):
+    """#5105: a rácsból a bal sáv album-sorára húzott kép az albumba kerül —
+    valódi egérhúzással, a ledobási jel közvetlen hívása nélkül."""
+    window, controller, engine = dnd_qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    photo_a = library / "a.jpg"
+    photo_b = library / "b.jpg"
+    controller.createAlbum("Húzás-album", [_path_row(controller, photo_a)])
+    qt_app.processEvents()
+    row_b = _path_row(controller, photo_b)
+    window.setProperty("selectedIndexes", [row_b])
+    _child(window, "photoGrid").setProperty("contentY", 0)
+    qt_app.processEvents()
+
+    album_drop = next(
+        item
+        for item in _walk(window.contentItem())
+        if item.objectName().startswith("albumDropArea_")
+    )
+    source_proxy = _find_visual(
+        window,
+        "thumbDragProxy",
+        predicate=lambda item: int(item.property("photoIndex")) == row_b,
+    )
+    source_mouse = _find_visual(
+        window,
+        "thumbMouseArea",
+        predicate=lambda item: int(item.parentItem().property("index")) == row_b,
+    )
+    _real_drag(window, qt_app, engine, source_proxy, source_mouse, album_drop)
+
+    def _albumai(name):
+        section = load_or_empty(library / ".picasa.ini").section(name)
+        return set(filter(None, (section.get("albums") if section else "").split(",")))
+
+    album_tokens = _albumai("a.jpg")
+    assert len(album_tokens) == 1, f"az előkészített album hiányzik: {album_tokens}"
+    _wait(
+        qt_app,
+        lambda: _albumai("b.jpg") == album_tokens,
+        "a rácsból az album sorára húzott kép nem került az albumba",
+    )

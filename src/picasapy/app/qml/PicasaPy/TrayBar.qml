@@ -793,15 +793,26 @@ Column {
                             }
                             return rows
                         }
-                        Drag.active: trayDragHandler.active
-                        Drag.dragType: Drag.Automatic
-                        Drag.mimeData: ({
-                            "text/uri-list": tray.selectedTrayFileUriList()
-                        })
-                        Drag.supportedActions:
-                            Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
-                        Drag.hotSpot.x: trayDragHandler.centroid.position.x
-                        Drag.hotSpot.y: trayDragHandler.centroid.position.y
+                        // #5105: a húzás „teste" külön, az egeret követő
+                        // elem — a cella maga nem mozdul (target: null),
+                        // ezért a DropArea-találat a követő helyzetét nézi,
+                        // felengedéskor pedig kifejezetten leadjuk.
+                        Item {
+                            id: trayDragProxy
+                            objectName: "trayDragProxy"
+                            width: 1; height: 1
+                            x: trayDragHandler.centroid.position.x
+                            y: trayDragHandler.centroid.position.y
+                            readonly property string payload: trayThumb.payload
+                            readonly property var photoRows: trayThumb.photoRows
+                            Drag.active: trayDragHandler.active
+                            Drag.dragType: Drag.Internal
+                            Drag.mimeData: ({
+                                "text/uri-list": tray.selectedTrayFileUriList()
+                            })
+                            Drag.supportedActions:
+                                Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
+                        }
 
                         DragHandler {
                             id: trayDragHandler
@@ -809,6 +820,9 @@ Column {
                             enabled: trayThumb.trayCellSelected
                             acceptedButtons: Qt.LeftButton
                             target: null
+                            onActiveChanged: {
+                                if (!active) trayDragProxy.Drag.drop()
+                            }
                         }
 
                         TapHandler {

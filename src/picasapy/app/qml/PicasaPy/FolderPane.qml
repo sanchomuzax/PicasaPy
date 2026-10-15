@@ -1120,6 +1120,9 @@ Rectangle {
                         enabled: kind === "folder" || kind === "hidden"
                         hoverEnabled: kind === "folder"
                         anchors.fill: parent
+                        // #5105: húzás közben a lista görgetője ne vegye át
+                        // az egeret — különben a ledobás sosem indul el
+                        preventStealing: kind === "folder"
                         acceptedButtons: kind === "hidden"
                             ? Qt.RightButton : (Qt.LeftButton | Qt.RightButton)
                         property bool draggingFolder: false
@@ -1128,11 +1131,20 @@ Rectangle {
                         property real dragPressY: 0
                         readonly property string payload: "folders"
                         readonly property string folderPath: path
-                        Drag.active: kind === "folder" && draggingFolder
-                        Drag.dragType: Drag.Automatic
-                        Drag.supportedActions: Qt.MoveAction
-                        Drag.hotSpot.x: dragPressX
-                        Drag.hotSpot.y: dragPressY
+                        // #5105: a húzás „teste" az egeret követő elem —
+                        // a sor maga nem mozdul, így a DropArea-találat
+                        // ennek a helyzetét nézi.
+                        Item {
+                            id: folderDragProxy
+                            objectName: "folderDragProxy"
+                            width: 1; height: 1
+                            readonly property string payload: "folders"
+                            readonly property string folderPath: path
+                            Drag.active: kind === "folder"
+                                && folderRowMouse.draggingFolder
+                            Drag.dragType: Drag.Internal
+                            Drag.supportedActions: Qt.MoveAction
+                        }
                         onPressed: function(mouse) {
                             if (kind !== "folder" || mouse.button !== Qt.LeftButton)
                                 return
@@ -1143,6 +1155,8 @@ Rectangle {
                         }
                         onPositionChanged: function(mouse) {
                             if (!pressed || kind !== "folder") return
+                            folderDragProxy.x = mouse.x
+                            folderDragProxy.y = mouse.y
                             if (Math.abs(mouse.x - dragPressX)
                                     + Math.abs(mouse.y - dragPressY) > 8) {
                                 draggingFolder = true
@@ -1151,7 +1165,7 @@ Rectangle {
                         }
                         onReleased: function(mouse) {
                             if (draggingFolder) {
-                                folderRowMouse.Drag.drop()
+                                folderDragProxy.Drag.drop()
                                 draggingFolder = false
                                 didDragFolder = true
                             }
