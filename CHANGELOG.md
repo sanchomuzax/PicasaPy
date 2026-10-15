@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.108] – 2026-10-15
+
+- Teljessé vált a PicasaPy lett felületének fordítása (#5077).
+- A szerb felületen teljessé váltak a PicasaPy saját feliratai (#5079).
+- Teljessé vált a katalán felület: mind az 1397 eddig fordítatlan felirat katalán fordítást kapott. (#5082).
+- A portugál (európai) felület 1400 saját felirata mostantól portugálul jelenik meg. (#5084).
+- Elkészült az indonéz felület 1373 saját feliratának fordítása. (#5086).
+- Lefordítottuk a vietnámi felület hiányzó feliratait. (#5088).
+
 ## [0.9.107] – 2026-10-15
 
 - A horvát felületen minden felirat kapott horvát fordítást (#5070).
