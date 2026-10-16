@@ -376,6 +376,10 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
         "az arcfelismerés modellt töltött le az üres profilba"
     )
     _kattint(dialog, qt_app, "faceScanCloseButton")
+    # Ablakot zárni nem azonnali: a következő lépés (vörösszem) a főablakra kattint.
+    assert _var(qt_app, lambda: not dialog.isVisible()), (
+        "az arcfelismerő ablak bezárás után is látszik"
+    )
 
 
 def _nev(item) -> str:
@@ -453,13 +457,27 @@ def _vorosszem_diagnosztika(window, edit, terulet, gomb) -> str:
     )
 
 
+def _bal_fiok_nyitva_var(window, qt_app):
+    """Megvárja, hogy a bal fiók teljesen kinyíljon (#4929).
+
+    A fiók szélessége 250 ms-os animációval 1 → 280 képpontra nő, és a
+    `clip` miatt a csempék addig a levágott részen vannak. Az `isVisible()`
+    erre vak: a levágott csempe is látszónak számít, ezért nem elég rá várni.
+    """
+    fiok = _elem(window, "viewerLeftDrawer")
+    assert _var(qt_app, lambda: fiok.width() >= 280), (
+        f"a bal fiók nem nyílt ki (szélesség={fiok.width():.0f})"
+    )
+
+
 def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     app = tiszta_app
     window, edit = app["window"], app["edit"]
     _nyisd_meg_a_nezot(window, qt_app)
-    eszkoz = _elem(window, "editToolRedeye")
-    if not eszkoz.isVisible():
+    fiok = _elem(window, "viewerLeftDrawer")
+    if fiok.width() < 280:
         _kattint(window, qt_app, "toggle_left_drawer")
+    _bal_fiok_nyitva_var(window, qt_app)
     _kattint(window, qt_app, "editToolRedeye")
     terulet = _keres(window, "redeyeDragArea")
     gomb = _keres(window, "redeyeApplyButton")
@@ -510,11 +528,15 @@ def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
     try:
         _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag)
     except AssertionError as hiba:
-        if sys.platform != "win32" or tiszta_app["attempts"]:
+        if tiszta_app["attempts"]:
             raise
         # A pytest a rewrite miatt az üzenet után az "assert ..." sort is hozzáfűzi; csak az első sor kell.
         uzenet = str(hiba).splitlines()[0]
-        return f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
+        kiegeszitett = f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
+        if sys.platform != "win32":
+            # Linuxon szigorú marad, de a diagnosztika a CI-naplóba kerüljön (#4929).
+            raise AssertionError(kiegeszitett) from hiba
+        return kiegeszitett
     return None
 
 
