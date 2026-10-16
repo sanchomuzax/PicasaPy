@@ -158,6 +158,9 @@ Dialog {
             ColumnLayout {
                 spacing: 6
                 Layout.alignment: Qt.AlignVCenter
+                // a PanelButton nem ad implicitWidth-et, ezért az oszlop 0 lenne;
+                // a gombok (fillWidth) ehhez a szélességhez igazodnak
+                Layout.preferredWidth: 110
                 PanelButton {
                     objectName: "configButtonsAddButton"
                     label: qsTr("Add >>")
@@ -196,6 +199,7 @@ Dialog {
             ColumnLayout {
                 spacing: 6
                 Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: 110
                 PanelButton {
                     objectName: "configButtonsUpButton"
                     label: qsTr("Move Up")
