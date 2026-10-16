@@ -80,9 +80,21 @@ def _vizualis_bejaras(item):
         yield from _vizualis_bejaras(gyerek)
 
 
+def _utalak(ut) -> str:
+    """Az útvonal a fa alakjában: `/`-elválasztóval.
+
+    ⚠️ A fanézet két alakban adja a csomópont útvonalát: a közbenső
+    (nem indexelt) mappák `/`-rel épülnek (`folder_hierarchy._join`), a
+    valódi, indexelt mappák pedig a tárolt útjukon élnek, ami Windowson
+    `\\`-es. A `str(Path)` Windowson mindig `\\`-es, ezért az összevetés
+    előtt az elválasztót egységesítjük. Linuxon ez azonosság.
+    """
+    return str(ut).replace("\\", "/")
+
+
 def _vizualis(window, nev: str):
     for item in _vizualis_bejaras(window.contentItem()):
-        if item.objectName() == nev:
+        if _utalak(item.objectName()) == _utalak(nev):
             return item
     raise AssertionError(f"{nev} vizuális elem nem található")
 
@@ -90,7 +102,8 @@ def _vizualis(window, nev: str):
 def _latszik(window, nev: str) -> bool:
     """Ki van-e RAJZOLVA a vizuális fában az elem (látszik és van magassága)."""
     return any(
-        item.objectName() == nev and item.isVisible() and item.height() > 0
+        _utalak(item.objectName()) == _utalak(nev)
+        and item.isVisible() and item.height() > 0
         for item in _vizualis_bejaras(window.contentItem())
     )
 
@@ -192,15 +205,17 @@ def _fanezet(window, qt_app, engine, lib: Path) -> None:
     """Állapot-előkészítés: fanézet bekapcsolása a controlleren át.
 
     A nézetmód-váltás nem a tesztelt vezérlő; a kattintás-teszt maga a
-    nyilat és a menütételeket kattintja. A figyelt gyökér (`kepek`) ágát
-    kinyitjuk, különben a közbenső mappa sora nem kerül a látható sorok
-    közé. A közbenső mappa ágát CSUKVA hagyjuk: a nyíl-teszt ezt kattintja.
+    nyilat és a menütételeket kattintja. A közbenső mappa őseit a
+    `revealPath` nyitja ki: ez a fa SAJÁT útvonal-alakját használja
+    (Windowson a `toggle(str(lib))` nem találta el a `/`-es kulcsot, és a
+    figyelt gyökér ága zárva maradt). A közbenső mappa ágát CSUKVA hagyjuk:
+    a nyíl-teszt ezt kattintja, a `revealPath` a célt magát nem nyitja.
     """
     window.show()
     window.requestActivate()
     fa = _fa(engine)
     fa.setTreeView(True)
-    fa.toggle(str(lib))
+    fa.revealPath(_kozep_ut(lib))
     qt_app.processEvents()
     assert _varj(qt_app, lambda: _latszik(window, f"hierRow:{_kozep_ut(lib)}")), (
         "a fanézet nem rajzolta ki a közbenső mappát"
@@ -253,7 +268,7 @@ class TestNyil:
         _fanezet(window, qt_app, engine, lib)
         nezet = _fanezet_objektum(window, _kozep_ut(lib))
         kezdeti = nezet.property("selectedPath")
-        assert kezdeti != _kozep_ut(lib), (
+        assert _utalak(kezdeti) != _utalak(_kozep_ut(lib)), (
             "a próba feltétele: a közbenső mappa még nincs kijelölve"
         )
 
@@ -274,7 +289,10 @@ class TestSorKijeloles:
 
         _kattints(window, qt_app, _vizualis(window, f"hierRowMouse:{_kozep_ut(lib)}"))
 
-        assert _varj(qt_app, lambda: nezet.property("selectedPath") == _kozep_ut(lib)), (
+        assert _varj(
+            qt_app,
+            lambda: _utalak(nezet.property("selectedPath")) == _utalak(_kozep_ut(lib)),
+        ), (
             "a sorra kattintás nem jelölte ki a mappát"
         )
         assert not _latszik(window, f"hierRow:{_mely_ut(lib)}"), (
@@ -361,7 +379,7 @@ class TestHierMenu:
         assert _varj(qt_app, lambda: valaszto.property("visible") is True), (
             "a Move Folder kattintás nem nyitotta meg a mappaválasztót"
         )
-        assert pane.property("_movingFolder") == _kozep_ut(lib)
+        assert _utalak(pane.property("_movingFolder")) == _utalak(_kozep_ut(lib))
         _zar(qt_app, valaszto)
 
 
