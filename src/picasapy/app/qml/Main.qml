@@ -2997,9 +2997,7 @@ ApplicationWindow {
         onSaveRequested: function(row) { saveDialogs.ensure().openSave([row]) }
         onRevertRequested: function(row) { saveDialogs.ensure().openRevert([row]) }
         onUndoAllEditsRequested: function(row) {
-            if (typeof batchEffectController !== "undefined"
-                    && batchEffectController)
-                batchEffectController.clearAllEffectsMany([row])
+            undoAllEditsDialog.ensure().openFor([row])
         }
         onResetFacesRequested: resetFacesForPaths(
             controller && photoViewer.aktivSor >= 0
@@ -4571,11 +4569,7 @@ ApplicationWindow {
             ? controller.hasSavedBackup(window.selectedRows()) : false
         onSaveRequested: saveDialogs.ensure().openSave(window.selectedRows())
         onRevertRequested: saveDialogs.ensure().openRevert(window.selectedRows())
-        onUndoAllEditsRequested: {
-            if (typeof batchEffectController !== "undefined"
-                    && batchEffectController)
-                batchEffectController.clearAllEffectsMany(window.selectedRows())
-        }
+        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(window.selectedRows())
         onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
         onHideToggleRequested: window.toggleHiddenSelection()
         onMoveRequested: fileOpsDialogs.ensure().openMove(window.selectedPaths())
