@@ -2281,14 +2281,15 @@ a `0x00446610` két dwordként olvassa, packed `rect64`-ként értelmezi, majd a
 
 `0x0047a390` visszatérési rectje azonban nem feltétlenül ez a nyers
 alap-rect. A `0x0068f980` az `AlignedImageCollection` objektum `+0x94`
-mezőjéből kiolvasott értéket adja át a bridge-nek (`0x0068f9a5`), valamint
-`1` flaget (`0x0068f9ab`); a bridge
-ennek az objektumnak a `+0x14d0` per-index recttábláját használja a
+mezőjéből kiolvasott `CThumbDB` mutatót adja át a bridge-nek
+(`0x0068f9a5`), valamint `1` flaget (`0x0068f9ab`); a bridge ennek az
+objektumnak a `+0x14d0` per-index recttábláját használja a
 `0x00429dc0` hívásban (`0x0047a3be`–`0x0047a3da`). Ha a hívás sikeres, a
 `0x0047a3de`–`0x0047a419` utasítások metszik az alap-rectet a táblából
-kapott recttel. A `+0x94`-beli objektum pontos osztálya, a második
-recttábla upstream előállítása és az arcrekordhoz való kapcsolata ebben a
-körben nincs feloldva. Ezután a `0x0042c830` a `rotate(%d)` mezőt
+kapott recttel. A `+0x94`-beli objektum osztálya a 6. kör szerint
+`CThumbDB`; a második recttábla filmkészítés előtti konkrét íróhívása és
+az arcrekordhoz való példányszintű kapcsolata nincs feloldva. Ezután a
+`0x0042c830` a `rotate(%d)` mezőt
 olvassa (`0x00c81474`), a `0x00430610` a `filters` mezőt (`0x00c80b04`),
 majd a `0x00a4a240` affín módon transzformálja a rect négy sarkát; a bridge
 az eredményt visszaírja (`0x0047a41c`–`0x0047a484`). A `rotate` és
@@ -2448,14 +2449,93 @@ A `0x00429dc0` által visszaadott elem tehát az adott kiválasztott elemhez
 tartozó crop-rect, nem `leye`/`reye` koordinátákat tároló tábla.
 Ugyanakkor a `0x0042b370` receiverének és a getter `+0x94` mezője által
 mutatott objektumnak az azonosságát a vtable/RTTI nem nevezi meg; a
-`0x0042b370` ezért a táblával azonos elrendezésű crop-író jelölt, nem
-futásidejű objektumazonossággal igazolt író. Közvetlen hívóhelyei:
+`0x0042b370` ezért a táblával azonos elrendezésű crop-író jelölt. A
+következő, 6. kör a `+0x94` célosztályát azonosítja; ez önmagában még nem
+bizonyítja, hogy minden `0x0042b370`-hívó ugyanazt a példányt kapja. Közvetlen
+hívóhelyei:
 
 | hívóhely | hívófüggvény | bizonyított környezet |
 |---|---|---|
 | `0x00531e21` | `0x00531c60` | Passport-ág; a függvény stringjei: `CThumbUI::Passport0`, `Can't find any faces` (`0x00c899c4`, `0x00c899ac`) |
 | `0x006b0253` | `0x006b0200` | általános rect-/crop-író segéd; hívói közt a `0x005d4b60`, amelynek stringjei az `editpanel/cropselection` és az `editpanel/cropdiscard` (`0x00c95ae4`, `0x00c95fe8`) |
 | `0x006b3cd9` | `0x006b39b0` | további rect-író út; a transzformációs rekord `esi+ebp+0x40` rectmutatóját adja át; hívója `0x006abae0` |
+
+**A `+0x94` célosztálya és a filmkocka geometriája - #4400, 6. kör.**
+
+Az `AlignedImageCollection+0x94` célja **`CThumbDB`**. A példány a film
+üzemmód kiválasztása előtt létrejön: a `0x00402f90` út a `0x00415790`
+konstruktort hívja, majd az eredményt az alkalmazás `+0x1034` mezőjébe
+teszi (`0x00402faf`-`0x00402fdc`). Az inicializálás az alkalmazás
+`+0x1034` mutatóját a `CThumbUI+0x2bc` mezőbe másolja
+(`0x00403dae`-`0x00403db6`, `0x005643f0`-`0x00564616`). A mód-6
+gyárág (`0x00824090`) a `CThumbUI+0x2bc` értékét adja a
+`0x006999c0` konstruktornak (`0x008240d3`-`0x008240dc`); a konstruktor
+`0x0068c880`-on át inicializálja az `AlignedImageCollection`-t, és a
+kapott mutatót annak `+0x94` mezőjébe írja (`0x006999c3`-`0x006999c7`,
+`0x0068c8ff`).
+
+Két, egymástól független út azonosítja az osztályokat. **A)** a fenti
+utasításszintű mutató-adatfolyam az induláskor tárolt `CThumbDB` példányt
+köti a mód-6 kollekció `+0x94` mezőjéhez. **B)** a `0x00415790` konstruktor
+`0x00c81f78` vptr-értéket ír (`0x004157fd`), amelyet az RTTI
+`CThumbDB::vftable`-ként nevez meg; a `0x006999c0` a `0x00ca7d8c`
+vptr-értéket írja (`0x006999d8`), amelyet az RTTI
+`AlignedImageCollection::vftable`-ként azonosít. A `+0x94` mező tehát
+adatbázisobjektumra mutat, nem a három jelölt egyikének újonnan felépített
+ideiglenes objektumára.
+
+| jelölt | közvetlenül bizonyított szerep | következtetés a filmkészítésre |
+|---|---|---|
+| `0x00531c60` | Passport/útlevélkép ág (`CThumbUI::Passport0`, `Passportfail`, „Can't find any faces”); a `0x00531e1b` hívás `CThumbUI+0x2bc` mutatójával hívja a `0x0042b370` crop-írót | a közös `CThumbDB` `+0x14d0` tábláját írhatja ebben a Passport-ágban; ez nem az objektum konstruktora, és nem bizonyít filmkészítéskori hívást |
+| `0x006b0200` | a `+0x15` jelzőtől függően helyi szerkesztési rectet ír vagy a `+0x0c` mutatóval hívja a `0x0042b370`-et; hívói közt Passport- és szerkesztőút is van | crop-adatot írhat, de a filmkészítéskori példány/hívás nincs igazolva |
+| `0x006b39b0` | szerkesztési rekord `+0x40` rectjét adja a `0x0042b370`-nek a `+0x0c` mutatón keresztül; közvetlen hívója `0x006abae0` | szerkesztési crop-visszaíró út, nem a `+0x94` objektum konstruktora; a filmkészítési hívás nincs igazolva |
+
+A film crop-olvasó útja `0x00813c50` → az `AlignedImageCollection`
+`+0xa0` vtable-slotja (`0x0068f980`) → `0x0047a390`. A getter kiolvassa
+a `+0x94`-beli `CThumbDB` mutatót (`0x0068f9a5`), lekéri az alap
+`imagedata_facerect` rectet (`0x0047a390` → `0x00446610`), és a
+`+0x14d0` táblából kapott crop-recttel komponensenként metszi
+(`0x0047a3be`-`0x0047a419`). A vizsgált olvasólánc egyik jelölt írót sem
+hívja. Ez a közvetlen lánc egyikét sem teszi a filmkészítési adat előállítójává;
+közvetett callback vagy a film indítása előtti korábbi szerkesztés szerepe
+ettől még nincs kizárva.
+
+A kiválasztott filmfelbontás a cropképlet `Vw,Vh` keretméretét a
+`model+0x2e0` objektum alap-geometriáján keresztül éri el. A
+`0x00616940` a `facemakemovieres` felbontási indexét keresi ki
+(`0x00616b42`-`0x00616b64`), majd a kiválasztott indexet a
+`0x0080fea0`-nak adja (`0x00616be0`-`0x00616be4`). A `0x0080fbc0`
+`12 × index` eltolással olvassa a `0x00c7db50` táblából a szélességet és
+magasságot (`0x0080fc11`-`0x0080fc1f`), létrehozza a `ytDrawNode`-ot,
+és a `model+0x2e0`-ba teszi (`0x0080fc51`-`0x0080fc68`). A
+`0x00512220` az alap-rectet `[0,0,W,H]`-ként írja a node-ba
+(`0x0080fc6e`-`0x0080fc8e`, `0x00512254`-`0x0051227b`).
+
+A `ytDrawNode` `+0x20` virtuális getterje `0x009e0660` (vptr
+`0x00cda8cc`, RTTI alapján); a `0x00813330` ezen a sloton kéri le a
+téglalapot, majd a jobb-bal és alsó-felső különbséget adja tovább
+`Vw,Vh`-ként a `0x00813c50`-nek (`0x008133c4`-`0x008133d6`,
+`0x0081356b`-`0x008135c7`). A getter transzformációs bemenetet is fogad,
+ezért a képlet **a getter által visszaadott** `Vw,Vh`-t használja; a
+statikus lánc az alap-rect és a felbontási sor kapcsolatát bizonyítja, nem
+azt, hogy minden futásban a transzformált méret változatlanul egyezik a
+tábla nyers `W,H` értékével. A kiválasztott sorok pontos méretei a 2.8/b
+táblájában szerepelnek: az 5-ös és 6-os sor `1280×720`, illetve
+`1920×1080` (16:9); a 0-4-es sorok `320×240`, `640×480`, `800×600`,
+`1024×768`, `1600×1200` (4:3). Az arc-film alapértelmezett indexe 3,
+azaz `1024×768` (`0x00616b50`).
+
+A 2.5-ben fent megadott `0x00813c50` képletben `Vw,Vh` mind a kezdő
+képskála `s`, mind az arczoom `r` nevezőiben szerepel. Így a 16:9/4:3
+felbontás a keretszélesség és -magasság arányán keresztül befolyásolja a
+cropot; a visszaadott crop az arc `Bw:Bh` arányát tartja meg az élhatárokra
+vágásig, nem kényszeríti a téglalapot a videó képarányára. A középre
+igazított, előjeles oldalankénti félméret-változás pontosan
+`(z-1)·Bw/2`, illetve `(z-1)·Bh/2`; ha `z<1`, ez szűkítés, nem pozitív
+margó. Keretbe vágáskor a látható oldalankénti érték eltérhet. E képletet a korábbi
+QEMU-mérés ismert `[200,200,500,400]` arctéglalapon és `1024×768`
+kereten igazolta; a táblázat az elszigetelt helper futását dokumentálja, nem
+a teljes film-exportot.
 
 A teljes `.text`-pásztázás külön jelöltje a `0x00421bf0`: ez is az
 `arg+0x14d0` mező `+0x58/+0x48` indexelt vektorába ír 8 bájtos elemet
@@ -2572,16 +2652,21 @@ felbontás, nem a forrás arctéglalap cropképlete.
 
 Nyitott, blokkoló visszafejtési kérdések:
 
-**A getter osztálya/slotjai és a klip-selector útja feloldva; a getter recttáblája és upstream forrásai nyitottak.**
-Az imagedata `facerect` közvetlen alap-rectforrását és a `+0x14d0`-beli
-per-index recttel való metszést az utasításfolyam azonosítja, de a második
-recttábla osztálya/előállítója nem ismert. A vizsgált getter/crop ág nem
-olvassa közvetlenül a `facerectdata` szemlandmarkjait; amíg a `+0x14d0`
-tábla upstream eredete nincs meg, a landmarkok közvetett szerepe nyitott.
-Nyitott marad az is, hogy a `.picasa.ini` `faces=` ág pontosan hogyan
-töltődik az imagedata `facerect` oszlopába. A `+0x4e0` filmmodell-tábla
-imagedata `facerect`-olvasóból származó pixel-rectjeit a fenti betöltési út
-már azonosítja.
+**A getter osztálya/slotjai és a klip-selector útja feloldva; a crop-tábla adatútja részben nyitott.**
+Az `AlignedImageCollection+0x94` célosztálya `CThumbDB`, a
+`+0x14d0`-beli per-index crop-rect olvasója és az alap-
+`imagedata_facerect` recttel való metszése azonosított. Az `0x0042b370`
+író és a három jelölt közvetlen hívója szintén azonosított, de a tényleges
+Film arcokból export előtti íróhívás, a kiválasztott film-selector és az
+adott `+0x14d0`-bejegyzés példányszintű kapcsolata **NINCS MEG**. A vizsgált
+getter/crop ág nem olvassa közvetlenül a `facerectdata` szemlandmarkjait;
+amíg a `+0x14d0` tábla upstream eredete nincs meg, a landmarkok közvetett
+szerepe nyitott. Nyitott marad az is, hogy a `.picasa.ini` `faces=` ág
+pontosan hogyan töltődik az imagedata `facerect` oszlopába. A `+0x4e0`
+filmmodell-tábla imagedata `facerect`-olvasóból származó pixel-rectjeit a
+fenti betöltési út már azonosítja. A filmkeret alap-rectje a kiválasztott
+felbontási sorból jön; hogy a getter transzformált `Vw,Vh` értéke minden
+futásban megegyezik-e a nyers sorral, **NINCS MEG**.
 
 **Cáfoló keresés a mezőeltolásos találatokra:** a `paszta.py` streaming
 `.text`-pásztája talált `+0x18…+0x24` olvasót a `0x00819f50` címen, de az
@@ -2597,16 +2682,15 @@ Ghidra-kör kell: 0x0049d560 — kösd össze a `.picasa.ini` `faces=` ágának
 `rect64`-feldolgozását azzal az `imagedata_facerect` oszloppal, amelyet a
 `0x00446610` olvas; döntsd el, hogy a `0x0049d560` parserút írja-e ezt az
 oszlopot. [blokkoló]
-Ghidra-kör kell: 0x00429dc0 — oldd fel az `AlignedImageCollection+0x94`
-mutató által elért objektum osztályát, a `+0x14d0` per-index recttábla előállítóját és az
-arcrekordhoz vezető kapcsolatát; döntsd el, hogy a tábla adatát a
-`facerectdata` szemlandmarkjaiból számítja-e. [blokkoló]
 - **NINCS MEG:** a `.picasa.ini faces=` → `imagedata_facerect` betöltési
-  kapcsolat, a `+0x14d0` recttábla előállítása/eredete, a szemadat esetleges
-  upstream szerepe, a `rotate`/`filters` adatainak pontos numerikus
-  hatása, valamint az eredeti paneltől a kész filmkockáig tartó élő
-  viselkedésmérés. A transzformáció következő ellenőrzési útja a
-  `0x0042c830`/`0x00430610` célzott diszasszemblálása és mért bemenetű QEMU-próba.
+  kapcsolat, melyik íróhívás tölti a kiválasztott kép `+0x14d0`
+  bejegyzését a filmkészítés előtt, a szemadat esetleges upstream szerepe,
+  a `rotate`/`filters` adatainak pontos numerikus hatása, a getter
+  transzformált `Vw,Vh` értéke egy konkrét filmfutásban, valamint az eredeti
+  paneltől a kész filmkockáig tartó élő viselkedésmérés. A következő
+  felvehető irány az eredeti Picasa ismert arcú mintán végzett 4:3 és 16:9
+  filmkocka-mérése a #4426 lépéssorával; a writer-hívás példányszintű
+  rögzítéséhez QEMU-harness call-trace kell.
 
 **Bizonyítottsági határ:** a klipmezők nyers másolása, a low-res maszk
 képlete, a `0x00813c50` cropképlete, a getterek RTTI/vtable-felbontása,
