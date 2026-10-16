@@ -2,9 +2,8 @@
 
 Lefedve:
 - `timelineThumbMouseArea` - az idővonal bélyegképe megnyitja a nézetet;
-- `moreSuggestionsButton` - a „További javaslatok" gomb hívja a
-  `faceScanController.moreSuggestions()`-t (a felület a `UnnamedFacesView`,
-  a controller a már meglévő felület-utánzat).
+- a `moreSuggestionsButton` hiányzik a Név nélküliek albumából, mert a #5183
+  eltávolította a közös névsor műveleteit ebből a nézetből.
 
 Kimaradt tételek, ezért NINCS itt teszt (a jegy szerint leírva):
 - `faceRegionArea_` (FacesOverlay): csak észlelt arcon él, a teszthez
@@ -54,7 +53,9 @@ class TestIdovonalBelyeg:
 
 
 class TestTovabbiJavaslatok:
-    def test_a_gomb_valodi_kattintasra_hivja_a_javaslat_keresest(self, qt_app):
+    def test_a_kozos_javaslatgomb_nem_latszik_a_nevnelkuliek_albumaban(
+        self, qt_app
+    ):
         keresoes = _Keresoes()
         view = _make_view(qt_app, controller=keresoes)
         ablak = QQuickWindow()
@@ -67,13 +68,7 @@ class TestTovabbiJavaslatok:
         qt_app.processEvents()
 
         gomb = _vizualis(ablak, "moreSuggestionsButton")
-        assert gomb is not None and gomb.property("enabled") is True, (
-            "a További javaslatok gomb nem látszik kattintható állapotban"
-        )
-
-        _kattints_elemre(qt_app, ablak, gomb)
-
-        assert _varj(qt_app, lambda: ("moreSuggestions",) in keresoes.calls), (
-            "a További javaslatok kattintás nem hívta a javaslat-keresést"
+        assert gomb is not None and not gomb.isVisible(), (
+            "a közös További javaslatok gomb még látszik a Név nélküliek albumában"
         )
         ablak.close()

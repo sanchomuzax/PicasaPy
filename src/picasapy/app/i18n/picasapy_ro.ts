@@ -6900,6 +6900,74 @@ picasapy-origin-key: unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/sho
             <translation>Înapoi la nedenumite</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Unnamed people</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::Unnamed</extracomment>
+            <translation>Persoane fără nume</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>%d Face(s)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CUnnamedProgress::progress2</extracomment>
+            <translation>%d (de) chip(uri)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Welcome to the Unnamed people album! </source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/title)</extracomment>
+            <translation>Bun venit la albumul Persoane fără nume!</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter.  A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your Google Account contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.
+
+
+ Click 'Learn More' for information about this feature.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Pe măsură ce Picasa îți scanează fotografiile, chipurile găsite sunt grupate automat pentru a fi denumite cu ușurință.
+
+De reținut:
+
+npentru a identifica o persoană, dă clic pe „Adaugă un nume”, apoi introdu numele persoanei și apasă pe Enter.  De fiecare dată când denumești o persoană pentru prima dată, se va crea un nou album Persoane.
+
+(SFAT: conectează-te la Contul Google pentru a obține acces la toate persoanele de contact atunci când denumești persoane.)
+
+nPentru a ignora o persoană, dă clic pe butonul „X” de pe miniatura chipului.
+
+nSugestii: după ce ai denumit o persoană, Picasa îți poate sugera pentru persoana respectivă mai multe chipuri care corespund. Dă clic pe albumul unei persoane ca să vezi și să confirmi (sau să respingi) sugestiile.
+
+
+ Dă clic pe „Află mai multe” pentru mai multe informații despre această funcție.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Learn more...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
+            <translation>Aflaţi mai multe...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Închideţi</translation>
+        </message>
+        <message>
             <source>Stop ignoring</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nu mai ignoraţi</translation>
@@ -17862,6 +17930,13 @@ picasapy-origin-key: contactmgr:contactmgr/create.title</extracomment>
 picasapy-origin: picasa
 picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <translation>ID persoană din agendă:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>%d Photos in Picasa</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>%d (de) fotografii din Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

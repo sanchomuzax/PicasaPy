@@ -95,6 +95,20 @@ def test_az_ismeretlen_arc_fejlec_ket_nezetvaltoja_a_valodi_fomablakban(
     ablak.setProperty("facesAlbumMode", "unnamed")
     nezet = _elem(ablak, "unnamedFacesView")
     _vard_meg(lambda: nezet.isVisible(), qt_app, "a Névtelenek nézet megjelenése")
+    welcome = _elem(ablak, "unnamedWelcomeDialog")
+    if welcome.property("visible"):
+        welcome_close = _elem(ablak, "unnamedWelcomeCloseButton")
+        _vard_meg(
+            lambda: welcome_close.isVisible(),
+            qt_app,
+            "az első megnyitás üdvözlőablaka",
+        )
+        _kattint(ablak, welcome_close)
+        _vard_meg(
+            lambda: not welcome.property("visible"),
+            qt_app,
+            "az üdvözlőablak bezárása",
+        )
 
     alapmagassag = ablak.height()
     for elteres in (-5, 0, 5):
@@ -111,6 +125,7 @@ def test_az_ismeretlen_arc_fejlec_ket_nezetvaltoja_a_valodi_fomablakban(
         fejlec = _elem(ablak, "unknownFaceViewHeader")
         csoport_pane = _elem(ablak, "clusterToggleButton")
         assert csoport_pane.isVisible()
+        assert not show_ignored.isEnabled()
         ignoralt_pont = show_ignored.mapToItem(fejlec, QPointF(0, 0))
         csoport_pont = csoport_pane.mapToItem(fejlec, QPointF(0, 0))
         assert abs(show_ignored.width() - 120) <= 5
@@ -120,11 +135,15 @@ def test_az_ismeretlen_arc_fejlec_ket_nezetvaltoja_a_valodi_fomablakban(
         # A QML-tesztmotor nem telepíti a magyar fordítót; a hivatalos
         # fordítás meglétét az i18n-őrök ellenőrzik.
         assert str(show_ignored.property("text")) == "Show ignored faces"
-        _kattint(ablak, show_ignored)
+        assert ablak.property("facesAlbumMode") == "unnamed"
+
+        # A próbakönyvtárban nincs mellőzött arc, ezért a váltógomb helyesen
+        # letiltott. A visszalépő kattintást külön beállított nézetben mérjük.
+        ablak.setProperty("facesAlbumMode", "ignored")
         _vard_meg(
             lambda: ablak.property("facesAlbumMode") == "ignored",
             qt_app,
-            "a Mellőzött emberek album kiválasztása",
+            "a Mellőzött emberek nézet állapota",
         )
         assert not csoport_pane.isVisible()
 

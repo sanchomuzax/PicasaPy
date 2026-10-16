@@ -6886,6 +6886,74 @@ picasapy-origin-key: unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/sho
             <translation>Vissza ide: Név nélküliek</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Unnamed people</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::Unnamed</extracomment>
+            <translation>Meg nem nevezett emberek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>%d Face(s)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CUnnamedProgress::progress2</extracomment>
+            <translation>%d arc</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Welcome to the Unnamed people album! </source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/title)</extracomment>
+            <translation>Üdvözöljük a Név nélküliek albumban! </translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter.  A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your Google Account contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.
+
+
+ Click 'Learn More' for information about this feature.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>A Picasa a fotókeresés közben az egyszerű elnevezés érdekében automatikusan csoportosítja az arcokat.
+
+Fontos tudnivalók:
+
+A személyek nevének megadásához kattintson a Név hozzáadása elemre, írja be a személy nevét, majd nyomja le az Enter billentyűt. Minden alkalommal, amikor először nevez el valakit, a rendszer egy, az adott személyhez tartozó albumot hoz létre.
+
+(TIPP: Ha az elnevezés közben az összes névjegyét el szeretné érni, jelentkezzen be Google-fiókjával.)
+
+Ha figyelmen kívül szeretne hagyni valakit, kattintson az arc indexképén látható X gombra.
+
+Javaslatok: Az elnevezést követően előfordulhat, hogy a Picasa további képjavaslatokat tesz. Ha meg szeretné tekinteni, illetve el szeretné fogadni (vagy elutasítaná) a javaslatokat, nyissa meg az adott személyhez tartozó albumot.
+
+
+ Kattintson a További információ elemre, ha többet szeretne megtudni a funkcióról.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Learn more...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>További információ...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Bezárás</translation>
+        </message>
+        <message>
             <source>Stop ignoring</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Mellőzés visszavonása</translation>
@@ -6967,17 +7035,20 @@ picasapy-origin-key: stringres:CAlbumLabel::LoadingGrouped</extracomment>
         </message>
         <message>
             <source>Select someone you know and add a name.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::ToggleGroupIgnore</extracomment>
             <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet.</translation>
         </message>
         <message>
             <source>Select someone you know and add a name, or click the "x" to ignore that person.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::ToggleGrouped</extracomment>
             <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet, vagy kattintson az "x" ikonra az adott személy mellőzéséhez.</translation>
         </message>
         <message>
             <source>Select someone you know and add a name</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::ToggleUnGrouped</extracomment>
             <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet</translation>
         </message>
         <message>
@@ -17848,6 +17919,13 @@ picasapy-origin-key: contactmgr:contactmgr/create.title</extracomment>
 picasapy-origin: picasa
 picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <translation>Ismerős azonosítója:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>%d Photos in Picasa</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>%d fotó a Picasában</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

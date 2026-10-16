@@ -87,7 +87,7 @@ def tizenhat_bites_png(utvonal: Path, meret: tuple[int, int] = (60, 40)) -> Path
     szelesseg, magassag = meret
     x = np.linspace(0, 65535, szelesseg, dtype=np.uint16)[None, :]
     adat = np.broadcast_to(x, (magassag, szelesseg)).astype(np.uint16)
-    Image.fromarray(adat, mode="I;16").save(utvonal, "PNG")
+    Image.fromarray(adat).save(utvonal, "PNG")
     return utvonal
 
 

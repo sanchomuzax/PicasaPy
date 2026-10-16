@@ -679,12 +679,13 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left; anchors.leftMargin: 16
                     spacing: 5
-                    Rectangle {
-                        width: 10; height: 10
-                        radius: 5
+                    Image {
+                        objectName: "unnamedFacesIcon"
+                        width: 18; height: 18
                         anchors.verticalCenter: parent.verticalCenter
-                        color: Theme.textDark
-                        opacity: 0.45
+                        source: Qt.resolvedUrl("icons/person-silhouette.svg")
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
                     }
                     // #26/#449: az eredeti Picasa a beolvasás haladását MAGÁN
                     // a „Névtelenek" album tételén mutatta („While scanning,

@@ -21,6 +21,7 @@ Dialog {
     property string selectedKey: ""
     property var selectedContactIds: []
     property var selectedLocalContactIds: []
+    property string selectedThumbUrl: ""
     property int selectedPhotoCount: 0
     property bool settingFields: false
     property int nextDraftNumber: 0
@@ -72,6 +73,8 @@ Dialog {
         manager.originalEntries = copied.map(manager._copy)
         manager.selectedKey = ""
         manager.selectedLocalContactIds = []
+        manager.selectedThumbUrl = ""
+        manager.selectedPhotoCount = 0
         searchField.text = initialSearch
         nameField.text = ""
         emailField.text = ""
@@ -106,6 +109,7 @@ Dialog {
         manager.selectedKey = entry.key
         manager.selectedContactIds = entry.contactIds || []
         manager.selectedLocalContactIds = entry.localContactIds || []
+        manager.selectedThumbUrl = entry.thumbUrl || ""
         manager.selectedPhotoCount = entry.photoCount || 0
         manager.settingFields = true
         nameField.text = entry.name
@@ -139,7 +143,6 @@ Dialog {
     function addPerson() {
         var draftName = searchField.text.trim()
         manager.nextDraftNumber += 1
-        searchField.text = ""
         var entry = {
             key: "draft:" + manager.nextDraftNumber,
             name: draftName,
@@ -155,6 +158,8 @@ Dialog {
         if (manager.pendingFaceId >= 0)
             manager.pendingFaceDraftKey = entry.key
         manager.selectedLocalContactIds = []
+        manager.selectedThumbUrl = ""
+        manager.selectedPhotoCount = 0
         manager.settingFields = true
         nameField.text = draftName
         emailField.text = ""
@@ -171,12 +176,14 @@ Dialog {
         })
         manager.selectedKey = ""
         manager.selectedLocalContactIds = []
+        manager.selectedThumbUrl = ""
         contactList.currentIndex = -1
         if (manager.entries.length === 0) {
             manager.settingFields = true
             nameField.text = ""
             emailField.text = ""
             manager.settingFields = false
+            manager.selectedPhotoCount = 0
         } else {
             manager.selectContact(manager.entries[0])
         }
@@ -265,6 +272,8 @@ Dialog {
                     || !manager.faceScanController.assignNameToFaces(
                         [manager.pendingFaceId], personName))
                 return
+            if (controller && controller.refreshCollections)
+                controller.refreshCollections()
             manager.pendingFaceId = -1
             manager.pendingFaceName = ""
             manager.pendingFaceDraftKey = ""
@@ -370,17 +379,37 @@ Dialog {
                 Item { Layout.fillHeight: true }
 
                 RowLayout {
+                    objectName: "peopleManagerPhotoStatus"
                     Layout.fillWidth: true
                     visible: manager.selectedKey !== ""
+                    Item { Layout.fillWidth: true }
+                    Image {
+                        objectName: "peopleManagerPhotoCountIcon"
+                        Layout.preferredWidth: visible ? 36 : 0
+                        Layout.preferredHeight: 36
+                        visible: manager.pendingFaceId >= 0
+                        source: manager.selectedThumbUrl !== ""
+                            ? manager.selectedThumbUrl
+                            : Qt.resolvedUrl("icons/person-silhouette.svg")
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                    }
                     Label {
                         objectName: "peopleManagerPhotoCount"
-                        text: String(manager.selectedPhotoCount)
+                        text: manager.pendingFaceId >= 0
+                            ? qsTr("%d Photos in Picasa")
+                                .replace("%d", String(manager.selectedPhotoCount))
+                            : String(manager.selectedPhotoCount)
                     }
                     Item { Layout.fillWidth: true }
-                    Label { text: qsTr("Contact ID:") }
+                    Label {
+                        text: qsTr("Contact ID:")
+                        visible: manager.pendingFaceId < 0
+                    }
                     Label {
                         objectName: "peopleManagerContactId"
                         Layout.maximumWidth: 280
+                        visible: manager.pendingFaceId < 0
                         wrapMode: Text.Wrap
                         text: manager.selectedContactIds.join(", ")
                     }
