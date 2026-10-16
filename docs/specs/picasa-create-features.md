@@ -2415,6 +2415,114 @@ utóbbi ugyanebben a kerekítési módban bal/felső koordinátára `0`-t ad.
 Ez a helper izolált futása, nem a teljes `.picasa.ini` → timeline → render
 út futtatása.
 
+**A `+0x14d0`-es crop-tábla eredete és szerepe — #4400, 5. kör.**
+
+A kért filmútban a `0x0068f980` az `AlignedImageCollection` `+0xa0`
+getterje, amely a `+0x60` sloton át feloldott selectorhoz hívja a
+`0x0047a390` bridge-et (`0x0068f9a5`–`0x0068f9c3`). A getter a saját `+0x94`
+mezőjéből származó objektummutatót és `1` flaget ad át (`0x0068f9a5`,
+`0x0068f9ab`); a bridge ennek az objektumnak a `+0x14d0` recttáblájából kér
+indexelt bejegyzést a `0x00429dc0`-nál (`0x0047a3be`–`0x0047a3d5`). A
+`0x0047a390` először a `0x00446610`-tól kéri le a kiválasztott elem
+`imagedata_facerect` alap-rectjét (`0x0047a3a8`–`0x0047a3aa`), majd a
+`0x00429dc0`-tól az adott index crop-rectjét. Ha az accessor talál cropot,
+a filmút komponensenként metszi a két képpont-rectet:
+`x0=max(face.x0,crop.x0)`, `y0=max(face.y0,crop.y0)`,
+`x1=min(face.x1,crop.x1)`, `y1=min(face.y1,crop.y1)`
+(`0x0047a3de`–`0x0047a419`). Ezután a `rotate(%d)` értékét a `0x0042c830`
+olvassa, a `0x00430610` filter-utat, majd a `0x00a4a240` affinképzést hívja
+(`0x0047a41c`–`0x0047a470`). A klip renderelése tehát az arc-rectet a
+forrás cropjával metszi; a `+0x14d0` bejegyzése crop-rect, nem
+szemlandmark-koordináták sora. Ez önmagában nem zárja ki, hogy valamelyik
+upstream írója landmarkból számítsa ki a crop-rectet.
+
+A `0x0042b370` a feloldott crop-író: a `0x0042b000` segítségével elforgatja
+és határolja a kapott rectet, a `0x009b9290`-nal 64 bites `rect64` értékké
+normalizálja, a `0x00cd9554` formátummal `rect64(%I64x)` alakban formázza,
+majd a `0x00c812f8` (`crop`) kulcs alá írja (`0x0042b3e0`–`0x0042b3f5`,
+`0x0042b499`–`0x0042b530`). A `this+0x14d0` mezőn belüli vektor
+`+0x58/+0x48` címen levő 8 bájtos elemeket index szerint frissíti
+(`0x0042b535`, `0x0042b747`–`0x0042b785`); ugyanilyen indexelt olvasást
+végez a filmútban a `0x00429dc0` (`0x00429dce`, `0x00429e22`–`0x00429e43`).
+A `0x00429dc0` által visszaadott elem tehát az adott kiválasztott elemhez
+tartozó crop-rect, nem `leye`/`reye` koordinátákat tároló tábla.
+Ugyanakkor a `0x0042b370` receiverének és a getter `+0x94` mezője által
+mutatott objektumnak az azonosságát a vtable/RTTI nem nevezi meg; a
+`0x0042b370` ezért a táblával azonos elrendezésű crop-író jelölt, nem
+futásidejű objektumazonossággal igazolt író. Közvetlen hívóhelyei:
+
+| hívóhely | hívófüggvény | bizonyított környezet |
+|---|---|---|
+| `0x00531e21` | `0x00531c60` | Passport-ág; a függvény stringjei: `CThumbUI::Passport0`, `Can't find any faces` (`0x00c899c4`, `0x00c899ac`) |
+| `0x006b0253` | `0x006b0200` | általános rect-/crop-író segéd; hívói közt a `0x005d4b60`, amelynek stringjei az `editpanel/cropselection` és az `editpanel/cropdiscard` (`0x00c95ae4`, `0x00c95fe8`) |
+| `0x006b3cd9` | `0x006b39b0` | további rect-író út; a transzformációs rekord `esi+ebp+0x40` rectmutatóját adja át; hívója `0x006abae0` |
+
+A teljes `.text`-pásztázás külön jelöltje a `0x00421bf0`: ez is az
+`arg+0x14d0` mező `+0x58/+0x48` indexelt vektorába ír 8 bájtos elemet
+(`0x00421f10`–`0x00421f38`), a `0x00425f60` két hívóhelyéről
+(`0x00427835`, `0x00427ec1`). Ez ugyanazt a vektorelrendezést és
+normalizálót használja; a bináris RTTI nem nevezi meg a hívó és a film által
+olvasott `+0x94` objektum azonosságát, ezért nem állítható, hogy a
+`0x00425f60` bármely útja ugyanazt a példányt módosítja. A `0x00439a80` és `0x004860e0`
+`+0x14d0` találatai más objektum-/vektorútvonalak; az offset-egyezés önmagában
+nem azonosítja őket ennek a crop-táblának az íróiként.
+
+**A crop-rect külön `.picasa.ini` parserútja.** A `.picasa.ini`-t említő
+`0x006b52d0` a `0x0042a570`-et hívja (`0x006b576e`); ez a parser a
+`width`, `height`, `rotate` és `rect64` kulcsokat kezeli (`0x00c80ac4`,
+`0x00c80acc`, `0x00c80ad4`, `0x00c81460`), a `rect64(%I64x)` értéket
+`0x00cd9554` formátummal olvassa, majd a `0x009b93f0` konverterrel
+képpont-rectet állít elő (`0x0042a6b6`–`0x0042a707`). A hívó a négy
+koordinátát a saját `+0x240…+0x24c` állapotába másolja
+(`0x006b5796`–`0x006b57b6`). Ez független bizonyíték arra, hogy a crop
+rect64-ből képpont-rect lesz; **a parser ezen hívása nem írja közvetlenül a
+`+0x14d0` vektort**, és a teljes `.picasa.ini` parser → `+0x14d0` writer
+példányszintű kapcsolat nincs bizonyítva.
+
+**QEMU-mérés a crop-segédek geometriájára.** A harness a két bináris
+segédfüggvényt közvetlenül futtatta; ezek egész koordinátás, szintetikus
+bemenetű mérések, nem a teljes filmút futtatásai.
+
+| bináris függvény | mérés | kimenet |
+|---|---|---|
+| `0x009b4960` metszés | `A=[-10,20,200,300]`, `B=[0,0,100,250]` | `[0,20,100,250]` |
+| `0x009b4960` cáfoló eset | `A=[110,5,130,15]`, `B=[0,0,100,100]` | `[110,5,100,15]`; a helper a végpontokat metszi, de önmagában az üres téglalapot nem utasítja el vagy zsugorítja |
+| `0x009b4c80` 90°-os lépés | határok `[0,0,640,480]`, rect `[10,20,110,120]`, lépésszám `1` | `[360,10,460,110]` |
+| `0x009b4c80` 180° | ugyanaz, lépésszám `2` | `[530,360,630,460]` |
+| `0x009b4c80` 270° | ugyanaz, lépésszám `3` | `[20,530,120,630]` |
+
+A `0x009b4c80` egy lépéses utasításképlete:
+`[height-y1, x0, height-y0, x1]`, ahol kezdetben
+`width=bounds.x1-bounds.x0` és `height=bounds.y1-bounds.y0`; minden lépés
+után felcseréli a `width` és `height` értékét (`0x009b4cb0`–`0x009b4cee`).
+Így a következő lépés az előző szélességet használja magasságként. A
+függvényt a crop-író `0x0042b000` forgatási ága hívja (`0x0042b0e2`); a
+`0x0047a390` filmút viszont a `0x00430610` filter-/affin útját használja.
+A QEMU-eredmény ezért a crop írósegéd forgatását igazolja, nem a teljes
+filmszál filtereit; a filmhíd saját metszése közvetlenül az
+`0x0047a3de`–`0x0047a419` utasításokban látható, nem ezt a QEMU-segédet hívja.
+
+**Szem-landmark kapcsolatának határa.** A filmút a `0x00446610`
+`facerect`-eredményét és a `0x00429dc0` crop-rectjét metszi. A
+`0x0042b370` rectmutatót kap; a vizsgált íróutasításai nem olvassák a
+`leye`/`reye` mezőket. Ettől független adatút, hogy a `0x0081fc30` a
+`facerectdata` karakterláncból külön mezőkbe parsolja a `conf`, `pan`,
+`leye`, `reye` és `mouth` adatokat (`0x00820c88`); ez a parser a
+`0x00446610`-től külön kezeli őket. A két út azt támasztja alá, hogy a
+film crop-olvasója és a crop-tábla írója közvetlenül nem használ
+szemlandmarkot. Azt viszont nem dönti el, hogy a még fel nem oldott
+`+0xa0` virtuális getter hogyan állítja elő a `0x00813c50`-nek adott
+arctéglalapot; így a landmark közvetett hatása az arckiválasztásra nyitott.
+
+**Bizonyítottság.** A táblához vezető olvasó/író híváslánc és a rect64
+adatértelmezés utasításszintű, címzett binárislelet; önmagában ez
+**feltételes**. A `0x009b4960` metszés és `0x009b4c80` forgatás képlete
+utasításolvasással és ettől független QEMU-kimenettel egyezett, ezekre
+**megerősített**. A QEMU nem hajtotta végre a táblát író hívókat vagy a
+film teljes renderelését.
+
+
+
 **A 0x38-as forrás arcrekord további mezői:** a `0x0081fc30` a
 `"conf(%f),pan(%f),leye(%f,%f),reye(%f,%f),mouth(%f,%f)"` formátummal
 olvassa az arc-részletadatot (`0x00820c88`). Ehhez a **forrás arcrekordhoz**
@@ -2485,7 +2593,7 @@ is tartalmaz, de az időintervallum-rekord double mezőit olvassa. Mindkettő
 hamis pozitív, ezért az offset-egyezés vagy a lépésköz önmagában nem
 azonosítja a cropfogyasztót.
 
-Ghidra-kör kell: 0x00456610 — kösd össze a `.picasa.ini` `faces=` ágának
+Ghidra-kör kell: 0x0049d560 — kösd össze a `.picasa.ini` `faces=` ágának
 `rect64`-feldolgozását azzal az `imagedata_facerect` oszloppal, amelyet a
 `0x00446610` olvas; döntsd el, hogy a `0x0049d560` parserút írja-e ezt az
 oszlopot. [blokkoló]
