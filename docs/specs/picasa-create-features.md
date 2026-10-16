@@ -2144,7 +2144,8 @@ utasításai nem számítanak arckivágást. A timeline későbbi rajzolóágáb
 `+0x18…+0x24` mezőit ez a helper közvetlenül nem olvassa: a staging-rekord
 `+0x8` selectorával a modell `+0x2d8` forrásobjektumának vtable-ján kér
 méretet és arctéglalapot. A helper képlete most megvan; a virtuális getterek
-konkrét implementációja és a staging selector klipmezőhöz kötése nyitott.
+konkrét implementációját, a forrás-rect mezőjét és a staging selector
+klipmezőhöz vezető útját a 4. kör alább feloldja.
 
 A kliprekordok a modell `+0x48` listájában vannak; a `0x00611320`
 rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
@@ -2224,10 +2225,122 @@ videókockáig tartó adatutat.
 | `1024×768`, `2000×1000`, `cropfit=1/0`, `[800,400,1200,600]` | `cropfit=1`: `[312.68927001953125,284.3446350097656,712.3087768554688,484.1543884277344]`; `cropfit=0`: `[341.49969482421875,298.7498474121094,682.99932861328125,469.4996643066406]` | a cropfit 1-es max- és 0-s min-skálaválasztása |
 
 A QEMU-számítás és az utasításszintű képlet egyezik a visszaadott arctéglalap
-és képméretek mellett. A `0x00813c50` a visszaadott négyszög közepéhez
-igazít; magát a szemkoordinátát nem olvassa. Ez önmagában nem zárja ki, hogy
-a még fel nem oldott `+0xa0` getter szem-landmarkból alakítaná ki a
-visszaadott négyszöget.
+és képméretek mellett. A `0x00813c50` a `+0xa0` getter által visszaadott
+négyszög közepéhez igazít. A getter teljes rect-adatútja és a landmarkokra
+vonatkozó bizonyítás határa alább szerepel; a QEMU-próba a gettereket
+szintetikus válaszadókkal helyettesítette.
+
+**A forrásobjektum, getterek és a klip-selector útja — #4400, 4. kör.**
+
+Az objektum típusa nem csak a gettercímekből következik. A mód-6 gyárág a
+`0x00824090`-ben hívja a `0x006999c0` konstruktorát (`0x008240dc`); a
+konstruktor a `this` első dwordjába `0x00ca7d8c`-t ír (`0x006999d8`). A
+bináris RTTI ezt az `AlignedImageCollection::vftable` címeként nevezi meg.
+A panel `+0x4b8` forrásmutatóját a filmmodell `+0x2d8` mezője veszi át
+(`0x00616957`). A vtable nyers bejegyzései:
+
+| slot | bináris célfüggvény | szerep a hívási láncban |
+|---|---|---|
+| `AlignedImageCollection::vftable +0x58` | `0x0068f900` | a kiválasztott elem szélességét és magasságát kéri le |
+| `AlignedImageCollection::vftable +0xa0` | `0x0068f980` | a kiválasztott elem arctéglalapját kéri le |
+| `AlignedImageCollection::vftable +0x60` | `0x0068f710` | csoport- és elemsorszám alapján adja vissza a kiválasztott elemet |
+
+A `0x00813c50` mindkét getternek a 0. csoportot és a staging `+0x8`
+értékét adja (`0x00813cba`–`0x00813ccd`, `0x00813cd9`–`0x00813ced`). A
+`0x0068f900` és `0x0068f980` egyaránt a `+0x60` slotot használja az elem
+feloldásához. A `0x0068f710` az első argumentumot a csoportlistában, a
+másodikat az adott csoport gyermeklistájában ellenőrzi, majd a gyermeklista
+megfelelő dwordját adja vissza (`0x0068f710`–`0x0068f73c`). Így a klip `+0x8`
+mezője ezen az úton **0-tól számozott lista-selector**, nem kontakt- vagy
+személyazonosító.
+
+A selector klipről stagingbe jutása is követhető. A `0x00610d30` az időponthoz
+tartozó rekordot a `+0x48` kliplistából, `0xf8` bájtos lépésközzel választja
+ki (`0x00610e16`–`0x00610e25`). A `0x006123d0` rekordmásoló a forrás `+0x8`
+dwordját változatlanul továbbviszi (`0x006123ed`–`0x006123f1`); a
+`0x00812470` ezután a kiválasztott mintát a modell `+0x1a8` stagingrészébe
+másolja a `0x00612350`-nel (`0x00812578`–`0x00812580`). A
+`0x00813330` ugyanennek a `model+0x1a8` címnek az első argumentumát adja a
+`0x00813c50`-nek (`0x008134b5`, `0x008135c7`). A szerializáló oldalán a
+`0x00814f30` a klip `+0x8` értékével hívja a `0x0081e2d0`-t, amely a modell
+`+0x4e8` leképezőlistáján keresztül választ rectrekordot. A két út ugyanazt
+a klipből másolt selectorértéket használja; a writer maplistájának és a
+getter `AlignedImageCollection`-listájának kiválasztott adatelemei közötti
+azonosságot ez a kör nem állapítja meg.
+
+**A getter alap-rectje, utófeldolgozása és a landmarkok.** A
+`0x0068f980` ugyanazzal a `+0x60` selectorral választ elemet, majd a
+`0x0047a390`-en keresztül hívja a `0x00446610` imagedata-olvasót
+(`0x0068f9a5`–`0x0068f9c3`, `0x0047a3a8`–`0x0047a3af`). A közvetlen
+alap-rectforrás a kiválasztott sor 64 bites `imagedata_facerect` mezője:
+a `0x00446610` két dwordként olvassa, packed `rect64`-ként értelmezi, majd a
+`0x009b93f0`-en át képpontra váltja (`0x004467b2`–`0x004467dc`,
+`0x004468dd`). A mezőt az imagedata-rekord leírása u64-ként regisztrálja
+`facerect` néven (`+0xdc0`); a külön `facerectdata` sztringmező `+0xee8`
+(`picasa-imagedata-rekord.md`, mezőtábla).
+
+`0x0047a390` visszatérési rectje azonban nem feltétlenül ez a nyers
+alap-rect. A `0x0068f980` az `AlignedImageCollection` objektum `+0x94`
+mezőjéből kiolvasott értéket adja át a bridge-nek (`0x0068f9a5`), valamint
+`1` flaget (`0x0068f9ab`); a bridge
+ennek az objektumnak a `+0x14d0` per-index recttábláját használja a
+`0x00429dc0` hívásban (`0x0047a3be`–`0x0047a3da`). Ha a hívás sikeres, a
+`0x0047a3de`–`0x0047a419` utasítások metszik az alap-rectet a táblából
+kapott recttel. A `+0x94`-beli objektum pontos osztálya, a második
+recttábla upstream előállítása és az arcrekordhoz való kapcsolata ebben a
+körben nincs feloldva. Ezután a `0x0042c830` a `rotate(%d)` mezőt
+olvassa (`0x00c81474`), a `0x00430610` a `filters` mezőt (`0x00c80b04`),
+majd a `0x00a4a240` affín módon transzformálja a rect négy sarkát; a bridge
+az eredményt visszaírja (`0x0047a41c`–`0x0047a484`). A `rotate` és
+`filters` adatok pontos numerikus hatását és a transzformáció mérhető
+bemeneti tartományát ebben a körben nem mértem. Így a
+`imagedata_facerect` a közvetlen alapforrás, nem bizonyítottan a getter
+egyetlen rectforrása vagy utófeldolgozás nélküli kimenete.
+
+A külön `facerectdata` mező a `conf`, `pan`, `leye`, `reye`, `mouth`
+adatokat tárolja. A vizsgált getter/crop utasításláncban ennek a mezőnek vagy
+a szemkoordinátáknak közvetlen olvasása nem látszik; a `0x00813c50` a
+transzformált getter-rect közepéhez igazít. Mivel a `+0x14d0` recttábla
+előállításának forrása nincs feltárva, **nem dönthető el**, hogy a szemadat
+közvetve részt vett-e ennek a táblának a létrehozásában. Ez az állítás
+feltételes; a teljes `+0xa0` út QEMU-mérése nem történt meg.
+
+**Független ellenőrzés és QEMU-mérés.** A) a mód-6 konstruktorút a
+`0x006999c0` függvényen át a `0x00ca7d8c` vptr-hez vezet; B) a nyers
+vtable-adat és az RTTI ugyanazt az `AlignedImageCollection` osztályt és a
+`+0x58/+0xa0/+0x60` slotcímeket adja. Ez a két út az osztály- és
+slotazonosítást egymástól függetlenül alátámasztja. A klip `+0x8` → staging
+`+0x8` másolását utasításszintű adatfolyam, a listaindex-szerepet pedig ez
+és a QEMU-harness egyezése támasztja alá. A QEMU-futásban a `0x0068f710`
+szintetikus, egycsoportos/kételemű listán a `selector=0` első,
+`selector=1` második elemet adta vissza; `selector=2` és `group=1` esetén
+`0xffffffff`-et adott. A `0x0068f900` ugyanebben a harnessben a második
+elemhez rendelt szintetikus méretgetterből `1920×1080` értéket adott vissza.
+Ez a QEMU-próba nem futtatta a `+0xa0` rectolvasó-láncot.
+
+Az alap-rectmező, a `+0x14d0`-beli második rect, annak upstream forrása és a
+landmarkmező hiányzó olvasása ebben a körben egyetlen statikus
+utasításláncból következik; a vptr/RTTI út és a QEMU-próba ezeket nem méri
+függetlenül. Ezek ezért feltételes megállapítások, nem megerősített
+rectforrás- vagy landmarkeredet-állítások.
+
+**Cáfoló próbák.** A teljes `.text`-en a `paszta.py` streaming pásztájával
+kerestem az indirekt `+0x58/+0xa0` hívásokat és a rect/landmark mezők
+olvasóit. Azt az első feltevést, hogy a getter kimenete változatlanul a
+`facerect`, a `0x0047a390` utófeldolgozásának célzott diszasszemblálása
+cáfolta: van `+0x14d0`-beli recttel vett metszet és rotate/filter alapú affín
+transzformáció. A talált adatfolyamot ugyanazzal a címszintű mércével
+ellenőriztem: `0x0047a390` közvetlenül hívja a `0x00446610` alap-rect
+olvasót, majd az adott flag-ágban a leírt második rectet és transzformokat
+alkalmazza. További, azonos sloteltolású hívások is előkerültek (például
+`0x00618aa2`, `0x00618ed8`), de ezek a panel `+0x4a0` illetve a panel `this`
+vtable-ján futnak, nem a filmmodell `+0x2d8` objektumán; ezért nem cáfolják a
+fenti vptr-azonosítást. A getter- és rectolvasó-függvények utasításszintű
+ellenőrzésében a `facerectdata`/szemlandmark mezőre vezető közvetlen olvasás
+nem jelent meg; ez a negatív eredmény csak a vizsgált utasításláncra
+vonatkozik, a `+0x14d0` tábla előállítását nem fedi le. A `.picasa.ini`
+`faces=` sor és az imagedata `facerect` oszlopa közötti betöltési kapcsolat
+ettől még **nincs bizonyítva**.
 
 **A `rect64` → pixel-rect út és a még nem bizonyított `faces=` kapcsolat.**
 Külön megfigyelt `.picasa.ini`-út, hogy a `0x00456610` kódterületén
@@ -2351,7 +2464,16 @@ felbontás, nem a forrás arctéglalap cropképlete.
 
 Nyitott, blokkoló visszafejtési kérdések:
 
-`0x00813c50` a számítást elvégzi, de a modell `+0x2d8` forrásobjektumának virtuális getterei még nincsenek feloldva. Nem bizonyított, hogy a staging `+0x8` selector hogyan jut el a klip `+0x8` mezőjétől a `+0x4e8` maplistáig, és hogy a getter által visszaadott arctéglalap használ-e landmarkot.
+**A getter osztálya/slotjai és a klip-selector útja feloldva; a getter recttáblája és upstream forrásai nyitottak.**
+Az imagedata `facerect` közvetlen alap-rectforrását és a `+0x14d0`-beli
+per-index recttel való metszést az utasításfolyam azonosítja, de a második
+recttábla osztálya/előállítója nem ismert. A vizsgált getter/crop ág nem
+olvassa közvetlenül a `facerectdata` szemlandmarkjait; amíg a `+0x14d0`
+tábla upstream eredete nincs meg, a landmarkok közvetett szerepe nyitott.
+Nyitott marad az is, hogy a `.picasa.ini` `faces=` ág pontosan hogyan
+töltődik az imagedata `facerect` oszlopába. A `+0x4e0` filmmodell-tábla
+imagedata `facerect`-olvasóból származó pixel-rectjeit a fenti betöltési út
+már azonosítja.
 
 **Cáfoló keresés a mezőeltolásos találatokra:** a `paszta.py` streaming
 `.text`-pásztája talált `+0x18…+0x24` olvasót a `0x00819f50` címen, de az
@@ -2363,17 +2485,32 @@ is tartalmaz, de az időintervallum-rekord double mezőit olvassa. Mindkettő
 hamis pozitív, ezért az offset-egyezés vagy a lépésköz önmagában nem
 azonosítja a cropfogyasztót.
 
-Ghidra-kör kell: 0x00618050 — oldd fel a filmpanel `+0x4b8` mód-6 forrásobjektumának vtable-ját, nevezd meg a `+0x58` és `+0xa0` getter célját, és bizonyítsd, hogy a `0x00813c50` staging `+0x8` selectorát a klip `+0x8` mezője / modell `+0x4e8` maplistája adja-e; döntsd el, hogy a getter által visszaadott arctéglalap szem-landmarkból származik-e. [blokkoló]
-Ghidra-kör kell: 0x00456610 — kösd össze a `faces=` ág `rect64`-feldolgozását az imagedata `facerect` mezőjével, amelyet a `0x00446610` olvas; döntsd el, hogy a `.picasa.ini` `faces=` sorához a `0x0049d560` út tartozik-e. [blokkoló]
-- **NINCS MEG:** a teljes `.picasa.ini faces=` → imagedata `facerect` → `+0x4e0` adatút; a mód-6 forrásobjektum virtuális gettereinek célja; a klip `+0x8` → staging `+0x8` selector- és maplistakapcsolat; hogy a getter által visszaadott rect szem-landmarkból ered-e, illetve a teljes eredeti paneltől a filmkockáig tartó futás.
+Ghidra-kör kell: 0x00456610 — kösd össze a `.picasa.ini` `faces=` ágának
+`rect64`-feldolgozását azzal az `imagedata_facerect` oszloppal, amelyet a
+`0x00446610` olvas; döntsd el, hogy a `0x0049d560` parserút írja-e ezt az
+oszlopot. [blokkoló]
+Ghidra-kör kell: 0x00429dc0 — oldd fel az `AlignedImageCollection+0x94`
+mutató által elért objektum osztályát, a `+0x14d0` per-index recttábla előállítóját és az
+arcrekordhoz vezető kapcsolatát; döntsd el, hogy a tábla adatát a
+`facerectdata` szemlandmarkjaiból számítja-e. [blokkoló]
+- **NINCS MEG:** a `.picasa.ini faces=` → `imagedata_facerect` betöltési
+  kapcsolat, a `+0x14d0` recttábla előállítása/eredete, a szemadat esetleges
+  upstream szerepe, a `rotate`/`filters` adatainak pontos numerikus
+  hatása, valamint az eredeti paneltől a kész filmkockáig tartó élő
+  viselkedésmérés. A transzformáció következő ellenőrzési útja a
+  `0x0042c830`/`0x00430610` célzott diszasszemblálása és mért bemenetű QEMU-próba.
 
 **Bizonyítottsági határ:** a klipmezők nyers másolása, a low-res maszk
-képlete, valamint a `0x00813c50` visszaadott arctéglalapra végzett
-geometriai képlete statikus utasításolvasással és ettől független QEMU-
-futtatással megerősített. A QEMU-próba szintetikus gettereket használt;
-nem hajtotta végre a `.picasa.ini` betöltését, a mód-6 forrásobjektumot vagy
-a teljes timeline-renderelést. A selector/getter szem-landmark-kapcsolata
-nyitott.
+képlete, a `0x00813c50` cropképlete, a getterek RTTI/vtable-felbontása,
+valamint a selectorlista indexelése megerősített (utasításszintű olvasat,
+közvetlen vtable-adat/RTTI, illetve a selectorra QEMU-mérés egyezik). A klip
+`+0x8` → staging `+0x8` másolása bináris utasításfolyammal bizonyított. A
+`imagedata_facerect` közvetlen alap-rectforrás és a `+0x14d0`-beli
+utófeldolgozás feltételes, mert a teljes `+0xa0` lánc nem futott QEMU-ban,
+és az utóbbi recttábla upstream eredete nincs meg. A szemlandmarkok közvetlen
+hiányzó olvasása csak a vizsgált utasításláncra vonatkozó feltételes negatív
+állítás. A `faces=`-től az imagedata oszlopig tartó forrásút és a teljes
+videókocka-renderelés továbbra is nyitott.
 
 Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
 forrás-URL-jeit adja át (`Main.qml:728–734`,
