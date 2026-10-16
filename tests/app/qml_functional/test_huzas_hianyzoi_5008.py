@@ -699,3 +699,61 @@ def test_photos_dragged_onto_new_album_area_create_an_album_with_them(
     assert token in album_tokens, (
         f"a húzott kép nem az új albumba került: {album_tokens}"
     )
+
+
+@pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
+def test_photo_dragged_onto_tree_folder_row_moves_the_file(
+    dnd_qml_app, qt_app, height_delta
+):
+    """#5119: a rácsból a fanézet mappasorára húzott kép átkerül a célmappába,
+    valódi egérhúzással, a ledobási jel közvetlen hívása nélkül."""
+    window, controller, engine = dnd_qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    photo_b = library / "b.jpg"
+    target_path = library / "cel"
+    row_b = _path_row(controller, photo_b)
+    window.setProperty("selectedIndexes", [row_b])
+    _child(window, "photoGrid").setProperty("contentY", 0)
+    qt_app.processEvents()
+
+    folder_pane = _child(window, "folderPane")
+    hierarchy = engine.rootContext().contextProperty("folderHierarchyController")
+    hierarchy.setSimplified(True)
+    hierarchy.setTreeView(True)
+    hierarchy.expandAll()
+    _wait(
+        qt_app,
+        lambda: bool(folder_pane.property("treeViewMode")),
+        "a hierarchikus mappanézet nem nyílt meg",
+    )
+    _wait(
+        qt_app,
+        lambda: "hierRow:" + str(target_path) in {
+            item.objectName() for item in _walk(window.contentItem())
+        },
+        "a célmappasor nem jelent meg a fában",
+    )
+    tree_target_drop = _find_visual(
+        window, "hierFolderDropArea:" + str(target_path)
+    )
+    assert tree_target_drop.property("enabled") is True
+    source_proxy = _find_visual(
+        window,
+        "thumbDragProxy",
+        predicate=lambda item: int(item.property("photoIndex")) == row_b,
+    )
+    source_mouse = _find_visual(
+        window,
+        "thumbMouseArea",
+        predicate=lambda item: int(item.parentItem().property("index")) == row_b,
+    )
+    _real_drag(window, qt_app, engine, source_proxy, source_mouse, tree_target_drop)
+
+    _wait(
+        qt_app,
+        lambda: (target_path / photo_b.name).is_file() and not photo_b.exists(),
+        "a rácsból a fanézet mappasorára húzott kép nem került át a célmappába",
+    )

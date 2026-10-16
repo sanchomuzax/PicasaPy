@@ -1258,6 +1258,10 @@ Rectangle {
                 onFolderDroppedOnFolder: function(sourcePath, targetPath) {
                     pane.folderDroppedOnFolder(sourcePath, targetPath)
                 }
+                //: #5119: a rácsból a fa mappasorára húzott képek
+                onPhotosDroppedOnFolder: function(path, photoRows) {
+                    pane.photosDroppedOnFolder(path, photoRows)
+                }
                 onFolderContextMenuRequested: function(path) {
                     pane.openFolderContextMenu(path)
                 }

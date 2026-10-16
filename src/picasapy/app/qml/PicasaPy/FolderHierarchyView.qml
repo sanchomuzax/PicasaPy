@@ -72,6 +72,9 @@ Item {
 
     signal folderChosen(string path)
     signal folderDroppedOnFolder(string sourcePath, string targetPath)
+    //: #5119: a rácsból a fa mappasorára húzott képek ugyanúgy mennek a
+    //: fájlműveletbe, mint a lapos lista mappasorára húzottak
+    signal photosDroppedOnFolder(string path, var photoRows)
     // A képes mappák a FolderPane teljes mappa-menüjét használják; az
     // indexen kívüli, saját képet nem tartalmazó köztes sorok maradnak a
     // HierFolder rövid menüjénél.
@@ -382,7 +385,17 @@ Item {
                 enabled: !row.isRoot && !root.mentesSzuroAktiv
                 onDropped: function(drop) {
                     var source = drop.source
-                    if (!source || source.payload !== "folders"
+                    if (!source) return
+                    if (source.payload === "photos") {
+                        //: #5119: a rács képei, a lapos listával azonos módon
+                        if (!source.photoRows || source.photoRows.length === 0)
+                            return
+                        drop.accept()
+                        root.photosDroppedOnFolder(
+                            row.modelData.path, source.photoRows.slice())
+                        return
+                    }
+                    if (source.payload !== "folders"
                             || !source.folderPath
                             || source.folderPath === row.modelData.path)
                         return
