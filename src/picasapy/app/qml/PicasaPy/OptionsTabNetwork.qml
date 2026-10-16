@@ -53,7 +53,14 @@ ColumnLayout {
         spacing: 8
         Text { text: qsTr("Network logging level:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
         PicasaComboBox {
+            id: logLevelCombo
             objectName: "optionsNetworkLogLevelCombo"
+            // Az eredeti `<popup name="loglevel">` szélesség nélkül áll, tehát a
+            // leghosszabb tételhez igazodik; a felirat nem vágódhat le.
+            Layout.preferredWidth: Math.ceil(Math.max.apply(null,
+                model.map(function(t) { return logLevelMetrics.advanceWidth(t) })))
+                + leftPadding + rightPadding + (indicator ? indicator.width : 0) + 8
+            FontMetrics { id: logLevelMetrics; font: logLevelCombo.font }
             model: [qsTr("Disable logging"), qsTr("Log errors only"),
                     qsTr("Minimal log information"), qsTr("Detailed log information"),
                     qsTr("Log all network information")]

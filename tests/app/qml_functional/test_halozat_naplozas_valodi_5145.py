@@ -129,3 +129,21 @@ class TestTiltottMezok:
             f"{nev}: a proxy-vezérlő nem tiltott, pedig a PicasaPy nem használ proxyt"
         )
         _zar(qt_app, beallitasok)
+
+
+class TestSzintLegorduloSzelessege:
+    def test_a_leghosszabb_szint_felirata_sem_vagodik_le(self, halozat_app, qt_app):
+        """Az eredeti `<popup>` a leghosszabb tételhez igazodik (options.fen)."""
+        from PySide6.QtGui import QFontMetricsF
+
+        window, controller, _engine = halozat_app
+        _elokeszit(window, qt_app, controller)
+        beallitasok = _halozati_ful(window, qt_app)
+        legordulo = _gyerek(beallitasok, "optionsNetworkLogLevelCombo")
+        meres = QFontMetricsF(legordulo.property("font"))
+        tetelek = legordulo.property("model")
+        tetelek = [str(t) for t in (tetelek.toVariant() if hasattr(tetelek, "toVariant") else tetelek)]
+        leghosszabb = max(meres.horizontalAdvance(t) for t in tetelek)
+        belso = legordulo.property("width") - legordulo.property("leftPadding") - legordulo.property("rightPadding")
+        assert belso >= leghosszabb, f"a legördülő belseje {belso:.0f} px, a leghosszabb felirat {leghosszabb:.0f} px"
+        _zar(qt_app, beallitasok)
