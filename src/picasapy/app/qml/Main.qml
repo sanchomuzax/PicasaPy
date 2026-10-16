@@ -3687,6 +3687,9 @@ ApplicationWindow {
                                 window.facesAlbumMode = "ignored"
                             onShowUnnamedRequested:
                                 window.facesAlbumMode = "unnamed"
+                            onNameSubmitted: function(faceId, name) {
+                                peoplePanel.nameFaceFromPanel(faceId, name)
+                            }
                             onNamedSuggestionAccepted: Qt.callLater(
                                 function() {
                                     peoplePanel.refreshHeaderPeopleSnapshot(true)

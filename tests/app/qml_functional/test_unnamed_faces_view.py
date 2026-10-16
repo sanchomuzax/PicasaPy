@@ -83,6 +83,15 @@ class _StubFaceScanController(QObject):
         self._groups = groups if groups is not None else []
         self._ignored = ignored if ignored is not None else []
         self._assign_result = assign_result
+        self._welcome_shown = True
+
+    @Slot(result=bool)
+    def unnamedWelcomeHasBeenShown(self):  # noqa: N802
+        return self._welcome_shown
+
+    @Slot()
+    def markUnnamedWelcomeShown(self):  # noqa: N802
+        self._welcome_shown = True
 
     @Slot(bool, bool, result="QVariantList")
     def unnamedGroups(self, group_by_face, expand_groups):

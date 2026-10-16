@@ -72,6 +72,8 @@ _EXPECTED_ICONS = (
     # #463: bélyegkép arc-jelvények
     "faces-badge.svg",
     "face-suggestion-badge.svg",
+    # #5183: a Név nélküliek album címének személy-sziluettje
+    "person-silhouette.svg",
     "tray-clear.svg",
     # #2537: a „További lehetőségek…" gomb ikonja
     # (`outputlayout/export7_icon`, MÉRVE 13 × 7)

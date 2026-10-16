@@ -86,7 +86,7 @@ from picasapy.index import (
     unnamed_album_photos,
     unnamed_faces,
 )
-from picasapy.index.faces_detected import UnnamedFace, unnamed_photo_count
+from picasapy.index.faces_detected import UnnamedFace, unnamed_face_count
 from picasapy.index.hidden_scope import hidden_folders_visible
 from picasapy.index.ignored_ini_faces import IniIgnoredFace
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
@@ -198,6 +198,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     AUTOMATIC_DETECTION_KEY = "faces/automaticDetection"
     SUGGESTIONS_ENABLED_KEY = "faces/suggestionsEnabled"
     CLUSTER_STEP_KEY = "faces/clusterStep"
+    UNNAMED_WELCOME_SHOWN_KEY = "faces/unnamedWelcomeShown"
 
     def __init__(
         self,
@@ -793,12 +794,20 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     @Property(int, notify=unnamedCountChanged)
     def unnamedCount(self) -> int:
-        """A „Névtelenek" album mérete — hány fotón van legalább egy még
-        névtelen SAJÁT találat. A bal hasáb sora ezt mutatja (0 esetén a
-        sor rejtve marad — modell nélkül ez a szám mindig 0, a szkennelés
-        el sem indul, ld. `scanForFaces`)."""
+        """A bal hasábban látható névtelen arcok száma."""
         with open_index(self._db_path) as conn:
-            return unnamed_photo_count(conn)
+            return unnamed_face_count(conn)
+
+    @Slot(result=bool)
+    def unnamedWelcomeHasBeenShown(self) -> bool:  # noqa: N802
+        """A Név nélküliek üdvözlése már bezárult-e ebben a profilban."""
+        return self._beallitas_bool(self.UNNAMED_WELCOME_SHOWN_KEY, False)
+
+    @Slot()
+    def markUnnamedWelcomeShown(self) -> None:  # noqa: N802
+        """A bezárt üdvözlőablak megjegyzése a közös QSettings-tárban."""
+        self._settings.setValue(self.UNNAMED_WELCOME_SHOWN_KEY, True)
+        self._settings.sync()
 
     @Slot(bool, bool, result="QVariantList")
     def unnamedGroups(self, group_by_face: bool, expand_groups: bool) -> list[dict]:

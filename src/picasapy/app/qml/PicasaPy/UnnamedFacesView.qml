@@ -18,6 +18,7 @@ ColumnLayout {
     property var faceScanController: null
     signal showIgnoredRequested()
     signal showUnnamedRequested()
+    signal nameSubmitted(int faceId, string name)
     signal namedSuggestionAccepted()
     // #26: „unnamed" = a Névtelenek album, „ignored" = a Mellőzött emberek
     // album (`CAlbumLabel::Ignored`). Az eredetiben ez két ALBUM volt
@@ -35,6 +36,8 @@ ColumnLayout {
     // fejléc-utasítás várakozást kér (`CAlbumLabel::LoadingGrouped`)
     property bool groupingInProgress: false
     property var groupsModel: []
+    property var facesModel: []
+    property bool hasIgnoredFaces: false
     property var selectedFaceIds: ({})
     property int selectedCount: 0
     // #3670: a megerősítésre váró mellőzés arcai — a bélyegkép X-e EGY
@@ -50,11 +53,27 @@ ColumnLayout {
     function reload() {
         if (!faceScanController) {
             root.groupsModel = []
+            root.facesModel = []
+            root.hasIgnoredFaces = false
             return
         }
-        root.groupsModel = (root.mode === "ignored")
-            ? faceScanController.ignoredGroups()
-            : faceScanController.unnamedGroups(true, !root.grouped)
+        var ignored = faceScanController.ignoredGroups()
+        root.hasIgnoredFaces = false
+        for (var i = 0; i < ignored.length; ++i) {
+            if (ignored[i].faces && ignored[i].faces.length > 0) {
+                root.hasIgnoredFaces = true
+                break
+            }
+        }
+        var groups = (root.mode === "ignored")
+            ? ignored : faceScanController.unnamedGroups(true, !root.grouped)
+        root.groupsModel = groups
+        var faces = []
+        for (var j = 0; j < groups.length; ++j) {
+            for (var k = 0; k < groups[j].faces.length; ++k)
+                faces.push(groups[j].faces[k])
+        }
+        root.facesModel = faces
     }
 
     function toggleFace(faceId) {
@@ -94,6 +113,17 @@ ColumnLayout {
                        + "the \"x\" to ignore that person.")
                 : qsTr("Select someone you know and add a name")
 
+    function showWelcomeIfFirstOpen() {
+        if (!root.faceScanController || root.ignoredMode
+                || root.faceScanController.unnamedWelcomeHasBeenShown())
+            return
+        Qt.callLater(function() {
+            if (root.visible && !root.ignoredMode
+                    && !root.faceScanController.unnamedWelcomeHasBeenShown())
+                welcomeDialog.open()
+        })
+    }
+
     Component.onCompleted: reload()
     onModeChanged: {
         root.clearSelection()
@@ -101,7 +131,11 @@ ColumnLayout {
         root.reload()
     }
     onGroupedChanged: { clearSelection(); reload() }
-    onVisibleChanged: if (visible) { root.grouped = true; reload() }
+    onVisibleChanged: if (visible) {
+        root.grouped = true
+        reload()
+        root.showWelcomeIfFirstOpen()
+    }
 
     Connections {
         target: root.faceScanController || null
@@ -119,7 +153,8 @@ ColumnLayout {
     }
 
     Text {
-        objectName: "unnamedInstructions"
+        objectName: "ignoredInstructions"
+        visible: root.ignoredMode
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
         text: root.instructionText
@@ -133,8 +168,41 @@ ColumnLayout {
     RowLayout {
         objectName: "unknownFaceViewHeader"
         Layout.fillWidth: true
+        Layout.preferredHeight: 36
         spacing: 5
 
+        RowLayout {
+            objectName: "unnamedTitleBlock"
+            visible: !root.ignoredMode
+            spacing: 8
+
+            Image {
+                objectName: "unnamedTitleIcon"
+                Layout.preferredWidth: 36
+                Layout.preferredHeight: 36
+                source: Qt.resolvedUrl("icons/person-silhouette.svg")
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+            }
+            ColumnLayout {
+                spacing: 2
+                Text {
+                    objectName: "unnamedAlbumTitle"
+                    text: qsTr("Unnamed people")
+                    font.pixelSize: Theme.fontSize + 6
+                    color: "#68564f"
+                }
+                Text {
+                    objectName: "unnamedAlbumFaceCount"
+                    text: root.faceScanController
+                          ? qsTr("%d Face(s)").replace(
+                                "%d", String(root.faceScanController.unnamedCount))
+                          : qsTr("%d Face(s)").replace("%d", "0")
+                    font.pixelSize: Theme.fontSize - 2
+                    color: Theme.textGray
+                }
+            }
+        }
         Item { Layout.fillWidth: true }
         Button {
             id: clusterToggleButton
@@ -156,6 +224,7 @@ ColumnLayout {
                 objectName: "unknownfaceheaderpanel/showignored"
                 anchors.fill: parent
                 visible: !root.ignoredMode
+                enabled: root.hasIgnoredFaces
                 text: qsTr("Show ignored faces")
                 onClicked: root.showIgnoredRequested()
             }
@@ -169,7 +238,19 @@ ColumnLayout {
         }
     }
 
+    Text {
+        objectName: "unnamedInstructions"
+        visible: !root.ignoredMode
+        Layout.fillWidth: true
+        Layout.bottomMargin: 8
+        wrapMode: Text.WordWrap
+        text: root.instructionText
+        font.pixelSize: Theme.fontSize
+        color: Theme.textDark
+    }
+
     RowLayout {
+        visible: root.ignoredMode
         Layout.fillWidth: true
         spacing: 14
 
@@ -265,9 +346,154 @@ ColumnLayout {
         }
     }
 
+    GridView {
+        id: unnamedFacesGrid
+        objectName: "unnamedGroupsList"
+        visible: !root.ignoredMode
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        clip: true
+        cellWidth: 194
+        cellHeight: 198
+        readonly property int columns: Math.max(1, Math.floor(width / cellWidth))
+        height: Math.ceil(root.facesModel.length / columns) * cellHeight
+        model: root.facesModel
+        ScrollBar.vertical: PicasaScrollBar {}
+
+        delegate: Item {
+            id: faceCard
+            required property var modelData
+            width: unnamedFacesGrid.cellWidth
+            height: unnamedFacesGrid.cellHeight
+
+            Column {
+                width: 172
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 2
+
+                Rectangle {
+                    id: faceTile
+                    objectName: "faceTile_" + faceCard.modelData.faceId
+                    width: 146
+                    height: 172
+                    color: "transparent"
+                    border.width: 2
+                    border.color: root.selectedFaceIds[faceCard.modelData.faceId]
+                                  ? Theme.panelSelectionActive : "transparent"
+
+                    Image {
+                        objectName: "faceImage_" + faceCard.modelData.faceId
+                        anchors.fill: parent
+                        source: faceCard.modelData.thumbUrl
+                        smooth: true
+                        mipmap: true
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: root.toggleFace(faceCard.modelData.faceId)
+                    }
+
+                    Rectangle {
+                        objectName: "faceIgnoreX_" + faceCard.modelData.faceId
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 2
+                        width: 13
+                        height: 13
+                        radius: 0
+                        color: "#ffffff"
+                        border.color: "#1b1b1b"
+                        border.width: 1
+                        Text {
+                            anchors.centerIn: parent
+                            text: "X"
+                            font.pixelSize: 8
+                            font.bold: true
+                            color: "#111111"
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -2
+                            onClicked: root.requestIgnore(
+                                [faceCard.modelData.faceId])
+                        }
+                    }
+
+                    Rectangle {
+                        objectName: "suggestionBar_" + faceCard.modelData.faceId
+                        visible: (faceCard.modelData.suggestedName || "") !== ""
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 3
+                        height: 20
+                        color: Theme.infoBar
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 4
+                            spacing: 4
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width - 22
+                                elide: Text.ElideRight
+                                text: qsTr("%1?").arg(
+                                    faceCard.modelData.suggestedName || "")
+                                font.pixelSize: Theme.fontSize - 1
+                                color: Theme.infoBarText
+                            }
+                            Text {
+                                objectName: "suggestionYes_"
+                                            + faceCard.modelData.faceId
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "✓"
+                                color: Theme.infoBarText
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    onClicked: root.acceptSuggestion(
+                                        faceCard.modelData.faceId)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                TextField {
+                    id: faceNameField
+                    objectName: "unnamedFaceNameField_"
+                                + faceCard.modelData.faceId
+                    width: 172
+                    height: 20
+                    padding: 1
+                    horizontalAlignment: TextInput.AlignHCenter
+                    verticalAlignment: TextInput.AlignVCenter
+                    font.pixelSize: Theme.fontSize - 2
+                    placeholderText: qsTr("Add a name")
+                    background: Rectangle {
+                        color: "#ffffff"
+                        border.color: "#8a8a8a"
+                        border.width: 1
+                        radius: 0
+                    }
+                    TextFieldContextArea {}
+                    onAccepted: {
+                        var name = text.trim()
+                        if (!name)
+                            return
+                        text = ""
+                        root.nameSubmitted(faceCard.modelData.faceId, name)
+                    }
+                }
+            }
+        }
+    }
+
     ListView {
         id: groupsList
-        objectName: "unnamedGroupsList"
+        objectName: "ignoredGroupsList"
+        visible: root.ignoredMode
         Layout.fillWidth: true
         Layout.fillHeight: true
         clip: true
@@ -290,7 +516,7 @@ ColumnLayout {
 
             GridView {
                 id: faceGrid
-                objectName: "unnamedFaceGrid"
+                objectName: "ignoredFaceGrid"
                 Layout.fillWidth: true
                 interactive: false
                 cellWidth: 96
@@ -407,6 +633,113 @@ ColumnLayout {
                                 }
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    Popup {
+        id: welcomeDialog
+        objectName: "unnamedWelcomeDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: Overlay.overlay
+        width: 458
+        height: 494
+        padding: 15
+        modal: true
+        dim: true
+        focus: true
+        closePolicy: Popup.NoAutoClose
+        background: Rectangle {
+            color: "#606060"
+            border.color: "#999999"
+            border.width: 1
+            radius: 6
+        }
+        onClosed: if (root.faceScanController)
+            root.faceScanController.markUnnamedWelcomeShown()
+
+        contentItem: ColumnLayout {
+            spacing: 13
+
+            Text {
+                objectName: "unnamedWelcomeTitle"
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                text: qsTr("Welcome to the Unnamed people album! ")
+                font.pixelSize: Theme.fontSize
+                font.bold: true
+                color: "#ffffff"
+            }
+            Text {
+                objectName: "unnamedWelcomeBody"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                wrapMode: Text.WordWrap
+                text: qsTr(
+                    "As Picasa scans your photos, the faces it finds are "
+                    + "automatically grouped for easy naming.\n\n"
+                    + "Things to know:\n\n"
+                    + "To identify a person, click 'Add a name', then type "
+                    + "in the person's name and press Enter.  A new People "
+                    + "album will be created each time you name someone for "
+                    + "the first time.\n\n"
+                    + "(TIP: Sign in with your Google Account to gain access "
+                    + "to all of your Google Account contacts while naming.)\n\n"
+                    + "To ignore a person, click the 'X' button on the face "
+                    + "thumbnail.\n\n"
+                    + "Suggestions: After you name someone, Picasa may suggest "
+                    + "more matching faces for that person. Click on a "
+                    + "person's album to view and confirm (or reject) any "
+                    + "suggestions.\n\n\n Click 'Learn More' for information "
+                    + "about this feature.")
+                font.pixelSize: Theme.fontSize - 2
+                font.bold: true
+                color: "#ffffff"
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Button {
+                    objectName: "unnamedWelcomeLearnMoreButton"
+                    text: qsTr("Learn more...")
+                    Layout.preferredWidth: 86
+                    Layout.preferredHeight: 28
+                    contentItem: Text {
+                        text: parent.text
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: Theme.fontSize - 4
+                        font.bold: true
+                        color: "#ffffff"
+                    }
+                    background: Rectangle {
+                        color: "transparent"
+                        border.color: "#dddddd"
+                        border.width: 1
+                        radius: 6
+                    }
+                }
+                Item { Layout.fillWidth: true }
+                Button {
+                    objectName: "unnamedWelcomeCloseButton"
+                    text: qsTr("Close")
+                    Layout.preferredWidth: 82
+                    Layout.preferredHeight: 28
+                    onClicked: welcomeDialog.close()
+                    contentItem: Text {
+                        text: parent.text
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: Theme.fontSize - 4
+                        font.bold: true
+                        color: "#ffffff"
+                    }
+                    background: Rectangle {
+                        color: "transparent"
+                        border.color: "#dddddd"
+                        border.width: 1
+                        radius: 6
                     }
                 }
             }

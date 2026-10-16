@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.115] – 2026-10-17
+
+- A Súgóban témaváltáskor a tartalom újra a tetejéről indul (#5175).
+- A Név nélküliek album az eredeti Picasa szerint épül fel: minden arc alatt saját névmező van, a fejléc és a bal sáv az arcok számát mutatja, az első megnyitáskor útmutató jelenik meg, és az új név beírása után a személykezelő ablak a névvel előtöltve nyílik meg (#5183).
+
 ## [0.9.114] – 2026-10-16
 
 - A Gombok beállítása párbeszédben a Hozzáadás, Eltávolítás, Fel és Le gomb újra látszik és kattintható (#5170).
