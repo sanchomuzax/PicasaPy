@@ -6936,22 +6936,36 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Kai „Picasa“ nuskaito nuotraukas, rasti veidai automatiškai sugrupuojami, kad juos būtų lengva įvardyti.
+
+Dalykai, kuriuos verta žinoti.
+
+Jei norite identifikuoti asmenį, spustelėkite 'Pridėti vardą', tada įveskite asmens vardą ir paspauskite Įvesti. Kiekvieną kartą, kai identifikuojate asmenį pirmą kartą, sukuriamas naujas Žmonių albumas.
+
+(PATARIMAS. Prisijunkite naudodamiesi savo „Google“ paskyra, jei įvardindami norite gauti prieigą prie visų savo kontaktų.)
+
+Jei norite asmenį ignoruoti, spustelėkite 'X' mygtuką ant veido miniatiūros.
+
+Pasiūlymai. Kai identifikuojate asmenį, „Picasa“ gali pasiūlyti daugiau šį asmenį atitinkančių veidų. Spustelėkite asmens albumą, jei norite peržiūrėti ir patvirtinti (arba atmesti) pasiūlymus.
+
+
+ Spustelėkite 'Sužinoti daugiau', jei reikia daugiau informacijos apie šią funkciją.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Sužinokite daugiau…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <source>Stop ignoring</source>
@@ -17921,8 +17935,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>„Picasa“ nuotraukų: %d</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

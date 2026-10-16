@@ -6918,15 +6918,29 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Picasa, fotoğraflarınızı tararken bulduğu yüzleri kolay adlandırılabilmeleri için otomatik olarak gruplandırır.
+
+Bilinmesi gerekenler:
+
+Bir kişiyi tanımlamak için, "Ad ekle''yi tıklayın, sonra da kişinin adını yazıp Enter tuşuna basın. Birisini ilk kez adlandırdığınız her seferinde yeni bir Kişi albümü oluşturulur.
+
+(İPUCU: Adlandırırken, Google Hesabınızdaki kişilerin tümüne erişim sahibi olabilmek için Google Hesabınızla oturum açın.)
+
+Bir kişiyi yok saymak için, yüz küçük resmindeki "X" düğmesini tıklayın.
+
+Öneriler: Birisini adlandırdıktan sonra Picasa, söz konusu kişi için eşleşen başka yüzler önerebilir. Önerileri görüntülemek ve onaylamak (veya reddetmek) için bir kişinin albümünü tıklayın.
+
+
+ Bu özellik hakkında bilgi edinmek için 'Daha Fazla Bilgi Edinin''i tıklayın.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Daha fazla bilgi edinin…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

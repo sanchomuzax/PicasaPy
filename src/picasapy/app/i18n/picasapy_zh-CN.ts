@@ -6918,8 +6918,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Picasa 在扫描照片时，会对找到的脸部图像自动进行分组以便于命名。
+
+注意事项：
+
+要标识某人，请点击“添加姓名”，然后输入此人的姓名并按 Enter。每当您第一次为某人命名时，系统都会创建一个新的人物相册。
+
+（提示：命名时，使用 Google 帐户登录即可获取对您所有 Google 帐户联系人的访问权限）。
+
+要忽略某人，请点击脸部缩略图上的“X”按钮。
+
+建议：在您命名某人之后，Picasa 可能会建议更多与此人相匹配的脸部图像。点击此人的相册即可查看和确认（或拒绝）所有建议。
+
+
+ 点击“了解详情”以查看更多关于此功能的信息。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -6932,8 +6946,8 @@ picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>关闭</translation>
         </message>
         <message>
             <source>Stop ignoring</source>
@@ -17894,8 +17908,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>Picasa 中的 %d 张照片</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

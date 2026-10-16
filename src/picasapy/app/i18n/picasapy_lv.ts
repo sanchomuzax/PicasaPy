@@ -6936,8 +6936,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Kad pakalpojums Picasa skenē jūsu fotoattēlus, tajos redzamās sejas tiek automātiski grupētas, lai tām varētu piešķirt vārdus.
+
+Ņemiet vērā:
+
+Lai identificētu kādu personu, noklikšķiniet uz 'Pievienot vārdu', pēc tam ievadiet personas vārdu un nospiediet taustiņu Enter. Ikreiz, kad kādai personai pirmoreiz piešķirat vārdu, tiek izveidots jauns personas albums.
+
+(PADOMS. Pierakstieties, izmantojot savu Google kontu, lai vārda piešķiršanas laikā piekļūtu visām savām Google konta kontaktpersonām.)
+
+Lai ignorētu kādu personu, noklikšķiniet uz sejas sīktēla pogas 'X'.
+
+Ieteikumi. Kad personai piešķirat vārdu, pakalpojums Picasa var ieteikt citas atbilstošas šīs personas sejas. Noklikšķiniet uz personas albuma, lai skatītu un apstiprinātu (vai noraidītu) ieteikumus.
+
+
+ Noklikšķiniet uz 'Uzziniet vairāk', lai iegūtu papildinformāciju par šo funkciju.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -6950,8 +6964,8 @@ picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Aizvērt</translation>
         </message>
         <message>
             <source>Stop ignoring</source>
@@ -17921,8 +17935,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>%d fotoattēli programmā Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

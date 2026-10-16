@@ -6918,15 +6918,29 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Καθώς το Picasa σαρώνει τις φωτογραφίες σας, τα πρόσωπα που εντοπίζει ομαδοποιούνται αυτόματα για εύκολη ονοματοθεσία.
+
+Τι πρέπει να γνωρίζετε:
+
+Για την ταυτοποίηση κάποιου ατόμου, κάντε κλικ στην επιλογή "Προσθήκη κάποιου ονόματος" και, στη συνέχεια, πληκτρολογήστε το όνομα του αρχείου και πατήστε το πλήκτρο Enter.  Κάθε φορά που προσθέτετε το όνομα κάποιου ατόμου για πρώτη φορά, θα δημιουργείται ένα νέο λεύκωμα Ατόμων.
+
+(ΣΥΜΒΟΥΛΗ: Συνδεθείτε με τον Λογαριασμό σας Google για να αποκτήσετε πρόσβαση σε όλες τις επαφές σας κατά τη διαδικασία της ονοματοθεσίας.)
+
+Για να αγνοήσετε κάποιο άτομο, κάντε κλικ στο κουμπί "X" στη μικρογραφία με το πρόσωπο.
+
+Προτάσεις: Αφού ονομάσετε κάποιο άτομο, το Picasa ενδέχεται να προτείνει περισσότερα πρόσωπα αντιστοίχισης για το συγκεκριμένο άτομο. Κάντε κλικ στο λεύκωμα κάποιου ατόμου για να προβάλετε και να επιβεβαιώσετε (ή να απορρίψετε) τυχόν προτάσεις.
+
+
+ Για πληροφορίες σχετικά με αυτήν τη λειτουργία, κάντε κλικ στην επιλογή "Μάθετε περισσότερα".</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Μάθετε περισσότερα…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -17894,8 +17908,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>%d Φωτογραφίες στο Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

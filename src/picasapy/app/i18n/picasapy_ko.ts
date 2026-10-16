@@ -6918,15 +6918,29 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Picasa에서 사진을 스캔해 찾은 얼굴에 따라 그룹으로 분류해 주므로 쉽게 이름을 지정할 수 있습니다.
+
+알아야 할 사항:
+
+인물을 식별하기 위해서는 '이름 추가'를 클릭한 다음, 인물의 이름을 입력하고 Enter 키를 누릅니다. 인물 이름을 처음으로 지정할 때마다 새 인물 앨범이 만들어집니다.
+
+(도움말: Google 계정으로 로그인하면 이름을 지정하는 동안 모든 주소록에 액세스할 수 있습니다.)
+
+인물을 무시하려면 얼굴 썸네일 이미지에서 'X' 버튼을 클릭합니다.
+
+제안: 한 인물의 이름을 지정하면 Picasa에서 해당 인물과 일치하는 얼굴이 있는 사진을 더 제안할 수 있습니다. 제안을 보고 확인 또는 거부하려면 인물의 앨범을 클릭하세요. 
+
+
+ 이 기능에 대한 내용을 보려면 '자세히 알아보기'를 클릭하세요.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>자세히 알아보기...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

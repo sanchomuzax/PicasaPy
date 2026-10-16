@@ -6963,8 +6963,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>‏بينما يعمل بيكاسا على مسح صورك ضوئيًا، يتم تلقائيًا تجميع الوجوه التي يعثر عليها وذلك لسهولة التسمية.
+
+أمور يجب معرفتها:
+
+nلتعريف شخص، انقر على 'إضافة اسم'ثم اكتب اسم الشخص واضغط على Enter.  وسيتم إنشاء ألبوم أشخاص جديد في كل مرة تسمي فيها شخصًا جديدًا للمرة الأولى.
+
+(نصيحة: سجل الدخول باستخدام حساب Google لإمكانية الدخول إلى جميع جهات اتصال حسابك في Google أثناء التسمية.)
+
+لتجاهل شخص، انقر على زر 'X' على صورة الوجه المصغرة.
+
+الاقتراحات: بعد تسمية شخص، قد يقترح بيكاسا وجوهًا إضافية مطابقة لهذا الشخص. انقر على ألبوم الشخص لعرض أية اقتراحات وتأكيدها (أو رفضها).
+
+
+ انقر على 'مزيد من المعلومات' للاطلاع على معلومات عن هذه الميزة.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -6977,8 +6991,8 @@ picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>إغلاق</translation>
         </message>
         <message>
             <source>Stop ignoring</source>

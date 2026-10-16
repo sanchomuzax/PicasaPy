@@ -6918,22 +6918,36 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Habang sina-scan ng Picasa ang iyong mga larawan, awtomatikong ipinapangkat ang mga mukhang nahahanap nito para sa madaling pagpapangalan:
+
+Upang matukoy ang isang tao, i-click ang 'Magdagdag ng pangalan', pagkatapos ay i-type ang pangalan ng tao at pindutin ang Enter.  Isang bagong album ng Mga Tao ang magagawa sa tuwing pinapangalanan mo ang isang tao sa unang pagkakataon.
+
+(TIP: Mag-sign in sa iyong Google Account upang magkaroon ng access sa lahat ng mga contact sa iyong Google Account habang nagpapangalan.)
+
+Upang balewalain ang isang tao, i-click ang button na 'X' sa thumbnail na mukha.
+
+Mga Suhestyon: Pagkatapos mong pangalanan ang isang tao, maaaring magmungkahi ang Picasa ng higit pang mga tumutugmang mukha para sa taong iyon. Mag-click sa album ng isang tao upang tingnan at kumpirmahin (o tanggihan) ang anumang mga suhestyon.
+
+I-click ang 'Matuto nang higit pa' para sa impormasyon tungkol sa feature na ito.
+
+
+</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Matuto nang higit pa...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Sarhan</translation>
         </message>
         <message>
             <source>Stop ignoring</source>
@@ -17894,8 +17908,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>%d Mga Larawan sa Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

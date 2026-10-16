@@ -6936,15 +6936,29 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Picasa сканує ваші фотографії й автоматично групує ті з них, де впізнає ті самі обличчя, щоб вам було зручно позначати людей.
+
+Варто знати
+
+Щоб позначити людину, натисніть "Додати ім’я", введіть ім’я й натисніть Enter. Щоразу, коли ви вперше когось позначаєте, створюється новий альбом "Люди".
+
+(ПОРАДА. Увійдіть у свій обліковий запис Google, щоб мати доступ до всіх своїх контактів, позначаючи людей.)
+
+Щоб ігнорувати людину, натисніть кнопку "X" на ескізі з обличчям.
+
+Пропозиції: коли позначено людину, Picasa може запропонувати інші фотографії з цим обличчям. Натисніть альбом цієї людини, щоб переглянути й підтвердити (або відхилити) пропозиції.
+
+
+ Натисніть "Докладніше", щоб дізнатися про цю функцію.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Докладніше…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

@@ -6918,8 +6918,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>當 Picasa 掃描您的相片時，會自動將找到的臉孔分組，方便您分別命名。
+
+須知事項：
+
+如要標示出您所知道的人，請按一下 [新增名稱]，然後輸入這個人的名字，再按下 Enter 鍵。當您首次輸入某人的名字時，系統一律會建立新的「人物」相簿。
+
+(提示：如果您登入了自己的 Google 帳戶，您在輸入名字時便可以看到所有的聯絡人)。
+
+如要忽略某人，請在對應的臉孔縮圖上按一下 [X]。
+
+建議：輸入名字後，Picasa 可能會找出與該人物相符的其他臉孔。按一下特定人物的相簿即可查看並確認 (或拒絕) 系統提出的任何建議。
+
+
+ 如要進一步瞭解這項功能，請按一下 [瞭解詳情]。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

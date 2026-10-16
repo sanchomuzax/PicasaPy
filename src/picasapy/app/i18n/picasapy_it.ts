@@ -6927,8 +6927,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Man mano che Picasa esegue una scansione delle tue foto, i volti che trova vengono raggruppati automaticamente, in modo che tu possa indicare i nomi in maniera più semplice.
+
+Cose da sapere:
+
+Per identificare una persona, fai clic su "Aggiungi un nome", quindi digita il nome della persona e premi Invio. Viene creato un nuovo album Persone ogni volta che indichi il nome di qualcuno per la prima volta.
+
+Suggerimento. Accedi con il tuo account Google per visualizzare tutti i tuoi contatti durante l'assegnazione dei nomi.
+
+Per ignorare una persona, fai clic sul pulsante "X" sulla miniatura del volto.
+
+Suggerimenti. Dopo aver indicato il nome di qualcuno, Picasa potrebbe suggerirti altri volti corrispondenti al volto di quella persona. Fai clic sull'album di tale persona per vedere e confermare (o rifiutare) i suggerimenti.
+
+
+ Fai clic su "Ulteriori informazioni" per sapere di più su questa funzione.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -6941,8 +6955,8 @@ picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Chiudi</translation>
         </message>
         <message>
             <source>Stop ignoring</source>

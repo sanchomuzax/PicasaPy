@@ -6918,8 +6918,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Picasa で写真をスキャンすると、顔が検出されて自動的にグループ化されるため、名前を簡単に指定できます。
+
+操作方法:
+
+人物の名前を指定するには、[名前を追加] をクリックしてその人物の名前を入力し、Enter キーを押します。新しい人物の名前を指定するたびに新しい人物アルバムが作成されます。
+
+（ヒント: Google アカウントでログインすると、名前を指定するときに Google アカウントのすべての連絡先にアクセスできます）。
+
+特定の人物を無視する場合は、顔のサムネイルに表示されている [X] ボタンをクリックします。
+
+候補: 人物に名前を付けると、その人物に一致すると思われる顔の候補が表示されることがあります。人物のアルバムをクリックして表示し、候補を確認（または却下）してください。
+
+
+ この機能については [詳細] をクリックしてください。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

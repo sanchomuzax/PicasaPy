@@ -6918,8 +6918,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>ขณะที่ Picasa สแกนรูปภาพของคุณ ใบหน้าที่พบจะถูกจัดกลุ่มโดยอัตโนมัติเพื่อให้กำหนดชื่อได้ง่าย
+
+สิ่งที่ควรทราบ:
+
+ในการระบุตัวบุคคล ให้คลิก "เพิ่มชื่อ" จากนั้นพิมพ์ชื่อของบุคคลนั้นและกด Enter อัลบั้มผู้คนใหม่จะถูกสร้างขึ้นทุกครั้งที่คุณกำหนดชื่อบุคคลหนึ่งเป็นครั้งแรก
+
+(เคล็ดลับ: ลงชื่อเข้าใช้บัญชี Google ของคุณเพื่อเข้าถึงรายชื่อติดต่อทั้งหมดในบัญชี Google ของคุณขณะที่กำหนดชื่อ)
+
+ในการละเว้นบุคคล ให้คลิกที่ปุ่ม "X" ที่ภาพขนาดย่อของใบหน้า
+
+คำแนะนำ: หลังจากที่คุณกำหนดชื่อคน Picasa อาจแนะนำใบหน้าอื่นๆ ที่ตรงกันสำหรับคนนั้น คลิกที่อัลบั้มของคนนั้นเพื่อดูและยืนยัน (หรือปฏิเสธ) คำแนะนำ
+
+
+ คลิก "เรียนรู้เพิ่มเติม" สำหรับข้อมูลเกี่ยวกับคุณลักษณะนี้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -17894,8 +17908,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>%d รูปภาพใน Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

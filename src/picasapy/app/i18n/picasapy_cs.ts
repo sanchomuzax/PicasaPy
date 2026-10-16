@@ -6936,8 +6936,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Tváře lidí, které Picasa při skenování vašich fotek najde, jsou automaticky seskupovány, abyste je mohli snadněji označit jménem.
+
+Základní informace:
+
+Pokud chcete někoho označit, klikněte na „Přidat jméno“, zadejte jméno daného člověka a poté stiskněte Enter. Pokaždé, když někoho poprvé označíte jménem, vytvoří se nové album „Osoby“.
+
+(Tip: Přihlaste se pomocí svého účtu Google a při označování jménem tak budete mít přístup ke všem svým kontaktům.)
+
+Pokud někoho chcete ignorovat, klikněte na miniatuře tváře na tlačítko „X“.
+
+Doporučení: Poté co někoho pojmenujete, vám Picasa může k označení jménem nabídnout další podobné obličeje. Návrhy na označení můžete zobrazit a schválit (či odmítnout) poté, co kliknete na album daného člověka.
+
+
+ Další informace o této funkci si můžete přečíst po kliknutí na „Další informace“.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

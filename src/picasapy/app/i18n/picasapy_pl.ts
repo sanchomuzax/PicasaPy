@@ -6936,8 +6936,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Podczas skanowania zdjęć Picasa automatycznie grupuje znalezione twarze, aby ułatwić przypisywanie nazw.
+
+Warto wiedzieć:
+
+Aby zidentyfikować osobę, kliknij „Dodaj nazwę”, wpisz imię i nazwisko tej osoby, a następnie naciśnij Enter. Za każdym razem, gdy po raz pierwszy przypiszesz komuś nazwę, zostanie utworzony nowy album osób.
+
+WSKAZÓWKA: aby podczas przypisywania nazw móc korzystać ze wszystkich swoich kontaktów z konta Google, zaloguj się na to konto.
+
+Aby zignorować daną osobę, kliknij przycisk „X” na miniaturze twarzy.
+
+Sugestie: gdy przypiszesz nazwę jakiejś osobie, Picasa może zasugerować więcej pasujących twarzy. Kliknij album tej osoby, aby wyświetlić i potwierdzić (lub odrzucić) wszelkie sugestie.
+
+
+ Aby dowiedzieć się więcej o tej funkcji, kliknij „Więcej informacji”.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

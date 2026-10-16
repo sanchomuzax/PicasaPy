@@ -6918,8 +6918,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>जैसे ही Picasa आपकी फ़ोटो स्कैन करता है, वैसे ही उसे मिलने वाले चेहरों को आसानी से नाम देने के लिए अपने आप समूहीकृत कर दिया जाता है.
+
+जानने योग्य बातें:
+
+किसी व्यक्ति को पहचानने के लिए, 'एक नाम जोड़े' क्लिक करें, फिर व्यक्ति का नाम लिखें और Enter दबाएं.  जब भी आप पहली बार किसी व्यक्ति का नाम लेंगे, तब एक नया लोग एल्बम बनाया जाएगा.
+
+(टिप: नाम देते समय अपने सभी Google खाता संपर्कों की एक्सेस प्राप्त करने के लिए अपने Google खाते से प्रवेश करें.)
+
+किसी व्यक्ति को अनदेखा करने के लिए, चेहरा थंबनेल पर 'X' बटन क्लिक करें.
+
+सुझाव: आपके द्वारा किसी व्यक्ति को नाम दिए जाने के बाद, Picasa उस व्यक्ति के लिए मेल खाते और चेहरों का सुझाव दे सकता है. किसी भी सुझाव को देखने और उसकी पुष्टि (या अस्वीकार) करने के लिए व्यक्ति के एल्बम पर क्लिक करें.
+
+
+ इस सुविधा के बारे में जानकारी के लिए 'और जानें' क्लिक करें.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -6932,8 +6946,8 @@ picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>बंद करें</translation>
         </message>
         <message>
             <source>Stop ignoring</source>

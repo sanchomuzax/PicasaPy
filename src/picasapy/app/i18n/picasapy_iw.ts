@@ -6927,8 +6927,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>‏בשעה ש-Picasa סורק את התמונות שלך, הוא מקבץ באופן אוטומטי את הפרצופים המתגלים כדי שיהיה קל לתת שמות.
+
+דברים שכדאי לדעת:
+
+כדי לזהות מישהו, לחץ על 'הוסף שם', ואז הקלד את שם אותו אדם והקש Enter.  אלבום 'אנשים' חדש ייווצר בכל פעם שתיתן שם למישהו בפעם הראשונה.
+
+(טיפ: היכנס עם חשבון Google כדי לקבל גישה לכל אנשי הקשר שלך בעת מתן שמות.)
+
+כדי להתעלם מאדם מסוים, לחץ על הלחצן 'X' בתמונה הממוזערת של הפרצוף.
+
+הצעות: לאחר מתן שם למישהו, Picasa עשוי להציע עוד פרצופים מתאימים לאדם זה. לחץ על האלבום של מישהו כדי להציג ולאשר (או לדחות) הצעות כלשהן. 
+
+
+ לחץ על 'מידע נוסף' לקבלת מידע על התכונה הזו.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -6941,8 +6955,8 @@ picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>סגור</translation>
         </message>
         <message>
             <source>Stop ignoring</source>
@@ -17907,8 +17921,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>‏%d תצלומים ב-Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

@@ -6936,8 +6936,22 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>При сканировании фотографий Picasa автоматически группирует найденные лица, чтобы упростить добавление имен.
+
+Полезные советы
+
+Чтобы отметить человека, нажмите "Добавить имя", введите его и нажмите клавишу ВВОД. Каждый раз при добавлении нового человека будет создаваться его альбом.
+
+(Подсказка. Войдите в аккаунт Google, чтобы получить доступ к своим контактам при добавлении имен.)
+
+Чтобы игнорировать человека, нажмите крестик на уменьшенном изображении его лица.
+
+После того как вы отметили какого-либо человека, Picasa может предложить несколько похожих на него лиц. Нажмите на альбом с фотографиями соответствующего человека, чтобы посмотреть и подтвердить либо отклонить предложение.
+
+
+ Чтобы получить дополнительную информацию об этой функции, нажмите "Подробнее".</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -6950,8 +6964,8 @@ picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Закрыть</translation>
         </message>
         <message>
             <source>Stop ignoring</source>

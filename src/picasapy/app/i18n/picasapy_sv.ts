@@ -6927,15 +6927,29 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>När dina foton genomsöks i Picasa grupperas ansiktena som identifieras så att du enkelt kan ange namn på dem.
+
+Saker du behöver veta:
+
+Identifiera en person genom att klicka på Lägg till ett namn. Ange sedan personens namn och tryck på Retur. Ett nytt personalbum skapas varje gång du anger ett namn på någon för första gången.
+
+(Tips! Logga in med ditt Google-konto och få tillgång till alla kontakter i Google-kontot medan du anger namn.)
+
+Ignorera en person genom att klicka på knappen X på miniatyrbilden av ansiktet.
+
+Förslag: När du har angett ett namn på någon kan fler matchande ansikten föreslås i Picasa för personen. Klicka på en persons album om du vill visa och bekräfta (eller avvisa) förslag.
+
+
+ Klicka på Läs mer om du vill ha information om den här funktionen.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Läs mer...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
@@ -17907,8 +17921,8 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photos in Picasa</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
+            <translation>%d foton i Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

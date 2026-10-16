@@ -6903,7 +6903,7 @@ picasapy-origin-key: stringres:CUnnamedProgress::progress2</extracomment>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Welcome to the Unnamed people album! </source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Text1(instructionpanel/title)</extracomment>
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/title)</extracomment>
             <translation>Üdvözöljük a Név nélküliek albumban! </translation>
         </message>
         <message>
@@ -6923,7 +6923,7 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
  Click 'Learn More' for information about this feature.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Text1(instructionpanel/body)</extracomment>
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
             <translation>A Picasa a fotókeresés közben az egyszerű elnevezés érdekében automatikusan csoportosítja az arcokat.
 
 Fontos tudnivalók:
@@ -6943,14 +6943,14 @@ Javaslatok: Az elnevezést követően előfordulhat, hogy a Picasa további kép
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(instructionpanel/learn_more)</extracomment>
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
             <translation>További információ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(instructionpanel/close)</extracomment>
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
             <translation>Bezárás</translation>
         </message>
         <message>

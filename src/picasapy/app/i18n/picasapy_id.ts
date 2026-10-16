@@ -6918,15 +6918,29 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Ketika Picasa memindai foto Anda, wajah yang terdeteksi akan otomatis dikelompokkan untuk memudahkan penamaan.
+
+Hal-hal yang perlu diketahui:
+
+Untuk mengidentifikasi orang, klik 'Tambahkan nama', lalu ketik nama orang dan tekan Enter. Album Orang baru akan dibuat setiap kali Anda menamai seseorang untuk pertama kalinya.
+
+(KIAT: Masuk menggunakan Akun Google untuk mendapatkan akses ke semua kontak Akun Google Anda saat menamai.)
+
+Untuk mengabaikan orang, klik tombol 'X' di gambar mini wajah.
+
+Saran: Setelah Anda menamai seseorang, Picasa mungkin menyarankan wajah lainnya yang cocok dengan orang tersebut. Klik album orang untuk melihat dan mengonfirmasi (atau menolak) saran apa pun.
+
+
+ Klik 'Pelajari Lebih Lanjut' untuk informasi tentang fitur ini.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Pelajari selengkapnya...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />

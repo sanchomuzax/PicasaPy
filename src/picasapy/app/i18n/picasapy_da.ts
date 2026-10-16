@@ -6918,22 +6918,36 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 
  Click 'Learn More' for information about this feature.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
+            <translation>Når Picasa scanner dine fotos, grupperes de ansigter, der findes, automatisk, så de er nemme at navngive.
+
+Ting, du skal vide:
+
+For at identificere en person skal du klikke på 'Tilføj et navn' og derefter indtaste personens navn og trykke på Enter. Der oprettes et nyt Personer-album, hver gang du sætter navn på en person for første gang.
+
+(TIP! Log ind med din Google-konto for at få adgang til alle dine kontaktpersoner på din Google-konto, mens du sætter navn på dem).
+
+Vil du ignorere en person, skal du klikke på knappen 'X' på miniaturebilledet med ansigtet.
+
+Forslag: Når du har sat navn på en person, vil Picasa muligvis foreslå flere ansigter, der passer med den pågældende person. Klik på en persons album for at se og bekræfte (eller afvise) evt. forslag.
+
+
+ Klik på 'Få flere oplysninger' for at få mere at vide om denne funktion.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Learn more...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collab_text:Label(collab/storagetext);instructionpanel_text:Label(instructionpanel/learn_more);stringres:InstallEarth:launch_button;stringres:LighthouseUpdate:MoreInfo;stringres:iPhotoError::LearnMoreButton;upload_text:Label(upload/storagetext)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/learn_more)</extracomment>
+            <translation>Få flere oplysninger…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: instructionpanel_text:Label(instructionpanel/close)</extracomment>
+            <translation>Luk</translation>
         </message>
         <message>
             <source>Stop ignoring</source>
