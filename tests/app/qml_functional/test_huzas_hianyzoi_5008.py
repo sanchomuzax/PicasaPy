@@ -699,3 +699,232 @@ def test_photos_dragged_onto_new_album_area_create_an_album_with_them(
     assert token in album_tokens, (
         f"a húzott kép nem az új albumba került: {album_tokens}"
     )
+
+
+@pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
+def test_tray_photo_dragged_onto_folder_row_moves_the_file(
+    dnd_qml_app, qt_app, height_delta
+):
+    """#5105: a tálcán kijelölt kép a bal sáv mappasorára húzva átkerül a
+    célmappába. Valódi egérhúzás, a ledobási jel közvetlen hívása nélkül."""
+    window, controller, engine = dnd_qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    photo_a = library / "a.jpg"
+    target_path = library / "cel"
+    row_a = _path_row(controller, photo_a)
+    window.setProperty("selectedIndexes", [row_a])
+    _child(window, "photoGrid").setProperty("contentY", 0)
+    qt_app.processEvents()
+
+    # A tálca csak megtartott képeket mutat, ezért előbb a rácsról húzzuk be.
+    source_proxy = _find_visual(
+        window,
+        "thumbDragProxy",
+        predicate=lambda item: int(item.property("photoIndex")) == row_a,
+    )
+    source_mouse = _find_visual(
+        window,
+        "thumbMouseArea",
+        predicate=lambda item: int(item.parentItem().property("index")) == row_a,
+    )
+    tray_strip = _child(window, "trayScratchStrip")
+    _real_drag(window, qt_app, engine, source_proxy, source_mouse, tray_strip)
+    _wait(
+        qt_app,
+        lambda: bool(controller.isHeldAt(row_a)),
+        "a rácsból a tálcára húzott kép nem került a megtartott elemek közé",
+    )
+
+    controller.selectTrayIndex(0, False, False)
+    qt_app.processEvents()
+    tray_thumb = _find_visual(
+        window,
+        "trayPreviewThumb",
+        predicate=lambda item: int(item.property("index")) == 0,
+    )
+    tray_proxy = next(
+        item for item in _walk(tray_thumb) if item.objectName() == "trayDragProxy"
+    )
+    target_drop = _find_visual(window, "folderDropArea_" + str(target_path))
+    assert target_drop.property("enabled") is True
+
+    _real_drag(window, qt_app, engine, tray_proxy, tray_thumb, target_drop)
+
+    moved = target_path / photo_a.name
+    _wait(
+        qt_app,
+        lambda: moved.is_file() and not photo_a.exists(),
+        "a tálcáról a mappasorra húzott kép nem került át a célmappába",
+    )
+    from picasapy.app.worker_thread import wait_for_all_background_workers
+
+    assert wait_for_all_background_workers(30.0)
+
+
+def _hold_grid_photo_in_tray(window, qt_app, engine, controller, path: Path) -> None:
+    """A rács képét valódi húzással a tálcára teszi."""
+    row = _path_row(controller, path)
+    window.setProperty("selectedIndexes", [row])
+    _child(window, "photoGrid").setProperty("contentY", 0)
+    qt_app.processEvents()
+    source_proxy = _find_visual(
+        window,
+        "thumbDragProxy",
+        predicate=lambda item: int(item.property("photoIndex")) == row,
+    )
+    source_mouse = _find_visual(
+        window,
+        "thumbMouseArea",
+        predicate=lambda item: int(item.parentItem().property("index")) == row,
+    )
+    tray_strip = _child(window, "trayScratchStrip")
+    _real_drag(window, qt_app, engine, source_proxy, source_mouse, tray_strip)
+    _wait(
+        qt_app,
+        lambda: bool(controller.isHeldAt(row)),
+        "a rácsból a tálcára húzott kép nem került a megtartott elemek közé",
+    )
+
+
+def _select_first_tray_thumb(window, qt_app, controller):
+    """Kijelöli a tálca első elemét; visszaadja a cellát és a húzás testét."""
+    controller.selectTrayIndex(0, False, False)
+    qt_app.processEvents()
+    tray_thumb = _find_visual(
+        window,
+        "trayPreviewThumb",
+        predicate=lambda item: int(item.property("index")) == 0,
+    )
+    tray_proxy = next(
+        item for item in _walk(tray_thumb) if item.objectName() == "trayDragProxy"
+    )
+    return tray_thumb, tray_proxy
+
+
+@pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
+def test_tray_photo_dragged_onto_album_row_joins_the_album(
+    dnd_qml_app, qt_app, height_delta
+):
+    """#5105: a tálcán lévő kép a bal sáv album-sorára húzva az albumba kerül;
+    valódi egérhúzással, a ledobási jel közvetlen hívása nélkül."""
+    window, controller, engine = dnd_qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    photo_a = library / "a.jpg"
+    photo_b = library / "b.jpg"
+    controller.createAlbum("Tálca-album", [_path_row(controller, photo_a)])
+    qt_app.processEvents()
+    _hold_grid_photo_in_tray(window, qt_app, engine, controller, photo_b)
+    tray_thumb, tray_proxy = _select_first_tray_thumb(window, qt_app, controller)
+
+    token = controller.albums[0]["token"]
+    album_drop = _find_visual(window, f"albumDropArea_{token}")
+    _real_drag(window, qt_app, engine, tray_proxy, tray_thumb, album_drop)
+
+    def _albumai(name):
+        section = load_or_empty(library / ".picasa.ini").section(name)
+        return set(filter(None, (section.get("albums") if section else "").split(",")))
+
+    assert token in _albumai("a.jpg"), "az előkészített album hiányzik"
+    _wait(
+        qt_app,
+        lambda: token in _albumai("b.jpg"),
+        "a tálcáról az album sorára húzott kép nem került az albumba",
+    )
+
+
+@pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
+def test_tray_photo_dragged_onto_new_album_area_creates_an_album_with_it(
+    dnd_qml_app, qt_app, height_delta
+):
+    """#5105: a tálcán lévő kép az albumlista „új album" területére húzva új
+    albumba kerül; valódi egérhúzással, a ledobási jel közvetlen hívása nélkül."""
+    window, controller, engine = dnd_qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    photo_b = library / "b.jpg"
+    assert len(controller.albums) == 0, "a teszt induló állapotában nincs album"
+    _hold_grid_photo_in_tray(window, qt_app, engine, controller, photo_b)
+    tray_thumb, tray_proxy = _select_first_tray_thumb(window, qt_app, controller)
+
+    album_area = _find_visual(window, "albumDropArea")
+    _real_drag(window, qt_app, engine, tray_proxy, tray_thumb, album_area)
+
+    _wait(
+        qt_app,
+        lambda: len(controller.albums) == 1,
+        "a tálcáról az új album területre húzott kép nem hozott létre albumot",
+    )
+    token = controller.albums[0]["token"]
+    section = load_or_empty(library / ".picasa.ini").section("b.jpg")
+    album_tokens = set(
+        filter(None, (section.get("albums") if section else "").split(","))
+    )
+    assert token in album_tokens, (
+        f"a tálcáról húzott kép nem az új albumba került: {album_tokens}"
+    )
+
+
+@pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
+def test_photo_dragged_onto_tree_folder_row_moves_the_file(
+    dnd_qml_app, qt_app, height_delta
+):
+    """#5119: a rácsból a fanézet mappasorára húzott kép átkerül a célmappába,
+    valódi egérhúzással, a ledobási jel közvetlen hívása nélkül."""
+    window, controller, engine = dnd_qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    photo_b = library / "b.jpg"
+    target_path = library / "cel"
+    row_b = _path_row(controller, photo_b)
+    window.setProperty("selectedIndexes", [row_b])
+    _child(window, "photoGrid").setProperty("contentY", 0)
+    qt_app.processEvents()
+
+    folder_pane = _child(window, "folderPane")
+    hierarchy = engine.rootContext().contextProperty("folderHierarchyController")
+    hierarchy.setSimplified(True)
+    hierarchy.setTreeView(True)
+    hierarchy.expandAll()
+    _wait(
+        qt_app,
+        lambda: bool(folder_pane.property("treeViewMode")),
+        "a hierarchikus mappanézet nem nyílt meg",
+    )
+    _wait(
+        qt_app,
+        lambda: "hierRow:" + str(target_path) in {
+            item.objectName() for item in _walk(window.contentItem())
+        },
+        "a célmappasor nem jelent meg a fában",
+    )
+    tree_target_drop = _find_visual(
+        window, "hierFolderDropArea:" + str(target_path)
+    )
+    assert tree_target_drop.property("enabled") is True
+    source_proxy = _find_visual(
+        window,
+        "thumbDragProxy",
+        predicate=lambda item: int(item.property("photoIndex")) == row_b,
+    )
+    source_mouse = _find_visual(
+        window,
+        "thumbMouseArea",
+        predicate=lambda item: int(item.parentItem().property("index")) == row_b,
+    )
+    _real_drag(window, qt_app, engine, source_proxy, source_mouse, tree_target_drop)
+
+    _wait(
+        qt_app,
+        lambda: (target_path / photo_b.name).is_file() and not photo_b.exists(),
+        "a rácsból a fanézet mappasorára húzott kép nem került át a célmappába",
+    )

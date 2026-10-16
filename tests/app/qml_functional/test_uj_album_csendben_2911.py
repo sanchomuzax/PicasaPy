@@ -22,7 +22,7 @@ Nincs számozás és nincs dátum — minden alkalommal ugyanaz a név.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, Qt
 
 
 def _elem(gyoker, nev):
@@ -73,19 +73,7 @@ class TestANegyBelepo:
 
         assert [a["name"] for a in controller.albums] == ["Untitled"]
 
-    def test_a_bal_hasabra_ejtes(self, qml_app, qt_app):
-        window, controller, _engine = qml_app
-        _kijelol(window, qt_app, 0)
-
-        QMetaObject.invokeMethod(
-            _elem(window, "folderPane"),
-            "newAlbumPhotosDropped",
-            Qt.ConnectionType.DirectConnection,
-            Q_ARG("QVariant", [0]),
-        )
-        qt_app.processEvents()
-
-        assert [a["name"] for a in controller.albums] == ["Untitled"]
+    # #5105: a bal hasábra ejtést valódi egérhúzás teszteli: test_huzas_hianyzoi_5008.py (új album terület).
 
 
 class TestNincsParbeszed:
