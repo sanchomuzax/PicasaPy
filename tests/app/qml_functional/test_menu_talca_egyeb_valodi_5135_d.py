@@ -13,8 +13,7 @@ Lefedve:
   helyválasztót nyitja (a QML-párbeszéd `visible` állapotát mérjük).
 
 NEM lefedett, mert nem kattintható (lásd a jelentést): a Web Albums fül
-jelölői (a fül `enabled: false`), és az `optionsNetworkLogBrowseButton`
-(nincs `onClicked`).
+jelölői (a fül `enabled: false`).
 
 Parancsot közvetlenül nem indítunk: nincs `triggered`/`clicked`/`activated`
 hívás és nincs `.emit()`. A párbeszédek takarításához a `close` hívás szabad.
