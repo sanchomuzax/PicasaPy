@@ -387,9 +387,10 @@ tömörítése lenne.
 | Induláskori állapot? | **LEZÁRVA** — 4.3 |
 | `LastViewRoot` vs `LastViewRoot2` szerepe | **HATÓKÖRÖN KÍVÜL** — Win32 registry-részlet; nálunk egyetlen saját beállítás tárolja a gyökeret, a kettéosztás nem reprodukálandó |
 | A `watched` gyökér pontos ágválogatása | **LEZÁRVA** — 4/b szakasz, tárolóazonosság a `watchedfolders.txt`-tel |
+| Eltűnt mappa a bal sávban (#5177) | **NYITOTT** — a figyelő eseménye ismert, a sor eltávolítása/állapota és az offline viselkedés nem |
 
 ```
-Nyitott kérdések: 0 nyílt · 7 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 7 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
 ## 9. Amit KIZÁRTAM
@@ -399,3 +400,39 @@ Nyitott kérdések: 0 nyílt · 7 lezárva · 0 blokkolt · 1 hatókörön kív�
   jelentéstani horgonyából jön.
 - **`thumbui/soloview`**: a Mappanézet frissíti, de a szerepe nem
   következik a mért kódból — nem állítok róla semmit.
+
+---
+
+## 10. A lemezről eltűnt mappa (#5177)
+
+**Kérdés:** mi történik a bal sávban szereplő mappával, ha a programon
+kívül törlik, átnevezik, áthelyezik, vagy a meghajtója elérhetetlenné válik?
+Ez a szakasz az eredeti Picasa 3.9 binárisának és a meglévő speceknek a
+bizonyítékait választja szét; a teljes sor-életciklust a bináris alapján
+nem sikerült lezárni.
+
+### 10.1 Bizonyítékok kérdésenként
+
+| kérdés | bizonyíték és cím | állapot |
+|---|---|---|
+| 1. Futás közben észleli-e a könyvtár változását, és leveszi-e a sort? | Az aktív, elérhető figyelési gyökér alatt a már dokumentált watcher rekurzívan figyel (`bWatchSubtree=1`) és a `0x17` szűrőben benne van a `FILE_NOTIFY_CHANGE_DIR_NAME`; létrehozás: `0x007062b2`–`0x007062bd`. A watcher-létrehozást két független út erősíti meg: az IAT-rekesz nyers `.text`-beli keresése és a hívási hely diszasszemblálása. A változás utáni sor-törlés, szürkítés vagy halasztás nem következik ebből. Lásd [`picasa-mappakezelo.md` 16.5](picasa-mappakezelo.md). | A jelzés **megerősített**; a bal sáv válasza **nyitott**. |
+| 2. Mit csinál induláskor vagy újraolvasáskor? Van missing/offline jelzés? | A `watched` gyökér gyermekei a tárolt gyermeklistából épülnek (`0x004b79f1`–`0x004b79fc`), míg az `all` külön ágra kerül (`0x004b7c11`); ez a forrás nem dönti el, hogy a bejáró a hiányzó útvonal rekordját törli-e. A Mappakezelő jobb listájának tárolt elemei és a bal fa külön adatszerkezetek (lásd [`picasa-mappakezelo.md` 8., 14.2.](picasa-mappakezelo.md)). A meglévő `missing.jpg` fájlhiányos képek helyettesítője, nem folder-állapot (`0x0087f3d4`, [`picasa-program-resources.md`](picasa-program-resources.md) 776. sor). Folder-szintű szürke/offline feliratot nem azonosítottunk; a célzott indexkeresés negatív találata ezt nem bizonyítja. | **Nyitott.** |
+| 3. Másképp kezeli-e a leválasztott hálózati/cserélhető meghajtót? | A Mappakezelőben a leképezett távoli meghajtó fájlrendszer-ellenőrzés nélkül is felsorolódik (`0x007c9fee`, `driveType=4`); a belső/cserélhető meghajtók ága más. Ez a **Mappakezelő meghajtófája**, nem bizonyíték a bal sávban szereplő mappasor kezelésére. Lásd [`picasa-mappakezelo.md` 13.4.](picasa-mappakezelo.md). | A bal sávra **nyitott**. |
+| 4. Mi történik, ha képet dobnak a hiányzó mappára? | A `0x005d3290` `lb_drop` eseménykezelője hívja a `0x005e39a0`-t (`0x005d3f1c`–`0x005d3f57`). A handler lekéri a listaelem adatait (`0x004ae4e0` → `0x004ae600`); a második sztringmezőt (`+0x10`) az elem rekordjából másolja a helyi változóba, majd ezt adja az `Exists` segédnek (`0x00992ed0`). Az üres/null útvonal hamis, a dinamikus attribútum-lekérdezés `-1` eredménye pedig „nem létezik”. Ha a lokális ágjelző `0`, a hamis eredmény a `0x005e3db9` kódnál `2` értékű visszatérést eredményez a `0x005350b0` fájlmozgató hívása előtt. Az `0x004a0800` eseménytípus-kapu csak `5`, `6` vagy `7` esetén engedi ezt az ellenőrzési ágat; e típusok pontos payload-jelentése itt nincs feloldva. Ez az ág nem készít saját hibaüzenetet; a külső visszajelzés nem ismert. | A létezéskapu **feltételesen alátámasztott** egy utasításszintű úttal; az eredeti Picasa felületi válasza **nyitott**. |
+
+**Útvonal-alak:** a fenti dobás-ág az album-/mappasor tárolt sztringjét adja át az `Exists` segédnek; magában a segédben nincs útvonal-normalizálás. Hogy a PicasaPy hibájában látható Windows-útvonal kisbetűzése, perjele, 8.3 alakja vagy OneDrive-ra irányított Asztal-gyökere eltér-e a lemezen feloldható úttól, **NINCS MEG**: a hibás Windows-gépről nem áll rendelkezésre a ledobáskori pontos sorérték és az összehasonlított tényleges útvonal.
+
+### 10.2 Cáfoló kör
+
+Megpróbáltam cáfolni, hogy a `0x00992ed0` a célmappához társított sort ellenőrzi, és nem a forrásképet. A `0x004ae600` külön diszasszemblálása igazolja, hogy a listaelem mindkét sztringmezőjét (`+0x0c`, `+0x10`) a modellrekordból másolja; a `0x005e39a0` ellenőrző ága kifejezetten a második mezőt (`+0x10`) teszi az `Exists` hívás elé. Ez a cáfoló kör nem támasztja alá, hogy ez a mező biztosan teljes elérési út, ezért a célútvonal-értelmezés **feltételes** marad. Az alternatív eseménytípus-ág (`0x004a0800` hamis ága) virtuális diszpécserhez jut, de a `5/6/7` típus és a képes drop-payload megfeleltetése nem ismert, ezért ez nem cáfolja és nem is általánosítja a létezéskaput. A felhasználónak mutatott üzenetet ez sem dönti el.
+
+### 10.3 Következő mérés Windowsos Colab-körben
+
+Egy képernyőfelvételben rögzítsd mind a négy vizsgálati csoportot, képernyőképpel a változás előtt és után, valamint a látható Picasa-állapottal:
+
+1. Hozz létre `Desktop\x` mappát, vedd fel a Picasába, majd a program futása közben töröld vagy nevezd át külsőleg; hozd előtérbe a Picasát, várj 10 másodpercet, és rögzítsd a bal sort. Ezután végezz újraolvasást, majd indítsd újra a programot; mindhárom állapotot külön rögzítsd.
+2. Ugyanezt végezd el a Folder Managerben „Scan Always” állapotú gyökérrel és egy azon belüli eltűnt gyermekmappával, külön képernyőképpel a Mappakezelő listájáról és a bal sávról.
+3. Egy hálózati meghajtóról származó mappát hagyj a listában, válaszd le a meghajtót, majd rögzítsd a bal sor, a Folder Manager és az újraolvasás utáni állapotát. Külön ismételd meg ugyanezt egy cserélhető USB-meghajtóval.
+4. Húzz egy képet az eltűnt sorra; rögzítsd az egérkurzort/ejtési jelzést, a Picasa üzenetét, és azt, hogy a forráskép helye változott-e.
+
+*Kutatási következtetés a PicasaPy számára:* az eredeti Picasa dobáskezelője a célútvonalat létezés szerint kapuzza, ezért az eltűnt útvonalra irányuló fájlműveletet PicasaPy se indítsa el; hogy közben a bal sávban megőrizze, szürkítse vagy eltávolítsa-e a sort, csak a fenti Windowsos mérés után dönthető el.
