@@ -399,31 +399,56 @@ def _latszik_es_meretes(item) -> bool:
             and item.width() > 0 and item.height() > 0)
 
 
-def _osok_lathatosaga(item) -> str:
-    """Az elemtől a gyökérig: név és láthatóság (+ látszik, - nem látszik)."""
-    lanc = []
-    while item is not None:
-        lanc.append(f"{_nev(item)}:{'+' if item.isVisible() else '-'}")
-        item = item.parentItem()
-    return ">".join(lanc)
+def _keres(window, nev: str):
+    """Mint a _elem, de nem bukik el: None, ha az elem nincs (diagnosztikához, #4929)."""
+    talalatok = _elemek(window, nev)
+    return talalatok[0] if talalatok else None
 
 
-def _vorosszem_diagnosztika(window, terulet, gomb, edit) -> str:
-    """A húzás utáni, Apply előtti állapot: a Windows-bukás okának kiderítéséhez (#4929)."""
-    grab = window.mouseGrabberItem()
-    kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
-    talalat = _legfelso_talalat(window.contentItem(), kozep)
+def _igen_nem(logikai: bool) -> str:
+    return "igen" if logikai else "nem"
+
+
+def _elem_helyzet(window, nev: str, elem) -> str:
+    """Létezik-e, látszik-e, engedélyezett-e, és hol van az ablak tartalmához képest (#4929)."""
+    if elem is None:
+        return f"{nev}=nincs"
+    hely = elem.mapToItem(window.contentItem(), QPointF(0, 0))
     return (
+        f"{nev}=van(látszik={_igen_nem(elem.isVisible())}, "
+        f"engedélyezett={_igen_nem(elem.isEnabled())}, "
+        f"x={hely.x():.0f}, y={hely.y():.0f}, "
+        f"szél={elem.width():.0f}, mag={elem.height():.0f})"
+    )
+
+
+def _aktiv_szerkeszto(window) -> str:
+    """Az aktív szerkesztőfül és a megnyitott effekt neve, ha a szerkesztőpanel elérhető (#4929)."""
+    panel = _keres(window, "viewerEditorPanel")
+    if panel is None:
+        return "szerkesztőpanel=nincs"
+    return (f"aktív fül={panel.property('activeTab')}, "
+            f"effekt='{panel.property('paramEffectName')}'")
+
+
+def _vorosszem_diagnosztika(window, edit, terulet, gomb) -> str:
+    """A húzás körüli állapot a bukás okának kiderítéséhez (#4929). Bármelyik elem lehet None."""
+    grab = window.mouseGrabberItem()
+    talalat = None
+    if gomb is not None:
+        kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
+        talalat = _legfelso_talalat(window.contentItem(), kozep)
+    return (
+        f"{_elem_helyzet(window, 'redeyeDragArea', terulet)}, "
+        f"dragging={terulet.property('dragging') if terulet is not None else 'nincs'}, "
+        f"selW={terulet.property('selW') if terulet is not None else 'nincs'}, "
+        f"selH={terulet.property('selH') if terulet is not None else 'nincs'}, "
+        f"{_elem_helyzet(window, 'redeyeApplyButton', gomb)}, "
+        f"ablak={window.width():.0f}x{window.height():.0f}, "
+        f"{_aktiv_szerkeszto(window)}, "
         f"mouseGrabberItem={_nev(grab) if grab is not None else 'None'}, "
-        f"redeyeDragArea.dragging={terulet.property('dragging')}, "
-        f"redeyeDragArea.selW={terulet.property('selW')}, "
-        f"redeyeDragArea.selH={terulet.property('selH')}, "
         f"régiószám={edit.redeyeRegionCount}, "
         f"effectChain={edit.effectChain!r}, "
-        f"redeyeApplyButton.isVisible={gomb.isVisible()}, "
-        f"Apply-ősök=[{_osok_lathatosaga(gomb)}], "
-        f"Apply-középpont=({kozep.x():.1f}, {kozep.y():.1f}), "
-        f"ablak={window.width():.0f}x{window.height():.0f}, "
         f"hit-test={_nev(talalat) if talalat is not None else 'None'}."
     )
 
@@ -436,9 +461,16 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     if not eszkoz.isVisible():
         _kattint(window, qt_app, "toggle_left_drawer")
     _kattint(window, qt_app, "editToolRedeye")
-    terulet = _elem(window, "redeyeDragArea")
-    gomb = _elem(window, "redeyeApplyButton")
-    assert _var(qt_app, lambda: _latszik_es_meretes(terulet) and _latszik_es_meretes(gomb)), (
+    terulet = _keres(window, "redeyeDragArea")
+    gomb = _keres(window, "redeyeApplyButton")
+    if terulet is None or gomb is None:
+        diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+    assert terulet is not None, "a felületi elem nem található: redeyeDragArea"
+    assert gomb is not None, "a felületi elem nem található: redeyeApplyButton"
+    lathato = _var(qt_app, lambda: _latszik_es_meretes(terulet) and _latszik_es_meretes(gomb))
+    if not lathato:
+        diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+    assert lathato, (
         "a vörösszem húzási területe vagy az Alkalmaz gomb nem látszik a húzás előtt"
     )
     p0 = terulet.mapToScene(QPointF(terulet.width() * 0.46, terulet.height() * 0.46))
@@ -452,7 +484,7 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
                        Qt.KeyboardModifier.NoModifier,
                        QPoint(round(p1.x()), round(p1.y())))
     qt_app.processEvents()
-    diag.append(_vorosszem_diagnosztika(window, terulet, gomb, edit))
+    diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
     assert terulet.property("selW") > 0 and terulet.property("selH") > 0, (
         "a vörösszem-húzás nem adott kijelölést (selW/selH nulla)"
     )
@@ -480,7 +512,9 @@ def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
     except AssertionError as hiba:
         if sys.platform != "win32" or tiszta_app["attempts"]:
             raise
-        return f"#4929 diag: {hiba} | {' '.join(diag) or 'a húzás előtt bukott'}"
+        # A pytest a rewrite miatt az üzenet után az "assert ..." sort is hozzáfűzi; csak az első sor kell.
+        uzenet = str(hiba).splitlines()[0]
+        return f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
     return None
 
 
