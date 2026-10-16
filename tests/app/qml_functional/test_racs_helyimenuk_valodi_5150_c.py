@@ -17,7 +17,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QUrl
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPointF, Qt, QUrl
 from PySide6.QtGui import QGuiApplication
 
 from picasapy.metadata.iptc_writer import write_iptc_keywords
@@ -47,6 +47,7 @@ from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     kijelol,
     mentett_eredetik,
     varj,
+    vizualis_bejaras,
     zar,
 )
 
@@ -60,6 +61,24 @@ def _keszits_cimkevel(lib: Path) -> None:
     """A fotós mappa, benne egy `kirandulas` kulcsszavas JPEG (a kulcsszó az IPTC-ben él)."""
     keszits_konyvtarat(lib)
     write_iptc_keywords(lib / MAPPA / "a_nagy.jpg", ("kirandulas",))
+
+
+def _sor_a_nezetben(window, sor) -> bool:
+    """A címkesor egészben a főablakon belül van.
+
+    A Címkék-panel a jobb fiókban él, a fiók pedig 400 ms alatt nyílik. Nyitás
+    közben a sor a fiók aktuális szélességéhez igazodik, és kieshet az ablak
+    széléről: a kattintás ilyenkor nem a sorra megy."""
+    bal = sor.mapToScene(QPointF(0, 0)).x()
+    return bal >= 0 and bal + sor.width() <= window.width()
+
+
+def _cimke_szovege(sor, cimke: str):
+    """A címke neve a sorban: a kattintás ide menjen, ne a ✕ gombra (az a sor jobb szélén ül)."""
+    for item in vizualis_bejaras(sor):
+        if item.property("text") == cimke:
+            return item
+    raise AssertionError(f"a(z) {cimke} felirat nem található a sorban")
 
 
 def _undo_megerositese(window, qt_app, controller) -> None:
@@ -329,12 +348,15 @@ class TestCimkeMenu:
         ), "a Nézet ▸ Címkék kattintás nem nyitotta meg a címkepanelt"
 
     def _cimke_menu(self, window, qt_app):
-        """Valódi jobbklikk a `kirandulas` címkesoron; a menü megnyílását is megvárjuk."""
-        elem = keres_vizualis(window, "tagRemove-kirandulas")
-        while elem is not None and elem.property("modelData") != "kirandulas":
-            elem = elem.parentItem()
-        assert elem is not None, "a kirandulas címkesor nem található"
-        kattints(window, qt_app, elem, Qt.MouseButton.RightButton)
+        """Valódi jobbklikk a `kirandulas` címkesor szövegén; a menü megnyílását is megvárjuk."""
+        sor = keres_vizualis(window, "tagRemove-kirandulas")
+        while sor is not None and sor.property("modelData") != "kirandulas":
+            sor = sor.parentItem()
+        assert sor is not None, "a kirandulas címkesor nem található"
+        assert varj(qt_app, lambda: _sor_a_nezetben(window, sor)), (
+            "a kirandulas címkesor nem került a főablak látható részére"
+        )
+        kattints(window, qt_app, _cimke_szovege(sor, "kirandulas"), Qt.MouseButton.RightButton)
         menu = gyerek(window, "tagContextMenu")
         assert varj(qt_app, lambda: menu.property("visible") is True), (
             "a címkesor jobbklikkje nem nyitotta meg a címke-menüt"
