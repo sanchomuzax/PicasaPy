@@ -11,10 +11,8 @@ from PySide6.QtCore import (
     QPointF,
     QMetaObject,
     QObject,
-    QUrl,
     Qt,
 )
-from PySide6.QtQml import QQmlComponent
 from PySide6.QtTest import QTest
 
 from conftest import _build_qml_app
@@ -122,17 +120,6 @@ def _attached_drag(item):
         for child in item.children()
         if child.metaObject().className() == "QQuickDragAttached"
     )
-
-
-def _internal_drag_type(engine) -> int:
-    component = QQmlComponent(engine)
-    component.setData(
-        b"import QtQuick\nItem { property int typeForTest: Drag.Internal }",
-        QUrl(),
-    )
-    item = component.create()
-    assert item is not None, [error.toString() for error in component.errors()]
-    return int(item.property("typeForTest"))
 
 
 def _menu_tetel(window, name):

@@ -5,8 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QPoint, QPointF, QMetaObject, QObject, Qt, QUrl
-from PySide6.QtQml import QQmlComponent
+from PySide6.QtCore import QPoint, QPointF, QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
 
 from conftest import _build_qml_app
@@ -109,17 +108,6 @@ def _attached_drag(item):
         for child in item.children()
         if child.metaObject().className() == "QQuickDragAttached"
     )
-
-
-def _internal_drag_type(engine) -> int:
-    component = QQmlComponent(engine)
-    component.setData(
-        b"import QtQuick\nItem { property int typeForTest: Drag.Internal }",
-        QUrl(),
-    )
-    item = component.create()
-    assert item is not None, [error.toString() for error in component.errors()]
-    return int(item.property("typeForTest"))
 
 
 def _real_drag(window, qt_app, engine, source, start_item, end_item) -> None:

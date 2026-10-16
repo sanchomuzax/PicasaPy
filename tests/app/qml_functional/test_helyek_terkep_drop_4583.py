@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, QUrl, Qt
-from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from support.varakozas import hibaturo_feltetel, var_feltetelre
@@ -84,7 +83,7 @@ def _huzas_forras(window, source: QQuickItem):
 
 
 def _egerhuzas(window, qt_app, source: QQuickItem, target: QQuickItem,
-               internal_drag_type: int, offset: QPoint | None = None):
+               offset: QPoint | None = None):
     if offset is None:
         offset = QPoint()
     assert _varj(qt_app, lambda: source.width() > 0 and source.height() > 0)
@@ -132,17 +131,6 @@ def _egerhuzas(window, qt_app, source: QQuickItem, target: QQuickItem,
     assert drag_activated, "a rácskép egérhúzása nem aktiválta a QML Drag-et"
     QTest.mouseRelease(window, Qt.MouseButton.LeftButton, pos=end)
     qt_app.processEvents()
-
-
-def _internal_drag_type(engine) -> int:
-    component = QQmlComponent(engine)
-    component.setData(
-        b"import QtQuick\nItem { property int typeForTest: Drag.Internal }",
-        QUrl(),
-    )
-    item = component.create()
-    assert item is not None, [error.toString() for error in component.errors()]
-    return int(item.property("typeForTest"))
 
 
 def _forras_kep(window):
@@ -203,7 +191,6 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
     )
 
     eredeti_magassag = window.height()
-    internal_drag_type = _internal_drag_type(engine)
     for lepes, magassag_delta in enumerate((-5, 0, 5)):
         window.resize(window.width(), eredeti_magassag + magassag_delta)
         assert _varj(qt_app, lambda: drop_area.width() > 0
@@ -213,7 +200,7 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
         offset = QPoint(24 + lepes * 5, -16 + lepes * 4)
         _egerhuzas(
             window, qt_app, source_mouse, drop_area,
-            internal_drag_type, offset,
+            offset,
         )
         # #5105: a ledobást a térkép DropArea-jának kell elkapnia — a jelet
         # a teszt nem hívja közvetlenül.
