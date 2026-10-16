@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.113] – 2026-10-16
+
+- A fotó helyi menüjében és a nézőben a Minden szerkesztés visszavonása újra működik (#5163).
+
 ## [0.9.112] – 2026-10-16
 
 - A Mappa ▸ Rendezés ▸ Legutóbbi változások menüpont újra kattintható (#5156).
