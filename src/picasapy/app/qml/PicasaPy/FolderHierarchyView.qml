@@ -203,6 +203,11 @@ Item {
 
             Row {
                 id: sorTartalom
+                // #5137: a nyíl `hierArrowMouse` területe a sor `rowMouse`-a
+                // alatt maradt volna (a `rowMouse` később van deklarálva), és
+                // elnyelte a kattintást. A tartalom a sor fölé kerül; a nem
+                // kezelő elemekre (név, darabszám, ikon) a kattintás átmegy.
+                z: 1
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left
                 //: szűrő módban a pipák oszlopa előtte áll (a lapos lista
