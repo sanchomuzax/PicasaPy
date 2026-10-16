@@ -1993,6 +1993,7 @@ MenuBar {
             PicasaMenuItem {
                 objectName: "menuFolderSortByChanged"
                 text: qsTr("Recent &changes")
+                placeholder: false
                 sajat: true
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "changed"
