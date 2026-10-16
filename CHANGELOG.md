@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.111] – 2026-10-16
+
+- A rácsból a bal sáv fanézetének mappasorára húzott képek átkerülnek a célmappába, ugyanúgy, mint a lapos mappalistán (#5119).
+- A fanézetben a mappa melletti nyílra kattintva újra kinyílik és becsukódik az ág (#5137).
+
 ## [0.9.110] – 2026-10-16
 
 - A kijelölt képek egérrel a bal sáv mappájára, albumára, a tálcára húzva ténylegesen átkerülnek; mappa és arc húzása is működik (#5105).
