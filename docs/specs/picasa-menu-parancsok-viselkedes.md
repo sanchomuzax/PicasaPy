@@ -2565,6 +2565,115 @@ Megjegyzés a végrehajtóhoz: a fenti `var` egysége (mp) és a `kattint` koord
 
 **Nyitott, implementációt blokkoló kérdések:** a bemeneti mappák/albumok halmaza és időrendje; a kártyák teljes tartalma, a jobb halom és az időskála jelentése; a gombok műveletei és az Exit célja; a billentyűk; az animáció és a „Preparing timeline…” tényleges folyamatjelzője. A folytatáshoz a `qshow` ablakra fókuszált eredeti futtatási próba kell; eltérő dátumú második mappával a lapozás és a jobb halom is vizsgálható.
 
+#### 38.2.4 Helyi statikus újraolvasás: qshow, vezérlők és nyitott szemantika (#4443, 2026-10-16)
+
+Ez a kör az eredeti bináris utasításait és a helyi Picasa 3.7 telepítés
+`runtime/respack.yt` erőforrásait olvassa össze. A Colab/Wine futás az első
+qshow képkockán megállt, ezért abból billentyű-, kattintás-, csúszka- vagy
+animációs viselkedést nem veszek át. A qemu-harness izolált függvények kézzel épített állapotú
+futtatására való, nem Win32 ablak és billentyűfókusz tesztelésére; a qshow
+interakciós útvonalhoz nem alkalmas.
+
+**A qshow ablak útja.** A `CThumbUI::MakeTimeline` (`0x005e8a70`) a
+`0x008037e0` bemutató-felépítőt hívja; ez létrehozza a `qshow` nevű ablakobjektumot
+(`0x008038e7`, `0x00982bf0`) és meghívja az overlay-felépítőt
+(`0x008039cc`, `0x007fb210`). A qshow megjelenítésekor a `0x0080398f` a
+`0x00983fc0`-nak látható állapotot és `7` jelzőt ad. A helper a GWL_STYLE
+mezőbe `0x96080000` értéket ír (`0x0098407e-0x0098408b`), majd a
+`SetWindowPos` hívásban `HWND_TOPMOST` beszúrási pozíciót használ
+(`0x009841d4-0x009841d7`). Ez keret nélküli, legfelül tartott bemutatóablak
+útját bizonyítja. A `0x007fa730` a képernyő méreteit a `GetSystemMetrics`
+segítségével kéri le, és a `0x280 × 0x1e0` logikai vászonméretet is beállítja
+(`0x007fa73c-0x007fa767`). A képernyőn ténylegesen elfoglalt terület a
+futásidejű geometria és módjelző függvénye; a helyi futás ezt nem mérte meg.
+
+**Két, egymástól külön kezelt Időrend-elem.** A `oneup/timeline` a
+`oneup.tre` gombja, felirata „Timeline”, és a `0x008032e0` kattintási ága a
+`0x007fda00` állapotváltót hívja. Az `overlays/timeline` ezzel szemben az
+alsó skála vonalának képe; mellette külön `timelinedot` és `sliderthumb`
+rétegek vannak. A `0x007fb210` ezeket a grafikai rétegeket tölti be és
+skálázza. A rétegnevek és a rajzolat nem adják meg, hogy a skála mappát,
+albumot, hónapot vagy képet választ-e.
+
+**A négy overlay-grafika.** A csomag rekordjai a következő forrás-recteket
+adják meg:
+
+| réteg | forrás-rect | mit mutat a grafika | bináris rekord |
+|---|---:|---|---:|
+| `overlays/exit` | `(8,404,51,432)` | bélyegkép/rács jellegű ikon és balra mutató nyíl | `0x0027ca41` |
+| `overlays/left` | `(243,405,274,436)` | balra mutató nyíl | `0x0027da50` |
+| `overlays/startbutton` | `(298,404,341,432)` | kép ikon és lejátszásjel | `0x0027f126` |
+| `overlays/right` | `(366,405,397,436)` | jobbra mutató nyíl | `0x0027e5d4` |
+| `overlays/timeline` | `(197,461,442,468)` | vízszintes skálavonal | `0x00248b99` |
+| `overlays/sliderthumb` | `(260,457,285,480)` | kerek fogantyú | `0x00248be7` |
+
+Ezek a csomag képpont-koordinátái, nem futásidejű ablakkoordináták. A
+`overlays/exit`, `left`, `startbutton`, `right` sorrend a grafikák sorrendje;
+a kattintási célokhoz való kötésük **NINCS MEG**. A `oneup/prev`, `next`,
+`auto` és `exit` külön parancsnevek, ezért nem állítható, hogy a négy overlay
+automatikusan ezeket a gombokat hívja.
+
+**A bizonyított `oneup` parancsok.** A `oneup.tre` a `prev` és `next`
+gombra `mousedown` tulajdonságot ad; a `oneup/auto` grafikai rekordja „Auto
+Play” feliratú. A `0x008032e0` a `prev`/`next` nevet a
+`0x00802980`/`0x008029f0` függvényre irányítja. Ezek a OneUpUI `+0x3f4`
+indexét csökkentik/növelik; a következő elem elérésekor a `+0x3ec` listát és
+a `+0x3f0` elemszámot használják. Tehát ez a két parancs az aktuális oneup
+listában léptet. Hogy a lista eleme egy fotó, egy mappakártya vagy más csoport,
+az indexelt szolgáltató típusának hiányában **NINCS MEG**.
+
+A `oneup/auto` és `oneup/auto2` a `0x00803110` kapcsolót hívja. Ez megfordítja
+a `+0x3bb` állapotjelzőt, majd az automatikus lejátszás frissítési útjára lép.
+Ez alátámasztja, hogy a oneup sáv „Auto Play” gombja lejátszást kapcsol; nem
+bizonyítja, hogy a külön `overlays/startbutton` ugyanide köt, és azt sem, hogy
+a lejátszás egy kiválasztott mappát jár-e be. A `oneup/exit` a OneUpUI
+visszahívási láncán lép ki (`0x008032e0`, `0x00803180`), de a visszahívás
+célobjektuma és a visszaállított főablaki nézet **NINCS MEG**.
+
+**Görgő és billentyűk.** A OneUpUI eseménykezelő `0x00803180` kezeli a
+`0x20a` egérgörgő-eseményt: az iránytól függően a `0x00801210` vagy
+`0x008011b0` útjára lép. Az alút a OneUpUI állapotjelzői alapján a
+`0x007fd0c0` értékfrissítőt, a `prev`/`next` lapozást vagy az átmeneti
+frissítést hívja. Ezért a görgő hatása módfüggő; a Timeline módban végzett
+értékfrissítés jelentése **NINCS MEG**. A `0x00803180` nem rendel külön
+műveletet az `Up`, `Down`, `Left`, `Right`, `Space`, `Home`, `End` vagy
+`Escape` billentyűkódhoz. Az egyéb eseményeket az örökölt `0x00a52890` útjára
+adja, így a származtatott kezelő olvasata önmagában nem zárja ki, hogy a
+globális vagy az alap UI-út billentyűt kezeljen. A felsorolt billentyűk
+qshow-beli hatása **NINCS MEG**.
+
+**Tartalom és animáció.** A `0x005e8a70` a `CThumbUI+0x2c0` kollekciót
+bejárja, a `CThumbUI` vtable `+0x90` metódusát hívva. A thunk `0x00562cc0`
+a `CThumbUI+0x2bc` szolgáltató vtable `+0x20` metódusának adja át az indexet.
+A konstruktor `0x005643e0` e mezőket paraméterből tölti, de a konkrét
+szolgáltatótípus és a kollekció eredete nem azonosítható az itt olvasott
+hívásláncból. A mappák/albumok halmaza, rendezése, a kártyanév és a dátum
+forrása **NINCS MEG**. A „Preparing timeline…” karakterlánc a
+`0x00c978f0` címen van; tényleges folyamatjelző-vezérlő nem azonosítható.
+Az Időrend-váltás `0x007fda00` állapotváltót és `0x00802230` frissítőt hív,
+de az animáció tartalma, iránya és időzítése **NINCS MEG**.
+
+### Eredeti | Nálunk | Teendő
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `CThumbUI::MakeTimeline` qshow bemutatóablakot és overlay-rétegeket állít fel; a logikai vászon `640 × 480` (`0x007fa730`), a qshow ablak popup/topmost stílusú (`0x00983fc0`). | A `src/picasapy/app/qml/PicasaPy/TimelineView.qml` a főablakon belüli év/hónap bélyegképrács. | Az év/hónap rács nem az eredeti bemutató. A qshow jellegű, képernyőre illesztett felületet a nyitott méret- és tartalommodell után kell megépíteni. |
+| A csomag külön Exit, bal, indító, jobb, timeline-sáv és fogantyú grafikát ad; a oneup `prev`/`next` az indexelt oneup listán léptet, az `auto` automatikus lejátszást kapcsol. | A `TimelineView.qml`-ben nincs ilyen vezérlősáv; bezárás és Escape van. | A gombok képi megjelenése ismert, a négy overlay kattintási célja, a fogantyú értéke és az Exit visszatérési nézete nyitott. Ne kösd az overlay `startbutton`-t a `oneup/auto` gombhoz bizonyíték nélkül. |
+| A görgő OneUpUI eseményútja ismert, a felsorolt billentyűk qshow-beli hatása és a gyűjtemények/dátumkártyák forrása nem. | A `Main.qml` `Ctrl+5` parancsának `enabled` értéke hamis; a Nézet-menü Időrend eleme szintén letiltott, `timelineRequested` jelzésének nincs QML-fogyasztója. A `MainToolbar.qml` korábbi Időrend-gombját a #1903 eltávolította. Az eredeti `thumbui.tre` a `thumbui/timelinebutton` elemen `m_hidden`-t ad (`472-478`). | A menü és Ctrl+5 bekötés csak a teljes viselkedési modell után aktiválható. Az eredeti eszköztárgomb rejtett, ezért látható gomb hozzáadása eltér az eredeti felülettől. A valódi fókuszú eredeti qshow futás és képernyőkép továbbra is szükséges. |
+
+**Bizonyítottsági fok: feltételes.** A kódút és a független erőforrás-leltár egyezik a külön oneup bemutató, a vezérlőgrafikák, a oneup listaindexelése és az Auto Play állításain. A tartalomforrás, a dátumozás/rendezés, az overlay callbackek, a billentyűk, a kilépési cél és az animáció nem dőlt el.
+
+**Cáfoló kör.** Azt az értelmezést próbáltam cáfolni, hogy a `prev`/`next` közvetlenül hónapot vagy mappát léptet. A `0x00802980`/`0x008029f0` az indexelt oneup lista `+0x3f4` indexét módosítja, a `oneup.tre` pedig ugyanezekre a gombokra mousedown tulajdonságot ad. Ez cáfolja, hogy a gombkezelő közvetlenül naptári hónapindexet kezel; azt nem cáfolja, hogy a listaelemek mappakártyák lennének, mert a szolgáltató típusa továbbra is ismeretlen. A cáfoló eredmény ezért a teljes „mappa vagy hónap” kérdést nem zárja le.
+
+**Nyitott, célzott következő lépések:**
+
+- `Ghidra-kör kell: 0x005e8a70 - a CThumbUI+0x2bc szolgáltató és +0x2c0 kollekció konkrét típusa, forráshalmaza, sorrendje, valamint a cím és dátum előállítása. [blokkoló]`
+- `Ghidra-kör kell: 0x00a52890 - az örökölt billentyű/egér események, a négy overlay vezérlő hit-test/callback útja, és különösen a sliderthumb húzása. [blokkoló]`
+- `Ghidra-kör kell: 0x005e60d0 - a globális billentyűút működése qshow fókuszában, beleértve a nyíl, szóköz, Home/End és Escape parancsokat. [blokkoló]`
+- `Ghidra-kör kell: 0x008032e0 - a oneup/exit visszahívásának konkrét célja és visszatérési nézete, valamint hogy az overlay Exit ugyanide köt-e. [blokkoló]`
+- `Ghidra-kör kell: 0x007fda00 - az Időrend átmenet tényleges vizuális állapota és animációs paraméterei. [blokkoló]`
+- `Ghidra-kör kell: 0x008037e0 - a Timeline mód qshow ablak- és vászonméret-ágának pontos feltételei. [blokkoló]`
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
