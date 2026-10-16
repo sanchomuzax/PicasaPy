@@ -110,6 +110,17 @@ class TestUnnamedAlbum:
             album = unnamed_album_photos(conn)
         assert len(album) == 1
 
+    def test_unnamed_face_count_counts_faces_not_photos(self, tmp_path):
+        from picasapy.index import unnamed_face_count
+
+        db_path, photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face(), _face(score=0.4)])
+            replace_faces(conn, photo_ids["b.jpg"], [_face()])
+            conn.commit()
+
+            assert unnamed_face_count(conn) == 3
+
 
 class TestIgnoredFaces:
     """#26: a mellőzés NEM törlés — az eredetiben a személy a „Mellőzött

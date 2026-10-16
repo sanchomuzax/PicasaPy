@@ -348,6 +348,21 @@ class TestUnnamedAlbum:
         MÁR a megnyitás előtt be kell szúrni az indexbe."""
         _child(window, "folderPane").unnamedFacesChosen.emit()
         _settle(qt_app)
+        welcome = window.findChild(QObject, "unnamedWelcomeDialog")
+        if welcome is not None and welcome.property("opened") is True:
+            close_button = _child(window, "unnamedWelcomeCloseButton")
+            center = close_button.mapToScene(
+                close_button.boundingRect().center()
+            )
+            QTest.mouseClick(
+                window, Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+                QPoint(round(center.x()), round(center.y())),
+            )
+            deadline = time.monotonic() + 3.0
+            while welcome.property("opened") is True and time.monotonic() < deadline:
+                QTest.qWait(20)
+            assert welcome.property("opened") is False
 
     def _seed_unnamed_face(self, tmp_path, photo_name: str) -> int:
         """Egy VALÓDI (nem mockolt) `unnamed` állapotú arc beszúrása az

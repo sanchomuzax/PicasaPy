@@ -352,6 +352,10 @@ class TestUnnamedAlbumHeader:
         _open(window, qt_app)
         window.setProperty("unnamedFacesOpen", True)
         qt_app.processEvents()
+        welcome = window.findChild(QObject, "unnamedWelcomeDialog")
+        if welcome is not None and welcome.property("visible"):
+            close_button = _child(window, "unnamedWelcomeCloseButton")
+            _click(window, close_button, qt_app)
         view = _child(window, "unnamedFacesView")
         self._click_faces(window, qt_app, face_ids)
         assert view.property("selectedCount") == selected

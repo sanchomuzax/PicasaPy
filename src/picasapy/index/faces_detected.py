@@ -506,6 +506,17 @@ def unnamed_photo_count(conn: sqlite3.Connection) -> int:
     return int(row["n"]) if row is not None else 0
 
 
+def unnamed_face_count(conn: sqlite3.Connection) -> int:
+    """Hány látható, még névtelen arc van a „Névtelenek” albumban."""
+    row = conn.execute(
+        "SELECT COUNT(*) AS n FROM face fa "
+        "JOIN photos p ON p.id = fa.photo_id "
+        f"JOIN folders f ON f.id = p.folder_id AND {visible_folder_sql(conn)} "
+        "WHERE fa.state = 'unnamed'"
+    ).fetchone()
+    return int(row["n"]) if row is not None else 0
+
+
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """A „Névtelenek" album (issue #26, javasolt 1. lépcső): minden fotó,
     amelyen a SAJÁT detektorunk legalább egy arcot talált — csoportosítás
