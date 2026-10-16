@@ -383,7 +383,8 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
 
 
 def _nev(item) -> str:
-    return item.objectName() or type(item).__name__
+    # a PySide-burok típusa mindig QQuickItem; a valódi QML-típus a metaObject-ből jön
+    return item.objectName() or item.metaObject().className()
 
 
 def _legfelso_talalat(item, pont):
@@ -435,6 +436,65 @@ def _aktiv_szerkeszto(window) -> str:
             f"effekt='{panel.property('paramEffectName')}'")
 
 
+def _lathatosag(nev: str, elem) -> str:
+    """Egy elem saját `visible` értéke és mérete; `nincs`, ha nem található (#4929)."""
+    if elem is None:
+        return f"{nev}=nincs"
+    return (
+        f"{nev}=van(visible={_igen_nem(elem.property('visible'))}, "
+        f"szél={elem.width():.0f}, mag={elem.height():.0f})"
+    )
+
+
+def _elem_lathatosaga(item) -> str:
+    """Az `isVisible()`, a saját `visible`, az `opacity` és a méret egy elemre (#4929)."""
+    return (
+        f"{_nev(item)}(látszik={_igen_nem(item.isVisible())}, "
+        f"visible={_igen_nem(item.property('visible'))}, "
+        f"opacity={item.opacity():.2f}, "
+        f"{item.width():.0f}x{item.height():.0f})"
+    )
+
+
+def _szulolanc(window, elem) -> str:
+    """Az elemtől a `window.contentItem()`-ig tartó szülőlánc, elemenként (#4929)."""
+    if elem is None:
+        return "nincs"
+    gyoker = window.contentItem()
+    lanc = []
+    aktualis = elem
+    while aktualis is not None:
+        lanc.append(_elem_lathatosaga(aktualis))
+        if aktualis is gyoker:
+            break
+        aktualis = aktualis.parentItem()
+    return " < ".join(lanc)
+
+
+def _nezo_es_panelek_allapota(window) -> str:
+    """A néző, a szerkesztőpanelek és a bal fiók láthatósága a húzás körül (#4929).
+
+    Az `EditorPanel.qml` objectName-je (`editorPanel`) a példányon felülíródik
+    (`viewerEditorPanel`); a `redeyeModePanel` id-jú panel gyökerének
+    objectName-je `redeyeColumn`. Ezért ezekre a neveken keresünk.
+    """
+    nezo = _keres(window, "photoViewer")
+    nezo_resz = "photoViewer=nincs"
+    if nezo is not None:
+        nezo_resz = (
+            f"photoViewer(isCurrentVideo={_igen_nem(nezo.property('isCurrentVideo'))}, "
+            f"layoutMode={nezo.property('layoutMode')!r})"
+        )
+    return ", ".join([
+        nezo_resz,
+        f"viewerOpen={_igen_nem(window.property('viewerOpen') is True)}",
+        _lathatosag("viewerEditorPanel", _keres(window, "viewerEditorPanel")),
+        _lathatosag("editorModeToolScroll", _keres(window, "editorModeToolScroll")),
+        _lathatosag("redeyeModePanel", _keres(window, "redeyeColumn")),
+        _lathatosag("viewerLeftDrawer", _keres(window, "viewerLeftDrawer")),
+    ])
+
+
 def _vorosszem_diagnosztika(window, edit, terulet, gomb) -> str:
     """A húzás körüli állapot a bukás okának kiderítéséhez (#4929). Bármelyik elem lehet None."""
     grab = window.mouseGrabberItem()
@@ -444,16 +504,19 @@ def _vorosszem_diagnosztika(window, edit, terulet, gomb) -> str:
         talalat = _legfelso_talalat(window.contentItem(), kozep)
     return (
         f"{_elem_helyzet(window, 'redeyeDragArea', terulet)}, "
+        f"redeyeDragArea szülőlánc={_szulolanc(window, terulet)}, "
         f"dragging={terulet.property('dragging') if terulet is not None else 'nincs'}, "
         f"selW={terulet.property('selW') if terulet is not None else 'nincs'}, "
         f"selH={terulet.property('selH') if terulet is not None else 'nincs'}, "
         f"{_elem_helyzet(window, 'redeyeApplyButton', gomb)}, "
+        f"redeyeApplyButton szülőlánc={_szulolanc(window, gomb)}, "
         f"ablak={window.width():.0f}x{window.height():.0f}, "
         f"{_aktiv_szerkeszto(window)}, "
         f"mouseGrabberItem={_nev(grab) if grab is not None else 'None'}, "
         f"régiószám={edit.redeyeRegionCount}, "
         f"effectChain={edit.effectChain!r}, "
-        f"hit-test={_nev(talalat) if talalat is not None else 'None'}."
+        f"hit-test={_nev(talalat) if talalat is not None else 'None'}, "
+        f"{_nezo_es_panelek_allapota(window)}."
     )
 
 
