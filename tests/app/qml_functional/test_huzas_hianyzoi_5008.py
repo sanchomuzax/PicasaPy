@@ -651,3 +651,51 @@ def test_photo_dragged_onto_album_row_joins_the_album(
         lambda: _albumai("b.jpg") == album_tokens,
         "a rácsból az album sorára húzott kép nem került az albumba",
     )
+
+
+@pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
+def test_photos_dragged_onto_new_album_area_create_an_album_with_them(
+    dnd_qml_app, qt_app, height_delta
+):
+    """#5008: a rácsból az albumlista „új album" területére húzott kép új
+    albumba kerül. A névbekérő párbeszéd a #2911 óta nincs meg, az album
+    csendben „Untitled" nevet kap — valódi egérhúzással, a ledobási jel
+    közvetlen hívása nélkül."""
+    window, controller, engine = dnd_qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    photo_b = library / "b.jpg"
+    assert len(controller.albums) == 0, "a teszt induló állapotában nincs album"
+    row_b = _path_row(controller, photo_b)
+    window.setProperty("selectedIndexes", [row_b])
+    _child(window, "photoGrid").setProperty("contentY", 0)
+    qt_app.processEvents()
+
+    album_area = _find_visual(window, "albumDropArea")
+    source_proxy = _find_visual(
+        window,
+        "thumbDragProxy",
+        predicate=lambda item: int(item.property("photoIndex")) == row_b,
+    )
+    source_mouse = _find_visual(
+        window,
+        "thumbMouseArea",
+        predicate=lambda item: int(item.parentItem().property("index")) == row_b,
+    )
+    _real_drag(window, qt_app, engine, source_proxy, source_mouse, album_area)
+
+    _wait(
+        qt_app,
+        lambda: len(controller.albums) == 1,
+        "a rácsról az új album területre húzott kép nem hozott létre albumot",
+    )
+    token = controller.albums[0]["token"]
+    section = load_or_empty(library / ".picasa.ini").section("b.jpg")
+    album_tokens = set(
+        filter(None, (section.get("albums") if section else "").split(","))
+    )
+    assert token in album_tokens, (
+        f"a húzott kép nem az új albumba került: {album_tokens}"
+    )
