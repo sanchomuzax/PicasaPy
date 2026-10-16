@@ -69,6 +69,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from picasapy import network_log
+
 from . import detector as _detector
 from . import embedder as _embedder
 
@@ -263,6 +265,7 @@ def download_spec(
     try:
         try:
             with urllib.request.urlopen(cim, timeout=timeout) as valasz:  # noqa: S310
+                network_log.log_response(cim, valasz)
                 with reszleges.open("wb") as ki:
                     while True:
                         if cancel is not None and cancel.is_set():
@@ -284,6 +287,7 @@ def download_spec(
                             )
                         if progress is not None:
                             progress(letoltott, spec.size_bytes)
+                network_log.log_size(cim, letoltott)
         except (OSError, ValueError, http.client.HTTPException) as hiba:
             # A `URLError`/`HTTPError` és a socket-hibák egyaránt `OSError`
             # leszármazottak, a megszakadt válasz pedig `HTTPException` —
@@ -292,6 +296,7 @@ def download_spec(
             logger.warning(
                 "Az arcfelismerő modell letöltése sikertelen (%s): %s", hiba, cim
             )
+            network_log.log_failure(cim, hiba)
             return DownloadResult(STATUS_NETWORK, spec, detail=str(hiba))
 
         osszeg = digest.hexdigest()

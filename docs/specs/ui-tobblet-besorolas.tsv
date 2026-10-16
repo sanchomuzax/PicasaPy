@@ -255,7 +255,6 @@ PicasaPy/OptionsTabGeneral.qml	Use special effects	mero-vakfolt	A magyar szöveg
 PicasaPy/OptionsTabNameTags.qml	Enable suggestions:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/enablefacesuggestions.title hivatalos magyarjával.	options/enablefacesuggestions.title	
 PicasaPy/OptionsTabNameTags.qml	Suggestion threshold:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup176.title hivatalos magyarjával.	options/labelgroup176.title	
 PicasaPy/OptionsTabNetwork.qml	Automatically detect network settings	mero-vakfolt	A magyar szövegünk betűre egyezik az options/autoproxy.title hivatalos magyarjával.	options/autoproxy.title	
-PicasaPy/OptionsTabNetwork.qml	Browse...	segedszoveg	'Tallozas...' gomb a napofajl kivalasztasahoz - az eredetiben (ha volt) natív OS fajlvalaszto dialogus gombja lett volna, nem Picasa-authoralt sztring, ezert nincs a korpuszban - ugyanaz az indoklas, mint a tobbi 'Browse...' elofordulasnal a projektben.		
 PicasaPy/OptionsTabNetwork.qml	Log errors only	mero-vakfolt	A magyar szövegünk betűre egyezik az options/item138.title hivatalos magyarjával.	options/item138.title	
 PicasaPy/OptionsTabPrinting.qml	General (Lanczos-3)	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („Általános (Lanczos-3)”).	options/radio126.title	
 PicasaPy/OptionsTabSlideshow.qml	Browse...	mero-vakfolt	A mi magyarunk a hivatalossal egyezik, csak …/... eltérés („Tallózás…”, Beállítások ▸ Diavetítés).	options/MP3SlideshowPath.title	

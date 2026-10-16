@@ -9,8 +9,9 @@ Lefedve:
   `optionsAutoExcludeCheck` (az importáló `autoExclude` állapota),
   `optionsPrivacyLink` (a külső böngésző helyett a `https`-kezelő kapja a címet).
   Az `optionsUsageStatsCheck` tiltott: a kattintás nem vált.
-- Hálózat: a fül egésze tiltott (`enabled: false`), így az
-  `optionsNetworkAutoDetectCheck` kattintása nem vált.
+- Hálózat: a proxy-csoport tiltott (`enabled: false`), így az
+  `optionsNetworkAutoDetectCheck` kattintása nem vált. A naplózási vezérlők
+  (#5145) működnek, azokat a `test_halozat_naplozas_valodi_5145.py` méri.
 - Web Albums: a fül egésze tiltott (`enabled: false`), a három jelölő
   (`optionsWebStripedUploadCheck`, `optionsWebKeepJpegQualityCheck`,
   `optionsWebConfirmSyncDisableCheck`) kattintása nem vált.
@@ -157,18 +158,18 @@ class TestAltalanosFul:
 
 
 class TestHalozatFul:
-    def test_a_tiltott_halozat_fulon_a_jelolo_kattintasa_nem_valt(self, parbeszed_app, qt_app):
+    def test_a_tiltott_proxy_jelolo_kattintasa_nem_valt(self, parbeszed_app, qt_app):
         window, controller, _engine = parbeszed_app
         _elokeszit(window, qt_app, controller)
         beallitasok = _beallitasok_megnyit(window, qt_app)
         _fulre_kattint(qt_app, beallitasok, "optionsTabNetwork", 5)
         jelolo = _gyerek(beallitasok, "optionsNetworkAutoDetectCheck")
-        assert jelolo.property("enabled") is False, "a Hálózat fül tiltott"
+        assert jelolo.property("enabled") is False, "a proxy-csoport nincs tiltva"
         elotte = jelolo.property("checked")
 
         _klikk_ablakban(qt_app, beallitasok, jelolo)
 
-        assert jelolo.property("checked") == elotte, "a tiltott Hálózat jelölő átváltott"
+        assert jelolo.property("checked") == elotte, "a tiltott proxy-jelölő átváltott"
         _zar(qt_app, beallitasok)
 
 

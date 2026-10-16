@@ -25,6 +25,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from picasapy import network_log
 from picasapy.hidden_password import egyezik as jelszo_egyezik
 from picasapy.hidden_password import modern_lenyomat, picasa_lenyomat
 from picasapy.index.hidden_scope import visible_folder_sql
@@ -390,6 +391,8 @@ class AppController(
         # #1029: a Projektek gyűjtemény kezdeti (üres) állapota — a
         # `_reload()` tölti fel az indexből, a mappalistával együtt
         self._init_project_folders()
+        # #5145: a hálózati napló szintje a beállításból indul
+        self._apply_network_log()
         # #4887: az index a tényleges „rejtettek megjelenítése” értékkel indul
         self._rejtett_lathatosag_kozlese()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
@@ -656,6 +659,28 @@ class AppController(
             return
         self._get_settings().setValue("view/slideshowMusicFolder", local_path)
         self.statusChanged.emit()
+
+    @Property(int, notify=statusChanged)
+    def networkLogLevel(self) -> int:  # noqa: N802
+        """A hálózati napló szintje (0-4); az eredeti `LogLevel` kulcs, alapértéke 2."""
+        return network_log.read_level(self._get_settings().value("Preferences/LogLevel"))
+
+    @Slot(int)
+    def setNetworkLogLevel(self, value: int) -> None:  # noqa: N802
+        self._get_settings().setValue(
+            "Preferences/LogLevel", network_log.clamp_level(value)
+        )
+        self._apply_network_log()
+        self.statusChanged.emit()
+
+    @Property(str, constant=True)
+    def networkLogFile(self) -> str:  # noqa: N802
+        """A naplófájl rögzített helye: az adatkönyvtárban, `network.log` néven."""
+        return str(Path(self._db_path).parent / network_log.NAPLO_FAJLNEV)
+
+    def _apply_network_log(self) -> None:
+        """A mentett szintet a futó naplózóra alkalmazza, a naplófájllal együtt."""
+        network_log.configure(self.networkLogLevel, Path(self.networkLogFile))
 
     @Property(list, notify=statusChanged)
     def slideshowMusicTrackUrls(self):  # noqa: N802
