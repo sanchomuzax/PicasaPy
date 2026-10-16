@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.112] – 2026-10-16
+
+- A Mappa ▸ Rendezés ▸ Legutóbbi változások menüpont újra kattintható (#5156).
+
 ## [0.9.111] – 2026-10-16
 
 - A rácsból a bal sáv fanézetének mappasorára húzott képek átkerülnek a célmappába, ugyanúgy, mint a lapos mappalistán (#5119).
