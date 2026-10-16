@@ -126,7 +126,9 @@ Dialog {
         }
         helpDialog._elozoTopic = helpDialog.topic
         szovegNezo.text = helpDialog.szovegFejezethez(helpDialog.topic)
-        szovegGorgeto.contentY = 0
+        // #5175: a ScrollView-nak nincs contentY-ja, a görgetés a belső
+        // Flickable-ön van; enélkül a QML hibát ír a naplóba.
+        szovegGorgeto.contentItem.contentY = 0
     }
 
     RowLayout {
