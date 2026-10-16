@@ -77,6 +77,14 @@ Dialog {
             ? helpDialog._vezerlo.helpTopicText(fejezet) : ""
     }
 
+    // #5172: a fejezetlista kétféle modellt kap. Keresés nélkül a Python-lista
+    // dict-jei jönnek: a sor adata a `modelData`, a `model.*` szerepek nincsenek.
+    // Keresésnél a ListModel szerepei vannak a `model`-en, a `modelData` nincs.
+    // Ezért a sor adata az, ami éppen él.
+    function sorAdata(modell, elem) {
+        return (typeof elem === "object" && elem !== null) ? elem : modell
+    }
+
     function nyisdMeg(fejezet) {
         // Új megnyitás = tiszta lap: a korábbi böngészés előzménye már nem
         // tartozik ide.
@@ -195,11 +203,13 @@ Dialog {
                 delegate: ItemDelegate {
                     objectName: "helpResultRow"
                     width: ListView.view.width
+                    // #5172: a sor adata (lásd `sorAdata`), bármelyik modellből
+                    readonly property var adat: helpDialog.sorAdata(model, modelData)
                     height: reszletSor.visible
                         ? cimSor.implicitHeight + reszletSor.implicitHeight + 12
                         : cimSor.implicitHeight + 12
                     onClicked: helpDialog.topic =
-                        model.fejezet !== undefined ? model.fejezet : model.nev
+                        adat.fejezet !== undefined ? adat.fejezet : adat.nev
 
                     contentItem: Column {
                         spacing: 1
@@ -214,8 +224,8 @@ Dialog {
                             // „Effektek listája (5)" — a darabszám csak
                             // akkor jelenik meg, ha tényleg több van.
                             text: {
-                                var cim = model.cim !== undefined ? model.cim : ""
-                                var db = model.db !== undefined ? model.db : 0
+                                var cim = adat.cim !== undefined ? adat.cim : ""
+                                var db = adat.db !== undefined ? adat.db : 0
                                 return db > 1 ? cim + " (" + db + ")" : cim
                             }
                         }
@@ -224,12 +234,12 @@ Dialog {
                             id: reszletSor
                             objectName: "helpResultSnippet"
                             width: parent.width
-                            visible: model.reszlet !== undefined
-                                     && model.reszlet.length > 0
+                            visible: adat.reszlet !== undefined
+                                     && adat.reszlet.length > 0
                             elide: Text.ElideRight
                             color: Theme.textGray
                             font.pixelSize: Theme.fontSize - 2
-                            text: model.reszlet !== undefined ? model.reszlet : ""
+                            text: adat.reszlet !== undefined ? adat.reszlet : ""
                         }
                     }
                 }
