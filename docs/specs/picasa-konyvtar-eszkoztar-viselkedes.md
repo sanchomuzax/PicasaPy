@@ -393,10 +393,11 @@ menüsáv-építő rekordjaiból.*
    Name** (0), `0x9e19` = **Sort People by &Amount** (1), `0x9e38` =
    **Sort People by Top &10** (2). Vagyis nem mappanézet, hanem a
    **személy-lista rendezése**.
-5. **#5121 — meglevő album mellett hol látható és ejthető a 4-es típusú
-   `newalbumprompt` sor?** A bináris a sorhoz kötött újalbum-ágat bizonyítja,
-   de azt nem, hogy a sor a nem üres Albums szakaszban is létrejön-e, illetve
-   melyik üres lista-területet fedi le. Ld. 7. szakasz.
+5. **#5121 — a `CAlbumList` 4-es típusú `newalbumprompt` sora meglévő album
+   mellett is bekerül-e, és melyik függvény milyen feltétellel illeszti be?**
+   A sor felirata, renderelése és ejtési útja bizonyított; a lista
+   feltöltője és az albumszám szerinti feltétele még nincs azonosítva.
+   Részletek: 7. szakasz.
 
 ## Amit KIZÁRTAM
 
@@ -564,3 +565,91 @@ Az utasításokat a `functions` indexből vett függvényhatárokon belül olvas
 **Bizonyítottság:** a promptszöveg 4-es listarekordhoz kötése és a 4-es célrekord Drop → `0x006dc030` albumkészítési út két külön kódútból megerősített. A #5121 bináris kérdésének nem üres albumlistára vonatkozó fele nyitott: a `0x00762540` listafelépítő és az élő hit-test pontos listapozíciója nincs végigkövetve; az eredeti Picasán nem történt egérhúzásos mérés.
 
 **Ghidra-kör kell: 0x00762540 — a `CAlbumList` mikor és milyen listapozícióra teszi a 4-es típusú sort, ha már van album; melyik képernyőterület hit-testje adja át neki az `lb_drop` eseményt? [blokkoló]**
+
+## 7/b #5121 — A `CAlbumList` újalbum-sora: felirat, ejtés és beszúrási feltétel (2026-10-16, 2. kör)
+
+*Forrás: az eredeti `Picasa3.exe`; minden cím betöltési cím (VA). A
+függvénytesteket a bináris-index szerinti határokon belül olvastam, a
+`+0x30` írókat az indextől független, memóriakapus `paszta.py`-pásztázás
+ellenőrizte.*
+
+### 7/b.1 A 4-es sor felirata és rajzolása — megerősített
+
+- A `0x00765d30` a `0x004ae4e0`-val lekéri az aktuális listaelemet
+  (`0x00765dd1`–`0x00765e35`), majd a rekord `+0x30` mezőjét `4`-hez
+  hasonlítja (`0x00765e62`–`0x00765e69`). Egyezéskor a
+  `CAlbumList::newalbumprompt` kulcshoz (`0x00cb2878`) tartozó *“You can
+  drag and drop pictures here to make a new album.”* feliratot
+  (`0x00cb283c`) tölti be (`0x00765e6b`–`0x00765e75`).
+- A közös rekordmásoló `0x004ae600` a forrásrekord `+0x30` mezőjét a
+  célrekord `+0x30` mezőjébe másolja (`0x004ae6ca`–`0x004ae6cf`). Ez az
+  olvasott rekord formáját igazolja; nem azonosítja, ki készíti el a
+  4-es forrásrekordot.
+- A `CAlbumList` rajzolófüggvénye, `0x00763150`, külön 4-es ágat kezel
+  (`0x007636df`–`0x007636e4`). Az `Albums` fejléc külön listaelem:
+  `CAlbumList::liststicky5` (`0x00cb26d8`) → *“Albums”* (`0x00cb26d0`),
+  a címke lekérése a `0x00762540`-ben (`0x00762b6e`–`0x00762b78`). A
+  fejléc tehát nem bizonyítéka a 4-es sornak, és nem nevezi meg a sor
+  találati területét.
+
+### 7/b.2 A `lb_drop` út — megerősített
+
+- A `0x005d3290` esemény-diszpécser felismeri az `lb_drop` kulcsot
+  (`0x00c95e80`), és meghívja a `0x005e39a0` ejtéskezelőt
+  (`0x005d3f1c`–`0x005d3f57`).
+- A `0x005e39a0` az ejtés célrekordjának `+0x30` mezőjét `4`-hez
+  hasonlítja (`0x005e3a88`–`0x005e3a8f`). Egyezéskor a
+  `0x005ea770` albumkészítő útjára lép (`0x005e3aaa`–`0x005e3aaf`),
+  amely meghívja a `0x006dc030` album-létrehozó segédet (`0x005ea7e0`).
+- Ebben a Drop-ágban nincs albumdarabszám-feltétel. Ez csak a már
+  létező 4-es célrekord kezelését mutatja; a rekord jelenlétét nem.
+
+### 7/b.3 A lista feltöltője és a meglévő album melletti feltétel — nyitott
+
+- A `0x00762540` és a `0x00765d30` a saját `+0x24` mezőjükön át kapott
+  objektum `+0x2c0` listájából olvas rekordot (`0x00762608`–`0x0076264c`,
+  illetve `0x00765dd1`–`0x00765e35`). E két olvasó nem állítja elő a sort.
+- A teljes `.text` memóriakapus pásztázása 2 884 879 utasítást dekódolt;
+  a `[reg+0x30]` mezőt érintő 3 804 írásból a `4`-re vezethető közvetlen
+  vagy egyszerű regiszter-konstans írás 21 jelöltet adott. A két nem
+  veremalapú jelölt `0x009d53b8` és `0x00ad10b0`: az első környezetében
+  az objektum `+0x170` állapotmezőjét és a `+0x174`-et kezeli
+  (`0x009d5370`), a második egy `+0x28`, `+0x108`, `+0x110`, `+0x111`
+  és `+0xcc` mezőkkel rendelkező állapotobjektum ágában ír (`0x00ad1040`).
+  A diszasszemblálás egyik írást sem köti a `CAlbumList` rekordtömbjéhez;
+  nem tekinthetők a keresett beszúrás bizonyítékának.
+- A `CAlbumBuilder::updated` címkéjű `0x004b3770` a `0x004ae600`
+  rekordmásolót használja, ezért követendő jelölt. A vizsgált függvényben
+  nem találtam a rekord `+0x30` mezőjének 4-re állítását, és a másolt
+  rekordtömb `CAlbumList` `+0x2c0` listájához vezető kapcsolata sem
+  bizonyított. A mezőazonosság önmagában nem bizonyít azonos
+  objektumtípust.
+- Következtetés: **nem dőlt el**, hogy a 4-es `newalbumprompt` sor csak
+  üres albumlistánál, vagy nem üres listánál is megjelenik, illetve hogy
+  melyik vizuális terület fogad ejtést. A listaépítő és a hívási lánc
+  dekompilátumos követése blokkoló.
+
+### 7/b.4 QEMU-mérés
+
+A meglévő `qemu_harness` a bináris egyes függvényeit kézzel épített
+állapottal képes futtatni; a dokumentált példái képfeldolgozó függvények.
+Nincs kész Picasa UI-/album-modell inicializálója vagy 0/1/több albumot
+beállító forgatókönyve. A listaépítő és annak belépési állapota nélkül egy
+kézzel épített rekord futtatása nem mérné az eredeti albumszám-feltételt,
+ezért ez a kör nem végzett QEMU-futást.
+
+### 7/b.5 Eredeti / nálunk / teendő
+
+| | Megállapítás |
+|---|---|
+| **Eredeti** | A 4-es `newalbumprompt` rekord felirata és ejtési célként való kezelése bizonyított. A meglévő album melletti megjelenés és a célterület neve/helye nyitott. |
+| **Nálunk** | Az `AlbumsSection.qml` `albumDropArea` eleme a súgószöveg gyereke; a szöveg csak üres listánál látszik, ezért az ejtési cél is eltűnik az első album után. |
+| **Teendő** | Előbb az eredeti listaépítő és a 4-es sor beszúrási feltétele azonosítandó; utána ahhoz igazítható a célterület, majd meglévő albummal is valódi egérhúzásos teszt kell. |
+
+**Bizonyítottsági fok:** a 4-es rekord felirata, külön rajzolási ága és a Drop → `0x006dc030` út *megerősített*; a #5121 bináris kérdése a sor beszúrásáról és meglévő album melletti célterületéről *nyitott*. Az egyik független út a sorolvasó/Drop függvények utasításszintű vizsgálata; a másik az egész `.text` `+0x30` íróira végzett memóriakapus pásztázás és a `CAlbumBuilder::updated` jelölt ellenőrzése. Ezek a keresett beszúró feltételről nem adnak egyező, döntő eredményt.
+
+**Cáfoló kör:** az „első album után a sor biztosan eltűnik” állítást próbáltam cáfolni azzal, hogy a `0x00765d30` felirat-olvasóban és a `0x005e39a0` Drop-ágban albumszám-vizsgálatot kerestem. Egyik sem vizsgál albumszámot, de mindkettő már létező listaelemet fogyaszt, ezért ez nem cáfolja a csak üres listánál történő beszúrást. A megfigyelést ugyanazzal a mércével ellenőrizve a két funkció nem a listaépítő; a kérdés nyitva marad.
+
+**Ghidra-kör kell: 0x004b3770 — a `CAlbumBuilder::updated` által másolt 0x38 bájtos rekordtömb azonos-e a `CAlbumList` `+0x2c0` modelljével, és melyik hívó/ág állítja elő a `+0x30 = 4` rekordot meglévő albumok esetén? [blokkoló]**
+
+**Ghidra-kör kell: 0x00565920 — a `CAlbumList`-konstruktor szülőobjektumának melyik útja tölti fel a `+0x2c0` listát, és a beszúrás függ-e a meglévő albumok számától? [blokkoló]**
