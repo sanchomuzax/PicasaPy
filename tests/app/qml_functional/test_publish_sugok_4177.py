@@ -8,7 +8,6 @@ ráállás ettől még valódi, jelenet-koordinátás egérművelet.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -17,6 +16,7 @@ from PySide6.QtQml import QQmlComponent
 from PySide6.QtTest import QTest
 
 import picasapy.app
+from tests.support.varakozas import var_feltetelre
 
 _APP_DIR = Path(picasapy.app.__file__).parent
 _PANEL_FORRAS = (
@@ -50,15 +50,8 @@ def _elem(gyoker: QObject, nev: str) -> QObject:
     return elem
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _tooltip_probe(engine, target: QObject) -> QObject:

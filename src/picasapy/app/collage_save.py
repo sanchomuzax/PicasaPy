@@ -519,7 +519,18 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             from picasapy.index.sync import sync_folder
 
             with open_index(self._db_path) as conn:
-                sync_folder(conn, mappa, mappa)
+                enabled_filetypes = getattr(
+                    self, "_filetype_scan_snapshot", None
+                )
+                if enabled_filetypes is None:
+                    sync_folder(conn, mappa, mappa)
+                else:
+                    sync_folder(
+                        conn,
+                        mappa,
+                        mappa,
+                        enabled_filetypes=enabled_filetypes,
+                    )
         except Exception:  # noqa: BLE001 - az indexelés soha ne bukatassa a mentést
             logger.warning(
                 "A mentett kollázs mappája nem került az indexbe: %s", mappa,

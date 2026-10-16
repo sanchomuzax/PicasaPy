@@ -174,6 +174,57 @@ A lemezkép **felcsatolható**, és bármelyik lemezíró programmal lemezre
 
 A végén ezt írja ki: „Kész: *N* fájl, *M* lemezképen."
 
+## Visszaállítás a mentésből
+
+A mentésből a képeket a programon belül is visszaállíthatod — például egy
+új gépen, vagy ha az eredetik elvesztek. A mentés-panel jobb szélén, a
+**Mégse** gomb mellett áll a **Visszaállítás...** gomb. Másolás közben nem
+látszik, a készlet kiválasztásától pedig nem függ.
+
+A gomb a **Mentés visszaállítása** ablakot nyitja meg:
+
+1. Az első mezőbe írd be a mentés helyét, vagy válaszd ki:
+   - a **Mappa...** gombbal egy mentési mappát (amilyet a lemezről lemezre
+     mentés készít);
+   - a **Lemezkép...** gombbal a lemezkép-készlet **első** fájlját
+     (`.iso`). Ha a készlet több sorszámozott lemezképből áll
+     (`picasapy-mentes-01.iso`, `-02.iso` és így tovább), a program az
+     azonos nevű, sorszámozott társakat is megnyitja, és az összesből
+     visszaállít.
+2. A **Visszaállítás ide:** mezőbe írd be a célmappát, vagy a **Kiválasztás...**
+   gombbal válaszd ki. Ha a mappa még nincs meg, a program létrehozza.
+3. Kattints a **Visszaállítás** gombra. A **Mégse** bezárja az ablakot;
+   amíg a visszaállítás fut, mindkét gomb szürke.
+
+A program csak a **fényképeket és a RAW-fájlokat** állítja vissza, és
+mindegyik mellé viszi a mappája `.picasa.ini` fájlját is, így a címkék,
+a csillagok és a szerkesztések is megmaradnak. A videókat nem. A képek az
+**eredeti mappaszerkezetükben** kerülnek a célmappába.
+
+**Meglévő fájlt nem ír felül.** Ha a célmappában már van egy ugyanolyan
+nevű fájl a helyén, azt kihagyja, és érintetlenül hagyja. Ezért nyugodtan
+visszaállíthatsz olyan mappába is, ahol már vannak képek: csak a hiányzók
+kerülnek oda. A képeket **csak a célmappába** másolja. Ha látni akarod őket a
+könyvtárban, vedd fel a célmappát figyelt mappának (lásd
+[Mappakezelő](mappakezelo.md)).
+
+Ha a program végzett, az ablak bezárul, és a panelen ez áll: „Visszaállított
+fájlok: *N*; már létező fájlok kihagyva: *M*."
+
+A visszaállítás a háttérben fut, a program közben használható marad.
+
+Ha valami nem sikerül, a hiba **pirosan az ablakban** jelenik meg, az ablak
+pedig nyitva marad, hogy javíthass:
+
+- „Válassza ki a mentés forrását és a visszaállítási mappát." — valamelyik
+  mező üres;
+- „A mentés nem állítható vissza: …" — a mondat végén az ok áll, például
+  hogy a kiválasztott mappa vagy lemezkép nem mentés, vagy hogy a mentésben
+  nem található visszaállítható kép.
+
+Az eredeti Picasa mentéseit is felismeri: az általa írt mappából vagy
+lemezképből ugyanígy visszaállíthatsz.
+
 ## Mi kerül a célmappába
 
 - A képek, az eredeti **mappaszerkezetet megtartva**.
@@ -188,4 +239,5 @@ A végén ezt írja ki: „Kész: *N* fájl, *M* lemezképen."
 
 Az eredeti Picasa maga írta meg a CD-t vagy a DVD-t. A PicasaPy **nem ír
 lemezt**: a kimenete mappa vagy lemezkép-fájl. A lemezt ebből egy
-tetszőleges lemezíró programmal készíted el.
+tetszőleges lemezíró programmal készíted el. A mentésből a képeket viszont
+a PicasaPy vissza is tudja állítani — lásd fentebb.

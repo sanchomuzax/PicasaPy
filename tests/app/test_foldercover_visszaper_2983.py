@@ -39,15 +39,15 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 _KEEPALIVE: list[object] = []
 
 #: A tulajdonos naplójából vett, valódi alakok.
-WINDOWSOS = "C:\\Users\\attila.virag\\OneDrive - centralmediacsoport\\Képek\\AI"
+WINDOWSOS = "C:\\Users\\felhasznalo\\OneDrive - Ceg\\Képek\\AI"
 HALOZATI = "\\\\ds215j\\lemez\\My Pictures\\PicasaPy meroszett"
 
 
 class TestANormalizalas:
     def test_a_KODOLT_visszaper_feloldva(self):
         assert (
-            normalizald_az_azonositot("C:%5CUsers%5Cattila.virag%5CKépek%5CAI")
-            == "C:\\Users\\attila.virag\\Képek\\AI"
+            normalizald_az_azonositot("C:%5CUsers%5Cfelhasznalo%5CKépek%5CAI")
+            == "C:\\Users\\felhasznalo\\Képek\\AI"
         )
 
     def test_a_kisbetus_alak_is(self):
@@ -67,10 +67,10 @@ class TestANormalizalas:
 
         A Qt a `%`-ot már feloldotta (`%25` → `%`), tehát a teljes
         `fromPercentEncoding` itt MÁSODSZOR dekódolna."""
-        assert normalizald_az_azonositot("/home/sancho/a%41b") == "/home/sancho/a%41b"
+        assert normalizald_az_azonositot("/home/felhasznalo/a%41b") == "/home/felhasznalo/a%41b"
 
     def test_a_szokozos_ekezetes_utvonal_valtozatlan(self):
-        ut = "/home/sancho/Képek/nyaralás 2024"
+        ut = "/home/felhasznalo/Képek/nyaralás 2024"
         assert normalizald_az_azonositot(ut) == ut
 
     def test_URES_azonosito(self):

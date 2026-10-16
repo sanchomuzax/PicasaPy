@@ -144,8 +144,8 @@ def _merge_photo_into(
     # Album-tagság áthelyezése a CASCADE-törlés elé (#9) — az azonos
     # (photo_id, token) párt az INSERT OR IGNORE csendben kihagyja.
     conn.execute(
-        "INSERT OR IGNORE INTO photo_albums(photo_id, token) "
-        "SELECT ?, token FROM photo_albums WHERE photo_id = ?",
+        "INSERT OR IGNORE INTO photo_albums(photo_id, token, place) "
+        "SELECT ?, token, place FROM photo_albums WHERE photo_id = ?",
         (keeper_photo_id, loser_photo["id"]),
     )
     conn.execute("DELETE FROM photos WHERE id = ?", (loser_photo["id"],))
@@ -188,6 +188,12 @@ def _merge_loser_into_keeper(
     conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (loser_path,))
     conn.execute(
         "UPDATE folders SET has_ini = MAX(has_ini, (SELECT has_ini FROM "
+        "folders WHERE id = ?)) WHERE id = ?",
+        (loser_id, keeper_id),
+    )
+    # #4597: a rejtés (0/1/2) nem veszhet el összevonáskor — privát tartalom
+    conn.execute(
+        "UPDATE folders SET hidden = MAX(hidden, (SELECT hidden FROM "
         "folders WHERE id = ?)) WHERE id = ?",
         (loser_id, keeper_id),
     )

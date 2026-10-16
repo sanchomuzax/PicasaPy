@@ -29,8 +29,8 @@ ColumnLayout {
     // #455: fogd-és-vidd az albumlistára — új album, illetve meglévőbe
     // sorolás. A tényleges munkát a gazda végzi (a névkérő párbeszéd és a
     // kijelölés is ott van).
-    signal newAlbumDropped()
-    signal photosDroppedOnAlbum(string token)
+    signal newAlbumPhotosDropped(var photoRows)
+    signal photosDroppedOnAlbum(string token, var photoRows)
 
     spacing: 0
 
@@ -93,7 +93,8 @@ ColumnLayout {
             onDropped: function(drop) {
                 if (!section.acceptsPhotoDrag(drop)) return
                 drop.accept()
-                section.newAlbumDropped()
+                section.newAlbumPhotosDropped(
+                    drop.source.photoRows ? drop.source.photoRows.slice() : [])
             }
         }
     }
@@ -179,7 +180,9 @@ ColumnLayout {
                 onDropped: function(drop) {
                     if (!section.acceptsPhotoDrag(drop)) return
                     drop.accept()
-                    section.photosDroppedOnAlbum(albumItem.modelData.token)
+                    section.photosDroppedOnAlbum(
+                        albumItem.modelData.token,
+                        drop.source.photoRows ? drop.source.photoRows.slice() : [])
                 }
             }
             MouseArea {

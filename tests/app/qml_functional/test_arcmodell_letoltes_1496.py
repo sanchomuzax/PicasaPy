@@ -133,11 +133,14 @@ class _HamisLenyomatolo:
 
 @pytest.fixture
 def modell_mappa(tmp_path, monkeypatch):
-    """Üres, IDEIGLENES modell-mappa — a felhasználó valódi mappájához
-    (`~/.local/share/picasapy/models`) egyetlen teszt sem nyúlhat."""
+    """Hiányzó-modell tesztekhez izolált, IDEIGLENES modellmappa.
+
+    A tesztek külön szimulálják azt a tartalék esetet, amikor a csomagolt
+    modell nincs jelen; a felhasználó valódi mappájához nem nyúlnak."""
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
     monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
     monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+    monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
     return tmp_path / "xdg" / "picasapy" / "models"
 
 
@@ -199,11 +202,8 @@ def _parbeszed(qt_app, vezerlo):
 class TestAutomatikusSfaceFolyamatjelzes:
     @pytest.mark.parametrize("height_offset", [-5, 0, 5])
     def test_automatikus_letoltes_lathato_folyamatot_mutat(
-        self, qt_app, tmp_path, monkeypatch, height_offset
+        self, qt_app, tmp_path, modell_mappa, monkeypatch, height_offset
     ):
-        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
-        monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
-        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
         vezerlo = _vezerlo(
             tmp_path,
             _HamisDetektor(available=True),
@@ -324,8 +324,9 @@ class TestAGombOttVanAhonnanHianyzott:
 class TestLetoltesUtanElo:
     """A jegy „kész, ha" 5. pontja: letöltés után a keresés INDÍTHATÓ."""
 
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
     def test_a_letoltes_utan_a_kereses_gombja_eloved_valik(
-        self, qt_app, tmp_path, modell_mappa, apro_specek, monkeypatch
+        self, qt_app, tmp_path, modell_mappa, apro_specek, monkeypatch, height_offset
     ):
         specek, tartalom = apro_specek
         # A letöltés UTÁN újraépített modellek — a valódi kódban ez a
@@ -339,20 +340,72 @@ class TestLetoltesUtanElo:
             lenyomat_gyar=lambda: _HamisLenyomatolo(available=True),
         )
         parbeszed = _parbeszed(qt_app, vezerlo)
+        parbeszed.setHeight(parbeszed.height() + height_offset)
+        qt_app.processEvents()
         assert _elem(parbeszed, "faceScanStartButton").property("enabled") is False
 
-        with _Kiszolgalo(tartalom) as kiszolgalo:
-            monkeypatch.setenv(
-                model_download.MODEL_BASE_URL_ENV_VAR, kiszolgalo.alap_url
-            )
+        # A vezérlő előbb állítja -1-re a letöltési százalékot, és csak
+        # utána küldi a modelDownloadFinished jelet. A közvetlen kapcsolattal
+        # pontosan e két értesítés között tartjuk a háttérszálat, hogy a teszt
+        # ne függjön attól, a CI mikor ütemezi a QML-eseménysort.
+        letoltes_vege_jelzes = threading.Event()
+        tovabbenged = threading.Event()
+
+        def tartsa_fel_a_befejezest():
+            if vezerlo.modelDownloadPercent == -1:
+                letoltes_vege_jelzes.set()
+                tovabbenged.wait(10.0)
+
+        vezerlo.modelDownloadPercentChanged.connect(
+            tartsa_fel_a_befejezest, Qt.ConnectionType.DirectConnection
+        )
+
+        def hamis_letoltes(*, progress=None, cancel=None):
+            eredmenyek = []
+            teljes_meret = sum(spec.size_bytes for spec in specek)
+            kesz = 0
+            for spec in specek:
+                fajl = modell_mappa / spec.filename
+                fajl.parent.mkdir(parents=True, exist_ok=True)
+                fajl.write_bytes(tartalom["/" + spec.relative_url])
+                kesz += spec.size_bytes
+                if progress is not None:
+                    progress(kesz, teljes_meret)
+                eredmenyek.append(
+                    model_download.DownloadResult(
+                        status=model_download.STATUS_OK, spec=spec, path=fajl
+                    )
+                )
+            return tuple(eredmenyek)
+
+        monkeypatch.setattr(model_download, "download_missing", hamis_letoltes)
+        try:
             _kattint(
-                _elem(parbeszed, "faceScanDownloadButton"), qt_app, "a Letöltés gomb"
+                _elem(parbeszed, "faceScanDownloadButton"),
+                qt_app,
+                "a Letöltés gomb",
+            )
+            assert letoltes_vege_jelzes.wait(5.0), (
+                "a letöltési százalék nem állt vissza"
             )
             _var(
                 qt_app,
                 lambda: parbeszed.property("downloading") is False,
                 uzenet="a letöltés nem fejeződött be",
             )
+            keres_gomb = _elem(parbeszed, "faceScanStartButton")
+            assert keres_gomb.property("enabled") is False, (
+                "a teszt nem állt meg a két külön jelzés közötti állapotban"
+            )
+            tovabbenged.set()
+            _var(
+                qt_app,
+                lambda: keres_gomb.property("enabled") is True,
+                uzenet="a letöltés befejezése után is szürke maradt a keresés gombja",
+            )
+            assert vezerlo.waitForBackgroundWorkers(15.0)
+        finally:
+            tovabbenged.set()
             assert vezerlo.waitForBackgroundWorkers(15.0)
 
         # #4315: a detektor a csomaggal érkezik, csak a felismerő töltődik le.
@@ -466,10 +519,19 @@ class TestLetoltesUtanElo:
         _var(
             qt_app,
             lambda: parbeszed.property("downloading") is False,
-            masodperc=1.0,
+            masodperc=10.0,
             uzenet="a modellbetöltés hibája után beragadt a párbeszéd",
         )
         assert vezerlo.waitForBackgroundWorkers(15.0)
+        # A vezérlő a `finally`-ben előbb a százalékot állítja −1-re (ettől
+        # hamis a `downloading`), és csak UTÁNA küldi a befejező jelet; a
+        # szál bevárása után a sorba állított jelet még kézbesíteni kell (#4825).
+        _var(
+            qt_app,
+            lambda: bool(parbeszed.property("statusText")),
+            masodperc=10.0,
+            uzenet="a letöltés befejező üzenete nem érkezett meg",
+        )
 
         assert betoltott_fajlok.get("detector") == tartalom[
             "/" + specek[0].relative_url

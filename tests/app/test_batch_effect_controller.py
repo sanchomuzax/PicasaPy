@@ -116,6 +116,26 @@ class TestApplyEffectMany:
         ][0]
         assert section_line == "filters=sat=1,-0.2;autolight=1;"
 
+    def test_sepia_a_kijelolt_kepekre_kerul_es_egy_lepesben_visszavonhato(
+        self, controller, library
+    ):
+        before_a = _ini_text(library)
+        _run(
+            controller,
+            lambda: controller.applyEffectMany(
+                _rows_by_name(controller, "x.jpg", "z.jpg"), "sepia"
+            ),
+        )
+        assert "filters=sat=1,-0.2;sepia=1;" in _ini_text(library)
+        assert "filters=sepia=1;" in _ini_text_b(library)
+        assert controller.canUndoBatchEdit is True
+
+        controller.undoBatchEdit()
+
+        assert _ini_text(library) == before_a
+        assert "filters=sepia=1;" not in _ini_text_b(library)
+        assert controller.canUndoBatchEdit is False
+
     def test_uj_kepen_letrehozza_a_szekciot(self, controller, library):
         _run(
             controller,
@@ -167,9 +187,8 @@ class TestApplyEffectMany:
         assert controller.batchEditActive is False
         assert controller.batchEditDoneCount == controller.batchEditTotalCount == 2
 
-    def test_photoopfinished_kifut_ures_kijolesnel_is(self, controller):
-        # a `_run` helper a photoOpFinished-re vár — üres kijelölésnél is
-        # ki kell futnia (early-return se ragadjon be)
+    def test_ures_kijelolesnel_nincs_hattermunka(self, controller):
+        # üres kijelölésnél az early-return se ragadjon be
         _run(controller, lambda: controller.applyEffectMany([], "autolight"))
 
 

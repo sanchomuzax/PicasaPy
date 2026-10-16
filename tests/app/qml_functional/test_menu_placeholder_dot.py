@@ -8,6 +8,14 @@ from __future__ import annotations
 from PySide6.QtCore import QObject
 
 
+def _placeholder_items(window):
+    return [
+        item
+        for item in window.findChildren(QObject)
+        if bool(item.property("placeholder"))
+    ]
+
+
 class TestPlaceholderMenuItemek:
     """A `PicasaMenuItem`-mel jelölt helyfoglaló tételek."""
 
@@ -21,12 +29,9 @@ class TestPlaceholderMenuItemek:
         # (a képek fájljait teszi a vágólapra, Ctrl+X-szel együtt).
         # Ugyanaz a menet, mint a #1616-nál: példát cserélünk, nem
         # jelölést teszünk vissza egy működő tételre.
-        # #4346: a `menuViewThumbnailsOnly` most valódi, bekapcsolható szűrő.
-        for name in (
-            "menuViewDisplayMode16Bit",
-        ):
-            item = window.findChild(QObject, name)
-            assert item is not None, name
+        placeholders = _placeholder_items(window)
+        assert placeholders, "eltűntek a helyfoglalónak jelölt menütételek"
+        for item in placeholders:
             assert item.property("placeholder") is True
             assert item.property("enabled") is False
             # #331-tanulság (MEMORY.md): a `visible` ZÁRT menünél az
@@ -34,15 +39,13 @@ class TestPlaceholderMenuItemek:
             # nyitjuk fel, ezért csak a pont LÉTÉT és a rákötött feltételt
             # ellenőrizzük, nem az aktuális képernyő-láthatóságát.
             dot = item.findChild(QObject, "placeholderDot")
-            assert dot is not None, name
+            assert dot is not None, item.objectName() or item.property("text")
 
     def test_placeholder_felirat_halvanyabb(self, qml_app):
         window, _controller, _engine = qml_app
-        # #1616: a korábbi példa (`menuFileNewAlbum`) élővé vált, ezért
-        # egy MA IS helyfoglaló tételen mérünk.
-        # #1526: a következő példa (`menuEditCut`) is élővé vált — ez a
-        # teszt a JELÖLÉST méri, nem konkrét tételeket.
-        item = window.findChild(QObject, "menuViewDisplayMode16Bit")
+        placeholders = _placeholder_items(window)
+        assert placeholders, "eltűntek a helyfoglalónak jelölt menütételek"
+        item = placeholders[0]
         content = item.property("contentItem")
         assert content is not None
         # a felirat színe a Theme.textGray tokent használja (alap/világos
@@ -61,7 +64,6 @@ class TestMukodoMenuItemekValtozatlanok:
             "menuFileExport",
             "menuFileLocate",
             "menuEditCopyEffects",
-            "menuViewDarkTheme",
         ):
             item = window.findChild(QObject, name)
             assert item is not None, name
@@ -69,3 +71,14 @@ class TestMukodoMenuItemekValtozatlanok:
             assert not item.property("placeholder")
             dot = item.findChild(QObject, "placeholderDot")
             assert dot is None, name
+
+    def test_sajat_mukodo_tetelen_nincs_lathato_pont(self, qml_app):
+        """#4638: a Sötét téma SAJÁT tétel (`PicasaMenuItem`, `sajat`), így
+        a sablonja a pontot is tartalmazza — de a működő tételen az nem
+        látszik. Ez a látható állapotot őrzi, nem a belső fa alakját."""
+        window, _controller, _engine = qml_app
+        item = window.findChild(QObject, "menuViewDarkTheme")
+        assert item is not None
+        assert item.property("placeholder") is False
+        dot = item.findChild(QObject, "placeholderDot")
+        assert dot is None or dot.property("visible") is False

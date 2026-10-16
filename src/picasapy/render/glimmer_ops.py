@@ -953,31 +953,29 @@ def circular_gradient_mask(
     center: tuple[float, float] | None = None,
     inner_alpha: float = 0.0,
     outer_alpha: float = 1.0,
+    aspect_ratio: float = 1.0,
 ) -> np.ndarray:
     """`CircularGradient`: (H, W) float32 [0,1] maszk — `inner_alpha` az
     `inner_radius`-on belül (védett, „éles" zóna), `outer_alpha` az
     `outer_radius`-on túl, lineárisan a kettő között. `center` alapból a kép
     közepe, pixel-egységben.
 
-    #3958: a maszk az eredeti szerint 16 bites pozícióval, egész
-    koordinátával és megálló-táblával számol (`R = max(inner, outer)`), a
-    kimenet egész bájtokból (`alfa / 255`) áll. `outer <= inner` esetén a
-    spec képlete is érvényes (`R = max` miatt `p₁ = 255`, a fordított alfa
-    `trunc`-kal csonkol); a korábbi kemény lépcsőt csak azért tartjuk meg,
-    mert `inner = outer = 0` mellett az új út nullával osztana. Egyedül a
-    páratlan méret középpontja (`cx = W/2`) nem rögzített.
+    #3958/#4905: a 16 bites pozíció az eredeti egész befoglaló dobozából és
+    az aspect-függő skálából számolódik; a kimenet egész alfa-bájtokból
+    (`alfa / 255`) áll. A méret és a bal/felső él külön, nearest-even
+    kerekítést kap, ahogy a natív x87 FISTP.
 
     #788: a két alfa a natív `CircularGradientImageMask`
     `innerAlpha`/`outerAlpha` attribútuma; az alapértékek a KIOLVASOTT
     tartalékok (`0,0` → `1,0`), tehát az alapeset változatlan. A natív olvasó
     mindkettőt `[0,1]`-re vágja (`0x00bd0391`, `0x00bd03e1`).
 
-    ⚠️ **`aspectRatio` SZÁNDÉKOSAN nem paraméter.** A 283. kutatói kör
-    kimérte, hogy a tartaléka `1,0`, és a `filterdesc.xml` mind a négy
-    használatban elhagyja — a maszk tehát KÖR, és a `np.hypot` helyes. A nem
-    1,0-s eset geometriája NINCS kimérve, ezért egy ilyen paraméter csak
-    találgatást hordozhatna (`docs/specs/filters-decoded.md`).
+    `aspect_ratio` a natív `aspectRatio` mezője; a meglévő hívók változatlanul
+    körmaszkot kérnek az alapértelmezett `1.0` értékkel. Nem pozitív értéknél
+    `ValueError` (a natív viselkedés nincs kimérve, a csendes maszk hibás lenne).
     """
+    if aspect_ratio <= 0:
+        raise ValueError(f"Az aspectRatio pozitívnak kell lennie: {aspect_ratio}")
     cx, cy = center if center is not None else (width / 2.0, height / 2.0)
     belso = float(np.clip(inner_alpha, 0.0, 1.0))
     kulso = float(np.clip(outer_alpha, 0.0, 1.0))
@@ -990,7 +988,15 @@ def circular_gradient_mask(
         arany = (dist >= inner_radius).astype(np.float32)
         return (np.float32(belso) + arany * np.float32(kulso - belso)).astype(np.float32)
     tabla = _kormaszk_megallo_tabla(inner_radius, outer_radius, belso, kulso)
-    pozicio = _kormaszk_pozicio(height, width, cx, cy, outer_radius)
+    pozicio = _kormaszk_doboz_pozicio(
+        height,
+        width,
+        cx,
+        cy,
+        inner_radius,
+        outer_radius,
+        aspect_ratio,
+    )
     rekesz = pozicio >> 8
     tort = pozicio & 0xFF
     alfa = (tabla[rekesz + 1] * tort + tabla[rekesz] * (256 - tort)) >> 8
@@ -1022,33 +1028,51 @@ def _kormaszk_megallo_tabla(
     return tabla
 
 
-def _kormaszk_tavolsag(
-    height: int, width: int, cx: float, cy: float, sugar: float
+def _kormaszk_doboz_pozicio(
+    height: int,
+    width: int,
+    cx: float,
+    cy: float,
+    inner_radius: float,
+    outer_radius: float,
+    aspect_ratio: float,
 ) -> np.ndarray:
-    """A pozíció kerekítés előtti értéke, `√(u²+v²)`, float32-ben (`sqrtps`,
-    egyszeres pontosság — a spec rögzíti). Az `u`/`v` float64-ben képződik,
-    és float32-re csonkul; az `u²+v²` összeg és a gyök már float32."""
-    skala = _KORMASZK_POZICIO_MAX / sugar
-    u = ((np.arange(width, dtype=np.float64) - cx) * skala).astype(np.float32)
-    v = ((np.arange(height, dtype=np.float64) - cy) * skala).astype(np.float32)
-    return np.sqrt(v[:, np.newaxis] * v[:, np.newaxis] + u[np.newaxis, :] * u[np.newaxis, :])
+    """A tört paraméterek natív dobozából számolt SSE2 pozíció (#4905).
 
+    A `0x00bd05f0` a méretet és a bal/felső élt külön x87 `FISTP`-vel,
+    nearest-even módon egészíti ki. A pixelút a lekerekített, még nem
+    klippelt doboz közepét és méretét használja (`0x00cf47f0` és
+    `0x00cf48f0` konstansokkal), majd az SSE2 `sqrtps`/`cvtps2dq` ága adja a
+    16 bites pozíciót.
+    """
+    f32 = np.float32
+    radius = max(f32(inner_radius), f32(outer_radius))
+    height_f = f32(f32(2.0) * radius)
+    width_f = f32(f32(aspect_ratio) * height_f)
 
-def _kormaszk_pozicio(
-    height: int, width: int, cx: float, cy: float, sugar: float
-) -> np.ndarray:
-    """A 16 bites pozíció (`0x008f3970`, #3957): `u = (x−cx)·65280/R` EGÉSZ
-    képpontindexből (nincs `+0,5`), `P = min(round(√(u²+v²)), 0xff00)` —
-    az SSE2-ág (`sqrtps` + `cvtps2dq`) legközelebbire kerekít.
+    box_width = int(np.rint(width_f))
+    box_height = int(np.rint(height_f))
+    if box_width < 1 or box_height < 1:
+        # A 0-s méret osztást (inf/NaN maszk) adna: hibát dobunk helyette.
+        raise ValueError(
+            f"A körmaszk doboza nullára kerekedne (aspectRatio={aspect_ratio}, "
+            f"sugár={float(radius)})"
+        )
+    left = int(np.rint(f32(f32(cx) - f32(width_f * f32(0.5)))))
+    top = int(np.rint(f32(f32(cy) - f32(height_f * f32(0.5)))))
+    box_center_x = f32(left + f32(box_width * f32(0.5)))
+    box_center_y = f32(top + f32(box_height * f32(0.5)))
 
-    Rögzített (spec): a `√` egyszeres pontosságú (float32), a `rint` a
-    float32 eredményen fut. NEM rögzített: az `u`/`v` képzésének pontos alakja
-    (a bináris a befoglaló téglalapot a `1638,4`-es Flash-egységre képezi, és
-    `79,6875`-tel szoroz; mi `(x−cx)·65280/R`-t használunk float64-ben, majd
-    float32-re váltunk). A két alak néhány ezer képpontban egy egységgel
-    eltérhet."""
-    tavolsag = _kormaszk_tavolsag(height, width, cx, cy, sugar)
-    return np.minimum(np.rint(tavolsag), _KORMASZK_POZICIO_MAX).astype(np.int64)
+    flash_scale = f32(1638.4000244140625)
+    inverse_affine_scale = f32(79.6875)
+    scale_x = f32(f32(flash_scale / f32(box_width)) * inverse_affine_scale)
+    scale_y = f32(f32(flash_scale / f32(box_height)) * inverse_affine_scale)
+    u = (np.arange(width, dtype=np.float32) - box_center_x) * scale_x
+    v = (np.arange(height, dtype=np.float32) - box_center_y) * scale_y
+    distance = np.sqrt(
+        v[:, np.newaxis] * v[:, np.newaxis] + u[np.newaxis, :] * u[np.newaxis, :]
+    )
+    return np.minimum(np.rint(distance), _KORMASZK_POZICIO_MAX).astype(np.int64)
 
 
 def tint_multiply(image: np.ndarray, color: tuple[int, int, int], alpha: float) -> np.ndarray:
@@ -1237,12 +1261,15 @@ def _tengely_sulyok(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Egy tengely csapindexei és EGÉSZ súlyai, a `ytResampler` szerint.
 
-    Spec 5/b–5/c (`0x00a3f660`): a csap helye `j + 0,5`, a kimeneti képpont
-    középpontja `c = (i + 0,5) · forrás/cél` (float32). A mag kicsinyítéskor
-    a léptékkel nyúlik (`nyujtas = max(1, forrás/cél)`, `0x00a3f74b`):
+    Spec 5/b–5/c (`0x00a3f660`): a csap helye `j + 0,5`. A natív dobozág
+    előbb float32-ben tárolja a cél/forrás arányt, majd ennek külön float32
+    reciprokával számítja a középpontot (`0x00a3f711`–`0x00a3f717`,
+    `0x00a3f8af`–`0x00a3f8bd`). A tapeltolást a cél/forrás aránnyal szorozza,
+    és float32-ben veti össze a `0,5` határral (`0x00a3faf6`–`0x00a3fb20`).
+    Ez a kétlépcsős kerekítés matematikailag határra eső alsó tapot is
+    beengedhet, ezért a közvetlen forrás/cél osztás nem bitpontos.
 
-    * **doboz** (0-s mód): súly 1, ha `|x| < 0,5` — a határon álló csap nem
-      számít (`0x00a3fb12`);
+    * **doboz** (0-s mód): súly 1, ha a tárolt `|x| < 0,5`;
     * **Mitchell** (3-as mód): `B = C = 0,4`, `|x| < 2`;
     * **Lanczos-3** (5-ös mód, `lanczos=True`, #3998): `|x| < 3`.
 
@@ -1256,18 +1283,43 @@ def _tengely_sulyok(
     képponthatárra esik), a teljes súly a `csonk(c)` csapé. Ezt az esetet a
     bináris nem mérte ki; a maradék-szabály folytatása.
     """
-    skala = np.float32(be_meret) / np.float32(ki_meret)
-    nyujtas = max(1.0, float(skala))
-    sugar = (0.5 if doboz else 3.0 if lanczos else 2.0) * nyujtas
-    kozep = ((np.arange(ki_meret, dtype=np.float32) + np.float32(0.5)) * skala).astype(np.float64)
+    cel_forras = np.float32(ki_meret) / np.float32(be_meret)
+    forras_cel = np.float32(be_meret) / np.float32(ki_meret)
+    if doboz:
+        # A natív előbb cél/forrás float32 arányt tárol, majd külön veszi a
+        # reciprokát. Egyes méreteknél ez eltér a közvetlen forrás/cél
+        # osztástól (például 7→4: 1,74999988, nem 1,75).
+        skala = np.float32(np.float32(1.0) / cel_forras)
+        nyujtas = max(1.0, float(skala))
+        sugar = float(np.float32(np.float32(0.5) / cel_forras))
+        kozep = (
+            (np.arange(ki_meret, dtype=np.float32) + np.float32(0.5)) * skala
+        ).astype(np.float32).astype(np.float64)
+    else:
+        skala = forras_cel
+        nyujtas = max(1.0, float(skala))
+        sugar = (3.0 if lanczos else 2.0) * nyujtas
+        kozep = (
+            (np.arange(ki_meret, dtype=np.float32) + np.float32(0.5)) * skala
+        ).astype(np.float64)
     elso = np.floor(kozep - sugar - 0.5).astype(np.int64)
     ablak = int(np.ceil(2 * sugar)) + 2
     indexek = elso[:, None] + np.arange(ablak)[None, :]
-    tav = indexek + 0.5 - kozep[:, None]
-    ervenyes = (np.abs(tav) < sugar) & (indexek >= 0) & (indexek < be_meret)
     if doboz:
+        tap_kozep = (indexek.astype(np.float32) + np.float32(0.5)).astype(np.float32)
+        tav = (
+            (tap_kozep - kozep.astype(np.float32)[:, None]).astype(np.float32)
+            * cel_forras
+        ).astype(np.float32)
+        ervenyes = (
+            (np.abs(tav) < np.float32(0.5))
+            & (indexek >= 0)
+            & (indexek < be_meret)
+        )
         nyers = ervenyes.astype(np.float64)
     else:
+        tav = indexek + 0.5 - kozep[:, None]
+        ervenyes = (np.abs(tav) < sugar) & (indexek >= 0) & (indexek < be_meret)
         mag = lanczos3 if lanczos else mitchell_netravali
         nyers = np.where(ervenyes, mag(tav / nyujtas), 0.0)
     osszeg = nyers.sum(axis=1, keepdims=True)

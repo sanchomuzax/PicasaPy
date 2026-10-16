@@ -14,9 +14,10 @@ Motor:
   ONNX-modell) — 128 float32/arc.
 
 Mindkettő az OpenCV-be épített API, NULLA új futásidejű függőség (issue
-#26, méréssel ellenőrizve: 2026-08-07). A modellfájlok NEM kerülnek a
-repóba; hiányukban a `FaceDetector`/`FaceEmbedder` tisztán, naplózott
-üzenettel kikapcsol — a hívó minden más része változatlanul működik.
+#26, méréssel ellenőrizve: 2026-08-07). A két modellfájl a csomag része;
+ha valamelyik mégis hiányzik, a `FaceDetector`/`FaceEmbedder` tisztán,
+naplózott üzenettel kikapcsol — a hívó minden más része változatlanul
+működik.
 
 A csoportosítás (`clustering.py`) tiszta matematika — klaszterező
 könyvtár NÉLKÜL, koszinusz-hasonlóság + inkrementális centroid.

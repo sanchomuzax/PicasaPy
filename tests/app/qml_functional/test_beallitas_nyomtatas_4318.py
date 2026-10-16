@@ -7,17 +7,27 @@ import time
 
 import pytest
 import numpy as np
-from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
+from PySide6.QtCore import QLocale, QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
 from PIL import Image
+
+from tests.support.varakozas import var_feltetelre
+from picasapy.app.language_controller import LANGUAGE_KEY
 
 
 def _gyerek(gyoker, nev):
     elem = gyoker.findChild(QObject, nev)
     assert elem is not None, f"{nev} nem található"
     return elem
+
+
+#: A Repeater-delegáltak Python-burkolóit a teszt végéig életben tartjuk: a
+#: burkoló átmeneti megszűnése a windowsos CI-n „Internal C++ object
+#: (QQuickItem) already deleted" hibát adott a már lekért elemen
+#: (hipotézis: PySide-tulajdonjog / GC-időzítés, a QML-fa maga statikus).
+_ELO_DELEGALTAK: list = []
 
 
 def _ismetlo_elem(gyoker, qt_app, ismetlo_nev, index, gyerek_nev):
@@ -37,6 +47,7 @@ def _ismetlo_elem(gyoker, qt_app, ismetlo_nev, index, gyerek_nev):
         f"a(z) {ismetlo_nev} {index}. delegáltja nem épült fel"
     )
     delegalt = _delegalt_elkeszult.delegalt
+    _ELO_DELEGALTAK.append(delegalt)
     elem = (
         delegalt
         if delegalt.objectName() == gyerek_nev
@@ -46,15 +57,8 @@ def _ismetlo_elem(gyoker, qt_app, ismetlo_nev, index, gyerek_nev):
     return elem
 
 
-def _varj(qt_app, feltetel, masodperc=3.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc=10.0):
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattints(ablak, qt_app, elem):
@@ -112,6 +116,69 @@ def _valassz_combo(ablak, qt_app, combo, index):
     assert _varj(qt_app, lambda: combo.property("currentIndex") == index), (
         f"a(z) {index}. méretet nem választotta ki a kattintás"
     )
+
+
+@pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+def test_metrikus_terulet_ot_alapmerete_a_nyomtatas_fulon_latszik(
+    qml_app, qt_app, monkeypatch, magassag_elteres
+):
+    import picasapy.printing.dpi as dpi
+
+    class MetrikusQLocale:
+        MeasurementSystem = QLocale.MeasurementSystem
+
+        @classmethod
+        def system(cls):
+            return cls()
+
+        def measurementSystem(self):
+            return QLocale.MeasurementSystem.MetricSystem
+
+    monkeypatch.setattr(dpi, "QLocale", MetrikusQLocale, raising=False)
+    window, _controller, engine = qml_app
+    menu = _gyerek(window, "menuToolsOptions")
+    QMetaObject.invokeMethod(menu, "triggered", Qt.ConnectionType.DirectConnection)
+    assert _varj(
+        qt_app,
+        lambda: window.findChild(QObject, "optionsDialog") is not None
+        and window.findChild(QObject, "optionsDialog").property("visible"),
+    ), "a Beállítások ablaka nem nyílt meg"
+    options = _gyerek(window, "optionsDialog")
+    options.setProperty("height", options.height() + magassag_elteres)
+    qt_app.processEvents()
+
+    _kattints(options, qt_app, _gyerek(options, "optionsTabPrinting"))
+    assert _varj(
+        qt_app,
+        lambda: _gyerek(options, "optionsTabStack").property("currentIndex") == 4,
+    ), "a Nyomtatás fül nem nyílt meg"
+
+    print_ctl = engine.rootContext().contextProperty("printController")
+    print_ctl._settings.setValue(LANGUAGE_KEY, "en")
+    vart = [
+        ("M5X8CM", "5 x 8 cm"),
+        ("M9X13CM", "9 x 13 cm"),
+        ("M10X15CM", "10 x 15 cm"),
+        ("M13X18CM", "13 x 18 cm"),
+        ("M20X25CM", "20 x 25 cm"),
+    ]
+    meret_azonositok = _lista(print_ctl.printOptionSizes())
+    for index, (nev, felirat) in enumerate(vart):
+        combo = _ismetlo_elem(
+            options,
+            qt_app,
+            "optionsPrintSizeRepeater",
+            index,
+            f"optionsPrintSizeCombo{index}",
+        )
+        assert _varj(
+            qt_app,
+            lambda combo=combo, nev=nev: combo.property("currentIndex")
+            == meret_azonositok.index(nev),
+        ), f"a(z) {index + 1}. gyorsválasztó nem a {nev} méretet jelzi"
+        assert combo.property("currentText") == felirat, (
+            f"a(z) {index + 1}. gyorsválasztó felirata nem a méretet mutatja"
+        )
 
 
 @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
@@ -301,6 +368,49 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     )
 
 
+def _meret_combo_geometriak(options, tab, qt_app, kiserletek=5):
+    """Az öt méretválasztó geometriája a méretrácshoz képest.
+
+    Egy kísérleten belül minden elemet ÚJRA lekérünk a fa gyökeréből; ha a
+    lekért burkoló közben érvénytelenné vált (RuntimeError), az egész mérést
+    megismételjük. Az utolsó hiba a diagnosztikával együtt kerül elő — a
+    hiba nem nyelődik el."""
+    utolso_hiba = None
+    for kiserlet in range(1, kiserletek + 1):
+        index = -1
+        try:
+            meret_racs = _gyerek(tab, "optionsPrintSizeGrid")
+            geometriak = []
+            for index in range(5):
+                combo = _ismetlo_elem(
+                    options, qt_app, "optionsPrintSizeRepeater", index,
+                    f"optionsPrintSizeCombo{index}",
+                )
+                cimke = _ismetlo_elem(
+                    options, qt_app, "optionsPrintSizeRepeater", index,
+                    f"optionsPrintSizeLabel{index}",
+                )
+                assert cimke.property("visible") is False, (
+                    "a méretválasztó fölösleges sorszámcímkéje látható maradt"
+                )
+                geometriak.append(
+                    (
+                        combo.mapToItem(meret_racs, QPointF(0, 0)),
+                        float(combo.width()),
+                        float(combo.height()),
+                    )
+                )
+            return geometriak
+        except RuntimeError as hiba:
+            utolso_hiba = f"{kiserlet}. kísérlet, {index}. delegált: {hiba}"
+            qt_app.processEvents()
+            time.sleep(0.1)
+    raise AssertionError(
+        f"a méretválasztók burkolója {kiserletek} kísérletre sem maradt "
+        f"érvényes: {utolso_hiba}"
+    )
+
+
 @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
 def test_nyomtatas_ful_ketoszlopos_elrendezese_a_referencia_szerint(
     qml_app, qt_app, magassag_elteres, tmp_path
@@ -331,32 +441,8 @@ def test_nyomtatas_ful_ketoszlopos_elrendezese_a_referencia_szerint(
         lambda: meret_racs.width() > 0 and beallitas_racs.width() > 0,
     ), "a nyomtatási beállítások rácsa nem rendeződött el"
 
-    combo_geometriak = []
-    for index in range(5):
-        combo = _ismetlo_elem(
-            options,
-            qt_app,
-            "optionsPrintSizeRepeater",
-            index,
-            f"optionsPrintSizeCombo{index}",
-        )
-        cimke = _ismetlo_elem(
-            options,
-            qt_app,
-            "optionsPrintSizeRepeater",
-            index,
-            f"optionsPrintSizeLabel{index}",
-        )
-        assert cimke.property("visible") is False, (
-            "a méretválasztó fölösleges sorszámcímkéje látható maradt"
-        )
-        combo_geometriak.append(
-            (
-                combo.mapToItem(meret_racs, QPointF(0, 0)),
-                float(combo.width()),
-                float(combo.height()),
-            )
-        )
+    combo_geometriak = _meret_combo_geometriak(options, tab, qt_app)
+    meret_racs = _gyerek(tab, "optionsPrintSizeGrid")
 
     pontok = [adat[0] for adat in combo_geometriak]
     meret_racs_kozepe = meret_racs.mapToScene(
@@ -372,13 +458,17 @@ def test_nyomtatas_ful_ketoszlopos_elrendezese_a_referencia_szerint(
     for _pont, szelesseg, magassag in combo_geometriak:
         assert abs(szelesseg - 150) <= 3, f"eltérő méretválasztó-szélesség: {szelesseg}"
         assert abs(magassag - 23) <= 3, f"eltérő méretválasztó-magasság: {magassag}"
-    assert abs((pontok[1].x() - pontok[0].x()) - 157) <= 3
-    assert abs((pontok[2].y() - pontok[0].y()) - 30) <= 3
-    assert abs((pontok[3].y() - pontok[1].y()) - 30) <= 3
-    assert abs(pontok[0].x() - pontok[2].x()) <= 2
-    assert abs(pontok[2].x() - pontok[4].x()) <= 2
-    assert abs(pontok[0].y() - pontok[1].y()) <= 2
-    assert abs(pontok[2].y() - pontok[3].y()) <= 2
+    # Oszlopfolytonos sorrend, ahogy a referencián: balra 5x8, 9x13,
+    # 10x15 cm, jobbra 13x18 és 20x25 cm.
+    assert abs((pontok[3].x() - pontok[0].x()) - 157) <= 3
+    assert abs((pontok[1].y() - pontok[0].y()) - 30) <= 3
+    assert abs((pontok[2].y() - pontok[1].y()) - 30) <= 3
+    assert abs((pontok[4].y() - pontok[3].y()) - 30) <= 3
+    assert abs(pontok[0].x() - pontok[1].x()) <= 2
+    assert abs(pontok[1].x() - pontok[2].x()) <= 2
+    assert abs(pontok[3].x() - pontok[4].x()) <= 2
+    assert abs(pontok[0].y() - pontok[3].y()) <= 2
+    assert abs(pontok[1].y() - pontok[4].y()) <= 2
 
     cimke_nevek = (
         "optionsPrintPreviewsLabel",

@@ -86,8 +86,16 @@ class TestAmitAFelhasznaloLAT:
 
 # --- ÉLŐ mérés: a betöltött felületen és a valódi párbeszéden -------------
 
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl  # noqa: E402
+from PySide6.QtCore import (  # noqa: E402
+    QMetaObject,
+    QObject,
+    QPoint,
+    QPointF,
+    Qt,
+    QUrl,
+)
 from PySide6.QtQml import QQmlComponent, QQmlEngine  # noqa: E402
+from PySide6.QtTest import QTest  # noqa: E402
 
 import picasapy.app.application as app_module  # noqa: E402
 
@@ -107,7 +115,7 @@ class _HamisVezerlo(QObject):
 
     from PySide6.QtCore import Property, Signal
 
-    importFinished = Signal(int, int, int, int, int)
+    importFinished = Signal(int, int, int, int, int, int, int)
     importFailed = Signal(str)
     noInstallationFound = Signal()
     runningChanged = Signal()
@@ -156,16 +164,39 @@ class TestAzELOFelulet:
             "az import menüpontja le van tiltva — a felhasználó nem éri el"
         )
 
-    def test_a_megnyitas_ELINDITJA_az_atvetelt(self, qt_app):
+    def test_a_gomb_kattintasa_ELINDITJA_az_atvetelt(self, qt_app):
+        """A konfiguráció megnyitása önmagában még nem indít íróműveletet."""
         parbeszed, vezerlo = _parbeszed(qt_app)
         QMetaObject.invokeMethod(parbeszed, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert vezerlo.inditasok == 0, "az átvétel a felhasználó kérése előtt elindult"
+        gomb = _elem(parbeszed, "picasaImportStartButton")
+        eredeti_magassag = parbeszed.height()
+        for elteres in (-5, 0, 5):
+            parbeszed.resize(parbeszed.width(), eredeti_magassag + elteres)
+            qt_app.processEvents()
+            assert gomb.property("visible") is True
+            assert gomb.property("enabled") is True
+            teteje = gomb.mapToScene(QPointF(0, 0)).y()
+            assert teteje >= 0 and teteje + gomb.property("height") <= parbeszed.height()
+        parbeszed.resize(parbeszed.width(), eredeti_magassag)
+        qt_app.processEvents()
+        kozep = gomb.mapToScene(
+            QPointF(gomb.property("width") / 2, gomb.property("height") / 2)
+        )
+        QTest.mouseClick(
+            parbeszed,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(kozep.x()), round(kozep.y())),
+        )
         qt_app.processEvents()
         assert vezerlo.inditasok == 1, "a párbeszéd megnyílt, de nem indult import"
 
     def test_a_JELENTES_szamai_megjelennek_a_feluleten(self, qt_app):
         parbeszed, vezerlo = _parbeszed(qt_app)
         QMetaObject.invokeMethod(parbeszed, "open", Qt.ConnectionType.DirectConnection)
-        vezerlo.importFinished.emit(3, 12, 4, 7, 2)
+        vezerlo.importFinished.emit(3, 12, 4, 7, 2, 5, 1)
         qt_app.processEvents()
         eredmeny = _elem(parbeszed, "picasaImportResult").property("text")
         for szam in ("3", "12", "4", "7"):
@@ -173,13 +204,21 @@ class TestAzELOFelulet:
         kihagyott = _elem(parbeszed, "picasaImportSkipped")
         assert kihagyott.property("visible") is True
         assert "2" in kihagyott.property("text")
+        videok = _elem(parbeszed, "picasaImportVideoDates")
+        assert videok.property("visible") is True
+        assert "5" in videok.property("text")
+        hiba = _elem(parbeszed, "picasaImportVideoDatesFailed")
+        assert hiba.property("visible") is True
+        assert "1" in hiba.property("text")
 
     def test_ha_nincs_kihagyott_a_sor_sem_latszik(self, qt_app):
         parbeszed, vezerlo = _parbeszed(qt_app)
         QMetaObject.invokeMethod(parbeszed, "open", Qt.ConnectionType.DirectConnection)
-        vezerlo.importFinished.emit(1, 1, 0, 0, 0)
+        vezerlo.importFinished.emit(1, 1, 0, 0, 0, 0, 0)
         qt_app.processEvents()
         assert _elem(parbeszed, "picasaImportSkipped").property("visible") is False
+        assert _elem(parbeszed, "picasaImportVideoDates").property("visible") is False
+        assert _elem(parbeszed, "picasaImportVideoDatesFailed").property("visible") is False
 
     def test_a_nincs_adat_eset_SZOVEGET_kap_nem_nullakat(self, qt_app):
         parbeszed, vezerlo = _parbeszed(qt_app)

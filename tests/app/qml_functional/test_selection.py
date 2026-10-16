@@ -12,7 +12,7 @@ from support.jpeg_factory import make_jpeg
 
 def _do_photo_op(controller, qt_app, action) -> None:
     """A csillag/felirat/forgatás háttérszálon fut — a közös segéd megvárja
-    a `photoOpFinished` jelzést, és ELBUKIK, ha nem jön meg (#475)."""
+    a munkaszál végét, és ELBUKIK, ha az időkorlátig sem áll le (#475)."""
     wait_for_photo_op(controller, action, qt_app=qt_app)
 
 
@@ -193,8 +193,8 @@ class TestSelectionStability:
 class TestSelectStarred:
     """#426: „Csillagozottak kijelölése" (Picasa `ID_SELECTSTAR`, Szerkesztés
     menü) — a JELENLEGI nézet csillagos képeit jelöli ki, NEM a Mappák panel
-    „Csillagozott" nézet-szűrőjét váltja (az utóbbi külön, meglévő út,
-    `controller.showStarred()`, a bal oldali fa „Starred" bejegyzésén)."""
+    „Csillagozott" nézetét váltja (az utóbbi külön út,
+    `controller.showStarredAlbum()`, a bal oldali fa „Starred" bejegyzésén)."""
 
     @staticmethod
     def _indexes(window):

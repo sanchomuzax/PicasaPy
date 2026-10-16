@@ -48,10 +48,6 @@ SZANDEKOS_NOOP = frozenset({"auto", "normal"})
 # megszűnt (a #1580 képpont-mérése megvan), és a mód azóta él.
 NYUGDIJAZOTT = frozenset({"rdesk"})
 
-#: Megvalósítható, de ma értelmetlen (16 bites képernyő nincs).
-HELYFOGLALO = frozenset({"dither16"})
-
-
 def _tetel(window, nev):
     elem = window.findChild(object, nev)
     assert elem is not None, f"nincs ilyen menütétel: {nev}"
@@ -60,16 +56,13 @@ def _tetel(window, nev):
 
 class TestABesorolasTeljes:
     def test_minden_mod_pontosan_egy_csoportba_tartozik(self):
-        """A négy csoport lefedi a 11 módot, és nem fedik át egymást."""
-        besorolt = PIXEL_AFFECTING_MODES | SZANDEKOS_NOOP | NYUGDIJAZOTT | HELYFOGLALO
+        """A megvalósított, no-op és nyugdíjazott csoport lefedi a 11 módot."""
+        besorolt = PIXEL_AFFECTING_MODES | SZANDEKOS_NOOP | NYUGDIJAZOTT
         assert set(TETELEK.values()) == besorolt
         parok = [
             (PIXEL_AFFECTING_MODES, SZANDEKOS_NOOP),
             (PIXEL_AFFECTING_MODES, NYUGDIJAZOTT),
-            (PIXEL_AFFECTING_MODES, HELYFOGLALO),
             (SZANDEKOS_NOOP, NYUGDIJAZOTT),
-            (SZANDEKOS_NOOP, HELYFOGLALO),
-            (NYUGDIJAZOTT, HELYFOGLALO),
         ]
         for a, b in parok:
             assert not (a & b), f"átfedő csoportok: {a & b}"
@@ -95,15 +88,6 @@ class TestAMenuJelolesei:
                 continue
             elem = _tetel(window, nev)
             assert elem.property("retired") is True, f"{nev} nincs nyugdíjazva"
-            assert elem.property("enabled") is False, f"{nev} kattintható maradt"
-
-    def test_a_helyfoglalo_modok_jelolve_es_kattinthatatlanok(self, qml_app_module):
-        window, _ctl, _e = qml_app_module
-        for nev, mod in TETELEK.items():
-            if mod not in HELYFOGLALO:
-                continue
-            elem = _tetel(window, nev)
-            assert elem.property("placeholder") is True, f"{nev} nincs helyfoglalónak jelölve"
             assert elem.property("enabled") is False, f"{nev} kattintható maradt"
 
     def test_egyetlen_meg_nem_valositott_mod_sem_kattinthato(self, qml_app_module):

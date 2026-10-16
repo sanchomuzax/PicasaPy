@@ -8,6 +8,8 @@ from PySide6.QtCore import QEventLoop, QTimer, QTranslator
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
+from .i18n_build import forditsd
+
 _APP_DIR = Path(__file__).parent
 _I18N_DIR = _APP_DIR / "i18n"
 
@@ -27,6 +29,7 @@ def ask_startup_language_prompt(
     if app is None:
         return False
 
+    forditsd(_I18N_DIR / f"picasapy_{system_language}.ts")  # #4817
     translator = QTranslator(app)
     installed = translator.load(f"picasapy_{system_language}", str(_I18N_DIR))
     if installed:

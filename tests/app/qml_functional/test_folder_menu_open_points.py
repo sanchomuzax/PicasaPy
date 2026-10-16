@@ -66,16 +66,18 @@ class TestFolderMenuOpenPoints:
         # csak a JOBB gomb — a bal gombos kijelölés-logika érintetlen marad
         assert handler.property("acceptedButtons") == Qt.MouseButton.RightButton
 
-    def test_sort_state_is_refreshed_when_the_menu_opens(self, qml_app, qt_app):
-        """A „Mappa rendezésének alapja ▸" pipái a menü megnyitásakor a
-        vezérlő friss állapotát veszik át.
-
-        #1436: a menü a mappa TARTALMÁNAK rendezését mutatja
-        (`folderPhotoSort`), nem a mappák sorrendjét — az alapérték a
-        fájlnév, ezért a próba egy MÁSIK értéket állít be."""
-        window, controller, _engine = qml_app
-        controller.setFolderPhotoSort("date")
-        qt_app.processEvents()
+    def test_sort_menu_has_no_persistent_mode_state(self, qml_app, qt_app):
+        """A menü műveletei nem tárolnak módot vagy irányt."""
+        window, _controller, _engine = qml_app
         _open_from_window(window, "")
         qt_app.processEvents()
-        assert _child(window, "folderContextMenu").property("sortMode") == "date"
+        menu = _child(window, "folderContextMenu")
+        assert menu.property("sortMode") is None
+        assert menu.property("sortReverse") is None
+        for name in (
+            "folderMenuSortByDate",
+            "folderMenuSortByName",
+            "folderMenuSortBySize",
+            "folderMenuSortReverse",
+        ):
+            assert _child(window, name).property("checkable") is False

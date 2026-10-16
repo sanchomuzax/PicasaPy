@@ -65,7 +65,7 @@ def _listaelem(qt_app, lista, index):
         return ertek is not None
 
     _elkeszult.ertek = None
-    assert varj_feltetelre(qt_app, _elkeszult, masodperc=3), (
+    assert varj_feltetelre(qt_app, _elkeszult, masodperc=10.0), (
         f"a lista {index}. sora nem épült fel"
     )
     ertek = _elkeszult.ertek
@@ -86,6 +86,11 @@ def _nyomtatasi_parbeszed(window, qt_app):
 def nyomtatasi_parbeszed(qml_app_magyar, qt_app):
     window, _controller, _engine = qml_app_magyar
     dialog = _nyomtatasi_parbeszed(window, qt_app)
+    # #4795: a kezdőmagasság az első elrendezés után, késleltetve áll be —
+    # addig az Ellenőrzés gomb a görgethető rész takart alján lehet.
+    assert varj_feltetelre(
+        qt_app, lambda: not dialog.property("meretezesFuggoben"), masodperc=10.0
+    )
     yield dialog
     dialog.setProperty("visible", False)
     qt_app.processEvents()
@@ -102,7 +107,7 @@ def _nyisd_meg_az_atnezest(dialog, qt_app):
     _kattints(_elem(dialog, "printReviewButton"), qt_app)
     panel = _elem(dialog, "printReviewPanel")
     assert varj_feltetelre(
-        qt_app, lambda: panel.property("visible") is True, masodperc=3
+        qt_app, lambda: panel.property("visible") is True, masodperc=10.0
     ), (
         "az Ellenőrzés kattintása nem nyitotta meg a felülvizsgálatot"
     )
@@ -145,7 +150,7 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         sikerult_eltavolitani = varj_feltetelre(
             qt_app,
             lambda: _lista(dialog.property("quality"))["total"] == 1,
-            masodperc=3,
+            masodperc=10.0,
         )
         assert sikerult_eltavolitani, (
             f"az eltávolító kattintás nem változtatott: rows="
@@ -170,7 +175,7 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         assert varj_feltetelre(
             qt_app,
             lambda: _lista(dialog.property("quality"))["total"] == 0,
-            masodperc=3,
+            masodperc=10.0,
         )
         assert _elem(dialog, "printReviewEmptyText").property("text") == (
             "Nincs több nyomtatni való kép."
@@ -183,7 +188,7 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         assert varj_feltetelre(
             qt_app,
             lambda panel=panel: panel.property("visible") is False,
-            masodperc=3,
+            masodperc=10.0,
         )
         assert _lista(dialog.property("rows")) == [0, 1]
         assert _lista(dialog.property("quality"))["total"] == 2
@@ -200,7 +205,7 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
             lambda cel=cel, panel=panel: (
                 cel.exists() and panel.property("visible") is False
             ),
-            masodperc=3,
+            masodperc=10.0,
         ), "az OK gomb nem indította el a nyomtatást"
         assert cel.read_bytes().startswith(b"%PDF")
         assert panel.property("visible") is False

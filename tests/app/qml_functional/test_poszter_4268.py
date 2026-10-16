@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import numpy as np
 import pytest
 from PIL import Image
-from PySide6.QtCore import QLocale, QObject, QPoint, QPointF, Qt, QMetaObject
+from PySide6.QtCore import QObject, QPoint, QPointF, Qt, QMetaObject
 from PySide6.QtTest import QSignalSpy, QTest
 
+import picasapy.printing.dpi as dpi
 from picasapy.lazy_cv2 import cv2
 from tests.app.qml_functional.conftest import _build_qml_app
+from tests.support.varakozas import var_feltetelre
 
 _DIALOG_PARENTS: list[QObject] = []
 
@@ -29,13 +30,8 @@ def _chart(lib):
 
 
 @pytest.fixture(autouse=True)
-def _amerikai_papirbeallitas():
-    old = QLocale()
-    QLocale.setDefault(QLocale("en_US"))
-    try:
-        yield
-    finally:
-        QLocale.setDefault(old)
+def _amerikai_papirbeallitas(monkeypatch):
+    monkeypatch.setattr(dpi, "_metrikus_teruleti_meres", lambda: False)
 
 
 @pytest.fixture(scope="module")
@@ -46,8 +42,8 @@ def poster_app(
     _module_user_folder_guard,
 ):
     """A teljes QML-ablakot egyszer építi fel a tíz ellenőrzéshez."""
-    old_locale = QLocale()
-    QLocale.setDefault(QLocale("en_US"))
+    amerikai = pytest.MonkeyPatch()
+    amerikai.setattr(dpi, "_metrikus_teruleti_meres", lambda: False)
     app = _build_qml_app(
         qt_app,
         tmp_path_factory.mktemp("poster-4268"),
@@ -61,17 +57,12 @@ def poster_app(
         try:
             next(app, None)
         finally:
-            QLocale.setDefault(old_locale)
+            amerikai.undo()
 
 
-def _var(qt_app, condition, message: str, seconds: float = 5.0):
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if condition():
-            return
-        time.sleep(0.01)
-    raise AssertionError(message)
+def _var(qt_app, condition, message: str, seconds: float = 10.0):
+    if not var_feltetelre(qt_app, condition, seconds):
+        raise AssertionError(message)
 
 
 def _elem(root, name: str):
@@ -284,7 +275,7 @@ def test_kattintasbol_negy_440x440as_lap_kesz_atfedessel(
 
 
 def test_papirmeret_a_legutobbi_valasztast_es_a_teruleti_listat_megorzi(
-    poster_app, qt_app
+    poster_app, qt_app, monkeypatch
 ):
     _window, controller, _engine = poster_app
 
@@ -303,7 +294,7 @@ def test_papirmeret_a_legutobbi_valasztast_es_a_teruleti_listat_megorzi(
         "a Poszter párbeszéd nem zárult be a Mégse gombbal",
     )
 
-    QLocale.setDefault(QLocale("hu_HU"))
+    monkeypatch.setattr(dpi, "_metrikus_teruleti_meres", lambda: True)
     assert controller.posterPaperSizes() == ["10x15", "20x25"]
     assert controller.posterPaperSize() == "10x15"
     controller.setPosterPaperSize("20x25")

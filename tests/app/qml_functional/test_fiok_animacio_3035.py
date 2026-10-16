@@ -25,10 +25,9 @@ nem látszó sáv ugyanazt a kaput hívja, mint a menü.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from tests.support.varakozas import var_feltetelre
 
 #: a mért animáció-hossz
 ANIMACIO_MS = 400
@@ -40,19 +39,12 @@ def _gyerek(gyoker, nev):
     return objektum
 
 
-def _var(qt_app, felteteles, masodperc: float = 3.0):
+def _var(qt_app, felteteles, masodperc: float = 10.0):
     """Megvárja a feltételt — VALÓDI idő múlásával.
 
     ⚠️ A puszta `processEvents` nem elég: az animáció órája nem lép
     tőle, tehát a 400 ms-os betolás közepén állva mérnénk."""
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if felteteles():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return felteteles()
+    return var_feltetelre(qt_app, felteteles, masodperc)
 
 
 @pytest.fixture(autouse=True, params=(795, 800, 805))

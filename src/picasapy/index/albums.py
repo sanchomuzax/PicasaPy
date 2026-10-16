@@ -16,7 +16,8 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import dataclass
 
-from .queries import _SELECT, PhotoRecord, _records
+from .hidden_scope import visible_folder_sql
+from .queries import PhotoRecord, _records, _select
 
 
 @dataclass(frozen=True)
@@ -35,12 +36,18 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
     A névtelen albumok a lista végére kerülnek — a Picasa is így mutatja a
     hiányos definíciókat.
     """
+    # #4887: a darabszám csak a LÁTHATÓ mappák képeit számolja — különben
+    # az album a rejtett mappa képeinek számát is elárulná.
     rows = conn.execute(
-        """
+        f"""
         SELECT a.token AS token,
                max(a.name) AS name,
                max(a.date) AS date,
-               (SELECT count(*) FROM photo_albums pa WHERE pa.token = a.token)
+               (SELECT count(*) FROM photo_albums pa
+                  JOIN photos p ON p.id = pa.photo_id
+                  JOIN folders f ON f.id = p.folder_id
+                   AND {visible_folder_sql(conn)}
+                 WHERE pa.token = a.token)
                    AS n
         FROM albums a
         GROUP BY a.token
@@ -61,12 +68,18 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
 def album_photos(conn: sqlite3.Connection, token: str) -> tuple[PhotoRecord, ...]:
     """Az album képei — a rács ugyanazt a rekord-alakot kapja, mint máshol.
 
+    A sorrend az `albumorder=` kézi helye szerint áll (#4599), a hely nélküliek
+    a végén, utána mappa útvonala és fájlnév szerint.
+
     Ismeretlen token esetén üres eredmény (nem hiba): a hasáb és az ini
     átmenetileg eltérhet, ha közben egy másik program írta az ini-t.
     """
     rows = conn.execute(
-        f"{_SELECT} JOIN photo_albums pa ON pa.photo_id = p.id"
-        " WHERE pa.token = ? ORDER BY f.path, p.name",
+        f"{_select(conn)} JOIN photo_albums pa ON pa.photo_id = p.id"
+        " WHERE pa.token = ?"
+        # #4599 (ADR-016): kézi hely szerint; a hely nélküliek a végén,
+        # utána mappa útvonala, fájlnév (hely nélküli albumnál = a mai rend)
+        " ORDER BY (pa.place IS NULL), pa.place, f.path, p.name",
         (token,),
     )
     return _records(rows)

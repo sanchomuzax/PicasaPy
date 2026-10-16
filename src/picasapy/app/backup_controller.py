@@ -43,7 +43,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QStandardPaths, Signal, Slot
 
-from picasapy.backup import futtasd, mappankent, tervezd_meg
+from picasapy.backup import futtasd, mappankent, tervezd_meg, visszaallit
 from picasapy.backup.lemezkep import LemezkepTetel, lemezkepekbe
 from picasapy.burn import CD, DVD, hasznalhato_kapacitas, lemezek_szama
 from picasapy.index import open_index
@@ -99,6 +99,8 @@ class BackupController(BackgroundWorkerMixin, QObject):
     futasKesz = Signal(int, int)
     #: #2074: (hány lemezkép, hány fájl) — a lemezkép-kimenet vége
     lemezkepekKeszek = Signal(int, int)
+    #: #4614: (visszaállított fájlok, már létező fájlok)
+    visszaallitasKesz = Signal(int, int)
     #: #3009: (hányadik, hány) — az eredeti is végig beszél
     #: („Copying (%d/%d) files"). A felület ebből tud haladást mutatni.
     haladas = Signal(int, int)
@@ -602,3 +604,27 @@ class BackupController(BackgroundWorkerMixin, QObject):
         )
         self.keszletekValtoztak.emit()
         self.futasKesz.emit(len(masoltak), bajtok)
+
+    @Slot(str, str)
+    def visszaallitastFuttat(self, forras: str, cel: str) -> None:  # noqa: N802
+        """A kiválasztott mentési mappát vagy ISO-készletet visszaállítja."""
+        self._start_background(
+            self._visszaallitas_hattereben,
+            args=(str(forras), str(cel)),
+            name="backup-restore",
+        )
+
+    def _visszaallitas_hattereben(self, forras: str, cel: str) -> None:
+        try:
+            eredmeny = visszaallit(Path(forras), Path(cel))
+        except Exception as hiba:  # noqa: BLE001 — a QML hibasávjára megy
+            _log.warning("a mentés visszaállítása elszállt: %s", hiba)
+            self.hibatJelez.emit(
+                self.tr("The backup could not be restored: %1").replace(
+                    "%1", str(hiba)
+                )
+            )
+            return
+        self.visszaallitasKesz.emit(
+            eredmeny.visszaallitott, eredmeny.kihagyott
+        )

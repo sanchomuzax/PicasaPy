@@ -213,7 +213,10 @@ def _interop_valtozasok(forras_meret: tuple[int, int] | None) -> list[Valtozas]:
 
 
 def _exif_valtozasok(
-    size: tuple[int, int], now: datetime, taken_at: datetime | None
+    size: tuple[int, int],
+    now: datetime,
+    taken_at: datetime | None,
+    taken_at_override: datetime | None = None,
 ) -> list[Valtozas]:
     nev = ascii_ertek(ALAIRAS)
     valtozasok = [
@@ -226,10 +229,14 @@ def _exif_valtozasok(
         # Orientation (#3966): a képpontok már állnak, a tag nem forgathat újra
         Valtozas("0th", 0x0112, Ertek(SHORT, 1), csak_ha_megvan=True),
     ]
-    if taken_at is not None:
+    eredeti_datum = taken_at_override or taken_at
+    if eredeti_datum is not None:
         valtozasok.append(
             Valtozas(
-                "Exif", 0x9003, ascii_ertek(_exif_datetime(taken_at)), csak_ha_hianyzik=True
+                "Exif",
+                0x9003,
+                ascii_ertek(_exif_datetime(eredeti_datum)),
+                csak_ha_hianyzik=taken_at_override is None,
             )
         )
     return valtozasok
@@ -243,9 +250,15 @@ def _exif_szegmens(
     size: tuple[int, int],
     now: datetime,
     forras_meret: tuple[int, int] | None = None,
+    taken_at_override: datetime | None = None,
 ) -> bytes | None:
     """A frissített EXIF-APP1, vagy `None` (akkor a forrásé megy bájtra)."""
-    valtozasok = _exif_valtozasok(size, now, source_taken_at(source))
+    valtozasok = _exif_valtozasok(
+        size,
+        now,
+        source_taken_at(source),
+        taken_at_override=taken_at_override,
+    )
     if forras_meret is not None:
         valtozasok += _interop_valtozasok(forras_meret)
     kicsi = _vedett_kep("bélyegkép", lambda: _kicsinyitett_kep(encoded))
@@ -398,6 +411,7 @@ def _frissitett_szegmensek(
     size: tuple[int, int],
     now: datetime,
     forras_meret: tuple[int, int] | None = None,
+    taken_at_override: datetime | None = None,
 ) -> list[bytes]:
     exif_i, xmp_i = _elso(szegmensek, _EXIF_ID), _elso(szegmensek, _XMP_ID)
     exif_uj = _vedett(
@@ -409,6 +423,7 @@ def _frissitett_szegmensek(
             size=size,
             now=now,
             forras_meret=forras_meret,
+            taken_at_override=taken_at_override,
         ),
     )
     xmp_uj = _vedett(
@@ -442,6 +457,7 @@ def frissitett_metaadat(
     *,
     size: tuple[int, int],
     now: datetime | None = None,
+    taken_at_override: datetime | None = None,
 ) -> bytes:
     """Az újrakódolt export-JPEG (`encoded`) metaadatokkal, az eredeti
     Picasa szerint frissítve. `size` = a KIMENETI kép `(szélesség, magasság)`.
@@ -460,7 +476,13 @@ def frissitett_metaadat(
     try:
         forras_meret = _vedett_meret(lambda: _forras_meret(forras_bajt))
         uj = _frissitett_szegmensek(
-            source, szegmensek, encoded, size, ido, forras_meret=forras_meret
+            source,
+            szegmensek,
+            encoded,
+            size,
+            ido,
+            forras_meret=forras_meret,
+            taken_at_override=taken_at_override,
         )
     except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
         _LOG.warning("export: a metaadat-frissítés kimaradt, bájtmásolás", exc_info=True)

@@ -6,6 +6,7 @@ from .exporter import (
     ExportSettings,
     export_photos,
     is_automatic_quality,
+    render_photo_pixels,
     resolve_export_quality,
     resolve_export_subsampling,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "ExportSettings",
     "export_photos",
     "is_automatic_quality",
+    "render_photo_pixels",
     "resolve_export_quality",
     "resolve_export_subsampling",
     "XmpImageMetadata",

@@ -18,7 +18,8 @@ import QtQuick.Controls
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
 // szürkén LÁTSZANAK (#416, illetve a spec 5.1. szabálya: az inaktív tétel
-// is tétel, hogy a menü magassága és a tételek helye állandó maradjon).
+// is tétel, hogy a menü magassága és a tételek helye állandó maradjon). A
+// Névcímkék hozzáadása (#4535) a kiválasztott mappa képeire indít keresést.
 //
 // Önálló, signal-alapú komponens: a controller-kötést a FolderPane.qml
 // végzi (nem forró fájl).
@@ -37,10 +38,6 @@ PicasaMenu {
     property string folderPath: ""
     // a felhasználó egyéni gyűjteményei: {name, folders} elemek listája
     property var customCollections: []
-    // a rács jelenlegi rendezése (date/name/size/changed) és iránya — a
-    // „Mappa rendezésének alapja ▸" almenü pipáihoz
-    property string sortMode: "date"
-    property bool sortReverse: false
     // #422: rejtett-e a jobbklikkelt mappa. A spec A.2 kimondja, hogy a
     // `Folder::ID_HIDEENTIREALBUM` „Mappa elrejtése" és a
     // `Folder::ID_UNHIDEENTIREALBUM` „Mappa megjelenítése" NEM két külön
@@ -72,6 +69,7 @@ PicasaMenu {
     //: #1638: a mappa a LOMTÁRBA, a tartalmával együtt — nem véglegesen
     signal deleteFolderRequested()
     signal exportAsHtmlRequested()
+    signal addNameTagsRequested(string folderPath)
 
     // -- 1. blokk: mappaleírás ---------------------------------------------
 
@@ -138,51 +136,25 @@ PicasaMenu {
         // sorrend (spec A.2)
         title: qsTr("S&ort Folder By")
 
-        // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
-        // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
-        // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
-        // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
-        // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
-        // (a #1464-ben bevezetett minta).
-        //
-        // A `menu.sortMode` PILLANATFELVÉTEL: a gazda csak a menü nyitásakor
-        // írja bele a vezérlő állapotát. Azonos értéket visszaírva nincs
-        // változás-jelzés, tehát a kötés újranyitáskor sem éledne fel.
+        // #4890: ezek egyszeri parancsok. A rendezett lista marad meg,
+        // ezért nincs aktív mód vagy kijelölt menütétel.
         MenuItem {
             objectName: "folderMenuSortByDate"
             text: qsTr("&Date")
-            checkable: true
-            checked: menu.sortMode === "date"
-            onTriggered: {
-                menu.sortModeRequested("date")
-                checked = Qt.binding(function () {
-                    return menu.sortMode === "date"
-                })
-            }
+            checkable: false
+            onTriggered: menu.sortModeRequested("date")
         }
         MenuItem {
             objectName: "folderMenuSortByName"
             text: qsTr("&Name")
-            checkable: true
-            checked: menu.sortMode === "name"
-            onTriggered: {
-                menu.sortModeRequested("name")
-                checked = Qt.binding(function () {
-                    return menu.sortMode === "name"
-                })
-            }
+            checkable: false
+            onTriggered: menu.sortModeRequested("name")
         }
         MenuItem {
             objectName: "folderMenuSortBySize"
             text: qsTr("&Size")
-            checkable: true
-            checked: menu.sortMode === "size"
-            onTriggered: {
-                menu.sortModeRequested("size")
-                checked = Qt.binding(function () {
-                    return menu.sortMode === "size"
-                })
-            }
+            checkable: false
+            onTriggered: menu.sortModeRequested("size")
         }
         //: #467: a NEGYEDIK szempont — az eredeti rendezés-motorja ismerte
         //: („Rendezés szín alapján", `CSelectionNode` → `SortColor`), de a
@@ -191,14 +163,8 @@ PicasaMenu {
         MenuItem {
             objectName: "folderMenuSortByColor"
             text: qsTr("&Color")
-            checkable: true
-            checked: menu.sortMode === "color"
-            onTriggered: {
-                menu.sortModeRequested("color")
-                checked = Qt.binding(function () {
-                    return menu.sortMode === "color"
-                })
-            }
+            checkable: false
+            onTriggered: menu.sortModeRequested("color")
         }
         //: #1721 (ADR-014): az ÖTÖDIK szempont — a KÉZI sorrend. A rácson
         //: húzással átrendezett képek sorrendje; a mappa `.picasa.ini`-je
@@ -208,31 +174,15 @@ PicasaMenu {
         MenuItem {
             objectName: "folderMenuSortByPriority"
             text: qsTr("&Manual order")
-            checkable: true
-            checked: menu.sortMode === "priority"
-            onTriggered: {
-                menu.sortModeRequested("priority")
-                checked = Qt.binding(function () {
-                    return menu.sortMode === "priority"
-                })
-            }
+            checkable: false
+            onTriggered: menu.sortModeRequested("priority")
         }
         MenuSeparator {}
         MenuItem {
             objectName: "folderMenuSortReverse"
             text: qsTr("&Reverse order")
-            checkable: true
-            checked: menu.sortReverse
-            onTriggered: {
-                menu.sortReverseRequested()
-                // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
-                // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
-                // látszik, mert a művelet mindig átbillenti az állapotot —
-                // ez szerencse, nem szerkezet (ld. #1471).
-                checked = Qt.binding(function () {
-                    return menu.sortReverse
-                })
-            }
+            checkable: false
+            onTriggered: menu.sortReverseRequested()
         }
     }
     MenuSeparator {}
@@ -307,6 +257,7 @@ PicasaMenu {
     PicasaMenuItem {
         objectName: "folderMenuAddNameTags"
         text: qsTr("&Add name tags")
-        placeholder: true
+        placeholder: false
+        onTriggered: menu.addNameTagsRequested(menu.folderPath)
     }
 }

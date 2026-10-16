@@ -17,6 +17,7 @@ import logging
 import shutil
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
@@ -192,6 +193,8 @@ class ExportItem:
     # `0x0073f320`) végzi. Üresen hagyva nem születik ini a célban.
     caption: str | None = None
     keywords: str | None = None
+    # #4332: az indexben tárolt dátumfelülírás kerül az export EXIF-jébe.
+    taken_at_override: str | None = None
 
 
 @dataclass(frozen=True)
@@ -338,9 +341,10 @@ def _write_ini_metadata(
 ) -> None:
     """A `caption`/`keywords` átvitele a célmappa `.picasa.ini`-jébe (#1166).
 
-    Egyetlen `update_document` hívással, a köteg végén: a párhuzamosan
-    futó eredeti Picasa közbeírása így sem veszhet el (#295), és nem
-    nyitjuk-zárjuk fájlonként. Adat nélküli kötegnél nem keletkezik ini.
+    Egyetlen `update_document` hívással, a köteg végén: az előzetes
+    ujjlenyomat-ellenőrzésig észlelt Picasa-változás újratöltést és újrajátszást
+    kap (#295). A sikeres ellenőrzés és fájlcsere közti külső írás elveszhet;
+    nem nyitjuk-zárjuk fájlonként. Adat nélküli kötegnél nem keletkezik ini.
 
     A szekció fejléce a CÉLFÁJL neve (sorszámozásnál `001-a.jpg`),
     különben az adatnak nem lenne gazdája."""
@@ -418,19 +422,25 @@ def _export_one(
         shutil.copy2(source, target)  # bájthű másolás, nincs generációs veszteség
         return target
 
-    image = _decode_image(source)
-    image = _apply_filter_chain(image, ops)
-    # #3065: ELŐBB a tükrözés, UTÁNA a forgatás — a mért sorrend (három
-    # független összeállító, `docs/specs/picasa-ini-format.md` „⛳ MEGVAN A
-    # SORREND”). A kettő nem kommutál: fölcserélve 90°/270° mellett a MÁSIK
-    # tengelyre tükröz.
-    image = apply_flip(image, item.flip_flags)
-    image = _apply_rotation(image, item.rotate_steps)
+    image = render_photo_pixels(
+        source,
+        ops,
+        rotate_steps=item.rotate_steps,
+        flip_flags=item.flip_flags,
+    )
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
     height, width = image.shape[:2]
+    taken_at_override = (
+        datetime.fromisoformat(item.taken_at_override)
+        if item.taken_at_override
+        else None
+    )
     payload = _transfer_metadata(
-        source, _encode_jpeg(image, settings, source), (width, height)
+        source,
+        _encode_jpeg(image, settings, source),
+        (width, height),
+        taken_at_override=taken_at_override,
     )
     target = _unique_target(target_dir, number_prefix + source.stem, ".jpg")
     # Közös helper (#129): fsync + atomikus csere — félkész célfájl sose
@@ -443,20 +453,18 @@ def _first_frame(source: Path) -> np.ndarray | None:
     """A videó ELSŐ olvasható képkockája BGR tömbként, vagy `None` (#1166).
 
     Az eredeti „Első képkocka" választása ezt teszi a mappába a film
-    helyett. Sosem dob: olvashatatlan felvételnél a hívó a teljes film
-    másolására esik vissza."""
-    capture = None
+    helyett. A ThumbnailCache időkorlátos, elszigetelt dekóderét használja,
+    így az export és a bélyegkép ugyanazt a videóképkocka-kinyerést kapja.
+    Olvashatatlan felvételnél a hívó a teljes film másolására esik vissza."""
+    # Lusta import: a bélyegkép-dekóder csak videó első-kockás exportnál
+    # kell, ne növelje a normál export indulási költségét.
+    from picasapy.thumbs.cache import _decode_video_frame_isolated
+
     try:
-        capture = cv2.VideoCapture(str(source))
-        if not capture.isOpened():
-            return None
-        ok, frame = capture.read()
-        return frame if ok and frame is not None and frame.size else None
-    except cv2.error:
+        frame = _decode_video_frame_isolated(source)
+        return frame if frame is not None and frame.size else None
+    except (OSError, ValueError):
         return None
-    finally:
-        if capture is not None:
-            capture.release()
 
 
 def _write_jpeg(image: np.ndarray, target: Path, settings: ExportSettings) -> None:
@@ -575,6 +583,7 @@ def _is_noop_copy(
         and settings.max_dimension is None
         and not settings.watermark_text
         and not item.filters
+        and not item.taken_at_override
     )
 
 
@@ -730,8 +739,33 @@ def _apply_rotation(image: np.ndarray, rotate_steps: int) -> np.ndarray:
     return cv2.rotate(image, _rotations()[steps])
 
 
+def render_photo_pixels(
+    source: Path,
+    ops: tuple[FilterOp, ...],
+    *,
+    rotate_steps: int = 0,
+    flip_flags: int = 0,
+) -> np.ndarray:
+    """Teljes felbontású, szerkesztett kép BGR-ben (#4602).
+
+    A közös belépő az export és a nyomtatás számára: `_decode_image` EXIF-
+    tájolással és RAW-dekóderrel olvas, utána a filters-lánc, a tükrözés és
+    az órairányú negyedfordulat kerül a képpontokba. A `ops`-nak a hívó már
+    érvényesítette a külön tárolt `crop=` kulcsot.
+    """
+    image = _decode_image(source)
+    image = _apply_filter_chain(image, ops)
+    # #3065: előbb a tükrözés, utána a forgatás — a mért sorrend.
+    image = apply_flip(image, flip_flags)
+    return _apply_rotation(image, rotate_steps)
+
+
 def _transfer_metadata(
-    source: Path, encoded: bytes, size: tuple[int, int]
+    source: Path,
+    encoded: bytes,
+    size: tuple[int, int],
+    *,
+    taken_at_override: datetime | None = None,
 ) -> bytes:
     """Az újrakódolt JPEG metaadatai az eredeti Picasa szerint (#136, #3961).
 
@@ -744,7 +778,9 @@ def _transfer_metadata(
     régi, bájtra másoló út (#136) a kimenet; ha az is dob (ugyanazt a
     szegmens-kódot használja), a kép metaadat nélkül megy ki."""
     try:
-        return frissitett_metaadat(source, encoded, size=size)
+        return frissitett_metaadat(
+            source, encoded, size=size, taken_at_override=taken_at_override
+        )
     except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
         _LOG.warning("export: a metaadat-frissítés hibázott, bájtmásolás", exc_info=True)
     try:

@@ -11,6 +11,7 @@ Rectangle {
     id: show
     color: "#000000"
     visible: false
+    clip: true
 
     property var photosModel: null
     // #1640: az AKTÍV megjelenítési mód — a vetített kép URL-jének valódi
@@ -90,21 +91,32 @@ Rectangle {
     onPlayingChanged: show._syncMusic()
     onScreensaverModeChanged: show._syncMusic()
 
-    //: #433: az ÁTMENET a diák között. Az eredeti diavetítése ugyanazt a
-    //: 18-as készletet használja, mint a filmkészítő (`transtype`,
-    //: `picasa-create-features.md` 2.1) — ebből az az öt van meg, amelyik a
-    //: Picasa jellegzetes érzetét adja; a maradék 13 a filmkészítővel
-    //: együtt jön (#432). A választó csak azt sorolja fel, ami MŰKÖDIK.
-    //: A feliratok az eredeti HIVATALOS magyar szövegei
-    //: (`CTransitions::*`, `picasa-create-features.md` 2.1): Kivágás ·
-    //: Szétoszlás · Szétoszlás feketén át · Szétoszlás fehéren át ·
-    //: Pásztázás és nagyítás — nem a mi fordításunk.
+    //: #4567: az eredeti diavetítés teljes, 22 elemű készlete
+    //: (`picasa-create-features.md`, 3764–3794). A sorrend és a feliratok
+    //: a `CTransitions::*` erőforráscsaládot követik.
     readonly property var atmenetek: [
         { kulcs: "cut", nev: qsTr("Cut") },
         { kulcs: "dissolve", nev: qsTr("Dissolve") },
         { kulcs: "dissolveblack", nev: qsTr("Dissolve through black") },
         { kulcs: "dissolvewhite", nev: qsTr("Dissolve through white") },
-        { kulcs: "kenburns", nev: qsTr("Pan and Zoom") }
+        { kulcs: "wipeleft", nev: qsTr("Wipe - left") },
+        { kulcs: "wiperight", nev: qsTr("Wipe") },
+        { kulcs: "wipeup", nev: qsTr("Wipe - top") },
+        { kulcs: "wipedown", nev: qsTr("Wipe - bottom") },
+        { kulcs: "diagwipeul", nev: qsTr("Wipe - up left") },
+        { kulcs: "diagwipeur", nev: qsTr("Wipe - up right") },
+        { kulcs: "diagwipedl", nev: qsTr("Wipe - down left") },
+        { kulcs: "diagwipedr", nev: qsTr("Wipe - down right") },
+        { kulcs: "pushleft", nev: qsTr("Push - left") },
+        { kulcs: "pushright", nev: qsTr("Push") },
+        { kulcs: "pushtop", nev: qsTr("Push - top") },
+        { kulcs: "pushdown", nev: qsTr("Push - bottom") },
+        { kulcs: "circlein", nev: qsTr("Circle - inwards") },
+        { kulcs: "circleout", nev: qsTr("Circle") },
+        { kulcs: "rect", nev: qsTr("Rectangle") },
+        { kulcs: "kenburns", nev: qsTr("Pan and Zoom") },
+        { kulcs: "kenburnsaoi", nev: qsTr("Pan and Zoom - face") },
+        { kulcs: "timelapse", nev: qsTr("Time Lapse") }
     ]
     property string transitionKind: "dissolve"
     //: #2992: a diaidő a sáv ± gombjairól a HÍVÓNAK megy (Main.qml →
@@ -437,10 +449,10 @@ Rectangle {
     function starCurrent() { show.starToggled(currentIndex) }
     function rotateCurrent(delta) { show.rotateRequested(currentIndex, delta) }
 
-    //: #433: az ÁTMENET motorja. A kimenő képet egy második `Image` tartja
-    //: (`slideshowPrevImage`), a fekete/fehér áttűnést pedig egy fátyol —
-    //: így a négy átmenet ugyanabból a két elemből épül, elágazás nélkül a
-    //: rajzoló oldalon.
+    //: #433/#4567: az átmenetmotor két `Image`-et használ
+    //: (`slideshowPrevImage`, `slideshowImage`); a fekete/fehér áttűnéshez
+    //: fátyol tartozik, a mozgó változatok az iránytól függő geometriát
+    //: animálják.
     //:
     //: ⚠️ A `cut` nem „nincs átmenet": az eredeti készletben SAJÁT tétel
     //: (`transtype` 1. eleme), ezért a választóban is szerepel — a
@@ -457,15 +469,64 @@ Rectangle {
         elozoSlide.height = slide.height
         elozoSlide.rotation = slide.rotation
         elozoSlide.scale = slide.scale
+        elozoSlide.transitionOffsetX = slide.transitionOffsetX
+        elozoSlide.transitionOffsetY = slide.transitionOffsetY
+    }
+
+    function _atmenetIrany() {
+        var w = show.width
+        var h = show.height
+        switch (show.transitionKind) {
+        case "wipeleft": return { x: w, y: 0 }
+        case "wiperight": return { x: -w, y: 0 }
+        case "wipeup": return { x: 0, y: h }
+        case "wipedown": return { x: 0, y: -h }
+        case "diagwipeul": return { x: w, y: h }
+        case "diagwipeur": return { x: -w, y: h }
+        case "diagwipedl": return { x: w, y: -h }
+        case "diagwipedr": return { x: -w, y: -h }
+        case "pushleft": return { x: -w, y: 0 }
+        case "pushright": return { x: w, y: 0 }
+        case "pushtop": return { x: 0, y: -h }
+        case "pushdown": return { x: 0, y: h }
+        default: return { x: 0, y: 0 }
+        }
+    }
+
+    function _kilepoKepMozog() {
+        return show.transitionKind.indexOf("wipe") === 0
+                || show.transitionKind.indexOf("diagwipe") === 0
+                || show.transitionKind.indexOf("push") === 0
+    }
+
+    function _beuszoKepMozog() {
+        return show.transitionKind.indexOf("push") === 0
+    }
+
+    function _atmenetVege() {
+        elozoSlide.opacity = 0
+        elozoSlide.transitionOffsetX = 0
+        elozoSlide.transitionOffsetY = 0
+        slide.transitionOffsetX = 0
+        slide.transitionOffsetY = 0
+        if (show.transitionKind !== "kenburns"
+                && show.transitionKind !== "kenburnsaoi")
+            slide.scale = 1
+        fatyol.opacity = 0
     }
 
     function _atmenetIndit(elozoUrl) {
         atmenetAnimacio.stop()
         show._geometriatAtvesz()
-        //: a bejövő dia a pásztázás ELEJÉRŐL induljon: az előző dia
-        //: nagyítása a másolaton él tovább, a diát visszaállítjuk
+        elozoSlide.transitionOffsetX = 0
+        elozoSlide.transitionOffsetY = 0
+        slide.transitionOffsetX = 0
+        slide.transitionOffsetY = 0
+        //: a bejövő dia a saját mozgásának elejéről induljon: az előző dia
+        //: geometriája a másolaton él tovább, a diát visszaállítjuk
         slide.scale = 1.0
-        if (show.transitionKind === "kenburns")
+        if (show.transitionKind === "kenburns"
+                || show.transitionKind === "kenburnsaoi")
             kenBurns.restart()
         if (show.transitionKind === "cut" || !elozoUrl) {
             elozoSlide.opacity = 0
@@ -477,7 +538,30 @@ Rectangle {
         //: tartja) — ugyanaz a pár, tehát a Qt gyorstárából jön
         show._betolt(elozoSlide, elozoUrl, slide.sourceSize)
         elozoSlide.opacity = 1
-        slide.opacity = show.transitionKind === "dissolve" ? 0 : 1
+        var irany = show._atmenetIrany()
+        if (show._beuszoKepMozog()) {
+            slide.transitionOffsetX = -irany.x
+            slide.transitionOffsetY = -irany.y
+        }
+        if (show.transitionKind.indexOf("wipe") >= 0) {
+            // A kimenő kép irányba kicsúszik; az új kép közben fokozatosan
+            // fedi fel az alatta maradó képet, hogy a wipe látható legyen.
+            slide.opacity = 0
+        } else if (show.transitionKind === "circleout") {
+            slide.scale = 0.18
+            slide.opacity = 0
+        } else if (show.transitionKind === "rect") {
+            slide.scale = 0.72
+            slide.opacity = 0
+        } else if (show.transitionKind === "circlein") {
+            slide.scale = 1.2
+            slide.opacity = 0
+        } else if (show.transitionKind === "timelapse") {
+            slide.scale = 1.16
+            slide.opacity = 0
+        } else {
+            slide.opacity = show.transitionKind === "dissolve" ? 0 : 1
+        }
         fatyol.color = show.transitionKind === "dissolvewhite"
             ? "#ffffff" : "#000000"
         fatyol.opacity = 0
@@ -487,32 +571,66 @@ Rectangle {
     SequentialAnimation {
         id: atmenetAnimacio
         objectName: "slideshowTransition"
-        //: az egyszerű áttűnés PÁRHUZAMOS (a kimenő halványul, a bejövő
-        //: erősödik), a fekete/fehér áttűnés SOROS (előbb a fátyol be, utána
-        //: ki) — ezért van két, egymást kizáró szakasz.
+        //: a wipe a kimenő képet kicsúsztatja, a push mindkét képet mozgatja,
+        //: a kör/négyszög nagyítással nyit, az időgyorsítás rövid zoommal
+        //: vált. A dissolve és a színfátyol a korábbi átmenetet tartja.
         ParallelAnimation {
             NumberAnimation {
-                target: elozoSlide; property: "opacity"; to: 0
-                duration: show.transitionKind === "dissolve"
-                          ? show.transitionMs : show.transitionMs / 2
+                target: elozoSlide; property: "opacity"
+                to: show._kilepoKepMozog() ? 1 : 0
+                duration: show.transitionMs
+            }
+            NumberAnimation {
+                target: elozoSlide; property: "transitionOffsetX"
+                to: show._kilepoKepMozog() ? show._atmenetIrany().x : 0
+                duration: show.transitionMs
+            }
+            NumberAnimation {
+                target: elozoSlide; property: "transitionOffsetY"
+                to: show._kilepoKepMozog() ? show._atmenetIrany().y : 0
+                duration: show.transitionMs
             }
             NumberAnimation {
                 target: slide; property: "opacity"; to: 1
-                duration: show.transitionKind === "dissolve"
-                          ? show.transitionMs : 1
+                duration: show.transitionKind === "timelapse"
+                          ? show.transitionMs * 0.35 : show.transitionMs
+            }
+            NumberAnimation {
+                target: slide; property: "transitionOffsetX"; to: 0
+                duration: show.transitionMs
+            }
+            NumberAnimation {
+                target: slide; property: "transitionOffsetY"; to: 0
+                duration: show.transitionMs
+            }
+            NumberAnimation {
+                target: show.transitionKind === "kenburns"
+                        || show.transitionKind === "kenburnsaoi" ? null : slide
+                property: "scale"; to: 1
+                duration: show.transitionKind === "timelapse"
+                          ? show.transitionMs * 0.35
+                          : (show.transitionKind === "kenburns"
+                             || show.transitionKind === "kenburnsaoi" ? 1
+                                                                        : show.transitionMs)
+                easing.type: show.transitionKind === "timelapse"
+                             ? Easing.OutExpo : Easing.OutCubic
             }
             NumberAnimation {
                 target: fatyol; property: "opacity"
-                to: show.transitionKind === "dissolve" ? 0 : 1
-                duration: show.transitionKind === "dissolve"
-                          ? 1 : show.transitionMs / 2
+                to: show.transitionKind === "dissolveblack"
+                        || show.transitionKind === "dissolvewhite" ? 1 : 0
+                duration: show.transitionKind === "dissolveblack"
+                          || show.transitionKind === "dissolvewhite"
+                          ? show.transitionMs / 2 : 1
             }
         }
         NumberAnimation {
             target: fatyol; property: "opacity"; to: 0
-            duration: show.transitionKind === "dissolve"
-                      ? 1 : show.transitionMs / 2
+            duration: show.transitionKind === "dissolveblack"
+                      || show.transitionKind === "dissolvewhite"
+                      ? show.transitionMs / 2 : 1
         }
+        ScriptAction { script: show._atmenetVege() }
     }
 
     Timer {
@@ -576,11 +694,14 @@ Rectangle {
     Image {
         id: elozoSlide
         objectName: "slideshowPrevImage"
-        anchors.centerIn: parent
+        property real transitionOffsetX: 0
+        property real transitionOffsetY: 0
         //: a méretet/elfordulást a váltáskor a `_geometriatAtvesz` írja —
         //: ezek csak a kezdőértékek (első dia, még nincs mit másolni)
         width: parent.width
         height: parent.height
+        x: (parent.width - width) / 2 + transitionOffsetX
+        y: (parent.height - height) / 2 + transitionOffsetY
         opacity: 0
         fillMode: Image.PreserveAspectFit
         asynchronous: false
@@ -593,14 +714,17 @@ Rectangle {
     Image {
         id: slide
         objectName: "slideshowImage"
+        property real transitionOffsetX: 0
+        property real transitionOffsetY: 0
         // az ini-forgatást a nézővel azonos módon követi (revision-kötés)
         readonly property int iniSteps: show.photosModel
             ? (show.photosModel.revision,
                show.photosModel.rotateAt(show.currentIndex))
             : 0
-        anchors.centerIn: parent
         width: iniSteps % 2 ? parent.height : parent.width
         height: iniSteps % 2 ? parent.width : parent.height
+        x: (parent.width - width) / 2 + transitionOffsetX
+        y: (parent.height - height) / 2 + transitionOffsetY
         rotation: iniSteps * 90
         // #1640: a megjelenítési mód (Projektor mód stb.) a NYERS fájl
         // URL-jén nem látszik — a `displayUrlAt` aktív módnál a
@@ -628,14 +752,18 @@ Rectangle {
         NumberAnimation on scale {
             id: kenBurns
             objectName: "slideshowKenBurns"
-            running: show.visible && show.transitionKind === "kenburns"
+            running: show.visible
+                     && (show.transitionKind === "kenburns"
+                         || show.transitionKind === "kenburnsaoi")
                      && show.currentIndex >= 0
             from: 1.0
-            to: 1.08
+            to: show.transitionKind === "kenburnsaoi" ? 1.12 : 1.08
             duration: Math.max(show.intervalMs, 1)
         }
         //: a nagyítás NEM ragadhat be: átmenet-váltáskor visszaáll
-        onScaleChanged: if (show.transitionKind !== "kenburns" && scale !== 1.0)
+        onScaleChanged: if (show.transitionKind !== "kenburns"
+                            && show.transitionKind !== "kenburnsaoi"
+                            && scale !== 1.0)
                             scale = 1.0
     }
 
@@ -780,6 +908,7 @@ Rectangle {
                 onClicked: show.togglePause()
             }
             PicasaButton {
+                objectName: "slideshowNextButton"
                 text: "▶▶"; width: 38
                 height: controlsRow.buttonHeight
                 onClicked: show.advance()
@@ -802,6 +931,8 @@ Rectangle {
                 objectName: "slideshowTransitionBox"
                 height: controlsRow.buttonHeight
                 width: 150
+                //: a 22 soros lista a képernyő alján álló sáv fölé nyílik
+                popup.y: -popup.implicitHeight
                 model: show.atmenetek.map(function (a) { return a.nev })
                 currentIndex: {
                     for (var i = 0; i < show.atmenetek.length; ++i)

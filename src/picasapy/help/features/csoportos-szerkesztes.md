@@ -5,16 +5,38 @@
 Jelölj ki több képet, majd **Kép ▸ Csoportos szerkesztés**. Az almenüből
 választott műveletet a program **minden kijelölt képre** ráteszi:
 
+- **Átnevezés…** (F2) — a kijelölt képek átnevezése, lásd
+  [Fájlműveletek](fajlmuveletek.md)
+- **Forgatás jobbra** és **Forgatás balra**
 - **Automatikus kontraszt**
 - **Automatikus szín**
-- **Automatikus vörösszem-eltávolítás**
 - **Jó napom van**
+- **Szépia**
 - **Élesítés**
-- **Filmszemcse**
 - **Melegítés**
-- **Forgatás jobbra** és **Forgatás balra**
+- **Filmszemcse**
+- **Fekete-fehér**
+- **Automatikus vörösszem-eltávolítás**
+
+Az almenü tételei csoportokban állnak, vonalakkal elválasztva: elöl az
+átnevezés, utána a forgatás, majd az automatikus javítások, a
+hatások, végül a vörösszem-eltávolítás.
 
 Munka közben haladásjelző sáv látszik, ami meg is szakítható.
+
+A nézőben a menü a **megnyitott képre** hat: ott a kiválasztott művelet
+csak arra az egy képre kerül rá, a rácsban hagyott kijelöléshez nem nyúl.
+
+### Szöveg megjelenítése és elrejtése
+
+Az almenü két külön parancsa, a **Szöveg megjelenítése** és a **Szöveg
+elrejtése** a kijelölt képekre írt **szövegfedvényt** kapcsolja be vagy ki
+— nem törli, csak elrejti vagy újra láthatóvá teszi. Csak azokra a képekre
+hat, amelyeken van szöveg, a többihez nem nyúl. A két parancs a **menü
+megnyitásakor** dől el, hogy aktív-e: a **Szöveg megjelenítése** csak akkor
+kapcsolható, ha a kijelölésben van elrejtett szöveg, a **Szöveg
+elrejtése** pedig akkor, ha van látható. Egy képre ugyanezt a szerkesztő
+**Szöveg megjelenítése** jelölője adja — lásd [A szerkesztő](szerkeszto.md).
 
 Ha meggondolod magad: **Szerkesztés ▸ Csoportos szerkesztés
 visszavonása** egy lépésben visszacsinálja az egész köteget.

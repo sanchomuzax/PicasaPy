@@ -421,6 +421,23 @@ class TestRunImportNamingModes:
         assert (dest / "Nyaralás" / "a.jpg").exists()
         assert (dest / "Nyaralás" / "b.jpg").exists()
 
+    def test_manual_mode_blank_name_starts_no_import(self, controller, tmp_path):
+        # #4595: cím nélkül a vezérlő NEM indítja el az importot — se
+        # háttérszál, se másolás a célgyökérbe.
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        started = []
+        controller.importStarted.connect(started.append)
+
+        _scan(controller, str(source))
+        controller.runImport(str(dest), "manual", "   ", "leave")
+
+        assert started == []
+        assert list(dest.iterdir()) == []
+
     def test_today_mode_uses_a_single_folder_for_every_candidate(
         self, controller, tmp_path
     ):
@@ -561,6 +578,31 @@ class TestAfterCopying:
 
         source_doc = load_document(source / ".picasa.ini")
         assert source_doc.section("a.jpg") is None
+        dest_doc = load_document(dest / "2024-03-05" / ".picasa.ini")
+        assert dest_doc.section("a.jpg").get("star") == "yes"
+
+    def test_delete_copied_cleans_legacy_ini_into_new_ini_and_keeps_legacy_bytes(
+        self, controller, tmp_path
+    ):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        legacy_ini = source / "Picasa.ini"
+        legacy_bytes = (
+            b"[a.jpg]\nstar=yes\n\n[other.jpg]\nstar=no\n"
+        )
+        legacy_ini.write_bytes(legacy_bytes)
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+
+        _scan(controller, str(source))
+        controller.runImport(str(dest), "date", "", "delete_copied")
+        _megvar_hattermunkat(controller)
+
+        source_doc = load_document(source / ".picasa.ini")
+        assert source_doc.section("a.jpg") is None
+        assert source_doc.section("other.jpg").get("star") == "no"
+        assert legacy_ini.read_bytes() == legacy_bytes
         dest_doc = load_document(dest / "2024-03-05" / ".picasa.ini")
         assert dest_doc.section("a.jpg").get("star") == "yes"
 

@@ -11,61 +11,75 @@ import QtQuick.Layouts
 // amíg az hiányzik, a null-őr miatt a mezők a mentett/alapértékkel
 // jelennek meg, csak írás nem történik).
 //
-// A "Send videos as"/HTML-jelölő MARADT tiltott placeholder: ezek csak
-// Windows/Outlook alatt értelmezettek voltak az eredetiben, és a
-// PicasaPy-nak nincs videó-e-mail vagy Outlook-integrációja.
+// A videóküldési mód élő beállítás (`EmailMovie`); a HTML-jelölő marad
+// tiltott helyőrző, mert az eredetiben csak Windows/Outlook alatt működött.
 ColumnLayout {
     id: root
-    spacing: 12
+    spacing: 3
 
     // #305 mintája: a controller átmenetileg null lehet (QML-engine
     // leépítés) — és amíg az integrátor nem regisztrálja, mindig az
     readonly property var mailCtl: (typeof emailController !== "undefined")
         ? emailController : null
 
-    Text {
-        // #2432: az eredeti felirata „Levelezőprogram:”
-        // (`options/labelgroup38.title`) — a korábbi „Choose your mail
-        // client:” a mi fogalmazásunk volt.
-        text: qsTr("Mail program:")
-        font.pixelSize: Theme.fontSize
-        color: Theme.ink
-    }
     ButtonGroup { id: mailGroup }
+    RowLayout {
+        spacing: 8
+        Text {
+            id: mailProgramLabel
+            // #2432: az eredeti felirata „Levelezőprogram:”
+            // (`options/labelgroup38.title`).
+            text: qsTr("Mail program:")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+        RadioButton {
+            objectName: "optionsMailDefaultRadio"
+            text: qsTr("Use this computer's default email program")
+            ButtonGroup.group: mailGroup
+            implicitHeight: 22
+            // #3661: a hivatalos magyar felirat az ablak keskeny állásában
+            // tördelődik, a címke mellett maradó helyet használja.
+            Layout.fillWidth: true
+            Layout.preferredWidth: 0
+            contentItem: Text {
+                leftPadding: parent.indicator.width + parent.spacing
+                text: parent.text
+                font: parent.font
+                color: parent.enabled ? Theme.ink : Theme.textGray
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+            }
+            // #1572: a `!== undefined` a hiányzó tulajdonságra véd.
+            checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)
+                ? root.mailCtl.useDefaultClient : true
+            onToggled: if (root.mailCtl && checked)
+                root.mailCtl.setUseDefaultClient(true)
+        }
+    }
     RadioButton {
-        objectName: "optionsMailDefaultRadio"
-        text: qsTr("Use this computer's default email program")
+        objectName: "optionsMailChooseRadio"
+        text: qsTr("Let me choose each time I send pictures")
         ButtonGroup.group: mailGroup
-        // #3661: a hivatalos magyar felirat („A számítógép alapértelmezett
-        // levelezőprogramjának használata") az ablak legkisebb szélességén
-        // kitolja a fület — a #3572 mintája szerint tördelődik helyette.
+        implicitHeight: 22
+        Layout.leftMargin: mailProgramLabel.implicitWidth + 8
         Layout.fillWidth: true
         Layout.preferredWidth: 0
         contentItem: Text {
             leftPadding: parent.indicator.width + parent.spacing
             text: parent.text
             font: parent.font
-            color: parent.palette.windowText
+            color: parent.enabled ? Theme.ink : Theme.textGray
             wrapMode: Text.WordWrap
             verticalAlignment: Text.AlignVCenter
         }
-        // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
-        // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
-        checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)
-            ? root.mailCtl.useDefaultClient : true
-        onToggled: if (root.mailCtl && checked) root.mailCtl.setUseDefaultClient(true)
-    }
-    RadioButton {
-        objectName: "optionsMailChooseRadio"
-        text: qsTr("Let me choose each time I send pictures")
-        ButtonGroup.group: mailGroup
         checked: root.mailCtl ? !root.mailCtl.useDefaultClient : false
         onToggled: if (root.mailCtl && checked) root.mailCtl.setUseDefaultClient(false)
     }
     // #2432: az eredetiben HÁROM gomb van (`options/radio42.title` = „A
     // Google Fiók használata”). A PicasaPy-nak nincs Google-fiók-
-    // integrációja, ezért TILTOTT HELYŐRZŐ — ugyanaz a bevett alak, mint a
-    // „Send videos as” két gombjánál és az Outlook-jelölőnél lent.
+    // integrációja, ezért TILTOTT HELYŐRZŐ. A Windows/Outlook-jelölő lent
+    // szintén letiltott, a videóküldési mód viszont működik.
     //
     // ⚠️ Miért helyőrző, és nem elhagyás: a fül szerkezete így hű marad, és
     // a tiltás kimondja, hogy nem működik. Egy engedélyezett, de kattintásra
@@ -78,6 +92,18 @@ ColumnLayout {
         objectName: "optionsMailGoogleRadio"
         text: qsTr("Use my Google Account")
         ButtonGroup.group: mailGroup
+        implicitHeight: 22
+        Layout.leftMargin: mailProgramLabel.implicitWidth + 8
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        contentItem: Text {
+            leftPadding: parent.indicator.width + parent.spacing
+            text: parent.text
+            font: parent.font
+            color: parent.enabled ? Theme.ink : Theme.textGray
+            wrapMode: Text.WordWrap
+            verticalAlignment: Text.AlignVCenter
+        }
         enabled: false
     }
 
@@ -136,55 +162,121 @@ ColumnLayout {
     // #2020: az „egyedülálló kép" NEM méret, hanem KAPCSOLÓ. Az eredetiben
     // két választógomb, és az elsőbe bele van írva a csúszka aktuális
     // értéke — ezért él a kötés a fenti `aktualisMeret`-re.
-    Text {
-        text: qsTr("Single picture size:")
-        font.pixelSize: Theme.fontSize
-        color: Theme.ink
-    }
     ButtonGroup { id: singleGroup }
-    RadioButton {
-        objectName: "optionsMailSingleSameRadio"
-        text: qsTr("Same as multiple (%1 pixels)").arg(root.aktualisMeret)
-        ButtonGroup.group: singleGroup
-        checked: (root.mailCtl && root.mailCtl.singlePictureOriginal !== undefined)
-            ? !root.mailCtl.singlePictureOriginal : true
-        onToggled: if (root.mailCtl && checked)
-            root.mailCtl.setSinglePictureOriginal(false)
+    RowLayout {
+        spacing: 8
+        Text {
+            id: singlePictureLabel
+            text: qsTr("Single picture size:")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+        RadioButton {
+            objectName: "optionsMailSingleSameRadio"
+            text: qsTr("Same as multiple (%1 pixels)").arg(root.aktualisMeret)
+            ButtonGroup.group: singleGroup
+            implicitHeight: 22
+            Layout.fillWidth: true
+            Layout.preferredWidth: 0
+            contentItem: Text {
+                leftPadding: parent.indicator.width + parent.spacing
+                text: parent.text
+                font: parent.font
+                color: parent.enabled ? Theme.ink : Theme.textGray
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+            }
+            checked: (root.mailCtl && root.mailCtl.singlePictureOriginal !== undefined)
+                ? !root.mailCtl.singlePictureOriginal : true
+            onToggled: if (root.mailCtl && checked)
+                root.mailCtl.setSinglePictureOriginal(false)
+        }
     }
     RadioButton {
         objectName: "optionsMailSingleOriginalRadio"
         text: qsTr("Original size")
         ButtonGroup.group: singleGroup
+        implicitHeight: 22
+        Layout.leftMargin: singlePictureLabel.implicitWidth + 8
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        contentItem: Text {
+            leftPadding: parent.indicator.width + parent.spacing
+            text: parent.text
+            font: parent.font
+            color: parent.enabled ? Theme.ink : Theme.textGray
+            wrapMode: Text.WordWrap
+            verticalAlignment: Text.AlignVCenter
+        }
         checked: (root.mailCtl && root.mailCtl.singlePictureOriginal !== undefined)
             ? root.mailCtl.singlePictureOriginal : false
         onToggled: if (root.mailCtl && checked)
             root.mailCtl.setSinglePictureOriginal(true)
     }
 
-    Text {
-        text: qsTr("Send videos as:")
-        font.pixelSize: Theme.fontSize
-        color: Theme.ink
-    }
     ButtonGroup { id: movieGroup }
-    RadioButton {
-        objectName: "optionsMailMovieFirstFrameRadio"
-        text: qsTr("First frame")
-        ButtonGroup.group: movieGroup
-        checked: true
-        enabled: false
+    RowLayout {
+        spacing: 8
+        Text {
+            id: movieModeLabel
+            text: qsTr("Send videos as:")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+        RadioButton {
+            objectName: "optionsMailMovieFirstFrameRadio"
+            text: qsTr("First frame")
+            ButtonGroup.group: movieGroup
+            implicitHeight: 22
+            Layout.fillWidth: true
+            Layout.preferredWidth: 0
+            contentItem: Text {
+                leftPadding: parent.indicator.width + parent.spacing
+                text: parent.text
+                font: parent.font
+                color: parent.enabled ? Theme.ink : Theme.textGray
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+            }
+            checked: (root.mailCtl && root.mailCtl.movieFull !== undefined)
+                ? !root.mailCtl.movieFull : true
+            enabled: !!(root.mailCtl && root.mailCtl.movieFull !== undefined
+                && root.mailCtl.setMovieFull !== undefined)
+            onToggled: if (root.mailCtl && checked
+                && root.mailCtl.setMovieFull !== undefined)
+                    root.mailCtl.setMovieFull(false)
+        }
     }
     RadioButton {
         objectName: "optionsMailMovieFullRadio"
         text: qsTr("Full film")
         ButtonGroup.group: movieGroup
-        enabled: false
+        implicitHeight: 22
+        Layout.leftMargin: movieModeLabel.implicitWidth + 8
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        contentItem: Text {
+            leftPadding: parent.indicator.width + parent.spacing
+            text: parent.text
+            font: parent.font
+            color: parent.enabled ? Theme.ink : Theme.textGray
+            wrapMode: Text.WordWrap
+            verticalAlignment: Text.AlignVCenter
+        }
+        checked: (root.mailCtl && root.mailCtl.movieFull !== undefined)
+            ? root.mailCtl.movieFull : false
+        enabled: !!(root.mailCtl && root.mailCtl.movieFull !== undefined
+            && root.mailCtl.setMovieFull !== undefined)
+        onToggled: if (root.mailCtl && checked
+            && root.mailCtl.setMovieFull !== undefined)
+                root.mailCtl.setMovieFull(true)
     }
 
     // csak Windows/Outlook alatt volt értelmezve az eredetiben
     CheckBox {
         objectName: "optionsMailUseHtmlCheck"
         text: qsTr("Send inline photos and captions (Outlook only)")
+        implicitHeight: 24
         enabled: false
         // #3661: a hivatalos magyar felirat („Szövegközi fotók és
         // képfeliratok küldése (csak Outlookban)") volt a fül LEGSZÉLESEBB,
@@ -196,7 +288,7 @@ ColumnLayout {
             leftPadding: parent.indicator.width + parent.spacing
             text: parent.text
             font: parent.font
-            color: parent.palette.windowText
+            color: parent.enabled ? Theme.ink : Theme.textGray
             wrapMode: Text.WordWrap
             verticalAlignment: Text.AlignVCenter
         }

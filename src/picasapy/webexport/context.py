@@ -28,6 +28,9 @@ class PhotoExportData:
     large_rel_path: str
     large_width: int
     large_height: int
+    #: #4610: „Teljes mozgófilm" módban exportált film — a nagy kép maga a
+    #: filmfájl, a sablon a beágyazó ágat kapja (spec 6.1).
+    movie_embed: bool = False
 
     @property
     def name_only(self) -> str:
@@ -61,6 +64,10 @@ class WebExportSettings:
     shadowed_thumbnails: bool = True
     shadowed_images: bool = False
     export_file_name: str = "index.html"
+    #: #4610 (`webexport.fen` `moviesradio`): False = „Első képkocka" (az
+    #: eredeti alapértéke, `Preferences\WebExportMovie` = 0), True = „Teljes
+    #: mozgófilm".
+    movie_full: bool = False
 
 
 def _bool_var(value: bool) -> str:
@@ -111,8 +118,11 @@ def image_loop_variables(photos: tuple[PhotoExportData, ...], index: int) -> dic
         "itemNameOnly": photo.name_only,
         "itemOriginalPath": photo.name,
         "itemCaption": photo.caption,
-        "itemWidth": str(photo.original_width),
-        "itemHeight": str(photo.original_height),
+        # #4610: az EXPORTÁLT kép mérete, nem az eredetié — a hivatalos
+        # doksi szerint „Actual width of the exported picture"
+        # (`web/documentation/index.html`, Image Loop Variables).
+        "itemWidth": str(photo.large_width),
+        "itemHeight": str(photo.large_height),
         "itemSize": str(round(photo.size_bytes / 1024)),
         "itemThumbnailImage": photo.thumbnail_rel_path,
         "itemThumbnailWidth": str(photo.thumbnail_width),
@@ -122,6 +132,14 @@ def image_loop_variables(photos: tuple[PhotoExportData, ...], index: int) -> dic
         "isLastImage": _bool_var(is_last),
         "isNextImage": _bool_var(not is_last),
         "isPrevImage": _bool_var(not is_first),
+        # #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): `isImage`
+        # = nem film, vagy „Első képkocka" (`0x0086efe6`). Teljes filmnél az
+        # eredeti a típuskód szerint választ `<embed>` és ActiveX közt; a
+        # kód→kiterjesztés leképezés nyitott, ezért nálunk minden teljes
+        # film az `<embed>` ágat kapja (a mai böngészőben az ActiveX halott).
+        "isImage": _bool_var(not photo.movie_embed),
+        "isSimpleEmbed": _bool_var(photo.movie_embed),
+        "isExtendedEmbed": _bool_var(False),
         "nextImage": next_photo.large_rel_path if next_photo else "",
         "prevImage": prev_photo.large_rel_path if prev_photo else "",
         "nextThumbnail": next_photo.thumbnail_rel_path if next_photo else "",

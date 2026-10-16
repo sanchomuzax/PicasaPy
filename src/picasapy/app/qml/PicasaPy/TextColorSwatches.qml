@@ -1,7 +1,9 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 
-// Rögzített, PicasaPy-saját színpaletta a szöveg-eszközhöz (#450) — a
+// Közös színválasztó a szöveg- és effekt-színekhez (#450/#4548): a fix
+// paletta mellett szabad spektrumválasztás és előzmény-sor is elérhető; a
 // kijelölt szín kék kerettel jelölt.
 //
 // #496: kiemelve az EditorPanel.qml-ből (ld. ott a `ToolTile` megjegyzését).
@@ -15,10 +17,48 @@ import QtQuick.Layouts
 // példánnyal is.
 Item {
     id: swatches
-    // #4283: a közös effekt-színválasztóban jelenik meg az eredeti MRU-sor;
-    // a szövegeszköz saját, kompakt palettája ezt nem bővíti ki.
+    // #4283/#4548: az effekt- és a szöveg-színválasztóban is látható az MRU-sor.
     property bool showRecentColors: false
+    // Keskeny panelhez (a szövegpanel két, egymás melletti példánya): az MRU
+    // és a színkerék 3 × 2-es, 12 px-es mini-rácsban ül a paletta mellett
+    // (#4548: a 260 px-es panelbe a két példány így fér el, ld. #656 őr);
+    // a magasság a sima (35 px) marad.
+    property bool compactRecentColors: false
+    readonly property bool compactRecent: showRecentColors && compactRecentColors
+    readonly property bool wideRecent: showRecentColors && !compactRecentColors
     property string currentColor: "#ffffff"
+    property string displayedColor: currentColor
+    readonly property bool spectrumPickerVisible:
+        spectrumPickerLoader.item ? spectrumPickerLoader.item.visible : false
+    readonly property real spectrumPickerWidth:
+        spectrumPickerLoader.item ? spectrumPickerLoader.item.width : 225
+    readonly property real spectrumPickerHeight:
+        spectrumPickerLoader.item ? spectrumPickerLoader.item.height : 225
+    readonly property real spectrumSceneX:
+        spectrumPickerLoader.item
+            ? spectrumPickerLoader.item.x
+                + spectrumPickerLoader.item.spectrumFieldItem.x : 0
+    readonly property real spectrumSceneY:
+        spectrumPickerLoader.item
+            ? spectrumPickerLoader.item.y
+                + spectrumPickerLoader.item.spectrumFieldItem.y : 0
+    readonly property real spectrumWidth:
+        spectrumPickerLoader.item
+            ? spectrumPickerLoader.item.spectrumFieldItem.width : 181
+    readonly property real spectrumHeight:
+        spectrumPickerLoader.item
+            ? spectrumPickerLoader.item.spectrumFieldItem.height : 147
+    readonly property real hueSceneX:
+        spectrumPickerLoader.item
+            ? spectrumPickerLoader.item.x
+                + spectrumPickerLoader.item.hueSpectrumItem.x : 0
+    readonly property real hueSceneY:
+        spectrumPickerLoader.item
+            ? spectrumPickerLoader.item.y
+                + spectrumPickerLoader.item.hueSpectrumItem.y : 0
+    readonly property real hueWidth:
+        spectrumPickerLoader.item
+            ? spectrumPickerLoader.item.hueSpectrumItem.width : 181
     signal colorPicked(string hex)
     // #506: a "palette" néven elnevezve elfedte az Item/Control
     // beépített `palette` tulajdonságát (Qt-figyelmeztetés induláskor)
@@ -31,8 +71,10 @@ Item {
         showRecentColors && typeof editController !== "undefined" && editController
                 && editController.recentPickerColors !== undefined
             ? editController.recentPickerColors : ["", "", "", "", ""]
-    implicitWidth: showRecentColors ? 225 : 73
-    implicitHeight: showRecentColors ? 85 : 35
+    implicitWidth: compactRecent ? 115 : (wideRecent ? 225 : 103)
+    implicitHeight: wideRecent ? 85 : 35
+
+    onCurrentColorChanged: displayedColor = currentColor
 
     function rememberColor(hex) {
         if (typeof editController !== "undefined" && editController
@@ -40,10 +82,29 @@ Item {
             editController.rememberPickerColor(String(hex))
     }
 
+    function chooseColor(hex) {
+        displayedColor = String(hex)
+        colorPicked(displayedColor)
+        if (showRecentColors)
+            rememberColor(displayedColor)
+    }
+
+    function closeSpectrumPicker() {
+        if (spectrumPickerLoader.item)
+            spectrumPickerLoader.item.close()
+    }
+
+    function openSpectrumPicker() {
+        if (spectrumPickerLoader.item)
+            spectrumPickerLoader.item.open()
+        else
+            spectrumPickerLoader.active = true
+    }
+
     GridLayout {
         id: palette
-        x: swatches.showRecentColors ? 20 : 0
-        y: swatches.showRecentColors ? 50 : 0
+        x: swatches.wideRecent ? 20 : 0
+        y: swatches.wideRecent ? 50 : 0
         columns: 4
         rowSpacing: 3
         columnSpacing: 3
@@ -55,19 +116,73 @@ Item {
                 objectName: swatches.objectName + "Swatch" + index
                 width: 16; height: 16; radius: 2
                 color: modelData
-                border.width: modelData.toLowerCase() === swatches.currentColor.toLowerCase() ? 2 : 1
-                border.color: modelData.toLowerCase() === swatches.currentColor.toLowerCase()
+                border.width: modelData.toLowerCase() === swatches.displayedColor.toLowerCase() ? 2 : 1
+                border.color: modelData.toLowerCase() === swatches.displayedColor.toLowerCase()
                               ? Theme.selectionBlue : Theme.chromeBorder
                 MouseArea {
                     anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        if (swatches.showRecentColors)
-                            swatches.rememberColor(modelData)
-                        swatches.colorPicked(modelData)
+                        swatches.chooseColor(modelData)
                     }
                 }
             }
         }
+    }
+
+    Rectangle {
+        id: spectrumButton
+        objectName: swatches.objectName + "SpectrumButton"
+        x: swatches.wideRecent ? 20 : (swatches.compactRecent ? 75 : 77)
+        y: swatches.wideRecent ? 15 : (swatches.compactRecent ? 3 : 4)
+        width: swatches.compactRecent ? 12 : 26
+        height: width
+        radius: width / 2
+        color: Theme.buttonBg
+        border.width: 1
+        border.color: Theme.chromeBorder
+        ToolTip.text: qsTr("Pick Color")
+        ToolTip.visible: spectrumButtonMouse.containsMouse
+        ToolTip.delay: Theme.tooltipDelay
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: swatches.compactRecent ? 2 : 4
+            radius: width / 2
+            clip: true
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.00; color: "#ff0000" }
+                GradientStop { position: 0.17; color: "#ffff00" }
+                GradientStop { position: 0.33; color: "#00ff00" }
+                GradientStop { position: 0.50; color: "#00ffff" }
+                GradientStop { position: 0.67; color: "#0000ff" }
+                GradientStop { position: 0.83; color: "#ff00ff" }
+                GradientStop { position: 1.00; color: "#ff0000" }
+            }
+        }
+
+        MouseArea {
+            id: spectrumButtonMouse
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: swatches.openSpectrumPicker()
+        }
+    }
+
+    Loader {
+        id: spectrumPickerLoader
+        active: false
+        sourceComponent: Component {
+            ColorSpectrumPicker {
+                objectName: swatches.objectName + "Picker"
+                anchorItem: swatches
+                currentColor: swatches.displayedColor
+                recentColors: swatches.recentColors
+                onColorPicked: (hex) => swatches.chooseColor(hex)
+            }
+        }
+        onLoaded: item.open()
     }
 
     Repeater {
@@ -79,26 +194,27 @@ Item {
             property string recentColor: modelData || ""
             // A `pickerpanel/mru_0` az első hely; az eredeti 31 px-es
             // osztás és a 26 × 26-os mező a szerkesztőpanel méretspecéből jön.
-            x: 51 + index * 31
-            y: 15
-            width: 26
-            height: 26
+            // Sűrített módban a 3 × 2-es mini-rács 1–5. helye (a 0. a kerék).
+            x: swatches.compactRecent ? 75 + ((index + 1) % 3) * 14
+                                      : 51 + index * 31
+            y: swatches.compactRecent ? 3 + Math.floor((index + 1) / 3) * 16
+                                      : 15
+            width: swatches.compactRecent ? 12 : 26
+            height: width
             color: recentColor === "" ? "transparent" : recentColor
             border.width: recentColor !== ""
-                          && recentColor.toLowerCase() === swatches.currentColor.toLowerCase()
+                          && recentColor.toLowerCase() === swatches.displayedColor.toLowerCase()
                           ? 2 : 1
             border.color: recentColor !== ""
-                          && recentColor.toLowerCase() === swatches.currentColor.toLowerCase()
+                          && recentColor.toLowerCase() === swatches.displayedColor.toLowerCase()
                           ? Theme.selectionBlue : Theme.chromeBorder
             MouseArea {
                 anchors.fill: parent
                 enabled: parent.recentColor !== ""
+                cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     var color = parent.recentColor
-                    swatches.colorPicked(color)
-                    // A MRU-jel frissítése új Repeater-elemet építhet, ezért
-                    // az objektumot törlő műveletnek kell az utolsónak lennie.
-                    swatches.rememberColor(color)
+                    swatches.chooseColor(color)
                 }
             }
         }

@@ -6,7 +6,7 @@ forró fájl végzi)."""
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
+from PySide6.QtCore import QLocale, QMetaObject, QObject, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
 # élő Python-referencia nélkül a JS-motor GC-je bármikor eltávolítaná a
@@ -124,22 +124,30 @@ class TestFolderContextMenu:
         for name in (
             "folderMenuHideFolder",
             "folderMenuUploadToGooglePhotos",
-            "folderMenuAddNameTags",
         ):
             item = menu.findChild(QObject, name)
             assert item is not None, f"{name} hiányzik"
             assert item.property("enabled") is False, f"{name} nem szürke"
 
-    def test_sort_submenu_checks_the_current_mode(self, qml_engine, qt_app):
-        """A „Mappa rendezésének alapja ▸" almenü az `Sort` menüosztály
-        négy tétele (spec A.2), a jelenlegi rendezés pipálva."""
+        # #4535: a Névcímkék hozzáadása tényleges mappa-keresést indít.
+        assert menu.findChild(QObject, "folderMenuAddNameTags").property("enabled")
+
+    def test_sort_submenu_items_are_one_off_commands(self, qml_engine, qt_app):
+        """A rendezés egyszeri művelet, a menü nem mutat tartós módot."""
         menu = self._make_menu(qml_engine)
-        menu.setProperty("sortMode", "name")
-        menu.setProperty("sortReverse", True)
         qt_app.processEvents()
-        assert menu.findChild(QObject, "folderMenuSortByName").property("checked")
-        assert not menu.findChild(QObject, "folderMenuSortByDate").property("checked")
-        assert menu.findChild(QObject, "folderMenuSortReverse").property("checked")
+        for name in (
+            "folderMenuSortByDate",
+            "folderMenuSortByName",
+            "folderMenuSortBySize",
+            "folderMenuSortByColor",
+            "folderMenuSortByPriority",
+            "folderMenuSortReverse",
+        ):
+            item = menu.findChild(QObject, name)
+            assert item is not None
+            assert item.property("checkable") is False
+            assert item.property("checked") is False
 
     def test_new_collection_trigger_emits_signal(self, qml_engine, qt_app):
         menu = self._make_menu(qml_engine)
@@ -250,36 +258,41 @@ class TestFolderPropertiesDialog:
             "folderPropertiesAutomaticDate",
             "folderPropertiesUseMusic",
             "folderPropertiesMusicPath",
+            "folderPropertiesMusicBrowseButton",
+            "folderPropertiesMusicFileDialog",
             "folderPropertiesLocation",
             "folderPropertiesDescription",
         ):
             assert dialog.findChild(QObject, name) is not None, f"{name} hiányzik"
 
-    def test_unbacked_fields_are_shown_but_disabled(self, qml_engine):
-        """A név, a zene és a helyszín mögött még nincs réteg — a mezők a
-        helyükön vannak, de inaktívak (az elrendezés a dizájn része)."""
+    def test_a_mappanev_szerkesztheto_a_helyszin_mappamodban_inaktiv(self, qml_engine):
+        """A név átnevező úton menthető; a helyszínnek nincs mappaszintű írása."""
         dialog = self._make_dialog(qml_engine)
-        for name in (
-            "folderPropertiesNameField",
-            "folderPropertiesUseMusic",
-            "folderPropertiesLocation",
-        ):
-            item = dialog.findChild(QObject, name)
-            assert item.property("enabled") is False, f"{name} nem inaktív"
+        assert dialog.findChild(
+            QObject, "folderPropertiesNameField"
+        ).property("enabled") is True
+        assert dialog.findChild(
+            QObject, "folderPropertiesLocation"
+        ).property("enabled") is False
 
     def test_music_path_follows_the_music_checkbox(self, qml_engine, qt_app):
         """Az eredeti `<bind attr="enabled" source="usemusic">`."""
         dialog = self._make_dialog(qml_engine)
         check = dialog.findChild(QObject, "folderPropertiesUseMusic")
         path = dialog.findChild(QObject, "folderPropertiesMusicPath")
+        browse = dialog.findChild(QObject, "folderPropertiesMusicBrowseButton")
+        assert check.property("enabled") is True
         assert path.property("enabled") is False
+        assert browse.property("enabled") is False
         check.setProperty("checked", True)
         qt_app.processEvents()
         assert path.property("enabled") is True
+        assert browse.property("enabled") is True
 
-    def test_accept_emits_date_and_description(self, qml_engine, qt_app):
+    def test_accept_emits_date_and_description(self, qml_engine, qt_app, tmp_path):
         dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
-        dialog.setProperty("folderPath", "/mnt/fotok/balaton")
+        folder_path = str(tmp_path / "balaton")
+        dialog.setProperty("folderPath", folder_path)
         _open(dialog)
         qt_app.processEvents()
         events = []
@@ -292,13 +305,14 @@ class TestFolderPropertiesDialog:
             "text", "Balatoni nyaralás")
         _invoke(dialog, "accept")
         qt_app.processEvents()
-        assert events == [("/mnt/fotok/balaton", "2019-07-04", "Balatoni nyaralás")]
+        assert events == [(folder_path, "2019-07-04", "Balatoni nyaralás")]
 
-    def test_automatic_date_button_clears_the_date(self, qml_engine, qt_app):
+    def test_automatic_date_button_clears_the_date(self, qml_engine, qt_app, tmp_path):
         """Az eredeti „Automatic date" gombja: a mappa a legrégebbi képe
         dátumára áll vissza — a mentés üres dátumot ad tovább."""
         dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
-        dialog.setProperty("folderPath", "/mnt/fotok/balaton")
+        folder_path = str(tmp_path / "balaton")
+        dialog.setProperty("folderPath", folder_path)
         dialog.setProperty("currentDate", "2019-07-04")
         _open(dialog)
         qt_app.processEvents()
@@ -311,7 +325,7 @@ class TestFolderPropertiesDialog:
         qt_app.processEvents()
         _invoke(dialog, "accept")
         qt_app.processEvents()
-        assert events == [("/mnt/fotok/balaton", "")]
+        assert events == [(folder_path, "")]
 
     def test_accept_with_invalid_date_emits_nothing(self, qml_engine, qt_app):
         dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
@@ -340,15 +354,21 @@ class TestFolderPropertiesDialog:
         assert hint.property("visible") is False
 
     def test_existing_values_prefill_the_fields(self, qml_engine, qt_app):
-        dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
-        dialog.setProperty("currentDate", "2019-07-04")
-        dialog.setProperty("currentDescription", "Régi leírás")
-        dialog.setProperty("folderName", "balaton")
-        _open(dialog)
-        qt_app.processEvents()
-        assert dialog.findChild(
-            QObject, "folderPropertiesDateField").property("text") == "2019-07-04"
-        assert dialog.findChild(
-            QObject, "folderPropertiesDescription").property("text") == "Régi leírás"
-        assert dialog.findChild(
-            QObject, "folderPropertiesNameField").property("text") == "balaton"
+        # #4494: a dátummező a nyelvi beállítás szerinti alakot mutatja
+        eredeti = QLocale()
+        QLocale.setDefault(QLocale(QLocale.Language.Hungarian, QLocale.Country.Hungary))
+        try:
+            dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
+            dialog.setProperty("currentDate", "2019-07-04")
+            dialog.setProperty("currentDescription", "Régi leírás")
+            dialog.setProperty("folderName", "balaton")
+            _open(dialog)
+            qt_app.processEvents()
+            assert dialog.findChild(
+                QObject, "folderPropertiesDateField").property("text") == "2019. 07. 04."
+            assert dialog.findChild(
+                QObject, "folderPropertiesDescription").property("text") == "Régi leírás"
+            assert dialog.findChild(
+                QObject, "folderPropertiesNameField").property("text") == "balaton"
+        finally:
+            QLocale.setDefault(eredeti)

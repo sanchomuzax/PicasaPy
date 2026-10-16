@@ -19,9 +19,11 @@ Két ára van:
 
 ## Sávhatár
 
-Az írás KIZÁRÓLAG az `ini/` csomag API-ján megy (`update_document`), tehát
-ütközésbiztosan és backuppal: a párhuzamosan író Picasa közbeírása nem
-veszhet el. Közvetlen fájlírás itt sincs.
+Az írás KIZÁRÓLAG az `ini/` csomag API-ján megy (`update_document`), útvonal-
+lockkal és backuppal. Az előzetes ujjlenyomat-ellenőrzésig észlelt külső
+változásra újratölt és újrapróbál; az ellenőrzés és fájlcsere közti külső írás
+teljes kizárását a fájlrendszeri API nem garantálja. Közvetlen fájlírás itt
+sincs.
 
 ## A tartalom bitre pontosan megy át
 
@@ -54,8 +56,14 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from collections.abc import Sequence
 
-from picasapy.ini import IniDocument, Section, load_or_empty, update_document
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.ini import (
+    IniDocument,
+    Section,
+    has_ini_source,
+    load_or_empty,
+    update_document,
+)
+from picasapy.ini.names import INI_NAME
 
 
 class IniSectionsFailed(Exception):
@@ -149,7 +157,7 @@ class IniSectionCopy:
 
 def ini_path_for(companion: Path) -> Path:
     """A kísérőfájlt tartalmazó eredeti-mappa `.picasa.ini`-je."""
-    return companion.parent / PICASA_INI_NAME
+    return companion.parent / INI_NAME
 
 
 def _renamed_section(section: Section, new_name: str) -> Section:
@@ -325,7 +333,7 @@ def _remove_if_contentless(ini: Path) -> None:
     Enélkül a célmappában egy magára maradt `.picasa.ini` tartaná életben
     az eredeti-mappát (a `rmdir` csak ÜRES könyvtárat töröl), miközben a
     felhasználónak azt mondjuk: semmi nem változott."""
-    if not ini.is_file():
+    if not has_ini_source(ini):
         return
     try:
         if load_or_empty(ini).serialize().strip():
@@ -444,7 +452,7 @@ def remove_original_ini_sections(companions: Sequence[Path]) -> int:
 
 def _section_of(ini: Path, name: str) -> Section | None:
     """A szekció, vagy `None`, ha nincs ini vagy nincs benne ilyen nevű."""
-    if not ini.is_file():
+    if not has_ini_source(ini):
         return None
     return load_or_empty(ini).section(name)
 
@@ -492,7 +500,7 @@ def _apply(move: IniSectionMove) -> IniSectionMove | None:
         `update_document` újrajátszott dokumentumából: egy párhuzamos író
         közbeírását itt ugyanúgy nem látjuk, mint a másolás ágán (#1450).
     """
-    if not move.source_ini.is_file():
+    if not has_ini_source(move.source_ini):
         return None
     source_document = load_or_empty(move.source_ini)
     section = source_document.section(move.source_name)

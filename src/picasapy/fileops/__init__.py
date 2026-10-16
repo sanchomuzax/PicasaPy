@@ -23,7 +23,9 @@ from .move import move_photo
 from .move_folder import FolderMoveError, move_folder
 from .new_folder import (
     InvalidFolderNameError,
+    create_unique_split_folder,
     create_folder_for_move,
+    sanitize_split_folder_name,
     validate_folder_name,
 )
 from .originals import (
@@ -36,7 +38,14 @@ from .originals import (
     plan_original_moves,
     undo_original_moves,
 )
-from .rename import RenameItem, preview_name, rename_photo, rename_photos_many
+from .rename import (
+    PartialRenameError,
+    RenameItem,
+    preview_name,
+    rename_photo,
+    rename_photos_many,
+)
+from .rename_folder import FolderRenameError, rename_folder
 from .reveal import open_folder_in_file_manager, reveal_in_file_manager
 from .trash import (
     TrashUnavailableError,
@@ -53,9 +62,11 @@ __all__ = [
     "BatchResult",
     "InvalidFolderNameError",
     "OriginalMove",
+    "PartialRenameError",
     "RenameItem",
     "TrashUnavailableError",
     "conflicting_names",
+    "create_unique_split_folder",
     "copy_photo",
     "copy_photos",
     "create_folder_for_move",
@@ -68,7 +79,9 @@ __all__ = [
     "has_enough_free_space",
     "is_folder_writable",
     "FolderMoveError",
+    "FolderRenameError",
     "move_folder",
+    "rename_folder",
     "move_photo",
     "move_photos",
     "move_preserved_originals",
@@ -80,6 +93,7 @@ __all__ = [
     "preview_name",
     "rename_photo",
     "rename_photos_many",
+    "sanitize_split_folder_name",
     "open_folder_in_file_manager",
     "required_bytes_for",
     "reveal_in_file_manager",

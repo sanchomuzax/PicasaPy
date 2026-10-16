@@ -35,6 +35,27 @@ def controller(qt_app, added):
 
 
 class TestDiscoverPicasa:
+    def test_normal_workerhiba_a_discoveryFailed_jelzesen_jut_el(
+        self, controller, monkeypatch
+    ):
+        def olvashatatlan_telepitesek():
+            raise OSError("a beállítási mappa nem olvasható")
+
+        monkeypatch.setattr(
+            "picasapy.app.discovery_controller.discover_installations",
+            olvashatatlan_telepitesek,
+        )
+        events = []
+        controller.discoveryFailed.connect(lambda *args: events.append(args))
+        loop = _quit_on(controller.discoveryFailed)
+
+        controller.discoverPicasa()
+        loop.exec()
+
+        assert events == [
+            ("interactive", "OSError", "a beállítási mappa nem olvasható")
+        ]
+
     def test_emits_proposed_folders_from_found_installations(
         self, controller, monkeypatch
     ):

@@ -33,6 +33,9 @@ Item {
     // A gazda hasáb egységes sormagassága (#730) — a hasáb ebből számolja a
     // komponens magasságát is, ezért felülírhatónak kell lennie.
     property int rowHeight: 22
+    property bool draggingFolder: false
+    property bool didDragFolder: false
+    property string draggedFolderPath: ""
 
     // #3681: a mentés-üzemmód szűrő-módja — a `FolderPane` közös
     // szerződése (ld. `FolderPane.qml`). Aktív módban a fa a MÉG EL NEM
@@ -68,11 +71,36 @@ Item {
     readonly property alias rowCount: list.count
 
     signal folderChosen(string path)
+    signal folderDroppedOnFolder(string sourcePath, string targetPath)
+    // A képes mappák a FolderPane teljes mappa-menüjét használják; az
+    // indexen kívüli, saját képet nem tartalmazó köztes sorok maradnak a
+    // HierFolder rövid menüjénél.
+    signal folderContextMenuRequested(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
     // gazdában van (`FUN_00733a40`): a komponens csak jelez, nem cselekszik.
     signal locateOnDiskRequested(string path)
     signal removeFromPicasaRequested(string path)
     signal moveFolderRequested(string path)
+
+    // A forrás nem a virtualizált ListView-sor: a QQuickListView újrahasznosíthatja
+    // a delegátumot, miközben a mutató áthalad a fán. Ez az állandó proxy
+    // viszi a mappa payloadját a DropArea-ig.
+    Item {
+        id: folderDragProxy
+        objectName: "folderTreeDragProxy"
+        x: 0
+        y: 0
+        width: 1
+        height: 1
+        visible: root.draggingFolder
+        readonly property string payload: "folders"
+        readonly property string folderPath: root.draggedFolderPath
+        Drag.active: root.draggingFolder
+        Drag.dragType: Drag.Internal  // #5105: programon belüli húzás, a rendszer-DnD Waylandon nem adja le a DropArea-nak
+        Drag.supportedActions: Qt.MoveAction
+        Drag.hotSpot.x: 0
+        Drag.hotSpot.y: 0
+    }
 
     // -- kifelé hívható parancsok ----------------------------------------
 
@@ -150,7 +178,6 @@ Item {
             readonly property bool mentesJelolt:
                 root.mentesSzuroAktiv && row.mentesUt !== ""
                 && root._mentesTerkep[row.mentesUt] !== undefined
-
             color: row.isSelected ? Theme.panelSelectionActive
                    : (rowMouse.containsMouse ? Theme.selectionBlue : "transparent")
 
@@ -222,13 +249,13 @@ Item {
                     height: root.rowHeight - 4
                     anchors.verticalCenter: parent.verticalCenter
 
-                    // #2215: a `Ready` ÖNMAGÁBAN nem elég. A szolgáltató
-                    // korábban 1×1 átlátszó képet adott, ha nincs borító —
-                    // az sikeresen betöltődik, tehát ez a feltétel igaz
-                    // lett, és a mappaikon elrejtőzött: a sor üresen
-                    // maradt. A szolgáltató ma null képet ad (`Error`), a
-                    // méret-ellenőrzés pedig második védelem arra az
-                    // esetre, ha valaki visszahozná a helyettesítő képet.
+                    // #2215/#4876: a `Ready` ÖNMAGÁBAN nem elég. A
+                    // szolgáltató borító nélkül SZÁNDÉKOSAN 1×1 átlátszó,
+                    // érvényes jelölőt ad (null képre a Qt minden kérésnél
+                    // hibasort írna) — az sikeresen betöltődik, ezért a
+                    // méretfeltétel (`implicitWidth > 1`) az ELSŐDLEGES
+                    // védelem: enélkül a mappaikon elrejtőzne, és a sor
+                    // üresen maradna.
                     readonly property bool boritoLatszik:
                         borito.status === Image.Ready
                         && borito.implicitWidth > 1
@@ -320,7 +347,17 @@ Item {
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onClicked: function (mouse) {
                     if (mouse.button === Qt.RightButton) {
-                        if (!row.isRoot) root.openContextMenu(row.modelData.path)
+                        if (!row.isRoot) {
+                            if (row.modelData.own > 0)
+                                root.folderContextMenuRequested(
+                                    row.modelData.path)
+                            else
+                                root.openContextMenu(row.modelData.path)
+                        }
+                        return
+                    }
+                    if (root.didDragFolder) {
+                        root.didDragFolder = false
                         return
                     }
                     // #3681: mentés-szűrő módban a mentetlen sor egy pipa —
@@ -337,6 +374,55 @@ Item {
                     root.choose(row.modelData.path)
                 }
                 onDoubleClicked: root.toggle(row.modelData.path)
+            }
+
+            DropArea {
+                objectName: "hierFolderDropArea:" + row.modelData.path
+                anchors.fill: parent
+                enabled: !row.isRoot && !root.mentesSzuroAktiv
+                onDropped: function(drop) {
+                    var source = drop.source
+                    if (!source || source.payload !== "folders"
+                            || !source.folderPath
+                            || source.folderPath === row.modelData.path)
+                        return
+                    drop.accept()
+                    root.folderDroppedOnFolder(
+                        source.folderPath, row.modelData.path)
+                }
+            }
+        }
+
+        DragHandler {
+            id: folderDragHandler
+            target: null
+            onActiveChanged: {
+                if (active) {
+                    var index = list.indexAt(
+                        centroid.pressPosition.x, centroid.pressPosition.y)
+                    var source = index >= 0 ? root._lathatoSorok[index] : null
+                    if (!source || source.kind !== "folder"
+                            || root.mentesSzuroAktiv)
+                        return
+                    root.draggedFolderPath = String(source.path || "")
+                    if (root.draggedFolderPath.length === 0) return
+                    root.didDragFolder = false
+                    root.draggingFolder = true
+                } else {
+                    var wasDragging = root.draggingFolder
+                    if (wasDragging) folderDragProxy.Drag.drop()
+                    root.draggingFolder = false
+                    root.draggedFolderPath = ""
+                    root.didDragFolder = wasDragging
+                    if (wasDragging)
+                        Qt.callLater(function() { root.didDragFolder = false })
+                }
+            }
+            onTranslationChanged: {
+                var point = list.mapToItem(
+                    root, centroid.position.x, centroid.position.y)
+                folderDragProxy.x = point.x
+                folderDragProxy.y = point.y
             }
         }
     }

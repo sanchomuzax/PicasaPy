@@ -10,7 +10,7 @@ Dialog {
     title: qsTr("Configure Photo Viewer...")
     modal: true
     focus: true
-    width: 420
+    width: 520
     parent: Overlay.overlay
     anchors.centerIn: parent
 
@@ -18,6 +18,21 @@ Dialog {
 
     ColumnLayout {
         width: parent ? parent.width : 380
+
+        CheckBox {
+            id: fullscreenStartupCheck
+            objectName: "photoViewerFullscreenStartupCheck"
+            Layout.fillWidth: true
+            text: qsTr("Fullscreen startup (requires restart of Photo Viewer to take effect)")
+            checked: dialog.viewerController
+                     && dialog.viewerController.viewerFullscreenStartup !== undefined
+                     ? dialog.viewerController.viewerFullscreenStartup : true
+            onClicked: {
+                if (dialog.viewerController
+                        && dialog.viewerController.toggleViewerFullscreenStartup !== undefined)
+                    dialog.viewerController.toggleViewerFullscreenStartup()
+            }
+        }
 
         CheckBox {
             id: colorManagementCheck

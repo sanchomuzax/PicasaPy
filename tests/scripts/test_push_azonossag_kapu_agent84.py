@@ -43,7 +43,7 @@ BLOKKOLANDO = [
     "git push --force-with-lease origin main",
     # ⚠️ a worktree-s alak — a kiadás-kapu ÉPPEN ezen csúszott el
     "git -C ~/picasapy-agent push origin main",
-    "git -C /home/sancho/Documents/PicasaPy-wt-42 push -u origin fix/x",
+    "git -C /home/felhasznalo/Documents/PicasaPy-wt-42 push -u origin fix/x",
     "git --git-dir=/x/.git --work-tree=/x push origin main",
     "git -c user.name=X push origin main",
     # összetett parancsban, a második tagként
@@ -76,11 +76,11 @@ ATENGEDENDO = [
 
 
 #: A projekt egyik munkafája — a kapu hatóköre (#3105).
-PROJEKT = "/home/sancho/Documents/PicasaPy"
+PROJEKT = "/home/felhasznalo/Documents/PicasaPy"
 
 #: A felhasználó egy MÁSIK projektje. Ott a bot GitHub Appja nincs telepítve,
 #: tehát a kapu javasolta burkoló sem járható út.
-IDEGEN = "/home/sancho/Documents/claude-code-rules"
+IDEGEN = "/home/felhasznalo/Documents/claude-code-rules"
 
 
 @pytest.mark.parametrize("cmd", BLOKKOLANDO)
@@ -211,4 +211,4 @@ def test_felhoben_is_tilos(cmd, monkeypatch):
 @pytest.mark.parametrize("cmd", FELHOBEN_ATMEHET)
 def test_helyben_valtozatlanul_blokkol(cmd, monkeypatch):
     monkeypatch.delenv("CLAUDE_CODE_REMOTE", raising=False)
-    assert kapu.blokkolando(cmd, "/home/sancho/Documents/PicasaPy")
+    assert kapu.blokkolando(cmd, "/home/felhasznalo/Documents/PicasaPy")

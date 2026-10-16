@@ -1,4 +1,4 @@
-"""A hat szín-keresés menüpontja a KÍSÉRLETI almenüben (#1399).
+"""A hét szín-keresés menüpontja a KÍSÉRLETI almenüben (#1399, #4689).
 
 ## A hely — mérve, és az első nekifutásom rossz volt
 
@@ -18,8 +18,8 @@ ezért nem hangulat kérdése volt — a bizonyíték döntötte el.
 csak más tokennel — beírja a `color:<szín>`-t a keresőmezőbe, a kurzort a
 szöveg végére viszi (`EM_SETSEL 0xFFFF,0xFFFF`), és lefuttatja a keresést.
 
-A hetedik kezelő (`color:black`) szándékosan NEM kap menüpontot: az
-eredetiben sincs hozzá felirat.
+Az eredeti hetedik tétele a `ID_VIEW_BW` (`&Black and White`, parancs
+`0x9da9`), amely `color:black` keresést indít (`0x005ccca7`).
 """
 
 from __future__ import annotations
@@ -34,6 +34,7 @@ SZINEK = (
     ("menuToolsSearchGreen", "color:green"),
     ("menuToolsSearchBlue", "color:blue"),
     ("menuToolsSearchPurple", "color:purple"),
+    ("menuToolsSearchBlack", "color:black"),
 )
 
 
@@ -75,6 +76,7 @@ def test_a_kereses_le_is_fut(qml_app, qt_app):
     )
 
 
-def test_a_feketehez_NINCS_menupont(qml_app, qt_app):
-    """A hetedik kezelő (`color:black`) szándékosan kimarad."""
-    assert qml_app[0].findChild(QObject, "menuToolsSearchBlack") is None
+def test_a_fekete_feher_tetel_megjelenik(qml_app):
+    """Az eredeti `ID_VIEW_BW` parancsa a hetedik tétel."""
+    tetel = qml_app[0].findChild(QObject, "menuToolsSearchBlack")
+    assert tetel is not None, "a Search for... hetedik tétele hiányzik"

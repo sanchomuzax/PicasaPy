@@ -44,12 +44,15 @@ class _StubController(QObject):
         # #422: a mappa-menü feltöltésével bekötött további slotok
         self.descriptions: dict[str, str] = {}
         self.set_description_calls: list[tuple[str, str]] = []
+        self.music_enabled: dict[str, bool] = {}
+        self.music_files: dict[str, str] = {}
+        self.set_music_calls: list[tuple[str, bool, str]] = []
+        self.edit_album_music_calls: list[tuple[str, bool, str]] = []
         self.resync_calls: list[str] = []
         self.removed_folders: list[str] = []
         self.sort_calls: list[str] = []
         self.reverse_calls = 0
-        self.photo_sort_calls: list[str] = []  # #1436
-        self.photo_reverse_calls = 0
+        self.folder_sort_calls: list[tuple[str, str]] = []  # #4890
 
     @Property("QVariant", notify=customCollectionsChanged)
     def customCollections(self):
@@ -88,6 +91,24 @@ class _StubController(QObject):
         self.set_description_calls.append((folder_path, text))
         self.descriptions[folder_path] = text
 
+    @Slot(str, result=bool)
+    def folderMusicEnabled(self, folder_path):
+        return self.music_enabled.get(folder_path, False)
+
+    @Slot(str, result=str)
+    def folderMusicFile(self, folder_path):
+        return self.music_files.get(folder_path, "")
+
+    @Slot(str, bool, str)
+    def setFolderMusic(self, folder_path, use_music, music_file):
+        self.set_music_calls.append((folder_path, use_music, music_file))
+        self.music_enabled[folder_path] = use_music
+        self.music_files[folder_path] = music_file
+
+    @Slot(str, bool, str)
+    def editAlbumMusic(self, token, use_music, music_file):
+        self.edit_album_music_calls.append((token, use_music, music_file))
+
     @Slot(str)
     def resyncFolder(self, folder_path):
         self.resync_calls.append(folder_path)
@@ -120,24 +141,9 @@ class _StubController(QObject):
     def toggleFolderSortReverse(self):
         self.reverse_calls += 1
 
-    # #1436: a mappa-menü „Mappa rendezésének alapja ▸" tételei a mappa
-    # TARTALMÁT rendezik — a duplumnak ezt a felszínt kell tükröznie,
-    # különben a teszt egy nem létező úton marad zöld.
-    @Property(str, notify=customCollectionsChanged)
-    def folderPhotoSort(self):
-        return "name"
-
-    @Property(bool, notify=customCollectionsChanged)
-    def folderPhotoSortReverse(self):
-        return False
-
-    @Slot(str)
-    def setFolderPhotoSort(self, mode):
-        self.photo_sort_calls.append(mode)
-
-    @Slot()
-    def toggleFolderPhotoSortReverse(self):
-        self.photo_reverse_calls += 1
+    @Slot(str, str)
+    def sortFolderBy(self, folder, mode):
+        self.folder_sort_calls.append((folder, mode))
 
     # a FolderPane induláskor a gyűjtemény-csukottságot is lekérdezi
     @Slot(str, result=bool)
@@ -289,18 +295,20 @@ class TestFolderMenuCommands:
         assert controller.resync_calls == ["/kepek/balaton"]
 
     def test_sort_mode_reaches_the_controller(self, pane, controller, qt_app):
-        """#1436: a mappa-menü a KÉPSORRENDET állítja, nem a mappákét."""
+        """#4890: a menü a célmappát és az egyszeri rendezést adja át."""
+        _invoke(pane, "openFolderContextMenu", "/kepek/balaton")
         menu = pane.findChild(QObject, "folderContextMenu")
         menu.sortModeRequested.emit("date")
         qt_app.processEvents()
-        assert controller.photo_sort_calls == ["date"]
+        assert controller.folder_sort_calls == [("/kepek/balaton", "date")]
         assert controller.sort_calls == []  # a MAPPÁK sorrendjéhez nem nyúl
 
     def test_reverse_order_reaches_the_controller(self, pane, controller, qt_app):
+        _invoke(pane, "openFolderContextMenu", "/kepek/balaton")
         menu = pane.findChild(QObject, "folderContextMenu")
         menu.sortReverseRequested.emit()
         qt_app.processEvents()
-        assert controller.photo_reverse_calls == 1
+        assert controller.folder_sort_calls == [("/kepek/balaton", "reverse")]
         assert controller.reverse_calls == 0
 
     def test_remove_from_picasa_asks_before_removing(self, pane, controller, qt_app):

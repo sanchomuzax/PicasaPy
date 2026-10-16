@@ -82,6 +82,7 @@ HIANYZOTT_TETELEK = [
     # Létrehozás
     ("Set as Desktop...", None),
     ("Add to Screensaver...", None),
+    ("From Faces in Selection...", None),
     ("Create a Gift CD...", None),
     ("Publish to Blogger...", None),
     # Eszközök
@@ -136,10 +137,13 @@ def test_csoportos_szerkesztes_almenu_a_kep_menuben():
 def test_mozgofilm_almenu_es_a_mukodo_muvelet_megmaradt():
     src = _source()
     assert 'title: qsTr("Movie")' in src
-    # a korábban is működő "Movie" tétel az almenü gyermekeként él tovább,
-    # ugyanazzal a jelzéssel
+    # a korábban is működő normál film tétel az almenü gyermekeként él tovább
     assert 'objectName: "menuCreateMovie"' in src
     assert "bar.movieRequested()" in src
+    # #4331: az eredeti ID_FACES a kijelölésből nyitja meg az arc-film módot
+    assert 'objectName: "menuCreateMovieFromFaces"' in src
+    assert 'qsTr("From Faces in Selection...")' in src
+    assert "bar.faceMovieRequested()" in src
 
 
 # -- 3. réteg: élő QML-fa — a meglévő, MŰKÖDŐ tételek nem romlottak el ----
@@ -239,15 +243,18 @@ class TestGyorsbillentyuk:
             assert shortcut is not None, name
             assert str(shortcut.property("sequence")) == sequence
 
-    def test_kijelolestol_fuggo_shortcutok_alapbol_tiltottak(self, qml_app):
-        """Kijelölés nélkül a Ctrl+Enter / Delete gyorsbillentyűk nem
-        élesek — ugyanaz a feltétel, mint a menüpontoké (photoActionsEnabled)."""
+    def test_ures_kijelolesnel_a_mappakereses_shortcut_aktiv(self, qml_app):
+        """A Ctrl+Enter kijelölés nélkül az aktuális mappára vonatkozik."""
         window, controller, lib, engine = qml_app
         locate = window.findChild(QObject, "shortcutLocateOnDisk")
+        file_locate = window.findChild(QObject, "menuFileLocate")
+        folder_locate = window.findChild(QObject, "menuFolderLocate")
         delete = window.findChild(QObject, "shortcutDeleteFromDisk")
         # #1472: a nyomtatás ugyanezen a feltételen áll
         printing = window.findChild(QObject, "shortcutPrint")
-        assert locate.property("enabled") is False
+        assert file_locate.property("enabled") is False
+        assert folder_locate.property("enabled") is True
+        assert locate.property("enabled") is True
         assert delete.property("enabled") is False
         assert printing.property("enabled") is False
 

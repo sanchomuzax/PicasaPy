@@ -32,6 +32,8 @@ from support.collage_canvas_harness import (
     keszits_kepeket,
     nyitott_vezerlo,
 )
+from PySide6.QtWidgets import QApplication
+from tests.support.varakozas import var_feltetelre
 
 #: A folyamatjelző doboz mérete (spec 9.1).
 OVERLAY_MERET = (224, 80)
@@ -75,16 +77,10 @@ def _gomb(panel, dialog_nev, gomb_nev):
     return gomb
 
 
-def _var(feltetel, ms=2000):
+def _var(feltetel, ms=10000):
     """Esemény-pörgetés HATÁRIDŐVEL — fejnélküli környezetben az elrendezés
     és a `Popup` megnyílása nem azonnali."""
-    eltelt = 0
-    while eltelt < ms:
-        if feltetel():
-            return True
-        QTest.qWait(25)
-        eltelt += 25
-    return feltetel()
+    return var_feltetelre(QApplication.instance(), feltetel, ms / 1000)
 
 
 def _esc(panel):
@@ -198,16 +194,28 @@ class TestFormatumEltéres:
                     or controller.collageSavedPath != "")
         assert controller.waitForBackgroundWorkers(30.0)
 
-    def test_a_beallitas_mellozese_nem_ment(self, panel, controller):
+    @pytest.mark.parametrize("height", [795, 800, 805])
+    def test_a_beallitas_mellozese_nem_ment(self, panel, controller, height):
+        view = panel.property("_view")
+        view.resize(view.width(), height)
         controller.collageFormatMismatch.emit()
-        _var(
+        dialog = _parbeszed(panel, "collageFormatMismatchDialog")
+        assert _var(
             lambda: _parbeszed(panel, "collageFormatMismatchDialog").property(
                 "visible"
             )
         )
-        _kattints(panel, _gomb(panel, "collageFormatMismatchDialog",
-                               "collageFormatDontSetButton"))
-        QTest.qWait(100)
+        gomb = _gomb(panel, "collageFormatMismatchDialog",
+                      "collageFormatDontSetButton")
+        assert _var(lambda: gomb.width() > 0 and gomb.height() > 0)
+        center = gomb.mapToScene(gomb.boundingRect().center())
+        QTest.mouseClick(
+            view,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(center.x()), round(center.y())),
+        )
+        assert _var(lambda: not dialog.property("visible"))
         assert controller.collageSavedPath == ""
 
 

@@ -316,6 +316,41 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
         </message>
     </context>
     <context>
+        <name>PlacesMarker</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="44" />
+            <source>1 photo here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>1 photo here:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="45" />
+            <source>%d photos here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%d photos here:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="55" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="56" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
+            <source>Search for these photos in Picasa</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Search for these photos in Picasa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
+            <source>Erase location info</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Erase location info</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="73" />
+            <source>Erase map coordinates(i.e., GPS information) from these photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Erase map coordinates(i.e., GPS information) from these photos</translation>
+        </message>
+    </context>
+    <context>
         <name>PrintController</name>
         <message>
             <source>No printer selected.</source>
@@ -419,6 +454,13 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
             <translation>Printer Setup</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>A printer must be installed in order to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>A printer must be installed in order to print.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -1032,6 +1074,12 @@ You can drag the rectangle to position it, and move its sides to refine the shap
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Name</translation>
         </message>
+        <message>
+            <source>Type a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:peoplepanel::prompt4name</extracomment>
+            <translation>Type a name</translation>
+        </message>
     </context>
     <context>
         <name>OptionsDialog</name>
@@ -1107,7 +1155,8 @@ picasapy-origin-key: options:options/UITransitions.title</extracomment>
         </message>
         <message>
             <source>Show tooltips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Show tooltips</translation>
         </message>
         <message>
@@ -1203,6 +1252,11 @@ picasapy-origin-key: options:options/DoNotConfirmRemoveFromAlbum.title</extracom
             <source>Help improve PicasaPy:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Help improve PicasaPy:</translation>
+        </message>
+        <message>
+            <source>Privacy...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Privacy...</translation>
         </message>
         <message>
             <source>Send anonymous usage statistics</source>
@@ -1327,21 +1381,81 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
+            <source>.bmp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportBMP.title</extracomment>
+            <translation>.bmp</translation>
+        </message>
+        <message>
+            <source>.gif</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportGIF.title</extracomment>
+            <translation>.gif</translation>
+        </message>
+        <message>
             <source>Display JPEG files and:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Display JPEG files and:</translation>
         </message>
         <message>
-            <source>RAW</source>
+            <source>.png</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPNG.title</extracomment>
+            <translation>.png</translation>
+        </message>
+        <message>
+            <source>.tga</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTGA.title</extracomment>
+            <translation>.tga</translation>
+        </message>
+        <message>
+            <source>.tif, .tiff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTIF.title</extracomment>
+            <translation>.tif, .tiff</translation>
+        </message>
+        <message>
+            <source>.webp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
+            <translation>.webp</translation>
+        </message>
+        <message>
+            <source>.psd (Photoshop)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPSD.title</extracomment>
+            <translation>.psd (Photoshop)</translation>
+        </message>
+        <message>
+            <source>RAW formats</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::RAW</extracomment>
-            <translation>RAW</translation>
+            <translation>RAW formats</translation>
         </message>
         <message>
             <source>Movies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Movies</translation>
+        </message>
+        <message>
+            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportMovies.title</extracomment>
+            <translation>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</translation>
+        </message>
+        <message>
+            <source>Quicktime Movies (.MOV)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportQuicktime.title</extracomment>
+            <translation>Quicktime Movies (.MOV)</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
         </message>
         <message>
             <source>Supported Formats</source>
@@ -1703,6 +1817,20 @@ picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
 picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
             <translation>Upload contact thumbnails to Google Contacts</translation>
         </message>
+        <message>
+            <source>Cluster threshold:</source>
+            <extracomment>    picasapy-origin-key: options:options/labelgroup181.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup181.title</extracomment>
+            <translation>Cluster threshold:</translation>
+        </message>
+        <message>
+            <source>Upload people album thumbnails to Google Contacts</source>
+            <extracomment>    picasapy-origin-key: options:options/uploadcontactphotos.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
+            <translation>Upload people album thumbnails to Google Contacts</translation>
+        </message>
     </context>
     <context>
         <name>WebExportDialog</name>
@@ -1744,29 +1872,58 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <translation>Template:</translation>
         </message>
         <message>
-            <source>Picture size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picture size:</translation>
+            <source>Export pictures at:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
+            <translation>Export pictures at:</translation>
         </message>
         <message>
-            <source>Thumbnail size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Thumbnail size:</translation>
+            <source>Original Size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item4.title</extracomment>
+            <translation>Original Size</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Original size</translation>
+            <source>1024 pixels (for large monitors)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item5.title</extracomment>
+            <translation>1024 pixels (for large monitors)</translation>
         </message>
         <message>
-            <source>Shadow pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Shadow pictures</translation>
+            <source>800 pixels (for large Web pages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item6.title</extracomment>
+            <translation>800 pixels (for large Web pages)</translation>
         </message>
         <message>
-            <source>Shadow thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Shadow thumbnails</translation>
+            <source>640 pixels (for Web pages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item7.title</extracomment>
+            <translation>640 pixels (for Web pages)</translation>
+        </message>
+        <message>
+            <source>320 pixels (for email)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item8.title</extracomment>
+            <translation>320 pixels (for email)</translation>
+        </message>
+        <message>
+            <source>Export movies using:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup9.title</extracomment>
+            <translation>Export movies using:</translation>
+        </message>
+        <message>
+            <source>First frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
+            <translation>First frame</translation>
+        </message>
+        <message>
+            <source>Full movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+            <translation>Full movie</translation>
         </message>
         <message>
             <source>PicasaPy is generating the web page.</source>
@@ -1976,9 +2133,21 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
             <translation>Add Custom Aspect Ratio</translation>
         </message>
         <message>
-            <source>Width:</source>
+            <source>Dimensions:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Width:</translation>
+            <translation>Dimensions:</translation>
+        </message>
+        <message>
+            <source>Example:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio:customaspectratio/labelgroup10.title;rename:rename/sample.title;stringres:RenameDialog::Example</extracomment>
+            <translation>Example:</translation>
+        </message>
+        <message>
+            <source>   4 x 6   Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio:customaspectratio/label11.title</extracomment>
+            <translation>   4 x 6   Small print</translation>
         </message>
         <message>
             <source>Name:</source>
@@ -2300,6 +2469,28 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
         </message>
         <message>
             <location filename="../formatting.py" />
+            <source>Movie Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movieinfo;stringres:ytImageMetadata::MovieInfo</extracomment>
+            <translation>Movie Info</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Rate</source>
+            <extracomment>picasapy-deviation: szándékos eltérés az eredeti magyar fordítástól (#4855) — a „rate” itt sebesség, az érték fps; az eredeti „Mozgófilm minősítése” félrevezető
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movierate;stringres:ytImageMetadata::MovieRate</extracomment>
+            <translation>Movie Rate</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Length</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movielength;stringres:ytImageMetadata::MovieLength</extracomment>
+            <translation>Movie Length</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
             <source>Camera Make</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Make</extracomment>
@@ -2335,6 +2526,13 @@ picasapy-origin-key: stringres:EXIF::DateTime</extracomment>
         </message>
         <message>
             <location filename="../formatting.py" />
+            <source>File Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FileDate</extracomment>
+            <translation>File Date</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
             <source>Orientation</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
@@ -2360,6 +2558,13 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::FocalLengthIn35mmFilm</extracomment>
             <translation>Focal Length in 35mm Film</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>CCD Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::CCDWidth</extracomment>
+            <translation>CCD Width</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2430,10 +2635,23 @@ picasapy-origin-key: stringres:EXIF::ColorSpace</extracomment>
         </message>
         <message>
             <location filename="../formatting.py" />
+            <source>JPEG Quality</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>JPEG Quality</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
             <source>Keywords</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
             <translation>Keywords</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>People Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:XMP::Regions</extracomment>
+            <translation>People Tags</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -3383,16 +3601,17 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current aspect</source>
+            <source>Current ratio</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
-            <translation>Current aspect</translation>
+            <translation>Current ratio</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="356" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Current ratio</translation>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
         </message>
         <message>
             <source>Current display</source>
@@ -3766,26 +3985,6 @@ picasapy-origin-key: tooltips:Label(editpanel/crop_label)</extracomment>
             <translation>Choose a size below, then drag on the picture to select the area you want to keep.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="718" />
-            <source>Top left</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Top left</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="723" />
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Landscape</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="728" />
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Portrait</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="738" />
             <source>Rotate</source>
             <extracomment>picasapy-origin: picasa
@@ -4088,11 +4287,6 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <translation>Color Mix</translation>
         </message>
         <message>
-            <source>Edge Strength</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Edge Strength</translation>
-        </message>
-        <message>
             <source>Gradient</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Gradient</translation>
@@ -4140,11 +4334,6 @@ picasapy-origin-key: stringres:EXIF::Sharpness;stringres:filter_radsat_label2</e
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Size</translation>
-        </message>
-        <message>
-            <source>Smoothness</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Smoothness</translation>
         </message>
         <message>
             <source>Strength</source>
@@ -4670,6 +4859,27 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Movie saved: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>Replace Existing or Create New?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>Replace Existing</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>Create New</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
@@ -5219,6 +5429,25 @@ picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
             <translation>Music files (*.mp3, *.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Text Slide</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>%1     %2x%3 pixels</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1     %2x%3 pixels</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>(%1 of %2)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(%1 of %2)</translation>
         </message>
     </context>
     <context>
@@ -6371,7 +6600,37 @@ picasapy-origin-key: stringres:CFolderMgrDialog::confirmfrexclude</extracomment>
         </message>
     </context>
     <context>
+        <name>OpenWithDialog</name>
+        <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Open With...</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>Open</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>No application is associated with this file type.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>No application is associated with this file type.</translation>
+        </message>
+    </context>
+    <context>
         <name>FileOpsController</name>
+        <message>
+            <source>Unable to open application</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
+            <translation>Unable to open application</translation>
+        </message>
         <message>
             <source>The system default application could not open %1/%2 selected files.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -6395,6 +6654,32 @@ picasapy-origin-key: stringres:CFolderMgrDialog::confirmfrexclude</extracomment>
     </context>
     <context>
         <name>FolderPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1319" />
+            <source>Delete Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact</extracomment>
+            <translation>Delete Person</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1323" />
+            <source>Are you sure you want to delete the people album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Are you sure you want to delete the people album "%1"?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1333" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>Yes</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1339" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>No</translation>
+        </message>
         <message>
             <source>Calculating…</source>
             <extracomment>picasapy-origin: picasa
@@ -6444,6 +6729,16 @@ picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
             <source>Delete Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Delete Folder</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete the album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Are you sure you want to delete the album "%1"?</translation>
+        </message>
+        <message>
+            <source>Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Delete Album</translation>
         </message>
         <message>
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
@@ -6854,6 +7149,12 @@ picasapy-origin-key: stringres:il_BurnPanel::burnbutton</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
+            <source>Restore...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restore...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Selection and Settings</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text(publish/selectiontext)</extracomment>
@@ -7213,6 +7514,12 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_collage)
         <name>Main</name>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>Configure Buttons...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Configure Buttons...</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>Want to Cancel?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
@@ -7224,6 +7531,36 @@ picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Do you want to cancel this operation?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Move photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Move photo here?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Move %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Move %d photos here?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Put photo here?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Put %d photos here?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>(OK)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(OK)</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7295,6 +7632,19 @@ picasapy-origin-key: stringres:CUploadManagerThread::cancel</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
             <translation>Keep Going</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Confirm</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Are you sure you want to add all of the selected album's images?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:addtosaver::warning</extracomment>
+            <translation>Are you sure you want to add all of the selected album's images?</translation>
         </message>
         <message>
             <source>The desktop background is set (%1).</source>
@@ -7476,6 +7826,30 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A hidden folder cannot be moved into a collection. Unhide it first.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -8470,6 +8844,15 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         </message>
     </context>
     <context>
+        <name>ZoomNavigator</name>
+        <message>
+            <location filename="../qml/PicasaPy/ZoomNavigator.qml" />
+            <source>Zoomed to %1%</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zoomed to %1%</translation>
+        </message>
+    </context>
+    <context>
         <name>PhotoViewer</name>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
@@ -8486,10 +8869,22 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Saved %1 to Exported Videos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Failed to capture frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <translation>Failed to capture frame</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Failed to export clip</translation>
         </message>
         <message>
             <source>Show only one picture</source>
@@ -8847,6 +9242,20 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
 picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
             <translation>Return to organized thumbnails</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Remove Edits</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove all movie edits?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
+            <translation>Remove all movie edits?</translation>
+        </message>
     </context>
     <context>
         <name>PicasaImportDialog</name>
@@ -8861,6 +9270,12 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
             <source>Looking for a previous Picasa installation…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Looking for a previous Picasa installation…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="74" />
+            <source>The search failed: %1: %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The search failed: %1: %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="71" />
@@ -8897,6 +9312,38 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
     <context>
         <name>PeoplePanel</name>
         <message>
+            <source>Add a person manually</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/manual_add)</extracomment>
+            <translation>Add a person manually</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>Instructions:
+
+1) Manipulate the rectangle to fit the face of the person you want to add.
+
+You can drag the rectangle to position it, and move its sides to refine the shape.
+
+2) Click on "Add a name" under the rectangle and type in the person's name.
+
+(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Instructions:
+
+1) Manipulate the rectangle to fit the face of the person you want to add.
+
+You can drag the rectangle to position it, and move its sides to refine the shape.
+
+2) Click on "Add a name" under the rectangle and type in the person's name.
+
+(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)</translation>
+        </message>
+        <message>
             <source>Named people who appear with the currently selected person will be listed here.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Named people who appear with the currently selected person will be listed here.</translation>
@@ -8907,6 +9354,31 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
             <translation>People who appear in the currently selected photos will be listed here.</translation>
         </message>
         <message>
+            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter. A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter. A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</translation>
+        </message>
+        <message>
             <source>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</translation>
@@ -8915,6 +9387,33 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>People</translation>
+        </message>
+        <message>
+            <source>Loading faces for file...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Loading1</extracomment>
+            <translation>Loading faces for file...</translation>
+        </message>
+        <message>
+            <source>Loading faces for %1 files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loading faces for %1 files...</translation>
+        </message>
+        <message>
+            <source>Looking for other people...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Looking</extracomment>
+            <translation>Looking for other people...</translation>
+        </message>
+        <message>
+            <source>Sorting face data, %1%</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sorting face data, %1%</translation>
+        </message>
+        <message>
+            <source>, %1 files unchecked.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>, %1 files unchecked.</translation>
         </message>
         <message>
             <source>In this photo:</source>
@@ -8958,9 +9457,50 @@ picasapy-origin-key: stringres:PeoplePanel::Known1</extracomment>
 picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomment>
             <translation>Select a folder to display faces</translation>
         </message>
+        <message>
+            <source>Ignore People</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::IgnorePeopleTitle;stringres:DeleteMessage::RemoveMultipleYesButtonUnknown;stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
+            <translation>Ignore People</translation>
+        </message>
+        <message>
+            <source>Ignore Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+            <translation>Ignore Person</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to move this person to the ignored people album?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleUnknown;stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
+            <translation>Are you sure you want to move this person to the ignored people album?</translation>
+        </message>
+        <message>
+            <source>Don't ask again, always ignore</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck;stringres:ThumbUI::ConfirmUnknownCheckbox</extracomment>
+            <translation>Don't ask again, always ignore</translation>
+        </message>
     </context>
     <context>
         <name>PeoplePanelRow</name>
+        <message>
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
+            <translation>Add a name</translation>
+        </message>
+        <message>
+            <source>Ignore person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+            <translation>Ignore person</translation>
+        </message>
+        <message>
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1?</translation>
+        </message>
         <message>
             <source>%1 photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8978,6 +9518,68 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomm
             <source>Copying names, keywords and places from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Copying names, keywords and places from Picasa...</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 folder to import manually, or leave it empty to use detected installations.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose a Picasa2 folder to import manually, or leave it empty to use detected installations.</translation>
+        </message>
+        <message>
+            <source>Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Picasa2 data folder</translation>
+        </message>
+        <message>
+            <source>Choose or enter a Picasa2 folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose or enter a Picasa2 folder</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 data folder first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose a Picasa2 data folder first.</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Browse...</translation>
+        </message>
+        <message>
+            <source>Windows path prefix</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Windows path prefix</translation>
+        </message>
+        <message>
+            <source>For example, C:/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>For example, C:/Pictures</translation>
+        </message>
+        <message>
+            <source>Matching local folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Matching local folder</translation>
+        </message>
+        <message>
+            <source>For example, /home/user/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>For example, /home/user/Pictures</translation>
+        </message>
+        <message>
+            <source>Enter both paths for the drive mapping.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Enter both paths for the drive mapping.</translation>
+        </message>
+        <message>
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Import</translation>
+        </message>
+        <message>
+            <source>Choose the Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose the Picasa2 data folder</translation>
         </message>
         <message>
             <source>Done.</source>
@@ -8999,6 +9601,16 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
             <source>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) taken over from Picasa.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 video date(s) taken over from Picasa.</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) could not be taken over; try again later.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 video date(s) could not be taken over; try again later.</translation>
         </message>
         <message>
             <source>%1 photo(s) were left untouched because they already had data.</source>
@@ -9052,6 +9664,30 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <source>&amp;Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Desktop</translation>
+        </message>
+        <message>
+            <source>&amp;Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::Shortcuts;stringres:eMenuView::Shortcuts</extracomment>
+            <translation>&amp;Shortcuts</translation>
+        </message>
+        <message>
+            <source>Sort &amp;People by Name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
+            <translation>Sort &amp;People by Name</translation>
+        </message>
+        <message>
+            <source>Sort People by &amp;Amount</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
+            <translation>Sort People by &amp;Amount</translation>
+        </message>
+        <message>
+            <source>Sort People by Top &amp;10</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
+            <translation>Sort People by Top &amp;10</translation>
         </message>
         <message>
             <source>Write faces to XMP...</source>
@@ -9597,11 +10233,24 @@ picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
             <translation>F&amp;older</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
+            <source>&amp;Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Album</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219" />
             <source>&amp;Edit Description...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>&amp;Edit Description...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1640" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>&amp;Edit Album Description...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222" />
@@ -9924,6 +10573,27 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
             <translation>Paste Text</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
+            <source>Are you sure you want to replace the existing caption with the contents of the clipboard?
+(This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Are you sure you want to replace the existing caption with the contents of the clipboard?
+(This operation is not undoable)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="85" />
+            <source>Replace</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDGo::ReplaceButton;stringres:CTextEditNode::confirmyesbutton;stringres:RestoreProc::replace</extracomment>
+            <translation>Replace</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="91" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cancel</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
             <source>Show Edit Controls</source>
             <extracomment>picasapy-origin: picasa
@@ -10021,6 +10691,12 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
             <translation>Linear &amp;Gamma (2.2)</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
+            <source>&amp;Sepia</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Sepia</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -10078,6 +10754,34 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <translation>Reset &amp;Faces</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>Reset Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
+            <translation>Reset Faces</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>WARNING! This will DELETE all face data, people albums, and rescan all photos for faces again. This can REMOVE name tags on synced web albums. Do you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::RemoveAllFaceData</extracomment>
+            <translation>WARNING! This will DELETE all face data, people albums, and rescan all photos for faces again. This can REMOVE name tags on synced web albums. Do you want to do this?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>WARNING! This will DELETE all people albums, and move all the faces to the unnamed album. This can REMOVE name tags on synced web albums also. Do you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
+            <translation>WARNING! This will DELETE all people albums, and move all the faces to the unnamed album. This can REMOVE name tags on synced web albums also. Do you want to do this?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>Yes</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416" />
             <source>Set as &amp;Desktop...</source>
             <extracomment>picasapy-origin: picasa
@@ -10102,6 +10806,20 @@ picasapy-origin-key: stringres:eMenuCreate::ID_BURNCD</extracomment>
             <source>New Movie...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>New Movie...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1947" />
+            <source>From Faces in Selection...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACES</extracomment>
+            <translation>From Faces in Selection...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2125" />
+            <source>From People Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
+            <translation>From People Albums...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
@@ -10273,6 +10991,15 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
         </message>
     </context>
     <context>
+        <name>PlacesMap</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMap.qml" />
+            <source>Place %d photos here</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Place %d photos here</translation>
+        </message>
+    </context>
+    <context>
         <name>PlacesPanel</name>
         <message>
             <source>Clear %1 Geotag(s)</source>
@@ -10324,6 +11051,20 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <translation>The map component (QtLocation) is not available. Geotags can still be edited.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PlacesPanel.qml" line="151" />
+            <source>Loading Map...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
+            <translation>Loading Map...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesPanel.qml" line="150" />
+            <source>Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::init_err</extracomment>
+            <translation>Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
             <source>Right-click the map to place the selected pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -10349,6 +11090,21 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <source>Select a picture to see its properties.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Select a picture to see its properties.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
+            <source>Edit Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PropertiesPanel::edit_keywords</extracomment>
+            <translation>Edit Tags</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Keywords</source>
+            <extracomment>    picasapy-origin-key: stringres:IDS_KEYWORD_PREFS
+picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
+            <translation>Keywords</translation>
         </message>
     </context>
     <context>
@@ -10443,6 +11199,56 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
 picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
             <translation>Preview</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>The setting could not be saved.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The setting could not be saved.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Starting when the computer is idle is only available on Linux.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Starting when the computer is idle is only available on Linux.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Install the swayidle package to use this option.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Install the swayidle package to use this option.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Not supported on this desktop (%1). It works on wlroots-based Wayland desktops (labwc, sway, Wayfire) with swayidle.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Not supported on this desktop (%1). It works on wlroots-based Wayland desktops (labwc, sway, Wayfire) with swayidle.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>This desktop does not start it by itself after you log in again; it works in the current session.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>This desktop does not start it by itself after you log in again; it works in the current session.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>unknown</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Unknown;stringres:RestoreProc::unknown;stringres:ytICDVDR::MTUnknown</extracomment>
+            <translation>unknown</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Start when the computer is idle for</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Start when the computer is idle for</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>minutes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:uploadmgr::minutes</extracomment>
+            <translation>minutes</translation>
+        </message>
     </context>
     <context>
         <name>SlideshowView</name>
@@ -10480,6 +11286,107 @@ picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
             <translation>Dissolve through white</translation>
+        </message>
+        <message>
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>Wipe - left</translation>
+        </message>
+        <message>
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Wipe</translation>
+        </message>
+        <message>
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>Wipe - top</translation>
+        </message>
+        <message>
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>Wipe - bottom</translation>
+        </message>
+        <message>
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>Wipe - up left</translation>
+        </message>
+        <message>
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>Wipe - up right</translation>
+        </message>
+        <message>
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>Wipe - down left</translation>
+        </message>
+        <message>
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>Wipe - down right</translation>
+        </message>
+        <message>
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>Push - left</translation>
+        </message>
+        <message>
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>Push</translation>
+        </message>
+        <message>
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>Push - top</translation>
+        </message>
+        <message>
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>Push - bottom</translation>
+        </message>
+        <message>
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>Circle - inwards</translation>
+        </message>
+        <message>
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>Circle</translation>
+        </message>
+        <message>
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>Rectangle</translation>
+        </message>
+        <message>
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>Pan and Zoom - face</translation>
+        </message>
+        <message>
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>Time Lapse</translation>
         </message>
         <message>
             <source>Pan and Zoom</source>
@@ -10601,10 +11508,24 @@ picasapy-origin-key: tagpanel_text:Label(tagpanel/add_tag_label)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
-            <source>Quick tags</source>
+            <source>Quick Tags:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tagpanel_text:Label(tagpanel/quick_label)</extracomment>
-            <translation>Quick tags</translation>
+            <translation>Quick Tags:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Add tag to the currently selected items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tagpanel_text:Tooltip(tagpanel/addtag)</extracomment>
+            <translation>Add tag to the currently selected items</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Configure Quick Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickTagConfigDlg::title;tagpanel_text:Tooltip(tagpanel/quick_config)</extracomment>
+            <translation>Configure Quick Tags</translation>
         </message>
     </context>
     <context>
@@ -10949,27 +11870,6 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverNoSel;stringres:il_GetS
     <context>
         <name>VideoPlayerView</name>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
-            <source>Export Clip</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(movieeditpanel/export_movie)</extracomment>
-            <translation>Export Clip</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
-            <source>Capture current frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(movieeditpanel/capture_frame)</extracomment>
-            <translation>Capture current frame</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
-            <source>Restore movie to its original length (remove start and end points)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
-            <translation>Restore movie to its original length (remove start and end points)</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58" />
             <source>Unable to play this video.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -10985,10 +11885,50 @@ picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Create a new ending point</translation>
         </message>
+    </context>
+    <context>
+        <name>VideoEditPanel</name>
         <message>
-            <source>Reset trim</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Reset trim</translation>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Reset Start and End</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/reset_trim)</extracomment>
+            <translation>Reset Start and End</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Take Snapshot</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/capture_frame)</extracomment>
+            <translation>Take Snapshot</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Export Clip</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/export_movie)</extracomment>
+            <translation>Export Clip</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Capture current frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/capture_frame)</extracomment>
+            <translation>Capture current frame</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Restore movie to its original length (remove start and end points)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
+            <translation>Restore movie to its original length (remove start and end points)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Save a clip of the movie between the start and end points</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/export_movie)</extracomment>
+            <translation>Save a clip of the movie between the start and end points</translation>
         </message>
     </context>
     <context>
@@ -11049,6 +11989,24 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <source>Loading photo library…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Loading photo library…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Checking folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Checking folders…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Refreshing folder list…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Refreshing folder list…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Checking export folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Checking export folders…</translation>
         </message>
         <message>
             <location filename="../application.py" line="416" />
@@ -11406,6 +12364,18 @@ picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWASt
             <translation>Source:</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Removable drives</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <source>Removable Drive (%1)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Removable Drive (%1)</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
             <source>(none selected)</source>
@@ -11489,6 +12459,13 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <source>Folder template:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Folder template:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Enter new folder title or choose existing folder to continue</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
@@ -11578,6 +12555,25 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Close</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <source>Import Files/Folder</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
+            <translation>Import Files/Folder</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Folder...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Files...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
@@ -11787,9 +12783,31 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Locate on Disk</translation>
         </message>
         <message>
+            <source>Locate</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Locate</translation>
+        </message>
+        <message>
+            <source>File on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>File on Disk</translation>
+        </message>
+        <message>
+            <source>Locate Original on Disk</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
+            <translation>Locate Original on Disk</translation>
+        </message>
+        <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Delete from Disk</translation>
+        </message>
+        <message>
+            <source>Remove from Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
+            <translation>Remove from Album</translation>
         </message>
         <message>
             <source>Copy Full Path</source>
@@ -11824,6 +12842,12 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>FolderPropertiesDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Untitled</translation>
+        </message>
+        <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Folder::ID_ALBUM_EDITCAPTIONS</extracomment>
@@ -11836,6 +12860,33 @@ picasapy-origin-key: stringres:CEditAlbum::albumTitle</extracomment>
             <translation>Album Properties</translation>
         </message>
         <message>
+            <source>Folder Properties</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CEditAlbum::folderTitle</extracomment>
+            <translation>Folder Properties</translation>
+        </message>
+        <message>
+            <source>Cannot Rename Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cannot Rename Folder</translation>
+        </message>
+        <message>
+            <source>Folder renaming is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Folder renaming is unavailable.</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cancel</translation>
+        </message>
+        <message>
             <source>Name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Name:</translation>
@@ -11846,21 +12897,49 @@ picasapy-origin-key: stringres:CEditAlbum::albumTitle</extracomment>
             <translation>Date:</translation>
         </message>
         <message>
+            <source>Music:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Music:</translation>
+        </message>
+        <message>
             <source>Automatic date</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/autodate.title</extracomment>
             <translation>Automatic date</translation>
         </message>
         <message>
-            <source>Enter the date as YYYY-MM-DD.</source>
+            <source>Enter the date like this: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Enter the date as YYYY-MM-DD.</translation>
+            <translation>Enter the date like this: %1</translation>
         </message>
         <message>
             <source>Use music for Slideshow and Movie presentation:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/usemusic.title</extracomment>
             <translation>Use music for Slideshow and Movie presentation:</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Browse...</translation>
+        </message>
+        <message>
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Audio files</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Music files (*.mp3, *.wma)</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Music files (*.mp3, *.m4a)</translation>
         </message>
         <message>
             <source>Place taken (optional):</source>
@@ -11873,6 +12952,24 @@ picasapy-origin-key: album:album/labelgroup14.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/labelgroup16.title</extracomment>
             <translation>Description (optional):</translation>
+        </message>
+        <message>
+            <source>Choose date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose date</translation>
+        </message>
+    </context>
+    <context>
+        <name>DateCalendarPopup</name>
+        <message>
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Previous month</translation>
+        </message>
+        <message>
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Next month</translation>
         </message>
     </context>
     <context>
@@ -12126,6 +13223,18 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
     <context>
         <name>EditorCropPanel</name>
         <message>
+            <source>Custom Aspect Ratios</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
+            <translation>Custom Aspect Ratios</translation>
+        </message>
+        <message>
+            <source>Deletes the current aspect ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
+            <translation>Deletes the current aspect ratio</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Suggested crops</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -12185,20 +13294,6 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/cropdiscard)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Landscape</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Portrait</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Preview</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
@@ -12217,12 +13312,6 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Rotate;stringres:ImageFilters::Rotation;stringres:filter_rot_label0;tooltips:Label(editpanel/croprotatecrop)</extracomment>
             <translation>Rotate</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Top left</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Top left</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12339,6 +13428,48 @@ picasapy-origin-key: stringres:filter_RoundedEdges_label0</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <translation>Vignette</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Add a light glow to the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Matte_tooltip0</extracomment>
+            <translation>Add a light glow to the edges of your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Mimics infrared night-vision cameras</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_NightVision_tooltip0</extracomment>
+            <translation>Mimics infrared night-vision cameras</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Brings out image details</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_LocalContrast_tooltip0</extracomment>
+            <translation>Brings out image details</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Give your photo rounded corners</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_RoundedEdges_tooltip0</extracomment>
+            <translation>Give your photo rounded corners</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Simulate film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikGrain_tooltip0</extracomment>
+            <translation>Simulate film grain</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Adds film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_grain2_tooltip0;stringres:filter_grain_tooltip0</extracomment>
+            <translation>Adds film grain</translation>
         </message>
     </context>
     <context>
@@ -12486,9 +13617,31 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <translation>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</translation>
+        </message>
+        <message>
             <source>Note: click inside the box to undo the change.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Note: click inside the box to undo the change.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.
+
+Note: You can click on a box to delete a change.
+
+You can also click 'auto' to reapply the auto-corrections.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.
+
+Note: You can click on a box to delete a change.
+
+You can also click 'auto' to reapply the auto-corrections.</translation>
         </message>
     </context>
     <context>
@@ -12867,6 +14020,111 @@ picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Warmify</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Sharpens edges in your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_unsharp2_tooltip0;stringres:filter_unsharp_tooltip0</extracomment>
+            <translation>Sharpens edges in your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Converts photo to sepia tone</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_sepia_tooltip0</extracomment>
+            <translation>Converts photo to sepia tone</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes your photo black and white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_bw_tooltip0</extracomment>
+            <translation>Makes your photo black and white</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Improves skintones by boosting warm tones</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_warm_tooltip0</extracomment>
+            <translation>Improves skintones by boosting warm tones</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Simulate film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikGrain_tooltip0</extracomment>
+            <translation>Simulate film grain</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Adds film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_grain2_tooltip0;stringres:filter_grain_tooltip0</extracomment>
+            <translation>Adds film grain</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Change the color of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikTint_tooltip0</extracomment>
+            <translation>Change the color of your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes a tinted look</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_tint_tooltip0</extracomment>
+            <translation>Makes a tinted look</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Increases or decreases saturation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_sat_tooltip0</extracomment>
+            <translation>Increases or decreases saturation</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Softens focus around a center point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radblur_tooltip0</extracomment>
+            <translation>Softens focus around a center point</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Gives your photo a gauzy glow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_glow2_tooltip0;stringres:filter_glow_tooltip0</extracomment>
+            <translation>Gives your photo a gauzy glow</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes a photo that looks like it was taken with B&amp;W film and a color filter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_ansel_tooltip0</extracomment>
+            <translation>Makes a photo that looks like it was taken with B&amp;W film and a color filter</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Desaturates around a center point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radsat_tooltip0</extracomment>
+            <translation>Desaturates around a center point</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>A graduated filter, useful for skies</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_dir_tint_tooltip0</extracomment>
+            <translation>A graduated filter, useful for skies</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Tints around a central point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radtint_tooltip0</extracomment>
+            <translation>Tints around a central point</translation>
+        </message>
     </context>
     <context>
         <name>EditorEffectsTab2</name>
@@ -12987,6 +14245,96 @@ picasapy-origin-key: stringres:filter_Orton_label0</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_QuantizePalette_label0</extracomment>
             <translation>Posterize</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Simulate black-and-white infrared film</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_IR_tooltip0</extracomment>
+            <translation>Simulate black-and-white infrared film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Imitate the Lomo toy camera</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Lomo_tooltip0</extracomment>
+            <translation>Imitate the Lomo toy camera</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Make your photo look like it was taken with a plastic camera</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Holga_tooltip0</extracomment>
+            <translation>Make your photo look like it was taken with a plastic camera</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Emulate that "high dynamic range" look</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Emulate that "high dynamic range" look</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Add a little classic movie magic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Cinemascope_tooltip0</extracomment>
+            <translation>Add a little classic movie magic</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimic Michael Orton's effect</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Orton_tooltip0</extracomment>
+            <translation>Mimic Michael Orton's effect</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Rounded corners and a warm, aged glow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Sixties_tooltip0</extracomment>
+            <translation>Rounded corners and a warm, aged glow</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Make your photo look like a negative</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Invert_tooltip0</extracomment>
+            <translation>Make your photo look like a negative</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Simulate heat vision</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_HeatMap_tooltip0</extracomment>
+            <translation>Simulate heat vision</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimics infrared night-vision cameras</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_NightVision_tooltip0</extracomment>
+            <translation>Mimics infrared night-vision cameras</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimics film cross-processing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_CrossProcess_tooltip0</extracomment>
+            <translation>Mimics film cross-processing</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Reduce the number of colors in your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_QuantizePalette_tooltip0</extracomment>
+            <translation>Reduce the number of colors in your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Convert your photo to two colors</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_TwoTone_tooltip0</extracomment>
+            <translation>Convert your photo to two colors</translation>
         </message>
     </context>
     <context>
@@ -13120,6 +14468,111 @@ picasapy-origin-key: stringres:filter_radblur_label0</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <translation>Vignette</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Bring out colors and increase contrast</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Boost_tooltip0</extracomment>
+            <translation>Bring out colors and increase contrast</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Makes your photo soft and glowy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Soften_tooltip0</extracomment>
+            <translation>Makes your photo soft and glowy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Darken the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Vignette_tooltip0</extracomment>
+            <translation>Darken the edges of your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a light glow to the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Matte_tooltip0</extracomment>
+            <translation>Add a light glow to the edges of your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look blocky and low-res</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Pixelate_tooltip0</extracomment>
+            <translation>Make your photo look blocky and low-res</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Pixelate everything inside or outside a central area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikFocalPixelate_tooltip0</extracomment>
+            <translation>Pixelate everything inside or outside a central area</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Zoom everything outside a central area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_FocalZoom_tooltip0</extracomment>
+            <translation>Zoom everything outside a central area</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look like it was drawn with a pencil</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PencilSketch_tooltip0</extracomment>
+            <translation>Make your photo look like it was drawn with a pencil</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look like neon</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Neon_tooltip0</extracomment>
+            <translation>Make your photo look like neon</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Comic book style half-toning</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Comicize_tooltip0</extracomment>
+            <translation>Comic book style half-toning</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a frame to your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Border_tooltip0</extracomment>
+            <translation>Add a frame to your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Give your photo rounded corners</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_RoundedEdges_tooltip0</extracomment>
+            <translation>Give your photo rounded corners</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo appear to be floating slightly above the background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_DropShadow_tooltip0</extracomment>
+            <translation>Make your photo appear to be floating slightly above the background</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a shadowed matte frame to your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_MuseumMatte_tooltip0</extracomment>
+            <translation>Add a shadowed matte frame to your photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Give your photo that instant-film look</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_tooltip0</extracomment>
+            <translation>Give your photo that instant-film look</translation>
         </message>
     </context>
     <context>
@@ -13456,6 +14909,69 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/showtextcheckbox)</extracomment>
 picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill_label0;stringres:filter_finetune2_label1;stringres:filter_finetune_label1;stringres:filter_triple2_label1;stringres:filter_triple3_label1;stringres:filter_triple_label3;tooltips:Label(editpanel/filllightlabel)</extracomment>
             <translation>Fill Light</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Crop this Photo to a different format</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop)</extracomment>
+            <translation>Crop this Photo to a different format</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fix a crooked Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/horizonadjust)</extracomment>
+            <translation>Fix a crooked Photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Repair Red-Eye flaws in this Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/redeye)</extracomment>
+            <translation>Repair Red-Eye flaws in this Photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>One-click fix for lighting and color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/enhance)</extracomment>
+            <translation>One-click fix for lighting and color</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fix exposure without affecting color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/autolighting)</extracomment>
+            <translation>Fix exposure without affecting color</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Remove color casts automatically</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/autocolor)</extracomment>
+            <translation>Remove color casts automatically</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Repair blemishes, dust and scratches</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/retouch)</extracomment>
+            <translation>Repair blemishes, dust and scratches</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Add/Edit Text on a photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/edittext)</extracomment>
+            <translation>Add/Edit Text on a photo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fill Light: Adjust the ambient light in the Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filllight_icon)</extracomment>
+            <translation>Fill Light: Adjust the ambient light in the Photo</translation>
+        </message>
     </context>
     <context>
         <name>EditorParamPanel</name>
@@ -13494,6 +15010,20 @@ picasapy-origin-key: stringres:ImageFilters::FocalSize;stringres:filter_focalpix
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Cancel</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Apply Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmAbandonModifiedEditYesButton;tooltips:Tooltip(editpanel/ok)</extracomment>
+            <translation>Apply Changes</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Cancel Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/cancel)</extracomment>
+            <translation>Cancel Changes</translation>
         </message>
     </context>
     <context>
@@ -13634,22 +15164,24 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Edge Strength</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Edge Strength</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Posterize</source>
+            <source>Color Brush</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_QuantizePalette_label0</extracomment>
-            <translation>Posterize</translation>
+picasapy-origin-key: stringres:ImageFilters::BlurXY</extracomment>
+            <translation>Color Brush</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Smoothness</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Smoothness</translation>
+            <source>Dot Density</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::DotContrast</extracomment>
+            <translation>Dot Density</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Dot Fade</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::DotFade</extracomment>
+            <translation>Dot Fade</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13883,6 +15415,13 @@ picasapy-origin-key: stringres:ImageFilters::BlackColor</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Tint Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::TintColor</extracomment>
+            <translation>Tint Color</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Second Color</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::WhiteColor</extracomment>
@@ -14033,6 +15572,11 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
             <translation>&amp;Clear Selection</translation>
         </message>
         <message>
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Date</translation>
+        </message>
+        <message>
             <source>&amp;Delete Album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Delete Album</translation>
@@ -14050,9 +15594,25 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
             <translation>&amp;Invert Selection</translation>
         </message>
         <message>
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Name</translation>
+        </message>
+        <message>
             <source>&amp;Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Refresh Thumbnails</translation>
+        </message>
+        <message>
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>&amp;Reverse order</translation>
+        </message>
+        <message>
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Size</translation>
         </message>
         <message>
             <source>E&amp;xport as HTML Page...</source>
@@ -14352,6 +15912,17 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_DELETE</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>&amp;Edit People Album...</translation>
+        </message>
+        <message>
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>&amp;Invert Selection</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Refresh Thumbnails</translation>
         </message>
         <message>
             <source>Select &amp;All</source>
@@ -15669,6 +17240,12 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>The backup plan could not be prepared: %1</translation>
         </message>
+        <message>
+            <location filename="../backup_controller.py" line="0" />
+            <source>The backup could not be restored: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The backup could not be restored: %1</translation>
+        </message>
     </context>
     <context>
         <name>BackupHost</name>
@@ -15797,6 +17374,84 @@ picasapy-origin-key: stringres:il_BurnPanel::bksetname</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_BurnPanel::BackupCopy::3</extracomment>
             <translation>Backup Complete</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore Backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restore Backup</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose backup folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose backup folder</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose restore folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose restore folder</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose the first disc image</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose the first disc image</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>ISO disc images (*.iso)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ISO disc images (*.iso)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>All files (*)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>All files (*)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose a backup folder or the first disc image:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Choose a backup folder or the first disc image:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore to:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restore to:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Folder...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Disc image...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Disc image...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restore</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restored %1 file(s); skipped %2 existing file(s).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restored %1 file(s); skipped %2 existing file(s).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Select both a backup source and a restore folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Select both a backup source and a restore folder.</translation>
         </message>
         <message>
             <source>Calculating…</source>
@@ -15966,6 +17621,12 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
+            <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fullscreen startup (requires restart of Photo Viewer to take effect)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="41" />
             <source>Use Color Management</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
@@ -15998,6 +17659,316 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <source>No</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>No</translation>
+        </message>
+    </context>
+    <context>
+        <name>AdjustTimestampDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="241" />
+            <source>Mon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mon</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="248" />
+            <source>Tue</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tue</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="255" />
+            <source>Wed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Wed</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="262" />
+            <source>Thu</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Thu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="269" />
+            <source>Fri</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fri</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="276" />
+            <source>Sat</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="283" />
+            <source>Sun</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sun</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <source>Adjust Photo Date - %1 items</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Adjust Photo Date - %1 items</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
+            <source>Current photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Current photo date</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="108" />
+            <source>New photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>New photo date</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="153" />
+            <source>New photo time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>New photo time</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="205" />
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Previous month</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="223" />
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Next month</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="164" />
+            <source>Adjust all photo dates by the amount</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Adjust all photo dates by the amount</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="173" />
+            <source>Set all photos to the same date and time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Set all photos to the same date and time</translation>
+        </message>
+    </context>
+    <context>
+        <name>XmpFacesWriteDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="13" />
+            <source>Write Face Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:FaceTagJob::progress;write_all_facetags:write_all_facetags/window1.title</extracomment>
+            <translation>Write Face Tags</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="32" />
+            <source>Write faces or write all may take a long time. If logging is set to detailed or higher, network.log will contain messages about read-only files which could not be updated. Signing out is recommended while using this feature.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/label3.title</extracomment>
+            <translation>Write faces or write all may take a long time. If logging is set to detailed or higher, network.log will contain messages about read-only files which could not be updated. Signing out is recommended while using this feature.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="49" />
+            <source>Write Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/onlyselection.title</extracomment>
+            <translation>Write Selected</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="55" />
+            <source>Write Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/allwithfaces.title</extracomment>
+            <translation>Write Faces</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="60" />
+            <source>Write All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/allfiles.title</extracomment>
+            <translation>Write All</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="65" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cancel</translation>
+        </message>
+    </context>
+    <context>
+        <name>PeopleManagerDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="12" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>People</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="232" />
+            <source>Search:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Search:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="269" />
+            <source>Delete Person</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact</extracomment>
+            <translation>Delete Person</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="275" />
+            <source>New Person</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/create.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/create.title</extracomment>
+            <translation>New Person</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="296" />
+            <source>Contact ID:</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
+            <translation>Contact ID:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />
+            <source>Name:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Name:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="321" />
+            <source>Email(s):</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Email(s):</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="337" />
+            <source>Sync Face Tags with Web Albums</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/sync.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/sync.title</extracomment>
+            <translation>Sync Face Tags with Web Albums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="346" />
+            <source>Revert</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Revert</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="366" />
+            <source>Manage Online Contacts</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/online.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/online.title</extracomment>
+            <translation>Manage Online Contacts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="371" />
+            <source>Refresh Contacts</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/refresh_contacts.title;refresh_contacts_progress:refresh_contacts_progress/window1.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/refresh_contacts.title;refresh_contacts_progress:refresh_contacts_progress/window1.title</extracomment>
+            <translation>Refresh Contacts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="377" />
+            <source>OK</source>
+            <extracomment>    picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)
+picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="383" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cancel</translation>
+        </message>
+    </context>
+    <context>
+        <name>TextColorSwatches</name>
+        <message>
+            <location filename="../qml/PicasaPy/TextColorSwatches.qml" line="114" />
+            <source>Pick Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDesaturateFilter::pickcolor;stringres:ImageFilters::PickColor;tooltips:Label(editpanel/colorwheel_label0);tooltips:Label(editpanel/colorwheel_label1)</extracomment>
+            <translation>Pick Color</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditorUndoRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/EditorUndoRow.qml" />
+            <source>Remove the latest fix or edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filter_undo)</extracomment>
+            <translation>Remove the latest fix or edit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorUndoRow.qml" />
+            <source>Reapply a removed fix or edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filter_redo)</extracomment>
+            <translation>Reapply a removed fix or edit</translation>
+        </message>
+    </context>
+    <context>
+        <name>KeywordsDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tags</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tags:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Add Tag:</source>
+            <extracomment>    picasapy-origin-key: keywordstext:Label(keywords/addkeywords_label)
+picasapy-origin: picasa
+picasapy-origin-key: keywordstext:Label(keywords/addkeywords_label)</extracomment>
+            <translation>Add Tag:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Add</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Add</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Remove</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Done</source>
+            <extracomment>    picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed
+picasapy-origin: picasa
+picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
+            <translation>Done</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags cannot be modified because one or more items are read-only.</source>
+            <extracomment>    picasapy-origin-key: keywordstext:Label(keywords/readonly_label)
+picasapy-origin: picasa
+picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
+            <translation>Tags cannot be modified because one or more items are read-only.</translation>
         </message>
     </context>
 </TS>

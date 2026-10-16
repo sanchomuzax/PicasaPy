@@ -175,12 +175,13 @@ class TestUjAlbumMenupontEsCtrlN:
         # kiírt literál — nem a menüfeliratból származtatva
         assert str(rovidites.property("sequence")) == "Ctrl+N"
 
-    def test_a_ctrl_n_a_keresomezoben_allva_is_hat(self, qml_app, qt_app):
-        """⚠️ MÉRT, nem feltevés (#1526/#1571 hibaosztálya, ugyanúgy, mint
-        a #1615 `Ctrl+M`-nél): a `Ctrl+N` nem szerkesztő-billentyű, tehát a
-        `QQuickTextInput` a `ShortcutOverride`-ban nem tartja vissza — az
-        ablak-szintű `Shortcut` a mezőben állva is győz."""
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_a_ctrl_n_keresofokuszban_nem_hoz_letre_albumot(
+        self, qml_app, qt_app, height_delta
+    ):
+        """#4398: szövegfókuszban a keresőmező tartja meg a billentyűt."""
         window, _controller, _engine = qml_app
+        window.setHeight(window.height() + height_delta)
         _select_row(window, qt_app, 0)
         mezo = _elem(window, "searchField")
         mezo.setProperty("focus", True)
@@ -189,12 +190,17 @@ class TestUjAlbumMenupontEsCtrlN:
             "a keresőmező nem kapott fókuszt — a mérés nem érvényes"
         )
 
+        shortcut = _elem(window, "shortcutNewAlbum")
+        aktivalt = []
+        shortcut.activated.connect(lambda: aktivalt.append(True))
+        assert shortcut.property("enabled") is False
+
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert [a["name"] for a in _controller.albums] == ["Untitled"], (
-            "a Ctrl+N a keresőmezőben állva elveszett"
-        )
+        assert mezo.property("activeFocus") is True
+        assert aktivalt == [], "a Ctrl+N a keresőmező-fókuszban elindult"
+        assert _controller.albums == [], "a Ctrl+N keresés közben albumot hozott létre"
         assert str(mezo.property("text")) == "", (
             "a Ctrl+N karaktert írt a keresőmezőbe"
         )

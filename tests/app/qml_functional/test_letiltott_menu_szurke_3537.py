@@ -23,11 +23,13 @@ def _tetel(window, nev: str):
     return tetel
 
 
-def _felirat_szerint(window, felirat: str):
+def _helyfoglalo(window):
+    """Egy még meg nem valósított (helyfoglaló) menütétel — a minta-tétel
+    (korábban a „Search &Options”, #4641 óta működik) nem rögzített."""
     for obj in window.findChildren(QObject):
-        if obj.property("text") == felirat and obj.property("placeholder") is True:
+        if obj.property("placeholder") is True and obj.property("text"):
             return obj
-    raise AssertionError(f"nincs ilyen helyfoglaló tétel: {felirat}")
+    raise AssertionError("nincs helyfoglaló menütétel")
 
 
 def _cimkeszin(tetel) -> str:
@@ -43,7 +45,7 @@ def test_a_letiltott_tetel_szurke(qml_app, qt_app):
     qt_app.processEvents()
 
     mentes = _tetel(window, "menuFileSave")
-    helyfoglalo = _felirat_szerint(window, "&Check for Updates")
+    helyfoglalo = _helyfoglalo(window)
 
     assert mentes.property("enabled") is False
     assert _cimkeszin(mentes) == _cimkeszin(helyfoglalo)
@@ -53,7 +55,7 @@ def test_az_engedelyezett_tetel_nem_szurke(qml_app, qt_app):
     window, _controller, _ = qml_app
 
     mentes_ki = _tetel(window, "menuToolsBackup")
-    helyfoglalo = _felirat_szerint(window, "&Check for Updates")
+    helyfoglalo = _helyfoglalo(window)
 
     assert mentes_ki.property("enabled") is True
     assert _cimkeszin(mentes_ki) != _cimkeszin(helyfoglalo)

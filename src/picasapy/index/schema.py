@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 19
+SCHEMA_VERSION = 24
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -144,6 +144,33 @@ END;
 # össze őket tokenre. Így a mappánként futó, idempotens szinkron egyszerűen
 # újraírhatja a saját sorait, és az ini-ből törölt album magától kiesik —
 # akkor is, ha másik mappa még hivatkozik rá.
+# ⚠️ **TÖRTÉNETI ALAK — CSAK a `MIGRATIONS[7]`-é** (a `place` oszlop nélkül).
+# A tábla MAI alakja az `_ALBUMS_DDL`; a `place` oszlopot a `MIGRATIONS[22]`
+# adja a már migrált indexeknek (#4599).
+_ALBUMS_V7_DDL = """
+CREATE TABLE IF NOT EXISTS albums (
+    folder_id INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    name TEXT,
+    date TEXT,
+    description TEXT,
+    location TEXT,
+    PRIMARY KEY (folder_id, token)
+);
+
+CREATE TABLE IF NOT EXISTS photo_albums (
+    photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    PRIMARY KEY (photo_id, token)
+);
+
+CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(token);
+"""
+
+# #4599 (ADR-016): a `place` az album-tagság KÉZI HELYE — a kép saját
+# `.picasa.ini`-szakaszának `albumorder=<token>:<hely>` párjából jön (a
+# szinkron tölti). Az index csak GYORSÍTÓTÁRAZZA: az igazságforrás az ini.
+# NULL = „nincs kézi hely", az album végére kerül.
 _ALBUMS_DDL = """
 CREATE TABLE IF NOT EXISTS albums (
     folder_id INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
@@ -158,6 +185,7 @@ CREATE TABLE IF NOT EXISTS albums (
 CREATE TABLE IF NOT EXISTS photo_albums (
     photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
     token TEXT NOT NULL,
+    place REAL,
     PRIMARY KEY (photo_id, token)
 );
 
@@ -366,6 +394,16 @@ CREATE TABLE IF NOT EXISTS face_scan (
 CREATE INDEX IF NOT EXISTS idx_face_scan_ok ON face_scan(ok);
 """
 
+# #4536: a személyenként választott album-indexkép. A Contacts2 azonosító
+# mappánként lokális, ezért a tárolt kulcs a személy casefoldolt neve. A fotó
+# törlésekor a választás is kiesik; a felület a személy első arcára esik vissza.
+_PERSON_THUMBNAILS_DDL = """
+CREATE TABLE IF NOT EXISTS person_thumbnails (
+    person_key TEXT PRIMARY KEY,
+    photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE
+);
+"""
+
 
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
@@ -399,6 +437,7 @@ CREATE TABLE IF NOT EXISTS photos (
     flip_flags INTEGER NOT NULL DEFAULT 0,
     filters TEXT,
     taken_at TEXT,
+    taken_at_override TEXT,
     orientation INTEGER NOT NULL DEFAULT 1,
     width INTEGER,
     height INTEGER,
@@ -407,11 +446,17 @@ CREATE TABLE IF NOT EXISTS photos (
     geotag_ini TEXT,
     exif_lat REAL,
     exif_lon REAL,
+    movie_format TEXT,
+    frame_rate REAL,
+    duration_seconds REAL,
     first_seen_mtime_ns INTEGER,
     UNIQUE (folder_id, name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 1;
+CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
+    ON photos(folder_id)
+    WHERE kind = 'video' AND movie_format IS NULL;
 
 {_PHOTO_HASHES_DDL}
 
@@ -423,6 +468,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 
 {_FACE_NAME_DDL}
 
 {_FACE_SCAN_DDL}
+
+{_PERSON_THUMBNAILS_DDL}
 
 {_RESOLVED_ROOT_DDL}
 
@@ -477,7 +524,7 @@ ALTER TABLE photos ADD COLUMN exif_lon REAL;
     # #9: virtuális albumok. Üres táblákkal jön létre — a meglévő indexekhez
     # nem kell újraindexelés, a következő szinkron tölti fel őket az
     # ini-kből (a `[.album:token]` szekciók és az `albums=` kulcs alapján).
-    7: _ALBUMS_DDL,
+    7: _ALBUMS_V7_DDL,
     # #26 (1. lépcső): a saját arc-detektálás táblája. Üresen jön létre —
     # a meglévő indexekhez nem kell újraindexelés; a következő arc-scan
     # (`FaceScanController`, opcionális háttérfolyamat) tölti fel.
@@ -543,4 +590,54 @@ ALTER TABLE folders ADD COLUMN unread INTEGER NOT NULL DEFAULT 0;
     18: """
 ALTER TABLE photos ADD COLUMN flip_flags INTEGER NOT NULL DEFAULT 0;
 """,
+    # #4332: a felhasználó által beállított felvételi dátum tartós, indexbeli
+    # felülírása. Nem kerül a forrás EXIF-be vagy a .picasa.ini-be: az
+    # eredeti a dátumot a saját adatbázisában tartja (#451); a felülírás a
+    # fájl változása (pl. a program saját Mentése) után is megmarad.
+    19: """
+ALTER TABLE photos ADD COLUMN taken_at_override TEXT;
+""",
+    # #4580: a videó panelmezői. NULL-lal indulnak, hogy a következő sync
+    # az inkrementális kihagyást feloldva visszatölthesse a meglévő videókat.
+    20: """
+ALTER TABLE photos ADD COLUMN movie_format TEXT;
+ALTER TABLE photos ADD COLUMN frame_rate REAL;
+ALTER TABLE photos ADD COLUMN duration_seconds REAL;
+CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
+    ON photos(folder_id)
+    WHERE kind = 'video' AND movie_format IS NULL;
+""",
+    # #4597: EGYSZERI ÁTÁLLÍTÁS. A `folders.hidden` eddig csak az indexben
+    # élt (0/1); az új kód az ini `P2category=Hidden Folders` sorából
+    # származtatja. A régi 1-es sorok 2-re („rejtett, az ini-be még nincs
+    # beírva”) állnak át: az első szinkron beírja őket az ini-be, és CSAK
+    # EZUTÁN számít az ini az igazságforrásnak. Az offline mappa 2-esen
+    # marad, és visszatérésekor pótlódik — rejtés nem veszhet el.
+    21: """
+UPDATE folders SET hidden = 2 WHERE hidden = 1;
+""",
+    # #4599 (ADR-016): az album-tagság kézi helye (`albumorder=`). NULL-lal
+    # indul minden meglévő sor — „nincs kézi hely", tehát a meglévő albumok
+    # sorrendje változatlan (mappa útvonala, fájlnév); a következő szinkron
+    # tölti fel az ini-ből, újraindexelés nem kell.
+    # A scan-állapot érvénytelenítése csak az albumtagot tartalmazó mappákra
+    # terjed ki: változatlan ini esetén a szinkron különben kihagyná a már
+    # indexelt mappát, így az albumorder nem jutna be a place oszlopba.
+    22: """
+ALTER TABLE photo_albums ADD COLUMN place REAL;
+CREATE TABLE IF NOT EXISTS folder_scan_state (
+    path TEXT PRIMARY KEY,
+    mtime_ns INTEGER NOT NULL,
+    ini_mtime_ns INTEGER,
+    filetype_signature TEXT
+);
+DELETE FROM folder_scan_state WHERE path IN (
+    SELECT DISTINCT f.path FROM folders f
+    JOIN photos p ON p.folder_id = f.id
+    JOIN photo_albums a ON a.photo_id = p.id
+);
+""",
+    # #4536: a személyenként választott indexkép táblája. A meglévő arcokból
+    # nincs kiválasztás kikövetkeztethető, ezért üresen indul.
+    23: _PERSON_THUMBNAILS_DDL,
 }

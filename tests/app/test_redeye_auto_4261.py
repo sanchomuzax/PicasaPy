@@ -118,6 +118,41 @@ def test_auto_result_keeps_normalized_eye_circles(provider, monkeypatch, tmp_pat
     np.testing.assert_allclose(circles, ((0.2, 0.25, 0.1), (0.4, 0.25, 0.1)))
 
 
+def test_auto_result_with_size_returns_rendered_detection_dimensions(
+    provider, monkeypatch, tmp_path
+) -> None:
+    from picasapy.app import edit_preview
+
+    image = _image_with_two_eyes_and_red_dress()
+    monkeypatch.setattr(
+        provider,
+        "_resolve_source",
+        lambda *_args, **_kwargs: image,
+    )
+    monkeypatch.setattr(
+        provider,
+        "_render_cached",
+        lambda _key, source, _ops: source,
+    )
+    monkeypatch.setattr(
+        edit_preview,
+        "detect_eye_circles",
+        lambda _image: (EyeCircle(20, 20, 8),),
+    )
+
+    count, circles, size, display_size, eye_to_display = (
+        provider.redeye_auto_result_with_size(
+            "photo", tmp_path / "photo.png", ()
+        )
+    )
+
+    assert count == 1
+    np.testing.assert_allclose(circles, ((0.2, 0.25, 0.1),))
+    assert size == (100, 80)
+    assert display_size == (100, 80)
+    assert eye_to_display == ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+
+
 def test_feedback_uses_whole_image_fallback_when_model_is_missing(
     provider, monkeypatch, tmp_path
 ) -> None:

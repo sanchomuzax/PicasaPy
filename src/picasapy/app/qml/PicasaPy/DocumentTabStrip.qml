@@ -40,6 +40,8 @@ Item {
     property var projectTabs: []
     //: melyik lap aktív — a gazda ebből köti a tartalom láthatóságát
     property string activeTabId: root.libraryTabId
+    //: A mező billentyűi maradjanak a mezőnél, amikor az kapott fókuszt.
+    property bool textEntryHasFocus: false
 
     //: a mentetlen módosításról szóló kérdés szövege (hivatalos fordítással)
     property string unsavedMessage: qsTr(
@@ -50,6 +52,12 @@ Item {
 
     readonly property bool hasProjectTabs: root.projectTabs.length > 0
     readonly property bool libraryActive: root.activeTabId === root.libraryTabId
+    // #4639: a súgó a tényleges Shortcut.sequence értékeket olvassa.
+    readonly property var keyboardShortcutSequences: [
+        closeTabOnEscape.sequence, closeTabOnCtrlW.sequence,
+        nextTabOnCtrlTab.sequence, previousTabOnCtrlShiftTab.sequence,
+        nextTabOnCtrlRight.sequence, previousTabOnCtrlLeft.sequence
+    ]
 
     // A sáv üresen SEM látszik, SEM helyet nem foglal. A magasságot azért is
     // kimondjuk (nem csak a `visible`-t), mert a `visible` öröklődik a
@@ -138,8 +146,10 @@ Item {
     // tényleg van zárható, aktív lap — és nem akkor, amikor már a kérdés áll
     // a képernyőn (ott az Esc a Mégse útja).
     Shortcut {
+        id: closeTabOnEscape
         sequence: "Esc"
-        enabled: root.hasProjectTabs && !root.libraryActive
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !root.libraryActive
                  && !closeConfirm.visible
         onActivated: root.requestCloseActive()
     }
@@ -152,29 +162,39 @@ Item {
     // nem külön ágon: a piszkos lap kérdését így nem kerüli meg — ugyanaz
     // a megfontolás, mint az `Esc`-nél (a fájl 3. invariánsa).
     Shortcut {
+        id: closeTabOnCtrlW
         sequence: "Ctrl+W"
-        enabled: root.hasProjectTabs && !root.libraryActive
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !root.libraryActive
                  && !closeConfirm.visible
         onActivated: root.requestCloseActive()
     }
     Shortcut {
+        id: nextTabOnCtrlTab
         sequence: "Ctrl+Tab"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(1)
     }
     Shortcut {
+        id: previousTabOnCtrlShiftTab
         sequence: "Ctrl+Shift+Tab"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(-1)
     }
     Shortcut {
+        id: nextTabOnCtrlRight
         sequence: "Ctrl+Right"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(1)
     }
     Shortcut {
+        id: previousTabOnCtrlLeft
         sequence: "Ctrl+Left"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(-1)
     }
 

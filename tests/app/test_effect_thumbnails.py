@@ -52,6 +52,26 @@ class TestSyncRender:
         # a forrás 320x200 (16:10) — az arány a kicsinyítés után is közel áll
         assert abs(image.width() / image.height() - 320 / 200) < 0.1
 
+    def test_url_filter_chain_overrides_stale_photo_record(
+        self, qt_app, tmp_path
+    ):
+        """A QML-csempe az aktuális láncot küldi, a PhotoRecord még régi lehet."""
+        records = _library(tmp_path)
+        provider = _provider(records)
+
+        before = provider.requestImage(
+            f"{records[0].id}/bw?filters=", None, None
+        )
+        after = provider.requestImage(
+            f"{records[0].id}/bw?filters=sepia%3D1%3B", None, None
+        )
+
+        assert before.convertToFormat(
+            before.Format.Format_RGB888
+        ).constBits().tobytes() != after.convertToFormat(
+            after.Format.Format_RGB888
+        ).constBits().tobytes(), "a csempe a régi PhotoRecord-láncból renderelt"
+
     def test_crop64_előzmény_crop_kulcs_nélkül_nem_vágja_az_effektcsempét(
         self, qt_app, tmp_path
     ):

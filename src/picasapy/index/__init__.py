@@ -21,6 +21,7 @@ from .face_groups import (
     javaslatokat_ujraszamol,
     lazitott_lepcso,
 )
+from .hidden_scope import hidden_folders_visible, set_hidden_folders_visible
 from .ignored_ini_faces import IniIgnoredFace, ignored_ini_faces
 from .faces_detected import (
     PendingEmbeddingFace,
@@ -43,11 +44,13 @@ from .faces_detected import (
     reset_all_faces,
     store_embedding,
     unnamed_album_photos,
+    unnamed_photo_count,
     set_suggested_name,
     suggested_faces,
     suggested_faces_for,
     unignore_faces,
     unnamed_faces,
+    unnamed_faces_for_photos,
 )
 from .fast_key_source import IndexFastKeySource
 from .hashes import load_dhashes, load_fast_keys, save_dhashes, save_fast_keys
@@ -75,6 +78,13 @@ from .people import (
     photos_with_faces,
     people_with,
     person_photos,
+)
+from .person_thumbnails import (
+    PersonThumbnail,
+    person_thumbnail,
+    person_thumbnail_face,
+    person_thumbnails,
+    set_person_thumbnail,
 )
 from .project_folders import ProjectFolder, project_folders
 from .relocate import (
@@ -108,6 +118,7 @@ __all__ = [
     "PendingEmbeddingFace",
     "UnnamedFace",
     "PersonRecord",
+    "PersonThumbnail",
     "PhotoRecord",
     "ProjectFolder",
     "RelocationCancelled",
@@ -129,8 +140,10 @@ __all__ = [
     "folder_scan_stamps",
     "geotagged_photos",
     "hidden_folders",
+    "hidden_folders_visible",
     "is_folder_hidden",
     "set_folder_hidden",
+    "set_hidden_folders_visible",
     "photos_up_to_age",
     "photos_with_keyword",
     "video_photos",
@@ -151,8 +164,12 @@ __all__ = [
     "photos_with_faces",
     "people_with",
     "person_photos",
+    "person_thumbnail",
+    "person_thumbnail_face",
+    "person_thumbnails",
     "photo_by_id",
     "unnamed_album_photos",
+    "unnamed_photo_count",
     "photos_in_folder",
     "photos_under_folder",
     "folder_has_collage",
@@ -178,6 +195,7 @@ __all__ = [
     "save_colors",
     "save_dhashes",
     "save_fast_keys",
+    "set_person_thumbnail",
     "SearchSuggestion",
     "search_photos",
     "search_suggestions",
@@ -190,6 +208,7 @@ __all__ = [
     "suggested_faces_for",
     "unignore_faces",
     "unnamed_faces",
+    "unnamed_faces_for_photos",
     "update_photo_fields",
     "folder_looks_offline",
     "watched_root_missing",

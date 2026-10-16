@@ -334,15 +334,18 @@ szerkesztése**, a kijelölt képek mindegyikére egyszerre:
 | `ID_PICTURE_AUTO_COLOR` | Automatikus szín |
 | `ID_PICTURE_AUTO_REDEYE` | Automatikus vörösszem-eltávolítás |
 | `ID_PICTURE_ENHANCE` | Jó napom van |
+| Kép-menü `Sepia` (`0x9d4a`) | Szépia |
 | `ID_PICTURE_SHARPEN` | Élesítés |
+| Kép-menü `Black and White` (`0x9d4c`) | Fekete-fehér |
 | `ID_PICTURE_FILM_GRAIN` | Filmszemcse |
 | `ID_PICTURE_WARMIFY` | Melegítés |
 | `ID_PICTURE_ROTATECLOCKWISE` / `…COUNTERCLOCKWISE` | Forgatás jobbra / balra |
 | `ID_PICTURE_SHOW_TEXT` / `…HIDE_TEXT` | Szöveg megjelenítése / elrejtése |
 
-Ezek pontosan a már implementált `filters=` egykattintásos szűrőink
-(`autolight`, `autocolor`, `redeye`, `enhance`, `unsharp`, `grain`, `warm`) —
-vagyis a kötegelt alkalmazás **motorja megvan**, csak a menü hiányzik.
+Ezek az eredeti kötegelt parancsok. A #4624-ben a Szépia és a Fekete-fehér
+menütétele is bekerült; mindkettő a kijelölt képek `filters=` láncához
+adja hozzá a `sepia` vagy `bw` effektet, a többi batch műveletével közös
+egylépéses visszavonással.
 
 ## K.2 Nézet → megjelenítési módok (fejlesztői/diagnosztikai almenü)
 

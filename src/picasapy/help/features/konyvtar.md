@@ -9,8 +9,13 @@ projekt-mappák (Kollázsok, Mozgófilmek, Exportált képek) **lila könyv
 csillaggal**, a címke pedig **szürke címke**.
 
 A **Nézet ▸ Könyvtárnézet** pipa mutatja, hogy a főablak a könyvtárat
-mutatja. Ez ma mindig be van kapcsolva; a párja, a **Szerkesztési
-nézet**, még nem készült el.
+mutatja. Ez a pipa mindig be van kapcsolva. A párja, a **Nézet ▸
+Szerkesztési nézet** (Ctrl+3) a kijelölt képet (többnél az elsőt) megnyitja a nézőben, ahol
+szerkesztheted — lásd [Nézegetés](nezegetes.md). Ugyanezt teszi a
+**Kép ▸ Megjelenítés és szerkesztés** is. Mindkettő szürke, amíg nincs
+kijelölt kép. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló
+a néző bal oldali szerkesztőpanelét mutatja vagy rejti — lásd [A
+szerkesztő](szerkeszto.md).
 
 ## Mappák
 
@@ -36,8 +41,30 @@ sorrend és az indexképek kapcsolója tehát egy helyről vezérelhető, és a
 két belépési pont nem tud szétcsúszni. Keskeny ablakban a ▾ gomb
 elrejtőzik; a menüsorból ilyenkor is elérhető minden.
 
-A hasáb üres részére jobbgombbal kattintva az **Egyszerűsített fanézet**
-kapcsoló érhető el.
+Ebben a menüben a rendezési tételek után az Emberek-lista három rendezése
+áll: **Személyek rendezése név alapján**, **Személyek rendezése mennyiség
+alapján** és **Személyek rendezése a toplista alapján**. A pipa mutatja,
+melyik van érvényben. Alattuk a **Gyorsbillentyűk** almenü a négy
+ugrópontot kínálja (**Sajátgép**, **Képek**, **Dokumentumok**,
+**Asztal**) — ugyanazokat, mint az almenü teteje (lásd lentebb, „Honnan
+induljon a fa").
+
+Fanézetben a mappa sorára jobbgombbal kattintva a menü attól függ, milyen
+sor az: ha a mappában vannak saját képek (vagyis a könyvtár valódi
+mappája), a **teljes mappa-menü** nyílik, ugyanaz, mint a többi nézetben.
+A csak továbbvezető, saját kép nélküli köztes sorokon rövidebb menü jön elő.
+
+A hasáb üres részére jobbgombbal kattintva a hasáb saját menüje nyílik
+meg. Ebben a következők vannak:
+
+- a **rendezés** tételei (név, méret, legutóbbi változtatás, fordított
+  sorrend) és az Emberek-lista rendezése,
+- az **Egyszerűsített fanézet** kapcsoló,
+- az **Indexképek megjelenítése a könyvtárban** kapcsoló — ugyanaz, mint a
+  **Nézet ▸ Mappanézet** almenüben,
+- a **Gyorsbillentyűk** almenü, benne az **Asztal**: a program az Asztal mappára
+  ugrik, ahogy a **Nézet ▸ Mappanézet ▸ Asztal** pont is teszi. (A
+  felirat az eredeti Picasa fordításából való; billentyűkhöz nincs köze.)
 
 > Ha a program még nem tudja, melyek a figyelt mappáid, az
 > Egyszerűsített fanézet a **teljes fát** hagyja meg — inkább mutat
@@ -81,14 +108,15 @@ A **Nézet ▸ Mappanézet ▸ Indexképek megjelenítése a könyvtárban**
 bekapcsolásával a hasáb sorain a kék mappaikon helyett a mappa egyik
 fotójának kis bélyegképe látszik. Ugyanaz a mappa mindig ugyanazt a képet
 kapja, futások között is. Alapból kikapcsolva indul, és a választásod
-megmarad.
+megmarad. Induláskor ezek a kis képek gyorsan megjelennek, mert a program
+a már elkészült bélyegképeket használja. Ha egy mappában nincs fotó, a
+sorában a mappaikon marad.
 
 **A fanézetben ez mindig látszik**, a kapcsolótól függetlenül — ott ezért
 a menüpont szürke. A kapcsoló az egyszerű, egyszintű listára vonatkozik.
 
-> A hasáb helyi menüjében is szerepel egy **Indexképek megjelenítése a
-> könyvtárban** tétel, de az **még nem működik** — a menüsorból viszont
-> igen.
+A hasáb helyi menüjének **Indexképek megjelenítése a könyvtárban** tétele
+ugyanezt a kapcsolót állítja, tehát a két hely nem csúszhat szét.
 
 ### A mappa dátuma
 
@@ -104,6 +132,40 @@ frissíti**. Ez szándékos: a fájl módosítási idejét sok minden átírja
 (mentés, másolás, egy másik program), és enélkül ugyanaz a kép hol a
 rács elejére, hol a végére ugrott volna, a mappa fejléc-dátuma pedig
 elmozdult volna. Aminek van EXIF-felvételi ideje, arra ez nem hat.
+
+### A mappa tulajdonságai
+
+A mappa sorára jobbgombbal kattintva a **Mappaleírás szerkesztése…**
+tétel, vagy a megnyitott mappára a **Mappa ▸ Leírás szerkesztése…**
+megnyitja a **Mappa tulajdonságai** ablakot. A mezői:
+
+- **Név:** — ide írva a mappát át is nevezheted. Az **OK** gomb átnevezi a
+  mappát a lemezen, a benne lévő képek, almappák és a `.picasa.ini` vele
+  együtt maradnak. Ha a név foglalt, érvénytelen, vagy a mappa egyik képe
+  épp szerkesztés alatt áll, **A mappa nem nevezhető át** címmel ablak
+  mondja meg az okot, és semmi nem változik;
+- **Dátum:** — a mappa dátuma, a nyelvi beállításod szerinti alakban
+  (magyarul például `2026. 01. 01.`); a szabványos ÉÉÉÉ-HH-NN alakot is
+  elfogadja. A mező jobb szélén lévő naptár-ikonra (**Dátum
+  kiválasztása**) kattintva naptár nyílik a mező alatt: az **Előző hónap**
+  és a **Következő hónap** nyíllal lapozol, a napra kattintva a dátum a
+  mezőbe kerül. Menteni itt is az **OK** ment. Az **Automatikus dátum**
+  gomb törli a kézzel megadott értéket, és a mappa visszaáll a benne lévő
+  legkorábbi kép dátumára. Érvénytelen dátumnál az **OK** szürke, és egy
+  sor megmutatja, milyen alakban várja a program a dátumot;
+- **Zene:** — a **Zene használata diavetítéshez és mozgófilmes
+  prezentációhoz** jelölővel, és a **Tallózás…** gombbal választott hangfájllal
+  (Windowson `.mp3` vagy `.wma`, máshol `.mp3` vagy `.m4a`). Ez a zene szól
+  a mappa diavetítésénél és a mappából készített filmben. A fájlmező és a
+  gomb csak bejelölt jelölővel él;
+- **Leírás (opcionális):** — a mappa leírása.
+
+Az **OK** egyszerre menti a nevet, a dátumot, a zenét és a leírást, és
+bezárja az ablakot. A **Mégse** semmit nem ment.
+
+Az album tulajdonságai ugyanebben az ablakban nyílnak (lásd lentebb). A
+**Felvétel készítésének helye (opcionális):** mező csak albumnál szerkeszthető;
+mappánál szürke.
 
 ### A mappák sorrendje
 
@@ -182,13 +244,37 @@ képet mutatja.
 ### Az album nevének és adatainak átírása
 
 Az album sorára jobbgombbal kattintva az **Albumleírás szerkesztése…**
-tétel megnyitja az **Album tulajdonságai** ablakot. Négy mezője van:
-**Név**, **Dátum**, **A felvétel helye** és **Leírás**. A mentés minden
+tétel megnyitja az **Album tulajdonságai** ablakot. Öt mezője van:
+**Név**, **Dátum**, **Zene**, **A felvétel helye** és **Leírás**. A mentés minden
 olyan mappa `.picasa.ini` fájljába átvezeti a változást, ahol az albumnak
 van tagja.
 
 Ugyanez az ablak nyílik meg a mappáknál is (**Mappaleírás
 szerkesztése…**) — az eredeti Picasa is egy ablakot használ a kettőre.
+Mappánál a mezők kicsit mások (lásd fent, **A mappa tulajdonságai**).
+
+### Album törlése
+
+Az album sorára jobbgombbal kattintva az **Album törlése** tétel előbb
+rákérdez: „Biztosan törli a(z) "*név*" albumot?" Az **Album törlése**
+gombbal jóváhagyva a program az albumot minden olyan mappa
+`.picasa.ini` fájljából kiveszi, ahol tagja volt. **A képek megmaradnak**
+a mappáikban, és a többi albumhoz sem nyúl — csak ez az egy összeállítás
+szűnik meg.
+
+### Az Album menü albumnézetben
+
+A **Mappa** menü parancsai a **megnyitott mappára** hatnak. Ha egy
+albumot nyitsz meg, a menüsorban a **Mappa** helyén **Album** áll, ahogy
+az eredeti Picasában. Az első tétele, az **Albumleírás szerkesztése…** a
+nyitott album **Album tulajdonságai** ablakát nyitja meg (lásd fent).
+Mappanézetben ugyanezen a helyen a mappa leírását szerkeszted.
+
+Album vagy Emberek-album nézése közben a program a korábban nézett
+mappát megjegyzi, de a menü **Keresés a lemezen**, **Eltávolítás a
+Picasából…**, **Áthelyezés…** és **Törlés…** tétele ilyenkor **szürke** —
+így véletlenül sem a korábbi mappára hatnak. Ha ilyenkor mappát akarsz
+kezelni, előbb kattints a mappára a bal hasábon.
 
 ## Gyűjtemények
 
@@ -199,6 +285,12 @@ alá. A hasábon a gyűjtemény fejlécére kattintva nyitod és csukod.
   gyűjteménybe** almenün át.
 - A gyűjtemény fejlécére jobbgombbal kattintva **átnevezheted** vagy
   **eltávolíthatod**. A gyűjtemény eltávolítása a mappáidat nem bántja.
+
+Azt, hogy egy mappa melyik gyűjteménybe tartozik, a program a mappa
+saját `.picasa.ini` fájljába írja, ahogy az eredeti Picasa is. A
+besorolás ezért a mappával együtt költözik, és a program újratelepítése
+után is megmarad. Ha egy gyűjteményt eltávolítasz, a mappái visszakerülnek
+a **Mappák a lemezen** csoportba.
 
 Ha az utolsó nyitott gyűjteményt is bezárnád, a program figyelmeztet:
 utána a rács üres lesz, amíg nem nyitsz ki valamit.
@@ -218,10 +310,43 @@ kikerülnek a listából.
 
 - **Nézet ▸ Kis indexképek** (Ctrl+1) és **Normál indexképek** (Ctrl+2)
   váltja a méretet. Finomabban a képtálca jobb szélén lévő
-  nagyítás-csúszkával állíthatod.
+  nagyítás-csúszkával állíthatod. A **Kis indexképek**, a **Normál
+  indexképek** és a **Szerkesztési nézet** tétel közül mindig pontosan
+  az áll pipával, amelyik az éppen látható nézetet adja: szerkesztési
+  nézetben az utolsó, különben az aktuális indexképméret tétele. A
+  csúszkával beállított köztes méretnél egyik indexkép-tételen sincs
+  pipa.
 - **Nézet ▸ Indexkép felirata** almenüben választhatod, mi legyen a kép
   alatt: **Egyik sem**, **Fájlnév**, **Képfelirat**, **Címkék** vagy
   **Felbontás**.
+
+### Kis képek: alapból el vannak rejtve
+
+A rács **alapból csak a nagy képeket mutatja**, ahogy az eredeti Picasa is.
+Ami nagyon kicsi — például egy legfeljebb 200 képpont hosszú ikon —, vagy
+kis területű és szélsőségesen keskeny sáv, az nem látszik a rácson.
+Ha egy kép „eltűnt" a mappából, érdemes ezt ellenőrizni. Videókat és a
+mérettel nem rendelkező bejegyzéseket ez nem érint.
+
+A **Nézet ▸ Kis képek** kapcsoló a kisebb képeket is megjeleníti: pipával
+látszanak, pipa nélkül (ez az alapállás) nem. A beállítás megmarad a
+következő indításig. A fájlokhoz ez nem nyúl, csak azt dönti el, mi kerül a
+rácsra.
+
+### Megjelenítési mód az indexképeken
+
+A **Nézet ▸ Megjelenítési mód** almenü választása — köztük a **16 bites
+(szemcsézett)** mód — az indexképeken is látszik. Lásd:
+[Nézegetés](nezegetes.md).
+
+### Kép húzása másik programba
+
+A rácsból vagy a képtálcáról a képeket **kihúzhatod más programba** is —
+például egy levélbe vagy egy fájlkezelő ablakába. A másik program
+**fájlként** kapja őket: a kijelölés összes képét, nem csak azt, amelyiket
+megfogtad. A tálcáról a tálca **saját kijelölése** megy, akkor is, ha a
+képek több mappából valók. A program közben a fájlokat nem módosítja. (A
+mappák és albumok közti húzás ettől független, lásd fent.)
 
 ### Nagyító a rácson
 
@@ -253,6 +378,17 @@ A tálca akkor hasznos igazán, ha **több mappából** akarsz képeket
   hozzáadhatod.
 - **Törlés a tálcáról** — kiüríti.
 
+A **Ctrl+H** ugyanazt csinálja, mint a tálca helyi menüjének
+kijelölés-megtartó tétele: rögzíti a kijelölést. Nézőben nem működik.
+
+Ha egy **kollázs** készítése közben a **kollázs lapjáról** a könyvtárba
+lépsz, hogy még képeket gyűjts, a tálca fölött egy sáv jelenik meg ezzel
+az üzenettel: „Jelölje ki azokat az elemeket, amelyeket a projekt
+kliptálcájára fel szeretne venni, majd a »Vissza« gombra kattintva térjen
+vissza a projekthez". A **Vissza a kollázshoz** gombbal visszalépsz a
+kollázsra, a sáv jobb szélén lévő **×** pedig csak elrejti az üzenetet — a
+kollázs lapja nyitva marad. Lásd [Kollázs](kollazs.md).
+
 ### Ha albumra kattintasz
 
 Ha a bal hasábon egy **albumot** választasz ki, és közben egyetlen kép
@@ -279,12 +415,43 @@ húzva nagyítva látod a részleteket.
 A tálca kimeneti gombsora (**Nyomtatás**, **E-mail**, **Exportálás**,
 **Kollázs**, **Film**) keskeny ablakban nem fér ki egészen. Ilyenkor
 a sor végén megjelenik a **További lehetőségek…** gomb, és a ki nem
-férő gombok alatta, listában érhetők el.
+férő gombok alatta, a gombra kattintva felnyíló függőleges oszlopban
+érhetők el. Az oszlopban ugyanúgy ikon és felirat áll, mint a sávban, és
+a tétel szürke, ha a hozzá tartozó gomb is az volna.
+
+A kimeneti gombsorra jobbgombbal kattintva a **Gombok konfigurálása…**
+tétel ugyanazt az ablakot nyitja meg, mint az **Eszközök ▸ Gombok
+konfigurálása…** menüpont (lásd [Beállítások](beallitasok.md)).
+
+## A képek dátumának módosítása
+
+Ha egy képnek rossz a dátuma — például a gép órája rosszul volt beállítva
+—, javíthatod. Jelöld ki a képeket, majd **Eszközök ▸ Dátum és idő
+beállítása…**. A **Dátum módosítása – N fotó** ablakban látod az első
+kép bélyegképét és a **Jelenlegi fotódátum**át, megadhatod az **Új
+fotódátum**ot (a dátumra kattintva naptár nyílik) és az **Új fotó
+időpontja**t. Két mód közül választasz:
+
+- **Minden fotó dátumának eltolása ugyanannyival** — a program az első
+  kép régi és új dátuma közti különbséget adja hozzá az összes kijelölt
+  kép saját idejéhez, tehát a képek közti időkülönbségek megmaradnak;
+- **Minden fotó dátumának és idejének beállítása ugyanarra** — mindegyik
+  kép ugyanazt a dátumot és időt kapja.
+
+Az **OK** menti a változtatást, ahogy az eredeti Picasa is: az új
+felvételi dátumot **beleírja a képfájl EXIF-adataiba**, és a fájl
+módosítási idejét is ugyanannyival eltolja. A `.picasa.ini` fájlhoz nem
+nyúl. Ezután a program újraolvassa a mappát, így a rács, a dátum szerinti
+rendezés és a **Tulajdonságok** panel már az új dátumot mutatja — és
+mivel a fájlban van, más program is ezt látja.
+
+Az EXIF-dátum írása **JPEG** képeken működik.
 
 ## A Tulajdonságok panel
 
-A jobb oldali fiók **Tulajdonságok** panelje (**Alt+Enter**, vagy a képtálca
-panelkapcsolójáról) a kijelölt kép adatait mutatja. Legfelül a **Fájl
+A jobb oldali fiók (a **Ctrl+0**-val, vagy a fiók szélén lévő keskeny,
+nem látható sávra kattintva nyitod és zárod) **Tulajdonságok** panelje
+(**Alt+Enter**, vagy a képtálca panelkapcsolójáról) a kijelölt kép adatait mutatja. Legfelül a **Fájl
 útvonala**, a **Fájlméret** és a **Méretek** áll, alattuk a felvétel adatai:
 a **Fényképezőgép gyártmánya** és **típusa**, a felvétel és a digitalizálás
 ideje, a tájolás, a **Vaku** állása, az **Objektív** neve, a
@@ -293,9 +460,26 @@ ideje, a tájolás, a **Vaku** állása, az **Objektív** neve, a
 **Tömörítés** és a **Színtér**, végül a **Kulcsszavak** és a
 GPS-koordináták.
 
+A panelen jobbgombbal kattintva egyetlen tétel nyílik: a **Szerkesztési
+címkék**, ami a Címkék panelt hozza elő.
+
+Ha van kijelölés, a panelen egy **Kulcsszavak** gomb is áll, mellette a
+kijelölés címkéivel. A gomb a **Címkék** ablakot nyitja meg: felül a kép
+bélyegképe, neve és dátuma, alatta a **Címkék:** lista. A **Címke
+hozzáadása:** mezőbe írt címkét a **Hozzáadás** gomb teszi fel a
+kijelölésre, a listában kijelölt címkét az **Eltávolítás** veszi le, a
+**Kész** bezárja az ablakot. Ha a kijelölésben írásvédett kép van, az
+ablak ezt kiírja („A címkék nem módosíthatók, mert a kijelölésben
+írásvédett elem van."), és nem enged módosítani. A címkézés a felvételi
+dátum nélküli képek dátumát sem változtatja meg.
+
 A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
 annak **a sora sem jelenik meg** — a panel tehát képenként rövidebb vagy
-hosszabb. Videóra ma csak a három felső sor jön ki.
+hosszabb. Videónál a három felső sor után a videó adatai jönnek: a
+**Mozgófilm adatai** sor a formátumot, a **Képkockasebesség** sor a
+másodpercenkénti képkockák számát (például `25 fps`), a
+**Mozgófilm hossza** pedig a hosszt perc:másodperc (hosszabb videónál
+óra:perc:másodperc) alakban.
 
 ### Az objektív neve
 
@@ -331,14 +515,44 @@ marad üresen, ha a fényképezőgép valami szokatlant írt bele.
 
 ## Rejtett képek
 
-Egy képet a **kép helyi menüjének Elrejtés** parancsával tüntethetsz el
-a nézetből — a fájl a lemezen marad. A rejtett képek előhozásához
-kapcsold be a **Nézet ▸ Rejtett képek** pontot; ekkor ugyanennek a helyi
-menünek a tétele **Megjelenítés**-re vált, és azzal hozod vissza a képet.
+Egy képet a **Kép ▸ Elrejtés** paranccsal vagy a **kép helyi menüjének
+Elrejtés** tételével tüntethetsz el a nézetből — a fájl a lemezen marad.
+A **Kép ▸ Elrejtés** csak a kijelölés látható képeit rejti el; ha a
+kijelölésben már rejtett kép is van, azt nem hozza elő.
+A rejtett képek előhozásához kapcsold be a **Nézet ▸ Rejtett képek**
+pontot. Visszahozni a **Kép ▸ Megjelenítés** paranccsal tudod: a
+kijelölt képek közül csak a rejtetteket teszi újra láthatóvá, a már
+látható képeket nem rejti el. A kép helyi menüjében is ott van, ugyanennek
+a tételnek a helyén **Megjelenítés**-re vált.
 
-> A **Kép** menü **Megjelenítés** tétele és a mappák helyi menüjének
-> **Elrejtés** / **Megjelenítés** párja még **nem működik** — a
-> kép-elrejtés a kép helyi menüjéből megy.
+Egész mappát is elrejthetsz: jelöld ki, majd **Mappa ▸ Elrejtés**, vagy a
+mappa helyi menüjében **Mappa elrejtése**. Album- és személynézetben nincs
+kijelölt mappa, ezért ott a **Mappa ▸ Elrejtés** és a **Mappa ▸
+Megjelenítés** szürke. A mappa eltűnik a bal hasábról;
+a **Nézet ▸ Rejtett képek** bekapcsolásával a **Rejtett mappák** között
+látod viszont. Visszahozni a **Mappa ▸ Megjelenítés** paranccsal tudod, vagy
+a mappa helyi menüjének **Mappa megjelenítése** tételével: ehhez
+előbb kapcsold be a **Nézet ▸ Rejtett képek** pontot, és jelöld ki a mappát a
+**Rejtett mappák** között. A mappa ugyanúgy a
+lemezen marad.
+
+A rejtett mappa **képei máshol sem bukkannak fel**: a keresés, a szűrők
+(csillag, film, arc, kor), az Emberek nézet, az idővonal, az albumok, a
+térkép, a hasonló képek és a másodpéldányok keresése, a diavetítés, a
+képernyővédő és a képtálca is kihagyja őket. Csak akkor látszanak, ha a
+**Nézet ▸ Rejtett képek** be van kapcsolva (jelszó esetén a feloldás
+után).
+
+Az elrejtés a **mappa saját `.picasa.ini` fájljába** íródik, ugyanúgy,
+ahogy a Picasa tette. Ezért a mappa akkor is rejtett marad, ha a program
+újraolvassa a könyvtárat, és a régi Picasában elrejtett mappák itt is
+rejtve jelennek meg. Ha a `.picasa.ini` nem írható, a program szól: a
+mappa ilyenkor nálunk rejtett, de a Picasa nem fogja rejtettnek látni.
+Egy **nem elérhető** mappát (például lecsatolt meghajtón) nem lehet
+újra megjeleníteni, amíg vissza nem tér; addig rejtett marad.
+
+Rejtett mappát **gyűjteménybe sem tehetsz át** — előbb szüntesd meg a
+rejtését.
 
 ### A rejtett mappák jelszava
 

@@ -48,6 +48,8 @@ class DiscoveryController(BackgroundWorkerMixin, QObject):
     #: `discoveryFinished`-től, mert a felhasználó itt nem kért semmit:
     #: találat nélkül SEMMI nem történhet és semmi nem jelenhet meg.
     startupDiscoveryFinished = Signal(list, int)
+    #: A workerből kikerülő hiba: művelet, kivételtípus, diagnosztikai szöveg.
+    discoveryFailed = Signal(str, str, str)
 
     def __init__(
         self,
@@ -92,7 +94,15 @@ class DiscoveryController(BackgroundWorkerMixin, QObject):
             javaslatok, darab = self._felderites()
             self.startupDiscoveryFinished.emit(javaslatok, darab)
 
-        self._start_background(worker, name="picasapy-discovery-startup")
+        self._start_background(
+            worker,
+            name="picasapy-discovery-startup",
+            on_error=lambda error: self._report_discovery_error("startup", error),
+        )
+
+    def _report_discovery_error(self, operation: str, error: Exception) -> None:
+        """Workerhibát ad át a Qt-felületnek; a jelzés queued módon érkezik."""
+        self.discoveryFailed.emit(operation, type(error).__name__, str(error))
 
     def _startup_offer_done(self) -> bool:
         if self._settings is None:
@@ -136,7 +146,11 @@ class DiscoveryController(BackgroundWorkerMixin, QObject):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin) — a
         # leépítés (teszt-fixture, app-zárás) `waitForBackgroundWorkers()`-
         # szel bevárhatja, amíg a controller még él (ld. #430).
-        self._start_background(worker, name="picasapy-discovery")
+        self._start_background(
+            worker,
+            name="picasapy-discovery",
+            on_error=lambda error: self._report_discovery_error("interactive", error),
+        )
 
     @Slot(list)
     def adoptWatchedFolders(self, paths: list) -> None:

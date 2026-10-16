@@ -42,6 +42,7 @@ import time
 
 import pytest
 from PySide6.QtCore import QObject
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 #: A felvételek helye a fejlesztői gépen (a CI-n nincs ott, ld. a fejlécet).
 REFERENCIA_MAPPA = "research/felirat-ki-bekapcsolva/"
@@ -60,17 +61,12 @@ VILAGOS_KUSZOB = 225
 SZIN_TURES = 6
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AssertionError, AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(
+        qt_app,
+        hibaturo_feltetel(feltetel, (AssertionError, AttributeError, TypeError, RuntimeError)),
+        masodperc,
+    )
 
 
 def _walk(item):

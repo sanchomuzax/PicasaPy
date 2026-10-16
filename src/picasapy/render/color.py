@@ -174,9 +174,12 @@ def apply_grain(image: np.ndarray, seed: int | None = None) -> np.ndarray:
     képpontok korrelálnak), **középtónusban erős** (a súly a 128 körül
     160/256, a két végén 32/256), és a képet átlagban ~2 szinttel
     **sötétíti**. A tényleges munkát `native_grain.apply_native_grain`
-    végzi; az elfogadási teszt statisztikai (tónussávonkénti szórás,
-    szomszéd-korreláció, átlagos eltolás), NEM pixel-diff — a Picasa natív
-    magja hívásonként más, ezért bájtra pontosan úgysem reprodukálható.
+    végzi. A renderlánc a Picasa CRT `rand()`-folyamából származó,
+    renderenkénti sorszámot alakítja maggá (`native_grain.grain_seed`), ezért
+    a kimenet ugyanazzal a képpel és lánccal determinisztikusan reprodukálható.
+    A raw golden-teszt pixelkimenetet mér, az elfogadási teszt emellett
+    statisztikai tulajdonságokat (tónussávonkénti szórást,
+    szomszéd-korrelációt és átlagos eltolást) is őriz.
 
     `seed`-del determinisztikus/reprodukálható; `seed=None` esetén a zaj
     valóban véletlen mag (`numpy` alapértelmezett generátorától kérve).

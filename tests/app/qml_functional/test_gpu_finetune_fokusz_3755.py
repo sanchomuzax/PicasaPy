@@ -23,9 +23,11 @@ magát (ld. ott).
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 import sys
 from pathlib import Path
+
 
 import cv2
 import numpy as np
@@ -52,6 +54,11 @@ from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import (
     _klikk,
     _nezot_nyit,
 )
+
+#: #4422/#1375: modulszintű fogantyúk — a tesztek ezeket cserélik, nem a
+#: globális `socket`/`subprocess` modult.
+_socket_letrehoz = socket.socket
+_alfolyamat_futtat = subprocess.run
 
 
 def _sajat_geometria(kep, keret) -> dict[str, float]:
@@ -232,10 +239,23 @@ _VALTOZAS_KUSZOB = 25
 def test_valodi_gpun_egerhuzassal(tmp_path):
     if not (_HEADLESS / "wayland-0").exists():
         pytest.skip(f"nincs headless Wayland-kompozitor ({_HEADLESS}/wayland-0)")
+    kliens = None
+    try:
+        kliens = _socket_letrehoz(socket.AF_UNIX, socket.SOCK_STREAM)
+        kliens.settimeout(0.5)
+        kliens.connect(str(_HEADLESS / "wayland-0"))
+    except OSError as exc:
+        pytest.skip(f"a headless Wayland-kompozitor nem érhető el: {exc}")
+    finally:
+        if kliens is not None:
+            kliens.close()
     gyoker = Path(__file__).resolve().parents[3]
     kornyezet = {**os.environ, **_GPU_KORNYEZET}
     kornyezet.pop("DISPLAY", None)
-    eredmeny = subprocess.run(
+    # #4422: az offscreen tesztfuttató QT_QUICK_BACKEND=software értéke nem
+    # öröklődhet a valódi OpenGL-es Wayland alfolyamatba.
+    kornyezet.pop("QT_QUICK_BACKEND", None)
+    eredmeny = _alfolyamat_futtat(
         [sys.executable, "-m", "pytest", f"{__file__}::TestValodiGpu",
          f"{__file__}::TestValodiGpuAlloKep",
          f"{__file__}::TestValodiGpuDiavetites",

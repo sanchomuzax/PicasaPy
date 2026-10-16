@@ -2,8 +2,8 @@
 `P2category` kulcsán — ebből él a bal hasáb **Projektek** gyűjteménye.
 
 A kulcs valódi értékei a 859 fájlos korpuszból: `Folders on Disk` (456),
-egyéni gyűjtemény-nevek (130), `Projects (internal)` (8), `Other Stuff` (3),
-`Exported Pictures` (3). A Projektek gyűjteménybe KIZÁRÓLAG a
+egyéni gyűjtemény-nevek (139), `Projects (internal)` (8), `Other Stuff` (3),
+`Exported Pictures` (3), letöltött albumok (6). A Projektek gyűjteménybe KIZÁRÓLAG a
 `Projects (internal)` értékű mappák tartoznak — a többi marad ott, ahol volt.
 """
 
@@ -11,9 +11,13 @@ from __future__ import annotations
 
 from picasapy.ini import (
     PROJECTS_CATEGORY,
+    is_custom_collection_category,
     is_projects_category,
+    load_or_empty,
     parse_document,
     read_folder_category,
+    save_document,
+    with_folder_category,
 )
 
 
@@ -72,3 +76,37 @@ class TestIsProjectsCategory:
     def test_missing_value_is_not_a_project(self):
         assert is_projects_category(None) is False
         assert is_projects_category("") is False
+
+
+class TestCustomCollectionCategory:
+    def test_custom_values_are_collections_but_builtin_values_are_not(self):
+        assert is_custom_collection_category("tech") is True
+        assert is_custom_collection_category("Andris") is True
+        for value in (
+            "Folders on Disk",
+            "Projects (internal)",
+            "Other Stuff",
+            "Exported Pictures",
+            "Downloaded Albums~otheruserid",
+        ):
+            assert is_custom_collection_category(value) is False, value
+
+    def test_category_write_round_trips_and_preserves_the_document(
+        self, tmp_path
+    ):
+        path = tmp_path / ".picasa.ini"
+        eredeti = (
+            b"[Picasa]\r\nP2category=Folders on Disk\r\nname=Keep me\r\n"
+            b"[IMG_0001.jpg]\r\nstar=yes\r\n"
+        )
+        path.write_bytes(eredeti)
+
+        document = load_or_empty(path)
+        updated = with_folder_category(document, "Utazás")
+        save_document(updated, path)
+        visszaolvasott = load_or_empty(path)
+
+        assert read_folder_category(visszaolvasott) == "Utazás"
+        assert path.read_bytes() == eredeti.replace(
+            b"P2category=Folders on Disk", "P2category=Utazás".encode("utf-8")
+        )

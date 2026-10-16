@@ -123,7 +123,7 @@ class TestRoundTripNewKeys:
 
 class TestFileIoNewKeys:
     """A fájl-alapú betöltés/mentés (`load_document`/`save_document`) és az
-    atomikus, ütközésbiztos `update_document` sem sérti a round-tripet."""
+    atomikus, útvonalanként sorosított `update_document` sem sérti a round-tripet."""
 
     def test_load_save_roundtrip_is_byte_identical(self, tmp_path):
         path = tmp_path / ".picasa.ini"

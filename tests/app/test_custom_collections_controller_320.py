@@ -1,5 +1,5 @@
-"""#320: `CustomCollectionsMixin` — a QSettings-alapú perzisztencia és a
-QML-nek adott `customCollections` property/slotok.
+"""#320/#4589: `CustomCollectionsMixin` — QSettings nevek és ini-tagság,
+valamint a QML-nek adott `customCollections` property/slotok.
 
 A mixin ÖNÁLLÓAN, egy minimális host-osztályon tesztelt (a
 `folder_tree_controller.py` tesztelési mintája) — a valódi `AppController`-
@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import pytest
 from PySide6.QtCore import QObject, QSettings
+
+from picasapy.ini import load_document, read_folder_category
+from picasapy.scanner import PICASA_INI_NAME
 
 
 @pytest.fixture
@@ -24,7 +27,13 @@ def host(tmp_path):
             return self._settings
 
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
-    return _Host(settings)
+    host = _Host(settings)
+    host.folder_path = tmp_path / "kepek" / "balaton"
+    host.folder_path.mkdir(parents=True)
+    (host.folder_path / PICASA_INI_NAME).write_text(
+        "[Picasa]\nP2category=Folders on Disk\n", encoding="utf-8"
+    )
+    return host
 
 
 class TestEmptyState:
@@ -82,23 +91,40 @@ class TestRenameAndDelete:
 class TestMoveFolderToCollection:
     def test_move_adds_folder(self, host):
         host.createCollection("Nyaralások")
-        host.moveFolderToCollection("/kepek/balaton", "Nyaralások")
+        host.moveFolderToCollection(str(host.folder_path), "Nyaralások")
         assert host.customCollections == [
-            {"name": "Nyaralások", "folders": ["/kepek/balaton"], "closed": False}
+            {
+                "name": "Nyaralások",
+                "folders": [str(host.folder_path)],
+                "closed": False,
+            }
         ]
+        assert read_folder_category(
+            load_document(host.folder_path / PICASA_INI_NAME)
+        ) == "Nyaralások"
 
     def test_move_between_collections_is_exclusive(self, host):
         host.createCollection("Régi")
         host.createCollection("Új")
-        host.moveFolderToCollection("/kepek/balaton", "Régi")
-        host.moveFolderToCollection("/kepek/balaton", "Új")
+        host.moveFolderToCollection(str(host.folder_path), "Régi")
+        host.moveFolderToCollection(str(host.folder_path), "Új")
         assert host.customCollections == [
             {"name": "Régi", "folders": [], "closed": False},
-            {"name": "Új", "folders": ["/kepek/balaton"], "closed": False},
+            {
+                "name": "Új",
+                "folders": [str(host.folder_path)],
+                "closed": False,
+            },
         ]
+        assert read_folder_category(
+            load_document(host.folder_path / PICASA_INI_NAME)
+        ) == "Új"
 
     def test_move_to_empty_target_clears_membership(self, host):
         host.createCollection("Nyaralások")
-        host.moveFolderToCollection("/kepek/balaton", "Nyaralások")
-        host.moveFolderToCollection("/kepek/balaton", "")
+        host.moveFolderToCollection(str(host.folder_path), "Nyaralások")
+        host.moveFolderToCollection(str(host.folder_path), "")
         assert host.customCollections == [{"name": "Nyaralások", "folders": [], "closed": False}]
+        assert read_folder_category(
+            load_document(host.folder_path / PICASA_INI_NAME)
+        ) == "Folders on Disk"

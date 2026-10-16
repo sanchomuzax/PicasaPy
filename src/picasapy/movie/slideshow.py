@@ -18,18 +18,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from functools import lru_cache
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import tempfile
+from typing import NamedTuple
 
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 from picasapy.cvimage import dekodolj_forrast
+from picasapy.ini import IniDocument, load_or_empty
+from picasapy.scanner import PICASA_INI_NAME
 
 # A kodek-négyes: MP4 konténer, széles körben elérhető OpenCV-ben.
 _FOURCC = "mp4v"
@@ -177,6 +181,20 @@ def _decode(source: Path) -> np.ndarray:
     return image
 
 
+def decode_photo(source: Path, goal: int | None = None) -> np.ndarray:
+    """A slideshow fotódekódoló publikus belépője.
+
+    A `goal` a preview célmérete; JPEG és RAW esetén a közös képdekóder
+    kicsinyített olvasást választ, ha az elérhető.
+    """
+    if goal is None:
+        return _decode(source)
+    image = dekodolj_forrast(source, goal=goal)
+    if image is None:
+        raise ValueError(f"A kép nem dekódolható: {source}")
+    return image
+
+
 def _atmeneti_kocka(
     kilepo: np.ndarray, erkezo: np.ndarray, tipus: str, arany: float
 ) -> np.ndarray:
@@ -201,37 +219,6 @@ def _atmeneti_kocka(
         return cv2.addWeighted(koztes, 1.0 - (p - 0.5) * 2, erkezo, (p - 0.5) * 2, 0.0)
 
     magassag, szelesseg = kilepo.shape[:2]
-    y, x = np.mgrid[0:magassag, 0:szelesseg]
-    xn = (x + 0.5) / max(1, szelesseg)
-    yn = (y + 0.5) / max(1, magassag)
-
-    iranyok = {
-        "wipeleft": xn < p,
-        "wiperight": xn >= 1.0 - p,
-        "wipeup": yn >= 1.0 - p,
-        "wipedown": yn < p,
-        "diagwipeul": xn + yn < 2.0 * p,
-        "diagwipeur": (1.0 - xn) + yn < 2.0 * p,
-        "diagwipedl": xn + (1.0 - yn) < 2.0 * p,
-        "diagwipedr": (1.0 - xn) + (1.0 - yn) < 2.0 * p,
-    }
-    if tipus in iranyok:
-        return np.where(iranyok[tipus][..., None], erkezo, kilepo)
-
-    if tipus in {"circlein", "circleout"}:
-        tav = np.sqrt(((xn - 0.5) * 2) ** 2 + ((yn - 0.5) * 2) ** 2)
-        sugar = p * np.sqrt(2)
-        belul = tav <= sugar
-        if tipus == "circleout":
-            belul = ~belul
-        return np.where(belul[..., None], erkezo, kilepo)
-
-    if tipus == "rect":
-        szeles = p * 0.5
-        mag = p * 0.5
-        kozep = (np.abs(xn - 0.5) <= szeles) & (np.abs(yn - 0.5) <= mag)
-        return np.where(kozep[..., None], erkezo, kilepo)
-
     if tipus in {"pushleft", "pushright", "pushtop", "pushdown"}:
         out = np.empty_like(kilepo)
         if tipus == "pushleft":
@@ -264,7 +251,65 @@ def _atmeneti_kocka(
         mozgatott = nagy[y0 : y0 + magassag, x0 : x0 + szelesseg]
         return cv2.addWeighted(kilepo, 1.0 - p, mozgatott, p, 0.0)
 
+    if tipus in {
+        "wipeleft", "wiperight", "wipeup", "wipedown",
+        "diagwipeul", "diagwipeur", "diagwipedl", "diagwipedr",
+        "circlein", "circleout", "rect",
+    }:
+        xn, yn = _atmenet_koordinatak(magassag, szelesseg)
+        if tipus == "wipeleft":
+            maszk = xn[None, :] < p
+        elif tipus == "wiperight":
+            maszk = xn[None, :] >= 1.0 - p
+        elif tipus == "wipeup":
+            maszk = yn[:, None] >= 1.0 - p
+        elif tipus == "wipedown":
+            maszk = yn[:, None] < p
+        elif tipus == "diagwipeul":
+            maszk = xn[None, :] + yn[:, None] < 2.0 * p
+        elif tipus == "diagwipeur":
+            maszk = (1.0 - xn[None, :]) + yn[:, None] < 2.0 * p
+        elif tipus == "diagwipedl":
+            maszk = xn[None, :] + (1.0 - yn[:, None]) < 2.0 * p
+        elif tipus == "diagwipedr":
+            maszk = (1.0 - xn[None, :]) + (1.0 - yn[:, None]) < 2.0 * p
+        elif tipus in {"circlein", "circleout"}:
+            tav = np.sqrt(
+                ((xn[None, :] - 0.5) * 2) ** 2
+                + ((yn[:, None] - 0.5) * 2) ** 2
+            )
+            maszk = tav <= p * np.sqrt(2)
+            if tipus == "circleout":
+                maszk = ~maszk
+        else:
+            maszk = (np.abs(xn[None, :] - 0.5) <= p * 0.5) & (
+                np.abs(yn[:, None] - 0.5) <= p * 0.5
+            )
+        return np.where(maszk[..., None], erkezo, kilepo)
+
     return erkezo
+
+
+def transition_frame(
+    outgoing: np.ndarray,
+    incoming: np.ndarray,
+    transition: str,
+    progress: float,
+) -> np.ndarray:
+    """A kész film és az előnézet közös átmeneti képkockája."""
+    return _atmeneti_kocka(outgoing, incoming, transition, progress)
+
+
+@lru_cache(maxsize=8)
+def _atmenet_koordinatak(magassag: int, szelesseg: int) -> tuple[np.ndarray, np.ndarray]:
+    """A maszkok normalizált sor- és oszlopkoordinátái méret szerint cache-elve."""
+    # A korábbi np.mgrid-képlet float64 koordinátákat adott; a körmaszk
+    # határán a float32 2–4 pixellel eltérő exportot eredményezett.
+    xn = (np.arange(szelesseg, dtype=np.float64) + 0.5) / max(1, szelesseg)
+    yn = (np.arange(magassag, dtype=np.float64) + 0.5) / max(1, magassag)
+    xn.setflags(write=False)
+    yn.setflags(write=False)
+    return xn, yn
 
 
 def _ffmpeg_exe() -> str | None:
@@ -323,8 +368,54 @@ def _hanggal_osszeilleszt(
         Path(atmeneti_cel).unlink(missing_ok=True)
 
 
-def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
-    """Képkockát készít a Szöveg fülön felvett dia beállításaiból."""
+@lru_cache(maxsize=256)
+def _betu_utvonal(fontfajlok: tuple[str, ...]) -> str | None:
+    """Az első betölthető betűfájl TELJES útvonala (vagy None: alapbetű).
+
+    A fájlnév nélküli betűnév keresése a rendszer betűmappáit járja be, ami
+    hideg gépen ~1 s; ezt a szerkesztés közben nem fizetjük újra (#4852).
+    Futás közben telepített betű csak a program újraindítása után látszik."""
+    for fontfajl in fontfajlok:
+        try:
+            return str(ImageFont.truetype(fontfajl, 10).path)
+        except OSError:
+            continue
+    return None
+
+
+def _betu_betoltese(fontfajlok: tuple[str, ...], meret: int):
+    """A gyorsítótárazott útvonalról tölt; ha a fájl közben eltűnt, újrakeres."""
+    for _ in range(2):
+        utvonal = _betu_utvonal(fontfajlok)
+        if utvonal is None:
+            break
+        try:
+            return ImageFont.truetype(utvonal, meret)
+        except OSError:
+            _betu_utvonal.cache_clear()
+    return ImageFont.load_default()
+
+
+class _Vaszon(NamedTuple):
+    """Csak a méret: a kis előnézeti vászon nem esik a páros/min. méret alá."""
+
+    width: int
+    height: int
+
+
+def _szovegdia(
+    slide: dict[str, object],
+    settings: MovieSettings | _Vaszon,
+    skala: float = 1.0,
+    *,
+    ido: float | None = None,
+) -> np.ndarray:
+    """Képkockát készít a Szöveg fülön felvett dia beállításaiból.
+
+    A `settings` már a TÉNYLEGES vászonméretet hordozza; a `skala` (a teljes
+    filmmérethez képesti arány, export: 1.0) a betűméretet és a margót
+    arányosan igazítja (a körvonal legalább 1 px), hogy a kis kocka ugyanazt mutassa kicsiben.
+    """
     def szin(ertek: object, tartalek: str) -> tuple[int, int, int]:
         try:
             return ImageColor.getrgb(str(ertek))[:3]
@@ -336,6 +427,8 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
     kep = Image.new("RGB", (settings.width, settings.height), hatter)
     rajz = ImageDraw.Draw(kep, "RGBA")
     meret = max(8, int(slide.get("size", 16)))
+    if skala != 1.0:
+        meret = max(1, round(meret * skala))
     betu = str(slide.get("font", "DejaVuSans"))
     fontfajlok = [betu, f"{betu}.ttf"]
     if slide.get("italic"):
@@ -343,21 +436,16 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
     if slide.get("bold"):
         fontfajlok.append("DejaVuSans-Bold.ttf")
     fontfajlok.append("DejaVuSans.ttf")
-    font = None
-    for fontfajl in fontfajlok:
-        try:
-            font = ImageFont.truetype(fontfajl, meret)
-            break
-        except OSError:
-            continue
-    if font is None:
-        font = ImageFont.load_default()
+    font = _betu_betoltese(tuple(fontfajlok), meret)
 
     szoveg = str(slide.get("text", ""))
     if not szoveg:
         return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
     stilus = int(slide.get("style", 0))
-    marg = max(16, settings.width // 18)
+    if skala == 1.0:
+        marg = max(16, settings.width // 18)
+    else:
+        marg = max(1, round(max(16, round(settings.width / skala) // 18) * skala))
     keret = rajz.multiline_textbbox((0, 0), szoveg, font=font)
     szoveg_szeles = keret[2] - keret[0]
     szoveg_magas = keret[3] - keret[1]
@@ -370,32 +458,120 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
         x, y = settings.width - szoveg_szeles - marg, (settings.height - szoveg_magas) // 2
     else:
         x, y = (settings.width - szoveg_szeles) // 2, (settings.height - szoveg_magas) // 2
+
+    rajzolando_szoveg = szoveg
+    alfa = 255
+    if ido is not None and stilus in (1, 8, 11):
+        # A felületről létrehozott MXF-dia blacktime és extra időeltolása 0.
+        # Az időtengely a helyi filmrenderelésé: kockaindex / fps.
+        kezdet = 0.0
+        if stilus == 8:
+            idotartam = settings.seconds_per_photo
+        else:
+            idotartam = settings.transition_seconds
+            if idotartam == 0:
+                idotartam = settings.seconds_per_photo / 3
+        if idotartam > 0:
+            arany = max(0.0, min(1.0, (ido + 0.02 - kezdet) / idotartam))
+            simitott = 3 * arany**2 - 2 * arany**3
+            if stilus == 1:
+                # A TextFadeMove X-eltolása 0-ról -M-re tart; M a saját
+                # render geometriájából számolt szövegdoboz-balél.
+                x = round(x - simitott * x)
+                alfa = round(255 * arany)
+            elif stilus == 8:
+                # B a vászon alsó éle, A a középre igazított szövegdoboz.
+                also = settings.height
+                kozep = 0.5 * (settings.height - szoveg_magas)
+                y = round(also + simitott * (kozep - also))
+            else:
+                # A timeline a szöveg UTF-8 bájthosszát lépteti. Csak a
+                # teljes karakterek rajzolhatók, a fél UTF-8 karakter nem.
+                hossz = len(szoveg.encode("utf-8"))
+                bajtlimit = max(1, int(hossz * arany + 0.5))
+                lathato = []
+                felhasznalt = 0
+                for karakter in szoveg:
+                    karakterbajtok = len(karakter.encode("utf-8"))
+                    if felhasznalt + karakterbajtok > bajtlimit:
+                        break
+                    lathato.append(karakter)
+                    felhasznalt += karakterbajtok
+                rajzolando_szoveg = "".join(lathato)
+                if not rajzolando_szoveg:
+                    return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
+
     if stilus in (4, 5, 6, 7):
         sav = (0, 0, 0, 180) if stilus in (4, 6) else (255, 255, 255, 180)
         rajz.rectangle((0, y - marg // 2, settings.width, y + szoveg_magas + marg // 2), fill=sav)
         betuszín = (255, 255, 255) if stilus in (4, 6) else (0, 0, 0)
     kontur = bool(slide.get("outline")) or stilus in (3, 11)
-    rajz.multiline_text(
+    kitoltes = (*betuszín, alfa) if alfa < 255 else betuszín
+    kontur_szin = (0, 0, 0) if betuszín != (0, 0, 0) else (255, 255, 255)
+    kontur_kitoltes = (*kontur_szin, alfa) if alfa < 255 else kontur_szin
+    szoveg_reteg = Image.new("RGBA", kep.size, (0, 0, 0, 0)) if alfa < 255 else None
+    szoveg_rajz = ImageDraw.Draw(szoveg_reteg) if szoveg_reteg is not None else rajz
+    szoveg_rajz.multiline_text(
         (x, y),
-        szoveg,
+        rajzolando_szoveg,
         font=font,
-        fill=betuszín,
+        fill=kitoltes,
         stroke_width=max(1, meret // 18) if kontur or slide.get("bold") else 0,
-        stroke_fill=(0, 0, 0) if betuszín != (0, 0, 0) else (255, 255, 255),
+        stroke_fill=kontur_kitoltes,
     )
+    if szoveg_reteg is not None:
+        kep = Image.alpha_composite(kep.convert("RGBA"), szoveg_reteg).convert("RGB")
     return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
 
 
-def _fotofelirat(frame: np.ndarray, path: Path, settings: MovieSettings) -> np.ndarray:
+def render_text_slide(
+    slide: dict[str, object],
+    settings: MovieSettings,
+    size: tuple[int, int] | None = None,
+) -> np.ndarray:
+    """A film szöveges diájának publikus renderelője.
+
+    `size` nélkül (export) a teljes filmméreten rajzol. `size`-zal (előnézet)
+    közvetlenül az adott méretű vászonra rajzol, a betű/elrendezés arányosan
+    skálázva, így nem kell a teljes méretet renderelni és kicsinyíteni."""
+    if size is None or tuple(size) == (settings.width, settings.height):
+        return _szovegdia(slide, settings)
+    width, height = max(2, int(size[0])), max(2, int(size[1]))
+    return _szovegdia(slide, _Vaszon(width, height), width / settings.width)
+
+
+def _picasa_caption(
+    path: Path, documents: dict[Path, IniDocument | None]
+) -> str:
+    """A kép `.picasa.ini`-beli felirata, az adott filmhez cache-elve."""
+    ini_path = path.parent / PICASA_INI_NAME
+    if ini_path not in documents:
+        try:
+            documents[ini_path] = load_or_empty(ini_path)
+        except OSError:
+            # A felirat metaadat; olvasási hiba esetén az EXIF-tartalék marad.
+            documents[ini_path] = None
+    document = documents[ini_path]
+    section = document.section(path.name) if document is not None else None
+    return (section.get("caption") or "").strip() if section is not None else ""
+
+
+def _fotofelirat(
+    frame: np.ndarray,
+    path: Path,
+    settings: MovieSettings,
+    picasa_caption: str = "",
+) -> np.ndarray:
     """Az elérhető EXIF-feliratot/dátumot diszkrét alsó sávban mutatja."""
     if not settings.show_captions and not settings.show_dates:
         return frame
-    caption = ""
+    caption = picasa_caption
     date = ""
     try:
         with Image.open(path) as photo:
             exif = photo.getexif()
-            caption = str(exif.get(270, "") or "").strip()
+            if not caption:
+                caption = str(exif.get(270, "") or "").strip()
             exif_values = exif
             try:
                 exif_values = exif.get_ifd(34665) or exif
@@ -426,6 +602,34 @@ def _fotofelirat(frame: np.ndarray, path: Path, settings: MovieSettings) -> np.n
     return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 
+def prepare_photo_frame(
+    path: Path,
+    settings: MovieSettings,
+    ini_docs: dict[Path, IniDocument | None],
+    *,
+    decoder=None,
+) -> np.ndarray:
+    """Dekódolja és a filmvászonra készíti a fotót.
+
+    Az export és az élő előnézet ugyanazt a vágást/letterboxot, hátteret,
+    feliratot és dátumsávot használja. A `decoder` csak a kis felbontású
+    előnézeti dekódert cseréli be; exportkor a teljes képkocka készül.
+    """
+    photo_path = Path(path)
+    image = (decoder or _decode)(photo_path)
+    frame = (
+        crop_to_fit(image, settings.width, settings.height)
+        if settings.cropfit
+        else letterbox(
+            image, settings.width, settings.height, settings.background
+        )
+    )
+    caption = (
+        _picasa_caption(photo_path, ini_docs) if settings.show_captions else ""
+    )
+    return _fotofelirat(frame, photo_path, settings, caption)
+
+
 def export_movie(
     sources,
     target: Path,
@@ -453,7 +657,8 @@ def export_movie(
     target = Path(target)
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    decoded: list[tuple[Path | None, np.ndarray]] = []
+    decoded: list[tuple[Path | None, np.ndarray, dict[str, object] | None]] = []
+    ini_documents: dict[Path, IniDocument | None] = {}
     for path in paths:
         if not path.exists():
             # #459/3: hiányzó fájl — a film a maradékkal elkészül
@@ -462,19 +667,25 @@ def export_movie(
             reasons.append("a fájl nem található")
             continue
         try:
-            image = _decode(path)
+            frame = prepare_photo_frame(path, settings, ini_documents)
         except (ValueError, OSError) as error:
             skipped.append(path)
             reasons.append(str(error))
             continue
-        frame = (
-            crop_to_fit(image, settings.width, settings.height)
-            if settings.cropfit
-            else letterbox(image, settings.width, settings.height, settings.background)
-        )
-        decoded.append((path, _fotofelirat(frame, path, settings)))
+        decoded.append((path, frame, None))
 
-    text_frames = [(None, _szovegdia(slide, settings)) for slide in settings.text_slides]
+    text_frames = [
+        (
+            None,
+            _szovegdia(
+                slide,
+                settings,
+                ido=settings.frames_per_photo / settings.fps,
+            ),
+            slide,
+        )
+        for slide in settings.text_slides
+    ]
     if settings.ordering == 2:
         decoded.sort(key=lambda entry: entry[0].stat().st_mtime if entry[0] else float("inf"))
     elif settings.ordering == 0 and len(decoded) > 1:
@@ -539,17 +750,36 @@ def export_movie(
             alap_tartas, maradek = divmod(osszes_tartas, len(decoded))
             holds = [alap_tartas] * len(decoded)
             holds[-1] += maradek
-        for index, (path, frame) in enumerate(decoded):
+        for index, (path, frame, text_slide) in enumerate(decoded):
             if index and settings.transition_frames:
                 previous = decoded[index - 1][1]
                 for step in range(1, settings.transition_frames + 1):
                     weight = step / (settings.transition_frames + 1)
+                    incoming = (
+                        _szovegdia(
+                            text_slide,
+                            settings,
+                            ido=(step - 1) / settings.fps,
+                        )
+                        if text_slide is not None
+                        else frame
+                    )
                     writer.write(_atmeneti_kocka(
-                        previous, frame, settings.transition_type, weight
+                        previous, incoming, settings.transition_type, weight
                     ))
                     frames_written += 1
-            for _ in range(holds[index]):
-                writer.write(frame)
+            for local_frame in range(holds[index]):
+                kocka = (
+                    _szovegdia(
+                        text_slide,
+                        settings,
+                        ido=(local_frame + (settings.transition_frames if index else 0))
+                        / settings.fps,
+                    )
+                    if text_slide is not None
+                    else frame
+                )
+                writer.write(kocka)
                 frames_written += 1
             if path is not None:
                 used.append(path)

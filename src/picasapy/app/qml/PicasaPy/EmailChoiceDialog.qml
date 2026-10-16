@@ -309,7 +309,12 @@ Dialog {
                             color: Theme.ink
                             placeholderText: ""
                             selectByMouse: true
-                            TextFieldContextArea {}
+                            TextFieldContextArea {
+                                autoCompleteSupported: true
+                                autoCompleteController:
+                                    (typeof emailController !== "undefined")
+                                    ? emailController : null
+                            }
                         }
                     }
 

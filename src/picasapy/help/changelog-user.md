@@ -4,6 +4,475 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-13
+
+**Rejtett mappák**
+
+- Az elrejtett mappa a mappa saját `.picasa.ini` fájljába kerül, mint a
+  Picasában: rejtett marad akkor is, ha a program újraolvassa a
+  könyvtárat, és a Picasában elrejtett mappák itt is rejtve jelennek
+  meg.
+- A rejtett mappák képei a mappán kívül sem látszanak: a keresés, a
+  szűrők, az Emberek nézet, az idővonal, az albumok, a térkép, a
+  diavetítés, a képernyővédő és a képtálca is kihagyja őket — kivéve, ha
+  a **Nézet ▸ Rejtett képek** be van kapcsolva. Lásd
+  [A könyvtár](features/konyvtar.md).
+- Az **Import a Picasából** a régi Picasa rejtett-mappa jelszavát is
+  átveszi, ha itt még nincs saját jelszavad. Lásd
+  [Importálás](features/importalas.md).
+
+**Fájlműveletek**
+
+- Tömeges átnevezésnél a **Dátum** a felvétel dátumát és idejét is a
+  névbe teszi, a tiltott jelek helyén kötőjellel; a névmezőbe nem írható
+  tiltott fájlnév-karakter, és a két jelölőnégyzet állása megmarad. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- A nézőben albumból vagy Emberek albumból megnyitott képen a
+  **Ctrl+Delete** és a helyi menü tétele már nem a lemezről töröl, hanem
+  csak az albumból veszi ki a képet. Lásd [Nézegetés](features/nezegetes.md).
+
+**Könyvtár**
+
+- A bal hasáb mappáinak kis indexképei induláskor gyorsabban jelennek
+  meg.
+
+## 2026-10-12
+
+**Billentyűk**
+
+- Az **F3** a kereső mezőre ugrik (mint a Ctrl+F), az **F4** csillagot ad
+  a kijelölt képekre, vagy elveszi róluk. Lásd
+  [Billentyűparancsok](features/billentyuk.md).
+
+**Importálás és exportálás**
+
+- Az importálás forrása most **egyes fájlok** is lehetnek: a **Tallózás…**
+  gomb menüjében a **Mappa…** és a **Fájlok…** közül választhatsz. Lásd
+  [Importálás](features/importalas.md).
+- A HTML-oldal exportálásakor egyetlen méretválasztó van (alapból 640
+  képpont), és a mozgófilmek **első képkockaként** vagy **teljes
+  mozgófilmként** kerülhetnek az oldalra. Az árnyékolás két
+  jelölőnégyzete megszűnt, az árnyékot a sablon adja. Lásd
+  [Exportálás](features/exportalas.md).
+
+**Szerkesztés**
+
+- Az effektek fülén a Shift lenyomására a kétféle effektet adó csempék
+  kis előnézete is átvált. Lásd [Effektek](features/effektek.md).
+- Az **Egyéni méretarány hozzáadása** ablak az eredeti feliratait kapta;
+  a saját arányok az **Egyéni méretarányok** cím alatt állnak, és a
+  lista melletti kukával törölhetők. Lásd [A szerkesztő](features/szerkeszto.md).
+- A szerkesztő fülsávjának ikonjai az eredeti méretét és rajzát követik.
+
+**Emberek és film**
+
+- Az Emberek panel fejléce mutatja, ha a háttérben még tart az
+  arckeresés a kijelölt képeken, és hány fájl ellenőrizetlen még. Lásd
+  [Emberek](features/emberek.md).
+- A filmkészítő előnézete a kiválasztott **átmenet** mozgását is
+  lejátssza, és a szöveges dia gépelés közben frissül. Lásd
+  [Mozgófilm](features/mozgofilm.md).
+
+## 2026-10-11
+
+**Néző és diavetítés**
+
+- Nagyított képen a sarokban **navigátorablak** mutatja, a kép melyik
+  része látszik; a kék keretet húzva máshová lépsz. Lásd
+  [Nézegetés](features/nezegetes.md).
+- A diavetítés átmenet-választója az eredeti Picasa mind a **22
+  átmenetét** kínálja (Törlés, Tolás, Kör, Négyszög, Gyorsítás és a
+  többi).
+- A nézőben megnyitott videó magától elindul.
+- Windowson és macOS-en a **Klip exportálása** gomb a vágott szakaszt
+  MP4-fájlba menti; Linuxon továbbra sem támogatott.
+
+**Szerkesztés**
+
+- A szerkesztő gombjaira és effektcsempéire mutatva az eredeti Picasa
+  súgóbuborékai jelennek meg. Lásd [A szerkesztő](features/szerkeszto.md).
+- A szöveg, a körvonal és az effektek színe **szabad színválasztóból** is
+  megadható, és a szövegeszköznél is ott vannak a legutóbbi színek.
+- A **Vörösszem** az automatikusan javított szemek köré is négyzetet
+  rajzol; ezek egyenként visszavonhatók, és az **Alaphelyzet** az
+  automatikus javítást is visszaveszi.
+- A **Vágás** paneljéről eltűnt három gyorsvágás-gomb, ami az eredetiben
+  nem volt meg; a javasolt vágások maradtak.
+- A **Képregény** csúszkái az eredeti nevükön: **Színes ecset**,
+  **Pontsűrűség**, **Ponthalványítás**. Lásd
+  [Effektek](features/effektek.md).
+
+**Emberek, helyek, címkék**
+
+- Az Emberek panelen a névtelen arc **javasolt neve** a **✓** gombbal
+  elfogadható, a **✗** gombbal elvethető, és megjelent a **Személy kézi
+  hozzáadása** gomb útmutatóval. Lásd [Emberek és
+  arcok](features/emberek.md).
+- Az üres Névtelenek gyűjteménynél az Emberek panel az eredeti
+  útmutatót mutatja.
+- A **Helyek** térképén a jelölők bélyegképet mutatnak, és kattintásra
+  buborék nyílik (**Ezen fotók keresése a Picasában**, **Helyadatok
+  törlése**). A rácsból a térképre húzott képek megerősítés után helyet
+  kapnak. Betöltés közben „Térkép betöltése..." látszik, internet nélkül
+  hibaüzenet. Lásd [Helyek](features/helyek.md).
+- A Címkék panel **+** és fogaskerék-gombja buboréksúgót kapott, a
+  gyorscímke-sor felirata **Gyorscímkék:**. Lásd [Csillagok, feliratok,
+  címkék](features/csillag-felirat-cimke.md).
+- A Tulajdonságok panel **Kulcsszavak** gombja a **Címkék** ablakot
+  nyitja; videónál a panel a formátumot, a képkockasebességet és a hosszt
+  is mutatja. Lásd [A könyvtár](features/konyvtar.md).
+
+**Könyvtár és menük**
+
+- Az album helyi menüjében működik az **Album törlése**: megerősítés után
+  az album minden mappából kikerül, a képek megmaradnak.
+- A **Mappa tulajdonságai** **Dátum** mezője mellől naptár nyílik, és a
+  dátum a nyelvi beállítás szerinti alakban látszik.
+- A **Nézet ▸ Mappanézet** (és a ▾ gomb) menüjében ott van a három
+  személyrendezés és a **Gyorsbillentyűk** almenü.
+- A kép helyi menüjének **Társítás** tétele programot választ, és azzal
+  nyitja meg a képet. Lásd [Fájlműveletek](features/fajlmuveletek.md).
+- A képtálca kimeneti gombsorán jobbgombbal elérhető a **Gombok
+  konfigurálása…**.
+
+**Importálás, e-mail, nyomtatás, régi adatok**
+
+- Az importálás a csatolt memóriakártyát és USB-meghajtót is felkínálja
+  forrásként (**Cserélhető meghajtók**). Kézi mappanévnél név nélkül nem
+  indul az importálás, és a név csak egyetlen mappanév lehet. Lásd
+  [Importálás](features/importalas.md).
+- Az **Import a Picasából** kézzel megadott Picasa2-adatmappából,
+  meghajtó-leképezéssel is működik.
+- Windowson az e-mail a képeket mellékletként csatolja a levelezőprogram
+  szabványos felületén át. Lásd [Küldés e-mailben](features/email.md).
+- A Nyomtatás ablak a tartalomhoz igazodik, a **Nyomtatás** és a
+  **Bezárás** gomb mindig látszik; nyomtató nélküli gépen az ablak
+  megmondja, mi a teendő. Lásd [Nyomtatás](features/nyomtatas.md).
+- A régi, **Picasa.ini** nevű fájl tartalma az első mentéskor átkerül az
+  új `.picasa.ini`-be, és a biztonsági mentés meg az áthelyező importálás
+  is megőrzi.
+- Forrásból indítva a program a felület fordításait maga készíti el.
+  Lásd [Első lépések](getting-started.md).
+
+## 2026-10-10
+
+**Új funkciók**
+
+- **Visszaállítás a biztonsági mentésből**: az **Eszközök ▸ Képek
+  biztonsági mentése…** panelen a **Visszaállítás...** gombbal egy
+  mentési mappából vagy ISO-lemezkép-készletből a programon belül
+  visszaállíthatod a képeket. Meglévő fájlt nem ír felül. Lásd [Képek
+  biztonsági mentése](features/biztonsagi-mentes.md).
+- A weboldal-export a saját `.tpl`-sablonjaidat is felajánlja. Lásd
+  [Exportálás](features/exportalas.md).
+- A **Szöveg** eszközzel egy képre több szövegdoboz is felvehető; a
+  meglévőre kattintva kijelölöd és átszerkesztheted. A betűtípus-lista a
+  gépre telepített betűcsaládokat kínálja. Lásd [A
+  szerkesztő](features/szerkeszto.md).
+
+**Néző**
+
+- Az **F11** teljes képernyőre váltja a nézőt, újra megnyomva visszaáll.
+  Lásd [Nézegetés](features/nezegetes.md).
+- A **◀** és **▶** gombot nyomva tartva a néző folyamatosan léptet.
+- A filmszalag hét férőhelyes, az éppen látott képet mindig középen
+  tartja, kétszínű kerettel.
+- Videónál a bal oldalon a fülsáv helyén a **videópanel** áll: a vágás
+  visszaállítása (megerősítéssel), a pillanatfelvétel és a klip
+  exportálása.
+- Az **Eszközök ▸ Fotómegjelenítő beállítása…** **Teljes képernyős
+  indítás** jelölője most már hat, újraindítás nélkül. Lásd
+  [Beállítások](features/beallitasok.md).
+
+**Szerkesztés és effektek**
+
+- A **Vörösszem** panel figyelmeztet, ha a képet a Kiegyenesítés
+  elforgatta; az automatikus vörösszem-javítás nem akad el egy hibás
+  szemhelyen.
+- A **Vágás** méretarány-listája kiírja a keret és a kép pixelméretét.
+- A **Retusálás** ecsetköre a kurzornál, a célnál és a forrásnál is
+  látszik a képen.
+- A szöveg igazítógombjain három külön jel áll.
+- A **Shift + Ragyogás** csúszkás panelt nyit (**Intenzitás**,
+  **Sugár**). A **Színátmenet** **Lágy perem** alapértéke 0,25, a
+  **Fókuszos FF** csúszkája **Méret**; a Polaroid, a 60-as évek és a
+  Kerekített élek színmintája **Háttérszín**. Lásd
+  [Effektek](features/effektek.md).
+- Egy effekt alkalmazása után az effektcsempék a frissített képet
+  mutatják.
+
+**Emberek és helyek**
+
+- A nézőben a felismert, névtelen arcra kattintva keret és **Írjon be
+  egy nevet** mező nyílik. Lásd [Emberek és arcok](features/emberek.md).
+- Az Emberek-album helyi menüjében működik **Az Emberek album törlése**
+  (megerősítéssel) és **Az Emberek album szerkesztése…**.
+- A mappa és az album helyi menüjének **Névcímkék hozzáadása** tétele
+  csak annak a képein keres arcot.
+- Windowson is működik a személyalbum javaslatainak kijelölése.
+- A **Helyek** panelen a jelölőre kattintva a rács a helyhez kötött
+  képeket mutatja; a keresőmező felirata **Keresés**. Lásd
+  [Helyek](features/helyek.md).
+
+**Könyvtár, keresés, menük**
+
+- A keresősáv javaslatai billentyűzettel is kezelhetők (**↓**/**↑**,
+  **Enter**, **Esc**); keresés után a zöld sáv **Vissza az összes
+  megtekintéséhez** gombja kilép a keresésből. Lásd
+  [Keresés](features/kereses.md).
+- A szűrősáv csak az aktív szűrőt mutatja bekapcsoltnak, a kor-szűrő
+  nézetváltáskor alaphelyzetbe áll, és a működés nélküli „▤" jel
+  eltűnt.
+- Fanézetben a képes mappasoron a jobb gomb a teljes mappa-menüt adja.
+  Lásd [A könyvtár](features/konyvtar.md).
+- A **Nézet** menü indexkép-tételei pipával jelzik az aktuális nézetet.
+- Album- és személynézetben a **Mappa ▸ Elrejtés** és **Megjelenítés**
+  szürke.
+- A **További lehetőségek…** a ki nem férő gombokat függőleges oszlopban
+  kínálja; a tálca ★ gombjának súgója a ★ fölött jelenik meg.
+- A Tulajdonságok panel jobbgombos menüjéből a Címkék panel nyílik.
+- A régi, **Picasa.ini** nevű fájlból is beolvasódnak a csillagok és a
+  feliratok. Lásd [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+- A **Kép ▸ Csoportos szerkesztés** az eredeti sorrendet követi, első
+  tétele az **Átnevezés…** (F2). Lásd [Csoportos
+  szerkesztés](features/csoportos-szerkesztes.md).
+- Az **Eszközök ▸ Kísérleti** almenü tételei az eredeti sorrendben
+  állnak.
+- A PicasaPy saját menüparancsai kék jelölést kapnak. Lásd [Első
+  lépések](getting-started.md).
+- A **Súgó ▸ Billentyűkódok** a működő gyorsbillentyűk listáját nyitja;
+  a **Súgó ▸ Frissítések keresése** szürke, mert megszűnt szolgáltatás.
+  Lásd [Billentyűparancsok](features/billentyuk.md).
+
+**Film, képernyővédő, háttérkép, e-mail**
+
+- A filmkészítő előnézete mutatja az átmenetet és a szöveges diát, és a
+  hangsáv is szól, hangerő-csúszkával. A mappafejlécben a kollázs-gomb
+  mellett filmgomb áll. Az album zenéje szól az album diavetítésében és
+  filmjében. Lásd [Mozgófilm](features/mozgofilm.md).
+- Albumnézetben a képernyővédőhöz adás előbb rákérdez. Lásd
+  [Képernyővédő](features/kepernyovedo.md).
+- A háttérkép a szerkesztett, helyesen álló képből készül. Lásd [Asztali
+  háttérkép](features/hatterkep.md).
+- Az e-mailhez készült ideiglenes képmásolatokat a program indításkor
+  törli. Lásd [Küldés e-mailben](features/email.md).
+
+## 2026-10-09
+
+**Szerkesztés és effektek**
+
+- A pontra összpontosító effekteknél (Lágy fókusz, Fókuszos FF,
+  Színátmenet, Sugaras árnyalás, Fókusznagyítás, Képpontnövelés) a
+  fókuszpontot **a képen húzhatod**, a Középpont csúszkák követik. Lásd
+  [Effektek](features/effektek.md).
+- Az **Árnyalás** színe választható (**Tinta színe**), alapból
+  világoskék, ahogy az eredetiben.
+- A **Ceruzarajz** panelje a **Sugár**, **Erősség** és **Fokozat**
+  csúszkát mutatja.
+- **Kép ▸ Csoportos szerkesztés**: új tétel a **Szépia** és a
+  **Fekete-fehér**. Lásd [Csoportos
+  szerkesztés](features/csoportos-szerkesztes.md).
+- Szerkesztőnézetben a **Ctrl+9** elrejti és előhozza a bal oldali
+  panelt.
+
+**Néző és menük**
+
+- Nyitott nézőben a **Fájl**, **Szerkesztés** és **Kép** menü a
+  megnyitott képre hat, és nem szürke. Lásd
+  [Nézegetés](features/nezegetes.md).
+- A **Nézet ▸ Könyvtárnézet** a nézőből visszavisz a könyvtárba.
+- Windowson a dupla kattintás az egykattintásos kilépés mellett is
+  bezárja a nézőt, és az nem nyílik meg újra; mentés után a néző a
+  mentett képet mutatja.
+- Albumnézetben a **Mappa** menü helyén **Album** menü áll, az
+  **Albumleírás szerkesztése…** tétellel. Lásd [A
+  könyvtár](features/konyvtar.md).
+- A **Kép ▸ Elrejtés** a kijelölésben már rejtett képeket nem hozza elő.
+- **F5**: frissíti a megnyitott mappát és a keresés eredményét.
+- A **Ctrl+Enter** kijelölés nélkül a megnyitott mappát mutatja a
+  fájlkezelőben, a **Ctrl+Shift+P** kijelölés nélkül a mappa indexképes
+  nyomtatását nyitja. Lásd [Billentyűparancsok](features/billentyuk.md).
+- **Eszközök ▸ Kísérleti ▸ Keresés…**: hetedik tételként megjelent a
+  **Fekete-fehér** színkeresés. Lásd [Keresés](features/kereses.md).
+
+**Emberek és arcok**
+
+- Az Emberek panelen a névadás új név esetén a személyek kezelése
+  ablakot nyitja; az új személy csak jóváhagyás után jön létre.
+- **Kép ▸ Arcok alaphelyzetbe állítása** Ctrl- vagy Shift-kattintással
+  az egész könyvtárra hat, előtte figyelmeztet. Windowson a kijelölt
+  képekre is helyesen működik. Lásd [Emberek](features/emberek.md).
+- Az arckeresés után a program bekapcsolt javaslatok mellett magától
+  csoportosítja az arcokat.
+- Az **Arcinformációk írása XMP-adatokba…** előbb megkérdezi, mire hasson:
+  a kijelölt képekre, az arcos képekre vagy az összesre.
+- A személyalbum fejlécének új gombja egyszerre kijelöli a javaslatos
+  képeket.
+
+**Mozgófilm**
+
+- **Létrehozás ▸ Mozgófilm ▸ Az Emberek albumból…** — film az összes
+  személyalbum képeiből. Lásd [Mozgófilm](features/mozgofilm.md).
+- Ha ugyanabban az ablakban újra filmet készítesz, a program megkérdezi:
+  cserélje a meglévőt, vagy készítsen újat.
+- A **Képfeliratok megjelenítése** a PicasaPy-ban írt képfeliratot
+  mutatja; a fájlba írt leírás csak akkor kerül a filmre, ha nincs
+  képfelirat.
+
+**Nyomtatás, poszter, háttérkép, e-mail**
+
+- A nyomtatás és a poszter a **szerkesztett**, helyesen álló képből
+  készül. Lásd [Nyomtatás](features/nyomtatas.md) és
+  [Poszter](features/poszter.md).
+- Az asztali háttérkép KDE Plasmán és labwc/Sway asztalon is beáll. Lásd
+  [Asztali háttérkép](features/hatterkep.md).
+- Az e-mail küldés szól, ha nincs beállított levelezőprogram. A
+  **Címzett** mező helyi menüjének **Automatikus kitöltés** tétele pipás
+  kapcsoló lett, és a program megjegyzi. Lásd [Küldés
+  e-mailben](features/email.md).
+
+**Könyvtár**
+
+- **Eszközök ▸ Dátum és idő beállítása…** most az eredeti szerint a
+  képfájl EXIF-dátumát és a fájl idejét írja át (JPEG képeken), így más
+  program is az új dátumot látja. Lásd [A könyvtár](features/konyvtar.md).
+- A mappák gyűjteménybe sorolása a mappa `.picasa.ini` fájljába kerül,
+  tehát a mappával együtt költözik.
+- Windowson a csak kis- és nagybetűben eltérő mappaátnevezést is észreveszi
+  a program.
+- Indulási gond esetén a hibanapló megmutatja, meddig jutott a program.
+  Lásd [Gyakori kérdések](faq.md).
+
+## 2026-10-08
+
+**Új funkciók**
+
+- **Létrehozás ▸ Poszter készítése…** — a képet lapokra vágja, hogy
+  nagyban kinyomtathasd. Lásd [Poszter](features/poszter.md).
+- **Létrehozás ▸ Hozzáadás a képernyővédőhöz…** és **Eszközök ▸
+  Képernyővédő konfigurálása…** — Linuxon is. Lásd
+  [Képernyővédő](features/kepernyovedo.md).
+- **Fájl ▸ E-mail…** (Ctrl+E) levélszerkesztővel: címzett, tárgy,
+  mellékletek. Az eredeti méretű melléklet is a szerkesztett képet viszi,
+  videónál választhatod az első képkockát vagy a teljes filmet. Lásd
+  [Küldés e-mailben](features/email.md).
+- **Fájl ▸ Fájl(ok) megnyitása szerkesztőben** (Ctrl+Shift+O) — a rendszer
+  alapértelmezett programjában nyitja a képeket. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- **Eszközök ▸ Dátum és idő beállítása…** — átállítja a kijelölt képek
+  dátumát; az új dátum az exportba is átkerül. Lásd [A
+  könyvtár](features/konyvtar.md).
+- Webkamerás felvétel az eszköztár **◉** gombjáról. Lásd
+  [Importálás](features/importalas.md).
+- A **Mozgófilm** készítője három füllel, átmenetekkel, méretekkel,
+  hangsávval, szöveges diával és filmszalag-szerkesztővel; a kézi diák
+  elvesztése előtt rákérdez. Lásd [Mozgófilm](features/mozgofilm.md).
+
+**Beállítások**
+
+- A **Beállítások** nyolc füléből hat működik: **Általános**,
+  **Fájltípusok**, **E-mail**, **Diavetítés**, **Névcímkék** és
+  **Nyomtatás**. Lásd [Beállítások](features/beallitasok.md).
+- A nyelvválasztó mind a 41 nyelvet kínálja, és első induláskor a program
+  felajánlja a rendszer nyelvét.
+- Új: **Eszközök ▸ Fotómegjelenítő beállítása…** a **Színkezelés
+  használata** kapcsolóval.
+- Az importálás a beállításokban megadott célmappát ajánlja fel. Lásd
+  [Importálás](features/importalas.md).
+
+**Emberek és arcok**
+
+- A jobb oldali **Emberek** panel arcképekkel mutatja a kijelölt kép
+  arcait, a névtelen arcot onnan is megnevezheted. Lásd
+  [Emberek](features/emberek.md).
+- Az **Eszközök ▸ Személyek kezelése…** megnyílik.
+- A **Kép ▸ Arcok alaphelyzetbe állítása** működik: a kijelölt képek arcait
+  törli, majd újra megkeresi őket.
+- Az arcfelismerő a programmal együtt települ, letöltés nélkül működik, és
+  a háttérben alapból fut. Tájképen nem jelöl téves arcot.
+- A személyalbum filmgombja és a **Létrehozás ▸ Mozgófilm** almenü arcos
+  tétele a Filmkészítőt nyitja.
+- Megszűnt a „database is locked” hiba: ha az adatbázis épp foglalt, a
+  program szól, és később magától újrapróbálja. Lásd [Gyakori
+  kérdések](faq.md).
+
+**Könyvtár**
+
+- A **Mappa tulajdonságai** ablakban a **Név** mezővel át is nevezheted a
+  mappát, és zenét választhatsz a mappa diavetítéséhez és filmjéhez. Lásd
+  [A könyvtár](features/konyvtar.md).
+- **Nézet ▸ Kis képek**: alapból csak a nagy képek látszanak, ahogy az
+  eredeti Picasában.
+- **Mappa ▸ Elrejtés** és **Megjelenítés**, valamint **Kép ▸
+  Megjelenítés** működik.
+- A bal hasáb helyi menüjében működik az **Indexképek megjelenítése a
+  könyvtárban** és a **Gyorsbillentyűk ▸ Asztal**.
+- A rácsból vagy a tálcáról kihúzott képek fájlként kerülnek más
+  programba.
+- Albumnézetben a **Mappa** menü törlése, áthelyezése és eltávolítása
+  szürke, így nem hathat véletlenül a korábban nézett mappára.
+- **Nézet ▸ Szerkesztési nézet** és **Kép ▸ Megjelenítés és szerkesztés**
+  (Ctrl+3) megnyitja a kijelölt képet a nézőben.
+
+**Nézegetés**
+
+- Kettős nézetben a lapozás, a felirat, a törlés és a tükrözés a
+  kijelölt oldal képére hat. Lásd [Nézegetés](features/nezegetes.md).
+- Bekapcsolt egykattintásos kilépésnél állóképről is egy kattintással
+  visszajutsz a könyvtárba.
+- A diavetítés követi a törölt vagy átrendezett képet.
+- Videónál **tényleges méret** és **teljes képernyő** gomb van, a vágósáv
+  **Kezdőpont** / **Végpont** feliratot kap.
+- **Nézet ▸ Megjelenítési mód ▸ 16 bites (szemcsézett)** működik.
+
+**Szerkesztő**
+
+- A **Kiegyenesítés** négyzethálót mutat, **ALKALMAZ** és **MÉGSE**
+  gombja van, és csak az Alkalmazra ment. Lásd [A
+  szerkesztő](features/szerkeszto.md).
+- **Nézet ▸ Szerkesztési vezérlők megjelenítése**: elrejti vagy mutatja a
+  bal panelt, a választás megmarad.
+- A színválasztó megjegyzi az öt legutóbbi színt.
+- Az automatikus vörösszem-javítás csak a felismert arcok szemén javít.
+- **Kép ▸ Csoportos szerkesztés ▸ Szöveg megjelenítése / elrejtése**
+  működik. Lásd [Csoportos szerkesztés](features/csoportos-szerkesztes.md).
+- Az effektek az eredeti Picasához még hűbben néznek ki.
+
+**Feliratok, címkék, fájlok**
+
+- A **Szöveg beillesztése** rákérdez, mielőtt lecserélné egy kép meglévő
+  feliratát. Lásd [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+- 30 képnél többre a program a címkézés előtt rákérdez.
+- A fájlmozgatás soha nem ír felül létező célfájlt; a kötegelt átnevezés
+  részleges hibája megnevezi az elkészült fájlokat. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- A mentés, a visszaállítás és a mentés visszavonása frissíti a nézetet,
+  hiba esetén hibaablakot ad. Lásd [Mentés](features/mentes.md).
+
+**Nyomtatás és export**
+
+- Minőségellenőrzés: **Legjobb / Jó / Gyenge** minőség soronként, és a túl
+  kicsi képeknél eltávolítás, nyomtatás vagy méretváltás. Lásd
+  [Nyomtatás](features/nyomtatas.md).
+- A méretlista a rendszer területi beállítása szerint metrikus vagy
+  hüvelykes; új a 3 × 4, a 4 × 5 hüvelykes és a 15 × 20 cm-es méret.
+- Exportnál a **Maximum** minőség teljes színfelbontással ment, és az exportált
+  kép frissített adatokat és bélyegképet kap. Lásd
+  [Exportálás](features/exportalas.md).
+
+**Keresés és helyek**
+
+- A keresőmező melletti panelen **Csak az arcokat ábrázoló fotók** és
+  **Csak a másodpéldányok mutatása** gomb van. Lásd [Keresés és
+  szűrés](features/kereses.md).
+- A Helyek panelen **Cím keresése** mező és térképtípus-választó van. Lásd
+  [Helyek és geocímkék](features/helyek.md).
+
+**Billentyűk**
+
+- Gépelés közben egyik gyorsbillentyű sem sül el; új a Ctrl+E és a
+  Ctrl+H. Lásd [Billentyűparancsok](features/billentyuk.md).
+
 ## 2026-09-28
 
 **Új: Útlevélkép**

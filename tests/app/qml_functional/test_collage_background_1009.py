@@ -34,6 +34,7 @@ from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre
 
 _KEEPALIVE: list[object] = []
 
@@ -191,19 +192,8 @@ CollageBackgroundBox { objectName: "collageBackgroundBox" }
     return root
 
 
-def _varj(qt_app, felteve, ezredmasodperc: int = 5000) -> bool:
-    """Vár, amíg a feltétel teljesül — fejnélküli rajzolás LASSÚ (#985).
-
-    A kép betöltése aszinkron (`asynchronous: true`), az elrendezés pedig nem
-    a hívás pillanatában fut le: aki azonnal mér, a fejnélküli környezetben
-    véletlenszerűen bukó tesztet ír."""
-    for _ in range(max(1, ezredmasodperc // 20)):
-        qt_app.processEvents()
-        if felteve():
-            return True
-        QTest.qWait(20)
-    qt_app.processEvents()
-    return bool(felteve())
+def _varj(qt_app, felteve, ezredmasodperc: int = 10000) -> bool:
+    return var_feltetelre(qt_app, felteve, ezredmasodperc / 1000)
 
 
 def _bejar(item: QQuickItem):

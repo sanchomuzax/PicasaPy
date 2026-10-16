@@ -1,6 +1,6 @@
 # PicasaPy paritás-ellenőrzés — #4317
 
-**Vizsgálati dátum:** 2026-10-06. **Hatókör:** a 2–4. réteg statikus QML-ellenőrzése; nem teljes kiadási paritásmérés.
+**Vizsgálati dátum:** 2026-10-13. **Hatókör:** a 2–4. réteg korábbi statikus QML-ellenőrzése, a 6. réteg tiszta profilos kattintáspróbája és a 7. réteg effektkimenet-mérése. A rétegállapotok a jegy korábbi köreihez és az alábbi bizonyítékokhoz kötődnek.
 
 ## A vizsgált állapot és a bizonyítás módja
 
@@ -18,7 +18,7 @@ A CSV-ben szereplő 138 külön parancsazonosító ellenőrzése a jelenlegi men
 |---|---|---|
 | Fájl és Szerkesztés | `ID_CLEAR_SELECTION`, `ID_COPY`, `ID_CUT`, `ID_EDIT_COPYALLEFFECTS`, `ID_EDIT_COPYTEXT`, `ID_EDIT_PASTEALLEFFECTS`, `ID_EDIT_PASTETEXT`, `ID_FILE_DELETEFROMDISK`, `ID_FILE_EXIT`, `ID_FILE_EXPORTTOFOLDER`, `ID_FILE_IMPORTPICTURE`, `ID_FILE_LOCATEONDISK`, `ID_FILE_NEWFOLDER`, `ID_FILE_NEWLABEL`, `ID_FILE_OPEN`, `ID_FILE_PRINT`, `ID_FILE_RENAME`, `ID_FILE_REVERT`, `ID_FILE_SAVE`, `ID_FILE_SAVEACOPY`, `ID_FILE_SAVEAS`, `ID_PASTE`, `ID_TOOLS_INCLUDEEXCLUDEFOLDERS` | `PicasaMenuBar.qml:483–751`; a menütételek `onTriggered` kezelői és a Main/QML-kapcsolatok a `Main.qml`-ben. Törlés/export/nyomtatás külső hatása kattintással ellenőrizendő. |
 | Mappa és rendezés | `ID_ALBUM_DELETE`, `ID_ALBUM_EDITCAPTIONS`, `ID_ALBUM_LOCATEONDISK`, `ID_ALBUM_SELECTALLPICTURES`, `ID_ALBUM_SLIDESHOW`, `ID_DATESORT`, `ID_FILE_EXPORTASWEBPAGE`, `ID_FILE_PRINTCONTACTSHEET`, `ID_MANAGE_ALBUM`, `ID_MOVEFOLDER`, `ID_NAMESORT`, `ID_REFRESH_THUMB`, `ID_REVERSESORT`, `ID_SIZESORT` | `PicasaMenuBar.qml:1483–1656`; külön helyi menüben a `FolderContextMenu.qml:80–305`. A `Delete`, `Hide` és `Unhide` a jelenlegi menüsávban még lehet helyfoglaló, a helyi mappamenüben viszont működő útjuk van; lásd a 3. réteget. |
-| Kép, effekt, kijelölés | `ID_PICTURE_AUTO_COLOR`, `ID_PICTURE_AUTO_LIGHTING`, `ID_PICTURE_AUTO_REDEYE`, `ID_PICTURE_ENHANCE`, `ID_PICTURE_FILM_GRAIN`, `ID_PICTURE_GEOUNTAG`, `ID_PICTURE_HIDE`, `ID_PICTURE_PROPERTIES`, `ID_PICTURE_REVERT`, `ID_PICTURE_ROTATECLOCKWISE`, `ID_PICTURE_ROTATECOUNTERCLOCKWISE`, `ID_PICTURE_SEPIA`, `ID_PICTURE_SHARPEN`, `ID_PICTURE_WARMIFY` | `PicasaMenuBar.qml:1660–1766`; az eredetihez képesti effektkimenet nem volt mérve, a 7. réteg továbbra is nyitott. |
+| Kép, effekt, kijelölés | `ID_PICTURE_AUTO_COLOR`, `ID_PICTURE_AUTO_LIGHTING`, `ID_PICTURE_AUTO_REDEYE`, `ID_PICTURE_ENHANCE`, `ID_PICTURE_FILM_GRAIN`, `ID_PICTURE_GEOUNTAG`, `ID_PICTURE_HIDE`, `ID_PICTURE_PROPERTIES`, `ID_PICTURE_REVERT`, `ID_PICTURE_ROTATECLOCKWISE`, `ID_PICTURE_ROTATECOUNTERCLOCKWISE`, `ID_PICTURE_SEPIA`, `ID_PICTURE_SHARPEN`, `ID_PICTURE_WARMIFY` | `PicasaMenuBar.qml:1660–1766, 1815–1875`; `ID_PICTURE_SEPIA` a `menuBatchSepia` → `applyEffectMany("sepia")` úton érhető el, a külön Fekete-fehér tétel `menuBatchBlackWhite` → `applyEffectMany("bw")`. A `ID_VIEW_SEPIA` továbbra is megjelenítési mód; az eredeti renderelt effektkimenet egyezése nincs mérve (7. réteg nyitott). |
 | Nézet és felirat | `ID_CAPFILE`, `ID_CAPFULL`, `ID_CAPNONE`, `ID_CAPRES`, `ID_CAPTAG`, `ID_SELECT_INVERT`, `ID_VIEW_ALL`, `ID_VIEW_AUTO`, `ID_VIEW_BW`, `ID_VIEW_COLOR_MANAGED`, `ID_VIEW_DESKTOP`, `ID_VIEW_FOLDERS`, `ID_VIEW_LARGETHUMBNAILS`, `ID_VIEW_LCD`, `ID_VIEW_LIGHTBOXVIEW`, `ID_VIEW_LINEAR`, `ID_VIEW_MAC`, `ID_VIEW_NORMAL`, `ID_VIEW_OV`, `ID_VIEW_PEOPLE`, `ID_VIEW_PLACES`, `ID_VIEW_PROJECTOR`, `ID_VIEW_PROPERTIES`, `ID_VIEW_SEPIA`, `ID_VIEW_SHOWHIDDEN`, `ID_VIEW_SLIDESHOW`, `ID_VIEW_SMALLTHUMBNAILS`, `ID_VIEW_THUMBNAILS`, `ID_VIEW_WATCHED` | `PicasaMenuBar.qml:755–1478`; felirat- és nézetkezelők a `Main.qml`-hez és a megfelelő panelekhez kapcsolódnak. A „megvan” itt is statikus út, nem kattintásos igazolás. |
 | Létrehozás | `ID_COLLAGEMAKER`, `ID_POSTER`, `ID_SCREENSAVER`, `ID_WALLPAPER` | `PicasaMenuBar.qml:1779–1831`; a párbeszéd- és exportutak a `CreateDialogs.qml`-ben, illetve a kapcsolódó vezérlőkben. Külső írás/asztali integráció kattintással ellenőrizendő. |
 | Eszközök | `ID_DUPES`, `ID_MOVE_DATABASE`, `ID_PASSPORT`, `ID_SAVESEARCH`, `ID_SEARCHTOKEN`, `ID_SELECTSTAR`, `ID_S_BLUE`, `ID_S_GREEN`, `ID_S_ORANGE`, `ID_S_PURPLE`, `ID_S_RED`, `ID_S_YELLOW`, `ID_TOOLS_BACKUP`, `ID_TOOLS_BUTTONMGR`, `ID_TOOLS_CONFIG_SCREENSAVER`, `ID_TOOLS_OPTIONS`, `ID_VIEWBYDATE`, `ID_VIEWBYNAME`, `ID_VIEWBYRECENT`, `ID_VIEWBYSIZE`, `ID_VIEWREVERSE`, `ID_VIEW_EARTH`, `ID_WRITE_XMP_FACES` | `PicasaMenuBar.qml:1835–2180`; az almenük elemei és jelzései ugyanebben a fájlban, a gazdaoldali kapcsolatok a `Main.qml`-ben. A Google Earth indítását és a lemezre író műveleteket kattintással kell ellenőrizni. |
@@ -31,9 +31,10 @@ A CSV-ben szereplő 138 külön parancsazonosító ellenőrzése a jelenlegi men
 | `ID_FILE_EMAIL` | **Megvan, de a Fájl menüben nem működik.** | `PicasaMenuBar.qml:623` helyfoglaló; aktív `Ctrl+E` shortcut sincs. Maga az e-mail küldési út más felületen megvan: `Main.qml:1996–2047`, a `TrayBar.emailRequested` bekötése `Main.qml:3710`. Javasolt jegy: „A Fájl ▸ E-mail parancs ugyanazt a kijelölést küldje, mint a képtálca e-mail művelete”. |
 | `ID_FILE_OPENINANEDITOR` | **#4330: a Fájl menü és a `Ctrl+Shift+O` a kijelölt fájlokat a rendszer alapértelmezett alkalmazásával nyitja meg.** | A specifikációban nincs külön szerkesztőprogram-beállítás, ezért a `FileOpsController.openPhotosInDefaultEditor` a Qt rendszermegnyitóját használja, és a meghiúsult fájlok számát jelzi. A kép helyi menüjének „Open File” útja szintén `QDesktopServices.openUrl`-t hív; nem a PicasaPy-nézőt nyitja. |
 | `ID_PICTURE_VIEW`, `ID_PICTURE_UNHIDE`, `ID_PICTURE_RESET_FACES` | **A felső Kép menüben megvan, de nem érhető el; a funkció másik menüútban megvan.** | Felső menü: `PicasaMenuBar.qml:1660,1754,1759` helyfoglalók. A kép helyi menüjének „View and Edit”, dinamikus Hide/Unhide és Reset Faces sorai aktívak: `PhotoContextMenu.qml:142–148,299–304,444–447`; a nézőben is van Reset Faces: `ViewerContextMenu.qml:229–231`. A művelet hiánya nem állítható, csak a felső menü elérési útjáé. |
-| `ID_FACES` | **Hiányzik a Film almenüből.** | Az eredeti bemenete a kijelölt arcok köre (`picasa-menu-parancsok-viselkedes.md` §30); a `PicasaMenuBar.qml:1816–1827` csak a „New Movie…” parancsot tartalmazza. Javasolt jegy: „A Film almenü készítsen filmet a kijelölésben lévő arcokból”. |
-| `ID_FACESRANDOM` | **Eredeti menütétel hiányzik; az egyenértékűség nyitott.** | Az eredeti a People Albums-ból indít filmet (`picasa-menu-parancsok-viselkedes.md` §30). A `CreateDialogs.qml:40–45` tartalmaz People-album sorokból filmet indító belépőt, de nem bizonyítja, hogy ez az eredeti „From People Albums…” kiválasztási szabályával azonos. Ne nyissunk fejlesztési jegyet az egyenértékűség tisztázása előtt. |
+| `ID_FACES` | **#4331: megvalósítva.** | A `PicasaMenuBar.qml` „From Faces in Selection...” tétele a kijelölt képsorokat a meglévő filmkészítő arcfilm-módjába adja át. A valódi kattintástól a nem üres MP4-ig tartó teszt a `test_arcfilm_fejlec_4212.py`; a timeline arc-kivágását nem méri (nyitott #4400). |
+| `ID_FACESRANDOM` | **#4633: a menütétel és a bizonyított People-album bemenet megvalósítva; a timeline arc/crop út nyitott.** | A `PicasaMenuBar.qml` „From People Albums...” sora kijelölés és nyitott személyalbum nélkül is elérhető; a `Main.qml` a meglévő `personMovieSourceUrls()` listát adja a `CreateDialogs.openMovieForSources()` útjának. A kattintásos kimenetpróba: `test_emberek_album_film_menu_4633.py`; a timeline belső arc-/crop-adatút továbbra is #4400. |
 | `ID_HELP_KEYBOARD_SHORTCUTS` | **Jelenleg helyfoglaló; az eredeti szolgáltatás szándékosan nem cél.** | `PicasaMenuBar.qml:2190`. Az eredeti művelet a megszűnt Picasa súgó-webhelyet nyitotta (`picasa-menu-parancsok-viselkedes.md` §22). A helyi `runtime\shortcuts.xml` hiányát a §22 és a #442 már külön nyitott kérdésként rögzíti; ez nem azonos az eredeti webes paranccsal. |
+| `ID_HELP_CHECK_FOR_UPDATES` | **Szándékosan nem cél: megszűnt Google-szolgáltatás.** | `PicasaMenuBar.qml`: a Súgó ▸ „&Check for Updates” tétele `retired: true` (#4640), szürke és pont nélküli. A Picasa a `winedisable.txt` szerint Wine alatt letiltotta (`picasa-menu-leltar.md` 9. szakasz); a PicasaPy saját frissítéskeresése nem paritás-feladat. |
 | `ID_HELP_TERMS`, `ID_FILE_EPROCESS`, `ID_TOOLS_UPLOAD`, `ID_TOOLS_UPLOADMGR` | **Szándékosan nem cél: megszűnt online szolgáltatás.** | `PicasaMenuBar.qml:625`, `:2198`, `:1845`, `:1891`; `PicasaMenuItem.qml:19–28` külön kezeli a helyfoglalót és a nyugdíjazott tételt. |
 | `ID_TOOLS_DOWNLOAD_FACES` | **Szándékosan nem cél; az eredeti Picasa 3.9 is eltávolította a menüből.** | A bináris `0x0056f694` címen `RemoveMenu`-t hív az `ID_TOOLS_DOWNLOAD_FACES` azonosítóra; részletesen `picasa-menu-parancsok-viselkedes.md` §36.1. A Picasa Web Albums szolgáltatása megszűnt. |
 | `ID_PICTURE_GEOTAG` | **Az eredeti Google Earth-integráció szándékosan nem cél Linuxon.** | Eredeti telepítés-/COM-függőség: `picasa-menu-parancsok-viselkedes.md` §33.5, külön kezelő `0x005cc825` → `0x00600580`. A helyi Helyek-panel geocímkézése nem ugyanaz a Google Earth-beléptető. A külön `ID_PICTURE_GEOUNTAG` viszont ma aktív menüpont (`PicasaMenuBar.qml:1926–1931`); a §33.5 korábbi „hiányzik” állítása elavult. |
@@ -54,7 +55,7 @@ Az eredeti helyi menük teljes rekordtábláit és a 44 gyorsbillentyű-rekordot
 | Mappa (`Folder`) | A 15 látható sorból a műveleti sorok aktívak; a Hide/Unhide egy állapotfüggő, aktív tétel; a Delete Folder aktív; Google Photos feltöltés nyugdíjazott; Add name tags helyfoglaló. | `FolderContextMenu.qml:80–310`; összevetve `ui-audit-context-menus.md` §1-gyel. A `picasa-menu-parancsok-viselkedes.md` §32.1 régi táblája még Hide/Unhide/Delete Folder helyfoglalónak mondja: ez elavult. Az eredeti 18 azonosító és a mai 15 megjelenő sor száma nem ugyanaz: almenü/szolgáltatási tételek és az állapotfüggő Hide/Unhide összevonása miatt. |
 | Képrács (`AlbumPhoto` / `FolderPhoto`) | View and Edit, forgatás, visszavonás, elrejtés, mappába mozgatás, fájlmegnyitás, mentés/visszaállítás, lemezkeresés, törlés, útvonal-másolás, tulajdonságok és arc-visszaállítás aktív; Split Folder, Open With és People Album Thumbnail helyfoglaló; webes feltöltés nyugdíjazott. | `PhotoContextMenu.qml:142–456`; eredeti rekordtábla `ui-audit-context-menus.md` D.1. A „Keresés” almenü jelenléte feltételes; a régi D.5 táblázat több további eltérést sorol fel. A „Open File” nem bizonyít külső szerkesztőt. |
 | Néző (`OneUp`) | Vissza a könyvtárhoz, forgatás, visszavonás, elrejtés, fájlmegnyitás, mentés/visszaállítás, lemezkeresés/törlés, útvonal-másolás, arc-visszaállítás és tulajdonság aktív; Open With helyfoglaló; online feltöltések nyugdíjazottak. | `ViewerContextMenu.qml:100–240`; eredeti 17 sor: `ui-audit-context-menus.md` §3. A megnyitás külső alkalmazásba irányuló hatása kattintással ellenőrizendő. |
-| Album | Leírás, kijelölés, indexkép-frissítés és HTML export aktív; Delete Album, Add name tags és Sort Album By helyfoglaló; Online Actions és feltöltések nyugdíjazottak. | `AlbumContextMenu.qml:51–138`; eredeti 13 azonosító/12 felirat: `ui-audit-context-menus.md` A.2 és `picasa-menu-parancsok-viselkedes.md` §32. |
+| Album | Törlés, leírás, kijelölés, indexkép-frissítés és HTML export aktív; Add name tags és Sort Album By helyfoglaló; Online Actions és feltöltések nyugdíjazottak. | `AlbumContextMenu.qml:51–138`; eredeti 13 azonosító/12 felirat: `ui-audit-context-menus.md` A.2 és `picasa-menu-parancsok-viselkedes.md` §32. |
 | Gyűjtemény (`Collection`) | Rename/Remove aktív felhasználói gyűjteményen; jelszó csak a beépített Rejtett mappák gyűjteménynél aktív, másutt helyfoglaló. | `CollectionContextMenu.qml:26–45`; a régi `ui-audit-context-menus.md` §4 „teljesen hiányzik” állítása elavult. |
 | Emberek album | Select All és Clear Selection aktív; Delete/Edit People Album helyfoglaló. | `PeopleAlbumContextMenu.qml:26–46`. |
 | Bal oldali lista (`AlbumList`) | Négy rendezési mód és fordítás, személyrendezés, egyszerűsített fa él; Show Thumbnails, Shortcuts és Desktop helyfoglaló; Windows gyökérváltók Linuxon nem jelennek meg. | `FolderListContextMenu.qml:45–225`; eredeti táblázat `ui-audit-context-menus.md` A.2. A helyi menü „Desktop” eleme nem azonos a működő Nézet ▸ Desktop paranccsal. |
@@ -67,11 +68,13 @@ Az eredeti helyi menük teljes rekordtábláit és a 44 gyorsbillentyű-rekordot
 
 Az eredeti **9 menüépítőben 44 gyorsbillentyűs rekord** van (`picasa-gyorsbillentyuk.md` §4). Az aktuális QML `Shortcut`-jai a `Main.qml`, `PicasaMenuBar.qml`, `PhotoViewer.qml` és más nézetek között oszlanak meg; a régi §6 „20 Shortcut” összesítése és több státusza már nem aktuális.
 
+**#4398 utáni állapot (2026-10-06):** a korábbi 53-as mérés pillanatfelvétel volt; a jelenlegi forrás 54 `Shortcut` deklarációt tartalmaz nyolc QML-fájlban. A gazdanézetek és a forrásban tényleges fókuszkapuk a `picasa-gyorsbillentyuk.md` §6.2 táblázatában vannak. A könyvtári `Shortcut`-ok nem aktívak a szerkesztőben, a szövegfókusz tiltja az alkalmazás gyorsbillentyűit, a csúszkák `+`, `=`, `-`, `_` billentyűket csak a szerkesztő 3–5. fülén fogadják; mindhárom viselkedést valódi billentyűleütéses QML-teszt ellenőrzi. A 44 eredeti helyi menürekord egyedi parancs-megfeleltetése továbbra is nyitott.
+
 | Billentyűcsoport | Mai állapot | Bizonyíték |
 |---|---|---|
 | `Ctrl+A/D/I`, `Ctrl+C/X/V`, `Ctrl+S`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+Shift+H/V`, `Ctrl+3`, `Ctrl+4`, `Ctrl+T`, `Ctrl+F`, `Ctrl+K`, `Ctrl+F6/F7/F8`, `Ctrl+1/2`, `Ctrl+M/O/N`, `Ctrl+P`, `Ctrl+Shift+P`, `Ctrl+Shift+S`, `F1`, `Shift+F1`, `F2`, `Alt+Return`, `Ctrl+Return`, `Delete`, `Ctrl+Delete` | A forrásban aktív QML kötés látható; `Ctrl+Shift+H/V`, `Ctrl+F`, `Ctrl+K` és `Ctrl+3` tehát nem hiányzóként kezelendő. | `Main.qml:919–998`, `:1068–1441`; `PicasaMenuBar.qml:389–460`; néző- és rácsesemények `PhotoViewer.qml:1368–1389`, `LightboxFeed.qml:356–391`. |
 | `Ctrl+5` | **Állandóan tiltott.** | `Main.qml:1358–1362` és `PicasaMenuBar.qml:874–879`. |
-| `Ctrl+H` (tálca: kijelölés megtartása) | **Nincs aktív kötés.** | Az eredeti tálca-rekord a `picasa-gyorsbillentyuk.md` §4-ben `0x00732ee0`; a mai `TrayContextMenu.qml` művelete nincs ezzel a szekvenciával feliratozva, a teljes QML `sequence:` leltárban nincs `Ctrl+H`. Javasolt jegy: „A Ctrl+H tartsa meg a kijelölést a képtálcán”. |
+| `Ctrl+H` (tálca: kijelölés megtartása) | **Aktív, nézet- és fókuszkapuval.** | A `TrayBar.qml` `trayKeepSelectionShortcut` a főablak létezését, a néző bezárt állapotát, a tálcakijelölést és a szövegfókusz hiányát kéri. A #4398 előtti hiánymegállapítás elavult volt. |
 | `F11`, `/`, `,`, `.` | Eredeti 48-rekeszes keymapben szerepelnek; aktív megfelelőjük a jelen QML-leltárban nem található. A videóvezérlő pontos billentyűhatása nyitott. | Eredeti tábla `picasa-gyorsbillentyuk.md` §2.5; aktuális QML-beli `sequence`/`Keys` leltár. Ne állítsuk kattintásos/valós idejű próba nélkül, hogy mindegyik fejlesztői hiány. |
 | Helyi menü billentyűfeliratai | A Folder helyi menü megjeleníti a `Ctrl+A/D/I/Enter` címkéket; a Photo/Viewer a `Enter`, forgatás, `Ctrl+Shift+O`, mentés, keresés, törlés és `Alt+Enter` feliratokat. Az Album/People/Tray listák nem mind mutatják az eredeti gyorsbillentyű-szövegeket. | `FolderContextMenu.qml:89–259`, `PhotoContextMenu.qml:142–407`, `ViewerContextMenu.qml:100–240`, `TrayContextMenu.qml:45–95`, `AlbumContextMenu.qml:71–105`, `PeopleAlbumContextMenu.qml:37–45`. A menüfelirat és a fókuszban ténylegesen elsülő globális shortcut külön bizonyítandó. |
 
@@ -99,13 +102,144 @@ Az ellenőrzés a QML-fájlokon végigkereste a `enabled: false` állandó ért�
 
 A statikus keresés **nem talált üres vagy csak `console.log/warn/error` hívásból álló eseménykezelőt** a keresett QML-kezelőtípusok között. Ez nem ellenőrzi a jelzések Python-oldali fogadóját; az ismert 12 bekötetlen vezérlőtag (#4316) és 30 néma művelet-jelzés (#4321) a hívó által megadott korábbi lelet, itt nem mértem újra.
 
+## 6. réteg — tiszta telepítés
+
+**Mérési dátum:** 2026-10-13. **Teszt:** `tests/app/qml_functional/test_tiszta_profil_4317.py::test_tiszta_profil_funkciok_valodi_kattintassal`. A program egy ideiglenes HOME, USERPROFILE és üres XDG_CONFIG_HOME/XDG_DATA_HOME/XDG_CACHE_HOME alatt indult; a képmappát és az egyetlen 360×240-es JPEG-et a teszt készítette. A teszt a DNS-feloldást és az IP-socket kapcsolódást letiltotta, az Unix socketet meghagyta. Rögzített hálózati próbálkozás nem volt. A Find Faces párbeszéd mindkét modellt elérhetőnek jelezte, a vizsgálat befejeződött, és a tiszta profil adatkönyvtárába nem került `.onnx` fájl.
+
+| Elem / funkció | Állapot | Bizonyíték |
+|---|---|---|
+| Tesztképmappa betöltése és indexképrács | **Megvan és működik.** | A `folderRowLabel` valódi kattintása után egy kép látszott a `photoGrid`-ben. Tesztlépés: `_lep_mappa_betoltes_es_indexkep_racs`; kép: [`01-racs.png`](../assets/paritas-tiszta-profil/01-racs.png). |
+| Néző megnyitása | **Megvan és működik.** | A bélyegkép valódi dupla kattintása megnyitotta a nézőt (`viewerOpen`). Tesztlépés: `_lep_nezo_valodi_dupla_kattintassal`; a néző a [`03-vorosszem.png`](../assets/paritas-tiszta-profil/03-vorosszem.png) képen látható. |
+| Csillag | **Megvan és működik.** | A csillagvezérlő valódi kattintása után a képadat csillagozott állapota igaz lett. Tesztlépés: `_lep_csillag_valodi_kattintassal`. |
+| Felirat | **Megvan és működik.** | A teszt valós billentyűbevitellel írta be a feliratot, majd a fotóvezérlőből visszaolvasta a mentett értéket. Tesztlépés: `_lep_felirat_valodi_bevitellel`. |
+| Auto Contrast és visszavonás | **Megvan és működik.** | A kattintás hozzáadta az `autolight` réteget, a Visszavonás eltávolította. Tesztlépés: `_lep_auto_kontraszt_es_visszavonas`. Ez az állapotpróba a réteget és a visszavonást ellenőrzi; képpontos eredmény-összevetést nem végez. |
+| Export célmappába | **Megvan és működik.** | A File ▸ Export Picture to Folder parancs és az Export gomb kattintással futott; JPEG keletkezett, a párbeszéd bezárult. Tesztlépés: `_lep_export_valodi_menu_es_kattintas`. Az offscreen teszt a fájlválasztó eredményét a párbeszéd `targetFolder` tulajdonságába adta, ezért az operációs rendszer fájlválasztóját nem mérte. |
+| Arcfelismerés | **Megvan és működik.** | A Tools ▸ Find Faces kattintással megnyitotta a párbeszédet; a detektor és az embedder elérhető volt, a vizsgálat befejeződött. Nem történt rögzített hálózati próbálkozás vagy modellletöltés. Tesztlépés: `_lep_arcfelismeres_inditasa_letoltes_nelkul`; kép: [`02-arcfelismeres.png`](../assets/paritas-tiszta-profil/02-arcfelismeres.png). A próba a futás befejezését méri, arc találatát nem állítja. |
+| Vörösszem-javítás | **Megvan és működik.** | A valódi húzásos kijelölés és az Alkalmaz kattintása a `redeye` réteget a szerkesztési láncba tette. Tesztlépés: `_lep_vorosszem_javitas_valodi_huzassal`; kép: [`03-vorosszem.png`](../assets/paritas-tiszta-profil/03-vorosszem.png). A generált tesztkép nem tartalmaz vörösszemet, ezért a képpontos javítás kimenetét ez a réteg nem minősíti. |
+
+A fenti futásban a felsorolt műveletek mindegyikénél nulla hálózati próbálkozást rögzítettünk. A teszt nem indított asztali vagy külső alkalmazást. E mért tiszta profilos útvonalban nem figyeltünk meg hiányzó vagy nem működő elemet, így ehhez a réteghez nem keletkezett új fejlesztői jegyjavaslat. Ez az eredmény nem zárja le a 7. réteg képpontos effekt-összevetését és nem helyettesíti az összes Picasa-parancs futásidejű vizsgálatát.
+
+## 7. réteg — effektkimenetek
+
+**Mérési dátum:** 2026-10-13. **Render-pillanatkép:** `fix/4317-codex`, `a8ba353b3561`. A PicasaPy kimeneteket az eredeti Picasa 3.9 exportjaival hasonlítottam össze. Az elsődleges referencia a helyi `meroadat.tar` `684-merokeszlet/export` könyvtára; 180 paraméteres sorból 179-hez volt Picasa-export. A 73 renderelt effektcsalád mindegyikéhez van legalább egy ilyen referencia. Az `unsharp` `max` változatához a 684-es csomagban nincs export; annak külön Picasa-referenciája a `meroszett` készletben van.
+
+Az eltérést a meglévő `tools/golden/analyze_validation_kit.py::mean_de` mérővel, CIE76 átlagos ΔE-ként számoltam; az egyezési küszöb a mérő `MATCH_DE = 2.0` értéke. A 684-es és a `meroszett` összevethető képpárjainak mérete egyezett. Minden érték nyers mért szám, nem becslés. Az alábbi 684-es oszlop az `alap`, `max`, `min`, illetve ahol szerepel, a `hex4` és `hex8` változatok egyedi ΔE-it sorolja.
+
+| Effekt | 684-es eredeti Picasa-export ΔE76 | Állapot az összes érvényes eredeti referencián |
+|---|---|---|
+| `ansel` | alap 0,038 | egyezik |
+| `autobacklight` | alap 0,121 | egyezik |
+| `autocolor` | alap 0,172 | egyezik |
+| `autocontrast` | alap 0,190 | egyezik |
+| `autolight` | alap 0,229 | egyezik |
+| `backlight` | alap 0,190; max 0,153; min 0,121 | egyezik |
+| `blur` | alap 0,116; max 0,104; min 0,104 | egyezik |
+| `boost` | alap 0,145; max 0,095; min 0,121 | egyezik |
+| `border` | alap 0,095; max 0,055; min 0,121 | egyezik önállóan; láncban lásd alább |
+| `bw` | alap 0,034 | egyezik |
+| `cinemascope` | alap 1,082 | egyezik |
+| `colorfix` | alap 0,121 | egyezik |
+| `colortemp` | alap 0,820; max 0,541; min 0,504 | egyezik |
+| `comicize` | alap 0,453; max 0,207; min 0,412 | egyezik |
+| `contrast` | alap 0,233; max 0,179; min 0,196 | egyezik |
+| `crossprocess` | alap 0,764; max 0,121 | egyezik |
+| `dir_brite` | alap 0,187 | egyezik |
+| `dir_sat` | alap 0,184 | egyezik |
+| `dir_sharp` | alap 0,384 | egyezik |
+| `dir_tint` | alap 0,170; max 0,199; min 0,121 | egyezik |
+| `dropshadow` | alap 0,084; max 0,054; min 0,083 | egyezik |
+| `enhance` | alap 0,190 | egyezik |
+| `fill` | alap 0,121; max 0,153 | egyezik |
+| `finetune` | alap 0,381; max 0,632; min 0,170 | egyezik |
+| `finetune2` | alap 0,574; max 0,569; min 0,170 | egyezik |
+| `focalpixelate` | alap 0,121; max 0,121; min 0,121 | egyezik |
+| `focalzoom` | alap 0,311; max 0,121; min 0,212 | egyezik |
+| `gamma` | alap 0,168; max 0,168; min 0,151 | egyezik |
+| `glow` | alap 0,264; max 0,284; min 0,121 | egyezik |
+| `glow2` | alap 0,264; max 0,284; min 0,121 | egyezik |
+| `grain` | alap 2,675 | **eltér**; további mérések lent |
+| `grain2` | alap 0,121 | **eltér**; merokit-2: 2,661 |
+| `hdr` | alap 0,265; max 0,121; min 0,188 | egyezik |
+| `heatmap` | alap 0,537; max 0,121; min 0,557 | **eltér**; meroszett: 4,254 és 3,324 |
+| `holga` | alap 0,512; max 0,121; min 0,088 | egyezik |
+| `invert` | alap 0,116 | egyezik |
+| `ir` | alap 0,063; max 0,121 | egyezik |
+| `linblur` | alap/max/min 0,274 | egyezik |
+| `localcontrast` | alap 0,159; max 0,258; min 0,121 | egyezik |
+| `lomo` | alap 0,267; max 0,121; min 0,263 | egyezik |
+| `matte` | alap 0,176; max 0,121; min 0,121 | egyezik |
+| `museummatte` | alap 0,230; max 0,287; min 0,128 | egyezik |
+| `neon` | alap 0,395; max 0,121 | egyezik |
+| `nightvision` | alap 4,528; max 0,121; min 3,624 | **eltér**; további mérések lent |
+| `orton` | alap 0,211; max 0,121; min 0,153 | egyezik |
+| `pencilsketch` | alap 0,128; max 0,121; min 0,017 | egyezik |
+| `picnikfocalpixelate` | alap 0,231; max 0,121; min 0,114 | **eltér**; merokit-2: 8,666 |
+| `picnikgrain` | alap 0,882; max 1,380; min 0,121 | egyezik |
+| `picniktint` | alap 0,373; max 0,121 | egyezik |
+| `pixelate` | alap 0,098; max 0,121; min 0,128 | egyezik |
+| `polaroid` | alap 0,118; max 0,131; min 0,131 | egyezik |
+| `quantizepalette` | alap 0,347; max 0,121; min 0,360 | egyezik |
+| `radblur` | alap 0,326; max 0,324; min 0,340 | egyezik |
+| `radsat` | alap 0,082; max 0,128; min 0,034 | egyezik |
+| `radtint` | alap 0,688; max 0,690; min 0,669 | egyezik |
+| `reanimatedeyecolor` | alap/max/min 0,121 | egyezik |
+| `roundededges` | alap 0,124; max 0,128; min 0,121 | egyezik |
+| `sat` | alap 0,152; max 0,452; min 0,036 | egyezik |
+| `sepia` | alap 0,495 | egyezik |
+| `shadow` | alap 0,178; max 0,180; min 0,121 | egyezik |
+| `sixties` | alap 0,970; max 0,121; min 1,049 | egyezik |
+| `soften` | alap 0,196; max 0,121; min 0,121 | egyezik |
+| `tilt` | alap 0,156; max 0,244; min 0,240 | egyezik |
+| `tint` | alap 0,585; max 0,532; min 0,517; hex4 0,121; hex8 0,121 | **eltér**; merokit-2: 2,136 |
+| `triple` | alap 0,188; max 0,005; min 0,193 | egyezik |
+| `triple2` | alap 0,247; max 0,000; min 0,026 | egyezik |
+| `triple3` | alap 0,194; max 0,131; min 0,121 | egyezik |
+| `twotone` | alap 0,546; max 0,121; min 0,670 | **eltér**; meroszett: 3,662 |
+| `unsharp` | alap 0,172; max: nincs 684-es export; min 0,121 | egyezik; meroszett max 0,251 |
+| `unsharp2` | alap 0,172; max 0,277; min 0,121 | egyezik |
+| `vignette` | alap 0,169; max 0,121; min 0,121 | egyezik önállóan; láncban lásd alább |
+| `warm` | alap 0,613 | egyezik |
+| `whitept` | alap 0,121 | egyezik |
+
+### Kiegészítő eredeti Picasa-referenciák és összetett láncok
+
+| Referencia és mérő | Nyers eredmény | Állapot |
+|---|---|---|
+| `PicasaPy meroszett/export-202608151229` — 178 Picasa-export; a fenti `mean_de` mérés | 172/178 eset ΔE ≤ 2,0. Eltérések: `grain/alap` 2,665; `heatmap/alap` 4,254, `heatmap/min` 3,324; `nightvision/alap` 7,307, `nightvision/min` 4,176; `twotone/alap` 3,662. | A fenti négy effektcsalád eltérő kimenete megerősítve; `unsharp/max` itt 0,251. |
+| `PicasaPy merokit-2/export-202608151438` — 49 eredeti Picasa-export; `mean_de` | `tint/tintszin_04.jpg` 2,136; `tint/tintszin_07.jpg` 2,136; `picnikfocalpixelate/halott_14.jpg` 8,666; `grain/szemcse_01.jpg` 2,665; `grain2/szemcse_02.jpg` 2,661; `grain+grain/szemcse_05.jpg` 4,631. | Hat eltérő eset. A `halott_14` rövid paraméterlánca nem érvényes Picasa-alkalmazás: a láncteszt és a [`filters-decoded.md`](filters-decoded.md) ezt külön dokumentálja; az eltérés a PicasaPy hibás bemenetkezelésének jelöltje. |
+| `PicasaPy merokit-3/export-202608151633` — 7 eredeti Picasa-export; `mean_de` | `nincsilyen+bw/B_ismeretlen_elol.jpg` 10,125. | Eltérő láncviselkedés: az eredeti Picasa az ismeretlen tag után megáll, így a `bw` sem fut le. Ezt a `picasa-ini-format.md` dokumentálja; a mérés a specet erősíti meg, nem mond ellent neki. |
+| `tests/render/test_lanc_sorrend_elesben_3229.py` — három azonos méretű, érvényes eredeti láncreferencia | Border+sepia 1,192; sepia+Border 1,146; Border+Vignette 11,642; mindhárom 1650×1250. | Az első kettő egyezik, a Border+Vignette lánc eltér. A `border` és `vignette` önálló táblázatsora ettől még egyezik. |
+| Ugyanennek a 3229-es készletnek a crop64+Vignette sora | PicasaPy 376×659, Picasa 1600×1200; nyers ΔE 43,781. | **Nem összehasonlítható, kizárva:** a teszt és a spec szerint a crop az `.ini` kulcsban van, nem a szűrőláncban; az eredeti export ezért vágatlan. Ez nem effekt-eltérésként szerepel. |
+| `merokit-2` és `merokit-3` második exportjai (`export-202608202215`, `export-202608202207`) | Nem mértem őket Picasa-referenciaként. | Kizárva: az `export-parbeszed.md` és `filters-decoded.md` szerint ezek PicasaPy-kimenetek, nem eredeti Picasa-exportok. |
+| `3084-poszterizalas` `quantizepalette` (szintetikus és valós kép), valamint `951-kiemelesek-arnyekok-fel-allas` `finetune2` | ΔE rendre 0,347; 0,910; illetve 0,629. | Mind egyezik. |
+| `tests/render/test_colab_golden_4256.py` — eredeti Picasa 3.9 színfolt-aranyképek, 3 próba | A 16 színfolt legnagyobb átlagos csatornaeltérése: `sepia` 1,0000 (11/16 folton nem nulla); `bw` 0,0000 (0/16); `warm` 1,0000 (13/16). A meglévő határ 2 RGB-szint. | Mindhárom egyezik; a teszt 3/3 sikeres. |
+
+**#4936 helyesbítés (2026-10-13):** a fenti `grain`/`grain2` és
+`grain+grain` értékek a javítás előtti, minden hívásnál `seed=0`-t adó
+renderelő mérési pillanatképei. A CRT-folyam sorszámozott magjával a 684-es
+`grain/alap` k=0 nyers ΔE-je **1,509**. A merokit-2
+`grain2/szemcse_02` esetén k=0: **2,661**, a Picasa munkameneti k=1 maggal
+**1,447**; a k=0 eltéréshez nem tartozik ΔE ≤ 2,0 elfogadási feltétel. A
+`grain+grain/szemcse_05` k=0,1-gyel **3,679**, a mért Picasa-munkamenet k=2,3
+magjával **1,866**. Ezek mérési adatok, nem további elfogadási küszöbök; a
+részletes képletet és tesztelési feltételeket a
+[`filters-decoded.md`](filters-decoded.md) rögzíti.
+
+### Eltérő kimenetek jegyjelöltjei
+
+Megnyitott jegyek (2026-10-13): Szemcse #4936, Hőtérkép #4937, Éjjellátó #4938, Színezés #4939, Kéttónusú #4940, picnikfocalpixelate bemenetkezelés #4941, Keret+Vinyetta lánc #4942.
+
+Az eltérő effektcsaládok a `grain`, `grain2`, `heatmap`, `nightvision`, `picnikfocalpixelate`, `tint` és `twotone`. Az eltérő összetett utak a `grain+grain`, az ismeretlen tag utáni `bw`, valamint a `Border+Vignette` lánc. A `crop64+Vignette` nem összehasonlítható méretű eredmény, ezért nem jegyjelölt. A GitHubot ez a mérési kör nem érte el, így nyitott jegy meglétét nem ellenőriztem; a hívó ezekre nyisson jegyet, ha nincs már nyitott, megfelelő jegy.
+
+Az eredeti Picasa és a mért kimenet között nem találtam spec–mérés ellentmondást: az ismeretlen tag utáni leállás például a bináris viselkedésleírással egyezik. Ez a 7. réteg a meglévő Picasa goldenekkel és mérőadat-tárral alátámasztott effektcsaládokra terjed ki; nem állítja, hogy minden paraméter minden lehetséges értékét vagy minden UI-parancsot lefuttatott.
+
 ## A #4317 „Kész, ha” pontjai
 
 | Pont | Állapot | Indok |
 |---|---|---|
-| mind a hét réteg végigmérve, mai main | ⛔ | Ez a kör csak a 2–4. réteg forráskódját vizsgálta; a záró státusz a helyi `origin/main`-tól három commit lemaradást mutatott, és a hivatkozás frissessége nem ellenőrizhető. |
-| minden hiány saját jegyet kapott vagy nem célként indokolt | ⛔ | A statikus hiányokra javaslatok lent vannak, de GitHub-hozzáférés nem volt, így nem ellenőriztem duplikált/nyitott jegyeket, és nem hoztam létre jegyet. Több eredeti parancs egyenértékűsége nyitott. |
-| tiszta profil végigkattintása képernyőképekkel | ⛔ | Nem futtattam alkalmazást tiszta felhasználói profillal, nem kattintottam végig a fő funkciókat, és nem készítettem képernyőképet. A #4315-ös modell-elérhetőségi eset a hívó által megadott korábbi lelet. |
+| mind a hét réteg végigmérve, mai main | ✅ | Az 1–6. réteg a korábbi körökben készült el; a 7. réteg fenti táblája a `a8ba353b3561` pillanatkép effektkimeneteit méri. |
+| minden hiány saját jegyet kapott vagy nem célként indokolt | 🟡 | A fenti eltérő effekt- és lánckimenetek jegyjelöltként fel vannak sorolva. GitHub-hozzáférés nem volt, így nyitott jegyet nem ellenőriztem és jegyet nem hoztam létre; a hívó nyisson jegyet, ha nincs megfelelő nyitott jegy. |
+| tiszta profil végigkattintása képernyőképekkel | ✅ | A 6. réteghez a fenti izolált teszt végigjárta és képekkel rögzítette a felsorolt fő műveleteket. Ez a mérés nem állítja, hogy az összes menüparancsot vagy a 7. réteg kimeneti egyezését lefedte. |
 
 ## Javasolt fejlesztői jegyek
 
@@ -117,7 +251,7 @@ Minden sor egy önálló funkció/menübelépő; a meglévő, hívó által megn
 | A Fájl ▸ Open File(s) in an Editor indítson külső szerkesztőt | Eredeti: `ID_FILE_OPENINANEDITOR` / `Ctrl+Shift+O`. A #4330 óta mindkettő működik; külön szerkesztő-beállítás nincs dokumentálva, ezért a rendszer alapértelmezett alkalmazását használjuk. | A kijelölt fájlok egyenként kapnak megnyitási kérést; sikertelen fájloknál a visszajelzés tartalmazza a hibás és az összes kijelölt fájl darabszámát. |
 | A Film almenü készítsen filmet a kijelölt arcokból | Eredeti: `ID_FACES`. Nálunk: a Film almenüben nincs ilyen tétel. | A parancs a kijelölt arcokat a film bemeneteként adja át, és a film export végigfut. |
 | A Nézet ▸ Edit View és Kép ▸ View and Edit menüpont nyissa meg a kijelölt képet | Eredeti: `ID_VIEW_PICTURE` és `ID_PICTURE_VIEW`. Nálunk: mindkét menüsori tétel helyfoglaló, bár a `Ctrl+3` és a képrács helyi menüje más belépő. | Mindkét felső menüsori tétel ugyanazt a dokumentált megnyitási műveletet indítja, csak a megfelelő kijelölési/fókusz-kapuval. |
-| A Kép ▸ Unhide állítsa láthatóra a kijelölt képeket | Eredeti: `ID_PICTURE_UNHIDE`. Nálunk: a felső menüsor tétele helyfoglaló; a helyi menü állapotfüggő Hide/Unhide művelete él. | A felső menüsori parancs a rejtett kijelölést megjeleníti, nem csak átvált egy másik állapotba. |
+| A Kép ▸ Hide és Unhide a kijelölt képeken is működjön | Eredeti: `ID_PICTURE_HIDE` / `ID_PICTURE_UNHIDE`. A korábbi „felső tétel helyfoglaló” lelet elavult: a Hide a helyi menü kapcsolóútjára, az Unhide a rejtett kijelölések útjára van kötve. | Valódi kattintás mindkét irányra; a `.picasa.ini` `hidden=yes` értéke létrejön, majd törlődik. Teszt: `tests/app/qml_functional/test_felsomenupontok_kep_4329.py`. |
 | A Kép ▸ Reset Faces használja a meglévő arc-visszaállítási műveletet | Eredeti: `ID_PICTURE_RESET_FACES`. Nálunk: felső menü helyfoglaló, a Photo/Viewer helyi menükben a művelet aktív. | A felső menütétel ugyanazt a kijelölésre alkalmazott arc-visszaállítási kezelőt hívja, mint a helyi menü. |
 | A Ctrl+H tartsa meg a képtálca kijelölését | Eredeti: `Tray::Ctrl+H`. Nálunk: a menüművelet létezik, aktív shortcut nem látható. | Ctrl+H a tálcára fókuszálva ugyanazt a tartós kijelölés-állapotot állítja be, mint a helyi menü. |
 | Az Eszközök ▸ Adjust Date and Time módosítsa a dátumot | Eredeti: `ID_TOOLS_ADJUST_TIMESTAMP`; a viselkedés két módját a `picasa-menu-parancsok-viselkedes.md` §3 írja le. Nálunk: `PicasaMenuBar.qml:1888` helyfoglaló. | Mindkét eredeti mód működik a kijelölésen, az eredeti fájl/metaadat mentési célja külön dokumentált. |
@@ -152,7 +286,7 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| `ID_FACESRANDOM = 0x9d5a`; a `0x0057cc7a` a `panel+0x4f1` módjelzőt állítja. A `0x00618050` mód 6-ot ad a `+0x4b4` objektum vtable 0. slotjának (`0x00618236`), majd az eredményt a `+0x4b8` mezőbe teszi. A `0x00699cd0` mód 6 esetén a `0x00824090`-nek nem nulla ágválasztót ad (`0x0069a308`–`0x0069a310`); a `0x00824090` ezért a `0x008226e0` ágat hívja, nem az album-kijelölés `0x008223e0` ágát (`0x008240e9`–`0x00824114`). A `0x008226e0` a `+0x2bc` (`+700`) objektum `0x00449a90`-nel kapott azonosítólistáját járja be, és csak azokat fűzi az eredménybe, amelyek alsó listája nem üres (`0x00822715`–`0x00822775`). A fűzés a bemeneti lista iterációs sorrendjében történik; rendező hívás vagy rendezési ág nem látszik. A `0x006175c0` a már kapott `+0x4b8` listát használó modell-újraépítő, nem listaépítő. A `0x00619010` a `+0x4bc` modell címét adja át a `0x00555a30`-nak; ebből a timeline klipjeinek belső arc-/crop-adatútja nem állapítható meg. | A `LightboxHeader.qml:416,441` mindkét filmgombja ugyanazt a jelet küldi; a `LightboxFeed.qml:873–875` a `Main.qml:732–737` `openPersonAlbumMovie()` függvényére irányít. Ez a `controller.photos` összes sorindexét adja a `CreateDialogs.qml:42–45,465–471` normál filmútjának, amely a `selectedMovieSourceUrls` listát építi; nincs benne eredeti 6-os módú bemenet vagy külön arc/crop átadás. | A film-fejlesztés a bizonyított bemenetet valósítsa meg: a `+0x2bc`-n kapott azonosítólistából szűrje ki az üres alsó listájú elemeket, és őrizze meg a forrás sorrendjét; ne váltsa ki ezt a normál fejlécút teljes `controller.photos` sorlistájával. A klip arcazonosítását/cropját ne találgassa; lásd a blokkoló Ghidra-kérést a `0x00555a30`-hoz. Elfogadás: az eredeti és az új út ugyanazon bemeneti modellen ugyanazt a szűrt, sorrendtartó ID-sorozatot adja; a timeline/crop-paritás külön, a hiányzó belső út feltárása után igazolható. |
+| `ID_FACESRANDOM = 0x9d5a`; a `0x0057cc7a` a `panel+0x4f1` módjelzőt állítja. A `0x00618050` mód 6-ot ad a `+0x4b4` objektum vtable 0. slotjának (`0x00618236`), majd az eredményt a `+0x4b8` mezőbe teszi. A `0x00699cd0` mód 6 esetén a `0x00824090`-nek nem nulla ágválasztót ad (`0x0069a308`–`0x0069a310`); a `0x00824090` ezért a `0x008226e0` ágat hívja, nem az album-kijelölés `0x008223e0` ágát (`0x008240e9`–`0x00824114`). A `0x008226e0` a `+0x2bc` (`+700`) objektum `0x00449a90`-nel kapott azonosítólistáját járja be, és csak azokat fűzi az eredménybe, amelyek alsó listája nem üres (`0x00822715`–`0x00822775`). A fűzés a bemeneti lista iterációs sorrendjében történik; rendező hívás vagy rendezési ág nem látszik. A `0x006175c0` a már kapott `+0x4b8` listát használó modell-újraépítő, nem listaépítő. A `0x00619010` a `+0x4bc` modell címét adja át a `0x00555a30`-nak; ebből a timeline klipjeinek belső arc-/crop-adatútja nem állapítható meg. | A #4633 „From People Albums...” menüpontja kijelölés nélkül a `Main.qml:openPeopleAlbumsMovie()` úton hívja a `personMovieSourceUrls()` slotot, majd a `CreateDialogs.openMovieForSources()`-t. A #4391 fejlécútja változatlanul `openPersonAlbumMovie()`-n át éri el ugyanezt a forráslistát, de megtartja a nyitott személyalbum-feltételt. A slot a nem üres albumok képeit a tárolt listában, rendezés nélkül fűzi össze; ezt a `test_emberek_album_film_menu_4633.py` és a `test_people_controller.py` fedi. | A bemeneti lista és sorrend megvalósult. A timeline klip arcazonosítását/cropját ne találgassuk; az adatút továbbra is #4400 nyitott vizsgálata. |
 
 ### 3. Kimenő fájlhúzás
 
@@ -168,7 +302,7 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 ## Nyitott
 
-- A kattintással és tiszta profillal ellenőrizendő hatások: minden menüút valós UI-viselkedése; külső szerkesztő, e-mail, nyomtató, Google Earth, fájltörlés/export; a 44 helyi menürekord és az eseményfogadók futásidejű parancs-kapcsolata.
+- A kattintással és tiszta profillal ellenőrizendő hatások: minden még nem vizsgált menüút valós UI-viselkedése; külső szerkesztő, e-mail, nyomtató, Google Earth, fájltörlés és az itt nem mért exportváltozatok; a 44 helyi menürekord és az eseményfogadók futásidejű parancs-kapcsolata.
 - A mai `main` frissessége: a záró státusz a helyi tracking ref szerint három commit lemaradást jelez; GitHub/hálózat tiltott volt, így a lemaradás tartalma és az upstream frissessége nincs ellenőrizve.
 - People Albums-film: a `CTransTimeline` belső feldolgozása, vagyis az arcazonosító és crop/igazítás útja a modellből a klipbe; lásd az egyetlen blokkoló Ghidra-kérést alább.
 - Gyorsbillentyűk: a `+0x332f` módjelző jelentése, valamint hogy a program más részén létrehozott gyorsítótáblák kapcsolódnak-e a 44 helyi menüfelirathoz. A helyi menüépítő-lánc nem regisztrál gyorsítót; az importtábla globális gyorsító-API-kat is tartalmaz, ezért a negatív állítás erre a láncra korlátozott.
@@ -226,14 +360,14 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 ## Javasolt jegytörzs-bővítés
 
-**Kész szöveg:** „A `Small Pictures` (`ID_VIEW_SMALL=0x9cd8`) a könyvtári `CThumbUI` Nézet menü láthatósági kapcsolója, nem bélyegképméret; a `CF_HDROP` fájlhúzás UTF-16 útvonal-listát ad át `COPY|MOVE|LINK` engedélyezéssel. A `From People Albums…` mód 6: a `0x00699cd0` a `0x00824090`-nek 1-es ágválasztót ad, ezért a `+0x2bc` (`+700`) objektum azonosítólistája fut végig a `0x008226e0`-n. Az üres alsó listájú elemek kiesnek, az eredeti lista sorrendje megmarad; ez nem a kiválasztott album `0x008223e0` ága. A mai fejlécút a személyalbum összes sorát a normál filmkészítőnek adja át, ezért nem egyenértékű. A `0x00555a30`-nál kért `CTransTimeline` belső arc-/crop-feldolgozása nyitott. A 44 helyi menürekord billentyűmezője felirat, a vizsgált lánc nem regisztrál gyorsítót; a `CThumbUI` tényleges eseményfogadója `0x005e6710`, nézet-/fókuszfeltételekkel. A mai PicasaPy QML-ben 53 `Shortcut` van nyolc fájlban; a 44 eredeti rekord és az egyes QML-fogadók nem feleltethetők meg automatikusan.”
+**Kész szöveg:** „A `Small Pictures` (`ID_VIEW_SMALL=0x9cd8`) a könyvtári `CThumbUI` Nézet menü láthatósági kapcsolója, nem bélyegképméret; a `CF_HDROP` fájlhúzás UTF-16 útvonal-listát ad át `COPY|MOVE|LINK` engedélyezéssel. A `From People Albums…` mód 6: a `0x00699cd0` a `0x00824090`-nek 1-es ágválasztót ad, ezért a `+0x2bc` (`+700`) objektum azonosítólistája fut végig a `0x008226e0`-n. Az üres alsó listájú elemek kiesnek, az eredeti lista sorrendje megmarad; ez nem a kiválasztott album `0x008223e0` ága. A mai fejlécút a személyalbum összes sorát a normál filmkészítőnek adja át, ezért nem egyenértékű. A `0x00555a30`-nál kért `CTransTimeline` belső arc-/crop-feldolgozása nyitott. A 44 helyi menürekord billentyűmezője felirat, a vizsgált lánc nem regisztrál gyorsítót; a `CThumbUI` tényleges eseményfogadója `0x005e6710`, nézet-/fókuszfeltételekkel. A #4398 után a mai PicasaPy QML-ben 54 `Shortcut` van nyolc fájlban; a 44 eredeti rekord és az egyes QML-fogadók nem feleltethetők meg automatikusan.”
 
 | fejlesztési irány | Eredeti / nálunk / teendő | Kész, ha |
 |---|---|---|
 | A Nézet ▸ Small Pictures kapcsolja a kis képek szűrőjét | Eredeti: `0x9cd8`, preferencia-kapcsoló, 60 000 px² alapküszöb és további ellenőrzések. Nálunk: `PicasaMenuBar.qml:885–890` helyfoglaló. Teendő: a tétel a szűrőt kapcsolja, ne bélyegképméretet. | A pipa és a látható képek a specifikált preferenciával és `0x0065f3c6`–`0x0065f5a9` szabályokkal egyeznek; a bélyegképméret nem változik. |
 | A képrács húzza a kijelölt fájlokat az asztali alkalmazásokba | Eredeti: `CF_HDROP`, UTF-16 útvonalak, COPY/MOVE/LINK. Nálunk: belső `payload="photos"`, OS-formátum nincs. Teendő: natív fájllista átadása. | Windows-próbán a fogadó a húzott fájlok útvonalait kapja, és az eredeti 3 engedett műveletből választott hatás visszajelzése helyes. |
 | Az Emberek-fejléc filmgombjai őrizzék az eredeti People/Face bemenetet | Eredeti: mód 6 a `+0x2bc` azonosítólistáját járja be, üres alsó listákat kihagy, sorrendet őriz (`0x00699cd0`, `0x00824090`, `0x008226e0`). Nálunk: `Main.qml:732–737` minden `controller.photos` sort a normál filmútvonalnak ad. Teendő: a bizonyított szűrt lista és sorrend bekötése külön People/Face útba; a timeline/crop belső útját ne találgassuk. | Az eredetivel azonos bemeneti modellen a forrás-azonosítók és sorrend egyeznek; crop/arcigazítás csak `CTransTimeline` feltárása után vehető át. |
-| A 44 menüfelirat és a billentyűkezelés nézet-/fókuszhelyes legyen | Eredeti: a rekord `+0x04` mezője felirat (`0x00a6aee0`, `0x00a6b250`); a `CThumbUI` saját billentyűútja `0x005e6710`, a szerkesztőfülek és a `+0x332f` ág bizonyított feltételeivel. Nálunk: 53 `Shortcut` nyolc QML-fájlban, vegyesen főablak-, nézeti és `Keys`-fogadók; pl. `Ctrl+Delete` rács/néző szerint, `Ctrl+H` tálca- és kijelöléskapuval. Teendő: minden kötés gazdanézetét és fókuszkapuját rögzíteni, és a helyi menüfeliratokat nem globális shortcut-regisztrációnak tekinteni. | A kilenc menü birtokos nézetéből indított esemény a megfelelő művelethez jut; a szövegmezők megtartják a gépelési/vágólap-billentyűket; az eredetihez nem igazolt 44/44 parancs-kapcsolat nincs állítva. |
+| A 44 menüfelirat és a billentyűkezelés nézet-/fókuszhelyes legyen | Eredeti: a rekord `+0x04` mezője felirat (`0x00a6aee0`, `0x00a6b250`); a `CThumbUI` saját billentyűútja `0x005e6710`, a szerkesztőfülek és a `+0x332f` ág bizonyított feltételeivel. Nálunk: a #4398 utáni leltár 54 `Shortcut` nyolc QML-fájlban, köztük rács/néző szerint külön `Ctrl+Delete`; könyvtári kötéseket nem enged be az editorba, és szövegfókuszban tiltja az alkalmazás-shortcutokat. Teendő: a helyi menüfeliratokat ne tekintsük globális shortcut-regisztrációnak; a 44 rekord egyedi parancsútja továbbra sincs bizonyítva. | A gazdanézet/fókuszkapuk a `picasa-gyorsbillentyuk.md` §6.2 táblázatában vannak; a könyvtár/editor/szövegfókusz eseteket valódi billentyűleütéses teszt fedi le; a nem igazolt 44/44 kapcsolat nyitott marad. |
 
 ## Új kutatási jegyjavaslatok
 

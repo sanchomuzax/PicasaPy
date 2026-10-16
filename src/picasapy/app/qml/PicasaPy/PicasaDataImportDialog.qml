@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // Import a Picasából (#3132) — a db3 kulcsszavainak, helyadatának és
@@ -23,8 +24,8 @@ Window {
     objectName: "picasaDataImportDialog"
     title: qsTr("Import from Picasa")
     modality: Qt.ApplicationModal
-    width: 460
-    height: 280
+    width: 620
+    height: 410
     color: Theme.canvasBg
 
     // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
@@ -42,6 +43,8 @@ Window {
     property int hely: 0
     property int arc: 0
     property int kihagyott: 0
+    property int videodatum: 0
+    property int videodatumHiba: 0
 
     function open() {
         importWindow.finished = false
@@ -52,32 +55,64 @@ Window {
         importWindow.hely = 0
         importWindow.arc = 0
         importWindow.kihagyott = 0
+        importWindow.videodatum = 0
+        importWindow.videodatumHiba = 0
         importWindow.visible = true
-        if (typeof picasaImportController === "undefined"
+    }
+
+    function startImport() {
+        if (importWindow.running
+                || typeof picasaImportController === "undefined"
                 || !picasaImportController)
             return
-        picasaImportController.startImport()
+
+        importWindow.finished = false
+        importWindow.nothingFound = false
+        importWindow.lastError = ""
+        if (sourceFolderField.text.trim().length > 0) {
+            if (drivePrefixField.text.trim().length === 0
+                    || localPrefixField.text.trim().length === 0) {
+                importWindow.lastError = qsTr(
+                    "Enter both paths for the drive mapping.")
+                return
+            }
+            picasaImportController.startManualImport(
+                sourceFolderField.text.trim(),
+                drivePrefixField.text.trim(),
+                localPrefixField.text.trim())
+        } else {
+            picasaImportController.startImport()
+        }
     }
 
     Connections {
         target: (typeof picasaImportController !== "undefined")
             ? picasaImportController : null
-        function onImportFinished(mappak, kulcsszo, hely, arc, kihagyott) {
+        function onImportFinished(mappak, kulcsszo, hely, arc, kihagyott, videodatum, videodatumHiba) {
             importWindow.mappak = mappak
             importWindow.kulcsszo = kulcsszo
             importWindow.hely = hely
             importWindow.arc = arc
             importWindow.kihagyott = kihagyott
+            importWindow.videodatum = videodatum
+            importWindow.videodatumHiba = videodatumHiba
             importWindow.finished = true
         }
-        function onImportFailed(message) { importWindow.lastError = message }
+        function onImportFailed(message) {
+            if (message === "picasapy-manual-source-required")
+                importWindow.lastError = qsTr("Choose a Picasa2 data folder first.")
+            else if (message === "picasapy-manual-mapping-required")
+                importWindow.lastError = qsTr("Enter both paths for the drive mapping.")
+            else
+                importWindow.lastError = message
+        }
         function onNoInstallationFound() { importWindow.nothingFound = true }
     }
 
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 14
-        spacing: 10
+        spacing: 8
 
         Label {
             objectName: "picasaImportHeadline"
@@ -90,10 +125,74 @@ Window {
                     ? qsTr("No Picasa data found on this computer.")
                     : importWindow.finished
                         ? qsTr("Done.")
-                        : qsTr("Copying names, keywords and places from Picasa...")
+                        : importWindow.running
+                            ? qsTr("Copying names, keywords and places from Picasa...")
+                            : qsTr("Choose a Picasa2 folder to import manually, or leave it empty to use detected installations.")
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Label {
+                text: qsTr("Picasa2 data folder")
+                Layout.preferredWidth: 145
+                color: Theme.ink
+            }
+            TextField {
+                id: sourceFolderField
+                objectName: "picasaImportSourceFolderField"
+                Layout.fillWidth: true
+                placeholderText: qsTr("Choose or enter a Picasa2 folder")
+                selectByMouse: true
+                TextFieldContextArea {}
+            }
+            Button {
+                objectName: "picasaImportBrowseButton"
+                text: qsTr("Browse...")
+                onClicked: sourceFolderDialog.open()
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Label {
+                text: qsTr("Windows path prefix")
+                Layout.preferredWidth: 145
+                color: Theme.ink
+            }
+            TextField {
+                id: drivePrefixField
+                objectName: "picasaImportDrivePrefixField"
+                Layout.fillWidth: true
+                text: "Z:\\"
+                placeholderText: qsTr("For example, C:/Pictures")
+                selectByMouse: true
+                TextFieldContextArea {}
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Label {
+                text: qsTr("Matching local folder")
+                Layout.preferredWidth: 145
+                color: Theme.ink
+            }
+            TextField {
+                id: localPrefixField
+                objectName: "picasaImportLocalPrefixField"
+                Layout.fillWidth: true
+                text: "/"
+                placeholderText: qsTr("For example, /home/user/Pictures")
+                selectByMouse: true
+                TextFieldContextArea {}
+            }
         }
 
         BusyIndicator {
+            objectName: "picasaImportBusyIndicator"
             running: importWindow.running
             visible: importWindow.running
             Layout.alignment: Qt.AlignHCenter
@@ -109,6 +208,30 @@ Window {
             text: qsTr("%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).")
                 .arg(importWindow.mappak).arg(importWindow.kulcsszo)
                 .arg(importWindow.hely).arg(importWindow.arc)
+        }
+
+        Label {
+            objectName: "picasaImportVideoDates"
+            visible: importWindow.finished && importWindow.lastError === ""
+                && importWindow.videodatum > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            color: Theme.ink
+            //: a Picasában módosított videó-dátumok átvétele (%1 videó)
+            text: qsTr("%1 video date(s) taken over from Picasa.")
+                .arg(importWindow.videodatum)
+        }
+
+        Label {
+            objectName: "picasaImportVideoDatesFailed"
+            visible: importWindow.finished && importWindow.lastError === ""
+                && importWindow.videodatumHiba > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            color: Theme.ink
+            //: a videó-dátumok átvétele az indexbe nem sikerült (%1 videó); a kulcsszavak és helyek átvétele ettől még megtörtént
+            text: qsTr("%1 video date(s) could not be taken over; try again later.")
+                .arg(importWindow.videodatumHiba)
         }
 
         Label {
@@ -128,11 +251,30 @@ Window {
             Layout.fillWidth: true
             Item { Layout.fillWidth: true }
             Button {
+                objectName: "picasaImportStartButton"
+                text: qsTr("Import")
+                enabled: !importWindow.running
+                onClicked: importWindow.startImport()
+            }
+            Button {
                 objectName: "picasaImportCloseButton"
                 text: importWindow.running ? qsTr("Close") : qsTr("OK")
                 enabled: !importWindow.running
                 onClicked: importWindow.visible = false
             }
+        }
+    }
+
+    FolderDialog {
+        id: sourceFolderDialog
+        objectName: "picasaImportSourceFolderDialog"
+        title: qsTr("Choose the Picasa2 data folder")
+        onAccepted: {
+            if (typeof picasaImportController !== "undefined"
+                    && picasaImportController
+                    && picasaImportController.localPathFromUrl !== undefined)
+                sourceFolderField.text =
+                    picasaImportController.localPathFromUrl(selectedFolder)
         }
     }
 }

@@ -1,12 +1,27 @@
 """.picasa.ini olvasás/írás — kétirányú Picasa 3.x kompatibilitás."""
 
-from .albums import Album, albums_of, parse_album_refs, serialize_album_refs
-from .contacts import Contact, contacts_of, ensure_contact, find_contact_id
+from .albums import (
+    STAR_ALBUM_TOKEN,
+    Album,
+    albums_of,
+    parse_album_refs,
+    serialize_album_refs,
+)
+from .contacts import (
+    Contact,
+    contacts_of,
+    ensure_contact,
+    find_contact_id,
+    with_contact,
+    without_contact,
+)
 from .contacts_xml import (
     ContactXmlEntry,
     apply_contacts_xml,
     load_contacts_xml,
     parse_contacts_xml,
+    save_contacts_xml,
+    serialize_contacts_xml,
 )
 from .document import (
     NO_SOURCE_FILE,
@@ -21,6 +36,8 @@ from .faces import (
     UNIDENTIFIED_CONTACT,
     Face,
     parse_faces,
+    remove_all_face_data,
+    reset_all_faces,
     serialize_faces,
     with_face,
     with_reassigned_face,
@@ -54,9 +71,19 @@ from .eye_strokes import (
     serialize_reanimated_eye_color,
 )
 from .folder_category import (
+    DOWNLOADED_ALBUMS_PREFIX,
+    EXPORTED_PICTURES_CATEGORY,
+    FOLDERS_ON_DISK_CATEGORY,
+    HIDDEN_FOLDERS_CATEGORY,
+    OTHER_STUFF_CATEGORY,
     PROJECTS_CATEGORY,
+    is_custom_collection_category,
+    is_hidden_folders_category,
     is_projects_category,
+    read_explicit_folder_category,
     read_folder_category,
+    set_folder_hidden_in_ini,
+    with_folder_category,
 )
 from .folder_date import (
     is_valid_folder_date,
@@ -64,18 +91,24 @@ from .folder_date import (
     with_folder_date_override,
     without_folder_date_override,
 )
+from .folder_music import read_folder_music, with_folder_music
 from .io import (
     IniConflictError,
     IniSaveError,
+    has_ini_source,
+    ini_source_path,
     load_document,
+    load_existing,
     load_or_empty,
     save_document,
     update_document,
 )
+from .names import INI_NAME, LEGACY_INI_NAME
 from .photo_crop import PhotoCropReader
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
 __all__ = [
+    "STAR_ALBUM_TOKEN",
     "CANONICAL_FILTER_NAMES",
     "MAX_PARAM_COUNTS",
     "Album",
@@ -84,6 +117,8 @@ __all__ = [
     "ContactXmlEntry",
     "Face",
     "EyeStroke",
+    "EXPORTED_PICTURES_CATEGORY",
+    "FOLDERS_ON_DISK_CATEGORY",
     "FilterOp",
     "FilterWriteError",
     "IniConflictError",
@@ -94,6 +129,8 @@ __all__ = [
     "Line",
     "NO_SOURCE_FILE",
     "PROJECTS_CATEGORY",
+    "OTHER_STUFF_CATEGORY",
+    "DOWNLOADED_ALBUMS_PREFIX",
     "Rect64",
     "RawStroke",
     "ReanimatedEyeColor",
@@ -112,19 +149,34 @@ __all__ = [
     "ensure_contact",
     "find_contact_id",
     "is_projects_category",
+    "is_custom_collection_category",
     "is_valid_folder_date",
     "load_contacts_xml",
     "load_document",
+    "load_existing",
     "load_or_empty",
+    "has_ini_source",
+    "ini_source_path",
+    "INI_NAME",
+    "LEGACY_INI_NAME",
     "max_param_count",
     "parse_album_refs",
     "parse_contacts_xml",
+    "save_contacts_xml",
+    "serialize_contacts_xml",
     "parse_document",
     "parse_faces",
     "parse_filters",
     "parse_reanimated_eye_color",
+    "read_explicit_folder_category",
     "read_folder_category",
+    "set_folder_hidden_in_ini",
+    "is_hidden_folders_category",
+    "HIDDEN_FOLDERS_CATEGORY",
+    "read_folder_music",
     "read_folder_date_override",
+    "remove_all_face_data",
+    "reset_all_faces",
     "save_document",
     "serialize_album_refs",
     "serialize_faces",
@@ -135,9 +187,13 @@ __all__ = [
     "validate_op_for_write",
     "with_face",
     "with_folder_date_override",
+    "with_folder_category",
+    "with_folder_music",
+    "with_contact",
     "with_reassigned_face",
     "without_face",
     "without_face_at_rect",
     "without_faces",
     "without_folder_date_override",
+    "without_contact",
 ]

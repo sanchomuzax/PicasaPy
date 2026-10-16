@@ -198,6 +198,33 @@ class TestParamSubpanelIsolatedOpening:
         actual_params = _as_list(panel.property("paramEffectParams"))
         assert len(actual_params) == expected_count
 
+    def test_shift_glow_click_opens_the_legacy_two_slider_panel(
+        self, qml_engine, qt_app
+    ):
+        fake = _FakeEditController()
+        panel = _make_panel(qml_engine, fake, active_tab=2)
+        panel.setProperty("shiftMasodlagos", True)
+        qt_app.processEvents()
+
+        button = panel.findChild(QObject, "effectGlow2")
+        assert button is not None
+        assert button.property("szuro") == "glow"
+        requested = []
+        panel.effectRequested.connect(lambda name: requested.append(name))
+        _click(button)
+        qt_app.processEvents()
+
+        assert panel.property("paramPanelActive") is True
+        assert panel.property("paramEffectName") == "glow"
+        assert requested == []
+        repeater = panel.findChild(QObject, "effectParamRepeater")
+        assert repeater is not None
+        assert repeater.property("count") == 2
+
+        params = _as_list(panel.property("paramEffectParams"))
+        assert [param["label"] for param in params] == ["Intensity", "Radius"]
+        assert _as_list(panel.property("paramEffectValues")) == [0.65, 20.0]
+
     @pytest.mark.parametrize(
         "object_name,key",
         [

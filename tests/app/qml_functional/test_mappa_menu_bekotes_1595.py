@@ -18,7 +18,7 @@ ezt jelenti.
 A jegy azt írta, hogy a menüsáv a „rossz" (ötös, hosszú feliratú)
 készletet használja a helyi menü négyes készlete helyett. A kód mérése ezt
 CÁFOLJA: a menüsáv `Rendezés`-e a MAPPÁKAT rendezi (`setFolderSort`,
-#1454), a helyi menüé a mappa KÉPEIT (`setFolderPhotoSort`, #1436) — két
+#1454), a helyi menü egyszer átrendezi a mappa KÉPEIT (`sortFolderBy`, #4890) — két
 külön funkció, nem ugyanaz kétszer. Az összevonásuk viselkedés-változás
 lenne, nem paritás-javítás.
 """

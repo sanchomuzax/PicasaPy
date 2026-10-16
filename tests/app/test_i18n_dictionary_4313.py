@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -63,7 +64,19 @@ def test_all_languages_have_one_ts_and_runtime_qm():
         )
 
 
-def test_selected_language_qm_is_installed_by_the_startup_path(monkeypatch):
+@pytest.fixture
+def _locale_visszaallitasa():
+    """#4881: a `_install_translator` az alapértelmezett QLocale-t is állítja."""
+    from PySide6.QtCore import QLocale
+
+    eredeti = QLocale()
+    yield
+    QLocale.setDefault(eredeti)
+
+
+def test_selected_language_qm_is_installed_by_the_startup_path(
+    monkeypatch, _locale_visszaallitasa
+):
     from PySide6.QtCore import QCoreApplication
 
     from picasapy.app import application
@@ -114,7 +127,7 @@ def test_hungarian_catalog_marks_inherited_picasa_text_with_its_origin():
     )
 
 
-def test_untranslated_picasa_row_keeps_its_origin_in_the_target_catalog():
+def test_translated_picasa_row_keeps_its_origin_in_the_target_catalog():
     from picasapy.app.i18n.dictionary import message_origin
 
     root = ET.parse(_I18N / "picasapy_ro.ts").getroot()
@@ -123,7 +136,8 @@ def test_untranslated_picasa_row_keeps_its_origin_in_the_target_catalog():
         for message in root.iter("message")
         if message.findtext("source") == "Close"
     )
-    assert message.find("translation").get("type") == "unfinished"
+    assert message.findtext("translation") == "Închideţi"
+    assert message.find("translation").get("type") is None
     assert message_origin(message) == "picasa"
     origin_keys = (message.findtext("extracomment") or "").partition(
         "picasapy-origin-key: "
@@ -139,7 +153,9 @@ def test_all_dictionaries_round_trip_byte_for_byte_and_report_missing_rows(capsy
         path = _I18N / f"picasapy_{code}.ts"
         source = path.read_bytes()
         catalog = load_catalog(source)
-        assert dump_catalog(catalog) == source, f"{code}: a TS körút nem bájtazonos"
+        assert dump_catalog(catalog) == source.replace(b"\r\n", b"\n"), (
+            f"{code}: a TS körút sorvég-normalizálás után sem bájtazonos"
+        )
 
         messages = list(catalog.iter("message"))
         assert messages, f"{code}: üres nyelvi szótár"
@@ -156,3 +172,31 @@ def test_all_dictionaries_round_trip_byte_for_byte_and_report_missing_rows(capsy
         print("Hiányzó aktív fordítások nyelvenként:")
         for code, count in summaries:
             print(f"{code:5s} {count:4d}")
+
+
+def _message_keys(path: Path) -> set[tuple[str, str]]:
+    root = ET.parse(path).getroot()
+    return {
+        (context.findtext("name") or "", message.findtext("source") or "")
+        for context in root.iterfind("context")
+        for message in context.iterfind("message")
+    }
+
+
+def test_every_language_has_all_messages_of_the_hungarian_catalog_4863():
+    """#4863: a magyar .ts-be került új üzenet minden nyelvi .ts-ben is megvan.
+
+    A generátor (scripts/build_i18n_dictionaries.py) a magyar katalógusból
+    származtatja a többit; ha valaki csak a magyart bővíti, a többi nyelv
+    elcsúszik, és a felirat a felületen fordítatlanul jelenik meg.
+    """
+    hungarian = _message_keys(_I18N / "picasapy_hu.ts")
+    lagging = {}
+    for code in SUPPORTED_LANGUAGES:
+        missing = hungarian - _message_keys(_I18N / f"picasapy_{code}.ts")
+        if missing:
+            lagging[code] = len(missing)
+    assert not lagging, (
+        "a magyar .ts üzeneteiből hiányzik a nyelvi fájlokból "
+        f"(futtasd: python3 scripts/build_i18n_dictionaries.py): {lagging}"
+    )

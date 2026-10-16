@@ -100,7 +100,7 @@ képi/exportált bizonyítékkal alátámasztott**, csak a fül-hovatartozás
 | Szépia (Sepia) | `sepia` | ✅ | ✅ (mért 3-csatornás LUT) | ❌ |
 | Fekete-fehér (B&W) | `bw` | ✅ | ✅ (pixelhű, Rec.601) | ❌ |
 | Melegítés (Warmify) | `warm` | ✅ | ✅ (mért LUT) | ❌ |
-| Filmszemcse (Film Grain) | `grain2` | ✅ | ✅ (statisztikai, nem pixelhű — sztochasztikus) | ❌ |
+| Filmszemcse (Film Grain) | `grain2` | ✅ | ✅ (renderenként sorszámozott CRT-mag; grain/alap nyers ΔE 1,509) | ❌ |
 | Árnyalás (Tint) | `tint` | ✅ | ⚠️ implementálva, de **legrosszabb golden-egyezés (ΔE 20,6)** — a színparaméter-formátum tisztázatlan (Nyitva 4) | ❌ (a színt gomb nem kínálja fel, csak alapértelmezett) |
 | Telítettség (Saturation) | `sat` | ✅ | ⚠️ negatív irány jó, pozitív irány romlik (ΔE 0,7–12,7) | ❌ |
 | Lágy fókusz (Soft Focus) | `radblur` | ✅ | ⚠️ eltér (ΔE 3,2) | ❌ |
@@ -1025,8 +1025,11 @@ kuka/törlés-ikon — az egyéni arányok funkciója **0%-ban implementált**.
   állapotban placeholder nélkül, csak keret — a bal mező kék kerettel
   aktív/fókuszált állapotban a képen)
 - **Név:** felirat, alatta egysoros szövegmező
-- Élő **példa-sor**: *„Példa: 4x6 kisméretű nyomat"* — feltehetően a
-  begépelt számokból/névből élőben frissül
+- **Példa-sor**: *„Példa: 4x6 kisméretű nyomat"* — **STATIKUS** minta, nem
+  élő (#4550): a `customaspectratio.fen`-ben a `labelgroup "Example:"`
+  egyetlen `<label title="   4 x 6   Small print"/>`-t tartalmaz, `bind` és
+  `name` nélkül (`picasa-fen-dialogs.md` 2.1). Az itteni korábbi „feltehetően
+  élőben frissül" a képernyőkép alapján tett feltevés volt.
 - **OK** gomb (a képen **inaktív/szürke** — üres mezőknél letiltva) és
   **Mégse** gomb, jobbra lent
 
@@ -3340,7 +3343,7 @@ csúszkát, és **a két gomb engedélyezettségét** is ő állítja.
 | `moviestart` / `movieend` token | a `filters=` láncban, a `setin`/`setout` írja | **megőrizzük**, de beállítani nem tudjuk (`ini/filter_registry.py:148–149`, `render/registry_data.py:512–513`) | a vágás-felület a #1838-on |
 | `movieeditpanel/reset_trim` | „összes film-szerkesztés törlése", megerősítéssel | **nincs** | #1838 |
 | `movieeditpanel/capture_frame` | képkocka a „Rögzített videoklipek" mappába | **nincs** | #1838 |
-| `movieeditpanel/export_movie` | klip-export az „Exportált videoklipek" mappába, háttérszálon | **nincs** | #1838 |
+| `movieeditpanel/export_movie` | klip-export az „Exportált videoklipek" mappába, háttérszálon | **Windows/macOS: van (#4564); Linuxon az eredeti tiltóüzenet marad** | #4564 |
 
 
 ### A másik négy *bizonytalan* elem — mind lezárva a `.tre`-ből

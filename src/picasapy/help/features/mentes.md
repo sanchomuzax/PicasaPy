@@ -26,6 +26,12 @@ megjeleníteni (például egy régi Picasa-változat effektje), a mentés előtt
 figyelmeztet: „A mentés ezek nélkül írja ki a képet, és a beállítások
 elvesznek. Ez nem vonható vissza."
 
+Ha a mentés, a visszaállítás vagy a mentés visszavonása véget ér, a rács
+és a megnyitott néző **magától frissül**: a nézőben a szerkesztő a lemezen
+lévő friss fájlt és szerkesztéslistát olvassa újra, tehát azt látod, ami
+most a fájlban van. Ha a művelet nem sikerül, **hibaablak** mondja meg az
+okot.
+
 ## Mentés visszavonása
 
 A mentés után megjelenő üzenetben a **Mentés visszavonása** gombbal

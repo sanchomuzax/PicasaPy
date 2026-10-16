@@ -188,8 +188,12 @@ Rectangle {
     // #455: fogd-és-vidd az albumlistára — új album, illetve meglévőbe
     // sorolás. A tényleges munkát a gazda végzi (a névkérő párbeszéd és a
     // kijelölés is ott van).
-    signal newAlbumDropped()
-    signal photosDroppedOnAlbum(string token)
+    signal newAlbumPhotosDropped(var photoRows)
+    signal photosDroppedOnAlbum(string token, var photoRows)
+    // #5007: a kijelölt rácsképek útvonalaihoz tartozó sorok ejtése egy
+    // mappára. A gazda a lemezműveletet a FileOpsControllerre bízza.
+    signal photosDroppedOnFolder(string path, var rows)
+    signal folderDroppedOnFolder(string sourcePath, string targetPath)
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -239,6 +243,7 @@ Rectangle {
             return
         //: #3173: a párbeszéd két használatú — a mappa-ág visszaállítja
         folderPropertiesDialog.mode = "folder"
+        folderPropertiesDialog.newFolderCreation = false
         folderPropertiesDialog.folderPath = path
         folderPropertiesDialog.folderName =
             path.substring(path.lastIndexOf("/") + 1)
@@ -246,18 +251,63 @@ Rectangle {
             controller ? controller.folderDateOverride(path) : ""
         folderPropertiesDialog.currentDescription =
             controller ? controller.folderDescriptionOf(path) : ""
+        folderPropertiesDialog.folderLocation = ""
+        folderPropertiesDialog.currentMusicEnabled =
+            controller && controller.folderMusicEnabled
+                ? controller.folderMusicEnabled(path) : false
+        folderPropertiesDialog.currentMusicFile =
+            controller && controller.folderMusicFile
+                ? controller.folderMusicFile(path) : ""
+        folderPropertiesDialog.open()
+    }
+
+    // #4534: a rács „Mappa felosztása itt” parancsa ugyanazt a
+    // tulajdonságablakot használja, de új testvérmappa metaadatait kéri.
+    function openSplitFolderHere(paths, isoDate) {
+        if (!paths || paths.length === 0 || !isoDate)
+            return
+        folderPropertiesDialog.mode = "folder"
+        folderPropertiesDialog.newFolderCreation = true
+        folderPropertiesDialog.splitPaths = paths.slice()
+        folderPropertiesDialog.folderPath = ""
+        folderPropertiesDialog.folderName =
+            folderPropertiesDialog.untitledFolderName
+        folderPropertiesDialog.folderLocation = ""
+        folderPropertiesDialog.currentDate = isoDate
+        folderPropertiesDialog.currentDescription = ""
+        folderPropertiesDialog.currentMusicEnabled = false
+        folderPropertiesDialog.currentMusicFile = ""
+        folderPropertiesDialog.open()
+    }
+
+    //: #4630: az Album menü az éppen megnyitott album tulajdonságait nyitja.
+    function openAlbumDescription(token, name) {
+        if (!token)
+            return
+        var adat = (controller && controller.albumProperties)
+            ? controller.albumProperties(token) : {}
+        folderPropertiesDialog.mode = "album"
+        folderPropertiesDialog.newFolderCreation = false
+        folderPropertiesDialog.albumToken = token
+        folderPropertiesDialog.albumName =
+            adat.name !== undefined ? adat.name : (name || "")
+        folderPropertiesDialog.currentDate =
+            adat.date !== undefined ? adat.date : ""
+        folderPropertiesDialog.albumLocation =
+            adat.location !== undefined ? adat.location : ""
+        folderPropertiesDialog.currentDescription =
+            adat.description !== undefined ? adat.description : ""
+        folderPropertiesDialog.currentMusicEnabled =
+            adat.use_music !== undefined ? adat.use_music : false
+        folderPropertiesDialog.currentMusicFile =
+            adat.music_file !== undefined ? adat.music_file : ""
         folderPropertiesDialog.open()
     }
 
     function openFolderContextMenu(path) {
         folderContextMenu.folderPath = path
         folderContextMenu.customCollections = pane.customCollectionsModel
-        // #1436: a pipák a mappa TARTALMÁNAK rendezését mutatják — ez a
-        // menü (`Folder::SortFolderBy`) a mappa képeit rendezi, nem a
-        // mappákat (azt a Mappa ▸ Rendezés `folderSort`-ja állítja, #1454).
         if (controller) {
-            folderContextMenu.sortMode = controller.folderPhotoSort
-            folderContextMenu.sortReverse = controller.folderPhotoSortReverse
             // #1637: a tétel felirata állapotfüggő („Mappa elrejtése" ↔
             // „Megjelenítés"), tehát a menü NYITÁSAKOR kell megkérdezni.
             // A `!== undefined` a #1572-őr mintája.
@@ -268,8 +318,8 @@ Rectangle {
         folderContextMenu.popup()
     }
 
-    // #422: a bal panel saját menüjének megnyitása — a pipák a menü
-    // nyitásakor veszik át a vezérlő friss rendezés-állapotát
+    // #422: a bal panel saját menüjének megnyitása — a rendezési pipák
+    // nyitáskor átveszik a vezérlő friss állapotát; a nézetpipák kötöttek.
     function openFolderListContextMenu() {
         if (controller) {
             // #461/3: a BAL HASÁB saját rendezése — az eredetiben ez a
@@ -287,6 +337,14 @@ Rectangle {
         albumContextMenu.albumToken = token
         albumContextMenu.albumName = name
         albumContextMenu.popup()
+    }
+    function _askDeleteAlbum(token, name) {
+        if (!token) return
+        deleteAlbumConfirm.pendingToken = token
+        deleteAlbumConfirm.ask(
+            "",
+            qsTr("Are you sure you want to delete the album \"%1\"?")
+                .replace("%1", name))
     }
     function openPeopleAlbumContextMenu(name) {
         peopleAlbumContextMenu.personName = name
@@ -518,9 +576,11 @@ Rectangle {
                 onAlbumContextMenuRequested: function(token, name) {
                     pane.openAlbumContextMenu(token, name)
                 }
-                onNewAlbumDropped: pane.newAlbumDropped()
-                onPhotosDroppedOnAlbum: function(token) {
-                    pane.photosDroppedOnAlbum(token)
+                onNewAlbumPhotosDropped: function(photoRows) {
+                    pane.newAlbumPhotosDropped(photoRows)
+                }
+                onPhotosDroppedOnAlbum: function(token, photoRows) {
+                    pane.photosDroppedOnAlbum(token, photoRows)
                 }
             }
 
@@ -557,11 +617,24 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left; anchors.leftMargin: 16
                         spacing: 5
+                        Image {
+                            objectName: "personThumbnailImage_" + modelData.name
+                            width: source !== "" ? 18 : 0
+                            height: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                            source: modelData.thumbUrl || ""
+                            fillMode: Image.PreserveAspectCrop
+                            smooth: true
+                            mipmap: true
+                            asynchronous: true
+                            visible: source !== ""
+                        }
                         Rectangle {
                             width: 10; height: 10
                             radius: 5
                             anchors.verticalCenter: parent.verticalCenter
                             color: Theme.picasaGreen
+                            visible: !modelData.thumbUrl
                         }
                         Text {
                             text: modelData.name + " (" + modelData.count + ")"
@@ -849,9 +922,10 @@ Rectangle {
                     // #384: hover ≠ kijelölés (ld. AlbumsSection.qml) —
                     // a "year" sorok nem kattinthatók, a MouseArea rájuk
                     // enabled: false, így containsMouse mindig false marad.
-                    color: isSelectedFolder ? Theme.panelSelectionActive
+                    color: folderDropArea.containsDrag ? Theme.listDragTarget
+                           : (isSelectedFolder ? Theme.panelSelectionActive
                            : (kind === "folder" && folderRowMouse.containsMouse
-                              ? Theme.panelSelection : "transparent")
+                              ? Theme.panelSelection : "transparent"))
 
                     // évszám-elválasztó: arányos betűs címke + vékony
                     // vízszintes elválasztó vonal a panel széléig (audit:
@@ -927,10 +1001,13 @@ Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             opacity: offline ? 0.45 : 1.0
 
-                            // #2215: a `Ready` önmagában nem elég — a
-                            // szolgáltató korábban 1×1 átlátszó képet adott
-                            // borító hiányában, ami sikeresen betöltődik,
-                            // tehát elrejtette a mappaikont is.
+                            // #2215/#4876: a `Ready` önmagában nem elég —
+                            // a szolgáltató borító hiányában SZÁNDÉKOSAN 1×1
+                            // átlátszó, érvényes jelölőt ad (null képre a Qt
+                            // minden kérésnél hibasort írna), ami sikeresen
+                            // betöltődik. A szélességfeltétel (`> 1`) az
+                            // ELSŐDLEGES védelem: ettől látszik ilyenkor a
+                            // mappaikon.
                             readonly property bool boritoLatszik:
                                 pane.albumThumbs
                                 && folderRowCoverImage.status === Image.Ready
@@ -985,7 +1062,8 @@ Rectangle {
                             //: A megnyitáskor áll vissza.
                             font.bold: unread
                             opacity: offline ? 0.55 : 1.0
-                            color: isSelectedFolder || folderRowMouse.containsMouse
+                            color: folderDropArea.containsDrag
+                                   || isSelectedFolder || folderRowMouse.containsMouse
                                    ? Theme.panelSelectionText : Theme.ink
                         }
                     }
@@ -1036,13 +1114,62 @@ Rectangle {
                     ToolTip.delay: Theme.tooltipDelay
                     MouseArea {
                         id: folderRowMouse
+                        objectName: "folderRowMouse"
                         // #3461: a Rejtett mappák fejléce is kap egeret, de
                         // CSAK a jobb gombra (helyi menü) — kijelölni nem lehet
                         enabled: kind === "folder" || kind === "hidden"
                         hoverEnabled: kind === "folder"
                         anchors.fill: parent
+                        // #5105: húzás közben a lista görgetője ne vegye át
+                        // az egeret — különben a ledobás sosem indul el
+                        preventStealing: kind === "folder"
                         acceptedButtons: kind === "hidden"
                             ? Qt.RightButton : (Qt.LeftButton | Qt.RightButton)
+                        property bool draggingFolder: false
+                        property bool didDragFolder: false
+                        property real dragPressX: 0
+                        property real dragPressY: 0
+                        readonly property string payload: "folders"
+                        readonly property string folderPath: path
+                        // #5105: a húzás „teste" az egeret követő elem —
+                        // a sor maga nem mozdul, így a DropArea-találat
+                        // ennek a helyzetét nézi.
+                        Item {
+                            id: folderDragProxy
+                            objectName: "folderDragProxy"
+                            width: 1; height: 1
+                            readonly property string payload: "folders"
+                            readonly property string folderPath: path
+                            Drag.active: kind === "folder"
+                                && folderRowMouse.draggingFolder
+                            Drag.dragType: Drag.Internal
+                            Drag.supportedActions: Qt.MoveAction
+                        }
+                        onPressed: function(mouse) {
+                            if (kind !== "folder" || mouse.button !== Qt.LeftButton)
+                                return
+                            dragPressX = mouse.x
+                            dragPressY = mouse.y
+                            draggingFolder = false
+                            didDragFolder = false
+                        }
+                        onPositionChanged: function(mouse) {
+                            if (!pressed || kind !== "folder") return
+                            folderDragProxy.x = mouse.x
+                            folderDragProxy.y = mouse.y
+                            if (Math.abs(mouse.x - dragPressX)
+                                    + Math.abs(mouse.y - dragPressY) > 8) {
+                                draggingFolder = true
+                                didDragFolder = true
+                            }
+                        }
+                        onReleased: function(mouse) {
+                            if (draggingFolder) {
+                                folderDragProxy.Drag.drop()
+                                draggingFolder = false
+                                didDragFolder = true
+                            }
+                        }
                         onClicked: function(mouse) {
                             if (kind === "hidden") {
                                 pane.openHiddenCollectionContextMenu(name)
@@ -1053,6 +1180,10 @@ Rectangle {
                                 pane.openFolderContextMenu(path)
                                 return
                             }
+                            if (didDragFolder) {
+                                didDragFolder = false
+                                return
+                            }
                             // #3681: mentés-szűrő módban a sor egy pipa —
                             // a kattintás jelöl/jelöletlenít, nem nyit meg
                             if (pane.mentesSzuroAktiv) {
@@ -1061,6 +1192,34 @@ Rectangle {
                                 return
                             }
                             pane.folderChosen(path)
+                        }
+                    }
+                    // #5007: csak a rács saját fotóhúzását fogadjuk el; a
+                    // külső fájlok importálása továbbra is az ImportDropArea
+                    // útján történik. A forrás sorait még a mappaváltás
+                    // előtt adjuk át, mert a sorra engedés meg is nyithatja
+                    // a célmappát.
+                    DropArea {
+                        id: folderDropArea
+                        objectName: "folderDropArea_" + path
+                        anchors.fill: parent
+                        enabled: kind === "folder"
+                        onDropped: function(drop) {
+                            var source = drop.source
+                            if (!source)
+                                return
+                            if (source.payload === "folders") {
+                                if (!source.folderPath || source.folderPath === path)
+                                    return
+                                drop.accept()
+                                pane.folderDroppedOnFolder(source.folderPath, path)
+                                return
+                            }
+                            if (source.payload !== "photos" || !source.photoRows
+                                    || source.photoRows.length === 0) return
+                            drop.accept()
+                            pane.photosDroppedOnFolder(
+                                path, source.photoRows.slice())
                         }
                     }
                 }
@@ -1096,6 +1255,12 @@ Rectangle {
                     pane.mentesPipaldKert(mappa, be)
                 }
                 onFolderChosen: function(path) { pane.folderChosen(path) }
+                onFolderDroppedOnFolder: function(sourcePath, targetPath) {
+                    pane.folderDroppedOnFolder(sourcePath, targetPath)
+                }
+                onFolderContextMenuRequested: function(path) {
+                    pane.openFolderContextMenu(path)
+                }
 
                 // A `HierFolder` menü három tétele, aminek a rétege a
                 // gazdában van — ugyanazokra a hívásokra kötve, mint a
@@ -1244,6 +1409,10 @@ Rectangle {
 
     AlbumContextMenu {
         id: albumContextMenu
+        onAddNameTagsRequested: function(token) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanAlbum(token)
+        }
         onSelectAllRequested:
             if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
         onClearSelectionRequested:
@@ -1259,33 +1428,99 @@ Rectangle {
         onExportAsHtmlRequested:
             if (pane.appWindow && pane.appWindow.openWebExport)
                 pane.appWindow.openWebExport()
-        //: #3173: az album tulajdonságai — UGYANAZ a párbeszéd, mint a
-        //: mappáé (`album.fen`), csak album módban: ott a név és a helyszín
-        //: is szerkeszthető.
-        onEditDescriptionRequested: {
-            var adat = (controller && controller.albumProperties)
-                ? controller.albumProperties(albumContextMenu.albumToken) : {}
-            folderPropertiesDialog.mode = "album"
-            folderPropertiesDialog.albumToken = albumContextMenu.albumToken
-            folderPropertiesDialog.albumName =
-                adat.name !== undefined ? adat.name : albumContextMenu.albumName
-            folderPropertiesDialog.currentDate =
-                adat.date !== undefined ? adat.date : ""
-            folderPropertiesDialog.albumLocation =
-                adat.location !== undefined ? adat.location : ""
-            folderPropertiesDialog.currentDescription =
-                adat.description !== undefined ? adat.description : ""
-            folderPropertiesDialog.open()
+        //: #3173: a helyi menü ugyanarra az albumtulajdonság-útvonalra megy.
+        onEditDescriptionRequested: pane.openAlbumDescription(
+            albumContextMenu.albumToken, albumContextMenu.albumName)
+        onDeleteAlbumRequested: pane._askDeleteAlbum(
+            albumContextMenu.albumToken, albumContextMenu.albumName)
+        //: #4599: „Sort Album By" — az album tárolt sorrendjének átrendezése
+        onSortAlbumRequested: function(mode) {
+            if (controller)
+                controller.sortAlbum(albumContextMenu.albumToken, mode)
         }
+    }
+
+    ConfirmDialog {
+        id: deleteAlbumConfirm
+        namePrefix: "deleteAlbum"
+        title: qsTr("Delete Album")
+        yesText: qsTr("Delete Album")
+        property string pendingToken: ""
+        onConfirmed: {
+            if (controller && pendingToken)
+                controller.deleteAlbum(pendingToken)
+            pendingToken = ""
+        }
+        onDenied: pendingToken = ""
+        onCanceled: pendingToken = ""
     }
 
     PeopleAlbumContextMenu {
         id: peopleAlbumContextMenu
+        onDeleteRequested: function(name) {
+            peopleAlbumDeleteConfirmation.personName = name
+            peopleAlbumDeleteConfirmation.open()
+        }
+        onEditRequested: function(name) {
+            if (pane.appWindow && pane.appWindow.openPeopleManagerForPerson)
+                pane.appWindow.openPeopleManagerForPerson(name)
+        }
         onSelectAllRequested:
             if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
         onClearSelectionRequested:
             if (pane.appWindow && pane.appWindow.clearSelection)
                 pane.appWindow.clearSelection()
+        onInvertSelectionRequested:
+            if (pane.appWindow && pane.appWindow.invertSelection)
+                pane.appWindow.invertSelection()
+        // Ugyanaz a frissítési út, mint az album-menüben: az aktív mappa
+        // újraszinkronja újratölti a látható rácsot.
+        onRefreshThumbnailsRequested:
+            if (controller) controller.resyncFolder(controller.currentFolder)
+    }
+
+    Dialog {
+        id: peopleAlbumDeleteConfirmation
+        objectName: "peopleAlbumDeleteConfirmation"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        title: qsTr("Delete Person")
+        property string personName: ""
+        // #1599/#1748: rögzített szélesség, különben a tördelő felirat és a
+        // Dialog egymás szélességéből számolna (kötési hurok)
+        implicitWidth: 380 + leftPadding + rightPadding
+
+        contentItem: Label {
+            width: 380
+            text: qsTr("Are you sure you want to delete the people album \"%1\"?")
+                .arg(peopleAlbumDeleteConfirmation.personName)
+            wrapMode: Text.WordWrap
+        }
+
+        footer: RowLayout {
+            spacing: 8
+
+            Item { Layout.fillWidth: true }
+
+            Button {
+                objectName: "peopleAlbumDeleteConfirmButton"
+                text: qsTr("Yes")
+                onClicked: peopleAlbumDeleteConfirmation.accept()
+            }
+            Button {
+                objectName: "peopleAlbumDeleteCancelButton"
+                text: qsTr("No")
+                onClicked: peopleAlbumDeleteConfirmation.reject()
+            }
+        }
+
+        onAccepted: {
+            if (controller)
+                controller.savePeopleManagerChanges([
+                    {action: "delete", oldName: peopleAlbumDeleteConfirmation.personName}
+                ])
+        }
     }
 
     FolderListContextMenu {
@@ -1294,6 +1529,10 @@ Rectangle {
         // mint a menüsáv `Nézet ▸ Mappanézet` harmadik tétele
         simplifiedTree:
             pane.hierarchyController ? pane.hierarchyController.simplified : false
+        albumThumbs: pane.albumThumbs
+        viewRoot: (pane.hierarchyController
+                && pane.hierarchyController.viewRoot !== undefined)
+            ? pane.hierarchyController.viewRoot : ""
         // #1767: a Személyek lista rendezése — a `!== undefined` a
         // #1572-őr mintája (a próbák stub-vezérlőjén hiányozhat)
         peopleSort: (controller && controller.peopleSort !== undefined)
@@ -1308,6 +1547,13 @@ Rectangle {
         onSortReverseRequested: if (controller) controller.togglePaneSortReverse()
         onSimplifiedTreeRequested:
             if (pane.hierarchyController) pane.hierarchyController.toggleSimplified()
+        onAlbumThumbnailsRequested:
+            if (pane.hierarchyController)
+                pane.hierarchyController.toggleAlbumThumbs()
+        onViewRootRequested: function(token) {
+            if (pane.hierarchyController)
+                pane.hierarchyController.setViewRoot(token)
+        }
     }
 
     // #457: melyik mappát mozgatjuk épp (a dialógus elfogadásakor kell)
@@ -1329,7 +1575,11 @@ Rectangle {
 
     FolderContextMenu {
         id: folderContextMenu
-        // #457: „Mappa áthelyezése…" — a célmappát a rendszer
+        onAddNameTagsRequested: function(path) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanFolder(path)
+        }
+        // #457: „Mappa áthelyezése…” — a célmappát a rendszer
         // mappaválasztójával kérjük be, a mozgatás a kísérőfájlokkal
         // együtt megy (a `.picasa.ini` nálunk az igazságforrás)
         onMoveFolderRequested: {
@@ -1389,14 +1639,14 @@ Rectangle {
 
         onRefreshThumbnailsRequested:
             if (controller) controller.resyncFolder(folderContextMenu.folderPath)
-        // #1436: a mappa TARTALMÁT rendezi (a képeket), nem a mappákat. A
-        // korábbi `setFolderSort` a rács MAPPA-sorrendjét állította, ezért
-        // tett a menüpont mást, mint amit a neve ígért.
+        // #4890: egyszer átrendezi a célmappát, és a kézi sorrendjét menti.
         onSortModeRequested: function(mode) {
-            if (controller) controller.setFolderPhotoSort(mode)
+            if (controller)
+                controller.sortFolderBy(folderContextMenu.folderPath, mode)
         }
         onSortReverseRequested:
-            if (controller) controller.toggleFolderPhotoSortReverse()
+            if (controller)
+                controller.sortFolderBy(folderContextMenu.folderPath, "reverse")
 
         onLocateRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController)
@@ -1475,12 +1725,29 @@ Rectangle {
 
     FolderPropertiesDialog {
         id: folderPropertiesDialog
+        renameFolderHandler: function(path, name) {
+            if (typeof controller === "undefined" || !controller
+                    || typeof controller.renameFolder !== "function")
+                return null
+            return controller.renameFolder(path, name)
+        }
         onFolderPropertiesAccepted: function(path, isoDate, description) {
             if (!controller) return
             controller.setFolderDescriptionOf(path, description)
             // üres dátum = „automatikus dátum": a felülírás törlése
             if (isoDate.length > 0) controller.setFolderDate(path, isoDate)
             else controller.clearFolderDate(path)
+        }
+        onFolderMusicAccepted: function(path, useMusic, musicFile) {
+            if (controller && controller.setFolderMusic)
+                controller.setFolderMusic(path, useMusic, musicFile)
+        }
+        onSplitFolderAccepted: function(paths, name, isoDate, location,
+                                        description, useMusic, musicFile) {
+            if (typeof fileOpsController !== "undefined" && fileOpsController)
+                fileOpsController.splitFolderHere(
+                    paths, name, isoDate, location, description,
+                    useMusic, musicFile)
         }
         //: #3173: album módban az ini-írás a `photo_ops_controller`-en megy,
         //: MINDEN olyan mappába, ahol az albumnak van tagja
@@ -1489,6 +1756,10 @@ Rectangle {
             controller.editAlbumProperties(
                 token, name, isoDate, location, description)
             pane.refreshCustomCollections()
+        }
+        onAlbumMusicAccepted: function(token, useMusic, musicFile) {
+            if (controller && controller.editAlbumMusic)
+                controller.editAlbumMusic(token, useMusic, musicFile)
         }
     }
 

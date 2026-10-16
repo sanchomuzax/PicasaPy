@@ -3,9 +3,12 @@
 átnevezés, háttérszálon + resync)."""
 
 import pytest
+from PySide6.QtCore import QLocale
+
+from picasapy.fileops.rename import format_taken_at
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import hangos_hurok
+from support.qt_wait import wait_for_photo_op
 
 
 @pytest.fixture
@@ -18,8 +21,12 @@ def library(tmp_path):
     make_jpeg(
         root / "b.jpg", size=(1024, 768), taken_at="2025:06:02 08:00:00",
     )
+    make_jpeg(
+        root / "c.jpg", size=(640, 480), taken_at="2025:07:03 09:00:00",
+    )
     (root / ".picasa.ini").write_text(
-        "[a.jpg]\nstar=yes\n[b.jpg]\ncaption=nyar\n", encoding="utf-8"
+        "[a.jpg]\nstar=yes\n[b.jpg]\ncaption=nyar\n[c.jpg]\nstar=no\n",
+        encoding="utf-8",
     )
     return root
 
@@ -57,11 +64,15 @@ def _rows_by_name(controller, *names) -> list:
     return [by_name[name] for name in names]
 
 
-def _do_rename(controller, action) -> None:
+def _stamp(controller, name) -> str:
+    """A fájl felvételi dátum-idő utótagja, a rendszer területi beállításával."""
+    photo = next(p for p in controller.photos.photos if p.name == name)
+    assert photo.taken_at, "a próbakép dátuma hiányzik"
+    return format_taken_at(photo.taken_at, QLocale.system())
 
-    loop = hangos_hurok(controller.photoOpFinished)
-    action()
-    loop.exec()
+
+def _do_rename(controller, action) -> None:
+    wait_for_photo_op(controller, action)
 
 
 class TestRenamePreview:
@@ -73,7 +84,19 @@ class TestRenamePreview:
     def test_date_and_size_suffix(self, controller):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
         preview = controller.renamePreview(rows, "nyaralas", True, True)
-        assert preview == "nyaralas 2025-05-01 800x600.jpg"
+        # dátum ÉS idő (nem csak az ISO-nap), majd a felbontás
+        assert preview == f"nyaralas {_stamp(controller, 'a.jpg')} 800x600.jpg"
+        assert len(_stamp(controller, "a.jpg")) > len("2025-05-01")
+
+    def test_flags_default_off_and_persist(self, controller):
+        assert controller.renameUseDate() is False
+        assert controller.renameUseSize() is False
+        controller.setRenameUseFlags(True, False)
+        assert controller.renameUseDate() is True
+        assert controller.renameUseSize() is False
+        controller.setRenameUseFlags(False, True)
+        assert controller.renameUseDate() is False
+        assert controller.renameUseSize() is True
 
     def test_empty_base_name_gives_empty_preview(self, controller):
         rows = _rows_by_name(controller, "a.jpg")
@@ -95,7 +118,7 @@ class TestRenamePhotosMany:
         assert not (library / "a.jpg").exists()
         assert not (library / "b.jpg").exists()
         names = {p.name for p in controller.photos.photos}
-        assert names == {"nyaralas.jpg", "nyaralas-1.jpg"}
+        assert names == {"nyaralas.jpg", "nyaralas-1.jpg", "c.jpg"}
 
     def test_ini_sections_follow_the_rename(self, controller, library):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
@@ -110,13 +133,15 @@ class TestRenamePhotosMany:
         assert document.section("nyaralas-1.jpg").get("caption") == "nyar"
 
     def test_date_and_size_suffix_end_to_end(self, controller, library):
+        stamp_a = _stamp(controller, "a.jpg")
+        stamp_b = _stamp(controller, "b.jpg")
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
         _do_rename(
             controller,
             lambda: controller.renamePhotosMany(rows, "nyar", True, True),
         )
-        assert (library / "nyar 2025-05-01 800x600.jpg").exists()
-        assert (library / "nyar 2025-06-02 1024x768-1.jpg").exists()
+        assert (library / f"nyar {stamp_a} 800x600.jpg").exists()
+        assert (library / f"nyar {stamp_b} 1024x768-1.jpg").exists()
 
     def test_collision_reports_failure_without_renaming(self, controller, library):
         # az "a.jpg" célneve ("b.jpg", sorszám nélkül) ütközik a köteg
@@ -131,6 +156,43 @@ class TestRenamePhotosMany:
         assert failures  # emberi hibaüzenet érkezett
         assert (library / "a.jpg").exists()
         assert (library / "b.jpg").exists()
+
+    def test_runtime_failure_reports_and_refreshes_partial_renames(
+        self, controller, library, monkeypatch
+    ):
+        import picasapy.fileops.rename as rename_module
+
+        rows = _rows_by_name(controller, "a.jpg", "b.jpg", "c.jpg")
+        real_rename = rename_module._rename
+        calls = 0
+
+        def fail_on_third(source, target):
+            nonlocal calls
+            calls += 1
+            if calls == 3:
+                raise PermissionError("injected third-file failure")
+            real_rename(source, target)
+
+        monkeypatch.setattr(rename_module, "_rename", fail_on_third)
+        failures = []
+        controller.syncFailed.connect(failures.append)
+        _do_rename(
+            controller,
+            lambda: controller.renamePhotosMany(rows, "trip", False, False),
+        )
+
+        assert failures
+        assert "trip.jpg" in failures[-1]
+        assert "trip-1.jpg" in failures[-1]
+        assert "c.jpg" in failures[-1]
+        assert (library / "trip.jpg").exists()
+        assert (library / "trip-1.jpg").exists()
+        assert not (library / "a.jpg").exists()
+        assert not (library / "b.jpg").exists()
+        assert (library / "c.jpg").exists()
+        assert {photo.name for photo in controller.photos.photos} == {
+            "trip.jpg", "trip-1.jpg", "c.jpg",
+        }
 
     def test_empty_base_name_is_a_no_op(self, controller, library):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")

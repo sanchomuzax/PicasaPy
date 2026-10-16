@@ -89,6 +89,13 @@ Rectangle {
                 text: "+"
                 enabled: panel.cimkezheto && tagInput.text.trim().length > 0
                 Layout.preferredWidth: 26
+                // #4577: a `tagpanel/addtag` súgója — a hover a gombon
+                // kell működjön, különben a buborék sosem jelenik meg
+                hoverEnabled: true
+                //: #4577: `tagpanel/addtag` (súgó) — az eredetiben a + gomb buboréksúgója
+                ToolTip.text: qsTr("Add tag to the currently selected items")
+                ToolTip.visible: hovered
+                ToolTip.delay: Theme.tooltipDelay
                 onClicked: panel.submit()
             }
         }
@@ -215,7 +222,9 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             Text {
-                text: qsTr("Quick tags")
+                objectName: "quickTagsLabel"
+                //: #4577: `tagpanel/quick_label` — az eredetiben a gyorscímke-sor felirata
+                text: qsTr("Quick Tags:")
                 font.pixelSize: Theme.fontSize
                 font.bold: true
                 color: Theme.ink
@@ -235,6 +244,10 @@ Rectangle {
                 TapHandler {
                     onTapped: quickTagsConfigDialog.open()
                 }
+                //: #4577: `tagpanel/quick_config` (súgó) — az eredetiben a fogaskerék buboréksúgója
+                ToolTip.text: qsTr("Configure Quick Tags")
+                ToolTip.visible: gearHover.hovered
+                ToolTip.delay: Theme.tooltipDelay
             }
         }
 

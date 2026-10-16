@@ -28,6 +28,24 @@ jelöli — lásd [Effektek](effektek.md).
 
 Az effektek részletes listája: [Effektek](effektek.md).
 
+## A bal panel elrejtése
+
+A néző bal oldali szerkesztőpanelje elrejthető, hogy a kép nagyobb helyet
+kapjon. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló mutatja
+és rejti, és a panel szélén középen lévő kis **‹** / **›** nyíl ugyanezt
+teszi (buboréksúgója: *Szerkesztési vezérlők megjelenítése/elrejtése*). A
+kettő ugyanazt az állapotot kapcsolja, és a választás **megmarad** a
+következő indításig. Billentyűvel a **Ctrl+9** teszi ugyanezt, amíg a
+néző nyitva van.
+
+## Szöveg megjelenítése és elrejtése a képen
+
+Ha a képen van szöveg, a **Szöveg** csempe alján megjelenik a **Szöveg
+megjelenítése** jelölő (buboréksúgója: *Fotón lévő szöveg megjelenítése
+vagy elrejtése*). Kikapcsolva a szöveg nem látszik a képen, de nem vész
+el. Több képre egyszerre a **Kép ▸ Csoportos szerkesztés** almenüje adja
+ugyanezt — lásd [Csoportos szerkesztés](csoportos-szerkesztes.md).
+
 ## A lassú effektek és az előnézet
 
 Tucatnyi effekt sokat számol: ilyen az **Élesítés**, a **Filmszemcse**,
@@ -50,6 +68,15 @@ valódi méretéhez igazodik. Ezeket a program a kép eredeti méretén
 számolja ki, és csak utána kicsinyíti le a képernyőre, hogy az előnézet
 azt mutassa, ami a kimentett fájlba is kerül. Nagy képnél ez érezhetően
 lassabb.
+
+## Nyitott effektpanel mellett a bal panel letiltva
+
+Ha egy **csúszkás effekt** panelje nyitva van (a csempe megnyomása után,
+az **Alkalmaz** és a **Mégse** gombbal), a bal panel többi része nem
+használható. Ha ilyenkor egy fülre kattintasz, a program **nem vált
+fület**: a panel tartalma elmosva, letiltva látszik, és az effekt
+előnézete megmarad. Ez az eredeti Picasa viselkedése. Az effektet az
+**Esc** elveti.
 
 ## Az effektek sorrendje számít
 
@@ -77,6 +104,13 @@ kép adatait.
 
 ## Gyakori javítások
 
+Ha az egeret a szerkesztő egy gombja vagy effektcsempéje fölé viszed,
+rövid súgóbuborék mondja meg, mire való — például a **Vágás**-nál „Vágja
+ezt a fotót más alakúra", a **Szépia**-nál „Átalakítja a fotót szépia
+tónusúvá". A buborékok szövege az eredeti Picasáé. Ugyanígy kap
+buborékot az **Alkalmaz**, a **Mégse**, a **Visszavonás** és az
+**Újra** gomb is.
+
 Kilenc gomb:
 
 - **Vágás** — külön eszköz, lásd lentebb.
@@ -96,8 +130,25 @@ A vágás, a retusálás, a szöveg és a vörösszem **Alkalmaz** és **Mégse*
 gombja a saját paneljében van, a bal oldalon.
 
 Egy kivétel a **Kiegyenesítés**: ott a csúszka és a két gomb a **kép
-fölött lebegő sávban** áll. A **Mégse** a kiegyenesítés nyitáskori
-értékét állítja vissza, az **Esc** billentyű ugyanezt teszi.
+fölött lebegő sávban** áll.
+
+### Kiegyenesítés
+
+A **Kiegyenesítés** megnyitásakor a kép fölé **négyzethálót** rajzol a
+program, hogy a horizontot a vonalakhoz igazíthasd. A sáv a kép alján áll,
+és **forgatott képnél is vízszintes** marad. A sáv gombjai **ALKALMAZ**
+(balra) és **MÉGSE** (jobbra). A kép a megnyitáskor az illesztett nézetre
+áll, és bezárás után is ott marad.
+
+- A csúszka húzása közben csak az előnézet változik. **A Kiegyenesítést
+  csak az ALKALMAZ menti el** (és csak akkor kerül be a szerkesztések és
+  a Visszavonás közé, ha az érték meg is változott).
+- A **MÉGSE**, és minden más kilépés — lapozás, az Esc, a néző bezárása —
+  a **megnyitáskori képet** adja vissza: a félkész állítás nem mentődik.
+- Amíg a Kiegyenesítés nyitva van, a **bal panel szürke**, és nem
+  kattintható; a panel alján a Visszavonás/Újra sor nem látszik.
+- Az **ALKALMAZ** után a **Visszavonás** gomb azonnal aktív, és megnevezi a
+  lépést.
 
 ## Vágás
 
@@ -109,9 +160,18 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
   13×18, 20×25), **A4** teljes oldal, valamint a képernyő-arányok:
   **4:3** (szabvány képernyő), **16:10** (széles monitor), **16:9**
   (HDTV) és **5:3** (széles digitális képkeret). Az **Egyéni méretarány
-  hozzáadása…** paranccsal saját arányt vehetsz fel névvel,
-  szélességgel és magassággal; a saját arányt később törölni is tudod.
-- **Álló** / **Fekvő** — a keret elforgatása.
+  hozzáadása…** paranccsal saját arányt vehetsz fel: az ablakban a
+  **Méretek:** sorba a szélességet és a magasságot, a **Név:** sorba a
+  nevét írod; alatta egy **Példa:** sor mutatja, mire gondol a program
+  (4x6, kisméretű nyomat). A saját arányok a listában az **Egyéni
+  méretarányok** cím alatt állnak. Törölni a lista melletti kis
+  **kukával** tudod: válaszd ki a saját arányt, kattints a kukára, és
+  hagyd jóvá a kérdést („Törli ezt az egyéni méretarányt?"). Beépített
+  aránynál a kuka szürke.
+  A lista első két sora a
+  pixelméretet is kiírja: a **Kézi** sor a kijelölt keret méretét (például
+  „Kézi: 1200x800"), a **Jelenlegi méretarány** sor a teljes kép méretét.
+  A kézi sor értéke követi a keretet, amíg húzod.
 - **Forgatás** gomb — a képarány oldalainak cseréje.
 - **Javasolt vágások** — a program kínál néhány kivágást: a részletre, a
   színre, a horizontra, illetve az arcokra komponálva és az arcokra
@@ -150,7 +210,21 @@ keretének húzásakor is.
 
 Az **Automatikus** gomb magától megkeresi a vörös szemeket. Ha nem talál
 semmit, kiírja: „Az automatika nem talált vörös szemet." Ha talált,
-azt is jelzi.
+azt is jelzi, és **minden kijavított szem köré négyzetet rajzol** —
+ugyanúgy, mint a kézzel jelölt szemek köré. Az automatikusan javított
+szemeket így egyenként is visszavonhatod: kattints a négyzetükbe (lásd
+lentebb). Az **Alaphelyzet** az automatikus javítást is visszaveszi.
+
+Az automatikus javítás a **felismert arcok szemére** korlátozódik: az arcon
+kívüli vörös részeket — például egy piros lámpát vagy ruhát — nem bántja.
+Ha az arcfelismerő nem érhető el, a program a korábbi módon, a teljes
+képen keres. Ha az arcfelismerő egy arcnál értelmetlen szemhelyet ad,
+a program azt kihagyja, és a javítás a többi szemmel lefut.
+
+Ha a képet a **Kiegyenesítés** elforgatta, a panelen figyelmeztetés áll:
+a forgatott képen a szem köré húzott keretek pontatlanok lehetnek. Ilyenkor
+vond vissza a Kiegyenesítést, javítsd a vörös szemeket, és szükség esetén
+egyenesítsd ki újra a képet.
 
 Kézzel is jelölhetsz: húzz keretet a szem köré. Húzás közben a
 **Shift**, a **Ctrl** és az **Alt** itt is megköti a keret arányát — ahogy
@@ -174,6 +248,9 @@ eredményt.
 Az **Ecset mérete** csúszkával állítod a folt méretét. Kattintással
 jelölöd ki a javítandó területet; utána az egeret mozgatva előnézetben
 látod, mivel pótolná a program, és egy újabb kattintás véglegesíti.
+Az egérmutató helyén az ecset méretű **kör** látszik (a rendszermutató
+ilyenkor nem jelenik meg); az első kattintás után a **cél** körét, a
+másodiknál a **forrásét** is látod a képen, amíg a javítás el nem készül.
 Nagyított képen a **Ctrl** lenyomva tartásával húzva pásztázhatsz. A
 panel kiírja, hány foltot javítottál.
 **Folt visszavonása** és **Folt újra** léptet a foltok között, az
@@ -181,11 +258,18 @@ panel kiírja, hány foltot javítottál.
 
 ## Szöveg
 
-Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Beállítható:
+Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Egy képre
+**több szövegdoboz** is felvehető: az **Alkalmaz** után kattints egy másik
+helyre, és írd be a következőt. Egy meglévő szövegre kattintva kijelölöd
+(kék keret jelzi), és átírhatod, áthelyezheted vagy a beállításait
+módosíthatod; az **Alkalmaz** a kijelölt dobozt frissíti. Beállítható:
 
 - **Betűtípus** és **betűméret**, valamint **félkövér**, **dőlt** és
-  **aláhúzott** stílus,
-- **igazítás** balra, középre, jobbra,
+  **aláhúzott** stílus. A betűtípus listája a gépre telepített
+  betűcsaládokat sorolja, és a választott család a képen is úgy látszik,
+  ahogy kiválasztottad,
+- **igazítás** balra, középre, jobbra — a három gombon külön jel mutatja,
+  melyik melyik,
 - **Szöveg színe** és **Körvonal színe**, **Körvonal vastagsága**,
 - **Átlátszóság**,
 - kapcsoló, amivel csak a körvonal látszik, kitöltés nélkül.
@@ -211,6 +295,25 @@ beállítottad, és a windowsos Picasa is így látja.
 > Korábban a program minden feliratot félkövérként mentett, a körvonal
 > vastagsága pedig mindig elveszett. Mindkettő megjavult; a régebben
 > mentett feliratokat érdemes egyszer ellenőrizni.
+
+## Színválasztó és a legutóbbi színek
+
+Az effektek színválasztóján — például a **Neon** színénél — a színek
+rácsa alatt **öt „legutóbbi szín"** rekesz áll: a legutóbb választott öt
+színt őrzi, a legfrissebb elöl. A rekeszek **megmaradnak** a következő
+indításig is, és a színekre rákattintva újra használhatod őket.
+
+A **Szöveg** eszköz **Szöveg színe** és **Körvonal színe** választóján is
+ott vannak a legutóbbi színek: a keskeny panel miatt kisebb rekeszekben, a
+paletta mellett.
+
+A rögzített palettán túl **bármilyen színt** választhatsz: a választó
+színkerék-gombja (buboréksúgója: **Színválasztás**) egy nagyobb
+színválasztót nyit. Ebben felül az öt legutóbbi szín áll, alatta egy
+nagy színmező, legalul pedig a teljes színskála csíkja: a csíkon a
+színárnyalatot választod, a színmezőben annak világosabb, sötétebb vagy
+fakóbb változatát. Amire kattintasz, az azonnal
+érvényesül a képen, és bekerül a legutóbbi színek közé.
 
 ## Festés ecsettel: hol hasson a Vámpírszem
 

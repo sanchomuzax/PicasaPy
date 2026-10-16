@@ -133,6 +133,8 @@ class TestDragSource:
         attached_drag.activeChanged.connect(
             lambda: attached_drag.property("active") and aktiv_lett.append(True)
         )
+        photo_drag_started = []
+        delegate.photoDragStarted.connect(photo_drag_started.append)
         window = QQuickWindow()
         window.resize(240, 120)
         delegate.setWidth(80)
@@ -151,6 +153,7 @@ class TestDragSource:
             QTest.mouseMove(window, start)
             QTest.mousePress(window, Qt.MouseButton.LeftButton, pos=start)
             previous_count = len(aktiv_lett)
+            previous_photo_count = len(photo_drag_started)
             # A QDrag saját eseményhurkában engedjük fel a pointert, hogy a
             # natív húzás offscreen módban is determinisztikusan befejeződjön.
             QTimer.singleShot(
@@ -168,4 +171,7 @@ class TestDragSource:
             qt_app.processEvents()
             assert len(aktiv_lett) > previous_count, (
                 "a valódi pointerhúzás nem aktiválta a húzást"
+            )
+            assert photo_drag_started[previous_photo_count:] == [3], (
+                "a valódi pointerhúzás nem küldte a kiválasztott kép indexét"
             )

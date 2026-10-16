@@ -24,6 +24,8 @@ panel property-jeinek felülírása.
 
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
@@ -267,6 +269,78 @@ _FACE_LANDMARKS = FaceLandmarks(
 )
 
 
+def _nezet_mozog(window) -> bool:
+    """A Névtelenek nézet még dolgozik: csoportosít, vagy a lista/rács mozog."""
+    view = _child(window, "unnamedFacesView")
+    if view.property("groupingInProgress"):
+        return True
+    for item in _walk(view):
+        if item.objectName() in ("unnamedGroupsList", "unnamedFaceGrid") and (
+            item.property("moving") or item.property("flicking")
+        ):
+            return True
+    return False
+
+
+def _var_nyugalomra(window, qt_app, timeout: float = 5.0) -> None:
+    """Determinisztikus szinkronpont a kattintás előtt (#4886): a nézet
+    300 ms-ig egyhuzamban nyugalomban van (futó arckeresés mellett a
+    csoportosítás és a lista-újraépülés aszinkron)."""
+    deadline = time.monotonic() + timeout
+    nyugodt_ota = None
+    while time.monotonic() < deadline:
+        qt_app.processEvents()
+        if _nezet_mozog(window):
+            nyugodt_ota = None
+        elif nyugodt_ota is None:
+            nyugodt_ota = time.monotonic()
+        elif time.monotonic() - nyugodt_ota >= 0.3:
+            return
+        QTest.qWait(20)
+
+
+def _click_diagnosis(window, target: str, center) -> str:
+    """A CI-n időnként hatástalan arc-kattintás (#4870) okának kiírása: mi
+    van a kattintás pontján, és mi a nézet/panel állapota."""
+    view = _child(window, "unnamedFacesView")
+    label = _child(window, "peoplePanelHeader")
+    hits = []
+    tiles = 0
+    for item in _walk(window.contentItem()):
+        if item.objectName() == target:
+            tiles += 1
+        if not item.isVisible():
+            continue
+        local = item.mapFromScene(center)
+        if item.contains(local) and item.acceptedMouseButtons() != Qt.MouseButton.NoButton:
+            hits.append(f"{item.metaObject().className()}:{item.objectName() or '-'}"
+                        f"(z={item.z()})")
+    return (
+        f"a kattintás után nincs fejléc; pont={center.x():.0f},{center.y():.0f}"
+        f" ablak={window.width()}x{window.height()}"
+        f" selectedCount={view.property('selectedCount')}"
+        f" grouped={view.property('grouped')}"
+        f" csoportosít={view.property('groupingInProgress')}"
+        f" mozog={_nezet_mozog(window)}"
+        f" csoportok={len(view.property('groupsModel') or [])}"
+        f" {target}-példány={tiles}"
+        f" fejléc.visible={label.property('visible')}"
+        f" fejléc.text={label.property('text')!r}"
+        f" panel.visible={_child(window, 'peoplePanel').property('visible')}"
+        f" egeret fogadók a ponton (alulról felfelé)={hits[-8:]}"
+        f" nyitott felugrók={_open_popups(window)}"
+    )
+
+
+def _open_popups(window) -> list[str]:
+    """A nyitott Popup-ok (a Qt overlay-ében élnek, nem a contentItem alatt)."""
+    return [
+        f"{obj.metaObject().className()}:{obj.objectName() or '-'}"
+        for obj in window.findChildren(QObject)
+        if obj.property("opened") is True
+    ]
+
+
 class TestUnnamedAlbum:
     def _open(self, window, qt_app):
         """A Névtelenek album megnyitása — a `reload()`-ot az
@@ -301,6 +375,7 @@ class TestUnnamedAlbum:
         át érhetők el, `findChild`-dal NEM (MEMORY 2026-07-31, ld. a
         `test_unnamed_faces_view.py` modul-docstringje)."""
         target = f"faceTile_{face_id}"
+        _var_nyugalomra(window, qt_app)
         for item in _walk(window.contentItem()):
             if item.objectName() == target and item.isVisible():
                 center = item.mapToScene(item.boundingRect().center())
@@ -309,13 +384,23 @@ class TestUnnamedAlbum:
                     QPoint(round(center.x()), round(center.y())),
                 )
                 _settle(qt_app)
+                # a kijelölés a panel fejlécét eseménykörök után kapcsolja be;
+                # a fix körszám a CI-n kevés volt (#4870) — megvárjuk
+                deadline = time.monotonic() + 5.0
+                while _header(window) is None and time.monotonic() < deadline:
+                    QTest.qWait(20)
+                if _header(window) is None:
+                    raise AssertionError(
+                        _click_diagnosis(window, target, center))
                 return
         raise AssertionError(f"{target} nem található/nem látszik a rácson")
 
     def test_nothing_selected_is_text3(self, qml_app, qt_app, tmp_path):
-        """A Text3 a „Név nélküliek" mód üres esete — csak ott."""
+        """A Text3 a „Név nélküliek" mód 0 kijelölés esete, NEM üres gyűjteménynél
+        (#4585: üres gyűjteménynél a Text1 áll). Van névtelen arc, nincs kijelölés."""
         window, controller, _engine = qml_app
         _library(window, controller, qt_app, tmp_path)
+        self._seed_unnamed_face(tmp_path, "c.jpg")
 
         self._open(window, qt_app)
 

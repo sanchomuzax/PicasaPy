@@ -14,17 +14,33 @@ import re
 import sqlite3
 import stat as stat_module
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from pathlib import Path
+from typing import NamedTuple
 
+from picasapy.index.queries import HIDDEN_INI_PENDING
 from picasapy.index.origin import forget_origin_keys_outside
-from picasapy.ini import IniDocument, load_document, read_folder_date_override
+from picasapy.ini import (
+    IniDocument,
+    ini_source_path,
+    is_hidden_folders_category,
+    load_document,
+    read_folder_category,
+    read_folder_date_override,
+    set_folder_hidden_in_ini,
+)
+from picasapy.ini.names import INI_NAME
+from picasapy.ini.album_order import places_of_section
 from picasapy.ini.albums import albums_of, parse_album_refs
-from picasapy.metadata import EMPTY_METADATA, read_file_metadata
+from picasapy.metadata import (
+    EMPTY_METADATA,
+    EMPTY_VIDEO_METADATA,
+    read_file_metadata,
+    read_video_metadata,
+)
 from picasapy.paths import normalize_path
 from picasapy.render.flip import FLIP_MASK
 from picasapy.scanner import (
-    PICASA_INI_NAME,
     FolderScan,
     HibasBejegyzes,
     MediaFile,
@@ -65,7 +81,8 @@ _SCAN_STATE_DDL = (
     "CREATE TABLE IF NOT EXISTS folder_scan_state ("
     " path TEXT PRIMARY KEY,"
     " mtime_ns INTEGER NOT NULL,"
-    " ini_mtime_ns INTEGER)"
+    " ini_mtime_ns INTEGER,"
+    " filetype_signature TEXT)"
 )
 
 logger = logging.getLogger(__name__)
@@ -90,6 +107,7 @@ def sync_tree(
     incremental: bool = True,
     progress: SyncProgressCallback | None = None,
     should_stop: Callable[[], bool] | None = None,
+    enabled_filetypes: Collection[str] | None = None,
 ) -> None:
     """A gyökér alatti könyvtár teljes szinkronja az indexbe.
 
@@ -138,7 +156,8 @@ def sync_tree(
     _ensure_scan_state(conn)
     # #1249: a sírkövek mindig kizárnak — a hívónak nem kell tudnia róluk
     exclude = tuple(exclude) + removed_folder_paths(conn)
-    skip = _make_skip(conn) if incremental else None
+    filetype_signature = _filetype_signature(enabled_filetypes)
+    skip = _make_skip(conn, filetype_signature) if incremental else None
     # #358: az `excluded_names` a #349 NÉV-kizárólista miatt kihagyott
     # mappákat gyűjti — ha ez nem üres, a gyökér scandirje bizonyíthatóan
     # lefutott (a gyökér tehát elérhető), csak minden talált tartalom
@@ -156,6 +175,7 @@ def sync_tree(
         skip=skip,
         excluded_names=excluded_names,
         hibas_bejegyzesek=hibas_bejegyzesek,
+        enabled_filetypes=enabled_filetypes,
     )
     if hibas_bejegyzesek:
         mappak = sum(1 for elem in hibas_bejegyzesek if elem.mappa)
@@ -185,7 +205,8 @@ def sync_tree(
                 cancelled = True
                 break
             continue
-        new_total += _sync_folder(conn, scan)
+        folder_result = _sync_folder(conn, scan)
+        new_total += folder_result.new_count
         if should_stop is not None and should_stop():
             # Az olvasás alatt változhatott a Mappakezelő kizárási
             # generációja. A jelen mappa még nem commitolt írásait eldobjuk,
@@ -193,8 +214,8 @@ def sync_tree(
             conn.rollback()
             cancelled = True
             break
-        if incremental:
-            _store_scan_state(conn, scan)
+        if incremental and (scan.files or scan.has_ini) and not folder_result.retry:
+            _store_scan_state(conn, scan, filetype_signature)
         conn.commit()
         if progress is not None and progress(
             str(scan.path), done, len(scans), new_total
@@ -239,6 +260,7 @@ def sync_folder(
     exclude: tuple[str | Path, ...] = (),
     should_stop: Callable[[], bool] | None = None,
     incremental: bool = False,
+    enabled_filetypes: Collection[str] | None = None,
 ) -> None:
     """Egyetlen mappa nem-rekurzív szinkronja (watcher-ág, #143).
 
@@ -294,14 +316,18 @@ def sync_folder(
     excluded = any(
         folder_path == item or item in folder_path.parents for item in exclude_paths
     )
-    skip = _make_skip(conn) if incremental else None
+    filetype_signature = _filetype_signature(enabled_filetypes)
+    skip = _make_skip(conn, filetype_signature) if incremental else None
     # #2483: a `folder_path` EBBEN a függvényben lett feloldva — a
     # kizárólista ne oldja fel még egyszer (útvonal-komponensenként egy
     # `lstat`)
     scan = (
         None
         if excluded
-        else scan_folder(folder_path, skip=skip, mar_feloldva=True)
+        else scan_folder(
+            folder_path, skip=skip, mar_feloldva=True,
+            enabled_filetypes=enabled_filetypes,
+        )
     )
     gyoker_baja = "" if excluded or scan is not None else _gyoker_baja(root_path)
     if gyoker_baja:
@@ -354,8 +380,9 @@ def sync_folder(
         conn.commit()
         return
     else:
-        _sync_folder(conn, scan)
-        _store_scan_state(conn, scan)
+        folder_result = _sync_folder(conn, scan)
+        if (scan.files or scan.has_ini) and not folder_result.retry:
+            _store_scan_state(conn, scan, filetype_signature)
     conn.commit()
 
 
@@ -575,6 +602,13 @@ def _remove_folder(conn: sqlite3.Connection, folder_path: Path) -> None:
 def _ensure_scan_state(conn: sqlite3.Connection) -> None:
     """A scan-állapot cache-tábla lusta létrehozása (ld. _SCAN_STATE_DDL)."""
     conn.execute(_SCAN_STATE_DDL)
+    columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(folder_scan_state)")
+    }
+    if "filetype_signature" not in columns:
+        conn.execute(
+            "ALTER TABLE folder_scan_state ADD COLUMN filetype_signature TEXT"
+        )
     conn.execute(_REMOVED_FOLDERS_DDL)
 
 
@@ -661,19 +695,22 @@ def folder_paths_under(conn: sqlite3.Connection, root: str | Path) -> tuple[str,
 _PATH_TABLES = ("folders", "folder_scan_state", "removed_folders", "photo_hashes")
 
 
-def _reszfa_feltetel(root: Path) -> tuple[str, tuple[str, str]]:
-    """WHERE-feltétel + paraméterek egy `path` oszlop `root` alatti soraira.
+def _reszfa_feltetel(root: Path) -> tuple[str, tuple[str, int, str]]:
+    """Pontos kis-/nagybetűs WHERE-feltétel a ``root`` alatti sorokra.
 
     Az `_under_root_query` mintája, de tábla NÉLKÜL: az `UPDATE`-be a
     `FROM` záradék nem fér bele (SQLite 3.33 óta az `UPDATE … FROM` JOIN-t
-    jelent, és a `path` oszlop kétértelművé válna). A LIKE-minta itt is
-    escape-elt és elválasztóval zárt: a „…/kep" gyökér NEM foghatja meg a
-    „…/kepek" sorait."""
-    prefix = str(root).rstrip(os.sep) + os.sep
-    escaped = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    jelent, és a `path` oszlop kétértelművé válna). A `LIKE` helyett a
+    `substr` + BINARY összehasonlítás pontos útvonal-egyezést és elválasztóval
+    zárt részfa-prefixet ad. Így a `Foo` részfa nem fogja meg a különálló
+    `foo` testvért, és a célütközés-ellenőrzés sem látja saját régi sorait.
+    """
+    root_text = str(root)
+    prefix = root_text.rstrip(os.sep) + os.sep
     return (
-        "WHERE path = ? OR path LIKE ? ESCAPE '\\'",
-        (str(root), escaped + "%"),
+        "WHERE (path = ? COLLATE BINARY OR "
+        "substr(path, 1, ?) = ? COLLATE BINARY)",
+        (root_text, len(prefix), prefix),
     )
 
 
@@ -700,10 +737,22 @@ def move_folder_tree(
 
     Visszatérési érték: az átírt MAPPA-sorok száma (a naplóhoz és a
     tesztek fogához)."""
-    old_path = Path(normalize_path(old_root))
-    new_path = Path(normalize_path(new_root))
-    if old_path == new_path:
+    # A rename may already have moved the directory before this index update.
+    # Resolve the parent, but preserve each supplied leaf spelling: on a
+    # case-insensitive filesystem the stale old path can resolve to the new
+    # entry and erase the very case-only change this function must record.
+    def moved_path(path: str | Path) -> str:
+        entry = Path(path)
+        return str(Path(normalize_path(entry.parent)) / entry.name)
+
+    old_text = moved_path(old_root)
+    new_text = moved_path(new_root)
+    # Path equality is case-insensitive on Windows; preserve spelling here so
+    # a case-only rename updates every indexed path.
+    if old_text == new_text:
         return 0
+    old_path = Path(old_text)
+    new_path = Path(new_text)
     _ensure_scan_state(conn)
     _ensure_photo_hashes(conn)
     utkozes, params = _reszfa_feltetel(new_path)
@@ -783,24 +832,54 @@ def folder_scan_stamps(
     }
 
 
-def _make_skip(conn: sqlite3.Connection):
+def _filetype_signature(enabled_filetypes: Collection[str] | None) -> str | None:
+    """Beállítás-kulcs a pecséthez: csoportváltáskor ne legyen régi skip."""
+    if enabled_filetypes is None:
+        return None
+    return ",".join(sorted(enabled_filetypes))
+
+
+def _make_skip(
+    conn: sqlite3.Connection, filetype_signature: str | None = None
+):
     """Kihagyás-predikátum az inkrementális rescanhez (#143).
 
     Csak olyan mappa hagyható ki, amely (1) az indexben is szerepel,
     (2) mappa- és ini-mtime-ja bitre egyezik a tárolt állapottal, és
     (3) mindkét mtime idősebb a frissesség-védőablaknál."""
     state = {
-        row["path"]: (row["mtime_ns"], row["ini_mtime_ns"])
+        row["path"]: (
+            row["mtime_ns"], row["ini_mtime_ns"], row["filetype_signature"]
+        )
         for row in conn.execute(
-            "SELECT s.path, s.mtime_ns, s.ini_mtime_ns"
+            "SELECT s.path, s.mtime_ns, s.ini_mtime_ns, s.filetype_signature"
             " FROM folder_scan_state s JOIN folders f ON f.path = s.path"
+        )
+    }
+    # #4580: migráció után a régi indexek videói NULL formátummal indulnak.
+    # Ezek mappája nem hagyható ki akkor sem, ha a scan-pecsét még friss.
+    # #4597: az ini-be még be nem írt rejtés (régi index) mappája sem — az
+    # egyszeri átállás az első szinkronon lefut.
+    always_scan = {
+        row["path"]
+        for row in conn.execute(
+            "SELECT DISTINCT f.path FROM photos p"
+            " JOIN folders f ON f.id = p.folder_id"
+            " WHERE p.kind = 'video' AND p.movie_format IS NULL"
+        )
+    } | {
+        row["path"]
+        for row in conn.execute(
+            "SELECT path FROM folders WHERE hidden = ?", (HIDDEN_INI_PENDING,)
         )
     }
     fresh_limit = time.time_ns() - _SKIP_SAFETY_NS
 
     def skip(path: Path, mtime_ns: int, ini_mtime_ns: int | None) -> bool:
+        if str(path) in always_scan:
+            return False
         return (
-            state.get(str(path)) == (mtime_ns, ini_mtime_ns)
+            state.get(str(path)) == (mtime_ns, ini_mtime_ns, filetype_signature)
             and mtime_ns <= fresh_limit
             and (ini_mtime_ns is None or ini_mtime_ns <= fresh_limit)
         )
@@ -808,20 +887,34 @@ def _make_skip(conn: sqlite3.Connection):
     return skip
 
 
-def _store_scan_state(conn: sqlite3.Connection, scan: FolderScan) -> None:
+def _store_scan_state(
+    conn: sqlite3.Connection,
+    scan: FolderScan,
+    filetype_signature: str | None = None,
+) -> None:
     if not scan.mtime_ns:
         return  # a mappa statja nem sikerült — ne rögzítsünk hamis állapotot
     conn.execute(
-        "INSERT INTO folder_scan_state(path, mtime_ns, ini_mtime_ns)"
-        " VALUES (?, ?, ?)"
+        "INSERT INTO folder_scan_state(path, mtime_ns, ini_mtime_ns, "
+        "filetype_signature) VALUES (?, ?, ?, ?)"
         " ON CONFLICT(path) DO UPDATE SET mtime_ns = excluded.mtime_ns,"
-        " ini_mtime_ns = excluded.ini_mtime_ns",
-        (str(scan.path), scan.mtime_ns, scan.ini_mtime_ns),
+        " ini_mtime_ns = excluded.ini_mtime_ns,"
+        " filetype_signature = excluded.filetype_signature",
+        (str(scan.path), scan.mtime_ns, scan.ini_mtime_ns, filetype_signature),
     )
 
 
-def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
-    """Egy mappa szinkronja; a visszatérési érték az ÚJ (az indexben eddig
+class _FolderSyncResult(NamedTuple):
+    """Egy mappa szinkronjának eredménye: az új fotók száma (#209) és hogy
+    a mappa újrapróbálandó-e (#4597: olvashatatlan ini — a scan-állapot nem
+    menthető, különben az inkrementális sync többé nem nézné meg)."""
+
+    new_count: int
+    retry: bool
+
+
+def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResult:
+    """Egy mappa szinkronja; az eredményben az ÚJ (az indexben eddig
     nem szereplő) fotók száma (#209, a haladás-jelzéshez)."""
     # #459/5: a sikeres scan bizonyítja, hogy a mappa elérhető — az esetleges
     # offline jelölés magától elmúlik (a NAS visszatérése után nincs teendő).
@@ -849,15 +942,18 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
                 row["filters"],
                 row["geotag_ini"],
             ),
+            row["movie_format"],
         )
         for row in conn.execute(
             "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
-            " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini"
+            " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
+            " movie_format"
             " FROM photos WHERE folder_id = ?",
             (folder_id,),
         )
     }
     document = _load_ini(scan)
+    _sync_folder_hidden(conn, folder_id, scan, document)
     new_count = 0
     for media in scan.files:
         section = document.section(media.name) if document else None
@@ -881,7 +977,11 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             # fájl-metaadat oszlopok maradnak. UPDATE csak akkor fut, ha
             # az ini-mezők ténylegesen eltérnek (#139) — különben a sor
             # érintetlen, az FTS-trigger sem sül el.
-            if current[1] != ini_fields:
+            if media.kind == "video" and current[2] is None:
+                # #4580: a v20-ról migrált sorokból a fájl újraolvasása tölti
+                # fel a videómezőket.
+                _upsert_photo(conn, folder_id, scan, media, ini_fields)
+            elif current[1] != ini_fields:
                 conn.execute(
                     "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
                     " keywords_ini = ?, rotate_steps = ?, flip_flags = ?,"
@@ -901,7 +1001,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
     # mappa-szinkron mindegyiket itt látja meg.
     forget_origin_keys_outside(conn, scan.path, nevek)
     _sync_albums(conn, folder_id, document)
-    _sync_folder_date(conn, folder_id, document)
+    sync_folder_date(conn, folder_id, document)
     # #1644: „olvasatlan" jelölő — a mappába ÚJ kép került. A `new_count` a
     # #209 óta pontosan ezt számolja (az indexben eddig nem szereplő
     # fotókat), tehát nincs szükség külön észlelésre.
@@ -913,10 +1013,14 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
         conn.execute(
             "UPDATE folders SET unread = 1 WHERE id = ?", (folder_id,)
         )
-    return new_count
+    if not scan.files and not scan.has_ini:
+        # A beállítás által kiszűrt, `.picasa.ini` nélküli mappa ne maradjon
+        # üres sorként a könyvtárban.
+        _remove_folder(conn, scan.path)
+    return _FolderSyncResult(new_count, scan.has_ini and document is None)
 
 
-def _sync_folder_date(
+def sync_folder_date(
     conn: sqlite3.Connection, folder_id: int, document: IniDocument | None
 ) -> None:
     """Mappa-dátum (#320): a `.picasa.ini` `[Picasa]` `date=` kézi
@@ -951,7 +1055,7 @@ def _sync_folder_date(
     conn.execute(
         "UPDATE folders SET date = ("
         " SELECT MIN(COALESCE("
-        "  p.taken_at,"
+        "  COALESCE(p.taken_at_override, p.taken_at),"
         "  strftime('%Y-%m-%dT%H:%M:%S',"
         "           COALESCE(p.first_seen_mtime_ns, p.mtime_ns) / 1000000000,"
         "           'unixepoch', 'localtime')"
@@ -973,14 +1077,19 @@ def _upsert_photo(
         if media.kind == "photo"
         else EMPTY_METADATA
     )
+    video_meta = (
+        read_video_metadata(scan.path / media.name)
+        if media.kind == "video"
+        else EMPTY_VIDEO_METADATA
+    )
     conn.execute(
         "INSERT INTO photos"
         "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
         " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
         " taken_at, orientation, width, height, caption_file, keywords_file,"
+        " movie_format, frame_rate, duration_seconds,"
         " exif_lat, exif_lon, first_seen_mtime_ns)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
-        " ?, ?) "
+        " VALUES (" + ", ".join("?" for _ in range(25)) + ") "
         "ON CONFLICT(folder_id, name) DO UPDATE SET "
         # #2486: a BEFAGYASZTÁS egyetlen sora. A `mtime_ns` az élő érték —
         # a változás-detektálásé, a bélyegkép-gyorstáré, a „legutóbbi
@@ -1000,9 +1109,16 @@ def _upsert_photo(
         "filters = excluded.filters, "
         "geotag_ini = excluded.geotag_ini, "
         "taken_at = excluded.taken_at, orientation = excluded.orientation, "
+        # #4332: a kézi dátum a fájl változása után is megmarad — a program
+        # saját Mentése is átírja a fájlt, és az eredeti Picasa a dátumot a
+        # saját adatbázisában tartja.
+        "taken_at_override = photos.taken_at_override, "
         "width = excluded.width, height = excluded.height, "
         "caption_file = excluded.caption_file, "
         "keywords_file = excluded.keywords_file, "
+        "movie_format = excluded.movie_format, "
+        "frame_rate = excluded.frame_rate, "
+        "duration_seconds = excluded.duration_seconds, "
         "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon",
         (
             folder_id,
@@ -1017,6 +1133,9 @@ def _upsert_photo(
             meta.height,
             meta.caption,
             ",".join(meta.keywords) or None,
+            video_meta.movie_format,
+            video_meta.frame_rate,
+            video_meta.duration_seconds,
             meta.latitude,
             meta.longitude,
             media.mtime_ns,
@@ -1024,11 +1143,51 @@ def _upsert_photo(
     )
 
 
+def _sync_folder_hidden(
+    conn: sqlite3.Connection,
+    folder_id: int,
+    scan: FolderScan,
+    document: IniDocument | None,
+) -> None:
+    """#4597: a `folders.hidden` az ini `P2category=Hidden Folders` sorából
+    származik — az újraépített index is rejtve hagyja a mappát.
+
+    EGYSZERI ÁTÁLLÍTÁS: a `hidden = 2` („rejtett, az ini-be még nincs
+    beírva": régi index vagy offline mappa) mappára előbb az ini-be íródik a
+    `Hidden Folders`, és csak ezután számít az ini az igazságforrásnak. Ha az
+    ini nem írható vagy nem olvasható, a jelölés 2 marad (a mappa rejtett
+    marad, a következő szinkron újrapróbálja). Ini nélküli mappánál az 1-es
+    jelölés érintetlen."""
+    current = conn.execute(
+        "SELECT hidden FROM folders WHERE id = ?", (folder_id,)
+    ).fetchone()[0]
+    if current == HIDDEN_INI_PENDING:
+        if scan.has_ini and document is None:
+            return  # olvashatatlan ini: nem írunk rá, rejtett marad
+        try:
+            if not is_hidden_folders_category(
+                read_folder_category(document) if document else None
+            ):
+                set_folder_hidden_in_ini(scan.path, True)
+        except (OSError, ValueError, RuntimeError):
+            return
+        conn.execute("UPDATE folders SET hidden = 1 WHERE id = ?", (folder_id,))
+        return
+    if document is None:
+        return
+    hidden = int(is_hidden_folders_category(read_folder_category(document)))
+    if bool(current) != bool(hidden):
+        conn.execute("UPDATE folders SET hidden = ? WHERE id = ?", (hidden, folder_id))
+
+
 def _load_ini(scan: FolderScan) -> IniDocument | None:
     if not scan.has_ini:
         return None
     try:
-        return load_document(scan.path / PICASA_INI_NAME)
+        ini_path = ini_source_path(scan.path / INI_NAME)
+        if ini_path is None:
+            return None
+        return load_document(ini_path)
     except (OSError, ValueError):
         # Zárolt/olvashatatlan/sérült ini (pl. a futó Picasa fogja): a mappa
         # metaadat nélkül indexelődik, a következő sync majd pótolja.
@@ -1102,6 +1261,8 @@ def _sync_albums(conn, folder_id: int, document) -> None:
             ),
         )
 
+    # #4599 (ADR-016): az album kézi helye (`albumorder=`) — az index csak
+    # gyorsítótárazza, az igazságforrás az ini.
     for name, photo_id in photo_ids.items():
         section = document.section(name)
         if section is None:
@@ -1109,11 +1270,12 @@ def _sync_albums(conn, folder_id: int, document) -> None:
         refs = section.get("albums")
         if not refs:
             continue
+        photo_places = places_of_section(section)
         for token in parse_album_refs(refs):
             conn.execute(
-                "INSERT OR IGNORE INTO photo_albums (photo_id, token)"
-                " VALUES (?, ?)",
-                (photo_id, token),
+                "INSERT OR IGNORE INTO photo_albums (photo_id, token, place)"
+                " VALUES (?, ?, ?)",
+                (photo_id, token, photo_places.get(token)),
             )
     _prune_albums(conn)
 
@@ -1236,6 +1398,10 @@ _TARGETED_UPDATE_COLUMNS = {
     # frissíthető. A #2976 óta ini-eredetű is: a mappa-resync a `flipped(N)`
     # kulcsból tölti, tehát az ini az igazságforrás, nem az index.
     "flip_flags",
+    # #4332/#4693/#4885: a dátummódosítás a forrás EXIF-ét írja; ha ez nem
+    # lehetséges (videó, nem-JPEG, hibás vagy írásvédett JPEG), a dátum ebbe a
+    # mezőbe kerül.
+    "taken_at_override",
 }
 
 

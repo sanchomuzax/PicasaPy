@@ -22,11 +22,10 @@ kiinduló sorához olvas.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 #: Fél képpont tűrés: a QML geometriája tört szám lehet.
 TURES = 0.5
@@ -61,14 +60,8 @@ def _x_a_savban(window, nev: str) -> float:
     return _elem(window, nev).mapToItem(sav, QPointF(0, 0)).x()
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        if feltetel():
-            return True
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattints(window, elem, qt_app, x: float | None = None) -> None:

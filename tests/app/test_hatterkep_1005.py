@@ -77,7 +77,7 @@ class TestABeallitas:
         nélkül. Ha valaki „szebb" kitöltésre írja át, itt bukik el."""
         futtato = _Futtato()
         eszkoz = wallpaper.set_desktop_background(
-            tmp_path / "h.bmp", runner=futtato, platform="linux",
+            tmp_path / "h.bmp", runner=futtato, platform="linux", desktop="",
             which=lambda nev: "/usr/bin/" + nev
         )
 
@@ -92,6 +92,7 @@ class TestABeallitas:
 
         eszkoz = wallpaper.set_desktop_background(
             tmp_path / "h.bmp", runner=futtato, platform="linux",
+            desktop="LXDE",
             which=lambda nev: "/usr/bin/" + nev
         )
 
@@ -105,6 +106,7 @@ class TestABeallitas:
             tmp_path / "h.bmp",
             runner=futtato,
             platform="linux",
+            desktop="",
             which=lambda nev: "/usr/bin/feh" if nev == "feh" else None,
         )
 
@@ -121,6 +123,7 @@ class TestABeallitas:
         assert (
             wallpaper.set_desktop_background(
                 tmp_path / "h.bmp", runner=futtato, platform="linux",
+                desktop="",
                 which=lambda _nev: None
             )
             is None

@@ -249,6 +249,15 @@ class TestScreenDevicePixelRatio:
 
 
 class TestTranslator:
+    @pytest.fixture(autouse=True)
+    def _locale_visszaallitasa(self):
+        """#4881: a `_install_translator` az alapértelmezett QLocale-t is állítja."""
+        from PySide6.QtCore import QLocale
+
+        eredeti = QLocale()
+        yield
+        QLocale.setDefault(eredeti)
+
     def test_hungarian_loads_and_translates(self, qt_app, monkeypatch):
         monkeypatch.setenv("PICASAPY_LANG", "hu_HU")
         translator = application._install_translator(qt_app)

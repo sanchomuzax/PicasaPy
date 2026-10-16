@@ -47,7 +47,7 @@ picasapy-origin-key: stringres:CThumbUI::Confirm2upRight</extracomment>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
@@ -85,7 +85,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonDiscard;stringres:CThumbUI::Con
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
@@ -94,7 +94,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonDiscard;stringres:CThumbUI::Con
             <location filename="../qml/PicasaPy/ActivityBadge.qml" />
             <source>Stop the background operation</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หยุดการทำงานเบื้องหลัง</translation>
         </message>
     </context>
     <context>
@@ -117,7 +117,7 @@ picasapy-origin-key: tooltips:Text2(thumbui/lightbox_bgtext)</extracomment>
         <message>
             <source>This collage was not completed. To finalize this collage (required for sharing or printing), please select the "Create Now" button. Please note that you can always change your collage later, even after it has been saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพตัดปะนี้ยังทำไม่เสร็จ หากต้องการสร้างให้เสร็จสมบูรณ์ (ซึ่งจำเป็นสำหรับการแชร์หรือพิมพ์) โปรดเลือกปุ่ม "สร้างตอนนี้" คุณยังเปลี่ยนภาพตัดปะได้ทุกเมื่อ แม้บันทึกไปแล้ว</translation>
         </message>
     </context>
     <context>
@@ -125,72 +125,72 @@ picasapy-origin-key: tooltips:Text2(thumbui/lightbox_bgtext)</extracomment>
         <message>
             <source>The face recognition model file is missing, so this step cannot run. Press "Download the model" below, and PicasaPy will get it for you. If you would rather do it by hand: copy the file "{0}" into this folder — {1} — or point the {2} environment variable at it, and then restart PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบไฟล์โมเดลรู้จำใบหน้า จึงทำขั้นตอนนี้ไม่ได้ กด "ดาวน์โหลดโมเดล" ด้านล่างเพื่อให้ PicasaPy ดาวน์โหลดให้ หากต้องการทำเอง ให้คัดลอกไฟล์ "{0}" ไปยังโฟลเดอร์นี้ — {1} — หรือกำหนดตัวแปรสภาพแวดล้อม {2} ให้ชี้ไปยังไฟล์ แล้วเริ่ม PicasaPy ใหม่</translation>
         </message>
         <message>
             <source>The model file is present, but PicasaPy could not load it. Check the application log.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มีไฟล์โมเดลอยู่แล้ว แต่ PicasaPy โหลดไม่ได้ โปรดตรวจสอบบันทึกของแอปพลิเคชัน</translation>
         </message>
         <message>
             <source>PicasaPy downloads the model file from the OpenCV Zoo project ({0} MB in total). Licence: {1} — free to use. The file is saved here: {2}</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy ดาวน์โหลดไฟล์โมเดลจากโครงการ OpenCV Zoo (ขนาดรวม {0} MB) ใบอนุญาต: {1} — ใช้งานได้ฟรี บันทึกไฟล์ไว้ที่นี่: {2}</translation>
         </message>
         <message>
             <source>The model file is already in place, but PicasaPy could not load it. It may be damaged: delete it from {0} and download it again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มีไฟล์โมเดลอยู่แล้ว แต่ PicasaPy โหลดไม่ได้ ไฟล์อาจเสียหาย: ลบไฟล์จาก {0} แล้วดาวน์โหลดอีกครั้ง</translation>
         </message>
         <message>
             <source>The download could not be started.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เริ่มดาวน์โหลดไม่ได้</translation>
         </message>
         <message>
             <source>The download failed: {0}</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดาวน์โหลดไม่สำเร็จ: {0}</translation>
         </message>
         <message>
             <source>There was nothing to download.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีอะไรให้ดาวน์โหลด</translation>
         </message>
         <message>
             <source>The face recognition model has been downloaded. You can start the search now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดาวน์โหลดโมเดลรู้จำใบหน้าแล้ว คุณเริ่มค้นหาได้เลย</translation>
         </message>
         <message>
             <source>PicasaPy verified the downloaded YuNet model, but could not load it. Face search is unavailable; check the application log.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy ตรวจสอบโมเดล YuNet ที่ดาวน์โหลดแล้ว แต่โหลดไม่ได้ การค้นหาใบหน้าใช้ไม่ได้ โปรดตรวจสอบบันทึกของแอปพลิเคชัน</translation>
         </message>
         <message>
             <source>Face detection is ready, but face grouping is unavailable because PicasaPy could not load the SFace model. Check the application log.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การตรวจหาใบหน้าพร้อมใช้งานแล้ว แต่จัดกลุ่มใบหน้าไม่ได้เนื่องจาก PicasaPy โหลดโมเดล SFace ไม่ได้ โปรดตรวจสอบบันทึกของแอปพลิเคชัน</translation>
         </message>
         <message>
             <source>The download was cancelled. Nothing was saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิกการดาวน์โหลดแล้ว ไม่มีการบันทึกไฟล์</translation>
         </message>
         <message>
             <source>The downloaded file was damaged, so PicasaPy threw it away instead of using it — a damaged model would find faces wrongly. Please try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์ที่ดาวน์โหลดเสียหาย PicasaPy จึงลบทิ้งแทนที่จะนำมาใช้ เพราะโมเดลที่เสียหายอาจค้นหาใบหน้าไม่ถูกต้อง โปรดลองอีกครั้ง</translation>
         </message>
         <message>
             <source>The model could not be saved to disk: {0}</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกโมเดลลงดิสก์ไม่ได้: {0}</translation>
         </message>
         <message>
             <source>PicasaPy could not reach the download source. Check your internet connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy เชื่อมต่อไปยังแหล่งดาวน์โหลดไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง</translation>
         </message>
     </context>
     <context>
@@ -204,57 +204,57 @@ picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
         <message>
             <source>Finished: %1 face(s) found in %2 checked picture(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จแล้ว: พบใบหน้า %1 ใบหน้า จากภาพ %2 ภาพที่ตรวจสอบ</translation>
         </message>
         <message>
             <source>Finished: no faces were found in %1 checked picture(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จแล้ว: ไม่พบใบหน้าในภาพ %1 ภาพที่ตรวจสอบ</translation>
         </message>
         <message>
             <source>Search cancelled. The faces found so far are kept.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิกการค้นหาแล้ว โดยเก็บใบหน้าที่พบจนถึงตอนนี้ไว้</translation>
         </message>
         <message>
             <source>The search failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาไม่สำเร็จ: %1</translation>
         </message>
         <message>
             <source>Grouping finished: %1 face(s) compared, %2 sorted into groups.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จัดกลุ่มเสร็จแล้ว: เปรียบเทียบใบหน้า %1 ใบหน้า และจัดเข้ากลุ่มแล้ว %2 รายการ</translation>
         </message>
         <message>
             <source>Grouping cancelled. The groups made so far are kept.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิกการจัดกลุ่มแล้ว โดยเก็บกลุ่มที่สร้างจนถึงตอนนี้ไว้</translation>
         </message>
         <message>
             <source>The grouping failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จัดกลุ่มไม่สำเร็จ: %1</translation>
         </message>
         <message>
             <source>PicasaPy goes through the pictures of your library and looks for faces. Pictures that already carry a name tag are left untouched. You can close this window while the search runs: the work continues, and the progress stays visible next to the Unnamed album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy จะตรวจดูภาพในไลบรารีของคุณเพื่อค้นหาใบหน้า ภาพที่มีแท็กชื่ออยู่แล้วจะไม่ถูกเปลี่ยน คุณปิดหน้าต่างนี้ระหว่างค้นหาได้ งานจะทำต่อไป และความคืบหน้าจะแสดงอยู่ข้างอัลบั้มไม่มีชื่อ</translation>
         </message>
         <message>
             <source>Searching...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังค้นหา...</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Scanning for faces... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังสแกนหาใบหน้า... เสร็จแล้ว %1%</translation>
         </message>
         <message>
             <source>Scanning for faces...</source>
@@ -265,27 +265,27 @@ picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
         <message>
             <source>As a second step PicasaPy can compare the faces it found and put the similar ones into the same group, so a whole group can be given a name at once.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ในขั้นตอนที่สอง PicasaPy สามารถเปรียบเทียบใบหน้าที่พบและจัดใบหน้าที่คล้ายกันไว้ในกลุ่มเดียวกัน เพื่อให้ตั้งชื่อทั้งกลุ่มได้ในครั้งเดียว</translation>
         </message>
         <message>
             <source>Grouping...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังจัดกลุ่ม...</translation>
         </message>
         <message>
             <source>Group Faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จัดกลุ่มใบหน้า</translation>
         </message>
         <message>
             <source>Grouping faces... %1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังจัดกลุ่มใบหน้า... %1 / %2</translation>
         </message>
         <message>
             <source>Pictures with unnamed faces: %1 — they are waiting in the Unnamed album, in the left pane.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพที่มีใบหน้าไม่มีชื่อ: %1 — รออยู่ในอัลบั้มไม่มีชื่อที่แผงด้านซ้าย</translation>
         </message>
         <message>
             <source>Close</source>
@@ -296,23 +296,58 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>Download the model</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดาวน์โหลดโมเดล</translation>
         </message>
         <message>
             <source>Downloading...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButton</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังดาวน์โหลด...</translation>
         </message>
         <message>
             <source>Downloading the model... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังดาวน์โหลดโมเดล... เสร็จแล้ว %1%</translation>
         </message>
         <message>
             <source>Downloading the model...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังดาวน์โหลดโมเดล...</translation>
+        </message>
+    </context>
+    <context>
+        <name>PlacesMarker</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="44" />
+            <source>1 photo here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>มีรูปภาพ 1 รูปที่นี่:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="45" />
+            <source>%d photos here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>มีรูปภาพ %d รูปที่นี่:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="55" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="56" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
+            <source>Search for these photos in Picasa</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ค้นหารูปภาพเหล่านี้ใน Picasa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
+            <source>Erase location info</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ลบข้อมูลตำแหน่ง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="73" />
+            <source>Erase map coordinates(i.e., GPS information) from these photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ลบพิกัดแผนที่ (เช่น ข้อมูล GPS) ออกจากรูปภาพเหล่านี้</translation>
         </message>
     </context>
     <context>
@@ -320,12 +355,12 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
         <message>
             <source>No printer selected.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้เลือกเครื่องพิมพ์</translation>
         </message>
         <message>
             <source>%1 — %2 × %3 mm, %4</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 — %2 × %3 มม., %4</translation>
         </message>
         <message>
             <source>portrait</source>
@@ -342,47 +377,47 @@ picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
         <message>
             <source>No pictures to print.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีรูปภาพที่จะพิมพ์</translation>
         </message>
         <message>
             <source>Invalid output path.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เส้นทางเอาต์พุตไม่ถูกต้อง</translation>
         </message>
         <message>
             <source>Invalid print settings: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การตั้งค่าการพิมพ์ไม่ถูกต้อง: %1</translation>
         </message>
         <message>
             <source>Unknown printer: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่รู้จักเครื่องพิมพ์: %1</translation>
         </message>
         <message>
             <source>default printer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เครื่องพิมพ์เริ่มต้น</translation>
         </message>
         <message>
             <source>The print job could not be started.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เริ่มงานพิมพ์ไม่ได้</translation>
         </message>
         <message>
             <source>None of the selected pictures could be printed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์รูปภาพที่เลือกไม่ได้: %1</translation>
         </message>
         <message>
             <source>Album:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัลบั้ม:</translation>
         </message>
         <message>
             <source>Date:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วันที่:</translation>
         </message>
         <message>
             <source>Unnamed Album</source>
@@ -411,7 +446,7 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วิธีใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -419,6 +454,13 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
             <translation>ตั้งค่าการพิมพ์ภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>A printer must be installed in order to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>ต้องติดตั้งเครื่องพิมพ์เพื่อพิมพ์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -430,19 +472,19 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
         <message>
             <source>Review</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตรวจทาน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพบางรูปเล็กเกินไปสำหรับการพิมพ์ให้ได้คุณภาพดี คุณนำรูปภาพเหล่านี้ออก พิมพ์ต่อ หรือยกเลิกแล้วเปลี่ยนขนาดพิมพ์ได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Low Quality: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณภาพต่ำ: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -483,7 +525,7 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Make sure your photos are ready to print</source>
@@ -495,39 +537,39 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Best quality (%1 pixels/inch)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณภาพดีที่สุด (%1 พิกเซลต่อนิ้ว)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Good quality (%1 pixels/inch)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณภาพดี (%1 พิกเซลต่อนิ้ว)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Bad quality (%1 pixels/inch)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณภาพต่ำ (%1 พิกเซลต่อนิ้ว)</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เมื่อใช้ขนาดพิมพ์ที่เลือก รูปภาพเหล่านี้มีความละเอียดต่ำกว่า %1 พิกเซลต่อนิ้ว:</translation>
         </message>
         <message>
             <source>%1 pixels/inch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 พิกเซลต่อนิ้ว</translation>
         </message>
         <message>
             <source>%1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 / %2</translation>
         </message>
         <message>
             <source>Print size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดพิมพ์:</translation>
         </message>
         <message>
             <source>CD Cover Size</source>
@@ -557,7 +599,7 @@ picasapy-origin-key: stringres:ytPrintSizes::e4x5</extracomment>
             <source>4 x 6</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation type="unfinished" />
+            <translation>4 x 6</translation>
         </message>
         <message>
             <source>5 x 7</source>
@@ -628,23 +670,24 @@ picasapy-origin-key: stringres:ytPrintSizes::eWallet;tooltips:Label(printpanel/w
         <message>
             <source>Smallest picture: %1 pixels/inch.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพที่เล็กที่สุด: %1 พิกเซลต่อนิ้ว</translation>
         </message>
         <message>
             <source>picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพ</translation>
         </message>
         <message>
             <source>pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพ</translation>
         </message>
         <message>
             <source>Please review before printing.
 %1 small %2 found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรดตรวจทานก่อนพิมพ์
+พบรูปภาพขนาดเล็ก %1 %2</translation>
         </message>
         <message>
             <source>You are ready to print.</source>
@@ -655,60 +698,60 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
         <message>
             <source>Print...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์...</translation>
         </message>
         <message>
             <source>Printing is unavailable: the Qt print support module is missing. On Debian/Ubuntu you can install it with: sudo apt install python3-pyside6.qtprintsupport</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์ไม่ได้: ไม่มีโมดูลสนับสนุนการพิมพ์ของ Qt ใน Debian/Ubuntu ติดตั้งได้ด้วยคำสั่ง: sudo apt install python3-pyside6.qtprintsupport</translation>
         </message>
         <message>
             <source>No pictures to print.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีรูปภาพที่จะพิมพ์</translation>
         </message>
         <message>
             <source>Choose the target file.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกไฟล์เป้าหมาย</translation>
         </message>
         <message>
             <source>These pictures could not be printed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์รูปภาพเหล่านี้ไม่ได้: %1</translation>
         </message>
         <message numerus="yes">
             <source>Pictures to print: %1 (%n page(s))</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>รูปภาพที่จะพิมพ์: %1 (%n หน้า)</numerusform>
             </translation>
         </message>
         <message>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปย่อ</translation>
         </message>
         <message>
             <source>Columns:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คอลัมน์:</translation>
         </message>
         <message>
             <source>Printer:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เครื่องพิมพ์:</translation>
         </message>
         <message>
             <source>Print to a PDF file...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์เป็นไฟล์ PDF...</translation>
         </message>
         <message>
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(ไม่ได้เลือก)</translation>
         </message>
         <message>
             <source>Browse...</source>
@@ -719,17 +762,17 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
         <message>
             <source>Fit to page:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปรับให้พอดีกับหน้า:</translation>
         </message>
         <message>
             <source>Whole picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพทั้งภาพ</translation>
         </message>
         <message>
             <source>Fill the page (crop)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เติมเต็มหน้า (ครอบตัด)</translation>
         </message>
         <message>
             <source>Orientation:</source>
@@ -740,7 +783,7 @@ picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
         <message>
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัตโนมัติ</translation>
         </message>
         <message>
             <source>Portrait</source>
@@ -757,17 +800,17 @@ picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
         <message>
             <source>Finished: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จแล้ว: %1</translation>
         </message>
         <message>
             <source>Printing: %1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังพิมพ์: %1 / %2</translation>
         </message>
         <message>
             <source>Print</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์</translation>
         </message>
         <message>
             <source>Close</source>
@@ -778,17 +821,17 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>PDF documents (*.pdf)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอกสาร PDF (*.pdf)</translation>
         </message>
         <message>
             <source>Copies of each picture:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จำนวนสำเนาของแต่ละรูปภาพ:</translation>
         </message>
         <message>
             <source>Add another copy of each Photo to be printed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มสำเนาของแต่ละรูปภาพที่จะพิมพ์</translation>
         </message>
     </context>
     <context>
@@ -797,7 +840,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Border and text options</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัวเลือกเส้นขอบและข้อความ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -831,13 +874,13 @@ picasapy-origin-key: printoptionstext:Label(printoptions/usenotext_label)</extra
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำบรรยายภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Filename</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อไฟล์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -871,13 +914,13 @@ picasapy-origin-key: printoptionstext:Label(printoptions/textonborder_label)</ex
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Font</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แบบอักษร</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -946,13 +989,13 @@ picasapy-origin-key: printoptionstext:Label(printoptions/border_color_label)</ex
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -967,12 +1010,12 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>No email program was found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบโปรแกรมอีเมล</translation>
         </message>
         <message>
             <source>No email program with attachment support was found; opening a blank email without the pictures attached.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบโปรแกรมอีเมลที่รองรับไฟล์แนบ จึงเปิดอีเมลเปล่าโดยไม่มีรูปภาพแนบ</translation>
         </message>
     </context>
     <context>
@@ -997,7 +1040,7 @@ picasapy-origin-key: rightdrawerpanel_text:Tooltip(rightdrawerpanel/close)</extr
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Add a name</source>
@@ -1016,12 +1059,26 @@ You can drag the rectangle to position it, and move its sides to refine the shap
 
 (Be sure to either press Enter or click on an autocompleted name to indicate that you are done)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำแนะนำ:
+
+1) ปรับกรอบสี่เหลี่ยมให้พอดีกับใบหน้าของบุคคลที่คุณต้องการเพิ่ม
+
+คุณลากกรอบเพื่อย้ายตำแหน่งได้ และลากด้านข้างเพื่อปรับรูปทรง
+
+2) คลิก "เพิ่มชื่อ" ใต้กรอบ แล้วพิมพ์ชื่อบุคคล
+
+(กด Enter หรือคลิกชื่อที่เติมข้อความอัตโนมัติเพื่อยืนยันว่าคุณพิมพ์เสร็จแล้ว)</translation>
         </message>
         <message>
             <source>Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อ</translation>
+        </message>
+        <message>
+            <source>Type a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:peoplepanel::prompt4name</extracomment>
+            <translation>พิมพ์ชื่อ</translation>
         </message>
     </context>
     <context>
@@ -1029,7 +1086,7 @@ You can drag the rectangle to position it, and move its sides to refine the shap
         <message>
             <source>Options</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัวเลือก</translation>
         </message>
         <message>
             <source>General</source>
@@ -1040,7 +1097,7 @@ picasapy-origin-key: options:options/tab3.title;stringres:IDS_GENERAL_PREFS</ext
         <message>
             <source>E-Mail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อีเมล</translation>
         </message>
         <message>
             <source>File Types</source>
@@ -1051,12 +1108,12 @@ picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</e
         <message>
             <source>Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงภาพสไลด์</translation>
         </message>
         <message>
             <source>Printing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การพิมพ์</translation>
         </message>
         <message>
             <source>Network</source>
@@ -1073,7 +1130,7 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
         <message>
             <source>Name Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็กชื่อ</translation>
         </message>
         <message>
             <source>Close</source>
@@ -1098,8 +1155,9 @@ picasapy-origin-key: options:options/UITransitions.title</extracomment>
         </message>
         <message>
             <source>Show tooltips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
+            <translation>แสดงแท็กความช่วยเหลือ</translation>
         </message>
         <message>
             <source>Single click to exit the editing view</source>
@@ -1116,14 +1174,16 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
         <message>
             <source>System Default (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค่าเริ่มต้นของระบบ (%1)</translation>
         </message>
         <message>
             <source>Change the language Picasa uses?
 
 It will change the next time Picasa is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนภาษาที่ Picasa ใช้หรือไม่?
+
+การเปลี่ยนแปลงจะมีผลเมื่อเปิด Picasa ในครั้งถัดไป</translation>
         </message>
         <message>
             <source>Files:</source>
@@ -1134,47 +1194,47 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
         <message>
             <source>Detect duplicates on import</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตรวจหารูปภาพซ้ำระหว่างนำเข้า</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างแคช...</translation>
         </message>
         <message>
             <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างแคชภาพขนาดย่อหรือไม่ ระบบจะสร้างภาพขนาดย่อใหม่เมื่อจำเป็น โดยไม่มีรูปภาพใดสูญหาย</translation>
         </message>
         <message>
             <source>Empty</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้าง</translation>
         </message>
         <message>
             <source>Keep</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เก็บไว้</translation>
         </message>
         <message>
             <source>%1 freed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คืนพื้นที่แล้ว %1</translation>
         </message>
         <message>
             <source>%1 bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 ไบต์</translation>
         </message>
         <message>
             <source>%1 kB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 kB</translation>
         </message>
         <message>
             <source>%1 MB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB</translation>
         </message>
         <message>
             <source>Delete from disk without confirmation</source>
@@ -1191,13 +1251,18 @@ picasapy-origin-key: options:options/DoNotConfirmRemoveFromAlbum.title</extracom
         <message>
             <source>Help improve PicasaPy:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ช่วยปรับปรุง PicasaPy:</translation>
+        </message>
+        <message>
+            <source>Privacy...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ความเป็นส่วนตัว...</translation>
         </message>
         <message>
             <source>Send anonymous usage statistics</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_advoptions:gpuploader_advoptions/send_to_google.title;options:options/usagestats.title;stringres:INSTALLRES_statscheckbox</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งสถิติการใช้งานโดยไม่ระบุตัวตน</translation>
         </message>
         <message>
             <source>Automatic updates:</source>
@@ -1259,7 +1324,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
         <message>
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 พิกเซล</translation>
         </message>
         <message>
             <source>Single picture size:</source>
@@ -1270,12 +1335,12 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
         <message>
             <source>Same as multiple (%1 pixels)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เหมือนกับหลายรูป (%1 พิกเซล)</translation>
         </message>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดเดิม</translation>
         </message>
         <message>
             <source>Send videos as:</source>
@@ -1304,7 +1369,7 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
         <message>
             <source>Mail program:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรแกรมอีเมล:</translation>
         </message>
         <message>
             <source>Use my Google Account</source>
@@ -1316,13 +1381,55 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
+            <source>.bmp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportBMP.title</extracomment>
+            <translation>.bmp</translation>
+        </message>
+        <message>
+            <source>.gif</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportGIF.title</extracomment>
+            <translation>.gif</translation>
+        </message>
+        <message>
             <source>Display JPEG files and:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>แสดงไฟล์ JPEG และ:</translation>
         </message>
         <message>
-            <source>RAW</source>
+            <source>.png</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPNG.title</extracomment>
+            <translation>.png</translation>
+        </message>
+        <message>
+            <source>.tga</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTGA.title</extracomment>
+            <translation>.tga</translation>
+        </message>
+        <message>
+            <source>.tif, .tiff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTIF.title</extracomment>
+            <translation>.tif, .tiff</translation>
+        </message>
+        <message>
+            <source>.webp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
+            <translation>.webp</translation>
+        </message>
+        <message>
+            <source>.psd (Photoshop)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPSD.title</extracomment>
+            <translation>.psd (Photoshop)</translation>
+        </message>
+        <message>
+            <source>RAW formats</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::RAW</extracomment>
             <translation>รูปแบบ RAW</translation>
@@ -1330,7 +1437,25 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
         <message>
             <source>Movies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพยนตร์</translation>
+        </message>
+        <message>
+            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportMovies.title</extracomment>
+            <translation>ภาพยนตร์ (.mov, .mpg, .m4v, .3gp, .avi, ...)</translation>
+        </message>
+        <message>
+            <source>Quicktime Movies (.MOV)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportQuicktime.title</extracomment>
+            <translation>Quicktime Movies (.MOV)</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>ตกลง</translation>
         </message>
         <message>
             <source>Supported Formats</source>
@@ -1383,7 +1508,7 @@ picasapy-origin-key: options:options/labelgroup118.title</extracomment>
         <message>
             <source>Print size %1:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดพิมพ์ %1:</translation>
         </message>
         <message>
             <source>Use high quality previews (slower)</source>
@@ -1449,7 +1574,7 @@ picasapy-origin-key: stringres:ytPrintSizes::e4x5</extracomment>
             <source>4 x 6</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation type="unfinished" />
+            <translation>4 x 6</translation>
         </message>
         <message>
             <source>5 x 7</source>
@@ -1527,7 +1652,7 @@ picasapy-origin-key: stringres:ytPrintSizes::ePassport</extracomment>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปย่อ</translation>
         </message>
     </context>
     <context>
@@ -1610,7 +1735,7 @@ picasapy-origin-key: options:options/labelgroup145.title</extracomment>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดเดิม</translation>
         </message>
         <message>
             <source>When syncing large files, upload previews first</source>
@@ -1639,7 +1764,7 @@ picasapy-origin-key: options:options/confirmsync::disable.title</extracomment>
         <message>
             <source>Name Tags:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็กชื่อ:</translation>
         </message>
         <message>
             <source>Add a watermark for all photo uploads:</source>
@@ -1692,28 +1817,42 @@ picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
 picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
             <translation>อัปโหลดภาพขนาดย่อของอัลบั้มบุคคลไปยังรายชื่อติดต่อ Google</translation>
         </message>
+        <message>
+            <source>Cluster threshold:</source>
+            <extracomment>    picasapy-origin-key: options:options/labelgroup181.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup181.title</extracomment>
+            <translation>ระดับคลัสเตอร์:</translation>
+        </message>
+        <message>
+            <source>Upload people album thumbnails to Google Contacts</source>
+            <extracomment>    picasapy-origin-key: options:options/uploadcontactphotos.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
+            <translation>อัปโหลดภาพขนาดย่อของอัลบั้มบุคคลไปยังรายชื่อติดต่อ Google</translation>
+        </message>
     </context>
     <context>
         <name>WebExportDialog</name>
         <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกเป็นหน้า HTML...</translation>
         </message>
         <message>
             <source>Page title:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อหน้า:</translation>
         </message>
         <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกไปที่:</translation>
         </message>
         <message>
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(ไม่ได้เลือก)</translation>
         </message>
         <message>
             <source>Browse...</source>
@@ -1724,7 +1863,7 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
         <message>
             <source>Choose target folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์ปลายทาง...</translation>
         </message>
         <message>
             <source>Template:</source>
@@ -1733,44 +1872,73 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <translation>แม่แบบ:</translation>
         </message>
         <message>
-            <source>Picture size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>Export pictures at:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
+            <translation>ส่งออกภาพที่:</translation>
         </message>
         <message>
-            <source>Thumbnail size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>Original Size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item4.title</extracomment>
+            <translation>ขนาดเดิม</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>1024 pixels (for large monitors)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item5.title</extracomment>
+            <translation>1024 พิกเซล (สำหรับจอแสดงผลขนาดใหญ่)</translation>
         </message>
         <message>
-            <source>Shadow pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>800 pixels (for large Web pages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item6.title</extracomment>
+            <translation>800 พิกเซล (สำหรับหน้าเว็บขนาดใหญ่)</translation>
         </message>
         <message>
-            <source>Shadow thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>640 pixels (for Web pages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item7.title</extracomment>
+            <translation>640 พิกเซล (สำหรับหน้าเว็บ)</translation>
+        </message>
+        <message>
+            <source>320 pixels (for email)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item8.title</extracomment>
+            <translation>320 พิกเซล (สำหรับอีเมล)</translation>
+        </message>
+        <message>
+            <source>Export movies using:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup9.title</extracomment>
+            <translation>ส่งภาพยนตร์ออกโดยใช้:</translation>
+        </message>
+        <message>
+            <source>First frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
+            <translation>ภาพแรก</translation>
+        </message>
+        <message>
+            <source>Full movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+            <translation>หนังเต็มจอ</translation>
         </message>
         <message>
             <source>PicasaPy is generating the web page.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy กำลังสร้างหน้าเว็บ</translation>
         </message>
         <message>
             <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างหน้าเว็บแล้ว: %1 ไฟล์ใน %2</translation>
         </message>
         <message>
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้าง</translation>
         </message>
         <message>
             <source>Close</source>
@@ -1784,27 +1952,27 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>Choose a target folder first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์ปลายทางก่อน</translation>
         </message>
         <message>
             <source>No pictures to export.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีรูปภาพที่จะส่งออก</translation>
         </message>
         <message>
             <source>None of the selected pictures could be exported.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกรูปภาพที่เลือกไม่ได้</translation>
         </message>
         <message>
             <source>Sorry, there is not enough free disk space to safely download pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขออภัย พื้นที่ว่างในดิสก์ไม่เพียงพอสำหรับดาวน์โหลดรูปภาพอย่างปลอดภัย</translation>
         </message>
         <message>
             <source>Unknown web export template: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่รู้จักแม่แบบส่งออกเว็บ: %1</translation>
         </message>
     </context>
     <context>
@@ -1824,7 +1992,7 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION</extracomment>
         <message>
             <source>Set Folder Date...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตั้งวันที่ของโฟลเดอร์...</translation>
         </message>
         <message>
             <source>Edit Folder Description...</source>
@@ -1841,7 +2009,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างการเลือก</translation>
         </message>
         <message>
             <source>Invert Selection</source>
@@ -1852,7 +2020,7 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         <message>
             <source>Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รีเฟรชภาพขนาดย่อ</translation>
         </message>
         <message>
             <source>Sort Folder By</source>
@@ -1863,17 +2031,17 @@ picasapy-origin-key: stringres:Folder::SortFolderBy</extracomment>
         <message>
             <source>Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วันที่</translation>
         </message>
         <message>
             <source>Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อ</translation>
         </message>
         <message>
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <source>Reverse Order</source>
@@ -1896,32 +2064,32 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาในดิสก์</translation>
         </message>
         <message>
             <source>Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบจาก Picasa...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายโฟลเดอร์...</translation>
         </message>
         <message>
             <source>Delete Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบโฟลเดอร์...</translation>
         </message>
         <message>
             <source>Upload to Google Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลดไปยัง Google รูปภาพ...</translation>
         </message>
         <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกเป็นหน้า HTML...</translation>
         </message>
         <message>
             <source>Add Name Tags</source>
@@ -1942,13 +2110,13 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION</extracomment>
             <location filename="../qml/PicasaPy/NewCollectionDialog.qml" />
             <source>“%1” is not a valid collection name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>“%1” ไม่ใช่ชื่อคอลเล็กชันที่ถูกต้อง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/NewCollectionDialog.qml" />
             <source>You already have a collection named “%1”.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มีคอลเล็กชันชื่อ “%1” อยู่แล้ว</translation>
         </message>
         <message>
             <source>Enter Collection Name:</source>
@@ -1962,17 +2130,29 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
         <message>
             <source>Add Custom Aspect Ratio</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มอัตราส่วนภาพกำหนดเอง</translation>
         </message>
         <message>
-            <source>Width:</source>
+            <source>Dimensions:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด:</translation>
+        </message>
+        <message>
+            <source>Example:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio:customaspectratio/labelgroup10.title;rename:rename/sample.title;stringres:RenameDialog::Example</extracomment>
+            <translation>ตัวอย่าง:</translation>
+        </message>
+        <message>
+            <source>   4 x 6   Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio:customaspectratio/label11.title</extracomment>
+            <translation>ภาพขนาดเล็ก 4 x 6</translation>
         </message>
         <message>
             <source>Name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อ:</translation>
         </message>
     </context>
     <context>
@@ -1981,29 +2161,29 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
             <location filename="../relocate_controller.py" />
             <source>The chosen destination is not a folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปลายทางที่เลือกไม่ใช่โฟลเดอร์</translation>
         </message>
         <message>
             <location filename="../relocate_controller.py" />
             <source>The destination is inside the current database folder. Choose a folder outside it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปลายทางอยู่ภายในโฟลเดอร์ฐานข้อมูลปัจจุบัน โปรดเลือกโฟลเดอร์ที่อยู่นอกโฟลเดอร์นี้</translation>
         </message>
         <message>
             <source>The destination folder is not empty. Choose an empty folder and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์ปลายทางไม่ว่าง โปรดเลือกโฟลเดอร์ว่างแล้วลองอีกครั้ง</translation>
         </message>
         <message>
             <location filename="../relocate_controller.py" />
             <source>The database cannot be moved to a network drive. Nothing has been changed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายฐานข้อมูลไปยังไดรฟ์เครือข่ายไม่ได้ ไม่มีการเปลี่ยนแปลงใดๆ</translation>
         </message>
         <message>
             <source>Choose a new database location first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกตำแหน่งฐานข้อมูลใหม่ก่อน</translation>
         </message>
     </context>
     <context>
@@ -2011,38 +2191,38 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
         <message>
             <source>Compacting</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังย่อฐานข้อมูล</translation>
         </message>
         <message>
             <source>PicasaPy is compacting its database to save disk space. This may take several minutes.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy กำลังย่อฐานข้อมูลเพื่อประหยัดพื้นที่ดิสก์ การดำเนินการนี้อาจใช้เวลาหลายนาที</translation>
         </message>
         <message>
             <source>Compacting...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังย่อ...</translation>
         </message>
         <message>
             <source>The database is already compact — nothing to do.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฐานข้อมูลถูกย่อแล้ว ไม่มีอะไรต้องทำ</translation>
         </message>
         <message>
             <source>Compacting cancelled. Your database is unchanged.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิกการย่อแล้ว ฐานข้อมูลของคุณไม่เปลี่ยนแปลง</translation>
         </message>
         <message>
             <source>Done.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จแล้ว</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Close</source>
@@ -2080,12 +2260,12 @@ picasapy-origin-key: stringres:eMenuTools::ID_PASSPORT</extracomment>
         <message>
             <source>The picture could not be read.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อ่านรูปภาพไม่ได้</translation>
         </message>
         <message>
             <source>The cropped picture could not be saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกรูปภาพที่ครอบตัดไม่ได้</translation>
         </message>
         <message>
             <source>OK</source>
@@ -2099,27 +2279,27 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Moving the database</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังย้ายฐานข้อมูล</translation>
         </message>
         <message>
             <source>PicasaPy is moving the database.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy กำลังย้ายฐานข้อมูล</translation>
         </message>
         <message>
             <source>Photo index…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดัชนีรูปภาพ…</translation>
         </message>
         <message>
             <source>Thumbnail cache…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แคชภาพขนาดย่อ…</translation>
         </message>
         <message>
             <source>Finishing…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังดำเนินการขั้นสุดท้าย…</translation>
         </message>
     </context>
     <context>
@@ -2133,12 +2313,12 @@ picasapy-origin-key: move_database:move_database/window1.title</extracomment>
         <message>
             <source>Move the photo index and thumbnail cache to a new folder. PicasaPy moves them the next time it starts.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายดัชนีรูปภาพและแคชภาพขนาดย่อไปยังโฟลเดอร์ใหม่ PicasaPy จะย้ายทั้งสองรายการเมื่อเริ่มทำงานครั้งถัดไป</translation>
         </message>
         <message>
             <source>Network drives (e.g. a NAS) are fully supported and are the normal setup for PicasaPy — make sure the drive stays connected while the app is running.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รองรับไดรฟ์เครือข่ายอย่างเต็มรูปแบบ (เช่น NAS) และเป็นการตั้งค่าปกติสำหรับ PicasaPy — ตรวจสอบให้แน่ใจว่าไดรฟ์ยังเชื่อมต่ออยู่ขณะเปิดแอป</translation>
         </message>
         <message>
             <source>Current database location:</source>
@@ -2155,7 +2335,7 @@ picasapy-origin-key: move_database:move_database/labelgroup9.title</extracomment
         <message>
             <source>(none selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(ไม่ได้เลือก)</translation>
         </message>
         <message>
             <source>Browse...</source>
@@ -2166,7 +2346,7 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
         <message>
             <source>Default</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค่าเริ่มต้น</translation>
         </message>
         <message>
             <source>Choose database location...</source>
@@ -2177,7 +2357,7 @@ picasapy-origin-key: stringres:eMenuTools::ID_MOVE_DATABASE</extracomment>
         <message>
             <source>Choose a new database location first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกตำแหน่งฐานข้อมูลใหม่ก่อน</translation>
         </message>
         <message>
             <source>Move on next restart</source>
@@ -2188,12 +2368,12 @@ picasapy-origin-key: move_database:move_database/move.title</extracomment>
         <message>
             <source>PicasaPy will move the database the next time it starts.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy จะย้ายฐานข้อมูลเมื่อเริ่มทำงานครั้งถัดไป</translation>
         </message>
         <message>
             <source>Cancel the move</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิกการย้าย</translation>
         </message>
         <message>
             <source>Close</source>
@@ -2213,12 +2393,12 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
         <message>
             <source>No</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Do not ask again</source>
@@ -2232,17 +2412,17 @@ picasapy-origin-key: stringres:CMakeFaceMoviePanelRememberDialog</extracomment>
         <message>
             <source>     %1      %2 on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>     %1      %2 ในดิสก์</translation>
         </message>
         <message>
             <source>     %1 to %2     %3 on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>     %1 ถึง %2     %3 ในดิสก์</translation>
         </message>
         <message>
             <source>Tags: </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก: </translation>
         </message>
         <message>
             <source>Pictures up to %d days old.</source>
@@ -2279,13 +2459,35 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <location filename="../formatting.py" />
             <source>File Path</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เส้นทางไฟล์</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>File Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดไฟล์</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movieinfo;stringres:ytImageMetadata::MovieInfo</extracomment>
+            <translation>ข้อมูลภาพยนตร์</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Rate</source>
+            <extracomment>picasapy-deviation: szándékos eltérés az eredeti magyar fordítástól (#4855) — a „rate” itt sebesség, az érték fps; az eredeti „Mozgófilm minősítése” félrevezető
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movierate;stringres:ytImageMetadata::MovieRate</extracomment>
+            <translation>ระดับเนื้อหาของภาพยนตร์</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Length</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movielength;stringres:ytImageMetadata::MovieLength</extracomment>
+            <translation>ความยาวของภาพยนตร์</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2324,6 +2526,13 @@ picasapy-origin-key: stringres:EXIF::DateTime</extracomment>
         </message>
         <message>
             <location filename="../formatting.py" />
+            <source>File Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FileDate</extracomment>
+            <translation>วันที่ของไฟล์</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
             <source>Orientation</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
@@ -2349,6 +2558,13 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::FocalLengthIn35mmFilm</extracomment>
             <translation>ความยาวโฟกัสในฟิล์ม 35 มม.</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>CCD Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::CCDWidth</extracomment>
+            <translation>ความกว้าง CCD</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2396,7 +2612,7 @@ picasapy-origin-key: stringres:EXIF::ExposureProgram</extracomment>
             <location filename="../formatting.py" />
             <source>Compression</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การบีบอัด</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2409,13 +2625,19 @@ picasapy-origin-key: stringres:EXIF::ColorSpace</extracomment>
             <location filename="../formatting.py" />
             <source>ICC Profile</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรไฟล์ ICC</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Embedded Thumbnail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพขนาดย่อที่ฝังอยู่</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>JPEG Quality</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>คุณภาพ JPEG</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2423,6 +2645,13 @@ picasapy-origin-key: stringres:EXIF::ColorSpace</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
             <translation>คำหลัก</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>People Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:XMP::Regions</extracomment>
+            <translation>แท็กบุคคล</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2506,13 +2735,13 @@ picasapy-origin-key: stringres:EXIF::Partial</extracomment>
             <source>Not Defined</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::NotDefined;stringres:EXIF::Undefined</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้กำหนด</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Normal Program</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรแกรมปกติ</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2546,7 +2775,7 @@ picasapy-origin-key: stringres:ytImageMetadata::sRGB</extracomment>
             <location filename="../formatting.py" />
             <source>Uncalibrated</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้ปรับตั้ง</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2671,50 +2900,50 @@ picasapy-origin-key: stringres:EXIF::PentaxPEFCompressed</extracomment>
             <location filename="../formatting.py" />
             <source>Auto</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Embedded</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฝังอยู่</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 m</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 m</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กลับด้าน</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Rotated 180°</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน 180°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored and rotated 180°</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กลับด้านและหมุน 180°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored and rotated 90° CCW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กลับด้านและหมุนทวนเข็มนาฬิกา 90°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Normal</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/item24.title;stringres:CTitleDialog::fontNormal;stringres:EXIF::Normal;stringres:EXIF::Standard</extracomment>
-            <translation type="unfinished" />
+            <translation>ปกติ</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2741,79 +2970,79 @@ picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
             <location filename="../formatting.py" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างสรรค์</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Rotated 90° CW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนตามเข็มนาฬิกา 90°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored and rotated 90° CW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กลับด้านและหมุนตามเข็มนาฬิกา 90°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Rotated 90° CCW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนทวนเข็มนาฬิกา 90°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 ไบต์</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 GB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 GB</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 TB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 TB</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="39" />
             <source>%1 KB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 KB</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="40" />
             <source>%1 MB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Tags: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก: %1</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="67" />
             <source>%1x%2 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 × %2 พิกเซล</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="93" />
             <source>File name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อไฟล์</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="94" />
             <source>Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="95" />
@@ -2826,13 +3055,13 @@ picasapy-origin-key: stringres:ytImageMetadata::FileSize</extracomment>
             <location filename="../formatting.py" line="98" />
             <source>Dimensions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="102" />
             <source>Date taken</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วันที่ถ่าย</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="115" />
@@ -2873,25 +3102,25 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
             <location filename="../formatting.py" line="131" />
             <source>%1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 มม.</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="137" />
             <source>Flash</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แฟลช</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="138" />
             <source>Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยิงแฟลชแล้ว</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="138" />
             <source>Did not fire</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้ยิงแฟลช</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="142" />
@@ -2904,7 +3133,7 @@ picasapy-origin-key: stringres:EXIF::LightSource;stringres:EXIF::WhiteBalance</e
             <location filename="../formatting.py" line="143" />
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="144" />
@@ -2917,49 +3146,49 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <location filename="../formatting.py" line="167" />
             <source>Focal length: %1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทางยาวโฟกัส: %1 มม.</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="173" />
             <source>(35 mm equivalent: %1 mm)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(เทียบเท่า 35 มม.: %1 มม.)</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="180" />
             <source>ISO: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ISO: %1</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="182" />
             <source>Flash: Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แฟลช: ยิงแล้ว</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="182" />
             <source>Flash: Off</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แฟลช: ปิด</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="194" />
             <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดง %1 โฟลเดอร์ / %2 รูปภาพ (%3 วินาที) %4 GB</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="207" />
             <source>0 pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>0 รูปภาพ</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="217" />
             <source>%1 MB on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB บนดิสก์</translation>
         </message>
     </context>
     <context>
@@ -2968,13 +3197,13 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <location filename="../qml/PicasaPy/AboutDialog.qml" line="7" />
             <source>About PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เกี่ยวกับ PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AboutDialog.qml" line="23" />
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรแกรมทดแทน Picasa แบบโอเพนซอร์สที่ทันสมัย</translation>
         </message>
     </context>
     <context>
@@ -2983,17 +3212,17 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <location filename="../controller.py" />
             <source>Tags: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก: %1</translation>
         </message>
         <message>
             <source>({current} / {total})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>({current} / {total})</translation>
         </message>
         <message>
             <source>Color search is still being prepared: {0} of {1} photos have been analyzed so far. Photos that have not been analyzed yet cannot show up in the results, but the list fills in on its own as soon as the preparation finishes.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังเตรียมการค้นหาด้วยสี: วิเคราะห์รูปภาพแล้ว {0} จาก {1} รูป รูปภาพที่ยังไม่ได้วิเคราะห์จะไม่ปรากฏในผลลัพธ์ แต่รายการจะเติมให้เองเมื่อการเตรียมเสร็จสิ้น</translation>
         </message>
         <message>
             <source>DRAFT</source>
@@ -3004,37 +3233,37 @@ picasapy-origin-key: stringres:projectutils::draft</extracomment>
         <message>
             <source>The collage project file could not be opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปิดไฟล์โครงการภาพตัดปะไม่ได้</translation>
         </message>
         <message>
             <source>Unknown picture frame.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่รู้จักกรอบรูปภาพ</translation>
         </message>
         <message>
             <source>No pictures are selected.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้เลือกรูปภาพ</translation>
         </message>
         <message>
             <source>The movie folder could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างโฟลเดอร์ภาพยนตร์ไม่ได้</translation>
         </message>
         <message>
             <source>No target file was chosen.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้เลือกไฟล์เป้าหมาย</translation>
         </message>
         <message>
             <source>Unknown collage type.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่รู้จักประเภทภาพตัดปะ</translation>
         </message>
         <message>
             <source>None of the selected pictures could be read.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อ่านรูปภาพที่เลือกไม่ได้</translation>
         </message>
         <message>
             <source>Creating collage… shutting down</source>
@@ -3057,27 +3286,27 @@ picasapy-origin-key: stringres:collage::initializing</extracomment>
         <message>
             <source>The collage is ready</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพตัดปะพร้อมแล้ว</translation>
         </message>
         <message>
             <source>Sorry, there is not enough free disk space to safely download pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขออภัย พื้นที่ว่างในดิสก์ไม่เพียงพอสำหรับดาวน์โหลดรูปภาพอย่างปลอดภัย</translation>
         </message>
         <message>
             <source>%1x%2 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 × %2 พิกเซล</translation>
         </message>
         <message>
             <source>File name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อไฟล์</translation>
         </message>
         <message>
             <source>Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์</translation>
         </message>
         <message>
             <source>File size</source>
@@ -3088,12 +3317,12 @@ picasapy-origin-key: stringres:ytImageMetadata::FileSize</extracomment>
         <message>
             <source>Dimensions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <source>Date taken</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วันที่ถ่าย</translation>
         </message>
         <message>
             <source>Camera</source>
@@ -3128,22 +3357,22 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
         <message>
             <source>%1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 มม.</translation>
         </message>
         <message>
             <source>Flash</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แฟลช</translation>
         </message>
         <message>
             <source>Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยิงแฟลชแล้ว</translation>
         </message>
         <message>
             <source>Did not fire</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้ยิงแฟลช</translation>
         </message>
         <message>
             <source>White balance</source>
@@ -3154,7 +3383,7 @@ picasapy-origin-key: stringres:EXIF::LightSource;stringres:EXIF::WhiteBalance</e
         <message>
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัตโนมัติ</translation>
         </message>
         <message>
             <source>Manual</source>
@@ -3165,29 +3394,29 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         <message>
             <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดง %1 โฟลเดอร์ / %2 รูปภาพ (%3 วินาที) %4 GB</translation>
         </message>
         <message>
             <source>0 pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>0 รูปภาพ</translation>
         </message>
         <message numerus="yes">
             <source>%n picture(s)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>%n รูปภาพ</numerusform>
             </translation>
         </message>
         <message>
             <source>%1 MB on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB บนดิสก์</translation>
         </message>
         <message>
             <source>Album %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัลบั้ม %1</translation>
         </message>
     </context>
     <context>
@@ -3195,27 +3424,27 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         <message>
             <source>Focal length: %1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทางยาวโฟกัส: %1 มม.</translation>
         </message>
         <message>
             <source>(35 mm equivalent: %1 mm)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(เทียบเท่า 35 มม.: %1 มม.)</translation>
         </message>
         <message>
             <source>ISO: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ISO: %1</translation>
         </message>
         <message>
             <source>Flash: Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แฟลช: ยิงแล้ว</translation>
         </message>
         <message>
             <source>Flash: Off</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แฟลช: ปิด</translation>
         </message>
         <message>
             <source>No EXIF data available.</source>
@@ -3238,7 +3467,7 @@ picasapy-origin-key: stringres:filter_retouch_label0</extracomment>
             <source>Red Eye</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตาสีแดง</translation>
         </message>
         <message>
             <location filename="../edit_action_names.py" />
@@ -3294,7 +3523,7 @@ picasapy-origin-key: stringres:filter_Sixties_label0</extracomment>
             <source>Soften</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Softness;stringres:filter_Soften_label0</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำให้นุ่มลง</translation>
         </message>
         <message>
             <location filename="../edit_action_names.py" />
@@ -3307,61 +3536,61 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Legacy Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์แบบเก่า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ครอบตัดให้ใกล้ใบหน้า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จัดองค์ประกอบภาพโดยให้ใบหน้าเป็นจุดเด่น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ครอบตัดตามสี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ครอบตัดตามรายละเอียด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ครอบตัดตามเส้นขอบฟ้า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์เพิ่มเติม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>The automatic copy is not available yet. To edit this picture, copy it to a writable folder yourself, or remove the write protection.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังไม่มีสำเนาอัตโนมัติให้ใช้ หากต้องการแก้ไขรูปภาพนี้ ให้คัดลอกไปยังโฟลเดอร์ที่เขียนได้ด้วยตนเอง หรือนำการป้องกันการเขียนออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="34" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="35" />
             <source>Redo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำซ้ำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
@@ -3372,16 +3601,17 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current aspect</source>
+            <source>Current ratio</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
             <translation>อัตราส่วนปัจจุบัน</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="356" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
         </message>
         <message>
             <source>Current display</source>
@@ -3435,25 +3665,25 @@ picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
             <source>Full page</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation type="unfinished" />
+            <translation>เต็มหน้า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
             <source>A4: Full page</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>A4: เต็มหน้า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="372" />
             <source>Full page (A4)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เต็มหน้า (A4)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="105" />
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สี่เหลี่ยมจัตุรัส: ปกซีดี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
@@ -3466,50 +3696,50 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
             <source>This image's orientation has been modified by the Straighten tool and might not crop accurately… try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทิศทางของภาพนี้ถูกเปลี่ยนด้วยเครื่องมือปรับภาพตรง และอาจครอบตัดได้ไม่แม่นยำ… ลองเลิกทำการปรับภาพตรง แล้วครอบตัดใหม่ จากนั้นปรับภาพตรงอีกครั้งหากจำเป็น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1834" />
             <source>Add Custom Aspect Ratio…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มอัตราส่วนภาพกำหนดเอง…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1810" />
             <source>Delete this custom aspect ratio?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบอัตราส่วนภาพกำหนดเองนี้หรือไม่?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="106" />
             <source>4:3: Standard screen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>4:3: หน้าจอมาตรฐาน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="107" />
             <source>16:10: Widescreen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>16:10: จอกว้าง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="108" />
             <source>16:9: HDTV</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>16:9: HDTV</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="109" />
             <source>5:3: Wide frame</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>5:3: กรอบภาพกว้าง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="265" />
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="299" />
             <source>Common Fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การแก้ไขทั่วไป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="270" />
@@ -3524,7 +3754,7 @@ picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="519" />
             <source>Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="314" />
@@ -3545,38 +3775,38 @@ picasapy-origin-key: stringres:filter_tilt_label0;tooltips:Label(editpanel/horiz
             <source>Redeye</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตาแดง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="334" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฉันรู้สึกโชคดี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="352" />
             <source>Creative Kit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชุดเครื่องมือสร้างสรรค์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="340" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความเปรียบต่างอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="346" />
             <source>Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปรับสีอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="352" />
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตกแต่ง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="357" />
@@ -3589,13 +3819,13 @@ picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMeta
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Copy Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คัดลอกคำบรรยายภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Add text based on the picture's caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มข้อความตามคำบรรยายของรูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
@@ -3608,37 +3838,37 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Outline color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สีเส้นขอบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Don't show the solid fill color (show outline only)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่แสดงสีเติมแบบทึบ (แสดงเฉพาะเส้นขอบ)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Outline thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความหนาเส้นขอบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Opacity</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความทึบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Remove all existing text</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบข้อความที่มีอยู่ทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Neutral Color Picker</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกสีปานกลาง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="409" />
@@ -3672,25 +3902,25 @@ picasapy-origin-key: stringres:filter_colorfix_label2;stringres:filter_colortemp
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="534" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซีเปีย</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="539" />
             <source>B&amp;W</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขาวดำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="544" />
             <source>Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำให้อบอุ่นขึ้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="549" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อฟิล์ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="554" />
@@ -3752,34 +3982,14 @@ picasapy-origin-key: tooltips:Label(editpanel/crop_label)</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="639" />
             <source>Choose a size below, then drag on the picture to select the area you want to keep.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="718" />
-            <source>Top left</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="723" />
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>ทิวทัศน์</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="728" />
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>ภาพบุคคล</translation>
+            <translation>เลือกขนาดด้านล่าง จากนั้นลากบนรูปภาพเพื่อเลือกบริเวณที่ต้องการเก็บไว้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="738" />
             <source>Rotate</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Rotate;stringres:ImageFilters::Rotation;stringres:filter_rot_label0;tooltips:Label(editpanel/croprotatecrop)</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="743" />
@@ -3799,19 +4009,19 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="768" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="773" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="326" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างสรรค์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="332" />
@@ -3824,7 +4034,7 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="595" />
             <source>Sharpen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มความคมชัด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="659" />
@@ -4020,7 +4230,7 @@ picasapy-origin-key: stringres:filter_RoundedEdges_label0</extracomment>
         <message>
             <source>Film Grain (Fine)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อฟิล์ม (ละเอียด)</translation>
         </message>
         <message>
             <source>Amount</source>
@@ -4037,7 +4247,7 @@ picasapy-origin-key: stringres:ImageFilters::Angle</extracomment>
         <message>
             <source>Block Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดบล็อก</translation>
         </message>
         <message>
             <source>Blur</source>
@@ -4048,12 +4258,12 @@ picasapy-origin-key: stringres:filter_blur_label0</extracomment>
         <message>
             <source>Blur Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รัศมีเบลอ</translation>
         </message>
         <message>
             <source>Border Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความกว้างเส้นขอบ</translation>
         </message>
         <message>
             <source>Brightness</source>
@@ -4064,32 +4274,27 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
         <message>
             <source>Center X</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จุดกึ่งกลาง X</translation>
         </message>
         <message>
             <source>Center Y</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จุดกึ่งกลาง Y</translation>
         </message>
         <message>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Edge Strength</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การผสมสี</translation>
         </message>
         <message>
             <source>Gradient</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การไล่ระดับสี</translation>
         </message>
         <message>
             <source>Inner Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รัศมีด้านใน</translation>
         </message>
         <message>
             <source>Intensity</source>
@@ -4100,12 +4305,12 @@ picasapy-origin-key: stringres:ImageFilters::Intensity;stringres:filter_glow2_la
         <message>
             <source>Line Position</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตำแหน่งเส้น</translation>
         </message>
         <message>
             <source>Preserve Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คงสีเดิม</translation>
         </message>
         <message>
             <source>Radius</source>
@@ -4128,12 +4333,7 @@ picasapy-origin-key: stringres:EXIF::Sharpness;stringres:filter_radsat_label2</e
         <message>
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Smoothness</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <source>Strength</source>
@@ -4144,18 +4344,18 @@ picasapy-origin-key: stringres:CDesaturateFilter::strength;stringres:ImageFilter
         <message>
             <source>Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความกว้าง</translation>
         </message>
         <message>
             <source>Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เกรน</translation>
         </message>
         <message>
             <source>Contrast</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Contrast;stringres:ImageFilters::Contrast;stringres:filter_contrast_label0;stringres:filter_contrast_label1;stringres:filter_triple_label2</extracomment>
-            <translation type="unfinished" />
+            <translation>ความเปรียบต่าง</translation>
         </message>
         <message>
             <source>Bloom</source>
@@ -4166,12 +4366,12 @@ picasapy-origin-key: stringres:ImageFilters::Blur1;stringres:filter_glow2_label0
         <message>
             <source>Steps</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขั้นตอน</translation>
         </message>
         <message>
             <source>Smoothing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การปรับให้เรียบ</translation>
         </message>
         <message>
             <source>Impact</source>
@@ -4188,12 +4388,12 @@ picasapy-origin-key: stringres:ImageFilters::BlendMode</extracomment>
         <message>
             <source>Hue</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โทนสี</translation>
         </message>
         <message>
             <source>Fade</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จาง</translation>
         </message>
         <message>
             <source>Color</source>
@@ -4216,32 +4416,32 @@ picasapy-origin-key: stringres:ImageFilters::InnerColor</extracomment>
         <message>
             <source>Black Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สีดำ</translation>
         </message>
         <message>
             <source>White Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สีขาว</translation>
         </message>
         <message>
             <source>Outer Thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความหนาภายนอก</translation>
         </message>
         <message>
             <source>Inner Thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความหนาด้านใน</translation>
         </message>
         <message>
             <source>Corner Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รัศมีของมุม</translation>
         </message>
         <message>
             <source>Caption Height</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความสูงของคำบรรยายภาพ</translation>
         </message>
         <message>
             <source>Distance</source>
@@ -4252,7 +4452,7 @@ picasapy-origin-key: stringres:ImageFilters::Distance</extracomment>
         <message>
             <source>Shadow Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สีเงา</translation>
         </message>
         <message>
             <source>Background Color</source>
@@ -4263,22 +4463,22 @@ picasapy-origin-key: stringres:ImageFilters::BackgroundColor</extracomment>
         <message>
             <source>Rounded</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มุมโค้ง</translation>
         </message>
         <message>
             <source>Lighten</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำให้สว่างขึ้น</translation>
         </message>
         <message>
             <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คลิกเพื่อเลือกบริเวณที่ต้องการแก้ไข จากนั้นเลื่อนเมาส์เพื่อดูตัวอย่างบริเวณที่จะใช้แทน คลิกภาพอีกครั้งเพื่อยืนยัน ทำซ้ำขั้นตอนนี้ได้ตามต้องการ</translation>
         </message>
         <message>
             <source>Brush Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดแปรง</translation>
         </message>
         <message>
             <source>Refining…</source>
@@ -4289,22 +4489,22 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
         <message>
             <source>Undo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำการแก้ไข</translation>
         </message>
         <message>
             <source>Redo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำการแก้ไขซ้ำ</translation>
         </message>
         <message>
             <source>Regions selected: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกบริเวณแล้ว: %1</translation>
         </message>
         <message>
             <source>Type your text, then click on the photo to place it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์ข้อความ แล้วคลิกบนรูปภาพเพื่อวางข้อความ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2082" />
@@ -4317,7 +4517,7 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2088" />
             <source>Due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เกิดข้อผิดพลาดเกี่ยวกับดิสก์ ดิสก์อาจเต็มหรืออ่านได้อย่างเดียว</translation>
         </message>
     </context>
     <context>
@@ -4404,13 +4604,13 @@ picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
             <source>4x6</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation type="unfinished" />
+            <translation>4x6</translation>
         </message>
         <message>
             <source>8.5x11</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
-            <translation type="unfinished" />
+            <translation>8.5x11</translation>
         </message>
         <message>
             <source>10x15</source>
@@ -4439,23 +4639,23 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Poster tiles saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกแผ่นโปสเตอร์แล้ว</translation>
         </message>
         <message>
             <source>The poster tiles could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างแผ่นโปสเตอร์ไม่ได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
             <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบรูปภาพ %1 รูป จึงไม่แสดงรูปเหล่านั้น (ไฟล์ที่หายไปอาจถูกย้าย เปลี่ยนชื่อ หรือลบ)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
@@ -4468,13 +4668,13 @@ picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
             <source>%1 pictures selected.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพแล้ว %1 รูป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
             <source>Collage type:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ประเภทภาพตัดปะ:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
@@ -4487,13 +4687,13 @@ picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
             <source>Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โมเสก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
             <source>Grid</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตาราง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
@@ -4534,7 +4734,7 @@ picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
             <source>Select pictures in the library first, or put them in the Picture Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพในไลบรารีก่อน หรือใส่รูปภาพลงในถาดรูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
@@ -4548,13 +4748,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปย่อ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
             <source>Frame Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โมเสกใส่กรอบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
@@ -4574,7 +4774,7 @@ picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(ไม่ได้เลือก)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
@@ -4587,84 +4787,105 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
             <source>JPEG images (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพ JPEG (*.jpg)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
             <source>Movie</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพยนตร์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
             <source>Video size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดวิดีโอ:</translation>
         </message>
         <message>
             <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพและจังหวะเวลาของภาพยนตร์มาจากไฟล์โครงการ ส่วนขนาดจะเริ่มต้นตามค่าเริ่มต้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
             <source>Seconds per picture:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จำนวนวินาทีต่อรูปภาพ:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
             <source>MP4 videos (*.mp4)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วิดีโอ MP4 (*.mp4)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
             <source>Creating movie: %1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังสร้างภาพยนตร์: %1 / %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้าง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
             <source>Collage saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกภาพตัดปะแล้ว: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
             <source>%1 pictures used.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ใช้รูปภาพแล้ว %1 รูป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
             <source>%1 pictures were skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ข้ามรูปภาพไป %1 รูป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
             <source>The collage could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างภาพตัดปะไม่ได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกภาพยนตร์แล้ว: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>แทนที่รายการเดิมหรือสร้างใหม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>แทนที่รายการที่มีอยู่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>สร้างใหม่</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
             <source>The movie could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างภาพยนตร์ไม่ได้</translation>
         </message>
         <message>
             <source>Text</source>
@@ -4687,12 +4908,12 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment
         <message>
             <source>Sizes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <source>Dimensions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <source>Transition style:</source>
@@ -4703,7 +4924,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</e
         <message>
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัด</translation>
         </message>
         <message>
             <source>Dissolve</source>
@@ -4732,7 +4953,7 @@ picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
         <message>
             <source>Wipe</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้าง</translation>
         </message>
         <message>
             <source>Wipe - top</source>
@@ -4846,7 +5067,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_labe
             <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>%1 Sec</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 วินาที</translation>
         </message>
         <message>
             <source>Audio:</source>
@@ -4863,18 +5084,18 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extra
         <message>
             <source>No audio selected</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้เลือกเสียง</translation>
         </message>
         <message>
             <source>Load…</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation type="unfinished" />
+            <translation>โหลด…</translation>
         </message>
         <message>
             <source>Clear</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้าง</translation>
         </message>
         <message>
             <source>Options</source>
@@ -4939,7 +5160,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)<
         <message>
             <source>Chronological</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตามลำดับเวลา</translation>
         </message>
         <message>
             <source>Ordering of Slides:</source>
@@ -4962,7 +5183,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);
         <message>
             <source>Remove Photos Taken Within %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำรูปภาพที่ถ่ายภายใน %1 ออก</translation>
         </message>
         <message>
             <source>Back to selected slide</source>
@@ -4979,12 +5200,12 @@ picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
         <message>
             <source>Font:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แบบอักษร:</translation>
         </message>
         <message>
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด:</translation>
         </message>
         <message>
             <source>Style:</source>
@@ -5001,12 +5222,12 @@ picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Cente
         <message>
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฉันรู้สึกโชคดี</translation>
         </message>
         <message>
             <source>Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำบรรยายภาพ</translation>
         </message>
         <message>
             <source>Caption - Classic</source>
@@ -5077,7 +5298,7 @@ picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepa
         <message>
             <source>Automatic Outline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เส้นขอบอัตโนมัติ</translation>
         </message>
         <message>
             <source>Automatic Outline (like movie subtitles)</source>
@@ -5118,12 +5339,12 @@ picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</ex
         <message>
             <source>Add selected clips</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มคลิปที่เลือก</translation>
         </message>
         <message>
             <source>Remove selected clip</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำคลิปที่เลือกออก</translation>
         </message>
         <message>
             <source>Add the selected clip(s) to the end of the movie</source>
@@ -5140,7 +5361,7 @@ picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</ext
         <message>
             <source>Play selected clip only</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เล่นเฉพาะคลิปที่เลือก</translation>
         </message>
         <message>
             <source>Preview</source>
@@ -5151,7 +5372,7 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres
         <message>
             <source>Pause</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หยุดชั่วคราว</translation>
         </message>
         <message>
             <source>Show actual movie size (don't stretch)</source>
@@ -5168,17 +5389,17 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
         <message>
             <source>Please Confirm...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรดยืนยัน...</translation>
         </message>
         <message>
             <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การดำเนินการนี้จะสร้างภาพยนตร์ใหม่และนำสไลด์ข้อความทั้งหมดที่คุณเพิ่มออก คุณแน่ใจหรือไม่?</translation>
         </message>
         <message>
             <source>Recompute</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำนวณใหม่</translation>
         </message>
         <message>
             <source>Close</source>
@@ -5195,7 +5416,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:b
         <message>
             <source>Audio files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์เสียง</translation>
         </message>
         <message>
             <source>Music files (*.mp3, *.wma)</source>
@@ -5208,6 +5429,25 @@ picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
             <translation>ไฟล์เพลง (*.mp3,*.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>สไลด์ข้อความ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>%1     %2x%3 pixels</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1     %2x%3 พิกเซล</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>(%1 of %2)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(%1 จาก %2)</translation>
         </message>
     </context>
     <context>
@@ -5230,13 +5470,13 @@ picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMeta
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Font:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แบบอักษร:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5256,13 +5496,13 @@ picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Cente
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฉันรู้สึกโชคดี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำบรรยายภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5332,7 +5572,7 @@ picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
             <source>Normal</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/item24.title;stringres:CTitleDialog::fontNormal;stringres:EXIF::Normal;stringres:EXIF::Standard</extracomment>
-            <translation type="unfinished" />
+            <translation>ปกติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5359,7 +5599,7 @@ picasapy-origin-key: stringres:CTitleDialog::fontBItalic</extracomment>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Automatic Outline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เส้นขอบอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5379,13 +5619,13 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Add</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่ม</translation>
         </message>
     </context>
     <context>
@@ -5411,7 +5651,7 @@ picasapy-origin-key: stringres:PublishToEarth::NoTagged</extracomment>
         <message>
             <source>The Google Earth file was written to %1, but this computer has no program associated with it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เขียนไฟล์ Google Earth ไปที่ %1 แล้ว แต่คอมพิวเตอร์เครื่องนี้ไม่มีโปรแกรมที่เชื่อมโยงกับไฟล์ดังกล่าว</translation>
         </message>
         <message>
             <source>Export movies using:</source>
@@ -5452,17 +5692,17 @@ picasapy-origin-key: stringres:eMenuTools::ID_EXPORT_EARTH</extracomment>
         <message>
             <source>%1 pictures written to the Google Earth file.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เขียนรูปภาพ %1 รูปลงในไฟล์ Google Earth แล้ว</translation>
         </message>
         <message>
             <source>None of the selected pictures has a location, so no Google Earth file was written.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีรูปภาพที่เลือกใส่ตำแหน่งไว้ จึงไม่ได้เขียนไฟล์ Google Earth</translation>
         </message>
         <message>
             <source>%1 pictures were left out: they have no location.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่นำรูปภาพ %1 รูปมาใช้ เนื่องจากไม่มีข้อมูลตำแหน่ง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="23" />
@@ -5476,13 +5716,13 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="44" />
             <source>Target folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์เป้าหมาย:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="54" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(ไม่ได้เลือก)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="59" />
@@ -5495,13 +5735,13 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="66" />
             <source>Image size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดรูปภาพ:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="74" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดเดิม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="81" />
@@ -5514,19 +5754,19 @@ picasapy-origin-key: export:export/labelgroup20.title</extracomment>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="103" />
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="127" />
             <source>%1 pictures exported, %2 failed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกรูปภาพแล้ว %1 รูป ล้มเหลว %2 รูป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="128" />
             <source>%1 pictures exported.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกรูปภาพแล้ว %1 รูป</translation>
         </message>
         <message>
             <source>Export to Folder...</source>
@@ -5537,7 +5777,7 @@ picasapy-origin-key: export:export/window1.title;stringres:CImageOutput::exportp
         <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออก</translation>
         </message>
         <message>
             <source>Export location:</source>
@@ -5566,13 +5806,13 @@ picasapy-origin-key: export:export/usewatermark.title</extracomment>
         <message>
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัตโนมัติ</translation>
         </message>
         <message>
             <source>Normal</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/item24.title;stringres:CTitleDialog::fontNormal;stringres:EXIF::Normal;stringres:EXIF::Standard</extracomment>
-            <translation type="unfinished" />
+            <translation>ปกติ</translation>
         </message>
         <message>
             <source>Maximum</source>
@@ -5643,7 +5883,7 @@ picasapy-origin-key: export:export/label33.title</extracomment>
         <message>
             <source>Custom (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำหนดเอง (%1)</translation>
         </message>
         <message>
             <source>Watermark:</source>
@@ -5663,51 +5903,51 @@ picasapy-origin-key: export:export/label44.title;options:options/label168.title<
         <message>
             <source>Move to New Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยังโฟลเดอร์ใหม่...</translation>
         </message>
         <message>
             <source>Copying Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::CopyProgress;stringres:CThumbUI::MoveFilesToAlbumFolder::CopyYesButton;stringres:RestoreApp::statuscopying</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังคัดลอกไฟล์</translation>
         </message>
         <message>
             <source>Moving Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;stringres:CThumbUI::MoveProgress</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังย้ายไฟล์</translation>
         </message>
         <message>
             <source>Copying file(s) to %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังคัดลอกไฟล์ไปยัง %1</translation>
         </message>
         <message>
             <source>Moving file(s) to %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังย้ายไฟล์ไปยัง %1</translation>
         </message>
         <message>
             <source>Copying %1 of %2 files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังคัดลอกไฟล์ %1 จาก %2</translation>
         </message>
         <message>
             <source>Moving %1 of %2 files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังย้ายไฟล์ %1 จาก %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="32" />
             <source>Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนชื่อ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="62" />
             <source>Move to Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยังโฟลเดอร์...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="435" />
@@ -5747,8 +5987,9 @@ picasapy-origin-key: stringres:DeleteMessage::DeleteItemsTitle;stringres:DeleteM
 (They will also be removed from any albums in which they appear)</source>
             <extracomment>DeleteMessage::DeleteMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>คุณแน่ใจหรือไม่ว่าต้องการส่งรายการที่เลือก %n รายการไปยังถังรีไซเคิล?
+(รายการเหล่านี้จะถูกนำออกจากทุกอัลบั้มที่มีรายการนั้นอยู่ด้วย)</numerusform>
             </translation>
         </message>
         <message>
@@ -5773,38 +6014,38 @@ picasapy-origin-key: stringres:DeleteMessage::NoUndoSingle</extracomment>
             <extracomment>DeleteMessage::NoUndoMultipleYesButton
 picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::DeleteProgress;stringres:DeleteMessage::NoUndoMultipleYesButton</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบไฟล์</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="474" />
             <source>Are you sure you want to delete %n selected files? (This cannot be undone.)</source>
             <extracomment>DeleteMessage::NoUndoMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ที่เลือก %n ไฟล์? (เลิกทำไม่ได้)</numerusform>
             </translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="101" />
             <source>File operation failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การทำงานกับไฟล์ล้มเหลว</translation>
         </message>
         <message>
             <source>Untitled</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีชื่อ</translation>
         </message>
         <message>
             <source>New Album...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัลบั้มใหม่...</translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) selected for rename.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>เลือกไฟล์ %n ไฟล์เพื่อเปลี่ยนชื่อแล้ว</numerusform>
             </translation>
         </message>
         <message>
@@ -5816,7 +6057,7 @@ picasapy-origin-key: rename:rename/label5.title</extracomment>
         <message>
             <source>Rename</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนชื่อ</translation>
         </message>
         <message>
             <source>Include in filename:</source>
@@ -5827,7 +6068,7 @@ picasapy-origin-key: rename:rename/labelgroup8.title</extracomment>
         <message>
             <source>Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วันที่</translation>
         </message>
         <message>
             <source>Image resolution</source>
@@ -5851,20 +6092,23 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesConfirmMove</extracomment>
             <source>Move Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;stringres:CThumbUI::MoveProgress</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไฟล์</translation>
         </message>
         <message>
             <source>Are you sure you want to move the file(s) to
 %1 ?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการย้ายไฟล์ไปที่
+%1 ?</translation>
         </message>
         <message>
             <source>This folder already contains files with the same name.
 
 Would you like to rename or skip these files?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มีไฟล์ชื่อเดียวกันอยู่ในโฟลเดอร์นี้แล้ว
+
+คุณต้องการเปลี่ยนชื่อหรือข้ามไฟล์เหล่านี้?</translation>
         </message>
         <message>
             <source>Rename Duplicates</source>
@@ -5876,37 +6120,37 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesRename</extracomment>
             <source>Skip Duplicates</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);stringres:CThumbUI::MoveFilesSkip</extracomment>
-            <translation type="unfinished" />
+            <translation>ข้ามรายการที่ซ้ำกัน</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>File operation finished</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การทำงานกับไฟล์เสร็จแล้ว</translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) done.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>เสร็จแล้ว %n ไฟล์</numerusform>
             </translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) skipped (a file with the same name already exists).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>ข้ามไฟล์ %n ไฟล์ (มีไฟล์ชื่อเดียวกันอยู่แล้ว)</numerusform>
             </translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) could not be processed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>ประมวลผลไฟล์ %n ไฟล์ไม่ได้</numerusform>
             </translation>
         </message>
     </context>
@@ -5915,12 +6159,12 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);str
         <message>
             <source>Saving file %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังบันทึกไฟล์ %1%</translation>
         </message>
         <message>
             <source>Saving %1 files %2%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังบันทึกไฟล์ %1 ไฟล์ %2%</translation>
         </message>
     </context>
     <context>
@@ -5928,12 +6172,12 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);str
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>A backup of this file will be made.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ระบบจะสร้างสำเนาสำรองของไฟล์นี้</translation>
         </message>
         <message>
             <source>Do not ask again</source>
@@ -5950,12 +6194,12 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
         <message>
             <source>JPEG Files (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์ JPEG (*.jpg)</translation>
         </message>
         <message>
             <source>WebP Files (*.webp)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์ WebP (*.webp)</translation>
         </message>
         <message>
             <source>Unable to save file due to filename collision.</source>
@@ -5981,12 +6225,15 @@ picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
 %1
 error(%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกไฟล์ทั้งหมดไม่ได้เนื่องจากข้อผิดพลาดของดิสก์ ดิสก์อาจเต็มหรืออ่านได้อย่างเดียว
+
+%1
+ข้อผิดพลาด(%2)</translation>
         </message>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึก</translation>
         </message>
         <message>
             <source>Save changes to disk?</source>
@@ -5997,32 +6244,32 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
         <message>
             <source>A backup of these files will be made.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ระบบจะสร้างสำเนาสำรองของไฟล์เหล่านี้</translation>
         </message>
         <message>
             <source>These pictures contain edits PicasaPy cannot render yet: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพเหล่านี้มีการแก้ไขที่ PicasaPy ยังแสดงผลไม่ได้: %1</translation>
         </message>
         <message>
             <source>Saving writes the picture without them, and the settings are lost. This cannot be undone.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การบันทึกจะเขียนรูปภาพโดยไม่มีการแก้ไขเหล่านี้ และการตั้งค่าจะสูญหาย เลิกทำไม่ได้</translation>
         </message>
         <message>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนกลับ</translation>
         </message>
         <message>
             <source>Revert to original version of these file(s)?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนไฟล์เหล่านี้กลับเป็นเวอร์ชันต้นฉบับหรือไม่?</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำไม่ได้ และการเปลี่ยนแปลงทั้งหมดจะสูญหาย</translation>
         </message>
         <message>
             <source>Undo Save</source>
@@ -6033,12 +6280,12 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
         <message>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หากต้องการเลิกทำการบันทึกล่าสุดและเก็บการแก้ไขไว้ ให้คลิก "เลิกทำการบันทึก"</translation>
         </message>
         <message>
             <source>File operation failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การทำงานกับไฟล์ล้มเหลว</translation>
         </message>
     </context>
     <context>
@@ -6046,7 +6293,7 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
         <message>
             <source>Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Picasa</translation>
         </message>
         <message>
             <source>There is an older version of Picasa installed.  Would you like to update your existing picture library, or search your computer for pictures again?</source>
@@ -6117,12 +6364,12 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
         <message>
             <source>Welcome to PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยินดีต้อนรับสู่ PicasaPy</translation>
         </message>
         <message>
             <source>Where should PicasaPy look for your pictures?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณต้องการให้ PicasaPy ค้นหารูปภาพจากที่ใด?</translation>
         </message>
         <message>
             <source>Only search Documents, Pictures, and the Desktop</source>
@@ -6133,12 +6380,12 @@ picasapy-origin-key: stringres:CInitialScanDialog::OnlySearchWin</extracomment>
         <message>
             <source>Search my whole home folder for pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหารูปภาพในโฟลเดอร์บ้านทั้งหมดของฉัน</translation>
         </message>
         <message>
             <source>Searching never moves or copies your files. You can change these folders later in the Folder Manager.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การค้นหาจะไม่ย้ายหรือคัดลอกไฟล์ คุณเปลี่ยนโฟลเดอร์เหล่านี้ภายหลังได้ในตัวจัดการโฟลเดอร์</translation>
         </message>
     </context>
     <context>
@@ -6147,19 +6394,22 @@ picasapy-origin-key: stringres:CInitialScanDialog::OnlySearchWin</extracomment>
             <source>This folder is already being watched:
 %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังเฝ้าดูโฟลเดอร์นี้อยู่แล้ว:
+%1</translation>
         </message>
         <message>
             <source>This folder cannot be opened:
 %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปิดโฟลเดอร์นี้ไม่ได้:
+%1</translation>
         </message>
         <message>
             <source>The folder could not be added:
 %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มโฟลเดอร์นี้ไม่ได้:
+%1</translation>
         </message>
         <message>
             <source>Folder List</source>
@@ -6185,13 +6435,13 @@ picasapy-origin-key: stringres:IDS_HOTFOLDER_CONFIRM</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
             <source>Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วิธีใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
             <source>Folder Manager — Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัวจัดการโฟลเดอร์ — วิธีใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6210,13 +6460,19 @@ Remove from Picasa takes the folder out of your library. The pictures stay on yo
 
 Face detection is separate: you can watch a folder and still keep faces in it out of the library.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สแกนเสมอจะเฝ้าดูโฟลเดอร์ไว้ รูปภาพที่คุณเพิ่มภายหลังจะปรากฏขึ้นเอง
+
+สแกนครั้งเดียวจะนำรูปภาพที่อยู่ในโฟลเดอร์ขณะนี้เข้ามา แล้วหยุดเฝ้าดูโฟลเดอร์นั้น
+
+นำออกจาก Picasa จะนำโฟลเดอร์ออกจากไลบรารี รูปภาพยังอยู่บนดิสก์
+
+การตรวจหาใบหน้าเป็นการตั้งค่าแยกต่างหาก คุณเฝ้าดูโฟลเดอร์ได้โดยไม่นำใบหน้าในโฟลเดอร์นั้นเข้าไลบรารี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="13" />
             <source>Folder Manager</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัวจัดการโฟลเดอร์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="29" />
@@ -6244,13 +6500,13 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
             <source>Remove from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำออกจาก Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
             <source>Adopt Picasa folders...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำโฟลเดอร์จาก Picasa มาใช้...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6263,7 +6519,7 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
@@ -6286,13 +6542,13 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Remove from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำออกจาก Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Select a folder on the left.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์ทางด้านซ้าย</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -6305,7 +6561,7 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/watched_label)</extracomment
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>For the current folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สำหรับโฟลเดอร์ปัจจุบัน:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -6325,7 +6581,7 @@ picasapy-origin-key: stringres:CFolderMgrDialog::nofr</extracomment>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Face detection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การตรวจหาใบหน้า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -6340,34 +6596,90 @@ picasapy-origin-key: stringres:CFolderMgrDialog::confirmfrexclude</extracomment>
         <message>
             <source>This is a PicasaPy addition — the original Picasa did not have it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นี่เป็นส่วนเพิ่มเติมของ PicasaPy ซึ่งไม่มีใน Picasa รุ่นดั้งเดิม</translation>
+        </message>
+    </context>
+    <context>
+        <name>OpenWithDialog</name>
+        <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เปิดด้วย...</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>เปิด</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ยกเลิก</translation>
+        </message>
+        <message>
+            <source>No application is associated with this file type.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่มีแอปพลิเคชันที่เชื่อมโยงกับชนิดไฟล์นี้</translation>
         </message>
     </context>
     <context>
         <name>FileOpsController</name>
         <message>
+            <source>Unable to open application</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
+            <translation>ไม่สามารถเปิดแอปพลิเคชันได้</translation>
+        </message>
+        <message>
             <source>The system default application could not open %1/%2 selected files.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แอปพลิเคชันเริ่มต้นของระบบเปิดไฟล์ที่เลือก %1/%2 ไฟล์ไม่ได้</translation>
         </message>
         <message>
             <source>This picture has no preserved original on disk.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีไฟล์ต้นฉบับที่เก็บรักษาไว้บนดิสก์สำหรับรูปภาพนี้</translation>
         </message>
         <message>
             <source>Choose a destination folder first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์ปลายทางก่อน</translation>
         </message>
         <message>
             <source>Select at least one picture first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพอย่างน้อยหนึ่งรูปก่อน</translation>
         </message>
     </context>
     <context>
         <name>FolderPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1319" />
+            <source>Delete Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact</extracomment>
+            <translation>ลบบุคคล</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1323" />
+            <source>Are you sure you want to delete the people album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการลบอัลบั้มบุคคล "%1"?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1333" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>ใช่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1339" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่</translation>
+        </message>
         <message>
             <source>Calculating…</source>
             <extracomment>picasapy-origin: picasa
@@ -6395,12 +6707,12 @@ picasapy-origin-key: stringres:ViewRoot::AllFolders</extracomment>
         <message>
             <source>My Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คอมพิวเตอร์ของฉัน</translation>
         </message>
         <message>
             <source>Do you want to remove the folder %1 and its subfolders?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณต้องการนำโฟลเดอร์ %1 และโฟลเดอร์ย่อยออกหรือไม่?</translation>
         </message>
         <message>
             <source>Remove Folder</source>
@@ -6411,19 +6723,31 @@ picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
         <message>
             <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการย้ายโฟลเดอร์ "%1" และเนื้อหาไปยังถังรีไซเคิล?</translation>
         </message>
         <message>
             <source>Delete Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบโฟลเดอร์</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete the album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการลบอัลบั้ม "%1"?</translation>
+        </message>
+        <message>
+            <source>Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ลบอัลบั้ม</translation>
         </message>
         <message>
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณกำลังจะปิดคอลเล็กชันสุดท้าย พื้นที่ภาพขนาดย่อจะไม่แสดงรูปภาพใดๆ ต้องการดำเนินการต่อหรือไม่?
+
+หากต้องการเปิดคอลเล็กชัน ให้ดับเบิลคลิกชื่อหรือคลิกไอคอนข้างชื่อ</translation>
         </message>
         <message>
             <source>Close Last Collection?</source>
@@ -6440,7 +6764,7 @@ picasapy-origin-key: stringres:CloseCollection::YesButon</extracomment>
         <message>
             <source>Move Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายโฟลเดอร์</translation>
         </message>
         <message>
             <source>Exported Pictures</source>
@@ -6458,7 +6782,7 @@ picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="586" />
             <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังไม่พร้อมใช้งาน — โฟลเดอร์ยังอยู่ในฐานข้อมูล และใช้ภาพขนาดย่อจากแคช</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="67" />
@@ -6478,7 +6802,7 @@ picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="112" />
             <source>Search results for "%1" (%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ผลการค้นหาสำหรับ "%1" (%2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="114" />
@@ -6491,7 +6815,7 @@ picasapy-origin-key: stringres:CAlbumList::liststicky2;stringres:CAlbumState::Fo
             <location filename="../qml/PicasaPy/FolderPane.qml" line="178" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคล</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="189" />
@@ -6510,19 +6834,19 @@ picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;strin
         <message>
             <source>Remove this folder from PicasaPy? The files stay on disk.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำโฟลเดอร์นี้ออกจาก PicasaPy หรือไม่? ไฟล์ยังอยู่บนดิสก์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" />
             <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการนำคอลเล็กชัน “%1” ออก? โฟลเดอร์ทั้งหมดในคอลเล็กชันนี้จะถูกย้ายไปยังคอลเล็กชัน “%2”</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" />
             <source>Folders on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์บนดิสก์</translation>
         </message>
         <message>
             <source>You can drag and drop pictures here to make a new album.</source>
@@ -6533,12 +6857,12 @@ picasapy-origin-key: stringres:CAlbumList::newalbumprompt</extracomment>
         <message>
             <source>Scanning for faces... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังสแกนหาใบหน้า... เสร็จแล้ว %1%</translation>
         </message>
         <message>
             <source>Unnamed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีชื่อ</translation>
         </message>
     </context>
     <context>
@@ -6560,7 +6884,7 @@ picasapy-origin-key: unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/sho
         <message>
             <source>Stop ignoring</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หยุดละเว้น</translation>
         </message>
         <message>
             <source>Look for more suggestions</source>
@@ -6571,12 +6895,12 @@ picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extraco
         <message>
             <source>Lowers the recognition threshold once, so more names are suggested. The stored setting is left unchanged.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลดเกณฑ์การรู้จำลงหนึ่งครั้งเพื่อให้แนะนำชื่อได้มากขึ้น โดยไม่เปลี่ยนการตั้งค่าที่บันทึกไว้</translation>
         </message>
         <message>
             <source>%1?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1?</translation>
         </message>
         <message>
             <source>Ignore</source>
@@ -6611,13 +6935,13 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveSingleUnknown;stringres:Peop
         <message>
             <source>Are you sure you want to move the %1 selected people to the ignored people album?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการย้ายบุคคลที่เลือก %1 คนไปยังอัลบั้มบุคคลที่ละเว้น?</translation>
         </message>
         <message>
             <source>Don't ask again, always ignore</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck;stringres:ThumbUI::ConfirmUnknownCheckbox</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ต้องถามอีก ละเว้นทุกครั้ง</translation>
         </message>
         <message>
             <source>Group by face</source>
@@ -6640,27 +6964,27 @@ picasapy-origin-key: stringres:CAlbumLabel::LoadingGrouped</extracomment>
         <message>
             <source>Select someone you know and add a name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกคนที่คุณรู้จักแล้วเพิ่มชื่อ</translation>
         </message>
         <message>
             <source>Select someone you know and add a name, or click the "x" to ignore that person.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกคนที่คุณรู้จักแล้วเพิ่มชื่อ หรือคลิก "x" เพื่อละเว้นบุคคลนั้น</translation>
         </message>
         <message>
             <source>Select someone you know and add a name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกคนที่คุณรู้จักแล้วเพิ่มชื่อ</translation>
         </message>
         <message>
             <source>%1 selected</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกแล้ว %1 รายการ</translation>
         </message>
         <message>
             <source>Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อ</translation>
         </message>
         <message>
             <source>Add a name</source>
@@ -6671,7 +6995,7 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
         <message>
             <source>Assign a name to all of the selected faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำหนดชื่อให้ใบหน้าที่เลือกทั้งหมด</translation>
         </message>
     </context>
     <context>
@@ -6679,7 +7003,7 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
         <message>
             <source>No camera information available</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีข้อมูลกล้อง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/HistogramBox.qml" line="42" />
@@ -6709,7 +7033,7 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
             <location filename="../qml/PicasaPy/ImportProgressPanel.qml" line="103" />
             <source>%1 / %2 folders — %3 new photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 โฟลเดอร์ / %2 รูปภาพ — รูปภาพใหม่ %3 รูป</translation>
         </message>
     </context>
     <context>
@@ -6723,12 +7047,12 @@ picasapy-origin-key: stringres:FaceTagJob::progress;write_all_facetags:write_all
         <message>
             <source>%1 / %2 pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 / %2 รูปภาพ</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
@@ -6744,13 +7068,13 @@ picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
             <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="80" />
             <source>%1 / %2 folders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 / %2 โฟลเดอร์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="90" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
@@ -6773,28 +7097,28 @@ picasapy-origin-key: tooltips:Label(publish/addmore)</extracomment>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Original Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดเดิม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>640 x 480</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMovie::size1;stringres:CMakeMoviePanel::size1;stringres:CPublishSizeList::640x;stringres:RenameDialog::samplesize</extracomment>
-            <translation type="unfinished" />
+            <translation>640 x 480</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>800 x 600</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::size2;stringres:CPublishSizeList::800x</extracomment>
-            <translation type="unfinished" />
+            <translation>800 x 600</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>1600 x 1200</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMovie::size2;stringres:CMakeMoviePanel::size4;stringres:CPublishSizeList::1600x</extracomment>
-            <translation type="unfinished" />
+            <translation>1600 x 1200</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6821,7 +7145,13 @@ picasapy-origin-key: stringres:il_BurnPanel::burnbutton</extracomment>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
+            <source>Restore...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กู้คืน...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6876,7 +7206,7 @@ picasapy-origin-key: tooltips:Text(publish/label_optionbox3)</extracomment>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6924,7 +7254,7 @@ picasapy-origin-key: stringres:il_NewBkDialogTitle;tooltips:Text(publish/label_b
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6937,7 +7267,7 @@ picasapy-origin-key: confirmsync:confirmsync/labelgroup9.title;tooltips:Text(pub
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Sync:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซิงค์:</translation>
         </message>
         <message>
             <source>Create a Set or use an existing one</source>
@@ -6996,17 +7326,17 @@ picasapy-origin-key: tooltips:Text1(publish/backuptext)</extracomment>
         <message>
             <source>%1 — last run: %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 — ดำเนินการครั้งล่าสุด: %2</translation>
         </message>
         <message>
             <source>%1 — not run yet</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 — ยังไม่ได้ดำเนินการ</translation>
         </message>
         <message>
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกทั้งหมด</translation>
         </message>
         <message>
             <source>Select None</source>
@@ -7017,17 +7347,17 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/select_none);stringres:
         <message>
             <source>To CD image (ISO)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไปยังไฟล์ภาพ CD (ISO)</translation>
         </message>
         <message>
             <source>To DVD image (ISO)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไปยังไฟล์ภาพ DVD (ISO)</translation>
         </message>
         <message>
             <source>Stop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หยุด</translation>
         </message>
     </context>
     <context>
@@ -7091,7 +7421,7 @@ picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extraco
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Lower the recognition threshold to get more suggestions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลดเกณฑ์การรู้จำเพื่อรับคำแนะนำเพิ่มเติม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
@@ -7111,19 +7441,19 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</ex
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Remove</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Remove all suggestions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำคำแนะนำทั้งหมดออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยืนยัน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
@@ -7143,13 +7473,13 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</ext
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30" />
             <source>SYNC</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซิงค์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="68" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="111" />
@@ -7161,17 +7491,17 @@ picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึก</translation>
         </message>
         <message>
             <source>Select starred photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพที่ติดดาว</translation>
         </message>
         <message>
             <source>Save edited photos to disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกรูปภาพที่แก้ไขลงดิสก์</translation>
         </message>
         <message>
             <source>Create Photo Collage</source>
@@ -7182,6 +7512,12 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_collage)
     </context>
     <context>
         <name>Main</name>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Configure Buttons...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำหนดค่าปุ่ม...</translation>
+        </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Want to Cancel?</source>
@@ -7198,11 +7534,43 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>Move photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ย้ายรูปภาพมาที่นี่หรือไม่?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Move %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ย้ายรูปภาพ %d รูปมาที่นี่หรือไม่?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>วางรูปภาพที่นี่หรือไม่?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>วางรูปภาพ %d รูปที่นี่หรือไม่?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>(OK)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(ตกลง)</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>You have a fairly large number of items selected.
 
 Are you sure you want to apply this tag to all %d items?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณเลือกรายการไว้ค่อนข้างมาก
+
+แน่ใจหรือไม่ว่าต้องการใช้แท็กนี้กับรายการทั้งหมด %d รายการ?</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7215,43 +7583,43 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <location filename="../qml/Main.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณสมบัติ</translation>
         </message>
         <message>
             <source>Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Tags:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก:</translation>
         </message>
         <message>
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคล</translation>
         </message>
         <message>
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สถานที่</translation>
         </message>
         <message>
             <source>Exit PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ออกจาก PicasaPy</translation>
         </message>
         <message>
             <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังมีงานเบื้องหลังที่กำลังทำงานอยู่ (ส่งออก ส่งออกเว็บ หรือสแกนใบหน้า) หากออกตอนนี้ งานจะหยุดและทำต่อภายหลังไม่ได้</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -7266,46 +7634,59 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <translation>ดำเนินการต่อ</translation>
         </message>
         <message>
+            <location filename="../qml/Main.qml" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ยืนยัน</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Are you sure you want to add all of the selected album's images?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:addtosaver::warning</extracomment>
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการเพิ่มภาพในอัลบั้มที่เลือกไว้ทั้งหมด</translation>
+        </message>
+        <message>
             <source>The desktop background is set (%1).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตั้งค่าพื้นหลังเดสก์ท็อปแล้ว (%1)</translation>
         </message>
         <message>
             <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพพร้อมใช้งานที่ %1 แต่ตั้งค่าพื้นหลังเดสก์ท็อปโดยอัตโนมัติไม่ได้</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แหล่งรูปภาพที่เลือกสำหรับโปรแกรมรักษาหน้าจอไม่มีรูปภาพที่พร้อมใช้งาน</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Added %1 pictures to Screensaver.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มรูปภาพ %1 รูปลงในโปรแกรมรักษาหน้าจอแล้ว</translation>
         </message>
         <message>
             <source>Cancelled writing face tags (%1 file(s) written).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิกการเขียนแท็กใบหน้าแล้ว (เขียนไฟล์ไป %1 ไฟล์)</translation>
         </message>
         <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เขียนข้อมูลใบหน้าลงใน XMP ไม่ได้: %1</translation>
         </message>
         <message>
             <source>Face data written to %1 file(s); %2 skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เขียนข้อมูลใบหน้าแล้ว %1 ไฟล์ ข้ามไป %2 ไฟล์</translation>
         </message>
         <message>
             <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เขียนข้อมูลใบหน้าแล้ว %1 ไฟล์ ข้ามไป %2 ไฟล์ ปัญหาแรก: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -7322,7 +7703,7 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
         <message>
             <source>No pictures have that tag.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีรูปภาพที่ใช้แท็กนี้</translation>
         </message>
         <message>
             <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
@@ -7345,28 +7726,28 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
         <message>
             <source>The search results could not be saved as an album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกผลการค้นหาเป็นอัลบั้มไม่ได้</translation>
         </message>
         <message>
             <source>There are no files on the clipboard to paste.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีไฟล์ในคลิปบอร์ดให้วาง</translation>
         </message>
         <message>
             <source>Wrong password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รหัสผ่านไม่ถูกต้อง</translation>
         </message>
         <message>
             <source>The password does not match. The hidden folders stay hidden.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รหัสผ่านไม่ตรงกัน โฟลเดอร์ที่ซ่อนอยู่ยังคงถูกซ่อนไว้</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="1076" />
             <source>Change Location</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนตำแหน่ง</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="1087" />
@@ -7374,7 +7755,9 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
 
 Are you sure you want to change the location of all %1 items?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณเลือกรายการไว้มากกว่าสองสามรายการ
+
+แน่ใจหรือไม่ว่าต้องการเปลี่ยนตำแหน่งของรายการทั้งหมด %1 รายการ?</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="1112" />
@@ -7382,7 +7765,9 @@ Are you sure you want to change the location of all %1 items?</source>
 
 Are you sure you want to clear the locations for all %1 items?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณเลือกรายการไว้มากกว่าสองสามรายการ
+
+แน่ใจหรือไม่ว่าต้องการล้างตำแหน่งของรายการทั้งหมด %1 รายการ?</translation>
         </message>
         <message>
             <source>Clear Geotags</source>
@@ -7395,7 +7780,9 @@ picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
 
 OK to proceed?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณกำลังจะลบข้อมูลตำแหน่งทางภูมิศาสตร์ทั้งหมด (เช่น ละติจูดและลองจิจูด) ออกจากรูปภาพที่เลือก
+
+ดำเนินการต่อหรือไม่?</translation>
         </message>
         <message>
             <source>Preparing attachments...</source>
@@ -7413,7 +7800,7 @@ picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/st
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพตัดปะ</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7438,19 +7825,43 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <location filename="../qml/Main.qml" />
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์นี้ยังไม่พร้อมใช้งาน (เช่น ไดรฟ์หรือโฟลเดอร์เครือข่ายถูกตัดการเชื่อมต่อ) รูปภาพยังอยู่ในฐานข้อมูลและใช้ภาพขนาดย่อจากแคช แต่ขณะนี้เปิดหรือแก้ไขไฟล์ต้นฉบับไม่ได้</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>แสดงโฟลเดอร์อีกครั้งไม่ได้ เนื่องจากเขียนไฟล์ .picasa.ini ไม่ได้ โฟลเดอร์ยังคงถูกซ่อนไว้</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>แสดงโฟลเดอร์อีกครั้งไม่ได้ในขณะที่โฟลเดอร์ไม่พร้อมใช้งาน (เช่น ไดรฟ์ถูกตัดการเชื่อมต่อ) โฟลเดอร์ยังคงถูกซ่อนไว้</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โฟลเดอร์ถูกซ่อนไว้ แต่ทำเครื่องหมายให้ Picasa ไม่ได้ (เขียนไฟล์ .picasa.ini ไม่ได้)</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ย้ายโฟลเดอร์ที่ซ่อนอยู่ไปยังคอลเล็กชันไม่ได้ โปรดเลิกซ่อนโฟลเดอร์ก่อน</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยังบุคคลใหม่</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>New person's name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อบุคคลใหม่:</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7489,8 +7900,8 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveMultipleYesButton</extracomm
             <source>Are you sure you want to remove the %n selected images from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>คุณแน่ใจหรือไม่ว่าต้องการนำรูปภาพที่เลือก %n รูปออกจากอัลบั้มปัจจุบัน?</numerusform>
             </translation>
         </message>
         <message>
@@ -7530,8 +7941,8 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveMultipleYesButtonPeople;stri
             <source>Are you sure you want to remove the %n selected people from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiplePeople
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>คุณแน่ใจหรือไม่ว่าต้องการนำบุคคลที่เลือก %n คนออกจากอัลบั้มปัจจุบัน?</numerusform>
             </translation>
         </message>
         <message>
@@ -7540,7 +7951,9 @@ picasapy-origin: picasapy</extracomment>
 If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ใช้การแก้ตาแดงกับ %1 แล้ว
+หากนำการแก้ไขทั้งหมดออก จะกู้คืนการแก้ตาแดงด้วยการทำซ้ำไม่ได้ 
+แน่ใจหรือไม่ว่าต้องการลบการแก้ไขเหล่านี้ถาวร?</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7571,7 +7984,7 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
         <message>
             <source>E&amp;xit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ออก</translation>
         </message>
         <message>
             <source>&amp;Edit</source>
@@ -7582,7 +7995,7 @@ picasapy-origin-key: stringres:eMenuEdit</extracomment>
         <message>
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกทั้งหมด</translation>
         </message>
         <message>
             <source>&amp;View</source>
@@ -7599,42 +8012,42 @@ picasapy-origin-key: resexport:win32:12;stringres:IDS_UPDATING</extracomment>
         <message>
             <source>F&amp;older</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;โฟลเดอร์</translation>
         </message>
         <message>
             <source>Rescan folders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สแกนโฟลเดอร์อีกครั้ง</translation>
         </message>
         <message>
             <source>&amp;Picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;รูปภาพ</translation>
         </message>
         <message>
             <source>&amp;Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;สร้าง</translation>
         </message>
         <message>
             <source>&amp;Tools</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เครื่องมือ</translation>
         </message>
         <message>
             <source>Folder Manager...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัวจัดการโฟลเดอร์...</translation>
         </message>
         <message>
             <source>&amp;Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;วิธีใช้</translation>
         </message>
         <message>
             <source>About PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เกี่ยวกับ PicasaPy</translation>
         </message>
         <message>
             <source>Import</source>
@@ -7651,68 +8064,68 @@ picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter
         <message>
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหา</translation>
         </message>
         <message>
             <source>Verzió és build</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เวอร์ชันและบิลด์</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="441" />
             <source>Back to View All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กลับไปที่มุมมองทั้งหมด</translation>
         </message>
         <message>
             <source>Duplicate Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์ซ้ำ</translation>
         </message>
         <message>
             <source>Looking for duplicate files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังค้นหาไฟล์ซ้ำ...</translation>
         </message>
         <message>
             <source>Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนชื่อ...</translation>
         </message>
         <message>
             <source>Move to Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยังโฟลเดอร์...</translation>
         </message>
         <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบออกจากดิสก์</translation>
         </message>
         <message numerus="yes">
             <source>%n picture(s) will be moved to the system trash.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>รูปภาพ %n รูปจะถูกย้ายไปยังถังขยะของระบบ</numerusform>
             </translation>
         </message>
         <message>
             <source>File operation failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การทำงานกับไฟล์ล้มเหลว</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Undo All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำการแก้ไขทั้งหมด</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/Main.qml" />
             <source>All edits will be removed from %n selected picture(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>การแก้ไขทั้งหมดจะถูกนำออกจากรูปภาพที่เลือก %n รูป</numerusform>
             </translation>
         </message>
         <message>
@@ -7724,12 +8137,12 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
         <message>
             <source>Target folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์เป้าหมาย:</translation>
         </message>
         <message>
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(ไม่ได้เลือก)</translation>
         </message>
         <message>
             <source>Browse...</source>
@@ -7740,12 +8153,12 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
         <message>
             <source>Image size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดรูปภาพ:</translation>
         </message>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดเดิม</translation>
         </message>
         <message>
             <source>Image quality:</source>
@@ -7756,12 +8169,12 @@ picasapy-origin-key: export:export/labelgroup20.title</extracomment>
         <message>
             <source>%1 pictures exported, %2 failed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกรูปภาพแล้ว %1 รูป ล้มเหลว %2 รูป</translation>
         </message>
         <message>
             <source>%1 pictures exported.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกรูปภาพแล้ว %1 รูป</translation>
         </message>
         <message>
             <source>Library</source>
@@ -7772,52 +8185,52 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
         <message>
             <source>Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รายการที่เลือก</translation>
         </message>
         <message>
             <source>Upload to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลดไปยัง Google รูปภาพ</translation>
         </message>
         <message>
             <source>E-Mail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อีเมล</translation>
         </message>
         <message>
             <source>Print</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์</translation>
         </message>
         <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออก</translation>
         </message>
         <message>
             <source>Hold</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พักไว้</translation>
         </message>
         <message>
             <source>Clear</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้าง</translation>
         </message>
         <message>
             <source>Add to</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มไปยัง</translation>
         </message>
         <message>
             <source>Share</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แชร์</translation>
         </message>
         <message>
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรแกรมทดแทน Picasa แบบโอเพนซอร์สที่ทันสมัย</translation>
         </message>
         <message>
             <location filename="Main.qml" line="967" />
@@ -7837,21 +8250,23 @@ picasapy-origin-key: stringres:CThumbUI::GetBadImagesYesButton</extracomment>
             <location filename="Main.qml" line="1023" />
             <source>Don't Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ต้องซ่อน</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1037" />
             <source>Picasa had a problem loading this file(s)
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Picasa พบปัญหาในการโหลดไฟล์เหล่านี้
+</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1037" />
             <source>
 Would you like to hide the files on disk?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+ต้องการซ่อนไฟล์บนดิสก์หรือไม่?</translation>
         </message>
         <message>
             <source>Similarity Search Results</source>
@@ -7862,7 +8277,7 @@ picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
         <message>
             <source>Clear Sample</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างตัวอย่าง</translation>
         </message>
         <message>
             <source>Updating similarity database (will be fast next time)</source>
@@ -7875,7 +8290,9 @@ picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
 
 It will change the next time Picasa is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนภาษาที่ Picasa ใช้หรือไม่?
+
+การเปลี่ยนแปลงจะมีผลเมื่อเปิด Picasa ในครั้งถัดไป</translation>
         </message>
     </context>
     <context>
@@ -7908,12 +8325,12 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/importbutton)</extracomment>
         <message>
             <source>Show movies only</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงเฉพาะภาพยนตร์</translation>
         </message>
         <message>
             <source>Show only photos with geotag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงเฉพาะรูปภาพที่มีแท็กตำแหน่ง</translation>
         </message>
         <message>
             <source>Clear your search</source>
@@ -7939,19 +8356,19 @@ picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="143" />
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหา</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="865" />
             <source>Search results for "%1" (%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ผลการค้นหาสำหรับ "%1" (%2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="259" />
             <source>View releases on GitHub</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดูรุ่นที่เผยแพร่บน GitHub</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
@@ -7964,13 +8381,13 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/newalbum)</extracomment>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Show photos on a timeline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงรูปภาพบนไทม์ไลน์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Timeline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไทม์ไลน์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
@@ -7996,25 +8413,25 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/folderviewpopup)</extracomment>
         <message>
             <source>Click and drag over photos to magnify them</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คลิกและลากเหนือรูปภาพเพื่อขยาย</translation>
         </message>
         <message>
             <source>Show duplicate files only</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงเฉพาะไฟล์ซ้ำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Open camera capture panel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปิดแผงบันทึกภาพจากกล้อง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Capture</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึก</translation>
         </message>
     </context>
     <context>
@@ -8024,7 +8441,7 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <source>Recording</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังบันทึก</translation>
         </message>
         <message>
             <source>Video</source>
@@ -8041,7 +8458,7 @@ picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/li
         <message>
             <source>Settings</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การตั้งค่า</translation>
         </message>
         <message>
             <source>Audio</source>
@@ -8052,23 +8469,23 @@ picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/au
         <message>
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <source>Done</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จเรียบร้อย</translation>
         </message>
         <message>
             <source>Record</source>
@@ -8091,7 +8508,7 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::snap</extracomment>
         <message>
             <source>Pause</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หยุดชั่วคราว</translation>
         </message>
         <message>
             <source>Resume</source>
@@ -8132,17 +8549,17 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
         <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกภาพนิ่งแล้ว</translation>
         </message>
         <message>
             <source>Capture failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกภาพไม่สำเร็จ</translation>
         </message>
         <message>
             <source>Unable to prepare the capture folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เตรียมโฟลเดอร์สำหรับบันทึกภาพไม่ได้</translation>
         </message>
         <message>
             <source>Capture live video from camera</source>
@@ -8193,7 +8610,7 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::connecterr</extracomment>
         <message>
             <source>Capture failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกภาพไม่สำเร็จ</translation>
         </message>
     </context>
     <context>
@@ -8202,25 +8619,25 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::connecterr</extracomment>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="50" />
             <source>Performance monitor</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัวตรวจสอบประสิทธิภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="68" />
             <source>CPU: %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>CPU: %1%</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="76" />
             <source>Memory: %1 MB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หน่วยความจำ: %1 MB</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="92" />
             <source>Save diagnostics...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกข้อมูลวินิจฉัย...</translation>
         </message>
     </context>
     <context>
@@ -8229,7 +8646,7 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::connecterr</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Move to New Person...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยังบุคคลใหม่...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
@@ -8264,17 +8681,17 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Locate in Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงตำแหน่งใน Picasa</translation>
         </message>
         <message>
             <source>Locate</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาตำแหน่ง</translation>
         </message>
         <message>
             <source>File on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์บนดิสก์</translation>
         </message>
         <message>
             <source>Locate Original on Disk</source>
@@ -8286,31 +8703,31 @@ picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="23" />
             <source>Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนชื่อ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="28" />
             <source>Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซ่อน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="35" />
             <source>Move to Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยังโฟลเดอร์...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="40" />
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบออกจากดิสก์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="46" />
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาในดิสก์</translation>
         </message>
         <message>
             <source>Add to Album</source>
@@ -8321,7 +8738,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
         <message>
             <source>New Album...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัลบั้มใหม่...</translation>
         </message>
         <message>
             <source>Remove from Album</source>
@@ -8332,22 +8749,22 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
         <message>
             <source>View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดูและแก้ไข</translation>
         </message>
         <message>
             <source>Rotate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนตามเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>Rotate Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนทวนเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>Undo All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำการแก้ไขทั้งหมด</translation>
         </message>
         <message>
             <source>Unhide</source>
@@ -8358,32 +8775,32 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
         <message>
             <source>Move to New Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยังโฟลเดอร์ใหม่...</translation>
         </message>
         <message>
             <source>Split Folder Here...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แยกโฟลเดอร์ที่นี่...</translation>
         </message>
         <message>
             <source>Open File</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปิดไฟล์</translation>
         </message>
         <message>
             <source>Open With</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปิดด้วย</translation>
         </message>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึก</translation>
         </message>
         <message>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนกลับ</translation>
         </message>
         <message>
             <source>Copy Full Path</source>
@@ -8412,18 +8829,27 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณสมบัติ</translation>
         </message>
         <message>
             <source>Find Similar Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหารูปภาพที่คล้ายกัน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Ctrl+Delete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ctrl+Delete</translation>
+        </message>
+    </context>
+    <context>
+        <name>ZoomNavigator</name>
+        <message>
+            <location filename="../qml/PicasaPy/ZoomNavigator.qml" />
+            <source>Zoomed to %1%</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ซูมเป็น %1%</translation>
         </message>
     </context>
     <context>
@@ -8439,7 +8865,13 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึก %1 ลงในอัลบั้มวิดีโอที่บันทึกแล้ว</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>บันทึก %1 ลงในอัลบั้มวิดีโอที่ส่งออกแล้ว</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
@@ -8447,6 +8879,12 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <translation>ไม่สามารถบันทึกเฟรม</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ส่งออกคลิปไม่สำเร็จ</translation>
         </message>
         <message>
             <source>Show only one picture</source>
@@ -8487,7 +8925,7 @@ picasapy-origin-key: stringres:ImageFilters::Selected;tooltips:Label(editpanel/s
         <message>
             <source>Show/Hide Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดง/ซ่อนคำบรรยายภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
@@ -8499,12 +8937,12 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracommen
         <message>
             <source>Delete this caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบคำบรรยายภาพนี้</translation>
         </message>
         <message>
             <source>Create Now</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างตอนนี้</translation>
         </message>
         <message>
             <source>In Progress...</source>
@@ -8517,20 +8955,22 @@ picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
             <source>Redeye fixes cannot be recovered with redo.
 Are you sure you want to undo?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กู้คืนการแก้ตาแดงด้วยการทำซ้ำไม่ได้
+แน่ใจหรือไม่ว่าต้องการเลิกทำ?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Retouch fixes cannot be recovered with redo.
 Are you sure you want to undo?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กู้คืนการตกแต่งด้วยการทำซ้ำไม่ได้
+แน่ใจหรือไม่ว่าต้องการเลิกทำ?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำบรรยายภาพจะแทนที่ข้อความที่คุณพิมพ์ไว้ (เลิกทำการดำเนินการนี้ไม่ได้)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
@@ -8566,25 +9006,25 @@ picasapy-origin-key: stringres:filter_tilt_label0;tooltips:Label(editpanel/horiz
             <source>Redeye</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตาแดง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="109" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฉันรู้สึกโชคดี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="110" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความเปรียบต่างอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="111" />
             <source>Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปรับสีอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="112" />
@@ -8597,25 +9037,25 @@ picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="114" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซีเปีย</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="115" />
             <source>B&amp;W</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขาวดำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="116" />
             <source>Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำให้อบอุ่นขึ้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="117" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อฟิล์ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="118" />
@@ -8670,7 +9110,7 @@ picasapy-origin-key: stringres:filter_dir_tint_label0</extracomment>
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตกแต่ง</translation>
         </message>
         <message>
             <source>Text</source>
@@ -8689,24 +9129,24 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="398" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำ</translation>
         </message>
         <message>
             <source>Undo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำ: ครอบตัด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401" />
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="403" />
             <source>Redo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำซ้ำ</translation>
         </message>
         <message>
             <source>Redo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำซ้ำ: ครอบตัด</translation>
         </message>
         <message>
             <source>Histogram and camera information</source>
@@ -8718,24 +9158,24 @@ picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588" />
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การเล่นวิดีโอต้องใช้โมดูล Qt Multimedia</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
             <source>Show Faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงใบหน้า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="769" />
             <source>Make a caption!</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มคำบรรยายภาพ!</translation>
         </message>
         <message>
             <source>Edit Faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แก้ไขใบหน้า</translation>
         </message>
         <message>
             <source>Edit Collage</source>
@@ -8764,7 +9204,7 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/editslideshow)</extracomment>
         <message>
             <source>Start slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เริ่มการแสดงภาพสไลด์</translation>
         </message>
         <message>
             <source>Previous picture</source>
@@ -8781,7 +9221,7 @@ picasapy-origin-key: stringres:WebExport::template4</extracomment>
         <message>
             <source>Render the final collage from this draft</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างภาพตัดปะฉบับสมบูรณ์จากแบบร่างนี้</translation>
         </message>
         <message>
             <source>Fit Photo inside viewing area</source>
@@ -8802,6 +9242,20 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
 picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
             <translation>กลับไปยังภาพย่อที่จัดระเบียบแล้ว</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>ลบการแก้ไข</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove all movie edits?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
+            <translation>ลบการตัดต่อภาพยนตร์ทั้งหมดหรือไม่</translation>
+        </message>
     </context>
     <context>
         <name>PicasaImportDialog</name>
@@ -8809,67 +9263,157 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="15" />
             <source>Import from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าจาก Picasa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="67" />
             <source>Looking for a previous Picasa installation…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังค้นหาการติดตั้ง Picasa ก่อนหน้านี้…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="74" />
+            <source>The search failed: %1: %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ค้นหาไม่สำเร็จ: %1: %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="71" />
             <source>We found your previous Picasa installation. It watched these folders — take them over?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พบการติดตั้ง Picasa ก่อนหน้านี้ ซึ่งเฝ้าดูโฟลเดอร์เหล่านี้อยู่ ต้องการนำการตั้งค่านี้มาใช้หรือไม่?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="74" />
             <source>We couldn't find a previous Picasa installation automatically. You can browse for its folder by hand.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบการติดตั้ง Picasa ก่อนหน้านี้โดยอัตโนมัติ คุณเลือกดูโฟลเดอร์ของ Picasa เองได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="126" />
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="158" />
             <source>Browse manually...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียกดูด้วยตนเอง...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="131" />
             <source>Not now</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไว้ก่อน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="136" />
             <source>Adopt</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำมาใช้</translation>
         </message>
     </context>
     <context>
         <name>PeoplePanel</name>
         <message>
+            <source>Add a person manually</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/manual_add)</extracomment>
+            <translation>เพิ่มบุคคลด้วยตนเอง</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ยกเลิก</translation>
+        </message>
+        <message>
+            <source>Instructions:
+
+1) Manipulate the rectangle to fit the face of the person you want to add.
+
+You can drag the rectangle to position it, and move its sides to refine the shape.
+
+2) Click on "Add a name" under the rectangle and type in the person's name.
+
+(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>คำแนะนำ:
+
+1) ปรับกรอบสี่เหลี่ยมให้พอดีกับใบหน้าของบุคคลที่คุณต้องการเพิ่ม
+
+คุณลากกรอบเพื่อย้ายตำแหน่งได้ และลากด้านข้างเพื่อปรับรูปทรง
+
+2) คลิก "เพิ่มชื่อ" ใต้กรอบ แล้วพิมพ์ชื่อบุคคล
+
+(กด Enter หรือคลิกชื่อที่เติมข้อความอัตโนมัติเพื่อยืนยันว่าคุณพิมพ์เสร็จแล้ว)</translation>
+        </message>
+        <message>
             <source>Named people who appear with the currently selected person will be listed here.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคลที่มีชื่อซึ่งปรากฏพร้อมกับบุคคลที่เลือกอยู่จะแสดงที่นี่</translation>
         </message>
         <message>
             <source>People who appear in the currently selected photos will be listed here.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคลที่ปรากฏในรูปภาพที่เลือกอยู่จะแสดงที่นี่</translation>
+        </message>
+        <message>
+            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter. A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ขณะที่ Picasa สแกนรูปภาพ ใบหน้าที่พบจะถูกจัดกลุ่มโดยอัตโนมัติเพื่อให้ตั้งชื่อได้ง่าย
+
+สิ่งที่ควรทราบ:
+
+หากต้องการระบุตัวบุคคล ให้คลิก "เพิ่มชื่อ" แล้วพิมพ์ชื่อบุคคลและกด Enter ทุกครั้งที่ตั้งชื่อบุคคลเป็นครั้งแรก ระบบจะสร้างอัลบั้มบุคคลใหม่
+
+(เคล็ดลับ: ลงชื่อเข้าใช้ด้วยบัญชี Google เพื่อเข้าถึงรายชื่อติดต่อทั้งหมดขณะตั้งชื่อ)
+
+หากต้องการละเว้นบุคคล ให้คลิกปุ่ม "X" บนภาพขนาดย่อของใบหน้า
+
+คำแนะนำ: หลังจากตั้งชื่อบุคคลแล้ว Picasa อาจแนะนำใบหน้าอื่นที่ตรงกัน คลิกอัลบั้มของบุคคลเพื่อดูและยืนยัน (หรือปฏิเสธ) คำแนะนำ</translation>
         </message>
         <message>
             <source>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังไม่พบบุคคล เมื่อพบและจัดกลุ่มใบหน้าแล้ว ใบหน้าเหล่านั้นจะแสดงในอัลบั้มไม่มีชื่อ</translation>
         </message>
         <message>
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคล</translation>
+        </message>
+        <message>
+            <source>Loading faces for file...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Loading1</extracomment>
+            <translation>กำลังโหลดใบหน้าสำหรับไฟล์...</translation>
+        </message>
+        <message>
+            <source>Loading faces for %1 files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังโหลดใบหน้าจากไฟล์ %1 ไฟล์...</translation>
+        </message>
+        <message>
+            <source>Looking for other people...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Looking</extracomment>
+            <translation>กำลังค้นหาบุคคล...</translation>
+        </message>
+        <message>
+            <source>Sorting face data, %1%</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังจัดเรียงข้อมูลใบหน้า %1%</translation>
+        </message>
+        <message>
+            <source>, %1 files unchecked.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>, ไม่ตรวจสอบไฟล์ %1 ไฟล์</translation>
         </message>
         <message>
             <source>In this photo:</source>
@@ -8913,13 +9457,54 @@ picasapy-origin-key: stringres:PeoplePanel::Known1</extracomment>
 picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomment>
             <translation>เลือกโฟลเดอร์เพื่อแสดงใบหน้า</translation>
         </message>
+        <message>
+            <source>Ignore People</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::IgnorePeopleTitle;stringres:DeleteMessage::RemoveMultipleYesButtonUnknown;stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
+            <translation>ละเว้นบุคคล</translation>
+        </message>
+        <message>
+            <source>Ignore Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+            <translation>ละเว้นบุคคล</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to move this person to the ignored people album?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleUnknown;stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการย้ายบุคคลนี้ไปยังอัลบั้มของบุคคลที่ละเว้น</translation>
+        </message>
+        <message>
+            <source>Don't ask again, always ignore</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck;stringres:ThumbUI::ConfirmUnknownCheckbox</extracomment>
+            <translation>ไม่ต้องถามอีก ละเว้นทุกครั้ง</translation>
+        </message>
     </context>
     <context>
         <name>PeoplePanelRow</name>
         <message>
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
+            <translation>เพิ่มชื่อ</translation>
+        </message>
+        <message>
+            <source>Ignore person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+            <translation>ละเว้นบุคคล</translation>
+        </message>
+        <message>
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1?</translation>
+        </message>
+        <message>
             <source>%1 photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 รูปภาพ</translation>
         </message>
     </context>
     <context>
@@ -8927,38 +9512,110 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomm
         <message>
             <source>Import from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าจาก Picasa</translation>
         </message>
         <message>
             <source>Copying names, keywords and places from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังคัดลอกชื่อ คำสำคัญ และสถานที่จาก Picasa...</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 folder to import manually, or leave it empty to use detected installations.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกโฟลเดอร์ข้อมูล Picasa2 เพื่อนำเข้าด้วยตนเอง หรือเว้นว่างไว้เพื่อใช้การติดตั้งที่ตรวจพบ</translation>
+        </message>
+        <message>
+            <source>Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โฟลเดอร์ข้อมูล Picasa2</translation>
+        </message>
+        <message>
+            <source>Choose or enter a Picasa2 folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกหรือป้อนโฟลเดอร์ Picasa2</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 data folder first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกโฟลเดอร์ข้อมูล Picasa2 ก่อน</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>เรียกดู...</translation>
+        </message>
+        <message>
+            <source>Windows path prefix</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>คำนำหน้าเส้นทางของ Windows</translation>
+        </message>
+        <message>
+            <source>For example, C:/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ตัวอย่างเช่น C:/Pictures</translation>
+        </message>
+        <message>
+            <source>Matching local folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โฟลเดอร์ในเครื่องที่ตรงกัน</translation>
+        </message>
+        <message>
+            <source>For example, /home/user/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ตัวอย่างเช่น /home/user/Pictures</translation>
+        </message>
+        <message>
+            <source>Enter both paths for the drive mapping.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ป้อนเส้นทางทั้งสองเพื่อกำหนดการเชื่อมโยงไดรฟ์</translation>
+        </message>
+        <message>
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>นำเข้า</translation>
+        </message>
+        <message>
+            <source>Choose the Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกโฟลเดอร์ข้อมูล Picasa2</translation>
         </message>
         <message>
             <source>Done.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จแล้ว</translation>
         </message>
         <message>
             <source>No Picasa data found on this computer.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบข้อมูล Picasa ในคอมพิวเตอร์เครื่องนี้</translation>
         </message>
         <message>
             <source>The import could not finish: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าไม่เสร็จสมบูรณ์: %1</translation>
         </message>
         <message>
             <source>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปเดตโฟลเดอร์ %1 รายการ: คำสำคัญ %2 รายการ สถานที่ %3 แห่ง และชื่อ %4 ชื่อ</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) taken over from Picasa.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>นำวันที่ของวิดีโอ %1 รายการจาก Picasa มาใช้แล้ว</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) could not be taken over; try again later.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>นำวันที่ของวิดีโอ %1 รายการมาใช้ไม่ได้ โปรดลองอีกครั้งภายหลัง</translation>
         </message>
         <message>
             <source>%1 photo(s) were left untouched because they already had data.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ได้เปลี่ยนแปลงรูปภาพ %1 รูป เนื่องจากมีข้อมูลอยู่แล้ว</translation>
         </message>
         <message>
             <source>Close</source>
@@ -8978,12 +9635,12 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Previous album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัลบั้มก่อนหน้า</translation>
         </message>
         <message>
             <source>Next album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัลบั้มถัดไป</translation>
         </message>
     </context>
     <context>
@@ -8991,22 +9648,46 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>My &amp;Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คอมพิวเตอร์&amp;ของฉัน</translation>
         </message>
         <message>
             <source>My &amp;Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพ&amp;ของฉัน</translation>
         </message>
         <message>
             <source>My Do&amp;cuments</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอกสาร&amp;ของฉัน</translation>
         </message>
         <message>
             <source>&amp;Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เดสก์ท็อป</translation>
+        </message>
+        <message>
+            <source>&amp;Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::Shortcuts;stringres:eMenuView::Shortcuts</extracomment>
+            <translation>&amp;ทางลัด</translation>
+        </message>
+        <message>
+            <source>Sort &amp;People by Name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
+            <translation>จัดเรียง &amp;บุคคลตามชื่อ</translation>
+        </message>
+        <message>
+            <source>Sort People by &amp;Amount</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
+            <translation>จัดเรียงบุคคลตาม &amp;จำนวน</translation>
+        </message>
+        <message>
+            <source>Sort People by Top &amp;10</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
+            <translation>จัดเรียงบุคคลตาม &amp;10 อันดับแรก</translation>
         </message>
         <message>
             <source>Write faces to XMP...</source>
@@ -9035,7 +9716,7 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
         <message>
             <source>Search for...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหา...</translation>
         </message>
         <message>
             <source>&amp;Red</source>
@@ -9106,7 +9787,7 @@ picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
         <message>
             <source>Sort by &amp;Creation Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียงตาม&amp;วันที่สร้าง</translation>
         </message>
         <message>
             <source>Sort by &amp;Recent Changes</source>
@@ -9123,13 +9804,13 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
         <message>
             <source>Sort by &amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียงตาม&amp;ชื่อ</translation>
         </message>
         <message>
             <source>Re&amp;verse sort</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
-            <translation type="unfinished" />
+            <translation>ส&amp;ลับการเรียงลำดับ</translation>
         </message>
         <message>
             <source>Remove from Album</source>
@@ -9152,7 +9833,7 @@ picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
         <message>
             <source>&amp;Search for</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ค้นหา</translation>
         </message>
         <message>
             <source>&amp;Red</source>
@@ -9220,7 +9901,7 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="38" />
             <source>&amp;New Album...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;อัลบั้มใหม่...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39" />
@@ -9247,19 +9928,19 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_IMPORTPICTURE</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
             <source>&amp;Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เปลี่ยนชื่อ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="49" />
             <source>&amp;Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;บันทึก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="50" />
             <source>Rever&amp;t</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยน&amp;กลับ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53" />
@@ -9273,31 +9954,31 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาในดิสก์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66" />
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบออกจากดิสก์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
             <source>&amp;Print...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;พิมพ์...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72" />
             <source>&amp;E-Mail...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;อีเมล...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="74" />
             <source>E&amp;xit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="77" />
@@ -9310,13 +9991,13 @@ picasapy-origin-key: stringres:eMenuEdit</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="295" />
             <source>Undo Paste All Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำการวางเอฟเฟ็กต์ทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="301" />
             <source>Undo Batch Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำการแก้ไขเป็นชุด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80" />
@@ -9336,7 +10017,7 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTEALLEFFECTS</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96" />
@@ -9356,7 +10037,7 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101" />
             <source>C&amp;lear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้าง&amp;การเลือก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
@@ -9398,38 +10079,38 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_PICTURE</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณสมบัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="128" />
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204" />
             <source>&amp;Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;แท็ก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคล</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134" />
             <source>&amp;Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;สถานที่</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138" />
             <source>&amp;Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;แสดงภาพสไลด์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
             <source>Ti&amp;meline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไทม์&amp;ไลน์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="144" />
@@ -9442,7 +10123,7 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_SHOWHIDDEN</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
             <source>Dark Theme</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ธีมมืด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150" />
@@ -9483,7 +10164,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
             <source>Sort by creation date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียงตามวันที่สร้าง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="158" />
@@ -9503,14 +10184,14 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="170" />
             <source>Sort by name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียงตามชื่อ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="177" />
             <source>Reverse sort</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
-            <translation type="unfinished" />
+            <translation>สลับการเรียงลำดับ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="184" />
@@ -9530,13 +10211,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);prin
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192" />
             <source>&amp;Filename</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ชื่อไฟล์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198" />
             <source>&amp;Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;คำบรรยายภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210" />
@@ -9549,7 +10230,13 @@ picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218" />
             <source>F&amp;older</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;โฟลเดอร์</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
+            <source>&amp;Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;อัลบั้ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219" />
@@ -9557,6 +10244,13 @@ picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>&amp;แก้ไขคำจำกัดความ...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1640" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>&amp;แก้ไขคำอธิบายอัลบั้ม...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222" />
@@ -9569,7 +10263,7 @@ picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_SLIDESHOW</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227" />
             <source>Refresh &amp;Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รีเฟรช&amp;ภาพขนาดย่อ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="230" />
@@ -9582,19 +10276,19 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
             <source>&amp;Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;นำออกจาก Picasa...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
             <source>&amp;Picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;รูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
             <source>&amp;View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ดูและแก้ไข</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238" />
@@ -9607,13 +10301,13 @@ picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253" />
             <source>A&amp;uto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปรับ&amp;ความเปรียบต่างอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259" />
             <source>&amp;Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ปรับสีอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
@@ -9626,37 +10320,37 @@ picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_AUTO_REDEYE</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="271" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฉันรู้สึกโชคดี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
             <source>S&amp;harpen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มความคม&amp;ชัด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283" />
             <source>&amp;Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เนื้อฟิล์ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289" />
             <source>&amp;Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ทำให้อบอุ่นขึ้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296" />
             <source>R&amp;otate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน&amp;ตามเข็มนาฬิกา</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302" />
             <source>Rotate &amp;Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน&amp;ทวนเข็มนาฬิกา</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="313" />
@@ -9676,25 +10370,25 @@ picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_HIDE_TEXT</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239" />
             <source>Undo &amp;All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำ&amp;การแก้ไขทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
             <source>&amp;Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ซ่อน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="254" />
             <source>&amp;Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;สร้าง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
             <source>Make a &amp;Poster...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้าง&amp;โปสเตอร์...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="256" />
@@ -9707,19 +10401,19 @@ picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="257" />
             <source>&amp;Movie</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ภาพยนตร์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="260" />
             <source>&amp;Tools</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เครื่องมือ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="262" />
             <source>&amp;Folder Manager...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ตัวจัดการโฟลเดอร์...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
@@ -9746,13 +10440,13 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomme
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="270" />
             <source>&amp;Options...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ตัวเลือก...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="273" />
             <source>&amp;Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;วิธีใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="274" />
@@ -9779,37 +10473,37 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="281" />
             <source>Performance Monitor</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัวตรวจสอบประสิทธิภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1291" />
             <source>Test Mode (logs the next startup)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โหมดทดสอบ (บันทึกการเริ่มทำงานครั้งถัดไป)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1303" />
             <source>Send Log...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งบันทึก...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="58" />
             <source>TEST MODE — logging startup</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โหมดทดสอบ — กำลังบันทึกการเริ่มทำงาน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="287" />
             <source>About PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เกี่ยวกับ PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="89" />
             <source>Import From Google Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าจาก Google รูปภาพ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
@@ -9822,7 +10516,7 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPENINANEDITOR</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95" />
             <source>Mo&amp;ve to New Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายไปยัง&amp;โฟลเดอร์ใหม่...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
@@ -9849,13 +10543,13 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EPROCESS</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139" />
             <source>Cu&amp;t</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตั&amp;ด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140" />
             <source>&amp;Copy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;คัดลอก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
@@ -9877,6 +10571,27 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYTEXT</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
             <translation>วางข้อความ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
+            <source>Are you sure you want to replace the existing caption with the contents of the clipboard?
+(This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการแทนที่คำบรรยายภาพเดิมด้วยเนื้อหาในคลิปบอร์ด?
+(เลิกทำการดำเนินการนี้ไม่ได้)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="85" />
+            <source>Replace</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDGo::ReplaceButton;stringres:CTextEditNode::confirmyesbutton;stringres:RestoreProc::replace</extracomment>
+            <translation>แทนที่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="91" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
@@ -9917,7 +10632,7 @@ picasapy-origin-key: stringres:eMenuView::DisplayMode</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
             <source>&amp;Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;อัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
@@ -9976,16 +10691,22 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
             <translation>Linear &amp;Gamma (2.2)</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
+            <source>&amp;Sepia</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;ซีเปีย</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซีเปีย</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
             <source>&amp;Black and White</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ขาวดำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
@@ -10011,19 +10732,19 @@ picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extr
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="378" />
             <source>E&amp;xport as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่ง&amp;ออกเป็นหน้า HTML...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="384" />
             <source>&amp;Move...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ย้าย...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="385" />
             <source>&amp;Delete...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ลบ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406" />
@@ -10031,6 +10752,34 @@ picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extr
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
             <translation>รีเซ็ต &amp;ใบหน้า</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>Reset Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
+            <translation>รีเซ็ต &amp;ใบหน้า</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>WARNING! This will DELETE all face data, people albums, and rescan all photos for faces again. This can REMOVE name tags on synced web albums. Do you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::RemoveAllFaceData</extracomment>
+            <translation>คำเตือน! การดำเนินการนี้จะลบข้อมูลใบหน้าทั้งหมด และจะสแกนรูปภาพทั้งหมดเพื่อหาใบหน้าอีกครั้ง การดำเนินการนี้จะนำแท็กชื่อออกจากใน Web Albums ที่ซิงค์อยู่ คุณต้องการดำเนินการนี้หรือไม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>WARNING! This will DELETE all people albums, and move all the faces to the unnamed album. This can REMOVE name tags on synced web albums also. Do you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
+            <translation>คำเตือน! การดำเนินการนี้จะลบอัลบั้มของบุคคลทั้งหมด และย้ายใบหน้าทั้งหมดไปยังอัลบั้มที่ไม่มีชื่อ การดำเนินการนี้อาจนำแท็กชื่อจากอัลบั้มทางเว็บที่ซิงค์อยู่ออกเช่นกัน คุณต้องการดำเนินการนี้หรือไม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>ใช่</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416" />
@@ -10043,7 +10792,7 @@ picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="425" />
             <source>Add to &amp;Screensaver...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มไปยัง&amp;โปรแกรมรักษาหน้าจอ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="426" />
@@ -10056,7 +10805,21 @@ picasapy-origin-key: stringres:eMenuCreate::ID_BURNCD</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
             <source>New Movie...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพยนตร์ใหม่...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1947" />
+            <source>From Faces in Selection...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACES</extracomment>
+            <translation>จากใบหน้าในรายการที่เลือก...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2125" />
+            <source>From People Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
+            <translation>จากอัลบั้มบุคคล...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
@@ -10069,19 +10832,19 @@ picasapy-origin-key: stringres:eMenuCreate::ID_EXPORT_SENDTOBLOGGER</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="450" />
             <source>&amp;Upload Manager...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ตัวจัดการการอัปโหลด...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="455" />
             <source>Find Duplicates...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหารายการซ้ำ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="460" />
             <source>Configure Photo Viewer...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำหนดค่าโปรแกรมดูภาพ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="461" />
@@ -10094,19 +10857,19 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONFIG_SCREENSAVER</extracom
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="463" />
             <source>Batch Upload...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลดเป็นชุด...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="467" />
             <source>U&amp;pload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัป&amp;โหลด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="468" />
             <source>&amp;Geotag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เพิ่มแท็กตำแหน่ง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="469" />
@@ -10119,7 +10882,7 @@ picasapy-origin-key: stringres:eMenuTools::Experimental</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="471" />
             <source>Configure Buttons...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำหนดค่าปุ่ม...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481" />
@@ -10147,14 +10910,14 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_RELEASENOTES</extracomment>
             <source>Privacy Policy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: eula:eula/privacylink.title;stringres:INSTALLRES_PrivacyText;stringres:eMenuHelp::ID_HELP_PRIVACY</extracomment>
-            <translation type="unfinished" />
+            <translation>นโยบายข้อมูลส่วนบุคคล</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="486" />
             <source>Terms of Service</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;stringres:XMP::UsageTerms;stringres:eMenuHelp::ID_HELP_TERMS</extracomment>
-            <translation type="unfinished" />
+            <translation>ข้อกำหนดในการให้บริการ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="478" />
@@ -10166,7 +10929,7 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
         <message>
             <source>System Default (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค่าเริ่มต้นของระบบ (%1)</translation>
         </message>
         <message>
             <source>System Default</source>
@@ -10183,25 +10946,25 @@ picasapy-origin-key: move_database:move_database/window1.title</extracomment>
         <message>
             <source>Compact Database...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย่อฐานข้อมูล...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>&amp;Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;วันที่</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>&amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ชื่อ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>&amp;Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ขนาด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
@@ -10214,17 +10977,26 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>Recent &amp;changes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การเปลี่ยนแปลง&amp;ล่าสุด</translation>
         </message>
         <message>
             <source>Manage Duplicates...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จัดการไฟล์ซ้ำ...</translation>
         </message>
         <message>
             <source>Import from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าจาก Picasa...</translation>
+        </message>
+    </context>
+    <context>
+        <name>PlacesMap</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMap.qml" />
+            <source>Place %d photos here</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำหนดตำแหน่งรูปภาพ %d รูปที่นี่</translation>
         </message>
     </context>
     <context>
@@ -10232,19 +11004,19 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
         <message>
             <source>Clear %1 Geotag(s)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างแท็กตำแหน่ง %1 รายการ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="40" />
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สถานที่</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="48" />
             <source>%1 pictures with a place</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพ %1 รูปที่ระบุสถานที่</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="109" />
@@ -10257,13 +11029,13 @@ picasapy-origin-key: geopaneltext:Label(geopanel/search_label)</extracomment>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="145" />
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหา</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="77" />
             <source>Map</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แผนที่</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="54" />
@@ -10276,19 +11048,33 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="84" />
             <source>The map component (QtLocation) is not available. Geotags can still be edited.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีส่วนประกอบแผนที่ (QtLocation) แต่ยังแก้ไขแท็กตำแหน่งได้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesPanel.qml" line="151" />
+            <source>Loading Map...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
+            <translation>กำลังโหลดแผนที่...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesPanel.qml" line="150" />
+            <source>Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::init_err</extracomment>
+            <translation>Picasa ไม่สามารถเริ่มต้น Google Maps โปรดตรวจสอบว่าคุณเชื่อมต่อกับอินเทอร์เน็ตแล้ว</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
             <source>Right-click the map to place the selected pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คลิกขวาบนแผนที่เพื่อกำหนดตำแหน่งให้รูปภาพที่เลือก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="103" />
             <source>Remove Geotag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบแท็กตำแหน่ง</translation>
         </message>
     </context>
     <context>
@@ -10297,13 +11083,28 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณสมบัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="52" />
             <source>Select a picture to see its properties.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพเพื่อดูคุณสมบัติ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
+            <source>Edit Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PropertiesPanel::edit_keywords</extracomment>
+            <translation>แก้ไขแท็ก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Keywords</source>
+            <extracomment>    picasapy-origin-key: stringres:IDS_KEYWORD_PREFS
+picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
+            <translation>คำหลัก</translation>
         </message>
     </context>
     <context>
@@ -10319,31 +11120,31 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONFIG_SCREENSAVER</extracom
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Display photos from:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงรูปภาพจาก:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>No folders or albums contain pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีโฟลเดอร์หรืออัลบั้มที่มีรูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Selected Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพที่เลือก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Visual effect:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์ภาพ:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
@@ -10377,19 +11178,19 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Change pictures every:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนรูปภาพทุกๆ:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>%1 seconds</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 วินาที</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Show captions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงคำบรรยายภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
@@ -10397,6 +11198,56 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
             <translation>แสดงตัวอย่าง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>The setting could not be saved.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>บันทึกการตั้งค่าไม่ได้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Starting when the computer is idle is only available on Linux.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เริ่มทำงานเมื่อคอมพิวเตอร์ไม่ได้ใช้งาน ใช้ได้เฉพาะบน Linux</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Install the swayidle package to use this option.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ติดตั้งแพ็กเกจ swayidle เพื่อใช้ตัวเลือกนี้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Not supported on this desktop (%1). It works on wlroots-based Wayland desktops (labwc, sway, Wayfire) with swayidle.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่รองรับเดสก์ท็อปนี้ (%1) ใช้งานได้บนเดสก์ท็อป Wayland ที่ใช้ wlroots (labwc, sway, Wayfire) เมื่อติดตั้ง swayidle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>This desktop does not start it by itself after you log in again; it works in the current session.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เดสก์ท็อปนี้จะไม่เริ่มโปรแกรมเองหลังจากคุณลงชื่อเข้าใช้อีกครั้ง แต่จะทำงานในเซสชันปัจจุบัน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>unknown</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Unknown;stringres:RestoreProc::unknown;stringres:ytICDVDR::MTUnknown</extracomment>
+            <translation>ไม่ทราบ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Start when the computer is idle for</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เริ่มเมื่อคอมพิวเตอร์ไม่ได้ใช้งานเป็นเวลา</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>minutes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:uploadmgr::minutes</extracomment>
+            <translation>นาที</translation>
         </message>
     </context>
     <context>
@@ -10416,7 +11267,7 @@ picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;string
         <message>
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัด</translation>
         </message>
         <message>
             <source>Dissolve</source>
@@ -10437,6 +11288,107 @@ picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
             <translation>กระจายเป็นสีขาว</translation>
         </message>
         <message>
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>กวาด - ซ้าย</translation>
+        </message>
+        <message>
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ล้าง</translation>
+        </message>
+        <message>
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>กวาด - บนสุด</translation>
+        </message>
+        <message>
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>กวาด - ด้านล่าง</translation>
+        </message>
+        <message>
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>กวาด - ซ้ายบน</translation>
+        </message>
+        <message>
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>กวาด - ขวาบน</translation>
+        </message>
+        <message>
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>กวาด - ซ้ายล่าง</translation>
+        </message>
+        <message>
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>กวาด - ขวาล่าง</translation>
+        </message>
+        <message>
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>กด - ซ้าย</translation>
+        </message>
+        <message>
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>ดัน</translation>
+        </message>
+        <message>
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>ดัน - ด้านบน</translation>
+        </message>
+        <message>
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>ดัน - ด้านล่าง</translation>
+        </message>
+        <message>
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>วงกลม - ด้านใน</translation>
+        </message>
+        <message>
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>วงกลม</translation>
+        </message>
+        <message>
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>สี่เหลี่ยมผืนผ้า</translation>
+        </message>
+        <message>
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>เลื่อนขอบและซูม - ใบหน้า</translation>
+        </message>
+        <message>
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>เวลาที่ผ่านไป</translation>
+        </message>
+        <message>
             <source>Pan and Zoom</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
@@ -10446,7 +11398,7 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <location filename="../qml/PicasaPy/SlideshowView.qml" line="177" />
             <source>Exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ออก</translation>
         </message>
     </context>
     <context>
@@ -10455,13 +11407,13 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="145" />
             <source>PicasaPy · version %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy · เวอร์ชัน %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="162" />
             <source>Please note: PicasaPy is still a work in progress. Not all effects of the original Picasa are implemented yet, so it is not yet fully compatible with the original version.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรดทราบ: PicasaPy ยังอยู่ระหว่างการพัฒนา เอฟเฟ็กต์ของ Picasa รุ่นดั้งเดิมยังทำงานได้ไม่ครบ จึงยังเข้ากันได้กับรุ่นดั้งเดิมไม่ทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="176" />
@@ -10498,7 +11450,7 @@ picasapy-origin-key: stringres:TagPanel::tag_info_whole_album</extracomment>
             <location filename="../qml/PicasaPy/TagsPanel.qml" line="42" />
             <source>Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
@@ -10508,7 +11460,11 @@ Then press the button again to add the tag to the selected items.
 
 (TIP: Press &lt;ENTER&gt; after you type in your tag to automatically add the tag without pressing the button)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์แท็ก (คำหรือวลี) ในช่องข้อความทางซ้ายของปุ่มที่คุณเพิ่งกด
+
+จากนั้นกดปุ่มอีกครั้งเพื่อเพิ่มแท็กให้กับรายการที่เลือก
+
+(เคล็ดลับ: กด &lt;ENTER&gt; หลังจากพิมพ์แท็กเพื่อเพิ่มแท็กโดยอัตโนมัติโดยไม่ต้องกดปุ่ม)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
@@ -10542,20 +11498,34 @@ picasapy-origin-key: tagpanel_text:Label(tagpanel/add_tag_label)</extracomment>
             <location filename="../qml/PicasaPy/TagsPanel.qml" line="88" />
             <source>Select pictures to tag them.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพเพื่อเพิ่มแท็ก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
             <source>Tags cannot be modified because one or more items are read-only.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่สามารถแก้ไขแท็กได้เนื่องจากมีรายการที่เป็นแบบอ่านอย่างเดียว</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
-            <source>Quick tags</source>
+            <source>Quick Tags:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tagpanel_text:Label(tagpanel/quick_label)</extracomment>
             <translation>ติดแท็กอย่างรวดเร็ว:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Add tag to the currently selected items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tagpanel_text:Tooltip(tagpanel/addtag)</extracomment>
+            <translation>เพิ่มแท็กไปยังรายการที่เลือกในปัจจุบัน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Configure Quick Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickTagConfigDlg::title;tagpanel_text:Tooltip(tagpanel/quick_config)</extracomment>
+            <translation>กำหนดค่าแท็กอย่างรวดเร็ว</translation>
         </message>
     </context>
     <context>
@@ -10585,13 +11555,13 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/autofill_label)</ex
             <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" />
             <source>Tag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" />
             <source>(automatic)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(อัตโนมัติ)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" line="56" />
@@ -10608,7 +11578,7 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
             <source>Movie Maker</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
-            <translation type="unfinished" />
+            <translation>เครื่องมือสร้างภาพยนตร์</translation>
         </message>
         <message>
             <source>Create Movie Presentation</source>
@@ -10634,7 +11604,7 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>More...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มเติม...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
@@ -10646,7 +11616,7 @@ picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips
         <message>
             <source>Clear Tray</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างถาด</translation>
         </message>
         <message>
             <source>Add/Remove Star</source>
@@ -10687,32 +11657,32 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment
         <message>
             <source>Rotate counter-clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนทวนเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>Rotate clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนตามเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคล</translation>
         </message>
         <message>
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สถานที่</translation>
         </message>
         <message>
             <source>Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แท็ก</translation>
         </message>
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณสมบัติ</translation>
         </message>
         <message>
             <source>Show/Hide People Panel</source>
@@ -10741,12 +11711,12 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
         <message>
             <source>Order Prints (service discontinued)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สั่งพิมพ์ (บริการยุติแล้ว)</translation>
         </message>
         <message>
             <source>Publish to Blogger (service discontinued)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เผยแพร่ไปยัง Blogger (บริการยุติแล้ว)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
@@ -10766,43 +11736,43 @@ picasapy-origin-key: stringres:CThumbUI::CreateCollageWait</extracomment>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Add to</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มไปยัง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="102" />
             <source>Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รายการที่เลือก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="176" />
             <source>E-Mail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อีเมล</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="177" />
             <source>Print</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="180" />
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="189" />
             <source>Upload to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลดไปยัง Google รูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพตัดปะ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
@@ -10844,7 +11814,7 @@ picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTr
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
@@ -10871,7 +11841,7 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumFolder</extracomment>
             <comment>CThumbUI::UpdateAlbumphoto</comment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverphotos;stringres:CThumbUI::UpdateAlbumphoto;stringres:LighthouseConfirm::photo;stringres:LighthouseConfirm::photos</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพถ่าย</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayAlbumToken.qml" />
@@ -10879,7 +11849,7 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverphotos;stringres:CThumb
             <comment>CThumbUI::UpdateAlbumCoverphotos</comment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverphotos;stringres:CThumbUI::UpdateAlbumphoto;stringres:LighthouseConfirm::photo;stringres:LighthouseConfirm::photos</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayAlbumToken.qml" />
@@ -10887,59 +11857,78 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverphotos;stringres:CThumb
             <comment>CThumbUI::UpdateAlbumCoverNoSel</comment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverNoSel;stringres:il_GetSelectionInfo::1</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีตัวเลือก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayAlbumToken.qml" />
             <source>%1 - %2 %3</source>
             <comment>CThumbUI::UpdateAlbumCover</comment>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 - %2 %3</translation>
         </message>
     </context>
     <context>
         <name>VideoPlayerView</name>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
+            <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58" />
+            <source>Unable to play this video.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เล่นวิดีโอนี้ไม่ได้</translation>
+        </message>
+        <message>
+            <source>Create a new starting point</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>สร้างจุดเริ่มต้นใหม่</translation>
+        </message>
+        <message>
+            <source>Create a new ending point</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>สร้างจุดสิ้นสุดใหม่</translation>
+        </message>
+    </context>
+    <context>
+        <name>VideoEditPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Reset Start and End</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/reset_trim)</extracomment>
+            <translation>รีเซ็ตจุดเริ่มต้นและจุดสิ้นสุดใหม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Take Snapshot</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/capture_frame)</extracomment>
+            <translation>ถ่ายภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
             <source>Export Clip</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(movieeditpanel/export_movie)</extracomment>
             <translation>ส่งออกคลิป</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
             <source>Capture current frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(movieeditpanel/capture_frame)</extracomment>
             <translation>เก็บภาพของเฟรมปัจจุบัน</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
             <source>Restore movie to its original length (remove start and end points)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
             <translation>คืนค่าภาพยนตร์นี้กลับสู่ความยาวต้นฉบับ (ลบจุดเริ่มต้นและจุดสิ้นสุด)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58" />
-            <source>Unable to play this video.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Create a new starting point</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Create a new ending point</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Reset trim</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Save a clip of the movie between the start and end points</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/export_movie)</extracomment>
+            <translation>บันทึกคลิปภาพยนตร์ระหว่างจุดเริ่มต้นและจุดสิ้นสุด</translation>
         </message>
     </context>
     <context>
@@ -10981,41 +11970,59 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
         <message>
             <source>Existing data migrated from {source} to {target}.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายข้อมูลเดิมจาก {source} ไปยัง {target} แล้ว</translation>
         </message>
         <message>
             <location filename="../application.py" line="318" />
             <source>Starting…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังเริ่ม…</translation>
         </message>
         <message>
             <location filename="../application.py" line="339" />
             <source>Preparing index…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังเตรียมดัชนี…</translation>
         </message>
         <message>
             <location filename="../application.py" line="347" />
             <source>Loading photo library…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังโหลดไลบรารีรูปภาพ…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Checking folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังตรวจสอบโฟลเดอร์…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Refreshing folder list…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังรีเฟรชรายการโฟลเดอร์…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Checking export folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังตรวจสอบโฟลเดอร์ส่งออก…</translation>
         </message>
         <message>
             <location filename="../application.py" line="416" />
             <source>Scanning folders…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังสแกนโฟลเดอร์…</translation>
         </message>
         <message>
             <source>There were errors loading the PicasaPy database. Would you like to view the error log?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เกิดข้อผิดพลาดขณะโหลดฐานข้อมูล PicasaPy ต้องการดูบันทึกข้อผิดพลาดหรือไม่?</translation>
         </message>
         <message>
             <source>Database error</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ข้อผิดพลาดฐานข้อมูล</translation>
         </message>
     </context>
     <context>
@@ -11024,13 +12031,13 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <location filename="../drop_import_controller.py" line="104" />
             <source>Not added (not a picture or folder): %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่เพิ่มรายการ (ไม่ใช่รูปภาพหรือโฟลเดอร์): %1</translation>
         </message>
         <message>
             <location filename="../drop_import_controller.py" line="110" />
             <source>Drop pictures or folders here to add them.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วางรูปภาพหรือโฟลเดอร์ที่นี่เพื่อเพิ่ม</translation>
         </message>
     </context>
     <context>
@@ -11038,25 +12045,25 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
         <message>
             <source>Ignored people ({0})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บุคคลที่ละเว้น ({0})</translation>
         </message>
         <message>
             <location filename="../face_scan_controller.py" />
             <source>All unnamed faces ({0})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ใบหน้าที่ยังไม่มีชื่อทั้งหมด ({0})</translation>
         </message>
         <message>
             <location filename="../face_scan_controller.py" />
             <source>Not yet grouped ({0})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังไม่ได้จัดกลุ่ม ({0})</translation>
         </message>
         <message>
             <location filename="../face_scan_controller.py" />
             <source>Group {0} ({1})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กลุ่ม {0} ({1})</translation>
         </message>
     </context>
     <context>
@@ -11065,13 +12072,13 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <location filename="../dedup_controller.py" line="192" />
             <source>Choose a folder to search for duplicates in.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์เพื่อค้นหาไฟล์ซ้ำ</translation>
         </message>
         <message>
             <location filename="../dedup_controller.py" line="415" />
             <source>This picture is already inside a "Duplikátumok" folder; leaving it in place instead of nesting the folder inside itself.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพนี้อยู่ในโฟลเดอร์ "Duplikátumok" อยู่แล้ว จึงคงไว้ที่เดิมแทนที่จะซ้อนโฟลเดอร์ไว้ภายในตัวเอง</translation>
         </message>
     </context>
     <context>
@@ -11080,127 +12087,127 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="32" />
             <source>Find Duplicates</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหารูปภาพซ้ำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="100" />
             <source>Select at least two pictures in the grid, or pick another scope.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพอย่างน้อยสองรูปในตาราง หรือเลือกขอบเขตอื่น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="140" />
             <source>Comparing files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังเปรียบเทียบไฟล์...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="141" />
             <source>Analysing pictures...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังวิเคราะห์รูปภาพ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="142" />
             <source>Searching...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังค้นหา...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="233" />
             <source>Groups of duplicate and similar pictures. Pick which one to keep in each group; the rest can be moved to a "Duplikátumok" folder or deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กลุ่มรูปภาพที่ซ้ำกันหรือคล้ายกัน เลือกรูปภาพที่ต้องการเก็บไว้ในแต่ละกลุ่ม ส่วนที่เหลือจะย้ายไปยังโฟลเดอร์ "Duplikátumok" หรือลบได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="247" />
             <source>Search in:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาใน:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="260" />
             <source>Selected pictures (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพที่เลือก (%1)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="262" />
             <source>Selected pictures (none)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพที่เลือก (ไม่มี)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="263" />
             <source>This folder and its subfolders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์นี้และโฟลเดอร์ย่อย</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="264" />
             <source>Whole library</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไลบรารีทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="270" />
             <source>Scanning...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังสแกน...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="271" />
             <source>Scan for Duplicates</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สแกนหาไฟล์ซ้ำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="283" />
             <source>Searching the whole library reads every picture — with tens of thousands of photos this can take a long time. You can cancel at any point, and the next search starts from the already analysed pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การค้นหาทั้งไลบรารีจะอ่านรูปภาพทุกภาพ — หากมีรูปภาพหลายหมื่นรูป การค้นหาอาจใช้เวลานาน คุณยกเลิกได้ทุกเมื่อ และการค้นหาครั้งถัดไปจะเริ่มจากรูปภาพที่วิเคราะห์แล้ว</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="307" />
             <source>%1 %2 / %3</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 %2 / %3</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="318" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="360" />
             <source>No duplicates found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบรูปภาพซ้ำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="403" />
             <source>Exact duplicates (%1 pictures)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพที่ซ้ำกันทุกประการ (%1 รูป)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="405" />
             <source>Similar pictures (%1, distance %2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพที่คล้ายกัน (%1, ระยะห่าง %2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="473" />
             <source>Move others to "Duplikátumok"</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายรายการอื่นไปยัง "Duplikátumok"</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="478" />
             <source>Delete others to Trash</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบรายการอื่นไปยังถังขยะ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="493" />
@@ -11219,45 +12226,57 @@ You have chosen to delete ALL FILES from the source media.
 
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำเตือน
+
+คุณเลือกที่จะลบไฟล์ทั้งหมดจากสื่อต้นทาง
+
+</translation>
         </message>
         <message>
             <source>After importing, %1 file(s) will be deleted.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หลังจากนำเข้าแล้ว ไฟล์ %1 ไฟล์จะถูกลบ
+</translation>
         </message>
         <message>
             <source>An unknown number of files will be deleted after importing.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หลังจากนำเข้าแล้ว ไฟล์จำนวนหนึ่งที่ไม่ทราบจำนวนจะถูกลบ
+</translation>
         </message>
         <message>
             <source>1 file will not be imported because it is already a duplicate in Picasa.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่นำเข้าไฟล์ 1 ไฟล์ เนื่องจากเป็นไฟล์ซ้ำใน Picasa อยู่แล้ว
+</translation>
         </message>
         <message>
             <source>%1 files will not be imported because they are already duplicates in Picasa.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่นำเข้าไฟล์ %1 ไฟล์ เนื่องจากเป็นไฟล์ซ้ำใน Picasa อยู่แล้ว
+</translation>
         </message>
         <message>
             <source>
 Picasa does not recognize 1 of the files to be deleted.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+Picasa ไม่รู้จักไฟล์ 1 ไฟล์ที่จะลบ
+</translation>
         </message>
         <message>
             <source>
 Picasa does not recognize %1 of the files to be deleted.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+Picasa ไม่รู้จักไฟล์ %1 ไฟล์ที่จะลบ
+</translation>
         </message>
         <message>
             <source>
@@ -11266,19 +12285,23 @@ Are you sure you want to remove ALL FILES?
 THIS CANNOT BE UNDONE.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ทั้งหมด?
+
+เลิกทำไม่ได้
+</translation>
         </message>
         <message>
             <location filename="../import_source_controller.py" line="142" />
             <source>Choose a source folder first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์ต้นทางก่อน</translation>
         </message>
         <message>
             <location filename="../import_source_controller.py" line="356" />
             <source>Sorry, there is not enough free disk space to safely download pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขออภัย พื้นที่ว่างในดิสก์ไม่เพียงพอสำหรับดาวน์โหลดรูปภาพอย่างปลอดภัย</translation>
         </message>
     </context>
     <context>
@@ -11298,7 +12321,7 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button)
         <message>
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลด</translation>
         </message>
         <message>
             <source>Upload to Picasa Web Albums...</source>
@@ -11315,37 +12338,49 @@ picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWASt
         <message>
             <source>View the previous Photo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดูรูปภาพก่อนหน้า</translation>
         </message>
         <message>
             <source>View the next Photo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดูรูปภาพถัดไป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าจากต้นทาง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
             <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้ารูปภาพและวิดีโอจากโฟลเดอร์อื่น (เช่น กล้องหรือการ์ดหน่วยความจำที่เชื่อมต่ออยู่) ไปยังไลบรารีของคุณ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
             <source>Source:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ต้นทาง:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไดรฟ์แบบถอดได้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <source>Removable Drive (%1)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไดรฟ์แบบถอดได้ (%1)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
             <source>(none selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(ไม่ได้เลือก)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
@@ -11359,58 +12394,58 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
             <source>%1 pictures/videos found</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พบรูปภาพ/วิดีโอ %1 รายการ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
             <source>No pictures or videos found in this folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบรูปภาพหรือวิดีโอในโฟลเดอร์นี้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
             <source>Exclude Duplicates</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเว้นไฟล์ซ้ำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
             <source>Exclude photos that are already imported into Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเว้นรูปภาพที่นำเข้าไปยัง Picasa แล้ว</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
             <source>%n of those are duplicates already in Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
-                <numerusform />
+            <translation>
+                <numerusform>ในจำนวนนี้มี %n รายการที่ซ้ำกับไฟล์ใน Picasa อยู่แล้ว</numerusform>
+                <numerusform>ในจำนวนนี้มี %n รายการที่ซ้ำกับไฟล์ใน Picasa อยู่แล้ว</numerusform>
             </translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
             <source>Exclude All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเว้นทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
             <source>Include All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รวมทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
             <source>Include</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รวม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
             <source>Exclude</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเว้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
@@ -11423,7 +12458,14 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
             <source>Folder template:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แม่แบบโฟลเดอร์:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>ป้อนชื่อโฟลเดอร์ใหม่หรือเลือกโฟลเดอร์ที่มีอยู่เพื่อดำเนินการต่อ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
@@ -11443,7 +12485,7 @@ picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
             <source>%1 (Today)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 (วันนี้)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
@@ -11456,49 +12498,49 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
             <source>Leave card alone</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่เปลี่ยนแปลงการ์ด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
             <source>Delete only copied photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบเฉพาะรูปภาพที่คัดลอกแล้ว</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
             <source>Delete everything on card</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบทุกอย่างในการ์ด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการนำไฟล์ที่นำเข้าแล้วออกจากการ์ด? เลิกทำไม่ได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />
             <source>WARNING! You have chosen to delete ALL FILES…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คำเตือน! คุณเลือกที่จะลบไฟล์ทั้งหมด…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="276" />
             <source>Move instead of copy (source files will be deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายแทนการคัดลอก (ไฟล์ต้นทางจะถูกลบ)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
             <source>%1 / %2 imported</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าแล้ว %1 / %2 รายการ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
             <source>Done: %1 imported, %2 failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จแล้ว: นำเข้า %1 รายการ ล้มเหลว %2 รายการ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
@@ -11516,25 +12558,44 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <source>Import Files/Folder</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
+            <translation>นำเข้าไฟล์/โฟลเดอร์</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โฟลเดอร์...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไฟล์...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์ต้นทาง...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกโฟลเดอร์ปลายทาง...</translation>
         </message>
         <message>
             <source>%1 / %2 imported at %3/sec</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำเข้าแล้ว %1 / %2 รายการ ที่ %3 รายการ/วินาที</translation>
         </message>
         <message>
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไบต์</translation>
         </message>
         <message>
             <source>File types:</source>
@@ -11545,13 +12606,13 @@ picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</e
         <message>
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์รูปภาพและภาพยนตร์</translation>
         </message>
         <message>
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์รูปภาพ</translation>
         </message>
         <message>
             <source>All Files</source>
@@ -11562,22 +12623,22 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
         <message>
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แหล่งที่มาล่าสุด</translation>
         </message>
         <message>
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปลายทางล่าสุด</translation>
         </message>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดเดิม</translation>
         </message>
         <message>
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 พิกเซล</translation>
         </message>
     </context>
     <context>
@@ -11593,7 +12654,7 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์รูปภาพและภาพยนตร์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="40" />
@@ -11609,13 +12670,13 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="19" />
             <source>Save Log As...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกบันทึกเป็น...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="22" />
             <source>Text Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์ข้อความ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="22" />
@@ -11631,7 +12692,7 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <location filename="../timeline_controller.py" line="96" />
             <source>Unknown date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่ทราบวันที่</translation>
         </message>
     </context>
     <context>
@@ -11640,7 +12701,7 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <location filename="../qml/PicasaPy/TimelineView.qml" line="50" />
             <source>Timeline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไทม์ไลน์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TimelineView.qml" line="58" />
@@ -11653,7 +12714,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/TimelineView.qml" line="79" />
             <source>No pictures yet</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังไม่มีรูปภาพ</translation>
         </message>
     </context>
     <context>
@@ -11673,22 +12734,22 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
         <message>
             <source>Rotate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนตามเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>Rotate Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุนทวนเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>Undo All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำการแก้ไขทั้งหมด</translation>
         </message>
         <message>
             <source>Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซ่อน</translation>
         </message>
         <message>
             <source>Unhide</source>
@@ -11699,32 +12760,54 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
         <message>
             <source>Open File</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปิดไฟล์</translation>
         </message>
         <message>
             <source>Open With</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปิดด้วย</translation>
         </message>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึก</translation>
         </message>
         <message>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนกลับ</translation>
         </message>
         <message>
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาในดิสก์</translation>
+        </message>
+        <message>
+            <source>Locate</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ค้นหาตำแหน่ง</translation>
+        </message>
+        <message>
+            <source>File on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไฟล์บนดิสก์</translation>
+        </message>
+        <message>
+            <source>Locate Original on Disk</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
+            <translation>&amp;ต้นฉบับบนดิสก์</translation>
         </message>
         <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบออกจากดิสก์</translation>
+        </message>
+        <message>
+            <source>Remove from Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
+            <translation>&amp;เอาออกจากอัลบั้ม</translation>
         </message>
         <message>
             <source>Copy Full Path</source>
@@ -11753,11 +12836,17 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณสมบัติ</translation>
         </message>
     </context>
     <context>
         <name>FolderPropertiesDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่มีชื่อ</translation>
+        </message>
         <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa
@@ -11771,14 +12860,46 @@ picasapy-origin-key: stringres:CEditAlbum::albumTitle</extracomment>
             <translation>คุณสมบัติของอัลบั้ม</translation>
         </message>
         <message>
+            <source>Folder Properties</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CEditAlbum::folderTitle</extracomment>
+            <translation>คุณสมบัติของโฟลเดอร์</translation>
+        </message>
+        <message>
+            <source>Cannot Rename Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เปลี่ยนชื่อโฟลเดอร์ไม่ได้</translation>
+        </message>
+        <message>
+            <source>Folder renaming is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่สามารถเปลี่ยนชื่อโฟลเดอร์ได้</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>ตกลง</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ยกเลิก</translation>
+        </message>
+        <message>
             <source>Name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อ:</translation>
         </message>
         <message>
             <source>Date:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วันที่:</translation>
+        </message>
+        <message>
+            <source>Music:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เพลง:</translation>
         </message>
         <message>
             <source>Automatic date</source>
@@ -11787,15 +12908,38 @@ picasapy-origin-key: album:album/autodate.title</extracomment>
             <translation>วันที่อัตโนมัติ</translation>
         </message>
         <message>
-            <source>Enter the date as YYYY-MM-DD.</source>
+            <source>Enter the date like this: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ป้อนวันที่ในรูปแบบนี้: %1</translation>
         </message>
         <message>
             <source>Use music for Slideshow and Movie presentation:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/usemusic.title</extracomment>
             <translation>ใช้เพลงสำหรับการนำเสนอสไลด์โชว์และภาพยนตร์:</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>เรียกดู...</translation>
+        </message>
+        <message>
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไฟล์เสียง</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>ไฟล์เพลง (*.mp3,*.wma)</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>ไฟล์เพลง (*.mp3,*.m4a)</translation>
         </message>
         <message>
             <source>Place taken (optional):</source>
@@ -11809,6 +12953,24 @@ picasapy-origin-key: album:album/labelgroup14.title</extracomment>
 picasapy-origin-key: album:album/labelgroup16.title</extracomment>
             <translation>คำอธิบาย (เลือกได้):</translation>
         </message>
+        <message>
+            <source>Choose date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกวันที่</translation>
+        </message>
+    </context>
+    <context>
+        <name>DateCalendarPopup</name>
+        <message>
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เดือนก่อนหน้า</translation>
+        </message>
+        <message>
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เดือนถัดไป</translation>
+        </message>
     </context>
     <context>
         <name>FolderListContextMenu</name>
@@ -11821,7 +12983,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYDATE</extracomment>
         <message>
             <source>Sort by Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียงตามชื่อ</translation>
         </message>
         <message>
             <source>Sort by Size</source>
@@ -11839,7 +13001,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYRECENT;stringres:eMenuView::I
             <source>Reverse Sort Order</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
-            <translation type="unfinished" />
+            <translation>กลับลำดับการเรียง</translation>
         </message>
         <message>
             <source>Sort People by Name</source>
@@ -11856,7 +13018,7 @@ picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
         <message>
             <source>Sort People by Top List</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียงบุคคลตามรายการยอดนิยม</translation>
         </message>
         <message>
             <source>Simplified Tree View</source>
@@ -11873,7 +13035,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
         <message>
             <source>Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เดสก์ท็อป</translation>
         </message>
     </context>
     <context>
@@ -11914,27 +13076,27 @@ picasapy-origin-key: stringres:Tray::ID_REMOVE_SELECTION</extracomment>
         <message>
             <source>&amp;View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ดูและแก้ไข</translation>
         </message>
         <message>
             <source>R&amp;otate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน&amp;ตามเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>Rotate &amp;Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน&amp;ทวนเข็มนาฬิกา</translation>
         </message>
         <message>
             <source>&amp;Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ค้นหาในดิสก์</translation>
         </message>
         <message>
             <source>Propert&amp;ies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;คุณสมบัติ</translation>
         </message>
     </context>
     <context>
@@ -11942,7 +13104,7 @@ picasapy-origin-key: stringres:Tray::ID_REMOVE_SELECTION</extracomment>
         <message>
             <source>Delete Album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบอัลบั้ม</translation>
         </message>
         <message>
             <source>Edit Album Description...</source>
@@ -11965,7 +13127,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างการเลือก</translation>
         </message>
         <message>
             <source>Invert Selection</source>
@@ -11976,7 +13138,7 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         <message>
             <source>Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รีเฟรชภาพขนาดย่อ</translation>
         </message>
         <message>
             <source>Online Actions</source>
@@ -11987,7 +13149,7 @@ picasapy-origin-key: stringres:Album::ID_ONLINE_ACTIONS;stringres:CThumbUI::onli
         <message>
             <source>Upload to Google Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลดไปยัง Google รูปภาพ...</translation>
         </message>
         <message>
             <source>Upload to Picasa Web Albums...</source>
@@ -11998,7 +13160,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
         <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออกเป็นหน้า HTML...</translation>
         </message>
     </context>
     <context>
@@ -12006,12 +13168,12 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
         <message>
             <source>Rename Collection...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนชื่อคอลเล็กชัน...</translation>
         </message>
         <message>
             <source>Remove Collection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำคอลเล็กชันออก</translation>
         </message>
         <message>
             <source>Set/Change Password...</source>
@@ -12037,12 +13199,12 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
         <message>
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกทั้งหมด</translation>
         </message>
         <message>
             <source>Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ล้างการเลือก</translation>
         </message>
     </context>
     <context>
@@ -12050,52 +13212,65 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
         <message>
             <source>APPLY</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <source>CANCEL</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
         <name>EditorCropPanel</name>
         <message>
+            <source>Custom Aspect Ratios</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
+            <translation>สัดส่วนภาพที่กำหนดเอง</translation>
+        </message>
+        <message>
+            <source>Deletes the current aspect ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
+            <translation>ลบสัดส่วนภาพปัจจุบัน</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Suggested crops</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การครอบตัดที่แนะนำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>This image's orientation has been modified by the Straighten tool and might not crop accurately.
 If you encounter difficulty cropping this image, try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทิศทางของภาพนี้ถูกเปลี่ยนด้วยเครื่องมือปรับภาพตรง จึงอาจครอบตัดได้ไม่แม่นยำ
+หากครอบตัดภาพนี้ได้ยาก ให้ลองเลิกทำการปรับภาพตรง แล้วครอบตัดใหม่ จากนั้นปรับภาพตรงอีกครั้งหากจำเป็น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Add Custom Aspect Ratio…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มอัตราส่วนภาพกำหนดเอง…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Choose a size below, then drag on the picture to select the area you want to keep.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกขนาดด้านล่าง จากนั้นลากบนรูปภาพเพื่อเลือกบริเวณที่ต้องการเก็บไว้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12108,7 +13283,7 @@ picasapy-origin-key: tooltips:Label(editpanel/crop_label)</extracomment>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Delete this custom aspect ratio?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบอัตราส่วนภาพกำหนดเองนี้หรือไม่?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12116,20 +13291,6 @@ picasapy-origin-key: tooltips:Label(editpanel/crop_label)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/cropdiscard)</extracomment>
             <translation>ยกเลิกการครอบตัดภาพทั้งหมด</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>ทิวทัศน์</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>ภาพบุคคล</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12150,13 +13311,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <source>Rotate</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Rotate;stringres:ImageFilters::Rotation;stringres:filter_rot_label0;tooltips:Label(editpanel/croprotatecrop)</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Top left</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12179,19 +13334,19 @@ picasapy-origin-key: stringres:Address::ID_AUTOCOMPLETE</extracomment>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Copy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คัดลอก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตัด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Delete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
@@ -12204,13 +13359,13 @@ picasapy-origin-key: stringres:Address::ID_PASTE;stringres:eMenuEdit::ID_PASTE</
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำ</translation>
         </message>
     </context>
     <context>
@@ -12225,13 +13380,13 @@ picasapy-origin-key: stringres:filter_grain_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อฟิล์ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
             <source>Film Grain (Fine)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อฟิล์ม (ละเอียด)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
@@ -12251,7 +13406,7 @@ picasapy-origin-key: stringres:filter_Matte_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์เพิ่มเติม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
@@ -12273,6 +13428,48 @@ picasapy-origin-key: stringres:filter_RoundedEdges_label0</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <translation>ขอบมืด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Add a light glow to the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Matte_tooltip0</extracomment>
+            <translation>เพิ่มแสงที่ขอบภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Mimics infrared night-vision cameras</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_NightVision_tooltip0</extracomment>
+            <translation>จำลองกล้องอินฟราเรดมองเห็นในที่มืด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Brings out image details</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_LocalContrast_tooltip0</extracomment>
+            <translation>ทำให้รายละเอียดภาพเด่นชัด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Give your photo rounded corners</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_RoundedEdges_tooltip0</extracomment>
+            <translation>ตัดมุมโค้ง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Simulate film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikGrain_tooltip0</extracomment>
+            <translation>เลียนแบบเนื้อฟิล์ม</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Adds film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_grain2_tooltip0;stringres:filter_grain_tooltip0</extracomment>
+            <translation>เพิ่มเนื้อฟิล์ม</translation>
         </message>
     </context>
     <context>
@@ -12340,25 +13537,25 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Auto</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>No red eye was found automatically.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบตาแดงโดยอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -12368,26 +13565,30 @@ Note: You can click on a box to delete a change.
 
 You can also draw a square around any red eye that Picasa may have missed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Picasa พบและแก้ไขตาแดงแล้ว
+
+หมายเหตุ: คลิกกรอบเพื่อลบการแก้ไขได้
+
+คุณยังวาดกรอบสี่เหลี่ยมรอบตาแดงที่ Picasa อาจตรวจไม่พบได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Preview changes without square outlines</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงตัวอย่างการเปลี่ยนแปลงโดยไม่แสดงกรอบสี่เหลี่ยม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Redeye</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตาแดง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Regions selected: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกบริเวณแล้ว: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -12400,13 +13601,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>You can also draw a square around any red eye that Picasa may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณยังวาดกรอบสี่เหลี่ยมรอบตาแดงที่ Picasa อาจตรวจไม่พบได้ คลิก กดเมาส์ค้างไว้ แล้วลากล้อมรอบดวงตาแต่ละข้างเพื่อเลือก กรอบการเลือกจะปรากฏเหนือบริเวณนั้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -12416,9 +13617,31 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <translation>คลิก กดค้างไว้ แล้วลากเมาส์ล้อมรอบดวงตาแต่ละข้างเพื่อเลือก กล่องสำหรับการเลือกจะปรากฏขึ้นเหนือบริเวณนั้น  ปล่อยเมาส์เพื่อให้เสร็จสิ้นการเลือกของคุณ รูปภาพจะแสดงขึ้นโดยลบตาแดงออกแล้ว</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ทิศทางของภาพนี้ถูกเปลี่ยนด้วยเครื่องมือปรับภาพตรง ซึ่งอาจทำให้การเลือกบริเวณตาแดงคลาดเคลื่อนได้
+หากการแก้ตาแดงไม่ตรงตำแหน่ง (หรือไม่ปรากฏ) ให้ลองเลิกทำการปรับภาพตรง แล้วแก้ตาแดงอีกครั้ง จากนั้นปรับภาพตรงอีกครั้งหากจำเป็น</translation>
+        </message>
+        <message>
             <source>Note: click inside the box to undo the change.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>หมายเหตุ: คลิกภายในกรอบเพื่อเลิกทำการเปลี่ยนแปลง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.
+
+Note: You can click on a box to delete a change.
+
+You can also click 'auto' to reapply the auto-corrections.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>คลิก กดเมาส์ค้างไว้ แล้วลากล้อมรอบดวงตาแต่ละข้างเพื่อเลือก กรอบการเลือกจะปรากฏเหนือบริเวณนั้น ปล่อยเมาส์เพื่อยืนยันการเลือก รูปภาพจะแสดงโดยนำตาแดงออกแล้ว
+
+หมายเหตุ: คลิกกรอบเพื่อลบการเปลี่ยนแปลงได้
+
+คุณยังคลิก "อัตโนมัติ" เพื่อใช้การแก้ไขอัตโนมัติอีกครั้งได้</translation>
         </message>
     </context>
     <context>
@@ -12427,31 +13650,31 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Brush Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดแปรง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คลิกเพื่อเลือกบริเวณที่ต้องการแก้ไข จากนั้นเลื่อนเมาส์เพื่อดูตัวอย่างบริเวณที่จะใช้แทน คลิกภาพอีกครั้งเพื่อยืนยัน ทำซ้ำขั้นตอนนี้ได้ตามต้องการ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Redo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำการแก้ไขซ้ำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
@@ -12464,7 +13687,7 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Regions selected: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกบริเวณแล้ว: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
@@ -12478,13 +13701,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตกแต่ง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Undo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลิกทำการแก้ไข</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
@@ -12500,55 +13723,55 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Add text based on the picture's caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มข้อความตามคำบรรยายของรูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Don't show the solid fill color (show outline only)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่แสดงสีเติมแบบทึบ (แสดงเฉพาะเส้นขอบ)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Copy Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คัดลอกคำบรรยายภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Opacity</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความทึบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Outline color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สีเส้นขอบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Outline thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความหนาเส้นขอบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบข้อความที่มีอยู่ทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -12568,12 +13791,12 @@ picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMeta
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Type your text, then click on the photo to place it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์ข้อความ แล้วคลิกบนรูปภาพเพื่อวางข้อความ</translation>
         </message>
         <message>
             <source>Font</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แบบอักษร</translation>
         </message>
         <message>
             <source>Bold</source>
@@ -12590,7 +13813,7 @@ picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepa
         <message>
             <source>Underline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขีดเส้นใต้</translation>
         </message>
         <message>
             <source>Left justify text</source>
@@ -12613,17 +13836,17 @@ picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/rightalign)</extrac
         <message>
             <source>B</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>B</translation>
         </message>
         <message>
             <source>I</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>I</translation>
         </message>
         <message>
             <source>U</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>U</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -12636,13 +13859,13 @@ picasapy-origin-key: edittextpaneltext:Label(edittextpanel/edittext_label)</extr
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Font:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แบบอักษร:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -12709,19 +13932,19 @@ picasapy-origin-key: stringres:filter_radsat_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>B&amp;W</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขาวดำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อฟิล์ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
@@ -12762,13 +13985,13 @@ picasapy-origin-key: stringres:EXIF::Saturation;stringres:filter_sat_label0</ext
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ซีเปีย</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Sharpen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มความคมชัด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
@@ -12795,7 +14018,112 @@ picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำให้อบอุ่นขึ้น</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Sharpens edges in your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_unsharp2_tooltip0;stringres:filter_unsharp_tooltip0</extracomment>
+            <translation>ปรับขอบในรูปภาพให้คมชัด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Converts photo to sepia tone</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_sepia_tooltip0</extracomment>
+            <translation>แปลงรูปภาพเป็นโทนสีซีเปีย</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes your photo black and white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_bw_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพของคุณเป็นภาพขาวดำ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Improves skintones by boosting warm tones</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_warm_tooltip0</extracomment>
+            <translation>ปรับปรุงสีผิวโดยเพิ่มโทนสีอุ่น</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Simulate film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikGrain_tooltip0</extracomment>
+            <translation>เลียนแบบเนื้อฟิล์ม</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Adds film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_grain2_tooltip0;stringres:filter_grain_tooltip0</extracomment>
+            <translation>เพิ่มเนื้อฟิล์ม</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Change the color of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikTint_tooltip0</extracomment>
+            <translation>เปลี่ยนสีของรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes a tinted look</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_tint_tooltip0</extracomment>
+            <translation>ทำให้ดูเป็นแบบแต้มสี</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Increases or decreases saturation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_sat_tooltip0</extracomment>
+            <translation>เพิ่มหรือลดความอิ่มตัวของสี</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Softens focus around a center point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radblur_tooltip0</extracomment>
+            <translation>ปรับโฟกัสให้ภาพนุ่มลงรอบจุดศูนย์กลาง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Gives your photo a gauzy glow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_glow2_tooltip0;stringres:filter_glow_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพมีลักษณะเรืองแสง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes a photo that looks like it was taken with B&amp;W film and a color filter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_ansel_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพดูเหมือนถ่ายด้วยฟิล์มขาวดำและฟิลเตอร์สี</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Desaturates around a center point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radsat_tooltip0</extracomment>
+            <translation>ทำให้สีรอบจุดศูนย์กลางจางลง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>A graduated filter, useful for skies</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_dir_tint_tooltip0</extracomment>
+            <translation>ฟิลเตอร์ไล่สี เหมาะสำหรับถ่ายภาพท้องฟ้า</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Tints around a central point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radtint_tooltip0</extracomment>
+            <translation>แต้มสีรอบๆ จุดกึ่งกลาง</translation>
         </message>
     </context>
     <context>
@@ -12825,7 +14153,7 @@ picasapy-origin-key: stringres:filter_Cinemascope_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างสรรค์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
@@ -12918,6 +14246,96 @@ picasapy-origin-key: stringres:filter_Orton_label0</extracomment>
 picasapy-origin-key: stringres:filter_QuantizePalette_label0</extracomment>
             <translation>ทำเหมือนโปสเตอร์</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Simulate black-and-white infrared film</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_IR_tooltip0</extracomment>
+            <translation>จำลองแบบฟิล์มอินฟราเรดขาวดำ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Imitate the Lomo toy camera</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Lomo_tooltip0</extracomment>
+            <translation>จำลองแบบกล้องโลโม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Make your photo look like it was taken with a plastic camera</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Holga_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพดูเหมือนถ่ายด้วยกล้องพลาสติก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Emulate that "high dynamic range" look</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>จำลองลักษณะภาพแบบ "ช่วงไดนามิกสูง"</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Add a little classic movie magic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Cinemascope_tooltip0</extracomment>
+            <translation>เพิ่มมนต์เสน่ห์ภาพยนตร์แบบคลาสสิก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimic Michael Orton's effect</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Orton_tooltip0</extracomment>
+            <translation>เลียนแบบเอฟเฟกต์ของ Michael Orton</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Rounded corners and a warm, aged glow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Sixties_tooltip0</extracomment>
+            <translation>มุมมนและแสงอบอุ่นแบบภาพเก่า</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Make your photo look like a negative</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Invert_tooltip0</extracomment>
+            <translation>ทำให้ภาพดูเหมือนเนกาทีฟ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Simulate heat vision</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_HeatMap_tooltip0</extracomment>
+            <translation>จำลองภาพความร้อน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimics infrared night-vision cameras</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_NightVision_tooltip0</extracomment>
+            <translation>จำลองกล้องอินฟราเรดมองเห็นในที่มืด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimics film cross-processing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_CrossProcess_tooltip0</extracomment>
+            <translation>เลียนแบบครอสโพรเซสของฟิล์ม</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Reduce the number of colors in your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_QuantizePalette_tooltip0</extracomment>
+            <translation>ลดจำนวนสีในรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Convert your photo to two colors</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_TwoTone_tooltip0</extracomment>
+            <translation>แปลงรูปภาพเป็นแบบสองสี</translation>
+        </message>
     </context>
     <context>
         <name>EditorEffectsTab3</name>
@@ -12938,7 +14356,7 @@ picasapy-origin-key: stringres:filter_PicnikFocalPixelate_label0</extracomment>
             <source>Soften</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Softness;stringres:filter_Soften_label0</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำให้นุ่มลง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
@@ -12986,7 +14404,7 @@ picasapy-origin-key: stringres:filter_DropShadow_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
             <source>Film Grain (Fine)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อฟิล์ม (ละเอียด)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
@@ -13051,6 +14469,111 @@ picasapy-origin-key: stringres:filter_radblur_label0</extracomment>
 picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <translation>ขอบมืด</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Bring out colors and increase contrast</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Boost_tooltip0</extracomment>
+            <translation>ทำให้สีโดดเด่นและมีความเปรียบต่างสูงขึ้น</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Makes your photo soft and glowy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Soften_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพนุ่มนวลและมีประกาย</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Darken the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Vignette_tooltip0</extracomment>
+            <translation>เพิ่มความเข้มให้ขอบของรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a light glow to the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Matte_tooltip0</extracomment>
+            <translation>เพิ่มแสงที่ขอบภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look blocky and low-res</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Pixelate_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพดูมีความละเอียดต่ำ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Pixelate everything inside or outside a central area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikFocalPixelate_tooltip0</extracomment>
+            <translation>แปลงเป็นพิกเซลภายในหรือภายนอกพื้นที่ศูนย์กลาง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Zoom everything outside a central area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_FocalZoom_tooltip0</extracomment>
+            <translation>ซูมทุกอย่างภายนอกพื้นที่ส่วนกลาง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look like it was drawn with a pencil</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PencilSketch_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพของคุณดูเหมือนวาดด้วยดินสอ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look like neon</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Neon_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพของคุณดูเหมือนนีออน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Comic book style half-toning</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Comicize_tooltip0</extracomment>
+            <translation>การทำฮาล์ฟโทนแบบหนังสือการ์ตูน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a frame to your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Border_tooltip0</extracomment>
+            <translation>เพิ่มกรอบรูป</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Give your photo rounded corners</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_RoundedEdges_tooltip0</extracomment>
+            <translation>ตัดมุมโค้ง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo appear to be floating slightly above the background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_DropShadow_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพของคุณลอยอยู่เหนือพื้นหลังเล็กน้อย</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a shadowed matte frame to your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_MuseumMatte_tooltip0</extracomment>
+            <translation>เพิ่มกรอบด้านแบบมีเงาในรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Give your photo that instant-film look</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_tooltip0</extracomment>
+            <translation>ทำให้รูปภาพมีลักษณะคล้ายฟิล์มโพลารอยด์</translation>
+        </message>
     </context>
     <context>
         <name>EditorLegacyTab</name>
@@ -13058,31 +14581,31 @@ picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>Legacy Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์แบบเก่า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>These filters come from older Picasa versions.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฟิลเตอร์เหล่านี้มาจาก Picasa รุ่นเก่า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>Today's Picasa only recognises them inside your old edits.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Picasa รุ่นปัจจุบันรู้จักฟิลเตอร์เหล่านี้เฉพาะในรายการแก้ไขเก่าของคุณ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>This name is a leftover from an old configuration. Picasa 3.9 has no processor for it either, so it cannot be applied.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ชื่อนี้ตกค้างจากการตั้งค่าเก่า Picasa 3.9 ก็ไม่มีตัวประมวลผลสำหรับชื่อนี้ จึงใช้ฟิลเตอร์นี้ไม่ได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>Picasa can read this filter from an old .picasa.ini, but its exact pixel operation has not been decoded yet, so it cannot be applied.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Picasa อ่านฟิลเตอร์นี้จากไฟล์ .picasa.ini รุ่นเก่าได้ แต่ยังถอดรหัสการทำงานกับพิกเซลอย่างแน่ชัดไม่ได้ จึงใช้ฟิลเตอร์นี้ไม่ได้</translation>
         </message>
     </context>
     <context>
@@ -13098,13 +14621,13 @@ picasapy-origin-key: stringres:filter_radtint_label0</extracomment>
             <location filename="../../render/legacy_effects.py" />
             <source>Fill Light (one-click)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เติมแสง (คลิกครั้งเดียว)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Fill Light (slider)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เติมแสง (แถบเลื่อน)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
@@ -13138,19 +14661,19 @@ picasapy-origin-key: stringres:filter_dir_sharp_label0</extracomment>
             <location filename="../../render/legacy_effects.py" />
             <source>Lighting Fixes (v1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แก้ไขแสง (รุ่น 1)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Lighting Fixes (v2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แก้ไขแสง (รุ่น 2)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Lighting Fixes (v3)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แก้ไขแสง (รุ่น 3)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
@@ -13171,7 +14694,7 @@ picasapy-origin-key: stringres:filter_shadow_label0</extracomment>
             <source>Whitepoint</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::WhitePoint;stringres:filter_triple2_label3;stringres:filter_whitept_label0</extracomment>
-            <translation type="unfinished" />
+            <translation>จุดสีขาว</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
@@ -13185,7 +14708,7 @@ picasapy-origin-key: stringres:filter_gamma_label0</extracomment>
             <source>Contrast</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Contrast;stringres:ImageFilters::Contrast;stringres:filter_contrast_label0;stringres:filter_contrast_label1;stringres:filter_triple_label2</extracomment>
-            <translation type="unfinished" />
+            <translation>ความเปรียบต่าง</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
@@ -13219,13 +14742,13 @@ picasapy-origin-key: stringres:filter_rainbow_label0</extracomment>
             <location filename="../../render/legacy_effects.py" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความเปรียบต่างอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Focal Pixelate (legacy)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิกเซลโฟกัส (แบบเก่า)</translation>
         </message>
     </context>
     <context>
@@ -13234,7 +14757,7 @@ picasapy-origin-key: stringres:filter_rainbow_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Common Fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การแก้ไขทั่วไป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
@@ -13247,13 +14770,13 @@ picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างสรรค์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
@@ -13266,48 +14789,48 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์เพิ่มเติม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Legacy Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์แบบเก่า</translation>
         </message>
         <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การแก้ไขที่ใช้บ่อย</translation>
         </message>
         <message>
             <source>Finely-tuned lighting and color fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การแก้ไขแสงและสีอย่างละเอียด</translation>
         </message>
         <message>
             <source>Fun and useful image processing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การประมวลผลภาพที่สนุกและมีประโยชน์</translation>
         </message>
         <message>
             <source>More fun and useful image processing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การประมวลผลภาพที่สนุกและมีประโยชน์เพิ่มเติม</translation>
         </message>
         <message>
             <source>Even more fun and useful image processing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การประมวลผลภาพที่สนุกและมีประโยชน์ยิ่งขึ้น</translation>
         </message>
         <message>
             <source>Glimmer effects beyond the three known tabs</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เอฟเฟ็กต์ประกายแวววาวนอกเหนือจากสามแท็บที่รู้จัก</translation>
         </message>
         <message>
             <source>Filters left in the Picasa engine but not on its surface</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฟิลเตอร์ที่ยังอยู่ในระบบประมวลผล Picasa แต่ไม่แสดงในหน้าจอ</translation>
         </message>
     </context>
     <context>
@@ -13331,32 +14854,32 @@ picasapy-origin-key: stringres:filter_tilt_label0;tooltips:Label(editpanel/horiz
             <source>Redeye</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตาแดง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ฉันรู้สึกโชคดี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความเปรียบต่างอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปรับสีอัตโนมัติ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>ตกแต่ง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
@@ -13386,6 +14909,69 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/showtextcheckbox)</extracomment>
 picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill_label0;stringres:filter_finetune2_label1;stringres:filter_finetune_label1;stringres:filter_triple2_label1;stringres:filter_triple3_label1;stringres:filter_triple_label3;tooltips:Label(editpanel/filllightlabel)</extracomment>
             <translation>เติมแสง</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Crop this Photo to a different format</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop)</extracomment>
+            <translation>ครอบตัดรูปภาพนี้เป็นรูปแบบอื่น</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fix a crooked Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/horizonadjust)</extracomment>
+            <translation>แก้ไขรูปภาพที่บิดเบี้ยว</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Repair Red-Eye flaws in this Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/redeye)</extracomment>
+            <translation>แก้ตาแดงในรูปภาพนี้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>One-click fix for lighting and color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/enhance)</extracomment>
+            <translation>แก้ปัญหาแสงและสีในคลิกเดียว</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fix exposure without affecting color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/autolighting)</extracomment>
+            <translation>แก้ไขแสงโดยไม่ส่งผลต่อสี</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Remove color casts automatically</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/autocolor)</extracomment>
+            <translation>ย้ายแบบสีอัตโนมัติ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Repair blemishes, dust and scratches</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/retouch)</extracomment>
+            <translation>ซ่อมจุดบกพร่อง ฝุ่น และรอยขีดข่วน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Add/Edit Text on a photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/edittext)</extracomment>
+            <translation>เพิ่ม/แก้ไขข้อความในรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fill Light: Adjust the ambient light in the Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filllight_icon)</extracomment>
+            <translation>เติมแสง: ปรับแสงบรรยากาศโดยรอบในรูปภาพ</translation>
+        </message>
     </context>
     <context>
         <name>EditorParamPanel</name>
@@ -13393,7 +14979,7 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <source>Softness</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Softness;stringres:filter_Soften_label0</extracomment>
-            <translation type="unfinished" />
+            <translation>ความนุ่มนวล</translation>
         </message>
         <message>
             <source>Neon Color</source>
@@ -13417,13 +15003,27 @@ picasapy-origin-key: stringres:ImageFilters::FocalSize;stringres:filter_focalpix
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำไปใช้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Apply Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmAbandonModifiedEditYesButton;tooltips:Tooltip(editpanel/ok)</extracomment>
+            <translation>ใช้การเปลี่ยนแปลงเหล่านี้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Cancel Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/cancel)</extracomment>
+            <translation>ยกเลิกการเปลี่ยนแปลง</translation>
         </message>
     </context>
     <context>
@@ -13439,13 +15039,13 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
             <source>The automatic copy is not available yet. To edit this picture, copy it to a writable folder yourself, or remove the write protection.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังไม่มีสำเนาอัตโนมัติให้ใช้ หากต้องการแก้ไขรูปภาพนี้ ให้คัดลอกไปยังโฟลเดอร์ที่เขียนได้ด้วยตนเอง หรือนำการป้องกันการเขียนออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
             <source>Due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เกิดข้อผิดพลาดเกี่ยวกับดิสก์ ดิสก์อาจเต็มหรืออ่านได้อย่างเดียว</translation>
         </message>
     </context>
     <context>
@@ -13468,7 +15068,7 @@ picasapy-origin-key: stringres:EXIF::Saturation;stringres:filter_sat_label0</ext
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Inner Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รัศมีด้านใน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13495,19 +15095,19 @@ picasapy-origin-key: stringres:ImageFilters::Radius;stringres:filter_glow2_label
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Center X</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จุดกึ่งกลาง X</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Center Y</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จุดกึ่งกลาง Y</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13541,13 +15141,13 @@ picasapy-origin-key: stringres:EXIF::Shade;stringres:filter_dir_tint_label2</ext
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Block Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขนาดบล็อก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Blur Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รัศมีเบลอ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13560,38 +15160,40 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การผสมสี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Edge Strength</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Posterize</source>
+            <source>Color Brush</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_QuantizePalette_label0</extracomment>
-            <translation>ทำเหมือนโปสเตอร์</translation>
+picasapy-origin-key: stringres:ImageFilters::BlurXY</extracomment>
+            <translation>แปรงสี</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Smoothness</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>Dot Density</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::DotContrast</extracomment>
+            <translation>ความหนาแน่นของจุด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Dot Fade</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::DotFade</extracomment>
+            <translation>จางแบบเป็นจุด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความกว้าง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Border Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ความกว้างเส้นขอบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13611,7 +15213,7 @@ picasapy-origin-key: stringres:filter_blur_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Line Position</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตำแหน่งเส้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13625,7 +15227,7 @@ picasapy-origin-key: stringres:ImageFilters::Grain</extracomment>
             <source>Contrast</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Contrast;stringres:ImageFilters::Contrast;stringres:filter_contrast_label0;stringres:filter_contrast_label1;stringres:filter_triple_label2</extracomment>
-            <translation type="unfinished" />
+            <translation>ความเปรียบต่าง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13638,13 +15240,13 @@ picasapy-origin-key: stringres:ImageFilters::Bloom</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Steps</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ขั้นตอน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Smoothing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การปรับให้เรียบ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13672,7 +15274,7 @@ picasapy-origin-key: stringres:ImageFilters::Hue</extracomment>
             <source>Rotate</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Rotate;stringres:ImageFilters::Rotation;stringres:filter_rot_label0;tooltips:Label(editpanel/croprotatecrop)</extracomment>
-            <translation type="unfinished" />
+            <translation>หมุน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13706,13 +15308,13 @@ picasapy-origin-key: stringres:ImageFilters::InnerColor</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Black Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สีดำ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>White Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สีขาว</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13767,14 +15369,14 @@ picasapy-origin-key: stringres:ImageFilters::BackgroundColor</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Rounded</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มุมโค้ง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Lighten</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Lighten;stringres:ImageFilters::Screen</extracomment>
-            <translation type="unfinished" />
+            <translation>ทำให้สว่างขึ้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13810,6 +15412,13 @@ picasapy-origin-key: stringres:ImageFilters::Smoothing</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::BlackColor</extracomment>
             <translation>สีแรก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Tint Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::TintColor</extracomment>
+            <translation>สีแต้ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13884,22 +15493,22 @@ picasapy-origin-key: stringres:ImageFilters::Eraser</extracomment>
         <message>
             <source>Edits overwritten by another program</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรแกรมอื่นเขียนทับการแก้ไข</translation>
         </message>
         <message>
             <source>Another program changed these pictures and removed the edits you made here:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรแกรมอื่นเปลี่ยนรูปภาพเหล่านี้และลบการแก้ไขที่คุณทำไว้ที่นี่:</translation>
         </message>
         <message>
             <source>While the same folder is open in Picasa, its changes overwrite the edits made here. Restoring writes your edits back.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เมื่อเปิดโฟลเดอร์เดียวกันใน Picasa การเปลี่ยนแปลงจาก Picasa จะเขียนทับการแก้ไขที่ทำไว้ที่นี่ การกู้คืนจะเขียนการแก้ไขของคุณกลับไป</translation>
         </message>
         <message>
             <source>Restore edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กู้คืนการแก้ไข</translation>
         </message>
         <message>
             <source>Close</source>
@@ -13914,7 +15523,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>My Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คอมพิวเตอร์ของฉัน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -13934,19 +15543,19 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาในดิสก์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ลบจาก Picasa...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Move Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้ายโฟลเดอร์...</translation>
         </message>
     </context>
     <context>
@@ -13960,12 +15569,17 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         <message>
             <source>&amp;Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ล้างการเลือก</translation>
+        </message>
+        <message>
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;วันที่</translation>
         </message>
         <message>
             <source>&amp;Delete Album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ลบอัลบั้ม</translation>
         </message>
         <message>
             <source>&amp;Edit Album Description...</source>
@@ -13980,14 +15594,30 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
             <translation>&amp;การเลือกกลับกัน</translation>
         </message>
         <message>
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;ชื่อ</translation>
+        </message>
+        <message>
             <source>&amp;Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;รีเฟรชภาพขนาดย่อ</translation>
+        </message>
+        <message>
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>&amp;กลับลำดับ</translation>
+        </message>
+        <message>
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;ขนาด</translation>
         </message>
         <message>
             <source>E&amp;xport as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่ง&amp;ออกเป็นหน้า HTML...</translation>
         </message>
         <message>
             <source>Select &amp;All Pictures</source>
@@ -14010,7 +15640,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
         <message>
             <source>Upload to Google &amp;Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลดไปยัง Google &amp;รูปภาพ...</translation>
         </message>
     </context>
     <context>
@@ -14060,12 +15690,12 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>&amp;Remove Collection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;นำคอลเล็กชันออก</translation>
         </message>
         <message>
             <source>Rename &amp;Collection...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนชื่อ&amp;คอลเล็กชัน...</translation>
         </message>
     </context>
     <context>
@@ -14079,17 +15709,17 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         <message>
             <source>&amp;Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ล้างการเลือก</translation>
         </message>
         <message>
             <source>&amp;Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;วันที่</translation>
         </message>
         <message>
             <source>&amp;Delete Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ลบโฟลเดอร์...</translation>
         </message>
         <message>
             <source>&amp;Edit Folder Description...</source>
@@ -14112,12 +15742,12 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         <message>
             <source>&amp;Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ค้นหาในดิสก์</translation>
         </message>
         <message>
             <source>&amp;Move Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ย้ายโฟลเดอร์...</translation>
         </message>
         <message>
             <source>&amp;Color</source>
@@ -14128,17 +15758,17 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
         <message>
             <source>&amp;Manual order</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เรียงลำดับเอง</translation>
         </message>
         <message>
             <source>&amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ชื่อ</translation>
         </message>
         <message>
             <source>&amp;Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;นำออกจาก Picasa...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>
@@ -14149,7 +15779,7 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
         <message>
             <source>&amp;Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ขนาด</translation>
         </message>
         <message>
             <source>&amp;Unhide Folder</source>
@@ -14160,7 +15790,7 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>E&amp;xport as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่ง&amp;ออกเป็นหน้า HTML...</translation>
         </message>
         <message>
             <source>Mo&amp;ve to Collection</source>
@@ -14171,7 +15801,7 @@ picasapy-origin-key: stringres:Folder::ID_ALBUM_MOVETOCOLLECTION</extracomment>
         <message>
             <source>Refresh &amp;Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รีเฟรช&amp;ภาพขนาดย่อ</translation>
         </message>
         <message>
             <source>S&amp;ort Folder By</source>
@@ -14188,7 +15818,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>Upload to Google &amp;Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>อัปโหลดไปยัง Google &amp;รูปภาพ...</translation>
         </message>
     </context>
     <context>
@@ -14196,7 +15826,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>&amp;Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;เดสก์ท็อป</translation>
         </message>
         <message>
             <source>&amp;Shortcuts</source>
@@ -14214,7 +15844,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_WATCHED;stringres:eMenuView::I
             <source>Re&amp;verse sort</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
-            <translation type="unfinished" />
+            <translation>ส&amp;ลับการเรียงลำดับ</translation>
         </message>
         <message>
             <source>Show &amp;Thumbnails in Library</source>
@@ -14249,7 +15879,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYDATE</extracomment>
         <message>
             <source>Sort by &amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เรียงตาม&amp;ชื่อ</translation>
         </message>
         <message>
             <source>Sort by &amp;Recent Changes</source>
@@ -14269,7 +15899,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
         <message>
             <source>&amp;Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;ล้างการเลือก</translation>
         </message>
         <message>
             <source>&amp;Delete People Album</source>
@@ -14284,9 +15914,20 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>&amp;แก้ไขอัลบั้มของบุคคล...</translation>
         </message>
         <message>
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>&amp;การเลือกกลับกัน</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;รีเฟรชภาพขนาดย่อ</translation>
+        </message>
+        <message>
             <source>Select &amp;All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือก&amp;ทั้งหมด</translation>
         </message>
     </context>
     <context>
@@ -14294,7 +15935,7 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
         <message>
             <source>Create the collage and set it as the desktop background</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างภาพตัดปะและตั้งเป็นพื้นหลังเดสก์ท็อป</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
@@ -14307,14 +15948,14 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/makedesktop-label)</ext
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
             <source>The desktop background cannot be set yet — use „Create Collage” to save the picture.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยังตั้งภาพตัดปะเป็นพื้นหลังเดสก์ท็อปไม่ได้ — ใช้ "สร้างภาพตัดปะ" เพื่อบันทึกรูปภาพ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
             <source>Create Collage</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/sharebutton-label);stringres:CollageMaker::createprog</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างภาพตัดปะ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
@@ -14358,13 +15999,13 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/cancelbutton)</extrac
             <location filename="../qml/PicasaPy/CollagePanelTabBar.qml" />
             <source>Settings</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การตั้งค่า</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanelTabBar.qml" />
             <source>Clips (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คลิป (%1)</translation>
         </message>
     </context>
     <context>
@@ -14378,7 +16019,7 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
         <message>
             <source>Confirm…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยืนยัน…</translation>
         </message>
         <message>
             <source>The current collage contains unsaved changes.
@@ -14387,7 +16028,11 @@ Would you like to save or discard them before closing the tab? (Note: drafts are
 
 Click Cancel to leave the tab open.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพตัดปะปัจจุบันมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
+
+ต้องการบันทึกหรือทิ้งการเปลี่ยนแปลงก่อนปิดแท็บหรือไม่? (หมายเหตุ: แบบร่างจะบันทึกไว้ในอัลบั้มภาพตัดปะ)
+
+คลิกยกเลิกเพื่อเปิดแท็บนี้ไว้</translation>
         </message>
         <message>
             <source>Save Draft</source>
@@ -14404,7 +16049,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonDiscard;stringres:CThumbUI::Con
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
     </context>
     <context>
@@ -14418,37 +16063,37 @@ picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
         <message>
             <source>Looks like a pile of scattered pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดูเหมือนกองรูปภาพที่กระจัดกระจาย</translation>
         </message>
         <message>
             <source>Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โมเสก</translation>
         </message>
         <message>
             <source>Automatically fit pictures into the page</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ปรับรูปภาพให้พอดีกับหน้าโดยอัตโนมัติ</translation>
         </message>
         <message>
             <source>Frame Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โมเสกใส่กรอบ</translation>
         </message>
         <message>
             <source>A mosaic with a prominent center picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โมเสกที่มีรูปภาพตรงกลางเด่นชัด</translation>
         </message>
         <message>
             <source>Grid</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตาราง</translation>
         </message>
         <message>
             <source>Arrange pictures into regular rows and columns</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>จัดรูปภาพเป็นแถวและคอลัมน์อย่างเป็นระเบียบ</translation>
         </message>
         <message>
             <source>Contact Sheet</source>
@@ -14459,7 +16104,7 @@ picasapy-origin-key: stringres:CPropertiesDlg::thumbnail</extracomment>
         <message>
             <source>Thumbnails with an informative header</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพขนาดย่อพร้อมหัวเรื่องที่ให้ข้อมูล</translation>
         </message>
         <message>
             <source>Multiple Exposure</source>
@@ -14470,7 +16115,7 @@ picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
         <message>
             <source>Superimpose pictures over one another</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วางรูปภาพซ้อนทับกัน</translation>
         </message>
     </context>
     <context>
@@ -14551,7 +16196,7 @@ picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:Aspec
             <source>Full page</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation type="unfinished" />
+            <translation>เต็มหน้า</translation>
         </message>
         <message>
             <source>Letter paper</source>
@@ -14610,7 +16255,7 @@ picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
         <message>
             <source>Add Custom Aspect Ratio...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มอัตราส่วนภาพกำหนดเอง...</translation>
         </message>
         <message>
             <source>Select the relative width and height of your design</source>
@@ -14678,7 +16323,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label)
         <message>
             <source>Show captions as text on pictures with an "Instant Camera" border</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>แสดงคำบรรยายภาพเป็นข้อความบนรูปภาพที่มีกรอบแบบ "กล้องอินสแตนต์"</translation>
         </message>
         <message>
             <source>Set as Frame Center</source>
@@ -14693,13 +16338,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/set_frame_center-label)
             <location filename="../qml/PicasaPy/CollageCanvas.qml" />
             <source>Angle: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มุม: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageCanvas.qml" />
             <source>Scale: %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มาตราส่วน: %1%</translation>
         </message>
     </context>
     <context>
@@ -14708,7 +16353,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/set_frame_center-label)
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
@@ -14735,7 +16380,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/select_none)</extraco
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
             <source>Remove</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
@@ -14793,7 +16438,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/rand_order)</extracom
             <location filename="../qml/PicasaPy/CollageRandomRow.qml" />
             <source>View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดูและแก้ไข</translation>
         </message>
     </context>
     <context>
@@ -14927,7 +16572,7 @@ picasapy-origin-key: stringres:Rotate::ID_COLLAGE_ALIGN_270</extracomment>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
             <source>Remove</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
@@ -14961,13 +16606,13 @@ picasapy-origin-key: stringres:CollageS::ID_COLLAGE_MOVE_BOTTOM</extracomment>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
             <source>View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ดูและแก้ไข</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกทั้งหมด</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
@@ -15008,7 +16653,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/getmoreclips)</extrac
         <message>
             <source>+</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>+</translation>
         </message>
         <message>
             <source>Add selected clips to the collage</source>
@@ -15019,7 +16664,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/addclips)</extracomme
         <message>
             <source>–</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>–</translation>
         </message>
         <message>
             <source>Remove selected clips from the tray</source>
@@ -15033,12 +16678,12 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/deleteclips)</extraco
         <message>
             <source>Creating collage - %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังสร้างภาพตัดปะ - %1%</translation>
         </message>
         <message>
             <source>%1 / %2 processed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ประมวลผลแล้ว %1 / %2</translation>
         </message>
     </context>
     <context>
@@ -15054,17 +16699,19 @@ picasapy-origin-key: stringres:CMakeMoviePanel::recoveredautosave;stringres:Make
 
 Restore it to continue where you left off. If you discard it, the draft is deleted and will not be offered again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy พบแบบร่างภาพตัดปะที่บันทึกอัตโนมัติจากเซสชันก่อนหน้า
+
+กู้คืนเพื่อทำงานต่อจากจุดที่ค้างไว้ หากทิ้งแบบร่าง ระบบจะลบและไม่เสนอให้กู้อีก</translation>
         </message>
         <message>
             <source>Restore Draft</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กู้คืนแบบร่าง</translation>
         </message>
         <message>
             <source>Discard Draft</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ทิ้งแบบร่าง</translation>
         </message>
     </context>
     <context>
@@ -15111,12 +16758,12 @@ picasapy-origin-key: stringres:collage::done</extracomment>
         <message>
             <source>Copy saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกสำเนาแล้ว</translation>
         </message>
         <message>
             <source>%1 copies saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกสำเนาแล้ว %1 รายการ</translation>
         </message>
         <message>
             <source>One or more images could not be rotated because of the file type.</source>
@@ -15136,12 +16783,12 @@ picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
         <message>
             <source>The collage could not be saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกภาพตัดปะไม่ได้</translation>
         </message>
         <message>
             <source>The collage could not be saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกภาพตัดปะไม่ได้</translation>
         </message>
         <message>
             <source>Save Skipped</source>
@@ -15168,7 +16815,11 @@ picasapy-origin-key: stringres:collage::formatmismatch</extracomment>
 
 Are you sure you want to continue?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปแบบหน้าของภาพตัดปะปัจจุบันไม่ตรงกับขนาดเดสก์ท็อปในขณะนี้ พื้นหลังเดสก์ท็อปอาจแสดงผลไม่เป็นไปตามที่คาด
+
+(เคล็ดลับ: เลือก "จอภาพปัจจุบัน" ในเมนูรูปแบบหน้าเพื่อให้พอดีกัน)
+
+แน่ใจหรือไม่ว่าต้องการดำเนินการต่อ?</translation>
         </message>
         <message>
             <source>Set Anyway</source>
@@ -15185,7 +16836,7 @@ picasapy-origin-key: stringres:collage::formatwarningnobutton</extracomment>
         <message>
             <source>Confirm…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยืนยัน…</translation>
         </message>
         <message>
             <source>You have been editing a previously created collage.
@@ -15194,7 +16845,11 @@ Would you like to replace the existing collage or create an entirely new one?  (
 
 Press Cancel to continue editing the collage without saving.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณกำลังแก้ไขภาพตัดปะที่สร้างไว้ก่อนหน้านี้
+
+ต้องการแทนที่ภาพตัดปะเดิมหรือสร้างภาพตัดปะใหม่ทั้งหมด? (หมายเหตุ: ภาพตัดปะทั้งหมดจะบันทึกไว้ในอัลบั้ม "ภาพตัดปะ")
+
+กดยกเลิกเพื่อแก้ไขภาพตัดปะต่อโดยไม่บันทึก</translation>
         </message>
         <message>
             <source>Replace Existing</source>
@@ -15211,7 +16866,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>The current collage contains unsaved changes.
@@ -15220,7 +16875,11 @@ Would you like to save or discard them before closing the tab? (Note: drafts are
 
 Click Cancel to leave the tab open.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ภาพตัดปะปัจจุบันมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
+
+ต้องการบันทึกหรือทิ้งการเปลี่ยนแปลงก่อนปิดแท็บหรือไม่? (หมายเหตุ: แบบร่างจะบันทึกไว้ในอัลบั้มภาพตัดปะ)
+
+คลิกยกเลิกเพื่อเปิดแท็บนี้ไว้</translation>
         </message>
         <message>
             <source>Save Draft</source>
@@ -15255,7 +16914,7 @@ picasapy-origin-key: stringres:HybridUploadWindow::cancelnobutton;stringres:IBac
         <message>
             <source>%1 pictures could not be found, so they cannot be displayed…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่พบรูปภาพ %1 รูป จึงไม่สามารถแสดงได้…</translation>
         </message>
         <message>
             <source>Selection Required</source>
@@ -15305,22 +16964,22 @@ picasapy-origin-key: stringres:CImageOutput::filewriteerr</extracomment>
         <message>
             <source>The destination directory could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างไดเรกทอรีปลายทางไม่ได้</translation>
         </message>
         <message>
             <source>No images were available to send.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีรูปภาพให้ส่ง</translation>
         </message>
         <message>
             <source>export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งออก</translation>
         </message>
         <message>
             <source>Exports</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รายการส่งออก</translation>
         </message>
     </context>
     <context>
@@ -15334,7 +16993,7 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
         <message>
             <source>Send pictures by email</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งรูปภาพทางอีเมล</translation>
         </message>
         <message>
             <source>Select how you want to e-mail your photos.</source>
@@ -15345,7 +17004,7 @@ picasapy-origin-key: choose_mail_text:Label(choose_mail/selecttext)</extracommen
         <message>
             <source>MAIL CLIENT</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรแกรมอีเมล</translation>
         </message>
         <message>
             <source>Use my default email program.</source>
@@ -15374,7 +17033,7 @@ picasapy-origin-key: choose_mail_text:Label(choose_mail/gmailsignup1)</extracomm
         <message>
             <source>The pictures will be attached to a new message in your default email program.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ระบบจะแนบรูปภาพไปกับข้อความใหม่ในโปรแกรมอีเมลเริ่มต้นของคุณ</translation>
         </message>
         <message>
             <source>Remember this setting, don't display this dialog again.</source>
@@ -15385,17 +17044,17 @@ picasapy-origin-key: choose_mail_text:Label(choose_mail/remember)</extracomment>
         <message>
             <source>Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>วิธีใช้</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>New message</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ข้อความใหม่</translation>
         </message>
         <message>
             <source>Change User</source>
@@ -15406,7 +17065,7 @@ picasapy-origin-key: compose_mail_text:Label(compose_mail/changeuser);compose_sh
         <message>
             <source>Google account sending is not available in this version.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่งผ่านบัญชี Google ไม่พร้อมใช้งานในรุ่นนี้</translation>
         </message>
         <message>
             <source>To:</source>
@@ -15435,7 +17094,7 @@ picasapy-origin-key: compose_mail_text:Label(compose_mail/discard);compose_mail_
         <message>
             <source>Send</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ส่ง</translation>
         </message>
     </context>
     <context>
@@ -15444,13 +17103,13 @@ picasapy-origin-key: compose_mail_text:Label(compose_mail/discard);compose_mail_
             <location filename="../qml/PicasaPy/HelpDialog.qml" />
             <source>Back</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ย้อนกลับ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/HelpDialog.qml" />
             <source>Contents</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เนื้อหา</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/HelpDialog.qml" line="19" />
@@ -15463,7 +17122,7 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
             <location filename="../qml/PicasaPy/HelpDialog.qml" line="59" />
             <source>Search in help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ค้นหาในวิธีใช้</translation>
         </message>
     </context>
     <context>
@@ -15471,27 +17130,27 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
         <message>
             <source>Enter a password to use for the hidden folders.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ป้อนรหัสผ่านสำหรับโฟลเดอร์ที่ซ่อนอยู่</translation>
         </message>
         <message>
             <source>Enter the password to show the hidden folders.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ป้อนรหัสผ่านเพื่อแสดงโฟลเดอร์ที่ซ่อนอยู่</translation>
         </message>
         <message>
             <source>Hidden folders are locked</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โฟลเดอร์ที่ซ่อนอยู่ถูกล็อก</translation>
         </message>
         <message>
             <source>Password for hidden folders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รหัสผ่านสำหรับโฟลเดอร์ที่ซ่อนอยู่</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การป้องกันที่เข้มงวดยิ่งขึ้น (Picasa เปิดไม่ได้)</translation>
         </message>
         <message>
             <source>The passwords did not match.</source>
@@ -15502,17 +17161,17 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>This only hides the folders inside PicasaPy. The files stay on the disk and can be opened with any file manager.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การดำเนินการนี้ซ่อนเฉพาะโฟลเดอร์ใน PicasaPy ไฟล์ยังอยู่บนดิสก์และเปิดได้ด้วยตัวจัดการไฟล์ทุกโปรแกรม</translation>
         </message>
         <message>
             <source>Type the password again</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>พิมพ์รหัสผ่านอีกครั้ง</translation>
         </message>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำรหัสผ่านออก</translation>
         </message>
     </context>
     <context>
@@ -15521,13 +17180,13 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
             <location filename="../backup_controller.py" line="0" />
             <source>Unknown backup type.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่รู้จักประเภทข้อมูลสำรอง</translation>
         </message>
         <message>
             <location filename="../backup_controller.py" line="0" />
             <source>Picasa Backup</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การสำรองข้อมูล Picasa</translation>
         </message>
         <message>
             <location filename="../backup_controller.py" line="0" />
@@ -15539,47 +17198,53 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
         <message>
             <source>%1 file(s) do not fit on a single disc.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์ %1 ไฟล์มีขนาดใหญ่เกินกว่าจะใส่ลงในแผ่นดิสก์แผ่นเดียว</translation>
         </message>
         <message>
             <source>Give the backup set a name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตั้งชื่อชุดข้อมูลสำรอง</translation>
         </message>
         <message>
             <source>Choose where to save the backup.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกตำแหน่งบันทึกข้อมูลสำรอง</translation>
         </message>
         <message>
             <source>Unknown file filter.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่รู้จักตัวกรองไฟล์</translation>
         </message>
         <message>
             <source>A backup set with this name already exists.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>มีชุดข้อมูลสำรองชื่อนี้อยู่แล้ว</translation>
         </message>
         <message>
             <source>The backup set could not be changed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยนชุดข้อมูลสำรองไม่ได้</translation>
         </message>
         <message>
             <source>There is no such backup set.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่มีชุดข้อมูลสำรองนี้</translation>
         </message>
         <message>
             <source>The backup did not finish: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สำรองข้อมูลไม่เสร็จ: %1</translation>
         </message>
         <message>
             <source>The backup plan could not be prepared: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เตรียมแผนสำรองข้อมูลไม่ได้: %1</translation>
+        </message>
+        <message>
+            <location filename="../backup_controller.py" line="0" />
+            <source>The backup could not be restored: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กู้คืนข้อมูลสำรองไม่ได้: %1</translation>
         </message>
     </context>
     <context>
@@ -15605,27 +17270,27 @@ picasapy-origin-key: newbackupset:newbackupset/radio7.title</extracomment>
         <message>
             <source>Choose...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือก...</translation>
         </message>
         <message>
             <source>Writing %1 file(s) to disc image(s)...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังเขียนไฟล์ %1 ไฟล์ลงในอิมเมจดิสก์...</translation>
         </message>
         <message>
             <source>Done: %1 file(s) in %2 disc image(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เสร็จแล้ว: %1 ไฟล์ในอิมเมจดิสก์ %2 รายการ</translation>
         </message>
         <message>
             <source>Copying %1 file(s)... (%2 CD or %3 DVD)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังคัดลอกไฟล์ %1 ไฟล์... (CD %2 แผ่น หรือ DVD %3 แผ่น)</translation>
         </message>
         <message>
             <source>Copying (%1/%2) files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำลังคัดลอกไฟล์ (%1/%2)</translation>
         </message>
         <message>
             <source>All file types</source>
@@ -15636,17 +17301,17 @@ picasapy-origin-key: newbackupset:newbackupset/radio14.title</extracomment>
         <message>
             <source>All pictures (no movies)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพทั้งหมด (ไม่มีภาพยนตร์)</translation>
         </message>
         <message>
             <source>Only JPEGs with camera data</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เฉพาะไฟล์ JPEG ที่มีข้อมูลจากกล้อง</translation>
         </message>
         <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกไปที่:</translation>
         </message>
         <message>
             <source>Files:</source>
@@ -15657,12 +17322,12 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
         <message>
             <source>Are you sure you want to delete the backup set "%1"?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการลบชุดข้อมูลสำรอง "%1"?</translation>
         </message>
         <message>
             <source>Choose the backup location</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกตำแหน่งข้อมูลสำรอง</translation>
         </message>
         <message>
             <source>OK</source>
@@ -15673,7 +17338,7 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <source>Delete Set</source>
@@ -15702,13 +17367,91 @@ picasapy-origin-key: stringres:il_BurnPanel::bksetname</extracomment>
         <message>
             <source>Change</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เปลี่ยน</translation>
         </message>
         <message>
             <source>Backup Complete</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_BurnPanel::BackupCopy::3</extracomment>
             <translation>การสำรองเสร็จสมบูรณ์</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore Backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กู้คืนข้อมูลสำรอง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose backup folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกโฟลเดอร์ข้อมูลสำรอง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose restore folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกโฟลเดอร์สำหรับกู้คืน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose the first disc image</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกอิมเมจดิสก์แผ่นแรก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>ISO disc images (*.iso)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>อิมเมจดิสก์ ISO (*.iso)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>All files (*)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไฟล์ทั้งหมด (*)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose a backup folder or the first disc image:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกโฟลเดอร์ข้อมูลสำรองหรืออิมเมจดิสก์แผ่นแรก:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore to:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กู้คืนไปยัง:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โฟลเดอร์...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Disc image...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>อิมเมจดิสก์...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กู้คืน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restored %1 file(s); skipped %2 existing file(s).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กู้คืนไฟล์แล้ว %1 ไฟล์ ข้ามไฟล์เดิม %2 ไฟล์</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Select both a backup source and a restore folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เลือกทั้งแหล่งข้อมูลสำรองและโฟลเดอร์สำหรับกู้คืน</translation>
         </message>
         <message>
             <source>Calculating…</source>
@@ -15728,13 +17471,13 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยกเลิก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Configure Buttons</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำหนดค่าปุ่ม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
@@ -15768,13 +17511,13 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/remove)</extracomment>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Move Up</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลื่อนขึ้น</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Move Down</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลื่อนลง</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
@@ -15787,19 +17530,19 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/usedefaults)</extracomment>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Play Fullscreen Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เล่นสไลด์โชว์แบบเต็มหน้าจอ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Select starred photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เลือกรูปภาพที่ติดดาว</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Save edited photos to disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>บันทึกรูปภาพที่แก้ไขลงดิสก์</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
@@ -15850,13 +17593,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0" />
             <source>The disc image could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สร้างอิมเมจดิสก์ไม่ได้</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0" />
             <source>%1 item(s) could not be added to the disc.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>เพิ่มรายการ %1 รายการลงในแผ่นดิสก์ไม่ได้</translation>
         </message>
     </context>
     <context>
@@ -15865,7 +17608,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../ajandek_cd_controller.py" line="0" />
             <source>Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>รูปภาพ</translation>
         </message>
     </context>
     <context>
@@ -15874,10 +17617,16 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="10" />
             <source>Configure Photo Viewer...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>กำหนดค่าโปรแกรมดูภาพ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
+            <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เริ่มแบบเต็มหน้าจอ (ต้องเริ่มโปรแกรมดูภาพใหม่เพื่อให้มีผล)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="41" />
             <source>Use Color Management</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
@@ -15890,13 +17639,13 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="13" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ยืนยัน</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37" />
             <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy พร้อมใช้งานในภาษาหลักของระบบแล้ว ต้องการเปลี่ยนภาษา PicasaPy จากภาษาอังกฤษเป็นภาษานี้หรือไม่?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />
@@ -15909,7 +17658,317 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="53" />
             <source>No</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไม่</translation>
+        </message>
+    </context>
+    <context>
+        <name>AdjustTimestampDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="241" />
+            <source>Mon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>จ.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="248" />
+            <source>Tue</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>อ.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="255" />
+            <source>Wed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>พ.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="262" />
+            <source>Thu</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>พฤ.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="269" />
+            <source>Fri</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ศ.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="276" />
+            <source>Sat</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ส.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="283" />
+            <source>Sun</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>อา.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <source>Adjust Photo Date - %1 items</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ปรับวันที่รูปภาพ %1 รายการ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
+            <source>Current photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>วันที่ปัจจุบันของรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="108" />
+            <source>New photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>วันที่ใหม่ของรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="153" />
+            <source>New photo time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เวลาใหม่ของรูปภาพ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="205" />
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เดือนก่อนหน้า</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="223" />
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เดือนถัดไป</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="164" />
+            <source>Adjust all photo dates by the amount</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ปรับวันที่ของรูปภาพทั้งหมดตามจำนวนนี้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="173" />
+            <source>Set all photos to the same date and time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ตั้งวันที่และเวลาเดียวกันให้รูปภาพทั้งหมด</translation>
+        </message>
+    </context>
+    <context>
+        <name>XmpFacesWriteDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="13" />
+            <source>Write Face Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:FaceTagJob::progress;write_all_facetags:write_all_facetags/window1.title</extracomment>
+            <translation>เขียนแท็กใบหน้า</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="32" />
+            <source>Write faces or write all may take a long time. If logging is set to detailed or higher, network.log will contain messages about read-only files which could not be updated. Signing out is recommended while using this feature.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/label3.title</extracomment>
+            <translation>การเขียนใบหน้าหรือการเขียนทั้งหมดอาจใช้เวลานาน  หากมีการตั้งค่าบันทึกเป็นรายละเอียดหรือสูงกว่าบันทึกเครือข่ายจะมีข้อความเกี่ยวกับไฟล์สำหรับอ่านเท่านั้น  ซึ่งไม่สามารถทำการปรับปรุงได้ จึงขอแนะนำให้คุณออกจากระบบเมื่อใช้คุณลักษณะนี้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="49" />
+            <source>Write Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/onlyselection.title</extracomment>
+            <translation>เลือกการเขียน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="55" />
+            <source>Write Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/allwithfaces.title</extracomment>
+            <translation>เขียนใบหน้า</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="60" />
+            <source>Write All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/allfiles.title</extracomment>
+            <translation>เขียนทั้งหมด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="65" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ยกเลิก</translation>
+        </message>
+    </context>
+    <context>
+        <name>PeopleManagerDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="12" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>บุคคล</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="232" />
+            <source>Search:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ค้นหา:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="269" />
+            <source>Delete Person</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact</extracomment>
+            <translation>ลบบุคคล</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="275" />
+            <source>New Person</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/create.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/create.title</extracomment>
+            <translation>บุคคลใหม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="296" />
+            <source>Contact ID:</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
+            <translation>ID รายชื่อติดต่อ:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />
+            <source>Name:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ชื่อ:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="321" />
+            <source>Email(s):</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>อีเมล:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="337" />
+            <source>Sync Face Tags with Web Albums</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/sync.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/sync.title</extracomment>
+            <translation>ซิงค์การแท็กใบหน้ากับอัลบั้มเว็บ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="346" />
+            <source>Revert</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เปลี่ยนกลับ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="366" />
+            <source>Manage Online Contacts</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/online.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/online.title</extracomment>
+            <translation>จัดการรายชื่อติดต่อออนไลน์</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="371" />
+            <source>Refresh Contacts</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/refresh_contacts.title;refresh_contacts_progress:refresh_contacts_progress/window1.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/refresh_contacts.title;refresh_contacts_progress:refresh_contacts_progress/window1.title</extracomment>
+            <translation>รีเฟรชรายชื่อติดต่อ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="377" />
+            <source>OK</source>
+            <extracomment>    picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)
+picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>ตกลง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="383" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ยกเลิก</translation>
+        </message>
+    </context>
+    <context>
+        <name>TextColorSwatches</name>
+        <message>
+            <location filename="../qml/PicasaPy/TextColorSwatches.qml" line="114" />
+            <source>Pick Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDesaturateFilter::pickcolor;stringres:ImageFilters::PickColor;tooltips:Label(editpanel/colorwheel_label0);tooltips:Label(editpanel/colorwheel_label1)</extracomment>
+            <translation>เลือกสี</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditorUndoRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/EditorUndoRow.qml" />
+            <source>Remove the latest fix or edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filter_undo)</extracomment>
+            <translation>ลบการแก้ไขล่าสุด</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorUndoRow.qml" />
+            <source>Reapply a removed fix or edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filter_redo)</extracomment>
+            <translation>ใช้การแก้ไขที่ถูกลบซ้ำอีกครั้ง</translation>
+        </message>
+    </context>
+    <context>
+        <name>KeywordsDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>แท็ก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>แท็ก:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Add Tag:</source>
+            <extracomment>    picasapy-origin-key: keywordstext:Label(keywords/addkeywords_label)
+picasapy-origin: picasa
+picasapy-origin-key: keywordstext:Label(keywords/addkeywords_label)</extracomment>
+            <translation>เพิ่มแท็ก:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Add</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เพิ่ม</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>นำออก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Done</source>
+            <extracomment>    picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed
+picasapy-origin: picasa
+picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
+            <translation>เสร็จเรียบร้อย</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags cannot be modified because one or more items are read-only.</source>
+            <extracomment>    picasapy-origin-key: keywordstext:Label(keywords/readonly_label)
+picasapy-origin: picasa
+picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
+            <translation>ไม่สามารถแก้ไขแท็กได้เนื่องจากมีรายการที่เป็นแบบอ่านอย่างเดียว</translation>
         </message>
     </context>
 </TS>

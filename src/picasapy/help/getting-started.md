@@ -27,6 +27,17 @@ csak akkor, ha a Qt-t a rendszer csomagjaiból telepíted (a `pip`-es
 változat magával hozza). A négy `lib…` csomag a grafikus megjelenítéshez
 és a hanghoz kell; asztali rendszeren általában már fent van.
 
+Két további csomag ajánlott: az `xdg-utils` (ezzel adja át a program a
+képeket mellékletként a levelezőprogramnak) és a `cups-client` (a
+nyomtatáshoz). A PicasaPy Debian-csomagja ezt a kettőt ajánlásként
+magától felkínálja.
+
+Ha a programot a forrásból indítod, az első indításkor a felület
+fordításait is maga készíti el; ehhez a `pyside6-lrelease` eszköz kell (a
+`pip`-pel telepített PySide6 tartalmazza). Ha nem találja, és a fordítás
+még nem készült el, a felület angolul jelenik meg. A telepítővel feltett
+program a fordításokat készen hozza, ott ez nem kérdés.
+
 ### Windows
 
 **A rendes út a telepítő.** Minden kiadáshoz készül egy
@@ -75,6 +86,13 @@ lehetőség közül választhatsz:
 - **Az egész számítógép átnézése** — ha több lemezen, szétszórt
   mappákban tartod a képeket.
 
+Ha a számítógéped nyelve nem angol, és a PicasaPy tud ilyen nyelvet,
+az **első indításkor** a program megkérdezi, váltson-e a rendszer
+nyelvére (**Igen** / **Nem**). A kérdés csak egyszer jön; a nyelvet
+később a **Beállítások ▸ Általános** fülön vagy az **Eszközök ▸ Nyelv**
+menüben bármikor átállíthatod — lásd
+[Beállítások, nyelv, megjelenés](features/beallitasok.md).
+
 A keresés **soha nem mozgat és nem másol fájlokat**. Csak megnézi, mi hol
 van.
 
@@ -96,6 +114,13 @@ használható** — például mert nincs kijelölt kép, vagy mert a nézőben
 Ami soha nem lesz elérhető, arról az [Ami még nem érhető
 el](features/meg-nem-erheto-el.md) fejezet ír. Bármikor **F1**-et nyomva
 előjön ez a súgó (lásd [A beépített súgó](features/sugo.md)).
+
+A menüben néhány tétel **kék** felirattal látszik. Ezek a PicasaPy saját
+parancsai, az eredeti Picasában nem voltak meg: ilyen a **Nézet ▸ Sötét
+téma**, az **Eszközök ▸ Arcok keresése…** és a **Súgó ▸
+Teljesítmény-monitor**. Ha az egeret fölé viszed, a súgócímke is
+elmondja: „Ez a PicasaPy kiegészítése — az eredeti Picasában nem volt
+ilyen."
 
 **Eszköztár** — bal oldalt az **Importálás** gomb, az új album gombja, a
 két kis nézetváltó gomb és mellettük egy **▾** gomb, ami a mappanézet

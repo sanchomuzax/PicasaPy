@@ -9,7 +9,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .album_order import without_album_place
 from .document import ALBUM_SECTION_PREFIX, IniDocument
+from .folder_music import read_music_settings, with_music_settings
+
+# A Picasa különleges, virtuális Csillagozott albuma. A tag az INI `star`
+# kulcsának felel meg, nem az `albums=` listában szereplő saját albumnak.
+STAR_ALBUM_TOKEN = "]star"
 
 
 @dataclass(frozen=True)
@@ -19,6 +25,8 @@ class Album:
     date: str | None
     description: str | None
     location: str | None
+    use_music: bool
+    music_file: str
 
 
 def parse_album_refs(value: str) -> tuple[str, ...]:
@@ -32,18 +40,22 @@ def serialize_album_refs(refs: tuple[str, ...]) -> str:
 
 def albums_of(document: IniDocument) -> tuple[Album, ...]:
     """A dokumentum összes virtuális albuma, definíciós sorrendben."""
-    return tuple(
-        Album(
+    albums = []
+    for section in document.sections:
+        if not section.name.startswith(ALBUM_SECTION_PREFIX):
+            continue
+        use_music, music_file = read_music_settings(document, section.name)
+        albums.append(Album(
             # A szekciónévbeli token az azonosító, a token= kulcs redundáns.
             token=section.name[len(ALBUM_SECTION_PREFIX) :],
             name=section.get("name"),
             date=section.get("date"),
             description=section.get("description"),
             location=section.get("location"),
-        )
-        for section in document.sections
-        if section.name.startswith(ALBUM_SECTION_PREFIX)
-    )
+            use_music=use_music,
+            music_file=music_file,
+        ))
+    return tuple(albums)
 
 
 def with_album(document: IniDocument, photo_name: str, token: str) -> IniDocument:
@@ -56,7 +68,10 @@ def with_album(document: IniDocument, photo_name: str, token: str) -> IniDocumen
     current = parse_album_refs(section.get("albums") or "") if section else ()
     if token in current:
         return document
-    return document.with_value(
+    # #4599: egy korábbi tagságból árván maradt `albumorder=` pár nem ülhet rá
+    # az újonnan felvett tagra — az új tag hely nélkül, a végére kerül.
+    cleaned = without_album_place(document, photo_name, token)
+    return cleaned.with_value(
         photo_name, "albums", serialize_album_refs((*current, token))
     )
 
@@ -67,7 +82,8 @@ def without_album(
     """A kép kivétele az albumból.
 
     Az utolsó tagság törlésekor maga az `albums=` kulcs is kikerül — üres
-    kulcsot a Picasa sem hagy maga után.
+    kulcsot a Picasa sem hagy maga után. Az `albumorder=` megfelelő párja is
+    kikerül (#4599).
     """
     section = document.section(photo_name)
     if section is None:
@@ -77,10 +93,30 @@ def without_album(
         return document
     remaining = tuple(ref for ref in current if ref != token)
     if not remaining:
-        return document.with_removed(photo_name, "albums")
-    return document.with_value(
-        photo_name, "albums", serialize_album_refs(remaining)
-    )
+        updated = document.with_removed(photo_name, "albums")
+    else:
+        updated = document.with_value(
+            photo_name, "albums", serialize_album_refs(remaining)
+        )
+    # #4599 (ADR-016): az album kézi helye (`albumorder=`) a tagsággal együtt
+    # távozik, UGYANABBAN az írásban.
+    return without_album_place(updated, photo_name, token)
+
+
+def without_album_everywhere(document: IniDocument, token: str) -> IniDocument:
+    """Egy album definíciójának és minden képtagságának eltávolítása.
+
+    Egy mappa ini-jében az album definíciója a `[.album:<token>]` szekció,
+    a tagságok pedig a képszekciók `albums=` CSV-kulcsai. A többi albumot,
+    képadatot és ismeretlen sort változatlanul hagyja.
+    """
+    token = (token or "").strip()
+    if not token:
+        return document
+    updated = document
+    for section in document.file_sections():
+        updated = without_album(updated, section.name, token)
+    return updated.without_section(f"{ALBUM_SECTION_PREFIX}{token}")
 
 
 #: A tulajdonság-párbeszéd MÉRT mezői → a `.picasa.ini` kulcsai.
@@ -94,8 +130,6 @@ def without_album(
 #: viszont `description` (ezt olvassa az `albums_of`) — a kettő nem
 #: keverhető össze.
 #:
-#: ⚠️ A `music` mező szándékosan NINCS itt: diavetítés-/mozgófilm-zene a
-#: programban egyáltalán nincs, tehát nem is menthető (#3173).
 _ALBUM_MEZOK = ("name", "date", "location", "description")
 
 #: A NÉV nem törölhető: névtelen album a listában azonosíthatatlan volna.
@@ -110,6 +144,8 @@ def with_album_fields(
     date: str | None = None,
     location: str | None = None,
     description: str | None = None,
+    use_music: bool | None = None,
+    music_file: str | None = None,
 ) -> IniDocument:
     """Egy MEGLÉVŐ album tulajdonságainak írása (#3173).
 
@@ -143,6 +179,12 @@ def with_album_fields(
             eredmeny = eredmeny.with_removed(section_name, kulcs)
             continue
         eredmeny = eredmeny.with_value(section_name, kulcs, tisztitott)
+    eredmeny = with_music_settings(
+        eredmeny,
+        section_name,
+        use_music=use_music,
+        music_file=music_file,
+    )
     return eredmeny
 
 

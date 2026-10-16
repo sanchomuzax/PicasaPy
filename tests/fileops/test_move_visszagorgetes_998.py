@@ -96,11 +96,21 @@ class TestABukottAthelyezesNemHagyMasolatot:
         kep, cel = fa
         import picasapy.fileops.safe_move as move_modul
 
+        igazi_link = move_modul._link
+
+        def a_forras_hardlinkje_bukik(forras, cel_ut):
+            if Path(forras) == kep:
+                raise OSError(errno.EXDEV, "más fájlrendszer")
+            igazi_link(forras, cel_ut)
+
         monkeypatch.setattr(
-            move_modul, "_rename", lambda s, t: (_ for _ in ()).throw(
+            move_modul,
+            "_rename",
+            lambda s, t: (_ for _ in ()).throw(
                 OSError(errno.EXDEV, "más fájlrendszer")
-            )
+            ),
         )
+        monkeypatch.setattr(move_modul, "_link", a_forras_hardlinkje_bukik)
         # CSAK a FORRÁS törlése bukik — a frissen készült másolaté nem. Ez a
         # windowsos fájlzár alakja: a zárolt fájl nem törölhető, a másolat igen.
         # (Ha mindkettőt elrontanánk, a próba a visszagörgetést tenné
@@ -120,6 +130,57 @@ class TestABukottAthelyezesNemHagyMasolatot:
             "#998: a törlés bukása után a másolatot vissza kell törölni"
         )
 
+    def test_meglevo_celt_a_copy_fallback_sem_modositja(self, tmp_path, monkeypatch):
+        """Ütközéskor a forrás és a régi cél változatlan marad."""
+        import picasapy.fileops.safe_move as move_modul
+
+        kep = tmp_path / "forras.jpg"
+        cel = tmp_path / "cel.jpg"
+        kep.write_bytes(b"forras")
+        cel.write_bytes(b"eredeti cel")
+
+        igazi_link = move_modul._link
+        masolasok = []
+        igazi_copy = move_modul._copy
+
+        def a_forras_hardlinkje_bukik(forras, cel_ut):
+            if Path(forras) == kep:
+                raise OSError(errno.EXDEV, "más fájlrendszer")
+            igazi_link(forras, cel_ut)
+
+        def masol_tempbe(forras, cel_ut):
+            masolasok.append((Path(forras), Path(cel_ut)))
+            igazi_copy(forras, cel_ut)
+
+        monkeypatch.setattr(move_modul, "_link", a_forras_hardlinkje_bukik)
+        monkeypatch.setattr(move_modul, "_copy", masol_tempbe)
+        monkeypatch.setattr(
+            move_modul,
+            "_rename",
+            lambda s, t: (_ for _ in ()).throw(
+                OSError(errno.EXDEV, "más fájlrendszer")
+            ),
+        )
+        forras_torlesi_kiserletek = []
+
+        def csak_a_forras_zarolt(ut):
+            if Path(ut) == kep:
+                forras_torlesi_kiserletek.append(Path(ut))
+                raise PermissionError(errno.EACCES, "zárolt fájl")
+            os.unlink(ut)
+
+        monkeypatch.setattr(move_modul, "_unlink", csak_a_forras_zarolt)
+
+        with pytest.raises(FileExistsError):
+            move_modul.safe_move(str(kep), str(cel))
+
+        assert masolasok and masolasok[0][0] == kep
+        assert forras_torlesi_kiserletek == [], (
+            "foglalt célra nem szabad a forrást törölni próbálni"
+        )
+        assert kep.read_bytes() == b"forras"
+        assert cel.read_bytes() == b"eredeti cel"
+
 
 class TestAJogosMasolasUtElo:
     def test_mas_fajlrendszer_eseten_is_athelyez(self, fa, monkeypatch) -> None:
@@ -128,11 +189,21 @@ class TestAJogosMasolasUtElo:
         kep, cel = fa
         import picasapy.fileops.safe_move as move_modul
 
+        igazi_link = move_modul._link
+
+        def mas_fajlrendszer(forras, cel_ut):
+            if Path(forras) == kep:
+                raise OSError(errno.EXDEV, "más fájlrendszer")
+            igazi_link(forras, cel_ut)
+
         monkeypatch.setattr(
-            move_modul, "_rename", lambda s, t: (_ for _ in ()).throw(
+            move_modul,
+            "_rename",
+            lambda s, t: (_ for _ in ()).throw(
                 OSError(errno.EXDEV, "más fájlrendszer")
-            )
+            ),
         )
+        monkeypatch.setattr(move_modul, "_link", mas_fajlrendszer)
         uj = move_photo(kep, cel)
         assert uj == cel / "a.jpg"
         assert uj.read_bytes() == b"kep-adat"
@@ -145,3 +216,28 @@ class TestAJogosMasolasUtElo:
         uj = move_photo(kep, cel)
         assert uj.exists() and not kep.exists()
         assert os.path.samefile(uj, cel / "a.jpg")
+
+
+def test_mappa_atnevezessel_mozog_es_letezo_celt_nem_ir_felul(tmp_path):
+    """#4469: a hardlinkes út mappára nem működik — a mappa átnevezéssel megy."""
+    from picasapy.fileops.safe_move import safe_move
+
+    forras = tmp_path / "mappa"
+    forras.mkdir()
+    (forras / "kep.jpg").write_bytes(b"x")
+    safe_move(str(forras), str(tmp_path / "uj"))
+    assert (tmp_path / "uj" / "kep.jpg").read_bytes() == b"x"
+    assert not forras.exists()
+
+    masik = tmp_path / "masik"
+    masik.mkdir()
+    (tmp_path / "foglalt").mkdir()
+    (tmp_path / "foglalt" / "meglevo.jpg").write_bytes(b"y")
+    try:
+        safe_move(str(masik), str(tmp_path / "foglalt"))
+    except FileExistsError:
+        pass
+    else:
+        raise AssertionError("létező célmappára nem mozoghat")
+    assert (tmp_path / "foglalt" / "meglevo.jpg").read_bytes() == b"y"
+    assert masik.exists()

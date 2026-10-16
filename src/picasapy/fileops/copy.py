@@ -23,7 +23,7 @@ from picasapy.fileops.originals import (
     copy_preserved_originals,
     originals_slot_free,
 )
-from picasapy.ini import Section, load_or_empty, update_document
+from picasapy.ini import Section, has_ini_source, load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
 
@@ -88,7 +88,7 @@ def copy_photo(path: Path, dest_folder: Path) -> Path:
 
     source_ini = path.parent / PICASA_INI_NAME
     source_section = (
-        load_or_empty(source_ini).section(path.name) if source_ini.exists() else None
+        load_or_empty(source_ini).section(path.name) if has_ini_source(source_ini) else None
     )
     if source_section is not None:
         _copy_ini_section(source_section, target, dest_folder)
@@ -106,8 +106,9 @@ def _copy_ini_section(source_section: Section, target: Path, dest_folder: Path) 
     kimarad — adatvesztés helyett inkább a másolt kép marad ini-adat
     nélkül (a fájl maga ekkor is átkerül).
 
-    Az írás az ütközésbiztos `update_document`-en megy (#295): a párhuzamosan
-    futó eredeti Picasa közbeírása nem veszhet el."""
+    Az írás az útvonalanként szerializált, best-effort konkurenciakezelésű
+    `update_document`-en megy (#295): az ellenőrzésig észlelt Picasa-változás
+    újratöltést vált ki, az ellenőrzés és fájlcsere közti külső írás elveszhet."""
     dest_ini = dest_folder / PICASA_INI_NAME
     if load_or_empty(dest_ini).section(target.name) is not None:
         return

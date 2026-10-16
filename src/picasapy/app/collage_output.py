@@ -50,10 +50,16 @@ from picasapy.ini.folder_category import (
     CATEGORY_KEY,
     FOLDER_SECTION,
     is_projects_category,
+    read_explicit_folder_category,
     read_folder_category,
 )
-from picasapy.ini.io import load_document, load_or_empty, save_document
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.ini.io import (
+    has_ini_source,
+    load_existing,
+    load_or_empty,
+    save_document,
+)
+from picasapy.ini.names import INI_NAME
 from picasapy.collage.nodes import CollageNode
 from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
@@ -421,10 +427,10 @@ def ensure_project_album(folder: Path | str) -> bool:
     if not sajat:
         return False
 
-    ini = mappa / PICASA_INI_NAME
+    ini = mappa / INI_NAME
     try:
-        if ini.is_file() and is_projects_category(
-            read_folder_category(load_document(ini))
+        if has_ini_source(ini) and is_projects_category(
+            read_folder_category(load_existing(ini))
         ):
             return False
     except (OSError, ValueError):
@@ -477,7 +483,7 @@ def write_album_ini(folder: Path | str, album_name: str) -> Path:
     """
     mappa = Path(folder)
     mappa.mkdir(parents=True, exist_ok=True)
-    ut = mappa / PICASA_INI_NAME
+    ut = mappa / INI_NAME
 
     try:
         document = load_or_empty(ut)
@@ -490,7 +496,7 @@ def write_album_ini(folder: Path | str, album_name: str) -> Path:
     # Csak a projekt-besorolás — `name=` és `[encoding]` NEM, mert az
     # eredeti sem ír ilyet (ld. a docstringet). A meglévő értéket sem
     # írjuk felül: a besorolást a kulcs ÉRTÉKE dönti el (#1029).
-    if read_folder_category(document) is None:
+    if read_explicit_folder_category(document) is None:
         document = document.with_value(
             FOLDER_SECTION, CATEGORY_KEY, PROJECTS_CATEGORY
         )

@@ -8,6 +8,11 @@ import QtQuick.Layouts
 //
 // #496: kiemelve az EditorPanel.qml-ből — a gazda-panelre a `panel`
 // tulajdonságon át hivatkozik (ld. `EditorCropPanel.qml`).
+// #4558: a kétmódú csempék BÉLYEGKÉPE is a Shift szerinti szűrőé
+// — az eredeti a csempe erőforrás-nevét a `_mod%s` utótaggal képzi,
+// tehát a másodlagos előnézetét mutatja. Mindkét kép előre betöltődik
+// (`thumbSource` + `thumbSourceAlt`), a Shift csak a láthatóságot váltja
+// (`thumbAltActive`) — ld. a holtpont-indoklást a PanelButton.qml-ben.
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -56,24 +61,21 @@ ColumnLayout {
             // „Sharpen (Old)” (#2141)
             label: panel.shiftMasodlagos
                    ? qsTr("Sharpen (Old)") : qsTr("Sharpen")
+            tooltip: qsTr("Sharpens edges in your photo")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (unsharp) —
             //: az eredeti csempe-táblája (unsharp2 -> unsharp)
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "unsharp" : "unsharp2"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("unsharp2")
+            thumbSourceAlt: panel.effectThumbSource("unsharp")
+            thumbAltActive: panel.shiftMasodlagos
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectSepia"
             label: qsTr("Sepia")
+            tooltip: qsTr("Converts photo to sepia tone")
             onButtonClicked: if (!panel.tryOpenParamPanel("sepia", label)) panel.effectRequested("sepia")
             thumbSource: panel.effectThumbSource("sepia")
             badge: panel.hasBadge("sepia")
@@ -81,6 +83,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectBw"
             label: qsTr("B&W")
+            tooltip: qsTr("Makes your photo black and white")
             onButtonClicked: if (!panel.tryOpenParamPanel("bw", label)) panel.effectRequested("bw")
             thumbSource: panel.effectThumbSource("bw")
             badge: panel.hasBadge("bw")
@@ -88,6 +91,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectWarm"
             label: qsTr("Warmify")
+            tooltip: qsTr("Improves skintones by boosting warm tones")
             onButtonClicked: if (!panel.tryOpenParamPanel("warm", label)) panel.effectRequested("warm")
             thumbSource: panel.effectThumbSource("warm")
             badge: panel.hasBadge("warm")
@@ -99,19 +103,16 @@ ColumnLayout {
             // eredetin nincs — a `PicnikGrain` módja `effect` (#2141)
             label: panel.shiftMasodlagos
                    ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Adds film grain") : qsTr("Simulate film grain")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
             //: az eredeti csempe-táblája (picnikgrain -> grain)
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "grain" : "picnikgrain"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("picnikgrain")
+            thumbSourceAlt: panel.effectThumbSource("grain")
+            thumbAltActive: panel.shiftMasodlagos
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
@@ -120,24 +121,23 @@ ColumnLayout {
             // másodlagos, saját felirata „Tint (Old)” (#2141)
             label: panel.shiftMasodlagos
                    ? qsTr("Tint (Old)") : qsTr("Tint")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Makes a tinted look")
+                     : qsTr("Change the color of your photo")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (tint) —
             //: az eredeti csempe-táblája (picniktint -> tint)
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "tint" : "picniktint"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("picniktint")
+            thumbSourceAlt: panel.effectThumbSource("tint")
+            thumbAltActive: panel.shiftMasodlagos
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectSat"
             label: qsTr("Saturation")
+            tooltip: qsTr("Increases or decreases saturation")
             onButtonClicked: if (!panel.tryOpenParamPanel("sat", label)) panel.effectRequested("sat")
             thumbSource: panel.effectThumbSource("sat")
             badge: panel.hasBadge("sat")
@@ -145,6 +145,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRadblur"
             label: qsTr("Soft Focus")
+            tooltip: qsTr("Softens focus around a center point")
             onButtonClicked: if (!panel.tryOpenParamPanel("radblur", label)) panel.effectRequested("radblur")
             thumbSource: panel.effectThumbSource("radblur")
             badge: panel.hasBadge("radblur")
@@ -153,24 +154,21 @@ ColumnLayout {
             objectName: "effectGlow2"
             label: panel.shiftMasodlagos
                    ? qsTr("Glow (Old)") : qsTr("Glow")
+            tooltip: qsTr("Gives your photo a gauzy glow")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (glow) —
             //: az eredeti csempe-táblája (glow2 -> glow)
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "glow" : "glow2"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("glow2")
+            thumbSourceAlt: panel.effectThumbSource("glow")
+            thumbAltActive: panel.shiftMasodlagos
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectAnsel"
             label: qsTr("Filtered B&W")
+            tooltip: qsTr("Makes a photo that looks like it was taken with B&W film and a color filter")
             onButtonClicked: if (!panel.tryOpenParamPanel("ansel", label)) panel.effectRequested("ansel")
             thumbSource: panel.effectThumbSource("ansel")
             badge: panel.hasBadge("ansel")
@@ -178,6 +176,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRadsat"
             label: qsTr("Focal B&W")
+            tooltip: qsTr("Desaturates around a center point")
             onButtonClicked: if (!panel.tryOpenParamPanel("radsat", label)) panel.effectRequested("radsat")
             thumbSource: panel.effectThumbSource("radsat")
             badge: panel.hasBadge("radsat")
@@ -186,19 +185,17 @@ ColumnLayout {
             objectName: "effectDirTint"
             label: panel.shiftMasodlagos
                    ? qsTr("Radial Tint") : qsTr("Graduated Tint")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Tints around a central point")
+                     : qsTr("A graduated filter, useful for skies")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (radtint) —
             //: az eredeti csempe-táblája (dir_tint -> radtint)
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "radtint" : "dir_tint"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("dir_tint")
+            thumbSourceAlt: panel.effectThumbSource("radtint")
+            thumbAltActive: panel.shiftMasodlagos
             badge: panel.hasBadge(szuro)
         }
     }

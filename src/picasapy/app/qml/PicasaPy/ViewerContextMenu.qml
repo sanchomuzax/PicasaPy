@@ -52,6 +52,11 @@ PicasaMenu {
     // inaktív tétel LÁTSZIK, csak szürke (az eredeti szabálya)
     property bool hasEdits: false
     property bool hasBackup: false
+    property bool hasOriginalOnDisk: false
+    // #4621: albumból megnyitott képen a törlés-tétel az albumból eltávolít
+    // (felirat és művelet ugyanabból a feltételből, a gazdától)
+    property bool removesFromAlbum: false
+    readonly property bool _keresesAlmenu: menu.hasOriginalOnDisk
     // a felhasználó albumai: {token, name} elemek (a PhotoContextMenu
     // `albums` tulajdonságának mintája)
     property var albums: []
@@ -64,7 +69,7 @@ PicasaMenu {
     signal rotateLeftRequested()
     signal hideToggleRequested()
     signal openFileRequested()
-    signal locateRequested()
+    signal locateRequested(bool original)
     signal deleteRequested()
     signal copyFullPathRequested()
     signal propertiesRequested()
@@ -84,6 +89,30 @@ PicasaMenu {
     function triggerRotateRight() { menu.rotateRightRequested() }
     function triggerRotateLeft() { menu.rotateLeftRequested() }
     function triggerDelete() { menu.deleteRequested() }
+
+    function popupForPhoto(target, x, y, path, fileOps) {
+        hasOriginalOnDisk = !!fileOps && path.length > 0
+            ? fileOps.hasOriginalOnDisk(path) : false
+        popup(target, x, y)
+    }
+
+    function _kossAlmenuTetelt(almenu, nev) {
+        for (var i = 0; i < menu.count; ++i) {
+            var tetel = menu.itemAt(i)
+            if (tetel && tetel.subMenu === almenu) {
+                tetel.objectName = nev
+                tetel.visible = Qt.binding(function () {
+                    return menu._keresesAlmenu
+                })
+                tetel.height = Qt.binding(function () {
+                    return menu._keresesAlmenu ? tetel.implicitHeight : 0
+                })
+                return
+            }
+        }
+    }
+    Component.onCompleted:
+        menu._kossAlmenuTetelt(locateMenu, "viewerMenuLocateMenuItem")
 
     // -- 1. blokk: az alapértelmezett művelet (félkövér) ------------------
 
@@ -187,14 +216,34 @@ PicasaMenu {
     MenuItem {
         objectName: "viewerMenuLocate"
         text: qsTr("Locate on Disk") + "\tCtrl+Enter"
-        onTriggered: menu.locateRequested()
+        visible: !menu._keresesAlmenu
+        height: visible ? implicitHeight : 0
+        onTriggered: menu.locateRequested(false)
+    }
+    PicasaMenu {
+        id: locateMenu
+        objectName: "viewerMenuLocateMenu"
+        title: qsTr("Locate")
+
+        MenuItem {
+            objectName: "viewerMenuLocateFile"
+            text: qsTr("File on Disk") + "\tCtrl+Enter"
+            onTriggered: menu.locateRequested(false)
+        }
+        MenuItem {
+            objectName: "viewerMenuLocateOriginal"
+            text: qsTr("Locate Original on Disk")
+            enabled: menu.hasOriginalOnDisk
+            onTriggered: menu.locateRequested(true)
+        }
     }
     MenuItem {
         objectName: "viewerMenuDelete"
         // #1418: itt is Ctrl+Delete, ugyanúgy mint a rácsban (spec 4.,
         // ld. a fájl fejlécének megjegyzését) — a valódi billentyű a
         // PhotoViewer.qml Keys.onPressed-jében él.
-        text: qsTr("Delete from Disk") + "\tCtrl+Delete"
+        text: (menu.removesFromAlbum ? qsTr("Remove from Album")
+                                     : qsTr("Delete from Disk")) + "\tCtrl+Delete"
         onTriggered: menu.triggerDelete()
     }
     MenuItem {

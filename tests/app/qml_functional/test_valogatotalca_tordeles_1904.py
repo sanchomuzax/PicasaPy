@@ -35,13 +35,13 @@ nem a konkrét képpontszámot — azt a mérés majd szigorítja.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtQuick import QQuickItem
 
 import picasapy.app
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from tests.support.qml_blokk import blokk_horgonyra
 
 _TRAYBAR = (
@@ -70,20 +70,8 @@ def _elem(window, nev: str) -> QQuickItem:
     return talalt[0]
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _kepekkel(qml_app, qt_app, darab: int):

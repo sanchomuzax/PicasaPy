@@ -26,6 +26,7 @@ renderelőnk, és egy régi `.picasa.ini` bármikor hozhat ilyet.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
@@ -170,6 +171,7 @@ class SaveMixin(BackgroundWorkerMixin):
     saveFinished = Signal(int, int)
     revertFinished = Signal(int, int)
     undoSaveFinished = Signal(int, int)
+    diskOperationSucceededPaths = Signal(list)
     #: az első néhány sikertelen fájl "név: ok" alakban
     saveFailedDetails = Signal(list)
 
@@ -204,6 +206,73 @@ class SaveMixin(BackgroundWorkerMixin):
     saveProgressChanged = Signal()
     #: háttérszálból jövő haladás — Qt sorolja a GUI-szálra
     _saveProgressTick = Signal(int, int, int)  # (kész, összes, aktív?)
+
+    def _ensure_disk_operation_feedback_wired(self) -> None:
+        """A három lemezművelet végén a GUI-szál frissítse a nézetet."""
+        if getattr(self, "_disk_operation_feedback_wired", False):
+            return
+        self._disk_operation_feedback_wired = True
+        self.diskOperationSucceededPaths.connect(
+            self._refresh_editors_for_disk_operation
+        )
+        self.saveFinished.connect(self._on_disk_operation_finished)
+        self.revertFinished.connect(self._on_disk_operation_finished)
+        self.undoSaveFinished.connect(self._on_disk_operation_finished)
+
+    @Slot(list)
+    def _refresh_editors_for_disk_operation(self, paths: list[str]) -> None:
+        """A sikeresen módosított, éppen nyitott képek munkamenetét újratölti.
+
+        A mentés/visszaállítás az ini-láncot is megváltoztatja, miközben a
+        néző szerkesztője külön, memóriában tartott munkamenetet használ. A
+        könyvtármodell frissítése önmagában nem érvényteleníti ezt az
+        előnézetet, így a felhasználó továbbra is a lemezművelet előtti
+        állapotot látná. Csak a ténylegesen módosított útvonalhoz tartozó,
+        lemezről dolgozó szerkesztőket indítjuk újra; az „aa" mód memóriás
+        második felét érintetlenül hagyjuk.
+        """
+        def normalizal(utvonal: str | Path) -> str:
+            return os.path.normcase(
+                os.path.normpath(str(Path(utvonal).resolve(strict=False)))
+            )
+
+        modosultak = {normalizal(path) for path in paths}
+        if not modosultak:
+            return
+        for editor in getattr(self, "_edit_controllers", ()):
+            utvonal = getattr(editor, "_image_path", None)
+            foto_id = getattr(editor, "_photo_id", "")
+            if (
+                utvonal is None
+                or not foto_id
+                or getattr(editor, "_memory_only", False)
+                or normalizal(utvonal) not in modosultak
+            ):
+                continue
+            editor.beginEdit(foto_id, str(utvonal))
+
+    @Slot(int, int)
+    def _on_disk_operation_finished(self, done: int, failed: int) -> None:
+        """A jelzés után az aktuális nézetet a friss indexhez igazítja."""
+        if done > 0 or failed > 0:
+            self._refresh_view()
+
+    def _resync_disk_operation_folders(self, paths: list[Path]) -> None:
+        """A sikeresen módosított képek mappáit indexelje újra egyszer."""
+        folders = sorted({str(path.parent) for path in paths})
+        if not folders:
+            return
+        from picasapy.index import open_index
+
+        try:
+            with open_index(self._db_path) as conn:
+                for folder in folders:
+                    self._sync_tree(conn, folder)
+        except Exception as error:  # noqa: BLE001 — az írás már sikerült
+            logging.getLogger(__name__).exception(
+                "a mentés utáni indexfrissítés nem sikerült"
+            )
+            self.syncFailed.emit(str(error))
 
     def _ensure_save_progress(self) -> None:
         """Lusta állapot-inicializálás (a `BatchEffectMixin` mintája)."""
@@ -353,6 +422,7 @@ class SaveMixin(BackgroundWorkerMixin):
         `.picasaoriginals`-ba, plusz mentésenként egy sorszámozott
         pillanatkép az „Utolsó mentés visszavonása" számára).
         """
+        self._ensure_disk_operation_feedback_wired()
         records = [
             (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
              r.filters or "", int(getattr(r, "flip_flags", 0) or 0),
@@ -368,6 +438,7 @@ class SaveMixin(BackgroundWorkerMixin):
         def worker():
             done, failed, details = 0, 0, []
             naplo: list[tuple[str, str]] = []
+            successful_paths: list[Path] = []
             # #1527: ágonként EGY üzenet. Az eredeti sem sorolja fel a
             # fájlokat: három külön mondata van, és a lemezhiba-ágon az
             # ELSŐ érintett fájl neve + a hibakód jelenik meg.
@@ -388,12 +459,17 @@ class SaveMixin(BackgroundWorkerMixin):
                         self._report_save_error(error, path)
                 else:
                     done += 1
+                    successful_paths.append(path)
                     # #750: a sikeres mentés ÜRES lánccal jelent a naplónak,
                     # ami ott a bejegyzés TÖRLÉSÉT jelenti. Ld. a `redo=`
                     # döntést a `_record_saved_state` docstringjében.
                     naplo.append((str(path), ""))
                 self._saveProgressTick.emit(index + 1, len(records), 1)
             self._record_saved_state(naplo)
+            self._resync_disk_operation_folders(successful_paths)
+            self.diskOperationSucceededPaths.emit(
+                [str(path) for path in successful_paths]
+            )
             self._saveProgressTick.emit(len(records), len(records), 0)
             # #1527: a MENTÉS ága innentől a besorolt, hivatalos üzenetet
             # adja (`saveErrorOccurred`), nem a nyers „név: ok" listát —
@@ -606,6 +682,7 @@ class SaveMixin(BackgroundWorkerMixin):
             self.recordSavedChains(items)
 
     def _run_restore(self, rows, operation, finished_signal) -> None:
+        self._ensure_disk_operation_feedback_wired()
         paths = [
             Path(r.folder_path) / r.name for r in self._selected_records(rows)
         ]
@@ -616,6 +693,7 @@ class SaveMixin(BackgroundWorkerMixin):
         def worker():
             done, failed, details = 0, 0, []
             naplo: list[tuple[str, str]] = []
+            successful_paths: list[Path] = []
             for path in paths:
                 try:
                     result = operation(path)
@@ -625,6 +703,7 @@ class SaveMixin(BackgroundWorkerMixin):
                         details.append(f"{path.name}: {error}")
                 else:
                     done += 1
+                    successful_paths.append(path)
                     # #750: az „Utolsó mentés visszavonása" a `redo=`-ból
                     # VISSZAÍRJA a láncot `filters=`-be (`restored_filters`)
                     # — onnantól megint van mit védeni. A „Visszaállítás"
@@ -632,6 +711,10 @@ class SaveMixin(BackgroundWorkerMixin):
                     # (a `getattr` alapértéke) törli a bejegyzést.
                     naplo.append((str(path), getattr(result, "restored_filters", "")))
             self._record_saved_state(naplo)
+            self._resync_disk_operation_folders(successful_paths)
+            self.diskOperationSucceededPaths.emit(
+                [str(path) for path in successful_paths]
+            )
             if details:
                 self.saveFailedDetails.emit(details)
             finished_signal.emit(done, failed)

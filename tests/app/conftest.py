@@ -100,6 +100,21 @@ def _kis_kepek_latszanak():
 
 
 @pytest.fixture(autouse=True)
+def _email_nincs_valodi_mapi(monkeypatch):
+    """#4607: az e-mail tesztek Windowson se érjék el a valódi MAPI-t.
+
+    A platform "linux"-ra rögzül, a `_mapi_send` pedig kivételt dob; a MAPI
+    saját tesztjei ezt a `patch.object`-tel felülírják."""
+    from picasapy.app import email_controller
+
+    def _tiltott(*_args, **_kwargs):
+        raise AssertionError("valódi MAPI-hívás tesztből")
+
+    monkeypatch.setattr(email_controller, "_platform", lambda: "linux")
+    monkeypatch.setattr(email_controller, "_mapi_send", _tiltott)
+
+
+@pytest.fixture(autouse=True)
 def qml_warnings():
     """#718: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
     teszt VÉGÉN hibát dob, ha QML-SZKRIPTHIBA jelent meg (pl. „Cannot read
@@ -229,7 +244,7 @@ def _build_qml_app(qt_app, tmp_path):
         index_path=db,
         settings=settings,
     )
-    faces_helper = FacesHelper()
+    faces_helper = FacesHelper(db)
     # #26 (3. lépcső) — az application.py bekötésének tükre
     face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
     # Időrend nézet (#24) — az application.py bekötésének tükre: a
@@ -379,3 +394,91 @@ def qml_app_module(
     """
     root = tmp_path_factory.mktemp("qml-app-module")
     yield from _build_qml_app(qt_app, root)
+
+
+@pytest.fixture
+def legalabb_ket_betucsalad(qt_app, tmp_path_factory):
+    """Gondoskodik róla, hogy a rendszer-adatbázisban legalább két család legyen.
+
+    Közös a QML-es (#4546) és a vezérlős betűtípus-próbáknak. ⚠️ A `qml_app` /
+    `controller` ELŐTT kell létrejönnie (a teszt paraméterlistájában előtte
+    áll): a katalógust a felület építéskor olvassa ki.
+    """
+    from PySide6.QtGui import QFontDatabase
+
+    from picasapy.render.text_fonts import clear_family_cache
+    from support.betucsalad import atnevezett_betu
+
+    from support.betucsalad import BETU_FORRAS
+
+    azonositok = []
+    # #4506: a windowsos offscreen adatbázis ÜRES is lehet — akkor az eredeti
+    # Open Sans az első család, az átnevezett másolat a második
+    if not set(QFontDatabase.families()):
+        azonositok.append(QFontDatabase.addApplicationFont(str(BETU_FORRAS)))
+    if len(set(QFontDatabase.families())) < 2:
+        masolat = atnevezett_betu(
+            tmp_path_factory.mktemp("betu") / "OpenSanz.ttf"
+        )
+        azonositok.append(QFontDatabase.addApplicationFont(str(masolat)))
+    assert all(a >= 0 for a in azonositok), "a próbabetű nem tölthető be"
+    # #4964: a regisztráció megváltoztatta a családlistát, a gyorsítótár régi
+    clear_family_cache()
+    try:
+        yield
+    finally:
+        for azonosito in azonositok:
+            QFontDatabase.removeApplicationFont(azonosito)
+        clear_family_cache()
+
+
+@pytest.fixture
+def renderelo_betuk(qt_app):
+    """A szövegrajzoló próbák betűi üres Qt-adatbázis mellett (#4506).
+
+    Csak akkor tesz bármit, ha a Qt egyetlen valódi családot sem lát (a
+    windowsos offscreen futtató); ott a renderelő saját fájljelöltjeit adja
+    alkalmazás-betűként, minden stílusban. Globális környezeti változót nem
+    állít — a #4870-es `QT_QPA_FONTDIR` minden más próba rajzolását is
+    megváltoztatta.
+    """
+    from PySide6.QtGui import QFont, QFontDatabase
+
+    from picasapy.render.text_fonts import (
+        FONT_FAMILIES,
+        clear_family_cache,
+        font_path_for,
+    )
+    from support.betucsalad import betufajlok_regisztralasa, potlando_betufajlok
+
+    jeloltek = [
+        font_path_for(csalad.key, bold=felkover, italic=dolt)
+        for csalad in FONT_FAMILIES
+        for felkover in (False, True)
+        for dolt in (False, True)
+    ]
+    fajlok = potlando_betufajlok(QFontDatabase.families(), jeloltek)
+    regisztralt = betufajlok_regisztralasa(fajlok, QFontDatabase.addApplicationFont)
+    # a rajzoló a kulcsot („times") adja a QFont-nak; rendszerbetű-adatbázis
+    # nélkül a Qt nem fordítja le a regisztrált családnévre — a normál
+    # stílus fájljából kiolvasott névre irányítjuk
+    helyettesitesek = {}
+    for csalad in FONT_FAMILIES:
+        azonosito = regisztralt.get(font_path_for(csalad.key))
+        if azonosito is None:
+            continue
+        nevek = QFontDatabase.applicationFontFamilies(azonosito)
+        if nevek:
+            helyettesitesek[csalad.key] = nevek[0]
+    for kulcs, csaladnev in helyettesitesek.items():
+        QFont.insertSubstitution(kulcs, csaladnev)
+    # #4964: a regisztráció megváltoztatta a családlistát, a gyorsítótár régi
+    clear_family_cache()
+    try:
+        yield
+    finally:
+        for kulcs in helyettesitesek:
+            QFont.removeSubstitutions(kulcs)
+        for azonosito in regisztralt.values():
+            QFontDatabase.removeApplicationFont(azonosito)
+        clear_family_cache()

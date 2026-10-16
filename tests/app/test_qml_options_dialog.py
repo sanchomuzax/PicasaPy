@@ -5,12 +5,39 @@ illesztés (Eszközök → Beállítások... menüpont bekötése) az integráto
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Property, QObject, QPointF, Qt, Signal, Slot
+from PySide6.QtCore import (
+    Property,
+    QObject,
+    QPoint,
+    QPointF,
+    QSettings,
+    QTranslator,
+    Qt,
+    Signal,
+    Slot,
+)
 from PySide6.QtTest import QTest
 
+import picasapy.app.application as app_module
 from picasapy.app.language_controller import OWN_LANGUAGE_NAMES
+from picasapy.app.filetype_preferences import (
+    file_type_enabled,
+    set_file_type_enabled,
+)
+from tests.support.varakozas import var_feltetelre
+
+# #4506: a teszt ugyanazt a stílust és betűt használja, mint az alkalmazás —
+# enélkül Windowson a rendszer alapbetűje tolta el a referencia szerinti
+# 33 px-es kezdést és 22 px-es sorközt.
+app_module.allitsd_be_a_stilust()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _picasa_ui_font(qt_app):
+    app_module._install_ui_font(qt_app)
 
 
 class FakeController(QObject):
@@ -23,14 +50,23 @@ class FakeController(QObject):
 
     languageChanged = Signal()
     pendingLanguageChanged = Signal()
+    uiTransitionsEnabledChanged = Signal()
+    showTooltipsEnabledChanged = Signal()
+    singleClickExitEnabledChanged = Signal()
 
     _OWN_NAMES = OWN_LANGUAGE_NAMES
 
-    def __init__(self, language="en", pending_language=None):
+    def __init__(self, language="en", pending_language=None, filetype_settings=None):
         super().__init__()
         self._language = language
         self._pending_language = pending_language if pending_language is not None else language
         self.set_language_calls = []
+        self._filetype_settings = (
+            filetype_settings or QSettings("PicasaPy", "PicasaPy")
+        )
+        self._ui_transitions_enabled = True
+        self._show_tooltips_enabled = True
+        self._single_click_exit_enabled = False
 
     def _get_language(self):
         return self._language
@@ -41,6 +77,22 @@ class FakeController(QObject):
         return self._pending_language
 
     pendingLanguage = Property(str, _get_pending_language, notify=pendingLanguageChanged)
+
+    uiTransitionsEnabled = Property(
+        bool,
+        lambda self: self._ui_transitions_enabled,
+        notify=uiTransitionsEnabledChanged,
+    )
+    showTooltipsEnabled = Property(
+        bool,
+        lambda self: self._show_tooltips_enabled,
+        notify=showTooltipsEnabledChanged,
+    )
+    singleClickExitEnabled = Property(
+        bool,
+        lambda self: self._single_click_exit_enabled,
+        notify=singleClickExitEnabledChanged,
+    )
 
     def _get_available_languages(self):
         return ["en", "hu"]
@@ -59,6 +111,35 @@ class FakeController(QObject):
         self.set_language_calls.append(code)
         self._pending_language = code
         self.pendingLanguageChanged.emit()
+
+    @Slot(str, result=bool)
+    def fileTypeEnabled(self, group) -> bool:
+        return file_type_enabled(self._filetype_settings, group)
+
+    @Slot(str, bool)
+    def setFileTypeEnabled(self, group, enabled) -> None:
+        set_file_type_enabled(self._filetype_settings, group, enabled)
+
+    @Slot(result=list)
+    def supportedRawExtensions(self):
+        from picasapy.scanner.filetypes import RAW_EXTENSIONS
+
+        return sorted(RAW_EXTENSIONS)
+
+    @Slot(bool)
+    def setUITransitionsEnabled(self, enabled) -> None:
+        self._ui_transitions_enabled = bool(enabled)
+        self.uiTransitionsEnabledChanged.emit()
+
+    @Slot(bool)
+    def setShowTooltipsEnabled(self, enabled) -> None:
+        self._show_tooltips_enabled = bool(enabled)
+        self.showTooltipsEnabledChanged.emit()
+
+    @Slot(bool)
+    def setSingleClickExitEnabled(self, enabled) -> None:
+        self._single_click_exit_enabled = bool(enabled)
+        self.singleClickExitEnabledChanged.emit()
 
 
 class FakeConfirmSettings(QObject):
@@ -145,15 +226,20 @@ class FakeEmailController(QObject):
     emailSizeChanged = Signal()
     singlePictureOriginalChanged = Signal()
     useDefaultClientChanged = Signal()
+    movieFullChanged = Signal()
 
-    def __init__(self, size=480, single_original=False, use_default=True):
+    def __init__(
+        self, size=480, single_original=False, use_default=True, movie_full=False
+    ):
         super().__init__()
         self._size = size
         self._single_original = single_original
         self._use_default = use_default
+        self._movie_full = movie_full
         self.set_size_calls = []
         self.set_single_calls = []
         self.set_use_default_calls = []
+        self.set_movie_calls = []
 
     emailSize = Property(int, lambda self: self._size, notify=emailSizeChanged)
     singlePictureOriginal = Property(
@@ -162,6 +248,9 @@ class FakeEmailController(QObject):
     )
     useDefaultClient = Property(
         bool, lambda self: self._use_default, notify=useDefaultClientChanged
+    )
+    movieFull = Property(
+        bool, lambda self: self._movie_full, notify=movieFullChanged
     )
 
     @Slot(int)
@@ -181,6 +270,12 @@ class FakeEmailController(QObject):
         self.set_use_default_calls.append(use_default)
         self._use_default = use_default
         self.useDefaultClientChanged.emit()
+
+    @Slot(bool)
+    def setMovieFull(self, movie_full) -> None:
+        self.set_movie_calls.append(movie_full)
+        self._movie_full = movie_full
+        self.movieFullChanged.emit()
 
 
 class FakeImportSourceController(QObject):
@@ -214,8 +309,11 @@ def fake_import_source_controller():
 
 
 @pytest.fixture
-def fake_controller():
-    return FakeController()
+def fake_controller(tmp_path):
+    settings = QSettings(
+        str(tmp_path / "options.ini"), QSettings.Format.IniFormat
+    )
+    return FakeController(filetype_settings=settings)
 
 
 @pytest.fixture
@@ -328,15 +426,8 @@ class TestTabStructure:
         assert stack.property("currentIndex") == 2
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattints(window, qt_app, elem) -> None:
@@ -368,6 +459,33 @@ def _csuszkara_kattint(window, qt_app, slider, value) -> None:
     )
     point = slider.mapToScene(QPointF(x, slider.height() / 2)).toPoint()
     QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, point)
+    qt_app.processEvents()
+
+
+def _csuszkahuzas(window, qt_app, slider, value) -> None:
+    """Valódi fogantyúhúzás a vezérlő pillanatnyi geometriájából számolva."""
+    assert _var(qt_app, lambda: slider.width() > 0 and slider.height() > 0)
+    handle = slider.property("handle")
+    assert handle is not None, f"{slider.objectName()}: nincs fogantyú"
+    start = slider.mapToScene(
+        QPointF(handle.x() + handle.width() / 2, handle.y() + handle.height() / 2)
+    ).toPoint()
+    fraction = (value - slider.property("from")) / (
+        slider.property("to") - slider.property("from")
+    )
+    target_x = (
+        slider.property("leftPadding")
+        + handle.width() / 2
+        + fraction * (slider.property("availableWidth") - handle.width())
+    )
+    target = slider.mapToScene(QPointF(target_x, slider.height() / 2)).toPoint()
+    QTest.mousePress(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, start
+    )
+    QTest.mouseMove(window, target)
+    QTest.mouseRelease(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, target
+    )
     qt_app.processEvents()
 
 
@@ -577,12 +695,11 @@ class TestPlaceholderTabsAreDisabled:
     @pytest.mark.parametrize(
         "control_name",
         [
-            # #32: az E-Mail fül méret-csúszdái/kliens-választása mostantól
-            # élő (ld. TestEmailTabLiveSettings) — a "Send movies as"/HTML
-            # mező viszont Outlook-specifikus, maradt tiltott placeholder.
+            # #4451: a videómód az EmailControllerhez kötve él; vezérlő
+            # nélkül a két rádiógomb letiltva marad.
             "optionsMailMovieFirstFrameRadio",
+            "optionsMailMovieFullRadio",
             "optionsMailUseHtmlCheck",
-            "optionsFileTypeBmpCheck",
             "optionsNetworkAutoDetectCheck",
             "optionsWebStripedUploadCheck",
         ],
@@ -607,6 +724,273 @@ class TestSlideshowTab:
         assert music.property("enabled") is True
         assert music.property("checked") is True
         assert browse.property("enabled") is True
+
+
+class TestFileTypesTab:
+    def test_feliratok_es_elrendezes_a_picasa_referencia_szerint(
+        self,
+        qt_app,
+        fake_controller,
+        fake_confirm_settings,
+        fake_face_scan_controller,
+        tmp_path,
+    ):
+        """#4488: a Fájltípusok feliratai és sorai a referenciát követik."""
+        import picasapy.app.application as app_module
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        translator = QTranslator(qt_app)
+        qm = Path(app_module.__file__).parent / "i18n" / "picasapy_hu.qm"
+        assert translator.load(str(qm)), f"a magyar fordítás nem tölthető be: {qm}"
+        assert qt_app.installTranslator(translator)
+
+        engine = QQmlEngine()
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        engine.rootContext().setContextProperty("controller", fake_controller)
+        engine.rootContext().setContextProperty("confirmSettings", fake_confirm_settings)
+        engine.rootContext().setContextProperty(
+            "faceScanController", fake_face_scan_controller
+        )
+        factory = QQmlComponent(
+            engine,
+            str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
+        )
+        window = factory.create()
+        assert window is not None, factory.errorString()
+
+        try:
+            qml_source = (
+                app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsTabFileTypes.qml"
+            ).read_text(encoding="utf-8")
+            assert "font.pixelSize: Theme.fontSize" in qml_source
+            assert "font: parent.font" in qml_source
+
+            window.setWidth(769)
+            window.setHeight(466)
+            window.show()
+            stack = _child(window, "optionsTabStack")
+            _child(window, "optionsTabBar").setProperty("currentIndex", 2)
+
+            hatarido = time.monotonic() + 3.0
+            while time.monotonic() < hatarido:
+                qt_app.processEvents()
+                if window.isExposed() and stack.property("currentIndex") == 2:
+                    break
+                time.sleep(0.05)
+            assert window.isExposed(), "a Beállítások ablak nem jelent meg"
+
+            nevek = (
+                "optionsFileTypeBmpCheck",
+                "optionsFileTypeGifCheck",
+                "optionsFileTypePngCheck",
+                "optionsFileTypeTgaCheck",
+                "optionsFileTypeTiffCheck",
+                "optionsFileTypeWebpCheck",
+                "optionsFileTypePsdCheck",
+                "optionsFileTypeRawCheck",
+                "optionsFileTypeMoviesCheck",
+                "optionsFileTypeQuickTimeCheck",
+            )
+            vart_feliratok = (
+                ".bmp",
+                ".gif",
+                ".png",
+                ".tga",
+                ".tif, .tiff",
+                ".webp",
+                ".PSD (Photoshop)",
+                "RAW formátumok",
+                "Mozgófilmek (.mov, .mpg, .m4v, .3gp, .avi, ...)",
+                "Quicktime-filmek (.MOV)",
+            )
+
+            from PySide6.QtCore import QPointF
+            from PySide6.QtTest import QTest
+            from picasapy.app.library_controller import LibraryMixin
+            from picasapy.scanner.filetypes import RAW_EXTENSIONS
+
+            assert LibraryMixin.supportedRawExtensions(None) == sorted(RAW_EXTENSIONS)
+
+            kep = None
+            for elteres in (-5, 0, 5):
+                window.setHeight(466 + elteres)
+                qt_app.processEvents()
+                aktualis_feliratok = tuple(
+                    _child(window, nev).property("text") for nev in nevek
+                )
+                assert aktualis_feliratok == vart_feliratok
+
+                kep = window.grabWindow()
+                assert not kep.isNull(), "nem készült renderelt beállításkép"
+                meret = kep.devicePixelRatio()
+                panel_pozicio = stack.mapToItem(
+                    window.contentItem(), QPointF(0, 0)
+                )
+                marker_sarkok = []
+                for nev in nevek:
+                    check = _child(window, nev)
+                    indicator = check.property("indicator")
+                    assert indicator is not None, f"{nev}: hiányzik a jelölő"
+                    marker_pozicio = indicator.mapToItem(
+                        window.contentItem(), QPointF(0, 0)
+                    )
+                    x0 = round(marker_pozicio.x() * meret)
+                    y0 = round(marker_pozicio.y() * meret)
+                    width = max(1, round(indicator.width() * meret))
+                    height = max(1, round(indicator.height() * meret))
+                    hatter = kep.pixelColor(max(0, x0 - 2), y0 + height // 2)
+                    keret = [
+                        (x, y)
+                        for y in range(y0, min(kep.height(), y0 + height))
+                        for x in range(x0, min(kep.width(), x0 + width))
+                        if kep.pixelColor(x, y) != hatter
+                    ]
+                    assert keret, f"{nev}: a jelölő kerete nem jelent meg a képen"
+                    marker_sarkok.append(
+                        (min(x for x, _ in keret), min(y for _, y in keret))
+                    )
+
+                jelolo_x = marker_sarkok[0][0] / meret - panel_pozicio.x()
+                vart_x = stack.width() * (242.0 / 744.0)
+                assert abs(jelolo_x - vart_x) <= 3, (
+                    f"a jelölő bal margója {jelolo_x:.1f} px, "
+                    f"a referencia-geometria {vart_x:.1f} px"
+                )
+                jelolo_y = marker_sarkok[0][1] / meret - panel_pozicio.y()
+                assert abs(jelolo_y - 33) <= 3, (
+                    f"az első jelölősor {jelolo_y:.1f} px-re indul a paneltől, "
+                    "a referencia 33 px"
+                )
+                sorlepesek = [
+                    (marker_sarkok[i + 1][1] - marker_sarkok[i][1]) / meret
+                    for i in range(len(marker_sarkok) - 1)
+                ]
+                assert all(abs(lepes - 22) <= 3 for lepes in sorlepesek), (
+                    f"a renderelt sorlépések eltérnek a 22 px-es referenciától: "
+                    f"{sorlepesek}"
+                )
+
+                if elteres == 0:
+                    bizonyitek = tmp_path / "4488-fajltipusok.png"
+                    assert kep.save(str(bizonyitek))
+
+            raw = _child(window, "optionsFileTypeRawCheck")
+            link = _child(window, "optionsFileTypeSupportedFormatsLink")
+            # A referencián a link zárójelben áll: a 8 px-es hézag a nyitó
+            # zárójelig tart, a link közvetlenül utána következik.
+            zarojel = _child(window, "optionsFileTypeSupportedFormatsOpenParen")
+            raw_pozicio = raw.mapToItem(stack, QPointF(0, 0))
+            link_pozicio = link.mapToItem(stack, QPointF(0, 0))
+            zarojel_pozicio = zarojel.mapToItem(stack, QPointF(0, 0))
+            link_tavolsag = zarojel_pozicio.x() - raw_pozicio.x() - raw.width()
+            assert abs(link_tavolsag - 8) <= 2, (
+                f"a RAW-link hézaga {link_tavolsag:.1f} px, várt 8 px"
+            )
+            assert abs(
+                link_pozicio.x() - zarojel_pozicio.x() - zarojel.width()
+            ) <= 1, "a link nem közvetlenül a nyitó zárójel után áll"
+            assert abs(
+                link_pozicio.y() + link.height() / 2
+                - raw_pozicio.y() - raw.height() / 2
+            ) <= 2
+
+            link_pont = link.mapToScene(
+                QPointF(link.width() / 2, link.height() / 2)
+            ).toPoint()
+            QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=link_pont)
+            raw_dialog = _child(window, "optionsFileTypeSupportedRawFormatsDialog")
+            assert _var(qt_app, lambda: raw_dialog.property("visible")), (
+                "a Támogatott formátumok link nem nyitotta meg a RAW-listát"
+            )
+            lista = _child(window, "optionsFileTypeSupportedRawFormatsText")
+            assert lista.property("text") == ", ".join(sorted(RAW_EXTENSIONS))
+
+        finally:
+            window.deleteLater()
+            engine.deleteLater()
+            qt_app.removeTranslator(translator)
+            qt_app.processEvents()
+
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_kattintas_utan_ujraolvasasbol_kikerul_a_kikapcsolt_tipus(
+        self, dialog, qt_app, tmp_path, height_offset
+    ):
+        from picasapy.index import open_index, sync_tree
+        from support.jpeg_factory import make_jpeg
+
+        window, controller, *_ = dialog
+        window.setHeight(window.height() + height_offset)
+        window.setProperty("visible", True)
+        assert _var(qt_app, lambda: window.isExposed())
+
+        root = tmp_path / "kepek"
+        folder = root / "nyaralas"
+        folder.mkdir(parents=True)
+        make_jpeg(folder / "kep.jpg", size=(12, 8))
+        (folder / "kep.cr2").write_bytes(b"raw-data")
+        ini = folder / ".picasa.ini"
+        ini_tartalom = "[kep.jpg]\nstar=yes\n[kep.cr2]\ncaption=megmarad\n"
+        ini.write_text(ini_tartalom, encoding="utf-8")
+        adatbazis = tmp_path / "index.db"
+        with open_index(adatbazis) as conn:
+            sync_tree(conn, root, incremental=False)
+            kezdeti_nevek = {
+                sor["name"]
+                for sor in conn.execute("SELECT name FROM photos").fetchall()
+            }
+        assert kezdeti_nevek == {"kep.jpg", "kep.cr2"}
+
+        _kattints(window, qt_app, _child(window, "optionsTabFileTypes"))
+        assert _var(
+            qt_app, lambda: _child(window, "optionsTabStack").property("currentIndex") == 2
+        )
+        raw = _child(window, "optionsFileTypeRawCheck")
+        assert raw.property("enabled") is True
+        assert raw.property("checked") is True
+        assert controller.fileTypeEnabled("gif") is True
+        assert controller.fileTypeEnabled("png") is True
+        for object_name in (
+            "optionsFileTypeBmpCheck",
+            "optionsFileTypeGifCheck",
+            "optionsFileTypePngCheck",
+            "optionsFileTypeTgaCheck",
+            "optionsFileTypeTiffCheck",
+            "optionsFileTypeWebpCheck",
+            "optionsFileTypePsdCheck",
+            "optionsFileTypeMoviesCheck",
+            "optionsFileTypeQuickTimeCheck",
+        ):
+            assert _child(window, object_name).property("enabled") is True
+        _kattints(window, qt_app, raw)
+
+        assert raw.property("checked") is False
+        assert controller.fileTypeEnabled("raw") is False
+        controller._filetype_settings.sync()
+        reopened_settings = QSettings(
+            controller._filetype_settings.fileName(),
+            controller._filetype_settings.format(),
+        )
+        assert FakeController(filetype_settings=reopened_settings).fileTypeEnabled(
+            "raw"
+        ) is False
+        from picasapy.scanner.filetypes import FILETYPE_GROUPS
+
+        enabled = {
+            group for group in FILETYPE_GROUPS if controller.fileTypeEnabled(group)
+        }
+        with open_index(adatbazis) as conn:
+            sync_tree(conn, root, incremental=False, enabled_filetypes=enabled)
+            uj_nevek = {
+                sor["name"]
+                for sor in conn.execute("SELECT name FROM photos").fetchall()
+            }
+
+        assert uj_nevek == {"kep.jpg"}
+        assert ini.read_text(encoding="utf-8") == ini_tartalom
+        if height_offset == 0:
+            screenshot = window.grabWindow()
+            evidence = tmp_path / "4447-filetypes.png"
+            assert screenshot.save(str(evidence))
 
 
 class TestFaceDetectionOption:
@@ -659,12 +1043,104 @@ class TestFaceDetectionOption:
         suggestion_slider = _child(window, "optionsFaceSuggestionThresholdSlider")
         cluster_slider = _child(window, "optionsFaceClusterThresholdSlider")
         persist = _child(window, "optionsFacePersistToFileCheck")
+        suggestion_value = _child(window, "optionsFaceSuggestionThresholdValue")
+        cluster_value = _child(window, "optionsFaceClusterThresholdValue")
+        suggestion_ticks = _child(window, "optionsFaceSuggestionThresholdTicks")
+        cluster_ticks = _child(window, "optionsFaceClusterThresholdTicks")
+        suggestion_label = _child(window, "optionsFaceSuggestionThresholdLabel")
+        cluster_label = _child(window, "optionsFaceClusterThresholdLabel")
+        content = _child(window, "optionsNameTagsControls")
+        stack = _child(window, "optionsTabStack")
+        contact_upload = _child(window, "optionsFaceUploadContactPhotosCheck")
+        assert contact_upload.property("visible") is False
 
         assert suggestions.property("enabled") is True
         assert suggestions.property("checked") is True
         assert suggestion_slider.property("value") == 85
         assert cluster_slider.property("value") == 70
+        assert suggestion_value.property("text") == "85"
+        assert cluster_value.property("text") == "70"
+        assert suggestion_ticks.property("tickCount") == 10
+        assert cluster_ticks.property("tickCount") == 10
         assert persist.property("checked") is True
+
+        # A referencia kb. 434 px-es középre tett vezérlőcsoportot mutat;
+        # a saját elemgeometriát mérjük, a képernyőképhez ±3 px-et engedve.
+        assert abs(content.width() - 434) <= 3
+        content_origin = content.mapToItem(stack, QPointF(0, 0))
+        assert abs(
+            content_origin.x() + content.width() / 2 - stack.width() / 2
+        ) <= 3
+        assert abs(content_origin.y() - 8) <= 3
+        assert abs(suggestion_slider.width() - 297) <= 3
+        assert abs(cluster_slider.width() - 297) <= 3
+        suggestion_center = suggestion_slider.mapToItem(
+            stack, QPointF(suggestion_slider.width() / 2, suggestion_slider.height() / 2)
+        )
+        cluster_center = cluster_slider.mapToItem(
+            stack, QPointF(cluster_slider.width() / 2, cluster_slider.height() / 2)
+        )
+        detection_center = _child(window, "optionsFaceDetectionCheck").mapToItem(
+            stack, QPointF(0, _child(window, "optionsFaceDetectionCheck").height() / 2)
+        )
+        suggestions_center = suggestions.mapToItem(
+            stack, QPointF(0, suggestions.height() / 2)
+        )
+        persist_center = persist.mapToItem(
+            stack, QPointF(0, persist.height() / 2)
+        )
+        assert abs(suggestions_center.y() - detection_center.y() - 22) <= 3
+        assert abs(suggestion_center.y() - suggestions_center.y() - 24) <= 3
+        assert abs(
+            cluster_center.y() - suggestion_center.y()
+            - 41
+        ) <= 3
+        assert abs(persist_center.y() - cluster_center.y() - 39) <= 3
+        for label, slider in (
+            (suggestion_label, suggestion_slider),
+            (cluster_label, cluster_slider),
+        ):
+            assert label.property("rightAligned") is True
+            label_right = label.mapToItem(
+                stack, QPointF(label.width(), 0)
+            ).x()
+            slider_left = slider.mapToItem(stack, QPointF(0, 0)).x()
+            assert abs(slider_left - label_right - 8) <= 2
+
+        rendered = window.grabWindow()
+        assert not rendered.isNull(), "a fül nem rajzolódott ki"
+        dpr = rendered.devicePixelRatio()
+        for ticks, _slider, tick_prefix in (
+            (suggestion_ticks, suggestion_slider, "optionsFaceSuggestionTick"),
+            (cluster_ticks, cluster_slider, "optionsFaceClusterTick"),
+        ):
+            marks = [
+                item for item in ticks.childItems()
+                if item.objectName().startswith(tick_prefix)
+            ]
+            assert len(marks) == 10
+            mark_centers = [item.x() + item.width() / 2 for item in marks]
+            assert abs(mark_centers[-1] - mark_centers[0] - 287) <= 3
+            assert all(
+                abs((right - left) - 32) <= 3
+                for left, right in zip(mark_centers, mark_centers[1:], strict=False)
+            )
+            for mark in marks:
+                scene_point = mark.mapToScene(
+                    QPointF(mark.width() / 2, mark.height() / 2)
+                )
+                px, py = round(scene_point.x() * dpr), round(scene_point.y() * dpr)
+                pixels = [
+                    rendered.pixelColor(x, y)
+                    for x in range(max(0, px - 1), min(rendered.width(), px + 2))
+                    for y in range(max(0, py - 1), min(rendered.height(), py + 2))
+                ]
+                assert any(
+                    175 <= color.red() <= 220
+                    and abs(color.red() - color.green()) <= 3
+                    and abs(color.green() - color.blue()) <= 3
+                    for color in pixels
+                ), f"{mark.objectName()}: nem rajzolódott ki a beosztás"
 
         _kattints(window, qt_app, suggestions)
         assert controller.setting_calls[-1] == ("suggestions", False)
@@ -680,6 +1156,9 @@ class TestFaceDetectionOption:
         _csuszkara_kattint(window, qt_app, suggestion_slider, 90)
         assert controller.setting_calls[-1] == ("suggestionThreshold", 90)
         assert controller.suggestion_threshold == 90
+        _csuszkahuzas(window, qt_app, suggestion_slider, 95)
+        assert _var(qt_app, lambda: controller.suggestion_threshold == 95)
+        assert suggestion_value.property("text") == "95"
 
         _csuszkara_kattint(window, qt_app, cluster_slider, 75)
         assert controller.setting_calls[-1] == ("clusterThreshold", 75)
@@ -692,9 +1171,6 @@ class TestFaceDetectionOption:
     @pytest.mark.parametrize(
         "control_name",
         [
-            "optionsUiTransitionsCheck",
-            "optionsShowTooltipsCheck",
-            "optionsSingleClickExitCheck",
             # #2893: az `optionsAutoExcludeCheck` KIKERÜLT innen — a
             # másodpéldány-észlelés ÉLŐ lett (ld.
             # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
@@ -728,11 +1204,41 @@ class TestFaceDetectionOption:
             is True
         )
 
+    def test_general_tab_ui_preferences_toggle_their_controller_state(
+        self, dialog, qt_app
+    ):
+        window, controller, *_ = dialog
+        atmenetek = _child(window, "optionsUiTransitionsCheck")
+        tippek = _child(window, "optionsShowTooltipsCheck")
+        kilepes = _child(window, "optionsSingleClickExitCheck")
+
+        assert atmenetek.property("enabled") is True
+        assert atmenetek.property("checked") is True
+        assert tippek.property("enabled") is True
+        assert tippek.property("checked") is True
+        assert kilepes.property("enabled") is True
+        assert kilepes.property("checked") is False
+
+        _kattints(window, qt_app, atmenetek)
+        assert controller.uiTransitionsEnabled is False
+        assert atmenetek.property("checked") is False
+
+        _kattints(window, qt_app, tippek)
+        assert controller.showTooltipsEnabled is False
+        assert tippek.property("checked") is False
+
+        _kattints(window, qt_app, kilepes)
+        assert controller.singleClickExitEnabled is True
+        assert kilepes.property("checked") is True
+        _kattints(window, qt_app, kilepes)
+        assert controller.singleClickExitEnabled is False
+        assert kilepes.property("checked") is False
+
 
 class TestEmailTabLiveSettings:
     """#32: az OptionsTabEmail méret-csúszdái/kliens-választása az
-    `emailController`-hez kötve (a többi mező — "Send movies as"/HTML —
-    Outlook-specifikus, maradt tiltott)."""
+    `emailController`-hez kötve; #4451: a videómód is mentett, élő
+    beállítás, az Outlook-jelölő továbbra is tiltott."""
 
     def _dialog_with_email(self, qt_app, fake_controller, fake_confirm_settings,
                             fake_email_controller):
@@ -765,9 +1271,106 @@ class TestEmailTabLiveSettings:
         assert _child(window, "optionsMailSizeSlider").property("enabled") is True
         assert _child(window, "optionsMailSingleSameRadio").property("enabled") is True
         assert _child(window, "optionsMailDefaultRadio").property("enabled") is True
+        assert _child(window, "optionsMailMovieFirstFrameRadio").property("enabled") is True
+        assert _child(window, "optionsMailMovieFullRadio").property("enabled") is True
+        assert _child(window, "optionsMailMovieFirstFrameRadio").property("checked") is True
+        assert _child(window, "optionsMailMovieFullRadio").property("checked") is False
         window.deleteLater()
         engine.deleteLater()
         qt_app.processEvents()
+
+    def test_videomodus_valasztas_mentes_es_mindharom_ablakmagassagon_latszik(
+        self, qt_app, fake_controller, fake_confirm_settings, tmp_path
+    ):
+        """#4451: a rádiók kattinthatók, kizárják egymást és visszakötnek.
+
+        A referencia 466 px magas Opciók-ablakát ±5 px eltéréssel is
+        végigpróbáljuk; a kattintási pont mindig a vezérlő tényleges
+        scene-geometriájából származik.
+        """
+        email = FakeEmailController()
+        translator = QTranslator(qt_app)
+        qm = (
+            Path(__file__).resolve().parents[2]
+            / "src" / "picasapy" / "app" / "i18n" / "picasapy_hu.qm"
+        )
+        assert translator.load(str(qm))
+        qt_app.installTranslator(translator)
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, email
+        )
+        window.setProperty("width", 769)
+        window.setProperty("height", 466)
+        window.show()
+        tab_bar = _child(window, "optionsTabBar")
+        tab_bar.setProperty("currentIndex", 1)
+        first = _child(window, "optionsMailMovieFirstFrameRadio")
+        full = _child(window, "optionsMailMovieFullRadio")
+
+        hatarido = time.monotonic() + 3.0
+        while time.monotonic() < hatarido:
+            qt_app.processEvents()
+            if first.isVisible() and full.isVisible() and full.height() > 0:
+                break
+            time.sleep(0.05)
+        assert first.isVisible() and full.isVisible() and full.height() > 0
+        assert first.property("enabled") is True
+        assert full.property("enabled") is True
+        stack = _child(window, "optionsTabStack")
+        html = _child(window, "optionsMailUseHtmlCheck")
+        close = _child(window, "optionsCloseButton")
+
+        def _bottom(item):
+            return item.mapToScene(QPointF(0, item.height())).y()
+
+        stack_top = stack.mapToScene(QPointF(0, 0)).y()
+        stack_bottom = _bottom(stack)
+        close_top = close.mapToScene(QPointF(0, 0)).y()
+        assert stack_top <= _bottom(full) <= stack_bottom
+        assert stack_top <= _bottom(html) <= stack_bottom
+        assert close_top >= stack_bottom
+        assert _bottom(close) <= window.height()
+
+        kep = window.grabWindow()
+        assert not kep.isNull(), "az E-mail fül nem adott renderelt képet"
+        assert kep.save(str(tmp_path / "options-email-4451.png"))
+
+        for elteres in (-5, 0, 5):
+            window.setHeight(466 + elteres)
+            qt_app.processEvents()
+            assert window.height() == 466 + elteres
+            pont = full.mapToScene(QPointF(full.width() / 2, full.height() / 2))
+            assert 0 <= pont.x() < window.width()
+            assert 0 <= pont.y() < window.height()
+            QTest.mouseClick(
+                window,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+                QPoint(round(pont.x()), round(pont.y())),
+            )
+            qt_app.processEvents()
+            assert full.property("checked") is True
+            assert first.property("checked") is False
+            assert email.set_movie_calls[-1] is True
+
+            pont = first.mapToScene(
+                QPointF(first.width() / 2, first.height() / 2)
+            )
+            QTest.mouseClick(
+                window,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+                QPoint(round(pont.x()), round(pont.y())),
+            )
+            qt_app.processEvents()
+            assert first.property("checked") is True
+            assert full.property("checked") is False
+            assert email.set_movie_calls[-1] is False
+
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+        qt_app.removeTranslator(translator)
 
     def test_a_HARMADIK_levelezogomb_letezik_es_TILTOTT_2432(
         self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller

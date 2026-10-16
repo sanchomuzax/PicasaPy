@@ -143,6 +143,11 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # mag előjel szerint két külön magra ágazik (#693). Az alapérték a
     # filterdesc-ből: 0,1618 (nem kerek szám — mérés, nem tipp).
     "sat": (_p("saturation", "Saturation", -1.0, 1.0, 0.1618, 0.01),),
+    # #4557: a régi Glow Shift+Ragyogásként ugyanazt a két csúszkát adja.
+    "glow": (
+        _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
+        _p("radius", "Radius", 0.0, 100.0, 20.0),
+    ),
     # glow2=1,intenzitás,sugár
     "glow2": (
         # #2236: az alapérték 0,5 -> 0,65 a regiszterből.
@@ -168,7 +173,10 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
         # #3826: a tartomány fele elérhetetlen volt (min 0 -> −1), az
         # alapérték pedig a regiszter/spec szerinti 0 helyett 0,3 volt.
-        _p("radius", "Radius", -1.0, 1.0, 0.0, 0.01),
+        # #4559: a felirat az eredetiben „Size" (stringres
+        # `filter_radsat_label1` → „Méret"), nem „Radius" — a spec
+        # `docs/specs/filterdesc-registry.md:156` szerint.
+        _p("radius", "Size", -1.0, 1.0, 0.0, 0.01),
         _p("sharpness", "Sharpness", 0.0, 1.0, 0.5, 0.01),
     ),
     # tint=1,!!megőrzés,#szín (#717: a szín korábban hiányzott a láncból)
@@ -184,7 +192,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "dir_tint": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
-        _p("gradient", "Gradient", 0.0, 1.0, 0.5, 0.01),
+        # #4559: a Feather alapértéke 0,5 volt, a spec szerint (`d=0.25`) 0,25.
+        _p("gradient", "Gradient", 0.0, 1.0, 0.25, 0.01),
         # #2236: az alapérték 0,5 -> 0,25 a regiszterből.
         _p("shade", "Shade", 0.0, 1.0, 0.25, 0.01),
         _color("color", "Pick Color", "#ffffff"),
@@ -258,9 +267,9 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _checkbox("reverse", "Reverse"),
     ),
     "pencilsketch": (
-        _p("blur_radius", "Blur Radius", 0.5, 20.0, 2.0, 0.5),
-        _p("brightness", "Brightness", 0.0, 200.0, 100.0),
-        _p("color_mix", "Color Mix", 0.0, 100.0, 0.0),
+        _p("radius", "Radius", 1.3, 5.0, 2.0, 0.5),
+        _p("strength", "Strength", 0.0, 200.0, 100.0),
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # Neon=1,Fade,Color (#723): az eredeti panelján egyetlen SZÍNMINTA
     # (`_clrsw`, alap `0xff0000`, „Neon Color") és egy fokozat-csúszka van.
@@ -271,9 +280,11 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _color("color", "Neon Color", "#ff0000"),
     ),
     "comicize": (
-        _p("edge_strength", "Edge Strength", 0.0, 100.0, 20.0),
-        _p("posterize", "Posterize", 0.0, 100.0, 50.0),
-        _p("smoothness", "Smoothness", 0.0, 100.0, 50.0),
+        # #4556: az eredeti feliratok (`ImageFilters::BlurXY`, `DotContrast`,
+        # `DotFade`) — ld. `docs/specs/picasa-effekt-feliratok.md`
+        _p("blur_xy", "Color Brush", 0.0, 100.0, 20.0),
+        _p("dot_contrast", "Dot Density", 0.0, 100.0, 50.0),
+        _p("dot_fade", "Dot Fade", 0.0, 100.0, 50.0),
     ),
     # --- #516: a filterdesc-registry.md 4.2 szerint kiegészített/javított --
     # Border: OuterThickness, InnerThickness, CornerRadius, OuterColor,
@@ -305,7 +316,7 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # Polaroid: Rotate, OuterColor (az ini-ben Rotate jön előbb)
     "polaroid": (
         _p("rotate", "Rotate", -10.0, 10.0, 5.0, 0.5),
-        _color("outer_color", "Outer Color", "#e2e2e2"),
+        _color("outer_color", "Background Color", "#e2e2e2"),
     ),
     # Pixelate: Impact, BlendMode (renderer ma NEM használja — ld. jelentés),
     # Fade — a BlendMode vezérlőt a Fade pozíciója miatt kell tartani
@@ -389,12 +400,12 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "roundededges": (
         _p("corner_radius", "Corner Radius", 0.0, 0.0, 0.0,
            max_formula="half_min_wh", default_formula="tenth_min_wh"),
-        _color("outer_color", "Outer Color", "#ffffff"),
+        _color("outer_color", "Background Color", "#ffffff"),
     ),
     # Sixties: Fade, OuterColor, Rounded (checkbox)
     "sixties": (
         _p("fade", "Fade", 0.0, 100.0, 20.0),
-        _color("outer_color", "Outer Color", "#ffffff"),
+        _color("outer_color", "Background Color", "#ffffff"),
         _checkbox("rounded", "Rounded Corners", default=True),
     ),
     # PicnikGrain: Grain, Lighten (checkbox)
@@ -413,10 +424,14 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # unsharp2=1,mennyiség — a felső vég 3,0 (az `unsharp` v1-é 1,0),
     # az alapérték mindkettőnél 0,6
     "unsharp2": (_p("amount", "Amount", 0.0, 3.0, 0.6, 0.05),),
-    # PicnikTint=1,elhalványítás — a regiszter EGY csúszkát ad („Fade",
-    # 0–100, alap 0). Színválasztója NINCS: az örökölt `tint` az, aminek
-    # `preserve` + `#szín` párja van.
-    "picniktint": (_p("fade", "Fade", 0.0, 100.0, 0.0),),
+    # PicnikTint=1,elhalványítás,#szín — a `filterdesc.xml` szerint a
+    # szín a Fade után kerül a láncba, alapja #80cfff. A felirat a
+    # Picasa saját ImageFilters::TintColor szótárából jön. Az effekt az
+    # egész képre hat, nem festhető (#3541 helyesbítés).
+    "picniktint": (
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
+        _color("color", "Tint Color", "#80cfff"),
+    ),
 }
 
 

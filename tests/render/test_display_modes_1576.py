@@ -136,7 +136,7 @@ class TestModValaszto:
 
     @pytest.mark.parametrize(
         "mode",
-        ["auto", "normal", "dither16", "rdesk", "", "ismeretlen"],
+        ["auto", "normal", "rdesk", "", "ismeretlen"],
     )
     def test_a_tobbi_mod_ma_atenged(self, mode):
         """A még megvalósítatlan módokra átereszt.
@@ -145,7 +145,7 @@ class TestModValaszto:
         ebből a névsorból — a képpont-szabályukat a
         `tests/render/test_display_modes_1577_1578.py` őrzi —, a `sepia` és
         a `bw` pedig a #1657 óta (`test_display_modes_szepia_bw_1657.py`).
-        A maradék (`dither16`, `rdesk`, `mac`) külön jegyeké.
+        A maradék (`rdesk`, `mac`) külön jegyeké.
         """
         forras = _raszter((255, 255, 255), (0, 0, 0))
         eredmeny = apply_display_mode(forras, mode)

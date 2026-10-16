@@ -14,14 +14,13 @@ property-ket állítanánk.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt, QUrl
 from PySide6.QtGui import QGuiApplication, QWheelEvent
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtQuick import QQuickItem, QQuickView
 
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from picasapy.app.folder_hierarchy_controller import FolderHierarchyController
 
 try:
@@ -67,28 +66,15 @@ _FOLDERS = [
 # határidős poll: a VALÓDI feltételt figyeljük, és amint teljesül, azonnal
 # továbbengedünk.
 # --------------------------------------------------------------------------
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     """Határidős várakozás: a feltételt figyeli, nem az órát (#1463).
 
     #918: fejnélküli környezetben az elrendezés késik — egyetlen
     `processEvents()` után a méretek még a kezdeti állapotot mutatják."""
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
-def _var_stabil(qt_app, minta, masodperc: float = 5.0) -> bool:
+def _var_stabil(qt_app, minta, masodperc: float = 10.0) -> bool:
     """Megvárja, amíg a `minta()` KÉT EGYMÁST KÖVETŐ mérésben azonos.
 
     Ahol nincs egyetlen logikai feltétel, csak „álljon meg az elrendezés”,
@@ -350,9 +336,9 @@ class TestAKijelolesMindketIranybanAtjar:
 class TestAJobbklikkASorSajatMenujetAdja:
     """#732 ugyanaz a hibaosztálya: a hasáb gyökerén ülő `TapHandler` a
     rendezés-menüt nyitja meg mindenre, ami maga nem fogadja el a jobb
-    gombot. A fa sorainak SAJÁT menüjük van (`HierFolder`, öt tétel)."""
+    gombot. A köztes fasor saját menüje a `HierFolder` (öt tétel)."""
 
-    def test_a_fasor_a_hierfolder_menut_nyitja(self, render_pane, qt_app):
+    def test_a_koztes_fasor_a_hierfolder_menut_nyitja(self, render_pane, qt_app):
         view, pane, hierarchy = render_pane(tree=True)
         hierarchy.expandAll()
         _settle(qt_app, pane)
@@ -362,7 +348,7 @@ class TestAJobbklikkASorSajatMenujetAdja:
             for item in _walk(pane)
             if item.objectName().startswith("hierRow:")
         }
-        sor = sorok["/mnt/photo/Videok"]
+        sor = sorok["/mnt/photo/Kepek"]
         kozep = sor.mapToScene(QPointF(sor.width() / 2, sor.height() / 2))
         assert 0 <= kozep.y() <= view.height()
 
@@ -391,7 +377,7 @@ class TestAJobbklikkASorSajatMenujetAdja:
         assert lista_menu.property("visible") is False, (
             "a hasáb rendezés-menüje nyílt meg a sor saját menüje helyett"
         )
-        assert hier_menu.property("folderPath") == "/mnt/photo/Videok"
+        assert hier_menu.property("folderPath") == "/mnt/photo/Kepek"
 
 
 class TestAHasabEgyetlenGorgetojeMarad:

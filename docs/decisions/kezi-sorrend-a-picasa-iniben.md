@@ -2,6 +2,26 @@
 
 Dátum: 2026-09-16 · Státusz: ELFOGADVA · jegy: #1721
 
+> ## ⚠️ A PREMISSZA MEGDŐLT — ld. ADR-016 (2026-10-12, #4884, #4599)
+>
+> Az alábbi „A helyzet” szakasz szerint az eredeti a kézi sorrendet a
+> `db3/albums_0.db`-ben tartja. **Ez nem igaz**: a #4591 kimérte, hogy a
+> fájl tartalma borító-raszter, a #4884 pedig megtalálta a valódi helyet —
+> a keresőindex szótárát (`db3\wordhash.dat`), ahol minden mappa és album
+> egy szó, és a szó rekordindex-listájának sorrendje maga a megjelenítési
+> sorrend (`docs/specs/album-sorrend.md`).
+>
+> **A döntés ettől érvényben marad**, mint SAJÁT döntés: a `wordhash.dat` is
+> központi, bináris `db3`-fájl, tehát az 1. érv („a `db3` írása aránytalan
+> kockázat”) rá ugyanúgy áll, a 2. és a 3. érv pedig a premisszától
+> független. A szöveget történeti okból nem írtuk át.
+>
+> Az **album** sorrendjét az ADR-016
+> (`docs/decisions/album-sorrend-a-kep-szakaszaban.md`) rendezi: külön
+> kulcs (`albumorder=`), mert a mappa és az album sorrendje az eredetiben is
+> két független lista. Az ott felsorolt nyitott kérdések (NY1, NY2) a
+> `priority=`-re ugyanúgy vonatkoznak.
+
 ## A helyzet
 
 A rács sorrendjét ma kizárólag szabályok adják (`date` · `name` · `size` ·
@@ -23,8 +43,10 @@ A #1645 kutatási köre kimérte, hogy az eredeti Picasa a kézi sorrendet
    FUTÓ Picasája is használja (a tulajdonos párhuzamosan teszteli a két
    programot ugyanazon a NAS-mappán). Egy általunk írt `db3` egy hibás bájton
    az ő élő könyvtárát viszi.
-2. **Az `ini`-t már bírjuk.** Ütközésbiztos írás, round-trip, mappánkénti
-   hatókör — a projekt adatréteg-invariánsa szerint a `.picasa.ini`-t
+2. **Az `ini`-t már bírjuk.** Útvonalanként szerializált írás, round-trip,
+   a betöltés és az előzetes ujjlenyomat-ellenőrzés között észlelt változás
+   újrapróbálása, mappánkénti hatókör — a projekt adatréteg-invariánsa
+   szerint a `.picasa.ini`-t
    kizárólag az `ini/` csomag írja, és az már megvan.
 3. **A mappával együtt utazik.** Ha a felhasználó átmásolja a mappát, a kézi
    sorrend vele megy — a `db3`-as tárolás ezt nem tudja.

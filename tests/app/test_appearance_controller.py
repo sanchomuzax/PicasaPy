@@ -108,3 +108,45 @@ class TestAppearanceMixin:
         )
         settings.setValue(DARK_THEME_KEY, "talán")
         assert _Probe(settings).darkTheme is False
+
+    def test_general_ui_settings_default_to_the_picasa_values(self, controller):
+        assert controller.uiTransitionsEnabled is True
+        assert controller.showTooltipsEnabled is True
+        assert controller.singleClickExitEnabled is False
+
+    def test_general_ui_settings_are_saved_and_restored(
+        self, qt_app, controller
+    ):
+        from PySide6.QtCore import QSettings
+
+        controller.setUITransitionsEnabled(False)
+        controller.setShowTooltipsEnabled(False)
+        settings_path = controller._get_settings().fileName()
+        controller._get_settings().sync()
+
+        restored = type(controller)(
+            QSettings(settings_path, QSettings.Format.IniFormat)
+        )
+        assert restored.uiTransitionsEnabled is False
+        assert restored.showTooltipsEnabled is False
+
+    def test_single_click_exit_is_saved_and_restored(self, qt_app, controller):
+        from PySide6.QtCore import QSettings
+
+        controller.setSingleClickExitEnabled(True)
+        settings_path = controller._get_settings().fileName()
+        controller._get_settings().sync()
+
+        restored = type(controller)(QSettings(settings_path, QSettings.Format.IniFormat))
+        assert restored.singleClickExitEnabled is True
+
+    def test_single_click_exit_emits_only_when_changed(self, controller):
+        seen = []
+        controller.singleClickExitEnabledChanged.connect(
+            lambda: seen.append(controller.singleClickExitEnabled)
+        )
+
+        controller.setSingleClickExitEnabled(False)
+        assert seen == []
+        controller.setSingleClickExitEnabled(True)
+        assert seen == [True]

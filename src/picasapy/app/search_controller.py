@@ -7,6 +7,8 @@ végső osztályon regisztrálódnak — a QML és a tesztek változatlanul a
 
 from __future__ import annotations
 
+import time
+
 from PySide6.QtCore import Slot
 
 from picasapy.index import open_index, search_photos, search_suggestions
@@ -26,11 +28,12 @@ class SearchMixin:
         `selectFolder` és a `clearFilter` is teszi. Enélkül a
         Csillagozottakból a keresőmezőbe gépelve a sáv OTTMARADT a szűrő
         elavult darabszámával, miközben a rács már a találatokat mutatta.
-        A keresésnek saját darabszáma van: a bal hasáb „Search results for
-        … (N)" fejléce (`searchResultCount`)."""
+        #4531: nem üres keresésnél a sáv újra bekapcsol, de a keresés SAJÁT
+        darabszámával — rajta ül a „Back to View All" gomb."""
         query = text.strip()
         self._filter_active = False
         self._filter_status = ""
+        started = time.perf_counter()
         with open_index(self._db_path) as conn:
             if not query:
                 records = (
@@ -51,9 +54,19 @@ class SearchMixin:
                 records = search_photos(conn, query)
         if query:
             self._show_search_pane(records)
+            self._show_search_results(records, time.perf_counter() - started)
         else:
             self._restore_full_folder_pane()
-        self._show(records)
+            self._show(records)
+
+    def _show_search_results(self, records, elapsed: float) -> None:
+        """Keresési találatok a ZÖLD SÁVVAL (#4531).
+
+        A sáv hordozza a „Vissza az összes megtekintéséhez" gombot, ezért
+        szöveges keresés után is kell (az eredetiben a keresősáv
+        `viewallbutton`-ja). A darabszám mindig az épp megjelenő találatokból
+        készül, így nem avulhat el (#1443/#1515 tanulsága)."""
+        self._show_filtered(records, elapsed)
 
     def _show_search_pane(self, records) -> None:
         """A bal hasáb keresésre szűkítése (#49): csak a találatos mappák,
@@ -84,13 +97,15 @@ class SearchMixin:
         self._current_folder = folder_path  # a bal paneli kijelölés kövessen
         self._view_mode = ("search-folder", (query, folder_path))
         self._get_settings().setValue("session/lastFolder", folder_path)
+        started = time.perf_counter()
         with open_index(self._db_path) as conn:
             all_matches = search_photos(conn, query)
         # a hasáb az ÖSSZES találatos mappát mutatja tovább (#49), hogy
         # át lehessen kattintani a többibe; a rács a mappára szűkül
         self._show_search_pane(all_matches)
-        self._show(
-            tuple(r for r in all_matches if r.folder_path == folder_path)
+        self._show_search_results(
+            tuple(r for r in all_matches if r.folder_path == folder_path),
+            time.perf_counter() - started,
         )
 
     @Slot(str, result="QVariantList")

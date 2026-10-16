@@ -46,11 +46,12 @@ KÖZVETLENÜL a hover után történik.
 from __future__ import annotations
 
 import math
-import time
 
 import pytest
 from PySide6.QtCore import QEvent, QObject, QPoint, QPointF
 from PySide6.QtGui import QGuiApplication, QHoverEvent
+
+from tests.support.varakozas import var_feltetelre
 
 from support.collage_canvas_harness import (
     _child,
@@ -161,19 +162,12 @@ def _idozito(gyuru, index: int = 0):
     return talalt
 
 
-def _var(feltetel, masodperc: float = 8.0) -> bool:
+def _var(feltetel, masodperc: float = 10.0) -> bool:
     """Esemény-pörgetés, amíg a feltétel teljesül (vagy lejár az idő).
 
     ⚠️ Ez VÁRAKOZÁS, nem időmérés: a határidő csak felső korlát, a teszt
     verdiktje nem függ attól, mennyi idő telt el."""
-    app = QGuiApplication.instance()
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        if feltetel():
-            return True
-        app.processEvents()
-        time.sleep(0.005)
-    return bool(feltetel())
+    return var_feltetelre(QGuiApplication.instance(), feltetel, masodperc)
 
 
 def _kijelolve(controller, index: int = 0):

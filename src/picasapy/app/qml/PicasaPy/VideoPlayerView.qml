@@ -13,6 +13,15 @@ Item {
     // 1:1 bekapcsolásakor a VideoViewport a dekóder által jelzett
     // képkockaméretet tartja meg; a nézőterületen túli részt levágja.
     property bool actualSizeEnabled: false
+    signal exitRequested()
+
+    //: #4570: az `AutoPlayMovies` beállítás — kikapcsolva a videó megnyitáskor
+    //: áll, és a lejátszó gombjával indul. Kontroller nélkül (próbákban) a
+    //: Picasa alapja érvényes: magától indul.
+    readonly property bool autoPlay:
+        typeof controller !== "undefined" && controller
+        && controller.autoPlayMovies !== undefined
+            ? controller.autoPlayMovies : true
 
     //: #1838: a Picasából örökölt VÁGÁSPONTOK ezredmásodpercben. A **−1
     //: jelenti, hogy azon az oldalon nincs vágás** — nem 0 és nem a hossz.
@@ -35,13 +44,16 @@ Item {
     //: frissül. Ha itt optimistán átírnánk, a felület egy írásvédett mappán
     //: is mentettnek mutatná a vágást (#2497 tanulsága).
     signal trimRequested(int startMs, int endMs)
-    signal trimResetRequested()
-    signal exportClipRequested()
 
     //: #1838: KÉPKOCKA mentése (`movieeditpanel/capture_frame`). A komponens
     //: itt sem ír fájlt — a gazda hívja a vezérlő `captureMovieFrame`-jét a
-    //: sor indexével és az ÉPP LÁTOTT pozícióval.
+    //: sor indexével és az ÉPP LÁTOTT pozícióval. A gombot a videó-panel
+    //: (`VideoEditPanel.qml`) adja, ezért a jelzést a `captureFrame()` váltja ki.
     signal captureFrameRequested(int positionMs)
+
+    function captureFrame() {
+        player.captureFrameRequested(media.position)
+    }
 
     readonly property bool trimmed: trimStartMs >= 0 || trimEndMs >= 0
     //: a lejátszható szakasz — a vágás nélküli oldalon a fájl határa
@@ -74,9 +86,7 @@ Item {
         // a Picasa a megnyitáskor azonnal lejátszotta a videót. Nyíl-
         // függvény kell: a sourceChanged injektált jel-paramétere ("media")
         // különben árnyékolná a MediaPlayer id-ját.
-        onSourceChanged: () => {
-            if (String(media.source).length > 0) media.play()
-        }
+        onSourceChanged: () => player.startIfAutoPlay()
         //: #1838: a hossz csak a betöltés után ismert — a kezdőpontra ekkor
         //: tudunk ugrani (előbb a `position` írása elveszik)
         onDurationChanged: () => player.seekToTrimStart()
@@ -86,9 +96,15 @@ Item {
             if (player.trimEndMs >= 0 && media.position > player.trimEndMs)
                 media.pause()
         }
-        Component.onCompleted: () => {
-            if (String(media.source).length > 0) media.play()
-        }
+        Component.onCompleted: () => player.startIfAutoPlay()
+    }
+
+    //: #4570: a megnyitás utáni indítás — az `AutoPlayMovies` szabályozza.
+    //: Kikapcsolva a lejátszó áll marad, és a lejátszás gombra indul.
+    function startIfAutoPlay() {
+        if (String(media.source).length === 0) return
+        if (player.autoPlay) media.play()
+        else media.stop()
     }
 
     function togglePlayback() {
@@ -111,6 +127,16 @@ Item {
         anchors.right: parent.right
         anchors.bottom: controls.top
         actualSizeEnabled: player.actualSizeEnabled
+    }
+
+    VideoExitGestureArea {
+        objectName: "videoExitGestureArea"
+        anchors.fill: viewport
+        singleClickExit:
+            typeof controller !== "undefined" && controller
+            && controller.singleClickExitEnabled !== undefined
+                ? controller.singleClickExitEnabled : false
+        onExitRequested: player.exitRequested()
     }
 
     Text {
@@ -178,9 +204,10 @@ Item {
                         value: media.position
                     }
                 }
-                //: #1838: a három vágás-vezérlő, az eredeti sorrendjében
-                //: (`setin` · `setout` · `reset_trim`). A feliratok a nyomdai
-                //: vágásjelek: a be- és kimeneti pont szögletes zárójele.
+                //: #1838: a vágás-kezdő és -befejező vezérlő a sávon. A
+                //: visszaállítás, a képkocka és az export a videó-panelen van.
+                //: A feliratok a nyomdai vágásjelek: a be- és kimeneti pont
+                //: szögletes zárójele.
                 PicasaButton {
                     objectName: "videoSetInButton"
                     Layout.preferredWidth: 30
@@ -198,39 +225,6 @@ Item {
                     ToolTip.delay: Theme.tooltipDelay
                     ToolTip.visible: hovered
                     onClicked: player.trimRequested(player.trimStartMs, media.position)
-                }
-                PicasaButton {
-                    objectName: "videoResetTrimButton"
-                    Layout.preferredWidth: 30
-                    text: "⟲"
-                    //: vágás nélkül nincs mit visszaállítani — a gomb szürke
-                    enabled: player.trimmed
-                    //: `Tooltip(movieeditpanel/reset_trim)` — az eredeti szövege
-                    ToolTip.text: qsTr("Restore movie to its original length (remove start and end points)")
-                    ToolTip.delay: Theme.tooltipDelay
-                    ToolTip.visible: hovered
-                    onClicked: player.trimResetRequested()
-                }
-                //: #1838: `movieeditpanel/capture_frame` — „Take Snapshot".
-                //: A jel a fényképezőgép; a felirat a buboréksúgóban van, mert a
-                //: sávon csak 30 képpont széles gombok férnek el.
-                PicasaButton {
-                    objectName: "videoCaptureFrameButton"
-                    Layout.preferredWidth: 30
-                    text: "⃞"
-                    //: `Tooltip(movieeditpanel/capture_frame)`
-                    ToolTip.text: qsTr("Capture current frame")
-                    ToolTip.delay: Theme.tooltipDelay
-                    ToolTip.visible: hovered
-                    onClicked: player.captureFrameRequested(media.position)
-                }
-                // `movieeditpanel/export_movie`: a Linuxon az eredeti
-                // `LinuxNomovie` üzenetet adja; csak vágott klipnél aktív.
-                PicasaButton {
-                    objectName: "movieeditpanel/export_movie"
-                    text: qsTr("Export Clip")
-                    enabled: player.trimmed
-                    onClicked: player.exportClipRequested()
                 }
                 VideoPlayerControls {
                     objectName: "videoPlayerModeControls"

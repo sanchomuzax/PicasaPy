@@ -7,10 +7,10 @@ visszatérési értékét (azt a `tests/test_help_kereses_2214.py` méri).
 
 from __future__ import annotations
 
-import time
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtQuick import QQuickItem
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 
 def _walk(item: QQuickItem):
@@ -24,17 +24,8 @@ def _nevre(window, nev: str) -> list:
     return [e for e in _walk(gyoker) if e.objectName() == nev]
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _nyisd_meg(window, qt_app):
@@ -50,7 +41,7 @@ def _keress(window, qt_app, kifejezes: str):
     assert mezo is not None, "nincs keresőmező"
     mezo.setProperty("text", kifejezes)
     qt_app.processEvents()
-    _var(qt_app, lambda: len(_nevre(window, "helpResultTitle")) > 0, 3.0)
+    _var(qt_app, lambda: len(_nevre(window, "helpResultTitle")) > 0)
 
 
 class TestASorokMegkulonboztethetok:

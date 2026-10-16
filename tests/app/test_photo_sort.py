@@ -119,6 +119,19 @@ class TestAzIrany:
             "Beta.jpg",
         ]
 
+    def test_a_nev_sorrendje_a_szamsorozatokat_szamkent_hasonlitja(self):
+        kepek = (
+            _Photo("/a", "kep1.jpg"),
+            _Photo("/a", "kep10.jpg"),
+            _Photo("/a", "kep2.jpg"),
+        )
+
+        assert _names(sort_folder_blocks(kepek, "name")) == [
+            "kep1.jpg",
+            "kep2.jpg",
+            "kep10.jpg",
+        ]
+
 
 class TestADatumForrasa:
     """EXIF-felvételi dátum az elsődleges; hiányában a FÁJL ideje."""

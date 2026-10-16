@@ -104,13 +104,14 @@ def _ujjlenyomat(gyokér) -> dict:
 class TestUrlCimke:
     """A cimkét író és olvasó fél ugyanazt a nyelvet beszéli."""
 
-    def test_a_kepponot_mozdito_mod_cimket_kap(self, tmp_path):
+    @pytest.mark.parametrize("mod", ["dither16", "projector"])
+    def test_a_kepponot_mozdito_mod_cimket_kap(self, tmp_path, mod):
         _lib, records = _konyvtar(tmp_path)
-        url = _thumb_url(records[0], "projector")
-        assert url.endswith("&d=projector"), url
+        url = _thumb_url(records[0], mod)
+        assert url.endswith(f"&d={mod}"), url
 
     @pytest.mark.parametrize(
-        "mod", ["", "auto", "normal", "dither16", "rdesk"]
+        "mod", ["", "auto", "normal", "rdesk"]
     )
     def test_a_no_op_modok_nem_valtoztatjak_az_url_t(self, tmp_path, mod):
         """A no-op módok és az alaphelyzet: az URL bájtra a régi.

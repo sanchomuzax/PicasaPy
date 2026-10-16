@@ -32,12 +32,20 @@ szelesseg_3572.py` `_kattints_kozepere`-mintája szerint.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
+
+
+@pytest.fixture(autouse=True)
+def _huvelykes_terulet(monkeypatch):
+    """A tesztek az eredeti hüvelykes méretlistára épülnek; a CI-gép
+    területi beállítása ne döntse el, melyik készletet kapják (#4435)."""
+    from picasapy.printing import dpi
+
+    monkeypatch.setattr(dpi, "_metrikus_teruleti_meres", lambda: False)
 
 
 def _elem(root, nev):
@@ -82,12 +90,8 @@ def _kattints_kozepere(ablak, qt_app, elem):
     qt_app.processEvents()
 
 
-def _varakozzon(qt_app, feltetel, hatarido_mp=3):
-    hatarido = time.monotonic() + hatarido_mp
-    while time.monotonic() < hatarido and not feltetel():
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return feltetel()
+def _varakozzon(qt_app, feltetel, hatarido_mp=10.0):
+    return var_feltetelre(qt_app, feltetel, hatarido_mp)
 
 
 def _legordulo_tetele(qt_app, lista, index):

@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QUrl, Property
+from PySide6.QtCore import QObject, QUrl, QUrlQuery, Property
 from PySide6.QtQml import QQmlComponent, QQmlEngine, QQmlProperty
 
 # a QML-ből létrehozott gyökér-objektumok élő Python-referencia nélkül a
@@ -49,15 +49,20 @@ _TAB_NAMES = (
 
 
 class _FakeEditController(QObject):
-    """Csak a bélyegkép-URL-hez szükséges felület: `previewSource`."""
+    """Csak a bélyegkép-URL-hez szükséges két property."""
 
-    def __init__(self, preview_source="", parent=None):
+    def __init__(self, preview_source="", effect_chain="", parent=None):
         super().__init__(parent)
         self._preview_source = preview_source
+        self._effect_chain = effect_chain
 
     @Property(str)
     def previewSource(self):
         return self._preview_source
+
+    @Property(str)
+    def effectChain(self):
+        return self._effect_chain
 
 
 @pytest.fixture
@@ -201,12 +206,16 @@ class TestEffectThumbSourceWiring:
         panel = _make_panel(qml_engine, fake_controller=fake, active_tab=2)
         qt_app.processEvents()
         button = panel.findChild(QObject, "effectSepia")
-        assert button.property("thumbSource") == "image://effectthumb/42/sepia"
+        assert button.property("thumbSource") == (
+            "image://effectthumb/42/sepia?filters="
+        )
 
     def test_thumb_source_ignores_revision_bumps(self, qml_engine, qt_app):
-        """A bélyegkép csak a FOTÓTÓL függ, nem a szerkesztési revíziótól
-        (#338: "effektenként csak egyszer" gyorsítótárazás) — két eltérő
-        `rev=`-fel is ugyanazt az URL-t kell adnia."""
+        """Az előnézeti `rev` nem változtat az URL-en, ha a lánc azonos.
+
+        A `filters` paraméter tartalmazza a szerkesztési láncot; az előnézeti
+        kép revízióját a csempe-renderelés nem használja cache-busterként.
+        """
         fake_a = _FakeEditController(preview_source="image://editpreview/9?rev=1")
         panel_a = _make_panel(qml_engine, fake_controller=fake_a, active_tab=2)
         qt_app.processEvents()
@@ -217,7 +226,7 @@ class TestEffectThumbSourceWiring:
         qt_app.processEvents()
         source_b = panel_b.findChild(QObject, "effectBw").property("thumbSource")
 
-        assert source_a == source_b == "image://effectthumb/9/bw"
+        assert source_a == source_b == "image://effectthumb/9/bw?filters="
 
     def test_undo_redo_buttons_never_get_a_thumb_source(self, qml_engine, qt_app):
         """A nem-effekt gombok (Undo/Redo/…) a bélyegkép-mezőt sose kapják
@@ -387,7 +396,9 @@ class TestEffectThumbnailIntegration:
         button = panel.findChild(QObject, "effectSepia")
         source = button.property("thumbSource")
         assert source.startswith("image://effectthumb/")
-        assert source.endswith("/sepia")
+        assert QUrl(source).path().endswith("/sepia")
+        assert QUrlQuery(QUrl(source)).hasQueryItem("filters")
+        assert QUrlQuery(QUrl(source)).queryItemValue("filters") == ""
 
     def test_thumbnail_arrives_asynchronously_without_blocking(
         self, qml_app, qt_app

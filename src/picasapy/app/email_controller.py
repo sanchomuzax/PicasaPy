@@ -25,10 +25,13 @@ determinisztikus, oldalhatás-mentes módja) — a parancs-összeállítás
 
 from __future__ import annotations
 
+import ctypes
 import logging
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -44,9 +47,18 @@ from picasapy.mailer import (
     build_xdg_email_argv,
     resolve_email_max_dimension,
 )
+from picasapy.mailer.mapi import (
+    MAPI_OK,
+    MAPI_USER_ABORT,
+    build_mapi_message,
+    send_mapi,
+)
 
 from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_file_url
+
+#: Ennyi ideig várunk az xdg-email kilépési kódjára (#4606).
+_XDG_EMAIL_VARAKOZAS_S = 5.0
 
 #: A `shutil.which` és a `subprocess.Popen` MODULSZINTŰ fogantyúja (#1375) —
 #: a teszt EZEKET cserélje.
@@ -56,6 +68,17 @@ from .formatting import to_file_url
 #: tehát a csere minden más modulra is hat, amíg a teszt fut.
 _which = shutil.which
 _popen = subprocess.Popen
+
+#: A MAPI-küldés (#4607) MODULSZINTŰ fogantyúja — a Windows-ág tesztje ezt
+#: cseréli, hogy valódi levelezőt ne nyisson meg.
+_mapi_send = send_mapi
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse
+    (#1217: a platformfüggő ág a saját platformját mondja ki, #4607)."""
+    return sys.platform
+
 
 _log = logging.getLogger(__name__)
 
@@ -70,6 +93,8 @@ _log = logging.getLogger(__name__)
 _EXPORT_SIZE_KEY = "mail/exportSize"
 _SINGLE_ORIGINAL_KEY = "mail/singlePictureOriginal"
 _USE_DEFAULT_CLIENT_KEY = "mail/useDefaultClient"
+_MOVIE_FULL_KEY = "mail/movieFull"
+_EMAIL_AUTOCOMPLETE_KEY = "mail/EmailAutocomplete"
 
 #: A régi, INDEX-alapú kulcsok — csak a migrációhoz olvassuk őket.
 _REGI_MULTI_INDEX_KEY = "mail/multiSizeIndex"
@@ -84,6 +109,39 @@ _TRUE_VALUES = ("true", "1")
 
 #: #1375: a teszt EZT cseréli, nem a globális `tempfile.mkdtemp`-et.
 _mkdtemp = tempfile.mkdtemp
+
+#: #4609: az ideiglenes gyökér — a teszt EZT cseréli (ugyanez a minta).
+_gettempdir = tempfile.gettempdir
+
+#: #4609: az e-mail-másolat mappáinak neve-előtagja (`_keszitsd_elo`).
+_MAIL_MAPPA_ELOTAG = "picasapy-mail-"
+
+#: #4609: ennél frissebb mappához nem nyúlunk — egy párhuzamosan futó példány
+#: épp küldés közben lehet (a csatolmány nem tűnhet el alóla).
+_MAIL_MASOLAT_MIN_KOR_S = 3600
+
+
+def _torold_regi_mail_masolatok() -> None:
+    """Az előző indulások e-mail-másolatait törli (#4609).
+
+    A `_keszitsd_elo` minden küldésnél új `picasapy-mail-*` mappát hoz
+    létre a lemezen, és sosem takarít ki utánuk — indulásonként a
+    másolatok halmozódnának. Csak mappát törlünk, és a symlinket sosem
+    követjük: a célja a gyökéren kívül eshet. Hiba (zárolt, jogosulatlan
+    mappa) nem akasztja meg az indulást. Az egy óránál frissebb mappa marad."""
+    gyoker = Path(_gettempdir())
+    hatar = time.time() - _MAIL_MASOLAT_MIN_KOR_S
+    for mappa in gyoker.glob(f"{_MAIL_MAPPA_ELOTAG}*"):
+        if mappa.is_dir() and not mappa.is_symlink() and _mtime(mappa) < hatar:
+            shutil.rmtree(mappa, ignore_errors=True)
+
+
+def _mtime(ut: Path) -> float:
+    try:
+        return ut.stat().st_mtime
+    except OSError:
+        return time.time()
+
 
 def _coerce_bool(value, default: bool) -> bool:
     """A `QSettings` platformonként bool-t vagy szöveget ad vissza ugyanarra
@@ -121,6 +179,8 @@ class EmailController(QObject):
     emailSizeChanged = Signal()
     singlePictureOriginalChanged = Signal()
     useDefaultClientChanged = Signal()
+    movieFullChanged = Signal()
+    emailAutocompleteChanged = Signal()
     emailFailed = Signal(str)
     #: #1798b: az előkészítés FOLYAMATJELZŐJE. Az eredeti a
     #: „Preparing attachments…" sorral jelez, amíg a mellékleteket
@@ -149,7 +209,13 @@ class EmailController(QObject):
         ideiglenes fájlra) — élesben az alapértelmezett globális beállítás
         (az `application.py`-ban már beállított szervezet/app-név alatt)."""
         super().__init__(parent)
+        # #4609: a vezérlő indulásonként EGYSZER jön létre (application.py),
+        # így itt a régi másolatok takarítása az indulás része
+        _torold_regi_mail_masolatok()
         self._photo_source = photo_source
+        #: #4607: újrabelépés-őr — a MAPI-hívás a felhasználó válaszáig áll,
+        #: közben a Qt eseményhurok újabb küldést indíthatna.
+        self._mapi_folyamatban = False
         #: #1671: a KÉPTÁLCA rekordjai. Ha nem üres, ŐK a forrás — a rács
         #: pillanatnyi kijelölése és a látott mappa nem számít. Az eredeti
         #: súgója is így fogalmaz: „Print photos in the Photo Tray". A
@@ -160,6 +226,12 @@ class EmailController(QObject):
         self._settings = settings if settings is not None else QSettings()
         self._email_size = self._betolt_meretet()
         self._single_original = self._betolt_egy_kep_kapcsolot()
+        # Az eredeti Preferences\EmailMovie alapértéke 0: az első
+        # képkockát csatolja. A `mail/movieFull` a teljes film választását
+        # menti, hogy indulás után is ugyanaz a küldési mód maradjon.
+        self._movie_full = _coerce_bool(
+            self._settings.value(_MOVIE_FULL_KEY), False
+        )
         self._compose_recipient = ""
         #: #2184: friss profilon a program MEGKÉRDEZI, mivel küldjön.
         #: Az eredetiben a `DoNotPromptForEmailPref` alapértéke 0
@@ -170,6 +242,12 @@ class EmailController(QObject):
         #: sosem nyitja meg az Opciókat.
         self._use_default_client = _coerce_bool(
             self._settings.value(_USE_DEFAULT_CLIENT_KEY), False
+        )
+        # Az eredeti Preferences\EmailAutocomplete alapértéke 1 (BE).
+        # A Picasa ezt a beállítást csak a menü pipájához használja; a
+        # javaslómotort nem kapuzzuk vele.
+        self._email_autocomplete_enabled = _coerce_bool(
+            self._settings.value(_EMAIL_AUTOCOMPLETE_KEY), True
         )
 
     # -- méret-beállítások (OptionsTabEmail.qml csúszdái) ------------------
@@ -271,6 +349,20 @@ class EmailController(QObject):
         self._settings.setValue(_SINGLE_ORIGINAL_KEY, eredeti)
         self.singlePictureOriginalChanged.emit()
 
+    @Property(bool, notify=movieFullChanged)
+    def movieFull(self) -> bool:  # noqa: N802 — QML-stílus
+        """Igaz: a teljes videó kerül mellékletként, hamis: az első kocka."""
+        return self._movie_full
+
+    @Slot(bool)
+    def setMovieFull(self, movie_full: bool) -> None:  # noqa: N802
+        movie_full = bool(movie_full)
+        if movie_full == self._movie_full:
+            return
+        self._movie_full = movie_full
+        self._settings.setValue(_MOVIE_FULL_KEY, movie_full)
+        self.movieFullChanged.emit()
+
     @Property(bool, notify=useDefaultClientChanged)
     def useDefaultClient(self) -> bool:
         """Igaz: a rendszer alapértelmezett levelezőjét használjuk kérdés
@@ -290,6 +382,22 @@ class EmailController(QObject):
             _USE_DEFAULT_CLIENT_KEY, "true" if use_default else "false"
         )
         self.useDefaultClientChanged.emit()
+
+    @Property(bool, notify=emailAutocompleteChanged)
+    def emailAutocompleteEnabled(self) -> bool:  # noqa: N802 — QML-stílus
+        """Az e-mail címzett mező automatikus kitöltésének pipája (#4636)."""
+        return self._email_autocomplete_enabled
+
+    @Slot(bool)
+    def setEmailAutocompleteEnabled(self, enabled: bool) -> None:  # noqa: N802
+        enabled = bool(enabled)
+        if enabled == self._email_autocomplete_enabled:
+            return
+        self._email_autocomplete_enabled = enabled
+        self._settings.setValue(_EMAIL_AUTOCOMPLETE_KEY, enabled)
+        # A menü azonnali mentésű, nincs külön OK gomb vagy kilépéskori lépés.
+        self._settings.sync()
+        self.emailAutocompleteChanged.emit()
 
     @Slot(str)
     def setComposeRecipient(self, recipient: str) -> None:  # noqa: N802
@@ -331,6 +439,7 @@ class EmailController(QObject):
                     rotate_steps=photo.rotate_steps,
                     flip_flags=getattr(photo, "flip_flags", 0),  # #2902
                     filters=photo.filters,
+                    taken_at_override=getattr(photo, "taken_at_override", None),
                 )
             )
         return items
@@ -381,8 +490,12 @@ class EmailController(QObject):
             else self._email_size
         )
         max_dimension = resolve_email_max_dimension(meret)
-        target_dir = Path(_mkdtemp(prefix="picasapy-mail-"))
-        settings = ExportSettings(max_dimension=max_dimension, jpeg_quality=85)
+        target_dir = Path(_mkdtemp(prefix=_MAIL_MAPPA_ELOTAG))
+        settings = ExportSettings(
+            max_dimension=max_dimension,
+            jpeg_quality=85,
+            movie_full=self._movie_full,
+        )
         report = export_photos(items, target_dir, settings)
         if report.failed:
             _log.warning(
@@ -426,19 +539,36 @@ class EmailController(QObject):
     def _kuldes(
         self, attachment_paths, subject: str, body: str, recipient: str = ""
     ) -> bool:
-        """A tényleges indítás: `xdg-email`, annak hiányában `mailto:`
-        visszaesés — csatolmány NÉLKÜL (ld. a modul docstringje), erről az
-        `emailFailed` jelez, hogy a UI figyelmeztethesse a felhasználót."""
+        """A tényleges indítás: Windowson MAPI (a mellékletekkel, #4607),
+        Linuxon `xdg-email`, annak hiányában `mailto:` visszaesés —
+        csatolmány NÉLKÜL (ld. a modul docstringje), erről az `emailFailed`
+        jelez, hogy a UI figyelmeztethesse a felhasználót."""
         attachments = [Path(path) for path in attachment_paths]
+        if _platform().startswith("win"):
+            return self._kuldes_mapi(subject, body, attachments, recipient)
         xdg_email = _which("xdg-email")
         if xdg_email is not None:
             argv = build_xdg_email_argv(
                 subject, body, attachments, recipient=recipient
             )
             try:
-                _popen(argv)  # noqa: S603 — argv-lista, nincs shell
+                process = _popen(argv)  # noqa: S603 — argv-lista, nincs shell
             except OSError as error:
                 self.emailFailed.emit(str(error))
+                return False
+            # Az xdg-email a levelezőprogram indítása után kilép; ha egy
+            # kliens életben tartja, a felület nem várhat rá — ekkor a
+            # küldés elindultnak számít.
+            try:
+                return_code = process.wait(timeout=_XDG_EMAIL_VARAKOZAS_S)
+            except subprocess.TimeoutExpired:
+                return True
+            if return_code != 0:
+                _log.warning(
+                    "xdg-email sikertelen kilépési kóddal állt le: %s",
+                    return_code,
+                )
+                self.emailFailed.emit(self.tr("No email program was found."))
                 return False
             return True
 
@@ -454,3 +584,38 @@ class EmailController(QObject):
         if not opened:
             self.emailFailed.emit(self.tr("No email program was found."))
         return bool(opened)
+
+    def _kuldes_mapi(
+        self,
+        subject: str,
+        body: str,
+        attachments: list[Path],
+        recipient: str,
+    ) -> bool:
+        """Windows: a levélszerkesztő a MAPI-n át, a mellékletekkel (#4607).
+
+        A `MAPI_DIALOG` miatt a hívás a felhasználó válaszáig áll — a
+        szerkesztő bezárása `MAPI_USER_ABORT`, ez nem hiba és nem jelzendő.
+        Minden más kódnál a csatolmány NEM ment ki, ezért hibát jelzünk, és
+        nem esünk vissza csatolmány nélküli `mailto:`-ra."""
+        if self._mapi_folyamatban:
+            return False
+        self._mapi_folyamatban = True
+        try:
+            payload = build_mapi_message(
+                subject, body, attachments, recipient=recipient
+            )
+            code = _mapi_send(payload)
+        except (OSError, AttributeError, ctypes.ArgumentError):
+            _log.warning("MAPI-küldés kivétellel megszakadt", exc_info=True)
+            self.emailFailed.emit(self.tr("No email program was found."))
+            return False
+        finally:
+            self._mapi_folyamatban = False
+        if code == MAPI_OK:
+            return True
+        if code == MAPI_USER_ABORT:
+            return False
+        _log.warning("MAPI-küldés sikertelen, kód: %s", code)
+        self.emailFailed.emit(self.tr("No email program was found."))
+        return False

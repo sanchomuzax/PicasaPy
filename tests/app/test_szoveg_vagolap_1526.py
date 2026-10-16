@@ -68,8 +68,7 @@ def controller(qt_app, tmp_path, library):
 
 
 def _varj(qt_app, feltetel, masodperc: float = 15.0) -> bool:
-    """Több képre menő írás TÖBB `photoOpFinished`-et ad — egyetlen jelzésre
-    várni versenyhelyzet volna, ezért a VÉGÁLLAPOTRA várunk."""
+    """Több képre menő írásnál a teljes nézetállapotra várunk."""
     import time
 
     hatarido = time.monotonic() + masodperc

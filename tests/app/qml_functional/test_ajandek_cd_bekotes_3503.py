@@ -18,25 +18,14 @@ import subprocess
 
 import pytest
 from PySide6.QtCore import (
-    Q_ARG, QEventLoop, QMetaObject, QObject, QPoint, QPointF, Qt, QTimer,
+    Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt,
 )
 from PySide6.QtTest import QTest
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 def _var(qt_app, feltetel, ms=20000) -> bool:
-    eltelt = 0
-    while eltelt < ms:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        szunet = QEventLoop()
-        QTimer.singleShot(25, szunet.quit)
-        szunet.exec()
-        eltelt += 25
-    return bool(feltetel())
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), ms / 1000)
 
 
 def _elem(window, nev):
@@ -81,7 +70,7 @@ def _var_elrendezett_gombra(window, qt_app, parbeszed, nev):
         elozo_geometria = geometria
         return stabil
 
-    assert _var(qt_app, elrendezve, ms=5000), (
+    assert _var(qt_app, elrendezve, ms=10000), (
         f"a {nev} gomb nem lett látható és stabilan elrendezve a főablakban"
     )
     return gomb

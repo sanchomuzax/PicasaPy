@@ -26,11 +26,10 @@ rekeszt tart, tehát oda-vissza kapcsolgatva nem kell újrarenderelni.
 
 ## A cimke csak ott jelenik meg, ahol számít
 
-Az `auto`/`normal` és a hét, ma még meg nem valósított mód (#1579)
-képpontot nem mozdít, ezért **nem kap cimkét**: az URL bájtra ugyanaz, mint
-a mód bevezetése előtt. Így (a) a rendes használat semmivel nem lassul, és
-(b) a módból kilépve a Qt gyorstárában MÁR OTT LÉVŐ, festetlen kép jelenik
-meg azonnal — nincs újrarenderelés.
+Az `auto`/`normal` no-op mód és a képpontot nem módosító `rdesk` nem kap
+cimkét: az URL bájtra ugyanaz, mint a mód bevezetése előtt. A `dither16`
+képpontot módosít, ezért saját URL-kulcsot kap. Így a Qt gyorstára nem
+keveri össze a szemcsézett és az érintetlen képet.
 
 ## Amit ez a modul SZÁNDÉKOSAN nem tesz
 

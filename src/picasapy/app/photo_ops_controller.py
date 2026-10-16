@@ -45,7 +45,8 @@ import secrets
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, Qt, Signal, Slot
+from PySide6.QtGui import QGuiApplication
 
 from picasapy.export import export_sidecar_for_photo
 from picasapy.edit.effect_clipboard import (
@@ -53,11 +54,20 @@ from picasapy.edit.effect_clipboard import (
     crop_mirror_value,
     paste_all_effects,
 )
-from picasapy.fileops import RenameItem, preview_name, rename_photos_many
+from picasapy.fileops import (
+    PartialRenameError,
+    RenameItem,
+    preview_name,
+    rename_photos_many,
+)
+from picasapy.app.kezi_sorrend import mappa_prioritasai, mentsd_a_prioritasokat
 from picasapy.index import (
+    album_photos,
     open_index,
-    photos_with_keyword,
     photo_by_id,
+    photos_in_folder,
+    photos_with_faces,
+    photos_with_keyword,
     search_photos,
     update_photo_fields,
 )
@@ -65,9 +75,11 @@ from picasapy.ini import (
     FilterWriteError,
     IniConflictError,
     IniSaveError,
-    load_document,
+    STAR_ALBUM_TOKEN,
+    load_existing,
     update_document,
 )
+from picasapy.ini.album_order import AlbumOrderWriteError, write_album_places
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
 from picasapy.ini.albums import (
     albums_of,
@@ -75,7 +87,9 @@ from picasapy.ini.albums import (
     with_album,
     with_album_fields,
     without_album,
+    without_album_everywhere,
 )
+from picasapy.index.album_sort import SORT_MODES, new_places, sorted_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.render.flip import (
     FLIP_HORIZONTAL,
@@ -85,6 +99,8 @@ from picasapy.render.flip import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 
+from . import formatting
+from .appearance_controller import coerce_ui_preference_flag
 from .worker_thread import BackgroundWorkerMixin
 
 # #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
@@ -150,6 +166,13 @@ def tukrozes_mutacio(document, nev: str, flags: int):
     return document.with_removed(nev, "flipped")
 
 
+# #4879: a `rename.fen` két jelölőnégyzetének állása (az eredeti
+# `RenameUseDate` / `RenameUseSize` beállításkulcsa) — a következő
+# megnyitásig megmarad.
+RENAME_USE_DATE_KEY = "RenameUseDate"
+RENAME_USE_SIZE_KEY = "RenameUseSize"
+
+
 class PhotoOpsMixin(BackgroundWorkerMixin):
     """Csillag, felirat, forgatás és elrejtés — egyesével és kötegelten."""
 
@@ -157,10 +180,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # frissítését a GUI-szálra tereli (Qt automatikusan sorba állítja a
     # más szálból jövő emitet, ahogy a watcherDirty is teszi).
     # #1443: a harmadik elem az utómunka (hívható vagy None) — a GUI-szálon,
-    # a sor frissítése UTÁN, de a `photoOpFinished` ELŐTT fut le. Külön
-    # jelzés helyett azért ide, mert a tesztek (és a QML busy-jelzése) a
-    # `photoOpFinished`-re várnak: egy másik, később sorra kerülő jelzésen
-    # érkező utómunka a várakozás UTÁN futna le — néma versenyhelyzet.
+    # a sor frissítése UTÁN fut le. A felület a modell változását követi.
     _photoFieldUpdated = Signal(int, object, object)
     #: #3830: a sikertelen írás hiba-utómunkája (hívható) — a GUI-szálon,
     #: a `photoOpFailed` ELŐTT fut le (ugyanabból a szálból küldött, sorba
@@ -173,7 +193,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
     #: eljut a menühöz, nem csak a sajátunk.
     captionClipboardChanged = Signal()
-    photoOpFinished = Signal()
+    #: #4628: a kijelölt képek valamelyikének már van felirata, ezért a
+    #: vágólapról beillesztés előtt a QML megerősítést kér.
+    captionPasteConfirmationRequested = Signal()
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
@@ -200,6 +222,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: a vezérlő csak a tényt jelenti, ahogy a `saveCopyReady` is.
     rotationTypeFailed = Signal(int)   # hány elem maradt ki
     rotationNeedsSelection = Signal()
+
+    @Slot(int, result=str)
+    def hoverPreviewFileUrlAt(self, row: int) -> str:  # noqa: N802 — QML-hívás
+        """A rács egy sorának eredeti képe, URL-kódolva az előnézeti ablaknak."""
+        path = self._photos.filePathAt(row)
+        return formatting.to_file_url(path).toString()
     # #366: a tömeges átnevezés (fájlrendszer-írás, lehet lassú NAS-on)
     # háttérszálon fut; ez a jelzés tereli a resync/refresh-t vissza a
     # GUI-szálra, a `_photoFieldUpdated` mintája szerint.
@@ -282,16 +310,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             # pótoljuk (olcsó, csak a jelen nézet listáját írja újra, nem
             # lemezműveletet indít)
             self._provider.register_photos(self._photos.photos)
-        # #1443: az utómunka a sor frissítése UTÁN, a befejezés-jelzés ELŐTT
-        # fut — így a `photoOpFinished`-re váró hívó (QML, teszt) már a
-        # végleges nézetet látja. `record is None` esetén is lefut: ha a kép
-        # eltűnt az indexből, a nézetnek pláne frissülnie kell.
-        # #3830: ha az utómunka `True`-t ad, újabb írás indult a láncban
-        # (gyors egymás utáni forgatás) — a befejezés-jelzés majd a lánc
-        # VÉGÉN megy ki, különben a rá váró hívó félkész állapotot látna.
-        folytatodik = after() if after is not None else None
-        if folytatodik is not True:
-            self.photoOpFinished.emit()
+        # #1443: az utómunka a sor frissítése után fut. `record is None`
+        # esetén is lefut: ha a kép eltűnt az indexből, a nézetnek pláne
+        # frissülnie kell. #3830 esetén az utómunka a következő forgatást
+        # indíthatja, a modell így csak a lánc végső értékét kapja meg.
+        if after is not None:
+            after()
 
     @Slot(object)
     def _on_photo_write_aborted(self, on_error) -> None:
@@ -316,7 +340,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # meglévő hibajelzési minta (#86/#150): ugyanaz a csatorna, mint a
         # háttér-szinkron hibáié
         self.syncFailed.emit(message)
-        self.photoOpFinished.emit()
 
     def _run_photo_write(
         self, photo_id: int, perform, after=None, on_error=None
@@ -329,9 +352,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         `after`: opcionális utómunka (#1443), amit a GUI-szálon, a rács-sor
         frissítése után hívunk. Írási hiba esetén NEM fut le — olyankor a
-        nézet tartalma sem változott. Ha `True`-t ad vissza, a
-        `photoOpFinished` elmarad (a hívó újabb írást indított, #3830).
-
+        nézet tartalma sem változott. A forgatás utómunkája a következő
+        célértéket új háttérmunkában írja ki.
         `on_error`: opcionális hiba-utómunka (#3830) a GUI-szálon — a
         várt írási hibánál (`_WRITE_ERRORS`) ÉS nem várt kivételnél is
         lefut, hogy a hívó eldobhassa a függő állapotát."""
@@ -400,7 +422,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: Ha itt állunk, a csillag ki/be kapcsolása nem egy sor megjelenését
     #: változtatja, hanem a lista TARTALMÁT — a nézetet újra le kell
     #: kérdezni. A mappa-nézetben ellenben a sornak maradnia kell.
-    _CSILLAG_SZURT_NEZETEK = ("starred",)
+    _CSILLAG_SZURT_NEZETEK = ("starred", "starred_album")
 
     def _refresh_if_star_filtered(self) -> None:
         """Újralekérdezés, ha a csillag a jelen nézet tagságát dönti el.
@@ -574,7 +596,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         """A vágólap szövege a KIJELÖLT képek feliratába („Paste Text").
 
         Az eredetiben a parancs a kijelölésre hat, nem egy képre. Visszaadja,
-        hány képre indult írás.
+        hány képre indult írás. Ha a kijelölésben van már feliratozott kép,
+        a QML előbb megerősítést kér; az írás csak a `confirmCaptionPaste`
+        hívásakor indul.
 
         ⚠️ ÜRES vágólapra nem tesz semmit: a meglévő feliratok letörlése néma
         adatvesztés lenne — a törlésre a felirat-szerkesztő van."""
@@ -593,6 +617,25 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not kijeloles:
             return 0
 
+        # #4628: a kérdésre várva rögzítjük a célképeket és a szöveget. Így
+        # egy másik vágólap- vagy rácsváltozás nem módosítja a felhasználó
+        # által épp jóváhagyott műveletet.
+        if getattr(self, "_caption_paste_pending", None) is not None:
+            return 0
+        if any((photo.caption or "").strip() for photo in kijeloles):
+            self._caption_paste_pending = (
+                [photo.id for photo in kijeloles],
+                szoveg,
+            )
+            self.captionPasteConfirmationRequested.emit()
+            return 0
+
+        return self._write_caption_text(kijeloles, szoveg)
+
+    def _write_caption_text(self, kijeloles, szoveg: str) -> int:
+        """A már jóváhagyott vagy üres képekre menő feliratköteg."""
+        if not kijeloles or not szoveg:
+            return 0
         # #2915: EGY soros köteg, nem képenként egy szál — ugyanabba az
         # ini-be és indexbe írás párhuzamosan versenyhelyzet volt.
         azonositok = [photo.id for photo in kijeloles]
@@ -606,6 +649,27 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             after=utomunka,
         )
         return len(kijeloles)
+
+    @Slot(result=int)
+    def confirmCaptionPaste(self) -> int:  # noqa: N802
+        """A felhasználó jóváhagyta a függő felirat-beillesztést."""
+        pending = getattr(self, "_caption_paste_pending", None)
+        self._caption_paste_pending = None
+        if pending is None:
+            return 0
+        photo_ids, szoveg = pending
+        photos_by_id = {photo.id: photo for photo in self._photos.photos}
+        kijeloles = [
+            photos_by_id[photo_id]
+            for photo_id in photo_ids
+            if photo_id in photos_by_id
+        ]
+        return self._write_caption_text(kijeloles, szoveg)
+
+    @Slot()
+    def cancelCaptionPaste(self) -> None:  # noqa: N802
+        """A felhasználó elutasította a függő felirat-beillesztést."""
+        self._caption_paste_pending = None
 
     @Slot(int, str)
     def setCaption(self, row: int, text: str) -> None:
@@ -655,6 +719,25 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         return photo.id, perform
 
     # -- tömeges átnevezés (#366, rename.fen paritás) ------------------------
+
+    @Slot(result=bool)
+    def renameUseDate(self) -> bool:
+        """A „Date” jelölőnégyzet mentett állása (alap: ki)."""
+        return coerce_ui_preference_flag(
+            self._get_settings().value(RENAME_USE_DATE_KEY), False)
+
+    @Slot(result=bool)
+    def renameUseSize(self) -> bool:
+        """Az „Image resolution” jelölőnégyzet mentett állása (alap: ki)."""
+        return coerce_ui_preference_flag(
+            self._get_settings().value(RENAME_USE_SIZE_KEY), False)
+
+    @Slot(bool, bool)
+    def setRenameUseFlags(self, use_date: bool, use_size: bool) -> None:
+        """A két jelölőnégyzet állásának mentése (QSettings)."""
+        settings = self._get_settings()
+        settings.setValue(RENAME_USE_DATE_KEY, "true" if use_date else "false")
+        settings.setValue(RENAME_USE_SIZE_KEY, "true" if use_size else "false")
 
     @Slot(list, str, bool, bool, result=str)
     def renamePreview(
@@ -711,6 +794,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     items, base_name,
                     include_date=include_date, include_size=include_size,
                 )
+            except PartialRenameError as error:
+                # Részleges futásnál a fájlok/ini-szekciók egy része már
+                # megváltozott. Frissítsük ugyanazokat a mappákat, majd a
+                # strukturált hibaszöveg mutassa meg, mely nevek készültek el.
+                folders = sorted({str(item.path.parent) for item in items})
+                self._renameBatchDone.emit(folders)
+                self.photoOpFailed.emit(str(error))
+                return
             except (OSError, ValueError, IniSaveError, IniConflictError) as error:
                 self.photoOpFailed.emit(str(error))
                 return
@@ -729,15 +820,15 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             for folder in folders:
                 self._sync_tree(conn, folder)
         self._refresh_view()
-        self.photoOpFinished.emit()
 
     # -- virtuális albumok (#9, 2. lépés) ------------------------------------
 
     @Slot(list, str)
     def addRowsToAlbum(self, rows, token: str) -> None:
         """A kijelölés felvétele egy MEGLÉVŐ albumba: az `albums=` CSV
-        bővítése minden érintett fotónál, mappánként egyetlen ütközésbiztos
-        ini-írással (`_apply_batch`, a `setGeotagRows` mintája)."""
+        bővítése minden érintett fotónál, mappánként egyetlen útvonalanként
+        szerializált, best-effort konkurenciakezelésű ini-írással
+        (`_apply_batch`, a `setGeotagRows` mintája)."""
         token = (token or "").strip()
         if not token:
             return
@@ -753,7 +844,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     @Slot(list, str)
     def removeRowsFromAlbum(self, rows, token: str) -> None:
         """A kijelölés kivétele egy albumból (a definíció, `[.album:token]`,
-        a mappában marad — csak a tagság törlődik, ahogy a Picasa is teszi)."""
+        a mappában marad — csak a tagság törlődik, ahogy a Picasa is teszi).
+
+        A `]star` különleges albumnál a tagság az INI `star` kulcsa, ezért
+        annak levétele nem az `albums=` CSV-t módosítja (#4883).
+        """
         token = (token or "").strip()
         if not token:
             return
@@ -761,10 +856,238 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not valid:
             return
 
-        def mutate(document, photo):
-            return without_album(document, photo.name, token)
+        if token == STAR_ALBUM_TOKEN:
+            def mutate(document, photo):
+                return document.with_removed(photo.name, "star")
+        else:
+            def mutate(document, photo):
+                return without_album(document, photo.name, token)
 
         self._write_album_batch(valid, mutate)
+
+    @Slot(str, result=bool)
+    def deleteAlbum(self, token: str) -> bool:  # noqa: N802
+        """Egy album teljes törlése minden érintett mappa ini-jéből (#4598).
+
+        A törlés a `[.album:<token>]` definíciót és a képek `albums=`
+        hivatkozásait is kiveszi. A képfájlok és a többi album érintetlenek
+        maradnak. Visszatérés: legalább egy albumot ismerő mappába írtunk-e.
+        """
+        token = (token or "").strip()
+        if not token:
+            return False
+        erintett = list(self._album_dokumentumok(token))
+        if not erintett:
+            return False
+
+        try:
+            with open_index(self._db_path) as conn:
+                for ini_ut, _document in erintett:
+                    update_document(
+                        ini_ut,
+                        lambda document: without_album_everywhere(document, token),
+                        backup=True,
+                    )
+                    self._sync_tree(conn, str(ini_ut.parent))
+                self._load_albums(conn)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(str(error))
+            return False
+
+        self._refresh_view()
+        return True
+
+    @Slot(str, str, result=bool)
+    def sortAlbum(self, token: str, mode: str) -> bool:  # noqa: N802
+        """Az album „Sort Album By" almenüje (#4599, ADR-016): az album képeinek
+        TÁROLT sorrendjét egyszer átrendezi — `date` / `name` / `size` kulcs
+        szerint, vagy `reverse`: megfordítja. A Shift (a kiválasztás
+        pillanatában lenyomva) a három kulcsnál csökkenővé teszi, ahogy az
+        eredeti kezelő (`GetKeyState(VK_SHIFT)`, `0x005cc09d`); a `reverse`
+        Shifttel is megfordít."""
+        shift = bool(
+            QGuiApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
+        )
+        return self.sortAlbumBy(token, mode, descending=shift)
+
+    def sortAlbumBy(  # noqa: N802
+        self, token: str, mode: str, *, descending: bool = False
+    ) -> bool:
+        """A `sortAlbum` magja, a Shift állapotától függetlenül (#4599).
+
+        A mód nem tárolódik: minden tag új helyet kap (`1.0 … n`) az
+        `albumorder=` kulcsban, mappánként EGY ini-írással. Több mappára szóró
+        albumnál a tagok mappákon át összefésülve rendeződnek. Bukott írásnál
+        a hiba megnevezi a mappát (`albumWriteFailed`), és a művelet
+        megismételhető. Visszatérés: kiírtuk-e az egész új sorrendet.
+        """
+        token = (token or "").strip()
+        if not token or mode not in SORT_MODES:
+            return False
+        with open_index(self._db_path) as conn:
+            tarolt = album_photos(conn, token)
+        if not tarolt:
+            return False
+        rendezett = sorted_album(tarolt, mode, descending=bool(descending))
+        helyek = new_places(rendezett)
+        mappankent: dict[str, dict[str, float]] = {}
+        for (mappa, nev), hely in helyek.items():
+            mappankent.setdefault(mappa, {})[nev] = hely
+
+        try:
+            with open_index(self._db_path) as conn:
+                write_album_places(
+                    token,
+                    (
+                        (Path(mappa) / PICASA_INI_NAME, places)
+                        for mappa, places in mappankent.items()
+                    ),
+                    on_written=lambda ini_ut: self._sync_tree(
+                        conn, str(ini_ut.parent)
+                    ),
+                )
+        except (AlbumOrderWriteError, *_WRITE_ERRORS) as error:
+            self.albumWriteFailed.emit(str(error))
+            self._refresh_view()
+            return False
+        self._refresh_view()
+        return True
+
+    @Slot("QVariantList", int, result=bool)
+    def reorderAlbumPhotos(self, rows, target_row: int) -> bool:  # noqa: N802
+        """Húzással átrendezi az aktív album képeit (#5008).
+
+        A `rows` a rácsmodell aktuális sorai, a cél elé kerülnek. Az album
+        teljes tárolt sorrendjéből indulunk ki, és mappánként az `ini` API
+        albumorder-íróján keresztül mentünk; az `albums=` tagság nem változik.
+        """
+        token = str(self.currentAlbumToken or "").strip()
+        if not token:
+            return False
+        with open_index(self._db_path) as conn:
+            ordered = list(album_photos(conn, token))
+        grid_rows = list(getattr(self._photos, "_photos", ()) or ())
+        selected_indexes = sorted(
+            {int(row) for row in rows if 0 <= int(row) < len(grid_rows)}
+        )
+        if not ordered or not selected_indexes:
+            return False
+
+        def key(photo):
+            return (photo.folder_path, photo.name)
+
+        selected_keys = {key(grid_rows[index]) for index in selected_indexes}
+        album_keys = {key(photo) for photo in ordered}
+        selected_keys.intersection_update(album_keys)
+        if not selected_keys:
+            return False
+
+        moved = [photo for photo in ordered if key(photo) in selected_keys]
+        remaining = [photo for photo in ordered if key(photo) not in selected_keys]
+        destination = (
+            grid_rows[int(target_row)]
+            if 0 <= int(target_row) < len(grid_rows)
+            else None
+        )
+        destination_key = key(destination) if destination is not None else None
+        if destination_key in selected_keys:
+            return True
+        insertion = (
+            next(
+                (index for index, photo in enumerate(remaining)
+                 if key(photo) == destination_key),
+                len(remaining),
+            )
+            if destination_key is not None
+            else len(remaining)
+        )
+        reordered = [*remaining[:insertion], *moved, *remaining[insertion:]]
+        placements = new_places(reordered)
+        by_folder: dict[str, dict[str, float]] = {}
+        for (folder, name), place in placements.items():
+            by_folder.setdefault(folder, {})[name] = place
+
+        try:
+            with open_index(self._db_path) as conn:
+                write_album_places(
+                    token,
+                    (
+                        (Path(folder) / PICASA_INI_NAME, places)
+                        for folder, places in by_folder.items()
+                    ),
+                    on_written=lambda ini_path: self._sync_tree(
+                        conn, str(ini_path.parent)
+                    ),
+                )
+        except (AlbumOrderWriteError, *_WRITE_ERRORS) as error:
+            self.albumWriteFailed.emit(str(error))
+            self._refresh_view()
+            return False
+        self._refresh_view()
+        return True
+
+    @Slot(str, str, result=bool)
+    def sortFolderBy(self, folder: str, mode: str) -> bool:  # noqa: N802
+        """Egyszer átrendezi a célmappa listáját, és elmenti a kézi sorrendet.
+
+        A rendezési mód nem tárolódik. A névrendezés az album-rendezés
+        természetes összevetését használja; a fordított művelet a már
+        eltárolt kézi sorrendet fordítja meg.
+        """
+        folder = str(folder or "")
+        supported = (*SORT_MODES, "color", "priority")
+        if not folder or not folder.strip() or mode not in supported:
+            return False
+        with open_index(self._db_path) as conn:
+            photos = photos_in_folder(conn, folder)
+        if not photos:
+            return False
+
+        from .photo_sort import sort_folder_blocks, szin_adat_hiany
+
+        prioritasok = mappa_prioritasai(folder)
+        if mode in SORT_MODES:
+            if mode == "reverse":
+                stored_order = sort_folder_blocks(
+                    photos,
+                    "priority",
+                    prioritasok={
+                        (folder, name): value
+                        for name, value in prioritasok.items()
+                    },
+                )
+                ordered = sorted_album(stored_order, mode)
+            else:
+                ordered = sorted_album(photos, mode)
+        elif mode == "color":
+            hues = self._folder_photo_hues(photos)
+            if szin_adat_hiany(photos, hues):
+                # A színindex még nem kész: a fájlnév-sorrend ilyenkor
+                # véglegesen kiíródna, ezért nem rendezünk és nem írunk.
+                return False
+            ordered = sort_folder_blocks(photos, mode, hues=hues)
+        else:
+            ordered = sort_folder_blocks(
+                photos,
+                "priority",
+                prioritasok={
+                    (folder, name): value for name, value in prioritasok.items()
+                },
+            )
+
+        places = {
+            photo.name: float(position)
+            for position, photo in enumerate(ordered, start=1)
+        }
+        try:
+            mentsd_a_prioritasokat(folder, places)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(
+                f"A mappa sorrendje nem menthető ({folder}): {error}"
+            )
+            return False
+        self._refresh_view()
+        return True
 
     # -- Album-tulajdonságok (#3173) -------------------------------------------
 
@@ -787,8 +1110,38 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     "date": album.date or "",
                     "location": album.location or "",
                     "description": album.description or "",
+                    "use_music": album.use_music,
+                    "music_file": album.music_file or "",
                 }
         return {}
+
+    def albumMusicFile(self, token: str) -> str:  # noqa: N802
+        """Az engedélyezett albumzene meglévő, helyi fájlútvonala."""
+        token = (token or "").strip()
+        if not token:
+            return ""
+        for ini_path, document in self._album_dokumentumok(token):
+            for album in albums_of(document):
+                if album.token != token:
+                    continue
+                if not album.use_music or not album.music_file:
+                    return ""
+                local_path = formatting.to_local_path(album.music_file)
+                if not local_path:
+                    return ""
+                music_path = Path(local_path).expanduser()
+                if not music_path.is_absolute():
+                    music_path = ini_path.parent / music_path
+                try:
+                    return str(music_path.resolve()) if music_path.is_file() else ""
+                except OSError:
+                    return ""
+        return ""
+
+    def albumMusicTrackUrls(self, token: str) -> list:  # noqa: N802
+        """Az album egyetlen kiválasztott zeneszáma file-URL-ként."""
+        music_path = self.albumMusicFile(token)
+        return [formatting.to_file_url(music_path)] if music_path else []
 
     @Slot(str, str, str, str, str, result=bool)
     def editAlbumProperties(  # noqa: N802
@@ -844,6 +1197,41 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             self._refresh_view()
         return irt
 
+    @Slot(str, bool, str, result=bool)
+    def editAlbumMusic(  # noqa: N802
+        self, token: str, use_music: bool, music_file: str
+    ) -> bool:
+        """A zene két mezőjének mentése az albumot ismerő mappák ini-jébe."""
+        token = (token or "").strip()
+        if not token:
+            return False
+
+        def mutate(dokumentum):
+            return with_album_fields(
+                dokumentum,
+                token,
+                use_music=use_music,
+                music_file=music_file,
+            )
+
+        irt = False
+        try:
+            with open_index(self._db_path) as conn:
+                for ut, dokumentum in self._album_dokumentumok(token):
+                    if mutate(dokumentum) is dokumentum:
+                        continue
+                    update_document(ut, mutate, backup=True)
+                    self._sync_tree(conn, str(ut.parent))
+                    irt = True
+                if irt:
+                    self._load_albums(conn)
+        except _WRITE_ERRORS as hiba:
+            self.albumWriteFailed.emit(str(hiba))
+            return False
+        if irt:
+            self._refresh_view()
+        return irt
+
     def _album_dokumentumok(self, token: str):
         """(ini-útvonal, dokumentum) párok azokra a mappákra, amelyek ini-je
         ismeri ezt az albumot — a `[.album:<token>]` szekció jelenléte szerint.
@@ -862,7 +1250,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         for mappa in mappak:
             ut = Path(mappa) / PICASA_INI_NAME
             try:
-                dokumentum = load_document(ut)
+                dokumentum = load_existing(ut)
             except (OSError, ValueError):
                 continue
             if dokumentum.section(szakasz) is not None:
@@ -971,9 +1359,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if esemeny is not None:
             esemeny.set()
 
-    @Slot()
-    def writeFacesToXmp(self) -> None:
-        """A LÁTOTT mappa képeinek XMP-sidecarja, arcrégiókkal (#1403).
+    @Slot(str, "QVariantList")
+    def writeFacesToXmp(self, scope: str, rows) -> None:
+        """A kiválasztott hatókör XMP-sidecarjai arcrégiókkal (#1403, #4634).
 
         Az eredeti parancsa (`eMenuTools::ID_WRITE_XMP_FACES`, `.fen`
         `write_all_facetags`) kötegelt munkaként fut, és a HÁROM állapotát
@@ -992,10 +1380,33 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         nem az index — így a frissen elnevezett arc is bekerül, mielőtt a
         szinkron végigfut.
         """
-        utak = [
-            Path(photo.folder_path) / photo.name
-            for photo in self._photos.photos
-        ]
+        photos = self._photos.photos
+        if scope == "selected":
+            kijelolt_sorok: set[int] = set()
+            for nyers in rows or ():
+                try:
+                    sor = int(nyers)
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= sor < len(photos):
+                    kijelolt_sorok.add(sor)
+            photos = [photo for i, photo in enumerate(photos) if i in kijelolt_sorok]
+        elif scope == "faces":
+            with open_index(self._db_path) as conn:
+                arcot_tartalmazo_azonositok = {
+                    photo.id for photo in photos_with_faces(conn)
+                }
+            photos = [
+                photo
+                for photo in photos
+                if photo.id in arcot_tartalmazo_azonositok
+            ]
+        elif scope != "all":
+            # Ismeretlen hatókörrel ne lehessen véletlenül a teljes nézetet írni.
+            self.xmpFacesFinished.emit(0, 0, "")
+            return
+
+        utak = [Path(photo.folder_path) / photo.name for photo in photos]
         if not utak:
             self.xmpFacesFinished.emit(0, 0, "")
             return

@@ -3,9 +3,10 @@
 A forrás szekció (star/caption/rotate/filters/… és minden ismeretlen sor)
 bitre pontosan átkerül a cél mappa `.picasa.ini`-jébe.
 
-Mindkét ini-írás az ütközésbiztos `update_document`-en megy (#295): a
-NAS-mappát a párhuzamosan futó eredeti Picasa is írhatja, a sima
-`load → save` pedig némán felülírná, amit közben írt (lost update).
+Mindkét ini-írás az útvonalanként szerializált, best-effort konkurenciakezelésű
+`update_document`-en megy (#295): az előzetes ujjlenyomat-ellenőrzésig észlelt
+Picasa-változás újratöltést vált ki. A sikeres ellenőrzés és fájlcsere közti
+külső írás elveszhet.
 
 A műveletek sorrendje adatvesztés-kerülő (#295): fájlmozgatás → cél-ini
 írása → forrás-ini takarítása. Ha a cél-ini írása bukik, a metaadat még a
@@ -23,6 +24,7 @@ from picasapy.fileops.safe_move import safe_move
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,
+    has_ini_source,
     load_or_empty,
     update_document,
 )
@@ -76,7 +78,7 @@ def move_photo(path: Path, dest_folder: Path) -> Path:
     source_ini = path.parent / PICASA_INI_NAME
     dest_ini = dest_folder / PICASA_INI_NAME
     has_section = (
-        source_ini.exists() and load_or_empty(source_ini).section(name) is not None
+        has_ini_source(source_ini) and load_or_empty(source_ini).section(name) is not None
     )
     if has_section and load_or_empty(dest_ini).section(name) is not None:
         raise FileExistsError(

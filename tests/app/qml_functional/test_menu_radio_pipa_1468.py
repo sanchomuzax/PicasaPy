@@ -33,9 +33,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 from tests.support.qml_blokk import blokkok_tipusra
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from tests.app.qml_functional._fomenu_4420_menu import (
+    _kattints_qobject,
+    _megnyit,
+)
 
 _QML_ROOT = (
     Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "qml"
@@ -409,19 +414,40 @@ class TestNyelvvalasztas(_KizaroCsoportProba):
 
 
 class TestKonyvtarNezetAllandoPipaja:
-    """A `Nézet ▸ Könyvtár` pipája ÁLLANDÓ — a kattintás nem veheti le."""
+    """A Könyvtárnézet pipa- és visszatérési viselkedése (#4622)."""
 
-    def test_kattintasra_is_marad_a_pipa(self, qml_app, qt_app):
+    def test_a_konyvtarban_pipalt_es_inaktiv(self, qml_app):
         window, _controller, _engine = qml_app
         item = _child(window, "menuViewLibraryView")
         assert item.property("checked") is True
+        assert window.property("viewerOpen") is False
+        assert item.property("enabled") is False
 
-        _trigger(window, "menuViewLibraryView")
+    @pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))
+    def test_valodi_menukattintas_visszater_a_nezobol(
+        self, qml_app, qt_app, magassag_eltolas
+    ):
+        window, _controller, _engine = qml_app
+        window.resize(window.width(), window.height() + magassag_eltolas)
+        window.setProperty("viewerOpen", True)
+        qt_app.processEvents()
+        assert window.property("viewerOpen") is True
+
+        menu_bar = window.property("menuBar")
+        assert menu_bar is not None
+        menu = _megnyit(menu_bar, qt_app, "View")
+        item = _child(window, "menuViewLibraryView")
+        assert item.property("enabled") is True
+        assert item.property("checked") is True
+
+        _kattints_qobject(qt_app, item)
         qt_app.processEvents()
 
-        assert item.property("checked") is True, (
-            "a Könyvtár nézet pipája egyetlen kattintásra véglegesen eltűnt"
+        assert window.property("viewerOpen") is False, (
+            "a Nézet ▸ Könyvtárnézet kattintása nem zárta be a nézőt"
         )
+        assert item.property("checked") is True, "a Könyvtárnézet pipája eltűnt"
+        assert menu.property("opened") is False
 
 
 class TestBalHasabHelyiMenuje:
@@ -464,12 +490,15 @@ class TestBalHasabHelyiMenuje:
 
 
 class TestMappaHelyiMenuje:
-    """`FolderContextMenu` — a mappa KÉPEINEK rendezése (`folderPhotoSort`)."""
+    """A mappa rendezési menüje egyszeri parancsokat tartalmaz (#4890)."""
 
     nevek = (
         "folderMenuSortByDate",
         "folderMenuSortByName",
         "folderMenuSortBySize",
+        "folderMenuSortByColor",
+        "folderMenuSortByPriority",
+        "folderMenuSortReverse",
     )
 
     @staticmethod
@@ -482,17 +511,14 @@ class TestMappaHelyiMenuje:
         )
         qt_app.processEvents()
 
-    def test_a_mar_aktiv_tetelre_ujra_kattintva_marad_a_pipa(self, qml_app, qt_app):
-        window, controller, _engine = qml_app
-        path = controller.property("currentFolder") or ""
+    def test_a_rendezesek_nem_tarolnak_modot_vagy_iranyt(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        path = _controller.property("currentFolder") or ""
         self._ujranyit(window, qt_app, path)
-
-        _trigger(window, "folderMenuSortByName")
-        qt_app.processEvents()
-        self._ujranyit(window, qt_app, path)
-        _egyetlen_pipa(window, self.nevek, "folderMenuSortByName")
-
-        _trigger(window, "folderMenuSortByName")  # MÁSODSZOR
-        qt_app.processEvents()
-        self._ujranyit(window, qt_app, path)
-        _egyetlen_pipa(window, self.nevek, "folderMenuSortByName")
+        menu = _child(window, "folderContextMenu")
+        assert menu.property("sortMode") is None
+        assert menu.property("sortReverse") is None
+        for name in self.nevek:
+            item = _child(window, name)
+            assert item.property("checkable") is False
+            assert item.property("checked") is False

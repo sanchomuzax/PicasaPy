@@ -49,7 +49,7 @@ jelzi, hogy a fájl tartalma UTF-8 kódolású. A PicasaPy-nak meg kell őriznie
 |---|---|---|
 | `name` | `Foo Bar birthday` | album neve |
 | `category` | `Folders on Disk` | lokális album kategória — **Picasa 2-örökség**, a `P2category` elődje. A korpuszban **179** sor; a kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
-| `P2category` | `Downloaded Albums~otheruserid`, `Projects (internal)` | **gyűjtemény-hovatartozás** (nem csak letöltött album!) — a Picasa a kollázs/film kimeneti mappájába is ezt írja `Projects (internal)` értékkel; igazolva valódi `.cxf`-minta mellől (2026-08-07, #436) |
+| `P2category` | `Downloaded Albums~otheruserid`, `Projects (internal)` | **gyűjtemény-hovatartozás** (nem csak letöltött album!) — a Picasa a kollázs/film kimeneti mappájába is ezt írja `Projects (internal)` értékkel; igazolva valódi `.cxf`-minta mellől (2026-08-07, #436) · **`Hidden Folders`** = a mappa **el van rejtve** (Mappa elrejtése: `0x005ee2a0` → `0x00445b80` → `0x0045c0a0`; megjelenítéskor `Folders on Disk` íródik vissza — #4597, `picasa-menu-parancsok-viselkedes.md` 32.3.1). Olvasáskor üres `P2category` mellett a `category` kulcs érvényes (`0x004420fd`) |
 | `<user>_lh` | `joedoe_lh=5620038667642797505` | feltöltött album web-azonosítója |
 | `contactsversion` | — | globális verziószám (kontakt-adatbázis); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
 | `frversion` | — | globális verziószám (feltehetően arcfelismerés); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
@@ -1365,6 +1365,24 @@ is eldobja. (A mai írásunkban ilyen tag nincs.)
    bejegyzést. A korlát **felső** korlát, nem elvárt darabszám: a hiányzó
    paraméter az eredetiben az alapértékre esik vissza (mérve: `unsharp=1`
    ≡ `unsharp2=1,0.600000`), a záró üres mező (`grain=1,;`) pedig tolerált.
+
+### Konkurencia és a garancia határa (#4471)
+
+Az `update_document()` az azonos, normalizált ini-útvonalra érkező PicasaPy
+írásokat folyamaton belüli, útvonalankénti reentrant lockkal sorosítja; más
+ini-útvonalak egymástól függetlenül írhatók. A módosítási függvény a betöltés
+és az előzetes ujjlenyomat-ellenőrzés közötti változás észlelésekor frissen
+betölt, majd újrapróbál.
+
+Ez a PicasaPy ↔ PicasaPy garancia az `update_document()`-et használó
+read-modify-write műveletekre vonatkozik. A külső Picasa vagy más folyamat nem
+veszi ezt a lockot. Ha az ilyen írás az ujjlenyomat-ellenőrzés és az atomikus
+fájlcsere közé esik, elveszhet: hagyományos fájlrendszeri API-val az ellenőrzés
+és a csere nem alkot compare-and-swap műveletet. A `save_document()` közvetlen,
+teljes dokumentumot kiíró API: az útvonalonkénti lock a tényleges írást
+szerializálja, de nem egyesíti a korábban betöltött elavult dokumentumot.
+Többkulcsos, konkurens módosításnál az `update_document()` adja az
+újratöltési és újrapróbálási viselkedést.
 
 ### Az olvasás megengedő MARAD
 
@@ -2792,7 +2810,7 @@ szekció. Helyi korpusz-másolatból (NAS-hozzáférés nélkül).
 | `crop` | 761 | ✅ (`rect64`) |
 | `name` | 713 | ✅ (`[contacts2]`) |
 | `albums` | 620 | ✅ |
-| **`P2category`** | 615 | Picasa 2-örökség, de ma is ÉL: a mappa gyűjtemény-hovatartozása. A `Projects (internal)` értékű mappákat a bal hasáb **Projektek** gyűjteménye listázza (#1029, `picasapy.index.project_folders`); a többi érték (`Folders on Disk` stb.) egyelőre csak megőrzött |
+| **`P2category`** | 615 | Picasa 2-örökség, de ma is ÉL: a mappa gyűjtemény-hovatartozása. A `Projects (internal)` értékű mappákat a bal hasáb **Projektek** gyűjteménye listázza (#1029, `picasapy.index.project_folders`); az ismert beépített kategóriákat és az egyéni gyűjtemények mappáit a bal hasáb ugyanazon ini-söprésből olvassa (#4589). A korpuszban 139 egyéni besorolás van. |
 | `date` | 579 | ✅ |
 | `onlinechecksum` | 380 | ✅ |
 | `caption` | 208 | ✅ |

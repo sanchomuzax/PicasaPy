@@ -134,11 +134,13 @@ class TestDestinationSubpathForMode:
         )
         assert with_date == without_date == Path("Album")
 
-    def test_manual_mode_blank_name_falls_back_to_destination_root(self):
-        result = destination_subpath_for_mode(
-            date(2024, 3, 5), NAMING_MANUAL, manual_name="   "
-        )
-        assert result == Path(".")
+    def test_manual_mode_blank_name_is_refused_not_copied_to_root(self):
+        # #4595: cím nélkül az importálás nem indul — a célgyökérbe
+        # másolás (a régi `Path(".")`) a Picasa-tipp szerint nem lehet.
+        with pytest.raises(ValueError, match="manual naming requires a folder name"):
+            destination_subpath_for_mode(
+                date(2024, 3, 5), NAMING_MANUAL, manual_name="   "
+            )
 
     def test_by_date_mode_splits_into_one_folder_per_date(self):
         first = destination_subpath_for_mode(date(2024, 3, 5), NAMING_BY_DATE)
@@ -319,3 +321,23 @@ class TestMediaFilter:
         names = {c.path.name for c in scan_source(str(source), "nincs-ilyen")}
 
         assert names == {"kep.jpg", "film.avi", "nyers.cr2"}
+
+
+def test_scan_files_only_returns_existing_selected_media_files(tmp_path):
+    """#4596: a fájllista-forrás csak a kijelölt, létező médiafájlokat adja."""
+    from picasapy.importsource import scan_files
+
+    (tmp_path / "a.jpg").write_bytes(b"x")
+    (tmp_path / "b.mp4").write_bytes(b"x")
+    (tmp_path / "c.jpg").write_bytes(b"x")
+    (tmp_path / "n.txt").write_text("nem média")
+
+    scan = scan_files(
+        [tmp_path / "b.mp4", tmp_path / "a.jpg", tmp_path / "a.jpg",
+         tmp_path / "n.txt", tmp_path / "nincs.jpg"]
+    )
+
+    assert [c.path.name for c in scan.candidates] == ["a.jpg", "b.mp4"]
+    assert scan.unrecognized == 0
+    pictures = scan_files([tmp_path / "a.jpg", tmp_path / "b.mp4"], "pictures")
+    assert [c.path.name for c in pictures.candidates] == ["a.jpg"]

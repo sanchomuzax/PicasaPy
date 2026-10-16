@@ -154,7 +154,7 @@ class TestGrainV1NowRendered:
         assert not np.array_equal(result, sample)
 
     def test_grain_es_grain2_ugyanazt_a_modellt_hasznalja(self, sample):
-        # mindkettő a determinisztikus (seed=0) apply_grain-t hívja —
+        # két külön renderként mindkettő a renderbeli k=0 CRT-magot kapja —
         # paraméter nélküli oneclick lévén a kimenetnek meg kell egyeznie
         grain_result, _ = apply_filters(sample, parse_filters("grain=1;"))
         grain2_result, _ = apply_filters(sample, parse_filters("grain2=1;"))

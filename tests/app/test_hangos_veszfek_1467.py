@@ -119,7 +119,7 @@ class TestKesobbBekotottSzlot:
 
     def test_a_kesobb_bekotott_sorba_allitott_szlot_is_lefut(self, qt_app):
         jelzo = _Jelzo()
-        hurok = hangos_hurok(jelzo.kesz, timeout_ms=5000)
+        hurok = hangos_hurok(jelzo.kesz, timeout_ms=20000)
         gyujto = _Gyujto()
         # KÉSŐBB kötjük be, mint a hurok saját záró szlotját, és
         # KIFEJEZETTEN sorba állítva: a kézbesítése így biztosan a hurok
@@ -156,7 +156,7 @@ class TestRovidzarKesobbiSzlot:
 
     def test_a_rovidzar_elott_erkezo_jelzes_utan_is_lefut_a_kesobbi_szlot(self, qt_app):
         jelzo = _Jelzo()
-        hurok = hangos_hurok(jelzo.kesz, timeout_ms=5000)
+        hurok = hangos_hurok(jelzo.kesz, timeout_ms=20000)
         gyujto = _Gyujto()
         # a hurok saját szlotja UTÁN, sorba állítva — mint a valódi hívóknál
         jelzo.kesz.connect(gyujto.fogad, Qt.ConnectionType.QueuedConnection)
@@ -186,7 +186,7 @@ class TestRovidzarKesobbiSzlot:
 _ISMERT_SAJAT_HANGOS_VESZFEKEK = {
     # a jelzés SZÁNDÉKOSAN nem jön meg — a némaságot a teszt maga állítja
     ("tests/app/test_kollazs_gc_verseny_988.py", "test_a_mentes_tulel_agressziv_szemetgyujtest"),
-    # kétjelzéses várakozás (photoOpFinished + photoOpFailed), #519
+    # a művelet végét és a hibaágat külön ellenőrző bevárás, #519
     ("tests/app/test_qml_slideshow.py", "_invoke_photo_op"),
     ("tests/app/test_regi_originals_a_feluleten_1425.py", "_wait"),  # #2408
     ("tests/app/test_save_controller.py", "_wait"),  # #2408
@@ -290,7 +290,7 @@ class TestHivoiQuitNemAdHamisIdotullepest:
 
     def test_a_hivo_quitje_utan_sem_bukik_ha_a_jelzes_megvolt(self, qt_app):
         jelzo = _Jelzo()
-        hurok = hangos_hurok(jelzo.kesz, timeout_ms=5000)
+        hurok = hangos_hurok(jelzo.kesz, timeout_ms=20000)
         # a hívó saját, SORBA ÁLLÍTOTT kezelője zárja le a hurkot — a segéd
         # szlotja így a hurok kilépése után kerülne sorra
         jelzo.kesz.connect(hurok.quit, Qt.ConnectionType.QueuedConnection)

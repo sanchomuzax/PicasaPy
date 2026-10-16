@@ -9,13 +9,13 @@ pillanatnyi QML-geometriájából számolódik.
 from __future__ import annotations
 
 import csv
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 _ROOT = Path(__file__).resolve().parents[3]
 _ELEMENTS = _ROOT / "docs/specs/ui-lefedettseg-elemek.csv"
@@ -33,15 +33,8 @@ _EXPECTED = {
 }
 
 
-def _wait_until(qt_app, predicate, timeout: float = 3.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(predicate())
+def _wait_until(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, predicate, timeout)
 
 
 def _walk(item):
@@ -51,7 +44,49 @@ def _walk(item):
 
 
 def _click_item(window, item, qt_app) -> None:
-    assert item is not None and item.isVisible(), "a kattintandó elem nem látható"
+    assert item is not None, "a kattintandó elem nem található"
+    assert _wait_until(
+        qt_app,
+        lambda: item.isVisible() and item.width() > 0 and item.height() > 0,
+    ), (
+        "a kattintandó elem nem kapott kirajzolható méretet: "
+        f"visible={item.isVisible()}, width={item.width()}, height={item.height()}"
+    )
+    item.ensurePolished()
+    szulo = item.parentItem()
+    if szulo is not None:
+        szulo.ensurePolished()
+    window.update()
+
+    elozo_geometria = None
+    stabil_mintak = 0
+
+    def geometria_stabil() -> bool:
+        nonlocal elozo_geometria, stabil_mintak
+        bal_felso = item.mapToScene(QPointF(0, 0))
+        kozep = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+        most = tuple(
+            round(float(ertek), 3)
+            for ertek in (
+                bal_felso.x(),
+                bal_felso.y(),
+                kozep.x(),
+                kozep.y(),
+                item.width(),
+                item.height(),
+            )
+        )
+        if most == elozo_geometria:
+            stabil_mintak += 1
+        else:
+            elozo_geometria = most
+            stabil_mintak = 0
+        return stabil_mintak >= 2
+
+    assert _wait_until(qt_app, geometria_stabil), (
+        "a kattintási célpont geometriája nem stabilizálódott a "
+        "felületi átrendeződés után"
+    )
     point = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
         window,
@@ -174,6 +209,12 @@ def test_keresesi_elemlista_es_valodi_felhasznaloi_ut(
         and controller.photos.rowCount() == 2,
     ), "az arc-szűrő kikapcsolása nem állította vissza a fotókat"
 
+    # A könyvtári gyorsbillentyű nem aktív, amíg a keresőmezőé a fókusz.
+    face_filter.forceActiveFocus()
+    qt_app.processEvents()
+    assert field.property("activeFocus") is False
+    assert window.property("_szovegmezoneVanFokusz") is False
+
     # dupesearch: a valódi Ctrl+F6 út megjeleníti a kapcsolót, annak valódi
     # kattintása pedig visszavisz az összes képhez.
     _send_shortcut(
@@ -185,12 +226,34 @@ def test_keresesi_elemlista_es_valodi_felhasznaloi_ut(
         and window.findChild(QObject, "dupeFilter").isVisible(),
     ), "a másodpéldány-mód nem jelent meg"
     dupe_filter = window.findChild(QObject, "dupeFilter")
+    movie_filter = window.findChild(QObject, "movieFilter")
+    filter_row = dupe_filter.parentItem()
+    assert movie_filter is not None and filter_row is not None
+    # A Row-ba dinamikusan bekerülő gomb láthatósága megelőzheti az új x-et.
+    # Várjuk meg a testvérből számolt pozíciót, mielőtt arra kattintunk.
+    assert _wait_until(
+        qt_app,
+        lambda: abs(
+            float(dupe_filter.x())
+            - (
+                float(movie_filter.x())
+                + float(movie_filter.width())
+                + float(filter_row.property("spacing"))
+            )
+        )
+        <= 0.5,
+    ), "a másodpéldány-kapcsoló nem került a filmszűrő utáni helyére"
     _click_item(window, dupe_filter, qt_app)
     assert _wait_until(
         qt_app,
         lambda: controller.viewModeName == "folder"
         and controller.photos.rowCount() == 2,
-    ), "a másodpéldány-kapcsoló nem állította vissza a teljes nézetet"
+    ), (
+        "a másodpéldány-kapcsoló nem állította vissza a teljes nézetet: "
+        f"mode={controller.viewModeName!r}, "
+        f"rows={controller.photos.rowCount()}, "
+        f"scanning={controller.dupeSearchScanning}"
+    )
 
 
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])

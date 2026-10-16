@@ -79,5 +79,8 @@ class TestEscapeBinding:
         VALÓDI forrást.
         """
         forras = _QML_PATH.read_text(encoding="utf-8")
-        assert "Keys.onEscapePressed: viewer.handleEscape()" in forras
+        assert (
+            "Keys.onEscapePressed: if (!viewer.textEntryHasFocus) "
+            "viewer.handleEscape()"
+        ) in forras
         assert "function handleEscape()" in forras

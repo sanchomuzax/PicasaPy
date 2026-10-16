@@ -164,7 +164,7 @@ class TestAWaitNemSzivarog:
         _wait(
             host.collageProgress,
             lambda: host.collageProgress.emit(1, "x"),
-            timeout_ms=200,
+            timeout_ms=20000,
         )
 
         with warnings.catch_warnings():

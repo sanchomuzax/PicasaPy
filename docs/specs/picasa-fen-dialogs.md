@@ -337,7 +337,7 @@ törlése”) megjelenik. A magyar szövegek a `referencia/stringres-en-hu.tsv`
 | végleges törlés (nincs lomtár) | `NoUndoSingle`/`NoUndoMultiple`, gomb „Fájl törlése”/„Fájlok törlése” | saját üzenet („This file cannot be moved to the Trash…”) | ugyanott |
 | mappa törlése | `DeleteFolderWarnPC` | az eredeti szöveg | `FolderPane.qml:1177` |
 | albumból eltávolítás | `RemoveSingle`/`RemoveMultiple` megerősítés | **nincs megerősítés** | `Main.qml:1477–1481` |
-| album törlése | `DeleteAlbum` | a menütétel helykitöltő | `AlbumContextMenu.qml:51–54` |
+| album törlése | `DeleteAlbum` | a megerősítő dialógus az album definícióját és minden képtagságát törli az érintett mappa-inikből | `FolderPane.qml`, `photo_ops_controller.py` |
 | emberek-album eltávolítás | `RemoveSinglePeople`/`RemoveMultiplePeople` | saját üzenet („The face tag "%1" will be removed…”) | `Main.qml:3405–3417` |
 | mellőzés | `RemoveSingleUnknown`/`RemoveMultipleUnknown` | az eredeti szöveg | `UnnamedFacesView.qml:329` |
 
@@ -508,7 +508,11 @@ A legnagyobb `.fen` fájl (262 sor). Fülönként bontva:
 | **Printing** | 5 db nyomtatási méret `popup`, nagy felbontású előnézet checkbox, nyomtatóminőség (csak Win, radiogroup), átméretező algoritmus minősége (radiogroup: Lanczos-3/Lanczos-8). |
 | **Network** | Proxy felhasználónév/jelszó (csak Win), automatikus hálózati beállítás-felismerés, hálózati naplózási szint (`popup`, 5 fokozat), naplófájl útvonal (`pathbox`). |
 | **Web Albums** | Alapértelmezett feltöltési méret popup, "csíkozott" (progresszív) feltöltés checkbox (`bind` a mérettől függ, `transform="not"`), JPEG-minőség megőrzése checkbox, csak csillagozott fotók szinkronizálása, szinkron-megerősítés kikapcsolása (`name="confirmsync::disable"` — **figyelemre méltó, más dialógust vezérlő kulcs!**), névcímkék feltöltése, vízjel hozzáadása + szöveg. |
-| **Name Tags** | Arcfelismerés engedélyezése, javaslatok engedélyezése, javaslat-küszöb és klaszter-küszöb csúszkák (`bind`/`list` 50–95 tartomány), névcímkék mentése a fájlba, kontakt-fotók feltöltése Google Contacts-ba. |
+| **Name Tags** | Arcfelismerés engedélyezése, javaslatok engedélyezése, javaslat- és klaszterküszöb-csúszka (`ticks=10`, `width=20em`, `bind`/`list` 50–95, mellettük a kötött aktuális érték), névcímkék mentése a fájlba, a `uploadcontactphotos` forrássor (PicasaPy-ban rejtve; lásd a megjegyzést). |
+
+> **#4358 megjegyzés:** az `options.fen` `uploadcontactphotos` sora szerepel a
+> forrásban, de a Google Contacts feltöltési szolgáltatás megszűnt; a
+> PicasaPy Névcímkék fülén ezért a vezérlő rejtve marad.
 
 A `Web Albums` és `Name Tags` fülek egyértelműen V3 (felhő/arcok) hatókörűek,
 a `General`/`Slideshow`/`File Types` V1/V2, a `Printing`/`Network` alacsony

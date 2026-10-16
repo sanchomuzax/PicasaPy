@@ -65,8 +65,13 @@ from PySide6.QtGui import (
 )
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
+from picasapy.export import render_photo_pixels
+from picasapy.export.exporter import _decode_image
 from picasapy.app.busy_registry import get_app_busy_registry
+from picasapy.ini import PhotoCropReader
+from picasapy.ini.filters import parse_filters_prefix
 from picasapy.index import PhotoRecord
+from picasapy.lazy_cv2 import cv2
 from picasapy.printing.contact_sheet import (
     DEFAULT_COLUMNS,
     header_rect,
@@ -76,8 +81,9 @@ from picasapy.printing.dpi import (
     KICSI_KUSZOB_DPI,
     JO_MINOSEGI_KUSZOB_DPI,
     NyomatMeret,
+    alapmeretek_teruleti_mereshez,
     effektiv_dpi,
-    keszlet_nyelvhez,
+    keszlet_teruleti_mereshez,
     minoseg_osszegzes,
     nyomtatasi_minoseg_kod,
 )
@@ -93,6 +99,7 @@ from picasapy.printing.layout import (
     PrintOrientation,
     compute_print_layout,
 )
+from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.printing.resample import lanczos_resize
 from picasapy.printing.options import (
     BORDER_SIZE_MAX,
@@ -104,10 +111,11 @@ from picasapy.printing.options import (
     save_print_options,
     update_print_option,
 )
+from picasapy.render import normalize_crop_ops
+from picasapy.scanner import PICASA_INI_NAME
 
 from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_local_path
-from .language_controller import LANGUAGE_KEY
 
 _log = logging.getLogger(__name__)
 
@@ -136,7 +144,6 @@ _ELONEZET_DPI = 96.0
 _PRINT_SIZE_PRESET_KEYS = tuple(
     f"printing/sizePreset{index}" for index in range(1, 6)
 )
-_PRINT_PRESETS = ("TARCA", "M3_5X5", "M4X6", "M5X7", "M8X10")
 _PRINT_OPTION_SIZES = (
     "M3X4",
     "M3_5X5",
@@ -187,6 +194,7 @@ class PrintController(QObject):
         `PhotoRecord`-jait adja vissza (ld. a modul docstringje)."""
         super().__init__(parent)
         self._photo_source = photo_source
+        self._crop_reader = PhotoCropReader()
         #: #1671: a KÉPTÁLCA rekordjai. Ha nem üres, ŐK a forrás — a rács
         #: pillanatnyi kijelölése és a látott mappa nem számít. Az eredeti
         #: súgója is így fogalmaz: „Print photos in the Photo Tray". A
@@ -230,15 +238,16 @@ class PrintController(QObject):
     def printSizePresets(self) -> list[str]:  # noqa: N802 — QML-stílus
         """A Nyomtatás fül öt, a panel gyorsgombjaihoz tartozó mérete.
 
-        Az öt cserélhető gomb a mért `printpanel` készletből jön; a hatodik,
-        Teljes oldal gomb állandó. A kezdő értékek a
-        `picasa-nyomtatas.md` Wallet, 3,5×5, 4×6, 5×7 és 8×10 méretei. A
-        választás a nyelvváltás után is megmarad, ha az adott méret az új
-        készletben is szerepel.
+        A rendszer területi mértékegysége adja az eredeti Picasa ötösének
+        kezdőértékeit (#4435). A mentett PrintSize0–4 azonosítók felülírják
+        ezeket; a bővebb PicasaPy-katalógus további méretei nem változnak.
         """
         sizes = set(_PRINT_OPTION_SIZES)
         result = []
-        for key, default in zip(_PRINT_SIZE_PRESET_KEYS, _PRINT_PRESETS, strict=True):
+        defaults = tuple(
+            meret.name for meret in alapmeretek_teruleti_mereshez()
+        )
+        for key, default in zip(_PRINT_SIZE_PRESET_KEYS, defaults, strict=True):
             value = str(self._settings.value(key, default))
             result.append(value if value in sizes else default)
         return result
@@ -314,12 +323,8 @@ class PrintController(QObject):
             self._settings.setValue("printing/resamplerQuality", int(value))
 
     def _keszlet(self) -> tuple[NyomatMeret, ...]:
-        """A felület nyelvéhez tartozó nyomatméret-készlet (#1961).
-
-        A nyelvet a beállításokból olvassuk, nem gyorstárazzuk: a
-        felhasználó menet közben is válthat, és a párbeszéd minden
-        megnyitáskor újrakérdezi a listát."""
-        return keszlet_nyelvhez(self._settings.value(LANGUAGE_KEY))
+        """A rendszer területi mértékegységéhez tartozó készlet (#4435)."""
+        return keszlet_teruleti_mereshez()
 
     def _alapmeret(self) -> NyomatMeret:
         """A készlet alapértelmezett mérete: **Teljes oldal** (#3733).
@@ -327,7 +332,7 @@ class PrintController(QObject):
         A `docs/specs/picasa-nyomtatas.md` élő mérése (Colab EN 29/30,
         picasa-colab-jobs #55) szerint az eredeti nyomtatási nézet
         alapállása FullPage — mindkét készletben ez az utolsó tétel
-        (`TELJES_OLDAL`), ugyanaz a méret mindkét nyelven. Korábban itt
+        (`TELJES_OLDAL`), ugyanaz a méret mindkét területi készletben. Korábban itt
         a mért 4×6/10×15 cm állt, ami az eredetiben csak GOMB, nem
         alapállás."""
         return NyomatMeret.TELJES_OLDAL
@@ -336,10 +341,9 @@ class PrintController(QObject):
     #: A felirat a QML dolga, ide csak az azonosító kell.
     @Slot(result=list)
     def printSizes(self) -> list[str]:  # noqa: N802 — QML-stílus
-        """A felület nyelvéhez tartozó nyomatméretek azonosítói (#1961).
+        """A területi mértékegységhez tartozó nyomatméretek azonosítói (#4435).
 
-        Magyarul a metrikus lista, angolul a hüvelykes lista. A
-        `#3712-review` a korábbi Full Page nélküli ötöst javította;
+        A `#3712-review` a korábbi Full Page nélküli ötöst javította;
         a #4257 az eredeti sorrendben egészíti ki a hiányzó méretekkel."""
         return [tag.name for tag in self._keszlet()]
 
@@ -347,7 +351,7 @@ class PrintController(QObject):
     def printSize(self) -> str:  # noqa: N802 — QML-stílus
         """A megjegyzett nyomatméret (`PrintLastSize`), alapból Teljes oldal.
 
-        #1961: a tárolt érték túléli a nyelvváltást, ezért a MÁSIK készlet
+        #4435: a tárolt érték túléli a területi mérés váltását, ezért a MÁSIK készlet
         tételét nem adhatjuk vissza — a párbeszéd olyan méretet mutatna,
         ami nincs is a listájában."""
         alap = self._alapmeret()
@@ -762,6 +766,62 @@ class PrintController(QObject):
             for record in self._resolve_records(rows)
         ]
 
+    def _render_photo(self, record: PhotoRecord) -> QImage:
+        """A rácson látott szerkesztett fotó képpontjai QImage-ként (#4602)."""
+        path = Path(record.folder_path) / record.name
+        if getattr(record, "kind", "") == "video" or path.suffix.lower() in VIDEO_EXTENSIONS:
+            return QImage()
+        filters = getattr(record, "filters", None)
+        ops = parse_filters_prefix(filters) if filters else ()
+        crop, crop_ini_readable = (
+            self._crop_reader.read(path.parent / PICASA_INI_NAME, path.name)
+            if ops
+            else (None, True)
+        )
+        ops = normalize_crop_ops(
+            ops,
+            crop,
+            crop_ini_readable=crop_ini_readable,
+            warning_key=str(path),
+        )
+        try:
+            image = render_photo_pixels(
+                path,
+                ops,
+                rotate_steps=int(getattr(record, "rotate_steps", 0) or 0),
+                flip_flags=int(getattr(record, "flip_flags", 0) or 0),
+            )
+        except (OSError, ValueError) as error:
+            _log.warning(
+                "nyomtatás: nem dekódolható kép — kihagyva: %s (%s)", path, error
+            )
+            return QImage()
+
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        height, width = rgb.shape[:2]
+        return QImage(
+            rgb.data,
+            width,
+            height,
+            int(rgb.strides[0]),
+            QImage.Format.Format_RGB888,
+        ).copy()
+
+    @staticmethod
+    def _is_printable(record: PhotoRecord) -> bool:
+        """A teljes dekóderrel ellenőrzi, hogy nyomtatható-e a forrás."""
+        path = Path(record.folder_path) / record.name
+        if getattr(record, "kind", "") == "video" or path.suffix.lower() in VIDEO_EXTENSIONS:
+            return False
+        try:
+            _decode_image(path)
+        except (OSError, ValueError) as error:
+            _log.warning(
+                "nyomtatás: nem dekódolható kép — kihagyva: %s (%s)", path, error
+            )
+            return False
+        return True
+
     @Slot(list, str, str, str, result=bool)
     @Slot(list, str, str, str, int, result=bool)
     def renderPrintPreviewPdf(
@@ -970,7 +1030,7 @@ class PrintController(QObject):
         maradok: list[PhotoRecord] = []
         skipped: list[str] = []
         for record, path in zip(records, paths, strict=True):
-            image = QImage(str(path))
+            image = self._render_photo(record)
             if image.isNull():
                 _log.warning("indexkép: nem dekódolható kép — kihagyva: %s", path)
                 skipped.append(path.name)
@@ -1128,7 +1188,7 @@ class PrintController(QObject):
         job_records: list[PhotoRecord] = []
         skipped: list[str] = []
         for record, path in zip(records, paths, strict=True):
-            image = QImage(str(path))
+            image = self._render_photo(record)
             if image.isNull():
                 _log.warning("nyomtatás: nem dekódolható kép — kihagyva: %s", path)
                 skipped.append(path.name)
@@ -1435,11 +1495,10 @@ class PrintController(QObject):
         target = to_local_path(output_path)
         if not target:
             return False
-        paths = self._resolve_paths(rows)
         records = self._resolve_records(rows)
         kep_parok = []
-        for record, path in zip(records, paths, strict=True):
-            kep = QImage(str(path))
+        for record in records:
+            kep = self._render_photo(record)
             if not kep.isNull():
                 kep_parok.append((kep, record))
         darab = max(1, int(copies or 1))
@@ -1527,8 +1586,8 @@ class PrintController(QObject):
         DEKÓDOLHATÓ képek kapnak cellát: a kihagyott (videó, sérült) fájlok
         lapot sem kapnak."""
         darab = 0
-        for path in self._resolve_paths(rows):
-            if not QImage(str(path)).isNull():
+        for record in self._resolve_records(rows):
+            if self._is_printable(record):
                 darab += 1
         count = darab * max(1, int(copies or 1))
         if count < 1:
@@ -1569,8 +1628,8 @@ class PrintController(QObject):
         mert egy lapon sok kép van, nincs „a kép tájolása" (ld. ott a
         megjegyzést)."""
         darab = 0
-        for path in self._resolve_paths(rows):
-            if not QImage(str(path)).isNull():
+        for record in self._resolve_records(rows):
+            if self._is_printable(record):
                 darab += 1
         if darab < 1:
             return 0

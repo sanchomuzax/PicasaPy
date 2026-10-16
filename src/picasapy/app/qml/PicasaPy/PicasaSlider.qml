@@ -89,6 +89,9 @@ Slider {
     // (`leptesd()`) egyaránt tüzel — a hívók erre iratkoznak fel, nem
     // közvetlenül a `pressed`-re.
     signal veglegesult(real ertek)
+    //: A Picasa `editslider`-jeinek karakteres léptetése csak az editor
+    //: 3–5. fülén él; a közös csúszka más nézetei nem foghatják el.
+    property bool keyboardStepEnabled: false
     onPressedChanged: if (!control.pressed) control.veglegesult(control.value)
 
     //: a léptetés a FÓKUSZBAN lévő csúszkára hat — enélkül a billentyű
@@ -96,6 +99,8 @@ Slider {
     focusPolicy: Qt.StrongFocus
 
     Keys.onPressed: function (event) {
+        if (!control.keyboardStepEnabled)
+            return
         if (event.text === "+" || event.text === "=") {
             control.leptesd(1)
             event.accepted = true

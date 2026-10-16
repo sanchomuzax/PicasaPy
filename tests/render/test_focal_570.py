@@ -19,6 +19,7 @@ from picasapy.render.focal import (
     apply_focal_pixelate,
     apply_focal_zoom,
     focal_mask,
+    zoom_blur,
     zoom_max_offset,
     zoom_sample_count,
 )
@@ -91,8 +92,10 @@ class TestFocalZoom:
         after = float(out[0:8, 0:8, 0].std())
         assert after < before
 
-    def test_zero_impact_is_identity(self, photo):
-        np.testing.assert_array_equal(apply_focal_zoom(photo, impact=0.0), photo)
+    def test_zero_impact_runs_the_zero_offset_native_blend(self, photo):
+        out = apply_focal_zoom(photo, impact=0.0, radius=0.0, fade=0.0)
+        np.testing.assert_array_equal(out, zoom_blur(photo, 0.5, 0.5, 0.0))
+        assert not np.array_equal(out, photo)
 
     def test_fade_100_is_identity(self, photo):
         out = apply_focal_zoom(photo, impact=80.0, radius=10.0, fade=100.0)

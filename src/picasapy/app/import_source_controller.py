@@ -33,10 +33,13 @@ rácsban, ahogy a valódi Picasa importja is tenné."""
 
 from __future__ import annotations
 
+import ctypes
 import sqlite3
+import sys
 import time
 from collections.abc import Sequence
-from pathlib import Path
+from ctypes import wintypes
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable
 
 from PySide6.QtCore import (
@@ -44,6 +47,8 @@ from PySide6.QtCore import (
     QObject,
     QSettings,
     QStandardPaths,
+    QStorageInfo,
+    QUrl,
     Signal,
     Slot,
 )
@@ -56,7 +61,6 @@ from picasapy.fileops import (
 )
 from picasapy.fileops.original_ini import remove_original_ini_sections
 from picasapy.importsource import (
-    scan_source_detailed,
     ATMERETEZES_EREDETI,
     ATMERETEZES_OPCIOK,
     MEDIA_FILTER_PICTURES_AND_MOVIES,
@@ -67,6 +71,9 @@ from picasapy.importsource import (
     atmeretez_masolatot,
     destination_subpath_for_mode,
     duplicate_paths,
+    is_valid_folder_name,
+    scan_files,
+    scan_source_detailed,
 )
 from picasapy.index import (
     IndexFastKeySource,
@@ -74,10 +81,11 @@ from picasapy.index import (
     all_photos,
     open_index,
 )
-from picasapy.ini import load_document, save_document, update_document
-from picasapy.scanner import PICASA_INI_NAME, media_kind_of
+from picasapy.ini import has_ini_source, load_or_empty, update_document
+from picasapy.ini.names import INI_NAME
+from picasapy.scanner import media_kind_of
 
-from .formatting import to_local_path
+from .formatting import to_file_url, to_local_path
 from .wipe_card_warning import WipeCardFacts, wipe_card_warning
 from .worker_thread import BackgroundWorkerMixin
 from .display_mode_paint import current_display_mode_suffix
@@ -118,12 +126,146 @@ MAX_RECENT_SOURCES = 8
 # tartunk, ugyanannyit, mint a forrásokból — a legördülő így nem hízik el.
 RECENT_DESTINATIONS_SETTINGS_KEY = "import/recentdestinations"
 MAX_RECENT_DESTINATIONS = 8
+DEFAULT_DESTINATION_SETTINGS_KEY = "import/defaultdestination"
 
 # #1555: az importálás átméretezési beállítása. ⚠️ KÉPPONT-értéket
 # tárolunk, nem sorszámot — ahogy az eredeti is (egyetlen egész mező,
 # `[+0x74c]`); ettől egy új méret felvétele nem töri el a meglévő
 # beállításokat. A `0` jelentése „EREDETI MÉRET", nem „nincs beállítva".
 RESIZE_SETTINGS_KEY = "import/resizeLimit"
+
+
+def _platform() -> str:
+    """A futó platform helyettesíthető fogantyúja (#1217)."""
+    return sys.platform
+
+
+def _read_mountinfo() -> str:
+    """A Linux helyi mountlistáját olvassa be."""
+    return Path("/proc/self/mountinfo").read_text(encoding="utf-8")
+
+
+def _linux_media_mount_points(mountinfo: str) -> list[str]:
+    """A mountinfóból csak a felhasználói médiagyökerek alatti pontokat adja."""
+    mount_roots = (PurePosixPath("/media"), PurePosixPath("/run/media"))
+    mount_points: set[str] = set()
+    for line in mountinfo.splitlines():
+        fields = line.split()
+        if len(fields) < 6:
+            continue
+        # A mountinfo a szóközt, tabot, sortörést és backslash-t oktális
+        # escape-ként tárolja a mountpont mezőben.
+        raw_path = fields[4]
+        decoded_path = (
+            raw_path.replace("\\040", " ")
+            .replace("\\011", "\t")
+            .replace("\\012", "\n")
+            .replace("\\134", "\\")
+        )
+        mount_path = PurePosixPath(decoded_path)
+        if not mount_path.is_absolute():
+            continue
+        if any(
+            mount_path != root and mount_path.is_relative_to(root)
+            for root in mount_roots
+        ):
+            mount_points.add(str(mount_path))
+    return sorted(mount_points)
+
+
+def discover_linux_mounted_sources() -> list[dict[str, str]]:
+    """A Linux felhasználói médiagyökerei alatti mountokat adja vissza.
+
+    A helyi mountlistából először csak a `/media` és `/run/media` alatti
+    pontokat választjuk ki, utána a QStorageInfo ezek kész állapotát és
+    címkéjét adja meg. Így más csatolt fájlrendszert (például hálózati
+    meghajtót) nem kérdezünk le.
+    """
+    by_path: dict[str, dict[str, str]] = {}
+    try:
+        mountinfo = _read_mountinfo()
+    except OSError:
+        return []
+
+    for path in _linux_media_mount_points(mountinfo):
+        volume = QStorageInfo(path)
+        if not volume.isReady():
+            continue
+        root = PurePosixPath(str(volume.rootPath()))
+        # Csak a mountlistában felsorolt tényleges csatolási pontot fogadjuk
+        # el; egy közönséges almappa saját QStorageInfo-ja a szülő mountot
+        # adná vissza.
+        if root != PurePosixPath(path):
+            continue
+
+        name = str(volume.name() or "").strip() or root.name
+        if not name:
+            continue
+        by_path[path] = {"path": path, "name": name}
+
+    return sorted(
+        by_path.values(), key=lambda source: (source["name"].casefold(), source["path"])
+    )
+
+
+_DRIVE_REMOVABLE = 2
+_DRIVE_REMOTE = 4
+
+
+def _windows_drive_type(root_path: str) -> int:
+    """A Windows meghajtótípusát adja vissza a GetDriveTypeW hívással."""
+    get_drive_type = ctypes.windll.kernel32.GetDriveTypeW
+    get_drive_type.argtypes = [wintypes.LPCWSTR]
+    get_drive_type.restype = wintypes.UINT
+    return int(get_drive_type(root_path))
+
+
+def _has_dcim_directory(root_path: str) -> bool:
+    """Megnézi, hogy a helyi meghajtó gyökerében van-e DCIM mappa."""
+    return (Path(root_path) / "DCIM").is_dir()
+
+
+def discover_windows_mounted_sources() -> list[dict[str, str]]:
+    """Windows cserélhető meghajtókat és DCIM-et tartalmazó köteteket ad vissza.
+
+    A távoli meghajtót a meghajtótípus alapján még azelőtt kihagyjuk, hogy
+    készültséget, címkét vagy DCIM könyvtárat kérdeznénk le róla.
+    """
+    by_path: dict[str, dict[str, str]] = {}
+    for volume in QStorageInfo.mountedVolumes():
+        root_path = str(volume.rootPath() or "").strip()
+        if not root_path:
+            continue
+
+        drive_type = _windows_drive_type(root_path)
+        if drive_type == _DRIVE_REMOTE or not volume.isReady():
+            continue
+        if drive_type != _DRIVE_REMOVABLE and not _has_dcim_directory(root_path):
+            continue
+
+        path_key = root_path.casefold()
+        name = str(volume.name() or "").strip()
+        if not name:
+            name = PureWindowsPath(root_path).drive or root_path
+        by_path[path_key] = {"path": root_path, "name": name}
+
+    return sorted(
+        by_path.values(),
+        key=lambda source: (source["name"].casefold(), source["path"].casefold()),
+    )
+
+
+def discover_mounted_sources() -> list[dict[str, str]]:
+    """A támogatott platformokon felderített kártya- és USB-források.
+
+    A PTP/MTP kamerák külön termékdöntésig nem kerülnek ebbe a listába.
+    """
+    active_platform = _platform()
+    if active_platform.startswith("linux"):
+        return discover_linux_mounted_sources()
+    if active_platform == "win32":
+        return discover_windows_mounted_sources()
+    return []
 
 
 def _thumb_url(photo_id: int) -> str:
@@ -163,9 +305,11 @@ def _preview_photo_record(index: int, candidate: ImportCandidate) -> PhotoRecord
 
 def _library_paths(conn: sqlite3.Connection) -> tuple[Path, ...]:
     """A jelenleg indexelt könyvtár teljes fájl-útvonalai (#441 duplikátum-
-    kizárás forrása)."""
+    kizárás forrása). #4887: a rejtett mappák képei is — ez nem
+    megjelenítés, hanem a „már a könyvtárban van-e” döntés."""
     return tuple(
-        Path(record.folder_path) / record.name for record in all_photos(conn)
+        Path(record.folder_path) / record.name
+        for record in all_photos(conn, include_hidden_folders=True)
     )
 
 
@@ -221,8 +365,10 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     selectionChanged = Signal(list)
     autoExcludeChanged = Signal()
     mediaFilterChanged = Signal()
+    mountedSourcesChanged = Signal()
     recentSourcesChanged = Signal()
     recentDestinationsChanged = Signal()
+    defaultDestinationChanged = Signal()
     resizeLimitChanged = Signal()
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
@@ -273,6 +419,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         # #441: import ELŐTTI forgatás (negyed fordulatok, 0..3) és
         # csillagozás, forrás-útvonal szerint
         self._media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
+        self._mounted_sources: list[dict[str, str]] = []
         self._rotations: dict[str, int] = {}
         self._starred: set[str] = set()
         # a legutóbb regisztrált előnézeti (negatív) id-k — új szkennelés
@@ -306,6 +453,20 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         A `LastImport…` legördülő adata: a felhasználó egy kattintással
         visszatérhet a rendszeresen használt kártyához/mappához."""
         return self._read_recent_sources()
+
+    @Property("QVariant", notify=mountedSourcesChanged)
+    def mountedSources(self):  # noqa: N802 — QML property-konvenció
+        """A jelenleg elérhető, cserélhető importforrások."""
+        return [dict(source) for source in self._mounted_sources]
+
+    @Slot()
+    def refreshMountedSources(self) -> None:  # noqa: N802 — QML property-konvenció
+        """Frissíti a csatolt kártyák és USB-meghajtók listáját."""
+        sources = discover_mounted_sources()
+        if sources == self._mounted_sources:
+            return
+        self._mounted_sources = sources
+        self.mountedSourcesChanged.emit()
 
     def _read_recent_sources(self) -> list[str]:
         stored = self._get_settings().value(RECENT_SOURCES_SETTINGS_KEY, [])
@@ -342,20 +503,46 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             if Path(item).is_dir()
         ]
 
-    @Property(str, notify=recentDestinationsChanged)
+    @Property(str, notify=defaultDestinationChanged)
     def defaultDestination(self) -> str:  # noqa: N802
-        """Az alapértelmezett cél — az eredeti menü KÜLÖN szakasza
-        (`-seperator-before-default_location-`).
+        """A felhasználó alapértelmezett importcélja.
 
-        A képek rendszermappája alatti `Picasa` gyűjtő; ha a rendszer nem
-        ad képek-mappát, a felhasználó saját mappája. Az `export_controller`
-        alapértelmezésének mintája."""
+        Első használatkor közvetlenül a képek rendszermappája (a
+        `QStandardPaths.PicturesLocation`), vagy ennek hiányában a saját
+        mappa. A választás a `QSettings`-be kerül, az import párbeszéd ezt
+        ajánlja fel induló célként."""
+        tarolt = self._get_settings().value(DEFAULT_DESTINATION_SETTINGS_KEY, "")
+        if tarolt:
+            return str(tarolt)
         kepek = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.PicturesLocation
         )
         if not kepek:
             kepek = str(Path.home())
-        return str(Path(kepek) / "Picasa")
+        return str(Path(kepek))
+
+    @Property(QUrl, notify=defaultDestinationChanged)
+    def defaultDestinationUrl(self) -> QUrl:  # noqa: N802
+        """A beállított mappa `FolderDialog`-hoz alakított URL-je."""
+        return to_file_url(self.defaultDestination)
+
+    @Slot(str)
+    def setDefaultDestination(self, path: str) -> None:  # noqa: N802
+        """Elmenti a létező, felhasználó által kiválasztott importcélt."""
+        local_path = to_local_path(path)
+        if not local_path:
+            return
+        folder = Path(local_path).expanduser()
+        try:
+            if not folder.is_dir():
+                return
+            normalized = str(folder.resolve())
+        except OSError:
+            return
+        if normalized == self.defaultDestination:
+            return
+        self._get_settings().setValue(DEFAULT_DESTINATION_SETTINGS_KEY, normalized)
+        self.defaultDestinationChanged.emit()
 
     def _read_recent_destinations(self) -> list[str]:
         stored = self._get_settings().value(
@@ -564,33 +751,62 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                 self.sourceScanFailed.emit(str(error))
                 return
 
-            duplicates = _duplikatumok(self._index_path, candidates)
-
-            self._candidates = candidates
-            # #441: új forrás → a korábbi forgatások/csillagok nem élnek
-            self._rotations = {}
-            self._starred = set()
-            self._duplicate_paths = duplicates
-            self._excluded_paths = (
-                {str(path) for path in duplicates} if self._auto_exclude else set()
-            )
-            records = tuple(
-                _preview_photo_record(index, candidate)
-                for index, candidate in enumerate(candidates)
-            )
-            if self._provider is not None:
-                self._provider.unregister_additional_photos(self._preview_ids)
-                self._provider.register_additional_photos(records)
-            self._preview_ids = tuple(str(record.id) for record in records)
-
-            items = self._preview_items()
-            # #441: a SIKERES beolvasás után jegyezzük meg a forrást — a
-            # hibás/nem létező mappa ne kerüljön a legördülőbe
-            self._remember_source(target)
-            self.sourceScanFinished.emit(items, len(candidates))
+            self._apply_scan(candidates, remember=target)
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-scan")
+
+    def _apply_scan(
+        self, candidates: tuple[ImportCandidate, ...], remember: str = ""
+    ) -> None:
+        """A beolvasás közös lezárása (mappa és fájllista): duplikátum-
+        jelölés, kizárások, előnézeti rekordok, jelzés. Háttérszálon fut."""
+        duplicates = _duplikatumok(self._index_path, candidates)
+
+        self._candidates = candidates
+        # #441: új forrás → a korábbi forgatások/csillagok nem élnek
+        self._rotations = {}
+        self._starred = set()
+        self._duplicate_paths = duplicates
+        self._excluded_paths = (
+            {str(path) for path in duplicates} if self._auto_exclude else set()
+        )
+        records = tuple(
+            _preview_photo_record(index, candidate)
+            for index, candidate in enumerate(candidates)
+        )
+        if self._provider is not None:
+            self._provider.unregister_additional_photos(self._preview_ids)
+            self._provider.register_additional_photos(records)
+        self._preview_ids = tuple(str(record.id) for record in records)
+
+        items = self._preview_items()
+        # #441: a SIKERES beolvasás után jegyezzük meg a forrást — a
+        # hibás/nem létező mappa ne kerüljön a legördülőbe
+        if remember:
+            self._remember_source(remember)
+        self.sourceScanFinished.emit(items, len(candidates))
+
+    @Slot("QVariantList")
+    def scanFiles(self, files) -> None:  # noqa: N802 — QML-stílus
+        """#4596: a forrás KIJELÖLT FÁJLOK listája (a QML `FileDialog`
+        `selectedFiles`-a: `file://` URL-ek vagy útvonalak) — háttérszálon,
+        a mappás beolvasással azonos jelzésekkel és utófeldolgozással. A
+        „legutóbbi források” listája mappákat őriz, ezért fájllistát nem
+        jegyzünk meg."""
+        targets = [
+            text for text in (to_local_path(str(item)) for item in (files or [])) if text
+        ]
+        if not targets:
+            self.sourceScanFailed.emit(self.tr("Choose a source folder first."))
+            return
+
+        def worker() -> None:
+            scan = scan_files(targets, self._media_filter)
+            self._unrecognized = scan.unrecognized
+            self._apply_scan(scan.candidates)
+
+        self._start_background(worker, name="picasapy-importsource-scanfiles")
 
     @Slot(result=str)
     def wipeCardWarning(self) -> str:  # noqa: N802 — QML-stílus
@@ -610,6 +826,12 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         )
 
     # -- import ---------------------------------------------------------------
+
+    @Slot(str, result=bool)
+    def isValidFolderName(self, name: str) -> bool:  # noqa: N802
+        """#4837: a kézi importmappanév érvényes-e (a QML az Import gomb
+        tiltásához használja)."""
+        return is_valid_folder_name(name)
 
     @Slot(str, str, str, str)
     def runImport(
@@ -632,6 +854,14 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         after_copying = (
             after_copying if after_copying in _VALID_AFTER_COPYING else AFTER_COPY_LEAVE
         )
+        # #4595: kézi elnevezésnél cím nélkül nincs import — se másolás a
+        # célgyökérbe, se háttérszál (a QML-tipp kéri a címet).
+        if naming_mode == NAMING_MANUAL and not manual_name.strip():
+            return
+        # #4837: a kézi név EGYETLEN útvonal-elem lehet (se `../`, se
+        # abszolút út, se Windowson tiltott karakter) — érvénytelenre nincs import.
+        if naming_mode == NAMING_MANUAL and not is_valid_folder_name(manual_name):
+            return
         all_candidates = self._candidates
         included = tuple(
             candidate
@@ -757,7 +987,7 @@ def _mark_imported_ini(
             result = result.with_value(target.name, "star", "yes")
         return result
 
-    update_document(target.parent / PICASA_INI_NAME, _mutate, backup=True)
+    update_document(target.parent / INI_NAME, _mutate, backup=True)
 
 
 def _remove_source_file(path: Path) -> None:
@@ -785,12 +1015,16 @@ def _remove_source_file(path: Path) -> None:
                 directory.rmdir()  # csak ÜRES mappát töröl
             except OSError:
                 pass
-    source_ini = path.parent / PICASA_INI_NAME
-    if not source_ini.exists():
+    source_ini = path.parent / INI_NAME
+    if not has_ini_source(source_ini):
         return
     try:
-        document = load_document(source_ini)
+        document = load_or_empty(source_ini)
     except (OSError, ValueError):
         return
     if document.section(path.name) is not None:
-        save_document(document.without_section(path.name), source_ini, backup=True)
+        update_document(
+            source_ini,
+            lambda current: current.without_section(path.name),
+            backup=True,
+        )

@@ -42,7 +42,7 @@ A **szöveg**-beillesztés viszont a rendszer-vágólapról jön, **lecseréli**
 feliratot, megerősítést kér (`CTextEditNode::confirm`, gomb: `Replace`), és
 kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
 
-## 3. „Dátum és idő beállítása” — KÉT mód; a mentési cél részben nyitott
+## 3. „Dátum és idő beállítása” — KÉT mód; feltételes EXIF-írás
 
 `offsettime.fen`: bélyegkép-előnézet · „Current photo date" (dátum+idő) ·
 „New photo date" (dátum+idő) · **rádiócsoport**:
@@ -54,35 +54,211 @@ Több képre megy: az ablakcím szó szerint **`Adjust Photo Date - %d items`**
 (`0x00cb40ac`, xref: `0x0077c7c0`); a futásjelzés **`Setting photo dates`**
 (`0x00cb4120`, xref: `0x0077cfd0`, `AdjustTimeThread::SettingDates`).
 
-### A worker mit állít be — és mit nem bizonyít ez a híváslánc
+### A worker és a forrásfájl írása (2026-10-08, #4646)
 
 A két dátumfeldolgozó út (`0x00490580`, `0x00490c10`) egyaránt a `0x37`
 metaadat-tulajdonságot állítja be (`0x004906f7`/`0x004906fe` és
-`0x00490d3c`/`0x00490d43`). A tulajdonság-táblában a `0x37` az EXIF
-`DateTimeOriginal`-nak felel meg (ld. `picasa-metaadat-tulajdonsagok.md`, §3),
-de ez a Picasa metaadat-objektum tulajdonságát azonosítja; **önmagában nem
-bizonyítja, hogy a worker a képfájl EXIF-szegmensébe is kiírja**.
+`0x00490d3c`/`0x00490d43`). A tulajdonságtábla szerint a `0x37` az EXIF
+`DateTimeOriginal` (`0x9003`), ld. `picasa-metaadat-tulajdonsagok.md`, §3.
+Ezután mindkét worker a `[esp+0xac] == 2` feltételt vizsgálja
+(`0x0049070a`, `0x00490d4f`). A `[esp+0xac]` a worker keretében `0`-ról indul
+(`0x00490602`, `0x00490c92`), és közvetlen írás nincs rá más helyen. A `2`
+a `[esp+0x94]`-es kimeneti szerkezet `+0x18` mezőjéből jöhet: a `0x00490cc6`–
+`0x00490cd2` hívás a `[obj+0x48]` objektum vtable-jának `+0xc4` metódusát
+hívja ezzel a címmel. Ez a metódus nincs azonosítva, ezért a `2` jelentése
+**nyitott**. Ha teljesül, meghívja a `0x009ed330` íróutat;
+annak nullától eltérő visszatérése a fallback nélküli worker-ágra visz
+(`0x00490725`–`0x00490736`, `0x00490d69`–`0x00490d7b`), de a visszatérési
+kódok jelentését a disassembly nem nevezi meg. A `2` érték C++-oldali
+jelentése szintén nincs meg; ezért itt a nyers feltétel rögzíthető.
 
-Mindkét worker meghívja a `0x00992780` segédfüggvényt (`0x00490900`,
-`0x00490f40`). A függvény a `SetFileTime` API-t hívja (`0x0092234c` import;
-az index ezt a `0x00992780` hívójához rendeli). A worker `0` jelzője mellett a
-segéd a kiszámított időmutatót a `SetFileTime` második paraméterébe teszi,
-és nullát ad a harmadik/negyedik paraméternek (`0x009927e9`–`0x009927f9`). A
-Win32 paramétersorrend szerint ez **a fájl létrehozási idejét** állítja; ez a
-hívás nem állítja a hozzáférési vagy utolsó módosítási időt.
+Az `0x009ed330` hívja a `0x009eb290`-et, amelynek tempfájlos íróágán a
+kiválasztott
+képfájl útvonalát olvassa, `.tmp` fájlt ír (`"r+b"`/`"wb"`,
+`0x009eb3e0`, `0x009eb5c8`), majd a `0x00994400` útján lecseréli a forrásfájlt
+(`0x009eb70b`). A worker által előzőleg beállított `0x37` így a forrásfájl
+EXIF `DateTimeOriginal` mezőjébe kerül.
 
-⛔ **A teljes művelet célja még nyitott.** A bináris itt bizonyítja a `0x37`
-metaadat-objektum beállítását és a létrehozási idő állítására vezető ágat,
-de nem bizonyítja, hogy a `DateTimeOriginal` ténylegesen a képfájlba vagy a
-`.picasa.ini`-be íródik-e, illetve hogy egy későbbi metaadat-mentés módosítja-e
-a fájl utolsó módosítási idejét. Ehhez Windowsos mérés kell: egy teszt-JPEG
-EXIF `DateTimeOriginal`, a mappa `.picasa.ini`-jének bájtjai és fájl-`mtime`
-előtte/utána összevetése egyetlen képen, Picasában az új dátum beállítása után.
-Ebben a környezetben nincs Windows futtató/QEMU-rendszeremulátor, ezért ez a
-mérés **NINCS MEG**. A korábbi állítás — miszerint a kezelők hiánya a
-`SetFileTime` közvetlen hívólistájából kizárja a fájlrendszer-idő módosítását
-— **hibás negatív következtetés** volt: a kezelő a háttér-workerhez jut el,
-amely a segédfüggvényt hívja.
+A sikeres csere a fájlrendszer-időket is kezeli. A `0x009eb290` előbb
+elmenti mindhárom időt (`0x00ab3320` → `0x00ab3350` → `GetFileTime`). Ha a
+metaadat-objektumban olvasható és dátummá alakítható a `0x1c` tulajdonság
+(EXIF `DateTime`, `0x0132`; `0x009eb34b`–`0x009eb37d`), a `0x00ab35e0` az
+eredeti `FILETIME`-szerkezetben a hozzáférési és utolsó módosítási idő mezőket
+erre az értékre állítja (`or [edi+0x18], 6`, `+8`, `+0x10`); a
+létrehozási idő mezője érintetlen marad. A `0x00994400` fájlcsere-segéd
+sikeres visszatérése után a worker a `0x009eb4af` ágra jut, amely a
+`0x009eb4c1` címen hívja a `0x00ab34d0`-t; a cserehibás ág is megpróbálja ezt
+a visszaírást (`0x009eb738`). Ha a `DateTime` hiányzik vagy nem alakítható
+dátummá, a szerkezetben mindhárom eredeti idő marad, így a kód az eredeti
+hármast próbálja visszaírni. A `0x00ab35e0`-ban a két időkonverziós API
+visszatérését, a `0x00ab34d0`-ban pedig a `SetFileTime` eredményét nem kezeli
+helyreállítással; a tényleges fájlrendszer-állapot ezért a fájlcsere és az
+API-hívások sikerétől is függ.
+
+Ha a `[esp+0xac] == 2` feltétel nem teljesül, vagy a `0x009ed330` nullát ad
+vissza, a worker a fallback-ágra jut: az első workerben a `0x004908cd`-n át,
+a másodikban a `0x00490f0d`-n át a `0x00992780` hívásához (`0x00490900`,
+`0x00490f40`); a `0x004908cd`–`0x00490900` közti átmenet nincs végig követve. Ez a segéd a `SetFileTime`-ot hívja
+(`0x009927f9`, import-slot `0xc40474`; a korábbi `0x0092234c` cím téves volt:
+a `.text` közepébe esik, nem hívás). A hívóhelyek `push 0`-val adják át a
+jelzőt (`bl` = 0), így a `SetFileTime` argumentumai: létrehozási idő = az új
+dátum (`SystemTimeToFileTime`, `0x009927e3`), hozzáférési és utolsó írási idő
+= NULL (`neg bl` / `sbb` / `and` maszk, `0x009927e9`–`0x009927f7`). Ebben az ágban tehát a fájl létrehozási idejét
+a beállított új dátumra állítja; a hozzáférési és utolsó módosítási időt ez a
+hívás nem adja át, így azokat nem módosítja.
+
+⭐ **2026-10-11 (#4591) — a nem-EXIF ág a katalógust is írja.** A
+`[esp+0xac]` a `thumbindex`-rekord másolatának `+0x18` mezője, a **fájltípus**
+(a másoló: `IThumbDB` `+0xc4` → `0x0043c3f0` → `0x004edf60`); a `== 2` tehát
+„JPEG". Minden más típusnál (videó: 8/10/11) a `SetFileTime` mellett a
+`0x004ef3c0` (eltolás) ill. `0x004ef5a0` (abszolút) a rekord **1. FILETIME-ját**
+is átírja és piszkosnak jelöli. Részletek és mérés: `pmp-database.md` 15.1–15.2.
+
+A teljes `.text` indexfüggetlen pásztázása (`paszta.py`,
+`memoria_kapu()`-val indítva; 2 884 879 utasítás) a `.picasa.ini`-re mutató
+adat-hivatkozásokat a program más részein találta, nem a fenti worker/EXIF-író
+hívásláncban. E művelet nem ír `.picasa.ini`-kulcsot. Ez nem állítás a Picasa
+program egészének `.picasa.ini`-írásairól.
+
+### PicasaPy tárolási döntése (#4332)
+
+A dátummódosító a kijelölt fotók dátumát az SQLite-index `photos.taken_at_override`
+mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. *(A #4693 ELŐTTI állapot:)* A PicasaPy
+forrásfájl EXIF-szegmensét nem írta át: a forrás JPEG `DateTimeOriginal` mezője
+érintetlen maradt; exportált JPEG-en viszont a `DateTimeOriginal` az indexben
+felülírt dátumot kapja, a #451 Colab-mérésével egyezően. Ez a #4646 által
+feltárt eredeti viselkedéstől eltér. A rács, a dátum szerinti rendezés és a
+Tulajdonságok panel a felülírt értéket mutatta.
+
+**A PicasaPy megvalósítása (#4693):** A művelet `.picasa.ini`-kulcsot nem ír. A PicasaPy a forrásképen módosítja az
+EXIF `DateTimeOriginal` értékét, és a sikeres írás után a mappát újraolvassa,
+hogy az index, a rácssorrend és a Tulajdonságok-panel az új EXIF-értéket
+mutassa. A korábbi, #4332-es indexfelülírásos út ettől eltért; a jelenlegi
+menüparancs JPEG-nél már nem hoz létre `taken_at_override` értéket.
+Ha az EXIF-írás nem sikerül (videó, nem-JPEG, hibás vagy írásvédett JPEG), a
+dátum a `taken_at_override`-ba kerül (#4885), Windowson emellett a fájl
+létrehozási ideje is; hibás vagy írásvédett JPEG-nél ez csendes, katalógusbeli
+dátum.
+
+### Kérdés-válasz és összevetés (#4646, 2026-10-12)
+
+A lenti állításokat a `Picasa3.exe` disassembly-je és a címekre épülő
+imm32-keresés igazolja (eszközök: `pefile`, `capstone`, nincs indexfüggő
+lépés). Ahol a bináris nem dönt el valamit, ott **NYITOTT** áll.
+
+**Mit ír az eredeti, és mikor**
+
+| kérdés | válasz | bizonyíték | állapot |
+|---|---|---|---|
+| EXIF-mező | `0x37` = `DateTimeOriginal` (`0x9003`), az új dátumra | `push 0x37` + a `0x0049c640` setter: `0x004906f7`, `0x00490d3c` | igazolt |
+| EXIF-fájlírás | a forrásfájl `.tmp`-n át íródik, csere a `0x00994400`-zal | `r+b` (`0x009eb3e5`), `wb` (`0x009eb5c8`), csere `0x009eb70b`; hívás: `0x009ed39a` → `0x009eb290` | igazolt (a csere belseje nincs) |
+| az EXIF-ág feltétele | `[esp+0xac] == 2` **és** a `0x009ed330` nem nullát ad | `0x0049070a`, `0x00490d4f`, `0x00490734`–`0x00490736` | a `2` jelentése NYITOTT |
+| hozzáférési és utolsó írási idő | a worker-objektumban nincs `0x1c` (EXIF `DateTime`), ezért a `0x009f05c0` keresés nem talál → nincs `0x00ab35e0`-hívás → a mentett eredeti hármas íródik vissza (nincs eltolás) | `0x009eb34b`–`0x009eb37d` (`eax = 9`, `jne 0x9eb382`); `0x00ab34d0` a jelzőket (`-1`) használja | igazolt (statikus; natív futtatás nincs) |
+| létrehozási idő az EXIF-ágban | **érintetlen** (mentve, visszaírva) | `0x00ab35e0` nem írja a `+0x00`-t | igazolt |
+| fallback (nem EXIF, vagy íráshiba) | csak a létrehozási idő := az új dátum; hozzáférés és írás NULL | `push 0` a hívóknál (`0x00490900`, `0x00490f40`); `SetFileTime` `0x009927f9` | igazolt |
+| `.picasa.ini` | a láncban nincs hivatkozás | sztring `0x00c80a6c`; kb. 70 imm32-találat a `.text`-ben, egyik sincs a láncban | csak a láncra igaz |
+| JPEG / nem-JPEG / videó | a láncban nincs formátum-ellenőrzés; a `2` lehet a formátum-osztály | — | NYITOTT |
+
+**A mentett rekord és a visszaírás.** `0x00ab3320` a rekordot nullázza, a
+jelzőket `-1`-re állítja (`0x00ab3325`), majd `0x00ab3350` a `GetFileTime`-mal
+tölti (`0x00ab3495`). A rekord: `+0x00` létrehozás, `+0x08` hozzáférés,
+`+0x10` utolsó írás, `+0x18` jelzőbitek (1 = létrehozás, 2 = hozzáférés,
+4 = írás). A visszaírás `0x00ab34d0`-ban a jelzőbitek alapján választja ki, mely
+időt adja át a `SetFileTime`-nak (`0x00ab3582`–`0x00ab35a7`).
+
+**A `0x1c` kérdés (2026-10-12, statikusan feloldva).** A `0x009ed330` 1.
+argumentuma (P) a worker keretének lokális hash-táblája (`0x00490580`:
+`[esp+0x74]`; a táblamezők nullázása `0x004906b8`–`0x004906ce`), amelybe
+egyetlen beszúrás érkezik: a `0x37` (`0x004906fe`; a `0x00490c10`-ben
+`0x00490d43`). A bucket-szám és a fej beállítását az első beszúrásnál a
+`0x0049e810` végzi (ezt nem követtem végig; a getter csak a bucket-számot,
+a bucketeket és a csomópont-kulcsot olvassa). Más beszúrás a láncban nincs, és P-t a `0x009ed330` csak
+átadja. A `0x009eb290` `0x1c`-t keres P-ben (`0x009eb34b`, `0x009f05c0`);
+mivel a `0x1c` nincs a táblában, a getter `eax = 9`-et ad (nem talált ág
+`0x009f0600`), a `jne 0x9eb382` átugorja a `0x00ab35e0`-t. Tehát a
+DateTime **sem a régi, sem az új** értéke nem kerül be a láncba: a
+„hiányzik" ág érvényes. Ebben az ágban a sikeres EXIF-csere után a
+`0x00ab34d0` a `0x00ab3320` által `-1`-re állított jelzőkkel mindhárom
+mentett eredeti időt visszaírja (létrehozás, hozzáférés, utolsó írás), tehát
+a fájl időbélyegei nem változnak. A `0x0077d05a` és a `0x0077d07e` hívóhelyek a
+`0x0077cfd0`-kezdetű függvényben vannak (a spec szerint ez a SettingDates szál);
+innen csak a két workert hívják, `0x1c`-t nem állítanak.
+A teljes `.text` `0x1c` immediate-jeiből a `push 0x1c` + `0x009efe80` + `0x009ed330`
+mintázat még négy helyen fordul elő (`0x004386ee`, `0x00456440`,
+`0x00478399`, `0x004854e8`); ezek más függvények, és nem a dátumszál közvetlen
+hívásai. Azt nem igazoltam, hogy más úton nem érhetők-e el. A PicasaPy-nak
+ezek a helyek nem változtatják meg a fenti következtetést.
+
+**A fallback-ág.** `0x00992780` a `bl` jelzőt a `[esp+0x34]`-ről veszi. A
+megnyitás a `[0xd69520]` indirekt hívással történik, argumentumai egy
+`CreateFileW`-hívásra utalnak (hozzáférés `0x100` = FILE_WRITE_ATTRIBUTES,
+megosztás 3, OPEN_EXISTING, `0x2000000` = BACKUP_SEMANTICS). A cél címe
+futásidőben töltődik, importtal nem igazolt.
+
+**Összevetés a PicasaPy kutatáskor vizsgált kódjával** (`src/picasapy/app/timestamp_controller.py`,
+`_adjust_photo_file_date`):
+
+| pont | eredeti (bináris) | PicasaPy | eltérés |
+|---|---|---|---|
+| EXIF DateTimeOriginal | `0x37` az új dátumra | `_write_exif_datetime_original`, `.tmp`-csere (JPEG) | nincs (JPEG) |
+| hozzáférési és írási idő EXIF-írás után | **eredeti** (nincs eltolás; a `0x1c` nincs a worker-objektumban) | a régi fájlidő + (új − `read_exif_details(...).datetime_modified`), `os.utime` | **van** (igazolt, statikus): az eredeti nem tolja el a `atime`/`mtime`-ot |
+| létrehozási idő EXIF-írás után | érintetlen | visszaírja a régi `st_ctime`-ot (csak Windows) | nincs |
+| fallback (íráshiba) | létrehozási idő := új dátum | `_set_creation_time_ns(source, target)` — csak `win32`, POSIX-on nincs hatás | **van** Linuxon (#4885) |
+| `.picasa.ini` | nem írja (a láncban) | nem írja | nincs |
+| nem-JPEG | fallback (creation) | `_jpeg_segments` → `ValueError` → fallback | a feltétel nincs igazolva |
+
+A kutatás idején meglévő tesztek: `tests/app/test_timestamp_controller_4693.py` (a sikeres
+ágnál az `atime`/`mtime` eltolását rögzíti, nem a `DateTime`-értéket),
+`tests/app/qml_functional/test_adjust_timestamp_4332.py`,
+`tests/index/test_datum_feluliras_megmarad_4332.py`. A jegy által nevezett
+`tests/app/test_adjust_timestamp_4332.py` nincs a fában.
+
+**Kész, ha (a megvalósításhoz, #4646 és #4885)**
+
+- [ ] **Windows-mérés** (mért, nem becsült): egy JPEG-en, amelynek ismert a
+  `ftCreation` / `ftLastAccess` / `ftLastWrite` értéke és ismert az EXIF
+  `DateTime` és `DateTimeOriginal`, a párbeszéd után kiolvasni a három időt és
+  az EXIF-mezőket. Ebből eldől, hogy a fájlidő a `DateTime`-ból vagy az új
+  dátumból jön. Az eredmény táblázatban kerüljön ide.
+- [ ] Ugyanez nem-JPEG-en (ha a Picasa engedi), a `2` feltétel igazolásához.
+- [x] A bináris (2026-10-12) szerint a sikeres EXIF-ágban a `atime`/`mtime`
+  az eredeti marad (nincs `DateTime`-alapú beállítás). Az `os.utime`-eltolás
+  megszűnt; a `tests/app/test_timestamp_controller_4693.py`
+  `test_sikeres_exif_iras_utan_a_fajlidok_valtozatlanok` már a változatlanságot
+  rögzíti. A mérce a binárisból levezetett viselkedés; a Windows-mérés (fent)
+  kiegészítő ellenőrzés, nem kapu.
+- [ ] Linux: a creation-only fallback ne legyen hallgatólagos no-op. Vagy ír
+  valamit, vagy a felület kimondja a korlátot (#4885).
+- [ ] A jegy hivatkozásai frissítendők: a menüpont most
+  `PicasaMenuBar.qml:2385`–`2388` (a `:2022` elavult); a tesztnév a fentiek szerint.
+
+**Nyitott pontok, és honnan szerezhető meg**
+
+1. A `0x1c` forrása: bináris úton feloldva (2026-10-12): a worker-láncban nincs
+   `0x1c`, ezért a „hiányzik" ág él. A Windows-mérés (fent) a végső megerősítés.
+2. A `[esp+0xac] == 2` jelentése: a `[obj+0x48]` vtable `+0xc4` metódusának
+   azonosítása (a `0x00490cc6`–`0x00490cd2` hívás célja).
+3. A `0x00994400` (csere) és a `0x009eb820` belső hatása: nincs végig bejárva.
+4. A `[0xd69520]` cél: futásidőben töltődik, importtal nem igazolt.
+
+### Megvalósítási állapot (#4646, 2026-10-12)
+
+A PicasaPy sikeres EXIF-írási ága már nem tolja el az `atime`/`mtime` értéket:
+az írás előtt elmenti őket, a mappa újraszkennelése (`sync_tree`, amely relatime
+alatt olvassa a fájlokat) UTÁN állítja vissza. Windows alatt a korábban
+elmentett létrehozási időt is visszaírja. A hibaág továbbra is csak Windows
+alatt tudja az új dátumra állítani a létrehozási időt; a Linux viselkedés a
+#4885 hatóköre.
+
+Linuxon mérve (2026-10-12, három egymás utáni futás): zöld a
+`tests/app/test_timestamp_fajlidok_sorrend_4646.py` (a sorrendet GUI nélkül,
+valódi indexszel méri; fordított sorrendnél piros), a
+`tests/app/test_timestamp_controller_4693.py` és a valódi menüből futó
+`tests/app/qml_functional/test_adjust_timestamp_4332.py`. A menüs teszt az
+`atime`-ot nem méri: a módosítás után a nézet újratölti a képet, és ez a
+relatime alatt az `atime`-ot az EXIF-írástól függetlenül frissíti. A
+Windows-specifikus létrehozásiidő-ág és a natív Picasa Windows-mérés itt nem
+volt futtatható, ezért ezek ellenőrzése nyitott marad.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
@@ -133,6 +309,96 @@ az online páros — hatókörön kívül.
 1024 · 800 · 640 · 320, célmegjelöléssel), mozgókép-mód (első kocka / teljes),
 oldalcím, célmappa, **sablonlista + leírás + élő előnézet**, „Export".
 
+### 6.1 `webexport.fen` — a méretválasztó és a mozgókép-mód (#4610)
+
+Források: a helyi telepítés (`research/copy_Picasa_3_7/Picasa3/`)
+`runtime/webexport.fen`, `web/templates/*`, `web/documentation/index.html`,
+a hivatalos magyar katalógus (`referencia/i18n-hu/webexport.xml`), és a
+`Picasa3.exe` diszasszemblátuma (`eszkozok/binaris/picasa_dis.py`).
+
+**Egy méretválasztó van, nem kettő.** A párbeszédnek egyetlen
+`popup name="sizeradio"` vezérlője van („Export pictures at:",
+`webexport.fen` 2–10. sor), és ez a **nagy kép** méretét adja. Bélyegkép-
+méret választó **nincs**: a bélyegkép méretét a sablon `define
+thumbnailWidth`/`thumbnailHeight` sora szabja meg (`greyfrm/index.tpl`
+38–39. sor: 120; `whitefrm/index.tpl` 36–37.: 120; a `*bg` sablonokban a
+sor ki van kommentezve, pl. `blackbg/index.tpl` 38–39.).
+
+| index | `webexport.fen` elem | hivatalos magyar felirat (`webexport/itemN`) | képpont | `WebExportSize` érték |
+|---|---|---|---|---|
+| 0 | `Original Size` (4. sor) | Eredeti méret (`item4`) | 0 = eredeti | 0 |
+| 1 | `1024 pixels (for large monitors)` (5.) | 1024 képpont (nagy képernyőkhöz) (`item5`) | 1024 | 5 |
+| 2 | `800 pixels (for large Web pages)` (6.) | 800 képpont (nagyméretű weboldalakhoz) (`item6`) | 800 | 4 |
+| 3 | `640 pixels (for Web pages)` (7.) | 640 képpont (weboldalakhoz) (`item7`) | 640 | 3 |
+| 4 | `320 pixels (for email)` (8.) | 320 képpont (e-mailhez) (`item8`) | 320 | 1 |
+
+- **Alapérték: 640 képpont (3. index).** A párbeszéd-init (`0x007f52b0`) a
+  `Preferences\WebExportSize`-t **3-as alapértékkel** olvassa
+  (`0x007f5310 mov [esp+0x20], 3` → `0x007f5318 call 0x407a20`), a tárolt
+  érték → index leképezés az ugrótábla `0x7f5bf0` (`0x007f55a6`): 0→0, 1→4,
+  3→3, 4→2, 5→1, minden más (2, >5) → 0. A mentés (`0x007f5e80`) a fordítottja
+  (`0x7f61f8`: index 0→0, 1→5, 2→4, 3→3, 4→1), és mindkét kulcsot a
+  `Preferences` alá írja (`0x007f5ffe`, `0x007f6020`) — a választás tehát
+  **megmarad** a következő megnyitásig.
+- **A sablon felülírhatja.** A `define imageWidth/imageHeight` a
+  felhasználó választását írja felül (`blackbg/index.tpl` 31–34. sor
+  megjegyzése; `web/documentation` „Command Variables"). A képgeneráló
+  (`0x0086bce0`) a változótáblából olvas, és ha a sablon nem adta meg:
+  `imageWidth`/`imageHeight` = a párbeszéd választása (`[exp+0xae0]`/
+  `[exp+0xae4]`, `0x0086c207`–`0x0086c222`; a mentés ide írja,
+  `0x007f6070`–`0x007f6089`), **`thumbnailWidth`/`thumbnailHeight` = 144**
+  (`0x0086c125 push 0x90`, `0x0086c136 push 0x90`), `shadowedThumbnails` = 1
+  (`0x0086c117`).
+- **Árnyék-jelölőnégyzet nincs.** A `webexport.fen` egyetlen jelölőnégyzetet
+  vagy kapcsolót sem tartalmaz az árnyékoláshoz: a bélyegképek árnyéka a
+  sablon `define shadowedThumbnails` sorából jön (alapérték 1), a képeké a
+  `shadowedImages`-ből (alapérték 0, `web/documentation` „Command
+  Variables"). A PicasaPy ezért nem kínál árnyék-választót (#4849).
+
+**A mozgókép-mód** — `popup name="moviesradio"` („Export movies using:",
+`webexport.fen` 11–16. sor), két elem: **`First frame`** („Első képkocka",
+`item11`) és **`Full movie`** („Teljes mozgófilm", `item12`); a csoport
+címkéje „Mozgófilmek exportálása:" (`labelgroup9`).
+
+- **Alapérték: Első képkocka.** `Preferences\WebExportMovie` alapértéke 0
+  (`0x007f5355 mov [esp+0x20], esi`, ahol `esi = 0` a `0x007f52e9` óta); a
+  mentés nem nulla indexre 1-et ír (`0x007f5f67`–`0x007f5f75`).
+- **Mit jelent:** a mentés a választást az exportáló objektum `+0xae8`
+  bájtjába teszi (`0x007f60aa`–`0x007f60b9`: `[dlg+0xbb0]` = `[exp+0xae8]`,
+  mert `exp = dlg+0xc8`, `0x007f6076`). A sablonfeltételek ebből és a
+  fájltípusból jönnek (`0x0086db20`); film = a hét filmkód egyike (8, 9, 10,
+  11, 12, 0x17, 0x1D — ugyanaz a lista, mint az `export-parbeszed.md`-ben):
+  - `isImage` = **nem film, VAGY Első képkocka** (`0x0086efe6`–`0x0086f043`);
+  - `isSimpleEmbed` = film ÉS Teljes mozgófilm ÉS típuskód 10
+    (`0x0086ee82`–`0x0086eec9`);
+  - `isExtendedEmbed` = film ÉS Teljes mozgófilm ÉS típuskód ≠ 10
+    (`0x0086ef36`–`0x0086ef73`).
+
+  A gyári sablonok `targetlistelement.html`-je (mind a hat HTML-sablon,
+  pl. `blackbg/targetlistelement.html` 8–25. sor) az `isSimpleEmbed` ágon
+  `<embed src="<%itemLargeImage%>">`-et, az `isExtendedEmbed` ágon Windows
+  Media Player `<OBJECT>`-et, az `isImage` ágon `<img>`-et ad ⇒ **Teljes
+  mozgófilmnél az `itemLargeImage` maga a filmfájl**, Első képkockánál a film
+  állóképként szerepel a galériában.
+
+**Nyitott:**
+
+- melyik kiterjesztés a 10-es típuskód (tehát melyik film kap `<embed>`-et
+  és melyik `<OBJECT>`-et). Nálunk minden teljes film `isSimpleEmbed`
+  (termékdöntés: a mai böngészőkben az ActiveX `<OBJECT>` nem játszik le,
+  az `<embed>` igen) — ez NEM az eredeti leképezése;
+- a teljes film bélyegképe és a filmfájl kimeneti neve az `image/` alatt
+  (a fájlokból nem olvasható ki); nálunk a bélyegkép az első kocka, a film
+  bájthű másolat;
+- hogy a `moviesradio` tiltott-e film nélküli kijelölésnél (a `webexport`
+  init-jében nem kerestük; az `export.fen`-é igen, ld. `export-parbeszed.md`).
+- a gyári sablonok al-sablonjainak `define`-jai (pl. `blackbg/imagetarget.tpl`
+  29–30. sor `define imageWidth 600`, `greyfrm/framebase.tpl` 31–32. sor
+  `define thumbnailWidth 120`) **nálunk hatástalanok** a képgenerálásra: a
+  képek a futtatás előtt készülnek, és csak az `index.tpl` saját `define`-jait
+  olvassuk ki előre (`webexport/sizes.py`). Hogy az eredetiben ezek hatnak-e
+  a képméretre, a fájlokból nem dönthető el.
+
 ## 7. Színkezelés — és a beállítások TÁROLÁSI HELYE
 
 `ID_VIEW_COLOR_MANAGED` kapcsolója: **`EnableColorManagement`**, és
@@ -153,10 +419,10 @@ Bekapcsolva: **monitor ICM-profil** (`GetICMProfileA`, 1 hívó) + a képbe
 
 ---
 
-## Ami még hátra van (20 tétel)
+## Ami még hátra van (19 tétel)
 
-**Nézet (5):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
-`ID_VIEW_SEARCHVIEW` · `ID_VIEW_AUTO`
+**Nézet (4):** `ID_VIEW_PICTURE` · `ID_VIEW_LIGHTBOXVIEW` · `ID_VIEW_EDIT` ·
+`ID_VIEW_AUTO`
 **Fájl (4):** `ID_FILE_EMAIL` · `ID_FILE_EPROCESS` · `ID_FILE_OPEN` ·
 `ID_FILE_OPENINANEDITOR`
 **Eszközök (4):** `ID_TOOLS_BUTTONMGR` · `ID_TOOLS_CONFIG_SCREENSAVER` ·
@@ -309,6 +575,13 @@ igével megy (`ShellExecuteW`, `0x0050a740`). Az **`edit` ige a binárisban
 NEM létezik** — ahogy az `explore`/`runas`/`openas` sem. ⇒ nincs külön
 „szerkesztésre megnyitás", és **nem kell szerkesztő-beállítás**.
 
+**„Keresési opciók" (`ID_VIEW_SEARCHVIEW`, `eMenuView`, parancsazonosító `0x9d2b`, #4641):**
+a `searchcontainer/searchbutton` gombot aktiválja (`0x005cbb50` → `0x009cd8a0`),
+vagyis a keresőmező melletti gomb **opciócsoportját nyitja és zárja**. A
+találati sávot **nem** kapcsolja (a korábbi `0x9c8f` párosítás hibás: az a
+`thumbui/fullview` kezelője). A pipa a nyitott állapotot követi. Nálunk: a
+`menuViewSearchOptions` a `MainToolbar.qml` `searchOptionsPopup`-ját kapcsolja.
+
 **„Kis képek" (`ID_VIEW_SMALL`, `eMenuView`, parancsazonosító `0x9cd8`):**
 **láthatósági kapcsoló a CThumbUI könyvtári bélyegképnézetének Nézet
 menüjében**, nem indexképméret-választó. A menüépítő `0x005c90f0` a
@@ -359,12 +632,20 @@ azonosítók a `[+0x08]`…`[+0x16]` mezőkben.
 ⇒ **fájlokat** tesz a vágólapra (nem képadatot), és a Kivágás/Másolás
 különbségét a `Preferred DropEffect` hordozza. Jegy: **#1526**.
 
-### 20. A hat színcímke — `ID_S_RED` · `ID_S_ORANGE` · `ID_S_YELLOW` · `ID_S_GREEN` · `ID_S_BLUE` · `ID_S_PURPLE`
+### 20. A Keresés… almenü hét színkeresője — hat `ID_S_*` és `ID_VIEW_BW`
 
 Névtér: **`eMenuTools`** (az **Eszközök** menü, nem a Nézet).
 
-Mind a hat ugyanazt hívja (`0x005ccc41`–`0x005ccca2`), más tokennel:
+A `Searchfor` rekord hét gyerekre mutat: a mutató `0x00d6e708`
+(`0x0055c36f`), a darabszám **7** (`0x0055c379`). Az első hat elem a
+`ID_S_RED` · `ID_S_ORANGE` · `ID_S_YELLOW` · `ID_S_GREEN` · `ID_S_BLUE` ·
+`ID_S_PURPLE`; mind ugyanazt a kezelőt hívja (`0x005ccc41`–`0x005ccca2`),
+más tokennel:
 `mov edx, "color:<szín>"; call 0x0065b7b0`.
+
+| gyerek | feliratkulcs / alapfelirat | parancs | hatás |
+|---|---|---:|---|
+| 7. | `eMenuView::ID_VIEW_BW` / `&Black and White` (`&Fekete-fehér`) | `0x9da9` | `color:black` |
 
 A `0x0065b7b0` (131 b) **hat lépése**:
 
@@ -374,9 +655,15 @@ A `0x0065b7b0` (131 b) **hat lépése**:
 5. `SendMessage(mező, 0xB1 = EM_SETSEL, 0xFFFF, 0xFFFF)` — kurzor a végére (`0x0065b81d`)
 6. `0x0065b840(this,0,0,1)` — a lista újraépítése
 
-⇒ **A menüpont beírja a tokent a keresőmezőbe és elsüti a keresést** —
-nincs külön szűrő-modell. Van **hetedik** kezelő (`color:black`,
-`0x005ccca7`), de **nincs hozzá menüfelirat**. Jegy: **#1399**.
+⇒ A hét menüpont beírja a saját `color:<szín>` tokenjét a keresőmezőbe és
+elsüti a keresést; nincs külön szűrő-modell. A hetedik rekord a
+`0x00d6e780` címen áll, parancsa `0x9da9`. A diszpécser táblája
+(`0x005cde04`, `0x005cdc30`) ezt a parancsot a `0x005ccca7` kezelőre
+irányítja; az `0xc950fc` címen tárolt `color:black` tokent adja át a közös
+`0x0065b7b0` keresőmező-kezelőnek. **Helyesbítés (#4642):** a korábbi
+„nincs hozzá menüfelirat” állítás téves volt; a bináris `ID_VIEW_BW`
+feliratkulcsa és `&Black and White` alapfelirata ezen a rekordon is jelen
+van. Jegy: **#1399**, kutatási helyesbítés: **#4642**.
 
 ### 21. A mentés-család — `ID_FILE_SAVEAS` · `ID_FILE_SAVEACOPY` · `ID_FILE_EXIT`
 
@@ -921,7 +1208,7 @@ Forrás: `0x007319f0` **szűretlen** sztringlistája + `stringres-en-hu.tsv`.
 | 15 | `ID_ALBUM_DELETE` | &Delete Folder… | &Mappa törlése… | ❌ **`placeholder: true`** (`:222`) |
 | 16 | `ID_ONLINE_ACTIONS` | Online Actions (almenü) | — | ⚠️ nálunk laposan, csoport nélkül |
 | 17 | `ID_ALBUM_MAKE_WEB` | E&xport as HTML Page… | — | ✅ `:241` (#534 szerint a funkció hiányzik) |
-| 18 | `ID_ALBUM_FILTERFACES` | &Add name tags | — | ❌ `placeholder: true` (`:247`) — #26 |
+| 18 | `ID_ALBUM_FILTERFACES` | &Add name tags | — | ✅ a kiválasztott mappa képein indít név-címkézést (#4535) |
 
 Az `Online Actions` almenü alatt: `ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS`,
 `ID_UPLOAD_ALBUM_TO_LIGHTHOUSE`, `ID_ALBUM_MAKE_WEB`. Nálunk az `AlbumContextMenu.qml:107`
@@ -955,17 +1242,154 @@ Továbbá a `ShowHidden` beállítás (`0x00440af0`, `0x005643e0`, `0x005c9300`,
 
 **Vagyis az elrejtés adatvédelmi funkció**, nem csak nézeti szűrő.
 
-**Nálunk (mérve):** a fotó-szintű `hidden` oszlop megvan
-(`index/schema.py:225`), a `showHidden` beállítás is
-(`app/controller.py:500`), sőt a lemezes elrejtés kérdése is
-(`photo_ops_controller.py:105`, #459 — „Fájlok elrejtése"). **Mappa-szintű
-elrejtés viszont sehol nincs** (`grep hide_folder|folder_hidden` a `src/`-ben:
-üres), és a menütétel néma.
+**Nálunk (#4597 kódvizsgálat):** a fotó-szintű `photos.hidden` mellett a
+mappa-szintű `folders.hidden` is létezik (`index/schema.py:377`, `:501–515`).
+A `toggleFolderHidden` ezt az SQLite-mezőt olvassa és írja
+(`app/controller.py:897–914`); a láthatóságot a `showHidden` kapcsoló vezérli.
+A mező alapértéke új indexben `0`, ezért a jelenlegi rejtés nem rendelkezik
+az indexen kívüli forrással.
 
-*Bizonyítottsági fok: **megerősített** a 18 tétel, a feliratok és a három
-elrejtés-réteg. **Nincs mérve**, hogy a mappa elrejtése a `.picasa.ini`-be, az
-adatbázisba vagy mindkettőbe ír-e — ehhez a `0x0040cd10` környékének
-diszasszemblálása kell.*
+*Bizonyítottsági fok: **megerősített** a menüleltár, a feliratok és a három
+elrejtés-réteg. A mappaszintű Hide/Unhide tartós tárolója a 32.3.1 szerint
+**megerősített** (bináris, két független úton): `.picasa.ini`
+`[Picasa] P2category=Hidden Folders`.*
+
+### 32.3.1. ✅ #4597 — a mappa elrejtése a `.picasa.ini` `[Picasa] P2category=Hidden Folders` sora (2026-10-11)
+
+**Következtetés.** Az eredeti a „Mappa elrejtése" parancsra **nem külön
+jelölőt** ír, hanem a mappát átsorolja a **`Hidden Folders` gyűjteménybe**:
+a mappa saját `.picasa.ini`-jének `[Picasa]` szakaszába
+`P2category=Hidden Folders` kerül. A „Mappa megjelenítése" ugyanezt a kulcsot
+`P2category=Folders on Disk`-re írja vissza. A `P2category`-t az eredeti a
+mappa beolvasásakor szó szerint gyűjteménynévként veszi át, tehát az
+elrejtés **túléli az adatbázis újraépítését**, és a mappával együtt költözik.
+A db3-ban ennek csak a **származtatott másolata** van (`albumdata_category` →
+`catdata` sorindex). A jelszó viszont NEM az ini-ben van, hanem a db3
+`catdata` táblájában (ld. alább).
+
+#### Az írási lánc (A út), címekkel
+
+| lépés | cím | kiolvasott tény |
+|---|---|---|
+| menü | `0x007319f0` | `&Hide Folder` → parancs **`0x9c72`** (`0x00731d7a`: `mov word [esp+0x11e], 0x9c72`, a `push` miatt eltolt veremmel a Hide-tétel azonosítómezője); `&Unhide Folder` → **`0x9cd0`** (`0x00731dea`) |
+| diszpécser | `0x005cb990` | ugrótábla `0x005cdb34`/`0x005cd9fc`, alap `0x9c42`: a **`0x9c72` → `0x005cc054`**, a **`0x9cd0` → `0x005cc069`** (a táblát a binárisból kiolvasva) |
+| a két ág | `0x005cc054` / `0x005cc069` | `push 1` ill. `push edi` (=0), majd `call 0x005ee2a0` — **egy** rutin, a harmadik argumentum az irány |
+| gyűjtemény kiválasztása | `0x005ee2c1`–`0x005ee327` | ha az irány 1: `"Hidden Folders"` (`0x00c7ecb4`), különben `"Folders on Disk"` (`0x00c7ec78`); a név → `catdata`-sorindex a `0x00452a30`-cal |
+| átsorolás | `0x005ee352` | `call 0x00445b80(db, album, gyűjtemény, 1)` — a negyedik argumentum (1) kapcsolja az ini-írást |
+| ini-írás kapuja | `0x00445ea4` | `cmp byte [esp+0x34], 0` — csak ha a 4. argumentum igaz |
+| a gyűjtemény neve | `0x00445ebf` | `call 0x00453c00` — sorindex → név |
+| a mappa ini-útja | `0x00445eff` | `call 0x004543e0` (ugyanaz az út-feloldó, mint a mappadátumnál, `pmp-database.md` 12.1); nem nulla visszatérésnél **nincs** írás |
+| **a kiírás** | `0x00446012`–`0x00446017` | `push "P2category"` (`0x00c809e8`) · `call 0x0045c0a0` |
+| a közös `[Picasa]`-beállító | `0x0045c0a0` | `.picasa.ini` (`0x00c80a6c`) megnyitása, majd `0x0045c127`: `push "Picasa"` · `call 0x005ab210` (szakasz, kulcs, érték); a régi `Picasa.ini` (`0x00c8644c`) név ágát is kezeli |
+
+#### Az olvasási lánc (B út) — miért éli túl az újraépítést
+
+| lépés | cím | kiolvasott tény |
+|---|---|---|
+| `[Picasa]`-olvasó | `0x00441ed0` | `0x004420d3`: `P2category` kérése; **ha üres**, `0x004420fd`: visszaesés a régi **`category`** kulcsra |
+| gyűjtemény feloldása | `0x00452bd0` | nem üres névnél egyenesen `0x00452cdb`-re ugrik: `0x00453970` név szerinti keresés, hiánynál `0x00452ad0` **létrehozza** a gyűjteményt. Alapértéket (`Folders on Disk` / `Other Stuff` / iPhoto) **csak üres** kategóriánál ad |
+| hívók | `0x0047c560`, `0x004ada80` | a `0x0047c560` a betöltő (`0x0041ee10`, `0x0041fa3a`) és `0x0041ba40` alól minden ismert mappára (`0x00441cd0` találat + `0x00992ed0`) újraolvassa a `[Picasa]` szakaszt (`0x0047c732`); a `0x004ada80` az új album (`CAlbumState::newalbum`) útja |
+
+⇒ Az ini a mérvadó: a `Hidden Folders` érték a következő beolvasáskor
+visszaállítja a gyűjteménytagságot, adatbázistól függetlenül.
+
+#### A db3 oldala — mérve valódi adatbázison
+
+A `0x00415790` oszlopregisztráló a `catdata` táblát a `CThumbDB+0x760`-ra
+teszi (`0x00415861`–`0x0041586d`: `push "catdata"` · `lea esi,[ebp+0x760]`).
+A helyi minta (`research/testdata/Picasa2/db3`, `read_pmp_column`):
+
+- `catdata_name.pmp` — 20 sor; a beépítettek sorrendje: `Labels`,
+  `Projects (internal)`, `Folders on Disk`, `Web Albums`, `Web Drive`,
+  `Exported Pictures`, `Other Stuff`, **`Hidden Folders` (7. index)**,
+  `People`, utánuk a felhasználói gyűjtemények;
+- `catdata_state.pmp` (20 sor), `catdata_catpri.pmp` (18 sor);
+- `albumdata_category.pmp` — 2371 sor, az érték `catdata`-sorindex; a 7-es
+  érték **0-szor** fordul elő.
+
+Ez egyezik a korpusszal: a 859 `.picasa.ini` egyikében sincs
+`P2category=Hidden Folders` — a mintagazdának nincs rejtett mappája. A
+gyűjteménytagság tehát a db3-ban is megvan, de onnan **nem** kell átvenni:
+az ini hordozza.
+
+#### A „Rejtett mappák" jelszava — a `catdata` `info` mezője
+
+A `0x005eb910` jelszóút a lenyomatot (`0x00a4d420`, 32 jegyű kisbetűs hex
+MD5 — `picasa-mappakezelo.md`, a jelszó-szakasz) a
+`0x005ebc52`–`0x005ebc58`: `push "info"` (`0x00c812cc`) ·
+`call 0x006a63f0(CThumbDB+0x760, …)` hívással a **`catdata`** tábla
+`info` oszlopába írja, a `Hidden Folders` sorába; üres jelszónál
+(`0x005eba5e`–`0x005eba68`) ugyanide üres értéket. A `0x005ee2a0`
+elrejtéskor (`0x005ee4f9`–`0x005ee537`) az `info`-t olvassa vissza, és ha
+nem üres, a `catdata` `state` mezőjét állítja.
+
+⇒ A jelszó a **db3-ban** él, nem az ini-ben: a db3 törlésével elvész, a
+Picasa-átvétel pedig a `catdata` `Hidden Folders` sorának `info` értékéből
+veheti át. A helyi mintában `catdata_info.pmp` nincs (jelszót sosem
+állítottak be), ezért a fájl neve a `<tábla>_<oszlop>.pmp` konvencióból
+következik, mintán nem látott — ld. a nyitott pontot alább.
+
+#### Egy viselkedési részlet, ami könnyen elcsúszik
+
+A megjelenítés **nem** az elrejtés előtti gyűjteménybe tesz vissza: a
+`0x005ee300` ág feltétel nélkül `Folders on Disk`-et ír. Egy `Other Stuff`
+vagy egyéni gyűjteményből elrejtett mappa tehát megjelenítés után a
+**Mappák** között lesz.
+
+#### Kizárt jelöltek (ne járja újra a következő kör)
+
+- A `hidden=yes` (`0x00710080`, `0x00456610`) **képszintű** — a korpusz
+  mind a hat előfordulása képszakaszban áll (`[<fájl>.JPG]` alatt).
+- A `0x0040cd10` a sérült képek `Hide Files` párbeszéde
+  (`CThumbUI::GetBadImages`), nem mapparejtés.
+- Registry: a láncban (`0x005ee2a0` → `0x00445b80` → `0x0045c0a0`) nincs
+  `Reg*` hívás; az egyetlen beállítás-olvasás a `Preferences\DoNotConfirmHiddenPwd`
+  (`0x005ee3af`), ami a jelszó-felajánló párbeszéd „ne kérdezze újra"
+  jelölője, nem a rejtés állapota.
+
+#### Nálunk ma — az eltérés
+
+| | eredeti | PicasaPy (`5ea930822`) |
+|---|---|---|
+| rejtés tárolója | `.picasa.ini` `[Picasa] P2category=Hidden Folders` | csak SQLite `folders.hidden` (`index/queries.py` `set_folder_hidden`, `app/controller.py` `toggleFolderHidden`) |
+| újraépítés után | megmarad | **elvész** (`folders.hidden` alapértéke 0) |
+| megjelenítés | `P2category=Folders on Disk` | `folders.hidden=0` |
+| Picasában rejtett mappa nálunk | — | a `P2category=Hidden Folders` mappát az `is_custom_collection_category` **egyéni gyűjteménynek** sorolja (a `Hidden Folders` nincs a `_BUILTIN_CATEGORIES`-ban), tehát **látható** „Hidden Folders" nevű egyéni gyűjteményként jelenik meg |
+| `category=` visszaesés | `P2category` üresnél a `category` kulcs | a `read_folder_category` csak a `P2category`-t olvassa |
+| jelszó | db3 `catdata` `Hidden Folders` sor `info` (hex MD5) | `QSettings` `view/hiddenPasswordHash`; a db3-átvétel (`pmpimport/`) a `catdata`-t nem olvassa |
+
+#### Nyitott kérdések mérlege (32.3.1)
+
+- **LEZÁRVA** — a mappa rejtésének tárolója: `.picasa.ini`
+  `[Picasa] P2category=Hidden Folders` (A és B út, fent).
+- **LEZÁRVA** — túléli-e az újraépítést: igen, a `0x00441ed0` →
+  `0x00452bd0` olvasó a nevet adatbázistól függetlenül veszi át.
+- **LEZÁRVA** — a jelszó helye: db3 `catdata` `info` oszlop, a
+  `Hidden Folders` sorában (`0x005ebc52`, `0x00415866`).
+- **NYITOTT (örökölt, nem blokkoló)** — a jelszóoszlop fájlneve mintán:
+  `catdata_info.pmp` a konvenció szerint; megszerzés: egy Colab-futás az
+  eredeti Picasával (mappa elrejtése + jelszó megadása, utána a `db3`
+  fájllistája és a `catdata_info.pmp` tartalma).
+- **NYITOTT (örökölt, nem blokkoló)** — hiányzó `.picasa.ini` esetén a
+  `0x0045c0a0` létrehozza-e a fájlt (a `0x00410610` megnyitó `cl=1`
+  argumentuma nincs értelmezve); megszerzés: ugyanaz a Colab-futás egy
+  ini nélküli mappán.
+- **LEZÁRVA** — a gyűjtemény-név keresése (`0x00453970`) **csak az ASCII
+  betűkre kis-nagybetű-tűrő**: `0x00453a46`–`0x00453a5c` az `A`–`Z`
+  tartományt `+0x20`-szal kisbetűsíti mindkét oldalon, majd bájtonként
+  hasonlít, a hossznak egyeznie kell (`0x00453a6b`–`0x00453a85`); vágás
+  (szóköz-eltávolítás) a hasonlítóban nincs. ⇒ `hidden folders` is a
+  `Hidden Folders` gyűjteménybe sorol.
+
+- **Ismert maradék kockázat (PicasaPy-oldal, #4597):** index újraépítése és
+  egyúttal tartósan olvashatatlan `.picasa.ini` esetén a mappa rejtett jelölése
+  nem állítható vissza az ini-ből, ezért a mappa látható marad, amíg az ini
+  olvashatóvá nem válik (a szinkron addig minden körben újrapróbálja).
+
+- **Ismert maradék kockázat (PicasaPy-oldal, #4597):** az 1-es jelölésű (az
+  ini-ben már `Hidden Folders`) mappa, amelynek az ini-je kívülről eltűnt,
+  áthelyezéskor elveszíti a rejtést, mert csak a 2-es jelölés költözik az új
+  útvonalra.
 
 ### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
 
@@ -1306,6 +1730,8 @@ A két könyvtárszintű ág a `peoplepanel/resetfaces` névparancsot ereszti
 > Shift-ágat másolta le — dokumentált SAJÁT döntés maradhat, de az
 > eredeti három ágát a jegy rögzíti.
 
+A felület 2026-10-08 óta a táblázat szerinti három ágat követi (#4627).
+
 ### 34.5 Az elrejtés/megjelenítés — a `hidden` kulcs
 
 A `0x005e7d90(param)` ágai: `param=1` (Hide) a `]hidden` belső tokenet
@@ -1330,7 +1756,7 @@ webalbum nélkül nálunk nincs miről átvenni.
 | Forgatás jobbra/balra | fix 90/270°, háttérszálon; nincs kijelölés → őr-szöveg; típus-hiba → üzenet | `_rotate_many`: `rotate(0..3)`, videó hallgatólagosan kihagyva | vegyes kijelölésnél az `IDS_ROT_TYPEFAILED` üzenet (kis jegy) |
 | Undo All Edits | megerősítés (egy/több/film külön szöveg), régió-tokenek + `filters=` törlés | `openRevert` → `revertConfirmDialog`, `filters=` törlés | az egy/több szövegkülönböztetés a párbeszédben |
 | Unhide/Hide | `hidden` kulcs írása/törlése + frissítés | **egyezik** (`hidePhotosByIds`, `with_removed`) | — |
-| Reset Faces | sima = kijelölés (nincs kérdés); Ctrl/Shift = könyvtárszintű FIGYELEM-párbeszéd | mindig kérdez, ResetAllFaces-szöveg (#422 SAJÁT döntés) | a három ág megvalósítása vagy tudatos eltérés rögzítése |
+| Reset Faces | sima = kijelölés (nincs kérdés); Ctrl = `RemoveAllFaceData`; Shift = `ResetAllFaces` | a három ág az eredeti szerint, mindkét könyvtárszintű művelet megerősítéssel és ini-/index-frissítéssel | — |
 
 ### Nyitott kérdések mérlege (34.)
 
@@ -1914,8 +2340,145 @@ csomópontokat is kezeli — vagyis a **teljes képernyős** útra vált át. A
 eltávolítási blokkot adja. ⇒ Ez **akció-belépési pont**, nem bizonyíték arra,
 hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
-⇒ **Az Idővonal nem nézet-kapcsoló, hanem egy előkészítő lépéssel induló,
-teljes képernyős bemutató-mód** („Preparing timeline…" folyamatjelzővel).
+⇒ **Az Idővonal parancs egy előkészítő szöveget használó, `oneup` bemutató-útvonalat indít; nem a mai PicasaPy év/hónap-rács útvonala.** A teljes képernyős jelleg az útvonalból és a hozzá tartozó `oneup`/overlay erőforrásokból következik, a futó ablak tényleges megjelenése itt nincs megmérve.
+
+#### 38.2.1 Az Időrend bemutató-útja és bizonyított határai (#4443 kutatás)
+
+**A út — utasításszintű olvasat.** A billentyűkezelő `0x005e6279` ága
+ellenőrzi a `0x005696c0` őrt, majd `1` argumentummal hívja a
+`0x005e8a70`-et; a `Ctrl+5` menürekordja a `0x9ccc` parancsra mutat
+(`picasa-gyorsbillentyuk.md` 10.6). A `thumbui/timelinebutton` diszpécserága
+(`0x005da767–0x005da7ae`) ugyanezt a kezelőt hívja. A függvényben megtalálható
+a Picture Tray hibaüzenete („You must have images in the Picture Tray to do
+this.”), de a szöveg jelenléte önmagában nem azonosítja a Timeline bemenetét:
+a függvény több bemutatóágat kezel.
+
+Az Időrend ág `0x005e942e`-nél a `CThumbUI+0x2c0` mező által mutatott
+gyűjteménytől kér elemszámot
+(`0x004a0980`), majd `0`-tól a kapott elemszámig indexelve meghívja a
+`CThumbUI` vtable `+0x90` metódusát (`0x005e9490–0x005e94f1`). Ez a metódus
+`0x00562cc0`-n keresztül a `CThumbUI+0x2bc` szolgáltató `+0x20` virtuális
+metódusának adja át az indexet. Ez bizonyítja az indexelt bemeneti sorozat
+bejárását; a szolgáltató konkrét típusa, hogy az aktuális mappa/album, teljes
+könyvtár vagy Picture Tray adatait adja-e, továbbá a bejárás előtti dátum-
+rendezés és a képernyőn mutatott kártyák **NINCS MEG**.
+
+`0x005e943d–0x005e944d` a `CThumbUI::MakeTimeline` és a „Preparing
+timeline…” szöveget adja át a `0x009ae560` helpernek. A helper diszasszemblálása
+nem azonosít megjelenítő- vagy folyamatjelző-vezérlőt: **a szöveg bizonyított,
+a tényleges folyamatjelző NINCS MEG**. A bemutató-út később meghívja a
+`0x008037e0`-et, amely a `oneup/timeline` és `oneup/transtype` csomópontokat
+kéri le, majd a `0x007fb210` overlay-felépítőt. Utóbbi a
+`overlays/left`, `right`, `mouse`, `rollovermouse`, `exit`, `timeline`,
+`timelinedot`, `sliderthumb`, `startbutton` és `overlay` nevű rétegeket tölti
+be. A `oneup/timeline` gomb `0x008032e0` kattintási ága meghívja a
+`0x007fda00`-et; az állapotváltás időforrást kér, a `0x00802230` átmeneti
+frissítőt indítja, és állapotjelzőket állít. Az átmenet pontos képi tartalma,
+végpontjai és időtartama **NINCS MEG**.
+
+Az `oneup/prev` és `oneup/next` kattintási ág a `0x00802980`/`0x008029f0`
+képlista-indexet lépteti. A OneUpUI eseménykezelő `0x00803180` kezeli a
+`0x20a` egérgörgő-eseményt előző/következő ismételt hívásokkal, illetve a
+`0x319` esemény 1-es alparancsát ugyanarra a kilépési visszahívási útra küldi,
+mint az `oneup/exit` gombot. A `WM_KEYDOWN` (`0x100`) és `WM_KEYUP` (`0x101`)
+eseményhez ez a virtuális metódus nem rendel külön műveletet; az örökölt
+`0x00a52890` kezelő tartományellenőrzése is a közös kilépő ágra küldi őket. Ez
+csak a OneUpUI és örökölt eseményút olvasata: a főablak globális gyorsbillentyűi
+és a tényleges, futó módbeli billentyűviselkedés külön futtatási próbát igényel.
+
+Az `oneup/exit` kattintás a `0x008032e0`-ben a OneUpUI vtable `+0x24`
+metódusával elkéri a `this+0x50` objektumot, majd annak vtable `+0x14`
+metódusát hívja két nulla argumentummal. A visszahívás konkrét célobjektuma
+és az utána látható nézet **NINCS MEG**; a statikus híváslánc nem bizonyítja,
+hogy a kilépés pontosan melyik képernyőre tér vissza.
+
+**B út — független `respack.yt`-erőforrás-leltár.** A helyi Picasa 3.7
+telepítés `runtime/respack.yt` csomagjából kinyert teljes `oneup.tre` minden
+elrendezési csomópontja csoportonként: kép/alap (`oneup`, `bicubiccontainer`,
+`back`, `stripback`, `centergroup`, `caption`, `dtclip`); kilépés
+(`exit_icon`, `bcklabel`, `bcklabel_base`, `exit`); Időrend (`timeline_icon`,
+`tllabel`, `tllabel_base`, `timeline`); lapozás/lejátszás (`prev`, `next`,
+`auto`, `auto_icon`, `auto2`); forgatás/csillag (`rotateleft`, `rotateright`,
+`star`); átmenet/felirat (`transtype`, `caption_icon`, `caption_yesicon`,
+`captionbutton`); kijelzési idő (`plusone_icon`, `plusone`, `minusone_icon`,
+`minusone`, `tps`, `tpslabel`). A `prev`/`next` `mousedown` eseményre, a
+kijelzési idő `plusone`/`minusone` gombjai automatikus ismétlésre vannak
+állítva. A `oneuptext.tre` mindössze három feliratot ad meg: `Timeline`,
+`Exit`, `Display Time`. Ebben a két elrendezésforrásban nincs mappanév-,
+albumnév-, dátumkártya- vagy dátumfelirat-definíció; ez nem zárja ki a kódban
+dinamikusan felépített tartalmat.
+
+A csomag `overlays` rétegei között van egy vékony, vízszintes
+`overlays/timeline` vonal (`0x00248b99`, forrás-rect
+`(197,461,442,468)`, `245×7`), egy világos
+`overlays/#timelinedot` pontgrafika (`0x0024898b`, `(215,459,222,470)`,
+`7×11`), egy kék `overlays/timelinedot` pontgrafika (`0x00248a97`,
+`(215,462,222,470)`, `7×8`), valamint egy kerek `sliderthumb`-grafika
+(`0x00248be7`, `(260,457,285,480)`, `25×23`).
+A háttérréteg forrás-rectje `0x002152fb`-nél `(0,0,640,480)`. Itt két
+külön erőforrásról van szó: a `oneup/timeline` a `Timeline` gomb, az
+`overlays/timeline` az alsó vízszintes vonal grafikája. Ezek a
+640×480-as erőforrásvászon koordinátái; a `0x007fb210` kód az overlayek
+x-koordinátáját futáskor skálázza. A képek igazolják a sávot és a két pont-
+grafikát, de az erőforrásnevek és a rajzolat nem bizonyítják, hogy a sáv mit
+időzít, vagy hogy a fogantyú húzással mit állít.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `0x005e8a70` indexelt szolgáltatói sorozatot jár be, majd a `0x008037e0` → `0x007fb210` oneup/overlay bemutatóútba lép. A teljes tartalom, forráshalmaz, dátumsorrend és kártyák **NINCS MEG**. | A `TimelineView.qml` év-/hónap-rács. A Nézet ▸ Időrend menüpont és `Ctrl+5` tiltott; a `timelineRequested` jelzésnek nincs bekötése, aktív eszköztárgomb nincs. | A rácsot ne tekintsük az eredeti bemutató megfelelőjének. A képek és sorrend implementációja előtt a szolgáltató típusát, a bemeneti halmazt és a dátum-/kártyamodellt kell azonosítani. |
+| Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete **NINCS MEG**. | A jelenlegi rácsban nincs oneup bemutató-vezérlősáv vagy ilyen overlay. | A bizonyított vezérlők megjelenítése specifikálható; a timeline sáv tartalmát, a `sliderthumb` műveletét és a dátumkártyákat csak célzott kódkövetés vagy eredeti futtatási próba után szabad bekötni. |
+| A `0x008032e0` a `timeline`, `exit`, `prev`, `next` gombokat kezeli. `0x00803180` a görgőt navigációra, az `0x319/1` eseményt az Exit útjára küldi; a sima `WM_KEYDOWN/UP`-hoz a OneUpUI út nem rendel műveletet. Az Exit konkrét visszatérési célja **NINCS MEG**. | A menü és a `Ctrl+5` tiltott; futó bemutató és teszt nincs. | A billentyűmátrixot eredeti futtatásban kell próbálni; az Exit célját a `this+0x50` objektum dinamikus típusának és callbackjének követésével kell igazolni. |
+| A `thumbui/timelinebutton` akciónév létezik, de a csomagolt `thumbui.tre` rejtettnek jelöli (`m_hidden`); a súgó „Timeline view of all your photos”. | Nincs aktív főablaki Időrend-eszköztárgomb. | Az eredeti főablaki gomb láthatóságát ne következtessük ki a parancs létezéséből; ehhez futó Picasa-képernyőkép kell. |
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni azt az értelmezést, hogy a `timeline`
+sáv és a `sliderthumb` együtt fotó-/dátum-kereső csúszkát alkot. A teljes
+`oneup.tre`/`oneuptext.tre` leltárban nincs hozzájuk esemény- vagy értékkötés;
+a `0x007fb210` a rétegeket tölti be és az x-koordinátákat skálázza, míg
+a vizsgált `0x00803180`/`0x008032e0` eseményutak azonosíthatóan a görgőt és a
+megnevezett oneup-gombokat kezelik. Ez nem cáfolja, hogy közös alaposztályban
+vagy másik függvényben van húzáskezelés, ezért a fogantyú funkciója nyitva
+maradt. A korábbi „csak év/hónap-rács” magyarázatot a két független út
+(`0x005e8a70`→oneup/overlay és az önálló erőforrás-leltár) cáfolja; ez viszont
+nem dönti el a bemutató képkockáinak tartalmát.
+
+**Bizonyítottsági fok: feltételes.** Az utasításolvasat és a `respack.yt`
+leltár egyezik abban, hogy az Időrend egyedi oneup bemutatóút saját gombokkal
+és alsó overlay-grafikákkal. A képi tartalom/rendezés, a sáv és fogantyú
+viselkedése, a módbeli billentyűk és az Exit célja nem zárható le e két úttal.
+Minden fent megadott cím, fájloffset, rect és méret bináris rekordból vagy
+utasításból származik; becsült érték nincs. A `CTransTimeline` név a
+film-/People Albums másik hívási láncában szerepel
+(`picasa-create-features.md` 2038–2138); itt nem használtam Időrend-bizonyítékként.
+
+**Nyitott — következő pontos lépés:**
+
+- `Ghidra-kör kell: 0x005e8a70 — az indexelt szolgáltató konkrét típusa és forráshalmaza (mappa/album, teljes könyvtár vagy Picture Tray), a dátum szerinti rendezés, valamint a megjelenő dátum-/mappakártyák építése. [blokkoló]`
+- `Ghidra-kör kell: 0x00a52890 — az örökölt UI-eseménykezelő hogyan irányítja a OneUpUI egérle/fel/mozgatás eseményeit; a sliderthumb réteghez vezet-e húzásos hit-test vagy értékkötés. [blokkoló]`
+- `Ghidra-kör kell: 0x005e60d0 — a globális billentyűkezelő mely gyorsbillentyűi maradnak aktívak a OneUpUI megjelenésekor, és van-e külön billentyűút az Exithez vagy a lapozáshoz. [blokkoló]`
+- `Ghidra-kör kell: 0x008032e0 — az oneup/exit által elért this+0x50 objektum konkrét típusa, a vtable +0x14 callback célja és a visszatérési nézet. [blokkoló]`
+- `Ghidra-kör kell: 0x007fda00 — a Timeline gomb átmenetének tényleges vizuális tartalma, kezdő/végállapota és időzítése. [blokkoló]`
+- A tényleges kártyakép, Timeline sáv állapota, a billentyűk és Exit célja: **NINCS MEG**. A statikus kör után az eredeti Picasa futó módjában célzott billentyű-/húzáspróba és képernyőkép kell; QEMU-harness csak akkor használható, ha a Picasa felületet ezen a képen megjeleníti és az inputot továbbítja.
+
+#### 38.2.2 Futó felmérés az eredeti Picasán (Colab #102) — mit mutat a bemutató (#4443)
+
+**Horgony:** a mai megfelelő nézet `src/picasapy/app/qml/PicasaPy/TimelineView.qml:1`; a menüparancs `ID_VIEW_TIMELINE` (`0x9ccc`, 38.2).
+
+**Forrás:** eredeti angol Picasa 3.9.141, Wine, 1280×1024; futás 2026-10-06 22:33 UTC. A `job-102` 14 képernyőképe és `allapot.json`-ja egy „PicasaTeszt” mappát (24 kép, október 6-i mappadátum) és egy `Recently Updated (24)` albumot tartalmaz. A koordináták a `kepernyo__03.png` képpontjaiból származnak; ez a fájl és az `allapot.json` nem található meg a helyi mérőadat-archívumban, az eredmények a korábbi kutatási ágból vannak átvéve.
+
+| Eredeti (mért) | Nálunk (forrásból ellenőrizve) | Teendő |
+|---|---|---|
+| A `Ctrl+5` külön, teljes képernyős, fekete `qshow` ablakot nyit. A tartalom középre tett 640×480-as mezőben jelenik meg. | A `TimelineView.qml` az alkalmazásablakon belüli év/hónap-rács; a Nézet ▸ Időrend és a `Ctrl+5` inaktív. | A rács nem felel meg ennek a bemutató-módnak. |
+| A mappanév („PicasaTeszt”, `x 743–849, y 384–405`) és a hónap/év („October 2026”, `x 759–849, y 414–430`) jobbra igazított, nap nélkül. | A rács csoportfejléce `2026. szeptember (1)` alakú. | A bemutató elemének címe a mappanév, alatta a mappadátum hónapja és éve. |
+| A felirat alatti bal képhalom (`x 694–776, y 585–679`) enyhén elforgatott képekből áll; 10 pontból álló ív köti össze a felirattal (`x 740–843, y 452–564`). A jobb oldali halom (`x 796–869, y 583–665`) szerepe **NINCS MEG**. | Lapos bélyegképrács van, halom és pontozott ív nincs. | A halmok darabszámát, forgatását, ívét és a jobb halom szerepét nem szabad megbecsülni. |
+| Az alsó vezérlők sorrendje: kilépés (`x 348–390, y 676–703`), előző (`x 569–595, y 677–704`), indítás (`x 619–661, y 676–703`), következő (`x 684–719, y 668–704`). | A bemutató vezérlősávja nincs meg. | A gombok megjelenése bizonyított; műveletük és visszatérési céljuk nem. |
+| Az időskála vonala 245×7 px (`x 525–769, y 733–739`), a forrásgrafika 25×23 px; a látható fogantyú képpontjai `x 591–606, y 729–745`. A sáv 1:1-ben rajzolódik, a vászon `y=272` eltolásával. | Nincs időskála. | A vonal és fogantyú megjelenése bizonyított; húzásuk, a pontok jelentése és a skálavég-feliratok nem. |
+| A 3–14. képkocka bájtra azonos és nagyon sötét (legvilágosabb RGB=9). | Nincs bemutató-animáció. | E felvétel nem bizonyít beúszást vagy más animációt; az animációt és időzítését külön kell mérni. |
+| A `Right`, `Left`, `Space` és `Escape` próbák nem változtatták meg a képet, de az aktív ablak végig a `Picasa 3` maradt. | A bemutató billentyűviselkedése nincs tesztelve. | Ez a billentyűpróba fókuszhiba miatt érvénytelen; a módbeli billentyűk nyitottak. |
+| A `thumbui/timelinebutton` parancság létezik, de a csomagolt `thumbui.tre` elrejti (`m_hidden`). | Nincs látható főablaki Időrend-eszköztárgomb. | A jegy eszköztárgombot kér, de az eredeti kiadott felületen való láthatóságára nincs bizonyíték; az eredeti erőforrás alapján ne adjunk hozzá látható gombot. |
+
+**Bizonyítottság:** a `qshow` bemutatóablak, a felirat, a két halom és a pontozott ív, a négy gomb, valamint a sáv képi elrendezése méréssel igazolt. A `Right`/`Left`/`Space`/`Escape` eredménye érvénytelen fókusz miatt. A képkockák változatlansága nem zárja ki, hogy a felvétel az animáció előtt vagy egy Wine-korlát miatt készült.
+
+**Nyitott, implementációt blokkoló kérdések:** a bemeneti mappák/albumok halmaza és időrendje; a kártyák teljes tartalma, a jobb halom és az időskála jelentése; a gombok műveletei és az Exit célja; a billentyűk; az animáció és a „Preparing timeline…” tényleges folyamatjelzője. A folytatáshoz a `qshow` ablakra fókuszált eredeti futtatási próba kell; eltérő dátumú második mappával a lapozás és a jobb halom is vizsgálható.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
@@ -1947,19 +2510,23 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
-| `ID_VIEW_TIMELINE` (`0x9ccc`) | teljes képernyős bemutató-mód, „Preparing timeline…" előkészítéssel; gomb-belépési pont is (`thumbui/timelinebutton`) | menütétel + **valódi bekötés**: `Main.qml:823` → `toggleTimeline()` → `timelineController.reload()` + `timelineOpen` (`Main.qml:611`) | a **gomb**-belépési pont és az előkészítés-jelző hiányzik (kis jegy, ha kell) |
+| `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.2 szerint külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, 1:1 időskála és fogantyú. A billentyűk, gombműveletek, animáció és kilépési cél továbbra is **NINCS MEG**. | A legacy `TimelineView.qml` év/hónap-rács megmarad; a Nézet-menü és `Ctrl+5` tiltott, eszköztárgomb nincs. | A teljes megvalósítás előtt a 38.2.2 nyitott kérdéseit mérni kell. A jegy eszköztárgomb-kérésével szemben a csomagolt `thumbui.tre` az eredeti gombot `m_hidden`-ként jelöli; látható gombot ne vegyünk át bizonyíték nélkül. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
 
 ```
-Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a három parancsazonosító (38. bevezető); a `ShowHidden`
   tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
-  Idővonal bemutató-mód jellege és belépési pontjai (38.2); a háttérkép
-  teljes írási lánca, a stílusértékekkel együtt (38.3).
+  Időrend `oneup`/overlay belépési útja (38.2.1); a háttérkép teljes írási
+  lánca, a stílusértékekkel együtt (38.3).
+- **NYITVA (`#4443`):** a 38.2.2 futó mérése lezárta a képernyő képi
+  összetételét. Nyitott maradt a bemeneti mappák/albumok halmaza és sorrendje,
+  a jobb halom és időskála jelentése, a gombok művelete, a billentyűk, az
+  animáció és a kilépés célja. Ezekhez fókuszált, eredeti Picasa-futtatás kell.
 - **BLOKKOLT:** hogy a jelszó-ajánlat a BE- vagy a KIkapcsoláskor jön-e.
   A `0x005cb990` két hívóhelye statikusan nem különbözteti meg őket.
   **Mi kell hozzá:** egy megfigyelés élő Picasán — a „Nézet ▸ Rejtett
@@ -1975,9 +2542,10 @@ Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kív�
   **BMP-t ír** a saját `Backgrounds` mappájába, és arra mutat (38.3).
 - **„A háttérkép nyújtva/csempézve kerül ki"** — megdőlt: mindkét
   registry-érték `"0"` ⇒ **középre** (38.3).
-- **„A `timelineRequested` jelzésünknek nincs fogyasztója"** — a mérés
-  megcáfolta: `Main.qml:823` bekötve. *(Ez a kör saját, ellenőrzés előtti
-  feltevése volt — a grep döntötte el, nem a benyomás.)*
+- **„A `timelineRequested` jelzésünknek van aktív fogyasztója”** — a jelenlegi
+  QML-ben nincs ilyen bekötés: a `PicasaMenuBar.qml` deklarálja és kibocsátja,
+  de `Main.qml` nem kapcsol rá kezelőt; a Nézet-tétel és `Ctrl+5` tiltott.
+  *(A forráskeresésben csak a deklaráció és kibocsátás található.)*
 
 ## 39. tétel — a `printoptions` panel: TIZENEGY beállítás-kulcs (2026-08-31)
 
@@ -5474,8 +6042,9 @@ rögzített, fájlonként eltérő** időt használ.
 ✅ **LEZÁRVA (2026-09-05, #2304):** hogy az 1. FILETIME a fájl létrehozási
 vagy módosítási ideje-e a forrásrendszeren, és hogy a Picasa frissíti-e
 újraolvasáskor. **Egyik sem:** a kép **metaadat-dátuma**, a beolvasás
-pillanatában rögzítve (egyetlen író: `0x004eeb10`, egyetlen hívó:
-`0x00427898`), és a pásztázó **soha nem frissíti** — az csak a 2. mezőt
+pillanatában rögzítve (beolvasáskori író: `0x004eeb10`, egyetlen hívó:
+`0x00427898`; ⛔ 2026-10-11, #4591: a Dátum és idő beállítása nem-JPEG ága
+is írja — `0x004ef3c0`/`0x004ef5a0`, `pmp-database.md` 15.1), és a pásztázó **soha nem frissíti** — az csak a 2. mezőt
 (a fájl **módosítási** idejét) és a méretet írja felül. A teljes levezetés
 és a mérés: `pmp-database.md` 10. szakasz.
 
@@ -5642,6 +6211,15 @@ honnan veszi a korábbi címeket) tehát NINCS MEG** — a megszerzés útja: a
 
 ⇒ **A tiltási feltételek mind a hat tiltható tételnél egyeznek** — ezt eddig senki nem
 mérte, most igazolt. Egyedül az **Automatikus kitöltés** üres nálunk.
+
+### 23.7 Megvalósítás (#4636, 2026-10-08)
+
+A 23.6 táblázat a 2026-09-06-i állapotot rögzíti. A #4636 ezt követően
+bekötötte a pipás menütételt az e-mail címzett mezőbe: a beállítás a
+`mail/EmailAutocomplete` QSettings-kulcsban marad meg, alapértéke `true`.
+Az eredeti mérés szerint ez a beállítás a pipát és az értéket tárolja, a
+javaslómotort nem vezérli; a keresőmező külön `SearchSuggestions` útja ezért
+független marad.
 
 ## 24. adag (2026-09-06) — az automatikus kiegészítés FORRÁSA, és a kapcsoló, amit SENKI NEM OLVAS
 
@@ -6231,3 +6809,239 @@ történik, nem itt. Ez a `changeloc`/`defaultloc` kezelőben (`0x007d16b0`,
 címekre; `0x007d1900` (168 b), `0x006db040` (1175 b); a beállítás-hármas
 `0x00407630` / `0x004078e0` / `0x00407760`, hívószámok a bináris index
 `xrefs` táblájából.*
+## ⛳ `FolderPhoto::ID_PICTURE_SPLITALBUMHERE` — „Mappa felosztása itt…”: mit csinál az adattal (2026-10-12, #4534)
+
+*Forrás: a mappa-nézet helyi menüjének építője `0x00730790` (a felirat
+`0x00730a5e`/`0x00730a63`) · a főablak-diszpécser `0x005cb990` bájttérképe
+(`0x005cdb34`) és ugrótáblája (`0x005cd9fc`) · a kezelő `0x005e8570`
+(1272 b) · a „Mappa tulajdonságai” párbeszéd (`CEditAlbum`, vtábla
+`0x00ca9544`): `0x006dc030`, `0x006db4e0`, `0x008496c0`, `0x00849750`,
+`0x00849dc0` · a név- és útképzés `0x009946f0`, `0x00993bb0`, `0x009a3b50`,
+`0x009a3db0` · a mozgatás `0x005ea420` → `0x00479870` → `0x00478780` · a
+szürkítés `0x0056c5a0` (`0x0056d8f6`–`0x0056d962`) → `0x004ac8f0`.
+Mérés (Colab) NINCS: a végrehajtó az áthelyező menüpontot elutasítja
+(skill 1/d), ezért minden állítás utasításszintű.*
+
+### 1. A parancsazonosító és a kezelő
+
+A rekordtábla csúszás-szabálya szerint (a rekord kezdete a felirat
+`mov dword ptr [REK], eax` címe, a `+0x0a` mezőt a KÖVETKEZŐ blokk írja):
+
+| felirat | rekord (`esp+…`) | cmd | írás helye | ág a diszpécserben | kezelő |
+|---|---|---|---|---|---|
+| Áthelyezés új mappába… (`FolderPhoto::ID_ALBUM_NEW`) | `0xe8` | **`0x9cb6`** | `0x00730a77` | `0x005cbce0` | `0x005e9bb0` (`push 0`) |
+| **Mappa felosztása itt…** (`FolderPhoto::ID_PICTURE_SPLITALBUMHERE`) | `0xfc` | **`0x9ca6`** | `0x00730ac9` | `0x005cbd6d` | **`0x005e8570`** |
+
+**Független kontroll:** (1) a `0x9cb6` ága a `0x005e9bb0`, amit a
+`ui-audit-mainwindow.md` a `thumbui/newfolder` akciójaként ismer — tehát a
+párosítás nem csúszott el; (2) ugyanaz a táblaolvasás a 34.1 ismert
+értékeit adja vissza (`0x9ca2`→`0x005cbd35`, `0x9ca5`→`0x005cbd5f`).
+A tétel **csak a mappa-nézet** (`0x00730790`, kontextus `0x70`) menüjében
+van; az album-nézet építője (`0x00731050`) nem tartalmazza
+(`ui-audit-context-menus.md` D.1).
+
+### 2. A lépéssor — a `0x005e8570` sorrendjében
+
+| # | mit tesz | cím |
+|---|---|---|
+| 1 | ha a nézetnek nincs aktuális mappa-csomópontja (`[this+0xea8]` = 0) → semmi | `0x005e859b` |
+| 2 | köteg kezdete, felület-frissítés elnyomva (`[0xd6793c]`++) | `0x005e85b3`, `0x005e85b8` |
+| 3 | a kijelölt elemek listája (`0x005c76b0` → `0x007166c0`: a csomópont elemein **sorban** halad, és a kijelölt, nem elnyomott elemek azonosítóját gyűjti) | `0x005e85d3` |
+| 4 | **üres kijelölés → csendes kilépés** (nincs üzenet) | `0x005e862f` |
+| 5 | a csomópont **teljes kijelölésének törlése** (`0x00718a50`) | `0x005e8692` |
+| 6 | **új kijelölés: a 3. lépés ELSŐ eleme és a lista VÉGE között** — `0x00716ae0(csomópont, első, −1, 1)`; a tartomány azonosítói egy kimeneti tömbbe is kerülnek | `0x005e86d1` |
+| 7 | a rács újrarajzolása (`0x00a54b70(this,1,1,0.0,{−1…},1)`) — **a felhasználó a párbeszéd előtt LÁTJA, mely képek mennek át** | `0x005e8702` |
+| 8 | üres tartomány → kilépés | `0x005e8707` |
+| 9 | a vágópont-kép (a tartomány első eleme) **dátuma** (`0x005c6460` → `0x004edf60` + `0x0098b650`); ha a képrekordnak nincs érvényes dátuma, a függvény `−1`-et ad, és a kezelő **csendben kilép** | `0x005e873c`, `0x005e8753` |
+| 10 | új mappa-leíró: név = `IDS_DEFAULT_ALBUM_NAME` (**„Untitled” / „Névtelen”**), dátum = a 9. lépés dátuma (`0x0055ce70`, a név `0x0055cea7`, a dátum `+0x28`) | `0x005e8778` |
+| 11 | a JELENLEGI mappa elérési útja (`[this+0xeac]` → album-azonosító `+0x3c0` → `[[db+0x48]]+0x14`), majd annak **szülőmappája** (`0x009a3b50`: a záró `\` levágása után az utolsó `\` előtti rész) | `0x005e87af`, `0x005e87df` |
+| 12 | **„Mappa tulajdonságai” párbeszéd** — `0x006dc030(leíró, 0, 1)`; a 2. argumentum `0` a `CEditAlbum+0xcc`-be kerül (`0x008496e1`), és ez választja a címet: `CEditAlbum::folderTitle` = **„Folder Properties” / „Mappa tulajdonságai”** (`0x0084978f`–`0x008497a8`). Mezők az `album.fen` szerint: Név · Dátum (+ „Automatikus dátum”) · Zene · Felvétel helye · Leírás (`picasa-fen-dialogs.md` 3.2). **Mégse → semmi nem jön létre**, a 7. lépés kijelölése viszont megmarad | `0x005e8869`, `0x005e8870` |
+| 13 | a mappanév: a párbeszéd Név-mezője a **fájlnév-tisztítón** át (`0x009946f0`, ld. 3.); ha a tisztított név üres, a tartalék a `CThumbUI::albumname` = **„album”** (angolul és magyarul is) | `0x005e88b9`–`0x005e88fb` |
+| 14 | **egyedi út a szülőmappában** (`0x00993bb0`, ld. 3.), majd **mappa létrehozása** (`0x009a3db0`); csak siker esetén lesz az út a mozgatás célja | `0x005e891f`, `0x005e892e` |
+| 15 | a cél-tároló azonosítójának kikérése (`0x005eb660`); hiba → kilépés | `0x005e896f` |
+| 16 | az új mappa felvétele a katalógusba (`0x0055d120(leíró, út, 0, 0)`); hiba → kilépés | `0x005e89b9` |
+| 17 | újrarajzolás-jelző (`[[this+0x2c0]+0x166]` = 1, `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5) | `0x005e89df` |
+| 18 | **a tartomány minden képének áthelyezése** az új mappába (`0x005ea420`, ld. 4.) — csak ha a 14. lépés mappát hozott létre | `0x005e89f3` |
+| 19 | könyvtárnézet-frissítés (`0x0065b840(this,0,0,1)`), majd a `[this+0x2a4]` felület `+0x44` rekesze az új mappa azonosítójával (`1,1,0`) — ugyanez a hívás zárja az „Áthelyezés új mappába…” kezelőjét is (`0x005e9e57`) | `0x005e89fd`, `0x005e8a1b` |
+
+⇒ **A „Mappa felosztása itt…” az „Áthelyezés új mappába…” testvére**: a
+kettő ugyanazt a láncot hívja (leíró `0x0055ce70` → párbeszéd `0x006dc030` →
+tisztító `0x009946f0` → egyedi út `0x00993bb0` → `0x009a3db0` → `0x005eb660`
+→ `0x0055d120` → `0x005ea420`; az utóbbinál a `0x005ea770`-ben,
+`0x005ea7c9`–`0x005eaa63`). **Az egyetlen különbség a képkészlet:** a
+felosztás nem a kijelölést viszi, hanem **az első kijelölt képtől a mappa
+végéig mindent**.
+
+### 3. A név és a hely — pontosan
+
+**Hely: a jelenlegi mappa TESTVÉRE** (a szülőmappájában jön létre, nem
+almappaként) — 2. táblázat 11. sor. Az „Áthelyezés új mappába…” ugyanígy
+számol (`0x005e9d3d call 0x009a3b50`).
+
+**A név-tisztító `0x009946f0`:**
+
+1. a vezető szóközök kimaradnak; minden szóköz-jellegű karakter és az
+   U+3000 egy sima szóközre cserélődik (`0x009947ba`);
+2. a 0x20 alatti vezérlőkarakterek és a `\ / : * ? " < > |` halmaz
+   (`0x00cd8d24`) **kimarad** (nem cserélődik);
+3. az elejéről a `.` és a szóköz, a végéről a szóköz és a `.` levágódik
+   (`0x009947d6`–`0x00994820`);
+4. ha semmi nem maradt → `−1`, és a kimenet a hívó tartaléka marad
+   (itt: „album”);
+5. a fenntartott nevek — `aux`, `con`, `nul`, `prn` (`0x00cd8d80`–
+   `0x00cd8d8c`, kis-nagybetű-független) — **`_` utótagot** kapnak
+   (`0x009949dc`).
+
+**Az egyediesítő `0x00993bb0(szülő, kimenet)`:**
+
+1. ha a szülőmappa nem létezik → `−1` (`0x00993bcc`);
+2. az **alapnév** a név, a végéről levágva egy `_<nem nulla egész>`
+   utótagot (`0x00986600` utolsó `_`, `atol` ≠ 0 → csonkítás, `0x00993c57`–
+   `0x00993c92`);
+3. első jelölt: **a név változatlanul**; ha az út létezik, sorban
+   `<alap>_1`, `<alap>_2`, … (`"%s_%d"`, `0x00cd8d78`), **legfeljebb
+   4095-ig** (`cmp ebx, 0x1000`, `0x00993d19`), utána `−1`.
+
+⇒ Példa: a párbeszédben hagyott „Névtelen” név mellett, ha a szülőben már
+van `Névtelen`, az új mappa `Névtelen_1` lesz. **Ütközés miatt nincs
+hibaüzenet és nincs újrakérdezés.**
+
+**A mappa saját metaadata** a párbeszédből jön (név, dátum = a vágópont-kép
+dátuma, ha a felhasználó nem írta át, hely, leírás, zene). A régi mappa
+mappaszintű `[Picasa]` kulcsai **nem** másolódnak át — a kezelő semmilyen
+régi-mappa-leírót nem olvas, csak az útját.
+
+### 4. A képek mozgatása és a `.picasa.ini` — `0x005ea420`
+
+1. a cél útja az új album-azonosítóból; üres vagy nem létező → `9`-es hiba
+   (`0x005ea4a0`);
+2. folyamatjelző: `CThumbUI::MoveProgress` = **„Moving Files” / „Fájlok
+   áthelyezése”** (`0x005ea50d`), a darabszám a tartomány hossza;
+3. képenként: rekord (`0x004edf60`); ha a forrásfájl nem létezik → átugorja
+   (`0x005ea5e5`); a célnév a fájlnév a célmappához fűzve (`0x009a37b0`), az
+   egyediesítő (`0x00993030`, `%s%lu` minta) nem nullát ad → átugorja;
+   különben **`0x00479870(db, azonosító, 0, 0, folyamat)`** — a 3. argumentum
+   `0` = **áthelyezés, nem másolás**;
+4. a `0x00479870` csak média-rekordtípust mozgat (`0x00479905`–`0x00479940`:
+   2, 3, 6–0x12, 0x15–0x18, 0x1a, 0x1b–0x1d, 0x1f, 0x3e9), és a
+   `0x00478780`-at hívja, amely **mindkét mappa `.picasa.ini`-jét megnyitja**
+   (`0x0047886b`, `0x004788ee`), a kép szakaszát a forrásból a célba írja
+   (`0x0063e5b0`, `0x005ab100`), és — csak az áthelyezés-ágon (`[esp+0x2994]`
+   = 0, `0x0047896f`) — a forrás-inin is dolgozik (`0x00478993 call
+   0x005aafd0`), ami a szakasz eltávolításának felel meg. Ugyanez a
+   függvény hivatkozik a **`.picasaoriginals`** mappára (`0x00479108`) és
+   a 8-as és 0x12-es rekordtípusnál a **`.THM`** kísérőfájlra (`0x004789c3`).
+
+⇒ **A kép teljes szakasza (csillag, szerkesztések, arcok, `albums=`
+tokenek) a képpel költözik**, az albumtagság tehát megmarad. *(Bizalmi fok:
+erős — a két ini megnyitása, a szakaszmásolás és a forrás-törlés hívása
+címmel megvan; a mezőszintű másolást nem követtem végig.)*
+
+### 5. Mi NEM mozdul
+
+- **Nem kép fájlok** (szöveg, kísérőfájl, ismeretlen típus): a tartomány
+  a mappa-csomópont **elemeiből** áll (`0x00716ae0`), abban csak a katalógus
+  elemei vannak — a többi fájl a régi mappában marad. A `.THM` kísérőfájl
+  kivétel (4. pont).
+- **A régi mappa** a lemezen és a katalógusban is megmarad, akkor is, ha
+  kiürült (a kezelőben nincs törlő hívás). Ha a vágópont a mappa ELSŐ képe,
+  **minden kép átkerül**, a régi mappa üres lesz — ez ellen nincs őr.
+- Elnyomott (`+0x5a`) elemek: a tartomány-mag ezeket **nem szűri** ki a
+  kimeneti tömbből (`0x00716bba`–`0x00716bc8`) — hogy a felületen mi számít
+  elnyomottnak, ld. a nyitott kérdéseket.
+
+### 6. Megerősítés, szürkítés, visszavonás
+
+- **Külön megerősítő ablak nincs** — a „Mappa tulajdonságai” párbeszéd OK-ja
+  maga a jóváhagyás, a Mégse a visszalépés.
+- **Szürke**, ha az aktuális mappa egy **iPhoto- vagy Apple Photos-könyvtár**
+  `Masters`/`Originals` ágában van: a menü utófeldolgozója a kontextus
+  `0x70`/`0x8a` ágán `EnableMenuItem(…, MF_GRAYED)`-et hív (`0x00c40818`
+  `USER32!EnableMenuItem`) **három** parancsra egyszerre — `0x9c9a` (Törlés a
+  lemezről), `0x9cb6` (Áthelyezés új mappába), `0x9ca6` (Mappa felosztása) —,
+  ha a `0x004ac8f0` igazat ad; az utóbbi a mappa útját az
+  `iPhoto Library` / `Photos Library` útvonalaihoz méri (`0x0047cea0`,
+  `0x0047cfc0` → `0x0099bce0`/`0x0099bf40`, előtag-teszt `0x00987030`).
+  Windowson/Linuxon ilyen könyvtár nincs ⇒ **a gyakorlatban mindig aktív**;
+  az üres kijelölést nem szürkítés, hanem csendes kilépés kezeli (2./4. sor).
+- **Visszavonás nincs**: a programban nincs könyvtár-szintű Visszavonás
+  (`eMenuEdit::ID_UNDO` halott bejegyzés, `picasa-menusor-csoportok.md`,
+  #1795), és a kezelő sem rögzít visszaállítási adatot. Visszacsinálni csak
+  kézi visszamozgatással lehet.
+
+### 7. Eredeti / nálunk / teendő
+
+**Nálunk (mérve, 2026-10-12):** `PhotoContextMenu.qml:316–319` —
+`PicasaMenuItem { objectName: "contextMenuSplitFolder"; placeholder: true }`:
+szürke helyfoglaló, `onTriggered` nélkül, és **minden** helyi-menü
+kontextusban látszik (album- és személy-nézetben is). A `src/` alatt
+`splitFolder`/`split_folder` nincs. A testvérparancs nálunk:
+`FileOpsController.moveSelectionToNewFolder` (`fileops_controller.py`,
+#1614) — csak nevet kér, a célt a kijelölés első képének mappája ALÁ teszi,
+ütközésnél hibát ad.
+
+| szempont | eredeti | nálunk | teendő |
+|---|---|---|---|
+| belépési pont | csak a mappa-nézet képének helyi menüje | helyfoglaló, album-/személy-nézetben is | bekötni; album- és személy-kontextusban elrejteni |
+| képkészlet | az első kijelölt képtől (a rács sorrendjében) a mappa végéig, a kijelölt is | — | ugyanígy, a rács aktuális rendezése szerint |
+| előnézet | a tartomány a párbeszéd ELŐTT kijelölődik | — | ugyanígy |
+| párbeszéd | „Mappa tulajdonságai”: Név „Névtelen”, Dátum = vágópont-kép dátuma, hely, leírás | — | ugyanez a párbeszéd, mappa-címmel |
+| hely | a jelenlegi mappa **testvére** | (a testvérparancs: almappa) | testvér |
+| név | tisztítás (3.), üresen „album”, ütközésnél `_1`, `_2`… | (a testvérparancs: hiba ütközésnél) | a 3. szabályai |
+| ini | a képszakaszok átköltöznek, a forrásból törlődnek | `fileops.move.move_photo` már ezt teszi | a meglévő mozgató útját használni |
+| nem kép fájl | marad | — | marad |
+| megerősítés / visszavonás | nincs külön / nincs | — | nincs külön / nincs |
+
+### 8. Bizonyítottsági fok
+
+- cmd és kezelő (1.): **megerősített** (két független kontroll).
+- a lépéssor, a képkészlet, a testvér-hely, a név- és ütközésszabály, a
+  párbeszéd címe (2.–3.): **erős** (utasításszint, minden lépés címmel).
+- az ini-átköltözés (4.): **erős** a hívási mintára, **feltételes** a
+  mezőszintű részletekre.
+- a szürkítés (6.): **erős**.
+
+### 9. Nyitott kérdések mérlege
+
+| kérdés | állapot | a megszerzés útja |
+|---|---|---|
+| a 9. lépés dátuma EXIF-felvételi idő vagy fájlidő? | **NYITOTT** | a `0x004edf60` kimeneti rekord `+0x04` mezőjének írója; a gyakorlatban a rács dátum-rendezésének kulcsa (69. tétel: `thumbindex` 1. FILETIME) a jelölt |
+| az új mappa `.picasa.ini`-jébe a párbeszéd mely mezői kerülnek (`name=`, `date=`, `location=`, `description=`)? | **NYITOTT** | a `0x0055d120` → `0x0055d320` ág követése a `date=%f` íróig (`0x0068ac80`) |
+| a `+0x5a` „elnyomott” elem melyik felületi állapot (rejtett kép, szűrő)? | **NYITOTT** | a `+0x5a` írói (`tagkereso.py 0x5a`) |
+| a `[this+0x2a4]+0x44` rekesz pontos hatása (az új mappára ugrik-e a nézet) | **NYITOTT** | a `CMultiAlbumNode` második táblájának `+0x44` eleme (`picasa-eger-es-kijeloles.md` 12.1 táblázat bővítése) |
+| a `[.album:<token>]` definíciós szakaszok sorsa (ha a régi mappa ini-jében vannak) | **NYITOTT** | a `0x00478780` szakasz-másolójának teljes olvasása |
+
+Mérleg: 5 nyitott · 0 blokkolt · 0 hatókörön kívül. Egyik sem akadálya a
+megvalósításnak: a #4534 „Kész, ha” pontjai a 2.–6. szakasz megerősített és
+erős állításaira épülnek; a nyitottak a meglévő saját mechanizmusainkkal
+(rács-dátum, mappaszintű `[Picasa]` írás, mozgató) helyettesíthetők.
+
+### 10. Amit KIZÁRTAM
+
+- **„A kijelölt kép a RÉGI mappában marad”** — kizárva: a tartomány a
+  kijelölt képpel KEZDŐDIK (`0x00716ae0`, `idA` = első kijelölt, és az
+  elem a tartomány része).
+- **„Fájlnév vagy dátum szerint vág”** — kizárva: a csomópont elemsorrendjén
+  halad (`0x007166c0`, `0x00716ae0` a `+0xb4`/`+0xb8` rekeszeken), vagyis a
+  rácsban látott sorrend szerint.
+- **„Almappát hoz létre”** — kizárva: a cél a szülőmappa alá kerül
+  (`0x009a3b50`).
+- **„Külön megerősítést kér”** — kizárva: a kezelő egyetlen párbeszéde a
+  `CEditAlbum`.
+
+### 11. ⚠️ Melléklelet — két korábbi állítás, amit ez a kör megkérdőjelez
+
+1. **`picasa-konyvtar-eszkoztar-viselkedes.md` 2./6.:** „a gomb egy Névtelen
+   albumot hoz létre azonnal, párbeszéd nélkül”. A `0x006dc030` az új
+   leírónál (`+0x08` = −1, `0x0055ce7f`) **mindig** felépíti és megnyitja a
+   `CEditAlbum` párbeszédet (`0x006dc07d`, `0x006dc09d`, majd a
+   párbeszéd-objektum `+0x40` virtuális hívása `0x006dc0d5`), és csak a
+   `[esp+0xb0]` = 0 ágon (OK) ad igazat; az `Új album` hívása
+   (`…, 1, 0`) a `+0xcc` = 1 ágon az **„Album tulajdonságai”** címet kapja.
+   ⇒ az „Új album” is párbeszédet nyit, „Névtelen” előtöltéssel.
+2. **„Áthelyezés új mappába…” (#1614):** az eredeti a jelenlegi mappa
+   **testvérét** hozza létre a „Mappa tulajdonságai” párbeszéddel és
+   `_N`-es ütközéskezeléssel (`0x005e9d3d`, `0x005ea770`); nálunk almappa,
+   csak névvel, ütközésnél hiba.
+
+Mindkettő külön jegy tárgya; itt csak a bizonyíték áll.

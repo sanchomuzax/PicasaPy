@@ -8,19 +8,28 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .colors import paths_with_color
+from .hidden_scope import visible_folder_sql
 from .search_color import parse_color_terms
 
 _PATH_SEP = re.compile(r"[/\\]")
 
 # A hatásos caption/keywords: JPEG-nél az IPTC (caption_file) az elsődleges,
 # egyébként a .picasa.ini értéke (Picasa-viselkedés).
-_SELECT = """
+#
+# #4887: a `folders` illesztés a `{lathato}` feltételt kapja — a rejtett
+# mappák képei ITT, egy ponton maradnak ki minden olvasó lekérdezésből
+# (ld. `hidden_scope.py`). Közvetlenül nem használható: a `_select(conn)`
+# tölti ki a kapcsolatra érvényes feltétellel.
+_SELECT_SABLON = """
 SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.star, p.hidden, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
-       p.rotate_steps, p.flip_flags, p.filters, p.taken_at, p.orientation,
+       p.rotate_steps, p.flip_flags, p.filters,
+       COALESCE(p.taken_at_override, p.taken_at) AS taken_at,
+       p.taken_at_override, p.orientation,
        p.width, p.height,
        p.geotag_ini, p.exif_lat, p.exif_lon, p.first_seen_mtime_ns,
+       p.movie_format, p.frame_rate, p.duration_seconds,
        -- #463: a bélyegkép arc-jelvényeihez — hány felismert arc van a
        -- képen, és hány vár még névadásra. A `face` tábla származtatott
        -- adat (index/faces_detected.py); LEFT JOIN, hogy az arc-szkennelés
@@ -29,8 +38,21 @@ SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        (SELECT COUNT(*) FROM face
          WHERE face.photo_id = p.id AND face.state = 'unnamed'
        ) AS unnamed_face_count
-FROM photos p JOIN folders f ON f.id = p.folder_id
+FROM photos p JOIN folders f ON f.id = p.folder_id AND {lathato}
 """
+
+
+def _select(
+    conn: sqlite3.Connection, include_hidden_folders: bool | None = None
+) -> str:
+    """A közös fotó-SELECT a kapcsolatra érvényes mappa-láthatósággal (#4887).
+
+    `include_hidden_folders`: `None` = a felület által közölt láthatóság;
+    `True` csak belső, nem megjelenítő utakra (import, átnevezés, szkennelés).
+    """
+    return _SELECT_SABLON.format(
+        lathato=visible_folder_sql(conn, "f", include_hidden_folders)
+    )
 
 
 @dataclass(frozen=True)
@@ -75,6 +97,13 @@ class PhotoRecord:
     # az ini `flipped(N)` kulcsa megvan, de az `N` bit-jelentése nincs
     # kimérve (ld. `render/flip.py`).
     flip_flags: int = 0
+    # #4332: a dátummódosító indexbeli felülírása. A hatásos taken_at ezt
+    # veszi előre; ez külön mezőként kell az export bájthű másolási útjához.
+    taken_at_override: str | None = None
+    # #4580: a videók Tulajdonságok-paneljén látható értékek.
+    movie_format: str | None = None
+    frame_rate: float | None = None
+    duration_seconds: float | None = None
 
     @property
     def sort_mtime_ns(self) -> int:
@@ -117,7 +146,7 @@ def photos_in_folder(
     conn: sqlite3.Connection, folder: str | Path
 ) -> tuple[PhotoRecord, ...]:
     rows = conn.execute(
-        f"{_SELECT} WHERE f.path = ? ORDER BY p.name", (str(folder),)
+        f"{_select(conn)} WHERE f.path = ? ORDER BY p.name", (str(folder),)
     )
     return _records(rows)
 
@@ -138,7 +167,7 @@ def photos_under_folder(
         prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     )
     rows = conn.execute(
-        f"{_SELECT} WHERE f.path = ? "
+        f"{_select(conn)} WHERE f.path = ? "
         "OR f.path LIKE ? ESCAPE '\\' OR f.path LIKE ? ESCAPE '\\' "
         "ORDER BY f.path, p.name",
         (prefix, f"{escaped}/%", f"{escaped}\\\\%"),
@@ -150,20 +179,27 @@ def photo_by_id(conn: sqlite3.Connection, photo_id: int) -> PhotoRecord | None:
     """Egy fotó friss rekordja azonosító alapján (#141): a célzott
     index-UPDATE után ez adja vissza a rács-sor frissítéséhez szükséges
     állapotot — nincs szükség teljes mappa-resyncre/lekérdezésre."""
-    row = conn.execute(f"{_SELECT} WHERE p.id = ?", (photo_id,)).fetchone()
+    row = conn.execute(f"{_select(conn)} WHERE p.id = ?", (photo_id,)).fetchone()
     return _records([row])[0] if row is not None else None
 
 
-def all_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
+def all_photos(
+    conn: sqlite3.Connection, *, include_hidden_folders: bool | None = None
+) -> tuple[PhotoRecord, ...]:
     """A teljes könyvtár a rács-feedhez (#64) — a mappán belüli sorrend
     névsor; a mappák feed-sorrendjét a hívó (a bal hasáb rendje szerint)
-    állítja be."""
-    rows = conn.execute(f"{_SELECT} ORDER BY f.path, p.name")
+    állítja be.
+
+    #4887: a rejtett mappák képei a közös kapu szerint maradnak ki; a
+    `include_hidden_folders=True` a belső (nem megjelenítő) utaké."""
+    rows = conn.execute(
+        f"{_select(conn, include_hidden_folders)} ORDER BY f.path, p.name"
+    )
     return _records(rows)
 
 
 def starred_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
-    rows = conn.execute(f"{_SELECT} WHERE p.star = 1 ORDER BY f.path, p.name")
+    rows = conn.execute(f"{_select(conn)} WHERE p.star = 1 ORDER BY f.path, p.name")
     return _records(rows)
 
 
@@ -174,7 +210,7 @@ def video_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     sem újraindexelést. A rendezés a csillag-szűrőét követi (mappa, majd
     név), hogy a szűrt nézet ugyanúgy viselkedjen, mint a testvérei."""
     rows = conn.execute(
-        f"{_SELECT} WHERE p.kind = 'video' ORDER BY f.path, p.name"
+        f"{_select(conn)} WHERE p.kind = 'video' ORDER BY f.path, p.name"
     )
     return _records(rows)
 
@@ -201,7 +237,7 @@ def photos_with_keyword(
     rows = conn.execute(
         # ⚠️ A `keywords` a SELECT-ben számolt alias (IPTC > ini), tehát a
         # WHERE-ben nem hivatkozható — a két forrásoszlopra szűrünk.
-        f"{_SELECT} WHERE COALESCE(p.keywords_file, p.keywords_ini) IS NOT NULL"
+        f"{_select(conn)} WHERE COALESCE(p.keywords_file, p.keywords_ini) IS NOT NULL"
         " AND COALESCE(p.keywords_file, p.keywords_ini) <> ''"
         " ORDER BY f.path, p.name"
     )
@@ -235,15 +271,25 @@ def photos_up_to_age(
     rendezése is erre épül.
     """
     rows = conn.execute(
-        f"{_SELECT} WHERE p.taken_at IS NOT NULL AND p.taken_at >= ?"
-        " ORDER BY p.taken_at DESC, f.path, p.name",
+        f"{_select(conn)} WHERE COALESCE(p.taken_at_override, p.taken_at) IS NOT NULL"
+        " AND COALESCE(p.taken_at_override, p.taken_at) >= ?"
+        " ORDER BY COALESCE(p.taken_at_override, p.taken_at) DESC, f.path, p.name",
         (str(cutoff),),
     )
     return _records(rows)
 
 
+#: `folders.hidden` értékei: 0 látszik, 1 rejtett (az ini-ben is), 2 rejtett,
+#: de az ini-be még nincs beírva (régi index / offline mappa, #4597).
+HIDDEN_INI_PENDING = 2
+
+
 def set_folder_hidden(
-    conn: sqlite3.Connection, folder_path: str, hidden: bool
+    conn: sqlite3.Connection,
+    folder_path: str,
+    hidden: bool,
+    *,
+    ini_pending: bool = False,
 ) -> bool:
     """A mappa elrejtése/megjelenítése (#1637).
 
@@ -252,7 +298,10 @@ def set_folder_hidden(
     felület a jelzésből tud üzenetet adni)."""
     kurzor = conn.execute(
         "UPDATE folders SET hidden = ? WHERE path = ?",
-        (1 if hidden else 0, str(folder_path)),
+        (
+            (HIDDEN_INI_PENDING if ini_pending else 1) if hidden else 0,
+            str(folder_path),
+        ),
     )
     conn.commit()
     return kurzor.rowcount > 0
@@ -266,12 +315,38 @@ def is_folder_hidden(conn: sqlite3.Connection, folder_path: str) -> bool:
     return bool(sor["hidden"]) if sor is not None else False
 
 
+def carry_pending_hidden(conn: sqlite3.Connection, old: str, new: str) -> None:
+    """Áthelyezett mappa: a `old` részfa 2-es (az ini-be még nem írt) rejtését
+    az `new` részfa útvonalaira viszi (#4597).
+
+    Csak a JELÖLÉST viszi át (a cél sora 2-es lesz); az ini-írást a
+    közvetlenül utána futó szinkron végzi el. Mindkét útvonal-elválasztót
+    kezeli (a LIKE-jokerek escape-elve, mint a `photos_in_folder`-nél)."""
+    prefix = str(old).rstrip("/\\")
+    escaped = (
+        prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    )
+    rows = conn.execute(
+        "SELECT path FROM folders WHERE hidden = ? AND (path = ? "
+        "OR path LIKE ? ESCAPE '\\' OR path LIKE ? ESCAPE '\\')",
+        (HIDDEN_INI_PENDING, prefix, f"{escaped}/%", f"{escaped}\\\\%"),
+    ).fetchall()
+    new_prefix = str(new).rstrip("/\\")
+    for row in rows:
+        conn.execute(
+            "INSERT INTO folders(path, has_ini, hidden) VALUES (?, 0, ?) "
+            "ON CONFLICT(path) DO UPDATE SET hidden = excluded.hidden",
+            (new_prefix + row["path"][len(prefix):], HIDDEN_INI_PENDING),
+        )
+    conn.commit()
+
+
 def hidden_folders(conn: sqlite3.Connection) -> tuple[str, ...]:
     """A rejtett mappák útvonalai, ábécében."""
     return tuple(
         sor["path"]
         for sor in conn.execute(
-            "SELECT path FROM folders WHERE hidden = 1 ORDER BY path"
+            "SELECT path FROM folders WHERE hidden != 0 ORDER BY path"
         )
     )
 
@@ -285,9 +360,10 @@ def geotagged_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     térképre. Rendezés: legfrissebb felvétel elöl (mint a csillagozottaknál
     a mappa-sorrend) — a nem datált képek a végére."""
     rows = conn.execute(
-        f"{_SELECT} WHERE p.geotag_ini IS NOT NULL AND p.geotag_ini <> ''"
+        f"{_select(conn)} WHERE p.geotag_ini IS NOT NULL AND p.geotag_ini <> ''"
         " OR (p.exif_lat IS NOT NULL AND p.exif_lon IS NOT NULL)"
-        " ORDER BY p.taken_at IS NULL, p.taken_at DESC, f.path, p.name"
+        " ORDER BY COALESCE(p.taken_at_override, p.taken_at) IS NULL,"
+        " COALESCE(p.taken_at_override, p.taken_at) DESC, f.path, p.name"
     )
     return tuple(
         record for record in _records(rows) if record.location is not None
@@ -361,7 +437,7 @@ def _text_search(
     scope_clause = " AND p.id = ?" if only_id is not None else ""
     scope_params = () if only_id is None else (only_id,)
     rows = conn.execute(
-        f"{_SELECT} WHERE (p.id IN "
+        f"{_select(conn)} WHERE (p.id IN "
         "(SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
         f"{folder_clause}){scope_clause} ORDER BY f.path, p.name",
         (phrase, *folder_ids, *scope_params),
@@ -431,7 +507,9 @@ def search_suggestions(
         )
         for row in conn.execute(
             "SELECT f.path AS path, COUNT(p.id) AS n FROM folders f "
-            "JOIN photos p ON p.folder_id = f.id GROUP BY f.id ORDER BY f.path"
+            "JOIN photos p ON p.folder_id = f.id "
+            # #4887: rejtett mappa nevét se kínálja fel
+            f"WHERE {visible_folder_sql(conn)} GROUP BY f.id ORDER BY f.path"
         )
         if query in _PATH_SEP.split(row["path"])[-1].casefold()
     )
@@ -443,15 +521,21 @@ def _album_suggestions(
     conn: sqlite3.Connection, folded_query: str
 ) -> tuple[SearchSuggestion, ...]:
     """Album-javaslatok a has_ini-s mappák `.picasa.ini`-jeiből összesítve."""
-    from picasapy.ini import albums_of, load_document, parse_album_refs
+    from picasapy.ini import (
+        INI_NAME,
+        albums_of,
+        ini_source_path,
+        load_document,
+        parse_album_refs,
+    )
 
     names: dict[str, str] = {}  # token -> név (az első definíció nyer)
     counts: dict[str, int] = {}  # token -> tagok száma az összes ini-ben
     ini_rows = conn.execute("SELECT path FROM folders WHERE has_ini = 1")
     for row in ini_rows:
-        ini_path = Path(row["path"]) / ".picasa.ini"
+        ini_path = Path(row["path"]) / INI_NAME
         try:
-            document = load_document(ini_path)
+            document = load_document(ini_source_path(ini_path) or ini_path)
         except (OSError, ValueError):
             continue  # időközben törölt/olvashatatlan ini — kihagyjuk
         for album in albums_of(document):
@@ -475,7 +559,7 @@ def _album_suggestions(
 def _optional_count(row: sqlite3.Row, key: str) -> int:
     """Számláló-oszlop, ha a lekérdezés adta — különben 0.
 
-    Nem minden hívó a `_SELECT`-et használja (pl. a duplikátum-kereső saját,
+    Nem minden hívó a `_select`-et használja (pl. a duplikátum-kereső saját,
     szűkebb oszloplistával dolgozik), ezért a hiányzó oszlop nem hiba.
     """
     try:
@@ -500,6 +584,7 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             keywords=row["keywords"],
             rotate_steps=row["rotate_steps"],
             flip_flags=row["flip_flags"],
+            taken_at_override=row["taken_at_override"],
             filters=row["filters"],
             taken_at=row["taken_at"],
             orientation=row["orientation"],
@@ -516,6 +601,9 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             # azt a hibát, amit ez a mező megszüntet; jobb, ha egy szűkebb
             # oszloplistával érkező jövőbeli hívó hangosan elhasal.
             first_seen_mtime_ns=row["first_seen_mtime_ns"],
+            movie_format=row["movie_format"],
+            frame_rate=row["frame_rate"],
+            duration_seconds=row["duration_seconds"],
         )
         for row in rows
     )

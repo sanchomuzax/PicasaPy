@@ -33,15 +33,36 @@ bejegyzést, különben a csík örökre pörögne."""
 from __future__ import annotations
 
 import logging
+import sys
 import threading
 import time
 import weakref
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import CancelledError as FutureCancelledError
+from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
 from .busy_registry import get_app_busy_registry
 
 _log = logging.getLogger(__name__)
+def _megszakitas(exc: BaseException) -> bool:
+    """Megszakítás-e a kivétel. Az `asyncio`-t NEM importáljuk az indulási
+    láncba (#1653: modulszám-plafon); ha nincs betöltve, asyncio-megszakítás
+    sem keletkezhetett."""
+    if isinstance(exc, FutureCancelledError):
+        return True
+    aio = sys.modules.get("asyncio")
+    return aio is not None and isinstance(exc, aio.CancelledError)
+_OWNER_ERRORS_LOCK = threading.Lock()
+
+
+@dataclass(frozen=True)
+class BackgroundWorkerFailure:
+    """Lekérdezhető, kis méretű diagnosztika egy normál workerhibáról."""
+
+    worker_name: str
+    exception_type: str
+    message: str
 
 #: A `threading.Thread` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT
 #: cserélje: `monkeypatch.setattr(worker_thread, "_Thread", …)`.
@@ -191,6 +212,43 @@ class BackgroundWorkerMixin:
             self._bg_workers = set()
             return self._bg_workers
 
+    def takeBackgroundWorkerErrors(self) -> tuple[BackgroundWorkerFailure, ...]:
+        """Atomikusan visszaadja és kiüríti az owner függő workerhibáit.
+
+        Opcionális `on_error` callback nélkül is strukturáltan elérhetővé
+        teszi az `Exception`-öket a controllereknek. Csak típusnevet és
+        üzenetet tart meg, nem őrzi a tracebacket vagy a worker lokálisait.
+        """
+        with _OWNER_ERRORS_LOCK:
+            failures = getattr(self, "_bg_worker_errors", None)
+            if not failures:
+                return ()
+            self._bg_worker_errors = []
+            return tuple(failures)
+
+    def _record_background_worker_failure(
+        self, error: Exception, worker_name: str | None
+    ) -> None:
+        try:
+            message = str(error)
+        except BaseException as conversion_error:  # noqa: BLE001 — a diagnosztika se ölje meg a worker-védelmet
+            message = (
+                f"<az üzenet nem olvasható: "
+                f"{type(conversion_error).__name__}>"
+            )
+        failure = BackgroundWorkerFailure(
+            worker_name=worker_name or "?",
+            exception_type=type(error).__name__,
+            message=message,
+        )
+        with _OWNER_ERRORS_LOCK:
+            try:
+                failures = self._bg_worker_errors
+            except AttributeError:
+                failures = []
+                self._bg_worker_errors = failures
+            failures.append(failure)
+
     def _start_background(
         self,
         target: Callable[..., None],
@@ -199,6 +257,7 @@ class BackgroundWorkerMixin:
         kwargs: Mapping[str, Any] | None = None,
         name: str | None = None,
         cancel: Callable[[], None] | None = None,
+        on_error: Callable[[Exception], None] | None = None,
     ) -> threading.Thread:
         """Egy `target` HÁTTÉRSZÁLON indítása, nyilvántartva.
 
@@ -216,7 +275,12 @@ class BackgroundWorkerMixin:
         munka MEGSZAKÍTHATÓKÉNT jelentkezik be, és a jobb-felső sarki
         jelzőn megjelenik a megszakítás gombja. A visszahívás bármely
         szálról hívódhat (a felhasználó a GUI-szálról kattint), ezért csak
-        jelzőt állítson (`threading.Event`), ne végezzen munkát."""
+        jelzőt állítson (`threading.Event`), ne végezzen munkát.
+
+        Ha meg van adva, az `on_error` callback a worker szálon kapja meg a
+        targetből kikerülő normál `Exception` objektumot. A controller ezen
+        keresztül Qt-jelzést küldhet; közvetlen UI-állapotot ne módosítson.
+        Callback nélkül a traceback továbbra is a naplóba kerül."""
         workers = self._bg_worker_set()
         registry = get_app_busy_registry()
         registry.begin()
@@ -230,7 +294,10 @@ class BackgroundWorkerMixin:
         def _run() -> None:
             try:
                 target(*args, **(kwargs or {}))
-            except BaseException:  # noqa: BLE001 — ld. a hosszú indoklást
+            except BaseException as error:  # noqa: BLE001 — ld. a hosszú indoklást
+                if _megszakitas(error):
+                    # A megszakítás normál kimenet, nem workerhiba.
+                    return
                 # ⛔ #1457: A KIEJTETT KIVÉTEL MEGÖLI A FOLYAMATOT.
                 #
                 # Ha a `target` kivétellel áll le, a `threading` alapértelmezett
@@ -265,8 +332,25 @@ class BackgroundWorkerMixin:
                 # szükség, mert a `logging` leállás közben magától csendes.
                 #
                 # ⚠️ Ez NEM elnémítás: eddig a kivétel a `stderr`-re ment és
-                # senki nem olvasta; mostantól a naplóba megy, szálnévvel.
+                # senki nem olvasta; mostantól a naplóba megy, szálnévvel,
+                # és az opcionális callback az ownerhez is továbbítja.
                 _log.exception("háttérszál hibával állt le: %s", name or "?")
+                if isinstance(error, Exception):
+                    try:
+                        self._record_background_worker_failure(error, name)
+                    except BaseException:  # noqa: BLE001 — a diagnosztika se juttassa az eredeti kivételt az excepthookig
+                        _log.exception(
+                            "háttérszál hibáját nem sikerült eltárolni: %s",
+                            name or "?",
+                        )
+                    if on_error is not None:
+                        try:
+                            on_error(error)
+                        except BaseException:  # noqa: BLE001 — a worker ne jusson az excepthookig
+                            _log.exception(
+                                "háttérszál hiba-visszajelzése is hibával állt le: %s",
+                                name or "?",
+                            )
             finally:
                 # ⚠️ #999 — A SORREND ITT SZÁMÍT, ÉS KORÁBBAN FORDÍTVA VOLT.
                 #

@@ -65,7 +65,7 @@ class TestAMegszakitas:
         # az első fájl után megszakítjuk: a kapcsoló a köteg CIKLUSÁBAN
         # ellenőrződik, tehát a hívás sorrendje nem versenyfeltétel
         ctl.cancelXmpFaces()  # még nincs köteg — nem szabad elhasalnia
-        ctl.writeFacesToXmp()
+        ctl.writeFacesToXmp("all", [])
         ctl.cancelXmpFaces()
         assert ctl.waitForBackgroundWorkers(15.0), "a köteg nem állt le"
         QCoreApplication.processEvents()
@@ -82,7 +82,7 @@ class TestAMegszakitas:
         ctl, gyoker = vezerlo
         ctl.selectFolder(str(gyoker))
         QCoreApplication.processEvents()
-        ctl.writeFacesToXmp()
+        ctl.writeFacesToXmp("all", [])
         assert ctl.waitForBackgroundWorkers(15.0)
         QCoreApplication.processEvents()
 
@@ -95,7 +95,7 @@ class TestAMegszakitas:
         QCoreApplication.processEvents()
 
         assert ctl.xmpFacesTotal == 0, "köteg előtt nincs mit mutatni"
-        ctl.writeFacesToXmp()
+        ctl.writeFacesToXmp("all", [])
         assert ctl.xmpFacesTotal == 6, "a panel a TELJES darabszámot mutatja"
         assert ctl.waitForBackgroundWorkers(15.0)
         QCoreApplication.processEvents()

@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pytest
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import wait_for_signal
+from support.qt_wait import wait_for_photo_op, wait_for_signal
 
 from picasapy.app.edit_journal_controller import JOURNAL_FILENAME
 from picasapy.edit.edit_journal import load_journal
@@ -117,12 +117,11 @@ class TestCsoportosEffekt:
     """`batch_effect_controller.applyEffectMany` — a legtömegesebb író."""
 
     def test_a_kotegelt_effekt_naploz(self, controller, library):
-        wait_for_signal(
-            controller.photoOpFinished,
+        wait_for_photo_op(
+            controller,
             lambda: controller.applyEffectMany(
                 _sorok(controller, "x.jpg", "y.jpg", "z.jpg"), "autolight"
             ),
-            description="a csoportos effekt",
         )
 
         naplo = _naplo(controller)
@@ -131,12 +130,11 @@ class TestCsoportosEffekt:
         assert naplo[_kulcs(library, "b", "z.jpg")].chain == "autolight=1;"
 
     def test_a_felulirast_eszleli(self, controller, library):
-        wait_for_signal(
-            controller.photoOpFinished,
+        wait_for_photo_op(
+            controller,
             lambda: controller.applyEffectMany(
                 _sorok(controller, "x.jpg"), "autolight"
             ),
-            description="a csoportos effekt",
         )
 
         kapott = _picasa_felulir(
@@ -147,29 +145,26 @@ class TestCsoportosEffekt:
 
     def test_a_mindent_vissza_torli_a_bejegyzest(self, controller, library):
         """„Undo All Edits": a felhasználó MAGA törölt — nincs mit védeni."""
-        wait_for_signal(
-            controller.photoOpFinished,
+        wait_for_photo_op(
+            controller,
             lambda: controller.applyEffectMany(
                 _sorok(controller, "x.jpg"), "autolight"
             ),
-            description="a csoportos effekt",
         )
-        wait_for_signal(
-            controller.photoOpFinished,
+        wait_for_photo_op(
+            controller,
             lambda: controller.clearAllEffectsMany(_sorok(controller, "x.jpg")),
-            description="az összes szerkesztés visszavonása",
         )
 
         assert _kulcs(library, "a", "x.jpg") not in _naplo(controller)
 
     def test_a_koteg_visszavonasa_visszairja_a_naplot(self, controller, library):
         """A visszavont köteg után a napló a VISSZAÁLLÍTOTT láncot védi."""
-        wait_for_signal(
-            controller.photoOpFinished,
+        wait_for_photo_op(
+            controller,
             lambda: controller.applyEffectMany(
                 _sorok(controller, "x.jpg"), "autolight"
             ),
-            description="a csoportos effekt",
         )
 
         controller.undoBatchEdit()

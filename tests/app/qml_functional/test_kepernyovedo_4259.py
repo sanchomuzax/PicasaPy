@@ -9,6 +9,7 @@ from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtTest import QTest
 from support.qt_wait import varj_feltetelre
+from tests.app.qml_functional import _fomenu_4420_akciok as fomenu_akciok
 
 
 def _child(root, name):
@@ -33,6 +34,80 @@ def _click_item(window, item, qt_app):
         center.toPoint(),
     )
     qt_app.processEvents()
+
+
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
+def test_bejaro_valodi_megse_gombbal_bezarja_a_kepernyovedo_parbeszedet(
+    qml_app, qt_app, height_delta
+):
+    window, _controller, _engine = qml_app
+    celmagassag = window.height() + height_delta
+    window.resize(window.width(), celmagassag)
+    assert varj_feltetelre(qt_app, lambda: window.height() == celmagassag, 3.0)
+
+    _trigger(window, "menuToolsScreensaver")
+    assert varj_feltetelre(
+        qt_app,
+        lambda: _child(window, "screensaverDialog").property("visible") is True,
+        3.0,
+    )
+    dialog = _child(window, "screensaverDialog")
+    megse_gombok = [
+        elem
+        for elem in fomenu_akciok._parbeszed_gombok(dialog)
+        if "Button" in elem.metaObject().className()
+        and (
+            "cancel" in (elem.objectName() or "").casefold()
+            or str(elem.property("text") or "").strip().casefold()
+            in {"cancel", "mégse"}
+        )
+    ]
+    assert megse_gombok, "a ScreensaverDialog látható Mégse gombja hiányzik"
+
+    # A valódi termékgomb működését külön választjuk el a bejáró takarításától.
+    _click_item(window, megse_gombok[0], qt_app)
+    assert varj_feltetelre(
+        qt_app,
+        lambda: not fomenu_akciok._lathato_dialogusok(window),
+        3.0,
+    ), "a ScreensaverDialog valódi Mégse gombja nem zárta be a párbeszédet"
+
+    _trigger(window, "menuToolsScreensaver")
+    assert varj_feltetelre(
+        qt_app,
+        lambda: _child(window, "screensaverDialog").property("visible") is True,
+        3.0,
+    )
+    dialog = _child(window, "screensaverDialog")
+    megse_gombok = [
+        elem
+        for elem in fomenu_akciok._parbeszed_gombok(dialog)
+        if "Button" in elem.metaObject().className()
+        and (
+            "cancel" in (elem.objectName() or "").casefold()
+            or str(elem.property("text") or "").strip().casefold()
+            in {"cancel", "mégse"}
+        )
+    ]
+    assert megse_gombok, "a visszanyitott ScreensaverDialog Mégse gombja hiányzik"
+
+    naplo = []
+    fomenu_akciok._zarj_parbeszedeket(window, qt_app, naplo)
+    bejaro_bezarta = not fomenu_akciok._lathato_dialogusok(window)
+    if not bejaro_bezarta:
+        # Bizonyítja, hogy a termék Cancel gombja zár; a piros állítás így
+        # kizárólag a bejáró zárási útját nevezi meg.
+        _click_item(window, megse_gombok[0], qt_app)
+        assert varj_feltetelre(
+            qt_app,
+            lambda: not fomenu_akciok._lathato_dialogusok(window),
+            3.0,
+        ), "a valódi Mégse kattintás sem zárta be a párbeszédet"
+
+    assert bejaro_bezarta, (
+        "a bejáró nem zárta be a párbeszédet; a valódi Mégse gomb kattintása "
+        f"bezárta: {not fomenu_akciok._lathato_dialogusok(window)}; napló: {naplo}"
+    )
 
 
 def _start_preview(window, qt_app):

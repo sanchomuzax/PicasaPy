@@ -75,6 +75,7 @@ def _export_item(record) -> ExportItem:
         # (`CImageOutput`, `0x0073f320`) végzi.
         caption=record.caption,
         keywords=",".join(record.keywords) if record.keywords else None,
+        taken_at_override=getattr(record, "taken_at_override", None),
     )
 
 

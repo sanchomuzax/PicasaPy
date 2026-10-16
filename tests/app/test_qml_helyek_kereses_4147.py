@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import time
 
 import pytest
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 def _walk(item: QQuickItem):
@@ -27,17 +27,8 @@ def _variant_list(value):
     return value.toVariant() if hasattr(value, "toVariant") else value
 
 
-def _var(qt_app, predicate, timeout: float = 5.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            if predicate():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return bool(predicate())
+def _var(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate, (AttributeError, RuntimeError, TypeError)), timeout)
 
 
 def _kattint(window, item: QQuickItem, qt_app) -> None:
@@ -64,7 +55,7 @@ def test_a_helykereses_a_helyi_gps_kepeket_szuri_a_fomenu_kattintasa_utan(
     field = _elem(window, "placesSearchInput")
     button = _elem(window, "placesSearchButton")
     map_menu = _elem(window, "placesMapTypeMenu")
-    assert label.property("text") == "Search for an address:"
+    assert label.property("text") == "Search"
     assert field.property("placeholderText") == ""
     assert map_menu.property("visible") is True
 

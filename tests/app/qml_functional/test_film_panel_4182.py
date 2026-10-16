@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import os
-import time
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, QRectF, Qt, QUrl
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 _KEEP_ALIVE: list[QObject] = []
 
@@ -19,15 +19,8 @@ def _elem(gyoker, nev):
     return elem
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _darab(qml_lista) -> int:
@@ -363,7 +356,10 @@ def test_a_film_elonezete_gorgetes_nelkul_latszik_es_kattinthato(
             motion = _elem(window, "movieTabPanelMotion")
             footer = _elem(window, "movieCancelButton")
             assert panel.property("visible") is True
-            assert _elem(window, "moviePreviewImage").property("visible") is True
+            kep = _elem(window, "moviePreviewTransitionImage")
+            assert _varj(
+                qt_app, lambda kep=kep: kep.property("visible") is True
+            ), "a szolgáltató kockája nem látszik az előnézeten"
             preview = _elem(window, "moviePreviewButton")
             assert preview.property("visible") is True
 

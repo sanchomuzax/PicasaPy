@@ -18,10 +18,10 @@ import QtQuick.Controls
 // `toggleFolderSortReverse`) — a Picasa is egyetlen parancskészletet
 // használ, a menük abból válogatnak.
 //
-// A személyek rendezése, az „indexképek megjelenítése a könyvtárban" és
-// az „Asztal" gyorsugrás mögött még nincs réteg — szürkén látszanak
-// (#416, spec 5.1.). Az egyszerűsített fanézet a #1454-ben élővé vált: a
-// `FolderHierarchyController.simplified` kapcsolóját billenti.
+// A személyek rendezése és az egyszerűsített fanézet már a
+// FolderHierarchyController állapotát használja. A #4462 ugyanennek a
+// vezérlőnek a bélyegkép-kapcsolójára köti az „indexképek megjelenítése a
+// könyvtárban" tételt és az Asztal gyökérváltót.
 //
 // A Windows-specifikus Sajátgép/Dokumentumok/Képek tételek szándékosan
 // kimaradnak: a felmérés szerint is csak Windowson léteznek, a PicasaPy
@@ -38,6 +38,8 @@ PicasaMenu {
     // #1454: az „Egyszerűsített fanézet" pipája — a bal hasáb
     // fa-vezérlőjének állapota, a gazda köti be
     property bool simplifiedTree: false
+    property bool albumThumbs: false
+    property string viewRoot: ""
 
     //: #1767 — a Személyek lista rendezési módja: name / count / top
     property string peopleSort: "name"
@@ -46,6 +48,8 @@ PicasaMenu {
     signal sortModeRequested(string mode)
     signal sortReverseRequested()
     signal simplifiedTreeRequested()
+    signal albumThumbnailsRequested()
+    signal viewRootRequested(string token)
 
     // -- 1. blokk: a mappalista rendezése ---------------------------------
 
@@ -190,10 +194,15 @@ PicasaMenu {
             checked = Qt.binding(function () { return menu.simplifiedTree })
         }
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "folderListMenuShowThumbnails"
         text: qsTr("Show &Thumbnails in Library")
-        placeholder: true
+        checkable: true
+        checked: menu.albumThumbs
+        onTriggered: {
+            menu.albumThumbnailsRequested()
+            checked = Qt.binding(function () { return menu.albumThumbs })
+        }
     }
     MenuSeparator {}
 
@@ -207,18 +216,23 @@ PicasaMenu {
     // Dokumentumok · Képek — utóbbi három Windows-specifikus, ezért nálunk
     // kimarad, és egyedül az Asztal maradna benne.
     //
-    // Amíg egyik gyökérváltó mögött sincs réteg, egy egytételes almenü csak
-    // üres kattintást adna, ezért mindkettő lapos, helyfoglaló sor — a
-    // felirat és a HELY viszont már az eredeti. A magyar felirata a Picasa
-    // saját fordítása: „Gyorsbillentyűk".
-    PicasaMenuItem {
+    // Az Asztal az egyetlen nem Windows-specifikus gyökérváltó. A három
+    // Windows-tételt kihagyjuk, az Asztal a vezérlő meglévő gyökérváltó
+    // műveletét hívja.
+    PicasaMenu {
         objectName: "folderListMenuShortcuts"
-        text: qsTr("&Shortcuts")
-        placeholder: true
-    }
-    PicasaMenuItem {
-        objectName: "folderListMenuDesktop"
-        text: qsTr("&Desktop")
-        placeholder: true
+        title: qsTr("&Shortcuts")
+        MenuItem {
+            objectName: "folderListMenuDesktop"
+            text: qsTr("&Desktop")
+            checkable: true
+            checked: menu.viewRoot === "desktop"
+            onTriggered: {
+                menu.viewRootRequested("desktop")
+                checked = Qt.binding(function () {
+                    return menu.viewRoot === "desktop"
+                })
+            }
+        }
     }
 }

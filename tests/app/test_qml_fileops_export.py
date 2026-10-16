@@ -22,7 +22,7 @@ from PySide6.QtCore import (
 
 from support.halasztott_parbeszed import nyisd_meg
 from support.qml_halasztott import epitsd_fel_ha_fileops
-from support.qt_wait import hangos_hurok
+from support.qt_wait import hangos_hurok, wait_for_photo_op
 
 
 # a qml_app fixture a tests/app/conftest.py-ban él (közös a funkcionális
@@ -214,10 +214,13 @@ class TestRenameManyDialog:
         qt_app.processEvents()
         field = _child(window, "renameManyField")
         field.setProperty("text", "nyaralas")
-        loop = hangos_hurok(controller.photoOpFinished)
-        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
-        loop.exec()
-        qt_app.processEvents()
+        wait_for_photo_op(
+            controller,
+            lambda: QMetaObject.invokeMethod(
+                dialog, "accept", Qt.ConnectionType.DirectConnection
+            ),
+            qt_app=qt_app,
+        )
         assert (lib / "nyaralas.jpg").exists()
         assert (lib / "nyaralas-1.jpg").exists()
         assert not (lib / "a.jpg").exists()

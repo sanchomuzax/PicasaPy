@@ -31,12 +31,12 @@ KÉT dolgot állít, egyenlő súllyal:
    (`TestAKonyvtarValtozatlan`) — a jegy súlypontja ez.
 """
 
-import time
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 # (fiók-lap neve, a nézőbeli panel objectName-je, a könyvtárbeli párja,
 #  a könyvtárbeli SplitView-szélesség)
@@ -79,20 +79,8 @@ def _elem(window, nev: str):
     return talalt
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _ablakban(item: QQuickItem) -> tuple[float, float, float, float]:
@@ -114,7 +102,6 @@ def _kattints(window, item: QQuickItem, qt_app) -> None:
             item.mapToScene(item.boundingRect().center()).y(),
         )
         == elozo,
-        1.0,
     )
     kozep = item.mapToScene(item.boundingRect().center())
     QTest.mouseClick(

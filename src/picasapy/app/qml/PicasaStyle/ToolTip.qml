@@ -45,6 +45,16 @@ T.ToolTip {
     id: sugo
     objectName: "picasaToolTip"
 
+    // A `ShowTooltips` egyetlen kapcsolója vezérli a stílus példányát, ezért
+    // a 24 csatolt ToolTip-használat mind ugyanazt az állapotot követi.
+    // Önálló QML-próbában, ahol nincs alkalmazásvezérlő, az eredeti alapérték
+    // szerint marad bekapcsolva.
+    enabled: typeof controller === "undefined" || !controller
+             || controller.showTooltipsEnabled === undefined
+             || controller.showTooltipsEnabled
+    onEnabledChanged: if (!enabled) close()
+    onVisibleChanged: if (!enabled && visible) close()
+
     x: parent ? (parent.width - implicitWidth) / 2 : 0
     y: -implicitHeight - 4
 

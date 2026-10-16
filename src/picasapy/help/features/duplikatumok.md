@@ -21,6 +21,10 @@ Amíg tart, sárga sáv jelzi: **„Másodpéldányok keresése…"**. Utána a 
 eredménysávon a **Másodpéldányok** felirat mutatja, hogy ebben a módban
 vagy.
 
+A nézetet a keresőmező melletti **⌄** panel **Csak a másodpéldányok
+mutatása** gombja is be- és kikapcsolja — lásd [Keresés és
+szűrés](kereses.md).
+
 Kilépni két módon lehet:
 
 - a zöld sáv **Vissza az összes megtekintéséhez** gombjával, vagy

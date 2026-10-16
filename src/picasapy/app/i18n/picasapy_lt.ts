@@ -47,7 +47,7 @@ picasapy-origin-key: stringres:CThumbUI::Confirm2upRight</extracomment>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
     </context>
     <context>
@@ -85,7 +85,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonDiscard;stringres:CThumbUI::Con
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
     </context>
     <context>
@@ -94,7 +94,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonDiscard;stringres:CThumbUI::Con
             <location filename="../qml/PicasaPy/ActivityBadge.qml" />
             <source>Stop the background operation</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sustabdyti foninę operaciją</translation>
         </message>
     </context>
     <context>
@@ -117,7 +117,7 @@ picasapy-origin-key: tooltips:Text2(thumbui/lightbox_bgtext)</extracomment>
         <message>
             <source>This collage was not completed. To finalize this collage (required for sharing or printing), please select the "Create Now" button. Please note that you can always change your collage later, even after it has been saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šis koliažas nebuvo užbaigtas. Norėdami jį užbaigti (to reikia norint bendrinti arba spausdinti), pasirinkite mygtuką „Kurti dabar“. Koliažą visada galėsite pakeisti vėliau, net ir jį išsaugoję.</translation>
         </message>
     </context>
     <context>
@@ -125,72 +125,72 @@ picasapy-origin-key: tooltips:Text2(thumbui/lightbox_bgtext)</extracomment>
         <message>
             <source>The face recognition model file is missing, so this step cannot run. Press "Download the model" below, and PicasaPy will get it for you. If you would rather do it by hand: copy the file "{0}" into this folder — {1} — or point the {2} environment variable at it, and then restart PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Trūksta veidų atpažinimo modelio failo, todėl šio veiksmo atlikti negalima. Paspauskite apačioje esantį mygtuką „Atsisiųsti modelį“ ir PicasaPy jį atsisiųs. Jei norite tai padaryti patys, nukopijuokite failą „{0}“ į šį aplanką — {1} — arba nurodykite aplinkos kintamajam {2} šio aplanko kelią, tada iš naujo paleiskite PicasaPy.</translation>
         </message>
         <message>
             <source>The model file is present, but PicasaPy could not load it. Check the application log.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Modelio failas yra, tačiau PicasaPy nepavyko jo įkelti. Patikrinkite programos žurnalą.</translation>
         </message>
         <message>
             <source>PicasaPy downloads the model file from the OpenCV Zoo project ({0} MB in total). Licence: {1} — free to use. The file is saved here: {2}</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy atsisiunčia „YuNet“ modelį iš „OpenCV Zoo“ projekto (iš viso {0} MB). Licencija: {1} — galima naudoti nemokamai. Failas įrašomas čia: {2}</translation>
         </message>
         <message>
             <source>The model file is already in place, but PicasaPy could not load it. It may be damaged: delete it from {0} and download it again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Modelio failas jau yra, tačiau PicasaPy nepavyko jo įkelti. Jis gali būti sugadintas: ištrinkite jį iš {0} ir atsisiųskite dar kartą.</translation>
         </message>
         <message>
             <source>The download could not be started.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko pradėti atsisiuntimo.</translation>
         </message>
         <message>
             <source>The download failed: {0}</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsisiųsti nepavyko: {0}</translation>
         </message>
         <message>
             <source>There was nothing to download.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nebuvo ką atsisiųsti.</translation>
         </message>
         <message>
             <source>The face recognition model has been downloaded. You can start the search now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Modelis atsisiųstas. Dabar galite pradėti paiešką.</translation>
         </message>
         <message>
             <source>PicasaPy verified the downloaded YuNet model, but could not load it. Face search is unavailable; check the application log.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy patikrino atsisiųstą „YuNet“ modelį, tačiau nepavyko jo įkelti. Veidų paieška negalima; patikrinkite programos žurnalą.</translation>
         </message>
         <message>
             <source>Face detection is ready, but face grouping is unavailable because PicasaPy could not load the SFace model. Check the application log.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Veidų aptikimas paruoštas, tačiau veidų grupavimas negalimas, nes PicasaPy nepavyko įkelti „SFace“ modelio. Patikrinkite programos žurnalą.</translation>
         </message>
         <message>
             <source>The download was cancelled. Nothing was saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsisiuntimas atšauktas. Nieko neįrašyta.</translation>
         </message>
         <message>
             <source>The downloaded file was damaged, so PicasaPy threw it away instead of using it — a damaged model would find faces wrongly. Please try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsisiųstas failas buvo sugadintas, todėl PicasaPy jį pašalino, o ne panaudojo — sugadintas modelis veidus aptiktų neteisingai. Bandykite dar kartą.</translation>
         </message>
         <message>
             <source>The model could not be saved to disk: {0}</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko įrašyti modelio į diską: {0}</translation>
         </message>
         <message>
             <source>PicasaPy could not reach the download source. Check your internet connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy nepavyko pasiekti atsisiuntimo šaltinio. Patikrinkite interneto ryšį ir bandykite dar kartą.</translation>
         </message>
     </context>
     <context>
@@ -204,57 +204,57 @@ picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
         <message>
             <source>Finished: %1 face(s) found in %2 checked picture(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Baigta: patikrintose %2 nuotraukose rasta %1 veidų.</translation>
         </message>
         <message>
             <source>Finished: no faces were found in %1 checked picture(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Baigta: patikrintose %1 nuotraukose veidų nerasta.</translation>
         </message>
         <message>
             <source>Search cancelled. The faces found so far are kept.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paieška atšaukta. Iki šiol rasti veidai išsaugoti.</translation>
         </message>
         <message>
             <source>The search failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paieška nepavyko: %1</translation>
         </message>
         <message>
             <source>Grouping finished: %1 face(s) compared, %2 sorted into groups.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grupavimas baigtas: palyginta %1 veidų, %2 suskirstyta į grupes.</translation>
         </message>
         <message>
             <source>Grouping cancelled. The groups made so far are kept.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grupavimas atšauktas. Iki šiol sudarytos grupės išsaugotos.</translation>
         </message>
         <message>
             <source>The grouping failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grupavimas nepavyko: %1</translation>
         </message>
         <message>
             <source>PicasaPy goes through the pictures of your library and looks for faces. Pictures that already carry a name tag are left untouched. You can close this window while the search runs: the work continues, and the progress stays visible next to the Unnamed album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy peržiūri bibliotekos nuotraukas ir ieško veidų. Nuotraukos, kuriose jau yra vardo žyma, nekeičiamos. Kol vyksta paieška, šį langą galite užverti: darbas bus tęsiamas, o eiga bus rodoma šalia albumo „Be pavadinimo“.</translation>
         </message>
         <message>
             <source>Searching...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoma...</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Scanning for faces... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoma veidų... %1% baigta</translation>
         </message>
         <message>
             <source>Scanning for faces...</source>
@@ -265,54 +265,89 @@ picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
         <message>
             <source>As a second step PicasaPy can compare the faces it found and put the similar ones into the same group, so a whole group can be given a name at once.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Antruoju žingsniu PicasaPy gali palyginti rastus veidus ir sugrupuoti panašius, kad visai grupei būtų galima iš karto priskirti vardą.</translation>
         </message>
         <message>
             <source>Grouping...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grupuojama...</translation>
         </message>
         <message>
             <source>Group Faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grupuoti veidus</translation>
         </message>
         <message>
             <source>Grouping faces... %1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grupuojami veidai... %1 / %2</translation>
         </message>
         <message>
             <source>Pictures with unnamed faces: %1 — they are waiting in the Unnamed album, in the left pane.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukos su neįvardytais veidais: %1 — jos laukia kairėje esančiame albume „Be pavadinimo“.</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <source>Download the model</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsisiųsti modelį</translation>
         </message>
         <message>
             <source>Downloading...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButton</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsisiunčiama...</translation>
         </message>
         <message>
             <source>Downloading the model... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsisiunčiamas modelis... %1% baigta</translation>
         </message>
         <message>
             <source>Downloading the model...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsisiunčiamas modelis...</translation>
+        </message>
+    </context>
+    <context>
+        <name>PlacesMarker</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="44" />
+            <source>1 photo here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>1 nuotrauka čia:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="45" />
+            <source>%d photos here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%d nuotraukos (-ų) čia:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="55" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="56" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
+            <source>Search for these photos in Picasa</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ieškoti šių nuotraukų sistemoje „Picasa“</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
+            <source>Erase location info</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ištrinti vietos informaciją</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="73" />
+            <source>Erase map coordinates(i.e., GPS information) from these photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ištrinti žemėlapio koordinates (t. y. GPS duomenis), skirtas šioms nuotraukoms</translation>
         </message>
     </context>
     <context>
@@ -320,12 +355,12 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
         <message>
             <source>No printer selected.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepasirinktas spausdintuvas.</translation>
         </message>
         <message>
             <source>%1 — %2 × %3 mm, %4</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 — %2 × %3 mm, %4</translation>
         </message>
         <message>
             <source>portrait</source>
@@ -342,47 +377,47 @@ picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
         <message>
             <source>No pictures to print.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nėra nuotraukų spausdinti.</translation>
         </message>
         <message>
             <source>Invalid output path.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Netinkamas išvesties kelias.</translation>
         </message>
         <message>
             <source>Invalid print settings: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Netinkami spausdinimo nustatymai: %1</translation>
         </message>
         <message>
             <source>Unknown printer: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nežinomas spausdintuvas: %1</translation>
         </message>
         <message>
             <source>default printer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>numatytasis spausdintuvas</translation>
         </message>
         <message>
             <source>The print job could not be started.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko pradėti spausdinimo užduoties.</translation>
         </message>
         <message>
             <source>None of the selected pictures could be printed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko išspausdinti nė vienos pasirinktos nuotraukos: %1</translation>
         </message>
         <message>
             <source>Album:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Albumas:</translation>
         </message>
         <message>
             <source>Date:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Data:</translation>
         </message>
         <message>
             <source>Unnamed Album</source>
@@ -411,7 +446,7 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pagalba</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -419,6 +454,13 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
             <translation>Spausdintuvo sąranka</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>A printer must be installed in order to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>Kad galėtumėte spausdinti, reikia prijungti spausdintuvą.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -430,19 +472,19 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
         <message>
             <source>Review</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Peržiūra</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kai kurios nuotraukos per mažos tinkamai spausdinti. Galite pašalinti šias nuotraukas, jas vis tiek spausdinti arba atšaukti ir pakeisti spausdinimo dydį.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Low Quality: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Prasta kokybė: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -483,7 +525,7 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Make sure your photos are ready to print</source>
@@ -495,39 +537,39 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Best quality (%1 pixels/inch)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Geriausia kokybė (%1 pikselių colyje)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Good quality (%1 pixels/inch)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Gera kokybė (%1 pikselių colyje)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Bad quality (%1 pixels/inch)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Prasta kokybė (%1 pikselių colyje)</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktu spausdinimo dydžiu šių nuotraukų raiška nesiekia %1 pikselių colyje:</translation>
         </message>
         <message>
             <source>%1 pixels/inch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 pikselių colyje</translation>
         </message>
         <message>
             <source>%1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 / %2</translation>
         </message>
         <message>
             <source>Print size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinimo dydis:</translation>
         </message>
         <message>
             <source>CD Cover Size</source>
@@ -557,7 +599,7 @@ picasapy-origin-key: stringres:ytPrintSizes::e4x5</extracomment>
             <source>4 x 6</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation type="unfinished" />
+            <translation>4 x 6</translation>
         </message>
         <message>
             <source>5 x 7</source>
@@ -628,23 +670,24 @@ picasapy-origin-key: stringres:ytPrintSizes::eWallet;tooltips:Label(printpanel/w
         <message>
             <source>Smallest picture: %1 pixels/inch.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mažiausios nuotraukos raiška: %1 pikselių colyje.</translation>
         </message>
         <message>
             <source>picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>nuotrauka</translation>
         </message>
         <message>
             <source>pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>nuotraukos</translation>
         </message>
         <message>
             <source>Please review before printing.
 %1 small %2 found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Prieš spausdindami peržiūrėkite.
+Rasta mažų nuotraukų: %1 %2.</translation>
         </message>
         <message>
             <source>You are ready to print.</source>
@@ -655,81 +698,83 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
         <message>
             <source>Print...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinti...</translation>
         </message>
         <message>
             <source>Printing is unavailable: the Qt print support module is missing. On Debian/Ubuntu you can install it with: sudo apt install python3-pyside6.qtprintsupport</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinimas negalimas: trūksta Qt spausdinimo palaikymo modulio. Debian / Ubuntu sistemoje jį galite įdiegti komanda: sudo apt install python3-pyside6.qtprintsupport</translation>
         </message>
         <message>
             <source>No pictures to print.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nėra nuotraukų spausdinti.</translation>
         </message>
         <message>
             <source>Choose the target file.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite paskirties failą.</translation>
         </message>
         <message>
             <source>These pictures could not be printed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko išspausdinti šių nuotraukų: %1</translation>
         </message>
         <message numerus="yes">
             <source>Pictures to print: %1 (%n page(s))</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Spausdinamų nuotraukų: %1 (%n puslapis)</numerusform>
+                <numerusform>Spausdinamų nuotraukų: %1 (%n puslapiai)</numerusform>
+                <numerusform>Spausdinamų nuotraukų: %1 (%n puslapių)</numerusform>
             </translation>
         </message>
         <message>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation type="unfinished" />
+            <translation>Kontaktų lapas</translation>
         </message>
         <message>
             <source>Columns:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Stulpeliai:</translation>
         </message>
         <message>
             <source>Printer:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdintuvas:</translation>
         </message>
         <message>
             <source>Print to a PDF file...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinti į PDF failą...</translation>
         </message>
         <message>
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(nepasirinkta)</translation>
         </message>
         <message>
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
         <message>
             <source>Fit to page:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Talpinti puslapyje:</translation>
         </message>
         <message>
             <source>Whole picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Visa nuotrauka</translation>
         </message>
         <message>
             <source>Fill the page (crop)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Užpildyti puslapį (apkirpti)</translation>
         </message>
         <message>
             <source>Orientation:</source>
@@ -740,7 +785,7 @@ picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
         <message>
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatiškai</translation>
         </message>
         <message>
             <source>Portrait</source>
@@ -757,38 +802,38 @@ picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
         <message>
             <source>Finished: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Baigta: %1</translation>
         </message>
         <message>
             <source>Printing: %1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinama: %1 / %2</translation>
         </message>
         <message>
             <source>Print</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinti</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <source>PDF documents (*.pdf)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PDF dokumentai (*.pdf)</translation>
         </message>
         <message>
             <source>Copies of each picture:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kiekvienos nuotraukos kopijų skaičius:</translation>
         </message>
         <message>
             <source>Add another copy of each Photo to be printed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vienetu padidinti visų spausdinamų nuotraukų kopijų skaičių</translation>
         </message>
     </context>
     <context>
@@ -797,14 +842,14 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Border and text options</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rėmelio ir teksto parinktys</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -831,13 +876,13 @@ picasapy-origin-key: printoptionstext:Label(printoptions/usenotext_label)</extra
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Antraštė</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Filename</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo pavadinimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -871,13 +916,13 @@ picasapy-origin-key: printoptionstext:Label(printoptions/textonborder_label)</ex
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Font</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šriftas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -946,13 +991,13 @@ picasapy-origin-key: printoptionstext:Label(printoptions/border_color_label)</ex
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
@@ -967,12 +1012,12 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>No email program was found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nerasta el. pašto programa.</translation>
         </message>
         <message>
             <source>No email program with attachment support was found; opening a blank email without the pictures attached.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nerasta el. pašto programa su priedų palaikymu; atveriamas tuščias laiškas be pridėtų nuotraukų.</translation>
         </message>
     </context>
     <context>
@@ -997,7 +1042,7 @@ picasapy-origin-key: rightdrawerpanel_text:Tooltip(rightdrawerpanel/close)</extr
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Add a name</source>
@@ -1016,12 +1061,26 @@ You can drag the rectangle to position it, and move its sides to refine the shap
 
 (Be sure to either press Enter or click on an autocompleted name to indicate that you are done)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Instrukcijos:
+
+1) Pakeiskite stačiakampio dydį, kad jis atitiktų norimo pridėti asmens veidą.
+
+Galite nutempti stačiakampį į reikiamą vietą, o jo kraštines perkelti ir taip patikslinti formą.
+
+2) Po stačiakampiu spustelėkite „Pridėti vardą“ ir įveskite asmens vardą.
+
+(Baigę būtinai paspauskite Enter arba spustelėkite automatiškai pasiūlytą vardą.)</translation>
         </message>
         <message>
             <source>Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardas</translation>
+        </message>
+        <message>
+            <source>Type a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:peoplepanel::prompt4name</extracomment>
+            <translation>Įveskite vardą</translation>
         </message>
     </context>
     <context>
@@ -1029,7 +1088,7 @@ You can drag the rectangle to position it, and move its sides to refine the shap
         <message>
             <source>Options</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Parinktys</translation>
         </message>
         <message>
             <source>General</source>
@@ -1040,7 +1099,7 @@ picasapy-origin-key: options:options/tab3.title;stringres:IDS_GENERAL_PREFS</ext
         <message>
             <source>E-Mail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>El. paštas</translation>
         </message>
         <message>
             <source>File Types</source>
@@ -1051,12 +1110,12 @@ picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</e
         <message>
             <source>Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Skaidrių demonstracija</translation>
         </message>
         <message>
             <source>Printing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinimas</translation>
         </message>
         <message>
             <source>Network</source>
@@ -1073,13 +1132,13 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
         <message>
             <source>Name Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardų žymos</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
     </context>
     <context>
@@ -1098,8 +1157,9 @@ picasapy-origin-key: options:options/UITransitions.title</extracomment>
         </message>
         <message>
             <source>Show tooltips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
+            <translation>Rodyti pagalbos žymas</translation>
         </message>
         <message>
             <source>Single click to exit the editing view</source>
@@ -1116,14 +1176,16 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
         <message>
             <source>System Default (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sistemos numatytoji reikšmė (%1)</translation>
         </message>
         <message>
             <source>Change the language Picasa uses?
 
 It will change the next time Picasa is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pakeisti „Picasa“ naudojamą kalbą?
+
+Ji pasikeis kitą kartą paleidus „Picasa“.</translation>
         </message>
         <message>
             <source>Files:</source>
@@ -1134,47 +1196,47 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
         <message>
             <source>Detect duplicates on import</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuojant aptikti dublikatus</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išvalyti talpyklą...</translation>
         </message>
         <message>
             <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištuštinti miniatiūrų talpyklą? Prireikus miniatiūros bus sukurtos iš naujo — nuotraukos nepradings.</translation>
         </message>
         <message>
             <source>Empty</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išvalyti</translation>
         </message>
         <message>
             <source>Keep</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Palikti</translation>
         </message>
         <message>
             <source>%1 freed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atlaisvinta: %1.</translation>
         </message>
         <message>
             <source>%1 bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 baitų</translation>
         </message>
         <message>
             <source>%1 kB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 kB</translation>
         </message>
         <message>
             <source>%1 MB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB</translation>
         </message>
         <message>
             <source>Delete from disk without confirmation</source>
@@ -1191,13 +1253,18 @@ picasapy-origin-key: options:options/DoNotConfirmRemoveFromAlbum.title</extracom
         <message>
             <source>Help improve PicasaPy:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Padėkite tobulinti „PicasaPy“:</translation>
+        </message>
+        <message>
+            <source>Privacy...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Privatumas...</translation>
         </message>
         <message>
             <source>Send anonymous usage statistics</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_advoptions:gpuploader_advoptions/send_to_google.title;options:options/usagestats.title;stringres:INSTALLRES_statscheckbox</extracomment>
-            <translation type="unfinished" />
+            <translation>Siųsti anoniminę naudojimo statistiką</translation>
         </message>
         <message>
             <source>Automatic updates:</source>
@@ -1233,7 +1300,7 @@ picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
     </context>
     <context>
@@ -1259,7 +1326,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
         <message>
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 pikselių</translation>
         </message>
         <message>
             <source>Single picture size:</source>
@@ -1270,12 +1337,12 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
         <message>
             <source>Same as multiple (%1 pixels)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Toks pats kaip kelių nuotraukų (%1 pikselių)</translation>
         </message>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pradinis dydis</translation>
         </message>
         <message>
             <source>Send videos as:</source>
@@ -1304,7 +1371,7 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
         <message>
             <source>Mail program:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>El. pašto programa:</translation>
         </message>
         <message>
             <source>Use my Google Account</source>
@@ -1316,13 +1383,55 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
+            <source>.bmp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportBMP.title</extracomment>
+            <translation>.bmp</translation>
+        </message>
+        <message>
+            <source>.gif</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportGIF.title</extracomment>
+            <translation>.gif</translation>
+        </message>
+        <message>
             <source>Display JPEG files and:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Rodyti JPEG failus ir:</translation>
         </message>
         <message>
-            <source>RAW</source>
+            <source>.png</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPNG.title</extracomment>
+            <translation>.PNG</translation>
+        </message>
+        <message>
+            <source>.tga</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTGA.title</extracomment>
+            <translation>.tga</translation>
+        </message>
+        <message>
+            <source>.tif, .tiff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTIF.title</extracomment>
+            <translation>.tif, .tiff</translation>
+        </message>
+        <message>
+            <source>.webp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
+            <translation>.webp</translation>
+        </message>
+        <message>
+            <source>.psd (Photoshop)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPSD.title</extracomment>
+            <translation>.psd (Photoshop)</translation>
+        </message>
+        <message>
+            <source>RAW formats</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::RAW</extracomment>
             <translation>RAW formatai</translation>
@@ -1330,7 +1439,25 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
         <message>
             <source>Movies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Filmai</translation>
+        </message>
+        <message>
+            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportMovies.title</extracomment>
+            <translation>Filmai (.mov, .mpg, .m4v, .3gp, .avi ir pan.)</translation>
+        </message>
+        <message>
+            <source>Quicktime Movies (.MOV)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportQuicktime.title</extracomment>
+            <translation>„Quicktime“ filmai (.MOV)</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>Gerai</translation>
         </message>
         <message>
             <source>Supported Formats</source>
@@ -1363,7 +1490,7 @@ picasapy-origin-key: options:options/label104.title</extracomment>
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
     </context>
     <context>
@@ -1383,7 +1510,7 @@ picasapy-origin-key: options:options/labelgroup118.title</extracomment>
         <message>
             <source>Print size %1:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinimo dydis %1:</translation>
         </message>
         <message>
             <source>Use high quality previews (slower)</source>
@@ -1449,7 +1576,7 @@ picasapy-origin-key: stringres:ytPrintSizes::e4x5</extracomment>
             <source>4 x 6</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation type="unfinished" />
+            <translation>4 x 6</translation>
         </message>
         <message>
             <source>5 x 7</source>
@@ -1527,7 +1654,7 @@ picasapy-origin-key: stringres:ytPrintSizes::ePassport</extracomment>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation type="unfinished" />
+            <translation>Kontaktų lapas</translation>
         </message>
     </context>
     <context>
@@ -1560,7 +1687,7 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/loglevelgroup.title;o
             <source>Disable logging</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_options:gpuploader_options/disable_item.title;options:options/item137.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Išjungti žurnalų rašymą</translation>
         </message>
         <message>
             <source>Log errors only</source>
@@ -1596,7 +1723,7 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/loggroup.title;option
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
     </context>
     <context>
@@ -1610,7 +1737,7 @@ picasapy-origin-key: options:options/labelgroup145.title</extracomment>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pradinis dydis</translation>
         </message>
         <message>
             <source>When syncing large files, upload previews first</source>
@@ -1639,7 +1766,7 @@ picasapy-origin-key: options:options/confirmsync::disable.title</extracomment>
         <message>
             <source>Name Tags:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardų žymos:</translation>
         </message>
         <message>
             <source>Add a watermark for all photo uploads:</source>
@@ -1692,39 +1819,53 @@ picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
 picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
             <translation>Įkelti žmonių albumo miniatiūras į „Google“ kontaktus</translation>
         </message>
+        <message>
+            <source>Cluster threshold:</source>
+            <extracomment>    picasapy-origin-key: options:options/labelgroup181.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup181.title</extracomment>
+            <translation>Sankaupos slenkstis:</translation>
+        </message>
+        <message>
+            <source>Upload people album thumbnails to Google Contacts</source>
+            <extracomment>    picasapy-origin-key: options:options/uploadcontactphotos.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
+            <translation>Įkelti žmonių albumo miniatiūras į „Google“ kontaktus</translation>
+        </message>
     </context>
     <context>
         <name>WebExportDialog</name>
         <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti kaip HTML puslapį...</translation>
         </message>
         <message>
             <source>Page title:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Puslapio pavadinimas:</translation>
         </message>
         <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašyti į:</translation>
         </message>
         <message>
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(nepasirinkta)</translation>
         </message>
         <message>
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
         <message>
             <source>Choose target folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti paskirties aplanką...</translation>
         </message>
         <message>
             <source>Template:</source>
@@ -1733,50 +1874,79 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <translation>Šablonas:</translation>
         </message>
         <message>
-            <source>Picture size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>Export pictures at:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
+            <translation>Eksportuoti nuotraukas į:</translation>
         </message>
         <message>
-            <source>Thumbnail size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>Original Size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item4.title</extracomment>
+            <translation>Originalus dydis</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>1024 pixels (for large monitors)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item5.title</extracomment>
+            <translation>1024 taškai (dideliems monitoriams)</translation>
         </message>
         <message>
-            <source>Shadow pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>800 pixels (for large Web pages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item6.title</extracomment>
+            <translation>800 taškų (dideliems tinklalapiams)</translation>
         </message>
         <message>
-            <source>Shadow thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>640 pixels (for Web pages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item7.title</extracomment>
+            <translation>640 taškų (tinklalapiams)</translation>
+        </message>
+        <message>
+            <source>320 pixels (for email)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item8.title</extracomment>
+            <translation>320 taškų (el. laiškams)</translation>
+        </message>
+        <message>
+            <source>Export movies using:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup9.title</extracomment>
+            <translation>Eksportuoti filmus naudojant:</translation>
+        </message>
+        <message>
+            <source>First frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
+            <translation>Pirmas kadras</translation>
+        </message>
+        <message>
+            <source>Full movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+            <translation>Visas filmas</translation>
         </message>
         <message>
             <source>PicasaPy is generating the web page.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„PicasaPy“ kuria tinklalapį.</translation>
         </message>
         <message>
             <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tinklalapis sukurtas: %1 failų, %2</translation>
         </message>
         <message>
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kurti</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
     </context>
     <context>
@@ -1784,27 +1954,27 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>Choose a target folder first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite paskirties aplanką.</translation>
         </message>
         <message>
             <source>No pictures to export.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nėra eksportuotinų nuotraukų.</translation>
         </message>
         <message>
             <source>None of the selected pictures could be exported.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko eksportuoti nė vienos pasirinktos nuotraukos.</translation>
         </message>
         <message>
             <source>Sorry, there is not enough free disk space to safely download pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsiprašome, bet diske nepakanka vietos nuotraukoms saugiai siųsti.</translation>
         </message>
         <message>
             <source>Unknown web export template: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nežinomas žiniatinklio eksportavimo šablonas: %1</translation>
         </message>
     </context>
     <context>
@@ -1824,7 +1994,7 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION</extracomment>
         <message>
             <source>Set Folder Date...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nustatyti aplanko datą...</translation>
         </message>
         <message>
             <source>Edit Folder Description...</source>
@@ -1841,7 +2011,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti pasirinkimą</translation>
         </message>
         <message>
             <source>Invert Selection</source>
@@ -1852,7 +2022,7 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         <message>
             <source>Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atnaujinti miniatiūras</translation>
         </message>
         <message>
             <source>Sort Folder By</source>
@@ -1863,17 +2033,17 @@ picasapy-origin-key: stringres:Folder::SortFolderBy</extracomment>
         <message>
             <source>Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Data</translation>
         </message>
         <message>
             <source>Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardas</translation>
         </message>
         <message>
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis</translation>
         </message>
         <message>
             <source>Reverse Order</source>
@@ -1896,32 +2066,32 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Surasti diske</translation>
         </message>
         <message>
             <source>Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti iš „Picasa“...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti aplanką...</translation>
         </message>
         <message>
             <source>Delete Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti aplanką...</translation>
         </message>
         <message>
             <source>Upload to Google Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti į „Google“ nuotraukas...</translation>
         </message>
         <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti kaip HTML puslapį...</translation>
         </message>
         <message>
             <source>Add Name Tags</source>
@@ -1942,13 +2112,13 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION</extracomment>
             <location filename="../qml/PicasaPy/NewCollectionDialog.qml" />
             <source>“%1” is not a valid collection name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„%1“ nėra tinkamas kolekcijos pavadinimas.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/NewCollectionDialog.qml" />
             <source>You already have a collection named “%1”.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Jau turite kolekciją pavadinimu „%1“.</translation>
         </message>
         <message>
             <source>Enter Collection Name:</source>
@@ -1962,17 +2132,29 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
         <message>
             <source>Add Custom Aspect Ratio</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti tinkintą kraštinių santykį</translation>
         </message>
         <message>
-            <source>Width:</source>
+            <source>Dimensions:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Matmenys:</translation>
+        </message>
+        <message>
+            <source>Example:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio:customaspectratio/labelgroup10.title;rename:rename/sample.title;stringres:RenameDialog::Example</extracomment>
+            <translation>Pavyzdys:</translation>
+        </message>
+        <message>
+            <source>   4 x 6   Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio:customaspectratio/label11.title</extracomment>
+            <translation>4 x 6   Mažas spaudinys</translation>
         </message>
         <message>
             <source>Name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardas:</translation>
         </message>
     </context>
     <context>
@@ -1981,29 +2163,29 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
             <location filename="../relocate_controller.py" />
             <source>The chosen destination is not a folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkta paskirties vieta nėra aplankas.</translation>
         </message>
         <message>
             <location filename="../relocate_controller.py" />
             <source>The destination is inside the current database folder. Choose a folder outside it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paskirties vieta yra dabartinio duomenų bazės aplanko viduje. Pasirinkite aplanką už jo ribų.</translation>
         </message>
         <message>
             <source>The destination folder is not empty. Choose an empty folder and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paskirties aplankas nėra tuščias. Pasirinkite tuščią aplanką ir bandykite dar kartą.</translation>
         </message>
         <message>
             <location filename="../relocate_controller.py" />
             <source>The database cannot be moved to a network drive. Nothing has been changed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Duomenų bazės negalima perkelti į tinklo diską. Nieko nepakeista.</translation>
         </message>
         <message>
             <source>Choose a new database location first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite naują duomenų bazės vietą.</translation>
         </message>
     </context>
     <context>
@@ -2011,44 +2193,44 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
         <message>
             <source>Compacting</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Glaudinama</translation>
         </message>
         <message>
             <source>PicasaPy is compacting its database to save disk space. This may take several minutes.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„PicasaPy“ glaudina duomenų bazę, kad atlaisvintų vietos diske. Tai gali užtrukti kelias minutes.</translation>
         </message>
         <message>
             <source>Compacting...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Glaudinama...</translation>
         </message>
         <message>
             <source>The database is already compact — nothing to do.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Duomenų bazė jau suglaudinta — nieko nereikia daryti.</translation>
         </message>
         <message>
             <source>Compacting cancelled. Your database is unchanged.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Glaudinimas atšauktas. Duomenų bazė nepakeista.</translation>
         </message>
         <message>
             <source>Done.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
-            <translation type="unfinished" />
+            <translation>Atlikta.</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
     </context>
     <context>
@@ -2080,12 +2262,12 @@ picasapy-origin-key: stringres:eMenuTools::ID_PASSPORT</extracomment>
         <message>
             <source>The picture could not be read.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko perskaityti nuotraukos.</translation>
         </message>
         <message>
             <source>The cropped picture could not be saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko išsaugoti apkirptos nuotraukos.</translation>
         </message>
         <message>
             <source>OK</source>
@@ -2099,27 +2281,27 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Moving the database</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkeliama duomenų bazė</translation>
         </message>
         <message>
             <source>PicasaPy is moving the database.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„PicasaPy“ perkelia duomenų bazę.</translation>
         </message>
         <message>
             <source>Photo index…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukų indeksas…</translation>
         </message>
         <message>
             <source>Thumbnail cache…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Miniatiūrų talpykla…</translation>
         </message>
         <message>
             <source>Finishing…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Baigiama…</translation>
         </message>
     </context>
     <context>
@@ -2133,12 +2315,12 @@ picasapy-origin-key: move_database:move_database/window1.title</extracomment>
         <message>
             <source>Move the photo index and thumbnail cache to a new folder. PicasaPy moves them the next time it starts.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelkite nuotraukų indeksą ir miniatiūrų talpyklą į naują aplanką. „PicasaPy“ perkels juos kitą kartą paleidus programą.</translation>
         </message>
         <message>
             <source>Network drives (e.g. a NAS) are fully supported and are the normal setup for PicasaPy — make sure the drive stays connected while the app is running.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tinklo diskai (pvz., NAS) yra visiškai palaikomi ir yra įprastas „PicasaPy“ naudojimo būdas — veikiant programai diskas turi likti prijungtas.</translation>
         </message>
         <message>
             <source>Current database location:</source>
@@ -2155,18 +2337,18 @@ picasapy-origin-key: move_database:move_database/labelgroup9.title</extracomment
         <message>
             <source>(none selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(nepasirinkta)</translation>
         </message>
         <message>
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
         <message>
             <source>Default</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Numatytasis</translation>
         </message>
         <message>
             <source>Choose database location...</source>
@@ -2177,7 +2359,7 @@ picasapy-origin-key: stringres:eMenuTools::ID_MOVE_DATABASE</extracomment>
         <message>
             <source>Choose a new database location first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite naują duomenų bazės vietą.</translation>
         </message>
         <message>
             <source>Move on next restart</source>
@@ -2188,18 +2370,18 @@ picasapy-origin-key: move_database:move_database/move.title</extracomment>
         <message>
             <source>PicasaPy will move the database the next time it starts.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„PicasaPy“ perkels duomenų bazę kitą kartą paleidus programą.</translation>
         </message>
         <message>
             <source>Cancel the move</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti perkėlimą</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
     </context>
     <context>
@@ -2213,12 +2395,12 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
         <message>
             <source>No</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ne</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Do not ask again</source>
@@ -2232,17 +2414,17 @@ picasapy-origin-key: stringres:CMakeFaceMoviePanelRememberDialog</extracomment>
         <message>
             <source>     %1      %2 on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>     %1      %2 diske</translation>
         </message>
         <message>
             <source>     %1 to %2     %3 on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>     %1 į %2     %3 diske</translation>
         </message>
         <message>
             <source>Tags: </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymos: </translation>
         </message>
         <message>
             <source>Pictures up to %d days old.</source>
@@ -2279,13 +2461,35 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <location filename="../formatting.py" />
             <source>File Path</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo kelias</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>File Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo dydis</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movieinfo;stringres:ytImageMetadata::MovieInfo</extracomment>
+            <translation>Filmo informacija</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Rate</source>
+            <extracomment>picasapy-deviation: szándékos eltérés az eredeti magyar fordítástól (#4855) — a „rate” itt sebesség, az érték fps; az eredeti „Mozgófilm minősítése” félrevezető
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movierate;stringres:ytImageMetadata::MovieRate</extracomment>
+            <translation>Filmo įvertinimas</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>Movie Length</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPropertiesDlg::movielength;stringres:ytImageMetadata::MovieLength</extracomment>
+            <translation>Filmo trukmė</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2324,6 +2528,13 @@ picasapy-origin-key: stringres:EXIF::DateTime</extracomment>
         </message>
         <message>
             <location filename="../formatting.py" />
+            <source>File Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FileDate</extracomment>
+            <translation>Failo data</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
             <source>Orientation</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
@@ -2349,6 +2560,13 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:EXIF::FocalLengthIn35mmFilm</extracomment>
             <translation>Židinio nuotolis 35 mm juostoje</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>CCD Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::CCDWidth</extracomment>
+            <translation>CCD plotis</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2396,7 +2614,7 @@ picasapy-origin-key: stringres:EXIF::ExposureProgram</extracomment>
             <location filename="../formatting.py" />
             <source>Compression</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Glaudinimas</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2409,13 +2627,19 @@ picasapy-origin-key: stringres:EXIF::ColorSpace</extracomment>
             <location filename="../formatting.py" />
             <source>ICC Profile</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ICC profilis</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Embedded Thumbnail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įterptoji miniatiūra</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>JPEG Quality</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>JPEG kokybė</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2423,6 +2647,13 @@ picasapy-origin-key: stringres:EXIF::ColorSpace</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
             <translation>Raktiniai žodžiai</translation>
+        </message>
+        <message>
+            <location filename="../formatting.py" />
+            <source>People Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:XMP::Regions</extracomment>
+            <translation>Žmonių žymos</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2512,7 +2743,7 @@ picasapy-origin-key: stringres:EXIF::NotDefined;stringres:EXIF::Undefined</extra
             <location filename="../formatting.py" />
             <source>Normal Program</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įprastinė programa</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2546,7 +2777,7 @@ picasapy-origin-key: stringres:ytImageMetadata::sRGB</extracomment>
             <location filename="../formatting.py" />
             <source>Uncalibrated</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nekalibruota</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2671,50 +2902,50 @@ picasapy-origin-key: stringres:EXIF::PentaxPEFCompressed</extracomment>
             <location filename="../formatting.py" />
             <source>Auto</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Embedded</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įterptas</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 m</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 m</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atspindėta</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Rotated 180°</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukta 180°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored and rotated 180°</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atspindėta ir pasukta 180°</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored and rotated 90° CCW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atspindėta ir pasukta 90° prieš laikrodžio rodyklę</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Normal</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/item24.title;stringres:CTitleDialog::fontNormal;stringres:EXIF::Normal;stringres:EXIF::Standard</extracomment>
-            <translation type="unfinished" />
+            <translation>Normalus</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
@@ -2741,79 +2972,79 @@ picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
             <location filename="../formatting.py" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kūrybiniai</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Rotated 90° CW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukta 90° pagal laikrodžio rodyklę</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Mirrored and rotated 90° CW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atspindėta ir pasukta 90° pagal laikrodžio rodyklę</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Rotated 90° CCW</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukta 90° prieš laikrodžio rodyklę</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 baitų</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 GB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 GB</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>%1 TB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 TB</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="39" />
             <source>%1 KB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 KB</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="40" />
             <source>%1 MB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB</translation>
         </message>
         <message>
             <location filename="../formatting.py" />
             <source>Tags: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymos: %1</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="67" />
             <source>%1x%2 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 × %2 pikselių</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="93" />
             <source>File name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo pavadinimas</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="94" />
             <source>Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplankas</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="95" />
@@ -2826,13 +3057,13 @@ picasapy-origin-key: stringres:ytImageMetadata::FileSize</extracomment>
             <location filename="../formatting.py" line="98" />
             <source>Dimensions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Matmenys</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="102" />
             <source>Date taken</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fotografavimo data</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="115" />
@@ -2873,25 +3104,25 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
             <location filename="../formatting.py" line="131" />
             <source>%1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 mm</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="137" />
             <source>Flash</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="138" />
             <source>Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė suveikė</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="138" />
             <source>Did not fire</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė nesuveikė</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="142" />
@@ -2904,7 +3135,7 @@ picasapy-origin-key: stringres:EXIF::LightSource;stringres:EXIF::WhiteBalance</e
             <location filename="../formatting.py" line="143" />
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatiškai</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="144" />
@@ -2917,49 +3148,49 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <location filename="../formatting.py" line="167" />
             <source>Focal length: %1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Židinio nuotolis: %1 mm</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="173" />
             <source>(35 mm equivalent: %1 mm)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(35 mm ekvivalentas: %1 mm)</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="180" />
             <source>ISO: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ISO: %1</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="182" />
             <source>Flash: Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė: suveikė</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="182" />
             <source>Flash: Off</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė: išjungta</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="194" />
             <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Matoma aplankų: %1 / nuotraukų: %2 (%3 sek.) %4 GB</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="207" />
             <source>0 pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>0 nuotraukų</translation>
         </message>
         <message>
             <location filename="../formatting.py" line="217" />
             <source>%1 MB on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB diske</translation>
         </message>
     </context>
     <context>
@@ -2968,13 +3199,13 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <location filename="../qml/PicasaPy/AboutDialog.qml" line="7" />
             <source>About PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apie „PicasaPy“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AboutDialog.qml" line="23" />
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiuolaikiška atvirojo kodo „Picasa“ alternatyva.</translation>
         </message>
     </context>
     <context>
@@ -2983,17 +3214,17 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <location filename="../controller.py" />
             <source>Tags: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymos: %1</translation>
         </message>
         <message>
             <source>({current} / {total})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>({current} / {total})</translation>
         </message>
         <message>
             <source>Color search is still being prepared: {0} of {1} photos have been analyzed so far. Photos that have not been analyzed yet cannot show up in the results, but the list fills in on its own as soon as the preparation finishes.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spalvų paieška vis dar ruošiama: iki šiol išanalizuota {0} iš {1} nuotraukų. Dar neanalizuotos nuotraukos paieškos rezultatuose nebus rodomos, tačiau sąrašas bus automatiškai papildytas, kai paruošimas bus baigtas.</translation>
         </message>
         <message>
             <source>DRAFT</source>
@@ -3004,37 +3235,37 @@ picasapy-origin-key: stringres:projectutils::draft</extracomment>
         <message>
             <source>The collage project file could not be opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko atverti koliažo projekto failo.</translation>
         </message>
         <message>
             <source>Unknown picture frame.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nežinomas nuotraukos rėmelis.</translation>
         </message>
         <message>
             <source>No pictures are selected.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepasirinkta nuotraukų.</translation>
         </message>
         <message>
             <source>The movie folder could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko sukurti filmo aplanko.</translation>
         </message>
         <message>
             <source>No target file was chosen.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepasirinktas paskirties failas.</translation>
         </message>
         <message>
             <source>Unknown collage type.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nežinomas koliažo tipas.</translation>
         </message>
         <message>
             <source>None of the selected pictures could be read.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko perskaityti nė vienos pasirinktos nuotraukos.</translation>
         </message>
         <message>
             <source>Creating collage… shutting down</source>
@@ -3057,27 +3288,27 @@ picasapy-origin-key: stringres:collage::initializing</extracomment>
         <message>
             <source>The collage is ready</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Koliažas paruoštas</translation>
         </message>
         <message>
             <source>Sorry, there is not enough free disk space to safely download pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsiprašome, bet diske nepakanka vietos nuotraukoms saugiai siųsti.</translation>
         </message>
         <message>
             <source>%1x%2 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 × %2 pikselių</translation>
         </message>
         <message>
             <source>File name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo pavadinimas</translation>
         </message>
         <message>
             <source>Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplankas</translation>
         </message>
         <message>
             <source>File size</source>
@@ -3088,12 +3319,12 @@ picasapy-origin-key: stringres:ytImageMetadata::FileSize</extracomment>
         <message>
             <source>Dimensions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Matmenys</translation>
         </message>
         <message>
             <source>Date taken</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fotografavimo data</translation>
         </message>
         <message>
             <source>Camera</source>
@@ -3128,22 +3359,22 @@ picasapy-origin-key: stringres:EXIF::FocalLength</extracomment>
         <message>
             <source>%1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 mm</translation>
         </message>
         <message>
             <source>Flash</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė</translation>
         </message>
         <message>
             <source>Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė suveikė</translation>
         </message>
         <message>
             <source>Did not fire</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė nesuveikė</translation>
         </message>
         <message>
             <source>White balance</source>
@@ -3154,7 +3385,7 @@ picasapy-origin-key: stringres:EXIF::LightSource;stringres:EXIF::WhiteBalance</e
         <message>
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatiškai</translation>
         </message>
         <message>
             <source>Manual</source>
@@ -3165,29 +3396,31 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         <message>
             <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Matoma aplankų: %1 / nuotraukų: %2 (%3 sek.) %4 GB</translation>
         </message>
         <message>
             <source>0 pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>0 nuotraukų</translation>
         </message>
         <message numerus="yes">
             <source>%n picture(s)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>%n nuotrauka</numerusform>
+                <numerusform>%n nuotraukos</numerusform>
+                <numerusform>%n nuotraukų</numerusform>
             </translation>
         </message>
         <message>
             <source>%1 MB on disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 MB diske</translation>
         </message>
         <message>
             <source>Album %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Albumas %1</translation>
         </message>
     </context>
     <context>
@@ -3195,27 +3428,27 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         <message>
             <source>Focal length: %1 mm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Židinio nuotolis: %1 mm</translation>
         </message>
         <message>
             <source>(35 mm equivalent: %1 mm)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(35 mm ekvivalentas: %1 mm)</translation>
         </message>
         <message>
             <source>ISO: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ISO: %1</translation>
         </message>
         <message>
             <source>Flash: Fired</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė: suveikė</translation>
         </message>
         <message>
             <source>Flash: Off</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blykstė: išjungta</translation>
         </message>
         <message>
             <source>No EXIF data available.</source>
@@ -3294,7 +3527,7 @@ picasapy-origin-key: stringres:filter_Sixties_label0</extracomment>
             <source>Soften</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Softness;stringres:filter_Soften_label0</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašviesinti</translation>
         </message>
         <message>
             <location filename="../edit_action_names.py" />
@@ -3307,61 +3540,61 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Legacy Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Seni efektai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apkirpti pagal veidus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Komponuoti pagal veidus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apkirpti pagal spalvą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apkirpti pagal detales</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apkirpti pagal horizontą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Daugiau efektų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>The automatic copy is not available yet. To edit this picture, copy it to a writable folder yourself, or remove the write protection.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinė kopija dar nepasiekiama. Norėdami redaguoti šią nuotrauką, nukopijuokite ją į aplanką, kuriame galima įrašyti, arba pašalinkite apsaugą nuo įrašymo.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="34" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="35" />
             <source>Redo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grąžinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
@@ -3372,16 +3605,17 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current aspect</source>
+            <source>Current ratio</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
             <translation>Dabartinis santykis</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="356" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
         </message>
         <message>
             <source>Current display</source>
@@ -3441,19 +3675,19 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
             <source>A4: Full page</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>A4: visas puslapis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="372" />
             <source>Full page (A4)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Visas puslapis (A4)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="105" />
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kvadratas: CD viršelis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
@@ -3466,50 +3700,50 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
             <source>This image's orientation has been modified by the Straighten tool and might not crop accurately… try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šio vaizdo orientaciją pakeitė įrankis „Ištiesinti“, todėl gali nepavykti jo tiksliai apkirpti… pabandykite anuliuoti ištiesinimo pataisą, apkirpti dar kartą ir, jei reikia, vėl ištiesinti.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1834" />
             <source>Add Custom Aspect Ratio…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti pasirinktinį kraštinių santykį…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1810" />
             <source>Delete this custom aspect ratio?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti šį pasirinktinį kraštinių santykį?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="106" />
             <source>4:3: Standard screen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>4:3: standartinis ekranas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="107" />
             <source>16:10: Widescreen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>16:10: plačiaekranis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="108" />
             <source>16:9: HDTV</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>16:9: HDTV</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="109" />
             <source>5:3: Wide frame</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>5:3: platus rėmelis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="265" />
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="299" />
             <source>Common Fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dažniausiai naudojamos pataisos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="270" />
@@ -3524,7 +3758,7 @@ picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="519" />
             <source>Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Efektai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="314" />
@@ -3551,32 +3785,32 @@ picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;t
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="334" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Man sekasi!</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="352" />
             <source>Creative Kit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kūrybinis rinkinys</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="340" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis kontrasto nustatymas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="346" />
             <source>Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis spalvų nustatymas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="352" />
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>Retušuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="357" />
@@ -3589,13 +3823,13 @@ picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMeta
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Copy Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuoti antraštę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Add text based on the picture's caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti tekstą pagal nuotraukos antraštę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
@@ -3608,37 +3842,37 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Outline color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kontūro spalva</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Don't show the solid fill color (show outline only)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nerodyti visiško užpildymo spalvos (rodyti tik kontūrą)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Outline thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kontūro storis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Opacity</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepermatomumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Remove all existing text</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti visą esamą tekstą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>Neutral Color Picker</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Neutralios spalvos parinkimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="409" />
@@ -3672,25 +3906,25 @@ picasapy-origin-key: stringres:filter_colorfix_label2;stringres:filter_colortemp
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="534" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sepija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="539" />
             <source>B&amp;W</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nespalvota</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="544" />
             <source>Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašiltinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="549" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Juostelės grūdėtumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="554" />
@@ -3752,34 +3986,14 @@ picasapy-origin-key: tooltips:Label(editpanel/crop_label)</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="639" />
             <source>Choose a size below, then drag on the picture to select the area you want to keep.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="718" />
-            <source>Top left</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="723" />
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Peizažas</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="728" />
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Portretas</translation>
+            <translation>Pasirinkite toliau pateiktą dydį, tada tempdami pele nuotraukoje pažymėkite sritį, kurią norite išsaugoti.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="738" />
             <source>Rotate</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Rotate;stringres:ImageFilters::Rotation;stringres:filter_rot_label0;tooltips:Label(editpanel/croprotatecrop)</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="743" />
@@ -3799,19 +4013,19 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="768" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="773" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="326" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kūrybiniai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="332" />
@@ -3824,7 +4038,7 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="595" />
             <source>Sharpen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Smailinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="659" />
@@ -4020,13 +4234,13 @@ picasapy-origin-key: stringres:filter_RoundedEdges_label0</extracomment>
         <message>
             <source>Film Grain (Fine)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Plėvelės grūdėtumas (smulkus)</translation>
         </message>
         <message>
             <source>Amount</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Amount;stringres:filter_backlight_label1;stringres:filter_linblur_label1;stringres:filter_radblur_label2;stringres:filter_sat_label1;stringres:filter_unsharp2_label1;stringres:filter_unsharp_label1</extracomment>
-            <translation type="unfinished" />
+            <translation>Kiekis</translation>
         </message>
         <message>
             <source>Angle</source>
@@ -4037,7 +4251,7 @@ picasapy-origin-key: stringres:ImageFilters::Angle</extracomment>
         <message>
             <source>Block Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bloko dydis</translation>
         </message>
         <message>
             <source>Blur</source>
@@ -4048,12 +4262,12 @@ picasapy-origin-key: stringres:filter_blur_label0</extracomment>
         <message>
             <source>Blur Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Suliejimo spindulys</translation>
         </message>
         <message>
             <source>Border Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rėmelio plotis</translation>
         </message>
         <message>
             <source>Brightness</source>
@@ -4064,32 +4278,27 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
         <message>
             <source>Center X</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Centro X koordinatė</translation>
         </message>
         <message>
             <source>Center Y</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Centro Y koordinatė</translation>
         </message>
         <message>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Edge Strength</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spalvų derinys</translation>
         </message>
         <message>
             <source>Gradient</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Gradientas</translation>
         </message>
         <message>
             <source>Inner Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vidinis spindulys</translation>
         </message>
         <message>
             <source>Intensity</source>
@@ -4100,12 +4309,12 @@ picasapy-origin-key: stringres:ImageFilters::Intensity;stringres:filter_glow2_la
         <message>
             <source>Line Position</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Linijos padėtis</translation>
         </message>
         <message>
             <source>Preserve Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugoti spalvą</translation>
         </message>
         <message>
             <source>Radius</source>
@@ -4128,12 +4337,7 @@ picasapy-origin-key: stringres:EXIF::Sharpness;stringres:filter_radsat_label2</e
         <message>
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Smoothness</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis</translation>
         </message>
         <message>
             <source>Strength</source>
@@ -4144,12 +4348,12 @@ picasapy-origin-key: stringres:CDesaturateFilter::strength;stringres:ImageFilter
         <message>
             <source>Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Plotis</translation>
         </message>
         <message>
             <source>Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grūdėtumas</translation>
         </message>
         <message>
             <source>Contrast</source>
@@ -4166,12 +4370,12 @@ picasapy-origin-key: stringres:ImageFilters::Blur1;stringres:filter_glow2_label0
         <message>
             <source>Steps</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žingsniai</translation>
         </message>
         <message>
             <source>Smoothing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Glodinimas</translation>
         </message>
         <message>
             <source>Impact</source>
@@ -4188,12 +4392,12 @@ picasapy-origin-key: stringres:ImageFilters::BlendMode</extracomment>
         <message>
             <source>Hue</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atspalvis</translation>
         </message>
         <message>
             <source>Fade</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išnykimas</translation>
         </message>
         <message>
             <source>Color</source>
@@ -4216,32 +4420,32 @@ picasapy-origin-key: stringres:ImageFilters::InnerColor</extracomment>
         <message>
             <source>Black Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Juoda spalva</translation>
         </message>
         <message>
             <source>White Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Balta spalva</translation>
         </message>
         <message>
             <source>Outer Thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išorinis storumas</translation>
         </message>
         <message>
             <source>Inner Thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vidinis storumas</translation>
         </message>
         <message>
             <source>Corner Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kampo spindulys</translation>
         </message>
         <message>
             <source>Caption Height</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Antraštės aukštis</translation>
         </message>
         <message>
             <source>Distance</source>
@@ -4252,7 +4456,7 @@ picasapy-origin-key: stringres:ImageFilters::Distance</extracomment>
         <message>
             <source>Shadow Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šešėlio spalva</translation>
         </message>
         <message>
             <source>Background Color</source>
@@ -4263,22 +4467,22 @@ picasapy-origin-key: stringres:ImageFilters::BackgroundColor</extracomment>
         <message>
             <source>Rounded</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Užapvalinti</translation>
         </message>
         <message>
             <source>Lighten</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašviesinti</translation>
         </message>
         <message>
             <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spustelėkite sritį, kurią norite taisyti. Tada perkelkite pelę ir peržiūrėkite sritį, kuria ji bus pakeista. Spustelėkite vaizdą dar kartą, kad pritaikytumėte pakeitimą. Kartokite veiksmus.</translation>
         </message>
         <message>
             <source>Brush Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Teptuko dydis</translation>
         </message>
         <message>
             <source>Refining…</source>
@@ -4289,22 +4493,22 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
         <message>
             <source>Undo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti fragmentą</translation>
         </message>
         <message>
             <source>Redo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grąžinti fragmentą</translation>
         </message>
         <message>
             <source>Regions selected: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktos sritys: %1</translation>
         </message>
         <message>
             <source>Type your text, then click on the photo to place it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įveskite tekstą, tada spustelėkite nuotrauką, kad jį įterptumėte.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2082" />
@@ -4317,7 +4521,7 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2088" />
             <source>Due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Disko klaida. Diskas gali būti pilnas arba tik skaitomas.</translation>
         </message>
     </context>
     <context>
@@ -4404,7 +4608,7 @@ picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
             <source>4x6</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation type="unfinished" />
+            <translation>4x6</translation>
         </message>
         <message>
             <source>8.5x11</source>
@@ -4439,23 +4643,23 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Poster tiles saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Plakato dalys išsaugotos.</translation>
         </message>
         <message>
             <source>The poster tiles could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko sukurti plakato dalių.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
             <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko rasti nuotraukų: %1. Jos nebus rodomos. (Trūkstami failai galėjo būti perkelti, pervadinti arba ištrinti.)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
@@ -4468,13 +4672,13 @@ picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
             <source>%1 pictures selected.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkta nuotraukų: %1.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
             <source>Collage type:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Koliažo tipas:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
@@ -4487,13 +4691,13 @@ picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
             <source>Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mozaika</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
             <source>Grid</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tinklelis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
@@ -4534,7 +4738,7 @@ picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
             <source>Select pictures in the library first, or put them in the Picture Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite nuotraukas bibliotekoje arba įdėkite jas į nuotraukų dėklą.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
@@ -4548,13 +4752,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation type="unfinished" />
+            <translation>Kontaktų lapas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
             <source>Frame Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mozaika su rėmeliu</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
@@ -4574,97 +4778,118 @@ picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(nepasirinkta)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
             <source>JPEG images (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>JPEG vaizdai (*.jpg)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
             <source>Movie</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Filmas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
             <source>Video size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vaizdo įrašo dydis:</translation>
         </message>
         <message>
             <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Filmo nuotraukos ir jų trukmė nustatomos pagal projekto failą; pradinis dydis parenkamas automatiškai.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
             <source>Seconds per picture:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sekundžių vienai nuotraukai:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
             <source>MP4 videos (*.mp4)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>MP4 vaizdo įrašai (*.mp4)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
             <source>Creating movie: %1 / %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kuriamas filmas: %1 / %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kurti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
             <source>Collage saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Koliažas išsaugotas: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
             <source>%1 pictures used.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Panaudota nuotraukų: %1.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
             <source>%1 pictures were skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Praleista nuotraukų: %1.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
             <source>The collage could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko sukurti koliažo.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Filmas išsaugotas: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>Pakeisti esamą ar sukurti naują?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>Pakeisti esamą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>Kurti naują</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
             <source>The movie could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko sukurti filmo.</translation>
         </message>
         <message>
             <source>Text</source>
@@ -4687,12 +4912,12 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment
         <message>
             <source>Sizes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydžiai</translation>
         </message>
         <message>
             <source>Dimensions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Matmenys</translation>
         </message>
         <message>
             <source>Transition style:</source>
@@ -4703,7 +4928,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</e
         <message>
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Iškirpti</translation>
         </message>
         <message>
             <source>Dissolve</source>
@@ -4732,7 +4957,7 @@ picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
         <message>
             <source>Wipe</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti</translation>
         </message>
         <message>
             <source>Wipe - top</source>
@@ -4846,7 +5071,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_labe
             <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>%1 Sec</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 sek.</translation>
         </message>
         <message>
             <source>Audio:</source>
@@ -4863,18 +5088,18 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extra
         <message>
             <source>No audio selected</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepasirinktas garso įrašas</translation>
         </message>
         <message>
             <source>Load…</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti…</translation>
         </message>
         <message>
             <source>Clear</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Valyti</translation>
         </message>
         <message>
             <source>Options</source>
@@ -4939,7 +5164,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)<
         <message>
             <source>Chronological</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Chronologiškai</translation>
         </message>
         <message>
             <source>Ordering of Slides:</source>
@@ -4962,7 +5187,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);
         <message>
             <source>Remove Photos Taken Within %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti nuotraukas, padarytas per %1</translation>
         </message>
         <message>
             <source>Back to selected slide</source>
@@ -4979,12 +5204,12 @@ picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
         <message>
             <source>Font:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šriftas:</translation>
         </message>
         <message>
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis:</translation>
         </message>
         <message>
             <source>Style:</source>
@@ -5001,12 +5226,12 @@ picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Cente
         <message>
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Man sekasi!</translation>
         </message>
         <message>
             <source>Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Antraštė</translation>
         </message>
         <message>
             <source>Caption - Classic</source>
@@ -5077,7 +5302,7 @@ picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepa
         <message>
             <source>Automatic Outline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis kontūras</translation>
         </message>
         <message>
             <source>Automatic Outline (like movie subtitles)</source>
@@ -5118,12 +5343,12 @@ picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</ex
         <message>
             <source>Add selected clips</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti pasirinktus klipus</translation>
         </message>
         <message>
             <source>Remove selected clip</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti pasirinktą klipą</translation>
         </message>
         <message>
             <source>Add the selected clip(s) to the end of the movie</source>
@@ -5140,7 +5365,7 @@ picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</ext
         <message>
             <source>Play selected clip only</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Leisti tik pasirinktą klipą</translation>
         </message>
         <message>
             <source>Preview</source>
@@ -5151,7 +5376,7 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres
         <message>
             <source>Pause</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pristabdyti</translation>
         </message>
         <message>
             <source>Show actual movie size (don't stretch)</source>
@@ -5168,23 +5393,23 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
         <message>
             <source>Please Confirm...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Patvirtinkite...</translation>
         </message>
         <message>
             <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bus sukurtas naujas filmas ir pašalintos visos teksto skaidrės, kurias pridėjote. Esate įsitikinę?</translation>
         </message>
         <message>
             <source>Recompute</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perskaičiuoti</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <source>Create Movie</source>
@@ -5195,7 +5420,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:b
         <message>
             <source>Audio files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Garso failai</translation>
         </message>
         <message>
             <source>Music files (*.mp3, *.wma)</source>
@@ -5208,6 +5433,25 @@ picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
             <translation>Muzikos failai (*.mp3,*.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Teksto skaidrė</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>%1     %2x%3 pixels</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1     %2x%3 pikselių</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>(%1 of %2)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(%1 iš %2)</translation>
         </message>
     </context>
     <context>
@@ -5230,13 +5474,13 @@ picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMeta
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Font:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šriftas:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5256,13 +5500,13 @@ picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Cente
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Man sekasi!</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Antraštė</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5332,7 +5576,7 @@ picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
             <source>Normal</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/item24.title;stringres:CTitleDialog::fontNormal;stringres:EXIF::Normal;stringres:EXIF::Standard</extracomment>
-            <translation type="unfinished" />
+            <translation>Normalus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5359,7 +5603,7 @@ picasapy-origin-key: stringres:CTitleDialog::fontBItalic</extracomment>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Automatic Outline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis kontūras</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
@@ -5379,13 +5623,13 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieTitleDialog.qml" />
             <source>Add</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti</translation>
         </message>
     </context>
     <context>
@@ -5411,7 +5655,7 @@ picasapy-origin-key: stringres:PublishToEarth::NoTagged</extracomment>
         <message>
             <source>The Google Earth file was written to %1, but this computer has no program associated with it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„Google“ žemės failas įrašytas į %1, tačiau šiame kompiuteryje nėra su juo susietos programos.</translation>
         </message>
         <message>
             <source>Export movies using:</source>
@@ -5452,17 +5696,17 @@ picasapy-origin-key: stringres:eMenuTools::ID_EXPORT_EARTH</extracomment>
         <message>
             <source>%1 pictures written to the Google Earth file.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Į „Google“ žemės failą įrašyta nuotraukų: %1.</translation>
         </message>
         <message>
             <source>None of the selected pictures has a location, so no Google Earth file was written.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nė viena pasirinkta nuotrauka neturi vietos informacijos, todėl „Google“ žemės failas nebuvo įrašytas.</translation>
         </message>
         <message>
             <source>%1 pictures were left out: they have no location.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Praleista nuotraukų: %1, nes jose nėra vietos informacijos.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="23" />
@@ -5476,32 +5720,32 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="44" />
             <source>Target folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paskirties aplankas:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="54" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(nepasirinkta)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="59" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="66" />
             <source>Image size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vaizdo dydis:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="74" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pradinis dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="81" />
@@ -5514,30 +5758,30 @@ picasapy-origin-key: export:export/labelgroup20.title</extracomment>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="103" />
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="127" />
             <source>%1 pictures exported, %2 failed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuota nuotraukų: %1, nepavyko eksportuoti: %2.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ExportDialogs.qml" line="128" />
             <source>%1 pictures exported.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuota nuotraukų: %1.</translation>
         </message>
         <message>
             <source>Export to Folder...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/window1.title;stringres:CImageOutput::exportprog</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti į aplanką...</translation>
         </message>
         <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti</translation>
         </message>
         <message>
             <source>Export location:</source>
@@ -5566,13 +5810,13 @@ picasapy-origin-key: export:export/usewatermark.title</extracomment>
         <message>
             <source>Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatiškai</translation>
         </message>
         <message>
             <source>Normal</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/item24.title;stringres:CTitleDialog::fontNormal;stringres:EXIF::Normal;stringres:EXIF::Standard</extracomment>
-            <translation type="unfinished" />
+            <translation>Normalus</translation>
         </message>
         <message>
             <source>Maximum</source>
@@ -5596,7 +5840,7 @@ picasapy-origin-key: export:export/item27.title;stringres:EXIF::Custom</extracom
             <source>Export to Folder</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/window1.title;stringres:CImageOutput::exportprog</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti į aplanką</translation>
         </message>
         <message>
             <source>Use original size</source>
@@ -5643,7 +5887,7 @@ picasapy-origin-key: export:export/label33.title</extracomment>
         <message>
             <source>Custom (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktinis (%1)</translation>
         </message>
         <message>
             <source>Watermark:</source>
@@ -5663,51 +5907,51 @@ picasapy-origin-key: export:export/label44.title;options:options/label168.title<
         <message>
             <source>Move to New Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į naują aplanką...</translation>
         </message>
         <message>
             <source>Copying Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::CopyProgress;stringres:CThumbUI::MoveFilesToAlbumFolder::CopyYesButton;stringres:RestoreApp::statuscopying</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuojami failai</translation>
         </message>
         <message>
             <source>Moving Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;stringres:CThumbUI::MoveProgress</extracomment>
-            <translation type="unfinished" />
+            <translation>Failų perkėlimas</translation>
         </message>
         <message>
             <source>Copying file(s) to %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuojami failai į %1</translation>
         </message>
         <message>
             <source>Moving file(s) to %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkeliami failai į %1</translation>
         </message>
         <message>
             <source>Copying %1 of %2 files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuojama %1 iš %2 failų</translation>
         </message>
         <message>
             <source>Moving %1 of %2 files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkeliama %1 iš %2 failų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="32" />
             <source>Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pervadinti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="62" />
             <source>Move to Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į aplanką...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="435" />
@@ -5747,8 +5991,13 @@ picasapy-origin-key: stringres:DeleteMessage::DeleteItemsTitle;stringres:DeleteM
 (They will also be removed from any albums in which they appear)</source>
             <extracomment>DeleteMessage::DeleteMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Ar tikrai norite perkelti %n pasirinktą elementą į šiukšlinę?
+(Jis taip pat bus pašalintas iš visų albumų, kuriuose rodomas)</numerusform>
+                <numerusform>Ar tikrai norite perkelti %n pasirinktus elementus į šiukšlinę?
+(Jie taip pat bus pašalinti iš visų albumų, kuriuose rodomi)</numerusform>
+                <numerusform>Ar tikrai norite perkelti %n pasirinktų elementų į šiukšlinę?
+(Jie taip pat bus pašalinti iš visų albumų, kuriuose rodomi)</numerusform>
             </translation>
         </message>
         <message>
@@ -5773,38 +6022,42 @@ picasapy-origin-key: stringres:DeleteMessage::NoUndoSingle</extracomment>
             <extracomment>DeleteMessage::NoUndoMultipleYesButton
 picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::DeleteProgress;stringres:DeleteMessage::NoUndoMultipleYesButton</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti failus</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="474" />
             <source>Are you sure you want to delete %n selected files? (This cannot be undone.)</source>
             <extracomment>DeleteMessage::NoUndoMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Ar tikrai norite ištrinti %n pasirinktą failą? (Šio veiksmo atšaukti negalima.)</numerusform>
+                <numerusform>Ar tikrai norite ištrinti %n pasirinktus failus? (Šio veiksmo atšaukti negalima.)</numerusform>
+                <numerusform>Ar tikrai norite ištrinti %n pasirinktų failų? (Šio veiksmo atšaukti negalima.)</numerusform>
             </translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="101" />
             <source>File operation failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo operacija nepavyko</translation>
         </message>
         <message>
             <source>Untitled</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Be pavadinimo</translation>
         </message>
         <message>
             <source>New Album...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujas albumas...</translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) selected for rename.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>%n failas pasirinktas pervadinti.</numerusform>
+                <numerusform>%n failai pasirinkti pervadinti.</numerusform>
+                <numerusform>%n failų pasirinkta pervadinti.</numerusform>
             </translation>
         </message>
         <message>
@@ -5816,7 +6069,7 @@ picasapy-origin-key: rename:rename/label5.title</extracomment>
         <message>
             <source>Rename</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pervadinti</translation>
         </message>
         <message>
             <source>Include in filename:</source>
@@ -5827,7 +6080,7 @@ picasapy-origin-key: rename:rename/labelgroup8.title</extracomment>
         <message>
             <source>Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Data</translation>
         </message>
         <message>
             <source>Image resolution</source>
@@ -5851,20 +6104,23 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesConfirmMove</extracomment>
             <source>Move Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;stringres:CThumbUI::MoveProgress</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti failus</translation>
         </message>
         <message>
             <source>Are you sure you want to move the file(s) to
 %1 ?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ar tikrai norite perkelti failą (-us) į
+%1?</translation>
         </message>
         <message>
             <source>This folder already contains files with the same name.
 
 Would you like to rename or skip these files?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiame aplanke jau yra failų tokiu pačiu pavadinimu.
+
+Ar norite juos pervadinti ar praleisti?</translation>
         </message>
         <message>
             <source>Rename Duplicates</source>
@@ -5876,37 +6132,43 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesRename</extracomment>
             <source>Skip Duplicates</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);stringres:CThumbUI::MoveFilesSkip</extracomment>
-            <translation type="unfinished" />
+            <translation>Praleisti dublikatus</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>File operation finished</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo operacija baigta</translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) done.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>%n failas apdorotas.</numerusform>
+                <numerusform>%n failai apdoroti.</numerusform>
+                <numerusform>%n failų apdorota.</numerusform>
             </translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) skipped (a file with the same name already exists).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>%n failas praleistas (jau yra failas tokiu pačiu pavadinimu).</numerusform>
+                <numerusform>%n failai praleisti (jau yra failas tokiu pačiu pavadinimu).</numerusform>
+                <numerusform>%n failų praleista (jau yra failas tokiu pačiu pavadinimu).</numerusform>
             </translation>
         </message>
         <message numerus="yes">
             <source>%n file(s) could not be processed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Nepavyko apdoroti %n failo.</numerusform>
+                <numerusform>Nepavyko apdoroti %n failų.</numerusform>
+                <numerusform>Nepavyko apdoroti %n failų.</numerusform>
             </translation>
         </message>
     </context>
@@ -5915,12 +6177,12 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);str
         <message>
             <source>Saving file %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašomas failas %1%</translation>
         </message>
         <message>
             <source>Saving %1 files %2%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašoma %1 failų, %2%</translation>
         </message>
     </context>
     <context>
@@ -5928,12 +6190,12 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);str
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>A backup of this file will be made.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bus sukurta šio failo atsarginė kopija.</translation>
         </message>
         <message>
             <source>Do not ask again</source>
@@ -5950,12 +6212,12 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
         <message>
             <source>JPEG Files (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>JPEG failai (*.jpg)</translation>
         </message>
         <message>
             <source>WebP Files (*.webp)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>WebP failai (*.webp)</translation>
         </message>
         <message>
             <source>Unable to save file due to filename collision.</source>
@@ -5981,12 +6243,15 @@ picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
 %1
 error(%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko išsaugoti visų failų dėl disko klaidos. Diskas gali būti pilnas arba tik skaitomas.
+
+%1
+klaida(%2)</translation>
         </message>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugoti</translation>
         </message>
         <message>
             <source>Save changes to disk?</source>
@@ -5997,32 +6262,32 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
         <message>
             <source>A backup of these files will be made.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bus sukurtos šių failų atsarginės kopijos.</translation>
         </message>
         <message>
             <source>These pictures contain edits PicasaPy cannot render yet: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiose nuotraukose yra pakeitimų, kurių PicasaPy dar negali atvaizduoti: %1</translation>
         </message>
         <message>
             <source>Saving writes the picture without them, and the settings are lost. This cannot be undone.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašant nuotraukos bus išsaugotos be šių pakeitimų, o jų nustatymai bus prarasti. Šio veiksmo atšaukti negalima.</translation>
         </message>
         <message>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grįžti</translation>
         </message>
         <message>
             <source>Revert to original version of these file(s)?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atkurti pradinę šių failų versiją?</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šio veiksmo atšaukti negalima, o visi pakeitimai bus prarasti.</translation>
         </message>
         <message>
             <source>Undo Save</source>
@@ -6033,12 +6298,12 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
         <message>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Norėdami anuliuoti paskutinį įrašymą ir išsaugoti pakeitimus, spustelėkite „Anuliuoti įrašymą“.</translation>
         </message>
         <message>
             <source>File operation failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo operacija nepavyko</translation>
         </message>
     </context>
     <context>
@@ -6046,7 +6311,7 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
         <message>
             <source>Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Picasa</translation>
         </message>
         <message>
             <source>There is an older version of Picasa installed.  Would you like to update your existing picture library, or search your computer for pictures again?</source>
@@ -6106,23 +6371,23 @@ picasapy-origin-key: initialscan:Text2(initialscan/text4a)</extracomment>
             <source>Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by Picasa by using the Folder Manager tool (available from the Tools menu)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/text5);initialscan:Text2(initialscan/text5)</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuskaitytos nuotraukos nėra perkeliamos ar kopijuojamos į naujas vietas. Jūs galite rinktis, kuriuos aplankus rodys „Picasa“ su aplankų tvarkytuvės įrankiu (renkamasi iš meniu „Įrankiai“)</translation>
         </message>
         <message>
             <source>Continue</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
-            <translation type="unfinished" />
+            <translation>Tęsti</translation>
         </message>
         <message>
             <source>Welcome to PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sveiki atvykę į „PicasaPy“</translation>
         </message>
         <message>
             <source>Where should PicasaPy look for your pictures?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kur „PicasaPy“ turėtų ieškoti jūsų nuotraukų?</translation>
         </message>
         <message>
             <source>Only search Documents, Pictures, and the Desktop</source>
@@ -6133,12 +6398,12 @@ picasapy-origin-key: stringres:CInitialScanDialog::OnlySearchWin</extracomment>
         <message>
             <source>Search my whole home folder for pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoti nuotraukų visame mano namų aplanke</translation>
         </message>
         <message>
             <source>Searching never moves or copies your files. You can change these folders later in the Folder Manager.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieška niekada neperkelia ir nekopijuoja failų. Šiuos aplankus vėliau galėsite pakeisti aplankų tvarkytuvėje.</translation>
         </message>
     </context>
     <context>
@@ -6147,19 +6412,22 @@ picasapy-origin-key: stringres:CInitialScanDialog::OnlySearchWin</extracomment>
             <source>This folder is already being watched:
 %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šis aplankas jau stebimas:
+%1</translation>
         </message>
         <message>
             <source>This folder cannot be opened:
 %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko atverti šio aplanko:
+%1</translation>
         </message>
         <message>
             <source>The folder could not be added:
 %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko pridėti šio aplanko:
+%1</translation>
         </message>
         <message>
             <source>Folder List</source>
@@ -6185,20 +6453,20 @@ picasapy-origin-key: stringres:IDS_HOTFOLDER_CONFIRM</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
             <source>Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pagalba</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
             <source>Folder Manager — Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplankų tvarkytuvės žinynas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6210,13 +6478,19 @@ Remove from Picasa takes the folder out of your library. The pictures stay on yo
 
 Face detection is separate: you can watch a folder and still keep faces in it out of the library.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuostata „Visada stebėti“ ir toliau stebi aplanką: vėliau į jį įtrauktos nuotraukos atsiranda automatiškai.
+
+Nuostata „Nuskaityti vieną kartą“ apdoroja dabar aplanke esančias nuotraukas, o paskui aplanką pamiršta.
+
+Nuostata „Pašalinti iš Picasa“ pašalina aplanką iš bibliotekos. Nuotraukos lieka diske.
+
+Veidų aptikimas nustatomas atskirai: galite stebėti aplanką, bet neleisti jo veidų įtraukti į biblioteką.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="13" />
             <source>Folder Manager</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplankų tvarkytuvė</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="29" />
@@ -6244,13 +6518,13 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
             <source>Remove from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti iš „Picasa“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
             <source>Adopt Picasa folders...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perimti „Picasa“ aplankus...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6263,7 +6537,7 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
     </context>
     <context>
@@ -6286,13 +6560,13 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Remove from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti iš „Picasa“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Select a folder on the left.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kairėje pasirinkite aplanką.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -6305,7 +6579,7 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/watched_label)</extracomment
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>For the current folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dabartiniam aplankui:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -6325,7 +6599,7 @@ picasapy-origin-key: stringres:CFolderMgrDialog::nofr</extracomment>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Face detection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Veidų aptikimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -6340,34 +6614,90 @@ picasapy-origin-key: stringres:CFolderMgrDialog::confirmfrexclude</extracomment>
         <message>
             <source>This is a PicasaPy addition — the original Picasa did not have it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tai „PicasaPy“ papildymas — pradinėje „Picasa“ programoje šios funkcijos nebuvo.</translation>
+        </message>
+    </context>
+    <context>
+        <name>OpenWithDialog</name>
+        <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atidaryti naudojant...</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>Atidaryti</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atšaukti</translation>
+        </message>
+        <message>
+            <source>No application is associated with this file type.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Su šio tipo failais nesusieta jokia programa.</translation>
         </message>
     </context>
     <context>
         <name>FileOpsController</name>
         <message>
+            <source>Unable to open application</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
+            <translation>Nepavyko atidaryti programos</translation>
+        </message>
+        <message>
             <source>The system default application could not open %1/%2 selected files.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Numatytoji sistemos programa nepavyko atverti %1 iš %2 pasirinktų failų.</translation>
         </message>
         <message>
             <source>This picture has no preserved original on disk.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šios nuotraukos originalas diske neišsaugotas.</translation>
         </message>
         <message>
             <source>Choose a destination folder first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite paskirties aplanką.</translation>
         </message>
         <message>
             <source>Select at least one picture first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite bent vieną nuotrauką.</translation>
         </message>
     </context>
     <context>
         <name>FolderPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1319" />
+            <source>Delete Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact</extracomment>
+            <translation>Ištrinti asmenį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1323" />
+            <source>Are you sure you want to delete the people album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ar tikrai norite ištrinti žmonių albumą „%1“?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1333" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>Taip</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1339" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ne</translation>
+        </message>
         <message>
             <source>Calculating…</source>
             <extracomment>picasapy-origin: picasa
@@ -6395,12 +6725,12 @@ picasapy-origin-key: stringres:ViewRoot::AllFolders</extracomment>
         <message>
             <source>My Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mano kompiuteris</translation>
         </message>
         <message>
             <source>Do you want to remove the folder %1 and its subfolders?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ar norite pašalinti aplanką %1 ir jo poaplankius?</translation>
         </message>
         <message>
             <source>Remove Folder</source>
@@ -6411,19 +6741,31 @@ picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
         <message>
             <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ar tikrai norite perkelti aplanką „%1“ ir jo turinį į šiukšlinę?</translation>
         </message>
         <message>
             <source>Delete Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti aplanką</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete the album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ar tikrai norite ištrinti albumą „%1“?</translation>
+        </message>
+        <message>
+            <source>Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ištrinti albumą</translation>
         </message>
         <message>
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Jūs ketinate užverti paskutinę kolekciją. Miniatiūrų srityje nebus rodoma nė viena nuotrauka. Ar norite tęsti?
+
+Norėdami atverti kolekciją, dukart spustelėkite jos pavadinimą arba šalia jos esančią piktogramą.</translation>
         </message>
         <message>
             <source>Close Last Collection?</source>
@@ -6440,7 +6782,7 @@ picasapy-origin-key: stringres:CloseCollection::YesButon</extracomment>
         <message>
             <source>Move Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti aplanką</translation>
         </message>
         <message>
             <source>Exported Pictures</source>
@@ -6458,7 +6800,7 @@ picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="586" />
             <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiuo metu nepasiekiama — aplankas lieka duomenų bazėje, o miniatiūros rodomos iš talpyklos.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="67" />
@@ -6478,7 +6820,7 @@ picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="112" />
             <source>Search results for "%1" (%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paieškos rezultatai pagal „%1“ (%2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="114" />
@@ -6491,7 +6833,7 @@ picasapy-origin-key: stringres:CAlbumList::liststicky2;stringres:CAlbumState::Fo
             <location filename="../qml/PicasaPy/FolderPane.qml" line="178" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žmonės</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="189" />
@@ -6510,19 +6852,19 @@ picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;strin
         <message>
             <source>Remove this folder from PicasaPy? The files stay on disk.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti šį aplanką iš „PicasaPy“? Failai liks diske.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" />
             <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ar tikrai norite pašalinti kolekciją „%1“? Visi joje esantys aplankai bus perkelti į kolekciją „%2“.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" />
             <source>Folders on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplankai diske</translation>
         </message>
         <message>
             <source>You can drag and drop pictures here to make a new album.</source>
@@ -6533,12 +6875,12 @@ picasapy-origin-key: stringres:CAlbumList::newalbumprompt</extracomment>
         <message>
             <source>Scanning for faces... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoma veidų... %1% baigta</translation>
         </message>
         <message>
             <source>Unnamed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Be pavadinimo</translation>
         </message>
     </context>
     <context>
@@ -6560,7 +6902,7 @@ picasapy-origin-key: unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/sho
         <message>
             <source>Stop ignoring</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nebepaisyti</translation>
         </message>
         <message>
             <source>Look for more suggestions</source>
@@ -6571,12 +6913,12 @@ picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extraco
         <message>
             <source>Lowers the recognition threshold once, so more names are suggested. The stored setting is left unchanged.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vieną kartą sumažina atpažinimo slenkstį, kad būtų pasiūlyta daugiau vardų. Išsaugotas nustatymas nepakeičiamas.</translation>
         </message>
         <message>
             <source>%1?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1?</translation>
         </message>
         <message>
             <source>Ignore</source>
@@ -6611,13 +6953,13 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveSingleUnknown;stringres:Peop
         <message>
             <source>Are you sure you want to move the %1 selected people to the ignored people album?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ar tikrai norite perkelti %1 pasirinktų žmonių į ignoruojamų žmonių albumą?</translation>
         </message>
         <message>
             <source>Don't ask again, always ignore</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck;stringres:ThumbUI::ConfirmUnknownCheckbox</extracomment>
-            <translation type="unfinished" />
+            <translation>Daugiau nebeklausti, ignoruoti visada</translation>
         </message>
         <message>
             <source>Group by face</source>
@@ -6640,27 +6982,27 @@ picasapy-origin-key: stringres:CAlbumLabel::LoadingGrouped</extracomment>
         <message>
             <source>Select someone you know and add a name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite ką nors iš savo pažįstamų ir pridėkite vardą.</translation>
         </message>
         <message>
             <source>Select someone you know and add a name, or click the "x" to ignore that person.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite pažįstamą asmenį ir priskirkite jam vardą arba spustelėkite „x“, kad jo nepaisytumėte.</translation>
         </message>
         <message>
             <source>Select someone you know and add a name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite ką nors iš savo pažįstamų ir pridėkite vardą</translation>
         </message>
         <message>
             <source>%1 selected</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkta: %1</translation>
         </message>
         <message>
             <source>Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardas</translation>
         </message>
         <message>
             <source>Add a name</source>
@@ -6671,7 +7013,7 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
         <message>
             <source>Assign a name to all of the selected faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Priskirti vardus visiems pasirinktiems veidams</translation>
         </message>
     </context>
     <context>
@@ -6679,7 +7021,7 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
         <message>
             <source>No camera information available</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nėra fotoaparato informacijos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/HistogramBox.qml" line="42" />
@@ -6709,7 +7051,7 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
             <location filename="../qml/PicasaPy/ImportProgressPanel.qml" line="103" />
             <source>%1 / %2 folders — %3 new photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 / %2 aplankų — %3 naujų nuotraukų</translation>
         </message>
     </context>
     <context>
@@ -6718,17 +7060,17 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
             <source>Writing face tags</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:FaceTagJob::progress;write_all_facetags:write_all_facetags/window1.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašomos veido žymos</translation>
         </message>
         <message>
             <source>%1 / %2 pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 / %2 nuotraukų</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
     </context>
     <context>
@@ -6744,13 +7086,13 @@ picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
             <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="80" />
             <source>%1 / %2 folders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 / %2 aplankų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="90" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
     </context>
     <context>
@@ -6773,7 +7115,7 @@ picasapy-origin-key: tooltips:Label(publish/addmore)</extracomment>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Original Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Originalus dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6821,7 +7163,13 @@ picasapy-origin-key: stringres:il_BurnPanel::burnbutton</extracomment>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
+            <source>Restore...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atkurti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6876,7 +7224,7 @@ picasapy-origin-key: tooltips:Text(publish/label_optionbox3)</extracomment>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6924,7 +7272,7 @@ picasapy-origin-key: stringres:il_NewBkDialogTitle;tooltips:Text(publish/label_b
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
@@ -6937,7 +7285,7 @@ picasapy-origin-key: confirmsync:confirmsync/labelgroup9.title;tooltips:Text(pub
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>Sync:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sinchronizuoti:</translation>
         </message>
         <message>
             <source>Create a Set or use an existing one</source>
@@ -6996,17 +7344,17 @@ picasapy-origin-key: tooltips:Text1(publish/backuptext)</extracomment>
         <message>
             <source>%1 — last run: %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 — paskutinį kartą vykdyta: %2</translation>
         </message>
         <message>
             <source>%1 — not run yet</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 — dar nevykdyta</translation>
         </message>
         <message>
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti viską</translation>
         </message>
         <message>
             <source>Select None</source>
@@ -7017,17 +7365,17 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/select_none);stringres:
         <message>
             <source>To CD image (ISO)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Į CD atvaizdą (ISO)</translation>
         </message>
         <message>
             <source>To DVD image (ISO)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Į DVD atvaizdą (ISO)</translation>
         </message>
         <message>
             <source>Stop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Stabdyti</translation>
         </message>
     </context>
     <context>
@@ -7091,7 +7439,7 @@ picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extraco
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Lower the recognition threshold to get more suggestions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sumažinkite atpažinimo slenkstį, kad gautumėte daugiau pasiūlymų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
@@ -7111,19 +7459,19 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</ex
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Remove</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Remove all suggestions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti visus pasiūlymus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Patvirtinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
@@ -7143,13 +7491,13 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</ext
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30" />
             <source>SYNC</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>SINCHRONIZUOTI</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="68" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/LightboxHeader.qml" line="111" />
@@ -7161,17 +7509,17 @@ picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugoti</translation>
         </message>
         <message>
             <source>Select starred photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rinktis žvaigždute pažymėtas nuotraukas</translation>
         </message>
         <message>
             <source>Save edited photos to disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugokite redaguotas nuotraukas diske</translation>
         </message>
         <message>
             <source>Create Photo Collage</source>
@@ -7182,6 +7530,12 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_collage)
     </context>
     <context>
         <name>Main</name>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Configure Buttons...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Konfigūruoti mygtukus...</translation>
+        </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Want to Cancel?</source>
@@ -7198,11 +7552,43 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>Move photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Perkelti nuotrauką čia?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Move %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Perkelti %d nuotraukas (-ų) čia?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Įdėti nuotrauką čia?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Įdėti %d nuotraukas (-ų) čia?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>(OK)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(Gerai)</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>You have a fairly large number of items selected.
 
 Are you sure you want to apply this tag to all %d items?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Jūs pasirinkote gana daug elementų.
+
+Ar tikrai norite pritaikyti šią žymą visiems %d elementams?</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7215,43 +7601,43 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <location filename="../qml/Main.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Savybės</translation>
         </message>
         <message>
             <source>Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymos</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Tags:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymos:</translation>
         </message>
         <message>
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žmonės</translation>
         </message>
         <message>
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vietos</translation>
         </message>
         <message>
             <source>Exit PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išeiti iš „PicasaPy“</translation>
         </message>
         <message>
             <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fone vis dar vyksta operacija (eksportavimas, žiniatinklio eksportavimas arba veidų paieška). Jei išeisite dabar, ji bus sustabdyta ir vėliau nebus tęsiama.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -7263,49 +7649,62 @@ picasapy-origin-key: stringres:CUploadManagerThread::cancel</extracomment>
             <source>Keep Going</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
-            <translation type="unfinished" />
+            <translation>Tęsti</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Patvirtinti</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Are you sure you want to add all of the selected album's images?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:addtosaver::warning</extracomment>
+            <translation>Ar tikrai norite įdėti visas pažymėto albumo nuotraukas?</translation>
         </message>
         <message>
             <source>The desktop background is set (%1).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Darbalaukio fonas nustatytas (%1).</translation>
         </message>
         <message>
             <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotrauka paruošta: %1, tačiau nepavyko automatiškai nustatyti jos kaip darbalaukio fono.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktuose ekrano užsklandos šaltiniuose nėra pasiekiamų nuotraukų.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Added %1 pictures to Screensaver.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Į ekrano užsklandą įtraukta nuotraukų: %1.</translation>
         </message>
         <message>
             <source>Cancelled writing face tags (%1 file(s) written).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardų žymų įrašymas atšauktas (įrašyta failų: %1).</translation>
         </message>
         <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko įrašyti veidų duomenų į XMP: %1</translation>
         </message>
         <message>
             <source>Face data written to %1 file(s); %2 skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Veidų duomenys įrašyti į %1 failų; praleista: %2.</translation>
         </message>
         <message>
             <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Veidų duomenys įrašyti į %1 failų; praleista: %2. Pirmoji problema: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -7322,7 +7721,7 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
         <message>
             <source>No pictures have that tag.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nėra nuotraukų su šia žyma.</translation>
         </message>
         <message>
             <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
@@ -7345,28 +7744,28 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
         <message>
             <source>The search results could not be saved as an album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko išsaugoti paieškos rezultatų kaip albumo.</translation>
         </message>
         <message>
             <source>There are no files on the clipboard to paste.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Iškarpinėje nėra failų, kuriuos būtų galima įklijuoti.</translation>
         </message>
         <message>
             <source>Wrong password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Netinkamas slaptažodis</translation>
         </message>
         <message>
             <source>The password does not match. The hidden folders stay hidden.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Slaptažodis netinka. Paslėpti aplankai lieka paslėpti.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="1076" />
             <source>Change Location</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Keisti vietą</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="1087" />
@@ -7374,7 +7773,9 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
 
 Are you sure you want to change the location of all %1 items?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkote gana daug elementų.
+
+Ar tikrai norite pakeisti visų %1 elementų vietą?</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="1112" />
@@ -7382,7 +7783,9 @@ Are you sure you want to change the location of all %1 items?</source>
 
 Are you sure you want to clear the locations for all %1 items?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkote gana daug elementų.
+
+Ar tikrai norite išvalyti visų %1 elementų vietos duomenis?</translation>
         </message>
         <message>
             <source>Clear Geotags</source>
@@ -7395,7 +7798,9 @@ picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
 
 OK to proceed?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ketinate ištrinti visą pasirinktų nuotraukų geografinės vietos informaciją (t. y. platumą ir ilgumą).
+
+Ar tęsti?</translation>
         </message>
         <message>
             <source>Preparing attachments...</source>
@@ -7413,7 +7818,7 @@ picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/st
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Koliažas</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7438,19 +7843,43 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <location filename="../qml/Main.qml" />
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šis aplankas šiuo metu nepasiekiamas (pavyzdžiui, atjungtas diskas arba tinklo išteklius). Jo nuotraukos lieka duomenų bazėje, o miniatiūros rodomos iš talpyklos, tačiau originalių failų šiuo metu negalima atverti ar redaguoti.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nepavyko vėl parodyti aplanko, nes negalima įrašyti jo .picasa.ini failo. Aplankas lieka paslėptas.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplanko negalima vėl parodyti, kol jis nepasiekiamas (pavyzdžiui, atjungtas diskas). Jis lieka paslėptas.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplankas paslėptas, tačiau nepavyko pažymėti jo kaip skirto „Picasa“ programai (negalima įrašyti .picasa.ini failo).</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paslėpto aplanko negalima perkelti į kolekciją. Pirmiausia jį parodykite.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į naują asmenį</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>New person's name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujo asmens vardas:</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7489,8 +7918,10 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveMultipleYesButton</extracomm
             <source>Are you sure you want to remove the %n selected images from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Ar tikrai norite pašalinti %n pasirinktą nuotrauką iš dabartinio albumo?</numerusform>
+                <numerusform>Ar tikrai norite pašalinti %n pasirinktas nuotraukas iš dabartinio albumo?</numerusform>
+                <numerusform>Ar tikrai norite pašalinti %n pasirinktų nuotraukų iš dabartinio albumo?</numerusform>
             </translation>
         </message>
         <message>
@@ -7530,8 +7961,10 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveMultipleYesButtonPeople;stri
             <source>Are you sure you want to remove the %n selected people from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiplePeople
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Ar tikrai norite pašalinti %n pasirinktą asmenį iš dabartinio albumo?</numerusform>
+                <numerusform>Ar tikrai norite pašalinti %n pasirinktus žmones iš dabartinio albumo?</numerusform>
+                <numerusform>Ar tikrai norite pašalinti %n pasirinktų žmonių iš dabartinio albumo?</numerusform>
             </translation>
         </message>
         <message>
@@ -7540,7 +7973,9 @@ picasapy-origin: picasapy</extracomment>
 If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Raudonų akių korekcijos pritaikytos %1.
+Jei pašalinsite visus pakeitimus, šių korekcijų nebegalėsite atkurti.
+Ar tikrai norite visam laikui pašalinti korekcijas?</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -7571,7 +8006,7 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
         <message>
             <source>E&amp;xit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Išeiti</translation>
         </message>
         <message>
             <source>&amp;Edit</source>
@@ -7582,7 +8017,7 @@ picasapy-origin-key: stringres:eMenuEdit</extracomment>
         <message>
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti viską</translation>
         </message>
         <message>
             <source>&amp;View</source>
@@ -7599,42 +8034,42 @@ picasapy-origin-key: resexport:win32:12;stringres:IDS_UPDATING</extracomment>
         <message>
             <source>F&amp;older</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>A&amp;plankas</translation>
         </message>
         <message>
             <source>Rescan folders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Iš naujo nuskaityti aplankus</translation>
         </message>
         <message>
             <source>&amp;Picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Nuotrauka</translation>
         </message>
         <message>
             <source>&amp;Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Sukurti</translation>
         </message>
         <message>
             <source>&amp;Tools</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Įrankiai</translation>
         </message>
         <message>
             <source>Folder Manager...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplankų tvarkytuvė...</translation>
         </message>
         <message>
             <source>&amp;Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Pagalba</translation>
         </message>
         <message>
             <source>About PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apie „PicasaPy“</translation>
         </message>
         <message>
             <source>Import</source>
@@ -7651,68 +8086,72 @@ picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter
         <message>
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paieška</translation>
         </message>
         <message>
             <source>Verzió és build</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Versija ir komponavimo numeris</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="441" />
             <source>Back to View All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atgal į parinktį „Rodyti viską“</translation>
         </message>
         <message>
             <source>Duplicate Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasikartojantys failai</translation>
         </message>
         <message>
             <source>Looking for duplicate files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoma pasikartojančių failų...</translation>
         </message>
         <message>
             <source>Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pervadinti...</translation>
         </message>
         <message>
             <source>Move to Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į aplanką...</translation>
         </message>
         <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti iš disko</translation>
         </message>
         <message numerus="yes">
             <source>%n picture(s) will be moved to the system trash.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>%n nuotrauka bus perkelta į sistemos šiukšlinę.</numerusform>
+                <numerusform>%n nuotraukos bus perkeltos į sistemos šiukšlinę.</numerusform>
+                <numerusform>%n nuotraukų bus perkelta į sistemos šiukšlinę.</numerusform>
             </translation>
         </message>
         <message>
             <source>File operation failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failo operacija nepavyko</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Undo All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti visus pakeitimus</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/Main.qml" />
             <source>All edits will be removed from %n selected picture(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Visi pakeitimai bus pašalinti iš %n pasirinktos nuotraukos.</numerusform>
+                <numerusform>Visi pakeitimai bus pašalinti iš %n pasirinktų nuotraukų.</numerusform>
+                <numerusform>Visi pakeitimai bus pašalinti iš %n pasirinktų nuotraukų.</numerusform>
             </translation>
         </message>
         <message>
@@ -7724,28 +8163,28 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
         <message>
             <source>Target folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paskirties aplankas:</translation>
         </message>
         <message>
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(nepasirinkta)</translation>
         </message>
         <message>
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
         <message>
             <source>Image size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vaizdo dydis:</translation>
         </message>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pradinis dydis</translation>
         </message>
         <message>
             <source>Image quality:</source>
@@ -7756,12 +8195,12 @@ picasapy-origin-key: export:export/labelgroup20.title</extracomment>
         <message>
             <source>%1 pictures exported, %2 failed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuota nuotraukų: %1, nepavyko eksportuoti: %2.</translation>
         </message>
         <message>
             <source>%1 pictures exported.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuota nuotraukų: %1.</translation>
         </message>
         <message>
             <source>Library</source>
@@ -7772,59 +8211,59 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
         <message>
             <source>Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkimas</translation>
         </message>
         <message>
             <source>Upload to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti į „Google“ nuotraukas</translation>
         </message>
         <message>
             <source>E-Mail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>El. paštas</translation>
         </message>
         <message>
             <source>Print</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinti</translation>
         </message>
         <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti</translation>
         </message>
         <message>
             <source>Hold</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sulaikyti</translation>
         </message>
         <message>
             <source>Clear</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Valyti</translation>
         </message>
         <message>
             <source>Add to</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti prie</translation>
         </message>
         <message>
             <source>Share</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bendrinti</translation>
         </message>
         <message>
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiuolaikiška atvirojo kodo „Picasa“ alternatyva.</translation>
         </message>
         <message>
             <location filename="Main.qml" line="967" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1022" />
@@ -7837,21 +8276,23 @@ picasapy-origin-key: stringres:CThumbUI::GetBadImagesYesButton</extracomment>
             <location filename="Main.qml" line="1023" />
             <source>Don't Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Neslėpti</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1037" />
             <source>Picasa had a problem loading this file(s)
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„Picasa“ nepavyko įkelti šio failo (-ų)
+</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1037" />
             <source>
 Would you like to hide the files on disk?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+Ar norite paslėpti failus diske?</translation>
         </message>
         <message>
             <source>Similarity Search Results</source>
@@ -7862,7 +8303,7 @@ picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
         <message>
             <source>Clear Sample</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išvalyti pavyzdį</translation>
         </message>
         <message>
             <source>Updating similarity database (will be fast next time)</source>
@@ -7875,7 +8316,9 @@ picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
 
 It will change the next time Picasa is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pakeisti „Picasa“ naudojamą kalbą?
+
+Ji pasikeis kitą kartą paleidus „Picasa“.</translation>
         </message>
     </context>
     <context>
@@ -7908,12 +8351,12 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/importbutton)</extracomment>
         <message>
             <source>Show movies only</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti tik filmus</translation>
         </message>
         <message>
             <source>Show only photos with geotag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti tik tas nuotraukas, kuriose yra geografinių žymų</translation>
         </message>
         <message>
             <source>Clear your search</source>
@@ -7939,19 +8382,19 @@ picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="143" />
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paieška</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="865" />
             <source>Search results for "%1" (%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paieškos rezultatai pagal „%1“ (%2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="259" />
             <source>View releases on GitHub</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Peržiūrėti leidimus „GitHub“ svetainėje</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
@@ -7964,13 +8407,13 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/newalbum)</extracomment>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Show photos on a timeline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti nuotraukas laiko juostoje</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Timeline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Chronologija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
@@ -7996,25 +8439,25 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/folderviewpopup)</extracomment>
         <message>
             <source>Click and drag over photos to magnify them</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Jei norite nuotraukas padidinti, spustelėkite ir tempkite jas</translation>
         </message>
         <message>
             <source>Show duplicate files only</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti tik pasikartojančius failus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Open camera capture panel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atverti kameros fiksavimo skydelį</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Capture</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
-            <translation type="unfinished" />
+            <translation>Užfiksuoti</translation>
         </message>
     </context>
     <context>
@@ -8024,7 +8467,7 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <source>Recording</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašoma</translation>
         </message>
         <message>
             <source>Video</source>
@@ -8041,7 +8484,7 @@ picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/li
         <message>
             <source>Settings</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nustatymai</translation>
         </message>
         <message>
             <source>Audio</source>
@@ -8052,23 +8495,23 @@ picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/au
         <message>
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <source>Done</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
-            <translation type="unfinished" />
+            <translation>Baigta</translation>
         </message>
         <message>
             <source>Record</source>
@@ -8091,13 +8534,13 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::snap</extracomment>
         <message>
             <source>Pause</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pristabdyti</translation>
         </message>
         <message>
             <source>Resume</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
-            <translation type="unfinished" />
+            <translation>Atnaujinti</translation>
         </message>
         <message>
             <source>Play</source>
@@ -8132,17 +8575,17 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
         <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Momentinė nuotrauka išsaugota</translation>
         </message>
         <message>
             <source>Capture failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fiksavimas nepavyko</translation>
         </message>
         <message>
             <source>Unable to prepare the capture folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko paruošti fiksavimo aplanko.</translation>
         </message>
         <message>
             <source>Capture live video from camera</source>
@@ -8193,7 +8636,7 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::connecterr</extracomment>
         <message>
             <source>Capture failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fiksavimas nepavyko</translation>
         </message>
     </context>
     <context>
@@ -8202,25 +8645,25 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::connecterr</extracomment>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="50" />
             <source>Performance monitor</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Našumo stebėsena</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="68" />
             <source>CPU: %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>CPU: %1%</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="76" />
             <source>Memory: %1 MB</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atmintis: %1 MB</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PerfMonitorPanel.qml" line="92" />
             <source>Save diagnostics...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugoti diagnostikos duomenis...</translation>
         </message>
     </context>
     <context>
@@ -8229,7 +8672,7 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::connecterr</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Move to New Person...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į naują asmenį...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
@@ -8264,17 +8707,17 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Locate in Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rasti programoje „Picasa“</translation>
         </message>
         <message>
             <source>Locate</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rasti</translation>
         </message>
         <message>
             <source>File on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Failas diske</translation>
         </message>
         <message>
             <source>Locate Original on Disk</source>
@@ -8286,31 +8729,31 @@ picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="23" />
             <source>Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pervadinti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="28" />
             <source>Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Slėpti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="35" />
             <source>Move to Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į aplanką...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="40" />
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti iš disko</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="46" />
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Surasti diske</translation>
         </message>
         <message>
             <source>Add to Album</source>
@@ -8321,7 +8764,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
         <message>
             <source>New Album...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujas albumas...</translation>
         </message>
         <message>
             <source>Remove from Album</source>
@@ -8332,22 +8775,22 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
         <message>
             <source>View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Peržiūrėti ir redaguoti</translation>
         </message>
         <message>
             <source>Rotate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukti pagal laikrodžio rodyklę</translation>
         </message>
         <message>
             <source>Rotate Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukti prieš laikrodžio rodyklę</translation>
         </message>
         <message>
             <source>Undo All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti visus pakeitimus</translation>
         </message>
         <message>
             <source>Unhide</source>
@@ -8358,32 +8801,32 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
         <message>
             <source>Move to New Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į naują aplanką...</translation>
         </message>
         <message>
             <source>Split Folder Here...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Padalyti aplanką čia...</translation>
         </message>
         <message>
             <source>Open File</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atverti failą</translation>
         </message>
         <message>
             <source>Open With</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atverti naudojant</translation>
         </message>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugoti</translation>
         </message>
         <message>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grįžti</translation>
         </message>
         <message>
             <source>Copy Full Path</source>
@@ -8412,18 +8855,27 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Savybės</translation>
         </message>
         <message>
             <source>Find Similar Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rasti panašių nuotraukų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Ctrl+Delete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ctrl+Delete</translation>
+        </message>
+    </context>
+    <context>
+        <name>ZoomNavigator</name>
+        <message>
+            <location filename="../qml/PicasaPy/ZoomNavigator.qml" />
+            <source>Zoomed to %1%</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mastelis padidintas iki %1%</translation>
         </message>
     </context>
     <context>
@@ -8439,7 +8891,13 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 išsaugota aplanke „Užfiksuoti vaizdo įrašai“</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 išsaugota aplanke „Eksportuoti vaizdo įrašai“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
@@ -8447,6 +8905,12 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <translation>Nepavyko užfiksuoti kadro</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nepavyko eksportuoti klipo</translation>
         </message>
         <message>
             <source>Show only one picture</source>
@@ -8487,7 +8951,7 @@ picasapy-origin-key: stringres:ImageFilters::Selected;tooltips:Label(editpanel/s
         <message>
             <source>Show/Hide Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti / slėpti antraštę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
@@ -8499,12 +8963,12 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracommen
         <message>
             <source>Delete this caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti šią antraštę</translation>
         </message>
         <message>
             <source>Create Now</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sukurti dabar</translation>
         </message>
         <message>
             <source>In Progress...</source>
@@ -8517,20 +8981,22 @@ picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
             <source>Redeye fixes cannot be recovered with redo.
 Are you sure you want to undo?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Raudonų akių korekcijų nebus galima atkurti.
+Ar tikrai norite anuliuoti?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Retouch fixes cannot be recovered with redo.
 Are you sure you want to undo?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Retušavimo pataisų nebus galima atkurti.
+Ar tikrai norite anuliuoti?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Antraštė pakeis jūsų įvestą tekstą. (Šio veiksmo negalima anuliuoti.)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
@@ -8572,19 +9038,19 @@ picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;t
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="109" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Man sekasi!</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="110" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis kontrasto nustatymas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="111" />
             <source>Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis spalvų nustatymas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="112" />
@@ -8597,25 +9063,25 @@ picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="114" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sepija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="115" />
             <source>B&amp;W</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nespalvota</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="116" />
             <source>Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašiltinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="117" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Juostelės grūdėtumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="118" />
@@ -8670,7 +9136,7 @@ picasapy-origin-key: stringres:filter_dir_tint_label0</extracomment>
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>Retušuoti</translation>
         </message>
         <message>
             <source>Text</source>
@@ -8689,24 +9155,24 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="398" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti</translation>
         </message>
         <message>
             <source>Undo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti: apkirpimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401" />
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="403" />
             <source>Redo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grąžinti</translation>
         </message>
         <message>
             <source>Redo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atkurti: apkirpimas</translation>
         </message>
         <message>
             <source>Histogram and camera information</source>
@@ -8718,24 +9184,24 @@ picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588" />
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vaizdo įrašų atkūrimui reikia Qt Multimedia modulio.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
             <source>Show Faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti veidus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="769" />
             <source>Make a caption!</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sukurkite antraštę!</translation>
         </message>
         <message>
             <source>Edit Faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Redaguoti veidus</translation>
         </message>
         <message>
             <source>Edit Collage</source>
@@ -8764,7 +9230,7 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/editslideshow)</extracomment>
         <message>
             <source>Start slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pradėti skaidrių demonstraciją</translation>
         </message>
         <message>
             <source>Previous picture</source>
@@ -8781,7 +9247,7 @@ picasapy-origin-key: stringres:WebExport::template4</extracomment>
         <message>
             <source>Render the final collage from this draft</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atvaizduoti galutinį koliažą iš šio juodraščio</translation>
         </message>
         <message>
             <source>Fit Photo inside viewing area</source>
@@ -8802,6 +9268,20 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
 picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
             <translation>Grįžti į susistemintas miniatiūras</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Pašalinti pakeitimus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove all movie edits?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
+            <translation>Pašalinti visus filmo redagavimus?</translation>
+        </message>
     </context>
     <context>
         <name>PicasaImportDialog</name>
@@ -8809,67 +9289,157 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="15" />
             <source>Import from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuoti iš „Picasa“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="67" />
             <source>Looking for a previous Picasa installation…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoma ankstesnio „Picasa“ įdiegimo…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="74" />
+            <source>The search failed: %1: %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paieška nepavyko: %1: %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="71" />
             <source>We found your previous Picasa installation. It watched these folders — take them over?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Radome ankstesnį „Picasa“ įdiegimą. Jis stebėjo šiuos aplankus — ar norite juos perimti?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="74" />
             <source>We couldn't find a previous Picasa installation automatically. You can browse for its folder by hand.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko automatiškai rasti ankstesnio „Picasa“ įdiegimo. Galite patys nurodyti jo aplanką.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="126" />
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="158" />
             <source>Browse manually...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti rankiniu būdu...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="131" />
             <source>Not now</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ne dabar</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="136" />
             <source>Adopt</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perimti</translation>
         </message>
     </context>
     <context>
         <name>PeoplePanel</name>
         <message>
+            <source>Add a person manually</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/manual_add)</extracomment>
+            <translation>Pridėkite asmenį rankiniu būdu</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atšaukti</translation>
+        </message>
+        <message>
+            <source>Instructions:
+
+1) Manipulate the rectangle to fit the face of the person you want to add.
+
+You can drag the rectangle to position it, and move its sides to refine the shape.
+
+2) Click on "Add a name" under the rectangle and type in the person's name.
+
+(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Instrukcijos:
+
+1) Pakeiskite stačiakampio dydį, kad jis atitiktų norimo pridėti asmens veidą.
+
+Galite nutempti stačiakampį į reikiamą vietą, o jo kraštines perkelti ir taip patikslinti formą.
+
+2) Po stačiakampiu spustelėkite „Pridėti vardą“ ir įveskite asmens vardą.
+
+(Baigę būtinai paspauskite Enter arba spustelėkite automatiškai pasiūlytą vardą.)</translation>
+        </message>
+        <message>
             <source>Named people who appear with the currently selected person will be listed here.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Čia bus pateikti įvardyti žmonės, esantys kartu su šiuo metu pasirinktu asmeniu.</translation>
         </message>
         <message>
             <source>People who appear in the currently selected photos will be listed here.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiuo metu pasirinktose nuotraukose esantys žmonės bus nurodyti čia.</translation>
+        </message>
+        <message>
+            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter. A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>„Picasa“ nuskaito nuotraukas, o rastus veidus automatiškai sugrupuoja, kad juos būtų lengviau pavadinti.
+
+Ką verta žinoti:
+
+Norėdami atpažinti asmenį, spustelėkite „Pridėti vardą“, įveskite jo vardą ir paspauskite Enter. Kiekvieną kartą pirmą kartą pavadinus asmenį sukuriamas naujas žmonių albumas.
+
+(PATARIMAS: prisijunkite prie „Google“ paskyros, kad galėtumėte rinktis iš visų savo kontaktų.)
+
+Norėdami ignoruoti asmenį, spustelėkite veido miniatiūroje esantį mygtuką „X“.
+
+Pasiūlymai: pavadinus asmenį, „Picasa“ gali pasiūlyti daugiau panašių veidų. Spustelėkite asmens albumą, kad peržiūrėtumėte pasiūlymus ir juos patvirtintumėte arba atmestumėte.</translation>
         </message>
         <message>
             <source>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kol kas žmonių nerasta. Rasti ir sugrupuoti veidai bus rodomi albume „Be pavadinimo“.</translation>
         </message>
         <message>
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žmonės</translation>
+        </message>
+        <message>
+            <source>Loading faces for file...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Loading1</extracomment>
+            <translation>Įkeliami veidai, skirti failui...</translation>
+        </message>
+        <message>
+            <source>Loading faces for %1 files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Įkeliami veidai iš %1 failų...</translation>
+        </message>
+        <message>
+            <source>Looking for other people...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::Looking</extracomment>
+            <translation>Ieškoma kitų žmonių...</translation>
+        </message>
+        <message>
+            <source>Sorting face data, %1%</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rūšiuojami veidų duomenys: %1%</translation>
+        </message>
+        <message>
+            <source>, %1 files unchecked.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>, nepažymėta failų: %1.</translation>
         </message>
         <message>
             <source>In this photo:</source>
@@ -8913,13 +9483,54 @@ picasapy-origin-key: stringres:PeoplePanel::Known1</extracomment>
 picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomment>
             <translation>Pasirinkite aplanką, iš kurio norite rodyti veidus</translation>
         </message>
+        <message>
+            <source>Ignore People</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::IgnorePeopleTitle;stringres:DeleteMessage::RemoveMultipleYesButtonUnknown;stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
+            <translation>Ignoruoti žmones</translation>
+        </message>
+        <message>
+            <source>Ignore Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+            <translation>Ignoruoti asmenį</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to move this person to the ignored people album?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleUnknown;stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
+            <translation>Ar tikrai norite perkelti šį asmenį į ignoruojamų žmonių albumą?</translation>
+        </message>
+        <message>
+            <source>Don't ask again, always ignore</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck;stringres:ThumbUI::ConfirmUnknownCheckbox</extracomment>
+            <translation>Daugiau nebeklausti, ignoruoti visada</translation>
+        </message>
     </context>
     <context>
         <name>PeoplePanelRow</name>
         <message>
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
+            <translation>Pridėti vardą</translation>
+        </message>
+        <message>
+            <source>Ignore person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+            <translation>Ignoruoti asmenį</translation>
+        </message>
+        <message>
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1?</translation>
+        </message>
+        <message>
             <source>%1 photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 nuotraukų</translation>
         </message>
     </context>
     <context>
@@ -8927,44 +9538,116 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomm
         <message>
             <source>Import from Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuoti iš „Picasa“</translation>
         </message>
         <message>
             <source>Copying names, keywords and places from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuojami vardai, raktažodžiai ir vietos iš „Picasa“...</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 folder to import manually, or leave it empty to use detected installations.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite „Picasa2“ aplanką, iš kurio norite importuoti, arba palikite lauką tuščią, kad būtų naudojami aptikti įdiegimai.</translation>
+        </message>
+        <message>
+            <source>Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>„Picasa2“ duomenų aplankas</translation>
+        </message>
+        <message>
+            <source>Choose or enter a Picasa2 folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite arba įveskite „Picasa2“ aplanką</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 data folder first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pirmiausia pasirinkite „Picasa2“ duomenų aplanką.</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Naršyti...</translation>
+        </message>
+        <message>
+            <source>Windows path prefix</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>„Windows“ kelio prefiksas</translation>
+        </message>
+        <message>
+            <source>For example, C:/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pavyzdžiui, C:/Pictures</translation>
+        </message>
+        <message>
+            <source>Matching local folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atitinkantis vietinis aplankas</translation>
+        </message>
+        <message>
+            <source>For example, /home/user/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pavyzdžiui, /home/user/Pictures</translation>
+        </message>
+        <message>
+            <source>Enter both paths for the drive mapping.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Įveskite abu diskų susiejimo kelius.</translation>
+        </message>
+        <message>
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Importuoti</translation>
+        </message>
+        <message>
+            <source>Choose the Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite „Picasa2“ duomenų aplanką</translation>
         </message>
         <message>
             <source>Done.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
-            <translation type="unfinished" />
+            <translation>Atlikta.</translation>
         </message>
         <message>
             <source>No Picasa data found on this computer.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiame kompiuteryje „Picasa“ duomenų nerasta.</translation>
         </message>
         <message>
             <source>The import could not finish: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko užbaigti importavimo: %1</translation>
         </message>
         <message>
             <source>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atnaujinta aplankų: %1; raktažodžių: %2; vietų: %3; vardų: %4.</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) taken over from Picasa.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Perimtos „Picasa“ vaizdo įrašų datos: %1.</translation>
+        </message>
+        <message>
+            <source>%1 video date(s) could not be taken over; try again later.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nepavyko perimti %1 vaizdo įrašų datų; bandykite dar kartą vėliau.</translation>
         </message>
         <message>
             <source>%1 photo(s) were left untouched because they already had data.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 nuotrauka (-ų) nepakeista, nes jose jau buvo duomenų.</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <source>OK</source>
@@ -8978,12 +9661,12 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Previous album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ankstesnis albumas</translation>
         </message>
         <message>
             <source>Next album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kitas albumas</translation>
         </message>
     </context>
     <context>
@@ -8991,22 +9674,46 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>My &amp;Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mano &amp;kompiuteris</translation>
         </message>
         <message>
             <source>My &amp;Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mano &amp;nuotraukos</translation>
         </message>
         <message>
             <source>My Do&amp;cuments</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mano do&amp;kumentai</translation>
         </message>
         <message>
             <source>&amp;Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Darbalaukis</translation>
+        </message>
+        <message>
+            <source>&amp;Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::Shortcuts;stringres:eMenuView::Shortcuts</extracomment>
+            <translation>&amp;Nuorodos</translation>
+        </message>
+        <message>
+            <source>Sort &amp;People by Name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
+            <translation>Rūšiuoti &amp;žmones pagal vardus</translation>
+        </message>
+        <message>
+            <source>Sort People by &amp;Amount</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
+            <translation>Rūšiuoti žmones pagal &amp;kiekį</translation>
+        </message>
+        <message>
+            <source>Sort People by Top &amp;10</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
+            <translation>Rūšiuoti žmones pagal &amp;10 populiariausių</translation>
         </message>
         <message>
             <source>Write faces to XMP...</source>
@@ -9035,7 +9742,7 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
         <message>
             <source>Search for...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoti pagal...</translation>
         </message>
         <message>
             <source>&amp;Red</source>
@@ -9106,7 +9813,7 @@ picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
         <message>
             <source>Sort by &amp;Creation Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rūšiuoti pagal &amp;sukūrimo datą</translation>
         </message>
         <message>
             <source>Sort by &amp;Recent Changes</source>
@@ -9123,7 +9830,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
         <message>
             <source>Sort by &amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rūšiuoti pagal &amp;pavadinimą</translation>
         </message>
         <message>
             <source>Re&amp;verse sort</source>
@@ -9152,7 +9859,7 @@ picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
         <message>
             <source>&amp;Search for</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Ieškoti</translation>
         </message>
         <message>
             <source>&amp;Red</source>
@@ -9220,7 +9927,7 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="38" />
             <source>&amp;New Album...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Naujas albumas...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39" />
@@ -9247,19 +9954,19 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_IMPORTPICTURE</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
             <source>&amp;Rename...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Pervardyti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="49" />
             <source>&amp;Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Išsaugoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="50" />
             <source>Rever&amp;t</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grą&amp;žinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53" />
@@ -9273,31 +9980,31 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Surasti diske</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66" />
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti iš disko</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
             <source>&amp;Print...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Spausdinti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72" />
             <source>&amp;E-Mail...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;El. paštas...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="74" />
             <source>E&amp;xit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Išeiti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="77" />
@@ -9310,13 +10017,13 @@ picasapy-origin-key: stringres:eMenuEdit</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="295" />
             <source>Undo Paste All Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti visų efektų įklijavimą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="301" />
             <source>Undo Batch Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti paketinį redagavimą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80" />
@@ -9336,7 +10043,7 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTEALLEFFECTS</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti viską</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96" />
@@ -9356,7 +10063,7 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101" />
             <source>C&amp;lear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išva&amp;lyti pasirinkimą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
@@ -9398,38 +10105,38 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_PICTURE</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Savybės</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="128" />
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204" />
             <source>&amp;Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Žymos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žmonės</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134" />
             <source>&amp;Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Vietos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138" />
             <source>&amp;Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Skaidrių demonstracija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
             <source>Ti&amp;meline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Chrono&amp;logija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="144" />
@@ -9442,7 +10149,7 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_SHOWHIDDEN</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
             <source>Dark Theme</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tamsi tema</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150" />
@@ -9483,7 +10190,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
             <source>Sort by creation date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rūšiuoti pagal sukūrimo datą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="158" />
@@ -9503,7 +10210,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="170" />
             <source>Sort by name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rūšiuoti pagal pavadinimą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="177" />
@@ -9530,13 +10237,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);prin
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192" />
             <source>&amp;Filename</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Failo pavadinimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198" />
             <source>&amp;Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Antraštė</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210" />
@@ -9549,7 +10256,13 @@ picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218" />
             <source>F&amp;older</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>A&amp;plankas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
+            <source>&amp;Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Albumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219" />
@@ -9557,6 +10270,13 @@ picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>Redaguoti &amp;aprašymą...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1640" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>&amp;Redaguoti albumo aprašymą...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222" />
@@ -9569,7 +10289,7 @@ picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_SLIDESHOW</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227" />
             <source>Refresh &amp;Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atnaujinti &amp;miniatiūras</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="230" />
@@ -9582,19 +10302,19 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
             <source>&amp;Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Pašalinti iš „Picasa“...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
             <source>&amp;Picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Nuotrauka</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
             <source>&amp;View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>P&amp;eržiūrėti ir redaguoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238" />
@@ -9607,13 +10327,13 @@ picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253" />
             <source>A&amp;uto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis &amp;kontrastas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259" />
             <source>&amp;Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Automatinės spalvos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
@@ -9626,37 +10346,37 @@ picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_AUTO_REDEYE</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="271" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Man sekasi!</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
             <source>S&amp;harpen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>P&amp;aryškinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283" />
             <source>&amp;Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Juostos grūdėtumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289" />
             <source>&amp;Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Sušildyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296" />
             <source>R&amp;otate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pas&amp;ukti pagal laikrodžio rodyklę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302" />
             <source>Rotate &amp;Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pas&amp;ukti prieš laikrodžio rodyklę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="313" />
@@ -9676,25 +10396,25 @@ picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_HIDE_TEXT</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239" />
             <source>Undo &amp;All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti &amp;visus pakeitimus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
             <source>&amp;Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Slėpti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="254" />
             <source>&amp;Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Sukurti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
             <source>Make a &amp;Poster...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Padaryti plakatą...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="256" />
@@ -9707,19 +10427,19 @@ picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="257" />
             <source>&amp;Movie</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Filmas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="260" />
             <source>&amp;Tools</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Įrankiai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="262" />
             <source>&amp;Folder Manager...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Aplankų tvarkytuvė...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
@@ -9746,13 +10466,13 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomme
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="270" />
             <source>&amp;Options...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Parinktys...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="273" />
             <source>&amp;Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Pagalba</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="274" />
@@ -9779,37 +10499,37 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="281" />
             <source>Performance Monitor</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Našumo stebėsena</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1291" />
             <source>Test Mode (logs the next startup)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bandomasis režimas (įrašoma kito paleidimo eiga)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1303" />
             <source>Send Log...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Siųsti žurnalą...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="58" />
             <source>TEST MODE — logging startup</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>BANDOMASIS REŽIMAS — paleidimo žurnalas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="287" />
             <source>About PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apie „PicasaPy“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="89" />
             <source>Import From Google Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuoti iš „Google“ nuotraukų...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
@@ -9822,7 +10542,7 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPENINANEDITOR</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95" />
             <source>Mo&amp;ve to New Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkel&amp;ti į naują aplanką...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
@@ -9849,13 +10569,13 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_EPROCESS</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139" />
             <source>Cu&amp;t</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Iš&amp;kirpti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140" />
             <source>&amp;Copy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Kopijuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
@@ -9877,6 +10597,27 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYTEXT</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
             <translation>Įklijuoti tekstą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
+            <source>Are you sure you want to replace the existing caption with the contents of the clipboard?
+(This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ar tikrai norite pakeisti esamą antraštę iškarpinės turiniu?
+(Šio veiksmo negalima anuliuoti)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="85" />
+            <source>Replace</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDGo::ReplaceButton;stringres:CTextEditNode::confirmyesbutton;stringres:RestoreProc::replace</extracomment>
+            <translation>Keisti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="91" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
@@ -9917,7 +10658,7 @@ picasapy-origin-key: stringres:eMenuView::DisplayMode</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
             <source>&amp;Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Automatinis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
@@ -9976,16 +10717,22 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
             <translation>Linijinė &amp;gama (2.2)</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
+            <source>&amp;Sepia</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Sepija</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sepija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
             <source>&amp;Black and White</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Juoda ir balta</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
@@ -10011,19 +10758,19 @@ picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extr
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="378" />
             <source>E&amp;xport as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>E&amp;ksportuoti kaip HTML puslapį…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="384" />
             <source>&amp;Move...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Perkelti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="385" />
             <source>&amp;Delete...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Ištrinti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406" />
@@ -10031,6 +10778,34 @@ picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extr
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
             <translation>Nustatyti &amp;veidus iš naujo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>Reset Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
+            <translation>Nustatyti &amp;veidus iš naujo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>WARNING! This will DELETE all face data, people albums, and rescan all photos for faces again. This can REMOVE name tags on synced web albums. Do you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::RemoveAllFaceData</extracomment>
+            <translation>ĮSPĖJIMAS! Taip IŠTRINSITE visus veidų duomenis, žmonių albumus, o visos nuotraukos ieškant veidų bus nuskaitytos dar kartą. Taip gali būti PAŠALINTOS sinchronizuotų žiniatinklio albumų vardų žymos. Ar norite tai padaryti?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>WARNING! This will DELETE all people albums, and move all the faces to the unnamed album. This can REMOVE name tags on synced web albums also. Do you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
+            <translation>ĮSPĖJIMAS! Taip IŠTRINSITE visus žmonių albumus, o visus veidus perkelsite į albumą be pavadinimo. Taip iš sinchronizuotų žiniatinklio albumų galite PAŠALINTI ir vardų žymas. Ar norite tai padaryti?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>Taip</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416" />
@@ -10043,7 +10818,7 @@ picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="425" />
             <source>Add to &amp;Screensaver...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti prie &amp;ekrano užsklandos...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="426" />
@@ -10056,7 +10831,21 @@ picasapy-origin-key: stringres:eMenuCreate::ID_BURNCD</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
             <source>New Movie...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujas filmas...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1947" />
+            <source>From Faces in Selection...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACES</extracomment>
+            <translation>Iš pasirinktų veidų...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2125" />
+            <source>From People Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
+            <translation>Iš žmonių albumų...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
@@ -10069,19 +10858,19 @@ picasapy-origin-key: stringres:eMenuCreate::ID_EXPORT_SENDTOBLOGGER</extracommen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="450" />
             <source>&amp;Upload Manager...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Įkėlimo tvarkytuvė...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="455" />
             <source>Find Duplicates...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rasti dublikatus...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="460" />
             <source>Configure Photo Viewer...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Konfigūruoti nuotraukų peržiūros programą...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="461" />
@@ -10094,19 +10883,19 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONFIG_SCREENSAVER</extracom
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="463" />
             <source>Batch Upload...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti paketą...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="467" />
             <source>U&amp;pload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Į&amp;kelti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="468" />
             <source>&amp;Geotag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Geografinė žyma</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="469" />
@@ -10119,7 +10908,7 @@ picasapy-origin-key: stringres:eMenuTools::Experimental</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="471" />
             <source>Configure Buttons...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Konfigūruoti mygtukus...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481" />
@@ -10154,7 +10943,7 @@ picasapy-origin-key: eula:eula/privacylink.title;stringres:INSTALLRES_PrivacyTex
             <source>Terms of Service</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;stringres:XMP::UsageTerms;stringres:eMenuHelp::ID_HELP_TERMS</extracomment>
-            <translation type="unfinished" />
+            <translation>Paslaugų teikimo sąlygos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="478" />
@@ -10166,7 +10955,7 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
         <message>
             <source>System Default (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sistemos numatytoji reikšmė (%1)</translation>
         </message>
         <message>
             <source>System Default</source>
@@ -10183,25 +10972,25 @@ picasapy-origin-key: move_database:move_database/window1.title</extracomment>
         <message>
             <source>Compact Database...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Suglaudinti duomenų bazę...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>&amp;Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Data</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>&amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pagal &amp;pavadinimą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>&amp;Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
@@ -10214,17 +11003,26 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
             <source>Recent &amp;changes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujausi &amp;pakeitimai</translation>
         </message>
         <message>
             <source>Manage Duplicates...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tvarkyti dublikatus...</translation>
         </message>
         <message>
             <source>Import from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuoti iš „Picasa“...</translation>
+        </message>
+    </context>
+    <context>
+        <name>PlacesMap</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMap.qml" />
+            <source>Place %d photos here</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Padėti %d nuotraukas (-ų) čia</translation>
         </message>
     </context>
     <context>
@@ -10232,19 +11030,19 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
         <message>
             <source>Clear %1 Geotag(s)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išvalyti geografines žymas: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="40" />
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vietos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="48" />
             <source>%1 pictures with a place</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 nuotraukos su vietos žyma</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="109" />
@@ -10257,38 +11055,52 @@ picasapy-origin-key: geopaneltext:Label(geopanel/search_label)</extracomment>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="145" />
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paieška</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="77" />
             <source>Map</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žemėlapis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="54" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="84" />
             <source>The map component (QtLocation) is not available. Geotags can still be edited.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žemėlapio komponentas (QtLocation) nepasiekiamas. Geografines žymas vis tiek galima redaguoti.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesPanel.qml" line="151" />
+            <source>Loading Map...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
+            <translation>Įkeliamas žemėlapis...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesPanel.qml" line="150" />
+            <source>Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::init_err</extracomment>
+            <translation>„Picasa“ nepavyko inicijuoti „Google“ žemėlapių. Įsitikinkite, kad esate prisijungę prie interneto.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
             <source>Right-click the map to place the selected pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spustelėkite žemėlapį dešiniuoju pelės klavišu, kad priskirtumėte vietą pasirinktoms nuotraukoms.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="103" />
             <source>Remove Geotag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti geografinę žymą</translation>
         </message>
     </context>
     <context>
@@ -10297,13 +11109,28 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Savybės</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="52" />
             <source>Select a picture to see its properties.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite nuotrauką, kad pamatytumėte jos ypatybes.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
+            <source>Edit Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PropertiesPanel::edit_keywords</extracomment>
+            <translation>Redaguoti žymas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Keywords</source>
+            <extracomment>    picasapy-origin-key: stringres:IDS_KEYWORD_PREFS
+picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
+            <translation>Raktiniai žodžiai</translation>
         </message>
     </context>
     <context>
@@ -10319,31 +11146,31 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONFIG_SCREENSAVER</extracom
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Display photos from:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti nuotraukas iš:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>No folders or albums contain pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplankuose ir albumuose nėra nuotraukų.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Selected Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktos nuotraukos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Visual effect:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vaizdo efektas:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Iškirpti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
@@ -10377,19 +11204,19 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Change pictures every:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Keisti nuotraukas kas:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>%1 seconds</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 sekundžių</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
             <source>Show captions</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti antraštes</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
@@ -10397,6 +11224,56 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
             <translation>Peržiūra</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>The setting could not be saved.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nepavyko išsaugoti nustatymo.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Starting when the computer is idle is only available on Linux.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paleisti, kai kompiuteris nenaudojamas, galima tik „Linux“ sistemoje.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Install the swayidle package to use this option.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Norėdami naudoti šią parinktį, įdiekite „swayidle“ paketą.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Not supported on this desktop (%1). It works on wlroots-based Wayland desktops (labwc, sway, Wayfire) with swayidle.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Šioje darbalaukio aplinkoje (%1) nepalaikoma. Funkcija veikia su „wlroots“ pagrindu veikiančiais „Wayland“ darbalaukiais („labwc“, „sway“, „Wayfire“) ir „swayidle“.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>This desktop does not start it by itself after you log in again; it works in the current session.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Prisijungus iš naujo ši darbalaukio aplinka pati jos nepaleidžia; ji veikia tik dabartinėje sesijoje.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>unknown</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Unknown;stringres:RestoreProc::unknown;stringres:ytICDVDR::MTUnknown</extracomment>
+            <translation>Nežinoma</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>Start when the computer is idle for</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paleisti, kai kompiuteris nenaudojamas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ScreensaverDialog.qml" />
+            <source>minutes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:uploadmgr::minutes</extracomment>
+            <translation>minutės (-ių)</translation>
         </message>
     </context>
     <context>
@@ -10411,12 +11288,12 @@ picasapy-origin-key: oneuptext:Text(oneup/tpslabel);tooltips:Text(editoneup/tpsl
             <source>seconds</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;stringres:uploadmgr::seconds</extracomment>
-            <translation type="unfinished" />
+            <translation>sekundės</translation>
         </message>
         <message>
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Iškirpti</translation>
         </message>
         <message>
             <source>Dissolve</source>
@@ -10437,6 +11314,107 @@ picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
             <translation>Pamažu išnykti per baltą</translation>
         </message>
         <message>
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>Išnykti – į kairę</translation>
+        </message>
+        <message>
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ištrinti</translation>
+        </message>
+        <message>
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>Išnykti – į viršų</translation>
+        </message>
+        <message>
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>Išnykti – į apačią</translation>
+        </message>
+        <message>
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>Išnykti – į viršų ir kairę</translation>
+        </message>
+        <message>
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>Išnykti – į viršų ir dešinę</translation>
+        </message>
+        <message>
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>Išnykti – į apačią ir kairę</translation>
+        </message>
+        <message>
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>Išnykti – į apačią ir dešinę</translation>
+        </message>
+        <message>
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>Paspausti – į kairę</translation>
+        </message>
+        <message>
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>Paspausti</translation>
+        </message>
+        <message>
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>Paspausti – į viršų</translation>
+        </message>
+        <message>
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>Spauskite į apačią</translation>
+        </message>
+        <message>
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>Apskritimas – į vidų</translation>
+        </message>
+        <message>
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>Apskritimas</translation>
+        </message>
+        <message>
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>Stačiakampis</translation>
+        </message>
+        <message>
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>Pereiti į panoraminį vaizdą ir keisti mastelį – veidas</translation>
+        </message>
+        <message>
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>Praėjęs laikas</translation>
+        </message>
+        <message>
             <source>Pan and Zoom</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
@@ -10446,7 +11424,7 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <location filename="../qml/PicasaPy/SlideshowView.qml" line="177" />
             <source>Exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išeiti</translation>
         </message>
     </context>
     <context>
@@ -10455,13 +11433,13 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="145" />
             <source>PicasaPy · version %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„PicasaPy“ · versija %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="162" />
             <source>Please note: PicasaPy is still a work in progress. Not all effects of the original Picasa are implemented yet, so it is not yet fully compatible with the original version.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atkreipkite dėmesį: „PicasaPy“ vis dar kuriama. Kai kurie originalios „Picasa“ efektai dar neįgyvendinti, todėl programa dar nėra visiškai suderinama su originalia versija.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="176" />
@@ -10498,7 +11476,7 @@ picasapy-origin-key: stringres:TagPanel::tag_info_whole_album</extracomment>
             <location filename="../qml/PicasaPy/TagsPanel.qml" line="42" />
             <source>Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
@@ -10508,7 +11486,11 @@ Then press the button again to add the tag to the selected items.
 
 (TIP: Press &lt;ENTER&gt; after you type in your tag to automatically add the tag without pressing the button)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kairėje, šalia ką tik paspausto mygtuko esančiame teksto laukelyje įrašykite žymą (žodį ar frazę).
+
+Tada dar kartą paspauskite mygtuką, kad žyma būtų pridėta prie pasirinktų elementų.
+
+(PATARIMAS: įvedę žymą paspauskite &lt;ENTER&gt; — ji bus automatiškai pridėta, nereikės spausti mygtuko.)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
@@ -10542,20 +11524,34 @@ picasapy-origin-key: tagpanel_text:Label(tagpanel/add_tag_label)</extracomment>
             <location filename="../qml/PicasaPy/TagsPanel.qml" line="88" />
             <source>Select pictures to tag them.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite nuotraukas, kad galėtumėte joms priskirti žymas.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
             <source>Tags cannot be modified because one or more items are read-only.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymų negalima keisti, nes vienas arba keli elementai yra nekeičiami.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
-            <source>Quick tags</source>
+            <source>Quick Tags:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tagpanel_text:Label(tagpanel/quick_label)</extracomment>
             <translation>Sparčiosios žymos:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Add tag to the currently selected items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tagpanel_text:Tooltip(tagpanel/addtag)</extracomment>
+            <translation>Pridėti žymą prie šiuo metu pasirinktų elementų</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Configure Quick Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickTagConfigDlg::title;tagpanel_text:Tooltip(tagpanel/quick_config)</extracomment>
+            <translation>Konfigūruoti sparčiąsias žymas</translation>
         </message>
     </context>
     <context>
@@ -10585,13 +11581,13 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/autofill_label)</ex
             <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" />
             <source>Tag</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žyma</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" />
             <source>(automatic)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(automatiškai)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" line="56" />
@@ -10608,7 +11604,7 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
             <source>Movie Maker</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
-            <translation type="unfinished" />
+            <translation>Programa „Movie Maker“</translation>
         </message>
         <message>
             <source>Create Movie Presentation</source>
@@ -10634,7 +11630,7 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>More...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Daugiau...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
@@ -10646,7 +11642,7 @@ picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips
         <message>
             <source>Clear Tray</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išvalyti dėklą</translation>
         </message>
         <message>
             <source>Add/Remove Star</source>
@@ -10687,32 +11683,32 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment
         <message>
             <source>Rotate counter-clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sukti į kairę</translation>
         </message>
         <message>
             <source>Rotate clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sukti pagal laikrodžio rodyklę</translation>
         </message>
         <message>
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žmonės</translation>
         </message>
         <message>
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vietos</translation>
         </message>
         <message>
             <source>Tags</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žymos</translation>
         </message>
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Savybės</translation>
         </message>
         <message>
             <source>Show/Hide People Panel</source>
@@ -10741,12 +11737,12 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
         <message>
             <source>Order Prints (service discontinued)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Užsakyti nuotraukas (paslauga nutraukta)</translation>
         </message>
         <message>
             <source>Publish to Blogger (service discontinued)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Skelbti „Blogger“ (paslauga nutraukta)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
@@ -10766,43 +11762,43 @@ picasapy-origin-key: stringres:CThumbUI::CreateCollageWait</extracomment>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Add to</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti prie</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="102" />
             <source>Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="176" />
             <source>E-Mail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>El. paštas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="177" />
             <source>Print</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spausdinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="180" />
             <source>Export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="189" />
             <source>Upload to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti į „Google“ nuotraukas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Koliažas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
@@ -10844,7 +11840,7 @@ picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTr
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
     </context>
     <context>
@@ -10871,7 +11867,7 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumFolder</extracomment>
             <comment>CThumbUI::UpdateAlbumphoto</comment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverphotos;stringres:CThumbUI::UpdateAlbumphoto;stringres:LighthouseConfirm::photo;stringres:LighthouseConfirm::photos</extracomment>
-            <translation type="unfinished" />
+            <translation>nuotrauka</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayAlbumToken.qml" />
@@ -10879,7 +11875,7 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverphotos;stringres:CThumb
             <comment>CThumbUI::UpdateAlbumCoverphotos</comment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverphotos;stringres:CThumbUI::UpdateAlbumphoto;stringres:LighthouseConfirm::photo;stringres:LighthouseConfirm::photos</extracomment>
-            <translation type="unfinished" />
+            <translation>nuotraukos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayAlbumToken.qml" />
@@ -10894,52 +11890,71 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverNoSel;stringres:il_GetS
             <source>%1 - %2 %3</source>
             <comment>CThumbUI::UpdateAlbumCover</comment>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 – %2 %3</translation>
         </message>
     </context>
     <context>
         <name>VideoPlayerView</name>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
+            <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58" />
+            <source>Unable to play this video.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nepavyko atkurti šio vaizdo įrašo.</translation>
+        </message>
+        <message>
+            <source>Create a new starting point</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sukurti naują pradžios tašką</translation>
+        </message>
+        <message>
+            <source>Create a new ending point</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sukurti naują pabaigos tašką</translation>
+        </message>
+    </context>
+    <context>
+        <name>VideoEditPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Reset Start and End</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/reset_trim)</extracomment>
+            <translation>Nustatyti iš naujo pradžią ir pabaigą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Take Snapshot</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/capture_frame)</extracomment>
+            <translation>Padaryti momentinę ekrano nuotrauką</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
             <source>Export Clip</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(movieeditpanel/export_movie)</extracomment>
             <translation>Eksportuoti iškarpą</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
             <source>Capture current frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(movieeditpanel/capture_frame)</extracomment>
             <translation>Išsaugoti esamą rėmelį</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
             <source>Restore movie to its original length (remove start and end points)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
             <translation>Atkurti pradinę filmo trukmę (pašalinti pradžios ir pabaigos taškus)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58" />
-            <source>Unable to play this video.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Create a new starting point</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Create a new ending point</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <source>Reset trim</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Save a clip of the movie between the start and end points</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/export_movie)</extracomment>
+            <translation>Išsaugoti filmo klipą nuo pirmo iki paskutinio taško</translation>
         </message>
     </context>
     <context>
@@ -10981,41 +11996,59 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
         <message>
             <source>Existing data migrated from {source} to {target}.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Esami duomenys perkelti iš {source} į {target}.</translation>
         </message>
         <message>
             <location filename="../application.py" line="318" />
             <source>Starting…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paleidžiama…</translation>
         </message>
         <message>
             <location filename="../application.py" line="339" />
             <source>Preparing index…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ruošiamas indeksas…</translation>
         </message>
         <message>
             <location filename="../application.py" line="347" />
             <source>Loading photo library…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkeliama nuotraukų biblioteka…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Checking folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tikrinami aplankai…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Refreshing folder list…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atnaujinamas aplankų sąrašas…</translation>
+        </message>
+        <message>
+            <location filename="../application.py" />
+            <source>Checking export folders…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tikrinami eksportavimo aplankai…</translation>
         </message>
         <message>
             <location filename="../application.py" line="416" />
             <source>Scanning folders…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuskaitomi aplankai…</translation>
         </message>
         <message>
             <source>There were errors loading the PicasaPy database. Would you like to view the error log?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkeliant „PicasaPy“ duomenų bazę įvyko klaidų. Ar norite peržiūrėti klaidų žurnalą?</translation>
         </message>
         <message>
             <source>Database error</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Duomenų bazės klaida</translation>
         </message>
     </context>
     <context>
@@ -11024,13 +12057,13 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <location filename="../drop_import_controller.py" line="104" />
             <source>Not added (not a picture or folder): %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepridėta (tai ne nuotrauka ar aplankas): %1</translation>
         </message>
         <message>
             <location filename="../drop_import_controller.py" line="110" />
             <source>Drop pictures or folders here to add them.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Numeskite nuotraukas ar aplankus čia, kad juos pridėtumėte.</translation>
         </message>
     </context>
     <context>
@@ -11038,25 +12071,25 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
         <message>
             <source>Ignored people ({0})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ignoruojami žmonės ({0})</translation>
         </message>
         <message>
             <location filename="../face_scan_controller.py" />
             <source>All unnamed faces ({0})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Visi neįvardyti veidai ({0})</translation>
         </message>
         <message>
             <location filename="../face_scan_controller.py" />
             <source>Not yet grouped ({0})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dar nesugrupuoti ({0})</translation>
         </message>
         <message>
             <location filename="../face_scan_controller.py" />
             <source>Group {0} ({1})</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grupė {0} ({1})</translation>
         </message>
     </context>
     <context>
@@ -11065,13 +12098,13 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <location filename="../dedup_controller.py" line="192" />
             <source>Choose a folder to search for duplicates in.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite aplanką, kuriame ieškoti dublikatų.</translation>
         </message>
         <message>
             <location filename="../dedup_controller.py" line="415" />
             <source>This picture is already inside a "Duplikátumok" folder; leaving it in place instead of nesting the folder inside itself.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ši nuotrauka jau yra aplanke „Duplikátumok“, todėl paliekama vietoje, užuot įdėjus aplanką į patį save.</translation>
         </message>
     </context>
     <context>
@@ -11080,134 +12113,134 @@ picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Too
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="32" />
             <source>Find Duplicates</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rasti dublikatus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="100" />
             <source>Select at least two pictures in the grid, or pick another scope.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tinklelyje pasirinkite bent dvi nuotraukas arba pasirinkite kitą sritį.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="140" />
             <source>Comparing files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Lyginami failai...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="141" />
             <source>Analysing pictures...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Analizuojamos nuotraukos...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="142" />
             <source>Searching...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoma...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="233" />
             <source>Groups of duplicate and similar pictures. Pick which one to keep in each group; the rest can be moved to a "Duplikátumok" folder or deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasikartojančių ir panašių nuotraukų grupės. Kiekvienoje grupėje pasirinkite, kurią nuotrauką palikti; likusias galima perkelti į aplanką „Duplikátumok“ arba ištrinti.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="247" />
             <source>Search in:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoti:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="260" />
             <source>Selected pictures (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktos nuotraukos (%1)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="262" />
             <source>Selected pictures (none)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktos nuotraukos (nėra)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="263" />
             <source>This folder and its subfolders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šis aplankas ir jo poaplankiai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="264" />
             <source>Whole library</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Visa biblioteka</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="270" />
             <source>Scanning...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuskaitoma...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="271" />
             <source>Scan for Duplicates</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoti dublikatų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="283" />
             <source>Searching the whole library reads every picture — with tens of thousands of photos this can take a long time. You can cancel at any point, and the next search starts from the already analysed pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškant visoje bibliotekoje peržiūrima kiekviena nuotrauka — jei jų dešimtys tūkstančių, paieška gali užtrukti. Ją galite atšaukti bet kuriuo metu, o kitą kartą paieška bus tęsiama nuo jau išanalizuotų nuotraukų.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="307" />
             <source>%1 %2 / %3</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 %2 / %3</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="318" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="360" />
             <source>No duplicates found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dublikatų nerasta.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="403" />
             <source>Exact duplicates (%1 pictures)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tikslūs dublikatai (%1 nuotraukų)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="405" />
             <source>Similar pictures (%1, distance %2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Panašios nuotraukos (%1, atstumas %2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="473" />
             <source>Move others to "Duplikátumok"</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kitas perkelti į „Duplikátumok“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="478" />
             <source>Delete others to Trash</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kitus ištrinti į šiukšlinę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/DedupDialog.qml" line="493" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
     </context>
     <context>
@@ -11219,45 +12252,57 @@ You have chosen to delete ALL FILES from the source media.
 
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ĮSPĖJIMAS
+
+Pasirinkote ištrinti VISUS FAILUS iš šaltinio laikmenos.
+
+</translation>
         </message>
         <message>
             <source>After importing, %1 file(s) will be deleted.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importavus bus ištrinta %1 failų.
+</translation>
         </message>
         <message>
             <source>An unknown number of files will be deleted after importing.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importavus bus ištrintas nežinomas failų skaičius.
+</translation>
         </message>
         <message>
             <source>1 file will not be imported because it is already a duplicate in Picasa.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>1 failas nebus importuotas, nes „Picasa“ jau yra jo dublikatas.
+</translation>
         </message>
         <message>
             <source>%1 files will not be imported because they are already duplicates in Picasa.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 failai nebus importuoti, nes jie jau yra dublikatai „Picasa“ programoje.
+</translation>
         </message>
         <message>
             <source>
 Picasa does not recognize 1 of the files to be deleted.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+„Picasa“ neatpažįsta 1 ištrinamo failo.
+</translation>
         </message>
         <message>
             <source>
 Picasa does not recognize %1 of the files to be deleted.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+„Picasa“ neatpažįsta %1 ištrinamų failų.
+</translation>
         </message>
         <message>
             <source>
@@ -11266,19 +12311,23 @@ Are you sure you want to remove ALL FILES?
 THIS CANNOT BE UNDONE.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+Ar tikrai norite pašalinti VISUS FAILUS?
+
+ŠIO VEIKSMO NEBUS GALIMA ATŠAUKTI.
+</translation>
         </message>
         <message>
             <location filename="../import_source_controller.py" line="142" />
             <source>Choose a source folder first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite šaltinio aplanką.</translation>
         </message>
         <message>
             <location filename="../import_source_controller.py" line="356" />
             <source>Sorry, there is not enough free disk space to safely download pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsiprašome, bet diske nepakanka vietos nuotraukoms saugiai siųsti.</translation>
         </message>
     </context>
     <context>
@@ -11298,7 +12347,7 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button)
         <message>
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti</translation>
         </message>
         <message>
             <source>Upload to Picasa Web Albums...</source>
@@ -11315,37 +12364,49 @@ picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWASt
         <message>
             <source>View the previous Photo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ankstesnė nuotrauka</translation>
         </message>
         <message>
             <source>View the next Photo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kita nuotrauka</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuoti iš šaltinio</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
             <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuokite nuotraukas ir vaizdo įrašus iš kito aplanko (pvz., prijungto fotoaparato ar atminties kortelės) į biblioteką.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
             <source>Source:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šaltinis:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Išimami diskai</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <source>Removable Drive (%1)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Išimamas diskas (%1)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
             <source>(none selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>(nepasirinkta)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
@@ -11353,64 +12414,65 @@ picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWASt
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Naršyti...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
             <source>%1 pictures/videos found</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rasta nuotraukų / vaizdo įrašų: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
             <source>No pictures or videos found in this folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šiame aplanke nerasta nuotraukų ar vaizdo įrašų.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
             <source>Exclude Duplicates</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Neįtraukti dublikatų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
             <source>Exclude photos that are already imported into Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Neįtraukti jau importuotų į „Picasa“ nuotraukų</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
             <source>%n of those are duplicates already in Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
-                <numerusform />
+            <translation>
+                <numerusform>%n iš jų jau yra „Picasa“ dublikatas</numerusform>
+                <numerusform>%n iš jų jau yra „Picasa“ dublikatai</numerusform>
+                <numerusform>%n iš jų jau yra „Picasa“ dublikatų</numerusform>
             </translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
             <source>Exclude All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Neįtraukti nieko</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
             <source>Include All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įtraukti viską</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
             <source>Include</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įtraukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
             <source>Exclude</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Neįtraukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
@@ -11423,7 +12485,14 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
             <source>Folder template:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Aplanko šablonas:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Jei norite tęsti, įveskite naują aplanko pavadinimą arba pasirinkite esamą aplanką</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
@@ -11443,7 +12512,7 @@ picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
             <source>%1 (Today)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 (šiandien)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
@@ -11456,49 +12525,49 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
             <source>Leave card alone</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nenaudokite kortelės</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
             <source>Delete only copied photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti tik nukopijuotas nuotraukas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
             <source>Delete everything on card</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti iš kortelės viską</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ar tikrai norite pašalinti importuotus failus iš kortelės? ŠIO VEIKSMO NEBUS GALIMA ATŠAUKTI.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />
             <source>WARNING! You have chosen to delete ALL FILES…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ĮSPĖJIMAS! Pasirinkote ištrinti VISUS FAILUS…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="276" />
             <source>Move instead of copy (source files will be deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti, o ne kopijuoti (šaltinio failai bus ištrinti)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
             <source>%1 / %2 imported</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuota: %1 / %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
             <source>Done: %1 imported, %2 failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Baigta: importuota %1, nepavyko: %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
@@ -11512,29 +12581,48 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <source>Import Files/Folder</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
+            <translation>Importuoti failus / aplanką</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplankas...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Failai...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti šaltinio aplanką...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti paskirties aplanką...</translation>
         </message>
         <message>
             <source>%1 / %2 imported at %3/sec</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Importuota: %1 / %2 (%3 per sek.)</translation>
         </message>
         <message>
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>baitų</translation>
         </message>
         <message>
             <source>File types:</source>
@@ -11545,13 +12633,13 @@ picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</e
         <message>
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukų ir filmų failai</translation>
         </message>
         <message>
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukų failai</translation>
         </message>
         <message>
             <source>All Files</source>
@@ -11562,22 +12650,22 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
         <message>
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujausi šaltiniai</translation>
         </message>
         <message>
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujausios paskirties vietos</translation>
         </message>
         <message>
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pradinis dydis</translation>
         </message>
         <message>
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 pikselių</translation>
         </message>
     </context>
     <context>
@@ -11593,7 +12681,7 @@ picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukų ir filmų failai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="40" />
@@ -11609,13 +12697,13 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="19" />
             <source>Save Log As...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugoti žurnalą kaip...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="22" />
             <source>Text Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Teksto failai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="22" />
@@ -11631,7 +12719,7 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <location filename="../timeline_controller.py" line="96" />
             <source>Unknown date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nežinoma data</translation>
         </message>
     </context>
     <context>
@@ -11640,20 +12728,20 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <location filename="../qml/PicasaPy/TimelineView.qml" line="50" />
             <source>Timeline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Chronologija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TimelineView.qml" line="58" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TimelineView.qml" line="79" />
             <source>No pictures yet</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukų dar nėra</translation>
         </message>
     </context>
     <context>
@@ -11673,22 +12761,22 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
         <message>
             <source>Rotate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukti pagal laikrodžio rodyklę</translation>
         </message>
         <message>
             <source>Rotate Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukti prieš laikrodžio rodyklę</translation>
         </message>
         <message>
             <source>Undo All Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti visus pakeitimus</translation>
         </message>
         <message>
             <source>Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Slėpti</translation>
         </message>
         <message>
             <source>Unhide</source>
@@ -11699,32 +12787,54 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
         <message>
             <source>Open File</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atverti failą</translation>
         </message>
         <message>
             <source>Open With</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atverti naudojant</translation>
         </message>
         <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugoti</translation>
         </message>
         <message>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grįžti</translation>
         </message>
         <message>
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Surasti diske</translation>
+        </message>
+        <message>
+            <source>Locate</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rasti</translation>
+        </message>
+        <message>
+            <source>File on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Failas diske</translation>
+        </message>
+        <message>
+            <source>Locate Original on Disk</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
+            <translation>&amp;Originalas diske</translation>
         </message>
         <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti iš disko</translation>
+        </message>
+        <message>
+            <source>Remove from Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
+            <translation>&amp;Pašalinti iš albumo</translation>
         </message>
         <message>
             <source>Copy Full Path</source>
@@ -11753,11 +12863,17 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Savybės</translation>
         </message>
     </context>
     <context>
         <name>FolderPropertiesDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPropertiesDialog.qml" line="62" />
+            <source>Untitled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Be pavadinimo</translation>
+        </message>
         <message>
             <source>Edit Folder Description</source>
             <extracomment>picasapy-origin: picasa
@@ -11771,14 +12887,46 @@ picasapy-origin-key: stringres:CEditAlbum::albumTitle</extracomment>
             <translation>Albumo ypatybės</translation>
         </message>
         <message>
+            <source>Folder Properties</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CEditAlbum::folderTitle</extracomment>
+            <translation>Aplanko ypatybės</translation>
+        </message>
+        <message>
+            <source>Cannot Rename Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nepavyko pervadinti aplanko</translation>
+        </message>
+        <message>
+            <source>Folder renaming is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplanko pervadinti negalima.</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>Gerai</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atšaukti</translation>
+        </message>
+        <message>
             <source>Name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vardas:</translation>
         </message>
         <message>
             <source>Date:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Data:</translation>
+        </message>
+        <message>
+            <source>Music:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Muzika:</translation>
         </message>
         <message>
             <source>Automatic date</source>
@@ -11787,15 +12935,38 @@ picasapy-origin-key: album:album/autodate.title</extracomment>
             <translation>Automatinė data</translation>
         </message>
         <message>
-            <source>Enter the date as YYYY-MM-DD.</source>
+            <source>Enter the date like this: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įveskite datą šiuo formatu: %1</translation>
         </message>
         <message>
             <source>Use music for Slideshow and Movie presentation:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/usemusic.title</extracomment>
             <translation>Naudoti muziką skaidrėms demonstruoti ir filmo pateikčiai:</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Naršyti...</translation>
+        </message>
+        <message>
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Garso failai</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Muzikos failai (*.mp3,*.wma)</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Muzikos failai (*.mp3,*.m4a)</translation>
         </message>
         <message>
             <source>Place taken (optional):</source>
@@ -11809,6 +12980,24 @@ picasapy-origin-key: album:album/labelgroup14.title</extracomment>
 picasapy-origin-key: album:album/labelgroup16.title</extracomment>
             <translation>Aprašymas (neprivaloma):</translation>
         </message>
+        <message>
+            <source>Choose date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkti datą</translation>
+        </message>
+    </context>
+    <context>
+        <name>DateCalendarPopup</name>
+        <message>
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ankstesnis mėnuo</translation>
+        </message>
+        <message>
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kitas mėnuo</translation>
+        </message>
     </context>
     <context>
         <name>FolderListContextMenu</name>
@@ -11821,7 +13010,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYDATE</extracomment>
         <message>
             <source>Sort by Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rūšiuoti pagal pavadinimą</translation>
         </message>
         <message>
             <source>Sort by Size</source>
@@ -11856,7 +13045,7 @@ picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
         <message>
             <source>Sort People by Top List</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rūšiuoti žmones pagal populiariausiųjų sąrašą</translation>
         </message>
         <message>
             <source>Simplified Tree View</source>
@@ -11873,7 +13062,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
         <message>
             <source>Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Darbalaukis</translation>
         </message>
     </context>
     <context>
@@ -11914,27 +13103,27 @@ picasapy-origin-key: stringres:Tray::ID_REMOVE_SELECTION</extracomment>
         <message>
             <source>&amp;View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>P&amp;eržiūrėti ir redaguoti</translation>
         </message>
         <message>
             <source>R&amp;otate Clockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pas&amp;ukti pagal laikrodžio rodyklę</translation>
         </message>
         <message>
             <source>Rotate &amp;Counterclockwise</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pas&amp;ukti prieš laikrodžio rodyklę</translation>
         </message>
         <message>
             <source>&amp;Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Rasti diske</translation>
         </message>
         <message>
             <source>Propert&amp;ies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ypaty&amp;bės</translation>
         </message>
     </context>
     <context>
@@ -11942,7 +13131,7 @@ picasapy-origin-key: stringres:Tray::ID_REMOVE_SELECTION</extracomment>
         <message>
             <source>Delete Album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti albumą</translation>
         </message>
         <message>
             <source>Edit Album Description...</source>
@@ -11965,7 +13154,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti pasirinkimą</translation>
         </message>
         <message>
             <source>Invert Selection</source>
@@ -11976,7 +13165,7 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         <message>
             <source>Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atnaujinti miniatiūras</translation>
         </message>
         <message>
             <source>Online Actions</source>
@@ -11987,7 +13176,7 @@ picasapy-origin-key: stringres:Album::ID_ONLINE_ACTIONS;stringres:CThumbUI::onli
         <message>
             <source>Upload to Google Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įkelti į „Google“ nuotraukas...</translation>
         </message>
         <message>
             <source>Upload to Picasa Web Albums...</source>
@@ -11998,7 +13187,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
         <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportuoti kaip HTML puslapį...</translation>
         </message>
     </context>
     <context>
@@ -12006,12 +13195,12 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
         <message>
             <source>Rename Collection...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pervadinti kolekciją...</translation>
         </message>
         <message>
             <source>Remove Collection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti kolekciją</translation>
         </message>
         <message>
             <source>Set/Change Password...</source>
@@ -12037,12 +13226,12 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
         <message>
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti viską</translation>
         </message>
         <message>
             <source>Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti pasirinkimą</translation>
         </message>
     </context>
     <context>
@@ -12050,52 +13239,65 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
         <message>
             <source>APPLY</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PRITAIKYTI</translation>
         </message>
         <message>
             <source>CANCEL</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ATŠAUKTI</translation>
         </message>
     </context>
     <context>
         <name>EditorCropPanel</name>
         <message>
+            <source>Custom Aspect Ratios</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
+            <translation>Pasirinktiniai formato koeficientai</translation>
+        </message>
+        <message>
+            <source>Deletes the current aspect ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
+            <translation>Ištrina dabartinį formato koeficientą</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Suggested crops</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Siūlomi apkirpimai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>This image's orientation has been modified by the Straighten tool and might not crop accurately.
 If you encounter difficulty cropping this image, try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šio vaizdo orientaciją pakeitė įrankis „Ištiesinti“, todėl gali nepavykti jo tiksliai apkirpti.
+Jei apkirpti sunku, pabandykite anuliuoti ištiesinimo pataisą, iš naujo apkirpti vaizdą ir, jei reikia, vėl jį ištiesinti.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Add Custom Aspect Ratio…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti pasirinktinį kraštinių santykį…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Choose a size below, then drag on the picture to select the area you want to keep.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite toliau pateiktą dydį, tada tempdami pele nuotraukoje pažymėkite sritį, kurią norite išsaugoti.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12108,7 +13310,7 @@ picasapy-origin-key: tooltips:Label(editpanel/crop_label)</extracomment>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
             <source>Delete this custom aspect ratio?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti šį pasirinktinį kraštinių santykį?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12116,20 +13318,6 @@ picasapy-origin-key: tooltips:Label(editpanel/crop_label)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/cropdiscard)</extracomment>
             <translation>Atmeta pritaikytą kirpimą</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Peizažas</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Portretas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12150,13 +13338,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <source>Rotate</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Rotate;stringres:ImageFilters::Rotation;stringres:filter_rot_label0;tooltips:Label(editpanel/croprotatecrop)</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Top left</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -12179,19 +13361,19 @@ picasapy-origin-key: stringres:Address::ID_AUTOCOMPLETE</extracomment>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Copy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Iškirpti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Delete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ištrinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
@@ -12204,13 +13386,13 @@ picasapy-origin-key: stringres:Address::ID_PASTE;stringres:eMenuEdit::ID_PASTE</
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti viską</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TextFieldContextMenu.qml" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti</translation>
         </message>
     </context>
     <context>
@@ -12225,13 +13407,13 @@ picasapy-origin-key: stringres:filter_grain_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Juostelės grūdėtumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
             <source>Film Grain (Fine)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Plėvelės grūdėtumas (smulkus)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
@@ -12251,7 +13433,7 @@ picasapy-origin-key: stringres:filter_Matte_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Daugiau efektų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
@@ -12273,6 +13455,48 @@ picasapy-origin-key: stringres:filter_RoundedEdges_label0</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <translation>Vinjetė</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Add a light glow to the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Matte_tooltip0</extracomment>
+            <translation>Pridėkite švelnų nuotraukos kontūrų blizgesį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Mimics infrared night-vision cameras</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_NightVision_tooltip0</extracomment>
+            <translation>Imituoja infraraudonųjų spindulių naktinio matymo fotoaparatus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Brings out image details</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_LocalContrast_tooltip0</extracomment>
+            <translation>Išryškina vaizdo detales</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Give your photo rounded corners</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_RoundedEdges_tooltip0</extracomment>
+            <translation>Užapvalinkite nuotraukos kampus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Simulate film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikGrain_tooltip0</extracomment>
+            <translation>Imituoti juostos grūdėtumą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab4.qml" />
+            <source>Adds film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_grain2_tooltip0;stringres:filter_grain_tooltip0</extracomment>
+            <translation>Prideda juostos grūdėtumo</translation>
         </message>
     </context>
     <context>
@@ -12340,25 +13564,25 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Auto</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>No red eye was found automatically.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatiškai raudonų akių neaptikta.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -12368,13 +13592,17 @@ Note: You can click on a box to delete a change.
 
 You can also draw a square around any red eye that Picasa may have missed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„Picasa“ aptiko raudonų akių efektą ir jį pašalino.
+
+Pastaba: spustelėkite laukelį, kad pašalintumėte pataisą.
+
+Taip pat galite apvesti kvadratu raudoną akį, kurios „Picasa“ galėjo nepastebėti.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Preview changes without square outlines</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Peržiūrėti pakeitimus be kvadrato formos kontūrų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -12387,7 +13615,7 @@ picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;t
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Regions selected: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktos sritys: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -12400,13 +13628,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>Undo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>You can also draw a square around any red eye that Picasa may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Taip pat galite apvesti kvadratu raudoną akį, kurios „Picasa“ galėjo nepastebėti. Spustelėkite, laikykite nuspaudę ir vilkite pelę aplink kiekvieną akį atskirai. Virš srities atsiras pasirinkimo laukelis.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -12416,9 +13644,31 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <translation>Jei norite pažymėti akį, spustelėkite ir laikydami nuspaudę pelės klavišą vilkite žymeklį aplink ją. Akis žymėkite atskirai. Virš žymimos zonos atsiras žymėjimo laukelis. Žymėjimą užbaigsite atleidę pelės klavišą. Nuotrauka bus parodyta su atlikta raudonų akių korekcija.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Šio vaizdo orientaciją pakeitė įrankis „Ištiesinti“, todėl žymint raudonų akių sritis gali pasitaikyti netikslumų.
+Jei raudonų akių pataisos nesutampa su akimis (arba jų visai nėra), pabandykite anuliuoti ištiesinimo pataisą, iš naujo pritaikyti raudonų akių korekciją ir, jei reikia, vėl ištiesinti vaizdą.</translation>
+        </message>
+        <message>
             <source>Note: click inside the box to undo the change.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pastaba: spustelėkite laukelio viduje, kad anuliuotumėte pakeitimą.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.
+
+Note: You can click on a box to delete a change.
+
+You can also click 'auto' to reapply the auto-corrections.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Spustelėkite, laikykite nuspaudę ir vilkite pelę aplink kiekvieną akį atskirai. Virš srities atsiras pasirinkimo laukelis. Atleiskite pelės mygtuką, kad užbaigtumėte žymėjimą. Nuotraukoje bus pašalintas raudonų akių efektas.
+
+Pastaba: spustelėkite laukelį, kad pašalintumėte pataisą.
+
+Taip pat galite spustelėti „auto“, kad vėl pritaikytumėte automatines pataisas.</translation>
         </message>
     </context>
     <context>
@@ -12427,31 +13677,31 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Brush Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Teptuko dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spustelėkite sritį, kurią norite taisyti. Tada perkelkite pelę ir peržiūrėkite sritį, kuria ji bus pakeista. Spustelėkite vaizdą dar kartą, kad pritaikytumėte pakeitimą. Kartokite veiksmus.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Redo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Grąžinti fragmentą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
@@ -12464,7 +13714,7 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Regions selected: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinktos sritys: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
@@ -12478,13 +13728,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>Retušuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
             <source>Undo Patch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anuliuoti fragmentą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
@@ -12500,55 +13750,55 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Add text based on the picture's caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti tekstą pagal nuotraukos antraštę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Don't show the solid fill color (show outline only)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nerodyti visiško užpildymo spalvos (rodyti tik kontūrą)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Copy Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuoti antraštę</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Opacity</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepermatomumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Outline color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kontūro spalva</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Outline thickness</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kontūro storis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti visą esamą tekstą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -12568,12 +13818,12 @@ picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMeta
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Type your text, then click on the photo to place it.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įveskite tekstą, tada spustelėkite nuotrauką, kad jį įterptumėte.</translation>
         </message>
         <message>
             <source>Font</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šriftas</translation>
         </message>
         <message>
             <source>Bold</source>
@@ -12590,7 +13840,7 @@ picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepa
         <message>
             <source>Underline</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pabraukti</translation>
         </message>
         <message>
             <source>Left justify text</source>
@@ -12613,17 +13863,17 @@ picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/rightalign)</extrac
         <message>
             <source>B</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>B</translation>
         </message>
         <message>
             <source>I</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>I</translation>
         </message>
         <message>
             <source>U</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>U</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -12636,13 +13886,13 @@ picasapy-origin-key: edittextpaneltext:Label(edittextpanel/edittext_label)</extr
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Font:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šriftas:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Size:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -12709,19 +13959,19 @@ picasapy-origin-key: stringres:filter_radsat_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>B&amp;W</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nespalvota</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Efektai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Film Grain</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Juostelės grūdėtumas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
@@ -12762,13 +14012,13 @@ picasapy-origin-key: stringres:EXIF::Saturation;stringres:filter_sat_label0</ext
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Sepia</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sepija</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Sharpen</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Smailinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
@@ -12795,7 +14045,112 @@ picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
             <source>Warmify</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašiltinti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Sharpens edges in your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_unsharp2_tooltip0;stringres:filter_unsharp_tooltip0</extracomment>
+            <translation>Paryškina kontūrus nuotraukoje</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Converts photo to sepia tone</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_sepia_tooltip0</extracomment>
+            <translation>Suteikia nuotraukai sepijos toną</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes your photo black and white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_bw_tooltip0</extracomment>
+            <translation>Paverčia nuotrauką juoda ir balta</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Improves skintones by boosting warm tones</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_warm_tooltip0</extracomment>
+            <translation>Pagerina odos atspalvius, paryškinant šiltąsias spalvas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Simulate film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikGrain_tooltip0</extracomment>
+            <translation>Imituoti juostos grūdėtumą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Adds film grain</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_grain2_tooltip0;stringres:filter_grain_tooltip0</extracomment>
+            <translation>Prideda juostos grūdėtumo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Change the color of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikTint_tooltip0</extracomment>
+            <translation>Pakeiskite nuotraukos spalvas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes a tinted look</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_tint_tooltip0</extracomment>
+            <translation>Sukuriamas vaizdas su atspalviais</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Increases or decreases saturation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_sat_tooltip0</extracomment>
+            <translation>Sumažina arba padidina spalvų sodrumą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Softens focus around a center point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radblur_tooltip0</extracomment>
+            <translation>Sušvelnina fokusavimą aplink centro tašką</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Gives your photo a gauzy glow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_glow2_tooltip0;stringres:filter_glow_tooltip0</extracomment>
+            <translation>Suteikia nuotraukai švelnų blizgesį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Makes a photo that looks like it was taken with B&amp;W film and a color filter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_ansel_tooltip0</extracomment>
+            <translation>Priverčia nuotrauką atrodyti taip, lyg ji būtų daryta nespalvota juosta naudojant spalvos filtrą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Desaturates around a center point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radsat_tooltip0</extracomment>
+            <translation>Sumažina sodrumą aplink centro tašką</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>A graduated filter, useful for skies</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_dir_tint_tooltip0</extracomment>
+            <translation>Gradientinis filtras, naudingas dangui paryškinti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab1.qml" />
+            <source>Tints around a central point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_radtint_tooltip0</extracomment>
+            <translation>Atspalviai aplink centrinį tašką</translation>
         </message>
     </context>
     <context>
@@ -12825,7 +14180,7 @@ picasapy-origin-key: stringres:filter_Cinemascope_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kūrybiniai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
@@ -12918,6 +14273,96 @@ picasapy-origin-key: stringres:filter_Orton_label0</extracomment>
 picasapy-origin-key: stringres:filter_QuantizePalette_label0</extracomment>
             <translation>Paversti plakatu</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Simulate black-and-white infrared film</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_IR_tooltip0</extracomment>
+            <translation>Imituoti juodą ir baltą infraraudonųjų spindulių juostą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Imitate the Lomo toy camera</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Lomo_tooltip0</extracomment>
+            <translation>Imituoti „Lomo“ žaislinį fotoaparatą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Make your photo look like it was taken with a plastic camera</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Holga_tooltip0</extracomment>
+            <translation>Priverskite savo nuotrauką atrodyti taip, lyg ji būtų daryta lomografiniu fotoaparatu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Emulate that "high dynamic range" look</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Imituoti „didelio dinaminio diapazono“ (HDR) išvaizdą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Add a little classic movie magic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Cinemascope_tooltip0</extracomment>
+            <translation>Pridėti šiek tiek klasikinio filmo žavesio</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimic Michael Orton's effect</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Orton_tooltip0</extracomment>
+            <translation>Imituoja Maiklo Ortono efektą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Rounded corners and a warm, aged glow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Sixties_tooltip0</extracomment>
+            <translation>Užapvalinti kampai ir šiltas, sendintas blizgesys</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Make your photo look like a negative</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Invert_tooltip0</extracomment>
+            <translation>Padarykite taip, kad nuotrauka atrodytų kaip negatyvas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Simulate heat vision</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_HeatMap_tooltip0</extracomment>
+            <translation>Imituoti šiluminį vaizdą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimics infrared night-vision cameras</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_NightVision_tooltip0</extracomment>
+            <translation>Imituoja infraraudonųjų spindulių naktinio matymo fotoaparatus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Mimics film cross-processing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_CrossProcess_tooltip0</extracomment>
+            <translation>Imituoja kryžminį juostos apdorojimą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Reduce the number of colors in your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_QuantizePalette_tooltip0</extracomment>
+            <translation>Sumažinkite spalvų nuotraukoje</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab2.qml" />
+            <source>Convert your photo to two colors</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_TwoTone_tooltip0</extracomment>
+            <translation>Konvertuokite nuotrauką į dvi spalvas</translation>
+        </message>
     </context>
     <context>
         <name>EditorEffectsTab3</name>
@@ -12938,7 +14383,7 @@ picasapy-origin-key: stringres:filter_PicnikFocalPixelate_label0</extracomment>
             <source>Soften</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Softness;stringres:filter_Soften_label0</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašviesinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
@@ -12986,7 +14431,7 @@ picasapy-origin-key: stringres:filter_DropShadow_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
             <source>Film Grain (Fine)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Plėvelės grūdėtumas (smulkus)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
@@ -13051,6 +14496,111 @@ picasapy-origin-key: stringres:filter_radblur_label0</extracomment>
 picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <translation>Vinjetė</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Bring out colors and increase contrast</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Boost_tooltip0</extracomment>
+            <translation>Išryškinti spalvas ir padidinti kontrastą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Makes your photo soft and glowy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Soften_tooltip0</extracomment>
+            <translation>Paverčia nuotrauką švelnių spalvų ir blizgia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Darken the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Vignette_tooltip0</extracomment>
+            <translation>Patamsina nuotraukos kraštus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a light glow to the edges of your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Matte_tooltip0</extracomment>
+            <translation>Pridėkite švelnų nuotraukos kontūrų blizgesį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look blocky and low-res</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Pixelate_tooltip0</extracomment>
+            <translation>Padarykite, kad nuotrauka atrodytų sudaryta iš kvadratinių taškų ir mažos skiriamosios gebos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Pixelate everything inside or outside a central area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PicnikFocalPixelate_tooltip0</extracomment>
+            <translation>Išryškinti visų centrinėje srityje ir už jos ribų esančių elementų taškus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Zoom everything outside a central area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_FocalZoom_tooltip0</extracomment>
+            <translation>Keisti visų už centrinės srities esančių elementų mastelį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look like it was drawn with a pencil</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_PencilSketch_tooltip0</extracomment>
+            <translation>Priverskite nuotrauką atrodyti taip, lyg ji būtų piešta pieštuku</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo look like neon</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Neon_tooltip0</extracomment>
+            <translation>Padarykite, kad nuotrauka atrodytų neoninė</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Comic book style half-toning</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Comicize_tooltip0</extracomment>
+            <translation>Komiksų knygelių stiliaus pustoniai</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a frame to your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Border_tooltip0</extracomment>
+            <translation>Pridėkite prie nuotraukos rėmelį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Give your photo rounded corners</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_RoundedEdges_tooltip0</extracomment>
+            <translation>Užapvalinkite nuotraukos kampus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Make your photo appear to be floating slightly above the background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_DropShadow_tooltip0</extracomment>
+            <translation>Priverskite savo nuotrauką plūduriuoti šiek tiek virš fono</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Add a shadowed matte frame to your photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_MuseumMatte_tooltip0</extracomment>
+            <translation>Pridėkite prie nuotraukos šešėliuotą matinį rėmelį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorEffectsTab3.qml" />
+            <source>Give your photo that instant-film look</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_tooltip0</extracomment>
+            <translation>Suteikite nuotraukai momentinių nuotraukų išvaizdą</translation>
+        </message>
     </context>
     <context>
         <name>EditorLegacyTab</name>
@@ -13058,31 +14608,31 @@ picasapy-origin-key: stringres:filter_Vignette_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>Legacy Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Seni efektai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>These filters come from older Picasa versions.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šie filtrai perimti iš senesnių „Picasa“ versijų.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>Today's Picasa only recognises them inside your old edits.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dabartinė „Picasa“ juos atpažįsta tik senuose redagavimo įrašuose.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>This name is a leftover from an old configuration. Picasa 3.9 has no processor for it either, so it cannot be applied.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Šis pavadinimas liko iš senos konfigūracijos. Net „Picasa 3.9“ neturi šio filtro apdorojimo priemonės, todėl jo pritaikyti negalima.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorLegacyTab.qml" />
             <source>Picasa can read this filter from an old .picasa.ini, but its exact pixel operation has not been decoded yet, so it cannot be applied.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„Picasa“ gali perskaityti šį filtrą iš seno .picasa.ini failo, tačiau tikslus jo poveikis pikseliams dar neiššifruotas, todėl filtro pritaikyti negalima.</translation>
         </message>
     </context>
     <context>
@@ -13098,13 +14648,13 @@ picasapy-origin-key: stringres:filter_radtint_label0</extracomment>
             <location filename="../../render/legacy_effects.py" />
             <source>Fill Light (one-click)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Užpildanti šviesa (vienu spustelėjimu)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Fill Light (slider)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Užpildanti šviesa (slankiklis)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
@@ -13138,19 +14688,19 @@ picasapy-origin-key: stringres:filter_dir_sharp_label0</extracomment>
             <location filename="../../render/legacy_effects.py" />
             <source>Lighting Fixes (v1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apšvietimo pataisos (1 versija)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Lighting Fixes (v2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apšvietimo pataisos (2 versija)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Lighting Fixes (v3)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apšvietimo pataisos (3 versija)</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
@@ -13219,13 +14769,13 @@ picasapy-origin-key: stringres:filter_rainbow_label0</extracomment>
             <location filename="../../render/legacy_effects.py" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis kontrasto nustatymas</translation>
         </message>
         <message>
             <location filename="../../render/legacy_effects.py" />
             <source>Focal Pixelate (legacy)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fokalinis pikseliavimas (senasis)</translation>
         </message>
     </context>
     <context>
@@ -13234,7 +14784,7 @@ picasapy-origin-key: stringres:filter_rainbow_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Common Fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dažniausiai naudojamos pataisos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
@@ -13247,13 +14797,13 @@ picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Efektai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Creative</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kūrybiniai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
@@ -13266,48 +14816,48 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Daugiau efektų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabBar.qml" />
             <source>Legacy Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Seni efektai</translation>
         </message>
         <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dažniausiai reikalingi taisymai</translation>
         </message>
         <message>
             <source>Finely-tuned lighting and color fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tikslus apšvietimo ir spalvų reguliavimas</translation>
         </message>
         <message>
             <source>Fun and useful image processing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Smagus ir kūrybingas vaizdų apdorojimas</translation>
         </message>
         <message>
             <source>More fun and useful image processing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Smagus ir kūrybingas vaizdų apdorojimas</translation>
         </message>
         <message>
             <source>Even more fun and useful image processing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dar smagesnis ir kūrybingesnis vaizdų apdorojimas</translation>
         </message>
         <message>
             <source>Glimmer effects beyond the three known tabs</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Blizgesio efektai už trijų žinomų skirtukų ribų</translation>
         </message>
         <message>
             <source>Filters left in the Picasa engine but not on its surface</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Filtrai, likę „Picasa“ modulyje, bet nerodomi jos sąsajoje</translation>
         </message>
     </context>
     <context>
@@ -13337,26 +14887,26 @@ picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;t
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>I'm Feeling Lucky</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Man sekasi!</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>Auto Contrast</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis kontrasto nustatymas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>Auto Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinis spalvų nustatymas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>Retouch</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation type="unfinished" />
+            <translation>Retušuoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
@@ -13386,6 +14936,69 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/showtextcheckbox)</extracomment>
 picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill_label0;stringres:filter_finetune2_label1;stringres:filter_finetune_label1;stringres:filter_triple2_label1;stringres:filter_triple3_label1;stringres:filter_triple_label3;tooltips:Label(editpanel/filllightlabel)</extracomment>
             <translation>Užpildanti šviesa</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Crop this Photo to a different format</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/crop)</extracomment>
+            <translation>Apkirpti nuotrauką iki kito formato</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fix a crooked Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/horizonadjust)</extracomment>
+            <translation>Taisyti pakreipta nuotrauką</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Repair Red-Eye flaws in this Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/redeye)</extracomment>
+            <translation>Panaikinti raudonų akių efektą šioje nuotraukoje</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>One-click fix for lighting and color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/enhance)</extracomment>
+            <translation>Vienu paspaudimu taisykite apšvietimą ir spalvas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fix exposure without affecting color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/autolighting)</extracomment>
+            <translation>Taisykite išlaikymą nepaveikdami spalvų</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Remove color casts automatically</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/autocolor)</extracomment>
+            <translation>Automatiškai pašalinti nepageidaujamus atspalvius</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Repair blemishes, dust and scratches</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/retouch)</extracomment>
+            <translation>Pataisyti defektus, pašalinti dulkes ir įbrėžimus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Add/Edit Text on a photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/edittext)</extracomment>
+            <translation>Pridėti / redaguoti nuotraukos tekstą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Fill Light: Adjust the ambient light in the Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filllight_icon)</extracomment>
+            <translation>Užpildanti šviesa: reguliuoja išsklaidytą šviesą nuotraukoje</translation>
+        </message>
     </context>
     <context>
         <name>EditorParamPanel</name>
@@ -13393,7 +15006,7 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <source>Softness</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Softness;stringres:filter_Soften_label0</extracomment>
-            <translation type="unfinished" />
+            <translation>Švelnumas</translation>
         </message>
         <message>
             <source>Neon Color</source>
@@ -13417,13 +15030,27 @@ picasapy-origin-key: stringres:ImageFilters::FocalSize;stringres:filter_focalpix
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pritaikyti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Apply Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmAbandonModifiedEditYesButton;tooltips:Tooltip(editpanel/ok)</extracomment>
+            <translation>Taikyti pakeitimus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Cancel Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/cancel)</extracomment>
+            <translation>Atšaukti pakeitimus</translation>
         </message>
     </context>
     <context>
@@ -13439,13 +15066,13 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
             <source>The automatic copy is not available yet. To edit this picture, copy it to a writable folder yourself, or remove the write protection.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatinė kopija dar nepasiekiama. Norėdami redaguoti šią nuotrauką, nukopijuokite ją į aplanką, kuriame galima įrašyti, arba pašalinkite apsaugą nuo įrašymo.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
             <source>Due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Disko klaida. Diskas gali būti pilnas arba tik skaitomas.</translation>
         </message>
     </context>
     <context>
@@ -13455,7 +15082,7 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
             <source>Amount</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Amount;stringres:filter_backlight_label1;stringres:filter_linblur_label1;stringres:filter_radblur_label2;stringres:filter_sat_label1;stringres:filter_unsharp2_label1;stringres:filter_unsharp_label1</extracomment>
-            <translation type="unfinished" />
+            <translation>Kiekis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13468,7 +15095,7 @@ picasapy-origin-key: stringres:EXIF::Saturation;stringres:filter_sat_label0</ext
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Inner Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vidinis spindulys</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13495,19 +15122,19 @@ picasapy-origin-key: stringres:ImageFilters::Radius;stringres:filter_glow2_label
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Center X</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Centro X koordinatė</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Center Y</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Centro Y koordinatė</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13541,13 +15168,13 @@ picasapy-origin-key: stringres:EXIF::Shade;stringres:filter_dir_tint_label2</ext
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Block Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bloko dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Blur Radius</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Suliejimo spindulys</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13560,38 +15187,40 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spalvų derinys</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Edge Strength</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Posterize</source>
+            <source>Color Brush</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_QuantizePalette_label0</extracomment>
-            <translation>Paversti plakatu</translation>
+picasapy-origin-key: stringres:ImageFilters::BlurXY</extracomment>
+            <translation>Spalvų teptukas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
-            <source>Smoothness</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <source>Dot Density</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::DotContrast</extracomment>
+            <translation>Taško tankis</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Dot Fade</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::DotFade</extracomment>
+            <translation>Taško išnykimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Plotis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Border Width</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rėmelio plotis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13611,7 +15240,7 @@ picasapy-origin-key: stringres:filter_blur_label0</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Line Position</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Linijos padėtis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13638,13 +15267,13 @@ picasapy-origin-key: stringres:ImageFilters::Bloom</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Steps</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žingsniai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Smoothing</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Glodinimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13672,7 +15301,7 @@ picasapy-origin-key: stringres:ImageFilters::Hue</extracomment>
             <source>Rotate</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Rotate;stringres:ImageFilters::Rotation;stringres:filter_rot_label0;tooltips:Label(editpanel/croprotatecrop)</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13706,13 +15335,13 @@ picasapy-origin-key: stringres:ImageFilters::InnerColor</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Black Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Juoda spalva</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>White Color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Balta spalva</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13767,7 +15396,7 @@ picasapy-origin-key: stringres:ImageFilters::BackgroundColor</extracomment>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Rounded</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Užapvalinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13813,6 +15442,13 @@ picasapy-origin-key: stringres:ImageFilters::BlackColor</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Tint Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::TintColor</extracomment>
+            <translation>Atspalvio spalva</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Second Color</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::WhiteColor</extracomment>
@@ -13851,7 +15487,7 @@ picasapy-origin-key: stringres:ImageFilters::BlurEdges</extracomment>
             <source>Pixel Size</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::PixelSize;stringres:filter_focalpixelate_label1</extracomment>
-            <translation type="unfinished" />
+            <translation>Pikselio dydis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -13884,28 +15520,28 @@ picasapy-origin-key: stringres:ImageFilters::Eraser</extracomment>
         <message>
             <source>Edits overwritten by another program</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pakeitimus perrašė kita programa</translation>
         </message>
         <message>
             <source>Another program changed these pictures and removed the edits you made here:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kita programa pakeitė šias nuotraukas ir pašalino čia atliktus pakeitimus:</translation>
         </message>
         <message>
             <source>While the same folder is open in Picasa, its changes overwrite the edits made here. Restoring writes your edits back.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kol tas pats aplankas atvertas „Picasa“ programoje, jos pakeitimai perrašo čia atliktus pakeitimus. Atkūrus jūsų pakeitimai įrašomi iš naujo.</translation>
         </message>
         <message>
             <source>Restore edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atkurti pakeitimus</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
     </context>
     <context>
@@ -13914,7 +15550,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>My Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mano kompiuteris</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -13934,19 +15570,19 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Surasti diske</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti iš „Picasa“...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Move Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti aplanką...</translation>
         </message>
     </context>
     <context>
@@ -13960,12 +15596,17 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         <message>
             <source>&amp;Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Išvalyti pasirinkimą</translation>
+        </message>
+        <message>
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Data</translation>
         </message>
         <message>
             <source>&amp;Delete Album</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Ištrinti albumą</translation>
         </message>
         <message>
             <source>&amp;Edit Album Description...</source>
@@ -13980,14 +15621,30 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
             <translation>&amp;Atvirkštinis žymėjimas</translation>
         </message>
         <message>
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pagal &amp;pavadinimą</translation>
+        </message>
+        <message>
             <source>&amp;Refresh Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Atnaujinti miniatiūras</translation>
+        </message>
+        <message>
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>&amp;Atvirkštinė tvarka</translation>
+        </message>
+        <message>
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Dydis</translation>
         </message>
         <message>
             <source>E&amp;xport as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>E&amp;ksportuoti kaip HTML puslapį…</translation>
         </message>
         <message>
             <source>Select &amp;All Pictures</source>
@@ -14010,7 +15667,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
         <message>
             <source>Upload to Google &amp;Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Įkelti į „Google“ nuotraukas...</translation>
         </message>
     </context>
     <context>
@@ -14060,12 +15717,12 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>&amp;Remove Collection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paš&amp;alinti kolekciją</translation>
         </message>
         <message>
             <source>Rename &amp;Collection...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pervardyti &amp;kolekciją...</translation>
         </message>
     </context>
     <context>
@@ -14079,17 +15736,17 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
         <message>
             <source>&amp;Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Išvalyti pasirinkimą</translation>
         </message>
         <message>
             <source>&amp;Date</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Data</translation>
         </message>
         <message>
             <source>&amp;Delete Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Ištrinti aplanką...</translation>
         </message>
         <message>
             <source>&amp;Edit Folder Description...</source>
@@ -14112,12 +15769,12 @@ picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_S
         <message>
             <source>&amp;Locate on Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Rasti diske</translation>
         </message>
         <message>
             <source>&amp;Move Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Perkelti aplanką...</translation>
         </message>
         <message>
             <source>&amp;Color</source>
@@ -14128,17 +15785,17 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
         <message>
             <source>&amp;Manual order</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Rankinė tvarka</translation>
         </message>
         <message>
             <source>&amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pagal &amp;pavadinimą</translation>
         </message>
         <message>
             <source>&amp;Remove from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Pašalinti iš „Picasa“...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>
@@ -14149,7 +15806,7 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
         <message>
             <source>&amp;Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Dydis</translation>
         </message>
         <message>
             <source>&amp;Unhide Folder</source>
@@ -14160,7 +15817,7 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>E&amp;xport as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>E&amp;ksportuoti kaip HTML puslapį…</translation>
         </message>
         <message>
             <source>Mo&amp;ve to Collection</source>
@@ -14171,7 +15828,7 @@ picasapy-origin-key: stringres:Folder::ID_ALBUM_MOVETOCOLLECTION</extracomment>
         <message>
             <source>Refresh &amp;Thumbnails</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atnaujinti &amp;miniatiūras</translation>
         </message>
         <message>
             <source>S&amp;ort Folder By</source>
@@ -14188,7 +15845,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>Upload to Google &amp;Photos...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Įkelti į „Google“ nuotraukas...</translation>
         </message>
     </context>
     <context>
@@ -14196,7 +15853,7 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
         <message>
             <source>&amp;Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Darbalaukis</translation>
         </message>
         <message>
             <source>&amp;Shortcuts</source>
@@ -14249,7 +15906,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYDATE</extracomment>
         <message>
             <source>Sort by &amp;Name</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rūšiuoti pagal &amp;pavadinimą</translation>
         </message>
         <message>
             <source>Sort by &amp;Recent Changes</source>
@@ -14269,7 +15926,7 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_
         <message>
             <source>&amp;Clear Selection</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>&amp;Išvalyti pasirinkimą</translation>
         </message>
         <message>
             <source>&amp;Delete People Album</source>
@@ -14284,9 +15941,20 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
             <translation>&amp;Redaguoti žmonių albumus...</translation>
         </message>
         <message>
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>&amp;Atvirkštinis žymėjimas</translation>
+        </message>
+        <message>
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Atnaujinti miniatiūras</translation>
+        </message>
+        <message>
             <source>Select &amp;All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rinktis &amp;viską</translation>
         </message>
     </context>
     <context>
@@ -14294,7 +15962,7 @@ picasapy-origin-key: stringres:PplAlbum::ID_ALBUM_EDITCAPTIONS</extracomment>
         <message>
             <source>Create the collage and set it as the desktop background</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sukurti koliažą ir nustatyti jį kaip darbalaukio foną</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
@@ -14307,14 +15975,14 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/makedesktop-label)</ext
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
             <source>The desktop background cannot be set yet — use „Create Collage” to save the picture.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Darbalaukio fono nustatymas dar nepasiekiamas — pasirinkite „Kurti koliažą“, kad išsaugotumėte nuotrauką.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
             <source>Create Collage</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/sharebutton-label);stringres:CollageMaker::createprog</extracomment>
-            <translation type="unfinished" />
+            <translation>Kurti koliažą</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
@@ -14342,7 +16010,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/resetbutton)</extraco
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanel.qml" />
@@ -14358,13 +16026,13 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/cancelbutton)</extrac
             <location filename="../qml/PicasaPy/CollagePanelTabBar.qml" />
             <source>Settings</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nustatymai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollagePanelTabBar.qml" />
             <source>Clips (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Klipai (%1)</translation>
         </message>
     </context>
     <context>
@@ -14378,7 +16046,7 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
         <message>
             <source>Confirm…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Patvirtinti…</translation>
         </message>
         <message>
             <source>The current collage contains unsaved changes.
@@ -14387,7 +16055,11 @@ Would you like to save or discard them before closing the tab? (Note: drafts are
 
 Click Cancel to leave the tab open.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dabartiniame koliaže yra neišsaugotų pakeitimų.
+
+Ar norite juos išsaugoti ar atmesti prieš užverdami skirtuką? (Pastaba: juodraščiai išsaugomi albume „Koliažai“.)
+
+Spustelėkite „Atšaukti“, kad skirtukas liktų atvertas.</translation>
         </message>
         <message>
             <source>Save Draft</source>
@@ -14404,7 +16076,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonDiscard;stringres:CThumbUI::Con
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
     </context>
     <context>
@@ -14418,37 +16090,37 @@ picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
         <message>
             <source>Looks like a pile of scattered pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atrodo kaip išmėtytų nuotraukų krūva</translation>
         </message>
         <message>
             <source>Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mozaika</translation>
         </message>
         <message>
             <source>Automatically fit pictures into the page</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Automatiškai sutalpinti nuotraukas puslapyje</translation>
         </message>
         <message>
             <source>Frame Mosaic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mozaika su rėmeliu</translation>
         </message>
         <message>
             <source>A mosaic with a prominent center picture</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mozaika su ryškia centrine nuotrauka</translation>
         </message>
         <message>
             <source>Grid</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tinklelis</translation>
         </message>
         <message>
             <source>Arrange pictures into regular rows and columns</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išdėstyti nuotraukas tvarkingomis eilėmis ir stulpeliais</translation>
         </message>
         <message>
             <source>Contact Sheet</source>
@@ -14459,7 +16131,7 @@ picasapy-origin-key: stringres:CPropertiesDlg::thumbnail</extracomment>
         <message>
             <source>Thumbnails with an informative header</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Miniatiūros su informatyvia antrašte</translation>
         </message>
         <message>
             <source>Multiple Exposure</source>
@@ -14470,7 +16142,7 @@ picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
         <message>
             <source>Superimpose pictures over one another</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždėti nuotraukas vieną ant kitos</translation>
         </message>
     </context>
     <context>
@@ -14610,7 +16282,7 @@ picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
         <message>
             <source>Add Custom Aspect Ratio...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pridėti pasirinktinį formato koeficientą...</translation>
         </message>
         <message>
             <source>Select the relative width and height of your design</source>
@@ -14678,7 +16350,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label)
         <message>
             <source>Show captions as text on pictures with an "Instant Camera" border</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rodyti antraštes kaip tekstą nuotraukose su „momentinio fotoaparato“ rėmeliu</translation>
         </message>
         <message>
             <source>Set as Frame Center</source>
@@ -14693,13 +16365,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/set_frame_center-label)
             <location filename="../qml/PicasaPy/CollageCanvas.qml" />
             <source>Angle: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kampas: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageCanvas.qml" />
             <source>Scale: %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mastelis: %1%</translation>
         </message>
     </context>
     <context>
@@ -14708,7 +16380,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/set_frame_center-label)
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti viską</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
@@ -14735,7 +16407,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/select_none)</extraco
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
             <source>Remove</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageActionRow.qml" />
@@ -14793,7 +16465,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/rand_order)</extracom
             <location filename="../qml/PicasaPy/CollageRandomRow.qml" />
             <source>View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Peržiūrėti ir redaguoti</translation>
         </message>
     </context>
     <context>
@@ -14927,7 +16599,7 @@ picasapy-origin-key: stringres:Rotate::ID_COLLAGE_ALIGN_270</extracomment>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
             <source>Remove</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
@@ -14961,13 +16633,13 @@ picasapy-origin-key: stringres:CollageS::ID_COLLAGE_MOVE_BOTTOM</extracomment>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
             <source>View and Edit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Peržiūrėti ir redaguoti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
             <source>Select All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti viską</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/CollageContextMenus.qml" />
@@ -15008,7 +16680,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/getmoreclips)</extrac
         <message>
             <source>+</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>+</translation>
         </message>
         <message>
             <source>Add selected clips to the collage</source>
@@ -15019,7 +16691,7 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/addclips)</extracomme
         <message>
             <source>–</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>–</translation>
         </message>
         <message>
             <source>Remove selected clips from the tray</source>
@@ -15033,12 +16705,12 @@ picasapy-origin-key: collagepaneltext:Tooltip(collagepanel/deleteclips)</extraco
         <message>
             <source>Creating collage - %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kuriamas koliažas - %1%</translation>
         </message>
         <message>
             <source>%1 / %2 processed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Apdorota: %1 / %2</translation>
         </message>
     </context>
     <context>
@@ -15054,17 +16726,19 @@ picasapy-origin-key: stringres:CMakeMoviePanel::recoveredautosave;stringres:Make
 
 Restore it to continue where you left off. If you discard it, the draft is deleted and will not be offered again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„PicasaPy“ rado ankstesnės sesijos metu automatiškai išsaugotą koliažo juodraštį.
+
+Atkurkite jį ir tęskite nuo ten, kur baigėte. Jei juodraštį atmesite, jis bus ištrintas ir nebebus siūlomas.</translation>
         </message>
         <message>
             <source>Restore Draft</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atkurti juodraštį</translation>
         </message>
         <message>
             <source>Discard Draft</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atmesti juodraštį</translation>
         </message>
     </context>
     <context>
@@ -15111,12 +16785,12 @@ picasapy-origin-key: stringres:collage::done</extracomment>
         <message>
             <source>Copy saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopija išsaugota</translation>
         </message>
         <message>
             <source>%1 copies saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugota kopijų: %1</translation>
         </message>
         <message>
             <source>One or more images could not be rotated because of the file type.</source>
@@ -15136,12 +16810,12 @@ picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
         <message>
             <source>The collage could not be saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko išsaugoti koliažo</translation>
         </message>
         <message>
             <source>The collage could not be saved.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko išsaugoti koliažo.</translation>
         </message>
         <message>
             <source>Save Skipped</source>
@@ -15168,7 +16842,11 @@ picasapy-origin-key: stringres:collage::formatmismatch</extracomment>
 
 Are you sure you want to continue?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dabartinis koliažo puslapio formatas neatitinka darbalaukio dydžio. Todėl darbalaukio fonas gali atrodyti kitaip, nei tikitės.
+
+(PATARIMAS: puslapio formato sąraše pasirinkite „Dabartinis ekranas“, kad vaizdas idealiai tilptų.)
+
+Ar tikrai norite tęsti?</translation>
         </message>
         <message>
             <source>Set Anyway</source>
@@ -15185,7 +16863,7 @@ picasapy-origin-key: stringres:collage::formatwarningnobutton</extracomment>
         <message>
             <source>Confirm…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Patvirtinti…</translation>
         </message>
         <message>
             <source>You have been editing a previously created collage.
@@ -15194,7 +16872,11 @@ Would you like to replace the existing collage or create an entirely new one?  (
 
 Press Cancel to continue editing the collage without saving.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Redaguojate anksčiau sukurtą koliažą.
+
+Ar norite pakeisti esamą koliažą ar sukurti visiškai naują? (Pastaba: visi koliažai išsaugomi albume „Koliažai“.)
+
+Paspauskite „Atšaukti“, kad tęstumėte koliažo redagavimą jo neišsaugoję.</translation>
         </message>
         <message>
             <source>Replace Existing</source>
@@ -15211,7 +16893,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>The current collage contains unsaved changes.
@@ -15220,7 +16902,11 @@ Would you like to save or discard them before closing the tab? (Note: drafts are
 
 Click Cancel to leave the tab open.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dabartiniame koliaže yra neišsaugotų pakeitimų.
+
+Ar norite juos išsaugoti ar atmesti prieš užverdami skirtuką? (Pastaba: juodraščiai išsaugomi albume „Koliažai“.)
+
+Spustelėkite „Atšaukti“, kad skirtukas liktų atvertas.</translation>
         </message>
         <message>
             <source>Save Draft</source>
@@ -15255,7 +16941,7 @@ picasapy-origin-key: stringres:HybridUploadWindow::cancelnobutton;stringres:IBac
         <message>
             <source>%1 pictures could not be found, so they cannot be displayed…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko rasti %1 nuotraukų, todėl jų negalima rodyti…</translation>
         </message>
         <message>
             <source>Selection Required</source>
@@ -15305,22 +16991,22 @@ picasapy-origin-key: stringres:CImageOutput::filewriteerr</extracomment>
         <message>
             <source>The destination directory could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko sukurti paskirties aplanko.</translation>
         </message>
         <message>
             <source>No images were available to send.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nėra nuotraukų, kurias galima siųsti.</translation>
         </message>
         <message>
             <source>export</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>eksportuoti</translation>
         </message>
         <message>
             <source>Exports</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Eksportai</translation>
         </message>
     </context>
     <context>
@@ -15334,7 +17020,7 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
         <message>
             <source>Send pictures by email</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Siųsti nuotraukas el. paštu</translation>
         </message>
         <message>
             <source>Select how you want to e-mail your photos.</source>
@@ -15345,7 +17031,7 @@ picasapy-origin-key: choose_mail_text:Label(choose_mail/selecttext)</extracommen
         <message>
             <source>MAIL CLIENT</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PAŠTO PROGRAMA</translation>
         </message>
         <message>
             <source>Use my default email program.</source>
@@ -15374,7 +17060,7 @@ picasapy-origin-key: choose_mail_text:Label(choose_mail/gmailsignup1)</extracomm
         <message>
             <source>The pictures will be attached to a new message in your default email program.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukos bus pridėtos prie naujo laiško numatytojoje el. pašto programoje.</translation>
         </message>
         <message>
             <source>Remember this setting, don't display this dialog again.</source>
@@ -15385,17 +17071,17 @@ picasapy-origin-key: choose_mail_text:Label(choose_mail/remember)</extracomment>
         <message>
             <source>Help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pagalba</translation>
         </message>
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>New message</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujas laiškas</translation>
         </message>
         <message>
             <source>Change User</source>
@@ -15406,7 +17092,7 @@ picasapy-origin-key: compose_mail_text:Label(compose_mail/changeuser);compose_sh
         <message>
             <source>Google account sending is not available in this version.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Siuntimas naudojant „Google“ paskyrą šioje versijoje negalimas.</translation>
         </message>
         <message>
             <source>To:</source>
@@ -15435,7 +17121,7 @@ picasapy-origin-key: compose_mail_text:Label(compose_mail/discard);compose_mail_
         <message>
             <source>Send</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Siųsti</translation>
         </message>
     </context>
     <context>
@@ -15444,13 +17130,13 @@ picasapy-origin-key: compose_mail_text:Label(compose_mail/discard);compose_mail_
             <location filename="../qml/PicasaPy/HelpDialog.qml" />
             <source>Back</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atgal</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/HelpDialog.qml" />
             <source>Contents</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Turinys</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/HelpDialog.qml" line="19" />
@@ -15463,7 +17149,7 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
             <location filename="../qml/PicasaPy/HelpDialog.qml" line="59" />
             <source>Search in help</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoti žinyne</translation>
         </message>
     </context>
     <context>
@@ -15471,27 +17157,27 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
         <message>
             <source>Enter a password to use for the hidden folders.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įveskite slaptažodį, skirtą paslėptiems aplankams apsaugoti.</translation>
         </message>
         <message>
             <source>Enter the password to show the hidden folders.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įveskite slaptažodį, kad būtų rodomi paslėpti aplankai.</translation>
         </message>
         <message>
             <source>Hidden folders are locked</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paslėpti aplankai užrakinti</translation>
         </message>
         <message>
             <source>Password for hidden folders</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paslėptų aplankų slaptažodis</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Stipresnė apsauga („Picasa“ negali atverti)</translation>
         </message>
         <message>
             <source>The passwords did not match.</source>
@@ -15502,17 +17188,17 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>This only hides the folders inside PicasaPy. The files stay on the disk and can be opened with any file manager.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Taip paslepiami tik aplankai „PicasaPy“ programoje. Failai lieka diske ir juos galima atverti bet kuria failų tvarkytuve.</translation>
         </message>
         <message>
             <source>Type the password again</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įveskite slaptažodį dar kartą</translation>
         </message>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pašalinti slaptažodį</translation>
         </message>
     </context>
     <context>
@@ -15521,13 +17207,13 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
             <location filename="../backup_controller.py" line="0" />
             <source>Unknown backup type.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nežinomas atsarginės kopijos tipas.</translation>
         </message>
         <message>
             <location filename="../backup_controller.py" line="0" />
             <source>Picasa Backup</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„Picasa“ atsarginė kopija</translation>
         </message>
         <message>
             <location filename="../backup_controller.py" line="0" />
@@ -15539,47 +17225,53 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
         <message>
             <source>%1 file(s) do not fit on a single disc.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 failų netelpa į vieną diską.</translation>
         </message>
         <message>
             <source>Give the backup set a name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Suteikite atsarginių kopijų rinkiniui pavadinimą.</translation>
         </message>
         <message>
             <source>Choose where to save the backup.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite vietą atsarginei kopijai išsaugoti.</translation>
         </message>
         <message>
             <source>Unknown file filter.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nežinomas failų filtras.</translation>
         </message>
         <message>
             <source>A backup set with this name already exists.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsarginių kopijų rinkinys tokiu pavadinimu jau yra.</translation>
         </message>
         <message>
             <source>The backup set could not be changed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko pakeisti atsarginių kopijų rinkinio.</translation>
         </message>
         <message>
             <source>There is no such backup set.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tokio atsarginių kopijų rinkinio nėra.</translation>
         </message>
         <message>
             <source>The backup did not finish: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atsarginės kopijos kūrimas nebaigtas: %1</translation>
         </message>
         <message>
             <source>The backup plan could not be prepared: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko paruošti atsarginės kopijos plano: %1</translation>
+        </message>
+        <message>
+            <location filename="../backup_controller.py" line="0" />
+            <source>The backup could not be restored: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nepavyko atkurti atsarginės kopijos: %1</translation>
         </message>
     </context>
     <context>
@@ -15605,27 +17297,27 @@ picasapy-origin-key: newbackupset:newbackupset/radio7.title</extracomment>
         <message>
             <source>Choose...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkti...</translation>
         </message>
         <message>
             <source>Writing %1 file(s) to disc image(s)...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rašoma %1 failų į disko atvaizdą (-us)...</translation>
         </message>
         <message>
             <source>Done: %1 file(s) in %2 disc image(s).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Baigta: %1 failų, %2 disko atvaizdų.</translation>
         </message>
         <message>
             <source>Copying %1 file(s)... (%2 CD or %3 DVD)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuojama %1 failų... (%2 CD arba %3 DVD)</translation>
         </message>
         <message>
             <source>Copying (%1/%2) files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kopijuojami failai (%1/%2)</translation>
         </message>
         <message>
             <source>All file types</source>
@@ -15636,17 +17328,17 @@ picasapy-origin-key: newbackupset:newbackupset/radio14.title</extracomment>
         <message>
             <source>All pictures (no movies)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Visos nuotraukos (be filmų)</translation>
         </message>
         <message>
             <source>Only JPEGs with camera data</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tik JPEG failai su fotoaparato duomenimis</translation>
         </message>
         <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašyti į:</translation>
         </message>
         <message>
             <source>Files:</source>
@@ -15657,12 +17349,12 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
         <message>
             <source>Are you sure you want to delete the backup set "%1"?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ar tikrai norite ištrinti atsarginių kopijų rinkinį „%1“?</translation>
         </message>
         <message>
             <source>Choose the backup location</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkite atsarginės kopijos vietą</translation>
         </message>
         <message>
             <source>OK</source>
@@ -15673,7 +17365,7 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <source>Delete Set</source>
@@ -15702,13 +17394,91 @@ picasapy-origin-key: stringres:il_BurnPanel::bksetname</extracomment>
         <message>
             <source>Change</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Keisti</translation>
         </message>
         <message>
             <source>Backup Complete</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_BurnPanel::BackupCopy::3</extracomment>
             <translation>Archyvavimas baigtas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore Backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atkurti atsarginę kopiją</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose backup folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite atsarginės kopijos aplanką</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose restore folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite atkūrimo aplanką</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose the first disc image</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite pirmąjį disko atvaizdą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>ISO disc images (*.iso)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ISO disko atvaizdai (*.iso)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>All files (*)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Visi failai (*)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Choose a backup folder or the first disc image:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite atsarginės kopijos aplanką arba pirmąjį disko atvaizdą:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore to:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atkurti į:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplankas...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Disc image...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Disko atvaizdas...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restore</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atkurti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Restored %1 file(s); skipped %2 existing file(s).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atkurta failų: %1; praleista jau esančių failų: %2.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/BackupHost.qml" line="0" />
+            <source>Select both a backup source and a restore folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasirinkite ir atsarginės kopijos šaltinį, ir atkūrimo aplanką.</translation>
         </message>
         <message>
             <source>Calculating…</source>
@@ -15728,13 +17498,13 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atšaukti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Configure Buttons</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mygtukų konfigūravimas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
@@ -15768,13 +17538,13 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/remove)</extracomment>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Move Up</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į viršų</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Move Down</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Perkelti į apačią</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
@@ -15787,19 +17557,19 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/usedefaults)</extracomment>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Play Fullscreen Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paleisti skaidrių demonstravimą visame ekrane</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Select starred photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Rinktis žvaigždute pažymėtas nuotraukas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
             <source>Save edited photos to disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išsaugokite redaguotas nuotraukas diske</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0" />
@@ -15844,19 +17614,19 @@ picasapy-origin-key: stringres:il_BurnPanel::HandleDone::2</extracomment>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Uždaryti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0" />
             <source>The disc image could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko sukurti disko atvaizdo.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0" />
             <source>%1 item(s) could not be added to the disc.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko į diską įtraukti elementų: %1.</translation>
         </message>
     </context>
     <context>
@@ -15865,7 +17635,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../ajandek_cd_controller.py" line="0" />
             <source>Pictures</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotraukos</translation>
         </message>
     </context>
     <context>
@@ -15874,10 +17644,16 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="10" />
             <source>Configure Photo Viewer...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Konfigūruoti nuotraukų peržiūros programą...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
+            <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paleisti per visą ekraną (pakeitimui įsigalioti reikia iš naujo paleisti nuotraukų peržiūros programą)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="41" />
             <source>Use Color Management</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
@@ -15890,13 +17666,13 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="13" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Patvirtinti</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37" />
             <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>„PicasaPy“ jau pasiekiama jūsų sistemos kalba. Ar norite pakeisti „PicasaPy“ kalbą iš anglų į šią?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />
@@ -15909,7 +17685,317 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="53" />
             <source>No</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ne</translation>
+        </message>
+    </context>
+    <context>
+        <name>AdjustTimestampDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="241" />
+            <source>Mon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pirm.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="248" />
+            <source>Tue</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Antr.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="255" />
+            <source>Wed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Treč.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="262" />
+            <source>Thu</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ketv.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="269" />
+            <source>Fri</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Penkt.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="276" />
+            <source>Sat</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Šešt.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="283" />
+            <source>Sun</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sekm.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <source>Adjust Photo Date - %1 items</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Koreguoti nuotraukų datas — %1 elementų</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
+            <source>Current photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dabartinė nuotraukos data</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="108" />
+            <source>New photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nauja nuotraukos data</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="153" />
+            <source>New photo time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Naujas nuotraukos laikas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="205" />
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ankstesnis mėnuo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="223" />
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kitas mėnuo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="164" />
+            <source>Adjust all photo dates by the amount</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Koreguoti visų nuotraukų datas nurodytu laikotarpiu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="173" />
+            <source>Set all photos to the same date and time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nustatyti vienodą visų nuotraukų datą ir laiką</translation>
+        </message>
+    </context>
+    <context>
+        <name>XmpFacesWriteDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="13" />
+            <source>Write Face Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:FaceTagJob::progress;write_all_facetags:write_all_facetags/window1.title</extracomment>
+            <translation>Įrašyti veidų žymas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="32" />
+            <source>Write faces or write all may take a long time. If logging is set to detailed or higher, network.log will contain messages about read-only files which could not be updated. Signing out is recommended while using this feature.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/label3.title</extracomment>
+            <translation>Veidų įrašymas arba visų įrašymas gali užtrukti. Jei registravimas yra nustatytas kaip išsamus arba dar platesnis nustatymas, network.log bus nurodyti pranešimai apie tik skaitomus failus, kurių nepavyko atnaujinti. Naudojant šią funkciją rekomenduojama atsijungti.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="49" />
+            <source>Write Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/onlyselection.title</extracomment>
+            <translation>Pasirinktų įrašymas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="55" />
+            <source>Write Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/allwithfaces.title</extracomment>
+            <translation>Veidų įrašymas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="60" />
+            <source>Write All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: write_all_facetags:write_all_facetags/allfiles.title</extracomment>
+            <translation>Visų įrašymas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="65" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atšaukti</translation>
+        </message>
+    </context>
+    <context>
+        <name>PeopleManagerDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="12" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Žmonės</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="232" />
+            <source>Search:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paieška:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="269" />
+            <source>Delete Person</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact</extracomment>
+            <translation>Ištrinti asmenį</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="275" />
+            <source>New Person</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/create.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/create.title</extracomment>
+            <translation>Naujas asmuo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="296" />
+            <source>Contact ID:</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
+            <translation>Kontakto ID:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />
+            <source>Name:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vardas:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="321" />
+            <source>Email(s):</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>El. pašto adresai:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="337" />
+            <source>Sync Face Tags with Web Albums</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/sync.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/sync.title</extracomment>
+            <translation>Veido žymų sinchronizavimas su žiniatinklio albumais</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="346" />
+            <source>Revert</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Grįžti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="366" />
+            <source>Manage Online Contacts</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/online.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/online.title</extracomment>
+            <translation>Tvarkyti interneto kontaktus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="371" />
+            <source>Refresh Contacts</source>
+            <extracomment>    picasapy-origin-key: contactmgr:contactmgr/refresh_contacts.title;refresh_contacts_progress:refresh_contacts_progress/window1.title
+picasapy-origin: picasa
+picasapy-origin-key: contactmgr:contactmgr/refresh_contacts.title;refresh_contacts_progress:refresh_contacts_progress/window1.title</extracomment>
+            <translation>Atnaujinti kontaktus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="377" />
+            <source>OK</source>
+            <extracomment>    picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)
+picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>Gerai</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="383" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atšaukti</translation>
+        </message>
+    </context>
+    <context>
+        <name>TextColorSwatches</name>
+        <message>
+            <location filename="../qml/PicasaPy/TextColorSwatches.qml" line="114" />
+            <source>Pick Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDesaturateFilter::pickcolor;stringres:ImageFilters::PickColor;tooltips:Label(editpanel/colorwheel_label0);tooltips:Label(editpanel/colorwheel_label1)</extracomment>
+            <translation>Spalvos pasirinkimas</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditorUndoRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/EditorUndoRow.qml" />
+            <source>Remove the latest fix or edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filter_undo)</extracomment>
+            <translation>Pašalinti paskutinę pataisą ar redakciją</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorUndoRow.qml" />
+            <source>Reapply a removed fix or edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/filter_redo)</extracomment>
+            <translation>Iš naujo pritaikyti pašalintą pataisą ar redakciją</translation>
+        </message>
+    </context>
+    <context>
+        <name>KeywordsDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Žymos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Žymos:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Add Tag:</source>
+            <extracomment>    picasapy-origin-key: keywordstext:Label(keywords/addkeywords_label)
+picasapy-origin: picasa
+picasapy-origin-key: keywordstext:Label(keywords/addkeywords_label)</extracomment>
+            <translation>Pridėti žymą:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Add</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pridėti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pašalinti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Done</source>
+            <extracomment>    picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed
+picasapy-origin: picasa
+picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
+            <translation>Baigta</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
+            <source>Tags cannot be modified because one or more items are read-only.</source>
+            <extracomment>    picasapy-origin-key: keywordstext:Label(keywords/readonly_label)
+picasapy-origin: picasa
+picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
+            <translation>Žymų negalima keisti, nes vienas arba keli elementai yra nekeičiami.</translation>
         </message>
     </context>
 </TS>

@@ -36,7 +36,22 @@ Item {
 
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
+    //: #4331 / `ID_FACES`: a 30. szakasz szerinti kijelölt képeket adja át
+    //: a meglévő filmkészítőnek. Az arc-kivágás adatútja a #4400-ra vár.
+    function openFaceMovie() {
+        var rows = dialogs.appWindow.selectedIndexes
+        if (!rows || rows.length === 0) return
+        movieDialog.openForRows(rows, false, false)
+        movieDialog.personMovieMode = true
+        movieDialog.applyDefaultSize()
+    }
     function openPoster(sourcePath) { posterDialog.openForSource(sourcePath) }
+    function openTimestamp(rows) { timestampDialog.openForRows(rows) }
+
+    AdjustTimestampDialog {
+        id: timestampDialog
+        timestampController: (typeof controller !== "undefined") ? controller : null
+    }
     // #4391: az eredeti People-film szűrt, sorrendtartó képsora kerül
     // közvetlenül a meglévő Filmkészítőbe.
     function openMovieForRows(rows) {
@@ -52,10 +67,12 @@ Item {
     //: ⛔ A FELBONTÁS nincs a projektfájlban (`curresolution` nálunk
     //: kitöltetlen), ezért az marad az alapértelmezésen — a párbeszéd
     //: felirata ezt ki is mondja.
-    function openMovieProject(masodperc, burstmodethresh) {
+    function openMovieProject(masodperc, burstmodethresh, moviePath) {
         movieDialog.personMovieMode = false
         movieDialog.applyDefaultSize()
         movieDialog.projektbolNyilt = true
+        if (moviePath)
+            movieDialog.previousMoviePath = String(moviePath)
         if (masodperc > 0)
             movieSeconds.value = Math.round(masodperc * 10)
         if (burstmodethresh !== undefined && burstmodethresh >= 0)
@@ -354,7 +371,11 @@ Item {
         height: Math.min(720, Math.max(0, dialogs.appWindow.height - 24))
         standardButtons: Dialog.NoButton
         property string targetFile: ""
+        // A korábbi sikeres kimenet útvonala: az eredeti panel is megjegyzi,
+        // és újabb export előtt felajánlja a cserét vagy az új fájlt.
+        property string previousMoviePath: ""
         property string audioFile: ""
+        property bool audioFileFromFolderMusic: false
         property int audioOption: 0
         property int transitionIndex: 1
         property bool personMovieMode: false
@@ -363,10 +384,66 @@ Item {
         property int movieInitialPhotoCount: 0
         property int previewIndex: 0
         property string previewSource: ""
+        property int previewFromIndex: -1
+        property real previewTransitionProgress: 1
+        property int previewImageWidth: 0
+        property int previewImageHeight: 0
+        property int previewLatestRequestGeneration: 0
+        property int previewDisplayedGeneration: 0
+        property int previewGenerationFloor: 0
+        property int previewAwaitingTransitionGeneration: 0
+        readonly property real previewAudioVolume:
+            controller && controller.movieVolume !== undefined
+                ? controller.movieVolume / 1000 : 0.5
+        readonly property string previewTransitionKind:
+            transitionKeys[transitionIndex] || "dissolve"
+        property string previewTransitionFrameSource: ""
+        property bool previewAwaitingTransitionFrame: false
+        property bool previewResettingTransition: false
+        readonly property int previewFramesPerSecond: 24
+        readonly property bool previewTransitionServiceAvailable:
+            controller && typeof controller.requestMovieTransitionPreview === "function"
+        readonly property real previewAspectRatio: {
+            var size = sizeOptions[movieHeightBox.currentIndex]
+            return size[0] / size[1]
+        }
+        readonly property int previewOutputWidth:
+            sizeOptions[movieHeightBox.currentIndex][0]
+        readonly property int previewOutputHeight:
+            sizeOptions[movieHeightBox.currentIndex][1]
+        readonly property int previewItemCount:
+            movieClipSources.length + movieSlides.length
         property bool previewActualSizeEnabled: false
         property int previewWindowVisibilityBeforeFullscreen: Window.Windowed
         property bool previewOwnsFullscreen: false
         property var movieSlides: []
+        onMovieSlidesChanged: refreshPreviewAfterItemsChanged()
+        onMovieClipSourcesChanged: refreshPreviewAfterItemsChanged()
+        onPreviewIndexChanged: Qt.callLater(function() {
+            movieDialog.prefetchNextPreviewFrame()
+        })
+        readonly property var movieFilmstripItems: {
+            var items = []
+            movieClipSources.forEach(function(source, index) {
+                var names = controller
+                        && typeof controller.movieClipNames === "function"
+                    ? controller.movieClipNames([source]) : []
+                items.push({
+                    kind: "photo",
+                    source: source,
+                    name: names.length ? names[0] : "",
+                    index: index,
+                })
+            })
+            movieSlides.forEach(function(_slide, index) {
+                items.push({
+                    kind: "text",
+                    name: qsTr("Text Slide"),
+                    index: index,
+                })
+            })
+            return items
+        }
         property var movieSlideSelection: []
         property int movieSlideEditingIndex: -1
         property string textColor: "#ffffff"
@@ -419,9 +496,12 @@ Item {
         readonly property int movieBurstThresholdSeconds: Math.floor(
             movieBurstSlider.value * movieBurstSlider.value * 86400)
         readonly property real previewSlideDurationSeconds:
-            Math.max(0.5, movieSeconds.value / 10)
+            Math.max(
+                0.5,
+                (movieSeconds && movieSeconds.value !== undefined
+                    ? movieSeconds.value : 30) / 10)
         readonly property real previewDurationSeconds:
-            previewSlideDurationSeconds * movieClipSources.length
+            previewSlideDurationSeconds * previewItemCount
         function formatPreviewTime(seconds) {
             var total = Math.max(0, Math.floor(seconds))
             var hours = Math.floor(total / 3600)
@@ -434,22 +514,206 @@ Item {
                     + ":" + ketjegyu(remainingSeconds)
         }
         function togglePreviewPlayback() {
-            if (!movieClipSources.length) {
+            if (!previewItemCount) {
                 moviePreviewTimer.stop()
             } else if (moviePreviewTimer.running) {
                 moviePreviewTimer.stop()
             } else {
-                previewIndex = 0
-                previewSource = movieClipSources[0]
+                setPreviewIndex(0)
                 moviePreviewTimer.start()
             }
         }
+        function setPreviewIndex(index) {
+            previewIndex = Math.max(0, Math.min(previewItemCount - 1, index))
+            previewSource = previewIndex < movieClipSources.length
+                ? movieClipSources[previewIndex] : ""
+            stopPreviewTransition()
+            previewFromIndex = -1
+            previewTransitionProgress = 1
+            previewAwaitingTransitionFrame = false
+            previewGenerationFloor = previewLatestRequestGeneration
+            moviePreviewTransitionFallbackTimer.stop()
+            requestPreviewFrame()
+            prefetchNextPreviewFrame()
+        }
+        function stopPreviewTransition() {
+            previewResettingTransition = true
+            moviePreviewTransition.stop()
+            previewResettingTransition = false
+        }
+        function refreshPreviewAfterItemsChanged() {
+            var itemCount = movieClipSources.length + movieSlides.length
+            stopPreviewTransition()
+            moviePreviewFrameTimer.stop()
+            moviePreviewTransitionFallbackTimer.stop()
+            previewAwaitingTransitionFrame = false
+            previewGenerationFloor = previewLatestRequestGeneration
+            previewFromIndex = -1
+            previewTransitionProgress = 1
+            if (itemCount < 1) {
+                previewIndex = 0
+                previewSource = ""
+                previewTransitionFrameSource = ""
+                return
+            }
+            previewIndex = Math.max(0, Math.min(itemCount - 1, previewIndex))
+            previewSource = previewIndex < movieClipSources.length
+                ? String(movieClipSources[previewIndex]) : ""
+            // Egy gépelés/szerkesztés több tételváltozást is jelez (#4852):
+            // a kérés rövid összevonás után, legfeljebb egyszer indul.
+            movieItemsRefreshTimer.restart()
+        }
+        function requestPreviewFrame() {
+            if (!movieDialog.visible || !previewTransitionServiceAvailable
+                    || movieClipSources.length + movieSlides.length < 1
+                    || moviePreviewViewport.width < 16
+                    || moviePreviewViewport.height < 16)
+                return 0
+            var outgoingIndex = previewFromIndex >= 0
+                ? previewFromIndex : previewIndex
+            var outgoingSlide = outgoingIndex >= movieClipSources.length
+                ? movieSlides[outgoingIndex - movieClipSources.length] : null
+            var incomingSlide = previewIndex >= movieClipSources.length
+                ? movieSlides[previewIndex - movieClipSources.length] : null
+            var hostWindow = moviePreviewViewport.Window.window
+            var devicePixelRatio = hostWindow && hostWindow.devicePixelRatio > 0
+                ? hostWindow.devicePixelRatio : 1
+            var generation = Number(controller.requestMovieTransitionPreview(
+                outgoingIndex < movieClipSources.length
+                    ? String(movieClipSources[outgoingIndex]) : "",
+                previewIndex < movieClipSources.length
+                    ? String(movieClipSources[previewIndex]) : "",
+                previewTransitionKind,
+                previewTransitionProgress,
+                previewOutputWidth,
+                previewOutputHeight,
+                movieCropToFit.checked,
+                movieShowCaptions.checked,
+                movieShowDates.checked,
+                outgoingSlide ? JSON.stringify(outgoingSlide) : "",
+                incomingSlide ? JSON.stringify(incomingSlide) : "",
+                previewActualSizeEnabled,
+                moviePreviewViewport.width,
+                moviePreviewViewport.height,
+                devicePixelRatio
+            ))
+            if (generation > previewLatestRequestGeneration)
+                previewLatestRequestGeneration = generation
+            return generation
+        }
+        function prefetchNextPreviewFrame() {
+            if (!movieDialog.visible || !previewTransitionServiceAvailable
+                    || previewItemCount < 2 || !controller
+                    || typeof controller.prefetchMovieTransitionPreview !== "function")
+                return
+            var nextIndex = (previewIndex + 1) % previewItemCount
+            var nextSlide = nextIndex >= movieClipSources.length
+                ? movieSlides[nextIndex - movieClipSources.length] : null
+            var hostWindow = moviePreviewViewport.Window.window
+            var devicePixelRatio = hostWindow && hostWindow.devicePixelRatio > 0
+                ? hostWindow.devicePixelRatio : 1
+            controller.prefetchMovieTransitionPreview(
+                nextIndex < movieClipSources.length
+                    ? String(movieClipSources[nextIndex]) : "",
+                nextSlide ? JSON.stringify(nextSlide) : "",
+                previewOutputWidth,
+                previewOutputHeight,
+                movieCropToFit.checked,
+                movieShowCaptions.checked,
+                movieShowDates.checked,
+                previewActualSizeEnabled,
+                moviePreviewViewport.width,
+                moviePreviewViewport.height,
+                devicePixelRatio
+            )
+        }
+        function advancePreview() {
+            if (!previewItemCount) {
+                moviePreviewTimer.stop()
+                return
+            }
+            previewFromIndex = previewIndex
+            previewIndex = (previewIndex + 1) % previewItemCount
+            previewSource = previewIndex < movieClipSources.length
+                ? movieClipSources[previewIndex] : ""
+            if (previewTransitionKind === "cut") {
+                previewFromIndex = -1
+                previewTransitionProgress = 1
+                stopPreviewTransition()
+                requestPreviewFrame()
+                return
+            }
+            previewTransitionProgress = 0
+            previewAwaitingTransitionFrame = false
+            var generation = requestPreviewFrame()
+            if (generation > 0) {
+                previewAwaitingTransitionGeneration = generation
+                previewAwaitingTransitionFrame = true
+                moviePreviewTransitionFallbackTimer.restart()
+                return
+            }
+            moviePreviewTransition.restart()
+        }
         function seekPreview(seconds) {
-            if (!movieClipSources.length) return
-            previewIndex = Math.min(
-                movieClipSources.length - 1,
+            if (!previewItemCount) return
+            setPreviewIndex(Math.min(
+                previewItemCount - 1,
                 Math.max(0, Math.floor(seconds / previewSlideDurationSeconds)))
-            previewSource = movieClipSources[previewIndex]
+            )
+        }
+        function movieInfoText() {
+            var photoCount = movieClipSources.length
+            var total = photoCount + movieSlides.length
+            if (!total) return ""
+
+            var selected = movieClipList.currentIndex
+            if (selected < photoCount) selected = previewIndex
+            var name, width, height, position
+            if (selected >= photoCount) {
+                var slideIndex = selected - photoCount
+                if (slideIndex < 0 || slideIndex >= movieSlides.length) return ""
+                name = qsTr("Text Slide")
+                var movieSize = sizeOptions[movieHeightBox.currentIndex]
+                width = movieSize[0]
+                height = movieSize[1]
+                position = photoCount + slideIndex + 1
+            } else {
+                var names = controller
+                        && typeof controller.movieClipNames === "function"
+                    ? controller.movieClipNames([movieClipSources[selected]]) : []
+                name = names.length ? names[0] : ""
+                var dimensions = controller
+                        && typeof controller.moviePreviewImageSize === "function"
+                    ? controller.moviePreviewImageSize(
+                        String(movieClipSources[selected])) : []
+                width = dimensions.length > 1 && dimensions[0] > 0
+                    ? dimensions[0] : movieDialog.previewImageWidth
+                height = dimensions.length > 1 && dimensions[1] > 0
+                    ? dimensions[1] : movieDialog.previewImageHeight
+                position = selected + 1
+            }
+            return qsTr("%1     %2x%3 pixels")
+                    .arg(name).arg(width).arg(height)
+                    + " " + qsTr("(%1 of %2)").arg(position).arg(total)
+        }
+        function selectMovieFilmstripItem(index) {
+            movieClipList.currentIndex = index
+            if (index < movieClipSources.length) {
+                moviePreviewTimer.stop()
+                setPreviewIndex(index)
+                movieSlideSelection = []
+                movieSlideEditingIndex = -1
+                if (movieSlideList.currentIndex >= 0)
+                    movieSlideList.currentIndex = -1
+            } else {
+                moviePreviewTimer.stop()
+                var slideIndex = index - movieClipSources.length
+                if (slideIndex < 0 || slideIndex >= movieSlides.length) return
+                movieSlideSelection = [slideIndex]
+                movieSlideEditingIndex = -1
+                movieSlideList.currentIndex = slideIndex
+                setPreviewIndex(index)
+            }
         }
         function togglePreviewFullscreen() {
             var hostWindow = moviePreviewPanel.Window.window
@@ -480,6 +744,17 @@ Item {
                 dialogs.trayHasPictures,
                 true)
         }
+        function useFolderMusicAsDefault() {
+            if (audioFileFromFolderMusic) audioFile = ""
+            audioFileFromFolderMusic = false
+            if (!controller || typeof controller.filmMusicForSources !== "function")
+                return
+            var configured = controller.filmMusicForSources(movieClipSources)
+            if (configured) {
+                audioFile = configured
+                audioFileFromFolderMusic = true
+            }
+        }
         function openForRows(rows, allowTray, preferTray) {
             if ((!rows || rows.length === 0) && !allowTray) return
             personMovieMode = false
@@ -488,14 +763,15 @@ Item {
             movieClipSources = preferTray
                 ? controller.movieSourceUrls(movieClipIndexes)
                 : controller.selectedMovieSourceUrls(movieClipIndexes)
+            useFolderMusicAsDefault()
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             movieSlideSelection = []
             movieSlideEditingIndex = -1
+            movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
-            previewIndex = 0
-            previewSource = movieClipSources.length ? movieClipSources[0] : ""
+            setPreviewIndex(0)
             targetFile = ""
             open()
         }
@@ -505,14 +781,15 @@ Item {
             applyDefaultSize()
             movieClipIndexes = []
             movieClipSources = sources.slice(0)
+            useFolderMusicAsDefault()
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             movieSlideSelection = []
             movieSlideEditingIndex = -1
+            movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
-            previewIndex = 0
-            previewSource = movieClipSources[0]
+            setPreviewIndex(0)
             targetFile = ""
             open()
         }
@@ -558,6 +835,7 @@ Item {
             movieSlideSelection = [insertionIndex]
             movieSlideEditingIndex = insertionIndex
             movieSlideList.currentIndex = insertionIndex
+            movieClipList.currentIndex = movieClipSources.length + insertionIndex
             loadTextSlide()
         }
         function loadTextSlide() {
@@ -614,6 +892,7 @@ Item {
             }
             movieSlides = slides
             movieSlideList.currentIndex = index
+            movieClipList.currentIndex = movieClipSources.length + index
         }
         function removeTextSlide() {
             var selected = movieSlideSelection.length
@@ -629,6 +908,9 @@ Item {
             movieSlideSelection = nextIndex >= 0 ? [nextIndex] : []
             movieSlideEditingIndex = -1
             movieSlideList.currentIndex = nextIndex
+            movieClipList.currentIndex = nextIndex >= 0
+                    ? movieClipSources.length + nextIndex
+                    : Math.min(movieClipList.currentIndex, movieClipSources.length - 1)
             loadTextSlide()
         }
         function selectTextSlide(index, modifiers) {
@@ -669,6 +951,7 @@ Item {
             })
             movieSlideEditingIndex = -1
             movieSlideList.currentIndex = insertionIndex
+            movieClipList.currentIndex = movieClipSources.length + insertionIndex
         }
         function editTextSlide(index) {
             if (index < 0 || index >= movieSlides.length) return
@@ -685,6 +968,7 @@ Item {
             slide.text = text
             slides[index] = slide
             movieSlides = slides
+            movieClipList.currentIndex = movieClipSources.length + index
         }
         function recomputeMovie() {
             if (movieSlides.length > 0) {
@@ -700,20 +984,37 @@ Item {
             movieSlides = []
             movieSlideSelection = []
             movieSlideEditingIndex = -1
+            movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
             if (controller)
                 movieClipSources = controller.movieSourceUrls(movieClipSources)
-            previewIndex = 0
-            previewSource = movieClipSources.length ? movieClipSources[0] : ""
+            setPreviewIndex(0)
             moviePreviewTimer.stop()
             movieTabs.currentIndex = 0
         }
         function exportMovie() {
+            if (previousMoviePath.length > 0) {
+                movieReplaceDialog.open()
+                return
+            }
+            startMovieExport()
+        }
+        function replacePreviousMovie() {
+            targetFile = previousMoviePath
+            startMovieExport()
+        }
+        function createNewMovie() {
+            targetFile = ""
+            startMovieExport()
+        }
+        function startMovieExport() {
             var meret = sizeOptions[movieHeightBox.currentIndex]
             var sources = movieClipSources.slice(0)
             if (movieSoloClip.checked && sources.length) {
-                var selected = movieClipList.currentIndex < 0 ? 0 : movieClipList.currentIndex
+                var selected = movieClipList.currentIndex < 0
+                        || movieClipList.currentIndex >= sources.length
+                    ? 0 : movieClipList.currentIndex
                 sources = [sources[selected]]
             }
             sources = sources.slice(0, movieUsedPhotoCount)
@@ -737,8 +1038,16 @@ Item {
         }
         onClosed: {
             movieDialog.projektbolNyilt = false
+            movieItemsRefreshTimer.stop()
             moviePreviewTimer.stop()
+            moviePreviewTransition.stop()
+            if (moviePreviewMusicLoader.item)
+                moviePreviewMusicLoader.item.stop()
             movieDialog.restorePreviewFullscreen()
+        }
+        onOpened: {
+            movieDialog.requestPreviewFrame()
+            movieDialog.prefetchNextPreviewFrame()
         }
         ColumnLayout {
             anchors.fill: parent
@@ -794,11 +1103,10 @@ Item {
                                 onClicked: {
                                     moviePreviewTimer.stop()
                                     var selected = movieClipList.currentIndex
-                                    if (selected < 0) selected = 0
-                                    movieDialog.previewIndex = selected
-                                    movieDialog.previewSource =
-                                        movieDialog.movieClipSources.length
-                                        ? movieDialog.movieClipSources[selected] : ""
+                                    if (selected < 0
+                                            || selected >= movieDialog.movieClipSources.length)
+                                        selected = 0
+                                    movieDialog.setPreviewIndex(selected)
                                 }
                             }
                         }
@@ -822,6 +1130,7 @@ Item {
                                 onActivated: {
                                     if (!movieDialog.personMovieMode)
                                         controller.setMovieResolutionIndex(currentIndex)
+                                    movieDialog.requestPreviewFrame()
                                 }
                             }
                         }
@@ -856,7 +1165,10 @@ Item {
                                 id: movieOverlapSlider
                                 objectName: "movieOverlapSlider"
                                 Layout.fillWidth: true
-                                from: 0; to: Math.max(0.1, movieSeconds.value / 10 * 0.9)
+                                from: 0; to: Math.max(
+                                    0.1,
+                                    (movieSeconds && movieSeconds.value !== undefined
+                                        ? movieSeconds.value : 30) / 10 * 0.9)
                                 value: Math.min(0.5, to); stepSize: 0.1
                                 grooveThickness: 9
                                 grooveInset: 3
@@ -869,7 +1181,9 @@ Item {
                             Text {
                                 objectName: "movieOverlapValueLabel"
                                 text: qsTr("%1 Sec").arg(
-                                    movieOverlapSlider.value.toFixed(1))
+                                    (movieOverlapSlider
+                                        && movieOverlapSlider.value !== undefined
+                                        ? movieOverlapSlider.value : 0.5).toFixed(1))
                             }
                         }
                         RowLayout {
@@ -891,7 +1205,8 @@ Item {
                             Text {
                                 objectName: "movieSecondsValueLabel"
                                 text: qsTr("%1 Sec").arg(
-                                    (movieSeconds.value / 10).toFixed(1))
+                                    ((movieSeconds && movieSeconds.value !== undefined
+                                        ? movieSeconds.value : 30) / 10).toFixed(1))
                                 color: Theme.ink
                             }
                         }
@@ -926,7 +1241,14 @@ Item {
                                 elide: Text.ElideMiddle
                             }
                             Button { objectName: "movieAddAudioButton"; text: qsTr("Load…"); onClicked: movieAudioDialog.open() }
-                            Button { objectName: "movieRemoveAudioButton"; text: qsTr("Clear"); onClicked: movieDialog.audioFile = "" }
+                            Button {
+                                objectName: "movieRemoveAudioButton"
+                                text: qsTr("Clear")
+                                onClicked: {
+                                    movieDialog.audioFile = ""
+                                    movieDialog.audioFileFromFolderMusic = false
+                                }
+                            }
                         }
                         RowLayout {
                             Layout.fillWidth: true
@@ -952,18 +1274,29 @@ Item {
                                 text: qsTr("Show Captions")
                                 checked: controller && typeof controller.moviePreference === "function"
                                         ? controller.moviePreference("captions") : false
-                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
-                                               controller.setMoviePreference("captions", checked)
+                                onToggled: {
+                                    if (controller && typeof controller.setMoviePreference === "function")
+                                        controller.setMoviePreference("captions", checked)
+                                    movieDialog.requestPreviewFrame()
+                                }
                             }
-                            CheckBox { id: movieShowDates; objectName: "movieShowDates"; text: qsTr("Show Dates") }
+                            CheckBox {
+                                id: movieShowDates
+                                objectName: "movieShowDates"
+                                text: qsTr("Show Dates")
+                                onToggled: movieDialog.requestPreviewFrame()
+                            }
                             CheckBox {
                                 id: movieCropToFit
                                 objectName: "movieCropToFit"
                                 text: qsTr("Full frame photo crop")
                                 checked: controller && typeof controller.moviePreference === "function"
                                         ? controller.moviePreference("cropfit") : false
-                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
-                                               controller.setMoviePreference("cropfit", checked)
+                                onToggled: {
+                                    if (controller && typeof controller.setMoviePreference === "function")
+                                        controller.setMoviePreference("cropfit", checked)
+                                    movieDialog.requestPreviewFrame()
+                                }
                             }
                             CheckBox {
                                 id: movieRemoveLowResFaces
@@ -1102,17 +1435,23 @@ Item {
                             property alias contentHeight: movieSlideList.contentHeight
                             property alias currentIndex: movieSlideList.currentIndex
                             property alias contentY: movieSlideList.contentY
-                            ListView {
-                                id: movieSlideList
-                                objectName: "movieSlideList"
-                                anchors.fill: parent
-                                model: movieDialog.movieSlides
-                                onCurrentIndexChanged: movieDialog.loadTextSlide()
-                                delegate: ItemDelegate {
-                                    id: movieSlideDelegate
-                                    objectName: "movieSlideDelegate" + index
-                                    width: movieSlideList.width
-                                    text: modelData.text
+                    ListView {
+                        id: movieSlideList
+                        objectName: "movieSlideList"
+                        anchors.fill: parent
+                        model: movieDialog.movieSlides
+                        onCurrentIndexChanged: {
+                            movieDialog.loadTextSlide()
+                            if (currentIndex >= 0) {
+                                movieClipList.currentIndex =
+                                    movieDialog.movieClipSources.length + currentIndex
+                            }
+                        }
+                        delegate: ItemDelegate {
+                            id: movieSlideDelegate
+                            objectName: "movieSlideDelegate" + index
+                            width: movieSlideList.width
+                            text: qsTr("Text Slide")
                                     highlighted: movieDialog.movieSlideSelection.indexOf(index) >= 0
                                     MouseArea {
                                         id: movieSlidePointer
@@ -1232,10 +1571,18 @@ Item {
                             ToolTip.visible: hovered
                             ToolTip.delay: Theme.tooltipDelay
                             onClicked: {
-                                if (movieClipList.currentIndex < 0) return
+                                var selected = movieClipList.currentIndex
+                                if (selected < 0) return
+                                if (selected >= movieDialog.movieClipSources.length) {
+                                    movieDialog.removeTextSlide()
+                                    return
+                                }
                                 var sources = movieDialog.movieClipSources.slice(0)
-                                sources.splice(movieClipList.currentIndex, 1)
+                                sources.splice(selected, 1)
                                 movieDialog.movieClipSources = sources
+                                movieClipList.currentIndex = Math.min(
+                                    selected,
+                                    sources.length + movieDialog.movieSlides.length - 1)
                             }
                         }
                         CheckBox { id: movieSoloClip; objectName: "movieSoloClip"; text: qsTr("Play selected clip only") }
@@ -1245,12 +1592,12 @@ Item {
                         objectName: "movieClipList"
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        model: controller && typeof controller.movieClipNames === "function"
-                                ? controller.movieClipNames(movieDialog.movieClipSources) : []
+                        model: movieDialog.movieFilmstripItems
                         delegate: ItemDelegate {
+                            objectName: "movieClipDelegate" + index
                             width: movieClipList.width
-                            text: modelData
-                            onClicked: movieClipList.currentIndex = index
+                            text: modelData.name
+                            onClicked: movieDialog.selectMovieFilmstripItem(index)
                         }
                     }
                 }
@@ -1263,23 +1610,79 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Item {
+                        id: moviePreviewViewport
                         objectName: "moviePreviewViewport"
                         Layout.preferredWidth: 240
-                        Layout.preferredHeight: 140
+                        // Az infósor külön sora ne szorítsa le a filmvezérlőket.
+                        Layout.preferredHeight: 118
                         clip: true
+                        onWidthChanged: if (movieDialog.visible) moviePreviewResizeTimer.restart()
+                        onHeightChanged: if (movieDialog.visible) moviePreviewResizeTimer.restart()
+                        MoviePreviewFrame {
+                            objectName: "moviePreviewOutgoingFrame"
+                            anchors.fill: parent
+                            z: 0
+                            visible: !movieDialog.previewTransitionServiceAvailable
+                                && moviePreviewTransition.running
+                                && movieDialog.previewFromIndex >= 0
+                            photoSources: movieDialog.movieClipSources
+                            slides: movieDialog.movieSlides
+                            itemIndex: movieDialog.previewFromIndex
+                            aspectRatio: movieDialog.previewAspectRatio
+                            outputHeight: movieDialog.previewOutputHeight
+                            actualSizeEnabled: movieDialog.previewActualSizeEnabled
+                            imageObjectName: "moviePreviewOutgoingImage"
+                            onImageSizeChanged: function(width, height) {
+                                if (itemIndex === movieDialog.previewIndex) {
+                                    movieDialog.previewImageWidth = width
+                                    movieDialog.previewImageHeight = height
+                                }
+                            }
+                        }
+                        MoviePreviewFrame {
+                            objectName: "moviePreviewIncomingFrame"
+                            anchors.fill: parent
+                            z: 1
+                            visible: !movieDialog.previewTransitionServiceAvailable
+                                && movieDialog.previewItemCount > 0
+                            photoSources: movieDialog.movieClipSources
+                            slides: movieDialog.movieSlides
+                            itemIndex: movieDialog.previewIndex
+                            aspectRatio: movieDialog.previewAspectRatio
+                            outputHeight: movieDialog.previewOutputHeight
+                            actualSizeEnabled: movieDialog.previewActualSizeEnabled
+                            imageObjectName: "moviePreviewImage"
+                            onImageSizeChanged: function(width, height) {
+                                if (itemIndex === movieDialog.previewIndex) {
+                                    movieDialog.previewImageWidth = width
+                                    movieDialog.previewImageHeight = height
+                                }
+                            }
+                        }
                         Image {
-                            id: moviePreviewImage
-                            objectName: "moviePreviewImage"
+                            id: moviePreviewTransitionImage
+                            objectName: "moviePreviewTransitionImage"
                             anchors.centerIn: parent
+                            z: 2
+                            visible: source !== ""
+                                && movieDialog.movieClipSources.length
+                                    + movieDialog.movieSlides.length > 0
+                            source: movieDialog.previewTransitionFrameSource
                             width: movieDialog.previewActualSizeEnabled
                                     && sourceSize.width > 0
-                                ? sourceSize.width : parent.width
+                                ? sourceSize.width / moviePreviewDpr
+                                : parent.width
                             height: movieDialog.previewActualSizeEnabled
                                     && sourceSize.height > 0
-                                ? sourceSize.height : parent.height
+                                ? sourceSize.height / moviePreviewDpr
+                                : parent.height
                             fillMode: Image.PreserveAspectFit
                             cache: false
-                            source: movieDialog.previewSource
+                            readonly property real moviePreviewDpr: {
+                                var hostWindow = moviePreviewViewport.Window.window
+                                return hostWindow && hostWindow.devicePixelRatio > 0
+                                    ? hostWindow.devicePixelRatio : 1
+                            }
                         }
                     }
                     Button {
@@ -1321,7 +1724,7 @@ Item {
                             from: 0
                             to: Math.max(1, movieDialog.previewDurationSeconds)
                             stepSize: movieDialog.previewSlideDurationSeconds
-                            enabled: movieDialog.movieClipSources.length > 1
+                            enabled: movieDialog.previewItemCount > 1
                             Binding on value {
                                 when: !moviePreviewScrubSlider.pressed
                                 value: movieDialog.previewIndex
@@ -1353,8 +1756,12 @@ Item {
                         stepSize: 10
                         value: controller && controller.movieVolume !== undefined
                             ? controller.movieVolume : 500
-                        onMoved: if (controller && controller.setMovieVolume)
-                                     controller.setMovieVolume(Math.round(value))
+                        onMoved: {
+                            if (controller && controller.setMovieVolume)
+                                controller.setMovieVolume(Math.round(value))
+                            if (moviePreviewMusicLoader.item)
+                                moviePreviewMusicLoader.item.volume = value / 1000
+                        }
                     }
                     PicasaButton {
                         objectName: "video_control_bar2/1to1"
@@ -1365,7 +1772,10 @@ Item {
                         ToolTip.text: qsTr("Show actual movie size (don't stretch)")
                         ToolTip.delay: Theme.tooltipDelay
                         ToolTip.visible: hovered
-                        onClicked: movieDialog.previewActualSizeEnabled = checked
+                        onClicked: {
+                            movieDialog.previewActualSizeEnabled = checked
+                            movieDialog.requestPreviewFrame()
+                        }
                     }
                     PicasaButton {
                         objectName: "video_control_bar2/fullscreen"
@@ -1376,6 +1786,13 @@ Item {
                         ToolTip.visible: hovered
                         onClicked: movieDialog.togglePreviewFullscreen()
                     }
+                }
+                Text {
+                    objectName: "makemoviepanel/infotext"
+                    Layout.fillWidth: true
+                    elide: Text.ElideMiddle
+                    color: Theme.textGray
+                    text: movieDialog.movieInfoText()
                 }
             }
             RowLayout {
@@ -1388,20 +1805,167 @@ Item {
         }
     }
 
+    Dialog {
+        id: movieReplaceDialog
+        objectName: "movieReplaceDialog"
+        modal: true
+        title: qsTr("Replace Existing or Create New?")
+        closePolicy: Popup.CloseOnEscape
+        anchors.centerIn: parent ? Overlay.overlay : undefined
+
+        RowLayout {
+            spacing: 8
+
+            PicasaButton {
+                objectName: "movieReplaceExistingButton"
+                text: qsTr("Replace Existing")
+                accent: Theme.picasaGreen
+                onClicked: {
+                    movieReplaceDialog.close()
+                    movieDialog.replacePreviousMovie()
+                }
+            }
+            PicasaButton {
+                objectName: "movieCreateNewButton"
+                text: qsTr("Create New")
+                onClicked: {
+                    movieReplaceDialog.close()
+                    movieDialog.createNewMovie()
+                }
+            }
+            PicasaButton {
+                objectName: "movieReplaceCancelButton"
+                text: qsTr("Cancel")
+                onClicked: movieReplaceDialog.close()
+            }
+        }
+    }
+
+    // #1743: a vezérlő jelzését a `Main.qml` mindig álló `Connections`-e
+    // hívja ezen a függvényen át (csak NYITOTT párbeszédnél).
+    function jelezdAFilmAtmenetElonezetet(source, generation) {
+        var readyGeneration = Number(generation)
+        if (movieDialog.movieClipSources.length
+                    + movieDialog.movieSlides.length < 1
+                || readyGeneration <= movieDialog.previewDisplayedGeneration
+                || readyGeneration <= movieDialog.previewGenerationFloor)
+            return
+        movieDialog.previewDisplayedGeneration = readyGeneration
+        movieDialog.previewTransitionFrameSource = String(source || "")
+        if (movieDialog.previewAwaitingTransitionFrame
+                && readyGeneration
+                    === movieDialog.previewAwaitingTransitionGeneration) {
+            movieDialog.previewAwaitingTransitionFrame = false
+            moviePreviewTransitionFallbackTimer.stop()
+            if (!moviePreviewTransition.running)
+                moviePreviewTransition.restart()
+        }
+    }
+
+    Connections {
+        target: moviePreviewTransition
+        function onRunningChanged() {
+            if (movieDialog.previewResettingTransition) return
+            if (moviePreviewTransition.running) return
+            moviePreviewFrameTimer.stop()
+            movieDialog.requestPreviewFrame()
+        }
+    }
+
+    Timer {
+        id: moviePreviewTransitionFallbackTimer
+        objectName: "moviePreviewTransitionFallbackTimer"
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (!movieDialog.previewAwaitingTransitionFrame) return
+            movieDialog.previewAwaitingTransitionFrame = false
+            moviePreviewTransition.restart()
+        }
+    }
+
+    Timer {
+        id: movieItemsRefreshTimer
+        objectName: "movieItemsRefreshTimer"
+        interval: 120
+        repeat: false
+        onTriggered: {
+            movieDialog.requestPreviewFrame()
+            movieDialog.prefetchNextPreviewFrame()
+        }
+    }
+
+    Timer {
+        id: moviePreviewResizeTimer
+        objectName: "moviePreviewResizeTimer"
+        interval: 120
+        repeat: false
+        onTriggered: movieDialog.requestPreviewFrame()
+    }
+
+    Timer {
+        id: moviePreviewFrameTimer
+        objectName: "moviePreviewFrameTimer"
+        interval: Math.max(1, Math.round(1000 / movieDialog.previewFramesPerSecond))
+        repeat: true
+        running: moviePreviewTransition.running
+            && !moviePreviewTransition.paused
+            && !movieDialog.previewAwaitingTransitionFrame
+        onTriggered: movieDialog.requestPreviewFrame()
+    }
+
     Timer {
         id: moviePreviewTimer
         objectName: "moviePreviewTimer"
-        interval: Math.max(500, movieSeconds.value * 100)
+        interval: Math.max(
+            500,
+            (movieSeconds && movieSeconds.value !== undefined
+                ? movieSeconds.value : 30) * 100)
         repeat: true
-        onTriggered: {
-            if (!movieDialog.movieClipSources.length) {
-                stop()
-                return
-            }
-            movieDialog.previewIndex = (movieDialog.previewIndex + 1)
-                    % movieDialog.movieClipSources.length
-            movieDialog.previewSource = movieDialog.movieClipSources[movieDialog.previewIndex]
+        onRunningChanged: {
+            if (!moviePreviewMusicLoader.item) return
+            if (running) moviePreviewMusicLoader.item.play()
+            else moviePreviewMusicLoader.item.pause()
         }
+        onTriggered: movieDialog.advancePreview()
+    }
+
+    Loader {
+        id: moviePreviewMusicLoader
+        objectName: "moviePreviewMusicLoader"
+        active: movieDialog.visible && moviePreviewTimer.running
+            && movieDialog.audioFile.length > 0
+        source: active ? "MoviePreviewMusicPlayer.qml" : ""
+        property string audioSource: movieDialog.audioFile
+        property real outputVolume: movieDialog.previewAudioVolume
+        property bool loopMusic: movieDialog.audioOption === 2
+        onLoaded: {
+            item.source = audioSource
+            item.volume = outputVolume
+            item.loop = loopMusic
+            if (moviePreviewTimer.running) item.play()
+        }
+        onAudioSourceChanged: {
+            if (!item) return
+            item.source = audioSource
+            if (audioSource && moviePreviewTimer.running) item.play()
+            else if (!audioSource) item.stop()
+        }
+        onOutputVolumeChanged: if (item) item.volume = outputVolume
+        onLoopMusicChanged: if (item) item.loop = loopMusic
+    }
+
+    NumberAnimation {
+        id: moviePreviewTransition
+        objectName: "moviePreviewTransition"
+        target: movieDialog
+        property: "previewTransitionProgress"
+        from: 0
+        to: 1
+        duration: Math.max(
+            1,
+            (movieOverlapSlider && movieOverlapSlider.value !== undefined
+                ? movieOverlapSlider.value : 0.5) * 1000)
     }
 
     ConfirmDialog {
@@ -1443,7 +2007,10 @@ Item {
                 ? qsTr("Music files (*.mp3, *.wma)")
                 : qsTr("Music files (*.mp3, *.m4a)"),
         ]
-        onAccepted: movieDialog.audioFile = selectedFile.toString()
+        onAccepted: {
+            movieDialog.audioFile = selectedFile.toString()
+            movieDialog.audioFileFromFolderMusic = false
+        }
     }
 
     ColorDialog {
@@ -1585,6 +2152,7 @@ Item {
     //: A film elkészült.
     function jelezdAFilmSikert(path, used, skipped, missing) {
         movieProgressDialog.close()
+        movieDialog.previousMoviePath = path
         createResultDialog.message =
             qsTr("Movie saved: %1").arg(path)
             + "\n" + qsTr("%1 pictures used.").arg(used)

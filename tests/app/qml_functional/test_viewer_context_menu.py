@@ -17,7 +17,7 @@ csoportbontást és a viselkedési szabályokat a
 from __future__ import annotations
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
-from support.qt_wait import hangos_hurok
+from support.qt_wait import wait_for_photo_op
 
 # a spec 3. szakaszának teljes tételsora, sorrendben
 _EXPECTED_ITEMS = [
@@ -84,12 +84,8 @@ def _close_menu(window, qt_app):
 
 
 def _do_photo_op(controller, qt_app, action) -> None:
-    """A forgatás háttérszálon fut — megvárja a `photoOpFinished`-t
-    (a `test_viewer.py` mintája)."""
-    loop = hangos_hurok(controller.photoOpFinished)
-    action()
-    loop.exec()
-    qt_app.processEvents()
+    """A forgatás háttérszála után feldolgozza a sorba állított frissítést."""
+    wait_for_photo_op(controller, action, qt_app=qt_app)
 
 
 class TestViewerContextMenuStructure:

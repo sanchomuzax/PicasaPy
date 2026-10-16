@@ -11,13 +11,14 @@ from PySide6.QtCore import QObject, QPoint, QPointF, QRectF, Qt
 from PySide6.QtTest import QTest
 
 _QML = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/PicasaPy"
-_OVERLAY = (_QML / "FacesOverlay.qml").read_text(encoding="utf-8")
 _PEOPLE = (_QML / "PeoplePanel.qml").read_text(encoding="utf-8")
 
 
-def test_a_kezi_arcbevitel_megse_gombja_fordithato():
-    assert 'objectName: "faceManualCancelButton"' in _OVERLAY
-    assert 'text: qsTr("Cancel")' in _OVERLAY
+def test_a_kezi_arcbevitel_megse_gombja_a_panelen_van():
+    # A Picasa spec a kézi hozzáadás teljes vezérlését a PeoplePanelbe teszi;
+    # a korábbi, képen lebegő Mégse gomb ezt a paritást nem fedte le.
+    assert 'objectName: "peoplePanelManualCancelButton"' in _PEOPLE
+    assert 'text: qsTr("Cancel")' in _PEOPLE
 
 
 def test_ures_emberek_panelen_megjelenik_a_mappa_utmutatoja():
@@ -53,6 +54,7 @@ def test_a_statuszszoveg_a_foablakban_is_latszik(qml_app, qt_app):
 def test_a_kezi_arcbevitel_megse_gombja_a_foablakban_mukodik(qml_app, qt_app):
     window, _controller, _engine = qml_app
     window.setProperty("viewerOpen", True)
+    window.setProperty("activeDrawerTab", "people")
     qt_app.processEvents()
     viewer = window.findChild(QObject, "photoViewer")
     assert viewer is not None
@@ -61,9 +63,11 @@ def test_a_kezi_arcbevitel_megse_gombja_a_foablakban_mukodik(qml_app, qt_app):
     overlay = window.findChild(QObject, "facesOverlay")
     assert overlay is not None
     overlay.setProperty("draftRect", QRectF(20, 20, 40, 40))
-    button = window.findChild(QObject, "faceManualCancelButton")
+    button = window.findChild(QObject, "peoplePanelManualCancelButton")
     assert button is not None
     assert button.property("text") == "Cancel"
+    panel_button = window.findChild(QObject, "peoplePanelManualAddButton")
+    assert panel_button is not None
     height = window.height()
     try:
         for delta in (-5, 0, 5):
@@ -92,6 +96,7 @@ def test_a_kezi_arcbevitel_megse_gombja_a_foablakban_mukodik(qml_app, qt_app):
                 time.sleep(0.01)
             assert viewer.property("facesEditMode") is False
             assert overlay.property("draftRect").width() == 0
+            assert panel_button.property("visible")
             viewer.setProperty("facesEditMode", True)
             overlay.setProperty("draftRect", QRectF(20, 20, 40, 40))
     finally:

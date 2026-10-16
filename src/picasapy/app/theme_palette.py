@@ -49,6 +49,12 @@ from PySide6.QtGui import QColor
 from ..render.display_modes import apply_display_mode, display_mode_changes_pixels
 
 
+#: #4412: a 16 bites mód képpontonként eltérő ZAJT ad (spec 5.3) — egy egyszínű
+#: felületi tokenre ez egyetlen zajértéket, azaz puszta színeltolást jelentene,
+#: nem szemcsézést. A felület palettája ezért ebben a módban változatlan.
+_PALETTAN_KIVULI_MODOK = frozenset({"dither16"})
+
+
 def theme_palette(tokens: Mapping[str, QColor], mode: str) -> dict[str, str]:
     """Tokennév → átalakított szín (`#AARRGGBB`), EGY menetben.
 
@@ -57,7 +63,8 @@ def theme_palette(tokens: Mapping[str, QColor], mode: str) -> dict[str, str]:
     `Theme.qml` üres palettán a NYERS értékeket adja, tehát a felület képe
     ilyenkor nem mozdul.
     """
-    if not display_mode_changes_pixels(mode) or not tokens:
+    if (not display_mode_changes_pixels(mode) or not tokens
+            or mode in _PALETTAN_KIVULI_MODOK):
         return {}
 
     nevek = list(tokens)

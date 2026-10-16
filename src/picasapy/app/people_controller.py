@@ -10,18 +10,29 @@ szűrt nézet, a mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz.
 A #26 1. köre csak OLVASOTT; a #422 4. lépcsőjével két KÖTEGELT írás is
 ide került (az Emberek-album kép-szintű parancsai): egy személy arc-
 címkéjének levétele, illetve átvitele másik névre a kijelölt képeken. Az
-írás a `faces_helper.py` mintáját követi (ütközésbiztos `update_document`,
-atomikus, backuppal), csak több képre, mappánként egy ini-írással."""
+írás a `faces_helper.py` mintáját követi (`update_document`, útvonalankénti
+szerializálással és észlelt változáskor újrapróbálással; atomikus, backuppal),
+csak több képre, mappánként egy ini-írással."""
 
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import datetime
 import secrets
 import time
 from pathlib import Path
 
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
-from picasapy.index import open_index
+from picasapy.index import (
+    all_photos,
+    open_index,
+    photo_by_id,
+    person_thumbnail_face,
+    person_thumbnails,
+    set_person_thumbnail,
+    unnamed_faces_for_photos,
+)
 from picasapy.index.faces_detected import (
     suggested_album_photos,
     suggested_faces_for,
@@ -34,24 +45,43 @@ from picasapy.index.people import (
     rendezd_szemelyeket,
 )
 from picasapy.ini import (
+    UNIDENTIFIED_CONTACT,
+    Contact,
     IniConflictError,
     IniSaveError,
+    ContactXmlEntry,
     contacts_of,
     ensure_contact,
     find_contact_id,
+    load_contacts_xml,
+    ini_source_path,
     load_document,
     parse_faces,
+    save_contacts_xml,
     update_document,
+    with_contact,
     with_reassigned_face,
+    without_contact,
+    without_face,
     without_face_at_rect,
 )
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .contact_names import central_contacts_path
+from .models import _thumb_url
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
 # és a lemezhiba is KEZELT hiba, nem néma adatvesztés
 _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
+
+
+
+def _load_ini(ini_path: Path):
+    """Olvasáshoz: a `.picasa.ini`, hiányában a régi `Picasa.ini` (#4819).
+
+    A `load_document` modulszintű név marad (a tesztek ezt számolják)."""
+    return load_document(ini_source_path(ini_path) or ini_path)
 
 
 class PeopleMixin:
@@ -66,16 +96,38 @@ class PeopleMixin:
 
     @Property("QVariant", notify=peopleChanged)
     def people(self):
-        """A bal hasábnak: `[{name, count}, ...]` — LISTA, nem tuple (#232,
-        a QML-ben a tuple nem tömb), a `albums` property mintájára."""
+        """A bal hasáb személy-sorai névvel, darabszámmal és arcképpel."""
         # #1767: a rendezés a MEGJELENÍTÉSNÉL történik, nem a
         # begyűjtésnél — az `people_in_index` eredményét a Projektek
         # gyűjtemény is használja (`index/side_pane.py`), és annak a
         # sorrendje nem a hasáb beállításától függ.
-        return [
-            {"name": person.name, "count": person.photo_count}
-            for person in rendezd_szemelyeket(self._people, self.peopleSort)
-        ]
+        people = rendezd_szemelyeket(self._people, self.peopleSort)
+        with open_index(self._db_path) as conn:
+            saved = person_thumbnails(conn, (person.name for person in people))
+            result = []
+            for person in people:
+                thumbnail = saved.get(person.name.casefold())
+                photo_id = (
+                    thumbnail.photo_id
+                    if thumbnail is not None
+                    else person.thumbnail_photo_id
+                )
+                rect = (
+                    thumbnail.rect
+                    if thumbnail is not None
+                    else person.thumbnail_rect
+                )
+                photo = photo_by_id(conn, photo_id) if photo_id is not None else None
+                result.append(
+                    {
+                        "name": person.name,
+                        "count": person.photo_count,
+                        "thumbUrl": _thumb_url(photo, arc=rect)
+                        if photo is not None and rect is not None
+                        else "",
+                    }
+                )
+        return result
 
     @Slot(result="QVariantList")
     def personMovieSourceUrls(self):  # noqa: N802 — QML-slot-stílus
@@ -113,6 +165,318 @@ class PeopleMixin:
         `currentAlbumToken` mintájára, a jelzése is (ld. `_init_people`)."""
         mode, param = self._view_mode
         return param if mode == "person" else ""
+
+    @Slot(result="QVariantList")
+    def peopleManagerContacts(self) -> list[dict]:  # noqa: N802
+        """A központi névjegytár és a mappák kontaktjainak uniója.
+
+        A központi id mellett a listában minden mappánkénti `[Contacts2]` id
+        is megmarad. A mappák között név szerint egyesítünk, mert a helyi id
+        eltérhet; az album képszáma a `faces=` hivatkozásokból származik.
+        """
+        with open_index(self._db_path) as conn:
+            photos = all_photos(conn)
+        by_folder: dict[str, list] = {}
+        for photo in photos:
+            by_folder.setdefault(photo.folder_path, []).append(photo)
+
+        contacts_by_name: dict[str, dict] = {}
+        central_id_to_name: dict[str, str] = {}
+        try:
+            central_contacts = load_contacts_xml(self._people_contacts_path())
+        except (OSError, ValueError):
+            central_contacts = ()
+        for contact in central_contacts:
+            if not contact.name or not contact.person_id:
+                continue
+            key = contact.name.casefold()
+            row = contacts_by_name.setdefault(
+                key,
+                {
+                    "name": contact.name,
+                    "email": "",
+                    "contactIds": [],
+                    "localContactIds": [],
+                    "photoCount": 0,
+                },
+            )
+            if contact.person_id not in row["contactIds"]:
+                row["contactIds"].append(contact.person_id)
+            central_id_to_name[contact.person_id.casefold()] = key
+
+        for folder_path, folder_photos in by_folder.items():
+            try:
+                document = _load_ini(Path(folder_path) / PICASA_INI_NAME)
+            except (OSError, ValueError):
+                continue
+            contacts = tuple(
+                contact
+                for contact in contacts_of(document)
+                if contact.name
+                and contact.person_id.casefold() != UNIDENTIFIED_CONTACT
+            )
+            names: dict[str, str] = {}
+            for contact in contacts:
+                key = central_id_to_name.get(
+                    contact.person_id.casefold(), contact.name.casefold()
+                )
+                row = contacts_by_name.setdefault(
+                    key,
+                    {
+                        "name": contact.name,
+                        "email": "",
+                        "contactIds": [],
+                        "localContactIds": [],
+                        "photoCount": 0,
+                    },
+                )
+                if not row["email"]:
+                    row["email"] = contact.email
+                if contact.person_id not in row["contactIds"]:
+                    row["contactIds"].append(contact.person_id)
+                if contact.person_id not in row["localContactIds"]:
+                    row["localContactIds"].append(contact.person_id)
+                names[contact.person_id.casefold()] = key
+
+            for photo in folder_photos:
+                section = document.section(photo.name)
+                raw_faces = section.get("faces") if section is not None else None
+                if not raw_faces:
+                    continue
+                try:
+                    faces = parse_faces(raw_faces)
+                except ValueError:
+                    continue
+                names_on_photo = {
+                    names[face.contact_id.casefold()]
+                    for face in faces
+                    if face.is_identified
+                    and face.contact_id.casefold() in names
+                }
+                for name in names_on_photo:
+                    contacts_by_name[name]["photoCount"] += 1
+
+        contacts = sorted(
+            contacts_by_name.values(), key=lambda contact: contact["name"].casefold()
+        )
+        thumbnail_urls = {}
+        if hasattr(self, "_people"):
+            thumbnail_urls = {
+                person["name"].casefold(): person["thumbUrl"]
+                for person in self.people
+            }
+        for contact in contacts:
+            contact["thumbUrl"] = thumbnail_urls.get(
+                contact["name"].casefold(), ""
+            )
+        return contacts
+
+    def _people_contacts_path(self) -> Path:
+        """A PicasaPy központi tárának contacts/contacts.xml fájlja."""
+        return central_contacts_path(self._db_path)
+
+    @Slot("QVariantList", result=bool)
+    def savePeopleManagerChanges(self, changes) -> bool:  # noqa: N802
+        """A kontaktmódosítások kiírása `[Contacts2]`/`faces=` sorokba.
+
+        Az Új személyt a központi tárba menti; a névváltoztatás a központi
+        bejegyzések mellett csak az érintett mappák `[Contacts2]` sorait
+        frissíti, így az arckapcsolatok id-je megmarad. A törlés a központi
+        bejegyzést, valamint az érintett mappák névjegyeit és `faces=`
+        hivatkozásait távolítja el. Mappánként egy útvonalanként szerializált,
+        best-effort konkurenciakezelésű ini-frissítés történik.
+        """
+        if not changes:
+            return True
+        tiszta_valtozasok = []
+        for change in changes:
+            if not isinstance(change, dict):
+                return False
+            action = str(change.get("action", ""))
+            name = str(change.get("name", "")).strip()
+            email = str(change.get("email", "")).strip()
+            old_name = str(change.get("oldName", "")).strip()
+            if action not in {"create", "update", "delete"}:
+                return False
+            if action == "delete":
+                if not old_name:
+                    return False
+            elif (
+                not name
+                or not old_name and action == "update"
+                or any(char in name or char in email for char in ";\r\n")
+            ):
+                return False
+            tiszta_valtozasok.append(
+                {
+                    "action": action,
+                    "oldName": old_name,
+                    "name": name,
+                    "email": email,
+                }
+            )
+
+        if any(
+            change["action"] == "create" and change["email"]
+            for change in tiszta_valtozasok
+        ):
+            # A mért központi XML-formátumban nincs e-mail mező; emailt csak
+            # olyan személyhez mentünk, akinek van mappabeli Contacts2 sora.
+            return False
+        email_updates = {
+            change["oldName"].casefold()
+            for change in tiszta_valtozasok
+            if change["action"] == "update" and change["email"]
+        }
+        if email_updates:
+            local_names = {
+                row["name"].casefold()
+                for row in self.peopleManagerContacts()
+                if row["localContactIds"]
+            }
+            if not email_updates <= local_names:
+                return False
+
+        try:
+            central_path = self._people_contacts_path()
+            entries = list(load_contacts_xml(central_path))
+            now = datetime.now().astimezone().isoformat(timespec="seconds")
+            changed_central = False
+            for change in tiszta_valtozasok:
+                action = change["action"]
+                old_key = change["oldName"].casefold()
+                if action == "create":
+                    if any(
+                        c.name.casefold() == change["name"].casefold()
+                        for c in entries
+                    ):
+                        continue
+                    used_ids = {c.person_id.casefold() for c in entries}
+                    person_id = secrets.token_hex(8)
+                    while person_id.casefold() in used_ids:
+                        person_id = secrets.token_hex(8)
+                    entries.append(
+                        ContactXmlEntry(
+                            person_id=person_id,
+                            name=change["name"],
+                            modified_time=now,
+                            local_contact="1",
+                        )
+                    )
+                    changed_central = True
+                elif action == "update":
+                    matched = False
+                    updated_entries = []
+                    for contact in entries:
+                        if contact.name.casefold() == old_key:
+                            updated_entries.append(
+                                replace(
+                                    contact,
+                                    name=change["name"],
+                                    modified_time=now,
+                                )
+                            )
+                            matched = True
+                        else:
+                            updated_entries.append(contact)
+                    if not matched:
+                        used_ids = {c.person_id.casefold() for c in entries}
+                        person_id = secrets.token_hex(8)
+                        while person_id.casefold() in used_ids:
+                            person_id = secrets.token_hex(8)
+                        updated_entries.append(
+                            ContactXmlEntry(
+                                person_id=person_id,
+                                name=change["name"],
+                                modified_time=now,
+                                local_contact="1",
+                            )
+                        )
+                    entries = updated_entries
+                    changed_central = True
+                else:
+                    kept = [c for c in entries if c.name.casefold() != old_key]
+                    changed_central |= len(kept) != len(entries)
+                    entries = kept
+
+            if changed_central:
+                save_contacts_xml(central_path, tuple(entries))
+
+            # #4887: az átnevezés/törlés a rejtett mappák ini-jébe is írjon —
+            # ez nem megjelenítés, a név különben ott elavulna
+            with open_index(self._db_path) as conn:
+                photos = all_photos(conn, include_hidden_folders=True)
+            by_folder: dict[str, list] = {}
+            for photo in photos:
+                by_folder.setdefault(photo.folder_path, []).append(photo)
+
+            for folder_path, _folder_photos in sorted(by_folder.items()):
+                ini_path = Path(folder_path) / PICASA_INI_NAME
+                try:
+                    current = _load_ini(ini_path)
+                except (OSError, ValueError):
+                    continue
+                if not any(
+                    contact.name.casefold()
+                    == change["oldName"].casefold()
+                    for contact in contacts_of(current)
+                    for change in tiszta_valtozasok
+                    if change["action"] in {"update", "delete"}
+                ):
+                    continue
+
+                def mutate(document, changes=tiszta_valtozasok):
+                    for change in changes:
+                        action = change["action"]
+                        if action == "create":
+                            # Az új személy még nem albumtag; csak a központi
+                            # névjegy jön létre. Az ini-be az első arctagelés
+                            # ír majd `[Contacts2]` + `faces=` adatot.
+                            continue
+                        matches = tuple(
+                            contact
+                            for contact in contacts_of(document)
+                            if contact.name.casefold()
+                            == change["oldName"].casefold()
+                        )
+                        if action == "update":
+                            for contact in matches:
+                                document = with_contact(
+                                    document,
+                                    Contact(
+                                        person_id=contact.person_id,
+                                        name=change["name"],
+                                        email=change["email"],
+                                        gaia_id=contact.gaia_id,
+                                    ),
+                                )
+                            continue
+
+                        person_ids = {contact.person_id.casefold() for contact in matches}
+                        if not person_ids:
+                            continue
+                        for section in document.file_sections():
+                            raw_faces = section.get("faces")
+                            if not raw_faces:
+                                continue
+                            try:
+                                faces = parse_faces(raw_faces)
+                            except ValueError:
+                                continue
+                            for face in faces:
+                                if face.contact_id.casefold() in person_ids:
+                                    document = without_face(document, section.name, face)
+                        for contact in matches:
+                            document = without_contact(document, contact.person_id)
+                    return document
+
+                update_document(ini_path, mutate, backup=True)
+        except (*_WRITE_ERRORS, OSError, ValueError) as error:
+            self.syncFailed.emit(str(error))
+            return False
+
+        self._reload_after_sync()
+        return True
 
     def _init_people(self) -> None:
         """A konstruktorból hívandó kezdeti állapot (a `people` mezőé)."""
@@ -187,6 +551,32 @@ class PeopleMixin:
         )
         self._show(records)
         self._arc_nagyitas_atvezetese(name, records)
+
+    @Slot(int, str, result=bool)
+    def canSetPersonThumbnail(self, photo_id: int, person_name: str) -> bool:  # noqa: N802
+        """Csak az aktuális személy arcát tartalmazó fotó választható."""
+        if (
+            not person_name
+            or self.currentPersonName.casefold() != person_name.strip().casefold()
+        ):
+            return False
+        with open_index(self._db_path) as conn:
+            return person_thumbnail_face(conn, person_name, photo_id) is not None
+
+    @Slot(int, str, result=bool)
+    def setPersonThumbnail(self, photo_id: int, person_name: str) -> bool:  # noqa: N802
+        """A jelenlegi személy albumképének beállítása, indexbe mentve."""
+        if (
+            not person_name
+            or self.currentPersonName.casefold() != person_name.strip().casefold()
+        ):
+            return False
+        with open_index(self._db_path) as conn:
+            if not set_person_thumbnail(conn, person_name, photo_id):
+                return False
+            conn.commit()
+        self.peopleChanged.emit()
+        return True
 
     @staticmethod
     def _osszefuzve(
@@ -286,7 +676,7 @@ class PeopleMixin:
             kulcs = str(photo.folder_path)
             if kulcs not in dokumentumok:
                 try:
-                    dokumentumok[kulcs] = load_document(
+                    dokumentumok[kulcs] = _load_ini(
                         Path(photo.folder_path) / PICASA_INI_NAME
                     )
                 except (OSError, ValueError):
@@ -305,12 +695,14 @@ class PeopleMixin:
 
     @Slot(list, result="QVariantList")
     def peopleOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
-        """A megadott sorokon NÉVVEL szereplő emberek: `[{name, count}]`.
+        """A megadott sorokon NÉVVEL szereplő emberek: `[{name, count,
+        photo_id, rect, thumbUrl}]`.
 
         A `count` azt mondja, a kijelölés hány képén szerepel az illető; a
         főnézetben minden rekord egy megjelenő személy-sort ad a panelnek
-        (#4045)."""
-        counts: dict[str, int] = {}
+        (#4045). Több fotón előforduló személynél az első kijelölt fotó
+        arcát használjuk az ikonképhez."""
+        people: dict[str, dict] = {}
         # ⚠️ #1146: MAPPÁNKÉNT olvasunk ini-t, nem képenként. A régi ág
         # soronként hívott `load_document()`-et — 2 002 soros kijelölésnél
         # 6 006 ini-beolvasás egyetlen billentyűleütésre, hálózati
@@ -321,7 +713,7 @@ class PeopleMixin:
             kulcs = str(folder)
             if kulcs not in dokumentumok:
                 try:
-                    dokumentumok[kulcs] = load_document(folder / PICASA_INI_NAME)
+                    dokumentumok[kulcs] = _load_ini(folder / PICASA_INI_NAME)
                 except OSError:
                     dokumentumok[kulcs] = None
             document = dokumentumok[kulcs]
@@ -340,19 +732,97 @@ class PeopleMixin:
                 faces = parse_faces(raw)
             except ValueError:
                 continue
-            on_photo = {
-                names[face.contact_id.casefold()]
-                for face in faces
-                if face.is_identified and face.contact_id.casefold() in names
-            }
-            for name in on_photo:
-                counts[name] = counts.get(name, 0) + 1
-        return [
-            {"name": name, "count": count}
-            for name, count in sorted(
-                counts.items(), key=lambda kv: (-kv[1], kv[0].casefold())
+            on_photo = {}
+            for face in faces:
+                name = names.get(face.contact_id.casefold())
+                if face.is_identified and name and name not in on_photo:
+                    on_photo[name] = face
+            for name, face in on_photo.items():
+                entry = people.setdefault(
+                    name,
+                    {
+                        "name": name,
+                        "count": 0,
+                        "photo_id": photo.id,
+                        "rect": None,
+                        "thumbUrl": "",
+                    },
+                )
+                entry["count"] += 1
+                if entry["rect"] is None:
+                    rect = (
+                        face.rect.left,
+                        face.rect.top,
+                        face.rect.right,
+                        face.rect.bottom,
+                    )
+                    entry["photo_id"] = photo.id
+                    entry["rect"] = list(rect)
+                    entry["thumbUrl"] = _thumb_url(photo, arc=rect)
+        result = [
+            person
+            for person in sorted(
+                people.values(),
+                key=lambda entry: (-entry["count"], entry["name"].casefold()),
             )
         ]
+        if result:
+            with open_index(self._db_path) as conn:
+                saved = person_thumbnails(
+                    conn, (person["name"] for person in result)
+                )
+                for person in result:
+                    thumbnail = saved.get(person["name"].casefold())
+                    if thumbnail is None:
+                        continue
+                    photo = photo_by_id(conn, thumbnail.photo_id)
+                    if photo is None:
+                        continue
+                    person["photo_id"] = thumbnail.photo_id
+                    person["rect"] = list(thumbnail.rect)
+                    person["thumbUrl"] = _thumb_url(photo, arc=thumbnail.rect)
+        return result
+
+    @Slot(list, result="QVariantList")
+    def unnamedFacesOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
+        """A kijelölt fotók saját, még névtelen arcai a jobb oldali panelhez.
+
+        A névadás és mellőzés meglévő `FaceScanController`-műveleteihez
+        szükséges `faceId`-t és a közös bélyegkép-szolgáltató URL-jét adja.
+        A fotó sorrendje a kijelölést követi, az azonos fotón lévő arcoké
+        felülről, majd balról lefelé determinisztikus.
+        """
+        photos = self._rows_to_photos(rows)
+        by_id = {photo.id: photo for photo in photos}
+        if not by_id:
+            return []
+        photo_order = {photo.id: index for index, photo in enumerate(photos)}
+        with open_index(self._db_path) as conn:
+            faces = unnamed_faces_for_photos(conn, by_id)
+
+        result = []
+        for face in sorted(
+            faces,
+            key=lambda item: (
+                photo_order[item.photo_id],
+                item.rect[1] if item.rect else 1.0,
+                item.rect[0] if item.rect else 1.0,
+                item.id,
+            ),
+        ):
+            photo = by_id.get(face.photo_id)
+            if photo is None or face.rect is None:
+                continue
+            result.append(
+                {
+                    "faceId": face.id,
+                    "photo_id": face.photo_id,
+                    "rect": list(face.rect),
+                    "thumbUrl": _thumb_url(photo, arc=face.rect),
+                    "suggestedName": face.suggested_name or "",
+                }
+            )
+        return result
 
     def _refresh_people_view(self, mode: str, param: str) -> bool:
         """A `_refresh_view()` "person" ágának kiszervezett teste — igazat ad

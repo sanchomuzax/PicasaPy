@@ -19,6 +19,8 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+from typing import NamedTuple
+
 import numpy as np
 
 from picasapy.lazy_cv2 import cv2
@@ -47,6 +49,16 @@ _ZOOM_BAND_ROWS = 64
 
 #: A `cv2.remap` egész (`CV_16SC2`) indextérképének felső határa.
 _REMAP_MAX_SIZE = 32767
+
+
+class _ZoomStep(NamedTuple):
+    """Egy natív SSE2-lépés levágott célterülete és 16.16-os forrásindexei."""
+
+    x_start: int
+    y_start: int
+    x_indices: np.ndarray
+    y_indices: np.ndarray
+    valid_rows: np.ndarray
 
 
 def focal_mask(
@@ -125,7 +137,13 @@ def zoom_offsets(samples: int, max_offset: int) -> tuple[int, ...]:
 
 
 def zoom_sample_indices(length: int, offset: int, focus_px: float) -> np.ndarray:
-    """Egy tengely legközelebbi-szomszéd forrásindexei (#3883), `int64`.
+    """Az ideális egytengelyes leképezés legközelebbi-szomszéd indexei (#3883).
+
+    Ez a képlet-segéd külön-külön számolja ki a pixeleket. A natív
+    `zoom_blur` SSE2-útja ehelyett az affine mátrixból épített, egész
+    16.16-os léptetőtáblát és levágott ROI-t használja; azt a
+    `_zoom_native_steps` valósítja meg. A segéd képen belüli clampje ezért
+    nem a natív peremkezelés modellje.
 
     A cél → forrás mátrix egy tengelyre `u = (X + 0,5)·L/(L+off) + off·f/L`
     (`f` a fókusz képpontban), float32-ben; az index `⌊65536·u⌋ >> 16` — a
@@ -174,69 +192,157 @@ def zoom_blur(
 ) -> np.ndarray:
     """A `RadialBlurImageOperation` magja (`0x00bcf4b0`, #3883) — `uint8`.
 
-    Az akkumulátor a forrás másolata; `zoom_offsets` sorrendjében minden
-    eltoláshoz a forrásból legközelebbi szomszéddal vett minta
-    (`zoom_sample_indices`, a két tengely külön — a mátrix átlós) keveredik
-    rá (`zoom_blend_step`). A függőleges eltoláshoz is a `W`-ből számolt
-    `D` tartozik, de a léptékarány tengelyenként más: `H/(H+off)`.
+    A `zoom_offsets` sorrendjében a natív SSE2-út a célterületet az affine
+    mátrix inverzével levágja, majd soronként 16.16-os koordinátatáblát épít.
+    Az első lane kezdőértéke a leképezett pixelközép; a lane-lépés a
+    float32 mátrixelem `65536`-tal szorozva, nullához csonkolva. A következő
+    lane-ek és négyes csoportok egész összeadással készülnek. A képen kívüli
+    célpixelek kimaradnak, nem a szélső forráspixelre szorulnak.
 
     `gyors=True`: CSAK a csúszka-húzás közbeni élő előnézetnek (a
-    `gyors_elonezet` blokk, #3846 mintájára). Ugyanazok a mintaindexek, de
-    OpenCV-vel (`remap` + `addWeighted`): kerekítve, sávhiba nélkül. A natív
-    út 2560 px-en ~1,7× lassabb a régi, átlagoló OpenCV-útnál; a gyors út
-    ennél is gyorsabb, és szemre ugyanazt a zoomot adja.
+    `gyors_elonezet` blokk, #3846 mintájára). Ugyanezt a natív léptetőtáblát
+    használja, OpenCV-vel (`remap` + `addWeighted`): kerekítve, sávhiba nélkül.
     """
     height, width = image.shape[:2]
-    offsets = zoom_offsets(zoom_sample_count(impact), zoom_max_offset(width, impact))
-    focus_x = float(x) * width
-    focus_y = float(y) * height
-    steps = [
-        (
-            zoom_sample_indices(height, off, focus_y),
-            zoom_sample_indices(width, off, focus_x),
-        )
-        for off in offsets
-    ]
+    if not width or not height:
+        return image.copy()
+    focus_x = np.float32(float(x) * width)
+    focus_y = np.float32(float(y) * height)
+    steps = _zoom_native_steps(height, width, focus_x, focus_y, impact)
     if gyors and max(height, width) <= _REMAP_MAX_SIZE:
         return _zoom_blur_gyors(image, steps)
     return _zoom_blur_nativ(image, steps)
 
 
+def _zoom_native_steps(
+    height: int, width: int, focus_x: np.float32, focus_y: np.float32, impact: float
+) -> list[_ZoomStep]:
+    """A Picasa SSE2-út 16.16-os léptetőtáblája és levágott cél-ROI-ja.
+
+    A magban (`0x00bcf4cb`–`0x00bcf58e`) minden lépés egész `off` értéke
+    saját affine mátrixot épít. A transform (`0x00bcefb0`) a float32
+    mátrixelemekből egyszer csonkolt 16.16-os lépést készít, majd négyes
+    lane-ekkel halad; nem értékeli újra lebegőpontos képlettel minden célpixel
+    koordinátáját. A `0xa4a140`/`0xa4a240` a forrástéglalapot a célba
+    vetíti, a `0x9aaae0` metszi a kimenettel. A peremsor jobb végét a mag
+    `0xbcf2a2`–`0xbcf2e9` ellenőrzi a 16.16-os forrásindex alapján.
+    """
+    steps: list[_ZoomStep] = []
+    offsets = zoom_offsets(zoom_sample_count(impact), zoom_max_offset(width, impact))
+    for off in offsets:
+        # A mag `D`-t szélességből számolja, de a függőleges skála magasságú.
+        # Az x87 elsőként float32-be írja az osztást, majd annak reciprokát
+        # is float32-ként tárolja (`0x00bcf61e`–`0x00bcf628`, `0x00bcf642`–`0x00bcf64a`).
+        scale_x_ratio = np.float32((width + off) / width)
+        scale_y_ratio = np.float32((height + off) / height)
+        scale_x = np.float32(1.0 / float(scale_x_ratio))
+        scale_y = np.float32(1.0 / float(scale_y_ratio))
+
+        # A bináris a fókusz komplementerét (`W-x`, `H-y`) szorozza az
+        # eltolással, elosztja a dimenzióval, majd ezt vonja le az offból.
+        # A köztes hányados float32-be kerül a kivonás előtt.
+        tx_remainder = np.float32(off * (width - float(focus_x)) / width)
+        ty_remainder = np.float32(off * (height - float(focus_y)) / height)
+        shift_x = np.float32(off - float(tx_remainder))
+        shift_y = np.float32(off - float(ty_remainder))
+
+        # `a4a140`/`a4a240`: a forrás-téglalap inverz leképezése. A helper a
+        # határból 0,499-et von le, majd az x87 FISTP nearest-even módjával
+        # egész célhatárt készít. Python round ugyanezt a ties-to-even szabályt
+        # használja; a végén a téglalap a célkép határaival metsződik.
+        x_start = max(0, round((0.0 - float(shift_x)) / float(scale_x) - 0.499))
+        x_stop = min(
+            width,
+            round((width - float(shift_x)) / float(scale_x) - 0.499),
+        )
+        y_start = max(0, round((0.0 - float(shift_y)) / float(scale_y) - 0.499))
+        y_stop = min(
+            height,
+            round((height - float(shift_y)) / float(scale_y) - 0.499),
+        )
+        if x_stop <= x_start or y_stop <= y_start:
+            continue
+
+        # A target->source koordinátát float32-ben tárolja az x87 út, utána
+        # a `0xc0b1e0`/`0xc29990` konverzió nullához csonkol 16.16-ra.
+        # Az x tengely `m00` lépése a négylane-es táblába kerül; a radial
+        # mátrix `m10=0`, ezért a soron belüli y-lane-ek azonosak.
+        base_x = np.float32(float(scale_x) * (x_start + 0.5) + float(shift_x))
+        fixed_x_start = int(float(base_x) * 65536.0)
+        fixed_x_step = int(float(scale_x) * 65536.0)
+        x_fixed = fixed_x_start + np.arange(x_stop - x_start, dtype=np.int64) * fixed_x_step
+        x_indices = x_fixed >> 16
+
+        # A SSE2-sor végén a mintán kívüli célpixelek kimaradnak. Zoomnál a
+        # vízszintes leképezés monoton, ezért a jobb szélt elég visszavágni.
+        x_count = len(x_indices)
+        while x_count and (x_indices[x_count - 1] < 0 or x_indices[x_count - 1] >= width):
+            x_count -= 1
+        x_indices = x_indices[:x_count]
+        if not x_count:
+            continue
+
+        rows = np.arange(y_start, y_stop, dtype=np.float64)
+        base_y = np.float32(shift_y)  # m10=0 a RadialBlur diagonális mátrixában.
+        y_mapped = np.asarray(
+            np.float32(scale_y) * (rows + 0.5) + base_y, dtype=np.float32
+        )
+        y_fixed = (y_mapped.astype(np.float64) * 65536.0).astype(np.int64)
+        y_indices = y_fixed >> 16
+        valid_rows = (y_indices >= 0) & (y_indices < height)
+        steps.append(_ZoomStep(x_start, y_start, x_indices, y_indices, valid_rows))
+    return steps
+
+
 def _zoom_blur_gyors(
-    image: np.ndarray, steps: list[tuple[np.ndarray, np.ndarray]]
+    image: np.ndarray, steps: list[_ZoomStep]
 ) -> np.ndarray:
-    """Az élő előnézet útja: `remap` egész indextérképpel (pontosan a natív
-    minta), `addWeighted` 38/256 · 217/256 súllyal (sávhiba nélkül)."""
+    """Az élő előnézet útja: natív léptetőtábla, OpenCV-keverés, sávhiba nélkül."""
     height, width = image.shape[:2]
     index_map = np.empty((height, width, 2), dtype=np.int16)
-    acc = image
-    for rows, cols in steps:
-        index_map[..., 0] = cols[np.newaxis, :]
-        index_map[..., 1] = rows[:, np.newaxis]
+    out = image.copy()
+    for step in steps:
+        x_end = step.x_start + len(step.x_indices)
+        y_end = step.y_start + len(step.y_indices)
+        index_map.fill(0)
+        index_map[step.y_start:y_end, step.x_start:x_end, 0] = step.x_indices[
+            np.newaxis, :
+        ]
+        index_map[step.y_start:y_end, step.x_start:x_end, 1] = np.clip(
+            step.y_indices, 0, height - 1
+        )[:, np.newaxis]
         sample = cv2.remap(image, index_map, None, cv2.INTER_NEAREST)
         # a −0,5 a natív `>> 8` csonkítását közelíti (a kerekítés helyett)
-        acc = cv2.addWeighted(
-            sample, _ZOOM_SAMPLE_WEIGHT / 256.0, acc, _ZOOM_ACC_WEIGHT / 256.0, -0.5
+        mixed = cv2.addWeighted(
+            sample, _ZOOM_SAMPLE_WEIGHT / 256.0, out, _ZOOM_ACC_WEIGHT / 256.0, -0.5
         )
-    return acc.copy() if acc is image else acc
+        region = out[step.y_start:y_end, step.x_start:x_end]
+        mixed_region = mixed[step.y_start:y_end, step.x_start:x_end]
+        region[step.valid_rows] = mixed_region[step.valid_rows]
+    return out
 
 
 def _zoom_blur_nativ(
-    image: np.ndarray, steps: list[tuple[np.ndarray, np.ndarray]]
+    image: np.ndarray, steps: list[_ZoomStep]
 ) -> np.ndarray:
     """A natív út: `zoom_blend_step` egészben, a sávhibával."""
     height = image.shape[0]
-    # A sorok egymástól függetlenek (a minta a FORRÁSBÓL jön, a keverés
-    # soron belüli), ezért sávonként végigvihető minden lépés: a sáv a
-    # gyorsítótárban marad, és nem kell teljes képméretű köztes tömb.
-    out = np.empty_like(image)
-    for top in range(0, height, _ZOOM_BAND_ROWS):
-        bottom = min(top + _ZOOM_BAND_ROWS, height)
-        acc = image[top:bottom].copy()
-        for rows, cols in steps:
-            sample = np.take(np.take(image, rows[top:bottom], axis=0), cols, axis=1)
-            acc = zoom_blend_step(acc, sample)
-        out[top:bottom] = acc
+    out = image.copy()
+    for step in steps:
+        x_end = step.x_start + len(step.x_indices)
+        y_end = step.y_start + len(step.y_indices)
+        for top in range(step.y_start, y_end, _ZOOM_BAND_ROWS):
+            bottom = min(top + _ZOOM_BAND_ROWS, y_end)
+            row_start = top - step.y_start
+            row_end = bottom - step.y_start
+            valid = step.valid_rows[row_start:row_end]
+            if not valid.any():
+                continue
+            rows = np.clip(step.y_indices[row_start:row_end], 0, height - 1)
+            sample = image[rows[:, np.newaxis], step.x_indices[np.newaxis, :]]
+            region = out[top:bottom, step.x_start:x_end]
+            mixed = zoom_blend_step(region, sample)
+            region[valid] = mixed[valid]
     return out
 
 
@@ -262,9 +368,8 @@ def apply_focal_zoom(
     szerint, a `MaskInstruction` egész képletével keveredik az élesen maradó
     középpontra, végül a `Fade` a szokásos `1 − Fade/100` súllyal zár.
 
-    `D = 0` mellett (keskeny kép vagy `Impact < 1`) a kép változatlan — a
-    spec ciklusa ilyenkor is keverne; hogy a mag itt kilép-e, nincs kiolvasva
-    (#3893), ez a mi feltevésünk.
+    `D = 0` mellett is lefut a natív mintaciklus: az `N` darab null-eltolású
+    minta a 38/217-es képlettel ismételten az akkumulátorra keveredik.
     A `gyors` a húzás közbeni élő előnézet útja (`zoom_blur`).
     """
     validate_image(image)
@@ -280,10 +385,7 @@ def apply_focal_zoom(
             raise ValueError(f"A(z) {name} nem lehet negatív: {value}")
 
     height, width = image.shape[:2]
-    if zoom_max_offset(width, impact) <= 0:
-        blurred = image
-    else:
-        blurred = zoom_blur(image, x, y, impact, gyors=gyors)
+    blurred = zoom_blur(image, x, y, impact, gyors=gyors)
 
     # a körmaszk a `MaskInstruction` egész képletével keveri a kernelt az
     # élesen maradó középpontra (`masked_blend`, #3442)

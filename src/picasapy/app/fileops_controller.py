@@ -24,6 +24,7 @@ from picasapy.fileops import (
     conflicting_names,
     copy_photos,
     create_folder_for_move,
+    create_unique_split_folder,
     delete_photo_permanently,
     delete_photo_to_trash,
     delete_to_trash,
@@ -36,8 +37,17 @@ from picasapy.fileops import (
     trash_available,
     validate_folder_name,
 )
+from picasapy.fileops import open_with
 from picasapy.fileops.move_folder import FolderMoveError
-from picasapy.ini import IniConflictError, IniSaveError
+from picasapy.ini import (
+    IniConflictError,
+    IniSaveError,
+    update_document,
+    with_folder_date_override,
+    with_folder_music,
+)
+from picasapy.fileops.safe_move import safe_move
+from picasapy.scanner import PICASA_INI_NAME
 
 from .controller import _to_local_path
 from .formatting import to_local_path
@@ -130,6 +140,24 @@ class FileOpsController(QObject):
     #: #1638: a lomtárba tett MAPPA útja — az index innen tudja, mit vegyen ki
     folderDeleted = Signal(str)
 
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self._vagolap_adat = None
+        # A Menü Beillesztés tétele a jelzésből tudja, hogy a vágólap
+        # tartalma megváltozott. Külső program másolását is követjük, a
+        # fej nélküli tesztplatformon viszont nem kérdezzük le a Qt-vágólapot.
+        if (
+            QGuiApplication.instance() is not None
+            and QGuiApplication.platformName() not in ("offscreen", "minimal")
+        ):
+            clipboard = QGuiApplication.clipboard()
+            if clipboard is not None:
+                clipboard.dataChanged.connect(self._clipboard_data_changed)
+
+    @Slot()
+    def _clipboard_data_changed(self) -> None:
+        self.clipboardFilesChanged.emit()
+
     @Slot(str, str)
     def renamePhoto(self, path: str, new_name: str) -> None:
         """Átnevezés (F2): a célnév- vagy forrás-hibákat `operationFailed`
@@ -220,6 +248,65 @@ class FileOpsController(QObject):
             self.operationFailed.emit("move_to_new_folder", str(error))
             return
         self._run_batch("move", move_photos, paths, str(target), RENAME)
+
+    @Slot(list, str, str, str, str, bool, str)
+    def splitFolderHere(
+        self,
+        paths: list,
+        name: str,
+        iso_date: str,
+        location: str,
+        description: str,
+        use_music: bool,
+        music_file: str,
+    ) -> None:
+        """A mappában kijelölt képtől a csoport végéig új testvérmappába tesz (#4534)."""
+        if not paths:
+            return
+        source_paths = [Path(_to_local_path(str(path)) or str(path)) for path in paths]
+        source_folder = source_paths[0].parent
+        if any(path.parent != source_folder for path in source_paths):
+            return
+        try:
+            target = create_unique_split_folder(source_folder.parent, name)
+
+            def write_folder_metadata(document):
+                result = with_folder_date_override(document, iso_date)
+                result = with_folder_music(
+                    result, use_music, to_local_path(music_file)
+                )
+                result = (
+                    result.with_value("Picasa", "location", location)
+                    if location.strip()
+                    else result.with_removed("Picasa", "location")
+                )
+                return (
+                    result.with_value("Picasa", "description", description)
+                    if description.strip()
+                    else result.with_removed("Picasa", "description")
+                )
+
+            update_document(target / PICASA_INI_NAME, write_folder_metadata)
+            for source in source_paths:
+                destination = move_photo(source, target)
+                self.photoMoved.emit(str(source), str(destination))
+            # A `.THM` kísérő a vele azonos nevű fájllal költözik — de csak ha
+            # a forrásmappában nem marad azonos nevű másik fájl, amelyhez
+            # szintén tartozhat (pl. a helyben maradó videó).
+            for source in source_paths:
+                for extension in (".THM", ".thm", ".Thm", ".tHm"):
+                    companion = source.with_suffix(extension)
+                    if not companion.is_file():
+                        continue
+                    marado = [
+                        item for item in source_folder.iterdir()
+                        if item.stem == source.stem and item != companion
+                    ]
+                    if not marado:
+                        safe_move(str(companion), str(target / companion.name))
+                    break
+        except _OPERATION_ERRORS as error:
+            self.operationFailed.emit("split_folder", str(error))
 
     def _run_batch(self, operation, function, paths, dest_folder, policy) -> None:
         dest = Path(_to_local_path(dest_folder))
@@ -481,6 +568,7 @@ class FileOpsController(QObject):
         # A művelet így sem lesz néma: a `_vagolap_adat` mindig elkészül,
         # tehát az őr azt méri, AMIT feltennénk — a valódi vágólapra írás
         # pedig ott történik meg, ahol van vágólap.
+        self.clipboardFilesChanged.emit()
         if QGuiApplication.platformName() in ("offscreen", "minimal"):
             return
         vagolap = QGuiApplication.clipboard()
@@ -502,11 +590,12 @@ class FileOpsController(QObject):
     def _vagolap_adata(self):
         """A vágólap tartalma — a próbák EZT a metódust térítik el.
 
-        Fej nélküli környezetben (`offscreen`/`minimal`) `None`: ott nincs
-        vágólap-tulajdonos, és a Qt-hívás a CI-n SZEGMENSHIBÁVAL állította
-        meg a tesztfájlt (ld. a `_tegyd_a_vagolapra` figyelmeztetését)."""
+        Fej nélküli környezetben (`offscreen`/`minimal`) a saját, legutóbb
+        létrehozott MIME-adatot olvassuk vissza. A Qt-rendszervágólaphoz nem
+        nyúlunk: ott nincs tulajdonos, és a natív lekérdezés a CI-n
+        szegmenshibát okozott."""
         if QGuiApplication.platformName() in ("offscreen", "minimal"):
-            return None
+            return self._vagolap_adat
         vagolap = QGuiApplication.clipboard()
         return None if vagolap is None else vagolap.mimeData()
 
@@ -609,6 +698,56 @@ class FileOpsController(QObject):
             return
         if not QDesktopServices.openUrl(QUrl.fromLocalFile(local)):
             self.operationFailed.emit("open", f"nem sikerült megnyitni: {local}")
+
+    @Slot(result=bool)
+    def hasNativeOpenWith(self) -> bool:  # noqa: N802 — QML-név
+        """#4533: Windowson a héj saját „Megnyitás ezzel" párbeszéde van, nem
+        a mi választónk. A QML ilyenkor a `openWithNative`-ot hívja."""
+        return open_with.has_native_open_with()
+
+    @Slot(str)
+    def openWithNative(self, path: str) -> None:
+        """#4533: a Windows héj „Megnyitás ezzel" párbeszédét nyitja a fájlra."""
+        local = _to_local_path(path)
+        if not local or not Path(local).is_file():
+            self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
+            return
+        try:
+            open_with.open_with_dialog_windows(Path(local))
+        except OSError:
+            self.operationFailed.emit("open", self.tr("Unable to open application"))
+
+    @Slot(str, result="QVariantList")
+    def openWithChoices(self, path: str) -> list[dict]:
+        """#4533: a fájltípushoz társított alkalmazások a „Társítás…" választónak
+        (`id`, `name`). Nem létező fájlnál üres lista."""
+        local = _to_local_path(path)
+        if not local or not Path(local).is_file():
+            return []
+        return [
+            {"id": app.app_id, "name": app.name}
+            for app in open_with.apps_for_file(Path(local))
+        ]
+
+    @Slot(str, str)
+    def openWithApp(self, path: str, app_id: str) -> None:
+        """#4533: a kijelölt alkalmazással nyitja meg a fájlt. A listát újra
+        lekérdezi, így a választó nem tart a lemezen kívül állapotot."""
+        local = _to_local_path(path)
+        if not local or not Path(local).is_file():
+            self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
+            return
+        app = next(
+            (a for a in open_with.apps_for_file(Path(local)) if a.app_id == app_id),
+            None,
+        )
+        if app is None:
+            self.operationFailed.emit("open", self.tr("Unable to open application"))
+            return
+        try:
+            open_with.launch_app(app, Path(local))
+        except OSError:
+            self.operationFailed.emit("open", self.tr("Unable to open application"))
 
     @Slot(list)
     def openPhotosInDefaultEditor(self, paths: list[str]) -> None:

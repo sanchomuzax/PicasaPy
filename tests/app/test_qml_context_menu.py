@@ -48,6 +48,7 @@ class TestPhotoContextMenu:
         "contextMenuRotateRight": "rotateRightRequested",
         "contextMenuRotateLeft": "rotateLeftRequested",
         "contextMenuMove": "moveRequested",
+        "contextMenuSplitFolder": "splitFolderRequested",
         "contextMenuOpenFile": "openFileRequested",
         "contextMenuLocate": "locateRequested",
         "contextMenuDelete": "deleteRequested",
@@ -84,9 +85,8 @@ class TestPhotoContextMenu:
     # Mentés / Visszaállítás / Összes szerkesztés visszavonása alapból
     # szintén szürke, de NEM helyfoglaló: állapotfüggő (#422), ezért a
     # saját tesztjük fedi őket (test_photo_menu_commands.py).
+    # #4533: a „Társítás" (contextMenuOpenWith) már működik, nincs a listában.
     EXPECTED_DISABLED = [
-        "contextMenuSplitFolder",
-        "contextMenuOpenWith",
         "contextMenuUploadToWebAlbums",
         "contextMenuBlockUpload",
     ]
@@ -150,6 +150,16 @@ class TestPhotoContextMenu:
         helyfoglaló többé."""
         menu = self._make_menu(qml_engine)
         item = menu.findChild(QObject, "contextMenuResetFaces")
+        assert item is not None
+        assert item.property("enabled") is True
+
+    def test_split_folder_is_live_in_the_folder_context(self, qml_engine):
+        menu = _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\n'
+            'PhotoContextMenu { objectName: "menu"; currentFolder: "/photos" }\n',
+        )
+        item = menu.findChild(QObject, "contextMenuSplitFolder")
         assert item is not None
         assert item.property("enabled") is True
 

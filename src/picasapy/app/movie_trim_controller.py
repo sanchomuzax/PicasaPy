@@ -109,8 +109,9 @@ class MovieTrimMixin:
         ini_path = Path(felvetel.folder_path) / PICASA_INI_NAME
         uj_lanc = filters_with_trim(felvetel.filters or "", trim)
 
-        # #137: ütközésbiztos írás — a párhuzamosan futó eredeti Picasa
-        # módosítása nem veszhet el (a mutate tiszta, újrajátszható).
+        # #137: útvonalanként soros írás — az előzetes ujjlenyomat-
+        # ellenőrzésig észlelt Picasa-módosítás újrajátszódik. A check/save
+        # közti külső írás teljes kizárását a fájlrendszer nem garantálja.
         def mutate(document):
             if uj_lanc:
                 return document.with_value(felvetel.name, "filters", uj_lanc)

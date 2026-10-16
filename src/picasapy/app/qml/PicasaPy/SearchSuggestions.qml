@@ -12,6 +12,7 @@ Rectangle {
     // [{kind: "folder"|"album", name, count, param}] — a controller
     // search_suggestions() eredménye
     property var suggestions: []
+    property int selectedIndex: -1
     signal chosen(string kind, string name, string param)
 
     visible: suggestions.length > 0
@@ -19,6 +20,9 @@ Rectangle {
     height: column.height + 2
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
+
+    onQueryChanged: selectedIndex = -1
+    onSuggestionsChanged: selectedIndex = -1
 
     // A beírt rész félkövér kiemelése (casefold-os, HTML-escape-elt).
     function highlighted(name, query) {
@@ -42,6 +46,27 @@ Rectangle {
             chosen(s.kind, s.name, s.param)
     }
 
+    function moveSelection(direction) {
+        if (suggestions.length === 0)
+            return
+        if (selectedIndex < 0) {
+            selectedIndex = direction > 0 ? 0 : suggestions.length - 1
+            return
+        }
+        selectedIndex = Math.max(
+            0, Math.min(suggestions.length - 1, selectedIndex + direction))
+    }
+
+    function chooseSelected() {
+        if (selectedIndex >= 0)
+            choose(selectedIndex)
+    }
+
+    function dismiss() {
+        suggestions = []
+        selectedIndex = -1
+    }
+
     Column {
         id: column
         x: 1; y: 1
@@ -54,9 +79,11 @@ Rectangle {
                 objectName: "suggestionRow"
                 required property var modelData
                 required property int index
+                readonly property color keyboardSelectionColor: Theme.thumbHover
                 width: column.width
                 height: 22
-                color: rowHover.hovered ? Theme.thumbHover : "transparent"
+                color: index === box.selectedIndex || rowHover.hovered
+                    ? keyboardSelectionColor : "transparent"
 
                 FolderIcon {
                     id: rowIcon

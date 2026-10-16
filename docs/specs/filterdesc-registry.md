@@ -551,7 +551,7 @@ a #2456 helyesbítése (a hetes alakkal még nem mértünk) érvényben marad.
 | `RoundedEdges` | szín Outer (#fff), CornerRadius 0–min(W,H)/2 (min(W,H)/10) |
 | `Sixties` | Rounded jelölő (be), szín Outer (#fff), Fade 0–100 (20) |
 | `Soften` | Impact 0–100 (50), Fade 0–100 (50) + festhető maszk |
-| `PicnikTint` | szín (#80cfff), Fade 0–100 (0) + festhető maszk |
+| `PicnikTint` | szín (#80cfff), Fade 0–100 (0); az effekt az egész képre hat, nem festhető (#3541 helyesbítés). |
 | `TwoTone` | szín Black (#004488), szín White (#ffff00), Brightness −95–95 (0), Contrast 0–100 (20), Fade 0–100 (0) |
 | `Vignette` | Blur 0–50 (35), Strength 1–2 (1,4), szín (#000), Fade 0–100 (0) |
 
@@ -1730,12 +1730,101 @@ a pontosan `s = 1,0` eset ad `0`-t, és a következő lépcső `s > 3,0`-nál j�
 ⇒ Ez megmagyarázza, miért illeszkedik a Vignette golden-készletére
 kalibrált modellünk: **abban a tartományban ez a tag nem is változik.**
 
-*NINCS MEG (a következő kör dolga):* a `0x00bcc2e0` további szakasza — a
-`0x00bcc438`-tól induló második, szimmetrikus blokk operandusai, és hogy a
-két kiszámolt, `255`-re vágott egész **mit** vezérel (menetszám? sugár?
-alfa-szorzó?). A veremleképzés ott már nem követhető megbízhatóan kézzel:
-**célzott dekompiláció** kell a `0x00bcc2e0`-ra. Amíg ez nincs meg, a
-Comicize-eltérés oka sem magyarázható.
+**Lezárva utasításszinten (2026-10-06).** A `0x00bc52c0` a leíróból jövő
+`quality`-t `[1,15]` közé korlátozza (`0x00bc5324`–`0x00bc5352`); ez a `q`
+érték kerül a `0x00bcc3d0` lokális mezőjébe. Mindkét szimmetrikus blokk ezt
+használja:
+
+```text
+t = ceil((strength − 1) / 2)
+m_x = min(255, trunc(t·q + 1))
+m_y = min(255, trunc(t·q + 1))
+```
+
+A két `fistp` előtt az FPU vezérlőszó `0x0c00`-val kap csonkoló kerekítést.
+A `0x00bcc4c4` a második, a `0x00bcc4ec` az első egész értéket adja át a
+`0x00bcbbd0`-nak. A hívott maszképítő az elsőt vízszintes, a másodikat
+függőleges kiterjesztésként használja: a kiterjesztett szélesség
+`(x₁−x₀)+2·m_x`, a magasság `(y₁−y₀)+2·m_y`
+(`0x00bcbbeb`–`0x00bcbc0c`). A maszk pufferszélét 255-re tölti, a belső
+képtartományba a forrásalfa inverzét írja (`0x00bcbc20`–`0x00bcbc40`,
+`0x00bcbcb1`–`0x00bcbcc0`). A pixel-súlyozó (`0x00bcbfb0`) ettől külön
+közvetlenül is elfogyasztja a float32 `strength` értéket (részletek lentebb).
+
+##### A `GlowImageOperation` súlya és színes pixelkeverése — utasítás + QEMU (#626, 2026-10-06)
+
+**Bizonyítottsági fok:** `megerősített` a `quality`-ból származó
+maszkkiterjesztés utasításképletére, a `strength` súlyára, valamint a lent
+megadott, teljes felbontású, átlátszatlan QEMU-kontrollokra (utasítás + az
+eredeti kód futtatása). Az exportból vett általános pixelgolden nincs ebben a
+futásban.
+
+**A út — utasításszint.** A `0x00bcbfb0` alapágában a float32
+`strength`-öt a `0x00cf39d8` konstanssal szorozza (érték: `256,0`), az FPU
+vezérlőszó `0x0c00` bitjeivel csonkoló konverziót kér, majd a maszk `M`
+byte-jával szoroz és 8 bittel jobbra tolja. A `0x00408af0` ezt `255`-nél
+korlátozza:
+
+```text
+e = min(255, (M · trunc(float32(strength) · 256)) >> 8)   # strength ≥ 0
+```
+
+A forrás alfa-bájtja is beleszól: `u = A_src·e + 128`,
+`beta = (u + (u >> 8)) >> 8` (`0x00bcc206`–`0x00bcc220`). Az egyes
+színcsatornáknál a `0x00bcbd60` számítása:
+
+```text
+u = C_glow·beta + 128
+C_out = (C_src·(256 − e) >> 8) + ((u + (u >> 8)) >> 8)
+```
+
+Vagyis a forrástag osztója `256`, a színes glow-tag pedig a kerekített
+egész `÷255` alakot használja. A `0x00bb8e10` hívó a szín alfa-bájtját
+`0xff`-re állítja (`0x00bb8e5f`); a QEMU kontroll ezért `color=0xffff0000`
+értéket kapott. Ez a színes tagot is ellenőrzi, nem csak a fekete színre
+korábban mért ágat.
+
+**B út — az eredeti kód QEMU-futtatása.** A helyi `qemu-i386` harness az
+eredeti `0x00bb8f70` munkavégzőt futtatta; a visszatérő célrekord
+`+0x10` pointeréből olvasta ki a 7×7 BGRA-kimenetet. Minden futás bemenete
+azonos, átlátszatlan, `BGRA=(40,80,160,255)` képpontokból állt;
+`xblur=yblur=2`, `glowalpha=1`, `quality=3`, `color=0xffff0000`;
+`FPUCW=0x027f`. Csak `strength` változott. A QEMU kimenet SHA-256-a a teljes
+196 bájtos BGRA-pufferen készült.
+
+| `strength` | QEMU sarok / szomszédos szél / közép (RGB) | QEMU-puffer SHA-256 | `inner_glow` eltérő RGB-bájt / max. Δ |
+|---:|---|---|---:|
+| 0 | 160,80,40 / 160,80,40 / 160,80,40 | `50e70080785638cd72a030ade47f74020c2b86920ea88186f6116ff6efef8cee` | 0/147 / 0 |
+| 1 | 214,35,17 / 199,47,23 / 160,80,40 | `68ee9d48118944f5791e810296d9d360c9ba47330862ddcb10a427a3bdfe6c06` | 16/147 / 1 |
+| 1,1 | 219,30,15 / 203,44,22 / 160,80,40 | `5c0f3aec710643c85e491b50954293b3aec5f3984d86c2adac5b42c406e66715` | 28/147 / 1 |
+| 2 | 255,0,0 / 238,14,7 / 160,80,40 | `4b30fe634d38fcf4f4cbb039bf09a3d759999c324cefff9aa1b0216e762d764f` | 20/147 / 1 |
+| 3 | 255,0,0 / 255,0,0 / 160,80,40 | `a1ac7ad25bb6c5ef3cb31da0bcd6ad7986044a3a419124bc39beef702e49b80b` | 28/147 / 1 |
+
+A `strength=3` korábbi SHA-256 értéke csonka, 63 karakteres volt; itt a teljes, 64 karakteres hash szerepel.
+
+**A/B út egyezése:** az utasításban a `strength`-szorzó 1 fölött sincs 1-re
+korlátozva; a QEMU-ban azonos első lépcsőértékű (`t=1`) `1,1`, `2` és `3`
+beállítások eltérő képpont-kimenetet adnak. A natív és a mostani PicasaPy
+RGB-kimenet közötti legnagyobb eltérés mindháromnál 1 szint.
+
+**Eredeti / nálunk / teendő:**
+
+| | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| `strength` és maszk | `e = min(255,(M·trunc(strength·256))>>8)`; az eredeti QEMU-pufferek a tesztelt értékeken ismételhetőek. Forrás: `bináris (0x00bcbfb0, 0x00cf39d8, 0x00408af0)`; `mérés (qemu-i386, 7×7)` | `belso_ragyogas.ragyogas_suly()` ugyanezt a 8.8-as súlyozást használja. A vizsgált 5 erősségből 0 esetben volt 1-nél nagyobb RGB-eltérés. Forrás: `src/picasapy/render/belso_ragyogas.py`; `mérés (QEMU ↔ inner_glow)` | A geometria és a súly képlete lezárt. A teljes effekt-kimenethez mérj exportból származó, változatos színű és részleges forrásalfa-pixeleket is; ezekre a jelen kör nem szolgáltat goldent. |
+| színes pixelkeverés | A glow-tag kerekített `÷255`, a forrástag csonkolt `÷256`; a piros (`255`) színcsatornán a QEMU 1 szinttel magasabb a jelenlegi modellen ott, ahol a glow súlya nem nulla. Forrás: `bináris (0x00bcbd60)`; `mérés (qemu-i386 ↔ inner_glow)` | `_teljes_felbontasu_tabla()` a glow-tagot is `>>8` alakban számolja; a 7×7 mintán a teljes RGB eltérés legfeljebb 1 szint, de a natív kimenettel 16–28 RGB-bájt tért el az egyes nem nulla súlyú futásokban. Forrás: `src/picasapy/render/belso_ragyogas.py` | Külön fejlesztési tételben a teljes felbontású színes tagot a natív kerekített `÷255` alakra kell átírni, majd a vörös, zöld, kék és részleges forrásalfa kontrollokat bájtra egyeztetni. |
+
+**Cáfoló kísérlet.** A hipotézis az volt, hogy a `strength`-öt a motor `1`-nél
+levágja. Azonos QEMU-bemenetnél az `s=1` és `s=1,1` kimenete 96 BGRA-bájtban
+tért el (max. 5 szinttel); `s=2` esetén 140 bájtban (max. 41), `s=3`
+esetén 144 bájtban (max. 63). Ez cáfolja az `s≤1` levágást. Ugyanazon
+`s=1` kontroll ismételt QEMU-futtatása bájtra azonos SHA-256-ot adott:
+`68ee9d48118944f5791e810296d9d360c9ba47330862ddcb10a427a3bdfe6c06`.
+
+**A #626 elfogadásához ebben a sorban:** ✅ a `quality`-függő
+maszkkiterjesztés, a `strength`-súly és a színes, átlátszatlan kontroll
+képlete bekerült, két független úttal; ⛔ exportból vett általános pixelgolden
+és részleges forrásalfa-mérés nincs ebben a körben.
 
 #### Méretfüggő elmosás-sugarak — a hét érintett szűrő
 
@@ -2356,6 +2445,54 @@ szorzóértelmezéssel. **Nem mért:** tört `Contrast` értékű valódi Picasa
 natív függvény viselkedése tört értékre is bitre ismert, de ezt Picasa-golden nem
 ellenőrzi.*
 
+#### Tört `Contrast`: pixelkimenet-ellenőrzés (#626, 2026-10-06)
+
+Az előző bekezdésben nyitva hagyott tört csúszkaérték pixelhatását az eredeti
+gépi kód és a helyi PicasaPy-út összevetésével ellenőriztem. A QEMU-próba a
+natív `0x008f1bd0` kontrasztmátrix-építőt, `0x008f2990` lekérdezőt,
+`0x008f21a0` Q11-konverziót és `0x008f2640` pixelalkalmazót hívta, a lokális
+5×5 identitásmátrixra, FPU-vezérlőszó `0x027f` mellett. A két SSE2-jelző nullázása
+a pixelalkalmazó skaláris natív ágát választotta. Ez célzott függvénypróba, nem
+`filterdesc.xml`-ből felépített teljes effekt vagy Picasa-export.
+
+Minden `c` értéknél 768 BGRA-pixelt futtattam: három 256-os csoportban rendre
+az R, G, illetve B csatorna járta be a 0…255 tartományt; a másik két színcsatorna
+állandó, az alfa 255 volt. A kimenet a jelenlegi
+`simple_color_matrix(..., contrast=c)` eredményével mind az öt értéknél
+**768/768 pixelen egyezett**.
+
+| `c` | natív `k` (float32-bitek) | natív Q11 átló / RGB-bias | natív ↔ PicasaPy eltérés |
+|---:|---|---|---:|
+| 40 | `1.7100000381469727` (`0x3fdae148`) | `3502 / −178` | 0/768 |
+| 40.25 | `1.7174999713897705` (`0x3fdbd70a`) | `3517 / −180` | 0/768 |
+| 40.5 | `1.725000023841858` (`0x3fdccccd`) | `3533 / −182` | 0/768 |
+| 40.75 | `1.7324999570846558` (`0x3fddc28f`) | `3548 / −184` | 0/768 |
+| −40.5 | `0.5950000286102295` (`0x3f1851ec`) | `1219 / 105` | 0/768 |
+
+`c = 40.5` esetén a bináris táblából `T[40] = 0.71` és `T[41] = 0.74`, ezért
+a natív interpolált görbeérték `0.7250000238418579` (`0x3f39999a`); a kész `k`
+float32-bitje `0x3fdccccd`. A natív kontrasztmátrix eltolása
+`−46.03750228881836`, Q11 átlója
+`3533`, RGB-bias-a `−182`. Ugyanezeket a `k`-bitek, Q11-együtthatók és biasok
+érték szerint a PicasaPy saját mátrix- és fixpontos útja adta.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x008f2990` a tört pozitív `c`-hez szomszédos táblapontokat interpolálja; `0x008f1bd0` felépíti a `k` és `(1−k)·63.5` mátrixot; `0x008f21a0` Q11-re alakít, `0x008f2640` alkalmazza a pixelekre. QEMU pixelmérés: a fenti öt értéknél nincs eltérés. | `src/picasapy/render/glimmer_ops.py`: `_kontraszt_gorbe` → `_kontraszt_matrix` → `_fixpont_egyutthato` / `_fixpont_bias` → `_fixpontos_szinmatrix`; mind az öt eset 768/768 pixelen egyezik a natív futással. | A bináris pixelképlet és a jelenlegi implementáció igazolt; kódmódosítás nem indokolt. A mérőadathalmazban nincs valódi, tört `SimpleColorMatrix Contrast`-ot tartalmazó Glimmer-export, ezért egy tényleges Picasa-export goldenje továbbra sincs meg. A teljes effekt/export-lánc ellenőrzéséhez ilyen csúszkaértékű Glimmer-állapotot kell elmenteni Picasában, majd ugyanazt a mintaképet exportálni és a natív képet a mérőadathoz adni. |
+
+**Fok: megerősített** a natív tört-`Contrast` pixelmatematikára és a jelenlegi
+PicasaPy-út egyezésére. A út: az `0x008f2990`, `0x008f1bd0`, `0x008f21a0` és
+`0x008f2640` utasításszintű olvasata, konstansai és adattovábbítása. B út: e
+natív rutinok QEMU-futtatása, majd bitre egyező Q11- és pixelkimenet összevetése
+a PicasaPy implementációjával 5×768 mintán. **Nyitott:** valódi Picasa-export
+golden tört Glimmer-`Contrast` értékkel.
+
+**Cáfoló próba:** a `40.5` értéknél interpoláció helyett a `T[40]` pontot
+használó értelmezés. Független natív futásban a `c=40` és `c=40.5` kimenete
+261/768 mintán eltért; a `c=40` natív kimenet külön egyezett a PicasaPy
+`c=40` eredményével 768/768 mintán. A cáfoló változat tehát reprodukálhatóan
+hibás, az interpolált út pedig fennmaradt.
+
 #### Együttes fényerő + kontraszt (`0x008f2040`) — a `ContrastAndBrightnessLinked` ág
 
 ```c
@@ -2882,7 +3019,7 @@ A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiért
 (`<<16`, `<<8`, `<<0`) — ugyanaz a „csak OR-ozni kell" minta, mint az
 `AdjustCurves`-nél (4.8).
 
-### 4.11 `Tiled`, `EdgeDetectionB` és a Sobel-változat (2026-08-14, #626)
+### 4.11 `CircularGradientImageMask`, `Tiled`, `EdgeDetectionB` és a Sobel-változat (2026-08-14, 2026-10-12; #626, #4905)
 
 Két célzott kör futott ezekre párhuzamosan (nyers kimenet:
 `referencia/dekompilalt-pakolo/script-DecompileTiled.log`, `-Edge.log`).
@@ -2996,7 +3133,7 @@ Nincs felülmintavételezés. A SIMD-ág `CVTPS2DQ`-t, a skalár `FISTP`-t
 használ; a lent rögzített próbamintán a két ág bájtra azonos.
 
 **Korábbi izolált pixel-golden, eredeti gépi kódból állítólag mérve.** A privát QEMU-i386
-harness (`/home/sancho/picasapy-agent/eszkozok/qemu_harness/hb.py`,
+harness (`~/picasapy-agent/eszkozok/qemu_harness/hb.py`,
 `install_crt_shims`) az eredeti, változatlan EXE (`SHA-256:
 644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
 `0x008f3840` →
@@ -3366,6 +3503,128 @@ olvasat + az eredeti worker QEMU-futtatása és attól független Python-bájt
 **megerősített** a fenti wrapper-golden és a vak, független QEMU-kontroll
 alapján. A projekt `native_dot_mask` pixelmagja ettől továbbra sem tekinthető
 bájtpontosnak: a korábbi 7×7 összevetés 20/49 eltérő bájtot talált.
+
+#### `CircularGradientImageMask` — tört bemenetek natív goldenje (2026-10-12, #4905)
+
+A `0x00bc2a50` (stdcall, `arg1` = maszk-objektum, `arg2` = ctx) teljes
+előállítóját futtattuk az eredeti, változatlan Picasa3.exe-ben (`SHA-256:
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
+`qemu-i386` alatt. A hívási rekord mezői és az alfa-végpontok az előző, #4905-es
+kutatási ágból átvett mérési szakasz szerintiek; a jelen folytatás a tört
+középpontot, sugarat és aspectet vizsgálja. A `[0xd695d2]=1` út **SSE2**
+(XMM, nem MMX): az elágazás `0x008f3b14`, a vektoros távolság és
+`CVTPS2DQ` útja `0x008f3cf0`–`0x008f3cfd`.
+
+| `this` eltolás | mező | típus / szerep |
+|---|---|---|
+| `+0x00`, `+0x04` | `width`, `height` | int; klippelési határ |
+| `+0x08` | `aspectRatio` | float |
+| `+0x0c`, `+0x10` | `innerRadius`, `outerRadius` | float |
+| `+0x14`, `+0x18` | `innerAlpha`, `outerAlpha` | float |
+| `+0x1c`, `+0x20` | `xCenter`, `yCenter` | float |
+
+A hívás utáni ctx egy 40 bájtos `Ref`: `[1]` sorhossz (pixel), `[2]`
+szélesség, `[3]` magasság, `[4]` pixeladat-pointer. A pixel BGRA, a szín
+nulla, az alfa a maszk. A kimeneti méret és a `this`-en visszakapott négy
+koordináta a képpel metszett, jobb/alsó kizáró téglalap; a táblázat alatt
+ezeket a mért koordinátákat adjuk meg.
+
+**A natív egész befoglaló doboza.** A `0x00bd05f0` a két sugár közül a
+nagyobbat veszi (`0x00bd0621`–`0x00bd0646`), kétszerezi, majd az aspecttel
+szorozza a szélességhez (`0x00bd064a`–`0x00bd065b`). A szélességet és
+magasságot külön `FISTP` alakítja egészre (`0x00bd065f`–`0x00bd066f`). A
+bal/felső él a bemeneti középpontból mínusz a lebegő dobozméret fele, és
+szintén külön `FISTP` kerekíti (`0x00bd0673`–`0x00bd06bd`). A QEMU-próbákban
+az x87 control word `0x027f` volt; ezért itt a `FISTP` kerekítése
+nearest-even. Jelölje `f32` a binárisban tárolt float32 köztes értéket,
+`RN-even` pedig ezt a mért `FISTP`-kerekítést:
+
+```text
+R  = max(f32(innerRadius), f32(outerRadius))
+hF = f32(2 · R)
+wF = f32(aspectRatio · hF)
+Bw = RN-even(wF)                    # x87 FISTP
+Bh = RN-even(hF)                    # x87 FISTP
+L  = RN-even(f32(xCenter − f32(wF · 0.5)))  # x87 FISTP
+T  = RN-even(f32(yCenter − f32(hF · 0.5)))  # x87 FISTP
+```
+
+Az `RN-even` az x87 `FISTP` nearest-even kerekítése a mért control word
+mellett. A jobb és alsó kizáró végpont rendre `L+Bw`, `T+Bh`; nem a
+`center+radius` külön kerekítése. A befoglaló doboz középpontja **és mérete**
+ebből a négy külön kerekített egészből jön:
+
+```text
+boxCenterX = L + Bw/2       boxCenterY = T + Bh/2
+```
+
+Ez nem a paraméterközéppont csonkolása, és nem képpontközépre (`x+0,5`,
+`y+0,5`) mintavételezés. A `0x00bd0540` ezután a dobozt a kép határaira
+klippeli; a transzformáció az **előtte** rögzített, nem vágott `Bw/Bh` és
+`boxCenterX/Y` értékeket használja.
+
+**A pixelmag mért transzformációja.** A `0x008f3840` által előkészített
+transzformációban az eredeti bináris qword konstansok:
+`[0x00cf47f0] = 1638.4000244140625` és
+`[0x00cf48f0] = 79.6875`. A nyolc natív kimenetet bájtra visszaadó
+float32-újraszámítás effektív skálái és pixelindexei:
+
+```text
+sx = f32(f32(1638.4000244140625 / Bw) · 79.6875)
+sy = f32(f32(1638.4000244140625 / Bh) · 79.6875)
+u  = f32((x − boxCenterX) · sx)
+v  = f32((y − boxCenterY) · sy)      # x,y: egész, nullától induló képpontindex
+p  = min(CVTPS2DQ(sqrtps(u·u + v·v)), 0xff00)
+```
+
+Az `aspectRatio` tehát a méretezett doboz szélességét és így az x-skálát is
+alakítja; a sugárértékek a doboz kiválasztásán túl az alfa-megállókhoz
+kerülnek. Az alfa-stopok és a két-stopos LUT interpolációja a fenti
+`0x008f3700` / `0x008f3970` leírás szerinti; a mostani QEMU-próbák az
+alfa-végpontokat is változtatták. A teljes képletet ugyanazzal a meglévő
+`_kormaszk_megallo_tabla`-val összerakva a következő nyers QEMU alfa-bájtok
+mind egyeztek. Minden sorban `flag=1`; `régi` a mai
+`circular_gradient_mask` bájt-összevetése, `doboz` a fenti befoglaló doboz
+és skálák szerinti újraszámítás:
+
+| eset | rögzített QEMU-bemenet `(W×H; cx,cy; Ri,Ro; αi,αo; aspect)` | natív vágott téglalap | régi eltérés | doboz eltérés |
+|---|---|---:|---:|---:|
+| `cx_half` | `64×48; 31.5,24; 10,30; 0,1; 1` | `(2,0,62,48)` | `2144/2880`, max Δ=7 | `0/2880`, max Δ=0 |
+| `cy_half` | `64×48; 32,23.5; 10,30; 0,1; 1` | `(2,0,62,48)` | `2074/2880`, max Δ=7 | `0/2880`, max Δ=0 |
+| `center_quarters` | `64×48; 31.25,22.75; 8,24; 0.125,0.875; 1` | `(7,0,55,47)` | `1495/2256`, max Δ=5 | `0/2256`, max Δ=0 |
+| `radius_halves` | `64×48; 32,24; 7.5,21.5; 0.25,0.75; 1` | `(10,2,53,45)` | `1221/1849`, max Δ=7 | `0/1849`, max Δ=0 |
+| `radius_quarters` | `64×48; 31.5,23.5; 7.25,21.75; 0.125,0.875; 1` | `(10,2,54,46)` | `1331/1936`, max Δ=13 | `0/1936`, max Δ=0 |
+| `aspect_075` | `64×48; 32,24; 10,30; 0,1; 0.75` | `(10,0,55,48)` | `1790/2160`, max Δ=102 | `0/2160`, max Δ=0 |
+| `aspect_125` | `64×48; 31.5,23.5; 10,30; 0,1; 1.25` | `(0,0,64,48)` | `2602/3072`, max Δ=76 | `0/3072`, max Δ=0 |
+| `all_fractional` | `37×23; 18.5,11.25; 3.25,18.75; 0.25,0.75; 0.75` | `(4,0,32,23)` | `603/644`, max Δ=41 | `0/644`, max Δ=0 |
+
+**Cáfoló kör.** Ugyanezeken a natív bájtokon a pixelindexhez adott
+`(+0.5,+0.5)` eltolás, a bemeneti középpont nulla felé csonkolása, valamint
+az aspect elhagyása nem ad általánosan egyező eredményt: például
+`cx_half` esetén rendre `2163/2880` (max Δ=10) és `2206/2880` (max Δ=13)
+eltérés; `aspect_075` esetén aspect nélkül `1803/2160` (max Δ=96). A
+`all_fractional` mintában a középpontcsonkolás véletlenül egyezett, ezért a
+`cx_half` és `radius_quarters` ellenpróbák is lefutottak: a teljes mintakészlet
+nem egyezik a csonkolási hipotézissel.
+
+**Eredeti / nálunk / teendő.** Eredeti: `0x00bc2a50` →
+`0x008f3840` → `0x008f3970`; a geometriai dobozt a `0x00bd05f0` állítja
+elő. Nálunk: `src/picasapy/render/glimmer_ops.py::circular_gradient_mask`
+az eredeti tört középpontot és a sugarat közvetlenül normalizálja, és nem
+kap aspectet; a fenti méréseken bájtra eltér. Teendő a külön fejlesztési
+jegyben: a doboz egészre kerekített geometriáját és aspect-függő skáláját
+átvezetni, a nyolc mérésben egyező `_kormaszk_megallo_tabla`-t megtartani,
+majd a táblázat mind a nyolc esetét nyers alfa-bájtonként egyeztetni. Ez a
+szakasz csak a `[0xd695d2]=1` SSE2-ágat bizonyítja.
+
+**Bizonyítottsági fok: megerősített** a `[0xd695d2]=1` SSE2-ágra, a
+megadott QEMU futtatási környezetben (x87 CW=`0x027f`, SSE
+`CVTPS2DQ`-val): a geometria utasításszintű olvasata, a független
+index/xref-lánc és a nyolc, törteket, két aspectet, változó
+alfa-végpontokat tartalmazó bájtos QEMU-összevetés egyezik. A korábbi
+`MMX` megnevezés helytelen volt; a mért flag az SSE2-ágat választja. Nyitott
+a `[0xd695d2]=0` skalárút és a valódi alkalmazás induláskori flag-értéke; ez
+a nyolc új goldenre nem vonatkozik.
 
 #### `EdgeDetectionSobel` — a kernel teljesen megvan
 
@@ -4149,14 +4408,14 @@ eleje.
 | `HSVGradientMap` | `0x008f03ec` | `0x00bbc190` | `0x00bb7c80` (435 b) | `0x00bbc260` (1448 b) | hueOffset@0x44 |
 | `IR` | `0x008f0a14` | `0x00bc3d80` | `0x00bc3f50` (395 b) | — | greenglow@0x2c, greenglowalpha@0x34, redweight@0x3c |
 | `ImageOperation` *(ős)* | `0x008f0b0c` | `0x00c07709` | `0x00c07709` (42 b) | — | — |
-| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34 |
+| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34; +0x3c Blur(R,R,q3), +0x40/+0x44 Multiply(S); a teljes kimenet feltétele nyitott, ld. 2a |
 | `MultiplyColorMatrix` | `0x008f0024` | `0x00bb7730` | `0x00bc16b0` (428 b) | `0x00bb77a0` (165 b) | multiplier@0x28 |
 | `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
 | `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
 | `PaletteMap` | `0x008f00d0` | `0x00bb7900` | `0x00bb7c80` (435 b) | `0x00bb7e40` (1093 b) | — *(a `ColorMaps` tömb más úton)* |
-| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
+| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — (rés-adat: `0x00d1bfa0`; a mag `0x00bcdf10` közvetlen hívás, ld. 5/e) | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
 | `QuantizePalette` | `0x008eff58` | `0x00bb5a30` | `0x00bb5ad0` (139 b) | — | Steps@0x24, Depth@0x2c |
-| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | amount@0x34 |
+| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | x@0x24, y@0x2c, amount@0x34 (#4906) |
 | `Resize` | `0x008f0908` | `0x00bc3370` | `0x00bc3650` (407 b) | — | width@0x24, height@0x2c, smoothing@0x34 |
 | `Rotate` | `0x008efefc` | `0x00bb5270` | `0x00bb5640` (239 b) | — | radAngle@0x24, degAngle@0x2c, borderColor@0x34, flipH@0x3c, flipV@0x44, padBorder@0x4c |
 | `Shader` | `0x008eff2c` | `0x00bb5830` | `0x00bb58d0` (202 b) | — | — |
@@ -4260,9 +4519,9 @@ kezdőállapota megmarad.
 | `MultiplyColorMatrix` | `Multiplier` | `NULL` | `0x00bb7680` | S |
 | `Nested` | közös `Blend`-mezők; `id` | közös mezők 0/NULL; hiányzó `id` esetén nincs névvel ellátott regiszter | `0x00bb31f0`, inline | S |
 | `Noise` | `randomSeed`, `low`, `high`, `channelOptions`, `grayScale` | `NULL` | `0x00bbed20` | S |
-| `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` | S |
+| `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` (konstruktor; az osztály, nem a `Pixelate` effekt; ld. 5/e) | S |
 | `QuantizePalette` | `Steps`, `Depth` | nyers tagmezők `0` | `0x00bb31f0`, inline | S |
-| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; a további mezők nyitottak |
+| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; x/y/amount olvasó: `0x00bc2420`; `Mask` közös mező (`0x00bc4900`); `ignoreObjects` nyitott (#4906) |
 | `Resize` | `width`, `height`, `smoothing`; `ignoreObjects` | a három művelettag 0/NULL; `ignoreObjects` nincs a típus tagtáblájában | `0x00bb31f0`, inline | S |
 | `Rotate` | `radAngle`, `degAngle`, `borderColor`, `flipH`, `flipV`, `padBorder` | `NULL` | `0x00bb50f0` | S |
 | `SetVar` | `Name` | `NULL` | `0x00bb31f0`, inline | S |
@@ -4418,6 +4677,152 @@ ellenőrizve), **megerősített** a hét Q-val jelölt konstruktor nyers
 mezőkezdeteire; **feltételes** a közös olvasó jelenléti kapujára; **nyitott** a teljes
 XML-kiértékelésre, a szöveges szín/gradiens grammatikára és a felsorolt
 végrehajtói fallbackoktól eltérő, még nem vizsgált getterekre.*
+
+---
+
+### `RadialBlurImageOperation` — pixelmag és natív összevetés (#4906, 2026-10-13)
+
+**Alkalmazó és paraméterek.** RTTI: `glimmer::RadialBlurImageOperation::vftable` `0x00cf07fc`; a vtable `+0x18` rése (0-alapú 6. slot) az alkalmazó: `0x00bc24e0` (169 bájt), amely a `0x00bcf4b0` magot hívja. Az attribútumolvasó `0x00bc2420` a `x` nevet `this+0x24`-be, `y`-t `this+0x2c`-be, `amount`-ot `this+0x34`-be írja, majd meghívja a közös olvasót (`0x00bc4900`). Az apply float32 x/y képpontkoordinátát ad át; a double amount-ot `0x008eea90` egészre csonkolja.
+
+**Pixelképlet a gépi kódból.** A mag a forrásképet másolja a célakkumulátorba, majd `k=N…1` sorrendben fut:
+
+```
+N = min(amount + 5, 30)                 ; 0x00bcf4e0–0x00bcf4f7
+D = floor(W · amount / 200)             ; 0x00bcf4cb–0x00bcf4dd
+off_k = floor(k · D / N)                 ; 0x00bcf58a–0x00bcf58e
+                                         ; következő lépés: k←k−1, számláló←számláló−D
+```
+
+A `D`-hez a mag `0x51eb851f` konstans szorzását és `>>6`-ot használja. Az `off_k` a legnagyobb eltolástól csökken. A mátrixépítő (`0x00bcf51d`–`0x00bcf6e9`) `W−x`, `H−y`, a dimenziók és `off_k` alapján készíti a cél→forrás leképezést. A folytonos, ideális geometriai alak:
+
+```
+sx = W / (W + off_k)     tx = off_k · x / W
+sy = H / (H + off_k)     ty = off_k · y / H
+u  = (X + 0,5) · sx + tx
+v  = (Y + 0,5) · sy + ty
+```
+
+Az utasításokban a mátrixelemek float32-ként tárolódnak. A tényleges
+kerekítési pontok (az `fx`, `fy` az apply függvény float32 képpontkoordinátája):
+
+```
+sx = float32(1 / float32((W + off) / W))
+sy = float32(1 / float32((H + off) / H))
+tx = float32(off - float32(off · (W - fx) / W))
+ty = float32(off - float32(off · (H - fy) / H))
+```
+
+Ez a sor a folytonos geometriai leképezést írja le; az egyes pixeleket a
+natív SSE2-út nem lebegőpontos képlet-újraszámolással, hanem az alábbi
+16.16-os léptetőtáblával mintázza:
+
+1. A transzformáló (`0x00bcefb0`) a float32 `m00`/`m10` együtthatót
+   `65536`-tal szorozza, majd a `0x00c0b1e0` → `0x00c29990` segédúton
+   nullához csonkolt egész lépést készít (`CVTTSD2SI`, `da1428=1`):
+   `step_x = trunc(m00 · 65536)`, `step_y = trunc(m10 · 65536)`.
+2. A forrástéglalapot az affine mátrix inverzével cél-ROI-vá alakítja
+   (`0x00a4a140`, `0x00a4a240`), a határokból `0,499`-et levon, x87
+   `FISTP` nearest-even kerekítéssel egész célhatárokat képez, majd a
+   `0x009aaae0` lépéssel metszi őket a célképpel. Az üres ROI kimarad.
+3. Az első célpixel-középből float32 forráskoordinátát készít; annak
+   `65536`-szorosát nullához csonkolja. A vízszintes pozíciók egész
+   hozzáadással készülnek:
+
+   ```
+   base_x = trunc(float32(m00·(x0+0,5) + m01·(y+0,5) + m02) · 65536)
+   Ux(j) = base_x + j · step_x
+   Uy(y) = trunc(float32(m10·(x0+0,5) + m11·(y+0,5) + m12) · 65536)
+   ```
+
+   A négylane-es SSE2-csoport `[base, base+step, base+2·step,
+   base+3·step]`; a következő csoport a `4·step` egész hozzáadásával indul
+   (`0x00bcf0f4`–`0x00bcf1d5`). RadialBlur esetén `m01=m10=0`, tehát a
+   függőleges 16.16 koordináta egy soron belül állandó.
+4. A 16.16 koordináta felső 16 bitje adja a forrás `x`/`y` indexet
+   (`psrld 16`, `0x00bcf355`/`0x00bcf35a`); a sorfolytonos indexet a
+   `pmaddwd [1,W]` képezi (`0x00bcf36b`). A sor jobb széléről a mag elhagyja
+   azt a célpixelt, amelynek mintája kívülre esne (`0x00bcf2a2`–`0x00bcf2e9`).
+
+Így a geometriai képletsor és a pixelszintű mintavétel külön réteg: utóbbi
+a float32 kezdőértékből, egyszer csonkolt 16.16 lépésből és egész
+léptetésből áll. A táblát az utasításokból vezettük le; a trace csak
+ellenőrző adat, nem a képlet forrása. A hat 16×16-os trace-visszajátszás
+bájtra reprodukálta a natív kimenetet.
+
+Ez pontmintavétel, interpoláció nélkül. Az SSE2-ág mintánként egész
+bájtokon számol:
+
+```
+acc = floor((38 · sample + 217 · acc) / 256)
+```
+
+A 38 és 217 súlyok a `0x00bcf0f9`–`0x00bcf0fe` utasításokból jönnek; a mag a BGRA alfát is feldolgozza. Az SSE2-sávhiba és a mintán kívüli célpixel kihagyása a `filters-decoded.md` „A FocalZoom zoom-kernele teljesen” szakaszában szerepel. A használt x87-kerekítési mód a QEMU-futásban ismert.
+
+**x87- és egészkonverzió.** A helyi QEMU-harness `0x027f` vezérlőszót ír be, majd `FLDCW`-vel betölti: RC=`00` (legközelebbi, páros döntés), PC=`10` (53 bites pontosság). Az apply az `x`/`y` double gettereredményt `FSTP m32`-vel float32 képpontkoordinátává írja (`0x00bc250c`–`0x00bc2530`); a kerekítés a vezérlőszó szerinti nearest. Az `amount`-ot a `0x008eea90` segéd `FNSTCW` → `OR 0x0c00` → `FLDCW` → `FISTP` útja csonkolja nullához, majd visszaállítja a korábbi vezérlőszót; ezen az úton nincs `FRNDINT`. A koordináta 16.16-ra alakításánál a harness beállítása mellett a `0x00c29990` `CVTTSD2SI`-t használ, ami szintén nullához csonkol. Ha a `0xda1428` gyorssegéd-jelző 0, a `0x00c299c6` fallback `FISTP qword`-ot és előjel szerinti korrekciót használ; `FRNDINT` ebben az útban sincs. Kontrollmérésben, `0x027f` mellett, a gyorssegéd-jelzők (`0xda1424/0xda1428`) 1↔0 kapcsolása az amount 1 és 50 kimeneti hashét nem változtatta; amount 50-nél az RC=down (`0x067f`) viszont megváltoztatta a hashét. Ez a vezérlőszó érzékenységét mutatja; a mátrix műveletsorrendjét és táblaképzését a fenti, utasításszintű levezetés rögzíti.
+
+**Natív mérés, QEMU-harness alapállapot (`d695d2` érintetlenül 0; általános ág).** Az eredeti `0x00bc24e0` apply és `0x00bcf4b0` mag futott; a getter mezőoffset alapján visszaadó stub, a nézetek kézzel épültek. Az eredeti bináris kezdeti `0x00d695d2` bájtja 0; a harness nem hívja a CPUID-jelzőt beállító `0x00c33d30` függvényt. A mag `0x00bcf6ee` ezért a `0x009dc3d0` általános transzformációs útra ágazik. Ez a QEMU-mérés a jegyben skalár ágnak nevezett út; nem a `focal.py`-ban modellezett speciális SSE2-ág. A generikus út belső blend segédje MMX utasításokat használ, tehát a „skalár” itt az ág megnevezése, nem az összes belső utasításkészlet leírása. A valódi gépen futó SSE2/MMX-út összevetésére a külön `d695d2=1` kontroll szolgál. A másik jelző (`0x00d695d4`) is érintetlenül maradt. A harness saját matematikai segédjelzői `0xda1424/0xda1428=1`, az x87 vezérlőszava `0x027f`. A BGRA bemenet `random.Random(seed).randrange(256)` sorozatából készült. A `focal.zoom_blur` normalizált `x/W, y/H` értéket kapott. A színeredmény az első három csatornán, az alfaeredmény ugyanazon BGRA-bemenet negyedik csatornáján mért bájtszintű eltérés.
+
+| W×H; (x,y) pixel; seed | amount | színbájt eltér / összes; max abs. | alfabájt eltér / összes; max abs. |
+|---|---:|---:|---:|
+| 24×20; (7,2; 14); 4906 | 1 | 1334/1440; 209 | 444/480; 206 |
+| 24×20; (7,2; 14); 4906 | 5 | 1332/1440; 209 | 444/480; 204 |
+| 24×20; (7,2; 14); 4906 | 10 | 1337/1440; 209 | 445/480; 204 |
+| 24×20; (7,2; 14); 4906 | 25, 25,7 | mindkettő 1387/1440; 205 | mindkettő 458/480; 199 |
+| 24×20; (7,2; 14); 4906 | 50 | 1418/1440; 195 | 465/480; 186 |
+| 24×20; (7,2; 14); 4906 | 75 | 1427/1440; 192 | 477/480; 175 |
+| 24×20; (7,2; 14); 4906 | 100 | 1430/1440; 183 | 476/480; 168 |
+| 24×20; (12,4; 10,3); 4907 | 50 | 1417/1440; 205 | 467/480; 193 |
+| 24×20; (0,25; 0,75); 4908 | 50 | 1424/1440; 205 | 474/480; 173 |
+| 48×20; (14,4; 14); 4909 | 100 | 2864/2880; 194 | 953/960; 168 |
+| 24×1; (7,2; 0,5); 4910 | 50 | 70/72; 179 | 22/24; 176 |
+
+A 12 alapállapotú futás nyers BGRA kimenete és esettáblája: [2026-10-13-radialblur-4906-qemu-scalar.json](../benchmarks/2026-10-13-radialblur-4906-qemu-scalar.json). Az amount 25 és 25,7 kimenete azonos (SHA-256: `339d85f4dd14e34d4a590e7c850cc651047ac9cdf33ee5852c25dd261d67f3b1`), összhangban az apply csonkolásával. Az előző kör amount=1-hez közölt 1417/1440 színbájt-eltérés nem ismétlődött: az érintetlen jelzővel 1334/1440, a forced SSE2-kontrollban 0/1440 adódott. A 1417/1440 ebben a friss alapállapotú mérésben a 4907-es, amount=50 kontroll eredménye; hogy az előző jelentésben ez keveredett-e át, **NINCS MEG**.
+
+**Forced SSE2-kontroll (`d695d2=1`).** Ugyanaz a 12 eset, bemenet és `zoom_blur`-összevetés a kernel különleges ágának kényszerítésével. A korábbi táblázat számai így pontosan reprodukálódtak: az amount 1/5/10/25/25,7 és a két koordinátás kontroll 0 eltérést ad; az amount 50/75/100 eltérései rendre 40/272/405 színbájt; a 48×20-as eset 1415/2880, a 24×1-es 48/72. A teljes sorok az alábbi táblában vannak. A `d695d4=1` kiegészítő kontroll amount 1/50/100 esetén ugyanezt a kimeneti hashét adta, így a mért eltérést a `d695d2` ág választása magyarázza.
+
+| W×H; (x,y) pixel; seed | amount | színbájt eltér / összes; max abs. | alfabájt eltér / összes; max abs. |
+|---|---:|---:|---:|
+| 24×20; (7,2; 14); 4906 | 1, 5, 10, 25, 25,7 | mindegyik 0/1440; 0 | mindegyik 0/480; 0 |
+| 24×20; (7,2; 14); 4906 | 50 | 40/1440; 3 | 4/480; 1 |
+| 24×20; (7,2; 14); 4906 | 75 | 272/1440; 5 | 91/480; 5 |
+| 24×20; (7,2; 14); 4906 | 100 | 405/1440; 9 | 126/480; 8 |
+| 24×20; (12,4; 10,3); 4907 | 50 | 0/1440; 0 | 0/480; 0 |
+| 24×20; (0,25; 0,75); 4908 | 50 | 0/1440; 0 | 0/480; 0 |
+| 48×20; (14,4; 14); 4909 | 100 | 1415/2880; 30 | 478/960; 30 |
+| 24×1; (7,2; 0,5); 4910 | 50 | 48/72; 44 | 15/24; 29 |
+
+Ebben a forced kontrollban az amount 25 és 25,7 teljes kimenete azonos; SHA-256 mindkettőre `0ee38b71deef72a1f287cf2544cc68941d8db3ae624e97028487bfca1e54f1ca`. Az itt közölt `zoom_blur`-eltérések a 16.16-os natív léptetőtábla megvalósítása előtti kódállapotot rögzítik; a friss 28 páros összevetés alább található.
+
+**Kiegészítő közvetlen magmérés (#4906, 2026-10-13).** A QEMU-harness közvetlenül a `0x00bcf4b0` magot hívta, a `0x00bc24e0` apply diszasszemblálásával egyező argumentumsorrenddel. ABI-kontrollként a közvetlen `d695d2=0` kimenet bájtra egyezett a korábbi apply-mérés kimenetével 24×20-on, `(x,y)=(7,2;14)`, amount=1 és 50 esetén (a régi kimenetek SHA-256-a rendre `9a54896b6f7c65c5efeb38a5d20b7293bcf1965915d8eafe9e842424dfc0a565` és `8d6701c9b0f79f537ed879564e94beea661a68aaa92b2c31858a5b3d9c9a70f0`). A teszt 16×16 és 33×17 képeken, négy középponttal, amount 0/1/10/25/25,7/50/100 értékekkel futott; `d695d2=0` az eredeti általános ág, `d695d2=1` a kényszerített SSE2-ág. Az összevetés a jelenlegi `src/picasapy/render/focal.py::zoom_blur` modellel készült. A `0x027f` x87 vezérlőszó és a harness `da1424/da1428=1` állapota rögzített. A részletes, bájtszintű bemenetek, mindkét natív ág és a PicasaPy-kimenet hex/base64/SHA-256 adatai, valamint valamennyi eltérő pixel koordinátája a [2026-10-13-radialblur-4906-mag.json](../benchmarks/2026-10-13-radialblur-4906-mag.json) fájlban vannak.
+
+**Natív 16.16-tábla és 28/28 páregyezés (2026-10-13, #4906).** A `src/picasapy/render/focal.py::zoom_blur` most a fenti, utasításszinten levezetett ROI- és léptetőtábla-képletet használja, és a `D=0` eseteket is végigfuttatja. A `tests/render/data/radialblur-4906-pairs.json` 28 közvetlen natív SSE2-bemenet/kimenet párt tartalmaz: 16×16 és 33×17 méretet, hét amountot (0, 1, 10, 25, 25,7, 50, 100), közép- és szélső fókuszokat. A `tests/render/test_radialblur_native_4906.py` mind a 28 kimenetet bájtra ellenőrzi; **28/28 egyezett**. A tesztpárok bemeneti SHA-k szerint deduplikáltak; a léptető köztes adatai és a tömörített trace ellenőrzési hash-e a [2026-10-13-radialblur-4906-koztes.json](../benchmarks/2026-10-13-radialblur-4906-koztes.json) fájlban van. A trace hat 16×16-os visszajátszása bájtra reprodukálta a natív kimenetet; a képletet a disassemblyből vezettük le.
+
+**ABI-cáfoló próba.** A közvetlen hívás első paramétersorrend-változatát a korábbi apply-mérés amount=50-es, 24×20-as kimenete cáfolta: a kimeneti hash nem egyezett; a két float argumentum megfelelő stackhelyre igazítása után pontos egyezés lett. A hibás első futás nem része a nyers mérési fájlnak. A végleges argumentumsorrendet ugyanazon apply-adat amount=1 és 50 kimenetével külön is ellenőriztük.
+
+| W×H; `(x,y)` pixel | SSE2 eltérő pixelek amount `0, 1, 10, 25/25,7, 50, 100` sorrendben | maximum csatornaeltérés amount `25,7, 50, 100` sorrendben |
+|---|---|---|
+| 16×16; `(8,8)` | `0, 0, 0, 57, 86, 131` | `6, 17, 36` |
+| 16×16; `(0,0)` | `0, 0, 0, 66, 140, 201` | `23, 53, 71` |
+| 33×17; `(16,5;8,5)` | `0, 0, 0, 0, 0, 0` | `0, 0, 0` |
+| 33×17; `(0,5;16)` | `0, 0, 0, 27, 105, 384` | `19, 61, 112` |
+
+A 25 és 25,7 natív kimeneti hash-e mind a négy középpontnál azonos. Az általános ág mind a 28 esetben minden pixelnél eltér a korábbi `zoom_blur`-től. A forced SSE2-ág eltérései a 16×16 `(8,8)` esetben amount=25-nél a `x=4…15, y=0…15` tartományban, a 16×16 `(0,0)` esetben szintén `x=4…15, y=0…15` tartományban jelentkeznek; a 33×17 `(0,5;16)` szélső esetben amount=25-nél csak az alsó sor `y=16, x=5…32` tér el. Ezek a régi modell összevetését dokumentálják; a friss implementáció 28/28 SSE2-párra egyezik.
+
+**`Mask` és `ignoreObjects`.** A `runtime/filterdesc.xml:898–902` `_msk` néven `CircularGradientImageMask`-ot hoz létre, majd a RadialBlur gyerek `Mask="{_msk}"` attribútumára köti; ugyanott `ignoreObjects="true"` is szerepel. A `0x00bc2420` a három numerikus mező után `0x00bc4900`-t hívja; ez a `Mask` értéket a közös `this+0x14` mezőbe olvassa. A közös műveletfordító saját utasítás után fűzi a maszkoló utasítást (`0x00bc4ae0`, `MaskInstruction` ág), tehát a maszk az apply fölötti utasításrétegben érvényesül. Az apply törzse nem olvassa. A közös olvasó diszasszemblálásában nincs `ignoreObjects`-lekérés; a bináris ASCII és UTF-16LE literal-keresése sem talált ilyen sztringet. Ez nem zárja ki, hogy a külső XML-/objektumcső használja; a fogyasztó és a láncbeli hatás **NINCS MEG**.
+
+**Bizonyítottsági fok: megerősített a natív SSE2-ágra.** A vtable/app út, a paraméteroffszetek, a float32 mátrix, az inverz ROI-vágás, a kezdőérték, a csonkolt 16.16 lépés és az egész lane-léptetés utasításszinten levezetett; a 28 közvetlen SSE2-pár bájtra egyezik. A `Mask` közös utasításrétegbeli viselkedése igazolt. A `d695d2=0` általános ág pixelképlete és az `ignoreObjects` külső fogyasztója továbbra is nyitott.
+
+**A #4906 készültsége:**
+
+- Alkalmazó, `amount`/`x`/`y`: ✅ (`0x00bc24e0`; mezők `+0x34`, `+0x24`, `+0x2c`; amount `0x008eea90`-nél nullához csonkolt, x/y pixelben float32).
+- Mintaszám, eltolás, súlyozás és kerekítés: ✅ `N`, `D`, `off`, float32 mátrix, ROI-határ, 16.16 kezdőérték/lépés/lane-sorrend és 38/217 egész keverés utasításszinten levezetve.
+- `Mask`: ✅ igazoltan a közös utasításrétegben, az apply fölött (`filterdesc.xml:898–902`, `0x00bc2420`, `0x00bc4900`, közös fordító).
+- `ignoreObjects`: ⛔ nyitott; a külső fogyasztó nincs azonosítva.
+- Mai kóddal összevetés: ✅ a natív SSE2-ág 28/28 esetben bájtra egyezik a 16×16 és 33×17 méretű bemeneteken, amount 0–100 között. Az általános ág korábbi eltérő kódállapotot rögzítő mérése marad nyitott.
+
+**Cáfoló próba (15.2).** Azt próbáltuk cáfolni, hogy a korábbi 0 eltérésű táblázat a QEMU-harness változatlan alapállapotát írja le. Ugyanazon seedelt 24×20 bemeneten kizárólag `d695d2` változott: érintetlen 0 mellett amount 1-nél 1334/1440 színbájt tért el; forced 1 mellett a modell és a natív kimenet bájtra azonos lett. `d695d4` 0→1 változtatása forced SSE2 mellett amount 1/50/100 esetén nem módosította a kimeneti hashét. A cáfolatot azonos bájtösszehasonlítással végeztük; a régi `amount=1 → 1417` számot egyik ág sem adta.
+
+**Nyitott:** a `d695d2=0` általános `0x009dc3d0` út részletes pixelhatása és az `ignoreObjects` külső fogyasztója. Ghidra-kör kell: `0x009dc3d0` — a `d695d2=0` általános út és a `0x009dc040` blend helper tényleges mintavételezési/akkumulációs képlete [blokkoló]. Ghidra-kör kell: `0x00bc4ae0` — az általános műveletfordító hogyan továbbítja (ha továbbítja) az `ignoreObjects` XML-attribútumot a külső objektumkompozitornak [blokkoló].
 
 ---
 
@@ -4691,6 +5096,136 @@ bináris futtatása qemu-i386 alatt, egyező pixelbájtokkal. A felsorolt
 szintetikus mérések nem fedik le a teljes `filterdesc.xml` LocalContrast
 láncot, annak blur-/blend-határait vagy export-goldenét; ez a nagyobb effekt
 szintjén nyitott marad.
+
+### 2a. `LocalContrastImageOperation` — három XML-export-golden mérve; a natív QEMU-lánc nyitott (#4907, 2026-10-13)
+
+**Bizonyítottsági fok: `feltételes` a teljes natív pixelkimenetre.** A
+`LocalContrast` három Picasa-exportját összevetettem a mai
+`xml_local_contrast` RGB-kimenetével; mindháromra van pontos CIE76-mérés, így a
+jegy export-golden alternatívája teljesül. Az export JPEG, ezért ez nem nyers
+natív bájtazonosság. A teljes `LocalContrastImageOperation` QEMU-futtatóútja
+sem állt össze: az utasításlista külső végrehajtójának hívója és szerződése
+`NINCS MEG`.
+
+**Builder és hívási határ (helyi diszasszemblálás + RTTI).** A
+`LocalContrastImageOperation` vtáblája `0x00cf0a7c`; a `+0x1c` slot értéke
+`0x00bc4810`. A builder (`0x00bc41e0`) a `0x00bc1250` Nested-konstruktort,
+`0x00bb7680` MultiplyColorMatrix-konstruktort és `0x00bbf780` GetVar-konstruktort
+hívja. A konstruktorok által beírt végső vtábla-címeket az RTTI nevei azonosítják:
+`0x00cf0774` = `NestedImageOperation`, `0x00cf0024` =
+`MultiplyColorMatrixImageOperation`, `0x00cf06f0` = `GetVarImageOperation`.
+A `0x00bbf780` a `BlendImageOperation` alaprészt (`0x00cf0b2c`) is inicializálja,
+majd a végső GetVar-vtáblát írja be. A vtable-adatok közvetlen kiolvasása
+megegyezik az RTTI-táblával. A builder teljes Add/Subtract sorrendje és az
+alkalmazó által frissített Blur/Multiply mezők a
+`docs/specs/filters-decoded.md` „HDR” szakaszban, a mód-sorszámok e lap
+`BlendInstruction` szakaszában vannak rögzítve.
+
+A `0x00bc4ae0` `[vtbl+0x1c]` hívása ezen a vtáblán `0x00bc4810`-ra érkezik.
+Ez az `ApplyInstruction`-t (`0x00bc51d0`, vtable `0x00cf0f18`) fűzi az
+utasításlistához, majd a `0x00bc13e0` végigjárja a gyerekeket és azok
+`vtable+0x0c` metódusát hívja. Ez az utasítások összeállítása, nem képpontfutás.
+A képpont-végrehajtás az `ApplyInstruction` `0x00bd0cc0` metódusán át az adott
+művelet `vtable+0x18` munkavégzőjéhez kerül; a `BlendInstruction` keverője
+`0x00bd0700`. Tehát a `0x00bc4810` nem a teljes lánc egyetlen képpont-futtatója.
+Az `0x00bc4730` alkalmazó végén a `0x00bc47fd` hívás a 40 bájtos
+képreceptort másolja a kimeneti rekordba (`0x009a8ca0`: tíz `dword` másolása,
+refcount-kezeléssel); ez nem a gyerekutasítások képpontfuttatása.
+
+**Cáfoló pásztázás és QEMU-határ (2026-10-13).** A teljes `.text`-et a
+`paszta.py` darabolt pásztázójával jártam be, első műveletként
+`paszta.memoria_kapu(512)` hívással, 8 KiB-os darabokkal. Az ismert pozitív
+kontroll (`0x0040265e`, vtable `+0x0c` indirekt hívás) megjelent. A vtable-betöltés
+→ `+0x0c` slot-betöltés → regiszteres `call` alakból 977 helyet talált a
+pásztázás; a `0x00bb`–`0x00bc` tartományban az azonosítható találatok
+utasításépítők (`0x00bb41c0`, `0x00bc13e0`, `0x00bc4ae0`), nem az
+utasításlista képpontfuttatója.
+A közvetlen `call [reg+0x0c]` alakra nulla találat volt. Ez a cáfoló kör nem
+zárja ki a más ABI-t vagy más hívásalakot, ezért a külső listafuttató címe és
+a képleírók verem-/argumentum-ABI-ja továbbra is `NINCS MEG`.
+
+A korábbi qemu-harness README `0x00bcb2f0` próbája `SIGSEGV`-vel végződött,
+kézzel épített, más belépőjű bemenettel; nem tekintettem LocalContrast-mérésnek.
+Ebben a körben nem futott a teljes lánc qemu-i386 alatt, ezért nincs natív
+képpontpuffer és nincs `docs/benchmarks/`-ba mentett QEMU-golden. A tervezett
+`hb.py` futás a brief szerint skalár ágat mérne; itt nem keletkezett skalár
+LocalContrast-kimenet, és SIMD-ág-egyezésre sincs bizonyíték.
+
+**Picasa-export összevetés (684-es készlet).** Az `.picasa.ini`-ben rögzített
+HDR-paraméterek (`hdr__min.jpg`, `hdr__alap.jpg`) és exportjaik alapján a két
+Fade=0 eset aktív natív lánc. A ΔE a dekódolt RGB-pufferek CIE76 átlagos
+eltérése; a táblázatban hat tizedesre kerekítve szerepel. Az egyező bájtok
+száma az 960×640×3 bájtos pufferekre vonatkozik, nem nyers natív kimeneti fájlra.
+
+| HDR-beállítás (R, S, Fade) | `hdr_local_contrast` ↔ Picasa-export, ΔE | `xml_local_contrast` ↔ Picasa HDR-export, ΔE | XML-egyező bájt |
+|---|---:|---:|---:|
+| min (1,3; 1; 0) | 0,187638 | 1,120346 | 732 550 / 1 843 200 |
+| alap (20; 3; 0) | 0,264679 | 1,416554 | 695 673 / 1 843 200 |
+
+A `hdr_local_contrast`-tal végzett oszlop a mai renderer és az eredeti
+Picasa-export összevetése, nem az eredeti gépi kód közvetlen futtatása. A
+`LocalContrast` XML-effekt saját három export-goldenje az alábbi mérés.
+
+**LocalContrast XML export-golden (684-es készlet).** A `.picasa.ini` pontos
+paraméterei: `min` R=1,3/C=1,0; `alap` R=15/C=1,5; `max` R=40/C=3,0
+(`mérés (684-es archívum, .picasa.ini)`). Mindhárom forrás és export 960×640
+RGB (`mérés (684-es JPEG-ek dekódolása)`); a gyökérforrás SHA-256-a
+`170510965b768d685ceef017859c51acc6ce848c2d22be192a53ece49096f55e`
+(`mérés (684-es forrásfájl)`). A `ΔE` a dekódolt RGB-pufferek átlagos CIE76
+eltérése, azonos méreten; a pixel-egyezés a 960×640 RGB-pixelekre vonatkozik.
+Az `xml kimenet SHA-256` a mai `xml_local_contrast` nyers, sorfolytonos RGB
+bufferén készült; a Picasa-cél a JPEG fájlhash-e.
+
+| beállítás | `Radius` / `Contrast` | `xml_local_contrast` ↔ Picasa LocalContrast-export, átlag ΔE | pontos RGB-pixel | Picasa JPEG SHA-256 | XML-nyers RGB SHA-256 |
+|---|---:|---:|---:|---|---|
+| min | 1,3 / 1,0 | 0,120932434898 | 86,858724% | `cf2e5d181fb6ea67a705670c0bc0d9b5d954180320af923e9cd5019cd05ffff2` | `013624f5638d9e037c6a5a4963932ac73972f65d6472b726d0bc4861e589824a` |
+| alap | 15 / 1,5 | 0,159202738267 | 77,107259% | `cb3df97d6d2da3fb47f3172188f09c3e8af2f3e91cfec613c557e7fa4944d782` | `556d06df8af4950c76e9af2d3c6387daf9cd9705457a5e053afa2e346698a1b5` |
+| max | 40 / 3,0 | 0,257917673364 | 58,535970% | `ffcd23e658e66ca366d5a61475db80ccf23c697ac5b0afde3ec6c5dc6424defe` | `4bf112c4a4377daf3f38b41ae29c1412424caba057fdb78ec59ca51bbb4e8504` |
+
+Forrás mindhárom sornál: `mérés (684-es Picasa-export ↔
+src/picasapy/render/glimmer_ops.py:xml_local_contrast; CIE76,
+analyze_validation_kit.mean_de)`. Ezek export-goldenek, nem a natív
+QEMU-pixelpuffer eredményei.
+
+| HDR-beállítás | forrás ↔ Picasa-export, ΔE | átlagos előjeles csatornaeltolódás |
+|---|---:|---:|
+| max (80; 7; 100) | 0,120932 | 0,002686 |
+
+A max export beállítása a mérési fájlban `HDR=1,80,7,100`; a szállított
+`filterdesc.xml` `BlendAlpha=1-(Fade/100)` kifejezése Fade=100-nál nulla.
+Ezért a max sor nem harmadik aktív natív (Radius, Strength) pixelmérés.
+
+**Cáfoló kísérlet (15.2).** Megpróbáltam cáfolni azt, hogy a mai XML-modell
+három LocalContrast-exportot jól közelít: ugyanazon forrásra kiszámoltam a
+natív `LocalContrastImageOperation` HDR-út jelenlegi modelljét
+(`hdr_local_contrast`) is. Ennek exporttól mért ΔE-je min/alap/max sorrendben
+1,106937 / 1,813364 / 2,209803 (`mérés (hdr_local_contrast ↔ ugyanazon három
+Picasa-export)`), az XML-modell 0,120932 / 0,159203 / 0,257918 értékeivel
+szemben. A próba azt cáfolja, hogy a natív HDR-út és az XML-es LocalContrast
+felcserélhető volna; az XML-modell/export közeli eredményét nem cáfolta. A
+falszifikációt ugyanazzal a CIE76/RGB-dekódolási mércével ellenőriztem.
+Külön kontrollként a Picasa HDR min export forrástól mért ΔE-je 1,120346,
+átlagos csatornaeltolódása 0,479735; a LocalContrast min export forrástól
+0,120932 ΔE-re van (`mérés (684-es exportok)`). Min állásban a jelenlegi XML-
+modell a bemenettel azonos, ezért ott a mért ΔE a JPEG újramentési alapzaja.
+Ez a kontroll nem magyarázza a max állás maradék ΔE-jét; bájtazonosság nem
+állítható.
+
+**Kész, ha — export-golden alternatíva: ✅ teljesült.** Három Radius/Contrast
+beállításon a Picasa `LocalContrast` exportját a megfelelő forrásra futtatott
+`xml_local_contrast` eredménnyel hasonlítottam össze; a mért ΔE-értékek és
+hash-ek a fenti táblában vannak. Ez a jegyszövegben megadott export-golden
+feltételt teljesíti. **Natív QEMU teljes lánc: ⛔ nincs meg.** A helyi
+QEMU-harness a skalár ágat mérő környezet; ez a kör nem ért el az
+utasításlistát futtató külső hívóig, ezért nem készült natív LocalContrast
+nyers QEMU-puffer, és SIMD-ág-egyezést sem igazol. A következő konkrét lépés a
+`0x00bc4ae0`/`0x00bc4810` által összerakott utasításlista külső végrehajtójának
+hívóját, képköteg-ABI-ját és belépő veremállapotát visszakövetni, majd azt a
+`hb.py`-val futtatni három beállításon. A nyers QEMU-kimenet címe és hash-e:
+`NINCS MEG`.
+
+**Nyitott, blokkoló Ghidra-kérdés a natív futtatáshoz:**
+`Ghidra-kör kell: 0x00cf0f18 — az ApplyInstruction vtable +0x0c slotját hívó külső utasításlista-futtató és a 40 bájtos képleíró verem-/argumentum-ABI azonosítása [blokkoló]`.
 
 ### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
 
@@ -5055,6 +5590,11 @@ smoothing=False)` a `cv2.INTER_NEAREST`-et hívja (`src/picasapy/render/glimmer_
 koordinátalépés és a QEMU-összevetés a 5/d pontban szerepel; a korábbi
 „mechanizmus egyezik” állítás itt visszavonva.
 
+> ⛔ **Helyesbítés (2026-10-13, #4908):** a fenti „nálunk” bekezdés a #4188
+> előtti állapotot írja le (`b5e056bdb`). Ma a `resize_image(smoothing=False)`
+> a 5/d képletét követi (16.16-os fixpontos koordináta, középponthoz igazítva);
+> a cv2-os `INTER_NEAREST` már nincs a fő úton. Ld. 5/d és 5/f.
+
 ### 5/b. A mag kicsinyítéskor a léptékkel nyúlik — LEZÁRVA
 
 A korábbi nyitott kérdés („a 3-as mód magja kicsinyítéskor szélesedik-e?”)
@@ -5134,10 +5674,18 @@ a vízszintes léptéket veti össze 1,0-val:
    Ha a mátrixban forgatás vagy nyírás van (`|m1|` vagy `|m3|` > 0,0001,
    `0x009e6da0`, `[0x00cf3ab8]`), a wrapper a `0x009e6df0` általános utat
    hívja; a tiszta átméretezésnél ez nem fordul elő.
-2. **A doboz:** sugara 0,5, és a kicsinyítés léptékével nyúlik (5/b). A csap
-   súlya 1, ha `|x| < 0,5`, egyébként 0 (`0x00a3fb12` `fcomp [0xc7dafc]` = 0,5,
-   `jp` → 0). A határon álló csap **nem** számít bele. A csap helye `j + 0,5`,
-   a kimeneti képpont középpontja `c = (i + 0,5) · forrás/cél`, float32-ben.
+2. **A doboz:** a kernelvizsgálat szigorú `|x| < 0,5` (`0x00a3fb12`
+   `fcomp [0xc7dafc]` = 0,5, `jp` → 0), de az `x` értéke nem a valós
+   aritmetikájú szimmetrikus távolság. A natív előbb float32-ben tárolja a
+   cél/forrás arányt, annak reciprokát is float32-be kerekíti, ebből készíti
+   a középpontot (`0x00a3f711`–`0x00a3f717`, `0x00a3f8af`–`0x00a3f8bd`), majd
+   a tapeltolást az eredeti cél/forrás aránnyal szorozza
+   (`0x00a3faf6`–`0x00a3fb20`). Emiatt egy matematikailag határon álló alsó
+   tap a szigorú összehasonlításban mégis a határon **belülre** kerülhet.
+   A korábbi „a határon álló tap kizárt” következtetés a statikus
+   összehasonlításból indult ki, a köztes float32 reciprok-kerekítést nem
+   vette figyelembe; a Pixelate natív mérési bizonyítéka ezt helyesbíti (5/h).
+   A csap helye `j + 0,5`.
 3. **Egész súlyok:** `w_int = csonk(w · 16383 / Σw)`
    (`0x00a4031f` `[this+0x2c]` = 1,0 × `[0x00cf3b70]` = 16383,0;
    `0x00a4035d` `call 0xc29990` = `cvttsd2si`). A maradékot
@@ -5171,10 +5719,21 @@ változatlan):
 | `Pixelate` min (Impact 2, Add) | 0,783 | **0,128** |
 | `Pixelate` max (Fade 100) | 0,121 | 0,121 |
 
-A 48 × 32-es kicsinyített kép blokkjainak **94,4%-a bitre egyezik** a
-Picasa-export blokkközepeivel (függőleges menet elöl: 93,3%). A terület-átlag
-(`cv2.INTER_AREA`, kerekít) ΔE-je 0,276, az ismételt 2×-es felezésé 4,637. Az
-eredeti tehát **egy lépésben** dobozol, felezés nélkül.
+A korábbi mérés **94,4%** pontos blokkközép-egyezést állított (függőleges
+menet elöl: 93,3%). Ez az arány a jelenleg átadott mérőadatból nem
+reprodukálható. A 2026-10-13-i újramérés a `684-merokeszlet` 960 × 640-es
+`pixelate__alap.jpg` forrását és exportját használta; a mai `resize_image`
+48 × 32-re kicsinyítő, majd 960 × 640-re nearest nagyító láncával az export
+20 × 20-as blokkjainak középpontján **1324/1536** RGB-hármas egyezett
+bájtra, **212/1536** tért el (összesen 260/4608 csatornabájt, minden eltérés
+abszolút értéke legfeljebb 1). A dekódolt export 20 × 20-as blokkjai közül
+1150/1536 nem konstans. Az export JPEG, két 64 elemű kvantálási táblával és
+4:4:4 mintavételezéssel; a veszteséges JPEG-kvantálás így legalább egy
+mért forrása az egzakt blokkközép-eltéréseknek. Ez nem bizonyítja, hogy a
+korábbi, pontosan 5,6%-os eltérés minden tagját ez okozta: annak mérőadata
+vagy köztes kimenete itt nincs meg. A terület-átlag (`cv2.INTER_AREA`,
+kerekít) ΔE-je 0,276, az ismételt 2×-es felezésé 4,637. Az eredeti tehát
+**egy lépésben** dobozol, felezés nélkül.
 
 **Érintett leírók** (`filterdesc.xml`): `Pixelate` és `PicnikFocalPixelate`
 (kicsinyítés, `imagewidth/Impact`); `Cinemascope` Letterbox-szal (a szélesség
@@ -5227,7 +5786,7 @@ a Codex-munkamenetben nem állt rendelkezésre.*
 
 *Forrás: skalár `ytResampler` `0x00a40e40` (méret 1443 bájt); SIMD
 `0x00a413f0` (méret 1565 bájt); a dispatch `0x00a426a0`; futtatott
-QEMU-harness: `/home/sancho/picasapy-agent/eszkozok/qemu_harness/`.*
+QEMU-harness: `~/picasapy-agent/eszkozok/qemu_harness/`.*
 
 | út | négyes főciklus | függőleges maradékág |
 |---|---|---|
@@ -5376,7 +5935,7 @@ szélen kívüli minta viselkedése itt a közös affine munkavégzőé.
 
 | | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`) | teendő |
 |---|---|---|---|
-| `smoothing=false` mintakoordináta | középpont + float32 → 16.16 csonkolás; az egész lépés ismételt hozzáadása; `sar 16` | `cv2.INTER_NEAREST`; a négy mért méretpárból négy eltér | az OpenCV-hívást cserélni a fenti, bájtra specifikált koordinátamenetre; a négy QEMU-eset legyen bitpontos referencia |
+| `smoothing=false` mintakoordináta | középpont + float32 → 16.16 csonkolás; az egész lépés ismételt hozzáadása; `sar 16` | ⛔ elavult sor (#4188 előtt: `cv2.INTER_NEAREST`). Ma: 16.16-os fixpontos koordináta (`glimmer_ops.resize_image`). Ellenőrizve 2026-10-13: a két QEMU-koordinátasor (5×3→3×2, 4×2→7×5) reprodukálódik | nincs koordináta-teendő. Nincs tárolt pixelszintű natív kimenet a négy méretpárra; ha kell, a `hb.py` harnessben újra kell futtatni |
 | `smoothing=false` súly | egy érvényes BGRA-pixel, súly 1 | egy legközelebbi pixel, de a koordinátatérkép eltér | azonos pixel kiválasztása a natív koordinátából |
 | képen kívüli affine-minta | írás kihagyása, célpuffer változatlan | a tiszta Resize nem hoz létre ilyen koordinátát; ez a függvény nem vizsgálja az affine ági képszél-kitöltést | a hívói célpuffer-inicializálás vizsgálata, mielőtt általános affine-határviselkedést ugyanide emelünk |
 | `smoothing=true` | 5/c: fixpontos doboz/Mitchell-súlyok | négy QEMU-méretpáron bájtra egyezik | nincs mért teendő |
@@ -5384,6 +5943,253 @@ szélen kívüli minta viselkedése itt a közös affine munkavégzőé.
 Nincs mérve valódi Picasa-exportból származó külön Resize-golden; a fenti
 pixelértékek a natív gépi kód QEMU-futtatásából és a PicasaPy-függvény
 azonos bemeneteiből származnak.
+
+### 5/e. ⭐ `Pixelate` és `PixelateImageOperation`: két külön út — a natív mag mérése az 5/h-ban (#4908, 2026-10-13)
+
+**Két dolog, ugyanazzal a névvel.**
+- A `Pixelate` **effekt** (`filterdesc.xml:1191`) egy `NestedImageOperation`-ben két `ResizeImageOperation`-t használ: `Resize(imagewidth/Impact)` (simítva), majd `Resize(imagewidth, smoothing="false")`. **Nem** használ `PixelateImageOperation`-t. Az 5/c és 5/d szakasz ezt a láncot méri (ΔE 0,098 az alapállásra).
+- A `PixelateImageOperation` (vtábla RVA `0x008f04f4`, VA `0x00cf04f4`) a `filterdesc.xml`-ben **csak a `Comicize` szűrőben** fordul elő, két példányban (`pixelWidth=_nDotSize`). Az `0x00bcdf10` ennek a magja.
+
+Ezért a #4908 kiinduló megfogalmazása („`PixelateImageOperation` (1 effekt)”) pontatlan: a natív mag a Comicize-é, a `Pixelate` effekt más láncon fut.
+
+**Állapot (#4908, 2026-10-13; a natív mag részletes mérése és korrekciója az 5/g–5/h-ban).** A `Pixelate` effekt Resize-lánca külön út; az `0x00bcdf10` magot a `0x009a8b60` natív képleíró-konstruktorral futtattuk. A [19 natív eset teljes bájtjait és SHA-256-ait tartalmazó mérés](../benchmarks/2026-10-13-pixelate-4908-mag.json) eredetileg 15 egyezést és 4 eltérést mutatott a közvetlen forrás/cél osztást használó Python-referenciához képest. Az 5/h-ben azonosított natív float32 reciprok-sorrend után a 19 rögzített vektor mind bájtra egyezik; az eredeti JSON megőrzi a javítás előtti Python-kimenetet, a regressziós fixture a natív várt bájtokat használja.
+
+*Bizonyítottsági fok: **feltételes**. Egy QEMU-harness útvonalon a natív BGRA-kimenetet a külön futtatott `pixelate_centered` eredményével 19 vektoron bájtról bájtra összevetettük; ugyanennek a harnessnek a teljes újrafuttatása azonos kimeneteket adott. Az ismétlés a reprodukálhatóságot ellenőrzi, de nem független második mérési módszer. A statikus disassembly a hívási útvonalat és a leíró elrendezését támasztja alá, nem a 19 kimenet bájtjait. A `Pixelate` effekt Resize-láncának külön bizonyítottsági foka az 5/f-ben marad.*
+
+**A lánc (gépi kód, `pdis` a `Picasa3.exe`-ből):**
+
+| lépés | cím | szerep | ellenőrzés |
+|---|---|---|---|
+| vtábla 1. rés | `0x00bbd050` | attribútumolvasó: `pixelWidth` `+0x24`, `pixelHeight` `+0x2c`, `offsetX` `+0x34`, `offsetY` `+0x3c` | vtábla-olvasás (`0x00cf04f4 + 4`) |
+| vtábla 6. rés | `0x00bbd150` | alkalmazó, 199 bájt, `ret 0xc`, `ecx` = az op | vtábla-olvasás (`+0x18`) |
+| közvetlen hívás | `0x00bbd207` → `0x00bcdf10` | a mag, cdecl: `(img, pw, ph, dst)` | `0x00bbd1ed`–`0x00bbd207` |
+| inicializáló | `0x00bbcf30` | konstruktor: nullázza a mezőket, a vtáblát `0x00cf04f4`-re állítja | `pdis` |
+
+A vtábla 8. rése `0x00d1bfa0`: ez **adat** (nullák), nem kód. A `PixelateImageOperation`-nek tehát nincs munkavégző-rése; a magot az alkalmazó hívja közvetlenül.
+
+**Paraméterek.** Az alkalmazó a `+0x24`/`+0x2c` mezőt float-ként veszi; ha ≤ 0, `1,0` (`fcomp` a `0xc7e328`-cal, majd `fld1`). A magban `W = [img+8]`, `H = [img+0xc]`; a `W/pw` és `H/ph` float-osztás után a `0x00529e10` hívás áll. A natív segéd közvetlen QEMU-mérése `1,25 → 2` és `2,5 → 3` eredményt adott. A teljes mag köztes méretét és képpontkimenetét a mostani futás már méri; részletek az 5/h-ban.
+
+**Natív QEMU-mérés — a `Pixelate` effekt Resize-párja.** A `qemu-i386`
+`pentium3` CPU-profilt kapott (SSE2 nincs, ezért a `ytResampler` skalár ága
+futott). Az első lépés az `0x00bcb5e0` wrapperen futott
+`smoothing=true` értékkel; a második az `0x009e7420` nearest munkavégzőn,
+teljes kimeneti téglalappal. Mindkét lépés minden bájtját külön vetettük
+össze a `glimmer_artistic.apply_pixelate` előtti mai
+`resize_image`-lánccal (az alfát 3 síkú szürke vezérlőképként mérve):
+
+| bemenet | Impact | köztes méret | QEMU-visszatérés | eltérő bájt: kicsinyítés / nagyítás |
+|---|---:|---:|---:|---:|
+| 24 × 16 | 2 | 12 × 8 | 0 / 0 | 0 / 0 |
+| 24 × 16 | 3 | 8 × 5 | 0 / 0 | 0 / 0 |
+| 24 × 16 | 4 | 6 × 4 | 0 / 0 | 0 / 0 |
+| 24 × 16 | 20 | 1 × 1 | 0 / 0 | 0 / 0 |
+| 5 × 3 | 2 | 3 × 2 | 0 / 0 | 0 / 0 |
+| 5 × 3 | 3 | 2 × 1 | 0 / 0 | 0 / 0 |
+| 5 × 3 | 4 | 1 × 1 | 0 / 0 | 0 / 0 |
+| 5 × 3 | 20 | 1 × 1 | 0 / 0 | 0 / 0 |
+
+Ez a natív resampler-út skalár ágának mérése, nem a SIMD-ágé és nem a
+`ResizeImageOperation` külső `0x00bc3650` alkalmazójának teljes futtatása.
+Az eredeti BGRA-bájtfolyamot és mindkét kimeneti puffert a
+`docs/benchmarks/2026-10-13-pixelate-4908-qemu-scalar.json` tartalmazza.
+
+**Cáfoló próba.** A 5 × 3, Impact=2 határesetet fekete-fehér sakktáblás
+RGB-bemenettel és eltérő alfaértékekkel is lefuttattuk; mindkét QEMU-lépés
+státusza 0, a Python-referenciához képest mindkét kimenet eltérő bájtjainak
+száma 0. Ez a nagyfrekvenciás kis eset nem fedi le a többi méretet vagy a
+SIMD-ágat.
+
+**A .5-ös határeset.** A mag utasításai a `W/pw` arányt a `0x00529e10`
+segédhez adják (`0x00bcdf8d`). A segédet QEMU-ban közvetlenül mérve
+`float32(5/2) = 2,5` bemenetre `3,0` floatot adott; a `5/4 = 1,25` próba
+eredménye `2,0` volt. Ez a `PixelateImageOperation` célrácsának kerekítését
+erősíti meg ezeken a bemeneteken, és a kért `W=5`, `Impact=2` határesetben
+3-as célméretet ad. A `Pixelate` effekt ettől külön Resize-lánc: az ő
+`W=5`, Impact=2 célmérete is 3, de ezt a Resize-pár próbája a mai láncból
+számolta.
+
+**Korábbi sikertelen magpróba (felülírva az 5/g–5/h eredményével).** A kézzel
+felépített célleíróval futó nyolc kísérletben a kimenet előre beírt `0xA5`
+maradt; ez nem volt összehasonlítható natív pixelkimenet. A mag utasításai
+azt is megmutatják, hogy `[dst+0x10] == 0` esetén `4`-gyel tér vissza
+(`0x00bce27d`–`0x00bce294`). Az új mérés a `0x009a8b60` natív képinicializálóval
+építette a forrás- és célobjektumot, majd a cél valódi `+0x10` pixelmutatójáról
+olvasta ki a teljes képet; lásd 5/g–5/h.
+
+**A PicasaPy mai megvalósítása (grep, `src/picasapy/render`):**
+- `Pixelate` effekt: `chain.py:874` → `chain_glimmer_handlers.apply_pixelate_op` → `glimmer_artistic.apply_pixelate` (`glimmer_artistic.py:74`): `Resize(W/Impact)` simítva, majd `Resize(W, smoothing=false)`, utána `BlendMode` és `Fade`. Ez követi a `filterdesc.xml` láncát.
+- `PixelateImageOperation`: `effects_artistic.pixelate_centered` (`effects_artistic.py:198`) a natív mag portja. **Csak a `Comicize` hívja** (`effects_artistic.py:392`).
+- `effects_artistic.apply_pixelate` (`effects_artistic.py:122`): cv2-alapú közelítés (`INTER_AREA` + `INTER_NEAREST`, blokk = a rövidebb oldal %-a). A chain nem hívja.
+
+**Visszavonás.** Ebben a körben egy előzetes megállapításom szerint a natív `ceil(W/pw)` rács eltérhet a `Pixelate` effekt `round(W/Impact)` láncától. Ez **téves volt**: a natív mag nem a `Pixelate` effekté. A `Pixelate` effekt összevetését a 5/c és 5/d szakasz végzi.
+
+### 5/f. ⭐ A `Pixelate` effekt Resize-párja, végig (#4908, 2026-10-13)
+
+*Bizonyítottsági fok: lépésenként, lent. Összkép: **nyitott** — nincs olyan natív futás, amely a két Resize-t egymás után, bájtra, a teljes `Pixelate` láncon mérte.*
+
+**A lánc** (`filterdesc.xml:1191`, a `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml` fájlból, szó szerint):
+
+```xml
+<NestedImageOperation BlendAlpha="{1-(_sldrFade.value/100)}" BlendMode="{_sldrBlendMode.value}" ...>
+  <ResizeImageOperation width="{imagewidth/_sldrImpact.value}" height="{imageheight/_sldrImpact.value}" ignoreObjects="true"/>
+  <ResizeImageOperation width="{imagewidth}" height="{imageheight}" smoothing="false" ignoreObjects="true"/>
+</NestedImageOperation>
+```
+
+`_sldrImpact` 2–150, alap 20; `_sldrBlendMode` 0–9, alap 9; `_sldrFade` 0–100, alap 0.
+
+**Lépések:**
+
+**A. Célméret (Impact → egész).** A két méretparaméter float (`imagewidth/Impact`). A kerekítés: `trunc(v + 0,5)` — pontos `.5`-nél felfelé (#4912, `a6de59e4e`). **Bizonyíték: egy út** (a #4912 kiolvasása és a `tests/render/test_pixelate_kerekites_4912.py`). A QEMU-harness nem mérte: az 5/d harness a Resize-munkavégzőt közvetlenül hívta, a méretkonverziót megkerülte. ⇒ **nyitott** (második út kell).
+
+**B. Első Resize — `smoothing=true`, kicsinyítés (doboz).** Mód: a vízszintes cél/forrás `1/Impact ≤ 1` → 0-s doboz (5/c.1). Súlyok: `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé (5/c.2–3). Alkalmazó: `(Σ w·p + 255) >> 14`, vízszintes menet elöl (5/c.4).
+- Út 1 (statikus): `0x00bcb629`–`0x00bcb659`, `0x00a3f660`, `0x00a426a0` (5/c).
+- Út 2 (QEMU): négy méretpárra a `smoothing=true` bájtra egyezik (5/d.B).
+⇒ **megerősített** (két út). Kiegészítés: a Picasa-exporttal a 48×32-es kicsinyítésen a blokkközepek **94,4%-a** bitre egyezik, a többi 5,6% oka **nincs megnevezve** ⇒ **nyitott**.
+
+**C. Második Resize — `smoothing=false`, nagyítás (legközelebbi szomszéd).** A képlet: 5/d.A. A forráskoordináta:
+`q_x(0) = trunc(float32(0,5·s_x)·65536)`, `dx = trunc(s_x·65536)`, `q_x(i) = q_x(0) + i·dx`, `src_x = q_x >> 16`; y-ra `q_y(y) = trunc(float32((y+0,5)·s_y)·65536)`, `src_y = q_y >> 16`. Súly 1, nincs clamp; a képen kívüli index kimarad.
+- Út 1 (statikus): 5/d.A.
+- Út 2 (QEMU): a 5/d.B két mért koordinátasora (5×3→3×2: `x=[0,2,4]`, `y=[0,2]`; 4×2→7×5: `x=[0,0,1,1,2,3,3]`, `y=[0,0,1,1,1]`).
+- Ellenőrzés 2026-10-13: a `resize_image(..., smoothing=False)` (`glimmer_ops.py`, #4188) mindkét sort reprodukálja (Python-próba a munkafán).
+⇒ **megerősített koordináta-szinten.** A pixelszintű natív kimenet a négy méretpárra nincs tárolva; a bitpontos összevetés nyitott.
+
+**D. Láncolás.** A második Resize bemenete az első kimenete (`small`). Ez a két lépés együtt **nincs natívan mérve**. ⇒ **nyitott.**
+
+**E. Kimenet, BlendMode, Fade.** A `glimmer_artistic.apply_pixelate` (`glimmer_artistic.py`) a `BLEND_MODE_BY_INDEX` táblával és a `fade_alpha`-val keveri a bemenettel. A blendmód-tábla a #3443 mérése, nem a Pixelate-lánc natív bájtos mérése. ⇒ **nyitott** a teljes láncra.
+
+#### Eredeti / nálunk / teendő
+
+| lépés | eredeti | nálunk (`glimmer_artistic.apply_pixelate`) | státusz / teendő |
+|---|---|---|---|
+| A. célméret | `trunc(v+0,5)` (#4912) | `int(width / impact + 0.5)` | egy út; natív mérés kell a konverzióra |
+| B. 1. Resize | doboz, `16383`-súlyok, csonkolás | `resize_image(smoothing=True)` | megerősített (két út); export-egyezés 94,4% — 5,6% oka nyitott |
+| C. 2. Resize | 16.16 középpont, csonkolás, súly 1 | `resize_image(smoothing=False)` | megerősített koordináta-szinten (két út) |
+| D. láncolás | nincs natív mérés | két egymás utáni hívás | nyitott |
+| E. BlendMode/Fade | blend-tábla (#3443) | `apply_blend_mode` + `fade_alpha` | nyitott a teljes láncra |
+
+**Nem a Pixelate-lánc:** `effects_artistic.apply_pixelate` (`INTER_AREA` + `INTER_NEAREST`, blokk = a rövidebb oldal %-a) nem a `Pixelate` effekt. A chain a `glimmer_artistic.apply_pixelate`-et hívja (`chain_glimmer_handlers.py:17,195`). A `effects_artistic.apply_pixelate` csak tesztekből hívott.
+
+**Kész, ha (javasolt, a #4908 eredeti „Kész ha”-ja helyett, mert az a `PixelateImageOperation`/Comicize magjára mutat):**
+- [ ] QEMU-futás (`hb.py` harness, a korlát kimondva: a Resize-objektumok kézzel épülnek): a két Resize egymás után, 24×16 és 5×3 képen, `Impact ∈ {2, 3, 4, 20}`, bájtos összevetés `glimmer_artistic.apply_pixelate` előtti `resize_image`-láncával.
+- [ ] Egy `.5`-ös határeset natívan: `W = 5`, `Impact = 2` (2,5) → a natív célméret 3, nem 2.
+- [ ] Export-egyezés: a 5,6%-os blokkeltérés legalább egy okának megnevezése.
+
+#### 5/g. A korábbi sikertelen magpróba helyesbítése (#4908, 2026-10-13)
+
+A korábbi `wpix4908.py` kézzel építette az ImageInfo leírót, de a mezőkiosztása
+hibás volt: a `+0x4` mezőbe pixelmutatót, a `+0x14` mezőbe bájtstride-ot írt.
+A bináris `0x009a8b60` konstruktora szerint a `+0x4` és `+0x8` mező a szélesség,
+`+0xc` a magasság, `+0x10` a pixelmutató, `+0x14` pedig 16 bites módjelző.
+Nulla konstruktor-argumentumnál a módjelző `1`. A `0x00a43000`–`0x00a43010`
+utasításai a `+0x4` értéket sorszámításban használják; a korábbi elrendezéssel
+felépített descriptor ezért nem volt érvényes mérési bemenet.
+
+Az új futás mind a forrás-, mind a célleírót a `0x009a8b60` konstruktorral,
+`(0,0,W,H)` téglalapból építi. A `0x009a8a30`/`0x009a9b30` allokációs út
+létrehozza a pixelterületet. A `0x009a8ca0` másoló hozzárendelő és
+`0x009a8bc0` destruktor a mag belső leíró-életciklusának része. A `HeapReAlloc`
+IAT-hoz a mérő a `hb.py` CRT-shimjeit kiegészítő aréna-shimet használt.
+
+A harness minden esetre meghívja a `0x00bbcf30` műveletkonstruktort, majd
+közvetlenül a `0x00bcdf10` magot; a `0x00bbd150` attribútumolvasó/alkalmazó
+függvényt nem futtatja. A mag a `0x00bcb5e0` Resize-wrapperen át végzi a
+simított kicsinyítést és a simítás nélküli, középre igazított visszanagyítást.
+A kézi descriptorral kapott korábbi összeomlás/üres puffer nem Pixelate-kimenet,
+és nem része az alábbi mérési mátrixnak.
+
+### 5/h. ⭐ A PixelateImageOperation natív bájt-összevetése (#4908, 2026-10-13)
+
+*Bizonyítottsági fok: **feltételes** a mért 19 vektorra.* A descriptor és a
+hívási útvonal utasításszintű olvasása (A) egyezik a natív QEMU-futás belépési
+és kimeneti elrendezésével (B). A bájteredményeket azonban csak a B útvonal méri,
+ezért a kötelező két független út a kimeneti bájtállításra még nincs meg.
+
+**Visszakereshető mérési adat.** A [mérési JSON](../benchmarks/2026-10-13-pixelate-4908-mag.json)
+19 esetben tárolja a BGRA-bemenet, a natív BGRA-kimenet és a javítás előtti
+Python-referencia hex és base64 bájtjait, SHA-256-ait, a leíró adatait, a QEMU visszatérési
+kódját és az összehasonlítás eredményét. A bináris SHA-256:
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`;
+a QEMU `10.0.13`, `pentium3` CPU-profillal futott.
+A mérés minden bemenetre meghívta a `0x00bbcf30` konstruktort és a
+`0x00bcdf10` magot; a mért program a `0x00bcb5e0` wrapper két ágát is végrehajtotta.
+Ez nem a `0x00bbd150` teljes attribútumolvasó/alkalmazó út mérése.
+
+A leíró `(0,0,W,H)` téglalapból, natív `0x009a8b60` konstruktorral készült.
+A binárisból olvasott mezők: `+0x4 = W`, `+0x8 = W`, `+0xc = H`,
+`+0x10 = pixelmutató`, `+0x14 = 16 bites módjelző` (a használt nulla
+argumentumnál `1`), `+0x18/+0x1c = bal/felső origó`, `+0x20 = 0xffffffff`.
+A célképet a mag utáni célleíró `+0x10` mutatójáról olvastuk; mind a 19
+státusz nulla, a mutató nem nulla, és a visszaolvasott méret `W×H×4` bájt.
+Az arénát `0xa5`-tel előtöltő mátrix a sakktáblás esetben kiegészítő
+cáfoló kontrollt kapott: azonos futás nulla-aréna-előtöltéssel is ugyanazt a
+140 bájtot adta, és az `0xa5`-es ismétlés is bitre azonos volt.
+
+**Mérőmátrix és eredmény.** A véletlen BGRA-bemeneteket rögzített
+`random.Random` magok készítették (`4908`, `4909`, `4910`); mindhárom
+méretnél hat blokkpár szerepelt: `(2,2)`, `(3,3)`, `(4,4)`, `(8,8)`,
+`(2,3)`, `(3,2)`. A 7×5 mérethez egy sakktáblás `(2,3)` cáfoló bemenet is
+hozzáadódott. A Python-referencia első három csatornája közvetlenül a
+`pixelate_centered`-en futott; az alfa-csatornát három azonos szürke síkként
+adtuk át, majd az eredmény első síkját használtuk. Ez illeszkedik a függvény
+3-csatornás bemeneti szerződéséhez.
+
+| bemenet | eset | egyező | eltérő | eltérő bájt |
+|---|---:|---:|---:|---:|
+| 7×5 (hat véletlen + sakktábla) | 7 | 7 | 0 | 0 / 980 |
+| 16×16 | 6 | 6 | 0 | 0 / 6144 |
+| 33×17 | 6 | 6 | 0 | 0 / 13464 |
+| **összesen** | **19** | **19** | **0** | **0 / 20588** |
+
+**Az eltérés oka és a határesetek.** A négy kezdeti eltérés mind a köztes
+vízszintes kicsinyítés ugyanazon cellájában jelent meg; a visszanagyítás
+rácshatárai mindkét kimenetben azonosak voltak. A natív sorrend a cél/forrás
+arányt float32-be kerekíti, ennek reciprokát külön float32-be tárolja, majd a
+tap távolságát ismét a cél/forrás aránnyal skálázza. A 7→4 aránynál a tárolt
+értékek `0x3f124925` és `0x3fdfffff`; a kimeneti 2. cella bal oldali tapja
+`−0,49999976`, így a natív szigorú `< 0,5` kernelvizsgálat beengedi. A 7→2
+esetben ugyanez `0x3e924925` / `0x405fffff` és `−0,49999988`. A Python eddig
+közvetlenül osztotta a forrásméretet a célmérettel, így 1,75 illetve 3,5
+értéket kapott, és kizárta ezt a tapot.
+
+A függőleges határesetet is lefedi a 19 vektor: 5→2-nél a cél/forrás arány
+`0x3ecccccd`, reciprokja pontosan 2,5, a határtávolság pedig pontosan
+`−0,5`; a natív szigorú összehasonlítás ezt kizárja. Ezért a javítás a natív
+float32 műveleti sorrendet követi mindkét tengelyen; a vízszintes 7-es
+szélességből adódó reciprok-kerekítés önmagában hozza be az alsó tapot.
+Az új számítás az eredeti 19 vektor mindegyikén 0 eltérő bájtot ad.
+
+#### Eredeti / nálunk / teendő
+
+| lépés | eredeti | nálunk (`effects_artistic.pixelate_centered`) | státusz / teendő |
+|---|---|---|---|
+| képleíró | `0x009a8b60`; `+0x10` kimeneti pixelmutató | NumPy képtömb | natív leíróval fut; JSON-ban a leíró és mindhárom bájttömb szerepel |
+| simított kicsinyítés | `0x00bcb5e0`, smoothing=1 | `resize_image(..., smoothing=True)` és a natív float32 aránymenet | a közvetlen forrás/cél osztás helyett a cél/forrás float32 arány float32 reciproka adja a középpontot; mind a 19 vektor egyezik |
+| középre igazított visszanagyítás | `0x00bcdf10`, smoothing=0 ág | `_kozepre_racs` | a végső kimenet a fenti méret/pár szerinti eredményt adja; önálló köztes puffer nincs mérve |
+| bájtos összevetés | natív BGRA | RGB + külön kezelt alfa, `pixelate_centered` | 19/19 egyezik; minden bemenet és elvárt kimenet a `tests/render/data/pixelate_4908_native.json` fájlban is rögzítve |
+
+**Kész, ha — az eredeti jegypont visszaellenőrzése:**
+- [x] A natív `0x00bcdf10`/`0x00bbcf30` QEMU-futás mind a 19 eseten sikeres (`qemu_rc=0`, magstátusz `0`, érvényes célmutató).
+- [x] A kis képek natív kimenetét bájtról bájtra összevetettük a `pixelate_centered`-del; minden bemenet, mindkét kimenet és SHA-256 a mérési JSON-ban van.
+- [x] A natív kimenetek bájtpontos egyezése a 19 rögzített tesztvektoron; a négy korábbi eltérés oka azonosított és javított.
+- [ ] A kért egyparancsos, tartós harness mentése a `~/picasapy-agent/eszkozok/qemu_harness/pixelate_4908_mag.py` útvonalra — ebben a munkamenetben az útvonal a sandbox írható területén kívül van; a méréshez használt szkript csak a munkafa ideiglenes `.bt/` könyvtárában volt.
+
+#### 5/g.1. (Felülírva az 5/h-val) Mag-összevetés újrapróba (#4908, 2026-10-13, második kör) — nincs bájtos eredmény
+
+*Bizonyítottsági fok: a kódolvasás és a harness-hiba megerősített; a bájtos összevetés **nem készült el** (nincs natív pixelkimenet, sem egyezés, sem eltérés).*
+
+**Mit csináltunk.** A `qemu-i386` harnessben (`eszkozok/qemu_harness/wpix4908.py`, a `hb.py`-ra épülve) a `0x00bcdf10` magot cdecl `(img, pw, ph, dst)` alakban hívtuk, 5 × 3-as véletlen BGRA-képpel, rögzített maggal, `pw = ph = 2` mellett. A `pixelate_centered` összevetéshez nem futott le, mert a mag nem adott pixelkimenetet.
+
+**Megállapítások (kódolvasásból, `pdis`):**
+- A mag törzse (`0x00bcdf10`–`0x00bce2e4`) **nem tartalmaz MMX-utasítást**; a skalár/SIMD ágat a hívott resampler dönti el, azt ebben a körben nem mértük.
+- A `dst` (4. argumentum) egy ImageInfo-szerű objektum. Ha `[dst+0x10] == 0`, a mag `0x00bce27d`–`0x00bce292` úton **azonnal `eax = 4`-gyel tér vissza, és nem ír a célpufferbe**. Ez magyarázhatja az előző kör érintetlen `0xA5` pufferét, ha a dst-mező nulla volt; a benchmark JSON a dst-mezőket nem rögzíti, ezt nem tudtuk ellenőrizni.
+- A mag `0x00bcb5e0` wrapperen át egy átméretező-objektumot épít (`0x009bd2e0`, `0x00a422xx`); ennek a belső objektumának mezőit (`[ebp+0x6c…0x90]`) a harness nem építi fel.
+
+**Harness-hiba, amit megtaláltunk:** a `HeapReAlloc` import (`KERNEL32`, IAT-index 64) a harnessben nem volt kezelve, ezért a `iat_common` (`0x10000300`) kilépett `99`-cel. A wpix4908.py ehhez egy bump-arénás `HeapReAlloc` shimet ad (`0x3a0`, a `CRT_SHIM_ASM` arénájával).
+
+**Ami után a futás még összeomlik:** a shim után a futás `SIGSEGV`-vel áll meg a `0x00a422xx` átméretező-ágban (a `0x009bd2e0` hívás után). A `dst` stride-mező (`+0x14`) bájt- és elemszám-változatán is ugyanez a hiba. A `wq.py` (QuantizePalette, a #626-os előző kör) szintén `SIGSEGV`-vel omlik össze, más címen (`0x00bcb2f0`); hogy ez ugyanaz a hiba, nem bizonyított.
+
+**Következő lépés (blokkoló, nem kutatás-kimerülés):** a `0x00bcb5e0` wrapper `this`/`ebp` objektumának pontos felépítése (a `0x009a8b60`/`0x009a8ca0`/`0x009a8bc0` inicializálók és a `dst`-objektum élettartama) — ehhez Ghidra-kör vagy a `0x00a422xx` átméretező-objektum kódolvasása kell. A három kész-feltétel közül a `.5`-határeset és az export-egyezés ebben a körben nem változott; a natív `0x00bcdf10` bájtos összevetés **nyitott**.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
@@ -9844,13 +10650,67 @@ egyezési állításnak.
 az összevetés észleli az előjelcserét; a 24 egyezés nem szimmetrikus mintából
 adódó ál-egyezés.
 
-**A próba határa:** a QEMU-wrapper közvetlenül a pixelmagot és külön a
-méretsegédet futtatta. A `0x00bb5640` teljes Glimmer-Apply útját (az XML
-attribútum-beolvasástól a transzformmátrix felépítéséig) ebben a körben nem
-futtattam; a szögkonverziót és mátrix-összeállítást az utasításszintű
-levezetés támasztja alá (`0x00bb5730`, `0x00bc8060`, `0x009e6340`). Ezért a
-natív pixelmag és a méretképlet megerősített, az integrált Apply-út bájtszintű
-QEMU-goldenje **nincs meg**.
+**A próba határa:** ez a 2026-10-04-i QEMU-futás közvetlenül a pixelmagot és
+külön a méretsegédet hívta. Az integrált Apply-út kontrollált attribútumokkal
+2026-10-07-én szintén lefutott; a következő alpont tartalmazza az eredményét.
+
+### Integrált Glimmer-Apply QEMU-golden (2026-10-07, #626)
+
+**Bizonyítottsági fok: megerősített a Polaroid-leíró által használt Rotate-útra.**
+A független A út az utasításolvasat: az RTTI szerinti vtable
+`0x00cefefc + 0x18` címen levő, 0-indexű 6. slotja `0x00bb5640`;
+`0x00bb5730` a `radAngle` hiányában a
+`degAngle`-t olvassa és fokból radiánt készít; `0x00bb5640` a kitöltőszínt,
+`flipH`, `flipV` és `padBorder` értékeit adja a `0x00bc8060` mátrixépítőnek.
+Az a `0x00bcb5e0` wrapperen át a forgatásos mátrixnál a `0x009e6df0`/
+`0x009e7060` általános affine-mintavételt hívja, `smoothing=1`-gyel.
+
+A független B út `qemu-i386` alatt az eredeti `0x00bb5640` Apply-tól a
+`0x00bc8060` mátrixépítőn keresztül a natív mintavevőig futott. A harness
+csak a `0x008ef520` attribútum-kiértékelőt helyettesítette determinisztikus
+próbastubbal; a Rotate Apply, a mátrixépítő és a mintavevő eredeti kód maradt.
+Az input 5×4 BGRA kép volt, csatornái `(x,y)` szerint
+`B=(31x+13y+21)&255`, `G=(11x+37y+41)&255`, `R=(53x+7y+91)&255`, `A=255`.
+Az attribútumok `radAngle` hiányzó, `degAngle=+10°`/`−10°`,
+`borderColor=0x00E2593D`, `padBorder=true`, `flipH=flipV=false` értéket
+adtak. Mindkét QEMU-kimenet 5×4 lett, és mindkettő BGR-csatornái **0 bájtban**
+tértek el a `rotate_with_pad` kimenetétől; a két előjelű QEMU-kimenet egymástól
+**60 BGR-bájtban** tért el.
+
+A kitöltés és méretezés külön cáfoló kontrollja ugyanazzal a bemenettel:
+`+30°` és `−30°` esetén mindkét natív cél 6×5; a BGR-kimenet mindkettőnél
+0 bájtban tért el a helyi `rotate_with_pad`-tól, és a két natív kimenet
+78 BGR-bájtban különbözött, tehát a téves előjelű kimenet nem illeszkedik.
+A `+30°` szélső pixeljeiben a natív kitöltőszín
+`(0x3d,0x59,0xe2)` jelenik meg, tehát a `borderColor` csatornasorrendje is
+egyezik a helyi BGR-kitöltéssel. A korábbi 24 natív pixelmag-próbával együtt
+ez a QEMU-út a rácsméretet, az előjelet, a kitöltést és a Polaroid által
+használt mátrixutat is ellenőrzi.
+
+A natív QEMU-kimenetek visszakereshető azonosítói (a 40 bájtos CImage-leíró
+nélküli BGRA-pixelpuffer SHA-256-a):
+
+| `degAngle` | natív kimenet | SHA-256 |
+|---:|---:|---|
+| `+10°` | 5×4 BGRA | `32fdbab991b421daacddb72b014256cac0716ab095c881f9611d65d2e290abf0` |
+| `−10°` | 5×4 BGRA | `13a5521f416364e2cd6af529d03a1e8783285e7c40b899a4963c21d66b7f3ea0` |
+| `+30°` | 6×5 BGRA | `df623a19ac790d5bc5fb144288687aaf247b3e1811e4e9317016d458e1b9ea9c` |
+| `−30°` | 6×5 BGRA | `43a0af5a3a73befa16acdc5e5655ca5bdf39f11988fa70b19798f62befb12bc1` |
+
+| **Eredeti** | **Nálunk** | **Teendő** |
+|---|---|---|
+| `degAngle` → radián; `padBorder` mellett csonkolt forgatott befoglaló méret; képpontközepes mátrix; 8 bites fixpontos bilineáris mintavétel; üres sarkokban `borderColor` (`0x00bb5730`, `0x00bc7ca0`, `0x00bc8060`, `0x009e7060`) | `rotate_with_pad` + `fixpontos_bilinearis`; a teljes Apply QEMU-golden a `+10°`, `−10°`, `+30°`, `−30°` kontrollokon 0 BGR-eltérés | **Nincs javítási teendő** a Polaroid út pixelmatematikáján; ezek a paraméterek a jelenlegi kódot igazolják. |
+| Az általános művelet opcionális `flipH`/`flipV` tagokat is olvas (`0x00bb5270`, `0x00bb5640`) | A Polaroid út nem ad meg ilyen attribútumot; a QEMU-próbában mindkettő hamis. Külön kontrollban a `flipV` tükörképe 0 bájtban, a `flipH`/mindkettő tükörképe 1 BGR-bájtban tért el (`+10°`, 5×4; egy eltérő vörös bájt: 54 helyett 55). | A kiadott Polaroid-recepthez nem szükséges. Ha egy jövőbeli recept flipet használ, a `0x00bc8060` mátrixszorzási sorrendjét külön golden-méréssel kell lezárni. |
+
+**A kontroll korlátja:** a QEMU a natív attribútum-kiértékelő helyett próbastubbal
+adta a fenti pontos attribútumértékeket; ezért az XML-kifejezések futásidejű
+kiértékelése **NINCS MEG** ebben a futásban, és nem része ennek a
+pixelmatematikai állításnak. A `flipH`-t is használó, nem kiadott általános
+receptnél a leírt 1 bájtos eltérés oka és teljes pixelpontos modellje szintén
+**NINCS MEG**. Következő konkrét lépés ilyen recept megjelenésekor: a
+`0x00bc8060` mátrixépítő flipágát több méret/szög QEMU-rácsán összevetni a
+`0x009e6340` mátrixszorzás pontos sorrendjével; a mostani eltérés a `+10°`,
+5×4 kontrollban egy vörös bájt (54/55). A Polaroid leíróban nincs flip attribútum.
 
 ### Mérve
 
@@ -10668,8 +11528,10 @@ Ugyanennek a forrásnak a `draw_border()`-rel előállított PicasaPy RGB-képe
 20,506, maximum 180). Ez a **#4123 előtti, történeti alapmérés**: natív
 `(y=1,x=1)=180,180,180`, PicasaPy `0,0,0`; natív `(1,2)=255,255,255`,
 PicasaPy `143,143,143`. A #4123 óta a `_sarok_fedes()` már a natív 16.16-os
-képletet és packed-csatornasorrendet követi; a mostani, 2026-10-05-i
-újramérés 30/81 eltérést talált, a részletek az I) szakaszban vannak.
+képletet és packed-csatornasorrendet követi; a 2026-10-05-i 30/81 eredmény
+az akkori forrásállapot történeti mérése. A 2026-10-06-i közvetlen mérés a
+jelenlegi függvénnyel mindhárom QEMU-goldenre teljes egyezést adott (I.4/b,
+valamint az alábbi 5–6. pont).
 
 #### 5. Export-összevetés és fok
 
@@ -10700,16 +11562,21 @@ paramétereire (utasítások + az eredeti gépi kód futtatása; a pontos hívó
 a §I.4-ben).
 
 **A #626 leltár Border-sora:** `Border | 4 effekt | feltételes |` a natív
-képlet, alfaút és a két ív paraméterezése megerősített; a PicasaPy jelenlegi
-9×9 kimenete 30/81 pixelben eltér, a javított 81/81 egyezés és az általános
-implementáció még nincs.
+képlet, alfaút és a két ív paraméterezése megerősített. A jelenlegi
+`draw_border()` mindhárom rögzített QEMU-goldennel teljesen egyezik
+(5×5→9×9, 7×7→13×13, 9×8→15×14); a három konkrét mérésen túli
+méret-/sugártartomány általános egyezése továbbra sincs mérve.
 
 #### Nyitott, célzott fejlesztői irány
 
-A két ív natív `q`, `rᵢ²`, `rₒ²` paramétere lezárva a §I.4-ben. A következő
-lépés a `_sarok_fedes_negyed`/`_sarok_folt` átírása a két külön natív q-rácsra,
-majd a 5×5→9×9 PicasaPy-golden 81/81 pixelre ellenőrzése; az implementáció
-még nem készült el.
+**Helyesbítés (2026-10-06):** az előző fejlesztői javaslatot a jelenlegi
+forrásállapot mérése felülírja. A `draw_border()` a három rögzített natív
+QEMU-goldennel bájtra egyezik, ezért ezekre a mintákra sem átírás, sem
+javítás nem indokolt. A három mintán túli méret-/sugártartomány általános
+igazolása nyitott; ha ezt le akarjuk zárni, a következő mérés a már rögzített
+`0x00bbe570` QEMU-harnesssel egy új, nem négyzetes forrásméret és új
+`R/inner/outer` kombináció teljes pufferét hasonlítsa össze a
+`draw_border()` kimenetével.
 
 ### G) ⭐ A `SimpleColorMatrix` hue-forgató mátrixa (2026-09-19, #626)
 
@@ -11147,16 +12014,13 @@ Ez ellenőrzi, hogy a harness a stride-egység hibájára érzékeny. Nem bizony
 hogy ez okozta a korábbi 16/81 eltérést; annak akkori pontos oka **NINCS MEG**.
 
 **Bizonyítottsági fok:** `megerősített` a fenti Border-worker útban használt
-mezőkiosztásra és az alapgoldenre: az utasításszintű címzés és az eredeti
-QEMU-kimenet egyezik. A két további teljes kimenet pontos natív goldenként
-rögzített mérés; a PicasaPy `draw_border()`-rel való egyezésük még nincs
-megmérve. A leíró egyéb mezőinek és külön formátumjelzőjének szemantikája
-nyitott marad.
+mezőkiosztásra és mindhárom natív goldenre: az utasításszintű címzés, az
+eredeti QEMU-kimenet és a jelenlegi `draw_border()` kimenete egyezik. A
+leíró egyéb mezőinek és külön formátumjelzőjének szemantikája nyitott marad.
 
 **Nyitott:** a `+0x16`, `+0x20`, `+0x24` mezők pontos szemantikája/élettartama,
-az esetleges külön pixel-formátumjelző, a régi `16/81` harness-eltérés pontos
-oka, valamint a három golden `draw_border()`-rel való összevetése. A vizsgált
-mezők követéséhez Ghidra-dekompilálás nem kellett.
+az esetleges külön pixel-formátumjelző és a régi `16/81` harness-eltérés
+pontos oka. A vizsgált mezők követéséhez Ghidra-dekompilálás nem kellett.
 
 #### 🔁 A CImage-leíró vak, független ellenőrzése
 - **bíráló:** külön kódolvasás a binárisból és az indexből, a spec és a PicasaPy-forrás megtekintése nélkül
@@ -11172,23 +12036,26 @@ mezők követéséhez Ghidra-dekompilálás nem kellett.
 
 #### 5. Eredeti / nálunk / fejlesztői teendő
 
-| | Eredeti, mérve | PicasaPy, olvasva | Teendő |
+| | Eredeti | Nálunk | Teendő |
 |---|---|---|---|
-| Pixelkimenet | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa az I.1-ben; a külső sáv `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok kompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. Az eredeti workerből az I.4/b három teljes, SHA-256-tal rögzített golden kimenetet mér. | A jelenlegi `src/picasapy/render/glimmer_frame_ops.py::draw_border()` olvasásakor külön `_border_q_racs` készül a külső és forrásívhez, a függvény a forrás `R`-t és a belső vastagságból számolt `K`-t használja, és külön kompozitálja a sarkokat. E körben ezt a függvényt nem futtattam; a korábbi 30/81 mérés nem bizonyítja a mostani forrásállapot eredményét. | Hasonlítsd össze a függvény RGB-kimenetét az I.4/b három natív goldenjének RGB-csatornáival: `5×5, R=2, B=1, O=1 → 9×9`; `7×7, R=3, B=1, O=2 → 13×13`; `9×8, R=4, B=2, O=1 → 15×14`. **Kész, ha** mindháromnál minden RGB-csatorna egyezik (sorrendben 243/507/630 csatorna); az eltérést koordinátánként rögzítsd, és csak a binárisból igazolt eltérő műveletet módosítsd. |
+| Pixelkimenet | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa az I.1-ben; a külső sáv `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok kompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. Az eredeti `0x00bbe570` workerből I.4/b-ben három, SHA-256-tal rögzített QEMU-kimenet készült. | Közvetlen mérés: a mostani `src/picasapy/render/glimmer_frame_ops.py::draw_border()` kimenete a három eredeti QEMU-pufferrel bájtra egyezik: 5×5, `R=2,B=1,O=1` → 9×9: 243/243 RGB-csatorna; 7×7, `R=3,B=1,O=2` → 13×13: 507/507; 9×8, `R=4,B=2,O=1` → 15×14: 630/630. A rekonstruált opaque ARGB-pufferek SHA-256-a is egyezik az I.4/b hash-eivel. Mérő: közvetlen függvényhívás az I.4/b golden-adatain; nem pytest-futtatás. | E három bemenetre nincs további kódteendő. Az I.4/b elfogadási feltétele teljesült. A három mintán kívüli méret-/sugártartományra ne általánosítsunk mérés nélkül. |
 | Alfa | Az `aa1840` részleges maszkján `Aₑ=(255·C)>>8`; a `9ab360` a forrássarokmaszk kimenetén ezt az értéket teszi a maszk alfa-bájtjává. Az `8f4810` végső dwordjének alfa-bájtja `0xff`. | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol; `_sarok_fedes` RGB-súlyt számol. | Tartsd külön a fedési súlyt, az `aa1840` ARGB-maszkját, a `9ab360` maszkátalakítását és a forráskép `8f4810`-es kompozitálását. A RGB `draw_border()`-től ne kérj alfa megőrzést. |
 
-#### 6. A teljes 9 × 9 Border-minta: történeti eltérés, jelenlegi ellenőrzés nyitott
+#### 6. A Border-goldenek: a régi eltérés történeti, a három mostani minta egyezik
 
-A korábbi összevetésben az 5×5-ös `0xff204060` forrás, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítású natív 9×9 kimenettől a PicasaPy RGB **30/81 pixelben** tért el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ebből 18 eltérés a külső keretívben, 12 a forrássarok-ívben volt; ezek történeti mérési értékek, nem a most olvasott `draw_border()` futásának eredményei. A korábbi elemzés a félpixeles sugár-/középpontmodellt és a tükrözött negyedet azonosította, míg a #4300 külső `q=2128` pontján ettől külön a `K` kerekítése is egy szintnyi eltérést okozott. A jelenlegi forrásállapot teljes golden-egyezése nincs újramérve.
+Az előző összevetésben az 5×5-ös `0xff204060` forrás, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítású natív 9×9 kimenettől a PicasaPy RGB **30/81 pixelben** tért el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ez történeti eredmény, nem a mostani forrásállapot mérése. 2026-10-06-án a jelenlegi `draw_border()`-t közvetlenül összehasonlítottam az I.4/b eredeti QEMU-goldenjeivel: az 5×5→9×9 minta 81/81 pixelben, a 7×7→13×13 minta 169/169-ben, a 9×8→15×14 minta 210/210-ben egyezik; rendre 243/243, 507/507 és 630/630 RGB-csatornán. Mindhárom rekonstruált opaque ARGB-puffer SHA-256-a az eredeti QEMU-golden hash-e. A korábbi eltérések tehát a korábbi implementáció-/mérési állapotot írják le.
 
 - **Külső keretív, 18 pixel:** `(1,1)`, `(1,2)`, `(1,3)`, `(1,5)`, `(1,6)`, `(1,7)`, `(2,1)`, `(2,7)`, `(3,1)`, `(3,7)`, `(5,1)`, `(5,7)`, `(6,1)`, `(6,7)`, `(7,2)`, `(7,3)`, `(7,5)`, `(7,6)`. Ezeket a belső színű keret külső, lekerekített ívének fedési súlya okozza.
 - **Forrássarok-ív, 12 pixel:** `(2,2)`, `(2,3)`, `(2,5)`, `(2,6)`, `(3,2)`, `(3,6)`, `(5,2)`, `(5,6)`, `(6,2)`, `(6,3)`, `(6,5)`, `(6,6)`. Ezeket a forrásképet vágó belső ív fedési súlya okozza.
 
-A #4123 előtti 29/81 eltérés mind megmaradt; az új, 30. eltérés `(3,6)`: natív `[46,76,106]`, PicasaPy `[45,75,105]` (csatornánként −1). A 29 régi eltérést a külső keretív/forrássarok-maszk koordinátacsoportok és a hozzájuk tartozó feltételezett `q`-térkép osztályozza, de az egyes pontok pontos natív súlyát csak a fenti hívóargumentumok levezetése dönti el.
+A fenti koordinátalisták kizárólag a korábbi 30/81 eltérésre vonatkoznak;
+a 2026-10-06-i három aktuális összevetésben nincs eltérő képpont.
+
+**Történeti adat a #4123 előtti forrásállapotból:** a korábbi 29/81 eltérésből 29 megmaradt, és a 30. eltérés `(3,6)` volt: natív `[46,76,106]`, PicasaPy `[45,75,105]` (csatornánként −1). A régi eltéréseket a külső keretív/forrássarok-maszk koordinátacsoportok és a hozzájuk tartozó feltételezett `q`-térkép osztályozta; az egyes pontok pontos akkori natív súlya nem lett lezárva. Ez nem a jelenlegi `draw_border()` három QEMU-goldenhez végzett mérésének eredménye.
 
 A `tests/render/test_glimmer_frame_ops_4122.py::_native_q_racs()` középpontja `(127/32, 7/2)`, a négyzetes sugarai `7.5/12.5`; a teszt saját kommentje szerint ezeket **a kimeneti mintából vezette vissza**. Ezek az értékek nem bináris forrású bizonyítékok, ezért nem használhatók a külső keretív és a forrássarok-ív eltéréseinek megmagyarázására.
 
-**Bizonyítottsági fok:** `megerősített` a korábbi, rögzített 5×5-ös natív mintán mért paraméterekre, q-rácsra, fedési képletre és alfa-útra. Az I.4/a hívóparaméter-próbáiban az utasításszintű út és a natív belépési napló egyezik; az I.4/b-ben a helyes leíróval a natív alapminta teljes puffere bájtra egyezik, két további minta pedig natív golden. A most olvasott `draw_border()`-ről nincs friss golden-összevetés.
+**Bizonyítottsági fok:** `megerősített` a pixelképletre, alfa-útra és a három rögzített bemenetre: A) az `0x00bbe320`, `0x00bbe570`, `0x00aa13b0`, `0x00aa1840`, `0x009ab360` és `0x008f4810` utasításolvasata; B) az eredeti gépi kód QEMU-futtatásából származó I.4/b goldenek; C) a jelenlegi `draw_border()` közvetlen mérése, amely mindhárom puffert bájtra visszaadja. A/B a natív pixelmatematikában egyezik; a PicasaPy-kimenet mindhárom megadott méreten hozzájuk egyezik. A három eseten kívüli általános méret-/sugártartomány **nincs mérve**.
 
 **Cáfoló próba:** azt ellenőriztem, hogy a `0x00aa1840` maga állítja-e `0xff`-re a perem alfáját. Átlátszó célrétegben a qemu-kimenet részleges alfái megmaradnak (például `(0,4)=0x01`, `(3,1)=0x15`); csak az opaque black cél fölötti `0x009ab410` után lesz a kimeneti alfa `0xff`. A hipotézis cáfolva.
 
@@ -11200,10 +12067,17 @@ ez cáfolja a korábbi visszavezetett paraméterezést. Tükrözési kontrollké
 a natív külső felső q-sor szélei `2048` és `2128`, a forrásé `512` és `560`,
 tehát egyetlen bal felső maszk tükrözése sem adja a natív négy sarkot.
 
-**Nyitott:** a `draw_border()` jelenlegi forrásállapotának három golden-
-összevetése és az általános q-rács további méret-/sugár-eseteken való teljes
-pixel-igazolása. Az I.4/b új kimenetei elfogadott natív mérések; a PicasaPy-
-megfeleltetésük nincs megmérve.
+**Friss cáfoló kontroll (2026-10-06):** a közvetlen mérésben a q-rács
+x-meredekségét futás közben `240`-ről `0`-ra változtattam. Az 5×5-ös eset
+azonnal 18/81 pixelben eltért az eredeti QEMU-goldentől, a rekonstruált
+ARGB-hash `2e8ce6b9618305e5aa9d97bce2dd2dbfda3a81b94d61580f796cf482477a418a`
+lett. A hibás kontroll tehát nem őrzi meg az egyezést; a kísérlet csak a
+mérő érzékenységét ellenőrzi, nem a natív képlet bizonyítéka.
+
+**Nyitott:** a q-rács teljes egyezése a három mért bemeneten kívüli
+méret-/sugár-eseteken, valamint a korábban felsorolt, pixelkimenethez nem
+szükséges `+0x16`, `+0x20`, `+0x24` mezők teljes szemantikája. A három
+I.4/b QEMU-golden jelenlegi `draw_border()`-megfeleltetése lezárult.
 
 #### #4300 — a két egy szintes pont teljes natív útja (2026-10-06)
 

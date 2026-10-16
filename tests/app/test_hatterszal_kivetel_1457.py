@@ -39,8 +39,12 @@ MEGMONDJA, melyik kivétel az; eddig a fatális abort elvitte magával.
 
 from __future__ import annotations
 
+import asyncio
+from concurrent.futures import CancelledError as FutureCancelledError
 import logging
 import threading
+
+import pytest
 
 from picasapy.app.worker_thread import (
     BackgroundWorkerMixin,
@@ -115,3 +119,93 @@ class TestAKivetelNemSzallElA_stderr_re:
             lambda: eredmeny.append("lefutott"), name="proba-2"
         ).join(5.0)
         assert eredmeny == ["lefutott"]
+
+    def test_a_normal_workerhiba_eljut_az_owner_error_callbackhez(self) -> None:
+        """A mixin ne csak naplózza: az owner kapja meg az eredeti kivételt."""
+        vezerlo = _Vezerlo()
+        hiba = ValueError("diagnosztikához megtartandó hiba")
+        latott: list[Exception] = []
+
+        def robban() -> None:
+            raise hiba
+
+        szal = vezerlo._start_background(
+            robban,
+            name="proba-owner-hiba",
+            on_error=latott.append,
+        )
+        szal.join(5.0)
+
+        assert not szal.is_alive()
+        assert latott == [hiba]
+        assert type(latott[0]) is ValueError
+
+    @pytest.mark.parametrize(
+        "cancellation",
+        (asyncio.CancelledError, FutureCancelledError),
+    )
+    def test_a_megszakitas_nem_hiba_es_nem_hivja_az_owner_callbacket(
+        self, cancellation
+    ) -> None:
+        vezerlo = _Vezerlo()
+        latott: list[Exception] = []
+
+        def megszakitva() -> None:
+            raise cancellation("felhasználó megszakította")
+
+        szal = vezerlo._start_background(
+            megszakitva,
+            name="proba-megszakitas",
+            on_error=latott.append,
+        )
+        szal.join(5.0)
+
+        assert not szal.is_alive()
+        assert latott == []
+        assert vezerlo.takeBackgroundWorkerErrors() == ()
+
+    def test_a_callback_hibaja_sem_jut_el_a_threading_excepthookig(
+        self, caplog, capfd
+    ) -> None:
+        # A globális `threading.excepthook` cseréje helyett (#1375) azt
+        # nézzük, amit az alapértelmezett excepthook tenne: kijutó kivételnél
+        # „Exception in thread” kerülne a hibakimenetre.
+        vezerlo = _Vezerlo()
+
+        def hibas_callback(_error: Exception) -> None:
+            raise RuntimeError("a callback is hibázott")
+
+        with caplog.at_level(
+            logging.ERROR, logger="picasapy.app.worker_thread"
+        ):
+            szal = vezerlo._start_background(
+                lambda: (_ for _ in ()).throw(ValueError("workerhiba")),
+                name="proba-hibas-callback",
+                on_error=hibas_callback,
+            )
+            szal.join(5.0)
+
+        assert not szal.is_alive()
+        assert "Exception in thread" not in capfd.readouterr().err
+        assert "a callback is hibázott" in caplog.text
+
+    def test_handler_nelkul_is_lekerdezheto_a_strukturalt_workerhiba(self) -> None:
+        vezerlo = _Vezerlo()
+        hiba = OSError("nincs olvasási hozzáférés")
+
+        def hibas_munka() -> None:
+            raise hiba
+
+        szal = vezerlo._start_background(
+            hibas_munka,
+            name="proba-strukturalt-hiba",
+        )
+        szal.join(5.0)
+
+        assert not szal.is_alive()
+        failures = vezerlo.takeBackgroundWorkerErrors()
+        assert len(failures) == 1
+        assert failures[0].worker_name == "proba-strukturalt-hiba"
+        assert failures[0].exception_type == "OSError"
+        assert failures[0].message == "nincs olvasási hozzáférés"
+        assert vezerlo.takeBackgroundWorkerErrors() == ()

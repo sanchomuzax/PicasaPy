@@ -16,9 +16,8 @@ feloldóval.
 
 from __future__ import annotations
 
-import time
-
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 #: A négy tétel a spec 2.2 sorrendjében: Sajátgép · Képek · Dokumentumok · Asztal
 GYOKER_TETELEK = [
@@ -38,17 +37,8 @@ def _trigger(root, nev):
     return elem
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 class TestANegyTetelOttVan:

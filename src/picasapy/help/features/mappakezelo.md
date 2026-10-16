@@ -50,8 +50,10 @@ Az **OK** megnyomásakor a program megkérdezi: „Biztosan eltávolítja az
 
 > A jelölés akkor is megmarad, ha **később visszakapcsolod** az
 > arcfelismerést a mappára: a már megjelölt képeken a keresés nem indul
-> újra. Az eredeti Picasa is így viselkedik. A jelölés visszavonására ma
-> nincs parancs a felületen.
+> újra. Az eredeti Picasa is így viselkedik. Egy mappa
+> egészére a jelölés visszavonására nincs parancs; a kijelölt képeken a
+> **Kép ▸ Arcok alaphelyzetbe állítása** törli az arcokat és a jelölést is,
+> majd a program újra megkeresi őket.
 
 ### Ha nem sikerül felvenni
 
@@ -83,9 +85,10 @@ A mappára jobbgombbal kattintva:
   **Kijelölés törlése**
 - **Mappa rendezése** — dátum, név, méret, fordított sorrend
 - **Indexképek frissítése** — újraolvassa a mappát
-- **Mappaleírás szerkesztése…** — név, dátum, hely és leírás; a mappához
-  zene is választható a diavetítéshez és a filmhez (a megnyitott mappára
-  ugyanez a **Mappa ▸ Leírás szerkesztése…** menüpontból is)
+- **Mappaleírás szerkesztése…** — a **Mappa tulajdonságai** ablak: név (itt
+  át is nevezheted a mappát), dátum, zene a mappa diavetítéséhez és
+  filmjéhez, és leírás (a megnyitott mappára ugyanez a **Mappa ▸ Leírás
+  szerkesztése…** menüpontból is). Részletek: [A könyvtár](konyvtar.md)
 - **Mappa elrejtése** / **Mappa megjelenítése**
 - **Keresés a lemezen** — megnyitja a fájlkezelőben
 - **Áthelyezés gyűjteménybe** — meglévőbe vagy újba

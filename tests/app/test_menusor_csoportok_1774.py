@@ -317,8 +317,7 @@ def _alak() -> dict[str, list[str]]:
             fajta = jel.split()[0]
             reszlet = forras[talalat.end() : talalat.end() + 700]
             if fajta in ("Menu", "PicasaMenu"):
-                cim = re.search(r'title:\s*qsTr\("([^"]*)"\)', reszlet)
-                felirat = cim.group(1) if cim else "?"
+                felirat = _qstr_felirat(reszlet, "title") or "?"
                 if not verem:
                     menuk.append((felirat, []))
                 elif len(verem) == 1:
@@ -326,8 +325,8 @@ def _alak() -> dict[str, list[str]]:
                 verem.append(melyseg)
             else:
                 if len(verem) == 1:
-                    szoveg = re.search(r'text:\s*(?:qsTr\("([^"]*)"\)|bar\.(\w+))', reszlet)
-                    menuk[-1][1].append((szoveg.group(1) or szoveg.group(2)) if szoveg else "?")
+                    szoveg = _qstr_felirat(reszlet, "text")
+                    menuk[-1][1].append(szoveg if szoveg else "?")
             melyseg += 1
         elif jel == "{":
             melyseg += 1
@@ -336,6 +335,27 @@ def _alak() -> dict[str, list[str]]:
             if verem and verem[-1] == melyseg:
                 verem.pop()
     return dict(menuk)
+
+
+def _qstr_felirat(blokk: str, tulajdonsag: str) -> str | None:
+    """A statikus szöveget adja vissza; feltételesnél az alapágét.
+
+    A #4630 a Mappa menü címét és leírás-tételét albumnézetben dinamikusan
+    váltja. Ez a szerkezeti őr a könyvtárnézeti (feltételes kifejezés utáni)
+    feliratot tartja meg; az albumágat a célzott QML-funkcionális teszt méri.
+    """
+    sor = re.search(rf"(?m)^\s*{tulajdonsag}:\s*", blokk)
+    if not sor:
+        return None
+    kifejezes = blokk[sor.end() :]
+    kovetkezo_tulajdonsag = re.search(r"(?m)^\s*[A-Za-z_]\w*\s*:", kifejezes)
+    if kovetkezo_tulajdonsag:
+        kifejezes = kifejezes[: kovetkezo_tulajdonsag.start()]
+    szovegek = re.findall(r'qsTr\("([^"]*)"\)', kifejezes)
+    if szovegek:
+        return szovegek[-1] if "?" in kifejezes else szovegek[0]
+    valtozo = re.match(r"bar\.(\w+)", kifejezes)
+    return valtozo.group(1) if valtozo else None
 
 
 def test_a_menusor_sorrendje_a_mert_eredetit_koveti():

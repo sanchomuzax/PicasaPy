@@ -29,6 +29,13 @@ def pytest_configure(config):
         "markers",
         "valodi_kepmappa: a teszt a rendszer VALÓDI képmappáját méri (#2897)",
     )
+    # #4817: a `.qm` nincs a repóban — a futásidejű fordítás a `.ts`-ből
+    # itt készül el (csak a hiányzó vagy elavult fájl fordul újra)
+    from pathlib import Path
+
+    from picasapy.app.i18n_build import forditsd_mind
+
+    forditsd_mind(Path(__file__).resolve().parents[1] / "src" / "picasapy" / "app" / "i18n")
 
 
 @pytest.fixture(autouse=True)
@@ -44,6 +51,53 @@ def takarito_naplo_elvezetve(monkeypatch, tmp_path_factory):
         monkeypatch.setattr(
             modul, "_TAKARITO_NAPLO", tmp_path_factory.getbasetemp() / "takarito.log"
         )
+
+
+class _AlSwaybg:
+    """Futva maradó `swaybg` utánzata: a `wait` lejár, a `poll` `None`."""
+
+    def wait(self, timeout=None):
+        import subprocess
+
+        raise subprocess.TimeoutExpired("swaybg", timeout)
+
+    def poll(self):
+        return None
+
+    def terminate(self):
+        return None
+
+
+def _al_futtato(parancs, **_kwargs):
+    import subprocess
+
+    return subprocess.CompletedProcess(parancs, 0, "", "")
+
+
+@pytest.fixture(autouse=True)
+def valodi_asztalhoz_nem_nyul(monkeypatch):
+    """#4892: a háttérkép-beállítás tesztből nem érheti el a valódi asztalt.
+
+    A `set_desktop_background` labwc alatt valódi `swaybg`-t indított
+    (`start_new_session=True`, tehát túlélte a tesztet), és a teszt képe a
+    fizikai kijelző háttere lett — napokig. Minden befecskendezés nélküli
+    hívás ál-indítót, ál-futtatót és ál-registryt kap; a kifejezetten
+    befecskendezett fogantyú (a lánc saját próbái) érintetlen marad.
+    Őr: `tests/test_hatterkep_teszt_asztal_4892.py`.
+    """
+    from picasapy.app import wallpaper
+
+    eredeti = wallpaper.set_desktop_background
+
+    def vedett(bmp_path, **kwargs):
+        kwargs.setdefault("runner", _al_futtato)
+        kwargs.setdefault("launcher", lambda *_a, **_k: _AlSwaybg())
+        kwargs.setdefault("registry_setter", lambda _kulcs, _ertek: None)
+        kwargs.setdefault("windows_api", lambda _ut: True)
+        return eredeti(bmp_path, **kwargs)
+
+    monkeypatch.setattr(wallpaper, "set_desktop_background", vedett)
+    monkeypatch.setattr(wallpaper, "_swaybg_folyamat", None)
 
 
 @pytest.fixture(autouse=True)

@@ -5,7 +5,8 @@
 A #3002 megírta az arcátvétel tiszta átalakítóját (`arcatvetel.arcokat_atvesz`),
 de **hívó nélkül** maradt: a db3-ban álló arcok sehogy nem jutottak el a
 `.picasa.ini`-be. A #2336 közben megírta a futtatót (mappánként EGY írás az
-`update_document` ütközésbiztos útján) — ez a lap azt méri, hogy az arcok
+`update_document` útvonalanként soros, best-effort konkurenciakezelésű útján)
+— ez a lap azt méri, hogy az arcok
 ugyanabba a ciklusba kerültek be.
 
 ## Amit a jegy „Kész, ha" listája kér, és amit itt mérünk

@@ -46,7 +46,7 @@ def _utvonalak(csomopont) -> list[str]:
 MAPPAK = [
     {"path": "/media/kepek/2024", "count": 3},
     {"path": "/media/kepek/2025", "count": 5},
-    {"path": "/home/sancho/Letoltesek", "count": 2},
+    {"path": "/home/felhasznalo/Letoltesek", "count": 2},
     {"path": "/mnt/idegen/valami", "count": 7},
 ]
 
@@ -70,10 +70,10 @@ class TestAHatokor:
     def test_TOBB_figyelt_mappa_tobb_ag(self):
         fa = build_hierarchy(
             MAPPAK, simplified=True,
-            watched_roots=("/media/kepek", "/home/sancho/Letoltesek"),
+            watched_roots=("/media/kepek", "/home/felhasznalo/Letoltesek"),
         )
         assert sorted(_utvonalak(fa)) == [
-            "/home/sancho/Letoltesek", "/media/kepek"
+            "/home/felhasznalo/Letoltesek", "/media/kepek"
         ]
 
     def test_a_figyelt_ag_GYERMEKEI_megmaradnak(self):

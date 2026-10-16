@@ -220,6 +220,12 @@ Window {
             objectName: "optionsTabStack"
             Layout.fillWidth: true
             Layout.fillHeight: true
+            // A StackLayout alapértelmezett implicit magassága a legmagasabb
+            // fül tartalmát követné, és a rövidebb E-mail lapnál kitolná az
+            // ablakból az alsó gombsort. A fülek a rendelkezésre álló helyet
+            // kapják; a saját túlcsorduló tartalmukat a stack levágja.
+            Layout.minimumHeight: 0
+            Layout.preferredHeight: 0
             currentIndex: tabBar.currentIndex
             clip: true
 

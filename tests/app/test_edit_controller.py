@@ -72,6 +72,17 @@ class TestBeginEdit:
         controller.beginEdit("1", str(photo))
         assert controller.effectChainCounts.get("enhance") == 1
 
+    def test_effect_chain_property_tracks_applied_effects(self, controller, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text("[IMG_0001.jpg]\nfilters=enhance=1;\n", encoding="utf-8")
+        controller.beginEdit("1", str(photo))
+
+        assert controller.effectChain == "enhance=1;"
+
+        controller.applyEffect("bw")
+
+        assert controller.effectChain == "enhance=1;bw=1;"
+
     def test_registers_with_preview_provider(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
         image = provider.requestImage("1", None, None)
@@ -148,6 +159,7 @@ class TestToggleTool:
         assert "filters=" not in ini_text
         assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
+
     def test_preserves_unrelated_keys(self, controller, photo):
         ini = photo.parent / ".picasa.ini"
         ini.write_text(
@@ -174,6 +186,15 @@ class TestToggleTool:
     def test_without_active_edit_raises(self, controller):
         with pytest.raises(ValueError):
             controller.toggleTool("enhance")
+
+
+class TestPicnikTintColorPersistence:
+    def test_selected_color_is_written_to_filters_ini(self, controller, photo):
+        """#4554: a kiválasztott Tint Color a PicnikTint második paramétere."""
+        controller.beginEdit("1", str(photo))
+        controller.applyEffectWithParams("picniktint", [0.0, "#ff0000"])
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=PicnikTint=1,0.000000,00ff0000;" in ini_text
 
 
 @_SKIP_READONLY
@@ -261,6 +282,18 @@ class TestOneShotLayering:
         controller.undo()
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "filters=" not in ini_text
+
+    def test_legacy_picasa_ini_chain_survives_first_save(self, controller, photo):
+        """#4819: csak régi `Picasa.ini` van — a régi effekt a mentés után is
+        a lánc elején áll, a régi fájl érintetlen."""
+        legacy = photo.parent / "Picasa.ini"
+        legacy_bytes = b"[IMG_0001.jpg]\r\nfilters=autolight=1;\r\n"
+        legacy.write_bytes(legacy_bytes)
+        controller.beginEdit("1", str(photo))
+        controller.toggleTool("enhance")
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=autolight=1;enhance=1;" in ini_text
+        assert legacy.read_bytes() == legacy_bytes
 
     def test_picasa_written_duplicate_chain_not_damaged(self, controller, photo):
         """Round-trip: a valódi Picasa által írt, ismétlődő szűrős láncból
@@ -1544,8 +1577,10 @@ class TestAzIgazitasEljutARAJZOLOIG2108:
         controller.endEdit()
 
         controller.beginEdit("1", str(photo))
-        spec = controller._current_text_spec()
-        assert spec is not None, "a mentett felirat nem kerül az előnézetbe"
+        specs = controller._current_text_spec()
+        assert specs is not None, "a mentett felirat nem kerül az előnézetbe"
+        assert len(specs) == 1
+        spec = specs[0]
         assert spec.align == "right", (
             "a fájlból betöltött igazítás nem jut el a rajzolóig: "
             f"{spec.align!r}"
@@ -2029,14 +2064,64 @@ class TestRedeyeTool:
         assert controller.hasSavedRedeye is True  # #2393: átnevezve
         assert controller.redeyeRegionCount == 0
 
+    def test_invalid_auto_eye_coordinate_does_not_break_save(
+        self, controller, tmp_path, monkeypatch
+    ):
+        """A hibás YuNet-pontot az észlelés forrásánál kell eldobni, ne a mentés bukjon."""
+        from picasapy.app import edit_preview
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+        from picasapy.faces.redeye import detect_eye_circles
+
+        bad_coordinate = 2.0534839661647758e30
+        bad_face = FaceDetection(
+            left=0.0,
+            top=0.0,
+            right=1.0,
+            bottom=1.0,
+            score=0.99,
+            landmarks=FaceLandmarks(
+                right_eye=(bad_coordinate, 0.5),
+                left_eye=(0.5, 0.5),
+                nose=(0.5, 0.5),
+                mouth_right=(0.5, 0.5),
+                mouth_left=(0.5, 0.5),
+            ),
+        )
+
+        class DetectorWithInvalidEyePoint:
+            available = True
+
+            def detect(self, _image):
+                return (bad_face,)
+
+        detector = DetectorWithInvalidEyePoint()
+        monkeypatch.setattr(
+            edit_preview,
+            "detect_eye_circles",
+            lambda image: detect_eye_circles(image, detector),
+        )
+        path = make_jpeg(tmp_path / "IMG_0001.jpg", size=(1, 1))
+        controller.beginEdit("1", str(path))
+        controller.enterRedeyeTool()
+        controller.applyRedeye()
+
+        text = (path.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=redeye=1;" in text
+
     def test_apply_without_manual_regions_persists_auto_eye_circles(
         self, controller, photo, monkeypatch
     ):
         controller.beginEdit("1", str(photo))
         monkeypatch.setattr(
             controller._provider,
-            "redeye_auto_result",
-            lambda *_args: (1, ((0.5, 0.5, 0.1),)),
+            "redeye_auto_result_with_size",
+            lambda *_args: (
+                1,
+                ((0.5, 0.5, 0.1),),
+                (800, 600),
+                (800, 600),
+                ((1, 0, 0), (0, 1, 0)),
+            ),
         )
         controller.enterRedeyeTool()
         controller.applyRedeye()
@@ -2309,7 +2394,9 @@ class TestASzovegStilusaAFAJLBA_KERUL:
         self._felirat(controller, photo, bold=False)
         assert _text_ertek(photo) != felkover
 
-    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(self, controller, photo):
+    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(
+        self, legalabb_ket_betucsalad, controller, photo
+    ):
         # a lista `{key, label}` szótárakból áll (a lenyíló adata)
         kulcsok = [cs["key"] for cs in controller.textFontFamilies]
         mas = next((cs for cs in kulcsok if cs != "Arial"), None)

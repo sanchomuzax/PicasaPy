@@ -18,6 +18,7 @@ import pytest
 from picasapy.render.text_fonts import (
     DEFAULT_FAMILY,
     FONT_FAMILIES,
+    clear_family_cache,
     family_labels,
     font_path_for,
     load_font,
@@ -65,17 +66,80 @@ class TestFontResolution:
     def test_an_unknown_family_falls_back_to_the_default(self):
         assert font_path_for("nincs-ilyen") == font_path_for(DEFAULT_FAMILY)
 
-    def test_the_dropdown_data_is_key_and_label(self):
+    def test_the_dropdown_data_is_key_and_label(self, legalabb_ket_betucsalad):
+        """#4546: futó Qt-alkalmazás mellett a telepített családok adják a
+        listát, nélküle a Pillow-kompatibilitási lista — a teszt azt várja,
+        ami az adott folyamatban érvényes (a CI egy folyamatban több fájlt is
+        futtathat, így a Qt-alkalmazás jelenléte nem rögzített)."""
+        from PySide6.QtGui import QFontDatabase, QGuiApplication
+
         labels = family_labels()
+        # #4835: a windowsos offscreen gépen kevés család látszik — a fixture
+        # gondoskodik legalább kettőről, így a lista nem lehet üres.
+        assert len(labels) >= 2
         assert {"key", "label"} == set(labels[0])
-        assert [item["key"] for item in labels] == [f.key for f in FONT_FAMILIES]
+        if QGuiApplication.instance() is not None:
+            vart = sorted(
+                set(QFontDatabase.families()),
+                key=lambda family: (family.casefold(), family),
+            )
+        else:
+            vart = [f.key for f in FONT_FAMILIES]
+        assert [item["key"] for item in labels] == vart
 
     def test_a_nonpositive_size_is_refused(self):
         with pytest.raises(ValueError):
             load_font(DEFAULT_FAMILY, 0)
 
 
+class TestFamilyLabelsCache:
+    """#4964: a Qt-családlistát egyszer kérdezzük le, nem minden hívásnál."""
+
+    @pytest.fixture(autouse=True)
+    def _friss_gyorsitotar(self):
+        # a más tesztektől örökölt lista ne rontsa el a számlálást
+        clear_family_cache()
+        yield
+        clear_family_cache()
+
+    @pytest.fixture
+    def rendszer_betuk(self, monkeypatch):
+        """Futó Qt-app látszatát és egy fix családlistát ad, lekérdezés-számlálóval."""
+        from PySide6.QtGui import QFontDatabase, QGuiApplication
+
+        hivasok = []
+
+        def families():
+            hivasok.append(1)
+            return ["Zeta", "Alfa"]
+
+        monkeypatch.setattr(QGuiApplication, "instance", staticmethod(lambda: object()))
+        monkeypatch.setattr(QFontDatabase, "families", staticmethod(families))
+        return hivasok
+
+    def test_repeated_calls_query_the_system_once(self, rendszer_betuk):
+        elso = family_labels()
+        masodik = family_labels()
+
+        assert len(rendszer_betuk) == 1
+        assert elso == masodik
+        assert [item["key"] for item in elso] == ["Alfa", "Zeta"]
+
+    def test_mutating_a_returned_list_does_not_leak_into_the_next_call(
+        self, rendszer_betuk
+    ):
+        elso = family_labels()
+        elso.append({"key": "Hamis", "label": "Hamis"})
+        elso[0]["label"] = "elrontva"
+
+        kovetkezo = family_labels()
+
+        assert [item["key"] for item in kovetkezo] == ["Alfa", "Zeta"]
+        assert kovetkezo[0]["label"] == "Alfa"
+
+
 @_needs_font
+@pytest.mark.usefixtures("renderelo_betuk")
 class TestTypography:
     def test_bold_puts_more_ink_on_the_canvas(self):
         normal = apply_text_overlay(_canvas(), "Proba", 0.05, 0.6)

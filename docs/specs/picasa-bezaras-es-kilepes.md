@@ -41,6 +41,197 @@ Ezek **visszalépnek az előző szintre**, nem zárnak alkalmazást.
 A szerkesztő nézetnek ezen felül **külön `back` vezérlője** is van
 (`editoneup/back`, `editoneup/stripback`) — a kilépés és a visszalépés két
 külön dolog.
+
+### `SingleClickExit` — a videó-előnézeti ablak eseményei (#4458, 2026-10-06)
+
+**Megerősített a `ytDSMovie` ablakára:** a `SingleClickExit` nem a `Back to
+Library` gomb kattintását módosítja, hanem azt választja ki, hogy a videó
+előnézeti ablakának balgombos eseményei közül melyik indítsa el a
+`thumbui/albumview` parancsot.
+
+Az eseményút a binárisban:
+
+1. A `ytDSMovie` ablakosztály `WndProc`-ja `0x0054c540` (`0x0054c840` a
+   `RegisterClassA` rekordjába ezt a címet és a `ytDSMovie` osztálynevet
+   írja). A `0x0054b730` a `ytDSMovie` nevű gyermekablakot létrehozza, és az
+   ablakfogantyút az objektum `+0x17c` mezőjében tárolja.
+2. A `CThumbUI` `+0x288` interfészének vtáblája `0x00c906f4`, egyetlen
+   bejegyzése `0x00595fe0`. A videóobjektum `+0x184` mezőjébe ez az
+   interfész kerül (`0x00593fcf`–`0x00593fd5`, illetve
+   `0x005948c6`–`0x005948cc`). A videóablak az `editpanel/movieparent`
+   felületi elemhez kapcsolódik (`0x00594a89`–`0x00594a8e`, majd
+   `0x00594c13`–`0x00594c34`); a `.tre` szerint ez az elem az
+   `editpanel/preview` gyereke.
+3. A `WndProc` a `WM_LBUTTONDOWN` (`0x201`) üzenetet `1` eseménykóddá
+   alakítja (`0x0054c7f9`–`0x0054c80a`), a `WM_LBUTTONDBLCLK` (`0x203`)
+   üzenetet pedig `3`-má (`0x0054c7d0`–`0x0054c7e5`), majd meghívja a
+   fenti interfészt.
+4. A `0x00595fe0` csak az `1` és `3` kódnál olvassa a
+   `Preferences\SingleClickExit` értéket (`0x005962bb`–`0x005962e6`).
+   A `0x0059630b`–`0x00596313` összevetése azt követeli meg, hogy az
+   esemény `1` legyen, ha a beállítás `1`, és `3`, ha a beállítás `0`.
+   Egyezéskor — ha a lent megnevezett belső kapu nyitva van — a kezelő a
+   `thumbui/albumview` parancsnevet a műveleti listába teszi
+   (`0x00596326`–`0x00596338`, `0x00596495`–`0x005964c2`). Az elem felirata
+   „Back To Library”, súgója „Return to organized thumbnails”
+   (`thumbui_text.tre`), tehát ez a rendezett bélyegképekhez visszalépő
+   művelet.
+
+| `SingleClickExit` | esemény a videó-előnézeti `ytDSMovie` ablakon | művelet |
+|---:|---|---|
+| **0** (alapérték; `0x006e0cf2`–`0x006e0cfa`) | balgombos dupla kattintás (`WM_LBUTTONDBLCLK`, `0x203`; belső kód `3`) | `thumbui/albumview`: vissza a rendezett bélyegképekhez |
+| **1** | egyszeres balgomb-lenyomás (`WM_LBUTTONDOWN`, `0x201`; belső kód `1`) | ugyanaz a `thumbui/albumview` művelet |
+
+**Kapu és területi korlát.** A beállítás-egyezés után a kezelő még ellenőrzi,
+hogy `[CThumbUI+0x30a6] == 0` (`0x00596319`–`0x00596320`). Ha az érték nem
+nulla, az album-nézet parancsa nem fut le; dupla kattintásnál külön ág hívja
+a `0x005944f0`-et (`0x00596297`–`0x005962b8`). Ennek a mezőnek az állapotnevét
+ez a vizsgálat nem azonosította, ezért a táblázat a nyitott kapu esetére szól.
+Az eseményút a `ytDSMovie` gyermekablak teljes kliensfelületéről kapja az
+egérüzenetet. A `WndProc` nem ad át egérkoordinátát, és a callback nem végez
+képpont- vagy képtartalom-találatvizsgálatot; ezen az útvonalon a videókép és
+a videóablak kitöltése között nincs különbségképzés. A kliensfelület pontos
+pixelmérete nincs megmérve. Ez a bizonyíték **nem** állapítja meg, hogy az
+állóképes `editpanel/previewimage` vagy az azon kívüli üres szerkesztői
+terület is ugyanígy viselkedik.
+
+**A `SingleClickExit` közvetlen sztringhivatkozásainak leltára:** a memóriakapus,
+darabolt teljes `.text` pásztázás 2 884 879 utasítást vizsgált meg, és a
+`SingleClickExit` literálra pontosan öt kódhivatkozást adott. A pozitív
+ellenőrzés mind az ötöt a nyilvántartó és a sztring-xref leltárával egyezőnek
+találta:
+
+| cím | szerep |
+|---|---|
+| `0x006e0cf5` | alapérték-regisztrálás; a `0x006e0cb0` rutin 0-val regisztrálja |
+| `0x006e136a` | az Általános beállítások párbeszéd kulcslistája |
+| `0x00564b7b` | `CThumbUI` inicializálás: beolvasás a `+0x31ac` mezőbe |
+| `0x005cfafc` | beállítási érték beolvasása az opciólap összeállításakor |
+| `0x005962bb` | a kattintási esemény végrehajtási kapuja |
+
+### Állóképes előnézet: a `PreviewHandler` útja (#4493, 2026-10-07)
+
+**A beállítás az állóképes előnézet kezelőjéig is eljut.** A `CThumbUI`
+inicializálása a `Preferences\SingleClickExit` értékét a `+0x31ac` mezőbe
+olvassa (`0x00564b7b`–`0x00564bac`). A `PreviewHandler` vtáblája
+`0x00c90a60`; negyedik metódusa `0x005c24c0`. Ez a metódus az `1` eseménykód
+ágában csak akkor folytatja a kilépő útvonalat, ha a mező nem nulla
+(`0x005c2898`–`0x005c28bf`), az `0x0d` kód ágában pedig csak akkor, ha nulla
+(`0x005c2b03`–`0x005c2b0f`). A közös út a `0x00566270` rutinra vezet; az
+ellenőrzi, hogy az `editpanel/preview` létezik és látható-e, majd feloldja és
+elküldi a `thumbui/albumview` parancsot (`0x005662a2`–`0x005662fc`). Az
+előnézet láthatósági kapuja és a kezelő egyes belső ágai tehát itt is
+feltételek; egyes ágak a `0x00571a80` segédre terelnek, amelynek pontos
+szemantikája ebből a vizsgálatból nem állapítható meg.
+
+**Az objektumkapcsolat külön ellenőrzése:** a `0x00563190` a
+`PreviewHandler` vtábláját írja az objektumra (`0x0056319a`), a szülőt pedig
+`+0x28` mezőbe teszi (`0x005631b9`). A `0x005733f0` UI-építő a
+`editpanel/preview` és `editpanel/preview2` elemekhez ilyen kezelőt hoz létre
+és regisztrál (`0x005738fd`–`0x00573957`); az `editpanel.tre` szerint az
+`editpanel/previewimage` és `editpanel/previewimage2` ezek gyermekei (1005.,
+1011. sor). A memóriakapus teljes `.text` pásztázás a `0x00c90a60` vtable
+közvetlen író hivatkozását a `0x00563190` rutinban találta meg. Ez megerősíti,
+hogy a vizsgált handler az állóképes előnézeti ághoz tartozik.
+
+Az `1` kódhoz tartozó általános jelentés balgomb-lenyomás. A 2026-10-07-i
+#4493-as állapotban még nem volt ismert, mi állítja elő az `0x0d` eseményt; ezt
+a következő, #4500-as célzott olvasat lezárta. Az `0x0d` nem egérüzenet és nem
+kattintásszám, hanem a billentyűesemény `VK_RETURN` kódja (lásd lent).
+
+**A 2026-10-07-i kutatási állapot — a #4500 későbbi eredménye felülírta.** A
+natív bemeneti út akkori vizsgálata még nem volt összekötve a
+`PreviewHandler`-rel. A `ytWindow::vftable` (`0x00cd87fc`)
+üzenetkezelője a `0x00984970`; a `0x201`–`0x208` Win32 egérüzeneteket
+`0x00984a10`–`0x009850da` között táblás ágakkal választja szét, és a
+`0x00985324` bájttábla két közös útra tereli őket. A látható balgomb-lenyomási
+út közvetlenül kimásolja a natív `HWND`, `message`, `wParam`, `lParam`
+mezőket (`0x00984d35`–`0x00984d80`), majd a rekord címét a
+`[ytWindow+0x64]` objektum `+0x2c` virtuális metódusának adja
+(`0x009851a1`–`0x009851b1`). A külön `0x00561f50` rutin is rekordot állít
+össze, de egy másik ágban (`0x00984e65`); egyik út sem bizonyítja, hogy az
+`editpanel/preview` `PreviewHandler`-jéhez vezet, és nem tárja fel, melyik
+üzenet állítja `0x0d`-re a handler eseményének `+8` mezőjét.
+Az ATL `CAxHostWindow` `0x00920fa0` eljárása egy másik jelölt: az ismert
+`WM_*` ágak az eredeti Win32 üzenetszámot adják át a `0x00921980` segédnek,
+de ennek a hívásnak sincs bizonyított kapcsolata a `PreviewHandler`-rel.
+
+A teljes `.text` `paszta.py`-s, memóriakapus összehasonlító pásztázása 52,
+`0x201`–`0x209` konstanssal végzett `cmp` utasítást talált 18 függvényben;
+ez nem zárja ki a táblás vagy virtuális leképezést, tehát negatív eredményként
+nem használható. **Cáfoló kör:** a `0x0d = WM_LBUTTONDBLCLK` feltevést a más
+UI-ágak ellenőrzésével próbáltam cáfolni: a videó-előnézeti ág a
+`WM_LBUTTONDBLCLK`-t `3` kódra viszi (`0x0054c7d0`–`0x0054c7e3`), a
+fában pedig külön `treedouble` esemény készül (`0x00ab3ff0`,
+`0x00ab3ffc`). Ez cáfolja az ágak közötti kódazonosítási feltevést, de nem
+dönti el a still preview gesztusát, mert egyik út PreviewHandler-kapcsolata
+sem bizonyított.
+
+#### Eredeti / nálunk / teendő (#4493)
+
+| | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| videó-előnézet (`ytDSMovie`) | `[CThumbUI+0x30a6] == 0` mellett `SingleClickExit=0`: balgombos dupla kattintás (`WM_LBUTTONDBLCLK`, `0x203`, belső kód `3`); `=1`: balgomb-lenyomás (`WM_LBUTTONDOWN`, `0x201`, belső kód `1`). Mindkettő a `thumbui/albumview` parancshoz vezet (`0x0054c540`, `0x00595fe0`). | A `VideoExitGestureArea` köti a `controller.singleClickExitEnabled` értéket a videó kilépési gesztusához (`VideoPlayerView.qml:120–124`). | A #4449 videós útja megfelel az eredeti beállításnak. |
+| állóképes előnézet (`editpanel/preview`) | `=1` esetén a balgomb-lenyomás `1` kódja, `=0` esetén a billentyű-eseményosztályban a `VK_RETURN` (`0x0d`) vezethet a `thumbui/albumview` parancshoz, ha a `CThumbUI+0x31ac` mező nulla és az előnézet látható (`0x00564bac`, `0x005c24c0`, `0x00566270`). Az `0x0d` tehát nem egérgesztus. | A `PhotoViewer.qml` a `singleClickExitEnabled` értéket olvassa. `=1` mellett a bal kattintás visszalép; `=0` mellett Enterre a könyvtárba tér vissza, az aktív szerkesztőeszköz saját Enter-útját megtartva. Mindkét állásban a dupla kattintás nagyítás-illesztés marad, a `Back to Library` gomb pedig a `viewer.kerBezaras()`-t használja. | `=1` mellett a már bekötött bal kattintás lépjen vissza; `=0` mellett az állóképes néző Enter billentyűje térjen vissza a könyvtárba. Az Enter ne vegye el az aktív szerkesztőeszköz (különösen a sorozat-vágás) saját eseményét. A dupla kattintás maradjon nagyítás-illesztés, a `Back to Library` gomb pedig működő. |
+
+**Fejlesztői teendő a #4500-as leképezés után:**
+
+1. Bekapcsolt értéknél a bizonyított balgomb-lenyomás hívja a meglévő
+   `viewer.kerBezaras()` visszalépést.
+2. Kikapcsolt értéknél a `VK_RETURN`-nek megfelelő Enter billentyűje hívja a
+   `viewer.kerBezaras()` visszalépést; a dupla kattintás maradjon
+   `viewer.zoomFit()`.
+3. Az Enter-kezelés ne vegye el az aktív szerkesztőeszköz saját útját
+   (különösen a Vágás „alkalmazás és következő kép” sorozatát), és a meglévő
+   `viewerBackButton` maradjon használható.
+
+**Kész, ha:** az `0x0d` billentyűkód bizonyítéka a specben áll; `SingleClickExit=1`
+mellett az állóképes előnézetből balgomb-lenyomásra visszalép; `=0` mellett
+Enterre visszalép; az aktív szerkesztőeszköz megtartja saját Enter-útját; a
+dupla kattintás nagyítás-illesztés marad; a `Back to Library` vezérlő továbbra
+is elérhető.
+
+**Nyitott:** az üres szerkesztőfelület viselkedése; ez a #4500 Enter-következtetését nem érinti.
+
+- ~~`Ghidra-kör kell: 0x005c24c0 — kövesd vissza a PreviewHandler esemény +8 mezőjének 0x0d-re állítását a natív bemenetig`.~~ **Lezárva (#4500):** az `0x0d` a billentyűesemény `+0x10` mezőjében a `VK_RETURN`; nem egérgesztus, ezért a `WM_*` egérüzenet leképezését nem kell hozzá keresni.
+
+#### #4500 — az `0x0d` a Return billentyű, nem egérgesztus (2026-10-12)
+
+A `0x005c24c0` (`PreviewHandler`) eseményrekordján belül két külön mező
+azonosítja az eseményt: a `+0x08` az eseményosztály, a `+0x10` pedig a
+billentyűkód. A kezelő a `0x17` billentyűosztályt külön ágon választja ki,
+majd annak `+0x10` mezőjét vizsgálja; az `0x0d` ezen a mezőn a Win32
+`VK_RETURN` (Enter). Tehát a korábbi `0x0d = egérkattintás` feltevés téves:
+nem a `WM_*` egérüzenetből származó osztálykódot, hanem a Return billentyűt
+jelenti. A bizonyíték közvetlenül a handler két mezőjének külön olvasata és
+összevetése; a `0x00984970` `ytWindow` egérútja ettől független, és nem
+szükséges az Enter azonosításához.
+
+A `CThumbUI` `SingleClickExit` mezője a `+0x31ac` eltoláson van. A Return
+ág csak nulla értéknél engedi tovább a visszalépési utat; az `0x00566270`
+ellenőrzi az `editpanel/preview` láthatóságát, majd a
+`thumbui/albumview` parancshoz vezet. A handler belső kapui tehát itt is
+érvényesek, de az esemény fizikai jelentése már nem feltételes: **Enter**.
+
+**Nálunk (#4500 előtt):** a `PhotoViewer.qml` Enter-kötése minden nem
+szövegmező-fókusznál a következő képre léptetett. A kikapcsolt beállítás
+Enter-kilépését ez a jegy pótolja. A beállított egykattintásos bal kattintás
+és a `viewerBackButton` meglévő útja változatlan; dupla kattintásra továbbra is
+`zoomFit()` fut. A Vágás eszköz `CropOverlay.qml`-beli Enter-kezelése külön
+„alkalmazás és következő kép” sorozatot végez, ezért annak eseményét a
+nézőből kilépő ág nem foghatja el.
+
+**Bizonyosság: feltételes (egy út).** A `+0x10 == VK_RETURN (0x0d)` a
+dekompilált kódból (`referencia/ghidra-koteg-2026-10-12/005c24c0.c`, #23)
+közvetlenül kiolvasható; a `+0x08 == 0x17` billentyű-eseményosztály viszont
+következtetés, mert a `+8` mező írója még nincs megtalálva. Második,
+független út (a `+8` író azonosítása vagy natív futtatás a kezelőn) zárná le.
+A #4493 korábbi gesztusleírása és a #4500 „nem azonosított” következtetése
+ehhez képest elavult.
+
+**Nyitott marad:** az üres szerkesztőfelület viselkedése. Ez nem változtat
+azon, hogy az állóképes előnézet `SingleClickExit=0` melletti bizonyított
+Return-útja Enter.
 ## 2. szint — lap bezárása (projekt), HÁROM választással
 
 A kollázs- és a filmszerkesztő **lapként** viselkedik, és a lap bezárásakor —
@@ -329,7 +520,7 @@ parancs-forgalmazón át), nem ablaküzenet. A teljes leltár:
 | **főablak X** (egyéni címsor gomb) | `WM_SYSCOMMAND, SC_CLOSE` | WndProc `0x005e4d87` | a kilépési kapu fut le (kb. lépései) |
 | **lap X** (kollázs/film fül) | `<lapid>/close` — a gomb az azonosítóból építi: `"%x" + "/close"` (`0x005b2553`–`0x005b2565`) | `0x005b2410` | egy projekt-lap, háromválasztós megerősítéssel |
 | **jobb fiók X** (szerkesztőben) | `rightdrawerpanel/close` | `0x0057bb50` | a jobb oldali információsáv |
-| **nav X** | `nav/close` | `0x005de8e0` | a bal navigációs hasáb (keresőkonténer) |
+| **navigátor X** | `nav/close` | `0x005de8e0` | a szerkesztői nagyítás-navigátor lebegőablaka (`nav.tre`) |
 | **toys X** | `toys/close` | `0x005d56e0` | az egyszerű javítások panel eszköze |
 | **modális párbeszéd X** | `CloseModal` névparancs, vagy `WM_CLOSE` | `0x00983140` | az aktuális modális ablak |
 | **miniböngésző (Helyek)** X | `geo::close_tip` = „Ablak bezárása" | `0x00651580` | a geo/miniböngésző ablak |
