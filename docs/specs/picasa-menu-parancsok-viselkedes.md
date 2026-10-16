@@ -2459,7 +2459,92 @@ film-/People Albums másik hívási láncában szerepel
 - `Ghidra-kör kell: 0x007fda00 — a Timeline gomb átmenetének tényleges vizuális tartalma, kezdő/végállapota és időzítése. [blokkoló]`
 - A tényleges kártyakép, Timeline sáv állapota, a billentyűk és Exit célja: **NINCS MEG**. A statikus kör után az eredeti Picasa futó módjában célzott billentyű-/húzáspróba és képernyőkép kell; QEMU-harness csak akkor használható, ha a Picasa felületet ezen a képen megjeleníti és az inputot továbbítja.
 
-#### 38.2.2 Futó felmérés az eredeti Picasán (Colab #102) — mit mutat a bemutató (#4443)
+#### 38.2.2 Futás közbeni megfigyelés, job-102 (#4443)
+
+**Forrás:** a `job-102` 14 képernyőképe és `allapot.json`-ja (a mérőmappa nincs a repóban). Eredeti Picasa 3.9, 1280×1024, mappa: „PicasaTeszt" (24 kép, mappadátum 2026. október 6.). A felvétel lépéssora: az 1. kép után Ctrl+5, 8 mp várakozás, Right, Right, Left (3-3 mp), Space (6 mp), Escape (4 mp); minden lépés után egy kép.
+
+**Módszer:** PIL-lel dolgoztam. A 01-02 kockát `ImageOps.autocontrast`-tal világosítottam. A 03-14 kockák legvilágosabb képpontja 8-9 a 255-ből, ezért a 03. és a 14. kockát fix, 32-szeres szorzóval is megnéztem (a `.meres-102/vilagos/` alá mentve). A kockák közötti eltérést pixelenként számoltam.
+
+**Kockák:**
+
+| kocka | mit mutat | eltérés az előzőhöz |
+|---|---|---|
+| 01 | főrács, 24 bélyeg; a bal panelen „Scanning, 71% complete" | - |
+| 02 | a főrács ugyanaz; a bal panelen „Unnamed (6)" | 32 116 képpont. A bal panel változott; a rácsban is van eltérés (26 125 képpont), ennek okát nem azonosítottam. |
+| 03 | fekete, teljes képernyős ablak (`qshow`): az Időrend-bemutató | a teljes kocka |
+| 04-14 | a 03-mal pixelre azonos (fájlméretük is azonos: 10 017 bájt) | 0 képpont |
+
+**A bemutató elrendezése (03. kocka, képpontban, a teljes kockán):**
+
+- Cím: „PicasaTeszt", jobbra igazítva, `x 743-850`, `y 384-403`.
+- Dátum: „October 2026", jobbra igazítva, nap nélkül, `x 762-849`, `y 417-431`.
+- Bal oldali elforgatott bélyeg-halom, a cím alatt, balra; pontozott ív köti a címhez. A határait külön nem mértem le.
+- Jobb oldali bélyeg: `x 797-870`, `y 583-666`. A szerepe nem ismert.
+- Vezérlősáv: 4 gomb és egy csúszka.
+  - Bal szélső: rács-vissza ikon, `x 348-391`, `y 676-704`.
+  - Előző (bal nyíl): `x 569-596`, `y 677-705`.
+  - Indító (kép és nyíl ikon): `x 619-662`, `y 676-704`.
+  - Következő (jobb nyíl): a mért határoló téglalap `x 684-730`, `y 660-705`; a gomb valódi jobb szélét a szomszédos elemtől nem választottam el.
+  - Csúszka: sáv `x 525-770`, `y 729-746`. A fogantyút a képről látom, `x` kb. 591-606, `y` kb. 729-745 körül; külön nem mértem.
+
+**Sötétség:** a 03-14 kockák legvilágosabb képpontja (8, 8, 9) a 255-ből. Minden elem (cím, bélyegek, gombok, csúszka) csak a szorzott változatban látszik, az átlagfényesség 0,04 a 255-ből. A kockák között nincs változás, ezért az animáció időbeli lefutása ebből nem látszik.
+
+**Billentyűk:**
+
+- Egy billentyű hatása nem olvasható ki. A 03. kocka után 11 egyforma kocka van, a lépések (7 művelet) és a kockák (14) száma nem egyezik, az `allapot.json` pedig nem tartalmaz lépésfeliratot, így a kockák nem köthetők billentyűhöz.
+- Escape: az utolsó (14.) kockán a `windows` listában még ott van a `qshow`. Ha az utolsó kocka az Escape után készült, az Escape nem zárta be az ablakot. A kockákból nem derül ki, hogy így volt-e, ezért ezt nem állítom.
+- Aktív ablak: a 01-14 kockák mindegyikén `active.title` = „Picasa 3", a `qshow` megjelenése után is. A fókusz a főablakon maradt. Ez összhangban van azzal, hogy a billentyűk nem a bemutatóhoz érkeztek, de a kockák ezt nem bizonyítják.
+
+**Nyitott, a következő mérés dönti el:**
+
+1. A sötétség oka: beúszó vagy ragadt animáció (ekkor időben változna), Wine-renderelés, vagy rögzítési hiba.
+2. Melyik billentyű mit csinál. Ehhez a `qshow` ablak fókuszát kell igazolni.
+3. Bezárja-e az Escape a bemutatót.
+4. Több mappánál mi történik (sorrend, cím, dátum). A felvétel egyetlen mappát mutat.
+5. A jobb bélyeg és a fogantyú szerepe, a bal halom pontos határai.
+
+### Eredeti | Nálunk | Teendő
+
+| Eredeti (mért) | Nálunk (forrásból) | Teendő |
+|---|---|---|
+| Ctrl+5 külön, fekete `qshow` ablakot nyit; a 03. kockán az Időrend-bemutató látszik. | `Main.qml:1723-1727`: a `Ctrl+5` gyorsbillentyű `enabled: false` (1725. sor); a `toggleTimeline()` (`Main.qml:1687`) csak ebből hívódik. A menütétel (`PicasaMenuBar.qml:1160-1163`) szintén tiltott, a `timelineRequested` jelzésnek a QML-ben nincs fogadója. | A billentyű és a menü jelenleg semmit nem nyit. A bemutató megépítése után a bekötést újra kell tervezni. |
+| Cím „PicasaTeszt" és „October 2026" (hónap és év, nap nélkül), jobbra igazítva. | `TimelineView.qml`: a fejléc „Timeline" felirat; a korszak-fejléc `címke (darab)` alakú. | Eltérő megjelenés és tartalom. A bemutató címe a mappanév és a dátum; nálunk nincs ilyen. |
+| Bal bélyeg-halom (elforgatott), jobb bélyeg, pontozott ív. | Nincs: a `TimelineView` lapos GridView-rács. | A halmok szerepe, darabszáma és forgatása nem mért. |
+| Vezérlősáv: rács-vissza, előző, indító, következő gomb; csúszka. | Nincs vezérlősáv. A `TimelineView` egy bezáró gombot (`timelineCloseButton`) és az Escape-et ismeri (`TimelineView.qml:32`). Az `onClosed` jelzés (`Main.qml:3082`) a rácsra visszaviszi a nézetet. | A gombok műveletei nem mértek; az Exit célja sem ismert. |
+| Billentyűk: Right, Right, Left, Space, Escape. Egy billentyű hatása nem olvasható ki. | A `TimelineView` csak az Escape-et kezeli (`Keys.onEscapePressed`), nyíl- és szóköz-kezelés nincs. | A mérés előtt nem állítható, hogy a nyilak lapoznának. Ld. a következő mérést. |
+| 03-14 kockák: sötét (átlag 0,04), változatlan. | Nincs bemutató-animáció. | Nyitott (ld. fent, 1. pont). |
+
+**Következő mérés** (a fenti 1-5. pontot dönti el). Az A és a B a `PicasaTeszt` mintakészletet használja; a C-hez egy második mappa kell.
+
+**A - időbeli sorozat és billentyűk.** Ctrl+5 után 1 mp-es sorozat (minden `var:1` után egy kép), majd kattintás a fekete háttér alsó részére a fókuszhoz, utána a billentyűk az eredeti sorrendben, végül Escape.
+
+```json
+[
+  {"picasa": "indit"},
+  {"var_ablak": "Picasa", "mp": 60},
+  {"kattint": [340, 437]},
+  {"var": 2},
+  {"billentyu": "ctrl+5"},
+  {"var_ablak": "qshow", "mp": 10},
+  {"var": 1}, {"var": 1}, {"var": 1}, {"var": 1}, {"var": 1},
+  {"var": 1}, {"var": 1}, {"var": 1}, {"var": 1}, {"var": 1},
+  {"kattint": [640, 950]},
+  {"var": 1},
+  {"billentyu": "Right"}, {"var": 3},
+  {"billentyu": "Right"}, {"var": 3},
+  {"billentyu": "Left"}, {"var": 3},
+  {"billentyu": "space"}, {"var": 6},
+  {"billentyu": "Escape"}, {"var": 4}
+]
+```
+
+**B - kontroll a sötétségre.** Ugyanaz az A-lépéssor, de `ctrl+4` (Slideshow) a `ctrl+5` helyett, és a sorozat után Escape. Ha a Slideshow kockái világosak, a sötétség a Timeline-hoz köthető. Ha ők is sötétek, a rögzítés vagy a Wine-renderelés a gyanús.
+
+**C - több mappa.** Mintakészlet: a `PicasaTeszt` mellé egy második mappa más hónapból (javaslat: 2025. június, 5 kép). Lépéssor: `picasa indít`, `var_ablak Picasa 60`, `billentyu ctrl+5`, `var_ablak qshow 10`, `var 8`, `billentyu Escape`, `var 4`. Ebből látszik, melyik mappák jelennek meg, milyen sorrendben, és van-e dátumkártya.
+
+Megjegyzés a végrehajtóhoz: a fenti `var` egysége (mp) és a `kattint` koordinátái (1280×1024) a végrehajtó kódjából ellenőrizendők a futtatás előtt; a kockák egyeztetéséhez a lépés sorszámát a végrehajtó naplójában rögzíteni kell. A `var_ablak` a `qshow` címét várja, a pontos ablakcímet az első kísérlet `allapot.json`-ja adja meg.
+
+#### 38.2.3 Futó felmérés az eredeti Picasán (Colab #102) — mit mutat a bemutató (#4443)
 
 **Horgony:** a mai megfelelő nézet `src/picasapy/app/qml/PicasaPy/TimelineView.qml:1`; a menüparancs `ID_VIEW_TIMELINE` (`0x9ccc`, 38.2).
 
@@ -2510,7 +2595,7 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
-| `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.2 szerint külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, 1:1 időskála és fogantyú. A billentyűk, gombműveletek, animáció és kilépési cél továbbra is **NINCS MEG**. | A legacy `TimelineView.qml` év/hónap-rács megmarad; a Nézet-menü és `Ctrl+5` tiltott, eszköztárgomb nincs. | A teljes megvalósítás előtt a 38.2.2 nyitott kérdéseit mérni kell. A jegy eszköztárgomb-kérésével szemben a csomagolt `thumbui.tre` az eredeti gombot `m_hidden`-ként jelöli; látható gombot ne vegyünk át bizonyíték nélkül. |
+| `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.3 szerint külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, 1:1 időskála és fogantyú. A billentyűk, gombműveletek, animáció és kilépési cél továbbra is **NINCS MEG**. | A legacy `TimelineView.qml` év/hónap-rács megmarad; a Nézet-menü és `Ctrl+5` tiltott, eszköztárgomb nincs. | A teljes megvalósítás előtt a 38.2.2 és a 38.2.3 nyitott kérdéseit mérni kell. A jegy eszköztárgomb-kérésével szemben a csomagolt `thumbui.tre` az eredeti gombot `m_hidden`-ként jelöli; látható gombot ne vegyünk át bizonyíték nélkül. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
@@ -2523,7 +2608,7 @@ Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kív�
   tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
   Időrend `oneup`/overlay belépési útja (38.2.1); a háttérkép teljes írási
   lánca, a stílusértékekkel együtt (38.3).
-- **NYITVA (`#4443`):** a 38.2.2 futó mérése lezárta a képernyő képi
+- **NYITVA (`#4443`):** a 38.2.3 futó mérése lezárta a képernyő képi
   összetételét. Nyitott maradt a bemeneti mappák/albumok halmaza és sorrendje,
   a jobb halom és időskála jelentése, a gombok művelete, a billentyűk, az
   animáció és a kilépés célja. Ezekhez fókuszált, eredeti Picasa-futtatás kell.
