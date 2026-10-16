@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import re
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, QUrl, Qt
-from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 _PROBA_TERKEP = '''import QtQuick
@@ -66,20 +65,8 @@ def _qml_lista(value) -> list:
     return list(value)
 
 
-def _varj(qt_app, predicate, timeout: float = 5.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        try:
-            if predicate():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        time.sleep(0.005)
-    try:
-        return bool(predicate())
-    except (AttributeError, RuntimeError, TypeError):
-        return False
+def _varj(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate), timeout)
 
 
 def _scene_center(item: QQuickItem) -> QPoint:
@@ -96,13 +83,25 @@ def _huzas_forras(window, source: QQuickItem):
 
 
 def _egerhuzas(window, qt_app, source: QQuickItem, target: QQuickItem,
-               internal_drag_type: int, offset: QPoint | None = None):
+               offset: QPoint | None = None):
     if offset is None:
         offset = QPoint()
     assert _varj(qt_app, lambda: source.width() > 0 and source.height() > 0)
     assert _varj(qt_app, lambda: target.width() > 0 and target.height() > 0)
+    # #5105: az oldalpanel becsúszik — a célpontot csak a nyugalmi
+    # helyzetében mérjük, különben az ablakon kívülre húznánk
+    elozo = None
+    for _ in range(100):
+        most = _scene_center(target)
+        if most == elozo:
+            break
+        elozo = most
+        QTest.qWait(30)
     start = _scene_center(source)
     end = _scene_center(target) + offset
+    assert 0 <= end.x() < window.width() and 0 <= end.y() < window.height(), (
+        f"a térkép célpontja az ablakon kívül esik: {end}"
+    )
     proxy = _huzas_forras(window, source)
     attached_drag = next(
         child for child in proxy.children()
@@ -116,7 +115,7 @@ def _egerhuzas(window, qt_app, source: QQuickItem, target: QQuickItem,
     # `Automatic`, ami Windowson a fájlkezelő felé is húzható; a teszt az
     # egérrel indított húzás belső QML-ágát választja ki, hogy az offscreen
     # futtató natív OLE/QDrag hurka ne vegye át a pointert.
-    attached_drag.setProperty("dragType", internal_drag_type)
+    # #5105: a termék húzási módját a teszt nem írja át
     QTest.mouseMove(window, start)
     QTest.mousePress(window, Qt.MouseButton.LeftButton, pos=start)
     delta = end - start
@@ -132,17 +131,6 @@ def _egerhuzas(window, qt_app, source: QQuickItem, target: QQuickItem,
     assert drag_activated, "a rácskép egérhúzása nem aktiválta a QML Drag-et"
     QTest.mouseRelease(window, Qt.MouseButton.LeftButton, pos=end)
     qt_app.processEvents()
-
-
-def _internal_drag_type(engine) -> int:
-    component = QQmlComponent(engine)
-    component.setData(
-        b"import QtQuick\nItem { property int typeForTest: Drag.Internal }",
-        QUrl(),
-    )
-    item = component.create()
-    assert item is not None, [error.toString() for error in component.errors()]
-    return int(item.property("typeForTest"))
 
 
 def _forras_kep(window):
@@ -203,7 +191,6 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
     )
 
     eredeti_magassag = window.height()
-    internal_drag_type = _internal_drag_type(engine)
     for lepes, magassag_delta in enumerate((-5, 0, 5)):
         window.resize(window.width(), eredeti_magassag + magassag_delta)
         assert _varj(qt_app, lambda: drop_area.width() > 0
@@ -213,12 +200,10 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
         offset = QPoint(24 + lepes * 5, -16 + lepes * 4)
         _egerhuzas(
             window, qt_app, source_mouse, drop_area,
-            internal_drag_type, offset,
+            offset,
         )
-        # A tesztelő Qt offscreen platform aktiválja a QML Drag-et egérből,
-        # de nem továbbít belső QQuick DropArea eseményt. A térkép nyilvános
-        # ejtési jelét ugyanazzal a képpontból származtatott ponttal adjuk át;
-        # a produkciós DropArea onDropped ágát külön forrásőr védi.
+        # #5105: a ledobást a térkép DropArea-jának kell elkapnia — a jelet
+        # a teszt nem hívja közvetlenül.
         drop_point = drop_area.mapFromScene(
             _scene_center(drop_area) + offset
         )
@@ -228,10 +213,14 @@ def test_racsrol_terkepre_huzas_put_move_megerositessel_ini_be_ir(
             _huzas_forras(window, source_mouse).property("photoRows")
         )
         assert drag_rows == [0]
-        map_item.photosDropped.emit(drag_rows, expected_lat, expected_lon)
+        assert _varj(qt_app, lambda n=lepes + 1: len(delivered_drops) == n), (
+            "a valódi egérhúzás ledobása nem érte el a térképet"
+        )
         assert delivered_drops[-1][0] == drag_rows
+        # #5105: a valódi ledobás pontja platformonként ±1 képpontot
+        # kerekít (Windowson mérve); a próbatérképen 1 képpont = 1e-4 fok
         assert delivered_drops[-1][1:] == pytest.approx(
-            (expected_lat, expected_lon)
+            (expected_lat, expected_lon), abs=3e-4
         )
         assert _varj(qt_app, lambda: _elem(window, "dropGeotagConfirm") is not None
                      and _elem(window, "dropGeotagConfirm").property("visible") is True), (

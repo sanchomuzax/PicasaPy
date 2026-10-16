@@ -16,28 +16,14 @@ párbeszéd saját fejezetét mutatja.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 #: (a párbeszéd objectName-je, a nyitás útja, a várt fejezet). A nyitás

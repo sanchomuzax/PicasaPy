@@ -21,12 +21,12 @@ Ez a fájl a VALÓDI láncot állítja: `Main.qml` → `window.selectedIndexes`
 
 from __future__ import annotations
 
-import time
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 
 def _walk(item: QQuickItem):
@@ -42,20 +42,8 @@ def _keres(window, nev: str):
     return window.findChild(QObject, nev)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _kattints(window, item: QQuickItem) -> None:

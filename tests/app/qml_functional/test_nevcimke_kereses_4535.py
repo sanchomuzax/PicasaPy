@@ -57,7 +57,7 @@ def _album_sample(lib: Path) -> None:
     )
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     hatarido = time.monotonic() + masodperc
     while time.monotonic() < hatarido:
         qt_app.processEvents()
@@ -110,7 +110,10 @@ def _click_and_wait(item, scanner, qt_app):
     scanner.scanFinished.connect(callback)
     try:
         _click_menu_item(item, qt_app)
-        assert _varj(qt_app, lambda: bool(finished)), "az arckeresés nem fejeződött be"
+        # Az arcdetektor betöltése a windowsos futón másodpercekig tart (main-CI, 2026-10-13).
+        assert _varj(qt_app, lambda: bool(finished), masodperc=20.0), (
+            "az arckeresés nem fejeződött be"
+        )
     finally:
         scanner.scanFinished.disconnect(callback)
     return finished[-1]

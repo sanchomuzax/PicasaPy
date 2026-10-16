@@ -214,6 +214,17 @@ Az eltérést a meglévő `tools/golden/analyze_validation_kit.py::mean_de` mér
 | `3084-poszterizalas` `quantizepalette` (szintetikus és valós kép), valamint `951-kiemelesek-arnyekok-fel-allas` `finetune2` | ΔE rendre 0,347; 0,910; illetve 0,629. | Mind egyezik. |
 | `tests/render/test_colab_golden_4256.py` — eredeti Picasa 3.9 színfolt-aranyképek, 3 próba | A 16 színfolt legnagyobb átlagos csatornaeltérése: `sepia` 1,0000 (11/16 folton nem nulla); `bw` 0,0000 (0/16); `warm` 1,0000 (13/16). A meglévő határ 2 RGB-szint. | Mindhárom egyezik; a teszt 3/3 sikeres. |
 
+**#4936 helyesbítés (2026-10-13):** a fenti `grain`/`grain2` és
+`grain+grain` értékek a javítás előtti, minden hívásnál `seed=0`-t adó
+renderelő mérési pillanatképei. A CRT-folyam sorszámozott magjával a 684-es
+`grain/alap` k=0 nyers ΔE-je **1,509**. A merokit-2
+`grain2/szemcse_02` esetén k=0: **2,661**, a Picasa munkameneti k=1 maggal
+**1,447**; a k=0 eltéréshez nem tartozik ΔE ≤ 2,0 elfogadási feltétel. A
+`grain+grain/szemcse_05` k=0,1-gyel **3,679**, a mért Picasa-munkamenet k=2,3
+magjával **1,866**. Ezek mérési adatok, nem további elfogadási küszöbök; a
+részletes képletet és tesztelési feltételeket a
+[`filters-decoded.md`](filters-decoded.md) rögzíti.
+
 ### Eltérő kimenetek jegyjelöltjei
 
 Megnyitott jegyek (2026-10-13): Szemcse #4936, Hőtérkép #4937, Éjjellátó #4938, Színezés #4939, Kéttónusú #4940, picnikfocalpixelate bemenetkezelés #4941, Keret+Vinyetta lánc #4942.

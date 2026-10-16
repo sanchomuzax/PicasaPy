@@ -19,32 +19,19 @@ Amit ez a fájl rögzít:
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 REJTETT_FEJLEC = "hiddenCollectionHeader"
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _elem(window, nev):

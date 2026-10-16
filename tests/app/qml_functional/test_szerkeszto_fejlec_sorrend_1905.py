@@ -66,13 +66,13 @@ eltérésre JPEG-en mért szegélyekből nem mondunk ki új igazságot.
 """
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject
 from PySide6.QtQuick import QQuickItem
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 #: A felvételen mért távolság a doboz alja és a panel alja között.
 MERT_ALSO_HEZAG = 4
@@ -93,17 +93,8 @@ def _elem(window, nev: str):
     return window.findChild(QObject, nev)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _bal_x(elem) -> float:
@@ -151,6 +142,13 @@ def _valts_ket_kepre(window, qt_app):
     nezo = _elem(window, "photoViewer")
     nezo.setProperty("layoutMode", "ab")
     qt_app.processEvents()
+    # a Row az újonnan látható gombokat csak a következő elrendezési körben
+    # helyezi el; addig a bal szélen (a lejátszó helyén) állnak
+    _var(
+        qt_app,
+        lambda: _bal_x(_elem(window, "viewerSwapLayout"))
+        > _bal_x(_elem(window, "viewerLayoutAa")),
+    )
 
 
 class TestAVezerlokSorrendje:

@@ -32,6 +32,8 @@ from support.collage_canvas_harness import (
     keszits_kepeket,
     nyitott_vezerlo,
 )
+from PySide6.QtWidgets import QApplication
+from tests.support.varakozas import var_feltetelre
 
 #: A folyamatjelző doboz mérete (spec 9.1).
 OVERLAY_MERET = (224, 80)
@@ -75,16 +77,10 @@ def _gomb(panel, dialog_nev, gomb_nev):
     return gomb
 
 
-def _var(feltetel, ms=2000):
+def _var(feltetel, ms=10000):
     """Esemény-pörgetés HATÁRIDŐVEL — fejnélküli környezetben az elrendezés
     és a `Popup` megnyílása nem azonnali."""
-    eltelt = 0
-    while eltelt < ms:
-        if feltetel():
-            return True
-        QTest.qWait(25)
-        eltelt += 25
-    return feltetel()
+    return var_feltetelre(QApplication.instance(), feltetel, ms / 1000)
 
 
 def _esc(panel):

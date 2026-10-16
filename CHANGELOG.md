@@ -7,6 +7,131 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.110] – 2026-10-16
+
+- A kijelölt képek egérrel a bal sáv mappájára, albumára, a tálcára húzva ténylegesen átkerülnek; mappa és arc húzása is működik (#5105).
+- A kijelölt képek kis elhúzása és elengedése a saját helyükre már nem rendezi át őket (#5105).
+- A nagy-fájl őr a gitben tárolt méretet méri (Windowson sem bukik a CRLF miatt), a nyelvi katalógusok kimondott kivételek (#5105).
+
+## [0.9.109] – 2026-10-15
+
+- Teljessé vált a thai felület fordítása (#5090).
+- A hindi felület mind az 1 413 saját felirata mostantól hindiül jelenik meg (#5092).
+- Minden PicasaPy-saját felirat elérhető filippínó fordítást kapott. (#5095).
+- Teljessé vált az arab felület fordítása, a többes számú feliratok mind a hat alakjával. (#5097).
+- A PicasaPy perzsa felületének eddig hiányzó feliratai most már teljesen le vannak fordítva (#5099).
+- A héber felület korábban fordítatlan PicasaPy-feliratai teljes héber fordítást kaptak. (#5101).
+
+## [0.9.108] – 2026-10-15
+
+- Teljessé vált a PicasaPy lett felületének fordítása (#5077).
+- A szerb felületen teljessé váltak a PicasaPy saját feliratai (#5079).
+- Teljessé vált a katalán felület: mind az 1397 eddig fordítatlan felirat katalán fordítást kapott. (#5082).
+- A portugál (európai) felület 1400 saját felirata mostantól portugálul jelenik meg. (#5084).
+- Elkészült az indonéz felület 1373 saját feliratának fordítása. (#5086).
+- Lefordítottuk a vietnámi felület hiányzó feliratait. (#5088).
+
+## [0.9.107] – 2026-10-15
+
+- A horvát felületen minden felirat kapott horvát fordítást (#5070).
+- A szlovák felületen most már a PicasaPy feliratai is lefordítva jelennek meg. (#5071).
+- Teljessé vált a szlovén felület fordítása (#5073).
+- Elkészült a litván felület fordítása, a többes szám mindhárom alakjával (#5075).
+
+## [0.9.106] – 2026-10-15
+
+- A görög felületen minden felirat görög fordítást kapott. (#5059).
+- Az ukrán felületen mind a 2845 felirat lefordított, a Picasa ukrán terminológiáját követő alakban jelenik meg. (#5061).
+- A román felületen mind az 1411 fordítatlan felirat román fordítást kapott, a Picasa terminológiájához igazítva (#5064).
+- Teljessé vált a bolgár felület fordítása. (#5066).
+
+## [0.9.105] – 2026-10-15
+
+- A török felületen most már minden PicasaPy-felirat lefordítva jelenik meg. (#5046).
+- A svéd felületen minden korábban fordítatlan felirat svéd fordítással jelenik meg, megőrizve a Picasa-terminológiát és a helyőrzőket (#5048).
+- Lefordítottuk a cseh felületen eddig fordítatlan feliratokat (#5051).
+- Teljessé vált a dán felület fordítása. (#5053).
+- Teljessé vált a finn felület fordítása (#5055).
+- A norvég felület PicasaPy-saját feliratai teljes bokmål-fordítást kaptak (#5057).
+
+## [0.9.104] – 2026-10-15
+
+- Uzupełniono polskie tłumaczenia interfejsu PicasaPy (#5033).
+- Az orosz felületen minden PicasaPy-saját felirat teljes orosz fordítással jelenik meg, megőrizve a helyőrzőket, gyorsbillentyűket és mindhárom többes alakot (#5035).
+- A japán felületen mostantól minden felirat le van fordítva (#5037).
+- A kínai (egyszerűsített) felületen minden korábban fordítatlan felirat most kínai fordítással jelenik meg (#5039).
+- A koreai felület hiányzó feliratai teljes körű koreai fordítást kaptak. (#5042).
+- A hagyományos kínai felületen lefordítottuk a PicasaPy feliratait, gyorsbillentyűit és formátumjelölőit. (#5044).
+
+## [0.9.103] – 2026-10-15
+
+- Az angol (brit) felületen minden PicasaPy-saját felirat teljes, brit helyesírású fordítással jelenik meg (#5018).
+- Die deutsche Oberfläche ist jetzt vollständig übersetzt (#5020).
+- A francia felületen minden PicasaPy-saját felirat lefordítva jelenik meg, a helyőrzők és gyorsbillentyűk megőrzésével (#5021).
+- A spanyol felületen minden PicasaPy-felirat teljes, spanyol fordítással jelenik meg (#5023).
+- Az olasz felületen minden PicasaPy-saját felirat teljes olasz fordítással jelenik meg (#5025).
+- A brazíliai portugál felületen minden PicasaPy-saját felirat lefordítva jelenik meg, a helyőrzők és gyorsbillentyűk megőrzésével (#5028).
+- A holland felületen most minden PicasaPy-saját felirat holland fordítással jelenik meg (#5030).
+
+## [0.9.102] – 2026-10-15
+
+- A retusálás a forrás gradienseit átültető Poisson-gyógyítással a cél környezetébe olvasztja a foltot (#4544).
+
+## [0.9.101] – 2026-10-15
+
+- A rácsból képeket lehet a tálcára húzni, az albumok kézi sorrendjét, a mappák helyét és az arcok személyhez rendelését húzással módosítani. (#5008).
+
+## [0.9.100] – 2026-10-15
+
+- A kijelölt képek a mappasorra húzva átkerülnek, a Másolás és Beillesztés pedig a kiválasztott mappába másolja őket (#5007).
+
+## [0.9.99] – 2026-10-14
+
+- A Jó napom van, a Gördülő stáblista és az Írógép stílusú szöveges diák animálódnak a filmben. (#4615).
+
+## [0.9.98] – 2026-10-14
+
+- A nézőben a Ctrl+F9 folyamatosan léptet a mappa végéig, kézi lapozásra és bezáráskor megáll (#4698).
+
+## [0.9.97] – 2026-10-14
+
+- A személy-album indexképe a fotó helyi menüjéből beállítható, és az SQLite index megőrzi. (#4536).
+
+## [0.9.96] – 2026-10-14
+
+- A Picasa-átvétel megőrzi a mappák és albumok kézi képsorrendjét. (#4889).
+
+## [0.9.95] – 2026-10-14
+
+- A Ctrl+Alt előnézet a kijelölt képet mutatja, és csak 1024 képpontnál szélesebb tartalomnézetben jelenik meg (#4949).
+
+## [0.9.94] – 2026-10-14
+
+- A szerkesztő betűcsalád-listája futás közben egyszer olvassa be a rendszer betűtípusait, nem minden lekérdezéskor (#4964).
+- A szerkesztés megnyitása gyorsabb: a néző a betűcsalád-listát csak egyszer tölti be, nem minden megnyitáskor (#4966).
+
+## [0.9.93] – 2026-10-14
+
+- A PR-ek ellenőrzése ritkábban futtatja feleslegesen a teljes tesztkészletet; az utolsó 30 beolvadásból 13 helyett már csak 4 esetben (#4922).
+
+## [0.9.92] – 2026-10-13
+
+- A Sugaras elmosás (RadialBlur) képpontra az eredeti Picasa kimenetét adja, a kép szélein is (#4906).
+
+## [0.9.91] – 2026-10-13
+
+- A Pixelate natív kimenetével egyező kicsinyítést és középre igazított visszanagyítást ad (#4908).
+- A PR-ek tesztjei a módosításhoz kapcsolódó ellenőrzésekre szűkülnek, Windows alatt pedig csak a Windows-érzékeny tesztek futnak (#4922).
+- A Ctrl+Alt felugró előnézet már nem a buboréksúgó kapcsolóját követi, hanem a saját beállítását, amely alapból be van kapcsolva (#4949).
+- A forráskódból és a tesztadatokból kikerültek a fejlesztőgép helyi felhasználói útvonalai (#4952).
+
+## [0.9.90] – 2026-10-13
+
+- A hiányos paraméterű Fókuszpixelezés a Picasához hasonlóan változatlanul hagyja a képet, nem alapértékekkel pixelez (#4941).
+- A paritáslap most már a 7. réteg Picasa-exportokhoz mért effektkimeneteit és eltéréseit is tartalmazza (#4317).
+- A Szemcse effekt az eredeti Picasa véletlenmag-sorát követi, így az export a Picasáéval képpontra egyező szemcsét ad (#4936).
+- A paritásmérő a saját kimenetünket a Picasa-referencia JPEG-kódolásával és az export láncolvasójával hasonlítja; a Hőtérkép, Éjjellátó, Színezés, Kéttónusú és Keret+Vinyetta látszólagos eltérése ezzel eltűnt (#4940).
+
 ## [0.9.89] – 2026-10-13
 
 - Ctrl+Alt nyomva tartásakor a képrács kurzor alatti fotója nagy, külön előnézeti ablakban jelenik meg (#4928).

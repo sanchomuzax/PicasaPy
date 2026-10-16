@@ -8,7 +8,6 @@ import errno
 import os
 import socket
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -20,6 +19,7 @@ from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import wait_for_photo_op
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from tests.app.qml_functional._fomenu_4420_menu import _kattints, _megnyit
 from tests.app.qml_functional.conftest import _build_qml_app
 
@@ -34,18 +34,8 @@ _QML_REFS = []
 _DOKUKEPEK_KAPCSOLO = "PICASAPY_DOKUKEPEK"
 
 
-def _var(qt_app, feltetel, masodperc: float = 8.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        time.sleep(0.02)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _bejark(item):
@@ -338,7 +328,7 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
     assert _var(qt_app, lambda: export.property("opened") is False), (
         "az export befejeződött, de a párbeszéd nyitva maradt"
     )
-    assert _var(qt_app, lambda: export.property("visible") is False, 3.0), (
+    assert _var(qt_app, lambda: export.property("visible") is False), (
         "az export párbeszéd bezáró animációja nem ért véget"
     )
     assert not app["attempts"], f"exportálás közben hálózati próbálkozás történt: {app['attempts']}"
@@ -349,9 +339,14 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
     window, engine = app["window"], app["engine"]
     menu_bar = window.property("menuBar")
     _QML_REFS.append(menu_bar)
-    _megnyit(menu_bar, qt_app, "Tools")
-    _kattints(qt_app, _elem(window, "menuToolsFaceScan"))
-    assert _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog"))), (
+    # Windowson a felugró menü elhelyezése késhet, és az első kattintás a
+    # még mozgó menüpont mellé eshet; ilyenkor egyszer újranyitjuk a menüt.
+    for _ in range(2):
+        _megnyit(menu_bar, qt_app, "Tools")
+        _kattints(qt_app, _elem(window, "menuToolsFaceScan"))
+        if _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog")), 10.0):
+            break
+    assert _elemek(window, "faceScanDialog"), (
         "a Tools > Find Faces kattintás után nem jött létre a párbeszéd"
     )
     dialog = _elem(window, "faceScanDialog")
@@ -399,16 +394,61 @@ def _legfelso_talalat(item, pont):
     return item
 
 
-def _vorosszem_diagnosztika(window, terulet, gomb) -> str:
-    """A húzás utáni, Apply előtti állapot: a Windows-bukás okának kiderítéséhez (#4929)."""
-    grab = window.mouseGrabberItem()
-    kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
-    talalat = _legfelso_talalat(window.contentItem(), kozep)
+def _latszik_es_meretes(item) -> bool:
+    return (item.isVisible() and item.isEnabled()
+            and item.width() > 0 and item.height() > 0)
+
+
+def _keres(window, nev: str):
+    """Mint a _elem, de nem bukik el: None, ha az elem nincs (diagnosztikához, #4929)."""
+    talalatok = _elemek(window, nev)
+    return talalatok[0] if talalatok else None
+
+
+def _igen_nem(logikai: bool) -> str:
+    return "igen" if logikai else "nem"
+
+
+def _elem_helyzet(window, nev: str, elem) -> str:
+    """Létezik-e, látszik-e, engedélyezett-e, és hol van az ablak tartalmához képest (#4929)."""
+    if elem is None:
+        return f"{nev}=nincs"
+    hely = elem.mapToItem(window.contentItem(), QPointF(0, 0))
     return (
-        f"mouseGrabberItem={_nev(grab) if grab is not None else 'None'}, "
-        f"redeyeDragArea.dragging={terulet.property('dragging')}, "
-        f"Apply-középpont=({kozep.x():.1f}, {kozep.y():.1f}), "
+        f"{nev}=van(látszik={_igen_nem(elem.isVisible())}, "
+        f"engedélyezett={_igen_nem(elem.isEnabled())}, "
+        f"x={hely.x():.0f}, y={hely.y():.0f}, "
+        f"szél={elem.width():.0f}, mag={elem.height():.0f})"
+    )
+
+
+def _aktiv_szerkeszto(window) -> str:
+    """Az aktív szerkesztőfül és a megnyitott effekt neve, ha a szerkesztőpanel elérhető (#4929)."""
+    panel = _keres(window, "viewerEditorPanel")
+    if panel is None:
+        return "szerkesztőpanel=nincs"
+    return (f"aktív fül={panel.property('activeTab')}, "
+            f"effekt='{panel.property('paramEffectName')}'")
+
+
+def _vorosszem_diagnosztika(window, edit, terulet, gomb) -> str:
+    """A húzás körüli állapot a bukás okának kiderítéséhez (#4929). Bármelyik elem lehet None."""
+    grab = window.mouseGrabberItem()
+    talalat = None
+    if gomb is not None:
+        kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
+        talalat = _legfelso_talalat(window.contentItem(), kozep)
+    return (
+        f"{_elem_helyzet(window, 'redeyeDragArea', terulet)}, "
+        f"dragging={terulet.property('dragging') if terulet is not None else 'nincs'}, "
+        f"selW={terulet.property('selW') if terulet is not None else 'nincs'}, "
+        f"selH={terulet.property('selH') if terulet is not None else 'nincs'}, "
+        f"{_elem_helyzet(window, 'redeyeApplyButton', gomb)}, "
         f"ablak={window.width():.0f}x{window.height():.0f}, "
+        f"{_aktiv_szerkeszto(window)}, "
+        f"mouseGrabberItem={_nev(grab) if grab is not None else 'None'}, "
+        f"régiószám={edit.redeyeRegionCount}, "
+        f"effectChain={edit.effectChain!r}, "
         f"hit-test={_nev(talalat) if talalat is not None else 'None'}."
     )
 
@@ -421,8 +461,18 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     if not eszkoz.isVisible():
         _kattint(window, qt_app, "toggle_left_drawer")
     _kattint(window, qt_app, "editToolRedeye")
-    terulet = _elem(window, "redeyeDragArea")
-    assert terulet.isEnabled() and terulet.width() > 0 and terulet.height() > 0
+    terulet = _keres(window, "redeyeDragArea")
+    gomb = _keres(window, "redeyeApplyButton")
+    if terulet is None or gomb is None:
+        diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+    assert terulet is not None, "a felületi elem nem található: redeyeDragArea"
+    assert gomb is not None, "a felületi elem nem található: redeyeApplyButton"
+    lathato = _var(qt_app, lambda: _latszik_es_meretes(terulet) and _latszik_es_meretes(gomb))
+    if not lathato:
+        diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+    assert lathato, (
+        "a vörösszem húzási területe vagy az Alkalmaz gomb nem látszik a húzás előtt"
+    )
     p0 = terulet.mapToScene(QPointF(terulet.width() * 0.46, terulet.height() * 0.46))
     p1 = terulet.mapToScene(QPointF(terulet.width() * 0.54, terulet.height() * 0.54))
     cel = terulet.window()
@@ -434,7 +484,14 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
                        Qt.KeyboardModifier.NoModifier,
                        QPoint(round(p1.x()), round(p1.y())))
     qt_app.processEvents()
-    diag.append(_vorosszem_diagnosztika(window, terulet, _elem(window, "redeyeApplyButton")))
+    diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+    assert terulet.property("selW") > 0 and terulet.property("selH") > 0, (
+        "a vörösszem-húzás nem adott kijelölést (selW/selH nulla)"
+    )
+    assert edit.redeyeRegionCount >= 1, "a vörösszem-húzás nem hozott létre régiót"
+    assert _var(qt_app, lambda: _latszik_es_meretes(gomb)), (
+        "az Alkalmaz gomb nem látszik a húzás után"
+    )
     _kattint(window, qt_app, "redeyeApplyButton")
     assert _var(qt_app, lambda: "redeye" in edit.effectChain.casefold()), (
         "a vörösszem-kijelölés alkalmazása nem került a szerkesztési láncba"
@@ -455,7 +512,9 @@ def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
     except AssertionError as hiba:
         if sys.platform != "win32" or tiszta_app["attempts"]:
             raise
-        return f"#4929 diag: {hiba} | {' '.join(diag) or 'a húzás előtt bukott'}"
+        # A pytest a rewrite miatt az üzenet után az "assert ..." sort is hozzáfűzi; csak az első sor kell.
+        uzenet = str(hiba).splitlines()[0]
+        return f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
     return None
 
 

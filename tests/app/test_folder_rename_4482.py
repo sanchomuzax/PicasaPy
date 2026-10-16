@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sqlite3
-import time
 from pathlib import Path
 
 import pytest
@@ -24,19 +23,11 @@ from picasapy.ini import (
 from picasapy.thumbs import ThumbnailCache
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
-def _var(qt_app, condition, seconds=8.0):
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        try:
-            if condition():
-                return True
-        except (AttributeError, RuntimeError, sqlite3.Error):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.02)
-    return bool(condition())
+def _var(qt_app, condition, seconds=10.0):
+    return var_feltetelre(qt_app, hibaturo_feltetel(condition, (AttributeError, RuntimeError, sqlite3.Error)), seconds)
 
 
 @pytest.fixture

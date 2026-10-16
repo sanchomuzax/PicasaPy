@@ -6,11 +6,12 @@ from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QElapsedTimer, QEventLoop, QObject, QPoint, QTimer, Qt, QUrl
+from PySide6.QtCore import QEventLoop, QObject, QPoint, QTimer, Qt, QUrl
 from PySide6.QtTest import QTest
 from picasapy.lazy_cv2 import cv2
 from picasapy.movie.mxf import read_mxf
 from picasapy.movie.slideshow import _ffmpeg_exe
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev):
@@ -31,17 +32,8 @@ def _kattintas(window, qt_app, item):
     qt_app.processEvents()
 
 
-def _var(qt_app, feltetel, lejarat_ms=3000):
-    """Határidős ciklus időzített Qt/QML-állapotokhoz."""
-    ora = QElapsedTimer()
-    ora.start()
-    while ora.elapsed() < lejarat_ms:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, lejarat_ms=10000):
+    return var_feltetelre(qt_app, feltetel, lejarat_ms / 1000)
 
 
 def _close_open_create_dialogs(window, qt_app):

@@ -827,6 +827,12 @@ class EditPreviewProvider(QQuickImageProvider):
         if not ops:
             height, width = source_array.shape[:2]
             return source_array, None, LancHelyzet.kezdo(width, height)
+        if any(op.name.casefold() in {"grain", "grain2"} for op in ops):
+            # A szemcsemag sorszáma a teljes renderláncban értendő. A
+            # prefix-cache kettévágása a záró grainnek újra 0-t adna, ezért
+            # szemcsét tartalmazó láncnál egyben renderelünk.
+            jelentes = apply_filters(source_array, ops)
+            return jelentes.image, jelentes.content_placement, jelentes.helyzet
         # #3229: a lánc MÁR NEM rendez át — az `apply_filters` az ops
         # sorrendjében fut, és a `crop64` koordinátáit a leképezés vezeti át.
         # Ezért a prefix egyszerűen a lánc eleje, és a kettévágott futtatás

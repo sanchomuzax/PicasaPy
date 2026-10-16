@@ -15,6 +15,7 @@ Rectangle {
     signal ignoreRequested(int faceId)
     signal suggestionAccepted(int faceId)
     signal suggestionRejected(int faceId)
+    signal faceDropped(int faceId, string personName)
 
     function submitName(name) {
         var cleanName = String(name).trim()
@@ -56,6 +57,78 @@ Rectangle {
         mipmap: true
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
+    }
+
+    Item {
+        id: faceDragProxy
+        objectName: row.unnamedFace
+                    ? "peopleFaceDragProxy_" + row.faceId : ""
+        x: faceImage.x + faceImage.width / 2
+        y: faceImage.y + faceImage.height / 2
+        width: 1
+        height: 1
+        visible: row.unnamedFace
+        readonly property string payload: "face"
+        readonly property int draggedFaceId: row.faceId
+        Drag.active: faceDragMouse.dragging
+        Drag.dragType: Drag.Internal  // #5105: programon belüli húzás, a rendszer-DnD Waylandon nem adja le a DropArea-nak
+        Drag.supportedActions: Qt.MoveAction
+        Drag.hotSpot.x: 0
+        Drag.hotSpot.y: 0
+    }
+
+    MouseArea {
+        id: faceDragMouse
+        objectName: row.unnamedFace
+                    ? "peopleFaceDragArea_" + row.faceId : ""
+        x: faceImage.x
+        y: faceImage.y
+        width: faceImage.width
+        height: faceImage.height
+        visible: row.unnamedFace
+        acceptedButtons: Qt.LeftButton
+        preventStealing: true
+        property bool dragging: false
+        property real pressX: 0
+        property real pressY: 0
+        onPressed: function(mouse) {
+            pressX = mouse.x
+            pressY = mouse.y
+            dragging = false
+        }
+        onPositionChanged: function(mouse) {
+            if (!pressed) return
+            var dx = mouse.x - pressX
+            var dy = mouse.y - pressY
+            if (!dragging && Math.abs(dx) + Math.abs(dy) > 8)
+                dragging = true
+            if (dragging) {
+                var point = faceDragMouse.mapToItem(row, mouse.x, mouse.y)
+                faceDragProxy.x = point.x
+                faceDragProxy.y = point.y
+            }
+        }
+        onReleased: function(mouse) {
+            if (dragging) {
+                faceDragProxy.Drag.drop()
+                dragging = false
+            }
+        }
+    }
+
+    DropArea {
+        objectName: !row.unnamedFace
+                    ? "peoplePanelPersonDropArea_" + row.personName : ""
+        anchors.fill: parent
+        enabled: !row.unnamedFace
+        onDropped: function(drop) {
+            var source = drop.source
+            if (!source || source.payload !== "face"
+                    || Number(source.draggedFaceId) < 0)
+                return
+            drop.accept()
+            row.faceDropped(Number(source.draggedFaceId), row.personName)
+        }
     }
 
     Text {

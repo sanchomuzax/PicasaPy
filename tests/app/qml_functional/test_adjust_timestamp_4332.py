@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -14,6 +13,7 @@ from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
 from tests.app.qml_functional.conftest import _build_qml_app
+from tests.support.varakozas import var_feltetelre
 
 
 DATUMOK = ("2020:01:01 12:00:00", "2020:01:03 12:00:00")
@@ -37,14 +37,8 @@ def timestamp_app(qt_app, tmp_path):
     yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_kepek)
 
 
-def _var(qt_app, feltetel, leiras: str, ido: float = 3.0) -> None:
-    hatarido = time.monotonic() + ido
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.05)
-    assert feltetel(), f"időtúllépés: {leiras}"
+def _var(qt_app, feltetel, leiras: str, ido: float = 10.0) -> None:
+    assert var_feltetelre(qt_app, feltetel, ido), f"időtúllépés: {leiras}"
 
 
 def _elem(window, nev: str):

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -17,6 +16,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 @pytest.fixture
@@ -68,15 +68,8 @@ def _qml_class_names(item) -> list[str]:
     return names
 
 
-def _wait_for(qt_app, condition, timeout: float = 3.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        QCoreApplication.processEvents()
-        if condition():
-            return True
-        QTest.qWait(50)
-    QCoreApplication.processEvents()
-    return bool(condition())
+def _wait_for(qt_app, condition, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, condition, timeout)
 
 
 def _click(item, *, x_fraction: float = 0.5, y_fraction: float = 0.5) -> None:

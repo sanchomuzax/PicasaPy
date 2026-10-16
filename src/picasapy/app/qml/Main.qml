@@ -1420,6 +1420,7 @@ ApplicationWindow {
         // (⚠️ A komment maga sem tartalmazhatja a keresett mintát: az
         // első változatom épp ezzel vezette félre a mérést.)
         id: shortcutCopyFiles
+        objectName: "shortcutCopyFiles"
         sequence: "Ctrl+C"
         enabled: !window._szovegmezoneVanFokusz
                  && window.photoActionRows().length > 0
@@ -1428,6 +1429,7 @@ ApplicationWindow {
     }
     Shortcut {
         id: shortcutCutFiles
+        objectName: "shortcutCutFiles"
         sequence: "Ctrl+X"
         enabled: !window._szovegmezoneVanFokusz
                  && window.photoActionRows().length > 0
@@ -1576,6 +1578,7 @@ ApplicationWindow {
         //: másoláson: szövegmezőben a mezőé a billentyű (különben átnevezés
         //: közben nem lehetne beilleszteni a szövegbe).
         id: shortcutPasteFiles
+        objectName: "shortcutPasteFiles"
         sequence: "Ctrl+V"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
         onActivated: window.beillesztAVagolaprol()
@@ -3291,10 +3294,34 @@ ApplicationWindow {
             // album ugyanazt a névkérő párbeszédet kapja, mint a menüből
             // indított (Fájl → Új album), hogy ne legyen két, kicsit
             // másképp viselkedő út ugyanarra.
-            onNewAlbumDropped: fileOpsDialogs.ensure().openNewAlbum(window.selectedIndexes)
-            onPhotosDroppedOnAlbum: function(token) {
-                if (controller && window.selectedIndexes.length > 0)
-                    controller.addRowsToAlbum(window.selectedIndexes, token)
+            onNewAlbumPhotosDropped: function(rows) {
+                if (rows && rows.length > 0)
+                    fileOpsDialogs.ensure().openNewAlbum(rows)
+            }
+            onPhotosDroppedOnAlbum: function(token, rows) {
+                if (controller && rows && rows.length > 0)
+                    controller.addRowsToAlbum(rows, token)
+            }
+            // #5007: a rácsból mappára húzott kijelölés áthelyezése. A
+            // DropArea a forrássorokat még a célmappa megnyitása előtt
+            // pillanatfelvételként adja át; a fájlokat és a .picasa.ini-t a
+            // FileOpsController meglévő kötegelt útja mozgatja.
+            onPhotosDroppedOnFolder: function(path, rows) {
+                if (!controller || !fileOpsController || !path
+                        || !rows || rows.length === 0)
+                    return
+                var paths = []
+                for (var i = 0; i < rows.length; ++i) {
+                    var photoPath = controller.photos.filePathAt(
+                        Number(rows[i]))
+                    if (photoPath.length > 0) paths.push(photoPath)
+                }
+                if (paths.length > 0)
+                    fileOpsController.movePhotos(paths, path, "rename")
+            }
+            onFolderDroppedOnFolder: function(sourcePath, targetPath) {
+                if (fileOpsController && sourcePath && targetPath)
+                    fileOpsController.moveFolder(sourcePath, targetPath)
             }
             // #3681: a mentés-panel közös szűrő-szerződése (ld.
             // `FolderPane.qml`) — amíg a mentés-panel LÁTSZIK, a hasáb a
@@ -4447,6 +4474,10 @@ ApplicationWindow {
         // vászon kapja meg.
         visible: window.libraryFrameVisible
         appWindow: window
+        onPhotosDroppedOnTray: function(rows) {
+            if (controller && rows && rows.length > 0)
+                controller.holdRows(rows)
+        }
         // #4637: a testreszabható alsó kimeneti gombsor közös helyi menüje.
         onConfigureButtonsContextMenuRequested: function(anchorItem, x, y) {
             window.openConfigureButtonsContextMenu(anchorItem, x, y)
@@ -4515,6 +4546,11 @@ ApplicationWindow {
             // #3468: a „Keresés" almenü csak EGY kijelölt képnél jelenik meg
             var db = window.selectedRows().length
             photoContextMenu.kijeloltKepekSzama = db > 0 ? db : 1
+            photoContextMenu.peopleThumbnailFaceAvailable = controller
+                ? controller.canSetPersonThumbnail(
+                    Number(controller.photos.idAt(window.fileOpTargetRow)),
+                    controller.currentPersonName)
+                : false
         }
         // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
         // együtt kötve, hogy a menü újranyitáskor friss legyen)
@@ -4625,6 +4661,12 @@ ApplicationWindow {
         onMoveToNewPersonRequested: {
             if (controller) moveToNewPersonDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
+        }
+        onSetPeopleAlbumThumbnailRequested: {
+            if (controller && controller.setPersonThumbnail(
+                    Number(controller.photos.idAt(window.fileOpTargetRow)),
+                    controller.currentPersonName))
+                window.peopleFaceRevision++
         }
     }
 

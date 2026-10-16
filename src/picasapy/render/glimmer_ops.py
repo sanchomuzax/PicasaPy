@@ -1261,12 +1261,15 @@ def _tengely_sulyok(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Egy tengely csapindexei és EGÉSZ súlyai, a `ytResampler` szerint.
 
-    Spec 5/b–5/c (`0x00a3f660`): a csap helye `j + 0,5`, a kimeneti képpont
-    középpontja `c = (i + 0,5) · forrás/cél` (float32). A mag kicsinyítéskor
-    a léptékkel nyúlik (`nyujtas = max(1, forrás/cél)`, `0x00a3f74b`):
+    Spec 5/b–5/c (`0x00a3f660`): a csap helye `j + 0,5`. A natív dobozág
+    előbb float32-ben tárolja a cél/forrás arányt, majd ennek külön float32
+    reciprokával számítja a középpontot (`0x00a3f711`–`0x00a3f717`,
+    `0x00a3f8af`–`0x00a3f8bd`). A tapeltolást a cél/forrás aránnyal szorozza,
+    és float32-ben veti össze a `0,5` határral (`0x00a3faf6`–`0x00a3fb20`).
+    Ez a kétlépcsős kerekítés matematikailag határra eső alsó tapot is
+    beengedhet, ezért a közvetlen forrás/cél osztás nem bitpontos.
 
-    * **doboz** (0-s mód): súly 1, ha `|x| < 0,5` — a határon álló csap nem
-      számít (`0x00a3fb12`);
+    * **doboz** (0-s mód): súly 1, ha a tárolt `|x| < 0,5`;
     * **Mitchell** (3-as mód): `B = C = 0,4`, `|x| < 2`;
     * **Lanczos-3** (5-ös mód, `lanczos=True`, #3998): `|x| < 3`.
 
@@ -1280,18 +1283,43 @@ def _tengely_sulyok(
     képponthatárra esik), a teljes súly a `csonk(c)` csapé. Ezt az esetet a
     bináris nem mérte ki; a maradék-szabály folytatása.
     """
-    skala = np.float32(be_meret) / np.float32(ki_meret)
-    nyujtas = max(1.0, float(skala))
-    sugar = (0.5 if doboz else 3.0 if lanczos else 2.0) * nyujtas
-    kozep = ((np.arange(ki_meret, dtype=np.float32) + np.float32(0.5)) * skala).astype(np.float64)
+    cel_forras = np.float32(ki_meret) / np.float32(be_meret)
+    forras_cel = np.float32(be_meret) / np.float32(ki_meret)
+    if doboz:
+        # A natív előbb cél/forrás float32 arányt tárol, majd külön veszi a
+        # reciprokát. Egyes méreteknél ez eltér a közvetlen forrás/cél
+        # osztástól (például 7→4: 1,74999988, nem 1,75).
+        skala = np.float32(np.float32(1.0) / cel_forras)
+        nyujtas = max(1.0, float(skala))
+        sugar = float(np.float32(np.float32(0.5) / cel_forras))
+        kozep = (
+            (np.arange(ki_meret, dtype=np.float32) + np.float32(0.5)) * skala
+        ).astype(np.float32).astype(np.float64)
+    else:
+        skala = forras_cel
+        nyujtas = max(1.0, float(skala))
+        sugar = (3.0 if lanczos else 2.0) * nyujtas
+        kozep = (
+            (np.arange(ki_meret, dtype=np.float32) + np.float32(0.5)) * skala
+        ).astype(np.float64)
     elso = np.floor(kozep - sugar - 0.5).astype(np.int64)
     ablak = int(np.ceil(2 * sugar)) + 2
     indexek = elso[:, None] + np.arange(ablak)[None, :]
-    tav = indexek + 0.5 - kozep[:, None]
-    ervenyes = (np.abs(tav) < sugar) & (indexek >= 0) & (indexek < be_meret)
     if doboz:
+        tap_kozep = (indexek.astype(np.float32) + np.float32(0.5)).astype(np.float32)
+        tav = (
+            (tap_kozep - kozep.astype(np.float32)[:, None]).astype(np.float32)
+            * cel_forras
+        ).astype(np.float32)
+        ervenyes = (
+            (np.abs(tav) < np.float32(0.5))
+            & (indexek >= 0)
+            & (indexek < be_meret)
+        )
         nyers = ervenyes.astype(np.float64)
     else:
+        tav = indexek + 0.5 - kozep[:, None]
+        ervenyes = (np.abs(tav) < sugar) & (indexek >= 0) & (indexek < be_meret)
         mag = lanczos3 if lanczos else mitchell_netravali
         nyers = np.where(ervenyes, mag(tav / nyujtas), 0.0)
     osszeg = nyers.sum(axis=1, keepdims=True)

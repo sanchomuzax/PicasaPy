@@ -23,19 +23,30 @@ ListView {
     signal openRequested(int row)
     // zöld ▸ a mappa-fejlécen: vetítés a csoport első képétől
     signal slideshowRequested(int startRow)
-
-    // Ctrl+Alt alatt a kurzor alatti, valódi képfájl lesz a külön
-    // PopDisplay-ablak képe; a rács egyetlen indexe jelöli a hover célját.
-    property int hoverPreviewRow: -1
-    readonly property var hoverPreviewPhoto: {
-        if (!grid.ctl || !grid.ctl.photos || grid.hoverPreviewRow < 0)
-            return ({})
-        return grid.ctl.photos.itemAt(grid.hoverPreviewRow)
+    // #5008: a forrásból érkező képsorokat rendezzük, ne a pillanatnyi
+    // kijelölést; album-feedben ugyanez az albumorder kulcsot írja.
+    signal photoRowsDroppedOnReorder(
+        int start, int count, real flowWidth, real x, real y, var photoRows)
+    onPhotoRowsDroppedOnReorder: function(
+        start, count, flowWidth, x, y, photoRows) {
+        grid.ejtsdAzAtrendezest(
+            start, count, flowWidth, x, y, photoRows)
     }
-    readonly property string hoverPreviewSource: {
-        if (!grid.ctl || !grid.ctl.photos || grid.hoverPreviewRow < 0)
+
+    // Ctrl+Alt alatt a kijelölt (aktuális) kép lesz a külön PopDisplay-ablak
+    // képe. A mutató alatti cella nem módosítja ezt a képforrást.
+    readonly property int currentPreviewRow:
+        grid.appWindow && grid.appWindow.selectedIndex !== undefined
+        ? Number(grid.appWindow.selectedIndex) : -1
+    readonly property var currentPreviewPhoto: {
+        if (!grid.ctl || !grid.ctl.photos || grid.currentPreviewRow < 0)
+            return ({})
+        return grid.ctl.photos.itemAt(grid.currentPreviewRow) || ({})
+    }
+    readonly property string currentPreviewSource: {
+        if (!grid.ctl || !grid.ctl.photos || grid.currentPreviewRow < 0)
             return ""
-        return grid.ctl.hoverPreviewFileUrlAt(grid.hoverPreviewRow)
+        return grid.ctl.hoverPreviewFileUrlAt(grid.currentPreviewRow)
     }
 
     // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
@@ -87,9 +98,12 @@ ListView {
                 | Qt.WindowTransparentForInput
         modality: Qt.NonModal
         color: Theme.lightboxBg
+        // A gyerekablak kliensszélességét a fő tartalomnézet adja; a spec
+        // GetClientRect(child HWND).right értékének ez a QML-párja.
+        readonly property real clientWidth: grid.width
 
         readonly property var photoSize: {
-            const dimensions = (grid.hoverPreviewPhoto.resolution || "")
+            const dimensions = (grid.currentPreviewPhoto.resolution || "")
                 .split("x")
             return {
                 width: Number(dimensions[0]) || 0,
@@ -107,18 +121,18 @@ ListView {
         readonly property int previewImageStatus: previewImage.status
         readonly property bool requested: grid.appWindow.active
             && grid.ctl
-            && grid.ctl.showTooltipsEnabled !== undefined
-            && grid.ctl.showTooltipsEnabled === true
+            && grid.ctl.enableHover !== undefined
+            && grid.ctl.enableHover === true
             && grid.ctl.ctrlAltHeld === true
-            && grid.hoverPreviewRow >= 0
-            && grid.hoverPreviewPhoto.isVideo !== true
+            && grid.currentPreviewRow >= 0
+            && grid.currentPreviewPhoto.isVideo !== true
             && previewWidth > 0 && previewHeight > 0
 
         width: previewWidth + 24
         height: previewHeight + 24
         x: Math.round(grid.appWindow.x + (grid.appWindow.width - width) / 2)
         y: Math.round(grid.appWindow.y + (grid.appWindow.height - height) / 2)
-        visible: requested && width > 1024
+        visible: requested && clientWidth > 1024
                  && previewImage.status === Image.Ready
 
         Rectangle {
@@ -133,8 +147,8 @@ ListView {
                 anchors.fill: parent
                 anchors.margins: 12
                 source: hoverPreviewWindow.requested
-                       && hoverPreviewWindow.width > 1024
-                       ? grid.hoverPreviewSource : ""
+                       && hoverPreviewWindow.clientWidth > 1024
+                       ? grid.currentPreviewSource : ""
                 sourceSize.width: hoverPreviewWindow.previewWidth
                 sourceSize.height: hoverPreviewWindow.previewHeight
                 fillMode: Image.PreserveAspectFit
@@ -798,12 +812,34 @@ ListView {
 
     /** Az ejtés végrehajtása: a kijelölt képek a cél ELÉ kerülnek, és a
         vezérlő kiírja az új kézi sorrendet a mappa `.picasa.ini`-jébe. */
-    function ejtsdAzAtrendezest(start, count, flowWidth, x, y) {
-        if (!grid.ctl || typeof grid.ctl.reorderPhotos !== "function") return
-        var sorok = appWindow.selectedIndexes
+    // #5105: a húzott képeket a saját helyükre (vagy közvetlenül az
+    // összefüggő blokk mögé) ejtve a sorrend nem változik — különben egy
+    // kis elhúzás és felengedés véletlenül átrendezne.
+    function sajatHelyereEjtes(sorok, celSor) {
+        var szamok = []
+        for (var i = 0; i < sorok.length; ++i) szamok.push(Number(sorok[i]))
+        szamok.sort(function(a, b) { return a - b })
+        if (szamok.indexOf(celSor) >= 0) return true
+        var osszefuggo =
+            szamok[szamok.length - 1] - szamok[0] === szamok.length - 1
+        return osszefuggo && celSor === szamok[szamok.length - 1] + 1
+    }
+
+    function ejtsdAzAtrendezest(start, count, flowWidth, x, y, photoRows) {
+        if (!grid.ctl) return
+        var sorok = photoRows
+        if (!sorok || sorok.length === 0)
+            sorok = appWindow.selectedIndexes
         if (!sorok || sorok.length === 0) return
-        grid.ctl.reorderPhotos(sorok, grid.ejtesiCelSor(
-            start, count, flowWidth, x, y))
+        var celSor = grid.ejtesiCelSor(start, count, flowWidth, x, y)
+        if (grid.sajatHelyereEjtes(sorok, celSor)) return
+        if (grid.ctl.currentAlbumToken) {
+            if (typeof grid.ctl.reorderAlbumPhotos === "function")
+                grid.ctl.reorderAlbumPhotos(sorok, celSor)
+            return
+        }
+        if (typeof grid.ctl.reorderPhotos === "function")
+            grid.ctl.reorderPhotos(sorok, celSor)
     }
 
     function beginLasso() {
@@ -1137,9 +1173,10 @@ ListView {
                 onDropped: function(drop) {
                     if (!grid.acceptsPhotoDrag(drop)) return
                     drop.accept()
-                    grid.ejtsdAzAtrendezest(
+                    grid.photoRowsDroppedOnReorder(
                         groupCol.modelData.start, groupCol.modelData.count,
-                        groupFlow.width, drop.x, drop.y)
+                        groupFlow.width, drop.x, drop.y,
+                        drop.source.photoRows ? drop.source.photoRows.slice() : [])
                 }
             }
             Repeater {
@@ -1195,13 +1232,6 @@ ListView {
                         isHidden: slot.info.hidden === true
                         keywords: slot.info.keywords || ""
                         resolution: slot.info.resolution || ""
-                        onHoverChanged: function(row, hovered) {
-                            if (hovered) {
-                                grid.hoverPreviewRow = row
-                            } else if (grid.hoverPreviewRow === row) {
-                                grid.hoverPreviewRow = -1
-                            }
-                        }
                         captionMode: grid.ctl ? grid.ctl.thumbCaptionMode : "none"
                         dragMimeData: ({
                             "text/uri-list": grid.selectedFileUriList()

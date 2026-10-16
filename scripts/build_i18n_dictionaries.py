@@ -4,7 +4,7 @@
 Példa:
 
     python3 scripts/build_i18n_dictionaries.py \
-        --references /home/sancho/picasapy-agent/referencia/i18n
+        --references ~/picasapy-agent/referencia/i18n
 
 A pár kulcsa a #2971 kinyerője szerinti `panel:azonosító`. Az első lépésben a
 saját magyar fordítás normalizált alakja az eredeti magyar szöveghez kapcsolódik

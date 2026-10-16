@@ -96,7 +96,7 @@ def _atmenet_kivalaszt(window, qt_app, combo, controls, popup, lista, index):
     pont = _kozep(combo)
     QTest.mouseMove(window, QPoint(round(pont.x()), round(pont.y())))
     assert varj_feltetelre(
-        qt_app, lambda: controls.property("opacity") > 0, masodperc=3
+        qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
     ), "az egérmozgatás nem jelenítette meg a vezérlősávot"
     QTest.mouseClick(
         window,
@@ -105,7 +105,7 @@ def _atmenet_kivalaszt(window, qt_app, combo, controls, popup, lista, index):
         QPoint(round(pont.x()), round(pont.y())),
     )
     assert varj_feltetelre(
-        qt_app, lambda: popup.property("visible"), masodperc=3
+        qt_app, lambda: popup.property("visible"), masodperc=10.0
     ), "az átmenetválasztó nem nyílt ki"
 
     tartalommagas = float(lista.property("contentHeight"))
@@ -122,7 +122,7 @@ def _atmenet_kivalaszt(window, qt_app, combo, controls, popup, lista, index):
     assert varj_feltetelre(
         qt_app,
         lambda: _sor_index_szerint(lista, index) is not None,
-        masodperc=3,
+        masodperc=10.0,
     ), f"a(z) {index}. átmenetsor nem jelent meg a listában"
     sor = _sor_index_szerint(lista, index)
     assert sor.property("modelData") == _ATMENET_NEVEK[index], (
@@ -159,7 +159,7 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
     show.setProperty("currentIndex", 0)
     show.setProperty("visible", True)
     assert varj_feltetelre(
-        qt_app, lambda: show.property("visible"), masodperc=5
+        qt_app, lambda: show.property("visible"), masodperc=10.0
     ), "a diavetítés nem vált láthatóvá"
     show.setProperty("playing", False)
     show.setProperty("transitionMs", 400)
@@ -172,7 +172,7 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
         assert varj_feltetelre(
             qt_app,
             lambda: abs(show.height() - window.height()) < 0.5,
-            masodperc=3,
+            masodperc=10.0,
         ), f"a vetítő nem követte az ablakmagasságot ({delta:+d} px)"
         assert controls.y() + controls.height() <= show.height() + 3, (
             f"a vezérlősáv kilóg a vetítőből ({delta:+d} px)"
@@ -184,14 +184,14 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
     pont = _kozep(next_button)
     QTest.mouseMove(window, QPoint(round(pont.x()), round(pont.y())))
     assert varj_feltetelre(
-        qt_app, lambda: controls.property("opacity") > 0, masodperc=3
+        qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
     ), "az egérmozgatás nem jelenítette meg a vezérlősávot"
     elozo_index = int(show.property("currentIndex"))
     _kattint(window, next_button)
     assert varj_feltetelre(
         qt_app,
         lambda: show.property("currentIndex") != elozo_index,
-        masodperc=3,
+        masodperc=10.0,
     ), f"a következő gomb nem váltott képet ({kulcs})"
     if kulcs == "cut":
         assert animation.property("running") is False
@@ -199,22 +199,22 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
         assert varj_feltetelre(
             qt_app,
             lambda: slideshow_image.property("opacity") < 0.99,
-            masodperc=3,
+            masodperc=10.0,
         ), f"a wipe nem fedte fel az új képet ({kulcs})"
         assert varj_feltetelre(
             qt_app,
             lambda: previous_image.property("x") != 0
             or previous_image.property("y") != 0,
-            masodperc=3,
+            masodperc=10.0,
         ), f"a wipe nem mozgatta ki a régi képet ({kulcs})"
     else:
         assert varj_feltetelre(
-            qt_app, lambda: animation.property("running"), masodperc=3
+            qt_app, lambda: animation.property("running"), masodperc=10.0
         ), f"a kiválasztott átmenet nem indított lejátszást: {kulcs}"
         assert varj_feltetelre(
             qt_app,
             lambda: not animation.property("running"),
-            masodperc=3,
+            masodperc=10.0,
         ), f"az átmenet animációja nem fejeződött be: {kulcs}"
 
     masik = "cut" if kulcs != "cut" else "dissolve"
@@ -225,5 +225,5 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
     assert varj_feltetelre(
         qt_app,
         lambda: controller.property("slideshowTransition") == kulcs,
-        masodperc=3,
+        masodperc=10.0,
     ), f"a kattintás nem választotta ki ezt az átmenetet: {kulcs}"

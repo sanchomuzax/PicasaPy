@@ -81,7 +81,12 @@ class TestPeopleProperty:
         assert isinstance(host.people, list)
 
     def test_person_has_name_and_count(self, host):
-        assert host.people == [{"name": "Roy Avery", "count": 1}]
+        people = host.people
+        assert [{key: person[key] for key in ("name", "count")} for person in people] == [
+            {"name": "Roy Avery", "count": 1}
+        ]
+        assert people[0]["thumbUrl"].startswith("image://thumbs/")
+        assert "&fz=" in people[0]["thumbUrl"]
 
     def test_signal_emitted_on_load(self, tmp_path, library, qt_app):
         from picasapy.app.people_controller import PeopleMixin

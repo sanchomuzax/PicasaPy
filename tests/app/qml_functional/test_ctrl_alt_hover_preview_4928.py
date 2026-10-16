@@ -1,21 +1,22 @@
-"""#4928: a Ctrl+Alt felugró előnézet valódi eseményre jelenik meg."""
+"""#4928/#4949: Ctrl+Alt a kijelölt képet nyitja meg, a specifikációs határral."""
 # rontás-kontroll: PopDisplay megvalósítás nélkül → 1 failed
 
 from __future__ import annotations
 
-import time
+from pathlib import Path
 
 import pytest
+from PIL import Image
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from tests.app.qml_functional.conftest import _build_qml_app
-from tests.support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre
 
 
 def _elonezetesi_probak_kepei(lib):
-    make_jpeg(lib / "a-nagy.jpg", size=(1600, 900))
-    make_jpeg(lib / "b-kicsi.jpg", size=(320, 160))
+    Image.new("RGB", (1600, 900), (255, 0, 0)).save(lib / "a-nagy.jpg")
+    Image.new("RGB", (320, 160), (0, 0, 255)).save(lib / "b-kicsi.jpg")
 
 
 @pytest.fixture
@@ -27,15 +28,25 @@ def qml_app_ctrl_alt(qt_app, tmp_path):
     )
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
+
+
+def _sor_fajlnev_alapjan(controller, fajlnev: str) -> int:
+    return next(
+        sor
+        for sor in range(controller.photos.rowCount())
+        if Path(controller.photos.filePathAt(sor)).name == fajlnev
+    )
+
+
+def _racs_szelessege(window, grid, qt_app, cel: int) -> None:
+    ablakcel = round(window.width() + cel - grid.width())
+    window.setWidth(ablakcel)
+    assert _varj(qt_app, lambda: round(grid.width()) == cel), (
+        f"a tartalomnézet kliensszélessége nem állt be {cel} px-re "
+        f"(ablak={window.width()}, nézet={grid.width()})"
+    )
 
 
 def _vizualis_leszarmazottak(elem):
@@ -61,6 +72,7 @@ def _lathato_belyegkepek(window):
     assert kis is not None and nagy is not None, (
         "a könyvtár-rácsban nem látszik egy kis és egy 1024 px-nél szélesebb kép"
     )
+
     def kozep(area):
         return area.mapToScene(
             QPointF(area.width() / 2, area.height() / 2)
@@ -69,7 +81,7 @@ def _lathato_belyegkepek(window):
     return (kis, kozep(kis)), (nagy, kozep(nagy))
 
 
-def test_ctrl_alt_a_mutato_alatti_kepet_mutatja_es_elengedesre_elrejti(
+def test_ctrl_alt_a_kijelolt_kepet_mutatja_es_elengedesre_elrejti(
     qml_app_ctrl_alt, qt_app, tmp_path
 ):
     window, controller, _engine = qml_app_ctrl_alt
@@ -84,6 +96,9 @@ def test_ctrl_alt_a_mutato_alatti_kepet_mutatja_es_elengedesre_elrejti(
     grid = window.findChild(QObject, "photoGrid")
     assert popup is not None, "a Ctrl+Alt előnézeti felugró ablak hiányzik"
     assert grid is not None, "a könyvtár-rács nem található"
+    _racs_szelessege(window, grid, qt_app, 1200)
+    kis_sor = _sor_fajlnev_alapjan(controller, "b-kicsi.jpg")
+    nagy_sor = _sor_fajlnev_alapjan(controller, "a-nagy.jpg")
     for magassag_eltolas in (-5, 0, 5):
         window.setHeight(alapmagassag + magassag_eltolas)
         assert _varj(
@@ -94,58 +109,47 @@ def test_ctrl_alt_a_mutato_alatti_kepet_mutatja_es_elengedesre_elrejti(
         (kis_area, kis_pont), (nagy_area, nagy_pont) = _lathato_belyegkepek(
             window
         )
-
-        QTest.mouseMove(window, QPoint(1, 1))
-        QTest.keyPress(window, Qt.Key.Key_Control)
-        QTest.keyPress(
-            window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier
-        )
-        assert not popup.isVisible(), (
-            "üres pontról kép nélkül is megjelent az előnézet"
-        )
-        QTest.keyRelease(
-            window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier
-        )
-        QTest.keyRelease(window, Qt.Key.Key_Control)
-
-        QTest.mouseMove(window, kis_pont, delay=10)
-        assert _varj(
-            qt_app, lambda area=kis_area: area.property("containsMouse")
-        ), (
-            "a valódi egérmozgás nem jutott el a kis képcelláig: "
-            f"pont=({kis_pont.x()}, {kis_pont.y()}), "
-            f"ablak=({window.width()}, {window.height()}), "
-            f"cella=({kis_area.x()}, {kis_area.y()}, "
-            f"{kis_area.width()}, {kis_area.height()})"
-        )
-        assert _varj(
-            qt_app,
-            lambda area=kis_area: grid.property("hoverPreviewRow")
-            == area.parentItem().property("index"),
-        ), "a kis képcella lebegtetése nem jutott el a könyvtár-rácsig"
-        QTest.keyPress(window, Qt.Key.Key_Control)
-        QTest.keyPress(
-            window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier
-        )
-        assert not popup.isVisible(), (
-            "1024 px-nél keskenyebb előnézeti ablak is megjelent"
-        )
-        QTest.keyRelease(
-            window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier
-        )
-        QTest.keyRelease(window, Qt.Key.Key_Control)
-
+        # A kurzor a nagy piros képen áll, a kijelölés a kis kék kép.
+        window.setProperty("selectedIndexes", [kis_sor])
+        window.setProperty("selectedIndex", kis_sor)
         QTest.mouseMove(window, nagy_pont, delay=10)
         assert _varj(
             qt_app, lambda area=nagy_area: area.property("containsMouse")
-        ), (
-            "a valódi egérmozgás nem jutott el a nagy képcelláig"
+        ), "a nagy képcella lebegtetése nem jutott el a könyvtár-rácsig"
+        QTest.keyPress(window, Qt.Key.Key_Control)
+        QTest.keyPress(
+            window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier
         )
+        assert _varj(qt_app, lambda: popup.isVisible()), (
+            "1024 px-nél szélesebb tartalomnézetben nem jelent meg a kis kép"
+        )
+        image = window.findChild(QObject, "ctrlAltHoverPreviewImage")
+        assert _varj(qt_app, lambda: popup.property("previewImageStatus") == 1)
+        rendered = popup.grabWindow()
+        image_center = image.mapToScene(
+            QPointF(image.width() / 2, image.height() / 2)
+        ).toPoint()
+        center_pixel = rendered.pixelColor(image_center)
+        assert center_pixel.blue() > center_pixel.red() * 2, (
+            "a kurzor alatti nagy piros kép jelent meg a kijelölt kis kék helyett"
+        )
+        QTest.keyRelease(
+            window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier
+        )
+        assert _varj(qt_app, lambda: not popup.isVisible())
+        QTest.keyRelease(window, Qt.Key.Key_Control)
+
+        # Most a kijelölés a nagy piros kép, a kurzor a kis kék képen áll.
+        window.setProperty("selectedIndexes", [nagy_sor])
+        window.setProperty("selectedIndex", nagy_sor)
+        QTest.mouseMove(window, kis_pont, delay=10)
+        assert _varj(
+            qt_app, lambda area=kis_area: area.property("containsMouse")
+        ), "a valódi egérmozgás nem jutott el a kis képcelláig"
         assert _varj(
             qt_app,
-            lambda area=nagy_area: grid.property("hoverPreviewRow")
-            == area.parentItem().property("index"),
-        ), "a nagy képcella lebegtetése nem jutott el a könyvtár-rácsig"
+            lambda: popup.width() == popup.property("previewWidth") + 24,
+        ), "a popup szélessége nem követte a kijelölt kép geometriáját"
         QTest.keyPress(window, Qt.Key.Key_Control)
         QTest.keyPress(
             window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier
@@ -155,12 +159,15 @@ def test_ctrl_alt_a_mutato_alatti_kepet_mutatja_es_elengedesre_elrejti(
         )
         image = window.findChild(QObject, "ctrlAltHoverPreviewImage")
         assert _varj(qt_app, lambda: popup.isVisible()), (
-            "Ctrl+Alt és képre mutatás mellett nem jelent meg az előnézet: "
+            "Ctrl+Alt mellett nem jelent meg a kijelölt nagy kép: "
             f"active={window.property('active')}, "
             f"held={controller.property('ctrlAltHeld')}, "
-            f"row={grid.property('hoverPreviewRow')}, "
+            f"selected={window.property('selectedIndex')} (várt: {nagy_sor}), "
+            f"previewRow={grid.property('currentPreviewRow')}, "
+            f"previewPhoto={grid.property('currentPreviewPhoto')}, "
             f"requested={popup.property('requested')}, "
-            f"windowSize=({popup.width()}, {popup.height()}), "
+            f"clientWidth={popup.property('clientWidth')}, "
+            f"previewWidth={popup.property('previewWidth')}, "
             f"imageStatus={popup.property('previewImageStatus')}, "
             f"imageVisible={image.property('visible')}"
         )
@@ -175,15 +182,15 @@ def test_ctrl_alt_a_mutato_alatti_kepet_mutatja_es_elengedesre_elrejti(
             assert rendered.save(str(tmp_path / "ctrl-alt-preview.png")), (
                 "a renderelt előnézet képe nem menthető"
             )
-        assert popup.width() > 1024, (
-            "a specifikáció szerinti gyermekablak-szélesség nem nagyobb 1024 px-nél"
+        assert popup.property("clientWidth") > 1024, (
+            "a PopDisplay kliensszélessége nem nagyobb 1024 px-nél"
         )
         image_center = image.mapToScene(
             QPointF(image.width() / 2, image.height() / 2)
         ).toPoint()
         center_pixel = rendered.pixelColor(image_center)
-        assert center_pixel.red() > center_pixel.green() * 2, (
-            "a renderelt felugró ablak közepén nem a próbakép látszik"
+        assert center_pixel.red() > center_pixel.blue() * 2, (
+            "a renderelt felugró ablak közepén nem a kijelölt piros kép látszik"
         )
 
         QTest.keyRelease(
@@ -195,12 +202,51 @@ def test_ctrl_alt_a_mutato_alatti_kepet_mutatja_es_elengedesre_elrejti(
         QTest.keyRelease(window, Qt.Key.Key_Control)
 
     controller.setShowTooltipsEnabled(False)
+    QTest.mouseMove(window, QPoint(1, 1))
+    QTest.mouseMove(window, nagy_pont, delay=10)
+    assert _varj(
+        qt_app,
+        lambda area=nagy_area: area.property("containsMouse"),
+    ), "a nagy képcella lebegtetése nem jutott el a könyvtár-rácsig"
+    QTest.keyPress(window, Qt.Key.Key_Control)
+    QTest.keyPress(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
+    assert _varj(qt_app, lambda: popup.isVisible()), (
+        "a buboréksúgó kikapcsolása elrejtette az előnézetet (#4949)"
+    )
+    QTest.keyRelease(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
+    QTest.keyRelease(window, Qt.Key.Key_Control)
+    assert _varj(qt_app, lambda: not popup.isVisible())
+
+    controller.setEnableHover(False)
     QTest.keyPress(window, Qt.Key.Key_Control)
     QTest.keyPress(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
     assert not popup.isVisible(), (
-        "a kikapcsolt mutató-beállítás mellett megjelent az előnézet"
+        "a kikapcsolt EnableHover mellett megjelent az előnézet"
     )
     QTest.keyRelease(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
     QTest.keyRelease(window, Qt.Key.Key_Control)
 
+    controller.setEnableHover(True)
     controller.setShowTooltipsEnabled(True)
+
+    # A tartalomnézet kliensszélességének határa szigorú: 1024 px-en zárva,
+    # 1025 px-en nyitva. A popup és az egérkurzor helye ettől független.
+    window.setProperty("selectedIndexes", [nagy_sor])
+    window.setProperty("selectedIndex", nagy_sor)
+    _racs_szelessege(window, grid, qt_app, 1024)
+    QTest.keyPress(window, Qt.Key.Key_Control)
+    QTest.keyPress(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
+    assert _varj(qt_app, lambda: popup.property("clientWidth") == 1024), (
+        "a tartalomnézet szélessége nem állt be pontosan 1024 px-re"
+    )
+    assert not popup.isVisible(), "1024 px-es tartalomnézetnél megjelent a popup"
+    _racs_szelessege(window, grid, qt_app, 1025)
+    assert _varj(qt_app, lambda: popup.property("clientWidth") == 1025), (
+        "a tartalomnézet szélessége nem állt be pontosan 1025 px-re"
+    )
+    assert _varj(qt_app, lambda: popup.isVisible()), (
+        "1025 px-es tartalomnézetnél nem jelent meg a popup"
+    )
+    QTest.keyRelease(window, Qt.Key.Key_Alt, Qt.KeyboardModifier.ControlModifier)
+    QTest.keyRelease(window, Qt.Key.Key_Control)
+    assert _varj(qt_app, lambda: not popup.isVisible())

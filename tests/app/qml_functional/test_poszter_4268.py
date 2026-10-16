@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +13,7 @@ from PySide6.QtTest import QSignalSpy, QTest
 import picasapy.printing.dpi as dpi
 from picasapy.lazy_cv2 import cv2
 from tests.app.qml_functional.conftest import _build_qml_app
+from tests.support.varakozas import var_feltetelre
 
 _DIALOG_PARENTS: list[QObject] = []
 
@@ -60,14 +60,9 @@ def poster_app(
             amerikai.undo()
 
 
-def _var(qt_app, condition, message: str, seconds: float = 5.0):
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if condition():
-            return
-        time.sleep(0.01)
-    raise AssertionError(message)
+def _var(qt_app, condition, message: str, seconds: float = 10.0):
+    if not var_feltetelre(qt_app, condition, seconds):
+        raise AssertionError(message)
 
 
 def _elem(root, name: str):

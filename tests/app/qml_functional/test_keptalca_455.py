@@ -25,7 +25,6 @@ kattintunk, és a jelvényt a kirajzolt cellán mérjük.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, Qt
@@ -34,6 +33,7 @@ from PySide6.QtTest import QTest
 
 from support.halasztott_parbeszed import epitsd_fel
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 #: A két próbamappa és képszámuk — a mappákon átnyúló gyűjtéshez.
 ALMA = "alma"
@@ -60,21 +60,9 @@ def _elem(window, nev: str) -> QQuickItem:
     return talalt
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     """Esemény-pörgetés, amíg a feltétel teljesül (vagy lejár az idő)."""
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _kattints(window, item: QQuickItem, qt_app, amig=None) -> None:

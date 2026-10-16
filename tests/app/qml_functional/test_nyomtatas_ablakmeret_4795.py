@@ -7,7 +7,6 @@ ablakmagasságnál a gombsor rögzített marad, a tartalom görgethető.
 
 from __future__ import annotations
 
-import time
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
@@ -17,6 +16,7 @@ from tests.app.qml_functional.test_nyomtatas_bekotes_1472 import (
     _kijelol,
     _menubol_nyit,
 )
+from tests.support.varakozas import var_feltetelre
 
 
 @pytest.fixture(autouse=True)
@@ -40,12 +40,8 @@ def _tetje(elem) -> float:
     return elem.mapToScene(QPointF(0, 0)).y()
 
 
-def _var(qt_app, feltetel, masodperc=3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido and not feltetel():
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc=10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _nyit(qml_app, qt_app):

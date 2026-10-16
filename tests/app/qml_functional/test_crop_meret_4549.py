@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import re
-import time
 
 from PySide6.QtCore import QObject, QPoint, QPointF, QRectF, Qt
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 
 def _item(window, name: str):
@@ -20,12 +20,9 @@ def _pump(qt_app, count: int = 4) -> None:
         qt_app.processEvents()
 
 
-def _wait_until(condition, qt_app, timeout_seconds: float = 3.0) -> None:
-    deadline = time.monotonic() + timeout_seconds
-    while not condition() and time.monotonic() < deadline:
-        QTest.qWait(20)
-        _pump(qt_app, 2)
-    assert condition(), "a vágó felülete nem épült fel a határidőn belül"
+def _wait_until(condition, qt_app, timeout_seconds: float = 10.0) -> None:
+    if not var_feltetelre(qt_app, condition, timeout_seconds):
+        raise AssertionError("a vágó felülete nem épült fel a határidőn belül")
 
 
 def _point(item, x: float = 0.5, y: float = 0.5) -> QPoint:

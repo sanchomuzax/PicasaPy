@@ -36,4 +36,4 @@ def test_kezzel_megadott_picasa2_mappat_es_meghajto_lekepezest_hasznal(qt_app, t
 
     assert not felderitesek, "a kézi mappa helyett automatikus telepítésfelderítés indult"
     assert olvasasi_hivasok == [(db3, str(cel / "kep.jpg"))]
-    assert kesz == [(1, 1, 0, 0, 0, 0, 0)]
+    assert kesz == [(1, 1, 0, 0, 0, 0, 0, 0)]

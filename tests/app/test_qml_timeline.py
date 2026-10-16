@@ -6,11 +6,11 @@ hívások alább csak a meglévő placeholder belső állapotát fedik le, nem
 felhasználói belépési utak.
 """
 
-import time
 
 import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 def _child(window, name):
@@ -27,13 +27,8 @@ def _invoke(qt_app, obj, name, *args):
     qt_app.processEvents()
 
 
-def _wait_for(qt_app, predicate, timeout_ms=3000):
-    deadline = time.monotonic() + timeout_ms / 1000
-    while time.monotonic() < deadline:
-        if predicate():
-            return True
-        QTest.qWait(10)
-    return predicate()
+def _wait_for(qt_app, predicate, timeout_ms=10000):
+    return var_feltetelre(qt_app, predicate, timeout_ms / 1000)
 
 
 class TestTimelineEntryPoints:

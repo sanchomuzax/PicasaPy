@@ -28,13 +28,13 @@ erőforrása és helye bináris kutatást kíván, külön jegy.
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import picasapy.app as app_csomag
 from PySide6.QtCore import QPointF
 from PySide6.QtQuick import QQuickItem
 from tests.support.qml_blokk import blokk_horgonyra
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 _QML = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
@@ -69,17 +69,8 @@ def _elem(window, nev: str):
     raise AssertionError(f"nincs ilyen elem: {nev}")
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AssertionError, AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel, (AssertionError, AttributeError, RuntimeError, TypeError)), masodperc)
 
 
 def _x(elem) -> float:

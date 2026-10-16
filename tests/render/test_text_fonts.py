@@ -18,6 +18,7 @@ import pytest
 from picasapy.render.text_fonts import (
     DEFAULT_FAMILY,
     FONT_FAMILIES,
+    clear_family_cache,
     family_labels,
     font_path_for,
     load_font,
@@ -89,6 +90,52 @@ class TestFontResolution:
     def test_a_nonpositive_size_is_refused(self):
         with pytest.raises(ValueError):
             load_font(DEFAULT_FAMILY, 0)
+
+
+class TestFamilyLabelsCache:
+    """#4964: a Qt-családlistát egyszer kérdezzük le, nem minden hívásnál."""
+
+    @pytest.fixture(autouse=True)
+    def _friss_gyorsitotar(self):
+        # a más tesztektől örökölt lista ne rontsa el a számlálást
+        clear_family_cache()
+        yield
+        clear_family_cache()
+
+    @pytest.fixture
+    def rendszer_betuk(self, monkeypatch):
+        """Futó Qt-app látszatát és egy fix családlistát ad, lekérdezés-számlálóval."""
+        from PySide6.QtGui import QFontDatabase, QGuiApplication
+
+        hivasok = []
+
+        def families():
+            hivasok.append(1)
+            return ["Zeta", "Alfa"]
+
+        monkeypatch.setattr(QGuiApplication, "instance", staticmethod(lambda: object()))
+        monkeypatch.setattr(QFontDatabase, "families", staticmethod(families))
+        return hivasok
+
+    def test_repeated_calls_query_the_system_once(self, rendszer_betuk):
+        elso = family_labels()
+        masodik = family_labels()
+
+        assert len(rendszer_betuk) == 1
+        assert elso == masodik
+        assert [item["key"] for item in elso] == ["Alfa", "Zeta"]
+
+    def test_mutating_a_returned_list_does_not_leak_into_the_next_call(
+        self, rendszer_betuk
+    ):
+        elso = family_labels()
+        elso.append({"key": "Hamis", "label": "Hamis"})
+        elso[0]["label"] = "elrontva"
+
+        kovetkezo = family_labels()
+
+        assert [item["key"] for item in kovetkezo] == ["Alfa", "Zeta"]
+        assert kovetkezo[0]["label"] == "Alfa"
 
 
 @_needs_font

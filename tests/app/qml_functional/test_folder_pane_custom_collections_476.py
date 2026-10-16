@@ -17,8 +17,6 @@ deklarált) gyerekei — a benne lévő `CollectionHeader` és a belső `Repeate
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import (
     Property,
@@ -35,6 +33,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtQuick import QQuickItem, QQuickView
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 # #664: a QtTest ugyanaz az eset, mint a QtPrintSupport a
 # `test_print_controller.py`-ban — a pip-es PySide6 wheel (CI) hozza, a
@@ -70,28 +69,15 @@ _KEEPALIVE = []
 # találgatás: terhelt, négymagos gépen nem elég, és a kattintás ilyenkor
 # NÉMÁN a semmibe megy — a teszt valódi hiba nélkül vált pirosra.
 # --------------------------------------------------------------------------
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     """Határidős várakozás: a feltételt figyeli, nem az órát (#1463).
 
     #918: fejnélküli környezetben az elrendezés késik — egyetlen
     `processEvents()` után a méretek még a kezdeti állapotot mutatják."""
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
-def _var_stabil(qt_app, minta, masodperc: float = 5.0) -> bool:
+def _var_stabil(qt_app, minta, masodperc: float = 10.0) -> bool:
     """Megvárja, amíg a `minta()` KÉT EGYMÁST KÖVETŐ mérésben azonos.
 
     A repóban bevált idióma (`test_collage_view_and_edit_1001.py::

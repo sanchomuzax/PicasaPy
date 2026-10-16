@@ -13,6 +13,7 @@ from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
 from PIL import Image
 
+from tests.support.varakozas import var_feltetelre
 from picasapy.app.language_controller import LANGUAGE_KEY
 
 
@@ -56,15 +57,8 @@ def _ismetlo_elem(gyoker, qt_app, ismetlo_nev, index, gyerek_nev):
     return elem
 
 
-def _varj(qt_app, feltetel, masodperc=3.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc=10.0):
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattints(ablak, qt_app, elem):

@@ -34,10 +34,9 @@ kiterjedését (7–9 sor) méri, a folytonosságát nem.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject, QPointF
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(window, nev: str) -> QObject:
@@ -46,14 +45,8 @@ def _elem(window, nev: str) -> QObject:
     return obj
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        if feltetel():
-            return True
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 class TestAKonyvtariCsuszkaGeometriaja:

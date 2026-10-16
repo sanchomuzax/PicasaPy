@@ -6,13 +6,13 @@ keresztül töltjük be, a tests/app/test_qml_functional.py mintája szerint
 (pl. TestThumbCaption.test_thumb_delegate_shows_filename_caption).
 """
 
-import time
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QRectF, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 # a QML-ből létrehozott gyökér-objektumok élő Python-referenciák nélkül a
 # JS-motor tulajdonába kerülnek és a GC bármikor eltávolíthatja őket —
@@ -506,16 +506,8 @@ def _string_arg(value):
     return (Q_ARG("QVariant", value),)
 
 
-def _wait_for(qt_app, predicate, timeout_ms=3000):
-    """A QML-állapotot határidővel, eseményeket pörgetve várja meg."""
-    deadline = time.monotonic() + timeout_ms / 1000
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        QTest.qWait(10)
-    qt_app.processEvents()
-    return predicate()
+def _wait_for(qt_app, predicate, timeout_ms=10000):
+    return var_feltetelre(qt_app, predicate, timeout_ms / 1000)
 
 
 class TestCropOverlay:

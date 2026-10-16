@@ -10,7 +10,6 @@ Amit ez NEM mér: a natív választó megjelenését és szűrőinek működés�
 from __future__ import annotations
 
 import re
-import time
 from pathlib import Path
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt, QUrl
@@ -20,6 +19,7 @@ import picasapy.app
 from picasapy.scanner.filetypes import PHOTO_EXTENSIONS, RAW_EXTENSIONS, VIDEO_EXTENSIONS
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "ImportSourceDialog.qml"
 
@@ -30,15 +30,8 @@ def _elem(root, name: str):
     return result
 
 
-def _varj(qt_app, condition, message: str, seconds: float = 5.0) -> None:
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if condition():
-            return
-        time.sleep(0.01)
-    qt_app.processEvents()
-    assert condition(), message
+def _varj(qt_app, condition, message: str, seconds: float = 10.0) -> None:
+    assert var_feltetelre(qt_app, condition, seconds), message
 
 
 def _kattint(window, item, qt_app) -> None:

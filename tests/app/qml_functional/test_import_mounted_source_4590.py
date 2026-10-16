@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(root, name: str):
@@ -16,14 +17,9 @@ def _elem(root, name: str):
     return result
 
 
-def _varj(qt_app, condition, message: str, seconds: float = 3.0) -> None:
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if condition():
-            return
-        time.sleep(0.01)
-    qt_app.processEvents()
+def _varj(qt_app, condition, message: str, seconds: float = 10.0) -> None:
+    if var_feltetelre(qt_app, condition, seconds):
+        return
     assert condition(), message
 
 

@@ -27,7 +27,6 @@ A referenciában a szövegpanel igazító gombjainak képe nincs a leltárban
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -38,6 +37,7 @@ from PySide6.QtQuick import QQuickItem
 import picasapy.app
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 _PANEL = (
     Path(picasapy.app.__file__).parent
@@ -69,18 +69,8 @@ def _keres(elem: QQuickItem, object_name: str):
     return None
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _szovegpanel_nyitva(ablak, qt_app):

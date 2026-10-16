@@ -67,7 +67,7 @@ def _klip(tmp_path: Path) -> QUrl:
     return QUrl.fromLocalFile(str(kimenet))
 
 
-def _varj(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     hatarido = time.monotonic() + masodperc
     while time.monotonic() < hatarido:
         qt_app.processEvents()
@@ -111,7 +111,7 @@ def test_kikapcsolva_nem_indul_magatol(qt_app, tmp_path, magassag):
     )
     media = _media(nezo)
     # Egy időablak: ha magától indulna, már most játszana.
-    _varj(qt_app, lambda: _lejatszik(media), masodperc=1.5)
+    _varj(qt_app, lambda: _lejatszik(media), masodperc=10.0)
     assert not _lejatszik(media), (
         "kikapcsolt AutoPlayMovies mellett a videó magától elindult"
     )

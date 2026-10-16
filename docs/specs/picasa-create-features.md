@@ -2139,10 +2139,13 @@ A `0x00619010` a `+0x4bc` filmmodell címét adja át a `0x00555a30`-nak
 `.set` hívást küld a modellmutatóval; a `0x0074e710` setter ezt
 dereferálja, majd a `0x0074d8a0` a szolgáltatás `+0x308` mezőjébe
 menti (`0x0074d8b1`). A `0x00555a30` és a `0x0074d8a0` vizsgált
-utasításai nem számítanak arckivágást. A későbbi timeline-út
-(`0x0074dfc0`, `0x008127b0`) a modell kliplistáját dolgozza fel, de a
-teljes arcmező-író/olvasó lánc és a renderelt képkivágás képlete nincs
-azonosítva.
+utasításai nem számítanak arckivágást. A timeline későbbi rajzolóágában a
+`0x00813330` `0x00813c50`-et hívja; ez az arc-keretező számítás. A klip
+`+0x18…+0x24` mezőit ez a helper közvetlenül nem olvassa: a staging-rekord
+`+0x8` selectorával a modell `+0x2d8` forrásobjektumának vtable-ján kér
+méretet és arctéglalapot. A helper képlete most megvan; a virtuális getterek
+konkrét implementációját, a forrás-rect mezőjét és a staging selector
+klipmezőhöz vezető útját a 4. kör alább feloldja.
 
 A kliprekordok a modell `+0x48` listájában vannak; a `0x00611320`
 rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
@@ -2156,6 +2159,188 @@ rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
 | `+0x1c` | `facerecty0` | `0x008169c2`; beíró: `0x00815110` | a második dword változatlan másolata; **képpont**, a forráskép felső széle felől |
 | `+0x20` | `facerectx1` | `0x00816a0e`; beíró: `0x00815116` | a harmadik dword változatlan másolata; **képpont**, a forráskép bal széle felől |
 | `+0x24` | `facerecty1` | `0x00816a5a`; beíró: `0x00815120` | a negyedik dword változatlan másolata; **képpont**, a forráskép felső széle felől |
+
+**A `CTransTimeline` arckeretező képlete — statikus dekódolás és QEMU (#4400, 4. kör).**
+
+A `0x00813330` a `0x008135c7` címen hívja a `0x00813c50`-et, ha a
+timeline-mód `+0x28c == 0x14`. A `0x00813c50` csak akkor futtatja az arcágat,
+ha a `+0x1a8` staging-rekord első dwordja `3`, és a `+0x8` selector nem
+`-1` (`0x00813c91`–`0x00813ca0`). A modell `+0x2d8` objektumának vtable
+`+0x58` slotja két kimeneti mutatóba adja a forráskép szélességét és
+magasságát; a `+0xa0` slot a selectorhoz tartozó `x0,y0,x1,y1` arctéglalapot
+adja vissza (`0x00813caa`–`0x00813cef`). A helper a bal/felső koordinátát
+legalább 0-ra, a jobb/alsót legfeljebb a forráskép szélességére/magasságára
+korlátozza (`0x00813cef`–`0x00813d35`), majd az üres téglalapot elutasítja.
+
+Jelölések: `Vw,Vh` a hívótól kapott keretméret, `Iw,Ih` a `+0x58` getter
+forrásképmérete, `R` pedig a `+0xa0` getter által visszaadott téglalap. A
+bináris `0x00cf48f8` qword konstansa
+`δ = 0.49900001287460327`; a kód ezt mindkét `V` mérethez hozzáadja.
+`cropfit` a modell `+0x2c5` bájtja (`0x00813d3b`–`0x00813d46`). Az első,
+egységes képskála:
+
+```
+cropfit != 0: s = max((Vw + δ) / Iw, (Vh + δ) / Ih)
+cropfit == 0: s = min((Vw + δ) / Iw, (Vh + δ) / Ih)
+```
+
+A két ág rendre a `0x0049fae0` max- és `0x0049fab0` min-segédet hívja
+(`0x00813dd0`, `0x00813e5e`). A `cropfit != 0` ág a teljes képet a kerethez
+igazító cover/crop téglalapot a `0x009b4b60`-nal számítja; a nulla ág a
+contain/fit téglalapot a `0x009b4aa0` és `0x009b49c0` segítségével. Mindkét
+út középre teszi a képet, majd ugyanazzal az `s` skálával viszi át az arc
+téglalapját. Az igazítás egész koordinátáját ezek a segédek állítják elő;
+az x87 `FISTP` és a középre osztó előjeles `SAR 1` része a bináris
+viselkedésnek (`0x009b49c0`, `0x009b4aa0`, `0x009b4b60`).
+
+A skálázott, középre igazított arctéglalap mérete legyen `Bw × Bh`. A helper
+az `r = min((Vw + δ)/Bw, (Vh + δ)/Bh)` arányból választ végső zoomot
+(`0x00813fac`–`0x00813fe6`; a `0x0049fab0` minimumsegéd). A pontos
+ágfeltétel és konstansok (`0x00813fef`–`0x00814027`):
+
+```
+r > 4.0:       z = r / 3.0
+r <= 4.0:      z = min(r, 1.2999999523162842)
+```
+
+A `4.0`, `3.0` és `1.2999999523162842` értékek rendre a
+`0x00c7e4a4` float, a `0x00cf39f8` qword és a `0x00c7e4ac` float tartalma.
+A végső téglalap középpontja a skálázott arctéglalap közepe; a fél szélesség
+és magasság rendre `Bw*z/2` és `Bh*z/2`. Ezután a bal/felső szélt 0-ra, a
+jobb/alsó szélt `Vw`/`Vh`-ra korlátozza (`0x0081402b`–`0x00814149`). A
+téglalap oldalankénti többlete a középre igazított esetben pontosan
+`(z-1)/2`-szerese az arctéglalap adott méretének; a faktor nem minden
+méretnél állandó: `r>4` esetén `r/3`, `r<=1.3` esetén pedig `r`.
+
+**QEMU-ellenőrzés.** A `0x00813c50` eredeti kódja futott a helyi QEMU-
+harnessben, `x87 CW=0x027f` mellett. A `+0x58` és `+0xa0` virtuális slotot
+szintetikus válaszadók helyettesítették, ismert képmérettel és
+arctéglalappal; ez a helper számtanát méri, nem a teljes paneltől a
+videókockáig tartó adatutat.
+
+| Bemenet (`Vw×Vh`, `Iw×Ih`, `cropfit`, `R`) | mért kimeneti téglalap | ellenőrzött ág |
+|---|---|---|
+| `1024×768`, `1024×768`, `1`, `[200,200,500,400]` | `[155.10072326660156,170.11045837402344,545.3541259765625,430.27935791015625]` | `s` float32-bitek: `0x3f80154a`; `z` float32-bitek: `0x3fa66666` |
+| `1024×768`, `1024×768`, `1`, `[100,100,200,200]` | `[22.0142822265625,22.0142822265625,278.1806335449219,278.1806335449219]` | `r>4`, `z` float32-bitek: `0x4023d70b`, a `r/3` ág; cáfolja az állandó `1.3` zoomot |
+| `1024×768`, `2000×1000`, `cropfit=1/0`, `[800,400,1200,600]` | `cropfit=1`: `[312.68927001953125,284.3446350097656,712.3087768554688,484.1543884277344]`; `cropfit=0`: `[341.49969482421875,298.7498474121094,682.99932861328125,469.4996643066406]` | a cropfit 1-es max- és 0-s min-skálaválasztása |
+
+A QEMU-számítás és az utasításszintű képlet egyezik a visszaadott arctéglalap
+és képméretek mellett. A `0x00813c50` a `+0xa0` getter által visszaadott
+négyszög közepéhez igazít. A getter teljes rect-adatútja és a landmarkokra
+vonatkozó bizonyítás határa alább szerepel; a QEMU-próba a gettereket
+szintetikus válaszadókkal helyettesítette.
+
+**A forrásobjektum, getterek és a klip-selector útja — #4400, 4. kör.**
+
+Az objektum típusa nem csak a gettercímekből következik. A mód-6 gyárág a
+`0x00824090`-ben hívja a `0x006999c0` konstruktorát (`0x008240dc`); a
+konstruktor a `this` első dwordjába `0x00ca7d8c`-t ír (`0x006999d8`). A
+bináris RTTI ezt az `AlignedImageCollection::vftable` címeként nevezi meg.
+A panel `+0x4b8` forrásmutatóját a filmmodell `+0x2d8` mezője veszi át
+(`0x00616957`). A vtable nyers bejegyzései:
+
+| slot | bináris célfüggvény | szerep a hívási láncban |
+|---|---|---|
+| `AlignedImageCollection::vftable +0x58` | `0x0068f900` | a kiválasztott elem szélességét és magasságát kéri le |
+| `AlignedImageCollection::vftable +0xa0` | `0x0068f980` | a kiválasztott elem arctéglalapját kéri le |
+| `AlignedImageCollection::vftable +0x60` | `0x0068f710` | csoport- és elemsorszám alapján adja vissza a kiválasztott elemet |
+
+A `0x00813c50` mindkét getternek a 0. csoportot és a staging `+0x8`
+értékét adja (`0x00813cba`–`0x00813ccd`, `0x00813cd9`–`0x00813ced`). A
+`0x0068f900` és `0x0068f980` egyaránt a `+0x60` slotot használja az elem
+feloldásához. A `0x0068f710` az első argumentumot a csoportlistában, a
+másodikat az adott csoport gyermeklistájában ellenőrzi, majd a gyermeklista
+megfelelő dwordját adja vissza (`0x0068f710`–`0x0068f73c`). Így a klip `+0x8`
+mezője ezen az úton **0-tól számozott lista-selector**, nem kontakt- vagy
+személyazonosító.
+
+A selector klipről stagingbe jutása is követhető. A `0x00610d30` az időponthoz
+tartozó rekordot a `+0x48` kliplistából, `0xf8` bájtos lépésközzel választja
+ki (`0x00610e16`–`0x00610e25`). A `0x006123d0` rekordmásoló a forrás `+0x8`
+dwordját változatlanul továbbviszi (`0x006123ed`–`0x006123f1`); a
+`0x00812470` ezután a kiválasztott mintát a modell `+0x1a8` stagingrészébe
+másolja a `0x00612350`-nel (`0x00812578`–`0x00812580`). A
+`0x00813330` ugyanennek a `model+0x1a8` címnek az első argumentumát adja a
+`0x00813c50`-nek (`0x008134b5`, `0x008135c7`). A szerializáló oldalán a
+`0x00814f30` a klip `+0x8` értékével hívja a `0x0081e2d0`-t, amely a modell
+`+0x4e8` leképezőlistáján keresztül választ rectrekordot. A két út ugyanazt
+a klipből másolt selectorértéket használja; a writer maplistájának és a
+getter `AlignedImageCollection`-listájának kiválasztott adatelemei közötti
+azonosságot ez a kör nem állapítja meg.
+
+**A getter alap-rectje, utófeldolgozása és a landmarkok.** A
+`0x0068f980` ugyanazzal a `+0x60` selectorral választ elemet, majd a
+`0x0047a390`-en keresztül hívja a `0x00446610` imagedata-olvasót
+(`0x0068f9a5`–`0x0068f9c3`, `0x0047a3a8`–`0x0047a3af`). A közvetlen
+alap-rectforrás a kiválasztott sor 64 bites `imagedata_facerect` mezője:
+a `0x00446610` két dwordként olvassa, packed `rect64`-ként értelmezi, majd a
+`0x009b93f0`-en át képpontra váltja (`0x004467b2`–`0x004467dc`,
+`0x004468dd`). A mezőt az imagedata-rekord leírása u64-ként regisztrálja
+`facerect` néven (`+0xdc0`); a külön `facerectdata` sztringmező `+0xee8`
+(`picasa-imagedata-rekord.md`, mezőtábla).
+
+`0x0047a390` visszatérési rectje azonban nem feltétlenül ez a nyers
+alap-rect. A `0x0068f980` az `AlignedImageCollection` objektum `+0x94`
+mezőjéből kiolvasott értéket adja át a bridge-nek (`0x0068f9a5`), valamint
+`1` flaget (`0x0068f9ab`); a bridge
+ennek az objektumnak a `+0x14d0` per-index recttábláját használja a
+`0x00429dc0` hívásban (`0x0047a3be`–`0x0047a3da`). Ha a hívás sikeres, a
+`0x0047a3de`–`0x0047a419` utasítások metszik az alap-rectet a táblából
+kapott recttel. A `+0x94`-beli objektum pontos osztálya, a második
+recttábla upstream előállítása és az arcrekordhoz való kapcsolata ebben a
+körben nincs feloldva. Ezután a `0x0042c830` a `rotate(%d)` mezőt
+olvassa (`0x00c81474`), a `0x00430610` a `filters` mezőt (`0x00c80b04`),
+majd a `0x00a4a240` affín módon transzformálja a rect négy sarkát; a bridge
+az eredményt visszaírja (`0x0047a41c`–`0x0047a484`). A `rotate` és
+`filters` adatok pontos numerikus hatását és a transzformáció mérhető
+bemeneti tartományát ebben a körben nem mértem. Így a
+`imagedata_facerect` a közvetlen alapforrás, nem bizonyítottan a getter
+egyetlen rectforrása vagy utófeldolgozás nélküli kimenete.
+
+A külön `facerectdata` mező a `conf`, `pan`, `leye`, `reye`, `mouth`
+adatokat tárolja. A vizsgált getter/crop utasításláncban ennek a mezőnek vagy
+a szemkoordinátáknak közvetlen olvasása nem látszik; a `0x00813c50` a
+transzformált getter-rect közepéhez igazít. Mivel a `+0x14d0` recttábla
+előállításának forrása nincs feltárva, **nem dönthető el**, hogy a szemadat
+közvetve részt vett-e ennek a táblának a létrehozásában. Ez az állítás
+feltételes; a teljes `+0xa0` út QEMU-mérése nem történt meg.
+
+**Független ellenőrzés és QEMU-mérés.** A) a mód-6 konstruktorút a
+`0x006999c0` függvényen át a `0x00ca7d8c` vptr-hez vezet; B) a nyers
+vtable-adat és az RTTI ugyanazt az `AlignedImageCollection` osztályt és a
+`+0x58/+0xa0/+0x60` slotcímeket adja. Ez a két út az osztály- és
+slotazonosítást egymástól függetlenül alátámasztja. A klip `+0x8` → staging
+`+0x8` másolását utasításszintű adatfolyam, a listaindex-szerepet pedig ez
+és a QEMU-harness egyezése támasztja alá. A QEMU-futásban a `0x0068f710`
+szintetikus, egycsoportos/kételemű listán a `selector=0` első,
+`selector=1` második elemet adta vissza; `selector=2` és `group=1` esetén
+`0xffffffff`-et adott. A `0x0068f900` ugyanebben a harnessben a második
+elemhez rendelt szintetikus méretgetterből `1920×1080` értéket adott vissza.
+Ez a QEMU-próba nem futtatta a `+0xa0` rectolvasó-láncot.
+
+Az alap-rectmező, a `+0x14d0`-beli második rect, annak upstream forrása és a
+landmarkmező hiányzó olvasása ebben a körben egyetlen statikus
+utasításláncból következik; a vptr/RTTI út és a QEMU-próba ezeket nem méri
+függetlenül. Ezek ezért feltételes megállapítások, nem megerősített
+rectforrás- vagy landmarkeredet-állítások.
+
+**Cáfoló próbák.** A teljes `.text`-en a `paszta.py` streaming pásztájával
+kerestem az indirekt `+0x58/+0xa0` hívásokat és a rect/landmark mezők
+olvasóit. Azt az első feltevést, hogy a getter kimenete változatlanul a
+`facerect`, a `0x0047a390` utófeldolgozásának célzott diszasszemblálása
+cáfolta: van `+0x14d0`-beli recttel vett metszet és rotate/filter alapú affín
+transzformáció. A talált adatfolyamot ugyanazzal a címszintű mércével
+ellenőriztem: `0x0047a390` közvetlenül hívja a `0x00446610` alap-rect
+olvasót, majd az adott flag-ágban a leírt második rectet és transzformokat
+alkalmazza. További, azonos sloteltolású hívások is előkerültek (például
+`0x00618aa2`, `0x00618ed8`), de ezek a panel `+0x4a0` illetve a panel `this`
+vtable-ján futnak, nem a filmmodell `+0x2d8` objektumán; ezért nem cáfolják a
+fenti vptr-azonosítást. A getter- és rectolvasó-függvények utasításszintű
+ellenőrzésében a `facerectdata`/szemlandmark mezőre vezető közvetlen olvasás
+nem jelent meg; ez a negatív eredmény csak a vizsgált utasításláncra
+vonatkozik, a `+0x14d0` tábla előállítását nem fedi le. A `.picasa.ini`
+`faces=` sor és az imagedata `facerect` oszlopa közötti betöltési kapcsolat
+ettől még **nincs bizonyítva**.
 
 **A `rect64` → pixel-rect út és a még nem bizonyított `faces=` kapcsolat.**
 Külön megfigyelt `.picasa.ini`-út, hogy a `0x00456610` kódterületén
@@ -2230,6 +2415,114 @@ utóbbi ugyanebben a kerekítési módban bal/felső koordinátára `0`-t ad.
 Ez a helper izolált futása, nem a teljes `.picasa.ini` → timeline → render
 út futtatása.
 
+**A `+0x14d0`-es crop-tábla eredete és szerepe — #4400, 5. kör.**
+
+A kért filmútban a `0x0068f980` az `AlignedImageCollection` `+0xa0`
+getterje, amely a `+0x60` sloton át feloldott selectorhoz hívja a
+`0x0047a390` bridge-et (`0x0068f9a5`–`0x0068f9c3`). A getter a saját `+0x94`
+mezőjéből származó objektummutatót és `1` flaget ad át (`0x0068f9a5`,
+`0x0068f9ab`); a bridge ennek az objektumnak a `+0x14d0` recttáblájából kér
+indexelt bejegyzést a `0x00429dc0`-nál (`0x0047a3be`–`0x0047a3d5`). A
+`0x0047a390` először a `0x00446610`-tól kéri le a kiválasztott elem
+`imagedata_facerect` alap-rectjét (`0x0047a3a8`–`0x0047a3aa`), majd a
+`0x00429dc0`-tól az adott index crop-rectjét. Ha az accessor talál cropot,
+a filmút komponensenként metszi a két képpont-rectet:
+`x0=max(face.x0,crop.x0)`, `y0=max(face.y0,crop.y0)`,
+`x1=min(face.x1,crop.x1)`, `y1=min(face.y1,crop.y1)`
+(`0x0047a3de`–`0x0047a419`). Ezután a `rotate(%d)` értékét a `0x0042c830`
+olvassa, a `0x00430610` filter-utat, majd a `0x00a4a240` affinképzést hívja
+(`0x0047a41c`–`0x0047a470`). A klip renderelése tehát az arc-rectet a
+forrás cropjával metszi; a `+0x14d0` bejegyzése crop-rect, nem
+szemlandmark-koordináták sora. Ez önmagában nem zárja ki, hogy valamelyik
+upstream írója landmarkból számítsa ki a crop-rectet.
+
+A `0x0042b370` a feloldott crop-író: a `0x0042b000` segítségével elforgatja
+és határolja a kapott rectet, a `0x009b9290`-nal 64 bites `rect64` értékké
+normalizálja, a `0x00cd9554` formátummal `rect64(%I64x)` alakban formázza,
+majd a `0x00c812f8` (`crop`) kulcs alá írja (`0x0042b3e0`–`0x0042b3f5`,
+`0x0042b499`–`0x0042b530`). A `this+0x14d0` mezőn belüli vektor
+`+0x58/+0x48` címen levő 8 bájtos elemeket index szerint frissíti
+(`0x0042b535`, `0x0042b747`–`0x0042b785`); ugyanilyen indexelt olvasást
+végez a filmútban a `0x00429dc0` (`0x00429dce`, `0x00429e22`–`0x00429e43`).
+A `0x00429dc0` által visszaadott elem tehát az adott kiválasztott elemhez
+tartozó crop-rect, nem `leye`/`reye` koordinátákat tároló tábla.
+Ugyanakkor a `0x0042b370` receiverének és a getter `+0x94` mezője által
+mutatott objektumnak az azonosságát a vtable/RTTI nem nevezi meg; a
+`0x0042b370` ezért a táblával azonos elrendezésű crop-író jelölt, nem
+futásidejű objektumazonossággal igazolt író. Közvetlen hívóhelyei:
+
+| hívóhely | hívófüggvény | bizonyított környezet |
+|---|---|---|
+| `0x00531e21` | `0x00531c60` | Passport-ág; a függvény stringjei: `CThumbUI::Passport0`, `Can't find any faces` (`0x00c899c4`, `0x00c899ac`) |
+| `0x006b0253` | `0x006b0200` | általános rect-/crop-író segéd; hívói közt a `0x005d4b60`, amelynek stringjei az `editpanel/cropselection` és az `editpanel/cropdiscard` (`0x00c95ae4`, `0x00c95fe8`) |
+| `0x006b3cd9` | `0x006b39b0` | további rect-író út; a transzformációs rekord `esi+ebp+0x40` rectmutatóját adja át; hívója `0x006abae0` |
+
+A teljes `.text`-pásztázás külön jelöltje a `0x00421bf0`: ez is az
+`arg+0x14d0` mező `+0x58/+0x48` indexelt vektorába ír 8 bájtos elemet
+(`0x00421f10`–`0x00421f38`), a `0x00425f60` két hívóhelyéről
+(`0x00427835`, `0x00427ec1`). Ez ugyanazt a vektorelrendezést és
+normalizálót használja; a bináris RTTI nem nevezi meg a hívó és a film által
+olvasott `+0x94` objektum azonosságát, ezért nem állítható, hogy a
+`0x00425f60` bármely útja ugyanazt a példányt módosítja. A `0x00439a80` és `0x004860e0`
+`+0x14d0` találatai más objektum-/vektorútvonalak; az offset-egyezés önmagában
+nem azonosítja őket ennek a crop-táblának az íróiként.
+
+**A crop-rect külön `.picasa.ini` parserútja.** A `.picasa.ini`-t említő
+`0x006b52d0` a `0x0042a570`-et hívja (`0x006b576e`); ez a parser a
+`width`, `height`, `rotate` és `rect64` kulcsokat kezeli (`0x00c80ac4`,
+`0x00c80acc`, `0x00c80ad4`, `0x00c81460`), a `rect64(%I64x)` értéket
+`0x00cd9554` formátummal olvassa, majd a `0x009b93f0` konverterrel
+képpont-rectet állít elő (`0x0042a6b6`–`0x0042a707`). A hívó a négy
+koordinátát a saját `+0x240…+0x24c` állapotába másolja
+(`0x006b5796`–`0x006b57b6`). Ez független bizonyíték arra, hogy a crop
+rect64-ből képpont-rect lesz; **a parser ezen hívása nem írja közvetlenül a
+`+0x14d0` vektort**, és a teljes `.picasa.ini` parser → `+0x14d0` writer
+példányszintű kapcsolat nincs bizonyítva.
+
+**QEMU-mérés a crop-segédek geometriájára.** A harness a két bináris
+segédfüggvényt közvetlenül futtatta; ezek egész koordinátás, szintetikus
+bemenetű mérések, nem a teljes filmút futtatásai.
+
+| bináris függvény | mérés | kimenet |
+|---|---|---|
+| `0x009b4960` metszés | `A=[-10,20,200,300]`, `B=[0,0,100,250]` | `[0,20,100,250]` |
+| `0x009b4960` cáfoló eset | `A=[110,5,130,15]`, `B=[0,0,100,100]` | `[110,5,100,15]`; a helper a végpontokat metszi, de önmagában az üres téglalapot nem utasítja el vagy zsugorítja |
+| `0x009b4c80` 90°-os lépés | határok `[0,0,640,480]`, rect `[10,20,110,120]`, lépésszám `1` | `[360,10,460,110]` |
+| `0x009b4c80` 180° | ugyanaz, lépésszám `2` | `[530,360,630,460]` |
+| `0x009b4c80` 270° | ugyanaz, lépésszám `3` | `[20,530,120,630]` |
+
+A `0x009b4c80` egy lépéses utasításképlete:
+`[height-y1, x0, height-y0, x1]`, ahol kezdetben
+`width=bounds.x1-bounds.x0` és `height=bounds.y1-bounds.y0`; minden lépés
+után felcseréli a `width` és `height` értékét (`0x009b4cb0`–`0x009b4cee`).
+Így a következő lépés az előző szélességet használja magasságként. A
+függvényt a crop-író `0x0042b000` forgatási ága hívja (`0x0042b0e2`); a
+`0x0047a390` filmút viszont a `0x00430610` filter-/affin útját használja.
+A QEMU-eredmény ezért a crop írósegéd forgatását igazolja, nem a teljes
+filmszál filtereit; a filmhíd saját metszése közvetlenül az
+`0x0047a3de`–`0x0047a419` utasításokban látható, nem ezt a QEMU-segédet hívja.
+
+**Szem-landmark kapcsolatának határa.** A filmút a `0x00446610`
+`facerect`-eredményét és a `0x00429dc0` crop-rectjét metszi. A
+`0x0042b370` rectmutatót kap; a vizsgált íróutasításai nem olvassák a
+`leye`/`reye` mezőket. Ettől független adatút, hogy a `0x0081fc30` a
+`facerectdata` karakterláncból külön mezőkbe parsolja a `conf`, `pan`,
+`leye`, `reye` és `mouth` adatokat (`0x00820c88`); ez a parser a
+`0x00446610`-től külön kezeli őket. A két út azt támasztja alá, hogy a
+film crop-olvasója és a crop-tábla írója közvetlenül nem használ
+szemlandmarkot. Azt viszont nem dönti el, hogy a még fel nem oldott
+`+0xa0` virtuális getter hogyan állítja elő a `0x00813c50`-nek adott
+arctéglalapot; így a landmark közvetett hatása az arckiválasztásra nyitott.
+
+**Bizonyítottság.** A táblához vezető olvasó/író híváslánc és a rect64
+adatértelmezés utasításszintű, címzett binárislelet; önmagában ez
+**feltételes**. A `0x009b4960` metszés és `0x009b4c80` forgatás képlete
+utasításolvasással és ettől független QEMU-kimenettel egyezett, ezekre
+**megerősített**. A QEMU nem hajtotta végre a táblát író hívókat vagy a
+film teljes renderelését.
+
+
+
 **A 0x38-as forrás arcrekord további mezői:** a `0x0081fc30` a
 `"conf(%f),pan(%f),leye(%f,%f),reye(%f,%f),mouth(%f,%f)"` formátummal
 olvassa az arc-részletadatot (`0x00820c88`). Ehhez a **forrás arcrekordhoz**
@@ -2279,7 +2572,16 @@ felbontás, nem a forrás arctéglalap cropképlete.
 
 Nyitott, blokkoló visszafejtési kérdések:
 
-`0x008127b0` a `0x00810420`-nak a timeline objektumot és annak `+0x1a8` staging-objektumát adja át (`0x008128a2`–`0x008128aa`). A `0x00810420` közvetlenül olvassa a staging-objektum `+0x14` bájtját, de nincs benne közvetlen `+0x18…+0x24` operandus; a cropfogyasztó az indirekt hívások mögött maradt.
+**A getter osztálya/slotjai és a klip-selector útja feloldva; a getter recttáblája és upstream forrásai nyitottak.**
+Az imagedata `facerect` közvetlen alap-rectforrását és a `+0x14d0`-beli
+per-index recttel való metszést az utasításfolyam azonosítja, de a második
+recttábla osztálya/előállítója nem ismert. A vizsgált getter/crop ág nem
+olvassa közvetlenül a `facerectdata` szemlandmarkjait; amíg a `+0x14d0`
+tábla upstream eredete nincs meg, a landmarkok közvetett szerepe nyitott.
+Nyitott marad az is, hogy a `.picasa.ini` `faces=` ág pontosan hogyan
+töltődik az imagedata `facerect` oszlopába. A `+0x4e0` filmmodell-tábla
+imagedata `facerect`-olvasóból származó pixel-rectjeit a fenti betöltési út
+már azonosítja.
 
 **Cáfoló keresés a mezőeltolásos találatokra:** a `paszta.py` streaming
 `.text`-pásztája talált `+0x18…+0x24` olvasót a `0x00819f50` címen, de az
@@ -2291,14 +2593,32 @@ is tartalmaz, de az időintervallum-rekord double mezőit olvassa. Mindkettő
 hamis pozitív, ezért az offset-egyezés vagy a lépésköz önmagában nem
 azonosítja a cropfogyasztót.
 
-Ghidra-kör kell: 0x008127b0 — oldd fel a `0x00810420` indirekt hívásai mögötti per-klip renderelőt, és kösd a `0xf8` lépésű kliprekord `+0x18…+0x24` pixel-rectjét a kivágást/transzformációt számító fogyasztóhoz; add meg a pontos crop-, margó-, képarány- és szemigazítási képletet, továbbá hogy a `+0x8` selector hozzáfér-e a `+0x4e0` rekord landmark-mezőihez. [blokkoló]
-Ghidra-kör kell: 0x00456610 — kösd össze a `faces=` ág `rect64`-feldolgozását az imagedata `facerect` mezőjével, amelyet a `0x00446610` olvas; döntsd el, hogy a `.picasa.ini` `faces=` sorához a `0x0049d560` út tartozik-e. [blokkoló]
-- **NINCS MEG:** a teljes `.picasa.ini faces=` → imagedata `facerect` → `+0x4e0` adatút; a lejátszási crop képlete, margója, cél-képaránya, szemhez igazítása és a clip-selector landmark-használata.
+Ghidra-kör kell: 0x0049d560 — kösd össze a `.picasa.ini` `faces=` ágának
+`rect64`-feldolgozását azzal az `imagedata_facerect` oszloppal, amelyet a
+`0x00446610` olvas; döntsd el, hogy a `0x0049d560` parserút írja-e ezt az
+oszlopot. [blokkoló]
+Ghidra-kör kell: 0x00429dc0 — oldd fel az `AlignedImageCollection+0x94`
+mutató által elért objektum osztályát, a `+0x14d0` per-index recttábla előállítóját és az
+arcrekordhoz vezető kapcsolatát; döntsd el, hogy a tábla adatát a
+`facerectdata` szemlandmarkjaiból számítja-e. [blokkoló]
+- **NINCS MEG:** a `.picasa.ini faces=` → `imagedata_facerect` betöltési
+  kapcsolat, a `+0x14d0` recttábla előállítása/eredete, a szemadat esetleges
+  upstream szerepe, a `rotate`/`filters` adatainak pontos numerikus
+  hatása, valamint az eredeti paneltől a kész filmkockáig tartó élő
+  viselkedésmérés. A transzformáció következő ellenőrzési útja a
+  `0x0042c830`/`0x00430610` célzott diszasszemblálása és mért bemenetű QEMU-próba.
 
-**Bizonyítottsági határ:** a klipmezők nyers másolása és a low-res maszk
-képlete a diszasszemblálás és az elkülönített QEMU-futás egyezésével
-megerősített. A tényleges lejátszási cropképlet nincs meg; a QEMU-próbák
-nem hajtották végre az INI-betöltést vagy a teljes timeline-renderelést.
+**Bizonyítottsági határ:** a klipmezők nyers másolása, a low-res maszk
+képlete, a `0x00813c50` cropképlete, a getterek RTTI/vtable-felbontása,
+valamint a selectorlista indexelése megerősített (utasításszintű olvasat,
+közvetlen vtable-adat/RTTI, illetve a selectorra QEMU-mérés egyezik). A klip
+`+0x8` → staging `+0x8` másolása bináris utasításfolyammal bizonyított. A
+`imagedata_facerect` közvetlen alap-rectforrás és a `+0x14d0`-beli
+utófeldolgozás feltételes, mert a teljes `+0xa0` lánc nem futott QEMU-ban,
+és az utóbbi recttábla upstream eredete nincs meg. A szemlandmarkok közvetlen
+hiányzó olvasása csak a vizsgált utasításláncra vonatkozó feltételes negatív
+állítás. A `faces=`-től az imagedata oszlopig tartó forrásút és a teljes
+videókocka-renderelés továbbra is nyitott.
 
 Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
 forrás-URL-jeit adja át (`Main.qml:728–734`,
@@ -2492,6 +2812,11 @@ forrás-módját **5**-re, illetve **6**-ra a szokásos 1–4/7 helyett
 (`0x00618209`–`0x00618223`), és a `[panel+0x4f3]` bájt tárolja, hogy
 bármelyik áll-e (`0x0061823c`). *Bizalmi fok: **erős** — a jelentést a
 rájuk épülő kapu szövege adja, a jelzők nevét nem olvastuk ki.*
+
+> ⚠️ **2026-10-13 (G/3, 2. pont):** a `0x618050` dekompilátuma szerint a mód-7
+> építés maga is 1-re állítja a `+0x4f0` bájtot. Ezért a „függőben lévő módosítás”
+> jelentés nem egyedül áll: a `+0x4f0` a mód-7 utáni újraépítés kiválasztója is.
+> A fok **feltételes**, amíg utasításszinten nincs megerősítve (G/3, 6. pont, 1. tétel).
 
 #### G) A készítési idő küszöbe: szomszédos csoportosítás, ordering-függő kiválasztás (#4194)
 
@@ -3176,6 +3501,506 @@ forrása **NYITOTT**.
 
 **Új kutatási jegyjavaslatok:** nincs; a nyitott pontok a #4194 és a már jelzett #181 natív UI-mérés folytatásai.
 
+#### G/3. Módválasztás, horgonyforrás és a Neven-kapu — a hívási gráf és a dekompilátum (2026-10-13, #4194 8. kör)
+
+**Módszer és határ.** Az EXE nincs a gépen, ezért utasításszintű újraolvasás
+nem futott (a Codespace hálózatot igényelne). Három adatforrás:
+(a) a bináris index `xrefs.csv` **pozitív** közvetlen hívási élei (a
+vtábla-hívások nem látszanak, negatív találatra nem építek); (b) a
+`ghidra-koteg-2026-10-06b/` `00618050.c`, `00699cd0.c`, `00824090.c`,
+`008223e0.c` dekompilátuma; (c) a `ghidra-koteg-2026-10-12c/008226e0.c`.
+A (b) és (c) egyetlen dekompilátumforrás, ezért a horgony **utasításszintű**
+íráslánca (`0x8242f0`) önálló második útként **nem** számít.
+
+**1. Hívási élek (`xrefs.csv`, pozitív).**
+
+| hívó → hívott | megjegyzés |
+|---|---|
+| `0x006175c0` → `0x0081b800` | az egyetlen közvetlen hívó; a G-ben szereplő `0x617810` hívóhely ennek a függvénynek a belsejében van |
+| `0x00699cd0` → `0x00824090`, `0x00699cd0` → `0x006999c0` | a `0x699cd0` módkiosztó ágai |
+| `0x00824090` → `0x008223e0`, `0x00824090` → `0x008226e0`, `0x00824090` → `0x006999c0` | mindhárom közvetlen él |
+
+A `0x618050` → `0x699cd0` él vtábla-hívás (a `+0x4b4` objektum 0. slotja),
+ezért az indexben nem látszik; a dekompilátum adja (b).
+
+**2. A mód kiválasztása (`0x618050`, dekompilátum 96–125. sor; ⚠️ egy forrás).**
+A `param_1` `int *`, ezért `param_1[0x13c]` a `+0x4f0` bájt, `(int)param_1 + 0x4f1`
+a `+0x4f1`. Az alapmód 1 vagy 4 (`+0x134 ≠ -1`), vagy 7 (`FUN_00617110`, ha a
+`+0x135` objektum szerint igaz). Ezután: `+0x4f0 ≠ 0` → **5**; különben
+`+0x4f1 ≠ 0` → **6**. Mellékhatás: ha az alapmód 7 és `+0x4f1 = 0`, a
+`+0x4f0` bájt **1-re áll** (`00618050.c` 124. sor), és ez a
+következő építéseknél megmarad.
+
+- `0x699cd0(1..4)` → `0x68c880` (0x498 bájtos objektum);
+- `0x699cd0(7)` → `0x6999c0` (0x770 bájtos objektum, ctor, a horgony kezdőértéke `-1`);
+- `0x699cd0(5|6)` → `0x824090` (listaépítő, a horgonyág ide tartozik).
+
+⚠️ **Ütközés a 2.5/F-fel:** a 2.5/F szerint a `+0x4f0`/`+0x4f1` „függőben lévő,
+még nem alkalmazott Opciók-állapot”. A dekompilátum szerint a mód-7 építés
+maga is beállítja a `+0x4f0`-t, tehát a „függőben” jelentés nem egyedül áll.
+Ezt utasításszinten kell megerősíteni (nyitott).
+
+**3. A horgony (`0x824090` / `0x8223e0` / `0x8226e0`, dekompilátum).**
+- A `0x824090` `param_2` bájtja szerint: `0` → `0x8223e0`, nem nulla → `0x8226e0`.
+  Ezt a bájtot a `0x699cd0` hívóhelye adja át; a dekompilátum argumentum nélkül
+  mutatja a hívást, ezért a flag forrása **nyitott**.
+- A `0x8223e0` 2. argumentuma `[+0xeac] → +0x3c0`, az album-azonosító (alap `-1`).
+  A horgony-lokálist (`param_1`, a `0x824090` 44. sora) a `0x8223e0` a saját
+  kimeneti vektorának **0. elemével** tölti (`*param_3 = *puVar3`,
+  `008223e0.c` 122–123. sor); üres vektornál a `-1` marad (`uVar6 >> 1 == 0`).
+- A `0x8226e0` nem tölti a horgony-lokálist; a `&local_28` vektort adja. A
+  horgony így `-1`, azaz a 0. rekord.
+- A `0x824090` dekompilátumában a horgony-lokál **csak íródik**, olvasása nem
+  látszik. Az a `0x8242f0` `movl %edx,0x738(%ebp)` íráson át jut a `0x81c9b0`-ba,
+  és ezt a dekompilátum nem mutatja (G/2c, utasításszint).
+
+**4. A Neven-kapu (új a G/2c-hez képest).** A `0x824090` dekompilátuma szerint
+a Neven-súly (`_DAT_00c7c838`) akkor kerül be, ha (i) a
+`Preferences\SmartMultiPersonTrans` igaz, **és** (ii) a `+0x6f4` bájt
+(`piVar6[0x1bd]`) nem nulla. A `+0x6f4` csak akkor lesz 1, ha a `0x448c90` /
+`0x448a10` ellenőrzés hamis (a találatnál korai `goto` kihagyja), vagy a
+`0x8226e0` ágon fut. A G/2c csak az (i) feltételt említi. ⚠️ Egy dekompilátumon alapul.
+
+**5. Mit ad ez a kiválasztási szabályhoz.** Fotóindex nem jött ki; a
+„melyik marad” kérdés változatlan. Feltételes hipotézisek (nem bizonyítékok):
+- mód-7 első építésnél a horgony `-1`, a spirál a 0. rekordtól indul (a
+  `0x6999c0` ctor kezdőértékére támaszkodva; a rekordlista feltöltése nincs olvasva);
+- mód-5 `flag = 0` esetén a horgony az album-vektor 0. eleme, ha az nem üres.
+
+**6. Nyitott — a következő konkrét kör.**
+1. A `0x699cd0` hívóhelye a `0x824090` flag-argumentumával (melyik horgonyág fut).
+2. A `0x6999c0` törzse: a `0x4e0` lista feltöltése, a `+0x738 = -1` kezdőérték, és hogy a 7-es mód ezt használja-e.
+3. A `0x618050` 96–125. sorának utasításszintű megerősítése: íródik-e a `+0x4f0` a mód-7 ágban (2.5/F ütközés).
+4. A `0x8242f0` körüli utasítások és a `0x81c9b0` `+0x738`-olvasása: a horgonykapcsolat utasításszintű igazolása.
+
+**Bizonyítottsági fok (G/3):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| A `0x6175c0` → `0x81b800`, `0x699cd0` → `0x824090`/`0x6999c0`, `0x824090` → `0x8223e0`/`0x8226e0` élek | bináris index (pozitív élek) | **megerősített** |
+| A mód 5/6/7 kiosztása és a `+0x4f0` mód-7 általi beállítása | dekompilátum (`00618050.c`) | **feltételes** (egy forrás); ellentmond a 2.5/F „függőben” jelentésének |
+| A horgony a `0x8223e0` vektorának 0. eleme, üres/`0x8226e0` esetén `-1` | dekompilátum (`008223e0.c`, `008226e0.c`) | **feltételes**; a `0x738` lépés csak utasításszinten |
+| A Neven-súly a `+0x6f4` kapuval is feltétel | dekompilátum (`00824090.c` 52–79. sor) | **feltételes** |
+| A `0x824090` flag-argumentuma | — | **NYITOTT** |
+| A konkrét megtartott fotóindex | — | **NYITOTT** |
+
+#### G/3b. A 9. kör (2026-10-13): utasításszintű olvasat az eredeti EXE-n — módválasztás, horgony, hívóhely (#4194)
+
+**Helyesbítés a G/3-hoz.** A G/3 azt írta, hogy az EXE nincs a gépen. Ez téves:
+a `~/Documents/PicasaPy/research/copy_Picasa_3_7/Picasa3/Picasa3.exe` megvan
+(10 160 456 bájt, PE32/i386, ImageBase `0x400000`, SHA-256 kezdete
+`644b7bec89a2e4d5`). Ezért most utasításszintű olvasat készült: a `0x699cd0`,
+`0x618050`, `0x824090`, `0x8223e0`, `0x81c9b0` törzsét capstone 5.0.7-tel
+(a `~/picasapy-agent/venv`) disassemblálva olvastam. A segédszkriptek a
+munkafán kívül, a scratchpadban vannak; a repóba nem kerültek.
+
+**Módszer.** (a) E8/E9 közvetlen hívóhely-pásztázás a `.text`-re (nem az
+xref-indexből); (b) a vtábla-hívások azonosítása a `.rdata` és a konstruktorok
+`mov dword ptr [reg+X], imm32` alakú vtábla-beállításainak bájt-keresésével;
+(c) a `+0x738`, `+0x4f0`, `+0x4f1` mezők íróinak bájt-pásztázása a teljes
+`.text`-en (index-független). A `0x81c9b0` spirálja és pontozó ciklusa a
+G/2c szerint maradt; ebben a körben a horgonykeresést és a minimumot újra
+olvastam.
+
+**1. A hívóhely és a flag-argumentum.**
+
+- A `0x699cd0`-ra nincs közvetlen E8/E9 hívás. A hívóhely a `0x618247`
+  (`call eax`, `eax = [[ecx]]`, `ecx = [panel+0x4b4]`), a mód a `push esi`.
+- A `[panel+0x4b4]` másodlagos interfész. A `0x69830d`-es konstruktor a
+  `[obj+0x14]` helyre tölti a `0xca7b7c` vtáblát, amelynek 0. slotja a
+  `0x699cd0`. A `this` tehát az objektum `+0x14` címe: másodlagos vtábla =
+  eltolt this. A primer vtábla (`0xca7b38`) 0. slotja más (`0x6996d0`, dtor),
+  ezért a hívás nem azon megy. ⚠️ A gyári hívás (`0x618191`, a
+  `0xd49f68` objektum +0x14 vtáblaslotja) visszatérési értékét nem követtem
+  végig; a `+0x14` következtetés a vtábla-kép és a konstruktor alapján áll.
+- A `0x699cd0` mód-ágai: mód 5 és 6 a `0x69a305` / `0x69a308` ágon mennek:
+  `edx = [this+0x10]`, `cl = (esi == 6)`, majd `call 0x824090`. Tehát
+  `arg1 = [this+0x10]`, `arg2 = (mód == 6)`. A `0x824090`-ben ezt igazolja
+  az `arg1` (`[esp+4]` a belépéskor, `mov ebx,[esp+0x34]` a `push ebx` után)
+  és az `arg2` (`cmp byte ptr [esp+0x44],0` a négy `push` után).
+- A `0x824090` 0x8240e9. sora: `arg2 == 0` → `call 0x8223e0` (horgony-
+  vektor), `arg2 != 0` → `call 0x8226e0`. **A flag forrása tehát: a mód
+  (6 → 1, 5 → 0).** A G/3 „nyitott” pontja ezzel lezárva.
+- A `0x824090` maga építi a `0x770` bájtos objektumot (0x8240b4–0x8240e1:
+  foglalás + `0x6999c0`), és `mov eax, ebp`-pel ezt adja vissza. A `0x618247`
+  eredménye a `[panel+0x4b8]`-ba kerül.
+
+**2. A mód kiválasztása (`0x618050`, 0x618209–0x618247).**
+
+| `[panel+0x4f0]` | `[panel+0x4f1]` | mód | `arg2` a `0x824090`-nek | horgony-út |
+|---|---|---|---|---|
+| ≠ 0 | – | 5 | 0 | `0x8223e0` |
+| 0 | ≠ 0 | 6 | 1 | `0x8226e0` |
+| 0 | 0 | alap: `0x617110` igaz → 7; különben `[panel+0x4d0] == -1` → 1, egyébként 4 | – | 7: nincs `0x824090`; 1/4: a `0x699cd0` 1–4 ága (nem olvastam) |
+
+- A `0x618209`–`0x618223` sorok a mód-választás; a 0x4f0/0x4f1 bájtok az
+  `ebp`-hez, vagyis a `0x618050` panel-objektumhoz tartoznak (nem az
+  `[panel+0x4b4]` objektumhoz).
+- **Mellékhatás (megerősítve):** a `0x618259`–`0x618270` sorokban, ha a
+  dispatch után `esi == 7` és `[panel+0x4f0] == 0` és `[panel+0x4f1] == 0`,
+  akkor `[panel+0x4f0] := 1`. Az első mód-7 építés után a következő
+  építés már mód 5. Ez árnyalja a 2.5/F „függőben lévő, még nem alkalmazott”
+  értelmezését: a bájt a tényleges építés után is beáll.
+
+**3. A horgony (`0x824090` belseje).**
+
+- A `[obj+0x738]` kezdőértéke `-1` (konstruktor, `0x699b9b`).
+- A `0x824090` `[esp+0x40]` lokálisa a horgony-kimenet; `0x8240f6`-ban `-1`.
+  Mód 5-nél a `0x8223e0` ezt az out-paramétert kapja (`lea ecx,[esp+0x40]`).
+- A `0x8242f0`: `mov dword ptr [ebp+0x738], edx`, ahol `edx = [esp+0x40]`
+  (a `0x8242e4`-ben). Ez a `+0x738` egyetlen közvetlen írása a `0x824090`
+  családon belül.
+- A `0x8223e0` horgony-írása (`0x822668`–`0x822675`): ha az `esi` (a
+  `0x8225cb`-es `call ebp` eredménye) nem nulla, akkor `*anchor = [[edi]]`, vagyis
+  a kimeneti vektor 0. eleme; ha nulla, az `-1` marad (`0x82265d` `je
+  0x8226c0`). A `call ebp` függvénye (`[0xc40284]`, a `.rdata`-ban) nincs
+  azonosítva.
+- A `0x8226e0`-nak csak a `this = ebx` és a `&[esp+0x14]` kimenet adódik
+  át (`0x824104`–`0x824106`); a `[esp+0x40]` nem írható belőle. Mód 6-nál a
+  horgony tehát `-1`.
+- A `0x824144`-ben a lista-kitöltő ág csak akkor fut, ha a `[esp+0x18]`
+  feltétel teljesül (`test dword ptr [esp+0x18], 0xfffffffe`; `je 0x824296`).
+  A `[esp+0x18]` jelentése nincs dekódolva; ezért a „üres kimenet → nincs
+  lista” olvasat feltételes.
+
+**4. A kiválasztó bemenete (`0x81c9b0`, újraolvasva).**
+
+- Korai kilépés `0x81e0f2` (lokálisok felszabadítása, `ret 0x14`, nincs
+  kiválasztás): ha `[obj+0x508] >> 1 == 0`, vagy a `[obj+0x504]` vektor
+  valamely eleme 0, vagy az első elem `+0xc` mezője ≤ 1 (`0x81c9d3`–`0x81c9ff`).
+- Horgony (`0x81ca05`–`0x81ca33`): `[obj+0x738] == -1` → 0. index. Különben
+  a `[obj+0x4e0]` rekordok (elemméret `0x38`) `+0x30` kulcsai között az első
+  egyezés indexe; egyezés nélkül a 0. index.
+- Minimum (`0x81d7b0`–`0x81d7d9`): `fcompp` + `ah & 0x41`; csak szigorú
+  `<` cserél, így holtversenyben a korábban bejárt jelölt marad; ha egyik
+  sem nyer a kezdőértékhez képest, a spirál első eleme a tartalék.
+- Kimenet (`0x81d832`): a nyertes rekord `+0x30` kulcsa kerül a kimeneti
+  vektorba; a nyertes index az új középpont (`0x81d8a0`).
+
+**5. Írók (bájt-pásztázás, index-független).**
+
+- `+0x738`: a `0x699cd0`-osztály objektumán belül két író van: a konstruktor
+  (`0x699b9b`, `-1`) és a `0x8242f0` (anchor). A `0x7a9375` és a `0x7a97f3`
+  más osztály (vtábla `0xcb6e98`, `+0x6bc`/`+0x53c` mezők): nem ez az
+  objektum. A címet vevő (`lea`) hivatkozások osztálya (például `0x412a6b`,
+  `0x413155`, `0x7faca4`, `0x7fb6d9`, `0x7ffed5`) nincs azonosítva, ezért
+  a pointeres írás nem zárható ki.
+- `+0x4f0` és `+0x4f1`: a bájt-pásztázás zajos (sok osztály használ ilyen
+  eltolást). A `0x618050`-hez tartozó írások: a `0x618270` (`+0x4f0 := 1`,
+  mód-7) és a `0x612aa4`/`0x612aaa` (`+0x4f0 := bl`, `+0x4f1 := bl`, egy
+  nullázó/init-rutinban, a `bl` a `0x6129f2` `xor ebx,ebx`-ből 0). A
+  `0x612860`-as rutin és a `0x618050` ugyanazé-e az osztálya: nincs
+  igazolva. A `0x618209`-es olvasás `+0x4f1`-forrása ezért csak
+  „init-nullázás + nem azonosított írók” szinten áll.
+
+**6. A kérdés: melyik fotó marad meg.** A mechanizmus most már utasításszinten
+áll; a konkrét fotó nem.
+
+- A kiválasztás rekordkulcsokon (`+0x30`) fut, a kimenet ezek listája.
+- Kezdő középpont: mód 5-nél, ha az album-vektor nem üres és `esi ≠ 0`, az
+  album-vektor 0. kulcsának rekordja; egyébként (mód 6, vagy üres vektor)
+  a `[obj+0x4e0]` lista 0. eleme.
+- A spirál (+1, −1, +2, −2 …, legfeljebb 100 jelölt, a G/2c szerint) csak
+  a középponttól eltérő csoportból vesz jelöltet; a pontszám a regisztrált
+  getterek súlyozott összege; szigorú minimum, döntetlennél a korábbi;
+  a nyertes az új középpont.
+- Következmény: a küszöbön belüli csoportban **a megtartott kép nem
+  „az első” és nem „az utolsó” általános szabállyal**. A döntő a
+  `[obj+0x4e0]` lista sorrendje (a feltöltő `0x823620` még nincs olvasva) és
+  a getter-pontszámok iránya.
+- **Visszavont hipotézis (G/3 5. pont):** „mód-7 első építésnél a horgony
+  `-1`, a spirál a 0. rekordtól indul”. A mód-7 ág nem hívja a `0x824090`-et,
+  így a `[obj+0x4e0]` lista ott üres (a konstruktor nullázza), és a
+  `0x81c9b0` korai kilépéssel tér vissza. Más feltöltő nincs azonosítva;
+  ezért a mód-7 kiválasztás „nincs kimenete” olvasat feltételes.
+
+**Bizonyítottsági fok (G/3b):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| A `0x6999c0` ctor: `+0x738 = -1`, `+0x500 = 1`, `+0x4e0..0x4fc = 0` | utasítás | **megerősített** |
+| A `0x699cd0` hívóhelye: `0x618247`, a `0xca7b7c` másodlagos vtábla 0. slotja | utasítás + `.rdata` + konstruktor-immediátum | **megerősített** (a gyári visszatérés követése: feltételes) |
+| Mód-választás: `[+0x4f0] ≠ 0 → 5`, `[+0x4f0] = 0 ∧ [+0x4f1] ≠ 0 → 6` | utasítás (`0x618209`–`0x618236`) | **megerősített** |
+| Mód-7 beállítja `[+0x4f0] := 1` (`0x618270`) | utasítás | **megerősített** |
+| `0x824090` flag = `(mód == 6)`; `0` → `0x8223e0`, `≠ 0` → `0x8226e0` | utasítás (`0x69a308`, `0x8240e9`) | **megerősített** |
+| `[obj+0x738] := [esp+0x40]` (`0x8242f0`) | utasítás | **megerősített** |
+| Horgony = kimeneti vektor 0. kulcsa, ha `esi ≠ 0`; egyébként `-1` | utasítás (`0x822668`–`0x822675`) | **megerősített**; az `esi` feltétel (`[0xc40284]`) feltételes |
+| Mód 6 horgonya `-1` | utasítás | **megerősített** |
+| `0x81c9b0` horgonykeresés, korai kilépés, szigorú minimum | utasítás | **megerősített** |
+| `+0x738` írói a `0x699cd0`-osztályon | bájt-pásztázás | **feltételes** (pointeres írók nincsenek kizárva) |
+| `[+0x4f1]` írói (a `0x612aaa` nullázó, több nem azonosított) | bájt-pásztázás | **NYITOTT** (csak az init-nullázás látszik) |
+| `[obj+0x504]` feltöltője | — | **NYITOTT** |
+| `0x617110` (mód-7 feltétel) | — | **NYITOTT** |
+| Konkrét megtartott fotóindex | — | **NYITOTT** |
+
+**Nyitott pontok, és mi zárná le őket.**
+
+1. `[panel+0x4f1]` 1-re állító írói: a `0x612860`-as rutin osztályának
+   azonosítása, és a `0x618050` osztályán belüli bájt-pásztázás vagy
+   dekompilátum. Ez dönti el, mikor lesz mód 6.
+2. `0x823620` és a `[obj+0x504]` feltöltője: a `[obj+0x4e0]` lista sorrendje
+   (időrend-e). Ez a legfontosabb a „melyik” kérdéshez.
+3. A `call ebp` (`[0xc40284]`) azonosítása: mikor nem nulla az `esi`, vagyis
+   mikor lesz a horgony az album-vektor 0. eleme.
+4. A `0x824144` `[esp+0x18]` feltétele: dekódolás.
+5. A HOG/Neven getter visszatérési értékének iránya: a minimum a
+   legkisebb hasonlóságot vagy a legkisebb távolságot választja-e.
+6. A `0x617110` (mód-7 feltétel) olvasata.
+7. Natív viselkedésmérés: a QEMU-hám nem ad kimenetet (G/2c); a Wine alatti
+   Picasa nem készít filmet (picasa-colab-jobs #106). Mérés csak Windows-
+   gépen lehetséges.
+
+**Kész, ha (a #4194 jegy szerint) — állapot: NEM teljesül.**
+
+- [ ] 1. feltétel: a kiválasztási szabály a specben, két független úttal — a
+  mechanizmus megvan, a konkrét megtartott fotó nincs; a jegy nem zárható.
+- [ ] 2. feltétel: a fejlesztői teendő kimondva (Eredeti | Nálunk | Teendő).
+  Lásd lent.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Mód 5/6 horgony, `0x81c9b0` spirál, szigorú minimum, `+0x4f0` mód-7 beállítás. | A `slideshow.py` színátlagos legközelebbi képet választ; a film-szűrés nincs. | **#4182:** a csoportosítás (G) és a horgony-szabály (G/3b) implementálható; a megtartási lépést csak az 1–3. nyitott pont lezárása után szabad eredetihűnek nevezni. |
+
+#### G/3c. A 10. kör (2026-10-13): a [obj+0x4e0] rendezése, a horgony-feltétel, a `+0x4f0/+0x4f1` írói, az IAT-név (#4194)
+
+**Módszer.** Utasításszintű olvasat az EXE-n (`research/copy_Picasa_3_7/Picasa3/Picasa3.exe`,
+capstone a `~/picasapy-agent/.venv`-ben, `pefile` a PE-fejhez és az importtáblához).
+Bájt-pásztázás a teljes `.text`-en (index-független). A segédszkriptek a scratchpadban
+vannak, a repóba nem kerültek. Natív QEMU-futás nem készült (a G/2c szerint a szintetikus
+rekordokkal a kiválasztó a végső indexig nem jut el).
+
+**1. A `[obj+0x4e0]` lista feltöltése és rendezése.**
+
+- Egyetlen közvetlen hívó: `0x00824090` → `0x00823620` a `0x0082417d`-ön (E8-pásztázás).
+- Argumentumok (`0x823620` belépési stackje): arg1 = a helyi forrásvektor (`lea eax,[esp+0x18]`),
+  arg2 = `&[obj+0x4e0]` (cél; a darabszám `[+4]>>1`, elemméret `0x38`), arg3 = `&[obj+0x4f8]`.
+  A `0x823620` a `0x82368e`-hez közel a `0x8256a0` rendezőt hívja a helyi `[esp+0x3c]` vektoron.
+- `0x8256a0`: alulról felfelé összefésülő rendezés (`0x825930` az összefésülés), a
+  comparátor a `0x819570`.
+- `0x819570`: a két elem kulcsát a `0x4edf60` olvassa (zárolt gyorsítótáras kulcsolvasó; a
+  kimenet a bejegyzés `+4…+0x10` dwordjeit másolja, a 8 bájtos kulcs az `+0xc/+0x10`-en van).
+  A kulcs összehasonlítása **előjel nélküli 64 bites** (`ja`/`jb`/`jae`): −1, ha `k1 < k2`,
+  különben +1. A rendező csak `< 0` esetén cserél ⇒ a sorrend **dátum szerint növekvő**.
+- A kulcs azonossága: ugyanaz a `0x4edf60` dátumolvasó, amelyet a G-szakasz `0x0081ae10`
+  csoportosítója használ (`+0x34` mező). A „FILETIME” azonosítás a G-szakaszban mért
+  (QEMU-s) tény; itt csak a rendező kulcsának típusát és irányát igazoltam.
+- **Nem követtem végig:** a `0x8256a0` kimenetének `arg2`-be jutását (a `0x823620` 0x82392e–0x823b76
+  tartománya). Ezért a „a lista tényleg rendezett” állítás **feltételes**.
+- **Nyitott:** egyenlő dátumnál a sorrend (a comparátor `+1`-et ad egyenlőségnél; a
+  összefésülés stabilitása nincs ellenőrizve).
+
+**2. Horgony-feltétel: a `call [0xc40284]` azonosítva.**
+
+- A `0x00c40284` IAT-slot neve: **KERNEL32.dll!GetCurrentThreadId** (pefile-lel, az importtáblából).
+- Hívóhelyek: `0x008225cb` (a `0x8223e0` belsejében), `0x004edf71` (a `0x4edf60`-ban),
+  `0x00823b53` (a `0x823620`-ban). Mindhárom a szál-azonosítót a tulajdonos-ellenőrző
+  mintához használja (`[obj+0x20]` / `[esp+0x38]` tulajdonos, `+0x24` / `+0x3c` számláló).
+- A `0x8223e0` horgony-ága (`0x822668`): `test esi,esi` után, ha `esi ≠ 0`, a horgony a
+  `this`-vektor 0. eleme (`mov eax,[edi]; mov ecx,[eax]`, `edi = this`). A szál-azonosító
+  felhasználói szálon nem nulla, tehát a gyakorlatban a feltétel mindig teljesül; üres
+  vektornál a `-1` marad. Ezzel a G/3b „`[0xc40284]` nyitott” pontja lezárult.
+
+**3. A `+0x4f0` / `+0x4f1` bájtok írói (bájt-pásztázás, `mov byte [reg+disp]` alakok).**
+
+| cím | művelet | kontextus | fok |
+|---|---|---|---|
+| `0x0057cc69` | `[ebx+0x4f0] := 1` | a `cmp ebp,0x9d59` ág (`0x57cc61`) | erős (utasítás) |
+| `0x0057cc7a` | `[ebx+0x4f1] := 1` | a `cmp ebp,0x9d5a` ág (`0x57cc72`) | erős (utasítás) |
+| `0x00612aa4`, `0x00612aaa` | `[edi+0x4f0] := bl`, `[edi+0x4f1] := bl` (bl = 0) | a `0x612a80` nullázó (a `+0x4e0` mellett) | erős (utasítás) |
+| `0x00618270` | `[ebp+0x4f0] := 1` | mód-7 mellékhatás (G/3b) | erős (utasítás) |
+| `0x004ec587` | `[reg+0x4f0] := 1` | nem azonosított osztály | feltételes |
+| `0x004ec027`, `0x004f6a8f` | `[reg+0x4f0] := 0` | nem azonosított osztály | feltételes |
+| `0x004e4550` | `[ebx+0x4f0] := bl` | nem azonosított | feltételes |
+
+- A `0x9d59` / `0x9d5a` azonosítók a **makemoviepanel vezérlő-azonosítói**: a `0x0056f7a0`
+  állapotfrissítő a `0x56f830` ágban ugyanezekkel az azonosítókkal hívja a `call ebx`-et
+  (a `0x9d30`, `0x9d62`, `0x9d5c`, `0x9d58` társaságában). Ezért a `+0x4f0` / `+0x4f1` nem
+  számított állapot, hanem **egy vezérlő bekapcsolt állapotából** íródik.
+- **Nyitott:** melyik vezérlő a `0x9d59` és a `0x9d5a` (a felirat). A fájlban nincs MENU-erőforrás;
+  a dialógus-leírás a REGISTRY-erőforrásban vagy a `.tre`-ben lehet — nincs megnézve.
+- A mód-választás (`0x618209`–`0x618236`) így: `[+0x4f0] ≠ 0` → 5, különben `[+0x4f1] ≠ 0` → 6.
+  Ez utasításszinten megerősített, de a bejövő érték **vezérlőből** jön, nem számításból.
+
+**4. A kiválasztó összehasonlítása (`0x81d7b0`–`0x81d7d9`, megerősített).**
+
+- A `fcompp` a `best` és a `v` (jelölt-összeg) között hasonlít; csak `best > v` esetén cserél
+  (`test ah,0x41` ⇒ `best ≤ v` esetén marad). **A kisebb összegű jelölt nyer**, döntetlennél a
+  korábbi marad. Ez a G/2c „szigorú minimum” állítását megerősíti.
+- **Nyitott:** a getterek (HOG `0x00873e40`, Neven `0x008742a0`, a `0x00873170` összegző) iránya:
+  távolság (a kisebb = hasonlóbb) vagy hasonlóság (a kisebb = kevésbé hasonló). A minimum
+  mindkét esetben a kisebbet választja, tehát a **választás iránya** a getter jelentésétől függ,
+  és azt ebben a körben nem fejtettem vissza.
+- **Nyitott:** a csoportkizárás iránya. A G-szakasz szerint a spirál csak „a középponttól eltérő
+  csoportból” vesz jelöltet, a `0x81d41d`–`0x81d428` ág viszont az aktuális jelölt csoportjával
+  egyezőt hagyja ki. Hogy ez a középpont vagy a jelölt csoportja, nincs egyértelműen igazolva.
+
+**5. A szabály állása (feltételes, nem zárt).**
+
+1. Csoport: a küszöb alatti szomszédos csoportosítás (G, megerősített).
+2. Rendezés: a `[obj+0x4e0]` dátum szerint növekvő (feltételes, lásd 1.).
+3. Középpont (`ordering = 0`): mód 5 (`0x9d59`) → a `this`-vektor 0. eleme, ha nem üres; mód 6 (`0x9d5a`) vagy üres → index 0 (a legkorábbi dátumú rekord, feltételes).
+4. Jelöltsor: kifelé spirál (+1, −1, +2, −2 …), legfeljebb 100 jelölt (G/2c).
+5. Pontszám: a getterek súlyozott összege; a kisebb nyer, szigorú minimum, döntetlenre a korábbi (megerősített); a getter-irány **nyitott**.
+6. Kimenet: a nyertes rekord `+0x30` kulcsa (G/2c).
+
+**Bizonyítottsági fok (G/3c):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| `call [0xc40284]` = `KERNEL32.dll!GetCurrentThreadId` | import-tábla (pefile) | **megerősített** |
+| A `0x823620` egyetlen közvetlen hívója a `0x824090` (`0x82417d`) | E8-pásztázás | **megerősített** (vtábla-hívás nincs kizárva) |
+| A `[obj+0x4e0]` feltöltő rendezője 64 bites előjel nélküli, dátum-kulcsú összefésülés, növekvő irány | utasítás (`0x819570`, `0x8256a0`, `0x825930`) | **megerősített** a comparátorra; **feltételes** a lista végső sorrendjére |
+| A horgony a `this`-vektor 0. eleme, ha a TID ≠ 0 | utasítás (`0x822668`) | **megerősített** |
+| `+0x4f1 := 1` a `0x9d5a` ágon (`0x57cc7a`) | utasítás | **megerősített** (a vezérlő neve **nyitott**) |
+| `+0x4f0`, `+0x4f1` többi írója | bájt-pásztázás | **feltételes** (zajos minta) |
+| `0x81d7b0` szigorú minimum | utasítás | **megerősített** |
+| Getter-irány (távolság vagy hasonlóság) | — | **NYITOTT** |
+| Csoportkizárás iránya | — | **NYITOTT** |
+| Egyenlő dátum sorrendje | — | **NYITOTT** |
+| Konkrét megtartott fotóindex | — | **NYITOTT** |
+
+**Nyitott pontok és a lezárásuk útja.**
+
+1. A getter-irány: a `0x873170` → `0x873e40` (HOG) és `0x8742a0` (Neven) törzse; a visszatérési érték jelentése (a kisebb = hasonlóbb?).
+2. A `0x9d59`/`0x9d5a` vezérlő felirata: a makemoviepanel dialógus-leírása (REGISTRY-erőforrás vagy `.tre`).
+3. A `0x8223e0` mód-5 forrásvektora: a `[esp+0x14]` kitöltője mód 5-nél nincs igazolva (a `0x8223e0` nem kap vektor-kimenetet).
+4. Egyenlő dátumú rekordok sorrendje: a `0x8256a0` összefésülés stabilitása, vagy a `0x825930` ágai.
+5. A csoportkizárás: a `0x81d41d`–`0x81d428` ág melyik csoportot zárja ki.
+6. Natív viselkedésmérés: Windows-gép kell (Wine alatt a Picasa nem készít filmet, picasa-colab-jobs #106).
+
+#### G/3d. A 11. kör (2026-10-13): a getterek iránya, a csoportkizárás, a rendező stabilitása, a mód-5 forrásvektor (#4194)
+
+**Módszer és határ.** Utasításszintű olvasat az EXE-n (`research/copy_Picasa_3_7/Picasa3/Picasa3.exe`,
+capstone + pefile; a segédszkriptek a scratchpadban vannak, a repóba nem kerültek). A kiválasztó
+ágait a G/3c óta újraolvastam. Második út: a `ghidra-koteg-2026-10-12/00823620.c` és a `0081b800.c`
+dekompilátuma (a kiíró ciklus és a hívási argumentumok). Natív futás nem készült. A getterek
+(HOG, Neven) és a rekognáló törzse csak az EXE-ből olvasott, egy úton állnak.
+
+**1. A getterek iránya — MEGERŐSÍTVE: mindkettő TÁVOLSÁG (kisebb = hasonlóbb).**
+
+- **HOG** (`0x00873e40`, argumentumok `a`, `b`, `this` = `ecx`): a `[this+0x4c]` jelzőtömb szerint
+  kiszámolja a két rekord vektorát (`0x873cb0`), majd a visszatérési érték
+  `Σ_j (A_j − B_j)² / (A_j + B_j + ε)`, `ε = 1e-8` (a `0xcf4bd8` double). A vektor hossza
+  `[+0x4] >> 1`, az elemek `float`-ok. A `0x873e40` törzsében nincs `fsqrt`: ez χ²-típusú
+  **távolság** (hisztogram-összehasonlítás), azonos vektornál 0.
+- **Neven** (`0x008742a0`): kiindulás `1.0`. (i) Ha a `[this+0x34]` klaszter-azonosítók
+  megegyeznek és nem nullák, a visszatérés `1 − 1.0 = 0` (korai ág `0x8742c2`). (ii) Egyébként
+  `0x48c440` (rekognáló). Hiba vagy arc-hiány esetén a kimenet 0, így a visszatérés `1.0`
+  (maximális távolság). Sikernél a `0x48c440` kimeneti paramétere lesz `x` (a `0x3c`-es vtábla-slot
+  írja, a törzsét nem olvastam), és a visszatérés `1 − x`. Tehát Neven = `1 − hasonlóság`,
+  kisebb = hasonlóbb. ⚠️ A `0x3c` slot törzse nincs igazolva, ezért a „hasonlóság” jelleg feltételes.
+- **Következmény:** a `0x81d7b0` minimum-választója (legkisebb súlyozott összeg) a **legkisebb
+  távolságú** jelöltet viszi, azaz a középponthoz legjobban hasonlítót. Súlyok: HOG `1.0`,
+  Neven `0.4f` (`0xc7c838`, kétszer ellenőrizve), a Neven-kapu a G/3 4. pontja szerint.
+
+**2. A csoportkizárás — MEGERŐSÍTVE: a KÖZÉPPONT csoportja.** (A G/3c 5. nyitott pontja lezárva.)
+
+- `0x81d41d`–`0x81d428`: `esi = G[j]` (a jelölt csoportja), `if (esi == G[c]) → 0x81d4ca` (kihagyás).
+  Itt `ecx = c` végig: a `0x81d3d4`/`0x81d3d8` és a `0x81d3a2`/`0x81d3a6` ágak is a `c`-t töltik.
+- `G` = `*[ebp+0x14]` = `[this+0x6cc]`. A `0x81b800` (`piVar10 = this+0x1b3` ha `param_4 ≠ 0`) adja át,
+  és a csoport-azonosítót a `0x81ae10` írja (`0x81ae48`, `0x81ae96`: `mov [esi+0x6cc], …`).
+- Ugyanebben a szakaszban további kizárások: a már kiválasztott jelölt (`[esp+0x48]` bájt, `0x81d404`) és
+  a zászlós elem (`*[ebp+0x10]`, `0x81d40e`), ahol a zászló a `[this+0x6dc]`/`[this+0x6e4]` mögött áll.
+- ⚠️ **Nyitott:** a `0x81d338`–`0x81d390` határ-ellenőrzés a `[this+0x708]` tömböt olvassa. Ez a 0x6999c0
+  konstruktorban `0`-ra áll (`mov [edi+0x708], ecx`, `ecx = 0`), és ordering 0 ágon nem látszik írója
+  (a `0x874e40` írja, de csak nem nulla ordering ágon fut). Ha az ág elérhető, null-olvasás lenne; ezt
+  futás nem igazolta, ezért **nyitott**.
+
+**3. Egyenlő dátumkulcs — MEGERŐSÍTVE: a rendező stabil, nincs másodlagos kulcs.**
+
+- A kulcs 64-bit előjel nélküli dátum (`0x4edf60`). A `0x819570` összehasonlító `−1`-et ad, ha `k1 < k2`
+  (a `0x8195ab`–`0x8195dc` ágak: a magas dword `ja`/`jb`, alacsony `jae`), **egyenlőnél `+1`**.
+- A `0x825930` összefésülés a jobb futamelemet csak akkor veszi előre, ha `cmp(jobb, bal) < 0`
+  (`0x825962` `jl`); egyenlőnél a **bal** (korábbi) marad.
+- A páronkénti kezdő lépés (`0x825740`–`0x825771`) csak `cmp(második, első) < 0` esetén cserél.
+- **Következmény:** egyenlő dátumnál a forrásvektor eredeti sorrendje marad. A másodlagos kulcs tehát
+  a **forrásvektor pozíciója**, nincs más kulcs. Ez a forrás-generátortól függ (G/3d 4. pont), ezért a
+  „melyik marad” kérdésben a sorrend a forrás ismeretéig nyitott.
+- Feltételes: az `0x8256a0` futamszintű ciklusai (`0x825790`, `0x825801`) nincsenek végigkövetve, csak a
+  két összefésülési szabály igazolt.
+
+**4. A mód-5 forrásvektor töltője — MEGERŐSÍTVE a töltő, RÉSZBEN a tartalom. (A G/3c 3. nyitott pontja.)**
+
+- **Helyesbítés G/3c-hez:** a `0x8223e0` MEGKAP vektor-kimenetet. A `0x8240fe` `lea eax,[esp+0x14]`
+  után a `0x824114` hívás (mód 5, `flag == 0`) `eax`-ban hagyja a címet, így `0x8223e0` `edi = eax` a
+  forrásvektor (`{ptr, size}`). Mód 6-nál a `0x8226e0` ugyanezt `push eax`-szal kapja.
+- A `0x8223e0` kitöltési ágai (`0x822402`–`0x822521`), sorrendben:
+  (a) ha `[builder+0xeac]` album-objektum és `[album+0x3c9] ≠ 0`: a vtábla `[0xdc]` slotja (`push 1; push edi`);
+  (b) különben ha `[builder+0xea8] ≠ 0`: `0x7166c0(…, 1)`; nulla visszatérésnél és nem üres vektornál tovább;
+  (c) különben, ha a vektor üres, a zászlóbit `0`, és `[builder+0xe64] ≠ −1`: **egyetlen elem**, a
+  `[builder+0xe68]` (`0x822506`–`0x822521`).
+  Ha a vektor üres marad, `0x822524` → `eax = 9`, a horgony nem áll be, és `0x824090` nem épít listát.
+- **Horgony:** nem üres vektornál és `TID ≠ 0` esetén (`0x82265f`) a horgony `vec[0]`, a `+0x30` kulcs
+  szerint keresve (G/2c). A `TID` a `GetCurrentThreadId` (G/3c 2. pont).
+- ⚠️ **Nyitott:** (a) az album-slot `0xdc` törzse (melyik fotók), (b) a `0x7166c0` törzse, (c) a
+  `[builder+0xe68]` és `[builder+0xe64]` értelme. Ezek döntik el, mi kerül a mód-5 listába.
+
+**5. A rendezés kimenete — MEGERŐSÍTVE (utasítás + Ghidra `00823620.c` 262–300. sor).**
+
+- A `0x8256a0` a forrás-indexlistát rendezi a dátumkulcs szerint (3. pont). Az `s = sorted[p]` kiíró
+  ciklus (`00823620.c` 268–277. sor): `inv[s] = p` a `[obj+0x4f8]`-ba; a `dst[p]` 0x38 bájtos rekordba
+  `+0x30 = forrás-kulcs[s]` és `+0x34 = local_80[s]`; majd `0x446610`-hívás.
+- Tehát a `[obj+0x4e0]` lista a dátum szerint rendezett, és a jelöltindex a **rendezett pozíció**.
+
+**6. A ordering 0 kiválasztási lánc, összefoglalva (a G/3c 5. pontjának részletezése).**
+
+- **Darabszám:** `k` = a `0x81b800` `uStack_30` (a `hossz` argumentum 2…n közé szorítva, `param_2 < 3 → 2`,
+  `n < k → n`). A ciklus `[this+0x500] < k` mellett fut, minden lépésben egy nyertest vesz fel.
+- **Kezdő középpont `c`:** mód 5 és a horgony megtalálva → annak indexe; különben index 0 (mód 6, vagy üres).
+- **Jelöltek:** spirál `c+1, c−1, c+2, c−2, …` (`0x81d298`–`0x81d4df`), legfeljebb 100 rögzített
+  jelölt (`0x81d4e4`, `ebx & ~1 == 0xc8`). Jelölt, ha nincs még nyertes, nincs zászlózva, és
+  `G[j] ≠ G[c]`.
+- **Pontszám:** `score(j) = Σ_k w_k · G_k(j, c)`. A `0x873170` a `(g_k, c, &vec, &cnt, flag)` argumentumokkal
+  minden listaelemre a `g_k` objektum vtábla `+0x8` slotját hívja (`call edx`, `ecx = g_k`, `0x8733d1`–`0x8733f6`),
+  és a visszatérést `fstp`-pel az elem vektorába írja (`0x8733f8`). A súlyozott összeget a hívó képzi:
+  `out_i += w_k · vec_k[i]` a `0x81d75e`–`0x81d77d` ágban, `w_k = [this+0x50c][k]`. A getter argumentum-sorrendje `(jelölt, c)`.
+- **Választás:** a `0x81d7b0`-ban a legkisebb `score`, szigorú `<`, az 1e8 kezdőhatár alatt; döntetlennél
+  a korábban bejárt (G/2c). Ha egy sem éri el az 1e8-at, a spirál első eleme.
+- **Nyertes:** `+0x30` kulcs a kimenetbe (`0x81d832`), a jelölés, és új középpont (`0x81d8a0`).
+- **Következmény a küszöbön belüli képekre:** (i) a nyertes csoportja a következő lépésben ki van zárva, tehát
+  **két egymást követő választás nem lehet azonos csoportból**; (ii) egy csoport képviselője az a tagja,
+  amelyik a legkisebb `HOG-χ² + 0,4·Neven` távolságot adja az **előző választotthoz**. Nem az első, nem az
+  utolsó, és nem a minőség alapján dől el. Ez a mechanizmus; a konkrét fotóindex futás nélkül nem adható meg.
+
+**7. Mód 7 (`0x699cd0(7)` → `0x6999c0`).** A `0x6999c0` ctor a 0x770 bájtos objektumot `[+0x4e0] = 0`,
+`[+0x738] = −1`, `[+0x708] = 0` állapotban hagyja. Mód 7 nem hívja a `0x824090`-et, így a lista üres és a
+`0x81c9b0` korai kilépéssel tér vissza (G/3b). Ez azt jelenti, hogy mód 7-nél nincs küszöbszűrés. ⚠️ Ez a
+G/3b feltételes olvasata, mert a mód-7 objektum további használata nincs végigkövetve.
+
+**Bizonyítottsági fok (G/3d):**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| HOG = `Σ (A−B)²/(A+B+1e-8)`, távolság (kisebb = hasonlóbb) | utasítás (`0x873e40`–`0x874003`), konstans `0xcf4bd8` | **megerősített** (egy út) |
+| Neven = `1 − x`, azonos klaszter → 0, rekognáló-hiba → 1 | utasítás (`0x8742a0`–`0x874314`, `0x48c440`) | **megerősített**; az `x` a `0x3c` slotból **feltételes** |
+| Neven súly `0.4f` | `0xc7c838` (olvasott érték) | **megerősített** |
+| Csoportkizárás: a jelölt csoportja = a középpont csoportja → kihagy | utasítás (`0x81d41d`–`0x81d428`), `ecx = c` ellenőrizve | **megerősített** |
+| `G` = `[this+0x6cc]`, írója `0x81ae10` | utasítás (`0x81ae48`, `0x81ae96`), `0x81b800` argumentum | **megerősített** |
+| `[this+0x708]` határ-ellenőrzés írója és null-kockázata | — | **NYITOTT** |
+| Egyenlő dátum: a rendező stabil, másodlagos kulcs a forrásvektor pozíciója | utasítás (`0x819570`, `0x825930`, `0x825740`) + Ghidra `00823620.c` | **megerősített** (összefésülési szabály); a futamszintű sorrend **feltételes** |
+| Mód-5 forrásvektor töltője: `0x8223e0` (`eax = &[esp+0x14]`) | utasítás (`0x8240fe`, `0x824114`) | **megerősített** (a G/3c helyesbítve) |
+| A `0x8223e0` ágai (album `0xdc`, `0x7166c0`, egyelemű `[+0xe68]`) | utasítás (`0x822402`–`0x822521`) | **megerősített** az ágszerkezet; a `0xdc` és a `0x7166c0` törzse **NYITOTT** |
+| Horgony = `vec[0]`, ha `TID ≠ 0` | utasítás (`0x82265f`–`0x822675`) | **megerősített** |
+| `0x8256a0` kimenete a `[obj+0x4e0]` rendezett listája; `inv` és `+0x30/+0x34` | utasítás + Ghidra `00823620.c` 268–277. sor | **megerősített** (két út) |
+| Választási lánc: spirál, 100 jelölt, `G[j] ≠ G[c]`, `argmin Σ w·távolság` | utasítás (`0x81d298`–`0x81d8a0`, `0x81d7b0`) | **megerősített** |
+| Konkrét megtartott fotóindex | — | **NYITOTT** (futás nélkül) |
+
+**Nyitott pontok, és mi zárná le őket.**
+
+1. `[this+0x708]`: a határ-tömb írója ordering 0 ágon, és az, hogy az ág elérhető-e nullpointerrel. Lezárja: a `0x81d338` ág futás-mérése vagy a `0x874e40` ordering 0 előfeltételének igazolása.
+2. `0x8223e0` `0xdc` (album fotólista) és `0x7166c0` törzse, valamint `[builder+0xe68]`/`[+0xe64]` értelme. Lezárja: a két virtuális törzs olvasása és a `0x6175c0` hívóhely visszakövetése.
+3. A HOG-vektor forrása (`0x873cb0`) és a Neven `0x3c` slot törzse (a hasonlóság skálája). Lezárja: a két törzs olvasása.
+4. A `hossz` argumentum (`0x6175c0` `param_2`) forrása: mit jelent a darabszám a film szempontjából. Lezárja: a hívó visszakövetése.
+5. Natív viselkedésmérés: Windows-gép kell (Wine alatt a Picasa nem készít filmet, picasa-colab-jobs #106). Lezárja: 4–6 képes, ismert időbélyegű mappa a Filmkészítő csúszkájával.
+
+**Kész, ha (a #4194 jegy szerint) — állapot: NEM teljesül.** A mechanizmus most már utasításszinten áll
+(csoport, rendezés, horgony, spirál, `argmin` súlyozott távolsággal), de a konkrét megtartott fotóhoz két
+nyitott bemenet kell: a 1. (`[this+0x708]`) és a 2. (mód-5 forrás) pont. A jegy nem zárható.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Dátum szerint rendezett lista, küszöb alatti csoport (Δ<T szomszéd), horgony (album első eleme vagy 0. index), spirál (+1, −1, +2 …, ≤100 jelölt, más csoport), `argmin Σ w·távolság` (HOG χ² + 0,4·Neven), láncos választás. | `slideshow.py` színátlag szerinti legközelebbi képet választ; burst-szűrő nincs. | **#4182:** a csoportosítás (G) és a rendezés (G/3d 3. pont) implementálható. A pontszámhoz arc-leíró kell (HOG-szerű χ² és Neven-szerű távolság); enélkül a „melyik marad” nem egyezik az eredetivel. A megtartási lépést csak az 1–2. nyitott pont lezárása után szabad eredetihűnek nevezni. |
+
 #### Bizonyítottsági fok
 
 **Megerősített** (utasításszinten olvasva): a négy tálcagomb ága és
@@ -3198,6 +4023,139 @@ Ghidra-dekompilátum és az utasításszintű olvasat támasztja alá.
 és a gráfélek teljes költségképzése.
 
 **Erős**: a `[panel+0x4f0]`/`[+0x4f1]` jelzők jelentése.
+
+#### G/3e. A 12. kör (záró, 2026-10-13): a [this+0x708] tömb és a mód-5 forrás — RÉSZLEGES, a szabály NEM zárult le (#4194)
+
+**Eredmény egy mondatban:** a megtartási szabály utasításszinten sem lett teljes; a két nyitott pont
+közül az elsőt szűkítettem, a másodikat csak a fordítási ág elején tudtam olvasni. A „Kész, ha" lista
+ezért **nem írható meg konkrét megtartott indexekkel** — nem akarok kitalált teszteseteket adni.
+
+**Módszer.** Utasításszintű olvasat (capstone 4 + pefile, `~/picasapy-agent/.venv`), lineáris szkennelés
+a `.text` egészén (`0x708]` operandus-minta és `call 0x81e…` hívók). Segédszkriptek a scratchpadban
+(`g3e/scan.py`, `g3e/dis.py`), a repóba nem kerültek. Natív futás nem készült.
+
+**(a) `[this+0x708]` — szűkítve.**
+
+- **Nem határlista.** A `0x81e5a0` (`this` = `eax`) a `[this+0x4e4] >> 1` = a rekordszám `n` alapján
+  átméretezi a **három** int-tömböt: `[+0x700]` (méret-jelző `+0x704`), `[+0x708]` (`+0x70c`) és
+  `[+0x710]` (`+0x714`). A `[+0x708]` mérete tehát **n**, rekordonként egy elem — nem időcsoportonként.
+  A `0x81e8e0`-es átméretező (`0x97c810` realloc, `0x97caf0` free, `(n << 1) | flag` a méret-szóban) a
+  közös tömb-kezelő.
+- **Hívási hely:** a `0x8242c7` (`mov eax, ebp; call 0x81e5a0`), a `0x824090`-es lista-építő után, a
+  `0x81e3a0` és `0x819370` előtt. Tehát a ordering-0 ág rekordlistájának építésekor a tömb mindig n elemű.
+  Ez azt jelenti, hogy a `0x81d353`/`0x81d382` olvasásánál a null-pointer-kockázat az n = 0 esetre szűkül,
+  és ott a határ-ellenőrzés (`cmp eax, esi; jge`) megakadályozza az olvasást.
+- **Nem igazolt:** a tömb ELEM-tartalma. Az elemek írása közvetett (betöltött mutatón keresztül), ezért a
+  `0x6`-os mintás szkennelés nem találta meg. A `0x81d338`-as ág `esi`-határa (a `cmp eax, esi`-t megelőző
+  töltés) sem lett végigkövetve. Tehát: a tömb neve „határ" csak feltételes; a tartalma **NYITOTT**.
+
+**(b) Mód-5 forrásvektor — részben.**
+
+- **`0x7166c0`** (`esi` = a kimeneti vektor `{ptr, size}`, `ebx` = a forrásobjektum, `[esp+8]`): először
+  felszabadítja a kimeneti vektor régi bufferét, majd a `[ebx]` vtábla `+0xb4`/`+0xb8` slotjait hívja
+  (az első a darabszám, a második az elem), és a `[ebx+0x2cc]` jelzőre a `+0xc4` slot is fut. Ez egy
+  **gyűjteményből vektort építő** rutin. Hogy a `+0xb4`/`+0xb8` pontosan mit ad (album-sorrend, kijelölés),
+  a vtábla-törzsekből nem igazoltam — **feltételes**.
+- **`0x8223e0`-ban** a `0xdc` album-slot törzse nincs olvasva; a `0x7166c0` a `[builder+0xea8]` ágon hívódik.
+  A két ág kiválasztása (album `[+0x3c9]`, `[builder+0xea8]`) a G/3d 4. pontjában leírt.
+- **Következmény:** a mód-5 lista tartalmát (az album kézi sorrendjét vagy a kijelölést) még **nem** tudom
+  megállapítani; ezért a 0x7166c0-ág eredménye sem zárható le.
+
+**Megtartási szabály (G/3e) — összefoglaló, ami igazolt és ami nem:**
+
+| Lépés | Állapot |
+|---|---|
+| Csoportosítás: szomszédos `delta < T` → ugyanaz a csoport | **megerősített** (G, natív QEMU) |
+| Rendezés dátum szerint, egyenlőnél a forrásvektor pozíciója | **megerősített** (G/3d 3. pont) |
+| Horgony = `vec[0]` (mód 5, `TID ≠ 0`), különben index 0 | **megerősített** (G/3d 4. pont), a `vec` tartalma **NYITOTT** |
+| Spirál `c+1, c−1, c+2, …`, ≤ 100 jelölt, `G[j] ≠ G[c]` | **megerősített** (G/2c) |
+| Pontszám `Σ w · távolság` (HOG χ², Neven `1 − x`, súly 0,4), argmin, 1e8 kezdőhatár | **megerősített** a szerkezetben; a Neven `x` skálája **feltételes** |
+| `[this+0x708]` mint „határ-tömb" | **CSÖKKENT** — per-rekord int tömb, hossza n; tartalma **NYITOTT** |
+| Mód-5 album-ág (`0xdc`) és `0x7166c0` tartalma | **NYITOTT** |
+| Konkrét megtartott fotóindex | **NYITOTT** (natív futás nélkül nem adható meg) |
+
+**Kész, ha — állapot: NEM teljesül.** A jegy nem zárható. Ami most megírható tesztként: a csoportosítás
+(már mérve: `[0, 3240, 6480]`, `T = 3600` → mind egy csoport, `[0,0,0]`; `[0, 3600, 7200]` → `[0, 1, 2]`).
+A megtartott index tesztjéhez az (a) elem tartalma és a (b) album-ág kell.
+
+**Következő, lezáró lépés (csak ha van rá erőforrás):** a `[this+0x708]` elem-írója (közvetett mutató
+követése a `0x81e5a0`-t hívó `0x8242c7`-ből felfelé, és a `0x81d338`-as blokk `esi`-határa), valamint a
+`0x7166c0` `+0xb4`/`+0xb8` vtábla-törzsei. Natív QEMU-próba előtt ezek kellenek, különben kitalált vtáblát mérne.
+
+#### G/3f. A 13. kör (2026-10-13): a [this+0x708] írói, a nearest-flag kitöltő — NEM ZÁRULT LE (#4194)
+
+**Eredmény egy mondatban:** a `[this+0x708]` elemeinek íróját nem találtam meg; a `0x7166c0` vtábla-törzseit
+és a `0xdc` album-slotot ebben a körben nem olvastam; a megtartási szabály tehát továbbra sem zárható le.
+Új, utasításszinten igazolt rész: a `0x874ac0` szomszédos-jelölt (nearest-flag) kitöltője (2. pont).
+
+**Módszer.** Capstone 5.0.7 (`~/picasapy-agent/.venv`), a teljes `.text` szkennelése szinkron-újraindítással
+(érvénytelen bájtnál egy bájttal tovább), a `0x708` minden operandusalakja (`0x708]`, `add`, `push` stb.).
+Segédszkriptek a scratchpadban (`g3f/`), a repóba nem kerültek. Ghidra: `ghidra-koteg-2026-10-12/0081b800.c`.
+Natív futás nem készült. A `00874e40`/`00874320`/`00874ac0` dekompilátuma nincs a referencia-kötegekben.
+
+**1. A `[this+0x708]` teljes hozzáférés-listája.**
+
+- A teljes szkennelés a G/3e 29 találatát adja (`0x708]` alak), plusz egy `lea` (`0x81bb95`) és a
+  konstruktor-írás (`0x699ac3`). Más alak nincs (sem `add reg, 0x708`, sem `push`).
+- **Csak a mutatót írják** (újraallokálás): `0x81a272`, `0x81e916`, `0x81e98f`, `0x81e99e`, `0x81e9c3`,
+  `0x81e9c9`, `0x81ea91`, `0x81eaa0`. Ezek a `0x81e8e0` realloc/free ágai; a méret a `+0x70c`-ben van,
+  `(n << 1) | flag` alakban.
+- **Olvasó helyek:** `0x81d353`/`0x81d382` (szomszédos egyenlőség, `arr[k] != arr[k∓1]` megszakítja a
+  spirált; a 0x81b800 Ghidra-kimenetének ~1799–1803. sora); `0x81f3c8`–`0x81f52a` (különbség és
+  `cmp ebx, 0x16e`); a `0x874e40` a3-argumentumán át (`arr[edi] - arr[edx] ≤ 0x16e` ablak).
+- **Elemíró: NEM TALÁLTAM.** A 29 hozzáférési hely blokkjaiban nincs `[reg+idx*4]` írás. A `0x874e40`
+  `[ebx+esi]`-írásai a `0x97c810`-zel frissen foglalt lokális bufferbe mennek (`0x874f9c`), nem a `+0x708`-ba.
+- **Ellentmondás — NYITVA.** A `0x874320` (a `0x874e56`-ban a3-at kapja `eax`-ben) `[eax]` → `[ecx]` → vtábla
+  `+0xc` láncot követ, ami objektumra utal, nem int-tömbre. A3 verem-offszete (`[E+0xc]`) és ez a lánc
+  nincs összeegyeztetve. Amíg ez nincs, a „a3 int-tömb” olvasat is csak feltételes.
+
+**2. A `0x874ac0` — nearest-flag kitöltő (utasításszinten megerősítve).**
+
+- Signatúra: `0x874ac0(src, Lki, Rki)`. `src` = bájt-jelzővektor (`{ptr, (n<<1)|flag}`), `Lki`/`Rki` = int-vektorok
+  (`0x874ac0` eleje: `[esp+4]` = src, `mov esi,[eax+4]; shr esi,1` = n).
+- A `0x874e40` a `src`-nek a `+0x6f8` mezőt adja (`0x874e75`: `ecx = [esp+0x98]`, a4 = `p1+0x1be`), az
+  `Lki`/`Rki` a saját lokálisai (`[esp+0x78]`, `[esp+0x6c]`).
+- Működés (`0x874c8c`–`0x874e2f`, a kitöltő ciklusa):
+  - `L[i]` = az i-nél **korábbi** legnagyobb `j`, amelyre `src[j] ≠ 0`; ha nincs, `-1`.
+  - `R[i]` = az i-nél **későbbi** legkisebb `j`, amelyre `src[j] ≠ 0`; ha nincs, `n`.
+  - Az `L[i]` a `[edx+ecx*4]` írásból és az `edi = ecx` frissítésből, az `R[k]` a `[edx+eax*4]` írásból
+    (`eax = n−1−ecx`) és az `esi = eax` frissítésből jön.
+- **Teszteset (a kódból levezetve):** `src = [0,1,0,0,1,0]`, n = 6 → `L = [-1,-1,1,1,1,4]`,
+  `R = [1,4,4,4,6,6]`.
+- **Kapcsolat a spirálhoz NEM igazolt.** A 0x81b800 Ghidra-kimenetében a spirál határait a `param_1+0x720`
+  (balra) és `+0x728` (jobbra) táblákból olvassa (~1763–1771. sor). A G/2b szerint ezekbe csak szentinel kerül
+  (`0x81e5a0`: `-1`, `n`). A `0x874ac0` szomszédot ír, nem szentinelt. Hogy a `0x874e40` lokálisai eljutnak-e
+  a `+0x720/+0x728` mezőkbe, nem láttam. **A G/2b szentinel-állítás ezért nyitott.**
+
+**3. A `0x7166c0` vtábla-törzsei és a `0xdc` album-slot — ebben a körben NEM olvastam.** A G/3e (b) nyitott marad.
+
+**4. A 2. KÖR tételei** (`0x699cd0` hívóhely, `0x824090` flag, `0x6999c0`, `0x618050` mód-7, `0x8242f0`,
+`0x81c9b0`): ezek a G/3b–G/3d szakaszban már le vannak írva, ebben a körben nem ismételtem meg. Csak a
+`0x8242f0` `mov [ebp+0x738], edx` írását ellenőriztem (egyezik a G/3b-vel).
+
+**Megtartási szabály (G/3f) — állapot:**
+
+| Lépés | Állapot |
+|---|---|
+| Csoportosítás: szomszédos `delta < T` → ugyanaz a csoport | **megerősített** (G, natív QEMU) |
+| Rendezés dátum szerint | **megerősített** (G/3d 3. pont) |
+| Spirál `c±k`, ≤ 100 jelölt | **megerősített** (G/2c) |
+| Pontszám, argmin, 1e8 kezdőhatár | szerkezet **megerősített**; a Neven-skála **feltételes** |
+| `[this+0x708]` tartalma és írója | **NYITOTT** (írót nem találtam; ellentmondás a `0x874320` láncban) |
+| `+0x720/+0x728` írója (a `0x874ac0` kimenete?) | **NYITOTT** (az összekötés nincs igazolva) |
+| `0x7166c0` vtábla-törzsek, `0xdc` album-ág | **NYITOTT** (ebben a körben nem vizsgált) |
+| Konkrét megtartott fotóindex | **NYITOTT** |
+
+**Tesztesetek (G/3f).** Megtartott indexet nem adok: nincs igazolva. Amit a bizonyíték már megenged:
+
+- csoportosítás (G): `[0, 3240, 6480]`, `T = 3600` → `[0, 0, 0]`; `[0, 3600, 7200]` → `[0, 1, 2]`;
+- nearest-flag kitöltő (G/3f 2. pont, függvényszintű): `src = [0,1,0,0,1,0]` → `L = [-1,-1,1,1,1,4]`,
+  `R = [1,4,4,4,6,6]`. A spirálhoz való kapcsolata nincs igazolva.
+
+**Kész, ha — állapot: NEM teljesül.** A jegy nyitva marad. Lezáró lépés, két független úton:
+(a) a `+0x708` írója: a `0x874e40` a3 verem-offszetének és a `0x874320` vtábla-láncának összevetése
+(utasítás + egy Ghidra-dekompilátum a `00874e40`-re, ami még nincs a kötegben);
+(b) a `0x874e40` kimeneti másolása: hova kerül a `Lki`/`Rki` (`+0x720`/`+0x728`?).
 
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
@@ -5110,8 +6068,8 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 
 **Írógép (`textstyle11`)**
 
-- A stílus-11 factory-ág a `0x00809fe0` kezelőt és a `0x0080a030` építőt használja; a `len` a szöveg bájthossza. A `d` értéke `desc+0xec` (`transitiontime`); ha nem pozitív, `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). A kezdőpont `L=desc+0xf0+desc+0xf4` (`0x810453`–`0x810464`), ahol a parserben `+0xf0=blacktime`, a `+0xf4` mezőnek nincs XML-attribútuma és alapértéke 0 (`0x8162f0`, `0x8152f0`).
-- A kockafüggvény képlete a G.6.3/G.6.7 szerint: `n(t)=max(1, trunc(len·clamp((t+0.02−L)/d,0,1)+0.5))`. A lineáris rész szerinti ütem `len/d` bájt/s, tehát a szövegdia teljes `advanceinterval`-je csak akkor határozza meg a karakterütemet, ha `transitiontime` nem pozitív és a `d=advanceinterval/3` visszaesés aktiválódik.
+- A stílus-11 factory-ág a `0x00809fe0` kezelőt és a `0x0080a030` építőt használja; a `len` a szöveg bájthossza. A `d` értéke `desc+0xec` (`transitiontime`); ha ez pontosan nulla, `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). Negatív `d`-t a factory nem helyettesít, és a kezelő `d>0` feltétele miatt az animáció nem frissül. A kezdőpont `L=desc+0xf0+desc+0xf4` (`0x810453`–`0x810464`), ahol a parserben `+0xf0=blacktime`, a `+0xf4` mezőnek nincs XML-attribútuma és alapértéke 0 (`0x8162f0`, `0x8152f0`).
+- A kockafüggvény képlete a G.6.3/G.6.7 szerint: `n(t)=max(1, trunc(len·clamp((t+0.02−L)/d,0,1)+0.5))`, ha `d>0`. A lineáris rész szerinti ütem `len/d` bájt/s; az `advanceinterval/3` visszaesés csak nulla `transitiontime` esetén aktiválódik, és csak pozitív eredményű `d` mellett frissül a kezelő.
 - A képlet a **bájtszámot** bizonyítja, nem azt, hogy a natív rajzoló egy több-bájtos UTF-8 karaktert hány látható karakterként kezel. A glyph-szintű ütem és a kurzor kérdése továbbra is mérendő.
 
 **Gördülő stáblista (`textstyle8`)**
@@ -5125,7 +6083,7 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 - A factory 1-es stílusága a `FadeMove` konstruktort (`0x00809c50`, `0x8107a7`) és építőt (`0x00809cd0`, `0x8107ba`) hívja. A kezelő a lineáris alfa- és a smoothstep pozíció-idővonalat is bekapcsolja (`H+0x48=1`, `H+0x49=1`, `0x809cb9`–`0x809cbc`).
 - A gyár `AL=0xff` értéket ad át (`0x81079a`); a konstruktor alfa-kezdőértéke 0 (`0x809c68`), végértékét `H+0x0d` tárolja. Az alfa-építő a lineáris `0x00809ae0` interpolátort adja a `0x009e6010` szegmensnek (`0x809eb0`), tehát a kódból olvasható alfaút 0→255.
 - A pozícióút a `H+0x28`→`H+0x2c` végpontokat smoothstep-pel interpolálja; a stílus-1 hívásban `H+0x28=0`, a `H+0x2c` végpontot a hívó stackadja adja, forrása nyitott. Az 1-es jelző miatt a `dia+0x14c` mezőt írja (`0x809cd0`, `0x809d20`). A gyár a közös `L=desc+0xf0+desc+0xf4` kezdőértéket adja át (`0x810453`–`0x810464`, `0x8107b2`).
-- A stílus-1 ág `0x8107a0` betöltése a factory által korábban kiszámított `d` lokális értéket használja: `d=desc+0xec`, ha pozitív, különben `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). Ezt az értéket a factory a `0x809c50` konstruktor első argumentumaként adja át, ahol `H+0x08` mezőbe kerül; az alfaág `0x809af0` hívása is ugyanezt a `d`-t kapja. A `0x809cd0` a bemenő időhöz hozzáadja `H+0x08`-at, ezért a számforrás ismert, de a natív időtengelyen betöltött szerepét nem szabad pusztán „mozgás-időtartamnak” nevezni.
+- A stílus-1 ág `0x8107a0` betöltése a factory által korábban kiszámított `d` lokális értéket használja: `d=desc+0xec`, ha nem nulla, egyébként `d=desc+0xe8/3` (`0x8104b9`–`0x8104dc`). Ezt az értéket a factory a `0x809c50` konstruktor első argumentumaként adja át, ahol `H+0x08` mezőbe kerül; az alfa- és pozíció-idővonal is ezt használja. A negatív `d` nem vált ki visszaesést, és a kezelő `d>0` kapuja miatt nem frissít. A `0x809cd0` a pozíciószegmenst `[L,L+H+0x08]` időintervallumra építi, tehát itt `H+0x08` a szegmens időtartama; a kockaidőből számolt arányt a közös kiértékelő állítja elő.
 - **Nyitott:** a pozíció-végpont forrása nincs teljesen lezárva. A gyár a kiválasztott szövegobjektum `+4` alobjektumának `vtable+0x30` metódusát hívja (`0x810761`–`0x810771`), majd egy visszaadott egész értéket előjellel megfordítva floatként a konstruktor stackterületére ír (`0x810783`–`0x81079c`). A helper–argumentum–`H+0x2c` kapcsolatot és a koordinátatengelyt a helyi diszasszemblálás nem dönti el; ezekre nincs pixelérték vagy becslés.
 
 ##### G.7.8.4 Két ellenőrzési út és cáfoló kör
@@ -5141,7 +6099,7 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 - [ ] A szövegdia képkockája a kimeneti ciklusban, a dia helyi `k` indexével épül; az egyszeri `text_frames` előrenderelés megszűnik. A kockaszám és a fotók tartási ideje nem változik.
 - [ ] A natív időbélyeg és a helyi kocka indexének leképezése rögzítve van. `t_k=k/fps` önmagában **nem igazolt**: a natív `t` a pin 100 ns-os órájából származik, a reset seedje `+0x108/+0x10c`.
 - [ ] A 11-es stílus a G.7.8.3 képletét alkalmazza a mentett `trans` mezőkkel; a több-bájtos próbaszöveg kimenetén eldől, hogy a byte-index és a látható glyph-index hogyan felel meg.
-- [ ] A 8-as stílus `advanceinterval`-hosszú smoothstep útja `B→A`, a 1-es stílus 0→255 lineáris alfája és egykomponensű smoothstep mozgása kockánként renderelődik. A textstyle1 `d` bemenete binárisan `desc+0xec`, nem pozitív értéknél `desc+0xe8/3`; a `H+0x08` időeltolás tényleges szerepe és a `H+0x2c` geometriai végpont exportkori értéke pontosan feloldandó vagy referenciából mérendő, becslés nélkül.
+- [ ] A 8-as stílus `advanceinterval`-hosszú smoothstep útja `B→A`, a 1-es stílus 0→255 lineáris alfája és egykomponensű smoothstep mozgása kockánként renderelődik. A textstyle1 `d` bemenete binárisan `desc+0xec`, nulla értéknél `desc+0xe8/3`; negatív értéknél a kezelő nem frissít. A `H+0x08` időeltolás tényleges szerepe és a `H+0x2c` geometriai végpont exportkori értéke pontosan feloldandó vagy referenciából mérendő, becslés nélkül.
 - [ ] A Picasa 3.9 referenciából mindhárom stílus kockái `k` szerint dokumentálva; a kimeneti teszt kiválasztott kockái a referencia képkockáival összevetve. A tolerancia a mérésből származik, nem előre beállított érték.
 
 ##### G.7.8.6 Nyitott — a konkrét megszerzési út
@@ -5151,7 +6109,7 @@ Az eredeti G.7.7.3 hibásan a `0xcbdd60` címet a vtábla kezdetének vette, és
 - Ghidra-kör kell: `0x00814330` — a `.mxf`/TimelineXML `this+0x50` rekord szülőobjektuma a filmexportban hogyan jut el a `0x812470/0x8127b0` render-`ctx+0x48` listájához? Az objektumazonosságot kell eldönteni. [blokkoló]
 - Ghidra-kör kell: `0x00816360` — a TimelineXML `this+0x4c` szülőpointere exportkor ugyanarra a kontextusra mutat-e, amelynek `+0x48` listáját a render-helper olvassa? [blokkoló]
 - Ghidra-kör kell: `0x008127b0` — a `ctx+0x48` mintavételezett rekordjának `ctx+0x1a8`-ba másolása mely exportágon történik, és hogyan kapcsolódik az előző XML-parser szülőjéhez? [blokkoló]
-- Ghidra-kör kell: `0x00810420` — a `textstyle1` `d` (`desc+0xec`, nem pozitív értéknél `desc+0xe8/3`) pontos időszemantikája, valamint a `0x809c50` hívásban a `H+0x2c`-t adó virtuális geometriai eredmény forrása? [blokkoló]
+- Ghidra-kör kell: `0x00810420` — a `0x809c50` hívásban a `H+0x2c`-t adó virtuális geometriai eredményt melyik konkrét osztály és mező állítja elő, és mi a koordinátajelentése/mértékegysége? [blokkoló]
 - Mérés kell: eredeti Picasa 3.9 filmexport mindhárom stílussal, kockánkénti timestamp/pozíció/alfa/karakter-kiolvasással. A helyi `meroadat.tar` releváns film- vagy szövegdia-exportmintát nem tartalmazott; a referenciakockák és a natív ütem ezért `NINCS MEG`.
 
 ##### G.7.8.7 6. kör (2026-10-13): a két blokkoló Ghidra-pont — mi dőlt el, mi nem
@@ -5192,9 +6150,95 @@ Nyitva:
 | reset (`0x74d970`) olvassa a seedet, és másolja `+0x208/+0x20c`, `+0x4b0`, `+0x4b8`-ba; nullázza `+0x1fc`, `+0x4a8`, `+0x218`-at | bináris, teljes dekompilátum (`0074d970.c`, G.7.8.7) |
 | film-végidő és darabszám: `ctx+0x90` bázis, `ctx+0x94>>1` darabszám, `0xf8` lépés | bináris (`0x813330`, a `008127b0.c` callee-törzse); az objektum azonossága `ctx+0x48` szerkezeti egyezés, nem bizonyíték |
 | TimelineXML `this+0x50` → szülő `+0x48` lista, majd render `ctx+0x48` → `ctx+0x1a8` rekordmásolás | bináris (`0x8152f0`, `0x816360`, `0x80a460`, `0x812470`, `0x8127b0`, `0x612350`); a szülőpointer és render-context azonossága nyitott |
-| Írógép natív üteme `len/d` bájt/s; `d=transitiontime`, nem pozitív esetén `advanceinterval/3` | bináris (`0x8104b9`–`0x8104dc`; G.6.3/G.6.7) |
+| Írógép natív üteme `len/d` bájt/s; `d=transitiontime`, nulla esetén `advanceinterval/3`, negatív esetén nincs frissítés | bináris (`0x8104b9`–`0x8104dc`, `0x80a080`; G.6.3/G.6.7) |
 | Gördülő interpoláció `3p²−2p³`, időmező `advanceinterval` | bináris (`0x818cf0`; `0x810fe5`; G.6.4/G.7.5) |
-| `textstyle1` alfa `0→255`, lineáris; `d` input `desc+0xec`, nem pozitív értéknél `desc+0xe8/3`; `H+0x08`-ba kerül | bináris (`0x8104b9`–`0x8104dc`, `0x8107a0`–`0x8107b2`, `0x809c50`, `0x809cd0`, `0x809af0`) |
+| `textstyle1` alfa `0→255`, lineáris; `d` input `desc+0xec`, nulla értéknél `desc+0xe8/3`; negatív értéknél a kezelő nem frissít | bináris (`0x8104b9`–`0x8104dc`, `0x8107a0`–`0x8107b2`, `0x809c50`, `0x809cd0`, `0x809af0`, `0x809d20`) |
 | export seed tényleges értéke, parser-szülő és render-context azonossága, `k↔t` leképezés | NINCS MEG |
 | Gördülő tényleges pixeles A/B és textstyle1 `H+0x2c` mozgásvégpont/időszemantika | NINCS MEG |
 | referenciafilm képkockái, a három stílus natív mérési táblája, kimeneti képteszt | NINCS MEG |
+
+#### G.7.10 7. kör (2026-10-14): célzott újraellenőrzés a #4615 átadáshoz
+
+*Bizonyítottsági fok: **feltételes** arra, hogy az animáció ténylegesen látszik a film exportjában. A factory és a kockakezelők animációs útját két külön bináris nézet támasztja alá; a natív kimenet és az esetleges későbbi pozíció-felülírás nincs képkockán mérve.*
+
+**A út — a factory hívási ágai és a kockakezelők.** A stíluslista neveit a `referencia/stringres-en-hu.tsv:456,458,465` rendeli a `textstyle1`, `textstyle11`, illetve `textstyle8` beállításhoz. A `0x00810420` film-factory kódjában az 1-es ág (`0x00810656`) a `TextFadeMove` konstruktort és építőt hívja (`0x008107a7` → `0x00809c50`; `0x008107ba` → `0x00809cd0`); a 8-as ág (`0x00810ed0`) ugyanezt a kezelőt hívja (`0x00810fee`, `0x0081100d`), majd a `+0x48/+0x49` jelzőket nullázza (`0x00811005`–`0x00811009`). A 11-es ág (`0x00811cd8`) a `TextTypeWriter` kezelőt hívja (`0x00811db7` → `0x00809fe0`). A `0x00809d20` kockakezelő az `0x13` eseményen, az esemény `[+0x10]` időbélyegéből frissíti a dia `+0x14c/+0x150` pozícióját a `0x009debd0` híváson át; a `0x0080a080` az idővonal értékét egész karakterhosszként írja a dia `+0x34c` mezőjébe, és változáskor újrarajzolást kér. Forrás: célzott diszasszemblálás a hivatkozott címeken.
+
+**B út — RTTI-vtáblák, az első út nélkül újraolvasva.** A bináris-index RTTI-táblájában a `TextFadeMoveHandler::vftable` (`0x00cbdb94`) 3. slotja `0x00809d20`, a `TextTypeWriterHandler::vftable` (`0x00cbdbbc`) 3. slotja `0x0080a080`; a beágyazott `TextFadeHandler::vftable` (`0x00cbdb80`) 3. slotja `0x00809b40`. Ez a külön RTTI→slot út a factory által elért kezelők per-frame függvényeit azonosítja, és egyezik az utasításszintű leolvasással. A két út a kezelőstruktúra meglétét támasztja alá; önmagában egyik sem képkockamérés.
+
+**Cáfoló kísérlet — lehetséges pozíció-visszaírás.** A `ytFlyingNode::vftable` RTTI-sora tartalmazza a `0x00819040` metódust. Ennek célzott diszasszemblálása szerint a metódus a dia `+0x14c/+0x150` mezőit a `+0x388/+0x38c` mezőkkel veti össze, eltéréskor pedig a `0x009debd0`-val visszaírja az utóbbi párt. Ez valódi lehetséges cáfoló út a Gördülő pozíciójára. A célobjektum azonossága és az exportkori meghívás nincs bizonyítva, ezért a keresés nem cáfolta, de nem is igazolta a filmben látható mozgást; a `+0x388/+0x38c` tartalma **NINCS MEG**.
+
+**Mérőanyag és a #4615 elfogadási pontjai.** A helyi mérőarchívum tagneveiben nem találtam film-/szövegdia-/MXF-hivatkozást, és videófájl-kiterjesztésű tagot sem; a repóban nincs `research/testdata/` könyvtár. Semmit nem bontottam ki. A meglévő `slideshow.py` útja továbbra is állóképet ír: a 623. sor egyszer hozza létre a `text_frames` listát, a 640. sor fűzi ezt a filmbe, a 697–699. sorok pedig ugyanazt a képkockát írják ki a tartási ciklusban.
+
+- [ ] A három stílus animációja a natív filmben és képkockás referencia-összevetése — **NINCS MEG**; Picasa 3.9 export és képkockánkénti mérés kell.
+- [ ] A helyi kimenet képkocka-tesztje — **NINCS MEG**; ez fejlesztői és tesztmunka, nem kutatási lelet.
+
+#### G.7.11 #4615 célzott bináris kör: kockaidő, pozíció és írógép-hossz (2026-10-14)
+
+*Bizonyítottsági fok: **feltételes**. A factory → kezelő út és a kezelők idővonal-kiértékelése utasításszinten leolvasható; az RTTI és a nyers vtábla ettől függetlenül megerősíti a slot–függvény azonosságot. A képletekhez nincs külön Picasa 3.9 képkockamérés, és a lehetséges későbbi pozíció-felülírás, valamint az exportkori objektumazonosság nyitott. Ezért a binárisból következő képlet nem bizonyítja önmagában, hogy ugyanaz az érték látható a film kimenetében.*
+
+**Képkockaidő és arány a két kezelőben.** A `TextFadeMoveHandler` slot 3 függvénye (`0x00809d20`) és a `TextTypeWriterHandler` slot 3 függvénye (`0x0080a080`) a `0x13` eseményből a qword időbélyeget olvassa (`event+0x10`). Mindkettő a kezelőhöz épített idővonalat adja a `0x009e5e20` kapunak, majd a `0x009e5e70` kiértékelőnek. A kapu csak pozitív `H+0x08` időtartamnál enged frissítést. Az idővonal-kiértékelő a `t+0.02` értéket használja, a szegmens startját (`L`) kivonja, majd az eredményt az `end−start` időtartammal osztja és `[0,1]` közé korlátozza. Így `p=clamp((t+0.02−L)/d,0,1)`. A `0.02` konstans címe `0x00cf48a8`; az esemény időbélyegének magasabb szintű, filmkockaindexhez viszonyított leképezése itt nincs bizonyítva.
+
+- A Gördülő stáblista (`textstyle8`) `d=desc+0xe8` (`advanceinterval`), és `L=desc+0xf0+desc+0xf4`. A pozíció interpolátora `S(p)=3p²−2p³`, ezért a kezelt komponens `P=B+S(p)(A−B)`. A kezelő `H+0x49=0` jelzője miatt a `dia+0x150` komponenst (Y) írja; `H+0x48=0` miatt alfát nem animál. A factory által beállított végpontok: `B=h_b`, `A=0.5·(h_a−(E+0x54−E+0x4c))`. `h_a` a szövegdia téglalapjának alsó–felső különbsége, `h_b` a háttérdia téglalapjának alsó–felső különbsége, `E+0x4c/+0x54` a szövegobjektum metódusa által visszaadott függőleges pár. Az induló és végső érték tehát futásidejű geometriai képlet, nem rögzített pixelkonstans; konkrét exportérték **NINCS MEG**.
+- A „Jó napom van” (`textstyle1`) `d=desc+0xec` (`transitiontime`), ha ez nem nulla; pontosan nulla esetén `d=desc+0xe8/3`. Negatív `transitiontime` esetén a factory megtartja a negatív értéket, de a kezelő pozitív-időtartam kapuja nem frissít. Az idővonal kezdete `L=desc+0xf0+desc+0xf4`; az alfa- és a pozíció-idővonal is a `[L,L+d]` intervallumot használja, ezért `d` ezek időtartama. A kockaidőből számolt arány `p=clamp((t+0.02−L)/d,0,1)`. A lineáris alfa `0→255`; a pozíció smoothstep útjának kezdete `H+0x28=0`, vége `H+0x2c=−M`, és az X komponenst (`dia+0x14c`) írja. `M` a kiválasztott szövegobjektum `vtable+0x30` metódusának visszatérési értéke; a metódus pontos osztálya, `M` geometriai jelentése, egysége és exportkori értéke **NINCS MEG**.
+- Az Írógép (`textstyle11`) az időarányt ugyanezzel a `p` képlettel kapja. `d=desc+0xec`, ha nem nulla; nulla esetén `d=desc+0xe8/3`; negatív `d` mellett nincs frissítés. A timeline értéke `len·p`; a kezelő ehhez `0.5`-et ad, egészre csonkítja, és legalább `1`-et ír a dia `+0x34c` mezőjébe. Ez bájtindex, nem bizonyított Unicode-karakterindex.
+
+**Az írógép hosszának egysége.** A `0x00811d9e` körüli factory-ciklus a `+4`-es szövegadat-pointert bájtonként növeli, az első NUL bájtnál áll meg, és a terminátor nélküli pointerkülönbséget adja a `0x00809fe0` konstruktornak. A konstruktor ezt a bájthosszt tárolja `H+0x0c`-ban; a `0x0080a030` építő ezt a mezőt teszi az idővonal végértékévé. Ez a vizsgált út keskeny, NUL-terminált karaktertárat és bájtszámot bizonyít, nem UTF-16 kódosegység- vagy Unicode-kódpontszámot. Az adattár pontos kódolása (MBCS, UTF-8 vagy más), illetve a több-bájtos karakter részleges megjelenítése **NINCS MEG**.
+
+| érték vagy állítás | forrás |
+|---|---|
+| `TextFadeMoveHandler` slot 3 = `0x00809d20`; `TextTypeWriterHandler` slot 3 = `0x0080a080` | bináris (`RTTI 0x00cbdb94`, `0x00cbdbbc`; nyers PE-vtábla-dwordok ugyanott; factory-ágak `0x810fee`, `0x811d9e`) |
+| Az esemény típusa `0x13`, időbélyege qword `event+0x10` | bináris (`0x809d20`, `0x80a080`) |
+| Időkapu `H+0x08>0`; kiértékelési arány `clamp((t+0.02−L)/d,0,1)` | bináris (`0x9e5e20`, `0x9e5e70`); `0.02` literál: `0x00cf48a8` |
+| `textstyle8`: `d=desc+0xe8`, `L=desc+0xf0+desc+0xf4`, `B=h_b`, `A=0.5·(h_a−(E+0x54−E+0x4c))`, Y-írás; smoothstep `3p²−2p³` | bináris (`0x810ed0`–`0x811009`, `0x809cd0`, `0x809d20`, `0xc72150`, `0x818cf0`; geometriához G.7.5 és `0x9e51a0`) |
+| `textstyle1`: `d=desc+0xec`, pontosan nulla esetén `desc+0xe8/3`; negatív d-nél nincs frissítés; `L` közös; alfa `0→255`; X út `0→−M` | bináris (`0x8104b9`–`0x8104dc`, `0x8107a7`–`0x8107b2`, `0x809c50`, `0x809cd0`, `0x809eb0`, `0x809d20`) |
+| `textstyle1` `M` metódusának szemantikája/egysége és futásidejű értéke | NINCS MEG |
+| `textstyle11` bájthossza és az idővonal végértéke | bináris (`0x811d9e`–`0x811db7`, `0x809fe0`, `0x80a030`, `0x80a080`) |
+| Az írógép-adat pontos kódolása és a bájtindex glyph-megjelenítési hatása | NINCS MEG |
+| Diahelyi kockaindex ↔ esemény-időbélyeg, referenciakockák, exportkori geometriai számok | NINCS MEG; a helyi `meroadat.tar` tagnevei között nem volt film-/szövegdia-minta, így nem bontottam ki mérőadatot |
+
+**A két független út.**
+
+- **A út — utasításszintű adatfolyam:** a `0x00810420` factory stíluságai a desc mezőket a megfelelő konstruktoroknak/építőknek adják; a `0x809cd0` és `0x80a030` a startot, végidőt és végértéket állítja be; a két slot 3 függvény az esemény időbélyegével meghívja a közös időkaput és kiértékelőt. Ez az út adja a fenti arányt és a stílusmezőket.
+- **B út — RTTI és nyers vtable:** az index RTTI-bejegyzései és a PE-ben közvetlenül kiolvasott négy dword egyaránt a `0x00cbdb94`/`0x00cbdbbc` vtáblák 3. elemét köti a két slot 3 függvényhez. Ez egyezik a factory által létrehozott kezelőtípusokkal, de önmagában nem méri vagy bizonyítja az időképletet. A négy kérdés képlet-szintű állításai ezért **feltételesek**: a B út a függvényazonosságot ellenőrzi, nem egy második, független képletmérést.
+
+**Cáfoló kísérlet — a pozíció későbbi felülírása.** Azt próbáltam cáfolni, hogy a `TextFadeMoveHandler` által írt pozíció biztosan a kimeneti képkockán marad. A `ytFlyingNode::vftable` RTTI-sora a `0x00819040` metódushoz vezet; az offset-térkép a `+0x14c/+0x150` olvasását és írását, illetve a `+0x388/+0x38c` mezők írását mutatja; a metódus utasításai összevetik a két mezőpárt, és eltéréskor a `+0x388/+0x38c` párból visszaírják a dia pozícióját. **Az ellenőrzés ugyanazzal a mércével:** az RTTI azonosítja a metódust, az offset-térkép és az utasítások alátámasztják a mezőkapcsolatot, de nincs bizonyíték arra, hogy ez ugyanaz az objektum, és a metódus a handler után, a filmkocka mentése előtt fut. Ez valódi lehetséges felülírás, de nem bizonyítja és nem is cáfolja a látható animációt; a kimeneti képkocka-mérés továbbra is szükséges.
+
+**A #4615 „Kész, ha” pontjai a kutatás után.**
+
+- [ ] A három stílus animál a filmben, mért kép-összevetés a referenciával — **NINCS MEG**. A bináris út animációs kezelőket és képleteket igazol, de nincs eredeti Picasa 3.9 kockamérés, referencia-összevetés vagy exportkori érték.
+- [ ] Kimenet-teszt a képkockákra — **NINCS MEG**. Ez implementációs és tesztfeladat; a jelen kutatási kör nem módosított kódot vagy tesztet.
+
+#### G.7.12 #4615: a textstyle1 X-végpontja és az írógép szövegkódolása (2026-10-14)
+
+*Bizonyítottsági fok: mindkét kérdésre **feltételes**. A bináris két külön útja egyezik az M geometriájáról és az UTF-8 belső szövegkezelésről; a futásidejű objektum pontos típusa/exportértéke, illetve egy ékezetes `.mxf` mintafájl bájtsorozata nem áll rendelkezésre. A következtetés nem képkockamérés.*
+
+**1. `textstyle1` („Jó napom van”): M a transzformált szövegdoboz X-minimuma.** A `0x00810761`–`0x00810771` a kiválasztott objektum `vtable+0x30` metódusát hívja egy négyelemű kimeneti téglalappal. A visszaadott téglalap első egész mezőjét a factory `0x00810783` olvassa, előjelét megfordítja (`neg ecx`), majd a `0x00809c50` konstruktorba adja; így az idővonal végpontja `H+0x2c=−M`. A dia X koordinátáját (`dia+0x14c`) író kezelő ezt a végpontot használja.
+
+A `0x009e08b0` ismert text-node megvalósítása előbb a saját `vtable+0x28` téglalap-metódusát hívja. Érvénytelen/üres téglalapnál a `+0x244` gyermek téglalapját is felhasználhatja; a `0x009de880`-nal lekéri az objektum és ősei transzformációját, a `0x00a4a240` pedig a helyi téglalap négy sarkát transzformálja, majd a befoglaló X/Y-minimumot és maximumot egész téglalapként adja vissza. A `ytMultiTextNode` RTTI-táblájában a `vtable+0x30` erre a `0x009e08b0` metódusra mutat; a `vtable+0x28` (`0x009e0ad0`) gyorsítótár esetén az objektum `+0x188/+0x18c/+0x190/+0x194` mezőiből olvassa a helyi téglalapot, máskülönben a `vtable+0x20` metódusra delegál. A geometriai képlet tehát:
+
+`R=[x0,y0,x1,y1]` a szövegobjektum helyi téglalapja; `T(x,y)=(m0·x+m1·y+m2, m3·x+m4·y+m5)` a hat floatból álló összegzett affin mátrix; `M` a `T` által transzformált négy sarok X-koordinátájának minimuma, a kódban az `0x00cf4160`-ból olvasott `0.499` levonása és `fistp` egészkonverziója után. Ez a szövegdoboz téglalapjától és az objektum/ősök transzformációjától függ; közvetlen, önálló dia-szélesség-képletet a vizsgált ág nem olvas. A konkrét exportkori `R`, mátrix, `M` és koordinátaegység (képpont vagy más exportegység) **NINCS MEG**. Az `0x00809eb0` nem M-kiértékelő: az alfa idővonalát építi az alfa-bájtos mezőkből (`+0x0c/+0x0d`), ezért nem ez szolgáltatja az X-végpontot.
+
+**2. Írógép (`textstyle11`): bájtszám, UTF-8 belső szövegút.** A G.7.11-ben rögzített factory-ciklus (`0x00811d9e`–`0x00811db7`) a `+4` pointert bájtonként lépteti az első NUL-ig, a bájthosszt a `0x00809fe0` konstruktornak adja; ez nem UTF-16 kódosegység-számolás. Az azonos factory közeli stringsegédje (`0x008106a9`–`0x008106bf` → `0x009863f0`) UTF-8-szerű vezetőbájt-hosszakat léptet: ASCII bájt 1, `0xc0`–`0xdf` 2, `0xe0`–`0xef` 3, `0xf0`–`0xf7` 4, és ellenőrzi a folytató bájtok `0x80` alsó határát. Az MXF `text` XML-elemének dispatch ága (`0x00815c48`–`0x00815cb1`) a szöveget stringobjektummá olvassa, majd a propertybe másolja. Egy ettől különálló Windows-határfüggvény (`0x009affb0`) a `MultiByteToWideChar` importot `0xfde9` kódlappal, azaz CP_UTF8-ként hívja.
+
+Ez az út a film szövegének keskeny bájttárolójára és az alkalmazás UTF-8-kezelésére mutat. A magyar ékezetes betűk UTF-8 alakja 2 bájt (az ASCII karakteré 1); a típusról azonban a bájtonkénti NUL-keresés önmagában nem döntene. A konkrét MXF fájlba írt kódolás és egy ékezetes szöveg tényleges bájtsora **NINCS MEG**, mert helyi `.mxf`/`.pxc` minta nem volt elérhető.
+
+| érték vagy állítás | forrás |
+|---|---|
+| `textstyle1` M-et a kiválasztott objektum `vtable+0x30` metódusától kapja; `H+0x2c=−M`; a dia X mezője `+0x14c` | bináris (`0x00810761`–`0x008107a7`, `0x00809c50`, `0x00809d20`) |
+| Az ismert text-node getter a helyi RECT-et az objektum/ősök mátrixával befoglaló téglalappá alakítja; M annak X-minimuma, `0x00cf4160=0.499` korrekcióval egészítve | bináris (`0x009e08b0`, `0x009de880`, `0x00a4a240`, adat `0x00cf4160`; RTTI: `ytMultiTextNode::vftable`, `0x009e08b0`; helyi RECT: `0x009e0ad0`) |
+| A `ytMultiTextNode` gyorsítótárazott helyi RECT mezői `+0x188/+0x18c/+0x190/+0x194`; az érvényesség jelzője `+0x20f` | bináris (`ytMultiTextNode` RTTI és offset-térkép; `0x009e0ad0`) |
+| A factory bájthosszt ad az írógép-konstruktornak; az ékezetes betűk belső UTF-8 bájtszáma 2 | bináris (`0x00811d9e`–`0x00811db7`, `0x00809fe0`, UTF-8 léptető `0x009863f0`); fájlszintű példa: **NINCS MEG** |
+| Az MXF `text` mező stringobjektumba kerül; az app egyik több-bájtos → UTF-16 határa CP_UTF8-at választ | bináris (`0x00815c48`–`0x00815cb1`, `0x009affb0`, import: `MultiByteToWideChar`) |
+| Exportkori helyi RECT, transzformációs mátrix, `M` és koordinátaegység; konkrét ékezetes MXF bájtsor | **NINCS MEG**; Picasa 3.9-es minta/export és célzott kockamérés kell |
+
+**A két független út.**
+
+- **A út — közvetlen adatfolyam:** a `0x00810761` vtable-hívás kimeneti téglalapjának első mezője kerül negálva `H+0x2c`-ba. A `0x009e08b0` és `0x00a4a240` utasításai visszavezetik ezt a mezőt a text-node RECT-re és a transzformált sarkok X-minimumára. A string oldalon a factoryban hívott `0x009863f0` a több-bájtos karakterek UTF-8 vezetőbájtjai alapján léptet.
+- **B út — RTTI/adatmezők és külön kódolási határ:** az RTTI a `ytMultiTextNode` `+0x30` slotját `0x009e08b0`-hoz, a `+0x28` slotját `0x009e0ad0`-hoz köti; az offset-térkép és a mezőolvasások külön igazolják a lokális RECT-forrást. A másik kódolási út az MXF `text`-dispatcher stringobjektum-másolása és a független `0x009affb0` CP_UTF8 hívása. Mindkét pár ugyanabba az irányba mutat; a konkrét exportpéldát egyik sem helyettesíti.
+
+**Cáfoló kísérlet.** M-re azt az alternatívát próbáltam igazolni, hogy a végpont közvetlenül a dia szélessége vagy egy rögzített `desc` érték. A factory közvetlenül egy objektum-vtábla `+0x30` slotját hívja, a getter pedig RECT-et és összegzett transzformációt olvas; az RTTI-s slotkötés és az offset-térkép ezt külön ellenőrzi. Az alternatíva nem állja ki ugyanazt az utasításszintű mércét. Kódolásnál az ANSI/CP_ACP lehetőséget a bájtonkénti ciklus önmagában nem cáfolja; a külön UTF-8 léptető és a CP_UTF8 hívás az alkalmazáson belüli UTF-8 értelmezést támasztja alá. A fájlszintű alternatíva a hiányzó MXF-minta miatt nyitva marad.
+
+**A #4615 „Kész, ha” pontjai.**
+
+- [ ] A három stílus animál a filmben, mért kép-összevetés a referenciával — **NINCS MEG**; az M geometriai bináris útja és a korábbi G.7.11 képletei nem helyettesítik a Picasa 3.9 referenciaexportot és a kockánkénti mérést.
+- [ ] Kimenet-teszt a képkockákra — **NINCS MEG**; ez kód- és tesztmunka, ebben a kutatási körben nem készült.

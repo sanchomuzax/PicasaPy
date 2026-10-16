@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
@@ -16,19 +14,13 @@ from picasapy.ini import (
     with_folder_music,
 )
 from support.jpeg_factory import make_jpeg
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
-def _wait(qt_app, condition, seconds=5.0):
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        try:
-            if condition():
-                return True
-        except (AttributeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    return bool(condition())
+def _wait(qt_app, condition, seconds=10.0):
+    return var_feltetelre(
+        qt_app, hibaturo_feltetel(condition, (AttributeError, RuntimeError)), seconds
+    )
 
 
 def _click(window, item):

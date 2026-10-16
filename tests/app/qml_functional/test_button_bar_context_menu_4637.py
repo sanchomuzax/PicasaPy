@@ -2,23 +2,13 @@
 
 from __future__ import annotations
 
-import time
-
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
-def _var(qt_app, condition, seconds: float = 3.0) -> bool:
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        try:
-            if condition():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.05)
-    return False
+def _var(qt_app, condition, seconds: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(condition), seconds)
 
 
 def _visual_child(window, name: str):

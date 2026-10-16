@@ -198,6 +198,8 @@ class TestAlbumsMigration:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        # A v7 database predates the #4536 table as well.
+        raw.execute("DROP TABLE person_thumbnails")
         raw.executescript(
             "DROP TABLE IF EXISTS photo_albums;"
             "DROP TABLE IF EXISTS albums;"
@@ -414,6 +416,7 @@ class TestAlbumPlaceMigration:
         path = tmp_path / f"regi-v{version}.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        raw.execute("DROP TABLE person_thumbnails")
         raw.executescript(
             "ALTER TABLE photo_albums DROP COLUMN place;"
         )
@@ -454,12 +457,12 @@ class TestAlbumPlaceMigration:
         return path
 
     @pytest.mark.parametrize(("version", "expected_hidden"), [(21, 2), (22, 2)])
-    def test_v21_es_v22_adatbazisbol_is_v23_ra_migrál_es_megtartja_adatokat(
+    def test_v21_es_v22_adatbazisbol_is_v24_re_migrál_es_megtartja_adatokat(
         self, tmp_path, version, expected_hidden
     ):
         path = self._legacy_database(tmp_path, version)
         with open_index(path) as conn:
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 23
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == 24
             columns = {row[1] for row in conn.execute("PRAGMA table_info(photo_albums)")}
             assert "place" in columns
             rows = conn.execute("SELECT photo_id, place FROM photo_albums").fetchall()
@@ -481,7 +484,7 @@ class TestAlbumPlaceMigration:
                 )
             }
             assert "folder_scan_state" in tables
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 23
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == 24
 
     def test_hely_nelkuli_album_a_mai_rendben_all(self, tmp_path):
         from picasapy.index.albums import album_photos

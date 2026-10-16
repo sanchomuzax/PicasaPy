@@ -8,7 +8,6 @@ A menü SZERKEZETÉT (tételsor, sorrend, szürke tételek, felirat-váltás) a
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -28,6 +27,7 @@ from picasapy.ini.text_overlay import (
     serialize_text,
 )
 from picasapy.scanner import PICASA_INI_NAME
+from tests.support.varakozas import var_feltetelre
 
 
 # A QML által birtokolt Popup/menüpont-wrappert a PySide6 teszt közben
@@ -62,15 +62,8 @@ def _close_menu(window, qt_app):
     qt_app.processEvents()
 
 
-def _wait_for(qt_app, condition, timeout=3.0):
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if condition():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(condition())
+def _wait_for(qt_app, condition, timeout=10.0):
+    return var_feltetelre(qt_app, condition, timeout)
 
 
 def _click_item(qt_app, item):

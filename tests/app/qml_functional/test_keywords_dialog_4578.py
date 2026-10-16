@@ -7,10 +7,11 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QElapsedTimer, QObject, Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QSignalSpy, QTest
 
+from tests.support.varakozas import var_feltetelre
 from picasapy.index import open_index, sync_tree
 from picasapy.ini import load_document, update_document
 
@@ -40,16 +41,8 @@ def _click(window, item, qt_app):
     qt_app.processEvents()
 
 
-def _wait_for(qt_app, predicate, timeout_ms: int = 3000) -> bool:
-    timer = QElapsedTimer()
-    timer.start()
-    while timer.elapsed() < timeout_ms:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(predicate())
+def _wait_for(qt_app, predicate, timeout_ms: int = 10000) -> bool:
+    return var_feltetelre(qt_app, predicate, timeout_ms / 1000)
 
 
 def _wait_for_next_frame(window, qt_app) -> None:

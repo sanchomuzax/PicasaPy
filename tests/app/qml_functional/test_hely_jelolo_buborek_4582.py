@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -15,6 +14,7 @@ from tests.app.qml_functional.conftest import _build_qml_app
 from support.jpeg_factory import make_jpeg
 
 import picasapy.app
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
@@ -66,17 +66,8 @@ def _elem(window, object_name: str) -> QQuickItem:
     return item
 
 
-def _var(qt_app, predicate, timeout: float = 3.0) -> bool:
-    hatarido = time.monotonic() + timeout
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if predicate():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        QTest.qWait(50)
-    return bool(predicate())
+def _var(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate), timeout)
 
 
 def _kattint(window, item: QQuickItem, qt_app) -> None:

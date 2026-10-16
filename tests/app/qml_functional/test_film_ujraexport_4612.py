@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, Qt
@@ -10,6 +9,7 @@ from PySide6.QtTest import QTest
 
 from picasapy.movie.mxf import MxfAtmenet, MxfForras, MxfProjekt, write_mxf
 from picasapy.movie.slideshow import MovieReport
+from support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev):
@@ -18,15 +18,8 @@ def _elem(gyoker, nev):
     return objektum
 
 
-def _varj(qt_app, feltetel, masodperc=3.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc=10.0):
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattintas(window, qt_app, elem):

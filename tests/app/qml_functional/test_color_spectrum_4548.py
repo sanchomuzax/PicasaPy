@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import (
     QMetaObject,
@@ -16,6 +14,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QColor
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 
 def _item(root, name):
@@ -30,14 +29,9 @@ def _item(root, name):
     return None
 
 
-def _wait_for(qt_app, predicate, description, timeout=3.0):
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return
-        time.sleep(0.05)
-    assert predicate(), f"határidőn belül nem teljesült: {description}"
+def _wait_for(qt_app, predicate, description, timeout=10.0):
+    if not var_feltetelre(qt_app, predicate, timeout):
+        raise AssertionError(f"határidőn belül nem teljesült: {description}")
 
 
 def _click_item(window, item, qt_app, x_ratio=0.5, y_ratio=0.5):

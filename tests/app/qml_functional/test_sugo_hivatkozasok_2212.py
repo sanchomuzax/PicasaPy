@@ -12,9 +12,9 @@ zöldek lennének akkor is, ha a QML-oldali kötés hiányzik.
 from __future__ import annotations
 
 import re
-import time
 
 from PySide6.QtCore import QMetaObject, QObject, Q_ARG, Qt
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 
 def _gyerek(window, nev):
@@ -23,17 +23,8 @@ def _gyerek(window, nev):
     return obj
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _nyisd_meg_a_sugot(window, qt_app):

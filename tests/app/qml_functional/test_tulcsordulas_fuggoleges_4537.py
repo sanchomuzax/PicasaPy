@@ -23,12 +23,12 @@ a tálca alján a felugró a látható területen maradjon; az irány a mi dönt
 
 from __future__ import annotations
 
-import time
 
 import pytest
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QSignalSpy, QTest
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 #: Mért kimeneti gomb-mező (`picasa-keptalca.md` 11.): 55 × 36, a cella 59.
 GOMB_SZELESSEG = 55
@@ -48,17 +48,8 @@ JELEK = [
 ]
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _elem(window, nev: str) -> QObject:
@@ -112,7 +103,7 @@ def _nyitas(window, qt_app) -> None:
 
 def _magassag_beallitas(window, qt_app, magassag: int) -> None:
     window.requestActivate()
-    _var(qt_app, lambda: window.isActive(), 2.0)
+    _var(qt_app, lambda: window.isActive(), 10.0)
     window.setWidth(SZUK)
     window.setHeight(magassag)
     qt_app.processEvents()
