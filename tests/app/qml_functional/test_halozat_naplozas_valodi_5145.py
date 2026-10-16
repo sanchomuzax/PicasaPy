@@ -13,6 +13,8 @@ A proxy-mezők és az automatikus felismerés továbbra is tiltottak maradnak.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QObject
 
@@ -75,7 +77,7 @@ class TestNaplofajl:
     def test_alapertelmezett_naplofajl_az_adatkonyvtarban_van(self, halozat_app, tmp_path):
         _window, controller, _engine = halozat_app
 
-        assert controller.networkLogFile == str(tmp_path / "network.log"), (
+        assert Path(controller.networkLogFile) == tmp_path / "network.log", (
             "az alapértelmezett naplófájl nem az adatkönyvtárban van"
         )
 
@@ -102,7 +104,7 @@ class TestNaplofajl:
         mezo = _gyerek(beallitasok, "optionsNetworkLogPathField")
 
         assert mezo.property("readOnly") is True, "a naplófájl mező szerkeszthető"
-        assert mezo.property("text") == str(tmp_path / "network.log"), (
+        assert Path(mezo.property("text")) == tmp_path / "network.log", (
             "a naplófájl mező nem a network.log útvonalát mutatja"
         )
         _zar(qt_app, beallitasok)
