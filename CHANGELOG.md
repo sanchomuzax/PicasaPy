@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.114] – 2026-10-16
+
+- A Gombok beállítása párbeszédben a Hozzáadás, Eltávolítás, Fel és Le gomb újra látszik és kattintható (#5170).
+- A Súgó témalistájában a témára kattintva újra átvált a tartalom (#5172).
+
 ## [0.9.113] – 2026-10-16
 
 - A fotó helyi menüjében és a nézőben a Minden szerkesztés visszavonása újra működik (#5163).
