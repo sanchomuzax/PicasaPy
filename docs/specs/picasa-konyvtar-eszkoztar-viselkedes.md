@@ -393,6 +393,10 @@ menüsáv-építő rekordjaiból.*
    Name** (0), `0x9e19` = **Sort People by &Amount** (1), `0x9e38` =
    **Sort People by Top &10** (2). Vagyis nem mappanézet, hanem a
    **személy-lista rendezése**.
+5. **#5121 — meglevő album mellett hol látható és ejthető a 4-es típusú
+   `newalbumprompt` sor?** A bináris a sorhoz kötött újalbum-ágat bizonyítja,
+   de azt nem, hogy a sor a nem üres Albums szakaszban is létrejön-e, illetve
+   melyik üres lista-területet fedi le. Ld. 7. szakasz.
 
 ## Amit KIZÁRTAM
 
@@ -508,5 +512,55 @@ elnevezése téves volt.
   a `0x0055d183 call 0x004ada80` visszatérése.
 - **Mi történik két azonos nevű albummal:** a `0x0055cf70` nem számoz, de
   hogy a `0x006dc030` elutasítja-e a duplikátumot, **nincs kimérve**.
-- A `[doc+0xeb0]+0x30c`-be írt „Labels"-index szerepe (kijelölés? görgetés?)
+- A `[doc+0xeb0]+0x30c`-be írt „Labels”-index szerepe (kijelölés? görgetés?)
   nincs megnevezve.
+
+## 7. #5121 — A `CAlbumList` újalbum-sora és ejtési útja (2026-10-16)
+
+*Forrás: a megadott eredeti `Picasa3.exe`; minden cím betöltési cím (VA).
+Az utasításokat a `functions` indexből vett függvényhatárokon belül olvastam.*
+
+### 7.1 A külön sor: `CAlbumList::newalbumprompt`
+
+- A `0x00765d30` a `0x004ae4e0`-val beolvassa a listarekordot. A kimeneti
+  rekord `+0x30` mezőjét (`[esp+0x60]`) `4`-hez hasonlítja
+  (`0x00765e62`–`0x00765e69`). Egyezéskor a
+  `CAlbumList::newalbumprompt` kulcshoz (`0x00cb2878`) tartozó
+  *“You can drag and drop pictures here to make a new album.”* feliratot
+  (`0x00cb283c`) tölti be (`0x00765e6b`–`0x00765e75`). A mező-hozzárendelést
+  a közös rekordmásoló `0x004ae600` igazolja: a forrás `+0x30` mezőjét a
+  kimeneti `+0x30` mezőbe másolja.
+- Az `Albums` szakasz fejléce külön erőforrás:
+  `CAlbumList::liststicky5` (`0x00cb26d8`) → *“Albums”* (`0x00cb26d0`),
+  betöltése a `0x00762540`-ben, `0x00762b6e`–`0x00762b78` között. A
+  newalbum-felirat tehát a `4`-es típusú listaelemhez tartozik; az
+  `Albums` fejléc külön megnevezett elem.
+- A `CAlbumList` rajzolófüggvénye (`0x00763150`) külön `4`-es ágat kezel
+  (`0x007636df`–`0x007636e4`), ami megerősíti, hogy a `4`-es elemnek
+  önálló sorrajzolási útja van.
+
+### 7.2 A `lb_drop` a 4-es soron új albumot készít
+
+- A `0x005d3290` esemény-diszpécser az `lb_drop` kulcsot
+  (`0x00c95e80`) felismeri, majd a `0x005e39a0` ejtéskezelőt hívja
+  (`0x005d3f1c`–`0x005d3f57`).
+- A `0x005e39a0` ugyanazzal a `0x004ae4e0` rekordlekérővel olvassa a
+  cél-elemet; a kimeneti rekord `+0x30` mezőjének `4` értékénél
+  (`0x005e3a88`–`0x005e3a8f`) a `0x005ea770` albumkészítő útjára lép
+  (`0x005e3aaa`–`0x005e3aaf`). Ez a függvény meghívja a
+  `0x006dc030` album-létrehozó segédet (`0x005ea7e0`).
+- A `0x005e39a0` ezen ágában nincs albumszám-feltétel. Ez a tény a
+  4-es sorra érkező Drop működését bizonyítja; önmagában nem bizonyítja,
+  hogy a nem üres szakaszban is van ilyen sor vagy találati terület.
+
+### 7.3 Eredeti / nálunk / teendő
+
+| | Megállapítás |
+|---|---|
+| **Eredeti** | A `CAlbumList` 4-es típusú `newalbumprompt` sorának `lb_drop` eseménye az album-létrehozó útvonalra jut. A `liststicky5` / “Albums” fejléc nem ez a 4-es sor. |
+| **Nálunk** | Az `AlbumsSection.qml`-ben az `albumDropArea` a súgó-`Text` gyereke, a szöveg pedig csak üres albumlistánál látható; ezért ezzel együtt az ejtési terület is eltűnik az első album után. |
+| **Teendő** | A 4-es sor megjelenési és találati feltételét nem üres listánál még ki kell olvasni / mérni. Utána a célterületet az eredeti sorhoz kell kötni, és valódi egérhúzással igazolni meglévő album mellett. |
+
+**Bizonyítottság:** a promptszöveg 4-es listarekordhoz kötése és a 4-es célrekord Drop → `0x006dc030` albumkészítési út két külön kódútból megerősített. A #5121 bináris kérdésének nem üres albumlistára vonatkozó fele nyitott: a `0x00762540` listafelépítő és az élő hit-test pontos listapozíciója nincs végigkövetve; az eredeti Picasán nem történt egérhúzásos mérés.
+
+**Ghidra-kör kell: 0x00762540 — a `CAlbumList` mikor és milyen listapozícióra teszi a 4-es típusú sort, ha már van album; melyik képernyőterület hit-testje adja át neki az `lb_drop` eseményt? [blokkoló]**
