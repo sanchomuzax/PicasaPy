@@ -2139,10 +2139,12 @@ A `0x00619010` a `+0x4bc` filmmodell címét adja át a `0x00555a30`-nak
 `.set` hívást küld a modellmutatóval; a `0x0074e710` setter ezt
 dereferálja, majd a `0x0074d8a0` a szolgáltatás `+0x308` mezőjébe
 menti (`0x0074d8b1`). A `0x00555a30` és a `0x0074d8a0` vizsgált
-utasításai nem számítanak arckivágást. A későbbi timeline-út
-(`0x0074dfc0`, `0x008127b0`) a modell kliplistáját dolgozza fel, de a
-teljes arcmező-író/olvasó lánc és a renderelt képkivágás képlete nincs
-azonosítva.
+utasításai nem számítanak arckivágást. A timeline későbbi rajzolóágában a
+`0x00813330` `0x00813c50`-et hívja; ez az arc-keretező számítás. A klip
+`+0x18…+0x24` mezőit ez a helper közvetlenül nem olvassa: a staging-rekord
+`+0x8` selectorával a modell `+0x2d8` forrásobjektumának vtable-ján kér
+méretet és arctéglalapot. A helper képlete most megvan; a virtuális getterek
+konkrét implementációja és a staging selector klipmezőhöz kötése nyitott.
 
 A kliprekordok a modell `+0x48` listájában vannak; a `0x00611320`
 rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
@@ -2156,6 +2158,76 @@ rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
 | `+0x1c` | `facerecty0` | `0x008169c2`; beíró: `0x00815110` | a második dword változatlan másolata; **képpont**, a forráskép felső széle felől |
 | `+0x20` | `facerectx1` | `0x00816a0e`; beíró: `0x00815116` | a harmadik dword változatlan másolata; **képpont**, a forráskép bal széle felől |
 | `+0x24` | `facerecty1` | `0x00816a5a`; beíró: `0x00815120` | a negyedik dword változatlan másolata; **képpont**, a forráskép felső széle felől |
+
+**A `CTransTimeline` arckeretező képlete — statikus dekódolás és QEMU (#4400, 4. kör).**
+
+A `0x00813330` a `0x008135c7` címen hívja a `0x00813c50`-et, ha a
+timeline-mód `+0x28c == 0x14`. A `0x00813c50` csak akkor futtatja az arcágat,
+ha a `+0x1a8` staging-rekord első dwordja `3`, és a `+0x8` selector nem
+`-1` (`0x00813c91`–`0x00813ca0`). A modell `+0x2d8` objektumának vtable
+`+0x58` slotja két kimeneti mutatóba adja a forráskép szélességét és
+magasságát; a `+0xa0` slot a selectorhoz tartozó `x0,y0,x1,y1` arctéglalapot
+adja vissza (`0x00813caa`–`0x00813cef`). A helper a bal/felső koordinátát
+legalább 0-ra, a jobb/alsót legfeljebb a forráskép szélességére/magasságára
+korlátozza (`0x00813cef`–`0x00813d35`), majd az üres téglalapot elutasítja.
+
+Jelölések: `Vw,Vh` a hívótól kapott keretméret, `Iw,Ih` a `+0x58` getter
+forrásképmérete, `R` pedig a `+0xa0` getter által visszaadott téglalap. A
+bináris `0x00cf48f8` qword konstansa
+`δ = 0.49900001287460327`; a kód ezt mindkét `V` mérethez hozzáadja.
+`cropfit` a modell `+0x2c5` bájtja (`0x00813d3b`–`0x00813d46`). Az első,
+egységes képskála:
+
+```
+cropfit != 0: s = max((Vw + δ) / Iw, (Vh + δ) / Ih)
+cropfit == 0: s = min((Vw + δ) / Iw, (Vh + δ) / Ih)
+```
+
+A két ág rendre a `0x0049fae0` max- és `0x0049fab0` min-segédet hívja
+(`0x00813dd0`, `0x00813e5e`). A `cropfit != 0` ág a teljes képet a kerethez
+igazító cover/crop téglalapot a `0x009b4b60`-nal számítja; a nulla ág a
+contain/fit téglalapot a `0x009b4aa0` és `0x009b49c0` segítségével. Mindkét
+út középre teszi a képet, majd ugyanazzal az `s` skálával viszi át az arc
+téglalapját. Az igazítás egész koordinátáját ezek a segédek állítják elő;
+az x87 `FISTP` és a középre osztó előjeles `SAR 1` része a bináris
+viselkedésnek (`0x009b49c0`, `0x009b4aa0`, `0x009b4b60`).
+
+A skálázott, középre igazított arctéglalap mérete legyen `Bw × Bh`. A helper
+az `r = min((Vw + δ)/Bw, (Vh + δ)/Bh)` arányból választ végső zoomot
+(`0x00813fac`–`0x00813fe6`; a `0x0049fab0` minimumsegéd). A pontos
+ágfeltétel és konstansok (`0x00813fef`–`0x00814027`):
+
+```
+r > 4.0:       z = r / 3.0
+r <= 4.0:      z = min(r, 1.2999999523162842)
+```
+
+A `4.0`, `3.0` és `1.2999999523162842` értékek rendre a
+`0x00c7e4a4` float, a `0x00cf39f8` qword és a `0x00c7e4ac` float tartalma.
+A végső téglalap középpontja a skálázott arctéglalap közepe; a fél szélesség
+és magasság rendre `Bw*z/2` és `Bh*z/2`. Ezután a bal/felső szélt 0-ra, a
+jobb/alsó szélt `Vw`/`Vh`-ra korlátozza (`0x0081402b`–`0x00814149`). A
+téglalap oldalankénti többlete a középre igazított esetben pontosan
+`(z-1)/2`-szerese az arctéglalap adott méretének; a faktor nem minden
+méretnél állandó: `r>4` esetén `r/3`, `r<=1.3` esetén pedig `r`.
+
+**QEMU-ellenőrzés.** A `0x00813c50` eredeti kódja futott a helyi QEMU-
+harnessben, `x87 CW=0x027f` mellett. A `+0x58` és `+0xa0` virtuális slotot
+szintetikus válaszadók helyettesítették, ismert képmérettel és
+arctéglalappal; ez a helper számtanát méri, nem a teljes paneltől a
+videókockáig tartó adatutat.
+
+| Bemenet (`Vw×Vh`, `Iw×Ih`, `cropfit`, `R`) | mért kimeneti téglalap | ellenőrzött ág |
+|---|---|---|
+| `1024×768`, `1024×768`, `1`, `[200,200,500,400]` | `[155.10072326660156,170.11045837402344,545.3541259765625,430.27935791015625]` | `s` float32-bitek: `0x3f80154a`; `z` float32-bitek: `0x3fa66666` |
+| `1024×768`, `1024×768`, `1`, `[100,100,200,200]` | `[22.0142822265625,22.0142822265625,278.1806335449219,278.1806335449219]` | `r>4`, `z` float32-bitek: `0x4023d70b`, a `r/3` ág; cáfolja az állandó `1.3` zoomot |
+| `1024×768`, `2000×1000`, `cropfit=1/0`, `[800,400,1200,600]` | `cropfit=1`: `[312.68927001953125,284.3446350097656,712.3087768554688,484.1543884277344]`; `cropfit=0`: `[341.49969482421875,298.7498474121094,682.99932861328125,469.4996643066406]` | a cropfit 1-es max- és 0-s min-skálaválasztása |
+
+A QEMU-számítás és az utasításszintű képlet egyezik a visszaadott arctéglalap
+és képméretek mellett. A `0x00813c50` a visszaadott négyszög közepéhez
+igazít; magát a szemkoordinátát nem olvassa. Ez önmagában nem zárja ki, hogy
+a még fel nem oldott `+0xa0` getter szem-landmarkból alakítaná ki a
+visszaadott négyszöget.
 
 **A `rect64` → pixel-rect út és a még nem bizonyított `faces=` kapcsolat.**
 Külön megfigyelt `.picasa.ini`-út, hogy a `0x00456610` kódterületén
@@ -2279,7 +2351,7 @@ felbontás, nem a forrás arctéglalap cropképlete.
 
 Nyitott, blokkoló visszafejtési kérdések:
 
-`0x008127b0` a `0x00810420`-nak a timeline objektumot és annak `+0x1a8` staging-objektumát adja át (`0x008128a2`–`0x008128aa`). A `0x00810420` közvetlenül olvassa a staging-objektum `+0x14` bájtját, de nincs benne közvetlen `+0x18…+0x24` operandus; a cropfogyasztó az indirekt hívások mögött maradt.
+`0x00813c50` a számítást elvégzi, de a modell `+0x2d8` forrásobjektumának virtuális getterei még nincsenek feloldva. Nem bizonyított, hogy a staging `+0x8` selector hogyan jut el a klip `+0x8` mezőjétől a `+0x4e8` maplistáig, és hogy a getter által visszaadott arctéglalap használ-e landmarkot.
 
 **Cáfoló keresés a mezőeltolásos találatokra:** a `paszta.py` streaming
 `.text`-pásztája talált `+0x18…+0x24` olvasót a `0x00819f50` címen, de az
@@ -2291,14 +2363,17 @@ is tartalmaz, de az időintervallum-rekord double mezőit olvassa. Mindkettő
 hamis pozitív, ezért az offset-egyezés vagy a lépésköz önmagában nem
 azonosítja a cropfogyasztót.
 
-Ghidra-kör kell: 0x008127b0 — oldd fel a `0x00810420` indirekt hívásai mögötti per-klip renderelőt, és kösd a `0xf8` lépésű kliprekord `+0x18…+0x24` pixel-rectjét a kivágást/transzformációt számító fogyasztóhoz; add meg a pontos crop-, margó-, képarány- és szemigazítási képletet, továbbá hogy a `+0x8` selector hozzáfér-e a `+0x4e0` rekord landmark-mezőihez. [blokkoló]
+Ghidra-kör kell: 0x00618050 — oldd fel a filmpanel `+0x4b8` mód-6 forrásobjektumának vtable-ját, nevezd meg a `+0x58` és `+0xa0` getter célját, és bizonyítsd, hogy a `0x00813c50` staging `+0x8` selectorát a klip `+0x8` mezője / modell `+0x4e8` maplistája adja-e; döntsd el, hogy a getter által visszaadott arctéglalap szem-landmarkból származik-e. [blokkoló]
 Ghidra-kör kell: 0x00456610 — kösd össze a `faces=` ág `rect64`-feldolgozását az imagedata `facerect` mezőjével, amelyet a `0x00446610` olvas; döntsd el, hogy a `.picasa.ini` `faces=` sorához a `0x0049d560` út tartozik-e. [blokkoló]
-- **NINCS MEG:** a teljes `.picasa.ini faces=` → imagedata `facerect` → `+0x4e0` adatút; a lejátszási crop képlete, margója, cél-képaránya, szemhez igazítása és a clip-selector landmark-használata.
+- **NINCS MEG:** a teljes `.picasa.ini faces=` → imagedata `facerect` → `+0x4e0` adatút; a mód-6 forrásobjektum virtuális gettereinek célja; a klip `+0x8` → staging `+0x8` selector- és maplistakapcsolat; hogy a getter által visszaadott rect szem-landmarkból ered-e, illetve a teljes eredeti paneltől a filmkockáig tartó futás.
 
-**Bizonyítottsági határ:** a klipmezők nyers másolása és a low-res maszk
-képlete a diszasszemblálás és az elkülönített QEMU-futás egyezésével
-megerősített. A tényleges lejátszási cropképlet nincs meg; a QEMU-próbák
-nem hajtották végre az INI-betöltést vagy a teljes timeline-renderelést.
+**Bizonyítottsági határ:** a klipmezők nyers másolása, a low-res maszk
+képlete, valamint a `0x00813c50` visszaadott arctéglalapra végzett
+geometriai képlete statikus utasításolvasással és ettől független QEMU-
+futtatással megerősített. A QEMU-próba szintetikus gettereket használt;
+nem hajtotta végre a `.picasa.ini` betöltését, a mód-6 forrásobjektumot vagy
+a teljes timeline-renderelést. A selector/getter szem-landmark-kapcsolata
+nyitott.
 
 Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
 forrás-URL-jeit adja át (`Main.qml:728–734`,
