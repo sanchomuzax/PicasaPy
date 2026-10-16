@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import pytest
 
+from picasapy.app import folder_hierarchy_controller as fhc
+
 from tests.app.qml_functional._nezet_menu_5150_helpers import (
     elokeszit,
     nezet_app_epitese,
@@ -51,7 +53,16 @@ _RENDEZESEK = (
 
 
 @pytest.fixture
-def mappa_app(qt_app, tmp_path):
+def mappa_app(qt_app, tmp_path, monkeypatch):
+    # A rendszermappa-gyökerek (Képek, Dokumentumok, Asztal) a futtató gép
+    # mappáitól függenek: a CI-gépen nincsenek, és a program akkor helyesen a
+    # Sajátgépre esik vissza. Ezért a teszt saját mappákat ad (#1407 mintája).
+    utak = {}
+    for token, nev in (("mypics", "Kepek"), ("mydocs", "Iratok"), ("desktop", "Asztal")):
+        mappa = tmp_path / "rendszer" / nev
+        mappa.mkdir(parents=True)
+        utak[token] = str(mappa)
+    monkeypatch.setattr(fhc, "_rendszermappa", lambda token: utak.get(token, ""))
     yield from nezet_app_epitese(qt_app, tmp_path)
 
 
