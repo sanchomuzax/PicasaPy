@@ -127,7 +127,7 @@ class TestFajlVagolap:
 
         fajlok, muvelet = _vagolap_fajlok(fileops)
         assert muvelet == "copy", f"a Másolás nem „copy” jelzést tett fel: {muvelet}"
-        assert fajlok == [str(controller.photos.filePathAt(0))], (
+        assert [Path(f) for f in fajlok] == [Path(str(controller.photos.filePathAt(0)))], (
             f"a Másolás nem a kijelölt képet tette a vágólapra: {fajlok}"
         )
 
@@ -143,7 +143,7 @@ class TestFajlVagolap:
 
         fajlok, muvelet = _vagolap_fajlok(fileops)
         assert muvelet == "cut", f"a Kivágás nem „cut” jelzést tett fel: {muvelet}"
-        assert fajlok == [str(controller.photos.filePathAt(0))]
+        assert [Path(f) for f in fajlok] == [Path(str(controller.photos.filePathAt(0)))]
 
     def test_a_beillesztes_valodi_kattintassal_masolja_a_kepet_a_mappaba(
         self, szerk_app, qt_app
