@@ -188,8 +188,12 @@ Rectangle {
     // #455: fogd-és-vidd az albumlistára — új album, illetve meglévőbe
     // sorolás. A tényleges munkát a gazda végzi (a névkérő párbeszéd és a
     // kijelölés is ott van).
-    signal newAlbumDropped()
-    signal photosDroppedOnAlbum(string token)
+    signal newAlbumPhotosDropped(var photoRows)
+    signal photosDroppedOnAlbum(string token, var photoRows)
+    // #5007: a kijelölt rácsképek útvonalaihoz tartozó sorok ejtése egy
+    // mappára. A gazda a lemezműveletet a FileOpsControllerre bízza.
+    signal photosDroppedOnFolder(string path, var rows)
+    signal folderDroppedOnFolder(string sourcePath, string targetPath)
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -572,9 +576,11 @@ Rectangle {
                 onAlbumContextMenuRequested: function(token, name) {
                     pane.openAlbumContextMenu(token, name)
                 }
-                onNewAlbumDropped: pane.newAlbumDropped()
-                onPhotosDroppedOnAlbum: function(token) {
-                    pane.photosDroppedOnAlbum(token)
+                onNewAlbumPhotosDropped: function(photoRows) {
+                    pane.newAlbumPhotosDropped(photoRows)
+                }
+                onPhotosDroppedOnAlbum: function(token, photoRows) {
+                    pane.photosDroppedOnAlbum(token, photoRows)
                 }
             }
 
@@ -611,11 +617,24 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left; anchors.leftMargin: 16
                         spacing: 5
+                        Image {
+                            objectName: "personThumbnailImage_" + modelData.name
+                            width: source !== "" ? 18 : 0
+                            height: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                            source: modelData.thumbUrl || ""
+                            fillMode: Image.PreserveAspectCrop
+                            smooth: true
+                            mipmap: true
+                            asynchronous: true
+                            visible: source !== ""
+                        }
                         Rectangle {
                             width: 10; height: 10
                             radius: 5
                             anchors.verticalCenter: parent.verticalCenter
                             color: Theme.picasaGreen
+                            visible: !modelData.thumbUrl
                         }
                         Text {
                             text: modelData.name + " (" + modelData.count + ")"
@@ -903,9 +922,10 @@ Rectangle {
                     // #384: hover ≠ kijelölés (ld. AlbumsSection.qml) —
                     // a "year" sorok nem kattinthatók, a MouseArea rájuk
                     // enabled: false, így containsMouse mindig false marad.
-                    color: isSelectedFolder ? Theme.panelSelectionActive
+                    color: folderDropArea.containsDrag ? Theme.listDragTarget
+                           : (isSelectedFolder ? Theme.panelSelectionActive
                            : (kind === "folder" && folderRowMouse.containsMouse
-                              ? Theme.panelSelection : "transparent")
+                              ? Theme.panelSelection : "transparent"))
 
                     // évszám-elválasztó: arányos betűs címke + vékony
                     // vízszintes elválasztó vonal a panel széléig (audit:
@@ -1042,7 +1062,8 @@ Rectangle {
                             //: A megnyitáskor áll vissza.
                             font.bold: unread
                             opacity: offline ? 0.55 : 1.0
-                            color: isSelectedFolder || folderRowMouse.containsMouse
+                            color: folderDropArea.containsDrag
+                                   || isSelectedFolder || folderRowMouse.containsMouse
                                    ? Theme.panelSelectionText : Theme.ink
                         }
                     }
@@ -1093,13 +1114,62 @@ Rectangle {
                     ToolTip.delay: Theme.tooltipDelay
                     MouseArea {
                         id: folderRowMouse
+                        objectName: "folderRowMouse"
                         // #3461: a Rejtett mappák fejléce is kap egeret, de
                         // CSAK a jobb gombra (helyi menü) — kijelölni nem lehet
                         enabled: kind === "folder" || kind === "hidden"
                         hoverEnabled: kind === "folder"
                         anchors.fill: parent
+                        // #5105: húzás közben a lista görgetője ne vegye át
+                        // az egeret — különben a ledobás sosem indul el
+                        preventStealing: kind === "folder"
                         acceptedButtons: kind === "hidden"
                             ? Qt.RightButton : (Qt.LeftButton | Qt.RightButton)
+                        property bool draggingFolder: false
+                        property bool didDragFolder: false
+                        property real dragPressX: 0
+                        property real dragPressY: 0
+                        readonly property string payload: "folders"
+                        readonly property string folderPath: path
+                        // #5105: a húzás „teste" az egeret követő elem —
+                        // a sor maga nem mozdul, így a DropArea-találat
+                        // ennek a helyzetét nézi.
+                        Item {
+                            id: folderDragProxy
+                            objectName: "folderDragProxy"
+                            width: 1; height: 1
+                            readonly property string payload: "folders"
+                            readonly property string folderPath: path
+                            Drag.active: kind === "folder"
+                                && folderRowMouse.draggingFolder
+                            Drag.dragType: Drag.Internal
+                            Drag.supportedActions: Qt.MoveAction
+                        }
+                        onPressed: function(mouse) {
+                            if (kind !== "folder" || mouse.button !== Qt.LeftButton)
+                                return
+                            dragPressX = mouse.x
+                            dragPressY = mouse.y
+                            draggingFolder = false
+                            didDragFolder = false
+                        }
+                        onPositionChanged: function(mouse) {
+                            if (!pressed || kind !== "folder") return
+                            folderDragProxy.x = mouse.x
+                            folderDragProxy.y = mouse.y
+                            if (Math.abs(mouse.x - dragPressX)
+                                    + Math.abs(mouse.y - dragPressY) > 8) {
+                                draggingFolder = true
+                                didDragFolder = true
+                            }
+                        }
+                        onReleased: function(mouse) {
+                            if (draggingFolder) {
+                                folderDragProxy.Drag.drop()
+                                draggingFolder = false
+                                didDragFolder = true
+                            }
+                        }
                         onClicked: function(mouse) {
                             if (kind === "hidden") {
                                 pane.openHiddenCollectionContextMenu(name)
@@ -1110,6 +1180,10 @@ Rectangle {
                                 pane.openFolderContextMenu(path)
                                 return
                             }
+                            if (didDragFolder) {
+                                didDragFolder = false
+                                return
+                            }
                             // #3681: mentés-szűrő módban a sor egy pipa —
                             // a kattintás jelöl/jelöletlenít, nem nyit meg
                             if (pane.mentesSzuroAktiv) {
@@ -1118,6 +1192,34 @@ Rectangle {
                                 return
                             }
                             pane.folderChosen(path)
+                        }
+                    }
+                    // #5007: csak a rács saját fotóhúzását fogadjuk el; a
+                    // külső fájlok importálása továbbra is az ImportDropArea
+                    // útján történik. A forrás sorait még a mappaváltás
+                    // előtt adjuk át, mert a sorra engedés meg is nyithatja
+                    // a célmappát.
+                    DropArea {
+                        id: folderDropArea
+                        objectName: "folderDropArea_" + path
+                        anchors.fill: parent
+                        enabled: kind === "folder"
+                        onDropped: function(drop) {
+                            var source = drop.source
+                            if (!source)
+                                return
+                            if (source.payload === "folders") {
+                                if (!source.folderPath || source.folderPath === path)
+                                    return
+                                drop.accept()
+                                pane.folderDroppedOnFolder(source.folderPath, path)
+                                return
+                            }
+                            if (source.payload !== "photos" || !source.photoRows
+                                    || source.photoRows.length === 0) return
+                            drop.accept()
+                            pane.photosDroppedOnFolder(
+                                path, source.photoRows.slice())
                         }
                     }
                 }
@@ -1153,6 +1255,13 @@ Rectangle {
                     pane.mentesPipaldKert(mappa, be)
                 }
                 onFolderChosen: function(path) { pane.folderChosen(path) }
+                onFolderDroppedOnFolder: function(sourcePath, targetPath) {
+                    pane.folderDroppedOnFolder(sourcePath, targetPath)
+                }
+                //: #5119: a rácsból a fa mappasorára húzott képek
+                onPhotosDroppedOnFolder: function(path, photoRows) {
+                    pane.photosDroppedOnFolder(path, photoRows)
+                }
                 onFolderContextMenuRequested: function(path) {
                     pane.openFolderContextMenu(path)
                 }

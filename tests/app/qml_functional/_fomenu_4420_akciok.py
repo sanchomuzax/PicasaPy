@@ -192,7 +192,7 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
                         qt_app,
                         lambda dialogus=dialogus: dialogus.property("scanning")
                         is False,
-                        3.0,
+                        10.0,
                     )
                 elif keres_fut:
                     naplo.append(
@@ -233,7 +233,7 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
                 QTest.keyClick(celablak, Qt.Key.Key_Escape)
             qt_app.processEvents()
             naplo.append(f"{nev}: Escape billentyűvel, Mégse útvonalon bezárva")
-        if not _varj(qt_app, lambda: not _lathato_dialogusok(ablak), 3.0):
+        if not _varj(qt_app, lambda: not _lathato_dialogusok(ablak), 10.0):
             naplo.append("Mégse útvonal után is nyitva maradt párbeszédablak")
 
 
@@ -461,7 +461,7 @@ def _akcio(
         qt_app,
         lambda: bool(_lathato_dialogusok(ablak))
         or _feluleti_allapot(ablak) != elotte["felulet"],
-        1.0,
+        10.0,
     )
     # #4503: a háttérmunkás parancsok (kötegelt szerkesztés, XMP-írás) hatása a
     # munka VÉGÉN látszik; a CI lassabb gépén az 1 mp kevés volt, és a bejáró

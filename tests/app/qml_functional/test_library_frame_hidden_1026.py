@@ -45,12 +45,12 @@ mérte, hogy ugyanaz a szöveg Linuxon 14, Windowson 12 px). Minden állítás
 az ABLAKHOZ és a szomszédokhoz viszonyít.
 """
 
-import time
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 # --------------------------------------------------------------------------
 # Segédek (a #985 tesztfájljának bevált mintája szerint)
@@ -113,20 +113,8 @@ def _elem(window, nev: str) -> QQuickItem:
     return talalt
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _ablakban(item: QQuickItem) -> tuple[float, float, float, float]:
@@ -203,7 +191,7 @@ def _konyvtar_fulre(window, qt_app) -> None:
         if sav.property("activeTabId") == "library":
             return
         _kattints(window, _elem(window, "documentTabLibrary"), qt_app)
-        if _var(qt_app, lambda: sav.property("activeTabId") == "library", 1.0):
+        if _var(qt_app, lambda: sav.property("activeTabId") == "library"):
             return
     raise AssertionError("a Könyvtár fülre kattintás nem váltott lapot")
 

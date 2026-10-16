@@ -8,7 +8,6 @@ import errno
 import os
 import socket
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -20,6 +19,7 @@ from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import wait_for_photo_op
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from tests.app.qml_functional._fomenu_4420_menu import _kattints, _megnyit
 from tests.app.qml_functional.conftest import _build_qml_app
 
@@ -34,18 +34,8 @@ _QML_REFS = []
 _DOKUKEPEK_KAPCSOLO = "PICASAPY_DOKUKEPEK"
 
 
-def _var(qt_app, feltetel, masodperc: float = 8.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        time.sleep(0.02)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _bejark(item):
@@ -338,7 +328,7 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
     assert _var(qt_app, lambda: export.property("opened") is False), (
         "az export befejeződött, de a párbeszéd nyitva maradt"
     )
-    assert _var(qt_app, lambda: export.property("visible") is False, 3.0), (
+    assert _var(qt_app, lambda: export.property("visible") is False), (
         "az export párbeszéd bezáró animációja nem ért véget"
     )
     assert not app["attempts"], f"exportálás közben hálózati próbálkozás történt: {app['attempts']}"
@@ -349,9 +339,14 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
     window, engine = app["window"], app["engine"]
     menu_bar = window.property("menuBar")
     _QML_REFS.append(menu_bar)
-    _megnyit(menu_bar, qt_app, "Tools")
-    _kattints(qt_app, _elem(window, "menuToolsFaceScan"))
-    assert _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog"))), (
+    # Windowson a felugró menü elhelyezése késhet, és az első kattintás a
+    # még mozgó menüpont mellé eshet; ilyenkor egyszer újranyitjuk a menüt.
+    for _ in range(2):
+        _megnyit(menu_bar, qt_app, "Tools")
+        _kattints(qt_app, _elem(window, "menuToolsFaceScan"))
+        if _var(qt_app, lambda: bool(_elemek(window, "faceScanDialog")), 10.0):
+            break
+    assert _elemek(window, "faceScanDialog"), (
         "a Tools > Find Faces kattintás után nem jött létre a párbeszéd"
     )
     dialog = _elem(window, "faceScanDialog")

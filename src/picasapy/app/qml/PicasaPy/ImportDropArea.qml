@@ -26,7 +26,16 @@ DropArea {
         dropController.importDroppedUrls(list)
     }
 
+    // #5105: a programon BELÜLI húzás (rácsból, tálcáról, mappasorról
+    // indul, van `source`-a) nem import — az alatta fekvő mappa-, tálca-,
+    // album- és személy-célpontoké. Ha itt elfogadnánk, az ablakot fedő
+    // réteg elnyelné a ledobást.
+    onEntered: function(drag) {
+        if (drag.source) drag.accepted = false
+    }
+
     onDropped: function(drop) {
+        if (drop.source) return
         if (drop.hasUrls) {
             root.submitUrls(drop.urls)
             drop.acceptProposedAction()

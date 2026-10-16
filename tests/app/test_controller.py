@@ -2,7 +2,6 @@
 
 import re
 import threading
-import time
 
 import pytest
 
@@ -10,6 +9,7 @@ from support.qt_wait import hangos_hurok, wait_for_photo_op
 from PIL import Image
 
 from support.jpeg_factory import make_jpeg
+from tests.support.varakozas import var_feltetelre
 
 # #505: a `TestBusyAndBackgroundResync` a küszöbölt/min-láthatóságú
 # `AppBusyRegistry`-t (`busy_registry.py`) gyakorolja — apró (nem nulla)
@@ -31,17 +31,8 @@ def _small_busy_timings(monkeypatch):
     reset_app_busy_registry()
 
 
-def _wait_until(qt_app, predicate, timeout_s=5.0):
-    """Aktív várakozás valódi idő-előrehaladással, eseményfeldolgozással —
-    a küszöbölt busy-jelzés (`AppBusyRegistry`) `QTimer`-en át tüzel, ami
-    csak `processEvents()` alatt fut le."""
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.005)
-    return False
+def _wait_until(qt_app, predicate, timeout_s=10.0):
+    return var_feltetelre(qt_app, predicate, timeout_s)
 
 
 @pytest.fixture

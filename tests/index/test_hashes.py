@@ -20,7 +20,7 @@ class TestSchema:
         # v17: a befagyasztott, első látáskori fájlidő, #2486 —
         # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
         # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
-        assert SCHEMA_VERSION == 23
+        assert SCHEMA_VERSION == 24
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:

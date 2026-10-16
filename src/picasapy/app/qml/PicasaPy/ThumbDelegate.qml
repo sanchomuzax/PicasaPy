@@ -70,7 +70,6 @@ Item {
     // jelölt területről továbbra is lasszó lesz, különben elveszne a
     // rács legfontosabb kijelölő gesztusa)
     signal photoDragStarted(int index)
-    signal hoverChanged(int index, bool hovered)
 
     readonly property string captionText: {
         switch (cell.captionMode) {
@@ -298,7 +297,7 @@ Item {
             cell.dragRows && cell.dragRows.length
                 ? cell.dragRows : [cell.index]
         Drag.active: mouse.dragging
-        Drag.dragType: Drag.Automatic
+        Drag.dragType: Drag.Internal  // #5105: programon belüli húzás, a rendszer-DnD Waylandon nem adja le a DropArea-nak
         Drag.mimeData: cell.dragMimeData
         Drag.supportedActions: Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
         Drag.hotSpot.x: 0
@@ -325,8 +324,6 @@ Item {
         objectName: "thumbMouseArea"
         anchors.fill: parent
         hoverEnabled: true
-        onEntered: cell.hoverChanged(cell.index, true)
-        onExited: cell.hoverChanged(cell.index, false)
         preventStealing: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         property bool lassoing: false

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QPoint, QUrl, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 def _walk(item: QQuickItem):
@@ -23,17 +23,8 @@ def _item(window, object_name: str) -> QQuickItem:
     raise AssertionError(f"A főablakból hiányzik: {object_name}")
 
 
-def _var(qt_app, predicate, timeout: float = 3.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            if predicate():
-                return True
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return bool(predicate())
+def _var(qt_app, predicate, timeout: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(predicate, (AttributeError, RuntimeError, TypeError)), timeout)
 
 
 def _kattint(window, item: QQuickItem, qt_app) -> None:

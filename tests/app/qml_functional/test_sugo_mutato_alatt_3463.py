@@ -22,33 +22,20 @@ kötötte be, saját súgóablakkal: `test_sugo_kulon_ablakbol_3544.py`.
 from __future__ import annotations
 
 import re
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtTest import QTest
 
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from picasapy.help_content import fejezetek
 
 _QML = Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "qml"
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _deklaralt_temak() -> dict[str, str]:

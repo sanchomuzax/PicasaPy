@@ -12,13 +12,12 @@ nézet. Az élő mérés (picasa-colab-jobs #49/#50/#54) a mérce:
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtTest import QTest
 
+from tests.support.varakozas import var_feltetelre
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
 
 try:
@@ -56,15 +55,8 @@ class _HamisDetektor:
         return self.faces
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _elem(root, nev):

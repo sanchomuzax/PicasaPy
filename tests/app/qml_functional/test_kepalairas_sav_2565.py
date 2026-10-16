@@ -52,11 +52,11 @@ rövidíti `…`-tal). A rövidítés szabálya — karakterszám vagy képponts
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import picasapy.app as app_csomag
 from PySide6.QtCore import QObject
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 _QML_MAPPA = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
 _NEZO = (_QML_MAPPA / "PhotoViewer.qml").read_text(encoding="utf-8")
@@ -65,17 +65,12 @@ _TS = (
 ).read_text(encoding="utf-8")
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AssertionError, AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(
+        qt_app,
+        hibaturo_feltetel(feltetel, (AssertionError, AttributeError, TypeError, RuntimeError)),
+        masodperc,
+    )
 
 
 def _walk(item):

@@ -95,3 +95,72 @@ class TestMainWiring:
         _invoke_submit(area, [(extra / "c.jpg").as_uri()])
         qt_app.processEvents()
         assert str(extra) in list(controller.watchedFolders)
+
+
+_BELSO_HUZAS_QML = b"""
+import QtQuick
+import QtQuick.Window
+import PicasaPy
+Window {
+    width: 400; height: 300; visible: true
+    property int alattaEjtesek: 0
+    DropArea {
+        objectName: "alattaFekvo"
+        anchors.fill: parent
+        onDropped: function(drop) { drop.accept(); alattaEjtesek += 1 }
+    }
+    ImportDropArea { objectName: "importReteg"; anchors.fill: parent; z: 95 }
+    Item {
+        objectName: "belsoForras"
+        x: 10; y: 10; width: 1; height: 1
+        readonly property string payload: "photos"
+        Drag.dragType: Drag.Internal
+        Drag.mimeData: ({ "text/uri-list": "file:///tmp/belso.jpg" })
+    }
+}
+"""
+
+
+class TestBelsoHuzasNemImport:
+    """#5105: a programon belüli húzás (van `source`-a) nem import — az
+    ablakot fedő réteg nem nyelheti el, az alatta fekvő cél kapja meg."""
+
+    def test_belso_huzas_az_alatta_fekvo_celhoz_er(self, qt_app):
+        import picasapy.app.application as app_module
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+        from PySide6.QtQuick import QQuickItem
+
+        fake = FakeDropController()
+        engine = QQmlEngine()
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        engine.rootContext().setContextProperty("dropImportController", fake)
+        component = QQmlComponent(engine)
+        component.setData(_BELSO_HUZAS_QML, "")
+        window = component.create()
+        assert window is not None, component.errorString()
+        qt_app.processEvents()
+        forras = window.findChild(QQuickItem, "belsoForras")
+        drag = next(
+            child for child in forras.children()
+            if child.metaObject().className() == "QQuickDragAttached"
+        )
+        drag.setProperty("active", True)
+        forras.setX(200)
+        forras.setY(150)
+        qt_app.processEvents()
+        assert QMetaObjectInvoke(drag, "drop")
+        qt_app.processEvents()
+        try:
+            assert fake.received == [], "a belső húzás importként futott le"
+            assert window.property("alattaEjtesek") == 1, (
+                "az ablakot fedő import-réteg elnyelte a belső ledobást"
+            )
+        finally:
+            window.deleteLater()
+            qt_app.processEvents()
+
+
+def QMetaObjectInvoke(obj, name: str) -> bool:
+    from PySide6.QtCore import QMetaObject, Qt
+
+    return QMetaObject.invokeMethod(obj, name, Qt.ConnectionType.DirectConnection)

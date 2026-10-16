@@ -33,12 +33,12 @@ automatikus bejelentkezést, a `begin` száma nulla lenne, és a teszt bukik.
 
 from __future__ import annotations
 
-import time
 
 import pytest
 
 from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
+from tests.support.varakozas import var_feltetelre
 
 #: 0 ms küszöb + bőkezű (200 ms) minimális láthatóság: a valódi háttérmunka
 #: (2 apró teszt-JPEG) néhány ezredmásodperc alatt lefuthat. A 0 ms küszöb
@@ -57,14 +57,8 @@ def _small_busy_timings(monkeypatch):
     reset_app_busy_registry()
 
 
-def _wait_until(qt_app, predicate, timeout_s=5.0):
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.005)
-    return False
+def _wait_until(qt_app, predicate, timeout_s=10.0):
+    return var_feltetelre(qt_app, predicate, timeout_s)
 
 
 class _RegistryKemlelo:

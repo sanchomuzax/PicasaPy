@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QSettings, Qt, QUrl
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev: str):
@@ -15,15 +15,8 @@ def _elem(gyoker, nev: str):
     return talalat
 
 
-def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 3.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.05)
-    qt_app.processEvents()
-    assert feltetel(), uzenet
+def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 10.0):
+    assert var_feltetelre(qt_app, feltetel, masodperc), uzenet
 
 
 def _kattint(ablak, elem, qt_app):

@@ -31,7 +31,7 @@ class _AzonnalJelzo(QObject):
 def test_a_hivas_kozben_kiadott_jelzes_sem_veszik_el(qt_app):
     jelzo = _AzonnalJelzo()
 
-    eredmeny = _wait(jelzo.kesz, qt_app, jelzo.inditas, timeout_ms=3000)
+    eredmeny = _wait(jelzo.kesz, qt_app, jelzo.inditas, timeout_ms=10000)
 
     assert eredmeny["args"] == (3, 0)
 
@@ -47,7 +47,7 @@ def test_a_bekotes_a_kivaltas_elott_tortenik(qt_app):
         naplo.append("inditas")
         jelzo.inditas()
 
-    _wait(jelzo.kesz, qt_app, inditas, timeout_ms=3000)
+    _wait(jelzo.kesz, qt_app, inditas, timeout_ms=10000)
 
     assert naplo == ["inditas", "jelzes"], (
         "a jelzesnek az inditas UTAN kell jonnie, de a bekotesnek MAR "

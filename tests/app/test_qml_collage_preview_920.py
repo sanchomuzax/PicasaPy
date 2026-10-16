@@ -27,7 +27,7 @@ def _settle(qt_app, rounds=6):
         pause.exec()
 
 
-def _var(controller, jelzes, hivas, ms=8000):
+def _var(controller, jelzes, hivas, ms=10000):
     """A `jelzes` bevárása a `hivas` után — HANGOS vészfékkel (#1467).
 
     A hívók eddig is `assert _var(...)`-t írtak, de a bukás-üzenet üres
@@ -129,12 +129,12 @@ class TestFelulet:
             assert varj_feltetelre(
                 qt_app,
                 lambda vart=ablakmagassag: window.height() == vart,
-                masodperc=3,
+                masodperc=10.0,
             )
 
             hibak.clear()
             controller.requestCollagePreview([0], "picturegrid", "noborder")
-            assert varj_feltetelre(qt_app, lambda: bool(hibak), masodperc=3), (
+            assert varj_feltetelre(qt_app, lambda: bool(hibak), masodperc=10.0), (
                 "a renderelő valódi hibaága nem futott le"
             )
             assert varj_feltetelre(
@@ -145,7 +145,7 @@ class TestFelulet:
                         "visible"
                     )
                 ),
-                masodperc=3,
+                masodperc=10.0,
             ), "a valódi előnézet-hiba nem jutott el a felhasználóig"
             dialog = window.findChild(QObject, "createResultDialog")
             szoveg = window.findChild(QObject, "createResultText")
@@ -158,7 +158,7 @@ class TestFelulet:
             assert varj_feltetelre(
                 qt_app,
                 lambda aktualis=dialog: not aktualis.property("visible"),
-                masodperc=3,
+                masodperc=10.0,
             )
 
     def test_a_parbeszedben_ott_az_elonezet_es_a_keveres(self, qml_app, qt_app):

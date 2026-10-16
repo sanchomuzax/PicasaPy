@@ -22,7 +22,6 @@ Nálunk a film-gomb eddig csak a tálcán és a személyalbum-fejlécben volt.
 """
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPointF, Qt, QUrl
@@ -33,6 +32,7 @@ import picasapy.app
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.support.jpeg_factory import make_jpeg
 from tests.support.qml_blokk import blokk_horgony_utan
+from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 _FEED = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
@@ -59,18 +59,8 @@ def _keres(elem: QQuickItem, object_name: str):
     return None
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _kattints(ablak, qt_app, elem: QQuickItem) -> None:

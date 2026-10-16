@@ -1024,8 +1024,10 @@ Kimaradt a PicasaPyból (2026-10-13 állapot): `Ctrl+6`, `Ctrl+8`, `Ctrl+G`,
 hatása a #4643 mérésével részben feltárt; a mai bekötési irányt és a nyitott
 részeket a **10.22** rögzíti. **Helyesbítés:** a bal szerkesztőfiók nálunk
 létezik (`PhotoViewer.qml`: `editorControlsVisible`, `toggle_left_drawer`;
-`PicasaMenuBar.qml`: „Show Edit Controls”). A Ctrl+9 kötés időközben bekerült
-(#4696, 0.9.46), az F5 is (#4697) — lásd 10.23.
+`PicasaMenuBar.qml`: „Show Edit Controls”). A Ctrl+9 kötés (#4696) csak a
+szerkesztőnézőben aktív; az F5 (#4697) csak a könyvtárnézetben frissíti az
+aktuális mappát. A 2026-10-14-i eredeti programfutás és a mai kód viselkedése
+a **10.34**-ben szerepel.
 `Ctrl+Shift+H` / `Ctrl+Shift+V` (tükrözés — a művelet a kódbázisban NINCS
 meg; külön jegy). A soronkénti elszámolás a #2163 kommentjében áll, a gépi őr a
 `tests/app/test_gyorsbillentyu_agak_2163.py`: az bukik, ha olyan billentyűt
@@ -1796,7 +1798,7 @@ A 10.24 „Ctrl+G nyitott” állítása ezzel pontosítva: a lánc megvan, a v�
 - [x] A VK-0x47 közvetlen kezelő-keresés elvégezve; a negatív eredmény a vizsgált eseteken igazolt.
 - [ ] A `V` (könyvtárnézeti aktív nézet) osztálya azonosítva.
 - [ ] A `V.vtbl[+0x74]` és a gyermekek Ctrl+G-kezelése igazolva, vagy a teljes lánc `0xf4241`-et ad (kódúton igazolva).
-- [ ] Dinamikus mérés: Ctrl+G a könyvtárnézetben, a változás rögzítve.
+- [x] Dinamikus mérés: a Ctrl+G könyvtárnézetben és szerkesztőnézőben sem okozott látható változást (Colab, job-121/122, 2026-10-14; 10.34).
 - Csak ha mindhárom nyitott pont negatív: „a Ctrl+G a könyvtárnézetben hatástalan”.
 
 ### 10.28 #4699 — a Ctrl+Alt (VK `0x12`) látható hatása: felugró `PopDisplay`-ablak (2026-10-13)
@@ -1986,6 +1988,81 @@ Egyik ismert jelölt sem billentyűkezelő a részleges olvasás alapján. Mivel
 - [ ] renderelt képernyőkép az eredeti Picasa képével összevetve (a `felhasználóra-vár` csak akkor, ha a Colab-próba nem ad képet).
 
 **Módszertani megjegyzés:** a #4928 jegy a 10.28 feltételeit idézte, de a megvalósítás a `showTooltips` kapcsolót használta, a bináris `EnableHover`-jét nem. A jövőben a megvalósítás-jegy az `EnableHover` olvasóját nevezze meg, és a `test_` fájl egy `EnableHover`-kikapcsolt esetet is tartalmazzon.
+
+
+### 10.33 #4949 — a küszöb, az alapérték, a képforrás és a tick-periódus lezárása (2026-10-14)
+
+**Kérdés.** A #4949 négy, még nyitott binárisbeli részlete: melyik ablak kliensszélessége kapja a küszöböt; mi az `EnableHover` értéke hiányzó kulcsnál; az `[e70] := [e64]` melyik képhez vezet; és milyen periódussal ellenőrzi a `PopDisplay` visszahívása az Alt állapotát.
+
+**Következtetés.** Az eredeti binárisban a küszöb a `PopDisplay` gyerekablak kliensszélessége, szigorúan `> 0x400` (**1024 px**, a határ QEMU-próbával ellenőrizve); a hiányzó `EnableHover` alapértéke igaz; az előnézet az aktuális képet (`[panel+0xe64]`) kapja; Alt lenyomva tartásakor a callback periódusa `0x0a` (**10 ms**). Az `0x0097d150` a callbacket regisztrálja, nem az időközt tárolja. Az Alt felengedése utáni **tényleges falióra-késleltetés NINCS MEG**: a bináris a következő callbackkor rejt, de a valós ütemezési késés itt nem lett megmérve.
+
+**Bizonyíték és két út.** A binárisbeli címek az eredeti `Picasa3.exe` helyi példányára vonatkoznak. A QEMU-próbák a `qemu_harness/hb.py`-val, az eredeti függvényekkel futottak; nem teljes Picasa-futtatások. A küszöbpróba közvetlenül az eredeti `cmp/jbe` utasításnál állította be a RECT `right` mezőjét. Az alapérték-próba a `0x00408060`-at futtatta; a `0x00985ff0` sztringmásolást és a `0x00401000` takarítást helyettesítő visszatérőkkel kerülte meg, és a globális `atexit` regisztrációt kikapcsoló paramétert adott át. Ez a próba a defaultmezők inicializálását ellenőrzi, nem a Windows Registry hívását. A képmásolási próbában a `0x0056b6f0` három, a vizsgált hozzárendeléshez nem szükséges belső segédhívása (`0x005704d0`, `0x004e40c0`, `0x00570920`) kapott stubot. A tick-próba a `GetAsyncKeyState`, `IsWindowVisible`, `LoadCursorA` és `SetCursor` Win32-hívások célzott helyettesítőit használta. A próbák csak a táblában megnevezett utasítások és adatfolyamok állításait támasztják alá.
+
+| Kérdés | A út — bináris | B út — független ellenőrzés | Eredmény és fok |
+|---|---|---|---|
+| Küszöb objektuma | `0x00774d60`: a gyerekobjektum HWND-je `[EBX+0x6c]`; `GetClientRect` (`[0xc4081c]`) ezt kapja, a RECT `right` mezője pedig a `0x00774f95` `cmp [esp+0x24],0x400` utasításáig jut. A `jbe` `0x007750f8`-ra ugrik, így a megjelenítő ág csak `right > 0x400` esetén fut. | Az eredeti `cmp/jbe` utasítást QEMU-ban közvetlenül, a RECT `right` mezőjét beállítva futtattam: `1024`-nél a `jbe` feltétel igaz (`ZF=1`); `1025`-nél hamis. A `GetClientRect` híváslánca külön azonosítja, hogy ez a gyerekablak kliens-RECT-je. | **Gyerekablak kliensszélessége > 1024 px** — megerősített. QEMU-korlát: a próba a már kitöltött RECT-et és a határutasítást ellenőrizte, nem hozott létre valódi Windows-ablakot. |
+| `EnableHover` hiányzó kulcs | `0x00564d00`: a konstruktor a default helyére `1`-et ír; a mutatót átadja a `0x00407a20`-nak. A `0x00408060` az átadott értéket a registry-objektum értékmezőibe másolja (`[+0x0c]`, `[+0x10]`); a `0x00407a20` hiányzó értékű ága a default feldolgozására jut. A `0x004019b0` alakítja a beállítást logikai értékké, ezt írja a panel `[+0xe78]` mezőjébe (`0x00564d11`–`0x00564d1a`). | QEMU-ban az eredeti `0x00408060`-at a defaultmutatóval futtattam. A `0` bemeneti kontroll eredménye `[+0x0c]=0`, `[+0x10]=0`; az `1` bemeneté mindkét mezőn `1`. Ez ellenőrzi, hogy a mezők a hívó által adott defaultot követik. A hiányzó registry-érték ágát külön az utasításokból követtem végig. | **Kulcs nélkül igaz (`1`)** — megerősített. A QEMU itt a default átadását ellenőrzi, nem a Windows Registry API-t vagy a teljes beállítás-olvasót. |
+| Képforrás | `0x0056b6f0`: ha a bemenő index érvényes és eltér `[panel+0xe64]`-től, akkor `[panel+0xe70] := [panel+0xe64]`. A 10.28 3. lépésének külön mezőírói/olvasói lánca az `e64`-et az aktuális kép indexeként azonosítja. | QEMU-ban az eredeti `0x0056b6f0` két különböző, mesterséges bemenő indexet kapott; közben `[e64]` értéke rendre `0x11111111`, majd `0x33333333` volt. `[e70]` rendre az `e64` értékét kapta, nem a bemenő indexet. | **Az aktuális (`e64`) kép, nem a kurzor alatti elem** — megerősített. A szintetikus számok csak a két bemenet megkülönböztetésére szolgáltak. |
+| Alt-elengedés callback-periódusa | `0x00775550` meghívja a `0x007753f0` callbacket, és annak visszatérési értékét adja vissza. Látható popup és lenyomott Alt esetén a `0x007753f0` `0x0a`-t ad (`0x0077547f`); a rejtett/inaktív ág `0x64`-et (`0x00775536`). A `0x0097fc30` QPC-delta alapján, az `0x00cf3e10` címen tárolt `1000.0` szorzóval ezredmásodpercekben ütemezi a callback következő futását. A `0x0097d150` csak a callback-objektumot és a regisztrációs jelzőt kapja. | QEMU-ban az eredeti `0x007753f0` Alt-lenyomott ága `0x0a`-val tért vissza; ez megegyezik a scheduler által használt visszatérési értékkel. A `0x0097d150` hívás és a `0x0097fc30` ütemező külön utasításlánca igazolja, hová kerül az intervallum. | **Aktív ellenőrzés: 10 ms; elrejtés a következő tickkor** — megerősített. A felhasználó által érzékelt, valós idejű eltűnési késés: **NINCS MEG**. |
+
+**Cáfoló kísérlet.** A „popup szélessége kapja a küszöböt” olvasatot a `0x00774d60` hívásargumentumával próbáltam cáfolni: a `GetClientRect` argumentuma a gyerekobjektum `[+0x6c]` HWND-je, az összehasonlított `right` pedig ennek kimeneti RECT-jéből jön. A popup saját szélessége nem bemenete ennek az ágnak. A „kurzor alatti index kerül `[e70]`-be” olvasatot két különböző bemenő index és két különböző `[e64]` érték QEMU-próbája cáfolta: az eredeti függvény mindkét esetben `[e64]`-et másolta át. Mindkét cáfoló eredmény egyezik az utasításszintű olvasattal; a küszöb QEMU-próbájának korlátját a fenti sor jelzi.
+
+**A 10.33 méréskori megvalósítás (#4950).** A controller már a külön `view/enableHover` beállítást olvasta `True` alapértékkel; a buboréksúgó `view/showTooltips` kulcsa külön maradt, és a kikapcsolt `enableHover` megakadályozta a popupot. Az akkori eltérések: a QML a `hoverPreviewRow` kurzor alatti képét használta, és a küszöb a popup saját `width` mezőjén volt. A `ctrlAltHeld` kötés azonnal elrejtette a popupot; a bináris a következő callbackkor rejt, és látható állapotban a scheduler 10 ms-os periódust kap.
+
+**A #4949 „Kész, ha” pontjainak friss állapota:**
+
+- [x] A popup a saját `EnableHover` beállítását használja, a buboréksúgó nem vezérli (#4950; `appearance_controller.py`, `LightboxFeed.qml`). Hiányzó kulcsnál az eredeti bináris defaultja igaz (`0x00564d00`, `0x00408060`).
+- [x] Kikapcsolt beállításnál nincs popup (#4950; `test_ctrl_alt_hover_preview_4928.py`).
+- [x] A `>1024 px` küszöb a gyerekablak / tartalomnézet kliensszélességén van (`LightboxFeed.qml`, `grid.width`), nem a popup saját `width` mezőjén; a határ 1024/1025 px-en tesztelt.
+- [x] A popup képforrása az aktuális, kijelölt kép (`[panel+0xe64]`), nem a kurzor alatti elem (`LightboxFeed.qml`, `selectedIndex`).
+- [ ] Elengedéskor az elrejtés az eredeti visszahívás következő tickjén történjen; aktív callback-periódus `10 ms` (`0x007753f0` → `0x0097fc30`). A valós falióra-késésre ne állítson a fejlesztői jegy mérést, mert az **NINCS MEG**.
+
+**A 10.28 és 10.32 státuszának kezelése.** A 10.28/10.32 alatti, e négy pontra vonatkozó „nyitott” bejegyzések a korábbi kutatási pillanatképet őrzik; azok eredményét ez a 10.33-as szakasz váltja fel. A 10.32-ben nyitva hagyott popup-elhelyezés, a `WM_PAINT`/`BitBlt` teljes képútja, a második `ShowWindow` út és a kurzor viselkedése e körnek nem volt kérdése, továbbra is külön nyitott.
+
+### 10.34 #4643 — Picasa 3.9 dinamikus próba és a mai kötéseink (2026-10-14)
+
+**Mérés.** Az eredeti Picasa 3.9-et Colabban, a `job-121` és `job-122`
+futásban vizsgáltuk, pozitív kontrollal. A felhasználói felületen látható
+eredmény:
+
+| billentyű | bináris ág / cél | Picasa 3.9 — könyvtárnézet | Picasa 3.9 — szerkesztőnéző |
+|---|---|---|---|
+| `Ctrl+9` | `0x005e629f` → `0x00579330` szerkesztő-előnézeti őr → kattintás az `editpanel/toggle_left_drawer` elemre (10.23) | nincs látható hatás | ki- és bekapcsolja a bal oldali szerkesztőfiókot; a képterület kitölti a felszabaduló helyet |
+| `Ctrl+G` | nincs közvetlen VK-ág; a Ctrl-betű továbbítás `0x00a53b00` → `0x00a582f0` → az aktív nézet `vtbl[+0x74]` kezelője felé megy; a végpont nyitott (10.27) | nincs látható változás | nincs látható változás |
+| `F5` | `0x005e6869`: beállítja a `+0x166` frissítési jelzőt és meghívja a `0x0065b840`-et; az idle-út listafrissítést indít. A lemezolvasási lánc kapui feltételesek (10.22, 10.26). | nincs látható változás | nincs látható változás |
+
+**Mai PicasaPy-kód és bizonyíték.**
+
+| billentyű | jelenlegi kötés | mért jelenlegi működés |
+|---|---|---|
+| `Ctrl+9` | `PhotoViewer.qml`: `enabled: viewer.visible`, majd `toggleEditorDrawer()`; `editorDrawerOffset` `0` és `-279` között vált, a bal fiók szélessége `280 + editorDrawerOffset`, a mellette levő nézet tölti ki a maradék helyet | A `test_ctrl9_left_drawer_4696.py` valódi billentyűeseménnyel méri a nyitást/zárást és a könyvtárnézeti hatástalanságot, három ablakmagasságon. A kapcsoló csak a nézőben él. |
+| `Ctrl+G` | Nincs `Ctrl+G`-re kötött `Shortcut` a `src/picasapy/app/qml/` alatt | A kódban nincs külön látható művelete. Az eredeti futásban sem látszott változás egyik nézetben sem. Ez nem bizonyítja, hogy a bináris belső billentyűláncának minden ága művelet nélküli; a könyvtárnézeti virtuális kezelő végpontja továbbra is nyitott (10.27). |
+| `F5` | `Main.qml`: a `resyncFolder(currentFolder)` csak érvényes, aktív könyvtárnézetben fut; a nézőben a `libraryActive` feltétel letiltja | A `test_f5_konyvtar_frissites_4697.py` valódi F5-leütéssel igazolja, hogy a könyvtárban a lemezről eltűnt és újonnan megjelent fájl, valamint a keresési találat frissül, három ablakmagasságon. A nézőben az F5 kötése letiltott. |
+
+Az eredeti mérésben nem jelent meg látható F5-változás. A #4697 korábbi
+megvalósítása célzottan a megváltozott mappatartalom újraolvasását és a
+keresési eredmények frissítését kérte; ezt az `a814e1e8f` commit és a
+`changelog.d/4697.md` rögzíti. A két futás eredménye eltérő: a #4697 tesztje
+fájlváltozást idéz elő, míg a Colab-mérés csak a leütés utáni látható
+eredményt rögzíti. A statikus bináriselemzés is igazolja a `+0x166` frissítési
+jelzőt és a lemezolvasás útját (10.22, 10.26), de nem igazolja, hogy minden
+F5-re látható változásnak kell történnie. A korábbi #4697 viselkedés ezért
+megmarad; a mérés nem indokolja az eltávolítását.
+
+A `Ctrl+G` eredményét „a két vizsgált nézetben nem látható változásként” kell
+idézni, nem teljes binárisbeli no-opként. Ezzel a 10.27 dinamikus mérési
+feladata teljesült; a statikus végpont és a teljes belső hatás továbbra is
+nyitott. A `Ctrl+9` eredménye megerősíti a 10.23-ban kiolvasott
+`editpanel/toggle_left_drawer` műveletet, és elavulttá teszi a 10.7-ben korábban
+szereplő „a bal fiók nálunk nem létezik” állítást.
+
+### 10.35 #4698 — a Ctrl+F9 a nézőben: futásidejű mérés (2026-10-14)
+
+*Bizonyítottsági fok: **megerősített** a látható hatásra (három Colab-futás az eredeti Picasa 3.9-cel: job-122, job-123, job-149); a nézőt léptető kódút **nyitott**.*
+
+A PicasaTeszt mappa 24 képén, a néző az 1. képen: Ctrl+F9 után a néző folyamatosan, képenként azonnal továbblép, és a mappa utolsó képén megáll. A job-149-ben a második Ctrl+F9 0,5 s után érkezett; a következő felvételen a lapozás a mappa közepén (kb. 16. kép) járt, egy másodperccel később az utolsó képen állt, tehát **az ismételt lenyomás nem állítja meg**. Az ütem legalább kb. 15 kép/s; a másodperces mintavétel finomabbat nem ad. A könyvtárnézetben a billentyűnek nincs látható hatása (#4698 kommentjei).
+
+**Viszony a 10.23/10.25/10.31 megállapításához.** Az ott olvasott `[panel+0xdc4]` kapcsoló és a `0x005f89a0` útja valóban nem vált képet; a mérés szerint azonban a nézőben a Ctrl+F9 képet vált. A két állítás nem ellentmondás, hanem két különböző kezelő: a statikus olvasat a könyvtár/előnézet panelé, a néző Ctrl+F9-kezelőjét még nem azonosítottuk. A megvalósítás a **mért** viselkedést követi: Ctrl+F9 a nézőben a mappa végéig léptet, ismételt lenyomásra nem áll meg.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 

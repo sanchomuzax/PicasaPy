@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'/home/sancho/Documents/PicasaPy/.codex/hooks/session-start.sh'"
+            "command": "sh -c 'exec \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start.sh\"'"
           }
         ]
       }

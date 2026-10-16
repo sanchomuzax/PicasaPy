@@ -31,7 +31,7 @@ from picasapy.pmpimport.thumbindex import (
 #: magát, ha nincs ott; nem bukik. (És útvonalat SOSEM ír a kimenetbe:
 #: a katalógus magánadat.)
 _VALODI = Path(
-    "/home/sancho/Documents/PicasaPy/research/testdata/Picasa2-arcok/Picasa2/db3"
+    Path.home() / "Documents/PicasaPy/research/testdata/Picasa2-arcok/Picasa2/db3"
 )
 
 

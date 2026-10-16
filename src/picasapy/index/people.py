@@ -33,10 +33,12 @@ from .queries import PhotoRecord, _records, _select
 
 @dataclass(frozen=True)
 class PersonRecord:
-    """Egy személy a bal hasábnak: név + a rá kitaggelt fotók száma."""
+    """Személylista-sor, valamint az első arc fotója tartalék-indexképnek."""
 
     name: str
     photo_count: int
+    thumbnail_photo_id: int | None = None
+    thumbnail_rect: tuple[float, float, float, float] | None = None
 
 
 #: Egy mappa arc-adata: (mappa, {person_id.casefold(): név}, {fájlnév: arcok}).
@@ -95,23 +97,52 @@ def people_in_index(
     az ini-söprést a Projektek gyűjteménnyel (`index/side_pane.py`), és a
     `.picasa.ini`-ket nem kell kétszer végigolvasni. `None` esetén a
     viselkedés változatlan: maga söpör."""
-    counts: dict[str, int] = {}
-    for _folder_path, names, faces_by_file in (
+    people: dict[str, dict] = {}
+    for folder_path, names, faces_by_file in (
         _iter_face_data(conn)
         if face_data is None
         else _lathato_arcadat(conn, face_data)
     ):
-        for faces in faces_by_file.values():
+        photo_ids = {
+            row["name"].casefold(): row["id"]
+            for row in conn.execute(
+                "SELECT p.id, p.name FROM photos p "
+                "JOIN folders f ON f.id = p.folder_id WHERE f.path = ? "
+                "ORDER BY p.name COLLATE NOCASE",
+                (folder_path,),
+            )
+        }
+        for filename, faces in faces_by_file.items():
             seen: set[str] = set()
             for face in faces:
                 name = _resolve_name(face, names)
                 if name is None or name in seen:
                     continue
                 seen.add(name)
-                counts[name] = counts.get(name, 0) + 1
+                record = people.setdefault(
+                    name,
+                    {
+                        "count": 0,
+                        "thumbnail_photo_id": None,
+                        "thumbnail_rect": None,
+                    },
+                )
+                record["count"] += 1
+                photo_id = photo_ids.get(filename.casefold())
+                if record["thumbnail_photo_id"] is None and photo_id is not None:
+                    rect = face.rect
+                    record["thumbnail_photo_id"] = photo_id
+                    record["thumbnail_rect"] = (
+                        rect.left, rect.top, rect.right, rect.bottom
+                    )
     return tuple(
-        PersonRecord(name=name, photo_count=count)
-        for name, count in sorted(counts.items(), key=lambda kv: kv[0].casefold())
+        PersonRecord(
+            name=name,
+            photo_count=record["count"],
+            thumbnail_photo_id=record["thumbnail_photo_id"],
+            thumbnail_rect=record["thumbnail_rect"],
+        )
+        for name, record in sorted(people.items(), key=lambda kv: kv[0].casefold())
     )
 
 

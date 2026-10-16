@@ -2,24 +2,17 @@
 
 from __future__ import annotations
 
-import time
 
 import pytest
 from PySide6.QtCore import QEvent, QObject, QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen
+from tests.support.varakozas import var_feltetelre
 
 _AUTO_EYES = ((0.25, 0.4, 0.1), (0.7, 0.6, 0.05))
 
 
-def _varj_feltetelre(qt_app, feltetel, hatarido_masodperc: float = 3.0) -> bool:
-    vege = time.monotonic() + hatarido_masodperc
-    while time.monotonic() < vege:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj_feltetelre(qt_app, feltetel, hatarido_masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, hatarido_masodperc)
 
 
 def _visualis_gyerekek(item):

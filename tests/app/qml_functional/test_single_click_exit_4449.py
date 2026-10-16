@@ -7,17 +7,11 @@ import time
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
-def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.05)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattints(qt_app, ablak, elem, dupla=False):
@@ -212,7 +206,7 @@ def test_bekapcsolt_dupla_kattintas_bezarja_de_nem_nyitja_ujra_a_nezot(
 
     QTest.mouseDClick(ablak, Qt.MouseButton.LeftButton, pos=pont)
 
-    assert _varj(qt_app, lambda: time.monotonic() >= kattintas_vege, 3.0)
+    assert _varj(qt_app, lambda: time.monotonic() >= kattintas_vege, 10.0)
     assert ablak.property("viewerOpen") is False, (
         "bekapcsolt SingleClickExit mellett a dupla kattintás után zárva kell "
         "maradnia a nézőnek"

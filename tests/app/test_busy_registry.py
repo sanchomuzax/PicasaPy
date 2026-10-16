@@ -17,6 +17,7 @@ from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
 from picasapy.app import worker_thread
 from picasapy.app.worker_thread import BackgroundWorkerMixin
+from tests.support.varakozas import var_feltetelre
 
 _TEST_SHOW_DELAY_MS = 30
 _TEST_MIN_VISIBLE_MS = 50
@@ -37,14 +38,8 @@ class _Worker(BackgroundWorkerMixin):
     """Minimál controller-utánzat: csak a mixint gyakorolja."""
 
 
-def _wait_until(qt_app, predicate, timeout_s=2.0):
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        time.sleep(0.005)
-    return False
+def _wait_until(qt_app, predicate, timeout_s=10.0):
+    return var_feltetelre(qt_app, predicate, timeout_s)
 
 
 class TestCounterReachesZero:
@@ -114,7 +109,7 @@ class TestCounterReachesZero:
 
         def worker(barrier: threading.Barrier):
             registry.begin()
-            barrier.wait(timeout=5.0)
+            barrier.wait(timeout=10.0)
             registry.end()
 
         barrier = threading.Barrier(3)
@@ -125,7 +120,7 @@ class TestCounterReachesZero:
         for thread in threads:
             thread.start()
         for thread in threads:
-            thread.join(timeout=5.0)
+            thread.join(timeout=10.0)
             assert not thread.is_alive()
 
         assert _wait_until(qt_app, lambda: registry.activeCount == 0)

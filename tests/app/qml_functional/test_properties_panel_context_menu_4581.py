@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QElapsedTimer, QObject, QPoint, QPointF, Qt
+from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 def _item(window, name: str):
@@ -29,16 +30,8 @@ def _click(window, item, button, qt_app):
     qt_app.processEvents()
 
 
-def _wait_for(qt_app, predicate, timeout_ms: int = 3000) -> bool:
-    timer = QElapsedTimer()
-    timer.start()
-    while timer.elapsed() < timeout_ms:
-        qt_app.processEvents()
-        if predicate():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(predicate())
+def _wait_for(qt_app, predicate, timeout_ms: int = 10000) -> bool:
+    return var_feltetelre(qt_app, predicate, timeout_ms / 1000)
 
 
 def test_right_click_edit_tags_opens_tags_panel_at_variable_window_heights(

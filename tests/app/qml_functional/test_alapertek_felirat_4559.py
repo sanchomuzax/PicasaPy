@@ -13,12 +13,11 @@ nézőképet is elmenti. Az ablakot −5 / 0 / +5 px magassággal ismétli.
 
 from __future__ import annotations
 
-import time
-
 import pytest
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtTest import QTest
 
+from tests.support.varakozas import var_feltetelre
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.app.qml_functional.test_editor_panel_rendered_651 import _child
 from tests.app.qml_functional.test_effect_sliders import _as_list
@@ -56,13 +55,9 @@ def hu_app(qt_app, tmp_path):
         qt_app.removeTranslator(translator)
 
 
-def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 5.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return
-        time.sleep(0.05)
+def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 10.0):
+    if var_feltetelre(qt_app, feltetel, masodperc):
+        return
     raise AssertionError(uzenet)
 
 

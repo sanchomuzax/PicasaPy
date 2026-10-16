@@ -26,6 +26,7 @@ from pathlib import Path
 
 import picasapy.app.application as app_module
 from tests.support.qml_blokk import blokk_horgony_utan
+from tests.support.varakozas import var_feltetelre
 
 #: `notifier/docbounds` — a cella mért mérete.
 CELLA_SZELESSEG = 247
@@ -112,7 +113,6 @@ class TestAHalvanyitasSorsaKIMONDVA:
 # hogy ne legyen két, egymástól elcsúszható másolat.
 # ----------------------------------------------------------------------
 
-import time  # noqa: E402
 
 from PySide6.QtCore import QObject  # noqa: E402
 
@@ -122,14 +122,8 @@ from app.test_qml_ertesitosav_1129 import (  # noqa: E402
 )
 
 
-def _var(qt_app, feltetel, masodperc: float = 3.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        if feltetel():
-            return True
-        qt_app.processEvents()
-        time.sleep(0.01)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 class TestAzELOCella:

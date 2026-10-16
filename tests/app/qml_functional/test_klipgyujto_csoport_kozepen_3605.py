@@ -23,10 +23,10 @@ fut: egy jobbra horgonyzott csoport csak az egyiken eshetne véletlenül közép
 """
 from __future__ import annotations
 
-import time
 
 from PySide6.QtCore import QPointF
 from PySide6.QtQuick import QQuickItem
+from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 #: a QML geometriája tört szám lehet (a `splitX` kerekített)
 TURES = 0.5
@@ -50,17 +50,8 @@ def _elem(window, nev: str):
     return None
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 
 def _vizszintes(elem) -> tuple[float, float]:

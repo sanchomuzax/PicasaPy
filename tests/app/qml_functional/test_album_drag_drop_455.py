@@ -74,7 +74,13 @@ class TestDropTargets:
         expected_tray = controller.fileUriList(
             [controller.trayItems[1]["path"]]
         )
-        assert _attached_drag(tray_thumb).property("mimeData") == {
+        # #5105: a húzás az egeret követő belső elemen él
+        tray_proxy = next(
+            item
+            for item in _visual_items(tray_thumb)
+            if item.objectName() == "trayDragProxy"
+        )
+        assert _attached_drag(tray_proxy).property("mimeData") == {
             "text/uri-list": expected_tray
         }
 
@@ -90,7 +96,7 @@ class TestDropTargets:
                 assert _attached_drag(proxy).property("mimeData") == {
                     "text/uri-list": expected_grid
                 }
-                assert _attached_drag(tray_thumb).property("mimeData") == {
+                assert _attached_drag(tray_proxy).property("mimeData") == {
                     "text/uri-list": expected_tray
                 }
         finally:
@@ -116,7 +122,11 @@ class TestDropTargets:
         window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [0])
 
-        _emit(_child(window, "folderPane"), "newAlbumDropped")
+        _emit(
+            _child(window, "folderPane"),
+            "newAlbumPhotosDropped",
+            Q_ARG("QVariant", [0]),
+        )
         qt_app.processEvents()
 
         assert [a["name"] for a in controller.albums] == ["Untitled"]
@@ -125,7 +135,11 @@ class TestDropTargets:
         window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [])
 
-        _emit(_child(window, "folderPane"), "newAlbumDropped")
+        _emit(
+            _child(window, "folderPane"),
+            "newAlbumPhotosDropped",
+            Q_ARG("QVariant", []),
+        )
         qt_app.processEvents()
 
         assert controller.albums == []
@@ -144,6 +158,7 @@ class TestDropTargets:
             _child(window, "folderPane"),
             "photosDroppedOnAlbum",
             Q_ARG("QString", token),
+            Q_ARG("QVariant", [1]),
         )
         qt_app.processEvents()
 

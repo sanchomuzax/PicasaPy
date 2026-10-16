@@ -42,6 +42,7 @@ Dialog {
             key: entry.key,
             name: entry.name,
             email: entry.email,
+            thumbUrl: entry.thumbUrl || "",
             contactIds: entry.contactIds.slice(),
             localContactIds: entry.localContactIds.slice(),
             photoCount: entry.photoCount,
@@ -59,6 +60,7 @@ Dialog {
                 key: "contact:" + loaded[i].name,
                 name: loaded[i].name,
                 email: loaded[i].email,
+                thumbUrl: loaded[i].thumbUrl || "",
                 contactIds: loaded[i].contactIds,
                 localContactIds: loaded[i].localContactIds,
                 photoCount: loaded[i].photoCount,
@@ -142,6 +144,7 @@ Dialog {
             key: "draft:" + manager.nextDraftNumber,
             name: draftName,
             email: "",
+            thumbUrl: "",
             contactIds: [],
             localContactIds: [],
             photoCount: 0,
@@ -318,6 +321,24 @@ Dialog {
                         height: ListView.view.height / 17
                         text: modelData.name
                         highlighted: ListView.isCurrentItem
+                        contentItem: RowLayout {
+                            spacing: 6
+                            Image {
+                                Layout.preferredWidth: visible ? 24 : 0
+                                Layout.preferredHeight: 24
+                                source: modelData.thumbUrl || ""
+                                visible: source !== ""
+                                fillMode: Image.PreserveAspectCrop
+                                smooth: true
+                                mipmap: true
+                                asynchronous: true
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: modelData.name
+                                elide: Text.ElideRight
+                            }
+                        }
                         onClicked: {
                             ListView.view.currentIndex = index
                             manager.selectContact(modelData)

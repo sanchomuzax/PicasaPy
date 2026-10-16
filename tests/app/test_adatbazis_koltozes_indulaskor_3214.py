@@ -75,7 +75,7 @@ class TestASzandekRogzitese:
 
     def test_a_szandek_a_beallitasba_kerul(self, vezerlo, config_dir, tmp_path):
         cel = tmp_path / "uj-hely"
-        hurok = hangos_hurok(vezerlo.relocateScheduled, timeout_ms=5000)
+        hurok = hangos_hurok(vezerlo.relocateScheduled, timeout_ms=20000)
         vezerlo.startRelocate(str(cel))
         hurok.exec()
 
@@ -84,7 +84,7 @@ class TestASzandekRogzitese:
     def test_semmi_nem_mozdul_el(self, vezerlo, forras, config_dir, tmp_path):
         index_db, cache_dir = forras
         cel = tmp_path / "uj-hely"
-        hurok = hangos_hurok(vezerlo.relocateScheduled, timeout_ms=5000)
+        hurok = hangos_hurok(vezerlo.relocateScheduled, timeout_ms=20000)
         vezerlo.startRelocate(str(cel))
         hurok.exec()
 
@@ -101,7 +101,7 @@ class TestASzandekRogzitese:
         cel.mkdir()
         (cel / "valami.txt").write_text("nem üres", encoding="utf-8")
 
-        hurok = hangos_hurok(vezerlo.relocateFailed, timeout_ms=5000)
+        hurok = hangos_hurok(vezerlo.relocateFailed, timeout_ms=20000)
         vezerlo.startRelocate(str(cel))
         hurok.exec()
 

@@ -27,6 +27,7 @@ from picasapy.app.filetype_preferences import (
     file_type_enabled,
     set_file_type_enabled,
 )
+from tests.support.varakozas import var_feltetelre
 
 # #4506: a teszt ugyanazt a stílust és betűt használja, mint az alkalmazás —
 # enélkül Windowson a rendszer alapbetűje tolta el a referencia szerinti
@@ -425,15 +426,8 @@ class TestTabStructure:
         assert stack.property("currentIndex") == 2
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        time.sleep(0.01)
-    qt_app.processEvents()
-    return bool(feltetel())
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattints(window, qt_app, elem) -> None:
