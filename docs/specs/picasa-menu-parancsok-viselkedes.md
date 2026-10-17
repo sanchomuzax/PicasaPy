@@ -2676,7 +2676,7 @@ de az animáció tartalma, iránya és időzítése **NINCS MEG**.
 
 #### 38.2.5 Ghidra-köteg: a lista és a OneUp-parancsok határa (#4443, 2026-10-17)
 
-**Elsődleges út — Ghidra C-kód.** A 2026-10-17-i köteg `FUN_005e8a70`
+**Elsődleges út - Ghidra C-kód.** A 2026-10-17-i köteg `FUN_005e8a70`
 teljes dekompilálását adja (`referencia/ghidra/2026-10-17-qshow-diavetites.txt`,
 `CÍM 0x005e942e`). Az Időrend bemutatóág lekéri az indexelt kollekció
 elemszámát (`0x004a0980`), `0`-tól végigmegy rajta, és minden indexre a
@@ -2686,7 +2686,7 @@ vászonértékeket. A `FUN_005e8a70` ezen ágában nem látszik dátummezőt olv
 komparátor vagy rendezőhívás: a függvény az aktuális indexelt kollekció
 sorrendjét fogyasztja; a kollekció upstream forrása és sorrendképzése nyitott.
 
-**Második út — helyi diszasszembly és RTTI.** A `0x005e942e–0x005e94f1`
+**Második út - helyi diszasszembly és RTTI.** A `0x005e942e-0x005e94f1`
 utasításai ugyanezt az elemszám → indexhurok → vtable `+0x90` láncot mutatják.
 A `0x00562cc0` thunk a `CThumbUI+0x2bc` objektum vtable `+0x20` helyére
 továbbít. Az RTTI szerint a `CThumbDB` vtable `+0x20` bejegyzése
@@ -2727,11 +2727,11 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 
 **Nyitott:**
 
-- `Ghidra-kör kell: 0x004039f0 — a CThumbUI-konstruktor +0x2bc szolgáltató-argumentumának konkrét típusa, a +0x2c0 kollekció forráshalmaza és upstream sorrendje. [blokkoló]`
-- `Ghidra-kör kell: 0x00a52890 — az örökölt egér/billentyű eseményút, az overlay exit/left/startbutton/right hit-testje és a sliderthumb húzási értékkötése. [blokkoló]`
-- `Ghidra-kör kell: 0x005e60d0 — a qshow láthatósága alatt elérhető globális gyorsbillentyűk és a Ctrl+5/nyilak/szóköz/Escape útja. [blokkoló]`
-- `Ghidra-kör kell: 0x008032e0 — az oneup/exit callback konkrét célobjektuma és visszatérési nézete; az oneup/oneup rács-vissza szerepe. [blokkoló]`
-- `Ghidra-kör kell: 0x00802230 — az Időrend-átmenet tényleges képi tartalma és időzítése. [blokkoló]`
+- `Ghidra-kör kell: 0x004039f0 - a CThumbUI-konstruktor +0x2bc szolgáltató-argumentumának konkrét típusa, a +0x2c0 kollekció forráshalmaza és upstream sorrendje. [blokkoló]`
+- `Ghidra-kör kell: 0x00a52890 - az örökölt egér/billentyű eseményút, az overlay exit/left/startbutton/right hit-testje és a sliderthumb húzási értékkötése. [blokkoló]`
+- `Ghidra-kör kell: 0x005e60d0 - a qshow láthatósága alatt elérhető globális gyorsbillentyűk és a Ctrl+5/nyilak/szóköz/Escape útja. [blokkoló]`
+- `Ghidra-kör kell: 0x008032e0 - az oneup/exit callback konkrét célobjektuma és visszatérési nézete; az oneup/oneup rács-vissza szerepe. [blokkoló]`
+- `Ghidra-kör kell: 0x00802230 - az Időrend-átmenet tényleges képi tartalma és időzítése. [blokkoló]`
 - A mappák/albumok forráshalmaza és upstream sorrendje, a cím-/dátumkártyák, a futó billentyűviselkedés és az Exit utáni nézet: **NINCS MEG**.
 
 #### 38.2.6 Második Ghidra-köteg: a 38.2.5 nyitott pontjainak mérése (#4443, 2026-10-17)

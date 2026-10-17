@@ -2490,7 +2490,7 @@ ideiglenes objektumára.
 | `0x006b0200` | a `+0x15` jelzőtől függően helyi szerkesztési rectet ír vagy a `+0x0c` mutatóval hívja a `0x0042b370`-et; hívói közt Passport- és szerkesztőút is van | crop-adatot írhat, de a filmkészítéskori példány/hívás nincs igazolva |
 | `0x006b39b0` | szerkesztési rekord `+0x40` rectjét adja a `0x0042b370`-nek a `+0x0c` mutatón keresztül; közvetlen hívója `0x006abae0` | szerkesztési crop-visszaíró út, nem a `+0x94` objektum konstruktora; a filmkészítési hívás nincs igazolva |
 
-**A crop-író receiverének kötése az `AlignedImageCollection+0x94` mezőhöz — #4400, 7. kör.**
+**A crop-író receiverének kötése az `AlignedImageCollection+0x94` mezőhöz - #4400, 7. kör.**
 
 A három vizsgált közvetlen hívó közül a `0x00531c60` receiveréről bizonyítható,
 hogy ugyanaz a `CThumbDB`-példány, amelyet a filmút az
@@ -2500,7 +2500,7 @@ a `CThumbUI+0x2bc` mezőbe másolja (`0x00564616`). A Passport-ágban a
 `0x00531e1b` tölti `ECX`-be ezt a `CThumbUI+0x2bc` mutatót, majd a
 `0x00531e21` hívja a `0x0042b370`-et. A film mód-6 gyárága a
 `CThumbUI+0x2bc` értékét adja a
-`0x006999c0` kollekciókonstruktornak (`0x008240d3`–`0x008240dc`); a
+`0x006999c0` kollekciókonstruktornak (`0x008240d3`-`0x008240dc`); a
 `0x0068c880` ezt a kapott mutatót írja az `AlignedImageCollection+0x94`
 mezőjébe (`0x0068c8ff`). Az `0x00415790` és `0x006999c0` konstruktor
 vptr-értékeit a RTTI rendre `CThumbDB::vftable`-ként
@@ -2516,16 +2516,16 @@ azonossága nincs bizonyítva; az aliasolásuk sincs kizárva. A
 Passport-műveletet végez. Nincs bizonyíték arra, hogy a Film arcokból
 indításakor vagy renderelésekor meghívná. A `0x0042b370` a rectet a
 `this+0x14d0` indexelt táblába írja és a `.picasa.ini` `crop` kulcsát is
-frissíti (`0x0042b370`, `0x0042b535`, `0x0042b747`–`0x0042b785`); ebből
+frissíti (`0x0042b370`, `0x0042b535`, `0x0042b747`-`0x0042b785`); ebből
 következik, hogy a film a közös adatbázisban korábban tárolt cropot
 olvashatja, de a konkrét film-selectorhoz tartozó bejegyzést nem futás
 közben figyeltük meg.
 
-**Cáfoló próba — a transzformáció és metszés sorrendje.** A lehetséges
+**Cáfoló próba - a transzformáció és metszés sorrendje.** A lehetséges
 ellenhipotézis az volt, hogy a getter előbb forgatja/transzformálja az
 arctéglalapot, és csak utána metszi a crop-recttel. A célzott
-utasításolvasás ezt cáfolja: `0x0047a3a8`–`0x0047a3aa` lekéri az alap
-`facerect`-et, `0x0047a3d5` a cropot, `0x0047a3de`–`0x0047a419` elvégzi a
+utasításolvasás ezt cáfolja: `0x0047a3a8`-`0x0047a3aa` lekéri az alap
+`facerect`-et, `0x0047a3d5` a cropot, `0x0047a3de`-`0x0047a419` elvégzi a
 komponensenkénti metszést, majd `0x0047a429` hívja a forgatási segédet,
 `0x0047a45c` a filter-segédet, és `0x0047a46c` a négy sarok affín
 transzformációját. A friss kontextusú, önálló bináris újralevezetés ugyanezt
@@ -2728,8 +2728,8 @@ Ghidra-kör kell: 0x0049d560 — kösd össze a `.picasa.ini` `faces=` ágának
 `rect64`-feldolgozását azzal az `imagedata_facerect` oszloppal, amelyet a
 `0x00446610` olvas; döntsd el, hogy a `0x0049d560` parserút írja-e ezt az
 oszlopot. [blokkoló]
-Ghidra-kör kell: 0x00430610 — fejtsd fel a film `+0xa0` getterének filter-transzformációját és a `0x0047a390` által átadott értékek pontos geometriai hatását a négy sarokra. [blokkoló]
-Ghidra-kör kell: 0x009e0660 — határozd meg a `model+0x2e0` keret-getterének transzformációs feltételeit és a `0x00813c50`-nek ténylegesen átadott `Vw,Vh` értékeket az arcfilm alapútján. [blokkoló]
+Ghidra-kör kell: 0x00430610 - fejtsd fel a film `+0xa0` getterének filter-transzformációját és a `0x0047a390` által átadott értékek pontos geometriai hatását a négy sarokra. [blokkoló]
+Ghidra-kör kell: 0x009e0660 - határozd meg a `model+0x2e0` keret-getterének transzformációs feltételeit és a `0x00813c50`-nek ténylegesen átadott `Vw,Vh` értékeket az arcfilm alapútján. [blokkoló]
 - **NINCS MEG:** a `.picasa.ini faces=` → `imagedata_facerect` betöltési
   kapcsolat; a film indításakor ténylegesen hívott `+0x14d0` író és a
   kiválasztott selectorhoz tartozó bejegyzés; a landmark esetleges
@@ -2737,7 +2737,7 @@ Ghidra-kör kell: 0x009e0660 — határozd meg a `model+0x2e0` keret-getterének
   getter transzformált `Vw,Vh` értéke egy konkrét filmfutásban; valamint
   az eredeti paneltől a kész filmkockáig tartó élő viselkedésmérés. Az
   íróhívás példányszintű rögzítéséhez QEMU-harness call-trace kell; a
-  teljes kép–render–export eredményhez a #4426 lépéssora kellene, de a
+  teljes kép-render-export eredményhez a #4426 lépéssora kellene, de a
   Wine alatti eredeti program ezt a funkciót nem támogatja.
 
 **Bizonyítottsági határ:** a klipmezők nyers másolása, a low-res maszk
@@ -2770,12 +2770,12 @@ működhet, de arcazonosítót/arckivágást nem ad át. A paritási összesít�
 
 A #4331 „Kijelölésben lévő arcokból” belépője a `personMovieMode` állapotot
 bekapcsolja és az arcfilm felbontásindexét állítja be
-(`CreateDialogs.qml:41–47`), de az exporthívás csak a képek URL-jeit, a
-méretet és az általános filmopciókat adja át (`CreateDialogs.qml:1011–1037`,
-`create_controller.py:880–919`). A `MovieSettings` nem hordoz arcfilm- vagy
-face-selector mezőt (`movie/slideshow.py:54–82`); az export a képeket a
+(`CreateDialogs.qml:41-47`), de az exporthívás csak a képek URL-jeit, a
+méretet és az általános filmopciókat adja át (`CreateDialogs.qml:1011-1037`,
+`create_controller.py:880-919`). A `MovieSettings` nem hordoz arcfilm- vagy
+face-selector mezőt (`movie/slideshow.py:54-82`); az export a képeket a
 `prepare_photo_frame` teljes képes cropfit/letterbox útján dolgozza fel
-(`movie/slideshow.py:605–625`). Ez statikus kódáttekintés: nem mért
+(`movie/slideshow.py:605-625`). Ez statikus kódáttekintés: nem mért
 kimeneti paritás. A #4331 jelen állapotában tehát a menüpont és a méretmód
 megvan, a #4400 szerinti arckivágás még nincs bekötve.
 
