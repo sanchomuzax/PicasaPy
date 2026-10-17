@@ -389,15 +389,51 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
 
 def _nev(item) -> str:
     # a PySide-burok típusa mindig QQuickItem; a valódi QML-típus a metaObject-ből jön
-    return item.objectName() or item.metaObject().className()
+    if not _ervenyes_qt_elem(item):
+        return "már törölt"
+    try:
+        return item.objectName() or item.metaObject().className()
+    except RuntimeError:
+        return "már törölt"
+
+
+def _ervenyes_qt_elem(item) -> bool:
+    if item is None:
+        return False
+    try:
+        return shiboken6.isValid(item)
+    except RuntimeError:
+        return False
+
+
+def _talalat_szoveg(item) -> tuple[str, str]:
+    """A találat nevét és típusát azonnal szöveggé alakítja (#4929)."""
+    if not _ervenyes_qt_elem(item):
+        return "nincs", "nincs"
+    try:
+        return item.objectName(), item.metaObject().className()
+    except RuntimeError:
+        return "már törölt", "QQuickItem"
 
 
 def _legfelso_talalat(item, pont):
     """A pontnál legfelül álló elem; rekurzív, mert a childAt csak a közvetlen gyerekeket nézi."""
-    if not item.contains(item.mapFromScene(pont)):
+    if not _ervenyes_qt_elem(item):
         return None
-    for gyerek in sorted(item.childItems(), key=lambda g: g.z(), reverse=True):
-        if gyerek.isVisible():
+    try:
+        if not item.contains(item.mapFromScene(pont)):
+            return None
+        gyerekek = sorted(item.childItems(), key=lambda g: g.z(), reverse=True)
+    except RuntimeError:
+        return None
+    for gyerek in gyerekek:
+        if not _ervenyes_qt_elem(gyerek):
+            continue
+        try:
+            lathato = gyerek.isVisible()
+        except RuntimeError:
+            continue
+        if lathato:
             talalat = _legfelso_talalat(gyerek, pont)
             if talalat is not None:
                 return talalat
@@ -405,14 +441,22 @@ def _legfelso_talalat(item, pont):
 
 
 def _latszik_es_meretes(item) -> bool:
-    return (item.isVisible() and item.isEnabled()
-            and item.width() > 0 and item.height() > 0)
+    if not _ervenyes_qt_elem(item):
+        return False
+    try:
+        return (item.isVisible() and item.isEnabled()
+                and item.width() > 0 and item.height() > 0)
+    except RuntimeError:
+        return False
 
 
 def _keres(window, nev: str):
     """Mint a _elem, de nem bukik el: None, ha az elem nincs (diagnosztikához, #4929)."""
-    talalatok = _elemek(window, nev)
-    return talalatok[0] if talalatok else None
+    try:
+        talalatok = _elemek(window, nev)
+        return talalatok[0] if talalatok else None
+    except RuntimeError:
+        return None
 
 
 def _igen_nem(logikai: bool) -> str:
@@ -421,15 +465,18 @@ def _igen_nem(logikai: bool) -> str:
 
 def _elem_helyzet(window, nev: str, elem) -> str:
     """Létezik-e, látszik-e, engedélyezett-e, és hol van az ablak tartalmához képest (#4929)."""
-    if elem is None:
+    if not _ervenyes_qt_elem(elem):
         return f"{nev}=nincs"
-    hely = elem.mapToItem(window.contentItem(), QPointF(0, 0))
-    return (
-        f"{nev}=van(látszik={_igen_nem(elem.isVisible())}, "
-        f"engedélyezett={_igen_nem(elem.isEnabled())}, "
-        f"x={hely.x():.0f}, y={hely.y():.0f}, "
-        f"szél={elem.width():.0f}, mag={elem.height():.0f})"
-    )
+    try:
+        hely = elem.mapToItem(window.contentItem(), QPointF(0, 0))
+        return (
+            f"{nev}=van(látszik={_igen_nem(elem.isVisible())}, "
+            f"engedélyezett={_igen_nem(elem.isEnabled())}, "
+            f"x={hely.x():.0f}, y={hely.y():.0f}, "
+            f"szél={elem.width():.0f}, mag={elem.height():.0f})"
+        )
+    except RuntimeError:
+        return f"{nev}=már törölt"
 
 
 def _aktiv_szerkeszto(window) -> str:
@@ -437,42 +484,82 @@ def _aktiv_szerkeszto(window) -> str:
     panel = _keres(window, "viewerEditorPanel")
     if panel is None:
         return "szerkesztőpanel=nincs"
-    return (f"aktív fül={panel.property('activeTab')}, "
-            f"effekt='{panel.property('paramEffectName')}'")
+    return _biztonsagos_olvasas(
+        lambda: (f"aktív fül={panel.property('activeTab')}, "
+                 f"effekt='{panel.property('paramEffectName')}'")
+    )
 
 
 def _lathatosag(nev: str, elem) -> str:
     """Egy elem saját `visible` értéke és mérete; `nincs`, ha nem található (#4929)."""
-    if elem is None:
+    if not _ervenyes_qt_elem(elem):
         return f"{nev}=nincs"
-    return (
-        f"{nev}=van(visible={_igen_nem(elem.property('visible'))}, "
-        f"szél={elem.width():.0f}, mag={elem.height():.0f})"
-    )
+    try:
+        return (
+            f"{nev}=van(visible={_igen_nem(elem.property('visible'))}, "
+            f"szél={elem.width():.0f}, mag={elem.height():.0f})"
+        )
+    except RuntimeError:
+        return f"{nev}=már törölt"
+
+
+def _biztonsagos_olvasas(olvasas, alap="már törölt"):
+    try:
+        return olvasas()
+    except RuntimeError:
+        return alap
+
+
+def _biztonsagos_elem_property(elem, nev: str):
+    if not _ervenyes_qt_elem(elem):
+        return "már törölt"
+    return _biztonsagos_olvasas(lambda: elem.property(nev))
+
+
+def _biztonsagos_ablak_meret(window) -> str:
+    try:
+        return f"{window.width():.0f}x{window.height():.0f}"
+    except RuntimeError:
+        return "már törölt"
 
 
 def _elem_lathatosaga(item) -> str:
     """Az `isVisible()`, a saját `visible`, az `opacity` és a méret egy elemre (#4929)."""
-    return (
-        f"{_nev(item)}(látszik={_igen_nem(item.isVisible())}, "
-        f"visible={_igen_nem(item.property('visible'))}, "
-        f"opacity={item.opacity():.2f}, "
-        f"{item.width():.0f}x{item.height():.0f})"
-    )
+    if not _ervenyes_qt_elem(item):
+        return "már törölt"
+    try:
+        return (
+            f"{_nev(item)}(látszik={_igen_nem(item.isVisible())}, "
+            f"visible={_igen_nem(item.property('visible'))}, "
+            f"opacity={item.opacity():.2f}, "
+            f"{item.width():.0f}x{item.height():.0f})"
+        )
+    except RuntimeError:
+        return "már törölt"
 
 
 def _szulolanc(window, elem) -> str:
     """Az elemtől a `window.contentItem()`-ig tartó szülőlánc, elemenként (#4929)."""
-    if elem is None:
+    if not _ervenyes_qt_elem(elem):
         return "nincs"
-    gyoker = window.contentItem()
+    try:
+        gyoker = window.contentItem()
+    except RuntimeError:
+        return "törölt ablak-elem"
     lanc = []
     aktualis = elem
     while aktualis is not None:
+        if not _ervenyes_qt_elem(aktualis):
+            lanc.append("már törölt")
+            break
         lanc.append(_elem_lathatosaga(aktualis))
         if aktualis is gyoker:
             break
-        aktualis = aktualis.parentItem()
+        try:
+            aktualis = aktualis.parentItem()
+        except RuntimeError:
+            lanc.append("már törölt")
+            break
     return " < ".join(lanc)
 
 
@@ -485,14 +572,19 @@ def _nezo_es_panelek_allapota(window) -> str:
     """
     nezo = _keres(window, "photoViewer")
     nezo_resz = "photoViewer=nincs"
-    if nezo is not None:
-        nezo_resz = (
-            f"photoViewer(isCurrentVideo={_igen_nem(nezo.property('isCurrentVideo'))}, "
-            f"layoutMode={nezo.property('layoutMode')!r})"
+    if _ervenyes_qt_elem(nezo):
+        nezo_resz = _biztonsagos_olvasas(
+            lambda: (
+                f"photoViewer(isCurrentVideo={_igen_nem(nezo.property('isCurrentVideo'))}, "
+                f"layoutMode={nezo.property('layoutMode')!r})"
+            )
         )
+    viewer_open = _biztonsagos_olvasas(
+        lambda: window.property("viewerOpen") is True, False
+    )
     return ", ".join([
         nezo_resz,
-        f"viewerOpen={_igen_nem(window.property('viewerOpen') is True)}",
+        f"viewerOpen={_igen_nem(viewer_open)}",
         _lathatosag("viewerEditorPanel", _keres(window, "viewerEditorPanel")),
         _lathatosag("editorModeToolScroll", _keres(window, "editorModeToolScroll")),
         _lathatosag("redeyeModePanel", _keres(window, "redeyeColumn")),
@@ -504,18 +596,24 @@ def _vorosszem_diagnosztika(
     window, edit, terulet, gomb, kattintasi_adatok=None,
 ) -> str:
     """A húzás körüli állapot a bukás okának kiderítéséhez (#4929). Bármelyik elem lehet None."""
-    grab = window.mouseGrabberItem()
+    try:
+        grab = window.mouseGrabberItem()
+    except RuntimeError:
+        grab = None
     talalat = None
-    if gomb is not None:
-        kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
-        talalat = _legfelso_talalat(window.contentItem(), kozep)
+    if _ervenyes_qt_elem(gomb):
+        try:
+            kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
+            talalat = _legfelso_talalat(window.contentItem(), kozep)
+        except RuntimeError:
+            talalat = None
     kattintas_diag = ""
     if kattintasi_adatok is not None:
-        kapo = kattintasi_adatok.get("hit")
-        kapo_nev = kapo.objectName() if kapo is not None else "nincs"
-        kapo_tipus = kapo.metaObject().className() if kapo is not None else "nincs"
+        kapo_nev = kattintasi_adatok.get("talalat_nev", "nincs")
+        kapo_tipus = kattintasi_adatok.get("talalat_tipus", "nincs")
         kattintas_diag = (
             f"editToolRedeye kattintási pont={kattintasi_adatok.get('pont', 'nincs')}, "
+            f"eszköz={kattintasi_adatok.get('eszkoz', 'nincs')}, "
             f"cél={kapo_nev or '<névtelen>'}/{kapo_tipus}, "
             f"ablakAktív kezdetben={kattintasi_adatok.get('ablakAktív kezdetben', 'nincs')}, "
             f"ablakAktív kattintás előtt={kattintasi_adatok.get('ablakAktív kattintás előtt', 'nincs')}, "
@@ -529,16 +627,16 @@ def _vorosszem_diagnosztika(
         f"{kattintas_diag}"
         f"{_elem_helyzet(window, 'redeyeDragArea', terulet)}, "
         f"redeyeDragArea szülőlánc={_szulolanc(window, terulet)}, "
-        f"dragging={terulet.property('dragging') if terulet is not None else 'nincs'}, "
-        f"selW={terulet.property('selW') if terulet is not None else 'nincs'}, "
-        f"selH={terulet.property('selH') if terulet is not None else 'nincs'}, "
+        f"dragging={_biztonsagos_elem_property(terulet, 'dragging')}, "
+        f"selW={_biztonsagos_elem_property(terulet, 'selW')}, "
+        f"selH={_biztonsagos_elem_property(terulet, 'selH')}, "
         f"{_elem_helyzet(window, 'redeyeApplyButton', gomb)}, "
         f"redeyeApplyButton szülőlánc={_szulolanc(window, gomb)}, "
-        f"ablak={window.width():.0f}x{window.height():.0f}, "
+        f"ablak={_biztonsagos_ablak_meret(window)}, "
         f"{_aktiv_szerkeszto(window)}, "
-        f"mouseGrabberItem={_nev(grab) if grab is not None else 'None'}, "
-        f"régiószám={edit.redeyeRegionCount}, "
-        f"effectChain={edit.effectChain!r}, "
+        f"mouseGrabberItem={_nev(grab) if _ervenyes_qt_elem(grab) else 'None'}, "
+        f"régiószám={_biztonsagos_olvasas(lambda: edit.redeyeRegionCount)}, "
+        f"effectChain={_biztonsagos_olvasas(lambda: edit.effectChain)!r}, "
         f"hit-test={_nev(talalat) if talalat is not None else 'None'}, "
         f"nyitott felugrók={_nyitott_felugrok(window)!r}, "
         f"{_nezo_es_panelek_allapota(window)}."
@@ -560,14 +658,35 @@ def _bal_fiok_nyitva_var(window, qt_app):
 
 def _nyitott_felugrok(window) -> list[str]:
     """Az ablak felugró rétegén (overlay) éppen látható elemek neve (#4929)."""
-    reteg = window.property("overlay")
+    try:
+        reteg = window.property("overlay")
+    except RuntimeError:
+        return ["törölt overlay"]
     if reteg is None:
         return []
-    return [
-        (gyerek.objectName() or gyerek.metaObject().className())
-        for gyerek in reteg.childItems()
-        if gyerek.isVisible()
-    ]
+    try:
+        gyerekek = reteg.childItems()
+    except RuntimeError:
+        return ["törölt overlay"]
+    lathatok = []
+    for gyerek in gyerekek:
+        if not _ervenyes_qt_elem(gyerek):
+            continue
+        try:
+            if gyerek.isVisible():
+                lathatok.append(_nev(gyerek))
+        except RuntimeError:
+            continue
+    return lathatok
+
+
+def _ponti_talalat_szoveg(window, pont) -> tuple[str, str]:
+    """A pontnál talált elemet azonnal szöveggé alakítja; Qt-burköt nem ad vissza."""
+    try:
+        gyoker = window.contentItem()
+    except RuntimeError:
+        return "már törölt", "QQuickItem"
+    return _talalat_szoveg(_legfelso_talalat(gyoker, pont))
 
 
 def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
@@ -578,9 +697,9 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     if fiok.width() < 280:
         _kattint(window, qt_app, "toggle_left_drawer")
     _bal_fiok_nyitva_var(window, qt_app)
-    # #4929: a CI-n a kattintás idején egy felugró elem (QQuickOverlay) volt
-    # felül, és a Vörösszem eszköz nem kapcsolt be (redeyeActive hamis). Előbb
-    # megvárjuk, hogy ne legyen nyitott felugró elem, utána a mód bekapcsolását.
+    # #4929: egy korábbi CI-hibánál felugró elem takarta az eszközt. A normál
+    # kattintás előtt megvárjuk a bezárását; részletes hit-tesztet csak bukáskor
+    # végzünk, hogy az ne módosítsa a QML-fa életciklusát.
     _var(qt_app, lambda: not _nyitott_felugrok(window))
     szerkeszto = _keres(window, "viewerEditorPanel")
     eszkoz = _keres(window, "editToolRedeye")
@@ -588,10 +707,12 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
         diag.append(_vorosszem_diagnosztika(window, edit, None, None))
     assert eszkoz is not None, "a felületi elem nem található: editToolRedeye"
     eszkoz.ensurePolished()
-    assert eszkoz.isEnabled() and eszkoz.width() > 0 and eszkoz.height() > 0, (
+    eszkoz_kattinthato = _var(qt_app, lambda: _latszik_es_meretes(eszkoz))
+    assert eszkoz_kattinthato, (
         "a Vörösszem eszköz nem kattintható"
     )
     kattintasi_adatok = {
+        "eszkoz": _elem_helyzet(window, "editToolRedeye", eszkoz),
         "ablakAktív kezdetben": window.isActive(),
         "redeyeActive kattintás előtt": (
             bool(szerkeszto.property("redeyeActive"))
@@ -599,19 +720,20 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
         ),
     }
     window.requestActivate()
-    aktiv = _var(qt_app, window.isActive, 10.0)
-    kattintasi_adatok["ablakAktív kattintás előtt"] = window.isActive()
-    kozep = eszkoz.mapToScene(QPointF(eszkoz.width() / 2, eszkoz.height() / 2))
-    pont = QPoint(round(kozep.x()), round(kozep.y()))
-    kattintasi_adatok["pont"] = f"({pont.x()},{pont.y()})"
-    kattintasi_adatok["hit"] = _legfelso_talalat(
-        window.contentItem(), QPointF(pont.x(), pont.y())
+    aktiv = _var(
+        qt_app,
+        lambda: window.isActive() and _latszik_es_meretes(eszkoz),
+        10.0,
     )
+    kattintasi_adatok["ablakAktív kattintás előtt"] = window.isActive()
     if not aktiv:
         diag.append(_vorosszem_diagnosztika(
             window, edit, None, None, kattintasi_adatok
         ))
     assert aktiv, "a főablak nem aktiválódott a vörösszem-kattintás előtt"
+    kozep = eszkoz.mapToScene(QPointF(eszkoz.width() / 2, eszkoz.height() / 2))
+    pont = QPoint(round(kozep.x()), round(kozep.y()))
+    kattintasi_adatok["pont"] = f"({pont.x()},{pont.y()})"
     QTest.mouseClick(
         eszkoz.window(), Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier, pont,
@@ -631,6 +753,11 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     )
     if not _var(qt_app, lambda: szerkeszto is not None
                 and bool(szerkeszto.property("redeyeActive")), 10.0):
+        kattintasi_adatok["talalat_nev"], kattintasi_adatok["talalat_tipus"] = (
+            _ponti_talalat_szoveg(
+                window, QPointF(pont.x(), pont.y())
+            )
+        )
         diag.append("redeyeActive hamis a kattintás után; nyitott felugrók="
                     + repr(_nyitott_felugrok(window)))
         diag.append(_vorosszem_diagnosztika(
@@ -651,6 +778,7 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
         ))
     assert lathato, (
         "a vörösszem húzási területe vagy az Alkalmaz gomb nem látszik a húzás előtt"
+        f" | #4929 diag: {' '.join(diag)}"
     )
     p0 = terulet.mapToScene(QPointF(terulet.width() * 0.46, terulet.height() * 0.46))
     p1 = terulet.mapToScene(QPointF(terulet.width() * 0.54, terulet.height() * 0.54))
@@ -750,3 +878,39 @@ def test_vorosszem_windowsos_kihagyasa_megtartja_a_diagnosztikat(monkeypatch):
     assert indok is not None
     assert "#4929 diag: redeyeActive hamis a kattintás után" in indok
     assert "hit-test=QQuickOverlay; active=False; redeyeActive=False→False" in indok
+
+
+def test_vorosszem_diagnosztika_nem_olvassa_a_torolt_kattintasi_celpontot(
+    monkeypatch, qt_app,
+):
+    """A későbbi diagnosztika csak a célpont korábban rögzített szövegét olvassa (#4929)."""
+    class Ablak:
+        def mouseGrabberItem(self):
+            return None
+
+        def width(self):
+            return 800
+
+        def height(self):
+            return 600
+
+    class Edit:
+        redeyeRegionCount = 0
+        effectChain = ""
+
+    monkeypatch.setitem(globals(), "_aktiv_szerkeszto", lambda _window: "")
+    monkeypatch.setitem(globals(), "_nezo_es_panelek_allapota", lambda _window: "")
+    monkeypatch.setitem(globals(), "_nyitott_felugrok", lambda _window: [])
+
+    celpont = QQuickItem()
+    celpont.setObjectName("editToolRedeye")
+    shiboken6.delete(celpont)
+    adatok = {
+        "hit": celpont,
+        "talalat_nev": "editToolRedeye",
+        "talalat_tipus": "QQuickItem",
+    }
+
+    eredmeny = _vorosszem_diagnosztika(Ablak(), Edit(), None, None, adatok)
+
+    assert "cél=editToolRedeye/QQuickItem" in eredmeny
