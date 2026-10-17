@@ -1,8 +1,13 @@
-"""#4533: a fotó helyi menüjének „Társítás…" (Open With) tétele.
+"""#4533, #5195: a fotó helyi menüjének „Társítás" (Open With) tétele.
 
-A tétel eddig helyfoglaló volt. Most a kattintás a társított alkalmazások
-listáját nyitja meg, és a választott alkalmazással megnyitja a képet. A
-teszt valódi kattintásokkal megy végig a menün és a párbeszéden; csak a
+#4533: a tétel eddig helyfoglaló volt; a kattintás a társított alkalmazások
+választóját nyitja meg, és a választott alkalmazással megnyitja a képet.
+
+#5195: Linuxon a tétel almenü lett: a társított alkalmazások listája, alul a
+választóval. Windowson a héj saját párbeszéde marad egyetlen tétel, almenü
+nélkül.
+
+A teszt valódi kattintásokkal megy végig a menün és a párbeszéden; csak a
 lista forrását (a `.desktop` fájlokat) és a tényleges indítást helyettesíti.
 """
 
@@ -22,6 +27,10 @@ from tests.app.qml_functional._felsomenupontok_helpers_4329 import (
     _magassag,
     _objektum,
     _varj,
+)
+from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
+    keres_vizualis_mindenablakban,
+    kattints,
 )
 
 _ALKALMAZASOK = [
@@ -83,6 +92,23 @@ def _lathato_sorok(lista, nev: str):
     return sorted(sorok, key=lambda item: item.mapToScene(QPointF(0, 0)).y())
 
 
+def _latszo_tetel(window, nev: str):
+    """A `nev` tétel, ha látszik valamelyik nyitott ablakban."""
+    tetel = keres_vizualis_mindenablakban(window, nev)
+    assert tetel is not None, f"{nev} nem látszik"
+    return tetel
+
+
+def _nyisd_meg_tarsitas_almenut(window, qt_app):
+    """Valódi kattintással megnyitja a „Társítás" almenüt."""
+    kattints(window, qt_app, _latszo_tetel(window, "contextMenuOpenWith"))
+    almenu = _elem(window, "contextMenuOpenWithMenu")
+    assert almenu is not None, "a Társítás almenü nem található"
+    assert _varj(qt_app, lambda: almenu.property("visible") is True), (
+        "a Társítás almenü nem nyílt meg a valódi kattintásra"
+    )
+
+
 @pytest.fixture
 def linux_valaszto(monkeypatch):
     """A Linux-ág (a mi választónk) kényszerítése minden platformon.
@@ -112,17 +138,31 @@ def indulas_fake(monkeypatch, linux_valaszto):
 
 
 @pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
-def test_tarsitas_kattintas_listazza_es_megnyitja_a_kepet(
+def test_tarsitas_almenu_az_alkalmazas_tetelere_megnyitja_a_kepet(
     qml_app, qt_app, indulas_fake, height_offset
 ):
     window, controller, _engine = qml_app
     _magassag(window, height_offset)
     _nyisd_meg_helyi_menut(window, qt_app, 0)
-    tetel = _elem(window, "contextMenuOpenWith")
-    assert tetel is not None, "a Társítás tétel nem található"
-    assert tetel.property("enabled") is True, "a Társítás tétel le van tiltva"
+    _nyisd_meg_tarsitas_almenut(window, qt_app)
 
-    _kattints(qt_app, tetel)
+    kattints(window, qt_app, _latszo_tetel(window, "contextMenuOpenWithApp_eog.desktop"))
+
+    assert _varj(qt_app, lambda: len(indulas_fake) == 1)
+    app_id, megnyitott = indulas_fake[0]
+    assert app_id == "eog.desktop"
+    assert megnyitott == Path(controller.photos.filePathAt(0))
+
+
+@pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
+def test_tarsitas_valasztoja_listazza_es_megnyitja_a_kepet(
+    qml_app, qt_app, indulas_fake, height_offset
+):
+    window, controller, _engine = qml_app
+    _magassag(window, height_offset)
+    _nyisd_meg_helyi_menut(window, qt_app, 0)
+    _nyisd_meg_tarsitas_almenut(window, qt_app)
+    kattints(window, qt_app, _latszo_tetel(window, "contextMenuOpenWithChoose"))
 
     assert _varj(
         qt_app,
@@ -130,7 +170,7 @@ def test_tarsitas_kattintas_listazza_es_megnyitja_a_kepet(
             _objektum(window, "openWithDialog") is not None
             and _objektum(window, "openWithDialog").property("visible") is True
         ),
-    ), "a Társítás nem nyitotta meg a választót"
+    ), "a Társítás… választó nem nyitotta meg a választót"
     lista = _objektum(window, "openWithAppList")
     assert lista is not None
     assert lista.property("count") == len(_ALKALMAZASOK)
@@ -149,7 +189,7 @@ def test_tarsitas_kattintas_listazza_es_megnyitja_a_kepet(
 
 
 @pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
-def test_tarsitas_ures_listanal_nem_indit_semmit(
+def test_tarsitas_ures_listanal_csak_a_valasztot_mutatja_es_nem_indit_semmit(
     qml_app, qt_app, monkeypatch, linux_valaszto, height_offset
 ):
     inditasok = []
@@ -162,7 +202,9 @@ def test_tarsitas_ures_listanal_nem_indit_semmit(
     window, _controller, _engine = qml_app
     _magassag(window, height_offset)
     _nyisd_meg_helyi_menut(window, qt_app, 0)
-    _kattints(qt_app, _elem(window, "contextMenuOpenWith"))
+    _nyisd_meg_tarsitas_almenut(window, qt_app)
+    assert keres_vizualis_mindenablakban(window, "contextMenuOpenWithApp_gimp.desktop") is None
+    kattints(window, qt_app, _latszo_tetel(window, "contextMenuOpenWithChoose"))
 
     assert _varj(
         qt_app,
@@ -177,7 +219,7 @@ def test_tarsitas_ures_listanal_nem_indit_semmit(
 def test_tarsitas_windowson_a_hej_sajat_parbeszedet_hivja(
     qml_app, qt_app, monkeypatch, indulas_fake, height_offset
 ):
-    """Windowson a kattintás a héj párbeszédét indítja, a mi választónk nem nyílik."""
+    """Windowson almenü nincs: a tétel a héj párbeszédét indítja, a mi választónk nem nyílik."""
     monkeypatch.setattr(open_with_module, "_platform", lambda: "win32")
     hejhivasok = []
     monkeypatch.setattr(
@@ -188,7 +230,10 @@ def test_tarsitas_windowson_a_hej_sajat_parbeszedet_hivja(
     window, controller, _engine = qml_app
     _magassag(window, height_offset)
     _nyisd_meg_helyi_menut(window, qt_app, 0)
-    _kattints(qt_app, _elem(window, "contextMenuOpenWith"))
+    assert keres_vizualis_mindenablakban(window, "contextMenuOpenWith") is None, (
+        "Windowson a Társítás almenü nem lehet látható"
+    )
+    kattints(window, qt_app, _latszo_tetel(window, "contextMenuOpenWithNative"))
 
     assert _varj(qt_app, lambda: len(hejhivasok) == 1), (
         "a Társítás nem hívta a héj párbeszédét"
