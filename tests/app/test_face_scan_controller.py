@@ -1781,7 +1781,7 @@ class TestGlobalFaceReset4627:
         second.mkdir()
         paths = [first / "a.jpg", second / "b.jpg"]
         for path in paths:
-            make_jpeg(path)
+            make_jpeg(path, size=(100, 100))
         detector = _FakeDetector()
         ctl, helper = _make_controller_with_faces_helper(
             qt_app, tmp_path, root, detector=detector
@@ -1865,16 +1865,56 @@ class TestGlobalFaceReset4627:
                 "SELECT COUNT(*) FROM face WHERE group_id IS NOT NULL"
             ).fetchone()[0] == 2
 
-    def test_shift_branch_keeps_face_rectangles_but_removes_people(
+    def test_named_ini_overlap_is_hidden_from_unnamed_album(self, qt_app, tmp_path):
+        from picasapy.index import open_index, reset_all_faces
+
+        ctl, _helper, _detector, _paths = self._scanned_library(qt_app, tmp_path)
+        with open_index(tmp_path / "index.db") as conn:
+            reset_all_faces(conn)
+            conn.commit()
+
+        assert ctl.unnamedAlbum() == []
+        assert ctl.unnamedGroups(True, True) == []
+        assert ctl.unnamedCount == 0
+
+    def test_shift_reset_keeps_regions_as_unnamed_and_removes_people(
         self, qt_app, tmp_path
     ):
-        """# rontás-kontroll: resetAllFaces név-ürítését kiiktatva → 1 failed"""
+        """A név eltűnik, a régió névtelen lesz, a mellőzés bájtra megmarad."""
         from picasapy.index import all_photos, open_index
-        from picasapy.ini import load_document, parse_faces
+        from picasapy.ini import (
+            Face,
+            Rect64,
+            load_document,
+            parse_faces,
+            update_document,
+            with_face,
+        )
 
         ctl, _helper, detector, paths = self._scanned_library(
             qt_app, tmp_path
         )
+
+        faces_before = {}
+        ignored_before = {}
+        for path in paths:
+            assert _helper.addIgnoredFace(str(path), 0.6, 0.65, 0.9, 0.95)
+            update_document(
+                path.parent / ".picasa.ini",
+                lambda document, name=path.name: with_face(
+                    document,
+                    name,
+                    Face(rect=Rect64(0.7, 0.1, 0.8, 0.2), contact_id="0"),
+                ),
+                backup=True,
+            )
+            before = load_document(path.parent / ".picasa.ini")
+            faces_before[path] = before.section(path.name).get("faces")
+            ignored_before[path] = next(
+                entry
+                for entry in faces_before[path].split(";")
+                if entry.endswith(",ffffffffffffffff")
+            )
 
         affected = ctl.resetAllFaces()
 
@@ -1886,10 +1926,17 @@ class TestGlobalFaceReset4627:
             assert section is not None
             faces = parse_faces(section.get("faces") or "")
             assert len(faces) == 1
-            assert faces[0].contact_id == "0"
+            assert faces[0].is_ignored
+            assert section.get("faces") == ignored_before[path]
+            assert ",0" not in section.get("faces")
             assert section.get("facedata") == "123"
             contacts = document.section("Contacts2")
-            assert contacts is None or contacts.items() == ()
+            assert contacts is None
+
+        assert ctl.unnamedCount == 2
+        assert {row["path"] for row in ctl.unnamedAlbum()} == {
+            str(path) for path in paths
+        }
 
         with open_index(tmp_path / "index.db") as conn:
             photos = all_photos(conn)

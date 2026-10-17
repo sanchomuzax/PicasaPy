@@ -123,11 +123,24 @@ def best_region(rect: Sequence[float], regions: Iterable[RelRect]) -> RelRect | 
     return match_regions([(0, rect)], regions).get(0)
 
 
+def match_named_regions(
+    items: Iterable[tuple[K, Sequence[float]]], faces: Iterable[Face]
+) -> dict[K, RelRect]:
+    """Index-arcokat párosít a mentett név-régiókkal, egy-az-egyhez."""
+    regions = (
+        (face.rect.left, face.rect.top, face.rect.right, face.rect.bottom)
+        for face in faces
+        if face.is_identified
+    )
+    return match_regions(items, regions)
+
+
 def ini_faces_of(
     photo_path: Path, cache: dict | None = None
 ) -> tuple[Face, ...]:
     """A fotó `faces=` bejegyzései a mappa `.picasa.ini`-jéből. Hiányzó
-    vagy olvashatatlan ini, hiányzó szakasz, hibás érték: üres.
+    vagy olvashatatlan ini, hiányzó szakasz: üres; a hibás egyedi bejegyzést
+    a `parse_faces` hagyja ki.
 
     `cache` (#4586): mappánként egyszer olvassa be az ini-t (a mappa → a
     dokumentum vagy `None`) — tömeges bejárásnál nem képenként parse-ol."""
