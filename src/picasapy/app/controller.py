@@ -114,29 +114,16 @@ from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 _log = logging.getLogger(__name__)
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+# #4856: az eredeti diavetítés hét átmenete (`picasa-create-features.md` 4.3);
+# a 22 tételes lista a filmkészítőé (`create_controller._MOVIE_TRANSITIONS`).
 _SLIDESHOW_TRANSITIONS = (
     "cut",
-    "dissolve",
-    "dissolveblack",
-    "dissolvewhite",
-    "wipeleft",
-    "wiperight",
-    "wipeup",
-    "wipedown",
-    "diagwipeul",
-    "diagwipeur",
-    "diagwipedl",
-    "diagwipedr",
-    "pushleft",
-    "pushright",
-    "pushtop",
-    "pushdown",
-    "circlein",
-    "circleout",
-    "rect",
     "kenburns",
-    "kenburnsaoi",
-    "timelapse",
+    "dissolve",
+    "wiperight",
+    "circleout",
+    "pushright",
+    "rect",
 )
 _FILETYPE_SNAPSHOT_UNSET = object()
 
@@ -549,15 +536,18 @@ class AppController(
     #: beállítás-tárolóba mennek, a `view/…` kulcsok mintájára — a
     #: registry-kulcsok egy-az-egyben átvétele nem cél (más a platform).
     @Property(str, notify=statusChanged)
-    def slideshowTransition(self):  # noqa: N802 — QML-property-konvenció
-        return self._get_settings().value("view/slideshowTransition", "dissolve")
+    def slideshowTransition(self):  # noqa: N802 - QML-property-konvenció
+        """A mentett átmenet. A hét elemen kívüli (régebbi) mentett értéket
+        betöltéskor Dissolve-ra cseréli (#4856)."""
+        mentett = self._get_settings().value("view/slideshowTransition", "dissolve")
+        return mentett if mentett in _SLIDESHOW_TRANSITIONS else "dissolve"
 
     @Slot(str)
     def setSlideshowTransition(self, value: str) -> None:  # noqa: N802
         """A vetítés-átmenet megőrzése (#433).
 
-        Ismeretlen kulcsot NEM tárolunk; az eredeti 22 kulcsos készlet a
-        `picasa-create-features.md` vetítési specifikációját követi (#4567)."""
+        Ismeretlen kulcsot NEM tárolunk; a készlet az eredeti diavetítés hét
+        átmenete (`picasa-create-features.md` 4.3, #4856)."""
         if value not in _SLIDESHOW_TRANSITIONS:
             return
         self._get_settings().setValue("view/slideshowTransition", value)

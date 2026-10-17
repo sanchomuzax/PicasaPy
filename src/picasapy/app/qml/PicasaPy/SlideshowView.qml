@@ -91,32 +91,17 @@ Rectangle {
     onPlayingChanged: show._syncMusic()
     onScreensaverModeChanged: show._syncMusic()
 
-    //: #4567: az eredeti diavetítés teljes, 22 elemű készlete
-    //: (`picasa-create-features.md`, 3764–3794). A sorrend és a feliratok
-    //: a `CTransitions::*` erőforráscsaládot követik.
+    //: #4856: a diavetítés átmenet-választója az eredeti hét elemét kínálja
+    //: (`picasa-create-features.md` 4.3), ebben a sorrendben. A feliratok a
+    //: meglévő `CTransitions::*` szövegek.
     readonly property var atmenetek: [
         { kulcs: "cut", nev: qsTr("Cut") },
-        { kulcs: "dissolve", nev: qsTr("Dissolve") },
-        { kulcs: "dissolveblack", nev: qsTr("Dissolve through black") },
-        { kulcs: "dissolvewhite", nev: qsTr("Dissolve through white") },
-        { kulcs: "wipeleft", nev: qsTr("Wipe - left") },
-        { kulcs: "wiperight", nev: qsTr("Wipe") },
-        { kulcs: "wipeup", nev: qsTr("Wipe - top") },
-        { kulcs: "wipedown", nev: qsTr("Wipe - bottom") },
-        { kulcs: "diagwipeul", nev: qsTr("Wipe - up left") },
-        { kulcs: "diagwipeur", nev: qsTr("Wipe - up right") },
-        { kulcs: "diagwipedl", nev: qsTr("Wipe - down left") },
-        { kulcs: "diagwipedr", nev: qsTr("Wipe - down right") },
-        { kulcs: "pushleft", nev: qsTr("Push - left") },
-        { kulcs: "pushright", nev: qsTr("Push") },
-        { kulcs: "pushtop", nev: qsTr("Push - top") },
-        { kulcs: "pushdown", nev: qsTr("Push - bottom") },
-        { kulcs: "circlein", nev: qsTr("Circle - inwards") },
-        { kulcs: "circleout", nev: qsTr("Circle") },
-        { kulcs: "rect", nev: qsTr("Rectangle") },
         { kulcs: "kenburns", nev: qsTr("Pan and Zoom") },
-        { kulcs: "kenburnsaoi", nev: qsTr("Pan and Zoom - face") },
-        { kulcs: "timelapse", nev: qsTr("Time Lapse") }
+        { kulcs: "dissolve", nev: qsTr("Dissolve") },
+        { kulcs: "wiperight", nev: qsTr("Wipe") },
+        { kulcs: "circleout", nev: qsTr("Circle") },
+        { kulcs: "pushright", nev: qsTr("Push") },
+        { kulcs: "rect", nev: qsTr("Rectangle") }
     ]
     property string transitionKind: "dissolve"
     //: #2992: a diaidő a sáv ± gombjairól a HÍVÓNAK megy (Main.qml →
