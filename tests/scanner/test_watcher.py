@@ -246,9 +246,7 @@ class TestWindowsKonyvtarTorles:
 
     @pytest.fixture(autouse=True)
     def _windows(self, monkeypatch):
-        monkeypatch.setattr(
-            "picasapy.scanner.watcher._torolt_ut_tipusa_ismeretlen", lambda: True
-        )
+        monkeypatch.setattr("picasapy.scanner.watcher._platform", lambda: "win32")
 
     def _kezelo(self, tmp_path, jelzesek):
         from picasapy.scanner.watcher import _Handler
