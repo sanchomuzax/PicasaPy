@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pytest
@@ -154,12 +155,24 @@ def test_clicking_album_suggestion_opens_that_album(qml_app, qt_app, tmp_path):
     # A lista késleltetve (150 ms) frissül; a sort csak a TELJES szóhoz
     # tartozó, albumot is tartalmazó lista után keressük, különben a régi
     # lista egy éppen lecserélődő sorára kattintanánk.
-    assert _wait(
-        qt_app,
-        lambda: popup.property("visible") is True
-        and popup.property("query") == "recently"
-        and any(s["kind"] == "album" for s in (_javaslatok() or [])),
-    )
+    # A javaslatlista több lépésben (mappák, albumok) állhat össze: a sort csak
+    # akkor keressük, ha a lista legalább fél másodpercig változatlan, különben
+    # a megtalált index alatt a kattintás pillanatában már más sor állhat
+    # (CI: a mappa-javaslatra esett a kattintás, az album nem nyílt meg).
+    allapot = {"lista": None, "ota": time.monotonic()}
+
+    def _stabil_albumos_lista():
+        most = _javaslatok() or []
+        if most != allapot["lista"]:
+            allapot["lista"], allapot["ota"] = most, time.monotonic()
+        return (
+            popup.property("visible") is True
+            and popup.property("query") == "recently"
+            and any(s["kind"] == "album" for s in most)
+            and time.monotonic() - allapot["ota"] >= 0.5
+        )
+
+    assert _wait(qt_app, _stabil_albumos_lista)
     rows = [row for row in _walk(popup) if row.objectName() == "suggestionRow"]
     assert rows and rows[0].isVisible()
     suggestions = _javaslatok()
@@ -174,7 +187,8 @@ def test_clicking_album_suggestion_opens_that_album(qml_app, qt_app, tmp_path):
     assert _wait(qt_app, lambda: controller.currentAlbumToken == token), (
         "az album-javaslat kiválasztása nem nyitotta meg az albumot: "
         f"currentAlbumToken={controller.currentAlbumToken!r}, várt={token!r}, "
-        f"lista látszik={popup.property('visible')!r}, mező={field.property('text')!r}"
+        f"lista látszik={popup.property('visible')!r}, mező={field.property('text')!r}, "
+        f"mappa={controller.currentFolder!r}"
     )
     # A képek betöltése háttérben megy; a CI-n lassabb lehet, mint a nyitás.
     assert _wait(qt_app, lambda: controller.photos.rowCount() == 24, 20.0), (
