@@ -8856,7 +8856,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
             <translation>Zakreni ulijevo</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Poništi sve izmjene</translation>
         </message>
@@ -8887,6 +8887,11 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Otvori pomoću</translation>
         </message>
         <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Otvori pomoću...</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Spremi</translation>
@@ -8909,7 +8914,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Prenesi u &amp;Picasa web-albume...</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Blokiraj od prijenosa</translation>
@@ -12837,7 +12842,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
             <translation>Zakreni ulijevo</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Poništi sve izmjene</translation>
         </message>
@@ -12917,7 +12922,7 @@ picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD;stringres:Slingshot::ID_QUI
             <translation>Brzi prijenos</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Blokiraj od prijenosa</translation>

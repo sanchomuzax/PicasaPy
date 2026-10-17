@@ -7,7 +7,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, QPointF, QRect, Qt
 from PySide6.QtGui import QColor, QImage, QPainter
-from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
@@ -118,23 +117,6 @@ def _enter_name(window, qt_app, field, name):
     QTest.keyClick(window, Qt.Key.Key_Return)
 
 
-def _visual_item(window, object_name):
-    found = window.findChild(QQuickItem, object_name)
-    if found is not None:
-        return found
-
-    def walk(item):
-        for child in item.childItems():
-            if child.objectName() == object_name:
-                return child
-            nested = walk(child)
-            if nested is not None:
-                return nested
-        return None
-
-    return walk(window.contentItem())
-
-
 def test_named_row_matches_reference_and_9b_header_at_nearby_heights(
     qml_app_valodi_belyegkep, qt_app, tmp_path
 ):
@@ -226,7 +208,7 @@ def test_named_row_matches_reference_and_9b_header_at_nearby_heights(
     assert re.search(r"font\.pixelSize\s*:\s*16\b", source)
 
 
-def test_enter_opens_people_dialog_for_existing_names_and_routes_new_names_through_it(
+def test_enter_routes_existing_names_directly_and_new_names_through_people_dialog(
     qml_app_valodi_belyegkep, qt_app, tmp_path
 ):
     window, controller, panel, library, photo_path, _photo_row, unnamed_ids = (
@@ -244,36 +226,11 @@ def test_enter_opens_people_dialog_for_existing_names_and_routes_new_names_throu
     _enter_name(window, qt_app, existing_field, _EXISTING_NAME)
     assert varj_feltetelre(
         qt_app,
-        lambda: (
-            (dialog := window.findChild(QObject, "peopleManagerDialog")) is not None
-            and bool(dialog.property("visible"))
-        ),
+        lambda: _named_item(panel, f"peoplePanelRow_{_EXISTING_NAME}") is not None,
         3.0,
     )
-    dialog = window.findChild(QObject, "peopleManagerDialog")
-    search = window.findChild(QObject, "peopleManagerSearchField")
-    contact = _visual_item(window, f"peopleManagerContact_{_EXISTING_NAME}")
-    choose_button = window.findChild(QObject, "peopleManagerOkButton")
-    photo_count = window.findChild(QObject, "peopleManagerPhotoCount")
-    assert dialog is not None and search is not None and contact is not None
-    assert choose_button is not None and photo_count is not None
-    assert search.property("text") == _EXISTING_NAME
-    assert contact.property("highlighted") is True
-    assert choose_button.property("text") == "Choose"
-    assert photo_count.property("text") == "0 Photos in Picasa"
     loader = window.findChild(QObject, "peoplePanelPeopleManagerLoader")
-    assert loader is not None and loader.property("active")
-
-    _click(window, choose_button)
-    assert varj_feltetelre(
-        qt_app,
-        lambda: not bool(dialog.property("visible"))
-        and _named_item(panel, f"peoplePanelRow_{_EXISTING_NAME}") is not None,
-        3.0,
-    )
-    saved = load_document(library / ".picasa.ini")
-    saved_faces = parse_faces(saved.section(photo_path.name).get("faces") or "")
-    assert sum(face.contact_id == _CONTACT_ID for face in saved_faces) == 1
+    assert loader is None or not loader.property("active")
 
     new_field = _named_item(panel, f"peoplePanelAddName_{unnamed_ids[1]}")
     assert new_field is not None and new_field.isVisible()

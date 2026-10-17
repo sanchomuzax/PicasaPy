@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import sys
 import warnings
 from collections import defaultdict
 from dataclasses import asdict, dataclass
@@ -533,6 +534,9 @@ def main() -> int:
     parser.add_argument("--tests-root", type=Path, default=root / "tests/app")
     parser.add_argument("--json", action="store_true", help="géppel feldolgozható JSON kimenet")
     args = parser.parse_args()
+    # Windowson a konzol kódolása cp1252; az ékezetes kimenet UTF-8-ban menjen.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     for directory in (args.qml_root, args.tests_root):
         if not directory.is_dir():
             parser.error(f"nem létező könyvtár: {directory}")

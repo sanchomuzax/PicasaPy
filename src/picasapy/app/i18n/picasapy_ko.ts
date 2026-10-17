@@ -8830,7 +8830,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
             <translation>시계 반대 방향으로 회전</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>모든 수정 취소</translation>
         </message>
@@ -8861,6 +8861,11 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>연결 프로그램으로 열기</translation>
         </message>
         <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>연결 프로그램으로 열기...</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>저장</translation>
@@ -8883,7 +8888,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Picasa 웹앨범에 업로드(&amp;P)...</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>업로드 차단(&amp;B)</translation>
@@ -12810,7 +12815,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
             <translation>시계 반대 방향으로 회전</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>모든 수정 취소</translation>
         </message>
@@ -12890,7 +12895,7 @@ picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD;stringres:Slingshot::ID_QUI
             <translation>빠른 업로드</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>업로드 차단(&amp;B)</translation>

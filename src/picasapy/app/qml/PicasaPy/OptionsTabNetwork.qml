@@ -56,10 +56,12 @@ ColumnLayout {
             id: logLevelCombo
             objectName: "optionsNetworkLogLevelCombo"
             // Az eredeti `<popup name="loglevel">` szélesség nélkül áll, tehát a
-            // leghosszabb tételhez igazodik; a felirat nem vágódhat le.
+            // leghosszabb tételhez igazodik; a felirat nem vágódhat le. Ráhagyás
+            // nélkül, mert a Beállítások 480 px-es legkisebb szélességén a fül
+            // különben túllógna (#3572).
             Layout.preferredWidth: Math.ceil(Math.max.apply(null,
                 model.map(function(t) { return logLevelMetrics.advanceWidth(t) })))
-                + leftPadding + rightPadding + (indicator ? indicator.width : 0) + 8
+                + leftPadding + rightPadding + (indicator ? indicator.width : 0)
             FontMetrics { id: logLevelMetrics; font: logLevelCombo.font }
             model: [qsTr("Disable logging"), qsTr("Log errors only"),
                     qsTr("Minimal log information"), qsTr("Detailed log information"),

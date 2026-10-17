@@ -164,7 +164,8 @@ PicasaMenu {
 
     MenuItem {
         objectName: "viewerMenuUndoAllEdits"
-        text: qsTr("Undo All Edits")
+        // #5195: az eredetiben kis `a`-val: FolderPhoto::ID_PICTURE_REVERT
+        text: qsTr("Undo all Edits")
         enabled: menu.hasEdits
         onTriggered: menu.undoAllEditsRequested()
     }
@@ -264,7 +265,8 @@ PicasaMenu {
     }
     PicasaMenuItem {
         objectName: "viewerMenuBlockUpload"
-        text: qsTr("Block Upload")
+        // #5195: a hivatalos felirat (AlbumPhoto::ID_SUPPRESS)
+        text: qsTr("Block from Uploading")
         placeholder: false
         // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
         retired: true

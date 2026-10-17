@@ -3688,7 +3688,7 @@ ApplicationWindow {
                             onShowUnnamedRequested:
                                 window.facesAlbumMode = "unnamed"
                             onNameSubmitted: function(faceId, name) {
-                                peoplePanel.nameFaceFromPanel(faceId, name)
+                                peoplePanel.nameFaceFromPanel(faceId, name, true)
                             }
                             onNamedSuggestionAccepted: Qt.callLater(
                                 function() {
@@ -4552,6 +4552,10 @@ ApplicationWindow {
                     Number(controller.photos.idAt(window.fileOpTargetRow)),
                     controller.currentPersonName)
                 : false
+            // #5195: a „Társítás ▸" almenü listája a megnyitáskor készül
+            photoContextMenu.nativeOpenWith = fileOpsController.hasNativeOpenWith()
+            photoContextMenu.openWithApps = ut.length > 0
+                ? fileOpsController.openWithChoices(ut) : []
         }
         // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
         // együtt kötve, hogy a menü újranyitáskor friss legyen)
@@ -4611,6 +4615,11 @@ ApplicationWindow {
         onOpenFileRequested: {
             var target = controller.photos.filePathAt(window.fileOpTargetRow)
             if (target.length > 0) fileOpsController.openPhoto(target)
+        }
+        // #5195: a „Társítás ▸" almenü egy alkalmazása megnyitja a képet
+        onOpenWithAppRequested: function(appId) {
+            var target = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (target.length > 0) fileOpsController.openWithApp(target, appId)
         }
         // #4533: Társítás… — Windowson a héj saját párbeszéde, Linuxon a mi választónk
         onOpenWithRequested: {

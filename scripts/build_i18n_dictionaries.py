@@ -161,6 +161,21 @@ def _hungarian_text(message: ET.Element) -> str:
     return translation.text or ""
 
 
+def _single_picasa_origin_key(message: ET.Element) -> str | None:
+    """A magyar TS-ben megadott egyetlen eredetkulcs, ha Picasa-sor jelöli."""
+    if message_origin(message) != ORIGIN_PICASA:
+        return None
+    key_lines = [
+        line[len(ORIGIN_KEY_PREFIX) :].strip()
+        for line in (message.findtext("extracomment") or "").splitlines()
+        if line.startswith(ORIGIN_KEY_PREFIX)
+    ]
+    if len(key_lines) != 1:
+        return None
+    keys = [key.strip() for key in key_lines[0].split(";") if key.strip()]
+    return keys[0] if len(keys) == 1 else None
+
+
 _Key = tuple[str, str, str, int]
 
 
@@ -239,16 +254,20 @@ def _build_language(
         if previous is not None and _keep_existing(message, previous):
             continue
         hungarian_translation = _hungarian_text(message)
-        origin_match = match_original_translation(
-            hungarian_translation,
-            source_texts,
-            source_texts,
-            hungarian_index=source_index,
-        )
-        if origin_match is None:
-            set_message_origin(message, ORIGIN_PICASAPY)
+        exact_key = _single_picasa_origin_key(message)
+        if exact_key is not None:
+            set_message_origin(message, ORIGIN_PICASA, (exact_key,))
         else:
-            set_message_origin(message, ORIGIN_PICASA, origin_match[1])
+            origin_match = match_original_translation(
+                hungarian_translation,
+                source_texts,
+                source_texts,
+                hungarian_index=source_index,
+            )
+            if origin_match is None:
+                set_message_origin(message, ORIGIN_PICASAPY)
+            else:
+                set_message_origin(message, ORIGIN_PICASA, origin_match[1])
 
         if app_code == "en":
             _set_source_language(message)
@@ -258,6 +277,15 @@ def _build_language(
         # hagyjuk, mintsem egyetlen eredeti alakból nyelvtani formát találjunk ki.
         if message.get("numerus") == "yes":
             _set_unfinished(message)
+            continue
+
+        if exact_key is not None:
+            value = target_texts.get(exact_key)
+            if value is None:
+                _set_unfinished(message)
+                continue
+            _set_finished(message, value)
+            set_message_origin(message, ORIGIN_PICASA, (exact_key,))
             continue
 
         if origin_match is None:
