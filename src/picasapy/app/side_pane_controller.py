@@ -42,6 +42,7 @@ import sqlite3
 import threading
 
 from picasapy.index.side_pane import SidePaneCollections, load_side_pane_collections
+from picasapy.ini import central_contacts_path
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,9 @@ class SidePaneMixin:
         A hiba nyelt, de NAPLÓZVA: egy diagnosztikai kellemetlenség soha
         nem viheti el a háttér-szinkront, viszont vakon sem állhatunk."""
         try:
-            collections = load_side_pane_collections(conn)
+            collections = load_side_pane_collections(
+                conn, central_path=central_contacts_path(self._db_path)
+            )
         except Exception:  # noqa: BLE001 — a szinkron nem hiúsulhat meg tőle
             logger.warning(
                 "a hasáb gyűjteményeinek háttérbeli előállítása hibára futott",
@@ -103,7 +106,9 @@ class SidePaneMixin:
         menetben mindkettőhöz."""
         collections = self._take_side_pane_stash()
         if collections is None:
-            collections = load_side_pane_collections(conn)
+            collections = load_side_pane_collections(
+                conn, central_path=central_contacts_path(self._db_path)
+            )
         self._init_custom_collections()
         self._apply_side_pane(collections)
 

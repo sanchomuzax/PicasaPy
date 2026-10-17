@@ -26,7 +26,8 @@ from picasapy.ini import (
     UNIDENTIFIED_CONTACT,
     IniConflictError,
     IniSaveError,
-    contacts_of,
+    ContactNameResolver,
+    central_contacts_path,
     ensure_contact,
     find_contact_id,
     has_ini_source,
@@ -85,10 +86,7 @@ class FacesHelper(QObject):
                     faces = parse_faces(raw_faces)
                 except ValueError:
                     faces = ()
-                names = {
-                    contact.person_id.casefold(): contact.name
-                    for contact in contacts_of(document)
-                }
+                names = self._contact_name_resolver().names_by_id(document)
                 ini_faces = [
                     _face_to_dict(face, names)
                     for face in faces
@@ -139,9 +137,12 @@ class FacesHelper(QObject):
         if not image_path:
             return []
         document, _path = self._load(image_path)
-        if document is None:
-            return []
-        names = {contact.name for contact in contacts_of(document) if contact.name}
+        resolver = self._contact_name_resolver()
+        names = (
+            set(resolver.central_names())
+            if document is None
+            else set(resolver.names_by_id(document).values())
+        )
         return sorted(names, key=str.casefold)
 
     @Slot(str, float, float, float, float, str, result=bool)
@@ -271,8 +272,21 @@ class FacesHelper(QObject):
         existing = find_contact_id(document, clean_name)
         if existing is not None:
             return document, existing
+        for person_id, resolved_name in self._contact_name_resolver().names_by_id(
+            document
+        ).items():
+            if resolved_name.casefold() == clean_name.casefold():
+                return ensure_contact(document, person_id, resolved_name), person_id
         new_id = secrets.token_hex(8)
         return ensure_contact(document, new_id, clean_name), new_id
+
+    def _contact_name_resolver(self) -> ContactNameResolver:
+        central_path = (
+            central_contacts_path(self._index_path)
+            if self._index_path is not None
+            else None
+        )
+        return ContactNameResolver(central_path)
 
     def _mutate(self, image_path: str, mutate, left=None, top=None, right=None, bottom=None) -> bool:
         """Közös írási keret: szerializált, best-effort `update_document` egyetlen

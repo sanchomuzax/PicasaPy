@@ -37,6 +37,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 
+from picasapy.ini import central_contacts_path, merge_contacts_xml
 from picasapy.pmpimport.db3_atvetel import (
     AtvetelJelentes,
     rekordokat_atvesz,
@@ -217,6 +218,16 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
                 osszes_rekord: list = []
                 for db3 in konyvtarak:
                     beolvasas = self._olvaso(db3, remapper)
+                    if self._index_path is not None:
+                        try:
+                            merge_contacts_xml(
+                                Path(db3) / "contacts" / "contacts.xml",
+                                central_contacts_path(self._index_path),
+                            )
+                        except (OSError, ValueError):
+                            # A contacts.xml opcionális (pmp-database.md): a hibás
+                            # névjegyfájl nem állíthatja meg a képek átvételét.
+                            _log.warning("A Picasa contacts.xml nem vehető át: %s", db3, exc_info=True)
                     if isinstance(beolvasas, Db3Beolvasas):
                         rekordok = beolvasas.rekordok
                         wordhash_kihagyott = beolvasas.wordhash_kihagyott
