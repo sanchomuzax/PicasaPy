@@ -2364,120 +2364,97 @@ A job-66 a Név nélküliek csempe-mezőjének útja: nem külön névadási fel
 
 **Helyesbítés:** a korábbi „Név nélküliek névmezője inline panelmező” következtetés kizárólag a jobb fiók fejlécmezőjére (`header_editbox`) vonatkozik. A Név nélküliek csempéjének külön „Add a name” mezőjét a job-163 és a job-66 mutatja; a job-66 nem másik felületi útvonal.
 
-## 20. #5184 — a személykezelés bináris oldalának részleges eredménye
+## 20. #5184: a személykezelés bináris oldalának eredménye (2026-10-17, 2. kör)
 
-**Hatókör:** az eredeti `Picasa3.exe` célzott diszasszemblye: N1, N3, N5/N6
-adatkezelői útja és N7 kijelölési adatszerkezete. A felületi N4/N5/N6/N7/N8
-felvételeket a Colab-végrehajtó rögzíti; ez a szakasz azokat nem állítja
-lezártnak. A 85-ös értékek és a `red.cfg` korábbi leltára az 1. és 16.
-szakaszban marad a részletes forrásukkal.
+**Hatókör:** a jegy N1, N3, N5, N6, N7 bináris oldala, valamint a felvételes N4 és N8. Az öt dekompilált függvény a `referencia/ghidra/2026-10-17-szemelykezeles.txt` fájlban van: `0x0048ef20`, `0x007ba820`, `0x00584cc0`, `0x00647270`, `0x006470d0`. A többi címet diszasszemblálás (`annot_disasm.py`) és a bináris-index élei (`xrefs`, `string_xrefs`) adják. **Az index csak a közvetlen hívásokat látja**, a vtable-hívásokat nem; a negatív állítások erre a korlátra épülnek.
 
-### 20.1 N1 — már megnevezett képek felismerése
+**Jelölés:** `bináris 0x…` = a címen olvasott kód · `Ghidra` = a dekompilált kimenet · `index` = a bináris-index éle · `disasm` = a kód helyi diszasszemblálása · `felvétel (job-N)` = a Colab-végrehajtó leírása · `NINCS MEG` = nem szerezhető meg eddig.
 
-`0x0047bee0` hozza létre a `CFaceDetector::Queue`-t; a feldolgozó `0x0047b020`
-a `FRAddSuggesetions` beállítástól függő javaslat-útban hívja a `0x0048ef20`
-felismerési és egyeztetési útvonalat. Ez a javaslatkapu önmagában nem a
-normál arckeresés engedélyezője. A kép-adatbázis útjáról a `0x00467ca0` a
-`0x0047bfd0`-n keresztül tesz munkát a `0x006a02e0` sorba. A vizsgált
-diszpécser- és munkafüggvényekben nem látszik közvetlen „van már megnevezett
-arc” feltétel.
+### 20.0 Mérleg
 
-Ez **nem** bizonyítja, hogy az ilyen képet mindig felismeri: az előzetes
-jogosultsági szűrő és a `0x0048ef20` teljes egyeztetési útja nincs végigkövetve.
-**NINCS MEG**, hogy a normál pásztázás a már megnevezett arcú képet a sorba
-teszi-e, illetve pontosan hol dönt erről. Megszerzés: a `0x00467ca0`-ba érkező
-kép-lista feltételének, a sorba tétel hívóinak és a `0x0048ef20` arc-
-egyeztetési ágának folytatása; ha az indirekt felismerőhívás paraméterei
-diszasszemblyből nem dönthetők el, célzott Ghidra-kör.
+| Pont | Eredmény röviden | Állapot |
+|---|---|---|
+| N1 | A sorba állító útban nincs név-feltétel; a kép újrafeldolgozását egy arc-halmaz ellenőrző összege dönti el. Hogy a névvel rendelkező képen talál-e az eredeti további arcot: NINCS MEG. | BLOKKOLT |
+| N3 | A detektor-hívás helye és a küszöb útja megvan (nulla → `this+0x3498`). A bemeneti méret, a pontszámküszöb, a minimális arcméret és a felismerési arány: NINCS MEG. | BLOKKOLT |
+| N4 | A nézőben alapból nincs keret és név a megnevezett arcon (felvétel). | LEZÁRVA |
+| N5 | A kijelölt arc és a csempe mellőzése az ini-íróhoz vezet (megerősítve). A személyszintű mellőzés útja nincs dekompilálva. | BLOKKOLT |
+| N6 | A törlés a memóriabeli listából távolít el; a [Contacts2] írója nem szerepel a törlési út közvetlen hívásai között; az arcok sorsa NINCS MEG. | BLOKKOLT |
+| N7 | Név nélküliek: többes kijelölés (megerősítve). Személykezelő: a törlés egy sort céloz; a lista kijelölési módja NINCS MEG. | BLOKKOLT |
+| N8 | A referencia-felvétel a job-186; a leírása nem állt rendelkezésre, ezért itt nincs szöveg. | BLOKKOLT |
 
-### 20.2 N3 — a detektor számszerű paraméterei
+Nyitott kérdések: 0 nyílt · 1 lezárva · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”
 
-Az `FRSuggestionThreshold=85` (`0x006e0eda`) és
-`FRSortThreshold=85` (`0x006e0ee8`) **javaslat- és csoportosítási küszöb**,
-nem a detektor pontszámküszöbe. Ezt a `0x0047b020` javaslatkapuja és az
-1. szakasz beállításleírása támasztja alá. A `plugins/red.cfg` külső modell
-konfigurációja létezik (16. szakasz), és a `0x0045f0c0` betöltője a
-`plugins/red.cfg`-re hivatkozik; további loader-hivatkozás a `0x00803c80`.
-Nem igazolt, hogy mindkét betöltő ugyanahhoz az arcfelismerési futáshoz
-tartozik. A modellparaméterek jelentése nincs megfejtve.
+### 20.1 N1: már megnevezett kép és a sorba állítás
 
-| Paraméter | Eredmény |
-|---|---|
-| Detektor bemeneti képmérete | **NINCS MEG** |
-| Detektor pontszámküszöbe | **NINCS MEG**; a 85/85 érték nem ez |
-| Minimális arcméret | **NINCS MEG** |
-| Külső modell betöltése és a fenti értékek átadása | A `red.cfg` modell-leltára ismert a 16. szakaszból; e paraméterek hozzárendelése **NINCS MEG** |
+1. **A sorba állítás menete (Ghidra, disasm).** A `0x0048ef20` képenként dönt. A `0x0048ec70` a kulcshoz tartozó, küszöb feletti arcok indexeiből ellenőrző összeget képez (`bináris 0x0048ed57-0x0048eda6`: `rol 7`, `xor`), és a `0x0048ef20` ezt a tárolt értékkel veti össze (`Ghidra`, a 242. sor: `uStack_11c == *puVar5`). Egyezés esetén a kép kimarad.
+2. **Nincs név-feltétel a két függvényben.** Az egyetlen összehasonlítás az arc-tábla értékét a kép kulcsával veti össze (`bináris 0x0048ed67-0x0048ed71`). A második tábla értékét 5000-es (`0x1388`) küszöbbel nézi (`bináris 0x0048ed85-0x0048ed8c`).
+3. **Feltételes:** a kulcs jelentése (kép- vagy személyazonosító) a hívóban nincs igazolva. Ha személyazonosító volna, az összeg a személy arcainak halmaza lenne, és az állítás gyengülne.
+4. **A mi oldalunk (kódolvasat, NEM futtatva):** `src/picasapy/app/face_scan_controller.py:466-476`. A fotó kimarad, ha az ini-ben van azonosított arc (`is_identified`). Ez név-alapú kihagyás, az eredeti sorba állítójában nincs meg.
+5. **Nyitott:** talál-e az eredeti további arcot a névvel rendelkező képen. Ehhez a detektor utáni feldolgozás (`0x0048e1f0` után, `0x0048af60`) és egy Colab-mérés kell. NINCS MEG.
 
-Megszerzés: a `0x0048ef20` felismerési útjából a `red.cfg` betöltéséig és a
-detektorhívásig követni az argumentumokat, majd a `vfr_VdeFaceFinder` modell-
-payload sémáját megfejteni. Ghidra-kör kell: `0x0048ef20` — a betöltött
-detektor milyen bemeneti képméretet, pontszámküszöböt és minimális arcméretet
-kap, és melyik argumentum vagy modellmező adja ezeket? [blokkoló]
+### 20.2 N3: a detektor paraméterei
 
-### 20.3 N5 — személy/arc mellőzése
+- A `0x0048ef20` float-argumentuma nulla esetén a `this+0x3498` mezőt használja (`Ghidra`, 651-652. sor). Az egyik közvetlen hívó, a `0x00414940`, nullát ad át (`bináris 0x00414a8f`: `fldz`, hívás `0x00414a9e`). Ezen az úton a küszöb tehát a `this+0x3498` tárolt értéke. **A `this+0x3498` értéke és írója: NINCS MEG.**
+- A detektor-hívás helye a `0x0048e1f0` (912 bájt); ez a kép-futtató, nem igazolt, hogy maga a detektor. A float ott a negyedik argumentum (`bináris 0x0048e939`, `0x0048e93f`). A függvényben nincs közvetlen 960-as vagy 0,9-es állandó (`disasm`). A detektor belső paraméterezése indirekt vtable-hívásokon át történik (`bináris 0x0048e242`, `0x0048e2f1`); a hívott célok: NINCS MEG.
+- A `this+0x2e10` detektor-objektumot a `0x0045f0c0` tölti be a `plugins/red.cfg` fájlból (16. szakasz). A betöltött mezők: NINCS MEG.
+- A `0x1388` (5000) a `0x0048ec70` második tábláján szűr; a tábla jelentése (pontszám?) nincs igazolva, és nem a detektor küszöbe. A 3.4/d szakasz mért tartománya (≈5100-6300) összefér vele, de a tábla és a mért oszlop megfeleltetése nincs igazolva.
+- **Az eredeti felismerési aránya: NINCS MEG.** Csak mért adat adhatja; a Colab-végrehajtó felvétele kell.
 
-A `peoplepanel` parancselosztója `0x0063f970`. A kijelölt elemek „ignore”
-parancsa `0x006470d0`: a `CThumbDB` `+0x2e94` (`]ignoreface`) és `+0x2e98`
-(`]unknownface`) album-tagsági műveleteit hívja, majd képenként közvetlenül
-meghívja a `0x00484820` `.picasa.ini` arcírót. A writer `faces=` és
-`backuphash` adatot ír; a `facedata` írását a `FRWriteFaceDataINI` kapuzza
-(18.2).
+### 20.3 N5: mellőzés (kijelölt arc, csempe, személy)
 
-A csempe/csoport `ignore:` parancsa külön `0x00647270` kezelőre jut. Ez a
-különleges albumtagságokat frissíti, de közvetlenül nem hívja a
-`0x00484820` írót. A job-64 élő felvétele az X-es „Ignore Person” út után
-`faces=rect64(...),ffffffffffffffff` értéket mutat (15.3/b.1), de a
-`0x00647270` és az ini-író közti közvetett kapcsolatot ez a bináris kör nem
-azonosította. A mért kimenet és a kijelölt arc közvetlen íróútja egybeillik,
-de önmagában nem bizonyítja, hogy a csempe-kezelő ugyanezt a hívási utat járja.
+**Kijelölt arc (`0x006470d0`, Ghidra, index).** A kijelölés listáját a `+0xeac` alobjektum vtable-hívása adja (`+0xd8` slot). A `0x0044a6b0` teszt nullától eltérő értéke 1000000 hibával megszakítja a műveletet, és ekkor nincs írás. Egyébként az album-műveletek futnak (`0x004d9aa0` a 0 és a 2 jelzővel, `0x004da1d0` a 2 jelzővel), majd **minden kijelölt arcra `0x00484820(rekord, arc, 1, 0)` hívódik** (`Ghidra`; index: direkt él). **Megerősített:** a kijelölt arc mellőzése az ini-írót hívja, és a mért kimenet (job-64: `faces=rect64(…),ffffffffffffffff`) ugyanezt mutatja.
 
-A pontos `db3` oszlop vagy sor, amelyben a tagság tartósul, **NINCS MEG**;
-a hívásokból ezt nem szabad mezőnévként kikövetkeztetni. Megszerzés: a
-`0x004d9aa0` és `0x004da1d0` tagsági útját a `0x004127c0`
-oszlopregisztrációjához és a db3 piszkos/mentő ágához követni, majd azonos
-képen a mellőzés előtti és utáni helyi db3-t összevetni. A jegyhez kért élő
-N5-felvétel még a Colab-végrehajtó feladata.
+**Helyesbítés:** az előző körben a `0x006470d0` a `CThumbDB` `+0x2e94` és `+0x2e98` mezőit hívta. A dekompilált kód szerint az album-műveletek a `*(DAT_00d67668+0x1034)+0x68` táblán futnak. A `]ignoreface` sztringet a `0x004ac650` használja (`index`), nem a `0x006470d0`. A `+0x2e94` és `+0x2e98` megfeleltetés NINCS igazolva.
 
-### 20.4 N6 — személy törlése
+**Csempe (`0x00647270`).** A csempe mellőzése közvetve eléri az ini-írót: a `0x00647270` a `0x00449090`-t hívja (`Ghidra`, index), a `0x00449090` pedig a `0x00484820`-t (`index`; `disasm`: `bináris 0x004498f3`, argumentumok: az arc, a `1` és a `0`). A `0x00449090` hívása feltételes: a `0x0044a6b0` teszt nullától eltér, és a `param_3` jelző nem nulla. Ha a `param_3` nulla, és a teszt nem nulla, a függvény 1000000 hibával tér vissza. **Feltételes:** a `0x00449090` belső feltétele NINCS dekompilálva.
 
-A „Delete Person” esemény kezelője `0x007ba820`. Egyetlen kijelölt
-sorszámot tart (`[ebp+0x13c]`), szükség esetén rendezési indexet fordít vissza,
-majd a megerősítés után meghívja a `0x005836f0` és `0x00584cc0` útvonalat, és
-eltávolítja a kiválasztott sort a felületi listából. A kontaktok
-`.picasa.ini`-beli tartós írója `0x00586e20` (`[Contacts2]`), betöltője
-`0x00587110`.
+**Személyszintű mellőzés: NINCS MEG.** A „move this person to the ignored people album” sztring (`0x00c99830`) a `0x005fdc30` és a `0x00640340` függvényekhez tartozik (`index`). Egyik sincs dekompilálva, ezért nem tudjuk, melyik tárolót írja.
 
-**NINCS MEG**, hogy a törlési út pontosan mely `[Contacts2]` kulcsot törli,
-mely `db3` sort/oszlopot módosítja, és mi történik a korábban ehhez a személyhez
-rendelt arcok `faces=` hivatkozásával. A közvetlen hívási gráf nem zárja ki a
-közvetett callbacket. A szerződés feloldásához célzott dekompiláció kell:
-Ghidra-kör kell: `0x007ba820` — a Delete Person esemény `0x00584cc0` utáni
-callbackjei mely `[Contacts2]` kulcsokat és `db3` sorokat módosítják, és hogyan
-kezelik a törölt személyhez rendelt arcok hivatkozásait? [blokkoló]
+### 20.4 N6: a személy törlése
 
-### 20.5 N7 — kijelölési adatszerkezet
+**A törlési kezelő (`0x007ba820`, Ghidra).**
+- Egy aktív sort céloz: a sor indexe a `+0x13c` mezőben van, a `0xffffffff` jelentése „nincs kijelölés”. Rendezett listánál az indexet a `+0x100` tömbön át kell feloldani.
+- Megerősítés: a `ContactManagerDlg::ConfirmDelete` párbeszéd. A „ne figyelmeztess” beállítás a `Preferences` csoportban van.
+- Sorrend: `0x005836f0` (feltételes: a sor jelzőbitje 1 (`bVar1 & 1`), a kollekció létezik, és `(jelző & 6) != 4`), majd `0x00584cc0(azonosító)`, majd a sor eltávolítása a felületi listából (`0x007b5ad0`, nincs dekompilálva), végül a sor-jelző tömb eltolása bájtonként.
 
-A Név nélküliek arc-kijelölése a `0x007199b0` `selected` kezelési ágában
-egy szülőcsomópont vektorán (`[ebx+0x32c]`, darabszám `[ebx+0x330] >> 1`)
-keres; a megtalált arccsomópont `+0x5d` jelzőbájtját állítja be. Vagyis a
-kijelöltség elemenként tárolódik, nem egyetlen kiválasztott arc indexében.
-A korábbi job-180 felvételen a Ctrl+A mind a hat csempét egyszerre
-kijelölte, ami függetlenül egyezik a bináris adatszerkezettel; a jelen jegy
-friss N7-felvételét a Colab-végrehajtó rögzíti.
+**A `0x00584cc0` (Ghidra).** Zárolás után megkeresi az elemet (`0x00588210`), törli a csomópont `+0x38` mezőjének 0. bitjét, majd meghívja a `0x00587b90`-t. Ezt csak a `0x00584cc0` hívja (`index`). Ha az nem sikerül, a `0x0058dde0` következik.
 
-A Személykezelő törlési kezelője (`0x007ba820`) egy kijelölt sor indexével
-dolgozik; a `contactmgr.fen` `contacts` listája nem deklarál többszörös
-kijelölést. Ez a bináris művelet egyetlen aktív sort céloz, de önmagában nem
-bizonyítja, hogy a lista felülete több sort sem enged kijelölni. A pontos
-felületi modell N7-felvételre vár.
+**A [Contacts2] írója (`0x00586e20`).** A törlési út egyik függvénye sem hívja közvetlenül (`index`, direkt élek). Közvetlen hívói: `0x00484820` (az arc-író; `disasm`: `bináris 0x00485118`, a kollekció a `this+0x2c5c` mezőből jön), `0x0068ac20` és `0x007d55f0`. A törlés tehát a memóriabeli listát frissíti. A lemezre írás későbbi mentésben vagy az arc-íróhoz kötve történik; ez utóbbi még nincs vizsgálva. **Feltételes.**
 
-### 20.6 A #5184 mérlege
+**Az arcok sorsa: NINCS MEG.** A `0x005836f0` (2332 bájt) a törlés feltételes ágában fut, de nincs dekompilálva, ezért nem tudjuk, mit csinál az arcokkal. Direkt élei között nincs az arc-író (`0x00484820`).
 
-**Bizonyítottsági fok: feltételes.** Az N5 szűk állítása — a kijelölt arcok
-mellőzési útja meghívja az ini-írót, és a mért eredményben az `ffff…` jelöli
-a mellőzött arcot — két független úton egyezik. N1, N3 és N6 bináris oldala,
-valamint N7 Személykezelő-felületi modellje nyitott; N4, N5/N6/N7 felületi
-viselkedése és N8 képernyőképe a végrehajtói felvételre vár. A megnevezett
-arcú képek kihagyására vonatkozó cáfoló próbában a sorbaállító és a háttér-
-munkás útját vizsgáltuk: ott nem találtunk név szerinti szűrőt. Ez a cáfolat
-nem zárja ki a sorbaállítás előtti feltételt, ezért N1-et nem dönti el.
+### 20.5 N7: kijelölési modell
+
+- **Név nélküliek (megerősítve):** a mellőzési út (`0x006470d0`) egy listát dolgoz fel, amelynek hossza a vtable-hívásból jön (`Ghidra`), és minden elemen végigmegy. A felvétel (job-180, Ctrl+A után hat csempe) ezzel egyezik.
+- **Személykezelő:** a törlési kezelő (`0x007ba820`) egyetlen sort olvas (`+0x13c`). A lista kijelölési módja (egy vagy több) a `contactmgr.fen` fájlból vagy a lista-vezérlő jelzőjéből dönthető el. Ezt nem olvastam: **NINCS MEG.**
+
+### 20.6 N4 és N8: felvételek
+
+- **N4 (job-187): LEZÁRVA.** A megnevezett arcon a nézőben alapból nincs keret és nincs név. Ez felvételi eredmény: a képkockát nem néztem meg, az összefoglalót a jegy adja. Nálunk nem mérve.
+- **N8 (job-186): BLOKKOLT.** A People Manager leírása nem állt rendelkezésre, ezért szöveg nincs. A mérce a job-186 kimenete; a leírást a jegy kommentjéből kell ide másolni.
+
+### 20.7 Ghidra-kör kérések
+
+Ghidra-kör kell: 0x0048e1f0 - a detektor vtable-hívásainak (`call eax`, `0x0048e242`, `0x0048e2f1`) célja: milyen bemeneti képméretet, pontszámküszöböt és minimális arcméretet kap, és honnan (a `this+0x2e10` objektum mezőiből vagy a kapott float-ból)? [blokkoló]
+
+Ghidra-kör kell: 0x0045f0c0 - a `red.cfg` betöltője milyen detektor-paramétereket állít be a `this+0x2e10` objektumra, és hol íródik a `this+0x3498` küszöb? [blokkoló]
+
+Ghidra-kör kell: 0x0048af60 - a sorba állítás `param_5 == 0` ága mit csinál a detektor eredményével, és hogyan viszonyul a 0x0048e1f0 hívásához? [blokkoló]
+
+Ghidra-kör kell: 0x005836f0 - a Delete Person arc-ága mit csinál a törölt személy arcaival (`faces=` törlés, átnevezés vagy mellőzés)? [blokkoló]
+
+Ghidra-kör kell: 0x00587b90 és 0x0058dde0 - a memória-listából törlésen túl írnak-e a [Contacts2]-be? Ha nem, a 0x0068ac20 és a 0x007d55f0 mikor és milyen mentési úton hívja a 0x00586e20-t? [blokkoló]
+
+Ghidra-kör kell: 0x0044a6b0 - mit tesztel a visszatérési értéke, és mit jelent a csempe-ág (0x00647270) és a kijelölt arc ága (0x006470d0) elágazása? [blokkoló]
+
+Ghidra-kör kell: 0x005fdc30 és 0x00640340 - a személyszintű mellőzés („move this person to the ignored people album”) melyik tárolót írja? [blokkoló]
+
+### 20.8 A #5184 mérlege
+
+**Bizonyítottsági fok: feltételes.** Megerősített: az N5 szűk állítása (a kijelölt arc mellőzése az ini-írót hívja, a mért kimenet `ffff…`) és az N7 Név nélküliek többes kijelölése. Feltételes: az N1 név-független sorba állítása (a kulcs jelentése és a detektor utáni ág nincs igazolva), az N6 törlési útja (a [Contacts2] írása későbbi mentésen vagy az arc-íróhoz kötve történik), és a csempe-ág (a `0x00449090` belső feltétele). NINCS MEG: az N3 detektor-paraméterei és az eredeti felismerési aránya, az N5 személyszintű útja, az N6 arc-sorsa, az N7 Személykezelő kijelölési módja, az N8 leírása.
+
+**Cáfoló kísérletek.** (a) N1: a két függvényben kerestem név- vagy kontakt-összehasonlítást; nincs. Ez a negatív állítás csak a két függvény teljes kódjára szól, a hívóit nem olvastam végig. (b) N5: a kijelölt arc ágában az író minden elemre fut, de csak akkor, ha a `0x0044a6b0` teszt nullát ad; nullától eltérő értéknél a függvény írás nélkül tér vissza (1000000). (c) N6: a törlési út direkt élei nem tartalmazzák a [Contacts2] írót; ez index-negatív, a vtable-hívásokat nem zárja ki.
+
+### 20.9 Nyitott kérdések mérlege (20.)
+
+Nyitott kérdések: 0 nyílt · 1 lezárva · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A blokkolt tételek mindegyike Ghidra-kört vagy Colab-felvételt igényel; egyiknek sincs tulajdonosi döntésre vagy gépre szüksége.
