@@ -18,8 +18,7 @@ Lefedve (valódi egérrel vagy billentyűvel, a hatást állapoton mérve):
 Nincs itt, mert a felületen nincs elérhető kattintás (ld. a jelentést):
 `unnamedNameField`, `addNameButton`, `ignoreFacesButton`,
 `moreSuggestionsButton`, `optionsFaceUploadContactPhotosCheck`,
-`publishUploadAllSize`, `publishUploadAllAccess`, `unnamedWelcomeLearnMoreButton`,
-`nameInputField`.
+`publishUploadAllSize`, `publishUploadAllAccess`, `unnamedWelcomeLearnMoreButton`.
 
 A felugró menük és párbeszédek a kattintás célját a saját ablakukban is
 kaphatják; a `kattints` (5150-es segéd) ezt az ablakot keresi meg. Az e-mail-teszt
