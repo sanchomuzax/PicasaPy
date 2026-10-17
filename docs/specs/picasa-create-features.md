@@ -5539,6 +5539,104 @@ Következő felvehető munka: célzottan feloldani a `0x00423300` callback adat�
 
 **Módosított fájl:** `docs/specs/picasa-create-features.md` (új 4.3 szakasz).
 
+#### 4.3 7. kör: a véletlen pásztázás képlete és magja (#5225, 2026-10-17)
+
+**Következtetés.** A `0x0076d900` két jelölt téglalapot készít. Két helyi
+LCG-törtet (`u`, `v`) addig húz, amíg `|u-v| ≥ 0,5`; ezek adják a két
+mérettényezőt. Négy külön `_rand()`-tört (`ρ₀…ρ₃`) adja a két jelölt kért
+eltolását. A `0x0076d7e0` mindkét jelöltet a forrás határain belülre
+transzformálja; a méretét nem módosítja. Van középre igazító lépés a
+kezdeti illesztésben, és mindkét méretezés a téglalap középpontja körül
+történik, de nincs végső, véletlent helyettesítő középre igazító ág.
+
+**Képlet a határolás előtt.** Legyen a `0x009b4aa0` által készített,
+képarányra illesztett alaptéglalap mérete `w×h`, középpontja `(cx,cy)`, a
+forrás határa pedig `[L,T,R,B]`. A két helyi tört `u,v ∈
+{0/32768,…,32767/32768}`, és a kód újrapróbálja őket, amíg
+`|u-v| < 0,5`. A `0x0076d6f0` középpontos méretezése után:
+
+| jelölt | méret | kért bal-felső sarok a `0x76d7e0` korlátozó előtt |
+|---|---|---|
+| A | `wA=w×(0,75+0,2u)`, `hA=h×(0,75+0,2u)` | `xA=cx−wA/2+W×(0,2ρ₁−0,1)`, `yA=cy−hA/2+H×(0,2ρ₀−0,1)` |
+| B | `wB=w×(0,75+0,2v)`, `hB=h×(0,75+0,2v)` | `xB=cx−wB/2+W×(0,2ρ₃−0,1)`, `yB=cy−hB/2−H×0,2ρ₂` |
+
+Itt `W×H` a `0x0076d900`-nak átadott forráshatár mérete. A végső sarok a
+kért sarokhoz tartozó téglalap és a `[L,T,R,B]` határok közti
+megengedett eltolásra korlátozódik; a `0x0076d7e0` ugyanazt az eltolást adja
+mindkét szemközti élhez, így a méret változatlan marad. A két jelölt
+sorrendjét a `0x0076d790` LCG-ág felcserélheti.
+
+| konstanscím | bináris érték és típus | képletbeli szerep |
+|---|---|---|
+| `0x00cf4748` | `0.2` (`double`) | tört szorzó |
+| `0x00c7dd30` | `0.1` (`double`) | A és B x-eltolásának, illetve A y-eltolásának középpontja |
+| `0x00cf3b08` | `0.75` (`double`) | alap méretszorzó |
+| `0x00c7dafc` | `0.5` (`float`) | helyi törtek elfogadási küszöbe |
+
+**A tört képzése és az állapot.** A `0x00c08221` `_rand()` a belső MSVC
+LCG-t lépteti: `state = (state×0x343fd + 0x269ec3) mod 2^32`, visszatérési értéke
+`(state>>16)&0x7fff`. Az illesztőben a `(R+0x3f8000)<<8` biteket floatként
+értelmezve `1+R/32768`; az 1 kivonása adja `R/32768`-et. A helyi LCG
+ugyanezt az állapotléptetést és felső 15 bitet használja. A
+`0x0076e100` konstruktor `0x0076e16a`-nál és `0x0076e1a4`-nél is `_rand()`-ot
+hív, `this+0x434`-be, illetve `this+0x458`-ba ír. Az illesztő állapota a
+`this+0x458` mező (`edi+0x20` a `0x0076d900`-ban), amelyet a konstruktor
+második húzása inicializál.
+
+**`srand`-pásztázás.** A `paszta.py` kapuján át végigvizsgált teljes `.text`
+(kezdő VA `0x00401000`, méret `0x0083e160`, záró VA `0x00c3f160`)
+területén 10 közvetlen hívás mutat a belső
+`srand`-ra (`0x00c08214`): `0x00423a6c`, `0x00565cc5`, `0x006804c4`,
+`0x0071d993`, `0x0071e23b`, `0x0085b76d`, `0x0087cb85`, `0x0088fed7`,
+`0x009180df`, `0x009902b8`. Egyik sem a `0x0076e100` konstruktorban vagy a
+`0x0076d900` illesztőben van; a teljes pásztázás a wrapper címére mutató
+nem-hívás azonnali operandust sem talált. Ez nem mondja meg, hogy a
+diavetítés futása előtt a szál CRT-állapotát melyik másik út állította be.
+
+**Bizonyítottság: feltételes.** (A) Az `0x0076d900` utasításszintű
+adatfolyama adja a törteket, a méret- és eltolásképleteket, valamint a
+`0x76d7e0` korlátozást. (B) A külön követett konstruktor- és helperút
+(`0x0076e100` → `0x0076e4e0` → `0x0076d900`; `0x0076d6f0` középpontos
+méretezés; `0x0076d7e0` eltolás) egyezik a két jelölt értelmezésével. A
+képletekhez nincs független, renderelt képkockamérés, és a CRT szálállapot
+futás előtti számszerű magja sincs meg, ezért a látható képkockák és a
+véletlensorozat bitpontos reprodukciója **nyitott**.
+
+**Cáfoló kísérlet.** Elsőre felmerült, hogy a `0x0076dae1`-nél összehasonlított
+`fabs(0)` és `0,5` miatt a négy `_rand()`-hívás elérhetetlen. A diszasszemblálás
+ezt cáfolja: a kisebb eredmény a `0x0076dc82` helyi-LCG újrapróbáló ágára
+ugrik; ha a két tört eltérése eléri a `0,5`-öt, a `0x0076dd0b` visszaugrik a
+méretező, majd a négy `_rand()`-hívást tartalmazó blokkra. Ellenőrzésként a
+`0x0076dcdf` összehasonlítása ugyanazzal az x87-flag értelmezéssel adja a
+`|u-v| < 0,5` ismétlési feltételt. A statikus út az elfogadási ágat mutatja;
+konkrét futásban kapott képkockasort ez nem helyettesít.
+
+**#5225 „Kész, ha” pontjai.**
+
+- ✅ Képlet címekkel: a méret- és eltolási képletek, a törtleképezés és a
+  határkorlátozás fent, `0x0076d900`, `0x0076d6f0`, `0x0076d7e0` és
+  konstanscímekhez kötve.
+- ✅ Középre igazítás: az alaptéglalap feltételes középre helyezése
+  `0x0076d9f4–0x0076da24` és `0x0076da87–0x0076dabf`; a méretezés
+  középpontja `0x0076d6f0`. A végső eltolás véletlen, majd határolt.
+- ⛔ Futás előtti számszerű mag és két egymást követő renderelt futás:
+  **NINCS MEG**. A Colab job-184/185 felvétele egyik tagként sincs a helyi
+  `meroadat.tar` archívumban; a valós felvételek mérésével kell folytatni.
+- ✅/⛔ `srand`: a teljes binárisban 10 közvetlen híváshely megvan; a
+  slideshow futás előtti konkrét hívás és a thread seedje **NINCS MEG**.
+
+**Nyitott.** A CRT szálállapot tényleges, futás előtti értéke és az azt
+beállító `srand`-hívás diavetítési útja; továbbá a job-184/185 két egymást
+követő képkockasora. Ezeket a 10 felsorolt `srand`-hívás hívási adatútjának
+célzott követése, majd az eredeti Colab-felvételen végzett képkockamérés
+döntheti el. A képlet bináris útjából önálló új kutatási jegy nem következik.
+
+**Helyi viszonyítás.** A `SlideshowView.qml:752–761` a `kenburns`-t
+középre igazítva, `1,08`-ig nagyítja; ez a Picasa két jelölt téglalapját és
+véletlen eltolását nem valósítja meg. A fenti bizonyíték az illesztő
+útvonaláról szól, és önmagában nem igazolja, hogy ez a függvény a teljes
+képernyős `BigSlideshow2` útjából fut-e (az a 4.2-ben nyitott kérdés).
+
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
 A korábbi szakasz a `slideshowctrls.tre`-t idézte (két elem). **Az igazi
