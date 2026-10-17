@@ -2623,7 +2623,8 @@ listában léptet. Hogy a lista eleme egy fotó, egy mappakártya vagy más csop
 az indexelt szolgáltató típusának hiányában **NINCS MEG**.
 
 A `oneup/auto` és `oneup/auto2` a `0x00803110` kapcsolót hívja. Ez megfordítja
-a `+0x3bb` állapotjelzőt, majd az automatikus lejátszás frissítési útjára lép.
+a `+0x3bb` állapotjelzőt a `0x00801130` segéden keresztül, majd az
+állapotfüggő frissítési útjára lép.
 Ez alátámasztja, hogy a oneup sáv „Auto Play” gombja lejátszást kapcsol; nem
 bizonyítja, hogy a külön `overlays/startbutton` ugyanide köt, és azt sem, hogy
 a lejátszás egy kiválasztott mappát jár-e be. A `oneup/exit` a OneUpUI
@@ -2667,12 +2668,71 @@ de az animáció tartalma, iránya és időzítése **NINCS MEG**.
 
 **Nyitott, célzott következő lépések:**
 
-- `Ghidra-kör kell: 0x005e8a70 - a CThumbUI+0x2bc szolgáltató és +0x2c0 kollekció konkrét típusa, forráshalmaza, sorrendje, valamint a cím és dátum előállítása. [blokkoló]`
+- `Ghidra-kör kell: 0x004039f0 - a CThumbUI-konstruktor +0x2bc szolgáltató-argumentumának konkrét típusa, a +0x2c0 kollekció forráshalmaza és az upstream sorrend. [blokkoló]`
 - `Ghidra-kör kell: 0x00a52890 - az örökölt billentyű/egér események, a négy overlay vezérlő hit-test/callback útja, és különösen a sliderthumb húzása. [blokkoló]`
 - `Ghidra-kör kell: 0x005e60d0 - a globális billentyűút működése qshow fókuszában, beleértve a nyíl, szóköz, Home/End és Escape parancsokat. [blokkoló]`
 - `Ghidra-kör kell: 0x008032e0 - a oneup/exit visszahívásának konkrét célja és visszatérési nézete, valamint hogy az overlay Exit ugyanide köt-e. [blokkoló]`
-- `Ghidra-kör kell: 0x007fda00 - az Időrend átmenet tényleges vizuális állapota és animációs paraméterei. [blokkoló]`
-- `Ghidra-kör kell: 0x008037e0 - a Timeline mód qshow ablak- és vászonméret-ágának pontos feltételei. [blokkoló]`
+- `Ghidra-kör kell: 0x00802230 - a 0x007fda00 által indított Időrend-átmenet tényleges vizuális állapota, kezdő/végállapota és időzítése. [blokkoló]`
+
+#### 38.2.5 Ghidra-köteg: a lista és a OneUp-parancsok határa (#4443, 2026-10-17)
+
+**Elsődleges út — Ghidra C-kód.** A 2026-10-17-i köteg `FUN_005e8a70`
+teljes dekompilálását adja (`referencia/ghidra/2026-10-17-qshow-diavetites.txt`,
+`CÍM 0x005e942e`). Az Időrend bemutatóág lekéri az indexelt kollekció
+elemszámát (`0x004a0980`), `0`-tól végigmegy rajta, és minden indexre a
+`CThumbUI` vtable `+0x90` metódusát hívja. A qshow felépítőjének
+(`0x008037e0`) átadja ezt a listát, valamint a `0x400` × `0x300` logikai
+vászonértékeket. A `FUN_005e8a70` ezen ágában nem látszik dátummezőt olvasó
+komparátor vagy rendezőhívás: a függvény az aktuális indexelt kollekció
+sorrendjét fogyasztja; a kollekció upstream forrása és sorrendképzése nyitott.
+
+**Második út — helyi diszasszembly és RTTI.** A `0x005e942e–0x005e94f1`
+utasításai ugyanezt az elemszám → indexhurok → vtable `+0x90` láncot mutatják.
+A `0x00562cc0` thunk a `CThumbUI+0x2bc` objektum vtable `+0x20` helyére
+továbbít. Az RTTI szerint a `CThumbDB` vtable `+0x20` bejegyzése
+`0x00423300`, és a Ghidra-köteg ezt a függvényt is indexparaméterrel működő
+adatlekérdezőként dekompilálja. Ez a két út egyezik a szolgáltató-interfész
+alakjában; nem bizonyítja, hogy az adott futásidejű `+0x2bc` példány maga
+`CThumbDB`, és nem nevezi meg a képhalmazt.
+
+**A léptető és az Auto Play.** A `0x008032e0` `oneup/prev` és `oneup/next`
+ágai rendre a `0x00802980` és `0x008029f0` függvényeket hívják. Ezek az
+OneUpUI `+0x3f4` indexét csökkentik/növelik, és a következő elemhez a
+`+0x3ec` listát, illetve a `+0x3f0` elemszámot használják. A külön
+`oneup.tre` erőforrás a két gombnak `mousedown` eseményt ad. Az `oneup/auto`
+és `oneup/auto2` a `0x00803110` → `0x00801130` útvonalon a `+0x3bb` bájtot
+0/1 között váltja, majd állapotfüggő frissítést indít; az erőforrás felirata
+„Auto Play”. Az utóbbi két állítás kód- és erőforrás-útja egymástól külön
+származik.
+
+Az `oneup/exit` ág egy OneUpUI vtable `+0x24` hívásból kapott objektum
+vtable `+0x14` metódusát hívja két nulla argumentummal. A callback célobjektuma
+nem azonosítható az ág utasításaiból. A `overlays/exit` és a bal oldali
+rács-vissza ikon hit-test/callback kötése sincs meg, ezért nem állítható, hogy
+ez a `oneup/exit`-et hívja. A `oneup/oneup` elem neve szintén nem bizonyít
+rács-vissza műveletet.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a qshow saját dátumsorrendet
+épít. A teljes `FUN_005e8a70` dekompilált ágát és a megfelelő gépi kód
+indexhurok-részét átnéztem dátummező-, komparátor- vagy rendezőhívásért; ilyen
+lépés nincs a bemutatóágban. Ez csak a rendezés qshow-beli létrehozását
+cáfolja, nem az upstream kollekció korábbi rendezését.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A qshow az aktuális CThumbUI indexelt kollekció sorrendjét járja be; a forráshalmaz, upstream sorrend, cím-/dátumkártyák nyitottak. A `prev`/`next` a oneup listán léptet, az Auto Play állapotot vált. | `TimelineView.qml` év/hónap rács, nem qshow; a menü és Ctrl+5 letiltott, a QML-ben nincs qshow-vezérlősáv. | A bemutatót külön, teljes képernyős módként kell specifikálni. A listát a bizonyított aktuális kollekcióból építsd; ne vezess be új dátumsorrendet a forrás tisztázása nélkül. A rács-vissza és Exit bekötését csak a callback céljának feltárása után add meg. |
+| A parancsnév `thumbui/timelinebutton` megvan, de a `thumbui.tre` elem `m_hidden`; a 2026-10-17-i út nem igazolt látható fejlécgombot. | Nincs aktív Időrend-eszköztárgomb. | A menü és Ctrl+5 újraaktiválása megfelel a jegynek; látható eszköztárgomb az eredetivel való paritásban nem bizonyított, ezt termékdöntésként külön kell kezelni. |
+
+**Bizonyítottsági fok: feltételes.** A kollekcióbejárás és a szolgáltató virtuális interfésze két eltérő vizsgálati úton egyezik. A parancsok egy része célzott diszasszemblyből és erőforrás-nevekből követhető, de a qshow billentyűi, az overlayek kattintási céljai, a rács-vissza, az Exit visszatérési nézete, a kártyák tartalma/sorrendje és a tényleges animáció továbbra sincs eldöntve.
+
+**Nyitott:**
+
+- `Ghidra-kör kell: 0x004039f0 — a CThumbUI-konstruktor +0x2bc szolgáltató-argumentumának konkrét típusa, a +0x2c0 kollekció forráshalmaza és upstream sorrendje. [blokkoló]`
+- `Ghidra-kör kell: 0x00a52890 — az örökölt egér/billentyű eseményút, az overlay exit/left/startbutton/right hit-testje és a sliderthumb húzási értékkötése. [blokkoló]`
+- `Ghidra-kör kell: 0x005e60d0 — a qshow láthatósága alatt elérhető globális gyorsbillentyűk és a Ctrl+5/nyilak/szóköz/Escape útja. [blokkoló]`
+- `Ghidra-kör kell: 0x008032e0 — az oneup/exit callback konkrét célobjektuma és visszatérési nézete; az oneup/oneup rács-vissza szerepe. [blokkoló]`
+- `Ghidra-kör kell: 0x00802230 — az Időrend-átmenet tényleges képi tartalma és időzítése. [blokkoló]`
+- A mappák/albumok forráshalmaza és upstream sorrendje, a cím-/dátumkártyák, a futó billentyűviselkedés és az Exit utáni nézet: **NINCS MEG**.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
