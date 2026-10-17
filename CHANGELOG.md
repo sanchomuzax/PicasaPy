@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.124] – 2026-10-17
+
+- A Név nélküliek kibontott nézetében (Expand groups) a fejlécben megjelenik a névmező és az Ignore Selected gomb, ahogy az eredetiben (#5214).
+- Windowson a mentés nem bukik el, ha a képet egy pillanatra egy másik olvasó (például a bélyegkép-készítő) tartja nyitva (#5221).
+
 ## [0.9.123] – 2026-10-17
 
 - Windowson a kívülről törölt mappa felismerése a közös platform-ellenőrzésen át működik (#5177).

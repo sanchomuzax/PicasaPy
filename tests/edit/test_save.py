@@ -511,3 +511,34 @@ class TestGuardRejectionRollsBackImage:
         section = load_document(image_path.parent / _INI_NAME).section("IMG_0001.png")
         assert section.get("filters") == "enhance=1;"
         assert section.get("redo") is None
+
+
+class TestWindowsZarolas:
+    """Windowson egy olvasó rövid ideig nyitva tarthatja a képet; a mentés
+    cseréje ilyenkor `PermissionError`-ral bukik (CI: WinError 5). A mentés
+    néhányszor újrapróbálja a cserét, és sikerül, ha a zár közben felenged."""
+
+    def test_atmeneti_zar_utan_a_kep_mentodik(self, photo, monkeypatch):
+        import picasapy.edit.save as save_modul
+        import picasapy.ioutil as ioutil
+
+        image_path, _original_bytes = photo
+        valodi = ioutil._replace
+        kepcserek = {"db": 0}
+
+        def zarolt_csere(forras, cel):
+            if Path(cel) == image_path and kepcserek["db"] < 3:
+                kepcserek["db"] += 1
+                raise PermissionError(13, "Access is denied")
+            return valodi(forras, cel)
+
+        monkeypatch.setattr(ioutil, "_replace", zarolt_csere)
+        monkeypatch.setattr(save_modul, "_ZAR_KESLELTETES", 0.0)
+
+        save_edited(image_path, _solid_image((99, 88, 77)), EditSession.from_value("enhance=1;"))
+
+        decoded = cv2.imdecode(
+            np.frombuffer(image_path.read_bytes(), dtype=np.uint8), cv2.IMREAD_COLOR
+        )
+        assert tuple(int(c) for c in decoded[0, 0]) == (99, 88, 77)
+        assert kepcserek["db"] == 3

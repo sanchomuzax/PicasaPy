@@ -6977,6 +6977,12 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/ignore);stringres:people
             <translation>Huwag Pansinin</translation>
         </message>
         <message>
+            <source>Ignore Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/ignore)</extracomment>
+            <translation>Huwag Pansinin ang Nakapili</translation>
+        </message>
+        <message>
             <source>Ignore all of the selected faces</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: unknownfaceheaderpaneltext:Tooltip(unknownfaceheaderpanel/ignore)</extracomment>
