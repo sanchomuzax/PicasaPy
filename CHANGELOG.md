@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.121] – 2026-10-17
+
+- A bal sávból eltűnik a programon kívül törölt mappa, ahogy az eredetiben, és a már nem létező mappára húzott kép nem indít fájlműveletet (#5177).
+- A Fájl ▸ Visszaállítás tétel már a mentés után azonnal engedélyezett, a kijelölés megváltoztatása nélkül (#5206).
+- Az Átnevezés párbeszéd szövegmezőjében az Enter elfogadja az új nevet, az Escape pedig megszakítja (#5207).
+
 ## [0.9.120] – 2026-10-17
 
 - A Név nélküliek üdvözlőablaka a Close gombbal bezárva Windowson sem jelenik meg újra (#5183).
