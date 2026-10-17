@@ -235,3 +235,57 @@ class TestLibraryWatcher:
             stop_marking.set()
             marker.join(timeout=2)
             watcher.stop()
+
+
+class TestWindowsKonyvtarTorles:
+    """Windowson a watchdog a törölt mappát FÁJL-törlésként jelzi (#5177).
+
+    A `ReadDirectoryChangesW` törlésnél nem mondja meg, mappa volt-e, és a
+    törölt utat már nem lehet lekérdezni, ezért `is_directory` hamis.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _windows(self, monkeypatch):
+        monkeypatch.setattr(
+            "picasapy.scanner.watcher._torolt_ut_tipusa_ismeretlen", lambda: True
+        )
+
+    def _kezelo(self, tmp_path, jelzesek):
+        from picasapy.scanner.watcher import _Handler
+
+        class Figyelo:
+            _roots = (str(tmp_path),)
+
+            def _mark_dirty(self, valtozas):
+                jelzesek.append(valtozas)
+
+        return _Handler(Figyelo())
+
+    def test_kiterjesztes_nelkuli_torles_mappatorles(self, tmp_path):
+        from watchdog.events import FileDeletedEvent
+
+        from picasapy.scanner import DirectoryChange
+
+        jelzesek = []
+        self._kezelo(tmp_path, jelzesek).on_any_event(
+            FileDeletedEvent(str(tmp_path / "Eltunt"))
+        )
+        assert jelzesek == [DirectoryChange(str(tmp_path / "Eltunt"), "deleted")]
+
+    def test_kep_torlese_marad_mappajelzes(self, tmp_path):
+        from watchdog.events import FileDeletedEvent
+
+        jelzesek = []
+        self._kezelo(tmp_path, jelzesek).on_any_event(
+            FileDeletedEvent(str(tmp_path / "A" / "kep.jpg"))
+        )
+        assert jelzesek == [str(tmp_path / "A")]
+
+    def test_rejtett_ut_torlese_nem_jelez(self, tmp_path):
+        from watchdog.events import FileDeletedEvent
+
+        jelzesek = []
+        self._kezelo(tmp_path, jelzesek).on_any_event(
+            FileDeletedEvent(str(tmp_path / ".picasaoriginals"))
+        )
+        assert jelzesek == []

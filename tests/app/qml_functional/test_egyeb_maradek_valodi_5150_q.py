@@ -29,11 +29,11 @@ from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
 )
 from tests.app.qml_functional._menusor_maradek_5150_helpers import tetel_kattintasa as menusor_tetel
 from tests.app.qml_functional._nezet_menu_5150_helpers import tetel_kattintasa
-from tests.app.qml_functional._racs_helyimenuk_5150_helpers import varj
+from tests.app.qml_functional._racs_helyimenuk_5150_helpers import kattints, varj
 from tests.app.qml_functional._racs_maradek_5150_helpers import (
+    _ablak_elemei,
     kattint,
     keres,
-    keres_latszo,
     utvonal,
 )
 
@@ -75,6 +75,24 @@ def fa_app(qt_app, tmp_path, monkeypatch):
     yield from app_epitese(qt_app, tmp_path, kepeket_keszit=_keszits_fat)
 
 
+def _utas_elem(window, elotag: str, ut: Path):
+    """A látható `elotag:<út>` nevű elem, ahol az út Path-ként egyezik.
+
+    Windowson a modell útja és a `watchedFolders` szövege eltérhet
+    (elválasztó, kis-nagybetű), ezért nem a teljes objectName-et vetjük össze."""
+    for elem in _ablak_elemei(window):
+        nev = elem.objectName()
+        if nev.startswith(elotag) and elem.isVisible() and Path(nev[len(elotag):]) == ut:
+            return elem
+    return None
+
+
+def _utas_kattintas(window, qt_app, elotag: str, ut: Path) -> None:
+    elem = _utas_elem(window, elotag, ut)
+    assert elem is not None, f"nincs látható {elotag}{ut} elem"
+    kattints(window, qt_app, elem)
+
+
 def _masik_utja(controller) -> Path:
     return Path(str(controller.watchedFolders[0])) / MASIK
 
@@ -85,11 +103,11 @@ def _fa_nezet_bekapcsolasa(window, qt_app, controller) -> tuple[Path, Path]:
     kepek = Path(str(controller.watchedFolders[0]))
     masik = kepek / MASIK
     tetel_kattintasa(window, qt_app, "menuViewTreeView", almenu_utvonal=("menuViewFolderView",))
-    assert varj(qt_app, lambda: keres_latszo(window, "hierRow:" + str(kepek)) is not None), (
+    assert varj(qt_app, lambda: _utas_elem(window, "hierRow:", kepek) is not None), (
         "a fa-nézetben nem látszik a gyökér sora"
     )
-    kattint(window, qt_app, "hierArrowMouse:" + str(kepek))
-    assert varj(qt_app, lambda: keres_latszo(window, "hierRow:" + str(masik)) is not None), (
+    _utas_kattintas(window, qt_app, "hierArrowMouse:", kepek)
+    assert varj(qt_app, lambda: _utas_elem(window, "hierRow:", masik) is not None), (
         "a gyökér nyílja nem nyitotta ki a masik mappát"
     )
     return kepek, masik
@@ -120,13 +138,13 @@ class TestMappafa:
         window.requestActivate()
         _kepek, masik = _fa_nezet_bekapcsolasa(window, qt_app, controller)
         gyerek = masik / ALMAPPA
-        assert keres_latszo(window, "hierRow:" + str(gyerek)) is None, (
+        assert _utas_elem(window, "hierRow:", gyerek) is None, (
             "az almappa már nyitva volt a nyíl előtt"
         )
 
-        kattint(window, qt_app, "hierArrowMouse:" + str(masik))
+        _utas_kattintas(window, qt_app, "hierArrowMouse:", masik)
 
-        assert varj(qt_app, lambda: keres_latszo(window, "hierRow:" + str(gyerek)) is not None), (
+        assert varj(qt_app, lambda: _utas_elem(window, "hierRow:", gyerek) is not None), (
             "a nyíl kattintása nem nyitotta ki a masik ágát"
         )
 
