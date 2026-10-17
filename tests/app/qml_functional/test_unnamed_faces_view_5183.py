@@ -231,8 +231,15 @@ def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app
     )
     # A `closed` jel a kilépő átmenet után jön; Windowson ez a `visible`
     # hamisra váltása után is késhet, ezért a mentett jelzőre várunk.
+    beallitas = getattr(face_scan, "_settings", None)
     assert var_feltetelre(
         qt_app, lambda: face_scan.unnamedWelcomeHasBeenShown() is True, 3.0
+    ), (
+        "az üdvözlőablak jelzője nem mentődött: "
+        f"tároló={beallitas.fileName() if beallitas else None!r}, "
+        f"formátum={beallitas.format() if beallitas else None!r}, "
+        f"érték={beallitas.value(face_scan.UNNAMED_WELCOME_SHOWN_KEY) if beallitas else None!r}, "
+        f"állapot={beallitas.status() if beallitas else None!r}"
     )
 
     # Ismételt, valódi bal oldali kattintásra az üdvözlés már nem jön elő.

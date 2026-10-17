@@ -826,7 +826,13 @@ ColumnLayout {
                     text: qsTr("Close")
                     Layout.preferredWidth: 82
                     Layout.preferredHeight: 28
-                    onClicked: welcomeDialog.close()
+                    // A jelzőt a gomb maga is menti: Windowson a `closed` jel
+                    // után sem volt mentve (#5183 CI).
+                    onClicked: {
+                        if (root.faceScanController)
+                            root.faceScanController.markUnnamedWelcomeShown()
+                        welcomeDialog.close()
+                    }
                     contentItem: Text {
                         text: parent.text
                         horizontalAlignment: Text.AlignHCenter
