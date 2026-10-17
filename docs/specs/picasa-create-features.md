@@ -2861,6 +2861,115 @@ Nem blokkoló további címek: `0x00907cd0` (a szűrő képi hatása), `0x0069f5
 
 A 7. kör „Következő célzott Ghidra-kör" listája (`0x0049d560`, `0x00430610`, `0x009e0660`) ezzel lezárult: mindhárom C megvan. A lezáráshoz a fenti hat cím kell.
 
+**A film-getterek hídja - #4400, 9. kör (2026-10-17).**
+
+**Kérdés.** A 8. kör hat blokkoló címe: a híd (`0x0047a390`) metszése, forgatása, filtere és affín transzformációja; a `0x0090ff50` művelete; a `Vw,Vh` képzése (`0x00813330`); az affín ág bemenete és kimenete (`0x00a4a240`); a `0x00a4a520` ág forrása; és a `0x0049d560` tömbjének helye (`0x0045a9d0` hívja). Ahol a C nem dönt, kimondjuk, mi hiányzik.
+
+**Forrás.** `referencia/ghidra/2026-10-17-film-hog-kor.txt`, a hat `CÍM` szakasz. A sorhivatkozások ennek a fájlnak a sorai. A `0x00c29cca` és a `0x00c0b310` szakaszt nem használtuk, mert a #4194-hez tartoznak. A `0x00446610`, `0x00429dc0`, `0x0042c830`, `0x004147d0`, `0x00430610`, `0x00812aa0`, `0x00813c50`, `0x0049d560`, `0x0049c2b0` és `0x004841f0` törzse ebben a fájlban nincs. A `0x00430610` működését a 8. kör összefoglalójából vettük át, újra nem olvastuk. A `0x00c72150` (0,5) konstans a korábbi .rdata-olvasatból való. A `0x00cf4160` a spec egy másik szakasza szerint 0,499; ezt ebben a körben nem ellenőriztük.
+
+**Eredmények.**
+
+*(a) A híd (`0x0047a390`).* A `+0xa0` getter (`0x0068f980`) hívja, a spec szerint 1 jelzővel. A kimenet négy dword, az ESI-ben. Lépések a C szerint:
+
+1. `0x00446610` az alap-rectet az ESI-be írja (29. sor).
+2. Jelző nélkül a híd itt véget ér (30. sor).
+3. Metszés: `0x00429dc0` crop-rectet ad. Ha sikeres, x0 és y0 a maximum, x1 és y1 a minimum (35-57. sor). Üres-ellenőrzés nincs.
+4. `0x0042c830(param_2, &local_84, 0)` (59. sor). A `local_84` a kimeneti címe. A 2.5 szakasz korábbi olvasata szerint ez a `rotate` mező. A C később nem olvassa a `local_84`-et. A rect nem megy be ebbe a hívásba, ezért ez nem rect-forgatás.
+5. `0x004147d0()` (60. sor). Argumentum nélkül. A hatása NINCS MEG.
+6. `0x00430610(param_1, local_80, 0, 0, 0, 0)` (61. sor): szűrő. A rect nulla. A `local_80` a hívás előtt nincs feltöltve. A visszatérési értéket nem használják. A 8. kör szerint a nulla rect a `local_80` +0x10/+0x14 mezőit használná határnak.
+7. `0x00a4a240(local_28)` (62. sor): affín befoglaló téglalap. A négy dword az ESI-be kerül (63-66. sor), és **felülírja** a metszett értéket.
+
+Ebből következik: a metszés csak akkor hat a végső rectre, ha a `0x00a4a240` bemenete (EDX) az ESI-ről érkezik. A C ezt nem mutatja.
+
+*(b) A `0x0090ff50`.* Nincs argumentuma. Az ESI-objektum mezőit olvassa: +0x18, +0x1c, +0x20, +0x24, +0x28, +0x2c. Ha x0 < x1 és y0 < y1, hív egy `0x009e6340` függvényt. A többi ág csak hívásokat tesz (`0x009e6340`, `0x00c29d20`, `0x00c285f0`). Közvetlen írás az objektumba nincs. Négy hívója van (`0x00430610`, `0x00430790`, `0x00463cd0`, `0x006ab020`), ezért nem film-specifikus. Mivel +0x18-tól olvas, ha az ESI a négy dwordos helyi téglalapra mutat, ezek az olvasások a téglalapon kívül esnek.
+
+*(c) A `Vw,Vh` (`0x00813330`).* A `model+0x2e0` ytDrawNode getterétől (vtable +0x20) kapott rectet a `local_1a8` helyre írja (207. sor). Utána (244-245. sor):
+`0x00812aa0(this, this+0x1a8, this+0x7ec, local_1a8 - iStack_1b0, iStack_1a4 - iStack_1ac, 0)`.
+A pár tehát a `0x00812aa0`-nak megy, feltétel nélkül, a korai kilépések után. A `0x00813c50` a `this+0x28c == 0x14` ágon fut (248. sor), argumentum nélkül. Nulla-kezelés a C-ben nincs.
+
+*(d) Az affín ág (`0x00a4a240`).* `__fastcall`: ECX = kimeneti négy egész, EDX = bemeneti rect (x0, y0, x1, y1), a veremben hat float mátrix (m0-m5).
+
+- Sarkok: x' = m0·x + m1·y + m2, y' = m3·x + m4·y + m5 (428-439. sor).
+- Befoglaló téglalap: min x, min y, max x, max y. Minden értékből `ROUND(érték - C)`, ahol `C = 0x00cf4160` (484-487. sor).
+- Kimenet: `[minX, minY, maxX, maxY]`. A visszatérési érték az ECX.
+- A `0x0047a390` hívásában (62. sor) csak az ECX (`local_28`) látszik. Az EDX és a verem-argumentum forrása NINCS MEG.
+- Hívók: 52, köztük a crop-író `0x0042b000` (`0x0042b342`) és a `0x009e0660` getter. Nem film-specifikus.
+
+*(e) A `0x00a4a520`* (a `0x009e0660` getter 0 jelzőjű ága). ECX = bemeneti rect, EAX = mátrix, ESI = kimenet. A rectet mindkét irányban `0,5`-tel kitágítja (530-538. sor). A sarkokat ugyanazzal a mátrix-képlettel transzformálja. A C csak a maximumot számolja (maxX, maxY; 543-560. sor). A négy kimeneti egész forrása NINCS MEG: a C négy `0x00c29990` hívást mutat, az értékeik nem látszanak. Hívók: 11.
+
+*(f) A `0x0049d560` tömbje (`0x0045a9d0`).*
+
+- Kép-méret: a `0x0042a440` adja, ha a jelző be van kapcsolva és a hívás sikeres. Egyébként a `+0xd4` vtable-hívás (1176-1179. sor). Ha a méret nulla, nincs írás.
+- A-ág (1181-1244. sor): az A-slot (`local_f4`) rekordjait a `0x0049d560` tölti (1191. sor). Ez az ág fut, ha a B-slot hiányzik vagy érvénytelen, vagy nincs ini-mutató (`+0x2c5c`).
+- B-ág (1245-1397. sor): érvényes B-slot és ini-mutató esetén a `0x0049c2b0` tömbjéből 32 bájtos rekordok épülnek, ini-olvasással (`0x00586040`, `0x005835d0`).
+- Mindkét ágban a feldolgozott tömb a `0x004841f0(this, &tömb, 0)` hívásba megy (1236. és 1384. sor). Ez a tárolás. A célja NINCS MEG.
+- Az A-ágban, ha van ini-mutató, a rekordok 4-5. dword-jét a `0x00587110` kapja a `.picasa.ini` objektummal (1223-1231. sor). A 8. kör szerint a `0x0049d560` nullázza ezt a két dword-öt. Ha ez igaz, minden rekord (0, 0) párt kap.
+- Bit0: az A-ágban a `uStack_b0` csak `>> 1` alakban olvasódik (1192. sor). A bit0-t ez a függvény nem állítja be. A beállító a `0x0049d560` vagy a `0x0049c2b0` törzsében lehet. Ezek nincsenek a fájlban.
+- A `0x0045a9d0` hívója egy: `0x0047e470` (`0047e77e`).
+
+**Bizonyítottsági fok.**
+
+- Megerősített (a C-ből közvetlenül látszik):
+  - A híd hívássorrendje: alap-rect, metszés, `0x0042c830`, `0x004147d0`, `0x00430610`, `0x00a4a240`. A kimenet a `0x00a4a240` pointere.
+  - A metszés komponensenként max és min.
+  - A `0x0042c830` nem kap rectet. A `local_84` a C-ben később nincs olvasva.
+  - A `0x00430610` visszatérési értékét a híd nem használja.
+  - A `0x0090ff50` nem ír közvetlenül az ESI-objektumba. Nem film-specifikus.
+  - A `0x00a4a240` befoglaló téglalapot számol, és a kimenet sorrendje.
+  - A `0x00a4a520` csak maximumot számol.
+  - A `0x0045a9d0` két ágra oszlik, és mindkettő a `0x004841f0`-nak ad tömböt.
+  - A `Vw,Vh`-jellegű pár a `0x00812aa0`-nak megy.
+- Feltételes (egy útra épül):
+  - A metszés hatása a végső rectre (az EDX = ESI feltevés).
+  - A mátrix forrása a forgatás-értékből.
+  - A `0x00587110` (0, 0) párja: a 8. kör nullázási állításától függ.
+
+**Cáfoló kísérletek.**
+
+1. *A metszés adja a végső rectet.* Részben cáfolva: a `0x00a4a240` kimenete felülírja az ESI-t (63-66. sor).
+2. *A `0x0042c830` forgatja a rectet.* Cáfolva: a rect nem megy be a hívásba.
+3. *A `0x0090ff50` módosítja a téglalapot.* Cáfolva: nincs közvetlen írás az objektumba. A hívott függvények hatása NINCS MEG.
+4. *A `0x00430610` ad vissza téglalapot.* Cáfolva: a visszatérési értéket nem használják.
+5. *A `Vw,Vh` a getter rectjének x1-x0 és y1-y0 értéke.* Nem igazolt. A C más kifejezést mutat, és a kivonandók (`iStack_1b0`, `iStack_1ac`) nincsenek beállítva.
+6. *A `0x00a4a520` is befoglaló téglalapot számol.* Cáfolva a C-ben: csak maximum látszik.
+7. *A `0x0049d560` tömbje az imagedata-oszlopba megy.* Nem cáfolható és nem igazolható: a tárolás a `0x004841f0`-n át megy, amelynek törzse hiányzik.
+
+Korábbi állítások javítása:
+
+8. A 8. kör `0x0047a4a0` hívása `0x0047a576`-nál van. A C szerint a `0x00a4a240` hívása `0x0047a58b`-nél áll.
+9. A 7. kör szerinti „forgatási segéd” a `0x0047a429`-nél: a C-ben a forgatási helyen a `0x0042c830` áll, ami a `rotate` értéket olvassa. Rect-t nem forgat.
+10. A 7. kör szerinti x1-x0 és y1-y0 a `0x00813c50`-nek: a C szerint a pár a `0x00812aa0`-nak megy. A `0x00813c50` argumentum nélkül hívódik.
+11. A 8. kör szerint „a getter törzse nem transzformál”: ez a getter saját kódjára igaz. A `0x00a4a520` ága viszont transzformál.
+12. A 8. kör `FUN_0090ff50(&téglalap)` állítása: a függvény az ESI-objektum +0x18 mezőitől olvas.
+
+**Ghidra-kör kell (9. kör):**
+
+- Ghidra-kör kell: 0x004841f0 - a `0x0045a9d0` tömbjének tárolója: hova ír (imagedata-oszlop vagy más). [blokkoló]
+- Ghidra-kör kell: 0x00812aa0 - a `0x00813330` 4-5. argumentumának (`Vw,Vh`-jellegű pár) felhasználása, és a nulla téglalap kezelése. [blokkoló]
+- Célzott utasításolvasat kell, nem hívólista: 0x0047a3f0-0x0047a46c - az EDX és a verem-argumentum beállítása a `0x00a4a240` hívás előtt, és a `local_84` (forgatás-érték) felhasználása. [blokkoló]
+
+**Következtetés a további hívólistákról.** A 9. kör nem kér újabb hívót. A hívólisták megvannak: `0x0047a390` (1 hívó), `0x0090ff50` (4), `0x00a4a240` (52), `0x00a4a520` (11), `0x0045a9d0` (1). Egy újabb hívó a fenti eredményt nem változtatja meg. A maradékot ezek döntik el:
+
+- **Natív QEMU-mérés** a `0x0068f980` → `0x0047a390` láncon, ismert facerect, crop-rect, rotate-érték és mátrix bemenettel. Ez dönti el: (1) hat-e a metszés a végső rectre, (2) hogyan hat a rotate-érték a kimenetre, (3) a `0x00812aa0` előtti `Vw,Vh` számértéke.
+- **Colab-felvétel** (eredeti Picasa 3.9, Wine alatt). Ez a `.picasa.ini` `faces=` és `crop` kulcsainak valódi írását mutatja, ha a kiváltó művelet Wine alatt lefut. A teljes film-render Wine alatt nem támogatott (a 7. kör szerint), ezért a keretméretre nem dönt.
+
+**Fejlesztési következmény.** Nincs. A cropképlet és a keretméret együtt még nem írható le megvalósítható formában. A `Vw,Vh` képzése hiányzik, a híd mátrixa és bemenete nincs a C-ben, és a metszés hatása a végső rectre nem látszik.
+
+**NINCS MEG (9. kör után).**
+
+- A `0x00a4a240` mátrixának (verem-argumentum) és bemeneti rectjének (EDX) forrása a `0x0047a46c` hívásnál.
+- A metszés hatása a végső rectre (az EDX = ESI feltevés).
+- A forgatás-érték (`local_84`) felhasználása: a mátrixban van-e, és hogyan.
+- A `0x00430610` szűrő képi hatása (`0x00907cd0`), és a `local_80` tartalma a hívás előtt.
+- A `0x0090ff50` mellékhatásai (`0x009e6340`, `0x00c29d20`, `0x00c285f0`), és az ESI-objektum azonosítása.
+- A `Vw,Vh`-pár felhasználása a `0x00812aa0`-ban, és a nulla téglalap kezelése.
+- A `0x00a4a520` négy kimeneti egészének forrása (a min-értékek és a `0x00c29990` hívások).
+- A `0x0045a9d0` tömbjének tárolója (`0x004841f0`), és hogy ez imagedata-oszlop-e.
+- A bit0 jelző beállítója (`0x0049d560` vagy `0x0049c2b0`).
+- A kép-méret (`local_e4`, `local_e0`) átadása a `0x0049d560`-nak és a konverternek.
+- A kép-méretet adó `0x0042a440` és a `+0xd4` vtable-hívás: melyik adja.
+- A `0x0045a9d0` kiváltó lánca (`0x0047e470` és feljebb), és a B-slot forrása.
+
 Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
 forrás-URL-jeit adja át (`Main.qml:728–734`,
 `people_controller.py:81–89`, `index/people.py:170–198`). A
