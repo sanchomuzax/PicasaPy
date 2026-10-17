@@ -91,6 +91,13 @@ fülön a **Szöveg** mezőbe írod a szöveget, majd:
   teszed; a **Mégse** elveti;
 - **A kijelölt dia eltávolítása**.
 
+Három stílus a kész filmben **mozog** is:
+
+- **Jó napom van** - a szöveg oldalra csúszva, áttűnve jelenik meg;
+- **Gördülő stáblista** - a szöveg a kép aljáról gördül fel a közepéig;
+- **Képfelirat - Írógép** - a szöveg betűnként íródik ki, mint egy
+  írógépen.
+
 A dia a **Szöveges dia** névvel kerül a filmszalagra. A **Dia** fül
 alján a hozzáadott szöveges diák listája áll: duplán kattintva
 szerkeszthető a dia, húzással sorrendbe teheted őket, és ha a listán

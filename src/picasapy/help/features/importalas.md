@@ -164,6 +164,13 @@ Két fontos tulajdonsága van:
   kulcsszó, hely vagy arc, azt érintetlenül hagyja.
 - **Bármikor megismételhető** — a kimaradt mappákkal folytatja.
 
+A neveken, kulcsszavakon és helyeken kívül az átvétel ezeket is hozza:
+
+- a mappák és az albumok **kézi képsorrendjét** - ha a régi Picasában
+  húzással rendezted a képeket, itt is abban a sorrendben látod őket;
+- a **videók** dátumát, ha a régi Picasában módosítottad (a PicasaPy ez
+  szerint rendezi és mutatja őket), és a videókhoz megadott **helyet**.
+
 Ha a régi Picasában **jelszót** állítottál be a rejtett mappákra, az
 átvétel ezt a jelszót is hozza — de csak akkor, ha a PicasaPy-ban még nem
 adtál meg saját jelszót. A sajátodat nem írja felül. A jelszóról

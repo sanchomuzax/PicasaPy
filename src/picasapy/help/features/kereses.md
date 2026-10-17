@@ -42,8 +42,9 @@ A panelen:
   Kísérleti ▸ Fájlok másodpéldányainak megjelenítése** — lásd
   [Duplikátumok keresése](duplikatumok.md).
 
-> A **Nézet ▸ Keresési opciók** menüpont ettől függetlenül **még nem
-> működik**: ma csak helyfoglaló, a fenti panel nem kapcsolódik hozzá.
+Ugyanezt a panelt a **Nézet ▸ Keresési opciók** menüpont is nyitja és
+csukja, pontosan úgy, mint a **⌄** gomb. A menüpont előtt pipa áll,
+amíg a panel nyitva van.
 
 ## Keresés szín szerint
 

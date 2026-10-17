@@ -78,10 +78,19 @@ A lista soraiban **arcképek** állnak: a névvel ellátott embereknél az
 arc kis, kivágott képe és mellette a név — a névre kattintva a személy
 albumára lépsz. A kijelölt képeken lévő **még névtelen arcok** is
 megjelennek a lista végén, egy-egy arcképpel és egy **Név hozzáadása**
-mezővel. Írd be a nevet, és nyomj **Entert**. Ha már van ilyen nevű
-személy, az arc azonnal hozzá kerül. Ha még nincs, megnyílik a személyek
-kezelése ablak a beírt névvel: az **új személy csak akkor jön létre**, ha
-ott jóváhagyod; ha bezárod az ablakot, semmi nem változik.
+mezővel. Írd be a nevet, és nyomj **Entert**: megnyílik a személyek
+kezelése ablak, a keresőmezőben a beírt névvel.
+
+- Ha **már van ilyen nevű személy**, az ablak őt jelöli ki, a gomb
+  felirata pedig **Kiválasztás** - erre kattintva az arc hozzá kerül.
+- Ha **még nincs**, az **új személy csak akkor jön létre**, ha ott
+  jóváhagyod.
+
+Ha bezárod az ablakot, semmi nem változik.
+
+Egy névtelen arcképet **egérrel egy megnevezett ember sorára is
+húzhatsz** a listában: elengedve az arc az ő nevét kapja.
+
 A névtelen arckép sarkában lévő **×** (**Személy mellőzése**) a mellőzést
 kéri: a program rákérdez, hogy valóban a Mellőzött emberek albumba
 kerüljön-e az arc. Az **×** a megnevezett sorokon is látszik, ahogy az
@@ -132,17 +141,32 @@ névre jobbgombbal kattintva:
   törlése** gombja;
 - **Az Emberek album szerkesztése…** — megnyitja a személyek
   kezelése ablakot (lásd lentebb), az adott személy kijelölésével;
-- kijelölheted az összes képét, vagy törölheted a kijelölést.
+- **Az összes kijelölése** (Ctrl+A), **Kijelölés törlése** (Ctrl+D) és
+  **Kiválasztás megfordítása** (Ctrl+I) - a személy képeinek
+  kijelölésére; a menü mellettük a gyorsbillentyűt is mutatja;
+- **Indexképek frissítése** - újrarajzolja a személy képeinek
+  indexképeit.
 
 ## Névtelen arcok
 
 A bal hasáb **Névtelenek** bejegyzése a még el nem nevezett arcokat
-gyűjti. Ha ez a gyűjtemény **üres** — például még egyetlen arcot sem
-talált a keresés —, az Emberek panelen az eredeti Picasa útmutatója
-olvasható: hogyan nevezz el valakit, hogyan mellőzz egy arcot, és hol
-találod a javaslatokat. (Az útmutató egyik mondata Google-fiókos
-bejelentkezést említ — a PicasaPy-ban ilyen nincs, erre nincs szükség.)
-Itt:
+gyűjti. Az Emberek csoportban ez a sor áll **legelöl**, a személyek
+előtt, és a mellette lévő szám a névtelen **arcok** számát mutatja; a
+csoport összesítő száma is beleszámolja.
+
+Az album **első megnyitásakor** egy üdvözlő ablak jelenik meg
+(„Üdvözöljük a Név nélküliek albumban!"): röviden leírja, hogyan nevezel
+el valakit, hogyan mellőzöl egy arcot, és hol találod a javaslatokat. A
+**Bezárás** gombbal csukod be, és legközelebb már nem jön elő. A
+**További információ...** gomb ma nem nyit meg semmit. (Az útmutató egyik
+mondata Google-fiókos bejelentkezést említ - a PicasaPy-ban ilyen nincs,
+erre nincs szükség.)
+
+Ha a gyűjtemény **üres** - például még egyetlen arcot sem talált a
+keresés -, ugyanez az útmutató az Emberek panelen is olvasható.
+
+Az album fejlécében a **Meg nem nevezett emberek** cím alatt az arcok
+száma áll (például „37 arc"). Itt:
 
 - Az album csoportosítva nyílik: egy emberhez tartozó arcokat egyben
   látod. A fejléc **Csoportok részletes nézete** gombja szétnyitja őket,
@@ -152,8 +176,13 @@ Itt:
   hogy az „x" ikonra kattintva mellőzheted az illetőt. Amíg a program a
   csoportokat számolja, ehelyett ez áll ott: „Az arcok csoportosítása
   folyamatban van, kérjük, várjon…"
-- Egy arc alá beírt névvel elnevezed. Ha a program tippel valakire, a név
-  mellett kérdőjel áll — egy kattintás elfogadja.
+- Minden arc alatt saját **Név hozzáadása** mező áll. Gépelés közben a
+  mező alatt egy lista mutatja, mely meglévő személyek neve illik a
+  beírt szövegre, arcképükkel együtt. Enterre a személyek kezelése ablak
+  nyílik meg, ugyanúgy, mint az Emberek panelen (lásd fent): meglévő
+  névnél a **Kiválasztás** gomb adja hozzá az arcot, új névnél az új
+  személyt ott hagyod jóvá. Ha a program tippel valakire, a név mellett
+  kérdőjel áll - egy kattintás elfogadja.
 - A **Mellőzés** paranccsal félreteszed azokat az arcokat, amiket nem
   akarsz elnevezni (járókelők, plakátok). Ugyanezt teszi a csempe
   sarkában lévő **✕**. A program rákérdez — „Biztosan áthelyezi ezt a
@@ -385,9 +414,17 @@ névhez rendelhetsz, a **Hozzáadás az Emberek albumhoz** almenüből pedig egy
 már meglévő személyhez teheted át — az almenü a többi személyt sorolja fel.
 Az **Eltávolítás az Emberek albumból** (Ctrl+Delete) kiveszi onnan.
 
-> A helyi menü **Beállítás az Emberek album indexképeként** tétele **még
-> nem működik** — az emberalbumok saját borítóképét ma nem lehet
-> megválasztani.
+### A személy arcképének kiválasztása
+
+A személy neve mellett - a bal hasábon és az Emberek panelen - egy kis
+arckép áll. Alapból a program választja ki, de te is megadhatod: nyisd
+meg a személy albumát, kattints jobbgombbal arra a képre, amelyiken a
+legjobban tetszik az arca, és válaszd a **Beállítás az Emberek album
+indexképeként** tételt. Onnantól ennek a képnek az arckivágása áll a
+neve mellett, és újraindítás után is megmarad.
+
+A tétel csak a személy albumában látszik, és csak olyan képen élénk,
+amelyiken az illető arca meg van jelölve.
 
 ## Film az arcokból
 

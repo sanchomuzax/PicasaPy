@@ -8,8 +8,9 @@
 
 > **Fontos:** hat fül működik: az **Általános**, az **E-mail**, a
 > **Fájltípusok**, a **Diavetítés**, a **Nyomtatás** és a **Névcímkék**.
-> A **Hálózat** és a **Webalbumok** fül **még nem működik**: a vezérlői
-> szürkék, a helyük csak az eredeti Picasa elrendezését követi.
+> A **Hálózat** fülön csak a naplózás működik, a proxy-beállítások
+> szürkék. A **Webalbumok** fül **nem működik**: a Picasa Webalbumok
+> megszűnt szolgáltatás, a fül csak az eredeti Picasa elrendezését követi.
 > Az Általános fülön szürke a **Névtelen használati statisztikák
 > küldése a Google részére** és az **Automatikus frissítések** is. A
 > **Bezárás** gomb zárja az ablakot; nincs külön OK, mert az élő
@@ -64,9 +65,11 @@ A lista **első tétele** az **Alapértelmezett rendszerbeállítás** — után
 zárójelben a gépeden beállított nyelv. Ezt választva a program minden
 indításnál a rendszer nyelvéből dönt. Alatta a **41 választható nyelv**
 áll, mindegyik **a saját nyelvén** írva (például **English (US)**,
-**Magyar**, **Deutsch**). A magyar és az angol felület teljes; a többi
-nyelvben az eredeti Picasa fordításai szerepelnek, és ami még nincs
-lefordítva, az angolul marad.
+**Magyar**, **Deutsch**). Mind a 41 nyelven **teljes** a felület: az
+eredeti Picasa fordításai mellett a PicasaPy saját feliratai is le vannak
+fordítva. A párbeszédablakok szabványos gombjai (például **OK**,
+**Mégse**) is a választott nyelven jelennek meg, nem a gép
+rendszernyelvén.
 
 **Első induláskor** a program felajánlja a rendszered nyelvét: ha a
 gép nyelve nem angol, és a PicasaPy tud ilyen nyelvet, egy kérdés
@@ -154,6 +157,34 @@ maradnak.
   átméretező szűrővel kicsinyíti a nyomtatás.
 
 A méretek részletei: [Nyomtatás](nyomtatas.md).
+
+### Hálózat fül
+
+A PicasaPy nem használ proxyt, ezért a fül felső része - a **Felhasználónév
+a proxyhoz:**, a **Jelszó a proxyhoz:** és a **Hálózati beállítások
+automatikus észlelése** - szürke, és nem is lesz rá szükség.
+
+Ami működik, az a naplózás. A **Hálózati események naplózási szintje:**
+listából öt fokozat közül választasz:
+
+- **Naplózás letiltása** - nem készül napló;
+- **Csak a hibák naplózása** - csak a sikertelen letöltések;
+- **Minimális mennyiségű naplóadat** (alapérték) - minden letöltés egy
+  rövid sorral;
+- **Részletes naplóadatok** - ezen felül a kapott válasz részletei és az
+  esetleges átirányítás is;
+- **Az összes hálózati információ naplózása** - ezen felül a letöltött
+  adat mérete is.
+
+A választott szint megmarad a következő indításra. A **Napló:** mező
+mutatja, hova kerül a napló: egy `network.log` nevű fájlba, a program
+adatmappájában. A helye nem változtatható, a mező csak olvasható - a
+szövegét viszont kimásolhatod.
+
+A program ma egyetlen dolgot tölt le a hálóról: az arcfelismerő fájlját,
+ha az valamiért hiányzik a telepítésből (lásd
+[Emberek és arcok](emberek.md)). A napló tehát csak ilyenkor bővül -
+akkor érdemes elővenni, ha ez a letöltés nem sikerül.
 
 ### Névcímkék fül
 

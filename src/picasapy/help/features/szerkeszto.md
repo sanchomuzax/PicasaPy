@@ -163,7 +163,8 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
   hozzáadása…** paranccsal saját arányt vehetsz fel: az ablakban a
   **Méretek:** sorba a szélességet és a magasságot, a **Név:** sorba a
   nevét írod; alatta egy **Példa:** sor mutatja, mire gondol a program
-  (4x6, kisméretű nyomat). A saját arányok a listában az **Egyéni
+  (4x6, kisméretű nyomat). Tört értéket tizedesvesszővel (`1,5`) és
+  tizedesponttal (`1.5`) is beírhatsz. A saját arányok a listában az **Egyéni
   méretarányok** cím alatt állnak. Törölni a lista melletti kis
   **kukával** tudod: válaszd ki a saját arányt, kattints a kukára, és
   hagyd jóvá a kérdést („Törli ezt az egyéni méretarányt?"). Beépített
@@ -253,6 +254,12 @@ ilyenkor nem jelenik meg); az első kattintás után a **cél** körét, a
 másodiknál a **forrásét** is látod a képen, amíg a javítás el nem készül.
 Nagyított képen a **Ctrl** lenyomva tartásával húzva pásztázhatsz. A
 panel kiírja, hány foltot javítottál.
+
+A retusálás nem egyszerűen átmásolja a forrás részletét a foltra: a
+mintázatát (például a bőr vagy a fű szerkezetét) átveszi, a világosságát
+és a színét viszont a folt **környezetéhez igazítja**. Így a javított hely
+akkor sem üt el a környékétől, ha a forrást egy világosabb vagy
+sötétebb részről vetted.
 **Folt visszavonása** és **Folt újra** léptet a foltok között, az
 **Alaphelyzet** mindet törli.
 
