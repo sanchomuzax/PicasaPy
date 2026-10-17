@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 24
+SCHEMA_VERSION = 25
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -299,6 +299,14 @@ ALTER TABLE face ADD COLUMN suggested_name TEXT;
 CREATE INDEX IF NOT EXISTS idx_face_person ON face(person_name);
 """
 
+# #5180: distinguish detector results from anonymous regions imported from
+# Picasa's db3. Imported rows have geometry only and must not enter the SFace
+# embedding queue. The default keeps every preexisting face a detector row.
+_FACE_SOURCE_DDL = """
+ALTER TABLE face ADD COLUMN source TEXT NOT NULL DEFAULT 'detector';
+CREATE INDEX IF NOT EXISTS idx_face_source_photo ON face(source, photo_id);
+"""
+
 # A `folders.offline` (#459/5): a mappa jelenleg nem elérhető (levált
 # NAS-mount, kihúzott lemez). Ilyenkor a mappa és a fotói BENNMARADNAK az
 # indexben — a takarítás kihagyja őket —, csak jelölést kapnak; a következő
@@ -466,6 +474,7 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
 
 {_FACE_EMBEDDING_DDL}
 {_FACE_NAME_DDL}
+{_FACE_SOURCE_DDL}
 
 {_FACE_SCAN_DDL}
 
@@ -640,4 +649,7 @@ DELETE FROM folder_scan_state WHERE path IN (
     # #4536: a személyenként választott indexkép táblája. A meglévő arcokból
     # nincs kiválasztás kikövetkeztethető, ezért üresen indul.
     23: _PERSON_THUMBNAILS_DDL,
+    # #5180: arcforrás-jelölő. A régi arcok detektorkimenetek, az új db3
+    # régiók pedig a saját embedding nélküli forrásuk szerint kerülnek be.
+    24: _FACE_SOURCE_DDL,
 }

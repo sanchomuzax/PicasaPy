@@ -98,12 +98,15 @@ def test_v23_index_migrates_the_thumbnail_table(tmp_path):
     with open_index(db) as conn:
         sync_tree(conn, library)
         conn.execute("DROP TABLE person_thumbnails")
+        # #5180: a v23-as séma még nem tartalmazza az arcforrás-jelölőt
+        conn.execute("DROP INDEX idx_face_source_photo")
+        conn.execute("ALTER TABLE face DROP COLUMN source")
         conn.execute("PRAGMA user_version = 23")
         conn.commit()
 
     with open_index(db) as conn:
-        assert SCHEMA_VERSION == 24
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 24
+        assert SCHEMA_VERSION == 25
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
         columns = {
             row["name"]
             for row in conn.execute("PRAGMA table_info(person_thumbnails)")

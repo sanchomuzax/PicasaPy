@@ -52,7 +52,7 @@ def _pmp(tmp_path, nev: str, field_type: int, body: bytes, count: int):
 
 
 class TestATablaTeljes:
-    def test_mind_a_kilenc_importalt_oszlop_szerepel(self):
+    def test_mind_a_tiz_importalt_oszlop_szerepel(self):
         from picasapy.pmpimport.importer import _COLUMNS
         from picasapy.pmpimport.pmp_column import OSZLOP_TIPUSOK
 
@@ -67,6 +67,7 @@ class TestATablaTeljes:
         assert OSZLOP_TIPUSOK["caption"] == 0x00
         assert OSZLOP_TIPUSOK["rotate"] == 0x00
         assert OSZLOP_TIPUSOK["filters"] == 0x00
+        assert OSZLOP_TIPUSOK["deferredface"] == 0x00
         assert OSZLOP_TIPUSOK["deferredregion"] == 0x00
         assert OSZLOP_TIPUSOK["tags"] == 0x06
         assert OSZLOP_TIPUSOK["crop64"] == 0x04
