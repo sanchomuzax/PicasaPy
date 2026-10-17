@@ -160,10 +160,10 @@ def _clamp_folder_pane_width(width: int) -> int:
     return max(FOLDER_PANE_WIDTH_MIN, min(FOLDER_PANE_WIDTH_MAX, width))
 
 
-def _mappaban_megnevezett_arc(path: str) -> bool:
+def _mappaban_megnevezett_arc(path: str, central_path=None) -> bool:
     """Van-e a mappa ini-jében megnevezett arc (#4887) — EGY ini olvasása,
     hogy a mappa elrejtése ne indítson fölöslegesen teljes Emberek-söprést."""
-    gyujto = FaceDataCollector()
+    gyujto = FaceDataCollector(central_path)
     try:
         gyujto(path, load_or_empty(Path(path) / PICASA_INI_NAME))
     except (OSError, ValueError):
@@ -1033,7 +1033,9 @@ class AppController(
         # ini-söprést kér (NAS-on drága) — csak akkor, ha a mappában van
         # megnevezett arc, tehát a darabszám egyáltalán változhat.
         self._rejtett_lathatosag_valtozott(
-            emberek=_mappaban_megnevezett_arc(path)
+            emberek=_mappaban_megnevezett_arc(
+                path, central_contacts_path(self._db_path)
+            )
         )
 
     def _rejtett_lathatosag_kozlese(self) -> None:

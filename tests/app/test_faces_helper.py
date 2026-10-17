@@ -111,6 +111,80 @@ class TestFacesFor:
         ini.write_text("[IMG_0001.jpg]\nfaces=nemertelmes;\n", encoding="utf-8")
         assert helper.facesFor(str(photo)) == []
 
+    def test_invalid_person_entry_does_not_hide_valid_faces(self, helper, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[Contacts2]\n8e62b2035b74b477=Kis Éva;;\n"
+            "[IMG_0001.jpg]\n"
+            "faces=rect64(3f845bcb59418507),8e62b2035b74b477;"
+            "rect64(10000000f1ddff49),not-a-person\n",
+            encoding="utf-8",
+        )
+
+        faces = helper.facesFor(str(photo))
+
+        assert [face["name"] for face in faces] == ["Kis Éva"]
+
+    def test_named_ini_face_is_not_returned_again_as_an_unnamed_detection(
+        self, helper, photo, tmp_path
+    ):
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+        from picasapy.index import open_index, replace_faces, sync_tree
+
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[Contacts2]\n8e62b2035b74b477=Kis Éva;;\n"
+            "[IMG_0001.jpg]\n"
+            "faces=rect64(3f845bcb59418507),8e62b2035b74b477\n",
+            encoding="utf-8",
+        )
+        db_path = tmp_path / "index.db"
+        with open_index(db_path) as conn:
+            sync_tree(conn, photo.parent)
+            photo_id = conn.execute(
+                "SELECT id FROM photos WHERE name = ?", (photo.name,)
+            ).fetchone()["id"]
+            landmarks = FaceLandmarks(
+                right_eye=(2.05, 2.5),
+                left_eye=(2.2, 2.5),
+                nose=(2.1, 2.65),
+                mouth_right=(2.05, 2.8),
+                mouth_left=(2.2, 2.8),
+            )
+            replace_faces(
+                conn,
+                photo_id,
+                [
+                    FaceDetection(
+                        left=2.0,
+                        top=2.4,
+                        right=2.4,
+                        bottom=3.0,
+                        score=0.99,
+                        landmarks=landmarks,
+                    ),
+                    FaceDetection(
+                        left=6.8,
+                        top=4.8,
+                        right=7.5,
+                        bottom=5.5,
+                        score=0.99,
+                        landmarks=landmarks,
+                    ),
+                ],
+            )
+            conn.commit()
+
+        helper._index_path = db_path
+
+        faces = helper.facesFor(str(photo))
+
+        assert [face["name"] for face in faces] == ["Kis Éva", ""]
+        assert faces[1]["detected"] is True
+        assert [faces[1][key] for key in ("left", "top", "right", "bottom")] == [
+            pytest.approx(value) for value in (0.85, 0.8, 0.9375, 0.9166666667)
+        ]
+
     def test_empty_path_gives_empty_list(self, helper):
         assert helper.facesFor("") == []
 

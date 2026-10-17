@@ -36,19 +36,23 @@ class SidePaneCollections:
     custom_collection_folders: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
-def load_side_pane_collections(conn: sqlite3.Connection) -> SidePaneCollections:
+def load_side_pane_collections(
+    conn: sqlite3.Connection, *, central_path=None
+) -> SidePaneCollections:
     """Emberek + Projektek + egyéni gyűjtemények egyetlen söpréssel.
 
     Az eredménye azonos a két korábbi gyűjtemény külön lekérdezésével, és
     ugyanebből a menetből megadja az egyéni `P2category`-értékek mappáit.
     A söprés darabszámát teszt rögzíti:
     `tests/index/test_egy_ini_sopres_1601.py`."""
-    faces = FaceDataCollector()
+    faces = FaceDataCollector(central_path)
     projects = ProjectFolderCollector()
     custom_collections = CustomCollectionFolderCollector()
     sweep_folder_inis(conn, (faces, projects, custom_collections))
     return SidePaneCollections(
-        people=people_in_index(conn, tuple(faces.rows)),
+        people=people_in_index(
+            conn, tuple(faces.rows), central_path=central_path
+        ),
         project_folders=project_folders_from_paths(conn, projects.paths),
         custom_collection_folders=custom_collections.result(),
     )

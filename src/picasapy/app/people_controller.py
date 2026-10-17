@@ -34,6 +34,7 @@ from picasapy.index import (
     unnamed_faces_for_photos,
 )
 from picasapy.index.faces_detected import (
+    faces_for_photo,
     suggested_album_photos,
     suggested_faces_for,
 )
@@ -47,10 +48,12 @@ from picasapy.index.people import (
 from picasapy.ini import (
     UNIDENTIFIED_CONTACT,
     Contact,
+    ContactNameResolver,
     IniConflictError,
     IniSaveError,
     ContactXmlEntry,
     contacts_of,
+    central_contacts_path,
     ensure_contact,
     find_contact_id,
     load_contacts_xml,
@@ -68,7 +71,7 @@ from picasapy.ini import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
-from .contact_names import central_contacts_path
+from .face_ignore_ini import ini_faces_of, match_named_regions
 from .models import _thumb_url
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
@@ -133,7 +136,11 @@ class PeopleMixin:
     def personMovieSourceUrls(self):  # noqa: N802 — QML-slot-stílus
         """A nem üres személyalbumok képei a tárolt lista sorrendjében."""
         with open_index(self._db_path) as conn:
-            records = person_movie_photos(conn, self._people)
+            records = person_movie_photos(
+                conn,
+                self._people,
+                central_path=central_contacts_path(self._db_path),
+            )
         return [
             formatting.to_file_url(str(Path(record.folder_path) / record.name))
             .toString()
@@ -181,11 +188,8 @@ class PeopleMixin:
             by_folder.setdefault(photo.folder_path, []).append(photo)
 
         contacts_by_name: dict[str, dict] = {}
-        central_id_to_name: dict[str, str] = {}
-        try:
-            central_contacts = load_contacts_xml(self._people_contacts_path())
-        except (OSError, ValueError):
-            central_contacts = ()
+        resolver = ContactNameResolver(self._people_contacts_path())
+        central_contacts = resolver.central_contacts
         for contact in central_contacts:
             if not contact.name or not contact.person_id:
                 continue
@@ -202,7 +206,6 @@ class PeopleMixin:
             )
             if contact.person_id not in row["contactIds"]:
                 row["contactIds"].append(contact.person_id)
-            central_id_to_name[contact.person_id.casefold()] = key
 
         for folder_path, folder_photos in by_folder.items():
             try:
@@ -215,15 +218,19 @@ class PeopleMixin:
                 if contact.name
                 and contact.person_id.casefold() != UNIDENTIFIED_CONTACT
             )
-            names: dict[str, str] = {}
+            resolved_names = resolver.names_by_id(document)
+            names = {
+                person_id: name
+                for person_id, name in resolved_names.items()
+                if name and person_id != UNIDENTIFIED_CONTACT
+            }
             for contact in contacts:
-                key = central_id_to_name.get(
-                    contact.person_id.casefold(), contact.name.casefold()
-                )
+                name = names.get(contact.person_id.casefold(), contact.name)
+                key = name.casefold()
                 row = contacts_by_name.setdefault(
                     key,
                     {
-                        "name": contact.name,
+                        "name": name,
                         "email": "",
                         "contactIds": [],
                         "localContactIds": [],
@@ -236,7 +243,6 @@ class PeopleMixin:
                     row["contactIds"].append(contact.person_id)
                 if contact.person_id not in row["localContactIds"]:
                     row["localContactIds"].append(contact.person_id)
-                names[contact.person_id.casefold()] = key
 
             for photo in folder_photos:
                 section = document.section(photo.name)
@@ -248,7 +254,7 @@ class PeopleMixin:
                 except ValueError:
                     continue
                 names_on_photo = {
-                    names[face.contact_id.casefold()]
+                    names[face.contact_id.casefold()].casefold()
                     for face in faces
                     if face.is_identified
                     and face.contact_id.casefold() in names
@@ -516,7 +522,9 @@ class PeopleMixin:
         KÖZÖS, egyetlen `.picasa.ini`-söprésből állítja elő mindkettőt (a
         két külön hívás minden ini-t kétszer olvasott végig). Ez a metódus
         akkor való, ha tényleg csak az Emberek lista változott."""
-        self._people = people_in_index(conn)
+        self._people = people_in_index(
+            conn, central_path=central_contacts_path(self._db_path)
+        )
         self.peopleChanged.emit()
 
     @Slot(str)
@@ -543,7 +551,12 @@ class PeopleMixin:
             if self._csak_javaslatok:
                 records = javaslatok
             else:
-                records = self._osszefuzve(person_photos(conn, name), javaslatok)
+                records = self._osszefuzve(
+                    person_photos(
+                        conn, name, central_path=central_contacts_path(self._db_path)
+                    ),
+                    javaslatok,
+                )
         elapsed = time.perf_counter() - started
         self._filter_active = True
         self._filter_status = formatting.filter_status_text(
@@ -672,6 +685,7 @@ class PeopleMixin:
                 if face.rect is not None:
                     keretek.setdefault(face.photo_id, tuple(face.rect))
         dokumentumok: dict[str, object | None] = {}
+        resolver = self._people_name_resolver()
         for photo in records:
             kulcs = str(photo.folder_path)
             if kulcs not in dokumentumok:
@@ -684,13 +698,20 @@ class PeopleMixin:
             document = dokumentumok[kulcs]
             if document is None:
                 continue
-            contact_id = find_contact_id(document, name)
-            if contact_id is None:
-                continue
-            rects = self._person_faces(document, photo.name, contact_id)
-            if rects:
-                rect = rects[0]
-                keretek[photo.id] = (rect.left, rect.top, rect.right, rect.bottom)
+            names = resolver.names_by_id(document)
+            contact_ids = tuple(
+                person_id
+                for person_id, resolved_name in names.items()
+                if resolved_name.casefold() == name.casefold()
+            )
+            for contact_id in contact_ids:
+                rects = self._person_faces(document, photo.name, contact_id)
+                if rects:
+                    rect = rects[0]
+                    keretek[photo.id] = (
+                        rect.left, rect.top, rect.right, rect.bottom
+                    )
+                    break
         return keretek
 
     @Slot(list, result="QVariantList")
@@ -708,6 +729,7 @@ class PeopleMixin:
         # 6 006 ini-beolvasás egyetlen billentyűleütésre, hálózati
         # megosztáson mindegyik egy-egy hálózati kör.
         dokumentumok: dict[str, object | None] = {}
+        resolver = self._people_name_resolver()
         for photo in self._rows_to_photos(rows):
             folder = Path(photo.folder_path)
             kulcs = str(folder)
@@ -719,11 +741,7 @@ class PeopleMixin:
             document = dokumentumok[kulcs]
             if document is None:
                 continue
-            names = {
-                contact.person_id.casefold(): contact.name
-                for contact in contacts_of(document)
-                if contact.name
-            }
+            names = resolver.names_by_id(document)
             section = document.section(photo.name)
             raw = section.get("faces") if section is not None else None
             if not raw:
@@ -783,6 +801,12 @@ class PeopleMixin:
                     person["thumbUrl"] = _thumb_url(photo, arc=thumbnail.rect)
         return result
 
+    def _people_name_resolver(self) -> ContactNameResolver:
+        """Közös feloldó; könnyű, DB nélküli tesztgazdánál csak a mappát nézi."""
+        db_path = getattr(self, "_db_path", None)
+        central_path = central_contacts_path(db_path) if db_path is not None else None
+        return ContactNameResolver(central_path)
+
     @Slot(list, result="QVariantList")
     def unnamedFacesOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
         """A kijelölt fotók saját, még névtelen arcai a jobb oldali panelhez.
@@ -799,19 +823,41 @@ class PeopleMixin:
         photo_order = {photo.id: index for index, photo in enumerate(photos)}
         with open_index(self._db_path) as conn:
             faces = unnamed_faces_for_photos(conn, by_id)
+            ordered_faces = sorted(
+                faces,
+                key=lambda item: (
+                    photo_order[item.photo_id],
+                    item.rect[1] if item.rect else 1.0,
+                    item.rect[0] if item.rect else 1.0,
+                    item.id,
+                ),
+            )
+            faces_by_photo = {}
+            ini_cache = {}
+            matched_named_ids = set()
+            for face in ordered_faces:
+                if face.rect is not None:
+                    faces_by_photo.setdefault(face.photo_path, []).append(face)
+            for photo_path, photo_faces in faces_by_photo.items():
+                ini_faces = ini_faces_of(photo_path, ini_cache)
+                all_index_faces = faces_for_photo(conn, photo_faces[0].photo_id)
+                matches = match_named_regions(
+                    (
+                        (face.id, face.rect)
+                        for face in all_index_faces
+                        if face.rect is not None
+                        and face.state in {"unnamed", "named"}
+                    ),
+                    ini_faces,
+                )
+                matched_named_ids.update(matches)
 
         result = []
-        for face in sorted(
-            faces,
-            key=lambda item: (
-                photo_order[item.photo_id],
-                item.rect[1] if item.rect else 1.0,
-                item.rect[0] if item.rect else 1.0,
-                item.id,
-            ),
-        ):
+        for face in ordered_faces:
             photo = by_id.get(face.photo_id)
             if photo is None or face.rect is None:
+                continue
+            if face.id in matched_named_ids:
                 continue
             result.append(
                 {
@@ -830,7 +876,11 @@ class PeopleMixin:
         if mode != "person":
             return False
         with open_index(self._db_path) as conn:
-            records = person_photos(conn, param)
+            records = person_photos(
+                conn,
+                param,
+                central_path=central_contacts_path(self._db_path),
+            )
         self._show(records)
         #: #2187: az új tartalom törli a modell arc-kereteit — újra kell adni
         self._arc_nagyitas_atvezetese(param, records)

@@ -146,6 +146,71 @@ def save_contacts_xml(path: str | Path, entries: tuple[ContactXmlEntry, ...]) ->
     write_atomic(Path(path), payload, make_parents=True)
 
 
+def merge_contacts_xml(
+    source_path: str | Path, central_path: str | Path
+) -> int:
+    """A Picasa-profil minden névjegyét beemeli a központi névtárba.
+
+    Azonosító szerint egyesít: a profil neve nyer az azonos azonosítójú
+    központi bejegyzéssel szemben, a PicasaPy egyéb névjegyei megmaradnak.
+    A forrásfájl hiánya opcionális eset, ilyenkor nulla a visszatérés.
+    """
+    source = Path(source_path)
+    central = Path(central_path)
+    if source.resolve() == central.resolve():
+        return 0
+    incoming = load_contacts_xml(source)
+    if not incoming:
+        return 0
+
+    entries = list(load_contacts_xml(central))
+    positions = {
+        contact.person_id.casefold(): index
+        for index, contact in enumerate(entries)
+    }
+    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    changed = 0
+    for contact in incoming:
+        if not _CONTACT_ID.fullmatch(contact.person_id):
+            continue
+        key = contact.person_id.casefold()
+        position = positions.get(key)
+        modified_time = contact.modified_time
+        try:
+            modified = datetime.fromisoformat(modified_time)
+        except ValueError:
+            modified = None
+        if modified is None or modified.tzinfo is None:
+            modified_time = now
+
+        if position is None:
+            positions[key] = len(entries)
+            entries.append(
+                ContactXmlEntry(
+                    person_id=contact.person_id,
+                    name=contact.name,
+                    modified_time=modified_time,
+                    local_contact="1",
+                )
+            )
+            changed += 1
+            continue
+
+        current = entries[position]
+        if current.name != contact.name:
+            entries[position] = ContactXmlEntry(
+                person_id=current.person_id,
+                name=contact.name,
+                modified_time=now,
+                local_contact="1",
+            )
+            changed += 1
+
+    if changed:
+        save_contacts_xml(central, tuple(entries))
+    return changed
+
+
 def apply_contacts_xml(
     document: IniDocument, entries: tuple[ContactXmlEntry, ...]
 ) -> IniDocument:

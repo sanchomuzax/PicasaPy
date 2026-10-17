@@ -278,7 +278,8 @@ def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app
     assert _find_item(window, "unnamedNameField").property("visible") is False
     assert _find_item(window, "ignoreFacesButton").property("visible") is False
     assert _find_item(window, "moreSuggestionsButton").property("visible") is False
-    assert _find_item(window, "addNameButton").property("visible") is False
+    # #5214: a külön „Add a name" gomb megszűnt, a névmező veszi át
+    assert _find_item(window, "addNameButton") is None
 
     tile_items = [_find_item(window, f"faceTile_{face_id}") for face_id in range(1, 7)]
     name_fields = [

@@ -38,6 +38,7 @@ class Face:
 
 
 def parse_faces(value: str) -> tuple[Face, ...]:
+    """A hibás bejegyzéseket egyenként kihagyva olvassa be a `faces=` sort."""
     faces = []
     for entry in value.split(";"):
         if not entry:
@@ -48,8 +49,12 @@ def parse_faces(value: str) -> tuple[Face, ...]:
             or not rect_part.startswith("rect64(")
             or not _CONTACT_ID.match(contact_id)
         ):
-            raise ValueError(f"Érvénytelen faces-bejegyzés: {entry!r}")
-        faces.append(Face(rect=decode_rect64(rect_part), contact_id=contact_id))
+            continue
+        try:
+            rect = decode_rect64(rect_part)
+        except ValueError:
+            continue
+        faces.append(Face(rect=rect, contact_id=contact_id))
     return tuple(faces)
 
 
@@ -130,12 +135,14 @@ def remove_all_face_data(document: IniDocument) -> IniDocument:
 
 
 def reset_all_faces(document: IniDocument) -> IniDocument:
-    """A személyneveket törli, a régiókat névtelen arcokként megtartja.
+    """A megnevezéseket törli, a mellőzött régiókat és az arcadatot megtartja.
 
-    A `ResetAllFaces` a `faces=` minden kontaktazonosítóját `0`-ra állítja
-    (ez az arc-régiót megtartó, nem mellőzött névtelen alak), majd törli a
-    személyalbumokat adó `[Contacts2]` bejegyzéseket. A `facedata` és az
-    egyéb fotóadatok változatlanok.
+    A Picasa `ResetAllFaces` művelete törli a személyi albumokat, és az
+    arcokat a Név nélküliek közé helyezi. A `faces=` sorból ezért a
+    megnevezett és nulla azonosítójú rekordok kikerülnek; a mellőzött
+    (`ffffffffffffffff`) rekordok eredeti szövege megmarad. A felismert,
+    névtelen arcot a Picasa nem írja `0`-val a sorba. A `[Contacts2]`
+    bejegyzéseket töröljük, a `facedata` és más fotóadatok változatlanok.
     """
     updated = document
     for section in document.file_sections():
@@ -143,12 +150,23 @@ def reset_all_faces(document: IniDocument) -> IniDocument:
         raw_faces = current.get("faces") if current is not None else None
         if raw_faces is None:
             continue
-        faces = parse_faces(raw_faces)
-        if faces:
-            unnamed = tuple(Face(rect=face.rect, contact_id="0") for face in faces)
-            updated = updated.with_value(
-                section.name, "faces", serialize_faces(unnamed)
-            )
+        retained = []
+        dropped_entry = False
+        for entry in raw_faces.split(";"):
+            if not entry:
+                continue
+            parsed = parse_faces(entry)
+            if parsed and parsed[0].is_ignored:
+                retained.append(entry)
+            else:
+                dropped_entry = True
+        if not dropped_entry:
+            continue
+        replacement = ";".join(retained)
+        if replacement:
+            updated = updated.with_value(section.name, "faces", replacement)
+        else:
+            updated = updated.with_removed(section.name, "faces")
     return _without_all_contacts(updated)
 
 

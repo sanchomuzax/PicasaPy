@@ -86,7 +86,7 @@ from picasapy.index import (
     unnamed_album_photos,
     unnamed_faces,
 )
-from picasapy.index.faces_detected import UnnamedFace, unnamed_face_count
+from picasapy.index.faces_detected import UnnamedFace
 from picasapy.index.hidden_scope import hidden_folders_visible
 from picasapy.index.ignored_ini_faces import IniIgnoredFace
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
@@ -96,6 +96,7 @@ from .face_ignore_ini import (
     ignored_regions,
     ini_face_key,
     ini_faces_of,
+    match_named_regions,
     match_regions,
     parse_ini_face_key,
     quantize_rect,
@@ -781,12 +782,43 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if self._stop_event is not None:
             self._stop_event.set()
 
+    @staticmethod
+    def _unnamed_faces_without_named_ini(conn) -> tuple[UnnamedFace, ...]:
+        """Az index névtelen arcai közül kihagyja az ini-ben már megnevezetteket."""
+        faces = unnamed_faces(conn)
+        faces_by_photo = {}
+        ini_cache = {}
+        matched_named_ids = set()
+        for face in faces:
+            if face.rect is not None:
+                faces_by_photo.setdefault(face.photo_path, []).append(face)
+        for photo_path, photo_faces in faces_by_photo.items():
+            ini_faces = ini_faces_of(photo_path, ini_cache)
+            all_index_faces = faces_for_photo(conn, photo_faces[0].photo_id)
+            matched = match_named_regions(
+                (
+                    (face.id, face.rect)
+                    for face in all_index_faces
+                    if face.rect is not None and face.state in {"unnamed", "named"}
+                ),
+                ini_faces,
+            )
+            matched_named_ids.update(matched)
+        return tuple(face for face in faces if face.id not in matched_named_ids)
+
     @Slot(result="QVariantList")
     def unnamedAlbum(self) -> list[dict]:
         """A „Névtelenek" album QML-nek: `[{path, name}, ...]` — LISTA, nem
         tuple (a `people`/`albums` property mintája, MEMORY 2026-07-22)."""
         with open_index(self._db_path) as conn:
-            records = unnamed_album_photos(conn)
+            face_photo_ids = {
+                face.photo_id for face in self._unnamed_faces_without_named_ini(conn)
+            }
+            records = [
+                record
+                for record in unnamed_album_photos(conn)
+                if record.id in face_photo_ids
+            ]
         return [
             {"path": str(Path(record.folder_path) / record.name), "name": record.name}
             for record in records
@@ -796,7 +828,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def unnamedCount(self) -> int:
         """A bal hasábban látható névtelen arcok száma."""
         with open_index(self._db_path) as conn:
-            return unnamed_face_count(conn)
+            return len(self._unnamed_faces_without_named_ini(conn))
 
     @Slot(result=bool)
     def unnamedWelcomeHasBeenShown(self) -> bool:  # noqa: N802
@@ -831,7 +863,11 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         kimarad — `addFace()`-hez relatív (rect64) koordináta kell, amit
         méret nélkül nem lehet számolni (ld. `UnnamedFace.rect`)."""
         with open_index(self._db_path) as conn:
-            faces = [face for face in unnamed_faces(conn) if face.rect is not None]
+            faces = [
+                face
+                for face in self._unnamed_faces_without_named_ini(conn)
+                if face.rect is not None
+            ]
         if not group_by_face:
             return [_group_payload(faces, self.tr("All unnamed faces ({0})").format(len(faces)))]
         buckets: dict[int | None, list] = {}

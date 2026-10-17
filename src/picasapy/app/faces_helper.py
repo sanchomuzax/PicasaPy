@@ -3,8 +3,9 @@
 
 A néző overlay-je a mentett régiókat a fotó mappájának `.picasa.ini`
 `faces=` és `[Contacts2]` adataiból, a még névtelen detektálásokat pedig a
-`face` indextáblából kéri le. A név és az arcmentés továbbra is az ini API-n
-keresztül történik.
+`face` indextáblából kéri le. A névvel mentett ini-régióval átfedő index-
+találatot nem adja vissza második, névtelen arcként. A név és az arcmentés
+továbbra is az ini API-n keresztül történik.
 
 Az ÍRÁS a csillag/album-mintát követi (`photo_ops_controller.py`,
 `ini.io.update_document`): azonos útvonalon soros, az előzetes ellenőrzésig
@@ -26,7 +27,8 @@ from picasapy.ini import (
     UNIDENTIFIED_CONTACT,
     IniConflictError,
     IniSaveError,
-    contacts_of,
+    ContactNameResolver,
+    central_contacts_path,
     ensure_contact,
     find_contact_id,
     has_ini_source,
@@ -45,6 +47,8 @@ from picasapy.ini.faces import Face
 from picasapy.ini.rect64 import Rect64
 from picasapy.index import open_index
 from picasapy.scanner import PICASA_INI_NAME
+
+from .face_ignore_ini import match_named_regions
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós
 # ütközés is kezelt hiba, nem néma adatvesztés/omlás
@@ -71,12 +75,13 @@ class FacesHelper(QObject):
         `faceId` mezőt is kap, hogy a néző a DB-n keresztül tudja elmenteni
         a ráírt nevet. A mellőzést (`ffffffffffffffff`) és a nulla
         contact_id-jú ini-bejegyzést kihagyja. Hiányzó ini/szekció/kulcs,
-        hibás `faces=` érték vagy nem indexelt fotó esetén az adott
-        adatforrásból üres lista jön."""
+        illetve nem indexelt fotó esetén az adott adatforrásból üres lista
+        jön. A hibás egyedi `faces=` bejegyzést a parser önállóan kihagyja."""
         if not image_path:
             return []
         document, path = self._load(image_path)
         ini_faces = []
+        named_faces = ()
         if document is not None:
             section = document.section(path.name)
             raw_faces = section.get("faces") if section is not None else None
@@ -85,18 +90,24 @@ class FacesHelper(QObject):
                     faces = parse_faces(raw_faces)
                 except ValueError:
                     faces = ()
-                names = {
-                    contact.person_id.casefold(): contact.name
-                    for contact in contacts_of(document)
-                }
+                named_faces = tuple(
+                    face
+                    for face in faces
+                    if face.is_identified
+                )
+                names = self._contact_name_resolver().names_by_id(document)
                 ini_faces = [
                     _face_to_dict(face, names)
                     for face in faces
                     if face.is_identified
                 ]
-        return ini_faces + self._unnamed_detected_faces(path)
+        return ini_faces + self._unnamed_detected_faces(path, named_faces)
 
-    def _unnamed_detected_faces(self, image_path: Path) -> list[dict]:
+    def _unnamed_detected_faces(
+        self,
+        image_path: Path,
+        named_faces: tuple[Face, ...] = (),
+    ) -> list[dict]:
         """A még névtelen, YuNet által felismert arcok a fotó indexsoraiból."""
         if self._index_path is None or not self._index_path.is_file():
             return []
@@ -111,23 +122,44 @@ class FacesHelper(QObject):
                 if photo is None or not photo["width"] or not photo["height"]:
                     return []
                 rows = conn.execute(
-                    "SELECT id, rect_left, rect_top, rect_right, rect_bottom "
-                    "FROM face WHERE photo_id = ? AND state = 'unnamed' "
+                    "SELECT id, rect_left, rect_top, rect_right, rect_bottom, state "
+                    "FROM face WHERE photo_id = ? "
                     "ORDER BY id",
                     (photo["id"],),
                 )
-                return [
-                    {
-                        "left": row["rect_left"] / photo["width"],
-                        "top": row["rect_top"] / photo["height"],
-                        "right": row["rect_right"] / photo["width"],
-                        "bottom": row["rect_bottom"] / photo["height"],
-                        "name": "",
-                        "detected": True,
-                        "faceId": int(row["id"]),
-                    }
-                    for row in rows
-                ]
+                detections = []
+                for row in rows:
+                    rect = (
+                        row["rect_left"] / photo["width"],
+                        row["rect_top"] / photo["height"],
+                        row["rect_right"] / photo["width"],
+                        row["rect_bottom"] / photo["height"],
+                    )
+                    detections.append((row, rect))
+                matched = match_named_regions(
+                    (
+                        (int(row["id"]), rect)
+                        for row, rect in detections
+                        if row["state"] in {"unnamed", "named"}
+                    ),
+                    named_faces,
+                )
+                result = []
+                for row, rect in detections:
+                    if row["state"] != "unnamed" or int(row["id"]) in matched:
+                        continue
+                    result.append(
+                        {
+                            "left": rect[0],
+                            "top": rect[1],
+                            "right": rect[2],
+                            "bottom": rect[3],
+                            "name": "",
+                            "detected": True,
+                            "faceId": int(row["id"]),
+                        }
+                    )
+                return result
         except (OSError, sqlite3.Error, RuntimeError):
             return []
 
@@ -139,9 +171,12 @@ class FacesHelper(QObject):
         if not image_path:
             return []
         document, _path = self._load(image_path)
-        if document is None:
-            return []
-        names = {contact.name for contact in contacts_of(document) if contact.name}
+        resolver = self._contact_name_resolver()
+        names = (
+            set(resolver.central_names())
+            if document is None
+            else set(resolver.names_by_id(document).values())
+        )
         return sorted(names, key=str.casefold)
 
     @Slot(str, float, float, float, float, str, result=bool)
@@ -268,11 +303,31 @@ class FacesHelper(QObject):
         nincs ilyen nevű kontakt még (64 bites véletlen hex, a Picasa-
         formátum szerint). A hívó nem üres, levágott nevet ad."""
         clean_name = (name or "").strip()
+        resolver = self._contact_name_resolver()
+        # A központi névjegy az elsődleges névforrás. A mappa Contacts2
+        # bejegyzését viszont csak a korábbi, pontos névegyezéssel használjuk:
+        # a teljes names_by_id táblán végzett casefold keresés egy eltérő
+        # kis-/nagybetűzésű helyi nevet is ugyanannak venné, így a frissen
+        # begépelt név helyett a régi helyi címke maradna a panelen.
+        for contact in resolver.central_contacts:
+            if contact.name.casefold() == clean_name.casefold():
+                return (
+                    ensure_contact(document, contact.person_id, contact.name),
+                    contact.person_id,
+                )
         existing = find_contact_id(document, clean_name)
         if existing is not None:
             return document, existing
         new_id = secrets.token_hex(8)
         return ensure_contact(document, new_id, clean_name), new_id
+
+    def _contact_name_resolver(self) -> ContactNameResolver:
+        central_path = (
+            central_contacts_path(self._index_path)
+            if self._index_path is not None
+            else None
+        )
+        return ContactNameResolver(central_path)
 
     def _mutate(self, image_path: str, mutate, left=None, top=None, right=None, bottom=None) -> bool:
         """Közös írási keret: szerializált, best-effort `update_document` egyetlen
