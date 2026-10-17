@@ -37,6 +37,14 @@ def collector():
                 self.event.wait(marad)
                 self.event.clear()
 
+        def wait_until(self, predicate, timeout=5.0):
+            deadline = time.monotonic() + timeout
+            while not predicate(self.seen):
+                remaining = deadline - time.monotonic()
+                assert remaining > 0, "nem érkezett meg a várt könyvtáresemény"
+                self.event.wait(remaining)
+                self.event.clear()
+
         @property
         def seen(self):
             return set().union(*self.batches) if self.batches else set()
@@ -79,6 +87,33 @@ class TestLibraryWatcher:
         (tmp_path / "m" / "uj.jpg").write_bytes(b"x")
         collector.wait()
         assert str(tmp_path / "m") in collector.seen
+
+    def test_directory_rename_reports_only_changed_subtrees(
+        self, tmp_path, watcher_factory, collector
+    ):
+        """Az átnevezés külön törlést és új részfa-beolvasást jelez.
+
+        Mappanév-változáskor a fájlok maguk nem változnak, ezért a fájlszintű
+        eseményszűrés önmagában nem veheti ki a régi út indexsorát. A
+        gyökér megjelölése viszont fölöslegesen bejárná a teljes könyvtárat.
+        """
+        source = tmp_path / "Eltunt"
+        source.mkdir()
+        watcher_factory(tmp_path)
+
+        destination = tmp_path / "Atnevezett"
+        source.rename(destination)
+
+        collector.wait_until(
+            lambda events: {
+                (getattr(event, "path", None), getattr(event, "action", None))
+                for event in events
+            }
+            >= {
+                (str(source), "deleted"),
+                (str(destination), "created"),
+            }
+        )
 
     def test_ini_change_reports_folder(self, tmp_path, watcher_factory, collector):
         (tmp_path / "m").mkdir()

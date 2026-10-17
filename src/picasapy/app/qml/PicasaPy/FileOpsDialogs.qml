@@ -152,6 +152,9 @@ Item {
                 objectName: "renameField"
                 width: 300
                 font.pixelSize: Theme.fontSize
+                // #5207: Enter elfogadja a párbeszédet (mint a Rename gomb), az
+                // Escape a Dialog-é (Mégse). A kiterjesztés kérdése külön.
+                onAccepted: renameDialog.accept()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
             }

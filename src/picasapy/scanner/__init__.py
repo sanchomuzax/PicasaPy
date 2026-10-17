@@ -41,7 +41,7 @@ from .watched import (
     read_watched_folders,
     write_watched_folders,
 )
-from .watcher import LibraryWatcher
+from .watcher import DirectoryChange, LibraryWatcher
 
 __all__ = [
     "DEFAULT_DIRECTORY_FILTERS",
@@ -55,6 +55,7 @@ __all__ = [
     "VIDEO_EXTENSIONS",
     "WATCHED_FOLDERS_NAME",
     "FolderScan",
+    "DirectoryChange",
     "LibraryWatcher",
     "MediaFile",
     "NameFilters",

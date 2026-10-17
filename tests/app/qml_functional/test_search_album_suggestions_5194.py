@@ -171,10 +171,14 @@ def test_clicking_album_suggestion_opens_that_album(qml_app, qt_app, tmp_path):
     album_row = next(row for row in rows if row.property("index") == album_index)
     _click(window, album_row, qt_app)
 
-    assert _wait(
-        qt_app,
-        lambda: controller.currentAlbumToken == token
-        and controller.photos.rowCount() == 24,
-    ), "az album-javaslat kiválasztása nem nyitotta meg az albumot"
+    assert _wait(qt_app, lambda: controller.currentAlbumToken == token), (
+        "az album-javaslat kiválasztása nem nyitotta meg az albumot: "
+        f"currentAlbumToken={controller.currentAlbumToken!r}, várt={token!r}, "
+        f"lista látszik={popup.property('visible')!r}, mező={field.property('text')!r}"
+    )
+    # A képek betöltése háttérben megy; a CI-n lassabb lehet, mint a nyitás.
+    assert _wait(qt_app, lambda: controller.photos.rowCount() == 24, 20.0), (
+        f"az album megnyílt, de {controller.photos.rowCount()} képet mutat (várt: 24)"
+    )
     assert field.property("text") == ""
     assert popup.property("visible") is False
