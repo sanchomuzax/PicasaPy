@@ -343,7 +343,7 @@ Popup {
                                 Layout.fillWidth: true
                                 model: panel.meretek
                                 currentIndex: Math.max(0, panel.meretek.indexOf(panel.pendingSize))
-                                onCurrentIndexChanged: panel.pendingSize = currentText
+                                onCurrentIndexChanged: panel.pendingSize = panel.meretek[currentIndex]
                             }
                         }
                     }
