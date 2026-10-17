@@ -65,6 +65,9 @@ def tetel_kattintasa(window, qt_app, cim: str, nev: str, almenu_utvonal=()) -> N
     assert varj(qt_app, lambda: tetel.property("visible") is True), (
         f"{nev} nem látszik a megnyitott menüben"
     )
+    # Az engedélyezést kötés adja (pl. Visszaállítás: a mentett másolat), ami
+    # Windowson a menü megnyitása után frissülhet; a kattintás előtt kivárjuk.
+    varj(qt_app, lambda: tetel.isEnabled())
     _kattints(qt_app, tetel)
 
 
