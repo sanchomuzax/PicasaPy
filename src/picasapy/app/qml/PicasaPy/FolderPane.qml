@@ -27,6 +27,10 @@ Rectangle {
     property bool searchActive: false
     property string searchQuery: ""
     property int searchResultCount: 0
+    readonly property string searchResultsAlbumText: searchActive
+        ? qsTr("Search results for \"%1\" (%2)")
+            .arg(searchQuery).arg(searchResultCount)
+        : ""
     // #9: az albumok listája ({token, name, count} elemek) és az éppen
     // kiválasztott album token-je (a kijelölés-kiemeléshez)
     property var albumsModel: []
@@ -569,6 +573,7 @@ Rectangle {
                 albumsModel: pane.albumsModel
                 selectedAlbumToken: pane.selectedAlbumToken
                 starredActive: pane.starredActive
+                searchResultsText: pane.searchResultsAlbumText
                 rowHeight: pane.rowHeight
                 onToggled: pane.toggleCollection("albums")
                 onStarredChosen: pane.starredChosen()
@@ -786,10 +791,6 @@ Rectangle {
                 //: és a csukhatóság változatlan.
                 label: pane.folderRootLabel
                 itemCount: folderList.model ? folderList.model.folderCount : 0
-                headerText: pane.searchActive
-                            ? qsTr("Search results for \"%1\" (%2)")
-                              .arg(pane.searchQuery).arg(pane.searchResultCount)
-                            : ""
                 labelObjectName: "folderPaneHeader"
                 collapsed: pane.foldersCollapsed
                 onToggled: pane.toggleCollection("folders")

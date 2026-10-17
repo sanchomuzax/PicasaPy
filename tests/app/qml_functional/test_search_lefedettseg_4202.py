@@ -177,9 +177,11 @@ def test_keresesi_elemlista_es_valodi_felhasznaloi_ut(
         qt_app,
         lambda: controller.searchActive and controller.searchResultCount == 1,
     ), "a keresés nem szűrte egy találatra a főablakot"
-    status = window.findChild(QObject, "folderPaneHeader")
+    status = window.findChild(QObject, "searchResultsAlbumText")
     assert status is not None and status.isVisible()
     assert status.property("text") == 'Search results for "a" (1)'
+    folder_header = window.findChild(QObject, "folderPaneHeader")
+    assert "Search results for" not in folder_header.property("text")
     grouped_results = window.findChild(QObject, "groupedSearchResults")
     assert grouped_results is not None and grouped_results.isVisible(), (
         "a főablak központi keresési találatrácsa nem jelent meg"

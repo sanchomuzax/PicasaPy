@@ -110,13 +110,13 @@ class SearchMixin:
 
     @Slot(str, result="QVariantList")
     def searchSuggestions(self, text: str) -> list:
-        """Kereső-javaslatok a legördülőnek (#7) — dict-lista a QML-nek.
+        """Mappa- és album-javaslatok a legördülőnek — dict-lista a QML-nek.
 
-        Egyelőre csak mappa-javaslatok: az album-sor kiválasztása csak a
-        virtuális albumok UI-jával (#9) lesz értelmes."""
+        Az albumnevek és tagsági darabszámok az indexből jönnek; gépeléskor
+        nem olvassuk be újra a mappák `.picasa.ini` fájljait.
+        """
         with open_index(self._db_path) as conn:
             return [
                 {"kind": s.kind, "name": s.name, "count": s.count, "param": s.param}
-                for s in search_suggestions(conn, text)
-                if s.kind == "folder"
+                for s in search_suggestions(conn, text, include_albums=True)
             ]

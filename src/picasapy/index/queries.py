@@ -482,18 +482,14 @@ def search_suggestions(
     *,
     include_albums: bool = False,
 ) -> tuple[SearchSuggestion, ...]:
-    """Javaslatok gépelés közben: név-egyező mappák és virtuális albumok.
+    """Név-egyező mappa- és album-javaslatok az indexelt adatokból.
 
-    Picasa-viselkedés (150933-as referencia): az egyezés részszó-alapú és
-    casefold-os; előbb a mappák, aztán az albumok, névsorban, darabszámmal.
-    Az albumok a `.picasa.ini`-kből jönnek (az index nem tárolja őket);
-    ugyanaz a token több ini-ben is szerepelhet — összesítve számoljuk.
+    A részszó-egyezés kisbetűfüggetlen. Ha az album-ág engedélyezett,
+    albumok jönnek előbb a már indexelt `.picasa.ini` adatokból, aztán a
+    mappák; mindkét típus névsorban, darabszámmal. A javaslatkérés nem nyit
+    `.picasa.ini` fájlt, így gépelés közben sem indul lemezolvasás.
 
-    Az album-ág opt-in (#138): az összes has_ini-s mappa ini-jének beolvasása
-    (NAS-on) drága, gépelés közben leütésenként hívódna, a jelenlegi hívó
-    pedig el is dobja az album-találatokat. Amíg a virtuális albumok UI-ja
-    (#9) el nem készül, az alapértelmezés `include_albums=False` — ini-olvasás
-    ilyenkor egyáltalán nem történik.
+    Az album-ág opt-in marad a meglévő hívók kompatibilitása miatt.
     """
     query = text.strip().casefold()
     if not query:
@@ -513,47 +509,24 @@ def search_suggestions(
         )
         if query in _PATH_SEP.split(row["path"])[-1].casefold()
     )
-    albums = _album_suggestions(conn, query) if include_albums else ()
-    return (folders + albums)[:limit]
+    albums: tuple[SearchSuggestion, ...] = ()
+    if include_albums:
+        # Az index albums táblája már a szinkron során gyorsítótárazza a
+        # definíciókat és a tagságot. A lokális import az albums.py → queries
+        # függőség miatt csak a híváskor történik.
+        from .albums import albums_in_index
 
-
-def _album_suggestions(
-    conn: sqlite3.Connection, folded_query: str
-) -> tuple[SearchSuggestion, ...]:
-    """Album-javaslatok a has_ini-s mappák `.picasa.ini`-jeiből összesítve."""
-    from picasapy.ini import (
-        INI_NAME,
-        albums_of,
-        ini_source_path,
-        load_document,
-        parse_album_refs,
-    )
-
-    names: dict[str, str] = {}  # token -> név (az első definíció nyer)
-    counts: dict[str, int] = {}  # token -> tagok száma az összes ini-ben
-    ini_rows = conn.execute("SELECT path FROM folders WHERE has_ini = 1")
-    for row in ini_rows:
-        ini_path = Path(row["path"]) / INI_NAME
-        try:
-            document = load_document(ini_source_path(ini_path) or ini_path)
-        except (OSError, ValueError):
-            continue  # időközben törölt/olvashatatlan ini — kihagyjuk
-        for album in albums_of(document):
-            if album.name and album.token not in names:
-                names[album.token] = album.name
-        for section in document.sections:
-            if section.is_special:
-                continue
-            refs = parse_album_refs(section.get("albums") or "")
-            for token in refs:
-                counts[token] = counts.get(token, 0) + 1
-    return tuple(
-        SearchSuggestion(
-            kind="album", name=name, count=counts.get(token, 0), param=token
+        albums = tuple(
+            SearchSuggestion(
+                kind="album",
+                name=album.name,
+                count=album.photo_count,
+                param=album.token,
+            )
+            for album in albums_in_index(conn)
+            if album.name and query in album.name.casefold()
         )
-        for token, name in sorted(names.items(), key=lambda kv: kv[1].casefold())
-        if folded_query in name.casefold()
-    )
+    return (albums + folders)[:limit]
 
 
 def _optional_count(row: sqlite3.Row, key: str) -> int:

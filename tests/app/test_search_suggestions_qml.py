@@ -75,6 +75,20 @@ class TestSearchSuggestions:
         ]
         assert "(6)" in counts
 
+    def test_count_follows_the_name_instead_of_sitting_at_row_edge(self, component):
+        item, app = component
+        item.setProperty("query", "logo")
+        item.setProperty("suggestions", [_SUGGESTIONS[1]])
+        app.processEvents()
+        label = _by_object_name(item, "suggestionLabel")[0]
+        count = _by_object_name(item, "suggestionCount")[0]
+        row = _by_object_name(item, "suggestionRow")[0]
+
+        label_x = label.mapToItem(row, 0, 0).x()
+        count_x = count.mapToItem(row, 0, 0).x()
+        assert abs(count_x - (label_x + label.width() + 4)) <= 3
+        assert abs(label.width() - label.property("implicitWidth")) <= 3
+
     def test_highlight_is_case_insensitive(self, component):
         item, _ = component
         assert item.highlighted("HS Logo", "logo") == "HS <b>Logo</b>"

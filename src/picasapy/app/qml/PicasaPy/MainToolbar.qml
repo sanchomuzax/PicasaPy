@@ -10,6 +10,7 @@ Rectangle {
     id: toolbar
 
     readonly property bool searchOptionsOpen: searchOptionsPopup.opened
+    readonly property alias searchBoxItem: searchBox
 
     function toggleSearchOptions() {
         if (searchOptionsPopup.opened)
