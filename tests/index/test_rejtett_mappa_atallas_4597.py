@@ -36,6 +36,9 @@ def _regi_index(db, gyoker, rejtett):
     # a v21-es alakhoz a későbbi (#4599, v23) oszlop sem tartozik hozzá —
     # különben a 22→23 átállítás egy már meglévő oszlopot venne fel
     kapcsolat.execute("ALTER TABLE photo_albums DROP COLUMN place")
+    # ugyanígy a v25-ös arcforrás-jelölő (#5180)
+    kapcsolat.execute("DROP INDEX idx_face_source_photo")
+    kapcsolat.execute("ALTER TABLE face DROP COLUMN source")
     kapcsolat.execute("PRAGMA user_version=21")
     kapcsolat.commit()
     kapcsolat.close()
