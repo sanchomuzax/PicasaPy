@@ -9,7 +9,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.9.123] – 2026-10-17
 
+- Windowson a kívülről törölt mappa felismerése a közös platform-ellenőrzésen át működik (#5177).
 - A Picasa-profil névjegyei bekerülnek a központi névtárba, és minden felület ugyanazt a nevet használja (#5179).
+- A People ablak keresése törli a kiszűrt személy kijelölését, így a kiemelés és a részletek nem térnek el (#5182).
 
 ## [0.9.122] – 2026-10-17
 
