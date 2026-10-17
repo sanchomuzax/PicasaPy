@@ -15,10 +15,10 @@ Lefedve (az audit „Rács" csoportjából):
 - Név nélküliek: a mellőzött arc visszavonása; az arc névmezője Enterre nevet küld.
 
 Nincs rajta teszt, mert a terméken nem érhető el valódi kattintással (jelentve):
-- `unnamedNameField`, `addNameButton`, `ignoreFacesButton`,
-  `ignoreFacesDontAskCheck`: a sorukat a Név nélküliek nézetben a
-  `RowLayout` rejti (`visible: root.ignoredMode`), a mellőzött nézetben pedig
-  maguk `!ignoredMode`-ra vannak kötve, így sehol sem láthatók.
+- `ignoreFacesDontAskCheck`: a megerősítő párbeszéd jelölője; a
+  `test_unnamed_faces_view.py` (TestDontAskAgain) valódi egérkattintással fedi.
+  (A `unnamedNameField` és az `ignoreFacesButton` a kibontott nézetben látszik,
+  és a `test_nev_nelkuliek_kibontott_5214.py` fedi; az `addNameButton` megszűnt.)
 - `moreSuggestionsButton`: ugyanaz a sor; a `test_racs_vezerlok_valodi_5135_c`
   szerint a #5183 óta szándékosan nincs ebben az albumban.
 - `unnamedWelcomeLearnMoreButton`: nincs kattintáskezelője.

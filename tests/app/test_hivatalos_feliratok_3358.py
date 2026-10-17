@@ -67,6 +67,8 @@ HIVATALOS = {
     "Right justify text": ("Szöveg jobbra igazítása", "edittextpanel/rightalign"),
     "Ignore all of the selected faces": (
         "Az összes kijelölt arc mellőzése", "unknownfaceheaderpanel/ignore"),
+    "Ignore Selected": (
+        "Kijelöltek mellőzése", "unknownfaceheaderpanel/ignore"),
     "From Faces in Selection...": (
         "A kijelölésben lévő arcokból…", "eMenuCreateMovie::ID_FACES"),
     "Display Time": ("Megjelenítési idő", "oneup/tpslabel"),
@@ -152,7 +154,7 @@ ELOFORDULASOK = {
     "PicasaPy/EditorTextPanel.qml": [
         "Left justify text", "Center justify text", "Right justify text"],
     "PicasaPy/UnnamedFacesView.qml": [
-        "Ignore all of the selected faces",
+        "Ignore all of the selected faces", "Ignore Selected",
         # #3585
         "Group by face", "Expand groups", "Grouping faces, please wait...",
         "Select someone you know and add a name.",

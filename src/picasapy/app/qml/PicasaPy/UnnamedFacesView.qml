@@ -184,23 +184,11 @@ ColumnLayout {
                 fillMode: Image.PreserveAspectFit
                 smooth: true
             }
-            ColumnLayout {
-                spacing: 2
-                Text {
-                    objectName: "unnamedAlbumTitle"
-                    text: qsTr("Unnamed people")
-                    font.pixelSize: Theme.fontSize + 6
-                    color: "#68564f"
-                }
-                Text {
-                    objectName: "unnamedAlbumFaceCount"
-                    text: root.faceScanController
-                          ? qsTr("%d Face(s)").replace(
-                                "%d", String(root.faceScanController.unnamedCount))
-                          : qsTr("%d Face(s)").replace("%d", "0")
-                    font.pixelSize: Theme.fontSize - 2
-                    color: Theme.textGray
-                }
+            Text {
+                objectName: "unnamedAlbumTitle"
+                text: qsTr("Unnamed people")
+                font.pixelSize: Theme.fontSize + 6
+                color: "#68564f"
             }
         }
         Item { Layout.fillWidth: true }
@@ -238,24 +226,32 @@ ColumnLayout {
         }
     }
 
-    Text {
-        objectName: "unnamedInstructions"
-        visible: !root.ignoredMode
-        Layout.fillWidth: true
-        Layout.bottomMargin: 8
-        wrapMode: Text.WordWrap
-        text: root.instructionText
-        font.pixelSize: Theme.fontSize
-        color: Theme.textDark
-    }
-
+    // #5214: a „N Face(s)” sor a fejléc alatt, az útmutató FÖLÖTT. Balra a
+    // darabszám (a cím alatt, az ikon és a rés szélességével beljebb); jobbra
+    // kibontott módban a névmező és az „Ignore Selected” gomb, a felső
+    // gombpár jobb szélére igazítva. Mellőzött módban a kijelölésszámláló és
+    // a „Stop ignoring” ugyanitt marad.
     RowLayout {
-        visible: root.ignoredMode
+        objectName: "unnamedFaceRow"
         Layout.fillWidth: true
         spacing: 14
 
+        Text {
+            objectName: "unnamedAlbumFaceCount"
+            visible: !root.ignoredMode
+            Layout.leftMargin: 44
+            Layout.alignment: Qt.AlignVCenter
+            text: root.faceScanController
+                  ? qsTr("%d Face(s)").replace(
+                        "%d", String(root.faceScanController.unnamedCount))
+                  : qsTr("%d Face(s)").replace("%d", "0")
+            font.pixelSize: Theme.fontSize - 2
+            color: Theme.textGray
+        }
         Item { Layout.fillWidth: true }
         Text {
+            visible: root.ignoredMode
+            Layout.alignment: Qt.AlignVCenter
             text: root.selectedCount > 0
                   ? qsTr("%1 selected").arg(root.selectedCount)
                   : ""
@@ -264,21 +260,30 @@ ColumnLayout {
         TextField {
             id: nameField
             objectName: "unnamedNameField"
-            visible: !root.ignoredMode
+            visible: !root.ignoredMode && !root.grouped
+            Layout.alignment: Qt.AlignVCenter
             Layout.preferredWidth: 180
-            placeholderText: qsTr("Name")
+            placeholderText: qsTr("Add a name")
+            // #5214: az eredetiben (job-183) fehér, keretes mező, mint a csempéé
+            background: Rectangle {
+                color: "#ffffff"
+                border.color: "#8a8a8a"
+                border.width: 1
+            }
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}
+            onAccepted: root.nameSelectedFaces(text)
         }
-        // #26: „Ignore" — az eredetiben a mellőzés NEM törlés volt: a
+        // #26: „Ignore" - az eredetiben a mellőzés NEM törlés volt: a
         // személy a „Mellőzött emberek" albumba került
         // (`DeleteMessage::RemoveSingleUnknown`), külön megerősítéssel.
         // #26: a Mellőzött emberek albumban a mellőzés VISSZAVONÁSA a
-        // művelet — az eredetiben is album volt, tehát vissza lehetett
+        // művelet - az eredetiben is album volt, tehát vissza lehetett
         // nyúlni belőle, nem egyirányú szemetes
         Button {
             objectName: "unignoreFacesButton"
             visible: root.ignoredMode
+            Layout.alignment: Qt.AlignVCenter
             text: qsTr("Stop ignoring")
             enabled: root.selectedCount > 0 && !!root.faceScanController
             onClicked: root.unignoreSelected()
@@ -286,22 +291,26 @@ ColumnLayout {
         Button {
             id: ignoreButton
             objectName: "ignoreFacesButton"
-            visible: !root.ignoredMode
-            text: qsTr("Ignore")
+            visible: !root.ignoredMode && !root.grouped
+            Layout.alignment: Qt.AlignVCenter
+            text: qsTr("Ignore Selected")
             enabled: root.selectedCount > 0 && !!root.faceScanController
             ToolTip.visible: hovered
             ToolTip.text: qsTr("Ignore all of the selected faces")
             ToolTip.delay: Theme.tooltipDelay
             onClicked: root.requestIgnore(root.selectedKeys())
         }
-        // #3237: „További javaslatok keresése" — az eredeti `moresug`
+        // #3237: „További javaslatok keresése" - az eredeti `moresug`
         // parancsa (kezelő `0x00602890`). A felismerési küszöböt EGYSZERI
         // alkalommal lazítja (a lépcsőt tízzel), és a beállítást NEM írja
-        // vissza — a mért viselkedés. A mellőzött nézetben nincs értelme,
+        // vissza - a mért viselkedés. A mellőzött nézetben nincs értelme,
         // ezért ott nem látszik.
+        // #5135_c / #5183: a Név nélküliek albumában szándékosan nem látszik
+        // (a közös névsor-műveletek kikerültek ebből a nézetből); a funkció a
+        // menüből érhető el (Main.qml: findMoreSuggestions).
         Button {
             objectName: "moreSuggestionsButton"
-            visible: !root.ignoredMode
+            visible: false
             text: qsTr("Look for more suggestions")
             enabled: !!root.faceScanController
             ToolTip.visible: hovered
@@ -314,36 +323,17 @@ ColumnLayout {
                 root.reload()
             }
         }
-        Button {
-            id: addNameButton
-            objectName: "addNameButton"
-            visible: !root.ignoredMode
-            text: qsTr("Add a name")
-            enabled: root.selectedCount > 0
-                     && nameField.text.trim().length > 0
-                     && !!root.faceScanController
-            ToolTip.visible: hovered
-            ToolTip.text: qsTr(
-                "Assign a name to all of the selected faces")
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: {
-                var ids = []
-                var key
-                for (key in root.selectedFaceIds) {
-                    ids.push(parseInt(key))
-                }
-                var ok = root.faceScanController.assignNameToFaces(
-                    ids, nameField.text.trim())
-                if (ok) {
-                    nameField.text = ""
-                    root.clearSelection()
-                    root.reload()
-                    if (typeof controller !== "undefined" && controller) {
-                        controller.refreshCollections()
-                    }
-                }
-            }
-        }
+    }
+
+    Text {
+        objectName: "unnamedInstructions"
+        visible: !root.ignoredMode
+        Layout.fillWidth: true
+        Layout.bottomMargin: 8
+        wrapMode: Text.WordWrap
+        text: root.instructionText
+        font.pixelSize: Theme.fontSize
+        color: Theme.textDark
     }
 
     GridView {
@@ -416,6 +406,7 @@ ColumnLayout {
 
                     Rectangle {
                         objectName: "faceIgnoreX_" + faceCard.modelData.faceId
+                        visible: root.grouped
                         anchors.top: parent.top
                         anchors.right: parent.right
                         anchors.margins: 2
@@ -483,6 +474,7 @@ ColumnLayout {
                     id: faceNameField
                     objectName: "unnamedFaceNameField_"
                                 + faceCard.modelData.faceId
+                    visible: root.grouped
                     width: 172
                     height: 20
                     x: (faceTile.width - width) / 2
@@ -924,6 +916,30 @@ ColumnLayout {
             if (typeof controller !== "undefined" && controller)
                 controller.refreshCollections()
             root.namedSuggestionAccepted()
+        }
+        return ok
+    }
+    // #5214: a fejléc névmezőjének Enter-je a KIJELÖLT arcokat nevezi meg.
+    // Egy arcnál a csempe mezőjének útja (`nameSubmitted` → Main.qml →
+    // People-ablak). Többnél a tömeges névadás: a People-ablak egyszerre egy
+    // arcot kezel (`pendingFaceId`), ciklusban a többi csendben elveszne.
+    function nameSelectedFaces(name) {
+        var cleanName = String(name || "").trim()
+        var ids = root.selectedKeys()
+        if (!cleanName || ids.length === 0 || !root.faceScanController)
+            return false
+        if (ids.length === 1) {
+            nameField.text = ""
+            root.nameSubmitted(ids[0], cleanName)
+            return true
+        }
+        var ok = root.faceScanController.assignNameToFaces(ids, cleanName)
+        if (ok) {
+            nameField.text = ""
+            root.clearSelection()
+            root.reload()
+            if (typeof controller !== "undefined" && controller)
+                controller.refreshCollections()
         }
         return ok
     }
