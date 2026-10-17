@@ -4,6 +4,8 @@
 
 <p align="center"><em>Photo management and editing inspired by Google Picasa.</em></p>
 
+<p align="center"><strong>Miért csinálom ezt? Olvasd el a Substack-en: <a href="https://substack.com/@sanchomuzax/p-211538466">https://substack.com/@sanchomuzax/p-211538466</a></strong></p>
+
 <p align="center">
   <a href="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml"><img src="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
