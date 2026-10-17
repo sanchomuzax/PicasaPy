@@ -2560,3 +2560,400 @@ A törlési út Ghidra-hívottjai (`0x00584cc0`, 11 db) között nincs `0x00586e
 Nyitott kérdések: 0 nyílt · 1 lezárva (N4) · 6 blokkolt (N1, N3, N5, N6, N7, N8) · 0 hatókörön kívül · 0 „csak nyitva”. Megerősített: N3 gyári küszöbök (21.1). Feltételes: N1 (21.3), az N5 csempe-ág (21.4) és az N6 memóriabeli kötés (21.5). A blokkolt tételek mindegyike Ghidra-kört vagy felvételt igényel; tulajdonosi döntést egyik sem.
 
 **Fejlesztési lista: nincs.** Az N1 eltérése csak a `0x006b6a50` olvasata után dől el. Az N3 küszöbök és a mi 0,9-esünk nem egyenértékű mennyiségek, ezért nincs bizonyított hibás viselkedés nálunk.
+
+## 22. #5184, negyedik kör: a Ghidra-köteg C-kódja (2026-10-17)
+
+**Hatókör:** a 21.6 kérdései (N1, N3, N5, N6, és a csempe-ág a `0x0044a6b0`-val), a 21.6 után nyitott új címek, és a 20. szakasz N-pontjainak új állapota. Az N4 lezárt, az N7 és az N8 nem változott.
+
+**Forrás:** `referencia/ghidra/2026-10-17-szemelykezeles-3.txt` (a továbbiakban `-3`). A kódkörnyezethez kellett még a `2026-10-17-szemelykezeles-2.txt` (`-2`: `0x0048e1f0`, `0x0048af60`) és a `2026-10-17-szemelykezeles.txt` (`-1`: `0x0048ef20`, `0x007ba820`, `0x00647270`, `0x006470d0`). A sorszámok ezeknek a fájloknak a sorait jelölik. A `0x0048e590`, `0x0048bae0`, `0x0063f970`, `0x0068ac20`, `0x00586e20`, `0x006956d0`, `0x0069b240` és `0x007b99a0` egyik fájlban sincs meg.
+
+**Jelölés:** ugyanaz, mint a 20. szakaszban. `in_stack_…`: a Ghidra stack-argumentuma, a hívó adja. `LAB_…`: ugrási címke a kódban.
+
+**Röviden:**
+- A 960 px nincs a `0x0048e5da` kódjában. Ez a függvény a `0x0048e590` folytatása. A bemeneti képméret forrása a `0x0048e590` vagy a detektor-objektum lehet; ez nincs olvasva.
+- A `0x006b6a50` nem néz nevet. A kizárás a hívó visszatérési értékén múlik, a hívó (`0x0048bae0`) nincs a körben.
+- A személyszintű tároló-írás nincs a `0x00640340` és a `0x005fdc30` kódjában.
+- A `[Contacts2]` sort a `0x0068c030` láncán át írhatja, de hogy a törlés után fut-e, nincs meg.
+
+### 22.1 N1: a 0x006b6a50 (lookup) nem név-alapú
+
+- **Mit csinál (-3, 34-332. sor).** Indexszel olvas: a `param_2` indexű rekordot (hosszát a `param_1[0x19]` táblából, eltolását a `param_1[0x17]` táblából veszi) a `param_3` objektum +4 mezőjű pufferébe másolja (121., 316. sor).
+- **Mit ad vissza.** 0: a rekord kiolvasva; nulla hosszú rekordnál is 0 (132-145. sor). 3: az index a tábla végén van (80-93. sor). 2: belső állapot-ellenőrzés (65-79. sor), jelentése NINCS MEG. 0xffffffff: nincs fájl-objektum, és a rekord nem üres (147-161. sor). Más nem nulla érték a hívott függvények (0x009bd220, 0x0099dd50) hibakódja; ezeket nem olvastuk.
+- **Név vagy személy alapján zár-e ki?** A saját kódjában nem. Nincs string-összehasonlító hívás a hívottjai között (csak `_memcpy` és `ReadFile`), a 21.3 diszasszemblálásában pedig nincs `cmpsb`. A kizárás ebből a függvényből nem jön, csak a visszatérési értékből.
+- **Hívók.** 13 hívója van (-3, 4-16. sor), köztük a `0x0048bae0` (`0x0048bcd5`). A többit nem olvastuk. A hívólista általános olvasóra utal, de ezt nem bizonyítja.
+- **Hol dől el a kizárás.** A `0x0048e5da` (-3, 508-537. sor) a `0x0048bae0` visszatérésével dönt. 0 esetén a kép bekerül a gyűjtőbe (540-562. sor), nem nulla esetén kimarad (525-537. sor). A már kitöltött slotú képet a `0x0048bae0` nélkül is a gyűjtőbe teszi (539-562. sor). A kulcs jelentése (kép- vagy személyazonosító) NINCS MEG, ezért az sem dől el, hogy a sikeres lookup ág az ismert vagy az új képekre vonatkozik.
+- **Állapot: BLOKKOLT (marad).** A lookup kódszinten nem név-alapú (megerősítve, 22.7). Az eredeti kizárás döntését a `0x0048bae0` adja, ezért a mi `is_identified` kihagyásunk (`src/picasapy/app/face_scan_controller.py:470-474`) eltérése nincs eldöntve.
+
+### 22.2 N3: a 960 px nincs a 0x0048e5da kódjában
+
+- **A 0x0048e5da a 0x0048e590 folytatása.** A `0x0048e590` feltételes ugrással lép bele (-3, 338. sor). Az ESI (`this`), az EBP (képlista) és az EBX (egy `int*`) belépési állapotát, valamint a stack-argumentumokat a `0x0048e590` adja (363-366. sor). A `0x0048e590` hívója a `0x0048ef20` (-1, 879. sor), nyolc argumentummal.
+- **Képméret.** A `0x0048e5da`-ban nincs képméret. A 960 (`0x3c0`) konstans sincs a -3 és a -2 kódjában. A -1 fájl egyetlen `0x3c0`-ja (2104. sor) mezőeltolás (`+0x3c0`).
+- **Mit kap a detektor (`0x0048e1f0`, -2, 16-115. sor).** Bejegyzésenként hívja a `param_9` +0x2c slotját (78. sor). A kérés: [5] a `this+0x2908` tábla 8 bájtos bejegyzésének mutatója (71-74. sor), [4] a pontszám-puffer kódolt darabszáma (76. sor), [3] a pontszám-puffer. A hívás után a [0] találatszámot és a [3] pontszámokat olvassa (82-85. sor). Képméret egyik mezőben sincs.
+- **A param_9.** A `0x0048e5da`-ban stack-argumentum (`in_stack_0000001c`, -3, 567. sor), a `0x0048e590` adja. Az osztálya NINCS MEG.
+- **Sorrend.** Ugyanarra a képre a `0x0048bae0` (ha a slot nulla) a `0x0048e1f0` előtt fut. A `0x0048e5da` a kulcslistán (`in_stack_0000005c`) visszafelé halad (477-603. sor). A találatot az `in_stack_00000034` tömbbe fűzi (562. sor). Ha a köteg eléri a határt (`in_stack_00000038 >> 1`), hívja a `0x0048e1f0`-t (564-567. sor), a ciklus után a maradékra egyszer (605-611. sor). A `0x0048e1f0`-nak viszont az `in_stack_00000058` listát adja. Hogy a két tömb hogyan függ össze, NINCS MEG.
+- **Pontszám.** A `0x0048e1f0` a `this+0x34a4` mezőt (0,50, FRRecommendIncludeLimit) szűrőküszöbként használja (-2, 50. és 86. sor). A Ghidra `(DWORD)` alakja félrevezető, a 21.2 szerint az összehasonlítás float. A `param_4` a hívótól jön (`in_stack_00000060`). Ha ez a 0,85 (`this+0x3498`), a 104. sor egy FUN_00446610-hívást indít, ezt nem olvastuk.
+- **Állapot: BLOKKOLT (marad).** Megerősítve: a detektor bejegyzésenként hívódik (-2, a 55-115. sor ciklusában). Nincs megerősítve: a detektor bemeneti mérete, a 960 px, és a param_9 osztálya.
+
+### 22.3 N5, személyszintű és többszemélyes ág: a tároló-írás nincs ebben a két függvényben
+
+- **0x00640340 (-3, 655-801. sor): megerősítő párbeszéd, nem ír tárolót.** Ha a `Preferences\DoNotConfirmPeopleRemove` igaz, párbeszéd nélkül 0-t ad (692-699. sor). Különben öt erőforrás-kulccsal (`PeoplePanel::ConfirmRemove*`, `il_Cancel`) üzenetablakot épít (703-777. sor). A párbeszéd eredménye (FUN_009bab50) nem nulla: 0xf4242 (778-788. sor). Nulla: FUN_009baae0 és FUN_00401900 után 0 (790-800. sor). Közvetlen tároló-íráshívás nincs. Az ismeretlen hívottjai (0x00401900, 0x009baae0, 0x0051a120) miatt ez csak a közvetlen kódra szól. Hívója a 0x0063f970, két helyen (657-659. sor).
+- **0x005fdc30 (-3, 804-1009. sor): szövegválasztó, nem ír tárolót.** Paraméterei: darabszám (`param_1`), név (`param_2`), és az EDI-ben a fajta (0-3). Az EDI=3 címe `DeleteMessage::IgnorePeopleTitle` (847. sor). Névtelen hívásnál a darabszám dönt az egyes és a többes ág között: 1 alatt `RemoveSingleUnknown` (928-930. sor), 2 vagy több alatt `RemoveMultipleUnknown`, a darabszámmal (`FUN_0040eab0(…, param_1)`, 973-981. sor).
+- **Egy- és többszemélyes ág.** A darabszám-választás csak névtelen hívásnál érvényes. Névvel megadva (`param_2 ≠ 0`) az EDI=3 a `DeleteFolderWarnPC` ágra esik (867-888. sor). Ez mappa-figyelmeztetés kulcsa, nem személyi.
+- **Szöveg és kulcs.** A C-kód csak kulcsneveket ad. A szöveg (a 21.6 „move the %d selected people…” idézete) a sztringtáblából jön. A kulcs és a szöveg összekötését a C-kód nem mutatja.
+- **Hívók.** A 0x005fdc30-at a 0x005c9930 (0x005c9a42), a 0x005c9b00 (0x005ca1e1) és a 0x005edef0 (0x005ee072) hívja (-3, 807-809. sor). Melyik hívja EDI=3-mal, és mit ír az igen után: NINCS MEG.
+- **Az elágazás.** A 0x0063f970 a 0x00640340-et hívja (0x0063fd96, 0x0063fff2), a csempe-ágat a 0x00647270-nel (0x0063fda9), a kijelölt arc ágát a 0x006470d0-nal (0x0063fffe) (-1, 1550. és 2126. sor). A hívási címek szerint a megerősítés mindkét ág hívása előtt áll. A 0x0063f970 törzsét nem olvastuk.
+- **Állapot: BLOKKOLT (marad).** A személyszintű tároló-írás NINCS MEG. Ehhez a 0x0063f970 és a 0x005edef0 kell.
+
+### 22.4 N5 csempe-ág és a 0x0044a6b0 (a 21.6 utolsó tétele)
+
+- **A 0x0044a6b0 visszatérése (-3, 1176-1264. sor).** Az indexhez tartozó állapotot (a `this+0x11a4` táblából, vagy a `this+0x11a8` alapértékből) 0x3E9 (1001) értékkel veti össze (1233. sor). Ha nem egyezik, 0. Ha egyezik, a `param_3` szerinti tábla értékét adja: `param_3 = 0` esetén a `this+0x1bc0` táblából, nem nulla esetén a `this+0x1c20` táblából (1236-1239. sor). Nem nulla visszatérés tehát: az állapot 1001, és a kiválasztott tábla értéke nem nulla. Az 1001 és a két tábla jelentése NINCS MEG (nincs mezőnév).
+- **Hívói.** 18 hívója van (-3, 1179-1196. sor), köztük az arc-író `0x00484820` (`0x00484b10`), a `0x00647270` és a `0x006470d0`. Az arc-író maga is futtatja a tesztet.
+- **Csempe-ág (0x00647270, -1, 1579-1672. sor).**
+  - Ha a `bVar14` igaz (`param_3 = 0`, és a `0x2ad`/`0x2af` jelzők így állnak; 1607-1609. sor), a lista üres (1614-1631. sor), a ciklus nem fut, és nincs 0x0044a6b0-teszt.
+  - Egyébként a lista a `param_2` indexű csempe elemét tartalmazza, és a ciklus elemenként két tesztet futtat:
+    1. `0x0044a6b0(…, elem, 0)` (1636. sor): nem nulla és `param_3 = 0` esetén 1000000-val megszakít (1638-1643. sor). Nem nulla és `param_3 ≠ 0` esetén a 0x00449090 és a 0x0045ecf0 hívása (1650-1653. sor).
+    2. `0x0044a6b0(…, elem, 1)` (1658. sor): nem nulla esetén a 0x00449090 és a 0x0045ecf0 hívása (1665-1668. sor), **a `param_3`-tól függetlenül**.
+- **Kijelölt arc (0x006470d0, -1, 2138-2227. sor).** Csak a lista első elemét teszteli (`*local_8`, a 0 jelzővel hívott tábla, 2177. sor). Nem nulla esetén 1000000 (2182. sor). Utána az album-műveletek (2190., 2197. sor), majd minden elemre a `0x00484820` (2204-2205. sor).
+- **A két ág különbsége (a 21.6 kérdése).** A csempe-ág mindkét táblát minden elemre teszteli. A kijelölt ág egy táblát, és csak az első elemet teszteli, az írást viszont minden elemre elvégzi. A `param_3` a csempe-ágban csak az első tesztben számít. A hívó (`0x0063f970`) értékét nem látjuk.
+- **Helyesbítés a 20.3-hoz.** A 20.3 szerint a 0x00449090 csak akkor hívódik, ha a teszt nem nulla és a `param_3` nem nulla. Ez az első tesztre igaz. A második tesztnél a 0x00449090 a `param_3`-tól függetlenül hívódik. A 20.3 ezen a ponton pontatlan volt.
+- **Állapot: N5 BLOKKOLT (marad).** A 21.6 csempe-ág kérdésére megvan a válasz a visszatérésre és az ágkülönbségre. NINCS MEG: a `param_3` hívói értéke, az 1001 jelentése, és a 0x00449090 belső feltétele.
+
+### 22.5 N6: a 0x0068c030 fájlíró; a `[Contacts2]` a láncon át jön; a mentés kiváltója NINCS MEG
+
+- **A 0x0068c030 (-3, 1012-1174. sor).** Megnyitja a `param_1[1]` útvonalú fájlt (1052-1060. sor; a megnyitó `DAT_00d69520`). Ír: a fejlécet (`*param_1`), majd a pároknak (`param_1[4][i]`, `param_1[6][i]`) mindkettőt, ha nem üres (1082-1137. sor), végül a 0x0068ac20 szövegét (1138-1154. sor). Ha a fájl nem volt rejtett, rejtetté teszi (1161-1165. sor).
+- **Hibaág.** Üres fejlécnél nincs írás, és a megnyitott fogó nincs lezárva (1171-1172. sor).
+- **Literálok.** A 0x0068c030-ban nincs `faces=` és nincs `[Contacts2]`. A szöveg a bemeneti tömbökből és a 0x0068ac20-ból jön.
+- **`[Contacts2]`.** A 0x0068c030 hívja a 0x0068ac20-t (1138. sor, C-kód). Az index szerint a 0x0068ac20 hívja a 0x00586e20-t, amely a `[Contacts2]` sztringet tartalmazza (21.5). Az első él C-kód, a második csak index. Ha a 0x0068ac20 szövege a 0x00586e20 kimenete, a 0x0068c030 futásakor a `[Contacts2]` sor íródik. Ezt nem láttuk.
+- **`faces=`.** NINCS MEG. A forrás lehet a 0x0068c030 hívójának tömbje, a 0x0068ac20 vagy a 0x00586e20.
+- **Hívók.** A 0x0068c030-at közvetlenül a 0x006956d0 (0x00697557) és a 0x0069b240 (0x0069b9fc) hívja (-3, 1015-1016. sor). A 0x00687ec0 és a 0x007f7660 nem közvetlen hívók (ez direkt hívási negatív, a vtable-hívást nem zárja ki). A 0x007d55f0-on át (21.5) a másik `[Contacts2]`-láncban vannak.
+- **A törlési út (0x007ba820, -1, 1045-1073. sor).** Közvetlen hívottjai között nincs a 0x0068c030, a 0x0068ac20, a 0x006956d0, a 0x0069b240, a 0x007d55f0 és a 0x00586e20. Hívója a 0x007b99a0 (1047. sor, `0x007b9b72`). A törlés utáni mentés tehát a 0x007b99a0-ban, vagy a közvetett hívottakban (0x00586a60, 0x007b5ad0; nincs olvasva) lehet.
+- **Csonkítás.** A közvetlen hívottak között nincs csonkító hívás. A `DAT_00d69520` azonosítása dönti el, hogy egy rövidebb mentés után marad-e régi tartalom a fájl végén.
+- **Állapot: BLOKKOLT (marad).**
+
+### 22.6 Ghidra-kör kérések
+
+- `Ghidra-kör kell: 0x0048bae0 - a 0x006b6a50 hívója (0x0048bcd5): mit ad kulcsnak (kép- vagy személyazonosító), és mit jelent a 0 visszatérés a 0x0048e5da és a 0x0048af60 számára? [blokkoló, N1]`
+- `Ghidra-kör kell: 0x0048e590 - a 0x0048e5da belépési állapota (ESI, EBP, EBX, stack-argumentumok): honnan jön a param_9 detektor-objektum, van-e képméret, és hogyan kapcsolódik az in_stack_00000034 az in_stack_00000058 listához? [blokkoló, N3]`
+- `Ghidra-kör kell: 0x0063f970 - a 0x00640340, a 0x00647270 (param_3) és a 0x006470d0 hívója: mit ír az igen-ág, és melyik tárolót? [blokkoló, N5]`
+- `Ghidra-kör kell: 0x005edef0 - a 0x005fdc30 hívója (0x005ee072), EDI = 3 ág: mit ír a megerősítés után? (A 0x005c9930 és a 0x005c9b00 ugyanez a kérdés.) [blokkoló, N5]`
+- `Ghidra-kör kell: 0x007b99a0 - a törlési kezelő (0x007ba820) hívója (0x007b9b72): a törlés után hívja-e a 0x0068c030-at, a 0x006956d0-t, a 0x0069b240-et vagy a 0x007d55f0-t? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x006956d0 - a 0x0068c030 hívója (0x00697557): mikor fut, és ír-e faces= és [Contacts2] sorokat? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x0069b240 - a 0x0068c030 másik hívója (0x0069b9fc): ugyanez a kérdés. [blokkoló, N6]`
+- `Ghidra-kör kell: 0x0068ac20 - a 0x0068c030 farokszövege: hívja-e a 0x00586e20-t, és mit ad vissza? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x00586e20 - a [Contacts2] író: honnan veszi a sorokat, és ír-e faces= sort? [blokkoló, N6]`
+- `Ghidra-kör kell: DAT_00d69520 - a 0x0068c030 megnyitója: melyik függvény, és csonkít-e a megnyitás? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x00449090 - a belső feltétele (a csempe-ág írója; a 20.3 nyitott pontja). [nem blokkoló, N5 csempe-ág]`
+
+### 22.7 Bizonyítottsági fok és cáfoló kísérletek
+
+**Megerősített (két út: C-kód és a korábbi diszasszembly vagy index):**
+- (a) A 0x006b6a50 saját kódjában nincs név- vagy személy-összehasonlítás (C-kód, és a 21.3 diszasszemblálása).
+- (b) A 960 (`0x3c0`) konstans nincs a 0x0048e5da és a 0x0048e1f0 kódjában (C-kód, és a 21.2 diszasszemblálása).
+- (c) A 0x00640340 közvetlen kódja nem ír tárolót (C-kód, és a 21.4 index a közvetlen hívottakra). A vtable-hívásokat nem zárja ki.
+
+**Feltételes (egy út, vagy egy út és index):**
+- A 0x0048e5da kötegelési sorrendje (C-kód, -2 és -3).
+- A csempe-ág két tesztje és az 1000000-ág (C-kód, -1). A 20.3 korábbi olvasata ugyanebből a Ghidra-kimenetből jött, ezért nem független.
+- A kijelölt ág csak az első elemre teszteli a 0x0044a6b0-t (C-kód).
+- A törlési kezelő nem hívja közvetlenül a mentést (a C-kód HÍVOTTAK-listája).
+- A `[Contacts2]`-lánc: C-kód (0x0068c030 → 0x0068ac20) és index (0x0068ac20 → 0x00586e20).
+
+**NINCS MEG:** a 0x0048e5da kulcsa és a két tömb kapcsolata; a bemeneti képméret; a személyszintű tároló-írás; a `param_3` hívói értéke; az 1001 jelentése; a `faces=` forrása; a mentés kiváltója; a fájl csonkítása.
+
+**Cáfoló kísérletek:**
+- (a) N1: azt állítottam, hogy a 0x006b6a50 nem név-alapú. A hívottjai (0x006b61b0, 0x006b6a30, 0x006b71b0, 0x0049ffc0, 0x0099dd50, 0x009bd220) nincsenek olvasva, ezért a negatív állítás csak a saját kódjára szól.
+- (b) N3: azt állítottam, hogy a detektor bejegyzésenként hívódik, nem köteg-szinten. A 0x0048e1f0 detektor-hívása (-2, 78. sor) a 55-115. sor ciklusában van. Az állítás megáll.
+- (c) N5: a kézenfekvő olvasatot (1000000 minden kijelölt elemre) ellenőriztem. A 2177. sor csak `*local_8`-t teszteli, ezért az olvasat nem áll meg.
+- (d) N6: azt állítottam volna, hogy a törlés közvetlenül menti a fájlt. A 0x007ba820 közvetlen hívottjai között nincs mentés, ezért ez az állítás nem áll meg. A közvetett út nincs kizárva.
+
+### 22.8 A 20. szakasz N-pontjainak új állapota
+
+| Pont | Állapot | Mi változott |
+|---|---|---|
+| N1 | BLOKKOLT | A lookup (0x006b6a50) kódszinten nem név-alapú. A kizárás a 0x0048bae0-ban van, az nincs a körben. |
+| N3 | BLOKKOLT | A 960 px nincs a 0x0048e5da és a 0x0048e1f0 kódjában. A bemeneti méret forrása a 0x0048e590 vagy a detektor-objektum lehet; ezek nincsenek olvasva. |
+| N4 | LEZÁRVA | Változatlan. |
+| N5 | BLOKKOLT | A csempe- és a kijelölt ág tesztjei pontosítva (22.4). A 0x00640340 és a 0x005fdc30 nem ír tárolót. A személyszintű írás nincs ebben a két függvényben; a hívóik nincsenek olvasva. |
+| N6 | BLOKKOLT | A 0x0068c030 a fájlíró. A `[Contacts2]` az index szerint a 0x0068ac20 láncon át írható. A `faces=` forrása és a mentés kiváltója NINCS MEG. |
+| N7 | BLOKKOLT | Változatlan. |
+| N8 | BLOKKOLT | Változatlan. |
+
+Nyitott kérdések: 0 nyílt · 1 lezárva · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”.
+
+### 22.9 Fejlesztési következmény
+
+Egyik N-pont sem zárult le, ezért nincs eltérés a mai viselkedéstől. A 21.8 „Fejlesztési lista: nincs” állítás érvényben marad.
+
+### 22.10 Mérleg (4. kör)
+
+Megerősített (két út): 3 tétel (22.7 a-c). Feltételes: 5 tétel (22.7). NINCS MEG: a 22.7 listája. A blokkolt tételek mindegyike Ghidra-kört igényel: 10 blokkoló és 1 nem blokkoló kérés (22.6). Tulajdonosi döntést egyik sem igényel.
+
+## 23. #5184, ötödik kör: a hívók C-kódja (2026-10-17)
+
+**Hatókör:** a 22.6 kérdései: N1, N3, N5 (kijelölt, csempe és személyszintű ág), N6, és a csempe-ág írója (0x00449090, a 22.6 nem blokkoló pontja). A tíz cím: `0x0048bae0`, `0x0048e590`, `0x0063f970`, `0x005edef0`, `0x007b99a0`, `0x006956d0`, `0x0069b240`, `0x0068ac20`, `0x00586e20`, `0x00449090`.
+
+**Forrás:** `~/picasapy-agent/referencia/ghidra/2026-10-17-szemelykezeles-4.txt` (a továbbiakban `-4`, 4 228 sor, tíz `==== CÍM … ====` szakasz). Két helyen nyúltam vissza az `…szemelykezeles.txt` (`-1`) fájlhoz: a 0x00449090 hívási argumentumai a 0x00647270 C-jében (1650. és 1665. sor), és a 0x0048e590 hívója, a 0x0048ef20 (44., 142. és 654. sor).
+
+**Utak:** a Ghidra-C (`-1`, `-2`, `-3`, `-4`) egy eszköz, ezért egy Ghidra-olvasat egy útnak számít. Független második út: a diszasszembly (`annot_disasm.py`) és a bináris-index (`xrefs`, `string_xrefs`, HÍVÓK és HÍVOTTAK). Jelölés: ugyanaz, mint a 20. szakaszban. `DATA` = a hívó egy függvénytáblából (parancs-elosztó) hívja.
+
+### 23.1 N1: a kizárás értékalapú, nem név-alapú (0x0048bae0, 0x0048e590)
+
+- **A 0x0048bae0 (-4, 1-134. sor).** A kulcs (`param_1`) táblaindex. A `this+0x28b8` tábla legalább kulcs + 0x4000 elemes lesz (40-110. sor). Ha a tábla bejegyzése nem nulla, azt adja vissza (34-36. sor). Különben a `0x006b6a50(kulcs, &local_c, 0)` lookup dönt (120. sor).
+- **Visszatérés.** 0 csak akkor, ha a lookup 0-t ad ÉS `local_c != 0.0` (121-126. sor). Minden más eset 9 (131. sor). A -1 kulcs 9-et ad (30-31. sor), a túlméret vagy a foglalási hiba 4-et (49., 112. sor).
+- **A visszaírt érték C szerint mindig 0.** A `local_8` csak egyszer kap értéket (118. sor), és nincs hívás, amely a címét kapja. Ezért a `*param_2` és a tábla bejegyzése 0 lesz (123-124. sor), és a cache-találat sosem következik be. Ez lehet valódi működés, de lehet a dekompiláló hibája is: a lookup kimenete a `local_c`, nem a `local_8`. A C ebből nem dönt.
+- **A 0x0048e590 (-4, 135-431. sor)** minden kulcsra hívja a 0x0048bae0-t (293. sor). **0 esetén a kulcs bekerül a köteg-tömbbe** (294-308. sor, majd 325-345. sor). **Nem nulla esetén kimarad** (310-322. sor, majd a ciklus folytatódik).
+- **A kulcs jelentése: NINCS MEG.** A C-ben csak táblaindex. Hogy kép- vagy személyazonosító-e, a hívókból nem derül ki.
+- **Hívók (index).** A 0x0048bae0 három élt kap: 0x0048af60 (0048b18a), **0x0048b840 (0048ba44, a spec eddig nem nevezte meg)**, és a 0x0048e5da (0048e83e). A 0x0048e5da a 0x0048e590 törzsében van, az index ezt külön függvénynek nevezi.
+- **Állapot: BLOKKOLT (marad).** A 0x0048bae0 és a 0x0048e590 C-jében nincs név- vagy személy-összehasonlítás. Ha a kizárásnak van név-feltétele, az a 0x006b6a50 rekordjában van. Azt nem olvastuk (a 21.6 kérése nyitott).
+
+### 23.2 N3: a detektor-objektum `this+0x2e10`; a 960 px nincs a hívási láncban
+
+- **A detektor-objektum (C).** A 0x0048e590 a 168-172. sorban tölti a `this+0x2e10` mezőt: ha a `this+0x2e14` bájt nulla, vagy a mező nulla, hívja a 0x0045f0c0-t. A 0x0048e1f0 kilencedik argumentuma ez a mező (`local_30`, 347-348. sor és 390-391. sor). Ez megadja a param_9 forrását (21.7). Ha a mező nulla, a függvény `0xffffffff`-et ad (173-174. sor).
+- **A detektor osztálya és vtable-je: NINCS MEG.** A +0x2c slot célja ezen múlik.
+- **A 0x0048e1f0 negyedik argumentuma (C).** A 0x0048e590 ötödik argumentuma, a `local_120` (-1, 142. és 654. sor). A 654. sor szerint ez a 0x0048ef20 float-argumentuma, nulla esetén a `this+0x3498` (0,85). A 142. sor szerint a kulcsok száma. Mindkettő küszöb vagy darabszám, nem képméret. Hogy melyik fut le a 879. sor előtt, a kódból ebben a körben nem dől el teljesen.
+- **A köteg (C).** A kulcs a köteg 0x24 bájtos elemének 0. mezőjébe kerül (`*puVar7 = param_4[0][i]`, 276. sor). A detektor a köteget (`aiStack_24`) és a darabszám-mutatót kapja (`aiStack_24 + 2`), nem a teljes kulcslistát (347, 390. sor). A köteg határa `aiStack_24[4] >> 1` (346. és 390. sor). Az `aiStack_24[4]` mezőt a függvény nem állítja be, csak olvassa és maszkolja (414. sor). A határ forrása: NINCS MEG.
+- **A 960 px.** A tíz C-ben nincs 960 (`0x3c0`). A 0x0048e590 `param_3` és `param_8` argumentuma mutató: `&local_118` (a lista címe) és `&local_d4`. A 0x0048ef20 harmadik argumentumából (`param_3`) egyelemű lista épülhet a `local_118`-ba (137. sor). Ez lista, nem méret. A 0x0048e590 argumentumai közül tehát egyik sem képméret.
+- **Állapot: BLOKKOLT (marad).** Új: a param_9 forrása, a negyedik argumentum forrása és a köteg-logika. Hiányzik: a detektor bemeneti képmérete és a `this+0x2e10` osztálya.
+
+### 23.3 N5 csempe-ág és az igen-ág (0x0063f970, 0x00449090)
+
+- **A 0x0063f970 (-4, 434-1075. sor)** parancs-elosztó (HÍVÓK: `00ca16d0 DATA`). A parancs-sztringek alapján ágazik. A mellőzésnek két ága van:
+  1. **Csempe-ág (745-754. sor).** Az `FUN_00986120(local_c, 7)` blokkban a 0x0049ff60 adja az indexet. Ha az index a listán belül van, ÉS `0x00640340() == 0`, hívja: `0x00647270(this, index, (char)this[0xdb])`. A `this[0xdb]` a `this+0x36c` bájtja, ez a 0x00647270 `param_3`-a. Az írója NINCS MEG.
+  2. **Kijelölt arc (824-849. sor).** A `0x11`-es blokk a 0x004a0d40 objektum `+0xeac` alobjektumának listájából (`+0x500`) veszi az elemet. A `"ignore"` parancsra, és `0x00640340() == 0` esetén hívja a `0x006470d0(this)`-t (839-842. sor).
+- **A 0x00640340 feltétele.** A 0x0063f970 csak 0-nál hajt végre. A 0 jelentését a 22.3 -3 olvasata adja (nincs párbeszéd, vagy a párbeszéd eredménye nulla). A FUN_009bab50 jelentése NINCS MEG, ezért az „igen" és a „nem" szó itt feltételes.
+- **A 0x0063f970 nem hívja a személy-utat.** A HÍVOTTAK-listában nincs 0x005fdc30, 0x005c9b00 és 0x00449090, és a C-ben sincs ilyen hívás. A vtable-hívásokat az index nem látja.
+- **A 0x00449090 (-4, 3789-4226. sor).** Paraméterei: `(this, kulcslista, param_3, param_4, param_5)`. A csempe-ágban (-1, 1650. és 1665. sor) mindkét hívás `param_4 = 0`, `param_5 = 1` értékkel fut. Az első hívás csak `param_3 != 0` esetén van (-1). Írásai:
+  - (a) két kulcs-indexelt memóriabeli lista (`this+0x1c18`, `this+0x1c78`) elemét módosítja, törléssel vagy új értékkel (3852-4170. sor);
+  - (b) mindig: `FUN_004d9aa0(this+0x68, kulcslista, 0, 2)` (4217. sor), vagyis album-művelet;
+  - (c) `param_5 != 0` esetén minden kulcsra: `FUN_00484820(this, kulcs, 1, 0)` (4211-4215. sor). Ez az arc-író (20.3), vagyis az ini-írás;
+  - (d) `param_4 != 0` esetén a kulcsok a `local_8` listába gyűlnek (4131. sor), és a végén a `]expeople:%d` kulcsú albumba íródnak (4218-4221. sor). A `%d` a `param_3`. **A csempe-ág ezt nem éri el**, mert `param_4 = 0`.
+- **A 0x00449090 nem hívja a 0x0044a6b0-t.** Az ellenőrzés a hívóban van (0x00647270). A 0x00449090 belső írásai attól függetlenek.
+- **Állapot (csempe).** A 0x00449090 belső feltétele most megvan a C-ben: az ini-írás `param_5`-tól, a személy-album `param_4`-től függ. A 20.3 és a 22.6 nyitott pontja ezzel lezárva. A 0x0044a6b0 visszatérésének 1001-je továbbra is NINCS MEG.
+
+### 23.4 N5 személyszintű ág: a 0x005edef0 mappa-törlés; a jelölt a 0x005c9b00
+
+- **A 0x005edef0 (-4, 1077-1225. sor) mappa-törlés,** nem személy-mellőzés. A hibaágban az `IDS_CANT_DELETE_FOLDER` sztring áll (1197. sor). A 0x005fdc30 hívás (1160. sor) C-argumentumai: darabszám (`aiStack_f8[3] >> 1`), név (`&stack0xfffffefc`), `1`, és három kimeneti puffer. Az EDI (fajta) a C-ben nem látszik, ezért a 22.3 és a 22.6 szerinti „EDI = 3" nincs igazolva.
+- **Mit ír a megerősítés után.** A `FUN_005fd670` nem nulla visszatérése után: a `0x0097e4c0` hívás, a `_DAT_00d6793c` számláló, ha `cStack_d0` igaz, a `*(*(this+0x2bc)+0x48)` objektum vtable `+0x8c` slotja (1171-1172. sor), és a fő lépés: `0x00440af0(*(this+0x2bc), kulcs, aiStack_f8)` (1181. sor). Hogy a 0x00440af0 melyik tárolót írja, NINCS MEG.
+- **Személy-jelölt: a 0x005c9b00.** A 0x005fdc30 hívói a 22.3 szerint: 0x005c9930 (005c9a42), 0x005c9b00 (005ca1e1) és 0x005edef0 (005ee072). A 15. szakasz szerint a fejlécsáv `ignore` parancsa a 0x005c9b00-t hívja (`ui, 1, 1, 0`). A 0x005c9b00 hívja a 0x00449090-t is (005c9ef6). Ha `param_4 = 1`-gyel hívja, a `]expeople:%d` album a személyszintű tároló jelöltje. A C-ben ez nincs megnézve: NINCS MEG.
+- **A `]expeople` kulcs nem bizonyítja**, hogy ez a „Mellőzött emberek" album. A kulcsot a C adja, a szöveget nem.
+- **Egy- és többszemélyes ág: NINCS MEG.** A 0x005fdc30 nincs a tíz címben.
+- **Állapot: BLOKKOLT (marad).** Kizárva: a 0x0063f970 és a 0x005edef0 mint személy-út.
+
+### 23.5 N6: a törlés nem ment közvetlenül; a mentési lánc részben C-ben; a [Contacts2] nincs igazolva
+
+- **A 0x007b99a0 (-4, 1228-1600. sor)** parancs-elosztó (HÍVÓK: `00cb7b9c DATA`). A `delete` ág (1403-1406. sor) a 0x007ba820-t hívja, és **azonnal visszatér**. Nincs mentési hívás a törlés után. Az `ok` ág (1297-1308. sor) a 0x007bb660-ot, a 0x007baf50-t és a 0x008d2720-t hívja. Az `online` ág (1467-1534. sor) előbb a 0x007bb660-ot hívja, majd a `PersistBeforeSync` kérdés után a 0x007baf50-t.
+- **A 0x006956d0 (-4, 1602-3182. sor).** A 0x0068c030 hívása a 3113-3114. sorban van. Csak akkor fut, ha a helyi állapot 2. Az állapot 1, ha `param_3[0x40] != 0` és a `param_3[0x15]` bájt nem nulla (1789-1791. sor). Az 1-es állapotú ciklusban a 0x0068ac80 hívódik, és az állapot 2 lesz (2711-2720. sor). A hívója a 0x006952e0 (00695609, index; C nincs).
+- **A 0x0069b240 (-4, 3185-3632. sor).** Ugyanez a gépezet. Az állapot a `param_3[0x40]` bájtja a belépéskor (3282. sor). A 0x0068ac80 a 3529-3538. sorban, a 0x0068c030 a 3597-3598. sorban van. A hívója a 0x00692210 (006922f8, index; C nincs).
+- **A 0x0068ac20 (-4, 3635-3665. sor).** A `while (iVar3 != 0)` ciklus a dekompilált C-ben nem fut: `iVar3` 0 marad (3656. sor), és a 0x0069ceb0 visszatérése nincs bekötve. A függvény a `this+0x2c` címet adja vissza (3663. sor). Az index szerint a 0x0068ac20 mégis hívja a 0x00586e20-t (0068ac5a). A hívás tehát a kódban van, de a feltétele NINCS MEG.
+- **A 0x00586e20 (-4, 3667-3753. sor).** Csak akkor épít `Contacts2` sztringet, ha `param_4 != 0`, a 64 bites kulcs nem nulla, és nem `0xffffffff` (3747-3749. sor). A sztring ideiglenes, és azonnal felszabadul. Nincs írás, és nincs `faces=` sor a függvényben. HÍVÓK: 0x00484820 (00485118), 0x0068ac20 (0068ac5a), 0x007d55f0 (007d5ca6). Az arc-író, a 0x00484820 is hívja ezt (index-él).
+- **`faces=` és [Contacts2].** A tíz függvényben nincs `faces=` literál. Forrása NINCS MEG. A `[Contacts2]` kiírásának módja NINCS MEG; a hívás megvan (index).
+- **A mentés kiváltója: NINCS MEG.** A törlés után a 0x007b99a0 nem ment. A lehetséges mentési lánc: az `ok` vagy `online` ág (0x007bb660, 0x007baf50), majd 0x006952e0 vagy 0x00692210, majd 0x006956d0 vagy 0x0069b240, végül 0x0068c030. Hiányzik a 0x007baf50, a 0x007bb660, a 0x006952e0 és a 0x00692210 C-je.
+- **Állapot: BLOKKOLT (marad).**
+
+### 23.6 Ghidra-kör kérések (új)
+
+- `Ghidra-kör kell: 0x006b6a50 - a rekord-olvasó: a kulcs (táblaindex) melyik rekordot olvassa, és a `local_c` float mit jelent? A 21.6 kérése változatlanul nyitott. [blokkoló, N1]`
+- `Ghidra-kör kell: 0x0048b840 - a 0x0048bae0 harmadik hívója (0048ba44): neki is gyűjtés-e a 0 visszatérés, mint a 0x0048e590-ben? [blokkoló, N1]`
+- `Ghidra-kör kell: 0x0045f0c0 - a this+0x2e10 objektum példányosítása: melyik osztály, és mi a vtable-je (a +0x2c slot célja)? [blokkoló, N3]`
+- `Ghidra-kör kell: 0x00640340 és FUN_009bab50 - a 0 visszatérés "nincs párbeszéd" vagy "megerősítve"? A 0x0063f970 csak 0-nál hajt végre, ezért az igen-ág ettől függ. [blokkoló, N5]`
+- `Ghidra-kör kell: 0x005c9b00 - a fejlécsáv "ignore" kezelője (0x005e1645): hívja-e a 0x00449090-t `param_4 = 1` értékkel, és mi az EDI a 0x005fdc30 hívásában? [blokkoló, N5]`
+- `Ghidra-kör kell: 0x005c9930 - a 0x005fdc30 másik hívója: ugyanez a kérdés. [blokkoló, N5]`
+- `Ghidra-kör kell: 0x007baf50 és 0x007bb660 - az "ok" és az "online" mentési lépése: hívja-e a 0x006952e0-t vagy a 0x00692210-t, és ír-e a lemezre? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x006952e0 - a 0x006956d0 hívója (00695609): mikor fut, és hívódik-e a törlés után? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x00692210 - a 0x0069b240 hívója (006922f8): ugyanez a kérdés. [blokkoló, N6]`
+- `Ghidra-kör kell: 0x0068ac80 - az 1-es állapotú első lépés (0x006956d0: 2719. sor; 0x0069b240: 3537. sor): mit ír, és van-e benne `faces=` sor? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x0069ceb0 - a 0x0068ac20 listajárója: mit ad vissza, és ezért fut-e a ciklus (3659. sor)? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x00440af0 - a mappa-törlés (0x005edef0) fő lépése: melyik tárolót írja? [nem blokkoló, N5 mappa-ág]`
+
+A 22.6 többi kérése változatlan. A 0x0068c030 (`DAT_00d69520` megnyitó) a -3 fájlban van, és ebben a körben nem olvastam.
+
+### 23.7 Bizonyítottsági fok és cáfoló kísérletek
+
+**Megerősített (C-kód és független második út: diszasszembly vagy index):**
+- (a) A 0x0063f970 csempe- és kijelölt-ága a `0x00640340() == 0` feltételhez van kötve (C -4; index: a 0x0063f970 élei a 0x00640340, a 0x00647270 és a 0x006470d0 felé).
+- (b) A 0x007b99a0 `delete` ága a 0x007ba820-t hívja, mentési hívás nélkül (C -4; index: a 0x007b99a0 HÍVOTTAK-listájában a 0x007ba820 van, a 0x0068c030 nincs).
+- (c) A 0x0068c030 két hívója a 0x006956d0 és a 0x0069b240 (C -4; index: mindkét HÍVOTTAK-lista tartalmazza).
+- (d) A 0x00449090 csempe-hívásaiban `param_5 = 1` van, és az ini-író (0x00484820) hívása megvan (C -1 és -4; index: a 0x00449090 HÍVOTTAK-listájában a 0x00484820 szerepel).
+- (e) A 960 nincs a 0x0048e590 C-jében (C -4), és nincs a 0x0048e1f0 diszasszembly-jében (21.2).
+
+**Feltételes (egy út, vagy több Ghidra-C):**
+- N1: a kizárás értékalapú (C -4; a 22.1 -3 olvasata ugyanaz az eszköz).
+- N3: a param_9 a `this+0x2e10` (C -4 és a 21.7 -2 olvasata).
+- N5 csempe: a `param_4 = 0` a csempe-hívásokban (C -1 és -4).
+- N5 személy: a 0x0063f970 nem hívja a személy-utat (C; az index csak a direkt éleket látja).
+- N5 mappa: a 0x005edef0 mappa-törlés (az `IDS_CANT_DELETE_FOLDER` sztring; függvénynév nincs).
+- N6: a 0x006956d0 és a 0x0069b240 állapotgépe (C).
+- N6: a 0x0068ac20 hívás megvan az indexben, de a ciklusa a C-ben nem fut (C-ellentmondás; a dekompiláló hibája lehet).
+
+**NINCS MEG:** a kulcs jelentése (N1); a 0x006b6a50 rekord-tartalma; a bemeneti képméret forrása (N3); a 0x0045f0c0 osztálya és vtable-je (N3); a 0x00640340 és a FUN_009bab50 0-jának jelentése (N5); a személyszintű tároló és az egy- és többszemélyes ág (N5); az EDI a 0x005edef0 hívásában (N5); a 0x0044a6b0 1001-je (N5); a `faces=` sor forrása (N6); a mentés kiváltója (N6); a [Contacts2] tényleges kiírása (N6).
+
+**Cáfoló kísérletek:**
+- (a) N1: kerestem név- vagy személy-összehasonlítást a 0x0048bae0 és a 0x0048e590 C-jében: nincs. A negatív állítás e két függvényre szól, a 0x006b6a50-ra nem.
+- (b) N6: a 22.5 feltevése, hogy a törlés a 0x007b99a0-ban menthet, a `delete` ágra nem áll: az a 0x007ba820 után azonnal visszatér.
+- (c) N5 csempe: a 0x00449090-ban nincs 0x0044a6b0 hívás. A 0x0044a6b0 teszt tehát a hívóban gátol, a 0x00449090 belső írásait nem.
+- (d) N5 személy: a 0x0063f970 nem hívja a 0x005fdc30-at, a 0x005c9b00-t és a 0x00449090-t sem. A személy-út más belépésből indul.
+- (e) N3: a 960 nincs a C-ben, és az öt argumentum egyike sem méret. Ettől még a méret lehet a 0x0048e1f0 belsejében vagy a detektor-objektumban; ezt nem zártam ki.
+
+**Módszertani megjegyzés.** A 0x0048e590 HÍVOTTAK-listája valószínűleg csak az első blokkot fedi: a HÍVÓK-lista szerint a 0x0048bae0 hívását az index a 0x0048e5da alá sorolja. A 0x0048e590 többi hívását (0x0048b840, 0x0048e1f0) ezért a C-ből olvastam, nem a listából.
+
+### 23.8 A 20. szakasz N-pontjainak új állapota
+
+| Pont | Állapot | Mi változott |
+|---|---|---|
+| N1 | BLOKKOLT | A kizárás a 0x0048bae0-ban és a 0x0048e590-ben értékalapú (0 = gyűjtés, nem nulla = kimarad). Név-feltétel a két függvényben nincs. A rekord-tartalom a 0x006b6a50-ban van. |
+| N3 | BLOKKOLT | A detektor-objektum a `this+0x2e10`. A 960 nincs a hívási láncban. A bemeneti méret forrása NINCS MEG. |
+| N4 | LEZÁRVA | Változatlan. |
+| N5 | BLOKKOLT | Csempe: a 0x00449090 belső feltétele megvan; az ini-írás `param_5 = 1`-gyel fut. Személy: a 0x0063f970 és a 0x005edef0 nem a személy-út; a jelölt a 0x005c9b00. |
+| N6 | BLOKKOLT | A törlés (a 0x007b99a0 `delete` ága) nem ment közvetlenül. A mentési lánc részben C-ben van. A [Contacts2] és a `faces=` forrása nincs igazolva. |
+| N7 | BLOKKOLT | Változatlan. |
+| N8 | BLOKKOLT | Változatlan. |
+
+Nyitott kérdések: 0 nyílt · 1 lezárva · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".
+
+### 23.9 Fejlesztési következmény
+
+Egyik N-pont sem zárult le, ezért nincs bizonyított eltérés. A `src/picasapy/app/face_scan_controller.py:470-474` név-alapú kihagyása (N1) nyitott: a 0x0048bae0 C-jében nincs név-összehasonlítás, de a kizárás tartalmát a 0x006b6a50 adja. A 21.8 „Fejlesztési lista: nincs" állítás érvényben marad.
+
+### 23.10 Mérleg (5. kör)
+
+Megerősített: 5 tétel (23.7 a-e). Feltételes: 7 tétel (23.7). NINCS MEG: a 23.7 listája. Blokkoló kérés: 11 (23.6), nem blokkoló: 1 (23.6). Tulajdonosi döntést egyik sem igényel.
+
+## 24. #5184, hatodik kör (2026-10-17)
+
+**Hatókör:** a 23.6 kérdései. A tíz cím a `-5` fájlban van. A 23.6 két címe (0x00640340, 0x006b6a50) a `-3` fájlban van (22. szakasz). A többi címet (0x007bb660, 0x008d2720 és társai) a dumpok nem tartalmazzák.
+
+**Forrás:** `~/picasapy-agent/referencia/ghidra/2026-10-17-szemelykezeles-5.txt` (a továbbiakban `-5`, 2 389 sor). Visszaolvastam a `2026-10-17-szemelykezeles-4.txt` (`-4`) 0x00449090 végét (4206-4221. sor) és a 0x0048e590 két hívását (178. és 293. sor), a `…-3.txt` (`-3`) DoNotConfirmPeopleRemove ágát (692. sor), és az `…szemelykezeles.txt` (`-1`) két 0x00449090-hívását (1650. és 1665. sor).
+
+**Utak:** a Ghidra-C egy út. A második út a bináris-index: a `-5` fejlécében a HÍVÓK és HÍVOTTAK listák. A diszasszemblálást ebben a körben nem néztem.
+
+**Jelölés:** ugyanaz, mint a 20. szakaszban. `idx` = a kiválasztott elem indexe, `lista` = a kulcslista.
+
+### 24.1 N1: a kizárás nem név-alapú a vizsgált függvényekben; a döntő lookup nincs eldöntve
+
+- **0x0048b840 (`-5`, 181-338. sor), a kötegelt változat.** A 0x0048bae0-t minden elemre hívja (319. sor), de a visszatérését nem olvassa. A 0x0048bae0 a kimeneti tömb (a hívó EDI-jében érkezik) megfelelő elemébe ír; a 23.1 szerint ez az érték mindig 0. A saját visszatérése 0 vagy 0xf4242, a `*param_3` jelzőtől függően (320. és 336. sor). Nem nulla jelzőnél a ciklus megszakad.
+- **Válasz a 23.6 kérdésére: nem.** A 0x0048b840 nem gyűjt. A 0-ra gyűjtés a 0x0048e590 saját ciklusában van (`-4`, 293-308. sor, a 23.1 szerint). A 0x0048e590 mindkét hívást tartalmazza (178. és 293. sor). Hogy melyik fut melyik esetben, ebben a körben nem néztem meg.
+- **0x006b6a50 (`-3`, a 22.1 szerint):** indexszel olvas rekordot, és nincs benne név-összehasonlítás. A `local_c` float jelentése NINCS MEG. A 13 hívója nincs olvasva (21.6, nyitott).
+- **Állapot (N1): BLOKKOLT.** A 24.7 szerint a következő Ghidra-kör csak hívókat adna, ezért itt a felvétel dönt.
+
+### 24.2 N3: a detektor-objektum létrejön; az osztálya és a vtable-je NINCS MEG
+
+- **0x0045f0c0 (`-5`, 45-179. sor).** Ha a `this+0x2e10` nulla (115. sor), lefoglal 0xb0 bájtot (116. sor), és a `FUN_006ccbb0()` adja az objektumot (121. sor). A `plugins` útvonalat a `FUN_00408390("plugins")` állítja be (123. sor). Az objektum vtable-jének 0. slotja két kimeneti pufferrel fut (144. sor). A `Preferences\FRTemplateChecking` kulcsot olvassa (149. sor). Ha az init 0-t adott, a vtable `+0x34` slotját hívja (156. sor). Végül a `this+0x2e10` mezőbe teszi az objektumot, a `this+0x2e14` mezőt 1-re állítja (158-159. sor).
+- **Válasz a 23.6 kérdésére:** a példányosítás a `FUN_0097c5d0(0xb0)` és a `FUN_006ccbb0()`. Az osztály és a vtable NINCS MEG; a vtable a konstruktorban van. A `+0x2c` slot ebben a függvényben nem hívódik. A `this+0x3498` nem íródik itt (21.7). A `red.cfg` név nincs a C-ben.
+- **Állapot (N3): BLOKKOLT.** Az osztály és a vtable a `FUN_006ccbb0`-ban, illetve onnan hívott kódban van.
+
+### 24.3 N5: a személy-tároló; a 0x00449090 `param_4 = 1` hívása megvan; a predikátum NINCS MEG
+
+- **0x005c9b00 (`-5`, 431-1467. sor), a fejlécsáv-mellőzés.** A 23.4 szerint az `ignore` parancs hívja. A függvény három ágat tartalmaz:
+  1. **Üres kijelölés (1246-1253. sor).** Ha a kijelölési lista (`this+0xea8`) `+0x330` mezője üres, és a `FUN_004aca00(idx)` nulla, a `+0xec` slot hívódik (`this+700+0x48` objektum, `idx`). Ebben az ágban nincs 0x00449090- és nincs 0x005fdc30-hívás. A `+0xec` slot célja NINCS MEG. A `+0x330` üresség-jelzése a `>> 1` és `& 1` minta alapján következtetés, nem igazolt. Az 1246. sor feltétele szerint a `uStack_1f74` ebben az ágban 0 marad.
+  2. **Nem üres kijelölés (1254-1333. sor).** Ha a `param_3 != 0`, először a `0x005c9930`-at hívja, `param_5 = 1` és `param_4 = idx` értékkel (1263. sor). Utána a `FUN_005fd670` megerősítést kér (1264. sor). Ha nem erősíti meg, az ág kilép (1265-1270. sor).
+  3. **Tároló-ág (1284-1315. sor).** Ez a `param_3`-tól független, a nem üres ág végén fut. Ha a `FUN_00448c90(this+700)` nem nulla, **0x00449090(this+700, lista, idx, 1, 1)** fut (1314. sor). Ha nulla, és a `FUN_00448a10(this+700, idx, 0)` nem nulla, a `FUN_004d9aa0(this+0x68, lista, 0, 2)` album-művelet fut (1308. sor). Ha egyik sem, ezen az ágon nincs külön írás.
+- **A 0x00449090 `param_4 = 1` hívása** (C: `-5` 1314. sor; index: a 0x005c9b00 HÍVOTTAK-listájában a 0x00449090 szerepel). A `-4` 0x00449090 végén (4211-4221. sor) két írás van:
+  - `param_5 != 0` esetén minden kulcsra `FUN_00484820(this, kulcs, 1, 0)`, vagyis az arc-író (az ini-írás);
+  - `param_4 != 0` és a gyűjtött lista nem üres esetén a gyűjtött kulcsok a `]expeople:%d` kulcsú albumba íródnak. A `%d` a `param_3`, vagyis az index. A gyűjtés feltétele a ciklusban van (3852-4170. sor), ezt nem néztem végig.
+- **Más `param_4 = 1` hívás a dumpokban nincs.** A két csempe-hívás (`-1`, 1650. és 1665. sor) `uVar3` értéke 0, tehát `param_4 = 0`.
+- **Egy- és többszemélyes ág.** A C szerint a személy-tároló-írást nem a darabszám, hanem a `FUN_00448c90` predikátum dönti el. Egy kijelölt és több kijelölt személy ugyanazon az ágon fut, ha a kijelölés nem üres. A darabszám a 0x005fdc30 szövegét választja (névtelen hívásnál, 22.3). A 653. sor darabszám-argumentuma (`uStack_1f74 >> 1`) a C-ben 0-ból jön, ezért ebből a többes-ágra nem következtetek.
+- **0x005c9930 (`-5`, 340-430. sor), `param_5 = 1` esetén.** Először a `FUN_00448c90` és a `FUN_00448a10` predikátumot nézi (370-381. sor). Ha az egyik nem nulla, nem ír (383. sor). Ha mindkettő nulla, a `this+700+0x48` objektum `+0x9c` slotját (`param_4`, rekord) és a `this+0x2c0+0x4c` objektum `+4` slotját hívja (391-395. sor). A 0x00484820 közvetlenül nincs benne; a vtable-célok NINCS MEG. A 0x005fdc30 hívása (405. sor) hat argumentummal fut; az EDI nincs a C-ben.
+- **0x00440af0 (`-5`, 1-44. sor), a mappa-törlés fő lépése (a 23.4 kérdése).** A `param_1+0x48` objektum `+0x2c` slotjától a kulcs útvonalát kéri (28. sor), beolvassa a `Preferences\ShowHidden` kulcsot (34. sor), majd a `FUN_004019b0` és a `FUN_006ca8c0` hívásait (36-37. sor). A C-ben nincs ini- vagy album-írás. A két hívott függvény célja NINCS MEG.
+- **Állapot (N5):**
+  - kijelölt arc (0x006470d0): változatlan (20.3);
+  - csempe (0x00647270): változatlan (23.7);
+  - **személy: BLOKKOLT.** A tároló (a `]expeople:%d` album és az ini-írás) a C-ben megvan, de a 0x00448c90 jelentése nincs;
+  - **egyszemélyes ág: BLOKKOLT.** A `+0xec` slot célja nincs meg;
+  - az EDI a 0x005fdc30 hívásában disasm-kérdés, nem Ghidra.
+
+### 24.4 N5: a megerősítés 0-ja (0x00640340)
+
+- **0x00640340 (`-3`, a 22.3 szerint).** Ha a `Preferences\DoNotConfirmPeopleRemove` igaz (692. sor), párbeszéd nélkül 0-t ad. Különben párbeszédet épít. A `FUN_009bab50` eredményétől függ: nem nulla eredménynél 0xf4242, nulla eredménynél a `FUN_009baae0` és a `FUN_00401900` után 0.
+- **Válasz a 23.6 kérdésére:** a 0 jelentése: vagy nincs kérdés, vagy a párbeszéd nem szakította meg a műveletet. A 0xf4242 megszakítási kód a dumpokban (a 0x0048b840 és a 0x00692210 is ezt adja megszakításkor). A gomb-sorrend (melyik gomb a „igen”) és a `FUN_009bab50` belseje NINCS MEG.
+- **Állapot:** a 0x0063f970 csak 0-nál hajt végre (23.3). Az igen-ág feltétele tehát a „nem szakította meg”. Hogy ez az „igen” gomb, azt a `FUN_009bab50` dönti el.
+
+### 24.5 N6: a mentési lánc; a 0x006952e0 → 0x006956d0 kapcsolat megerősített; a trigger NINCS MEG
+
+- **0x007baf50 (`-5`, 2154-2387. sor), az ok és az online ág közös része.** A 0x00584010-et hívja a `this+0xd4+0x2c5c` gyűjteménnyel (2346. sor), majd a kijelölt elemeket a 0x005849d0-val törli (2365. sor). Hiba esetén a `ContactManagerDlg::UpdateFailed` üzenetet mutatja (2349-2356. sor). **Nem hív** 0x006952e0-t, 0x00692210-t és 0x0068c030-t (HÍVOTTAK-lista). A lemezre írás a 0x00584010-ban lehet; ez NINCS MEG. Az `iStack_28` a C-ben nincs beállítva (2194. és 2346. sor), ezért a 0x00584010 második argumentumáról nem döntök.
+- **0x007bb660:** NINCS MEG a dumpokban. Az ok és az online ág is ezt hívja a 0x007baf50 előtt (23.5).
+- **0x006952e0 (`-5`, 1876-2085. sor), a mentés-sor.** A bemeneti elemet a `+0x1b0` tömbbe fűzi (`+0x1b4` számlálóval). Ha a `+0x47c` nem nulla, és az elem `+0x54` bájtja nulla, a 0x0068c5c0-t hívja (2042-2043. sor). Ezután a `+0x8c` táblában törli az adott indexű bejegyzést, és **mindig** hívja a 0x006956d0-t (2055. sor; a hívási cím 00695609). Ez válasz a 23.6 kérdésére: a 0x006956d0 hívója a 0x006952e0.
+  - **Hívója: 0x006980a0 (006980c3), csak index.** A 0x006980a0 C-je nincs a körben. A „mikor fut" és a „hívódik-e törlés után" kérdés ezen múlik.
+- **0x00692210 (`-5`, 1801-1875. sor), a sor-futtató.** A `+0x1b0` tömb minden elemére: megszakítás-ellenőrzés (a `+8` objektum `+4` slotja), majd 0x0068c5c0 (1838. sor), opcionálisan két segédhívás a `+0x438` mezőre, végül 0x0069b240 (1865. sor). Megszakításkor 0xf4242-t ad (1834. sor).
+  - **Hívói: két DATA-hivatkozás (00ca7cc0, 00ca7df8).** Egy parancs-táblából indul. A tábla tulajdonosa NINCS MEG, ezért a „mikor fut" kérdés nyitott.
+- **0x0068ac80 (`-5`, 1468-1800. sor), a rekord szövege.** A `name=%s`, a `description=%s` (ha nem üres), a `location=%s` (ha nem üres), a `category=%s` és a `date=%f` sorokat írja (1614-1624. sor). Utána a `FUN_006a3b80` (a `this+0x988` alobjektumon) listájának `%s=%s` sorait írja (1627-1636. sor). **A `faces=` nincs literálként a függvényben.** A kulcs a listából jöhet; a lista forrása NINCS MEG.
+- **0x0069ceb0 (`-5`, 2086-2153. sor), a listajáró.** Nem hív semmit és nem ír. Visszatérése 1, ha van következő elem (az `in_EAX[2]` be van állítva), 0, ha vége. A 0x0068ac20 ciklusában (`-4`, 3659. sor) a visszatérést a C nem köti be, ezért a ciklus futása C-ből nem dönthető el.
+- **`faces=` és `[Contacts2]` összesítve.** A `faces=` szöveg egyik dumpban sincs literálként. A `[Contacts2]` csak a 0x00586e20 `FUN_00985ff0("Contacts2")` hívásában van (`-4`, 3748. sor), és a 0x00586e20 csak `param_4 != 0` esetén épít sztringet (23.5).
+- **Állapot (N6): BLOKKOLT.** Megerősített: a törlési út (0x007ba820 és 0x007baf50) közvetlenül nem ment, és a 0x006952e0 → 0x006956d0 → 0x0068c030 lánc. NINCS MEG: a mentés kiváltója (0x006980a0 és a DATA-tábla), a 0x007bb660 és a `faces=` forrása.
+
+### 24.6 Ghidra-kör kérések (új)
+
+- `Ghidra-kör kell: 0x007bb660 - az ok és az online ág közös lépése (a 0x007baf50 előtt): hívja-e a 0x006952e0-t vagy a 0x00692210-t, és ír-e lemezre? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x008d2720 - az ok ág 0x007baf50 utáni hívása: mentés-e (0x006952e0, 0x00692210)? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x00584010 - a 0x007baf50 gyűjtemény-frissítője: ír-e fájlba, és mit csinál a this+0xd4+0x2c5c gyűjteménnyel? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x006a3b80 - a 0x0068ac80 kulcs=érték listájának forrása (this+0x988): honnan jön a faces= kulcs? [blokkoló, N6]`
+- `Ghidra-kör kell: 0x00448c90 - a személy-predikátum (0x005c9b00 1284. sor, 0x005c9930 370. sor): mit olvas, és mit jelent a nem nulla érték? [blokkoló, N5]`
+- `Ghidra-kör kell: 0x009bab50 - a 0x00640340 párbeszéd-eredménye: a nulla az igen vagy a nem gomb? [blokkoló, N5]`
+- `Ghidra-kör kell: 0x006ccbb0 - a this+0x2e10 detektor-objektum konstruktora: melyik osztály, és melyik vtable-t írja az első mezőbe? [blokkoló, N3]`
+- `Ghidra-kör kell: 0x006ca8c0 - a 0x00440af0 ShowHidden-ágának hívott függvénye: mit csinál a kimeneti pufferekkel? [nem blokkoló, N5 mappa-ág]`
+
+Diszasszemblálás kell (nem Ghidra): a 0x0068ac20 ciklus-tesztje (0068ac41-0068ac62 között), és a 0x005fdc30 hívások EDI-je (`-5` 405. és 653. sor). Ezeket az `annot_disasm.py` dönti el, nem a Ghidra.
+
+### 24.7 Következtetés: a felvétel dönt, nem a következő Ghidra-kör
+
+- **N1.** A következő kör a 0x006b6a50 13 hívóját kérné. Ezek a lookup hívói, nem a kizárás mechanizmusa, ezért ebből nem lesz eldöntés. **Döntő felvétel:** ugyanabban a mappában két fotó. A) egy arc, név nélkül. B) egy arc, amelynek nevet adunk. Javaslat-futás (felismerés) a név adása előtt és után. Ha a B fotó a jelöltek között marad, a név-alapú kihagyásunk (`src/picasapy/app/face_scan_controller.py:470-474`) eltér az eredetitől. Ha kiesik, a kizárás névhez vagy korábbi feldolgozáshoz köthető. A kettőt a B2 futás választja szét: ugyanaz a fotó, név nélkül, de már egyszer feldolgozva.
+- **N3 (960 px).** Ha a 0x006ccbb0 is megvan, a méretezés a detektor belsejében lehet, egy újabb hívási szinten. **Döntő felvétel:** ugyanaz az egy arcos kép 640, 800, 960, 1280 és 1600 px hosszú élre méretezve, az arc pixelmérete állandó. Ha a detektor 960 px-re méretez, a 960 fölötti képeken a találati arány csökken, a 960 alattiakon nem változik. Ez a jóslat a 960 px mellett szól, ha teljesül, és ellene, ha nem.
+- **N6 (a trigger).** A következő kör a 0x006980a0-t és a DATA-tábla tulajdonosát kérné. Ezek a parancs-szint hívói, nem a mentés-lépés. **Döntő felvétel:** egy megnevezett személy törlése, majd a `.picasa.ini` és a `[Contacts2]` tartalmának összevetése két időpontban: a törlés után azonnal, és a Picasa bezárása után. Ha a `faces=` sor azonnal változik, a mentés a törlési ágból indul (ezt a 24.6 Ghidra-kérések ellenőrzik). Ha csak bezáráskor, a mentés a parancs-szinten van.
+- **N5 (személy).** Felvételt most nem kérek. A 0x00448c90 egyetlen predikátum, a 24.6 kérése elég lehet. Ha a predikátum nem egyszerű, a felvétel: egy megnevezett személy és egy név nélküli arc mellőzése, majd a `.picasa.ini` `faces=` sorainak és a Picasa albumlistájának összevetése.
+- **Tulajdonosi döntés:** a felvétel a Colab-végrehajtón fut. A viselkedés-típusú feladat a tulajdonos `jovahagyva` címkéjét kéri. Ezt a tulajdonos dönti el.
+
+### 24.8 Bizonyítottsági fok és cáfoló kísérletek
+
+**Megerősített (két út: C és index):**
+- (a) A 0x005c9b00 hívja a 0x00449090-t (C: 1314. sor; index: HÍVOTTAK-lista).
+- (b) A 0x006952e0 hívja a 0x006956d0-t (C: 2055. sor; index: 00695609).
+- (c) A 0x007baf50 nem hív 0x006952e0-t, 0x00692210-t és 0x0068c030-t (C és index: HÍVOTTAK-lista; csak a közvetlen hívásokra).
+- (d) A 0x0069ceb0 nem hív és nem ír (C: nincs hívás; index: HÍVOTTAK = 0).
+
+**Feltételes (egy út, vagy C-keresés):**
+- (e) A 0x0048b840 nem gyűjt (C: 319. sor).
+- (f) A 0x005c9b00 `param_4 = 1` értéke (C); a dumpokban más `param_4 = 1` hívás nincs.
+- (g) A 0x00448c90 személy-predikátum (a hívás-helyből következtetett szerep; a belseje nincs).
+- (h) A 0x0068ac20 ciklusa (C-ellentmondás: a visszatérés nincs bekötve).
+- (i) A 0x00440af0 nem ír ini-t és albumot (C; a két hívott függvény nincs a körben).
+- (j) A `faces=` nincs literálként (C-keresés a dumpokban).
+
+**NINCS MEG:**
+- a 0x006b6a50 kulcsának jelentése és a `local_c` float (N1);
+- a 0x0045f0c0 osztálya és vtable-je (N3);
+- a 0x00448c90, a 0x00448a10 és a 0x004aca00 jelentése (N5);
+- a `+0xec` slot célja (N5);
+- a 0x005fdc30 EDI-je (N5);
+- a `FUN_009bab50` gomb-sorrendje (N5);
+- a 0x007bb660 és a 0x008d2720 (N6);
+- a 0x006980a0 és a DATA-tábla (N6);
+- a `faces=` forrása és a `[Contacts2]` kiírásának módja (N6);
+- a 0x0068ac20 ciklusa (N6).
+
+**Cáfoló kísérletek:**
+- (a) N5 személy: a 0x00449090 `param_4 = 1` hívását kerestem a dumpokban. Egy van (0x005c9b00). Ez a dumpokra szól, nem a teljes binárisra.
+- (b) N5 személy: ha a 0x00448c90 személyre nulla, a 0x00449090 nem fut. Ezt a predikátum belseje nélkül nem zárom ki.
+- (c) N6: a törlési út (0x007ba820, 0x007baf50) nem hív mentést közvetlenül. Ez csak a közvetlen hívásokra áll. A 0x007bb660 és a 0x008d2720 nincs olvasva.
+- (d) N1: a 0x0048b840 nem gyűjt. Ez a negatív állítás a 0x0048b840 kódjára szól; a gyűjtő-ág a 0x0048e590-ben van.
+- (e) N6 `faces=`: a dumpokban nincs literál. A lista forrása (0x006a3b80) nincs olvasva, ezért a sor létezését ez nem zárja ki.
+
+### 24.9 A 20. szakasz N-pontjainak új állapota
+
+| Pont | Állapot | Mi változott |
+|---|---|---|
+| N1 | BLOKKOLT | A 0x0048b840 nem gyűjt. A kizárás a 0x0048e590 0-ágán és a döntő lookup rekordján múlik. Következő lépés: felvétel (24.7). |
+| N3 | BLOKKOLT | A 0x0045f0c0 létrehozza a detektor-objektumot (0xb0 bájt, a `FUN_006ccbb0`). Osztály, vtable és 960 px: NINCS MEG. |
+| N4 | LEZÁRVA | Változatlan. |
+| N5 | BLOKKOLT | A személy-ágban a 0x00449090 `param_4 = 1` hívása (0x005c9b00, 1314. sor) a `]expeople:%d` albumba és az ini-írásba megy. A 0x00448c90 predikátum jelentése NINCS MEG. Az egyszemélyes ág `+0xec` slotja NINCS MEG. A 0x00640340 igen-ága a 0 jelentésétől függ (24.4). |
+| N6 | BLOKKOLT | A mentési lánc megerősített: 0x006952e0 → 0x006956d0 → 0x0068c030. A 0x007baf50 nem ment. A mentés kiváltója (0x006980a0, DATA-tábla) és a `faces=` forrása NINCS MEG. |
+| N7 | BLOKKOLT | Változatlan (ez a kör nem érintette). |
+| N8 | BLOKKOLT | Változatlan. |
+
+Nyitott kérdések: 0 nyílt · 1 lezárva · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".
+
+### 24.10 Fejlesztési következmény
+
+Nincs lezárt N-pont, ezért nincs bizonyított eltérés. A 21.8 és a 23.9 „fejlesztési lista: nincs" állítása érvényben marad. Az N1 kérdése (`face_scan_controller.py:470-474`) nyitott; a 24.7 felvétele dönti el.
+
+### 24.11 Mérleg (6. kör)
+
+Megerősített: 4 tétel (24.8 a-d). Feltételes: 6 tétel (24.8 e-j). NINCS MEG: 10 csoport (24.8). Blokkoló Ghidra-kérés: 7 (24.6), nem blokkoló: 1 (24.6). Felvétel dönt: N1, N3 (960 px) és N6 (trigger); N5 a 0x00448c90 után. A felvétel tulajdonosi jóváhagyást kér.
