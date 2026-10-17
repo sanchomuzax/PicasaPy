@@ -3233,6 +3233,36 @@ Ghidra-kör a WndProc-ra most nem kérhető, mert a címe nincs meg. Ha a hívó
 
 **Nyitott kérdések mérlege (38.2.11):** 0 nyílt · 2 lezárva · 1 blokkolt · 0 hatókörön kívül · 1 csak nyitva.
 
+#### 38.2.12 Nyolcadik kör: a WndProc helye és a billentyűk mért hatása (#4443, 2026-10-17)
+
+**Kérdés.** A 38.2.11 után nyitott maradt, hol regisztrálják az ytWindow osztályt, mi a WndProc, és mit csinálnak a billentyűk a Ctrl+5-tel nyitott qshow ablakban.
+
+**Forrás.**
+- `referencia/ghidra/2026-10-17-ytwindow-hivatkozasok.txt`: az `"ytWindow"` sztring (`0x00c7f35c`) minden utasításbeli hivatkozása (Ghidra, konstans-keresés) és a tartalmazó függvények C-kódja.
+- `referencia/ghidra/2026-10-17-ytwindow-wndproc.txt` és `referencia/ghidra/2026-10-17-ytwindow-uzenetek.txt`: a WndProc és a `OneUpUI` vtábla `+0x1c` bejegyzésének C-kódja.
+- Colab-felvétel, picasa-colab-jobs job-189: alapállapot, Ctrl+5 kijelölés nélkül, majd Right, Right, Left, space, space, Home, End, Escape, lépésenként képernyőképpel és ablaklistával.
+
+**Eredmények.**
+1. **Regisztráció (megerősített).** A `FUN_009838b0` kitölti a WNDCLASS-t: `style = 0x400b`, `lpfnWndProc = 0x00983940`, `cbWndExtra = 4`, ikon `IDI_APPLICATION` (`LoadIconA(0, 0x7f00)`), háttér `GetStockObject(0)`, osztálynév `"ytWindow"`, majd a `DAT_00d69530` mutatón át regisztrál. A konstans-keresés három hivatkozást talált: kettő a `0x00983670` (ablaklétrehozás), egy ez a függvény. Két független út: a sztring hivatkozásai és a WNDCLASS-mezők sorrendje.
+2. **A WndProc (`0x00983940`) csak továbbít (megerősített a C-kódból).** A `GetWindowLongA(hwnd, -21)` (felhasználói adat) objektum vtáblájának `+0x1c` metódusát hívja az üzenettel. Ha az `0xf4241`-et ad vagy nincs objektum, a `DAT_00d69554` alapeljárás fut; az `1000000` visszatérés 1-re fordul. A billentyűkezelés tehát az ablakhoz kötött objektum osztályában van.
+3. **A `OneUpUI` vtábla nem az ablakobjektumé (feltételes).** A `0x00cbd5c4 + 0x1c` bejegyzés a `0x0097b5f0`, amely csak egy kritikus szakaszt enged el. Az ablakhoz kötött objektum osztálya és vtáblája NINCS MEG; a `-21` mezőt író hívás a `0x00983670` körül keresendő.
+4. **A billentyűk mért hatása (megerősített a felvételen).** A Ctrl+5 után megjelenik a `qshow` ablak (az ablaklistában `['Picasa 3', 'qshow']`), de az aktív ablak végig a `Picasa 3` marad. A Right, Right, Left, space, space, Home, End és Escape után az egymást követő képek között **egyetlen képpont sem változik** (képpontonkénti összevetés, 8-as küszöb, 4.-22. kép), és a qshow nyitva marad. A szóköz nem indít lejátszást, a nyilak nem lapoznak, az Escape nem zár be.
+
+**Bizonyítottsági fok.**
+
+| állítás | fok | alap |
+|---|---|---|
+| ytWindow-regisztráció a `0x009838b0`-ban, WndProc `0x00983940` | megerősített | sztring-hivatkozások + WNDCLASS-mezők |
+| a WndProc a `-21` objektum vtábla `+0x1c` metódusára továbbít | megerősített | C-kód + a `0x00982d60` alosztályozó mintája (38.2.11) |
+| a billentyűk nem változtatják a qshow képét, az ablak nyitva marad | megerősített | job-189, 18 egymást követő kép, nulla eltérés |
+| a qshow nem kap billentyűfókuszt | feltételes | az ablaklista aktív ablaka; Wine alatt a fókusz kezelése eltérhet a Windowsétól (a 38.2.7 szerint a kód `SetFocus`-t hív) |
+
+**Cáfoló kísérlet.** „A billentyűk hatnak, csak a kép lassan frissül.” Cáfolva: a lépések között 3-5 másodperc várakozás volt, és a 22. kép (az Escape után 3 másodperccel) is bitre egyezik a 4.-kel.
+
+**Következtetés.** A Ctrl+5-tel nyitott Időrend-bemutatót az eredetiben a vizsgált billentyűk nem vezérlik; a kezelés a képernyő vezérlőin (előző, lejátszás, következő, csúszka, rács-vissza, Exit) át történik. A PicasaPy megvalósításának ezért nem kell billentyűparancsot adnia a bemutatóhoz; ha mégis ad, az eltérés az eredetitől. Nyitott: a vezérlők kattintásos viselkedése (Colab-felvétel kell a képernyő gombjaira kattintva).
+
+**Nyitott kérdések mérlege (38.2.12):** 0 nyílt · 3 lezárva (regisztráció, WndProc, billentyűk) · 1 blokkolt (az ablakobjektum osztálya, nem blokkolja a megvalósítást) · 0 hatókörön kívül.
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
