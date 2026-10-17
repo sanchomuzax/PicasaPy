@@ -165,16 +165,16 @@ Ez a szakasz a funkció **fele**, és eddig sehol nem volt leírva.
 | útvonal | függvény | kapu | mit ír |
 |---|---|---|---|
 | **A) általános metaadat-író** | `0x007d55f0` | — | `faces=` (a `[contacts2]` után) |
-| **B) `FRWriteFaceDataINI`** | `0x00484820` | `Preferences\FRWriteFaceDataINI`, **alapból 0** | `faces` + **`facedata`** + `backuphash` |
+| **B) arcíró** | `0x00484820` | csak a `facedata`-hoz: `Preferences\FRWriteFaceDataINI`, alapból 0 | `faces` és `backuphash` mindig; **`facedata` csak bekapcsolva** |
 
-A **B) útvonal** a `0x00484dcf`-en olvassa a kapcsolót; ha nincs
-bekapcsolva (`bl == 0`), a teljes arc-blokk **átugrik** a `0x00484f72`-re.
-Ha be van kapcsolva, három kulcsot ír egymás után:
+A **B) útvonal** a `0x00484dcf`-en olvassa a kapcsolót. A helyesbített
+ágvizsgálat szerint a `faces=` kulcs mindig kiíródik; a kapcsoló csak a
+`facedata`-t kapuzza. A writer `backuphash`-t is ír:
 
 ```asm
-0x0048516d  push "faces"        -> 0x005ab210(szakasz, kulcs, érték)
-0x004851ab  push "facedata"
-0x0048521c  push "backuphash"
+0x0048516d  push "faces"        -> 0x005ab210(szakasz, kulcs, érték) ; mindig
+0x004851ab  push "facedata"     ; csak FRWriteFaceDataINI esetén
+0x0048521c  push "backuphash"   ; mindig
 ```
 
 A `backuphash` képzése itt is a már ismert (#643) alak: a 64 bites érték
@@ -186,7 +186,7 @@ négy 16 bites szavának XOR-ja, `"%d"`-vel formázva
 >
 > **DE — mérve:** a 859 fájlos valódi `.picasa.ini`-korpuszban a `facedata`
 > **0-szor** fordul elő (`faces=` 4973-szor, `backuphash` 14700-szor).
-> Ez egybevág azzal, hogy a kapcsolója alapból ki van kapcsolva.
+> Ez egybevág azzal, hogy a `facedata` kapcsolója alapból ki van kapcsolva.
 >
 > **Amit ez a megvalósításra jelent:** `facedata`-t **írni nem kell**; a
 > round-trip parsernek viszont **meg kell őriznie**, ha valaha előfordul.
@@ -416,7 +416,7 @@ szerinti átfedéses levezetés csak akkor kell, ha ez a fájl hiányzik.
 |---|---|
 | detektálás | **háttérszálon**, folyamatosan (`BgFaceDetectThread`) |
 | csoportosítás / javaslat | a detektálás után, saját folyamatjelzéssel |
-| `.picasa.ini` írás (B útvonal) | csak ha `FRWriteFaceDataINI` **be van kapcsolva** |
+| `.picasa.ini` írás (B útvonal) | `faces=` és `backuphash` mindig; `facedata` csak ha `FRWriteFaceDataINI` **be van kapcsolva** |
 | képfájlba írás | `PersistFaceToFile` szerint, **kötegelt, megszakítható** munkaként |
 | kontakt → ini sorrend | **előbb a `[contacts2]`**, és csak utána a `faces=` hivatkozás; ha a kontakt-írás hibázik, a `faces=` sor **sem** íródik ki (`0x007d55f0`) |
 
@@ -2259,20 +2259,22 @@ Ugyanez a függvény végigmegy a tétellistán, és fájlonként meghívja a
 0x0044b323  call 0x00484820
 ```
 
-A `0x00484820` a 6/B pontban már dokumentált **arcadat-kiíró**: a
+A `0x00484820` az arcadat-kiíró: a
 `Preferences\FRWriteFaceDataINI` kulcsot olvassa (`0x00484dcf` a kulcsnév,
-`0x00484de7` az **alapérték 0**), és csak igaz esetben írja a `.picasa.ini`
-`faces` (`0x0048516d`) + `facedata` (`0x004851ab`) + `backuphash`
-(`0x0048521d`) kulcsait.
+`0x00484de7` az **alapérték 0**). A `faces=` (`0x0048516d`) mindig kiíródik;
+a kapcsoló csak a `facedata` (`0x004851ab`) kulcsot kapuzza. A writer
+`backuphash`-t is ír (`0x0048521d`; a kapu helyesbítése: 9/f).
 
-⇒ **A jóváhagyás elsődlegesen az ADATBÁZISBA ír** (oszlop-tömb + piszkos-jelző),
-és a `.picasa.ini`-be **alapértelmezés szerint SEMMIT** — az ini-ág az
-alapból kikapcsolt `FRWriteFaceDataINI` mögött van. Az elvetés ezzel szemben
-közvetlenül ír `.picasa.ini`-t (`]ignoreface`, 15. szakasz).
+⇒ **A jóváhagyás elsődlegesen az adatbázisba ír** (oszlop-tömb + piszkos-jelző),
+és a `.picasa.ini`-be is írhat `faces=` adatot; a `facedata` alapból kimarad.
+Mellőzéskor a `.picasa.ini` `faces=` személymezője
+`ffffffffffffffff`; a `]ignoreface` állapotot a `CThumbDB` különleges
+albumtagsága jelzi, nem az ini-be írt token (15.3/b.1).
 
-**Termékre:** ha nálunk a jóváhagyás a `.picasa.ini`-be ír, az **szándékos
-eltérés** az eredetitől — mondjuk ki a megvalósító jegyben (#2187), ne
-csússzon be véletlenül.
+**Termékre:** önmagában az, hogy jóváhagyáskor `faces=` kerül a
+`.picasa.ini`-be, nem eltérés az eredetitől; a `0x00484820` ezt a kulcsot is
+kiírja. Az eltérést a konkrét érték és a `facedata` viselkedése alapján kell
+megnevezni.
 
 ### 18.3 Melléklelet: a PMP-oszlopok NEVE → TAGELTOLÁS, mind a 44
 
@@ -2346,6 +2348,7 @@ A job-66 a Név nélküliek csempe-mezőjének útja: nem külön névadási fel
 | Új név, People ablak és tárolás | A csempe mezőjébe írt **„Teszt Elek”** után Enterre **„People”** ablak nyílik. A Search mezőbe a név előre be van írva és ki van jelölve; a névlista üres, a **„Delete Person”** és **„OK”** tiltott, a **„New Person”** aktív. Jobbra „Name:” és „Email(s):” mező, szürke „Sync Face Tags with Web Albums” jelölő és „Revert”; alul „Manage Online Contacts”, „Refresh Contacts”, „OK”, „Cancel” (`job-163`, 14-19. kép). Az új személy OK-ja után a bal sávban `People (2)`, `Unnamed (5)`, `Teszt Elek (1)` látszik (`job-167`, 18. kép). A `.picasa.ini`-ben `[Contacts2]` alatt `<azonosító>=Teszt Elek;;`, a fotó szakaszában `faces=rect64(…),<azonosító>` szerepel (`job-66`; `job-167`, 18. kép). A job-66 helyesbítése szerint ez is a csempe-mező útja. | A csempe Enter-kezelője kiüríti a mezőt és jelzi a beírt arcot/nevet (`UnnamedFacesView.qml:501-508`); a `Main.qml:3690-3692` ezt People ablakra küldi. A `PeopleManagerDialog.qml:53-98` előtölti a Search mezőt, meglévő találatnál kiválasztja a kontaktot; a `PeopleManagerDialog.qml:146-170` kezeli a „New Person” műveletet; a `PeopleManagerDialog.qml:241-289, 299-380, 381-473, 485-510` adja az OK/Choose útját, a kereső/listát, a névjegymezőket és az alsó gombokat, majd menti és a kijelölt arcra alkalmazza. A `face_scan_controller.py:861-923` a sikeres arcot megnevezettként rögzíti, frissíti a mappát és az arcszámot; a `faces_helper.py:265-295` az érintett `.picasa.ini`-t írja. | Az új név útja és eredménye megerősített, élő felvétellel. A `[Contacts2]` és `faces=` adatot a job-66 ugyanebből a csempe-mezőből mérte; ez nem másik felületi útvonal. |
 | Meglévő név, javaslatlista, Choose és Escape | A mezőbe írt `Tes` alatt javaslatlista jelenik meg arcképpel és **„Teszt Elek”** névvel (`job-167`, 22. kép). A teljes név Enterre People ablakot nyit, a `Teszt Elek` személy kijelölve, „1 Photo in Picasa” adatsorral, **„Choose”** gombbal (`job-167`, 26-30. kép). A felvétel nem kattintott a Choose-ra, ezért az arc a Név nélküliek között maradt. Az ismeretlen `Valami` keresés üres listát és Name mezőt, tiltott OK-t ad; Escape bezárja az ablakot változtatás nélkül (`job-167`, 32-34. kép). | A csempe mező részleges szövegre a névjegyek között kis-nagybetűtől független részsztringet keres; a felugró listában kép és név jelenik meg (`UnnamedFacesView.qml:371-385, 512-589`). A csempe Enter útja meglévő névnél is People ablakot nyit, a meglévő kontakt kiválasztásával és **Choose** gombbal (#5192; `PeoplePanel.qml:192-210`; `PeopleManagerDialog.qml:82-93, 499-505`). A listabeli javaslat-elemre kattintáshoz nincs külön aktiváló kezelő a csempe popupjában (`UnnamedFacesView.qml:547-587`). | A javaslat megjelenése, People ablak, Choose felirata és az ismeretlen névnél Escape útja élő felvétellel igazolt. A javaslatelem kattintásának rögzítése nyitott. A Choose utáni állapot lezárva, lásd a következő sort (helyesbítve, job-179). |
 | Choose után: a meglévő személyhez rendelés | A csempe-mezőbe írt meglévő név Enter után a People ablak nyílik, a meglévő személy kijelölve, a jóváhagyó gomb **„Choose”** (`job-167`, `job-179`). A Choose-ra kattintva az ablak bezárul, az arc a meglévő személyhez kerül: `Unnamed (5)` → `Unnamed (4)`, `Teszt Elek (1)` → `Teszt Elek (2)`. A `.picasa.ini`-ben egy `[Contacts2]`-bejegyzés marad, mindkét fotó `faces=` sora ugyanarra az azonosítóra mutat (`job-179`). | #5182 (0.9.123) óta a People ablak Choose-útját valódi kattintásos teszt fedi (d789d91de). | Zárva (`job-179`): nincs nyitott tétel. Referencia a megvalósításhoz: a két számláló-változás és a `.picasa.ini` egy `[Contacts2]`-bejegyzése. |
+
 | Arc mellőzése az X-szel és a fejléc gombjával | A csempe X-ére kattintva **„Ignore People”** megerősítés jelenik meg, majd a **„Ignore Person”** jóváhagyása az arcot mellőzöttként menti: `faces=rect64(27c00680d8ffdb3f),ffffffffffffffff` (`job-64`; a megerősítés képkockája: „Colab EN 36”). Az eredeti fájlkimenet után a mellőzött arc a „Mellőzött emberek” albumba tartozik (15.3/b.1). A fejléc **„Ignore Selected”** gombja csak a kibontott nézetben látszik, kijelölés nélkül szürke (`job-183`, 10. kép). | A csempe X és a kibontott nézet fejlécének **„Ignore Selected”** gombja is megerősítést kér (`UnnamedFacesView.qml:417-440, 273-295, 849-909`), majd a FaceScanController mellőzött állapotba teszi az arcot (`face_scan_controller.py:1138-1166`). A csoportosított nézet fejlécében nincs „Ignore Selected” gomb (helyesbítve, job-183). A fejléc „Show ignored faces” gombja akkor aktív, ha van mellőzött arc (`UnnamedFacesView.qml:223-229`); a külön nézetben a „Stop ignoring” visszahozza a kijelölt arcokat (`Main.qml:3275-3280`; `UnnamedFacesView.qml:279-284, 924-949`). | Az X útja és a `.picasa.ini` eredménye a job-64-gyel megerősített. A job-162/163 a kezdeti „Show ignored faces” gombot mutatja, job-163 4. képén szürkén. |
 
 ### 19.1 Nyitott kérdések és megszerzésük
@@ -2360,3 +2363,121 @@ A job-66 a Név nélküliek csempe-mezőjének útja: nem külön névadási fel
 *Bizonyítottsági fok: **megerősített, élő méréssel** a Név nélküliek nézet címére, útmutatójára, fejlécgombjaira és alapállapotára (job-162; job-163, 4. és 8. kép); az első megnyitás üdvözlőablakára (job-162, 12. kép); a csempe saját mezőjére és az új név People-ablak útjára (job-163, 11-19. kép); a javaslat megjelenésére, a meglévő névhez tartozó Choose ablakra és az Escape-re (job-167, 22., 26-34. kép); a Choose utáni állapotra (job-179); a kibontott és a csoportosított nézet fejlécére és csempéire (job-180, job-183); az új név OK utáni állapotára és `.picasa.ini` soraira (job-66; job-167, 18. kép); valamint az X mellőzési útjára (job-64, „Colab EN 36”). **NINCS MEG:** a kommentben rövidített üdvözlőszöveg teljes Picasa-változata, a csempék pontos pixelmérete/sorrendje/csoporthatárai, a javaslatelem kattintása, a csempe-mező Escape-je, a „Learn more...” gomb megnyitott címe (job-175, job-177) és a Ctrl/Shift/húzás kijelölési szabálya.*
 
 **Helyesbítés:** a korábbi „Név nélküliek névmezője inline panelmező” következtetés kizárólag a jobb fiók fejlécmezőjére (`header_editbox`) vonatkozik. A Név nélküliek csempéjének külön „Add a name” mezőjét a job-163 és a job-66 mutatja; a job-66 nem másik felületi útvonal.
+
+## 20. #5184 — a személykezelés bináris oldalának részleges eredménye
+
+**Hatókör:** az eredeti `Picasa3.exe` célzott diszasszemblye: N1, N3, N5/N6
+adatkezelői útja és N7 kijelölési adatszerkezete. A felületi N4/N5/N6/N7/N8
+felvételeket a Colab-végrehajtó rögzíti; ez a szakasz azokat nem állítja
+lezártnak. A 85-ös értékek és a `red.cfg` korábbi leltára az 1. és 16.
+szakaszban marad a részletes forrásukkal.
+
+### 20.1 N1 — már megnevezett képek felismerése
+
+`0x0047bee0` hozza létre a `CFaceDetector::Queue`-t; a feldolgozó `0x0047b020`
+a `FRAddSuggesetions` beállítástól függő javaslat-útban hívja a `0x0048ef20`
+felismerési és egyeztetési útvonalat. Ez a javaslatkapu önmagában nem a
+normál arckeresés engedélyezője. A kép-adatbázis útjáról a `0x00467ca0` a
+`0x0047bfd0`-n keresztül tesz munkát a `0x006a02e0` sorba. A vizsgált
+diszpécser- és munkafüggvényekben nem látszik közvetlen „van már megnevezett
+arc” feltétel.
+
+Ez **nem** bizonyítja, hogy az ilyen képet mindig felismeri: az előzetes
+jogosultsági szűrő és a `0x0048ef20` teljes egyeztetési útja nincs végigkövetve.
+**NINCS MEG**, hogy a normál pásztázás a már megnevezett arcú képet a sorba
+teszi-e, illetve pontosan hol dönt erről. Megszerzés: a `0x00467ca0`-ba érkező
+kép-lista feltételének, a sorba tétel hívóinak és a `0x0048ef20` arc-
+egyeztetési ágának folytatása; ha az indirekt felismerőhívás paraméterei
+diszasszemblyből nem dönthetők el, célzott Ghidra-kör.
+
+### 20.2 N3 — a detektor számszerű paraméterei
+
+Az `FRSuggestionThreshold=85` (`0x006e0eda`) és
+`FRSortThreshold=85` (`0x006e0ee8`) **javaslat- és csoportosítási küszöb**,
+nem a detektor pontszámküszöbe. Ezt a `0x0047b020` javaslatkapuja és az
+1. szakasz beállításleírása támasztja alá. A `plugins/red.cfg` külső modell
+konfigurációja létezik (16. szakasz), és a `0x0045f0c0` betöltője a
+`plugins/red.cfg`-re hivatkozik; további loader-hivatkozás a `0x00803c80`.
+Nem igazolt, hogy mindkét betöltő ugyanahhoz az arcfelismerési futáshoz
+tartozik. A modellparaméterek jelentése nincs megfejtve.
+
+| Paraméter | Eredmény |
+|---|---|
+| Detektor bemeneti képmérete | **NINCS MEG** |
+| Detektor pontszámküszöbe | **NINCS MEG**; a 85/85 érték nem ez |
+| Minimális arcméret | **NINCS MEG** |
+| Külső modell betöltése és a fenti értékek átadása | A `red.cfg` modell-leltára ismert a 16. szakaszból; e paraméterek hozzárendelése **NINCS MEG** |
+
+Megszerzés: a `0x0048ef20` felismerési útjából a `red.cfg` betöltéséig és a
+detektorhívásig követni az argumentumokat, majd a `vfr_VdeFaceFinder` modell-
+payload sémáját megfejteni. Ghidra-kör kell: `0x0048ef20` — a betöltött
+detektor milyen bemeneti képméretet, pontszámküszöböt és minimális arcméretet
+kap, és melyik argumentum vagy modellmező adja ezeket? [blokkoló]
+
+### 20.3 N5 — személy/arc mellőzése
+
+A `peoplepanel` parancselosztója `0x0063f970`. A kijelölt elemek „ignore”
+parancsa `0x006470d0`: a `CThumbDB` `+0x2e94` (`]ignoreface`) és `+0x2e98`
+(`]unknownface`) album-tagsági műveleteit hívja, majd képenként közvetlenül
+meghívja a `0x00484820` `.picasa.ini` arcírót. A writer `faces=` és
+`backuphash` adatot ír; a `facedata` írását a `FRWriteFaceDataINI` kapuzza
+(18.2).
+
+A csempe/csoport `ignore:` parancsa külön `0x00647270` kezelőre jut. Ez a
+különleges albumtagságokat frissíti, de közvetlenül nem hívja a
+`0x00484820` írót. A job-64 élő felvétele az X-es „Ignore Person” út után
+`faces=rect64(...),ffffffffffffffff` értéket mutat (15.3/b.1), de a
+`0x00647270` és az ini-író közti közvetett kapcsolatot ez a bináris kör nem
+azonosította. A mért kimenet és a kijelölt arc közvetlen íróútja egybeillik,
+de önmagában nem bizonyítja, hogy a csempe-kezelő ugyanezt a hívási utat járja.
+
+A pontos `db3` oszlop vagy sor, amelyben a tagság tartósul, **NINCS MEG**;
+a hívásokból ezt nem szabad mezőnévként kikövetkeztetni. Megszerzés: a
+`0x004d9aa0` és `0x004da1d0` tagsági útját a `0x004127c0`
+oszlopregisztrációjához és a db3 piszkos/mentő ágához követni, majd azonos
+képen a mellőzés előtti és utáni helyi db3-t összevetni. A jegyhez kért élő
+N5-felvétel még a Colab-végrehajtó feladata.
+
+### 20.4 N6 — személy törlése
+
+A „Delete Person” esemény kezelője `0x007ba820`. Egyetlen kijelölt
+sorszámot tart (`[ebp+0x13c]`), szükség esetén rendezési indexet fordít vissza,
+majd a megerősítés után meghívja a `0x005836f0` és `0x00584cc0` útvonalat, és
+eltávolítja a kiválasztott sort a felületi listából. A kontaktok
+`.picasa.ini`-beli tartós írója `0x00586e20` (`[Contacts2]`), betöltője
+`0x00587110`.
+
+**NINCS MEG**, hogy a törlési út pontosan mely `[Contacts2]` kulcsot törli,
+mely `db3` sort/oszlopot módosítja, és mi történik a korábban ehhez a személyhez
+rendelt arcok `faces=` hivatkozásával. A közvetlen hívási gráf nem zárja ki a
+közvetett callbacket. A szerződés feloldásához célzott dekompiláció kell:
+Ghidra-kör kell: `0x007ba820` — a Delete Person esemény `0x00584cc0` utáni
+callbackjei mely `[Contacts2]` kulcsokat és `db3` sorokat módosítják, és hogyan
+kezelik a törölt személyhez rendelt arcok hivatkozásait? [blokkoló]
+
+### 20.5 N7 — kijelölési adatszerkezet
+
+A Név nélküliek arc-kijelölése a `0x007199b0` `selected` kezelési ágában
+egy szülőcsomópont vektorán (`[ebx+0x32c]`, darabszám `[ebx+0x330] >> 1`)
+keres; a megtalált arccsomópont `+0x5d` jelzőbájtját állítja be. Vagyis a
+kijelöltség elemenként tárolódik, nem egyetlen kiválasztott arc indexében.
+A korábbi job-180 felvételen a Ctrl+A mind a hat csempét egyszerre
+kijelölte, ami függetlenül egyezik a bináris adatszerkezettel; a jelen jegy
+friss N7-felvételét a Colab-végrehajtó rögzíti.
+
+A Személykezelő törlési kezelője (`0x007ba820`) egy kijelölt sor indexével
+dolgozik; a `contactmgr.fen` `contacts` listája nem deklarál többszörös
+kijelölést. Ez a bináris művelet egyetlen aktív sort céloz, de önmagában nem
+bizonyítja, hogy a lista felülete több sort sem enged kijelölni. A pontos
+felületi modell N7-felvételre vár.
+
+### 20.6 A #5184 mérlege
+
+**Bizonyítottsági fok: feltételes.** Az N5 szűk állítása — a kijelölt arcok
+mellőzési útja meghívja az ini-írót, és a mért eredményben az `ffff…` jelöli
+a mellőzött arcot — két független úton egyezik. N1, N3 és N6 bináris oldala,
+valamint N7 Személykezelő-felületi modellje nyitott; N4, N5/N6/N7 felületi
+viselkedése és N8 képernyőképe a végrehajtói felvételre vár. A megnevezett
+arcú képek kihagyására vonatkozó cáfoló próbában a sorbaállító és a háttér-
+munkás útját vizsgáltuk: ott nem találtunk név szerinti szűrőt. Ez a cáfolat
+nem zárja ki a sorbaállítás előtti feltételt, ezért N1-et nem dönti el.
