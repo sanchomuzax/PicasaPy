@@ -2133,9 +2133,12 @@ ApplicationWindow {
                 window.photoActionRows(), controller.currentPersonName)
         }
         // #444: a nem-destruktív mentés három fokozata — a megerősítések és
-        // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban
+        // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban.
+        // #5206: a befejezett mentés/visszaállítás léptetett számlálón át
+        // újraértékeli a kötést (a `hasSavedBackup` lemezt néz, a QML nem látja)
         hasSavedBackup: controller
-            ? controller.hasSavedBackup(window.photoActionRows()) : false
+            ? (controller.savedBackupRevision,
+               controller.hasSavedBackup(window.photoActionRows())) : false
         // #4332: a dátummódosítás kizárólag az indexben tárolt felülírást írja.
         onAdjustTimestampRequested:
             createDialogs.ensure().openTimestamp(window.photoActionRows())

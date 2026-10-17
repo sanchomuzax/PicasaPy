@@ -12,10 +12,12 @@ import cv2
 import numpy as np
 import pytest
 from PySide6.QtCore import QEventLoop, QSettings, QTimer
+from PySide6.QtTest import QSignalSpy
 
 from picasapy.edit.save import ORIGINALS_DIR_NAME
 from picasapy.index import open_index, sync_tree
 from picasapy.thumbs import ThumbnailCache
+from support.varakozas import var_feltetelre
 
 
 def _jpeg(path: Path, colour=(20, 30, 200)) -> Path:
@@ -264,3 +266,39 @@ class TestRevertAndUndoSave:
         self._save_once(controller, qt_app, library)
 
         assert controller.hasSavedBackup([0]) is True
+
+    def test_a_befejezett_mentes_es_visszaallitas_leptet_a_mentettseg_szamlalot(
+        self, controller, qt_app, library
+    ):
+        """#5206: a „Visszaállítás" menüpont kötése a `savedBackupRevision`
+        számlálóját olvassa. A lemezt a QML nem látja, ezért a befejezett
+        mentésnek és visszaállításnak a számlálót (és a notify jelzést) kell
+        léptetnie, különben a menüpont a mentés után is tiltott marad."""
+        _, folder, _db = library
+        _set_filters(controller, qt_app, library, "bw=1;")
+        elotte = controller.savedBackupRevision
+        jelzesek = QSignalSpy(controller.savedBackupChanged)
+
+        # A befejezés-jelzés és a számláló léptetése a GUI-szálon, két
+        # külön esemény: a várakozás az elsőre is visszatérhet, ezért a
+        # másodikat időkorláttal várjuk (nem egy `processEvents` után nézzük).
+        _wait(controller.saveFinished, qt_app, lambda: controller.saveRowsToDisk([0]))
+        assert var_feltetelre(
+            qt_app, lambda: controller.savedBackupRevision > elotte
+        ), "a mentés befejezése nem léptette a számlálót"
+        utana_mentes = controller.savedBackupRevision
+        assert var_feltetelre(qt_app, lambda: jelzesek.count() >= 1), (
+            "a mentés befejezése nem küldte a notify jelzést"
+        )
+
+        _wait(
+            controller.revertFinished,
+            qt_app,
+            lambda: controller.revertRowsToOriginal([0]),
+        )
+        assert var_feltetelre(
+            qt_app, lambda: controller.savedBackupRevision > utana_mentes
+        ), "a visszaállítás befejezése nem léptette a számlálót"
+        assert var_feltetelre(qt_app, lambda: jelzesek.count() >= 2), (
+            "a visszaállítás befejezése nem küldte a notify jelzést"
+        )

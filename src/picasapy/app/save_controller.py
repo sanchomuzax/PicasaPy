@@ -251,11 +251,27 @@ class SaveMixin(BackgroundWorkerMixin):
                 continue
             editor.beginEdit(foto_id, str(utvonal))
 
+    #: #5206: a megőrzött eredetik léte változhatott (a „Visszaállítás" tétel)
+    savedBackupChanged = Signal()
+    _saved_backup_revision = 0
+
+    @Property(int, notify=savedBackupChanged)
+    def savedBackupRevision(self) -> int:  # noqa: N802 - QML-stílus
+        """Léptetett számláló: egy befejezett mentés vagy visszaállítás után nő.
+
+        A `hasSavedBackup` a lemezt nézi, a QML-kötés a Python-hívást nem
+        látja. A kötés ezt a számlálót olvassa, így a befejezés után
+        újraértékelődik (#5206).
+        """
+        return self._saved_backup_revision
+
     @Slot(int, int)
     def _on_disk_operation_finished(self, done: int, failed: int) -> None:
         """A jelzés után az aktuális nézetet a friss indexhez igazítja."""
         if done > 0 or failed > 0:
             self._refresh_view()
+            self._saved_backup_revision += 1
+            self.savedBackupChanged.emit()
 
     def _resync_disk_operation_folders(self, paths: list[Path]) -> None:
         """A sikeresen módosított képek mappáit indexelje újra egyszer."""
