@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.130] - 2026-10-17
+
+- A Filmkészítő időszűrője a „Legjobb átmenetek” sorrendben figyelembe veszi a képek készítési idejét (#4194).
+
 ## [0.9.129] - 2026-10-17
 
 - A Picasa-import az ismeretlen arcokat a Név nélküliek közé veszi át, és a db3 arcrégiókat meglévő arcadat mellett is kiegészíti (#5180).
