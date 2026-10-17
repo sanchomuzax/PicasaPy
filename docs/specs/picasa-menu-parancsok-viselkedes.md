@@ -3265,6 +3265,92 @@ Ghidra-kör a WndProc-ra most nem kérhető, mert a címe nincs meg. Ha a hívó
 
 **Nyitott kérdések mérlege (38.2.12):** 0 nyílt · 2 lezárva (regisztráció, WndProc-továbbítás) · 2 blokkolt (az ablakobjektum osztálya és üzenetkezelője; a billentyűk és gombok viselkedése, mert a Colab-környezet a bemenetet nem viszi át) · 0 hatókörön kívül.
 
+#### 38.2.13 Kilencedik kör: a qshow ablakobjektuma (#4443, 2026-10-17)
+
+**Kérdés.** A 38.2.12 szerint a WndProc (`0x00983940`) a `GetWindowLongA(hwnd, -21)` objektum vtábla `+0x1c` metódusára továbbít. Három kérdés: (a) melyik függvény írja a -21 mezőt, és mi kerül oda; (b) mi a qshow ablakobjektum vtábla-címe; (c) melyik `+0x1c` metódus kezeli a billentyűket és a gombokat.
+
+**Forrás és módszer.** Csak olvasás. Nincs új Ghidra-futás, nincs bináris, nincs hálózat. A C-kódok a `~/picasapy-agent/referencia/ghidra/` mappában vannak:
+- `2026-10-17-hog-qshow-k4.txt`: a `0x00983670` (147-253. sor) és a `0x00982d60` (306-377. sor).
+- `2026-10-17-qshow-ctrl5.txt`: a `0x00983670` második példánya (2441-2541. sor).
+- `2026-10-17-ytwindow-hivatkozasok.txt`: a `0x00982d60`, a `0x00983670` és a `0x009838b0` C-kódja, a `"ytWindow"` sztring hivatkozásai.
+- `2026-10-17-ytwindow-wndproc.txt`: a WndProc (`0x00983940`).
+- `2026-10-17-hog-racs-ytwindow.txt`: a `0x00982d00` (1286-1310. sor).
+- `2026-10-17-qshow-2.txt`: a `0x004039f0`, a "Picasa 3" főablak építője (104-107. sor).
+- `2026-10-17-qshow-3.txt`: a `0x008037e0`, a qshow építője (786-813. sor, és a függvény vége).
+
+A mappa összes fájljában megkerestem a `-0x15` és a `0xffffffeb` előfordulásait, és a `0x00982bf0` hivatkozásait. A `0x00982bf0` C-kódja nincs a mappában.
+
+**Eredmények.**
+
+1. **A -21 mezőt két függvény írja (megerősített).** Mindkettő a `DAT_00d69524` függvénymutatón át hívja a `(hwnd, 0xffffffeb)` párost:
+   - `0x00983670` (ablaklétrehozás): a `CreateWindowEx`-alakú hívás után, ha van hwnd. Hívója a `0x00982bf0` (`0x00982cf2`).
+   - `0x00982d60` (WndProc-csere): a `-4` hívás után. Hívói a `0x00982d00` (`0x00982d48`), a `0x007360b0` (`0x00736497`), a `0x00736a50` (`0x00736abc`) és a `0x00aa5100` (`0x00aa5161`).
+   Az alak SetWindowLongA-é, de a név nincs megerősítve.
+
+2. **A CreateWindowEx nem adja a -21 értékét (megerősített).** A létrehozó hívás utolsó argumentuma (`lpParam`) a C-kódban `0`.
+
+3. **Az érték nincs meg (NINCS MEG).** Mindkét `DAT_00d69524(hwnd, 0xffffffeb)` hívásnak csak két argumentuma látszik. A -4 hívásnak (`0x00982d60`, 373. sor) a harmadik argumentuma (`EDI`) látszik, a -21 hívásnak nem. Ez a dekompilátor hiánya is lehet, vagy egy regiszterből jövő érték. A C-ből nem dönthető el.
+
+4. **A this és a jelölt objektum (feltételes).** A `0x00983670` és a `0x00982d60` `this`-e (`unaff_ESI`) a hwnd-t a `+0x6c`-ben tárolja, így a hwnd-ből vissza lehet rá találni. A `this` típusának neve nincs a C-kódban. Ismert mezői: `+0x00` vtábla-mutató, `+0x34` a régi WndProc, `+0x64` a `0x008037e0` által beállított másik objektum (`piVar5`, lásd 5.), `+0x6c` a hwnd, `+0x78` a szülő hwnd. Ha a -21 érték a `this`, akkor ez az objektum a jelölt. Ez nincs igazolva.
+
+5. **A qshow ablakának objektuma: a `0x008037e0` piVar4-je (feltételes).** A `0x008037e0` két objektumot épít:
+   - `piVar4` (0x88 bájt): a `0x00982bf0` visszatérési értéke. A `SetFocus((HWND)piVar4[0x1b])` (813. sor) a `+0x6c` hwnd-t használja, ezért ez feltételesen a qshow ablakának objektuma.
+   - `piVar5` (0x890 bájt), a `0x007fa7f0` építi (C-kód nincs). A `piVar4[0x19] = piVar5` (808. sor) a `+0x64`-be írja, és a `(*piVar5 + 0x28)(piVar4)` hívás kapcsolja össze a kettőt.
+   A -21 objektuma a `piVar4` és a `piVar5` közül bármelyik lehet. A C nem dönti el.
+
+6. **A vtábla címe nincs meg (NINCS MEG).**
+   - A `piVar4` vtábláját a `0x00982bf0` állíthatja be. Ennek C-kódja nincs a mappában. A `0x008037e0` nem ír vtáblát a `piVar4`-re.
+   - A `0x004039f0` a `0x00982bf0` után írja be a `ytFrameWindow::vftable`-t (`qshow-2.txt` 107. sor). Ez a főablak, nem a qshow.
+   - A `ytWindow::vftable` a `0x00982d00`-ban áll be (`*in_EAX = ytWindow::vftable`). A `0x00982d00` hívói között nincs a `0x00982bf0`, ezért nem bizonyított, hogy a qshow vtáblája ez. A szimbólum számértéke sincs a mappában.
+   - A `piVar5` vtáblája a `0x007fa7f0`-ban áll be. Annak C-kódja sincs a mappában.
+
+7. **A +0x1c üzenetkezelő címe nincs meg (NINCS MEG).** A cím a vtábla címéből számolható. A `vtábla + 0x1c` címen lévő 4 bájt (kis-endian, 32 bites binárisban) a metódus abszolút címe. A vtábla az objektum első 4 bájtja. Mivel a vtábla címe nincs meg, a bejegyzés címe sincs meg.
+
+8. **A WndProc és a -21 olvasói (megerősített, a 38.2.12 kiegészítése).** A `0x00983940` a `GetWindowLongA(hwnd, -0x15)` eredményét használja. Ha van objektum, és a `+0x1c` hívás nem `0xf4241`-et ad, a függvény visszatér az eredménnyel (`1000000` esetén 1-gyel). Egyébként a `DAT_00d69554` alapeljárás fut. A `+0x1c` hívás három argumentumot kap: `msg`, `wParam`, `lParam`. A `this` a C-kódban nem látszik. A `0x00982d60` 357. sora is olvassa a -21 mezőt: ha van objektum, meghívja a `FUN_00982e60`-at, majd az objektum vtábla első slotját `1` argumentummal.
+
+**Bizonyítottsági fok.**
+
+| állítás | fok | alap |
+|---|---|---|
+| a -21 mezőt a `0x00983670` írja (létrehozás) | megerősített | (hog-qshow-k4) 244. sor; (qshow-ctrl5) 2532. sor |
+| a -21 mezőt a `0x00982d60` írja (WndProc-csere) | megerősített | (hog-qshow-k4) 374. sor |
+| az írás `DAT_00d69524`-en át, SetWindowLongA-alakú | feltételes | a C alakja; a név nincs megerősítve |
+| a CreateWindowEx `lpParam`-ja `0`, a -21 értéke nem onnan jön | megerősített | (hog-qshow-k4) 236-237. sor |
+| a -21-be kerülő érték (a harmadik argumentum) | NINCS MEG | a C-ben két argumentum látszik |
+| a -21 objektuma a `this` (`unaff_ESI`) | feltételes (jelölt) | a hwnd a `+0x6c`-ben; az érték nincs |
+| a qshow ablakának objektuma a `0x008037e0` `piVar4`-je | feltételes | (qshow-3) 813. sor: `SetFocus` a `+0x6c` hwnd-del |
+| a qshow objektum vtáblája `ytWindow::vftable` | NINCS MEG | a `0x00982d00` nem hívója a `0x00982bf0`-nak |
+| a `+0x1c` üzenetkezelő címe | NINCS MEG | a vtábla címe hiányzik |
+| a WndProc a -21 objektum `+0x1c` metódusára továbbít | megerősített | (ytwindow-wndproc) C-kód |
+
+**Cáfoló kísérletek.**
+1. „A -21-et a CreateWindowEx `lpParam`-ja állítja be.” **Cáfolva:** a létrehozó hívás `lpParam` argumentuma `0`.
+2. „A -21-et csak a `0x00983670` írja.” **Cáfolva:** a `0x00982d60` is ír rá (374. sor).
+3. „A -21 objektuma `ytWindow::vftable`-t visel.” **Nem igazolódott:** a `0x00982d00` nem hívója a `0x00982bf0`-nak. Ez nem cáfolat, mert a `0x00982bf0` C-kódja hiányzik.
+4. „A -21 objektuma a `this`.” **Nem cáfolható és nem igazolható:** a -21 értéke nincs a C-ben. A `piVar5` is jelölt marad.
+
+**Következtetés.**
+- A -21 mezőt a `0x00983670` (létrehozás) és a `0x00982d60` (WndProc-csere) írja. Ez megerősített.
+- Hogy melyik objektum kerül oda, nincs megmérve. A jelöltek: a qshow ablakának `piVar4`-je vagy a `piVar5`.
+- A vtábla címe nincs meg, ezért a `+0x1c` üzenetkezelő sincs meg. A billentyűk és gombok kérdése blokkolt.
+
+**Hiányzik.**
+- A `0x00982bf0` C-kódja: a vtábla-beállítás (`*this = ...`) és a `this` átadása a `0x00983670`-nek.
+- A `0x00983670` `DAT_00d69524(hwnd, 0xffffffeb)` hívásának szerelése: a hívás előtti push-sor, vagyis a harmadik argumentum. A C-sorrend szerint a hívás a `0x009837d2`-es (`FUN_00980670`) hívás után van.
+- A `0x007fa7f0` C-kódja, ha a `piVar5` lesz a jelölt.
+
+**Ghidra-kör kell.** A kért sor (a vtábla +0x1c üzenetkezelője) most nem írható fel, mert a vtábla címe nincs meg. Helyette:
+
+Ghidra-kör kell: 0x00982bf0 - a qshow ablakobjektum konstruktora (vtábla-beállítás, a `this` átadása a 0x00983670-nek) [blokkoló]
+
+Szerelés kell: 0x00983670 - a `DAT_00d69524(hwnd, 0xffffffeb)` hívás előtti push-sor (a harmadik argumentum) [blokkoló]
+
+Ha a vtábla címe megvan, a következő kör a `+0x1c` üzenetkezelőre szól: WM_KEYDOWN, WM_LBUTTONDOWN ága.
+
+**Amit ez NEM jelent.** A qshow billentyű- és egérviselkedése Windowsban továbbra sincs megmérve. A 38.2.12 nyitott pontja nem zárult le, csak szűkült: az írók megvannak, az objektum nincs.
+
+**Nyitott kérdések mérlege (38.2.13):** 0 nyílt · 2 lezárva (a -21 írói; a CreateWindowEx `lpParam`-ja kizárva) · 3 blokkolt (az érték; a vtábla címe; az üzenetkezelő) · 0 hatókörön kívül.
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
