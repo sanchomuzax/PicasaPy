@@ -50,7 +50,7 @@ def qml_warnings():
     yield from qml_warning_guard()
 
 
-def _teardown_qml_app(engine, qt_app, *, keep_modul=None):
+def _teardown_qml_app(engine, qt_app, *, keep_modul=None, root_window=None):
     """Biztonságosan leállítja az appot, majd elengedi a QML-burkokat."""
     from PySide6.QtCore import QCoreApplication, QEvent
 
@@ -78,6 +78,18 @@ def _teardown_qml_app(engine, qt_app, *, keep_modul=None):
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     qt_app.processEvents()
 
+    # A hívó teszt `window` változója a teardown alatt még életben lehet.
+    # A QML-fa törlése önmagában nem veszi ki ezt a Python-burkot a Shiboken
+    # wrapper-nyilvántartásából; cím-újrafelhasználáskor egy másik típusú
+    # C++ objektum régi burkát adhatja vissza (ld. #4880, #5252).
+    if root_window is not None:
+        import shiboken6
+
+        try:
+            shiboken6.invalidate(root_window)
+        except (RuntimeError, TypeError):
+            pass
+
     # #4880/#4897: a hívó teszt és a betöltött tesztsegédek listáiban maradt
     # elavult burkokat csak a motor törlése után érvénytelenítjük.
     import sys
@@ -86,6 +98,27 @@ def _teardown_qml_app(engine, qt_app, *, keep_modul=None):
     if keep_modul is not None:
         modulok.append(keep_modul)
     keep_burkok.tesztmodulok_listait_elenged(modulok)
+
+
+def _validated_qml_root_window(root_objects):
+    """A QML-gyökér érvényes főablak legyen, mielőtt a teszt használja."""
+    import shiboken6
+    from PySide6.QtQuick import QQuickWindow
+
+    if not root_objects:
+        raise RuntimeError("Main.qml nem adott vissza gyökérobjektumot")
+    window = root_objects[0]
+    if not isinstance(window, QQuickWindow):
+        raise RuntimeError(
+            "Main.qml rootObjects()[0] eleme nem QQuickWindow, "
+            f"hanem {type(window).__name__}"
+        )
+    if not shiboken6.isValid(window):
+        raise RuntimeError(
+            "Main.qml rootObjects()[0] QQuickWindow burka érvénytelen "
+            "C++ objektumra mutat"
+        )
+    return window
 
 
 @pytest.fixture(scope="module")
@@ -349,8 +382,7 @@ def _build_qml_app(
             "emailController", email_controller
         )
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
-    assert engine.rootObjects(), "Main.qml betöltése sikertelen"
-    window = engine.rootObjects()[0]
+    window = _validated_qml_root_window(engine.rootObjects())
     controller._reload()
     controller.selectFolder(str(lib))
     qt_app.processEvents()
@@ -378,7 +410,9 @@ def _build_qml_app(
     # A szám viszont ÖNMAGÁBAN lelet: a rács-bélyegképeknél nem marad
     # semmi, az effekt-bélyegképeknél viszont tucatnyi — ez a #1457-en
     # rögzített nyitott kérdés (szivárog-e, vagy csak a fa élettartama).
-    _teardown_qml_app(engine, qt_app, keep_modul=keep_modul)
+    _teardown_qml_app(
+        engine, qt_app, keep_modul=keep_modul, root_window=window
+    )
 
 
 @pytest.fixture
