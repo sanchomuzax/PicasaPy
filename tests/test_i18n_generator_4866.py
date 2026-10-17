@@ -49,6 +49,19 @@ def _referencia(root: Path, hu: dict[str, str], de: dict[str, str]) -> Path:
     return root
 
 
+def _referencia_minden_nyelv(root: Path, hu: dict[str, str], target: dict[str, str]) -> Path:
+    for code in gen._REFERENCE_LANGUAGES:
+        folder = root / code
+        folder.mkdir(parents=True)
+        texts = hu if code == "hu" else target
+        items = "".join(
+            f'<stringres id="{key}"><xmbtext>{value}</xmbtext></stringres>'
+            for key, value in texts.items()
+        )
+        (folder / "p.xml").write_text(f"<resources>{items}</resources>", encoding="utf-8")
+    return root
+
+
 def _futtat(tmp_path: Path, hu_ts: str, de_ts: str | None, hu_ref, de_ref) -> Path:
     refs = _referencia(tmp_path / "ref", hu_ref, de_ref)
     out = tmp_path / "out"
@@ -68,6 +81,56 @@ def _messages(path: Path) -> dict[str, ET.Element]:
 def _tr(message: ET.Element) -> tuple[str | None, str | None]:
     t = message.find("translation")
     return t.get("type"), t.text
+
+
+def test_egyertelmu_kulcs_alapjan_minden_nyelv_kitoltodik_azonos_magyar_szovegnel(tmp_path):
+    key = "p:window_close"
+    hu = _ts(
+        "hu_HU",
+        [("Close", f"picasapy-origin: picasa\npicasapy-origin-key: {key}", "Bezárás")],
+    )
+    refs = _referencia_minden_nyelv(
+        tmp_path / "ref",
+        {"window_close": "Bezárás", "toolbar_close": "Bezárás"},
+        {"window_close": "Fenster schließen", "toolbar_close": "Leiste schließen"},
+    )
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "picasapy_hu.ts").write_text(hu, encoding="utf-8")
+
+    gen.build_dictionaries(refs, out, compile_qm=False)
+
+    for reference_code in gen._REFERENCE_LANGUAGES:
+        app_code = gen._APP_CODE[reference_code]
+        if app_code == "hu":
+            continue
+        message = _messages(out / f"picasapy_{app_code}.ts")["Close"]
+        expected = "Close" if app_code == "en" else "Fenster schließen"
+        assert _tr(message) == (None, expected), app_code
+        assert message.findtext("extracomment") == (
+            f"picasapy-origin: picasa\npicasapy-origin-key: {key}"
+        ), app_code
+
+
+def test_hianyzik_a_pontos_nyelvi_kulcs_nem_hasznal_masik_szovegegyezo_sort(tmp_path):
+    key = "p:window_close"
+    hu = _ts(
+        "hu_HU",
+        [("Close", f"picasapy-origin: picasa\npicasapy-origin-key: {key}", "Bezárás")],
+    )
+    refs = _referencia(
+        tmp_path / "ref",
+        {"window_close": "Bezárás helyett más", "toolbar_close": "Bezárás"},
+        {"toolbar_close": "Leiste schließen"},
+    )
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "picasapy_hu.ts").write_text(hu, encoding="utf-8")
+
+    gen.build_dictionaries(refs, out, compile_qm=False)
+
+    message = _messages(out / "picasapy_de.ts")["Close"]
+    assert _tr(message) == ("unfinished", None)
 
 
 def test_kulonbozo_irasjelu_elem_nem_parosodik_automatikusan(tmp_path):
