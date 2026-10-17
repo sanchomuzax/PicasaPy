@@ -176,10 +176,31 @@ Rectangle {
             panel.pendingNewFaceName, panel.pendingNewFaceId)
     }
 
-    function nameFaceFromPanel(faceId, name) {
+    function _hasPersonNamed(name) {
+        var ctl = typeof controller !== "undefined" ? controller : null
+        if (!ctl)
+            return false
+        var entries = ctl.peopleManagerContacts()
+        var wanted = String(name).trim().toLocaleLowerCase()
+        for (var i = 0; i < entries.length; ++i) {
+            if (String(entries[i].name).trim().toLocaleLowerCase() === wanted)
+                return true
+        }
+        return false
+    }
+
+    // A jobb fiók sormezője meglévő névre közvetlenül nevet ad (#4511);
+    // a Név nélküliek csempéje (`peopleDialogAlways`) meglévő névre is a
+    // People ablakot nyitja, a személyt kijelölve, Choose gombbal (#5192,
+    // picasa-colab-jobs job-167).
+    function nameFaceFromPanel(faceId, name, peopleDialogAlways) {
         var cleanName = String(name || "").trim()
         if (faceId < 0 || !cleanName)
             return
+        if (!peopleDialogAlways && panel._hasPersonNamed(cleanName)) {
+            panel.assignNameToFace(faceId, cleanName)
+            return
+        }
         panel.pendingNewFaceId = faceId
         panel.pendingNewFaceName = cleanName
         if (peopleManagerLoader.status === Loader.Ready)

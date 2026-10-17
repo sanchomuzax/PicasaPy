@@ -3688,7 +3688,7 @@ ApplicationWindow {
                             onShowUnnamedRequested:
                                 window.facesAlbumMode = "unnamed"
                             onNameSubmitted: function(faceId, name) {
-                                peoplePanel.nameFaceFromPanel(faceId, name)
+                                peoplePanel.nameFaceFromPanel(faceId, name, true)
                             }
                             onNamedSuggestionAccepted: Qt.callLater(
                                 function() {
