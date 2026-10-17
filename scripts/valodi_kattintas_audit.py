@@ -55,6 +55,7 @@ class Control:
     line: int
     group: str
     qml_type: str
+    dynamic: bool = False
 
 
 @dataclass
@@ -63,6 +64,7 @@ class FunctionInfo:
     module: str
     node: ast.FunctionDef | ast.AsyncFunctionDef
     aliases: dict[str, tuple[str, str]]
+    module_constants: dict[str, object]
 
 
 def _qml_tokens(source: str) -> Iterable[tuple[str, str, int]]:
@@ -142,13 +144,24 @@ def _qml_controls(qml_root: Path) -> list[Control]:
                 colon = tokens[index + 1] if index + 1 < len(tokens) else None
                 literal = tokens[index + 2] if index + 2 < len(tokens) else None
                 if colon and colon[:2] == ("punctuation", ":") and literal and literal[0] == "string":
+                    object_name = literal[1]
+                    next_index = index + 3
+                    while (
+                        next_index + 1 < len(tokens)
+                        and tokens[next_index][:2] == ("punctuation", "+")
+                        and tokens[next_index + 1][0] == "string"
+                    ):
+                        object_name += tokens[next_index + 1][1]
+                        next_index += 2
+                    dynamic = next_index < len(tokens) and tokens[next_index][:2] == ("punctuation", "+")
                     controls.append(
                         Control(
                             file=path.relative_to(qml_root).as_posix(),
-                            object_name=literal[1],
+                            object_name=object_name,
                             line=line,
                             group=_group_for(path.name),
                             qml_type=stack[-1] or "",
+                            dynamic=dynamic,
                         )
                     )
     return controls
@@ -235,43 +248,115 @@ def _collect_functions(tests_root: Path) -> list[FunctionInfo]:
             if isinstance(node, ast.ImportFrom) and node.module:
                 for alias in node.names:
                     aliases[alias.asname or alias.name] = (node.module, alias.name)
+        constants = _module_constants(tree)
         module = path.stem
         for node in _function_nodes(tree):
-            infos.append(FunctionInfo(path, module, node, aliases))
+            infos.append(FunctionInfo(path, module, node, aliases, constants))
     return infos
 
 
-def _parametrize_values(function: ast.FunctionDef | ast.AsyncFunctionDef, controls: set[str]) -> dict[str, set[str]]:
+_UNKNOWN = object()
+
+
+def _static_value(node: ast.AST, constants: dict[str, object]) -> object:
+    """Evaluate only inert Python syntax used by module constants/decorators."""
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Name):
+        return constants.get(node.id, _UNKNOWN)
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        values = [_static_value(item, constants) for item in node.elts]
+        if isinstance(node, ast.List):
+            return values
+        if isinstance(node, ast.Set):
+            return set(values) if all(value is not _UNKNOWN for value in values) else tuple(values)
+        return tuple(values)
+    if isinstance(node, ast.Dict):
+        entries = [
+            (_static_value(key, constants), _static_value(value, constants))
+            for key, value in zip(node.keys, node.values, strict=True)
+            if key is not None
+        ]
+        if any(key is _UNKNOWN for key, _value in entries):
+            return _UNKNOWN
+        try:
+            return dict(entries)
+        except TypeError:
+            return _UNKNOWN
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _static_value(node.left, constants)
+        right = _static_value(node.right, constants)
+        if isinstance(left, str) and isinstance(right, str):
+            return left + right
+        return _UNKNOWN
+    if isinstance(node, ast.Call) and _dotted_name(node.func).split(".")[-1] == "param":
+        # A pytest.param row is its positional data; id=/marks= do not affect columns.
+        return tuple(_static_value(argument, constants) for argument in node.args)
+    return _UNKNOWN
+
+
+def _module_constants(tree: ast.Module) -> dict[str, object]:
+    constants: dict[str, object] = {}
+    for statement in tree.body:
+        if isinstance(statement, ast.Assign):
+            value = _static_value(statement.value, constants)
+            for target in statement.targets:
+                if isinstance(target, ast.Name):
+                    constants[target.id] = value
+        elif isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name) and statement.value:
+            constants[statement.target.id] = _static_value(statement.value, constants)
+    return constants
+
+
+def _matching_control_names(value: object, controls: set[str], dynamic_controls: set[str]) -> set[str]:
+    if not isinstance(value, str):
+        return set()
+    matches = {value} if value in controls else set()
+    if value not in controls:
+        matches.update(prefix for prefix in dynamic_controls if prefix and value.startswith(prefix))
+    return matches
+
+
+def _parametrize_values(
+    function: ast.FunctionDef | ast.AsyncFunctionDef,
+    controls: set[str],
+    module_constants: dict[str, object],
+    dynamic_controls: set[str],
+) -> dict[str, set[str]]:
     result: dict[str, set[str]] = {}
     for decorator in function.decorator_list:
         if not isinstance(decorator, ast.Call) or _dotted_name(decorator.func).split(".")[-1] != "parametrize":
             continue
         if len(decorator.args) < 2:
             continue
-        try:
-            names = ast.literal_eval(decorator.args[0])
-            values = ast.literal_eval(decorator.args[1])
-        except (ValueError, TypeError):
-            continue
-        params = names.split(",") if isinstance(names, str) else list(names)
-        if not isinstance(values, (list, tuple)):
+        names = _static_value(decorator.args[0], module_constants)
+        values = _static_value(decorator.args[1], module_constants)
+        params = names.split(",") if isinstance(names, str) else list(names) if isinstance(names, (list, tuple)) else []
+        if not isinstance(values, (list, tuple)) or not params:
             continue
         for index, param in enumerate(params):
+            if not isinstance(param, str):
+                continue
             found: set[str] = set()
             for row in values:
                 item = row[index] if isinstance(row, (list, tuple)) and index < len(row) else row
-                if isinstance(item, str) and item in controls:
-                    found.add(item)
+                found.update(_matching_control_names(item, controls, dynamic_controls))
             if found:
                 result[param.strip()] = found
     return result
 
 
 class _TestInputAnalyzer:
-    def __init__(self, functions: list[FunctionInfo], control_types: dict[str, set[str]]):
+    def __init__(
+        self,
+        functions: list[FunctionInfo],
+        control_types: dict[str, set[str]],
+        dynamic_control_names: set[str],
+    ):
         self.functions = functions
         self.control_types = control_types
         self.control_names = set(control_types)
+        self.dynamic_control_names = dynamic_control_names
         self.functions_by_name: dict[str, list[FunctionInfo]] = defaultdict(list)
         self.functions_by_module: dict[tuple[str, str], list[FunctionInfo]] = defaultdict(list)
         for info in functions:
@@ -296,7 +381,12 @@ class _TestInputAnalyzer:
         for info in self.functions:
             if not info.node.name.startswith("test_"):
                 continue
-            initial = _parametrize_values(info.node, self.control_names)
+            initial = _parametrize_values(
+                info.node,
+                self.control_names,
+                info.module_constants,
+                self.dynamic_control_names,
+            )
             _returned, clicked, _found = self._run_function(info, initial, set())
             for name in clicked:
                 covered[name].add(f"{info.path.name}:{info.node.name}")
@@ -322,7 +412,7 @@ class _TestInputAnalyzer:
             if node is None:
                 return set()
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                return {node.value} if node.value in self.control_names else set()
+                return _matching_control_names(node.value, self.control_names, self.dynamic_control_names)
             if isinstance(node, ast.Name):
                 return set(env.get(node.id, set()))
             if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
@@ -386,6 +476,13 @@ class _TestInputAnalyzer:
                     returned, helper_clicked, helper_found = self._run_function(
                         helper, helper_env, stack, found
                     )
+                    if not returned and any(
+                        isinstance(child, ast.Call)
+                        and isinstance(child.func, ast.Attribute)
+                        and child.func.attr == "objectName"
+                        for child in ast.walk(helper.node)
+                    ):
+                        returned.update(value for values in arg_values for value in values)
                     clicked.update(helper_clicked)
                     found.update(helper_found)
                     return returned
@@ -412,6 +509,8 @@ class _TestInputAnalyzer:
                 return expression(node.left) | expression(node.right)
             if isinstance(node, ast.UnaryOp):
                 return expression(node.operand)
+            if isinstance(node, ast.Lambda):
+                return expression(node.body)
             return set()
 
         def assign(target: ast.AST, values: set[str]) -> None:
@@ -482,8 +581,9 @@ def _audit(qml_root: Path, tests_root: Path) -> dict[str, object]:
     control_types: dict[str, set[str]] = defaultdict(set)
     for control in controls:
         control_types[control.object_name].add(control.qml_type)
+    dynamic_control_names = {control.object_name for control in controls if control.dynamic}
     functions = _collect_functions(tests_root)
-    coverage = _TestInputAnalyzer(functions, control_types).test_coverage()
+    coverage = _TestInputAnalyzer(functions, control_types, dynamic_control_names).test_coverage()
     remaining_controls = [control for control in controls if control.object_name not in coverage]
     groups: dict[str, list[dict[str, object]]] = {group: [] for group in GROUP_ORDER}
     for control in remaining_controls:
@@ -521,7 +621,13 @@ def _text_report(report: dict[str, object]) -> str:
         lines.append(f"\n{group}")
         for filename, file_entries in by_file.items():
             lines.append(f"- {filename} [{len(file_entries)}]: ")
-            lines.append("  " + ", ".join(f"{entry['object_name']}:{entry['line']}" for entry in file_entries))
+            lines.append(
+                "  "
+                + ", ".join(
+                    f"{entry['object_name']}{'…' if entry['dynamic'] else ''}:{entry['line']}"
+                    for entry in file_entries
+                )
+            )
     if int(report["remaining"]) == 0:
         lines.append("\nNincs fedetlen vezérlő.")
     return "\n".join(lines)
