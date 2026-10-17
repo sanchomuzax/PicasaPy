@@ -3,7 +3,7 @@
 ## A hiba, amit ez az őr kizár
 
 A kiadási automatika (`auto_bump.zard_le_a_changelogot`) átnevezi a
-`## [Nem kiadott]` címet `## [verzió] – dátum` alakra — és **nem tesz a
+`## [Nem kiadott]` címet `## [verzió] - dátum` alakra — és **nem tesz a
 helyére újat**. A következő kör tehát olyan fájlt kap, amiben nincs hova
 írni; aki ilyenkor kézzel vesz fel szakaszt, könnyen MÁS néven teszi.
 
@@ -40,7 +40,7 @@ def test_a_lezaras_utan_van_ures_kiadatlan_szakasz(tmp_path: Path) -> None:
     assert auto_bump.zard_le_a_changelogot(c, "0.8.29", "2026-08-21") is True
     szoveg = c.read_text(encoding="utf-8")
 
-    assert "## [0.8.29] – 2026-08-21" in szoveg, "a lezárás nem történt meg"
+    assert "## [0.8.29] - 2026-08-21" in szoveg, "a lezárás nem történt meg"
     assert auto_bump.KIADATLAN_CIM in szoveg, (
         "a lezárás után NINCS üres „Nem kiadott\" szakasz — a következő kör "
         "megint más néven venné fel (#1770)"

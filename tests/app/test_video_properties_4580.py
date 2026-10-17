@@ -50,6 +50,9 @@ def test_a_v20_as_index_videofelvetele_incrementalis_szinkronnal_frissul(
         conn.execute("ALTER TABLE photo_albums DROP COLUMN place")
         conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
         conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
+        # a v25-ös arcforrás-jelölő (#5180) sem tartozik a v20-as alakhoz
+        conn.execute("DROP INDEX idx_face_source_photo")
+        conn.execute("ALTER TABLE face DROP COLUMN source")
         conn.execute("PRAGMA user_version = 20")
         past = 1_700_000_000_000_000_000
         os.utime(library, ns=(past, past))
