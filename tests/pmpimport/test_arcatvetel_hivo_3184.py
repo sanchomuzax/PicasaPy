@@ -16,13 +16,14 @@ ugyanabba a ciklusba kerültek be.
 * a `[Contacts2]` szakasz csak az arcírással EGYÜTT keletkezik (nincs árva
   kontakt);
 * `frversion = "1.5"` a `[Picasa]` szakaszba, ha írtunk arcot;
-* a meglévő `faces=` **érintetlen** marad — és a száraz futás sem hozza
-  létre az ini-t, ha semmi nem írható.
+* a meglévő `faces=` régió bájtjai megmaradnak, a nem ütköző db3-régió
+  mellé kerül — és a száraz futás sem hozza létre az ini-t, ha semmi nem írható.
 """
 
 from __future__ import annotations
 
 from picasapy.ini.document import parse_document
+from picasapy.ini.faces import parse_faces
 from picasapy.pmpimport.deferredregion import DeferredFace
 from picasapy.pmpimport.importer import PhotoRecord
 from picasapy.pmpimport.db3_atvetel import (
@@ -86,10 +87,11 @@ class TestAFuttatoKiviszi:
         assert "[Contacts2]" not in szoveg
         assert "frversion" not in szoveg
 
-    def test_a_meglevo_faces_erintetlen_es_kihagyottnak_szamit(self, tmp_path):
+    def test_a_meglevo_faces_regioja_megmarad_es_a_db3_arc_melle_kerul(self, tmp_path):
         (tmp_path / "kep.jpg").write_bytes(b"")
+        regi_faces = "rect64(1234567812345678),abcdef0123456789"
         (tmp_path / ".picasa.ini").write_text(
-            "[kep.jpg]\nfaces=rect64(1234567812345678),abcdef0123456789\n",
+            f"[kep.jpg]\nfaces={regi_faces}\n",
             encoding="utf-8",
         )
         jelentes = rekordokat_atvesz(
@@ -101,10 +103,17 @@ class TestAFuttatoKiviszi:
             ]
         )
         szoveg = _ini(tmp_path)
-        assert "Kiss Anna" not in szoveg
+        assert "Kiss Anna" in szoveg
         assert "abcdef0123456789" in szoveg
-        assert jelentes.arc == 0
-        assert jelentes.kihagyott == 1
+        raw_faces = next(
+            line.removeprefix("faces=")
+            for line in szoveg.splitlines()
+            if line.startswith("faces=")
+        )
+        assert raw_faces.startswith(regi_faces + ";")
+        assert len(parse_faces(raw_faces)) == 2
+        assert jelentes.arc == 1
+        assert jelentes.kihagyott == 0
 
     def test_csak_arc_eseten_is_IR(self, tmp_path):
         """⛔ A száraz futás korábban csak a kulcsszót és a helyet nézte: a

@@ -14,7 +14,13 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from .deferredregion import DeferredFace, parse_deferred_region
+from picasapy.ini.contacts_xml import load_contacts_xml
+
+from .deferredregion import (
+    DeferredFace,
+    parse_deferred_face,
+    parse_deferred_region,
+)
 from .remap import PathRemapper
 from .table import read_table
 from .thumbindex import (
@@ -38,7 +44,8 @@ logger = logging.getLogger(__name__)
 #: #2336: a `geoview` a geotag TÉNYLEGES jelzője (ld. `_koordinata`) —
 #: a tartalmát nem értelmezzük, csak azt, hogy üres-e.
 _COLUMNS = (
-    "caption", "rotate", "star", "filters", "crop64", "deferredregion",
+    "caption", "rotate", "star", "filters", "crop64", "deferredface",
+    "deferredregion",
     "tags", "lat", "long", "geoview",
 )
 
@@ -49,6 +56,7 @@ _COLUMNS = (
 #: ott 50 kép). Az `imagedata_star.pmp` oszlopot NEM váltja ki: a kettő
 #: UNIÓJA számít, hogy a régebbi adatbázisok se sérüljenek.
 _STARLIST_NAME = "starlist.txt"
+_UNASSIGNED_CONTACT_ID = "ffffffffffffffff"
 
 
 @dataclass(frozen=True)
@@ -125,6 +133,7 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
     index_path = _find_thumb_index(db3_dir)
     entries = read_thumb_index(index_path)
     table = read_table(db3_dir, "imagedata")
+    contact_names = _contact_names(db3_dir)
     csillagos = _read_starlist(db3_dir)
     manual_priorities, manual_album_places, wordhash_kihagyott = (
         _wordhash_manual_orders(db3_dir, entries, remapper)
@@ -138,13 +147,7 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
         local_path = remapper.remap(windows_path)
         if local_path is None:
             continue
-        deferred = table.value("deferredregion", entry.index)
-        try:
-            faces = parse_deferred_region(deferred)
-        except ValueError:
-            # hibás régió-bejegyzés nem dönti be az importot — a fotó
-            # többi adata így is értékes (részleges import elve)
-            faces = ()
+        faces = _photo_faces(table, entry.index, contact_names)
         # #2336: a geotag jelzője a `geoview` üressége, nem a koordináta
         # nulla értéke. Ha az OSZLOP hiányzik (régebbi adatmappa), a jelző
         # nem kérdezhető meg — a `None` erre az esetre szól.
@@ -185,6 +188,68 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
     return Db3Beolvasas(
         rekordok=tuple(records), wordhash_kihagyott=wordhash_kihagyott
     )
+
+
+def _contact_names(db3_dir: Path) -> dict[str, str]:
+    """`contacts.xml` id → current name; this beats the region snapshot."""
+    path = Path(db3_dir) / "contacts" / "contacts.xml"
+    try:
+        return {
+            entry.person_id.casefold(): entry.name
+            for entry in load_contacts_xml(path)
+            if entry.person_id and entry.name
+        }
+    except (OSError, ValueError) as hiba:
+        logger.warning("A db3 contacts.xml nem olvasható: %s", path, exc_info=hiba)
+        return {}
+
+
+def _photo_faces(
+    table, row: int, contact_names: dict[str, str]
+) -> tuple[DeferredFace, ...]:
+    """Resolve db3 ids against contacts.xml, using deferredregion as fallback.
+
+    `deferredface` is authoritative for the id and unknown sentinel. The
+    same-rectangle `deferredregion` name is only a fallback when the contact
+    list is absent or lacks an id. Snapshot-only regions remain importable.
+    """
+    try:
+        by_id = parse_deferred_face(table.value("deferredface", row))
+    except ValueError:
+        logger.warning("Hibás deferredface-sor: %s", row, exc_info=True)
+        by_id = ()
+    try:
+        snapshots = parse_deferred_region(table.value("deferredregion", row))
+    except ValueError:
+        logger.warning("Hibás deferredregion-sor: %s", row, exc_info=True)
+        snapshots = ()
+
+    names_by_rect: dict[object, set[str]] = {}
+    for snapshot in snapshots:
+        name = snapshot.name.strip()
+        if name:
+            names_by_rect.setdefault(snapshot.rect, set()).add(name)
+
+    resolved: list[DeferredFace] = []
+    deferred_rects = set()
+    for face in by_id:
+        deferred_rects.add(face.rect)
+        contact_id = face.contact_id or ""
+        name = ""
+        if contact_id != _UNASSIGNED_CONTACT_ID:
+            name = contact_names.get(contact_id, "")
+            if not name:
+                candidates = names_by_rect.get(face.rect, set())
+                if len(candidates) == 1:
+                    name = next(iter(candidates))
+        resolved.append(
+            DeferredFace(rect=face.rect, name=name, contact_id=contact_id)
+        )
+
+    # The two columns are sparse and overlap only partially. Keep snapshot-only
+    # regions, but never let a stale snapshot rename an id-bearing row.
+    resolved.extend(face for face in snapshots if face.rect not in deferred_rects)
+    return tuple(resolved)
 
 
 def _wordhash_manual_orders(

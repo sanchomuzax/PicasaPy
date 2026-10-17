@@ -269,6 +269,9 @@ class TestMigracio:
         raw.executescript(DDL)
         # a v17 oszlopának eltávolítása = a v16-os alak visszaállítása
         raw.executescript(
+            # #5180: a forrásjelölő csak a v25-ben érkezik
+            "DROP INDEX idx_face_source_photo;\n"
+            "ALTER TABLE face DROP COLUMN source;\n"
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             #: #2902: a friss séma már tartalmazza — a v16 nem
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
