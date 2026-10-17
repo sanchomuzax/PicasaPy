@@ -42,6 +42,13 @@ def test_a_regi_negyargumentumos_alak_tovabbra_is_16_9() -> None:
     assert (beallitas.width, beallitas.height) == (1280, 720)
 
 
+def test_uj_film_alapertelmezett_diasorrendje_a_legjobb_atmenet() -> None:
+    from picasapy.app.create_controller import CreateMixin
+
+    beallitas = CreateMixin._film_beallitas(640, 480, 1.0)
+    assert beallitas.ordering == 0
+
+
 def test_a_negy_haromnegyedes_meretet_a_regi_keplet_elrontana() -> None:
     """A foga: van olyan méret, amit a 16:9-es származtatás elrontana."""
     rossz = [

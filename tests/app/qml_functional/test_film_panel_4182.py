@@ -145,6 +145,8 @@ def test_a_film_panel_feliratai_es_muveletei_a_foablakbol_minden_magassagon(
             _kattints(window, qt_app, film_gomb)
             film = _elem(window, "movieDialog")
             assert film.property("visible") is True
+            assert _elem(window, "movieSmartOrder").property("checked") is True
+            assert _elem(window, "movieAlbumOrder").property("checked") is False
             _kattints(window, qt_app, _elem(window, "movieTabMotion"))
 
             for nev in (

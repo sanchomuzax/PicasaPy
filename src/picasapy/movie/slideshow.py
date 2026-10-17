@@ -35,6 +35,8 @@ from picasapy.cvimage import dekodolj_forrast
 from picasapy.ini import IniDocument, load_or_empty
 from picasapy.scanner import PICASA_INI_NAME
 
+from .burst import capture_groups, select_chain
+
 # A kodek-négyes: MP4 konténer, széles körben elérhető OpenCV-ben.
 _FOURCC = "mp4v"
 
@@ -71,7 +73,7 @@ class MovieSettings:
     show_dates: bool = False
     cropfit: bool = False
     remove_low_res_faces: bool = False
-    ordering: int = 1
+    ordering: int = 0
     burstmodethresh: int = 0
 
     def __post_init__(self) -> None:
@@ -556,6 +558,27 @@ def _picasa_caption(
     return (section.get("caption") or "").strip() if section is not None else ""
 
 
+def _capture_timestamp(path: Path) -> float | None:
+    """A kép készítési ideje EXIF-ből, ennek hiányában fájlidőből."""
+    try:
+        with Image.open(path) as photo:
+            exif = photo.getexif()
+            exif_values = exif
+            try:
+                exif_values = exif.get_ifd(34665) or exif
+            except (AttributeError, KeyError, TypeError):
+                pass
+            raw_date = str(exif_values.get(36867) or exif.get(306) or "")
+            if raw_date:
+                return datetime.strptime(raw_date, "%Y:%m:%d %H:%M:%S").timestamp()
+    except (OSError, ValueError, TypeError):
+        pass
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return None
+
+
 def _fotofelirat(
     frame: np.ndarray,
     path: Path,
@@ -658,6 +681,7 @@ def export_movie(
     target.parent.mkdir(parents=True, exist_ok=True)
 
     decoded: list[tuple[Path | None, np.ndarray, dict[str, object] | None]] = []
+    capture_times: list[float | None] = []
     ini_documents: dict[Path, IniDocument | None] = {}
     for path in paths:
         if not path.exists():
@@ -673,6 +697,7 @@ def export_movie(
             reasons.append(str(error))
             continue
         decoded.append((path, frame, None))
+        capture_times.append(_capture_timestamp(path))
 
     text_frames = [
         (
@@ -689,19 +714,16 @@ def export_movie(
     if settings.ordering == 2:
         decoded.sort(key=lambda entry: entry[0].stat().st_mtime if entry[0] else float("inf"))
     elif settings.ordering == 0 and len(decoded) > 1:
-        # A „legjobb átmenet” sorrend a következő, színátlagban legközelebbi
-        # képet választja. A döntés determinisztikus, és az album sorrendje
-        # marad azonos távolság esetén.
-        maradek = decoded[1:]
-        rendezett = [decoded[0]]
-        while maradek:
-            elozo = np.mean(rendezett[-1][1], axis=(0, 1))
-            kovetkezo = min(
-                range(len(maradek)),
-                key=lambda i: float(np.linalg.norm(elozo - np.mean(maradek[i][1], axis=(0, 1)))),
-            )
-            rendezett.append(maradek.pop(kovetkezo))
-        decoded = rendezett
+        groups = capture_groups(capture_times, settings.burstmodethresh)
+        # Az eredeti HOG-vektor előállítása még nincs feltárva (#4194). A
+        # jelenlegi képi forrás a korábbi színátlag; ez nem eredetihű HOG.
+        features = [np.mean(frame, axis=(0, 1)) for _, frame, _ in decoded]
+        order = select_chain(
+            groups,
+            len(decoded),
+            feature_for_index=features.__getitem__,
+        )
+        decoded = [decoded[index] for index in order]
     decoded.extend(text_frames)
 
     if not decoded:

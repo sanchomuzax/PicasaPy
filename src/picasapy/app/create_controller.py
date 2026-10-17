@@ -724,7 +724,7 @@ class CreateMixin(PosterMixin):
             show_dates=bool((options or {}).get("showdates", False)),
             cropfit=bool((options or {}).get("cropfit", False)),
             remove_low_res_faces=bool((options or {}).get("removelowresfaces", False)),
-            ordering=max(0, min(2, int((options or {}).get("ordering", 1)))),
+            ordering=max(0, min(2, int((options or {}).get("ordering", 0)))),
             burstmodethresh=max(
                 0, min(86400, int((options or {}).get("burstmodethresh", 0)))
             ),
