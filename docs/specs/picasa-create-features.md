@@ -4617,8 +4617,10 @@ A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.)
 
 | Eredeti (`ordering = 0`, bizonyított) | Nálunk (mérve) | Teendő |
 |---|---|---|
-| Lánc-kiválasztás: horgony, spirál-jelöltek a középponttól (+1, -1, +2, -2, …), 100 jelölt, csoportkizárás az aktuális középpontra, HOG-minimum (szigorú `<`, 1e8, tartalék: a 0. jelölt), 15-ös irányváltás, a kimenet a választás sorrendje | `src/picasapy/movie/slideshow.py:691-701`: színátlag-lánc a teljes listán; nincs horgony, spirál, csoport, darabszám-korlát | A fenti algoritmus a `movie/` csomagban, d_HOG-gal (`ε = 1e-8`). A színátlag-ág marad `nem eredeti`, amíg a HOG-jellemzővektor hossza, cella- és iránysorrendje, valamint a végső normálás le nem zárult. A rádió alapállapota az általános új film úton lezárult (G/6). |
-| Csoportosítás: szomszédos, egész másodpercre kerekített idők, `delta >= T` új csoport, `T = 0`-nál nincs csoport (G szakasz) | `burstmodethresh` csak tárolódik (`src/picasapy/movie/slideshow.py:75, 99`; `mxf.py:126, 203, 323`) | Implementálható a G szakasz etalonjaival. |
+| Lánc-kiválasztás: horgony, spirál-jelöltek a középponttól (+1, -1, +2, -2, …), 100 jelölt, csoportkizárás az aktuális középpontra, HOG-minimum (szigorú `<`, 1e8, tartalék: a 0. jelölt), 15-ös irányváltás, a kimenet a választás sorrendje | `src/picasapy/movie/burst.py`: a G/5 láncmodell megvan; az injektált jellemző jelenleg a korábbi színátlag, mert a `0x00873cb0` valódi HOG-vektora nincs feltárva | A lánc szerkezete és a d_HOG primitív implementálva. Az eredetit követő képkiválasztás nyitott marad, amíg a valódi HOG-vektor forrása nem ismert. |
+| Csoportosítás: szomszédos, egész másodpercre kerekített idők, `delta >= T` új csoport, `T = 0`-nál nincs csoport (G szakasz) | A `burstmodethresh` az `ordering = 0` exportban csoportokat képez és befolyásolja a láncválasztást (`src/picasapy/movie/slideshow.py`, `src/picasapy/movie/burst.py`) | A három G szakaszbeli etalon implementálva; más `ordering`-ágak képkiválasztása továbbra sincs feltárva. |
+
+**Frissítés (2026-10-17, G/6):** új filmnél a „Best Transitions” rádió az alapértelmezett (`ordering = 0`).
 
 **Kész, ha:**
 1. `T = 0`-nál nincs csoportosítás.

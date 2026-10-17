@@ -1317,8 +1317,8 @@ Item {
                                 text: qsTr("Ordering of Slides:")
                                 color: Theme.ink
                             }
-                            RadioButton { id: movieSmartOrder; objectName: "movieSmartOrder"; text: qsTr("Best Transitions") }
-                            RadioButton { objectName: "movieAlbumOrder"; text: qsTr("Album Order"); checked: true }
+                            RadioButton { id: movieSmartOrder; objectName: "movieSmartOrder"; text: qsTr("Best Transitions"); checked: true }
+                            RadioButton { objectName: "movieAlbumOrder"; text: qsTr("Album Order") }
                             RadioButton { id: movieChronologicalOrder; objectName: "movieChronologicalOrder"; text: qsTr("Chronological") }
                         }
                     }
