@@ -76,6 +76,31 @@ class ScreensaverRunBridge(QObject):
     def finish(self) -> None:
         self.finished.emit()
 
+    @Slot(int, int, int, int, result="QVariantList")
+    def slideshowPanZoomRectangles(  # noqa: N802 - QML metódusnév
+        self,
+        forras_szelesseg: int,
+        forras_magassag: int,
+        nezet_szelesseg: int,
+        nezet_magassag: int,
+    ) -> list[dict[str, float]]:
+        """A külön képernyővédő-ablak ugyanazt az illesztőt használja."""
+        if min(
+            forras_szelesseg,
+            forras_magassag,
+            nezet_szelesseg,
+            nezet_magassag,
+        ) <= 0:
+            return []
+        from .slideshow_pan_zoom import qml_pan_zoom_rectangles
+
+        return qml_pan_zoom_rectangles(
+            forras_szelesseg,
+            forras_magassag,
+            nezet_szelesseg,
+            nezet_magassag,
+        )
+
 
 def _settings() -> QSettings:
     return QSettings("PicasaPy", "PicasaPy")
