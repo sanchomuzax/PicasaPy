@@ -2734,6 +2734,83 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 - `Ghidra-kör kell: 0x00802230 — az Időrend-átmenet tényleges képi tartalma és időzítése. [blokkoló]`
 - A mappák/albumok forráshalmaza és upstream sorrendje, a cím-/dátumkártyák, a futó billentyűviselkedés és az Exit utáni nézet: **NINCS MEG**.
 
+#### 38.2.6 Második Ghidra-köteg: a 38.2.5 nyitott pontjainak mérése (#4443, 2026-10-17)
+
+**Forrás és módszer.** A `referencia/ghidra/2026-10-17-qshow-2.txt` öt címe (`0x004039f0`, `0x00a52890`, `0x005e60d0`, `0x008032e0`, `0x00802230`) és az első köteg `FUN_005e8a70` dekompilátuma (`2026-10-17-qshow-diavetites.txt`). Két független úton ellenőriztem: (A) a `0x005e8a70` helyi diszasszemblálása (`annot_disasm.py`, a munkafa `.bt/` mappájában, a repón kívül), (B) a bináris-index (függvénytábla, RTTI, hívóélek), (C) a `Picasa3.exe` közvetlen olvasása (vtable-slotok, konstansok). A címek a `Picasa3.exe` virtuális címei.
+
+##### 1. Lista forrása és sorrendje
+
+- **Bizonyított: üres listánál nem indul a bemutató.** A `0x005e8a70` mód-1 ágában a `FUN_005d2a70()` és a `[this+0x2c0]+0x154` (0 vagy 1) ellenőrzése után, valamint a függvény végén, ha az összegyűjtött tömb (`uStack_d0`) üres, az `IDS_MUST_SELECT` üzenettel tér vissza. A `0x008037e0` (a qshow-építő) csak ezután hívódik, és egyetlen hívója van: a `0x005e8a70`. (dekompilátum + diszasszembly)
+- **Bizonyított: a tömb CSAK a Flipbook + Ctrl + Shift ágban töltődik.** A feltételek: `Preferences\Flipbook` kulcs, `GetAsyncKeyState(0x11)` és `(0x10)`, valamint az aktív ablak (`DAT_00d67849`). A forrás `[this+0x2bc]` (a szolgáltató), az elemszám `[+0x4ec] >> 1`, a rekord elérése `+0xf8` (`0x004edf60`). A rekord típuskódja szerint szűr: 2, 3, 6, 7, 13, 14, 18, 22, 24, 26, 27, 28, 31 (a kódok jelentése **NINCS MEG**). A sorrend **fordított**: az elemszám-1 indextől 1-ig, a 0. elem kimarad. (dekompilátum + diszasszembly)
+- **Ellentmondás (mérve):** Shift nélkül, a Flipbook beállítástól függetlenül, a tömb üres marad, tehát a mód-1 ág `IDS_MUST_SELECT`-re fut, nem qshow-ra. A tömb-slotok (`[esp+0x2c]`, `[esp+0x30]`, `[esp+0x40]`, `[esp+0x44]`) íróhelyei ezt mutatják: a nullázás (`0x005e8dc1`-`0x005e8dcd`) után csak olyan írások vannak, amelyek a már üres `local_c0`-ból másolnak (`0x005e9178`-`0x005e929a`). **Ez nincs összhangban a 38.2.2 megfigyelésével** (job-102: Ctrl+5 után qshow látszott). Lehetséges magyarázat: a felvételen Shift volt lenyomva, ez nincs rögzítve.
+- **Feltételes: a rács listája.** A `0x004039f0` a főablakot (`ytFrameWindow`, vtable `0x00cd95c0`) és egy 0x3710 bájtos objektumot hozza létre (konstruktor `0x005643e0`, paraméterei `param_1+0x1030` és `+0x1038`); a `FUN_0040bf70` tölti. Ez a CThumbUI-nak tűnik (a `0x005e8a70` `this`-e is ilyen, a `+0x2bc`/`+0x2c0` mezőkkel), de nem bizonyított. A rács lista-forrása ettől még nincs igazolva, a qshow-é pedig nincs.
+- **Nyitott: a „Preparing timeline…” ciklus kimenete.** A ciklus (`0x005e8a70`, dekompilátum 1215-1259. sor) `FUN_004a0980()` elemszámon megy 0-tól felfelé, és minden indexre a `this->vt+0x90` hívást végzi, elemenként a `piStack_6c` folyamatjelző-objektumnak adva. Hogy ez-e a qshow listája, nincs igazolva.
+
+##### 2. Vezérlők és billentyűk
+
+- **`0x008032e0` (oneup esemény, kattintás = `0x8000004`): megerősített, tizenkét név.** A kód név-összehasonlítással választ: `captionbutton` (felirat-váltás, `0x009cd730` / `0x009cd760`), `plusone` / `minusone` (`0x00802ff0`, `+1,0` / `-1,0`; a `-1,0` a `0x00cf3ed0`-ban), `auto` / `auto2` (`0x00803110`, automatikus lejátszás), `timeline` (`0x00802be0`, majd `0x007fda00`), `exit` (lásd 3.), `prev` / `next` (`0x00802980` / `0x008029f0`, az indexet lépteti), `rotateright` / `rotateleft` (`0x00a60920` 1, illetve 0, vt+8 hívás, `0x00802e20`), `star` (vt+4 hívás a `[esi+0x359]` jelzővel).
+- **Billentyűk: erős.** A `0x005e60d0` (a főablak billentyű-kapcsolója, a `0x005e6710` hívja) switch-listája: `0x0D` (Enter), `0x30`-`0x33`, **`0x34` és `0x35` (`4`, `5`) → `0x005e8a70(this, 0)`, illetve `(this, 1)`**, továbbá `0x36`, `0x38`, `0x39`, `0x41`-`0x59` (betűk), `0x75`-`0x78` (F6-F9). **Nincs eset** Esc (`0x1B`), Space (`0x20`), End/Home (`0x23`/`0x24`) és a nyilak (`0x25`-`0x28`) számára: a főablak kapcsolója ezekre nem ad műveletet. Ez egyezik a 38.2.2-es fókuszhibával.
+- **Egér és görgő: megerősített.** A `0x00a52890` switchében nincs billentyű-eset (`0x100`/`0x101` nincs). Bal gomb (`0x201`): találat-kereső (`0x009e4630`) és `SetCapture`. Görgő (`0x20a`): a `0x00a516c0` a delta / 120 értéket kapja (`0x00cf4640` = 120, a WHEEL_DELTA). A OneUp saját kezelője (`0x00803180`, 38.2.4) léptet.
+- **A `sliderthumb` húzása: NINCS MEG.** A találati elem kezelője a `0x0052d3c0` és a `0x009e4630` körül van, és nincs a kötegben.
+
+##### 3. Exit és rács-vissza célja
+
+- **Mechanizmus: megerősített (diszasszembly + vtable-olvasás).** `oneup/exit` → `this->vt+0x24()` → `0x00a6ccf0`: `mov eax,[ecx+0x50]; ret`, vagyis az objektum `[this+0x50]` mezőjét adja vissza → annak `vt+0x14(0, 0)` hívása. A `+0x50` mezőt a `vt+0x28` (`0x00a6cd00`: `mov [ecx+0x50], arg`) állítja. A CThumbUI vtable (`0x00c9052c`) +0x24 slotja ugyanez a getter.
+- **Ha a tulajdonos CThumbUI, az Exit üres.** Ekkor a `vt+0x14` = `0x00b0d990`, amely csak `ret`. Vagyis az Exit ilyen tulajdonosnál nem végez műveletet. A tényleges tulajdonos osztálya **NINCS MEG**: a `vt+0x28` hívásai indirektek, az index nem látja őket. A `OneUpUI` vtable-jét (`0x00cbd5c4`) író konstruktort kell megkeresni.
+- **Rács-vissza = `oneup/exit`: feltételes.** A bal alsó ikon (képernyő-x 348-391) az `overlays/exit` réteghez hasonlít (forrás-rect `(8,404,51,432)`, rács és nyíl), a `oneup.tre` kilépés-csoportja (`exit_icon`, `bcklabel`, `exit`) pedig ugyanerre a gombra utal. A kötés (hit-test) az `exit` elemhez a respack-geometria mérése nélkül nincs igazolva. A `oneup/oneup` nevet a `0x008032e0` nem kezeli: az a képalap elem.
+
+##### 4. Átmenet
+
+- **Időrend-váltás (`0x007fda00`): megerősített lépéssor (diszasszembly).** Kapuk: `[this+0x2d8]` (bájt) és `[this+0x538]` (mutató). Az aktuális index (`[this+0x3f4]`) negatív esetén 0. A QPC-érték a `[this+0x430]`-ba (double) kerül, majd **`0x00802230(this, 1)`** hívódik: a `param_2 = 1` nem animált ágat jelez. Végül `[+0x3b8]=1`, `[+0x3b9]=1`, `[+0x3ba]=0`, `[+0x3bb]=0`. A flagek jelentése **NINCS MEG**.
+- **A `0x00802230` a következő elem ugrása véletlen eltolással: megerősített képlet.** Az elem `[this+0xfb][[this+0xfd]]`. Ha `([this+0xfc] >> 1) <= [this+0xfd]`, a visszatérés 4 (vége). Két `rand()` hívás (CRT, `0x00c08221`) ad egy-egy 15 bites `t = r / 32768` értéket. Az új eltolás: x = W · 0,15 · t_x, y = H · 0,5 · 0,15 · t_y, ahol W = `[this+0x11d]`, H = `[this+0x11e]` (a középre igazítás is ezekből számol). A konstansok a binárisban: `0,15` (`0x00cf4320`, double), `0,5` (`0x00c72150`, double). Az előző eltolás `[+0x102]`/`[+0x103]`-ban marad.
+- **Nem animált ág (`param_2 ≠ 0`): a kódalak megvan, a viselkedés NINCS MEG.** Ekkor `local_58 = 0` és a `0x00802180` hívódik. Az animátor (`[+0xb8]+4`) viselkedése nincs megmérve.
+- **Időtartam: NINCS MEG.** A `ROUND(_DAT_00d35808)` a `[+0xb9]` ágon van. A `0x00d35808` a `.data` szakaszban van (írható), a fájlban lévő bájtok nem fordítási idejű konstansok (f64-ként 7,18·10^-305). Az íróhely nincs az indexben: az `xrefs` táblában a hívások szerepelnek, adat-hivatkozás nem.
+- **A véletlen seed-je: NINCS MEG** (a `srand` hívását nem vizsgáltam), így az eltolás nem reprodukálható.
+
+##### Bizonyítottsági fok
+
+| állítás | fok | alap |
+|---|---|---|
+| üres tömb → `IDS_MUST_SELECT`, nem qshow (mód-1, Shift nélkül) | megerősített | dekompilátum + diszasszembly (tömb-slotok) |
+| a lista csak Flipbook + Ctrl + Shift ágban töltődik, fordított sorrend | megerősített | dekompilátum + diszasszembly |
+| Ctrl+5 → qshow | **ellentmondásos** | a kód Shift nélkül nem ad qshow-t; a 38.2.2 megfigyelés igen |
+| billentyűtérkép (`0x005e60d0`) | erős | teljes switch-lista, nincs nyíl/Esc/Space eset |
+| az Exit mechanizmusa (`this+0x50` → `vt+0x14`) | megerősített | diszasszembly + vtable-olvasás |
+| az Exit célja (a tulajdonos osztálya) | NINCS MEG | indirekt `vt+0x28` hívások |
+| rács-vissza = `oneup/exit` | feltételes | képi és névbeli egyezés, geometria nincs mérve |
+| eltolás-képlet (0,15 · W; 0,5 · 0,15 · H; rand / 32768) | megerősített | dekompilátum + `pefile`-olvasott konstansok |
+| időtartam, seed, animátor | NINCS MEG | futásidejű `.data` változó, nincs író az indexben |
+
+**Két független út:** a lista-kapunál a dekompilátum és a helyi diszasszembly egyezik; az Exit-mechanizmusnál a diszasszembly és a vtable-olvasás; a konstansoknál a dekompilátum és a `pefile`-olvasás.
+
+##### Cáfoló kísérletek
+
+1. „A Ctrl+5 normál ága qshow-t nyit.” **Cáfolva a kódból** (a tömb üres, `IDS_MUST_SELECT`). Ez ellentmond a 38.2.2 megfigyelésének; a két állítás egyike téves, vagy Shift volt lenyomva. Ez nincs eldöntve.
+2. „Az Exit a rácsnézetbe visz.” **Nem igazolt, részben cáfolt:** CThumbUI-tulajdonosnál a hívott `0x00b0d990` üres, így a visszatérés nem ebből az ágból jön.
+3. „Az Időrend-váltás animált.” **Nem igazolt:** a `0x007fda00` `param_2 = 1`-gyel hívja a `0x00802230`-at, ami nem animált ágat jelez; az animátor viselkedése nincs megmérve.
+
+##### Mérleg a 38.2.5 nyitott pontjairól
+
+| 38.2.5 pont | állapot |
+|---|---|
+| lista forrása és sorrendje | **részben zárva**: a flipbook-ág forrása és sorrendje megvan; a normál ág ellentmond a 38.2.2-nek |
+| vezérlők és billentyűk | **részben zárva**: név → művelet és billentyűtérkép megvan; a `sliderthumb` húzása nyitott |
+| Exit és rács-vissza célja | **részben zárva**: a mechanizmus megvan; a célobjektum osztálya nyitott |
+| átmenet | **részben zárva**: az eltolás-képlet és az Időrend-váltás lépései megvannak; az időtartam nyitott |
+
+**Nyitott kérdések: 0 nyílt · 0 lezárva · 9 blokkolt · 0 hatókörön kívül · 0 csak-nyitva.** A 38.2.5 öt Ghidra-kérdéséből négy részben zárult; a maradék a lenti tételekben van.
+
+##### Nyitott (a hívó futtatja, fontosság szerinti sorrendben)
+
+- `Ghidra-kör kell: 0x00a52890 - a találati elem (sliderthumb) húzási kezelője: a 0x0052d3c0 eseményhívás és a 0x009e4630 találat-kereső célja, az értékkötés. [blokkoló]`
+- `Ghidra-kör kell: 0x008037e0 - a qshow ablak létrehozása: WndProc, és melyik ablak kapja a billentyűket (nyíl, Esc). [blokkoló]`
+- `Ghidra-kör kell: 0x00802180 - a 0x00802230 param_2 ≠ 0 (nem animált) ágának célja. [blokkoló]`
+- `Ghidra-kör kell: 0x004edf60 - a rekord típuskód-mezője (a 4. mező): a 13 kód (2, 3, 6, 7, 13, 14, 18, 22, 24, 26, 27, 28, 31) jelentése. [blokkoló]`
+- `Ghidra-kör kell: 0x00415500 - a Preparing ciklus folyamatjelző-objektuma (piStack_6c) és a vt+4 hívás célja: a ciklus kimenete. [blokkoló]`
+- **Eredeti futtatás (Colab-gép, nem Ghidra):** Ctrl+5 Shift nélkül, a Preferences\Flipbook be- és kikapcsolva, a billentyű-állapot naplózva; rögzítendő a qshow vagy az `IDS_MUST_SELECT` üzenet. Ez dönti el a 38.2.2 ellentmondást. [blokkoló]
+- **Paszta-kör (gépi, a teljes .text-keresés csak a `paszta.py`-n át):** (a) a `0x00cbd5c4` (OneUpUI vtable) írója, a konstruktor, amely megmondja a `+0x50` tulajdonos osztályát; (b) a `0x00d35808` íróhelye (az időtartam). [blokkoló]
+- **Respack-kör (gépi):** az `overlays/exit` és az `oneup/exit` elemek geometriájának összevetése a képernyő-x 348-391 gombbal (rács-vissza kötés). [blokkoló]
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
@@ -2777,7 +2854,7 @@ Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kív�
   tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
   Időrend `oneup`/overlay belépési útja (38.2.1); a háttérkép teljes írási
   lánca, a stílusértékekkel együtt (38.3).
-- **NYITVA (`#4443`):** a 38.2.3 futó mérése lezárta a képernyő képi
+- **NYITVA (`#4443`; a 2. Ghidra-köteg állapota a 38.2.6-ban):** a 38.2.3 futó mérése lezárta a képernyő képi
   összetételét. Nyitott maradt a bemeneti mappák/albumok halmaza és sorrendje,
   a jobb halom és időskála jelentése, a gombok művelete, a billentyűk, az
   animáció és a kilépés célja. Ezekhez fókuszált, eredeti Picasa-futtatás kell.
