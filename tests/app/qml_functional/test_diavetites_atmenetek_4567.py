@@ -1,4 +1,8 @@
-"""A diavetítés eredeti 22 átmenete kattintással választható és lejátszható (#4567)."""
+"""A diavetítés átmenetei kattintással választhatók és lejátszhatók (#4567).
+
+#4856: a választó az eredeti hét átmenetét kínálja (`picasa-create-features.md`
+4.3), nem a 22 tételes filmkészletet.
+"""
 
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
@@ -9,51 +13,21 @@ from support.qt_wait import varj_feltetelre
 
 _ATMENETKULCSOK = (
     "cut",
-    "dissolve",
-    "dissolveblack",
-    "dissolvewhite",
-    "wipeleft",
-    "wiperight",
-    "wipeup",
-    "wipedown",
-    "diagwipeul",
-    "diagwipeur",
-    "diagwipedl",
-    "diagwipedr",
-    "pushleft",
-    "pushright",
-    "pushtop",
-    "pushdown",
-    "circlein",
-    "circleout",
-    "rect",
     "kenburns",
-    "kenburnsaoi",
-    "timelapse",
+    "dissolve",
+    "wiperight",
+    "circleout",
+    "pushright",
+    "rect",
 )
 _ATMENET_NEVEK = (
     "Cut",
-    "Dissolve",
-    "Dissolve through black",
-    "Dissolve through white",
-    "Wipe - left",
-    "Wipe",
-    "Wipe - top",
-    "Wipe - bottom",
-    "Wipe - up left",
-    "Wipe - up right",
-    "Wipe - down left",
-    "Wipe - down right",
-    "Push - left",
-    "Push",
-    "Push - top",
-    "Push - bottom",
-    "Circle - inwards",
-    "Circle",
-    "Rectangle",
     "Pan and Zoom",
-    "Pan and Zoom - face",
-    "Time Lapse",
+    "Dissolve",
+    "Wipe",
+    "Circle",
+    "Push",
+    "Rectangle",
 )
 
 
@@ -149,9 +123,9 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
     animation = _gyerek(window, "slideshowTransition")
     previous_image = _gyerek(window, "slideshowPrevImage")
     slideshow_image = _gyerek(window, "slideshowImage")
-    assert combo.property("count") == 22, (
-        "a specifikáció vetítési átmenet-készlete 22 tétel "
-        "(docs/specs/picasa-create-features.md, 3764–3794)"
+    assert combo.property("count") == len(_ATMENETKULCSOK), (
+        "a diavetítés átmenet-készlete a specifikáció 4.3 szerint hét tétel "
+        "(docs/specs/picasa-create-features.md, 4.3)"
     )
 
     controller.setSlideshowLoop(True)
@@ -177,7 +151,7 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
         assert controls.y() + controls.height() <= show.height() + 3, (
             f"a vezérlősáv kilóg a vetítőből ({delta:+d} px)"
         )
-    kattintasi_elteres = -5 if index < 8 else (0 if index < 16 else 5)
+    kattintasi_elteres = (-5, 0, 5)[index % 3]
     window.setHeight(alapmagassag + kattintasi_elteres)
     qt_app.processEvents()
 

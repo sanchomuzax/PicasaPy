@@ -2,9 +2,9 @@
 
 Az eredeti diavetítése **nem egyszerű képváltogatás**: a vezérlősávjában
 átmenet-választó ül (`slideshowctrls/transtype`), amely a
-`docs/specs/picasa-create-features.md` teljes, 22 tételes vetítési
-átmenet-készletét használja. Az `SlideshowEffectTime` az átmenet hossza,
-a `captionmode` a felirat módja.
+`docs/specs/picasa-create-features.md` 4.3 szerinti, hét tételes vetítési
+átmenet-készletét használja (#4856; a 22 tételes lista a filmkészítőé).
+Az `SlideshowEffectTime` az átmenet hossza, a `captionmode` a felirat módja.
 
 ⚠️ Ez az őr a KÖTÉSEKET és a beállítás-tárolást méri; a kirajzolt, kattintásos
 lejátszást a `test_diavetites_atmenetek_4567.py` ellenőrzi.
@@ -24,11 +24,18 @@ _MAIN = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
 
 ATMENETEK = (
     "cut",
+    "kenburns",
     "dissolve",
+    "wiperight",
+    "circleout",
+    "pushright",
+    "rect",
+)
+# a filmkészítő további tételei: a diavetítés ezeket NEM tárolja (#4856)
+FILMKESZITO_CSAK = (
     "dissolveblack",
     "dissolvewhite",
     "wipeleft",
-    "wiperight",
     "wipeup",
     "wipedown",
     "diagwipeul",
@@ -36,13 +43,9 @@ ATMENETEK = (
     "diagwipedl",
     "diagwipedr",
     "pushleft",
-    "pushright",
     "pushtop",
     "pushdown",
     "circlein",
-    "circleout",
-    "rect",
-    "kenburns",
     "kenburnsaoi",
     "timelapse",
 )
@@ -76,14 +79,33 @@ class TestAMegorzottBeallitasok:
         assert controller.slideshowTransition == "dissolve"
 
     @pytest.mark.parametrize("kulcs", ATMENETEK)
-    def test_mind_a_22_atmenet_tarolhato(self, controller, kulcs):
+    def test_mind_a_het_atmenet_tarolhato(self, controller, kulcs):
         controller.setSlideshowTransition(kulcs)
         assert controller.slideshowTransition == kulcs
+
+    @pytest.mark.parametrize("kulcs", FILMKESZITO_CSAK)
+    def test_a_filmkeszito_csak_tetele_nem_tarolhato(self, controller, kulcs):
+        """#4856: a diavetítés a 4.3 szerinti hét elemet tárolja."""
+        controller.setSlideshowTransition("dissolve")
+        controller.setSlideshowTransition(kulcs)
+        assert controller.slideshowTransition == "dissolve"
 
     def test_az_ISMERETLEN_kulcsot_nem_tarolja(self, controller):
         """Egy elgépelt érték némán átmenet nélküli vetítést adna."""
         controller.setSlideshowTransition("dissolve")
         controller.setSlideshowTransition("ismeretlen")
+        assert controller.slideshowTransition == "dissolve"
+
+    def test_a_mentett_hetelemen_kivuli_ertek_betoltesekor_dissolve(
+        self, controller, tmp_path
+    ):
+        """#4856: a korábban mentett, a hét elemen kívüli érték betöltéskor
+        Dissolve lesz."""
+        tarolo = QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        )
+        tarolo.setValue("view/slideshowTransition", "kenburnsaoi")
+        tarolo.sync()
         assert controller.slideshowTransition == "dissolve"
 
     def test_az_atmenet_hossza_a_dia_ido_alatt_marad(self, controller):
@@ -114,14 +136,17 @@ class TestAValasztoAVezerlosavban:
     def test_a_valaszto_ott_van(self):
         assert 'objectName: "slideshowTransitionBox"' in _VIEW
 
-    def test_a_spec_szerinti_22_atmenetet_sorolja(self):
-        """A választó a teljes, 22 tételes vetítési készletet sorolja."""
+    def test_a_spec_szerinti_het_atmenetet_sorolja(self):
+        """A választó a 4.3 szerinti hét tételes vetítési készletet sorolja
+        (#4856); a filmkészítő tételei nem szerepelnek benne."""
         kezd = _VIEW.index("readonly property var atmenetek:")
         veg = _VIEW.index("property string transitionKind:", kezd)
         blokk = _VIEW[kezd:veg]
         for kulcs in ATMENETEK:
             assert f'kulcs: "{kulcs}"' in blokk
-        assert blokk.count("kulcs:") == 22
+        assert blokk.count("kulcs:") == 7
+        for kulcs in FILMKESZITO_CSAK:
+            assert f'kulcs: "{kulcs}"' not in blokk
 
     def test_a_valaszto_NEM_ir_kozvetlenul_beallitast(self):
         """A gazda dönti el, hova kerül — a `starToggled` mintája."""
