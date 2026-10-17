@@ -4689,6 +4689,83 @@ A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok
 - Az ordering 1/2 teljes út natív QEMU-mérése nincs meg; a `0x00878310` és `0x00875ee0` kiválasztási útja csak dekompilátum alapján vizsgált. A `0x00874ac0` önálló helper függvényszintű leírása a G/3f-ben szerepel, az ordering 1/2 útba kapcsolása nincs natívan ellenőrizve.
 - Az általános új film úttól eltérő, `ordering = 2`-t beállító speciális panelág pontos felhasználói feltétele nincs meg.
 
+#### G/7. A HOG-vektor a C-kódból (2026-10-17, #4194)
+
+**Kérdés.** Mi a HOG-jellemzővektor hossza, a cellák és az irányrekeszek bejárási sorrendje, a gradiens számítása, a normálás képlete és blokktartománya, és hogyan kerül a vektor a `0x00873cb0` kimenetébe? Ez a G/6 „HOG-jellemzővektor” része, és a G/5 „Kész, ha” 5. pontjának feltétele.
+
+**Forrás.**
+- **A, C-kód:** `referencia/ghidra/2026-10-17-hog-qshow-k4.txt`, a `0x0088c1a0` szakasz (13-144. sor). A hívó: `referencia/ghidra/2026-10-17-film-idoszuro-3.txt`, a `0x00873cb0` szakasz (1-95. sor).
+- **B, utasításszintű olvasat:** a G/6 szakasz (`0x0088c1a0` és `0x00873cb0`, a bináris, `annot_disasm.py`). Ez független az A úttól.
+- A `0x0088c480` és a `0x0088cd10` törzse nincs a két fájlban, csak a hívóhelyeik. A rájuk vonatkozó állítások ezért nincsenek meg.
+
+**Eredmények (a C-kódból).**
+
+1. **Ciklusok** (A, 43-142. sor). Négy egymásba ágyazott ciklus, a belső elemekkel:
+   - `local_20` 0-tól 0x20-ig, 8-as lépéssel: 4 ablak-sor (a = 0..3).
+   - `local_24` 0-tól 0x38-ig, 8-as lépéssel: 7 ablak-oszlop (b = 0..6).
+   - `local_1c` 2 körben: 2 cella-sor az ablakon belül (i = 0..1).
+   - `param_2` 2 körben: 2 cella-oszlop az ablakon belül (j = 0..1).
+   - `iVar5` 0xc-től, 0x24-es lépéssel, 2 körben: a cella 18 eleme (9 + 9).
+
+2. **Vektorhossz: 2016 float.** 4 × 7 ablak × 72 elem. Egy ablak 72 eleme = 2 × 2 cella × 18 elem. A 72 osztható 4-gyel, a farok-ciklusok (103-112. és 128-136. sor) nulla kört futnak.
+
+3. **Rács és forrás.** A bemenet 5 × 8-as rács. A `this+0x10` tábla (T) 8 bájtos rekordjainak első dword-je a sor-tábla címe (a sor: `local_20 + 8i`). A sor-tábla 8 bájtos rekordjainak első dword-je a cella-blokk címe (az oszlop: `local_24 + 8j`). Egy cella-blokk 18 folytonos float (72 bájt). A C nem ellenőrzi az 5 × 8 méretet.
+
+4. **Bejárási sorrend.** A kimeneti index (float, a 0. elemtől): k = 504a + 72b + 36i + 18j + m. A forrás: a cella (a+i, b+j), a cella m. eleme.
+   - Az ablakok a külső (a) és a belső (b) ciklus sorrendjében követik egymást: w = 7a + b, az ablak kezdete 72w.
+   - Egy ablakon belül a cellák sorrendje (i, j) = (0,0), (0,1), (1,0), (1,1), vagyis a cella-koordináták (a,b), (a,b+1), (a+1,b), (a+1,b+1).
+   - Egy cellán belül az elemek sorrendje m = 0..17, közvetlen másolással.
+   - A kimeneti lépések float-ban: ablak 72, i-sor 36, j-oszlop 18 (a C-ben a mutató-lépés 0x48, 0x24, 0x12 dword).
+
+5. **Átfedés.** Az ablak 1 cella-lépéssel tolódik: a forrás-index b-nként és j-nként is 8 bájttal nő. Egy cella ezért több ablakban is szerepel. A másolatok száma a cella sor-darabszámának (1, 2, 2, 2, 1) és oszlop-darabszámának (1, 2, 2, 2, 2, 2, 2, 1) szorzata. Összesen 8 × 14 = 112 másolat, ez 28 ablak × 4 cella. A legtöbb másolat 4 (például az (1,1) cella).
+
+6. **Gradiens.** A `0x0088c1a0` törzsében nincs gradiens-számítás: nincs különbség-, szög- vagy irányképzés. A törzs másolást, négyzetösszeget, egy függvényhívást (`FUN_0049fe60`) és osztást végez. A két segédhívás (`0x0088c480`, `0x0088cd10`) végezhet számítást, ez a C-ből nem látszik. **NINCS MEG** (a gradiens helye és képlete).
+
+7. **Normálás** (A, 89-136. sor). Ablakonként, a másolás után:
+   - S_w = Σ x_t² az ablak 72 elemén (94-101. sor, 18 négyes csoport);
+   - d_w = `FUN_0049fe60(S_w + c)`, ahol `c` a `_DAT_00c7e328` (113. sor);
+   - y_t = x_t / d_w (115-127. sor).
+   - Az ablakok tartománya [72w, 72w + 72), w = 0..27. Az ablakok a kimenetben nem fedik egymást, és együtt lefedik a 2016 elemet.
+   - A C-ben a `c` értéke és a hívott függvény neve nincs kiírva. A gyök és az 1,0 a G/6 utasításszintű olvasatából jön.
+
+8. **Kimenet** (A, a `0x00873cb0` 92. sora). A `0x00873cb0` nem ír vektort. A `FUN_0088c1a0(*(int *)(param_2 + 0x54) + iStack_10 * 8)` hívás egy 8 bájtos rekord címét adja át. A `0x0088c1a0` a rekord első dword-jében lévő címre (OUT) írja a 2016 elemet, majd helyben normálja. Az `iStack_10` a C-ben csak deklarálva és használva van, értékadása nincs meg. A kimeneti buffer foglalása (legalább 2016 float = 8064 bájt) a C-ben nincs. A `0x00873cb0` saját számításai (`local_8c`, `local_88`, `FUN_00819f50`, `FUN_008198e0`) a C-ben nem kötődnek a hívás argumentumához. A `this` (ECX) átadása a hívásnál nem látszik.
+
+**Bizonyítottsági fok.**
+
+**Megerősített** (két úton: A a C-kód, B a G/6 utasításszintű olvasata):
+- Ciklushatárok: 0x20 (4 ablak-sor) és 0x38 (7 ablak-oszlop). A: 43-142. sor. B: G/6, a 0x38 és a 0x20 határérték.
+- Forráslépés 0x24 a 18 elemű blokk két fele között. A: `iVar5 + 0x24`, 64-77. sor. B: G/6, a 0x24 bájtos forráslépés.
+- A normálás szerkezete: négyzetösszeg a 72 elemen, majd egy skalárral való osztás. A: 94-127. sor. B: G/6, „négyzetösszeg + 1.0, gyök, osztás”.
+
+**Feltételes** (csak A úton; B nem vizsgálta):
+- A 2016 hossz, a 4 × 7 ablak és az 5 × 8 rács.
+- Az 1 cella-lépéses átfedés és az ablakon belüli sorrend (i, j, m).
+- A `c = 1,0` konstans és a gyök-azonosítás. Ezek B úton állnak, A-ban nincsenek kiírva.
+
+**Nincs meg:**
+- A 18 elemű blokk jelentése (irányrekesz-e?) és az 5 × 8 rács jelentése (cellák pozíciója?). A „cella” és „irányrekesz” nevek a HOG-névből jönnek, a C nem nevezi meg.
+- A T tábla tartalma és mérete, valamint a `this+0x8` tömb. A `0x0088cd10` és a `0x0088c480` törzse hiányzik.
+- A gradiens helye és képlete.
+- A kimeneti buffer foglalása és az `iStack_10` index.
+- A köztes pontosság: a `float10` (x87) és a float32 tárolás közötti kerekítés nincs a C-ben.
+
+**Cáfoló kísérlet (15.2).** A ciklusokat szó szerint másoló gépi modell futtatását a futtatási engedély megtagadása miatt nem végeztem el. Az alábbi cáfolatok kézi nyomkövetések, nem gépi vagy natív ellenőrzések.
+- **H1: az ablakok nem fedik át egymást** (cellánként legfeljebb 1 másolat). **Cáfolva.** A forrás-index b-nként 8 bájttal nő, így a b = 0 és a b = 1 ablak ugyanazt a cellát olvassa. Az (1,1) cella 4-szer másolódik: (a = 0, i = 1) vagy (a = 1, i = 0), és (b = 0, j = 1) vagy (b = 1, j = 0).
+- **H2: a normálás a teljes 2016 elemű vektoron fut.** **Cáfolva.** A négyzetösszeg és az osztás ciklusa 72 elemre szól (a végét a `local_28 = 72w + 69` adja, a csoportszám 18), és ablakonként újraindul.
+- **H3: a hossz 1008 (két ablak-sor).** **Cáfolva.** A külső ciklus határa `local_20 < 0x20`, ez 4 kört ad.
+- **Nyomkövetés, k = 72** (a = 0, b = 1, i = j = 0, m = 0). Az első írás címe `puVar8 - 8`, azaz OUT + 4·72. A forrás a sor-tábla 0. sora (`TB + 0`), majd az 1. oszlop (`+ 8·1`), a 0. elem: X[0][1][0]. Az első írás OUT + 0 címre esik, tehát a -2 dword-eltolás nem ír OUT elé.
+- **Eredmény:** a három hipotézis mind ellentmond a C-kódnak. Ez nem második út, a bizonyítottsági fok ettől nem nő.
+
+**G/5 „Kész, ha” 5. pontjának új állapota.** ⛔ Még részben teljesült. A rádió-rész lezárult (G/6). A HOG-vektor normálásának szerkezete két úton áll. A 2016-os hossz és a rács-/ablak-sorrend csak C úton áll (feltételes). A rács forrása, a gradiens és a kimeneti buffer nincs meg. Az „eredeti” jelölés továbbra sem adható. (A G/5 szövegét nem írtam át.)
+
+**Fejlesztési következmény (#4182).** A `d_HOG` primitív (G/4 6. pont) és a G csoportosítás továbbra is fejleszthető. A C szerinti elrendezés (2016 elem, 4 × 7 ablak, ablakonkénti normálás) megírható, de feltételesként kell jelölni, amíg a második út és a rács forrása nincs meg.
+
+**Nyitott.**
+- `Ghidra-kör kell: 0x0088cd10 - a `this+0x10` tábla (rács) és a `this+0x8` tömb feltöltése: a rács mérete és a cella-hozzárendelés [blokkoló]`
+- `Ghidra-kör kell: 0x0088c480 - a másolás előtt futó segéd: ír-e a `this+0x10` táblába vagy más `this`-mezőbe, és számol-e gradienst [blokkoló]`
+- `Ghidra-kör kell: 0x00873510 - a 0x00873cb0 hívójának a rekordtömb (`*(param_2+0x54)`) és a kimeneti buffer (legalább 2016 float) foglalása, valamint az `iStack_10` értékadása [blokkoló]`
+- `Ghidra-kör kell: 0x0049fe60 - a hívott függvény azonosítása (gyök-e) és a `_DAT_00c7e328` értéke [nem blokkoló: a G/6 utasításszintű olvasata gyöknek mondja, a C-ben nincs kiírva]`
+
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
 *A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
