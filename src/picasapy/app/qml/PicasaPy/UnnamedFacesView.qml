@@ -124,6 +124,15 @@ ColumnLayout {
         })
     }
 
+    // #5185: a „Learn more...” a Picasa súgóját nyitja az alapértelmezett
+    // böngészőben (`instructionpanel/learn_more`, 19.2). A `hl` a felület
+    // nyelvéből jön; az üdvözlőablak a kattintás után is nyitva marad.
+    function learnMoreUrl() {
+        return "http://picasa.google.com/support/bin/answer.py?hl="
+            + (controller ? controller.helpLanguageCode : "")
+            + "&answer=156272"
+    }
+
     Component.onCompleted: reload()
     onModeChanged: {
         root.clearSelection()
@@ -797,6 +806,7 @@ ColumnLayout {
                     text: qsTr("Learn more...")
                     Layout.preferredWidth: 86
                     Layout.preferredHeight: 28
+                    onClicked: Qt.openUrlExternally(root.learnMoreUrl())
                     contentItem: Text {
                         text: parent.text
                         horizontalAlignment: Text.AlignHCenter
