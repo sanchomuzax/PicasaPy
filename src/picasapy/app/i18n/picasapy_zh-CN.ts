@@ -17733,10 +17733,12 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <translation>确认</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37" />
-            <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="57" />
+            <source>Picasa is now available in your system's native language.
+Would you like to switch Picasa from English to this language?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy 现已支持您的系统语言。要将 PicasaPy 的界面语言从英语切换为此语言吗？</translation>
+            <translation>Picasa is now available in your system's native language.
+Would you like to switch Picasa from English to this language?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />

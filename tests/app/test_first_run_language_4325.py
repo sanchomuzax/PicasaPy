@@ -13,24 +13,66 @@ def settings(tmp_path):
     return QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
 
 
+@pytest.fixture
+def windows_nt():
+    """A felajánlás platformtól független; a név a régi tesztek olvashatóságát őrzi."""
+
+
 @pytest.mark.parametrize(
-    ("accepted", "expected"),
-    [(True, "hu"), (False, "en")],
+    ("accepted", "expected_language", "expected_pending"),
+    [(True, "de", "system"), (False, "en", "en")],
 )
 def test_first_run_choice_is_saved_as_current_and_pending(
-    settings, monkeypatch, accepted, expected
+    settings, monkeypatch, windows_nt, accepted, expected_language, expected_pending
 ):
-    monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "hu")
+    monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "de")
     asked = []
 
     result = language_controller.resolve_first_run_language(
         settings, lambda system_language: asked.append(system_language) or accepted
     )
 
-    assert asked == ["hu"]
-    assert result == expected
-    assert settings.value(language_controller.LANGUAGE_KEY) == expected
-    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == expected
+    assert asked == ["de"]
+    assert result == expected_language
+    assert settings.value(language_controller.LANGUAGE_KEY) == expected_language
+    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == expected_pending
+
+
+@pytest.mark.parametrize(
+    "system_language",
+    ["es", "fr", "it", "de", "ja", "zh-CN", "zh-TW", "ko", "ru", "pt", "nl", "fa"],
+)
+def test_first_run_prompt_accepts_the_original_recognized_languages(
+    settings, monkeypatch, windows_nt, system_language
+):
+    monkeypatch.setattr(
+        language_controller, "resolve_system_language", lambda: system_language
+    )
+    asked = []
+
+    assert language_controller.resolve_first_run_language(
+        settings, lambda code: asked.append(code) or False
+    ) == "en"
+    assert asked == [system_language]
+    assert settings.value(language_controller.LANGUAGE_KEY) == "en"
+    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == "en"
+
+
+@pytest.mark.parametrize("system_language", ["hu", "fil"])
+def test_first_run_prompt_also_offers_picasapy_only_catalogues(
+    settings, monkeypatch, windows_nt, system_language
+):
+    monkeypatch.setattr(
+        language_controller, "resolve_system_language", lambda: system_language
+    )
+    asked = []
+
+    assert language_controller.resolve_first_run_language(
+        settings, lambda code: asked.append(code) or True
+    ) == system_language
+    assert asked == [system_language]
+    assert settings.value(language_controller.LANGUAGE_KEY) == system_language
+    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == "system"
 
 
 def test_saved_language_suppresses_first_run_question(settings, monkeypatch):
@@ -44,9 +86,9 @@ def test_saved_language_suppresses_first_run_question(settings, monkeypatch):
     assert settings.value(language_controller.LANGUAGE_KEY) == "en"
 
 
-@pytest.mark.parametrize("system_language", ["en", "eo"])  # eo: nincs a 41 nyelv között (#4313)
+@pytest.mark.parametrize("system_language", ["en", "enUK", "eo"])
 def test_english_or_unsupported_system_language_suppresses_question(
-    settings, monkeypatch, system_language
+    settings, monkeypatch, windows_nt, system_language
 ):
     monkeypatch.setattr(
         language_controller, "resolve_system_language", lambda: system_language
@@ -59,7 +101,7 @@ def test_english_or_unsupported_system_language_suppresses_question(
     assert not settings.contains(language_controller.LANGUAGE_KEY)
 
 
-def test_saved_first_run_choice_prevents_a_second_question(settings, monkeypatch):
+def test_saved_first_run_choice_prevents_a_second_question(settings, monkeypatch, windows_nt):
     monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "hu")
     calls = []
 
@@ -70,3 +112,25 @@ def test_saved_first_run_choice_prevents_a_second_question(settings, monkeypatch
     assert language_controller.resolve_first_run_language(settings, ask) == "hu"
     assert language_controller.resolve_first_run_language(settings, ask) is None
     assert calls == ["hu"]
+
+
+def test_accepted_system_choice_tracks_the_system_language_on_later_startup(
+    settings, monkeypatch, windows_nt
+):
+    monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "hu")
+    assert language_controller.resolve_first_run_language(settings, lambda _code: True) == "hu"
+    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == "system"
+
+    monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "fr")
+    assert language_controller.resolve_startup_language(settings) == "fr"
+    assert settings.value(language_controller.LANGUAGE_KEY) == "fr"
+    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == "system"
+
+
+def test_linux_also_offers_the_first_run_language_prompt(settings, monkeypatch):
+    # PicasaPy-eltérés: az eredeti csak Windowson futott, a PicasaPy Linuxon is felajánl.
+    monkeypatch.setattr("sys.platform", "linux")
+    monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "de")
+
+    assert language_controller.resolve_first_run_language(settings, lambda _l: True) == "de"
+    assert settings.value(language_controller.LANGUAGE_KEY) == "de"
