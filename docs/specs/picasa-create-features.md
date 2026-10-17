@@ -4828,7 +4828,7 @@ A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok
 | `0x00cf4b88` (W) | `f1d4c853fb211940` | 6,2831853 | 2π (nyolc tizedesre) |
 | `0x00c7e328` (c) | `000000000000f03f` | 1,0 | a normálás állandója; a G/6 olvasatával egyezik |
 
-Ebből: a szög [0, 2π) tartományban van (negatív esetén + W), a rekesz-index p = A · 9/π ∈ [0, 18), tehát **18 előjeles irányrekesz, rekeszenként 20°**, a 19. hely (p ≥ 17 felső szomszédja) a 0. rekeszbe fordul vissza (5. pont). A két hívott függvény a CRT matematikai belépőinek mintáját mutatja: `0x00c29cca` = `mov edx, 0x00d491c0; jmp` (táblás CRT-intrinszik-belépő, az atan2 jelöltje), `0x00c0b310` = `sub esp,0xc; fst qword [esp]; call …` (a `_CIsqrt` mintája). Ez a két azonosítás **feltételes** (bájtminta, a cél nincs végigkövetve); a három konstans **megerősített** (közvetlen bájtolvasás, és a G/6 utasításszintű olvasata a c-re ugyanezt adja).
+Ebből: a szög [0, 2π) tartományban van (negatív esetén + W), a rekesz-index p = A · 9/π ∈ [0, 18), tehát **18 előjeles irányrekesz, rekeszenként 20°**, a 19. hely (p ≥ 17 felső szomszédja) a 0. rekeszbe fordul vissza (5. pont). A két hívott függvény a CRT matematikai belépőinek mintáját mutatja: `0x00c29cca` = `mov edx, 0x00d491c0; jmp` (a CRT táblás belépője, az atan2 jelöltje), `0x00c0b310` = `sub esp,0xc; fst qword [esp]; call …` (a `_CIsqrt` mintája). Ez a két azonosítás **feltételes** (bájtminta, a cél nincs végigkövetve); a három konstans **megerősített** (a bájtok közvetlen kiolvasása, és a G/6 utasításszintű olvasata a c-re ugyanezt adja).
 
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
