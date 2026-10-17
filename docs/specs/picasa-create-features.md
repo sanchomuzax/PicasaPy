@@ -5824,7 +5824,7 @@ Következő felvehető munka: célzottan feloldani a `0x00423300` callback adat�
 
 **Módosított fájl:** `docs/specs/picasa-create-features.md` (új 4.3 szakasz).
 
-#### 4.3 7. kör: a véletlen pásztázás képlete és magja (#5225, 2026-10-17)
+#### 4.4 7. kör: a véletlen pásztázás képlete és magja (#5225, 2026-10-17)
 
 **Következtetés.** A `0x0076d900` két jelölt téglalapot készít. Két helyi
 LCG-törtet (`u`, `v`) addig húz, amíg `|u-v| ≥ 0,5`; ezek adják a két
