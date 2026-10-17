@@ -2755,6 +2755,112 @@ olvasása csak a vizsgált láncra vonatkozó feltételes negatív állítás. A
 numerikus hatása, a futásidejű keretméret és a teljes videókocka-renderelés
 továbbra is nyitott.
 
+**A getterek C-kódja - #4400, 8. kör (2026-10-17).**
+
+**Kérdés.** A 7. kör három C-kódot kért: `0x0049d560`, `0x00430610` és `0x009e0660`. Három kérdésre kellett válasz: (a) milyen transzformációt végez a `0x00430610` a négy sarokra, és milyen mezőkből; (b) a `0x009e0660` milyen feltételek mellett ad más keretméretet, és mit kap a `0x00813c50` `Vw,Vh`-ként; (c) mi a `0x0049d560` szerepe a láncban. A 7. kör a `0x00430610`-t a film `+0xa0` getterének filter-transzformációjaként nevezte meg. Az 5. és 6. kör szerint a getter a `0x0068f980` (vtable-slot `+0xa0`). Ez a `0x0047a390` hidat hívja, a `0x00430610` pedig a híd filter-segédje (hívás: `0x0047a45c`). A C ezt megerősíti, lásd (a).
+
+**Forrás.** `referencia/ghidra/2026-10-17-film-2.txt`: a három függvény C-kódja, hívói és hívottjai. A `0x0047a390`, `0x00813330`, `0x00a4a240`, `0x00a4a520`, `0x0090ff50`, `0x00907cd0`, `0x0069f510` és `0x0045a9d0` törzse nincs a fájlban. Az alábbi állítások ezért a látott C-re vonatkoznak.
+
+**Eredmények.**
+
+*(a) A `0x00430610` szűrő-segéd. Nincs benne affín transzformáció a négy sarokra.*
+
+- Bemenet: `param_1` (objektum; a `+0x31f4` alatt keresi a `filters` kulcsot), `param_2` (objektum; `+0x30` a szűrt mező, `+0x8`/`+0xc` a méret, `+0x10`/`+0x14` a visszaállító téglalap határa), és a téglalap `param_3..param_6`: `[x0, y0, x1, y1]`, négy egész. Nem sarokpontok.
+- Kimenet: csak a státusz (`iVar1`). A téglalap nem jut vissza a hívónak.
+- Lépések a C szerint:
+  1. `param_2 == 0` esetén `4`. Ha a `FUN_00430540` nullától eltérő értéket ad, a függvény azt adja vissza.
+  2. Szálzár a helyi `FilterArray` körül.
+  3. `FUN_0069f510(param_1+0x31f4, "filters")`. Ha ez nem nulla, a téglalap-blokk akkor is lefut, a szűrő nem.
+  4. Ha a lookup nulla, a `FUN_00907cd0` a `FilterArray`-t és a `param_2+0x30` mezőt kapja, méretekkel `param_2+0x8` és `+0xc`. Ha ez nem nulla, a téglalap-blokk kimarad.
+  5. Téglalap-blokk: üres téglalapnál (`x1 <= x0` vagy `y1 <= y0`) a téglalap `[0, 0, param_2+0x10, param_2+0x14]` lesz. Utána `FUN_0090ff50(&téglalap)`.
+- Metszés: valódi metszés nincs a C-ben. Csak az üres-téglalap visszaállítás látszik.
+- Forgatás: nincs a függvényben.
+- Filter: van (3-4. lépés). A hatása NINCS MEG.
+- Affín: nincs a függvényben. A spec szerint az affín transzformáció a `0x00a4a240`-hez köthető, a film-hídban, a filter után (`0x0047a41c`-`0x0047a470`; az 5. kör szerint itt affín leképezés épül). A 7. kör `0x0047a46c` címe ennek a hívásnak a helye lehet. Ezt a `0x0047a390` C-je dönti el.
+- A filmút sorrendje a spec szerint: metszés → forgatás → filter (`0x00430610`) → affín (`0x00a4a240`). A C a filter-lépést és a `filters` kulcsot megerősíti. A többi lépés csak a spec szerint van meg.
+- A `0x0090ff50` az egyetlen téglalap-művelet. Ha az affín a `0x00a4a240`, a `0x0090ff50` valószínűleg nem affín. Ez feltételes.
+- Ha a `0x0090ff50` nem ír globális területre, a szűrő-lépés nem módosítja a hívó téglalapját.
+- Nem film-specifikus: kilenc kódhívása van. A crop-író `0x0042b000` kétszer hívja (`0x0042b13d`, `0x0042b32f`); a híd hívása (`0x0047a45c`) csak egy a kilencből. Ez új tény.
+- Nincs DATA (vtable) hivatkozás rá. A 2.5 szakasz korábbi „filter-/affin útja" megnevezése ezért pontosítandó: a `0x00430610`-ben csak szűrő van.
+
+*(b) A `0x009e0660` ytDrawNode `+0x20` getter (`__thiscall`; `this` = `param_1`, kimenet = `param_2`, második bemenet = `param_3`).*
+
+- Csak adatreferencia mutat rá: 44 DATA-hivatkozás, kódhívás nincs. A `0x00cda8ec` a `0x00cda8cc + 0x20` vtable-helyen áll, ez egyezik a spec vptr-jével. A slot-hely megerősített (xref-adat és a spec utasításolvasata). Az osztályazonosítás (ytDrawNode) RTTI-alapú, ez egy út: feltételes.
+- Nulla téglalap (`[0,0,0,0]`): ha `[this+0x20f] == 0`, és (`[this+0x190] <= [this+0x188]` vagy `[this+0x194] <= [this+0x18c]`). A `this+0x188..+0x194` a csomópont saját `[x0, y0, x1, y1]` téglalapja. Ha a jelzőbájt nem nulla, ez az ellenőrzés kimarad.
+- Egyébként a kimenet négy dword másolata: `FUN_00a4a520()`, ha `[param_3+0x24] == 0`, különben `FUN_00a4a240(param_3)`.
+- A getter törzse nem transzformál: másol, és forrást választ. A `param_3` a `0x00a4a240`-nek megy. Mivel az affín transzformáció a spec szerint a `0x00a4a240`-hez köthető, a nem nulla bájt ága transzformált téglalapot adhat. Ez egy út: feltételes.
+- Más keretméretet tehát két eset ad: a nulla téglalap, és a `0x00a4a240` ága. A `0x00a4a520` ágának forrása NINCS MEG.
+- Mit kap a `0x00813c50` `Vw,Vh`-ként: a C ezt nem mondja meg. A 7. kör utasításolvasata szerint a `0x00813330` a visszaadott téglalap `x1-x0` és `y1-y0` értékét adja tovább. Ez egy út: feltételes. A `0x00813330` C-je kell.
+- Nulla téglalapnál `Vw = Vh = 0`. A spec szerint ezek a `0x00813c50` képletének nevezőjében vannak. Hogy a `0x00813330` kezeli-e ezt, NINCS MEG.
+
+*(c) A `0x0049d560` a `faces=` tételek parser-je, pixel-rekordokba.*
+
+- Egyetlen hívója a `0x0045a9d0` (`0045b8f7`). A kulcsnév (`faces`) nincs a C-ben. A spec szerint a `.picasa.ini` útjáról hívódik.
+- Bemenet: `;`-vel elválasztott tételek, tételenként két `,`-vel elválasztott mező. Az első mező `rect64(%I64x)` alakú. A második mező nincs felhasználva. A `rect64` olvasás és a `0x009b93f0` konverter használata egyezik a 7. kör `0x0042a570` olvasatával: két út, megerősített.
+- Kimenet: a `*param_1` tömb 32 bájtos rekordjai (nyolc dword). Az első hat dword a `local_24`: ebből az első négy a képpont-téglalap, az 5-6. a C szerint nullázva. Utána a `local_c` két dwordja (`_DAT_00c7ccf8`).
+- A tömb minden híváskor felszabadul és üresre áll. A bit0 jelző a törlésen túl megmarad. A C-ben nincs olyan utasítás, ami bit0-t beállítana. Ha be van állítva, az első érvényes arcnál a függvény `4`-gyel kilép.
+- Hibás tétel: kimarad, a függvény nem áll meg. Hibák: nem `rect64`; a `FUN_009b9190` nem nulla; a konverter nem nulla; `x1 <= x0` vagy `y1 <= y0`; a `FUN_0092c450` nem nulla.
+- Visszatérési érték: `-1`, ha a határ üres (`param_1[2..5]`); `4`, ha a lista zárt, vagy foglalási hiba van; egyébként `0`.
+- Képhatár: a `0x0049d560` törzsében nincs metszés; a határ csak az üres-ellenőrzésben szerepel. A metszés a konverterben van (a spec korábbi, QEMU-val mért olvasata): `x0` a `[0, w-1]`, `x1` az `[1, w]` közé szorul.
+- A konverter argumentum nélkül hívódik. A spec szerint a kép szélességét és magasságát és a rect64 értéket kapja. Ezek forrása NINCS MEG. A `param_1[2..5]` határ egy lehetséges forrás, bizonyíték nélkül.
+- Az `imagedata_facerect`: a `0x00446610` rect64 (u64) mezőt olvas a spec szerint. A `0x0049d560` pixel-rekordot ír. Ha az oszlop rect64 marad, ez a lista nem a közvetlen író, hacsak a hívó vissza nem kódolja. Ezt a `0x0045a9d0` dönti el.
+
+**Bizonyítottsági fok.**
+
+- Megerősített (két út egyezik):
+  - A `0x00430610` nem a `+0xa0` getter. A C-ben nincs DATA-hivatkozás, a getter vtable-ből jön; a spec szerint a getter a `0x0068f980`, a `0x0047a390` pedig a híd.
+  - A `0x00430610`-ben nincs affín transzformáció a négy sarokra. A C-ben nincs affín-kód; a spec szerint az affín a `0x00a4a240`-hez köthető.
+  - A `0x00430610` a `filters` kulcsot keresi: a C-literál és a spec (`0x00c80b04`) egyezik.
+  - A `0x009e0660` a `0x00cda8cc` vtable `+0x20` slotja: xref-adat és spec-olvasat.
+  - A `0x0049d560` `rect64` olvasása és a `0x009b93f0` konverter használata egyezik a 7. kör `0x0042a570` olvasatával.
+- Feltételes (egy útra épül):
+  - a `0x009e0660` nulla-ága (C);
+  - a `0x009e0660` kimenete nem a saját téglalap (C);
+  - a `0x00a4a240` ágának affín jellege (spec, a C csak a hívást mutatja);
+  - a `Vw,Vh` a visszaadott téglalap mérete (7. kör, utasításolvasata);
+  - a szűrő-lépés nem módosítja a hívó téglalapját (C, a `0x0090ff50` törzse nélkül);
+  - a `0x0049d560` listája nem az imagedata-oszlop írója (C és a formátum-eltérés);
+  - a `0x0049d560` törzse nem metsz (C);
+  - a `0x00430610` nem film-specifikus (hívólista, egy forrás).
+
+**Cáfoló kísérletek.**
+
+1. *A `0x00430610` mint `+0xa0` getter.* A getter vtable-ből érkezik, a `0x00430610`-nek nincs DATA-hivatkozása. A cáfolat sikerült.
+2. *A `0x0090ff50` mint négy sarokra ható affín.* A `0x0090ff50` egy téglalapot kap, nem sarokpontokat, az affín pedig a spec szerint a `0x00a4a240`. A cáfolat részben sikerült: affínként nincs alátámasztva, de a törzse hiányzik.
+3. *A `0x00430610` visszaadja a téglalapot.* Nincs kimeneti téglalap, csak `iVar1`. A cáfolat sikerült a C szintjén; a globális írás lehetősége a `0x0090ff50`-től függ.
+4. *A `0x0049d560` metsz a kép határára.* A törzsben nincs metszés, a metszés a konverterben van. A cáfolat részleges: a metszés nem ebben a függvényben van.
+5. *A `0x0049d560` az imagedata-oszlopba ír.* A rekord pixel-rekord, az oszlop a spec szerint rect64. A cáfolat részleges: a hívó visszakódolhatja.
+6. *A `0x009e0660` alap-méretnél nulla keretet ad.* A spec szerint a csomópont téglalapja `[0,0,W,H]` (7. kör). W és H pozitív esetén a nulla-ág nem fut, feltéve, hogy ez a téglalap a `+0x188..+0x194` mezőbe kerül. A visszaadott téglalap szélessége és magassága (W, H) még nincs igazolva.
+
+**NINCS MEG (8. kör után).**
+
+- A `faces=` lista célja (`0x0045a9d0` dönti el). A `0x0049d560` önmagában nem ír imagedata-oszlopot.
+- A bit0 jelző beállítója.
+- A `0x009b93f0` konverter implicit bemenetei (rect64 érték, kép-méret).
+- A `0x00430610` szűrő-hatása a képre (`0x00907cd0`): képi, nem geometriai.
+- A `0x0090ff50` hatása a téglalapra.
+- A `0x0047a390` teljes törzse (metszés, forgatás, affín hívás címe: `0x0047a46c`?), és a `0x0047a4a0` (hívás: `0x0047a576`) szerepe.
+- A `0x00a4a240` és a `0x00a4a520` törzse, így a `0x009e0660` visszaadott téglalapjának forrása.
+- A `Vw,Vh` képzése és a nulla téglalap kezelése (`0x00813330`).
+- Zárva a C szerint: a `0x0049d560` második mezőjének sorsa (nem olvassa), és a `0x00430610` négy sarokra ható affínja (nincs benne).
+- Változatlan: a `0x00813c50` kapott `Vw,Vh` értéke egy konkrét filmfutásban; a landmark upstream szerepe; a `+0x14d0` író és a selector bejegyzés; a rotate/filter numerikus hatása; az élő viselkedésmérés.
+
+Ghidra-kör kell: 0x0047a390 - a híd törzse (a `+0xa0` getter, `0x0068f980`, hívja): a `+0x14d0` metszés, a `rotate` hívás, a `0x00430610` argumentumai (hívás: `0x0047a45c`) és az affín hívás címe (`0x0047a46c`?). [blokkoló]
+
+Ghidra-kör kell: 0x0090ff50 - a `0x00430610` egyetlen téglalap-művelete: módosítja-e a téglalapot, és ír-e globális területre. [blokkoló]
+
+Ghidra-kör kell: 0x00813330 - a `Vw,Vh` képzése a `0x009e0660` visszaadott téglalapjából, és a nulla téglalap kezelése. [blokkoló]
+
+Ghidra-kör kell: 0x00a4a240 - a `[param_3+0x24] != 0` ág: az affín transzformáció bemenete és kimenete. [blokkoló]
+
+Ghidra-kör kell: 0x00a4a520 - a `[param_3+0x24] == 0` ág forrása: a csomópont saját téglalapja, vagy más. [blokkoló]
+
+Ghidra-kör kell: 0x0045a9d0 - az egyetlen hívó: hova kerül a `0x0049d560` tömbje (imagedata-oszlop, vagy más), és mi állítja a bit0 jelzőt. [blokkoló]
+
+Nem blokkoló további címek: `0x00907cd0` (a szűrő képi hatása), `0x0069f510` (a `filters` lookup visszatérési jelentése), `0x009b93f0` (a konverter implicit bemenete).
+
+A 7. kör „Következő célzott Ghidra-kör" listája (`0x0049d560`, `0x00430610`, `0x009e0660`) ezzel lezárult: mindhárom C megvan. A lezáráshoz a fenti hat cím kell.
+
 Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
 forrás-URL-jeit adja át (`Main.qml:728–734`,
 `people_controller.py:81–89`, `index/people.py:170–198`). A
