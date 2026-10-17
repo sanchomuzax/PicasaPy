@@ -78,6 +78,9 @@ class TestSema:
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
         raw.executescript("DROP TABLE face_scan;\n"
+            # #5180: a friss séma arcforrás-oszlopa csak a v25-ben érkezik
+            "DROP INDEX idx_face_source_photo;\n"
+            "ALTER TABLE face DROP COLUMN source;\n"
             #: #2902: a friss séma már tartalmazza — a v17 nem
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             #: #4332: a felvételi dátum felülírása a v20-ban érkezik

@@ -1,17 +1,18 @@
-"""A db3 arcadatának átvétele a `.picasa.ini`-be — a #3002 őre.
+"""A db3 arcadatának átvétele a `.picasa.ini`-be — a #3002/#5180 őre.
 
 ## A döntés, amit ez a lap rögzít
 
-A jegy három szabályt kínált arra az esetre, ha a db3-ban van arc, a fotó
-ini-jében viszont nincs (vagy más van). Az **A** maradt (a jegy javaslata):
+A #3002 három szabályt kínált arra az esetre, ha a db3-ban van arc, a fotó
+ini-jében viszont nincs (vagy más van). Az **A** maradt, majd a #5180 a
+fotószintű kihagyást rect64-szintűre pontosította:
 
-> **csak a HIÁNYZÓT pótoljuk**: ahol az ini-ben nincs `faces=`, oda beírjuk
-> a db3-ból származót; ahol van, hozzá sem nyúlunk.
+> **csak a HIÁNYZÓ régiót pótoljuk**: a már szereplő rect64-et nem írjuk
+> át, az eltérő db3-régiót hozzáadjuk, a meglévő `faces=` szövegét megtartva.
 
-Indok: az `A` **soha nem ír felül meglévő adatot**, tehát nem ronthat el
-semmit. A `.picasa.ini` az igazságforrás; ha ott már áll arc, azt vagy a
-felhasználó, vagy az eredeti Picasa írta — az import nem tudja, melyik a
-frissebb, tehát nem is dönthet helyette.
+Indok: az import nem tudja megállapítani, melyik forrás frissebb. A
+`.picasa.ini`-beli arcok változatlanok maradnak; az azonos rect64-et
+kihagyjuk, de egy másik db3-régió nem vész el pusztán azért, mert a fotónak
+már van `faces=` sora.
 
 ## A mintakészlet: GENERÁLT, de VALÓDI formátumú db3
 
@@ -123,19 +124,19 @@ class TestAzIniBeIras:
         assert FRVERSION == "1.5"
         assert _ertek(uj, "Picasa", "frversion") == FRVERSION
 
-    def test_A_SZABALY_a_meglevo_faces_hez_HOZZA_SEM_NYUL(self) -> None:
-        """⛔ Ez a jegy döntése: meglévő adatot nem írunk felül."""
-        eredeti = "[kep.jpg]\nfaces=rect64(1111111111111111),abcdef0123456789\n"
+    def test_meglevo_region_bajtra_megmarad_es_az_uj_regio_melle_kerul(self) -> None:
+        """#5180/spec 3.4: a nem ütköző db3-arc átjöhet, a régi régió marad."""
+        eredeti_faces = "rect64(1111111111111111),abcdef0123456789"
+        eredeti = f"[kep.jpg]\nfaces={eredeti_faces}\n"
         dok = parse_document(eredeti)
         uj = arcokat_atvesz(
             dok, "kep.jpg", (DeferredFace(rect=_rect(), name="Kiss Anna"),)
         )
-        assert _ertek(uj, "kep.jpg", "faces") == _ertek(dok, "kep.jpg", "faces")
-        assert find_contact_id(uj, "Kiss Anna") is None, (
-            "meglévő `faces=` mellett kontaktot sem hozunk létre — az "
-            "árva bejegyzés lenne"
-        )
-        assert _ertek(uj, "Picasa", "frversion") is None
+        uj_faces = _ertek(uj, "kep.jpg", "faces")
+        assert uj_faces.startswith(eredeti_faces + ";")
+        assert len(parse_faces(uj_faces)) == 2
+        assert find_contact_id(uj, "Kiss Anna") is not None
+        assert _ertek(uj, "Picasa", "frversion") == FRVERSION
 
     def test_a_MEGLEVO_kontakt_azonositoja_ujrahasznosul(self) -> None:
         """Ha a név már szerepel a `[Contacts2]`-ben, ne kapjon második

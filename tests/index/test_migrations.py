@@ -125,6 +125,9 @@ class TestMigrationV20TakenAtOverride:
             conn.execute("ALTER TABLE photo_albums DROP COLUMN place")
             conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
             conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
+            # #5180: a v19-es arc-tábla a v25-ös forrásjelölő nélkül
+            conn.execute("DROP INDEX idx_face_source_photo")
+            conn.execute("ALTER TABLE face DROP COLUMN source")
             conn.execute("PRAGMA user_version = 19")
             conn.commit()
 
@@ -332,6 +335,9 @@ class TestFaceEmbeddingMigration:
         raw.executescript(
             "DROP TABLE IF EXISTS face_group;\n"
             "DROP INDEX IF EXISTS idx_face_group;\n"
+            # #5180: a forrásjelölő csak a v25-ben érkezik
+            "DROP INDEX idx_face_source_photo;\n"
+            "ALTER TABLE face DROP COLUMN source;\n"
             # #26 (v12): a név-oszlopok — az indexüket ELŐBB kell eldobni,
             # különben a DROP COLUMN a tárolt DDL újraparse-olásán elhasal
             "DROP INDEX IF EXISTS idx_face_person;\n"
@@ -420,6 +426,11 @@ class TestAlbumPlaceMigration:
         raw.executescript(
             "ALTER TABLE photo_albums DROP COLUMN place;"
         )
+        # #5180: ezek a visszaállított régi sémák a forrásjelölő előttiek
+        raw.executescript(
+            "DROP INDEX idx_face_source_photo;"
+            "ALTER TABLE face DROP COLUMN source;"
+        )
         if scan_state:
             raw.executescript(
                 "CREATE TABLE folder_scan_state ("
@@ -457,12 +468,12 @@ class TestAlbumPlaceMigration:
         return path
 
     @pytest.mark.parametrize(("version", "expected_hidden"), [(21, 2), (22, 2)])
-    def test_v21_es_v22_adatbazisbol_is_v24_re_migrál_es_megtartja_adatokat(
+    def test_v21_es_v22_adatbazisbol_is_aktualisra_migrál_es_megtartja_adatokat(
         self, tmp_path, version, expected_hidden
     ):
         path = self._legacy_database(tmp_path, version)
         with open_index(path) as conn:
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 24
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
             columns = {row[1] for row in conn.execute("PRAGMA table_info(photo_albums)")}
             assert "place" in columns
             rows = conn.execute("SELECT photo_id, place FROM photo_albums").fetchall()
@@ -484,7 +495,7 @@ class TestAlbumPlaceMigration:
                 )
             }
             assert "folder_scan_state" in tables
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 24
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
 
     def test_hely_nelkuli_album_a_mai_rendben_all(self, tmp_path):
         from picasapy.index.albums import album_photos
@@ -527,6 +538,8 @@ class TestAlbumPlaceMigration:
         # a scan-állapot viszont igen
         raw = sqlite3.connect(db)
         raw.executescript(
+            "DROP INDEX idx_face_source_photo;\n"
+            "ALTER TABLE face DROP COLUMN source;\n"
             "ALTER TABLE photo_albums DROP COLUMN place;\n"
             "PRAGMA user_version = 22;"
         )
