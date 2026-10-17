@@ -4660,7 +4660,9 @@ A tágabb e-mail beállítás-készlet (`0x006e1100`): `EmailSinglePicture` ·
 megszűnt). **A választó-párbeszéd maga viszont nem az**, mert nálunk a
 Beállítások ígéri.
 
-### 47.2 ⛔ NÁLUNK NÉMA BEÁLLÍTÁS: „Let me choose each time"
+### 47.2 ⛔ TÖRTÉNETI LELET (2026-09-01): „Let me choose each time”
+
+**A lent következő lelet a 2026-09-01-i kódállapotra vonatkozik.** A #1798/#4135 után a levélküldés lánca megváltozott; a mai állapotot a 47.3 szakasz írja le.
 
 A `OptionsTabEmail.qml` (99 sor) két rádiógombot kínál:
 
@@ -4714,8 +4716,12 @@ az egész párbeszéd hiányzik; a csoportosztás nincs mérve.)*
 - **„A `choose_mail` teljes egészében halott szolgáltatás"** — megdőlt:
   csak a **Google Mail-ág** az; a választó-párbeszéd maga él, és nálunk a
   Beállítások ígéri is (47.2).
-- **„A `mail/useDefaultClient` beállításunk hat a küldésre"** — megdőlt:
-  a `sendRows()` nem olvassa (47.2).
+- **„A `mail/useDefaultClient` beállításunk hat a küldésre”**: ezt a 47.2
+  lelet tévesnek mérte, mert a `sendRows()` akkor még nem olvasta a kulcsot.
+
+### 47.3 Frissítés (2026-10-17): a levelezési mód beállítása bekötött
+
+A 47.2 lelet történeti. A mai lánc a forrásban végigkövethető: a Beállítások rádiógombja a `mail/useDefaultClient` értéket írja (`OptionsTabEmail.qml:54-77`, `email_controller.py:366-384`). A `sendRows()` `mailChoiceRequested` jelzést küld (`email_controller.py:507-519`), a `Main.qml` ebből megnyitja a párbeszédet (`Main.qml:2622-2631`), majd az `EmailChoiceDialog.qml:34-43` a tárolt érték szerint a `compose` vagy `choose` panelt mutatja. A „Let me choose each time I send pictures” ezért nem néma beállítás. A küldés mindkét módban a rendszer alapértelmezett levelezőprogramját használja; a Google Mail ág továbbra is letiltott.
 
 ## 48. tétel — a NÉMA BEÁLLÍTÁS mint önálló hibaosztály (2026-09-01)
 
