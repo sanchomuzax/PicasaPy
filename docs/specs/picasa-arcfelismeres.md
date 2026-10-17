@@ -2957,3 +2957,157 @@ Nincs lezárt N-pont, ezért nincs bizonyított eltérés. A 21.8 és a 23.9 „
 ### 24.11 Mérleg (6. kör)
 
 Megerősített: 4 tétel (24.8 a-d). Feltételes: 6 tétel (24.8 e-j). NINCS MEG: 10 csoport (24.8). Blokkoló Ghidra-kérés: 7 (24.6), nem blokkoló: 1 (24.6). Felvétel dönt: N1, N3 (960 px) és N6 (trigger); N5 a 0x00448c90 után. A felvétel tulajdonosi jóváhagyást kér.
+
+## 25. #5184, hetedik kör (2026-10-17)
+
+**Hatókör:** a 24.6 nyolc címe (`0x007bb660`, `0x008d2720`, `0x00584010`, `0x006a3b80`, `0x00448c90`, `0x009bab50`, `0x006ccbb0`, `0x006ca8c0`). Mind a nyolcra van válasz. Az N1, N3, N5 és N6 pontokra következő döntés a 25.10 szakaszban van.
+
+**Forrás:** `referencia/ghidra/2026-10-17-szemelykezeles-6.txt` (a továbbiakban `-6`, 1 117 sor, nyolc `==== CÍM … ====` szakasz). Visszaolvastam: `referencia/ghidra/2026-10-17-szemelykezeles-5.txt` (`-5`) 2211., 2336., 2346., 2383-2384. sora (a 0x007baf50 hívási argumentumai), és `referencia/binary-index/rtti.csv` (a `CNevenVision::vftable` táblája, 961. sor). A red.cfg betöltéséhez a `referencia/research-2026-08-13-red-pipeline.md` 44-49. sorát olvastam. A 0x00640340 olvasata a `-3` dumpból jön (22.3).
+
+**Jelölés:** ugyanaz, mint a 20. szakaszban. `index` = a bináris-index fejléce (HÍVÓK, HÍVOTTAK) vagy a `rtti.csv`. `C` = a `-6` dekompilált kódja. `egy út` = egy eszköz (Ghidra) egy kimenete.
+
+### 25.1 N6: 0x007bb660, az ok és az online ág közös lépése
+
+- **Mit csinál (C, 36-322. sor).** Csak a `param_1+0x158` mező 2 vagy 3 értékénél fut (80-82. sor). A `this+0xd4+0x2c5c` gyűjteményt használja (199. sor). A 3-as ágban a 0x00585ad0-val duplikáció-keresést futtat (199-202. sor). Találatnál a 0x0058ff00-t és a 0x007b7f00-t hívja (206-208. sor), és az üzenetek közül egyet mutat (`DupContact`, `DupNameMsg`, `DupEmailMsg`, `DupFoundTitle`). Utána a 0x009bab50 párbeszédet futtat (285. sor).
+- **Hívja-e a 0x006952e0-t vagy a 0x00692210-t?** **Nem.** Egyik sincs a C-törzsben, és a HÍVOTTAK-listában (index) sincs.
+- **Ír-e lemezre?** Közvetlenül nem. A C-ben és a HÍVOTTAK-listában nincs fájl-API. A 0x00585ad0, a 0x0058ff00 és a 0x007b7f00 belsejét nem olvastuk: **NINCS MEG**, hogy írnak-e.
+
+### 25.2 N6: 0x008d2720, az ok ágban a 0x007baf50 után
+
+- **Mit csinál (C, 363-378. sor).** Két mezőt állít be (`param_1[0x25]` és `[0x26]`, azaz +0x94 és +0x98) az argumentumaiból. Értéke 0 esetén a +0x164, majd a +0x15c slotot hívja. Értéke 1 esetén a +0x168, majd a +0x15c slotot hívja. Közvetlen hívottja nincs (HÍVOTTAK: 0, index).
+- **Mentés-e (0x006952e0, 0x00692210)?** **Nem közvetlenül.** Mentés csak a vtable-célokban lehet (+0x15c, +0x164, +0x168). Ezek nincsenek a körben: **NINCS MEG**.
+
+### 25.3 N6: 0x00584010, a 0x007baf50 gyűjtemény-frissítője
+
+- **Argumentumai (`-5`, 2211., 2346. sor).**
+  1. `*(this+0xd4)+0x2c5c` (uVar3). Ugyanez a gyűjtemény megy a 0x00585ad0-nak is a 0x007bb660-ban. Ez a válasz a 24.5 kérdésére: a gyűjtemény az **első** argumentum, nem a harmadik.
+  2. `iStack_28`: interfész-mutató. A 0x007baf50 a végén felszabadítja (`-5`, 2383-2384. sor). A látott C-ben nincs beállítva.
+  3. `&puStack_14`: a 0x007baf50 által épített rekordtömb. Az elemek 0x30 bájtosak, az elején 64 bites kulccsal.
+  4. `&puStack_1c`: elemenkénti állapot-bájt (`-5`, 2336. sor: `bVar2 >> 1 & 3`).
+- **Mit csinál (C, 400-514. sor).** (1) Minden rekordra meghívja a 0x005875d0-t 3-as móddal, a kulccsal és az 1. argumentummal. Hibánál megáll. (2) Ha a 2. és a 4. argumentum nem nulla, a 2. argumentum vtable-jén kér egy listát. Az állapot-bájt nem 2 elemeire meghívja a 0x005836f0-t (21.5 szerint a név-tábla kivétele).
+- **Ír-e lemezre?** A C-törzsben nincs fájl-API, és a HÍVOTTAK-listában sincs. Ha ír, az a 0x005875d0, a 0x005836f0 vagy a 2. argumentum vtable-hívásai belsejében van: **NINCS MEG**.
+- **Mentés-hívás** (0x006952e0, 0x00692210) a hívottak között **nincs**.
+
+### 25.4 N6: 0x006a3b80, a faces= kulcs forrása
+
+- **Mit csinál (C, 599-755. sor).** Egy láncolt listán (`param_1[0x16]`) keres. A csomópont nevének utolsó N karakterét hasonlítja a keresett névhez, kisbetű-érzéketlenül (667-669. sor). N a keresett név hossza. Találatnál a csomópont típusától függ a folytatás: vagy értéket ad (677. sor), vagy a `param_3` indexű elemet írja ki. A 0x13320004 típusnál ez 64 bites szám `%I64u` alakban (729-732. sor). A lista végén 0-t ad (645. sor).
+- **Van-e benne `faces=` literál?** **Nincs.** A függvény csak keres és formáz. A neveket a listából olvassa.
+- **Honnan jön a `faces=` kulcs?** **NINCS MEG.** A listát töltő kód nincs a körben. A 0x006a3b80-at a 0x0068ac80 (0068af54) és a 0x0068b320 (0068b93a) hívja (index). A listát töltő függvény címe nincs meg. Ehhez a `this+0x988` mező írói kellenek (index, nem Ghidra).
+
+### 25.5 N5: 0x00448c90, a személy-predikátum
+
+- **Mit olvas (C, 807-821. sor).** Egy 64 bites értéket kér a 0x00448fb0-tól (local_8, local_4). Ez az egyetlen közvetlen hívottja.
+- **Mit jelent a nem nulla érték?** A visszatérés 1, ha a 0x00448fb0 0-t adott és a 64 bites érték nem nulla (817-818. sor). Egyébként a 0x00448fb0 visszatérését adja `& 0xffffff00`-val (820. sor). Ezért a nem nulla eredmény kétféle lehet: (a) a 64 bites érték nem nulla, vagy (b) a 0x00448fb0 magas bitekben hibakódot adott (pl. 0xf4242 esetén 0xf4200). A 0xff alatti hibakódok (pl. 2) 0-t adnak.
+- **A 64 bites érték jelentése** (személy-azonosító-e): **NINCS MEG**, mert a 0x00448fb0 nincs a körben.
+- **Hívók** (index): 42, köztük a 0x005c9b00 három helyen és a 0x005c9930 egy helyen (24.3, 24.6).
+
+### 25.6 N5: 0x009bab50, a megerősítő párbeszéd visszatérése
+
+- **Mit ad (C, 880-916. sor).** A párbeszéd eredményét (vtable +0x158) képezi le: 0 → 0, 2 → 1, más nem nulla → 2 (907-915. sor). Ha a gombcsoport hiányzik, 2-t ad (898-900. sor). Ha a `param_1[0x36]` nem nulla, a gombcsoport +0x88 mezőjét 1-re vagy 2-re állítja (889-906. sor).
+- **Melyik gomb a 0?** **NINCS MEG.** A gombazonosítók a vtable +0x158 hívásban és a gombcsoportban vannak.
+- **A 0 jelentése két hívónál ellentétes:**
+  - a 0x00640340 (a törlés-megerősítés, 22.3): 0 esetén a művelet fut tovább, és 0-val tér vissza. Nem nulla esetén 0xf4242-t ad, és a törlés nem fut.
+  - a 0x007bb660 (a duplikáció-kérdés, 285-306. sor): nem nulla esetén meghívja a FUN_007bb370-et, és annak eredményével tér vissza. 0 esetén a FUN_007bb370 nem fut, és 0-val tér vissza.
+  Tehát a 0 nem állandó jelentésű. A leképezés a dialógus-objektumtól függ.
+
+### 25.7 N3: 0x006ccbb0 és a detektor-objektum
+
+- **Mit csinál (C, 927-943. sor).** Az EDI-ben kapott objektum első mezőjébe a `CNevenVision::vftable` címet írja (932. sor). A második mezőt nullázza, a 0x0097adb0-t kétszer hívja, a többi mezőt nullázza.
+- **Hívó.** A 0x0045f0c0 hívja (HÍVÓK: 0045f143). A 24.2 szerint (`-5`, 115-159. sor) ez a this+0x2e10 mezőbe kerülő objektum. A 0x0048e590 (`-4`, 168-172. sor) ebből a mezőből adja a 0x0048e1f0 kilencedik argumentumát (23.2).
+- **Osztály:** `CNevenVision`. Ez **feltételes**: az EDI-átadást a 0x0045f143 hívásnál nem néztük meg diszasszemblálással.
+- **Vtable (index).** A `rtti.csv` szerint a `CNevenVision::vftable` (0x00ca8754) 25 bejegyzésű. A +0x2c slot (a 0x0048e1f0 hívja, 22.2) **0x006cde50**. A +0x34 slot 0x006cdf30. Ez index-adat, C-ben nincs megerősítve.
+- **A Red.dll.** A `research-2026-08-13-red-pipeline.md` (44-49. sor) szerint a CNevenVision a Red.dll betöltője: a 0x006cc9e0 a LoadLibraryA után a `REDENTRY` exportot hívja. A jegyzet a megállapítást megerősítettnek jelöli. A detektor tehát valószínűleg a Red.dll-ben van. Ehhez a körben nincs Ghidra-dump.
+- **960 px:** **NINCS MEG.** A 0x006cde50 olvasata után derül ki, hogy a méretezés a fő binárisban van-e, vagy a Red.dll-ben.
+
+### 25.8 N5: 0x006ca8c0, a mappa-ág kimeneti pufferei (nem blokkoló)
+
+- **Mit csinál (C, 982-1115. sor).** A kritikus szakasz zárolása után: ha a `param_1[0x19]` lista nulla, 4-gyel tér vissza (1012-1025. sor).
+- Ha a `param_2` vagy a `param_3` 0 (1026. sor), a kimeneti tömböt (ESI) újraépíti. A lista elemeinek 4 bájtos értékeit másolja bele. A `param_2 = 0` esetén a `param_1[0x1b]` táblában, a `param_3 = 0` esetén a `param_1[0x1f]` táblában nem nulla bájtú elemeket kihagyja (1036-1057. sor). A tömb kapacitását duplázza (1061-1074. sor). A régi tömböt a 0x0097caf0-val szabadítja fel, vagy a 0x0097c810-zel méretezi át.
+- Ha mindkét argumentum nem nulla: a 0x00891110-t hívja a listán (1102. sor). Ennek C-je nincs a körben.
+- A 0x00440af0 hívja (24.3).
+- **Ír-e lemezre vagy az ini-be?** **Nem.** Csak memóriában dolgozik. Fájl- vagy ini-hívás nincs.
+
+### 25.9 Ghidra-kör kérések (új)
+
+- `Ghidra-kör kell: 0x006cde50 - a CNevenVision +0x2c metódusa (rtti.csv; a 0x0048e1f0 hívja): továbbadja-e a Red.dll-nek, vagy van benne 960 (0x3c0) vagy méretezés? [blokkoló, N3]`
+- `Ghidra-kör kell: 0x00448fb0 - a 0x00448c90 64 bites kimenete: mi a kulcs (személy- vagy más azonosító), és mit jelent a 0 és a nem nulla? [blokkoló, N5]`
+- `Ghidra-kör kell: 0x00448a10 - a második predikátum (0x005c9930 370-381. sor; 0x005c9b00 1308. sor): mit olvas? [blokkoló, N5]`
+- `Ghidra-kör kell: 0x004aca00 - az üres kijelölés ágának predikátuma (0x005c9b00 1246-1253. sor): mit olvas? [blokkoló, N5 egyszemélyes ág]`
+- `Ghidra-kör kell: 0x005875d0 - a 0x00584010 rekordonkénti hívása (3-as mód): ír-e fájlba, és melyikbe? [nem blokkoló, N6 ok/online ág]`
+
+Diszasszemblálás kell (nem Ghidra): a 0x0045f143 előtt az EDI értéke, vagyis a this+0x2e10 objektum-e (25.7). A 24.6 két diszasszemblálási kérése (a 0x0068ac20 ciklusa és a 0x005fdc30 EDI-je) nyitott: ebben a dumpban nincs rájuk adat. A `this+0x988` mező írói a 25.4 faces= kérdéséhez kellenek (bináris-index).
+
+### 25.10 Következtetés: a felvétel dönt
+
+Az új kérések többsége hívott, nem hívó (25.9). Ezek egy lépésben dönthetnek. A hívó-irányú kérések (N1 és N6) nem zárnak: a következő kör újabb hívókat kérne. Ott a felvétel dönt. A felvétel a Colab-végrehajtón fut. A viselkedés-típusú feladat a tulajdonos `jovahagyva` címkéjét kéri (24.7). Ezt a tulajdonos dönti el.
+
+**N1 (felvétel).** A 24.6-ban és a 25.9-ben nincs N1-kérdés. A 0x006b6a50 rekordolvasó 13 hívójának olvasása nem zár: újabb hívó-kör kellene (24.7). A B2-felvétel (24.7) érvényes. Három kimenetet különböztet meg:
+- B kiesik, B2 marad: a kizárás név-alapú. A mi kódunk (`src/picasapy/app/face_scan_controller.py:470-474`) egyezik.
+- B2 is kiesik: a kizárás a feldolgozottságtól függ, nem a névtől. A mi kódunk eltér.
+- B marad: az eredeti nem zárja ki a nevezett képet. A mi kódunk eltér.
+
+**N3 (960 px, felvétel).** A 24.7 jóslatát ez a kör pontosítja. A 24.7 szerint a kép méretét úgy változtatnánk, hogy az arc aránya állandó. Ez a terv nem dönt: ha a detektor 960 px-re skáláz, a skálázás után a bemenet azonos lenne, és a találati arány nem változna. Pontosított terv: az arcot kivágjuk, üres háttérbe illesztjük, és a kép teljes hosszát változtatjuk: 640, 800, 960, 1280 és 1600 px. Ha a találati arány a 960 px körül változik, a detektor a bemenet méretét használja. Ha nem változik, a 960 nem a bemeneti méret.
+
+**N6 (trigger, felvétel).** A 0x007bb660, a 0x008d2720, a 0x00584010 és a 0x007baf50 nem hív mentési láncot közvetlenül. A törlés (0x007ba820) után a 0x007b99a0 visszatér (23.5). A mentés kiváltója a 0x006980a0 vagy a 0x00692210 parancs-tábláiból jön. Ezeknek a hívóit újabb hívó-kör kérné, ezért a felvétel dönt (24.7 terve). Egy megnevezett személyt törlünk. Utána összevetjük a `.picasa.ini` és a `[Contacts2]` tartalmát két időpontban: a törlés után azonnal, és a Picasa bezárása után.
+- Ha a `faces=` sor azonnal változik, a mentés a törlési ágból vagy annak közeli hívóiból indul.
+- Ha csak bezáráskor változik, a mentés a parancs-szinten van.
+A felvétel a `faces=` forrását nem dönti el, csak a mentés időzítését.
+
+**N5 (személy, felvétel).** A 0x00448fb0 (25.9) dönti el a predikátum jelentését. Ha az nem dönt, a felvétel: egy megnevezett személy mellőzése, és egy név nélküli arc mellőzése. Mindkettő után a `.picasa.ini` `faces=` sorait és a Picasa albumlistáját (a `]expeople:%d` album neve) vetjük össze. A megerősítő párbeszéd mindkét gombjával külön próba kell. Így dől el a 0 jelentése (25.6).
+
+### 25.11 A 20. szakasz N-pontjainak új állapota
+
+| Pont | Állapot | Mi változott |
+|---|---|---|
+| N1 | BLOKKOLT | Nincs új adat. A döntés a B2-felvételre vár (25.10). |
+| N3 | BLOKKOLT | A detektor osztálya CNevenVision (feltételes). A +0x2c slot: 0x006cde50 (index). A 960 px: NINCS MEG, a Red.dll-ben lehet. |
+| N4 | LEZÁRVA | Változatlan. |
+| N5 | BLOKKOLT | A 0x00448c90 olvasata megvan. A jelentés a 0x00448fb0-tól függ. A 0 jelentése a 0x009bab50 két hívójánál ellentétes. |
+| N6 | BLOKKOLT | Az ok és az online ág sem hív mentést közvetlenül. A `faces=` forrása és a mentés kiváltója NINCS MEG. |
+| N7 | BLOKKOLT | Változatlan. |
+| N8 | BLOKKOLT | Változatlan. |
+
+Nyitott kérdések: 0 nyílt · 1 lezárva · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".
+
+### 25.12 Bizonyítottsági fok és cáfoló kísérletek
+
+**Megerősített (két út: a C-törzs és az index vagy más forrás):**
+- (a) A 0x007bb660, a 0x008d2720 és a 0x00584010 nem hívja közvetlenül a 0x006952e0-t vagy a 0x00692210-t (C-törzs és index-fejléc).
+- (b) A 0x00584010 C-törzsében és HÍVOTTAK-listájában nincs fájl-API (C-törzs és index-fejléc).
+- (c) A 0x006ccbb0 a `CNevenVision::vftable` címet írja az első mezőbe (C-törzs és `rtti.csv`).
+
+**Feltételes (egy út, vagy két hívó ugyanazon az eszközön):**
+- (d) A 0x007baf50 első argumentuma a `this+0xd4+0x2c5c` (`-5` C, egy út).
+- (e) A this+0x2e10 objektum CNevenVision (C: 0x0045f0c0 és 0x0048e590). Az EDI-átadás nincs diszasszemblálással ellenőrizve.
+- (f) A +0x2c slot célja 0x006cde50 (csak index).
+- (g) A 0x006a3b80-ban nincs `faces=` literál (C-törzs, egy út).
+- (h) A 0x00448c90 visszatérésének olvasata (C-törzs; a 0x00448fb0 az egyetlen közvetlen hívottja, index).
+- (i) A 0x009bab50 0-jelentése nem állandó (két hívó, egy eszköz).
+- (j) A 0x008d2720 vtable-célja nincs olvasva. A mentés kizárása csak a közvetlen hívásokra áll.
+- (k) A mentés kiváltója a DATA-táblákban van (csak index).
+
+**NINCS MEG:**
+- a 0x00448fb0, a 0x00448a10 és a 0x004aca00 jelentése (N5);
+- a +0xec slot célja (N5);
+- a 0x005875d0 és a 0x005836f0 fájl-írása (N6);
+- a 0x00585ad0, a 0x0058ff00 és a 0x007b7f00 szemantikája (N6);
+- a `faces=` forrása, vagyis a 0x006a3b80 listáját töltő kód címe (N6);
+- a 960 px helye: a fő binárisban vagy a Red.dll-ben (N3);
+- a dialógus 0 gombja (N5);
+- a 0x006b6a50 rekordolvasójának jelentése (N1);
+- a 0x0045f0c0 EDI-átadása a 0x006ccbb0 előtt (N3).
+
+**Cáfoló kísérletek:**
+- (a) N6 mentés: a 0x008d2720 vtable-hívásai mentést indíthatnak. Ezt nem zártam ki. A negatív állítás a közvetlen hívásokra szól.
+- (b) N5 „nulla = igen": ugyanaz a 0 a 0x007bb660-ban a FUN_007bb370-et kihagyja. A 0 tehát nem általános „igen".
+- (c) N3 osztály: ha a 0x0045f0c0 a 0x006ccbb0 után más vtable-t írna a this+0x2e10-be, az osztály eltérne. A 24.2 olvasatában ilyen írás nem szerepel, de a teljes 0x0045f0c0-t nem néztem végig.
+- (d) N3 960 px: a 0x0048e590 C-jében nincs 960 (23.2). Ez a fő binárisra szól, a Red.dll-re nem.
+- (e) N6 `faces=` literál: a 0x006a3b80-ban nincs literál. A kulcs a listából jöhet, ezt nem zártam ki.
+
+### 25.13 Fejlesztési következmény
+
+Nincs lezárt N-pont, ezért nincs bizonyított eltérés, és nincs fejlesztési lista. A `src/picasapy/app/face_scan_controller.py:470-474` név-alapú kihagyása (N1) nyitott. A B2-felvétel dönt. A 21.8, 23.9 és 24.10 szerinti „fejlesztési lista: nincs” érvényben marad.
+
+### 25.14 Mérleg (7. kör)
+
+Megerősített: 3 tétel (25.12 a-c). Feltételes: 8 tétel (25.12 d-k). NINCS MEG: 9 tétel (25.12). Blokkoló Ghidra-kérés: 4 (25.9), nem blokkoló: 1 (25.9). Felvétel dönt: N1, N3 (960 px) és N6 (trigger). N5 a 0x00448fb0 után, különben felvétel. Tulajdonosi döntés: a Colab-felvétel jóváhagyása (`jovahagyva` címke).
