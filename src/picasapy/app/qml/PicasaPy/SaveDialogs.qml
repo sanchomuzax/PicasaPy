@@ -166,7 +166,7 @@ Item {
     Dialog {
         id: saveErrorDialog
         objectName: "saveErrorDialog"
-        title: qsTr("Save")
+        title: kind === "revert" ? qsTr("Revert") : qsTr("Save")
         modal: true
         anchors.centerIn: parent
         standardButtons: Dialog.Ok
@@ -174,6 +174,9 @@ Item {
         property string fileName: ""
         property int code: 0
         readonly property string message: {
+            if (kind === "revert")
+                //: FileRevert::fileerr
+                return qsTr("Unable to revert all files due to a disk error. The disk may be full or read-only.")
             if (kind === "collision")
                 //: CFileSaveThread:filesaveerr2
                 return qsTr("Unable to save file due to filename collision.")
@@ -344,6 +347,14 @@ Item {
         saveErrorDialog.kind = kind
         saveErrorDialog.fileName = fileName
         saveErrorDialog.code = code
+        saveErrorDialog.open()
+    }
+
+    //: FileRevert::fileerr — az eredeti hivatalos hibaüzenete
+    function jelezdAVisszaallitasiHibat() {
+        saveErrorDialog.kind = "revert"
+        saveErrorDialog.fileName = ""
+        saveErrorDialog.code = 0
         saveErrorDialog.open()
     }
 }

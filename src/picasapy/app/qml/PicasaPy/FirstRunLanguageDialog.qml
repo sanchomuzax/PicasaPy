@@ -35,12 +35,27 @@ ApplicationWindow {
         anchors.margins: 24
         spacing: 20
 
-        Label {
-            objectName: "firstRunLanguagePromptMessage"
+        RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            wrapMode: Text.WordWrap
-            text: qsTr("PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?")
+            spacing: 16
+
+            Image {
+                objectName: "firstRunLanguagePromptIcon"
+                Layout.preferredWidth: 48
+                Layout.preferredHeight: 48
+                source: Qt.resolvedUrl("../../assets/icon.png")
+                sourceSize: Qt.size(48, 48)
+                fillMode: Image.PreserveAspectFit
+            }
+
+            Label {
+                objectName: "firstRunLanguagePromptMessage"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                wrapMode: Text.WordWrap
+                text: qsTr("Picasa is now available in your system's native language.\nWould you like to switch Picasa from English to this language?")
+            }
         }
 
         RowLayout {

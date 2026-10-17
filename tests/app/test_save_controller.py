@@ -7,6 +7,7 @@ eldobná).
 """
 
 from pathlib import Path
+from threading import Event
 
 import cv2
 import numpy as np
@@ -14,6 +15,7 @@ import pytest
 from PySide6.QtCore import QEventLoop, QSettings, QTimer
 from PySide6.QtTest import QSignalSpy
 
+from picasapy.app import save_controller as save_controller_module
 from picasapy.edit.save import ORIGINALS_DIR_NAME
 from picasapy.index import open_index, sync_tree
 from picasapy.thumbs import ThumbnailCache
@@ -238,6 +240,39 @@ class TestRevertAndUndoSave:
 
         assert result.get("done") == 1
         assert np.array_equal(cv2.imread(str(folder / "IMG_0001.jpg")), original)
+
+    def test_revert_uses_the_save_progress_state(
+        self, controller, qt_app, library, monkeypatch
+    ):
+        """#5268: a Revert művelet ugyanazt a folyamatállapotot használja."""
+        self._save_once(controller, qt_app, library)
+
+        elkezdodott = Event()
+        folytathato = Event()
+        eredeti_visszaallit = save_controller_module.revert
+
+        def varakozo_visszaallit(path):
+            elkezdodott.set()
+            assert folytathato.wait(5), "a visszaállítási próbaművelet beragadt"
+            return eredeti_visszaallit(path)
+
+        monkeypatch.setattr(save_controller_module, "revert", varakozo_visszaallit)
+        kesz = QSignalSpy(controller.revertFinished)
+        controller.revertRowsToOriginal([0])
+        try:
+            assert elkezdodott.wait(3), "a háttérművelet nem indult el"
+            assert controller.saveProgressActive is True, (
+                "a Visszaállítás alatt nem aktív a mentés folyamatjelzője"
+            )
+            assert controller.saveProgressFileCount == 1
+            assert controller.saveProgressIsReverting is True
+        finally:
+            folytathato.set()
+
+        assert var_feltetelre(qt_app, lambda: kesz.count() == 1), (
+            "a visszaállítás nem fejeződött be"
+        )
+        assert controller.saveProgressActive is False
 
     def test_undo_save_keeps_the_edits(self, controller, qt_app, library):
         _, folder, _db = library
