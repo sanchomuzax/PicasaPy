@@ -4493,20 +4493,15 @@ F5 = [0.48,0.52,0.49,0.51,0.12,0.09,0.11,0.10]
 
 **Ami még nem zárult le (feltételek):**
 - **Neven (`SmartMultiPersonTrans` be):** a 0,4-es tag külső arcfelismerő könyvtár (`0x0048c440` vtábla +0x3c hívása). Sim értéke NINCS MEG; a modell és a teszt HOG-only. Az alapértéke NINCS MEG (a Preferences-olvasó).
-- **Jellemzővektor forrása (`0x00873cb0`):** NINCS MEG; a teszt véletlen vektorokat használ. Valódi képnél a költség a `0x00873cb0` vektoraiból jön.
+- **Jellemzővektor forrása (`0x00873cb0`):** G/6 részlegesen vizsgálta. A hossz, a cella- és iránysorrend, valamint az egyesített kimeneti vektor normálása NINCS MEG; a G/4 teszt előre megadott vektorokat használt.
 - **Pozíciósorrend (`[obj+0x4f0]`):** a dátum szerinti rendezés feltételes (G/3c). Egyenlő dátumnál a sorrend nincs ellenőrizve.
 - **Horgony a felhasználói állapotból (`0x008223e0`, `0x008226e0`):** NINCS MEG; alapállapotban -1 (0. pozíció).
 - **Dátumkulcs-tábla (`[obj+0x708]`):** a törési feltétel a tesztelt kulcsoknál egyezik (30/30). A valódi tartalom NINCS MEG (G/3e, G/3f).
-- **Rádió alapállapota (G/4 9. pont 6.):** NINCS MEG. A három rádió-sztring hivatkozói az indexben (`string_xrefs`): `0x006173c0`, `0x006175c0`, `0x00618050`, `0x0061df10`.
-- **`ordering = 1` (album) és `2` (időrend):** a gráfág nyitott. A `0x00878310`, `0x00874ac0` és `0x00875ee0` nincs dekompilálva.
+- **Rádió alapállapota:** G/6 megerősítette az általános új film úton: az alap `ordering = 0`, a „Legjobb átmenetek” rádió bejelölve; a `0x00618050` külön speciális ága `ordering = 2`-t ír.
+- **`ordering = 1` (album) és `2` (időrend):** a `0x00878310`, `0x00874ac0` és `0x00875ee0` G/6-ban dekompilálva lett. A gráfág eredő kiválasztási szabálya és a kimeneti indexsorrend továbbra is nyitott.
 - **Csoportkizárás hiánya:** ha egy csoport minden tagja kizárt, a sorozat rövidebb a kértnél (V3). A jelenlegi `slideshow.py` ezt nem kezeli.
 
-**Ghidra-kör kérések** (a hívó köteghez):
-- `Ghidra-kör kell: 0x00873cb0 - a HOG-jellemzővektor építése a rekordból: hossz, sorrend, normálás [blokkoló a valódi képmegtartáshoz]`
-- `Ghidra-kör kell: 0x006173c0 - a film-panel három rádiójának alapbejelölése a felépítéskor, és honnan (Preferences-kulcs vagy konstans) [blokkoló: ez dönti el, melyik ág az alapértelmezett]`
-- `Ghidra-kör kell: 0x00878310 - a 0x00877c50 visszakövetése: a végső fotóindex-sorrend ordering ≠ 0-n [blokkoló ordering = 1/2-re]`
-- `Ghidra-kör kell: 0x00874ac0 - a szomszéd-kitöltő: a [obj+0x720]/[obj+0x728] határtáblák nem-szentinel értékei ordering ≠ 0-n [blokkoló ordering = 1/2-re]`
-- `Ghidra-kör kell: 0x00875ee0 - az album-ág (ordering = 1) kiválasztója, ha [obj+0x1da] nulla [blokkoló ordering = 1-re]`
+**A G/5-ben kért Ghidra-függvények:** mind az ötöt dekompilálták; a részleges eredményeket és a megmaradt nyitott kérdéseket a G/6 rögzíti.
 
 A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.) csak `ordering ≠ 0`-n hatnak: a `0x0081b800` ordering-0 ága (`param_3 == 0`) a `0x0081c9b0` hívása után visszatér, és nem éri el ezeket.
 
@@ -4516,7 +4511,7 @@ A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.)
 
 | Eredeti (`ordering = 0`, bizonyított) | Nálunk (mérve) | Teendő |
 |---|---|---|
-| Lánc-kiválasztás: horgony, spirál-jelöltek a középponttól (+1, -1, +2, -2, …), 100 jelölt, csoportkizárás az aktuális középpontra, HOG-minimum (szigorú `<`, 1e8, tartalék: a 0. jelölt), 15-ös irányváltás, a kimenet a választás sorrendje | `src/picasapy/movie/slideshow.py:691-701`: színátlag-lánc a teljes listán; nincs horgony, spirál, csoport, darabszám-korlát | A fenti algoritmus a `movie/` csomagban, d_HOG-gal (`ε = 1e-8`). A színátlag-ág `nem eredeti` jelölést kap, amíg a jellemzővektor (`0x00873cb0`) és a rádió alapállapota le nem zárult. |
+| Lánc-kiválasztás: horgony, spirál-jelöltek a középponttól (+1, -1, +2, -2, …), 100 jelölt, csoportkizárás az aktuális középpontra, HOG-minimum (szigorú `<`, 1e8, tartalék: a 0. jelölt), 15-ös irányváltás, a kimenet a választás sorrendje | `src/picasapy/movie/slideshow.py:691-701`: színátlag-lánc a teljes listán; nincs horgony, spirál, csoport, darabszám-korlát | A fenti algoritmus a `movie/` csomagban, d_HOG-gal (`ε = 1e-8`). A színátlag-ág marad `nem eredeti`, amíg a HOG-jellemzővektor hossza, cella- és iránysorrendje, valamint a végső normálás le nem zárult. A rádió alapállapota az általános új film úton lezárult (G/6). |
 | Csoportosítás: szomszédos, egész másodpercre kerekített idők, `delta >= T` új csoport, `T = 0`-nál nincs csoport (G szakasz) | `burstmodethresh` csak tárolódik (`src/picasapy/movie/slideshow.py:75, 99`; `mxf.py:126, 203, 323`) | Implementálható a G szakasz etalonjaival. |
 
 **Kész, ha:**
@@ -4524,7 +4519,69 @@ A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.)
 2. A három csoportosítási etalon teljesül (`T = 3600`: `[0,3240,6480]→[0,0,0]`, `[0,3600,7200]→[0,1,2]`, `[0,3240,7200]→[0,0,1]`).
 3. A `d_HOG` primitív a G/4 6. pont fixture-jén 1e-6 relatív tűréssel egyezik.
 4. A kiválasztó a három teszt-vektoron pontosan adja: V1 `[0,3,1,5]`, V2 `[3,1,5,4]`, V3 `[0]`.
-5. Az „eredeti" jelölés csak akkor, ha a jellemzővektor (`0x00873cb0`) és a rádió alapállapota (G/4 9. pont 6.) is lezárult.
+5. Az „eredeti" jelölés csak akkor, ha a jellemzővektor (`0x00873cb0`) és a rádió alapállapota (G/4 9. pont 6.) is lezárult. **Állapot G/6 után: ⛔ részben teljesült.** Az általános új film út rádióállapota lezárult, a HOG-jellemzővektor hossza, cella- és iránysorrendje, valamint végső normálása nyitott.
+
+#### G/6. A 11. kör (2026-10-17): a HOG-kivonó részleges feltárása, rádió-alapállapot, ordering ≠ 0 ágak (#4194)
+
+**Forrás.** A Ghidra-kimenet neve: `referencia/ghidra/2026-10-17-film-idoszuro-3.txt`. Az öt kért cím: `0x00873cb0`, `0x006173c0`, `0x00878310`, `0x00874ac0`, `0x00875ee0`. Az utasításszintű ellenőrzés az eredeti binárisból készült a helyi `annot_disasm.py` eszközzel; a natív fixture-mérés a meglévő QEMU-harness-szel futott.
+
+**HOG-jellemzővektor (`0x00873cb0`).** A függvény a rekordból származó mezőket és transzformációs adatokat készít elő, majd a `[param_2+0x54]` vektortár `iStack_10 * 8` címére hívja a `0x0088c1a0`-t. A dekompilátumban `in_EAX`, `unaff_ESI` és `unaff_EDI` bemenetként szerepel, ezért a képi bemenet és a vektorépítő segédfüggvények teljes adatkapcsolata nem állt helyre. A végső vektor hossza, a cellák sorrendje és az irányrekeszek sorrendje **NINCS MEG**.
+
+A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok 8 bájtos lépésekkel a `0x38` és `0x20` határértékig futnak; egy forrás-hozzáférés `0x24` bájtos lépést használ. Ezek a ciklushatárok önmagukban nem bizonyítják, hogy a végső leíróban milyen cella- vagy iránysorrendet jelentenek. A belső feldolgozott szakasz négyzetösszegéhez a kód `1.0` értéket ad, négyzetgyököt számol, majd a szakasz komponenseit ezzel osztja: `y_i = x_i / sqrt(1.0 + Σ(x_j²))`, ahol a `j` tartomány az adott belső szakasz, de annak megfeleltetése a végső HOG-vektorhoz **NINCS MEG**. A `0x0088c480` segédvektora legfeljebb `0x28` bejegyzést másol, a `0x0088cd10` segédvektora legfeljebb `5` bejegyzést kezel; ezek köztes tárolók, nem a végső HOG-vektor méretei.
+
+**Natív fixture a HOG-távolsághoz.** A G/4 6. pont három vektorpárja a `0x00873e40` távolságfüggvénybe előre beadott bemenet volt. QEMU-i386 alatt a kimenetek pontosan egyeztek a G/4-ben feljegyzett natív értékekkel. Ez megerősíti a távolságfüggvényt, de nem a képből vektort építő `0x00873cb0`-t, mert a mérés azt az utat nem hívta.
+
+**Rádió-alapállapot.** A `0x006173c0` három rádiógombot regisztrál, és a callback-adatként átadott lokális egész értékeket nullázza. Ez önmagában nem mondja meg, melyik gomb van bejelölve. A panel beállítás-beolvasója, `0x00616940`, a `Preferences` alól a `showcaptions` és `cropfit` kulcsot olvassa, majd a modell `[+0x2cc]` mezőjét `0`-ra írja (`0x00616a18`). A panelépítő `0x00618050` a `0` értékű mezőnél a `smart_order_radio` bejelölt bájtját `1`-re állítja (`0x0061881a`-tól). A beállítás-visszaolvasó `0x006175c0` ugyanezt a bejelölt rádiót `ordering = 0` értékként menti. A vizsgált új film út alapállapota tehát a „Legjobb átmenetek” rádió; ebben a beolvasóban nincs hozzá Preferences-kulcs. A panelépítő külön speciális útja a `[+0x2cc]` mezőbe `2`-t ír (`0x00618c83`), ezért a megállapítás nem terjed ki erre a speciális állapotra.
+
+**`ordering ≠ 0` ágak.** A `0x00874ac0` a jelzővektorból minden pozícióhoz a legközelebbi előző és következő megjelölt indexet tölti ki. A `0x00875ee0` ezt a segédfüggvényt használja az album/gráf jelöltút építésekor, csoport- és kiválasztási jelzőket vizsgál, és a `0x00873170` gettert hívja. A `0x00878310` az elődmutatókon visszafelé járva út-elemeket fűz egy listába. A dekompilátum több regiszterbemenete és a függvényhívó argumentumainak kapcsolata nem tisztázott, így az ordering 1 és 2 végső kiválasztási szabálya és kimeneti sorrendje **NINCS MEG**. E három eredmény utasításszintű vagy QEMU-ellenőrzése ebben a körben nem készült.
+
+**Bizonyítottsági fok.** A teljes HOG-jellemzővektor leírása **nyitott**, mert a hossz, cella- és iránysorrend nem azonosítható, és a natív fixture nem futtatta a kivonót. A belső normálási művelet és az ordering ≠ 0 részfunkciói **feltételesek**, mert ezekre csak a bináris/dekompilátum út áll rendelkezésre. A rádió állítása az általános új film útra **megerősített**: a beállítás-beolvasó `0`-t ad, a panelépítő ezt a smart rádióra fordítja, a beállítás-visszaolvasó pedig ugyanazt `ordering = 0`-ként kódolja. A három lépés eltérő függvényben és két irányban ellenőrizhető.
+
+**A két független út.**
+- **A, HOG:** Ghidra-C és utasításszintű olvasat a `0x00873cb0` és `0x0088c1a0` útján. Ez belső normálási műveletet mutat, de a végső vektor hosszát és rendezését nem.
+- **B, natív mérés:** a G/4 fixture-párjainak közvetlen bemérése a `0x00873e40`-be. A három eredmény egyezik a G/4 értékeivel. Ez külön ellenőrzi a metrikát, nem a HOG-kivonót, így a két út a jellemzővektor-kérdésre nem egyezik és nem ad két független bizonyítékot.
+- **Rádió:** az A út a `0x00616940` mezőinicializálása; a B út a `0x00618050` mezőből gombállapotot készít, amelyet a `0x006175c0` `ordering = 0`-ként olvas vissza. Az általános új film út következtetése egyezik.
+
+**Cáfoló kísérlet (15.2).** Megpróbáltam a G/4 fixture-kimenetet a HOG-kivonó független igazolásaként használni. A QEMU-hívás útjának ellenőrzése kimutatta, hogy az előre megadott tömböket közvetlenül a `0x00873e40` pontozó kapja, a `0x00873cb0` nem fut. Ez cáfolja azt az erősebb állítást, hogy a fixture a képből épített jellemzővektort is validálja. Külön cáfoló ellenőrzésként a `0x006173c0` lokális nulláit tekintettem lehetséges „mindegyik rádió kikapcsolva” állapotnak; a `0x00618050` `ordering = 0` ága ezzel szemben kifejezetten bejelöli a smart rádiót, ezért a lokális nullákból levont következtetés hamis.
+
+**Bizonyíték.**
+
+| állítás vagy érték | forrás |
+|---|---|
+| `0x00873cb0` a `[param_2+0x54] + iStack_10 * 8` címre írja a `0x0088c1a0` eredményét | bináris `0x00873cb0` |
+| belső ciklushatárok `0x38` és `0x20`, forráslépés `0x24` | bináris `0x0088c1a0`, `0x0088c1f4`-`0x0088c460` |
+| belső normálás: négyzetösszeg + `1.0`, gyök, osztás | bináris `0x0088c3b4`-`0x0088c423`; `0x00c7e328` = `1.0` double |
+| köztes vektorhatárok: `0x28`, illetve `5` bejegyzés | bináris `0x0088c480`, `0x0088cd10`; nem végső HOG-dimenzió |
+| végső HOG-vektor hossza, cella- és iránysorrendje | NINCS MEG |
+| G/4 fixture 1 távolsága: `1.6742424964904785` | mérés (QEMU-i386, G/4 6., `0x00873e40`) |
+| G/4 fixture 2 távolsága: `2.055555582046509` | mérés (QEMU-i386, G/4 6., `0x00873e40`) |
+| G/4 fixture 3 távolsága: `2.999999892949745e-08` | mérés (QEMU-i386, G/4 6., `0x00873e40`) |
+| általános új film modellje `ordering = 0`-ra indul | bináris `0x00616940`, `0x00616a18` |
+| `ordering = 0` esetén a smart rádió bejelölt | bináris `0x00618050`, `0x0061881a`-tól |
+| a smart rádió visszaolvasása `ordering = 0` | bináris `0x006175c0`, `0x006177a3`-`0x006177a7` |
+| a speciális panelág `ordering = 2`-t ír | bináris `0x00618c83` |
+| a 3 rádió callback-lokálisai nullázódnak, de ez nem a kijelölési állapot | bináris `0x006173c0`, `0x006173c8`-`0x006173cf`; cáfolat: `0x0061881a` |
+| `ordering ≠ 0` út-kiválasztás végső sorrendje | NINCS MEG |
+
+**Fejlesztési teendő (#4182, frissítve).**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `ordering = 0` algoritmusa G/5 szerint; az általános új film úton a smart rádió az alap | `src/picasapy/movie/slideshow.py:691-701` színátlagos lánc, `src/picasapy/movie/mxf.py` saját alapérték | A G szerinti csoportosítás és a `d_HOG` primitív fejleszthető a rögzített etalonokkal. A kiválasztó ne kapjon „eredeti” jelölést, amíg a HOG-jellemzővektor hossza, cella- és iránysorrendje, végső normálása nincs bizonyítva. Az alap rádió-értéket az általános új film úton egyeztesd `ordering = 0`-ra. |
+| `ordering = 1/2` gráfút: részfunkciói G/6-ban láthatók, teljes út és kimeneti sorrend nyitott | jelenlegi `slideshow.py` nem valósítja meg ezt a gráfutat | Az ordering 1/2 implementációt ne vedd fel a #4182 eredetit követő fejlesztésébe a gráfút és a sorrend lezárásáig. |
+
+**Kész, ha:**
+1. A G csoportosítási etalonok teljesülnek.
+2. A `d_HOG` primitív a G/4 6. pont mindhárom natív fixture-jén a feljegyzett értéket adja.
+3. A HOG-kivonó végső hossza, cella- és iránysorrendje, valamint normálása bináris útból és független natív méréssel egyezik.
+4. Az általános új film út `ordering = 0`-t és a smart rádiót használja.
+5. Az ordering 1/2 ág csak azután nevezhető eredetinek, ha az út költsége, kiválasztott indexei és végső sorrendje bizonyított.
+
+**Nyitott.**
+- `Ghidra-kör kell: 0x0088c1a0 - a köztes tömbök és a végső HOG-vektor mezőnkénti összekötése, a vektor hossza, cella- és iránysorrend, valamint a normálási blokkok pontos tartománya [blokkoló]`
+- `Ghidra-kör kell: 0x00877c50 - a 0x00878310 hívási argumentumai, az elődút iránya és a végső fotóindexek sorrendje ordering = 1/2 esetén [blokkoló]`
+- Az ordering 1/2 teljes út natív QEMU-mérése nincs meg; a `0x00878310` és `0x00875ee0` kiválasztási útja csak dekompilátum alapján vizsgált. A `0x00874ac0` önálló helper függvényszintű leírása a G/3f-ben szerepel, az ordering 1/2 útba kapcsolása nincs natívan ellenőrizve.
+- Az általános új film úttól eltérő, `ordering = 2`-t beállító speciális panelág pontos felhasználói feltétele nincs meg.
 
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
