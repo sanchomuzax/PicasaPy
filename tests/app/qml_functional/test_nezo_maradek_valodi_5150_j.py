@@ -167,15 +167,6 @@ def _klip_betoltese(popup, futtato, utvonal: str) -> None:
 class TestFelvetelPanel:
     """A kamerás felvétel-panel felbontó-listája, lejátszója és felvétel-gombja."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "VALÓDI HIBA (#5150 J): a felbontás-lista (outputsize) kiválasztása "
-            "a kattintás után a régi méretet írja a pendingSize-ba: a "
-            "onCurrentIndexChanged a currentText-et a frissítés előtt olvassa. "
-            "A lista szövege és a currentIndex helyes; ld. a jelentést."
-        ),
-    )
     def test_felbontas_lista_valodi_kattintassal_uj_meretet_valaszt(
         self, qml_app, qt_app, tmp_path, monkeypatch
     ):
