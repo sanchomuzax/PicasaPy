@@ -679,6 +679,16 @@ def select_tests(
     if not changed:
         return Selection(tuple(all_tests), True, "üres vagy nem megállapítható diff")
 
+    normalizalt_valtozott = tuple(
+        raw.replace("\\", "/").removeprefix("./") for raw in changed
+    )
+    if all(
+        path.startswith("docs/")
+        or ("/" not in path and path.endswith(".md"))
+        for path in normalizalt_valtozott
+    ):
+        return Selection((), False, "csak docs/ és gyökérszintű Markdown változott")
+
     selected: set[str] = set(smoke)
     modules: set[str] = set()
     module_paths: dict[str, str] = {}

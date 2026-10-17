@@ -68,6 +68,9 @@ jobs:
     outputs:
       kod: ${{ steps.d.outputs.kod }}
       docs: ${{ steps.d.outputs.docs }}
+      pr_docs_only: ${{ github.event_name == 'pull_request' && steps.d.outputs.kod != 'true' && steps.d.outputs.docs == 'true' && 'true' || 'false' }}
+      # A docs/ vagy gyökérszintű Markdown diffből a tesztválasztó 0 darabot
+      # ad; a csak-dokumentációs PR tesztjeit a docs-orok job futtatja.
       darabok: ${{ steps.n.outputs.darabok || '[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]' }}
       darabszam: ${{ steps.n.outputs.darabszam || '16' }}
       windows_darabok: ${{ steps.nw.outputs.darabok || '[]' }}
@@ -89,7 +92,9 @@ jobs:
         # kap-e egyáltalán tesztfutást. A hiba iránya néma: nem piros CI,
         # hanem KIMARADT mérés, zöld pipával.
         run: python3 scripts/ci_valtozas.py
-      # #4922: a két platform tesztlistája külön darabszámot kap. PR-en a
+      # #4922: a két platform tesztlistája külön darabszámot kap. A csak
+      # docs/ és gyökérszintű Markdown diff mindkettőn 0 darabot ad: a docs
+      # őrök külön futnak, a két tesztmátrix pedig kimarad. PR-en a
       # mért 3 perces cél legfeljebb 20 ubuntu-darabot enged; mainen 16 marad.
       - id: n
         env:
@@ -108,7 +113,7 @@ jobs:
   darabok-ubuntu:
     needs: valtozas
     # #187: kézi indításkor a `platform` bemenet szűr (windows esetén kimarad).
-    if: ${{ needs.valtozas.outputs.darabszam != '0' && (github.event_name != 'workflow_dispatch' || inputs.platform != 'windows') }}
+    if: ${{ needs.valtozas.outputs.pr_docs_only != 'true' && needs.valtozas.outputs.darabszam != '0' && (github.event_name != 'workflow_dispatch' || inputs.platform != 'windows') }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: ubuntu-latest
@@ -121,7 +126,7 @@ jobs:
   darabok-windows:
     needs: valtozas
     # #187: kézi indításkor a `platform` bemenet szűr (ubuntu esetén kimarad).
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.platform != 'ubuntu') && (github.event_name != 'pull_request' || needs.valtozas.outputs.windows_darabszam != '0') }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.platform != 'ubuntu') && needs.valtozas.outputs.pr_docs_only != 'true' && (github.event_name != 'pull_request' || needs.valtozas.outputs.windows_darabszam != '0') }}
     # #187: main-pushon egy újabb commit megszakítja a régebbi, még futó
     # windowsos futást. Minden más eseményre egyedi csoport jár (a run_id),
     # így a PR, az ütemezett és a kézi futás nem ütközik, a viselkedésük
@@ -217,7 +222,9 @@ jobs:
     if: always()
     steps:
       - name: A tesztválasztó nem talált futtatandó tesztet
-        if: ${{ needs.valtozas.outputs.darabszam == '0' }}
+        # A docs-only kiválasztás üres; ez siker, a Dokumentáció-őrök lépése
+        # alább külön teszi kötelezővé az erre az esetre futó ellenőrzéseket.
+        if: ${{ needs.valtozas.outputs.darabszam == '0' || needs.valtozas.outputs.pr_docs_only == 'true' }}
         run: |
           echo "A tesztválasztó nem talált futtatandó tesztet."
 
@@ -235,8 +242,9 @@ jobs:
 
       - name: Az ubuntu-tesztdarabok mind zöldek
         # #187: kézi windows-indításkor az ubuntu-darabok szándékosan kimaradnak.
-        # Ez nem bukás, a többi eset szigorúan változatlan.
-        if: ${{ needs.valtozas.outputs.darabszam != '0' && !(github.event_name == 'workflow_dispatch' && inputs.platform == 'windows') }}
+        # A csak-dokumentációs PR-ben is szándékosan kimaradnak a darabok;
+        # a Dokumentáció-őrök állapotát a fenti lépés ellenőrzi.
+        if: ${{ needs.valtozas.outputs.pr_docs_only != 'true' && needs.valtozas.outputs.darabszam != '0' && !(github.event_name == 'workflow_dispatch' && inputs.platform == 'windows') }}
         run: |
           if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-ubuntu.result }}"
@@ -275,6 +283,8 @@ jobs:
     if: always()
     steps:
       - name: A Windows-mátrix összes darabja zöld
+        # A 0 windows-darabszám miatt kihagyott mátrix siker; csak elindult,
+        # de nem sikeres mátrix esetén ellenőrzünk eredményt.
         if: ${{ always() && needs.darabok-windows.result != 'skipped' }}
         run: |
           # #187: a főágon a régebbi windowsos futást az újabb commit megszakítja.

@@ -328,44 +328,89 @@ def test_sugo_tartalom_valtozasnal_a_minden_lapot_olvaso_tesztek_futnak(
     assert set(tv.HELP_TESTS) <= set(dontes.fajlok)
 
 
-def test_docs_valtozasnal_a_teljes_utvonalat_vagy_alapnevet_emlito_teszt_is_fut(
-    repo: Path,
+@pytest.mark.parametrize(
+    "valtozott",
+    [
+        ["docs/specs/pelda.md"],
+        ["README.md"],
+        ["docs/specs/pelda.md", "README.md"],
+    ],
+)
+def test_csak_docs_es_gyoker_md_valtozas_nem_valaszt_tesztet(
+    repo: Path, valtozott: list[str],
 ) -> None:
-    utvonalas = "tests/test_spec_utvonal.py"
-    alapneves = "tests/test_spec_alapnev.py"
-    masik = "tests/test_spec_masik.py"
-    (repo / utvonalas).write_text(
-        'SPEC = "docs/specs/picasa-format.md"\n', encoding="utf-8"
-    )
-    (repo / alapneves).write_text(
-        'SPEC = "picasa-format.md"\n', encoding="utf-8"
-    )
-    (repo / masik).write_text('SPEC = "masik.md"\n', encoding="utf-8")
+    dontes = tv.select_tests(repo, valtozott)
 
-    dontes = tv.select_tests(repo, ["docs/specs/picasa-format.md"])
+    assert dontes.fajlok == ()
+    assert not dontes.teljes
+
+
+def test_csak_docs_valtozasnal_az_ubuntu_es_windows_darabszam_is_zero(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.delenv("GITHUB_OUTPUT", raising=False)
+    monkeypatch.setattr(
+        tv,
+        "_selection_for_cli",
+        lambda root, **kwargs: tv.select_tests(root, ["docs/specs/pelda.md"]),
+    )
+    monkeypatch.setattr(tv, "meresi_idok", lambda root: {})
+
+    assert tv.main(["--root", str(repo), "--darabszam"]) == 0
+    assert "darabszam=0" in capsys.readouterr().out
+
+    assert tv.main(["--root", str(repo), "--darabszam", "--windows"]) == 0
+    assert "darabszam=0" in capsys.readouterr().out
+
+
+def test_docs_es_src_valtozasnal_a_meglevo_kodvalasztas_megmarad(repo: Path) -> None:
+    (repo / "docs/specs/pelda.md").parent.mkdir(parents=True, exist_ok=True)
+    (repo / "docs/specs/pelda.md").write_text("spec\n", encoding="utf-8")
+    spec_olvaso = repo / "tests/test_spec_olvaso.py"
+    spec_olvaso.write_text(
+        'SPEC = "docs/specs/pelda.md"\n', encoding="utf-8"
+    )
+
+    dontes = tv.select_tests(
+        repo, ["docs/specs/pelda.md", "src/picasapy/forras.py"]
+    )
 
     assert not dontes.teljes
-    assert utvonalas in dontes.fajlok
-    assert alapneves in dontes.fajlok
-    assert masik not in dontes.fajlok
+    assert "tests/test_fogyaszto.py" in dontes.fajlok
+    assert "tests/test_spec_olvaso.py" in dontes.fajlok
     assert set(tv.SMOKE_TESTS) <= set(dontes.fajlok)
 
 
-def test_a_gyorsbillentyu_spec_dokumentacios_valtozasnal_kivalasztja_a_regresszios_orot() -> None:
-    dontes = tv.select_tests(
-        _ROOT, ["docs/specs/picasa-gyorsbillentyuk.md"]
+def test_specifikaciot_olvaso_gyorsbillentyu_or_a_docs_orokben_fut() -> None:
+    docs_lista = (_ROOT / "scripts/docs_olvaso_tesztek.py").read_text(
+        encoding="utf-8"
     )
-
-    assert "tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py" in dontes.fajlok
-
-
-def test_a_docs_only_kivalasztott_tesztjei_elinditjak_az_ubuntu_darabot() -> None:
     ci = (_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-    ubuntu = ci.split("\n  darabok-ubuntu:", 1)[1].split("\n  darabok-windows:", 1)[0]
-    kotelezo = ci.split("\n  test-ubuntu:", 1)[1].split("\n  test-windows:", 1)[0]
+    docs_job = ci.split("\n  docs-orok:", 1)[1].split("\n  test-ubuntu:", 1)[0]
 
+    assert "tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py" in docs_lista
+    assert "python3 scripts/docs_olvaso_tesztek.py" in docs_job
+
+
+def test_a_docs_only_darabok_kimaradnak_es_a_kotelezo_orok_sikerkent_kezelik() -> None:
+    ci = (_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    valtozas = ci.split("\n  valtozas:", 1)[1].split("\n  darabok-ubuntu:", 1)[0]
+    ubuntu = ci.split("\n  darabok-ubuntu:", 1)[1].split("\n  darabok-windows:", 1)[0]
+    windows = ci.split("\n  darabok-windows:", 1)[1].split("\n  docs-orok:", 1)[0]
+    kotelezo = ci.split("\n  test-ubuntu:", 1)[1].split("\n  test-windows:", 1)[0]
+    kotelezo_windows = ci.split("\n  test-windows:", 1)[1].split("\n  package:", 1)[0]
+
+    assert "pr_docs_only:" in valtozas
+    assert "github.event_name == 'pull_request'" in valtozas
     assert "needs.valtozas.outputs.darabszam != '0'" in ubuntu
+    assert "needs.valtozas.outputs.pr_docs_only != 'true'" in ubuntu
     assert "needs.valtozas.outputs.darabszam != '0'" in kotelezo
+    assert "needs.valtozas.outputs.pr_docs_only != 'true'" in kotelezo
+    assert "needs.valtozas.outputs.windows_darabszam != '0'" in windows
+    assert "needs.valtozas.outputs.pr_docs_only != 'true'" in windows
+    assert "needs.darabok-windows.result != 'skipped'" in kotelezo_windows
+    assert "needs.valtozas.outputs.darabszam == '0'" in kotelezo
+    assert "docs-orok.result" in kotelezo
 
 
 def test_forditasi_katalogus_valtozasnal_az_i18n_orok_futnak(repo: Path) -> None:

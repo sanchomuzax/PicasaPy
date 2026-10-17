@@ -93,6 +93,18 @@ def test_csak_docs_es_md_eseten_kimarad_a_matrix(tarolo: Path) -> None:
     assert d.docs is True
 
 
+def test_gyoker_md_dokumentacios_orokat_indit(tarolo: Path) -> None:
+    alap = _git(tarolo, "rev-parse", "HEAD")
+    _agat_nyit(tarolo, "ag")
+    (tarolo / "README.md").write_text("alap\nfrissített leírás\n", encoding="utf-8")
+    fej = _commit(tarolo, "gyoker dokumentacio")
+
+    d = _dontes(tarolo, alap, fej)
+
+    assert d.kod is False
+    assert d.docs is True
+
+
 def test_csak_a_verziosor_valtozott_kimarad(tarolo: Path) -> None:
     alap = _git(tarolo, "rev-parse", "HEAD")
     _agat_nyit(tarolo, "ag")
