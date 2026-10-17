@@ -233,6 +233,21 @@ class TestNezetKepfelirat:
 
 
 class TestNezetMappanezet:
+    @pytest.fixture(autouse=True)
+    def _rendszermappak(self, tmp_path, monkeypatch):
+        """A rendszermappa-gyökerek (Képek, Dokumentumok, Asztal) a futtató gép
+        mappáitól függenek: a CI-gépen nincsenek, és a program akkor helyesen a
+        Sajátgépre esik vissza. Ezért a teszt saját mappákat ad
+        (a test_nezet_menu_valodi_5150_b mintája)."""
+        from picasapy.app import folder_hierarchy_controller as fhc
+
+        utak = {}
+        for kulcs, mappanev in (("mypics", "Kepek"), ("mydocs", "Iratok"), ("desktop", "Asztal")):
+            mappa = tmp_path / "rendszer" / mappanev
+            mappa.mkdir(parents=True, exist_ok=True)
+            utak[kulcs] = str(mappa)
+        monkeypatch.setattr(fhc, "_rendszermappa", lambda kulcs: utak.get(kulcs, ""))
+
     @pytest.mark.parametrize(
         ("nev", "token"),
         [
