@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.131] - 2026-10-17
+
+- A csak dokumentációs PR-ek CI-je a dokumentáció-őröket futtatja a tesztdarabok helyett (#5250).
+
 ## [0.9.130] - 2026-10-17
 
 - A Filmkészítő időszűrője a „Legjobb átmenetek” sorrendben figyelembe veszi a képek készítési idejét (#4194).
