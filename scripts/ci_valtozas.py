@@ -119,9 +119,13 @@ def elemezd(tarolo: str, alap_jelolt: str, fej: str) -> Dontes:
         if fajl in maradek and _csak_verziosor(tarolo, alap, fej, fajl, minta):
             maradek = [s for s in maradek if s != fajl]
 
-    # #1863: a `docs/` alatt TESZTADAT is van (105 lapot nyitnak meg az őrök),
-    # ezért a mátrix ugyan kimarad, de a docs-ot olvasó őrök külön futnak.
-    docs = any(s.startswith("docs/") for s in valtozott)
+    # #1863/#5250: a `docs/` alatt TESZTADAT is van (105 lapot nyitnak meg az
+    # őrök), és a gyökérszintű Markdown is dokumentáció. Ezekre a mátrix
+    # kimarad, a docs-ot olvasó őrök külön futnak.
+    docs = any(
+        s.startswith("docs/") or ("/" not in s and s.endswith(".md"))
+        for s in valtozott
+    )
     return Dontes(
         kod=bool(maradek), docs=docs, valtozott=valtozott,
         erdemi=tuple(maradek), indoklas=indoklas,
