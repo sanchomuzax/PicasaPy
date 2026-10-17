@@ -2742,7 +2742,7 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 
 - **Bizonyított: üres listánál nem indul a bemutató.** A `0x005e8a70` mód-1 ágában a `FUN_005d2a70()` és a `[this+0x2c0]+0x154` (0 vagy 1) ellenőrzése után, valamint a függvény végén, ha az összegyűjtött tömb (`uStack_d0`) üres, az `IDS_MUST_SELECT` üzenettel tér vissza. A `0x008037e0` (a qshow-építő) csak ezután hívódik, és egyetlen hívója van: a `0x005e8a70`. (dekompilátum + diszasszembly)
 - **Bizonyított: a tömb CSAK a Flipbook + Ctrl + Shift ágban töltődik.** A feltételek: `Preferences\Flipbook` kulcs, `GetAsyncKeyState(0x11)` és `(0x10)`, valamint az aktív ablak (`DAT_00d67849`). A forrás `[this+0x2bc]` (a szolgáltató), az elemszám `[+0x4ec] >> 1`, a rekord elérése `+0xf8` (`0x004edf60`). A rekord típuskódja szerint szűr: 2, 3, 6, 7, 13, 14, 18, 22, 24, 26, 27, 28, 31 (a kódok jelentése **NINCS MEG**). A sorrend **fordított**: az elemszám-1 indextől 1-ig, a 0. elem kimarad. (dekompilátum + diszasszembly)
-- **Ellentmondás (mérve):** Shift nélkül, a Flipbook beállítástól függetlenül, a tömb üres marad, tehát a mód-1 ág `IDS_MUST_SELECT`-re fut, nem qshow-ra. A tömb-slotok (`[esp+0x2c]`, `[esp+0x30]`, `[esp+0x40]`, `[esp+0x44]`) íróhelyei ezt mutatják: a nullázás (`0x005e8dc1`-`0x005e8dcd`) után csak olyan írások vannak, amelyek a már üres `local_c0`-ból másolnak (`0x005e9178`-`0x005e929a`). **Ez nincs összhangban a 38.2.2 megfigyelésével** (job-102: Ctrl+5 után qshow látszott). Lehetséges magyarázat: a felvételen Shift volt lenyomva, ez nincs rögzítve.
+- **Ellentmondás (mérve):** Shift nélkül, a Flipbook beállítástól függetlenül, a tömb üres marad, tehát a mód-1 ág `IDS_MUST_SELECT`-re fut, nem qshow-ra. ⚠️ **HELYESBÍTVE (38.2.8):** ez téves: a `0x007164b0` Shift nélkül is tölt, a `[this+0xeac]` elemeiből. Az eredeti (téves) indoklás: a tömb-slotok (`[esp+0x2c]`, `[esp+0x30]`, `[esp+0x40]`, `[esp+0x44]`) íróhelyei ezt mutatják: a nullázás (`0x005e8dc1`-`0x005e8dcd`) után csak olyan írások vannak, amelyek a már üres `local_c0`-ból másolnak (`0x005e9178`-`0x005e929a`). **Ez nincs összhangban a 38.2.2 megfigyelésével** (job-102: Ctrl+5 után qshow látszott). Lehetséges magyarázat: a felvételen Shift volt lenyomva, ez nincs rögzítve.
 - **Feltételes: a rács listája.** A `0x004039f0` a főablakot (`ytFrameWindow`, vtable `0x00cd95c0`) és egy 0x3710 bájtos objektumot hozza létre (konstruktor `0x005643e0`, paraméterei `param_1+0x1030` és `+0x1038`); a `FUN_0040bf70` tölti. Ez a CThumbUI-nak tűnik (a `0x005e8a70` `this`-e is ilyen, a `+0x2bc`/`+0x2c0` mezőkkel), de nem bizonyított. A rács lista-forrása ettől még nincs igazolva, a qshow-é pedig nincs.
 - **Nyitott: a „Preparing timeline…” ciklus kimenete.** A ciklus (`0x005e8a70`, dekompilátum 1215-1259. sor) `FUN_004a0980()` elemszámon megy 0-tól felfelé, és minden indexre a `this->vt+0x90` hívást végzi, elemenként a `piStack_6c` folyamatjelző-objektumnak adva. Hogy ez-e a qshow listája, nincs igazolva.
 
@@ -2773,7 +2773,7 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 |---|---|---|
 | üres tömb → `IDS_MUST_SELECT`, nem qshow (mód-1, Shift nélkül) | megerősített | dekompilátum + diszasszembly (tömb-slotok) |
 | a lista csak Flipbook + Ctrl + Shift ágban töltődik, fordított sorrend | megerősített | dekompilátum + diszasszembly |
-| Ctrl+5 → qshow | **ellentmondásos** | a kód Shift nélkül nem ad qshow-t; a 38.2.2 megfigyelés igen |
+| Ctrl+5 → qshow | **feltételes** (38.2.8) | a korábbi „Shift nélkül nem ad qshow-t” téves; a kód Shift nélkül is adhat qshow-t, ha K1/K2/K4 teljesül; a 38.2.2 megfigyelés összefér vele |
 | billentyűtérkép (`0x005e60d0`) | erős | teljes switch-lista, nincs nyíl/Esc/Space eset |
 | az Exit mechanizmusa (`this+0x50` → `vt+0x14`) | megerősített | diszasszembly + vtable-olvasás |
 | az Exit célja (a tulajdonos osztálya) | NINCS MEG | indirekt `vt+0x28` hívások |
@@ -2821,7 +2821,7 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 |---|---|---|
 | a menü és a Ctrl+5 ugyanazt a `0x005e8a70(this, 1)` hívást indítja | megerősített | A + B + ugrótábla-bájtok |
 | Shift nélkül nincs qshow (mód 1) | megerősített | A + B, írás-elemzés |
-| a felvétel (Ctrl+5 kijelölés nélkül qshow) egyezik-e a kóddal | ellentmondásos | a 188-as kép nincs a munkafában |
+| a felvétel (Ctrl+5 kijelölés nélkül qshow) egyezik-e a kóddal | feltételes: összeférhető (38.2.8) | a 188-as kép nincs a munkafában |
 | qshow-építő: mód-ág, fókusz-HWND | megerősített | A + B |
 | `0x00802180` = `CarefulEnhance`-frissítés | megerősített | A |
 | `0x00415500` = `ytProgress`, `0x0052d3c0` = `ytUIEvent` | megerősített | A |
@@ -2834,13 +2834,13 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 **2. A mód-1 ág kapuja.**
 1. `0x005d2a70()` nem nulla, és a `[this+0x2c0]+0x154` mező nem 0 és nem 1 (`0x005e8dd6`-`0x005e8dee`). Ha nem, IDS_MUST_SELECT (`0x005e983e`).
 2. A tömb feltöltésének egyetlen útja: a Preferences\Flipbook igaz, az aktív ablak (`DAT_00d67849`) igaz, a Ctrl (`GetAsyncKeyState(0x11)`) és a Shift (`GetAsyncKeyState(0x10)`) egyszerre lenyomva (`0x005e8e28`-`0x005e8e6f`). Ekkor a rekordtár fordított sorrendű bejárása tölti a tömböt (`0x005e8e75` kezdettől).
-3. A tömb elemszáma `[esp+0x30]` (`uStack_d0`). A qshow-építő (`0x005e9787`) csak akkor hívódik, ha ez legalább 2: `0x005e95e6` `test [esp+0x30], 0xfffffffe`; különben IDS_MUST_SELECT (`0x005e97ce`).
+3. A tömb elemszáma `[esp+0x30]` (`uStack_d0`). A qshow-építő (`0x005e9787`) csak akkor hívódik, ha ez legalább 1 (HELYESBÍTVE, 38.2.8: a kódolt érték 2·n + jelző, tehát n ≥ 1 elég): `0x005e95e6` `test [esp+0x30], 0xfffffffe`; különben IDS_MUST_SELECT (`0x005e97ce`).
 
 **3. A nem-Flipbook ág nem tölt (megerősített, írás-elemzés).** A másolás forrása a `[esp+0x40]` lista-mutató, amelyet a mód-1 ág NULL-ra nulláz (`0x005e8dc1`). A másolási számlálót (`[esp+0x44]`) csak nullázás írja (`0x005e8dc5`, `0x005e8e09`). A Preferences-kulcsot felépítő `0x00407a20` a `[esp+0x50]` objektumba ír, a `0x009c84a0` pedig a `[esi+4]` és `[esi+8]` mezőket nullázza. A `[esp+0x30]` írói (`0x005e8f97`, `0x005e91a3`, `0x005e9274`) a Shift-ágban vagy számláló-függő ciklusokban vannak. Ellenpélda nincs: a Shift nélküli ág üres tömbbel IDS_MUST_SELECT-re fut.
 
 **4. A mért ellentmondás.** A kód szerint Shift nélkül nincs qshow. A 38.2.2 (job-102) és a jegy 188-as Colab-felvétele szerint Ctrl+5 kijelölés nélkül qshow nyílik: mappanév és dátum jobbra fent, mappakártyák, alul rács-vissza, előző / lejátszás / következő, csúszka, és az Escape nem zárja be. A 188-as kép nincs a munkafában (a legfrissebb képtári fájl 2026. október 1-jei), ezért a leírást a kör feladatából vettem, a képet nem láttam.
 
-**Ítélet.** A kód-olvasat megerősített: Shift nélkül nincs qshow. A felvétellel ez csak akkor fér össze, ha a Ctrl+5 pillanatában Shift volt lenyomva. Ezt a 188-as futás billentyű-naplója dönti el. Ha a napló szerint nem volt Shift, a felvétel ellentmond a kódnak, és a kódolvasatban van hiba, amit még nem találtam meg. Nem igazolt hipotézis: a küldő eszköz az `5`-öt Shift+5-ként (`%`) küldhette, ha a billentyűkiosztás ezt kérte.
+**Ítélet.** ⚠️ **VISSZAVONVA (38.2.8):** a „Shift nélkül nincs qshow” állítás téves. A kód-olvasat többi része megerősített. A felvétel és a kód viszonyát a 38.2.8 rendezi: összeférhetők, a K1, K2 és K4 kapu futásidejű értékétől függően.
 
 **5. A többi cím (Ghidra-köteg, 2026-10-17-qshow-3).**
 - **`0x008037e0` (qshow-építő): megerősített.** A `Preferences\BigSlideshow2` kulcsot olvassa. A paraméter-struktúra 1. bájtja (a hívó módja, a `0x005e8a70` `[ebp+0xc]`-je) dönti el az ágat: mód 0 → `0x00801cf0`; mód 1 → `0x007fda00` (Időrend-váltás), majd `0x00802060`, ha `[obj+0x3bf] == 0` (`0x008039de`-`0x008039fb`). A billentyűfókuszt `SetFocus(obj+0x6c)` adja. A `+0x6c` mező HWND, ugyanez a mező az egérfogásban is (`SetCapture(param_1[0x14]+0x6c)`, `0x00a52890`). Az ablak osztálya és WndProc-ja nincs a kötegben: a `0x00982bf0` a `0x00983670`-et hívja, az a létrehozó hely.
@@ -2867,12 +2867,96 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 - **Blokkolt:**
   - **Eredeti futtatás (Colab-gép, nem Ghidra):** a 188-as futás billentyű-naplójának ellenőrzése (volt-e Shift a Ctrl+5 pillanatában), vagy új Ctrl+5 futás Shift-naplóval, a Preferences\Flipbook be- és kikapcsolva. [blokkoló]
   - `Ghidra-kör kell: 0x00983670 - a qshow ablak létrehozása (CreateWindowEx) és az ablakosztály WndProc-ja: melyik HWND kapja a nyíl-, szóköz-, Home/End- és Escape-billentyűket. [blokkoló]`
-  - `Ghidra-kör kell: 0x0052d430 - a bal gombos esemény továbbítója: a találati elem (sliderthumb) kezelője és a csúszka értékkötése. [blokkoló]`
+  - `Ghidra-kör kell: 0x0052d430 - HELYESBÍTVE (38.2.8): nem továbbító, hanem `ytUIEvent`-vtábla-beállító; a csúszka-kezelést a `0x00a52890` vezérlőkezelő viszi tovább. [blokkoló]`
 - **Örökölt (gépi, nem ebben a körben kérdezve; a munkasorba):** (a) a rekordtípus-kódok írója (`0x004edf60` rekordtára, paszta); (b) az Exit tulajdonos-osztályának írója, `0x00cbd5c4` (paszta); (c) az átmenet időtartamának íróhelye, `0x00d35808` (paszta); (d) az `overlays/exit` és `oneup/exit` geometriája (respack); (e) az átmenet animátora, `0x00802230` (Ghidra vagy diszasszembly); (f) a gyűjtemény forrása, `0x004039f0` (`+0x2bc` szolgáltató, Ghidra).
 
 **Nyitott kérdések mérlege:** 6 nyílt (örökölt, a munkasorba) · 5 lezárva · 3 blokkolt · 0 hatókörön kívül · 0 csak nyitva.
 
 Lezárva ebben a körben: a `0x00802180` szerepe; a `0x00415500` szerepe; a `0x0052d3c0` szerepe; a `0x008037e0` mód-ága és fókusz-HWND-je; a másolási számláló értéke a Shift nélküli ágon.
+
+#### 38.2.8 Negyedik kör: a Ctrl+5 normál útja, a Shift-állítás visszavonva (#4443, 2026-10-17)
+
+**Kérdés.** Melyik út vezet a `0x005e8a70` mód-1 ágához, és mely kapuk döntik el, hogy a Ctrl+5 megnyitja-e a qshow-t? A 38.2.6-38.2.7 szerint a Shift nélküli ág üres listával `IDS_MUST_SELECT`-re fut; a 188-as felvétel szerint kijelölés nélkül qshow nyílik.
+
+**Forrás és módszer.** (A) A `0x005cb990` ID-switch táblái a `Picasa3.exe` PE-jéből olvasva (`pe_dis.read`, csak olvasás); a `0x005e60d0` billentyű-switch és a `0x005e8a70` teljes diszasszemblyje (`annot_disasm.py`; a munkafa `.bt/` mappájában, a kör végén törölve). (B) A bináris-index (`functions`, `xrefs`, `string_xrefs`) és a `paszta.py`-val végzett teljes `.text` pásztázás: `0x9ccc` és `0x9c..` immediate-ok, valamint a `+0xeac` mező írói. Nincs Ghidra-kör és nincs hálózat.
+
+**1. A három belépés, egy cél (megerősített).**
+
+| belépés | kód | hívás |
+|---|---|---|
+| menüparancs, ID `0x9ccc` (`Nézet ▸ Időrend`) | `0x005cb990`: `cmp esi,0x9c41` · `lea eax,[esi-0x9c42]` · `cmp eax,0xfa` · `movzx edx,byte ptr [eax+0x5cdb34]` · `jmp dword ptr [edx*4+0x5cd9fc]`. Az ID 0x9ccc → index 0x8a → bájt 47 → `0x005cbbdd`: `push 1` · `push ebx` · `call 0x005e8a70` | `(this, 1)` |
+| billentyű `Ctrl+5` | `0x005e60d0` → `0x005e6279`: `push ebp` · `call 0x005696c0` · `jne 0x005e65f7` · `push 1` · `push ebp` · `call 0x005e8a70` | `(panel, 1)` |
+| eszköztár-név `thumbui/timelinebutton` (a 38.2.7 kódolvasata, most nem mértem újra) | `0x005d9cc0` → `0x005da7ae` (`push 1`) | `(this, 1)` |
+
+A menü és a billentyű ugyanabba a mód-1 ágba fut. A `this` a két ágban más objektum lehet (a billentyűnél a switch `ebp` argumentuma, a menünél az `ebx`); az azonosságuk nincs megmérve, de a K-kapuk mindkét esetben ugyanazt a kódot futtatják.
+
+A „vizsgált ág nem a Ctrl+5 normál útja” hipotézis **cáfolva**: a `0x005e8a70` mód-1 ága a Ctrl+5 normál útja.
+
+Módszertani megjegyzés: a `0x9ccc` literál egyetlen operandusként szerepel (`0x0055aa15`, a menütábla-építő tárolása). Az elosztó a `0x9c42` bázist vonja le (`lea eax,[esi-0x9c42]`), ezért a literálra keresés nem találja az esetet. A bázis-levonás a keresés kulcsa.
+
+**2. A mód-1 ág kapui (megerősített, `0x005e8a70` diszasszembly).**
+
+| kapu | cím | feltétel | ha nem |
+|---|---|---|---|
+| K1 | `0x005e8dd1` | `call 0x005d2a70` ≠ 0. A függvény a `[this+0x2bc]+0x760` (catdata, db3) soraiban keres olyat, ahol a `state` oszlop (`0x006a5e60`) ≠ 0 | `IDS_MUST_SELECT` (`0x005e983e`) |
+| K2 | `0x005e8dde` | `test dword ptr [ecx+0x154], 0xfffffffe` ≠ 0, ahol `ecx = [this+0x2c0]`: a mező nem 0 és nem 1 | `IDS_MUST_SELECT` (`0x005e983e`) |
+| K3 | `0x005e8df4`-`0x005e8e6f` | Flipbook-beállítás ∧ aktív ablak ∧ Ctrl ∧ Shift: Flipbook-lista a `[this+0x2bc]` rekordtárából, fordított sorrendben. Shift nélkül ugrás `0x005e907b`-re | nincs külön ág |
+| K4 | `0x005e907d` | `call 0x005675d0` = 0. A függvény a `[this+0xeac]` láncot vizsgálja; ha nincs megfelelő csomópont, felszabadítja és újraépíti (`0x00717bb0`), és -1-et ad, ha az újraépítés nem sikerül | nem 0: a builder ezt az értéket adja vissza, qshow nem nyílik |
+| L2 | `0x005e90a5` | `[this+0xeac]` ≠ 0: `call 0x007164b0`. Minden i-re: `item = vt+0xb8(i)`; ha `item[+0x5a] == 0`, az `item[+0xb4]` bekerül a listába | üres lista → K5 |
+| L3 | `0x005e90b9` | `[this+0xe64] == -1`: a `0x005e92a0` ág, listaépítés a `0x00891110` függvénnyel | nem a fő út |
+| K5 | `0x005e95e6` | `test dword ptr [esp+0x30], 0xfffffffe`: a kódolt számláló (2·n + jelző) ≠ 0, azaz n ≥ 1 | `IDS_MUST_SELECT` (`0x005e97ce`) |
+| vége | `0x005e9787` | `call 0x008037e0` (a mód-1 qshow-építő) | nincs |
+
+**3. Miért nem a kijelölés a lista forrása.** Az L2 lista a `[this+0xeac]` gyűjteményből épül, nem a kijelölésből. Ennek írója a `0x00662b20`, amelynek sztringjei (`faces`, `albums`, `Search results`, `pictures`) a nézetek neveire utalnak. Ebből az következik (feltételezés a sztringekből, nem mérve), hogy a `[this+0xeac]` a megjelenített nézet aktuális gyűjteménye. A `+0x5a` jelző jelentése nincs megmérve (rejtett-kép szűrő a gyanú).
+
+**4. Cáfoló kísérletek.**
+
+1. „A Shift nélküli ágban a tömb üres” (38.2.6, 38.2.7). **Cáfolva.** A `0x007164b0` a `lea esi,[esp+0x44]` mutatóján át tölti a hívó tömbjét. A `lea` a `push eax` után fut, így az `esp` 4-gyel le van húzva, és a `[esp+0x44]` a hívó `[esp+0x40]`-`[esp+0x44]` párját jelenti. A 38.2.7 „nem-Flipbook ág nem tölt” állítása csak a közvetlen írásokat nézte, a mutatón átadott írást nem.
+2. „A qshow-kapu legalább 2 elemet kér”. **Helyesbítve.** A `[esp+0x30]` számláló 2·n + jelző kódolású (a `0x005e8f97` és a `0x005e9192`-`0x005e91a3` elemenként +2-t ad), a `0xfffffffe` maszk tehát n ≥ 1-et enged át.
+3. „A Ctrl+5 nem a mód-1 ág”. **Cáfolva** (1. pont).
+4. Megmaradó kérdés: K1, K2 és K4 futásidejű értéke. A statikus kód ezeket nem dönti el.
+
+**5. Bizonyítottsági fok.**
+
+| állítás | fok | alap |
+|---|---|---|
+| a Ctrl+5 billentyű és a menüparancs → `0x005e8a70(this, 1)` | megerősített | A: diszasszembly és PE-tábla; B: billentyű-switch |
+| a Shift-ág (K3) Flipbook-listát ad, nem a normál listát | megerősített | A: diszasszembly |
+| qshow-kapu: n ≥ 1 | megerősített | A: kódolás és maszk |
+| a Shift nem feltétele a qshow-nak (L2 út) | feltételes | A; a K4 és K1/K2 futásidejű értékétől függ |
+| felvétel ↔ kód | feltételes: összeférhető | A; K1/K2/K4 értéke nincs meg |
+| `[this+0xeac]` = a nézet gyűjteménye | feltételezés | B: író sztringjei; nincs mérve |
+
+**6. Helyesbítések a 38.2.6-38.2.7 állításaiban.**
+
+- ⛔ „Shift nélkül nincs qshow”: **visszavonva** (L2 út).
+- ⛔ „legalább 2 elem”: **helyesbítve**, n ≥ 1 (K5).
+- ⛔ „a `0x0052d430` a bal gombos esemény továbbítója”: **helyesbítve**. A függvény `ytUIEvent`-vtábla-beállító (`mov dword ptr [ecx], 0xc8b4b0`, `[ecx+0x68] = 0`), nem továbbító.
+- ✅ A `0x00983670` (qshow-ablak) dekompilátuma: `CreateWindowExA`-szerű hívás 12 argumentummal, osztálynév `"ytWindow"`. A HWND a `[obj+0x6c]`-be kerül, a szülő a `[obj+0x78]`. Stílus: az alapágban `0x00cb0000` (param_2 = 0) vagy `0x00cf0000` (param_2 ≠ 0); az 1. ágban ex-stílus `0x80`, stílus `0x84000000`; a 2. ágban stílus `0x84080000`; a 3. ágban `0x40000000`. A WndProc nincs ebben a függvényben.
+- ✅ A `0x0052d3c0` `ytUIEvent`-konstruktor (az előző körből, újra megerősítve).
+
+**7. Codex-kész lista: nem adható.** A viselkedés attól függ, hogy K1, K2 és K4 futásidejű értéke mi. Erre épülő fejlesztői lista feltevés volna. Már most eldönthető a fejlesztői következmény: a Ctrl+5-ös időrend nem Shift-függő (L2), és a listát a nézet gyűjteményéből (`[this+0xeac]`) kell építeni, nem a Flipbook-rekordtárból (K3).
+
+**8. Nyitott kérdések (ennek a körnek).**
+
+- Q-A: melyik a Ctrl+5 normál útja. **LEZÁRVA** (1. pont).
+- Q-B: kell-e Shift. **LEZÁRVA, feltételesen** (4. pont; a K4 értéke a feltétel).
+- Q-C: felvétel ↔ kód. **LEZÁRVA:** összeférhető, feltételes (5. pont).
+- Q-D: a K1 catdata `state`-sorainak futásidejű értéke és a `state` jelentése. **BLOKKOLT**: paszta-kör kell (a `0x006a5e60` hívóinak és a helyi db3-mintának az olvasása, a hívó futtatja). [blokkoló]
+- Q-E: a K2 `[this+0x2c0]+0x154` mezőjének jelentése és írói. **BLOKKOLT**: paszta-kör kell a `+0x154` írói az `[this+0x2c0]` típusában. [blokkoló]
+- Q-F: a K4 (`0x005675d0`) -1-ága. `Ghidra-kör kell: 0x004ae180 - a 0x005675d0 -1-ágának feltétele: mit ad a 0x004ae180, és mikor ad -1-et. [blokkoló]`
+- Q-G: az L3 ág (`0x00891110`). `Ghidra-kör kell: 0x00891110 - a listaépítő tartalma, ha a [this+0xe64] == -1. [nem blokkolja a fő utat]`
+- Q-H: a qshow-ablak WndProc-ja. `Ghidra-kör kell: 0x00983330 - a ytWindow-sztringet használó függvény: osztályregisztráció vagy WndProc (hívója a 0x00982d60); a billentyű-fókusz kezelése. [blokkoló]`
+
+**Nyitott kérdések mérlege (38.2.8): 0 nyílt · 3 lezárva · 5 blokkolt · 0 hatókörön kívül · 0 csak nyitva.** Az örökölt tételek (38.2.7 nyitott listája) változatlanul a munkasorban maradnak.
+
+**9. A jegy „Kész, ha” pontjai (#4443).**
+
+- ⛔ A spec leírja a bemutató működését bizonyítékkal: **részben.** Megvan az indítási út, a kapuk, a qshow-ablak létrehozása és az átmenet lépéssora. Nincs meg a WndProc, a csúszka, az Exit célja, az időtartam, a kártyák tartalma és a futásidejű K-értékek.
+- ⛔ Nézet ▸ Időrend és Ctrl+5 kattintásos teszttel: **nincs.** Ebben a körben kódot nem írtam.
+- ⛔ Képernyőkép az eredetivel összevetve: **nincs.** A 188-as kép nincs a munkafában, és nincs implementáció.
+
+**10. Javasolt fejlesztői irány (feltételes, még nem Codex-kész).** A Ctrl+5 és a menüpont ugyanabba a mód-1 ágba fut. A lista forrása a nézet gyűjteménye (L2), nem a kijelölés. Mielőtt a fejlesztés ezt építi, a K1, K2 és K4 futásidejű értékét kell megmérni egy valódi Picasa-futtatásban (Ctrl+5, kijelölés nélkül, a catdata és a `[this+0x2c0]` állapotának naplózásával).
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
