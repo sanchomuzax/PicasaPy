@@ -201,3 +201,213 @@ def test_real_click_on_delegate(window):
     assert report["total"] == 1
     assert report["covered"] == 1
     assert report["remaining"] == 0
+
+
+# #5150 maradék: négy minta, amelyet a teszt valódi kattintása fed, a régi audit
+# viszont nem ismerte fel. Mindegyikhez saját, egyvezérlős eset tartozik.
+def test_beagyazott_fuggveny_zart_nevvel_fed(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+Button { objectName: "nestedButton" }
+''',
+        '''from PySide6.QtTest import QTest
+
+def test_nested_click(window):
+    name = "nestedButton"
+
+    def kattints():
+        button = window.findChild(QObject, name)
+        QTest.mouseClick(button, Qt.LeftButton)
+
+    kattints()
+''',
+    )
+
+    assert report["total"] == 1
+    assert report["covered"] == 1
+    assert report["remaining"] == 0
+
+
+def test_beagyazott_fuggveny_visszahivaskent_fed(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+Button { objectName: "callbackButton" }
+''',
+        '''from PySide6.QtCore import QObject, QTimer
+from PySide6.QtTest import QTest
+
+def test_callback_click(window):
+    def kattints_kesleltetve():
+        button = window.findChild(QObject, "callbackButton")
+        QTest.mouseClick(button, Qt.LeftButton)
+
+    QTimer.singleShot(0, kattints_kesleltetve)
+''',
+    )
+
+    assert report["total"] == 1
+    assert report["covered"] == 1
+    assert report["remaining"] == 0
+
+
+def test_indexelt_talalat_kattintasa_fed(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+Button { objectName: "indexedButton" }
+''',
+        '''from PySide6.QtTest import QTest
+
+def _elemek(window, nev):
+    return [elem for elem in window.findChildren(QObject) if elem.objectName() == nev]
+
+def _latszo_elemek(window, nev):
+    # a külső helpernek nincs saját objectName()-hívása: a név a listaértelmezésen át jut el
+    return [elem for elem in _elemek(window, nev) if elem.isVisible()]
+
+def test_indexed_click(window):
+    talalatok = _latszo_elemek(window, "indexedButton")
+    QTest.mouseClick(talalatok[0], Qt.LeftButton)
+''',
+    )
+
+    assert report["total"] == 1
+    assert report["covered"] == 1
+    assert report["remaining"] == 0
+
+
+def test_f_string_nev_elotaggal_fed(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+MenuItem { objectName: "prefixedRow_" + modelData }
+''',
+        '''from PySide6.QtTest import QTest
+
+def test_f_string_click(window, azonosito):
+    elem = window.findChild(QObject, f"prefixedRow_{azonosito}")
+    QTest.mouseClick(elem, Qt.LeftButton)
+''',
+    )
+
+    assert report["total"] == 1
+    assert report["covered"] == 1
+    assert report["remaining"] == 0
+
+
+def test_szoveg_szerint_keresett_elem_fed_ha_a_teszt_nevezi_az_objectnamet(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+CheckBox {
+    objectName: "textNamedCheck"
+    text: qsTr("Remember this choice")
+}
+''',
+        '''from PySide6.QtCore import QObject
+from PySide6.QtTest import QTest
+
+def _szoveg_szerint(window, szoveg):
+    for elem in window.findChildren(QObject):
+        if elem.property("text") == szoveg:
+            return elem
+
+def test_text_click(window):
+    assert window.findChild(QObject, "textNamedCheck") is not None
+    elem = _szoveg_szerint(window, "Remember this choice")
+    QTest.mouseClick(elem, Qt.LeftButton)
+''',
+    )
+
+    assert report["total"] == 1
+    assert report["covered"] == 1
+    assert report["remaining"] == 0
+
+
+def test_azonos_feliratu_vezerlok_kozul_csak_a_megnevezett_fed(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+CheckBox {
+    objectName: "sameTextFirst"
+    text: qsTr("Same label")
+}
+CheckBox {
+    objectName: "sameTextSecond"
+    text: qsTr("Same label")
+}
+''',
+        '''from PySide6.QtCore import QObject
+from PySide6.QtTest import QTest
+
+def _szoveg_szerint(window, szoveg):
+    for elem in window.findChildren(QObject):
+        if elem.property("text") == szoveg:
+            return elem
+
+def test_same_label_click(window):
+    assert window.findChild(QObject, "sameTextFirst") is not None
+    elem = _szoveg_szerint(window, "Same label")
+    QTest.mouseClick(elem, Qt.LeftButton)
+''',
+    )
+
+    assert report["total"] == 2
+    assert report["covered"] == 1
+    assert report["coverage"].keys() == {"sameTextFirst"}
+
+
+# Ellenpéldák: jelhívással érintett elem, és objectName megnevezése nélküli
+# szöveg-egyezés NEM fed.
+def test_beagyazott_fuggveny_jelhivassal_marad_maradek(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+Button { objectName: "invokedNested" }
+''',
+        '''from PySide6.QtTest import QTest
+
+def test_nested_invoke(window):
+    name = "invokedNested"
+
+    def kattints():
+        button = window.findChild(QObject, name)
+        QMetaObject.invokeMethod(button, "click")
+
+    kattints()
+''',
+    )
+
+    assert report["total"] == 1
+    assert report["covered"] == 0
+    assert report["remaining"] == 1
+
+
+def test_szoveg_egyezes_objectname_nelkul_marad_maradek(tmp_path: Path):
+    report = _run_audit(
+        tmp_path,
+        '''import QtQuick.Controls
+CheckBox {
+    objectName: "textOnlyCheck"
+    text: qsTr("Forget this choice")
+}
+''',
+        '''from PySide6.QtCore import QObject
+from PySide6.QtTest import QTest
+
+def _szoveg_szerint(window, szoveg):
+    for elem in window.findChildren(QObject):
+        if elem.property("text") == szoveg:
+            return elem
+
+def test_text_click_without_name(window):
+    elem = _szoveg_szerint(window, "Forget this choice")
+    QTest.mouseClick(elem, Qt.LeftButton)
+''',
+    )
+
+    assert report["total"] == 1
+    assert report["covered"] == 0
+    assert report["remaining"] == 1
