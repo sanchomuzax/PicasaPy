@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.127] – 2026-10-17
+
+- A diavetítés átmenet-választója az eredeti hét elemét kínálja (Cut, Pan and Zoom, Dissolve, Wipe, Circle, Push, Rectangle); az arcra közelítő változat a filmkészítőben marad (#4856).
+
 ## [0.9.126] – 2026-10-17
 
 - A Picasa-profil névjegyei bekerülnek a központi névtárba, és minden felület ugyanazt a nevet használja (#5179).
