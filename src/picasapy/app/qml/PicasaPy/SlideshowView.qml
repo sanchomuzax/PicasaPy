@@ -14,6 +14,9 @@ Rectangle {
     clip: true
 
     property var photosModel: null
+    //: A Pan and Zoom két kivágását a host Python-vezérlője adja át;
+    //: a képernyővédő ugyanazt az illesztőt használja.
+    property var panZoomRectanglesProvider: null
     // #1640: az AKTÍV megjelenítési mód — a vetített kép URL-jének valódi
     // argumentuma (`displayUrlAt(index, mód)`). A hívó (Main.qml) köti a
     // `controller.displayMode`-hoz; így a kötés módváltáskor újraértékelődik.
@@ -300,6 +303,9 @@ Rectangle {
         show._diakBetolt()
     }
     onDisplayModeChanged: show._diakBetolt()
+    onTransitionKindChanged: show._frissitKenBurns()
+    onWidthChanged: show._frissitKenBurns()
+    onHeightChanged: show._frissitKenBurns()
 
     //: #3881: a látott kép útvonala a JELEN indexből
     function _kovetettUtFrissit() {
@@ -417,11 +423,51 @@ Rectangle {
         kep.source = url
     }
 
+    function _panZoomRectanglesFor(index) {
+        if (typeof show.panZoomRectanglesProvider !== "function"
+                || !show.photosModel || index < 0
+                || typeof show.photosModel.pixelWidthAt !== "function"
+                || typeof show.photosModel.pixelHeightAt !== "function"
+                || typeof show.photosModel.rotateAt !== "function")
+            return []
+        var sourceWidth = show.photosModel.pixelWidthAt(index)
+        var sourceHeight = show.photosModel.pixelHeightAt(index)
+        if (show.photosModel.rotateAt(index) % 2) {
+            var swap = sourceWidth
+            sourceWidth = sourceHeight
+            sourceHeight = swap
+        }
+        if (sourceWidth <= 0 || sourceHeight <= 0
+                || show.width <= 0 || show.height <= 0)
+            return []
+        return show.panZoomRectanglesProvider(
+            sourceWidth, sourceHeight,
+            Math.max(1, Math.round(show.width)),
+            Math.max(1, Math.round(show.height)))
+    }
+
+    function _frissitKenBurns() {
+        if (show.transitionKind === "kenburns" && show.visible
+                && show.currentIndex >= 0) {
+            slide.panZoomRectangles = show._panZoomRectanglesFor(show.currentIndex)
+            slide.panZoomProgress = 0
+            if (slide.panZoomRectangles.length === 2)
+                kenBurns.restart()
+            else
+                kenBurns.stop()
+        } else {
+            kenBurns.stop()
+            slide.panZoomRectangles = []
+            slide.panZoomProgress = 0
+        }
+    }
+
     //: a dia és az elő-betöltő forrása — minden olyan változáskor, amitől a
     //: vetített kép függ (index, láthatóság, modell, megjelenítési mód)
     function _diakBetolt() {
         show._betolt(slide, show._diaUrl(show.currentIndex),
                      show.forrasMeret(show.currentIndex))
+        show._frissitKenBurns()
         var kovetkezo = show.visible && show.photosModel
             ? show.nextPhotoIndex(show.currentIndex, 1) : -1
         // #1640: az elő-betöltés is a mód-tudatos URL-t kérje — különben a
@@ -456,6 +502,9 @@ Rectangle {
         elozoSlide.scale = slide.scale
         elozoSlide.transitionOffsetX = slide.transitionOffsetX
         elozoSlide.transitionOffsetY = slide.transitionOffsetY
+        elozoSlide.capturedPanZoomX = slide.x - slide.transitionOffsetX
+        elozoSlide.capturedPanZoomY = slide.y - slide.transitionOffsetY
+        elozoSlide.exactPanZoomGeometry = slide.panZoomActive
     }
 
     function _atmenetIrany() {
@@ -510,9 +559,8 @@ Rectangle {
         //: a bejövő dia a saját mozgásának elejéről induljon: az előző dia
         //: geometriája a másolaton él tovább, a diát visszaállítjuk
         slide.scale = 1.0
-        if (show.transitionKind === "kenburns"
-                || show.transitionKind === "kenburnsaoi")
-            kenBurns.restart()
+        if (show.transitionKind === "kenburnsaoi")
+            kenBurnsFace.restart()
         if (show.transitionKind === "cut" || !elozoUrl) {
             elozoSlide.opacity = 0
             slide.opacity = 1
@@ -681,12 +729,19 @@ Rectangle {
         objectName: "slideshowPrevImage"
         property real transitionOffsetX: 0
         property real transitionOffsetY: 0
+        property bool exactPanZoomGeometry: false
+        property real capturedPanZoomX: 0
+        property real capturedPanZoomY: 0
         //: a méretet/elfordulást a váltáskor a `_geometriatAtvesz` írja —
         //: ezek csak a kezdőértékek (első dia, még nincs mit másolni)
         width: parent.width
         height: parent.height
-        x: (parent.width - width) / 2 + transitionOffsetX
-        y: (parent.height - height) / 2 + transitionOffsetY
+        x: exactPanZoomGeometry
+           ? capturedPanZoomX + transitionOffsetX
+           : (parent.width - width) / 2 + transitionOffsetX
+        y: exactPanZoomGeometry
+           ? capturedPanZoomY + transitionOffsetY
+           : (parent.height - height) / 2 + transitionOffsetY
         opacity: 0
         fillMode: Image.PreserveAspectFit
         asynchronous: false
@@ -701,15 +756,60 @@ Rectangle {
         objectName: "slideshowImage"
         property real transitionOffsetX: 0
         property real transitionOffsetY: 0
+        property var panZoomRectangles: []
+        property real panZoomProgress: 0
         // az ini-forgatást a nézővel azonos módon követi (revision-kötés)
         readonly property int iniSteps: show.photosModel
             ? (show.photosModel.revision,
                show.photosModel.rotateAt(show.currentIndex))
             : 0
-        width: iniSteps % 2 ? parent.height : parent.width
-        height: iniSteps % 2 ? parent.width : parent.height
-        x: (parent.width - width) / 2 + transitionOffsetX
-        y: (parent.height - height) / 2 + transitionOffsetY
+        readonly property real forrasPixelSzelesseg: show.photosModel
+            && show.currentIndex >= 0
+            && typeof show.photosModel.pixelWidthAt === "function"
+            ? show.photosModel.pixelWidthAt(show.currentIndex) : 0
+        readonly property real forrasPixelMagassag: show.photosModel
+            && show.currentIndex >= 0
+            && typeof show.photosModel.pixelHeightAt === "function"
+            ? show.photosModel.pixelHeightAt(show.currentIndex) : 0
+        readonly property real forgatottPixelSzelesseg: iniSteps % 2
+            ? forrasPixelMagassag : forrasPixelSzelesseg
+        readonly property real forgatottPixelMagassag: iniSteps % 2
+            ? forrasPixelSzelesseg : forrasPixelMagassag
+        readonly property bool panZoomActive: show.transitionKind === "kenburns"
+            && panZoomRectangles && panZoomRectangles.length === 2
+            && forrasPixelSzelesseg > 0 && forrasPixelMagassag > 0
+        readonly property real panZoomX: panZoomActive
+            ? panZoomRectangles[0].x
+                + (panZoomRectangles[1].x - panZoomRectangles[0].x)
+                    * panZoomProgress : 0
+        readonly property real panZoomY: panZoomActive
+            ? panZoomRectangles[0].y
+                + (panZoomRectangles[1].y - panZoomRectangles[0].y)
+                    * panZoomProgress : 0
+        readonly property real panZoomWidth: panZoomActive
+            ? panZoomRectangles[0].width
+                + (panZoomRectangles[1].width - panZoomRectangles[0].width)
+                    * panZoomProgress : 1
+        readonly property real panZoomHeight: panZoomActive
+            ? panZoomRectangles[0].height
+                + (panZoomRectangles[1].height - panZoomRectangles[0].height)
+                    * panZoomProgress : 1
+        readonly property real panZoomScale: panZoomActive && panZoomWidth > 0
+            ? parent.width / panZoomWidth : 1
+        width: panZoomActive ? forrasPixelSzelesseg * panZoomScale
+                             : (iniSteps % 2 ? parent.height : parent.width)
+        height: panZoomActive ? forrasPixelMagassag * panZoomScale
+                              : (iniSteps % 2 ? parent.width : parent.height)
+        x: panZoomActive
+           ? -panZoomX * panZoomScale
+                + (forgatottPixelSzelesseg - forrasPixelSzelesseg)
+                    * panZoomScale / 2 + transitionOffsetX
+           : (parent.width - width) / 2 + transitionOffsetX
+        y: panZoomActive
+           ? -panZoomY * panZoomScale
+                + (forgatottPixelMagassag - forrasPixelMagassag)
+                    * panZoomScale / 2 + transitionOffsetY
+           : (parent.height - height) / 2 + transitionOffsetY
         rotation: iniSteps * 90
         // #1640: a megjelenítési mód (Projektor mód stb.) a NYERS fájl
         // URL-jén nem látszik — a `displayUrlAt` aktív módnál a
@@ -731,18 +831,29 @@ Rectangle {
         //: `forrasMeret`); a `_diakBetolt` írja. Ez csak a kezdőérték.
         sourceSize: show.forrasMeret(-1)
 
-        //: #433 „Pan and Zoom" (`kenburns`): a dia a tartózkodása alatt
-        //: LASSAN nagyít. Nem átmenet, hanem a diára rakott mozgás — ezért
-        //: a dia-időhöz kötött, nem az átmenet-hosszhoz.
-        NumberAnimation on scale {
+        //: #5258: a képarányra illesztett képből számolt két kivágás között
+        //: pásztáz; a dia-idő alatt ér el a B téglalapig.
+        NumberAnimation on panZoomProgress {
             id: kenBurns
             objectName: "slideshowKenBurns"
             running: show.visible
-                     && (show.transitionKind === "kenburns"
-                         || show.transitionKind === "kenburnsaoi")
+                     && show.transitionKind === "kenburns"
+                     && show.currentIndex >= 0
+                     && slide.panZoomRectangles.length === 2
+            from: 0.0
+            to: 1.0
+            duration: Math.max(show.intervalMs, 1)
+        }
+        //: A képernyővédő arcos változata (`kenburnsaoi`) külön átmenet;
+        //: a #5258 csak a sima Pan and Zoom kivágásait cseréli le.
+        NumberAnimation on scale {
+            id: kenBurnsFace
+            objectName: "slideshowKenBurnsFace"
+            running: show.visible
+                     && show.transitionKind === "kenburnsaoi"
                      && show.currentIndex >= 0
             from: 1.0
-            to: show.transitionKind === "kenburnsaoi" ? 1.12 : 1.08
+            to: 1.12
             duration: Math.max(show.intervalMs, 1)
         }
         //: a nagyítás NEM ragadhat be: átmenet-váltáskor visszaáll
