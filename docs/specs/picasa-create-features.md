@@ -2970,6 +2970,107 @@ Korábbi állítások javítása:
 - A kép-méretet adó `0x0042a440` és a `+0xd4` vtable-hívás: melyik adja.
 - A `0x0045a9d0` kiváltó lánca (`0x0047e470` és feljebb), és a B-slot forrása.
 
+**A film-tároló és a Vw,Vh - #4400, 10. kör (2026-10-17).**
+
+**Kérdés.** A 9. kör két blokkoló címe: `0x004841f0` (a `0x0045a9d0` tömbjének tárolója) és `0x00812aa0` (a `Vw,Vh`-jellegű pár felhasználása). Mindkettőre a 9. kör kérdését kell megválaszolni a C-kódból. A kérdés: a híd metszése, forgatása, filtere és affin transzformációja; a `0x0090ff50` téglalap-művelete; a `Vw,Vh` képzése (`0x00813330`); az affin ág bemenete és kimenete (`0x00a4a240`); a `0x0049d560` tömbjének helye. Ahol a C nem dönt, ki kell mondani, mi hiányzik.
+
+**Forrás.** `referencia/ghidra/2026-10-17-film-tarolo.txt` (a privát `picasapy-agent` repóban): a két `CÍM` szakasz; a sorhivatkozások ennek a sorai. Emellett a 9. kör fájlja, `referencia/ghidra/2026-10-17-film-hog-kor.txt`: a `0x00813330` getter-hívása (207. sor), a `Vw,Vh` képlete és a `0x00812aa0` hívása (244-245. sor), a `0x0045a9d0` hívóhelyei (1191, 1226, 1236, 1384. sor). A 8. kör fájlja, `referencia/ghidra/2026-10-17-film-2.txt`: a `0x0049d560` eleje és a `local_24` írói. A `0x0047a390`, `0x0090ff50`, `0x00a4a240` és `0x00a4a520` törzse ebben a körben nem szerepelt, ezért az ezekre vonatkozó állítások a 9. körből maradnak.
+
+**Eredmények.**
+
+*(a) A `0x004841f0`: a rekordtömb feldolgozója.*
+
+- Hívók: három. Kettő a `0x0045a9d0`-ban (`0045b85c`, `0045ba5c`), egy a `0x00644900`-ban (`00644b94`). A `0x00644900` C-je nincs meg.
+- A `0x0045a9d0` két helyen hívja: `FUN_004841f0(param_1, &iStack_b4, 0)` (1236. sor) és `FUN_004841f0(param_1, &ppuStack_d0, 0)` (1384. sor). Az `iStack_b4` a `0x0049d560` kimeneti listája (1191. sor). A `ppuStack_d0` a `0x00587110` kimeneti címe (1226. sor).
+- Hívási alak: a törzs a 3. argumentumot (`param_3`) már a 77. sorban olvassa (`param_3[1]`), a hívás viszont 0-t ad. A 2. argumentum egyszerre lista és objektum: a 140. sor ciklushatára `param_2[1] >> 1`, a 66. sor viszont `param_2[0xb17]`-et olvas (ez a `0x0045a9d0` `this+0x2c5c` ini-mutatója). A dekompilált prototípus és a hívás nem illeszkedik. A lista argumentuma a C-ből nem dönthető el.
+- Rekord: a törzs a rekord +0x10 és +0x14 szavát olvassa (83-84. sor), és a kettőt együtt kezeli. A +0 ... +0xc pixel-téglalapot nem olvassa.
+- Párok: `(-1, -1)` külön ágat indít (85-96. sor). `(0, 0)` esetén az egész ág kimarad (97. sor). Egyébként `FUN_005863f0` keres (100. sor). Ha nincs találat, `FUN_00476460` vagy `FUN_00412440` próbálkozik (121, 130. sor). A talált indexet `FUN_004844f0(*puVar8, index, param_3)` kapja (125, 130-132. sor).
+- Ismeretlen személy: ha nincs találat, a név részeként a `CThumbDB::UnknownPerson` sztring szerepel (69-74. és 104-118. sor).
+- Bit0: a 0x004841f0 nem állítja be. A 93. sorban csak egy helyi változó bit0-ját maszkolja. A `0x0049d560` elején csak megőrzi (`param_1[1] & 1`).
+- Írás: a törzs közvetlenül nem ír a rekordba. A rekord módosítása, ha van, a `FUN_004844f0`-ban lehet.
+
+*(b) A `0x00812aa0`: a Vw,Vh fogadója.*
+
+- Paraméterek: `param_1` a hívó objektum (`this`); `param_2` a tétel (`this+0x1a8`), a típusa `*param_2`: 2, 3 vagy 4; `param_3` a kimeneti objektum (`this+0x7ec`, +8 a szélesség, +0xc a magasság); `param_4` = Vw; `param_5` = Vh; `param_6` a jelző. A 0x00813330 hívásában a jelző 0.
+- Hívók: hat. A 0x00813330 hívása (`00813588`) feltétel nélkül fut a 244-245. sorban.
+- A Vw,Vh használata a C-ben:
+  1. Ha a kimeneti objektum mérete (+8, +0xc) nem egyezik Vw,Vh-val, `FUN_009a9c90(param_3)` fut (267-268. sor). Törzse nincs meg.
+  2. Típus 3 vagy 4: a képszolgáltató (`this+0x2d8`, vtable +0x5c) kapja Vw,Vh-t (304-306, 323-325. sor). A visszakapott kép méretét összeveti Vw,Vh-val (310-311. sor). Eltérésnél munkát sorol (318. sor).
+  3. Típus 4 és jelző 0: a 289-298. sor nem használja a Vw,Vh-t. Színnel tölt (`0xffaaaaaa`), vagy egy objektum vtable +0x28 hívását végzi, és 0-val tér vissza.
+  4. Típus 2: nincs képszolgáltató-hívás. A kitöltés színe `param_2[1]` (465-467. sor).
+  5. Kimeneti téglalap: ha `local_10c == Vw` és `local_108 == Vh` (498. sor), akkor x1 - x0 = local_10c, y1 - y0 = local_108. Egyébként (505-518. sor) mind a négy érték -1, és a kitöltés 0xff000000 (fekete).
+  6. Jelző nem nulla: a 478-492. sor `ROUND(Vh * FUN_0080c510() / this[0x2ac])` értéket ad a `this+0x564` objektum vtable +8 hívásának. A 0x00813330 ezt nem használja.
+- Nulla-kezelés: nincs. A C-ben nincs Vw = 0 vagy Vh = 0 elágazás, és az osztónál (`this[0x2ac]`) sincs nullavizsgálat. A 0 értéket a képszolgáltató kapja.
+
+*(c) A `Vw,Vh` képzése (`0x00813330`).*
+
+- A getter (vtable +0x20, a `*(this+0x2e0)` objektumon) a `&local_1a8` kimeneti területre ír (207. sor). A `0x00812aa0` hívás első két argumentuma: `local_1a8 - iStack_1b0` és `iStack_1a4 - iStack_1ac` (244-245. sor).
+- Helyesbítés a 9. körhöz: ott az állt, hogy a kivonandók nincsenek beállítva. A C-ben valóban nincs értékadásuk, de a getter a címen keresztül ír. Az `iStack_1ac` és az `iStack_1b0` a négy dwordos kimeneti területen belül vannak, ezért a getter írhatja őket.
+- A képlet szerint Vw = `out[0] - out[2]`, Vh = `iStack_1a4 - out[1]` (az `out` a getter kimenete `local_1a8`-tól). Ha az `out` mezői [x0, y0, x1, y1] lennének, a Vw negatív szélesség lenne, a Vh első tagja pedig a kimeneten kívül esne. A kivonás értelme ezért nem igazolt.
+
+*(d) A 9. kör kérdéseinek állapota a két címből.*
+
+- Híd metszése, forgatása, filtere, affin transzformációja: nem szerepelt a két címben. NINCS MEG.
+- `0x0090ff50`: nincs új adat.
+- `Vw,Vh` képzése: a forrás pontosítva (c), a kivonás értelme nincs megadva.
+- Affin ág (`0x00a4a240`) bemenete és kimenete: nincs új adat.
+- `0x0049d560` tömbjének helye: a `&iStack_b4` lista a `0x004841f0` hívásába megy. A C alapján ez nem közvetlen pixel-oszlop-író; a végső cél a `FUN_004844f0`-ban lehet, és az nincs meg.
+
+**Bizonyítottsági fok.**
+
+- Megerősített (a C-ből közvetlenül):
+  - A `0x0049d560` listája (`&iStack_b4`) a `0x004841f0` hívásába megy (hog 1191, 1236. sor).
+  - A `0x004841f0` a rekord +0x10/+0x14 szavát olvassa, a pixel-téglalapot nem (83-84. sor).
+  - `(0, 0)` párnál a `0x004841f0` kihagy minden tételt (97. sor).
+  - A `0x004841f0` nem állítja be a bit0-t.
+  - A dekompilált prototípus és a hívás ellentmond egymásnak: a 3. argumentum a hívásban 0, a törzs mégis dereferálja (77. sor).
+  - A `0x00812aa0` a Vw,Vh-t a képszolgáltató kért méreteként és a kimeneti méret ellenőrzésében használja (267-268, 304-306, 310-311, 323-325. sor).
+  - A `0x00813330` a `0x00812aa0`-t feltétel nélkül hívja, jelző 0-val (244-245. sor).
+  - A `0x0049d560` tételenként nullázza a `local_24[4]` és `local_24[5]` mezőket (film-2, 66-67. sor), és a 8. kör fájljában nincs további írás rájuk.
+- Feltételes:
+  - A `(0, 0)` pár a rekordban marad a `0x004841f0` hívásáig. Ehhez a `0x0049d560` másoló-ágának törzse kellene (film-2, 144. sor: `piVar9 = local_24`).
+  - Ha a pár nulla, a `0x0045a9d0` `0x00587110`-hívása is (0, 0) párral fut (hog 1226. sor). Ez a C alapján nem tűnik szándékoltnak; a másoló törzse dönti el.
+  - Ha a `local_10c` és `local_108` 0 marad, a `0x00812aa0` egyezés-ága (498. sor) csak Vw = Vh = 0 esetén fut. Ez feltételes, mert a `&local_114`-et kapó hívások (`FUN_009a91a0`, `FUN_009a8ca0`, `FUN_009a9c90`) felülírhatják a két változót.
+
+**Cáfoló kísérletek.**
+
+1. *A `0x004841f0` pixel-oszlopba ír.* Részben cáfolva: a törzsben nincs írás a +0 ... +0xc mezőkbe. A `FUN_004844f0` törzse nincs meg, ott lehet a tényleges írás.
+2. *A `0x004841f0` a faces= rect64-et olvassa.* Cáfolva: a törzs a +0x10/+0x14 párt olvassa, a pixel-téglalapot nem.
+3. *A `Vw,Vh` a film-keret mérete.* Nem igazolt: a `0x00812aa0` a kért képméretként használja. Hogy ez a film-keret is, a `0x00813330` képzésén múlik, és az nincs igazolva.
+4. *A `Vw,Vh` nulla értéke adja az egyezés-ágat.* Nem igazolt (lásd a feltételes pontot).
+5. *A `0x00813330` kivonandói nincsenek beállítva (9. kör).* Cáfolva: a getter a kimeneti területen belül írja őket.
+
+**Korábbi állítások javítása.**
+
+- A 9. körben a `0x004841f0(this, &tömb, 0)` hívás szövege helyes, de a „tömb" azonosítása nem igazolt (lásd a hívási alak ellentmondását).
+- A 9. körben „a kivonandók nincsenek beállítva" nem pontos (c).
+- A 9. körben „a `0x0049d560` tömbjének célját a `0x004841f0` dönti el" csak félig igaz: a `0x004841f0` a pár-keresést és a `FUN_004844f0` hívását tartalmazza; a cél a `FUN_004844f0`-ban van.
+
+**NINCS MEG (10. kör után).**
+
+- A `0x004841f0` belépési alakja: melyik argumentum a lista, és mit jelent a 3. argumentum (0 a hívásban).
+- A `puStack_7c` (rekordonkénti dword-tömb) forrása: a C-ben nincs hozzárendelés.
+- A `FUN_004844f0` törzse: a talált index és a lista hogyan kerül a rekordba.
+- A `0x0049d560` másoló-ágának törzse (film-2, 144. sor), vagyis a rekord-pár végső értéke.
+- A `0x00587110` kimenete (`ppuStack_d0`) és a `local_10c` (hog 1226. sor): mit tartalmaznak.
+- A bit0-t beállító függvény.
+- `FUN_009a9c90`, `FUN_009a91a0`, `FUN_009a8ca0`, `FUN_009aabf0` törzse: a kimeneti méret és a -1 értékek jelentése, és a `local_10c`, `local_108` írói.
+- A típus (`this+0x1a8`: 2, 3, 4) jelentése.
+- A képszolgáltató (`this+0x2d8`, vtable +0x5c) visszaadott méretének forrása.
+- A `0x009e0660` getter kimenetének mezőjelentése, és így a Vw,Vh képlet értelme.
+- A `0x0090ff50` hatása; a híd metszése, forgatása, filtere; az affin mátrix és EDX-bemenet forrása (`0x0047a3f0-0x0047a46c`): változatlanul a 9. körből.
+- A `0x00a4a520` négy kimeneti egészének forrása: változatlan.
+
+**Következtetés a további kérésekről.** Ez a kör nem kér újabb hívólistát: a `0x004841f0` három, a `0x00812aa0` hat hívója már megvan. A maradék belépési és futásidejű kérdés: a hívási alak, a rekord-pár értéke, a Vw,Vh és a híd mátrixa. Ezt natív QEMU-mérés dönti el, a korábbi (4-5. körös) QEMU-mérés módján. A `0x0068f980` → `0x0047a390` láncot kell futtatni ismert facerect, crop-rect, rotate-érték és mátrix-bemenettel, és ki kell olvasni:
+
+- a `0x0047a58b` (affin hívás) előtt az EDX és a verem-argumentumok értékét;
+- a `0x00812aa0` belépésén a `param_4`, `param_5` (Vw, Vh) és a `param_6` értékét;
+- a `0x004841f0` belépésén az ECX-et, a két stack-argumentumot, és a rekord +0x10/+0x14 párját.
+
+A Colab-felvétel (eredeti Picasa 3.9, Wine alatt) a `faces=` és a crop-kulcsok eredetét mutatja, a keretméretre nem dönt (a 9. kör szerint).
+
+**Fejlesztési következmény.** Nincs. A cropképlet és a keretméret még nem írható le megvalósítható formában: a `Vw,Vh` értelme, a híd mátrixa és a `0x004841f0` belépési alakja nincs igazolva.
+
 Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
 forrás-URL-jeit adja át (`Main.qml:728–734`,
 `people_controller.py:81–89`, `index/people.py:170–198`). A
