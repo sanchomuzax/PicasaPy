@@ -3146,14 +3146,92 @@ Hiányzik: K1 futásidejű értéke (Q-D), K2 `[this+0x2c0]+0x154` értéke (Q-E
 **Nyitott kérdések (38.2.10).**
 - Q-I: a K4 -1 négy feltétele. **LEZÁRVA** (1-4. pont). A futásidejű értékük nincs meg (Q-J).
 - Q-J: a K4 futásidejű értéke kijelölés nélkül. **BLOKKOLT:** `Ghidra-kör kell: 0x0056763a - a 0x004ae180 hívás előtti EAX (this): melyik objektum tömbjét olvassa a K4. [blokkoló]` Emellett paszta-kör kell a `[this+0x2a4]` +0x44 függvényére (a címe nincs a kötegben). [blokkoló]
-- Q-K: az ytWindow regisztrációja. **BLOKKOLT:** `Ghidra-kör kell: 0x00980670 - a CreateWindowExA hibaágában hívott függvény: regisztrálja-e az ytWindow osztályt, és állít-e be hwnd-t a [this+0x6c]-be. [blokkoló]`
-- Q-L: a WndProc címe és a billentyű-fókusz. **BLOKKOLT:** `Ghidra-kör kell: 0x00982d00 - a 0x00982d60 hívója (0x00982d48): mi van az EDI-ben a hívás előtt. [blokkoló]`
+- Q-K: az ytWindow regisztrációja. **BLOKKOLT:** `Ghidra-kör kell: 0x00980670 - a CreateWindowExA hibaágában hívott függvény: regisztrálja-e az ytWindow osztályt, és állít-e be hwnd-t a [this+0x6c]-be. [blokkoló]` **Új állapot (38.2.11):** részben lezárva: a `0x00980670` nem regisztrálja az ytWindow-t (feltételesen), a regisztráció helye nincs meg.
+- Q-L: a WndProc címe és a billentyű-fókusz. **BLOKKOLT:** `Ghidra-kör kell: 0x00982d00 - a 0x00982d60 hívója (0x00982d48): mi van az EDI-ben a hívás előtt. [blokkoló]` **Új állapot (38.2.11):** a WndProc címe még nincs meg; az EDI forrása a `0x00982d00` két hívójánál van (`0x00735d96`, `0x00a70cb4`), és azok nincsenek a kötegben.
 - Q-M: a `0x0097e510` szerepe. **LEZÁRVA** (c. pont). A visszaállító hívás helye nincs a kötegben, ez nem blokkol.
 - Q-N: az L3 forrása és célja. **BLOKKOLT:** `Ghidra-kör kell: 0x005e92a9 - az L3 hívás előtti EAX (cél) és a verembe tett forrás-argumentum: melyik lista másolódik. [blokkoló]` A dekompilátum nem mutatja ezeket, ezért a 0x005e92a0-0x005e92a9 tartomány diszasszembly-olvasata kell.
 - Q-O: Ctrl+5 kijelölés nélkül qshow-t nyit-e. **BLOKKOLT** (Q-D, Q-E, Q-J, Q-N).
 - Q-P: a `0x00802230` (animátor). **HATÓKÖRÖN KÍVÜL** ebben a körben.
 
 **Nyitott kérdések mérlege (38.2.10):** 0 nyílt · 2 lezárva · 5 blokkolt · 1 hatókörön kívül · 0 csak nyitva.
+
+#### 38.2.11 Hetedik kör: az ytWindow regisztrációja és a WndProc (#4443, 2026-10-17)
+
+**Kérdés.** Két pont a 38.2.10 nyitott listájából. (a) Regisztrálja-e a `0x00980670` az ytWindow osztályt, és állít-e hwnd-t a `[this+0x6c]`-be (ez a 38.2.10 feltételezése volt). (b) Milyen EDI-t ad a `0x00982d00` a `0x00982d60`-nak, vagyis mi a WndProc címe.
+
+**Forrás és módszer.** Csak olvasás. Nincs új Ghidra-futás és nincs hálózat. A fájlok a `~/picasapy-agent/referencia/ghidra/` mappában vannak:
+- `2026-10-17-hog-racs-ytwindow.txt` (1): a `0x00980670` és a `0x00982d00` szakasza (HÍVÓK, HÍVOTTAK, C-kód).
+- `2026-10-17-hog-qshow-k4.txt` (2): a `0x00982d60` HÍVÓK-listája és C-kódja (306-376. sor).
+- `2026-10-17-qshow-ctrl5.txt` (3): a `0x00983670` CreateWindowEx-alakú hívása és a hibaág (2524-2532. sor, keresési kivonat).
+
+Nincs megnézve: a `0x00980670` által hívott `FUN_00512030`, `FUN_0097de80` és `FUN_009ae560` belseje; a `0x00982d00` két hívóhelye (`0x00735d96`, `0x00a70cb4`).
+
+**Eredmények.**
+
+*A `0x00980670` (Q-K).* Hibajelentő. Ha a `GetLastError` nem nulla, a `FormatMessageA` szöveget készít. Egy MessageBox-alakú hívás (`FUN_0097de80`) hibaablakot jelenít meg, a cím az `ytApp::ErrorTitle` kulcsú szöveg. Végül a `LocalFree` felszabadít. Ezután mindig meghívja a `FUN_00512030`-at. Nincs argumentuma, nem kap `this`-t, és nem ír a `[this+0x6c]` mezőbe. Nincs benne `RegisterClass`-alakú hívás. Kilenc hívója van; az egyik a `0x00983670` (`0x009837d2`).
+
+*A `0x00983670` hibaága.* A CreateWindowEx-alakú hívás (indirekt, `DAT_00d695c8`, osztálynév `"ytWindow"`) 0-t ad, ekkor hívódik a `0x00980670`. A feltételes ág csak akkor fut, ha a `[this+0x6c]` a `0x00980670` hívása után sem nulla. A `0x00980670` nem írja a mezőt, ezért a feltétel a hibaágban hamis marad.
+
+*A `0x00982d00` (Q-L).* Konstruktor-jellegű. Beállítja a `ytWindow::vftable`-t, és nullázza az EAX-ben kapott `this` mezőit. Ezután meghívja a `0x00982d60`-at (`0x00982d48`). A C-kódban nem állít be EDI-t. Hívói a `FUN_00735d90` (`0x00735d96`) és a `FUN_00a70cb0` (`0x00a70cb4`); ezek nincsenek a kötegben.
+
+*A `0x00982d60` (WndProc-csere).* A C-kód szerint:
+1. A hwnd-t (EAX) a `[this+0x6c]`-be írja. Ha ez nulla, visszatér.
+2. Ha a `0x00983330` nem nulla értéket ad, és a `GetWindowLongA(hwnd, -21)` nem nulla, meghívja a `0x00982e60`-at, majd visszatér.
+3. Ha a `[this+0x34]` nulla, a régi WndProc-ot (`DAT_00d69528(hwnd, -4)`) oda menti. Az osztályinfó-lekérdezés után, ha a régi eljárás megegyezik az EDI-vel vagy a `DAT_00983940` fix címmel, a mezőt nullázza.
+4. A `DAT_00d69524(hwnd, -4, EDI)` hívás az EDI-t állítja be WndProc-ként. Az alakja SetWindowLongA-é, de a név nincs megerősítve.
+
+*A regiszterek.* A `0x00982d00` a `this`-t EAX-ben kezeli, a `0x00982d60` a `this`-t ESI-ben és a hwnd-t EAX-ben. A két C-kód nem illeszkedik egymáshoz. A `0x00982d48`-as hívás előtti EAX, ESI és EDI értéke nincs megállapítva.
+
+*A regisztráció helye.* Az olvasott részekben nincs. A `0x00982d60` GetClassInfo-alakú hívással csak lekérdezi az osztályt (`DAT_00d69538`, `"ytWindow"`). A teljes binárisban nem kerestük.
+
+**Helyesbítés.** A 38.2.10 szerint a `0x00980670` hwnd-t állíthat be a `[this+0x6c]`-be. A C-kód szerint nem ír oda. A 38.2.10 többi állítása a `0x00982d60`-ról (EDI-ből veszi a WndProc-ot, a régi eljárás a `[this+0x34]`-ben) egyezik a C-kóddal, de feltételes marad.
+
+**Cáfoló kísérletek.**
+1. „A `0x00980670` regisztrálja az ytWindow osztályt.” **Cáfolva** a közvetlen C-kódban: nincs `RegisterClass`-alakú hívás, a közvetlen külső hívottak (`FormatMessageA`, `GetLastError`, `LocalFree`) nem regisztrálnak. Feltétel: a `FUN_00512030` belsejét nem néztük.
+2. „A `0x00980670` hwnd-t állít be a `[this+0x6c]`-be.” **Cáfolva** a C-kódban: a függvény nem ír a mezőbe.
+3. „A `0x00982d00` állítja be az EDI-t a `0x00982d60`-nak.” **Nem igazolódott:** a C-kód nem mutat EDI-írást. Ez a dekompilátum hiánya is lehet, ezért ez sem cáfolat, sem igazolás.
+4. „A `0x00982d00` az ytWindow regisztrációja.” **Cáfolva:** vtable-írás és mezőnullázás van benne, osztályregisztráció nincs.
+
+**Bizonyítottsági fok.**
+
+A zárójeles számok a forrásfájlokat jelölik (lásd: Forrás és módszer).
+
+| állítás | fok | alap |
+|---|---|---|
+| `0x00980670`: hibajelentő (`GetLastError`, `FormatMessageA`, hibaablak, `LocalFree`), utána `FUN_00512030` | feltételes | (1) C-kód; a HÍVOTTAK-lista ugyanebből a fájlból jön |
+| `0x00980670` nem regisztrálja az ytWindow-t | feltételes | (1) C-kód; a `FUN_00512030` belseje nincs megnézve |
+| `0x00980670` nem ír a `[this+0x6c]` mezőbe | feltételes | (1) C-kód |
+| `0x00983670` a hibaágban hívja a `0x00980670`-et | megerősített | (3) C-kód, 2528. sor + (1) HÍVÓK: `0x009837d2` |
+| `0x00983670`: CreateWindowEx-alakú hívás, osztálynév `"ytWindow"` | feltételes | (3) C-kód |
+| `0x00982d00` hívja a `0x00982d60`-at (`0x00982d48`) | megerősített | (1) C-kód + (2) HÍVÓK: `0x00982d48` |
+| `0x00982d00`: vtable-írás és mezőnullázás, osztályregisztráció nincs | feltételes | (1) C-kód |
+| `0x00982d00` nem állít be EDI-t | feltételes | (1) C-kód (nincs regiszter-írás a C-ben) |
+| `0x00982d60`: hwnd nulla esetén visszatér; a WndProc-csere az EDI-vel, `DAT_00d69524` (-4) | feltételes | (2) C-kód, 332-373. sor; a függvénynév nincs megerősítve |
+| `0x00982d60`: a régi WndProc a `[this+0x34]` mezőben | feltételes | (2) C-kód, 364-366. sor |
+| a `0x00982d00` és a `0x00982d60` regiszter-használata nem illeszkedik | feltételes | (1) és (2) C-kódja |
+| a WndProc címe, a billentyű-fókusz | nincs meg | - |
+| az ytWindow regisztrációjának helye | nincs meg | - |
+
+**Következtetés.**
+- A `0x00980670` nem regisztrálja az ytWindow osztályt (feltételesen). Hibajelentő.
+- A WndProc címe nincs meg. A `0x00982d60` az EDI-t állítja be új WndProc-ként, ha a hwnd nem nulla, és a régi eljárást elmenti. Ez alosztályozásra utal, de nem dönti el, hogy az EDI az eredeti WndProc vagy egy alosztályozó eljárás.
+- Az EDI értéke a `0x00982d48` előtt nincs megállapítva.
+- A billentyű-fókusz nincs meg.
+
+**Hiányzik.**
+- A `0x00982d48` előtti EAX, ESI és EDI értéke.
+- A `0x00735d96` és a `0x00a70cb4` körüli diszasszembly az EAX, az ESI és az EDI állapotához.
+- Az `"ytWindow"` sztring xref-je, hogy a regisztráció helye megtalálható legyen.
+
+Ghidra-kör a WndProc-ra most nem kérhető, mert a címe nincs meg. Ha a hívó kéri, a következő lépés a két hívóhely és az `"ytWindow"` xref-je.
+
+**Nyitott kérdések (38.2.11).**
+- Q-K1: regisztrálja-e a `0x00980670` az ytWindow-t. **LEZÁRVA**, feltételesen (1. cáfolat).
+- Q-K2: állít-e a `0x00980670` hwnd-t. **LEZÁRVA** (2. cáfolat).
+- Q-K3: hol van az ytWindow regisztrációja. **CSAK NYITVA.** Feltételesen nem blokkolja a billentyű-kérdést, mert a `0x00982d60` a saját WndProc-ot állítja be.
+- Q-L: mi a WndProc címe, és ki kezeli a billentyű-fókuszt. **BLOKKOLT:** az EDI forrása hiányzik.
+
+**Nyitott kérdések mérlege (38.2.11):** 0 nyílt · 2 lezárva · 1 blokkolt · 0 hatókörön kívül · 1 csak nyitva.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
