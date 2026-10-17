@@ -74,9 +74,8 @@ class TestParse:
             "rect64(3f845bcb59418507),8e62b2035b74b4770;",  # 17 jegyű id
         ],
     )
-    def test_malformed_raises(self, bad):
-        with pytest.raises(ValueError):
-            parse_faces(bad)
+    def test_malformed_entry_is_skipped(self, bad):
+        assert parse_faces(bad) == ()
 
     def test_short_contact_id_accepted(self):
         # A Picasa máshol is elhagyja a vezető nullákat — legyünk tűrők.
@@ -87,6 +86,20 @@ class TestParse:
         faces = parse_faces("rect64(3f845bcb59418507),FFFFFFFFFFFFFFFF;")
         assert not faces[0].is_identified
         assert faces[0].is_ignored
+
+    def test_invalid_person_field_drops_only_its_entry(self):
+        raw = (
+            "rect64(3f845bcb59418507),8e62b2035b74b477;"
+            "rect64(10000000f1ddff49),not-a-person;"
+            "rect64(20000000f1ddff49),17be12be040e4089"
+        )
+
+        faces = parse_faces(raw)
+
+        assert [face.contact_id for face in faces] == [
+            "8e62b2035b74b477",
+            "17be12be040e4089",
+        ]
 
 
 class TestSerialize:
@@ -277,11 +290,14 @@ class TestGlobalFaceReset4627:
         assert updated.section("a.jpg").get("caption") == "keep"
         assert updated.section("Contacts2") is None
 
-    def test_reset_all_faces_keeps_rectangles_and_other_face_data(self):
+    def test_reset_all_faces_drops_named_and_unnamed_but_preserves_ignored(self):
+        named = "rect64(3f845bcb59418507),8E62B2035B74B477"
+        ignored = "rect64(10000000f1ddff49),FFFFFFFFFFFFFFFF"
+        unnamed = "rect64(20000000f1ddff49),0"
         document = parse_document(
             "[Contacts2]\n8e62b2035b74b477=Ada;;\n"
             "[a.jpg]\ncaption=keep\n"
-            f"faces={TWO_FACES_MEASURED}\n"
+            f"faces={named};{ignored};{unnamed}\n"
             "facedata=123\n"
         )
 
@@ -289,11 +305,18 @@ class TestGlobalFaceReset4627:
 
         section = updated.section("a.jpg")
         assert section is not None
-        faces = parse_faces(section.get("faces"))
-        assert [face.rect for face in faces] == [
-            face.rect for face in parse_faces(TWO_FACES_MEASURED)
-        ]
-        assert [face.contact_id for face in faces] == ["0", "0"]
+        assert section.get("faces") == ignored
+        assert ",0" not in section.get("faces")
         assert section.get("facedata") == "123"
         assert section.get("caption") == "keep"
         assert updated.section("Contacts2") is None
+
+    def test_reset_all_faces_keeps_ignored_only_trailing_separator(self):
+        raw_faces = "rect64(10000000f1ddff49),FFFFFFFFFFFFFFFF;"
+        document = parse_document(
+            f"[a.jpg]\nfaces={raw_faces}\nfacedata=123\n"
+        )
+
+        updated = reset_all_faces(document)
+
+        assert updated == document

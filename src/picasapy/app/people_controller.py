@@ -34,6 +34,7 @@ from picasapy.index import (
     unnamed_faces_for_photos,
 )
 from picasapy.index.faces_detected import (
+    faces_for_photo,
     suggested_album_photos,
     suggested_faces_for,
 )
@@ -69,6 +70,7 @@ from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
 from .contact_names import central_contacts_path
+from .face_ignore_ini import ini_faces_of, match_named_regions
 from .models import _thumb_url
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
@@ -799,19 +801,41 @@ class PeopleMixin:
         photo_order = {photo.id: index for index, photo in enumerate(photos)}
         with open_index(self._db_path) as conn:
             faces = unnamed_faces_for_photos(conn, by_id)
+            ordered_faces = sorted(
+                faces,
+                key=lambda item: (
+                    photo_order[item.photo_id],
+                    item.rect[1] if item.rect else 1.0,
+                    item.rect[0] if item.rect else 1.0,
+                    item.id,
+                ),
+            )
+            faces_by_photo = {}
+            ini_cache = {}
+            matched_named_ids = set()
+            for face in ordered_faces:
+                if face.rect is not None:
+                    faces_by_photo.setdefault(face.photo_path, []).append(face)
+            for photo_path, photo_faces in faces_by_photo.items():
+                ini_faces = ini_faces_of(photo_path, ini_cache)
+                all_index_faces = faces_for_photo(conn, photo_faces[0].photo_id)
+                matches = match_named_regions(
+                    (
+                        (face.id, face.rect)
+                        for face in all_index_faces
+                        if face.rect is not None
+                        and face.state in {"unnamed", "named"}
+                    ),
+                    ini_faces,
+                )
+                matched_named_ids.update(matches)
 
         result = []
-        for face in sorted(
-            faces,
-            key=lambda item: (
-                photo_order[item.photo_id],
-                item.rect[1] if item.rect else 1.0,
-                item.rect[0] if item.rect else 1.0,
-                item.id,
-            ),
-        ):
+        for face in ordered_faces:
             photo = by_id.get(face.photo_id)
             if photo is None or face.rect is None:
+                continue
+            if face.id in matched_named_ids:
                 continue
             result.append(
                 {
