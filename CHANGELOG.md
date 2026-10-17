@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.133] - 2026-10-18
+
+- Az első induláskor a rendszer nyelvét követő váltást, az eredeti angol kérdést és az alkalmazás ikonját mutatjuk (#5267).
+- A fájlok visszaállítása közben is látható a folyamatjelző, lemezhiba esetén pedig megjelenik a hivatalos hibaüzenet (#5268).
+
+## [0.9.132] - 2026-10-17
+
+- A diavetítés Pan and Zoom átmenete két véletlen képkivágás között pásztáz, nem középre nagyít. (#5258).
+
 ## [0.9.131] - 2026-10-17
 
 - A csak dokumentációs PR-ek CI-je a dokumentáció-őröket futtatja a tesztdarabok helyett (#5250).

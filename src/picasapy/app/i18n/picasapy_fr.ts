@@ -6157,6 +6157,12 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);str
     <context>
         <name>SaveProgressPanel</name>
         <message>
+            <source>Reverting Files.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::progress</extracomment>
+            <translation>Rétablissement des fichiers</translation>
+        </message>
+        <message>
             <source>Saving file %1%</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Enregistrement du fichier %1%</translation>
@@ -6218,6 +6224,12 @@ picasapy-origin-key: stringres:IDS_CANT_SAVE_TO_SAME</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
             <translation>Impossible d'enregistrer le fichier en raison d'une erreur de format de fichier.</translation>
+        </message>
+        <message>
+            <source>Unable to revert all files due to a disk error. The disk may be full or read-only.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:FileRevert::fileerr</extracomment>
+            <translation>Impossible de rétablir tous les fichiers en raison d'une erreur de disque. Le disque est peut-être saturé ou en lecture seule.</translation>
         </message>
         <message>
             <source>Unable to save all files due to a disk error. The disk may be full or read-only.
@@ -17721,10 +17733,12 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <translation>Confirmer</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37" />
-            <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="57" />
+            <source>Picasa is now available in your system's native language.
+Would you like to switch Picasa from English to this language?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy est maintenant disponible dans la langue de votre système. Voulez-vous remplacer l'anglais par cette langue dans PicasaPy ?</translation>
+            <translation>Picasa is now available in your system's native language.
+Would you like to switch Picasa from English to this language?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />

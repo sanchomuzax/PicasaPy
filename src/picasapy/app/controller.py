@@ -105,6 +105,7 @@ from .small_picture_filter import (
 from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
 from .screensaver_controller import ScreensaverMixin
+from .slideshow_pan_zoom import qml_pan_zoom_rectangles
 from .side_pane_controller import SidePaneMixin
 from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
@@ -552,6 +553,29 @@ class AppController(
             return
         self._get_settings().setValue("view/slideshowTransition", value)
         self.statusChanged.emit()
+
+    @Slot(int, int, int, int, result="QVariantList")
+    def slideshowPanZoomRectangles(  # noqa: N802 - QML metódusnév
+        self,
+        forras_szelesseg: int,
+        forras_magassag: int,
+        nezet_szelesseg: int,
+        nezet_magassag: int,
+    ) -> list[dict[str, float]]:
+        """A vetítő Pan and Zoom kivágásai, a QML-nek átadható alakban."""
+        if min(
+            forras_szelesseg,
+            forras_magassag,
+            nezet_szelesseg,
+            nezet_magassag,
+        ) <= 0:
+            return []
+        return qml_pan_zoom_rectangles(
+            forras_szelesseg,
+            forras_magassag,
+            nezet_szelesseg,
+            nezet_magassag,
+        )
 
     @Property(int, notify=statusChanged)
     def slideshowTransitionMs(self):  # noqa: N802

@@ -14,7 +14,7 @@ from picasapy.app import application, language_controller
 @pytest.mark.parametrize(
     ("accepted", "expected_language", "height_delta", "button_name"),
     [
-        (True, "hu", -5, "firstRunLanguagePromptYesButton"),
+        (True, "de", -5, "firstRunLanguagePromptYesButton"),
         (False, "en", 5, "firstRunLanguagePromptNoButton"),
     ],
 )
@@ -28,10 +28,12 @@ def test_startup_language_prompt_stores_real_click(
     button_name,
 ):
     monkeypatch.delenv("PICASAPY_LANG", raising=False)
-    monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "hu")
+
+    monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "de")
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     clicked = []
     prompt_text = []
+    prompt_icon = []
     click_deadline = time.monotonic() + 3.0
 
     def click_when_ready():
@@ -44,13 +46,18 @@ def test_startup_language_prompt_stores_real_click(
             window = candidates[0]
             button = window.findChild(QObject, button_name)
             message = window.findChild(QObject, "firstRunLanguagePromptMessage")
+            icon = window.findChild(QObject, "firstRunLanguagePromptIcon")
             if (
                 button is not None
                 and message is not None
+                and icon is not None
                 and button.width() > 0
                 and button.height() > 0
+                and icon.width() > 0
+                and icon.height() > 0
             ):
                 prompt_text.append(str(message.property("text")))
+                prompt_icon.append(icon.property("source").toLocalFile())
                 window.setHeight(window.height() + height_delta)
                 qt_app.processEvents()
                 point = button.mapToScene(
@@ -72,10 +79,16 @@ def test_startup_language_prompt_stores_real_click(
     result = application._startup_language(settings, prompt_timeout_ms=3500)
 
     assert clicked == [button_name], "a prompt gombjára nem történt valódi kattintás"
-    assert prompt_text and "PicasaPy" in prompt_text[0]
+    assert prompt_text == [
+        "Picasa is now available in your system's native language.\n"
+        "Would you like to switch Picasa from English to this language?"
+    ]
+    assert prompt_icon and prompt_icon[0].endswith("/assets/icon.png")
     assert result == expected_language
     assert settings.value(language_controller.LANGUAGE_KEY) == expected_language
-    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == expected_language
+    assert settings.value(language_controller.PENDING_LANGUAGE_KEY) == (
+        "system" if accepted else "en"
+    )
 
     def unexpected_prompt(_system_language):
         pytest.fail("az elmentett válasz után újra megjelent a kérdés")

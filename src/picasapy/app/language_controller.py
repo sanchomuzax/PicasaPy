@@ -189,10 +189,11 @@ def resolve_first_run_language(settings, ask_user: Callable[[str], bool]) -> str
     """Az első indulási rendszer-nyelv-felajánlás (#4325).
 
     Csak a még hiányzó `general/language` kulcsnál kérdez. A PicasaPy jelenlegi
-    katalógusában a nem angol, rendszer szerint választható nyelv a magyar;
-    a többi eredeti Picasa-nyelvhez még nincs fordítás. A választ az aktuális
-    és a következő indulási nyelvbe is beírja, így az induláskori második
-    feloldás már nem kérdez újra.
+    nyelvkatalógusában minden nem angol felület választható, ezért az eredeti
+    11 nyelv mellett a további katalógusoknál is felajánlja a rendszer nyelvét.
+    Igen esetén az aktuális nyelvkódot és a `system` függő választást menti;
+    nem esetén angolra állítja mindkettőt. Így a rendszer szerinti választás
+    későbbi induláskor is követi a rendszer nyelvét.
 
     `None` jelzi, hogy nem volt felajánlás (már beállított, angol vagy nem
     támogatott rendszer-nyelv)."""
@@ -200,12 +201,18 @@ def resolve_first_run_language(settings, ask_user: Callable[[str], bool]) -> str
         return None
 
     system_language = resolve_system_language()
-    if system_language == DEFAULT_LANGUAGE or system_language not in SUPPORTED_LANGUAGES:
+    # Az enUK külön katalógus, de a rendszer nyelvi kódja ettől még angol.
+    # Az eredeti Picasa en ága egyik angol változatnál sem kínál váltást.
+    if (
+        system_language in {DEFAULT_LANGUAGE, "enUK"}
+        or system_language not in SUPPORTED_LANGUAGES
+    ):
         return None
 
     selected = system_language if ask_user(system_language) else DEFAULT_LANGUAGE
+    pending = SYSTEM_LANGUAGE_CODE if selected != DEFAULT_LANGUAGE else DEFAULT_LANGUAGE
     settings.setValue(LANGUAGE_KEY, selected)
-    settings.setValue(PENDING_LANGUAGE_KEY, selected)
+    settings.setValue(PENDING_LANGUAGE_KEY, pending)
     return selected
 
 

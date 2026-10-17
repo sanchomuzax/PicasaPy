@@ -2945,6 +2945,14 @@ ApplicationWindow {
         id: slideshow
         objectName: "slideshowView"
         anchors.fill: parent
+        panZoomRectanglesProvider: function(
+            sourceWidth, sourceHeight, viewWidth, viewHeight
+        ) {
+            return controller
+                ? controller.slideshowPanZoomRectangles(
+                      sourceWidth, sourceHeight, viewWidth, viewHeight)
+                : []
+        }
         z: 100
         // #305: null-őr
         photosModel: !controller ? null
@@ -4119,10 +4127,9 @@ ApplicationWindow {
         y: 56 + importPanel.height + 12
     }
 
-    // #1527: a mentés folyamatjelzője. A mentés eddig is háttérszálon
-    // ment, de NÉMÁN — sok képnél a felhasználó nem tudta, dolgozik-e a
-    // program. A szöveg az eredeti két hivatalos alakja (egy fájl /
-    // több fájl), a százalék egy tizedesjegyre.
+    // #1527/#5268: a mentés és a fájl-visszaállítás közös folyamatjelzője.
+    // Mindkét művelet háttérszálon fut; a szöveg az eredeti hivatalos,
+    // műveletfüggő alakja, mentéskor a százalék egy tizedesjegyre.
     SaveProgressPanel {
         id: saveProgressPanel
         objectName: "saveProgressPanel"
@@ -4131,6 +4138,7 @@ ApplicationWindow {
             ? controller.saveProgressActive : false
         fileCount: controller ? controller.saveProgressFileCount : 0
         percent: controller ? controller.saveProgressPercent : 0
+        isReverting: controller ? controller.saveProgressIsReverting : false
         x: parent.width - width - 24
         y: 56 + importPanel.height + batchEditPanel.height + 24
     }
@@ -4990,6 +4998,9 @@ ApplicationWindow {
         }
         function onSaveErrorOccurred(kind, fileName, code) {
             saveDialogs.ensure().jelezdAmentesiHibat(kind, fileName, code)
+        }
+        function onRevertErrorOccurred() {
+            saveDialogs.ensure().jelezdAVisszaallitasiHibat()
         }
         function onExportFailedDetails(details) {
             exportDialogs.ensure().jegyezdAbukottFajlokat(details)

@@ -727,7 +727,26 @@ megkerüli ezt a felajánlást.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Csak hiányzó `lang` esetén kérdez; angolnál és a nem felismert locale-oknál nem. Az igen/nem döntés a jelen indulás előtt tárolódik; nincs külön ismétlés-tiltó kulcs. | A `src/picasapy/app/language_controller.py` támogatott kódjai `en`, `hu`; a hiányzó beállítás `en`-re esik, és induláskor nincs rendszer-nyelvfelajánlás. A kézi nyelvválasztás megerősített és a következő induláskor lép életbe (`src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:123–138`, `src/picasapy/app/language_controller.py:138–157, 220–234`). | Külön fejlesztési jegyben az első, még nyelvbeállítás nélküli induláskor kérdezzen, ha a rendszer nyelve támogatott és nem `en` — nálunk ez jelenleg `hu`. Igen: ezt a nyelvet töltse be ebben a futásban és mentse; nem: maradjon `en` és mentse, hogy ne kérdezzen újra. Már mentett nyelv mellett ne jelenjen meg. Ez a `hu`-ra kiterjesztés tudatos termékkülönbség: az eredeti felajánlási ág nem tartalmaz `hu`-t. |
+| Csak hiányzó `lang` esetén, NT-alapú Windowson kérdez; angol és nem felismert locale esetén nem. Igen a rendszer nyelvét (`0`), nem az angolt (`1`) menti. | A `language_controller.py` első induláskor minden platformon kérdez (a Linux-futás PicasaPy-eltérés, lásd alább); a `language` kulcs az aktuális, feloldott kódot kapja, a `language_pending` igen esetén `system`, nem esetén `en`. A párbeszéd címe `Confirm`, gombjai `Yes`/`No`, üzenete a beégetett angol szöveg, és a tartalomban az alkalmazás ikonja jelenik meg. | **#5267 kész.** Az eredeti 11 locale feltétele és az angol kihagyása megmarad. A PicasaPy plusz nyelvi katalógusainak felajánlása külön, alább indokolt eltérés. Már beállított nyelvnél nincs új kérdés. |
+
+**PicasaPy-eltérés (#5267), platform.** Az eredeti felajánló ág csak NT-alapú
+Windowson futott; a PicasaPy Linuxon is felajánl, mert ott is ez az egyetlen
+alkalom, amikor a rendszer nyelve automatikusan felületi nyelvvé válhat.
+
+**PicasaPy-eltérés (#5267), nyelvek.** A PicasaPy a 41 katalógusból az `en` és az
+`enUK` angol változatot kihagyva a megmaradó 39 nem angol katalóguskódnál is
+felajánlja a rendszer nyelvét, nem csak az eredeti 11 nyelv esetén. Az eredeti
+nyelveken kívüli kódok: `ar`, `iw`, `id`, `ca`, `da`, `hr`, `lv`, `lt`,
+`hu`, `no`, `pl`, `pt-BR`, `ro`, `sk`, `sl`, `fi`, `sv`, `fil`, `vi`, `tr`,
+`cs`, `el`, `sr`, `uk`, `bg`, `hi`, `th`. Indok: ezekhez a nyelvekhez a
+PicasaPy katalógust szállít, ezért a rendszer nyelvének felajánlása a többi
+felületi nyelven is használható választ ad; az eredeti 11 feltétele ettől
+változatlanul ellenőrizhető. A `language` az aktuális felület konkrét kódját
+tárolja, a `language_pending=system` pedig megőrzi az eredeti rendszer szerinti
+választás jelentését a következő indulásokra. A PicasaPy `zh-CN` és `zh-TW`
+katalógusa az eredeti egyetlen `zh` nyelvkód két régiós változatát fedi le.
+A fő üzenet minden katalógusban az eredeti Picasa angol szövege marad; a
+`Confirm`, `Yes` és `No` fordítható.
 
 ##### Cáfoló próba és bizonyítottság
 
