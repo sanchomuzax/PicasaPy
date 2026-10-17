@@ -394,6 +394,347 @@ def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app
     _save_window(window, "picasapy_5183_person_album.png")
 
 
+def test_existing_person_name_suggestions_choose_and_escape(
+    qml_app_5183, qt_app
+):
+    window, controller, engine = qml_app_5183
+    window.setWidth(1280)
+    window.setHeight(1005)
+    qt_app.processEvents()
+
+    face_scan = engine.rootContext().contextProperty("faceScanController")
+    _seed_six_faces(Path(controller._db_path))
+    assert face_scan.assignNameToFaces([1], "Teszt Elek")
+    controller.refreshCollections()
+    face_scan.unnamedCountChanged.emit()
+    assert var_feltetelre(qt_app, lambda: face_scan.unnamedCount == 5, 3.0)
+
+    groups = face_scan.unnamedGroups(True, False)
+    unnamed_ids = [
+        face["faceId"] for group in groups for face in group["faces"]
+    ]
+    assert len(unnamed_ids) == 5
+    target_face_id, escape_face_id = unnamed_ids[:2]
+
+    folder_pane = _find_item(window, "folderPane")
+    assert folder_pane is not None
+    folder_pane.setProperty("peopleCollapsed", False)
+    unnamed_row = _find_item(window, "unnamedFacesItem")
+    assert var_feltetelre(qt_app, lambda: unnamed_row.width() > 0, 3.0)
+    _click(qt_app, unnamed_row)
+
+    view = _find_item(window, "unnamedFacesView")
+    assert var_feltetelre(
+        qt_app, lambda: view is not None and view.property("visible") is True, 3.0
+    )
+    welcome = _find_object(window, "unnamedWelcomeDialog")
+    assert var_feltetelre(
+        qt_app,
+        lambda: welcome is not None and welcome.property("visible") is True,
+        3.0,
+    )
+    _click(qt_app, _find_item(window, "unnamedWelcomeCloseButton"))
+    assert var_feltetelre(
+        qt_app,
+        lambda: all(
+            (image := _find_item(window, f"faceImage_{face_id}")) is not None
+            and image.property("paintedWidth") > 0
+            for face_id in unnamed_ids
+        ),
+        5.0,
+    )
+    _save_window(window, "picasapy_5190_left_sidebar.png")
+
+    name_field = _find_item(window, f"unnamedFaceNameField_{target_face_id}")
+    assert name_field is not None
+    _click(qt_app, name_field)
+    for character in "Tes":
+        QTest.keyEvent(QTest.KeyAction.Click, name_field.window(), ord(character))
+    qt_app.processEvents()
+    suggestion_list = _find_item(
+        window, f"unnamedNameSuggestions_{target_face_id}"
+    )
+    assert suggestion_list is not None and suggestion_list.property("visible") is True
+    assert suggestion_list.height() >= 40
+    suggestion = _find_item(
+        window, f"unnamedFaceSuggestion_{target_face_id}_0"
+    )
+    assert suggestion is not None
+    assert suggestion.height() > 0
+    assert suggestion.width() > 0
+    assert suggestion.property("personName") == "Teszt Elek"
+    assert suggestion.property("thumbUrl").startswith("image://thumbs/")
+    suggestion_image = _find_item(
+        window, f"unnamedFaceSuggestionImage_{target_face_id}_0"
+    )
+    assert suggestion_image is not None
+    assert suggestion_image.property("source").toString().startswith(
+        "image://thumbs/"
+    )
+    assert var_feltetelre(
+        qt_app, lambda: suggestion_image.property("paintedWidth") > 0, 5.0
+    )
+    popup_point = suggestion_list.mapToScene(QPointF(0, 0))
+    row_point = suggestion.mapToScene(QPointF(0, 0))
+    assert popup_point.y() <= row_point.y(), (popup_point, row_point)
+    assert row_point.y() + suggestion.height() <= (
+        popup_point.y() + suggestion_list.height()
+    ), (suggestion_list.height(), suggestion.height(), popup_point, row_point)
+    suggestion_metrics_path = (
+        Path(__file__).resolve().parents[3]
+        / ".bt"
+        / "picasapy_5192_suggestion_geometry.json"
+    )
+    suggestion_metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    suggestion_metrics_path.write_text(
+        json.dumps(
+            {
+                "root_scene": {
+                    "x": view.mapToScene(QPointF(0, 0)).x(),
+                    "y": view.mapToScene(QPointF(0, 0)).y(),
+                },
+                "grid": {
+                    "x": _find_item(window, "unnamedGroupsList").x(),
+                    "y": _find_item(window, "unnamedGroupsList").y(),
+                    "content_y": _find_item(
+                        window, "unnamedGroupsList"
+                    ).property("contentY"),
+                    "scene_y": _find_item(window, "unnamedGroupsList")
+                    .mapToScene(QPointF(0, 0))
+                    .y(),
+                },
+                "card": {
+                    "x": _find_item(
+                        window, f"unnamedFaceCard_{target_face_id}"
+                    ).x(),
+                    "y": _find_item(
+                        window, f"unnamedFaceCard_{target_face_id}"
+                    ).y(),
+                    "scene_y": _find_item(
+                        window, f"unnamedFaceCard_{target_face_id}"
+                    )
+                    .mapToScene(QPointF(0, 0))
+                    .y(),
+                },
+                "field": {
+                    "x": name_field.x(),
+                    "y": name_field.y(),
+                    "parent_x": name_field.parentItem().x(),
+                    "parent_y": name_field.parentItem().y(),
+                    "scene_x": name_field.mapToScene(QPointF(0, 0)).x(),
+                    "scene_y": name_field.mapToScene(QPointF(0, 0)).y(),
+                    "width": name_field.width(),
+                    "height": name_field.height(),
+                },
+                "popup": {
+                    "x": popup_point.x(),
+                    "y": popup_point.y(),
+                    "width": suggestion_list.width(),
+                    "height": suggestion_list.height(),
+                },
+                "row": {
+                    "x": row_point.x(),
+                    "y": row_point.y(),
+                    "width": suggestion.width(),
+                    "height": suggestion.height(),
+                    "person_name": suggestion.property("personName"),
+                },
+                "image": {
+                    "source": suggestion_image.property("source").toString(),
+                    "painted_width": suggestion_image.property("paintedWidth"),
+                    "x": suggestion_image.mapToScene(QPointF(0, 0)).x(),
+                    "y": suggestion_image.mapToScene(QPointF(0, 0)).y(),
+                },
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    _save_window(window, "picasapy_5192_suggestion_list.png")
+
+    for character in "zt Elek":
+        QTest.keyEvent(QTest.KeyAction.Click, name_field.window(), ord(character))
+    qt_app.processEvents()
+    assert name_field.property("text") == "Teszt Elek"
+    QTest.keyClick(name_field.window(), Qt.Key.Key_Return)
+    qt_app.processEvents()
+
+    people_dialog = _find_object(window, "peopleManagerDialog")
+    assert var_feltetelre(
+        qt_app,
+        lambda: people_dialog is not None and people_dialog.property("visible") is True,
+        3.0,
+    )
+    search_field = _find_item(window, "peopleManagerSearchField")
+    assert search_field is not None
+    assert search_field.property("text") == "Teszt Elek"
+    assert search_field.property("selectionStart") == 0
+    assert search_field.property("selectionEnd") == len("Teszt Elek")
+    selected_person = _find_item(window, "peopleManagerContact_Teszt Elek")
+    assert selected_person is not None
+    assert selected_person.property("highlighted") is True
+    assert _find_item(window, "peopleManagerPhotoCount").property("text") == (
+        "1 Photo in Picasa"
+    )
+    choose_button = _find_item(window, "peopleManagerOkButton")
+    assert choose_button.property("text") == "Choose"
+    _save_window(window, "picasapy_5192_people_choose.png")
+
+    with open_index(Path(controller._db_path)) as conn:
+        photos = all_photos(conn)
+    # A már elnevezett arc és a most kiválasztandó arc ugyanabban a
+    # könyvtárban őrzi az eredeti személyazonosítót.
+    ini_paths = {Path(photo.folder_path) / ".picasa.ini" for photo in photos}
+    before_documents = [load_document(path) for path in ini_paths]
+    person_id = next(
+        contact.person_id
+        for document in before_documents
+        for contact in contacts_of(document)
+        if contact.name == "Teszt Elek"
+    )
+    assert sum(
+        face.contact_id == person_id
+        for document in before_documents
+        for section in document.sections
+        for face in parse_faces(section.get("faces") or "")
+    ) == 1
+
+    _click(qt_app, choose_button)
+    assert var_feltetelre(
+        qt_app,
+        lambda: people_dialog.property("visible") is False
+        and face_scan.unnamedCount == 4,
+        3.0,
+    )
+    after_documents = [load_document(path) for path in ini_paths]
+    assert sum(
+        face.contact_id == person_id
+        for document in after_documents
+        for section in document.sections
+        for face in parse_faces(section.get("faces") or "")
+    ) == 2
+
+    ini_path = next(iter(ini_paths))
+    central_path = Path(controller._db_path).parent / "contacts" / "contacts.xml"
+    paths_before_escape = (ini_path, central_path)
+    before_escape = tuple(
+        path.read_bytes() if path.exists() else None for path in paths_before_escape
+    )
+    escape_field = _find_item(window, f"unnamedFaceNameField_{escape_face_id}")
+    assert escape_field is not None
+    _click(qt_app, escape_field)
+    for character in "Teszt Elek":
+        QTest.keyEvent(QTest.KeyAction.Click, escape_field.window(), ord(character))
+    QTest.keyClick(escape_field.window(), Qt.Key.Key_Return)
+    qt_app.processEvents()
+    assert var_feltetelre(
+        qt_app,
+        lambda: people_dialog.property("visible") is True,
+        3.0,
+    )
+    QTest.keyClick(window, Qt.Key.Key_Escape)
+    assert var_feltetelre(
+        qt_app, lambda: people_dialog.property("visible") is False, 3.0
+    )
+    assert tuple(
+        path.read_bytes() if path.exists() else None for path in paths_before_escape
+    ) == before_escape
+    assert face_scan.unnamedCount == 4
+
+
+def test_unnamed_people_row_is_counted_and_precedes_named_people(
+    qml_app_5183, qt_app
+):
+    window, controller, engine = qml_app_5183
+    window.setWidth(1280)
+    window.setHeight(1005)
+    qt_app.processEvents()
+    face_scan = engine.rootContext().contextProperty("faceScanController")
+    _seed_six_faces(Path(controller._db_path))
+    assert face_scan.assignNameToFaces([1], "Teszt Elek")
+    controller.refreshCollections()
+    face_scan.unnamedCountChanged.emit()
+    assert var_feltetelre(qt_app, lambda: face_scan.unnamedCount == 5, 3.0)
+
+    folder_pane = _find_item(window, "folderPane")
+    folder_pane.setProperty("peopleCollapsed", False)
+    unnamed_row = _find_item(window, "unnamedFacesItem")
+    assert var_feltetelre(qt_app, lambda: unnamed_row.width() > 0, 3.0)
+    named_row = _find_item(window, "personItem_Teszt Elek")
+    assert named_row is not None
+    assert unnamed_row.mapToScene(QPointF(0, 0)).y() < named_row.mapToScene(
+        QPointF(0, 0)
+    ).y()
+    people_header = _find_item(window, "peopleHeader")
+    assert people_header is not None
+    assert people_header.property("text") == "People (2)"
+
+
+@pytest.mark.parametrize("height_offset", _WINDOW_HEIGHT_OFFSETS)
+def test_name_suggestion_click_and_layout_at_adjacent_heights(
+    qml_app_5183, qt_app, height_offset
+):
+    window, controller, engine = qml_app_5183
+    window.setWidth(1280)
+    window.setHeight(1005 + height_offset)
+    qt_app.processEvents()
+    face_scan = engine.rootContext().contextProperty("faceScanController")
+    _seed_six_faces(Path(controller._db_path))
+    assert face_scan.assignNameToFaces([1], "Teszt Elek")
+    controller.refreshCollections()
+    face_scan.unnamedCountChanged.emit()
+
+    folder_pane = _find_item(window, "folderPane")
+    folder_pane.setProperty("peopleCollapsed", False)
+    unnamed_row = _find_item(window, "unnamedFacesItem")
+    assert var_feltetelre(
+        qt_app,
+        lambda: unnamed_row is not None
+        and unnamed_row.width() > 0
+        and unnamed_row.height() > 0,
+        3.0,
+    )
+    _click(qt_app, unnamed_row)
+    welcome_close = _find_item(window, "unnamedWelcomeCloseButton")
+    assert var_feltetelre(qt_app, lambda: welcome_close.width() > 0, 3.0)
+    _click(qt_app, welcome_close)
+
+    target_face_id = next(
+        face["faceId"]
+        for group in face_scan.unnamedGroups(True, False)
+        for face in group["faces"]
+    )
+    name_field = _find_item(window, f"unnamedFaceNameField_{target_face_id}")
+    assert name_field is not None
+    _click(qt_app, name_field)
+    for character in "Tes":
+        QTest.keyEvent(QTest.KeyAction.Click, name_field.window(), ord(character))
+    qt_app.processEvents()
+    suggestions = _find_item(
+        window, f"unnamedNameSuggestions_{target_face_id}"
+    )
+    assert var_feltetelre(
+        qt_app,
+        lambda: suggestions is not None and suggestions.property("visible") is True,
+        3.0,
+    )
+    field_y = name_field.mapToScene(QPointF(0, name_field.height())).y()
+    suggestions_y = suggestions.mapToScene(QPointF(0, 0)).y()
+    assert abs(suggestions_y - field_y) <= 2, (
+        field_y,
+        suggestions_y,
+        _find_item(window, f"unnamedFaceCard_{target_face_id}").mapToScene(
+            QPointF(0, 0)
+        ),
+        _find_item(window, "unnamedFacesView").mapToScene(QPointF(0, 0)),
+    )
+    field_x = name_field.mapToScene(QPointF(name_field.width() / 2, 0)).x()
+    suggestions_x = suggestions.mapToScene(
+        QPointF(suggestions.width() / 2, 0)
+    ).x()
+    assert abs(suggestions_x - field_x) <= 3
+
+
 @pytest.mark.parametrize("height_offset", _WINDOW_HEIGHT_OFFSETS)
 def test_unnamed_album_layout_and_real_sidebar_click_at_adjacent_heights(
     qml_app_5183, qt_app, height_offset

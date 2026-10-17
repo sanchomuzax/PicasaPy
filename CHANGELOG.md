@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.117] – 2026-10-17
+
+- A bal sáv Emberek csoportjában a Név nélküliek sor áll elöl, és a csoport száma őt is beleszámolja, ahogy az eredetiben (#5190).
+- A Név nélküliek névmezője gépelés közben arcképpel és névvel ajánlja a meglévő személyeket, és meglévő névre a Személyek ablak a személyt kijelölve, Kiválasztás gombbal nyílik (#5192).
+
 ## [0.9.116] – 2026-10-17
 
 - A Beállítások ablak Hálózat fülén most már működik a naplózási szint: a választott szint megmarad, az arcfelismerő modell letöltései pedig a beállított szint szerint kerülnek a `network.log` naplófájlba, az alkalmazás adatmappájában (#5145).

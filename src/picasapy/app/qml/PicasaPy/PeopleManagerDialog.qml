@@ -27,7 +27,6 @@ Dialog {
     property int nextDraftNumber: 0
     property int pendingFaceId: -1
     property string pendingFaceName: ""
-    property string pendingFaceDraftKey: ""
     property string pendingPersonName: ""
     property var faceScanController: null
     readonly property int personRowHeight: Math.max(16, Theme.fontSize + 3)
@@ -85,8 +84,13 @@ Dialog {
                 return entry.name.toLocaleLowerCase()
                     === initialSearch.toLocaleLowerCase()
             })
-            if (target)
+            if (target) {
                 manager.selectContact(target)
+                if (manager.pendingFaceId >= 0) {
+                    searchField.forceActiveFocus()
+                    searchField.selectAll()
+                }
+            }
         } else if (copied.length > 0) {
             manager.selectContact(copied[0])
         }
@@ -101,7 +105,6 @@ Dialog {
     function openForFace(name, faceId) {
         manager.pendingFaceName = String(name || "").trim()
         manager.pendingFaceId = Number(faceId)
-        manager.pendingFaceDraftKey = ""
         manager.open()
     }
 
@@ -155,8 +158,6 @@ Dialog {
         }
         manager.entries = manager.entries.concat([entry])
         manager.selectedKey = entry.key
-        if (manager.pendingFaceId >= 0)
-            manager.pendingFaceDraftKey = entry.key
         manager.selectedLocalContactIds = []
         manager.selectedThumbUrl = ""
         manager.selectedPhotoCount = 0
@@ -216,11 +217,22 @@ Dialog {
         }
     }
 
+    function selectedEntry() {
+        return manager.entries.find(function(entry) {
+            return entry.key === manager.selectedKey
+        }) || null
+    }
+
     function canCommit() {
         for (var i = 0; i < manager.entries.length; ++i) {
             var entry = manager.entries[i]
             if (!entry.name.trim() || /[;\r\n]/.test(entry.name)
                 || /[;\r\n]/.test(entry.email))
+                return false
+        }
+        if (manager.pendingFaceId >= 0) {
+            var selected = manager.selectedEntry()
+            if (!selected || !selected.name.trim())
                 return false
         }
         return true
@@ -229,11 +241,8 @@ Dialog {
     function commitChanges() {
         var personToAssign = null
         if (manager.pendingFaceId >= 0) {
-            personToAssign = manager.entries.find(function(entry) {
-                return entry.key === manager.pendingFaceDraftKey
-            })
-            if (!personToAssign || !personToAssign.isNew
-                    || !personToAssign.name.trim())
+            personToAssign = manager.selectedEntry()
+            if (!personToAssign || !personToAssign.name.trim())
                 return
         }
         var changes = []
@@ -276,7 +285,6 @@ Dialog {
                 controller.refreshCollections()
             manager.pendingFaceId = -1
             manager.pendingFaceName = ""
-            manager.pendingFaceDraftKey = ""
         }
         manager.close()
     }
@@ -285,7 +293,6 @@ Dialog {
     onClosed: {
         manager.pendingFaceId = -1
         manager.pendingFaceName = ""
-        manager.pendingFaceDraftKey = ""
         manager.pendingPersonName = ""
     }
 
@@ -397,7 +404,9 @@ Dialog {
                     Label {
                         objectName: "peopleManagerPhotoCount"
                         text: manager.pendingFaceId >= 0
-                            ? qsTr("%d Photos in Picasa")
+                            ? (manager.selectedPhotoCount === 1
+                               ? qsTr("%d Photo in Picasa")
+                               : qsTr("%d Photos in Picasa"))
                                 .replace("%d", String(manager.selectedPhotoCount))
                             : String(manager.selectedPhotoCount)
                     }
@@ -488,7 +497,10 @@ Dialog {
             Item { Layout.fillWidth: true }
             Button {
                 objectName: "peopleManagerOkButton"
-                text: qsTr("OK")
+                text: manager.pendingFaceId >= 0
+                      && manager.selectedEntry()
+                      && !manager.selectedEntry().isNew
+                      ? qsTr("Choose") : qsTr("OK")
                 enabled: manager.canCommit()
                 onClicked: manager.commitChanges()
             }
