@@ -2944,9 +2944,9 @@ Módszertani megjegyzés: a `0x9ccc` literál egyetlen operandusként szerepel (
 - Q-C: felvétel ↔ kód. **LEZÁRVA:** összeférhető, feltételes (5. pont).
 - Q-D: a K1 catdata `state`-sorainak futásidejű értéke és a `state` jelentése. **BLOKKOLT**: paszta-kör kell (a `0x006a5e60` hívóinak és a helyi db3-mintának az olvasása, a hívó futtatja). [blokkoló]
 - Q-E: a K2 `[this+0x2c0]+0x154` mezőjének jelentése és írói. **BLOKKOLT**: paszta-kör kell a `+0x154` írói az `[this+0x2c0]` típusában. [blokkoló]
-- Q-F: a K4 (`0x005675d0`) -1-ága. `Ghidra-kör kell: 0x004ae180 - a 0x005675d0 -1-ágának feltétele: mit ad a 0x004ae180, és mikor ad -1-et. [blokkoló]`
-- Q-G: az L3 ág (`0x00891110`). `Ghidra-kör kell: 0x00891110 - a listaépítő tartalma, ha a [this+0xe64] == -1. [nem blokkolja a fő utat]`
-- Q-H: a qshow-ablak WndProc-ja. `Ghidra-kör kell: 0x00983330 - a ytWindow-sztringet használó függvény: osztályregisztráció vagy WndProc (hívója a 0x00982d60); a billentyű-fókusz kezelése. [blokkoló]`
+- Q-F: a K4 (`0x005675d0`) -1-ága. `Ghidra-kör kell: 0x004ae180 - a 0x005675d0 -1-ágának feltétele: mit ad a 0x004ae180, és mikor ad -1-et. [blokkoló]` **Új állapot (38.2.9):** részben lezárva: a `0x004ae180` -1-et ad, ha az index ≥ darabszám (feltételes); a `0x005675d0` -1-ága nyitott.
+- Q-G: az L3 ág (`0x00891110`). `Ghidra-kör kell: 0x00891110 - a listaépítő tartalma, ha a [this+0xe64] == -1. [nem blokkolja a fő utat]` **Új állapot (38.2.9):** részben lezárva: a `0x00891110` tömb-másoló, nem listaépítő (feltételes); az L3 forrása és célja nyitott.
+- Q-H: a qshow-ablak WndProc-ja. `Ghidra-kör kell: 0x00983330 - a ytWindow-sztringet használó függvény: osztályregisztráció vagy WndProc (hívója a 0x00982d60); a billentyű-fókusz kezelése. [blokkoló]` **Új állapot (38.2.9):** részben lezárva: a `0x00983330` nem WndProc (elvetett); az ytWindow WndProc és a regisztráció nyitott.
 
 **Nyitott kérdések mérlege (38.2.8): 0 nyílt · 3 lezárva · 5 blokkolt · 0 hatókörön kívül · 0 csak nyitva.** Az örökölt tételek (38.2.7 nyitott listája) változatlanul a munkasorban maradnak.
 
@@ -2957,6 +2957,101 @@ Módszertani megjegyzés: a `0x9ccc` literál egyetlen operandusként szerepel (
 - ⛔ Képernyőkép az eredetivel összevetve: **nincs.** A 188-as kép nincs a munkafában, és nincs implementáció.
 
 **10. Javasolt fejlesztői irány (feltételes, még nem Codex-kész).** A Ctrl+5 és a menüpont ugyanabba a mód-1 ágba fut. A lista forrása a nézet gyűjteménye (L2), nem a kijelölés. Mielőtt a fejlesztés ezt építi, a K1, K2 és K4 futásidejű értékét kell megmérni egy valódi Picasa-futtatásban (Ctrl+5, kijelölés nélkül, a catdata és a `[this+0x2c0]` állapotának naplózásával).
+
+#### 38.2.9 Ötödik kör: a K4 kapu, a qshow-ablak és az Időrend-váltás C-kódja (#4443, 2026-10-17)
+
+**Kérdés.** Három Q-pont és az Időrend-váltás (`0x007fda00`) C-kódja. Q-F: a `0x005675d0` (K4) -1-ága. Q-G: az L3 ág `0x00891110` függvénye. Q-H: a qshow-ablak WndProc-ja vagy osztályregisztrációja (`0x00983330`).
+
+**Forrás és módszer.** Két fájl, csak olvasás. Nincs új Ghidra-futás és nincs hálózat.
+- `2026-10-17-blokkolok-4443-4400.txt` (a `~/picasapy-agent/referencia/ghidra/` alatt): `0x004ae180`, `0x00983330`, `0x00891110`. A `0x00430610`, a `0x009e0660` (#4400) és a `0x00812470` (másik jegy) nincs vizsgálva.
+- `2026-10-17-idorend-film-sav.txt` (ugyanott): `0x007fda00`.
+
+(A) a dekompilált C-kód olvasata. (B) a korábbi diszasszembly-olvasat: a 38.2.6 Időrend-váltás lépéssora és a 38.2.7 mód-1 ága. A hívóéleket a HÍVÓK és HÍVOTTAK lista adja. A `0x00983670` és a `0x005e8a70` dekompilátuma más köteg fájlban van (`2026-10-17-qshow-ctrl5.txt`, `2026-10-17-qshow-diavetites.txt`). Ezt a kör nem olvasta be, csak a jelenlétüket nézte meg.
+
+**Eredmények.**
+
+*`0x004ae180` (Q-F).* Zárolt, indexelt olvasás. A `this` objektum `+0x150` mezőjének tömbjéből adja vissza az i-edik elemet (4 bájt). A darabszám a `+0x154` mező értékének a fele; az alsó bit jelző. Ha i ≥ darabszám, a visszatérési érték 0xFFFFFFFF. Más ág nem ad -1-et. Egy tömbelem is lehet 0xFFFFFFFF, és akkor a két eset nem különíthető el. A zár: ha a `+0x0C` bájt nulla, virtuális zárat hív (vtábla +0x18 és +0x1C), különben kritikus szakaszt (+0x28). A függvény újrabelépő: a tulajdonos szál a `+0x20`, a mélység a `+0x24` mezőben van.
+
+A hívóhelyek száma 16. A `0x005675d0` (K4) a `0x0056763a` címen hívja.
+
+*A K4 -1-ága (Q-F).* A `0x004ae180` nem a K4 -1-ága. Ez a `0x005675d0` egyik hívott függvénye. Hogy a `0x005675d0` mikor ad -1-et, az a saját kódjában dől el. Ez a kód nincs a kötegben, és a hívott index sem látszik.
+
+*`0x00891110` (Q-G).* Nem listaépítő, hanem tömb-másoló. A forrás tömbjét változatlanul bemásolja a céltömbbe (EAX). Lépései:
+1. Ha a cél és a forrás azonos, nem csinál semmit.
+2. A forrás jelzőbitjétől függően hív egy függvényt (`0x0074cf40` vagy `0x009829f0`). Ezek nevét nem ismerjük.
+3. Ha a forrás darabszáma 0, vagy 0x1FFFFFFF fölötti, a cél kiürül.
+4. Különben igazítja a kapacitást (újrafoglal vagy felszabadít), beállítja a darabszámot, és darabszám × 4 bájtot másol.
+
+A tartalom tehát a forrásé. Hogy mi a forrás és a cél az L3 ágban, azt a hívóhely dönti el (`0x005e92a9`, FUN_005e8a70). Ennek kódja a `2026-10-17-qshow-diavetites.txt`-ben van, ezt a kör nem olvasta be.
+
+*`0x00983330` (Q-H).* Nem WndProc. Nincs benne billentyűkezelés, és osztályregisztráció sem látszik. Mit csinál:
+1. Két osztálynevet ("ytWindow", "ytDialog") ad át egy függvénymutatón (`DAT_00d69538`) hívott műveletnek.
+2. Egy másik függvénymutatóval (`DAT_00d69528`) lekérdez egy értéket az `uStack_14` ablakhoz (feltételezés: HWND), `-4` paraméterrel. A -4 (0xFFFFFFFC) a Win32 GWL_WNDPROC értéke, tehát a lekérdezés feltehetően a window procedure.
+3. Az értéket három másik értékkel veti össze, köztük egy globálissal és egy fix címmel. Ha egyezik valamelyikkel, 1-et ad, különben 0-t.
+
+A hívott függvények nevét a dekompilátum nem adja. Az `uStack_14` és a `puStack_3c` értékét a függvény nem állítja be, ezért az összevetés bemenete nincs igazolva. Hívói: `0x00982dc2` (FUN_00982d60) és `0x00a57325` (FUN_00a572f0).
+
+*Az Időrend-váltás (`0x007fda00`).* A C-kód megerősíti a 38.2.6 lépéssorát. Két lépés hiányzott belőle:
+1. Kapu: a `[this+0x2d8]` bájt és a `[this+0x538]` mutató nem nulla. Ha nem, a függvény nem csinál semmit.
+2. A `[this+0x3f4]`, ha negatív, 0 lesz.
+3. **Új:** hívja a `0x0097e510(0)` függvényt (nincs a kötegben).
+4. **Új:** `[this+0x3be] = 1` (bájt, a jelentése nincs megnevezve).
+5. A QueryPerformanceCounter értéke double-ként a `[this+0x430]` mezőbe kerül.
+6. Hívja a `0x00802230(this, 1)` függvényt. Ez az animátor, nincs a kötegben.
+7. `[this+0x3ba]` és `[this+0x3bb]` 0, `[this+0x3b8]` és `[this+0x3b9]` 1.
+
+Billentyű-lekérdezés (GetAsyncKeyState) és Ctrl/Shift-ellenőrzés nincs benne. A függvény csak az átmenetet indítja. Vége, kártyái és kilépése nincs benne. Hívói: `0x007fde80`, `0x00802630`, `0x008032e0` és `0x008037e0`. A mód-1 hívás a `0x008037e0`-ban van (`0x008039e7`). Az első három szerepe nincs vizsgálva.
+
+**Cáfoló kísérletek.**
+1. „A `0x004ae180` a K4 -1-ága.” **Cáfolva:** a `0x005675d0` hívott függvénye.
+2. „A `0x00983330` a ytWindow WndProc-ja.” **Cáfolva:** nincs benne üzenetkezelés, csak 1 vagy 0 értéket ad.
+3. „A `0x00891110` listát épít.” **Cáfolva:** másol.
+4. „Az Időrend-váltást Shift vagy Ctrl szűri.” **Cáfolva** ebben a függvényben. A Shift-kapu a `0x005e8a70`-ben van (38.2.8).
+5. „A `param_2 = 1` nem animált ágat jelez” (38.2.6). **Visszavonva**, lásd a Helyesbítéseket.
+
+**Bizonyítottsági fok.**
+
+| állítás | fok | alap |
+|---|---|---|
+| `0x004ae180`: zárolt, indexelt olvasás; -1 pontosan akkor, ha index ≥ darabszám | feltételes | A (egy út) |
+| `0x004ae180` a K4 -1-ága | elvetett | A: a `0x005675d0` hívottja |
+| `0x00891110`: tömb-másolás | feltételes | A (egy út) |
+| a 38.2.8 „listaépítés” neve a `0x00891110`-re | elvetett | A |
+| `0x00983330` nem WndProc | elvetett | A |
+| `0x00983330`: két osztálynév, `-4` lekérdezés, 1/0 visszatérés | feltételes | A; a hívott függvények nevei hiányoznak |
+| `0x00983330` nem kezel billentyűfókuszt | elvetett | A |
+| `0x00983330` hívói: `0x00982dc2`, `0x00a57325` | feltételes | A (HÍVÓK); a 38.2.8 Q-H sora a `0x00982d60` hívót említi, de az nem független út |
+| `0x007fda00` lépéssora (1., 2., 5., 6., 7. pont) | megerősített | A (C) + B (38.2.6 lépéssor) |
+| `0x007fda00` 3. és 4. lépése (`0x0097e510(0)`, `+0x3be = 1`) | feltételes | A; a B-listában nincs |
+| `0x007fda00` nem néz billentyűt | megerősített | A + B (a 38.2.6 listában sincs) |
+| `0x007fda00` mód-1 hívója a `0x008037e0` | megerősített | A (HÍVÓK) + B (38.2.7 mód-1 ága) |
+| az átmenet időzített (a kezdőidő QPC-ből) | feltételes | A; az animátor (`0x00802230`) nincs a kötegben |
+
+**Összefüggés (feltételezés, nem mérve).** A `0x004ae180` darabszám-mezője a `+0x154` eltolásban van. A 38.2.8 K2 ugyanezen az eltoláson (`[this+0x2c0]+0x154`) vizsgálja a „nem 0 és nem 1” feltételt. Ha a `[this+0x2c0]` objektum ugyanilyen tömb, a K2 feltétele azt jelenti, hogy a darabszám nem nulla. A `[this+0x2c0]` típusát nem láttuk. Ellenőrzés: a `+0x154` írói (Q-E, paszta).
+
+**Helyesbítések.**
+- A 38.2.8 K-tábla L3 sorában a „listaépítés a `0x00891110` függvénnyel” helyesbítve: a `0x00891110` másol, nem épít listát.
+- A 38.2.8 Q-F előfeltétele („a `0x004ae180` a K4 -1-ága”) nem igaz: a `0x004ae180` a `0x005675d0` hívott függvénye.
+- A 38.2.6 Időrend-váltás lépéssora kihagyta a `0x0097e510(0)` hívást és a `[this+0x3be] = 1` beállítást.
+- A 38.2.6 cáfoló 3. pontja („`param_2 = 1` nem animált ágat jelez”) visszavonva. Alapja a „nem animált ág” címke volt, amelyet a 38.2.7 már visszavont. Az animátor viselkedése nyitott.
+- A 38.2.2 kérése a `0x007fda00`-ra (az átmenet vizuális tartalma): részben válaszolva. A lépéssor kész, a vizuális tartalom a `0x00802230`-ban van.
+
+**Nyitott kérdések (a hívó futtatja).**
+- `Ghidra-kör kell: 0x005675d0 - a K4 -1-ága: melyik feltételnél ad -1-et, és mit kezd a 0x004ae180 visszatérésével (hívóhely: 0x0056763a). [blokkoló]`
+- `Ghidra-kör kell: 0x00982d60 - a 0x00983330 hívója (0x00982dc2): mit tesz a 0/1 eredménnyel, és regisztrálja-e az ytWindow osztályt (lpfnWndProc). [blokkoló]`
+- `Ghidra-kör kell: 0x00802230 - az Időrend-átmenet animátora: a param_2 = 1 jelentése és az időzítés. [blokkoló]` A 38.2.5 és 38.2.6 kérése változatlan.
+- `Ghidra-kör kell: 0x0097e510 - a 0x007fda00 első hívása, argumentum 0: mit csinál. [nem blokkolja a fő utat]`
+- Olvasás, nem Ghidra: a `FUN_005e8a70` 0x005e92a9 körüli L3 ága a `2026-10-17-qshow-diavetites.txt`-ben. Ebből derül ki a `0x00891110` forrása és célja. [nem blokkolja a fő utat]
+- A `0x00983670` (qshow-ablak létrehozása) a `2026-10-17-qshow-ctrl5.txt`-ben van. A WndProc-kérdést ott lehet olvasni; ezt a kör nem olvasta be.
+
+**Nyitott kérdések mérlege (38.2.9):** 0 nyílt · 5 lezárva · 5 blokkolt · 0 hatókörön kívül · 0 csak nyitva.
+
+**A Q-pontok új állapota.**
+- **Q-F:** részben lezárva. A `0x004ae180` -1-et ad, ha az index ≥ darabszám (feltételes). A `0x005675d0` -1-ága nyitott.
+- **Q-G:** részben lezárva. A `0x00891110` tömb-másoló (feltételes). Az L3 forrása és célja nyitott.
+- **Q-H:** részben lezárva. A `0x00983330` nem WndProc. Az ytWindow WndProc és a regisztráció nyitott.
+
+**Codex-kész lista: nem adható.** A K1, K2 és K4 futásidejű értéke nincs megmérve, a Q-F és a Q-H nyitott.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
