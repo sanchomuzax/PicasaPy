@@ -10,7 +10,11 @@ from importlib import import_module
 
 _EXPORT_MODULES = {
     "cacheblob": ("CACHE_NEVEK", "FACETEMPLATE_HOSSZ", "CacheStore", "open_cache_store"),
-    "deferredregion": ("DeferredFace", "parse_deferred_region"),
+    "deferredregion": (
+        "DeferredFace",
+        "parse_deferred_face",
+        "parse_deferred_region",
+    ),
     "importer": (
         "Db3Beolvasas",
         "PhotoRecord",
@@ -50,6 +54,7 @@ __all__ = [
     "iter_photo_records",
     "open_cache_store",
     "parse_deferred_region",
+    "parse_deferred_face",
     "read_pmp_column",
     "read_table",
     "read_thumb_index",

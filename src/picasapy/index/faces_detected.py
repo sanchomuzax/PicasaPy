@@ -13,6 +13,7 @@ a saját találattal") a terv KÉSŐBBI lépcsője."""
 
 from __future__ import annotations
 
+import math
 import sqlite3
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -35,7 +36,10 @@ def replace_faces(
     (egy fotó ismételt szkennelése nem duplikál). A hívó felelős a
     commitért (a scan-worker kötegelve commitol, a dedup/hash-scan
     mintája szerint, ld. `app/dedup_controller.py`)."""
-    conn.execute("DELETE FROM face WHERE photo_id = ?", (photo_id,))
+    conn.execute(
+        "DELETE FROM face WHERE photo_id = ? AND source = 'detector'",
+        (photo_id,),
+    )
     rows = [
         (
             photo_id,
@@ -69,11 +73,85 @@ def replace_faces(
     )
 
 
+def replace_imported_unnamed_faces(
+    conn: sqlite3.Connection,
+    photo_id: int,
+    rects: Iterable[tuple[float, float, float, float]],
+) -> int:
+    """Replace db3-imported unnamed regions for one indexed photo.
+
+    Picasa stores rect64 coordinates relatively while this index uses image
+    pixels. The rows are marked with their source and carry no synthetic face
+    landmarks; consequently they are excluded from embedding calculation.
+    Returns the number of rows inserted (zero if the photo is not indexable).
+    """
+    conn.execute(
+        "DELETE FROM face WHERE photo_id = ? AND source = 'picasa'",
+        (photo_id,),
+    )
+    photo = conn.execute(
+        "SELECT width, height FROM photos WHERE id = ?", (photo_id,)
+    ).fetchone()
+    if photo is None or not photo["width"] or not photo["height"]:
+        return 0
+    width, height = int(photo["width"]), int(photo["height"])
+    detector_rows = tuple(
+        conn.execute(
+            "SELECT rect_left, rect_top, rect_right, rect_bottom FROM face "
+            "WHERE photo_id = ? AND source = 'detector'",
+            (photo_id,),
+        )
+    )
+    rows = []
+    for rect in rects:
+        if len(rect) != 4:
+            continue
+        left, top, right, bottom = (float(value) for value in rect)
+        if (
+            not all(map(math.isfinite, (left, top, right, bottom)))
+            or left < 0
+            or top < 0
+            or right > 1
+            or bottom > 1
+            or right <= left
+            or bottom <= top
+        ):
+            continue
+        pixel_rect = (left * width, top * height, right * width, bottom * height)
+        if any(
+            all(abs(pixel_rect[index] - detected[index]) <= 1.0 for index in range(4))
+            for detected in detector_rows
+        ):
+            continue
+        rows.append(
+            (
+                photo_id,
+                *pixel_rect,
+                0.0,
+                *(0.0 for _ in range(10)),
+                "picasa",
+            )
+        )
+    if rows:
+        conn.executemany(
+            "INSERT INTO face ("
+            "photo_id, rect_left, rect_top, rect_right, rect_bottom, det_conf, "
+            "right_eye_x, right_eye_y, left_eye_x, left_eye_y, nose_x, nose_y, "
+            "mouth_right_x, mouth_right_y, mouth_left_x, mouth_left_y, source"
+            ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            rows,
+        )
+    return len(rows)
+
+
 def clear_faces(conn: sqlite3.Connection, photo_id: int) -> None:
     """A fotó SAJÁT arc-találatainak törlése (pl. ha a Picasa időközben
     névcímkét kapott a fotón — ld. `FaceScanController`: onnantól a mi
     detektorunk kihagyja, a régi találat pedig félrevezető lenne)."""
-    conn.execute("DELETE FROM face WHERE photo_id = ?", (photo_id,))
+    conn.execute(
+        "DELETE FROM face WHERE photo_id = ? AND source = 'detector'",
+        (photo_id,),
+    )
 
 
 def reset_all_faces(conn: sqlite3.Connection) -> int:
@@ -109,7 +187,9 @@ def detected_face_count(conn: sqlite3.Connection, photo_id: int) -> int:
     """Hány SAJÁT arc-találat tartozik a fotóhoz (a néző overlay-jének
     később hasznos lekérdezés — 1. lépcsőben csak a teszteké)."""
     row = conn.execute(
-        "SELECT COUNT(*) AS n FROM face WHERE photo_id = ?", (photo_id,)
+        "SELECT COUNT(*) AS n FROM face "
+        "WHERE photo_id = ? AND source = 'detector'",
+        (photo_id,),
     ).fetchone()
     return int(row["n"]) if row is not None else 0
 
@@ -144,7 +224,7 @@ def faces_missing_embedding(conn: sqlite3.Connection) -> tuple[PendingEmbeddingF
         "FROM face f "
         "JOIN photos p ON p.id = f.photo_id "
         "JOIN folders fo ON fo.id = p.folder_id "
-        "WHERE f.embedding IS NULL "
+        "WHERE f.embedding IS NULL AND f.source = 'detector' "
         "ORDER BY f.id"
     )
     result = []

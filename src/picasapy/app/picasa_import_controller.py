@@ -40,6 +40,7 @@ from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 from picasapy.ini import central_contacts_path, merge_contacts_xml
 from picasapy.pmpimport.db3_atvetel import (
     AtvetelJelentes,
+    nevtelen_db3_arcokat_indexbe_atvesz,
     rekordokat_atvesz,
     videodatumokat_atvesz,
 )
@@ -249,6 +250,9 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
 
                 def index_lepes() -> None:
                     try:
+                        nevtelen_db3_arcokat_indexbe_atvesz(
+                            osszes_rekord, self._index_path
+                        )
                         jelentes = osszes + self._videodatum_atvevo(
                             osszes_rekord, self._index_path
                         )
