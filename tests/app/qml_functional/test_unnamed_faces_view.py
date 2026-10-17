@@ -182,16 +182,16 @@ class TestUnnamedFacesViewWiring:
         qt_app.processEvents()
         assert ("unnamedGroups", True, True) in stub.calls
 
-    def test_add_name_button_calls_assign_name_to_faces(self, qt_app):
+    def test_name_field_enter_assigns_all_selected_faces(self, qt_app):
+        """#5214: több kijelölt arc: a fejléc mezőjének Enterje tömeges névadás."""
         stub = _StubFaceScanController(assign_result=True)
         view = _make_view(qt_app, controller=stub)
+        view.setProperty("grouped", False)
         view.setProperty("selectedFaceIds", {"7": True, "9": True})
         view.setProperty("selectedCount", 2)
         name_field = view.findChild(QObject, "unnamedNameField")
         name_field.setProperty("text", "Roy Avery")
-        button = view.findChild(QObject, "addNameButton")
-        assert button.property("enabled") is True
-        button.clicked.emit()
+        name_field.accepted.emit()
         qt_app.processEvents()
         assign_calls = [c for c in stub.calls if c[0] == "assignNameToFaces"]
         assert len(assign_calls) == 1
@@ -202,13 +202,17 @@ class TestUnnamedFacesViewWiring:
         assert view.property("selectedCount") == 0
         assert name_field.property("text") == ""
 
-    def test_add_name_button_disabled_without_selection(self, qt_app):
+    def test_name_field_enter_without_selection_names_nobody(self, qt_app):
         stub = _StubFaceScanController()
         view = _make_view(qt_app, controller=stub)
+        view.setProperty("grouped", False)
         name_field = view.findChild(QObject, "unnamedNameField")
         name_field.setProperty("text", "Roy Avery")
-        button = view.findChild(QObject, "addNameButton")
-        assert button.property("enabled") is False
+        name_field.accepted.emit()
+        qt_app.processEvents()
+
+        assert [c for c in stub.calls if c[0] == "assignNameToFaces"] == []
+        assert name_field.property("text") == "Roy Avery"
 
 
 class TestIgnorePeople:
@@ -359,7 +363,7 @@ class TestIgnoredAlbum:
         view.setProperty("mode", "ignored")
         qt_app.processEvents()
 
-        assert view.findChild(QObject, "addNameButton").property("visible") is False
+        assert view.findChild(QObject, "unnamedNameField").property("visible") is False
         assert view.findChild(QObject, "ignoreFacesButton").property("visible") is False
         assert view.findChild(QObject, "unignoreFacesButton").property("visible") is True
 

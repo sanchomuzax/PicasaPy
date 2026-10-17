@@ -16,10 +16,11 @@ Lefedve (valódi egérrel vagy billentyűvel, a hatást állapoton mérve):
   EmailController beállítása a lemezre íródik).
 
 Nincs itt, mert a felületen nincs elérhető kattintás (ld. a jelentést):
-`unnamedNameField`, `addNameButton`, `ignoreFacesButton`,
 `moreSuggestionsButton`, `optionsFaceUploadContactPhotosCheck`,
-`publishUploadAllSize`, `publishUploadAllAccess`, `unnamedWelcomeLearnMoreButton`,
-`nameInputField`.
+`publishUploadAllSize`, `publishUploadAllAccess`, `unnamedWelcomeLearnMoreButton`.
+A `unnamedNameField` és az `ignoreFacesButton` a kibontott Név nélküliek
+nézetben látszik (#5214), valódi kattintással a
+`test_nev_nelkuliek_kibontott_5214.py` fedi; az `addNameButton` megszűnt.
 
 A felugró menük és párbeszédek a kattintás célját a saját ablakukban is
 kaphatják; a `kattints` (5150-es segéd) ezt az ablakot keresi meg. Az e-mail-teszt
