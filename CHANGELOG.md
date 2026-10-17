@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.123] – 2026-10-17
+
+- A Picasa-profil névjegyei bekerülnek a központi névtárba, és minden felület ugyanazt a nevet használja (#5179).
+
 ## [0.9.122] – 2026-10-17
 
 - Windowson a kívülről törölt mappa sora és képei eltűnnek a bal sávból (#5177).
