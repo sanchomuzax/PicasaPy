@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.129] – 2026-10-17
+
+- A Picasa-import az ismeretlen arcokat a Név nélküliek közé veszi át, és a db3 arcrégiókat meglévő arcadat mellett is kiegészíti (#5180).
+
 ## [0.9.128] – 2026-10-17
 
 - A Név nélküliek üdvözlőablakának Learn more... gombja az eredeti szerint megnyitja a Picasa súgóoldalát a felület nyelvén (#5185).
