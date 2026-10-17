@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.116] – 2026-10-17
+
+- A Beállítások ablak Hálózat fülén most már működik a naplózási szint: a választott szint megmarad, az arcfelismerő modell letöltései pedig a beállított szint szerint kerülnek a `network.log` naplófájlba, az alkalmazás adatmappájában (#5145).
+- A felületi vezérlők valódi egér- és billentyűbemenetes ellenőrzése bővült, és egy ismételhető audit megmutatja, melyik vezérlőhöz nincs még ilyen teszt (#5150).
+
 ## [0.9.115] – 2026-10-17
 
 - A Súgóban témaváltáskor a tartalom újra a tetejéről indul (#5175).
