@@ -3037,12 +3037,12 @@ Billentyű-lekérdezés (GetAsyncKeyState) és Ctrl/Shift-ellenőrzés nincs ben
 - A 38.2.2 kérése a `0x007fda00`-ra (az átmenet vizuális tartalma): részben válaszolva. A lépéssor kész, a vizuális tartalom a `0x00802230`-ban van.
 
 **Nyitott kérdések (a hívó futtatja).**
-- `Ghidra-kör kell: 0x005675d0 - a K4 -1-ága: melyik feltételnél ad -1-et, és mit kezd a 0x004ae180 visszatérésével (hívóhely: 0x0056763a). [blokkoló]`
-- `Ghidra-kör kell: 0x00982d60 - a 0x00983330 hívója (0x00982dc2): mit tesz a 0/1 eredménnyel, és regisztrálja-e az ytWindow osztályt (lpfnWndProc). [blokkoló]`
+- `Ghidra-kör kell: 0x005675d0 - a K4 -1-ága: melyik feltételnél ad -1-et, és mit kezd a 0x004ae180 visszatérésével (hívóhely: 0x0056763a). [blokkoló]` **Új állapot (38.2.10):** a -1 négy feltétele ismert; a futásidejű értékük nincs meg (Q-J).
+- `Ghidra-kör kell: 0x00982d60 - a 0x00983330 hívója (0x00982dc2): mit tesz a 0/1 eredménnyel, és regisztrálja-e az ytWindow osztályt (lpfnWndProc). [blokkoló]` **Új állapot (38.2.10):** a 0x00982d60 nem regisztrál; a WndProc-ot az EDI adja. A regisztráció jelöltje a 0x00980670 (Q-K).
 - `Ghidra-kör kell: 0x00802230 - az Időrend-átmenet animátora: a param_2 = 1 jelentése és az időzítés. [blokkoló]` A 38.2.5 és 38.2.6 kérése változatlan.
-- `Ghidra-kör kell: 0x0097e510 - a 0x007fda00 első hívása, argumentum 0: mit csinál. [nem blokkolja a fő utat]`
-- Olvasás, nem Ghidra: a `FUN_005e8a70` 0x005e92a9 körüli L3 ága a `2026-10-17-qshow-diavetites.txt`-ben. Ebből derül ki a `0x00891110` forrása és célja. [nem blokkolja a fő utat]
-- A `0x00983670` (qshow-ablak létrehozása) a `2026-10-17-qshow-ctrl5.txt`-ben van. A WndProc-kérdést ott lehet olvasni; ezt a kör nem olvasta be.
+- `Ghidra-kör kell: 0x0097e510 - a 0x007fda00 első hívása, argumentum 0: mit csinál. [nem blokkolja a fő utat]` **Új állapot (38.2.10):** lezárva: ShowCursor-számláló (0 látható, -1 rejtett).
+- Olvasás, nem Ghidra: a `FUN_005e8a70` 0x005e92a9 körüli L3 ága a `2026-10-17-qshow-diavetites.txt`-ben. Ebből derül ki a `0x00891110` forrása és célja. [nem blokkolja a fő utat] **Új állapot (38.2.10):** a 0x00891110 másol. A forrás és a cél a hívóhelyen van, az nincs a kötegben (Q-N). A kijelölés nélküli Ctrl+5 esetén ez blokkoló.
+- A `0x00983670` (qshow-ablak létrehozása) a `2026-10-17-qshow-ctrl5.txt`-ben van. A WndProc-kérdést ott lehet olvasni; ezt a kör nem olvasta be. **Új állapot (38.2.10):** beolvasva; egyezik a K4 fájl változatával. A WndProc nincs benne.
 
 **Nyitott kérdések mérlege (38.2.9):** 0 nyílt · 5 lezárva · 5 blokkolt · 0 hatókörön kívül · 0 csak nyitva.
 
@@ -3052,6 +3052,108 @@ Billentyű-lekérdezés (GetAsyncKeyState) és Ctrl/Shift-ellenőrzés nincs ben
 - **Q-H:** részben lezárva. A `0x00983330` nem WndProc. Az ytWindow WndProc és a regisztráció nyitott.
 
 **Codex-kész lista: nem adható.** A K1, K2 és K4 futásidejű értéke nincs megmérve, a Q-F és a Q-H nyitott.
+
+#### 38.2.10 Hatodik kör: a K4 -1-ága, az ytWindow regisztrációja és az L3 ág (#4443, 2026-10-17)
+
+**Kérdés.** A 38.2.9 nyitott listájából négy pont: (a) a K4 (`0x005675d0`) mikor ad -1-et, és mit jelent ez kijelölés nélkül; (b) melyik függvény regisztrálja az ytWindow osztályt, mi a WndProc címe, és ki kezeli a billentyű-fókuszt; (c) mi a `0x0097e510` szerepe; (d) mi az L3 ág (`0x005e92a9`, a `0x00891110` hívása) forrása és célja. Végül: a K1, K2 és K4 alapján eldönthető-e, hogy a Ctrl+5 kijelölés nélkül qshow-t nyit-e.
+
+**Forrás és módszer.** Csak olvasás. Nincs új Ghidra-futás és nincs hálózat. A fájlok a `~/picasapy-agent/referencia/ghidra/` mappában vannak:
+- `2026-10-17-hog-qshow-k4.txt`: `0x005675d0`, `0x00982d60`, `0x0097e510`, `0x00983670`. A `0x0088c1a0` nincs vizsgálva (ez a #4194-hez tartozik).
+- `2026-10-17-blokkolok-4443-4400.txt`: `0x004ae180`, `0x00983330`, `0x00891110`. A 38.2.9 forrása; az (a), (b) és (d) ponthoz kellett a törzsük.
+- `2026-10-17-qshow-diavetites.txt`: `FUN_005e8a70`, két dekompilátum, ugyanaz a függvény. Az L3 ág és a farok. A sorszámok az első dekompilátumra vonatkoznak.
+- `2026-10-17-qshow-ctrl5.txt`: `0x00983670` (2441-2541. sor), összevetve a K4 fájl változatával.
+- `2026-10-17-idorend-film-sav.txt`: `0x007fda00`, a `0x0097e510(0)` hívás helye.
+
+Nincs megnézve: `0x00980670`, `0x00717bb0`, `0x007164b0`, a `[this+0x2a4]` objektum +0x44 függvénye, és a `0x00982d60` hívóinak EDI-je. A `0x00802230` (animátor) a `2026-10-17-qshow-2.txt` fájlban van; ebben a körben nem olvastam.
+
+**Eredmények.**
+
+*(a) A K4 (`0x005675d0`).* A függvény a `[this+0xeac]` lánc csomópontjain megy végig. Ha az első olyan csomópont, amelynek `+0x213` bájtja nem nulla, a `+0x244` mezője is nem nulla, a K4 0-t ad, és nem épít újra. Minden más esetben a lánc felszabadul (vtábla `+8` hívás), és a függvény négy ponton ad -1-et:
+1. `X = [P+0x2fc]`, ahol `P = [this+0xea0]`. Ha `X = 0`, -1.
+2. Ha `[X+0x2c0] = 0`, -1.
+3. Ha `FUN_004ae180([P+0x2f0]) = -1`, -1. Ez az index túllépése. Egy tárolt 0xFFFFFFFF elem is ide fut, a két eset nem különíthető el.
+4. A `[this+0x2a4]` +0x44 függvényének hívása után `[this+0xeac] = 0`, -1. Ez a 38.2.8 „újraépítés nem sikerül" esete.
+
+Ha az újraépítés (`0x00717bb0`) lefut, a K4 0-t ad. Ezért a -1-et adó K4 is törli a régi láncot.
+
+Ctrl+5 esetén a -1 azt jelenti, hogy a `0x005e8a70` kilép: nincs qshow és nincs hibaüzenet. Hogy kijelölés nélkül a K4 -1-et ad-e, a kötegből nem dől el. A K4 törzse nem olvassa a `[this+0xe64]` mezőt (azt használja a szűrő és az L3 ág), de a négy feltétel mindegyike futásidejű értéktől függ.
+
+Ha a K4 nem 0, a `0x005e8a70` azonnal visszaadja ugyanazt az értéket (332-336. sor). Nincs IDS_MUST_SELECT üzenet, és qshow sem nyílik.
+
+*(b) Az ytWindow és a WndProc.* Az ytWindow-hoz tartozó három olvasott függvényben nincs olyan hívás, amely egy argumentumot kap, mint a RegisterClass. Ezek:
+- `0x00983670` (qshow-ablak): a CreateWindowExA alakú függvényt hívja 12 argumentummal, a sorrend a CreateWindowExA-val egyezik. Osztálynév: `"ytWindow"`. Regisztrációt nem végez. Ha a hívás 0-t ad, meghívja a `0x00980670`-et, és utána a `[this+0x6c]` nem nulla értékét várja. Ez arra utal, hogy a `0x00980670` hwnd-t állíthat be, de ez feltételezés.
+- `0x00983330`: a `DAT_00d69538`-at kétszer hívja, `"ytWindow"` és `"ytDialog"` névvel, három argumentummal. Ez GetClassInfo-alakú hívás. Utána a `DAT_00d69528`-cal (`-4`) lekérdez egy értéket. 1-et ad, ha ez egyezik a három összehasonlított érték egyikével, különben 0-t. Regisztrációt nem végez.
+- `0x00982d60` (a `0x00983330` hívója): a `"ytWindow"` nevű `DAT_00d69538`-hívás lekérdezés. Utána a `DAT_00d69524` `(hwnd, -4, EDI)` hívásával a `[this+0x6c]` ablakon beállítja az EDI-t új WndProc-nak. A régi WndProc-ot a `[this+0x34]` őrzi. A `DAT_00d69524`-et 2 és 3 argumentummal is hívja, ezért az API neve (feltételezés: SetWindowLongA) nincs megerősítve.
+
+Eredmény:
+- **Regisztráció:** az olvasott kódban nincs. A következő jelölt a `0x00980670`. A teljes bináris-ban nem kerestem.
+- **WndProc címe:** nincs meg. A `0x00982d60` az EDI-ből veszi. A hívói (`FUN_00982d00`, `FUN_007360b0`, `FUN_00736a50`, `FUN_00aa5100`) nincsenek a kötegben, így az EDI értéke sem ismert.
+- **Billentyű-fókusz** (nyíl, szóköz, Home/End, Escape): nincs meg. Az olvasott függvények egyike sem kezel billentyű-üzenetet, a WndProc nincs a kötegben.
+
+*(c) A `0x0097e510`.* ShowCursor-számlálót állít. Win32 szerint a 0 vagy annál nagyobb érték látható, a -1 rejtett. Ha az argumentum nagyobb, mint 0, a számlálót 0-ra viszi. Ha 0 vagy kisebb, -1-re. A `0x007fda00` az átmenet elején 0-val hívja (a `0x007fda2a` címen), tehát az átmenet alatt a kurzor rejtett. A 11 hívóból csak a `0x007fda00` van vizsgálva. A kurzor visszaállítása (1 argumentummal) nincs a kötegben.
+
+*(d) Az L3 ág (`0x005e92a9`).* A C-ben a hívás argumentum nélkül látszik: `FUN_00891110();`. A `0x00891110` a célját az EAX-ben (`in_EAX`), a forrását az első verem-argumentumban (`param_1`) kapja. Másol: a forrás darabszám × 4 bájtját a célba (`_memcpy`), a cél méretét előbb igazítva. Listát nem épít. A cél alakja {mutató, darabszám << 1 | jelző}.
+
+A forrás és a cél a hívóhelyen dől el. Az EAX és a verem értéke nincs a kötegben, ezért ez nincs igazolva. Erős feltételezés:
+- **Cél:** a kimeneti pár, `iStack_d4` és `uStack_d0`. Ugyanez az alak (az első dekompilátum 444-447. sora), és a farok K5 ellenőrzése (532. sor) ezt olvassa. Ha a cél más lenne, az L3 ágban a K5 a 212. sorban nullázott értéket látná, és az L3 ág sosem nyitna qshow-t.
+- **Forrás:** az L2-lista pár, `local_c0` és `local_bc`. A 38.2.8 szerint a `0x007164b0` ezt tölti, és a szűrő is ebből olvas (358. sor).
+
+Így az L3 ág a teljes L2-listát másolja, szűrés nélkül. Ez azon a feltevésen áll, hogy a `[this+0xe64] == -1` azt jelenti: nincs kijelölt elem. A szűrő a `[this+0xe64]` értékű elemet keresi, ezért ez indokolt, de nincs igazolva.
+
+Az L3 nem zsákutca. A `goto` után a közös farok fut: a K5, és ha a lista nem üres, a `0x008037e0` (qshow).
+
+**Helyesbítés.** A 38.2.8 K4 sora szerint a -1 az újraépítés hibájából jön. Ez hiányos: a négy feltételből három a vtábla-hívás előtt van (1-3. pont).
+
+**Megerősítés.** A 38.2.8 K3 és K5 sora helyes. A Shift-ág a 330. sorban a farokra ugrik, a K4 csak a Shift nélküli ágban fut. A `0x008037e0` hívása a K5 után áll (604. sor), nem Ctrl-feltételhez kötött. A `cStack_d9` blokk (455-483. sor) a flipbook-listát rajzolja. Ezt nem vizsgáltam tovább.
+
+**Cáfoló kísérletek.**
+1. „A K4 -1-e csak az újraépítés hibájától függ." **Cáfolva:** az 1-3. feltétel a vtábla-hívás előtt is -1-et ad.
+2. „A K4 -1 után IDS_MUST_SELECT üzenet jelenik meg." **Cáfolva:** a 332-336. sor visszatér, nincs üzenet ebben a függvényben.
+3. „A `0x00983330` vagy a `0x00982d60` regisztrálja az ytWindow-t." **Cáfolva** az olvasott kódban: csak lekérdezés és WndProc-csere van.
+4. „A `0x008037e0` hívása Ctrl-feltételes." **Cáfolva:** a hívás a K5 else-ágában van (604. sor), nem a `cStack_d9` blokkban.
+5. „Az L3 ág zsákutca." **Cáfolva:** a közös farok a K5 után a `0x008037e0`-t hívhatja.
+
+**Bizonyítottsági fok.**
+
+| állítás | fok | alap |
+|---|---|---|
+| K4: az 1-3. -1 feltétel (`X = 0`, `[X+0x2c0] = 0`, `0x004ae180 = -1`) | feltételes | A (C) |
+| K4: a 4. -1 feltétel (a vtábla-hívás után `[this+0xeac] = 0`) | megerősített | A (C) + B (38.2.8 K4 sora) |
+| K4 nem 0: a `0x005e8a70` azonnal visszatér, nincs IDS_MUST_SELECT | megerősített | A (332-336. sor) + B (38.2.8 K4 sora) |
+| K4 futásidejű értéke kijelölés nélkül | nincs meg | - |
+| a K4 törzse nem olvassa a `[this+0xe64]` mezőt | feltételes | A (a K4 teljes törzse; a hívott függvények nincsenek benne) |
+| `0x0097e510`: argumentum > 0 → 0 (látható), egyébként -1 (rejtett) | feltételes | A (C) + ShowCursor importnév |
+| `0x007fda00` az átmenet elején hívja a `0x0097e510(0)`-t | feltételes | A (C) |
+| `0x00891110`: másolás, cél EAX, forrás verem-argumentum | feltételes | A (egy út) |
+| L3 cél: a kimeneti pár (`iStack_d4`, `uStack_d0`) | feltételezés | C-ből következtetve; az EAX nincs meg |
+| L3 forrás: az L2-lista pár (`local_c0`, `local_bc`) | feltételezés | C-ből következtetve; a verem-argumentum nincs meg |
+| `0x00983670`: CreateWindowExA alak, `"ytWindow"` | feltételes | A (két dekompilátum, egy forrás) |
+| `0x00983330`, `0x00982d60`: nincs ytWindow-regisztráció | feltételes | A (három argumentumos lekérdezés; az API neve nincs) |
+| `0x00982d60`: a WndProc az EDI | feltételes | A |
+| a WndProc címe, a billentyű-fókusz | nincs meg | - |
+| `0x008037e0` a K5 után van, nem Ctrl-feltételes | megerősített | A (C) + B (38.2.8 K5 és „vége" sora) |
+
+**Következtetés: Ctrl+5 kijelölés nélkül qshow-t nyit-e?** A kötegből nem dönthető el. A kód feltételes választ ad (a sorszámok az első dekompilátumra vonatkoznak):
+- Ha K1 hamis, vagy a K2 feltétel nem teljesül: IDS_MUST_SELECT, nincs qshow (213-230. sor).
+- Ha K4 = -1: a függvény csendben kilép. Nincs qshow és nincs üzenet.
+- Ha K4 = 0: a lánc biztosan létezik, és az L2-lista épül. Ha a lista üres: IDS_MUST_SELECT (K5).
+- Ha K1 ≠ 0, a K2 feltétel teljesül, K4 = 0, és a lista nem üres: qshow nyílik.
+
+Ha a `[this+0xe64] == -1` valóban azt jelenti, hogy nincs kijelölt elem, a kijelölés nélküli eset az L3 ágra megy, és a teljes L2-lista kerül a qshow-ba. Ekkor nincs külön „nincs kijelölés" hibaág. Ez feltételezés, nem bizonyíték.
+
+Hiányzik: K1 futásidejű értéke (Q-D), K2 `[this+0x2c0]+0x154` értéke (Q-E), a K4 négy feltételének értéke (Q-J), az L2-lista darabszáma (a `+0x5a` jelző jelentése nincs megmérve, 38.2.8), és az L3 forrása és célja (Q-N).
+
+**Nyitott kérdések (38.2.10).**
+- Q-I: a K4 -1 négy feltétele. **LEZÁRVA** (1-4. pont). A futásidejű értékük nincs meg (Q-J).
+- Q-J: a K4 futásidejű értéke kijelölés nélkül. **BLOKKOLT:** `Ghidra-kör kell: 0x0056763a - a 0x004ae180 hívás előtti EAX (this): melyik objektum tömbjét olvassa a K4. [blokkoló]` Emellett paszta-kör kell a `[this+0x2a4]` +0x44 függvényére (a címe nincs a kötegben). [blokkoló]
+- Q-K: az ytWindow regisztrációja. **BLOKKOLT:** `Ghidra-kör kell: 0x00980670 - a CreateWindowExA hibaágában hívott függvény: regisztrálja-e az ytWindow osztályt, és állít-e be hwnd-t a [this+0x6c]-be. [blokkoló]`
+- Q-L: a WndProc címe és a billentyű-fókusz. **BLOKKOLT:** `Ghidra-kör kell: 0x00982d00 - a 0x00982d60 hívója (0x00982d48): mi van az EDI-ben a hívás előtt. [blokkoló]`
+- Q-M: a `0x0097e510` szerepe. **LEZÁRVA** (c. pont). A visszaállító hívás helye nincs a kötegben, ez nem blokkol.
+- Q-N: az L3 forrása és célja. **BLOKKOLT:** `Ghidra-kör kell: 0x005e92a9 - az L3 hívás előtti EAX (cél) és a verembe tett forrás-argumentum: melyik lista másolódik. [blokkoló]` A dekompilátum nem mutatja ezeket, ezért a 0x005e92a0-0x005e92a9 tartomány diszasszembly-olvasata kell.
+- Q-O: Ctrl+5 kijelölés nélkül qshow-t nyit-e. **BLOKKOLT** (Q-D, Q-E, Q-J, Q-N).
+- Q-P: a `0x00802230` (animátor). **HATÓKÖRÖN KÍVÜL** ebben a körben.
+
+**Nyitott kérdések mérlege (38.2.10):** 0 nyílt · 2 lezárva · 5 blokkolt · 1 hatókörön kívül · 0 csak nyitva.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
