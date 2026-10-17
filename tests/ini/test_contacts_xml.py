@@ -174,3 +174,25 @@ class TestApplyContactsXml:
 
         contacts = {c.person_id: c for c in contacts_of(updated)}
         assert contacts["B8E4117CF1D6615B"].name == "Friss"
+
+
+class TestMergeContactsXml:
+    """#5179: a profil névjegyei a központi tárba; a rossz azonosító kimarad."""
+
+    def test_rossz_azonositoju_nevjegy_kimarad_a_jo_atjon(self, tmp_path):
+        from picasapy.ini import load_contacts_xml, merge_contacts_xml
+
+        forras = tmp_path / "profil" / "contacts.xml"
+        forras.parent.mkdir()
+        forras.write_text(
+            "<contacts>"
+            '<contact id="b8e4117cf1d6615b" name="Roy Avery" modified_time="2020-01-01T10:00:00+01:00" local_contact="1"/>'
+            '<contact id="nem-hex" name="Hibás" modified_time="2020-01-01T10:00:00+01:00" local_contact="1"/>'
+            "</contacts>",
+            encoding="utf-8",
+        )
+        kozponti = tmp_path / "db" / "contacts" / "contacts.xml"
+        assert merge_contacts_xml(forras, kozponti) == 1
+        assert {(c.person_id, c.name) for c in load_contacts_xml(kozponti)} == {
+            ("b8e4117cf1d6615b", "Roy Avery")
+        }

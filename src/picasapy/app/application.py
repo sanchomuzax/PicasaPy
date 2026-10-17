@@ -1714,6 +1714,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         index_path=data_dir / "index.db",
         writer_queue=controller._index_iro_sor,
     )
+    picasa_import_controller.importFinished.connect(controller._reload_after_sync)
     # #4591: az átvett videódátumok után a rács/mappalista újratöltése
     picasa_import_controller.datesApplied.connect(controller._reload_after_sync)
     engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)

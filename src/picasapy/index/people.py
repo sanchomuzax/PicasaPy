@@ -23,7 +23,7 @@ import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from picasapy.ini import IniDocument, contacts_of, parse_faces
+from picasapy.ini import ContactNameResolver, IniDocument, parse_faces
 from picasapy.ini.faces import Face
 
 from .folder_ini import sweep_folder_inis
@@ -86,6 +86,8 @@ def _darabszam_szerint(
 def people_in_index(
     conn: sqlite3.Connection,
     face_data: tuple[FaceData, ...] | None = None,
+    *,
+    central_path=None,
 ) -> tuple[PersonRecord, ...]:
     """A könyvtárban előforduló, NÉVVEL ellátott személyek — NÉV szerint
     rendezve (kis-nagybetű-tűrően), a Picasa-hasáb mintájára.
@@ -99,7 +101,7 @@ def people_in_index(
     viselkedés változatlan: maga söpör."""
     people: dict[str, dict] = {}
     for folder_path, names, faces_by_file in (
-        _iter_face_data(conn)
+        _iter_face_data(conn, central_path)
         if face_data is None
         else _lathato_arcadat(conn, face_data)
     ):
@@ -146,7 +148,9 @@ def people_in_index(
     )
 
 
-def people_with(conn: sqlite3.Connection, name: str) -> tuple[PersonRecord, ...]:
+def people_with(
+    conn: sqlite3.Connection, name: str, *, central_path=None
+) -> tuple[PersonRecord, ...]:
     """Akik EGYÜTT szerepelnek a megadott személlyel — közös fotók száma
     szerint csökkenően, azonos darabszámnál név szerint.
 
@@ -162,7 +166,7 @@ def people_with(conn: sqlite3.Connection, name: str) -> tuple[PersonRecord, ...]
     if not name:
         return ()
     counts: dict[str, int] = {}
-    for _folder_path, names, faces_by_file in _iter_face_data(conn):
+    for _folder_path, names, faces_by_file in _iter_face_data(conn, central_path):
         for faces in faces_by_file.values():
             on_photo = {
                 resolved
@@ -181,13 +185,15 @@ def people_with(conn: sqlite3.Connection, name: str) -> tuple[PersonRecord, ...]
     )
 
 
-def person_photos(conn: sqlite3.Connection, name: str) -> tuple[PhotoRecord, ...]:
+def person_photos(
+    conn: sqlite3.Connection, name: str, *, central_path=None
+) -> tuple[PhotoRecord, ...]:
     """Egy megnevezett személyre kitaggelt fotók — a `album_photos` mintáját
     követő szűrt nézet. Ismeretlen/üres név esetén üres eredmény (nem hiba)."""
     if not name:
         return ()
     pairs: list[tuple[str, str]] = []
-    for folder_path, names, faces_by_file in _iter_face_data(conn):
+    for folder_path, names, faces_by_file in _iter_face_data(conn, central_path):
         for filename, faces in faces_by_file.items():
             if any(_resolve_name(face, names) == name for face in faces):
                 pairs.append((folder_path, filename))
@@ -204,6 +210,8 @@ def person_photos(conn: sqlite3.Connection, name: str) -> tuple[PhotoRecord, ...
 def person_movie_photos(
     conn: sqlite3.Connection,
     albums: Sequence[PersonRecord | str],
+    *,
+    central_path=None,
 ) -> tuple[PhotoRecord, ...]:
     """A személyalbum-lista nem üres képeit fűzi össze, sorrendtartóan.
 
@@ -222,7 +230,7 @@ def person_movie_photos(
     pairs_by_person: dict[str, list[tuple[str, str]]] = {
         name: [] for name in wanted
     }
-    for folder_path, names, faces_by_file in _iter_face_data(conn):
+    for folder_path, names, faces_by_file in _iter_face_data(conn, central_path):
         for filename, faces in faces_by_file.items():
             on_photo: set[str] = set()
             for face in faces:
@@ -290,15 +298,12 @@ class FaceDataCollector:
     olvassuk, nem kétszer. A törzse változatlanul a korábbi
     `_iter_face_data` ciklusmagja."""
 
-    def __init__(self) -> None:
+    def __init__(self, central_path=None) -> None:
         self.rows: list[FaceData] = []
+        self._name_resolver = ContactNameResolver(central_path)
 
     def __call__(self, folder_path: str, document: IniDocument) -> None:
-        names = {
-            contact.person_id.casefold(): contact.name
-            for contact in contacts_of(document)
-            if contact.name
-        }
+        names = self._name_resolver.names_by_id(document)
         if not names:
             return
         faces_by_file: dict[str, tuple[Face, ...]] = {}
@@ -316,12 +321,12 @@ class FaceDataCollector:
 
 
 def _iter_face_data(
-    conn: sqlite3.Connection,
+    conn: sqlite3.Connection, central_path=None
 ) -> tuple[FaceData, ...]:
     """(mappa, {person_id.casefold(): név}, {fájlnév: arcok}) hármasok a
     `has_ini=1` mappákra — olvashatatlan/hibás ini-t csendben kihagy (a
     könyvtár másik folyamat általi éppen-írása ne omlassza össze a listát)."""
-    collector = FaceDataCollector()
+    collector = FaceDataCollector(central_path)
     sweep_folder_inis(conn, (collector,))
     return _lathato_arcadat(conn, tuple(collector.rows))
 

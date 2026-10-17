@@ -27,7 +27,8 @@ from picasapy.ini import (
     UNIDENTIFIED_CONTACT,
     IniConflictError,
     IniSaveError,
-    contacts_of,
+    ContactNameResolver,
+    central_contacts_path,
     ensure_contact,
     find_contact_id,
     has_ini_source,
@@ -94,10 +95,7 @@ class FacesHelper(QObject):
                     for face in faces
                     if face.is_identified
                 )
-                names = {
-                    contact.person_id.casefold(): contact.name
-                    for contact in contacts_of(document)
-                }
+                names = self._contact_name_resolver().names_by_id(document)
                 ini_faces = [
                     _face_to_dict(face, names)
                     for face in faces
@@ -173,9 +171,12 @@ class FacesHelper(QObject):
         if not image_path:
             return []
         document, _path = self._load(image_path)
-        if document is None:
-            return []
-        names = {contact.name for contact in contacts_of(document) if contact.name}
+        resolver = self._contact_name_resolver()
+        names = (
+            set(resolver.central_names())
+            if document is None
+            else set(resolver.names_by_id(document).values())
+        )
         return sorted(names, key=str.casefold)
 
     @Slot(str, float, float, float, float, str, result=bool)
@@ -302,11 +303,31 @@ class FacesHelper(QObject):
         nincs ilyen nevű kontakt még (64 bites véletlen hex, a Picasa-
         formátum szerint). A hívó nem üres, levágott nevet ad."""
         clean_name = (name or "").strip()
+        resolver = self._contact_name_resolver()
+        # A központi névjegy az elsődleges névforrás. A mappa Contacts2
+        # bejegyzését viszont csak a korábbi, pontos névegyezéssel használjuk:
+        # a teljes names_by_id táblán végzett casefold keresés egy eltérő
+        # kis-/nagybetűzésű helyi nevet is ugyanannak venné, így a frissen
+        # begépelt név helyett a régi helyi címke maradna a panelen.
+        for contact in resolver.central_contacts:
+            if contact.name.casefold() == clean_name.casefold():
+                return (
+                    ensure_contact(document, contact.person_id, contact.name),
+                    contact.person_id,
+                )
         existing = find_contact_id(document, clean_name)
         if existing is not None:
             return document, existing
         new_id = secrets.token_hex(8)
         return ensure_contact(document, new_id, clean_name), new_id
+
+    def _contact_name_resolver(self) -> ContactNameResolver:
+        central_path = (
+            central_contacts_path(self._index_path)
+            if self._index_path is not None
+            else None
+        )
+        return ContactNameResolver(central_path)
 
     def _mutate(self, image_path: str, mutate, left=None, top=None, right=None, bottom=None) -> bool:
         """Közös írási keret: szerializált, best-effort `update_document` egyetlen
