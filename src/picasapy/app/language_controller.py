@@ -105,6 +105,21 @@ OWN_LANGUAGE_NAMES: dict[str, str] = {
 #: (spec A) szakasz), minden induláskor újra feloldva.
 SYSTEM_LANGUAGE_CODE = "system"
 
+#: A Picasa súgó-címének `hl` paramétere a felület nyelvéhez. A Picasa
+#: 45 bejegyzéses nyelvtáblájából (`0x00d46e88`, 19.2 kutatási szakasz)
+#: a támogatott kódokkal azonos nyelv bejegyzése; az `enUK` a `en-GB`, a
+#: `pt` a `pt-PT` sora. Az eredeti üres `hl`-t ad, ha nem határozható meg.
+PICASA_HELP_LANGUAGE: dict[str, str] = {
+    "ar": "ar", "fa": "fa", "iw": "iw", "id": "id", "ca": "ca", "da": "da",
+    "de": "de", "enUK": "en-GB", "en": "en", "es": "es", "fr": "fr",
+    "hr": "hr", "it": "it", "lv": "lv", "lt": "lt", "hu": "hu", "nl": "nl",
+    "no": "no", "pl": "pl", "pt": "pt-PT", "pt-BR": "pt-BR", "ro": "ro",
+    "sk": "sk", "sl": "sl", "fi": "fi", "sv": "sv", "fil": "fil", "vi": "vi",
+    "tr": "tr", "cs": "cs", "el": "el", "ru": "ru", "sr": "sr", "uk": "uk",
+    "bg": "bg", "hi": "hi", "th": "th", "zh-CN": "zh-CN", "zh-TW": "zh-TW",
+    "ja": "ja", "ko": "ko",
+}
+
 
 def coerce_language(value) -> str:
     """A mentett/kapott érték nyelvkóddá alakítása, ismeretlennél az
@@ -295,6 +310,14 @@ class LanguageMixin:
         A gépi locale a futás alatt nem változik, ezért elég egyszer
         kiszámítani."""
         return system_language_suffix()
+
+    @Property(str, constant=True)
+    def helpLanguageCode(self) -> str:
+        """A Picasa súgó-címének `hl` paramétere a FELÜLET nyelvéhez (#5185).
+
+        A `language` a futás alatt nem változik (#3555), ezért konstans.
+        Ismeretlen nyelvnél üres a `hl`, mint az eredetiben."""
+        return PICASA_HELP_LANGUAGE.get(self._language, "")
 
     @Property(list, notify=languageChanged)
     def availableLanguages(self):
