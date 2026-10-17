@@ -229,7 +229,11 @@ def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app
     assert var_feltetelre(
         qt_app, lambda: welcome.property("visible") is False, 3.0
     )
-    assert face_scan.unnamedWelcomeHasBeenShown() is True
+    # A `closed` jel a kilépő átmenet után jön; Windowson ez a `visible`
+    # hamisra váltása után is késhet, ezért a mentett jelzőre várunk.
+    assert var_feltetelre(
+        qt_app, lambda: face_scan.unnamedWelcomeHasBeenShown() is True, 3.0
+    )
 
     # Ismételt, valódi bal oldali kattintásra az üdvözlés már nem jön elő.
     window.setProperty("unnamedFacesOpen", False)
