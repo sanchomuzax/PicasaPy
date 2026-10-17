@@ -5042,7 +5042,7 @@ A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok
 
 Ebből: a szög [0, 2π) tartományban van (negatív esetén + W), a rekesz-index p = A · 9/π ∈ [0, 18), tehát **18 előjeles irányrekesz, rekeszenként 20°**, a 19. hely (p ≥ 17 felső szomszédja) a 0. rekeszbe fordul vissza (5. pont). A két hívott függvény a CRT matematikai belépőinek mintáját mutatja: `0x00c29cca` = `mov edx, 0x00d491c0; jmp` (a CRT táblás belépője, az atan2 jelöltje), `0x00c0b310` = `sub esp,0xc; fst qword [esp]; call …` (a `_CIsqrt` mintája). Ez a két azonosítás **feltételes** (bájtminta, a cél nincs végigkövetve); a három konstans **megerősített** (a bájtok közvetlen kiolvasása, és a G/6 utasításszintű olvasata a c-re ugyanezt adja).
 
-### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
+### 2.6 A MakeMoviePanel (a „Film készítése" felület) teljes beállítás-leltára
 
 *A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
 a szakasz a lefordított VALUES-t és a TÁROLÁSI kulcsokat adja — az olcsó
@@ -5450,7 +5450,60 @@ UTF-16-ra, és a **széles** API-t hívja; csak a 9x-ágon megy a nyers ANSI
 > széles változatot használta. A mi megoldásunk tehát nem kényszerű
 > kerülőút, hanem **ugyanaz a bevált minta**.
 
-### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) — MŰKÖDÉS
+#### 2.7 A Film-készítő elrendezése (#5262, 2026-10-17)
+
+**Következtetés:** az eredeti Film-készítő a főablak `panelroot` területébe ágyazott panel, nem külön párbeszédablak. Saját C++ erőforrásosztálya van (`MakeMoviePanel::ResCreate`), de a létrehozási út a `panelroot/makemoviepanel` gyökérelemet kapcsolja a közös felületgyökérhez. A panel tervvászna `800 × 534` egység. Ez a `respack.yt` szerkesztői koordinátája, nem igazolt futásidejű képpontméret. A `panelroot.tre` a panelt a `tabdiv` és a gyökér alsó széle közé horgonyozza; a panel tényleges megjelenési mérete a főablak méretét követi.
+
+**Bizonyítottsági fok: megerősített.** Az A út a `makemoviepanel.tre` és a `respack.yt` dekódolt rétegkoordinátái. A B út a `MakeMoviePanel` típusleíróját használó erőforrás-létrehozó kód, valamint a menüből a `panelroot/makemoviepanel` elemre váltó kód. A két út különböző forrásrétegből jut ugyanarra a főablak-panel következtetésre.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Főablak-panel a `panelroot` alatt. A `MakeMoviePanel::ResCreate` saját C++ erőforrásosztály, nem bizonyíték külön felső szintű ablakra. | A `src/picasapy/app/qml/PicasaPy/CreateDialogs.qml:362-372` `movieDialog` eleme külön `Dialog`, 700 egység széles, magassága legfeljebb 720, illetve a főablak magassága mínusz 24. `modal: false`. | A filmkészítő tartalma a főablak nézetébe kerüljön. A meglévő filmvezérlő és előnézeti logika maradjon használatban. |
+| Bal oldalon füles beállító hasáb, jobb oldalon előnézet, alul a filmcsík. A `.tre` kényszerei a főablakhoz igazítják a panelt. | A beállításlapok és az előnézet a párbeszédablak tartalmában vannak. A külön ablakkeret miatt a jelenlegi elrendezés szűkebb területre kerül. | A bal hasáb és a jobb oldali előnézet az eredeti elemfát kövesse. A filmcsík az előnézeti terület alján maradjon. A tervvászon koordinátái legyenek kiinduló arányok, ne rögzített képernyőméretek. |
+| A `cancel` elem súgója `Close Movie Maker panel`, és az Escape billentyű is aktiválja. A parancs-elosztó cancel ága a `panelroot/picasatab` könyvtárlapra vált (`0x0061df10`, `0x00620f77`). A klipgyűjtő nézetből a `Back to Movie Maker` gomb visz vissza a filmkészítőbe (`0x0056c2b0`). | A `movieCancelButton` bezárja a párbeszédablakot. | A `Close` és az Escape a könyvtárlapra lépjen vissza. A klipek könyvtárból való kiválasztása után maradjon elérhető a `Back to Movie Maker` visszatérés. |
+
+#### A tervvászon elemei
+
+| Eredeti elem | Hely és méret a tervvásznon | Forrás |
+|---|---|---|
+| `docbounds`, `basepanel` | `(0,0)`, `800 × 534` | bináris, `respack.yt` rétegfejlécek a `0x001eedc9` és `0x001eedda` fájleltoláson |
+| `edittabbase`, fülek | `(4,20)`, `276 × 389`; a fülsáv `(4,26)`, `276 × 25` | bináris, `0x001f0122` és `0x001f88bb` |
+| `tabpanel1`, `tabpanel2`, `tabpanel3` | `(5,44)`, `275 × 351`; `(6,57)`, `269 × 351`; `(5,52)`, `276 × 357` | bináris, rendre `0x001f56fc`, `0x001f24ed`, `0x001f0d1e` |
+| `previewpanel` | `(287,11)`, `507 × 361` | bináris, `0x001f0005` |
+| `moviebk` | `(291,6)`, `501 × 326` | bináris, `0x001f0027` |
+| `movieparent` | `(305,6)`, `489 × 326`; kezdetben rejtett belső előnézeti ablak | bináris, `0x001f0049`; szülője a `moviebk`, `makemoviepanel.tre:12-32` |
+| `filmcontainer` | `(330,444)`, `455 × 72` | bináris, `0x001eee2f` |
+| `cancel` | `(12,451)`, `130 × 28` | bináris, `0x001f0ceb`; `makemoviepanel.tre:542-545` |
+
+Az `edittabbase` és a `tabpanel` méretei az eredeti `800 × 534` tervvászon adatai. A `panelroot/makemoviepanel` függőlegesen a `tabdiv` változóhoz és a főablak aljához horgonyzott (`panelroot.tre:24-33`); a `basepanel` méretezve követi ezt (`makemoviepanel.tre:557-569`). A számok ezért nem garantálnak azonos fizikai képpontméretet más főablak-méretnél. A skálázás mértéke NINCS MEG, és nem becsültük meg.
+
+#### A két bizonyítási út
+
+**A út, erőforrás és geometria.** A `panelroot.tre:24-33` szerint a `panelroot/makemoviepanel` szülője a közös `root`, és a panel a főablak `tabdiv` sora alatt jelenik meg. A `makemoviepanel.tre:515`, `557-569` a jobb oldali előnézetet és a teljes panel alapját rendezi el. A fenti geometria a `respack.yt` megnevezett rétegeinek első négy előjeles `int16` koordinátájából származik. Összevetésként a kollázs ugyanezen tervvásznon a `collagepanel/base` alatt tartja a `rightcontainer` előnézetet; lásd az 1.10 szakaszt.
+
+**B út, létrehozó kód.** A `0x00579550` függvény a `panelroot/makemoviepanel` kulcsot a `MakeMoviePanel::RTTI_Type_Descriptor` (`0x00d3e7bc`) mellett adja át az erőforrás-gyárnak (`0x00c07db2`), majd meghívja a panel inicializálóját (`0x00622150`). A `0x0057cb60` menüút ugyanennek a `panelroot/makemoviepanel` elemnek a betöltését kéri; ezen az úton szerepel a `This feature is not supported for Linux` ág is. A külön `Back to Movie Maker` gombot építő `0x0056c2b0` a `panelroot/makemoviepanel` és a `panelroot/makemovietab` elemet ellenőrzi, így ez a klipgyűjtőből visszatérés útja, nem egy modalitást jelző ablakcím.
+
+#### Cáfoló kísérlet
+
+Az ellenhipotézis az volt, hogy a `movieparent` `window` típusú erőforrás miatt maga a Film-készítő is külön ablak lehet. A szülőfa ezt cáfolja: a `movieparent` a `moviebk` gyereke, és `m_hidden` jelölést kap; a teljes felület alapja ezzel szemben a `root` gyerekeként deklarált `basepanel`. A binárisban a `MakeMoviePanel` osztály gyárútja is a `panelroot/makemoviepanel` felületi elemhez vezet. A külön Win32 ablakosztály neve és az egyes `RT_DIALOG` sablonazonosítók MakeMoviePanelhez rendelése NINCS MEG. Megszerzésük útja a `0x00579550` erőforrás-létrehozó és a `0x006129c0` osztálygyár hívási láncának folytatása, majd az érintett PE-erőforrásazonosítók hozzárendelése. Ez nem változtat a két pozitív út egyező elrendezési bizonyítékán.
+
+#### Fejlesztői pontok
+
+Ha a filmkészítő elrendezését a kutatás alapján át kell alakítani:
+
+1. A `CreateDialogs.qml` külön `movieDialog` ablakát cseréld a főablak tartalmi területén megjelenő filmkészítő nézetre. A meglévő filmvezérlő és előnézeti műveletek maradjanak bekötve.
+2. A füles beállításokat a bal hasábba, a film előnézetét jobbra, a filmcsíkot az előnézet aljára rendezd. A fenti tervvászon-méretekhez igazodó arányokat használd, miközben a rendelkezésre álló főablak-mérethez rugalmasan igazodsz.
+3. A `Close` és Escape állítsa vissza a könyvtárlapot. A klipek kiválasztásához megnyitott könyvtárnézetből a `Back to Movie Maker` térjen vissza ugyanahhoz a filmprojekt-nézethez.
+4. A filmkészítés, a projektfájl megnyitása és az előnézet működése maradjon meg a nézetváltás után.
+
+**Kész, ha:**
+
+- a Film-készítő a főablak tartalmi területét használja, külön párbeszédablak nélkül;
+- a bal beállító hasáb, a jobb előnézet és az alsó filmcsík a fenti erőforrás-geometriának felel meg, és a panel nem lóg ki a főablakból;
+- a `Close` és az Escape a könyvtárlapra vezet vissza, a klipgyűjtőből pedig működik a `Back to Movie Maker` út;
+- a filmkészítés, projektfájl és előnézet meglévő funkciói tovább működnek.
+
+### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) - MŰKÖDÉS
 
 *A 2.2/2.6 a felső panel beállításait, ez a szakasz a film-előnézet ALUL
 lévő `video_control_bar2` vezérlősávját (a #1154 „nem feltárt" pontját).
