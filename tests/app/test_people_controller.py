@@ -260,10 +260,10 @@ class TestPeopleOfRows:
         a_row = next(i for i, photo in enumerate(photos) if photo.name == "a.jpg")
         b_row = next(i for i, photo in enumerate(photos) if photo.name == "b.jpg")
         detection = FaceDetection(
-            left=1, top=1, right=4, bottom=5, score=0.99,
+            left=6.5, top=5, right=7.5, bottom=5.8, score=0.99,
             landmarks=FaceLandmarks(
-                right_eye=(2, 2), left_eye=(3, 2), nose=(2.5, 3),
-                mouth_right=(2, 4), mouth_left=(3, 4),
+                right_eye=(6.7, 5.2), left_eye=(7.1, 5.2), nose=(6.9, 5.4),
+                mouth_right=(6.7, 5.6), mouth_left=(7.1, 5.6),
             ),
         )
         with open_index(host._db_path) as conn:
@@ -275,8 +275,55 @@ class TestPeopleOfRows:
 
         assert len(found) == 1
         assert found[0]["photo_id"] == photos[a_row].id
-        assert found[0]["rect"] == [0.125, 1 / 6, 0.5, 5 / 6]
+        assert found[0]["rect"] == pytest.approx(
+            [0.8125, 5 / 6, 0.9375, 5.8 / 6]
+        )
         assert found[0]["thumbUrl"].startswith(
             f"image://thumbs/{photos[a_row].id}?"
         )
         assert "&fz=" in found[0]["thumbUrl"]
+
+    def test_named_ini_region_hides_overlapping_unnamed_detection(self, host_rows):
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+        from picasapy.index import open_index, replace_faces
+
+        host, photos = host_rows
+        a_row = next(i for i, photo in enumerate(photos) if photo.name == "a.jpg")
+        photo = photos[a_row]
+
+        def detection(left, top, right, bottom):
+            return FaceDetection(
+                left=left,
+                top=top,
+                right=right,
+                bottom=bottom,
+                score=0.99,
+                landmarks=FaceLandmarks(
+                    right_eye=(left + 1, top + 1),
+                    left_eye=(left + 2, top + 1),
+                    nose=(left + 1.5, top + 2),
+                    mouth_right=(left + 1, top + 3),
+                    mouth_left=(left + 2, top + 3),
+                ),
+            )
+
+        found_in_named_region = detection(
+            photo.width * 0.30,
+            photo.height * 0.10,
+            photo.width * 0.40,
+            photo.height * 0.20,
+        )
+        unrelated = detection(
+            photo.width * 0.85,
+            photo.height * 0.80,
+            photo.width * 0.95,
+            photo.height * 0.95,
+        )
+        with open_index(host._db_path) as conn:
+            replace_faces(conn, photo.id, [found_in_named_region, unrelated])
+            conn.commit()
+
+        found = host.unnamedFacesOfRows([a_row])
+
+        assert len(found) == 1
+        assert found[0]["rect"] == pytest.approx([0.85, 0.8, 0.95, 0.95])

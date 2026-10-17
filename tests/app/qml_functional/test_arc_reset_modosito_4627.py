@@ -94,10 +94,12 @@ def test_reset_faces_modifier_branch_asks_before_global_change_and_cancel_is_saf
     message = _objektum(window, "resetFacesConfirmMessage")
     assert message is not None
     assert message.property("text") == translation, source
+    faces_before = {}
     for path in (first, other):
         document = load_document(path.parent / ".picasa.ini")
         section = document.section(path.name)
         assert section is not None and parse_faces(section.get("faces") or "")
+        faces_before[path] = section.get("faces")
 
     _kattints(qt_app, _objektum(window, "resetFacesCancelButton"))
     assert _varj(
@@ -109,6 +111,7 @@ def test_reset_faces_modifier_branch_asks_before_global_change_and_cancel_is_saf
         document = load_document(path.parent / ".picasa.ini")
         section = document.section(path.name)
         assert section is not None and parse_faces(section.get("faces") or "")
+        assert section.get("faces") == faces_before[path]
 
     _menu_bar, _menu, _fejlec, item = _nyisd_meg_felso_menut(
         qt_app, window, "picture", "menuPictureResetFaces"
@@ -139,6 +142,6 @@ def test_reset_faces_modifier_branch_asks_before_global_change_and_cancel_is_saf
             assert section is None or section.get("faces") is None
             assert section is None or section.get("facedata") is None
         else:
-            assert section is not None
-            faces = parse_faces(section.get("faces") or "")
-            assert faces and all(face.contact_id == "0" for face in faces)
+            assert section is None or section.get("faces") is None
+            contacts = document.section("Contacts2")
+            assert contacts is None
