@@ -28,6 +28,11 @@ _REPO = Path(__file__).resolve().parents[3]
 _KEPMENTES = _REPO / "docs" / "assets" / "paritas-tiszta-profil"
 _QML_REFS = []
 
+
+def _platform() -> str:
+    """A teszt helyettesíthető platformfogantyúja (#1217)."""
+    return sys.platform
+
 # Kapcsoló: a dokumentációs képek (docs/assets/paritas-tiszta-profil/) csak
 # akkor íródnak felül, ha PICASAPY_DOKUKEPEK=1 be van állítva. Alapból a
 # képernyőképek a tmp_path alá kerülnek, így a futás nem piszkítja a munkafát.
@@ -495,14 +500,33 @@ def _nezo_es_panelek_allapota(window) -> str:
     ])
 
 
-def _vorosszem_diagnosztika(window, edit, terulet, gomb) -> str:
+def _vorosszem_diagnosztika(
+    window, edit, terulet, gomb, kattintasi_adatok=None,
+) -> str:
     """A húzás körüli állapot a bukás okának kiderítéséhez (#4929). Bármelyik elem lehet None."""
     grab = window.mouseGrabberItem()
     talalat = None
     if gomb is not None:
         kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
         talalat = _legfelso_talalat(window.contentItem(), kozep)
+    kattintas_diag = ""
+    if kattintasi_adatok is not None:
+        kapo = kattintasi_adatok.get("hit")
+        kapo_nev = kapo.objectName() if kapo is not None else "nincs"
+        kapo_tipus = kapo.metaObject().className() if kapo is not None else "nincs"
+        kattintas_diag = (
+            f"editToolRedeye kattintási pont={kattintasi_adatok.get('pont', 'nincs')}, "
+            f"cél={kapo_nev or '<névtelen>'}/{kapo_tipus}, "
+            f"ablakAktív kezdetben={kattintasi_adatok.get('ablakAktív kezdetben', 'nincs')}, "
+            f"ablakAktív kattintás előtt={kattintasi_adatok.get('ablakAktív kattintás előtt', 'nincs')}, "
+            f"ablakAktív kattintás után={kattintasi_adatok.get('ablakAktív kattintás után', 'nincs')}, "
+            f"ablakAktív 3 eseményciklus után={kattintasi_adatok.get('ablakAktív 3 ciklus után', 'nincs')}, "
+            f"redeyeActive kattintás előtt={kattintasi_adatok.get('redeyeActive kattintás előtt', 'nincs')}, "
+            f"redeyeActive kattintás után={kattintasi_adatok.get('redeyeActive kattintás után', 'nincs')}, "
+            f"redeyeActive 3 eseményciklus után={kattintasi_adatok.get('redeyeActive 3 ciklus után', 'nincs')}, "
+        )
     return (
+        f"{kattintas_diag}"
         f"{_elem_helyzet(window, 'redeyeDragArea', terulet)}, "
         f"redeyeDragArea szülőlánc={_szulolanc(window, terulet)}, "
         f"dragging={terulet.property('dragging') if terulet is not None else 'nincs'}, "
@@ -558,21 +582,73 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     # felül, és a Vörösszem eszköz nem kapcsolt be (redeyeActive hamis). Előbb
     # megvárjuk, hogy ne legyen nyitott felugró elem, utána a mód bekapcsolását.
     _var(qt_app, lambda: not _nyitott_felugrok(window))
-    _kattint(window, qt_app, "editToolRedeye")
     szerkeszto = _keres(window, "viewerEditorPanel")
+    eszkoz = _keres(window, "editToolRedeye")
+    if eszkoz is None:
+        diag.append(_vorosszem_diagnosztika(window, edit, None, None))
+    assert eszkoz is not None, "a felületi elem nem található: editToolRedeye"
+    eszkoz.ensurePolished()
+    assert eszkoz.isEnabled() and eszkoz.width() > 0 and eszkoz.height() > 0, (
+        "a Vörösszem eszköz nem kattintható"
+    )
+    kattintasi_adatok = {
+        "ablakAktív kezdetben": window.isActive(),
+        "redeyeActive kattintás előtt": (
+            bool(szerkeszto.property("redeyeActive"))
+            if szerkeszto is not None else "szerkesztőpanel nincs"
+        ),
+    }
+    window.requestActivate()
+    aktiv = _var(qt_app, window.isActive, 10.0)
+    kattintasi_adatok["ablakAktív kattintás előtt"] = window.isActive()
+    kozep = eszkoz.mapToScene(QPointF(eszkoz.width() / 2, eszkoz.height() / 2))
+    pont = QPoint(round(kozep.x()), round(kozep.y()))
+    kattintasi_adatok["pont"] = f"({pont.x()},{pont.y()})"
+    kattintasi_adatok["hit"] = _legfelso_talalat(
+        window.contentItem(), QPointF(pont.x(), pont.y())
+    )
+    if not aktiv:
+        diag.append(_vorosszem_diagnosztika(
+            window, edit, None, None, kattintasi_adatok
+        ))
+    assert aktiv, "a főablak nem aktiválódott a vörösszem-kattintás előtt"
+    QTest.mouseClick(
+        eszkoz.window(), Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier, pont,
+    )
+    qt_app.processEvents()
+    kattintasi_adatok["ablakAktív kattintás után"] = window.isActive()
+    kattintasi_adatok["redeyeActive kattintás után"] = (
+        bool(szerkeszto.property("redeyeActive"))
+        if szerkeszto is not None else "szerkesztőpanel nincs"
+    )
+    for _ in range(3):
+        qt_app.processEvents()
+    kattintasi_adatok["ablakAktív 3 ciklus után"] = window.isActive()
+    kattintasi_adatok["redeyeActive 3 ciklus után"] = (
+        bool(szerkeszto.property("redeyeActive"))
+        if szerkeszto is not None else "szerkesztőpanel nincs"
+    )
     if not _var(qt_app, lambda: szerkeszto is not None
-                and bool(szerkeszto.property("redeyeActive"))):
+                and bool(szerkeszto.property("redeyeActive")), 10.0):
         diag.append("redeyeActive hamis a kattintás után; nyitott felugrók="
                     + repr(_nyitott_felugrok(window)))
+        diag.append(_vorosszem_diagnosztika(
+            window, edit, None, None, kattintasi_adatok
+        ))
     terulet = _keres(window, "redeyeDragArea")
     gomb = _keres(window, "redeyeApplyButton")
     if terulet is None or gomb is None:
-        diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+        diag.append(_vorosszem_diagnosztika(
+            window, edit, terulet, gomb, kattintasi_adatok
+        ))
     assert terulet is not None, "a felületi elem nem található: redeyeDragArea"
     assert gomb is not None, "a felületi elem nem található: redeyeApplyButton"
     lathato = _var(qt_app, lambda: _latszik_es_meretes(terulet) and _latszik_es_meretes(gomb))
     if not lathato:
-        diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+        diag.append(_vorosszem_diagnosztika(
+            window, edit, terulet, gomb, kattintasi_adatok
+        ))
     assert lathato, (
         "a vörösszem húzási területe vagy az Alkalmaz gomb nem látszik a húzás előtt"
     )
@@ -587,7 +663,9 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
                        Qt.KeyboardModifier.NoModifier,
                        QPoint(round(p1.x()), round(p1.y())))
     qt_app.processEvents()
-    diag.append(_vorosszem_diagnosztika(window, edit, terulet, gomb))
+    diag.append(_vorosszem_diagnosztika(
+        window, edit, terulet, gomb, kattintasi_adatok
+    ))
     assert terulet.property("selW") > 0 and terulet.property("selH") > 0, (
         "a vörösszem-húzás nem adott kijelölést (selW/selH nulla)"
     )
@@ -604,24 +682,16 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
 
 
 def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
-    """Windowson a bukás diagnosztikával kihagyásra fut (#4929); Linuxon szigorú marad.
-
-    Visszaad egy skip-indokot, ha a lépés kihagyásra futott, különben None.
-    A hálózati próbálkozás mindig valódi bukás.
-    """
+    """Windows-hibánál diagnosztikával kihagyható; más platformon szigorú (#4929)."""
     diag = []
     try:
         _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag)
     except AssertionError as hiba:
-        if tiszta_app["attempts"]:
+        if _platform() != "win32" or tiszta_app["attempts"]:
             raise
         # A pytest a rewrite miatt az üzenet után az "assert ..." sort is hozzáfűzi; csak az első sor kell.
         uzenet = str(hiba).splitlines()[0]
-        kiegeszitett = f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
-        if sys.platform != "win32":
-            # Linuxon szigorú marad, de a diagnosztika a CI-naplóba kerüljön (#4929).
-            raise AssertionError(kiegeszitett) from hiba
-        return kiegeszitett
+        return f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
     return None
 
 
@@ -632,8 +702,9 @@ def _ellenorizd_kepernyokepek_meretet(mappa: Path, vart: int = 3):
     assert osszesen < 1_000_000, f"a képernyőképek együtt {osszesen} bájtosak"
 
 
+@pytest.mark.parametrize("ablakmagassag_eltolas", [-5, 0, 5])
 def test_tiszta_profil_funkciok_valodi_kattintassal(
-    tiszta_app, qt_app, tmp_path_factory,
+    tiszta_app, qt_app, tmp_path_factory, ablakmagassag_eltolas,
 ):
     """A teljes felhasználói útvonal egy valós, izolált QML-appban fut.
 
@@ -642,6 +713,12 @@ def test_tiszta_profil_funkciok_valodi_kattintassal(
     régi PNG-it a teszt előbb törli, és felülírja az újakkal.
     """
     mappa = tiszta_app["kepek"]
+    window = tiszta_app["window"]
+    ablakmagassag = window.height() + ablakmagassag_eltolas
+    window.setHeight(ablakmagassag)
+    assert _var(qt_app, lambda: window.height() == ablakmagassag), (
+        f"az ablak magassága nem állt be: {window.height()} != {ablakmagassag}"
+    )
     for regi in mappa.glob("*.png"):
         regi.unlink()
     _lep_mappa_betoltes_es_indexkep_racs(tiszta_app, qt_app)
@@ -655,3 +732,21 @@ def test_tiszta_profil_funkciok_valodi_kattintassal(
     _ellenorizd_kepernyokepek_meretet(mappa, 2 if skip_indok else 3)
     if skip_indok:
         pytest.skip(skip_indok)
+
+
+def test_vorosszem_windowsos_kihagyasa_megtartja_a_diagnosztikat(monkeypatch):
+    """A Windowsos tartalék kihagyás indoka a kattintási diagnosztikát is viszi (#4929)."""
+    monkeypatch.setitem(globals(), "_platform", lambda: "win32")
+
+    def bukik(_app, _qt_app, diag):
+        diag.append("hit-test=QQuickOverlay; active=False; redeyeActive=False→False")
+        raise AssertionError("redeyeActive hamis a kattintás után")
+
+    monkeypatch.setitem(
+        globals(), "_lep_vorosszem_javitas_valodi_huzassal", bukik
+    )
+    indok = _lep_vorosszem_windowson_kihagyhato({"attempts": []}, None)
+
+    assert indok is not None
+    assert "#4929 diag: redeyeActive hamis a kattintás után" in indok
+    assert "hit-test=QQuickOverlay; active=False; redeyeActive=False→False" in indok
