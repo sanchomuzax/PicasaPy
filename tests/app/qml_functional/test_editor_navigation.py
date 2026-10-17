@@ -117,7 +117,9 @@ class TestViewerFolderBoundedNavigation:
         controller.showStarred()
         qt_app.processEvents()
         yield window, controller, engine
-        _teardown_qml_app(engine, qt_app, keep_modul=request.module)
+        _teardown_qml_app(
+            engine, qt_app, keep_modul=request.module, root_window=window
+        )
 
     def _open_viewer(self, window, qt_app, index):
         window.setProperty("viewerOpen", True)
