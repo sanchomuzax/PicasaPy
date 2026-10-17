@@ -5485,7 +5485,7 @@ Az `edittabbase` és a `tabpanel` méretei az eredeti `800 × 534` tervvászon a
 
 #### Cáfoló kísérlet
 
-Az ellenhipotézis az volt, hogy a `movieparent` `window` típusú erőforrás miatt maga a Film-készítő is külön ablak lehet. A szülőfa ezt cáfolja: a `movieparent` a `moviebk` gyereke, és `m_hidden` jelölést kap; a teljes felület alapja ezzel szemben a `root` gyerekeként deklarált `basepanel`. A binárisban a `MakeMoviePanel` osztály gyárútja is a `panelroot/makemoviepanel` felületi elemhez vezet. A külön Win32 ablakosztály neve és az egyes `RT_DIALOG` sablonazonosítók MakeMoviePanelhez rendelése NINCS MEG. Megszerzésük útja a `0x00579550` erőforrás-létrehozó és a `0x006129c0` osztálygyár hívási láncának folytatása, majd az érintett PE-erőforrásazonosítók hozzárendelése. Ez nem változtat a két pozitív út egyező elrendezési bizonyítékán.
+Az ellenhipotézis az volt, hogy a `movieparent` `window` típusú erőforrás miatt maga a Film-készítő is külön ablak lehet. A szülőfa ezt cáfolja: a `movieparent` a `moviebk` gyereke, és `m_hidden` jelölést kap; a teljes felület alapja ezzel szemben a `root` gyerekeként deklarált `basepanel`. A binárisban a `MakeMoviePanel` osztály gyárútja is a `panelroot/makemoviepanel` felületi elemhez vezet. A külön Win32 ablakosztály neve és az egyes `RT_DIALOG` sablonazonosítók MakeMoviePanelhez rendelése NINCS MEG. Megszerzésük útja a `0x00579550` erőforrás-létrehozó és a `0x006129c0` osztálygyár hívási láncának folytatása, majd az érintett PE-erőforrások azonosítóinak hozzárendelése. Ez nem változtat a két pozitív út egyező elrendezési bizonyítékán.
 
 #### Fejlesztői pontok
 
