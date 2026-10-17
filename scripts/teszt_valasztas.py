@@ -86,6 +86,7 @@ WINDOWS_SENSITIVE_TESTS = frozenset({
     "tests/app/qml_functional/test_gombmagassag_platformfuggetlen_2597.py",
     "tests/app/qml_functional/test_maradek_arc_video_4229.py",
     "tests/app/qml_functional/test_orokolt_ful_betumetrika_3263.py",
+    "tests/app/qml_functional/test_people_manager_5182.py",
     "tests/app/qml_functional/test_tiszta_profil_4317.py",
     "tests/app/qml_functional/test_ui_tulcsordulas_656.py",
     "tests/app/qml_functional/test_video_panel_4566.py",

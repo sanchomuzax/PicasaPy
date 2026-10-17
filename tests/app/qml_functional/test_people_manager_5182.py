@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QSettings, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
@@ -118,7 +118,7 @@ def _seed_named_and_unnamed_faces(controller, face_scan):
 
 @pytest.mark.parametrize("height_offset", (-5, 0, 5))
 def test_unnamed_tile_choose_assigns_existing_person_without_duplicate_contact(
-    qml_app, qt_app, height_offset
+    qml_app, qt_app, height_offset, tmp_path
 ):
     window, controller, engine = qml_app
     initial_height = int(window.height())
@@ -127,7 +127,14 @@ def test_unnamed_tile_choose_assigns_existing_person_without_duplicate_contact(
         qt_app, lambda: int(window.height()) == initial_height + height_offset
     )
     face_scan = engine.rootContext().contextProperty("faceScanController")
+    # A Windows-CI-n a tesztkörnyezet alapértelmezett (natív, név nélküli)
+    # QSettings-e nem írható (fileName='', AccessError), így az üdvözlőablak
+    # jelzője nem mentődik, és az ablak eltakarja a csempe mezőjét (mint a
+    # test_unnamed_faces_view_5183.py-ban); itt ideiglenes, fájlalapú tároló.
+    if face_scan._settings.status() != QSettings.Status.NoError or not face_scan._settings.fileName():
+        face_scan._settings = QSettings(str(tmp_path / "facescan.ini"), QSettings.Format.IniFormat)
     face_scan.markUnnamedWelcomeShown()
+    assert face_scan.unnamedWelcomeHasBeenShown() is True
     photo_path, target_path, target_face_id = _seed_named_and_unnamed_faces(
         controller, face_scan
     )
