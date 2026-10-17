@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.123] – 2026-10-17
+
+- Windowson a kívülről törölt mappa felismerése a közös platform-ellenőrzésen át működik (#5177).
+- A People ablak keresése törli a kiszűrt személy kijelölését, így a kiemelés és a részletek nem térnek el (#5182).
+
 ## [0.9.122] – 2026-10-17
 
 - Windowson a kívülről törölt mappa sora és képei eltűnnek a bal sávból (#5177).
