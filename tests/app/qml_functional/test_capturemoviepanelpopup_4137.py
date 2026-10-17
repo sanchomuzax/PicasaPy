@@ -15,6 +15,8 @@ from PySide6.QtCore import QObject, QPoint, QPointF, QTranslator, QUrl, Qt
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtTest import QTest
 
+from support.varakozas import var_feltetelre
+
 
 def _obj(window, name: str):
     found = window.findChild(QObject, name)
@@ -22,8 +24,32 @@ def _obj(window, name: str):
     return found
 
 
+def _stabil_helyen(qt_app, target) -> None:
+    """Megvárja, hogy a vezérlő látsszon, és a jelenetbeli helye két ciklusban ne változzon.
+
+    A beállítási oldal megnyitásakor a gombsor újrarendeződik (a Mégse és az
+    Alkalmaz egymás mellé kerül); a CI-n a kattintás korábban a még régi
+    helyre ment, és az Alkalmazt találta el (#5202).
+    """
+    elozo = None
+
+    def kesz():
+        nonlocal elozo
+        qt_app.processEvents()
+        if not target.isVisible():
+            return False
+        hely = target.mapToScene(QPointF(0, 0))
+        most = (round(hely.x()), round(hely.y()), target.property("width"))
+        stabil = most == elozo
+        elozo = most
+        return stabil
+
+    assert var_feltetelre(qt_app, kesz, 10.0), f"{target.objectName()} nem állt meg a helyén"
+
+
 def _kattints(qt_app, window, target) -> None:
     """A vezérlő közepére küldött valódi egéresemény."""
+    _stabil_helyen(qt_app, target)
     point = target.mapToScene(
         QPointF(target.property("width") / 2, target.property("height") / 2)
     )
@@ -163,7 +189,11 @@ class TestCaptureMoviePanelPopup:
         assert size_combo.property("count") >= 2
         size_combo.setProperty("currentIndex", (size_combo.property("currentIndex") + 1) % size_combo.property("count"))
         _kattints(qt_app, window, _obj(window, "capturemoviepanelpopup/settings_cancel"))
-        assert popup.property("selectedSize") == initial_size, "a Mégse elmentette az ideiglenes méretet"
+        assert popup.property("selectedSize") == initial_size, (
+            "a Mégse elmentette az ideiglenes méretet: "
+            f"selectedSize={popup.property('selectedSize')!r}, pendingSize={popup.property('pendingSize')!r}, "
+            f"settingsPage={popup.property('settingsPage')!r}"
+        )
 
         _kattints(qt_app, window, _obj(window, "capturemoviepanelpopup/camchange"))
         size_combo = _obj(window, "capturemoviepanelpopup/outputsize")
