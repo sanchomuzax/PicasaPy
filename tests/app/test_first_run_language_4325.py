@@ -128,8 +128,7 @@ def test_accepted_system_choice_tracks_the_system_language_on_later_startup(
 
 
 def test_linux_also_offers_the_first_run_language_prompt(settings, monkeypatch):
-    # PicasaPy-eltérés: az eredeti csak Windowson futott, a PicasaPy Linuxon is felajánl.
-    monkeypatch.setattr("sys.platform", "linux")
+    # PicasaPy-eltérés: az eredeti csak Windowson futott, a PicasaPy platformtól függetlenül felajánl.
     monkeypatch.setattr(language_controller, "resolve_system_language", lambda: "de")
 
     assert language_controller.resolve_first_run_language(settings, lambda _l: True) == "de"
