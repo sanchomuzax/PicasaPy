@@ -47,8 +47,19 @@ frissül, tehát azt látod, ami a lemezen van.
   kerülnek.
 - A képeket **húzással** is átteheted egy másik mappára a bal hasábon.
 
-A program megerősítést kér, és kiírja, hova viszi őket. Haladásjelző
-mutatja, hányadik fájlnál tart.
+A menüparancsnál a program megerősítést kér, és kiírja, hova viszi őket.
+Haladásjelző mutatja, hányadik fájlnál tart.
+
+### Húzással
+
+Jelöld ki a képeket a rácsban, fogd meg őket az egérrel, és engedd el a
+bal hasáb egyik **mappasorán**. A célsor húzás közben kiemelődik. A
+képek kérdés nélkül átkerülnek abba a mappába; ha ott már van azonos
+nevű fájl, a bevitt kép új nevet kap, semmi nem íródik felül. Ez a lapos
+mappalistán és a **fanézetben** is ugyanígy működik.
+
+Egy egész **mappát** is áthúzhatsz a bal hasábon egy másik mappára: a
+mappa a tartalmával együtt annak a mappának az almappája lesz.
 
 Ha a célmappában már van azonos nevű fájl, választhatsz: **Másodpéldányok
 átnevezése** (a bevitt fájlok új nevet kapnak) vagy **Másodpéldányok

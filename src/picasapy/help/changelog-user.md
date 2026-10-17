@@ -4,6 +4,99 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-17
+
+**Emberek és arcok**
+
+- A **Név nélküliek** album az eredeti Picasa szerint épül fel: első
+  megnyitáskor üdvözlő ablak fogad, minden arc alatt saját névmező van,
+  amely gépelés közben arcképpel együtt ajánlja a meglévő személyeket, a
+  fejléc és a bal hasáb pedig az arcok számát mutatja. A bal hasáb Emberek
+  csoportjában a Névtelenek sor áll legelöl. Lásd
+  [Emberek és arcok](features/emberek.md).
+- Névadáskor - a Névtelenek albumban és az Emberek panelen is - mindig a
+  személyek kezelése ablak nyílik meg; ha már van ilyen nevű személy, ő
+  lesz kijelölve, és a **Kiválasztás** gomb adja hozzá az arcot.
+- Egy névtelen arcképet az Emberek panelen egy megnevezett ember sorára
+  húzva is elnevezhetsz.
+- Működik a **Beállítás az Emberek album indexképeként**: a személy neve
+  mellett álló arcképet te választhatod ki.
+- Az Emberek album helyi menüjében új tétel a **Kiválasztás
+  megfordítása** és az **Indexképek frissítése**, és a kijelölő tételek
+  mellett a gyorsbillentyű is látszik.
+
+**Könyvtár, mappák, albumok**
+
+- A **Mappa felosztása itt...** működik: a kijelölt képtől a mappa végéig
+  minden kép új testvérmappába költözik. Lásd [A könyvtár](features/konyvtar.md).
+- Az **Album rendezésének alapja...** működik: az album képei egyszer
+  sorba rakhatók dátum, név vagy méret szerint, és ez a sorrend megmarad.
+- A mappa helyi menüjének **Mappa rendezésének alapja** almenüje most
+  egyszer rendezi a mappa képeit, és a sorrendet kézi sorrendként
+  megjegyzi; a név szerinti rendezés a számokat számként kezeli.
+- A **Mappa ▸ Rendezés ▸ Legutóbbi változtatások** tétel újra
+  kattintható.
+- **Húzás egérrel:** a kijelölt képek a bal hasáb mappájára húzva
+  átkerülnek oda (a fanézetben is), albumra húzva az albumba kerülnek, a
+  tálcára húzva a tálcán maradnak. Mappát egy másik mappára húzva
+  áthelyezheted, az album képeit húzással átrendezheted. A saját helyükre
+  visszaejtett képek sorrendje nem változik. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- A fanézetben a mappa melletti nyíl újra kinyitja és becsukja az ágat.
+- **Ctrl+Alt** nyomva tartásakor a kijelölt kép nagy előnézete jelenik
+  meg egy külön ablakban (elég széles képrácsnál).
+- A **Nézet ▸ Keresési opciók** működik: ugyanazt a panelt nyitja és
+  csukja, mint a keresőmező melletti gomb. Lásd [Keresés](features/kereses.md).
+- A **Tulajdonságok** panel új sorai: **Fájl dátuma**, **CCD
+  szélessége**, **Rekesz**, **JPEG minőség** és **Személycímkék**.
+- A **Dátum és idő beállítása** a fájl lemezen látható időbélyegeit már
+  nem módosítja. Videóknál és más, dátumírásra alkalmatlan fájloknál az
+  új dátumot a program a saját katalógusában jegyzi meg, és újraindítás
+  után is ezt mutatja.
+- A Csillagozott képek albumából törölt kép csak a csillagát veszíti el,
+  a fájl a lemezen marad.
+
+**Nézegetés**
+
+- A nézőben a **Ctrl+F9** folyamatosan léptet a mappa végéig. Lásd
+  [Nézegetés](features/nezegetes.md).
+- Ha az egykattintásos kilépés ki van kapcsolva, az **Enter** az
+  állóképről visszavisz a könyvtárba.
+- A fotó helyi menüjében és a nézőben az **Összes szerkesztés
+  visszavonása** újra működik.
+
+**Szerkesztés és film**
+
+- A **Retusálás** a folt környezetéhez igazítja a világosságot és a
+  színt, így a javított hely nem üt el. Lásd
+  [Szerkesztés](features/szerkeszto.md).
+- Az **Egyéni méretarány hozzáadása** ablakban a tört érték
+  tizedesvesszővel is beírható.
+- A filmben a **Jó napom van**, a **Gördülő stáblista** és a
+  **Képfelirat - Írógép** stílusú szöveges dia mozog. Lásd
+  [Mozgófilm](features/mozgofilm.md).
+- Több effekt (például a **Filmszemcse** és a **Szegély**) kimenete még
+  pontosabban követi az eredeti Picasát.
+
+**Importálás**
+
+- Az **Import a Picasából** a mappák és albumok kézi képsorrendjét, a
+  videók módosított dátumát és helyét is átveszi. Lásd
+  [Importálás](features/importalas.md).
+
+**Beállítások és felület**
+
+- A **Beállítások ▸ Hálózat** fülön működik a naplózási szint. Lásd
+  [Beállítások](features/beallitasok.md).
+- Mind a 41 nyelven teljes a felület, és a párbeszédek szabványos gombjai
+  is a választott nyelven jelennek meg.
+- A **Gombok konfigurálása** ablakban újra látszik és kattintható a
+  négy gomb.
+- A Súgó témalistájában a címek újra látszanak, a témára kattintva
+  átvált a tartalom, és mindig a tetejéről indul.
+- Indításkor a hálózati mappák ellenőrzése közben is használható a
+  főablak, és látszik, melyik lépésnél tart az indulás.
+
 ## 2026-10-13
 
 **Rejtett mappák**

@@ -83,7 +83,9 @@ A mappára jobbgombbal kattintva:
 
 - **Az összes kép kijelölése**, **Kiválasztás megfordítása**,
   **Kijelölés törlése**
-- **Mappa rendezése** — dátum, név, méret, fordított sorrend
+- **Mappa rendezésének alapja** - dátum, név, méret, szín, kézi sorrend
+  vagy fordított sorrend; egyszer rendezi a mappa képeit, lásd
+  [A könyvtár](konyvtar.md)
 - **Indexképek frissítése** — újraolvassa a mappát
 - **Mappaleírás szerkesztése…** — a **Mappa tulajdonságai** ablak: név (itt
   át is nevezheted a mappát), dátum, zene a mappa diavetítéséhez és

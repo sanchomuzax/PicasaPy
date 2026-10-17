@@ -80,6 +80,7 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+F8 | A hasonlóság-minta törlése |
 | F5 | A megnyitott mappa frissítése: beolvassa a lemezen történt változásokat, és frissíti a nézetet és a keresés eredményét |
 | Alt+Enter | Tulajdonságok panel |
+| Ctrl+Alt (nyomva tartva) | A kijelölt kép nagy előnézete külön ablakban - lásd [A könyvtár](konyvtar.md) |
 
 > A **Ctrl+3** ugyanazt csinálja, mint a **Nézet ▸ Szerkesztési nézet**
 > és a **Kép ▸ Megjelenítés és szerkesztés** menüpont: megnyitja a
@@ -139,6 +140,8 @@ felszabadítja az arányt.
 | Ctrl+9 | A bal oldali szerkesztőpanel elrejtése és előhozása |
 | F11 | Teljes képernyő be- és kikapcsolása (a diavetítés közben nem hat) |
 | Esc | Vissza a könyvtárhoz |
+| Enter | Vissza a könyvtárhoz, ha egyetlen állóképet nézel, és nincs nyitva szerkesztőeszköz; bekapcsolt egykattintásos kilépésnél, videón vagy két kép mellett a következő képre lép |
+| Ctrl+F9 | Gyors, folyamatos léptetés a mappa végéig; bármelyik kézi lapozás vagy a néző bezárása leállítja |
 
 ## Diavetítés közben
 

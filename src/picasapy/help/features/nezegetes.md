@@ -8,6 +8,11 @@ Megjelenítés és szerkesztés** is megnyitja. Kilépni a **Vissza a
 könyvtárhoz** gombbal vagy az Esc billentyűvel tudsz. A gomb fölé állva
 a súgója is elmondja, hova visz: *Vissza a rendezett indexképekhez*.
 
+Az **Enter** is visszavisz a könyvtárba, ha egyetlen állóképet nézel, és
+épp nincs nyitva szerkesztőeszköz. Ha az alábbi egykattintásos kilépés be
+van kapcsolva, vagy videót, illetve két képet nézel egymás mellett, az
+Enter ehelyett a következő képre lép.
+
 Ha a **Beállítások ▸ Általános** lapon bekapcsolod a **Szerkesztési
 nézetből való kilépés egy kattintással** jelölőt, az állóképen egyetlen
 kattintás is visszavisz a könyvtárba. A program megvárja a dupla kattintás
@@ -21,7 +26,10 @@ A néző alján és szélein a következőket találod:
 
 - **Előző kép** / **Következő kép** léptetés. Ha a gombot **nyomva
   tartod**, a néző folyamatosan lép tovább, felengedéskor megáll; a mappa
-  szélén a léptetés magától leáll.
+  szélén a léptetés magától leáll. Billentyűvel a **Ctrl+F9** indít ilyen
+  folyamatos léptetést: a néző képről képre halad, amint az előző betöltődött,
+  egészen a mappa végéig. Bármelyik kézi lapozás vagy a néző bezárása
+  megállítja.
 - **Filmszalag** a léptetőgombok között (lásd lentebb).
 - **Diavetítés indítása**.
 - **Arcok megjelenítése** (`F` billentyű) és **Arcok szerkesztése**

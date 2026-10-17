@@ -24,7 +24,9 @@ A csillag a gyors megjelölésre való. Csillagot adni és elvenni így tudsz:
 - diavetítés közben a vezérlősáv csillag-gombjával.
 
 A csillagozott képeket a bal hasáb **Csillagozott képek** albuma
-gyűjti össze, és az eszköztár csillag-szűrője is kiemeli őket.
+gyűjti össze, és az eszköztár csillag-szűrője is kiemeli őket. Ha ebben
+az albumban egy képet törölsz, a program csak a **csillagot veszi le**
+róla - maga a fájl a lemezen marad, és az album nézetéből tűnik el.
 A **Szerkesztés ▸ Csillagozottak kijelölése** egy lépésben kijelöli az
 összeset a jelenlegi nézetben.
 

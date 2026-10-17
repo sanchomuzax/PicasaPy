@@ -19,12 +19,6 @@ fölöslegesen.
 
 - Időrend (Ctrl+5) — a nézet még nem készült el, ezért a menüpont és a
   billentyű is inaktív
-- Keresési opciók
-
-**Mappa**
-
-- A **Mappa ▸ Mappa rendezése** almenüben a **Legutóbbi változtatások**
-  szerinti rendezés (a bal hasáb helyi menüjéből viszont **működik**)
 
 **Eszközök**
 
@@ -40,22 +34,18 @@ az utóbbi a működő gyorsbillentyűk listáját, lásd
 
 - Társítás a néző helyi menüjében — a könyvtárban, a kép helyi menüjében
   viszont **működik**, lásd [Fájlműveletek](fajlmuveletek.md)
-- Mappa felosztása itt…
-- Album rendezésének alapja — az **Album törlése** és az **Albumleírás
-  szerkesztése…** viszont **működik**, lásd [A könyvtár](konyvtar.md)
 - Jelszó megadása/módosítása… a saját gyűjteményeken — a **Rejtett
   mappák** fejlécén viszont **működik**, lásd [A könyvtár](konyvtar.md)
-- Beállítás az Emberek album indexképeként — az **Az Emberek album
-  törlése** és **Az Emberek album szerkesztése…** viszont **működik**,
-  lásd [Emberek és arcok](emberek.md)
 
 **Beállítások**
 
 A **Beállítások** párbeszéd nyolc füléből hat működik: az **Általános**,
 a **Fájltípusok**, az **E-mail**, a **Diavetítés**, a **Névcímkék** és a
-**Nyomtatás** (lásd [Beállítások](beallitasok.md)). Szürke marad:
+**Nyomtatás** (lásd [Beállítások](beallitasok.md)). A **Hálózat** fülön
+csak a naplózás működik. Szürke marad:
 
-- a **Hálózat** fül egésze,
+- a **Hálózat** fülön a proxy-beállítások (a két mező és az
+  **Hálózati beállítások automatikus észlelése** jelölőnégyzet),
 - a **Webalbumok** fül — a Picasa Webalbumok megszűnt szolgáltatás,
 - az **Általános** fülön az **Automatikus frissítések** sor és a
   **Névtelen használati statisztikák küldése a Google részére**

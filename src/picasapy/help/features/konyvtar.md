@@ -164,8 +164,25 @@ Az **OK** egyszerre menti a nevet, a dátumot, a zenét és a leírást, és
 bezárja az ablakot. A **Mégse** semmit nem ment.
 
 Az album tulajdonságai ugyanebben az ablakban nyílnak (lásd lentebb). A
-**Felvétel készítésének helye (opcionális):** mező csak albumnál szerkeszthető;
-mappánál szürke.
+**Felvétel készítésének helye (opcionális):** mező csak albumnál és új
+mappa létrehozásakor szerkeszthető; meglévő mappánál szürke.
+
+### Mappa felosztása
+
+Ha egy mappában két esemény képei keveredtek - például egy kirándulás
+és utána egy születésnap -, a mappát kettévághatod. Jelöld ki azt a
+képet, amelyiktől kezdve a képek új mappába valók, kattints rá
+jobbgombbal, és válaszd a **Mappa felosztása itt...** tételt.
+
+Megnyílik a **Mappa tulajdonságai** ablak az új mappa adataival: a neve
+**Névtelen**, a dátuma a kijelölt kép dátuma. Ezeket átírhatod, és itt a
+helyet, a leírást és a zenét is megadhatod. Az **OK** után a program a
+mappa mellé, **ugyanabba a szülőmappába** új mappát hoz létre, és a
+kijelölt képtől a mappa végéig minden képet átköltöztet bele. Ha a név
+már foglalt, a program számot tesz a végére (`_1`, `_2` …). A **Mégse**
+semmit nem változtat.
+
+A tétel csak mappában látszik - albumban és Emberek albumban nem.
 
 ### A mappák sorrendje
 
@@ -180,30 +197,46 @@ A **Nézet ▸ Mappanézet** almenü közepén, illetve a hasáb helyi menüjéb
 
 ### Egy mappán belül a képek sorrendje
 
-A mappára jobbgombbal kattintva a **Mappa rendezése** almenüben: dátum,
-név, méret vagy **szín** szerint, a **Fordított sorrend** kapcsolóval
-párosítva. Ugyanez a **Mappa** menüben is megvan.
+A mappára jobbgombbal kattintva a **Mappa rendezésének alapja** almenüben:
+**Dátum**, **Név**, **Méret** vagy **Szín** szerint, illetve **Fordított
+sorrend**.
+
+A rendezés **egyszeri**: a program a választott szempont szerint egyszer
+sorba rakja a mappa képeit, és ezt a sorrendet a mappa **kézi
+sorrendjeként** jegyzi meg (lásd lentebb). Csak az adott mappát érinti,
+a többi mappa sorrendje marad. A **Fordított sorrend** a mostani
+sorrendet fordítja meg. Utána a képeket húzással tovább igazíthatod.
+
+A **Név** szerinti rendezés a számokat számként kezeli: a `kep2.jpg` a
+`kep10.jpg` elé kerül, nem mögé.
+
+> A főmenü **Mappa ▸ Rendezés** almenüje mást csinál: azt dönti el, milyen
+> sorrendben kövessék egymást a **mappák** a rácsban (dátum, név, méret
+> vagy **Legutóbbi változtatások** szerint), a mappákon belüli képek
+> sorrendjéhez nem nyúl.
 
 A **Szín** szerinti rendezés a képek uralkodó színe szerint sorakoztat: a
 színes képek jönnek elöl, a szivárvány sorrendjében, utánuk a
-színtelenek. Ha egy mappát épp most olvasott be a program, a szín szerint
-még be nem sorolt képek a lista végén, névsorban állnak; ez magától a
-helyére kerül, ahogy a háttérben elkészül a színindex.
+színtelenek. A színeket a program a háttérben méri fel; ha egy mappát
+épp most olvasott be, és ez még nem készült el, a **Szín** szerinti
+rendezés nem változtat semmit. Várj egy kicsit, és válaszd újra.
 
 ### Kézi sorrend: húzd oda, ahova való
 
 A képeket egérrel is átrendezheted: fogd meg a kijelölt képeket, és húzd
 őket arra a helyre, ahol állniuk kell. A rács mutatja, hova esnek majd.
-
-Az átrendezés magától a **Kézi sorrend** szempontra állítja a mappát —
-ez a **Mappa rendezése** almenü új tétele —, így azonnal látod is, amit
-húztál.
+Ha csak egy kicsit mozdítod meg őket, és a saját helyükön engeded el, a
+sorrend nem változik.
 
 A kézi sorrend a mappa mellé, a `.picasa.ini` fájlba kerül. Megmarad a
-következő indításig, és a mappával együtt másik gépre is átvihető.
+következő indításig, és a mappával együtt másik gépre is átvihető. A
+**Mappa rendezésének alapja ▸ Kézi sorrend** tétel a tárolt kézi sorrendet
+állítja vissza a rácson.
 
 Egy húzás mindig **egy mappán belül** marad: több mappa képeit egyszerre
-nem lehet egymás közé rendezni.
+nem lehet egymás közé rendezni. (Ha egy kijelölést a bal hasábon egy
+**másik mappára** húzol, az nem átrendezés, hanem áthelyezés - lásd
+[Fájlműveletek](fajlmuveletek.md).)
 
 ### Ugrás a következő mappára a görgetősávról
 
@@ -261,6 +294,20 @@ gombbal jóváhagyva a program az albumot minden olyan mappa
 `.picasa.ini` fájljából kiveszi, ahol tagja volt. **A képek megmaradnak**
 a mappáikban, és a többi albumhoz sem nyúl — csak ez az egy összeállítás
 szűnik meg.
+
+### Az album képeinek sorrendje
+
+Az album sorára jobbgombbal kattintva az **Album rendezésének alapja...**
+almenüben egyszer sorba rakhatod az album képeit **Dátum**, **Név** vagy
+**Méret** szerint; ha közben a **Shift** billentyűt nyomva tartod, a
+sorrend csökkenő lesz. A **Fordított sorrend** a mostani sorrendet
+fordítja meg.
+
+Az album képeit **húzással** is átrendezheted, ugyanúgy, mint a mappáét.
+
+Az album sorrendje a képek mellé, a `.picasa.ini` fájlba kerül, ezért
+újraindítás után is megmarad. Csak az adott albumot érinti: a képek
+mappájában és a többi albumban a sorrend marad.
 
 ### Az Album menü albumnézetben
 
@@ -357,6 +404,20 @@ kis ablak jelenik meg a kurzor alatt: benne a kép a teljes felbontásból,
 1:1-ben, tehát részletesebben, mint maga az indexkép. Puszta kattintásra
 nem történik semmi — húzni kell. Ugyanezzel a gombbal kapcsolod ki.
 
+### Gyors előnézet a Ctrl+Alt billentyűvel
+
+Ha a rácsban a **Ctrl** és az **Alt** billentyűt egyszerre nyomva tartod,
+a **kijelölt kép** nagyban megjelenik egy külön kis ablakban, az ablak
+közepén. Elengedve eltűnik. Így a nézőbe lépés nélkül is jobban
+megnézheted a képet.
+
+Néhány feltétele van:
+
+- a kijelölt kép számít, nem az, amelyik fölött az egér áll;
+- videóra nem jelenik meg;
+- csak akkor működik, ha a képrács **elég széles** (körülbelül 1024
+  képpontnál szélesebb) - kis ablakban vagy keskeny rácsnál nem jön elő.
+
 ## A képtálca
 
 Az ablak alján lévő tálca mindig a jelenlegi kijelölést mutatja. A kék
@@ -377,6 +438,10 @@ A tálca akkor hasznos igazán, ha **több mappából** akarsz képeket
   mappára lépve sem tűnik el. Ettől kezdve az újabb kijelöléseidet
   hozzáadhatod.
 - **Törlés a tálcáról** — kiüríti.
+
+A rácsból képeket egérrel **a tálcára is húzhatsz**: elengedve
+felkerülnek, és a tálca meg is tartja őket, mintha a **Kijelölt elemek
+megőrzése** tételt választottad volna.
 
 A **Ctrl+H** ugyanazt csinálja, mint a tálca helyi menüjének
 kijelölés-megtartó tétele: rögzíti a kijelölést. Nézőben nem működik.
@@ -439,13 +504,19 @@ időpontja**t. Két mód közül választasz:
   kép ugyanazt a dátumot és időt kapja.
 
 Az **OK** menti a változtatást, ahogy az eredeti Picasa is: az új
-felvételi dátumot **beleírja a képfájl EXIF-adataiba**, és a fájl
-módosítási idejét is ugyanannyival eltolja. A `.picasa.ini` fájlhoz nem
-nyúl. Ezután a program újraolvassa a mappát, így a rács, a dátum szerinti
-rendezés és a **Tulajdonságok** panel már az új dátumot mutatja — és
-mivel a fájlban van, más program is ezt látja.
+felvételi dátumot **beleírja a képfájl EXIF-adataiba**. A fájl lemezen
+látható időbélyegeihez (például a módosítás idejéhez) **nem nyúl**: azok
+ugyanazok maradnak, mint előtte. A `.picasa.ini` fájlhoz sem nyúl. Ezután
+a program újraolvassa a mappát, így a rács, a dátum szerinti rendezés és
+a **Tulajdonságok** panel már az új dátumot mutatja - és mivel a fájlban
+van, más program is ezt látja.
 
-Az EXIF-dátum írása **JPEG** képeken működik.
+Az EXIF-dátum írása **JPEG** képeken működik. Ahová nem lehet dátumot
+írni - **videóknál**, más formátumú képeknél, vagy ha a fájl írásvédett
+-, a program az új dátumot a saját katalógusában jegyzi meg. A PicasaPy
+onnantól ezt mutatja és ez szerint rendez, újraindítás és a mappa
+újraolvasása után is; maga a fájl viszont nem változik, tehát más
+program a régi dátumot látja.
 
 ## A Tulajdonságok panel
 
@@ -454,11 +525,13 @@ nem látható sávra kattintva nyitod és zárod) **Tulajdonságok** panelje
 (**Alt+Enter**, vagy a képtálca panelkapcsolójáról) a kijelölt kép adatait mutatja. Legfelül a **Fájl
 útvonala**, a **Fájlméret** és a **Méretek** áll, alattuk a felvétel adatai:
 a **Fényképezőgép gyártmánya** és **típusa**, a felvétel és a digitalizálás
-ideje, a tájolás, a **Vaku** állása, az **Objektív** neve, a
-**Fókusztávolság**, az **Exponálási idő**, az **F-érték**, az ISO, a
-**Fehéregyensúly**, a **Fénymérés módja**, az **Exponálási program**, a
-**Tömörítés** és a **Színtér**, végül a **Kulcsszavak** és a
-GPS-koordináták.
+ideje, a **Fájl dátuma**, a tájolás, a **Vaku** állása, az **Objektív**
+neve, a **Fókusztávolság**, a **CCD szélessége**, az **Exponálási idő**, a
+**Rekesz**, az **F-érték**, az ISO, a **Fehéregyensúly**, a **Fénymérés
+módja**, az **Exponálási program**, a **Tömörítés**, a **Színtér** és a
+**JPEG minőség**, végül a **Kulcsszavak**, a **Személycímkék** (a képen
+megnevezett emberek, többször szereplő névnél a darabszámmal, például
+„Anna (2)") és a GPS-koordináták.
 
 A panelen jobbgombbal kattintva egyetlen tétel nyílik: a **Szerkesztési
 címkék**, ami a Címkék panelt hozza elő.
