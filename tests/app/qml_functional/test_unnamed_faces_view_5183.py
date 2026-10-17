@@ -9,7 +9,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
-from PySide6.QtCore import QObject, QPoint, QPointF, Qt
+from PySide6.QtCore import QSettings, QObject, QPoint, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
@@ -183,13 +183,19 @@ def _text_descendant(item, expected: str):
     return None
 
 
-def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app):
+def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app, tmp_path):
     window, _controller, engine = qml_app_5183
     window.setWidth(1280)
     window.setHeight(1005)
     qt_app.processEvents()
 
     face_scan = engine.rootContext().contextProperty("faceScanController")
+    # A Windows-CI-n a tesztkörnyezet alapértelmezett (natív, név nélküli)
+    # QSettings-e nem írható (fileName='', AccessError), így az üdvözlőablak
+    # jelzője nem mentődhet. Élesben a programnak van szervezet- és
+    # alkalmazásneve; itt egy ideiglenes, fájlalapú tárolót adunk.
+    if face_scan._settings.status() != QSettings.Status.NoError or not face_scan._settings.fileName():
+        face_scan._settings = QSettings(str(tmp_path / "facescan.ini"), QSettings.Format.IniFormat)
     _seed_six_faces(Path(_controller._db_path))
     face_scan.unnamedCountChanged.emit()
     assert var_feltetelre(qt_app, lambda: face_scan.unnamedCount == 6, 3.0)

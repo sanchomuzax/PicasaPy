@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -629,6 +630,137 @@ def test_qml_valtozas_csak_a_nev_szerint_hivatkozo_teszteket_valaszt(
 
     assert cel in dontes.fajlok
     assert masik not in dontes.fajlok
+
+
+def _git_commit(root: Path) -> str:
+    if not (root / ".git").exists():
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(
+        [
+            "git", "-c", "user.name=Teszt", "-c", "user.email=teszt@example.invalid",
+            "commit", "-qm", "teszt",
+        ],
+        cwd=root,
+        check=True,
+    )
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=root, check=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    ).stdout.strip()
+
+
+def _main_qml_repo(repo: Path) -> tuple[str, Path]:
+    qml = repo / "src/picasapy/app/qml/Main.qml"
+    qml.parent.mkdir(parents=True, exist_ok=True)
+    qml.write_text(
+        "import QtQuick\n"
+        "ApplicationWindow {\n"
+        "    id: window\n"
+        "    width: 1280\n"
+        "    Item {\n"
+        "        id: targetPane\n"
+        "        objectName: \"targetPane\"\n"
+        "        property int spacing: 4\n"
+        "        SpecialPane { id: specialPane }\n"
+        "    }\n"
+        "    Item { id: siblingPane; objectName: \"siblingPane\" }\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    functional = repo / "tests/app/qml_functional"
+    (functional / "test_target_pane.py").write_text(
+        'def test_target(): assert "targetPane" and "SpecialPane"\n',
+        encoding="utf-8",
+    )
+    (functional / "test_sibling_pane.py").write_text(
+        'def test_sibling(): assert "siblingPane"\n', encoding="utf-8"
+    )
+    (functional / "test_main_named.py").write_text(
+        'def test_main(): assert "Main.qml"\n', encoding="utf-8"
+    )
+    (functional / "test_unrelated.py").write_text(
+        "def test_unrelated(): assert True\n", encoding="utf-8"
+    )
+    base = _git_commit(repo)
+    return base, qml
+
+
+def _select_git_diff(repo: Path, base: str) -> tv.Selection:
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, check=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    ).stdout.strip()
+    return tv._selection_for_cli(repo, base=base, head=head, force_full=False)
+
+
+def test_main_qml_azonosithato_blokkvaltozasa_szukuletett_keszletet_valaszt(
+    repo: Path,
+) -> None:
+    base, qml = _main_qml_repo(repo)
+    qml.write_text(
+        qml.read_text(encoding="utf-8").replace("spacing: 4", "spacing: 8"),
+        encoding="utf-8",
+    )
+    _git_commit(repo)
+
+    dontes = _select_git_diff(repo, base)
+
+    assert not dontes.teljes
+    assert "tests/app/qml_functional/test_target_pane.py" in dontes.fajlok
+    assert "tests/app/qml_functional/test_main_named.py" in dontes.fajlok
+    assert "tests/app/qml_functional/test_sibling_pane.py" not in dontes.fajlok
+    assert "tests/app/qml_functional/test_unrelated.py" not in dontes.fajlok
+
+
+def test_main_qml_importvaltozasa_teljes_keszletet_valaszt(repo: Path) -> None:
+    base, qml = _main_qml_repo(repo)
+    qml.write_text(
+        qml.read_text(encoding="utf-8").replace(
+            "import QtQuick", "import QtQuick.Controls"
+        ),
+        encoding="utf-8",
+    )
+    _git_commit(repo)
+
+    dontes = _select_git_diff(repo, base)
+
+    assert dontes.teljes
+    assert set(dontes.fajlok) == set(tv.discover_tests(repo))
+
+
+def test_main_qml_gyokerproperty_valtozasa_teljes_keszletet_valaszt(
+    repo: Path,
+) -> None:
+    base, qml = _main_qml_repo(repo)
+    qml.write_text(
+        qml.read_text(encoding="utf-8").replace("width: 1280", "width: 1440"),
+        encoding="utf-8",
+    )
+    _git_commit(repo)
+
+    dontes = _select_git_diff(repo, base)
+
+    assert dontes.teljes
+    assert set(dontes.fajlok) == set(tv.discover_tests(repo))
+
+
+def test_main_qml_dinamikus_objectname_teljes_keszletet_valaszt(
+    repo: Path,
+) -> None:
+    base, qml = _main_qml_repo(repo)
+    qml.write_text(
+        qml.read_text(encoding="utf-8").replace(
+            'objectName: "targetPane"', "objectName: paneObjectName"
+        ).replace("spacing: 4", "spacing: 8"),
+        encoding="utf-8",
+    )
+    _git_commit(repo)
+
+    dontes = _select_git_diff(repo, base)
+
+    assert dontes.teljes
+    assert set(dontes.fajlok) == set(tv.discover_tests(repo))
 
 
 def test_a_pr_darabok_szama_a_mereshez_igazodik_mainen_tizenhat_a_plafon() -> None:

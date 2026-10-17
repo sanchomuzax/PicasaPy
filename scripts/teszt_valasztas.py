@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import ast
+from array import array
+from bisect import bisect_right
 import json
 import math
 import os
@@ -148,6 +150,43 @@ class ShardPlan:
     tul_hosszu_fajlok: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class MainQmlDiff:
+    """A PR-alap és a fej közti Main.qml diff érintett sorai és forrásai."""
+
+    regi_sorok: tuple[int, ...]
+    uj_sorok: tuple[int, ...]
+    regi_szoveg: str
+    uj_szoveg: str
+
+
+@dataclass(frozen=True)
+class _QmlObjectBlock:
+    tipus: str
+    nyito: int
+    zaro: int
+    kezdo_sor: int
+    veg_sor: int
+    azonosito: bool
+    bizonytalan_nev: bool
+    nevek: frozenset[str]
+
+
+_MAIN_QML_PATH = "src/picasapy/app/qml/Main.qml"
+_QML_OBJECT_TYPE = re.compile(
+    r"(?m)(?P<type>[A-Z][A-Za-z0-9_.]*)[ \t\r\n]*\{"
+)
+_QML_NAME_PROPERTY = re.compile(r"\b(?P<property>id|objectName)\s*:")
+_QML_LITERAL_NAME = re.compile(
+    r"\s*(?:\"(?P<double>[^\"\r\n]*)\"|'(?P<single>[^'\r\n]*)'|"
+    r"(?P<bare>[A-Za-z_]\w*))(?P<tail>[ \t]*(?:;|\}|//|$))"
+)
+_DIFF_HUNK = re.compile(
+    r"^@@ -(?P<old_start>\d+)(?:,(?P<old_count>\d+))? "
+    r"\+(?P<new_start>\d+)(?:,(?P<new_count>\d+))? @@"
+)
+
+
 def discover_tests(root: Path) -> list[str]:
     """A pytest által futtatható, név szerint felismert tesztfájlok."""
     tests = root / "tests"
@@ -173,6 +212,289 @@ def pyproject_only_version_changed(old: str, new: str) -> bool:
     regi_ertek = _VERSION_LINE.fullmatch(regi_verziok[0]).group("value")
     uj_ertek = _VERSION_LINE.fullmatch(uj_verziok[0]).group("value")
     return regi_maras == uj_maras and regi_ertek != uj_ertek
+
+
+def _qml_code_mask(source: str) -> str:
+    """A QML-kódot megtartó, az idézett szövegeket és kommenteket maszkoló másolat."""
+    masked = list(source)
+    index = 0
+    state = "code"
+    quote = ""
+    escaped = False
+    while index < len(source):
+        char = source[index]
+        next_char = source[index + 1] if index + 1 < len(source) else ""
+        if state == "line-comment":
+            if char == "\n":
+                state = "code"
+            else:
+                masked[index] = " "
+        elif state == "block-comment":
+            if char == "*" and next_char == "/":
+                masked[index] = masked[index + 1] = " "
+                index += 1
+                state = "code"
+            elif char != "\n":
+                masked[index] = " "
+        elif state == "string":
+            if char != "\n":
+                masked[index] = " "
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                state = "code"
+        elif char == "/" and next_char == "/":
+            masked[index] = masked[index + 1] = " "
+            index += 1
+            state = "line-comment"
+        elif char == "/" and next_char == "*":
+            masked[index] = masked[index + 1] = " "
+            index += 1
+            state = "block-comment"
+        elif char in {"'", '"', "`"}:
+            quote = char
+            masked[index] = " "
+            state = "string"
+        index += 1
+    return "".join(masked)
+
+
+def _qml_object_blocks(source: str) -> tuple[_QmlObjectBlock, ...] | None:
+    """Az object deklarációk határai és statikus id/objectName értékei.
+
+    A QML teljes nyelvtanát nem próbálja értelmezni. Ha a kapcsos zárójelek
+    nem párosak, a hívó a teljes QML-funkcionális készletre esik vissza.
+    """
+    masked = _qml_code_mask(source)
+    openings: list[int] = []
+    pairs: dict[int, int] = {}
+    for offset, char in enumerate(masked):
+        if char == "{":
+            openings.append(offset)
+        elif char == "}":
+            if not openings:
+                return None
+            pairs[openings.pop()] = offset
+    if openings:
+        return None
+
+    depth_at = array("i")
+    depth = 0
+    for char in masked:
+        depth_at.append(depth)
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+
+    line_starts = [0]
+    line_starts.extend(offset + 1 for offset, char in enumerate(source) if char == "\n")
+
+    blocks: list[_QmlObjectBlock] = []
+    for match in _QML_OBJECT_TYPE.finditer(masked):
+        opening = masked.find("{", match.start(), match.end())
+        closing = pairs.get(opening)
+        if closing is None:
+            return None
+        identifiers: set[str] = set()
+        uncertain_identifier = False
+        for prop in _QML_NAME_PROPERTY.finditer(masked, opening + 1, closing):
+            if depth_at[prop.start()] != depth_at[opening] + 1:
+                continue
+            line_end = source.find("\n", prop.end(), closing)
+            if line_end < 0:
+                line_end = closing
+            literal = _QML_LITERAL_NAME.match(source, prop.end(), line_end)
+            if literal is None:
+                uncertain_identifier = True
+                continue
+            if prop.group("property") == "id":
+                value = literal.group("bare")
+            else:
+                value = literal.group("double") or literal.group("single")
+                if value and "\\" in value:
+                    uncertain_identifier = True
+                    continue
+            if value:
+                identifiers.add(value)
+            else:
+                uncertain_identifier = True
+
+        start = match.start("type")
+        start_line = bisect_right(line_starts, start)
+        end_line = bisect_right(line_starts, closing)
+        blocks.append(
+            _QmlObjectBlock(
+                tipus=match.group("type"),
+                nyito=opening,
+                zaro=closing,
+                kezdo_sor=start_line,
+                veg_sor=end_line,
+                azonosito=bool(identifiers) and not uncertain_identifier,
+                bizonytalan_nev=uncertain_identifier,
+                nevek=frozenset() if uncertain_identifier else frozenset(identifiers),
+            )
+        )
+    return tuple(blocks)
+
+
+def _main_qml_test_scope(
+    root: Path, all_tests: Sequence[str], change: MainQmlDiff
+) -> set[str] | None:
+    """A statikusan azonosítható Main.qml-blokkok fogyasztótesztjei.
+
+    `None` jelzi a bizonytalan szerkezetet; ilyenkor a hívó a teljes készletet
+    futtatja.
+    """
+    old_blocks = _qml_object_blocks(change.regi_szoveg)
+    new_blocks = _qml_object_blocks(change.uj_szoveg)
+    if old_blocks is None or new_blocks is None:
+        return None
+    if not change.regi_sorok and not change.uj_sorok:
+        return None
+
+    names: set[str] = set()
+    found_scope = False
+    for _source, lines, blocks in (
+        (change.regi_szoveg, change.regi_sorok, old_blocks),
+        (change.uj_szoveg, change.uj_sorok, new_blocks),
+    ):
+        roots = [
+            block for block in blocks
+            if block.tipus.rsplit(".", 1)[-1] == "ApplicationWindow"
+            and not any(
+                parent.nyito < block.nyito and parent.zaro > block.zaro
+                for parent in blocks
+            )
+        ]
+        if len(roots) != 1:
+            return None
+        root_block = roots[0]
+        for line in lines:
+            containing = [
+                block for block in blocks
+                if block.kezdo_sor <= line <= block.veg_sor
+            ]
+            if not containing:
+                return None
+            shortest = min(block.zaro - block.nyito for block in containing)
+            innermost = [
+                block for block in containing
+                if block.zaro - block.nyito == shortest
+            ]
+            if len(innermost) != 1:
+                return None
+            current = innermost[0]
+            scopes: list[_QmlObjectBlock] = []
+            while current is not root_block:
+                if current.bizonytalan_nev:
+                    return None
+                if current.azonosito:
+                    scopes.append(current)
+                parents = [
+                    block for block in blocks
+                    if block.nyito < current.nyito and block.zaro > current.zaro
+                ]
+                if not parents:
+                    break
+                current = min(parents, key=lambda block: block.zaro - block.nyito)
+            if not scopes:
+                return None
+
+            found_scope = True
+            for scope in scopes:
+                contained = [
+                    block for block in blocks
+                    if scope.nyito <= block.nyito and block.zaro <= scope.zaro
+                ]
+                if any(block.bizonytalan_nev for block in contained):
+                    return None
+                for block in contained:
+                    names.add(block.tipus)
+                    names.add(block.tipus.rsplit(".", 1)[-1])
+                    names.update(block.nevek)
+
+    if not found_scope or not names:
+        return None
+
+    patterns = [
+        re.compile(rf"(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])")
+        for name in names if name
+    ]
+    selected = _test_files_referencing(root, all_tests, "Main.qml")
+    for test in all_tests:
+        try:
+            content = (root / test).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if any(pattern.search(content) for pattern in patterns):
+            selected.add(test)
+    return selected
+
+
+def _parse_diff_changed_lines(diff_text: str) -> tuple[tuple[int, ...], tuple[int, ...]] | None:
+    """A `git diff --unified=0` kimenetből az eltávolított és hozzáadott sorok."""
+    old_lines: list[int] = []
+    new_lines: list[int] = []
+    old_line = new_line = 0
+    active_hunk = False
+    for line in diff_text.splitlines():
+        hunk = _DIFF_HUNK.match(line)
+        if hunk:
+            old_line = int(hunk.group("old_start"))
+            new_line = int(hunk.group("new_start"))
+            active_hunk = True
+            continue
+        if not active_hunk or not line:
+            continue
+        marker = line[0]
+        if marker == "-":
+            old_lines.append(old_line)
+            old_line += 1
+        elif marker == "+":
+            new_lines.append(new_line)
+            new_line += 1
+        elif marker == " ":
+            old_line += 1
+            new_line += 1
+        elif marker == "\\":
+            continue
+        else:
+            active_hunk = False
+    return tuple(old_lines), tuple(new_lines)
+
+
+def _git_text_at(root: Path, reference: str, path: str) -> str | None:
+    try:
+        return subprocess.run(
+            ["git", "show", f"{reference}:{path}"], cwd=root,
+            check=True, capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _main_qml_diff(root: Path, base: str, head: str) -> MainQmlDiff | None:
+    """Ugyanazon hárompontos PR-diff hunkjai és Main.qml-verziói."""
+    if not base or not head:
+        return None
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--unified=0", f"{base}...{head}", "--", _MAIN_QML_PATH],
+            cwd=root, check=True, capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    lines = _parse_diff_changed_lines(result.stdout)
+    old_source = _git_text_at(root, base, _MAIN_QML_PATH)
+    new_source = _git_text_at(root, head, _MAIN_QML_PATH)
+    if lines is None or old_source is None or new_source is None:
+        return None
+    return MainQmlDiff(lines[0], lines[1], old_source, new_source)
 
 
 
@@ -343,6 +665,7 @@ def select_tests(
     *,
     pyproject_version_only: bool = False,
     force_full: bool = False,
+    main_qml_diff: MainQmlDiff | None = None,
     _kiserult: frozenset[str] = frozenset(),
 ) -> Selection:
     """Válassza ki a diff által érintett teszteket; bizonytalanságnál mindet."""
@@ -471,6 +794,20 @@ def select_tests(
     if qml_paths:
         qml_tests: set[str] = set()
         for qml_path in qml_paths:
+            if qml_path == _MAIN_QML_PATH:
+                if main_qml_diff is None:
+                    return Selection(
+                        tuple(all_tests), True,
+                        "Main.qml hunkjai nem állapíthatók meg biztonságosan",
+                    )
+                scoped_tests = _main_qml_test_scope(root, all_tests, main_qml_diff)
+                if scoped_tests is None:
+                    return Selection(
+                        tuple(all_tests), True,
+                        "Main.qml-változás nem köthető azonosítható QML-blokkhoz",
+                    )
+                qml_tests.update(scoped_tests)
+                continue
             file_name = Path(qml_path).name
             pattern = re.compile(
                 rf"\b{re.escape(Path(qml_path).stem)}(?:\.qml)?\b"
@@ -682,10 +1019,15 @@ def _version_only_for_refs(root: Path, base: str, head: str) -> bool:
 
 def _selection_for_cli(root: Path, *, base: str, head: str, force_full: bool) -> Selection:
     changed = None if force_full else _changed_files(root, base, head)
+    main_diff = (
+        _main_qml_diff(root, base, head)
+        if changed and _MAIN_QML_PATH in changed else None
+    )
     return select_tests(
         root, changed,
         pyproject_version_only=_version_only_for_refs(root, base, head),
         force_full=force_full,
+        main_qml_diff=main_diff,
     )
 
 
