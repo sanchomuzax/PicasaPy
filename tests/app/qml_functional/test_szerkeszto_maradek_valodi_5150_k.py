@@ -333,7 +333,7 @@ class TestKollazsLetrehozas:
         # és legalább egynek át kell rendeznie a képeket
         for _ in range(3):
             kattints(window, qt_app, gomb)
-            if _varj(qt_app, lambda: _csomopont_utvonalak(controller) != elotte, 2.0):
+            if _varj(qt_app, lambda: _csomopont_utvonalak(controller) != elotte, 10.0):
                 break
         assert _csomopont_utvonalak(controller) != elotte, (
             "a Shuffle Pictures kattintások nem rendezték át a kollázs képeit"

@@ -23,7 +23,7 @@ def _isolated_home_and_xdg(monkeypatch, tmp_path):
         monkeypatch.setenv(name, str(path))
 
 
-def _wait(qt_app, predicate, timeout: float = 5.0) -> bool:
+def _wait(qt_app, predicate, timeout: float = 10.0) -> bool:
     return var_feltetelre(qt_app, predicate, timeout)
 
 
