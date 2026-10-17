@@ -87,14 +87,9 @@ def _directory_change_path(path_str: str, roots: tuple[str, ...]) -> str | None:
     return None
 
 
-def _torolt_ut_tipusa_ismeretlen() -> bool:
-    """Windowson a watchdog a törölt mappát is fájlként jelzi (#5177).
-
-    A `ReadDirectoryChangesW` törlésnél nem mondja meg, mappa volt-e, a törölt
-    út pedig már nem kérdezhető le, ezért ott az `is_directory` hamis. Linuxon
-    az inotify megbízhatóan jelzi, ott nincs szükség a pótlásra.
-    """
-    return sys.platform == "win32"
+def _platform() -> str:
+    """A platform-fogantyú (#1217): a teszt ezt rögzíti, nem a globális `sys`-t."""
+    return sys.platform
 
 
 class _Handler(FileSystemEventHandler):
@@ -126,9 +121,12 @@ class _Handler(FileSystemEventHandler):
                             DirectoryChange(changed_path, action)
                         )
             return
+        # Windowson a watchdog a törölt mappát is fájlként jelzi (#5177): a
+        # `ReadDirectoryChangesW` törlésnél nem mondja meg, mappa volt-e, a törölt
+        # út pedig már nem kérdezhető le. Linuxon az inotify megbízhatóan jelzi.
         if (
             event.event_type == "deleted"
-            and _torolt_ut_tipusa_ismeretlen()
+            and _platform().startswith("win")
             and not _is_relevant(event.src_path, self._watcher._roots)
         ):
             changed_path = _directory_change_path(event.src_path, self._watcher._roots)
