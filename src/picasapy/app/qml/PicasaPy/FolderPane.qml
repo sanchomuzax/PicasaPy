@@ -587,13 +587,65 @@ Rectangle {
             CollectionHeader {
                 Layout.fillWidth: true
                 label: qsTr("People")
-                // #26: a `faces=`/`[Contacts2]`-ből aggregált, névvel ellátott
-                // személyek száma (arcfelismerés nélkül — a meglévő ini-
-                // adatokból, ld. picasapy.index.people).
+                // #5190: a látható sorok száma, a „Névtelenek" albumot is
+                // beleszámítva, ha van névtelen arc vagy folyik a keresés.
                 itemCount: pane.peopleModel.length
+                           + (pane.unnamedFaceCount > 0
+                              || pane.faceScanPercent >= 0 ? 1 : 0)
                 labelObjectName: "peopleHeader"
                 collapsed: pane.peopleCollapsed
                 onToggled: pane.toggleCollection("people")
+            }
+
+            // #5190: a „Névtelenek" sor a személyek elé kerül, és a fejléc
+            // darabszámába is beleszámít.
+            Rectangle {
+                id: unnamedFacesItem
+                objectName: "unnamedFacesItem"
+                // Beolvasás közben a sor akkor is látszik, ha még nincs találat.
+                visible: !pane.peopleCollapsed
+                         && (pane.unnamedFaceCount > 0 || pane.faceScanPercent >= 0)
+                Layout.fillWidth: true
+                Layout.preferredHeight: 22
+                color: pane.unnamedFacesActive ? Theme.panelSelectionActive
+                       : (unnamedFacesMouse.containsMouse ? Theme.panelSelection : "transparent")
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left; anchors.leftMargin: 16
+                    spacing: 5
+                    Image {
+                        objectName: "unnamedFacesIcon"
+                        width: 18; height: 18
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: Qt.resolvedUrl("icons/person-silhouette.svg")
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                    }
+                    Text {
+                        objectName: "unnamedFacesLabel"
+                        text: pane.faceScanPercent >= 0
+                              ? qsTr("Scanning for faces... %1% complete")
+                                .arg(pane.faceScanPercent)
+                              : qsTr("Unnamed") + " (" + pane.unnamedFaceCount + ")"
+                        font.pixelSize: Theme.fontSize
+                        font.italic: pane.faceScanPercent >= 0
+                        color: pane.unnamedFacesActive || unnamedFacesMouse.containsMouse
+                               ? Theme.panelSelectionText : Theme.textDark
+                    }
+                }
+                MouseArea {
+                    id: unnamedFacesMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: function(mouse) {
+                        if (mouse.button === Qt.RightButton) {
+                            pane.openPeopleAlbumContextMenu(qsTr("Unnamed"))
+                            return
+                        }
+                        pane.unnamedFacesChosen()
+                    }
+                }
             }
 
             // #26: egy-egy sor személyenként — az AlbumsSection.qml album-sorainak
@@ -657,69 +709,6 @@ Rectangle {
                             }
                             pane.personChosen(personItem.modelData.name)
                         }
-                    }
-                }
-            }
-
-            // #26 (3. lépcső): a „Névtelenek" sor — a személyek listája ALATT,
-            // ugyanabban az Emberek gyűjteményben (a personRepeater mintáját
-            // követi, de nincs saját modell-elem, csak egy darabszám).
-            Rectangle {
-                id: unnamedFacesItem
-                objectName: "unnamedFacesItem"
-                // #26: beolvasás közben a sor AKKOR IS látszik, ha még nulla
-                // névtelen arc van — a haladás helye maga ez a tétel
-                visible: !pane.peopleCollapsed
-                         && (pane.unnamedFaceCount > 0 || pane.faceScanPercent >= 0)
-                Layout.fillWidth: true
-                Layout.preferredHeight: 22
-                color: pane.unnamedFacesActive ? Theme.panelSelectionActive
-                       : (unnamedFacesMouse.containsMouse ? Theme.panelSelection : "transparent")
-                Row {
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left; anchors.leftMargin: 16
-                    spacing: 5
-                    Image {
-                        objectName: "unnamedFacesIcon"
-                        width: 18; height: 18
-                        anchors.verticalCenter: parent.verticalCenter
-                        source: Qt.resolvedUrl("icons/person-silhouette.svg")
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                    }
-                    // #26/#449: az eredeti Picasa a beolvasás haladását MAGÁN
-                    // a „Névtelenek" album tételén mutatta („While scanning,
-                    // progress information appears in the Unnamed album item"),
-                    // nem külön sávban vagy állapotsorban — a hosszú háttérmunka
-                    // ott mutatkozik, ahol az eredménye lesz.
-                    Text {
-                        objectName: "unnamedFacesLabel"
-                        text: pane.faceScanPercent >= 0
-                              ? qsTr("Scanning for faces... %1% complete")
-                                .arg(pane.faceScanPercent)
-                              : qsTr("Unnamed") + " (" + pane.unnamedFaceCount + ")"
-                        font.pixelSize: Theme.fontSize
-                        font.italic: pane.faceScanPercent >= 0
-                        color: pane.unnamedFacesActive || unnamedFacesMouse.containsMouse
-                               ? Theme.panelSelectionText : Theme.textDark
-                    }
-                }
-                MouseArea {
-                    id: unnamedFacesMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    // #732: a „Névtelenek" az eredetiben ALBUM (`PplAlbum`,
-                    // ui-audit-context-menus.md A.2), tehát a jobbklikk az
-                    // Emberek-album menüjét adja — enélkül az esemény a
-                    // hasáb-szintű TapHandlerre esett át, és a RENDEZÉS
-                    // menüje nyílt meg helyette.
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onClicked: function(mouse) {
-                        if (mouse.button === Qt.RightButton) {
-                            pane.openPeopleAlbumContextMenu(qsTr("Unnamed"))
-                            return
-                        }
-                        pane.unnamedFacesChosen()
                     }
                 }
             }

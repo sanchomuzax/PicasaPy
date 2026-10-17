@@ -363,8 +363,27 @@ ColumnLayout {
         delegate: Item {
             id: faceCard
             required property var modelData
+            objectName: "unnamedFaceCard_" + faceCard.modelData.faceId
+            property var nameSuggestions: []
             width: unnamedFacesGrid.cellWidth
             height: unnamedFacesGrid.cellHeight
+
+            function refreshNameSuggestions() {
+                var needle = faceNameField.text.trim().toLocaleLowerCase()
+                var ctl = typeof controller !== "undefined" ? controller : null
+                if (!needle || !ctl) {
+                    faceCard.nameSuggestions = []
+                    return
+                }
+                var people = ctl.peopleManagerContacts()
+                var matches = []
+                for (var i = 0; i < people.length; ++i) {
+                    if (String(people[i].name).toLocaleLowerCase()
+                            .indexOf(needle) >= 0)
+                        matches.push(people[i])
+                }
+                faceCard.nameSuggestions = matches
+            }
 
             Column {
                 width: 172
@@ -466,6 +485,7 @@ ColumnLayout {
                                 + faceCard.modelData.faceId
                     width: 172
                     height: 20
+                    x: (faceTile.width - width) / 2
                     padding: 1
                     horizontalAlignment: TextInput.AlignHCenter
                     verticalAlignment: TextInput.AlignVCenter
@@ -484,6 +504,86 @@ ColumnLayout {
                             return
                         text = ""
                         root.nameSubmitted(faceCard.modelData.faceId, name)
+                    }
+                    onTextEdited: faceCard.refreshNameSuggestions()
+                }
+            }
+
+            Popup {
+                id: nameSuggestionsPopup
+                objectName: "unnamedNameSuggestionPopup_"
+                            + faceCard.modelData.faceId
+                parent: Overlay.overlay
+                property var suggestions: faceCard.nameSuggestions
+                readonly property point rootPosition:
+                    root.mapToItem(parent, 0, 0)
+                readonly property real nameFieldX:
+                    rootPosition.x + unnamedFacesGrid.x
+                    - unnamedFacesGrid.contentX + faceCard.x
+                    + faceNameField.parent.x + faceNameField.x
+                readonly property real nameFieldY:
+                    rootPosition.y + unnamedFacesGrid.y
+                    - unnamedFacesGrid.contentY + faceCard.y
+                    + faceNameField.parent.y + faceNameField.y
+                x: nameFieldX + (faceNameField.width - width) / 2
+                y: nameFieldY + faceNameField.height
+                width: 212
+                height: Math.min(170, suggestions.length * 42 + 2)
+                visible: faceNameField.activeFocus
+                         && faceNameField.text.trim().length > 0
+                         && suggestions.length > 0
+                z: 1000
+                padding: 0
+                closePolicy: Popup.NoAutoClose
+
+                background: Rectangle {
+                    objectName: "unnamedNameSuggestions_"
+                                + faceCard.modelData.faceId
+                    color: "#ffffff"
+                    border.color: "#8a8a8a"
+                    border.width: 1
+                }
+
+                contentItem: ListView {
+                    anchors.fill: parent
+                    clip: true
+                    model: nameSuggestionsPopup.suggestions
+                    delegate: Item {
+                        required property var modelData
+                        required property int index
+                        objectName: "unnamedFaceSuggestion_"
+                                    + faceCard.modelData.faceId + "_" + index
+                        property string personName: String(modelData.name)
+                        property string thumbUrl: String(modelData.thumbUrl || "")
+                        width: ListView.view.width
+                        height: 40
+                        Image {
+                            objectName: "unnamedFaceSuggestionImage_"
+                                        + faceCard.modelData.faceId + "_" + index
+                            anchors.left: parent.left
+                            anchors.leftMargin: 17
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 28
+                            height: 30
+                            source: parent.thumbUrl !== ""
+                                    ? parent.thumbUrl
+                                    : Qt.resolvedUrl(
+                                          "icons/person-silhouette.svg")
+                            fillMode: Image.PreserveAspectCrop
+                            smooth: true
+                            mipmap: true
+                            asynchronous: true
+                        }
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 58
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 64
+                            text: parent.personName
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.textDark
+                            elide: Text.ElideRight
+                        }
                     }
                 }
             }

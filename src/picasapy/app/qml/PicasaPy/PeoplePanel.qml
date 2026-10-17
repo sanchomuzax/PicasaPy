@@ -166,19 +166,6 @@ Rectangle {
         return panel.faceScanController.rejectSuggestion(faceId)
     }
 
-    function _hasPersonNamed(name) {
-        var ctl = typeof controller !== "undefined" ? controller : null
-        if (!ctl)
-            return false
-        var entries = ctl.peopleManagerContacts()
-        var wanted = String(name).trim().toLocaleLowerCase()
-        for (var i = 0; i < entries.length; ++i) {
-            if (String(entries[i].name).trim().toLocaleLowerCase() === wanted)
-                return true
-        }
-        return false
-    }
-
     function _openPendingPersonDialog() {
         if (!peopleManagerLoader.item || panel.pendingNewFaceId < 0)
             return
@@ -193,10 +180,6 @@ Rectangle {
         var cleanName = String(name || "").trim()
         if (faceId < 0 || !cleanName)
             return
-        if (panel._hasPersonNamed(cleanName)) {
-            panel.assignNameToFace(faceId, cleanName)
-            return
-        }
         panel.pendingNewFaceId = faceId
         panel.pendingNewFaceName = cleanName
         if (peopleManagerLoader.status === Loader.Ready)
