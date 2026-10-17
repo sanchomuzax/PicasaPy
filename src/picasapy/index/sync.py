@@ -678,6 +678,39 @@ def folder_paths_under(conn: sqlite3.Connection, root: str | Path) -> tuple[str,
     )
 
 
+def remove_folder_tree(conn: sqlite3.Connection, root: str | Path) -> int:
+    """Egy eltűnt mappafa törlése kizárólag az indexből (#5177).
+
+    Nem ellenőrzi és nem járja be a lemezt. A jelzett út alatti indexsorokat
+    Path-alapon szűri, így Windows alatt az útvonal-komponensek és a
+    kis-nagybetű eltérése sem okoz téves előtag-egyezést. A fotókat a
+    mappasorok előtt törli, hogy a keresőindex-triggerek lefussanak.
+
+    A visszatérési érték a törölt mappasorok száma.
+    """
+    root_path = Path(normalize_path(root))
+    candidates = folder_paths_under(conn, root_path)
+    paths = tuple(
+        path
+        for path in candidates
+        if Path(path) == root_path or Path(path).is_relative_to(root_path)
+    )
+    if not paths:
+        return 0
+
+    removed = 0
+    for path in paths:
+        row = conn.execute("SELECT id FROM folders WHERE path = ?", (path,)).fetchone()
+        if row is None:
+            continue
+        conn.execute("DELETE FROM photos WHERE folder_id = ?", (row["id"],))
+        conn.execute("DELETE FROM folders WHERE id = ?", (row["id"],))
+        conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (path,))
+        removed += 1
+    conn.commit()
+    return removed
+
+
 #: A #1542 útvonal-átírása ezeket a táblákat érinti — MINDEGYIK ABSZOLÚT
 #: útvonalat tárol kulcsként, tehát egy áthelyezett részfánál MIND elavul:
 #:

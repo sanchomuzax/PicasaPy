@@ -15,13 +15,27 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from dataclasses import dataclass
 from pathlib import Path, PurePath
+from typing import Literal
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from .filetypes import media_kind_of
 from .walker import PICASA_INI_NAME
+
+
+@dataclass(frozen=True)
+class DirectoryChange:
+    """Egy könyvtár létrehozása vagy törlése, külön szinkronmóddal (#5177).
+
+    A létrehozás rekurzív szinkront kér az adott könyvtárra; a törlés csak
+    indexből törlést kér, lemezbejárás nélkül. Átnevezés két ilyen esemény.
+    """
+
+    path: str
+    action: Literal["created", "deleted"]
 
 
 def _relative_parts(path: PurePath, roots: tuple[str, ...]) -> tuple[str, ...]:
@@ -53,12 +67,53 @@ def _is_relevant(path_str: str, roots: tuple[str, ...]) -> bool:
     return media_kind_of(name) is not None
 
 
+def _directory_change_path(path_str: str, roots: tuple[str, ...]) -> str | None:
+    """Kanonikus eseményút, ha az a látható részfán belül van.
+
+    Az összevetés Path-alapú, nem szöveges előtaggal: ez a Windows
+    elválasztóit és útvonal-komponens határait is helyesen kezeli.
+    """
+    path = Path(path_str)
+    for root in roots:
+        root_path = Path(root)
+        try:
+            relative_parts = path.relative_to(root_path).parts
+        except ValueError:
+            continue
+        if not relative_parts or any(part.startswith(".") for part in relative_parts):
+            return None
+        return str(path)
+    return None
+
+
 class _Handler(FileSystemEventHandler):
     def __init__(self, watcher: "LibraryWatcher"):
         self._watcher = watcher
 
     def on_any_event(self, event) -> None:
         if event.is_directory:
+            if event.event_type in {"created", "deleted"}:
+                path_str = _directory_change_path(
+                    event.src_path, self._watcher._roots
+                )
+                if path_str is not None:
+                    self._watcher._mark_dirty(
+                        DirectoryChange(path_str, event.event_type)
+                    )
+            elif event.event_type == "moved":
+                for path_str, action in (
+                    (event.src_path, "deleted"),
+                    (getattr(event, "dest_path", ""), "created"),
+                ):
+                    if not path_str:
+                        continue
+                    changed_path = _directory_change_path(
+                        path_str, self._watcher._roots
+                    )
+                    if changed_path is not None:
+                        self._watcher._mark_dirty(
+                            DirectoryChange(changed_path, action)
+                        )
             return
         for path_str in (event.src_path, getattr(event, "dest_path", "")):
             if path_str and _is_relevant(path_str, self._watcher._roots):
@@ -74,9 +129,9 @@ _JOIN_TIMEOUT_S = 5
 class LibraryWatcher:
     """Figyelt gyökerek alatti változások debounce-olt jelzése.
 
-    on_folders_changed(folders: set[str]) a debounce-ablak lejártakor,
-    a watchdog megfigyelő szálából hívódik — a hívó felelőssége a
-    szál-átvitel (Qt-nál: queued signal).
+    on_folders_changed(folders: set[str | DirectoryChange]) a debounce-ablak
+    lejártakor, a watchdog megfigyelő szálából hívódik — a hívó felelőssége
+    a szál-átvitel (Qt-nál: queued signal).
     """
 
     def __init__(
@@ -92,7 +147,7 @@ class LibraryWatcher:
         self._max_debounce = max_debounce_seconds
         self._observer: Observer | None = None
         self._lock = threading.Lock()
-        self._dirty: set[str] = set()
+        self._dirty: set[str | DirectoryChange] = set()
         self._timer: threading.Timer | None = None
         self._first_dirty_at: float | None = None
         self._running = False
@@ -163,7 +218,7 @@ class LibraryWatcher:
         problémát, ahelyett hogy a folyamat később jel nélkül halna meg."""
         return self._observer is None or not self._szal_el(self._observer)
 
-    def _mark_dirty(self, folder: str) -> None:
+    def _mark_dirty(self, folder: str | DirectoryChange) -> None:
         with self._lock:
             if not self._running:
                 return

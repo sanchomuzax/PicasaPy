@@ -193,6 +193,12 @@ class FileOpsController(QObject):
         dest = Path(_to_local_path(dest_folder))
         return len(conflicting_names([Path(path) for path in paths], dest))
 
+    @Slot(str, result=bool)
+    def destinationFolderExists(self, dest_folder: str) -> bool:  # noqa: N802
+        """Igaz, ha a célmappa még létezik a lemezen (#5177)."""
+        local = _to_local_path(dest_folder)
+        return bool(local) and Path(local).is_dir()
+
     @Slot(list, str, str)
     def copyPhotos(self, paths: list, dest_folder: str, policy: str) -> None:
         """Kijelölés másolása a célmappába (#457/2), `policy` = rename|skip."""
@@ -203,7 +209,12 @@ class FileOpsController(QObject):
         """Kijelölés áthelyezése a célmappába (#457/2).
 
         Az eredeti a KÉPEK áthelyezésére ugyanazt a rename/skip párbeszédet
-        adta, mint a másolásra — ezért fut a kettő ugyanazon a magon."""
+        adta, mint a másolásra — ezért fut a kettő ugyanazon a magon.
+        A már eltűnt célmappát csendben elutasítjuk: a mappasor és a lemez
+        között a fájlfigyelő frissítése előtt rövid ideig eltérhet az állapot.
+        """
+        if not self.destinationFolderExists(dest_folder):
+            return
         self._run_batch("move", move_photos, paths, dest_folder, policy)
 
     @Slot(list, str)

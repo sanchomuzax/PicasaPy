@@ -22,6 +22,7 @@ from __future__ import annotations
 import logging
 import os
 import sqlite3
+import stat
 import threading
 import time
 from pathlib import Path
@@ -38,6 +39,7 @@ from picasapy.index import (
     folder_scan_stamps,
     move_folder_tree,
     open_index,
+    remove_folder_tree,
     remove_root,
     sync_folder,
 )
@@ -45,6 +47,7 @@ from picasapy.index.dedup_folders import merge_duplicate_folders
 from picasapy.index.queries import carry_pending_hidden
 from picasapy.paths import normalize_path, path_key
 from picasapy.scanner import (
+    DirectoryChange,
     LibraryWatcher,
     is_excluded,
     read_scan_list,
@@ -88,6 +91,67 @@ def _sqlite_write_lock_error(error: sqlite3.OperationalError) -> bool:
             return True
     message = str(error).casefold()
     return "locked" in message or "busy" in message
+
+
+def _coalesce_watcher_changes(changes) -> list[str | DirectoryChange]:
+    """A könyvtáresemény lefedje a köteg azonos/leszármazott fájljelzéseit.
+
+    Könyvtár törlésekor a watchdog a benne lévő médiafájlok `deleted`
+    eseményeit is küldheti. Ezeket a könyvtár-indexművelet kezeli; egy
+    ugyanoda irányuló `sync_folder` már fölösleges lemezolvasást indítana.
+    """
+    directory_changes: list[DirectoryChange] = []
+    file_folders: list[str] = []
+    for change in changes:
+        if not isinstance(change, DirectoryChange):
+            file_folders.append(str(change))
+            continue
+
+        same_path = next(
+            (
+                index
+                for index, previous in enumerate(directory_changes)
+                if Path(previous.path) == Path(change.path)
+            ),
+            None,
+        )
+        if same_path is None:
+            directory_changes.append(change)
+        elif directory_changes[same_path].action != change.action:
+            # Törlés és újralétrehozás egy debounce-ablakba esett. A
+            # jelenlegi állapot döntsön; hiba esetén a megőrző ág nyer.
+            try:
+                mode = Path(change.path).stat().st_mode
+            except FileNotFoundError:
+                action = "deleted"
+            except OSError:
+                action = "created"
+            else:
+                action = "created" if stat.S_ISDIR(mode) else "deleted"
+            directory_changes[same_path] = DirectoryChange(change.path, action)
+
+    # A szülőkönyvtár beolvasása/törlése lefedi a benne jelzett további
+    # könyvtáreseményeket is. Az egyezés Path-alapú, Windows alatt is.
+    filtered_directories = [
+        change
+        for change in directory_changes
+        if not any(
+            parent.action == change.action
+            and Path(parent.path) != Path(change.path)
+            and Path(change.path).is_relative_to(Path(parent.path))
+            for parent in directory_changes
+        )
+    ]
+    filtered_directories.sort(key=lambda change: len(Path(change.path).parts))
+    directory_paths = [Path(change.path) for change in filtered_directories]
+    return filtered_directories + [
+        folder
+        for folder in file_folders
+        if not any(
+            Path(folder) == directory or Path(folder).is_relative_to(directory)
+            for directory in directory_paths
+        )
+    ]
 
 
 # #209: a worker-oldali jelzés-ritkítás minimuma (mp) — sok gyorsan kihagyott
@@ -642,7 +706,10 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         root: str,
         progress=None,
         enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET,
+        *,
+        scan_root: str | None = None,
     ) -> None:
+        target = root if scan_root is None else scan_root
         excludes = self._folder_manager_excludes_for_root(root)
         if enabled_filetypes is _FILETYPE_SNAPSHOT_UNSET:
             enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
@@ -650,16 +717,16 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             kwargs = {"progress": progress}
             if enabled_filetypes is not None:
                 kwargs["enabled_filetypes"] = enabled_filetypes
-            self._sync_tree(conn, root, **kwargs)
+            self._sync_tree(conn, target, **kwargs)
             return
-        from . import controller as controller_module
-
         kwargs = {"exclude": excludes}
         if progress is not None:
             kwargs["progress"] = progress
         if enabled_filetypes is not None:
             kwargs["enabled_filetypes"] = enabled_filetypes
-        controller_module.sync_tree(conn, root, **kwargs)
+        from . import controller as controller_module
+
+        controller_module.sync_tree(conn, target, **kwargs)
 
     def _find_root(self, path: str) -> str | None:
         """#507: a `path`-hoz tartozó, MÁR figyelt gyökér — `path_key`
@@ -1027,14 +1094,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
     @Slot(list)
     def _on_folders_dirty(self, folders, *, felhasznaloi: bool = False) -> None:
-        """A watcher által jelzett (esetleg több) mappa célzott, nem-
-        rekurzív szinkronja EGY háttérszálon (#143).
+        """A watcher által jelzett mappák célzott frissítése (#143, #5177).
 
-        A `sync_tree` helyett a mappa-pontos `sync_folder`-t hívjuk: a
-        watcher konkrét mappát jelez, nincs ok a teljes részfa
-        újrajárására. A jelzett mappák koaleszálva, egyetlen worker-
-        szálban dolgozódnak fel — a watcher amúgy is debounce-ol
-        (`scanner/watcher.py`), így egy jelzésben több mappa is jöhet.
+        A fájlváltozás mappa-pontos `sync_folder`-t kap. Új könyvtárnál csak
+        az új út részfája kerül a rekurzív `sync_tree`-be; törlésnél az index
+        törlő API-ja távolítja el az út alatti sorokat, lemezbejárás nélkül.
+        A teljes gyökér-szinkron továbbra is a periodikus/kézi rescan feladata.
 
         ⚠️ #1440: ennek az ágnak SAJÁT futásjelzője van (`_dirty_running`).
         A `_sync_running` a `rescan()`-é, a `_sweep_running` (#1435) pedig
@@ -1045,7 +1110,7 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         index-íróból `sqlite3.OperationalError`, abból pedig a
         felhasználónak szóló `syncFailed` lett. A #1435 óta a worker akár
         kilenc mappát is visz, tehát sokkal tovább él — a kitettség nőtt."""
-        paths = [str(f) for f in folders]
+        paths = list(folders)
         if not paths:
             return  # üres jelzés: nincs mit szinkronizálni, jelzőt sem fogunk
         if self._sync_running or self._dirty_running:
@@ -1086,26 +1151,56 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             synced_folders = []
             try:
                 with open_index(self._db_path) as conn:
-                    for folder in paths:
-                        root = self._root_for_folder(folder)
+                    for folder in _coalesce_watcher_changes(paths):
+                        change = folder if isinstance(folder, DirectoryChange) else None
+                        folder_path = change.path if change is not None else str(folder)
+                        root = self._root_for_folder(folder_path)
                         if root is None:
                             continue  # már nem figyelt gyökér alatt — kihagyva
-                        if self._folder_manager_path_excluded(folder, root):
+                        if (
+                            change is None or change.action != "deleted"
+                        ) and self._folder_manager_path_excluded(folder_path, root):
                             continue
                         try:
-                            # #216: eltávolított gyökér mappája már ne íródjon
                             sync_options = {}
                             if enabled_filetypes is not None:
                                 sync_options["enabled_filetypes"] = enabled_filetypes
-                            sync_folder(
-                                conn,
-                                root,
-                                folder,
-                                exclude=self._folder_manager_excludes_for_root(root),
-                                should_stop=self._make_should_stop(root),
-                                **sync_options,
-                            )
-                            synced_folders.append(folder)
+                            if change is not None and change.action == "deleted":
+                                remove_folder_tree(conn, folder_path)
+                            elif change is not None:
+                                try:
+                                    folder_mode = Path(folder_path).stat().st_mode
+                                except FileNotFoundError:
+                                    remove_folder_tree(conn, folder_path)
+                                except OSError:
+                                    # Elérhetetlen cél esetén a teljes rescan
+                                    # dönt a mappa sorsáról.
+                                    continue
+                                else:
+                                    if stat.S_ISDIR(folder_mode):
+                                        self._sync_folder_manager_tree(
+                                            conn,
+                                            root,
+                                            progress=self._make_progress_emitter(
+                                                should_stop=self._make_should_stop(root)
+                                            ),
+                                            enabled_filetypes=enabled_filetypes,
+                                            scan_root=folder_path,
+                                        )
+                                    else:
+                                        remove_folder_tree(conn, folder_path)
+                            else:
+                                should_stop = self._make_should_stop(root)
+                                # #216: eltávolított gyökér mappája már ne íródjon
+                                sync_folder(
+                                    conn,
+                                    root,
+                                    folder_path,
+                                    exclude=self._folder_manager_excludes_for_root(root),
+                                    should_stop=should_stop,
+                                    **sync_options,
+                                )
+                            synced_folders.append(folder_path)
                         except (OSError, RuntimeError):
                             pass  # eltűnt mappa — a periodikus rescan rendezi
                         except sqlite3.OperationalError as error:
@@ -1116,14 +1211,14 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                                 # mappák a syncFinished utáni körre kerülnek.
                                 logger.warning(
                                     "mappaszinkron zárütközés, később újrapróbáljuk: %s: %s",
-                                    folder,
+                                    folder_path,
                                     error,
                                 )
-                                locked_folders.append(folder)
+                                locked_folders.append(folder_path)
                                 if conn.in_transaction:
                                     conn.rollback()
                             else:
-                                errors.append(f"{folder}: {error}")
+                                errors.append(f"{folder_path}: {error}")
             finally:
                 # #1440: a jelzőt az EMITEK ELŐTT engedjük el.
                 #
@@ -1533,7 +1628,7 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             if not timer.isActive():
                 timer.start(_LOCKED_SYNC_RETRY_MS)
             return
-        folders = sorted(self._pending_dirty)
+        folders = sorted(self._pending_dirty, key=str)
         self._pending_dirty = set()
         # #1458: a várakozás közben nyitott foglaltság-bejegyzések záródnak.
         # A `_on_folders_dirty` alább ÚJ bejegyzést nyithat (ha megint nem

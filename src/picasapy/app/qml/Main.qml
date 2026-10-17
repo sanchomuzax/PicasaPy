@@ -3319,7 +3319,8 @@ ApplicationWindow {
                         Number(rows[i]))
                     if (photoPath.length > 0) paths.push(photoPath)
                 }
-                if (paths.length > 0)
+                if (paths.length > 0
+                        && fileOpsController.destinationFolderExists(path))
                     fileOpsController.movePhotos(paths, path, "rename")
             }
             onFolderDroppedOnFolder: function(sourcePath, targetPath) {
