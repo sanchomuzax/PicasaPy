@@ -5483,6 +5483,62 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 
 Következő felvehető munka: célzottan feloldani a `0x00423300` callback adatútját és a `0x008037e0` `oneup/transtype` fogyasztóját; ha ezek a gyárhoz vezetnek, utána renderelt arcos és arc nélküli képkockával ellenőrizni a viselkedést. Külön kutatási jegyet ez a kör nem javasol, mert a megmaradt kérdések ugyanannak a #4856 átmenetútjának részei.
 
+#### 4.3 6. kör: a választólista, a „Pan and Zoom” célterülete és a `kenburnsaoi` (2026-10-17)
+
+**Kérdés:** az eredeti diavetítés átmenet-választójának hét eleme közül a „Pan and Zoom” (`kenburns`) a nagyítás célterületét arcadatból számolja-e, vagy anélkül? Létezik-e az arc-változat (`kenburnsaoi`) az eredetiben, el van-e rejtve a választóból, és ha létezik, mit csinál?
+
+**Röviden.** (1) A választó két külön listából épül: a diavetítés hét elemet mutat (`0x00d342e8`), a filmkészítő tízet (`0x00d345e4`). Az arc-változat a filmben választható, a diavetítésben nincs a listában, és a mentett érték sem tudja elérni. (2) A „Pan and Zoom” célterületét nem arcadat adja: a kivágás helyét a `rand()` véletlen törtjei döntik el, az útban nincs arc-mező. (3) A `kenburnsaoi` a filmben arcjelöltekből számol célt; érvényes arcjelölt hiányában a sima Pan and Zoom véletlen illesztése marad. Az arcjelölt forrása (`faces=`?) ebben a körben nem igazolt.
+
+**Bizonyítottsági fok.**
+- Választólista (7 és 10 elem, a mentett érték 0-6 tartománya): **megerősített**. (A) A diavetítés lista-feltöltő ciklusa (`0x0075d9a0`-`0x0075db78`, `cmp eax, 0x1c`) a 7 elemű tömbön fut. (B) A Colab-felvétel (job-182) ugyanezt a hét elemet mutatta, ugyanebben a sorrendben. A diavetítés-sáv és a 7 elemű lista összerendelése a Colab-egyezésen alapul (feltételezés, nem közvetlen kódbizonyíték).
+- „Pan and Zoom” célterülete arcmentes (szerkesztő-előnézeti út): **megerősített**. (A) Utasításszintű lánc: gyár (csoport 1) → `0x0076e100` → `0x0076e4e0` → vtábla `+0x30` (`0x009e08b0`) → illesztés `0x0076d900`. (B) Az arc-mezőket (`+0x4b0…+0x4bc`) a kenburns-konstruktor (`0x0076e100`) nem írja; az arc-csomópont (`0x0076ed30`) csak a 0x0a csoport ágából hívódik. A B-rekord a `0x00760d50` lokális kitöltéséből származik, amely az `editpanel/previewclip` objektum `vtbl+0x30` kimenetét használja (a mezőleképezés részben követve).
+- A véletlen pozíció: **feltételes**. A `0x00c08221` azonosítása erős (MSVC LCG), a hívási helyek megvannak, de renderelt képkocka-sorozat nincs, és a mag (`srand`) nem igazolt.
+- Az arc-változat léte és viselkedése a filmben: **megerősített** a regisztrálóban, a rekordban, a gyárban és az arc-csomópontban; **nyitott** az arcjelölt forrása.
+- A teljes képernyős diavetítés futásidejű útja: **nyitott** (lásd 4.2, `0x00423300`).
+
+**Bizonyíték.**
+
+| állítás | forrás |
+|---|---|
+| 22 rekord, 16 bájt: `dword0` = csoport, `dword1` = irány. Az 1. rekord `kenburns` (csoport 1), a 20. `kenburnsaoi` (csoport 0x0a) | bináris `0x00d34188` (+16·i), `0x00d34198`, `0x00d342c8` |
+| feliratok: „Pan and Zoom” (`0x00cb2c84`), „Pan and Zoom - face” (`0x00cb2a90`); a `Picasa3i18n.dll` `stringres id="CTransitions::kenburnsaoi"` bejegyzése ugyanezt adja | bináris `0x00cb2a90`, `0x00cb2f00`; `Picasa3i18n.dll` |
+| regisztráló: minden kulcsot szűrés nélkül vesz fel; a kenburnsaoi a `0x00771d46`-nál | bináris `0x00771a10`, `0x00771d46` |
+| rekord-lekérő: `0xd34188 + 16·i`, i ≥ 22 esetén 0 | bináris `0x00771d8e`-`0x00771d98` |
+| diavetítés-lista: `[0, 1, 2, 6, 9, 12, 15]` (7 dword), ciklus `eax += 4`, `cmp eax, 0x1c` | bináris `0x00d342e8`; `0x0075d9a0`, `0x0075db71`-`0x0075db78` |
+| filmkészítő-lista: `[0, 1, 2, 3, 4, 6, 9, 12, 20, 21]` (10 dword), ciklus `cmp ebp, 0xa` | bináris `0x00d345e4`; `0x00613c2d`, `0x00613dea`-`0x00613df1` |
+| diavetítés mentett értéke: kulcs `ThumbUISlideShow::transition`, szekció `Preferences`; a kiolvasás előtti kezdőérték 2 (Dissolve); az érték 0-6-ra szorul | bináris `0x00cb22b0`, `0x00c7eafc`, `0x0075d84f`, `0x0075d865`-`0x0075d872` |
+| a kiválasztott rekord csoportja és iránya → `0x00760b00` → `0x00760d50` (a `kind` a csoport) → gyár | bináris `0x0075d888`, `0x0075d8a3`, `0x00760ccc`, `0x00760eac` |
+| csoport 1 → `0x0076e100` (vtábla `0x00cb313c`); csoport 0x0a → `0x0076ed30` (vtábla `0x00cb320c`) | bináris `0x00771e97`, `0x00772286`, `0x0076e12e`, `0x0076ed4c` |
+| célszámítás `0x0076e4e0`; forráshatár: vtábla `+0x30` = `0x009e08b0`; illesztés `0x0076d900` | bináris `0x0076e4e0` (`0x0076e512`, `0x0076e551`); `0x00cb313c` + `0x30` |
+| `rand()` = MSVC LCG: `x = x·214013 + 2531011`, kimenet `(x >> 16) & 0x7fff` | bináris `0x00c08221`-`0x00c08242` |
+| véletlen törtek: `(rand + 0x3f8000) << 8` float-bitekként, majd 1,0 kivonása → [0, 1); 4 hívás az illesztésben | bináris `0x0076db61`, `0x0076db7c`, `0x0076dbe0`, `0x0076dbfb` |
+| a kenburns-konstruktor két rand-hívása | bináris `0x0076e16a`, `0x0076e1a4` |
+| arc-csomópont: előbb meghívja a kenburns-konstruktort, majd csak akkor írja felül az arc-célt (`0x0076ee50`), ha az arcjelölt nem tartalmaz `-1.0` sentinelt | bináris `0x0076ed41`, `0x0076ed5c`-`0x0076ed6e`, `0x0076edcd`, `0x0076ee33` |
+| `0x0076ee50` csak `0x0076ed30`-ból hívódik; `0x0076ed30` csak a gyár 0x0a ágából | xref: `0x0076ee50` ← `0x0076ed30` ← `0x00771e60` (`0x00772286`) |
+| film arc-ága: a `this+0x28c == 0x14` ágon `0x00813c50` az azonosítóhoz tartozó téglalapot adja; az azonosító forrása nyitott | bináris `0x00813330`, `0x00813c50` (4.1-4.2) |
+
+**A két független út.** (A) Utasítás-lánc: gyár → konstruktor → illesztés, a `rand()` hívásokkal. (B) Adat- és hívási gráf: a két tábla, a választólista-ciklusok, a preview-rekord forrása és az arc-ág kizárólagossága. A két út a választólistában és az arc-ág kizárólagosságában egyezik. A véletlen mechanizmust az (A) út adja; a (B) út ettől független.
+
+**Cáfoló kísérlet.**
+1. „A diavetítés listája erőforrásból épül, a 7 elem csak a binárisban látszik." Cáfolat nem sikerült: a szűrést a kódban lévő ciklus végzi (`cmp eax, 0x1c`), a felirat-erőforrás mind a 22 kulcsot tartalmazza, és a Colab-felvétel is hét elemet mutatott.
+2. „A mentett érték a 7 elemen túlra is mutathat." Cáfolva: a `cmp eax, 6` / `ja` a 0-6 tartományra szorít.
+3. „A kenburns B-rekordja (célméret) arcadatból jön." Nem cáfolható teljesen ebben a körben: a B-mezők leképezése részben követett. A forrás a previewclip befoglaló téglalapja (`vtbl+0x30`), nem arc.
+4. „A pásztázás nem véletlen, hanem konstans." Cáfolva: a `0x0076db5f`-`0x0076dbfb` szakaszban a rand-törtek adják a kivágás helyét; a `-1.0` sentinel csak az arc-jelöltnél jelenik meg.
+5. „A kenburnsaoi a teljes képernyős úton mégis elérhető." Nem zárható ki: a teljes képernyős út (`0x005e8a70` → `0x00423300`) nyitott (4.2). Ez a kör egyetlen gyenge pontja.
+
+**A jegy „Kész, ha” pontjai.**
+- ⛔ Arcot tartalmazó dián a nagyítás középpontja az arc felé mozdul (renderelt): **nem igazolható** az eredetiben. A diavetítés választójában nincs arc-változat (`0x00d342e8`); a filmben az arcforrás nyitott; render nincs.
+- ⛔ Arc nélküli dián a viselkedés változatlan: az eredeti arc nélküli viselkedése véletlen pásztázás (rand), nem középre igazított. A repo `SlideshowView.qml:752-761` középre igazít, tehát a jelenlegi viselkedés és az eredeti eltér. A „változatlan” így a jelenlegi repóra nem értelmezhető.
+- ⛔ A súgó igazodik: függ attól, hogy a diavetítés kap-e arc-változatot (termékdöntés).
+
+**Nyitott.**
+- Renderelt bizonyíték: két egymást követő Pan and Zoom futás képkockái (véletlen-e a pásztázás, és mennyire determinisztikus a sorozat): **NINCS MEG**. Ehhez Colab-felvétel kell.
+- A `0x0076d900` illesztés pontos képlete (x0, y0 a törtekből; a `fadd`/`fmul` konstansok `0x00cf4748`, `0x00c7dd30`, `0x00cf3b08`), és van-e középre igazító elágazás: diszasszemblálás még nincs végigkövetve. Nem blokkolja a fenti döntést, a pontos portoláshoz viszont kell.
+- A mag (`srand`): nem találtam importált `srand`-ot; belső seed-beállítás kizárva nincs. **NINCS MEG.**
+- A film arcjelölt-forrása (`0x00813c50` azonosító → `faces=`): nyitott (4.2).
+
+**Módosított fájl:** `docs/specs/picasa-create-features.md` (új 4.3 szakasz).
+
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
 A korábbi szakasz a `slideshowctrls.tre`-t idézte (két elem). **Az igazi
