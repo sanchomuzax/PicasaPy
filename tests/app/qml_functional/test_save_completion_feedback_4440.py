@@ -236,10 +236,16 @@ def test_a_revert_kattintasa_siker_es_hiba_utan_is_frissit(qml_app, qt_app):
                 controller.revertFinished,
                 lambda: _kattint_a_visszaallitasra(window, qt_app),
             )
-            hiba = window.findChild(QObject, "saveResultDialog")
-            assert hiba is not None
+            hiba = window.findChild(QObject, "saveErrorDialog")
+            assert hiba is not None, (
+                "a Visszaállítás lemezhibájához nem jelent meg a spec szerinti "
+                "hibaüzenet"
+            )
             assert _vár(qt_app, lambda hiba=hiba: hiba.property("visible"))
-            assert "forced restore error" in hiba.property("message")
+            assert hiba.property("message") == (
+                "Unable to revert all files due to a disk error. The disk may "
+                "be full or read-only."
+            )
             QMetaObject.invokeMethod(hiba, "close")
             assert _vár(qt_app, lambda hiba=hiba: not hiba.property("visible"))
         finally:

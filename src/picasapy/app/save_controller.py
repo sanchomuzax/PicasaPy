@@ -202,6 +202,8 @@ class SaveMixin(BackgroundWorkerMixin):
     #: a `save_error_kind.py`-ban; a SZÖVEGET a `SaveDialogs.qml` adja,
     #: mert a hivatalos feliratok fordítható erőforrások.
     saveErrorOccurred = Signal(str, str, int)
+    #: a fájl-visszaállítás hivatalos, általános lemezhiba-üzenete (#5268)
+    revertErrorOccurred = Signal()
     #: a lebegő folyamat-panel állapota változott
     saveProgressChanged = Signal()
     #: háttérszálból jövő haladás — Qt sorolja a GUI-szálra
@@ -298,6 +300,7 @@ class SaveMixin(BackgroundWorkerMixin):
         self._save_progress_done = 0
         self._save_progress_total = 0
         self._save_progress_active = False
+        self._save_progress_reverting = False
         self._saveProgressTick.connect(self._on_save_progress_tick)
         # ⚠️ A fájl kiírása MÉG NEM láthatóság: a másolat addig nem jelenik
         # meg a rácsban, amíg az index nem tud róla, a `selectFolder` pedig
@@ -328,6 +331,8 @@ class SaveMixin(BackgroundWorkerMixin):
         self._save_progress_done = done
         self._save_progress_total = total
         self._save_progress_active = bool(active)
+        if not active:
+            self._save_progress_reverting = False
         self.saveProgressChanged.emit()
 
     @Property(bool, notify=saveProgressChanged)
@@ -343,6 +348,12 @@ class SaveMixin(BackgroundWorkerMixin):
         (`progfile` / `progfiles`)."""
         self._ensure_save_progress()
         return self._save_progress_total
+
+    @Property(bool, notify=saveProgressChanged)
+    def saveProgressIsReverting(self) -> bool:  # noqa: N802 — QML-stílus
+        """A közös folyamatjelző a fájl-visszaállítás szövegét mutassa-e."""
+        self._ensure_save_progress()
+        return self._save_progress_reverting
 
     @Property(float, notify=saveProgressChanged)
     def saveProgressPercent(self) -> float:  # noqa: N802 — QML-stílus
@@ -645,7 +656,9 @@ class SaveMixin(BackgroundWorkerMixin):
         """„Visszaállítás": az eredeti visszamásolása a biztonsági
         mentésből — a szerkesztések ELVESZNEK (a felület ezért kérdez rá az
         eredeti szövegével)."""
-        self._run_restore(rows, revert, self.revertFinished)
+        self._run_restore(
+            rows, revert, self.revertFinished, show_restore_progress=True
+        )
 
     @Slot(list)
     def undoLastSave(self, rows) -> None:  # noqa: N802 — QML-stílus
@@ -697,7 +710,9 @@ class SaveMixin(BackgroundWorkerMixin):
         if items:
             self.recordSavedChains(items)
 
-    def _run_restore(self, rows, operation, finished_signal) -> None:
+    def _run_restore(
+        self, rows, operation, finished_signal, *, show_restore_progress=False
+    ) -> None:
         self._ensure_disk_operation_feedback_wired()
         paths = [
             Path(r.folder_path) / r.name for r in self._selected_records(rows)
@@ -706,15 +721,23 @@ class SaveMixin(BackgroundWorkerMixin):
             finished_signal.emit(0, 0)
             return
 
+        if show_restore_progress:
+            self._ensure_save_progress()
+            self._save_progress_reverting = True
+            self._saveProgressTick.emit(0, len(paths), 1)
+
         def worker():
             done, failed, details = 0, 0, []
+            disk_error_occurred = False
             naplo: list[tuple[str, str]] = []
             successful_paths: list[Path] = []
-            for path in paths:
+            for index, path in enumerate(paths):
                 try:
                     result = operation(path)
                 except _SAVE_ERRORS as error:
                     failed += 1
+                    if save_error_kind(error) == "disk":
+                        disk_error_occurred = True
                     if len(details) < _FAILED_DETAILS_LIMIT:
                         details.append(f"{path.name}: {error}")
                 else:
@@ -726,13 +749,23 @@ class SaveMixin(BackgroundWorkerMixin):
                     # minden szerkesztés-könyvelést töröl, ott az üres lánc
                     # (a `getattr` alapértéke) törli a bejegyzést.
                     naplo.append((str(path), getattr(result, "restored_filters", "")))
+                if show_restore_progress:
+                    self._saveProgressTick.emit(index + 1, len(paths), 1)
             self._record_saved_state(naplo)
             self._resync_disk_operation_folders(successful_paths)
             self.diskOperationSucceededPaths.emit(
                 [str(path) for path in successful_paths]
             )
             if details:
-                self.saveFailedDetails.emit(details)
+                if show_restore_progress and disk_error_occurred:
+                    logging.getLogger(__name__).warning(
+                        "visszaállítási hibák (#5268): %s", "; ".join(details)
+                    )
+                    self.revertErrorOccurred.emit()
+                else:
+                    self.saveFailedDetails.emit(details)
+            if show_restore_progress:
+                self._saveProgressTick.emit(len(paths), len(paths), 0)
             finished_signal.emit(done, failed)
 
         self._start_background(worker, name="picasapy-save-restore")
