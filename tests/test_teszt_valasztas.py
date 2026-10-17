@@ -349,6 +349,8 @@ def test_csak_docs_valtozasnal_az_ubuntu_es_windows_darabszam_is_zero(
     repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.delenv("GITHUB_OUTPUT", raising=False)
+    # a main CI-n PICASAPY_TESZT_TELJES=1 fut: a próba a PR-esetet méri, ezt itt kizárjuk
+    monkeypatch.delenv("PICASAPY_TESZT_TELJES", raising=False)
     monkeypatch.setattr(
         tv,
         "_selection_for_cli",
