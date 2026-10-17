@@ -1,0 +1,1 @@
+- Windowson a mentés nem bukik el, ha a képet egy pillanatra egy másik olvasó (például a bélyegkép-készítő) tartja nyitva.

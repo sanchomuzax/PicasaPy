@@ -180,6 +180,21 @@ from picasapy.ini import (
 from picasapy.ini.names import INI_NAME
 from picasapy.ioutil import write_atomic
 
+#: Windowson a képfájlt egy olvasó (bélyegkép, néző) rövid ideig nyitva
+#: tarthatja, ilyenkor a csere `PermissionError`-ral (sharing violation)
+#: bukik. A metaadat-író mintájára néhányszor újrapróbáljuk (összesen ~1,8 mp).
+_ZAR_UJRA = 8
+_ZAR_KESLELTETES = 0.05
+
+
+def _kep_irasa(image_path: Path, payload: bytes) -> None:
+    write_atomic(
+        image_path,
+        payload,
+        lock_retries=_ZAR_UJRA,
+        lock_retry_delay=_ZAR_KESLELTETES,
+    )
+
 #: A rejtett almappa neve, ahová az ÚJ mentéseink érintetlen eredetije kerül
 #: (spec + UX #3). Írni MINDIG ide írunk.
 ORIGINALS_DIR_NAME = ".picasaoriginals"
@@ -349,7 +364,7 @@ def save_edited(
 
     # (b) A renderelt kép az eredeti HELYÉRE.
     payload = _encode_image(image_path.suffix, rendered_image, jpeg_quality)
-    write_atomic(image_path, payload)
+    _kep_irasa(image_path, payload)
 
     # (c) `.picasa.ini`: a `redo=` frissítése, a `filters=` törlése.
     # #2675: `originhash` NEM íródik — nem mentéskori kulcs.
@@ -426,7 +441,7 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
     restored_filters = (stored.get(_REDO_KEY) or "") if stored else ""
 
     bytes_before = image_path.read_bytes()
-    write_atomic(image_path, snapshot.read_bytes())
+    _kep_irasa(image_path, snapshot.read_bytes())
     try:
         _update_ini_document(
             image_path,
@@ -491,7 +506,7 @@ def revert(image_path: str | Path) -> RevertResult:
     edited_bytes = image_path.read_bytes() if image_path.exists() else None
 
     original_bytes = backup_path.read_bytes()
-    write_atomic(image_path, original_bytes)
+    _kep_irasa(image_path, original_bytes)
 
     section = _section_name(image_path)
 
@@ -528,7 +543,7 @@ def _restore_image_or_raise(
     tudja, hogy a kép a következő megnyitáskor kétszer szerkesztettnek
     látszhat, és hol keresse az eredetit."""
     try:
-        write_atomic(image_path, payload)
+        _kep_irasa(image_path, payload)
     except OSError as restore_error:
         raise SaveError(
             f"A kép elmentődött ({image_path}), de a .picasa.ini "
