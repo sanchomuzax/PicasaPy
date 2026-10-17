@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.118] – 2026-10-17
+
+- A fotó helyi menüjének két felirata (a visszavonás és a feltöltés tiltása) az eredetit követi, a Társítás almenü pedig a képhez társított alkalmazásokat listázza (#5195).
+
 ## [0.9.117] – 2026-10-17
 
 - A bal sáv Emberek csoportjában a Név nélküliek sor áll elöl, és a csoport száma őt is beleszámolja, ahogy az eredetiben (#5190).

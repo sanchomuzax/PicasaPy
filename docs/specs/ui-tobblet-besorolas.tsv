@@ -266,7 +266,6 @@ PicasaPy/PeoplePanel.qml	People who appear in the currently selected 	segedszove
 PicasaPy/PerfMonitorPanel.qml	Performance monitor	sajat-funkcio	A Teljesítmény-monitor a docs/decisions/vedett-sajat-funkciok.md szerint saját funkció (#1364): fejlesztői eszköz, az eredeti Picasa 3.9 Súgó menüjében nincs ilyen menüpont vagy panel.		
 PicasaPy/PerfMonitorPanel.qml	Save diagnostics...	sajat-funkcio	A Teljesítmény-monitor a docs/decisions/vedett-sajat-funkciok.md szerint saját funkció (#1364): fejlesztői eszköz, az eredeti Picasa 3.9 Súgó menüjében nincs ilyen menüpont vagy panel.		
 PicasaPy/PhotoContextMenu.qml	Add to People Album	mero-vakfolt	A magyar szövegünk betűre egyezik a PplAlbumPhoto::ID_PEOPLEALBUMS hivatalos magyarjával (csak a & jel hiányzik); az angol eltér („Move to People Album”).	PplAlbumPhoto::ID_PEOPLEALBUMS	Move to People Album
-PicasaPy/PhotoContextMenu.qml	Block Upload	mero-vakfolt	A magyar szövegünk betűre egyezik az AlbumPhoto::ID_SUPPRESS hivatalos magyarjával (csak a & jel hiányzik); az angol eltér („Block from Uploading”).	AlbumPhoto::ID_SUPPRESS	Block from Uploading
 PicasaPy/PhotoContextMenu.qml	Ctrl+Delete	mero-vakfolt	A magyar szövegünk egyezik a ytMenu::CtrlPrefix + CMenuBar::Delete összefűzésével („Ctrl+Törlés”).	ytMenu::CtrlPrefix+CMenuBar::Delete	Ctrl+Delete
 PicasaPy/PhotoContextMenu.qml	File on Disk	mero-vakfolt	A magyar szövegünk egyezik a CThumbUI::locateondiskmenu hivatalos magyarjával (a & jel és a Ctrl+Enter gyorsbillentyű-rész nélkül).	CThumbUI::locateondiskmenu	File on Disk
 PicasaPy/PhotoContextMenu.qml	Locate Original on Disk	mero-vakfolt	A magyar szövegünk betűre egyezik a CThumbUI::locateorigondiskmenu_win hivatalos magyarjával (csak a & jel hiányzik); az angolban nálunk plusz „Locate” áll.	CThumbUI::locateorigondiskmenu_win	Original on Disk
@@ -368,7 +367,6 @@ PicasaPy/UnnamedFacesView.qml	Look for more suggestions	segedszoveg	'Tovabbi jav
 PicasaPy/UnnamedFacesView.qml	Lowers the recognition threshold once, so more names are 	segedszoveg	Buboreksugo a felismeresi kuszob lazitasarol; nincs talalhato eredeti megfelelo.		
 PicasaPy/UnnamedFacesView.qml	Stop ignoring	segedszoveg	'Mellozes visszavonasa' gomb felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/VideoPlayerView.qml	Unable to play this video.	segedszoveg	Saját videólejátszási hibaüzenet; nincs megfelelője a forrásokban.		
-PicasaPy/ViewerContextMenu.qml	Block Upload	mero-vakfolt	A magyar szövegünk betűre egyezik az AlbumPhoto::ID_SUPPRESS hivatalos magyarjával (csak a & gyorsbillentyű-jel hiányzik); az angol eltér („Block from Uploading”).	AlbumPhoto::ID_SUPPRESS	&Block from Uploading
 PicasaPy/WebExportDialog.qml	(not selected)	segedszoveg	Nincs kivalasztott cel allapotjelzo; nincs talalhato eredeti megfelelo.		
 PicasaPy/WebExportDialog.qml	Browse...	segedszoveg	'Tallozas...' gomb - natív OS fajlvalaszto, nincs Picasa-authoralt sztring rea.		
 PicasaPy/WebExportDialog.qml	Choose target folder...	segedszoveg	Celmappa-valaszto dialogus utasitasa; nincs talalhato eredeti megfelelo.		

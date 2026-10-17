@@ -8829,7 +8829,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
             <translation>Xoay ngược chiều kim đồng hồ</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Hoàn tác mọi chỉnh sửa</translation>
         </message>
@@ -8860,6 +8860,11 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Mở bằng</translation>
         </message>
         <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mở bằng...</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Lưu</translation>
@@ -8882,7 +8887,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Tải lên &amp;Anbom Web Picasa...</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Chặn Tải lên</translation>
@@ -12809,7 +12814,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
             <translation>Xoay ngược chiều kim đồng hồ</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Hoàn tác mọi chỉnh sửa</translation>
         </message>
@@ -12889,7 +12894,7 @@ picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD;stringres:Slingshot::ID_QUI
             <translation>Tải lên nhanh</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Chặn Tải lên</translation>

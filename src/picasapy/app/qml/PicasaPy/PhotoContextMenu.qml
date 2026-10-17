@@ -75,6 +75,12 @@ PicasaMenu {
     //: #1613: van-e a képnek megőrzött eredetije a `.picasaoriginals`-ban —
     //: enélkül az „Eredeti a lemezen" tétel szürke, mint az eredetiben
     property bool hasOriginalOnDisk: false
+    //: #5195: a „Társítás ▸" almenü tételei (`{id, name}`), a megnyitáskor
+    //: a Main.qml tölti a jobbklikkelt képre
+    property var openWithApps: []
+    //: #5195: Windowson a héj saját „Megnyitás ezzel" párbeszéde van, almenü
+    //: nélkül (ld. `contextMenuOpenWithNative`)
+    property bool nativeOpenWith: false
     //: #3468: a kijelölt képek száma a megnyitáskor (a „Keresés" almenü
     //: csak EGY képnél jelenik meg)
     property int kijeloltKepekSzama: 1
@@ -102,6 +108,8 @@ PicasaMenu {
     signal moveRequested()
     signal splitFolderRequested()
     signal openFileRequested()
+    //: #5195: a „Társítás ▸" almenü egy alkalmazását kéri a jobbklikkelt képre
+    signal openWithAppRequested(string appId)
     //: #4533: a „Társítás…" választót kéri a kijelölt képre
     signal openWithRequested()
     signal locateRequested()
@@ -141,6 +149,8 @@ PicasaMenu {
                                function () { return menu.personName !== "" })
         menu._kossAlmenuTetelt(locateMenu, "contextMenuLocateMenuTetel",
                                function () { return menu._keresesAlmenu })
+        menu._kossAlmenuTetelt(openWithMenu, "contextMenuOpenWith",
+                               function () { return !menu.nativeOpenWith })
     }
     Component.onCompleted: menu._kossElRejtettAlmenut()
 
@@ -294,7 +304,8 @@ PicasaMenu {
     // magassága állandó, az izommemória működik).
     MenuItem {
         objectName: "contextMenuUndoAllEdits"
-        text: qsTr("Undo All Edits")
+        // #5195: az eredetiben kis `a`-val: AlbumPhoto::ID_PICTURE_REVERT
+        text: qsTr("Undo all Edits")
         enabled: menu.hasEdits
         onTriggered: menu.undoAllEditsRequested()
     }
@@ -336,10 +347,46 @@ PicasaMenu {
         text: qsTr("Open File") + "\tCtrl+Shift+O"
         onTriggered: menu.openFileRequested()
     }
+    // #5195: „Társítás ▸" almenü: a fájltípushoz társított alkalmazások,
+    // alul a #4533 választó. A tétel láthatósága a `_kossElRejtettAlmenut`-ban
+    // van: Windowson (`nativeOpenWith`) a héj párbeszédét nyitó egy tétel marad.
+    PicasaMenu {
+        id: openWithMenu
+        objectName: "contextMenuOpenWithMenu"
+        title: qsTr("Open With")
+
+        // A Repeater a delegáltakat a már meglévő tételek MÖGÉ fűzi, így a
+        // választó került volna az alkalmazások elé; az Instantiator a
+        // megadott indexre szúrja be őket.
+        Instantiator {
+            objectName: "contextMenuOpenWithInstantiator"
+            model: menu.openWithApps
+            delegate: MenuItem {
+                required property var modelData
+                objectName: "contextMenuOpenWithApp_" + modelData.id
+                text: modelData.name
+                onTriggered: helyiMenu.openWithAppRequested(modelData.id)
+            }
+            onObjectAdded: function (index, item) { openWithMenu.insertItem(index, item) }
+            onObjectRemoved: function (index, item) { openWithMenu.removeItem(item) }
+        }
+        MenuSeparator {
+            visible: menu.openWithApps.length > 0
+            height: visible ? implicitHeight : 0
+        }
+        MenuItem {
+            // #4533: a kattintás a társított alkalmazások választóját nyitja
+            objectName: "contextMenuOpenWithChoose"
+            text: qsTr("Open With...")
+            onTriggered: menu.openWithRequested()
+        }
+    }
     MenuItem {
-        // #4533: a kattintás a társított alkalmazások választóját nyitja
-        objectName: "contextMenuOpenWith"
+        // #5195: Windowson a héj „Megnyitás ezzel" párbeszéde (#4533)
+        objectName: "contextMenuOpenWithNative"
         text: qsTr("Open With")
+        visible: menu.nativeOpenWith
+        height: visible ? implicitHeight : 0
         onTriggered: menu.openWithRequested()
     }
     MenuSeparator {}
@@ -441,7 +488,8 @@ PicasaMenu {
     }
     PicasaMenuItem {
         objectName: "contextMenuBlockUpload"
-        text: qsTr("Block Upload")
+        // #5195: a hivatalos felirat (AlbumPhoto::ID_SUPPRESS)
+        text: qsTr("Block from Uploading")
         placeholder: false
         // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
         retired: true

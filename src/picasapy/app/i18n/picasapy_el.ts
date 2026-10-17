@@ -8830,7 +8830,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
             <translation>Περιστροφή αριστερόστροφα</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Αναίρεση όλων των αλλαγών</translation>
         </message>
@@ -8861,6 +8861,11 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Άνοιγμα με</translation>
         </message>
         <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Άνοιγμα με...</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Αποθήκευση</translation>
@@ -8883,7 +8888,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Μεταφόρτωση στα &amp;Λευκώματα Ιστού Picasa...</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Αποκλεισμός από τη μεταφόρτωση</translation>
@@ -12810,7 +12815,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
             <translation>Περιστροφή αριστερόστροφα</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Αναίρεση όλων των αλλαγών</translation>
         </message>
@@ -12890,7 +12895,7 @@ picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD;stringres:Slingshot::ID_QUI
             <translation>Γρήγορη μεταφόρτωση</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Αποκλεισμός από τη μεταφόρτωση</translation>

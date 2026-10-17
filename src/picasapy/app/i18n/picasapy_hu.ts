@@ -8837,8 +8837,9 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
             <translation>Forgatás balra</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <source>Undo all Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_REVERT</extracomment>
             <translation>Összes szerkesztés visszavonása</translation>
         </message>
         <message>
@@ -8865,8 +8866,15 @@ picasapy-origin-key: tooltips:Label(contextMenuSplitFolder)</extracomment>
         </message>
         <message>
             <source>Open With</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_FILEOPENWITH</extracomment>
             <translation>Társítás</translation>
+        </message>
+        <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:slingshot::openwith_separator</extracomment>
+            <translation>Társítás...</translation>
         </message>
         <message>
             <source>Save</source>
@@ -8891,7 +8899,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Feltöltés a Picasa Webalbumokba…</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>Feltöltés tiltása</translation>
@@ -12819,8 +12827,9 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
             <translation>Forgatás balra</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <source>Undo all Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:FolderPhoto::ID_PICTURE_REVERT</extracomment>
             <translation>Összes szerkesztés visszavonása</translation>
         </message>
         <message>
@@ -12899,7 +12908,7 @@ picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD;stringres:Slingshot::ID_QUI
             <translation>Gyors feltöltés</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>Feltöltés tiltása</translation>

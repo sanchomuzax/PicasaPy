@@ -8843,7 +8843,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
             <translation>Rotera moturs</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ångra alla redigeringar</translation>
         </message>
@@ -8874,6 +8874,11 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Öppna med</translation>
         </message>
         <message>
+            <source>Open With...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Öppna med...</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Spara</translation>
@@ -8896,7 +8901,7 @@ picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Ladda upp till &amp;Picasa webbalbum...</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Spärra från uppladdning</translation>
@@ -12823,7 +12828,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_LABELS</extracomment>
             <translation>Rotera moturs</translation>
         </message>
         <message>
-            <source>Undo All Edits</source>
+            <source>Undo all Edits</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ångra alla redigeringar</translation>
         </message>
@@ -12903,7 +12908,7 @@ picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD;stringres:Slingshot::ID_QUI
             <translation>Snabbuppladdning</translation>
         </message>
         <message>
-            <source>Block Upload</source>
+            <source>Block from Uploading</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_SUPPRESS</extracomment>
             <translation>&amp;Spärra från uppladdning</translation>
