@@ -19,6 +19,7 @@ ColumnLayout {
     property var albumsModel: []
     property string selectedAlbumToken: ""
     property bool starredActive: false
+    property string searchResultsText: ""
     // #730: a hasáb egységes sormagassága — egyetlen forrásból
     property int rowHeight: 22
 
@@ -43,8 +44,10 @@ ColumnLayout {
     CollectionHeader {
         Layout.fillWidth: true
         label: qsTr("Albums")
-        // #9: 1 a csillagozott sorért + az összes virtuális album
+        // #9: a csillagozott sor + a virtuális albumok; #5194: kereséskor
+        // az új találatsor is a csoport része.
         itemCount: 1 + section.albumsModel.length
+                   + (section.searchResultsText.length > 0 ? 1 : 0)
         labelObjectName: "albumsHeader"
         collapsed: section.collapsed
         onToggled: section.toggled()
@@ -60,7 +63,8 @@ ColumnLayout {
     // súgó most az eredeti feltételét követi.
     Text {
         objectName: "albumDropHintText"
-        visible: !section.collapsed && section.albumsModel.length === 0
+        visible: !section.collapsed && section.searchResultsText.length === 0
+                 && section.albumsModel.length === 0
         Layout.fillWidth: true
         Layout.leftMargin: 16
         Layout.rightMargin: 8
@@ -95,6 +99,37 @@ ColumnLayout {
                 drop.accept()
                 section.newAlbumPhotosDropped(
                     drop.source.photoRows ? drop.source.photoRows.slice() : [])
+            }
+        }
+    }
+
+    Rectangle {
+        objectName: "searchResultsAlbumRow"
+        visible: !section.collapsed && section.searchResultsText.length > 0
+        Layout.fillWidth: true
+        Layout.preferredHeight: section.rowHeight
+        color: "transparent"
+        Row {
+            id: searchResultContent
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.leftMargin: 16
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            spacing: 5
+            AlbumIcon {
+                objectName: "searchResultsAlbumIcon"
+                anchors.verticalCenter: parent.verticalCenter
+                size: 13
+            }
+            Text {
+                objectName: "searchResultsAlbumText"
+                width: Math.max(0, searchResultContent.width - 13
+                                - searchResultContent.spacing)
+                text: section.searchResultsText
+                elide: Text.ElideRight
+                color: Theme.textDark
+                font.pixelSize: Theme.fontSize
             }
         }
     }

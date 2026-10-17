@@ -10,7 +10,13 @@ ellenőrzi.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMetaObject, QObject
+from PySide6.QtCore import QMetaObject, QObject, QPointF
+
+
+def _visual_items(item):
+    for child in item.childItems():
+        yield child
+        yield from _visual_items(child)
 
 
 class TestFiveCollectionHeaders:
@@ -97,7 +103,9 @@ class TestCollectionToggle:
 
 
 class TestFolderContentUnaffected:
-    def test_folder_pane_header_still_reflects_search(self, qml_app, qt_app):
+    def test_search_result_row_precedes_starred_and_existing_albums(
+        self, qml_app, qt_app
+    ):
         window, controller, _ = qml_app
         header = window.findChild(QObject, "folderPaneHeader")
         assert header is not None, "folderPaneHeader nem található"
@@ -105,12 +113,41 @@ class TestFolderContentUnaffected:
         #: nézetben a mért „Default View" (spec 4.2)
         assert "Default View" in header.property("text")
 
+        pane = window.findChild(QObject, "folderPane")
+        albums_header = window.findChild(QObject, "albumsHeaderRow")
+        assert pane is not None and albums_header is not None
+        pane.setProperty(
+            "albumsModel",
+            [{"token": "existing-album", "name": "Existing album", "count": 2}],
+        )
+        qt_app.processEvents()
+        album_count_before_search = albums_header.property("itemCount")
+
         controller.search("a")
         qt_app.processEvents()
-        assert header.property("text") == 'Search results for "a" (1)'
+        assert "Search results for" not in header.property("text")
+        search_row = window.findChild(QObject, "searchResultsAlbumRow")
+        search_text = window.findChild(QObject, "searchResultsAlbumText")
+        starred_row = window.findChild(QObject, "starredItem")
+        existing_album_row = next(
+            item
+            for item in _visual_items(window.contentItem())
+            if item.objectName() == "albumItem_existing-album"
+        )
+        assert search_row is not None and search_row.isVisible()
+        assert search_text is not None
+        assert search_text.property("text") == 'Search results for "a" (1)'
+        assert starred_row is not None and starred_row.isVisible()
+        search_y = search_row.mapToScene(QPointF(0, 0)).y()
+        starred_y = starred_row.mapToScene(QPointF(0, 0)).y()
+        existing_album_y = existing_album_row.mapToScene(QPointF(0, 0)).y()
+        assert search_y < starred_y < existing_album_y
+        assert albums_header.property("itemCount") == album_count_before_search + 1
 
         controller.search("")
         qt_app.processEvents()
+        assert not search_row.isVisible()
+        assert starred_row.isVisible()
         #: #1407: a Mappák fejléce a hasáb GYÖKERÉT nevezi meg — lapos
         #: nézetben a mért „Default View" (spec 4.2)
         assert "Default View" in header.property("text")

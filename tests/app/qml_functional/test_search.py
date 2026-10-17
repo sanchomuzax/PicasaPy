@@ -208,7 +208,7 @@ class TestSearchResultsGroupedGridWiring:
     """#7: a bal paneli „Találatok…” sor és a rács mappánkénti
     csoportosítása (group_by_folder bekötése a kereső-eredmény nézetbe)."""
 
-    def test_folder_pane_header_shows_query_and_count(self, qml_app, qt_app):
+    def test_search_result_row_is_in_albums_not_folder_header(self, qml_app, qt_app):
         window, controller, _ = qml_app
         header = window.findChild(QObject, "folderPaneHeader")
         assert header is not None, "folderPaneHeader nem található"
@@ -217,7 +217,11 @@ class TestSearchResultsGroupedGridWiring:
         assert "Default View" in header.property("text")
         controller.search("a")
         qt_app.processEvents()
-        assert header.property("text") == 'Search results for "a" (1)'
+        assert "Search results for" not in header.property("text")
+        search_row = window.findChild(QObject, "searchResultsAlbumText")
+        assert search_row is not None, "az Albumok alatti keresési sor nem található"
+        assert search_row.property("text") == 'Search results for "a" (1)'
+        assert search_row.isVisible()
 
     def test_folder_pane_header_restores_after_cleared_search(
         self, qml_app, qt_app

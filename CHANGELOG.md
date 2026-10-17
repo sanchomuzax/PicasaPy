@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.119] – 2026-10-17
+
+- A kereső albumjavaslatokat is mutat, a találati sort az Albumok közé helyezi, a listát pedig a mező alá, a mező szélességében igazítja, ahogy az eredetiben (#5194).
+
 ## [0.9.118] – 2026-10-17
 
 - A fotó helyi menüjének két felirata (a visszavonás és a feltöltés tiltása) az eredetit követi, a Társítás almenü pedig a képhez társított alkalmazásokat listázza (#5195).

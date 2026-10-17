@@ -229,22 +229,21 @@ class TestSearchSuggestions:
         assert calls["n"] == 0
         assert all(s.kind == "folder" for s in result)
 
-    def test_include_albums_true_reads_inis(self, suggest_conn, monkeypatch):
-        # include_albums=True mellett a régi viselkedés marad: az ini-k
-        # ténylegesen beolvasódnak (számlálóval ellenőrizve).
+    def test_include_albums_uses_index_without_reading_inis(
+        self, suggest_conn, monkeypatch
+    ):
+        # #5194: a név és a tagsági darabszám már az indexben van, ezért
+        # gépelésenként nem nyithatunk meg .picasa.ini fájlokat.
         import picasapy.ini as ini_module
 
-        calls = {"n": 0}
-        original = ini_module.load_document
+        def forbidden_load(*args, **kwargs):
+            raise AssertionError("javaslat közben nem olvasható .picasa.ini")
 
-        def counting_load(*args, **kwargs):
-            calls["n"] += 1
-            return original(*args, **kwargs)
-
-        monkeypatch.setattr(ini_module, "load_document", counting_load)
+        monkeypatch.setattr(ini_module, "load_document", forbidden_load)
         result = search_suggestions(suggest_conn, "logo", include_albums=True)
-        assert calls["n"] == 2  # két has_ini-s mappa
-        assert any(s.kind == "album" for s in result)
+        assert [(s.kind, s.name, s.count) for s in result if s.kind == "album"] == [
+            ("album", "logo valogatas", 3)
+        ]
 
     def test_match_is_substring_and_casefold(self, suggest_conn):
         # Picasa: a "logo" a "Sanoma Media logo" közepén is talál; ékezet/
@@ -252,12 +251,12 @@ class TestSearchSuggestions:
         assert search_suggestions(suggest_conn, "LOGO")
         assert search_suggestions(suggest_conn, "NYARI", include_albums=True)
 
-    def test_folders_before_albums(self, suggest_conn):
+    def test_albums_before_folders(self, suggest_conn):
         kinds = [
             s.kind
             for s in search_suggestions(suggest_conn, "logo", include_albums=True)
         ]
-        assert kinds == sorted(kinds, key=lambda k: k != "folder")
+        assert kinds == sorted(kinds, key=lambda k: k != "album")
 
     def test_empty_query_no_suggestions(self, suggest_conn):
         assert search_suggestions(suggest_conn, "") == ()

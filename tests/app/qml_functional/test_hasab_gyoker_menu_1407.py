@@ -127,13 +127,15 @@ class TestAHasabFejlece:
         _trigger(window, "menuViewSimplifiedTreeView")
         assert _var(qt_app, lambda: fejlec.property("text").startswith("My Computer"))
 
-    def test_a_keresesi_fejlec_TOVABBRA_is_felulirja(self, qml_app, qt_app):
-        """Kontroll: a keresés kiírása (#7) nem eshetett ki a felirat
-        cserélésével."""
+    def test_a_keresesi_talalatsor_az_albumokhoz_kerul(self, qml_app, qt_app):
+        """A keresési sor az Albumok csoportban jelenik meg; a Mappák
+        fejlécét többé nem írja felül."""
         window, controller, _e = qml_app
         fejlec = window.findChild(QObject, "folderPaneHeader")
         controller.search("a")
+        sor = window.findChild(QObject, "searchResultsAlbumText")
         assert _var(
             qt_app,
-            lambda: fejlec.property("text").startswith("Search results for"),
-        ), f"a keresési fejléc elveszett: {fejlec.property('text')!r}"
+            lambda: sor is not None and sor.isVisible(),
+        ), "a keresési sor hiányzik az Albumok csoportból"
+        assert not fejlec.property("text").startswith("Search results for")

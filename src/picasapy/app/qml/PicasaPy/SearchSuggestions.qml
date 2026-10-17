@@ -108,26 +108,31 @@ Rectangle {
                         border.color: "#5f8299"; border.width: 1
                     }
                 }
-                Text {
-                    objectName: "suggestionLabel"
-                    anchors.verticalCenter: parent.verticalCenter
+                Row {
+                    id: nameAndCount
                     x: 24
-                    width: parent.width - x - countText.width - 12
-                    elide: Text.ElideRight
-                    textFormat: Text.StyledText
-                    text: box.highlighted(modelData.name, box.query)
-                    color: Theme.ink
-                    font.pixelSize: Theme.fontSize
-                }
-                Text {
-                    id: countText
-                    objectName: "suggestionCount"
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.right: parent.right
-                    anchors.rightMargin: 6
-                    text: "(" + modelData.count + ")"
-                    color: Theme.placeholderText
-                    font.pixelSize: Theme.fontSize
+                    width: parent.width - x - 6
+                    spacing: 4
+                    Text {
+                        objectName: "suggestionLabel"
+                        width: Math.min(
+                            implicitWidth,
+                            Math.max(0, nameAndCount.width - countText.implicitWidth
+                                     - nameAndCount.spacing))
+                        elide: Text.ElideRight
+                        textFormat: Text.StyledText
+                        text: box.highlighted(modelData.name, box.query)
+                        color: Theme.ink
+                        font.pixelSize: Theme.fontSize
+                    }
+                    Text {
+                        id: countText
+                        objectName: "suggestionCount"
+                        text: "(" + modelData.count + ")"
+                        color: Theme.placeholderText
+                        font.pixelSize: Theme.fontSize
+                    }
                 }
                 HoverHandler { id: rowHover }
                 TapHandler { onTapped: box.choose(index) }

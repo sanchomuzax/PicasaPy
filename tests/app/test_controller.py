@@ -1376,16 +1376,31 @@ class TestSearchSuggestionsSlot:
     def test_empty_query_empty_list(self, controller):
         assert controller.searchSuggestions("  ") == []
 
-    def test_albums_deferred_to_issue_9(self, controller, library):
-        # Album-javaslat egyelőre nem kerül a legördülőbe: a kiválasztása
-        # csak a virtuális albumok UI-jával (#9) lesz értelmes.
+    def test_album_suggestions_use_index_and_precede_folders(
+        self, controller, library, monkeypatch
+    ):
+        from picasapy.index import open_index, sync_tree
+
         (library / "nyaralas" / ".picasa.ini").write_text(
             "[.album:aabb01]\nname=nyari valogatas\n"
             "[IMG_0001.jpg]\nalbums=aabb01\nstar=yes\n",
             encoding="utf-8",
         )
-        result = controller.searchSuggestions("nyari")
-        assert all(s["kind"] == "folder" for s in result)
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller._reload()
+
+        import picasapy.ini as ini_module
+
+        def forbidden_load(*args, **kwargs):
+            raise AssertionError("kereső-javaslat közben ini-olvasás történt")
+
+        monkeypatch.setattr(ini_module, "load_document", forbidden_load)
+        result = controller.searchSuggestions("nyar")
+        assert [(s["kind"], s["name"], s["count"]) for s in result] == [
+            ("album", "nyari valogatas", 1),
+            ("folder", "nyaralas", 2),
+        ]
 
 
 class TestLibraryFeed:

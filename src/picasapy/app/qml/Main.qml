@@ -2911,11 +2911,11 @@ ApplicationWindow {
     SearchSuggestions {
         id: searchSuggestionsBox
         objectName: "searchSuggestions"
+        parent: toolbar
         z: 50
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.rightMargin: 8
-        width: 300
+        x: toolbar.searchBoxItem.x
+        y: toolbar.searchBoxItem.y + toolbar.searchBoxItem.height
+        width: toolbar.searchBoxItem.width
         query: toolbar.searchText
         // #1026: a keresődoboz a könyvtár keretének része, tehát a buborék
         // sem úszhat rá a projekt-lapra (a beírt szöveg megmarad, ezért a
@@ -2927,6 +2927,11 @@ ApplicationWindow {
                 toolbar.clearSearch()
                 window.clearSelection()
                 controller.selectFolder(param)
+            } else if (kind === "album") {
+                toolbar.clearSearch()
+                window.clearSelection()
+                window.unnamedFacesOpen = false
+                controller.showAlbum(param)
             }
             suggestions = []
         }
