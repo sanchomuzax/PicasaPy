@@ -59,6 +59,9 @@ class TestMigracio:
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
         raw.executescript(
+            # #5180: a forrásjelölő csak a v25-ben érkezik
+            "DROP INDEX idx_face_source_photo;\n"
+            "ALTER TABLE face DROP COLUMN source;\n"
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             # #2902: a tükrözés jelzője a v19-ben

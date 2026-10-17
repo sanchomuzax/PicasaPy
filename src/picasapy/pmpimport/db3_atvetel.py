@@ -12,16 +12,13 @@ Az OLVASÓ oldal a #2342 óta kész: az `importer.iter_photo_records` behozza a
 A `.picasa.ini` az igazságforrás (7. rögzített döntés), és az eredeti Picasa
 is oda írja a `keywords=` és `geotag=` kulcsot, tehát az átvétel oda megy.
 
-## A SZABÁLY: csak a hiányzót pótoljuk
+## A SZABÁLY: csak a hiányzó adatot pótoljuk
 
-Ugyanaz az „A" szabály, ami a #3002 arcátvételét vezeti: ahol a fotónak már
-van értéke, ahhoz **hozzá sem nyúlunk**. Ha ott már áll adat, azt vagy a
-felhasználó, vagy az eredeti Picasa írta — az import nem tudja, melyik a
-frissebb, tehát nem is dönthet helyette. Így az átvétel **soha nem ír felül
-meglévő adatot**, tehát nem ronthat el semmit.
-
-A két adatfajta **külön** dől el: a meglévő `keywords=` nem akadálya annak,
-hogy a hiányzó `geotag=` bekerüljön.
+A meglévő `keywords=` és `geotag=` értékek védettek. Az arcokat viszont
+régiónként kezeljük (#5180): csak azokat a db3-rect64 értékeket adjuk hozzá,
+amelyek még nem szerepelnek a fotó `faces=` értékében; a meglévő régió
+szövegét változatlanul hagyjuk. Így egy meglévő arc nem rejti el a fotó más,
+ütközésmentes db3-arcait.
 
 ## Két réteg
 
@@ -69,13 +66,19 @@ from pathlib import Path
 
 from picasapy.index.atvett_datum import atvett_datumokat_beir
 from picasapy.index.database import open_index
+from picasapy.index.faces_detected import replace_imported_unnamed_faces
 from picasapy.ini.album_order import places_of_section, with_album_places
 from picasapy.ini.albums import parse_album_refs
 from picasapy.ini.document import IniDocument
+from picasapy.ini.faces import parse_faces
 from picasapy.ini.io import load_or_empty, update_document
 from picasapy.ini.priority import prioritassal
 from picasapy.metadata.gps import format_geotag
-from picasapy.pmpimport.arcatvetel import arcokat_atvesz, atveendo_arcok
+from picasapy.pmpimport.arcatvetel import (
+    ISMERETLEN_SZEMELY,
+    arcokat_atvesz,
+    atveendo_arcok,
+)
 from picasapy.pmpimport.importer import PhotoRecord
 from picasapy.pmpimport.videodatum import atveendo_datum
 from picasapy.scanner.walker import PICASA_INI_NAME
@@ -85,8 +88,7 @@ _log = logging.getLogger(__name__)
 #: a `.picasa.ini` kulcsai, amikbe az átvétel ír
 _KULCSSZO_KULCS = "keywords"
 _GEOTAG_KULCS = "geotag"
-#: #3184: az arcok kulcsa — az `arcatvetel` írja, itt csak a „már van
-#: adat" vizsgálatához kell
+#: #3184: az arcok kulcsa — az `arcatvetel` írja, itt rect-ütközést mérünk
 _ARC_KULCS = "faces"
 
 
@@ -224,11 +226,16 @@ def mappa_atvetel(
         )
         van_hely = rekord.latitude is not None and rekord.longitude is not None
         volt_hely = van_hely and _van_erteke(eredmeny, nev, _GEOTAG_KULCS)
-        #: #3184: az arc ugyanebben a ciklusban megy ki — egy mappa EGY írás.
-        #: A „már van adat" itt is az „A" szabály szerint dönt (a
-        #: `faces=` kulcs jelenléte), ugyanúgy, mint a másik két fajtánál.
-        volt_arc = bool(atveendo_arcok(rekord.faces)) and _van_erteke(
-            eredmeny, nev, _ARC_KULCS
+        #: #3184/#5180: az arc ugyanebben a ciklusban megy ki — egy mappa
+        #: EGY írás. Csak azonos rect64 számít kihagyottnak, nem bármilyen
+        #: `faces=` kulcs.
+        section = eredmeny.section(nev)
+        meglévő_rectek = {
+            face.rect
+            for face in parse_faces(section.get(_ARC_KULCS) or "")
+        } if section is not None else set()
+        volt_arc = any(
+            arc.rect in meglévő_rectek for arc in atveendo_arcok(rekord.faces)
         )
 
         elotte = eredmeny
@@ -361,6 +368,51 @@ def videodatumokat_atvesz(
             hiba,
         )
         return AtvetelJelentes(videodatum_hiba=len(tetelek))
+
+
+def nevtelen_db3_arcokat_indexbe_atvesz(
+    rekordok: Iterable[PhotoRecord], index_path: Path
+) -> int:
+    """A db3-ben ismeretlenként jelölt arcok átvétele a Név nélküliekbe.
+
+    A `deferredface` `ffffffffffffffff` id-je nem személy és nem ini-beli
+    mellőzés: az index `face` sora lesz `unnamed` állapottal. A fotó nincs
+    indexelve vagy nincs mérete esetén a régió kimarad.
+    """
+    records = tuple(rekordok)
+    if not any(
+        (face.contact_id or "").casefold() == ISMERETLEN_SZEMELY
+        for record in records
+        for face in getattr(record, "faces", ())
+    ):
+        return 0
+
+    inserted = 0
+    with open_index(index_path) as conn:
+        for record in records:
+            path = Path(record.local_path)
+            photo = conn.execute(
+                "SELECT p.id FROM photos p JOIN folders f ON f.id = p.folder_id "
+                "WHERE f.path = ? AND p.name = ?",
+                (str(path.parent), path.name),
+            ).fetchone()
+            if photo is None:
+                continue
+            rects = tuple(
+                (
+                    face.rect.left,
+                    face.rect.top,
+                    face.rect.right,
+                    face.rect.bottom,
+                )
+                for face in getattr(record, "faces", ())
+                if (face.contact_id or "").casefold() == ISMERETLEN_SZEMELY
+            )
+            inserted += replace_imported_unnamed_faces(
+                conn, int(photo["id"]), rects
+            )
+        conn.commit()
+    return inserted
 
 
 def rekordokat_atvesz(

@@ -523,7 +523,7 @@ def main(
             f"Ez a PR a(z) {verzio} verzióra emel, tehát a beolvadáskor "
             f"pontosan ez a kiadás születik — a naplóban viszont nincs "
             f"`## [{verzio}]` szakasz. Nevezd át a `{KIADATLAN_CIM}` "
-            f"szakaszt `## [{verzio}] – ÉÉÉÉ-HH-NN` alakra (a bejegyzésekkel "
+            f"szakaszt `## [{verzio}] - ÉÉÉÉ-HH-NN` alakra (a bejegyzésekkel "
             f"együtt), és tegyél fölé egy üres `{KIADATLAN_CIM}` címet a "
             f"következő körnek. Enélkül a kiadási jegyzet nem találja meg a "
             f"hozzá írt mondatokat, és a napló elveszti, mi melyik "

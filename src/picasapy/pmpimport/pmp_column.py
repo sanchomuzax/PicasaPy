@@ -66,6 +66,7 @@ OSZLOP_TIPUSOK: dict[str, int | None] = {
     "caption": 0x00,
     "rotate": 0x00,
     "filters": 0x00,
+    "deferredface": 0x00,
     "deferredregion": 0x00,
     "tags": 0x06,
     "crop64": 0x04,

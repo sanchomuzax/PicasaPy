@@ -111,7 +111,7 @@ def _fuzd_a_darabokat(szoveg: str, sorok: list[str]) -> str:
 
 
 def zard_le_a_changelogot(ut: Path, verzio: str, datum: str) -> bool:
-    """A „Nem kiadott" cím átnevezése `## [verzió] – dátum` alakra.
+    """A „Nem kiadott" cím átnevezése `## [verzió] - dátum` alakra.
 
     `False`, ha nincs ilyen szakasz — az nem hiba: egy tisztán belső
     változáshoz nem muszáj felhasználói mondatot írni."""
@@ -135,7 +135,7 @@ def zard_le_a_changelogot(ut: Path, verzio: str, datum: str) -> bool:
     ut.write_text(
         szoveg.replace(
             KIADATLAN_CIM,
-            f"{KIADATLAN_CIM}\n\n## [{verzio}] – {datum}",
+            f"{KIADATLAN_CIM}\n\n## [{verzio}] - {datum}",
             1,
         ),
         encoding="utf-8",
