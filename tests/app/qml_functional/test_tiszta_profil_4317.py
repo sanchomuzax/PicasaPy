@@ -7,7 +7,6 @@ from __future__ import annotations
 import errno
 import os
 import socket
-import sys
 from pathlib import Path
 
 import pytest
@@ -603,12 +602,8 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     assert not app["attempts"], f"vörösszem-javítás közben hálózati próbálkozás történt: {app['attempts']}"
 
 
-def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
-    """Windowson a bukás diagnosztikával kihagyásra fut (#4929); Linuxon szigorú marad.
-
-    Visszaad egy skip-indokot, ha a lépés kihagyásra futott, különben None.
-    A hálózati próbálkozás mindig valódi bukás.
-    """
+def _lep_vorosszem_diagnosztikaval(tiszta_app, qt_app):
+    """A vörösszem-lépés minden platformon szigorú (#4929); bukáskor a diagnosztika az üzenetbe kerül."""
     diag = []
     try:
         _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag)
@@ -617,12 +612,9 @@ def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
             raise
         # A pytest a rewrite miatt az üzenet után az "assert ..." sort is hozzáfűzi; csak az első sor kell.
         uzenet = str(hiba).splitlines()[0]
-        kiegeszitett = f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
-        if sys.platform != "win32":
-            # Linuxon szigorú marad, de a diagnosztika a CI-naplóba kerüljön (#4929).
-            raise AssertionError(kiegeszitett) from hiba
-        return kiegeszitett
-    return None
+        raise AssertionError(
+            f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
+        ) from hiba
 
 
 def _ellenorizd_kepernyokepek_meretet(mappa: Path, vart: int = 3):
@@ -651,7 +643,5 @@ def test_tiszta_profil_funkciok_valodi_kattintassal(
     _lep_auto_kontraszt_es_visszavonas(tiszta_app, qt_app)
     _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory)
     _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app)
-    skip_indok = _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app)
-    _ellenorizd_kepernyokepek_meretet(mappa, 2 if skip_indok else 3)
-    if skip_indok:
-        pytest.skip(skip_indok)
+    _lep_vorosszem_diagnosztikaval(tiszta_app, qt_app)
+    _ellenorizd_kepernyokepek_meretet(mappa)
