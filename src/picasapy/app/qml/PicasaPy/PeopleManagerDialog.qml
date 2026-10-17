@@ -37,6 +37,30 @@ Dialog {
         })
     }
 
+    function syncSelectionToFilteredEntries() {
+        var selectedIndex = manager.filteredEntries.findIndex(function(entry) {
+            return entry.key === manager.selectedKey
+        })
+        if (selectedIndex < 0) {
+            manager.selectedKey = ""
+            manager.selectedContactIds = []
+            manager.selectedLocalContactIds = []
+            manager.selectedThumbUrl = ""
+            manager.selectedPhotoCount = 0
+            manager.settingFields = true
+            nameField.text = ""
+            emailField.text = ""
+            manager.settingFields = false
+            if (contactList.currentIndex !== -1)
+                contactList.currentIndex = -1
+            return
+        }
+        if (contactList.currentIndex !== selectedIndex)
+            contactList.currentIndex = selectedIndex
+    }
+
+    onFilteredEntriesChanged: manager.syncSelectionToFilteredEntries()
+
     function _copy(entry) {
         return {
             key: entry.key,
