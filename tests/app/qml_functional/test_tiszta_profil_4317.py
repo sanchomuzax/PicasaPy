@@ -516,6 +516,7 @@ def _vorosszem_diagnosztika(window, edit, terulet, gomb) -> str:
         f"régiószám={edit.redeyeRegionCount}, "
         f"effectChain={edit.effectChain!r}, "
         f"hit-test={_nev(talalat) if talalat is not None else 'None'}, "
+        f"nyitott felugrók={_nyitott_felugrok(window)!r}, "
         f"{_nezo_es_panelek_allapota(window)}."
     )
 
@@ -533,6 +534,18 @@ def _bal_fiok_nyitva_var(window, qt_app):
     )
 
 
+def _nyitott_felugrok(window) -> list[str]:
+    """Az ablak felugró rétegén (overlay) éppen látható elemek neve (#4929)."""
+    reteg = window.property("overlay")
+    if reteg is None:
+        return []
+    return [
+        (gyerek.objectName() or gyerek.metaObject().className())
+        for gyerek in reteg.childItems()
+        if gyerek.isVisible()
+    ]
+
+
 def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     app = tiszta_app
     window, edit = app["window"], app["edit"]
@@ -541,7 +554,16 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     if fiok.width() < 280:
         _kattint(window, qt_app, "toggle_left_drawer")
     _bal_fiok_nyitva_var(window, qt_app)
+    # #4929: a CI-n a kattintás idején egy felugró elem (QQuickOverlay) volt
+    # felül, és a Vörösszem eszköz nem kapcsolt be (redeyeActive hamis). Előbb
+    # megvárjuk, hogy ne legyen nyitott felugró elem, utána a mód bekapcsolását.
+    _var(qt_app, lambda: not _nyitott_felugrok(window))
     _kattint(window, qt_app, "editToolRedeye")
+    szerkeszto = _keres(window, "viewerEditorPanel")
+    if not _var(qt_app, lambda: szerkeszto is not None
+                and bool(szerkeszto.property("redeyeActive"))):
+        diag.append("redeyeActive hamis a kattintás után; nyitott felugrók="
+                    + repr(_nyitott_felugrok(window)))
     terulet = _keres(window, "redeyeDragArea")
     gomb = _keres(window, "redeyeApplyButton")
     if terulet is None or gomb is None:
