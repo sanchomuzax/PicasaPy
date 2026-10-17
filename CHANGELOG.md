@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.122] – 2026-10-17
+
+- Windowson a kívülről törölt mappa sora és képei eltűnnek a bal sávból (#5177).
+
 ## [0.9.121] – 2026-10-17
 
 - A bal sávból eltűnik a programon kívül törölt mappa, ahogy az eredetiben, és a már nem létező mappára húzott kép nem indít fájlműveletet (#5177).

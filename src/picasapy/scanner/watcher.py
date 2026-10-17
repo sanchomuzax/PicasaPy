@@ -13,6 +13,7 @@ egyetlen jelzésbe gyűjti, és csak a releváns változásokra szól
 from __future__ import annotations
 
 import logging
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -86,6 +87,16 @@ def _directory_change_path(path_str: str, roots: tuple[str, ...]) -> str | None:
     return None
 
 
+def _torolt_ut_tipusa_ismeretlen() -> bool:
+    """Windowson a watchdog a törölt mappát is fájlként jelzi (#5177).
+
+    A `ReadDirectoryChangesW` törlésnél nem mondja meg, mappa volt-e, a törölt
+    út pedig már nem kérdezhető le, ezért ott az `is_directory` hamis. Linuxon
+    az inotify megbízhatóan jelzi, ott nincs szükség a pótlásra.
+    """
+    return sys.platform == "win32"
+
+
 class _Handler(FileSystemEventHandler):
     def __init__(self, watcher: "LibraryWatcher"):
         self._watcher = watcher
@@ -114,6 +125,15 @@ class _Handler(FileSystemEventHandler):
                         self._watcher._mark_dirty(
                             DirectoryChange(changed_path, action)
                         )
+            return
+        if (
+            event.event_type == "deleted"
+            and _torolt_ut_tipusa_ismeretlen()
+            and not _is_relevant(event.src_path, self._watcher._roots)
+        ):
+            changed_path = _directory_change_path(event.src_path, self._watcher._roots)
+            if changed_path is not None:
+                self._watcher._mark_dirty(DirectoryChange(changed_path, "deleted"))
             return
         for path_str in (event.src_path, getattr(event, "dest_path", "")):
             if path_str and _is_relevant(path_str, self._watcher._roots):
