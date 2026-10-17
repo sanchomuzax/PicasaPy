@@ -446,3 +446,13 @@ Mérési vakfolt: nincs új Colab-felvétel. A leltárban a `#3448` képe a Pica
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - a #5245 első kötegének módszere, vakfoltjai, 15 tételes forrás- és maiállapot-táblája, ítéletei és nyitott Colab-lépései.
+
+### Colab-felvétel a nyitott tételekhez (job-190, 2026-10-17)
+
+Az eredeti Picasa 3.9 angol felületén, alapállapotban (`C:\PicasaTeszt`, 24 kép), lépésenként képpel.
+
+| jegy | felvétel | ítélet |
+|---|---|---|
+| #3661 | Eszközök ▸ Beállítások: az ablak mérete 584 × 345 képpont (az ablaklista szerint), a nyolc fül (General, E-Mail, File Types, Slideshow, Printing, Network, Web Albums, Name Tags) egy sorban elfér. | Az eredeti ablak rögzített méretű, a fülsor nem tördel. A 480 px-es legkisebb szélesség a PicasaPy saját kérdése, az eredetiben nincs megfelelője; a mai görgethető fülsor nem eltérés, hanem kiegészítés. |
+| #3448 | A bélyegkép jobb gombos menüje mappanézetben (13. kép): View and Edit, Add to Album, Rotate Clockwise/Counterclockwise, Undo all Edits (szürke), Hide, Move to New Folder, Split Folder Here, Open File, Open With, Save és Revert (szürke), Locate on Disk, Delete from Disk, Copy Full Path, Upload to Picasa Web Albums, Block from Uploading, Reset Faces, Properties. | Mappanézetben a nem ide tartozó tételek **hiányoznak**, üres rés nincs; a csoportokat elválasztó vonalak tagolják. A mai PicasaPy (a rejtett tételek magassága nulla) ezzel egyezik. Album-nézetben a menü még nincs felvéve. |
+
