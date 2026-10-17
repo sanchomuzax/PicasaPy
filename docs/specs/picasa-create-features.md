@@ -4345,6 +4345,125 @@ Nyitott kérdések: 0 nyílt · 7 lezárva · 7 blokkolt · 0 hatókörön kív�
 
 **11. Ami NEM bizonyított (kimondva).** A kimaradó konkrét kép; a getterek képi jelentése (a `d_Neven` sim-je); a horgony forrása UI-ból; a rádió alapállapota; a jelöltlista azonossága a bemeneti sorrenddel; a gráfélek költsége. Ezek nélkül a fotóindex-szintű eredetiség **nem állítható**.
 
+**Frissítés (2026-10-17, G/5):** a 9. pont 1. és 7. tétele `ordering = 0`-ra LEZÁRULT (G/5); a 2., 3., 4., 5. és 6. tétel nyitott maradt, a 3. csak `ordering ≠ 0`-n releváns.
+
+#### G/5. A 10. kör (2026-10-17): a megtartott kép `ordering = 0`-n, natív mérés és dekompilátum-modell (#4194)
+
+**Kérdés.** Melyik kép marad meg a küszöbön belüli csoportból, és láncolt vagy párosított-e a ritkítás? (A G/4 9. pont 1-7. tételei.)
+
+**Válasz (`ordering = 0`, a „Legjobb átmenetek" rádió).** Nem az első, nem az utolsó és nem a legjobb minőségű kép marad meg. A kiválasztás **láncolt**: a horgonyból indul (alapállapotban a 0. pozíció, az időrendben legkorábbi kép), és minden lépésben azt a még nem választott jelöltet veszi, amelynek HOG-távolsága az utoljára megtartott képtől a legkisebb. A csoportkizárás csak az **aktuális** lánctagot érinti: egy csoport több tagja is bekerülhet, ha a lánc más csoportokon át tér vissza. A csoportosítás is láncolt (a szomszédos bemeneti képek között, G szakasz).
+
+**Bizonyítottsági fok: megerősített** a kiválasztási szabályra (két független út egyezik, 125 natív eset), **feltételes** a bemeneti feltételekre (lásd „Ami még nem zárult le").
+
+**Két független út.**
+- **A (dekompilátum és utasításszint):** a `0x0081c9b0` törzse (`referencia/ghidra/2026-10-17-film-idoszuro-2.txt`, 35-1135. sor) és az utasítás-ellenőrzés: `0x81d3a2`-`0x81d4f3` (ciklus, ablak, jelöltfeltételek, léptetés), `0x81d1f1`-`0x81d229` (a vtábla-hívás két argumentummal), `0x81ca9b`-`0x81caaf` (a jelzőtömb nullázása és a horgony jelölése), `0x81d400`-`0x81d428` (a jelölt-szűrő).
+- **B (natív futtatás):** az eredeti `0x0081c9b0` qemu-i386 alatt, szintetikus `this`-szel (`hb.py` harness, `.bt/sel/sel_native.py`). Ugyanazon a bemeneten az A-ból épített modell (`.bt/sel/model.py`) ugyanazt a sorrendet adja.
+
+**Algoritmus** (`0x0081c9b0`, `ordering = 0`):
+1. **Horgony** `c`: `[obj+0x738]` = -1 esetén a 0. pozíció (`0x0081ca05`-`0x0081ca33`, G/2c). A kimenet első eleme a horgony, `[obj+0x500] = 1` (`0x0081b800`: `param_1[0x140] = 1`).
+2. **Zárt-jelzők:** nullázott bájttömb (`0x81ca9b` memset), a horgony 1-re állítva (`0x81caaf`). A jelölt kizárja a már zártakat.
+3. **Lépés** `c` körül, irány `it` (kezdetben előre, +1). Ablak: előre `(c-1, RB[c])`, hátra `(LB[c], c+1)`; `LB = -1`, `RB = N` (az `0x81e5a0` szentinelei, spec 3407). Az első irányváltás után (`b2`) az előre-határ `-1`, a hátra-határ `N`. **Spirál:** `d` = +1, -1, +2, -2, … (`0x81d4ca`-`0x81d4db`: `d = -d`, ha `d > 0`, akkor `d += 1`), a jelölt `p = c + d`.
+4. **Jelölt:** `0 <= p < N`, nincs zárva, csoportja különbözik `c` csoportjától (`0x81d400`-`0x81d428`), és előre `p > lo`, hátra `p < hi`. Legfeljebb **100 jelölt** (`cmp eax, 0xc8`, azaz 2·100, `0x81d4e4`).
+5. **Irányváltás:** ha a jelöltek száma **15 alatt** van, és a spirál mindkét határt elérte, a kör nem választ, hanem irányt vált: `it = -it` (első alkalommal `b2 = true`), másodszor `it = 0` (mindkét irány). Hogy ez a választás helyett áll-e, azt a `d + c` helyzete dönti el a határokhoz képest (dekompilátum 605-618. sor). Ha nincs jelölt, a sorozat rövidebb marad a kértnél.
+6. **Költség:** `cost(p) = d_HOG(c, p)` (súly 1,0; Neven nélkül). Választás szigorú `<`-lel, kezdőérték `1e8` (`0x00c7da00`, bináris 0x4cbebc20), holtversenyben a spirálban korábbi jelölt nyer; ha egy sem éri el az 1e8-at, a 0. jelölt a tartalék.
+7. A választott lesz az új `c`, és a sorozat következő eleme.
+
+`d_HOG(a, b) = Σ (a_i - b_i)^2 / (a_i + b_i + ε)`, `ε = 1e-8` (`0x00873e40`).
+
+**Bizonyíték.**
+
+| állítás | forrás |
+|---|---|
+| a HOG-pontozó vtábla +8 slotja = `0x00873e40` | bináris `0x00cbdec4 + 8` |
+| `ε = 1e-8` | bináris `0x00cf4bd8` (double, 9.99999993922529e-09) |
+| kezdőküszöb `1e8` | bináris `0x00c7da00` = 0x4cbebc20 (f32) |
+| Neven-súly `0.4` (csak SmartMultiPersonTrans) | bináris `0x00c7c838` = 0x3ecccccd (f32) |
+| spirál `+1, -1, +2, -2, …` | asm `0x81d4ca`-`0x81d4db` |
+| 100 jelölt | asm `0x81d4e4` (`cmp 0xc8`) |
+| 15-ös irányváltó küszöb | dekompilátum 605. sor (`uVar6 < 0xf`); cáfoló, lásd lent |
+| horgony kizárása | asm `0x81caaf` (zárt-bájt = 1); olvasás `0x81d400` (`[esp+0x48]` = `esi` = a nullázott tömb) |
+| horgony -1 → 0. pozíció | dekompilátum 96-106. sor; natív: V1 |
+| a kimenet a választás sorrendje | dekompilátum 739-750. sor; natív: V1 |
+| csoportok (küszöb) | G szakasz (mérve, `0x0081ae10`); a natív teszt szintetikus csoportokat ad |
+
+**Natív mérés (B út), a modell (A út) összevetése:**
+
+| készlet | eset | egyezés |
+|---|---|---|
+| véletlen, horgony 0, dátumkulcs-tábla nulla (N = 5-8) | 40 | 40/40 |
+| véletlen, horgony 0, dátumkulcs-tábla véletlen 0-2 | 30 | 30/30 |
+| véletlen, nem nulla horgony | 30 | 30/30 |
+| nagy N (20-58 és 120) | 22 | 22/22 |
+| N = 300, L = 40 | 3 | 3/3 |
+
+**Cáfoló kísérletek (15.2).** Ugyanazokon a bemeneteken a modell variánsai (a cáfoló ugyanazt a mércét kapja):
+
+| variáns | egyezés |
+|---|---|
+| nincs csoportkizárás | 56/100 |
+| első jelölt a minimum helyett | 18/100 |
+| horgony nincs kizárva | 59/100 |
+| irányváltó küszöb 5 / 10 / 20 / 30 (22 nagy-N eset) | 4 / 13 / 13 / 10 |
+| jelöltlimit 50 (22 nagy-N eset) | 20/22 |
+| jelöltlimit 80 / 120 / 150 (N = 300, 3 eset) | 0 / 0 / 0 (a 100 egyezik: 3/3) |
+
+A 15-ös küszöb és a 100-as limit a mért tartományon belül igazolt. A limit 100 és 150 között az N ≤ 120 készleten nem különül el (a jelöltek száma ritkán lépi túl a 100-at); az N = 300 készlet viszont elkülöníti.
+
+**Teszt-vektorok (kézzel ellenőrizhetők, natívan mérve).** Nyolc dimenziós jellemzők, N = 6, csoportok `[0,0,0,1,1,2]`:
+
+```
+F0 = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80]
+F1 = [0.12,0.22,0.28,0.41,0.52,0.58,0.72,0.79]
+F2 = [0.90,0.10,0.05,0.80,0.10,0.70,0.20,0.60]
+F3 = [0.15,0.25,0.35,0.45,0.55,0.65,0.75,0.85]
+F4 = [0.50,0.50,0.50,0.50,0.10,0.10,0.10,0.10]
+F5 = [0.48,0.52,0.49,0.51,0.12,0.09,0.11,0.10]
+```
+
+| eset | horgony | L | kimenet (pozíciók) |
+|---|---|---|---|
+| V1 | 0 | 4 | `0, 3, 1, 5` |
+| V2 | 3 | 4 | `3, 1, 5, 4` |
+| V3 (mind egy csoport: `[0,0,0,0,0,0]`) | 0 | 3 | `0` (rövidebb a kértnél) |
+
+- **V1:** 0-ból a 3 nyer (d = 0,029963): 1 és 2 a horgony csoportjából kizárva, 4 és 5 távolabb. 3-ból a 4 kizárva (ugyanaz a csoport), a 1 nyer (d = 0,022519) a 2 (1,598) és az 5 (2,063) felett. 1-ből az 5 nyer (d = 1,997) a 4 (2,040) felett. A 2 kimarad.
+- **V2:** horgony 3. Az előre-jelöltek csak `[5]` (4 kizárva), kevesebb mint 15, ezért irányváltás; a kétirányú passz `[2,5,1,0]`-t ad, és az 1 nyer (d = 0,022519), nem a 0 (d = 0,029963), pedig az időrendben korábbi.
+
+**Ami még nem zárult le (feltételek):**
+- **Neven (`SmartMultiPersonTrans` be):** a 0,4-es tag külső arcfelismerő könyvtár (`0x0048c440` vtábla +0x3c hívása). Sim értéke NINCS MEG; a modell és a teszt HOG-only. Az alapértéke NINCS MEG (a Preferences-olvasó).
+- **Jellemzővektor forrása (`0x00873cb0`):** NINCS MEG; a teszt véletlen vektorokat használ. Valódi képnél a költség a `0x00873cb0` vektoraiból jön.
+- **Pozíciósorrend (`[obj+0x4f0]`):** a dátum szerinti rendezés feltételes (G/3c). Egyenlő dátumnál a sorrend nincs ellenőrizve.
+- **Horgony a felhasználói állapotból (`0x008223e0`, `0x008226e0`):** NINCS MEG; alapállapotban -1 (0. pozíció).
+- **Dátumkulcs-tábla (`[obj+0x708]`):** a törési feltétel a tesztelt kulcsoknál egyezik (30/30). A valódi tartalom NINCS MEG (G/3e, G/3f).
+- **Rádió alapállapota (G/4 9. pont 6.):** NINCS MEG. A három rádió-sztring hivatkozói az indexben (`string_xrefs`): `0x006173c0`, `0x006175c0`, `0x00618050`, `0x0061df10`.
+- **`ordering = 1` (album) és `2` (időrend):** a gráfág nyitott. A `0x00878310`, `0x00874ac0` és `0x00875ee0` nincs dekompilálva.
+- **Csoportkizárás hiánya:** ha egy csoport minden tagja kizárt, a sorozat rövidebb a kértnél (V3). A jelenlegi `slideshow.py` ezt nem kezeli.
+
+**Ghidra-kör kérések** (a hívó köteghez):
+- `Ghidra-kör kell: 0x00873cb0 - a HOG-jellemzővektor építése a rekordból: hossz, sorrend, normálás [blokkoló a valódi képmegtartáshoz]`
+- `Ghidra-kör kell: 0x006173c0 - a film-panel három rádiójának alapbejelölése a felépítéskor, és honnan (Preferences-kulcs vagy konstans) [blokkoló: ez dönti el, melyik ág az alapértelmezett]`
+- `Ghidra-kör kell: 0x00878310 - a 0x00877c50 visszakövetése: a végső fotóindex-sorrend ordering ≠ 0-n [blokkoló ordering = 1/2-re]`
+- `Ghidra-kör kell: 0x00874ac0 - a szomszéd-kitöltő: a [obj+0x720]/[obj+0x728] határtáblák nem-szentinel értékei ordering ≠ 0-n [blokkoló ordering = 1/2-re]`
+- `Ghidra-kör kell: 0x00875ee0 - az album-ág (ordering = 1) kiválasztója, ha [obj+0x1da] nulla [blokkoló ordering = 1-re]`
+
+A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.) csak `ordering ≠ 0`-n hatnak: a `0x0081b800` ordering-0 ága (`param_3 == 0`) a `0x0081c9b0` hívása után visszatér, és nem éri el ezeket.
+
+**A G/4 9. pont állapota G/5 után:** 1. LEZÁRVA (`ordering = 0`); 2. NYITVA (`ordering ≠ 0`); 3. csak `ordering ≠ 0`; 4. NYITVA (külső könyvtár, feltételes); 5. NYITVA; 6. NYITVA; 7. LEZÁRVA `ordering = 0`-ra, feltételekkel; 8-14. változatlan.
+
+**Fejlesztési teendő (#4182, Codex-kész):**
+
+| Eredeti (`ordering = 0`, bizonyított) | Nálunk (mérve) | Teendő |
+|---|---|---|
+| Lánc-kiválasztás: horgony, spirál-jelöltek a középponttól (+1, -1, +2, -2, …), 100 jelölt, csoportkizárás az aktuális középpontra, HOG-minimum (szigorú `<`, 1e8, tartalék: a 0. jelölt), 15-ös irányváltás, a kimenet a választás sorrendje | `src/picasapy/movie/slideshow.py:691-701`: színátlag-lánc a teljes listán; nincs horgony, spirál, csoport, darabszám-korlát | A fenti algoritmus a `movie/` csomagban, d_HOG-gal (`ε = 1e-8`). A színátlag-ág `nem eredeti` jelölést kap, amíg a jellemzővektor (`0x00873cb0`) és a rádió alapállapota le nem zárult. |
+| Csoportosítás: szomszédos, egész másodpercre kerekített idők, `delta >= T` új csoport, `T = 0`-nál nincs csoport (G szakasz) | `burstmodethresh` csak tárolódik (`src/picasapy/movie/slideshow.py:75, 99`; `mxf.py:126, 203, 323`) | Implementálható a G szakasz etalonjaival. |
+
+**Kész, ha:**
+1. `T = 0`-nál nincs csoportosítás.
+2. A három csoportosítási etalon teljesül (`T = 3600`: `[0,3240,6480]→[0,0,0]`, `[0,3600,7200]→[0,1,2]`, `[0,3240,7200]→[0,0,1]`).
+3. A `d_HOG` primitív a G/4 6. pont fixture-jén 1e-6 relatív tűréssel egyezik.
+4. A kiválasztó a három teszt-vektoron pontosan adja: V1 `[0,3,1,5]`, V2 `[3,1,5,4]`, V3 `[0]`.
+5. Az „eredeti" jelölés csak akkor, ha a jellemzővektor (`0x00873cb0`) és a rádió alapállapota (G/4 9. pont 6.) is lezárult.
+
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
 *A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
