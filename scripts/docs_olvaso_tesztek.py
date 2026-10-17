@@ -62,6 +62,9 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 #: azt észreveszi, ha egy itt felsorolt fájl eltűnik vagy átnevezik.
 DOCS_OLVASO_TESZTEK: tuple[str, ...] = (
     "tests/app/qml_functional/test_sajat_funkcio_jeloles_1701.py",
+    #: #5250: ezt a közvetlen spec-olvasót eddig a tesztválasztó húzta be
+    #: gyorsbillentyű-spec változáskor; a docs-only útvonal átkerül ide.
+    "tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py",
     "tests/render/test_display_modes_1577_1578.py",
     #: #1958: a spec-elavulás jelzése a `docs/specs/` lapjait olvassa.
     #: A #1968 helyreállította a mérést, és ez a tétel MÉRÉSSEL igazolt
