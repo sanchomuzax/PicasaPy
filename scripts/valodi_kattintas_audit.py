@@ -17,8 +17,8 @@ import ast
 import json
 import sys
 import warnings
-from collections import defaultdict
-from dataclasses import asdict, dataclass
+from collections import Counter, defaultdict
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Iterable
 
@@ -56,6 +56,7 @@ class Control:
     group: str
     qml_type: str
     dynamic: bool = False
+    text: str = ""
 
 
 @dataclass
@@ -65,6 +66,9 @@ class FunctionInfo:
     node: ast.FunctionDef | ast.AsyncFunctionDef
     aliases: dict[str, tuple[str, str]]
     module_constants: dict[str, object]
+    # A modulban szereplő összes sztring-literál: a szöveg szerinti keresés ebből látja,
+    # hogy a teszt megnevezi-e az objectName-et.
+    strings: frozenset[str]
 
 
 def _qml_tokens(source: str) -> Iterable[tuple[str, str, int]]:
@@ -126,45 +130,115 @@ def _qml_tokens(source: str) -> Iterable[tuple[str, str, int]]:
         i += 1
 
 
-def _qml_controls(qml_root: Path) -> list[Control]:
-    controls: list[Control] = []
-    for path in sorted(qml_root.rglob("*.qml")):
-        source = path.read_text(encoding="utf-8")
-        tokens = list(_qml_tokens(source))
-        stack: list[str | None] = []
-        for index, (kind, value, line) in enumerate(tokens):
-            if kind == "punctuation" and value == "{":
-                previous = tokens[index - 1] if index else ("", "", line)
-                qml_type = previous[1].split(".")[-1] if previous[0] == "identifier" else ""
-                stack.append(qml_type if qml_type in CONTROL_TYPES else None)
-            elif kind == "punctuation" and value == "}":
-                if stack:
-                    stack.pop()
-            elif kind == "identifier" and value == "objectName" and stack and stack[-1]:
-                colon = tokens[index + 1] if index + 1 < len(tokens) else None
-                literal = tokens[index + 2] if index + 2 < len(tokens) else None
-                if colon and colon[:2] == ("punctuation", ":") and literal and literal[0] == "string":
-                    object_name = literal[1]
-                    next_index = index + 3
-                    while (
-                        next_index + 1 < len(tokens)
-                        and tokens[next_index][:2] == ("punctuation", "+")
-                        and tokens[next_index + 1][0] == "string"
-                    ):
-                        object_name += tokens[next_index + 1][1]
-                        next_index += 2
-                    dynamic = next_index < len(tokens) and tokens[next_index][:2] == ("punctuation", "+")
-                    controls.append(
+def _text_literal(tokens: list[tuple[str, str, int]], index: int) -> str | None:
+    """A `text: "…"` vagy `text: qsTr("…")` tulajdonság literálja, ha egyetlen literál.
+
+    Összefűzés (`+`) vagy metódus (`.arg(…)`) után a kirajzolt szöveg más, ezért
+    ilyenkor nincs literál.
+    """
+    if index + 1 >= len(tokens) or tokens[index + 1][:2] != ("punctuation", ":"):
+        return None
+    position = index + 2
+    wrapped = (
+        position + 1 < len(tokens)
+        and tokens[position][:2] == ("identifier", "qsTr")
+        and tokens[position + 1][:2] == ("punctuation", "(")
+    )
+    if wrapped:
+        position += 2
+    if position >= len(tokens) or tokens[position][0] != "string":
+        return None
+    after = position + 1
+    if wrapped:
+        if after >= len(tokens) or tokens[after][:2] != ("punctuation", ")"):
+            return None
+        after += 1
+    if after < len(tokens) and tokens[after][:2] in {("punctuation", "+"), ("punctuation", ".")}:
+        return None
+    return tokens[position][1]
+
+
+def _qml_file_scan(path: Path, qml_root: Path) -> tuple[list[Control], Counter[str]]:
+    tokens = list(_qml_tokens(path.read_text(encoding="utf-8")))
+    # (vezérlő típusa vagy None, a `{` token indexe): a szöveg ugyanahhoz a blokkhoz kötődik.
+    stack: list[tuple[str | None, int]] = []
+    named: list[tuple[int, Control]] = []
+    texts: dict[int, str] = {}
+    text_counts: Counter[str] = Counter()
+    for index, (kind, value, line) in enumerate(tokens):
+        if kind == "punctuation" and value == "{":
+            previous = tokens[index - 1] if index else ("", "", line)
+            qml_type = previous[1].split(".")[-1] if previous[0] == "identifier" else ""
+            stack.append((qml_type if qml_type in CONTROL_TYPES else None, index))
+        elif kind == "punctuation" and value == "}":
+            if stack:
+                stack.pop()
+        elif kind == "identifier" and value == "objectName" and stack and stack[-1][0]:
+            colon = tokens[index + 1] if index + 1 < len(tokens) else None
+            literal = tokens[index + 2] if index + 2 < len(tokens) else None
+            if colon and colon[:2] == ("punctuation", ":") and literal and literal[0] == "string":
+                object_name = literal[1]
+                next_index = index + 3
+                while (
+                    next_index + 1 < len(tokens)
+                    and tokens[next_index][:2] == ("punctuation", "+")
+                    and tokens[next_index + 1][0] == "string"
+                ):
+                    object_name += tokens[next_index + 1][1]
+                    next_index += 2
+                dynamic = (
+                    next_index < len(tokens) and tokens[next_index][:2] == ("punctuation", "+")
+                )
+                named.append(
+                    (
+                        stack[-1][1],
                         Control(
                             file=path.relative_to(qml_root).as_posix(),
                             object_name=object_name,
                             line=line,
                             group=_group_for(path.name),
-                            qml_type=stack[-1] or "",
+                            qml_type=stack[-1][0] or "",
                             dynamic=dynamic,
-                        )
+                        ),
                     )
-    return controls
+                )
+        elif kind == "identifier" and value == "text":
+            literal_text = _text_literal(tokens, index)
+            if literal_text is not None:
+                text_counts[literal_text] += 1
+                if stack and stack[-1][0]:
+                    texts[stack[-1][1]] = literal_text
+    controls = [replace(control, text=texts.get(block, "")) for block, control in named]
+    return controls, text_counts
+
+
+def _qml_scan(qml_root: Path) -> tuple[list[Control], Counter[str]]:
+    """A vezérlők, és hogy egy-egy `text:` literál hányszor szerepel a QML-ben."""
+    controls: list[Control] = []
+    text_counts: Counter[str] = Counter()
+    for path in sorted(qml_root.rglob("*.qml")):
+        file_controls, file_texts = _qml_file_scan(path, qml_root)
+        controls.extend(file_controls)
+        text_counts.update(file_texts)
+    return controls, text_counts
+
+
+def _text_index(controls: list[Control], text_counts: Counter[str]) -> dict[str, set[str]]:
+    """Felirat → a feliratot viselő vezérlők objectName-jei.
+
+    Csak olyan felirat kerül be, amelyet a QML-ben MINDEN előfordulás megnevezett vezérlő
+    visel. Ha van név nélküli elem is ugyanazzal a felirattal, a kattintás célját nem
+    tudjuk eldönteni, ezért az ilyen felirat kimarad.
+    """
+    owners: dict[str, list[Control]] = defaultdict(list)
+    for control in controls:
+        if control.text:
+            owners[control.text].append(control)
+    return {
+        text: {control.object_name for control in found}
+        for text, found in owners.items()
+        if len(found) == text_counts[text]
+    }
 
 
 def _group_for(filename: str) -> str:
@@ -249,10 +323,19 @@ def _collect_functions(tests_root: Path) -> list[FunctionInfo]:
                 for alias in node.names:
                     aliases[alias.asname or alias.name] = (node.module, alias.name)
         constants = _module_constants(tree)
+        strings = _module_strings(tree)
         module = path.stem
         for node in _function_nodes(tree):
-            infos.append(FunctionInfo(path, module, node, aliases, constants))
+            infos.append(FunctionInfo(path, module, node, aliases, constants, strings))
     return infos
+
+
+def _module_strings(tree: ast.AST) -> frozenset[str]:
+    return frozenset(
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    )
 
 
 _UNKNOWN = object()
@@ -317,6 +400,29 @@ def _matching_control_names(value: object, controls: set[str], dynamic_controls:
     return matches
 
 
+def _looks_up_items(function: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """Igaz, ha a függvény névvel (`objectName()`) vagy felirattal (`property("text")`) keres."""
+    for child in ast.walk(function):
+        if not (isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute)):
+            continue
+        if child.func.attr == "objectName":
+            return True
+        first = child.args[0] if child.args else None
+        is_text_property = isinstance(first, ast.Constant) and first.value == "text"
+        if child.func.attr == "property" and is_text_property:
+            return True
+    return False
+
+
+def _nested_info(
+    caller: FunctionInfo, node: ast.FunctionDef | ast.AsyncFunctionDef
+) -> FunctionInfo:
+    """Beágyazott függvény: a hívó modulján és import-jain belül fut."""
+    return FunctionInfo(
+        caller.path, caller.module, node, caller.aliases, caller.module_constants, caller.strings
+    )
+
+
 def _parametrize_values(
     function: ast.FunctionDef | ast.AsyncFunctionDef,
     controls: set[str],
@@ -352,16 +458,27 @@ class _TestInputAnalyzer:
         functions: list[FunctionInfo],
         control_types: dict[str, set[str]],
         dynamic_control_names: set[str],
+        text_index: dict[str, set[str]],
     ):
         self.functions = functions
         self.control_types = control_types
         self.control_names = set(control_types)
         self.dynamic_control_names = dynamic_control_names
+        self.text_index = text_index
         self.functions_by_name: dict[str, list[FunctionInfo]] = defaultdict(list)
         self.functions_by_module: dict[tuple[str, str], list[FunctionInfo]] = defaultdict(list)
         for info in functions:
             self.functions_by_name[info.node.name].append(info)
             self.functions_by_module[(info.module, info.node.name)].append(info)
+
+    def _names_for_literal(self, value: str, info: FunctionInfo) -> set[str]:
+        names = _matching_control_names(value, self.control_names, self.dynamic_control_names)
+        # Felirat szerinti keresés: a teszt-modulnak a felirathoz tartozó objectName-ek közül
+        # PONTOSAN EGYET kell megneveznie, különben nem tudjuk, melyik elemre kattint.
+        named_here = self.text_index.get(value, set()) & info.strings
+        if len(named_here) == 1:
+            names |= named_here
+        return names
 
     def _resolve_helper(self, caller: FunctionInfo, name: str) -> FunctionInfo | None:
         if (caller.module, name) in self.functions_by_module:
@@ -406,20 +523,38 @@ class _TestInputAnalyzer:
         clicked: set[str] = set()
         found: set[str] = set(inherited_found or set())
         return_values: set[str] = set()
+        # Ebben a törzsben definiált beágyazott függvények (lexikus hatókör).
+        local_defs: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {}
 
         def expression(node: ast.AST | None) -> set[str]:
             nonlocal clicked, found
             if node is None:
                 return set()
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                return _matching_control_names(node.value, self.control_names, self.dynamic_control_names)
+                return self._names_for_literal(node.value, info)
+            if isinstance(node, ast.JoinedStr):
+                # f-string névvel és előtaggal (`f"row_{id}"`): az állandó rész eleje lehet
+                # az objectName-előtag.
+                head = node.values[0] if node.values else None
+                if isinstance(head, ast.Constant) and isinstance(head.value, str):
+                    return _matching_control_names(
+                        head.value, self.control_names, self.dynamic_control_names
+                    )
+                return set()
             if isinstance(node, ast.Name):
+                if node.id in local_defs:
+                    run_local(node.id)
                 return set(env.get(node.id, set()))
             if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
                 values: set[str] = set()
                 for item in node.elts:
                     values.update(expression(item))
                 return values
+            if isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
+                return comprehension(node)
+            if isinstance(node, ast.Subscript):
+                # Indexelés (`talalatok[0]`): a kiválasztott elem a tároló találatait örökli.
+                return expression(node.value)
             if isinstance(node, ast.IfExp):
                 return expression(node.body) | expression(node.orelse)
             if isinstance(node, ast.Call):
@@ -458,10 +593,18 @@ class _TestInputAnalyzer:
                     found.update(values)
                     return values
                 helper_name = node.func.id if isinstance(node.func, ast.Name) else ""
-                helper = self._resolve_helper(info, helper_name) if helper_name else None
+                local_def = local_defs.get(helper_name)
+                if local_def:
+                    helper = _nested_info(info, local_def)
+                else:
+                    helper = self._resolve_helper(info, helper_name) if helper_name else None
                 if helper:
                     positional = [*node.args]
-                    helper_env: dict[str, set[str]] = {}
+                    # A beágyazott függvény látja a külső hatókör változóit (zárás); a modulbeli
+                    # helper nem.
+                    helper_env: dict[str, set[str]] = (
+                        {name: set(values) for name, values in env.items()} if local_def else {}
+                    )
                     params = [
                         *helper.node.args.posonlyargs,
                         *helper.node.args.args,
@@ -476,12 +619,7 @@ class _TestInputAnalyzer:
                     returned, helper_clicked, helper_found = self._run_function(
                         helper, helper_env, stack, found
                     )
-                    if not returned and any(
-                        isinstance(child, ast.Call)
-                        and isinstance(child.func, ast.Attribute)
-                        and child.func.attr == "objectName"
-                        for child in ast.walk(helper.node)
-                    ):
+                    if not returned and _looks_up_items(helper.node):
                         returned.update(value for values in arg_values for value in values)
                     clicked.update(helper_clicked)
                     found.update(helper_found)
@@ -520,10 +658,34 @@ class _TestInputAnalyzer:
                 for item in target.elts:
                     assign(item, values)
 
+        def comprehension(node: ast.ListComp | ast.SetComp | ast.GeneratorExp) -> set[str]:
+            # A ciklusváltozó csak a kifejezésen belül él: a környezetet utána visszaállítjuk.
+            saved = {key: set(value) for key, value in env.items()}
+            for generator in node.generators:
+                assign(generator.target, expression(generator.iter))
+                for condition in generator.ifs:
+                    expression(condition)
+            values = expression(node.elt)
+            env.clear()
+            env.update(saved)
+            return values
+
+        def run_local(name: str) -> None:
+            # Beágyazott függvény hivatkozása (pl. `QTimer.singleShot(0, name)`): a törzse a
+            # hivatkozás pillanatának környezetében fut, a kattintásai a tesztéi.
+            closure = {key: set(value) for key, value in env.items()}
+            _returned, local_clicked, local_found = self._run_function(
+                _nested_info(info, local_defs[name]), closure, stack, found
+            )
+            clicked.update(local_clicked)
+            found.update(local_found)
+
         def run_statements(statements: list[ast.stmt]) -> None:
             nonlocal clicked, return_values
             for statement in statements:
-                if isinstance(statement, ast.Assign):
+                if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    local_defs[statement.name] = statement
+                elif isinstance(statement, ast.Assign):
                     values = expression(statement.value)
                     for target in statement.targets:
                         assign(target, values)
@@ -577,13 +739,15 @@ class _TestInputAnalyzer:
 
 
 def _audit(qml_root: Path, tests_root: Path) -> dict[str, object]:
-    controls = _qml_controls(qml_root)
+    controls, text_counts = _qml_scan(qml_root)
     control_types: dict[str, set[str]] = defaultdict(set)
     for control in controls:
         control_types[control.object_name].add(control.qml_type)
     dynamic_control_names = {control.object_name for control in controls if control.dynamic}
+    text_index = _text_index(controls, text_counts)
     functions = _collect_functions(tests_root)
-    coverage = _TestInputAnalyzer(functions, control_types, dynamic_control_names).test_coverage()
+    analyzer = _TestInputAnalyzer(functions, control_types, dynamic_control_names, text_index)
+    coverage = analyzer.test_coverage()
     remaining_controls = [control for control in controls if control.object_name not in coverage]
     groups: dict[str, list[dict[str, object]]] = {group: [] for group in GROUP_ORDER}
     for control in remaining_controls:
