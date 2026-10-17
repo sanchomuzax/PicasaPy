@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.120] – 2026-10-17
+
+- A Név nélküliek üdvözlőablaka a Close gombbal bezárva Windowson sem jelenik meg újra (#5183).
+- A Felvétel panelen a kimeneti méret listájából választott felbontás most már valóban érvényesül (#5202).
+
 ## [0.9.119] – 2026-10-17
 
 - A kereső albumjavaslatokat is mutat, a találati sort az Albumok közé helyezi, a listát pedig a mező alá, a mező szélességében igazítja, ahogy az eredetiben (#5194).
