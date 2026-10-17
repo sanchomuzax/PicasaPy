@@ -2945,6 +2945,14 @@ ApplicationWindow {
         id: slideshow
         objectName: "slideshowView"
         anchors.fill: parent
+        panZoomRectanglesProvider: function(
+            sourceWidth, sourceHeight, viewWidth, viewHeight
+        ) {
+            return controller
+                ? controller.slideshowPanZoomRectangles(
+                      sourceWidth, sourceHeight, viewWidth, viewHeight)
+                : []
+        }
         z: 100
         // #305: null-őr
         photosModel: !controller ? null

@@ -18,6 +18,14 @@ Window {
         id: slideshow
         objectName: "slideshowView"
         anchors.fill: parent
+        panZoomRectanglesProvider: function(
+            sourceWidth, sourceHeight, viewWidth, viewHeight
+        ) {
+            return saver
+                ? saver.slideshowPanZoomRectangles(
+                      sourceWidth, sourceHeight, viewWidth, viewHeight)
+                : []
+        }
         photosModel: saver ? saver.photos : null
         transitionKind: saver ? saver.effect : "dissolve"
         captionMode: saver && saver.showCaptions ? "caption" : "none"

@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.132] - 2026-10-17
+
+- A diavetítés Pan and Zoom átmenete két véletlen képkivágás között pásztáz, nem középre nagyít. (#5258).
+
 ## [0.9.131] - 2026-10-17
 
 - A csak dokumentációs PR-ek CI-je a dokumentáció-őröket futtatja a tesztdarabok helyett (#5250).
