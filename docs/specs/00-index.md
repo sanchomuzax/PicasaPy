@@ -534,7 +534,7 @@ rendezésének három módja** (`Preferences\peoplesort`), ld.
    sehol nem szerepelt nálunk (a `FolderHierarchyView.qml` fejléce is két
    módról ír). Jegy: **#853**.
 
-### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) - 1 nyitott élő UI-mérés (#4045, 9/b; a bináris ág eldőlt); 6 blokkolt személykezelési bináris pont (#5184, 20. szakasz). A 22. szakasz (#5184, negyedik kör) a Ghidra-köteg C-kódját dolgozza fel; a hat blokkolt pont egyike sem zárult le. A 23. szakasz (#5184, ötödik kör) a hívók C-kódját dolgozza fel; a hat pont továbbra is blokkolt.
+### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) - 1 nyitott élő UI-mérés (#4045, 9/b; a bináris ág eldőlt); 6 blokkolt személykezelési bináris pont (#5184, 20. szakasz). A 22. szakasz (#5184, negyedik kör) a Ghidra-köteg C-kódját dolgozza fel; a hat blokkolt pont egyike sem zárult le. A 23. szakasz (#5184, ötödik kör) a hívók C-kódját dolgozza fel; a hat pont továbbra is blokkolt. A 24. szakasz (#5184, hatodik kör) a 23.6 hívóinak C-kódját adja, és a három döntő pontra felvételi tervet javasol; egyik blokkolt pont sem zárult le.
 
 ⭐ **2026-10-17 (#5184, 20. szakasz) - a személykezelés bináris pontjai: 1 lezárva (N4), 6 blokkolt.** A detektor belépési pontja és a küszöb útja megvan (`0x0048e1f0`; nulla → `this+0x3498`). A sorba állító két függvényében nincs név-feltétel, de a felismerés utáni ág és egy Colab-mérés dönt. A Ghidra-kérések a 20.7 szakaszban vannak.
 
