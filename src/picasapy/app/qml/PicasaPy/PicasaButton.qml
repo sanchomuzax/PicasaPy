@@ -67,6 +67,14 @@ Button {
 
     readonly property bool accented: control.accent !== Qt.color("transparent")
 
+    // #5288: a BEKAPCSOLT állapot a mérce szerint szürke (a filmkészítő 1:1
+    // gombja). A spec az arany `_t` keretet 11 nevesített rétegre írja, a 1:1
+    // gomb rétegét nem nevezi meg. A mért Windows-felvételen a keret semleges
+    // (#bbbbbb), a kitöltés kékes, felül belső árnyékkal.
+    property bool greyChecked: false
+    readonly property bool greyCheckedLook: control.greyChecked && control.checked
+        && !control.down && !control.accented
+
     // --- a gomb tényleges színei (a background/contentItem ezeket használja) ---
     //
     // #883: az eredetinek NÉGY állapota van, nekünk kettő volt. A hiányzó
@@ -86,10 +94,12 @@ Button {
     // sötétedett — ez is eltérés volt.
     readonly property color surfaceTop: control.accented
         ? Qt.lighter(control.accent, 1.25)
-        : (control.down ? Theme.buttonTopDown : Theme.buttonTopNormal)
+        : (control.down ? Theme.buttonTopDown
+            : (control.greyCheckedLook ? Theme.buttonCheckedTop : Theme.buttonTopNormal))
     readonly property color surfaceBottom: control.accented
         ? control.accent
-        : (control.down ? Theme.buttonBottomDown : Theme.buttonBottomNormal)
+        : (control.down ? Theme.buttonBottomDown
+            : (control.greyCheckedLook ? Theme.buttonCheckedBottom : Theme.buttonBottomNormal))
 
     //: a rámutatás-árnyék akkor látszik, ha a mutató a gombon van, a gomb
     //: nincs lenyomva, és nem az akcentusos (zöld) változat
@@ -97,7 +107,8 @@ Button {
         control.hovered && !control.down && !control.accented
     readonly property color nyugalmiKeret: control.accented
         ? Qt.darker(control.accent, 1.3)
-        : (control.checked ? Theme.buttonToggledBorder : Theme.buttonBorder)
+        : (control.checked && !control.greyChecked
+            ? Theme.buttonToggledBorder : Theme.buttonBorder)
 
     // --- #2438: a panel FŐ gombja PULZÁL -------------------------------
     //
@@ -262,6 +273,37 @@ Button {
             width: 2
             anchors { top: parent.top; bottom: parent.bottom; left: parent.left
                       topMargin: 1; bottomMargin: 1; leftMargin: 1 }
+        }
+
+        // #5288: a bekapcsolt szürke állapot belső árnyéka a mérce szerint:
+        // felül erősebb, oldalt gyenge sáv; alul nincs külön sáv (a mért
+        // kitöltés ott csak halványul). A kitöltés a surfaceTop/surfaceBottom.
+        Rectangle {
+            objectName: "picasaButtonCheckedShadeLeft"
+            visible: control.greyCheckedLook
+            width: 4
+            color: Theme.buttonCheckedShade
+            anchors { top: parent.top; bottom: parent.bottom; left: parent.left
+                      topMargin: 1; bottomMargin: 1; leftMargin: 1 }
+        }
+        Rectangle {
+            objectName: "picasaButtonCheckedShadeRight"
+            visible: control.greyCheckedLook
+            width: 4
+            color: Theme.buttonCheckedShade
+            anchors { top: parent.top; bottom: parent.bottom; right: parent.right
+                      topMargin: 1; bottomMargin: 1; rightMargin: 1 }
+        }
+        Rectangle {
+            objectName: "picasaButtonCheckedShadeTop"
+            visible: control.greyCheckedLook
+            height: 5
+            anchors { top: parent.top; left: parent.left; right: parent.right
+                      topMargin: 1; leftMargin: 1; rightMargin: 1 }
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Theme.buttonCheckedShadeTop }
+                GradientStop { position: 1.0; color: Qt.alpha(Theme.buttonCheckedShadeTop, 0) }
+            }
         }
     }
 

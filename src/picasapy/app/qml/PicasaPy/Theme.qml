@@ -439,6 +439,17 @@ QtObject {
         // A bekapcsolt állapot ARANY keretet kap, a kitöltése változatlan.
         // Ez SZÍNJELZÉS, nem téma-elem: mindkét témán ugyanaz.
         readonly property color buttonToggledBorder: "#c39b62"
+        // #5288: a BEKAPCSOLT SZÜRKE állapot (a filmkészítő 1:1 gombja) a mért
+        // mércéből: kékes kitöltés (#dadfe4 → #c6cacf, a mért középértékhez
+        // igazítva), belső árnyék: felül 5 képpont erős (0,29 → 0), oldalt gyenge
+        // sáv (0,12). Alul nincs külön árnyék. A spec az arany `_t` keretet 11
+        // nevesített rétegre írja; a 1:1 gomb rétegét nem nevezi meg.
+        readonly property color buttonCheckedTop:
+            tema.dark ? Qt.lighter(nyersTokenek.buttonBg, 1.25) : "#dadfe4"
+        readonly property color buttonCheckedBottom:
+            tema.dark ? nyersTokenek.buttonBg : "#c6cacf"
+        readonly property color buttonCheckedShade: Qt.rgba(0, 0, 0, 0.12)
+        readonly property color buttonCheckedShadeTop: Qt.rgba(0, 0, 0, 0.29)
 
         // ------- #314: sötét téma kozmetikai javítások -------
         // splash-logó háttérkorongja: az eredeti Picasa-logó is fehér korongon
@@ -665,6 +676,10 @@ QtObject {
     readonly property color buttonHoverShade: tema._szin("buttonHoverShade", nyersTokenek.buttonHoverShade)
     readonly property color buttonBorder: tema._szin("buttonBorder", nyersTokenek.buttonBorder)
     readonly property color buttonToggledBorder: tema._szin("buttonToggledBorder", nyersTokenek.buttonToggledBorder)
+    readonly property color buttonCheckedTop: tema._szin("buttonCheckedTop", nyersTokenek.buttonCheckedTop)
+    readonly property color buttonCheckedBottom: tema._szin("buttonCheckedBottom", nyersTokenek.buttonCheckedBottom)
+    readonly property color buttonCheckedShade: tema._szin("buttonCheckedShade", nyersTokenek.buttonCheckedShade)
+    readonly property color buttonCheckedShadeTop: tema._szin("buttonCheckedShadeTop", nyersTokenek.buttonCheckedShadeTop)
     readonly property color logoDisc: tema._szin("logoDisc", nyersTokenek.logoDisc)
     readonly property color iconInk: tema._szin("iconInk", nyersTokenek.iconInk)
 

@@ -5,7 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, QTranslator, Qt
+from PySide6.QtCore import (
+    Q_ARG,
+    QMetaObject,
+    QObject,
+    QPoint,
+    QPointF,
+    QSettings,
+    QTranslator,
+    Qt,
+)
 from PySide6.QtGui import QColor
 from PySide6.QtQml import QQmlProperty
 from PySide6.QtQuick import QQuickItem
@@ -32,6 +41,10 @@ _LETILTOTT_SZOVEG = "#bababa"
 _OPCIO_LETILTOTT = "#b1b1b1"
 # A filmcsík bélyegképe a mércén képpontról mérve 50 × 50.
 _BELYEG_MERET = 50
+# A bélyegek közti rés a mércén 3 képpont (686-735, 739-788, …).
+_BELYEG_RES = 3
+# A bekapcsolt 1:1 gomb a mércén szürke keretű (nem az arany `_t` keret).
+_SZURKE_KERET = "#bbbbbb"
 _PIROS_X = "#b10000"
 _ZOLD = "#3b8f00"
 _KIVALASZTOTT_KEP_KERET = "#009eff"
@@ -493,6 +506,19 @@ def _merd_a_javitott_elemeket(window, kep):
     assert _elem(window, "video_control_bar2/1to1").property("checked") is True, (
         "az 1:1 gomb nem tükrözi a valódi méretet"
     )
+    # A bekapcsolt 1:1 gomb a mércén szürke: semleges keret, felül belső árnyék.
+    gomb = _elem(window, "video_control_bar2/1to1")
+    gx, gy, gw, _gh = _ablak_rect(gomb)
+    assert _keret(gomb.property("background")) == (_SZURKE_KERET, 1), (
+        f"a bekapcsolt 1:1 keret {_keret(gomb.property('background'))}, "
+        "a mércén szürke #bbbbbb"
+    )
+    assert _szin_kozel(_pixel(kep, gx + gw / 2, gy), _SZURKE_KERET, tures=6), (
+        "a bekapcsolt 1:1 gomb felső szegélye nem szürke a képernyőképen"
+    )
+    assert QColor(_pixel(kep, gx + gw / 2, gy + 1)).red() < 190, (
+        "a bekapcsolt 1:1 gombnak nincs felső belső árnyéka, mint a mércén"
+    )
     assert (round(fw), round(fh)) == (640, 480), (
         f"az előnézeti keret {fw:.0f} × {fh:.0f}, nem a 640 × 480-as kimeneti méret"
     )
@@ -554,6 +580,17 @@ def _merd_a_javitott_elemeket(window, kep):
         _kx, _ky, belyeg_w, belyeg_h = _ablak_rect(keret)
         assert (round(belyeg_w), round(belyeg_h)) == (_BELYEG_MERET, _BELYEG_MERET), (
             f"a bélyegkép {belyeg_w:.0f} × {belyeg_h:.0f}, a mércén 50 × 50"
+        )
+    # A bélyegek közti rés a mércén 3 képpont: a két klipes teszt két bélyeget ad.
+    belyeg_x = sorted(
+        _ablak_rect(keret)[0]
+        for keret in _leszarmazottak(filmstrip, "movieFilmstripFrame")
+    )
+    assert len(belyeg_x) >= 2, "a rés méréséhez legalább két bélyeg kell"
+    for elso, masodik in zip(belyeg_x, belyeg_x[1:], strict=False):
+        res = masodik - elso - _BELYEG_MERET
+        assert abs(res - _BELYEG_RES) <= 1, (
+            f"a bélyegek közti rés {res:.1f} képpont, a mércén {_BELYEG_RES}"
         )
     hozzaad = _elem(window, "movieFilmstripAddButton")
     torol = _elem(window, "movieFilmstripDeleteButton")
@@ -691,6 +728,7 @@ def test_a_mozgofilm_elemei_a_mercehez_igazodnak(movie_app, qt_app):
     output = Path(__file__).resolve().parents[3] / ".bt"
     output.mkdir(parents=True, exist_ok=True)
     assert rendered.save(str(output / "movie-maker-5264-hu-1087x730.png"))
+    assert rendered.save(str(output / "movie-maker-5288.png"))
     # A pixelellenőrzések a mentett, magyar képernyőképen futnak.
     _merd_a_javitott_elemeket(window, rendered)
     _negyzetes_fotonal_nincs_fekete_csik(window, qt_app)
@@ -724,3 +762,73 @@ def _negyzetes_fotonal_nincs_fekete_csik(window, qt_app):
     assert _pixel(kep, kx + kw - 1, kozep_y) != _FEKETE, (
         "a 4:3-as fotó jobb szélén fekete csík van"
     )
+
+
+def _nyisd_a_mozgofilmkeszitot(window, controller, qt_app, engine):
+    """A két fotós mappát kijelöli, és a Create > Movie menüből megnyitja."""
+    # A munkamenet-szintű qt_app a korábbi teszt magyar fordítóját is megtartja;
+    # a `&Create` menüút angol feliratot vár.
+    for korabbi in qt_app.findChildren(QTranslator):
+        qt_app.removeTranslator(korabbi)
+    engine.retranslate()
+    window.show()
+    window.requestActivate()
+    qt_app.processEvents()
+    controller.selectFolder(str(Path(str(controller.watchedFolders[0])) / _MAPPA))
+    assert _varj(qt_app, lambda: len(controller.photos.photos) == 2)
+    window.setProperty("selectedIndexes", [0, 1])
+    window.setProperty("selectedIndex", 0)
+    qt_app.processEvents()
+    _movie_menu_kattintas(window, qt_app)
+    assert _varj(qt_app, lambda: _elem(window, "movieDialog").property("visible"))
+    window.resize(1087, 730)
+    qt_app.processEvents()
+    return _elem(window, "movieDialog")
+
+
+@pytest.fixture
+def movie_app_kikapcsolt_1to1(qt_app, tmp_path):
+    """A korábbi indításban kikapcsolt 1:1: az INI-ben szövegként `false` áll."""
+    (tmp_path / "settings.ini").write_text(
+        "[General]\nmakemovie1to1=false\n", encoding="utf-8"
+    )
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_keszits_fotokat,
+    )
+
+
+def test_a_1to1_valasztas_mentodik_es_visszakapcsolhato(movie_app, qt_app, tmp_path):
+    window, controller, engine = movie_app
+    # A spec szerint a `Preferences\makemovie1to1` alapja 1 (bekapcsolva).
+    assert controller.moviePreference("actualSize") is True
+    _nyisd_a_mozgofilmkeszitot(window, controller, qt_app, engine)
+    gomb = _elem(window, "video_control_bar2/1to1")
+
+    _kattints(qt_app, gomb)
+    assert gomb.property("checked") is False
+    assert controller.moviePreference("actualSize") is False
+    # A lemezen a spec szerinti kulcs áll, a kikapcsolt érték szövegként.
+    controller._get_settings().sync()
+    mentett = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    assert str(mentett.value("makemovie1to1")).lower() == "false"
+
+    _kattints(qt_app, gomb)
+    assert gomb.property("checked") is True
+    assert controller.moviePreference("actualSize") is True
+
+
+def test_a_mentett_kikapcsolt_1to1_indulaskor_kikapcsolva_nyilik(
+    movie_app_kikapcsolt_1to1, qt_app
+):
+    window, controller, engine = movie_app_kikapcsolt_1to1
+    # A szövegként olvasott `false` ne ébredjen vissza igazra (bool("false") == True).
+    assert controller.moviePreference("actualSize") is False
+    dialog = _nyisd_a_mozgofilmkeszitot(window, controller, qt_app, engine)
+    gomb = _elem(window, "video_control_bar2/1to1")
+    assert dialog.property("previewActualSizeEnabled") is False
+    assert gomb.property("checked") is False
+    # Kikapcsolva nincs belső árnyék a gombon.
+    arnyek = _leszarmazottak(gomb, "picasaButtonCheckedShadeTop")
+    assert arnyek and all(item.property("visible") is False for item in arnyek)
