@@ -89,7 +89,7 @@ HIVATALOS = {
         "compacting/label5.title"),
     "This file is read only. In order to edit this file, PicasaPy needs to "
     "copy the file's folder. Would you like to make a copy now?": (
-        "A fájl írásvédett; szerkesztéséhez a Picasának másolatot kell "
+        "A fájl írásvédett; szerkesztéséhez a PicasaPy-nak másolatot kell "
         "készítenie a fájl mappájáról. Szeretne most másolatot készíteni?",
         "CThumbUI::ReadOnlyPrompt"),
     "Remember this setting, don't display this dialog again.": (

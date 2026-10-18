@@ -274,7 +274,7 @@ class TestGyorsbillentyuk:
         Ctrl+P-nek is élő billentyűt kellett kapnia), a #1590-ben ötről
         hatra (`Indexképek nyomtatása…`, Ctrl+Shift+P), a #1615-ben hatról
         hétre (`Importálás forrása…`, Ctrl+M), a #1633-ban pedig hétről
-        nyolcra (`Fájl felvétele a Picasába…`, Ctrl+O)."""
+        nyolcra (`Fájl felvétele a PicasaPy-ba…`, Ctrl+O)."""
         src = _source()
         # #1616: a `Ctrl+N` (Új album…) bekötésével nyolcról KILENCRE nőtt.
         # A darabszám önmagában gyenge mérce — nem mondja meg, MELYIK

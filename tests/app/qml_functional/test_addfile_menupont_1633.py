@@ -1,4 +1,4 @@
-"""A Fájl ▸ Fájl felvétele a Picasába… és a `Ctrl+O` bekötése (#1633).
+"""A Fájl ▸ Fájl felvétele a PicasaPy-ba… és a `Ctrl+O` bekötése (#1633).
 
 ## A lelet
 
@@ -27,7 +27,7 @@ közvetlenül — ugyanaz a minta, mint az `ImportDropArea.qml` `submitUrls()`-
 tesztje.
 
 A várt értékek (`"Add File to Picasa..."`, `"Ctrl+O"`,
-`"Fájl felvétele a Picasába…"`) szándékosan KIÍRT LITERÁLOK — nem a termék
+`"Fájl felvétele a PicasaPy-ba…"`) szándékosan KIÍRT LITERÁLOK — nem a termék
 konstansaiból olvassuk ki őket (#1576 tanulsága: az önmagát igazoló teszt
 bármit elfogad).
 """
@@ -82,11 +82,11 @@ class TestMenupont:
         tetel = _elem(window, "menuFileAddFile")
 
         assert not tetel.property("placeholder"), (
-            "a Fájl felvétele a Picasába… menüpont még mindig helyfoglaló, "
+            "a Fájl felvétele a PicasaPy-ba… menüpont még mindig helyfoglaló, "
             "tehát a felhasználó rá sem tud kattintani (#1633)"
         )
         assert tetel.property("enabled") is True, (
-            "a Fájl felvétele a Picasába… menüpont le van tiltva"
+            "a Fájl felvétele a PicasaPy-ba… menüpont le van tiltva"
         )
 
     def test_a_felirat_a_hirdetett_billentyut_is_tartalmazza(self, qml_app):
@@ -117,7 +117,7 @@ class TestMenupont:
         qt_app.processEvents()
 
         assert parbeszed.property("visible") is True, (
-            "a Fájl ▸ Fájl felvétele a Picasába… nem nyitotta meg a "
+            "a Fájl ▸ Fájl felvétele a PicasaPy-ba… nem nyitotta meg a "
             "fájlválasztót"
         )
         _bezar(window, qt_app)
@@ -219,7 +219,7 @@ class TestValodiHatas:
                 Qt.ConnectionType.DirectConnection,
                 Q_ARG("QVariant", [(uj_mappa / "kep.jpg").as_uri()]),
             ),
-            description="a Fájl felvétele a Picasába… szinkron",
+            description="a Fájl felvétele a PicasaPy-ba… szinkron",
             process_events_with=qt_app,
         )
 
@@ -258,7 +258,7 @@ class TestValodiHatas:
                     ],
                 ),
             ),
-            description="a Fájl felvétele a Picasába… szinkron",
+            description="a Fájl felvétele a PicasaPy-ba… szinkron",
             process_events_with=qt_app,
         )
 
@@ -303,7 +303,7 @@ class TestForrasEsFordítas:
 
         # kiírt literál mindkét oldalon
         assert forditasok.get("Add File to PicasaPy...") == (
-            "Fájl felvétele a Picasába…"
+            "Fájl felvétele a PicasaPy-ba…"
         )
 
 
