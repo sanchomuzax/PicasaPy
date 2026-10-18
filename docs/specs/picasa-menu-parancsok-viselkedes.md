@@ -3443,6 +3443,51 @@ Pásztázás kell (`paszta.py`, memóriakapuval): a `[0x00d67849]` globális nev
 
 Ghidra-kör kell: 0x005e8b10 - a mód-0 (Lejátszás) ág listaépítése: melyik gyűjteményből épít, és van-e K-kapu. [nem blokkoló]
 
+#### 38.2.15 A Ctrl+5 feltétele, a qshow vezérlője és kilépése (#4443, 2026-10-18)
+
+**Kérdés és módszer.** Ez a kör a Ctrl+5 módosító-feltételét, az `ytWindow`-hez tartozó bemutatóvezérlőt, valamint az Escape kilépési útját követte. A függvények mérete a bináris-indexből származik; a helyi diszasszemblálás a `picasapy-agent` venv `annot_disasm.py` eszközével készült. A PE-erőforrásokat, importokat és vtáblákat `pefile`-lal olvastam. Futó Picasa-mérést ez a kör nem végzett; a korábbi Colab-próbán a qshow megfagyott.
+
+**1. A Ctrl+5 feltétele.** A `0x005e6710` eseménykezelő `0x005e680f`-nél az esemény `+0x10` módosító-bájtját olvassa, majd `0x005e6812`-nél a `0x04` bitet teszteli. Ha be van állítva, a `0x005e69cc` ágon meghívja a `0x005e60d0` billentyűkezelőt. Annak „5” ága (`0x005e6279`) a `0x005696c0` kapu hamis eredménye esetén hívja a `0x005e8a70(this, 1)` bemutatóutat. A Ctrl-feltétel tehát az esemény módosító-bájtjának `0x04` bitjénél dől el, nem a `0x005e60d0`-ben végzett `GetKeyState`-lekérdezéssel. A `0x005e6710` saját `GetAsyncKeyState(0x10)` hívása a Shiftet vizsgálja. A külön `ytWindow`-út `0x00984970` kezelője a `0x00984f8f`-nél közvetlenül lekérdezi a `VK_CONTROL` (`0x11`) állapotát, és azt a módosító-bájt `0x04` bitjébe teszi (`0x00984fba`-`0x00984fcc`); ez függetlenül megerősíti a bit Ctrl-jelentését. A főablaki esemény `+0x10` mezőjének írója ebben a körben **NINCS MEG**.
+
+`pefile`-lal a PE erőforrásjegyzékében (`.rsrc`, `0x00da2000`) nincs `RT_ACCELERATOR` (`9`) típus. A bináris importálja a `USER32!CreateAcceleratorTableA` (`0x00c406e4`) és `USER32!TranslateAcceleratorA` (`0x00c4071c`) függvényt is, ezért ebből önmagában csak a beágyazott erőforrás-tábla hiánya következik, minden futásidejű gyorsítótábla kizárása nem. A vizsgált Ctrl+5 út közvetlen, kézi `WM_KEYDOWN`-kezelőág.
+
+**2. A qshow vezérlőobjektuma és billentyűi.** A `0x00982bf0` konstruktor a `ytWindow` vtábláját (`0x00cd87fc`) állítja be. A `0x00983670` létrehozza az ablakot, majd a `GWLP_USERDATA` (`-21`) helyre ugyanennek az objektumnak a mutatóját írja. A `ytWindow` vtábla PE-ből olvasott elemei: `+0x1c = 0x00984970` és `+0x20 = 0x00985550`. A WndProc a `+0x1c` üzenetkezelőt hívja; a `0x00984970` a billentyűüzenetből módosító-bájtot épít, majd a `+0x20` metóduson át továbbít. A `0x00985550` a `ytWindow+0x64` gyermekre küldi az eseményt annak `+0x30` virtuális metódusán.
+
+A gyermek a `QDrawable`: a `0x007fa7f0` konstruktor a `0x00cbd66c` vtáblát állítja be. A `0x008037e0` ezt rendeli a `ytWindow+0x64` mezőhöz, majd meghívja a QDrawable `+0x28` metódusát. Ennek célja a `0x007fa480`, amely a szülő `ytWindow` mutatóját a QDrawable `+0x50` mezőjébe írja. A PE-ből olvasott QDrawable vtábla `+0x30` eleme `0x00801270`, ez kezeli a qshow `WM_KEYDOWN` eseményeit:
+
+| Billentyű | Bináris ág | Megállapított művelet |
+|---|---|---|
+| Escape (`0x1b`) | `0x008012a7` → `0x007fb820` | A qshow-ablak bezárási útját indítja. |
+| Balra (`0x25`), Fel (`0x26`) | `0x008012bf`-`0x008012c9` → `0x008011b0` | Előző elem. |
+| Jobbra (`0x27`), Le (`0x28`) | `0x008012cf`-`0x008012d9` → `0x00801210` | Következő elem. |
+| Szóköz (`0x20`) | `0x008012df`-`0x00801344` | A `QDrawable+0x3bb` automatikus lejátszás-jelzőjét váltja; az aktív állapot külön leállítási/frissítési ágon megy. |
+| Ctrl+Szóköz | `0x008012e3`-`0x0080130d` | A `QDrawable+0x3ba` mezőt `1`-re állítja. A mező hatása **NINCS MEG**. |
+| Home (`0x24`), End (`0x23`) | teljes `0x00801270` függvény | Nincs hozzájuk külön ág; a vezérlő nem kezeli őket saját navigációs billentyűként. Az ismeretlen billentyű visszatérési értéke az ablak alapértelmezett üzenetkezelőjéhez engedi tovább az eseményt. |
+
+**3. Az Escape kilépési célja.** A `0x007fb820` az Escape-ág végén a QDrawable `+0x24` getterével (`0x00a6ccf0`, a `+0x50` mező visszaadása) elkéri a szülő `ytWindow`-t, majd annak vtable `+0x14` metódusát hívja két nulla argumentummal. A `ytWindow` vtábla `+0x14` eleme `0x00983270`. Nulla első argumentummal, ha a `[0x00d67858]` jelző nulla, a függvény a saját HWND-jére `PostMessageA(hwnd, WM_CLOSE, 0, 0)` üzenetet tesz (`WM_CLOSE = 0x10`, importcím `0x00c4080c`). Ha a jelző nem nulla, a kód a jelenlegi szál ablakait sorolja fel az `EnumThreadWindows` importtal (`0x00c40710`) és a `0x00982fa0` callbackkel; a callback bizonyos ablakoknak `SendMessageA(hwnd, WM_CLOSE, 0, 0)` üzenetet küld (`0x00c40884`). Az Escape tehát a qshow bezárását kezdeményezi; hogy a bezárás után pontosan melyik főnézet és fókuszállapot látszik, futó mérés nélkül **NINCS MEG**.
+
+**A két független út.**
+
+- **A út, utasításszintű lánc:** `0x00983670` → `0x00984970` → `0x00985550` → QDrawable `0x00801270`; innen az Escape `0x007fb820`-ba és a szülő `ytWindow+0x14` kilépő metódusába jut. A főablaki `0x005e6710` külön útja a `0x04` bitet vizsgálja, majd a `0x005e60d0` „5” ágához enged.
+- **B út, PE-adatok és RTTI:** a vtáblák nyers PE-olvasása a `ytWindow+0x14/+0x1c/+0x20` célokat (`0x00983270/0x00984970/0x00985550`) és a QDrawable `+0x30` célját (`0x00801270`) adja; a bináris-index RTTI-je a `ytWindow` és a QDrawable vtable-címeit azonosítja. A PE-importtábla a `0x00c4080c` címet `USER32!PostMessageA` néven azonosítja. A qshow eseménykezelő `GetAsyncKeyState(VK_CONTROL)` lekérdezése és `0x04` bitbe írása külön igazolja a Ctrl-bit jelentését.
+
+A két út a vezérlőobjektum, a billentyűkezelő és az Escape bezárási kérésének céljában egyezik. A kódból statikusan igazolt események futásidejű látható hatását ez nem méri meg.
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni azt, hogy a Ctrl+5 az erőforrásban tárolt accelerator-táblából jön: a teljes PE-erőforrástípus-jegyzékben nincs `RT_ACCELERATOR`; a megvizsgált billentyűút ehelyett a `0x005e6812` módosítóbit-próbán halad át. A PE más helyen dinamikus accelerator API-kat importál, ezért a negatív eredmény nem általánosítható minden gyorsítótáblára. Azt is próbáltam cáfolni, hogy a Home/End saját előző/következő műveletet kap: a teljes, index szerint 604 bájtos `0x00801270` függvényben nincs ilyen VK-ág, és a nem kezelt esemény a WndProc alapértelmezett útjára kerül. Mindkét cáfoló eredményt ugyanazzal a mércével ellenőriztem: függvénytörzs, PE-erőforrásjegyzék és nyers vtable/importadatok.
+
+**Bizonyítottsági fok: feltételes.** A Ctrl+5 bitkapuja, a qshow objektumlánca és az Escape által küldött bezárási kérés statikus bináris- és PE-adatokkal megerősített. Az eredeti ablakon a billentyűk látható hatása, a bezárás utáni fókusz és a `QDrawable+0x3ba` Ctrl+Szóköz-jelző szemantikája nem lett futásban megmérve.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A Ctrl+5 a CThumbUI esemény `+0x10` mezőjének `0x04` bitjén át jut a `0x005e60d0` „5” ágához, amely mód 1-ben indítja a `0x005e8a70`-et. A statikus PE-erőforrásban nincs `RT_ACCELERATOR`. | A Nézet ▸ Időrend és a Ctrl+5 a #1903 óta inaktív. | A Ctrl-feltételt a főablaki vezérlő visszaállításakor tartsuk meg; az eseménybit íróját ne találgassuk. |
+| A qshow a külön `ytWindow` és QDrawable objektumpárt használja. Balra/Fel előző, Jobbra/Le következő, Szóköz automatikus lejátszás-váltó, Escape bezárási kérés. Home/End nem kap egyedi navigációt. | A `TimelineView.qml` az alkalmazásablakon belüli év-/hónap-rács; qshow vezérlő nincs. | A bemutató saját teljes képernyős ablakában a fenti billentyűút és objektumhatár szükséges. |
+| Escape a `ytWindow+0x14` (`0x00983270`) útján `WM_CLOSE`-t tesz az ablakra; a visszatérő főnézet futásban nem lett megfigyelve. | Nincs qshow ablak és kilépési út. | A qshow bezárása után az eredeti könyvtárnézethez térjen vissza; a fókusz részletét eredeti futásban kell ellenőrizni. |
+| A bemutató tényleges kártyatartalma, dátumsorrendje és átmenetének képi/időbeli paraméterei korábbi körök alapján továbbra is **NINCS MEG**. | A mostani rács nem az eredeti bemutató. | A teljes reprodukció fejlesztése előtt a 38.2.1 és 38.2.9 nyitott tartalmi és animációs pontjait kell lezárni; addig csak a vezérlőhéj specifikált. |
+
+**Nyitott pontok.** A főablaki esemény `+0x10` módosító-bájtjának írója; a `QDrawable+0x3ba` Ctrl+Szóköz-jelző jelentése; a `[0x00d67858]` ág futásidejű értéke és az általa érintett ablak; a bezárás utáni tényleges nézet és fókusz; továbbá a korábban rögzített kártya-, dátumsorrend- és átmeneti adatok. Ezekhez a főablaki WM_KEYDOWN esemény létrehozójának célzott követése, a jelző mezőíróinak `paszta.py`-s pásztázása, illetve eredeti Picasa futás kell. Ghidra-kör ehhez a körben nem szükséges.
+
+**Nyitott kérdések mérlege (38.2.15).** 5 nyílt (módosítóbit-író, Ctrl+Szóköz-jelző, `[0x00d67858]` ág, bezárás utáni fókusz, korábbi tartalom/átmenet) · 3 lezárt (Ctrl+5 bitkapu, qshow vtable és kért billentyűk, Escape bezárási hívás) · 0 blokkolt · 0 hatókörön kívül.
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
