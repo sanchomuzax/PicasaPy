@@ -576,20 +576,22 @@ class TestPreviewEffectGyorsPolaroid:
         hivasok = []
         eredeti = glimmer_frames.apply_polaroid
 
-        def kem(image, rotate=5.0, color=(0xE2, 0xE2, 0xE2), *, gyors=False):
-            hivasok.append(gyors)
-            return eredeti(image, rotate, color, gyors=gyors)
+        def kem(image, rotate=5.0, color=(0xE2, 0xE2, 0xE2), *, alpha=255, gyors=False):
+            hivasok.append((alpha, gyors))
+            return eredeti(image, rotate, color, alpha=alpha, gyors=gyors)
 
         monkeypatch.setattr(glimmer_frames, "apply_polaroid", kem)
         controller.beginEdit("1", str(photo))
         assert controller.waitForBackgroundWorkers(10.0)
         hivasok.clear()
         controller.previewEffect("polaroid", [5.0])
-        assert hivasok and all(hivasok)
+        assert hivasok and all(alpha == 255 and gyors for alpha, gyors in hivasok)
         huzas = len(hivasok)
         controller.applyEffectWithParams("polaroid", [5.0])
         assert controller.waitForBackgroundWorkers(10.0)
-        assert hivasok[huzas:] and not any(hivasok[huzas:])
+        assert hivasok[huzas:] and all(
+            alpha == 255 and not gyors for alpha, gyors in hivasok[huzas:]
+        )
 
 
 class TestUndoRedoStack:

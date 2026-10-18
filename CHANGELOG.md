@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.140] - 2026-10-18
+
+- A Polaroid átlátszó előzmény után a kiválasztott háttérszínt mutatja (#5299).
+
 ## [0.9.139] - 2026-10-18
 
 - A Rainbow effekt mostantól a Picasa hat színsávjával renderelődik. (#5304).

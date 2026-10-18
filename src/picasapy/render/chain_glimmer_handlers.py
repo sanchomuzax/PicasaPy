@@ -263,7 +263,7 @@ def apply_museum_matte_op(image, op: FilterOp):
     )
 
 
-def apply_polaroid_op(image, op: FilterOp):
+def apply_polaroid_op(image, op: FilterOp, *, alpha: int = 255):
     # #3862: húzás közben (`EditController.previewEffect`, a `previewTilt`
     # mintájára) a Rotate a gyors mintavevővel fut; Alkalmaz/mentés/export/
     # bélyegkép a blokkon kívül, natívan.
@@ -271,6 +271,7 @@ def apply_polaroid_op(image, op: FilterOp):
         image,
         rotate=_float_at(op, 0, 5.0),
         color=_color_at(op, 1, (0xE2, 0xE2, 0xE2)),
+        alpha=alpha,
         gyors=gyors_elonezet_aktiv(),
     )
 

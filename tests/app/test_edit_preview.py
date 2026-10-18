@@ -258,6 +258,28 @@ class TestPrefixCache:
         # más prefix → a prefix újraszámolódik, majd az utolsó op fut
         assert calls == [(sat,), (tilt,)]
 
+    # rontás-kontroll: picasapy.render.chain._ALPHA_TRANSPARENT = 255 → 1 failed.
+    def test_polaroid_a_prefixben_irt_atlatszo_alfat_hasznalja(self, qt_app, tmp_path):
+        """#5299: a gyorsítótárazott dir_sat-prefix A=0 állapota eljut a Polaroidig."""
+        from picasapy.ini.filters import FilterOp
+        from picasapy.render.glimmer_frame_ops import drop_shadow_padding
+
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(64, 64))
+        directional = FilterOp("dir_sat", ("1", "0.35", "-0.2"))
+        first_polaroid = FilterOp("Polaroid", ("1", "0.000000", "00e2e2e2"))
+        provider.register("1", photo, (directional, first_polaroid))
+
+        second_polaroid = FilterOp("Polaroid", ("1", "0.000000", "00204080"))
+        provider.register("1", photo, (directional, second_polaroid))
+        rendered = provider.requestImage("1", None, None)
+
+        _, _, (pad_left, pad_top, _, _) = drop_shadow_padding(3, 90.0, 8)
+        x = pad_left + round(64 * 0.0645) + 32
+        y = pad_top + round(64 * 0.0968) + 32
+        pixel = rendered.pixelColor(x, y)
+        assert (pixel.red(), pixel.green(), pixel.blue()) == (0x20, 0x40, 0x80)
+
     def test_cached_render_matches_uncached(self, qt_app, tmp_path):
         provider = _make_provider()
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
