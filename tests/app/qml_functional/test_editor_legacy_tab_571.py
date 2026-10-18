@@ -140,16 +140,18 @@ class TestLegacyCatalogue:
             "triple3",
             "autocontrast",
             "shadow",
+            # #5304: a Rainbow kapott natív algoritmust és a lánc futtatja.
+            "rainbow",
         ):
             assert can_render_filter(key)
 
-    def test_the_undecoded_ones_are_not_renderable(self):
-        # ezek addig szürkék, amíg a natív magjuk nincs megfejtve — a
-        # felületen nem lehet aktívnak látszó, de nem ható gomb
+    def test_a_megfejtetlen_nevek_kozul_csak_a_colorfix_nem_renderelheto(self):
+        # #5304 óta a rainbow renderelhető, a colorfix natív magja továbbra
+        # sem ismert: a felületen nem lehet aktívnak látszó, de nem ható gomb.
         from picasapy.render.chain import can_render_filter
 
-        for key in ("colorfix", "rainbow"):
-            assert not can_render_filter(key)
+        assert not can_render_filter("colorfix")
+        assert can_render_filter("rainbow")
 
     def test_a_blur_renderel_de_gombkent_nem_kinalhato(self):
         """#1142 — a `blur` a LÁNCBÓL renderel (egy idegen ini-ben állhat a
