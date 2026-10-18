@@ -3116,7 +3116,7 @@ Mindkét ágban ugyanez áll (`0x0081356b`-`0x00813577` a `0x00812aa0` hívás e
 - Argumentumok (a `0x0068f980` hívása, `0x0068f9a5`-`0x0068f9c3`): arg1 = `CThumbDB` (`[esi+0x94]`), arg2 = a 0-tól számozott elem-index (a `+0x60` slot visszatérése, `eax`), arg3 = jelző = 1 (`push 1`).
 - Alap-téglalap: `0x00446610(CThumbDB, elem-index, esi)`; a 3. argumentum a `push esi` (a `0x00446610` `ret 0xc`-vel vesz le három argumentumot). A négy dword az `imagedata_facerect`-ből kerül az `esi`-be (a 8. kör C-je szerint; a `0x00446610` törzsét ebben a körben nem olvastam újra).
 - Metszés (`0x0047a3be`-`0x0047a419`): `0x00429dc0(CThumbDB, elem-index, &crop)`. Sikeres hívásnál `x0 = max(x0, cx0)`, `y0 = max(y0, cy0)`, `x1 = min(x1, cx1)`, `y1 = min(y1, cy1)`, az `esi` négy mezőjébe. Ha a hívás nullát ad (`0x0047a3da`), az alap-téglalap marad. Üres-ellenőrzés nincs.
-- Forgatás (`0x0047a41c`-`0x0047a429`): `0x0042c830(this = CThumbDB, elem-index, &rot, 0)`; a `rotate` a `[esp+0x20]` lokálisba kerül.
+- Forgatás (`0x0047a41c`-`0x0047a429`): `0x0042c830(this = CThumbDB, elem-index, &rot, 0)`; a `rotate` a `[esp+0x1c]` dword-ba kerül (javítva 2026-10-18: a `[esp+0x20]` a `0x0047a42e` által átadott objektum kezdete, lásd a 3168. sort).
 - Szűrő (`0x0047a45a`-`0x0047a45c`): `0x00430610`, a négy rect-argumentum nulla. A visszatérési értékét a híd nem használja, és a `[esp+0x30]` tömböt a híd később nem olvassa.
 - Affin (`0x0047a466`-`0x0047a46c`): **EDX = esi**, vagyis az affin bemenete a METSZETT rect. ECX = négy egész kimenet (`lea ecx,[esp+0x10]`), a verembe a 6 floatos mátrix címe kerül (`lea ecx,[esp+0x78]`, `0x0047a461`). A visszatérő mutatót a híd EAX-ből olvassa (`0x0047a471`), és `0x0047a473`-`0x0047a484` visszamásolja az `esi`-be. (A 9. kör a visszatérést ECX-ként írta; ezt a `0x00a4a240` végén nem ellenőriztem.)
 
@@ -3165,11 +3165,11 @@ A receiverek: a `0x00531c60` receivere a `CThumbDB` (7. kör, változatlan), de 
 
 *(k) A #4331-hez.* A jegytörzs-bővítés még nem írható. Az M (6 float) forrása és a rotate-érték hatása hiányzik. A metszés-láncra és a Vw és Vh értékére van már bizonyíték, de egy valódi filmfutáshoz az M kell.
 
-Ghidra-kör kell: 0x0042c830 - a `rotate` lokális (`[esp+0x20]`) és a híd 6 floatos mátrixának kapcsolata: a `0x0047a461`-nél verembe tolt mutató célját melyik utasítás írja? [blokkoló]
+Válasz [megerősített, két út; 2026-10-18]: a `0x0042c830` a rotate értéket a hívó **`[esp+0x1c]`** dword-jába írja (nem `[esp+0x20]`-ba). Asm-út: a `0x0047a41c` `push ebx` után a `lea ecx,[esp+0x20]` (`0x0047a41d`) már a `esp-4`-hez képest számol, így a kimeneti mutató `E0+0x1c` (E0: a hívás előtti `esp`). C-út (a film-hog dump hídja): a `local_84` (= `E0+0x1c`) és a `local_80` (= `E0+0x20`) egymás után áll, és a `local_84` a `0x0042c830` argumentumán kívül nincs olvasva. A `0x0042c830` nem ír a mátrixba (C: csak `*param_3`). **Nincs memóriakapcsolat a rotate és a 6 floatos mátrix között**: a rotate-dword a hívás után nem olvasódik sem a híd törzsében, sem a `0x00430610` vagy a `0x00a4a240` argumentumában.
 
-Ghidra-kör kell: 0x004147d0 - a `0x0047a42e`-as hívás (`this` = a `rotate` lokális) hatása a `rotate`-ra és a mátrixra. [blokkoló]
+Válasz [a rotate-hatásra megerősített; a mátrix-identitás feltételes; 2026-10-18]: a `0x0047a42e` `lea eax,[esp+0x20]` után a `0x004147d0`-t hívja, tehát `EAX` = `E0+0x20`, a `local_80` objektum (nem a rotate). A `0x004147d0` (sima `ret`, 106 bájt) ezt az objektumot alapértelmezettre írja: nullák; `1.0` a `+0x30`, `+0x40`, `+0x50`, `+0x58`, `+0x68`, `+0x78` mezőkön; `1` bájt a `+0x54` és `+0x7c` helyen. A rotate-dword (`E0+0x1c`) a reset kezdete előtt van, a reset **nem írja felül**. Hatás a rotate-ra: nincs. Hatás a mátrixra: a 6 floatos mátrix (`+0x58`..`+0x6c` = `E0+0x78`..`E0+0x8c`) **identitás**: `[1, 0, 0; 0, 1, 0]`. Feltétel: a `0x00430610` szűrő kimenete a `local_80` (88 bájt, a C szerint), ami a mátrix címe (`E0+0x78`) előtt végződik; ezt nem olvastam végig, ezért feltételes. C-út: `FUN_004147d0()` a `local_80` után, a mátrix a C-ben a `local_28` (`FUN_00a4a240(local_28)`).
 
-Ghidra-kör kell: 0x00a4a240 - a 6 floatos mátrix olvasási sorrendje és a visszatérő mutató konvenciója (EAX vagy ECX). [nem blokkoló]
+Válasz [megerősített, C és asm; 2026-10-18]: a `0x00a4a240` `__fastcall`, `ret 4`: ECX = a négy egész típusú kimenet, EDX = a bemeneti rect `[x0, y0, x1, y1]`, a verem egyetlen argumentuma a 6 floatos mátrix címe. A mátrix sorfolytonos 2×3: `X' = m0·x + m1·y + m2`, `Y' = m3·x + m4·y + m5` (az `m2` és `m5` az eltolás). A 4 sarokpont képe után a befoglaló téglalap min/max értékei, a kimenet `[minX, minY, maxX, maxY]`, mindegyik `ROUND(érték - c)`-vel, ahol `c` a `0x00cf4160` double-értéke (0.499). A C `(float)` konverziót mutat, az asm `fsub qword`-öt; a két konverzió különbsége ~1e-8, a kerekítési határ átbillenését nem vizsgáltam. **Visszatérés:** a C `return param_1` (ECX), tehát EAX = ECX; a híd `mov edx, [eax]` (`0x0047a471`) ezt használja. Az „EAX vagy ECX" kérdés így eldőlt: EAX = ECX. A 9. kör ECX-ként írt olvasatát helyesbítem. Megjegyzés: a 3121. sor `lea ecx,[esp+0x10]` a `push ecx` után áll, ezért a kimenet a `E0+0x0c`..`E0+0x1b`; a `E0+0x1c` rotate-dword ettől szabad.
 
 Nem Ghidra-kérdés, a következő körben: a film-idejű író (pásztázás, indextől független, lásd (g)); a `0x00cf39e4` szerepe (`0x00813d5a` környéke).
 
@@ -6410,7 +6410,7 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 
 **Nyitott pontok és következő irány.**
 
-- `Ghidra-kör kell (pontosítva, 4.5): 0x009c2fc0 és az oneup/transtype csomópont-osztály vtáblája: a +0x68 és +0x6c célfüggvények, valamint az adatút a 0x00771e60 gyárig vagy a 0x0076d900 illesztőig. A hívási sorrend megvan (4.5). [blokkoló]`
+- Válasz (2026-10-18, lásd 4.5): a `0x009c2fc0` nem beszúró, hanem kereső; a beszúró és a csomópont-osztály vtáblája NINCS MEG.
 - `Ghidra-kör kell: 0x00812470 - honnan töltődik fel a this+0x48 időzített sáv, és a rekord +0x8 régióazonosítója faces= vagy imagedata_facerect adathoz kötött-e? [blokkoló]`
 - A teljes képernyős vetítésből renderelt arcos és arc nélküli képkockapár, a középpont és az arc nélküli fallback mérésével: **NINCS MEG**.
 
@@ -6544,7 +6544,7 @@ Mindkét hívás előtt: a gyökér nem nulla (`cmp dword ptr [0xd67914], ebx`),
 
 **Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a `0x008037e0` közvetlenül a gyárat vagy az illesztőt hívja: a diszasszemblált törzsben a `0x00771e60` és a `0x0076d900` egyike sem szerepel (0 találat). Ez a közvetlen élt cáfolja; a virtuális úton át nem zárja ki.
 
-**Ghidra-kör kell:** `0x009c2fc0` és a `[0x00d67914]+0xc` tábla beszúrói: az `oneup/timeline` és `oneup/transtype` csomópontok osztályának vtáblája, és ezek +0x68 / +0x6c célja, hogy az adatút a gyár vagy az illesztő felé ellenőrizhető legyen [blokkoló]
+**Válasz [részben; 2026-10-18, dekompilált C]: a kérdés előfeltétele téves.** A `0x009c2fc0` (134 bájt, 1604 hívóval) **nem beszúró**, hanem útvonal-kereső: a `[DAT_00d67914]+0xc` hash-táblát járja be (`FUN_00409df0` a hash-index, `FUN_006f9890` a kulcs-összevetés), és a találat `puVar5[1]` mezőjét adja vissza, különben `0`. Nincs benne vtábla-hívás, ezért a `+0x68`/`+0x6c` cél a `0x009c2fc0`-ból nem olvasható ki. **A beszúró NINCS MEG**: a `DAT_00d67914` 1712 hivatkozása közül (`find_data_refs.py`) a `[root+0xc]` írója nincs azonosítva; a vtábla és a célok ezzel együtt nyitottak. Következő lépés: a `[root+0xc]` íróinak pásztázása (`paszta.py`, memóriakapuval), majd a beszúró konstruktorának vtábla-olvasata. A `0x008037e0` hívási sorrendje (4.5) ettől független és változatlan.
 
 **Bizonyítottsági fok:** a hívási szerkezet megerősített; a célok és az adatút NINCS MEG.
 
