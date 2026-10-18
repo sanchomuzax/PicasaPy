@@ -423,8 +423,11 @@ Item {
         readonly property int previewItemCount:
             movieClipSources.length + movieSlides.length
         // A spec szerint a `Preferences\makemovie1to1` alapja 1: a valódi méret a
-        // kiinduló nézet, az 1:1 gomb bekapcsolva.
-        property bool previewActualSizeEnabled: true
+        // kiinduló nézet, az 1:1 gomb bekapcsolva. A mentett választás (#5288)
+        // ezt írja felül indításkor.
+        property bool previewActualSizeEnabled:
+            controller && typeof controller.moviePreference === "function"
+                ? controller.moviePreference("actualSize") : true
         property int previewWindowVisibilityBeforeFullscreen: Window.Windowed
         property bool previewOwnsFullscreen: false
         property var movieSlides: []
@@ -1992,12 +1995,16 @@ Item {
                         Layout.preferredWidth: 38
                         text: "1:1"
                         checkable: true
+                        // A bekapcsolt állapot a mérce szerint szürke (#5288).
+                        greyChecked: true
                         checked: movieDialog.previewActualSizeEnabled
                         ToolTip.text: qsTr("Show actual movie size (don't stretch)")
                         ToolTip.delay: Theme.tooltipDelay
                         ToolTip.visible: hovered
                         onClicked: {
                             movieDialog.previewActualSizeEnabled = checked
+                            if (controller && typeof controller.setMoviePreference === "function")
+                                controller.setMoviePreference("actualSize", checked)
                             movieDialog.requestPreviewFrame()
                         }
                     }
@@ -2062,7 +2069,8 @@ Item {
             width: Math.max(0, parent.width - x)
             height: 72 * movieDialog.layoutScale
             orientation: ListView.Horizontal
-            spacing: 8 * movieDialog.layoutScale
+            // A mérce bélyegei közt 3 képpont a rés (#5288).
+            spacing: 3 * movieDialog.layoutScale
             clip: true
             // A mérce bélyegképe képpontról mérve 50 × 50; a sáv magassága ennél nagyobb.
             readonly property real thumbWidth: 50 * movieDialog.layoutScale

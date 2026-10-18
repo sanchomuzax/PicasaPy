@@ -72,6 +72,7 @@ from picasapy.movie.mxf import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import collage_output, collage_prefs
+from .appearance_controller import coerce_ui_preference_flag
 from .formatting import to_local_path
 from .poster_controller import PosterMixin
 
@@ -100,6 +101,8 @@ _MOVIE_PREFERENCES = {
     "captions": ("CMakeMoviePanel::showcaptions", False),
     "cropfit": ("CMakeMoviePanel::cropfit", False),
     "removeLowResFaces": ("makemoviepanel/remove_low_res_faces", False),
+    # #5288: a valódi méret (1:1) kapcsoló, a spec szerint alapból bekapcsolva.
+    "actualSize": ("makemovie1to1", True),
 }
 # #920: az élő előnézet mérete. Kicsi, mert a Képkupac pakolója
 # időkorlátos keresést futtat — teljes felbontáson a felület beragadna.
@@ -259,7 +262,11 @@ class CreateMixin(PosterMixin):
         if name not in _MOVIE_PREFERENCES:
             return False
         key, default = _MOVIE_PREFERENCES[name]
-        return bool(self._get_settings().value(key, default))
+        # Az INI-ből újraindítás után a `false` szövegként jön vissza, és a
+        # bool("false") igaz lenne: ezért a közös, szöveget is értő olvasó.
+        return coerce_ui_preference_flag(
+            self._get_settings().value(key, default), default=default
+        )
 
     @Slot(str, bool)
     def setMoviePreference(self, name: str, value: bool) -> None:  # noqa: N802
