@@ -54,11 +54,20 @@ lehetséges. Már van ilyen nevű fájl."
 
 **Fájl ▸ Visszaállítás** a fájlt az eredeti változatára állítja vissza.
 Ez a mentéskor készült biztonsági másolatot használja, ezért csak akkor
-kapcsolható be, ha van ilyen másolat.
+kapcsolható be, ha van ilyen másolat. Mentés után a
+tétel azonnal használható, nem kell hozzá a kijelölést megváltoztatni.
 
 A program rákérdez: „Visszaállítja ezeket a fájlokat az eredeti
 változatra? Ez a művelet nem vonható vissza, és az összes módosítás
 elvész."
+
+Visszaállítás közben ugyanaz a lebegő folyamatjelző látszik, mint
+mentéskor (ott „Fájl mentése: …%" áll), itt **Fájlok visszaállítása**
+felirattal. Ha a lemez hibát jelez
+(például megtelt vagy írásvédett), a program ezt írja: „Lemezhiba miatt
+nem lehetséges az összes fájl visszaállítása. Lehet, hogy a lemez megtelt
+vagy írásvédett." Sikeres visszaállítás után külön üzenet nem jön: a rács
+egyszerűen az eredeti képet mutatja.
 
 ## Összes szerkesztés visszavonása
 

@@ -73,10 +73,12 @@ rendszernyelvén.
 
 **Első induláskor** a program felajánlja a rendszered nyelvét: ha a
 gép nyelve nem angol, és a PicasaPy tud ilyen nyelvet, egy kérdés
-jelenik meg — például a magyarnál: „Szeretnéd a PicasaPy nyelvét angolról
-erre a nyelvre váltani?" **Igen** esetén a felület az adott nyelven
-indul, **Nem** esetén angol marad. A kérdés csak egyszer jön; a nyelvet
-később bármikor átállíthatod.
+jelenik meg a program ikonjával. A kérdés angolul szól, ahogy az eredeti
+Picasában is: azt kérdezi, hogy a program a rendszered nyelvén is
+elérhető, és szeretnél-e angolról erre a nyelvre váltani. **Igen** esetén a felület a rendszer nyelvén indul, és
+a beállítás az **Alapértelmezett rendszerbeállítás** lesz: ha később a
+gép nyelvét átállítod, a program is követi. **Nem** esetén angol marad.
+A kérdés csak egyszer jön; a nyelvet később bármikor átállíthatod.
 
 **Később a nyelv nem vált át azonnal.** Amikor a Beállításokban vagy az
 Eszközök menüben rákattintasz egy tételre, a

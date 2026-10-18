@@ -310,26 +310,28 @@ vetítésre és a következő indításig is.
 
 ### Átmenetek
 
-A választóban az eredeti Picasa mind a 22 átmenete megvan, ugyanabban a
-sorrendben és ugyanazokkal a nevekkel:
+A választó az eredeti Picasa diavetítésének hét átmenetét kínálja, ebben
+a sorrendben:
 
 | átmenet | mit csinál |
 |---|---|
 | Kivágás | nincs átmenet, a következő kép azonnal ott van |
+| Pásztázás és nagyítás | a kép lassan elmozdul egyik kivágásából a másikba, és közben nagyobb vagy kisebb lesz |
 | Szétoszlás | a két kép egymásba úszik |
-| Szétoszlás feketén át | az előző kép feketébe halványul, onnan jön elő a következő |
-| Szétoszlás fehéren át | ugyanez fehéren keresztül |
-| Törlés – balra, Törlés, Törlés – felfelé, Törlés – lefelé | az előző kép oldalra, illetve fel vagy le kicsúszik, és közben előtűnik a következő |
-| Törlés – balra fel, jobbra fel, balra le, jobbra le | ugyanez átlós irányban |
-| Tolás – balra, Tolás, Tolás – felfelé, Tolás – lefelé | a következő kép becsúszik, és kitolja az előzőt |
-| Kör – befelé, Kör | a következő kép kicsinyedve, illetve kicsiből nőve jelenik meg |
+| Törlés | az előző kép oldalra kicsúszik, és közben előtűnik a következő |
+| Kör | a következő kép kicsiből nőve, kör alakban jelenik meg |
+| Tolás | a következő kép becsúszik, és kitolja az előzőt |
 | Négyszög | a következő kép kisebb méretből kinagyulva jelenik meg |
-| Pásztázás és nagyítás | a kép lassan mozog, és közben egyre nagyobb lesz |
-| Pásztázás és nagyítás – arc | ugyanez, valamivel erősebb nagyítással |
-| Gyorsítás | a következő kép gyorsan, kissé nagyított állásból úszik be |
 
-A két **Pásztázás és nagyítás** nem a képek közé esik, hanem magán a
-képen fut, ezért a **diaidőhöz** igazodik, nem az átmenet hosszához.
+A **Pásztázás és nagyítás** nem a képek közé esik, hanem magán a képen
+fut, ezért a **diaidőhöz** igazodik, nem az átmenet hosszához. Minden
+képnél két, véletlenszerűen választott kivágás között pásztáz, tehát
+nem mindig a kép közepére nagyít.
+
+Ha egy korábbi változatban olyan átmenetet választottál, ami ebben a
+listában már nincs, a vetítés a **Szétoszlás** átmenettel indul. A többi átmenet
+(például az arcra közelítő változat) a [Mozgófilm](mozgofilm.md)
+készítőjében maradt meg.
 
 ## Megjelenítési mód
 

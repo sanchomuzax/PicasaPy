@@ -78,15 +78,13 @@ A lista soraiban **arcképek** állnak: a névvel ellátott embereknél az
 arc kis, kivágott képe és mellette a név — a névre kattintva a személy
 albumára lépsz. A kijelölt képeken lévő **még névtelen arcok** is
 megjelennek a lista végén, egy-egy arcképpel és egy **Név hozzáadása**
-mezővel. Írd be a nevet, és nyomj **Entert**: megnyílik a személyek
-kezelése ablak, a keresőmezőben a beírt névvel.
+mezővel. Írd be a nevet, és nyomj **Entert**:
 
-- Ha **már van ilyen nevű személy**, az ablak őt jelöli ki, a gomb
-  felirata pedig **Kiválasztás** - erre kattintva az arc hozzá kerül.
-- Ha **még nincs**, az **új személy csak akkor jön létre**, ha ott
-  jóváhagyod.
-
-Ha bezárod az ablakot, semmi nem változik.
+- Ha **már van ilyen nevű személy**, az arc azonnal az övé lesz, ablak
+  nem nyílik.
+- Ha **még nincs**, megnyílik a személyek kezelése ablak a beírt
+  névvel, és az **új személy csak akkor jön létre**, ha ott jóváhagyod.
+  Ha bezárod az ablakot, semmi nem változik.
 
 Egy névtelen arcképet **egérrel egy megnevezett ember sorára is
 húzhatsz** a listában: elengedve az arc az ő nevét kapja.
@@ -158,7 +156,11 @@ Az album **első megnyitásakor** egy üdvözlő ablak jelenik meg
 („Üdvözöljük a Név nélküliek albumban!"): röviden leírja, hogyan nevezel
 el valakit, hogyan mellőzöl egy arcot, és hol találod a javaslatokat. A
 **Bezárás** gombbal csukod be, és legközelebb már nem jön elő. A
-**További információ...** gomb ma nem nyit meg semmit. (Az útmutató egyik
+**További információ...** gomb az alapértelmezett böngésződben megnyitja
+az eredeti Picasa súgójának erre szóló címét, a felület nyelvén; az
+üdvözlő ablak közben nyitva marad. A Google a Picasa online súgóját
+megszüntette, ezért ott valószínűleg nem találsz tartalmat: a tudnivalók
+ebben a súgóban vannak. (Az útmutató egyik
 mondata Google-fiókos bejelentkezést említ - a PicasaPy-ban ilyen nincs,
 erre nincs szükség.)
 
@@ -176,12 +178,17 @@ száma áll (például „37 arc"). Itt:
   hogy az „x" ikonra kattintva mellőzheted az illetőt. Amíg a program a
   csoportokat számolja, ehelyett ez áll ott: „Az arcok csoportosítása
   folyamatban van, kérjük, várjon…"
+- Szétnyitott csoportoknál az arcok száma melletti sor jobb szélén egy
+  **Név hozzáadása** mező és a **Kijelöltek mellőzése** gomb is
+  megjelenik. Jelölj ki egy vagy több arcot, írd be a nevet a mezőbe, és
+  nyomj Entert: a név az összes kijelölt arcra rákerül. A **Kijelöltek
+  mellőzése** gomb a kijelölt arcokat egyszerre teszi félre.
 - Minden arc alatt saját **Név hozzáadása** mező áll. Gépelés közben a
   mező alatt egy lista mutatja, mely meglévő személyek neve illik a
-  beírt szövegre, arcképükkel együtt. Enterre a személyek kezelése ablak
-  nyílik meg, ugyanúgy, mint az Emberek panelen (lásd fent): meglévő
-  névnél a **Kiválasztás** gomb adja hozzá az arcot, új névnél az új
-  személyt ott hagyod jóvá. Ha a program tippel valakire, a név mellett
+  beírt szövegre, arcképükkel együtt. Itt az Enter **mindig** a
+  személyek kezelése ablakot nyitja meg: meglévő névnél az ablak a
+  személyt jelöli ki, és a **Kiválasztás** gomb adja hozzá az arcot; új
+  névnél az új személyt ott hagyod jóvá. Ha a program tippel valakire, a név mellett
   kérdőjel áll - egy kattintás elfogadja.
 - A **Mellőzés** paranccsal félreteszed azokat az arcokat, amiket nem
   akarsz elnevezni (járókelők, plakátok). Ugyanezt teszi a csempe
@@ -281,8 +288,9 @@ ahogy az eredeti Picasában:
 
 - **Ctrl**+kattintás a menüponton — **minden** arcadatot töröl, a
   személyalbumokat is, majd az összes képen újra keresi az arcokat.
-- **Shift**+kattintás — a személyalbumokat törli, az arcokat pedig a
-  névtelenek közé teszi; az arckeretek megmaradnak.
+- **Shift**+kattintás - a személyalbumokat és minden névadást töröl, az
+  arcok pedig a Név nélküliek közé kerülnek, ahol újra elnevezheted
+  őket. A mellőzött arcok mellőzve maradnak.
 
 Mindkét esetben előbb figyelmeztetés jön (**FIGYELEM!**, illetve
 **FIGYELMEZTETÉS!** kezdetű szöveggel), és csak az **Igen** után történik

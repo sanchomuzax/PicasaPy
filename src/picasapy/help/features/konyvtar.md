@@ -702,3 +702,9 @@ megosztáson van, a PicasaPy nem felejti el: a képek az adatbázisban
 maradnak, az indexképek a gyorstárból jönnek. A mappa megjelölve
 látszik, és a program szól, ha egy ilyen képet próbálsz megnyitni vagy
 szerkeszteni.
+
+Más a helyzet, ha egy mappát a programon kívül (például a fájlkezelőben)
+**törölsz**, miközben a meghajtója elérhető: ilyenkor a mappa a képeivel
+együtt eltűnik a bal hasábból, ahogy az eredeti Picasában is. Ha éppen
+egy ilyen, már nem létező mappára húznál képet, a program nem kezd
+fájlműveletbe.

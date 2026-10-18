@@ -66,8 +66,13 @@ A fül tetején az áll, hány kép van kijelölve („N kép kijelölve."). Ala
   levágódik, ahelyett hogy fekete sáv maradna) és **Kis felbontású arcok
   eltávolítása**. Ez utóbbi jelölő ma még **nem hat** a filmre: csak a
   film projektfájljába kerül.
-- **Diák rendezése:** **A legjobb átmenetek**, **Album szerint**
-  (alapérték) vagy **Időrend**.
+- **Diák rendezése:** **A legjobb átmenetek** (új filmnél ez az
+  alapérték), **Album szerint** vagy **Időrend**. A **legjobb
+  átmenetek** sorrendben a program a színükben egymáshoz közeli képeket
+  teszi egymás után, a gyors egymásutánban készült képeket (például egy
+  sorozatfelvétel kockáit) pedig a készítési idejük szerint egy csoportban
+  kezeli. A készítési időt a kép felvételi adataiból veszi, ha ilyen
+  nincs, a fájl dátumából.
 
 Az **OK** helyett a **Mozgófilm létrehozása** gomb indítja a munkát;
 célfájl nélkül is nyomható.

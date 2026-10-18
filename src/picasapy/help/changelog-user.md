@@ -4,6 +4,77 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-18
+
+**Emberek és arcok**
+
+- A jobb oldali **Emberek** panelen egy már meglévő névre az **Enter**
+  ismét azonnal elnevezi az arcot; a személyek kezelése ablak csak új
+  névnél nyílik meg. A **Név nélküliek** albumban továbbra is mindig az
+  ablak jön elő. Lásd [Emberek és arcok](features/emberek.md).
+- A Név nélküliek **szétnyitott csoportjainál** a fejlécben is van
+  **Név hozzáadása** mező és **Kijelöltek mellőzése** gomb, így egyszerre
+  több kijelölt arcot elnevezhetsz vagy félretehetsz.
+- Az üdvözlő ablak **További információ...** gombja a böngészőben
+  megnyitja az eredeti Picasa súgójának címét, a felület nyelvén.
+- Egy hibás arcbejegyzés már nem rejti el a fotó többi arcát, és a
+  megnevezett arc nem jelenik meg még egyszer névtelenként.
+- Az **Arcok alaphelyzetbe állítása** Shift+kattintásos változata minden
+  névadást töröl, és az arcokat a Név nélküliek közé teszi; a mellőzött
+  arcok mellőzve maradnak.
+- A régi Picasa névjegyei minden felületen ugyanazzal a névvel
+  jelennek meg.
+- A személyek kezelése ablakban a keresés leveszi a kijelölést arról, aki
+  kiesett a szűrésből.
+
+**A régi Picasa adatainak átvétele**
+
+- Az átvétel azokat az arcokat is hozza, amelyeket a régi Picasa nem
+  tudott senkihez kötni: ezek a Név nélküliek közé kerülnek. A képen
+  hiányzó arcokat akkor is pótolja, ha a képnek már van arcadata. Lásd
+  [Importálás](features/importalas.md).
+
+**Diavetítés és Mozgófilm**
+
+- A diavetítés átmenet-választója az eredeti Picasa hét átmenetét
+  kínálja: Kivágás, Pásztázás és nagyítás, Szétoszlás, Törlés, Kör,
+  Tolás, Négyszög. A **Pásztázás és nagyítás** két véletlen kivágás
+  között mozog, nem mindig középre nagyít. Lásd
+  [Nézegetés](features/nezegetes.md).
+- A Mozgófilm **A legjobb átmenetek** sorrendje figyelembe veszi a képek
+  készítési idejét, és új filmnél ez az alapérték. Lásd
+  [Mozgófilm](features/mozgofilm.md).
+
+**Mentés és visszaállítás**
+
+- A **Fájl ▸ Visszaállítás** közben folyamatjelző látszik (**Fájlok
+  visszaállítása**), lemezhibánál pedig hibaüzenet jön. A tétel mentés
+  után azonnal használható. Lásd [Mentés](features/mentes.md).
+- Windowson a mentés akkor sem bukik el, ha a képet egy pillanatra más
+  folyamat (például a bélyegkép-készítés) tartja nyitva.
+
+**Könyvtár, keresés, fájlok**
+
+- A kereső a mappák mellett **albumokat** is javasol; a lista a mező
+  alatt, a mező szélességében nyílik, a találatok sora pedig az Albumok
+  csoportba került. Lásd [Keresés](features/kereses.md).
+- A programon kívül törölt mappa eltűnik a bal hasábból (Windowson is).
+  Lásd [A könyvtár](features/konyvtar.md).
+- Az **Átnevezés** ablakban az Enter elfogadja, az Esc megszakítja.
+- A kép helyi menüjében a **Társítás** Linuxon almenüvé vált, amely
+  felsorolja a képtípushoz társított programokat. A helyi menü két
+  tétele az eredeti feliratot kapta: **Összes szerkesztés visszavonása**
+  és **Feltöltés tiltása** (ez utóbbi megszűnt szolgáltatás, szürke
+  marad). Lásd [Fájlműveletek](features/fajlmuveletek.md).
+
+**Egyéb**
+
+- Az első induláskori nyelvfelajánlás az eredeti angol kérdést és a
+  program ikonját mutatja; igen esetén a felület ezután is a rendszer
+  nyelvét követi. Lásd [Beállítások](features/beallitasok.md).
+- A webkamerás felvételnél a **Beállításokban** választott méret valóban
+  érvényesül. Lásd [Importálás](features/importalas.md).
+
 ## 2026-10-17
 
 **Emberek és arcok**
