@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.142] - 2026-10-18
+
+- A program neve a ragozott és összetett fordításokban is PicasaPy lett, tíz nyelven (#5298).
+
 ## [0.9.141] - 2026-10-18
 
 - A Név nélküliek névmezőjének ajánlólistájában a személyre kattintva az arc megkapja a nevet, ugyanúgy, mint Enterre (#5285).
