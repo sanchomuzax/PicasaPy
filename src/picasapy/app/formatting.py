@@ -134,16 +134,27 @@ def format_size(size_bytes: int, locale: QLocale, tr) -> str:
     """Fájlméret a Picasa magyar formátumai szerint (#526).
 
     A korábbi változat 1 MB alatt MINDIG KB-ot írt (egy 300 bájtos fájl így
-    „0 KB" volt) és a GB/TB fokozatot nem ismerte.
+    „0 KB" volt) és a GB/TB fokozatot nem ismerte. A számot Python fixpontos
+    formázása állítja elő, a területi beállítás szerinti tizedesjellel; így
+    nem kerülnek bele a `printf` formátumában nem szereplő ezreselválasztók.
     """
     for limit, label, decimals in _SIZE_TIERS:
         if size_bytes < limit:
             unit = limit // 1024
             value = size_bytes / unit if unit > 1 else float(size_bytes)
-            return tr(label).replace("%1", locale.toString(value, "f", decimals))
+            return tr(label).replace(
+                "%1", _fixed_number(value, decimals, locale)
+            )
     return tr("%1 TB").replace(
-        "%1", locale.toString(size_bytes / 1024**4, "f", 1)
+        "%1", _fixed_number(size_bytes / 1024**4, 1, locale)
     )
+
+
+def _fixed_number(value: float, decimals: int, locale: QLocale) -> str:
+    """Python `printf`-szerű fixpontos alak, csoportosítás nélkül."""
+    result = f"{value:.{decimals}f}"
+    decimal_point = locale.decimalPoint()
+    return result.replace(".", decimal_point) if decimal_point != "." else result
 
 
 def long_date(iso: str, locale: QLocale) -> str:
@@ -657,7 +668,7 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     A `tr_n` a többes számot kezelő fordító (`%n picture(s)` minta)."""
     if not records:
         return tr("0 pictures")
-    total_mb = sum(r.size for r in records) / (1024 * 1024)
+    meret = format_size(sum(r.size for r in records), locale, tr)
     # #2304: EXIF-felvételi idő híján a FÁJL ideje a tartalék. Enélkül egy
     # csupa EXIF-nélküli mappánál (letöltött vagy generált képek) a
     # dátumtartomány egyszerűen kimaradt az állapotsorból, holott az
@@ -669,12 +680,9 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     if dates:
         first = long_date(dates[0], locale)
         last = long_date(dates[-1], locale)
-    szam = locale.toString(total_mb, "f", 1)
     # ⚠️ A MÉRTÉKEGYSÉG a méret-argumentum RÉSZE, nem a formátumé: az eredeti
-    # `     %s      %s on disk` második `%s`-e a kész „86,5 MB" szöveg (a
-    # magyar „%2$s/lemez" alak is így olvasható: „24,7 MB/lemez"). Enélkül a
-    # sávról eltűnik az egység — a CI épp ezt fogta meg.
-    meret = f"{szam} MB"
+    # `     %s      %s on disk` második `%s`-e a kész méretszöveg (például
+    # „174 KB” vagy „1,5 MB”). Enélkül a sávról eltűnik az egység.
     # #1913: a méret-feliratnak KÉT alakja van, és a választás feltétele a két
     # FORMÁZOTT dátum sztring-egyenlősége (mérve: `0x00570266 sete al`) — nem
     # időbélyeg-összehasonlítás. Ebből következik, hogy nincs időablak:
@@ -685,7 +693,10 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     # magyar alakjuk KÜLÖNBÖZIK („%2$s/lemez" vs „%3$s a lemezen"), ezért két
     # külön fordítható sztring, nem egy közös + külön dátum-rész.
     if not dates:
-        farok = "   " + tr("%1 MB on disk").replace("%1", szam)
+        meretjel = "__PICASAPY_MERET__"
+        mb_resz = tr("%1 MB").replace("%1", meretjel)
+        on_disk = tr("%1 MB on disk").replace("%1", meretjel)
+        farok = "   " + on_disk.replace(mb_resz, meret, 1)
     elif first == last:
         #: `il_GetSelectionInfo::5` — EGY dátum
         farok = (
