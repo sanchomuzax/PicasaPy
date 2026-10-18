@@ -57,6 +57,7 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
 )
+from picasapy.render.rainbow import apply_rainbow
 from picasapy.render.chain_geometry import (
     AZONOSSAG,
     Matrix,
@@ -196,7 +197,8 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # kivételével, aminek az egyetlen mérőesete paraméter nélküli
         # (tehát azonosság) volt.
         "colorfix",
-        "rainbow",
+        # #5304: a `rainbow` kikerült a kalibrálatlanok közül; a teljes
+        # algoritmus a `render/rainbow.py`-ban, a #5296 spec szerint fut.
         # `linblur` és `dir_sharp` a #623-ban KIKERÜLT innen: a natív magok
         # (`0x0090de10`, `0x0090d600`), a burkolóik és a közös elmosó
         # (`0x009dd0d0`) visszafejtésével a hatás jellege és a
@@ -537,6 +539,12 @@ def _apply_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     return apply_tint(image, preserve=float(op.params[1]), color=color)
 
 
+def _apply_rainbow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Élő alak: `rainbow=1,színmegőrzés`; a natív callback intre csonkol.
+    preserve = int(float(op.params[1])) if len(op.params) > 1 else 0
+    return apply_rainbow(image, preserve=preserve)
+
+
 def _apply_ansel_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # Élő alak: `ansel=1[,szín]` — a szín opcionális (#357); nélküle tiszta B/W.
     color = parse_rgb_hex(op.params[1]) if len(op.params) > 1 else _DEFAULT_TINT_COLOR
@@ -846,6 +854,7 @@ _HANDLERS = {
     "backlight": native.apply_backlight_op,
     "shadow": native.apply_shadow_op,
     "autocontrast": native.apply_autocontrast_op,
+    "rainbow": _apply_rainbow_op,
     "triple": native.apply_triple_op,
     "triple2": native.apply_triple2_op,
     "triple3": native.apply_triple3_op,
@@ -955,7 +964,7 @@ def apply_filters(
     bejovo: LancHelyzet | None = None,
 ) -> ChainReport:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
-    enhance, autolight, autocolor, autocontrast, fill, backlight,
+    enhance, autolight, autocolor, autocontrast, rainbow, fill, backlight,
     finetune/finetune2, triple/triple2/triple3, contrast, gamma, colortemp,
     bw, sepia, warm, sat, unsharp/unsharp2, grain2, Vignette, glow/glow2,
     tint, ansel, desat, radblur, radsat, dir_tint, radtint).

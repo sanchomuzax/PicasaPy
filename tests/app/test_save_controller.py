@@ -123,17 +123,17 @@ class TestUnrenderableWarning:
         assert controller.unrenderableFiltersIn([0]) == []
 
     def test_an_unrenderable_entry_is_reported(self, controller, qt_app, library):
-        # A `rainbow` a „Régi effektek" fülön szürkén látszik: ismerjük a
+        # A `debug` a „Régi effektek" fülön szürkén látszik: ismerjük a
         # nevét, de renderelőnk nincs hozzá — a mentés eldobná.
         #
-        # #687: korábban a `gamma` állt itt. Az mostantól RENDERELHETŐ (a
-        # natív burkolójából), ezért nem volt többé alkalmas példának — a
-        # teszt épp emiatt bukott el a #687 CI-ján. A helyettesítőt a
+        # #687/#5304: a gamma és a rainbow azóta RENDERELHETŐ, ezért egyik
+        # sem alkalmas példának, mert a teszt #5304 előtt a rainbown bukott el.
+        # A helyettesítőt a
         # `chain.KNOWN_UNRENDERED_OPS`-ból kell venni, ha ez a lista
         # legközelebb is fogy.
-        _set_filters(controller, qt_app, library, "sepia=1;rainbow=1,0.5;")
+        _set_filters(controller, qt_app, library, "sepia=1;debug=1;")
 
-        assert controller.unrenderableFiltersIn([0]) == ["rainbow"]
+        assert controller.unrenderableFiltersIn([0]) == ["debug"]
 
     def test_the_empty_selection_is_silent(self, controller):
         assert controller.unrenderableFiltersIn([]) == []
