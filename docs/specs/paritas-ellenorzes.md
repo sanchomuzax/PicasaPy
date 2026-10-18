@@ -713,19 +713,19 @@ A GitHubon a vizsgált eltérésekre futtatott négy csak-olvasási `gh issue li
 
 ## Kombinált effektláncok az eredetihez mérve (#5295, 2026-10-18)
 
-Módszer: tíz szabad licencű kép (`minta-kombinalt` készlet a Colab-végrehajtón, k01-k10), képenként hét, egymástól teljesen eltérő réteg (összesen 70 különböző tag). Az eredeti kimenet a Colab-on futó eredeti Picasa 3.9 exportja (job-194), a PicasaPy-oldal a `tools/golden/compare_render.py pair` renderje; mérőszám a ΔE átlag és az SSIM, küszöb 2,0. A hibás réteget felezéssel kerestük: ugyanaz a tíz lánc az első 3, 5 és 6 rétegig (job-195, job-196, job-197). A láncok és a Colab-feladat: `docs/benchmarks/2026-10-18-5295-kombinalt/`.
+Módszer: tíz szabad licencű kép (`minta-kombinalt` készlet a Colab-végrehajtón, k01-k10), képenként hét, egymástól teljesen eltérő réteg (összesen 70 különböző tag). Az eredeti kimenet a Colab-on futó eredeti Picasa 3.9 exportja (job-194), a PicasaPy-oldal a `tools/golden/compare_render.py` renderje. A mérőszám a projekt kanonikus mércéje (`tools/golden/analyze_validation_kit.py`): a PicasaPy-render az eredeti export JPEG-beállításaival kódolva, ΔE átlag, küszöb 2,0, 6,0 fölött rossz. A nyers, JPEG-egyeztetés nélküli ΔE pontos renderre is kb. 2,7-et adhat, ezért az első mérés néhány „eltér” ítélete téves volt (#5301). A hibás réteget felezéssel kerestük: ugyanaz a tíz lánc az első 3, 5 és 6 rétegig (job-195, job-196, job-197). A láncok és a Colab-feladat: `docs/benchmarks/2026-10-18-5295-kombinalt/`.
 
-| kép | 3 réteg | 5 réteg | 6 réteg | 7 réteg | a hibát okozó réteg | jegy |
+| kép | 3 réteg | 5 réteg | 6 réteg | 7 réteg | ítélet, a hibát okozó réteg | jegy |
 |---|---:|---:|---:|---:|---|---|
-| k01 | 1,98 | 1,79 | 1,56 | 4,87 | 7.: `Vignette` (vágott, kiegyenesített, szépiás kép után) | #5300 |
-| k02 | 1,90 | 2,03 | 1,86 | 2,79 | 7.: `CrossProcess` (keretezett kép után) | #5301 |
-| k03 | 0,58 | 0,76 | 0,72 | 24,34 | 7.: `Polaroid` (az eredeti szürke képterületet ad) | #5299 |
-| k04 | 1,97 | 2,10 | 2,44 | 1,62 | határeset, nincs egyértelmű ugrás | |
-| k05 | 0,76 | 0,62 | 0,62 | 0,57 | egyezik | |
-| k06 | 1,70 | 0,83 | 0,83 | 1,17 | az SSIM alacsony az első 3 rétegben (`grain2` zajmagja, ismert eltérés) | |
-| k07 | 0,68 | 0,58 | 0,47 | 1,28 | enyhe emelkedés a 7. rétegnél (`Cinemascope`) | |
-| k08 | 46,77 | 60,41 | 61,16 | 61,05 | 2.: `rainbow`, amit a PicasaPy nem renderel, az eredeti viszont igen | #5296 |
-| k09 | 3,53 | 1,93 | 1,83 | 1,83 | az első 3 rétegben (`grain`, `ansel`, `triple2`); a `whitept` kimarad | #5296 |
-| k10 | 1,49 | 8,09 | 8,09 | 8,30 | 4.: `colorfix`, amit a PicasaPy nem renderel | #5296 |
+| k01 | 1,28 | 1,32 | 0,91 | 4,59 | eltér: 7. `Vignette` (vágott, kiegyenesített, szépiás kép után) | #5300 |
+| k02 | 0,28 | 1,17 | 1,07 | 1,73 | egyezik | (#5301 lezárva) |
+| k03 | 0,00 | 0,00 | 0,00 | 24,34 | eltér: 7. `Polaroid`; az eredetiben a `dir_sat` és a `blur` után a Polaroid a háttérszínt mutatja a kép helyén (job-198..200) | #5299 |
+| k04 | 0,00 | 0,00 | 0,00 | 0,34 | egyezik | |
+| k05 | 0,00 | 0,00 | 0,00 | 0,00 | egyezik | |
+| k06 | 0,00 | 0,90 | 0,90 | 0,93 | egyezik | |
+| k07 | 0,00 | 0,00 | 0,23 | 0,58 | egyezik | |
+| k08 | 46,85 | 60,45 | 61,25 | 61,14 | eltér: 2. `rainbow`, amit a PicasaPy nem renderel | #5296, #5304 |
+| k09 | 3,58 | 1,98 | 1,88 | 1,88 | 7 rétegen egyezik; 3 rétegen eltér (`grain`, `ansel`, `triple2`), a szemcse zajmagja | |
+| k10 | 0,00 | 8,04 | 8,04 | 8,34 | eltér: 4. `colorfix`, amit a PicasaPy nem renderel | #5296 |
 
-Következtetés: a tíz kombinációból kettő egyezik a küszöbön belül, egy határeset. Valódi, rétegre visszavezetett eltérés hat képen van: négy a ma „nem renderelendő”-nek tartott tagok miatt (#5296), három egy-egy effekt láncvégi viselkedése miatt (#5299, #5300, #5301). A szemcse-effektek (k06, k09) eltérése a zajmag ismert kérdése.
+Következtetés: a tíz kombinációból hat egyezik az eredetivel. Négy eltérés rétegre visszavezetve: két, eddig „nem renderelendő”-nek tartott tag (`rainbow`, `colorfix`; #5296), a Polaroid viselkedése bizonyos előző rétegek után (#5299), és a Vignette a vágott, kiegyenesített kép után (#5300).
