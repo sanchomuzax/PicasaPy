@@ -90,6 +90,7 @@ from picasapy.render.tone import apply_fill, apply_finetune2, parse_neutral_argb
 _log = logging.getLogger(__name__)
 _CROP_WARNING_LOCK = threading.Lock()
 _CROP_WARNINGS: set[tuple[str, str]] = set()
+_ALPHA_TRANSPARENT = 0
 
 
 def normalize_crop_ops(
@@ -962,6 +963,7 @@ def apply_filters(
     paint_mask: np.ndarray | None = None,
     mert_sorrend: bool = True,
     bejovo: LancHelyzet | None = None,
+    input_alpha: int = 255,
 ) -> ChainReport:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
     enhance, autolight, autocolor, autocontrast, rainbow, fill, backlight,
@@ -1041,8 +1043,11 @@ def apply_filters(
     megváltoztatja a kimeneti képméretet — a regiszterből számolva, a
     LÁNCBAN SZEREPLŐ (nemcsak a ténylegesen renderelt) nevek alapján.
     """
+    if input_alpha not in (0, 255):
+        raise ValueError(f"A lánc alfaállapota csak 0 vagy 255 lehet: {input_alpha}")
     result = image
     grain_ordinal = 0
+    alpha_state = input_alpha
     # #3229: a MÉRT sorrend ága követi, hova került a forrás — `hely_matrix` a
     # (vágás utáni) forrásból a jelenlegi képbe, `eredeti_*` pedig az eredeti
     # méret, amire a `crop64` koordinátái vonatkoznak (#330).
@@ -1158,6 +1163,8 @@ def apply_filters(
         try:
             if key in {"grain", "grain2"}:
                 result = handler(result, op, grain_ordinal)
+            elif key == "polaroid":
+                result = handler(result, op, alpha=alpha_state)
             else:
                 result = handler(result, op)
         except Exception:
@@ -1166,6 +1173,13 @@ def apply_filters(
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
         else:
+            # #5299: a Picasa pixel-worker egyes kimeneteinek alfáját nem írja
+            # át. Csak a kutatási specben megnevezett írókat követjük; a többi
+            # effekt mai, háromcsatornás viselkedése változatlan.
+            if key in {"dir_sat", "blur"}:
+                alpha_state = _ALPHA_TRANSPARENT
+            elif key == "colortemp" or key == "polaroid":
+                alpha_state = 255
             if key in {"grain", "grain2"}:
                 grain_ordinal += 1
             if mert_sorrend:
@@ -1195,11 +1209,16 @@ def apply_filters(
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         try:
-            result = handler(result, op)
+            if op.name.casefold() == "polaroid":
+                result = handler(result, op, alpha=alpha_state)
+            else:
+                result = handler(result, op)
         except Exception:
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
             continue
+        if op.name.casefold() == "polaroid":
+            alpha_state = 255
         alkalmazott_keretek.append(op)
     content_placement = None
     if mert_sorrend:
@@ -1230,4 +1249,5 @@ def apply_filters(
         legacy_warnings=tuple(legacy_warnings),
         content_placement=content_placement,
         helyzet=LancHelyzet(eredeti_w, eredeti_h, ered_matrix, hely_matrix, hely_w, hely_h),
+        alpha=alpha_state,
     )
