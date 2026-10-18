@@ -160,7 +160,7 @@ Az egyértelmű néma vagy nem elérhető fejlesztési tételek ebben a mintába
 
 A fenti futásban a felsorolt műveletek mindegyikénél nulla hálózati próbálkozást rögzítettünk. A teszt nem indított asztali vagy külső alkalmazást. E mért tiszta profilos útvonalban nem figyeltünk meg hiányzó vagy nem működő elemet, így ehhez a réteghez nem keletkezett új fejlesztői jegyjavaslat. Ez az eredmény nem zárja le a 7. réteg képpontos effekt-összevetését és nem helyettesíti az összes Picasa-parancs futásidejű vizsgálatát.
 
-## 7. réteg — effektkimenetek
+## 7. réteg - effektkimenetek
 
 **Mérési dátum:** 2026-10-13. **Render-pillanatkép:** `fix/4317-codex`, `a8ba353b3561`. A PicasaPy kimeneteket az eredeti Picasa 3.9 exportjaival hasonlítottam össze. Az elsődleges referencia a helyi `meroadat.tar` `684-merokeszlet/export` könyvtára; 180 paraméteres sorból 179-hez volt Picasa-export. A 73 renderelt effektcsalád mindegyikéhez van legalább egy ilyen referencia. Az `unsharp` `max` változatához a 684-es csomagban nincs export; annak külön Picasa-referenciája a `meroszett` készletben van.
 
@@ -246,14 +246,14 @@ Az eltérést a meglévő `tools/golden/analyze_validation_kit.py::mean_de` mér
 
 | Referencia és mérő | Nyers eredmény | Állapot |
 |---|---|---|
-| `PicasaPy meroszett/export-202608151229` — 178 Picasa-export; a fenti `mean_de` mérés | 172/178 eset ΔE ≤ 2,0. Eltérések: `grain/alap` 2,665; `heatmap/alap` 4,254, `heatmap/min` 3,324; `nightvision/alap` 7,307, `nightvision/min` 4,176; `twotone/alap` 3,662. | A fenti négy effektcsalád eltérő kimenete megerősítve; `unsharp/max` itt 0,251. |
-| `PicasaPy merokit-2/export-202608151438` — 49 eredeti Picasa-export; `mean_de` | `tint/tintszin_04.jpg` 2,136; `tint/tintszin_07.jpg` 2,136; `picnikfocalpixelate/halott_14.jpg` 8,666; `grain/szemcse_01.jpg` 2,665; `grain2/szemcse_02.jpg` 2,661; `grain+grain/szemcse_05.jpg` 4,631. | Hat eltérő eset. A `halott_14` rövid paraméterlánca nem érvényes Picasa-alkalmazás: a láncteszt és a [`filters-decoded.md`](filters-decoded.md) ezt külön dokumentálja; az eltérés a PicasaPy hibás bemenetkezelésének jelöltje. |
-| `PicasaPy merokit-3/export-202608151633` — 7 eredeti Picasa-export; `mean_de` | `nincsilyen+bw/B_ismeretlen_elol.jpg` 10,125. | Eltérő láncviselkedés: az eredeti Picasa az ismeretlen tag után megáll, így a `bw` sem fut le. Ezt a `picasa-ini-format.md` dokumentálja; a mérés a specet erősíti meg, nem mond ellent neki. |
-| `tests/render/test_lanc_sorrend_elesben_3229.py` — három azonos méretű, érvényes eredeti láncreferencia | Border+sepia 1,192; sepia+Border 1,146; Border+Vignette 11,642; mindhárom 1650×1250. | Az első kettő egyezik, a Border+Vignette lánc eltér. A `border` és `vignette` önálló táblázatsora ettől még egyezik. |
+| `PicasaPy meroszett/export-202608151229` - 178 Picasa-export; a fenti `mean_de` mérés | 172/178 eset ΔE ≤ 2,0. Eltérések: `grain/alap` 2,665; `heatmap/alap` 4,254, `heatmap/min` 3,324; `nightvision/alap` 7,307, `nightvision/min` 4,176; `twotone/alap` 3,662. | A fenti négy effektcsalád eltérő kimenete megerősítve; `unsharp/max` itt 0,251. |
+| `PicasaPy merokit-2/export-202608151438` - 49 eredeti Picasa-export; `mean_de` | `tint/tintszin_04.jpg` 2,136; `tint/tintszin_07.jpg` 2,136; `picnikfocalpixelate/halott_14.jpg` 8,666; `grain/szemcse_01.jpg` 2,665; `grain2/szemcse_02.jpg` 2,661; `grain+grain/szemcse_05.jpg` 4,631. | Hat eltérő eset. A `halott_14` rövid paraméterlánca nem érvényes Picasa-alkalmazás: a láncteszt és a [`filters-decoded.md`](filters-decoded.md) ezt külön dokumentálja; az eltérés a PicasaPy hibás bemenetkezelésének jelöltje. |
+| `PicasaPy merokit-3/export-202608151633` - 7 eredeti Picasa-export; `mean_de` | `nincsilyen+bw/B_ismeretlen_elol.jpg` 10,125. | Eltérő láncviselkedés: az eredeti Picasa az ismeretlen tag után megáll, így a `bw` sem fut le. Ezt a `picasa-ini-format.md` dokumentálja; a mérés a specet erősíti meg, nem mond ellent neki. |
+| `tests/render/test_lanc_sorrend_elesben_3229.py` - három azonos méretű, érvényes eredeti láncreferencia | Border+sepia 1,192; sepia+Border 1,146; Border+Vignette 11,642; mindhárom 1650×1250. | Az első kettő egyezik, a Border+Vignette lánc eltér. A `border` és `vignette` önálló táblázatsora ettől még egyezik. |
 | Ugyanennek a 3229-es készletnek a crop64+Vignette sora | PicasaPy 376×659, Picasa 1600×1200; nyers ΔE 43,781. | **Nem összehasonlítható, kizárva:** a teszt és a spec szerint a crop az `.ini` kulcsban van, nem a szűrőláncban; az eredeti export ezért vágatlan. Ez nem effekt-eltérésként szerepel. |
 | `merokit-2` és `merokit-3` második exportjai (`export-202608202215`, `export-202608202207`) | Nem mértem őket Picasa-referenciaként. | Kizárva: az `export-parbeszed.md` és `filters-decoded.md` szerint ezek PicasaPy-kimenetek, nem eredeti Picasa-exportok. |
 | `3084-poszterizalas` `quantizepalette` (szintetikus és valós kép), valamint `951-kiemelesek-arnyekok-fel-allas` `finetune2` | ΔE rendre 0,347; 0,910; illetve 0,629. | Mind egyezik. |
-| `tests/render/test_colab_golden_4256.py` — eredeti Picasa 3.9 színfolt-aranyképek, 3 próba | A 16 színfolt legnagyobb átlagos csatornaeltérése: `sepia` 1,0000 (11/16 folton nem nulla); `bw` 0,0000 (0/16); `warm` 1,0000 (13/16). A meglévő határ 2 RGB-szint. | Mindhárom egyezik; a teszt 3/3 sikeres. |
+| `tests/render/test_colab_golden_4256.py` - eredeti Picasa 3.9 színfolt-aranyképek, 3 próba | A 16 színfolt legnagyobb átlagos csatornaeltérése: `sepia` 1,0000 (11/16 folton nem nulla); `bw` 0,0000 (0/16); `warm` 1,0000 (13/16). A meglévő határ 2 RGB-szint. | Mindhárom egyezik; a teszt 3/3 sikeres. |
 
 **#4936 helyesbítés (2026-10-13):** a fenti `grain`/`grain2` és
 `grain+grain` értékek a javítás előtti, minden hívásnál `seed=0`-t adó
@@ -272,19 +272,19 @@ Megnyitott jegyek (2026-10-13): Szemcse #4936, Hőtérkép #4937, Éjjellátó #
 
 Az eltérő effektcsaládok a `grain`, `grain2`, `heatmap`, `nightvision`, `picnikfocalpixelate`, `tint` és `twotone`. Az eltérő összetett utak a `grain+grain`, az ismeretlen tag utáni `bw`, valamint a `Border+Vignette` lánc. A `crop64+Vignette` nem összehasonlítható méretű eredmény, ezért nem jegyjelölt. A GitHubot ez a mérési kör nem érte el, így nyitott jegy meglétét nem ellenőriztem; a hívó ezekre nyisson jegyet, ha nincs már nyitott, megfelelő jegy.
 
-Az eredeti Picasa és a mért kimenet között nem találtam spec–mérés ellentmondást: az ismeretlen tag utáni leállás például a bináris viselkedésleírással egyezik. Ez a 7. réteg a meglévő Picasa goldenekkel és mérőadat-tárral alátámasztott effektcsaládokra terjed ki; nem állítja, hogy minden paraméter minden lehetséges értékét vagy minden UI-parancsot lefuttatott.
+Az eredeti Picasa és a mért kimenet között nem találtam spec-mérés ellentmondást: az ismeretlen tag utáni leállás például a bináris viselkedésleírással egyezik. Ez a 7. réteg a meglévő Picasa goldenekkel és mérőadat-tárral alátámasztott effektcsaládokra terjed ki; nem állítja, hogy minden paraméter minden lehetséges értékét vagy minden UI-parancsot lefuttatott.
 
 ## A #4317 „Kész, ha” pontjai
 
 | Pont | Állapot | Indok |
 |---|---|---|
-| mind a hét réteg végigmérve, mai main | ✅ | Az 1–6. réteg a korábbi körökben készült el; a 7. réteg fenti táblája a `a8ba353b3561` pillanatkép effektkimeneteit méri. |
+| mind a hét réteg végigmérve, mai main | ✅ | Az 1-6. réteg a korábbi körökben készült el; a 7. réteg fenti táblája a `a8ba353b3561` pillanatkép effektkimeneteit méri. |
 | minden hiány saját jegyet kapott vagy nem célként indokolt | 🟡 | A fenti eltérő effekt- és lánckimenetek jegyjelöltként fel vannak sorolva. GitHub-hozzáférés nem volt, így nyitott jegyet nem ellenőriztem és jegyet nem hoztam létre; a hívó nyisson jegyet, ha nincs megfelelő nyitott jegy. |
 | tiszta profil végigkattintása képernyőképekkel | ✅ | A 6. réteghez a fenti izolált teszt végigjárta és képekkel rögzítette a felsorolt fő műveleteket. Ez a mérés nem állítja, hogy az összes menüparancsot vagy a 7. réteg kimeneti egyezését lefedte. |
 
 ## Javasolt fejlesztői jegyek
 
-Minden sor egy önálló funkció/menübelépő; a meglévő, hívó által megnevezett #4315, #4316, #4318–#4320, #4321 és a Timeline #936 nem ismétlődik.
+Minden sor egy önálló funkció/menübelépő; a meglévő, hívó által megnevezett #4315, #4316, #4318-#4320, #4321 és a Timeline #936 nem ismétlődik.
 
 | Cím | Eredeti / nálunk / teendő | Kész, ha |
 |---|---|---|
@@ -298,13 +298,13 @@ Minden sor egy önálló funkció/menübelépő; a meglévő, hívó által megn
 | Az Eszközök ▸ Adjust Date and Time módosítsa a dátumot | Eredeti: `ID_TOOLS_ADJUST_TIMESTAMP`; a viselkedés két módját a `picasa-menu-parancsok-viselkedes.md` §3 írja le. Nálunk: `PicasaMenuBar.qml:1888` helyfoglaló. | Mindkét eredeti mód működik a kijelölésen, az eredeti fájl/metaadat mentési célja külön dokumentált. |
 | A Configure Photo Viewer nyissa meg a néző beállításait | Eredeti: `ID_TOOLS_CONFIG_SLINGSHOT`. Nálunk: `PicasaMenuBar.qml:1872` helyfoglaló. | A menütétel a néző tényleges beállítófelületét nyitja meg, és a választások újraindítás után is érvényesek. |
 | A People Manager kezelje az Emberek albumokat | Eredeti: `ID_TOOLS_CONTACTMGR`. Nálunk: `PicasaMenuBar.qml:1846` helyfoglaló; People panel léte önmagában nem bizonyít Manager-paritást. | A név-/albumkezelési műveletek az eredeti menüből elérhetők és a dokumentált adatokra írnak. |
-| A Kép ▸ Show/Hide Text működjön a kijelölt képeken | Eredeti: `ID_PICTURE_SHOW_TEXT`, `ID_PICTURE_HIDE_TEXT`. Nálunk: mindkét menüpont helyfoglaló (`PicasaMenuBar.qml:1730–1731`). | A két parancs a kijelölt képek szövegfedvényét az eredeti állapotfeltételekkel kapcsolja. |
+| A Kép ▸ Show/Hide Text működjön a kijelölt képeken | Eredeti: `ID_PICTURE_SHOW_TEXT`, `ID_PICTURE_HIDE_TEXT`. Nálunk: mindkét menüpont helyfoglaló (`PicasaMenuBar.qml:1730-1731`). | A két parancs a kijelölt képek szövegfedvényét az eredeti állapotfeltételekkel kapcsolja. |
 | A Nézet ▸ Show Edit Controls kapcsolja a szerkesztő vezérlőit | Eredeti: `ID_VIEW_EDIT`. Nálunk: `PicasaMenuBar.qml:852` helyfoglaló. | A menüpont láthatóvá/rejtetté teszi a szerkesztő kezelősávját és a kiválasztott állapot újranyitáskor következetes. |
-| Folytassa vagy zárja le a 16 bites ditherelt megjelenítési mód munkáját | Eredeti: `ID_VIEW_16`, pontos képpont-átalakítása a `picasa-megjelenitesi-modok.md` §5.3-ban mérve. Nálunk: `PicasaMenuBar.qml:1015–1022` helyfoglaló; a QML-komment #1658-ra hivatkozik. | A #1658 meglévő jegy státuszát ellenőrizni; ha nyitott, a `ID_VIEW_16` alkalmazza a leírt ditherelést; ha nem cél, ezt indokoltan dokumentálni. |
+| Folytassa vagy zárja le a 16 bites ditherelt megjelenítési mód munkáját | Eredeti: `ID_VIEW_16`, pontos képpont-átalakítása a `picasa-megjelenitesi-modok.md` §5.3-ban mérve. Nálunk: `PicasaMenuBar.qml:1015-1022` helyfoglaló; a QML-komment #1658-ra hivatkozik. | A #1658 meglévő jegy státuszát ellenőrizni; ha nyitott, a `ID_VIEW_16` alkalmazza a leírt ditherelést; ha nem cél, ezt indokoltan dokumentálni. |
 
 Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jelentése és az eredeti kimenő fájlhúzás bináris szerződése megvan; a People Albums bemeneti szabálya és a 44 gyorsbillentyű tényleges fókuszkapuja még nem zárható le.
 
-## Új kutatási kérdések — állapot a #4339 után
+## Új kutatási kérdések - állapot a #4339 után
 
 | Kérdés | Állapot | Részletes spec |
 |---|---|---|
@@ -313,33 +313,33 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 | Kimenő fájlhúzás: OLE-formátum, fájllista, műveletmaszk; reprodukálható-e? | **Bináris szerződés megválaszolva:** egy `CF_HDROP` UTF-16 útvonal-lista, `COPY|MOVE|LINK` engedett hatásokkal. A natív Qt/asztali fogadópróba nyitott. | #4339 függelék, 3. táblázat; `picasa-eger-es-kijeloles.md` §5.1 |
 | Melyik nézetben/fókuszban él a 44 helyi menü-gyorsbillentyű? | **A feltevés pontosítva:** mind a kilenc menübirtokos és a `CThumbUI` billentyűkezelő feltételei ismertek; a helyi rekord billentyűmezője a menüfelirat része, a vizsgált építőút nem regisztrál gyorsítót. Nem mind a 44 rekord parancsának egyedi eseményútja. | #4339 függelék, 4. táblázat; `picasa-gyorsbillentyuk.md` §4.1, §6.1 |
 
-## #4339 — négy paritáskérdés, záró bináris kör
+## #4339 - négy paritáskérdés, záró bináris kör
 
 **Vizsgálati dátum:** 2026-10-06. **Módszer:** helyi bináris-index, utasításszintű diszasszemblálás, a megadott Ghidra-kötegek célzott dekompilátumai és QML-forrás-olvasás. A mostani záró kör csak az érintett függvényeket ellenőrizte Capstone-nal; új teljes `.text`-pásztázás nem történt. A korábbi pásztázásnál a `paszta.memoria_kapu()` futott elsőként. A qemu-i386 harness célzott Glimmer-képműveleteket futtat, nem Windows menü-/OLE-interakciót; e négy úthoz nem alkalmazható. Nincs runtime-desktop-próba, becsült értéket nem használok.
 
-### 1. `Small Pictures` — szűrő a könyvtári bélyegképnézetben
+### 1. `Small Pictures` - szűrő a könyvtári bélyegképnézetben
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| `eMenuView::ID_VIEW_SMALL = 0x9cd8`; a `CThumbUI` Nézet menüjében épül (`0x005c90f0`, tétel `0x005c918f`). A `Preferences\Show only big images` értéke alapból `1`; a menü ezt fordítva pipázza. A `0x005c94e0` az értéket kapcsolja és újraépíti a bélyegképnézetet. Nincs méretválasztás. A szűrőfogyasztó `0x0065d010` `BigPictureThreshold` alapértéke `0xEA60` = **60 000**; a `0x0065f521` szélesség×magasság területet hasonlítja ehhez, további 3,0/0,33333 képarány- és 200 px ágakkal. | A Nézet menü `menuViewThumbnailsOnly` sora `checkable`, de `placeholder: true` és nincs aktív kezelő (`PicasaMenuBar.qml:885–890`). | A `Small Pictures` tétel láthatósági szűrőt kapcsoljon, ne `thumbSizePreset`-et. A megvalósítás a dokumentált 60 000 px² alapküszöböt, a két képarány-konstanst és a 200 px ellenőrző ágat használja; a további fájltípus-ágakat a `0x0065f3c6`–`0x0065f5a9` tartományhoz kell igazítani. |
+| `eMenuView::ID_VIEW_SMALL = 0x9cd8`; a `CThumbUI` Nézet menüjében épül (`0x005c90f0`, tétel `0x005c918f`). A `Preferences\Show only big images` értéke alapból `1`; a menü ezt fordítva pipázza. A `0x005c94e0` az értéket kapcsolja és újraépíti a bélyegképnézetet. Nincs méretválasztás. A szűrőfogyasztó `0x0065d010` `BigPictureThreshold` alapértéke `0xEA60` = **60 000**; a `0x0065f521` szélesség×magasság területet hasonlítja ehhez, további 3,0/0,33333 képarány- és 200 px ágakkal. | A Nézet menü `menuViewThumbnailsOnly` sora `checkable`, de `placeholder: true` és nincs aktív kezelő (`PicasaMenuBar.qml:885-890`). | A `Small Pictures` tétel láthatósági szűrőt kapcsoljon, ne `thumbSizePreset`-et. A megvalósítás a dokumentált 60 000 px² alapküszöböt, a két képarány-konstanst és a 200 px ellenőrző ágat használja; a további fájltípus-ágakat a `0x0065f3c6`-`0x0065f5a9` tartományhoz kell igazítani. |
 
 ### 2. `From People Albums…` filmparancs
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| `ID_FACESRANDOM = 0x9d5a`; a `0x0057cc7a` a `panel+0x4f1` módjelzőt állítja. A `0x00618050` mód 6-ot ad a `+0x4b4` objektum vtable 0. slotjának (`0x00618236`), majd az eredményt a `+0x4b8` mezőbe teszi. A `0x00699cd0` mód 6 esetén a `0x00824090`-nek nem nulla ágválasztót ad (`0x0069a308`–`0x0069a310`); a `0x00824090` ezért a `0x008226e0` ágat hívja, nem az album-kijelölés `0x008223e0` ágát (`0x008240e9`–`0x00824114`). A `0x008226e0` a `+0x2bc` (`+700`) objektum `0x00449a90`-nel kapott azonosítólistáját járja be, és csak azokat fűzi az eredménybe, amelyek alsó listája nem üres (`0x00822715`–`0x00822775`). A fűzés a bemeneti lista iterációs sorrendjében történik; rendező hívás vagy rendezési ág nem látszik. A `0x006175c0` a már kapott `+0x4b8` listát használó modell-újraépítő, nem listaépítő. A `0x00619010` a `+0x4bc` modell címét adja át a `0x00555a30`-nak; ebből a timeline klipjeinek belső arc-/crop-adatútja nem állapítható meg. | A #4633 „From People Albums...” menüpontja kijelölés nélkül a `Main.qml:openPeopleAlbumsMovie()` úton hívja a `personMovieSourceUrls()` slotot, majd a `CreateDialogs.openMovieForSources()`-t. A #4391 fejlécútja változatlanul `openPersonAlbumMovie()`-n át éri el ugyanezt a forráslistát, de megtartja a nyitott személyalbum-feltételt. A slot a nem üres albumok képeit a tárolt listában, rendezés nélkül fűzi össze; ezt a `test_emberek_album_film_menu_4633.py` és a `test_people_controller.py` fedi. | A bemeneti lista és sorrend megvalósult. A timeline klip arcazonosítását/cropját ne találgassuk; az adatút továbbra is #4400 nyitott vizsgálata. |
+| `ID_FACESRANDOM = 0x9d5a`; a `0x0057cc7a` a `panel+0x4f1` módjelzőt állítja. A `0x00618050` mód 6-ot ad a `+0x4b4` objektum vtable 0. slotjának (`0x00618236`), majd az eredményt a `+0x4b8` mezőbe teszi. A `0x00699cd0` mód 6 esetén a `0x00824090`-nek nem nulla ágválasztót ad (`0x0069a308`-`0x0069a310`); a `0x00824090` ezért a `0x008226e0` ágat hívja, nem az album-kijelölés `0x008223e0` ágát (`0x008240e9`-`0x00824114`). A `0x008226e0` a `+0x2bc` (`+700`) objektum `0x00449a90`-nel kapott azonosítólistáját járja be, és csak azokat fűzi az eredménybe, amelyek alsó listája nem üres (`0x00822715`-`0x00822775`). A fűzés a bemeneti lista iterációs sorrendjében történik; rendező hívás vagy rendezési ág nem látszik. A `0x006175c0` a már kapott `+0x4b8` listát használó modell-újraépítő, nem listaépítő. A `0x00619010` a `+0x4bc` modell címét adja át a `0x00555a30`-nak; ebből a timeline klipjeinek belső arc-/crop-adatútja nem állapítható meg. | A #4633 „From People Albums...” menüpontja kijelölés nélkül a `Main.qml:openPeopleAlbumsMovie()` úton hívja a `personMovieSourceUrls()` slotot, majd a `CreateDialogs.openMovieForSources()`-t. A #4391 fejlécútja változatlanul `openPersonAlbumMovie()`-n át éri el ugyanezt a forráslistát, de megtartja a nyitott személyalbum-feltételt. A slot a nem üres albumok képeit a tárolt listában, rendezés nélkül fűzi össze; ezt a `test_emberek_album_film_menu_4633.py` és a `test_people_controller.py` fedi. | A bemeneti lista és sorrend megvalósult. A timeline klip arcazonosítását/cropját ne találgassuk; az adatút továbbra is #4400 nyitott vizsgálata. |
 
 ### 3. Kimenő fájlhúzás
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A `ytDragNode` `0x00aa1fb0` metódusa egy `CF_HDROP` (`cfFormat=15`) adatobjektumot készít: `DROPFILES.pFiles=20`, `fWide=1`, a csomópontlistából származó UTF-16 fájlútvonalakkal. A `QueryGetData` (`0x00aa1e90`) ezt a formátumot/HGLOBAL-t ellenőrzi, az `EnumFormatEtc` (`0x00aa1ed0`) a tárolt formátumot adja. `DoDragDrop` `dwOKEffects=7`, azaz COPY/MOVE/LINK megengedett; a kiválasztott hatást a fogadó adja vissza. | `ThumbDelegate.qml:279–305` a belső `payload="photos"` jelölést és QML-húzásállapotot használ; `Drag.mimeData` vagy OS-fájl URL nincs. | Adjon át kijelölt fájlútvonalakat tartalmazó natív fájllistát, és tegye lehetővé az eredeti három engedett műveletet. A Windows CF_HDROP és a cél által választott művelet egyezését asztali próbán kell igazolni; a QML-forrás önmagában erre nem bizonyíték. |
+| A `ytDragNode` `0x00aa1fb0` metódusa egy `CF_HDROP` (`cfFormat=15`) adatobjektumot készít: `DROPFILES.pFiles=20`, `fWide=1`, a csomópontlistából származó UTF-16 fájlútvonalakkal. A `QueryGetData` (`0x00aa1e90`) ezt a formátumot/HGLOBAL-t ellenőrzi, az `EnumFormatEtc` (`0x00aa1ed0`) a tárolt formátumot adja. `DoDragDrop` `dwOKEffects=7`, azaz COPY/MOVE/LINK megengedett; a kiválasztott hatást a fogadó adja vissza. | `ThumbDelegate.qml:279-305` a belső `payload="photos"` jelölést és QML-húzásállapotot használ; `Drag.mimeData` vagy OS-fájl URL nincs. | Adjon át kijelölt fájlútvonalakat tartalmazó natív fájllistát, és tegye lehetővé az eredeti három engedett műveletet. A Windows CF_HDROP és a cél által választott művelet egyezését asztali próbán kell igazolni; a QML-forrás önmagában erre nem bizonyíték. |
 
 ### 4. A 44 helyi menü-gyorsbillentyű nézeti kontextusa
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Kilenc építő hívja a `0x00a6aee0` tételépítőt, összesen 44 rekorddal; a birtokos nézeteket lásd a `picasa-gyorsbillentyuk.md` §4.1-ben. A 20 bájtos rekord `+0x04` mezője billentyűfeliratként kerül a menüszövegbe (`0x00a6aee0` → `0x00a6b250`); a `0x00a6ade0` csak a felirat összeállításához oldja fel a táblázat szerinti billentyűkódot, egyetlen közvetlen hívója a `0x00a6b250`. Ebben a helyi menüépítő/feliratláncban gyorsítóregisztráció nincs. A `CThumbUI` RTTI-s billentyűslotja a `0x005e6710`: fókuszált gyerek továbbítása után saját feltételekkel dolgozik. A `+0x332f != 0` ág a `0x00760970` kezelőre megy; ez keydownon Esc/nyilak/szóköz/számjegyek ágait kezeli. A szerkesztő `+`/`-` karakterei és Shift-váltása a 3–5. fül látható paneljéhez kötött (`0x005f95d0`, `0x005f9690`, `0x009e39b0`); az utóbbi a fókuszobjektum szülőláncában a `+0x20c` bájt hiányát követeli. Ez a CThumbUI fogadó feltételeit bizonyítja, de nem köti hozzá egyenként mind a 44 rekord parancsát. | A mostani QML-leltárban 53 `Shortcut` deklaráció van nyolc fájlban; több parancs `Main.qml`-szintű, miközben mások nézeti `Shortcut`-ot vagy `Keys`-kezelőt használnak. Például a `Ctrl+Delete` külön rács- és nézőkaput kap, a `Ctrl+H` csak kijelölt elemmel és a nézőn kívül aktív, az `Enter` a `LightboxFeed` `Keys.onPressed` ágában van, és a `Ctrl+C/X/V` megőrzi a szövegmező fókuszát (`picasa-gyorsbillentyuk.md` §6.1). | A billentyűparitást nézethez/fókuszhoz kötött fogadókon valósítsuk meg: ne tekintsük a 44 helyi menü feliratmezőjét önmagában gyorsítóregisztrációnak. A QML-út minden parancsánál legyen meghatározva a tulajdonos nézet, a fókuszkapu és az eseményfogadó; az eredetiben bizonyított CThumbUI-feltételeket (3–5. szerkesztőfül, `+0x332f` módág, fókuszolt gyerek továbbítása, `+0x20c`-mentes ősút) ne általánosítsuk a többi nyolc menüépítőre. Elfogadás: az egyes menük kontextusából indított kombinációk a megfelelő nézet műveletét érik el, a fókuszált szövegmezők szerkesztése megmarad, és a 44 rekordot nem globális shortcut-listaként kezeljük. |
+| Kilenc építő hívja a `0x00a6aee0` tételépítőt, összesen 44 rekorddal; a birtokos nézeteket lásd a `picasa-gyorsbillentyuk.md` §4.1-ben. A 20 bájtos rekord `+0x04` mezője billentyűfeliratként kerül a menüszövegbe (`0x00a6aee0` → `0x00a6b250`); a `0x00a6ade0` csak a felirat összeállításához oldja fel a táblázat szerinti billentyűkódot, egyetlen közvetlen hívója a `0x00a6b250`. Ebben a helyi menüépítő/feliratláncban gyorsítóregisztráció nincs. A `CThumbUI` RTTI-s billentyűslotja a `0x005e6710`: fókuszált gyerek továbbítása után saját feltételekkel dolgozik. A `+0x332f != 0` ág a `0x00760970` kezelőre megy; ez keydownon Esc/nyilak/szóköz/számjegyek ágait kezeli. A szerkesztő `+`/`-` karakterei és Shift-váltása a 3-5. fül látható paneljéhez kötött (`0x005f95d0`, `0x005f9690`, `0x009e39b0`); az utóbbi a fókuszobjektum szülőláncában a `+0x20c` bájt hiányát követeli. Ez a CThumbUI fogadó feltételeit bizonyítja, de nem köti hozzá egyenként mind a 44 rekord parancsát. | A mostani QML-leltárban 53 `Shortcut` deklaráció van nyolc fájlban; több parancs `Main.qml`-szintű, miközben mások nézeti `Shortcut`-ot vagy `Keys`-kezelőt használnak. Például a `Ctrl+Delete` külön rács- és nézőkaput kap, a `Ctrl+H` csak kijelölt elemmel és a nézőn kívül aktív, az `Enter` a `LightboxFeed` `Keys.onPressed` ágában van, és a `Ctrl+C/X/V` megőrzi a szövegmező fókuszát (`picasa-gyorsbillentyuk.md` §6.1). | A billentyűparitást nézethez/fókuszhoz kötött fogadókon valósítsuk meg: ne tekintsük a 44 helyi menü feliratmezőjét önmagában gyorsítóregisztrációnak. A QML-út minden parancsánál legyen meghatározva a tulajdonos nézet, a fókuszkapu és az eseményfogadó; az eredetiben bizonyított CThumbUI-feltételeket (3-5. szerkesztőfül, `+0x332f` módág, fókuszolt gyerek továbbítása, `+0x20c`-mentes ősút) ne általánosítsuk a többi nyolc menüépítőre. Elfogadás: az egyes menük kontextusából indított kombinációk a megfelelő nézet műveletét érik el, a fókuszált szövegmezők szerkesztése megmarad, és a 44 rekordot nem globális shortcut-listaként kezeljük. |
 
 ## Nyitott
 
@@ -361,11 +361,11 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 | `ID_VIEW_SMALL = 0x9cd8`, `Show only big images` alapérték 1, kapcsoló/nézetfrissítés | bináris (`0x005c90f0`, `0x005c94e0`) |
 | `BigPictureThreshold = 0xEA60 = 60 000`; `width × height`; képarány-konstansok 3.0 és 0.33333; méretág 200 | bináris (`0x0065f1e6`, `0x0065f521`, `0x00c49618`, `0x00cf4fd8`, `0x0065f553`) |
 | korábbi `minsize` kötés | **NINCS MEG** mint képszűrő-beállítás; a string xref a `.tre` attribútumparszolóba mutat (`0x008d1450`) |
-| `ID_FACESRANDOM = 0x9d5a`, `panel+0x4f1`, `facemakemovieres` alap 3 / 1024×768 | bináris (`0x0057cc72`, `0x00616b42`–`0x00616b64`) |
-| `ID_FACESRANDOM` módja: a `+0x4b4` objektum 0. helye 6-tal tér vissza a `+0x4b8` mezőbe | bináris (`0x00618050`: `0x00618209`–`0x0061824d`; Ghidra `00699cd0.c`) |
+| `ID_FACESRANDOM = 0x9d5a`, `panel+0x4f1`, `facemakemovieres` alap 3 / 1024×768 | bináris (`0x0057cc72`, `0x00616b42`-`0x00616b64`) |
+| `ID_FACESRANDOM` módja: a `+0x4b4` objektum 0. helye 6-tal tér vissza a `+0x4b8` mezőbe | bináris (`0x00618050`: `0x00618209`-`0x0061824d`; Ghidra `00699cd0.c`) |
 | a `+0x4b4` szolgáltatás 0. slotja módválasztó (`+0x14` rész, `0x00699cd0`); a `+0x1c` rész slotja destruktor (`0x0069d740` → `0x006996d0`) | bináris (Ghidra `00699cd0.c`, `0069d740.c`, `006996d0.c`; RTTI vtable `0x00ca7b7c`, `0x00ca7bd8`) |
-| mód 6 ágválasztója: album-alapú `0x008223e0` helyett a `+0x2bc` listaág, `0x008226e0` fut | bináris (Capstone `0x0069a305`–`0x0069a310`, `0x008240e9`–`0x00824114`) |
-| a `+0x2bc` listából csak nem üres alsó listájú azonosítók kerülnek át, a forrás sorrendjében | bináris (`0x008226e0`: Capstone `0x00822715`–`0x00822775`, `0x008229f0`–`0x008229fb`; Ghidra `008226e0.c`); **feltételes**, mert a szűrést/sorrendet egyetlen listabejáró függvény bizonyítja
+| mód 6 ágválasztója: album-alapú `0x008223e0` helyett a `+0x2bc` listaág, `0x008226e0` fut | bináris (Capstone `0x0069a305`-`0x0069a310`, `0x008240e9`-`0x00824114`) |
+| a `+0x2bc` listából csak nem üres alsó listájú azonosítók kerülnek át, a forrás sorrendjében | bináris (`0x008226e0`: Capstone `0x00822715`-`0x00822775`, `0x008229f0`-`0x008229fb`; Ghidra `008226e0.c`); **feltételes**, mert a szűrést/sorrendet egyetlen listabejáró függvény bizonyítja
 | `+0x4bc` modell és `+0x4b8` lista viszonya; modellrekonstrukció és lista-iterálás | bináris (`0x006175c0`, Ghidra-köteg `006175c0.c`, `0x00616940`) |
 | `CTransTimeline` arcazonosító-/cropmezője és klipbe jutása | **NINCS MEG**; Ghidra-kör kell `0x00555a30`-hoz |
 | OLE-formátum `CF_HDROP=15`, `DROPFILES.pFiles=20`, `fWide=1`, effect mask 7 | bináris (`0x00aa215a`, `0x00aa2074`, `0x00aa207a`, `0x00aa2136`) |
@@ -378,17 +378,17 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 ## A két független út
 
-- **Small Pictures — egyezik.** A: `0x005c90f0` menüépítő + `0x005c94e0` állapotkapcsoló (`Show only big images`, fordított pipa). B: `0x0065d010` külön képszűrő ugyanazt a beállítást olvassa, majd terület-, képarány- és méretágat alkalmaz. A beállítás kapcsoló, nem méretválasztó.
-- **Fájlhúzás — egyezik.** A: `0x00aa1fb0` `CF_HDROP`/UTF-16 payloadot és 7-es hatásmaszkot készít. B: a `ytSimpleDataObject` `EnumFormatEtc`/`QueryGetData` útja a 15-ös formátumot szolgálja ki, más formatet nem fogad el.
-- **People Albums film — a mód 6 ága megerősített két külön függvényrétegből; a szűrés/sorrend feltételes.** A: `0x0057cc7a` beállítja a `+0x4f1` jelzőt, `0x00618050` pedig 6-os módot kér. B: a külön `0x00699cd0` módválasztó a 6-ost az `0x00824090` ágválasztóján át a `0x008226e0`-re irányítja, nem az album-kijelölés `0x008223e0` ágára. A bemeneti forrás (`+0x2bc`), az üres alsó listák szűrése és a sorrend az `0x008226e0` bejárásából következik; ez egyetlen kódszintű út, ezért `feltételes`, noha Capstone és a Ghidra-dekompilátum utasításonként egyezik. A `0x00619010`/`0x00555a30` külön fogyasztói útján a modell címe megy át, a közvetlen modellolvasás pedig a `+0x2b0` hangfájlnévre korlátozódik; arc/crop mezőt nem azonosít. A CTransTimeline belseje nyitott.
-- **Gyorsbillentyűk — a menüfelirat és a CThumbUI eseményút megerősített; az egyedi parancs-kapcsolat korlátozott.** A: a `0x00a6aee0` → `0x00a6b250` lánc a rekord `+0x04` mezőjét szövegként építi a menübe, a `0x00a6ade0` pedig ezt a felirat-építő hívó keresi fel. B: a `CThumbUI` RTTI-s billentyűslotja `0x005e6710`; ennek diszasszemblálása és a külön dekompilált `0x005f95d0`, `0x005f9690`, `0x00760970`, `0x009e39b0` függvények rögzítik a mód-/fókuszfeltételeket. A két út a „felirat nem azonos a regisztrációval” következtetéssel egyezik. A lehetséges globális gyorsító-importok cáfoló ellenőrzése miatt ezt nem terjesztem ki a teljes programra; a 44 rekord és más gyorsító-API-k kapcsolata **NINCS MEG**.
+- **Small Pictures - egyezik.** A: `0x005c90f0` menüépítő + `0x005c94e0` állapotkapcsoló (`Show only big images`, fordított pipa). B: `0x0065d010` külön képszűrő ugyanazt a beállítást olvassa, majd terület-, képarány- és méretágat alkalmaz. A beállítás kapcsoló, nem méretválasztó.
+- **Fájlhúzás - egyezik.** A: `0x00aa1fb0` `CF_HDROP`/UTF-16 payloadot és 7-es hatásmaszkot készít. B: a `ytSimpleDataObject` `EnumFormatEtc`/`QueryGetData` útja a 15-ös formátumot szolgálja ki, más formatet nem fogad el.
+- **People Albums film - a mód 6 ága megerősített két külön függvényrétegből; a szűrés/sorrend feltételes.** A: `0x0057cc7a` beállítja a `+0x4f1` jelzőt, `0x00618050` pedig 6-os módot kér. B: a külön `0x00699cd0` módválasztó a 6-ost az `0x00824090` ágválasztóján át a `0x008226e0`-re irányítja, nem az album-kijelölés `0x008223e0` ágára. A bemeneti forrás (`+0x2bc`), az üres alsó listák szűrése és a sorrend az `0x008226e0` bejárásából következik; ez egyetlen kódszintű út, ezért `feltételes`, noha Capstone és a Ghidra-dekompilátum utasításonként egyezik. A `0x00619010`/`0x00555a30` külön fogyasztói útján a modell címe megy át, a közvetlen modellolvasás pedig a `+0x2b0` hangfájlnévre korlátozódik; arc/crop mezőt nem azonosít. A CTransTimeline belseje nyitott.
+- **Gyorsbillentyűk - a menüfelirat és a CThumbUI eseményút megerősített; az egyedi parancs-kapcsolat korlátozott.** A: a `0x00a6aee0` → `0x00a6b250` lánc a rekord `+0x04` mezőjét szövegként építi a menübe, a `0x00a6ade0` pedig ezt a felirat-építő hívó keresi fel. B: a `CThumbUI` RTTI-s billentyűslotja `0x005e6710`; ennek diszasszemblálása és a külön dekompilált `0x005f95d0`, `0x005f9690`, `0x00760970`, `0x009e39b0` függvények rögzítik a mód-/fókuszfeltételeket. A két út a „felirat nem azonos a regisztrációval” következtetéssel egyezik. A lehetséges globális gyorsító-importok cáfoló ellenőrzése miatt ezt nem terjesztem ki a teljes programra; a 44 rekord és más gyorsító-API-k kapcsolata **NINCS MEG**.
 
 ## Cáfoló kísérlet
 
 1. Azt próbáltam cáfolni, hogy `ID_VIEW_SMALL` bélyegképméretet állít: összevetettem a `0x9cd8` és `0x9c9d` külön parancsait, az `ID_VIEW_SMALL` menüépítőjét/íróját, valamint a külön képszűrő fogyasztót. A `0x9cd8` csak a `Show only big images` preferenciát váltja; a méret-presetek külön parancsok.
 2. Azt próbáltam cáfolni, hogy a drag adatobjektum csak CF_HDROP-ot fogad el: `QueryGetData`-nél alternatív formátumot vizsgáltam. A kód csak `cfFormat=15`, `DVASPECT_CONTENT` és HGLOBAL mellett tér vissza sikerrel; alternatív URI-/egyedi formátumot nem igazol.
 3. Azt próbáltam cáfolni, hogy a `0x006175c0` építi a People-képlistát, illetve a `0x0080fea0` végzi az arc-kivágást. A Ghidra-kód szerint a `0x006175c0` a `+0x4bc` modellt újraépíti és a már kapott `+0x4b8` listát iterálja; a `0x0080fea0` modellmezőket ír és node-okat inicializál. A lista-lekérési határ a `0x00618050`-ban van (`0x00618236`), de a virtuális cél és a render-crop út nyitott.
-4. **People-mód cáfoló köre:** azt ellenőriztem, hogy a 6-os mód vajon a kiválasztott album `0x008223e0` ágába jut-e. A Capstone-utasítások szerint a 6-os mód a `0x0069a30b` `sete cl`-nél 1-es jelzőt ad; a `0x008240e9` feltétel így a `0x008226e0` ágra visz, míg az album-alapú `0x008223e0` csak nulla jelzőnél fut. A cáfolat saját ellenőrzése: a `0x008226e0` `0x00822715`-nél valóban a `+0x2bc` listát kéri, és a `0x0082275f`–`0x00822775` csak üresnek talált alsó listánál ugrik ki; a `0x008229f0` iterációs indexe növekszik, kódolt rendezés nélkül. A korábbi „kiválasztott album” értelmezés mód 6-ra megdőlt; az a másik, nulla-jelzős ág.
+4. **People-mód cáfoló köre:** azt ellenőriztem, hogy a 6-os mód vajon a kiválasztott album `0x008223e0` ágába jut-e. A Capstone-utasítások szerint a 6-os mód a `0x0069a30b` `sete cl`-nél 1-es jelzőt ad; a `0x008240e9` feltétel így a `0x008226e0` ágra visz, míg az album-alapú `0x008223e0` csak nulla jelzőnél fut. A cáfolat saját ellenőrzése: a `0x008226e0` `0x00822715`-nél valóban a `+0x2bc` listát kéri, és a `0x0082275f`-`0x00822775` csak üresnek talált alsó listánál ugrik ki; a `0x008229f0` iterációs indexe növekszik, kódolt rendezés nélkül. A korábbi „kiválasztott album” értelmezés mód 6-ra megdőlt; az a másik, nulla-jelzős ág.
    A másik lehetséges célként felmerült `+0x1c` slotot is ellenőriztem: a Ghidra `0x0069d740`-et a `0x006996d0`-hez köti; ez `0x00699830` után a törlési jelzőtől függően felszabadítja az objektumot, tehát destruktor. A mód 5/6 út a `+0x14` rész `0x00699cd0` slotjával egyezik.
 5. **Gyorsító-regisztráció cáfoló köre:** az `imports.csv` `CreateAcceleratorTableA` és `TranslateAcceleratorA` importot is felsorol, tehát az egész programra tett „nincs gyorsítótábla” állítás nem tartható. A dekompilált `0x00a6ade0` kereső egyetlen közvetlen hívója a `0x00a6b250`; a célzott Capstone-olvasás ezen a láncon nem mutat ACCEL-regisztrációt. Az importtal szembeni cáfolatot ugyanazzal a mércével ellenőriztem: a használat és a 44 rekord közötti adat-/hívási kapcsolat **NINCS MEG**, ezért a negatív állítás csak a helyi menüépítő-láncra érvényes.
 
@@ -405,18 +405,18 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 | fejlesztési irány | Eredeti / nálunk / teendő | Kész, ha |
 |---|---|---|
-| A Nézet ▸ Small Pictures kapcsolja a kis képek szűrőjét | Eredeti: `0x9cd8`, preferencia-kapcsoló, 60 000 px² alapküszöb és további ellenőrzések. Nálunk: `PicasaMenuBar.qml:885–890` helyfoglaló. Teendő: a tétel a szűrőt kapcsolja, ne bélyegképméretet. | A pipa és a látható képek a specifikált preferenciával és `0x0065f3c6`–`0x0065f5a9` szabályokkal egyeznek; a bélyegképméret nem változik. |
+| A Nézet ▸ Small Pictures kapcsolja a kis képek szűrőjét | Eredeti: `0x9cd8`, preferencia-kapcsoló, 60 000 px² alapküszöb és további ellenőrzések. Nálunk: `PicasaMenuBar.qml:885-890` helyfoglaló. Teendő: a tétel a szűrőt kapcsolja, ne bélyegképméretet. | A pipa és a látható képek a specifikált preferenciával és `0x0065f3c6`-`0x0065f5a9` szabályokkal egyeznek; a bélyegképméret nem változik. |
 | A képrács húzza a kijelölt fájlokat az asztali alkalmazásokba | Eredeti: `CF_HDROP`, UTF-16 útvonalak, COPY/MOVE/LINK. Nálunk: belső `payload="photos"`, OS-formátum nincs. Teendő: natív fájllista átadása. | Windows-próbán a fogadó a húzott fájlok útvonalait kapja, és az eredeti 3 engedett műveletből választott hatás visszajelzése helyes. |
-| Az Emberek-fejléc filmgombjai őrizzék az eredeti People/Face bemenetet | Eredeti: mód 6 a `+0x2bc` azonosítólistáját járja be, üres alsó listákat kihagy, sorrendet őriz (`0x00699cd0`, `0x00824090`, `0x008226e0`). Nálunk: `Main.qml:732–737` minden `controller.photos` sort a normál filmútvonalnak ad. Teendő: a bizonyított szűrt lista és sorrend bekötése külön People/Face útba; a timeline/crop belső útját ne találgassuk. | Az eredetivel azonos bemeneti modellen a forrás-azonosítók és sorrend egyeznek; crop/arcigazítás csak `CTransTimeline` feltárása után vehető át. |
+| Az Emberek-fejléc filmgombjai őrizzék az eredeti People/Face bemenetet | Eredeti: mód 6 a `+0x2bc` azonosítólistáját járja be, üres alsó listákat kihagy, sorrendet őriz (`0x00699cd0`, `0x00824090`, `0x008226e0`). Nálunk: `Main.qml:732-737` minden `controller.photos` sort a normál filmútvonalnak ad. Teendő: a bizonyított szűrt lista és sorrend bekötése külön People/Face útba; a timeline/crop belső útját ne találgassuk. | Az eredetivel azonos bemeneti modellen a forrás-azonosítók és sorrend egyeznek; crop/arcigazítás csak `CTransTimeline` feltárása után vehető át. |
 | A 44 menüfelirat és a billentyűkezelés nézet-/fókuszhelyes legyen | Eredeti: a rekord `+0x04` mezője felirat (`0x00a6aee0`, `0x00a6b250`); a `CThumbUI` saját billentyűútja `0x005e6710`, a szerkesztőfülek és a `+0x332f` ág bizonyított feltételeivel. Nálunk: a #4398 utáni leltár 54 `Shortcut` nyolc QML-fájlban, köztük rács/néző szerint külön `Ctrl+Delete`; könyvtári kötéseket nem enged be az editorba, és szövegfókuszban tiltja az alkalmazás-shortcutokat. Teendő: a helyi menüfeliratokat ne tekintsük globális shortcut-regisztrációnak; a 44 rekord egyedi parancsútja továbbra sincs bizonyítva. | A gazdanézet/fókuszkapuk a `picasa-gyorsbillentyuk.md` §6.2 táblázatában vannak; a könyvtár/editor/szövegfókusz eseteket valódi billentyűleütéses teszt fedi le; a nem igazolt 44/44 kapcsolat nyitott marad. |
 
 ## Új kutatási jegyjavaslatok
 
 Nincs külön új kutatási jegyjavaslat: a fennmaradó `CTransTimeline` kérdés a #4339 blokkoló folytatása; a gyorsító-API-kapcsolat és az asztali drag-próba is ugyanennek a paritási vizsgálatnak a határán marad.
 
-## Nyitott — pontos következő bináris lépés
+## Nyitott - pontos következő bináris lépés
 
-- `Ghidra-kör kell: 0x00555a30 — a 0x00619010 által átadott +0x4bc film-modell címét a CTransTimeline hogyan dolgozza fel: melyik mező hordozza az arcazonosítót/cropot/arcra igazítást, és hogyan kerül ezekből adat a timeline-klipbe? [blokkoló]`
+- `Ghidra-kör kell: 0x00555a30 - a 0x00619010 által átadott +0x4bc film-modell címét a CTransTimeline hogyan dolgozza fel: melyik mező hordozza az arcazonosítót/cropot/arcra igazítást, és hogyan kerül ezekből adat a timeline-klipbe? [blokkoló]`
 - A `+0x332f` bájt által jelölt billentyűmód neve **NINCS MEG**; a `0x00760970` ág feltételei és a kezelt billentyűk ismertek, a mód szemantikája nem.
 - A `CreateAcceleratorTableA` / `TranslateAcceleratorA` importok és a 44 helyi menürekord közötti kapcsolat **NINCS MEG**; ezért a gyorsító-regisztráció hiánya csak a vizsgált `0x00a6aee0` → `0x00a6b250` helyi menüépítő-láncra állítható.
 - A fájlhúzás natív QML/Windows egyezése: **NINCS MEG** futó Windows-célalkalmazással végzett próbában.
@@ -425,18 +425,18 @@ Nincs külön új kutatási jegyjavaslat: a fennmaradó `CTransTimeline` kérdé
 
 **A 2026-10-06-i záró körben:**
 
-- `docs/specs/paritas-ellenorzes.md` — a People mód 6 bemeneti listája/sorrendje, a `CThumbUI` fókuszkapui, a cáfoló ellenőrzések és a `CTransTimeline` blokkoló kérdése.
-- `docs/specs/picasa-create-features.md` — a 6-os ág pontos forráslistája, szűrése és sorrendje; a modell/crop határának nyitva hagyása.
-- `docs/specs/picasa-gyorsbillentyuk.md` — a helyi menümező feliratjellege, a `CThumbUI` eseményfeltételei és a mai QML 53 `Shortcut`-os összevetése.
-- `docs/specs/00-index.md` — a #4339 kutatási állapot rövid összefoglalójának frissítése.
+- `docs/specs/paritas-ellenorzes.md` - a People mód 6 bemeneti listája/sorrendje, a `CThumbUI` fókuszkapui, a cáfoló ellenőrzések és a `CTransTimeline` blokkoló kérdése.
+- `docs/specs/picasa-create-features.md` - a 6-os ág pontos forráslistája, szűrése és sorrendje; a modell/crop határának nyitva hagyása.
+- `docs/specs/picasa-gyorsbillentyuk.md` - a helyi menümező feliratjellege, a `CThumbUI` eseményfeltételei és a mai QML 53 `Shortcut`-os összevetése.
+- `docs/specs/00-index.md` - a #4339 kutatási állapot rövid összefoglalójának frissítése.
 
 **A korábbi #4339-körök módosításai:**
 
-- `docs/specs/paritas-ellenorzes.md` — a #4339 négy kérdése, eredeti/nálunk/teendő táblái, bizonyítékai és nyitott bináris lépései.
-- `docs/specs/picasa-menu-parancsok-viselkedes.md` — `ID_VIEW_SMALL` helyesbítése és a küszöb pontosítása.
-- `docs/specs/picasa-create-features.md` — az `ID_FACESRANDOM` módjelzője és felbontása; nyitott bemeneti szabály.
-- `docs/specs/picasa-eger-es-kijeloles.md` — a `DoDragDrop` fájlformátuma, payloadja és hatásmaszkja.
-- `docs/specs/picasa-gyorsbillentyuk.md` — a 44 rekord kilenc menükontextusa és a nyitva maradt fókuszkapu.
+- `docs/specs/paritas-ellenorzes.md` - a #4339 négy kérdése, eredeti/nálunk/teendő táblái, bizonyítékai és nyitott bináris lépései.
+- `docs/specs/picasa-menu-parancsok-viselkedes.md` - `ID_VIEW_SMALL` helyesbítése és a küszöb pontosítása.
+- `docs/specs/picasa-create-features.md` - az `ID_FACESRANDOM` módjelzője és felbontása; nyitott bemeneti szabály.
+- `docs/specs/picasa-eger-es-kijeloles.md` - a `DoDragDrop` fájlformátuma, payloadja és hatásmaszkja.
+- `docs/specs/picasa-gyorsbillentyuk.md` - a 44 rekord kilenc menükontextusa és a nyitva maradt fókuszkapu.
 
 ## Forrás nélkül lezárt jegyek, első köteg (#5245, 2026-10-17)
 
@@ -589,3 +589,124 @@ Mérési vakfolt: nem futtattam az alkalmazást, és nem rendereltem a mai felü
 | #4881 | A párbeszédek szabványos gombjai a választott felületi nyelven jelenjenek meg | A Picasa saját `.fen` párbeszédei a saját gombfeliratukat használják (`picasa-fen-dialogs.md:106-107`: OK, Cancel; `:37`: Igen/Nem/Mégse). A Windows-üzenetdoboz gombjainak eredeti viselkedését nem mértük. | `application.py:1014-1029` (`_install_qt_translator`: a Qt `qtbase_*.qm` fordítója), `:1044` (`QLocale.setDefault` a választott nyelvvel, a területet a rendszer adja). | **Egyezik** a nyelv elvében. A tizedesjel a rendszer területét követi (ADR-004), az eredetit nem mértük. |
 | #5007 | A mappára húzott indexképek átkerülnek, a Másolás/Beillesztés átvisz képet | `picasa-menu-parancsok-viselkedes.md:627-633`: a vágólapra fájlok kerülnek (IDList, FileGroupDescriptor), a Kivágás és a Másolás különbsége a `Preferred DropEffect` formátumban van. A húzás szemantikája (mozgatás vagy másolás) nincs leírva. | `FolderPane.qml:1193-1214` (`folderDropArea` → `photosDroppedOnFolder`), `Main.qml:3315-3324` (mozgatás: `movePhotos`), `fileops_controller.py:590` (`copyFilesToClipboard`), `:622` (`pasteFilesFromClipboard`). | **Részben egyezik.** A vágólap modellje egyezik a forrással. A húzás mozgatása forrás nem található. |
 | #5121 | Meglévő album mellett ráhúzással nem lehet új albumot készíteni | Colab, eredeti Picasa 3.9, a jegy kommentjei szerint (job-155, -156, -159, -160): húzás az Albumok fejlécére, a sorok alá és az Új album (+) gombra nem készít albumot, meglévő albummal sem. A kontroll húzás a meglévő „Teszt album” sorra működik. Kiinduláskor, csak a „Recently Updated” rendszeralbummal, nincs súgósor (job-155). | `AlbumsSection.qml:65-67` (súgó és ejtési terület csak `albumsModel.length === 0` esetén), `:93-94` (`albumDropArea`). | **Egyezik** a meglévő album melletti viselkedésben. **Eltér** a nyugalmi súgósorban: a mai kódban üres albumlistánál látszik, az eredetinél a job-155 szerint nem. |
+
+## 7. réteg: effektkimenet az eredetihez mérve (#5277, 2026-10-18)
+
+**Mérési állapot:** `c668968b94cf706f63e6596c8e2f2e7fea467ccb` (a munkafa induló, friss main állapota). A mérő a `tools/golden/analyze_validation_kit.py::mean_de` CIE76 átlagos ΔE-jét használja: a renderelt képet előbb a Picasa-referencia JPEG mintavételezésével és kvantálótábláival kódolja újra (`tools/golden/jpeg_reference.py`, #4940), majd a dekódolt képeket hasonlítja össze. Az ítéleti küszöb változatlanul `MATCH_DE = 2,0`; `ΔE ≤ 2,0` egyezik.
+
+A referenciák a `~/.local/share/picasapy-meroadat/meroadat.tar` archívumból származnak; csak a szükséges fájlokat bontottam ki a munkafa ideiglenes könyvtárába, majd a mérés végén törlöm. NAS-adatot nem használtam. A futási környezet terhelési naplója (gép/mag/RAM, futás előtti és utáni 1/5/15 perces terhelés) **NINCS MEG**; minden mintapár egy render- és ΔE-futást kapott, a `meroszett` 4 párhuzamos workerrel futott.
+
+A táblázatban a **mintaszám** az adott effektcsaládhoz tartozó, tényleges eredeti Picasa-exporttal összehasonlított sorok száma; a mért eltérés ezek legnagyobb ΔE-je. Belekerült a 684-es szettből 179 export (180 sorból egy `unsharp/max` export hiányzott), a `PicasaPy meroszett` eredeti exportkészletéből 178, a `merokit-2`-ből 49, a `3084-poszterizalas`-ból 2 és a `951-kiemelesek-arnyekok-fel-allas`-ból 1. Ez összesen 409 összehasonlított effektmintasor, 73 mérőszett-csoportban. A további 7 `merokit-3` eredeti export láncviselkedési próba, külön lent.
+
+A korábbi, 2026-10-13-i táblázat még az `a8ba353b3561` kódállapotot mérte; az aktuális `b90c9736c` #4940 óta a JPEG kódolás normalizált. Ezért a régi táblázat nyers RGB-értékei nem közvetlenül összevethetők az alábbi, JPEG-kvantálótáblákkal normalizált ΔE-értékekkel (például `nightvision`: nyers 4,528, normalizálva 0,000).
+
+| Effekt | Mintaszám | Mért eltérés (max. ΔE76) | Küszöb | Ítélet |
+|---|---:|---:|---:|---|
+| `ansel` | 2 | 0,000 | 2,000 | egyezik |
+| `autobacklight` | 3 | 0,000 | 2,000 | egyezik |
+| `autocolor` | 4 | 0,096 | 2,000 | egyezik |
+| `autocontrast` | 3 | 0,000 | 2,000 | egyezik |
+| `autolight` | 3 | 0,645 | 2,000 | egyezik |
+| `backlight` | 7 | 0,000 | 2,000 | egyezik |
+| `blur` | 9 | 0,000 | 2,000 | egyezik |
+| `boost` | 6 | 0,000 | 2,000 | egyezik |
+| `border` | 6 | 0,000 | 2,000 | egyezik |
+| `bw` | 2 | 0,000 | 2,000 | egyezik |
+| `cinemascope` | 2 | 0,000 | 2,000 | egyezik |
+| `colorfix` | 7 | 0,000 | 2,000 | egyezik |
+| `colortemp` | 6 | 0,000 | 2,000 | egyezik |
+| `comicize` | 6 | 0,112 | 2,000 | egyezik |
+| `contrast` | 6 | 0,138 | 2,000 | egyezik |
+| `crossprocess` | 4 | 0,000 | 2,000 | egyezik |
+| `dir_brite` | 2 | 4,433 | 2,000 | eltér |
+| `dir_sat` | 2 | 1,608 | 2,000 | egyezik |
+| `dir_sharp` | 2 | 10,740 | 2,000 | eltér |
+| `dir_tint` | 6 | 0,000 | 2,000 | egyezik |
+| `dropshadow` | 6 | 0,000 | 2,000 | egyezik |
+| `enhance` | 3 | 0,000 | 2,000 | egyezik |
+| `fill` | 5 | 0,000 | 2,000 | egyezik |
+| `finetune` | 6 | 0,833 | 2,000 | egyezik |
+| `finetune2` | 7 | 0,698 | 2,000 | egyezik |
+| `focalpixelate` | 6 | 0,000 | 2,000 | egyezik |
+| `focalzoom` | 6 | 0,071 | 2,000 | egyezik |
+| `gamma` | 6 | 0,000 | 2,000 | egyezik |
+| `glow` | 6 | 0,001 | 2,000 | egyezik |
+| `glow2` | 6 | 0,001 | 2,000 | egyezik |
+| `grain` | 4 | 3,142 | 2,000 | eltér |
+| `grain2` | 4 | 2,232 | 2,000 | eltér |
+| `hdr` | 6 | 0,000 | 2,000 | egyezik |
+| `heatmap` | 6 | 0,000 | 2,000 | egyezik |
+| `holga` | 6 | 0,000 | 2,000 | egyezik |
+| `invert` | 2 | 0,000 | 2,000 | egyezik |
+| `ir` | 4 | 0,002 | 2,000 | egyezik |
+| `linblur` | 6 | 0,012 | 2,000 | egyezik |
+| `localcontrast` | 6 | 0,000 | 2,000 | egyezik |
+| `lomo` | 6 | 0,000 | 2,000 | egyezik |
+| `matte` | 6 | 0,000 | 2,000 | egyezik |
+| `museummatte` | 6 | 0,000 | 2,000 | egyezik |
+| `neon` | 4 | 0,000 | 2,000 | egyezik |
+| `nightvision` | 6 | 0,000 | 2,000 | egyezik |
+| `orton` | 6 | 0,000 | 2,000 | egyezik |
+| `pencilsketch` | 6 | 0,022 | 2,000 | egyezik |
+| `picnikfocalpixelate` | 8 | 0,159 | 2,000 | egyezik |
+| `picnikgrain` | 7 | 0,000 | 2,000 | egyezik |
+| `picniktint` | 4 | 0,000 | 2,000 | egyezik |
+| `pixelate` | 6 | 0,000 | 2,000 | egyezik |
+| `polaroid` | 6 | 0,001 | 2,000 | egyezik |
+| `quantizepalette` | 8 | 0,000 | 2,000 | egyezik |
+| `radblur` | 6 | 0,007 | 2,000 | egyezik |
+| `radsat` | 6 | 0,000 | 2,000 | egyezik |
+| `radtint` | 6 | 0,000 | 2,000 | egyezik |
+| `reanimatedeyecolor` | 6 | 0,000 | 2,000 | egyezik |
+| `roundededges` | 6 | 0,000 | 2,000 | egyezik |
+| `sat` | 6 | 0,000 | 2,000 | egyezik |
+| `sepia` | 4 | 0,000 | 2,000 | egyezik |
+| `shadow` | 6 | 0,001 | 2,000 | egyezik |
+| `sixties` | 6 | 0,000 | 2,000 | egyezik |
+| `soften` | 6 | 0,000 | 2,000 | egyezik |
+| `tilt` | 6 | 0,044 | 2,000 | egyezik |
+| `tint` | 21 | 0,000 | 2,000 | egyezik |
+| `triple` | 6 | 0,137 | 2,000 | egyezik |
+| `triple2` | 6 | 0,148 | 2,000 | egyezik |
+| `triple3` | 6 | 0,131 | 2,000 | egyezik |
+| `twotone` | 6 | 0,000 | 2,000 | egyezik |
+| `unsharp` | 8 | 0,000 | 2,000 | egyezik |
+| `unsharp2` | 8 | 0,000 | 2,000 | egyezik |
+| `vignette` | 9 | 0,000 | 2,000 | egyezik |
+| `warm` | 2 | 0,000 | 2,000 | egyezik |
+| `whitept` | 5 | 0,081 | 2,000 | egyezik |
+
+
+### A küszöb feletti effektkimenetek
+
+- **`dir_brite`**: a 684-es `dir_brite__alap.jpg` ΔE-je **4,433**, a `meroszett` azonos paramétersoráé **4,427**. Mindkét Picasa-lánc `dir_brite=1,0.500000,0.500000;`; a mai `parse_filters_prefix` a regiszter teljes paramétersort követelő szabálya mellett a mintában szereplő két vezérlőértéknél elvágja a láncot, így a renderer a forrást adja vissza. A Picasa-export a forrástól ΔE **4,442**-vel eltér, tehát az eredeti effekttag lefutott; a külön `compare_render.py` nyers összevetése is **4,442**-t mér; a közvetlen `apply_dir_brite` kimenet viszont ΔE **0,187**-re egyezik vele. Valószínű ok: a beolvasó paraméterszám-szabálya nem kezeli a mért puck-sort. Helyi specifikációs kapcsolat: `filters-decoded.md` „Az irányított család” (#3859) és a #4233 olvasási aritás-szabálya. Nyitott jegyállapot: **nem ellenőrizhető**, a `gh issue list --search` API-kapcsolati hibával leállt.
+- **`dir_sharp`**: a 684-es exporttal a ΔE **10,740**, a `meroszett` megfelelő mintájával **10,717**; mindkét lánctag ugyanaz a kétértékű forma, és ugyanott szakad meg. Az eredeti Picasa-kimenet a forrástól ΔE **10,748**-del tér el, amit a külön `compare_render.py` nyers útja is mér, míg a közvetlen `apply_dir_sharp` ΔE-je **0,384**. Valószínű ok és helyi specifikációs kapcsolat megegyezik a `dir_brite` soréval; a nyitott jegy állapota GitHub-hozzáférés híján nem állapítható meg.
+- **`grain`**: `merokit-2/szemcse_05.jpg`, `grain=1;grain=1;`: ΔE **3,142**. A helyi `filters-decoded.md` #4936 szerint a Picasa-export a munkamenet `k=2,3` zajmagjait, a jelenlegi láncos renderelés pedig új láncban `k=0,1`-et használ. Ez illik a mért eltéréshez; a nyitott jegy állapotát nem lehetett ellenőrizni.
+- **`grain2`**: `merokit-2/szemcse_02.jpg`, `grain2=1;`: ΔE **2,232**. A helyi #4936 specifikáció a `k=0` és a Picasa-munkamenetben mért `k=1` eltérését dokumentálja. A nyitott jegy állapota nem ellenőrizhető.
+
+A `dir_sat` két mintájából az egyiknél a parser szintén elvágja a kétértékű sort, de a legnagyobb mért ΔE **1,608**, ezért az előírt 2,0-s küszöb szerinti ítélet „egyezik”. Ez az egyezés a kimeneti küszöbre vonatkozik, és nem bizonyítja, hogy a tag lefutott. A 684-es készlet `autobacklight`, `grain2` és vegyes írásmódú `tint` sorai között is van levágott tag; ezek Picasa-referenciáján a kimeneti különbség a küszöbön belül marad.
+
+### Referencia nélküli effektek
+
+A `FILTER_REGISTRY` 56 `mode=effect` bejegyzéséből 55-höz van eredeti Picasa-kimenet legalább az egyik felsorolt készletben. **`debug`** az egyetlen referencia nélküli effekt-regiszterbejegyzés; a `make_validation_kit.py` fejlesztői eszközként eleve kizárja, és nem felhasználói effekt. Az `unsharp/max` egyedi 684-es exportja hiányzik, de az effekt más készletében van eredeti referencia, ezért az `unsharp` nem referencia nélküli.
+
+### Kiegészítő láncmérések
+
+| Lánc és készlet | Mintaszám | Mért eltérés (max. ΔE76) | Küszöb | Ítélet |
+|---|---:|---:|---:|---|
+| `nincsilyen=1;bw=1;` (`merokit-3`) | 7 | 10,123 (`B_ismeretlen_elol.jpg`) | 2,000 | eltér |
+| Border → sepia (`3229`, 01) | 1 | 0,000 | 2,000 | egyezik |
+| sepia → Border (`3229`, 02) | 1 | 0,000 | 2,000 | egyezik |
+| Border → Vignette (`3229`, 03) | 1 | 0,000 | 2,000 | egyezik a küszöb szerint; a parser a Vignette-tagot levágta |
+| `crop64` → Vignette (`3229`, 04) | 1 | 39,829; eltérő képméret | nincs | nem összehasonlítható |
+
+A `merokit-3`-ban az eredeti Picasa az ismeretlen tag után megállt, a PicasaPy viszont az utána következő `bw`-t is lefuttatta (ΔE **10,123**). Ez a `picasa-ini-format.md` ismeretlen tagok utáni leállási leírásával ellentétes; helyi kódkapcsolat a `parse_filters_prefix` ismeretlen név ága, korábbi viselkedési hivatkozás #1140. A `3229/04` képmérete PicasaPy-n **376×659**, az eredeti exporté **1600×1200**, ezért az eltérés nem fogadható el effekt-paritási ítéletként. A `3229/03` kimeneti különbsége a JPEG-normalizált küszöb szerint nulla, de a parser a `Vignette=1,35,1.4,0` tagot nem adta át a renderernek.
+
+A GitHubon a vizsgált eltérésekre futtatott négy csak-olvasási `gh issue list --search` parancs egyaránt `error connecting to api.github.com` hibával tért vissza. Emiatt nem igazolható, hogy a helyi #4233, #4936 és #1140 hivatkozásokhoz van-e jelenleg nyitott, megfelelő jegy; jegyet nem hoztam létre.
+
+
+### Bizonyítottsági fok és cáfoló kör
+
+**Bizonyítottsági fok: feltételes az összesített táblára.** A teljes effektmátrix minden ΔE-je a fenti, egységes mérőúton készült; két független út nem futott végig mind a 73 csoportra. A két irányított eltérés külön megerősített: az `analyze_validation_kit.py` JPEG-normalizált útja 4,433 / 10,740-et, a `compare_render.py` nyers összevetése 4,442 / 10,748-at ad; a Picasa-export és a forrás eltérése is ugyanazt a nem-tétlen eredetit igazolja.
+
+**Cáfoló kísérlet:** a „hibás a `dir_brite` és a `dir_sharp` számítási magja” feltevést a filterparser megkerülésével próbáltam cáfolni. A két közvetlen effekt-hívás eredménye 0,187 / 0,384 ΔE-vel illeszkedik az eredeti exportra (a korábbi #3859 mérésével egyezően), miközben a mai láncértelmező üres műveletsort ad; ez a számítási mag hibáját cáfolja, és a lánc elfogadási és paraméterszám-szabályára szűkíti az okot. A cáfoló mérce mindkét irányban ugyanaz a CIE76 ΔE és 2,0 küszöb.
