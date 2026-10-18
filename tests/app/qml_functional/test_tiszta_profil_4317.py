@@ -622,6 +622,10 @@ def _vorosszem_diagnosztika(
             f"redeyeActive kattintás előtt={kattintasi_adatok.get('redeyeActive kattintás előtt', 'nincs')}, "
             f"redeyeActive kattintás után={kattintasi_adatok.get('redeyeActive kattintás után', 'nincs')}, "
             f"redeyeActive 3 eseményciklus után={kattintasi_adatok.get('redeyeActive 3 ciklus után', 'nincs')}, "
+            f"overlay kattintás előtt={kattintasi_adatok.get('overlay kattintás előtt', 'nincs')}, "
+            f"childAt kattintás előtt={kattintasi_adatok.get('childAt kattintás előtt', 'nincs')}, "
+            f"overlay kattintás után={kattintasi_adatok.get('overlay kattintás után', 'nincs')}, "
+            f"childAt kattintás után={kattintasi_adatok.get('childAt kattintás után', 'nincs')}, "
         )
     return (
         f"{kattintas_diag}"
@@ -680,6 +684,95 @@ def _nyitott_felugrok(window) -> list[str]:
     return lathatok
 
 
+def _ertek(ertek) -> str:
+    """Egy tulajdonság értéke szövegként; `nincs`, ha a tulajdonság nem létezik (#4929)."""
+    if ertek is None:
+        return "nincs"
+    if isinstance(ertek, bool):
+        return _igen_nem(ertek)
+    return str(ertek)
+
+
+def _reszletes_leiras(item) -> str:
+    """Egy elem osztálya, neve, láthatósága, opacitása, z-je, helye és mérete; Popup esetén a Popup állapota (#4929)."""
+    if not _ervenyes_qt_elem(item):
+        return "már törölt"
+    try:
+        leiras = (
+            f"{item.metaObject().className()}"
+            f"(objectName={item.objectName() or '<névtelen>'}, "
+            f"látszik={_igen_nem(item.isVisible())}, "
+            f"visible={_ertek(item.property('visible'))}, "
+            f"opacity={item.opacity():.2f}, z={item.z():.0f}, "
+            f"x={item.x():.0f}, y={item.y():.0f}, "
+            f"szél={item.width():.0f}, mag={item.height():.0f}"
+        )
+        nyitott = item.property("opened")
+        if nyitott is not None:
+            leiras += f", opened={_ertek(nyitott)}"
+        popup = item.property("popup")
+        if isinstance(popup, QObject):
+            leiras += (
+                f", popup(opened={_ertek(popup.property('opened'))}, "
+                f"visible={_ertek(popup.property('visible'))})"
+            )
+        return leiras + ")"
+    except RuntimeError:
+        return "már törölt"
+
+
+def _overlay_keres(item):
+    """A QQuickOverlay réteg a tartalmi fában, vagy None (#4929)."""
+    for gyerek in item.childItems():
+        if not _ervenyes_qt_elem(gyerek):
+            continue
+        if gyerek.metaObject().className() == "QQuickOverlay":
+            return gyerek
+        talalat = _overlay_keres(gyerek)
+        if talalat is not None:
+            return talalat
+    return None
+
+
+def _overlay_gyerekei(window) -> str:
+    """Az ablak Overlay rétegének összes gyermeke, elemenként (#4929).
+
+    Nem a `window.property("overlay")`-t használjuk: az ablak ilyen tulajdonságot
+    nem ad ki, ezért a tartalmi fában keressük az osztályt.
+    """
+    try:
+        reteg = _overlay_keres(window.contentItem())
+        if reteg is None:
+            return "Overlay=nincs"
+        gyerekek = reteg.childItems()
+    except RuntimeError:
+        return "Overlay=már törölt"
+    leirasok = "; ".join(_reszletes_leiras(gyerek) for gyerek in gyerekek)
+    return f"Overlay gyerekei=[{leirasok}]"
+
+
+def _childat_lanc(window, scene_pont, hossz: int = 3) -> str:
+    """A `window.contentItem().childAt(...)` lánc első `hossz` eleme a kattintási pontban (#4929)."""
+    try:
+        aktualis = window.contentItem()
+    except RuntimeError:
+        return "már törölt"
+    lanc = []
+    for _ in range(hossz):
+        try:
+            lokalis = aktualis.mapFromScene(scene_pont)
+            kovetkezo = aktualis.childAt(lokalis.x(), lokalis.y())
+        except RuntimeError:
+            lanc.append("már törölt")
+            break
+        if kovetkezo is None:
+            lanc.append("nincs")
+            break
+        lanc.append(_reszletes_leiras(kovetkezo))
+        aktualis = kovetkezo
+    return " < ".join(lanc)
+
+
 def _ponti_talalat_szoveg(window, pont) -> tuple[str, str]:
     """A pontnál talált elemet azonnal szöveggé alakítja; Qt-burköt nem ad vissza."""
     try:
@@ -733,12 +826,17 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     assert aktiv, "a főablak nem aktiválódott a vörösszem-kattintás előtt"
     kozep = eszkoz.mapToScene(QPointF(eszkoz.width() / 2, eszkoz.height() / 2))
     pont = QPoint(round(kozep.x()), round(kozep.y()))
+    scene_pont = QPointF(pont.x(), pont.y())
     kattintasi_adatok["pont"] = f"({pont.x()},{pont.y()})"
+    kattintasi_adatok["overlay kattintás előtt"] = _overlay_gyerekei(window)
+    kattintasi_adatok["childAt kattintás előtt"] = _childat_lanc(window, scene_pont)
     QTest.mouseClick(
         eszkoz.window(), Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier, pont,
     )
     qt_app.processEvents()
+    kattintasi_adatok["overlay kattintás után"] = _overlay_gyerekei(window)
+    kattintasi_adatok["childAt kattintás után"] = _childat_lanc(window, scene_pont)
     kattintasi_adatok["ablakAktív kattintás után"] = window.isActive()
     kattintasi_adatok["redeyeActive kattintás után"] = (
         bool(szerkeszto.property("redeyeActive"))
@@ -778,7 +876,6 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
         ))
     assert lathato, (
         "a vörösszem húzási területe vagy az Alkalmaz gomb nem látszik a húzás előtt"
-        f" | #4929 diag: {' '.join(diag)}"
     )
     p0 = terulet.mapToScene(QPointF(terulet.width() * 0.46, terulet.height() * 0.46))
     p1 = terulet.mapToScene(QPointF(terulet.width() * 0.54, terulet.height() * 0.54))
@@ -810,16 +907,21 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
 
 
 def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
-    """Windows-hibánál diagnosztikával kihagyható; más platformon szigorú (#4929)."""
+    """Windows-hibánál diagnosztikával kihagyható; más platformon szigorú (#4929).
+
+    A diagnosztika bukásnál mindkét esetben bekerül: Windowson a kihagyás indokába,
+    máshol a hibaüzenetbe.
+    """
     diag = []
     try:
         _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag)
     except AssertionError as hiba:
-        if _platform() != "win32" or tiszta_app["attempts"]:
-            raise
         # A pytest a rewrite miatt az üzenet után az "assert ..." sort is hozzáfűzi; csak az első sor kell.
         uzenet = str(hiba).splitlines()[0]
-        return f"#4929 diag: {uzenet} | {' '.join(diag) or 'a húzás előtt bukott'}"
+        diag_szoveg = ' '.join(diag) or 'a húzás előtt bukott'
+        if _platform() != "win32" or tiszta_app["attempts"]:
+            raise AssertionError(f"{uzenet} | #4929 diag: {diag_szoveg}") from hiba
+        return f"#4929 diag: {uzenet} | {diag_szoveg}"
     return None
 
 
@@ -864,10 +966,33 @@ def test_tiszta_profil_funkciok_valodi_kattintassal(
 
 def test_vorosszem_windowsos_kihagyasa_megtartja_a_diagnosztikat(monkeypatch):
     """A Windowsos tartalék kihagyás indoka a kattintási diagnosztikát is viszi (#4929)."""
+    class Ablak:
+        def mouseGrabberItem(self):
+            return None
+
+        def width(self):
+            return 800
+
+        def height(self):
+            return 600
+
+    class Edit:
+        redeyeRegionCount = 0
+        effectChain = ""
+
     monkeypatch.setitem(globals(), "_platform", lambda: "win32")
+    monkeypatch.setitem(globals(), "_aktiv_szerkeszto", lambda _window: "")
+    monkeypatch.setitem(globals(), "_nezo_es_panelek_allapota", lambda _window: "")
+    monkeypatch.setitem(globals(), "_nyitott_felugrok", lambda _window: [])
 
     def bukik(_app, _qt_app, diag):
         diag.append("hit-test=QQuickOverlay; active=False; redeyeActive=False→False")
+        diag.append(_vorosszem_diagnosztika(
+            Ablak(), Edit(), None, None, {
+                "overlay kattintás előtt": "Overlay gyerekei=[QQuickPopupItem(opened=nem)]",
+                "childAt kattintás után": "QQuickOverlay(objectName=<névtelen>) < nincs",
+            },
+        ))
         raise AssertionError("redeyeActive hamis a kattintás után")
 
     monkeypatch.setitem(
@@ -878,6 +1003,22 @@ def test_vorosszem_windowsos_kihagyasa_megtartja_a_diagnosztikat(monkeypatch):
     assert indok is not None
     assert "#4929 diag: redeyeActive hamis a kattintás után" in indok
     assert "hit-test=QQuickOverlay; active=False; redeyeActive=False→False" in indok
+    assert "overlay kattintás előtt=Overlay gyerekei=[QQuickPopupItem(opened=nem)]" in indok
+    assert "childAt kattintás után=QQuickOverlay(objectName=<névtelen>) < nincs" in indok
+
+
+def test_reszletes_leiras_kiirja_az_elem_tulajdonsagait(qt_app):
+    """Az osztály, a név, az opacitás és a z-sorrend bekerül a diagnosztikába (#4929)."""
+    elem = QQuickItem()
+    elem.setObjectName("diagElem")
+    elem.setOpacity(0.5)
+    elem.setZ(3)
+
+    leiras = _reszletes_leiras(elem)
+
+    assert leiras.startswith("QQuickItem(objectName=diagElem, ")
+    assert "opacity=0.50, z=3, " in leiras
+    assert "popup(" not in leiras
 
 
 def test_vorosszem_diagnosztika_nem_olvassa_a_torolt_kattintasi_celpontot(
