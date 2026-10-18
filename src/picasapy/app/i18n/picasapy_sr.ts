@@ -6480,7 +6480,7 @@ picasapy-origin-key: stringres:CFolderMgrDialog::warning;stringres:IDS_ROOT_WATC
             <source>If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to PicasaPy. Are you sure you want to do this?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_HOTFOLDER_CONFIRM</extracomment>
-            <translation>Ако уклоните прегледани директоријум, нове ставке које додајете у директоријум или на диск неће аутоматски бити додате у Picasa-у. Да ли сте сигурни да желите то да урадите?</translation>
+            <translation>Ако уклоните прегледани директоријум, нове ставке које додајете у директоријум или на диск неће аутоматски бити додате у библиотеку апликације PicasaPy. Да ли сте сигурни да желите то да урадите?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -10053,14 +10053,14 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
             <source>Add Folder to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>Додај директоријум у Picasa-у...</translation>
+            <translation>Додај директоријум у апликацију PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
             <source>Add &amp;File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>Додај &amp;датотеку у Picasa-у...</translation>
+            <translation>Додај &amp;датотеку у апликацију PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
@@ -12801,7 +12801,7 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <source>Add File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>Додај &amp;датотеку у Picasa-у...</translation>
+            <translation>Додај &amp;датотеку у апликацију PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36" />
@@ -17996,14 +17996,14 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <source>%d Photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation>%d фотографије(а) у Picasa-и</translation>
+            <translation>%d фотографије(а) у апликацији PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photo in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa</extracomment>
-            <translation>%d фотографија у Picasa-и</translation>
+            <translation>%d фотографија у апликацији PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />
