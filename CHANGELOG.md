@@ -9,7 +9,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.9.142] - 2026-10-18
 
-- A program neve a ragozott és összetett fordításokban is PicasaPy lett, tíz nyelven (#5298).
+- A rainbow effekt narancs, sárga és lila sávja már nem sötétebb az eredetinél: a gamma-görbét az eredeti szerint egyszer, az első sáv színéből számolja (#5304).
 
 ## [0.9.141] - 2026-10-18
 

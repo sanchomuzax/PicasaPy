@@ -2,7 +2,8 @@
 
 A lépések és a konstansok a `docs/specs/filters-decoded.md` #5296
 szakaszából származnak: 30%-os szinthúzás CarefulEnhance móddal,
-paraméterezett színmegőrzés, sávonkénti gamma-LUT, majd a hat palettaszín
+paraméterezett színmegőrzés, az első sáv színéből számolt gamma-LUT az egész
+képre, majd a hat palettaszín
 maximális csatornájával normalizált szorzókeverés.
 """
 
@@ -68,13 +69,17 @@ def _colorize_bands(pixels: np.ndarray) -> np.ndarray:
     height = pixels.shape[0]
     output = np.empty_like(pixels)
     boundaries = _band_boundaries(height)
+    # A callback a gamma-LUT-ot csak az első sávnál kéri (`0x008f94ac`
+    # `test esi,esi`, `0x008f94c6` `jne`), és az egész képre alkalmazza:
+    # minden sáv az első palettaszín görbéjét kapja (#5304).
+    adjusted_all = _gamma_lut(_PALETTE[0])[pixels].astype(np.uint16)
 
     for index, palette in enumerate(_PALETTE):
         start, end = boundaries[index : index + 2]
         if start == end:
             continue
         maximum = max(palette)
-        adjusted = _gamma_lut(palette)[pixels[start:end]].astype(np.uint16)
+        adjusted = adjusted_all[start:end]
         for channel, color in enumerate(palette):
             output[start:end, :, channel] = np.minimum(
                 255, adjusted[..., channel] * color // maximum
