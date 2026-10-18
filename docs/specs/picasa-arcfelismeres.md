@@ -3548,7 +3548,7 @@ Tehát a `0x006cde50` +0x44 hívása egy Red.dll-beli objektumon fut; a `DAT_00d
 
 **A +0x44 célja: NINCS MEG.** A cél a Red.dll-beli objektum vtáblájában van. A Red.dll a kutatási másolatban megvan (`plugins/Red.dll`), de nincs a bináris-indexben, és ebben a körben nem vizsgáltam. Ez a 960 px kérdéssel együtt a Red.dll-re irányít (29.7).
 
-**A `this+0x2908` írói: NINCS MEG (közvetlen írás nincs).** A teljes `.text` darabolt pásztázása (`paszta.py`, 12 s) a `[reg+0x2908]` alakot két függvényben találja, mindkettőben olvasásként: `0x0048e1f0` (`mov edx, [ebp+0x2908]`, `0x0048e2b1`) és `0x0048ef20` (`[edi+0x2908]` a `0x0048f4d2`-nél, `[ecx+0x2908]` a `0x0048f6f1`-nél). Író 0. Ez csak a közvetlen eltolásra igaz; a bázis-eltolt írás (mint a `0x00448fb0`-ban az `add esi, 0x2748`) nem zárható ki.
+**A `this+0x2908` írói: a `0x0048ef20`-ban van bázis-eltolt író (33.2); a közvetlen eltolású keresés 0-t adott, és ez téves volt.** A teljes `.text` darabolt pásztázása (`paszta.py`, 12 s) a `[reg+0x2908]` alakot két függvényben találja, mindkettőben olvasásként: `0x0048e1f0` (`mov edx, [ebp+0x2908]`, `0x0048e2b1`) és `0x0048ef20` (`[edi+0x2908]` a `0x0048f4d2`-nél, `[ecx+0x2908]` a `0x0048f6f1`-nél). Író 0. Ez csak a közvetlen eltolásra igaz; a bázis-eltolt írás (mint a `0x00448fb0`-ban az `add esi, 0x2748`) nem zárható ki.
 
 **A detektor-bemenet mérete: NINCS MEG.** A `0x006cde50` méret-ágának forrása (`this+0x2908 >> 1`) a 27.x szerint marad, a tábla írója nincs. A 960 px nincs a Picasa3.exe C-kódjában (27.2), a Red.dll-ben lehet.
 
@@ -3625,7 +3625,7 @@ Nincs fejlesztési lista: az N-pontok egyike sem zárult le úgy, hogy eltérés
 
 - A `this+0x2748` mezőre a függvényben nincs hivatkozás (a diszasszemblálásban nincs `0x2748`, `0x27a0`, `0x27a8`, `0x27ac` eltolás). Az írói tehát a függvényen kívül vannak; a 29.3 szerinti `0x00448fb0` bázis-eltolt `add esi, 0x2748` a jelölt.
 - A `this` osztálya NINCS MEG: a függvény 15 indirekt hívást tartalmaz (`call [reg+...]`), a vtábla-azonosítás nem történt meg.
-- **Ellentmondás (nyitott):** a dekompilált C (1353-2395. sor) többször ír a `this+0x2908` mezőbe (`*(float **)(param_1 + 0x2908) = pfVar18;`, a 324. és 340. sorban; nullázás a 376. és 387. sorban). A diszasszemblálás (teljes függvény, `0x0048ef20`-`0x00490331`, lefedettség ellenőrizve) viszont a `[reg+0x2908]` alakot csak olvasásként mutatja (`0x0048f4d2`, `0x0048f6f1`); íráshoz tartozó utasítás nincs. A 29.4 „író 0" állítása ezzel két úton nincs igazolva, és a C-ben látható írás forrása nem azonosított.
+- **Ellentmondás feloldva (33.2):** a C-ben látható `this+0x2908` írások az asm-ben **bázis-eltolt** alakban vannak: a `0x0048f4d8` `add edi, 0x28c0` után a `0x0048f4ff` `mov [edi+0x48], ebx` a `this+0x2908` mezőt írja. A `[reg+0x2908]` alakú keresés ezt nem látja, ezért a 29.4 „író 0" állítása hibás (javítva a 29.4-ben).
 
 ### 30.4 `0x00587110`: a `[Contacts2]` olvasója, nem írója
 
@@ -3700,7 +3700,8 @@ Az eredeti két olvasási/persistálási kódrészletben a formátumsztring `%I6
 
 - Ghidra-kör kell: `0x00586e20` - melyik belső ág módosítja a Contacts2 adatot, és milyen feltétellel hívja vagy ütemezi az INI-véglegesítést [blokkoló]
 - Ghidra-kör kell: `0x007b81e0`, `0x007b9630`, `0x007ba060` - a Choose esemény callbackje, a `0x00586e20` elérésének útja és a kiírás pillanata [blokkoló]
-- Ghidra-kör kell: `0x00586540` - a contact ID előállításának forrása és az eredeti tárolt alak szélessége [blokkoló]
+- **Válasz [részben] (#5184, 2026-10-18, 11. kör):** a `0x00586540` nem állítja elő a contact ID-t, hanem keres. A `this+0x38` alatti térképobjektumból (`0x0058fc40`) a kulcs hash-értéke (`0x00409df0`) szerint kiválasztott láncolt listát járja végig, és az első, `0x006f9890` egyezés-ellenőrzésen átmenő elem `+0x10` és `+0x14` dword-jét másolja a `param_4`-be (a C-dumpban: `*param_4 = puVar3[4]; param_4[1] = puVar3[5];`). A visszaadott alak tehát **8 bájt** (két dword): ez a memóriabeli találat mérete. A második ág (`0x00586a60`, bemenete a `puVar3[4]`, `puVar3[5]`) állítja elő a jelölt azonosítót, és a `param_3` karakterláncával hasonlít össze, 2 bájtonként (széles karakter, valószínűleg UTF-16). Bizonyítottsági fok: **feltételes** (egy út: a C-törzs). Az „eredeti tárolt alak szélessége" **NINCS MEG**: a 8 bájt a memória-elem mérete; az INI-ben tárolt alak külön kérdés (a `%I64x` formátum 16 hexa-jegy, 30.4).
+  - Ghidra-kör kell: `0x00586a60` - a contact ID-jelölt előállítása a `puVar3[4]`, `puVar3[5]` bemenetből, és a `param_2` kulcs alakja [blokkoló]
 
 ### 32.6 A #5184 „Kész, ha” pontjainak állapota
 
@@ -3715,3 +3716,47 @@ Az eredeti két olvasási/persistálási kódrészletben a formátumsztring `%I6
 | N8, People Manager referencia-kép | ✅ LEZÁRVA | A job-186 24. képe a 631 x 351-es People ablakot és a vezérlőket rögzíti; a mérési leírást a jegy tartalmazza. |
 
 Nincs új fejlesztői lista: a PicasaPy jelenlegi 16 jegyű azonosítója és INI API-n át történő mentése nem bizonyítottan tér el az eredetitől. N6 lezárásához a fenti három célzott Ghidra-kérdés és a Choose előtti/utáni fájldiff szükséges.
+
+## 33. #5184, tizenegyedik kör: `0x006956d0` állapotgépe, a `this+0x2908` alias-írója és a `0x00586540` (2026-10-18)
+
+**Forrás:** a `.ghidra10/2026-10-18-ghidra-10.txt` (C-dump: `0x006956d0`, `0x00430610`, `0x0048ef20`, `0x00586540`), kiegészítve a Picasa3.exe capstone-diszasszemblálásával (`annot_disasm.py`). A diszasszemblált kimenet nem került a repóba.
+
+### 33.1 `0x006956d0` → `0x0068c030`: a kapu és az állapotbájt
+
+- A `0x0068c030` (fájlíró, 22.5) hívása (`0x00697557`; C-dumpban az 1512-1513. sor) előtt `cmp byte ptr [esp+0x1b], 2` (`0x00697540`) áll: a hívás **csak** akkor fut, ha az állapotbájt 2.
+- Az állapotbájt (C-ben `uStack_1608._3_1_`) írói a diszasszemblálásban:
+  - `0x00695737` = 1 és `0x0069573e` = 0 (a C 189-192. sora, a `param_3[0x40]` ágon);
+  - `0x00696d36` = 2: az 1-es ágban, a `0x0068ac80` hívás (`0x00696d31`) után; ez a C-dumpban nem látszik;
+  - a `0x00506270` táblakeresés (`0x00695a52`), amely a `this+0x3f0` tábla bejegyzésének `+0x20` mezőjét írja `*arg`-ba, ha a bejegyzés típusa `0x3e9`; egyébként az elem nyers értéke marad.
+- Az 1-es ág feltétele: `[esp+0x1b] == 1` és `[ebx+0x100] != 0` (`0x00696cf5-0x00696d0e`). A spec 23.5/24.5 állítása (a `0x0068c030` csak a 2-es állapotnál fut, az 1-es első lépése a `0x0068ac80`) így **megerősítve**: a C-dump és a diszasszembly egyezik.
+- **Feltételes:** a „mikor" pontos feltétele, mert a `0x00696d3b` és a `0x00697540` közti vezérlési út nincs végigkövetve, és a `this+0x3f0` tábla feltöltése sincs megnézve.
+
+### 33.2 `0x0048ef20`: a `this+0x2908` írója bázis-eltolt
+
+- A `0x0048f4cb` ágban: `mov edi, [esp+0x150]` (a `this`), `mov ecx, [edi+0x2908]` (`0x0048f4d2`), `add edi, 0x28c0` (`0x0048f4d8`), majd `mov [edi+0x48], ebx` (`0x0048f4ff`). Mivel `edi = this+0x28c0`, a tárolás a `this+0x2908` mezőt írja (`0x28c0 + 0x48 = 0x2908`). A C-ben ez a `*(float **)(param_1 + 0x2908) = pfVar18;` megfelelője.
+- Az igazolt író tehát megvan. A többi C-beli író (`0x0048f282`, `0x0048f35f`, `0x0048f395`, `0x0048f84f`, `0x0048f886`, mind `[ebp+0x48]` vagy `[esi+0x48]`) ugyanezt az eltolást használja, de az alap-regiszterük forrását **nem követtem végig**.
+- A `this+0x28c0` alobjektum zárral védett tömb: a `+0x20` (`this+0x28e0`) tulajdonos-szál, a `+0x24` (`this+0x28e4`) rekurzió-szám, a `+0xc` CS-jelző és a `+0x28` CRITICAL_SECTION. Ez a `0x00506270` zármintájával egyezik; a `+0x48` a tömbmutató (`this+0x2908`), a `+0x4c` a darabszám-jelző (`this+0x290c`).
+- **A `this` osztálya: NINCS MEG.** A `0x0048ef20` nem konstruktor (nincs vtábla-írás a törzsében). A vtáblát a hívóknál kell keresni: `0x00414940`, `0x0047b020`, `0x00536a90`, `0x005c6500`.
+
+### 33.3 `0x00586540`
+
+- A válasz a 32.5 alatt van (részben: a 8 bájtos találat-alak megvan, az ID-előállítás a `0x00586a60`-ban van).
+
+### 33.4 Cáfoló kísérletek
+
+- **33.1 cáfolata:** kerestem olyan írót, amely az 1-es ágban a `[esp+0x1b]`-et 2-n kívül más értékre állítja: nincs (a 0/1 írók a 189-192. sor ágában vannak). A `0x00506270` nem ad 2-t, ha a bejegyzés típusa nem `0x3e9`.
+- **Nyitott ellenpélda:** ha egy nyers elem felső bájtja 2 (az elem ≥ `0x02000000`), a sikertelen `0x00506270`-keresés után is 2 marad a bájtban, és a `0x0068c030` lefut. Az elemek forrása nincs megnézve, ezt nem zártam ki.
+- **33.2 cáfolata:** a `[reg+0x2908]` alakú keresés nulla írót adott; a `[edi+0x48]` alakú tárolás ezt a nullát cáfolja. Más íróhelyet nem kerestem.
+
+### 33.5 Bizonyítottsági fok
+
+- `0x006956d0` → `0x0068c030` hívási kapu (`[esp+0x1b] == 2`): **megerősített** (C-dump és capstone-diszasszembly).
+- Az 1-es → 2-es átmenet a `0x0068ac80` után: **megerősített** (asm); a C-dumpban nincs.
+- A „mikor" (melyik elem vagy tábla-bejegyzés éri el a 2-t): **feltételes**.
+- `this+0x2908` íróinak C és asm egyeztetése: **megerősített** a `0x0048f4ff` íróra; a többi alias nincs végigkövetve.
+- A `this` osztálya: **NINCS MEG**.
+
+### 33.6 Nyitott Ghidra-kérdések
+
+- Ghidra-kör kell: a `this+0x3f0` tábla bejegyzéseinek írói (a `0x00506270` olvassa: a `0x3e9` típus és a `+0x20` érték forrása); a 2-es állapot innen jön [blokkoló]
+- Ghidra-kör kell: a `0x0048ef20` egyik hívójának (`0x00414940`, `0x0047b020`, `0x00536a90`, `0x005c6500`) törzse: melyik objektum-osztály `this`-e a `0x0048ef20` bemenete, és hol van a vtábla-írás [blokkoló]
