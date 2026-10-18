@@ -335,7 +335,7 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
             <source>Search for these photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bu fotoğrafları Picasa'da ara</translation>
+            <translation>Bu fotoğrafları PicasaPy uygulamasında ara</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
@@ -1181,7 +1181,7 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
 
 It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’nın kullandığı dili değiştirmek ister misiniz?
+            <translation>PicasaPy uygulamasının kullandığı dili değiştirmek ister misiniz?
 
 Değişiklik, PicasaPy bir sonraki açıldığında geçerli olur.</translation>
         </message>
@@ -2069,7 +2069,7 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’dan kaldır...</translation>
+            <translation>PicasaPy uygulamasından kaldır...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
@@ -4511,7 +4511,7 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
             <source>This file is read only. In order to edit this file, PicasaPy needs to copy the file's folder. Would you like to make a copy now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
-            <translation>Bu dosya salt okunur. Bu dosyayı düzenlemek için Picasa'nın dosya klasörünü kopyalaması gerekiyor. Şimdi bir kopya oluşturmak istiyor musunuz?</translation>
+            <translation>Bu dosya salt okunur. Bu dosyayı düzenlemek için PicasaPy uygulamasının dosya klasörünü kopyalaması gerekiyor. Şimdi bir kopya oluşturmak istiyor musunuz?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2088" />
@@ -6386,7 +6386,7 @@ picasapy-origin-key: initialscan:Text2(initialscan/text4a)</extracomment>
             <source>Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by PicasaPy by using the Folder Manager tool (available from the Tools menu)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/text5);initialscan:Text2(initialscan/text5)</extracomment>
-            <translation>Fotoğraf araması dosyaları hiçbir zaman başka konumlara taşımaz veya kopyalamaz. Picasa’da hangi klasörlerin görüntüleneceğini Klasör Yöneticisi aracını kullanarak seçebilirsiniz (Araçlar menüsünde bulunur).</translation>
+            <translation>Fotoğraf araması dosyaları hiçbir zaman başka konumlara taşımaz veya kopyalamaz. PicasaPy uygulamasında hangi klasörlerin görüntüleneceğini Klasör Yöneticisi aracını kullanarak seçebilirsiniz (Araçlar menüsünde bulunur).</translation>
         </message>
         <message>
             <source>Continue</source>
@@ -6462,7 +6462,7 @@ picasapy-origin-key: stringres:CFolderMgrDialog::warning;stringres:IDS_ROOT_WATC
             <source>If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to PicasaPy. Are you sure you want to do this?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_HOTFOLDER_CONFIRM</extracomment>
-            <translation>İzlenen bir klasörü kaldırdığınızda, diskteki bu klasöre eklediğiniz yeni öğeler Picasa'ya otomatik olarak eklenmez. Bu işlemi yapmak istediğinizden emin misiniz?</translation>
+            <translation>İzlenen bir klasörü kaldırdığınızda, diskteki bu klasöre eklediğiniz yeni öğeler PicasaPy uygulamasına otomatik olarak eklenmez. Bu işlemi yapmak istediğinizden emin misiniz?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6497,7 +6497,7 @@ Face detection is separate: you can watch a folder and still keep faces in it ou
 
 Bir Kere Tara, klasörde şu anda bulunan fotoğrafları ekler ve ardından klasörü izlemeyi bırakır.
 
-Picasa’dan Kaldır, klasörü kitaplığınızdan çıkarır. Fotoğraflar diskinizde kalır.
+PicasaPy uygulamasından Kaldır, klasörü kitaplığınızdan çıkarır. Fotoğraflar diskinizde kalır.
 
 Yüz algılama ayrı bir ayardır: klasörü izlerken içindeki yüzleri kitaplığın dışında tutabilirsiniz.</translation>
         </message>
@@ -6512,7 +6512,7 @@ Yüz algılama ayrı bir ayardır: klasörü izlerken içindeki yüzleri kitapl�
             <source>For each folder, you can choose whether or not to have PicasaPy find pictures inside it.  You can also pick folders to watch for new pictures.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: foldermgr_text:Label(foldermgr/instructions_text)</extracomment>
-            <translation>Her bir klasör için, Picasa'nın içindeki resimleri bulması veya bulmaması yönünde seçim yapabilirsiniz. Ayrıca, yeni resimler için izlemek üzere klasör seçebilirsiniz.</translation>
+            <translation>Her bir klasör için, PicasaPy uygulamasının içindeki resimleri bulması veya bulmaması yönünde seçim yapabilirsiniz. Ayrıca, yeni resimler için izlemek üzere klasör seçebilirsiniz.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="43" />
@@ -6533,7 +6533,7 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’dan Kaldır</translation>
+            <translation>PicasaPy uygulamasından Kaldır</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
@@ -6575,7 +6575,7 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’dan Kaldır</translation>
+            <translation>PicasaPy uygulamasından Kaldır</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -8397,7 +8397,7 @@ picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
 
 It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’nın kullandığı dili değiştirmek ister misiniz?
+            <translation>PicasaPy uygulamasının kullandığı dili değiştirmek ister misiniz?
 
 Değişiklik, PicasaPy bir sonraki açıldığında geçerli olur.</translation>
         </message>
@@ -8795,7 +8795,7 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Locate in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa'da Konumlandır</translation>
+            <translation>PicasaPy uygulamasında Konumlandır</translation>
         </message>
         <message>
             <source>Locate</source>
@@ -10027,14 +10027,14 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
             <source>Add Folder to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>Picasa'ya Klasör Ekle...</translation>
+            <translation>PicasaPy uygulamasına Klasör Ekle...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
             <source>Add &amp;File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>&amp;Picasa'ya Dosya Ekle...</translation>
+            <translation>&amp;PicasaPy uygulamasına Dosya Ekle...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
@@ -10395,7 +10395,7 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Picasa'dan Kaldır...</translation>
+            <translation>&amp;PicasaPy uygulamasından Kaldır...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
@@ -12376,14 +12376,14 @@ Kaynak medyadaki TÜM DOSYALARI silmeyi seçtiniz.
             <source>1 file will not be imported because it is already a duplicate in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’da zaten yinelenen bir dosya olduğundan 1 dosya içe aktarılmayacak.
+            <translation>PicasaPy uygulamasında zaten yinelenen bir dosya olduğundan 1 dosya içe aktarılmayacak.
 </translation>
         </message>
         <message>
             <source>%1 files will not be imported because they are already duplicates in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’da zaten yinelenen dosyalar olduğundan %1 dosya içe aktarılmayacak.
+            <translation>PicasaPy uygulamasında zaten yinelenen dosyalar olduğundan %1 dosya içe aktarılmayacak.
 </translation>
         </message>
         <message>
@@ -12538,15 +12538,15 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
             <source>Exclude photos that are already imported into PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’ya zaten aktarılmış fotoğrafları hariç tut</translation>
+            <translation>PicasaPy uygulamasına zaten aktarılmış fotoğrafları hariç tut</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
             <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-                <numerusform>Bunlardan %n tanesi zaten Picasa’da yineleniyor</numerusform>
-                <numerusform>Bunlardan %n tanesi zaten Picasa’da yineleniyor</numerusform>
+                <numerusform>Bunlardan %n tanesi zaten PicasaPy uygulamasında yineleniyor</numerusform>
+                <numerusform>Bunlardan %n tanesi zaten PicasaPy uygulamasında yineleniyor</numerusform>
             </translation>
         </message>
         <message>
@@ -12774,7 +12774,7 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <source>Add File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>&amp;Picasa'ya Dosya Ekle...</translation>
+            <translation>&amp;PicasaPy uygulamasına Dosya Ekle...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36" />
@@ -13695,7 +13695,7 @@ You can also draw a square around any red eye that PicasaPy may have missed.</so
 
 Not: Bir değişikliği silmek için kutuya tıklayabilirsiniz.
 
-Picasa’nın gözden kaçırmış olabileceği bir kırmızı gözün çevresine de kare çizebilirsiniz.</translation>
+PicasaPy uygulamasının gözden kaçırmış olabileceği bir kırmızı gözün çevresine de kare çizebilirsiniz.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -13733,7 +13733,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>You can also draw a square around any red eye that PicasaPy may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’nın gözden kaçırmış olabileceği bir kırmızı gözün çevresine kare de çizebilirsiniz. Her gözü ayrı ayrı seçmek için fareyi gözün çevresinde tıklayıp basılı tutarak sürükleyin. Alanın üzerinde bir seçim kutusu görünür.</translation>
+            <translation>PicasaPy uygulamasının gözden kaçırmış olabileceği bir kırmızı gözün çevresine kare de çizebilirsiniz. Her gözü ayrı ayrı seçmek için fareyi gözün çevresinde tıklayıp basılı tutarak sürükleyin. Alanın üzerinde bir seçim kutusu görünür.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -15159,7 +15159,7 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/cancel)</extracomment>
             <source>This file is read only. In order to edit this file, PicasaPy needs to copy the file's folder. Would you like to make a copy now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
-            <translation>Bu dosya salt okunur. Bu dosyayı düzenlemek için Picasa'nın dosya klasörünü kopyalaması gerekiyor. Şimdi bir kopya oluşturmak istiyor musunuz?</translation>
+            <translation>Bu dosya salt okunur. Bu dosyayı düzenlemek için PicasaPy uygulamasının dosya klasörünü kopyalaması gerekiyor. Şimdi bir kopya oluşturmak istiyor musunuz?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
@@ -15675,7 +15675,7 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa’dan kaldır...</translation>
+            <translation>PicasaPy uygulamasından kaldır...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -15894,7 +15894,7 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
         <message>
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Picasa'dan Kaldır...</translation>
+            <translation>&amp;PicasaPy uygulamasından Kaldır...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>
@@ -17969,14 +17969,14 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <source>%d Photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation>Picasa'da %d Fotoğraf</translation>
+            <translation>PicasaPy uygulamasında %d Fotoğraf</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photo in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation>Picasa'da %d Fotoğraf</translation>
+            <translation>PicasaPy uygulamasında %d Fotoğraf</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

@@ -65,41 +65,7 @@ KIVETEL = {
 
 # Ragozott fordítások: a forrásszöveg, amelynek a fordításában a Picasa-név
 # még a régi alakban áll, mert a javításhoz nyelvi ítélet kell (Sonnet-szint).
-PENDING: frozenset[str] = frozenset(
-    {
-        '\nPicasaPy does not recognize %1 of the files to be deleted.\n',  # ko
-        '\nPicasaPy does not recognize 1 of the files to be deleted.\n',  # ko
-        '%1 files will not be imported because they are already duplicates in PicasaPy.\n',  # cs, fi, hr, ko, pl, sl, tr
-        '%d Photo in PicasaPy',  # cs, fi, ko, sl, sr, tr
-        '%d Photos in PicasaPy',  # cs, fi, ko, sl, sr, tr
-        '%n of those are duplicates already in PicasaPy',  # cs, fi, hr, ko, pl, sl, tr
-        '&Remove from PicasaPy...',  # cs, fi, hr, ko, pl, sl, tr
-        '1 file will not be imported because it is already a duplicate in PicasaPy.\n',  # cs, fi, hr, ko, pl, sl, tr
-        'Add &File to PicasaPy...',  # cs, fi, ko, sl, sr, tr
-        'Add File to PicasaPy...',  # cs, fi, ko, sl, sr, tr
-        'Add Folder to PicasaPy...',  # cs, fi, hr, ko, sl, sr, tr
-        "As PicasaPy scans your photos, the faces it finds are automatically grouped for easy naming.\n\nThings to know:\n\nTo identify a person, click 'Add a name', then type in the person's name and press Enter.  A new People album will be created each time you name someone for the first time.\n\n(TIP: Sign in with your Google Account to gain access to all of your Google Account contacts while naming.)\n\nTo ignore a person, click the 'X' button on the face thumbnail.\n\nSuggestions: After you name someone, PicasaPy may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.\n\n\n Click 'Learn More' for information about this feature.",  # ko
-        "As PicasaPy scans your photos, the faces it finds are automatically grouped for easy naming.\n\nThings to know:\n\nTo identify a person, click 'Add a name', then type in the person's name and press Enter. A new People album will be created each time you name someone for the first time.\n\n(TIP: Sign in with your Google Account to gain access to all of your contacts while naming.)\n\nTo ignore a person, click the 'X' button on the face thumbnail.\n\nSuggestions: After you name someone, PicasaPy may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.",  # ko
-        'Change the language PicasaPy uses?\n\nIt will change the next time PicasaPy is opened.',  # fi, hr, ko, sl, tr
-        'Exclude photos that are already imported into PicasaPy',  # cs, fi, hr, ko, pl, sl, tr
-        'For each folder, you can choose whether or not to have PicasaPy find pictures inside it.  You can also pick folders to watch for new pictures.',  # ko, tr
-        'If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to PicasaPy. Are you sure you want to do this?',  # cs, fi, ko, sl, sr, tr
-        'Locate in PicasaPy',  # cs, fi, hr, ko, pl, sl, tr
-        'PicasaPy Notifier',  # cs, hr, sv
-        'PicasaPy failed to initialize Google Maps.  Please make sure that you are connected to the Internet.',  # cs, ko
-        'PicasaPy had a problem loading this file(s)\n',  # fi, ko
-        'PicasaPy has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that PicasaPy may have missed.',  # ko, tr
-        'PicasaPy is now showing the files you have not previously backed up.',  # sl
-        'PicasaPy is ready to search for pictures on your computer',  # ko
-        'Remove from PicasaPy',  # cs, fi, hr, ko, pl, sl, tr
-        'Remove from PicasaPy...',  # cs, fi, hr, ko, pl, sl, tr
-        'Scan Always keeps watching the folder: pictures you add to it later show up on their own.\n\nScan Once takes the pictures that are in the folder now and then forgets about it.\n\nRemove from PicasaPy takes the folder out of your library. The pictures stay on your disk.\n\nFace detection is separate: you can watch a folder and still keep faces in it out of the library.',  # cs, fi, hr, ko, pl, sl, tr
-        'Search for these photos in PicasaPy',  # fi, hr, ko, pl, sl, tr
-        'Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by PicasaPy by using the Folder Manager tool (available from the Tools menu)',  # ko, tr
-        "This file is read only. In order to edit this file, PicasaPy needs to copy the file's folder. Would you like to make a copy now?",  # fi, ko, tr
-        'You can also draw a square around any red eye that PicasaPy may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.',  # ko, tr
-    }
-)
+PENDING: frozenset[str] = frozenset()
 
 
 def _kivetel(szoveg: str) -> bool:

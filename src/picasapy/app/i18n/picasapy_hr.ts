@@ -335,7 +335,7 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
             <source>Search for these photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pretraži ove fotografije u Picasi</translation>
+            <translation>Pretraži ove fotografije u aplikaciji PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
@@ -1185,7 +1185,7 @@ It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Želite li promijeniti jezik koji PicasaPy koristi?
 
-Promjena će stupiti na snagu pri sljedećem pokretanju Picase.</translation>
+Promjena će stupiti na snagu pri sljedećem pokretanju aplikacije PicasaPy.</translation>
         </message>
         <message>
             <source>Files:</source>
@@ -2071,7 +2071,7 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ukloni iz Picase...</translation>
+            <translation>Ukloni iz aplikacije PicasaPy...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
@@ -6515,7 +6515,7 @@ Face detection is separate: you can watch a folder and still keep faces in it ou
 
 „Skeniraj jednom” uvozi slike koje su trenutačno u mapi, a zatim je više ne prati.
 
-„Ukloni iz Picase” uklanja mapu iz vaše biblioteke. Slike ostaju na disku.
+„Ukloni iz aplikacije PicasaPy” uklanja mapu iz vaše biblioteke. Slike ostaju na disku.
 
 Prepoznavanje lica zasebna je postavka: mapu možete nadzirati, a lica u njoj ipak izostaviti iz biblioteke.</translation>
         </message>
@@ -6551,7 +6551,7 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ukloni iz Picase</translation>
+            <translation>Ukloni iz aplikacije PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
@@ -6593,7 +6593,7 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ukloni iz Picase</translation>
+            <translation>Ukloni iz aplikacije PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -8425,7 +8425,7 @@ It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Želite li promijeniti jezik koji PicasaPy koristi?
 
-Promjena će stupiti na snagu pri sljedećem pokretanju Picase.</translation>
+Promjena će stupiti na snagu pri sljedećem pokretanju aplikacije PicasaPy.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -8821,7 +8821,7 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Locate in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Prikaži u Picasi</translation>
+            <translation>Prikaži u aplikaciji PicasaPy</translation>
         </message>
         <message>
             <source>Locate</source>
@@ -10053,7 +10053,7 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
             <source>Add Folder to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>Dodavanje mape u Picasu...</translation>
+            <translation>Dodavanje mape u aplikaciju PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
@@ -10421,7 +10421,7 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Ukloni iz Picase...</translation>
+            <translation>&amp;Ukloni iz aplikacije PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
@@ -12402,14 +12402,14 @@ Odabrali ste izbrisati SVE DATOTEKE s izvornog medija.
             <source>1 file will not be imported because it is already a duplicate in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Datoteka se neće uvesti jer je već duplikat u Picasi.
+            <translation>Datoteka se neće uvesti jer je već duplikat u aplikaciji PicasaPy.
 </translation>
         </message>
         <message>
             <source>%1 files will not be imported because they are already duplicates in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 datoteka neće se uvesti jer su već duplikati u Picasi.
+            <translation>%1 datoteka neće se uvesti jer su već duplikati u aplikaciji PicasaPy.
 </translation>
         </message>
         <message>
@@ -12564,16 +12564,16 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
             <source>Exclude photos that are already imported into PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Isključi fotografije koje su već uvezene u Picasi</translation>
+            <translation>Isključi fotografije koje su već uvezene u aplikaciji PicasaPy</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
             <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-                <numerusform>Od toga je %n već duplikat u Picasi.</numerusform>
-                <numerusform>Od toga su %n već duplikati u Picasi.</numerusform>
-                <numerusform>Od toga je %n već duplikata u Picasi.</numerusform>
+                <numerusform>Od toga je %n već duplikat u aplikaciji PicasaPy.</numerusform>
+                <numerusform>Od toga su %n već duplikati u aplikaciji PicasaPy.</numerusform>
+                <numerusform>Od toga je %n već duplikata u aplikaciji PicasaPy.</numerusform>
             </translation>
         </message>
         <message>
@@ -15702,7 +15702,7 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ukloni iz Picase...</translation>
+            <translation>Ukloni iz aplikacije PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -15921,7 +15921,7 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
         <message>
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Ukloni iz Picase...</translation>
+            <translation>&amp;Ukloni iz aplikacije PicasaPy...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>
@@ -16882,7 +16882,7 @@ picasapy-origin-key: stringres:collage::done</extracomment>
             <source>PicasaPy Notifier</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CNotifierPopup::window_name</extracomment>
-            <translation>Picasin dojavljivač</translation>
+            <translation>Alat za obavijesti aplikacije PicasaPy</translation>
         </message>
         <message>
             <source>Completed Importing</source>

@@ -335,7 +335,7 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
             <source>Search for these photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Etsi näitä valokuvia Picasasta</translation>
+            <translation>Etsi näitä valokuvia PicasaPystä</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
@@ -1182,7 +1182,7 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
 
 It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Haluatko vaihtaa Picasan käyttämää kieltä?
+            <translation>Haluatko vaihtaa PicasaPyn käyttämää kieltä?
 
 Muutos tulee voimaan, kun PicasaPy avataan seuraavan kerran.</translation>
         </message>
@@ -2070,7 +2070,7 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Poista Picasasta...</translation>
+            <translation>Poista PicasaPystä...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
@@ -4513,7 +4513,7 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
             <source>This file is read only. In order to edit this file, PicasaPy needs to copy the file's folder. Would you like to make a copy now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
-            <translation>Tämä tiedosto on vain luettavissa. Jotta tiedostoa voidaan muokata, Picasan on kopioitava tiedoston kansio. Haluatko luoda kopion nyt?</translation>
+            <translation>Tämä tiedosto on vain luettavissa. Jotta tiedostoa voidaan muokata, PicasaPyn on kopioitava tiedoston kansio. Haluatko luoda kopion nyt?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2088" />
@@ -6471,7 +6471,7 @@ picasapy-origin-key: stringres:CFolderMgrDialog::warning;stringres:IDS_ROOT_WATC
             <source>If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to PicasaPy. Are you sure you want to do this?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_HOTFOLDER_CONFIRM</extracomment>
-            <translation>Jos poistat katsotun kansion, kansioon levylle lisättyjä uusia kuvia ei lisätä automaattisesti Picasaan. Haluatko varmasti tehdä tämän?</translation>
+            <translation>Jos poistat katsotun kansion, kansioon levylle lisättyjä uusia kuvia ei lisätä automaattisesti PicasaPyyn. Haluatko varmasti tehdä tämän?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6506,7 +6506,7 @@ Face detection is separate: you can watch a folder and still keep faces in it ou
 
 ”Skannaa kerran” -toiminto tuo nykyiset kansion kuvat ja unohtaa kansion sen jälkeen.
 
-”Poista Picasasta” poistaa kansion kirjastostasi. Kuvat säilyvät levyllä.
+”Poista PicasaPystä” poistaa kansion kirjastostasi. Kuvat säilyvät levyllä.
 
 Kasvojentunnistus on erillinen asetus: voit seurata kansiota ja silti jättää sen kasvot pois kirjastosta.</translation>
         </message>
@@ -6542,7 +6542,7 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Poista Picasasta</translation>
+            <translation>Poista PicasaPystä</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
@@ -6584,7 +6584,7 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Poista Picasasta</translation>
+            <translation>Poista PicasaPystä</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -8377,7 +8377,7 @@ picasapy-origin-key: stringres:CThumbUI::GetBadImagesYesButton</extracomment>
             <source>PicasaPy had a problem loading this file(s)
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasalla oli ongelma tämän tiedoston lataamisessa
+            <translation>PicasaPyllä oli ongelma tämän tiedoston lataamisessa
 </translation>
         </message>
         <message>
@@ -8410,7 +8410,7 @@ picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
 
 It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Haluatko vaihtaa Picasan käyttämää kieltä?
+            <translation>Haluatko vaihtaa PicasaPyn käyttämää kieltä?
 
 Muutos tulee voimaan, kun PicasaPy avataan seuraavan kerran.</translation>
         </message>
@@ -8808,7 +8808,7 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Locate in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Etsi Picasasta</translation>
+            <translation>Etsi PicasaPystä</translation>
         </message>
         <message>
             <source>Locate</source>
@@ -10040,14 +10040,14 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
             <source>Add Folder to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>Lisää kansio Picasaan...</translation>
+            <translation>Lisää kansio PicasaPyyn...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
             <source>Add &amp;File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>Lisää &amp;tiedosto Picasaan...</translation>
+            <translation>Lisää &amp;tiedosto PicasaPyyn...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
@@ -10408,7 +10408,7 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Poista &amp;Picasasta...</translation>
+            <translation>Poista &amp;PicasaPystä...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
@@ -12389,14 +12389,14 @@ Olet valinnut KAIKKIEN TIEDOSTOJEN poistamisen lähdemedialta.
             <source>1 file will not be imported because it is already a duplicate in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>1 tiedostoa ei tuoda, koska se on jo Picasan kaksoiskappale.
+            <translation>1 tiedostoa ei tuoda, koska se on jo PicasaPyn kaksoiskappale.
 </translation>
         </message>
         <message>
             <source>%1 files will not be imported because they are already duplicates in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 tiedostoa ei tuoda, koska ne ovat jo Picasan kaksoiskappaleita.
+            <translation>%1 tiedostoa ei tuoda, koska ne ovat jo PicasaPyn kaksoiskappaleita.
 </translation>
         </message>
         <message>
@@ -12551,15 +12551,15 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
             <source>Exclude photos that are already imported into PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Jätä pois kuvat, jotka on jo tuotu Picasaan</translation>
+            <translation>Jätä pois kuvat, jotka on jo tuotu PicasaPyyn</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
             <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-                <numerusform>Näistä %n on jo Picasassa oleva kaksoiskappale.</numerusform>
-                <numerusform>Näistä %n on jo Picasassa olevia kaksoiskappaleita.</numerusform>
+                <numerusform>Näistä %n on jo PicasaPyssä oleva kaksoiskappale.</numerusform>
+                <numerusform>Näistä %n on jo PicasaPyssä olevia kaksoiskappaleita.</numerusform>
             </translation>
         </message>
         <message>
@@ -12787,7 +12787,7 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <source>Add File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>Lisää &amp;tiedosto Picasaan...</translation>
+            <translation>Lisää &amp;tiedosto PicasaPyyn...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36" />
@@ -15172,7 +15172,7 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/cancel)</extracomment>
             <source>This file is read only. In order to edit this file, PicasaPy needs to copy the file's folder. Would you like to make a copy now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
-            <translation>Tämä tiedosto on vain luettavissa. Jotta tiedostoa voidaan muokata, Picasan on kopioitava tiedoston kansio. Haluatko luoda kopion nyt?</translation>
+            <translation>Tämä tiedosto on vain luettavissa. Jotta tiedostoa voidaan muokata, PicasaPyn on kopioitava tiedoston kansio. Haluatko luoda kopion nyt?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
@@ -15688,7 +15688,7 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Poista Picasasta...</translation>
+            <translation>Poista PicasaPystä...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -15907,7 +15907,7 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
         <message>
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Poista &amp;Picasasta...</translation>
+            <translation>Poista &amp;PicasaPystä...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>
@@ -17982,14 +17982,14 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <source>%d Photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation>%d valokuvaa Picasassa</translation>
+            <translation>%d valokuvaa PicasaPyssä</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photo in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa</extracomment>
-            <translation>%d valokuva Picasassa</translation>
+            <translation>%d valokuva PicasaPyssä</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />
