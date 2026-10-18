@@ -41,7 +41,9 @@ from picasapy.render.chain import KNOWN_UNRENDERED_OPS, apply_filters
 #: #1142: a `blur` KIKERÜLT innen — a `merokit-2` mérése szerint a
 #: csúszkatartomány fölötti küszöbnél valódi elmosást ad, ezért kapott
 #: modellt (`render/blur.py`, `tests/render/test_lanc_tagok_1142.py`).
-_STILL_UNRENDERED_KEYS = ("colorfix", "rainbow")
+#: #5304: a `rainbow` kikerült innen; a lánc most a natív callback
+#: specifikációját alkalmazza (`render/rainbow.py`).
+_STILL_UNRENDERED_KEYS = ("colorfix",)
 
 
 @pytest.fixture
@@ -68,10 +70,10 @@ class TestKnownUnrenderedRegistry:
         # egy ismert (renderelt) effekt + egy felismert-de-renderelhetetlen
         # egy láncban: az ismert effekt hasson, a másik csak jelentve legyen
         result, skipped = apply_filters(
-            sample, parse_filters("Invert=1;rainbow=1;")
+            sample, parse_filters("Invert=1;colorfix=1;")
         )
         assert not np.array_equal(result, sample), "az Invert lefutott"
-        assert skipped == ("rainbow",)
+        assert skipped == ("colorfix",)
 
 
 class TestGlimmerNowRendered:
@@ -117,18 +119,15 @@ class TestPicnikNoopMarker:
         assert not np.array_equal(result, sample)
         assert skipped == ("Boost",)
 
-    def test_uj_es_ismeretlen_egyszerre_a_kihagyott_listaban(self, sample):
-        # egy teljesen ismeretlen (soha nem dokumentált) név és egy #347-es
-        # felismert-de-renderelhetetlen név is a kihagyott-listába kerül —
-        # a lista NEM különbözteti meg az API szintjén, a
-        # KNOWN_UNRENDERED_OPS regiszter felelős ezért a downstream
-        # jelentésben
+    def test_ismeretlen_mellett_a_rainbow_lefut(self, sample):
+        # #5304: az ismeretlen név kihagyódik, a renderelt rainbow viszont
+        # ténylegesen változtat a képen és nem kerül a kihagyott-listába.
         result, skipped = apply_filters(
             sample, parse_filters("totallyunknownfilter=1;rainbow=1;")
         )
-        assert np.array_equal(result, sample)
-        assert skipped == ("totallyunknownfilter", "rainbow")
-        assert "rainbow" in KNOWN_UNRENDERED_OPS
+        assert not np.array_equal(result, sample)
+        assert skipped == ("totallyunknownfilter",)
+        assert "rainbow" not in KNOWN_UNRENDERED_OPS
         assert "totallyunknownfilter" not in KNOWN_UNRENDERED_OPS
 
 
