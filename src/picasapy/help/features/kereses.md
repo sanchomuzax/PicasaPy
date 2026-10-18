@@ -7,8 +7,13 @@ Keres a **fájlnévben**, a **képfeliratban**, a **címkékben** és a
 **mappanévben** is — ha egy mappa neve illeszkedik, a mappa teljes
 tartalma találat lesz.
 
-Gépelés közben javaslatok jelennek meg; a bal hasáb pedig a keresésre
-szűkül, és mappánként mutatja, hány találat van benne.
+Gépelés közben a mező alatt, a mezővel egyező szélességben egy
+javaslatlista nyílik: a beírt szövegre illő **mappákat** és **albumokat**
+mutatja. Egy mappát választva a mappára, egy albumot választva az
+albumra lépsz, és a keresés kiürül. A bal hasáb közben a keresésre
+szűkül, és mappánként mutatja, hány találat van benne. A találatok
+összesített sora az **Albumok** csoportban, album ikonnal áll, például:
+„Találatok a(z) "tó" kifejezésre (12)".
 
 A javaslatlistát billentyűzettel is kezelheted, miközben a kurzor a
 mezőben van: a **↓** és a **↑** lépked a javaslatok között (a kiemelt sor

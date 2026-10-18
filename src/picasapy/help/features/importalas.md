@@ -109,7 +109,8 @@ készíthetsz állóképet vagy videót:
 - **Beállítások** — a **Fényképezőgép** és a **Hang** forrásának
   választása, és a **Méret** (320 × 240, 640 × 480, 800 × 600 vagy
   1280 × 720). Az **Alkalmaz** elfogadja, a **Mégse** elveti;
-  a választás megmarad. A felső sor **Fényképezőgép** gombja a
+  a választás megmarad, és a pillanatkép meg a videó ebben a méretben
+  készül. A felső sor **Fényképezőgép** gombja a
   Beállításokból visszavisz az élő képhez;
 - a már felvett klipek között a **‹** és **›** gombbal lépkedhetsz,
   a ▶ lejátssza őket;
@@ -161,10 +162,18 @@ volt adat**.
 Két fontos tulajdonsága van:
 
 - **Meglévő adatot soha nem ír felül.** Ahol a kép mellett már van
-  kulcsszó, hely vagy arc, azt érintetlenül hagyja.
+  kulcsszó vagy hely, azt érintetlenül hagyja. Az arcoknál arconként
+  dönt: a már meglévő arcokhoz nem nyúl, de a képen még hiányzó arcokat
+  hozzáadja.
 - **Bármikor megismételhető** — a kimaradt mappákkal folytatja.
 
 A neveken, kulcsszavakon és helyeken kívül az átvétel ezeket is hozza:
+
+- azokat az **arcokat**, amelyeket a régi Picasa megtalált, de nem
+  tudott senkihez kötni: ezek a **Név nélküliek** albumba kerülnek, ahol
+  elnevezheted őket. A megnevezett arcok neve a régi Picasa
+  névjegyzékéből jön, tehát ha ott később átneveztél valakit, a friss
+  név érkezik meg;
 
 - a mappák és az albumok **kézi képsorrendjét** - ha a régi Picasában
   húzással rendezted a képeket, itt is abban a sorrendben látod őket;

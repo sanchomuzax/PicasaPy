@@ -23,6 +23,9 @@ program sorszámozza őket. A párbeszédben bekapcsolhatod, hogy a névbe
 kerüljön bele a **Dátum** és a **Képfelbontás** is; alul példát mutat,
 hogyan fog kinézni a kész név.
 
+A névmezőben az **Enter** elfogadja az új nevet (ugyanaz, mint az OK), az
+**Esc** pedig megszakítja az átnevezést.
+
 - A **Dátum** a felvétel **dátumát és idejét** (másodpercre) teszi a
   névbe, a számítógéped területi beállítása szerinti formában. A
   fájlnévben nem használható jelek (például a kettőspont vagy a
@@ -155,13 +158,16 @@ ott a kép már a saját mappájában látszik.
 A helyi menüben ezen kívül:
 
 - **Fájl megnyitása** — a rendszer alapértelmezett programjával,
-- **Társítás** — te választod ki, melyik programmal nyíljon meg a kép.
-  Windowson a rendszer saját „Megnyitás ezzel" ablaka jön elő. Linuxon a
-  **Társítás...** ablak a képtípushoz társított programokat sorolja fel:
-  válassz egyet, és a **Megnyitás** gombbal abban nyílik meg a kép. Ha
-  egyetlen program sincs a típushoz társítva, az ablak ezt írja: „Ehhez a
-  fájltípushoz nincs társított alkalmazás." (A néző helyi menüjének
-  **Társítás** tétele még nem működik.)
+- **Társítás** - te választod ki, melyik programmal nyíljon meg a kép.
+  Windowson ez egyetlen menütétel, és a rendszer saját „Megnyitás
+  ezzel" ablakát hozza elő. Linuxon almenü nyílik: felül a képtípushoz
+  társított programok állnak, egy kattintás abban nyitja meg a képet;
+  alul a **Társítás...** tétel egy ablakot nyit, ahol ugyanezek közül
+  választhatsz, és a **Megnyitás** gombbal indítod. Ha egyetlen program
+  sincs a típushoz társítva, az almenüben csak a **Társítás...** áll, az
+  ablak pedig ezt írja: „Ehhez a fájltípushoz nincs társított
+  alkalmazás." (A néző helyi menüjének **Társítás** tétele még nem
+  működik.)
 - **Teljes elérési út másolása** — a vágólapra teszi az útvonalat.
 
 ## Mappák
