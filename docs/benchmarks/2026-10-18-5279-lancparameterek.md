@@ -29,7 +29,7 @@ Az eredmény a `filters-decoded.md` irányított effekt-szakaszának kétcsúszk
 alakjával egyezik. A `filterdesc-registry.md` általános puck-sorrendjéhez
 hozzáírtam a három irányított natív effekt kivételét: itt a puck állítja a
 csúszkákat, de az x/y értékek nem részei a mentett láncnak. A #4233-as
-hiányos mező kezelése továbbra is pontos aritást követ.
+hiányos mező kezelése továbbra is pontos paraméterszámot követ.
 
 ## Képi összevetés
 
