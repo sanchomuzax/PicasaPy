@@ -3351,6 +3351,98 @@ Ha a vtábla címe megvan, a következő kör a `+0x1c` üzenetkezelőre szól: 
 
 **Nyitott kérdések mérlege (38.2.13):** 0 nyílt · 2 lezárva (a -21 írói; a CreateWindowEx `lpParam`-ja kizárva) · 3 blokkolt (az érték; a vtábla címe; az üzenetkezelő) · 0 hatókörön kívül.
 
+#### 38.2.14 Tizedik kör: a Ctrl+5 két belépési útja, a mód-bájt és a qshow-vezérlés (#4443, 2026-10-18)
+
+**Kérdés.** (1) Melyik switch-ág hívja a `0x005e8a70`-et a `0x9ccc`-hez? (2) Milyen feltétellel nyit qshow-t a Ctrl+5 (job-188: kijelölés nélkül is nyit), milyen paraméterrel, és mi a különbség a Lejátszás (diavetítés) hívásához képest? (3) Mit olvasható ki a qshow-ablak létrehozásából (`0x00983670`) és a `0x0052d430`-ból a bemutató vezérléséről?
+
+**Forrás és módszer.**
+- (A) Helyi diszasszembly, csak olvasás: a `Picasa3.exe` PE-jéből, a munkafa ideiglenes `.bt/bt_kiolv.py` szkriptjével (a kör végén törölve). Vizsgált függvények: `0x005cb990` (WM_COMMAND-elosztó), `0x005e60d0` (billentyű-kezelő), `0x005e8a70`, `0x008037e0`, `0x005696c0` (kapu), `0x00559150` (menütábla-építő). Az ugrótábla-bejegyzést a PE-ből olvastam, nem a Ghidra-szövegből.
+- (B) Azonosító-hozzárendelés: a menütábla-építő rekordjai és a `.rdata` feliratkulcsok (`eMenuView::ID_VIEW_TIMELINE` stb.) összevetése. A rekord `+0` mezője a `FUN_009ae560(kulcs)` eredményéből íródik (`mov [rekord], eax`), a `+0xa` a parancsazonosító.
+- (C) A jelenlegi kód: `src/picasapy/app/qml/PicasaMenuBar.qml`, `src/picasapy/app/qml/Main.qml`, `MainToolbar.qml`, és a `01bb55264` commit (#1903).
+- A függvényméreteket a bináris-index `functions` táblájából vettem. A vtábla-hívások nem látszanak az index `xrefs` táblájában, ezért a hívólista nem negatív állítás.
+
+**Eredmények.**
+
+1. **A `0x9ccc` hívási útja (megerősített; A + B).**
+   - `0x005cb990`: `lea eax,[esi-0x9c42]` · `cmp eax,0xfa` · `ja 0x5cd979` · `movzx edx,byte ptr [eax+0x5cdb34]` · `jmp dword ptr [edx*4+0x5cd9fc]`.
+   - `0x9ccc - 0x9c42` = index `0x8a`; a bájt (`0x5cdbbe`) értéke 47; az ugrótábla 47. bejegyzése (`0x5cdab8`) a `0x005cbbdd`-et adja.
+   - `0x005cbbdd`: `push 1` · `push ebx` · `call 0x005e8a70` · `jmp 0x5cd9e6`. Vagyis `(this = ebx, mód = 1)`.
+   - A `0x005cbbd1` ág (`push edi`, ahol `edi = 0`) a `0x9c6d` és a `0x9c9f` azonosítókat kapja: `(this, 0)`.
+   - Az azonosítók (B): `0x9ccc` = `eMenuView::ID_VIEW_TIMELINE` (`Ti&meline`, rekord `0xd6e090`, a kulcs-mutató a `0x0055a9ed`-nél íródik). `0x9c9f` = `eMenuView::ID_VIEW_SLIDESHOW` („&Slideshow", rekord `0xd6e07c`, `0x0055a9a3`). `0x9c6d` = `eMenuLabelFolder::ID_ALBUM_SLIDESHOW` („&View Slideshow", rekord `0xd6e1d4`, `0x0055ae81`).
+   - A `0x005e8a70` hívói (index, HÍVÓK): `005cbbd3`, `005cbbe0` (`FUN_005cb990`); `005da743`, `005da7ae` (`FUN_005d9cc0`, az eszköztár); `005e146f` (`FUN_005e0f70`, nem vizsgáltam); `005e626f`, `005e628a` (`FUN_005e60d0`, a billentyű).
+
+2. **A Ctrl+5 két belépési útja.**
+   - **E1, a menü.** A WM_COMMAND `0x9ccc` közvetlenül a `0x5cbbdd` ágra fut (1. pont). Az ágban nincs feltétel: a `0x005e8a70` `(this, 1)` paraméterrel hívódik. A gyorsbillentyű-hozzárendelés (accelerator-tábla) forrása NINCS MEG.
+   - **E2, a billentyű.** A `0x005e60d0` a WM_KEYDOWN-t (`0x100`) kezeli. A `cmp word ptr [esi+8],0x11` · `je 0x5e6603` a Ctrl-billentyű SAJÁT lenyomását zárja ki; nem követeli meg a Ctrl meglétét. A `0x005e6279` ág (a „5"-ös): `push ebp` · `call 0x005696c0` · `test al,al` · `jne 0x5e65f7` (kilépés) · `push 1` · `push ebp` · `call 0x005e8a70`. A `0x005e625e` ág (a „4"-es) ugyanez `push 0`-val, vagyis mód 0.
+   - **A kapu (`0x005696c0`, 91 bájt, `ret 4`).** `al = 1` pontosan akkor, ha: `[0x00d67914] != 0` ∧ a `0x009c2fc0(0x00c8ec30)` singleton nem 0 ∧ `[singleton+0x20c] == 0` ∧ `InterlockedCompareExchange([this+0x668], 0, 0) == InterlockedCompareExchange([this+0x99c], 0, 0)`. A `0x00c40328` IAT-slot a PE import-táblájából `KERNEL32!InterlockedCompareExchange`. A 0-ra való összehasonlítás nem ír (0 → 0), tehát a kapu tisztán olvas.
+   - A billentyű-út a kapu HAMIS eredményénél nyit. A Ctrl+5 csak akkor éri el a `0x005e8a70`-et, ha a kapu 0 (például nincs singleton, vagy a két mező nem egyezik).
+   - **A billentyű-út Ctrl-feltétele: NINCS MEG.** A látott kódban nincs `GetKeyState(VK_CONTROL)`-hívás. Lehet, hogy a Ctrl feltétele a `0x005e6710` hívóláncban van (lásd a nyitott pontokat).
+
+3. **A `0x005e8a70` elágazása a móddal (megerősített a sorrend).**
+   - Belépéskor: `call 0x005696c0` (`0x005e8acb`, `push ebx`). Ha ez 1, a `0x009cd8a0` hívás után `cmp eax,0xf4242` · `je 0x5e8b3d` (kilépés-jelölt ág).
+   - `cmp byte ptr [0x00d67849],0` · `je 0x5e8b06`. Ha a globális nem 0: `push 0x10` · `call dword ptr [GetAsyncKeyState]` (Shift) · `jne 0x5e8d5d` (Shift lenyomva: a `0x5e8d5d` ág).
+   - `0x005e8b06`: `cmp byte ptr [ebp+0xc],0` · `jne 0x5e8d5d`. **Mód 1 (Időrend)** a `0x5e8d5d` ágra megy; ebben vannak a K1-K4 kapuk (38.2.8). **Mód 0 (Lejátszás)** a `0x5e8b10` ágra megy. Ez a tartomány (`0x5e8b10`-`0x5e8d5c`) nem hívja a K1-et (`0x005d2a70`) és a K4-et (`0x005675d0`). Hívásai közül (részlet): `0x0052e8a0`, `0x0040fb50`, `0x004edf60`, `0x005c6710`, `0x00717bb0`, `0x00579330`, `0x009cd730`, `0x0052e2f0`, `0x005d1520`.
+   - A mód-bájt a `0x005e9706`-ban íródik a qshow-struktúra 1. bájtjába (`mov cl,[ebp+0xc]` · `mov [esp+0x65],cl`). A `0x005e9787` (`call 0x008037e0`) az egyetlen hívóhely.
+
+4. **A qshow-építő (`0x008037e0`) mód-ága (megerősített).**
+   - `0x008039de`: `mov edx,[esp+0x6c]` · `cmp byte ptr [edx+1],0` · `je 0x8039fd`. Mód 0: `push esi` · `call 0x00801cf0` (sima diavetítés).
+   - Mód nem 0: `call 0x007fda00` (Időrend-váltás) · `cmp byte ptr [esi+0x3bf],0` · ha 0, `call 0x00802060`.
+   - A `0x008037e0` a `Preferences\BigSlideshow2` kulcsot olvassa (38.2.9).
+
+5. **A qshow-ablak és a vezérlés (megerősített a létrehozás és a továbbítás; az objektum NINCS MEG).**
+   - A `0x00983670` `CreateWindowExA`-alakú hívása az `"ytWindow"` osztályt használja (`.ghidra4443/2026-10-17-qshow-ctrl5.txt`, 2524. sor). Utána `(*DAT_00d69524)(hwnd, 0xffffffeb)` (2532. sor): a -21 (GWLP_USERDATA) mező írása. Az írt érték (a harmadik argumentum) NINCS MEG (38.2.13).
+   - A WndProc (`0x00983940`) a -21 objektum `vt+0x1c` metódusára továbbít (38.2.12). Az objektum és a vtábla NINCS MEG (38.2.13).
+   - **`0x0052d430` (23 bájt): NEM továbbító.** `push edi` · `lea edi,[ecx+0x68]` · `mov dword ptr [ecx],0x00c8b4b0` · `call 0x00401000` · `mov dword ptr [edi],0` · `pop edi` · `ret`. Vtábla-beállító (a 38.2.8 helyesbítését igazolja).
+   - A főablak billentyű-kapcsolója (`0x005e60d0`) a 38.2.8 szerint nem kezel Escape-et, Space-t, nyilakat és Home/End-et. Ebben a körben ezt nem mértem újra. Ezek hatása a qshow-ablakban, a WndProc-objektumban van: NINCS MEG.
+   - **Kilépés (Exit):** NINCS MEG ebben a körben (a 38.2.8 szerinti `this+0x50` / `vt+0x14` hívás nincs újramérve).
+
+**Bizonyítottsági fok.**
+
+| állítás | fok | alap |
+|---|---|---|
+| `0x9ccc` → `0x005cbbdd` → `0x005e8a70(this, 1)` | megerősített | A: PE-tábla és diszasszembly; B: rekord-kulcs |
+| `0x9c9f` (Lejátszás) és `0x9c6d` (mappa-diavetítés) → `(this, 0)` | megerősített | A + B |
+| menü (E1) és billentyű (E2) egyaránt mód 1 | megerősített | A |
+| billentyű-kapu: IAT `InterlockedCompareExchange`, a feltételek szerkezete | megerősített | A + PE-import |
+| a kapu futásidejű értékei (singleton, flag, a két mező) | NINCS MEG | statikusan nem mérhető |
+| a Ctrl-feltétel a billentyű-útban | NINCS MEG | a látott kódban nincs Ctrl-ellenőrzés |
+| mód 1 → `0x5e8d5d`, mód 0 → `0x5e8b10` | megerősített (elágazás) | A |
+| a mód-0 ág listaépítése | NINCS MEG | nem követtem végig |
+| qshow-építő: mód 0 → `0x801cf0`; mód ≠ 0 → `0x7fda00` + `0x802060` | megerősített | A |
+| qshow-ablak: `CreateWindowExA`-alak, `"ytWindow"`, -21 írás | megerősített | Ghidra C (2524., 2532. sor) |
+| `0x0052d430` = vtábla-beállító | megerősített | A |
+| qshow billentyűi, Exit, vtábla | NINCS MEG | a WndProc-objektum hiányzik |
+
+**Cáfoló kísérletek.**
+1. „A Ctrl+5 nem jut a `0x005e8a70`-hez a `0x9ccc` switch-ágon át." **Cáfolva:** a `0x9ccc` egyedi indexe (`0x8a`) a `0x5cbbdd` ágra mutat, és ez az egyetlen ág, amely a `0x9ccc`-hez tartozik.
+2. „A Lejátszás és az Időrend ugyanazt az ágat használja." **Cáfolva a szerkezetben:** mód 1 a `0x5e8d5d`-re, mód 0 a `0x5e8b10`-re ugrik, és csak mód 1 hívja a K1-et és a K4-et. A mód-0 ág listatartalmát viszont nem bizonyítottam.
+3. „A `0x0052d430` a bal gombos esemény továbbítója." **Cáfolva** (23 bájt, vtábla-beállító).
+4. „A kapu minden Ctrl+5-öt blokkol." **Cáfolva:** a kapu hamis eredménynél enged tovább, a futásidejű értékek viszont nem ismertek.
+
+**Eredeti | Nálunk | Teendő**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Nézet ▸ Időrend (`0x9ccc`) → `0x005e8a70(this, 1)`, kijelölés nélkül is (job-188) | menüpont `enabled: false` (`PicasaMenuBar.qml:1160-1164`), Ctrl+5 `Shortcut` `enabled: false` (`Main.qml:1765-1773`), #1903 | Engedélyezés csak a valódi bemutató megépítése UTÁN, a menüpont és a billentyű együtt. |
+| Ctrl+5 billentyű-út: `0x005e60d0` „5"-ös ága, a `0x005696c0` kapuval, `(this, 1)` | nincs | A kapu futásidejű értékei és a Ctrl-feltétel kell a fejlesztés előtt (lásd a nyitott pontokat). |
+| Lejátszás (`0x9c9f`) és mappa-diavetítés (`0x9c6d`): `(this, 0)`, a qshow mód-0 ága (`0x801cf0`) | Ctrl+4 és a mappa-diavetítés megvan (a 29. tétel szerint) | Nincs teendő; a bemutató útja más, mint az Időrend-é. |
+| Időrend-váltás (`0x007fda00`, `0x802060`) mód 1-ben | nincs | A lépéssort (38.2.9) a bemutató-váltásnál kell követni. |
+| qshow-ablak: `ytWindow`, `CreateWindowExA`, `[this+0x6c]` HWND, -21 objektum | `TimelineView.qml`: év/hónap rács, az alkalmazásablakon belül | A rács nem az eredeti bemutató. A qshow-t külön, teljes képernyős módként kell megépíteni. |
+| Eszköztár-gomb `thumbui/timelinebutton` (`m_hidden`, 38.2.4) | `MainToolbar.qml` gombja #1903-mal eltávolítva | Az eredeti gomb rejtett, nem kell visszaállítani. |
+| Lista-forrás: a nézet gyűjteménye (`[this+0xeac]`, feltételezés) | nincs | Ha a bemutató a nézet képeit járja, a listát az aktuális gyűjteményből kell építeni, nem a Flipbook-rekordtárból (38.2.8). |
+| qshow billentyűi (nyíl, Space, Esc, Home/End) és egérkezelése | nincs | NINCS MEG: a `-21` objektum vtáblájának `+0x1c` metódusa kell (38.2.13). |
+| Kilépés (Exit) célja | nincs | NINCS MEG (a 38.2.8 `this+0x50` hívása nincs újramérve). |
+
+**Nyitott kérdések mérlege (38.2.14).** 4 nyílt · 3 lezárva (a `0x9ccc` hívási útja; a `0x0052d430` helyesbítése; a mód-elágazás és a qshow-építő mód-ága) · 3 blokkolt · 0 hatókörön kívül.
+
+Ghidra-kör kell: 0x005e6710 - a „5"-ös billentyű-ág (`0x005e6279`) hívóláncában van-e Ctrl- vagy Shift-ellenőrzés, és a Ctrl+5 billentyű-kötésének forrása (accelerator-tábla vagy a hívó). [blokkoló]
+
+Eredeti futtatás kell (Colab, nem Ghidra): Ctrl+5 kijelölés nélkül, a kapu-értékek naplózásával (`[this+0x668]` és `[this+0x99c]` egyezése, a singleton `+0x20c` flagje, a `[0x00d67849]` értéke). Ez dönti el a job-188 és a kód viszonyát. [blokkoló]
+
+Pásztázás kell (`paszta.py`, memóriakapuval): a `[0x00d67849]` globális neve (Flipbook-beállítás?) és írói. [blokkoló a Shift-ág értelmezéséhez]
+
+Ghidra-kör kell: 0x005e8b10 - a mód-0 (Lejátszás) ág listaépítése: melyik gyűjteményből épít, és van-e K-kapu. [nem blokkoló]
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
