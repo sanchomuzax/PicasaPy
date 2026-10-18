@@ -329,7 +329,7 @@ képnél két, véletlenszerűen választott kivágás között pásztáz, tehá
 nem mindig a kép közepére nagyít.
 
 Ha egy korábbi változatban olyan átmenetet választottál, ami ebben a
-listában már nincs, a vetítés **Szétoszlás**sal indul. A többi átmenet
+listában már nincs, a vetítés a **Szétoszlás** átmenettel indul. A többi átmenet
 (például az arcra közelítő változat) a [Mozgófilm](mozgofilm.md)
 készítőjében maradt meg.
 
