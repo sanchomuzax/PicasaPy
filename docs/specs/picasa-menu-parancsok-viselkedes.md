@@ -3441,7 +3441,7 @@ Eredeti futtatás kell (Colab, nem Ghidra): Ctrl+5 kijelölés nélkül, a kapu-
 
 Pásztázás kell (`paszta.py`, memóriakapuval): a `[0x00d67849]` globális neve (Flipbook-beállítás?) és írói. [blokkoló a Shift-ág értelmezéséhez]
 
-Ghidra-kör kell: 0x005e8b10 - a mód-0 (Lejátszás) ág listaépítése: melyik gyűjteményből épít, és van-e K-kapu. [nem blokkoló]
+Válasz [részben, 2026-10-18]: a `0x005e8b10` a `FUN_005e8a70(this, mode)` mód-0 ágának belépési pontja. A `cmp byte ptr [ebp+0xc], 0` (`0x005e8b06`) után, a `jne` nem ugrik, és a `test ebx, ebx` (`0x005e8b10`) a C 127-130. sorának `param_1[0x93]++` (`+0x24c`) ágát nyitja. **Gyűjtemény:** `FUN_004edf60(this[0xaf] + 0xf8, &lista)` tölti a listát a `this[0xaf]+0xf8` objektumból; ennek az objektumnak az azonossága NINCS MEG (a `FUN_004edf60` törzse nincs a dumpban). **K-kapu van, három:** (1) a belépő kapu (C 117-122: a `0x009c2fc0` oneup-keresés és a `this+0x332e` jelző, valamint a `0x005696c0` és a `0x009cd8a0 == 0xf4242` ellenőrzés) `-1`-gyel tér vissza; (2) a `this[0x3aa]` objektum `+0xb4` vtábla-hívása nullát ad, és a függvény `-1`-gyel tér vissza; (3) a `this+0x336c` jelzőt (C-ben `param_1 + 0xcdb`, mutató-indexelés) a `this+0x332f` és a típuskód-szűrő (8, 9, 10, 11, 12, 23, 29) adja. Lásd még a Shift-ág (`DAT_00d67849`) mellékágát. [nem blokkoló]
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
