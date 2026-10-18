@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.135] - 2026-10-18
+
+- A Helyek térképe betöltés közben az eredeti Picasa-ikont és feliratot mutatja a forgó jelző helyett (#5275).
+
 ## [0.9.134] - 2026-10-18
 
 - A régi irányított fényerő- és élesítés-effektek teljes paramétersorral futnak, ismeretlen lánctagnál pedig megáll a feldolgozás (#5279).
