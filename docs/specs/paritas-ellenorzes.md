@@ -589,3 +589,124 @@ Mérési vakfolt: nem futtattam az alkalmazást, és nem rendereltem a mai felü
 | #4881 | A párbeszédek szabványos gombjai a választott felületi nyelven jelenjenek meg | A Picasa saját `.fen` párbeszédei a saját gombfeliratukat használják (`picasa-fen-dialogs.md:106-107`: OK, Cancel; `:37`: Igen/Nem/Mégse). A Windows-üzenetdoboz gombjainak eredeti viselkedését nem mértük. | `application.py:1014-1029` (`_install_qt_translator`: a Qt `qtbase_*.qm` fordítója), `:1044` (`QLocale.setDefault` a választott nyelvvel, a területet a rendszer adja). | **Egyezik** a nyelv elvében. A tizedesjel a rendszer területét követi (ADR-004), az eredetit nem mértük. |
 | #5007 | A mappára húzott indexképek átkerülnek, a Másolás/Beillesztés átvisz képet | `picasa-menu-parancsok-viselkedes.md:627-633`: a vágólapra fájlok kerülnek (IDList, FileGroupDescriptor), a Kivágás és a Másolás különbsége a `Preferred DropEffect` formátumban van. A húzás szemantikája (mozgatás vagy másolás) nincs leírva. | `FolderPane.qml:1193-1214` (`folderDropArea` → `photosDroppedOnFolder`), `Main.qml:3315-3324` (mozgatás: `movePhotos`), `fileops_controller.py:590` (`copyFilesToClipboard`), `:622` (`pasteFilesFromClipboard`). | **Részben egyezik.** A vágólap modellje egyezik a forrással. A húzás mozgatása forrás nem található. |
 | #5121 | Meglévő album mellett ráhúzással nem lehet új albumot készíteni | Colab, eredeti Picasa 3.9, a jegy kommentjei szerint (job-155, -156, -159, -160): húzás az Albumok fejlécére, a sorok alá és az Új album (+) gombra nem készít albumot, meglévő albummal sem. A kontroll húzás a meglévő „Teszt album” sorra működik. Kiinduláskor, csak a „Recently Updated” rendszeralbummal, nincs súgósor (job-155). | `AlbumsSection.qml:65-67` (súgó és ejtési terület csak `albumsModel.length === 0` esetén), `:93-94` (`albumDropArea`). | **Egyezik** a meglévő album melletti viselkedésben. **Eltér** a nyugalmi súgósorban: a mai kódban üres albumlistánál látszik, az eredetinél a job-155 szerint nem. |
+
+## 7. réteg: effektkimenet az eredetihez mérve (#5277, 2026-10-18)
+
+**Mérési állapot:** `c668968b94cf706f63e6596c8e2f2e7fea467ccb` (a munkafa induló, friss main állapota). A mérő a `tools/golden/analyze_validation_kit.py::mean_de` CIE76 átlagos ΔE-jét használja: a renderelt képet előbb a Picasa-referencia JPEG mintavételezésével és kvantálótábláival kódolja újra (`tools/golden/jpeg_reference.py`, #4940), majd a dekódolt képeket hasonlítja össze. Az ítéleti küszöb változatlanul `MATCH_DE = 2,0`; `ΔE ≤ 2,0` egyezik.
+
+A referenciák a `~/.local/share/picasapy-meroadat/meroadat.tar` archívumból származnak; csak a szükséges fájlokat bontottam ki a munkafa ideiglenes könyvtárába, majd a mérés végén törlöm. NAS-adatot nem használtam. A futási környezet terhelési naplója (gép/mag/RAM, futás előtti és utáni 1/5/15 perces terhelés) **NINCS MEG**; minden mintapár egy render- és ΔE-futást kapott, a `meroszett` 4 párhuzamos workerrel futott.
+
+A táblázatban a **mintaszám** az adott effektcsaládhoz tartozó, tényleges eredeti Picasa-exporttal összehasonlított sorok száma; a mért eltérés ezek legnagyobb ΔE-je. Belekerült a 684-es szettből 179 export (180 sorból egy `unsharp/max` export hiányzott), a `PicasaPy meroszett` eredeti exportkészletéből 178, a `merokit-2`-ből 49, a `3084-poszterizalas`-ból 2 és a `951-kiemelesek-arnyekok-fel-allas`-ból 1. Ez összesen 409 összehasonlított effektmintasor, 73 mérőszett-csoportban. A további 7 `merokit-3` eredeti export láncviselkedési próba, külön lent.
+
+A korábbi, 2026-10-13-i táblázat még az `a8ba353b3561` kódállapotot mérte; az aktuális `b90c9736c` #4940 óta a JPEG kódolás normalizált. Ezért a régi táblázat nyers RGB-értékei nem közvetlenül összevethetők az alábbi, JPEG-kvantálótáblákkal normalizált ΔE-kkel (például `nightvision`: nyers 4,528, normalizálva 0,000).
+
+| Effekt | Mintaszám | Mért eltérés (max. ΔE76) | Küszöb | Ítélet |
+|---|---:|---:|---:|---|
+| `ansel` | 2 | 0,000 | 2,000 | egyezik |
+| `autobacklight` | 3 | 0,000 | 2,000 | egyezik |
+| `autocolor` | 4 | 0,096 | 2,000 | egyezik |
+| `autocontrast` | 3 | 0,000 | 2,000 | egyezik |
+| `autolight` | 3 | 0,645 | 2,000 | egyezik |
+| `backlight` | 7 | 0,000 | 2,000 | egyezik |
+| `blur` | 9 | 0,000 | 2,000 | egyezik |
+| `boost` | 6 | 0,000 | 2,000 | egyezik |
+| `border` | 6 | 0,000 | 2,000 | egyezik |
+| `bw` | 2 | 0,000 | 2,000 | egyezik |
+| `cinemascope` | 2 | 0,000 | 2,000 | egyezik |
+| `colorfix` | 7 | 0,000 | 2,000 | egyezik |
+| `colortemp` | 6 | 0,000 | 2,000 | egyezik |
+| `comicize` | 6 | 0,112 | 2,000 | egyezik |
+| `contrast` | 6 | 0,138 | 2,000 | egyezik |
+| `crossprocess` | 4 | 0,000 | 2,000 | egyezik |
+| `dir_brite` | 2 | 4,433 | 2,000 | eltér |
+| `dir_sat` | 2 | 1,608 | 2,000 | egyezik |
+| `dir_sharp` | 2 | 10,740 | 2,000 | eltér |
+| `dir_tint` | 6 | 0,000 | 2,000 | egyezik |
+| `dropshadow` | 6 | 0,000 | 2,000 | egyezik |
+| `enhance` | 3 | 0,000 | 2,000 | egyezik |
+| `fill` | 5 | 0,000 | 2,000 | egyezik |
+| `finetune` | 6 | 0,833 | 2,000 | egyezik |
+| `finetune2` | 7 | 0,698 | 2,000 | egyezik |
+| `focalpixelate` | 6 | 0,000 | 2,000 | egyezik |
+| `focalzoom` | 6 | 0,071 | 2,000 | egyezik |
+| `gamma` | 6 | 0,000 | 2,000 | egyezik |
+| `glow` | 6 | 0,001 | 2,000 | egyezik |
+| `glow2` | 6 | 0,001 | 2,000 | egyezik |
+| `grain` | 4 | 3,142 | 2,000 | eltér |
+| `grain2` | 4 | 2,232 | 2,000 | eltér |
+| `hdr` | 6 | 0,000 | 2,000 | egyezik |
+| `heatmap` | 6 | 0,000 | 2,000 | egyezik |
+| `holga` | 6 | 0,000 | 2,000 | egyezik |
+| `invert` | 2 | 0,000 | 2,000 | egyezik |
+| `ir` | 4 | 0,002 | 2,000 | egyezik |
+| `linblur` | 6 | 0,012 | 2,000 | egyezik |
+| `localcontrast` | 6 | 0,000 | 2,000 | egyezik |
+| `lomo` | 6 | 0,000 | 2,000 | egyezik |
+| `matte` | 6 | 0,000 | 2,000 | egyezik |
+| `museummatte` | 6 | 0,000 | 2,000 | egyezik |
+| `neon` | 4 | 0,000 | 2,000 | egyezik |
+| `nightvision` | 6 | 0,000 | 2,000 | egyezik |
+| `orton` | 6 | 0,000 | 2,000 | egyezik |
+| `pencilsketch` | 6 | 0,022 | 2,000 | egyezik |
+| `picnikfocalpixelate` | 8 | 0,159 | 2,000 | egyezik |
+| `picnikgrain` | 7 | 0,000 | 2,000 | egyezik |
+| `picniktint` | 4 | 0,000 | 2,000 | egyezik |
+| `pixelate` | 6 | 0,000 | 2,000 | egyezik |
+| `polaroid` | 6 | 0,001 | 2,000 | egyezik |
+| `quantizepalette` | 8 | 0,000 | 2,000 | egyezik |
+| `radblur` | 6 | 0,007 | 2,000 | egyezik |
+| `radsat` | 6 | 0,000 | 2,000 | egyezik |
+| `radtint` | 6 | 0,000 | 2,000 | egyezik |
+| `reanimatedeyecolor` | 6 | 0,000 | 2,000 | egyezik |
+| `roundededges` | 6 | 0,000 | 2,000 | egyezik |
+| `sat` | 6 | 0,000 | 2,000 | egyezik |
+| `sepia` | 4 | 0,000 | 2,000 | egyezik |
+| `shadow` | 6 | 0,001 | 2,000 | egyezik |
+| `sixties` | 6 | 0,000 | 2,000 | egyezik |
+| `soften` | 6 | 0,000 | 2,000 | egyezik |
+| `tilt` | 6 | 0,044 | 2,000 | egyezik |
+| `tint` | 21 | 0,000 | 2,000 | egyezik |
+| `triple` | 6 | 0,137 | 2,000 | egyezik |
+| `triple2` | 6 | 0,148 | 2,000 | egyezik |
+| `triple3` | 6 | 0,131 | 2,000 | egyezik |
+| `twotone` | 6 | 0,000 | 2,000 | egyezik |
+| `unsharp` | 8 | 0,000 | 2,000 | egyezik |
+| `unsharp2` | 8 | 0,000 | 2,000 | egyezik |
+| `vignette` | 9 | 0,000 | 2,000 | egyezik |
+| `warm` | 2 | 0,000 | 2,000 | egyezik |
+| `whitept` | 5 | 0,081 | 2,000 | egyezik |
+
+
+### A küszöb feletti effektkimenetek
+
+- **`dir_brite`** — a 684-es `dir_brite__alap.jpg` ΔE-je **4,433**, a `meroszett` azonos paramétersoráé **4,427**. Mindkét Picasa-lánc `dir_brite=1,0.500000,0.500000;`; a mai `parse_filters_prefix` a regiszter teljes paramétersort követelő szabálya mellett a mintában szereplő két vezérlőértéknél elvágja a láncot, így a renderer a forrást adja vissza. A Picasa-export a forrástól ΔE **4,442**-vel eltér, tehát az eredeti effekttag lefutott; a külön `compare_render.py` nyers összevetése is **4,442**-t mér; a közvetlen `apply_dir_brite` kimenet viszont ΔE **0,187**-re egyezik vele. Valószínű ok: a beolvasó aritás-szabálya nem kezeli a mért puck-sort. Helyi specifikációs kapcsolat: `filters-decoded.md` „Az irányított család” (#3859) és a #4233 olvasási aritás-szabálya. Nyitott jegyállapot: **nem ellenőrizhető**, a `gh issue list --search` API-kapcsolati hibával leállt.
+- **`dir_sharp`** — a 684-es exporttal a ΔE **10,740**, a `meroszett` megfelelő mintájával **10,717**; mindkét lánctag ugyanaz a kétértékű forma, és ugyanott szakad meg. Az eredeti Picasa-kimenet a forrástól ΔE **10,748**-del tér el, amit a külön `compare_render.py` nyers útja is mér, míg a közvetlen `apply_dir_sharp` ΔE-je **0,384**. Valószínű ok és helyi specifikációs kapcsolat megegyezik a `dir_brite` soréval; a nyitott jegy állapota GitHub-hozzáférés híján nem állapítható meg.
+- **`grain`** — `merokit-2/szemcse_05.jpg`, `grain=1;grain=1;`: ΔE **3,142**. A helyi `filters-decoded.md` #4936 szerint a Picasa-export a munkamenet `k=2,3` zajmagjait, a jelenlegi láncrender pedig új láncban `k=0,1`-et használ. Ez illik a mért eltéréshez; a nyitott jegy állapotát nem lehetett ellenőrizni.
+- **`grain2`** — `merokit-2/szemcse_02.jpg`, `grain2=1;`: ΔE **2,232**. A helyi #4936 specifikáció a `k=0` és a Picasa-munkamenetben mért `k=1` eltérését dokumentálja. A nyitott jegy állapota nem ellenőrizhető.
+
+A `dir_sat` két mintájából az egyiknél a parser szintén elvágja a kétértékű sort, de a legnagyobb mért ΔE **1,608**, ezért az előírt 2,0-s küszöb szerinti ítélet „egyezik”. Ez az egyezés a kimeneti küszöbre vonatkozik, és nem bizonyítja, hogy a tag lefutott. A 684-es készlet `autobacklight`, `grain2` és vegyes írásmódú `tint` sorai között is van levágott tag; ezek Picasa-referenciáján a kimeneti különbség a küszöbön belül marad.
+
+### Referencia nélküli effektek
+
+A `FILTER_REGISTRY` 56 `mode=effect` bejegyzéséből 55-höz van eredeti Picasa-kimenet legalább az egyik felsorolt készletben. **`debug`** az egyetlen referencia nélküli effekt-regiszterbejegyzés; a `make_validation_kit.py` fejlesztői eszközként eleve kizárja, és nem felhasználói effekt. Az `unsharp/max` egyedi 684-es exportja hiányzik, de az effekt más készletében van eredeti referencia, ezért az `unsharp` nem referencia nélküli.
+
+### Kiegészítő láncmérések
+
+| Lánc és készlet | Mintaszám | Mért eltérés (max. ΔE76) | Küszöb | Ítélet |
+|---|---:|---:|---:|---|
+| `nincsilyen=1;bw=1;` (`merokit-3`) | 7 | 10,123 (`B_ismeretlen_elol.jpg`) | 2,000 | eltér |
+| Border → sepia (`3229`, 01) | 1 | 0,000 | 2,000 | egyezik |
+| sepia → Border (`3229`, 02) | 1 | 0,000 | 2,000 | egyezik |
+| Border → Vignette (`3229`, 03) | 1 | 0,000 | 2,000 | egyezik a küszöb szerint; a parser a Vignette-tagot levágta |
+| `crop64` → Vignette (`3229`, 04) | 1 | 39,829; eltérő képméret | — | nem összehasonlítható |
+
+A `merokit-3`-ban az eredeti Picasa az ismeretlen tag után megállt, a PicasaPy viszont az utána következő `bw`-t is lefuttatta (ΔE **10,123**). Ez a `picasa-ini-format.md` ismeretlen tagok utáni leállási leírásával ellentétes; helyi kódkapcsolat a `parse_filters_prefix` ismeretlen név ága, korábbi viselkedési hivatkozás #1140. A `3229/04` képmérete PicasaPy-n **376×659**, az eredeti exporté **1600×1200**, ezért az eltérés nem fogadható el effekt-paritási ítéletként. A `3229/03` kimeneti különbsége a JPEG-normalizált küszöb szerint nulla, de a parser a `Vignette=1,35,1.4,0` tagot nem adta át a renderernek.
+
+A GitHubon a vizsgált eltérésekre futtatott négy csak-olvasási `gh issue list --search` parancs egyaránt `error connecting to api.github.com` hibával tért vissza. Emiatt nem igazolható, hogy a helyi #4233, #4936 és #1140 hivatkozásokhoz van-e jelenleg nyitott, megfelelő jegy; jegyet nem hoztam létre.
+
+
+### Bizonyítottsági fok és cáfoló kör
+
+**Bizonyítottsági fok: feltételes az összesített táblára.** A teljes effektmátrix minden ΔE-je a fenti, egységes mérőúton készült; két független út nem futott végig mind a 73 csoportra. A két irányított eltérés külön megerősített: az `analyze_validation_kit.py` JPEG-normalizált útja 4,433 / 10,740-et, a `compare_render.py` nyers összevetése 4,442 / 10,748-at ad; a Picasa-export és a forrás eltérése is ugyanazt a nem-tétlen eredetit igazolja.
+
+**Cáfoló kísérlet:** a „hibás a dir_brite/dir_sharp számítási magja” feltevést a filterparser megkerülésével próbáltam cáfolni. A két közvetlen effekt-hívás eredménye 0,187 / 0,384 ΔE-vel illeszkedik az eredeti exportra (a korábbi #3859 mérésével egyezően), miközben a mai láncértelmező üres műveletsort ad; ez a számítási mag hibáját cáfolja, és a lánc elfogadási/aritás-szabályára szűkíti az okot. A cáfoló mérce mindkét irányban ugyanaz a CIE76 ΔE és 2,0 küszöb.
