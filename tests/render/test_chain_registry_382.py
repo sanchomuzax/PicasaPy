@@ -74,6 +74,8 @@ _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 #: #1142: a `blur` is átkerült — a `merokit-2` szett három csúszkaállása
 #: kimérte, hogy a csúszkatartomány FÖLÖTTI küszöbnél valódi elmosást ad
 #: (ld. `render/blur.py`).
+#: #5304: a `rainbow` a #5296 spec szerint renderel, a 853 soros k08 export
+#: hat vízszintes sávjával és a natív paletta-/gamma-keveréssel.
 _NOW_RENDERED_NAMES = (
     "blur",
     "radtint",
@@ -91,6 +93,7 @@ _NOW_RENDERED_NAMES = (
     "gamma",
     "backlight",
     "shadow",
+    "rainbow",
 )
 
 #: A 26-ból az, amelyik HALOTT legacy névnek bizonyult (#567): a natív
@@ -123,11 +126,11 @@ class TestAll26NamesCovered:
         # `radtint` (#565), az `autobacklight` (#567), az irányított család
         # négy tagja (#623), majd a natív tónus-/szín-szűrők nyolcasa (#687)
         # átkerült a renderelők közé, a `focalpixelate` pedig halott legacy
-        # névnek bizonyult (#567)
+        # névnek bizonyult (#567). A `rainbow` is renderel a #5304 óta.
         assert len(_NOOP_NAMES) == 5
-        assert len(_NOW_RENDERED_NAMES) == 16
+        assert len(_NOW_RENDERED_NAMES) == 17
         assert len(_DEAD_LEGACY_KEYS) == 1
-        assert len(_UNRENDERED_NAMES) == 4
+        assert len(_UNRENDERED_NAMES) == 3
         assert (
             set(_NOOP_NAMES)
             | set(_NOW_RENDERED_NAMES)

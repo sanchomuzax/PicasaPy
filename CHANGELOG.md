@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.139] - 2026-10-18
+
+- A Rainbow effekt mostantól a Picasa hat színsávjával renderelődik. (#5304).
+
 ## [0.9.138] - 2026-10-18
 
 - A program felületén a saját neve PicasaPy, nem Picasa (#5294).
