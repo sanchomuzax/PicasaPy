@@ -3351,7 +3351,7 @@ ApplicationWindow {
             projectFolders: controller ? controller.projectFolders : []
             ignoredFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
                                ? (controller ? controller.photos.revision : 0,
-                                  faceScanController.ignoredCount())
+                                  faceScanController.ignoredCount)
                                : 0
             ignoredFacesActive: window.unnamedFacesOpen
                                 && window.facesAlbumMode === "ignored"
