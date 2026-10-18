@@ -384,6 +384,14 @@ ColumnLayout {
                 faceCard.nameSuggestions = matches
             }
 
+            // #5285: a névadás egy útja Enterre és a javaslat kattintására
+            // is: a mező kiürül, a javaslat-lista záródik
+            function submitName(name) {
+                faceNameField.text = ""
+                faceCard.nameSuggestions = []
+                root.nameSubmitted(faceCard.modelData.faceId, name)
+            }
+
             Column {
                 width: 172
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -503,8 +511,7 @@ ColumnLayout {
                         var name = text.trim()
                         if (!name)
                             return
-                        text = ""
-                        root.nameSubmitted(faceCard.modelData.faceId, name)
+                        faceCard.submitName(name)
                     }
                     onTextEdited: faceCard.refreshNameSuggestions()
                 }
@@ -584,6 +591,12 @@ ColumnLayout {
                             font.pixelSize: Theme.fontSize - 1
                             color: Theme.textDark
                             elide: Text.ElideRight
+                        }
+                        // #5285: a tételre kattintás a kattintott személy nevét
+                        // nevezi meg, ugyanazon az úton, mint az Enter
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: faceCard.submitName(parent.personName)
                         }
                     }
                 }
