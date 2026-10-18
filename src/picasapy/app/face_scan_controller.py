@@ -899,7 +899,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         to all of the selected faces"*. A MEGLÉVŐ `FacesHelper.addFace()`
         útján ír (nem új logika), majd a sikeresen megírt arcokat `'named'`
         állapotba állítja (`mark_faces_named`), hogy se a „Névtelenek"
-        album, se a jövőbeli csoportosítás ne lássa többé — az ALAPSZABÁLY
+        album, se a „Mellőzött emberek" albumban, se a jövőbeli
+        csoportosításban ne lássa többé — az ALAPSZABÁLY
         (a Picasa döntései szentek) innentől erre a friss, EMBER által
         adott névre is vonatkozik.
 
@@ -913,7 +914,12 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             return False
         ids = {int(face_id) for face_id in face_ids}
         with open_index(self._db_path) as conn:
-            by_id = {face.id: face for face in unnamed_faces(conn) if face.rect is not None}
+            kijelolheto = (*unnamed_faces(conn), *ignored_faces(conn))
+            by_id = {
+                face.id: face
+                for face in kijelolheto
+                if face.rect is not None
+            }
         written_ids: list[int] = []
         touched_folders: set[str] = set()
         #: #1403: az érintett FOTÓK (nem mappák) — ezekhez írjuk ki az XMP-t
