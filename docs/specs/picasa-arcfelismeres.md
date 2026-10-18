@@ -3527,3 +3527,64 @@ Nyitott kérdések: 0 nyílt · 1 lezárva (N4) · 6 blokkolt · 0 hatókörön 
 ### 29.9 Fejlesztési következmény
 
 Nincs fejlesztési lista: az N-pontok egyike sem zárult le úgy, hogy eltérést mutatna a mi kódunktól. A 27.7 állítása érvényben marad. Jegytörzs-javaslat: nincs. Az új Red.dll-es blokkoló (N3) nem változtatja a felvételi tervet: a Colab-felvétel dönt (24.7).
+
+## 30. #5184, tizedik kör: a Contacts2 írási lánc teljes .text-pásztázása (2026-10-18)
+
+### 30.1 A pásztázás eredménye
+
+A `paszta.py` teljes `.text`-utasításpásztázása a `memoria_kapu()` hívásával indult, még az utasítások bejárása előtt. A PE-ben **2 884 879 utasítás** volt; a mért csúcsmemória **107,8 MiB**. A Contacts2 cím `0x00c9105c`, a `.picasa.ini` cím `0x00c80a6c`. Az importtáblában nincs `WritePrivateProfileStringA/W`; a `WriteFile` IAT-cím `0x00c40240`.
+
+A közvetlen `WriteFile` hívások **20 utasításhelyen, 10 függvényben** vannak: `0x0068c030` (4), `0x0092d6d0` (3), `0x0099d950`, `0x0099df20`, `0x0099df60`, `0x0099dfa0`, `0x009e9290`, `0x009e93d0`, `0x00aab5c0` (egyenként 1), valamint `0x00c0ec24` (6). Ez a teljes írólista; a korábbi „a `0x0068c030` az egyetlen fájlíró” megállapítás csak a korábbi, kisebb dump hatókörére volt igaz.
+
+### 30.2 A jelöltek és az INI-kiíró lánc
+
+- **`0x00587110` a Contacts2 olvasó útja.** A Ghidra C-törzs a `Contacts2` szekcióból keres, majd az azonosítót `%I64x` formában állítja elő és nevet, e-mailt olvas vissza. A hívója `0x0045a9d0`, amely a `.picasa.ini`-t kezeli; annak hívója `0x0047e470`. A `0x0045a9d0` útja eléri az általános INI-véglegesítőt, de ez önmagában nem bizonyítja, hogy az olvasási művelet új Contacts2-adatot ír.
+- **`0x00586e20` a névjegy-tárolás jelöltje, közvetlen fájlírása nincs igazolva.** A teljes pásztázás három közvetlen hívót talált: `0x00484820`, `0x0068ac20`, `0x007d55f0`. Az utóbbi a `0x007d5ca6` helyen hívja, majd a nem nulla hibakódnál a `PersistContactToINI failed: err %d` szöveget adja át. A `0x00586e20` Ghidra-dumpja sok elérhetetlen blokk eltávolítására figyelmeztet, ezért az egyszerűsített C-törzs nem dönti el a belső módosítást. A teljes `.text`-pásztázás nem talált benne közvetlen fájl-API-hívást.
+- **A legerősebb lemezre író út a `0x00484820` környezetében van.** A függvény a `0x004849a7` helyen a `.picasa.ini` útvonalat adja át a `0x00410610`-nek, a `0x00485118` helyen hívja a `0x00586e20`-t, majd a `faces`, `facedata` és `backuphash` kulcsok frissítése után a `0x00410770`-t hívja (`0x00485256`, `0x004852b0`). A közvetlen hívási lánc innen `0x00410770` -> `0x009bef50` -> `0x009bd640` -> `0x0099dfa0`. A `0x009bd640` a `[%s]\n%s=%s\n` és `%s=%s\n` INI-formátumokat használja; a `0x0099dfa0` a teljes pásztázásban `WriteFile`-hívó. Ez a lánc alátámasztja az arcadatot kezelő művelet és az általános INI-kiírás kapcsolatát, de a dump nem bizonyítja, hogy minden `0x00586e20` hívás után kiírás történik, vagy hogy a `0x00586e20` maga állítja elő a Contacts2 sort.
+
+## 31. #5184, N6: Contacts2 mentés, Choose és azonosító
+
+### 31.1 Író és mentési lánc
+
+**Feltételes eredmény:** a `0x00586e20` a kontaktszintű INI-persistálás segédjének legerősebb jelöltje. A lemezre író általános végpont a `0x0099dfa0` `WriteFile`-hívó; a Contacts2-t is érintő arcadatút a `0x00484820`-on keresztül jut el az INI-véglegesítőhöz. A `0x00587110` olvasó, ezért nem a Contacts2-sor írója. A pontos, Contacts2-bejegyzést memóriában előállító függvény és annak feltételes ágai **NINCS MEG**.
+
+### 31.2 A kiváltó esemény
+
+**Mérés:** a hívó által rögzített job-179 megfigyelés szerint a `[Contacts2]` bejegyzés a Személykezelő **Choose** művelete után megjelenik a `.picasa.ini`-ben. Ez a felvétel a felhasználói eseményhez köti a megjelenést, de a fájldiff és az ablakbezárás időzítése nincs a mérőcsomagban, ezért azt nem dönti el, hogy a kiírás a kattintás kezelőjében vagy a művelet utáni lezáráskor fut.
+
+A `Choose` feliratot tartalmazó kezelő `0x007b81e0`; közvetlenül nem hívja a `0x00586e20`-t. A közvetlen hívásgráf nem mutatja meg, hogy a két műveletet indirekt callback köti-e össze.
+
+### 31.3 A contact ID alakja és a PicasaPy jelenlegi útja
+
+Az eredeti két olvasási/persistálási kódrészletben a formátumsztring `%I64x` (`0x00c82fcc`): 64 bites, kisbetűs hexadecimális alak, **kitöltő nulla és minimális szélesség nélkül**. Ez legfeljebb 16 hexadecimális jegyet jelent, de az eredeti azonosító-előállító nem került elő; a minden esetben pontosan 16 jegyű eredeti kulcs **NINCS MEG**. A `meroadat.tar` archívumban átnézett `.picasa.ini` példák között nem volt `[Contacts2]` szakasz, így a job-179 nyers kulcsértéke a helyi mérőadatból nem ellenőrizhető.
+
+**PicasaPy most:** a `faces_helper.py` új azonosítónál `secrets.token_hex(8)`-at használ, tehát pontosan 16 kisbetűs hexadecimális jegyet állít elő; meglévő központi vagy helyi ID-t újrahasznosít. Az `ini/contacts.py` a `[Contacts2]` értékét `név;;` alakban írja, az arc és a névjegy módosítása az `update_document` útján jut a `.picasa.ini`-be. Igazolt kompatibilitási eltérés nincs, ezért ebből a körből nem következik fejlesztői jegy.
+
+### 31.4 Független utak és cáfoló kísérlet
+
+- **A út:** a teljes utasításpásztázás és a hívóhelyek szerint a `0x00484820` ugyanabban a műveletben hívja a `0x00586e20`-t, módosítja az arcadat-kulcsokat, majd eléri az INI-szerializálót és a `WriteFile`-hívót.
+- **B út:** a `0x007d55f0` hívóhelyén a `0x00586e20` hibakódját a `PersistContactToINI failed` üzenettel naplózza; ettől függetlenül a `0x00587110` C-törzse olvasási műveletként azonosítja a másik Contacts2-jelöltet.
+- **Egyezés:** mindkét út a `0x00586e20`-t a kontakt-INI művelethez köti, és kizárja, hogy a `0x00587110` legyen az író. A konkrét Contacts2-sormódosítást és a Choose callbacket egyik sem bizonyítja.
+- **Cáfoló kísérlet:** azt az állítást ellenőriztem, hogy a `0x00586e20` maga a közvetlen fájlíró. A teljes IAT-célpásztázás nem talált közvetlen fájl-API-hívást benne, miközben a `WriteFile`-hívók külön listában azonosíthatók. Ez cáfolja a közvetlen író értelmezést, de az indirekt, segédhíváson át történő adatfrissítést nem zárja ki. Azt az állítást is cáfoltam, hogy az eredeti formátum garantálja a 16 jegyet: a `%I64x` formátumsztringben nincs szélességkitöltés.
+
+**Bizonyítottsági fok:** a hívási útvonal és a felhasználói esemény kapcsolata **feltételes**. N6 egészének állapota **BLOKKOLT**: a pontos Contacts2-mutációs függvény, a Choose callback és a személytörlés utáni kiírás időzítése nyitott.
+
+### 31.5 Nyitott Ghidra-kérdések
+
+- Ghidra-kör kell: `0x00586e20` - melyik belső ág módosítja a Contacts2 adatot, és milyen feltétellel hívja vagy ütemezi az INI-véglegesítést [blokkoló]
+- Ghidra-kör kell: `0x007b81e0`, `0x007b9630`, `0x007ba060` - a Choose esemény callbackje, a `0x00586e20` elérésének útja és a kiírás pillanata [blokkoló]
+- Ghidra-kör kell: `0x00586540` - a contact ID előállításának forrása és az eredeti tárolt alak szélessége [blokkoló]
+
+### 31.6 A #5184 „Kész, ha” pontjainak állapota
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| N1, névvel jelölt képen további ismeretlen arc | ⛔ BLOKKOLT | A 29.6 szerinti felismerés utáni ág és Colab-mérés nyitott. |
+| N3, eredeti felismerési arány és küszöb | ⛔ BLOKKOLT | A 29.4 szerint a 960 px helye a Red.dll-ben nyitott; arányra nincs mérés. |
+| N4, név és keret alapállapota | ✅ LEZÁRVA | A job-187 mérés: névvel jelölt arcon alapból sem keret, sem név nem látható (20. szakasz). |
+| N5, személyszintű mellőzés | ⛔ BLOKKOLT | A 28.4/a szerinti tényleges írási hely nyitott. |
+| N6, személytörlés és Contacts2 mentés | ⛔ RÉSZBEN | A Choose utáni megjelenés mért, a kontakttároló útvonal részben feltárt; a pontos callback, mutáció és törlési mentés nyitott (29.2, 31.). |
+| N7, kijelölési modell | ⛔ BLOKKOLT | A `contactmgr.fen` lista-erőforrása nem dönti el az egyes vagy többes kijelölést (28.4/c). |
+| N8, People Manager referencia-kép | ✅ LEZÁRVA | A job-186 24. képe a 631 x 351-es People ablakot és a vezérlőket rögzíti; a mérési leírást a jegy tartalmazza. |
+
+Nincs új fejlesztői lista: a PicasaPy jelenlegi 16 jegyű azonosítója és INI API-n át történő mentése nem bizonyítottan tér el az eredetitől. N6 lezárásához a fenti három célzott Ghidra-kérdés és a Choose előtti/utáni fájldiff szükséges.
