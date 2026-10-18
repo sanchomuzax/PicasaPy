@@ -6923,6 +6923,13 @@ picasapy-origin-key: stringres:CAlbumLabel::Unnamed</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
+            <source>Ignored people</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
+            <translation>Игнорирани хора</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>%d Face(s)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CUnnamedProgress::progress2</extracomment>

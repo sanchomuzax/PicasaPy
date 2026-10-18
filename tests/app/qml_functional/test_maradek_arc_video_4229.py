@@ -145,7 +145,9 @@ def test_az_ismeretlen_arc_fejlec_ket_nezetvaltoja_a_valodi_fomablakban(
             qt_app,
             "a Mellőzött emberek nézet állapota",
         )
-        assert not csoport_pane.isVisible()
+        # #5324: az eredeti mellőzött nézetében is látszik az Expand groups
+        # (picasa-colab-jobs job-210, 16. kép)
+        assert csoport_pane.isVisible()
 
         back_to_unnamed = _elem(ablak, "unknownfaceheaderpanel/showunknown")
         assert back_to_unnamed.isVisible()

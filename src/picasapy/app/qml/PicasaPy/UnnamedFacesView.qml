@@ -48,6 +48,9 @@ ColumnLayout {
     // `confirmSettings` tárban (#367). Az eredeti beállításkulcs neve
     // nincs kimérve; a viselkedés a mért jelölőé.
     readonly property string ignoreConfirmKey: "ignoreFaces"
+    // A Picasa kibontott fejlécének és rácsának függőleges eltolása a
+    // job-208 képe alapján; az alap és a Mellőzött nézet helye változatlan.
+    Layout.topMargin: !root.ignoredMode && !root.grouped ? -10 : 0
     spacing: 8
 
     function reload() {
@@ -161,16 +164,6 @@ ColumnLayout {
         }
     }
 
-    Text {
-        objectName: "ignoredInstructions"
-        visible: root.ignoredMode
-        Layout.fillWidth: true
-        wrapMode: Text.WordWrap
-        text: root.instructionText
-        font.pixelSize: Theme.fontSize
-        color: Theme.textDark
-    }
-
     // A két eredeti fejléc-váltó ugyanazt a nézetet kapcsolja a két album
     // között (`unknownfaceheaderpanel.tre:38` és `:43`). A gazda állítja a
     // módot, így a bal oldali albumjelölés és a látható tartalom együtt vált.
@@ -182,8 +175,9 @@ ColumnLayout {
 
         RowLayout {
             objectName: "unnamedTitleBlock"
-            visible: !root.ignoredMode
-            spacing: 8
+            visible: true
+            Layout.leftMargin: -16
+            spacing: 4
 
             Image {
                 objectName: "unnamedTitleIcon"
@@ -195,7 +189,8 @@ ColumnLayout {
             }
             Text {
                 objectName: "unnamedAlbumTitle"
-                text: qsTr("Unnamed people")
+                text: root.ignoredMode
+                      ? qsTr("Ignored people") : qsTr("Unnamed people")
                 font.pixelSize: Theme.fontSize + 6
                 color: "#68564f"
             }
@@ -204,7 +199,7 @@ ColumnLayout {
         Button {
             id: clusterToggleButton
             objectName: "clusterToggleButton"
-            visible: !root.ignoredMode
+            visible: true
             Layout.preferredWidth: 120
             Layout.preferredHeight: 27
             // #3585: a felirat a KÖVETKEZŐ állapotot nevezi meg —
@@ -235,31 +230,33 @@ ColumnLayout {
         }
     }
 
-    // #5214: a „N Face(s)” sor a fejléc alatt, az útmutató FÖLÖTT. Balra a
-    // darabszám (a cím alatt, az ikon és a rés szélességével beljebb); jobbra
+    // #5324: a „N Face(s)” sor a fejléc alatt, az útmutató FÖLÖTT. A darabszám
+    // bal széle az ikon bal széléhez igazodik; jobbra
     // kibontott módban a névmező és az „Ignore Selected” gomb, a felső
     // gombpár jobb szélére igazítva. Mellőzött módban a kijelölésszámláló és
     // a „Stop ignoring” ugyanitt marad.
     RowLayout {
         objectName: "unnamedFaceRow"
         Layout.fillWidth: true
-        spacing: 14
+        spacing: 6
 
         Text {
             objectName: "unnamedAlbumFaceCount"
-            visible: !root.ignoredMode
-            Layout.leftMargin: 44
+            visible: true
+            Layout.leftMargin: -16
             Layout.alignment: Qt.AlignVCenter
-            text: root.faceScanController
-                  ? qsTr("%d Face(s)").replace(
-                        "%d", String(root.faceScanController.unnamedCount))
-                  : qsTr("%d Face(s)").replace("%d", "0")
+            text: root.ignoredMode
+                  ? qsTr("%d Face(s)").replace("%d", String(root.facesModel.length))
+                  : root.faceScanController
+                    ? qsTr("%d Face(s)").replace(
+                          "%d", String(root.faceScanController.unnamedCount))
+                    : qsTr("%d Face(s)").replace("%d", "0")
             font.pixelSize: Theme.fontSize - 2
             color: Theme.textGray
         }
         Item { Layout.fillWidth: true }
         Text {
-            visible: root.ignoredMode
+            visible: root.ignoredMode && root.selectedCount > 0
             Layout.alignment: Qt.AlignVCenter
             text: root.selectedCount > 0
                   ? qsTr("%1 selected").arg(root.selectedCount)
@@ -271,7 +268,9 @@ ColumnLayout {
             objectName: "unnamedNameField"
             visible: !root.ignoredMode && !root.grouped
             Layout.alignment: Qt.AlignVCenter
-            Layout.preferredWidth: 180
+            Layout.preferredWidth: 162
+            Layout.preferredHeight: 20
+            height: 20
             placeholderText: qsTr("Add a name")
             // #5214: az eredetiben (job-183) fehér, keretes mező, mint a csempéé
             background: Rectangle {
@@ -291,7 +290,7 @@ ColumnLayout {
         // nyúlni belőle, nem egyirányú szemetes
         Button {
             objectName: "unignoreFacesButton"
-            visible: root.ignoredMode
+            visible: root.ignoredMode && root.selectedCount > 0
             Layout.alignment: Qt.AlignVCenter
             text: qsTr("Stop ignoring")
             enabled: root.selectedCount > 0 && !!root.faceScanController
@@ -336,9 +335,10 @@ ColumnLayout {
 
     Text {
         objectName: "unnamedInstructions"
-        visible: !root.ignoredMode
+        visible: true
         Layout.fillWidth: true
-        Layout.bottomMargin: 8
+        Layout.leftMargin: -4
+        Layout.bottomMargin: !root.ignoredMode && !root.grouped ? 3 : 8
         wrapMode: Text.WordWrap
         text: root.instructionText
         font.pixelSize: Theme.fontSize
@@ -352,7 +352,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         clip: true
-        cellWidth: 194
+        cellWidth: root.grouped ? 194 : 162
         cellHeight: 198
         readonly property int columns: Math.max(1, Math.floor(width / cellWidth))
         height: Math.ceil(root.facesModel.length / columns) * cellHeight
@@ -400,8 +400,9 @@ ColumnLayout {
                 Rectangle {
                     id: faceTile
                     objectName: "faceTile_" + faceCard.modelData.faceId
-                    width: 146
-                    height: 172
+                    width: root.grouped ? 146 : 120
+                    height: root.grouped ? 172 : 145
+                    x: root.grouped ? 0 : 13
                     color: "transparent"
                     border.width: 2
                     border.color: root.selectedFaceIds[faceCard.modelData.faceId]
@@ -610,6 +611,7 @@ ColumnLayout {
         visible: root.ignoredMode
         Layout.fillWidth: true
         Layout.fillHeight: true
+        Layout.leftMargin: -15
         clip: true
         spacing: 12
         model: root.groupsModel
@@ -622,6 +624,7 @@ ColumnLayout {
             spacing: 4
 
             Text {
+                visible: !root.ignoredMode
                 text: groupDelegate.modelData.label
                 font.pixelSize: Theme.fontSize
                 font.bold: true
@@ -633,8 +636,8 @@ ColumnLayout {
                 objectName: "ignoredFaceGrid"
                 Layout.fillWidth: true
                 interactive: false
-                cellWidth: 96
-                cellHeight: 96
+                cellWidth: 194
+                cellHeight: 198
                 readonly property int columns:
                     Math.max(1, Math.floor(width / cellWidth))
                 height: Math.ceil(
@@ -642,109 +645,98 @@ ColumnLayout {
                     / Math.max(1, columns)) * cellHeight
                 model: groupDelegate.modelData.faces
 
-                delegate: Rectangle {
-                    id: faceTile
+                delegate: Item {
+                    id: ignoredFaceCard
                     required property var modelData
-                    objectName: "faceTile_" + faceTile.modelData.faceId
-                    width: faceGrid.cellWidth - 6
-                    height: faceGrid.cellHeight - 6
-                    color: "transparent"
-                    border.width: 2
-                    border.color: root.selectedFaceIds[faceTile.modelData.faceId]
-                                  ? Theme.panelSelectionActive : "transparent"
+                    width: faceGrid.cellWidth
+                    height: faceGrid.cellHeight
 
-                    Image {
-                        anchors.fill: parent
-                        anchors.margins: 3
-                        source: faceTile.modelData.thumbUrl
-                        // #1600: a bélyegkép-textúra a Qt gyorsítótárában KÖZÖS a
-                        // ráccsal, ami mipmapot kér (#83). Eltérő beállítás mellett a Qt
-                        // „Mipmap settings changed" figyelmeztetést ad, és VISSZAESIK a
-                        // korábbi szűrésre — a kép nem azzal a szűréssel jelenik meg,
-                        // amit kértünk (a tulajdonos Windowson hatszor látta).
-                        smooth: true
-                        mipmap: true
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: root.toggleFace(faceTile.modelData.faceId)
-                    }
+                    Column {
+                        width: 172
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 2
 
-                    // #3670: a bélyegkép „X"-e a mellőzés — az eredeti
-                    // tájékoztatója: „To ignore a person, click the 'X'
-                    // button on the face thumbnail." Ugyanazt a kérdést és
-                    // ugyanazt a `.picasa.ini`-írást adja, mint a fejléc
-                    // Mellőzés gombja (spec 15.3/b.1).
-                    Rectangle {
-                        objectName: "faceIgnoreX_" + faceTile.modelData.faceId
-                        visible: !root.ignoredMode
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        anchors.margins: 4
-                        width: 18
-                        height: 18
-                        radius: 9
-                        color: Theme.infoBar
-                        Text {
-                            anchors.centerIn: parent
-                            text: "✕"
-                            font.pixelSize: Theme.fontSize - 1
-                            color: Theme.infoBarText
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -2
-                            onClicked: root.requestIgnore(
-                                [faceTile.modelData.faceId])
-                        }
-                    }
+                        Rectangle {
+                            id: faceTile
+                            objectName: "faceTile_" + ignoredFaceCard.modelData.faceId
+                            width: 146
+                            height: 172
+                            x: (parent.width - width) / 2
+                            color: "transparent"
+                            border.width: 2
+                            border.color: root.selectedFaceIds[ignoredFaceCard.modelData.faceId]
+                                          ? Theme.panelSelectionActive : "transparent"
 
-                    // #26: név-javaslat — az eredeti KÉRDÉSKÉNT vetette
-                    // fel („Anna?", `PeoplePanel::SuggestionFmt` = „%s?"),
-                    // és a felhasználó pipával erősítette meg
-                    // (`PeopleAlbum::ConfirmText`: „Press checkmark to
-                    // confirm match, press "x" to ignore."). Az „x" a
-                    // csempe sarkában ülő mellőzés (#3670) — a javaslat
-                    // csendes elvetése nem az eredeti művelete.
-                    Rectangle {
-                        objectName: "suggestionBar_" + faceTile.modelData.faceId
-                        visible: (faceTile.modelData.suggestedName || "") !== ""
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.margins: 3
-                        height: 20
-                        color: Theme.infoBar
-
-                        Row {
-                            anchors.fill: parent
-                            anchors.leftMargin: 4
-                            spacing: 4
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 22
-                                elide: Text.ElideRight
-                                //: a javasolt név kérdésként — az eredeti
-                                //: formátuma egyszerűen „%s?"
-                                text: qsTr("%1?").arg(
-                                    faceTile.modelData.suggestedName || "")
-                                font.pixelSize: Theme.fontSize - 1
-                                color: Theme.infoBarText
+                            Image {
+                                objectName: "ignoredFaceImage_"
+                                            + ignoredFaceCard.modelData.faceId
+                                anchors.fill: parent
+                                source: ignoredFaceCard.modelData.thumbUrl
+                                smooth: true
+                                mipmap: true
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
                             }
-                            Text {
-                                objectName: "suggestionYes_"
-                                            + faceTile.modelData.faceId
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "✓"
-                                color: Theme.infoBarText
-                                MouseArea {
-                                    anchors.fill: parent
-                                    anchors.margins: -4
-                                    onClicked: root.acceptSuggestion(
-                                        faceTile.modelData.faceId)
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.toggleFace(ignoredFaceCard.modelData.faceId)
+                            }
+
+                            // A mellőzött nézetben az eredeti sem mutatja a mellőző X-et.
+                            Rectangle {
+                                objectName: "faceIgnoreX_"
+                                            + ignoredFaceCard.modelData.faceId
+                                visible: false
+                                anchors.top: parent.top
+                                anchors.right: parent.right
+                                width: 18
+                                height: 18
+                                color: Theme.infoBar
+                            }
+
+                            Rectangle {
+                                objectName: "suggestionBar_"
+                                            + ignoredFaceCard.modelData.faceId
+                                visible: (ignoredFaceCard.modelData.suggestedName || "") !== ""
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 3
+                                height: 20
+                                color: Theme.infoBar
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: qsTr("%1?").arg(
+                                        ignoredFaceCard.modelData.suggestedName || "")
+                                    font.pixelSize: Theme.fontSize - 1
+                                    color: Theme.infoBarText
                                 }
+                            }
+                        }
+
+                        TextField {
+                            objectName: "ignoredFaceNameField_"
+                                        + ignoredFaceCard.modelData.faceId
+                            width: 172
+                            height: 20
+                            padding: 1
+                            horizontalAlignment: TextInput.AlignHCenter
+                            verticalAlignment: TextInput.AlignVCenter
+                            font.pixelSize: Theme.fontSize - 2
+                            placeholderText: qsTr("Add a name")
+                            background: Rectangle {
+                                color: "#ffffff"
+                                border.color: "#8a8a8a"
+                                border.width: 1
+                            }
+                            TextFieldContextArea {}
+                            onAccepted: {
+                                var cleanName = text.trim()
+                                if (!cleanName)
+                                    return
+                                text = ""
+                                root.nameSubmitted(
+                                    ignoredFaceCard.modelData.faceId, cleanName)
                             }
                         }
                     }
