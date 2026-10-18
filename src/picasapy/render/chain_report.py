@@ -180,6 +180,10 @@ class ChainReport(tuple):
     átfedő rétegeinek (vágás-téglalap, arckeretek) van szüksége: ők a
     kirajzolt képre horgonyozódnak, az viszont keretes lánc esetén már a
     keretezett kimenet. `None`, ha nem volt keret-effekt.
+
+    Az `.alpha` (#5299) a kimeneti kép alfája a láncból ismert 0/255
+    állapotként. A háromcsatornás renderképhez tartozó metaadatot a
+    láncprefix folytatásakor kell továbbadni.
     """
 
     # (Nincs `__slots__`: a `tuple` már változó hosszú C-szintű tárolást
@@ -198,6 +202,7 @@ class ChainReport(tuple):
         legacy_warnings: tuple[str, ...] = (),
         content_placement: TartalomHely | None = None,
         helyzet: LancHelyzet | None = None,
+        alpha: int = 255,
     ) -> "ChainReport":
         obj = super().__new__(cls, (image, skipped))
         obj.full_res = full_res
@@ -207,6 +212,7 @@ class ChainReport(tuple):
         obj.legacy_warnings = legacy_warnings
         obj.content_placement = content_placement
         obj.helyzet = helyzet
+        obj.alpha = alpha
         return obj
 
     @property

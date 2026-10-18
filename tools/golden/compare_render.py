@@ -374,6 +374,7 @@ def render_chain(
     Vignette-et a vágatlan képen számolta, és ΔE 4,59-et adott 0,53 helyett (#5300).
     """
     result = image
+    alpha = 255
     skipped: list[str] = []
     lut_ops: list[str] = []
     for op in ops:
@@ -388,7 +389,9 @@ def render_chain(
             if used_lut:
                 lut_ops.append(op.name)
             continue
-        result, op_skipped = apply_filters(result, (op,))
+        report = apply_filters(result, (op,), input_alpha=alpha)
+        result, op_skipped = report
+        alpha = report.alpha
         skipped.extend(op_skipped)
     return result, tuple(skipped), tuple(lut_ops)
 

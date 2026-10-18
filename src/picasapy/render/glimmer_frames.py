@@ -12,6 +12,8 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+import numpy as np
+
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_frame_ops import (
     add_border_sides,
@@ -112,7 +114,14 @@ def apply_museum_matte(
     return add_ring(glowed_outer, outer_thickness, outer_color)
 
 
-def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2), *, gyors: bool = False):
+def apply_polaroid(
+    image,
+    rotate: float = 5.0,
+    color=(0xE2, 0xE2, 0xE2),
+    *,
+    alpha: int = 255,
+    gyors: bool = False,
+):
     """`Polaroid=1,Rotate,szín` — négyzetes középvágás → aszimmetrikus
     FEHÉR keret (oldalt 6,45%, fent 9,68%, lent 25,8% a négyzet oldalából)
     → vetett árnyék (`distance 3`, `angle = 90−Rotate`, `blur 8`,
@@ -120,11 +129,17 @@ def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2), *, gyor
     `[-10..10]` fokkal, pozitívnál az óramutató járása szerint, a sarkokban
     `szín` kitöltéssel.
 
+    `alpha` (#5299) a lánc utolsó, specben megnevezett alfaíró effektjének
+    állapota (0 vagy 255). A keret átlátszatlan marad; a DropShadow a belső
+    fotóterületet a megadott háttérszínnel kompozitálja.
+
     `gyors=True` (#3862): a záró forgatás a `rotate_with_pad` gyors útját
     választja — CSAK a Rotate-csúszka húzása közbeni élő előnézetnek, ld.
     ott a docsztringet.
     """
     validate_image(image)
+    if alpha not in (0, 255):
+        raise ValueError(f"A Polaroid alfaállapota csak 0 vagy 255 lehet: {alpha}")
     height, width = image.shape[:2]
     crop_size = min(height, width)
     top = (height - crop_size) // 2
@@ -138,6 +153,13 @@ def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2), *, gyor
     bordered = add_border_sides(
         cropped, side_border, side_border, top_border, bottom_border, _POLAROID_FRAME_COLOR
     )
+    source_alpha = None
+    if alpha == 0:
+        source_alpha = np.full(bordered.shape[:2], 255, dtype=np.uint8)
+        source_alpha[
+            top_border : top_border + crop_size,
+            side_border : side_border + crop_size,
+        ] = 0
     # shadowAlpha = 0,4 rögzített → fade_alpha(fade) = 0,4 ⇒ fade = 60.
     # #3809: a vászon az eredeti és az eltolt-kiterjesztett doboz UNIÓJA
     szog = 90.0 - rotate
@@ -152,6 +174,7 @@ def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2), *, gyor
         margin=0,
         fade=60.0,
         pads=pads,
+        source_alpha=source_alpha,
     )
     return rotate_with_pad(shadowed, rotate, color, gyors=gyors)
 
