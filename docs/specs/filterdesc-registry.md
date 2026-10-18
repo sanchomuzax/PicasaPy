@@ -240,6 +240,13 @@ csúszkák `id` sorrendben, a színparaméter a végén. A `dir_tint` mért
 alapértékei (0,25 / 0,25) pontosan a `filterdesc.xml` `default` értékei —
 a csúszkanevek tehát ezzel a sorrenddel egyeznek.
 
+**Irányított effekt kivétel:** a `dir_sat`, `dir_brite` és `dir_sharp`
+`filterdesc.xml`-leírásában is van puck, de a puck csak a két iránycsúszkát
+állítja. A natív visszahívás ezeket közvetlenül olvassa, ezért a mentett
+`filters=` tagban a puck x/y nincs benne: az alak `=1,left-to-right,top-to-bottom`
+— két érték az engedélyező flag után. Ld. `filters-decoded.md`, „Az
+irányított család megvalósítva” szakasz.
+
 **Színformátum:** a Picasa a színt **mindig nyolc jeggyel** írja (`%08x`),
 a `tint`-et is; a régi, színkerekes effektek (`tint`, `ansel`, `dir_tint`,
 `radtint`) `ff` alfával. A fenti `ffff` a saját golden-kitünk terméke, nem a

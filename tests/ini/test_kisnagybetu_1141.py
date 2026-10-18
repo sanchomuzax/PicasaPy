@@ -106,9 +106,7 @@ class TestMatches:
 
         assert "filters=Sepia=1;bw=1;" in ini.read_text(encoding="utf-8")
 
-    def test_az_ismeretlen_nev_nem_vagja_el_a_lancot(self):
-        """Az IDEGEN (regiszteren kívüli) nevet változatlanul beengedjük —
-        azt a renderelő hagyja ki, a lánc többi tagja fut. Csak a
-        FELISMERT név rossz írásmódja vág (#1140/#1141 együtt)."""
+    def test_az_ismeretlen_nev_elvagja_a_lancot(self):
+        """Az eredeti az első ismeretlen tagnál megáll (#1140)."""
         ops = parse_filters_prefix("jovobeli_szuro=1;bw=1;")
-        assert [op.name for op in ops] == ["jovobeli_szuro", "bw"]
+        assert ops == ()

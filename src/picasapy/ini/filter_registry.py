@@ -206,7 +206,8 @@ _SAMPLED_PARAM_COUNTS: Mapping[str, int] = {
 #:     szakasz kimondott POZÍCIÓ-szabályával: „`puck` kurzoros szűrőnél a
 #:     fókuszpont (x, y) megy elöl, utána a csúszkák `id` sorrendben, a
 #:     színparaméter a végén". Tehát darabszám = 2·(van-e puck) + csúszkák
-#:     száma + 1·(van-e szín).
+#:     száma + 1·(van-e szín). A három irányított natív effekt külön kivétel:
+#:     a puck állítja a csúszkákat, de x/y-t nem ír a láncba.
 _DERIVED_PARAM_COUNTS: Mapping[str, int] = {
     "debug": 3,  # puck + Size
     "triple": 3,
@@ -228,9 +229,12 @@ _DERIVED_PARAM_COUNTS: Mapping[str, int] = {
     "gamma": 1,
     "backlight": 1,
     "fill": 1,
-    "dir_sat": 4,  # puck + 2 csúszka
-    "dir_brite": 4,
-    "dir_sharp": 4,
+    # A három irányított effekt puck vezérlője a két csúszkaértéket állítja;
+    # a `filters=` tagban maga a puck x/y nem szerepel (ld. a
+    # `filters-decoded.md` „Az irányított család megvalósítva” szakaszát).
+    "dir_sat": 2,
+    "dir_brite": 2,
+    "dir_sharp": 2,
     "focalpixelate": 6,  # puck + 4 csúszka (örökölt, a 3.9-ben halott)
     "LocalContrast": 2,
     "Matte": 4,

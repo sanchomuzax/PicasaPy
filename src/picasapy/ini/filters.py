@@ -88,6 +88,8 @@ def parse_filters_prefix(value: str) -> tuple[FilterOp, ...]:
       FORRÁST adja vissza, a `bw` nem fut le;
     * az `=` nélküli tagra **nem dobunk kivételt**. Nálunk ettől a kép
       EGYÁLTALÁN NEM exportálódott — nem romlott kép, hanem hiányzó kép.
+    * egy ismeretlen név is hibás tag: az eredeti nem talál hozzá szűrőt,
+      ezért itt vágjuk el a láncot, nem engedjük át a renderelőnek;
     * a leíró-regiszter ismert vezérlőszámú effektjeinél a puszta `=1`
       engedélyező alak érvényes, de ha a tag már ad meg vezérlőértéket, a
       mezők számának pontosan egyeznie kell a leíróéval (#4014/#4233).
@@ -107,12 +109,11 @@ def parse_filters_prefix(value: str) -> tuple[FilterOp, ...]:
         name, sep, rest = entry.partition("=")
         if not sep or not name:
             break
-        # #1141: a NEM kanonikus írásmód is hibás tag — az eredeti
-        # kis-nagybetű-érzékeny, és a bejáró az első hibás tagnál megáll
-        # (#1140). Mérve: `Sepia=1;bw=1;` esetén a `bw` sem fut le.
-        # Az ismeretlen (idegen/jövőbeli) nevet változatlanul beengedjük:
-        # azt a renderelő hagyja ki, a round-trip pedig megőrzi.
-        if canonical_filter_name(name) is not None and not is_exact_filter_name(name):
+        # #1140/#1141: ismeretlen név és nem kanonikus írásmód egyaránt az
+        # első hibás tag; az eredeti lánc-bejárója ezeknél megáll. Mérve:
+        # `nincsilyen=1;bw=1;` és `Sepia=1;bw=1;` esetén a `bw` sem fut le.
+        # A round-trip ettől függetlenül a dokumentum nyers értékét őrzi.
+        if canonical_filter_name(name) is None or not is_exact_filter_name(name):
             break
         params = tuple(rest.split(",")) if rest else ()
         # #4233: a Picasa csak a teljes vezérlősort vagy a flag-only alakot
