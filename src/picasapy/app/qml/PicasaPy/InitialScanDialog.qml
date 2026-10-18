@@ -29,7 +29,7 @@ import QtQuick.Layouts
 Dialog {
     id: initialScan
     objectName: "initialScanDialog"
-    title: qsTr("Picasa")
+    title: qsTr("PicasaPy")
     modal: true
     anchors.centerIn: parent
     // az eredetiben nincs Mégse gomb, de az ablak bezárható (Esc is) —
@@ -94,7 +94,7 @@ Dialog {
             wrapMode: Text.WordWrap
             text: initialScan.migrationStep
                   ? qsTr("There is an older version of Picasa installed.  Would you like to update your existing picture library, or search your computer for pictures again?")
-                  : qsTr("Picasa is ready to search for pictures on your computer")
+                  : qsTr("PicasaPy is ready to search for pictures on your computer")
             font.pixelSize: Theme.fontSize + 3
             font.bold: true
             color: Theme.ink
@@ -160,7 +160,7 @@ Dialog {
             objectName: "initialScanReassuranceText"
             Layout.preferredWidth: 600
             wrapMode: Text.WordWrap
-            text: qsTr("Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by Picasa by using the Folder Manager tool (available from the Tools menu)")
+            text: qsTr("Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by PicasaPy by using the Folder Manager tool (available from the Tools menu)")
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
         }

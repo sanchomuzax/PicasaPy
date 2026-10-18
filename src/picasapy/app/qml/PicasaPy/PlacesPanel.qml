@@ -176,7 +176,7 @@ Rectangle {
                     anchors.centerIn: parent
                     width: Math.min(parent.width - 24, 260)
                     visible: !!(mapLoader.item && mapLoader.item.offline)
-                    text: qsTr("Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.")
+                    text: qsTr("PicasaPy failed to initialize Google Maps.  Please make sure that you are connected to the Internet.")
                     font.pixelSize: Theme.fontSize
                     color: Theme.textGray
                     wrapMode: Text.WordWrap

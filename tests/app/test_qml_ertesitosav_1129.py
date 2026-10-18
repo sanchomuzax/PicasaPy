@@ -187,8 +187,10 @@ class TestAzAblak:
     """`0x00657300`: keret nélküli, mindig felül lévő, tálcagomb nélküli."""
 
     def test_az_ablaknev_a_stringresbol_valo(self, sav):
+        # #5294: a program saját neve PicasaPy; a stringres értéke az eredeti
+        # Picasa ablaknév volt, a felirat most a saját nevünket mondja.
         objektum, _c, _i, _q = sav
-        assert objektum.property("title") == "Picasa Notifier"
+        assert objektum.property("title") == "PicasaPy Notifier"
 
     def test_keret_nelkuli_mindig_felul_eszkoz_ablak(self, sav):
         objektum, _c, _i, _q = sav

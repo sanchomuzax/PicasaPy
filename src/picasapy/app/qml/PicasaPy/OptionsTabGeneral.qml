@@ -432,7 +432,7 @@ ColumnLayout {
                 var code = languageCombo.codes[index]
                 if (code === controller.pendingLanguage) return
                 languageConfirm.candidateCode = code
-                languageConfirm.ask("", qsTr("Change the language Picasa uses?\n\nIt will change the next time Picasa is opened."))
+                languageConfirm.ask("", qsTr("Change the language PicasaPy uses?\n\nIt will change the next time PicasaPy is opened."))
             }
         }
     }

@@ -94,7 +94,7 @@ Amíg a mentés-panel nyitva van, **az egész könyvtár átáll mentés-módba*
   látszanak. A panel bezárásakor a rács visszaáll, oda is, ahol előtte
   álltál.
 
-A panel maga is kiírja, mi történik: „A Picasa most azokat a fájlokat
+A panel maga is kiírja, mi történik: „A PicasaPy most azokat a fájlokat
 jeleníti meg, amelyekről korábban nem készült biztonsági másolat."
 
 A bal hasábon minden megjelenő mappa előtt **pipa** áll. **Alapból egy

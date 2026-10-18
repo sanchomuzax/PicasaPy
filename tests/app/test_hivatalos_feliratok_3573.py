@@ -73,8 +73,8 @@ HIVATALOS = {
         "aktuális képre alkalmazott. Folytatja?",
         "IDS_CONFIRMREVERT"),
     # az eredeti KÉT erőforrásból rakja össze, közéjük a fájllistát
-    "Picasa had a problem loading this file(s)\n": (
-        "A Picasa problémába ütközött a fájl(ok) betöltése során\n",
+    "PicasaPy had a problem loading this file(s)\n": (
+        "A PicasaPy problémába ütközött a fájl(ok) betöltése során\n",
         "CThumbUI::GetBadImages"),
     "\nWould you like to hide the files on disk?": (
         "\nEl szeretné rejteni a lemezen található fájlokat?",
@@ -87,7 +87,7 @@ HIVATALOS = {
         "A PicasaPy tömöríti az adatbázisát, hogy takarékoskodjon a "
         "lemezterülettel. Ez percekig is tarthat.",
         "compacting/label5.title"),
-    "This file is read only. In order to edit this file, Picasa needs to "
+    "This file is read only. In order to edit this file, PicasaPy needs to "
     "copy the file's folder. Would you like to make a copy now?": (
         "A fájl írásvédett; szerkesztéséhez a Picasának másolatot kell "
         "készítenie a fájl mappájáról. Szeretne most másolatot készíteni?",
@@ -100,10 +100,10 @@ HIVATALOS = {
     "Please enter a new name for these files:": (
         "Kérjük, adjon új nevet ezeknek a fájloknak:", "rename/label5.title"),
     "If you remove a watched folder, new items that you add to that folder "
-    "on disk will not be automatically added to Picasa. Are you sure you "
+    "on disk will not be automatically added to PicasaPy. Are you sure you "
     "want to do this?": (
         "Ha egy figyelt mappát eltávolít, a lemezen oda mentett új "
-        "fájlokat a Picasa nem veszi fel automatikusan. Biztosan ezt "
+        "fájlokat a PicasaPy nem veszi fel automatikusan. Biztosan ezt "
         "szeretné?",
         "IDS_HOTFOLDER_CONFIRM"),
     "Watching an entire drive can slow down the system. It would be "
@@ -235,7 +235,7 @@ ELAVULT_FORDITAS = (
     "<translation>Vörösszemjavítások történtek.",
     "Ezzel az ÖSSZES kijelölt képen eltávolít minden szerkesztést.",
     "Ezzel a jelenlegi képen eltávolít minden szerkesztést.",
-    "A Picasa nem tudta betölteni ezt/ezeket a fájlt/fájlokat. Szeretné "
+    "A PicasaPy nem tudta betölteni ezt/ezeket a fájlt/fájlokat. Szeretné "
     "elrejteni a fájlokat a lemezen?",
     "betöltése során. El szeretné rejteni",
     "A hasonlósági adatbázis épül (legközelebb gyors lesz)",
@@ -371,7 +371,7 @@ class TestQmlOldal:
 
     def test_a_serult_fajl_uzenet_a_fajllistat_is_mondja(self) -> None:
         forras = (QML / "Main.qml").read_text(encoding="utf-8")
-        assert 'qsTr("Picasa had a problem loading this file(s)\\n")' in forras
+        assert 'qsTr("PicasaPy had a problem loading this file(s)\\n")' in forras
         assert 'qsTr("\\nWould you like to hide the files on disk?")' in forras
         assert "pendingNames" in forras
 

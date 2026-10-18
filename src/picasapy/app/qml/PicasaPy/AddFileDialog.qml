@@ -27,7 +27,7 @@ import QtQuick.Dialogs
 FileDialog {
     id: addFileDialog
     objectName: "addFileDialog"
-    title: qsTr("Add File to Picasa...")
+    title: qsTr("Add File to PicasaPy...")
     fileMode: FileDialog.OpenFiles
     // a felirat a meglévő ImportSourceDialog szűrő-szókészletét használja
     // (`ImportSourceDialog.qml` — „Picture and Movie Files" / „All Files"),

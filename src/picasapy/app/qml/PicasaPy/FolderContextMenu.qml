@@ -210,7 +210,7 @@ PicasaMenu {
     }
     MenuItem {
         objectName: "folderMenuRemoveFromPicasa"
-        text: qsTr("&Remove from Picasa...")
+        text: qsTr("&Remove from PicasaPy...")
         onTriggered: menu.removeFromPicasaRequested()
     }
     MenuSeparator {}

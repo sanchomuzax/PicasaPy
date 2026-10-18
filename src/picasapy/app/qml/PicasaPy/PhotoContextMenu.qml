@@ -449,7 +449,7 @@ PicasaMenu {
     }
     MenuItem {
         objectName: "contextMenuLocateInPicasa"
-        text: qsTr("Locate in Picasa")
+        text: qsTr("Locate in PicasaPy")
         // #1613: album- és Emberek-nézetben van értelme — ott a kép nem a
         // saját mappájában látszik. Mappanézetben az eredeti sem mutatja.
         visible: menu.currentAlbumToken !== "" || menu.personName !== ""

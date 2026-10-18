@@ -82,7 +82,7 @@ A kérdés csak egyszer jön; a nyelvet később bármikor átállíthatod.
 
 **Később a nyelv nem vált át azonnal.** Amikor a Beállításokban vagy az
 Eszközök menüben rákattintasz egy tételre, a
-program megkérdezi: „Módosítja a Picasa kezelőfelületének nyelvét? A
+program megkérdezi: „Módosítja a PicasaPy kezelőfelületének nyelvét? A
 változás a program következő megnyitásakor lép érvénybe." **Igen** esetén
 a választás elmentődik, és **a következő indításnál** lép életbe; **Nem**
 vagy **Mégse** esetén semmi nem változik. Az eredeti Picasa is így

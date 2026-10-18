@@ -100,7 +100,7 @@ class TestMenupont:
         # megjelenítését méri, azt pedig a mnemonik nem érinti. A
         # mnemonikot a saját őre méri (`test_menu_mnemonikok_2152.py`).
         felirat = str(_elem(window, "menuFileAddFile").property("text"))
-        assert felirat.replace("&", "") == "Add File to Picasa...\tCtrl+O"
+        assert felirat.replace("&", "") == "Add File to PicasaPy...\tCtrl+O"
 
     def test_a_menupontra_kattintva_megnyilik_a_fajlvalaszto(
         self, qml_app, qt_app
@@ -302,7 +302,7 @@ class TestForrasEsFordítas:
         }
 
         # kiírt literál mindkét oldalon
-        assert forditasok.get("Add File to Picasa...") == (
+        assert forditasok.get("Add File to PicasaPy...") == (
             "Fájl felvétele a Picasába…"
         )
 

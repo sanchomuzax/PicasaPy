@@ -720,7 +720,7 @@ MenuBar {
         // funkciót pedig egy gomb végezte magában a párbeszédben.
         MenuItem {
             objectName: "menuFileAddFolder"
-            text: qsTr("Add Folder to Picasa...")
+            text: qsTr("Add Folder to PicasaPy...")
             //: #1768: szürke, amíg a szerkesztő nyitva — az eredeti sem
             //: üzen, csak nem engedi. A könyvtár szerkezetének
             //: átrendezése félbehagyott szerkesztés mellett kockázatos.
@@ -731,7 +731,7 @@ MenuBar {
         // nincs `enabled` feltétele — ugyanúgy, mint az Importálás forrása…
         MenuItem {
             objectName: "menuFileAddFile"
-            text: qsTr("Add &File to Picasa...") + "\tCtrl+O"
+            text: qsTr("Add &File to PicasaPy...") + "\tCtrl+O"
             onTriggered: bar.addFileRequested()
         }
         // #1615: ÉLŐ tétel. Az importálás nem függ kijelöléstől (a forrást
@@ -2081,7 +2081,7 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuFolderRemoveFromPicasa"
-            text: qsTr("&Remove from Picasa...")
+            text: qsTr("&Remove from PicasaPy...")
             enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
                      && bar.currentPersonName === ""
             onTriggered: bar.folderRemoveFromPicasaRequested()
