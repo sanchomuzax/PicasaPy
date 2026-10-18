@@ -354,14 +354,34 @@ ApplicationWindow {
     // `docs/specs/kollazs-panel-ui-spec.md` 3.1. Ma egyetlen projekt-laptípus
     // van, a kollázs; a lista mégis lista, mert a sáv szerződése az.
     readonly property string collageTabId: "collage"
-    readonly property var openProjectTabs:
-        (controller && controller.collageOpen)
-            ? [{
+    readonly property string movieMakerTabId: "movieMaker"
+    property bool movieMakerTabOpen: false
+    readonly property real documentTabsBottom:
+        documentTabStrip.y + documentTabStrip.height
+    readonly property string activeDocumentTabId:
+        documentTabStrip.activeTabId
+    readonly property bool movieMakerActive:
+        window.movieMakerTabOpen
+        && documentTabStrip.activeTabId === window.movieMakerTabId
+    property bool backToMovieMakerPrompted: false
+    readonly property var openProjectTabs: {
+        var tabs = []
+        if (controller && controller.collageOpen) {
+            tabs.push({
                 id: window.collageTabId,
                 title: qsTr("Collage"),
                 modified: controller.collageDirty === true
-              }]
-            : []
+            })
+        }
+        if (window.movieMakerTabOpen) {
+            tabs.push({
+                id: window.movieMakerTabId,
+                title: qsTr("Movie Maker"),
+                modified: false
+            })
+        }
+        return tabs
+    }
 
     // #1026: a KÖNYVTÁR PANELJE — EGYETLEN kapcsoló, nem sávonkénti elrejtés.
     //
@@ -443,6 +463,33 @@ ApplicationWindow {
     function openMovieFromRows(rows) {
         if (!controller || rows.length === 0) return
         createDialogs.ensure().openMovieForRows(rows)
+    }
+
+    // A filmkészítő a kollázshoz hasonlóan saját dokumentumlap. A tartalom
+    // a CreateDialogs.qml-ben marad, de a navigációt a főablak kezeli.
+    function openMovieMakerTab() {
+        window.viewerOpen = false
+        window.backToMovieMakerPrompted = false
+        window.movieMakerTabOpen = true
+        documentTabStrip.activateTab(window.movieMakerTabId)
+    }
+
+    function openMovieClipCollector() {
+        if (!window.movieMakerTabOpen) return
+        window.backToMovieMakerPrompted = true
+        documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+    }
+
+    function returnToMovieMaker() {
+        window.backToMovieMakerPrompted = false
+        if (window.movieMakerTabOpen)
+            documentTabStrip.activateTab(window.movieMakerTabId)
+    }
+
+    function closeMovieMakerTab() {
+        window.movieMakerTabOpen = false
+        if (documentTabStrip.activeTabId === window.movieMakerTabId)
+            documentTabStrip.activateTab(documentTabStrip.libraryTabId)
     }
 
     function openCollageTab() {
@@ -3125,6 +3172,10 @@ ApplicationWindow {
         height: documentTabStrip.visible ? documentTabStrip.savMagassag : 0
 
         onCloseAccepted: function(tabId, saveDraft) {
+            if (tabId === window.movieMakerTabId) {
+                window.movieMakerTabOpen = false
+                return
+            }
             if (!controller || tabId !== window.collageTabId) return
             // A háromgombos kérdés már eldőlt (#944); itt csak a
             // következményt hajtjuk végre — a piszkozat a Kollázsok albumba
@@ -4542,6 +4593,7 @@ ApplicationWindow {
             window.backToCollagePrompted = false
             documentTabStrip.activateTab(window.collageTabId)
         }
+        onBackToMovieMakerRequested: window.returnToMovieMaker()
         // #1798: a tálca „E-Mail" gombja engedélyezve volt és kattintható,
         // a jelzését viszont SEHOL nem fogta el senki — a testvérei
         // (Kollázs, Exportálás, Nyomtatás) mind be voltak kötve. Ez volt a

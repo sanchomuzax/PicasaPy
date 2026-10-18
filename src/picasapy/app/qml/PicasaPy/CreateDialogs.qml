@@ -358,18 +358,27 @@ Item {
         onAccepted: collageDialog.targetFile = selectedFile.toString()
     }
 
-    Dialog {
+    Item {
         id: movieDialog
         objectName: "movieDialog"
-        title: qsTr("Movie")
-        modal: false
-        anchors.centerIn: parent
-        width: 700
-        // A magyar feliratokkal is a teljes Mozgófilm fül férjen el az
-        // előnézet és a vezérlősáv fölött; kisebb főablaknál a ScrollView
-        // maradjon látható, saját görgetősávval.
-        height: Math.min(720, Math.max(0, dialogs.appWindow.height - 24))
-        standardButtons: Dialog.NoButton
+        x: 0
+        y: dialogs.appWindow
+                && typeof dialogs.appWindow.documentTabsBottom === "number"
+            ? dialogs.appWindow.documentTabsBottom : 0
+        width: parent.width
+        height: Math.max(0, parent.height - y)
+        visible: !!(dialogs.appWindow && dialogs.appWindow.movieMakerActive)
+        focus: visible
+        readonly property real layoutScale:
+            Math.min(1, Math.min(width / 800, height / 534))
+
+        function open() {
+            dialogs.appWindow.openMovieMakerTab()
+        }
+        function close() {
+            dialogs.appWindow.closeMovieMakerTab()
+        }
+
         property string targetFile: ""
         // A korábbi sikeres kimenet útvonala: az eredeti panel is megjegyzi,
         // és újabb export előtt felajánlja a cserét vagy az új fájlt.
@@ -413,7 +422,9 @@ Item {
             sizeOptions[movieHeightBox.currentIndex][1]
         readonly property int previewItemCount:
             movieClipSources.length + movieSlides.length
-        property bool previewActualSizeEnabled: false
+        // A spec szerint a `Preferences\makemovie1to1` alapja 1: a valódi méret a
+        // kiinduló nézet, az 1:1 gomb bekapcsolva.
+        property bool previewActualSizeEnabled: true
         property int previewWindowVisibilityBeforeFullscreen: Window.Windowed
         property bool previewOwnsFullscreen: false
         property var movieSlides: []
@@ -661,6 +672,16 @@ Item {
                 Math.max(0, Math.floor(seconds / previewSlideDurationSeconds)))
             )
         }
+        // A fotó mappájának neve az URL utolsó előtti eleme (a Picasa „mappa > fájl" alakja).
+        function movieFolderName(source) {
+            var parts = String(source).split("/")
+            if (parts.length < 2) return ""
+            try {
+                return decodeURIComponent(parts[parts.length - 2])
+            } catch (error) {
+                return parts[parts.length - 2]
+            }
+        }
         function movieInfoText() {
             var photoCount = movieClipSources.length
             var total = photoCount + movieSlides.length
@@ -682,6 +703,8 @@ Item {
                         && typeof controller.movieClipNames === "function"
                     ? controller.movieClipNames([movieClipSources[selected]]) : []
                 name = names.length ? names[0] : ""
+                var folder = movieFolderName(movieClipSources[selected])
+                if (folder.length) name = folder + " > " + name
                 var dimensions = controller
                         && typeof controller.moviePreviewImageSize === "function"
                     ? controller.moviePreviewImageSize(
@@ -993,6 +1016,28 @@ Item {
             moviePreviewTimer.stop()
             movieTabs.currentIndex = 0
         }
+        function addSelectedClips() {
+            var sources = movieDialog.movieClipSources.slice(0)
+            controller.selectedMovieSourceUrls(
+                dialogs.appWindow.selectedIndexes).forEach(function(url) {
+                if (sources.indexOf(url) < 0) sources.push(url)
+            })
+            movieDialog.movieClipSources = sources
+        }
+        function deleteSelectedClip() {
+            var selected = movieClipList.currentIndex
+            if (selected < 0) return
+            if (selected >= movieDialog.movieClipSources.length) {
+                movieDialog.removeTextSlide()
+                return
+            }
+            var sources = movieDialog.movieClipSources.slice(0)
+            sources.splice(selected, 1)
+            movieDialog.movieClipSources = sources
+            movieClipList.currentIndex = Math.min(
+                selected,
+                sources.length + movieDialog.movieSlides.length - 1)
+        }
         function exportMovie() {
             if (previousMoviePath.length > 0) {
                 movieReplaceDialog.open()
@@ -1036,7 +1081,13 @@ Item {
                 })
             close()
         }
-        onClosed: {
+        onVisibleChanged: {
+            if (visible) {
+                forceActiveFocus()
+                movieDialog.requestPreviewFrame()
+                movieDialog.prefetchNextPreviewFrame()
+                return
+            }
             movieDialog.projektbolNyilt = false
             movieItemsRefreshTimer.stop()
             moviePreviewTimer.stop()
@@ -1045,28 +1096,63 @@ Item {
                 moviePreviewMusicLoader.item.stop()
             movieDialog.restorePreviewFullscreen()
         }
-        onOpened: {
-            movieDialog.requestPreviewFrame()
-            movieDialog.prefetchNextPreviewFrame()
-        }
-        ColumnLayout {
+        Rectangle {
             anchors.fill: parent
-            anchors.margins: 14
-            spacing: 8
+            color: Theme.canvasBg
+        }
+        Item {
+            id: movieLeftPanel
+            objectName: "movieLeftPanel"
+            x: 4 * movieDialog.layoutScale
+            y: 20 * movieDialog.layoutScale
+            width: 276 * movieDialog.layoutScale
+            height: 389 * movieDialog.layoutScale
+
+            // A mérce szerint: 2 képpontos kék szegély, világos szürke töltés.
+            Rectangle {
+                objectName: "movieLeftPanelFrame"
+                anchors.fill: parent
+                color: Theme.movieBoxFill
+                border.color: Theme.movieBoxBorder
+                border.width: 2
+                radius: 7
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 0
+                clip: true
             TabBar {
                 id: movieTabs
                 objectName: "movieTabs"
                 Layout.fillWidth: true
-                TabButton { objectName: "movieTabMotion"; text: qsTr("Movie") }
-                TabButton { objectName: "movieTabSlide"; text: qsTr("Slide") }
-                TabButton { objectName: "movieTabClips"; text: qsTr("Clips") }
+                Layout.minimumWidth: 0
+                Layout.maximumWidth: 276 * movieDialog.layoutScale
+                Layout.preferredHeight: 25 * movieDialog.layoutScale
+                Layout.leftMargin: 1 * movieDialog.layoutScale
+                Layout.rightMargin: 1 * movieDialog.layoutScale
+                Layout.topMargin: 1 * movieDialog.layoutScale
+                MovieTabButton { objectName: "movieTabMotion"; text: qsTr("Movie") }
+                MovieTabButton { objectName: "movieTabSlide"; text: qsTr("Slide") }
+                MovieTabButton {
+                    objectName: "movieTabClips"
+                    text: qsTr("Clips (%d)").replace(
+                        "%d", String(movieDialog.movieClipSources.length))
+                }
             }
             StackLayout {
                 id: moviePages
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.minimumWidth: 0
+                Layout.maximumWidth: 276 * movieDialog.layoutScale
+                Layout.topMargin: 6 * movieDialog.layoutScale
+                Layout.leftMargin: 1 * movieDialog.layoutScale
+                Layout.rightMargin: 1 * movieDialog.layoutScale
+                Layout.bottomMargin: 1 * movieDialog.layoutScale
                 currentIndex: movieTabs.currentIndex
                 ScrollView {
+                    id: movieTabPanelMotion
                     objectName: "movieTabPanelMotion"
                     clip: true
                     ScrollBar.vertical: ScrollBar {
@@ -1074,133 +1160,106 @@ Item {
                     }
                     ColumnLayout {
                         width: moviePages.width
-                        spacing: 8
+                        spacing: 1
+
                         Text {
-                            objectName: "movieProjectNote"
-                            visible: movieDialog.projektbolNyilt
-                            text: qsTr("The movie's pictures and timing come from the project file; the size starts from the default.")
-                            wrapMode: Text.WordWrap
+                            objectName: "audio_label"
+                            text: qsTr("Audio Track:")
                             Layout.fillWidth: true
-                            font.pixelSize: Theme.fontSize - 1
+                            horizontalAlignment: Text.AlignHCenter
+                            color: Theme.ink
+                        }
+                        Text {
+                            objectName: "movieAudioPathLabel"
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            text: movieDialog.audioFile.length
+                                ? decodeURIComponent(movieDialog.audioFile.split("/").pop())
+                                : qsTr("None")
+                            color: movieDialog.audioFile.length
+                                ? Theme.ink : Theme.picasaGreen
+                            elide: Text.ElideMiddle
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Button {
+                                objectName: "movieAddAudioButton"
+                                text: qsTr("Load…")
+                                Layout.fillWidth: true
+                                onClicked: movieAudioDialog.open()
+                            }
+                            Button {
+                                id: removeAudioButton
+                                objectName: "movieRemoveAudioButton"
+                                text: qsTr("Clear")
+                                Layout.fillWidth: true
+                                enabled: movieDialog.audioFile.length > 0
+                                // Hangsáv nélkül a felirat szürke, nem a sötét gombszöveg.
+                                contentItem: Text {
+                                    text: removeAudioButton.text
+                                    font: removeAudioButton.font
+                                    color: removeAudioButton.enabled
+                                        ? Theme.ink : Theme.movieDisabledText
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    movieDialog.audioFile = ""
+                                    movieDialog.audioFileFromFolderMusic = false
+                                }
+                            }
+                        }
+                        Text {
+                            text: qsTr("Options")
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
                             color: Theme.textGray
                         }
-                        RowLayout {
+                        PicasaComboBox {
+                            id: movieAudioOptionBox
+                            objectName: "movieAudioOptionBox"
                             Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            Text {
-                                objectName: "movieCountLabel"
-                                text: qsTr("%1 pictures selected.").arg(movieDialog.movieClipSources.length)
-                                font.pixelSize: Theme.fontSize
-                                color: Theme.textGray
-                            }
+                            enabled: movieDialog.audioFile.length > 0
+                            // Hangsáv nélkül a felirat a mért szürke, nem a sötét gombszöveg.
+                            palette.disabled.buttonText: Theme.movieOptionDisabledText
+                            model: [qsTr("Truncate audio"), qsTr("Fit photos into audio"),
+                                qsTr("Loop photos to match audio")]
+                            currentIndex: movieDialog.audioOption
+                            onActivated: movieDialog.audioOption = currentIndex
+                        }
+                        Text {
+                            text: qsTr("Transition style:")
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            color: Theme.ink
+                        }
+                        PicasaComboBox {
+                            id: movieTransitionBox
+                            objectName: "movieTransitionBox"
+                            Layout.fillWidth: true
+                            model: [qsTr("Cut"), qsTr("Dissolve"),
+                                qsTr("Dissolve through black"), qsTr("Dissolve through white"),
+                                qsTr("Wipe - left"), qsTr("Wipe"), qsTr("Wipe - top"),
+                                qsTr("Wipe - bottom"), qsTr("Wipe - up left"),
+                                qsTr("Wipe - up right"), qsTr("Wipe - down left"),
+                                qsTr("Wipe - down right"), qsTr("Push - left"), qsTr("Push"),
+                                qsTr("Push - top"), qsTr("Push - bottom"),
+                                qsTr("Circle - inwards"), qsTr("Circle"),
+                                qsTr("Pan and Zoom"), qsTr("Pan and Zoom - face"),
+                                qsTr("Time Lapse"), qsTr("Rectangle")]
+                            currentIndex: movieDialog.transitionIndex
+                            onCurrentIndexChanged: movieDialog.transitionIndex = currentIndex
+                            onActivated: movieDialog.transitionIndex = currentIndex
+                        }
+                        RowLayout {
+                            objectName: "movieSecondsRow"
+                            Layout.fillWidth: true
+                            spacing: 4
                             Item { Layout.fillWidth: true }
-                            Button {
-                                objectName: "rewind"
-                                text: qsTr("Back to selected slide")
-                                ToolTip.text: qsTr("Back to selected slide")
-                                ToolTip.visible: hovered
-                                ToolTip.delay: Theme.tooltipDelay
-                                onClicked: {
-                                    moviePreviewTimer.stop()
-                                    var selected = movieClipList.currentIndex
-                                    if (selected < 0
-                                            || selected >= movieDialog.movieClipSources.length)
-                                        selected = 0
-                                    movieDialog.setPreviewIndex(selected)
-                                }
-                            }
-                        }
-                        RowLayout {
-                            Layout.maximumWidth: moviePages.width
                             Text {
-                                objectName: "moviesize_label"
-                                text: qsTr("Dimensions")
+                                objectName: "movieSecondsLabel"
+                                text: qsTr("Slide Duration:")
                                 color: Theme.ink
-                            }
-                            PicasaComboBox {
-                                id: movieHeightBox
-                                objectName: "movieHeightBox"
-                                Layout.preferredWidth: 190
-                                model: ["320x240", "640x480", "800x600",
-                                    "1024x768", "1600x1200", "1280x720 (720p)",
-                                    "1920x1080 (1080p)"]
-                                currentIndex: movieDialog.defaultSizeIndex
-                                // #4391: a Picasa az arc-film felbontását nem
-                                // menti vissza; csak a normál film írja a saját kulcsát.
-                                onActivated: {
-                                    if (!movieDialog.personMovieMode)
-                                        controller.setMovieResolutionIndex(currentIndex)
-                                    movieDialog.requestPreviewFrame()
-                                }
-                            }
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            Text { text: qsTr("Transition style:"); color: Theme.ink }
-                            PicasaComboBox {
-                                id: movieTransitionBox
-                                objectName: "movieTransitionBox"
-                                Layout.fillWidth: true
-                                model: [qsTr("Cut"), qsTr("Dissolve"),
-                                    qsTr("Dissolve through black"), qsTr("Dissolve through white"),
-                                    qsTr("Wipe - left"), qsTr("Wipe"), qsTr("Wipe - top"),
-                                    qsTr("Wipe - bottom"), qsTr("Wipe - up left"),
-                                    qsTr("Wipe - up right"), qsTr("Wipe - down left"),
-                                    qsTr("Wipe - down right"), qsTr("Push - left"), qsTr("Push"),
-                                    qsTr("Push - top"), qsTr("Push - bottom"),
-                                    qsTr("Circle - inwards"), qsTr("Circle"),
-                                    qsTr("Pan and Zoom"), qsTr("Pan and Zoom - face"),
-                                    qsTr("Time Lapse"), qsTr("Rectangle")]
-                                currentIndex: movieDialog.transitionIndex
-                                onCurrentIndexChanged: movieDialog.transitionIndex = currentIndex
-                                onActivated: movieDialog.transitionIndex = currentIndex
-                            }
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            Text { text: qsTr("Overlap"); color: Theme.ink }
-                            PicasaSlider {
-                                id: movieOverlapSlider
-                                objectName: "movieOverlapSlider"
-                                Layout.fillWidth: true
-                                from: 0; to: Math.max(
-                                    0.1,
-                                    (movieSeconds && movieSeconds.value !== undefined
-                                        ? movieSeconds.value : 30) / 10 * 0.9)
-                                value: Math.min(0.5, to); stepSize: 0.1
-                                grooveThickness: 9
-                                grooveInset: 3
-                                handleWidth: 16
-                                handleHeight: 22
-                                handleRadius: 3
-                                handleOffsetY: 2
-                                showTicks: false
-                            }
-                            Text {
-                                objectName: "movieOverlapValueLabel"
-                                text: qsTr("%1 Sec").arg(
-                                    (movieOverlapSlider
-                                        && movieOverlapSlider.value !== undefined
-                                        ? movieOverlapSlider.value : 0.5).toFixed(1))
-                            }
-                        }
-                        RowLayout {
-                            Layout.maximumWidth: moviePages.width
-                            Text { text: qsTr("Slide Duration:"); color: Theme.ink }
-                            PicasaSlider {
-                                id: movieSeconds
-                                objectName: "movieSeconds"
-                                Layout.fillWidth: true
-                                from: 10; to: 100; stepSize: 5; value: 30
-                                grooveThickness: 9
-                                grooveInset: 3
-                                handleWidth: 16
-                                handleHeight: 22
-                                handleRadius: 3
-                                handleOffsetY: 2
-                                showTicks: false
                             }
                             Text {
                                 objectName: "movieSecondsValueLabel"
@@ -1209,104 +1268,133 @@ Item {
                                         ? movieSeconds.value : 30) / 10).toFixed(1))
                                 color: Theme.ink
                             }
+                            Item { Layout.fillWidth: true }
+                        }
+                        PicasaSlider {
+                            id: movieSeconds
+                            objectName: "movieSeconds"
+                            Layout.preferredWidth: Math.round(parent.width * 0.5)
+                            Layout.alignment: Qt.AlignHCenter
+                            from: 10; to: 100; stepSize: 5; value: 30
+                            grooveThickness: 9
+                            grooveInset: 3
+                            handleWidth: 16
+                            handleHeight: 22
+                            handleRadius: 3
+                            handleOffsetY: 2
+                            showTicks: false
                         }
                         RowLayout {
+                            objectName: "movieOverlapRow"
                             Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            Text { text: qsTr("Target file:"); color: Theme.ink }
+                            spacing: 4
+                            Item { Layout.fillWidth: true }
                             Text {
-                                objectName: "movieTargetLabel"
-                                Layout.fillWidth: true
-                                elide: Text.ElideMiddle
-                                text: movieDialog.targetFile.length
-                                    ? movieDialog.targetFile : qsTr("(not selected)")
-                                color: Theme.textGray
-                            }
-                            Button { objectName: "movieBrowseButton"; text: qsTr("Browse..."); onClicked: movieTargetDialog.open() }
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            Text {
-                                objectName: "audio_label"
-                                text: qsTr("Audio Track:")
+                                objectName: "movieOverlapLabel"
+                                text: qsTr("Overlap")
                                 color: Theme.ink
                             }
                             Text {
-                                objectName: "movieAudioPathLabel"
-                                Layout.fillWidth: true
-                                text: movieDialog.audioFile.length
-                                    ? decodeURIComponent(movieDialog.audioFile.split("/").pop())
-                                    : qsTr("No audio selected")
-                                elide: Text.ElideMiddle
+                                objectName: "movieOverlapValueLabel"
+                                text: qsTr("%1 Sec").arg(
+                                    (movieOverlapSlider
+                                        && movieOverlapSlider.value !== undefined
+                                        ? movieOverlapSlider.value : 0.5).toFixed(1))
+                                color: Theme.ink
                             }
-                            Button { objectName: "movieAddAudioButton"; text: qsTr("Load…"); onClicked: movieAudioDialog.open() }
-                            Button {
-                                objectName: "movieRemoveAudioButton"
-                                text: qsTr("Clear")
-                                onClicked: {
-                                    movieDialog.audioFile = ""
-                                    movieDialog.audioFileFromFolderMusic = false
-                                }
+                            Item { Layout.fillWidth: true }
+                        }
+                        PicasaSlider {
+                            id: movieOverlapSlider
+                            objectName: "movieOverlapSlider"
+                            Layout.preferredWidth: Math.round(parent.width * 0.5)
+                            Layout.alignment: Qt.AlignHCenter
+                            from: 0; to: Math.max(
+                                0.1,
+                                (movieSeconds && movieSeconds.value !== undefined
+                                    ? movieSeconds.value : 30) / 10 * 0.9)
+                            value: Math.min(0.5, to); stepSize: 0.1
+                            grooveThickness: 9
+                            grooveInset: 3
+                            handleWidth: 16
+                            handleHeight: 22
+                            handleRadius: 3
+                            handleOffsetY: 2
+                            showTicks: false
+                        }
+                        Text {
+                            objectName: "moviesize_label"
+                            text: qsTr("Dimensions")
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            color: Theme.ink
+                        }
+                        PicasaComboBox {
+                            id: movieHeightBox
+                            objectName: "movieHeightBox"
+                            Layout.fillWidth: true
+                            model: ["320x240", "640x480", "800x600",
+                                "1024x768", "1600x1200", "1280x720 (720p)",
+                                "1920x1080 (1080p)"]
+                            currentIndex: movieDialog.defaultSizeIndex
+                            // #4391: a Picasa az arc-film felbontását nem
+                            // menti vissza; csak a normál film írja a saját kulcsát.
+                            onActivated: {
+                                if (!movieDialog.personMovieMode)
+                                    controller.setMovieResolutionIndex(currentIndex)
+                                movieDialog.requestPreviewFrame()
                             }
                         }
-                        RowLayout {
+                        CheckBox {
+                            id: movieShowCaptions
+                            objectName: "movieShowCaptions"
                             Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            Text { text: qsTr("Options"); color: Theme.ink }
-                            PicasaComboBox {
-                                id: movieAudioOptionBox
-                                objectName: "movieAudioOptionBox"
-                                Layout.fillWidth: true
-                                model: [qsTr("Truncate audio"), qsTr("Fit photos into audio"),
-                                    qsTr("Loop photos to match audio")]
-                                currentIndex: movieDialog.audioOption
-                                onActivated: movieDialog.audioOption = currentIndex
+                            Layout.preferredHeight: 24
+                            topPadding: 0
+                            bottomPadding: 0
+                            text: qsTr("Show Captions")
+                            font.pixelSize: Theme.fontSize - 4
+                            checked: controller && typeof controller.moviePreference === "function"
+                                    ? controller.moviePreference("captions") : false
+                            onToggled: {
+                                if (controller && typeof controller.setMoviePreference === "function")
+                                    controller.setMoviePreference("captions", checked)
+                                movieDialog.requestPreviewFrame()
                             }
                         }
-                        Flow {
+                        CheckBox {
+                            id: movieCropToFit
+                            objectName: "movieCropToFit"
                             Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            spacing: 8
-                            CheckBox {
-                                id: movieShowCaptions
-                                objectName: "movieShowCaptions"
-                                text: qsTr("Show Captions")
-                                checked: controller && typeof controller.moviePreference === "function"
-                                        ? controller.moviePreference("captions") : false
-                                onToggled: {
-                                    if (controller && typeof controller.setMoviePreference === "function")
-                                        controller.setMoviePreference("captions", checked)
-                                    movieDialog.requestPreviewFrame()
-                                }
+                            Layout.preferredHeight: 24
+                            topPadding: 0
+                            bottomPadding: 0
+                            text: qsTr("Full frame photo crop")
+                            font.pixelSize: Theme.fontSize - 4
+                            checked: controller && typeof controller.moviePreference === "function"
+                                    ? controller.moviePreference("cropfit") : false
+                            onToggled: {
+                                if (controller && typeof controller.setMoviePreference === "function")
+                                    controller.setMoviePreference("cropfit", checked)
+                                movieDialog.requestPreviewFrame()
                             }
-                            CheckBox {
-                                id: movieShowDates
-                                objectName: "movieShowDates"
-                                text: qsTr("Show Dates")
-                                onToggled: movieDialog.requestPreviewFrame()
-                            }
-                            CheckBox {
-                                id: movieCropToFit
-                                objectName: "movieCropToFit"
-                                text: qsTr("Full frame photo crop")
-                                checked: controller && typeof controller.moviePreference === "function"
-                                        ? controller.moviePreference("cropfit") : false
-                                onToggled: {
-                                    if (controller && typeof controller.setMoviePreference === "function")
-                                        controller.setMoviePreference("cropfit", checked)
-                                    movieDialog.requestPreviewFrame()
-                                }
-                            }
-                            CheckBox {
-                                id: movieRemoveLowResFaces
-                                objectName: "movieRemoveLowResFaces"
-                                text: qsTr("Remove Low Resolution Faces")
-                                checked: controller && typeof controller.moviePreference === "function"
-                                        ? controller.moviePreference("removeLowResFaces") : false
-                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
-                                               controller.setMoviePreference("removeLowResFaces", checked)
-                            }
+                        }
+                        CheckBox {
+                            id: movieShowDates
+                            objectName: "movieShowDates"
+                            Layout.fillWidth: true
+                            text: qsTr("Show Dates")
+                            onToggled: movieDialog.requestPreviewFrame()
+                        }
+                        CheckBox {
+                            id: movieRemoveLowResFaces
+                            objectName: "movieRemoveLowResFaces"
+                            Layout.fillWidth: true
+                            text: qsTr("Remove Low Resolution Faces")
+                            checked: controller && typeof controller.moviePreference === "function"
+                                    ? controller.moviePreference("removeLowResFaces") : false
+                            onToggled: if (controller && typeof controller.setMoviePreference === "function")
+                                           controller.setMoviePreference("removeLowResFaces", checked)
                         }
                         Flow {
                             Layout.fillWidth: true
@@ -1320,6 +1408,58 @@ Item {
                             RadioButton { id: movieSmartOrder; objectName: "movieSmartOrder"; text: qsTr("Best Transitions"); checked: true }
                             RadioButton { objectName: "movieAlbumOrder"; text: qsTr("Album Order") }
                             RadioButton { id: movieChronologicalOrder; objectName: "movieChronologicalOrder"; text: qsTr("Chronological") }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
+                            Text { text: qsTr("Target file:"); color: Theme.ink }
+                            Text {
+                                objectName: "movieTargetLabel"
+                                Layout.fillWidth: true
+                                elide: Text.ElideMiddle
+                                text: movieDialog.targetFile.length
+                                    ? movieDialog.targetFile : qsTr("(not selected)")
+                                color: Theme.textGray
+                            }
+                            Button {
+                                objectName: "movieBrowseButton"
+                                text: qsTr("Browse...")
+                                onClicked: movieTargetDialog.open()
+                            }
+                        }
+                        Text {
+                            objectName: "movieProjectNote"
+                            visible: movieDialog.projektbolNyilt
+                            text: qsTr("The movie's pictures and timing come from the project file; the size starts from the default.")
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.textGray
+                        }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                objectName: "movieCountLabel"
+                                text: qsTr("%1 pictures selected.").arg(movieDialog.movieClipSources.length)
+                                font.pixelSize: Theme.fontSize
+                                color: Theme.textGray
+                            }
+                            Button {
+                                objectName: "rewind"
+                                text: qsTr("Back to selected slide")
+                                Layout.fillWidth: true
+                                ToolTip.text: qsTr("Back to selected slide")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: Theme.tooltipDelay
+                                onClicked: {
+                                    moviePreviewTimer.stop()
+                                    var selected = movieClipList.currentIndex
+                                    if (selected < 0
+                                            || selected >= movieDialog.movieClipSources.length)
+                                        selected = 0
+                                    movieDialog.setPreviewIndex(selected)
+                                }
+                            }
                         }
                     }
                 }
@@ -1354,17 +1494,22 @@ Item {
                             PicasaComboBox {
                                 id: movieTextSizeBox
                                 objectName: "movieTextSizeBox"
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
                                 model: movieDialog.textSizes.map(function(size) {
                                     return String(size)
                                 })
                                 currentIndex: 4
                                 onCurrentIndexChanged: movieDialog.updateSelectedTextSlide()
                             }
+                        }
+                        RowLayout {
                             Text { text: qsTr("Style:"); color: Theme.ink }
                             PicasaComboBox {
                                 id: movieTextStyleBox
                                 objectName: "movieTextStyleBox"
                                 Layout.fillWidth: true
+                                Layout.minimumWidth: 0
                                 model: [qsTr("Centered"), qsTr("I'm Feeling Lucky"), qsTr("Caption"),
                                     qsTr("Caption - Classic"), qsTr("Gradient - Black"),
                                     qsTr("Gradient - White"), qsTr("Transparent - Black"),
@@ -1387,17 +1532,19 @@ Item {
                                 text: qsTr("Italic")
                                 onToggled: movieDialog.updateSelectedTextSlide()
                             }
-                            CheckBox {
-                                id: movieOutlineBox
-                                objectName: "movieOutlineBox"
-                                text: qsTr("Automatic Outline")
-                                onToggled: movieDialog.updateSelectedTextSlide()
-                                ToolTip.text: qsTr("Automatic Outline (like movie subtitles)")
-                                ToolTip.visible: hovered
-                                ToolTip.delay: Theme.tooltipDelay
-                            }
+                        }
+                        CheckBox {
+                            Layout.fillWidth: true
+                            id: movieOutlineBox
+                            objectName: "movieOutlineBox"
+                            text: qsTr("Automatic Outline")
+                            onToggled: movieDialog.updateSelectedTextSlide()
+                            ToolTip.text: qsTr("Automatic Outline (like movie subtitles)")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: Theme.tooltipDelay
                         }
                         RowLayout {
+                            Layout.fillWidth: true
                             Button {
                                 objectName: "movieTextColorButton"
                                 text: qsTr("Text color")
@@ -1412,20 +1559,29 @@ Item {
                                 border.width: 1
                                 radius: 2
                             }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
                             Button {
                                 objectName: "movieBackgroundColorButton"
                                 text: qsTr("Background color")
                                 onClicked: movieBackgroundColorDialog.open()
                             }
-                            Button { objectName: "movieInsertSlideButton"; text: qsTr("Insert Text Slide"); onClicked: movieDialog.openTitleDialog() }
                             Button {
-                                objectName: "movieRemoveSlideButton"
-                                text: qsTr("Remove Selected Slide")
-                                ToolTip.text: qsTr("Remove the selected slide")
-                                ToolTip.visible: hovered
-                                ToolTip.delay: Theme.tooltipDelay
-                                onClicked: movieDialog.removeTextSlide()
+                                objectName: "movieInsertSlideButton"
+                                text: qsTr("Insert Text Slide")
+                                Layout.fillWidth: true
+                                onClicked: movieDialog.openTitleDialog()
                             }
+                        }
+                        Button {
+                            objectName: "movieRemoveSlideButton"
+                            text: qsTr("Remove Selected Slide")
+                            Layout.fillWidth: true
+                            ToolTip.text: qsTr("Remove the selected slide")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: Theme.tooltipDelay
+                            onClicked: movieDialog.removeTextSlide()
                         }
                         Item {
                             objectName: "viewedit"
@@ -1509,7 +1665,19 @@ Item {
                 ColumnLayout {
                     objectName: "movieTabPanelClips"
                     spacing: 8
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    Button {
+                        objectName: "movieGetMoreClipsButton"
+                        text: qsTr("Get More...")
+                        Layout.fillWidth: true
+                        ToolTip.text: qsTr("Get more clips from Photo Library")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: Theme.tooltipDelay
+                        onClicked: dialogs.appWindow.openMovieClipCollector()
+                    }
                     RowLayout {
+                        Layout.fillWidth: true
                         Text {
                             objectName: "lengthslider_label"
                             text: qsTr("Total Photos")
@@ -1528,6 +1696,7 @@ Item {
                         }
                     }
                     RowLayout {
+                        Layout.fillWidth: true
                         Text {
                             objectName: "burstslider_label"
                             text: movieBurstSlider.value === 0
@@ -1544,48 +1713,42 @@ Item {
                         }
                     }
                     RowLayout {
+                        Layout.fillWidth: true
                         Button {
                             objectName: "movieRecomputeButton"
                             text: qsTr("Recompute")
+                            Layout.fillWidth: true
                             onClicked: movieDialog.recomputeMovie()
                         }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
                         Button {
                             objectName: "movieAddClipsButton"
                             text: qsTr("Add selected clips")
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: 0
                             ToolTip.text: qsTr("Add the selected clip(s) to the end of the movie")
                             ToolTip.visible: hovered
                             ToolTip.delay: Theme.tooltipDelay
-                            onClicked: {
-                                var sources = movieDialog.movieClipSources.slice(0)
-                                controller.selectedMovieSourceUrls(
-                                    dialogs.appWindow.selectedIndexes).forEach(function(url) {
-                                    if (sources.indexOf(url) < 0) sources.push(url)
-                                })
-                                movieDialog.movieClipSources = sources
-                            }
+                            onClicked: movieDialog.addSelectedClips()
                         }
                         Button {
                             objectName: "movieDeleteClipButton"
                             text: qsTr("Remove selected clip")
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: 0
                             ToolTip.text: qsTr("Remove the selected clip(s) from the tray")
                             ToolTip.visible: hovered
                             ToolTip.delay: Theme.tooltipDelay
-                            onClicked: {
-                                var selected = movieClipList.currentIndex
-                                if (selected < 0) return
-                                if (selected >= movieDialog.movieClipSources.length) {
-                                    movieDialog.removeTextSlide()
-                                    return
-                                }
-                                var sources = movieDialog.movieClipSources.slice(0)
-                                sources.splice(selected, 1)
-                                movieDialog.movieClipSources = sources
-                                movieClipList.currentIndex = Math.min(
-                                    selected,
-                                    sources.length + movieDialog.movieSlides.length - 1)
-                            }
+                            onClicked: movieDialog.deleteSelectedClip()
                         }
-                        CheckBox { id: movieSoloClip; objectName: "movieSoloClip"; text: qsTr("Play selected clip only") }
+                    }
+                    CheckBox {
+                        id: movieSoloClip
+                        objectName: "movieSoloClip"
+                        text: qsTr("Play selected clip only")
+                        Layout.fillWidth: true
                     }
                     ListView {
                         id: movieClipList
@@ -1602,25 +1765,85 @@ Item {
                     }
                 }
             }
+            }
+        }
+        RowLayout {
+            id: movieFooter
+            objectName: "movieFooter"
+            x: 12 * movieDialog.layoutScale
+            y: 451 * movieDialog.layoutScale
+            width: 266 * movieDialog.layoutScale
+            height: 28 * movieDialog.layoutScale
+            spacing: 8 * movieDialog.layoutScale
+            Button {
+                objectName: "movieCancelButton"
+                text: qsTr("Close")
+                Layout.fillWidth: true
+                Layout.preferredHeight: 28 * movieDialog.layoutScale
+                onClicked: movieDialog.close()
+            }
+            Button {
+                objectName: "movieCreateButton"
+                text: qsTr("Create Movie")
+                Layout.fillWidth: true
+                Layout.preferredHeight: 28 * movieDialog.layoutScale
+                onClicked: movieDialog.exportMovie()
+            }
+        }
             ColumnLayout {
                 id: moviePreviewPanel
                 objectName: "moviePreviewPanel"
-                Layout.fillWidth: true
+                x: 287 * movieDialog.layoutScale
+                y: 11 * movieDialog.layoutScale
+                width: Math.max(0, parent.width - x)
+                // A lejátszósor a filmcsík fölött, a panel alján marad: az
+                // előnézet a köztes helyet kitölti (a főablak méretét követi).
+                height: Math.max(0, parent.height - y - 90 * movieDialog.layoutScale)
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 118 * movieDialog.layoutScale
                     Item {
                         id: moviePreviewViewport
                         objectName: "moviePreviewViewport"
-                        Layout.preferredWidth: 240
-                        // Az infósor külön sora ne szorítsa le a filmvezérlőket.
-                        Layout.preferredHeight: 118
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: 118 * movieDialog.layoutScale
                         clip: true
                         onWidthChanged: if (movieDialog.visible) moviePreviewResizeTimer.restart()
                         onHeightChanged: if (movieDialog.visible) moviePreviewResizeTimer.restart()
+                        Rectangle {
+                            objectName: "moviePreviewViewportBg"
+                            anchors.fill: parent
+                            color: Theme.viewerBg
+                        }
+                        Rectangle {
+                            id: moviePreviewFrameBox
+                            objectName: "moviePreviewFrameBox"
+                            // Valódi méretben (1:1) a kimeneti képkocka mérete, nyújtás nélkül,
+                            // a szürke panel margójával. Egyébként a panelhez igazított keret,
+                            // egész, páros pixelekre igazítva (a renderelő is így méretez),
+                            // hogy a kép széle és a keret széle egybeessen.
+                            readonly property real pixelRatio: {
+                                var hostWindow = moviePreviewViewport.Window.window
+                                return hostWindow && hostWindow.devicePixelRatio > 0
+                                    ? hostWindow.devicePixelRatio : 1
+                            }
+                            width: movieDialog.previewActualSizeEnabled
+                                ? Math.round(movieDialog.previewOutputWidth / pixelRatio)
+                                : 2 * Math.floor(Math.round(Math.min(parent.width,
+                                    parent.height * movieDialog.previewAspectRatio)) / 2)
+                            height: movieDialog.previewActualSizeEnabled
+                                ? Math.round(movieDialog.previewOutputHeight / pixelRatio)
+                                : Math.round(width / movieDialog.previewAspectRatio)
+                            x: Math.round((parent.width - width) / 2)
+                            y: Math.round((parent.height - height) / 2)
+                            color: "#000000"
+                        }
                         MoviePreviewFrame {
                             objectName: "moviePreviewOutgoingFrame"
-                            anchors.fill: parent
+                            anchors.fill: moviePreviewFrameBox
                             z: 0
                             visible: !movieDialog.previewTransitionServiceAvailable
                                 && moviePreviewTransition.running
@@ -1641,7 +1864,7 @@ Item {
                         }
                         MoviePreviewFrame {
                             objectName: "moviePreviewIncomingFrame"
-                            anchors.fill: parent
+                            anchors.fill: moviePreviewFrameBox
                             z: 1
                             visible: !movieDialog.previewTransitionServiceAvailable
                                 && movieDialog.previewItemCount > 0
@@ -1662,7 +1885,7 @@ Item {
                         Image {
                             id: moviePreviewTransitionImage
                             objectName: "moviePreviewTransitionImage"
-                            anchors.centerIn: parent
+                            anchors.centerIn: moviePreviewFrameBox
                             z: 2
                             visible: source !== ""
                                 && movieDialog.movieClipSources.length
@@ -1671,12 +1894,14 @@ Item {
                             width: movieDialog.previewActualSizeEnabled
                                     && sourceSize.width > 0
                                 ? sourceSize.width / moviePreviewDpr
-                                : parent.width
+                                : moviePreviewFrameBox.width
                             height: movieDialog.previewActualSizeEnabled
                                     && sourceSize.height > 0
                                 ? sourceSize.height / moviePreviewDpr
-                                : parent.height
-                            fillMode: Image.PreserveAspectFit
+                                : moviePreviewFrameBox.height
+                            // A keret egész pixel (lásd fent), a kép kitölti. A letterbox-sávok
+                            // a kész képkockában vannak, tehát a kitöltés nem vág le fotót.
+                            fillMode: Image.PreserveAspectCrop
                             cache: false
                             readonly property real moviePreviewDpr: {
                                 var hostWindow = moviePreviewViewport.Window.window
@@ -1684,13 +1909,6 @@ Item {
                                     ? hostWindow.devicePixelRatio : 1
                             }
                         }
-                    }
-                    Button {
-                        objectName: "moviePreviewButton"
-                        text: qsTr("Preview")
-                        checkable: true
-                        checked: moviePreviewTimer.running
-                        onClicked: movieDialog.togglePreviewPlayback()
                     }
                 }
                 RowLayout {
@@ -1702,15 +1920,21 @@ Item {
                         objectName: "video_control_bar2/moviecontrolsclip"
                         Layout.preferredWidth: 34
                         Layout.preferredHeight: 30
-                        PicasaButton {
+                        Item {
                             objectName: "video_control_bar2/moviecontrols"
                             anchors.fill: parent
-                            text: moviePreviewTimer.running ? "❚❚" : "▶"
-                            ToolTip.text: moviePreviewTimer.running
-                                    ? qsTr("Pause") : qsTr("Preview")
-                            ToolTip.delay: Theme.tooltipDelay
-                            ToolTip.visible: hovered
-                            onClicked: movieDialog.togglePreviewPlayback()
+                            PicasaButton {
+                                objectName: "moviePreviewButton"
+                                anchors.fill: parent
+                                text: moviePreviewTimer.running ? "❚❚" : "▶"
+                                checkable: true
+                                checked: moviePreviewTimer.running
+                                ToolTip.text: moviePreviewTimer.running
+                                        ? qsTr("Pause") : qsTr("Preview")
+                                ToolTip.delay: Theme.tooltipDelay
+                                ToolTip.visible: hovered
+                                onClicked: movieDialog.togglePreviewPlayback()
+                            }
                         }
                     }
                     RowLayout {
@@ -1787,20 +2011,104 @@ Item {
                         onClicked: movieDialog.togglePreviewFullscreen()
                     }
                 }
-                Text {
-                    objectName: "makemoviepanel/infotext"
-                    Layout.fillWidth: true
-                    elide: Text.ElideMiddle
-                    color: Theme.textGray
-                    text: movieDialog.movieInfoText()
-                }
-            }
-            RowLayout {
-                objectName: "movieFooter"
+        }
+        // Az állapotsor a filmcsík alatt, az előnézeti oszlop közepén áll.
+        Text {
+            objectName: "makemoviepanel/infotext"
+            x: moviePreviewPanel.x
+            y: parent.height - 20 * movieDialog.layoutScale
+            width: moviePreviewPanel.width
+            height: 16 * movieDialog.layoutScale
+            horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideMiddle
+            color: Theme.textGray
+            text: movieDialog.movieInfoText()
+        }
+        ColumnLayout {
+            objectName: "movieFilmstripActions"
+            x: 291 * movieDialog.layoutScale
+            y: parent.height - 90 * movieDialog.layoutScale
+            width: 32 * movieDialog.layoutScale
+            height: 72 * movieDialog.layoutScale
+            spacing: 4 * movieDialog.layoutScale
+            PicasaButton {
+                objectName: "movieFilmstripAddButton"
                 Layout.fillWidth: true
-                Item { Layout.fillWidth: true }
-                Button { objectName: "movieCancelButton"; text: qsTr("Close"); onClicked: movieDialog.close() }
-                Button { objectName: "movieCreateButton"; text: qsTr("Create Movie"); onClicked: movieDialog.exportMovie() }
+                Layout.fillHeight: true
+                text: "+"
+                ToolTip.text: qsTr("Add selected clips")
+                ToolTip.visible: hovered
+                ToolTip.delay: Theme.tooltipDelay
+                onClicked: movieDialog.addSelectedClips()
+            }
+            PicasaButton {
+                objectName: "movieFilmstripDeleteButton"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                text: "×"
+                // A mérce X-e piros jelet mutat.
+                labelColor: Theme.movieRemoveMark
+                ToolTip.text: qsTr("Remove selected clip")
+                ToolTip.visible: hovered
+                ToolTip.delay: Theme.tooltipDelay
+                onClicked: movieDialog.deleteSelectedClip()
+            }
+        }
+        ListView {
+            id: movieFilmstrip
+            objectName: "movieFilmstrip"
+            x: 330 * movieDialog.layoutScale
+            y: parent.height - 90 * movieDialog.layoutScale
+            width: Math.max(0, parent.width - x)
+            height: 72 * movieDialog.layoutScale
+            orientation: ListView.Horizontal
+            spacing: 8 * movieDialog.layoutScale
+            clip: true
+            // A mérce bélyegképe képpontról mérve 50 × 50; a sáv magassága ennél nagyobb.
+            readonly property real thumbWidth: 50 * movieDialog.layoutScale
+            readonly property real thumbHeight: 50 * movieDialog.layoutScale
+            // A bélyegsor a sáv vízszintes közepén áll, ha kifér; ha nem fér ki,
+            // a görgetés a bal szélről indul.
+            readonly property real contentSpan: Math.max(
+                0, count * (thumbWidth + spacing) - spacing)
+            leftMargin: Math.max(0, (width - contentSpan) / 2)
+            rightMargin: leftMargin
+            model: movieDialog.movieFilmstripItems
+            delegate: Item {
+                required property int index
+                required property var modelData
+                width: movieFilmstrip.thumbWidth
+                height: movieFilmstrip.height
+
+                Rectangle {
+                    objectName: "movieFilmstripFrame"
+                    anchors.centerIn: parent
+                    width: movieFilmstrip.thumbWidth
+                    height: movieFilmstrip.thumbHeight
+                    color: Theme.panelBg
+                    border.width: index === movieClipList.currentIndex ? 2 : 1
+                    border.color: index === movieClipList.currentIndex
+                        ? Theme.thumbSelection : Theme.chromeBorder
+                    Image {
+                        anchors.fill: parent
+                        anchors.margins: 2 * movieDialog.layoutScale
+                        source: modelData.kind === "photo" ? modelData.source : ""
+                        fillMode: Image.PreserveAspectCrop
+                        visible: modelData.kind === "photo"
+                        asynchronous: true
+                    }
+                }
+                Text {
+                    anchors.centerIn: parent
+                    visible: modelData.kind === "text"
+                    text: qsTr("Text Slide")
+                    color: Theme.ink
+                    font.pixelSize: Theme.fontSize - 1
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: movieDialog.selectMovieFilmstripItem(index)
+                }
             }
         }
     }

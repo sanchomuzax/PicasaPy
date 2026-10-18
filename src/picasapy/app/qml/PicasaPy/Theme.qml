@@ -267,6 +267,22 @@ QtObject {
         //: a pirula mindkettőn sötétkék
         readonly property color trayTokenHighlightText: "#ffffff"
         readonly property color viewerBg: tema.dark ? "#1a1a1a" : "#808080"
+        // A Mozgófilm bal hasábjának kék szegélye (a Windows-os mérce szerint).
+        readonly property color movieBoxBorder: tema.dark ? "#4d6b80" : "#b4bfe0"
+        // A Mozgófilm bal hasábjának MÉRT színei (képpontból olvasva a mércéről):
+        // a hasáb töltése, a fülek (a nem kijelölt kékes átmenettel, a kijelölt
+        // világossal, kék szegéllyel), a letiltott felirat (Törlés) és a piros
+        // X-jel a filmcsík gombján. A sötét párt a mi döntésünk.
+        readonly property color movieBoxFill: tema.dark ? "#282828" : "#e8e8e8"
+        readonly property color movieTabFillTop: tema.dark ? "#3d4f63" : "#bec6df"
+        readonly property color movieTabFillBottom: tema.dark ? "#4a5f75" : "#c5cde4"
+        readonly property color movieTabSelected: tema.dark ? "#2e2e2e" : "#e8e8e8"
+        readonly property color movieTabBorder: tema.dark ? "#3f5c75" : "#6a80c1"
+        readonly property color movieDisabledText: tema.dark ? "#6a6a6a" : "#bababa"
+        // Az Opciók lista letiltott felirata: a mérce legsötétebb képpontja.
+        // A Törlésé (movieDisabledText) más árnyalat, ezért külön token.
+        readonly property color movieOptionDisabledText: tema.dark ? "#6a6a6a" : "#b1b1b1"
+        readonly property color movieRemoveMark: tema.dark ? "#e05a5a" : "#b10000"
 
         // #3663: a kettős nézet „Kijelölve" jelvénye a `respack.yt`
         // felvételén MÉRT szürke — a #3013 tévesen a `selectionBlue`
@@ -604,6 +620,15 @@ QtObject {
     readonly property color trayTokenHighlight: tema._szin("trayTokenHighlight", nyersTokenek.trayTokenHighlight)
     readonly property color trayTokenHighlightText: tema._szin("trayTokenHighlightText", nyersTokenek.trayTokenHighlightText)
     readonly property color viewerBg: tema._szin("viewerBg", nyersTokenek.viewerBg)
+    readonly property color movieBoxBorder: tema._szin("movieBoxBorder", nyersTokenek.movieBoxBorder)
+    readonly property color movieBoxFill: tema._szin("movieBoxFill", nyersTokenek.movieBoxFill)
+    readonly property color movieTabFillTop: tema._szin("movieTabFillTop", nyersTokenek.movieTabFillTop)
+    readonly property color movieTabFillBottom: tema._szin("movieTabFillBottom", nyersTokenek.movieTabFillBottom)
+    readonly property color movieTabSelected: tema._szin("movieTabSelected", nyersTokenek.movieTabSelected)
+    readonly property color movieTabBorder: tema._szin("movieTabBorder", nyersTokenek.movieTabBorder)
+    readonly property color movieDisabledText: tema._szin("movieDisabledText", nyersTokenek.movieDisabledText)
+    readonly property color movieOptionDisabledText: tema._szin("movieOptionDisabledText", nyersTokenek.movieOptionDisabledText)
+    readonly property color movieRemoveMark: tema._szin("movieRemoveMark", nyersTokenek.movieRemoveMark)
     readonly property color viewerFocusBadgeBg: tema._szin("viewerFocusBadgeBg", nyersTokenek.viewerFocusBadgeBg)
     readonly property color captionBar: tema._szin("captionBar", nyersTokenek.captionBar)
     readonly property color captionBarText: tema._szin("captionBarText", nyersTokenek.captionBarText)

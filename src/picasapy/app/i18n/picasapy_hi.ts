@@ -4523,6 +4523,27 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
     <context>
         <name>CreateDialogs</name>
         <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>अधिक प्राप्त करें...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>फ़ोटो लाइब्रेरी से अधिक क्लिप प्राप्त करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Clips (%d)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
+            <translation>क्लिप (%d)</translation>
+        </message>
+        <message>
             <source>Poster Settings</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/window1.title</extracomment>
@@ -8380,6 +8401,13 @@ It will change the next time Picasa is opened.</source>
 
 अगली बार Picasa खोलने पर यह बदलाव लागू होगा.</translation>
         </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(panelroot/makemovietab)</extracomment>
+            <translation>मूवी बनाएं</translation>
+        </message>
     </context>
     <context>
         <name>MainToolbar</name>
@@ -11738,6 +11766,13 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracommen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
             <translation>कोलाज पर वापस जाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Back to Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
+            <translation>मूवी मेकर में वापस</translation>
         </message>
         <message>
             <source>Cancel "Get more"</source>

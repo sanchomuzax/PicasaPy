@@ -481,8 +481,13 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             )
             assert film.property("movieUsedPhotoCount") == 3
             letrehozas = ablak.findChild(QObject, "movieCreateButton")
-            assert _varj(qt_app, lambda: film.property("opened")), (
-                "a Filmkészítő nem fejezte be a megnyílását"
+            assert _varj(
+                qt_app,
+                lambda: film.property("visible")
+                and ablak.property("movieMakerTabOpen")
+                and ablak.property("activeDocumentTabId") == "movieMaker",
+            ), (
+                "a Filmkészítő főablaklapja nem fejezte be a megnyílását"
             )
             assert _nyugalomba_jut(qt_app, letrehozas), (
                 "a Filmkészítő Létrehozás gombja nem állt meg a helyén"

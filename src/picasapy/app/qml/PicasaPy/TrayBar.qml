@@ -65,6 +65,7 @@ Column {
     signal movieRequested()
     //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja
     signal backToCollageRequested()
+    signal backToMovieMakerRequested()
     // #32 (RÉSZLEGES kör): Nyomtatás/E-mail — a dialógusok (nyomtató-
     // választó, tárgy/szöveg-bekérés) a Main.qml-ben élnének, ugyanúgy,
     // mint a fenti kettőnél (a bekötés az integrátor lépése, ld.
@@ -2379,7 +2380,8 @@ Column {
             //: nyitva marad, és a lapsávból tovább lehet visszatérni.
             property bool elrejtve: false
             visible: tray.appWindow
-                     ? (tray.appWindow.backToCollagePrompted === true
+                     ? ((tray.appWindow.backToCollagePrompted === true
+                        || tray.appWindow.backToMovieMakerPrompted === true)
                         && !traySingleActionBar.elrejtve)
                      : false
             //: újbóli belépéskor megint látszódjon
@@ -2393,6 +2395,9 @@ Column {
                 target: tray.appWindow ? tray.appWindow : null
                 ignoreUnknownSignals: true
                 function onBackToCollagePromptedChanged() {
+                    traySingleActionBar.elrejtve = false
+                }
+                function onBackToMovieMakerPromptedChanged() {
                     traySingleActionBar.elrejtve = false
                 }
             }
@@ -2447,11 +2452,20 @@ Column {
                     // 13 pulzáló elem egyike — a klip-gyűjtő módban EZ a fő
                     // cselekvés, tehát ez mutatja meg, hol lehet visszalépni.
                     throbbing: true
-                    text: qsTr("Back to Collage")
+                    text: tray.appWindow
+                          && tray.appWindow.backToMovieMakerPrompted === true
+                        ? qsTr("Back to Movie Maker")
+                        : qsTr("Back to Collage")
                     ToolTip.text: qsTr("Go back to what you were editing")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
-                    onClicked: tray.backToCollageRequested()
+                    onClicked: {
+                        if (tray.appWindow
+                                && tray.appWindow.backToMovieMakerPrompted === true)
+                            tray.backToMovieMakerRequested()
+                        else
+                            tray.backToCollageRequested()
+                    }
                 }
 
                 PicasaButton {

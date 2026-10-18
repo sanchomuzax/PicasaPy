@@ -23,6 +23,8 @@ Item {
     property bool modified: false
     //: az `objectName`-ek előtagja; a funkcionális tesztek szerződése
     property string namePrefix: "documentTab"
+    //: csak a hosszú mozgófilm-fül címe kap a felirathoz igazodó szélességet
+    property bool fitTitle: false
 
     signal activateRequested()
     signal closeRequested()
@@ -31,7 +33,9 @@ Item {
 
     implicitWidth: 125
     implicitHeight: 21
-    width: ful.implicitWidth
+    width: ful.fitTitle
+        ? Math.max(ful.implicitWidth, tabTitle.implicitWidth + 30)
+        : ful.implicitWidth
     height: ful.implicitHeight
 
     // Az aktív fül a TARTALOM színét veszi fel (mintha összeérne az alatta
@@ -52,6 +56,7 @@ Item {
     }
 
     Text {
+        id: tabTitle
         objectName: ful.namePrefix + "Label"
         anchors.left: parent.left
         anchors.leftMargin: 8
