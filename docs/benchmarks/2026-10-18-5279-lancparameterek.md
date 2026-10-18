@@ -1,6 +1,6 @@
-# #5279 — a láncparaméterek és az ismeretlen tag mérése
+# #5279: a láncparaméterek és az ismeretlen tag mérése
 
-**Időpont:** 2026-10-18 02:40–02:43, Europe/Budapest  
+**Időpont:** 2026-10-18 02:40 és 02:43 között, Europe/Budapest  
 **Kódállapot:** `c668968b9` + a munkafa #5279-es módosításai (nem commitolt)  
 **Gép:** AArch64, 4× Cortex-A76, 15 GiB RAM  
 **Terhelés előtte / utána (1 / 5 / 15 perc):** 2,17 / 3,15 / 5,42 · 1,68 / 2,93 / 5,26  

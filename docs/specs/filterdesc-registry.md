@@ -243,8 +243,8 @@ a csúszkanevek tehát ezzel a sorrenddel egyeznek.
 **Irányított effekt kivétel:** a `dir_sat`, `dir_brite` és `dir_sharp`
 `filterdesc.xml`-leírásában is van puck, de a puck csak a két iránycsúszkát
 állítja. A natív visszahívás ezeket közvetlenül olvassa, ezért a mentett
-`filters=` tagban a puck x/y nincs benne: az alak `=1,left-to-right,top-to-bottom`
-— két érték az engedélyező flag után. Ld. `filters-decoded.md`, „Az
+`filters=` tagban a puck x/y nincs benne: az alak `=1,left-to-right,top-to-bottom`,
+vagyis két érték az engedélyező flag után. Ld. `filters-decoded.md`, „Az
 irányított család megvalósítva” szakasz.
 
 **Színformátum:** a Picasa a színt **mindig nyolc jeggyel** írja (`%08x`),
