@@ -294,6 +294,17 @@ class TestLutOverrides:
         assert skipped == expected_skipped
         assert lut_ops == ()
 
+    def test_render_chain_a_crop64_et_a_helyen_futtatja_5300(self) -> None:
+        """#5300: a crop64 a lánc helyén vág, mint a termék; az utána álló
+        Vignette így a vágott képhez igazodik (régen a lánc végére került)."""
+        image = _color_image()
+        ops = parse_filters(
+            "crop64=1,10002000e000c000;Vignette=1,35.000000,1.400000,0.000000,00000000;"
+        )
+        rendered, _, _ = cr.render_chain(image, ops, cr.load_luts(None))
+        expected, _ = apply_filters(image, ops)
+        assert np.array_equal(rendered, expected)
+
 
 class TestKitMode:
     """Mini golden-kit szintetikus felépítése és lefuttatása."""

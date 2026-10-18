@@ -369,17 +369,15 @@ def render_chain(
 
     Visszatérés: (kép, kihagyott szűrők, LUT-tal felülírt szűrők). LUT-adat
     nélkül bitre azonos az `apply_filters`-szel (delegálja neki a műveletet).
-    A crop64 az `apply_filters` szabálya szerint a lánc végén, egyszer fut.
+    A crop64 a termék mért sorrendje szerint (`apply_filters`, `mert_sorrend=True`,
+    #3229) a HELYÉN fut, nem a lánc végén: a régi, halasztó szabály a k01-en a
+    Vignette-et a vágatlan képen számolta, és ΔE 4,59-et adott 0,53 helyett (#5300).
     """
     result = image
     skipped: list[str] = []
     lut_ops: list[str] = []
-    crop_op: FilterOp | None = None
     for op in ops:
         name = op.name.casefold()
-        if name == "crop64":
-            crop_op = op  # csak az effektív (utolsó) crop64 számít
-            continue
         if name == "fill" and luts.fill2d:
             strength = float(op.params[1]) if len(op.params) > 1 else 0.0
             result = _apply_fill_lut(result, luts, strength)
@@ -392,8 +390,6 @@ def render_chain(
             continue
         result, op_skipped = apply_filters(result, (op,))
         skipped.extend(op_skipped)
-    if crop_op is not None:
-        result, _ = apply_filters(result, (crop_op,))
     return result, tuple(skipped), tuple(lut_ops)
 
 
