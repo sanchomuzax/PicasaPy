@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.136] - 2026-10-18
+
+- A Mozgófilm-készítő beágyazott főablaklapként jelenik meg előnézettel és filmcsíkkal. (#5264).
+
 ## [0.9.135] - 2026-10-18
 
 - A Helyek térképe betöltés közben az eredeti Picasa-ikont és feliratot mutatja a forgó jelző helyett (#5275).

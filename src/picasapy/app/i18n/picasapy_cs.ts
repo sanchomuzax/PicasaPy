@@ -4527,6 +4527,27 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
     <context>
         <name>CreateDialogs</name>
         <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Získat více...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Získat další klipy z knihovny fotek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Clips (%d)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
+            <translation>Klipy (%d)</translation>
+        </message>
+        <message>
             <source>Poster Settings</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/window1.title</extracomment>
@@ -8406,6 +8427,13 @@ It will change the next time Picasa is opened.</source>
 
 Změna se projeví při příštím spuštění aplikace.</translation>
         </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(panelroot/makemovietab)</extracomment>
+            <translation>Vytvořit film</translation>
+        </message>
     </context>
     <context>
         <name>MainToolbar</name>
@@ -11764,6 +11792,13 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracommen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
             <translation>Zpět ke koláži</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Back to Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
+            <translation>Zpět k aplikaci Movie Maker</translation>
         </message>
         <message>
             <source>Cancel "Get more"</source>

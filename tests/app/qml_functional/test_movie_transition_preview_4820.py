@@ -134,6 +134,27 @@ def _make_pattern(path: Path, incoming: bool) -> np.ndarray:
         rgb[..., 0] = 245 - y * 180 // height
         rgb[..., 1] = 20 + x * 200 // width
         rgb[..., 2] = 30 + y * 210 // height
+    # A sima színátmenet kicsi, széles nézőterű előnézetre igazítva a Ken
+    # Burns képkockát majdnem azonossá teheti a dissolvéval. Nagy, jól
+    # elkülönülő alakzatokkal a teszt minden ablakmagasságon a tényleges
+    # mozgáskülönbséget ellenőrzi, változatlan RGB-hibatűréssel.
+    centers = (
+        ((46, 42, 19), (160, 68, 15), (275, 105, 23),
+         (89, 178, 17), (228, 198, 21))
+        if incoming
+        else ((54, 53, 24), (177, 56, 18), (260, 113, 20),
+              (100, 181, 21), (238, 195, 17))
+    )
+    colors = (
+        ((255, 236, 80), (22, 222, 238), (246, 58, 195),
+         (246, 238, 235), (35, 235, 90))
+        if incoming
+        else ((255, 78, 45), (245, 229, 68), (28, 237, 184),
+              (51, 102, 252), (240, 242, 246))
+    )
+    for (center_x, center_y, radius), color in zip(centers, colors, strict=True):
+        mask = (x - center_x) ** 2 + (y - center_y) ** 2 <= radius**2
+        rgb[mask] = color
     image = QImage(
         rgb.data, width, height, rgb.strides[0], QImage.Format.Format_RGB888
     ).copy()
@@ -478,6 +499,10 @@ def test_az_1_1_es_a_kattintott_diaszerkesztes_a_nezoket_frissiti(
         image = _elem(window, "moviePreviewTransitionImage")
         one_to_one = _elem(window, "video_control_bar2/1to1")
         assert one_to_one.property("visible")
+        # A spec szerint a makemovie1to1 alapja 1: az 1:1 kiinduláskor be van kapcsolva.
+        # Az első kattintás kikapcsolja, a második visszakapcsolja a valódi méretet.
+        assert one_to_one.property("checked") is True
+        _click(window, qt_app, one_to_one)
         _click(window, qt_app, one_to_one)
         assert _wait(
             qt_app,

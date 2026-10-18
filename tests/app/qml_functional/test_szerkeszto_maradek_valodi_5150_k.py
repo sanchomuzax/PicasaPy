@@ -444,6 +444,43 @@ def _film_nyit(window, qt_app):
     return film
 
 
+def _gorgess_elemhez(window, qt_app, elem) -> None:
+    """A filmező panel görgethető tartalmán belülre viszi a valódi kattintást."""
+    scroll = gyerek(window, "movieTabPanelMotion")
+    content = scroll.property("contentItem")
+    view_top = scroll.mapToScene(QPointF(0, 0)).y()
+    view_bottom = scroll.mapToScene(
+        QPointF(scroll.property("width"), scroll.property("height"))
+    ).y()
+    elem_top = elem.mapToScene(QPointF(0, 0)).y()
+    elem_bottom = elem.mapToScene(
+        QPointF(0, elem.property("height"))
+    ).y()
+    current = float(content.property("contentY"))
+    max_scroll = max(
+        0.0,
+        float(scroll.property("contentHeight")) - float(content.property("height")),
+    )
+    if elem_bottom > view_bottom + 3:
+        content.setProperty(
+            "contentY", min(max_scroll, current + elem_bottom - view_bottom + 3)
+        )
+    elif elem_top < view_top - 3:
+        content.setProperty("contentY", max(0.0, current - (view_top - elem_top + 3)))
+    qt_app.processEvents()
+    elem_top = elem.mapToScene(QPointF(0, 0)).y()
+    elem_bottom = elem.mapToScene(
+        QPointF(0, elem.property("height"))
+    ).y()
+    view_top = scroll.mapToScene(QPointF(0, 0)).y()
+    view_bottom = scroll.mapToScene(
+        QPointF(scroll.property("width"), scroll.property("height"))
+    ).y()
+    assert elem_top >= view_top - 3 and elem_bottom <= view_bottom + 3, (
+        f"{elem.objectName()} nem görgetődött a Mozgófilm fül nézőterébe"
+    )
+
+
 def _tallozo_ablakok(window, cel_utotag: str | None = None) -> list[QObject]:
     """A fájlválasztó párbeszédek (Qt Quick FileDialog); opcionálisan a kiterjesztés szerint szűrve."""
     talalt = []
@@ -477,6 +514,7 @@ class TestFilmParbeszed:
         window, vezerlo, _engine = qml_app_email
         _film_nyit(window, qt_app)
         jelolo = gyerek(window, nev)
+        _gorgess_elemhez(window, qt_app, jelolo)
         elotte = vezerlo.moviePreference(beallitas)
         assert jelolo.property("checked") == elotte, "a próba feltétele: a jelölő a mentett értéket mutatja"
 
@@ -493,6 +531,7 @@ class TestFilmParbeszed:
         window, _controller, _engine = qml_app_email
         _film_nyit(window, qt_app)
         jelolo = gyerek(window, "movieShowDates")
+        _gorgess_elemhez(window, qt_app, jelolo)
         elotte = jelolo.property("checked")
 
         kattints(window, qt_app, jelolo)
@@ -573,6 +612,7 @@ class TestFilmParbeszed:
         window, _controller, _engine = qml_app_email
         _film_nyit(window, qt_app)
         gomb = gyerek(window, "movieBrowseButton")
+        _gorgess_elemhez(window, qt_app, gomb)
         kattints(window, qt_app, gomb)
         valasztok = _tallozo_ablakok(window, "mp4")
         try:

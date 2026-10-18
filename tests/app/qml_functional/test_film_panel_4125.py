@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 import wave
 
-from PySide6.QtCore import QEventLoop, QObject, QPoint, QTimer, Qt, QUrl
+from PySide6.QtCore import QEventLoop, QObject, QPoint, QPointF, QTimer, Qt, QUrl
 from PySide6.QtTest import QTest
 from picasapy.lazy_cv2 import cv2
 from picasapy.movie.mxf import read_mxf
@@ -24,6 +24,32 @@ def _darab(value):
     return len(value or [])
 
 
+def _gorgess_elemhez(scroll, elem, qt_app):
+    """A scroll nézőterén kívülre eső vezérlőt teljesen láthatóvá teszi."""
+    flickable = scroll.property("contentItem")
+    nezoter_teteje = scroll.mapToScene(QPointF(0, 0)).y()
+    nezoter_alja = scroll.mapToScene(
+        QPointF(scroll.property("width"), scroll.property("height"))
+    ).y()
+    elem_teteje = elem.mapToScene(QPointF(0, 0)).y()
+    elem_alja = elem.mapToScene(
+        QPointF(0, elem.property("height"))
+    ).y()
+    content_y = flickable.property("contentY")
+    if elem_alja > nezoter_alja + 3:
+        max_gorgetes = max(
+            0, scroll.property("contentHeight") - flickable.property("height")
+        )
+        flickable.setProperty(
+            "contentY", min(max_gorgetes, content_y + elem_alja - nezoter_alja + 3)
+        )
+    elif elem_teteje < nezoter_teteje - 3:
+        flickable.setProperty(
+            "contentY", max(0, content_y - (nezoter_teteje - elem_teteje + 3))
+        )
+    qt_app.processEvents()
+
+
 def _kattintas(window, qt_app, item):
     """Valódi egérkattintás az elem pillanatnyi geometriájának közepére."""
     kozep = item.mapToScene(item.boundingRect().center())
@@ -35,7 +61,6 @@ def _kattintas(window, qt_app, item):
         QPoint(round(kozep.x()), round(kozep.y())),
     )
     qt_app.processEvents()
-    QTest.qWait(30)
 
 
 def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassagon(
@@ -136,7 +161,10 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
 
         _kattintas(window, qt_app, _elem(window, "movieTabSlide"))
         _elem(window, "movieSlideText").setProperty("text", "4125")
-        _kattintas(window, qt_app, _elem(window, "movieInsertSlideButton"))
+        dia_panel = _elem(window, "tabpanel2")
+        beszuras = _elem(window, "movieInsertSlideButton")
+        _gorgess_elemhez(dia_panel, beszuras, qt_app)
+        _kattintas(window, qt_app, beszuras)
         title_dialog = _elem(window, "movieTitleDialog")
         assert title_dialog.property("visible") is True, (
             "a szöveges dia gombja nem nyitotta meg a címdia-szerkesztőt"

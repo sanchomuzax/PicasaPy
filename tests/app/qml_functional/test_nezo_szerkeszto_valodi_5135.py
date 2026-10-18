@@ -277,7 +277,7 @@ class TestFilmElonezetLejatszas:
             _szines_kep(tmp_path / "kek.png", "#0000ff"),
         ])
         qt_app.processEvents()
-        gomb = _gyerek(dialog, "video_control_bar2/moviecontrols")
+        gomb = _gyerek(dialog, "moviePreviewButton")
         ablak = gomb.window()
         assert gomb.property("text") == "▶", "a próba feltétele: a lejátszás áll"
 
