@@ -137,31 +137,50 @@ Rectangle {
                             && (mapLoader.item.mapLoading
                                 || mapLoader.item.offline))
 
-                Column {
-                    anchors.centerIn: parent
-                    width: Math.min(parent.width - 24, 260)
-                    spacing: 8
-
-                    BusyIndicator {
-                        objectName: "placesMapLoadingIndicator"
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: 48
-                        height: 48
-                        running: visible
-                        visible: !!(mapLoader.item && mapLoader.item.mapLoading)
-                    }
+                // A betöltés az eredeti `geopanel` elrendezését követi
+                // (docs/specs/jobb-fiok-meretek.md 4. szakasz): a 264 × 284-es
+                // alap a térkép tetején kezdődik, a felirat y 89-nél (213 × 25),
+                // az ikon y 125-nél (64 × 52) áll; az alap vízszintesen középen.
+                Item {
+                    id: loadingBase
+                    width: 264
+                    height: 284
+                    x: Math.round((parent.width - width) / 2)
 
                     Text {
-                        objectName: "placesMapStatusText"
-                        width: parent.width
-                        text: mapLoader.item && mapLoader.item.offline
-                              ? qsTr("Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.")
-                              : qsTr("Loading Map...")
+                        objectName: "placesMapLoadingTitle"
+                        x: 27
+                        y: 89
+                        width: 213
+                        height: 25
+                        verticalAlignment: Text.AlignVCenter
+                        visible: !!(mapLoader.item && mapLoader.item.mapLoading)
+                        text: qsTr("Loading Map...")
                         font.pixelSize: Theme.fontSize
                         color: Theme.textGray
-                        wrapMode: Text.WordWrap
-                        horizontalAlignment: Text.AlignHCenter
                     }
+
+                    Image {
+                        objectName: "placesMapLoadingIndicator"
+                        x: 100
+                        y: 125
+                        width: 64
+                        height: 52
+                        source: "../../assets/tools/loading_icon.png"
+                        visible: !!(mapLoader.item && mapLoader.item.mapLoading)
+                    }
+                }
+
+                Text {
+                    objectName: "placesMapStatusText"
+                    anchors.centerIn: parent
+                    width: Math.min(parent.width - 24, 260)
+                    visible: !!(mapLoader.item && mapLoader.item.offline)
+                    text: qsTr("Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.textGray
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
                 }
             }
         }
