@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.144] - 2026-10-18
+
+- Egy arc mellőzése után a bal sáv „Mellőzött emberek” sora azonnal a helyes darabszámot mutatja, nem nullát (#5323).
+
 ## [0.9.143] - 2026-10-18
 
 - A program neve a ragozott és összetett fordításokban is PicasaPy lett, tíz nyelven (#5298).

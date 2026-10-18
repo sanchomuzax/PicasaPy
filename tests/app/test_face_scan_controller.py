@@ -1075,7 +1075,7 @@ class TestIgnoreFacesWritesIni:
 
         # az index oldala is mellőzött
         assert ctl.unnamedCount == 0
-        assert ctl.ignoredCount() == 1
+        assert ctl.ignoredCount == 1
 
     def test_ignoring_preserves_other_faces_on_the_photo(self, qt_app, tmp_path):
         # ellenpróba: EGY MÁSIK régió elnevezése a fotón a mellőzés ELŐTT —
@@ -1181,7 +1181,7 @@ class TestIgnoreFacesWritesIni:
         assert faces[0].rect.left == pytest.approx(0.6, abs=1e-3)
         # az index oldala is visszaáll
         assert ctl.unnamedCount == 1
-        assert ctl.ignoredCount() == 0
+        assert ctl.ignoredCount == 0
 
     def test_unignoring_the_only_entry_drops_the_faces_key(self, qt_app, tmp_path):
         root = tmp_path / "kepek"
@@ -1213,11 +1213,11 @@ class TestIgnoreFacesWritesIni:
         face_id = ctl.unnamedGroups(False, False)[0]["faces"][0]["faceId"]
 
         assert ctl.ignoreFaces([face_id]) == 1
-        assert ctl.ignoredCount() == 1
+        assert ctl.ignoredCount == 1
         assert not (root / ".picasa.ini").exists()
 
         assert ctl.unignoreFaces([face_id]) == 1
-        assert ctl.ignoredCount() == 0
+        assert ctl.ignoredCount == 0
 
 
 class TestIgnoreSurvivesRescan:
@@ -1255,7 +1255,7 @@ class TestIgnoreSurvivesRescan:
         # a friss találat AZONNAL mellőzöttként jelenik meg — nem
         # javaslatként a „Névtelenek" albumban
         assert ctl.unnamedCount == 0
-        assert ctl.ignoredCount() == 1
+        assert ctl.ignoredCount == 1
 
     def test_rescan_only_reignores_the_matching_region(self, qt_app, tmp_path):
         # a mellőzés RÉGIÓ-pontos: egy fotó MÁSIK, éppen most felbukkanó
@@ -1275,7 +1275,7 @@ class TestIgnoreSurvivesRescan:
 
         assert ctl.ignoreFaces([ignored_id]) == 1
         assert ctl.unnamedCount == 1
-        assert ctl.ignoredCount() == 1
+        assert ctl.ignoredCount == 1
 
         from picasapy.index import forget_face_scan, open_index
 
@@ -1292,7 +1292,7 @@ class TestIgnoreSurvivesRescan:
         # a második arc VÁLTOZATLANUL névtelen maradt — csak az elvetett
         # régió lett újra mellőzött
         assert ctl.unnamedCount == 1
-        assert ctl.ignoredCount() == 1
+        assert ctl.ignoredCount == 1
 
 
 class _TwoFaceDetector:
@@ -1532,7 +1532,7 @@ class TestIgnoredAlbumShowsIniRegions:
                 "SELECT id FROM photos WHERE name = 'a.jpg'"
             ).fetchone()["id"]
         assert faces[0]["thumbUrl"].startswith(f"image://thumbs/{photo_id}")
-        assert ctl.ignoredCount() == 1
+        assert ctl.ignoredCount == 1
 
     def test_unignoring_it_removes_only_the_ffff_pair(self, qt_app, tmp_path):
         root = tmp_path / "kepek"
@@ -1571,7 +1571,7 @@ class TestIgnoredAlbumShowsIniRegions:
         faces = ctl.ignoredGroups()[0]["faces"]
 
         assert [face["faceId"] for face in faces] == [face_id]
-        assert ctl.ignoredCount() == 1
+        assert ctl.ignoredCount == 1
 
 
 class _OverhangDetector:
