@@ -3246,24 +3246,24 @@ Az automatikus személy-összevonás feltételezését is ellenőriztem. A PplAl
 
 ### 27.4 A következő Ghidra-köteg (pontosítva: a hiányzó törzsek)
 
-1. `0x006980a0` - a 0x006952e0 hívója; ettől dől el, hogy a személy törlése után mentés fut-e (N6).
-2. `0x004019b0` - a 0x00440af0 hívottja; a mappa-törlés tárolója (N5 mappa-ág).
+1. `0x006980a0` - a 0x006952e0 hívója; ettől dől el, hogy a személy törlése után mentés fut-e (N6). **→ 29.2: vtábla-slot (+0x70); a hívók és a mentés-trigger NINCS MEG.**
+2. `0x004019b0` - a 0x00440af0 hívottja; a mappa-törlés tárolója (N5 mappa-ág). **→ 29.3: registry-olvasó, nem tároló; a tároló NINCS MEG.**
 3. `0x00585ad0`, `0x0058ff00`, `0x007b7f00` - a 0x007bb660 hívottjai (N6).
 4. `0x0058dd00`, `0x00927530`, `0x005836f0` - a 0x005875d0 közvetett írói (N6, a 0x00584010 mentése).
-5. `0x00448fb0` és a `this+0x27a0` tábla írói - a 64 bites érték jelentése (N5, személy-predikátum).
+5. `0x00448fb0` és a `this+0x27a0` tábla írói - a 64 bites érték jelentése (N5, személy-predikátum). **→ 29.3: a tábla-írók és a jelentés NINCS MEG.**
 6. `0x009bab50` vtable +0x158 célja - a gombazonosítók (N5, a 0 jelentése).
-7. A `DAT_00d35e44` objektum +0x44 slotja (a 0x006cde50 hívja) - a 960 px helye, a Red.dll-e (N3).
+7. A `DAT_00d35e44` objektum +0x44 slotja (a 0x006cde50 hívja) - a 960 px helye, a Red.dll-e (N3). **→ 29.4: a Red.dll `REDENTRY`-objektuma; NINCS MEG (29.7).**
 8. A 0x0045f0c0 init-jának 0. és +0x34 slotja - a red.cfg mezői (N3).
-9. A `this+0x2908` tábla írói (index, adat-hivatkozás) - a detektor-bemenet mérete (N3).
+9. A `this+0x2908` tábla írói (index, adat-hivatkozás) - a detektor-bemenet mérete (N3). **→ 29.4: közvetlen író nincs; NINCS MEG.**
 10. A 0x006b6a50 13 hívója - a kulcs jelentése (N1; a B2 felvétel dönt).
 11. A `this+0x988` mező írói és a `faces=` lista töltője (N6; index).
-12. A `00ca7cc0` és a `00ca7df8` DATA-hivatkozások parancs-tábla-tulajdonosa - a 0x00692210 hívási ideje (N6).
+12. A `00ca7cc0` és a `00ca7df8` DATA-hivatkozások parancs-tábla-tulajdonosa - a 0x00692210 hívási ideje (N6). **→ 29.2: vtábla-slot (PrepareCollection, AlignedImageCollection); a hívási idő NINCS MEG.**
 
 **Disasm-kérdések (nem Ghidra):** a 0x0045f143 előtti EDI (N3); a 0x005fdc30 hívásainak EDI-je (`0x005ee072`, `0x005c9a42`, `0x005ca1e1`, N5); a 0x0068ac20 ciklusának tesztje (`0068ac41-0068ac62`, N6); a 0x0068ac20 és a 0x00586e20 hívás feltétele (`0068ac5a`, N6).
 
 ### 27.5 Állapot (N1-N8)
 
-Az előző körök táblái (20.0, 22.8, 23.8, 24.9, 25.11) ehhez igazodnak; ahol eltérnek, ez a táblázat érvényes. A `[Contacts2]` íróról szóló korábbi állítás (21.5, 22.5) érvénytelen (27.1).
+Az előző körök táblái (20.0, 22.8, 23.8, 24.9, 25.11) ehhez igazodnak; ahol eltérnek, ez a táblázat érvényes. A 29.6 tábla (2026-10-18) ezt a táblázatot frissíti. A `[Contacts2]` íróról szóló korábbi állítás (21.5, 22.5) érvénytelen (27.1).
 
 | Pont | Állapot | Mi változott |
 |---|---|---|
@@ -3295,3 +3295,123 @@ Nyitott kérdések: 0 nyílt · 1 lezárva (N4) · 6 blokkolt · 0 hatókörön 
 ### 27.8 Mérleg (8. kör)
 
 Megerősített: 3 tétel (27.6 a-c). Feltételes: 4 tétel (27.6). NINCS MEG: a 27.6 listája. Ghidra-kérés: 44 (20.7, 21.6, 22.6, 23.6, 24.6): 13 megválaszolva, 31 részben (a `Hiányzik:` nevezi meg a hiányzó törzset). Disasm-kérdés: 4 (27.4), nem Ghidra. Tulajdonosi döntés: nincs; a felvétel (B2, B, N6-trigger) a Colab-végrehajtón dönt, a jóváhagyás a tulajdonosé (`jovahagyva`).
+
+## 29. #5184, kilencedik kör: a 2026-10-18-i Ghidra-dump hat címe (2026-10-18)
+
+**Hatókör:** a 27.4 lista 1., 2., 5., 7., 9. és 12. tétele. A forrás a `.ghidra8/2026-10-18-szemelykezeles-8-panzoom.txt` (a munkafában, a változtatások között nincs), kiegészítve a Picasa3.exe helyi diszasszemblálásával (`annot_disasm.py`, `find_data_refs.py`, `offset_map.py`), a `paszta.py` darabolt pásztázásával és a bináris-indexszel. A kérés a 29.3 és 29.4 szakaszokra hivatkozott; ilyen szakasz a lapon nem volt (a lap a 27.8-ig terjedt), ezért ez a kör hozta létre a 29. szakaszt (a 28. a #5185 leltára). A 0x008037e0 a #5225 kérdése: a `picasa-create-features.md` 4.5 szakaszában van.
+
+### 29.1 Mit adott a dump
+
+Hat cím: `0x008037e0` (#5225, lásd ott), `0x006980a0`, `0x004019b0`, `0x006cde50`, `0x00448fb0`, `0x00692210`. Mind a hat törzse olvasható, de a hívott függvények egy része nincs a dumpban (köztük a `0x006952e0`, a `0x006976f0`, a `0x00440af0`, a `0x009a4b20` és a `0x009a4a10`). Ezeknél a válasz csak részleges, a hiányzó törzs nevesítve van (29.7).
+
+### 29.2 N6: `0x006980a0` és `0x00692210` (27.4 tétel 1 és 12)
+
+**A C-törzsek.** `0x006980a0` a `this+0x5c >> 1` darabszámig hívja a `0x006952e0`-t (`this` és a sorszám argumentum), az első nem nulla eredménynél visszatér; ha nincs ilyen, és `this+0x458 != 0`, hívja a `0x006976f0`-t; végül `this+0x88 = 1` és 0 a visszatérés. A `0x00692210` a `this+0x1b4 >> 1` elemen megy végig: minden elemre hívja a `0x0068c5c0`-t, `this+0x438` esetén zárolt részt futtat, és minden elemre a `0x0069b240`-t; a `this+8` objektum +4 slotja a megszakítást figyeli (`0xf4242` a visszatérés).
+
+**A két cím nem parancstábla, hanem vtábla-cella.** A kérés „parancstábla"-nak nevezte a `00ca7cc0` és `00ca7df8` címeket. Ezek a DATA-hivatkozások két RTTI-vtábla +0x6c és +0x70 slotjai:
+
+| cella (DATA-hivatkozás) | vtábla (RTTI) | slot | függvény |
+|---|---|---|---|
+| `0x00ca7cc0` | `PrepareCollection::vftable` (`0x00ca7c54`) | +0x6c | `0x00692210` |
+| `0x00ca7cc4` | ugyanaz | +0x70 | `0x006980a0` |
+| `0x00ca7df8` | `AlignedImageCollection::vftable` (`0x00ca7d8c`) | +0x6c | `0x00692210` |
+| `0x00ca7dfc` | ugyanaz | +0x70 | `0x006980a0` |
+
+**Két független út.** A: az index DATA-hivatkozásai (a négy cella). B: az RTTI-vtábla kezdőcíme, a PE nyers értéke a cellában, és a vtábla határa: a következő RTTI-vtábla címe mindkét esetben 0xb8 bájttal később van (`0x00ca7d0c`, illetve `0x00ca7e44`), így a +0x6c és +0x70 slot mindkét vtáblán belül esik. Egyezik: a két út ugyanazt a négy cellát adja.
+
+**Cáfoló kísérlet.** Határ nélküli, 256 slotos vtábla-keresésre a két cím 68 találatot ad 21 vtábla-kezdetnél (például `ytICollection` +0x2a4, `ytIBitmap` +0x2bc, `ytIPicasaApp` +0x1ec, `ytIPlugin` +0x2d8). A találatok közül csak négy esik a saját vtábla határán belülre: a két fenti vtábla +0x6c és +0x70 slotja. A többi 64 a következő RTTI-vtábla címén túl van, tehát a szomszédos memória átfedése, nem slot. A `PrepareCollection` +0x1a4 (`0x00ca7df8`) is kívül esik, ezért a `00ca7df8` az `AlignedImageCollection` +0x6c slotja.
+
+**Hívók és hívás ideje: NINCS MEG.** Mindkét függvény virtuális slot, a hívóhelyek indirekt `call` (`call [reg+0x6c]`, `call [reg+0x70]`). A törlési út négy függvényében (`0x007ba820`, `0x007bb660`, `0x00584cc0`, `0x005836f0`) nincs olyan hívás, amelyről bizonyítható, hogy a két slotot hívja. A `0x005836f0`-ban a `[esi+0x6c]` egy kulcsként megy a `0x00409df0`-nak (mező, nem vtábla-hívás). A hívók típusa Ghidra-kör (29.7).
+
+**N6 mentés-kérdés: NINCS MEG.** Abból, amit a dump ad, nem dől el, fut-e mentés a személy törlése után: a `0x006980a0` feltételes (a `0x006952e0` eredményétől és a `this+0x458`-tól függ), a `0x006952e0` törzse pedig nincs a dumpban. A `[Contacts2]` kiírója továbbra is NINCS MEG (a 27.1 korrekciója marad: a `0x00586e20` nem író).
+
+### 29.3 N5: `0x004019b0` és `0x00448fb0` (27.4 tétel 2 és 5)
+
+**`0x004019b0` egy Windows-registry beállítás-olvasó, nem tároló.** A C-törzs: `in_EAX` objektum `[0]` gyökérkulccsal és `[1]+4` útvonallal nyit (`0x009a4890`, előbb `0xf003f`, sikertelenségre `0x20019`), a `0x009a4b20`-nak az `in_EAX+3` címet adja át, az eredmény `in_EAX[3]`, a `RegCloseKey` zárja. A HÍVOTTAK között nincs `RegSetValue`, `RegCreateKey` vagy más író hívás. Második út: a `0x008037e0` ugyanezt a hívást használja a `FUN_00407a20(local_1c, "Preferences", "BigSlideshow2")` után (`0x0080381e`), tehát a `Preferences\BigSlideshow2` beállítást olvassa.
+
+**Feltételes:** a `0x009a4b20` és a `0x009a4a10` törzse nincs olvasva, így az „csak olvas" állítás ezek hiányában nem teljes.
+
+**A mappa-törlés tárolója: NINCS MEG.** A `0x00440af0` a `0x004019b0`-t a `0x00440b64`-ben hívja. A `0x00440af0` törzse nincs a dumpban, ezért nem dől el, mit olvas és hová ír a mappa-törlés. A `0x004019b0` maga nem tárolja a törlést (a beállítás-olvasó).
+
+**`0x00448fb0` (N5, személy-predikátum).** A C-törzs: `this` zárolása (a `this+0x2754` jelzőtől függően a `this+0x2748` objektum +0x18 slotja, vagy a `this+0x2770` kritikus szakasz), rekurzió-számláló (`this+0x2768` tulajdonos-szál, `this+0x276c` darabszám). Tábla: a `this+0x27a0` mutató egy fejléc, `+0x4c >> 1` a darabszám, `+0x48` a 8 bájtos elemek. Ha az index a darabszámon belül van, az elem adja a visszatérési értéket, 0 kóddal; különben a `this+0x27a8` és `+0x27ac` alapérték, 4 kóddal.
+
+**Megerősített:** a disasm `add esi, 0x2748` (`0x00448fbc`) után `esi = this+0x2748`, tehát a `this+0x27a0` a `[esi+0x58]` mező. Ezért a közvetlen `0x27a0`-os eltolás-keresés üres eredményt ad (a kereső nem látja a bázis-eltolt hozzáférést).
+
+**A 64 bites érték jelentése: NINCS MEG.** A visszatérés a tábla eleme (index szerint), azonosító-e, nem dől el (a 25.5 szerinti „táblaindex" olvasat marad feltételes).
+
+**A tábla írói: NINCS MEG.** A `this` osztálya nincs azonosítva: a `0x00448fb0`, a `0x0048e1f0`, a `0x0048ef20` és a `0x0048af60` egyik vtáblában sincs (a 256 slotos keresés nulla találatot ad), tehát nem virtuális tagok, és a vtáblából nem következtethető a típus.
+
+### 29.4 N3: `0x006cde50`, a `DAT_00d35e44` és a `this+0x2908` (27.4 tétel 7 és 9)
+
+**A `DAT_00d35e44` nem a Picasa3.exe-ben születik.**
+- A `.data`-ban a `DAT_00d35e44` és a `DAT_00d35e48` nyers értéke 0 (PE nyers bájtok).
+- A `.text`-ben a `DAT_00d35e44` 71 hivatkozása mind olvasás (`mov reg,[abs]`, `cmp [abs],imm`, `cmp [abs],reg`, `A1` moffs-alak). Írás nincs (`find_data_refs.py` és bájt-osztályozás).
+- A `0x006ccd90` (a Red.dll betöltője) akkor tölt, ha `DAT_00d35e48` vagy `DAT_00d35e44` nulla: `push 0xd35e40` (egy struktúra címe), majd `call 0x006cc9e0`.
+- A `0x006cc9e0` (210 bájt): `LoadLibrary` (`call [0xc402b8]`), `GetProcAddress` a `REDENTRY` sztringgel (`0xca8718`), a modul-mutató a struktúra +8 mezőjébe (`mov [esi+8], eax`, azaz `DAT_00d35e48`). Majd `lea ecx,[esi+4]` (`0x006cca6a`), `push ecx`, `push 1`, `call eax` (`0x006cca70`): a `DAT_00d35e44` a `REDENTRY` kimeneti mutatója.
+
+Tehát a `0x006cde50` +0x44 hívása egy Red.dll-beli objektumon fut; a `DAT_00d35e44` nulla esetén a `0x006cde50` -1-et ad, és a +0x44 hívás nem fut.
+
+**Két független út:** A: a `0x006cc9e0` diszasszemblálása (a `REDENTRY` hívás stack-argumentumai). B: a 71 olvasás, a nulla nyers érték, és a `0x006ccd90` ellenőrzési sorrendje. Egyeznek.
+
+**Feltételes:** hogy a `REDENTRY` valóban a `DAT_00d35e44`-be ír (a Red.dll belsejét nem néztem).
+
+**Cáfoló kísérlet.** A `0x00d35e40` (a struktúra) hivatkozásai: a `0x006ccdf2` (push), a `0x00c36711` (adat-jellegű, nincs függvényben), és a `0x00c36717` (`mov dword [0x00d35e40], imm`). Az utolsó a struktúra +0 mezőjét írja, nem a +4-et, és nincs függvényhez rendelve; nem cáfolja az írást, hanem megerősíti, hogy a struktúrának más mezői is vannak.
+
+**A +0x44 célja: NINCS MEG.** A cél a Red.dll-beli objektum vtáblájában van. A Red.dll a kutatási másolatban megvan (`plugins/Red.dll`), de nincs a bináris-indexben, és ebben a körben nem vizsgáltam. Ez a 960 px kérdéssel együtt a Red.dll-re irányít (29.7).
+
+**A `this+0x2908` írói: NINCS MEG (közvetlen írás nincs).** A teljes `.text` darabolt pásztázása (`paszta.py`, 12 s) a `[reg+0x2908]` alakot két függvényben találja, mindkettőben olvasásként: `0x0048e1f0` (`mov edx, [ebp+0x2908]`, `0x0048e2b1`) és `0x0048ef20` (`[edi+0x2908]` a `0x0048f4d2`-nél, `[ecx+0x2908]` a `0x0048f6f1`-nél). Író 0. Ez csak a közvetlen eltolásra igaz; a bázis-eltolt írás (mint a `0x00448fb0`-ban az `add esi, 0x2748`) nem zárható ki.
+
+**A detektor-bemenet mérete: NINCS MEG.** A `0x006cde50` méret-ágának forrása (`this+0x2908 >> 1`) a 27.x szerint marad, a tábla írója nincs. A 960 px nincs a Picasa3.exe C-kódjában (27.2), a Red.dll-ben lehet.
+
+### 29.5 Ellenőrzések és eltérések
+
+- **A „0x00586e20: 24 hívás" nem reprodukálható.** A teljes `.text` pásztázása 3 közvetlen `call`-t talál (`0x00485118`, `0x0068ac5a`, `0x007d5ca6`), az index szintén 3-at ad. A 24 a kérés szerint egy 29.3 szakaszban volt, amely a lapon nincs; ezért nem tudtam hozzá igazodni.
+- A 0x0068ac20 hívja a 0x00586e20-t (`0x0068ac5a`), ez egybevág a 27.x szöveggel.
+
+### 29.6 Állapot (N1-N8) a 29. kör után
+
+Ez a tábla a 27.5 helyett érvényes.
+
+| Pont | Állapot | Mi változott |
+|---|---|---|
+| N1 | BLOKKOLT | Változatlan (27.5). |
+| N3 | BLOKKOLT | Új blokkoló: a `DAT_00d35e44` a Red.dll `REDENTRY`-objektuma (29.4). A +0x44 célja és a 960 px a Red.dll-ben van. A `this+0x2908` írói: nincs közvetlen író. |
+| N4 | LEZÁRVA | Változatlan. |
+| N5 | BLOKKOLT | A `0x004019b0` registry-olvasó, nem a mappa-törlés tárolója (29.3). A `0x00448fb0` tábla-írói és a 64 bites érték jelentése: NINCS MEG. |
+| N6 | BLOKKOLT | A `0x006980a0` és `0x00692210` a `PrepareCollection` és `AlignedImageCollection` +0x70/+0x6c slotja (29.2, nem parancstábla). A hívók és a hívás ideje: NINCS MEG. A `[Contacts2]` kiírója: NINCS MEG. |
+| N7 | BLOKKOLT | Változatlan. |
+| N8 | BLOKKOLT | Változatlan. |
+
+Nyitott kérdések: 0 nyílt · 1 lezárva (N4) · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".
+
+### 29.7 Ghidra-kör kérések (a 27.4 maradéka, egységes alakban)
+
+- Ghidra-kör kell: `0x006952e0`, ír-e fájlt, ha igen melyik író (a `[Contacts2]` kiírója), és a `0x006976f0` hívási feltétele (`this+0x458`) [blokkoló]
+- Ghidra-kör kell: `0x00692210` és `0x006980a0` hívóhelyei a `PrepareCollection` és `AlignedImageCollection` objektumokon (+0x6c / +0x70 slot): a hívó függvények típusa és a hívás ideje a törlési úton belül [blokkoló]
+- Ghidra-kör kell: `0x00448fb0`, `0x0048e1f0`, `0x0048ef20` `this` osztálya (egyezik-e), és a `this+0x2748` al-objektum írói (`[esi+0x58]` = `this+0x27a0`, `[esi+0x60]` = `this+0x27a8`, `[esi+0x64]` = `this+0x27ac`) [blokkoló]
+- Ghidra-kör kell: `plugins/Red.dll` `REDENTRY` belépés: a `DAT_00d35e44`-be írt objektum vtáblája és annak +0x44 célja, valamint a 960 px helye (N3); a Red.dll nincs az indexben [blokkoló]
+
+### 29.8 Bizonyítottsági fok és cáfoló kísérletek
+
+**Megerősített:**
+- (a) `0x00692210` és `0x006980a0` a `PrepareCollection` és `AlignedImageCollection` +0x6c / +0x70 slotja (29.2: A és B út).
+- (b) `0x004019b0` beállítás-olvasó (Windows-registry): A: a C-törzs; B: a `0x008037e0` hívóhelye.
+- (c) `0x00448fb0`: `esi = this+0x2748` a `0x00448fbc` után (disasm).
+- (d) A `DAT_00d35e44` nem íródik a Picasa3.exe közvetlen címzésével: 71 olvasás, 0 írás, nulla nyers érték (29.4).
+
+**Feltételes:**
+- (e) `DAT_00d35e44` a `REDENTRY` kimeneti mutatója (a Red.dll belsejét nem néztem).
+- (f) `0x006980a0` a `0x006952e0` eredményétől függ (a `0x006952e0` törzse nincs).
+- (g) `0x004019b0` csak olvas (`0x009a4b20`, `0x009a4a10` nincs olvasva).
+
+**Cáfoló kísérletek:**
+- (a) ellen: a határ nélküli vtábla-keresés 21 vtábla-kezdetnél ad találatot, de a határon belüli találat csak a két valódi vtábla 4 cellája (29.2).
+- (b) ellen: a közvetlen hívottak között nincs író API (`RegSetValue`, `RegCreateKey`), de a `0x009a4b20` belsejében lehet.
+- (d) ellen: a `0x00d35e40` struktúra +0 mezőjét író `0x00c36717` nem a +4 mező.
+- a `this+0x2908` íróira: a bázis-eltolt írás nincs kizárva.
+
+**NINCS MEG:** a `0x006952e0` és `0x006976f0` törzse; a hívók típusa (`0x00692210`, `0x006980a0`); a `this` osztálya; a `0x00448fb0` tábla-írói és a 64 bites érték jelentése; a Red.dll +0x44 célja; a 960 px helye; a `[Contacts2]` kiírója.
+
+### 29.9 Fejlesztési következmény
+
+Nincs fejlesztési lista: az N-pontok egyike sem zárult le úgy, hogy eltérést mutatna a mi kódunktól. A 27.7 állítása érvényben marad. Jegytörzs-javaslat: nincs. Az új Red.dll-es blokkoló (N3) nem változtatja a felvételi tervet: a Colab-felvétel dönt (24.7).

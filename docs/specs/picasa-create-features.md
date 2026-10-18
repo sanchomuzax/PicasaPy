@@ -6283,7 +6283,7 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 
 **A megmaradt nyitott kérdések.**
 
-- `Ghidra-kör kell: 0x008037e0 — a oneup/transtype által kiválasztott teljes képernyős átmenet mely konstruktor-/frissítő útba jut, és elérheti-e a 0x00771e60 vagy a 0x0074e670 útját? [blokkoló]`
+- `Ghidra-kör kell (pontosítva, 4.5): a 0x008037e0 által az oneup/transtype csomóponton hívott +0x68/+0x6c célok osztálya és vtáblája; elérheti-e a 0x00771e60 vagy a 0x0074e670 útját? [blokkoló]`
 - `Ghidra-kör kell: 0x008287b0 — mi a 0x0074e670 által használt interfész-vtábla-hívás konkrét célja, és milyen objektumot ad át a pin/AOI út következő szakaszának? [blokkoló]`
 - `Ghidra-kör kell: 0x00812470 — mi tölti fel a this+0x48 időzített sáv rekordjait, és ki állítja be a rekord +0x8 régióazonosítóját; van-e bizonyítható faces= adatút? [blokkoló]`
 - `Ghidra-kör kell: 0x00812aa0 — hogyan képeződik le pontosan a this+0x1a8 időzített rekord a this+0x7ec téglalapra, és melyik téglalap melyik átmeneti végállapothoz tartozik? [blokkoló]`
@@ -6332,7 +6332,7 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 
 **Nyitott pontok és következő irány.**
 
-- `Ghidra-kör kell: 0x008037e0 - a oneup/transtype node-ok virtuális +0x68 és +0x6c célfüggvényei, valamint az adatútjuk a 0x00771e60 gyárig vagy a 0x0076d900 illesztőig [blokkoló]`
+- `Ghidra-kör kell (pontosítva, 4.5): 0x009c2fc0 és az oneup/transtype csomópont-osztály vtáblája: a +0x68 és +0x6c célfüggvények, valamint az adatút a 0x00771e60 gyárig vagy a 0x0076d900 illesztőig. A hívási sorrend megvan (4.5). [blokkoló]`
 - `Ghidra-kör kell: 0x00812470 - honnan töltődik fel a this+0x48 időzített sáv, és a rekord +0x8 régióazonosítója faces= vagy imagedata_facerect adathoz kötött-e? [blokkoló]`
 - A teljes képernyős vetítésből renderelt arcos és arc nélküli képkockapár, a középpont és az arc nélküli fallback mérésével: **NINCS MEG**.
 
@@ -6438,9 +6438,39 @@ A tömör `wₙ=w·sₙ`, `hₙ=h·sₙ` jelölés a `0x0076d6f0` középpont k�
 - ✅/⛔ srand: a teljes binárisban 10 közvetlen hívóhely van. Hogy ezek közül melyik seedeli a slideshow CRT-állapotát a futás előtt, és mi a mag értéke, **NINCS MEG**.
 - ⛔ Teljes képernyős használat: a `0x005e8a70` hívja a `0x008037e0`-t, de a `oneup/transtype` virtuális céljaitól a `0x00771e60` gyárhoz vagy a `0x0076d900` illesztőhöz vezető adatút nincs bizonyítva.
 
-**Nyitott.** A runtime seedelő hívás és a CRT-állapot számszerű értéke; a job-184/185 képkockasora; továbbá a BigSlideshow2 `oneup/transtype` virtuális célfüggvényei és az átmenetgyárhoz vezető adatút. A dekompilált `0x005e8a70` a `0x008037e0` hívását mutatja, a virtuális célok és a híd nincsenek feloldva. Célzott Ghidra-kör: `0x008037e0`, a `+0x68` és `+0x6c` virtuális célok feloldásával. A képletből önálló kutatási jegy nem következik.
+**Nyitott.** A runtime seedelő hívás és a CRT-állapot számszerű értéke; a job-184/185 képkockasora; továbbá a BigSlideshow2 `oneup/transtype` virtuális célfüggvényei és az átmenetgyárhoz vezető adatút. A dekompilált `0x005e8a70` a `0x008037e0` hívását mutatja, a virtuális célok és a híd nincsenek feloldva. Célzott Ghidra-kör (pontosítva a 4.5 szerint): `0x009c2fc0` és az `oneup/transtype` csomópont vtáblája, a `+0x68` és `+0x6c` virtuális célok feloldásával. A képletből önálló kutatási jegy nem következik.
 
 **Helyi viszonyítás.** A QML providerből két kivágást kap (`SlideshowView.qml:426-463`, `778-812`); a számítást a `slideshow_pan_zoom.py` végzi. A jelenlegi kód közös középpontú alaptéglalapot használ, a méreteket a törtek eredeti sorrendjéhez rendeli, és egyetlen LCG-forrásból veszi a két mérettörtet, a négy eltolási törtet, majd a kimeneti sorrend felcserélésének döntését (`slideshow_pan_zoom.py:56-123`, `126-138`). Az eredeti bináris élre igazít, a nagyobb méretű jelölthöz rendeli az első két offsetet, a négy eltolási értéket a CRT `_rand()` adja, és nincs plusz helyi LCG-húzás a végső felcseréléshez. A QML kétkivágásos útjának és a binárisnak pontos megfelelése méréssel nincs igazolva. A `0x0076d900` teljes képernyős használata a 4.2 szerint nyitott.
+
+#### 4.5 9. kör: az `oneup/timeline` és `oneup/transtype` csomópontok virtuális hívásai (#5225, 2026-10-18)
+
+**Kérdés.** A 4.3 nyitott sora: az `oneup/transtype` csomópontok +0x68 és +0x6c célfüggvényei, és az adatútjuk a `0x00771e60` gyárig vagy a `0x0076d900` illesztőig.
+
+**Forrás.** A `0x008037e0` helyi diszasszemblálása (719 bájt, `annot_disasm.py`), a `0x009c2fc0` diszasszemblálása (134 bájt), és a bináris-index `string_xrefs` táblája. A dekompilátum (C) a `0x009c2fc0` hívásából kihagyja az útvonal-argumentumot (EDX), ezért a C-ből a csomópontok nem olvashatók ki; a sorrend a diszasszemblálásból jön.
+
+**A hívott csomópontok (megerősített).**
+- A `0x009c2fc0` útvonal-kereső: EDX-ben C-sztring (csomópont-útvonal), a `[0x00d67914]` gyökér `+0xc` hash-táblájában keres (`0x00409df0` a hash-index, `0x006f9890` a kulcs-összevetés), és 0-t ad, ha nincs találat.
+- `EDX = 0x00cbd528` („oneup/timeline", `0x00803a11`), `EDX = 0x00cbd54c` („oneup/transtype", `0x00803a30`). A `oneup/transtype` sztringet a `string_xrefs` szerint csak a `0x008037e0` használja.
+
+**A virtuális hívások sorrendje (megerősített, diszasszembly).** Az ágat a `cmp byte ptr [esp+0x10], bl` (`0x00803a03`) dönti el; a függvényben a BL nulla (az `ebx` a null-ellenőrzésekre van használva), tehát az ág a jelző nullaságától függ:
+- jelző = 0: timeline `+0x68` (`0x00803a64`), majd transtype `+0x6c` (`0x00803a83`);
+- jelző ≠ 0: timeline `+0x6c` (`0x00803a26`), majd transtype `+0x68` (`0x00803a83`).
+
+Mindkét hívás előtt: a gyökér nem nulla (`cmp dword ptr [0xd67914], ebx`), és a csomópont nem nulla. A C-kód (`unaff_BL == '\0'`) ugyanezt a sorrendet adja. A 4.3 „0x00803a11-0x00803a30" tartománya csak a timeline-hívást fedi; a transtype-olvasás hívása a `0x00803a30`-tól a `0x00803a83`-ig tart. Ez a helyesbítés.
+
+**Az adatút: NINCS MEG.**
+- Közvetlen él a `0x00771e60` vagy a `0x0076d900` felé nincs: a `0x008037e0` törzsében egyik cím sem fordul elő, és a hívottak listájában sincs.
+- A virtuális célok (`+0x68`, `+0x6c`) a csomópont-osztály vtáblájából jönnének. Az osztály nincs azonosítva: a `0x008037e0` nem írja a vtáblát, a csomópontok beszúrója pedig nincs ebben a körben. Jelölt osztályok, nem igazolva: `ITransitionNode` (`0x00cb2f38`), `CTransitionInfo` (`0x00cbdca0`), `CTransTimeline` (`0x00cbdcc4`).
+
+**Két út.** A: a `0x008037e0` diszasszembly hívásai. B: az adatkonstans-út: a két literál címe (`0x00cbd528`, `0x00cbd54c`) a diszasszemblálásból, és a `string_xrefs` táblából. Egyezik.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a `0x008037e0` közvetlenül a gyárat vagy az illesztőt hívja: a diszasszemblált törzsben a `0x00771e60` és a `0x0076d900` egyike sem szerepel (0 találat). Ez a közvetlen élt cáfolja; a virtuális úton át nem zárja ki.
+
+**Ghidra-kör kell:** `0x009c2fc0` és a `[0x00d67914]+0xc` tábla beszúrói: az `oneup/timeline` és `oneup/transtype` csomópontok osztályának vtáblája, és ezek +0x68 / +0x6c célja, hogy az adatút a gyár vagy az illesztő felé ellenőrizhető legyen [blokkoló]
+
+**Bizonyítottsági fok:** a hívási szerkezet megerősített; a célok és az adatút NINCS MEG.
+
+**Fejlesztési következmény:** nincs. A 4.4 képlete (`0x0076d900`) ezzel nem változik.
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
