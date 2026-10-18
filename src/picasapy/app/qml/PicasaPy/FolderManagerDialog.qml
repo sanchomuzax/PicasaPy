@@ -294,7 +294,7 @@ Window {
                 "removeWatchedFolder",
                 qsTr("If you remove a watched folder, new items that you add "
                      + "to that folder on disk will not be automatically "
-                     + "added to Picasa. Are you sure you want to do this?"))
+                     + "added to PicasaPy. Are you sure you want to do this?"))
             return
         }
         folderManagerWindow.stageState(path, state)
@@ -422,7 +422,7 @@ Window {
                     Layout.preferredWidth: 232
                     Layout.preferredHeight: Math.max(73, folderManagerInstructions.implicitHeight)
                     text: qsTr(
-                        "For each folder, you can choose whether or not to have Picasa find "
+                        "For each folder, you can choose whether or not to have PicasaPy find "
                         + "pictures inside it.  You can also pick folders to watch for new pictures.")
                     wrapMode: Text.WordWrap
                     font.pixelSize: Theme.fontSize
@@ -581,7 +581,7 @@ Window {
                     + "to it later show up on their own.\n\n"
                     + "Scan Once takes the pictures that are in the folder now "
                     + "and then forgets about it.\n\n"
-                    + "Remove from Picasa takes the folder out of your library. "
+                    + "Remove from PicasaPy takes the folder out of your library. "
                     + "The pictures stay on your disk.\n\n"
                     + "Face detection is separate: you can watch a folder and "
                     + "still keep faces in it out of the library.")

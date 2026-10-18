@@ -84,7 +84,7 @@ def wipe_card_warning(facts: WipeCardFacts) -> str:
             QCoreApplication.translate(
                 "ImportSourceController",
                 "1 file will not be imported because it is already a "
-                "duplicate in Picasa.\n",
+                "duplicate in PicasaPy.\n",
             )
         )
     elif facts.duplicates > 1:
@@ -93,7 +93,7 @@ def wipe_card_warning(facts: WipeCardFacts) -> str:
             QCoreApplication.translate(
                 "ImportSourceController",
                 "%1 files will not be imported because they are already "
-                "duplicates in Picasa.\n",
+                "duplicates in PicasaPy.\n",
             ).replace("%1", str(int(facts.duplicates)))
         )
 
@@ -102,7 +102,7 @@ def wipe_card_warning(facts: WipeCardFacts) -> str:
         reszek.append(
             QCoreApplication.translate(
                 "ImportSourceController",
-                "\nPicasa does not recognize 1 of the files to be deleted.\n",
+                "\nPicasaPy does not recognize 1 of the files to be deleted.\n",
             )
         )
     elif facts.unrecognized > 1:
@@ -110,7 +110,7 @@ def wipe_card_warning(facts: WipeCardFacts) -> str:
         reszek.append(
             QCoreApplication.translate(
                 "ImportSourceController",
-                "\nPicasa does not recognize %1 of the files to be deleted.\n",
+                "\nPicasaPy does not recognize %1 of the files to be deleted.\n",
             ).replace("%1", str(int(facts.unrecognized)))
         )
 

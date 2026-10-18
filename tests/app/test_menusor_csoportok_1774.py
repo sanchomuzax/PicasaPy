@@ -380,8 +380,12 @@ def _mnemonik_nelkul(tetelek: list[str]) -> list[str]:
     (`test_menu_mnemonikok_2152.py`). Ha itt nem hagynánk figyelmen kívül
     az `&`-t, minden mnemonik-bővítés hamis csoportosztás-eltérésnek
     látszana.
+
+    A program saját nevét (#5294: PicasaPy) ugyanígy kivesszük: a mért tábla
+    az eredeti Picasa feliratait tartalmazza, a csoportosztás pedig nem a
+    névtől függ. Mindkét oldalra alkalmazzuk, így a tábla nem változik.
     """
-    return [t.replace("&", "") for t in tetelek]
+    return [t.replace("&", "").replace("PicasaPy", "Picasa") for t in tetelek]
 
 
 def test_a_csoportok_a_mert_eredetit_kovetik():

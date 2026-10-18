@@ -429,8 +429,8 @@ Dialog {
                         objectName: "peopleManagerPhotoCount"
                         text: manager.pendingFaceId >= 0
                             ? (manager.selectedPhotoCount === 1
-                               ? qsTr("%d Photo in Picasa")
-                               : qsTr("%d Photos in Picasa"))
+                               ? qsTr("%d Photo in PicasaPy")
+                               : qsTr("%d Photos in PicasaPy"))
                                 .replace("%d", String(manager.selectedPhotoCount))
                             : String(manager.selectedPhotoCount)
                     }

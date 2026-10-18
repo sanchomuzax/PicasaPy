@@ -72,7 +72,7 @@ Item {
             //: `CThumbUI::ReadOnlyPrompt` — az eredeti szövege (#3573)
             editReadOnlyDialog.ask("", qsTr(
                 "This file is read only. In order to edit this file, "
-                + "Picasa needs to copy the file's folder. Would you "
+                + "PicasaPy needs to copy the file's folder. Would you "
                 + "like to make a copy now?")
                 + "\n\n" + qsTr(
                 "The automatic copy is not available yet. To edit this "

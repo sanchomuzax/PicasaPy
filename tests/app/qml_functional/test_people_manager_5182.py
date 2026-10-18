@@ -170,7 +170,7 @@ def test_unnamed_tile_choose_assigns_existing_person_without_duplicate_contact(
     assert selected_person is not None
     assert selected_person.property("highlighted") is True
     assert _find_item(window, "peopleManagerPhotoCount").property("text") == (
-        "1 Photo in Picasa"
+        "1 Photo in PicasaPy"
     )
     assert choose_button.property("text") == "Choose"
 

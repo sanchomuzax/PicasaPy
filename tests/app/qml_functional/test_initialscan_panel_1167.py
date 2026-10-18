@@ -43,7 +43,7 @@ class TestTisztaTelepites:
         _nyisd(window, controller, qt_app, monkeypatch, migracio=False)
 
         assert str(_elem(window, "initialScanQuestionText").property("text")) == (
-            "Picasa is ready to search for pictures on your computer"
+            "PicasaPy is ready to search for pictures on your computer"
         )
         assert "whole computer" in str(
             _elem(window, "initialScanWide").property("text")

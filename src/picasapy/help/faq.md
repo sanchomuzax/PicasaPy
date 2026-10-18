@@ -109,7 +109,7 @@ a rendszer. Linuxon telepítsd a `qml6-module-qtmultimedia` és a
 A térkép megjelenítéséhez való Qt-modul hiányzik a rendszeredről. A
 geocímkék ettől még olvashatók és törölhetők, csak a térkép nem látszik.
 
-### „A Picasa nem tudta inicializálni a Google Térképet. Ellenőrizze, hogy van-e internetkapcsolat."
+### „A PicasaPy nem tudta inicializálni a Google Térképet. Ellenőrizze, hogy van-e internetkapcsolat."
 
 A Helyek panel térképe az internetről tölti le a térképet, és most nem
 érte el. Ellenőrizd a hálózati kapcsolatot. A geocímkék ettől függetlenül

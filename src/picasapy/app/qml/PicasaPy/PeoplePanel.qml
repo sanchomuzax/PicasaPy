@@ -356,7 +356,7 @@ Rectangle {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: panel.unnamedAlbumMode && panel.unnamedCollectionEmpty
-                  ? qsTr("As Picasa scans your photos, the faces it finds "
+                  ? qsTr("As PicasaPy scans your photos, the faces it finds "
                          + "are automatically grouped for easy naming.\n\n"
                          + "Things to know:\n\n"
                          + "To identify a person, click 'Add a name', then "
@@ -367,7 +367,7 @@ Rectangle {
                          + "access to all of your contacts while naming.)\n\n"
                          + "To ignore a person, click the 'X' button on the "
                          + "face thumbnail.\n\n"
-                         + "Suggestions: After you name someone, Picasa may "
+                         + "Suggestions: After you name someone, PicasaPy may "
                          + "suggest more matching faces for that person. "
                          + "Click on a person's album to view and confirm "
                          + "(or reject) any suggestions.")

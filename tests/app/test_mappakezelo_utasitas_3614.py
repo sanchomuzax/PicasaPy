@@ -29,13 +29,13 @@ KONTEXTUS = "FolderManagerDialog"
 
 #: `foldermgr_text.tre` szó szerint — az „inside it.” után KÉT szóköz.
 FORRAS = (
-    "For each folder, you can choose whether or not to have Picasa find "
+    "For each folder, you can choose whether or not to have PicasaPy find "
     "pictures inside it.  You can also pick folders to watch for new pictures."
 )
 
 #: `referencia/stringres-en-hu.tsv` — a Picasa saját magyar szövege.
 VART = (
-    "Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük "
+    "Minden mappa esetében megadhatja, hogy a PicasaPy keressen-e bennük "
     "képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program "
     "figyelje bennük az új képek megjelenését."
 )

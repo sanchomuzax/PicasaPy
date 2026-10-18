@@ -22,8 +22,8 @@ TS = QML.parent / "i18n" / "picasapy_hu.ts"
 
 #: #3555: a `CGeneralPrefsPage::LangChange` angol alapszövege
 NYELVVALTAS_KERDES = (
-    "Change the language Picasa uses?\n\nIt will change the next time "
-    "Picasa is opened.")
+    "Change the language PicasaPy uses?\n\nIt will change the next time "
+    "PicasaPy is opened.")
 
 #: felirat → (hivatalos magyar, a `stringres` azonosítója)
 HIVATALOS = {
@@ -49,15 +49,15 @@ HIVATALOS = {
     "This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.\nIf your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.": (
         'A kép irányát megváltoztatta a „Kiegyenesítés” eszközzel, ami pontatlanságokat okozhat a vörösszemjavító négyszögek kiválasztásakor.\nHa a vörösszemjavítások igazítása helytelennek (vagy nem létezőnek) tűnik, vonja vissza a „Kiegyenesítés” eszközzel végzett javítást, majd ismételje meg a vörösszemjavításokat és - ha szükséges - a kiegyenesítést.',
         "IDS_WARN_REDEYE_ACCURACY"),
-    'Picasa has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that Picasa may have missed.': (
-        'A Picasa vörösszem-effektusokat talált a képen, és kijavította őket.\n\nMegjegyzés: a keretbe kattintva visszavonhatja a változást.\n\nA Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan kijelölheti és kijavíthatja.',
+    'PicasaPy has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that PicasaPy may have missed.': (
+        'A PicasaPy vörösszem-effektusokat talált a képen, és kijavította őket.\n\nMegjegyzés: a keretbe kattintva visszavonhatja a változást.\n\nA PicasaPy által esetleg figyelmen kívül hagyott vörösszemeket manuálisan kijelölheti és kijavíthatja.',
         "RedEye::AutoFixedMessage"),
     'Instructions:\n\n1) Manipulate the rectangle to fit the face of the person you want to add.\n\nYou can drag the rectangle to position it, and move its sides to refine the shape.\n\n2) Click on "Add a name" under the rectangle and type in the person\'s name.\n\n(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)': (
         'Utasítások:\n\n1) A négyszöget alakítsa úgy, hogy illeszkedjen a hozzáadni kívánt személy arcához.\n\nHúzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásával pedig pontosíthatja az alakját.\n\n2) Kattintson a négyszög alatt látható "Név hozzáadása" feliratra, és írja be a személy nevét.\n\n(Ne feledje, hogy a befejezéshez le kell nyomnia az Enter billentyűt, vagy az egyik automatikusan kiegészített névre kell kattintania.)',
         "manual_add::instructions"),
     # #3555: a nyelvváltás megerősítő kérdése (a Beállítások és a menü útja)
     NYELVVALTAS_KERDES: (
-        "Módosítja a Picasa kezelőfelületének nyelvét?\n\nA változás a "
+        "Módosítja a PicasaPy kezelőfelületének nyelvét?\n\nA változás a "
         "program következő megnyitásakor lép érvénybe.",
         "CGeneralPrefsPage::LangChange"),
     "Feather": ("Lágy perem", "filter_dir_tint_label1"),
@@ -294,7 +294,7 @@ BEALLITASOK = {
     ("OptionsTabFileTypes", "Quicktime Movies (.MOV)"): (
         "Quicktime-filmek (.MOV)", "options/SupportQuicktime.title"),
     ("OptionsTabGeneral", "Help improve PicasaPy:"): (
-        "Részvétel a Picasa fejlesztésében:", "options/labelgroup16.title"),
+        "Részvétel a PicasaPy fejlesztésében:", "options/labelgroup16.title"),
     ("OptionsTabGeneral", "Import destination folder:"): (
         "Importált képek mentési helye:", "options/labelgroup34.title"),
     ("OptionsTabGeneral", "Never check for updates"): (
