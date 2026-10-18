@@ -136,9 +136,11 @@ def test_embersor_kattintassal_a_kozponti_nevu_szemelyalbumot_nyitja(
     row_name = f"personItem_{_PERSON_NAME}"
     assert var_feltetelre(
         qt_app,
-        lambda: _visible(_find_item(window, row_name)),
+        lambda: _visible(_find_item(window, row_name))
+        and _find_item(window, row_name).width() > 0
+        and _find_item(window, row_name).height() > 0,
         3.0,
-    ), "a központi contacts.xml név nem jelent meg az Emberek sorban"
+    ), "a központi contacts.xml név nem jelent meg (méretezve) az Emberek sorban"
     _click(qt_app, _find_item(window, row_name))
     assert controller.currentPersonName == _PERSON_NAME
     assert controller.viewModeName == "person"
