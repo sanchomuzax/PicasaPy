@@ -177,9 +177,11 @@ class TestSaveToDisk:
             lambda: controller.saveRowsToDisk([0]),
         )
 
-        assert not controller.photos.photos[0].filters, (
-            f"a nézet nem töltődött újra; mód: {controller._view_mode!r}"
-        )
+        # #5333: az újratöltés a saveFinished után is futhat (Windowson
+        # pelyhes volt az azonnali olvasás): a modell frissülésére várunk
+        assert var_feltetelre(
+            qt_app, lambda: not controller.photos.photos[0].filters
+        ), f"a nézet nem töltődött újra; mód: {controller._view_mode!r}"
 
     def test_the_edit_is_burned_into_the_file(self, controller, qt_app, library):
         _, folder, _db = library
