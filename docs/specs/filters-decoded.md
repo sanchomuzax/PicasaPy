@@ -595,6 +595,115 @@ képarányos középpont (x,y), a redeye/crop régiókkal rokon minta; a
 Round-trip tesztek a valódi mintákkal: `tests/ini/test_filters.py`
 (`TestEffektFulKulcsok190`).
 
+### Polaroid: paraméterek, munkafüggvények és a k03 üres képterülete (#5299, 2026-10-18)
+
+**Paraméter-sorrend** (a jegyben megadott k03 INI-sorból):
+
+| index | érték | jelentés | forrás |
+|---|---|---|---|
+| 0 | 1 | engedélyező flag | mérés (a jegy k03 INI-sora: Polaroid=1,5.000000,00e2e2e2) |
+| 1 | 5.000000 | Rotate, fok; a leíró tartománya -10…10, alapértéke 5 | bináris (0x00bb5640; eredeti filterdesc.xml) |
+| 2 | 00e2e2e2 | háttérszín; a fehér képkeretet nem ez festi | bináris (0x00bbb720; eredeti filterdesc.xml), mérés (job-198: a vörös sentinel vörös középrészt ad) |
+
+Az INI-ben a szín bájtjai RRGGBB sorrendűek, a vezető 00 nem alfa:
+00e2e2e2 a #e2e2e2 RGB-szín. A recept a színt az árnyék háttérszínének
+és a forgatott kimenet üres sarkainak kitöltésére használja. A színválasztó
+neve a leíróban _cpkrOuter; a „Background Color” feliratot a bináris
+0x008feed8 útja köti hozzá.
+
+**Munkafüggvények.** A Polaroid négy műveletből áll:
+
+| lépés | művelet | apply-cím | viselkedés / forrás |
+|---|---|---|---|
+| 1 | Crop: középre igazított min(W,H) négyzet | 0x00bbdbd0 | bináris; a forrás képleírójából vág |
+| 2 | SimpleBorder: fehér keret | 0x00bbf4a0 | bináris + QEMU-mérés; a keret alfa=FF, a belső kép négy BGRA-bájtja változatlanul másolódik |
+| 3 | DropShadow: distance=3, blur=8, shadowAlpha=0,4, angle=90-Rotate | 0x00bbb720, rajzoló 0x00bcd940 | bináris (eredeti filterdesc.xml; 0x00bcd940 → 0x008f59d0 → 0x008f48b0) |
+| 4 | Rotate: degAngle, padBorder=true, borderColor=szín | 0x00bb5640; mátrix 0x00bc8060; mintavevő 0x009e7060 | bináris; a borderColor a forgatott vászon üres sarkait tölti |
+
+A SimpleBorder célképét a 0x009a91a0 tölti ki, majd a 0x009aabf0 másolja
+bele a forrást. Az utasításolvasatot és a natív QEMU-próbát a
+filterdesc-registry.md 4.12-es szakasza rögzíti. A DropShadow rajzolója
+a forrás alfáját használó source-over kompozitort hívja. Opaque háttéren
+az A=0 forráspixel RGB-je nem látszik; a cél, azaz a leíró
+backgroundColor értéke marad. A Polaroid leírója ezt a színt
+0xff000000 + _cpkrOuter.liveColor alakban adja át a DropShadownak.
+A színcsatornák képlete: ki=floor((forrás·A + háttér·(255-A))/255);
+opaque háttérnél A=0 esetén pontosan a háttér marad.
+A Rotate borderColor-ja csak a forgatás után üresen maradt területet tölti,
+ezért a kép közepének színét nem ez határozza meg.
+
+**Az előző munkafüggvények alfa-kimenete.** A Picasa képleírója 32 bites,
+BGRA-pixeleket használ. A két problémás worker nem más képformátumra vagy
+előre szorzott alfára vált: a kimeneti képleíróba ír, és a felső,
+alfa-bájtot nullán hagyja.
+
+| előző réteg | natív kimenet | forrás |
+|---|---|---|
+| dir_sat | A=0; a worker a B/G/R értékekből számol, alfa-bemenetet nem olvas, és a 32 bites kimeneti DWORD-ban csak a színcsatornákat állítja | bináris (0x0090dbb0, különösen 0x0090dd9f-0x0090ddbf; callback 0x008f8fb0) |
+| blur | A=0; a 0x0090c6b0 segéd csak a három színcsatornát írja a 32 bites kimenetbe. A 0x0090cf60 ezen felül külön él-/fal-segédpuffert használ, de ez nem más kimeneti pixelformátum | bináris (0x0090cf60 → 0x0090cd90 → 0x0090c6b0; pixelírás 0x0090c97f) |
+| colortemp | A=FF; a worker a legfelső bájtot kifejezetten 0xff-re állítja | bináris (0x0090ea10, 0x0090ebd4-0x0090ec01) |
+| Pixelate, NightVision, Holga | a job-200 egyrétegű próbájában a Polaroid fotóterülete látható. E kimenetek minden egyes alfa-bájtját ebben a körben nem diszasszembláltam | mérés (job-200 rétegenkénti Colab-összevetés); bájtonkénti alfa: NINCS MEG |
+
+A dir_sat és a blur RGB-kimenete nem előre szorzott: az RGB-számításuk
+független az alfától, és az alfa nulla mellett is színes adatot ír. Mindkét
+callback bejövő és kimenő képleíróval dolgozik; ez a szokásos külön
+forrás-/célpuffer, nem más pixelformátum. A blur emellett él-/fal-segédpuffert
+is használ. A külön kimeneti puffer önmagában nem magyarázza a hibát; a
+meghatározó eltérés a negyedik bájt. A régi blur itt a 0x0090cf60-os
+Picasa-szűrő, nem a projekt IIR-elmosója.
+
+**Mi történik a k03 láncban.** A teljes sor:
+
+<code>dir_sat=1,0.35,-0.2;colortemp=1,0.125,0;Pixelate=1,8,9,0;NightVision=1,0,0,0;Holga=1,70,30,0;blur=1,0.1;Polaroid=1,5.000000,00e2e2e2;</code>
+
+A dir_sat nullás alfája után a colortemp FF alfát ír, de a lánc utolsó
+blur rétege ismét nullázza azt. A Polaroid Crop és SimpleBorder ezt a
+forrásalfát viszi tovább; a DropShadow az átlátszó képterületet a beállított
+háttérszín fölött kompozitálja. Így az eredeti k03 fotóhelyén az INI
+#e2e2e2 színéhez közeli szürke jelenik meg. Ez alfa-vesztés, nem a fotó
+RGB-tartalmának eltűnése és nem külön
+puffer-/formátumhiba.
+
+**Két egymástól független út:** A) a munkafüggvény utasításai és a Polaroid
+műveletsorának olvasata: dir_sat és blur A=0-t ad, colortemp A=FF-et,
+SimpleBorder megtartja a forrás alfáját, DropShadow pedig alfával kever a
+leíró háttérszínére. B) a Colab-mérések: az egyrétegű dir_sat és blur után
+a vörösre állított Polaroid vörös középrészt ad; colortemp, Pixelate,
+NightVision és Holga után a fotó látható; a teljes lánc a színparamétertől
+függő szürke/vörös területet ad. A két út egyezik. **Bizonyítottsági fok:
+megerősített** az eredeti mechanizmusra. A Pixelate, NightVision és Holga
+alfabájtja külön nincs feltárva; a teljes lánc okát a végső blur által írt alfa
+eldönti.
+
+**Mérések és cáfoló próba.**
+
+| próba | eredmény | forrás |
+|---|---|---|
+| első hat réteg, Polaroid nélkül | eredeti és PicasaPy ΔE=0,72 | mérés (#5295 kombinált lánc, k03) |
+| teljes hét réteg | eredeti üres fotóterülete az INI #e2e2e2 színéhez közeli; PicasaPy a fotót mutatja; ΔE=24,34 | mérés (job-194/job-197, k03) |
+| teljes lánc vörös Polaroid-színnel | a fotóterület vörös | mérés (job-198) |
+| Polaroid önmagában | a fotó látható | mérés (job-199) |
+| külön-külön előző réteg + vörös Polaroid | dir_sat és blur után vörös; colortemp, Pixelate, NightVision és Holga után a fotó látható | mérés (job-200; export__k01.jpg, export__k07.jpg, export__k02.jpg közvetlen vizuális ellenőrzése) |
+
+Cáfoló próba: azt a magyarázatot próbáltam cáfolni, hogy a Polaroid minden
+esetben felülírja a fotót a választott színnel. A job-199 önálló Polaroidja
+és a job-200 colortemp kontrollja látható képet ad; a job-200 k02 exporton
+ez közvetlenül is ellenőrizhető. A cáfolatot a statikus colortemp-út
+függetlenül alátámasztja: a worker A=FF-et ír. Ez a próba a feltétel nélküli
+kitöltés hipotézisét megdönti, az alfa-mechanizmust nem.
+
+**Eredeti / nálunk / teendő.**
+
+| | eredeti | PicasaPy a munkafában | fejlesztési teendő |
+|---|---|---|---|
+| pixel és alfa a Polaroid bemenetén | BGRA; dir_sat és blur kimenetén A=0, colortemp kimenetén A=FF | az apply_filters RGB (H,W,3) tömböt ad a Polaroid handlernek; validate_image ezt a háromcsatornás alakot követeli | a chain.py rétegátadásán tartsd meg a natív alfát külön alfa-csatornában vagy BGRA-ban; a Polaroidnak add át az alfát, ne kényszerítsd opaque-ra |
+| Polaroid közepe | SimpleBorder megőrzi az alfa-bájtot; DropShadow source-overrel a backgroundColor színére kompozitál | apply_polaroid RGB-bemenetként a fotót teljes fedésűnek tekinti | a Crop/SimpleBorder/DropShadow/Rotate belső útján őrizd és használd a maszkot; az A=0 közép legyen a kiválasztott háttérszín |
+| k03 elfogadási mérés | a közép az INI #e2e2e2 színéhez közeli | jelenlegi ΔE=24,34 | javítás után a Polaroid fotóterület ΔE-je legfeljebb 2,0 legyen az eredeti Picasa-exporthoz képest |
+
+Kódmódosítás ebben a kutatói körben nem készült. A javasolt javítás után
+elért ΔE-érték: **NINCS MEG**; a kutatás a mechanizmust bizonyította, a
+terméki egyezést a fejlesztői mérésnek kell igazolnia.
+
 ## Golden-verdiktek (#115/#279, 2026-07-23) — mely szűrő mennyire pixelhű
 
 **VÉGLEGES mérés** a `compare_render.py --luts` futásából a kit3 **saját,
