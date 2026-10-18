@@ -83,10 +83,11 @@ Item {
 
     overlay = _item(window, "placesMapStatusOverlay")
     loading = _item(window, "placesMapLoadingIndicator")
+    title = _item(window, "placesMapLoadingTitle")
     message = _item(window, "placesMapStatusText")
     assert _var(qt_app, overlay.isVisible)
     assert loading.isVisible()
-    assert message.property("text") == "Loading Map..."
+    assert title.property("text") == "Loading Map..."
 
     map_item = loader.property("item")
     original_width, original_height = window.width(), window.height()
