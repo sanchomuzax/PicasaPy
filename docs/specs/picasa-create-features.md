@@ -3095,6 +3095,84 @@ face-selector mezőt (`movie/slideshow.py:54-82`); az export a képeket a
 kimeneti paritás. A #4331 jelen állapotában tehát a menüpont és a méretmód
 megvan, a #4400 szerinti arckivágás még nincs bekötve.
 
+**A film-crop lánc lezárása: a híd, a Vw/Vh-pár és a konstansok - #4400, 11. kör (2026-10-18).**
+
+*(A kör sorszáma 11: a 6-10. kör már a fenti szakaszokban van. A 10. kör végén kért Ghidra-kérdések egy része itt asm-szinten megválaszolódott.)*
+
+**Kérdés.** (1) Melyik a három közvetlen író közül (`0x00531c60`, `0x006b0200`, `0x006b39b0`) az, amelyik a film `AlignedImageCollection+0x94` objektumát (`CThumbDB`) írja, és fut-e a film indításakor? (2) A klip rajzolásakor a `facerect`-ből hogyan lesz a végső kivágás: milyen szorzók és konstansok, címmel és kiolvasott értékkel?
+
+**Forrás.** Kizárólag a helyi bináris: diszasszembly (`annot_disasm.py`), a `.rdata` konstansai a PE-ből (csak olvasás), és a hívási gráf a bináris-indexből (`xrefs`). Dekompilátumot nem használtam. A 7-10. kör állításait nem vettem át gépiesen: ahol a friss asm mást mutatott, ott javítom.
+
+**Eredmények.**
+
+*(a) Javítás: a `0x00813c50` argumentumokkal hívódik.* A 9. kör „argumentum nélkül" állítása az asm szerint téves (egy út, lásd (i)). A hívási hely (`0x008135bf`-`0x008135c7`): `push edx` (Vh), `push eax` (Vw), `push ebx` (this), `mov eax, esi` (a tétel-rekord), `edi` a kimeneti négy dword (`lea edi,[esp+0x54]`). A prológus a verembe tolt értékeket veszi át: `ebx` = Vw (`0x00813c5a`, `[esp+0x70]`), `ebp` = Vh (`0x00813c77`, `[esp+0x78]`). A hívás csak `this+0x28c == 0x14` esetén fut (`0x00813593`).
+
+*(b) Vw és Vh: a ytDrawNode-téglalap szélessége és magassága.* A `0x00813330` a `0x009e0660` getterét hívja (a `this+0x2e0` objektum vtábla `+0x20` slotján, `0x008133d6`). A getter négy dwordot ír a `[E+0x58]` címre (a `lea ecx,[esp+0x5c]` a `push eax` után fut, ezért a cím +0x58). Ebből:
+- Vh = out[3] - out[1] = y1 - y0 (`[esp+0x64]-[esp+0x5c]`),
+- Vw = out[2] - out[0] = x1 - x0 (`[esp+0x60]-[esp+0x58]`).
+Mindkét ágban ugyanez áll (`0x0081356b`-`0x00813577` a `0x00812aa0` hívás előtt, `0x008135ac`-`0x008135ba` a `0x00813c50` hívás előtt). A 10. kör „Vw = out[0] - out[2]" olvasata téves volt; a kivonás előjele a szokásos. Feltétel: a getter-hívás és a `0x0081356b` közötti esp-egyensúly nincs soronként végigolvasva.
+
+*(c) A híd (`0x0047a390`) sorrendje, argumentumokkal.*
+- Argumentumok (a `0x0068f980` hívása, `0x0068f9a5`-`0x0068f9c3`): arg1 = `CThumbDB` (`[esi+0x94]`), arg2 = a 0-tól számozott elem-index (a `+0x60` slot visszatérése, `eax`), arg3 = jelző = 1 (`push 1`).
+- Alap-téglalap: `0x00446610(CThumbDB, elem-index, esi)`; a 3. argumentum a `push esi` (a `0x00446610` `ret 0xc`-vel vesz le három argumentumot). A négy dword az `imagedata_facerect`-ből kerül az `esi`-be (a 8. kör C-je szerint; a `0x00446610` törzsét ebben a körben nem olvastam újra).
+- Metszés (`0x0047a3be`-`0x0047a419`): `0x00429dc0(CThumbDB, elem-index, &crop)`. Sikeres hívásnál `x0 = max(x0, cx0)`, `y0 = max(y0, cy0)`, `x1 = min(x1, cx1)`, `y1 = min(y1, cy1)`, az `esi` négy mezőjébe. Ha a hívás nullát ad (`0x0047a3da`), az alap-téglalap marad. Üres-ellenőrzés nincs.
+- Forgatás (`0x0047a41c`-`0x0047a429`): `0x0042c830(this = CThumbDB, elem-index, &rot, 0)`; a `rotate` a `[esp+0x20]` lokálisba kerül.
+- Szűrő (`0x0047a45a`-`0x0047a45c`): `0x00430610`, a négy rect-argumentum nulla. A visszatérési értékét a híd nem használja, és a `[esp+0x30]` tömböt a híd később nem olvassa.
+- Affin (`0x0047a466`-`0x0047a46c`): **EDX = esi**, vagyis az affin bemenete a METSZETT rect. ECX = négy egész kimenet (`lea ecx,[esp+0x10]`), a verembe a 6 floatos mátrix címe kerül (`lea ecx,[esp+0x78]`, `0x0047a461`). A visszatérő mutatót a híd EAX-ből olvassa (`0x0047a471`), és `0x0047a473`-`0x0047a484` visszamásolja az `esi`-be. (A 9. kör a visszatérést ECX-ként írta; ezt a `0x00a4a240` végén nem ellenőriztem.)
+
+→ Következmény: a metszés hatása a végső rectre **feltételes**. Egy út (az asm) mutatja az EDX = esi-t; a 9. kör C-je nem mutatja, ezért második úttal (pl. QEMU) kell megerősíteni. Ha igaz, a híd végső rectje: `befoglaló(M · metszett rect)`, ahol M a 6 floatos mátrix, amelynek forrása NINCS MEG.
+
+*(d) Kerekítés, és két névleg azonos konstans.* A `0x00a4a4a3`-`0x00a4a4ff` sorokban `fsub qword [0x00cf4160]` és `fistp` váltja: `ROUND(érték - C)`, ahol a kiolvasott `C` = **0.499** (double, bájtok `560e2db29defdf3f`). Ez lezárja a 9. kör „0,499?" kérdőjelét. ⚠️ A crop-képlet `δ`-ja (`0x00cf48f8`, bájtok `000000c09defdf3f`) **nem** ugyanaz: float32(0.499), kiterjesztve double-lé, értéke 0.49900001287460327. Két külön konstans; a megvalósításban nem cserélhetők fel.
+
+*(e) A `0x00813c50` konstansai, a PE-ből kiolvasva.*
+
+| cím | típus | kiolvasott érték | szerep (asm-hely) |
+|---|---|---|---|
+| `0x00cf48f8` | double | 0.49900001287460327 | δ, `fld qword` (`0x00813d60`, `0x00813dee`) |
+| `0x00cf39e4` | float | 4294967296.0 (2^32) | tízszer `fadd` (`0x00813d5a`-`0x00813e4b`); szerepe NEM ellenőrzött |
+| `0x00c7e4a4` | float | 4.0 | r > 4 elágazás (`0x00813fef`) |
+| `0x00cf39f8` | double | 3.0 | `z = r / 3.0` (`0x00814007`, `fdiv qword`) |
+| `0x00c7e4ac` | float | 1.2999999523162842 | `z` felső korlátja (`0x00814016`) |
+| `0x00c72150` | double | 0.5 | `fld qword` (`0x00814030`); a félméret-számításban, pontos szerep nincs igazolva |
+| `0x00cf3ed0` | float | -1.0 | belépő `fld` (`0x00813c53`, `0x0081358d`); szerepe feltételes |
+
+A z-ágak sorrendje egyezik a 4. kör képletével: `r > 4`: `z = r/3`; egyébként `z = min(r, 1.2999999523162842)`. A kör konstansai bináris eredetűek; a `0x00813c50` `δ`-ja és a 4. kör képlete egyezik.
+
+*(f) A `0x00cf39e4` (2^32) szerepe NINCS MEG.* A tízszeri `fadd` valószínűleg egész-kivonási/kerekítési trükk, de ezt a `0x00813d5a` környékén végig kell olvasni; ebben a körben nem tettem.
+
+*(g) Az 1. kérdés: a három író és a film.* Az indexből, csak közvetlen `call` élekkel, mélység 6-ig felfelé járva:
+- `0x006b0200`: 8 elérhető függvény; közvetlen hívói `0x00531c60`, `0x005d4b60`, `0x005f3ee0`.
+- `0x006b39b0`: 13 elérhető függvény; közvetlen hívója `0x006abae0`.
+- `0x00531c60`: 1 elérhető függvény; közvetlen hívója `0x005cb990`.
+A film-belépők (`0x00824090`, `0x006999c0`, `0x0068c880`, `0x00402f90`, `0x00619010`, `0x00616940`, `0x00813330`, `0x0068f980`, `0x0047a390`, `0x00813c50`) közül egyik sem érhető el. ⚠️ Ez **pozitív élekből** nem negatív állítás: az index nem látja a vtábla-hívásokat (`binaris-regeszet-modszertan.md`, 14. szakasz). A film-idejű hívás kizárásához indextől független pásztázás kellene; ezt nem végeztem el. Ezért a kérdés NYITOTT.
+A receiverek: a `0x00531c60` receivere a `CThumbDB` (7. kör, változatlan), de Passport-ágban fut. A `0x006b0200` és a `0x006b39b0` receivere (`EDI+0x0c`) továbbra sincs a `CThumbDB`-hez kötve.
+
+*(h) Cáfoló kísérletek (15.2).*
+1. „A `0x00813c50` argumentum nélkül hívódik" (9. kör): **cáfolva** (hívási hely és prológus).
+2. „`Vw = out[0] - out[2]`" (10. kör): **cáfolva** (előjel; a helyes: Vw = out[2] - out[0]).
+3. „A metszés nem hat a végső rectre, mert az affin felülírja az `esi`-t": **cáfolva**, az affin bemenete (EDX) az `esi`, vagyis a metszett rect.
+4. „A `0x00430610` szűrő módosítja a rectet": **nincs bizonyíték** rá. A rect-argumentumai nullák, a visszatérési értéke és a `[esp+0x30]` tömb nincs felhasználva a híd további részében.
+5. „A `Vw,Vh` a keret mérete": **feltételes**. A getter rectjének mérete; keret akkor, ha a csomópont rectje `[0,0,W,H]` és a jelző 0 (8. kör).
+
+*(i) Bizonyítottsági fok.*
+- **Megerősített** (két út egyezik): a híd sorrendje és argumentumai (9. kör C-je és az asm); a metszés max/min képlete (8. kör C-je és az asm); a `ROUND(érték - 0.499)` kerekítés (9. kör C-je és az asm); a konstansok értékei (PE-olvasás) és használatuk címe (asm).
+- **Feltételes** (egy út, az asm): a `0x00813c50` argumentumai (a 9. kör C-je más hívási alakot adott, lásd (a)); Vw és Vh a getter kimenetének két különbsége és az előjelük; az affin EDX-bemenete a metszett rect; az esp-egyensúly a Vw/Vh-olvasás előtt; a `0x00cf39e4` szerepe (nincs út); a `0x00a4a240` visszatérő mutatója (EAX vagy ECX).
+- **Nyitott**: a 6 floatos mátrix forrása; a `rotate` hatása a mátrixra; a film-idejű író.
+
+*(j) Válasz a két kérdésre.*
+1. A film `+0x94` objektuma a `CThumbDB` (`0x0068f9a5`; a 6. kör két útja szerint megerősített). Hogy a három író közül melyik fut a film indításakor: **NYITOTT**.
+2. A kivágás lépései: alaprect (`imagedata_facerect`) → metszés a `+0x14d0` crop-rectjével (`max`/`min`) → rotate-olvasás → szűrő (eredménye nélkül) → affin befoglaló M szerint → kerekítés `-0.499`-cel. A cropképlet (`s`, `z`, margó) változatlan (2.5, 4. kör), és a konstansai most mind bináris eredetűek. A rotate → M kapcsolat és M forrása **NINCS MEG**.
+
+*(k) A #4331-hez.* A jegytörzs-bővítés még nem írható. Az M (6 float) forrása és a rotate-érték hatása hiányzik. A metszés-láncra és a Vw és Vh értékére van már bizonyíték, de egy valódi filmfutáshoz az M kell.
+
+Ghidra-kör kell: 0x0042c830 - a `rotate` lokális (`[esp+0x20]`) és a híd 6 floatos mátrixának kapcsolata: a `0x0047a461`-nél verembe tolt mutató célját melyik utasítás írja? [blokkoló]
+
+Ghidra-kör kell: 0x004147d0 - a `0x0047a42e`-as hívás (`this` = a `rotate` lokális) hatása a `rotate`-ra és a mátrixra. [blokkoló]
+
+Ghidra-kör kell: 0x00a4a240 - a 6 floatos mátrix olvasási sorrendje és a visszatérő mutató konvenciója (EAX vagy ECX). [nem blokkoló]
+
+Nem Ghidra-kérdés, a következő körben: a film-idejű író (pásztázás, indextől független, lásd (g)); a `0x00cf39e4` szerepe (`0x00813d5a` környéke).
+
 ### 2.5/b A CMakeFaceMoviePanel működése — a „recompute" megerősítője (#1408)
 
 *A 2.5 csak két mondat volt; az arc-film PANEL-jének működése eddig nem
