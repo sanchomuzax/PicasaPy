@@ -3394,7 +3394,7 @@ Az `muvelet` mezők értékei: `kattint`, `billentyu`, `gepel`, `huz`, `menu`, `
 ### 28.7 Ghidra-kör kérések (új, a 28.3 nyitott pontjai)
 
 Ghidra-kör kell: 0x00586e20 - a teljes törzs: melyik hívás ír a `Contacts2` szakaszba, és a sikeres ág 0-t vagy -1-et ad-e vissza [blokkoló]
-Ghidra-kör kell: 0x00587110 - író-e a `Contacts2` szakasz írója, vagy csak olvas; mit csinál a 0x005875d0 hívás [blokkoló]
+Válasz [megválaszolva, a C-ben]: a `0x00587110` **olvasó**, nem a `[Contacts2]` írója; a `0x005875d0` memóriabeli beszúrás, fájl-API nélkül (30.4).
 Ghidra-kör kell: 0x0045a9d0 - a `.picasa.ini` mappafüggvény: mikor és hová írja a [Contacts2] sort, és hívja-e közvetve a 0x0068c030-at [blokkoló]
 Ghidra-kör kell: 0x00692210 - honnan hívódik (tábla vagy vtable), és mikor fut a 0x0069b240 mentés [nem blokkoló]
 
@@ -3498,9 +3498,9 @@ Nyitott kérdések: 0 nyílt · 1 lezárva (N4) · 6 blokkolt · 0 hatókörön 
 
 ### 29.7 Ghidra-kör kérések (a 27.4 maradéka, egységes alakban)
 
-- Ghidra-kör kell: `0x006952e0`, ír-e fájlt, ha igen melyik író (a `[Contacts2]` kiírója), és a `0x006976f0` hívási feltétele (`this+0x458`) [blokkoló]
+- Válasz [részben, 30.1-30.2]: a `0x006952e0` nem ír fájlt (fájl-API nincs a törzsében), feltétel nélkül hívja a `0x006956d0`-t; a `0x006976f0` hívási feltétele `this+0x458 != 0` (a hívó `0x006980a0` C-je). A [Contacts2] kiírója NINCS MEG (30.5).
 - Ghidra-kör kell: `0x00692210` és `0x006980a0` hívóhelyei a `PrepareCollection` és `AlignedImageCollection` objektumokon (+0x6c / +0x70 slot): a hívó függvények típusa és a hívás ideje a törlési úton belül [blokkoló]
-- Ghidra-kör kell: `0x00448fb0`, `0x0048e1f0`, `0x0048ef20` `this` osztálya (egyezik-e), és a `this+0x2748` al-objektum írói (`[esi+0x58]` = `this+0x27a0`, `[esi+0x60]` = `this+0x27a8`, `[esi+0x64]` = `this+0x27ac`) [blokkoló]
+- Válasz [részben, 30.3]: a `0x0048ef20`-ban nincs `this+0x2748` hivatkozás, tehát az írói ezen a függvényen kívül vannak; a `this` osztálya NINCS MEG; a `0x0048ef20` `this+0x2908` íróiról a C és a diszasszemblálás ellentmond egymásnak (nyitott). A `0x00448fb0` és a `0x0048e1f0` törzse ebben a körben nincs vizsgálva.
 - Ghidra-kör kell: `plugins/Red.dll` `REDENTRY` belépés: a `DAT_00d35e44`-be írt objektum vtáblája és annak +0x44 célja, valamint a 960 px helye (N3); a Red.dll nincs az indexben [blokkoló]
 
 ### 29.8 Bizonyítottsági fok és cáfoló kísérletek
@@ -3527,3 +3527,51 @@ Nyitott kérdések: 0 nyílt · 1 lezárva (N4) · 6 blokkolt · 0 hatókörön 
 ### 29.9 Fejlesztési következmény
 
 Nincs fejlesztési lista: az N-pontok egyike sem zárult le úgy, hogy eltérést mutatna a mi kódunktól. A 27.7 állítása érvényben marad. Jegytörzs-javaslat: nincs. Az új Red.dll-es blokkoló (N3) nem változtatja a felvételi tervet: a Colab-felvétel dönt (24.7).
+
+## 30. #5184 és #5185, tizedik kör: a `ghidra-9` dump válaszai (2026-10-18)
+
+**Hatókör:** a 28.7 `0x00587110` sora és a 29.7 `0x006952e0`, `0x006976f0`, `0x0048ef20` sorai. Forrás: a `.ghidra9/2026-10-18-ghidra-9.txt` (a munkafában, nem a változtatások része), kiegészítve a `referencia/ghidra/` helyi dumpokkal (`2026-10-18-szemelykezeles-8-panzoom.txt` a `0x006980a0` törzséhez, `2026-10-18-szemelykezeles-7.txt` a `0x005875d0` törzséhez) és a Picasa3.exe helyi diszasszemblálásával (`annot_disasm.py`).
+
+### 30.1 `0x006952e0`: memóriabeli mentési sor, nem fájlíró
+
+- A törzsében nincs fájl-API: a 19 hívott között nincs `CreateFile`, `WriteFile` és `0x0068c030`. Egyetlen hívója a `0x006980a0` (`006980c3`).
+- A törzs: (1) új, 0x118 bájtos elemet foglal (`FUN_0097c5d0`, `FUN_0068c320`), és a `param_2` indexszel a `this+0x58` és `this+0x60` tömbökből tölti ki; (2) a `this+0x454` 16 dword-ös blokkját átmásolja az elemre (`+0xd8`); (3) az elemet a `this+0x1b0` tömbbe fűzi (`+0x1b4` számlálóval); (4) ha `this+0x47c != 0` és az elem `+0x54` bájtja nulla, meghívja a `0x0068c5c0`-t (C: 793. sor); (5) a `this+0x8c` táblában törli a bejegyzést; (6) **feltétel nélkül** meghívja a `0x006956d0`-t (C: 806. sor).
+- A fájlírás tehát a `0x006956d0`-n át lehetséges. Ennek törzse nincs a dumpban; a korábbi dumpból ismert lánc (24.5): `0x006956d0` → `0x0068c030` (WriteFile). Ezt ebben a körben nem olvastam újra.
+
+### 30.2 `0x006976f0` és a hívási feltétele (`this+0x458`)
+
+- A hívója a `0x006980a0` (`006980e2`). Ennek törzse a `2026-10-18-szemelykezeles-8-panzoom.txt` 173-206. sorában van: ciklus a `this+0x5c >> 1` elemen a `0x006952e0`-val, az első nem nulla eredménynél visszatér; utána `if (*(int *)(param_1 + 0x458) != 0) FUN_006976f0(param_1);`, végül `this+0x88 = 1`.
+- A hívási feltétel tehát `this+0x458 != 0` (C, a hívó törzséből).
+- A `0x006976f0` maga nem olvassa a `this+0x458`-at (C: 837-1352. sor, nincs hivatkozás). Az `this+0x1b0` tömböt (`param_1[0x6c]`) és a `this+0x1b4` számlálót (`param_1[0x6d]`) járja be, és a `this+0x8` objektum zárját használja (`+0x14`, `+0x28`, `+0x2c`, `+0x30`). Fájl-API nincs a hívottjai között: ez frissítő menet, nem író.
+
+### 30.3 `0x0048ef20`: a `this` osztálya és a `this+0x2748`
+
+- A `this+0x2748` mezőre a függvényben nincs hivatkozás (a diszasszemblálásban nincs `0x2748`, `0x27a0`, `0x27a8`, `0x27ac` eltolás). Az írói tehát a függvényen kívül vannak; a 29.3 szerinti `0x00448fb0` bázis-eltolt `add esi, 0x2748` a jelölt.
+- A `this` osztálya NINCS MEG: a függvény 15 indirekt hívást tartalmaz (`call [reg+...]`), a vtábla-azonosítás nem történt meg.
+- **Ellentmondás (nyitott):** a dekompilált C (1353-2395. sor) többször ír a `this+0x2908` mezőbe (`*(float **)(param_1 + 0x2908) = pfVar18;`, a 324. és 340. sorban; nullázás a 376. és 387. sorban). A diszasszemblálás (teljes függvény, `0x0048ef20`-`0x00490331`, lefedettség ellenőrizve) viszont a `[reg+0x2908]` alakot csak olvasásként mutatja (`0x0048f4d2`, `0x0048f6f1`); íráshoz tartozó utasítás nincs. A 29.4 „író 0" állítása ezzel két úton nincs igazolva, és a C-ben látható írás forrása nem azonosított.
+
+### 30.4 `0x00587110`: a `[Contacts2]` olvasója, nem írója
+
+- A függvény a `.ini` bejegyzést **olvassa vissza**. Sztringjei: „Restoring contact, %llx, from .ini file: id=%llx, ...", „Ignoring .ini contact, %llx, found matching contact, %llx, already in manager.", „Cannot restore .ini entry for contact, %llx, unexpected number of tokens in string." (C, 4050-4250. sor).
+- A kulcs a 64 bites azonosító hexadecimális alakja (`FUN_0040eab0("%I64x", param_2, param_3)`), a szakasz neve `"Contacts2"` (`FUN_00985ff0`). Az értéket a `FUN_0099ac80` adja (ini-olvasás, törzse nincs a dumpban, feltételes), majd a `FUN_00988580` vesszőre (`DAT_00c81320`) bontja; pontosan hat tokent vár (`(local_a4 & 0xfffffffe) == 6`).
+- Hat token esetén duplikáció-ellenőrzés (`FUN_00586040`), zár, `FUN_00588210`, majd `FUN_005875d0` (beszúrás a memóriába). Fájl-API nincs a törzsben.
+- Egyetlen hívója a `0x0045a9d0` (`0045ba28`), a `.picasa.ini` mappafüggvény (28.3/b). Annak viselkedését ebben a körben nem vizsgáltam, ezért a betöltési szerep feltételes.
+- **A `0x005875d0`:** memóriabeli beszúrás. A `this+0x13c` bájtot 1-re állítja (piszkos jelző; a C-ben `param_1 + 0x4f`, mutató-indexelés), és a `this+0xcc` és `+0xd0` mezőkhöz nyúl (C-ben `param_1[0x33]`, `param_1[0x34]`; `FUN_0058f5a0`, `FUN_0058f640`, `FUN_0058f910`). A 17 hívottja között nincs fájl-API (a teljes lista ellenőrizve), és a törzsben nincs `0x0068c030`-hívás.
+
+### 30.5 Állapot
+
+- A `[Contacts2]` kiírója: **NINCS MEG**. A `0x00586e20` kiírói jelöltsége (28.3/a) nyitott marad.
+- N6 (29.6): a `0x006952e0` nem író. A fájlírás a `0x006956d0` → `0x0068c030` láncon át lehetséges (korábbi dump). A mentés kiváltója, a `0x006980a0` hívója NINCS MEG.
+- Blokkolt pontok: N3, N5, N6, N7, N8 változatlanul blokkolt.
+
+### 30.6 Bizonyítottsági fok és cáfoló kísérletek
+
+- **Megerősített:** a `0x006952e0` fájl-API-mentessége (a teljes HÍVOTTAK-lista és a C); a `0x006976f0` hívási feltétele (`this+0x458 != 0`; a hívó C-je, és a `0x006976f0` nem olvassa a mezőt); a `0x00587110` olvasó jellege (a C-sztringek és a hívott-lista egyezik: a törzsben nincs íráshoz tartozó hívás).
+- **Feltételes:** a `FUN_0099ac80` olvasó jellege (törzse nincs a dumpban, a név és a használat alapján); a `0x006956d0` → `0x0068c030` lánc (korábbi dump, 24.5).
+- **Nyitott:** a `0x0048ef20` `this`-osztálya; a `this+0x2908` íróinak C és asm ellentmondása.
+- **Cáfoló kísérlet (a `0x00587110` íróként):** ha írna, a törzsében vagy a közvetlen hívottjai között fájl-API vagy `0x0068c030` lenne. Sem a C hívott-listájában, sem a diszasszemblálásban nincs ilyen (28.3/b összevetve). A cáfolat sikeres.
+- **Cáfoló kísérlet (a `0x006952e0` íróként):** a törzsben nincs fájl-API, ezért a közvetlen írás kizárva. A `0x006956d0`-n át lehetséges írás nyitott.
+
+### 30.7 Fejlesztési következmény
+
+- Kódmódosítás nem következik: a `[Contacts2]` kiírása továbbra is blokkolt, a személykezelés felvételi terve (24.7) változatlan. Jegytörzs-javaslat: nincs.
