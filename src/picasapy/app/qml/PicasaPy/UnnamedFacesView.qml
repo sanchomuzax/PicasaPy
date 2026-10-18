@@ -201,12 +201,13 @@ ColumnLayout {
             }
         }
         Item { Layout.fillWidth: true }
-        Button {
+        PicasaButton {
             id: clusterToggleButton
             objectName: "clusterToggleButton"
             visible: !root.ignoredMode
             Layout.preferredWidth: 120
             Layout.preferredHeight: 27
+            font.pixelSize: Theme.buttonLabelSize
             // #3585: a felirat a KÖVETKEZŐ állapotot nevezi meg —
             // csoportosítva a részletes nézet, kibontva a csoportosítás.
             text: root.grouped ? qsTr("Expand groups") : qsTr("Group by face")
@@ -222,6 +223,7 @@ ColumnLayout {
                 anchors.fill: parent
                 visible: !root.ignoredMode
                 enabled: root.hasIgnoredFaces
+                font.pixelSize: Theme.buttonLabelSize
                 text: qsTr("Show ignored faces")
                 onClicked: root.showIgnoredRequested()
             }
@@ -229,6 +231,7 @@ ColumnLayout {
                 objectName: "unknownfaceheaderpanel/showunknown"
                 anchors.fill: parent
                 visible: root.ignoredMode
+                font.pixelSize: Theme.buttonLabelSize
                 text: qsTr("Back to Unnamed")
                 onClicked: root.showUnnamedRequested()
             }
@@ -254,7 +257,7 @@ ColumnLayout {
                   ? qsTr("%d Face(s)").replace(
                         "%d", String(root.faceScanController.unnamedCount))
                   : qsTr("%d Face(s)").replace("%d", "0")
-            font.pixelSize: Theme.fontSize - 2
+            font.pixelSize: Theme.buttonLabelSize
             color: Theme.textGray
         }
         Item { Layout.fillWidth: true }
@@ -297,11 +300,14 @@ ColumnLayout {
             enabled: root.selectedCount > 0 && !!root.faceScanController
             onClicked: root.unignoreSelected()
         }
-        Button {
+        PicasaButton {
             id: ignoreButton
             objectName: "ignoreFacesButton"
             visible: !root.ignoredMode && !root.grouped
             Layout.alignment: Qt.AlignVCenter
+            Layout.preferredWidth: 120
+            Layout.preferredHeight: 27
+            font.pixelSize: Theme.buttonLabelSize
             text: qsTr("Ignore Selected")
             enabled: root.selectedCount > 0 && !!root.faceScanController
             ToolTip.visible: hovered
