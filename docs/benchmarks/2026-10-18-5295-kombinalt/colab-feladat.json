@@ -1,0 +1,81 @@
+{
+  "v": 3,
+  "tipus": "ui_capture",
+  "cel": "Kombinalt effektek 10 kepen, eredeti meret es Maximum minoseg (#5295)",
+  "indulas": "alapallapot",
+  "lepesek": [
+    {
+      "kattint": [
+        502,
+        272
+      ]
+    },
+    {
+      "billentyu": "ctrl+a"
+    },
+    {
+      "var": 2
+    },
+    {
+      "kattint": [
+        744,
+        995
+      ]
+    },
+    {
+      "var": 4
+    },
+    {
+      "kattint": [
+        548,
+        435
+      ]
+    },
+    {
+      "var": 1
+    },
+    {
+      "kattint": [
+        600,
+        513
+      ]
+    },
+    {
+      "var": 1
+    },
+    {
+      "billentyu": "Home"
+    },
+    {
+      "billentyu": "Down"
+    },
+    {
+      "billentyu": "Down"
+    },
+    {
+      "billentyu": "Return"
+    },
+    {
+      "var": 1
+    },
+    {
+      "kattint": [
+        745,
+        672
+      ]
+    },
+    {
+      "var": 10
+    }
+  ],
+  "kimenet": [
+    "kepernyokep",
+    "allapot",
+    "export"
+  ],
+  "keret": {
+    "perc": 20
+  },
+  "picasa_ini_be": "[k01.jpg]\ncrop=rect64(08000800f800f800)\nfilters=crop64=1,08000800f800f800;autolight=1;finetune2=1,0.150000,0.100000,0.080000,00000000,0.100000;dir_brite=1,0.300000,-0.200000;tilt=1,0.180000,0.000000;sepia=1;Vignette=1,35.000000,1.400000,0.000000,00000000;\n\n[k02.jpg]\nfilters=dir_sharp=1,0.250000,-0.250000;warm=1;glow2=1,0.650000,3.000000;Comicize=1,20.000000,50.000000,50.000000;contrast=1,0.150000;Border=1,20.000000,5.000000,0.000000,00000000,00ffffff,0.000000;CrossProcess=1,0.000000;\n\n[k03.jpg]\nfilters=dir_sat=1,0.350000,-0.200000;colortemp=1,0.125000,0.000000;Pixelate=1,8.000000,9.000000,0.000000;NightVision=1,0.000000,0.000000,0.000000;Holga=1,70.000000,30.000000,0.000000;blur=1,0.100000;Polaroid=1,5.000000,00e2e2e2;\n\n[k04.jpg]\nfilters=dir_tint=1,0.500000,0.500000,0.250000,0.250000,ffffffff;autocolor=1;unsharp2=1,0.800000;Lomo=1,50.000000,0.000000;MuseumMatte=1,25.000000,40.000000,001a0e03,00f0eae4;TwoTone=1,0.000000,20.000000,0.000000,00004488,00ffff00;radblur=1,0.500000,0.500000,0.300000,0.500000;\n\n[k05.jpg]\nfilters=bw=1;sat=1,0.350000;DropShadow=1,4.000000,90.000000,10.000000,00000000,00ffffff,30.000000;FocalZoom=1,0.500000,0.500000,0.200000,0.500000,0.250000,0.000000;tint=1,80.000000,ffffffff;RoundedEdges=1,5.000000,00ffffff;Boost=1,50.000000;\n\n[k06.jpg]\nfilters=grain2=1;Matte=1,40.000000,1.200000,0.000000,00ffffff;gamma=1,0.150000;Neon=1,0.000000,00ff0000;PencilSketch=1,2.000000,100.000000,0.000000;radsat=1,0.500000,0.500000,0.300000,0.500000;PicnikGrain=1,10.000000,0;\n\n[k07.jpg]\nfilters=autobacklight=1;shadow=1,3.000000,0.250000,0.250000;PicnikTint=1,0.000000,0080cfff;QuantizePalette=1,8.000000,80.000000,0.000000;Soften=1,50.000000,50.000000;triple=1,0.300000,0.200000,0.400000;Cinemascope=1,0;\n\n[k08.jpg]\nfilters=autocontrast=1;rainbow=1,0.000000;Sixties=1,20.000000,00ffffff,0;finetune=1,0.150000,0.100000,0.080000,00000000,0.100000;Orton=1,25.000000,50.000000,0.000000;LocalContrast=1,15.000000,1.500000;radtint=1,0.500000,0.500000,0.250000,ffffffff;\n\n[k09.jpg]\nfilters=grain=1;ansel=1,ffffffff;triple2=1,0.300000,0.200000,0.400000;triple3=1,0.300000,0.200000,0.300000;linblur=1,0.500000,0.500000,3.000000;fill=1,0.400000;whitept=1,0.500000,0.500000,ffc0c0c0;\n\n[k10.jpg]\nfilters=enhance=1;backlight=1,0.500000;Invert=1;colorfix=1,0.500000,0.500000,0.250000;PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000,0;focalpixelate=1,0.500000,0.500000,40.000000,1.000000,0.250000,0.000000;unsharp=1,0.600000;\n",
+  "mintakeszlet": "kombinalt"
+}

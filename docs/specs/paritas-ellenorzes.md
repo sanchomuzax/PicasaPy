@@ -710,3 +710,22 @@ A GitHubon a vizsgált eltérésekre futtatott négy csak-olvasási `gh issue li
 **Bizonyítottsági fok: feltételes az összesített táblára.** A teljes effektmátrix minden ΔE-je a fenti, egységes mérőúton készült; két független út nem futott végig mind a 73 csoportra. A két irányított eltérés külön megerősített: az `analyze_validation_kit.py` JPEG-normalizált útja 4,433 / 10,740-et, a `compare_render.py` nyers összevetése 4,442 / 10,748-at ad; a Picasa-export és a forrás eltérése is ugyanazt a nem-tétlen eredetit igazolja.
 
 **Cáfoló kísérlet:** a „hibás a `dir_brite` és a `dir_sharp` számítási magja” feltevést a filterparser megkerülésével próbáltam cáfolni. A két közvetlen effekt-hívás eredménye 0,187 / 0,384 ΔE-vel illeszkedik az eredeti exportra (a korábbi #3859 mérésével egyezően), miközben a mai láncértelmező üres műveletsort ad; ez a számítási mag hibáját cáfolja, és a lánc elfogadási és paraméterszám-szabályára szűkíti az okot. A cáfoló mérce mindkét irányban ugyanaz a CIE76 ΔE és 2,0 küszöb.
+
+## Kombinált effektláncok az eredetihez mérve (#5295, 2026-10-18)
+
+Módszer: tíz szabad licencű kép (`minta-kombinalt` készlet a Colab-végrehajtón, k01-k10), képenként hét, egymástól teljesen eltérő réteg (összesen 70 különböző tag). Az eredeti kimenet a Colab-on futó eredeti Picasa 3.9 exportja (job-194), a PicasaPy-oldal a `tools/golden/compare_render.py pair` renderje; mérőszám a ΔE átlag és az SSIM, küszöb 2,0. A hibás réteget felezéssel kerestük: ugyanaz a tíz lánc az első 3, 5 és 6 rétegig (job-195, job-196, job-197). A láncok és a Colab-feladat: `docs/benchmarks/2026-10-18-5295-kombinalt/`.
+
+| kép | 3 réteg | 5 réteg | 6 réteg | 7 réteg | a hibát okozó réteg | jegy |
+|---|---:|---:|---:|---:|---|---|
+| k01 | 1,98 | 1,79 | 1,56 | 4,87 | 7.: `Vignette` (vágott, kiegyenesített, szépiás kép után) | #5300 |
+| k02 | 1,90 | 2,03 | 1,86 | 2,79 | 7.: `CrossProcess` (keretezett kép után) | #5301 |
+| k03 | 0,58 | 0,76 | 0,72 | 24,34 | 7.: `Polaroid` (az eredeti szürke képterületet ad) | #5299 |
+| k04 | 1,97 | 2,10 | 2,44 | 1,62 | határeset, nincs egyértelmű ugrás | |
+| k05 | 0,76 | 0,62 | 0,62 | 0,57 | egyezik | |
+| k06 | 1,70 | 0,83 | 0,83 | 1,17 | az SSIM alacsony az első 3 rétegben (`grain2` zajmagja, ismert eltérés) | |
+| k07 | 0,68 | 0,58 | 0,47 | 1,28 | enyhe emelkedés a 7. rétegnél (`Cinemascope`) | |
+| k08 | 46,77 | 60,41 | 61,16 | 61,05 | 2.: `rainbow`, amit a PicasaPy nem renderel, az eredeti viszont igen | #5296 |
+| k09 | 3,53 | 1,93 | 1,83 | 1,83 | az első 3 rétegben (`grain`, `ansel`, `triple2`); a `whitept` kimarad | #5296 |
+| k10 | 1,49 | 8,09 | 8,09 | 8,30 | 4.: `colorfix`, amit a PicasaPy nem renderel | #5296 |
+
+Következtetés: a tíz kombinációból kettő egyezik a küszöbön belül, egy határeset. Valódi, rétegre visszavezetett eltérés hat képen van: négy a ma „nem renderelendő”-nek tartott tagok miatt (#5296), három egy-egy effekt láncvégi viselkedése miatt (#5299, #5300, #5301). A szemcse-effektek (k06, k09) eltérése a zajmag ismert kérdése.
