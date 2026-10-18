@@ -2036,6 +2036,10 @@ mag, `0x009dd0d0`). Mind a négy elérhető a `filters=` láncból, és a
 | `dir_sharp` | `dir_sharp=1,balról-jobbra,felülről-lefelé` | ” |
 | `linblur` | `linblur=1,korong-x,korong-y,Mennyiség` | ⚠️ **2026-09-08 (#2702) HELYESBÍTÉS:** a korong a `filters=`-ben **normált**, de a `linblur` FELDOLGOZÓ visszahívása (`0x008f99c0`) `[-1, +1]`-ként olvassa (`0,5·W·(1+p)`) — a `0x008f9bf0` a HÚZÁS-ág, az `[0, 1]`-be ír. Ld. „A korong-koordináta ÁTVÁLTÁSA” szakaszt. Valódi ini-mintánk továbbra sincs rá |
 
+**Paraméterszám (#5279):** a három `dir_*` tag flag utáni mezője pontosan a
+két csúszkaérték; a puck x/y nem része a mentett láncnak. Ez a
+`filterdesc-registry.md` általános puck-sorrendje alóli natív kivétel.
+
 **A közös elmosó mag (`0x009dd0d0`)** most kapott először megvalósítást:
 kétmenetes, elsőrendű IIR, 9.7 fixpontos állapottal, a 4.2.5-ben MÉRT
 `k = round(65536·(1 − exp(−1/R)))` együtthatóval. A `dir_sharp` burkolója
