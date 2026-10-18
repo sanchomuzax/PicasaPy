@@ -284,7 +284,7 @@ def test_a_kibontott_es_mellozott_nezet_a_referenciageometriat_hasznalja(
     dialog = window.findChild(QObject, "ignoreFacesDialog")
     assert var_feltetelre(qt_app, lambda: dialog is not None and dialog.property("visible") is True, 3.0)
     _click(window, qt_app, _dialog_button(window, qt_app, "Ignore Person"))
-    assert var_feltetelre(qt_app, lambda: face_scan.ignoredCount() == 1, 5.0)
+    assert var_feltetelre(qt_app, lambda: face_scan.ignoredCount == 1, 5.0)
 
     _click(window, qt_app, _find_item(window, "unknownfaceheaderpanel/showignored"))
     view = _find_item(window, "unnamedFacesView")
