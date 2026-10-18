@@ -6177,11 +6177,13 @@ találta: `0x0057c9f4`, `0x00760eac`, `0x00771e2c`. A pásztázás nem talált
 közvetlen gyárhívást a `0x005e8a70` függvényben; ez az indirekt, virtuális vagy
 esemény-visszahívásos bekötést nem zárja ki. A keresés cáfolta a „gyárat csak
 a filmkészítő használja” munkahipotézist, de nem döntötte el a
-`BigSlideshow2` útját. A jelenlegi `SlideshowView.qml` mindkét Ken Burns
-kulcsot ugyanabba a középpontos animációba viszi, és csak a végső skálát
-különbözteti meg (`SlideshowView.qml:752–761`). A vetítési súgó is csak azt
-írja, hogy az „arc” változat erősebben nagyít
-(`src/picasapy/help/features/nezegetes.md:303–324`).
+`BigSlideshow2` útját. A jelenlegi `SlideshowView.qml`-ben a két Ken Burns
+kulcs viselkedése különvált: a `kenburns` két provider-kivágást
+interpolál, a `kenburnsaoi` külön középre igazított skálázást futtat
+(`SlideshowView.qml:426-463`, `778-812`, `835-857`). Ez a helyi kód nem
+bizonyítja a `BigSlideshow2` eredeti bekötését. A vetítési súgó továbbra is
+csak azt írja, hogy az „arc” változat erősebben nagyít
+(`src/picasapy/help/features/nezegetes.md:303-324`).
 
 **Nyitott, a fejlesztést blokkoló kérdések:**
 
@@ -6248,7 +6250,7 @@ Kódból ismert, renderelt ellenőrzés nincs:
 
 - A célterület-mérés (`0x0076ee50`, 10/10 QEMU-egyezés, előző kör): érvényes `(x0,y0,x1,y1)` esetén `rne(x0−0.5, y0−0.5, x1+0.5, y1+0.5)`, majd a forrásméretre illesztés a `0x009b4b60` szerint, a kép határára tolva (méret-megtartással).
 - Az interpolátor (`0x0076eb40`, csak disasm, 10-12c szakasz): a `0x0076dd10`-et kétszer hívja, `(t+1)×0.5` és `t×0.5` paraméterrel; a paramétert `[0,1]`-re szorítja, és `u²×(3−2u)` simítást alkalmaz. A `+0x414` és `+0x438` tömbök hozzárendelése a kezdő/végképkockához **nyitott**.
-- Nincs renderelt kezdő- és végkép. A jelenlegi QML (`SlideshowView.qml:752–761`) ezt nem fedi le.
+- Nincs renderelt kezdő- és végkép. A jelenlegi `kenburns` QML-ág két kivágást interpolál, de ezek megfeleltetése az eredeti `+0x414` és `+0x438` tömböknek, valamint a Picasa képkockáinak **NINCS MEG** (`SlideshowView.qml:426-463`, `778-812`, `835-846`).
 
 Nem becsültem a képletet: a fenti két tömb és a `t` tartománya kimondottan nyitott.
 
@@ -6302,17 +6304,17 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 
 **Arc nélküli eset és render.** A filmkészítő AOI-segéd sikertelen rekordnál a négy kimeneti értéket a `0x00cf3ed0` címen lévő `-1.0` sentinelre állítja; az AOI-konstruktor is ezzel inicializálja a `+0x4b0`-`+0x4bc` mezőket. Ez a lokális sentinelviselkedés nem bizonyítja a `BigSlideshow2` látható fallbackjét. A teljes képernyős út pontos középpontja, zoomaránya és kezdő-/végképkockája: **NINCS MEG**. A korábbi QEMU-próba a célterület-számítást mérte, nem képkockát renderelt. Ebben a körben nem készült QEMU-render: a hívási út és a renderelőhöz szükséges objektumkapcsolatok nem ismertek, a meglévő harnessnek nincs kész slideshow-transition futtatója. Forrás: bináris `0x00813c50`, `0x0076ed30`, `0x00cf3ed0`; renderelt mérés: **NINCS MEG**.
 
-**Két független út és cáfoló kísérlet.** A) Az utasításszintű út a `BigSlideshow2`-től a CThumbUI `+0x90` slotjáig, majd a `+0x2bc`-beli objektum virtuális `+0x20` hívásáig követhető (`0x005e8a70`, `0x00562cc0`). B) Az RTTI-vtábla és a konstruktor/hívó adatfolyama külön is megerősíti, hogy ez a slot thunk, és a callback objektumát a hívó adja át (`0x005643e0`, `0x004039f0`). A két út egyezik a callbackig, de egyik sem nevezi meg annak célját vagy az AOI-ágba vezető kapcsolatot; ezért a bizonyítottsági fok **nyitott**. Cáfoló próbálkozásként összevetettem a `0x005e8a70` közvetlen hívásait és a teljes, `paszta.py` memóriakapun át futtatott `.text`-pásztázás pozitív vtábla-találatait a `0x00771e60` átmenetgyárral és a `0x0074e670` filter/pin úttal. Közvetlen összekötő hívás nem került elő; a `+0x2bc` virtuális cél azonban feloldatlan, így a próbálkozás a hipotézist nem cáfolta. Az xref-index negatív találatát nem tekintettem bizonyítéknak.
+**Két független út és cáfoló kísérlet.** A) A Ghidra-kimenet a `0x005e8a70` függvényben pozitívan mutatja a `Preferences/BigSlideshow2` olvasását és a `0x008037e0` hívását. B) A külön RTTI- és konstruktorút a `CThumbUI +0x90` slotot, a `+0x2bc` thunkot és a `CThumbDB::vftable +0x20` célját (`0x00423300`) azonosítja (`0x005e9494`, `0x00562cc0`, `0x005643e0`, `0x004039f0`, `0x00415790`, `0x00c81f78`). A két út nem ad bizonyított kapcsolatot a `0x00771e60` átmenetgyárral vagy a `0x0076d900` illesztővel, ezért a teljes képernyős használat **nyitott**. Cáfoló próbálkozásként a callback `0x00423300` célját vetettem össze a transition-gyár hívóival. A pozitív RTTI-találat szerint a cél `CThumbDB`-metódus, nem átmenetkonstruktor; a `0x005e8a70`-ből ismert pozitív közvetlen él a `0x008037e0` felé vezet. Ez cáfolja azt a konkrét feltevést, hogy a `0x00423300` maga a transition-gyárhívás, de nem zárja ki a későbbi virtuális bekötést. Az index negatív találatát nem használtam bizonyítékként.
 
-**Nálunk.** A `Main.qml:2935`-`2953` a képeket és az átmenet-beállításokat adja át, arc-téglalapot nem; a `SlideshowView.qml:752`-`761` mindkét kulcsot ugyanahhoz a középre igazított skálázó animációhoz rendeli. A helyi végérték `kenburns` esetén `1.08`, `kenburnsaoi` esetén `1.12`. Ez a repó állapota, nem a Picasa teljes képernyős eredeti aránya. A `movie/slideshow.py:242`-`252` szintén együtt kezeli a két kulcsot, középre vágva; ez külön film-renderelő út. A diavetítési súgó (`src/picasapy/help/features/nezegetes.md:319`-`321`) jelenleg csak az erősebb nagyítást írja.
+**Nálunk.** A `Main.qml:2935`-`2953` a képeket és az átmenet-beállításokat adja át, arc-téglalapot nem. A `kenburns` a providerből két kivágást kap és ezeket animálja (`SlideshowView.qml:426-463`, `778-812`, `835-846`); a `kenburnsaoi` külön, középre igazított animációval `1.12`-ig nagyít (`847-857`). A kivágások képlete a `slideshow_pan_zoom.py`-ban van, részleteit és az eredetitől való eltéréseit a 4.4 szakasz rögzíti. A `movie/slideshow.py:242`-`252` külön film-renderelő út, középre vág. A diavetítési súgó (`src/picasapy/help/features/nezegetes.md:319`-`321`) csak az erősebb nagyítást írja.
 
 **Következő felvehető irány.** Az 5. kör feloldotta a `CThumbUI+0x2bc` callback `+0x20` virtuális célját `0x00423300`-ra; a célobjektum pontos osztálya és a `oneup/transtype` gyárhoz vezető kapcsolata nyitott maradt. Következő lépésként a callback adatútját és a `0x008037e0` átmenetfogyasztóját kell feltárni. Ha a gyárkapcsolat bizonyított, a teljes képernyős út kezdő- és végképkockáját kell renderelt arcos és arc nélküli kontrollal mérni.
 
 #### 4.2 5. kör: callback cél, átmenetindex és gyár (2026-10-16)
 
-**Eredmény.** A `CThumbUI::MakeTimeline` `+0x90` slotján át elért virtuális callback célja feloldódott: a `+0x2bc` objektum vtáblájának `+0x20` bejegyzése a `0x00423300` függvényre mutat. A függvény pontos osztály- és metódusneve **NINCS MEG**; a teste gyűjtemény- és adatbázis-objektum mezőit használja. A `kenburnsaoi` a regisztrációs táblában a 20. index (`0x14`), és a `0x00771e60` általános gyár `0x0a` típuságán át a `0x0076ed30` példányosítja a `ytDoubleAffineAOITransitionNode`-ot. A teljes képernyős útból e gyárig vezető él továbbra sincs bizonyítva.
+**Eredmény.** A `CThumbUI::MakeTimeline` `+0x90` slotján át elért virtuális callback célja a `0x00423300`. A `0x00c81f78` címen lévő RTTI-rekord ezt a `CThumbDB::vftable` `+0x20` metódusaként sorolja fel; az utasításai gyűjtemény- és adatbázismezőket használnak. A Ghidra-kimenet szerint a `0x005e8a70` a `Preferences/BigSlideshow2` értékét olvassa, és meghívja a `0x008037e0`-t. Ez a függvény a `oneup/timeline` és `oneup/transtype` csomópontokat olvassa, majd virtuális `+0x6c` és `+0x68` metódusokat hív. A `0x008037e0` és a `0x00771e60` átmenetgyár, illetve a `0x0076d900` illesztő közötti kapcsolat továbbra sincs bizonyítva.
 
-**A `+0x2bc` callback célja.** A `0x005e8a70` a `CThumbUI::MakeTimeline` képenkénti ciklusában a `CThumbUI` vtáblájának `+0x90` helyét hívja (`0x005e9494`-től). Az RTTI a `CThumbUI::vftable` bejegyzéseként a `0x00562cc0` thunkot adja. A thunk a `this+0x2bc` mezőből veszi a callback objektumot, majd annak vtbl `+0x20` bejegyzésére ugrik. A `CThumbUI` konstruktora (`0x005643e0`) az argumentumot a `+0x2bc` mezőbe menti; a hívó (`0x004039f0`) az argumentumot a szülő `+0x1034` mezőjéből tölti. A szülőobjektum konstruktora (`0x00415790`) a `0x00c81f78` vtáblacímet írja az objektumba (`0x004157fd`); e tábla `+0x20` bejegyzése `0x00423300`. Ehhez a vtáblacímhez az RTTI-indexben nincs osztálynév. A `0x00423300` utasításai gyűjtemény/adatbázis mezőket és iterátort használnak; ez a lelet nem köti a callbacket átmenetkonstruktorhoz. Forrás: bináris `0x005e8a70`, `0x005e9494`, `0x00562cc0`, `0x005643e0`, `0x004039f0`, `0x00415790`, `0x004157fd`, `0x00c81f78`, `0x00423300`; RTTI: `CThumbUI::vftable`.
+**A `+0x2bc` callback célja.** A `0x005e8a70` a `CThumbUI` vtáblájának `+0x90` helyét hívja (`0x005e9494`). Az RTTI a `CThumbUI::vftable` bejegyzéseként a `0x00562cc0` thunkot adja. A thunk a `this+0x2bc` mezőből veszi a callback objektumot, majd annak vtbl `+0x20` bejegyzésére ugrik. A `CThumbUI` konstruktora (`0x005643e0`) az argumentumot a `+0x2bc` mezőbe menti; a hívó (`0x004039f0`) az argumentumot a szülő `+0x1034` mezőjéből tölti. A szülőobjektum konstruktora (`0x00415790`) a `0x00c81f78` vtáblacímet írja az objektumba (`0x004157fd`). Az RTTI-rekord neve `CThumbDB::vftable`, és a `+0x20` bejegyzés `0x00423300`. Ez a callbackút és a `0x005e8a70` által meghívott `0x008037e0` átmenetfogyasztó közötti adatkapcsolat nincs meg. Forrás: bináris `0x005e8a70`, `0x005e9494`, `0x00562cc0`, `0x005643e0`, `0x004039f0`, `0x00415790`, `0x004157fd`, `0x00c81f78`, `0x00423300`; RTTI: `CThumbUI::vftable`, `CThumbDB::vftable`.
 
 **A beállításolvasó.** A `0x008037e0` a `oneup/timeline` és `oneup/transtype` csomópontokat olvassa, majd a node-ok virtuális `+0x6c` és `+0x68` metódusait használja (`0x00803a11`-`0x00803a30`). A függvénytörzsben nincs közvetlen `0x00771dc0` átmenetgyár-hívás. Ez nem zárja ki, hogy a beállítás egy másik későbbi vagy virtuális útba kerüljön. Forrás: bináris `0x008037e0`, `0x00803a11`-`0x00803a30`.
 
@@ -6322,16 +6324,15 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 
 | Réteg | Eredeti Picasa | Nálunk | Teendő |
 |---|---|---|---|
-| Átmenetazonosítás | `kenburnsaoi` index `0x14`; gyártípus `0x0a`; `ytDoubleAffineAOITransitionNode` konstruktor `0x0076ed30` | A `SlideshowView.qml:752-761` ugyanazt a középpontos animációt futtatja, mint a `kenburns`, de `1.12`-ig nagyít a sima változat `1.08` értéke helyett | A teljes képernyős út beállításától az AOI-node-ig bizonyítani a kapcsolatot, utána arcrégióval renderelni |
-| Arc nélküli eset | A teljes képernyős fallback **NINCS MEG**; a filmkészítő segéd `-1.0` sentinelje önmagában nem bizonyít vetítési viselkedést | A jelenlegi középre igazított animáció arcszűrés nélkül fut | Renderelt arc nélküli kontrollal mérni, hogy a sima `kenburns` viselkedés marad-e |
+| Átmenetazonosítás | `kenburnsaoi` index `0x14`; gyártípus `0x0a`; `ytDoubleAffineAOITransitionNode` konstruktor `0x0076ed30` | A sima `kenburns` két provider-kivágást animál; a `kenburnsaoi` külön, középre igazított animációval `1.12`-ig nagyít (`SlideshowView.qml:426-463`, `778-812`, `835-857`) | A teljes képernyős út beállításától az AOI-node-ig bizonyítani a kapcsolatot, utána arcrégióval renderelni |
+| Arc nélküli eset | A teljes képernyős fallback **NINCS MEG**; a filmkészítő segéd `-1.0` sentinelje önmagában nem bizonyít vetítési viselkedést | A sima `kenburns` két véletlen kivágást animál, de a 4.4-ben rögzített képlete, a mag és a teljes képernyős bekötés nem azonosított teljes egyezésként | Renderelt arc nélküli kontrollal mérni az eredeti és a PicasaPy kezdő- és végkivágását |
 | Súgó | A „Pan and Zoom - face” felirat arcot nevez meg | A `nezegetes.md:319-321` csak az erősebb nagyítást írja | Fejlesztés után a súgót a renderelt, bizonyított viselkedéshez igazítani |
 
 **Bizonyítottsági fok és cáfoló kísérlet.** A `kenburnsaoi` indexe és gyára megerősített: az átmenetregisztráló és rekord mellett a filmkészítő képkockaútja külön is a `0x14` ágat köti az arcsegédhez és a gyárhoz. A teljes képernyős viselkedés **nyitott**, mert a `0x005e8a70` és `0x008037e0` útja nem ad bizonyított kapcsolatot ehhez a gyárhoz vagy az AOI-node-hoz. Cáfoló próbálkozásként a `CThumbUI +0x90` slotot, a `+0x2bc` thunkt, a konstruktor által beállított vtáblát és a `0x008037e0` beállításolvasóját vetettem össze a transition-gyár hívóival. A vizsgált közvetlen hívásláncokban nem jelent meg összekötő él. Ellenőrzésként a negatív eredményt nem tekintettem cáfolatnak: a thunk célja pozitívan feloldódott `0x00423300`-ra, de a virtuális vagy későbbi átmenetbekötést ez nem zárja ki. Az index negatív találatát sem használtam negatív leletként.
 
 **Nyitott pontok és következő irány.**
 
-- `Ghidra-kör kell: 0x00423300 - mi az osztály/metódus pontos szerepe, és a callback eredménye hogyan jut a CThumbUI idővonalához? [blokkoló]`
-- `Ghidra-kör kell: 0x008037e0 - a oneup/transtype node értékét melyik frissítő vagy gyár fogyasztja, és eljut-e a 0x00771dc0 vagy 0x0076ed30 útjához? [blokkoló]`
+- `Ghidra-kör kell: 0x008037e0 - a oneup/transtype node-ok virtuális +0x68 és +0x6c célfüggvényei, valamint az adatútjuk a 0x00771e60 gyárig vagy a 0x0076d900 illesztőig [blokkoló]`
 - `Ghidra-kör kell: 0x00812470 - honnan töltődik fel a this+0x48 időzített sáv, és a rekord +0x8 régióazonosítója faces= vagy imagedata_facerect adathoz kötött-e? [blokkoló]`
 - A teljes képernyős vetítésből renderelt arcos és arc nélküli képkockapár, a középpont és az arc nélküli fallback mérésével: **NINCS MEG**.
 
@@ -6382,114 +6383,64 @@ Következő felvehető munka: célzottan feloldani a `0x00423300` callback adat�
 
 **A jegy „Kész, ha” pontjai.**
 - ⛔ Arcot tartalmazó dián a nagyítás középpontja az arc felé mozdul (renderelt): **nem igazolható** az eredetiben. A diavetítés választójában nincs arc-változat (`0x00d342e8`); a filmben az arcforrás nyitott; render nincs.
-- ⛔ Arc nélküli dián a viselkedés változatlan: az eredeti arc nélküli viselkedése véletlen pásztázás (rand), nem középre igazított. A repo `SlideshowView.qml:752-761` középre igazít, tehát a jelenlegi viselkedés és az eredeti eltér. A „változatlan” így a jelenlegi repóra nem értelmezhető.
+- ⛔ Arc nélküli dián a viselkedés változatlan: a jelenlegi `kenburns` már két véletlen kivágást animál, de a 4.4-ben dokumentált eredeti méret- és eltolásképletet, seedet és teljes képernyős bekötést nem reprodukálja igazoltan. Azonos eredményt renderelt kontrollal kell mérni.
 - ⛔ A súgó igazodik: függ attól, hogy a diavetítés kap-e arc-változatot (termékdöntés).
 
 **Nyitott.**
 - Renderelt bizonyíték: két egymást követő Pan and Zoom futás képkockái (véletlen-e a pásztázás, és mennyire determinisztikus a sorozat): **NINCS MEG**. Ehhez Colab-felvétel kell.
-- A `0x0076d900` illesztés pontos képlete (x0, y0 a törtekből; a `fadd`/`fmul` konstansok `0x00cf4748`, `0x00c7dd30`, `0x00cf3b08`), és van-e középre igazító elágazás: diszasszemblálás még nincs végigkövetve. Nem blokkolja a fenti döntést, a pontos portoláshoz viszont kell.
-- A mag (`srand`): nem találtam importált `srand`-ot; belső seed-beállítás kizárva nincs. **NINCS MEG.**
+- A `0x0076d900` képletét, a középre igazítás ágát és a használt konstansokat a következő, 4.4 szakasz binárisból rögzíti. A fit egészre kerekítésének aktív x87 módja továbbra is **NINCS MEG**.
+- A teljes `.text` pásztázása 10 hívóhelyet talált a `0x00c08214` belső seed-beállítóhoz; hogy ezek közül melyik fut le a slideshow előtt, és mi a CRT-mag, **NINCS MEG** (lásd 4.4).
 - A film arcjelölt-forrása (`0x00813c50` azonosító → `faces=`): nyitott (4.2).
 
 **Módosított fájl:** `docs/specs/picasa-create-features.md` (új 4.3 szakasz).
 
-#### 4.4 7. kör: a véletlen pásztázás képlete és magja (#5225, 2026-10-17)
+#### 4.4 8. kör: a véletlen pásztázás képlete és magja (#5225, 2026-10-18; a 7. kör helyesbítése)
 
-**Következtetés.** A `0x0076d900` két jelölt téglalapot készít. Két helyi
-LCG-törtet (`u`, `v`) addig húz, amíg `|u-v| ≥ 0,5`; ezek adják a két
-mérettényezőt. Négy külön `_rand()`-tört (`ρ₀…ρ₃`) adja a két jelölt kért
-eltolását. A `0x0076d7e0` mindkét jelöltet a forrás határain belülre
-transzformálja; a méretét nem módosítja. Van középre igazító lépés a
-kezdeti illesztésben, és mindkét méretezés a téglalap középpontja körül
-történik, de nincs végső, véletlent helyettesítő középre igazító ág.
+**Következtetés.** A `0x0076d900` két, képarányra illesztett alaptéglalapból indul, azokat feltételesen a forrás jobb és alsó széle felé igazítja, majd két véletlen méretű és helyzetű kivágást készít. Nincs középre igazító ág az illesztőben. A `0x0076d6f0` mindkét kivágást a saját téglalapközepe körül méretezi; a `0x0076d7e0` az eltolást a forráshatárok közé szorítja, a méret megtartásával. A nagyobb méretű jelölt kapja az első két `_rand()`-törtből készült eltolást, a kisebb a második kettőből.
 
-**Képlet a határolás előtt.** Legyen a `0x009b4aa0` által készített,
-képarányra illesztett alaptéglalap mérete `w×h`, középpontja `(cx,cy)`, a
-forrás határa pedig `[L,T,R,B]`. A két helyi tört `u,v ∈
-{0/32768,…,32767/32768}`, és a kód újrapróbálja őket, amíg
-`|u-v| < 0,5`. A `0x0076d6f0` középpontos méretezése után:
+**Képlet.** A `0x009b4aa0` a forrás és a célterület arányához illesztett `(0,0,w,h)` alaptéglalapot készít. A `0x0076d900` ebből két másolatot hoz létre. Feltételesen az egyik téglalapot a jobb, illetve az alsó forrásszélhez tolja (`0x0076d9a0`-`0x0076dac7`); a két `0x0076d790` hívás teljes téglalapokat cserélhet. Így a méretezés előtti középpontok különbözhetnek: `C₁=(cx₁,cy₁)` és `C₂=(cx₂,cy₂)`. Legyen a forráshatár `[L,T,R,B]`, `W=R-L`, `H=B-T`, az alaptéglalap mérete pedig `w×h`.
 
-| jelölt | méret | kért bal-felső sarok a `0x76d7e0` korlátozó előtt |
+A `0x009b4aa0` méretillesztése a `0x00cf4160` binary64 `0.499` és a `0x00cf41e0` binary64 `0.00001` konstansokat is használja. A skálát a két arány közül a kisebb adja, az eredményt `fistp` írja egész méretbe. Az aktív x87 kerekítési módot nem állapítottam meg, ezért a félértékek egészre kerekítésének részlete **NINCS MEG**.
+
+A helyi LCG két törtje `u₁,u₂ ∈ {0/32768,…,32767/32768}`; a kód újrahúzza őket, amíg `|u₁-u₂| ≥ 0,5`. A nagyobb skálájú jelölt `sₙ=0,75+0,2·max(u₁,u₂)`, a kisebb `sₖ=0,75+0,2·min(u₁,u₂)`. A `0x0076db4b`-`0x0076db5f` a nagyobb méretű téglalapot az első eltolási csoporthoz választja. Legyen a kiválasztott téglalapok méretezés előtti közepe rendre `Cₙ` és `Cₖ`, a négy `_rand()`-tört pedig hívási sorrendben `ρ₀…ρ₃`, ahol `ρᵢ=Rᵢ/32768`:
+
+| jelölt | célméret | kért bal felső sarok a `0x0076d7e0` előtt |
 |---|---|---|
-| A | `wA=w×(0,75+0,2u)`, `hA=h×(0,75+0,2u)` | `xA=cx−wA/2+W×(0,2ρ₁−0,1)`, `yA=cy−hA/2+H×(0,2ρ₀−0,1)` |
-| B | `wB=w×(0,75+0,2v)`, `hB=h×(0,75+0,2v)` | `xB=cx−wB/2+W×(0,2ρ₃−0,1)`, `yB=cy−hB/2−H×0,2ρ₂` |
+| nagyobb | `wₙ=w·sₙ`, `hₙ=h·sₙ` | `xₙ=cxₙ-wₙ/2+W·(0,2ρ₁-0,1)`, `yₙ=cyₙ-hₙ/2+H·(0,2ρ₀-0,1)` |
+| kisebb | `wₖ=w·sₖ`, `hₖ=h·sₖ` | `xₖ=cxₖ-wₖ/2+W·(0,2ρ₃-0,1)`, `yₖ=cyₖ-hₖ/2-H·0,2ρ₂` |
 
-Itt `W×H` a `0x0076d900`-nak átadott forráshatár mérete. A végső sarok a
-kért sarokhoz tartozó téglalap és a `[L,T,R,B]` határok közti
-megengedett eltolásra korlátozódik; a `0x0076d7e0` ugyanazt az eltolást adja
-mindkét szemközti élhez, így a méret változatlan marad. A két jelölt
-sorrendjét a `0x0076d790` LCG-ág felcserélheti.
+A `Rᵢ` a `0x00c08221` `_rand()` kimenete. A kisebb y-eltolása aszimmetrikus: a bináris a `0,2ρ₂` értéket negálja, `0,1` levonása nincs benne (`0x0076dc37`-`0x0076dc5f`). A `0x0076d7e0` határolása `x'=min(max(x,L),R-w)`, `y'=min(max(y,T),B-h)` alakban írható le; az eltolást azonosan adja hozzá a téglalap szemközti éleihez, így a méret változatlan.
 
-| konstanscím | bináris érték és típus | képletbeli szerep |
+A tömör `wₙ=w·sₙ`, `hₙ=h·sₙ` jelölés a `0x0076d6f0` középpont körüli műveletét fejezi ki. A függvény külön számolja a bemeneti szélesség és magasság felét, mindkettőt megszorozza ugyanazzal a mérettényezővel, majd a négy új élt 32 bites floatként írja vissza (`0x0076d712`-`0x0076d785`). Az alaptéglalap egész mérete a korábbi `0x009b4aa0` `fistp` lépéseiből jön; annak x87 kerekítési módja nyitott.
+
+| konstanscím | bináris érték és típus | szerep |
 |---|---|---|
-| `0x00cf4748` | `0.2` (`double`) | tört szorzó |
-| `0x00c7dd30` | `0.1` (`double`) | A és B x-eltolásának, illetve A y-eltolásának középpontja |
-| `0x00cf3b08` | `0.75` (`double`) | alap méretszorzó |
-| `0x00c7dafc` | `0.5` (`float`) | helyi törtek elfogadási küszöbe |
+| `0x00cf4748` | `0.2`, double, bájtok `9a9999999999c93f` | méret- és eltolásszorzó |
+| `0x00c7dd30` | `0.1`, double, bájtok `9a9999999999b93f` | nagyobb x/y és kisebb x képletének tagja |
+| `0x00cf3b08` | `0.75`, double, bájtok `000000000000e83f` | alap méretszorzó |
+| `0x00c7dafc` | `0.5`, float, bájtok `0000003f` | újrahúzási küszöb |
+| `0x00cf4160` | `0.499`, double, bájtok `560e2db29defdf3f` | az alap fit méretarányához |
+| `0x00cf41e0` | `0.00001`, double, bájtok `f168e388b5f8e43e` | egész méretre alakítás előtt |
 
-**A tört képzése és az állapot.** A `0x00c08221` `_rand()` a belső MSVC
-LCG-t lépteti: `state = (state×0x343fd + 0x269ec3) mod 2^32`, visszatérési értéke
-`(state>>16)&0x7fff`. Az illesztőben a `(R+0x3f8000)<<8` biteket floatként
-értelmezve `1+R/32768`; az 1 kivonása adja `R/32768`-et. A helyi LCG
-ugyanezt az állapotléptetést és felső 15 bitet használja. A
-`0x0076e100` konstruktor `0x0076e16a`-nál és `0x0076e1a4`-nél is `_rand()`-ot
-hív, `this+0x434`-be, illetve `this+0x458`-ba ír. Az illesztő állapota a
-`this+0x458` mező (`edi+0x20` a `0x0076d900`-ban), amelyet a konstruktor
-második húzása inicializál.
+**A tört és a konstruktor magja.** A `0x00c08221` `_rand()` MSVC LCG-je: `state=(state·0x343fd+0x269ec3) mod 2^32`, kimenete `(state>>16)&0x7fff`. A kód a `(R+0x3f8000)<<8` bitmintát floatként `1+R/32768` értelmezéssé alakítja, majd kivonja az 1-et. A helyi LCG ugyanezt az állapotléptetést használja. A két előzetes `0x0076d790` hívás egy-egy állapotlépése megelőzi az `u₁,u₂` húzását. A `0x0076e100` konstruktor a `0x0076e16a` visszatérési értékét a `this+0x434`, a `0x0076e1a4` értékét a `this+0x458` mezőbe írja. A `0x0076e4e0` a `this+0x438` tömböt adja át; a helyi LCG állapota ennek `+0x20` mezője, vagyis a konstruktor által beállított `this+0x458`.
 
-**`srand`-pásztázás.** A `paszta.py` kapuján át végigvizsgált teljes `.text`
-(kezdő VA `0x00401000`, méret `0x0083e160`, záró VA `0x00c3f160`)
-területén 10 közvetlen hívás mutat a belső
-`srand`-ra (`0x00c08214`): `0x00423a6c`, `0x00565cc5`, `0x006804c4`,
-`0x0071d993`, `0x0071e23b`, `0x0085b76d`, `0x0087cb85`, `0x0088fed7`,
-`0x009180df`, `0x009902b8`. Egyik sem a `0x0076e100` konstruktorban vagy a
-`0x0076d900` illesztőben van; a teljes pásztázás a wrapper címére mutató
-nem-hívás azonnali operandust sem talált. Ez nem mondja meg, hogy a
-diavetítés futása előtt a szál CRT-állapotát melyik másik út állította be.
+**Teljes .text pásztázás.** A `paszta.py` kapuján át a teljes .text (`0x00401000`, méret `0x0083e160`, záró cím `0x00c3f160`) 2 884 879 utasítást dolgozott fel. A belső srand-wrapper (`0x00c08214`) 10 közvetlen hívóhelye: `0x00423a6c`, `0x00565cc5`, `0x006804c4`, `0x0071d993`, `0x0071e23b`, `0x0085b76d`, `0x0087cb85`, `0x0088fed7`, `0x009180df`, `0x009902b8`. Mind a 10 találat közvetlen hívás; további hivatkozás és importált srand nincs. A slideshow út futás előtti konkrét seedelő hívása és a CRT-állapot számszerű értéke **NINCS MEG**.
 
-**Bizonyítottság: feltételes.** (A) Az `0x0076d900` utasításszintű
-adatfolyama adja a törteket, a méret- és eltolásképleteket, valamint a
-`0x76d7e0` korlátozást. (B) A külön követett konstruktor- és helperút
-(`0x0076e100` → `0x0076e4e0` → `0x0076d900`; `0x0076d6f0` középpontos
-méretezés; `0x0076d7e0` eltolás) egyezik a két jelölt értelmezésével. A
-képletekhez nincs független, renderelt képkockamérés, és a CRT szálállapot
-futás előtti számszerű magja sincs meg, ezért a látható képkockák és a
-véletlensorozat bitpontos reprodukciója **nyitott**.
+**Bizonyítottsági fok: feltételes.** (A) A `0x0076d900` utasításszintű adatfolyama adja a méret- és pozícióképleteket; a `0x0076d6f0`, `0x0076d790` és `0x0076d7e0` külön diszasszemblálása az egyes segédek műveletét igazolja. (B) A Ghidra C-kimenet és a hívási lánc (`0x0076e100` -> `0x0076e4e0` -> `0x0076d900`) ellenőrzi a két helyi tört újrahúzását, a két méretezést és a négy `_rand()`-hívást; a konstansok típusát a PE nyers bájtjai igazolják. A két út a méretválasztásban és a hívássorrendben egyezik. A pozícióképletekhez nincs független képkockamérés; a BigSlideshow2 átmenetútja, a futás előtti CRT-mag és a renderelt eredmény nyitott.
 
-**Cáfoló kísérlet.** Elsőre felmerült, hogy a `0x0076dae1`-nél összehasonlított
-`fabs(0)` és `0,5` miatt a négy `_rand()`-hívás elérhetetlen. A diszasszemblálás
-ezt cáfolja: a kisebb eredmény a `0x0076dc82` helyi-LCG újrapróbáló ágára
-ugrik; ha a két tört eltérése eléri a `0,5`-öt, a `0x0076dd0b` visszaugrik a
-méretező, majd a négy `_rand()`-hívást tartalmazó blokkra. Ellenőrzésként a
-`0x0076dcdf` összehasonlítása ugyanazzal az x87-flag értelmezéssel adja a
-`|u-v| < 0,5` ismétlési feltételt. A statikus út az elfogadási ágat mutatja;
-konkrét futásban kapott képkockasort ez nem helyettesít.
+**Cáfoló kísérlet.** Az előző 4.4-változat közös középpontot használt, a kisebb y-eltolásra pedig `H·(0,2ρ₂-0,1)`-et írt. Ezt a két állítást a nyers x87-adatfolyam cáfolta. A `0x0076d900` külön igazítja a két alap-téglalap élét, a `0x0076d6f0` mindegyik saját középpontját veszi; a `0x0076dc37`-`0x0076dc5f` blokk a kisebb csoport y-értékéből csak a `0,2ρ₂` szorzatot képzi és negálja. A független újralevezetés ugyanezt adta: a `ρ₀,ρ₁` csoport a nagyobb, a `ρ₂,ρ₃` a kisebb skálájú téglalaphoz tartozik. A korábbi közös középpont és kisebb y-képlet hibás volt.
 
 **#5225 „Kész, ha” pontjai.**
 
-- ✅ Képlet címekkel: a méret- és eltolási képletek, a törtleképezés és a
-  határkorlátozás fent, `0x0076d900`, `0x0076d6f0`, `0x0076d7e0` és
-  konstanscímekhez kötve.
-- ✅ Középre igazítás: az alaptéglalap feltételes középre helyezése
-  `0x0076d9f4–0x0076da24` és `0x0076da87–0x0076dabf`; a méretezés
-  középpontja `0x0076d6f0`. A végső eltolás véletlen, majd határolt.
-- ⛔ Futás előtti számszerű mag és két egymást követő renderelt futás:
-  **NINCS MEG**. A Colab job-184/185 felvétele egyik tagként sincs a helyi
-  `meroadat.tar` archívumban; a valós felvételek mérésével kell folytatni.
-- ✅/⛔ `srand`: a teljes binárisban 10 közvetlen híváshely megvan; a
-  slideshow futás előtti konkrét hívás és a thread seedje **NINCS MEG**.
+- ✅ Képlet címekkel: a két méretszorzó, mind a négy eltolási tag, a törtleképezés és a határkorlátozás a `0x0076d900`, `0x0076d6f0`, `0x0076d7e0`, `0x00c08221` és konstanscímek alapján szerepel.
+- ✅ Középre igazítás: az illesztőben nincs középre igazító ág. A `0x0076d9a0`-`0x0076dac7` feltételes élre igazítást végez, a `0x0076d6f0` a saját téglalapközép körül méretez.
+- ⛔ Futás előtti számszerű CRT-mag és két egymást követő renderelt futás: **NINCS MEG**. A job-184/185 felvételek nem találhatók a helyi meroadat.tar tagjai között; pontos eredeti képkockamérés kell.
+- ✅/⛔ srand: a teljes binárisban 10 közvetlen hívóhely van. Hogy ezek közül melyik seedeli a slideshow CRT-állapotát a futás előtt, és mi a mag értéke, **NINCS MEG**.
+- ⛔ Teljes képernyős használat: a `0x005e8a70` hívja a `0x008037e0`-t, de a `oneup/transtype` virtuális céljaitól a `0x00771e60` gyárhoz vagy a `0x0076d900` illesztőhöz vezető adatút nincs bizonyítva.
 
-**Nyitott.** A CRT szálállapot tényleges, futás előtti értéke és az azt
-beállító `srand`-hívás diavetítési útja; továbbá a job-184/185 két egymást
-követő képkockasora. Ezeket a 10 felsorolt `srand`-hívás hívási adatútjának
-célzott követése, majd az eredeti Colab-felvételen végzett képkockamérés
-döntheti el. A képlet bináris útjából önálló új kutatási jegy nem következik.
+**Nyitott.** A runtime seedelő hívás és a CRT-állapot számszerű értéke; a job-184/185 képkockasora; továbbá a BigSlideshow2 `oneup/transtype` virtuális célfüggvényei és az átmenetgyárhoz vezető adatút. A dekompilált `0x005e8a70` a `0x008037e0` hívását mutatja, a virtuális célok és a híd nincsenek feloldva. Célzott Ghidra-kör: `0x008037e0`, a `+0x68` és `+0x6c` virtuális célok feloldásával. A képletből önálló kutatási jegy nem következik.
 
-**Helyi viszonyítás.** A `SlideshowView.qml:752–761` a `kenburns`-t
-középre igazítva, `1,08`-ig nagyítja; ez a Picasa két jelölt téglalapját és
-véletlen eltolását nem valósítja meg. A fenti bizonyíték az illesztő
-útvonaláról szól, és önmagában nem igazolja, hogy ez a függvény a teljes
-képernyős `BigSlideshow2` útjából fut-e (az a 4.2-ben nyitott kérdés).
+**Helyi viszonyítás.** A QML providerből két kivágást kap (`SlideshowView.qml:426-463`, `778-812`); a számítást a `slideshow_pan_zoom.py` végzi. A jelenlegi kód közös középpontú alaptéglalapot használ, a méreteket a törtek eredeti sorrendjéhez rendeli, és egyetlen LCG-forrásból veszi a két mérettörtet, a négy eltolási törtet, majd a kimeneti sorrend felcserélésének döntését (`slideshow_pan_zoom.py:56-123`, `126-138`). Az eredeti bináris élre igazít, a nagyobb méretű jelölthöz rendeli az első két offsetet, a négy eltolási értéket a CRT `_rand()` adja, és nincs plusz helyi LCG-húzás a végső felcseréléshez. A QML kétkivágásos útjának és a binárisnak pontos megfelelése méréssel nincs igazolva. A `0x0076d900` teljes képernyős használata a 4.2 szerint nyitott.
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
