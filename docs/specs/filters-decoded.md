@@ -8718,6 +8718,12 @@ A callback sorrendje a `0x008f92d0` körüli hívásokból:
    (`0x00aa40a0`): `k=((max(tR,tG,tB)·255)/((tR+tG+tB)·85)-1)·0,5+1`,
    a LUT képlete `lroundf(powf(i/255.0f,1.0f/k)·255.0f)`. A kapcsolás és `k`
    számítása a callback `0x008f93e3-0x008f94e0` tartományában van.
+   A `k` minden sávra kiszámolódik, de a LUT-hívás csak az első sávnál fut
+   (`0x008f94ac` `test esi,esi`, `0x008f94c6` `jne 0x8f94ec`), és az egész
+   képre hat; a többi sáv tehát az első palettaszín (piros) görbéjével
+   gammázott képből színeződik (#5304). Mérés (Colab job-204, kanonikus
+   ΔE): sávonkénti LUT-tal `k08` 4,34, `k01` 3,76, `k02` 3,88; egyetlen,
+   első sávos LUT-tal 1,63, 1,26 és 1,72.
 
 A `k08` eredeti exportja `1280×853` méretű; a mentett láncban a
 `rainbow=1,0.000000` után `Sixties` is fut. A mintában a

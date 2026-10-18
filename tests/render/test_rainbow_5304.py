@@ -42,18 +42,23 @@ def _spec_szerinti_rainbow_kimenet(image: np.ndarray, preserve: int) -> np.ndarr
         255,
     ).astype(np.uint8)
 
+    # #5304: a gamma-LUT-ot a callback csak az ELSŐ sávnál kéri (`0x008f94ac`
+    # `test esi,esi` + `0x008f94c6` `jne`), és az egész képre alkalmazza; a k
+    # tehát az első palettaszínből jön, a többi sáv ugyanazt a görbét kapja.
+    first = _PALETTA[0]
+    k = ((max(first) * 255 / (sum(first) * 85) - 1) * 0.5) + 1
+    gamma_lut = np.array(
+        [math.floor((i / 255.0) ** (1.0 / k) * 255.0 + 0.5) for i in range(256)],
+        dtype=np.uint8,
+    )
+    adjusted_all = gamma_lut[gray]
     height = gray.shape[0]
     output = np.empty_like(gray)
     for band, palette in enumerate(_PALETTA):
         start = round(band * height / 6)
         end = round((band + 1) * height / 6)
         maximum = max(palette)
-        k = ((maximum * 255 / (sum(palette) * 85) - 1) * 0.5) + 1
-        gamma_lut = np.array(
-            [math.floor((i / 255.0) ** (1.0 / k) * 255.0 + 0.5) for i in range(256)],
-            dtype=np.uint8,
-        )
-        adjusted = gamma_lut[gray[start:end]]
+        adjusted = adjusted_all[start:end]
         for channel, color in enumerate(palette):
             output[start:end, :, channel] = np.minimum(
                 255, adjusted[..., channel].astype(np.uint16) * color // maximum
@@ -107,3 +112,13 @@ def test_rainbow_masodik_parametere_szabja_a_szinertek_megorzeset() -> None:
     assert not np.array_equal(grayscale, preserved)
     assert np.array_equal(grayscale, _spec_szerinti_rainbow_kimenet(image, 0))
     assert np.array_equal(preserved, _spec_szerinti_rainbow_kimenet(image, 256))
+
+
+def test_rainbow_minden_sava_az_elso_sav_gamma_gorbejet_kapja_5304() -> None:
+    """A sárga sáv ugyanazt a gammát kapja, mint a piros (#5304, `0x008f94c6`)."""
+    ramp = np.arange(256, dtype=np.uint8)
+    image = np.broadcast_to(ramp[None, :, None], (60, 256, 3)).copy()
+    out = apply_filters(image, parse_filters("rainbow=1,0.000000;")).image
+    # a piros és a sárga sáv R-csatornája azonos (236/236), ha a gamma közös;
+    # sávonkénti gammánál a középtónusokban eltérnének
+    assert np.array_equal(out[5, :, 0], out[25, :, 0])
