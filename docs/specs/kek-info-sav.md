@@ -548,11 +548,26 @@ Mindhárom a `.rdata`-ból, ebben a körben újraolvasva — a 7. szakasz
 | pont | kutatás | megvalósítás |
 |---|---|---|
 | 1. függőleges térköz (6 px) | ✅ mérve (#2173, kontroll #2255) | ✅ kész |
-| 2. címke-szám a sávon | ✅ **a bekötés is megvan** (10.4) | ❌ hiányzik (`app/formatting.py` `status_text`) |
-| 3. a méret-felirat két alakja | ✅ **a FELTÉTEL is megvan** (10.2) | ❌ hiányzik (egyetlen alak: `%1 MB on disk`) |
+| 2. címke-szám a sávon | ✅ **a bekötés is megvan** (10.4) | ✅ `status_text` → `_cimke_resz` |
+| 3. a méret-felirat két alakja | ✅ **a FELTÉTEL is megvan** (10.2) | ✅ dátumágak: `status_text`; egységfokozatok: 10.7 (#5332) |
 
-⇒ **A jegyben nincs több mérendő.** A 2026-09-07-i `ready`-söprés
-kommentje azt írta, hogy a 2. és a 3. pont „ugyanazon áll: nincs meg a
-forrásminta" — ez **elavult** volt: a forrás a 7. szakaszban (2026-09-04
-óta), a hiányzó feltétel pedig most került meg. A `bináris-kutatható`
-címke levehető; a jegy fejlesztői körre vár.
+⇒ A 2026-09-07-i `ready`-söprés kommentje azt írta, hogy a 2. és a 3. pont
+„ugyanazon áll: nincs meg a forrásminta” — ez elavult volt. A forrás a 7. és
+10.2. szakaszban szerepel; a megvalósítás állapotát a fenti táblázat mutatja.
+
+### 10.7 A kijelölés méretfokozatai (#5332)
+
+A `Picasa3.exe` `0x0098f9f0` függvénye a `0x00cf4218` címen lévő `1024.0`
+küszöböt hasonlítja a mérethez, majd a `0x00cf3f68` címen lévő
+`0.0009765625` (`1/1024`) szorzóval lép fokozatonként. A határvizsgálat az
+érték formázása előtt történik: 1024 bájt alatt `%.0f bytes`, 1024 bájttól
+1024² bájt alatt `%.0f KB`, 1024²-től 1024³ alatt `%.1f MB`, 1024³-tól
+1024⁴ alatt `%.1f GB`, attól fölfelé `%.1f TB`.
+
+Az alapértelmezett formátumsztringek címei: `0x00cd8b5c` (`%.0f bytes`),
+`0x00cd8b78` (`%.0f KB`), `0x00cd8b90` (`%.1f MB`), `0x00cd8ba8`
+(`%.1f GB`) és `0x00cd8bc0` (`%.1f TB`). A függvény ezeket a lokalizált
+formátum lekérése után adja át a formázó hívásnak. A formátumokból látható
+pontosság igazolt; a bináris ágai önmagukban nem döntik el a pontos félérték
+kerekítési irányát. A PicasaPy Python fixpontos formázást használ csoportosítás
+nélkül, a `QLocale` tizedesjelével.

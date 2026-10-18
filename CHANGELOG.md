@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.147] - 2026-10-18
+
+- Az állapotsor a kijelölés méretét a Picasa bináris egységváltásai szerint írja ki (#5332).
+
 ## [0.9.146] - 2026-10-18
 
 - Kisebb betűméretet és halvány tiltott feliratot kapott a Név nélküliek fejléce (#5328).

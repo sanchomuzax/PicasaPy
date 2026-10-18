@@ -118,12 +118,14 @@ class TestController:
         assert controller.folders.folderCount == 1
 
     def test_select_folder_fills_grid_and_status(self, controller, library):
-        # Picasa-stílus: "N képek   <hosszú dátum(tartomány)>   X,Y MB a lemezen"
+        # A méret a Picasa bináris fokozatát követi; ezek a kis tesztképek
+        # összesen 1 MB alatt vannak.
         controller.selectFolder(str(library / "nyaralas"))
         assert controller.photos.rowCount() == 2
         assert controller.statusText.startswith("2 ")
         assert "2025" in controller.statusText
-        assert "MB" in controller.statusText
+        assert "MB" not in controller.statusText
+        assert "KB" in controller.statusText or "bytes" in controller.statusText
 
     def test_photo_info_for_selection(self, controller, library):
         # Kijelöléskor a kék sáv a kép adatait mutatja (név, dátum,
