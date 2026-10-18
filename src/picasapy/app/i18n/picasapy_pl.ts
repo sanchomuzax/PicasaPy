@@ -335,7 +335,7 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
             <source>Search for these photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Wyszukaj te zdjęcia w Picasie</translation>
+            <translation>Wyszukaj te zdjęcia w aplikacji PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
@@ -2071,7 +2071,7 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Usuń z Picasy...</translation>
+            <translation>Usuń z aplikacji PicasaPy...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
@@ -6515,7 +6515,7 @@ Face detection is separate: you can watch a folder and still keep faces in it ou
 
 Skanuj raz — zaimportuj zdjęcia znajdujące się teraz w folderze, a potem przestań go monitorować.
 
-Usuń z Picasy — usuń folder z biblioteki. Zdjęcia pozostaną na dysku.
+Usuń z aplikacji PicasaPy — usuń folder z biblioteki. Zdjęcia pozostaną na dysku.
 
 Wykrywanie twarzy jest niezależne: możesz monitorować folder, nie dodając znajdujących się w nim twarzy do biblioteki.</translation>
         </message>
@@ -6551,7 +6551,7 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Usuń z Picasy</translation>
+            <translation>Usuń z aplikacji PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
@@ -6593,7 +6593,7 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Usuń z Picasy</translation>
+            <translation>Usuń z aplikacji PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -8821,7 +8821,7 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Locate in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pokaż w Picasie</translation>
+            <translation>Pokaż w aplikacji PicasaPy</translation>
         </message>
         <message>
             <source>Locate</source>
@@ -10421,7 +10421,7 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Usuń z Picasy...</translation>
+            <translation>&amp;Usuń z aplikacji PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
@@ -12402,14 +12402,14 @@ Wybrano usunięcie WSZYSTKICH PLIKÓW z nośnika źródłowego.
             <source>1 file will not be imported because it is already a duplicate in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nie zostanie zaimportowany 1 plik, ponieważ jest już duplikatem w Picasie.
+            <translation>Nie zostanie zaimportowany 1 plik, ponieważ jest już duplikatem w aplikacji PicasaPy.
 </translation>
         </message>
         <message>
             <source>%1 files will not be imported because they are already duplicates in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nie zostanie zaimportowanych %1 plików, ponieważ są już duplikatami w Picasie.
+            <translation>Nie zostanie zaimportowanych %1 plików, ponieważ są już duplikatami w aplikacji PicasaPy.
 </translation>
         </message>
         <message>
@@ -12564,16 +12564,16 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
             <source>Exclude photos that are already imported into PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Wyklucz zdjęcia, które zostały już zaimportowane do Picasy</translation>
+            <translation>Wyklucz zdjęcia, które zostały już zaimportowane do aplikacji PicasaPy</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
             <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-                <numerusform>Wśród nich jest już %n duplikat w Picasie</numerusform>
-                <numerusform>Wśród nich są już %n duplikaty w Picasie</numerusform>
-                <numerusform>Wśród nich jest już %n duplikatów w Picasie</numerusform>
+                <numerusform>Wśród nich jest już %n duplikat w aplikacji PicasaPy</numerusform>
+                <numerusform>Wśród nich są już %n duplikaty w aplikacji PicasaPy</numerusform>
+                <numerusform>Wśród nich jest już %n duplikatów w aplikacji PicasaPy</numerusform>
             </translation>
         </message>
         <message>
@@ -15702,7 +15702,7 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Usuń z Picasy...</translation>
+            <translation>Usuń z aplikacji PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -15921,7 +15921,7 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
         <message>
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Usuń z Picasy...</translation>
+            <translation>&amp;Usuń z aplikacji PicasaPy...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>

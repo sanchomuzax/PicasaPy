@@ -2358,7 +2358,7 @@ A job-66 a Név nélküliek csempe-mezőjének útja: nem külön névadási fel
 3. **Escape a csempe mezőjében:** új futásban kattints a csempe mezőjébe, gépelj egy még be nem fejezett nevet, majd `billentyu Escape`, `var_ablak`. Rögzítsd a mező tartalmát, a javaslatpopupot és az esetleges People ablakot.
 4. **Ctrl/Shift/húzásos kijelölés** (a Ctrl+A-t a `job-180` már mutatta: mind a hat csempe kijelölve, 15. kép; a többi nyitott): külön futásban kattints egy csempére és rögzítsd az alapot; utána külön próbáld `billentyu Ctrl` + kattintás egy másik csempére, `billentyu Shift` + kattintás egy másik csempére, majd külön `huz [x1,y1] [x2,y2]` két csempe között. Mindegyik után `var_ablak`; a pontokat a ténylegesen kirajzolt képkockáról válaszd ki. Rögzítsd a kijelölt kereteket, a „No Selection”/kijelölésszámot és a tálcát.
 5. **Picasa pontos csempe-sorrendje és csoporthatárai:** a job-163 leírása csak öt csempét soronként és hat arcot nevez meg, a pontos pixelméretet, sorrendet és csoporthatárokat nem. A job-163 folytatásában kattints az „Expand groups” gombra, majd `var_ablak`; a teljesen kirajzolt képkockán írd le a csoportcímkéket és a csempék balról jobbra, fentről lefelé sorrendjét. Pixelméretet csak tényleges képkocka-mérés után rögzíts.
-6. **A „Learn more...” gomb címe:** a megnyitott cím a binárisból olvasandó ki, a `Label(instructionpanel/learn_more)` kezelőjéből (`job-175`). Rögzítsd a kezelő bináris címét és a megnyitott cím sztringjét. A felvételből nem olvasható ki (`job-177`).
+6. **A „Learn more...” gomb címe:** a megnyitott cím a binárisból olvasandó ki, a `Label(instructionpanel/learn_more)` kezelőjéből (`job-175`). Rögzítsd a kezelő bináris címét és a megnyitott cím sztringjét. A felvételből nem olvasható ki (`job-177`). **Megválaszolva (2026-10-18, 28.2):** a kezelő `0x0074c760`, a cím `http://picasa.google.com/support/bin/answer.py?hl=%s&answer=156272` (`%s` = nyelvkód).
 
 *Bizonyítottsági fok: **megerősített, élő méréssel** a Név nélküliek nézet címére, útmutatójára, fejlécgombjaira és alapállapotára (job-162; job-163, 4. és 8. kép); az első megnyitás üdvözlőablakára (job-162, 12. kép); a csempe saját mezőjére és az új név People-ablak útjára (job-163, 11-19. kép); a javaslat megjelenésére, a meglévő névhez tartozó Choose ablakra és az Escape-re (job-167, 22., 26-34. kép); a Choose utáni állapotra (job-179); a kibontott és a csoportosított nézet fejlécére és csempéire (job-180, job-183); az új név OK utáni állapotára és `.picasa.ini` soraira (job-66; job-167, 18. kép); valamint az X mellőzési útjára (job-64, „Colab EN 36”). **NINCS MEG:** a kommentben rövidített üdvözlőszöveg teljes Picasa-változata, a csempék pontos pixelmérete/sorrendje/csoporthatárai, a javaslatelem kattintása, a csempe-mező Escape-je, a „Learn more...” gomb megnyitott címe (job-175, job-177) és a Ctrl/Shift/húzás kijelölési szabálya.*
 
@@ -3225,7 +3225,7 @@ Az automatikus személy-összevonás feltételezését is ellenőriztem. A PplAl
 
 ### 27.1 Mit zárt le ez a kör
 
-- **Korrekció (N6):** a 0x00586e20 NEM `[Contacts2]`-író. A 21.5 és a 22.5 szakasz ezt a függvényt `[Contacts2]`-írónak nevezte; a 23.5 már írás nélkülinek olvasta. A törzse csak a `FUN_00985ff0("Contacts2")` és a `FUN_00401000()` hívást tartalmazza, és mindig 0xffffffff-et ad vissza (`-4` 3667-3753. sor). A 23.5 „azonnal felszabadul" megfogalmazása nem igazolt. A két hívott segédfüggvény (`FUN_00985ff0`, `FUN_00401000`) belsejét nem olvastam, ezért a közvetett írás nincs kizárva. A `[Contacts2]` kiírója NINCS MEG.
+- **Korrekció (N6):** a 0x00586e20 NEM `[Contacts2]`-író. **Helyesbítve (2026-10-18, 28.3/a):** a diszasszemblálás szerint a törzs 24 hívást tartalmaz; a „nem író” és a „mindig -1” olvasat nincs igazolva. A 21.5 és a 22.5 szakasz ezt a függvényt `[Contacts2]`-írónak nevezte; a 23.5 már írás nélkülinek olvasta. A törzse csak a `FUN_00985ff0("Contacts2")` és a `FUN_00401000()` hívást tartalmazza, és mindig 0xffffffff-et ad vissza (`-4` 3667-3753. sor). A 23.5 „azonnal felszabadul" megfogalmazása nem igazolt. A két hívott segédfüggvény (`FUN_00985ff0`, `FUN_00401000`) belsejét nem olvastam, ezért a közvetett írás nincs kizárva. A `[Contacts2]` kiírója NINCS MEG.
 - **Szűkült (N3):** a detektor-bemenet méretének forrása a 0x006cde50 (a `param_9` +0x2c slotja) szerint a `this+0x2908` tábla bejegyzésének második dword-je (`>> 1`). A 960 px nincs a kódban. A tábla írója NINCS MEG.
 - **Megerősített (N3):** a 0x0048e1f0 küszöbe a `this+0x34a4` (0,50), float-ként hasonlítva. A C-alak `(DWORD)` félrevezető; a 27.2 (a) pont szerint a float-olvasat áll.
 - **Megerősített (N6):** a 0x0068c030 törzse nem csonkít: `OPEN_ALWAYS` módban nyit, a törzsében nincs SetEndOfFile vagy SetFilePointer.
@@ -3295,6 +3295,118 @@ Nyitott kérdések: 0 nyílt · 1 lezárva (N4) · 6 blokkolt · 0 hatókörön 
 ### 27.8 Mérleg (8. kör)
 
 Megerősített: 3 tétel (27.6 a-c). Feltételes: 4 tétel (27.6). NINCS MEG: a 27.6 listája. Ghidra-kérés: 44 (20.7, 21.6, 22.6, 23.6, 24.6): 13 megválaszolva, 31 részben (a `Hiányzik:` nevezi meg a hiányzó törzset). Disasm-kérdés: 4 (27.4), nem Ghidra. Tulajdonosi döntés: nincs; a felvétel (B2, B, N6-trigger) a Colab-végrehajtón dönt, a jóváhagyás a tulajdonosé (`jovahagyva`).
+
+## 28. #5185 leltár, 2026-10-18
+
+**Hatókör:** a #5185 jegy 8 pontja, és a „Learn more...” cím (a kutatói feladat 4. pontja). A jegy szövegét közvetlenül nem értük el; a pontok a kutatói brief felsorolásából valók. Forrás: a 3-27. szakasz, a bináris-index (`functions`, `xrefs`, `string_xrefs`), a `picasa-fen-dialogs.md` 4.1 szakasza (`contactmgr.fen`), és a helyi diszasszemblálás (`annot_disasm.py`).
+
+**Jelölés:** KÉSZ = az eredeti és a nálunk oldal is megvan és igazolt. RÉSZBEN = a pont egy része igazolt, a táblázat mondja meg, mi hiányzik. NINCS = nincs adat.
+
+### 28.1 Leltártábla
+
+| pont | állapot | szakasz | hiányzó elem | a megszerzés útja |
+|---|---|---|---|---|
+| 1. Bal sáv „Név nélküliek” sora: nézet, fejléc, gombok, csoportosítás, méret, sorrend, tálca, kijelölés | RÉSZBEN | 19 (1-6. sor), 9/d, 15.6 | csempék pontos mérete, sorrendje, csoporthatárai (NINCS MEG); az üdvözlőablak teljes szövege (a jegykomment rövidített); a tálca és a kijelölésszámláló viselkedése Ctrl/Shift/húzás után | Colab-felvétel (28.5, J0-J2). Bináris: a felirat-erőforrás nem nyers sztring az EXE-ben (28.6/c) |
+| 2. Arc kijelölése és megnevezése: Ctrl, Shift, húzás, névmező, javaslatok, Enter/OK után | RÉSZBEN | 19 (névadás, javaslatlista, Choose), 19.1 4. pont, 9/f, 15.3/c | a Ctrl/Shift/húzás szabálya (csak a Ctrl+A van felvéve, job-180); a Személykezelő kijelölési módja (N7, NINCS MEG) | Colab-felvétel (J2). Bináris: a `contactmgr.fen` lista-eleme nem adja meg a kijelölési módot |
+| 3. Javaslatok: megjelenés, elfogadás, elutasítás | RÉSZBEN | 15.2, 15.3/a, 18, 26.1, 26.3 | az eredeti javaslat-csempe felülete (NINCS MEG); a `suggestion_yes`/`suggestion_no` eseményazonosító és a db3/ini-írók (NINCS MEG); az elutasítás tartós hatása | Colab-felvétel (J3). Bináris: a 26.3 szerinti lépések (0x0063f970 esetérték) |
+| 4. Mellőzés: X, fejléc gombja, megerősítés, hová kerül, visszahozás | RÉSZBEN | 19 („Arc mellőzése” sor), 15.3/b.1, 9/e, 9/f, 20.3 | a személyszintű mellőzés írása (N5, NINCS MEG); az eredeti visszahozás (Show ignored / Stop ignoring) felvétele (csak a PicasaPy-kód mérve) | Colab-felvétel (J4). Bináris: 28.4/a (a 0x005fdc30 hívói) |
+| 5. Személy-album: arc/teljes kép, átnevezés, egyesítés, törlés | RÉSZBEN | 26 (5.1-5.4), 8, 21.5, 25, 27.5 | az alap zoommód jelentése (az 1 alapérték igazolt, a jelentése nincs; 28.4/b); a teljes album-összevonás (NINCS MEG); a törlés lemezre írása (N6, NINCS MEG) | Colab-felvétel (J5). Bináris: 28.3/d (mentés-kezelő), 28.4/b |
+| 6. Személykezelő párbeszéd: elrendezés, kijelölés, mezők, OK/Mégse | RÉSZBEN | 19 („Új név, People ablak” sor), 20.5, `picasa-fen-dialogs.md` 4.1 | az elrendezés és a mezők KÉSZ (két független út: a fen-erőforrás és a job-163 képkockái); a kijelölési mód NINCS MEG; a Mégse felvétel nélkül; az Escape igazolt (job-167) | Colab-felvétel (J6). A fen nem adja meg a listakijelölés módját |
+| 7. Névforrások: contacts.xml, [Contacts2], faces=, db3: mikor íródik és olvasódik | RÉSZBEN | 3.1, 3.3, 3.4, 3.5, 4, 22.5, 27.1, 28.3 | a [Contacts2] kiírója (NINCS MEG; két jelölt, 28.3/b); a mentés kiváltója (NINCS MEG, 28.3/d); a contacts.xml olvasásának időpontja (NINCS MEG) | Bináris: 28.3 (index és disasm). Ghidra-kör a 28.7 szerint |
+| 8. Arcfelismerés: mikor fut, mit hagy ki, küszöb | RÉSZBEN | 1.1, 1.2, 1.3, 2, 4, 21.1, 21.2, 26 (8.1-8.2), 27 (N3) | a 960 px bemeneti méret (NINCS MEG); az eredeti felismerési arány (NINCS MEG); az mtime/méret-átugrás és a névvel jelölt kép kihagyása (forrásolvasat, feltételes) | Colab-felvétel (J7). Bináris: a red.cfg mezői (16. szakasz, NINCS MEG) |
+| Learn more: a „Learn more...” gomb címe (feladat 4. pont) | KÉSZ | 28.2, és a 19.1 6. pontja | nincs | Bináris: a 0x0074c760 kezelő (disasm és sztring-xref) |
+
+### 28.2 Learn more: a kezelő és a cím (bináris)
+
+- **Kezelő:** `0x0074c760` (283 bájt). Két független úton azonosítva:
+  - **(A) diszasszemblálás.** A `learn_more` azonosító 11 bájtos összehasonlítása (`repe cmpsb`, `0x0074c785`-`0x0074c791`) adja az ágat. Egyezésnél a kezelő a nyelvkódot a `0x0098d380` függvénytől kéri (`0x0074c7f6`), a sablont a `0x0040eab0` formázza (`0x0074c822`), majd a `0x00981860`-t hívja a címmel (`0x0074c83c`). Egyezés nélkül a `0x00a6a4f0`-ra adja át (`0x0074c86d`).
+  - **(B) sztring-xref.** A `learn_more` (`0x00cb155c`) és a cím-sablon (`0x00cb1568`) is csak a `0x0074c760`-ban hivatkozott (`string_xrefs`); a cím-sablonra más függvény nem hivatkozik. A pontos `learn_more` azonosító csak itt szerepel; a `CUploadDialog:learn_more` (`0x007aa080`) más, a feltöltő-párbeszéd azonosítója.
+- **Cím (sablon):** `http://picasa.google.com/support/bin/answer.py?hl=%s&answer=156272`. A `%s` a nyelvkód. Ez a Picasa támogatási oldala, és a szolgáltatás megszűnt (`picasa-menu-parancsok-viselkedes.md` 6557), ezért a PicasaPy-ban nincs működő célja.
+- **Nyelvkód forrása:** a `0x0098d380` (importjai: `GetLocaleInfoA`, `InterlockedIncrement`). A visszaesési érték a `0x00c7f979` cím; a tartalma nincs dekódolva. **FELTÉTELES:** a `GetLocaleInfoA` LCTYPE-konstansa nincs ellenőrizve.
+- **NINCS MEG:** a `0x00981860` pontos megnyitó lépése (importjai `SearchPathA`, `GetLastError`; a belsejét nem követtem végig). A kezelő regisztrációja a parancstáblában: a `0x0074c760`-nak nincs direkt hívója az indexben; ez index-negatív, nem lelet.
+- **Bizonyítottsági fok:** a kezelő és a sablon **megerősített** (A és B egyezik). A nyelvkód forrása és a megnyitás **feltételes**.
+
+### 28.3 N6: a [Contacts2] jelöltek és a fájlírás lánca
+
+- **a) A 27.1 helyesbítése (feltételes, nem lezárt).** A 27.1 szerint a `0x00586e20` csak a `FUN_00985ff0("Contacts2")` és a `FUN_00401000()` hívást tartalmazza, és mindig `0xffffffff`-et ad vissza. A diszasszemblálás (752 bájt) ezt nem igazolja: **24 hívást** találtam benne, köztük indirekt `call edx`-et (`0x00586ebb`, `0x005870de`), és két `ret 0x10` záródást (`0x00586edc`, `0x0058710d`). A „nem író” olvasat tehát nincs igazolva; a `0x00586e20` kiírója nyitott.
+- **b) A két jelölt.** A `Contacts2` sztring (`0x00c9105c`) két függvényben hivatkozott:
+  - `0x00586e20`: hívói `0x00484820` (az arc-író), `0x0068ac20` és `0x007d55f0` (a „PersistContactToINI failed: err %d” hibaüzenet helye).
+  - `0x00587110` (1202 bájt): egyetlen hívója a `0x0045a9d0` (4358 bájt), amely a `.picasa.ini` sztringet használja; ennek hívója a `0x0047e470`. A `0x00587110` hívásai (disasm): `0x00985ff0` (a „Contacts2” kulcs), `0x0040eab0` (formázás), `0x005875d0` (kétszer), `0x00586040`, `0x00588210`, és kritikus szakasz (indirekt hívások). Fájl-API közvetlenül nincs.
+- **c) A fájlírás.** A `0x0068c030` a dumpolt egyetlen fájlíró (27.1). Közvetlen hívói: `0x006956d0` és `0x0069b240`. Ezek hívói: a `0x006952e0` (egyetlen hívója a `0x006980a0`), illetve a `0x00692210` (nincs direkt hívója). Visszafelé, a direkt hívásokon 8 ugrásig, a két `[Contacts2]` jelölt és a `0x0045a9d0`, `0x007d55f0`, `0x00484820`, `0x0068ac20` NEM éri el a `0x0068c030`-at. Ez **index-negatív**: vtable-hívásokat nem lát, ezért a közvetett írást nem zárja ki.
+- **d) A mentés-kezelő (`0x006980a0`).** A 89 bájtos függvény a gyűjtemény `[esi+0x5c] >> 1` elemén végigmegy, és mindegyikre meghívja a `0x006952e0`-t (`0x006980c3`). Ha ez nullától eltérő értéket ad, a függvény azt adja vissza. Egyébként, ha `[esi+0x458]` nem nulla, meghívja a `0x006976f0`-t, végül a `[esi+0x88]` bájtra 1-et ír (disasm, `0x006980a0`-`0x006980f6`). Sem direkt hívója, sem adat-hivatkozása nincs az indexben: vtable-on vagy regisztrált táblán át hívódik. **NINCS MEG:** ki hívja és mikor (ld. 28.7).
+- **Állapot:** a [Contacts2] kiírója **NINCS MEG**. A két jelölt memóriabeli módosítását a diszasszemblálás valószínűsíti; a lemezre írás útja nincs igazolva.
+
+### 28.4 Az N5, a személy-album és a N7 új bináris adatai
+
+- **a) Személyszintű mellőzés (N5).** A megerősítő szöveg („Are you sure you want to move this person to the ignored people album?”, `0x00c99830`) hivatkozói: `0x005fdc30` és `0x00640340`. A `0x005fdc30` hívói: `0x005c9930`, `0x005c9b00` (a fejlécsáv `ignore`/`removesel` kezelője, 15.2 szerint) és `0x005edef0`. A `0x00640340` egyetlen hívója a `0x0063f970`. A tényleges írás helye **NINCS MEG**.
+- **b) Az alap zoommód (5.1).** A `0x005e5290` (116 bájt; hívója a `0x005e0f70`, a fejlécsáv elosztója) a `Preferences\PeopleAlbumUseFaceSrc` kulcsot olvassa, alapértéke **1** (`mov dword ptr [esp+0x40], 1` a `0x005e52b5`-nél). A kulcs kiolvasása után a `0x00767e50`-t hívja `[edx+0xea0]` objektummal és az `ebx` argumentummal (`0x005e52f5`). Az 1 jelentése (arcra vágott vagy teljes kép) a `0x00767e50` belsejéből dönthető el: **NINCS MEG**.
+- **c) Kijelölési mód (N7).** A `contactmgr.fen` lista-eleme (`list name="contacts"`) nem adja meg a kijelölési módot; a Személykezelő kijelölési módja **NINCS MEG**.
+
+### 28.5 Colab-feladatjavaslatok (nincs indítva)
+
+**Előfeltétel:** a mért felvételi koordináták nincsenek meg (a spec-ben és a helyi memóriában sincs). Ezért a J0 felmérő kép kell elsőnek; a többi lépés a J0 koordinátáit használja. A lépések menüútvonallal vagy felirattal is megadhatók, a koordináta csak ahol mért.
+
+```json
+[
+  {"id": "J0", "pont": "1", "cel": "felmérő kép: a Név nélküliek nézet mért koordinátái", "elofeltetel": "nincs",
+   "lepesek": [{"muvelet": "kattint", "cel": "bal sáv, Unnamed (N) sor"}, {"muvelet": "varakozas", "ms": 5000}, {"muvelet": "kepernyokep", "nev": "j0-teljes"}],
+   "kimenetek": ["kepernyokep"], "megfigyelni": ["csempék helye és mérete", "Expand groups gomb helye", "fejléc és tálca állapota"], "koordinata": "NINCS MERT, ez a futás adja"},
+  {"id": "J1", "pont": "1", "cel": "csoportosítás és csempesorrend", "elofeltetel": "J0",
+   "lepesek": [{"muvelet": "kattint", "cel": "fejléc: Expand groups"}, {"muvelet": "varakozas", "ms": 3000}, {"muvelet": "kepernyokep", "nev": "j1-kibontott"}, {"muvelet": "kattint", "cel": "fejléc: Group by face"}, {"muvelet": "kepernyokep", "nev": "j1-csoportosított"}],
+   "kimenetek": ["kepernyokep (2 db)", "allapot"], "megfigyelni": ["csoportcímkék és csempesorrend, balról jobbra és fentről lefelé", "csoporthatárok", "csempe-pixelméret csak mért képen"]},
+  {"id": "J2", "pont": "2", "cel": "kijelölési modell: Ctrl, Shift, húzás", "elofeltetel": "J0",
+   "lepesek": [{"muvelet": "kattint", "cel": "A csempe (J0 koordináta)"}, {"muvelet": "billentyu", "cel": "Ctrl", "kattint": "B csempe"}, {"muvelet": "kepernyokep", "nev": "j2-ctrl"}, {"muvelet": "billentyu", "cel": "Shift", "kattint": "C csempe"}, {"muvelet": "kepernyokep", "nev": "j2-shift"}, {"muvelet": "huz", "cel": "D csempe -> E csempe"}, {"muvelet": "kepernyokep", "nev": "j2-huzas"}],
+   "kimenetek": ["kepernyokep (3 db)", "allapot (kijelölésszám, tálca)"], "megfigyelni": ["kijelölt keretek", "No Selection felirat", "Add a name mező aktivitása"]},
+  {"id": "J3", "pont": "3", "cel": "javaslat: megjelenés, elfogadás, elutasítás (két külön profilpéldányon)", "elofeltetel": "J0; egy névvel ellátott személy",
+   "lepesek": [{"muvelet": "varakozas", "cel": "javaslat megjelenése"}, {"muvelet": "kepernyokep", "nev": "j3-javaslat"}, {"muvelet": "kattint", "cel": "javaslat elfogadása (1. futás)"}, {"muvelet": "allapot"}, {"muvelet": "picasa_ini"}, {"muvelet": "kattint", "cel": "javaslat elutasítása (2. futás, új profil)"}, {"muvelet": "allapot"}, {"muvelet": "picasa_ini"}],
+   "kimenetek": ["kepernyokep", "picasa_ini (előtte és utána)", "contacts.xml", "db3 másolat", "allapot"], "megfigyelni": ["javaslat-csempe eredeti felülete", "Unnamed (N) számláló", "faces= sor változása"]},
+  {"id": "J4", "pont": "4", "cel": "mellőzés: X, fejléc gomb, megerősítés, visszahozás", "elofeltetel": "J0",
+   "lepesek": [{"muvelet": "kattint", "cel": "csempe X"}, {"muvelet": "kepernyokep", "nev": "j4-megerosites"}, {"muvelet": "kattint", "cel": "Ignore Person"}, {"muvelet": "allapot"}, {"muvelet": "picasa_ini"}, {"muvelet": "kattint", "cel": "fejléc: Show ignored faces"}, {"muvelet": "kepernyokep", "nev": "j4-mellozott"}, {"muvelet": "kattint", "cel": "csempe: Stop ignoring"}, {"muvelet": "picasa_ini"}],
+   "kimenetek": ["kepernyokep (3 db)", "picasa_ini (3 állapot)", "allapot"], "megfigyelni": ["a megerősítő szöveg pontos alakja", "hová kerül a mellőzött arc (Mellőzött emberek album)", "visszahozás után a faces= sor"]},
+  {"id": "J5", "pont": "5", "cel": "személy-album: arc/teljes kép, átnevezés, törlés", "elofeltetel": "egy névvel ellátott személy",
+   "lepesek": [{"muvelet": "kattint", "cel": "bal sáv, személy sora"}, {"muvelet": "kepernyokep", "nev": "j5-fejlec"}, {"muvelet": "kattint", "cel": "face_zoom, majd picture_zoom"}, {"muvelet": "kepernyokep", "nev": "j5-mod-a"}, {"muvelet": "kepernyokep", "nev": "j5-mod-b"}, {"muvelet": "menu", "cel": "Edit People Album...", "adat": "uj nev"}, {"muvelet": "allapot"}, {"muvelet": "contacts.xml"}, {"muvelet": "menu", "cel": "Delete People Album"}, {"muvelet": "kepernyokep", "nev": "j5-megerosites"}, {"muvelet": "allapot"}, {"muvelet": "bezaras_ujrainditas"}, {"muvelet": "allapot"}],
+   "kimenetek": ["kepernyokep (4 db)", "contacts.xml", "picasa_ini", "db3 másolat", "allapot"], "megfigyelni": ["a zoommód első megnyitáskor", "a megerősítő szöveg", "az arcok sorsa törlés után és újraindítás után"]},
+  {"id": "J6", "pont": "6", "cel": "Személykezelő párbeszéd: kijelölés, mezők, OK és Mégse", "elofeltetel": "J0",
+   "lepesek": [{"muvelet": "menu", "cel": "Személykezelő megnyitása"}, {"muvelet": "kepernyokep", "nev": "j6-elrendezes"}, {"muvelet": "kattint", "cel": "lista 1. sor"}, {"muvelet": "billentyu", "cel": "Ctrl", "kattint": "lista 2. sor"}, {"muvelet": "kepernyokep", "nev": "j6-kijeloles"}, {"muvelet": "kattint", "cel": "Cancel (Mégse)"}, {"muvelet": "allapot"}, {"muvelet": "menu", "cel": "Személykezelő újra"}, {"muvelet": "billentyu", "cel": "Escape"}, {"muvelet": "allapot"}],
+   "kimenetek": ["kepernyokep (2 db)", "allapot", "contacts.xml (Mégse előtt és után)"], "megfigyelni": ["többes kijelölés engedélyezett-e", "Delete Person állapota", "a Mégse és az Escape hatása"]},
+  {"id": "J7", "pont": "8", "cel": "arcfelismerés: indítás, kihagyás, küszöb", "elofeltetel": "üres Picasa-profil",
+   "lepesek": [{"muvelet": "import", "cel": "egy mappa, egy kép"}, {"muvelet": "varakozas", "ms": 60000}, {"muvelet": "kepernyokep", "nev": "j7-folyamat"}, {"muvelet": "allapot"}, {"muvelet": "picasa_ini"}, {"muvelet": "import", "cel": "új kép a mappába"}, {"muvelet": "varakozas", "ms": 60000}, {"muvelet": "allapot"}, {"muvelet": "mappa", "cel": "Face Detection Off"}, {"muvelet": "import", "cel": "új kép a kizárt mappába"}, {"muvelet": "allapot"}, {"muvelet": "kuszob", "ertek": 50}, {"muvelet": "allapot"}, {"muvelet": "kuszob", "ertek": 95}, {"muvelet": "allapot"}],
+   "kimenetek": ["kepernyokep", "picasa_ini", "allapot (arcszám, javaslatszám)"], "megfigyelni": ["a keresés indulási pillanata", "a kizárt mappa képeinek sorsa", "a küszöb hatása ugyanazon képkészleten"]},
+  {"id": "J8", "pont": "7", "cel": "mentés-diff: mikor íródik a [Contacts2], faces= és db3", "elofeltetel": "J3-J7 futásai",
+   "lepesek": [{"muvelet": "masolat", "cel": "picasa_ini, contacts.xml, db3 (sha256)"}, {"muvelet": "futtat", "cel": "a J3-J7 lépés"}, {"muvelet": "masolat", "cel": "ugyanaz, utána"}, {"muvelet": "bezaras"}, {"muvelet": "masolat", "cel": "ugyanaz, bezárás után"}],
+   "kimenetek": ["három állapot-másolat és diff"], "megfigyelni": ["mely lépés írja a [Contacts2] sort lemezre", "a mentés a lépés után vagy bezáráskor történik-e"]}
+]
+```
+
+Az `muvelet` mezők értékei: `kattint`, `billentyu`, `gepel`, `huz`, `menu`, `import`, `mappa`, `kuszob`, `kepernyokep`, `allapot`, `picasa_ini`, `contacts.xml`, `masolat`, `varakozas`, `bezaras`, `bezaras_ujrainditas`. A `huz` a húzást jelöli (kezdő és záró csempe), a `varakozas` ezredmásodpercben adott várakozás.
+
+### 28.6 Bizonyítottsági fok és cáfoló kísérletek
+
+- **Megerősített:** a `learn_more` kezelő és a cím-sablon (28.2, A és B).
+- **Feltételes:** a nyelvkód forrása (28.2); a `0x00586e20` kiírója (28.3/a); a `0x00587110` szerepe (28.3/b); az 1 alapérték a `PeopleAlbumUseFaceSrc` kulcson (28.4/b, a jelentése nincs).
+- **NINCS MEG:** a [Contacts2] lemezre írásának útja; a mentés-kezelő hívója (28.3/d); a 960 px; az eredeti felismerési arány; a személyszintű mellőzés írása; a Személykezelő kijelölési módja; a felirat-szövegek a helyi bináris alapján.
+- **Cáfoló kísérletek:**
+  - (a) Learn more: ha a `0x0074c760` nem volna a kezelő, a `learn_more` azonosító és a cím másik függvényben lenne. Az indexben mindkettő kizárólag ott van, a cáfolat nem sikerült.
+  - (b) [Contacts2]: a 27.1 „nem író” állítását diszasszemblálással próbáltam cáfolni. Sikerült: a 27.1 olvasata (két hívás, mindig -1) nem áll, a `0x00586e20` kiírója nyitott.
+  - (c) Felirat-szövegek: nyers keresés az EXE-ben, ASCII és UTF-16LE kódolásban: „As Picasa scans”, „Welcome to the Unnamed”, „Expand groups”, „Group by face”, „Show ignored faces”, „Stop ignoring”, „Ignore Selected” mind 0 találat. A helyi másolatban csak két `.tre` van. A szövegek forrása a jegy képernyőképe és a job-leírás marad.
+  - (d) Index-negatív: a `0x0068c030` visszafelé-bejárása vtable-hívásokat nem lát, ezért a „nem éri el” állítás csak a direkt hívási gráfra igaz.
+
+### 28.7 Ghidra-kör kérések (új, a 28.3 nyitott pontjai)
+
+Ghidra-kör kell: 0x00586e20 - a teljes törzs: melyik hívás ír a `Contacts2` szakaszba, és a sikeres ág 0-t vagy -1-et ad-e vissza [blokkoló]
+Ghidra-kör kell: 0x00587110 - író-e a `Contacts2` szakasz írója, vagy csak olvas; mit csinál a 0x005875d0 hívás [blokkoló]
+Ghidra-kör kell: 0x0045a9d0 - a `.picasa.ini` mappafüggvény: mikor és hová írja a [Contacts2] sort, és hívja-e közvetve a 0x0068c030-at [blokkoló]
+Ghidra-kör kell: 0x00692210 - honnan hívódik (tábla vagy vtable), és mikor fut a 0x0069b240 mentés [nem blokkoló]
+
+Disasm-kérdés (nem Ghidra): a 0x00767e50 belső ága, amely az 1 alapértéket a face/picture módra értelmezi (28.4/b).
+
+### 28.8 Mérleg (2026-10-18)
+
+- Leltár: 8 pont, mind RÉSZBEN; a Learn more KÉSZ.
+- Új bináris eredmény: a Learn more kezelő és címe (megerősített); a [Contacts2] két jelölt (feltételes); a mentés-kezelő (0x006980a0) leírása; az alapmód-kulcs olvasata (az 1 jelentése nincs).
+- Helyesbítés: a 27.1 „nem író” olvasata nem áll (28.3/a).
+- Colab-javaslat: J0-J8 (28.5), nincs indítva.
+- Fejlesztési következmény: nincs kódmódosítás. A Learn more gomb a PicasaPy-ban nincs kezelve; a célja megszűnt szolgáltatás, így a gomb sorsa termékdöntés.
 
 ## 29. #5184, kilencedik kör: a 2026-10-18-i Ghidra-dump hat címe (2026-10-18)
 

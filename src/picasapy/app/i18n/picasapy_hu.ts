@@ -12557,8 +12557,8 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-                <numerusform>Ebből %n már szerepel a Picasában (duplikátum)</numerusform>
-                <numerusform>Ebből %n már szerepel a Picasában (duplikátum)</numerusform>
+                <numerusform>Ebből %n már szerepel a PicasaPyban (duplikátum)</numerusform>
+                <numerusform>Ebből %n már szerepel a PicasaPyban (duplikátum)</numerusform>
             </translation>
         </message>
         <message>

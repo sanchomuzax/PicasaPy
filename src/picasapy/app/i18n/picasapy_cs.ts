@@ -2071,7 +2071,7 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
         <message>
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Odebrat z Picasy...</translation>
+            <translation>Odebrat z aplikace PicasaPy...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
@@ -6480,7 +6480,7 @@ picasapy-origin-key: stringres:CFolderMgrDialog::warning;stringres:IDS_ROOT_WATC
             <source>If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to PicasaPy. Are you sure you want to do this?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_HOTFOLDER_CONFIRM</extracomment>
-            <translation>Pokud odeberete sledovanou složku, nebudou položky nově přidané do této složky na disku automaticky přidány do Picasy. Opravdu to ji chcete odebrat?</translation>
+            <translation>Pokud odeberete sledovanou složku, nebudou položky nově přidané do této složky na disku automaticky přidány do aplikace PicasaPy. Opravdu to ji chcete odebrat?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6515,7 +6515,7 @@ Face detection is separate: you can watch a folder and still keep faces in it ou
 
 „Prohledat jednou“ přidá fotky, které jsou ve složce právě teď, a potom na ni zapomene.
 
-„Odebrat z Picasy“ odstraní složku z knihovny. Fotky zůstanou na disku.
+„Odebrat z aplikace PicasaPy“ odstraní složku z knihovny. Fotky zůstanou na disku.
 
 Detekce obličejů je samostatné nastavení: složku můžete sledovat, ale obličeje v ní do knihovny nezahrnovat.</translation>
         </message>
@@ -6551,7 +6551,7 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Odebrat z Picasy</translation>
+            <translation>Odebrat z aplikace PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
@@ -6593,7 +6593,7 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
             <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Odebrat z Picasy</translation>
+            <translation>Odebrat z aplikace PicasaPy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -8821,7 +8821,7 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
             <source>Locate in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Najít v Picase</translation>
+            <translation>Najít v aplikaci PicasaPy</translation>
         </message>
         <message>
             <source>Locate</source>
@@ -10053,14 +10053,14 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
             <source>Add Folder to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>Přidat složku do Picasy...</translation>
+            <translation>Přidat složku do aplikace PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
             <source>Add &amp;File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>Přidat &amp;soubor do Picasy...</translation>
+            <translation>Přidat &amp;soubor do aplikace PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
@@ -10421,7 +10421,7 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Odebrat z Picasy...</translation>
+            <translation>&amp;Odebrat z aplikace PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
@@ -11207,7 +11207,7 @@ picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
             <source>PicasaPy failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:geo::init_err</extracomment>
-            <translation>Picase se nepodařilo inicializovat Mapy Google. Přesvědčte se, zda funguje připojení k internetu.</translation>
+            <translation>Aplikaci PicasaPy se nepodařilo inicializovat Mapy Google. Přesvědčte se, zda funguje připojení k internetu.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
@@ -12402,14 +12402,14 @@ Rozhodli jste se odstranit VŠECHNY SOUBORY ze zdrojového média.
             <source>1 file will not be imported because it is already a duplicate in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>1 soubor nebude importován, protože už je v Picase duplicitní.
+            <translation>1 soubor nebude importován, protože už je v aplikaci PicasaPy duplicitní.
 </translation>
         </message>
         <message>
             <source>%1 files will not be imported because they are already duplicates in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 souborů nebude importováno, protože už jsou v Picase duplicitní.
+            <translation>%1 souborů nebude importováno, protože už jsou v aplikaci PicasaPy duplicitní.
 </translation>
         </message>
         <message>
@@ -12564,16 +12564,16 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
             <source>Exclude photos that are already imported into PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vyloučit fotky, které už byly importovány do Picasy</translation>
+            <translation>Vyloučit fotky, které už byly importovány do aplikace PicasaPy</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
             <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-                <numerusform>%n z nich už je v Picase duplicitní.</numerusform>
-                <numerusform>%n z nich už jsou v Picase duplicitní.</numerusform>
-                <numerusform>%n z nich už je v Picase duplicitních.</numerusform>
+                <numerusform>%n z nich už je v aplikaci PicasaPy duplicitní.</numerusform>
+                <numerusform>%n z nich už jsou v aplikaci PicasaPy duplicitní.</numerusform>
+                <numerusform>%n z nich už je v aplikaci PicasaPy duplicitních.</numerusform>
             </translation>
         </message>
         <message>
@@ -12801,7 +12801,7 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <source>Add File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>Přidat &amp;soubor do Picasy...</translation>
+            <translation>Přidat &amp;soubor do aplikace PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36" />
@@ -15702,7 +15702,7 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
             <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Odebrat z Picasy...</translation>
+            <translation>Odebrat z aplikace PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -15921,7 +15921,7 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
         <message>
             <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Odebrat z Picasy...</translation>
+            <translation>&amp;Odebrat z aplikace PicasaPy...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>
@@ -16882,7 +16882,7 @@ picasapy-origin-key: stringres:collage::done</extracomment>
             <source>PicasaPy Notifier</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CNotifierPopup::window_name</extracomment>
-            <translation>Notifikátor Picasy</translation>
+            <translation>Notifikátor aplikace PicasaPy</translation>
         </message>
         <message>
             <source>Completed Importing</source>
@@ -17996,14 +17996,14 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
             <source>%d Photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation>Počet fotek v Picase: %d</translation>
+            <translation>Počet fotek v aplikaci PicasaPy: %d</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
             <source>%d Photo in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa;stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation>Počet fotek v Picase: %d</translation>
+            <translation>Počet fotek v aplikaci PicasaPy: %d</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

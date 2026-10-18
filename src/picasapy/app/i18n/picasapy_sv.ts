@@ -16868,7 +16868,7 @@ picasapy-origin-key: stringres:collage::done</extracomment>
             <source>PicasaPy Notifier</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CNotifierPopup::window_name</extracomment>
-            <translation>Picasanotiser</translation>
+            <translation>PicasaPy-notiser</translation>
         </message>
         <message>
             <source>Completed Importing</source>
