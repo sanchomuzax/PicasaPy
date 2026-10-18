@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.146] - 2026-10-18
+
+- Kisebb betűméretet és halvány tiltott feliratot kapott a Név nélküliek fejléce (#5328).
+
 ## [0.9.145] - 2026-10-18
 
 - A Név nélküliek kibontott és mellőzött nézete az eredeti Picasa csempe- és névadási elrendezését követi (#5324).
