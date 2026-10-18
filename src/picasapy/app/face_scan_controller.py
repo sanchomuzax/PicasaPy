@@ -1362,10 +1362,14 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         else:
             self.scanNewFaces()
 
-    @Slot(result=int)
-    def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus
+    @Property(int, notify=unnamedCountChanged)
+    def ignoredCount(self) -> int:  # noqa: N802 - QML-tulajdonság
         """Hány arc van a „Mellőzött emberek" albumban — a saját indexben
-        mellőzöttek és az eredeti Picasa által mellőzöttek (#3670) együtt."""
+        mellőzöttek és az eredeti Picasa által mellőzöttek (#3670) együtt.
+
+        #5323: tulajdonság, `unnamedCountChanged` NOTIFY-jal (mint a
+        `unnamedCount`). Metódusként a QML-kötés nem figyelt a mellőzésre,
+        a bal sáv sora nullát mutatott."""
         # #4887: a gyorstár a rejtett mappák láthatóságához kötött — a
         # kapcsoló átváltása után a darabszám nem maradhat a régin
         lathato = hidden_folders_visible(self._db_path)
