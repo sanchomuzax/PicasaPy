@@ -63,7 +63,7 @@ FELIRATOK: dict[str, dict[str, tuple[str, str]]] = {
             "&Locate on Disk\tCtrl+Enter", "FolderWin::ID_ALBUM_LOCATEONDISK"
         ),
         "folderMenuRemoveFromPicasa": (
-            "&Remove from Picasa...", "Folder::ID_MANAGE_ALBUM"
+            "&Remove from PicasaPy...", "Folder::ID_MANAGE_ALBUM"
         ),
         "folderMenuMoveFolder": ("&Move Folder...", "Folder::ID_MOVEFOLDER"),
         "folderMenuDeleteFolder": ("&Delete Folder...", "Folder::ID_ALBUM_DELETE"),

@@ -579,7 +579,7 @@ class TestGeneralTabLiveLanguage:
             "#3555: a váltás csak a megerősítés UTÁN íródhat"
         )
         uzenet = _child(window, "optionsLanguageConfirmMessageLabel").property("text")
-        assert uzenet.startswith("Change the language Picasa uses?")
+        assert uzenet.startswith("Change the language PicasaPy uses?")
 
     def test_yes_click_calls_the_controller(self, dialog, qt_app):
         window, fake_controller, _cs, _qt = dialog

@@ -60,7 +60,7 @@ _EXISTING_SHORTCUT_EXCEPTIONS = frozenset(
         ("PicasaMenuBar", "Online Information"),
         ("PicasaMenuBar", "Product Release Notes"),
         ("ImportSourceDialog", "Upload to Picasa Web Albums..."),
-        ("AddFileDialog", "Add File to Picasa..."),
+        ("AddFileDialog", "Add File to PicasaPy..."),
         ("ViewerContextMenu", "Back to Library"),
         ("ViewerContextMenu", "Add to Album"),
         ("ViewerContextMenu", "Unhide"),

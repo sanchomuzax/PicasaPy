@@ -75,7 +75,7 @@ TETELSOR: dict[str, dict[str, str]] = {
         "contextMenuOpenWith": "Társítás",
         "contextMenuSave": "Mentés",
         "contextMenuRevert": "Visszaállítás",
-        "contextMenuLocateInPicasa": "Keresés a Picasában",
+        "contextMenuLocateInPicasa": "Keresés a PicasaPy-ban",
         "contextMenuLocate": "Keresés a lemezen",
         # #3468: csak egy visszaállítható képnél jelenik meg
         "contextMenuLocateMenu": "Keresés",

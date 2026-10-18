@@ -2581,7 +2581,7 @@ ApplicationWindow {
                 property string candidateCode: ""
                 function askFor(code) {
                     candidateCode = code
-                    ask("", qsTr("Change the language Picasa uses?\n\nIt will change the next time Picasa is opened."))
+                    ask("", qsTr("Change the language PicasaPy uses?\n\nIt will change the next time PicasaPy is opened."))
                 }
                 onConfirmed: if (controller) controller.setLanguage(candidateCode)
             }
@@ -4488,7 +4488,7 @@ ApplicationWindow {
                 var dialog = brokenPhotoDialog.ensure()
                 dialog.ask("",
                     //: `CThumbUI::GetBadImages` — utána a fájllista jön
-                    qsTr("Picasa had a problem loading this file(s)\n")
+                    qsTr("PicasaPy had a problem loading this file(s)\n")
                     + dialog.pendingNames.join("\n")
                     //: `CThumbUI::GetBadImages2`
                     + qsTr("\nWould you like to hide the files on disk?"))

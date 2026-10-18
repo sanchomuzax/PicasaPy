@@ -405,7 +405,7 @@ Item {
             verticalAlignment: Text.AlignTop
             fontSizeMode: Text.Fit
             minimumPixelSize: 7
-            text: qsTr("Picasa is now showing the files you have not previously backed up.")
+            text: qsTr("PicasaPy is now showing the files you have not previously backed up.")
         }
         //: `publish/backuptext3` (470,108 – 741,143) — lefelé a
         //: gombpárig (`selectall`, y 162) ér: a hivatalos magyar négy sor

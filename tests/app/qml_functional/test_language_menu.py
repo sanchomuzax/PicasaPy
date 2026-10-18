@@ -163,7 +163,7 @@ class TestLanguageMenu:
             "#3555: a menüpont önmagában nem válthat, csak kérdez"
         )
         uzenet = _gyerek(window, "menuLanguageConfirmMessageLabel").property("text")
-        assert uzenet.startswith("Change the language Picasa uses?")
+        assert uzenet.startswith("Change the language PicasaPy uses?")
 
     def test_yes_click_queues_for_the_next_start(self, menu_items, qt_app, monkeypatch):
         window, controller, _system, _english, _hungarian = menu_items

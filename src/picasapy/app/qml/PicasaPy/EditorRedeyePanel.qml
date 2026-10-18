@@ -127,7 +127,7 @@ ColumnLayout {
         visible: !panel.redeyeAutoReset && panel.redeyeFoundCount >= 0
         text: panel.redeyeFoundCount > 0
               //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
-              ? qsTr("Picasa has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that Picasa may have missed.")
+              ? qsTr("PicasaPy has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that PicasaPy may have missed.")
               : qsTr("No red eye was found automatically.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray

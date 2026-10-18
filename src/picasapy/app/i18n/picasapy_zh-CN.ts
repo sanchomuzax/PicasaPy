@@ -333,9 +333,9 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="55" />
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="56" />
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
-            <source>Search for these photos in Picasa</source>
+            <source>Search for these photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>在 Picasa 中搜索这些照片</translation>
+            <translation>在 PicasaPy 中搜索这些照片</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
@@ -1177,13 +1177,13 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
             <translation>系统默认（%1）</translation>
         </message>
         <message>
-            <source>Change the language Picasa uses?
+            <source>Change the language PicasaPy uses?
 
-It will change the next time Picasa is opened.</source>
+It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>更改 Picasa 使用的语言吗？
+            <translation>更改 PicasaPy 使用的语言吗？
 
-重新打开 Picasa 后将生效。</translation>
+重新打开 PicasaPy 后将生效。</translation>
         </message>
         <message>
             <source>Files:</source>
@@ -2067,9 +2067,9 @@ picasapy-origin-key: stringres:Folder::ID_UNHIDEENTIREALBUM</extracomment>
             <translation>在磁盘上定位</translation>
         </message>
         <message>
-            <source>Remove from Picasa...</source>
+            <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>从 Picasa 中移除...</translation>
+            <translation>从 PicasaPy 中移除...</translation>
         </message>
         <message>
             <source>Move Folder...</source>
@@ -4508,10 +4508,10 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2082" />
-            <source>This file is read only. In order to edit this file, Picasa needs to copy the file's folder. Would you like to make a copy now?</source>
+            <source>This file is read only. In order to edit this file, PicasaPy needs to copy the file's folder. Would you like to make a copy now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
-            <translation>此文件为只读文件。要编辑此文件，Picasa 需要复制该文件的文件夹。是否要立即制作副本？</translation>
+            <translation>此文件为只读文件。要编辑此文件，PicasaPy 需要复制该文件的文件夹。是否要立即制作副本？</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="2088" />
@@ -6324,9 +6324,9 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
     <context>
         <name>InitialScanDialog</name>
         <message>
-            <source>Picasa</source>
+            <source>PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa</translation>
+            <translation>PicasaPy</translation>
         </message>
         <message>
             <source>There is an older version of Picasa installed.  Would you like to update your existing picture library, or search your computer for pictures again?</source>
@@ -6335,10 +6335,10 @@ picasapy-origin-key: initialscan:Text1(initialscan/text2)</extracomment>
             <translation>安装的是较早版本的 Picasa。是要更新现有的图片库，还是再次搜索计算机以查找图片？</translation>
         </message>
         <message>
-            <source>Picasa is ready to search for pictures on your computer</source>
+            <source>PicasaPy is ready to search for pictures on your computer</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text2(initialscan/text2)</extracomment>
-            <translation>Picasa 已准备好搜索您计算机上的图片</translation>
+            <translation>PicasaPy 已准备好搜索您计算机上的图片</translation>
         </message>
         <message>
             <source>Update my existing picture library</source>
@@ -6383,10 +6383,10 @@ picasapy-origin-key: initialscan:Text2(initialscan/text4a)</extracomment>
             <translation>如果您的图片保存在计算机上多个文件夹中，特别是它们保存在多个硬盘驱动器上时，请选择此选项。</translation>
         </message>
         <message>
-            <source>Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by Picasa by using the Folder Manager tool (available from the Tools menu)</source>
+            <source>Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by PicasaPy by using the Folder Manager tool (available from the Tools menu)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/text5);initialscan:Text2(initialscan/text5)</extracomment>
-            <translation>搜索图片不会将文件移动或复制到其他位置。您可以通过“工具”菜单中的“文件夹管理器”选择 Picasa 显示哪些文件夹。</translation>
+            <translation>搜索图片不会将文件移动或复制到其他位置。您可以通过“工具”菜单中的“文件夹管理器”选择 PicasaPy 显示哪些文件夹。</translation>
         </message>
         <message>
             <source>Continue</source>
@@ -6459,10 +6459,10 @@ picasapy-origin-key: stringres:CFolderMgrDialog::warning;stringres:IDS_ROOT_WATC
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
-            <source>If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to Picasa. Are you sure you want to do this?</source>
+            <source>If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to PicasaPy. Are you sure you want to do this?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_HOTFOLDER_CONFIRM</extracomment>
-            <translation>如果删除监控文件夹，则添加到磁盘上该文件夹中的新项不会自动添加到 Picasa。确定要执行此操作吗？</translation>
+            <translation>如果删除监控文件夹，则添加到磁盘上该文件夹中的新项不会自动添加到 PicasaPy。确定要执行此操作吗？</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" />
@@ -6489,7 +6489,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 
 Scan Once takes the pictures that are in the folder now and then forgets about it.
 
-Remove from Picasa takes the folder out of your library. The pictures stay on your disk.
+Remove from PicasaPy takes the folder out of your library. The pictures stay on your disk.
 
 Face detection is separate: you can watch a folder and still keep faces in it out of the library.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -6497,7 +6497,7 @@ Face detection is separate: you can watch a folder and still keep faces in it ou
 
 “扫描一次”会导入文件夹当前已有的图片，然后不再监视该文件夹。
 
-“从 Picasa 中移除”会将文件夹从图片库中移除，但图片仍保留在磁盘上。
+“从 PicasaPy 中移除”会将文件夹从图片库中移除，但图片仍保留在磁盘上。
 
 头像检测是独立设置：您可以监视某个文件夹，同时不将其中的头像纳入图片库。</translation>
         </message>
@@ -6509,10 +6509,10 @@ Face detection is separate: you can watch a folder and still keep faces in it ou
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="29" />
-            <source>For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures.</source>
+            <source>For each folder, you can choose whether or not to have PicasaPy find pictures inside it.  You can also pick folders to watch for new pictures.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: foldermgr_text:Label(foldermgr/instructions_text)</extracomment>
-            <translation>对于每个文件夹，您都可以选择是否让 Picasa 查找其中的图片。您也可以挑选文件夹，以观看新图片。</translation>
+            <translation>对于每个文件夹，您都可以选择是否让 PicasaPy 查找其中的图片。您也可以挑选文件夹，以观看新图片。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="43" />
@@ -6531,9 +6531,9 @@ picasapy-origin-key: stringres:Add_Folder</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="91" />
-            <source>Remove from Picasa</source>
+            <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>从 Picasa 中移除</translation>
+            <translation>从 PicasaPy 中移除</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="104" />
@@ -6573,9 +6573,9 @@ picasapy-origin-key: foldermgr_text:Label(foldermgr/scan_once_label);stringres:I
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
-            <source>Remove from Picasa</source>
+            <source>Remove from PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>从 Picasa 中移除</translation>
+            <translation>从 PicasaPy 中移除</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderStatePanel.qml" />
@@ -6937,7 +6937,7 @@ picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/title)</extrac
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
-            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+            <source>As PicasaPy scans your photos, the faces it finds are automatically grouped for easy naming.
 
 Things to know:
 
@@ -6947,13 +6947,13 @@ To identify a person, click 'Add a name', then type in the person's name and pre
 
 To ignore a person, click the 'X' button on the face thumbnail.
 
-Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.
+Suggestions: After you name someone, PicasaPy may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.
 
 
  Click 'Learn More' for information about this feature.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extracomment>
-            <translation>Picasa 在扫描照片时，会对找到的脸部图像自动进行分组以便于命名。
+            <translation>PicasaPy 在扫描照片时，会对找到的脸部图像自动进行分组以便于命名。
 
 注意事项：
 
@@ -6963,7 +6963,7 @@ picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extraco
 
 要忽略某人，请点击脸部缩略图上的“X”按钮。
 
-建议：在您命名某人之后，Picasa 可能会建议更多与此人相匹配的脸部图像。点击此人的相册即可查看和确认（或拒绝）所有建议。
+建议：在您命名某人之后，PicasaPy 可能会建议更多与此人相匹配的脸部图像。点击此人的相册即可查看和确认（或拒绝）所有建议。
 
 
  点击“了解详情”以查看更多关于此功能的信息。</translation>
@@ -7413,10 +7413,10 @@ picasapy-origin-key: tooltips:Label(publish/backupcdheader2)</extracomment>
             <translation>选择要备份的文件夹和相册</translation>
         </message>
         <message>
-            <source>Picasa is now showing the files you have not previously backed up.</source>
+            <source>PicasaPy is now showing the files you have not previously backed up.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(publish/backuptext2)</extracomment>
-            <translation>Picasa 现在显示的是您以前没有备份的文件。</translation>
+            <translation>PicasaPy 现在显示的是您以前没有备份的文件。</translation>
         </message>
         <message>
             <source>Check the folders you want to back up, or choose 'Select All' to choose everything.</source>
@@ -8361,10 +8361,10 @@ picasapy-origin-key: stringres:CThumbUI::GetBadImagesYesButton</extracomment>
         </message>
         <message>
             <location filename="Main.qml" line="1037" />
-            <source>Picasa had a problem loading this file(s)
+            <source>PicasaPy had a problem loading this file(s)
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa 加载这些文件时遇到问题
+            <translation>PicasaPy 加载这些文件时遇到问题
 </translation>
         </message>
         <message>
@@ -8393,13 +8393,13 @@ picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
             <translation>更新相似数据库（下次使用时会快一些）</translation>
         </message>
         <message>
-            <source>Change the language Picasa uses?
+            <source>Change the language PicasaPy uses?
 
-It will change the next time Picasa is opened.</source>
+It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>更改 Picasa 使用的语言吗？
+            <translation>更改 PicasaPy 使用的语言吗？
 
-重新打开 Picasa 后将生效。</translation>
+重新打开 PicasaPy 后将生效。</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -8793,9 +8793,9 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_PEOPLEALBUMS</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoContextMenu.qml" />
-            <source>Locate in Picasa</source>
+            <source>Locate in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>在 Picasa 中定位</translation>
+            <translation>在 PicasaPy 中定位</translation>
         </message>
         <message>
             <source>Locate</source>
@@ -9473,7 +9473,7 @@ You can drag the rectangle to position it, and move its sides to refine the shap
             <translation>此处会列出当前所选照片中出现的人物。</translation>
         </message>
         <message>
-            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+            <source>As PicasaPy scans your photos, the faces it finds are automatically grouped for easy naming.
 
 Things to know:
 
@@ -9483,9 +9483,9 @@ To identify a person, click 'Add a name', then type in the person's name and pre
 
 To ignore a person, click the 'X' button on the face thumbnail.
 
-Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</source>
+Suggestions: After you name someone, PicasaPy may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa 会在扫描照片时自动将检测到的头像分组，方便您为其命名。
+            <translation>PicasaPy 会在扫描照片时自动将检测到的头像分组，方便您为其命名。
 
 请注意：
 
@@ -9495,7 +9495,7 @@ Suggestions: After you name someone, Picasa may suggest more matching faces for 
 
 要忽略某人，请点击头像缩略图上的“X”按钮。
 
-建议：为某人命名后，Picasa 可能会为该人物建议更多相似头像。点击此人的相册即可查看并确认（或拒绝）这些建议。</translation>
+建议：为某人命名后，PicasaPy 可能会为该人物建议更多相似头像。点击此人的相册即可查看并确认（或拒绝）这些建议。</translation>
         </message>
         <message>
             <source>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</source>
@@ -10024,17 +10024,17 @@ picasapy-origin-key: stringres:eMenuFile</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39" />
-            <source>Add Folder to Picasa...</source>
+            <source>Add Folder to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>将文件夹添加到 Picasa...</translation>
+            <translation>将文件夹添加到 PicasaPy...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
-            <source>Add &amp;File to Picasa...</source>
+            <source>Add &amp;File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>将文件添加到 Picasa(&amp;F)...</translation>
+            <translation>将文件添加到 PicasaPy(&amp;F)...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
@@ -10393,9 +10393,9 @@ picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
-            <source>&amp;Remove from Picasa...</source>
+            <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>从 Picasa 中移除(&amp;R)...</translation>
+            <translation>从 PicasaPy 中移除(&amp;R)...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
@@ -11178,10 +11178,10 @@ picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="150" />
-            <source>Picasa failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
+            <source>PicasaPy failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:geo::init_err</extracomment>
-            <translation>Picasa 无法初始化 Google 地图。请确保您已连接到互联网。</translation>
+            <translation>PicasaPy 无法初始化 Google 地图。请确保您已连接到互联网。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
@@ -12373,35 +12373,35 @@ You have chosen to delete ALL FILES from the source media.
 </translation>
         </message>
         <message>
-            <source>1 file will not be imported because it is already a duplicate in Picasa.
+            <source>1 file will not be imported because it is already a duplicate in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>由于文件已在 Picasa 中重复，1 个文件不会导入。
+            <translation>由于文件已在 PicasaPy 中重复，1 个文件不会导入。
 </translation>
         </message>
         <message>
-            <source>%1 files will not be imported because they are already duplicates in Picasa.
+            <source>%1 files will not be imported because they are already duplicates in PicasaPy.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>由于这些文件已在 Picasa 中重复，%1 个文件不会导入。
-</translation>
-        </message>
-        <message>
-            <source>
-Picasa does not recognize 1 of the files to be deleted.
-</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-Picasa 无法识别 1 个待删除文件。
+            <translation>由于这些文件已在 PicasaPy 中重复，%1 个文件不会导入。
 </translation>
         </message>
         <message>
             <source>
-Picasa does not recognize %1 of the files to be deleted.
+PicasaPy does not recognize 1 of the files to be deleted.
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-Picasa 无法识别待删除文件中的 %1 个。
+PicasaPy 无法识别 1 个待删除文件。
+</translation>
+        </message>
+        <message>
+            <source>
+PicasaPy does not recognize %1 of the files to be deleted.
+</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+PicasaPy 无法识别待删除文件中的 %1 个。
 </translation>
         </message>
         <message>
@@ -12536,17 +12536,17 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
-            <source>Exclude photos that are already imported into Picasa</source>
+            <source>Exclude photos that are already imported into PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>排除已导入 Picasa 的照片</translation>
+            <translation>排除已导入 PicasaPy 的照片</translation>
         </message>
         <message numerus="yes">
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
-            <source>%n of those are duplicates already in Picasa</source>
+            <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
-                <numerusform>其中 %n 个已在 Picasa 中重复</numerusform>
-                <numerusform>其中 %n 个已在 Picasa 中重复</numerusform>
+                <numerusform>其中 %n 个已在 PicasaPy 中重复</numerusform>
+                <numerusform>其中 %n 个已在 PicasaPy 中重复</numerusform>
             </translation>
         </message>
         <message>
@@ -12771,10 +12771,10 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
         <name>AddFileDialog</name>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="30" />
-            <source>Add File to Picasa...</source>
+            <source>Add File to PicasaPy...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>将文件添加到 Picasa(&amp;F)...</translation>
+            <translation>将文件添加到 PicasaPy(&amp;F)...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36" />
@@ -13685,17 +13685,17 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>Picasa has found and corrected red eye(s).
+            <source>PicasaPy has found and corrected red eye(s).
 
 Note: You can click on a box to delete a change.
 
-You can also draw a square around any red eye that Picasa may have missed.</source>
+You can also draw a square around any red eye that PicasaPy may have missed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa 已找到并修复红眼。
+            <translation>PicasaPy 已找到并修复红眼。
 
 注意：单击选框即可删除相应修改。
 
-您也可以在 Picasa 可能漏掉的红眼周围画一个方框。</translation>
+您也可以在 PicasaPy 可能漏掉的红眼周围画一个方框。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -13731,9 +13731,9 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tool
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>You can also draw a square around any red eye that Picasa may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.</source>
+            <source>You can also draw a square around any red eye that PicasaPy may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>您也可以在 Picasa 可能漏掉的红眼周围画一个方框。按住鼠标并分别绕每只眼睛拖动，以选中该区域。屏幕上会出现一个选框。</translation>
+            <translation>您也可以在 PicasaPy 可能漏掉的红眼周围画一个方框。按住鼠标并分别绕每只眼睛拖动，以选中该区域。屏幕上会出现一个选框。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -15156,10 +15156,10 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/cancel)</extracomment>
         <name>EditorDialogs</name>
         <message>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
-            <source>This file is read only. In order to edit this file, Picasa needs to copy the file's folder. Would you like to make a copy now?</source>
+            <source>This file is read only. In order to edit this file, PicasaPy needs to copy the file's folder. Would you like to make a copy now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
-            <translation>此文件为只读文件。要编辑此文件，Picasa 需要复制该文件的文件夹。是否要立即制作副本？</translation>
+            <translation>此文件为只读文件。要编辑此文件，PicasaPy 需要复制该文件的文件夹。是否要立即制作副本？</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorDialogs.qml" />
@@ -15673,9 +15673,9 @@ picasapy-origin-key: stringres:Folder::ID_HIER_FOLDER_COLLAPSE</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
-            <source>Remove from Picasa...</source>
+            <source>Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>从 Picasa 中移除...</translation>
+            <translation>从 PicasaPy 中移除...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderHierarchyView.qml" />
@@ -15892,9 +15892,9 @@ picasapy-origin-key: stringres:CThumbUI::Color</extracomment>
             <translation>姓名(&amp;N)</translation>
         </message>
         <message>
-            <source>&amp;Remove from Picasa...</source>
+            <source>&amp;Remove from PicasaPy...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>从 Picasa 中移除(&amp;R)...</translation>
+            <translation>从 PicasaPy 中移除(&amp;R)...</translation>
         </message>
         <message>
             <source>&amp;Reverse order</source>
@@ -16852,10 +16852,10 @@ picasapy-origin-key: stringres:collage::done</extracomment>
     <context>
         <name>PicasaNotifier</name>
         <message>
-            <source>Picasa Notifier</source>
+            <source>PicasaPy Notifier</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CNotifierPopup::window_name</extracomment>
-            <translation>Picasa 通知程序</translation>
+            <translation>PicasaPy 通知程序</translation>
         </message>
         <message>
             <source>Completed Importing</source>
@@ -17769,11 +17769,11 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="57" />
-            <source>Picasa is now available in your system's native language.
-Would you like to switch Picasa from English to this language?</source>
+            <source>PicasaPy is now available in your system's native language.
+Would you like to switch PicasaPy from English to this language?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa is now available in your system's native language.
-Would you like to switch Picasa from English to this language?</translation>
+            <translation>PicasaPy is now available in your system's native language.
+Would you like to switch PicasaPy from English to this language?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />
@@ -17966,17 +17966,17 @@ picasapy-origin-key: contactmgr:contactmgr/contact_id_group.title</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
-            <source>%d Photos in Picasa</source>
+            <source>%d Photos in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotosInPicasa</extracomment>
-            <translation>Picasa 中的 %d 张照片</translation>
+            <translation>PicasaPy 中的 %d 张照片</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
-            <source>%d Photo in Picasa</source>
+            <source>%d Photo in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ContactManagerDlg::PhotoInPicasa</extracomment>
-            <translation>Picasa 中有 %d 张照片</translation>
+            <translation>PicasaPy 中有 %d 张照片</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307" />

@@ -10,7 +10,7 @@ Picasához…**
 
 Bal oldalt a **Mappalista**, jobb oldalt **A jelenlegi mappára**
 vonatkozó beállítások. A jobb oldal tetején az eredeti Picasa útmutató
-szövege áll: „Minden mappa esetében megadhatja, hogy a Picasa keressen-e
+szövege áll: „Minden mappa esetében megadhatja, hogy a PicasaPy keressen-e
 bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a
 program figyelje bennük az új képek megjelenését." Ha még nem
 választottál mappát, alatta ez olvasható: „Jelölj ki egy mappát bal
@@ -24,7 +24,7 @@ oldalt."
 - **Eltávolítás a Picasából** — a mappa kikerül a nézetből. A lemezen
   lévő fájlokhoz **nem nyúl**. Figyelt mappánál a program rákérdez: „Ha
   egy figyelt mappát eltávolít, a lemezen oda mentett új fájlokat a
-  Picasa nem veszi fel automatikusan. Biztosan ezt szeretné?"
+  PicasaPy nem veszi fel automatikusan. Biztosan ezt szeretné?"
 - **Arcfelismerés bekapcsolva / kikapcsolva** — mappánként külön
   eldöntheted, keressen-e arcokat. A beállítás a mappára **és az alfáira**
   is vonatkozik.

@@ -23,7 +23,7 @@ ColumnLayout {
 
     readonly property var stateOptions: [
         { state: "once", label: qsTr("Scan Once") },
-        { state: "none", label: qsTr("Remove from Picasa") },
+        { state: "none", label: qsTr("Remove from PicasaPy") },
         { state: "always", label: qsTr("Scan Always") }
     ]
 

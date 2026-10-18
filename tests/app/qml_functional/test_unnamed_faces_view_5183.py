@@ -361,7 +361,7 @@ def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app
     assert search_field.property("text") == "Teszt Elek"
     photo_count = _find_item(window, "peopleManagerPhotoCount")
     assert photo_count is not None
-    assert photo_count.property("text") == "0 Photos in Picasa"
+    assert photo_count.property("text") == "0 Photos in PicasaPy"
     contact_id = _find_item(window, "peopleManagerContactId")
     assert contact_id is not None
     assert contact_id.property("visible") is False
@@ -592,7 +592,7 @@ def test_existing_person_name_suggestions_choose_and_escape(
     assert selected_person is not None
     assert selected_person.property("highlighted") is True
     assert _find_item(window, "peopleManagerPhotoCount").property("text") == (
-        "1 Photo in Picasa"
+        "1 Photo in PicasaPy"
     )
     choose_button = _find_item(window, "peopleManagerOkButton")
     assert choose_button.property("text") == "Choose"

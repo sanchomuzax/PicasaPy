@@ -162,7 +162,7 @@ Window {
     // ------------------------------------------------------------------
 
     //: `CNotifierPopup::window_name`
-    title: qsTr("Picasa Notifier")
+    title: qsTr("PicasaPy Notifier")
 
     //: `0x0065743c`: `WS_EX_TOPMOST | WS_EX_TOOLWINDOW`. A
     //: `WindowDoesNotAcceptFocus` a `TOOLWINDOW` következménye: az
