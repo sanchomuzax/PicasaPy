@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 import pytest
-from PySide6.QtCore import QObject, QPoint, QPointF, QRectF, Qt, QUrl
+from PySide6.QtCore import QObject, QPoint, QPointF, Qt, QUrl
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtTest import QTest
 from support.varakozas import var_feltetelre
@@ -80,13 +80,6 @@ def _teljesen_latszik(a_nezoterben, elem, *, megnevezes: str) -> None:
     )
 
 
-def _kep_szin(kep, window, pont: QPointF):
-    """A jelenlegi QQuickWindow-geometriából számított képpontszín."""
-    x = round(pont.x() * kep.width() / window.width())
-    y = round(pont.y() * kep.height() / window.height())
-    return kep.pixelColor(x, y)
-
-
 def _kattints(window, qt_app, elem: QObject) -> QPoint:
     assert elem.property("visible"), f"{elem.objectName()} nem látható"
     cel = elem.window() or window
@@ -100,7 +93,10 @@ def _kattints(window, qt_app, elem: QObject) -> QPoint:
 
 def _dia_felvetel(window, qt_app, szoveg=None):
     """Szöveges dia felvétele a címdia-párbeszéden át (#4198, 2.10)."""
-    _kattints(window, qt_app, _elem(window, "movieInsertSlideButton"))
+    dia_panel = _elem(window, "tabpanel2")
+    beszuras = _elem(window, "movieInsertSlideButton")
+    _gorgess_elemhez(dia_panel, beszuras, qt_app)
+    _kattints(window, qt_app, beszuras)
     dialog = _elem(window, "movieTitleDialog")
     assert _varj(qt_app, lambda: dialog.property("visible"))
     if szoveg is not None:
@@ -264,17 +260,16 @@ def test_a_film_panel_feliratai_es_muveletei_a_foablakbol_minden_magassagon(
         preview = _elem(window, "moviePreviewButton")
         flickable = scroll.property("contentItem")
         assert flickable.property("contentY") == 0, "az előnézet ellenőrzése nem görgethet"
-        hatter = film.property("background")
-        hatter_teteje = hatter.mapToScene(QPointF(0, 0)).y()
-        hatter_alja = hatter.mapToScene(
-            QPointF(hatter.property("width"), hatter.property("height"))
+        film_teteje = film.mapToScene(QPointF(0, 0)).y()
+        film_alja = film.mapToScene(
+            QPointF(film.property("width"), film.property("height"))
         ).y()
         gomb_teteje = preview.mapToScene(QPointF(0, 0)).y()
         gomb_alja = preview.mapToScene(
             QPointF(0, preview.property("height"))
         ).y()
-        assert gomb_teteje >= hatter_teteje - 3
-        assert gomb_alja <= hatter_alja + 3, "az előnézetgomb kilóg a párbeszéd látható teréből"
+        assert gomb_teteje >= film_teteje + 8
+        assert gomb_alja <= film_alja + 3, "az előnézetgomb kilóg a filmoldal tartalmából"
         _kattints(window, qt_app, preview)
         assert _elem(window, "moviePreviewTimer").property("running") is True
         assert _varj(qt_app, lambda: film.property("previewIndex") == 1)
@@ -356,7 +351,6 @@ def test_a_film_elonezete_gorgetes_nelkul_latszik_es_kattinthato(
 
             panel = _elem(window, "moviePreviewPanel")
             motion = _elem(window, "movieTabPanelMotion")
-            footer = _elem(window, "movieCancelButton")
             assert panel.property("visible") is True
             kep = _elem(window, "moviePreviewTransitionImage")
             assert _varj(
@@ -365,36 +359,30 @@ def test_a_film_elonezete_gorgetes_nelkul_latszik_es_kattinthato(
             preview = _elem(window, "moviePreviewButton")
             assert preview.property("visible") is True
 
-            panel_teteje = panel.mapToScene(QPointF(0, 0)).y()
-            panel_alja = panel.mapToScene(
+            panel_bal_fent = panel.mapToScene(QPointF(0, 0))
+            panel_jobb_lent = panel.mapToScene(
                 QPointF(panel.property("width"), panel.property("height"))
-            ).y()
-            fultartalom_alja = motion.mapToScene(
-                QPointF(0, motion.property("height"))
-            ).y()
-            footer_teteje = footer.mapToScene(QPointF(0, 0)).y()
-            assert panel_teteje >= fultartalom_alja - 3, "az előnézet a fülek görgetett tartalmában maradt"
-            assert panel_alja <= footer_teteje + 3, "az előnézet a párbeszéd alsó gombsorába lóg"
+            )
+            motion_jobb_lent = motion.mapToScene(
+                QPointF(motion.property("width"), motion.property("height"))
+            )
+            assert panel_bal_fent.x() >= motion_jobb_lent.x() - 3, (
+                "az előnézet nem a füles hasáb mellett jelenik meg"
+            )
+            assert panel_jobb_lent.x() <= window.width() + 3
+            film_teteje = film.mapToScene(QPointF(0, 0)).y()
+            assert panel_bal_fent.y() >= film_teteje + 8
+            assert panel_jobb_lent.y() <= window.height() + 3
 
-            hatter = film.property("background")
-            hatter_teteje = hatter.mapToScene(QPointF(0, 0)).y()
-            hatter_alja = hatter.mapToScene(
-                QPointF(hatter.property("width"), hatter.property("height"))
-            ).y()
-            gomb_teteje = preview.mapToScene(QPointF(0, 0)).y()
-            gomb_alja = preview.mapToScene(
+            assert 0 < film.property("height") <= window.height(), (
+                "a beágyazott film-panel magassága kilép a főablakból"
+            )
+            preview_teteje = preview.mapToScene(QPointF(0, 0)).y()
+            preview_alja = preview.mapToScene(
                 QPointF(0, preview.property("height"))
             ).y()
-            assert gomb_teteje >= hatter_teteje - 3
-            assert 0 < film.property("height") <= window.height(), (
-                "a párbeszéd magassága kilép a főablakból"
-            )
-            assert gomb_alja <= hatter_alja + 3, (
-                "a gomb nincs a párbeszéd látható terében: "
-                f"dialógus={film.property('height'):.1f}, "
-                f"főablak={window.height():.1f}, "
-                f"háttér={hatter.property('height'):.1f}"
-            )
+            assert preview_teteje >= panel_bal_fent.y() - 3
+            assert preview_alja <= panel_jobb_lent.y() + 3
 
             flickable = motion.property("contentItem")
             assert flickable.property("contentY") == 0, "a próba alatt nem görgettünk"
@@ -409,7 +397,11 @@ def test_a_film_elonezete_gorgetes_nelkul_latszik_es_kattinthato(
                 "movieAlbumOrder",
                 "movieChronologicalOrder",
             ):
-                _teljesen_latszik(motion, _elem(window, nev), megnevezes=nev)
+                elem = _elem(window, nev)
+                _gorgess_elemhez(motion, elem, qt_app)
+                _teljesen_latszik(motion, elem, megnevezes=nev)
+            flickable.setProperty("contentY", 0)
+            qt_app.processEvents()
 
             bar = _elem(window, "video_control_bar2/controlbar")
             for nev in (
@@ -479,10 +471,10 @@ def test_a_kis_foablakban_a_filmful_gorgetosavval_marad_lathato(
         qt_app.processEvents()
 
 
-def test_a_movie_dialog_hattere_cime_es_gombjai_a_parbeszedben_maradnak(
+def test_a_mozgofilm_lap_es_foablaki_vezerloi_lathatok_maradnak(
     qml_app, qt_app
 ):
-    """A valódi párbeszéd háttere és a fontos gombjai minden magasságon látszanak."""
+    """A főablakba ágyazott filmoldal és fontos vezérlői minden magasságon látszanak."""
     window, _controller, _engine = qml_app
     window.setProperty("selectedIndexes", [0, 1])
     qt_app.processEvents()
@@ -501,41 +493,31 @@ def test_a_movie_dialog_hattere_cime_es_gombjai_a_parbeszedben_maradnak(
             if eltolás == 0 and os.environ.get("PICASA_MOVIE_DIALOG_SCREENSHOT"):
                 assert kep.save(os.environ["PICASA_MOVIE_DIALOG_SCREENSHOT"])
 
-            assert film.property("title") == "Movie"
+            assert film.window() == window, "a Mozgófilmkészítő külön ablakba került"
+            assert window.property("movieMakerTabOpen") is True
+            assert window.property("activeDocumentTabId") == "movieMaker"
+            assert film.property("width") <= window.width()
+            assert film.property("height") <= window.height()
+            left = _elem(window, "movieLeftPanel")
+            preview = _elem(window, "moviePreviewPanel")
+            assert left.parentItem() == film
+            assert preview.parentItem() == film
+            left_bottom = left.mapToScene(
+                QPointF(left.property("width"), left.property("height"))
+            )
+            preview_top = preview.mapToScene(QPointF(0, 0))
+            preview_bottom = preview.mapToScene(
+                QPointF(preview.property("width"), preview.property("height"))
+            )
+            assert preview_top.x() >= left_bottom.x() - 3
+            assert preview_bottom.x() <= window.width() + 3
+            film_top = film.mapToScene(QPointF(0, 0)).y()
+            assert preview_top.y() >= film_top + 8
+            assert preview_bottom.y() <= window.height() + 3
             motion = _elem(window, "movieTabPanelMotion")
             assert motion.property("contentWidth") <= motion.property("width") + 3, (
-                "a Film fül vízszintes tartalma kilóg a párbeszéd nézőteréből"
+                "a Film fül vízszintes tartalma kilóg a bal hasáb nézőteréből"
             )
-            hatter = film.property("background")
-            assert hatter is not None, "a Movie párbeszédnek nincs hátteret adó eleme"
-            assert hatter.property("visible") is True
-            assert hatter.property("opacity") >= 0.99
-            szin = hatter.property("color")
-            if hasattr(szin, "alphaF"):
-                assert szin.alphaF() >= 0.99, "a párbeszéd háttere áttetsző"
-
-            parbeszed_bal = hatter.mapToScene(QPointF(0, 0))
-            parbeszed_jobb = hatter.mapToScene(
-                QPointF(hatter.property("width"), hatter.property("height"))
-            )
-            parbeszed = QRectF(parbeszed_bal, parbeszed_jobb)
-            # Az alsó keretsáv szöveg és gomb nélküli: itt a kirajzolt
-            # kitöltést hasonlítjuk a párbeszéden kívüli könyvtárnézethez.
-            sor_y = parbeszed.bottom() - 8
-            kitoltes = _kep_szin(kep, window, QPointF(parbeszed.left() + 8, sor_y))
-            kint = _kep_szin(kep, window, QPointF(parbeszed.right() + 10, sor_y))
-            keret = _kep_szin(kep, window, QPointF(parbeszed.left(), sor_y))
-            assert kitoltes.alpha() == 255, "a Movie párbeszéd kitöltése nem fed"
-            assert max(
-                abs(kitoltes.red() - kint.red()),
-                abs(kitoltes.green() - kint.green()),
-                abs(kitoltes.blue() - kint.blue()),
-            ) >= 10, "a Movie párbeszéd kitöltése a grabWindow képen átlátszó"
-            assert max(
-                abs(keret.red() - kitoltes.red()),
-                abs(keret.green() - kitoltes.green()),
-                abs(keret.blue() - kitoltes.blue()),
-            ) >= 10, "a Movie párbeszéd kerete nem különül el a kitöltéstől"
             vezérlok = [
                 _elem(window, "movieBrowseButton"),
                 _elem(window, "movieAddAudioButton"),
@@ -543,17 +525,25 @@ def test_a_movie_dialog_hattere_cime_es_gombjai_a_parbeszedben_maradnak(
                 _elem(window, "movieCancelButton"),
                 _elem(window, "movieCreateButton"),
             ]
-            belso = parbeszed.adjusted(-3, -3, 3, 3)
+            for elem in vezérlok[:3]:
+                _gorgess_elemhez(motion, elem, qt_app)
+                _teljesen_latszik(motion, elem, megnevezes=elem.objectName())
             for elem in vezérlok:
                 assert elem.property("visible"), f"{elem.objectName()} nem látható"
+                assert elem.property("width") > 0 and elem.property("height") > 0
                 bal_fent = elem.mapToScene(QPointF(0, 0))
                 jobb_lent = elem.mapToScene(
                     QPointF(elem.property("width"), elem.property("height"))
                 )
-                gomb_teglalap = QRectF(bal_fent, jobb_lent)
-                assert belso.contains(gomb_teglalap), (
-                    f"{elem.objectName() or elem.property('text')} kilóg a Movie "
-                    f"párbeszédből: {gomb_teglalap} kívül: {parbeszed}"
+                assert (
+                    bal_fent.x() >= -3
+                    and bal_fent.y() >= -3
+                    and jobb_lent.x() <= window.width() + 3
+                    and jobb_lent.y() <= window.height() + 3
+                ), (
+                    f"{elem.objectName() or elem.property('text')} kilóg a "
+                    f"főablakból: ({bal_fent.x():.1f}, {bal_fent.y():.1f})–"
+                    f"({jobb_lent.x():.1f}, {jobb_lent.y():.1f})"
                 )
 
             film.close()

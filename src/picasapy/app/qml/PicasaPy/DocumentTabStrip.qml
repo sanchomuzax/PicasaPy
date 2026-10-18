@@ -241,6 +241,7 @@ Item {
                 modified: modelData ? modelData.modified === true : false
                 active: modelData ? root.activeTabId === modelData.id : false
                 closable: true
+                fitTitle: modelData && modelData.id === "movieMaker"
                 onActivateRequested: root.activateTab(modelData.id)
                 onCloseRequested: root.requestClose(modelData.id)
             }

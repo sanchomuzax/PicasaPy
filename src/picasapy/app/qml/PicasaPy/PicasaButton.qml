@@ -29,6 +29,8 @@ import QtQuick.Controls
 Button {
     id: control
     property color accent: "transparent"   // pl. Theme.picasaGreen
+    // A felirat színe, ha a témától eltér (pl. a Mozgófilm X jele piros).
+    property color labelColor: "transparent"
 
     // A felirat legkisebb betűmérete, ha tördelve sem fér el. A padló
     // RELATÍV: a betűméret platformfüggő (ugyanaz a szöveg Linuxon és
@@ -219,9 +221,11 @@ Button {
     // #883: a felirat az eredetiben `CC000000`, azaz a tinta 80%-os
     // átlátszatlansággal. Nem szürke SZÍN — a színt a téma adja, az alfát az
     // eredeti; így sötét témán is helyes marad (a #336 tanulsága).
-    readonly property color inkColor: control.accented
-        ? "white"
-        : Qt.rgba(Theme.ink.r, Theme.ink.g, Theme.ink.b, 0.8)
+    readonly property color inkColor: control.labelColor !== Qt.color("transparent")
+        ? control.labelColor
+        : control.accented
+            ? "white"
+            : Qt.rgba(Theme.ink.r, Theme.ink.g, Theme.ink.b, 0.8)
 
     // #893: a letiltott csomópont alfáját az eredeti rajzoló NÉGGYEL OSZTJA
     // (`0x009e3178: shr dword ptr [edx+0x5c], 2`), közvetlenül a rajzolás
