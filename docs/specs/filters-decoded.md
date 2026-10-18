@@ -2604,8 +2604,11 @@ Vagyis a `tint` **hat lépésből** áll:
 | 5 | telítettségfüggő gamma-LUT, kitevő `1/k` | `0x00aa40a0` |
 | 6 | szorzó keverés, `max`-ra normálva | `0x009db4f0` |
 
-Ugyanez érvényes a **`rainbow`**-ra és az **`autocontrast`**-ra is (mindkettő
-hívja a `0x009db610`-et) — nálunk egyik sincs renderelve.
+Ugyanez a szinthúzó segédfüggvény fut le a **`rainbow`**-nál és az
+**`autocontrast`**-nál is (mindkettő hívja a `0x009db610`-et), de
+a paraméterük eltér: a `rainbow` `-1,0f` sentinelje 0,30-as vágópont-keverést,
+az `autocontrast` `1,0f` értéke 1,0-t ad. A PicasaPy az
+`autocontrast`-ot rendereli; a `rainbow`-ot még nem.
 
 *Bizonyítottsági fok: megerősített.*
 
@@ -7252,7 +7255,7 @@ Ugyanígy tömörítve a min ág ΔE-je 0,034. Mindkét ágon a medián 0, és a
 
 **Módszertani következmény:** a Picasa exportja nem 95-ös minőségű (az első luma-kvantáló sor `2, 2, 1, 2, 3, 6, 7, 9`), és a szemcsés, nagyfrekvenciás képen a különbség számít. A zajszintet ezért a **Picasa-export saját táblájával** kell mérni (`PIL`: `Image.open(export).quantization` és `JpegImagePlugin.get_sampling`), vagy még jobb: a mi kimenetünket ugyanazzal a táblával tömörítve kell a Picasához hasonlítani. A 95-ös zajszint a szemcsés effekteknél (Holga, NightVision, grain) alulbecsül, és hamis maradékot mutat.
 
-## ⛳ A RENDER-LEFEDETTSÉG KIMÉRVE: 84 = 77 + 6 + 1, hézag NINCS (2026-09-11, 291. kör, #684)
+## ⛳ A RENDER-LEFEDETTSÉG KIMÉRVE: 84 = 72 + 6 + 5 + 1 (2026-09-11, #684; #5296 helyesbítés)
 
 A #684 törzse kimondja az indítási feltételét: *„Csak akkor, ha a dev
 elvileg **minden effekttel kész**. … Ezért `blocked`."* A jegy címkéi
@@ -7264,30 +7267,31 @@ a kérdést, méréssel.
 | halmaz | darab | mi ez |
 |---|---:|---|
 | a `filterdesc`-regiszter **összes** tétele | **84** | `registry_data.RAW_FILTERS` |
-| ebből **van kezelőnk** | **77** | `chain._HANDLERS` + `_FRAME_EFFECTS` + `_NOOP_MARKERS` |
-| **kimondottan nem renderelendő** | **6** | `colorfix` · `debug` · `focalpixelate` · `picnikfocalpixelate` · `rainbow` · `whitept` |
-| maradék | **1** | `crop64` — a vágás, amit az `apply_filters` **külön** ágon alkalmaz, nem a `_HANDLERS`-en át |
+| ebből van `_HANDLERS`-kezelő | **72** | a `_FRAME_EFFECTS` az `_HANDLERS` részhalmaza |
+| külön no-op jelölő | **6** | `_NOOP_MARKERS` |
+| nincs PicasaPy-kezelője | **5** | `colorfix` · `debug` · `focalpixelate` · `rainbow` · `whitept` |
+| külön ágon kezelt | **1** | `crop64`, az `apply_filters` a `_HANDLERS`-en kívül alkalmazza |
 
-⚠️ **A kontroll stimmel: `77 + 6 + 1 = 84`.** ⇒ **Nincs olyan tétel, amihez
-se kezelő, se kimondott indok nem tartozik.**
+⚠️ **A darabszám stimmel: `72 + 6 + 5 + 1 = 84`.** Az öt kezelő nélküli
+névből csak a kisbetűs `focalpixelate` nem renderel az eredeti
+Picasában; a másik négy eredeti renderútját a #5296 vizsgálta meg. Ezért a
+korábbi „kimondottan nem renderelendő” megjelölés hibás volt.
 
 Módok szerint: `effect` **56** · `oneclick` **12** · `history` 7 ·
 `soft` 7 · `tool` 2.
 
-A hat „nem renderelendő" négy külön listából jön, mindegyik saját mért
-indokkal (`DEAD_LEGACY_OPS` 1 · `MEASURED_IDLE_OPS` 2 ·
-`MEASURED_NOT_RUNNING_OPS` 1 · `KNOWN_UNRENDERED_OPS` 4; az átfedés miatt
-hat egyedi név).
-
 *Forrás: `src/picasapy/render/registry_data.py` (`RAW_FILTERS`),
 `src/picasapy/render/chain.py` (`_HANDLERS`, `_FRAME_EFFECTS`,
-`_NOOP_MARKERS` és a négy kizáró lista).*
+`_NOOP_MARKERS`). Az eredeti Picasa viselkedéshez lásd alább a #5296
+bináris- és exportbizonyítékát.*
 
-### ⇒ A #684 indítási feltétele TELJESÜL
+### ⇒ A #684 indítási feltétele NEM TELJESÜL
 
-Modell **minden** effekt mögött van; a törzs „ezért `blocked`" mondata
-**elavult**. Ami hátravan, az nem hiányzó modell, hanem **hitelesítés** — és
-épp ezt dönti el egy golden-export.
+Nem állítható, hogy minden eredeti effekt mögött van PicasaPy-modell:
+`colorfix`, `debug`, `rainbow` és `whitept` renderútja hiányzik,
+`focalpixelate` pedig az eredeti exportban is inaktív. A modell-leltár
+teljességi feltétel tehát nem teljesül; az alábbi mérések és bináris
+bizonyítékok pontosítják a négy hiányzó effekt teendőjét.
 
 ### Amit az exportnak le KELL fednie — a fenti státusztáblából, tételesen
 
