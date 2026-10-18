@@ -710,3 +710,22 @@ A GitHubon a vizsgált eltérésekre futtatott négy csak-olvasási `gh issue li
 **Bizonyítottsági fok: feltételes az összesített táblára.** A teljes effektmátrix minden ΔE-je a fenti, egységes mérőúton készült; két független út nem futott végig mind a 73 csoportra. A két irányított eltérés külön megerősített: az `analyze_validation_kit.py` JPEG-normalizált útja 4,433 / 10,740-et, a `compare_render.py` nyers összevetése 4,442 / 10,748-at ad; a Picasa-export és a forrás eltérése is ugyanazt a nem-tétlen eredetit igazolja.
 
 **Cáfoló kísérlet:** a „hibás a `dir_brite` és a `dir_sharp` számítási magja” feltevést a filterparser megkerülésével próbáltam cáfolni. A két közvetlen effekt-hívás eredménye 0,187 / 0,384 ΔE-vel illeszkedik az eredeti exportra (a korábbi #3859 mérésével egyezően), miközben a mai láncértelmező üres műveletsort ad; ez a számítási mag hibáját cáfolja, és a lánc elfogadási és paraméterszám-szabályára szűkíti az okot. A cáfoló mérce mindkét irányban ugyanaz a CIE76 ΔE és 2,0 küszöb.
+
+## Kombinált effektláncok az eredetihez mérve (#5295, 2026-10-18)
+
+Módszer: tíz szabad licencű kép (`minta-kombinalt` készlet a Colab-végrehajtón, k01-k10), képenként hét, egymástól teljesen eltérő réteg (összesen 70 különböző tag). Az eredeti kimenet a Colab-on futó eredeti Picasa 3.9 exportja (job-194), a PicasaPy-oldal a `tools/golden/compare_render.py` renderje. A mérőszám a projekt kanonikus mércéje (`tools/golden/analyze_validation_kit.py`): a PicasaPy-render az eredeti export JPEG-beállításaival kódolva, ΔE átlag, küszöb 2,0, 6,0 fölött rossz. A nyers, JPEG-egyeztetés nélküli ΔE pontos renderre is kb. 2,7-et adhat, ezért az első mérés néhány „eltér” ítélete téves volt (#5301). A hibás réteget felezéssel kerestük: ugyanaz a tíz lánc az első 3, 5 és 6 rétegig (job-195, job-196, job-197). A láncok és a Colab-feladat: `docs/benchmarks/2026-10-18-5295-kombinalt/`.
+
+| kép | 3 réteg | 5 réteg | 6 réteg | 7 réteg | ítélet, a hibát okozó réteg | jegy |
+|---|---:|---:|---:|---:|---|---|
+| k01 | 1,28 | 1,32 | 0,91 | 4,59 | eltér: 7. `Vignette` (vágott, kiegyenesített, szépiás kép után) | #5300 |
+| k02 | 0,28 | 1,17 | 1,07 | 1,73 | egyezik | (#5301 lezárva) |
+| k03 | 0,00 | 0,00 | 0,00 | 24,34 | eltér: 7. `Polaroid`; az eredetiben a `dir_sat` és a `blur` után a Polaroid a háttérszínt mutatja a kép helyén (job-198..200) | #5299 |
+| k04 | 0,00 | 0,00 | 0,00 | 0,34 | egyezik | |
+| k05 | 0,00 | 0,00 | 0,00 | 0,00 | egyezik | |
+| k06 | 0,00 | 0,90 | 0,90 | 0,93 | egyezik | |
+| k07 | 0,00 | 0,00 | 0,23 | 0,58 | egyezik | |
+| k08 | 46,85 | 60,45 | 61,25 | 61,14 | eltér: 2. `rainbow`, amit a PicasaPy nem renderel | #5296, #5304 |
+| k09 | 3,58 | 1,98 | 1,88 | 1,88 | 7 rétegen egyezik; 3 rétegen eltér (`grain`, `ansel`, `triple2`), a szemcse zajmagja | |
+| k10 | 0,00 | 8,04 | 8,04 | 8,34 | eltér: 4. `colorfix`, amit a PicasaPy nem renderel | #5296 |
+
+Következtetés: a tíz kombinációból hat egyezik az eredetivel. Négy eltérés rétegre visszavezetve: két, eddig „nem renderelendő”-nek tartott tag (`rainbow`, `colorfix`; #5296), a Polaroid viselkedése bizonyos előző rétegek után (#5299), és a Vignette a vágott, kiegyenesített kép után (#5300).
