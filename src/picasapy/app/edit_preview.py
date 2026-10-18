@@ -231,11 +231,11 @@ class EditPreviewProvider(QQuickImageProvider):
         # lánc-prefix gyorsítótár (#140): élő csúszka-húzásnál csak az UTOLSÓ
         # op paramétere változik — az utolsó op ELŐTTI köztes eredményt
         # egyetlen rekeszben tároljuk (kulcs, prefix-lánc, forrás-referencia,
-        # prefix-kép, lánc-helyzet), így interakció közben csak az utolsó op
+        # prefix-kép, lánc-helyzet, alfaállapot), így interakció közben csak az utolsó op
         # fut újra. A lánc-helyzet (#3229) azért kell bele, mert a folytatás
-        # koordinátái az EREDETI képre vonatkoznak. Az utolsó mező a gyors
-        # élő-előnézet jelzője (#3846): a húzás közbeni gyors Kiegyenesítés
-        # köztes képe nem szolgálhatja ki az elengedés utáni natív renderelést.
+        # koordinátái az EREDETI képre vonatkoznak. Az 5. mező a gyors
+        # élő-előnézet jelzője (#3846), a 6. az alfaállapot (#5299): a húzás
+        # közbeni gyors Kiegyenesítés képe nem szolgálja ki a natív renderelést.
         self._prefix_cache: (
             tuple[
                 str,
@@ -244,6 +244,7 @@ class EditPreviewProvider(QQuickImageProvider):
                 np.ndarray,
                 LancHelyzet,
                 bool,
+                int,
             ]
             | None
         ) = None
@@ -840,12 +841,19 @@ class EditPreviewProvider(QQuickImageProvider):
         # átlagos eltérést mért a régi, halasztó ágon: a prefixbe került keret
         # után az utolsó op ARRA futott rá. A halasztás megszűnésével ez a
         # csapda is megszűnt — őr: `test_lanc_sorrend_elesben_3229.py`.)
-        prefix_array, prefix_helyzet = self._cached_prefix(key, source_array, ops[:-1])
+        prefix_array, prefix_helyzet, prefix_alpha = self._cached_prefix(
+            key, source_array, ops[:-1]
+        )
         # #3166 + #3229: a keret-elhelyezés a FORRÁS helyét mondja meg a
         # kimenetben, tehát a TELJES láncra értendő — a záró hívás ezért
         # megkapja a prefix koordináta-állapotát (`bejovo`), különben a
         # prefixben lefutott vágás/keret elveszne belőle.
-        jelentes = apply_filters(prefix_array, ops[-1:], bejovo=prefix_helyzet)
+        jelentes = apply_filters(
+            prefix_array,
+            ops[-1:],
+            bejovo=prefix_helyzet,
+            input_alpha=prefix_alpha,
+        )
         return jelentes.image, jelentes.content_placement, jelentes.helyzet
 
     def _render_cached(
@@ -863,7 +871,7 @@ class EditPreviewProvider(QQuickImageProvider):
         key: str,
         source_array: np.ndarray,
         prefix_ops: tuple[FilterOp, ...],
-    ) -> tuple[np.ndarray, LancHelyzet]:
+    ) -> tuple[np.ndarray, LancHelyzet, int]:
         """Az utolsó op ELŐTTI köztes eredmény, gyorsítótárból ha lehet.
 
         A találat feltétele: azonos fotó-kulcs, azonos prefix-lánc és
@@ -873,7 +881,8 @@ class EditPreviewProvider(QQuickImageProvider):
         A köztes KÉP mellett a lánc koordináta-állapotát is visszaadja
         (#3229): a folytatásnak tudnia kell, hogy a kapott kép már nem az
         eredeti — a `crop64` koordinátái arra vonatkoznak (#330), és a
-        keret-elhelyezés is a forrás helyét mondja meg a kimenetben."""
+        keret-elhelyezés is a forrás helyét mondja meg a kimenetben. Az
+        alfaállapot (#5299) a Polaroid folytatásához kell."""
         cached = self._prefix_cache
         gyors = gyors_elonezet_aktiv()
         if (
@@ -883,17 +892,19 @@ class EditPreviewProvider(QQuickImageProvider):
             and cached[2] is source_array
             and cached[5] == gyors
         ):
-            return cached[3], cached[4]
+            return cached[3], cached[4], cached[6]
         if prefix_ops:
             jelentes = apply_filters(source_array, prefix_ops)
             prefix_array = jelentes.image
             helyzet = jelentes.helyzet
+            alpha = jelentes.alpha
         else:
             prefix_array = source_array
             magassag, szelesseg = source_array.shape[:2]
             helyzet = LancHelyzet.kezdo(szelesseg, magassag)
-        self._prefix_cache = (key, prefix_ops, source_array, prefix_array, helyzet, gyors)
-        return prefix_array, helyzet
+            alpha = 255
+        self._prefix_cache = (key, prefix_ops, source_array, prefix_array, helyzet, gyors, alpha)
+        return prefix_array, helyzet, alpha
 
     def _cached_gpu_prefix(
         self,

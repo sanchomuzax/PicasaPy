@@ -396,13 +396,15 @@ def compose_drop_shadow(
     margin: int,
     fade: float = 0.0,
     pads: tuple[int, int, int, int] | None = None,
+    source_alpha: np.ndarray | None = None,
 ) -> np.ndarray:
     """A `DropShadow` kompozitálása MÁR KISZÁMOLT pixel-paraméterekkel
     (elmosás-sugár, eltolás, vászon-margó) — az önálló `draw_drop_shadow`
     és a Polaroid rögzített (pixelben megadott) árnyék-receptje közös magja
     (#1144). A hívó felel a `margin` helyes levezetéséért; a `pads`
     (bal, fent, jobb, lent) megadásakor a vászon aszimmetrikus, és a
-    `margin` figyelmen kívül marad.
+    `margin` figyelmen kívül marad. A Polaroid `source_alpha` maszkja (#5299)
+    az árnyékmaskot és a háttér fölötti forráskompozitot is vezérli.
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -418,7 +420,16 @@ def compose_drop_shadow(
     top = fent + offset_y
     left = bal + offset_x
     alfa = np.zeros((canvas_h, canvas_w), dtype=np.uint8)
-    alfa[top : top + height, left : left + width] = teglalap_alfa(fade_alpha(fade))
+    shadow_alpha = teglalap_alfa(fade_alpha(fade))
+    if source_alpha is None:
+        alfa[top : top + height, left : left + width] = shadow_alpha
+    else:
+        source_alpha = np.asarray(source_alpha)
+        if source_alpha.shape != (height, width) or source_alpha.dtype != np.uint8:
+            raise ValueError("source_alpha: uint8 HxW maszk kell a forrásképhez")
+        alfa[top : top + height, left : left + width] = (
+            source_alpha.astype(np.uint16) * shadow_alpha // 255
+        ).astype(np.uint8)
     alfa = nativ_blur_csatorna(alfa, blur_px, blur_px, _DROPSHADOW_QUALITY).astype(np.uint32)
 
     # a keverés (`0x008f48b0`) egész: `(S·α + D·(255 − α)) // 255`
@@ -427,7 +438,15 @@ def compose_drop_shadow(
     canvas = (arnyek * alfa[..., np.newaxis] + hatter * (255 - alfa[..., np.newaxis])) // 255
     canvas = canvas.astype(np.uint8)
 
-    canvas[fent : fent + height, bal : bal + width] = image
+    source_area = canvas[fent : fent + height, bal : bal + width]
+    if source_alpha is None:
+        source_area[:] = image
+    else:
+        alpha = source_alpha.astype(np.uint32)[..., np.newaxis]
+        source_area[:] = (
+            image.astype(np.uint32) * alpha
+            + source_area.astype(np.uint32) * (255 - alpha)
+        ) // 255
     return canvas
 
 

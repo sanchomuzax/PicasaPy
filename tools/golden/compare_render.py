@@ -372,6 +372,7 @@ def render_chain(
     A crop64 az `apply_filters` szabálya szerint a lánc végén, egyszer fut.
     """
     result = image
+    alpha = 255
     skipped: list[str] = []
     lut_ops: list[str] = []
     crop_op: FilterOp | None = None
@@ -390,10 +391,13 @@ def render_chain(
             if used_lut:
                 lut_ops.append(op.name)
             continue
-        result, op_skipped = apply_filters(result, (op,))
+        report = apply_filters(result, (op,), input_alpha=alpha)
+        result, op_skipped = report
+        alpha = report.alpha
         skipped.extend(op_skipped)
     if crop_op is not None:
-        result, _ = apply_filters(result, (crop_op,))
+        report = apply_filters(result, (crop_op,), input_alpha=alpha)
+        result = report.image
     return result, tuple(skipped), tuple(lut_ops)
 
 
