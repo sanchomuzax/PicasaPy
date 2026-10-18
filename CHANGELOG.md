@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.138] - 2026-10-18
+
+- A program felületén a saját neve PicasaPy, nem Picasa (#5294).
+
 ## [0.9.137] - 2026-10-18
 
 - A Mozgófilm-készítő filmcsíkján a bélyegek a mércéhez igazodnak, a bekapcsolt 1:1 gomb szürke, és az 1:1 választása megmarad indítások között (#5288).
