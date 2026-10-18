@@ -2604,8 +2604,11 @@ Vagyis a `tint` **hat lépésből** áll:
 | 5 | telítettségfüggő gamma-LUT, kitevő `1/k` | `0x00aa40a0` |
 | 6 | szorzó keverés, `max`-ra normálva | `0x009db4f0` |
 
-Ugyanez érvényes a **`rainbow`**-ra és az **`autocontrast`**-ra is (mindkettő
-hívja a `0x009db610`-et) — nálunk egyik sincs renderelve.
+Ugyanez a szinthúzó segédfüggvény fut le a **`rainbow`**-nál és az
+**`autocontrast`**-nál is (mindkettő hívja a `0x009db610`-et), de
+a paraméterük eltér: a `rainbow` `-1,0f` sentinelje 0,30-as vágópont-keverést,
+az `autocontrast` `1,0f` értéke 1,0-t ad. A PicasaPy az
+`autocontrast`-ot rendereli; a `rainbow`-ot még nem.
 
 *Bizonyítottsági fok: megerősített.*
 
@@ -7252,7 +7255,7 @@ Ugyanígy tömörítve a min ág ΔE-je 0,034. Mindkét ágon a medián 0, és a
 
 **Módszertani következmény:** a Picasa exportja nem 95-ös minőségű (az első luma-kvantáló sor `2, 2, 1, 2, 3, 6, 7, 9`), és a szemcsés, nagyfrekvenciás képen a különbség számít. A zajszintet ezért a **Picasa-export saját táblájával** kell mérni (`PIL`: `Image.open(export).quantization` és `JpegImagePlugin.get_sampling`), vagy még jobb: a mi kimenetünket ugyanazzal a táblával tömörítve kell a Picasához hasonlítani. A 95-ös zajszint a szemcsés effekteknél (Holga, NightVision, grain) alulbecsül, és hamis maradékot mutat.
 
-## ⛳ A RENDER-LEFEDETTSÉG KIMÉRVE: 84 = 77 + 6 + 1, hézag NINCS (2026-09-11, 291. kör, #684)
+## ⛳ A RENDER-LEFEDETTSÉG KIMÉRVE: 84 = 72 + 6 + 5 + 1 (2026-09-11, #684; #5296 helyesbítés)
 
 A #684 törzse kimondja az indítási feltételét: *„Csak akkor, ha a dev
 elvileg **minden effekttel kész**. … Ezért `blocked`."* A jegy címkéi
@@ -7264,30 +7267,31 @@ a kérdést, méréssel.
 | halmaz | darab | mi ez |
 |---|---:|---|
 | a `filterdesc`-regiszter **összes** tétele | **84** | `registry_data.RAW_FILTERS` |
-| ebből **van kezelőnk** | **77** | `chain._HANDLERS` + `_FRAME_EFFECTS` + `_NOOP_MARKERS` |
-| **kimondottan nem renderelendő** | **6** | `colorfix` · `debug` · `focalpixelate` · `picnikfocalpixelate` · `rainbow` · `whitept` |
-| maradék | **1** | `crop64` — a vágás, amit az `apply_filters` **külön** ágon alkalmaz, nem a `_HANDLERS`-en át |
+| ebből van `_HANDLERS`-kezelő | **72** | a `_FRAME_EFFECTS` az `_HANDLERS` részhalmaza |
+| külön no-op jelölő | **6** | `_NOOP_MARKERS` |
+| nincs PicasaPy-kezelője | **5** | `colorfix` · `debug` · `focalpixelate` · `rainbow` · `whitept` |
+| külön ágon kezelt | **1** | `crop64`, az `apply_filters` a `_HANDLERS`-en kívül alkalmazza |
 
-⚠️ **A kontroll stimmel: `77 + 6 + 1 = 84`.** ⇒ **Nincs olyan tétel, amihez
-se kezelő, se kimondott indok nem tartozik.**
+⚠️ **A darabszám stimmel: `72 + 6 + 5 + 1 = 84`.** Az öt kezelő nélküli
+névből csak a kisbetűs `focalpixelate` nem renderel az eredeti
+Picasában; a másik négy eredeti renderútját a #5296 vizsgálta meg. Ezért a
+korábbi „kimondottan nem renderelendő” megjelölés hibás volt.
 
 Módok szerint: `effect` **56** · `oneclick` **12** · `history` 7 ·
 `soft` 7 · `tool` 2.
 
-A hat „nem renderelendő" négy külön listából jön, mindegyik saját mért
-indokkal (`DEAD_LEGACY_OPS` 1 · `MEASURED_IDLE_OPS` 2 ·
-`MEASURED_NOT_RUNNING_OPS` 1 · `KNOWN_UNRENDERED_OPS` 4; az átfedés miatt
-hat egyedi név).
-
 *Forrás: `src/picasapy/render/registry_data.py` (`RAW_FILTERS`),
 `src/picasapy/render/chain.py` (`_HANDLERS`, `_FRAME_EFFECTS`,
-`_NOOP_MARKERS` és a négy kizáró lista).*
+`_NOOP_MARKERS`). Az eredeti Picasa viselkedéshez lásd alább a #5296
+bináris- és exportbizonyítékát.*
 
-### ⇒ A #684 indítási feltétele TELJESÜL
+### ⇒ A #684 indítási feltétele NEM TELJESÜL
 
-Modell **minden** effekt mögött van; a törzs „ezért `blocked`" mondata
-**elavult**. Ami hátravan, az nem hiányzó modell, hanem **hitelesítés** — és
-épp ezt dönti el egy golden-export.
+Nem állítható, hogy minden eredeti effekt mögött van PicasaPy-modell:
+`colorfix`, `debug`, `rainbow` és `whitept` renderútja hiányzik,
+`focalpixelate` pedig az eredeti exportban is inaktív. A modell-leltár
+teljességi feltétel tehát nem teljesül; az alábbi mérések és bináris
+bizonyítékok pontosítják a négy hiányzó effekt teendőjét.
 
 ### Amit az exportnak le KELL fednie — a fenti státusztáblából, tételesen
 
@@ -8519,3 +8523,136 @@ Fejlesztés: #3884.
 `min` **0,212** (mindkettő `JO`), `max` 0,121. A csúszka húzása közbeni élő
 előnézet (`gyors_elonezet`) ugyanazokkal a mintaindexekkel, de OpenCV-keveréssel,
 sávhiba nélkül fut (0,741 / 1,994); mentés, export és bélyegkép a natív úton.
+
+## #5296, Az eredeti exportban renderelt és nem renderelt tagok (2026-10-18)
+
+### A lánc útja
+
+Az eredeti láncvégrehajtó `FUN_00907f30` kiolvassa a tag nevét, és csak
+a `redeye`, `crop64`, `rot`, `save`, `retouch` és
+`picnik` neveket hagyja ki (`0x009080a4-0x009081ce`). A többi nevet a
+`0x008f7140` diszpécserhez küldi (`0x00908221`). A hat vizsgált tag
+egyike sincs a kihagyási listán. A natív filtertábla gyára
+(`0x008fa16d`) 49 darab, 16 bájtos rekordot jár be a
+`0x00cd0658` címtől; a callback címét a rekord `+4` mezőjéből
+adja át. A `CGenericFilter` render-slotja `0x008f6e40`, amely a
+`+0x0c` callbacket hívja. A tábla teljes bejárása pozitív vizsgálat,
+nem az xref-index negatív találatára épül.
+
+### A hat tag ítélete
+
+| tag | eredeti callback és munkafüggvény | renderel az eredeti export? | bizonyítottság és mérés |
+|---|---|---|---|
+| `colorfix` | natív sor #17: rekord `0x00cd0758`, callback `0x008f9190`; helper `0x008f9c60` a pipettaszín / hőmérséklet alapján hívja a mátrixműveletet `0x0090eda0`, illetve a középtónus-hőmérséklet workerét `0x0090ea10` | **Igen, ha aktív korrekciós paramétert kap.** A nemsemleges `+0x40` pipettaszín a mátrixot, a nem nulla `+0x2c` hőmérséklet a hőmérsékleti workert indítja; a 3×3-as mátrix alkalmazóképlete a lap „Az `autocolor` ALKALMAZÓJA” szakaszában szerepel. | **feltételes**: a callbackág binárisan igazolt. A 684-es `colorfix__alap` export bitre egyezik a tétlen kontrollal; aktív pipettaszínű és hőmérsékletű golden-mérés `NINCS MEG`. |
+| `debug` | natív sor #1: rekord `0x00cd0658`, callback `0x008f8360`, helper `0x008f9bf0`, képi worker `0x00aa1840` | **Igen.** A callback a vörös `0xffff0000` jelölő színét, méretét és képpontskálázott helyét továbbítja a workernek. | **feltételes**: bináris callbackút igazolt; 684-es `debug` golden-export `NINCS MEG`, a jelölő perem-/alfa-profiljának pontos képlete `NINCS MEG`. |
+| `focalpixelate` | a kisbetűs név eljut a diszpécserig, de a teljes 49 rekordos táblában nincs ilyen natív rekord vagy callback | **Nem.** | **megerősített**: a teljes natív tábla bejárása mellett a 684-es `min`, `alap` és `max` export dekódolt RGB-képe egymással és a tétlen kontrollokkal bitre azonos. |
+| `picnikfocalpixelate` / `PicnikFocalPixelate` | nem a 49-es natív táblából jön; Glimmer factory `0x008f9fe0`, worker `0x008f9a60`, leírása `filterdesc.xml` | **Igen.** A körkörös alfa-maszk után alacsony felbontású `W/Impact × H/Impact` átméretezés, majd teljes méretű legközelebbi szomszédos visszaméretezés fut. | **megerősített**: a descriptor és a bináris műveletgráf egyezik a 684-es eredeti exporttal; `min` és `alap` eltér a `Fade=100` kontrolltól (átlagos abszolút RGB-eltérés 2,174615, illetve 6,835422; 187819, illetve 366698 eltérő pixel a 614400-ból). |
+| `rainbow` | natív sor #37: rekord `0x00cd0898`, callback `0x008f92d0`; színező worker `0x009db4f0` | **Igen.** Hat vízszintes színsávot ír. Az algoritmus alább. | **megerősített a renderelés tényére**: a callbackút és a `k08` eredeti exportjának sáv-/határmérése egyezik; az algoritmuskód 3.9-es verzióazonossága nyitott. |
+| `whitept` | natív sor #20: rekord `0x00cd0788`, callback `0x008f9270`; nemsemleges pipettaszínnél a `0x0090eda0` 3×3-as mátrix workert hívja (alkalmazóképlet: „Az `autocolor` ALKALMAZÓJA”) | **Igen, ha a kiválasztott fehérpont nem semleges.** | **feltételes**: a callbackág binárisan igazolt. A 684-es `whitept__alap` szürke `0xffc0c0c0` beállítása tétlen; aktív, nemsemleges fehérponttal végzett exportmérés `NINCS MEG`. |
+
+A hat névből tehát egyedül a kisbetűs `focalpixelate` bizonyítottan
+nem renderelődik. A `PicnikFocalPixelate` descriptor-alapú renderútja már
+létezik; a `colorfix`, `debug`, `rainbow` és `whitept`
+PicasaPy-modellje hiányzik vagy nincs az eredetivel egyezően modellezve.
+
+### A `rainbow` algoritmusa
+
+A callback sorrendje a `0x008f92d0` körüli hívásokból:
+
+1. Előkészítés: `0x009aabf0`.
+2. Vágópontok szinthúzása: `0x009db610`, a `0x008f9323-0x008f9338`
+   hívóhelyen átadott `-1,0f` sentinelből a bináris `0xc7dcc8`
+   konstansát (float32 `0,3000000119`) veszi. Ez **30%-os vágópont-keverés**,
+   nem a kimeneti kép átlátszatlansága: `lo' = lo + 0,30·(loMin - lo)`,
+   `hi' = hi + 0,30·(hiMax - hi)`. A `loMin` a csatornák alsó
+   vágópontjainak közös minimuma, a `hiMax` a felsők közös maximuma.
+   A `CarefulEnhance` állapota a lépés `0,5`-ös skáláját és
+   `252` fehérpontját választja a normál `1,0` és `255` helyett.
+3. Színmegőrzés / telítetlenítés: a tag második paramétere `p`,
+   az `0x008f9352-0x008f9364` címen egészre csonkolva. Ha `p=256`,
+   a lépés kimarad; egyébként `w=256-p`, és a
+   `0x009a9550` worker (`0x008f9392` hívóhely) minden
+   `C` csatornán alkalmazza:
+   `Y=(77R+151G+28B)>>8`,
+   `C'=clamp(C+(((Y-C)·w)>>8),0,255)`. A
+   `rainbow=1,0.000000` második paramétere `p=0`, ezért előbb
+   szürkeárnyalatosít; a `p=256` teljes színmegőrzést jelent.
+4. Hat vízszintes sávra osztás: a magasságot a kép `[ebx+0x0c]`
+   mezőjéből olvassa (`0x008f9397-0x008f939a`), hatra osztja
+   (`0xcf39f0`), az eredményt float32-ként tartja meg
+   (`0x008f93d7-0x008f93df`). Az `i`-edik sáv határa
+   `FISTP(i·H/6)` (`0x008f9500-0x008f950c` és
+   `0x008f9527-0x008f9533`); az x87 kerekítési módját ezek előtt
+   nem állítja át. Az eredeti `H=853` mintán mért határok
+   `[0,142,284,426,569,711,853]`, a mérés nearest-even kerekítéssel
+   egyezik. A `0x009db4f0` sorciklusa `[start,end)` tartományú.
+5. Sávonkénti paletta, a bináris RGB-konstansokból:
+
+   | sáv | RGB |
+   |---:|---|
+   | 1 | `(236, 66, 66)`, piros |
+   | 2 | `(236, 151, 66)`, narancs |
+   | 3 | `(236, 236, 66)`, sárga |
+   | 4 | `(63, 199, 63)`, zöld |
+   | 5 | `(66, 66, 236)`, kék |
+   | 6 | `(127, 59, 161)`, lila |
+
+   A palettaszavak címei: `0x00ec4242`, `0x00ec9742`,
+   `0x00ecec42`, `0x003fc73f`, `0x004242ec`,
+   `0x007f3ba1`.
+6. Szorzó-keverés: minden kimeneti csatorna a szürke bemenet és a palettaszín
+   szorzata, a paletta legnagyobb csatornájával normálva:
+   `M=max(paletteR,paletteG,paletteB)`,
+   `outC=min(255,floor(inC·paletteC/M))`. A worker
+   `0x009db4f0` 16.16-os szorzás után lefelé kerekít és 255-re vág.
+   Az első sáv színezése előtt a callback szükség szerint gamma-LUT-ot kér
+   (`0x00aa40a0`): `k=((max(tR,tG,tB)·255)/((tR+tG+tB)·85)-1)·0,5+1`,
+   a LUT képlete `lroundf(powf(i/255.0f,1.0f/k)·255.0f)`. A kapcsolás és `k`
+   számítása a callback `0x008f93e3-0x008f94e0` tartományában van.
+
+A `k08` eredeti exportja `1280×853` méretű; a mentett láncban a
+`rainbow=1,0.000000` után `Sixties` is fut. A mintában a
+hat színsáv és a váltások `142, 284, 426, 569, 711` sorai mérhetők.
+Mivel a `Sixties` később módosítja a színeket, ez a kép a sávszámot,
+sorrendet és határokat ellenőrzi, a rainbow köztes palettapixeleit nem
+izolálja.
+
+**Verzióhatár:** a diszasszemblált bináris a Picasa 3.7-es példány
+(`copy_Picasa_3_7/Picasa3/Picasa3.exe`); a `k08` mérőkép a
+Picasa 3.9 exportja (job-194). Ezért a 3.9-es képen a
+`rainbow` renderelése közvetlenül mért tény, a pontos algoritmuskód
+címei viszont a 3.7-es binárisra vonatkoznak. A két verzió effektkódjának
+azonossága `NINCS MEG`.
+
+### Független ellenőrzés, cáfoló próba és bizonyítottság
+
+**A út, bináris:** láncvégrehajtó kihagyási listája és diszpécserhívása;
+49 natív rekord teljes bejárása; a callbackek és workerek utasításszintű
+olvasása; a `rainbow` konstansai és képletei.
+
+**B út, ettől független exportvizsgálat:** eredeti `k08` rainbow-kép
+sáv-/határmérése; a `PicnikFocalPixelate` leíró gráfjának összevetése a
+684-es `min/alap/max` exportokkal; valamint a
+`colorfix`/`whitept` tétlen kontrollok és
+`focalpixelate` paraméterváltozatok pixelazonossága. Ahol a mérés nem
+aktiválta a bináris feltételt (`colorfix`, `whitept`), ott az
+eredmény feltételes marad; a `debug`-hoz export nincs.
+
+**Cáfoló próba:** megvizsgáltuk a korábbi feltevést, hogy a
+`rainbow` nem fut, mert nincs kezelőnk vagy ki van zárva a láncból.
+Ezt cáfolja, hogy nincs a futtató hat kihagyott neve között, natív rekordja
+és callbackje van, a k08 exportban pedig a hat várt sáv látszik.
+A határsorokra a truncálás alternatívája `[0,142,284,426,568,710,853]`-at
+jósolna; ez eltér a mért 569. és 711. határtól. A worker
+`[start,end)` ciklusa nem ad off-by-one magyarázatot az eltérésre.
+Az ambient x87 kerekítési mód futásidejű értéke binárisból önmagában
+`NINCS MEG`; a mért határok nearest-even viselkedést igazolnak erre
+a mintára.
+
+**Összesített bizonyítottság: feltételes.** A `rainbow`
+3.9-es exportban való renderelését a kimenet közvetlenül és a bináris
+callbackút együttesen megerősíti; a pontos 3.9-es algoritmuskód egyezése
+nyitott. A `PicnikFocalPixelate` és `focalpixelate` ítélete is
+két független úttal megerősített. A `colorfix` és `whitept` aktív ága, illetve
+a `debug` renderútja binárisan igazolt, de nincs hozzájuk független
+aktív golden-mérés; ezek feltételes ítélete nem minősül megerősítettnek.
