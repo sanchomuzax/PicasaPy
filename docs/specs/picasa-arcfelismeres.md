@@ -2334,10 +2334,12 @@ azonosító közvetlenül jelzi a bizonyítékot.
 **Források:** a korábban feldolgozott bináris- és `.tre`-eredmények, valamint
 a `picasa-colab-jobs` job-64, job-66, job-162, job-163, job-167, job-175,
 job-177, job-179, job-180, job-183 és job-207 leírásai; a job-180, job-183 és job-207
-képernyőképeit közvetlenül megnéztük. A job-208 (J1), a job-209 és job-210 (J4) és a
-job-213 (J3-a és J5 felmérő) felvételeit a leírásuk alapján dolgoztuk fel; ezek
-képkockáit ebben a körben nem néztük meg, a képkocka-számok a leírásból valók.
-A job-66 a Név nélküliek csempe-mezőjének útja: nem külön névadási felület.
+képernyőképeit közvetlenül megnéztük. A job-208 (J1) és job-209 képkockáit nem
+néztük meg. A munkafában kapott `j4_*.png` képeket a job-210-hez, a
+`kepernyo__29.png` képet a job-213 29. képéhez tartozóként közvetlenül
+megnéztük; a hozzárendelés a feladatleírásból származik. Más képkockákról itt
+nem teszünk állítást. A job-66 a Név nélküliek csempe-mezőjének útja: nem
+külön névadási felület.
 
 | Téma | Eredeti | Nálunk | Teendő, kész ha |
 |---|---|---|---|
@@ -2365,6 +2367,77 @@ A job-66 a Név nélküliek csempe-mezőjének útja: nem külön névadási fel
 *Bizonyítottsági fok: **megerősített, élő méréssel** a Név nélküliek nézet címére, útmutatójára, fejlécgombjaira és alapállapotára (job-162; job-163, 4. és 8. kép); az első megnyitás üdvözlőablakára (job-162, 12. kép; a teljes szöveg job-207, 8. kép); a csempe saját mezőjére és az új név People-ablak útjára (job-163, 11-19. kép); a javaslat megjelenésére, a meglévő névhez tartozó Choose ablakra és az Escape-re (job-167, 22., 26-34. kép); a Choose utáni állapotra (job-179); a kibontott és a csoportosított nézet fejlécére és csempéire (job-180, job-183); az új név OK utáni állapotára és `.picasa.ini` soraira (job-66; job-167, 18. kép); valamint az X mellőzési útjára (job-64, „Colab EN 36”); a mellőzési megerősítő ablak szövegére, jelölőnégyzetére és gombjaira, a mellőzött nézet címére, darabszámára, feliratára és jobb felső gombjára (job-209, job-210); a kibontott és csoportosított nézet fejlécére és csempéire (job-208). **NINCS MEG:** a csempék pontos pixelmérete, sorrendje és csoporthatárai, a javaslatelem kattintása, a Ctrl/Shift/húzás kijelölési szabálya, és a mellőzött csempe visszahozása (a „Back to Unnamed” utáni csempe neve; külön felvétel). A „Learn more...” cím a 28.2 szerint megvan; a csempe-mező Escape-je a job-167 szerint igazolt (lásd a táblázatot).*
 
 **Helyesbítés:** a korábbi „Név nélküliek névmezője inline panelmező” következtetés kizárólag a jobb fiók fejlécmezőjére (`header_editbox`) vonatkozik. A Név nélküliek csempéjének külön „Add a name” mezőjét a job-163 és a job-66 mutatja; a job-66 nem másik felületi útvonal.
+
+### 19.2 #5337: a bal oldali People-lista és a `peoplepanel.tre` külön felület
+
+**Következtetés.** A `peoplepanel.tre` nem a bal sáv albumlistáját írja le:
+az eredeti `rightdrawerpanel/peoplepanel` gyermeke (`rightdrawerpanel.tre:48-53`),
+és a jelenlegi `PeoplePanel.qml` is kifejezetten a jobb oldali fiók Emberek-panelje
+(5-10. sor). A bal oldali People gyűjtemény a `FolderPane.qml` része; az eredeti
+`thumbui.tre` itt csak a `people_toggle` kapcsolót rögzíti (279-281. sor), a
+listát nem. Ez a hatókör-eltérés a `peoplepanel.tre` és a megadott felvételek
+közti látszólagos ellentmondást feloldja.
+
+**Módszer és forrásjelölés.** A `.tre`-sorok, szülők, horgonyok és módváltások
+az eredeti `peoplepanel.tre` 8-82. soraiból valók. A méretek és tervezői
+téglalapok a `Picasa3.exe` `runtime/respack.yt` rekordjai; az alábbi táblában
+szereplő rekordeltolások decimális fájleltolások. A tervezői téglalap nem írja
+felül a `.tre` horgonyát. A `m_hidden` makró kezdeti `setvisible 0` állapotot
+ad (`macros.tre:112-113`). A szövegkulcsok a `peoplepanel_text.tre`-ből valók.
+Az `.eredeti5337` bemeneti fájlok egyeznek a privát referencia-korpusz azonos
+fájljaival. A „NINCS MEG” azt jelenti, hogy a megnevezett forrásból az érték
+nem szerezhető meg.
+
+| Eredeti (`peoplepanel.tre`, szöveg és erőforrás) | Nálunk (`PeoplePanel.qml`, `FolderPane.qml`) | Teendő |
+|---|---|---|
+| `base`: szülő `root`, `m_scaleXY`; `rect: base` = (0,0)-(276,360), 276x360, respack 2623621. A kezdeti láthatóságot a `.tre` nem adja meg. | A `PeoplePanel.qml` gyökérpanelje adja a jobb oldali panelt. A bal oldali lista külön `FolderPane.qml`-rész. | A bal sávhoz nem cél: másik panel gyökere. A jobb panel teljes méret-összevetése külön feladat. |
+| `status_label`: szülő `base`, `m_displayfont14`, `m_offsetLT`; 213x14, respack 2624781; `Label peoplepanel/status_label` = „Select a folder to display faces” (`peoplepanel_text.tre:4-5`). A kezdeti láthatóságot és a módváltást a `.tre` nem adja meg. | `PeoplePanel.qml:281-289`, azonos felirat, feltételesen látszik `needsFolderSelection` esetén. | A felirat egyezik; a kezdeti és módváltási láthatóságot a jobb fiókról készült egyező felvétel nélkül NINCS MEG. |
+| `instructions`: szülő `peoplelist`; bal+16, jobb-16, felül 0, alul-16; 221x86, respack 2623655. `Text1` és `Text2` teljes üdvözlőszöveg, `Text3` üres Név nélküliek, `Text4` név szerinti album, `Text5` kijelölt fotók (`peoplepanel_text.tre:16-29`). A kezdeti láthatóságot és a módváltást a `.tre` nem adja meg. | `PeoplePanel.qml:340-386` egy `peoplePanelEmptyText` objektummal választja az állapotok szövegét. A teljes első szövegben „PicasaPy” áll, az eredetiben „Picasa”. | A szöveg- és állapotválasztás itt különbözik a horgonyvizsgálattól; a jobb panel módváltásának és horgonyának teljes összevetése a javasolt R2/R3 fejlesztői jegy része. |
+| `peoplelist`: szülő `base`, `m_offsetT`, `m_scaleX`, alsó korlát `PEOPLELISTBOTTOM=0`; 260x322, respack 2623638. Kezdeti láthatóságot a `.tre` nem jelöl; a `manual_add` elrejti, a `manual_cancel` újra megjeleníti. | `PeoplePanel.qml:299-338` két `Repeater`-rel jeleníti meg a személyeket és az itt előforduló névtelen arcokat, `PeoplePanelRow.qml` soraival. | Szemantikai megfelelés van, de külön listakeret és `.tre`-horgony nincs; a jobb panel R2/R3 összevetése külön jegy. |
+| `manual_add`: szülő `base`, középre, alul-4, kezdetben rejtett; 259x21, respack 2623672. „Add a person manually” (`peoplepanel_text.tre:10-11`); kattintás megjeleníti a `manual_frame`-et, elrejti a `status_label`, `peoplelist` és saját magát, megjeleníti az `editpanel/addfaceselection`-t (`peoplepanel.tre:24-32`). | `PeoplePanel.qml:390-399`, mérete 259x21 és középre igazított, de `visible: !manualAddActive`, tehát a forrásban a kezdeti rejtett állapot nem jelenik meg közvetlenül. | A láthatóság eltérését jobb fiókban kell ellenőrizni; külön R2/R3 fejlesztői jegy. |
+| `manual_frame`: szülő `base`, felül+32, alul-32, bal+16, jobb-16, kezdetben rejtett; 239x145, respack 2623689. | `PeoplePanel.qml:402-412` ugyanezt a tervezői méretet és kezdő koordinátát használja (`x=18`, `y=105`), láthatósága `manualAddActive`-től függ. | A fix koordinátás QML-elhelyezés és a `.tre` peremhorgonyzás nem azonos; külön R2/R3 fejlesztői jegy. |
+| `manual_instructions`: szülő `manual_frame`, bal+12, jobb-12, felül+12; 221x86, respack 2623706. A saját kezdeti láthatóságát a `.tre` nem adja meg; a szülőkeret kezdetben rejtett. | `PeoplePanel.qml:413-431`, a QML koordinátái a kereten belül `x=9`, `y=6`, mérete 221x86. | Bizonyított forráseltérés: `.tre` horgonya +12/+12, QML koordinátája 9/6. Külön R2/R3 fejlesztői jegy; a mérőfelvétel tisztázza a futásidejű eredetit. |
+| `manual_cancel`: szülő `manual_frame`, középre, `YConstraint 0,0,285`; a Cancel felirat (`peoplepanel_text.tre:13-14`), 98x28, respack 2623723. Kezdetben a rejtett szülővel rejtett; a gomb elrejti a keretet és az `editpanel/addfaceselection`-t, visszakapcsolja a `status_label`, `peoplelist` és `manual_add` elemeket, Escape-kezelő is van (`peoplepanel.tre:38-46`). | `PeoplePanel.qml:433-441`, 98x28-as Cancel gomb a kereten belül, `x=71`, `y=105`. | A `.tre` függőleges korlátja és a QML koordinátája eltér; a felvételek nem mutatnak jobb fiókot. Külön R2/R3 fejlesztői jegy. |
+| `cancel_icon`: szülő `manual_cancel`, `m_offsetRT`; 15x15, respack 2623740. Kezdetben a szülővel rejtett. | A jelenlegi Cancel gomb szöveges, külön ikonobjektum nem szerepel a `PeoplePanel.qml`-ben. | Bizonyított szerkezeti eltérés; külön R2/R3 fejlesztői jegy. |
+| `ignore-label`: szülő `ignore`, `m_buttonfontC`; feliratkulcs „Ignore” (`peoplepanel_text.tre:7-8`); saját respack-méret NINCS MEG, külön réteg-rect nincs. A `.tre` nem ad meg saját láthatóságot; kezdetben rejtett szülő alatt van. | `PeoplePanelRow.qml:239-271` az X vezérlőt „Ignore person” buboréksúgóval mutatja, külön „Ignore” feliratobjektum nélkül. | A szöveges gyermek és X-vezérlő megfeleltetése nyitott. A méret megszerzési útja: eredeti jobb fiók felvétele azonosított skálán, a szülővel együtt. |
+| `ignore`: szülő `base`, `m_offsetLT`, `m_buttontypecolor`, kezdetben rejtett; 163x17, respack 2624730. Későbbi megjelenítési feltétele NINCS MEG a `.tre`-ből. | `PeoplePanelRow.qml:239-271` 13x13-as X-et tesz az arckép jobb felső sarkára; az elem látható, csak a kattintás tiltott megnevezett sornál. | Eltér a szülő, méret és kezdeti láthatóság; külön R2/R3 fejlesztői jegy. |
+| `addname`: szülő `base`, `m_buttontypecolor`, `m_offsetLB`, kezdetben rejtett; 163x20, respack 2624713; szövege „Add a name” (`peoplepanel_text.tre:1-2`). Későbbi megjelenítési feltétele NINCS MEG a `.tre`-ből. | `PeoplePanelRow.qml:149-167` az arcnév mezőt a soron belül mutatja, 22 magas `TextField`-ként, névtelen arcnál. | Szülő, méret, vezérlőtípus és kezdeti láthatóság eltér; külön R2/R3 fejlesztői jegy. |
+| `suggestion_yes` és `suggestion_no`: mindkettő szülő `base`, `m_offsetLB`, kezdetben rejtett; 27x22, respack 2624747 és 2624764. Későbbi megjelenítési feltétel NINCS MEG a `.tre`-ből. | `PeoplePanelRow.qml:169-223` azonos 27x22-es gombokat rajzol a soron; csak névtelen arcnál és nem üres javaslatnál látszanak. | A méret egyezik, a szülő/horgony eltér; az eredeti megjelenítési feltétel NINCS MEG a `.tre`-ből. Külön R2/R3 fejlesztői jegy. |
+
+#### A bal oldali People gyűjtemény a felvételeken
+
+Az alábbiak nem `peoplepanel.tre`-elemek. A `j4_ignored_nezet.png`,
+`j4_megerosites.png`, `j4_mellozes_utan.png` és `kepernyo__29.png` képeken
+látható bal lista a `FolderPane.qml` megfelelője. A képfájlokat 1280x1024
+felbontásban kaptuk. A képernyőpixelek és a Qt logikai mértékegységek közti
+skálázás NINCS MEG, ezért a két oszlop méretadata nem tekinthető közvetlenül
+azonos egységű összevetésnek.
+
+| Eredeti (felvétel) | Nálunk (`FolderPane.qml`) | Teendő |
+|---|---|---|
+| People fejléc: `People (1)` a job-210-hez adott Ignored képen, `People (2)` a job-213 29. képén. | 592-603. sor: a fejléc `peopleModel.length` + a látható Név nélküliek sor számát mutatja; a `ignoredFaceCount` nincs beleszámítva. | A job-210 Ignored állapotában a látható `Ignored (1)` sor mellett `People (1)` látszik. A jelenlegi képlet ezt a sort nem számolja; külön fejlesztői jegy. |
+| Név nélküliek sor: `Unnamed (6)` a job-210-hez adott megerősítési képen, `Unnamed (4)` a job-213 képen. Kijelölt sáv pixelmérése: 40 képpont magas. | 605-654. sor: `Unnamed (N)`, látható, ha a gyűjtemény nyitott és van arc vagy keresés folyik; QML-sor 22 logikai egység, ikon 18x18. | A felirat és a feltételes megjelenés egyezik. Méretpontos eltérés a DPR/Qt-skála mérése nélkül NINCS MEG. |
+| Személy-sor: `Teszt Elek (2)` a job-213 29. képen; kijelölt sor pixelmérése 38 képpont. | 656-719. sor: `modelData.name (count)`, QML-sor 22 logikai egység, név nélküli bélyeg 10x10, képbélyeg 18x18. | A mért pixel és a QML-logikai méret közti átváltás NINCS MEG; egyező felbontású PicasaPy-kép kell az összehasonlításhoz. |
+| Mellőzött sor: `Ignored (1)` a job-210-hez adott Ignored képen; kijelölt sáv pixelmérése 40 képpont, People fejlécszám 1. | 721-766. sor: `Ignored people (N)`, QML-sor 22 logikai egység; a számláló nem része a People fejléc képletének. | Két közvetlen eltérés: a felirat és a csoportdarabszám. Külön fejlesztői jegy, az Eredeti sort és kész feltételeket lásd a javasolt törzsben. |
+
+**Két független út és cáfolás.** A út: a teljes `peoplepanel.tre` leltára,
+a szülőlánc a `rightdrawerpanel.tre`-ben, valamint a `thumbui.tre` kapcsolója
+elkülöníti a jobb oldali fiókot a bal lista-vezérlőjétől. B út: a megadott
+képek bal sávja, a `FolderPane.qml` saját People-gyűjteménye és a
+`ui-lefedettseg.md` `peoplepanel`/`thumbui` sora ugyanazt a különválasztást
+mutatja. A két út egyezik. Cáfoló feltevésként azt vizsgáltuk, hogy a bal
+oldali `Unnamed`, `Ignored` és személy sorok a `.tre` elemei. A 14 elemű
+`.tre` leltárban nincs ilyen sor vagy feliratkulcs, a szülője a jobb fiók,
+a képek pedig a bal oldali albumlistát mutatják; a feltevés megbukott.
+Ellenőrzésként a respack `peoplepanel` rétege (offset 3095476) és a bal
+oldali `thumbui/people_toggle` (`thumbui.tre:279-281`) is más-más felületet
+azonosít. A cáfolatot ugyanezzel a forráskritériummal ellenőriztük.
+
+**Fejlesztési következmény.** A `.tre`-ből hiányzó bal oldali listát nem
+szabad belőle rekonstruálni. A bal lista két igazolt eltérése a `FolderPane`
+felirata és számlálója; a jobb oldali panel strukturális eltérései külön
+R2/R3 feladatot igényelnek, mert a rendelkezésre álló felvételek nem mutatják
+azt a panelt.
 
 ### 19.3 #5336: a Név nélküliek fejlécének TRE-összevetése
 
