@@ -789,9 +789,9 @@ def _nyisd_a_mozgofilmkeszitot(window, controller, qt_app, engine):
 @pytest.fixture
 def movie_app_kikapcsolt_1to1(qt_app, tmp_path):
     """A korábbi indításban kikapcsolt 1:1: az INI-ben szövegként `false` áll."""
-    (tmp_path / "settings.ini").write_text(
-        "[General]\nmakemovie1to1=false\n", encoding="utf-8"
-    )
+    beallitas = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    beallitas.setValue("makemovie1to1", "false")
+    beallitas.sync()
     yield from _build_qml_app(
         qt_app,
         tmp_path,
