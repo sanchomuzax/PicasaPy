@@ -361,7 +361,7 @@ class TestHierMenu:
 
         megerosites = _gyerek(window, "removeFolderConfirmDialog")
         assert _varj(qt_app, lambda: megerosites.property("visible") is True), (
-            "a Remove from Picasa kattintás nem nyitotta meg a megerősítést"
+            "a Remove from PicasaPy kattintás nem nyitotta meg a megerősítést"
         )
         assert _KOZEP in str(megerosites.property("message"))
         _zar(qt_app, megerosites)

@@ -64,6 +64,6 @@ def test_a_serult_fajl_uzenet_soronkent_listazza_a_fajlokat(qml_app, qt_app):
 
     szoveg = window.findChild(QObject, "brokenPhotoMessageLabel").property("text")
     assert szoveg == (
-        "Picasa had a problem loading this file(s)\na.jpg\nb.jpg"
+        "PicasaPy had a problem loading this file(s)\na.jpg\nb.jpg"
         "\nWould you like to hide the files on disk?"
     ), szoveg

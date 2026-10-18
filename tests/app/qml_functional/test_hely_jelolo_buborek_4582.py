@@ -168,7 +168,7 @@ def test_jelolo_buborek_keres_es_torol(
     torles = _jelolo_elem(jelolo, "placesMarkerEraseButton")
     assert _var(qt_app, buborek.isVisible)
     assert szamlalo.property("text") == "6 photos here:"
-    assert keres.property("text") == "Search for these photos in Picasa"
+    assert keres.property("text") == "Search for these photos in PicasaPy"
     assert torles.property("text") == "Erase location info"
 
     kepmentes = window.grabWindow()

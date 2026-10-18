@@ -779,7 +779,7 @@ ColumnLayout {
                 Layout.fillHeight: true
                 wrapMode: Text.WordWrap
                 text: qsTr(
-                    "As Picasa scans your photos, the faces it finds are "
+                    "As PicasaPy scans your photos, the faces it finds are "
                     + "automatically grouped for easy naming.\n\n"
                     + "Things to know:\n\n"
                     + "To identify a person, click 'Add a name', then type "
@@ -790,7 +790,7 @@ ColumnLayout {
                     + "to all of your Google Account contacts while naming.)\n\n"
                     + "To ignore a person, click the 'X' button on the face "
                     + "thumbnail.\n\n"
-                    + "Suggestions: After you name someone, Picasa may suggest "
+                    + "Suggestions: After you name someone, PicasaPy may suggest "
                     + "more matching faces for that person. Click on a "
                     + "person's album to view and confirm (or reject) any "
                     + "suggestions.\n\n\n Click 'Learn More' for information "

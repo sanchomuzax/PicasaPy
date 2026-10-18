@@ -198,7 +198,7 @@ class TestMappaMuveletek:
 
         assert varj(
             qt_app, lambda: nyitott(_objektum(window, "removeFolderConfirmDialog"))
-        ), "a Mappa ▸ Remove from Picasa nem kért megerősítést"
+        ), "a Mappa ▸ Remove from PicasaPy nem kért megerősítést"
         zar(qt_app, _objektum(window, "removeFolderConfirmDialog"))
         assert len(controller.photos.photos) == len(KEPEK), (
             "a megerősítés nélkül a mappa képei eltűntek"

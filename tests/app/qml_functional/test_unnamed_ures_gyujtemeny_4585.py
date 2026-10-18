@@ -37,7 +37,7 @@ _INI = (
 )
 
 # Text1 és Text2 (`peoplepanel_text.tre`): az eredeti angol forrásszöveg
-TEXT1_ELEJE = "As Picasa scans your photos, the faces it finds are automatically grouped"
+TEXT1_ELEJE = "As PicasaPy scans your photos, the faces it finds are automatically grouped"
 # Text3: a nem üres gyűjteményben, kijelölés nélkül megmaradó szöveg
 TEXT3 = "No people have been found yet"
 

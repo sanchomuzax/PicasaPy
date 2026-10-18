@@ -712,7 +712,7 @@ class TestFotoMenuHelyek:
             lambda: utvonal(controller.currentFolder) == masik
             and controller.currentAlbumToken == "",
         ), (
-            f"a Locate in Picasa nem a kép mappájára váltott: {controller.currentFolder}"
+            f"a Locate in PicasaPy nem a kép mappájára váltott: {controller.currentFolder}"
         )
 
     def test_az_eredeti_fajl_megkeresese_valodi_kattintassal_a_fajlkezelot_hivja(

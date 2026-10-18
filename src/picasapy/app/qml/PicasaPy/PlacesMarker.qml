@@ -53,9 +53,9 @@ Item {
                 objectName: "placesMarkerSearchButton"
                 Layout.fillWidth: true
                 Layout.preferredHeight: 31
-                text: qsTr("Search for these photos in Picasa")
-                Accessible.name: qsTr("Search for these photos in Picasa")
-                ToolTip.text: qsTr("Search for these photos in Picasa")
+                text: qsTr("Search for these photos in PicasaPy")
+                Accessible.name: qsTr("Search for these photos in PicasaPy")
+                ToolTip.text: qsTr("Search for these photos in PicasaPy")
                 ToolTip.visible: hovered
                 ToolTip.delay: Theme.tooltipDelay
                 onClicked: {

@@ -471,7 +471,7 @@ Item {
         }
         MenuItem {
             objectName: "hierMenuRemoveFromPicasa"
-            text: qsTr("Remove from Picasa...")  // Folder::ID_MANAGE_ALBUM
+            text: qsTr("Remove from PicasaPy...")  // Folder::ID_MANAGE_ALBUM
             onTriggered: root.removeFromPicasaRequested(contextMenu.folderPath)
         }
         MenuItem {

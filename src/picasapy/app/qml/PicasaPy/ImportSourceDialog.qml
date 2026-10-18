@@ -476,14 +476,14 @@ Window {
         Text {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: qsTr("Exclude photos that are already imported into Picasa")
+            text: qsTr("Exclude photos that are already imported into PicasaPy")
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
         }
         Text {
             objectName: "importSourceDuplicateCountText"
             visible: importSourceWindow.duplicateCount > 0
-            text: qsTr("%n of those are duplicates already in Picasa", "",
+            text: qsTr("%n of those are duplicates already in PicasaPy", "",
                        importSourceWindow.duplicateCount)
             font.pixelSize: Theme.fontSize
             color: Theme.textGray

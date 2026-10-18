@@ -227,7 +227,7 @@ class TestMappaMenuRejtesLemezMozgatas:
 
         dialog = gyerek(window, "removeFolderConfirmDialog")
         assert varj(qt_app, lambda: nyitott(dialog)), (
-            "a Remove from Picasa kattintás nem kért megerősítést"
+            "a Remove from PicasaPy kattintás nem kért megerősítést"
         )
         zar(qt_app, dialog)
         assert len(sorrend(controller, cel)) == 3, (

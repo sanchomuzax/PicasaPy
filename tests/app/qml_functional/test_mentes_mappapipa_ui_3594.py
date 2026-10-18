@@ -42,7 +42,7 @@ _PANEL = (_QML / "PicasaPy" / "PublishPanel.qml").read_text(encoding="utf-8")
 class TestAMertSzovegek:
     @pytest.mark.parametrize("szoveg", [
         "Choose folders & albums to back up",
-        "Picasa is now showing the files you have not previously backed up.",
+        "PicasaPy is now showing the files you have not previously backed up.",
         "Check the folders you want to back up, or choose 'Select All' to "
         "choose everything.",
         "Select All",
@@ -56,8 +56,8 @@ class TestAMagyarFelirat:
     @pytest.mark.parametrize("forras, magyar", [
         ("Choose folders & albums to back up",
          "Mappák és albumok kijelölése biztonsági másolat készítéséhez"),
-        ("Picasa is now showing the files you have not previously backed up.",
-         "A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban "
+        ("PicasaPy is now showing the files you have not previously backed up.",
+         "A PicasaPy most azokat a fájlokat jeleníti meg, amelyekről korábban "
          "nem készült biztonsági másolat."),
         ("Select All", "Az összes kijelölése"),
         ("Select None", "Az összes kijelölés megszüntetése"),
