@@ -7,7 +7,6 @@ from __future__ import annotations
 import errno
 import os
 import socket
-import sys
 from pathlib import Path
 
 import pytest
@@ -28,10 +27,6 @@ _REPO = Path(__file__).resolve().parents[3]
 _KEPMENTES = _REPO / "docs" / "assets" / "paritas-tiszta-profil"
 _QML_REFS = []
 
-
-def _platform() -> str:
-    """A teszt helyettesíthető platformfogantyúja (#1217)."""
-    return sys.platform
 
 # Kapcsoló: a dokumentációs képek (docs/assets/paritas-tiszta-profil/) csak
 # akkor íródnak felül, ha PICASAPY_DOKUKEPEK=1 be van állítva. Alapból a
@@ -335,6 +330,30 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
     )
     assert _var(qt_app, lambda: export.property("visible") is False), (
         "az export párbeszéd bezáró animációja nem ért véget"
+    )
+    eredmeny = _elem(window, "exportResultDialog")
+    assert _var(qt_app, lambda: eredmeny.property("opened") is True, 30.0), (
+        "az export befejeződött, de az eredmény-párbeszéd nem nyílt meg"
+    )
+    felugrok = _nyitott_felugrok(window)
+    assert any("exportResultDialog" in elem for elem in felugrok), (
+        "a nyitott export-eredmény DeferredDialog nem látszik a felugrók között: "
+        f"{felugrok!r}"
+    )
+    ok_gombok = [
+        item for item in _bejark(window.contentItem())
+        if isinstance(item, QQuickItem)
+        and str(item.property("text") or "").strip().casefold() == "ok"
+        and item.isVisible() and item.isEnabled()
+    ]
+    _QML_REFS.extend(ok_gombok)
+    assert ok_gombok, "az export eredmény-párbeszéd OK gombja nem található"
+    _kattint_item(ok_gombok[-1], qt_app)
+    assert _var(qt_app, lambda: eredmeny.property("opened") is False), (
+        "az export eredmény-párbeszéd nem zárult be az OK kattintás után"
+    )
+    assert _var(qt_app, lambda: not _nyitott_felugrok(window)), (
+        "az export eredmény-párbeszéd bezáró animációja nem ért véget"
     )
     assert not app["attempts"], f"exportálás közben hálózati próbálkozás történt: {app['attempts']}"
 
@@ -661,24 +680,40 @@ def _bal_fiok_nyitva_var(window, qt_app):
 
 
 def _nyitott_felugrok(window) -> list[str]:
-    """Az ablak felugró rétegén (overlay) éppen látható elemek neve (#4929)."""
+    """A betöltött, nyitott párbeszédek és a látható Overlay-gyerekek (#4929)."""
+    lathatok = []
     try:
-        reteg = window.property("overlay")
+        parbeszedek = window.findChildren(QObject)
+    except RuntimeError:
+        parbeszedek = []
+    for parbeszed in parbeszedek:
+        if not _ervenyes_qt_elem(parbeszed):
+            continue
+        try:
+            if parbeszed.property("opened") is True:
+                nev = parbeszed.objectName() or parbeszed.metaObject().className()
+                lathatok.append(f"{nev} (opened)")
+        except RuntimeError:
+            continue
+
+    try:
+        reteg = _overlay_keres(window.contentItem())
     except RuntimeError:
         return ["törölt overlay"]
     if reteg is None:
-        return []
+        return lathatok
     try:
         gyerekek = reteg.childItems()
     except RuntimeError:
-        return ["törölt overlay"]
-    lathatok = []
+        return [*lathatok, "törölt overlay"]
     for gyerek in gyerekek:
         if not _ervenyes_qt_elem(gyerek):
             continue
         try:
             if gyerek.isVisible():
-                lathatok.append(_nev(gyerek))
+                nev = _nev(gyerek)
+                if nev not in lathatok:
+                    lathatok.append(nev)
         except RuntimeError:
             continue
     return lathatok
@@ -906,25 +941,6 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
     assert not app["attempts"], f"vörösszem-javítás közben hálózati próbálkozás történt: {app['attempts']}"
 
 
-def _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app):
-    """Windows-hibánál diagnosztikával kihagyható; más platformon szigorú (#4929).
-
-    A diagnosztika bukásnál mindkét esetben bekerül: Windowson a kihagyás indokába,
-    máshol a hibaüzenetbe.
-    """
-    diag = []
-    try:
-        _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag)
-    except AssertionError as hiba:
-        # A pytest a rewrite miatt az üzenet után az "assert ..." sort is hozzáfűzi; csak az első sor kell.
-        uzenet = str(hiba).splitlines()[0]
-        diag_szoveg = ' '.join(diag) or 'a húzás előtt bukott'
-        if _platform() != "win32" or tiszta_app["attempts"]:
-            raise AssertionError(f"{uzenet} | #4929 diag: {diag_szoveg}") from hiba
-        return f"#4929 diag: {uzenet} | {diag_szoveg}"
-    return None
-
-
 def _ellenorizd_kepernyokepek_meretet(mappa: Path, vart: int = 3):
     kepek = sorted(mappa.glob("*.png"))
     assert len(kepek) == vart, f"nem készült el mind a(z) {vart} képernyőkép: {kepek}"
@@ -958,53 +974,9 @@ def test_tiszta_profil_funkciok_valodi_kattintassal(
     _lep_auto_kontraszt_es_visszavonas(tiszta_app, qt_app)
     _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory)
     _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app)
-    skip_indok = _lep_vorosszem_windowson_kihagyhato(tiszta_app, qt_app)
-    _ellenorizd_kepernyokepek_meretet(mappa, 2 if skip_indok else 3)
-    if skip_indok:
-        pytest.skip(skip_indok)
-
-
-def test_vorosszem_windowsos_kihagyasa_megtartja_a_diagnosztikat(monkeypatch):
-    """A Windowsos tartalék kihagyás indoka a kattintási diagnosztikát is viszi (#4929)."""
-    class Ablak:
-        def mouseGrabberItem(self):
-            return None
-
-        def width(self):
-            return 800
-
-        def height(self):
-            return 600
-
-    class Edit:
-        redeyeRegionCount = 0
-        effectChain = ""
-
-    monkeypatch.setitem(globals(), "_platform", lambda: "win32")
-    monkeypatch.setitem(globals(), "_aktiv_szerkeszto", lambda _window: "")
-    monkeypatch.setitem(globals(), "_nezo_es_panelek_allapota", lambda _window: "")
-    monkeypatch.setitem(globals(), "_nyitott_felugrok", lambda _window: [])
-
-    def bukik(_app, _qt_app, diag):
-        diag.append("hit-test=QQuickOverlay; active=False; redeyeActive=False→False")
-        diag.append(_vorosszem_diagnosztika(
-            Ablak(), Edit(), None, None, {
-                "overlay kattintás előtt": "Overlay gyerekei=[QQuickPopupItem(opened=nem)]",
-                "childAt kattintás után": "QQuickOverlay(objectName=<névtelen>) < nincs",
-            },
-        ))
-        raise AssertionError("redeyeActive hamis a kattintás után")
-
-    monkeypatch.setitem(
-        globals(), "_lep_vorosszem_javitas_valodi_huzassal", bukik
-    )
-    indok = _lep_vorosszem_windowson_kihagyhato({"attempts": []}, None)
-
-    assert indok is not None
-    assert "#4929 diag: redeyeActive hamis a kattintás után" in indok
-    assert "hit-test=QQuickOverlay; active=False; redeyeActive=False→False" in indok
-    assert "overlay kattintás előtt=Overlay gyerekei=[QQuickPopupItem(opened=nem)]" in indok
-    assert "childAt kattintás után=QQuickOverlay(objectName=<névtelen>) < nincs" in indok
+    diag = []
+    _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag)
+    _ellenorizd_kepernyokepek_meretet(mappa)
 
 
 def test_reszletes_leiras_kiirja_az_elem_tulajdonsagait(qt_app):
