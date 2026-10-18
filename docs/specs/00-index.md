@@ -200,6 +200,8 @@ jelvénye — és a jelvény **két különböző felvételen**, eltérő szerke
 
 ### [filters-decoded.md](filters-decoded.md) — nincs blokkolt tétel; a #2456 élő útja lezárva, a megvalósítás #3315
 
+⭐ **2026-10-18 (#5299): a Polaroid üres k03 képterületének oka bizonyított:** a dir_sat és a régi blur a 32 bites kimenet alfa-bájtját nullán hagyja; a colortemp FF alfát ír. A Polaroid DropShadowja a forrásalfával a választott háttérszínre kever. A PicasaPy mostani RGB-lánca elveszíti ezt az alfát; a fejlesztési javítás és a ΔE≤2,0 mérés még hátravan. Részletek: a Polaroid-szakasz.
+
 ⭐ **2026-09-23 — a Comicize ágának két lépése kiolvasva (#3507):** a `BWImageOperation` folytonos Haeberli-szürke színmátrix (`0x00bbdd80`: 0,3086 / 0,6094 / 0,0820), nem küszöböl; a maszkos `GetVar` `GetVarInstruction` → `PartialMask` → `Pop`-ra fordul (`0x00bc4ae0`), `⌊(g·m + 255·(255−m))/255⌋`. A rasztervesztés oka máshol van. ~~**Nyitott kérdés:** … #3511.~~ → **LEZÁRVA (2026-09-23, #3511):** a kísérletből a `_opColorSpots` nyitó fekete Glow-ja hiányzott (`filterdesc.xml` 788); vele a szó szerinti lánc a 15 exporton az amplitúdó-hibát 0,0276-ra hozza (ma 1,4331). Fejlesztés: #3522.
 
 ⭐ **2026-09-22 — a `blur` 0,1…1,4 közötti „tétlensége” a KÉTSZÍNŰ tesztábra sajátja, nem a szűrőé (#3482).** A jelölő (`0x0090ca10`) mindig a szomszédos párt hasonlítja `K/n²`-hez; a fekete-fehér él négyzetes különbsége 195 075, tehát `K = CSONK(t²·65536) < 195 075`-ig fal. A kiolvasott lánc bitszintű szimulációja a `merokit-2` három exportját újratömörítve 0,013-ra (99,1% bitre), a 762-es hat exportot 0,000 / 0,010-re adja; valódi tartalmon 0,1-nél és 0,5-nél is simít. A kezelő hívóhelyének vizsgálata tárgytalan. Fejlesztés: #3493.
