@@ -3029,11 +3029,49 @@ Megerősített: 4 tétel (24.8 a-d). Feltételes: 6 tétel (24.8 e-j). NINCS MEG
 
 ### 25.9 Ghidra-kör kérések (új)
 
-- `Ghidra-kör kell: 0x006cde50 - a CNevenVision +0x2c metódusa (rtti.csv; a 0x0048e1f0 hívja): továbbadja-e a Red.dll-nek, vagy van benne 960 (0x3c0) vagy méretezés? [blokkoló, N3]`
-- `Ghidra-kör kell: 0x00448fb0 - a 0x00448c90 64 bites kimenete: mi a kulcs (személy- vagy más azonosító), és mit jelent a 0 és a nem nulla? [blokkoló, N5]`
-- `Ghidra-kör kell: 0x00448a10 - a második predikátum (0x005c9930 370-381. sor; 0x005c9b00 1308. sor): mit olvas? [blokkoló, N5]`
-- `Ghidra-kör kell: 0x004aca00 - az üres kijelölés ágának predikátuma (0x005c9b00 1246-1253. sor): mit olvas? [blokkoló, N5 egyszemélyes ág]`
-- `Ghidra-kör kell: 0x005875d0 - a 0x00584010 rekordonkénti hívása (3-as mód): ír-e fájlba, és melyikbe? [nem blokkoló, N6 ok/online ág]`
+- **Válasz (#5184, 0x006cde50, CNevenVision +0x2c slot):**
+  - **Slot:** egyetlen hivatkozása van, DATA-hivatkozás a `0x00ca8780` címről (dump 4. sor). A rtti.csv szerinti `0x00ca8754` vtábla +0x2c helye ez, tehát a slot ezt a függvényt tartalmazza.
+  - **960 és méretezés: a függvényben nincs.** Nincs `0x3c0` konstans, nincs szorzás vagy osztás (dump 8-36. sor). A méret a bemeneti képfejlécből jön (`fejléc[1] >> 1`, dump 27. sor), futásidejű érték, nem konstans.
+  - **Továbbadás:** ha a bemeneti ellenőrzés teljesül (dump 19-23. sor), a függvény a `DAT_00d35e44` globális mutató által mutatott objektum +0x44 vtábla-metódusát hívja. Argumentumai a this+0x8-tól a this+0x1c-ig tartó hat mező és az öt szavas rekord címe (dump 28-31. sor). Visszatérés: 0, ha a hívott 0-t adott, egyébként 0xFFFFFFFF; a védelmi ágon is 0xFFFFFFFF (dump 32, 35. sor).
+  - **Nem dönti el:** hogy a `DAT_00d35e44` célja a Red.dll-beli objektum-e. A 25.7 a Red.dll-t a 0x006cc9e0 betöltőhöz köti, de ez a dump ezt nem igazolja.
+  - **Bizonyítottsági fok:** megerősített a slot-hozzárendelés (DATA-hivatkozás és rtti.csv). Feltételes a 960 és a méretezés hiánya (a C-törzs teljes olvasata, egy út). NINCS MEG a célobjektum.
+  - **Következő bináris lépés:** a `0x00d35e44` címre hivatkozó írók megkeresése (index, adat-hivatkozás), majd a célobjektum +0x44 slot-függvényének dekompilálása (Ghidra).
+- **Válasz (#5184, 0x00448fb0, a 0x00448c90 64 bites kimenete):**
+  - **A kulcs táblaindex, nem azonosító.** A bemenet `param_1` index. Ha az index a this+0x27a0 mezőben lévő objektum `+0x4c >> 1` darabszámán belül van, a kimenet a `+0x48` tömb `param_1`-edik 8 bájtos eleme (dump 90-96. sor).
+  - **Visszatérési kód:** 0, ha az index a táblán belül van; 4, ha kívül. Ekkor a kimenet a this+0x27a8 és this+0x27ac alapértelmezett 64 bites érték (dump 98-101. sor).
+  - **A nulla és a nem nulla jelentése: NINCS MEG.** A tábla tartalmát ez a függvény csak olvassa. Hogy a 8 bájtos elemek személy-azonosítók-e, azt a tábla íróiból lehetne megtudni, az írók nincsenek a dumpban.
+  - **Hívó:** a 0x00448cac a 0x00448c90-ben (dump 44. sor). Ez megerősíti a 25.5 leírását.
+  - **Bizonyítottsági fok:** megerősített a mechanizmus (C-törzs és HÍVÓK-fejléc). NINCS MEG a kimenet tartalmi jelentése.
+  - **Következő bináris lépés:** a this+0x27a0 objektum +0x48 tömbjének és a this+0x27a8 alapértelmezett értékének írói (mezőhivatkozás index, majd a konstruktor dekompilálása).
+- **Válasz (#5184, 0x00448a10, a második predikátum):**
+  - **Mit olvas:**
+    1. a **slotot**: ha a `param_2` index a `param_1+0xb48` objektum `+0x48` tömbjének tartományában van, a tömb `param_2`-edik 4 bájtos eleme, különben a `param_1+0xb4c` mező (dump 189-195. sor);
+    2. a **slot-rekordot**: az első dword azonosító, érvényes, ha legalább 0x100; a `+4` mezőben NUL-ig tartó sztring (dump 203-209. sor);
+    3. két **referencia-sztringet**: K1 a `param_1+0x2e98`, K2 a `param_1+0x2e94` rekord `+4` mezőjéből (dump 196-201, 257-262. sor). Hiányzó vagy üres rekord üres sztringnek számít.
+  - **Mit ad vissza:** ha a slot neve egyezik K1-gyel, vagy mindkettő üres, a visszatérés `param_3 == 0` (dump 238-240. sor). Ha nem, de K2-vel egyezik, vagy mindkettő üres, 1 (dump 316-329. sor). Egyébként 0 (dump 299-313. sor). A sztringek összehasonlítása bájtonként történik; kisbetű-átalakítás a dumpban nincs (dump 220-234. sor).
+  - **Hívók:** a 0x005c9930 (0x005c9971 címen) és a 0x005c9b00 (0x005c9ce9, 0x005c9f09, 0x005ca046 címen), dump 120-123. sor. A `param_2` értéke ezeknél a hívásoknál **NINCS MEG**, mert a hívók törzse nincs a dumpban.
+  - **Bizonyítottsági fok:** megerősített a mechanizmus (C-törzs és HÍVÓK-fejléc). NINCS MEG: K1 és K2 jelentése, a slot-tábla tartalma, a hívók `param_2` értéke.
+  - **Következő bináris lépés:** a 0x005c9930 és a 0x005c9b00 dekompilálása a fenti hívások körül (a `param_2` forrása), valamint a `param_1+0x2e94`, `+0x2e98` és `+0xb48` mezők íróinak megkeresése.
+- **Válasz (#5184, 0x004aca00, az üres kijelölés ága):**
+  - **Közvetlenül nem olvas kijelölést.** A this+0xc4 mutató által mutatott A objektum +0x48 címén kezdődő beágyazott objektum vtábla +0x28 metódusát hívja a `param_1` argumentummal (dump 370. sor). Ennek visszatérését nem használja.
+  - **A visszatérés `FUN_00401000()` eredményének maszkolt értéke:** `eredmény & 0xFFFFFF00` (dump 371-372. sor). 0, ha az eredmény 256-nál kisebb.
+  - **Hívók:** a 0x005c9b00 két hívása, 0x005c9da6 és 0x005c9ff5 (dump 345-346. sor).
+  - **A HÍVOTTAK-listán van, a C-törzsben nincs:** `FUN_00987030` (dump 355. sor). A Ghidra a 0x004aca34, 0x004aca3a, 0x004aca4e és 0x004aca66 blokkokat elérhetetlennek törölte (dump 358-361. sor), a hívás ezekben lehet. Nem bizonyított.
+  - **Bizonyítottsági fok:** megerősített, hogy a visszatérés a `FUN_00401000` maszkolt eredménye, és hogy a függvény közvetlenül nem olvas kijelölést (C-törzs és HÍVOTTAK-fejléc). NINCS MEG: hogy a `FUN_00401000` vagy a vtábla-metódus vizsgál-e kijelölést, vagyis a predikátum tényleges jelentése. Ebből a függvényből az „üres kijelölés" jelleg nem igazolható.
+  - **Következő bináris lépés:** `FUN_00401000` dekompilálása; az A+0x48 beágyazott objektum típusának és +0x28 slotjának meghatározása (index, vtábla); a 0x004aca34-0x004aca66 tartomány diszasszemblálása (`pe_dis`), hogy kiderüljön, hívja-e a `FUN_00987030`-t.
+- **Válasz (#5184, 0x005875d0, a 0x00584010 hívása, 3-as mód):**
+  - **Közvetlen fájl-írás: nincs.** A törzsben és a HÍVOTTAK-listán (17 tétel, dump 386-403. sor) nincs fájl-API. A lista 13 belső függvényt és 4 külső hívást tartalmaz (kritikus szakasz, szálazonosító, `__aullrem`).
+  - **Közvetett író lehetséges, nem bizonyított:**
+    - `FUN_0058dd00`: csak kulcsos ágon, ha a 2-es mód-bit be van állítva és a beszúrás sikerült vagy a rekord változott (dump 612-613, 622-624, 646-648. sor);
+    - `FUN_00927530`: kulcsos ágon, meglévő rekordnál (dump 617. sor);
+    - `FUN_005836f0`: ha a `param_7` nem nulla (dump 642-645. sor).
+    Törzsük nincs a dumpban. **NINCS MEG**, hogy írnak-e fájlba, és melyikbe.
+  - **A mód bitjei (C-törzs):** az 1-es bit a `param_1+0x13c` bájtot 1-re állítja (dump 472-474, 609-611, 619-621. sor). A 2-es bit a `FUN_0058dd00` hívást engedélyezi kulcsos ágon (dump 612-613, 622-624, 646-648. sor). A 4-es és 8-as bit a `FUN_00927530` 3. és 4. argumentuma (dump 617. sor).
+  - **Mód 3 (1 + 2):** kulcs 0, vagy mindkét szava 0xFFFFFFFF esetén (dump 436, 440. sor) csak a `param_1+0x13c` bájt áll 1-re, `FUN_0058dd00` nem hívódik. Kulcsos ágon a beszúrás vagy módosítás után a bájt 1-re áll, és `FUN_0058dd00` hívódik.
+  - **A „3-as mód" nincs igazolva:** a 0x00584010 hívás (005840b8, dump 381. sor) argumentumértéke nincs a dumpban.
+  - **Memóriában írt rész (C-törzs):** a `param_1` objektum hash-táblája: darabszám `+0xcc`, bucket-szám `+0xd0`, csomópont-készlet `+0xd4`, bucket-tábla `+0xd8`. A bucket-index a 64 bites kulcs maradéka a bucket-számmal osztva (`__aullrem`, dump 488-490, 559. sor).
+  - **Bizonyítottsági fok:** megerősített, hogy a törzs közvetlenül nem ír fájlba (C-törzs és HÍVOTTAK-fejléc). Feltételes a bitek és a műveletek leképezése (egy út: C-törzs). NINCS MEG: a közvetett írás, a mód értéke a hívásban, a `+0x13c` bájt olvasói.
+  - **Következő bináris lépés:** `FUN_0058dd00` és `FUN_00927530` dekompilálása (a mód-3 kulcsos ágának mellékhatása); a `param_1+0x13c` bájt olvasóinak megkeresése (index, mezőhivatkozás); a 0x00584010 dekompilálása a 005840b8 körül (a mód argumentuma).
 
 Diszasszemblálás kell (nem Ghidra): a 0x0045f143 előtt az EDI értéke, vagyis a this+0x2e10 objektum-e (25.7). A 24.6 két diszasszemblálási kérése (a 0x0068ac20 ciklusa és a 0x005fdc30 EDI-je) nyitott: ebben a dumpban nincs rájuk adat. A `this+0x988` mező írói a 25.4 faces= kérdéséhez kellenek (bináris-index).
 
@@ -3146,8 +3184,28 @@ Az automatikus személy-összevonás feltételezését is ellenőriztem. A PplAl
 
 ### 26.3 Nyitott kérdések és megszerzésük
 
-- Ghidra-kör kell: 0x00646d70 - a suggestion_yes eseményhelye, a kijelölt arc és személy frissítése, valamint a db3 és ini írói [blokkoló]
-- Ghidra-kör kell: 0x00647020 - a suggestion_no eseményhelye, a `]expeople:%d` jelentése és tartós mentési útja [blokkoló]
+- **Válasz (#5185, 0x00646d70, a suggestion_yes eseményhely):**
+  - **Eseményhely:** egyetlen hívója a 0x0063fd3c, a `FUN_0063f970` elosztóban (dump 655-656. sor). Hogy ez-e a suggestion_yes, azt az elosztó esetértéke dönti el; az esetérték a dumpban nincs. **NINCS MEG** a konkrét eseményazonosító.
+  - **Mit csinál (C-törzs, dump 680-722. sor):**
+    1. ha az index a `this+0x348 >> 1` darabszámon kívül esik: 9;
+    2. kulcs: a `[this+0x344]` lista `param_1`-edik 8 bájtos elemének első mutatója által mutatott rekord első dword-je (dump 691. sor);
+    3. `FUN_0044a6b0` keresés a kulccsal, a `*(DAT_00d67668+0x1034)` objektumon (dump 691. sor);
+    4. **találatnál** (dump 700-721. sor): az A = `*(DAT_00d67668+0x102c)` objektum +0x24c és +0x250 mezőit nullázza (dump 707-712. sor); majd az `A+0x2a4` címen beágyazott objektum vtábla +0x44 metódusát hívja a találati értékkel és az 1, 0, 1 argumentumokkal; végül `FUN_0052e8a0`; visszatérés 1000000 (0xF4240);
+    5. **találat nélkül** (dump 693-699. sor): `FUN_006464a0`; ha ez nem nulla, a visszatérés 0; különben a `this+0x374` mezőbe írja a `param_1` indexet, és 1000000-t ad vissza.
+  - **Kijelölt arc:** a `this+0x374` mezőbe a `param_1` index kerül, és csak a találat-nélküli ágon, ha `FUN_006464a0` 0-t adott (C-törzs). Hogy ez a kijelölt arc, az a dumpból nem látszik. A találatnál hívott vtábla-metódus törzse **NINCS MEG**.
+  - **db3 és ini írók:** közvetlen fájl-API nincs sem a törzsben, sem a HÍVOTTAK-listán (dump 657-664. sor). Közvetett írók lehetnek: `FUN_0044a6b0`, `FUN_006464a0`, `FUN_0052e8a0`, `FUN_009d2b40`, `FUN_006433a0` és a vtábla-metódus; törzsük nincs a dumpban. **NINCS MEG.** A `FUN_0097caf0` és a `FUN_00a58fc0` csak a HÍVOTTAK-listán szerepel (dump 662, 664. sor), a C-törzsben nincs; a Ghidra a 0x00646e6e, 0x00646db8 és 0x00646ea0 blokkokat elérhetetlennek törölte (dump 667-669. sor).
+  - **Bizonyítottsági fok:** megerősített: egy hívó, és nincs közvetlen fájl-API (C-törzs és HÍVOTTAK-fejléc). Feltételes: a `this+0x374` írás és az elágazás (egy út: C-törzs). NINCS MEG: az eseményazonosító, a találati ág vtábla-metódusa, a db3 és ini írók.
+  - **Következő bináris lépés:** a 0x0063f970 dekompilálása a 0x0063fd3c körül (az esetérték); `FUN_0044a6b0` és `FUN_006464a0` dekompilálása; a `DAT_00d67668` íróinak megkeresése; az `A+0x2a4` beágyazott objektum vtábla +0x44 célja; a `FUN_0097caf0` és `FUN_00a58fc0` hívásainak diszasszemblálása a törölt blokkok tartományában.
+- **Válasz (#5185, 0x00647020, a suggestion_no eseményhely):**
+  - **Eseményhely:** egyetlen hívója a 0x0063fe57, a `FUN_0063f970` elosztóban (dump 728-729. sor). Az esetérték **NINCS MEG** a dumpból.
+  - **Mit csinál (C-törzs, dump 744-761. sor):**
+    1. ha az index a `+0x358 >> 1` darabszámon kívül esik: 9;
+    2. ha az index kisebb a `+0x348 >> 1` darabszámnál: a `FUN_0040eab0` hívást a `]expeople:%d` formátumsztringgel és a `+0x354` lista (4 bájtos elemek) `param_2`-edik elemének értékével végzi; majd `FUN_004d9aa0`-t hív a `*(DAT_00d67668+0x1034)+0x68` címre, a `+0x344` lista `param_2`-edik 8 bájtos elemének címével, 0 és 2 argumentummal; végül `FUN_00401000`-t (dump 747-757. sor);
+    3. a 2. pont feltételétől függetlenül: a `+0x354` lista `param_2`-edik eleme `0xFFFFFFFF` lesz, és `FUN_0064ae90(this, 0)` fut; visszatérés 0 (dump 759-761. sor).
+  - **A token:** a formázás a törlés előtt történik (dump 755. és 759. sor), tehát a formázott érték a régi. A formázott szöveg célpufferét a C-törzs nem mutatja: a hívás nem ad át kimeneti címet. **NINCS MEG**, hová kerül a token. `FUN_004d9aa0` nem a tokent, hanem a 8 bájtos bejegyzés címét kapja.
+  - **Tartós mentés:** közvetlen fájl-API nincs a törzsben és a HÍVOTTAK-listán (dump 730-734. sor). Közvetett út lehet a `FUN_004d9aa0` és a `FUN_0064ae90`; törzsük nincs a dumpban. **NINCS MEG.**
+  - **Bizonyítottsági fok:** megerősített: egy hívó, és nincs közvetlen fájl-API (C-törzs és HÍVOTTAK-fejléc). Feltételes: a formázás-törlés sorrend és a `0xFFFFFFFF` írás (egy út: C-törzs). NINCS MEG: a token jelentése és fogyasztója, a tartós mentési út, az esetérték.
+  - **Következő bináris lépés:** `FUN_004d9aa0` (2-es mód) és `FUN_0064ae90` dekompilálása; `FUN_0040eab0` célpufferének megállapítása; a `]expeople:` sztring szövegtári keresztreferenciájának lekérdezése (index), hogy kiderüljön, melyik függvény fogyasztja a tokent; a 0x0063f970 esetértéke a 0x0063fe57 körül.
 - Colab-lépéssor: egy névvel ellátott személy után várjunk arctalálat-javaslatot; nyissuk meg a személy-albumot; rögzítsük a javaslat nevét, a kijelölést és az összes vezérlőt; külön futásban fogadjuk el, majd utasítsuk el a javaslatot; minden lépés előtt és után mentsük a .picasa.ini, contacts.xml és db3 állapotát.
 - Colab-lépéssor: hozzunk létre két, külön képekkel rendelkező személyt; kattintsunk az első bal oldali sorára; mérjük meg a két zoomállapotot; nevezzük át; ezután jelöljük ki az első album összes képét és próbáljuk a Move to People Album almenüvel a másikhoz rendelni; végül töröljük külön a forrás és cél albumot. Rögzítsük a megerősítéseket, az üres album sorsát és az adatfájlok változását.
 - Colab-lépéssor: üres Picasa-profilban importáljunk egy fotót; figyeljük az első keresést; adjunk hozzá új mappát, majd abba új fotót; ismételjük meg kizárt mappával, kizárt almappával és már megnevezett arcot tartalmazó képpel; végül futtassuk a mappa- és album-helyi Névcímkék hozzáadása parancsot.
