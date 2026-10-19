@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.160] - 2026-10-20
+
+- A Visszaállítás ellenőrzése Windows alatt is kivárja, amíg a kép mentése és visszaállítása befejeződik (#5359).
+
 ## [0.9.159] - 2026-10-19
 
 - A Név nélküliek nézete első megnyitáskor is a bal panel mellett jelenik meg, és megszűnik a személyalbum-fejléc kötési hurka (#5363).
