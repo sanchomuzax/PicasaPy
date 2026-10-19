@@ -3177,6 +3177,39 @@ Válasz [megerősített, C és asm; 2026-10-18]: a `0x00a4a240` `__fastcall`, `r
 
 Nem Ghidra-kérdés, a következő körben: a film-idejű író (pásztázás, indextől független, lásd (g)); a `0x00cf39e4` szerepe (`0x00813d5a` környéke).
 
+**A film-crop lánc: a 12. kör (2026-10-19, #4400): a `0x00907cd0`, a `0x0042c830` és a `0x00429dc0` válasza, és a híd `esp+0x30` blokkja.**
+
+*Forrás:* `.ghidra11/2026-10-19-ghidra-11.txt` (C-törzsek és hívólisták); a `Picasa3.exe` helyi diszasszemblálása (`annot_disasm.py`: `0x00430610` 378 bájt, `0x0047a390` 261 bájt, `0x0042c830` 335 bájt, `0x004147d0` 106 bájt); a `.rdata` és a double-olvasat (`pefile`, nem kódsor).
+
+*(a) `0x00907cd0`: a kimeneti írás mérete.* A `0x00430610` `0x004306cb` sorában `lea edx,[ebp+0x30]` áll, és a `0x004306d4` hívás második argumentuma ez a cím. A `0x00907cd0` **10 dword-öt (40 bájtot)** ír ide (C: a `*param_2 = *puVar4` ciklus, tíz iteráció), tehát a `+0x30`-`+0x57` tartományt, és a `+0x58` (88) határnál véget ér. **Nem ír a 88 bájton túl.** Az írt értékek: `1.0` a `+0x30`, `+0x40`, `+0x50` mezőn, `0` a `+0x34`-`+0x3c` és `+0x44`-`+0x4c` mezőn, `1` bájt a `+0x54`-en. Ez egyezik a `0x004147d0` alapértékes töltésével (`fst [eax+0x30]`, `[eax+0x40]`, `[eax+0x50]` = 1.0; `mov byte [eax+0x54], cl`, `cl` = 1): a két út (a reset-rutin asm-je és a `0x00907cd0` C-je) ugyanazt adja.
+- A `0x00907cd0` többi írása a verem (`local_f4`, `local_cc`), illetve a zárolt állapot az első argumentumon (`param_1`, a `0x00430610` verem-lokálisa), nem az objektumban. A lista-elemek vtbl `+0x74`/`+0x78` hívásainak törzsét nem olvastam (a dump nem tartalmazza).
+- **Feltétel:** a hívás nem feltétel nélküli. A `0x004306bd` `test eax,eax` / `jne 0x4306df` átugorja a `0x907cd0` hívást, ha a `0x0069f510(…, "filters")` nem nulla. A `+0x30`-`+0x57` tehát csak akkor íródik, ha a `filters` keresés `0`-t ad. A `0x0069f510` visszatérésének jelentése a 12. kör alatt van (részben megválaszolva).
+
+*(b) `0x0042c830`: NEM tölti a `esp+0x30` blokkot.* A függvény (`__thiscall`, a `this` = ECX = `CThumbDB`) memóriaírása egyetlen 4 bájtos hely: `*param_3` (`mov [eax],0` a `0x0042c848`-nál, `mov [esi],edx` a `0x0042c93c`-nél). A többi írás a veremre (a sztring-mutató, `[esp+0x14]`) és a `this+0x1470` zárobjektumra megy. A híd `0x0047a429` hívása a `&rot = E0+0x1c` címre mutat (lásd a 11. kört), tehát a `0x0042c830` nem ír W-t vagy H-t.
+- A C-kód `else` ágában a `FUN_005c2100()` hívás kimenete hiányzik. Az asm (`0x0042c8af`: `lea eax,[esp+0x14]`, `call 0x5c2100`) megmutatja: a sztring-mutatót a `0x005c2100` írja a `[esp+0x14]`-be, a `this+0x58` lista `[+0x48]` tömbjének `index`-edik elemétől. Ez a `rotate(%d)` sztring forrása a tartományon belüli indexre.
+
+*(c) W és H: a blokk nullázódik, a híd nem ír Vw/Vh-t.* A `0x0047a42e` `lea eax,[esp+0x20]` után a `0x0047a432` `call 0x4147d0` az `E0+0x20` objektumot nullázza (`mov [eax+0x0..0x2c], ecx`, `ecx` = 0). Ez ugyanaz a cím, mint a `0x0047a454` `lea edx,[esp+0x30]` (a `sub esp,0x10` a `lea` előtt áll, a `0x0047a437`-nél). Így **W = `[O+0x8]` = 0 és H = `[O+0xc]` = 0**. A híd utasításai között nincs más írás erre a blokkra (a `[esp+0x38]` / `[esp+0x3c]` írása hiányzik).
+- A `0x00430610` ezt a blokkot `ebp`-ként kapja (`0x00430615`: `mov ebp,[esp+0x64]` a `push`-ok után, a második argumentum). Olvassa: `[ebp+0x8]` és `[ebp+0xc]` a `0x907cd0` argumentumaként (`0x004306c1`-`0x004306c4`), `[ebp+0x10]` és `[ebp+0x14]` a rect-alapként (`0x004306f3`-`0x004306f6`). Ezek mind nullák. **(W,H) = (0, 0), bináris (0x004147d0).**
+- Pontosítás a 3120. és 3154. sorhoz: a híd nem olvassa a `[esp+0x30]` blokkot, de a `0x00430610` igen, az `ebp` argumentumon át. A nulla W,H a reset eredménye, nem a híd írása.
+
+*(d) `0x00429dc0`: a metszőtéglalap forrása NEM a `+0x14d0`.* A kimenet négy dword (a híd `[esp+0xc]`-`[esp+0x18]`, a híd előre nullázza ezt a területet a `0x0047a3c5`-`0x0047a3d1` soron). A két 16 bites pár az `uVar13` (`[0]`, `[1]`) és az `uVar11` (`[2]`, `[3]`) felbontása.
+- **Forrás:** a `this+0x1528` lista (elem: `[+0x48] + index*8`, darabszám: `[+0x4c] >> 1`). Ha nincs lista, vagy az index túl nagy, az alapérték a `this+0x1530` és `this+0x1534`. Mindkettő a `this`-en belül van, nem a `+0x14d0`-ban.
+- A `this+0x14d0` a listát védő zárobjektum (`piVar14`): a `this+0x14dc` jelzőtől függően vtbl `+0x18` vagy `EnterCriticalSection(this+0x14f8)`, és a későbbi listaágú zárolás argumentuma (`local_10`). Nem rect-mező.
+- **Nyitott:** a nem üres ágban a `this+0x48` objektum vtbl `+0xd4` hívása (C: `(param_2, &local_24, &param_1)`) a második rect-forrás (az elem metszete). A `+0xd4` célja NINCS MEG (vtbl-hívás, a dump nem tartalmazza).
+
+*Bizonyítottsági fok.* (a) **feltételes**: a méret (40 bájt, `+0x30`-`+0x57`) asm és C szerint megerősített, a `0x0069f510` feltétel nyitott, ezért a tényleges írás nem dőlt el. (b) **megerősített**: asm szerint egyetlen rect-író (`*param_3`). (c) **megerősített**: W = H = 0 (reset-asm, a híd nem ír, a `0x00430610` olvasása asm-ben), két úton: a `0x004147d0` asm-je és a híd `0x0047a432`-`0x0047a45c` hívássora, amely a `0x00430610`-nek ugyanezt a blokkot adja. (d) **megerősített**, hogy a `+0x14d0` nem rect-mező; a nem üres ág `+0xd4` része **nyitott**.
+
+*Cáfoló kísérlet.* (c) azt feltételeztem, hogy a W,H a `0x0042c830` kimenete: cáfolva, mert a függvény asm-je csak `*param_3`-at ír. (d) azt feltételeztem, hogy a `+0x14d0` a rect-forrás: a C-ben csak zár és argumentum, cáfolva a dump alapján.
+
+*Fejlesztési következmény.* Nincs új teendő a bizonyított részből. A `0x0069f510` feltétele nélkül a `+0x30`-`+0x57` írás nem zárható le.
+
+- **A `"filters"` keresés 0-ja (12. kör, #4400, részben megválaszolva).** A `0x004306a0`-`0x004306b8` sorok a `"filters"` sztringet (`0xc80b04`) adják a `0x0069f510`-nek. Ez a `0x006a46c0`-t hívja (`0x0069f58a`), és a visszatérését `cmp eax,9` után (`0x0069f58f`) a 9-ről 0-ra írja (`0x0069f598`; a C szerint `param_3 = 0`). A `0x006a46c0` (362 bájt, végigolvasva) kódjai: `-1` (`0xffffffff`), ha a `0x006a41e0` (nem dekompilált) nullától különböző értéket ad (`0x006a46e7`-`0x006a4705`); `0`, ha az `[ebp+0xc]` index a lista (`[edi+0x4c]>>1`) alatt van, és az elem lekérése megtörtént (`0x006a4761`, `0x006a47eb`, `0x006a4821`); `9`, ha az index a lista végén van, vagy a zár már a saját szálon foglalt (`0x006a477a`, `0x006a47b6`, `0x006a479f`).
+  - **Következmény:** a `0x00907cd0` a `0x004306bd` `test eax,eax` után csak akkor marad ki, ha a `0x006a41e0` hibázott (`-1`). Egyébként fut, mert a 0 és a 9-ből leképezett 0 is a hívást engedi.
+  - **Nyitott:** a 0 kétféle jelentésű (megtalált elem, vagy a 9-ből 0-ra írt „nincs ilyen index”), és a `"filters"` kulcs melyik esetet adja, a `0x006a41e0`-tól függ (a kulcs indexre oldása). A `0x0069f510` EAX-be töltő visszatérési ágát nem követtem végig (a `ret 8` előtti `mov eax,ebx` sorok), ezért a leképezett érték visszatérési útja feltételes.
+  - **Bizonyítottsági fok:** a `-1` / `0` / `9` kódok és a 9→0 leképezés: **feltételes** (diszasszembly, egy út; a C egyezik). A 0 jelentése: **nyitott**, a `0x006a41e0` nélkül nem dönthető el.
+  - **Ghidra-kör kell: 0x006a41e0 - a `"filters"` kulcs feloldása indexre: mikor ad nullát, és mikor nem nullát [blokkoló]**
+- Ghidra-kör kell: 0x00429dc0 - a nem üres rect-ág: a `this+0x48` objektum vtbl `+0xd4` slotjának célja (az elem metszete) [nem blokkoló]
+
 ### 2.5/b A CMakeFaceMoviePanel működése — a „recompute" megerősítője (#1408)
 
 *A 2.5 csak két mondat volt; az arc-film PANEL-jének működése eddig nem
@@ -6633,6 +6666,20 @@ Az eltérés az x-koordinátában van, és a középpont okozza: a Python mindk�
 - NINCS MEG: a job-184/185 képkockasor (lásd fent).
 
 **Fejlesztési következmény.** A 4.4 képlete (`0x0076d900`) szerkezetileg megáll, de a Python-megvalósítás a fenti pontokon eltér tőle (középpont, méretsorrend, cserék, véletlenforrás, alap, mag). Ezek a jegy fejlesztési pontjai; a képlet nem változik.
+
+**12. kör (2026-10-19, #5225): a diavetítés indítási lánca és a `srand`.** (A 4.6 szakasz nincs a munkafában, ezért ide került.)
+
+*Forrás:* a `0x00783de0` (109 bájt) és a `0x0071d940` (381 bájt) és a `0x0071e120` (547 bájt) diszasszemblálása (`annot_disasm.py`), a `0x0071c380` dekompilált C-je (`.ghidra11/2026-10-19-ghidra-12.txt`), a bináris-index `xrefs` és `data_symbols` táblája.
+
+- **Az indítási lánc (megerősített: C és diszasszembly).** A `0x00783de0` a `this` (ECX) `+0x2c8` mezőjét ellenőrzi (0 esetén `4`-gyel tér vissza), majd a `0x0071c2d0`-t hívja, és a `+0x37c` módértékre ágaz: 5 és 6 esetén a `0x007853e0` fut, 10 esetén a `0x00785020`, mindkettő után `0x0071c0b0`. Minden más módértéknél (0-4, 7-9 és 11 fölött) a `0x00783e40`-`0x00783e42` sor a `0x0071c380`-t hívja (`mov ecx,edi; call 0x71c380`).
+- **A `0x0071c380` elágazása (megerősített: C és index).** A `+0x37c` (`param_1[0xdf]`) szerint: 1 → `0x0071d940`, 7 → `0x0071e120`, 2 → `0x0071ca60`, 8 → `0x0071dd40`, 9 → `0x0071dac0`. A `0x0071d940` és a `0x0071e120` közvetlen hívója az index szerint kizárólag a `0x0071c380` (egy-egy `call` él, adatreferencia nincs).
+- **A vtábla-bejegyzés.** A `0x00cad62c` DATA-hivatkozás a `CSelectionNode::vftable` (`0x00cad5b4`) `+0x78` slotja (a 30.), tehát a `0x0071c380` virtuális metódusként is elérhető, a `0x00783e42` közvetlen hívás mellett.
+- **Melyik ág a diavetítésé: NINCS MEG.** A `+0x37c` módértéket a hívó oldal írja. Ebben a körben nem néztem meg, melyik érték a diavetítés indításáé, ezért azt nem dönti el a szöveg: a diavetítés a `0x0071d940` (1) vagy a `0x0071e120` (7) ágon fut, a módérték szerint.
+- **`srand` a hívás előtt: NINCS.** A `0x00783de0` diszasszemblált törzsében és a `0x0071c380` hívott-listájában nincs `0x00c08214`. A `0x00c08214` a CRT `srand` (`call 0x00bf0583`, majd a seed a szál állapotának `+0x14` mezőjébe kerül); a `0x00c08221` a `rand`. A 10 közvetlen `srand`-hely közül kettő a két célfüggvényben van: `0x0071d993` (a `0x0071d940` törzsében) és `0x0071e23b` (a `0x0071e120` törzsében).
+- **A `0x0071d940` seedje (feltételes).** A `0x0071d98a`-`0x0071d993` sorok: `mov eax,edi; imul eax,eax,0xee6d00b1; push eax; call 0x0c08214`, ahol `edi` a ciklusindex. A seed tehát `i * 0xEE6D00B1` (32 bites szorzat), és a `srand` a ciklus minden elemén a `rand`-hívások előtt fut (`0x0071d9c0` és a többi `rand`). Ez a korábbi „mag nem igazolt” kijelentést pontosítja: a mag nem állandó, az elem indexéből jön. A `0x0071e120` seedje NINCS MEG: a `push eax` (`0x0071e23a`) előtti `eax` számítása a diszasszemblált ablakon kívül van.
+- **Bizonyítottsági fok.** Az indítási lánc és az elágazás: **megerősített** (C és diszasszembly: két út). A srand-helyek: **megerősített** (diszasszembly és index). A `0x0071d940` magképlete (seed): **feltételes** (egy út, az asm). A diavetítés módértéke és a `0x0071e120` seedje: **NINCS MEG**.
+- **Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy van srand a hívás előtt: a `0x00783de0` teljes diszasszemblált törzsében és a `0x0071c380` hívott-listájában nincs `0x00c08214`, a cáfolat nem sikerült. Azt is megnéztem, hogy a `0x0071d940` és a `0x0071e120` vtábla-slotból érhető-e el: a DATA-hivatkozások között nincs rájuk mutató bejegyzés. A vtábla-hívás kizárása nem negatív állítás, az index csak a közvetlen hívásokat látja.
+- **Nyitott.** A `+0x37c` módérték beállítója és a diavetítés értéke (a `0x00783de0` hívója), és a `0x0071e120` seedje (a `0x0071e23a` előtti `eax`).
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
