@@ -1521,7 +1521,9 @@ ListView {
         readonly property bool active: grid.appWindow
             && grid.appWindow.personAlbumName !== ""
         width: grid.width
-        height: active ? personAlbumColumn.implicitHeight : 0
+        // a Column implicitHeight-je csak a polish-fázisban frissül, az
+        // első megjelenéskor 0 lenne; a gyerekek magassága azonnal kész
+        height: active ? personAlbumColumn.childrenRect.height : 0
         implicitHeight: height
         visible: active
         // a fejléc magassága a Loader-es tartalom elrendezése után áll be,
