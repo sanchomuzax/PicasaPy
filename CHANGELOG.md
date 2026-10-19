@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.155] - 2026-10-19
+
+- A személyalbum az eredeti szerint jelenik meg: fejlécében a személy arcképe és neve, alatta az arcok sávja, majd a mappa összes képe, a zöld visszalépő sáv nélkül (#5330).
+
 ## [0.9.154] - 2026-10-19
 
 - A Név nélküliek fejlécének címe az eredeti, Georgia 24-es betűméretével jelenik meg, a névmező 163 px széles, súgót kapott, és a fejléc az eredeti háttérsávval látszik (#5343).
