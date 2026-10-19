@@ -188,9 +188,14 @@ Rectangle {
     // befoglaló hely vele együtt szűkül, a 280 px-es tartalom pedig balra
     // csúszik és a fiók levágása rejti el.
     property real editorDrawerOffset: editorControlsVisible ? 0 : -279
+    // A tényleges átmenet állapota megkülönbözteti az animációt az azonnali
+    // végértékre ugrástól; a teszt nem függ a képkockák mintavételezésétől.
+    readonly property bool editorDrawerAnimationRunning:
+        editorDrawerOffsetAnimation.running
     Behavior on editorDrawerOffset {
         enabled: viewer.uiTransitionsEnabled
         NumberAnimation {
+            id: editorDrawerOffsetAnimation
             objectName: "viewerEditorDrawerAnimation"
             duration: 250
             easing.type: Easing.InOutQuad

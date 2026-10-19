@@ -334,11 +334,17 @@ class TestAtnevezes:
 
 class TestVisszaallitas:
     @pytest.mark.parametrize("gomb", ["revertOkButton", "revertUndoSaveButton"])
+    @pytest.mark.parametrize("magassageltolas", (-5, 0, 5))
     def test_a_visszaallitas_gomb_az_eredeti_kepet_allitja_vissza(
-        self, kep_app, qt_app, gomb
+        self, kep_app, qt_app, gomb, magassageltolas
     ):
         window, controller, _engine = kep_app
         elokeszit(window, qt_app, controller)
+        celmagassag = window.height() + magassageltolas
+        window.setHeight(celmagassag)
+        assert varj(qt_app, lambda: window.height() == celmagassag, 10.0), (
+            f"a főablak nem vette fel a {magassageltolas:+d} px magasságeltolást"
+        )
         kep = mappa_ut(controller) / "a_nagy.jpg"
         eredeti = kep.read_bytes()
         kijelol(window, qt_app, [0])
@@ -357,8 +363,21 @@ class TestVisszaallitas:
         assert varj(qt_app, lambda: controller.hasSavedBackup([0]) is True), (
             "a mentés után nincs mentett másolat: a Visszaállítás tiltott marad"
         )
+        # A requestActivate() aszinkron a Windows ablakkezelőjén. A menü
+        # valódi kattintása előtt a teszt várja meg, hogy a célablak aktív
+        # legyen; a tíz másodperces korlát csak a lassú CI-aktiválást védi.
+        assert varj(qt_app, lambda: window.isActive(), 10.0), (
+            "a főablak nem aktiválódott a Visszaállítás menü kattintása előtt"
+        )
         tetel_kattintasa(window, qt_app, "&File", "menuFileRevert")
-        assert varj(qt_app, lambda: latszik(window, "revertConfirmDialog")), (
+        assert varj(
+            qt_app,
+            lambda: (
+                (parbeszed := _objektum(window, "revertConfirmDialog")) is not None
+                and parbeszed.property("opened") is True
+            ),
+            10.0,
+        ), (
             "a Visszaállítás párbeszéd nem nyílt meg"
         )
 

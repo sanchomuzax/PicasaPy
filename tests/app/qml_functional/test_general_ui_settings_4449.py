@@ -180,22 +180,20 @@ def test_tooltip_kapcsolo_kattintasra_elrejti_es_visszahozza(
     )
 
 
-def _figyeld_az_eltolast(viewer) -> list[float]:
-    """A fiók-eltolás minden változása (#4449 — pelyhes volt Windowson).
+def _figyeld_az_animacio_indulasat(viewer: QObject) -> list[bool]:
+    """Az animáció tényleges futását figyeli, nem a köztes képkockákat.
 
-    A korábbi őr 50 ms-onként mintavételezett, és lassú gépen két minta
-    között az egész átmenet lefuthatott, így köztes értéket sosem látott.
-    A változásjelzés minden animációs képkockán szól, tehát a köztes érték
-    akkor is rögzül, ha a mintavétel lemaradna."""
-    ertekek: list[float] = []
-    viewer.editorDrawerOffsetChanged.connect(
-        lambda: ertekek.append(viewer.property("editorDrawerOffset"))
+    A QML-animáció 250 ms alatt ér célba. Windows CI-n a képkockák
+    mintavételezése lemaradhat erről, miközben a néző saját futásállapotának
+    változásjelzése közvetlenül az animáció indulását rögzíti.
+    """
+    futasi_allapotok: list[bool] = []
+    viewer.editorDrawerAnimationRunningChanged.connect(
+        lambda: futasi_allapotok.append(
+            bool(viewer.property("editorDrawerAnimationRunning"))
+        )
     )
-    return ertekek
-
-
-def _volt_koztes(ertekek: list[float]) -> bool:
-    return any(-279 < e < 0 for e in ertekek)
+    return futasi_allapotok
 
 
 @pytest.mark.parametrize("magassageltolas", (-5, 0, 5))
@@ -215,7 +213,7 @@ def test_ui_atmenet_kapcsolo_ki_es_be_kattinthatoan_vezerli_a_fiok_atmenetet(
     fiok = _elem(ablak, "toggle_left_drawer")
 
     assert controller.uiTransitionsEnabled is True
-    ertekek = _figyeld_az_eltolast(viewer)
+    futasi_allapotok = _figyeld_az_animacio_indulasat(viewer)
     _kattints(ablak, qt_app, fiok)
     assert controller.editorControlsVisible is False, (
         "a szerkesztőfiók valódi gombja nem váltotta az állapotot"
@@ -224,19 +222,30 @@ def test_ui_atmenet_kapcsolo_ki_es_be_kattinthatoan_vezerli_a_fiok_atmenetet(
         qt_app,
         lambda: viewer.property("editorDrawerOffset") == -279,
     ), "a szerkesztőfiók átmenete nem ért véget"
-    assert _volt_koztes(ertekek), (
-        f"bekapcsolt átmenet mellett a szerkesztőfiók nem animálódott: {ertekek}"
+    assert True in futasi_allapotok, (
+        "bekapcsolt átmenet mellett a QML-animáció nem indult el: "
+        f"{futasi_allapotok}"
     )
 
     _kapcsold_at(ablak, qt_app, "optionsUiTransitionsCheck")
     assert controller.uiTransitionsEnabled is False
+    futasi_allapotok.clear()
     _kattints(ablak, qt_app, fiok)
     assert viewer.property("editorDrawerOffset") == 0
+    assert True not in futasi_allapotok, (
+        "kikapcsolt átmenet mellett is elindult a QML-animáció: "
+        f"{futasi_allapotok}"
+    )
 
     _kapcsold_at(ablak, qt_app, "optionsUiTransitionsCheck")
     assert controller.uiTransitionsEnabled is True
-    ertekek.clear()
+    futasi_allapotok.clear()
     _kattints(ablak, qt_app, fiok)
-    assert _varj(qt_app, lambda: _volt_koztes(ertekek)), (
-        f"a visszakapcsolt átmenet nem indult el: {ertekek}"
+    assert _varj(qt_app, lambda: True in futasi_allapotok), (
+        "a visszakapcsolt QML-animáció nem indult el: "
+        f"{futasi_allapotok}"
     )
+    assert _varj(
+        qt_app,
+        lambda: viewer.property("editorDrawerOffset") == -279,
+    ), "a visszakapcsolt szerkesztőfiók-átmenet nem ért véget"
