@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.153] - 2026-10-19
+
+- A kiadási jegyzet tartalék-szövegében nincs többé gondolatjel, így a kiadás képe utólag is feltölthető (#5347).
+
 ## [0.9.152] - 2026-10-18
 
 ## [0.9.151] - 2026-10-18
