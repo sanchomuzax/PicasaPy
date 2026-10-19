@@ -185,7 +185,9 @@ száma áll (például „37 arc"). Itt:
   mellőzése** gomb a kijelölt arcokat egyszerre teszi félre.
 - Minden arc alatt saját **Név hozzáadása** mező áll. Gépelés közben a
   mező alatt egy lista mutatja, mely meglévő személyek neve illik a
-  beírt szövegre, arcképükkel együtt. Itt az Enter **mindig** a
+  beírt szövegre, arcképükkel együtt. Ha a listában egy személyre
+  kattintasz, az arc azonnal az ő nevét kapja, a mező kiürül. Az Enter
+  viszont **mindig** a
   személyek kezelése ablakot nyitja meg: meglévő névnél az ablak a
   személyt jelöli ki, és a **Kiválasztás** gomb adja hozzá az arcot; új
   névnél az új személyt ott hagyod jóvá. Ha a program tippel valakire, a név mellett
@@ -195,13 +197,16 @@ száma áll (például „37 arc"). Itt:
   sarkában lévő **✕**. A program rákérdez — „Biztosan áthelyezi ezt a
   személyt a Mellőzött emberek albumba?" —, és a **Ne kérdezzen újból,
   mindig hagyja figyelmen kívül** pipával legközelebb kérdés nélkül
-  mellőz. A mellőzött arcok a **Mellőzött emberek** alá kerülnek, ahonnan
-  a **Mellőzés visszavonása** hozza őket vissza.
-- A **További javaslatok keresése** gombbal egyetlen kattintással több
-  névjavaslatot kérsz: a program egyszer lejjebb viszi a felismerési
-  küszöbét, és újra megnézi, kire tud tippelni. A **tárolt beállítás nem
-  változik** — a következő keresés megint a szokásos szigorúsággal fut.
-  A mellőzött arcok nézetében ez a gomb nem látszik.
+  mellőz. A mellőzött arcok a **Mellőzött emberek** alá kerülnek; a bal
+  hasábon a mellettük álló szám a mellőzés után azonnal frissül.
+- A fejléc **Mellőzött arcok megjelenítése** gombjával (szürke, amíg
+  nincs mellőzött arc) átváltasz a mellőzött arcokra. Ott a fejléc címe
+  **Mellőzött emberek**, alatta az arcok száma. Ha kijelölsz egy vagy több
+  arcot, megjelenik, hány van kijelölve („N kijelölve"), és a **Mellőzés
+  visszavonása** gomb: ez hozza vissza őket a Név nélküliek közé. A
+  **Vissza ide: Név nélküliek** gomb visz vissza a névtelen arcokhoz.
+- A Név nélküliek albumában nincs **További javaslatok keresése** gomb;
+  ez egy személy albumának fejlécében található (lásd lentebb).
 
 ### A mellőzés az eredeti Picasával is közös
 
@@ -354,7 +359,10 @@ amelyen erre a névre javaslat vár. Utána a két gomb csak ezekre hat —
 lásd lent, **Egyenként is dönthetsz**.
 
 Ha nincs mit eldönteni, ugyanezen a helyen a **További javaslatok
-keresése** gomb áll — ugyanaz, mint a Névtelenek nézetben.
+keresése** gomb áll. Egyetlen kattintással több névjavaslatot kérsz
+vele: a program egyszer lejjebb viszi a felismerési küszöbét, és újra
+megnézi, kire tud tippelni. A **tárolt beállítás nem változik**, a
+következő keresés megint a szokásos szigorúsággal fut.
 
 ### Egyenként is dönthetsz: jelölj ki képeket
 
