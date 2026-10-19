@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.155] - 2026-10-19
+
+- A diavetítés Pan and Zoom kivágásai az eredeti illesztő szerkezetét követik: jelöltenként a saját alaptéglalap közepéből indulnak, a nagyobb skála kapja az első eltolást, a két csere a skálázás előtt fut, az alap pedig egész méretű (#5351).
+
 ## [0.9.154] - 2026-10-19
 
 - A Név nélküliek fejlécének címe az eredeti, Georgia 24-es betűméretével jelenik meg, a névmező 163 px széles, súgót kapott, és a fejléc az eredeti háttérsávval látszik (#5343).
