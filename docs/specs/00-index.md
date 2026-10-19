@@ -542,6 +542,8 @@ rendezésének három módja** (`Preferences\peoplesort`), ld.
 
 ⭐ **2026-10-18 (#5185, 28. szakasz) - a személykezelés leltára: a 8 pont mind RÉSZBEN, a „Learn more” cím KÉSZ (`0x0074c760`); új [Contacts2]-jelöltek (`0x00586e20`, `0x00587110`), a 27.1 olvasata vitatott.**
 
+⭐ **2026-10-19 (#5185, 35. szakasz): mind a nyolc pont Eredeti/Nálunk/Teendő táblában; az Escape-helyesbítés után a csempe Escape nyitott; `PeopleAlbumUseFaceSrc=1` → `face_zoom` a `0x005e5290`/`0x00767e50` diszasszemblálásából (feltételes); a javaslatok, People Manager, tárolási időzítés és felismerési futás több része továbbra is nyitott, J2-J8 felvételi útjával.**
+
 ⭐ **2026-10-17 (#5184, 20. szakasz) - a személykezelés bináris pontjai: 1 lezárva (N4), 6 blokkolt.** A detektor belépési pontja és a küszöb útja megvan (`0x0048e1f0`; nulla → `this+0x3498`). A sorba állító két függvényében nincs név-feltétel, de a felismerés utáni ág és egy Colab-mérés dönt. A Ghidra-kérések a 20.7 szakaszban vannak.
 
 ⭐ **2026-10-12 (#4812, 9/g): névadás után az eredeti fejléce az elavult „van személy” jelzővel számol.** A sor „Add a name” mezőjének és a kép alatti „Type a name” mezőnek a véglegesítője (`0x006443e0`) a sort újraépíti (`0x00645350`), a fejlécet újraszámolja (`0x00642c10` → `0x00647df0`), de a `+0x364`-et nem frissíti. Ezért a szerkesztőben „Who is in these photos?” marad (élőben mérve: Colab #113). Az „In this photo:” a következő teljes frissítéskor jelenik meg (`selection_changed` → `peoplepanel/update` → `0x0064c340`). Nálunk a begépelt névadás már nem frissíti a fejlécet → ✅ #4812.
