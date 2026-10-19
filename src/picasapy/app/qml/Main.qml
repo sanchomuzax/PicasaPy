@@ -3592,7 +3592,11 @@ ApplicationWindow {
                     //: 12 px-es kerete a mi kártya-stílusunk, azt ez a jegy
                     //: nem kérdőjelezi meg.
                     Layout.rightMargin: 0
-                    color: Theme.contentPanel
+                    // #5352: a Név nélküliek (és a mellőzött) nézetben a
+                    // kártya kerete is az eredeti szürke (job-208: #e2e2e2);
+                    // sötét témában a mai szín marad.
+                    color: window.unnamedFacesOpen && !Theme.dark
+                           ? Theme.chromeBg : Theme.contentPanel
                     border.color: Theme.chromeBorder
 
                     ColumnLayout {

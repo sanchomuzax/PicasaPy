@@ -297,6 +297,10 @@ def test_nevmezo_merete_es_sugoja_az_eredeti_szerint(qml_app_5343, qt_app):
     assert var_feltetelre(qt_app, lambda: view.property("grouped") is False, 3.0)
 
     field = _find_item(window, "unnamedNameField")
+    # A mező a kibontáskor válik láthatóvá; a RowLayout csak utána méretezi.
+    var_feltetelre(
+        qt_app, lambda: field.property("width") == _REF_MEZO_SZELESSEG, 3.0
+    )
     assert field.property("width") == _REF_MEZO_SZELESSEG, (
         f"A névmező {field.property('width')} px, az eredeti {_REF_MEZO_SZELESSEG}."
     )
