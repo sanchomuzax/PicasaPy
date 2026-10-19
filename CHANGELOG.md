@@ -7,9 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.156] - 2026-10-19
+
+- A Név nélküliek nézetének törzse és kerete az eredeti szürke hátterével jelenik meg (#5352).
+
 ## [0.9.155] - 2026-10-19
 
-- A személyalbum az eredeti szerint jelenik meg: fejlécében a személy arcképe és neve, alatta az arcok sávja, majd a mappa összes képe, a zöld visszalépő sáv nélkül (#5330).
+- A diavetítés Pan and Zoom kivágásai az eredeti illesztő szerkezetét követik: jelöltenként a saját alaptéglalap közepéből indulnak, a nagyobb skála kapja az első eltolást, a két csere a skálázás előtt fut, az alap pedig egész méretű (#5351).
 
 ## [0.9.154] - 2026-10-19
 

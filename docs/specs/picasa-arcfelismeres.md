@@ -2439,6 +2439,180 @@ felirata és számlálója; a jobb oldali panel strukturális eltérései külö
 R2/R3 feladatot igényelnek, mert a rendelkezésre álló felvételek nem mutatják
 azt a panelt.
 
+### 19.3 #5336: a Név nélküliek fejlécének TRE-összevetése
+
+**Kérdés:** a `unknownfaceheaderpanel.tre` minden deklarációja, annak szülője,
+horgonyzása, mérete, kezdő láthatósága és módváltása megfelel-e a mai
+`UnnamedFacesView.qml` fejlécének, valamint a rendelkezésre álló eredeti
+felvételeknek.
+
+**Források és korlátok:** a munkafa `.eredeti5336/unknownfaceheaderpanel.tre`,
+`unknownfaceheaderpaneltext.tre` és `macros.tre` fájljai; a Picasa3.exe
+`runtime/respack.yt` erőforráscsomagja; a helyi
+`.eredeti5336/j1_csoportositott.png`, `j1_kibontott.png`, `j4_megerosites.png`,
+`j4_ignored_nezet.png` és `j4_mellozes_utan.png` képek; a
+`src/picasapy/app/qml/PicasaPy/UnnamedFacesView.qml` és `Main.qml`.
+Mind az öt helyi PNG 1280×1024 képpontos. Külön `job-207` nevű kép nincs a
+munkafában. A 19. szakasz korábbi felvétel-leírása a job-207 8. képét
+ismerteti, de ebben a körben azt a képet nem lehetett újra megvizsgálni.
+Ezért a `j1` és `j4` fájlnevek alapján megfigyelt állapotokat külön jelölöm,
+nem tulajdonítok nekik bizonyítatlan job-azonosítót. A 19. szakasz korábbi
+leírása a job-208-at J1-hez, a job-209/210-et J4-hez rendeli; a helyi
+fájlnevek ezt önmagukban nem bizonyítják.
+
+Az eredeti recteket a `respack.yt` rétegfejléceiből olvastam ki. A méret a
+rect két végpontjának különbsége. A `m_offsetLT` a bal és felső eltolást,
+`m_offsetRT` a jobb és felső eltolást tartja meg; `m_scaleX` a két vízszintes
+szélt, `m_offsetT` a felső szélt köti a szülőhöz; `m_hidden` a kezdeti
+láthatóságot nullára állítja (`macros.tre:21-23, 50-51, 63-65, 93-95,
+112-113`). A táblázat eredeti rectjei a 532×90-es erőforrás-vászon
+koordinátái, nem állítások a QML képpontjairól.
+Az `m_fakehidden` makró a `macros.tre`-ben definiált, de a vizsgált panel
+18 deklarációja közül egyik sem használja.
+
+A munkafa `HEAD` értéke `78c862ed` (#5333/#5334), és egy commit-tal
+lemarad a helyi `origin/main` `2f2561cb5` állapotától. Ez utóbbi a #5328/#5335
+végleges commitja, közvetlenül a HEAD után. A korábbi `8a637ac0` #5328
+ág-commit külön ágon maradt, és nem őse sem a HEAD-nek, sem az `origin/main`
+végleges commitjának. A „Nálunk” összevetés az `origin/main` QML-jét
+használja, mert az tartalmazza a kérésben megnevezett #5328-at. A munkafa
+QML-je még a régebbi állapot, ezért nem módosítottam, és a specben ezt a
+forráseltérést külön rögzítem.
+
+| Eredeti | Nálunk (`UnnamedFacesView.qml`) | Teendő |
+|---|---|---|
+| `album_title`, TRE:5-8. Szülő `album_title_clip`, `m_offsetLT`; `Property fontname Georgia`, `Property fontsize 24`; kezdetben látható. Respack `0x0033c77f`, rect `(52,14)-(429,35)`, 377×21. A text TRE nem ad hozzá feliratkulcsot. | `unnamedAlbumTitle`, az `unnamedTitleBlock` `RowLayout` gyermeke, QML:190-196; explicit szélesség/magasság nincs. „Unnamed people” vagy „Ignored people”; 18 px a `Theme.fontSize + 6` alapján, explicit betűcsalád nincs. | **D1 fejlesztői jegyjavaslat, a cím tipográfiájának egyeztetése.** Eredeti: `unknownfaceheaderpanel.tre:5-8`, respack `0x0033c77f`. Nálunk a család nincs megadva, a méret 18 px. Teendő: a cím betűcsaládját és mért megjelenő méretét a Picasa felvételével összevetni; eltérés esetén egyeztetni. Kész, ha az eredeti és a PicasaPy képkockáján a cím rectje, sortörése és betűképe dokumentáltan összevethető. |
+| `album_title_clip`, TRE:10-13. Szülő `headerbase`, `m_offsetLT`, aktív `XConstraint 1,1,-90`; a `#XConstraint 0,0,16` megjegyzés, nem aktív; kezdetben látható. Respack `0x0033c76e`, `(52,13)-(440,45)`, 388×32. | A cím `Text` közvetlenül az `unnamedTitleBlock` `RowLayout`-jában van, QML:176-197; explicit `clip` vagy `elide` nincs. | A D1 fejlesztői jegyjavaslat része. Eredeti: `unknownfaceheaderpanel.tre:10-13`, respack `0x0033c76e`. Kész, ha hosszú címnél a vágási határ is képkockán ellenőrzött, és a QML-ben az eredeti működéssel egyező viselkedés van, vagy dokumentáltan eltérő termékdöntés születik. |
+| `faceicon`, TRE:15-16. Szülő `headerbase`, `m_offsetLT`; kezdetben látható. Respack `0x0033b209`, `(11,12)-(47,48)`, 36×36. | `unnamedTitleIcon`, QML:182-189, az `unnamedTitleBlock` `RowLayout` első gyermeke, 36×36; forrása `icons/person-silhouette.svg`. | A méret és a cím melletti szerep megfelel. A Qt-erőforrás és a Picasa réteg azonossága nem követelmény ebben a szülő/horgony összevetésben; képi azonosságról nincs mérés, ezért erre nincs fejlesztői teendő. |
+| `info_text`, TRE:18-19. Szülő `headerbase`, `m_offsetLT`; kezdetben látható. Respack `0x0033c74c`, `(12,57)-(297,78)`, 285×21. A text TRE-ben nincs hozzá feliratkulcs. | `unnamedAlbumFaceCount`, az `origin/main` QML:241-259 sorai szerint az `unnamedFaceRow` `RowLayout` gyermeke; bal margója -16, függőleges igazítása középre; 12 px betűméretet kér (`Theme.buttonLabelSize`); explicit szélessége és magassága nincs. A munkafa HEAD-jében még 10 px szerepel. | **Mérés nyitott.** A TRE nem ad a `info_text`-hez szövegkulcsot vagy betűméretet. A j1 képek az arcszámlálót mutatják, de a jelenlegi QML kimenetéről nincs azonos méretű felvétel. A doboz- és betűméretet csak két összevethető képkocka pontos mérése döntheti el. |
+| `cluster`, TRE:24-28. Szülő `clustering_container`, `m_offsetLT`; kezdetben rejtett; `hidetarget` saját maga, `showtarget` `showall`. Respack `0x0033aeb2`, `(278,14)-(398,41)`, 120×27. Textkulcs: `unknownfaceheaderpanel/cluster`, „Group by face”. | A `clusterToggleButton`, az `origin/main` QML:199-209 soraiban a fejléc `RowLayout` gyermeke, `PicasaButton`, 120×27 és 12 px; kibontva „Group by face” feliratú. | **Nem cél azonos natív elemfa.** A QML egy gombbal valósítja meg a két feliratú váltást. A QML és a TRE deklarált mérete egyezik; a j1 csoportosított/kibontott képek a feliratot és állapotot támasztják alá. A külön TRE-gyerek helyett egy Qt-gomb használata önmagában nem eltérés. |
+| `showall`, TRE:30-33. Szülő `clustering_container`, `m_offsetLT`; kezdetben látható; `hidetarget` saját maga, `showtarget` `cluster`. Respack `0x0033aea1`, ugyanaz a `(278,14)-(398,41)`, 120×27 rect. Textkulcs: `unknownfaceheaderpanel/showall`, „Expand groups”. | Ugyanaz a `clusterToggleButton`, az `origin/main` QML:199-209 soraiban; csoportosítva „Expand groups” feliratú. Kezdő mód `grouped: true`, QML:27. | **Nem cél azonos natív elemfa.** A kezdeti „Expand groups” felirat és a kibontott mód „Group by face” felirata a `j1_csoportositott.png` és `j1_kibontott.png` képeken látszik. Az állapotváltó szerkezetet a TRE, a QML és a képek egymástól függetlenül támasztják alá. |
+| `clustering_container`, TRE:35-36. Szülő `headerbase`, `m_offsetRT`; kezdetben látható. Respack `0x0033ae90`, `(278,14)-(398,41)`, 120×27. | Nincs külön név szerinti Qt-konténer; maga a gomb a fejléc `RowLayout`-jának gyermeke, a kitöltő `Item` után, QML:170-209. | **Nem cél a szülő objektum azonossága.** A QML `RowLayout` a gyermekek sorrendjét és helyét adja, a gomb mérete és a két állapot felirata megegyezik a mért eredeti réteggel. A pontos képernyő-koordináta egyezése nincs QML-képkockán mérve. |
+| `showignored`, TRE:38-41. Szülő `viewtype_container`, `m_offsetLT`; kezdetben látható; önmagát rejti, `showunknown`-t mutatja. Respack `0x0033ae7f`, `(403,14)-(523,41)`, 120×27. Textkulcs: `unknownfaceheaderpanel/showignored`, „Show ignored faces”. | `unknownfaceheaderpanel/showignored`, az `origin/main` QML:216-224 soraiban a `unknownFaceViewTypeContainer` gyermeke, `PicasaButton`, 12 px; nem Mellőzött módban látszik, `hasIgnoredFaces` hamis értékénél letiltott. | A két mód közti láthatóság egyezik a j1 és j4 képekkel. A TRE nem deklarál letiltást; a QML `hasIgnoredFaces` feltétele erre külön szabály. A j1 képen a gomb szürke, a `j4_mellozes_utan.png` képen aktív. Ez a letiltási feltétel nem része a kért TRE-horgony, méret és módonkénti láthatósági összevetésnek, ezért ebben a feladatban nem cél. |
+| `showunknown`, TRE:43-47. Szülő `viewtype_container`, `m_offsetLT`; kezdetben rejtett; önmagát rejti, `showignored`-t mutatja. Respack `0x0033ae6e`, ugyanaz a `(403,14)-(523,41)`, 120×27 rect. Textkulcs: `unknownfaceheaderpanel/showunknown`, „Back to Unnamed”. | `unknownfaceheaderpanel/showunknown`, az `origin/main` QML:225-232 soraiban ugyanabban a 120×27-es konténerben, `PicasaButton`, 12 px; csak `ignoredMode` esetén látható. | A kezdő rejtettség és a mellőzött mód láthatósága egyezik a j1 és `j4_ignored_nezet.png` képekkel. Nincs további teendő ehhez a sorhoz. |
+| `viewtype_container`, TRE:49-50. Szülő `headerbase`, `m_offsetRT`; kezdetben látható. Respack `0x0033ae5d`, `(403,14)-(523,41)`, 120×27. | `unknownFaceViewTypeContainer`, a fejléc `RowLayout` gyermeke, QML:211-233, 120×27; a két gomb `anchors.fill`-lel ugyanazt a rectet tölti ki. | **Nem cél a natív szülőazonosság.** A két gyermek a megfelelő módokban ugyanazon méretű helyen jelenik meg; a QML-konténer megfelelteti a TRE konténer szerepét. |
+| `ignore`, TRE:53-56. Szülő `headerbase`, `m_offsetRT`; kezdetben rejtett; `SharedHandler` a `hottip_label`-hez. Respack `0x0033b03b`, `(403,56)-(523,83)`, 120×27. Textkulcs: `unknownfaceheaderpanel/ignore`, „Ignore Selected”; tooltip: „Ignore all of the selected faces”. | `ignoreFacesButton`, az `origin/main` QML:302-315 soraiban az `unnamedFaceRow` `RowLayout` gyermeke, középre igazítva; `PicasaButton`, 120×27, 12 px; csak kibontott Név nélküliek módban látható. A tooltip szövege megvan. A munkafa HEAD-jében még a #5328 előtti egyszerű `Button` van. | **Nincs fejlesztői teendő az `origin/main` állapotán.** Eredeti: `unknownfaceheaderpanel.tre:53-56`, respack `0x0033b03b`, 120×27. A #5328/#5335 QML sora `PicasaButton`, 120×27 és 12 px; ez a deklarált méretet egyezteti. A munkafa kódja elmaradt ettől az `origin/main` állapottól. |
+| `addname_instructions`, TRE:58-63. Szülő `headerbase`, `m_offsetLT`, `m_displayfont12`, kezdetben rejtett, aktív `XConstraint 1,1,-16`, `textwrap 0`. Respack `0x0033b0a9`, `(52,42)-(523,55)`, 471×13. A text TRE-ben nincs feliratkulcs. | A `unnamedInstructions`, QML:336-346, mindig látszik és a `root.instructionText` szöveget adja. A QML gyökér `ColumnLayout`-jának eleme, nem a fejlécé. | **Nem azonosított közvetlen pár, nincs eldöntött eltérés.** A Picasa3.exe diszasszemblálása `0x0074c8f0` címen az `instructionpanel/body` elemet is hivatkozza; a látható útmutató külön paneltartalom lehet. A `j1` képek látható útmutatója nem bizonyítja, hogy a TRE-ben rejtett `addname_instructions` vált láthatóvá. Kész fejlesztői teendő csak az elem és a külön útmutató-panel kapcsolatának bináris vagy felvételes bizonyítása után adható. |
+| `hottip_label`, TRE:65-68. Szülő `headerbase`, `m_offsetRT`, `m_displayfont12`, jobbra igazított; kezdetben látható, nincs rejtést beállító makró. Respack `0x0033c75d`, `(210,42)-(523,55)`, 313×13. A text TRE-ben nincs közvetlen label szöveg. | Külön QML `Text` nincs. Az Ignore gombhoz van `ToolTip`; a névmezőhöz az `origin/main` QML-ben nincs tooltip. QML:266-284, 302-315. | **D2 fejlesztői jegyjavaslat, tooltip-kötés összevetése.** Eredeti: `unknownfaceheaderpanel.tre:56,65-68,74` és text TRE:18-25. Nálunk csak az Ignore tooltipje van kifejezetten a gombhoz kötve. Kész, ha a Picasa hover-felvételén az `addname` és `ignore` tooltipje, a megjelenési helyük és a QML viselkedése össze van vetve; csak a mért eltérést kell javítani. |
+| `addname`, TRE:70-74. Szülő `headerbase`, kezdetben rejtett, `m_offsetRT`, `m_buttontypecolor`, `SharedHandler` a `hottip_label`-hez. Respack `0x0033b098`, `(235,60)-(398,80)`, 163×20. Textkulcs: `unknownfaceheaderpanel/addname`, „Add a name”; tooltip: `Assign a name to all of the selected faces`. | `unnamedNameField`, az `unnamedFaceRow` `RowLayout` gyermeke, QML:269-284; függőlegesen középre igazított `TextField`, 162×20; kibontott Név nélküliek módban látszik, placeholder „Add a name”. Nincs tooltip a mezőn. | **D2 fejlesztői jegyjavaslat, méret és tooltip felmérése.** Eredeti: `unknownfaceheaderpanel.tre:70-74`, respack `0x0033b098`, 163×20. Nálunk a deklarált szélesség 162 px, a tooltip hiányzik a mezőről, és a vezérlő Qt `TextField`. Kész, ha az eredeti kibontott képkocka alapján a szélesség és hover-viselkedés pontosan össze van mérve, és az eltérés javítva vagy a Qt-s szövegmezőre vonatkozó döntés indoklással dokumentálva van. |
+| `shadow`, TRE:79-81. Szülő `headerbase`, `m_scaleX`, `m_offsetT`; kezdetben látható. Respack `0x0033958e`, `(0,86)-(532,90)`, 532×4, áttetsző árnyékréteg. | Nincs külön `shadow` nevű elem a fejléc QML-jében; a nézetet tartalmazó `Main.qml` `Rectangle`-je a `Theme.contentPanel` színű, QML:3595; ez világos témában `#ffffff`, sötétben `#2e2e2e` (`Theme.qml:61`). | **D3 fejlesztői jegyjavaslat, fejléc felületének összevetése.** Eredeti: `unknownfaceheaderpanel.tre:79-81`, respack `0x0033958e`. Nálunk nincs külön 4 px-es fejlécárnyék. Kész, ha a Picasa és a QML fejléc határát képkockán összevetették, és az árnyék jelenlétéről vagy szándékos elhagyásáról dokumentált döntés született. |
+| `headerbase0`, TRE:83-85. Szülő `root`, `m_scaleX`, `m_offsetT`; kezdetben látható. Respack `0x0033957d`, `(0,0)-(532,86)`, 532×86, kitöltése `#eaeaea`. | Nincs azonos nevű QML elem. A gazda `Main.qml` tartalom-`Rectangle`-je a `Theme.contentPanel` színű, QML:3595; ez világos témában `#ffffff`, sötétben `#2e2e2e` (`Theme.qml:61`). | **D3 fejlesztői jegyjavaslat, háttérszín egyeztetése.** Eredeti: `unknownfaceheaderpanel.tre:83-85`, respack `0x0033957d`. A QML gazda sötét témában `#2e2e2e`, világosban `#ffffff`. Kész, ha a felületi tartomány két képkockáján a háttér összehasonlított, és a színeltérés javítva vagy tudatos termékdöntésként rögzítve van. |
+| `headerbase1`, TRE:87-90. Szülő `root`, `m_scaleX`, `m_offsetT`; `m_hidden`, kezdetben rejtett. Respack `0x0033956c`, `(0,0)-(532,86)`, 532×86, kitöltése `#f8f8f8`. | Nincs vele azonos nevű vagy dokumentált alternatív `headerbase1` QML-állapot. | **Nem cél a rejtett alternatív erőforrásréteg átvétele**, mert az eredeti TRE is kezdetben elrejti, és a vizsgált j1/j4 felvételek nem mutatnak külön kapcsolást. Más mód aktiválását ez a kör nem vizsgálta. |
+| `headerbase`, TRE:92-94. Szülő `root`, `m_scaleX`, `m_offsetT`; látható, átlátszó szerkezeti réteg. Respack `0x0033955b`, `(0,0)-(532,86)`, 532×86. | Nincs azonos nevű QML-csomópont. A gyökér `ColumnLayout` és a cím `RowLayout` adja a Qt szerkezeti elrendezést, QML:170-197. | **Nem cél a natív csomópontfa másolása.** A Qt elrendezési objektumok a viselkedési szerepet veszik át. A QML és a Picasa képernyő-koordinátájának pixelpontos egyezése külön mérés nélkül nem állítható. |
+
+#### 19.3.1 Módonkénti láthatóság és a felvételek viszonya
+
+| Mód | A TRE-ből várt állapot | Helyi eredeti kép | Jelenlegi QML |
+|---|---|---|---|
+| Kezdő, csoportosított Név nélküliek | `showall` látható, `cluster` rejtett; `showignored` látható, `showunknown` rejtett; `ignore` és `addname` rejtett. | `j1_csoportositott.png`: „Expand groups”, „Show ignored faces”; a két fejlécművelet rejtett. | `grouped: true`; azonos feliratok és láthatóság. |
+| Kibontott Név nélküliek | A `cluster` váltásával a csoportgomb vált feliratot. A `ignore` és `addname` kezdő rejtett állapotból való megjelenítését a vizsgált TRE deklaráció nem tartalmazza. | `j1_kibontott.png`: „Group by face”, látható névmező és „Ignore Selected”. | `!ignoredMode && !grouped` feltétellel a két vezérlő látható. Ez a felvétel és a QML állapot között egyezik, de a váltást ez a TRE-részlet nem magyarázza. |
+| Mellőzött nézet | `showunknown` váltógomb látható, `showignored` rejtett; `cluster`/`showall` váltó továbbra is deklarált. | `j4_ignored_nezet.png`: „Ignored people”, „Back to Unnamed”; az útmutató látható. | `ignoredMode` megfordítja a két nézetváltó gomb láthatóságát. |
+| Mellőzés után visszatért Név nélküliek | A mellőzött arc kiesése önmagában nem TRE-módváltó szabály. | `j4_mellozes_utan.png`: az arcszám 6-ról 5-re változik, „Show ignored faces” aktív. | A `hasIgnoredFaces` állapot aktiválja a gombot. |
+
+**A TRE és a képek közti kimondandó eltérés:** a `j1_kibontott.png` képen a
+`addname` és az „Ignore Selected” látszik, a TRE viszont mindkettőt
+kezdetben rejti, és ehhez a két elemhez nem ad `showtarget` vagy
+`hidetarget` deklarációt. Ez nem cáfolja a képen látott kibontott állapotot,
+de a bemásolt TRE önmagában nem magyarázza a vezérlők előhozását. A QML
+explicit mód-feltételei ezt a láthatóságot megvalósítják. A látható útmutató
+nem bizonyítja a TRE-ben rejtett `addname_instructions` megjelenését: a
+bináris diszasszemblálás `0x0074c8f0` az `instructionpanel/body` nevet is
+használja. A `hottip_label` hover nélküli képeken nem ítélhető meg.
+
+#### 19.3.2 Bizonyítottság, független utak és cáfoló kör
+
+**Bizonyítottsági fok: feltételes az egész összevetésre.** A TRE-sorok,
+makrók, QML-tulajdonságok és erőforrás-rectek pontosan kiolvashatók. A két
+váltópár állapotát a TRE és a QML mellett a j1/j4 képek is alátámasztják.
+Az egész panel pixelpontos egyezése azonban nincs mérve PicasaPy-képkockán,
+a job-207 kép nincs helyben, és a HEAD nem tartalmazza a #5328 változásait.
+
+**A két független út:**
+
+- **A út, deklaráció és kód:** kézzel feloldott TRE és `macros.tre`, a
+  `respack.yt` rect-rétegei, majd az `origin/main` #5328 utáni QML-jének közvetlen olvasása.
+  Ez megerősíti a deklarált szülőket, horgonyokat, méreteket, kezdeti
+  rejtettséget, feliratokat és a QML-ben kifejezett mód-feltételeket.
+- **B út, a forrástól független felvétel:** a helyi j1/j4 képeken külön
+  ellenőriztem a két váltópár feliratait, helyét és a rejtett, illetve látható
+  vezérlőket. A képek megerősítik a két mód váltását, de nem mérik a QML
+  renderét, és nem mutatnak tooltipet.
+- **Egyezés:** a csoportosítási és nézetváltó feliratok, az alternáló
+  láthatóság, valamint a kibontott fejléc két művelete egyezik. A TRE a két
+  művelet váltásának okát nem deklarálja; ez a rész feltételes marad.
+
+**Cáfoló kísérlet:** a cáfolandó állítás az volt, hogy a `cluster/showall` és
+a `showignored/showunknown` négy különböző, egymástól eltérő helyű gomb.
+Megpróbáltam ezt a TRE show/hide céljaival, a `respack.yt` rect-rétegeivel és
+a j1/j4 képekkel megcáfolni. A cáfolat sikerült: a két pár külön helyet foglal
+el, de mindkét pár tagjai páronként ugyanazon 120×27 recten váltanak. A
+következtetést ugyanazzal a mércével ellenőriztem: TRE-állapot és cél,
+erőforrás-réteg rectje, valamint a képeken olvasható felirat. Mindhárom út
+ugyanazt mutatja.
+
+#### 19.3.3 A #5336 „Kész, ha” pontjai
+
+1. **A TRE minden eleme táblázatban van:** ✅ mind a 18 deklaráció külön sor,
+   a szülővel, horgony/makró feloldással, respack recttel és mérettel,
+   kezdeti láthatósággal, szövegkulccsal, QML-megfelelővel és teendővel.
+2. **Minden eltérés indokoltan nem cél vagy fejlesztői jegyjavaslat:** ✅ a
+   natív csomópontfa eltérései indokoltan nem célok; a cím, tooltip, árnyék
+   és háttér vizuális eltérései a D1-D3 fejlesztői jegyjavaslatokban szerepelnek; a #5328 a gombméretet már
+   egyezteti az `origin/main` forrásában az eredeti TRE-sorral. Az útmutató
+   közvetlen megfelelése és a számláló pontos renderelt mérete nyitott,
+   mivel nincs döntő bizonyíték.
+3. **A felvétel és a TRE ellentmondása kimondva:** ✅ a kibontott képen
+   látható `addname` és `ignore` vezérlő kezdő rejtettsége és hiányzó TRE
+   váltódeklarációja rögzítve. A külön útmutatópanelt és a hover nélküli
+   tooltipet nem állítottam bizonyítatlan ellentmondásnak.
+
+#### 19.3.4 Javasolt fejlesztői jegyek
+
+Ezek jegytörzs-javaslatok, nem létrehozott GitHub-jegyek. A pixeleltérések
+igazítását csak összevethető felvételek után javaslom.
+
+**D1. Cím betűképe és vágása**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `unknownfaceheaderpanel.tre:5-13`, `album_title` és `album_title_clip`, Georgia 24, cím rect 377×21, klip 388×32. | `UnnamedFacesView.qml:190-196`, alap betűcsalád, 18 px, explicit klip nincs. | Két azonos méretű nézetképen mérni a cím betűképét, rectjét és a hosszú cím vágását; csak a mért eltérést igazítani. |
+
+**Kész, ha:** a csoportosított, kibontott és mellőzött állapot címének
+rectje, betűképe és hosszú címnél a vágási határ összevethető képkockán van
+mérve, az eltérés pedig javítva vagy indokoltan dokumentálva.
+
+**D2. Névmező és tooltip**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `unknownfaceheaderpanel.tre:65-74`, `hottip_label`, `addname`, `ignore`; respack `addname` `0x0033b098`, 163×20. A text TRE az `addname` tooltipjét is megadja. | A `TextField` 162×20, saját tooltip nélkül; külön `hottip_label` nincs. Az Ignore gomb tooltip-szövege a QML-ben megvan. | Az eredeti felvételen a két fejlécvezérlő hover-szövegét, helyét és a mező méretét mérni; a mért eltéréshez igazítani vagy a Qt-s szövegmezőről dokumentált döntést rögzíteni. |
+
+**Kész, ha:** az `addname` és `ignore` hover-viselkedése, a mező pontos
+szélessége és a tooltip helye képkockán össze van vetve, a döntés és az
+esetleges javítás rögzítve.
+
+**D3. Fejléc háttér és árnyék**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `unknownfaceheaderpanel.tre:79-94`, `shadow`, `headerbase0`, `headerbase1`, `headerbase`; respack 532×4-es árnyék, 532×86-os rétegek, a látható háttér `#eaeaea`. | Nincs külön shadow vagy base réteg a QML-ben; a gazda tartalomfelület a `Theme.contentPanel` színt használja, világos témában `#ffffff`, sötétben `#2e2e2e`. | A Picasa és a QML fejléc határát összevetni; a mért háttér- vagy árnyékkülönbséget javítani, vagy az elhagyást tudatos döntésként dokumentálni. |
+
+**Kész, ha:** a fejléc teljes háttérhatára és árnyéka összevethető
+képkockán van mérve, és mindkettő egyező vagy indokoltan eltérő.
+
+#### 19.3.5 Nyitott kérdések
+
+- A `job-207` 8. képének helyi másolata hiányzik; a korábbi leírás megvan, de
+  az eredeti kép újbóli vizsgálata `NINCS MEG`.
+- A `hottip_label` és az `addname` tooltipjének tényleges megjelenési
+  állapota hover-felvételen nincs mérve.
+- Az eredeti TRE által nem deklarált `addname` és `ignore` módváltás
+  forrása nincs meg. A `0x00749ba0` függvény diszasszemblálása önmagában nem
+  oldja fel az állapotmezők és az indirekt hívások szerepét. A célzott kérés:
+  `Ghidra-kör kell: 0x00749ba0 - mely állapotfeltételek mutatják vagy rejtik az addname és ignore elemeket a csoportosított, kibontott és mellőzött módban, és melyik vezérlő váltja ezeket [blokkoló]`.
+- A PicasaPy aktuális renderelt fejlécének képkockája hiányzik, így az
+  erőforrás-rectek és a QML-képpontok pixelpontos összevetése `NINCS MEG`.
+
 ## 20. #5184: a személykezelés bináris oldalának eredménye (2026-10-17, 2. kör)
 
 **Hatókör:** a jegy N1, N3, N5, N6, N7 bináris oldala, valamint a felvételes N4 és N8. Az öt dekompilált függvény a `referencia/ghidra/2026-10-17-szemelykezeles.txt` fájlban van: `0x0048ef20`, `0x007ba820`, `0x00584cc0`, `0x00647270`, `0x006470d0`. A többi címet diszasszemblálás (`annot_disasm.py`) és a bináris-index élei (`xrefs`, `string_xrefs`) adják. **Az index csak a közvetlen hívásokat látja**, a vtable-hívásokat nem; a negatív állítások erre a korlátra épülnek.
@@ -3548,7 +3722,7 @@ Tehát a `0x006cde50` +0x44 hívása egy Red.dll-beli objektumon fut; a `DAT_00d
 
 **A +0x44 célja: NINCS MEG.** A cél a Red.dll-beli objektum vtáblájában van. A Red.dll a kutatási másolatban megvan (`plugins/Red.dll`), de nincs a bináris-indexben, és ebben a körben nem vizsgáltam. Ez a 960 px kérdéssel együtt a Red.dll-re irányít (29.7).
 
-**A `this+0x2908` írói: NINCS MEG (közvetlen írás nincs).** A teljes `.text` darabolt pásztázása (`paszta.py`, 12 s) a `[reg+0x2908]` alakot két függvényben találja, mindkettőben olvasásként: `0x0048e1f0` (`mov edx, [ebp+0x2908]`, `0x0048e2b1`) és `0x0048ef20` (`[edi+0x2908]` a `0x0048f4d2`-nél, `[ecx+0x2908]` a `0x0048f6f1`-nél). Író 0. Ez csak a közvetlen eltolásra igaz; a bázis-eltolt írás (mint a `0x00448fb0`-ban az `add esi, 0x2748`) nem zárható ki.
+**A `this+0x2908` írói: a `0x0048ef20`-ban van bázis-eltolt író (33.2); a közvetlen eltolású keresés 0-t adott, és ez téves volt.** A teljes `.text` darabolt pásztázása (`paszta.py`, 12 s) a `[reg+0x2908]` alakot két függvényben találja, mindkettőben olvasásként: `0x0048e1f0` (`mov edx, [ebp+0x2908]`, `0x0048e2b1`) és `0x0048ef20` (`[edi+0x2908]` a `0x0048f4d2`-nél, `[ecx+0x2908]` a `0x0048f6f1`-nél). Író 0. Ez csak a közvetlen eltolásra igaz; a bázis-eltolt írás (mint a `0x00448fb0`-ban az `add esi, 0x2748`) nem zárható ki.
 
 **A detektor-bemenet mérete: NINCS MEG.** A `0x006cde50` méret-ágának forrása (`this+0x2908 >> 1`) a 27.x szerint marad, a tábla írója nincs. A 960 px nincs a Picasa3.exe C-kódjában (27.2), a Red.dll-ben lehet.
 
@@ -3625,7 +3799,7 @@ Nincs fejlesztési lista: az N-pontok egyike sem zárult le úgy, hogy eltérés
 
 - A `this+0x2748` mezőre a függvényben nincs hivatkozás (a diszasszemblálásban nincs `0x2748`, `0x27a0`, `0x27a8`, `0x27ac` eltolás). Az írói tehát a függvényen kívül vannak; a 29.3 szerinti `0x00448fb0` bázis-eltolt `add esi, 0x2748` a jelölt.
 - A `this` osztálya NINCS MEG: a függvény 15 indirekt hívást tartalmaz (`call [reg+...]`), a vtábla-azonosítás nem történt meg.
-- **Ellentmondás (nyitott):** a dekompilált C (1353-2395. sor) többször ír a `this+0x2908` mezőbe (`*(float **)(param_1 + 0x2908) = pfVar18;`, a 324. és 340. sorban; nullázás a 376. és 387. sorban). A diszasszemblálás (teljes függvény, `0x0048ef20`-`0x00490331`, lefedettség ellenőrizve) viszont a `[reg+0x2908]` alakot csak olvasásként mutatja (`0x0048f4d2`, `0x0048f6f1`); íráshoz tartozó utasítás nincs. A 29.4 „író 0" állítása ezzel két úton nincs igazolva, és a C-ben látható írás forrása nem azonosított.
+- **Ellentmondás feloldva (33.2):** a C-ben látható `this+0x2908` írások az asm-ben **bázis-eltolt** alakban vannak: a `0x0048f4d8` `add edi, 0x28c0` után a `0x0048f4ff` `mov [edi+0x48], ebx` a `this+0x2908` mezőt írja. A `[reg+0x2908]` alakú keresés ezt nem látja, ezért a 29.4 „író 0" állítása hibás (javítva a 29.4-ben).
 
 ### 30.4 `0x00587110`: a `[Contacts2]` olvasója, nem írója
 
@@ -3700,7 +3874,8 @@ Az eredeti két olvasási/persistálási kódrészletben a formátumsztring `%I6
 
 - Ghidra-kör kell: `0x00586e20` - melyik belső ág módosítja a Contacts2 adatot, és milyen feltétellel hívja vagy ütemezi az INI-véglegesítést [blokkoló]
 - Ghidra-kör kell: `0x007b81e0`, `0x007b9630`, `0x007ba060` - a Choose esemény callbackje, a `0x00586e20` elérésének útja és a kiírás pillanata [blokkoló]
-- Ghidra-kör kell: `0x00586540` - a contact ID előállításának forrása és az eredeti tárolt alak szélessége [blokkoló]
+- **Válasz [részben] (#5184, 2026-10-18, 11. kör):** a `0x00586540` nem állítja elő a contact ID-t, hanem keres. A `this+0x38` alatti térképobjektumból (`0x0058fc40`) a kulcs hash-értéke (`0x00409df0`) szerint kiválasztott láncolt listát járja végig, és az első, `0x006f9890` egyezés-ellenőrzésen átmenő elem `+0x10` és `+0x14` dword-jét másolja a `param_4`-be (a C-dumpban: `*param_4 = puVar3[4]; param_4[1] = puVar3[5];`). A visszaadott alak tehát **8 bájt** (két dword): ez a memóriabeli találat mérete. A második ág (`0x00586a60`, bemenete a `puVar3[4]`, `puVar3[5]`) állítja elő a jelölt azonosítót, és a `param_3` karakterláncával hasonlít össze, 2 bájtonként (széles karakter, valószínűleg UTF-16). Bizonyítottsági fok: **feltételes** (egy út: a C-törzs). Az „eredeti tárolt alak szélessége" **NINCS MEG**: a 8 bájt a memória-elem mérete; az INI-ben tárolt alak külön kérdés (a `%I64x` formátum 16 hexa-jegy, 30.4).
+  - Ghidra-kör kell: `0x00586a60` - a contact ID-jelölt előállítása a `puVar3[4]`, `puVar3[5]` bemenetből, és a `param_2` kulcs alakja [blokkoló]
 
 ### 32.6 A #5184 „Kész, ha” pontjainak állapota
 
@@ -3715,3 +3890,47 @@ Az eredeti két olvasási/persistálási kódrészletben a formátumsztring `%I6
 | N8, People Manager referencia-kép | ✅ LEZÁRVA | A job-186 24. képe a 631 x 351-es People ablakot és a vezérlőket rögzíti; a mérési leírást a jegy tartalmazza. |
 
 Nincs új fejlesztői lista: a PicasaPy jelenlegi 16 jegyű azonosítója és INI API-n át történő mentése nem bizonyítottan tér el az eredetitől. N6 lezárásához a fenti három célzott Ghidra-kérdés és a Choose előtti/utáni fájldiff szükséges.
+
+## 33. #5184, tizenegyedik kör: `0x006956d0` állapotgépe, a `this+0x2908` alias-írója és a `0x00586540` (2026-10-18)
+
+**Forrás:** a `.ghidra10/2026-10-18-ghidra-10.txt` (C-dump: `0x006956d0`, `0x00430610`, `0x0048ef20`, `0x00586540`), kiegészítve a Picasa3.exe capstone-diszasszemblálásával (`annot_disasm.py`). A diszasszemblált kimenet nem került a repóba.
+
+### 33.1 `0x006956d0` → `0x0068c030`: a kapu és az állapotbájt
+
+- A `0x0068c030` (fájlíró, 22.5) hívása (`0x00697557`; C-dumpban az 1512-1513. sor) előtt `cmp byte ptr [esp+0x1b], 2` (`0x00697540`) áll: a hívás **csak** akkor fut, ha az állapotbájt 2.
+- Az állapotbájt (C-ben `uStack_1608._3_1_`) írói a diszasszemblálásban:
+  - `0x00695737` = 1 és `0x0069573e` = 0 (a C 189-192. sora, a `param_3[0x40]` ágon);
+  - `0x00696d36` = 2: az 1-es ágban, a `0x0068ac80` hívás (`0x00696d31`) után; ez a C-dumpban nem látszik;
+  - a `0x00506270` táblakeresés (`0x00695a52`), amely a `this+0x3f0` tábla bejegyzésének `+0x20` mezőjét írja `*arg`-ba, ha a bejegyzés típusa `0x3e9`; egyébként az elem nyers értéke marad.
+- Az 1-es ág feltétele: `[esp+0x1b] == 1` és `[ebx+0x100] != 0` (`0x00696cf5-0x00696d0e`). A spec 23.5/24.5 állítása (a `0x0068c030` csak a 2-es állapotnál fut, az 1-es első lépése a `0x0068ac80`) így **megerősítve**: a C-dump és a diszasszembly egyezik.
+- **Feltételes:** a „mikor" pontos feltétele, mert a `0x00696d3b` és a `0x00697540` közti vezérlési út nincs végigkövetve, és a `this+0x3f0` tábla feltöltése sincs megnézve.
+
+### 33.2 `0x0048ef20`: a `this+0x2908` írója bázis-eltolt
+
+- A `0x0048f4cb` ágban: `mov edi, [esp+0x150]` (a `this`), `mov ecx, [edi+0x2908]` (`0x0048f4d2`), `add edi, 0x28c0` (`0x0048f4d8`), majd `mov [edi+0x48], ebx` (`0x0048f4ff`). Mivel `edi = this+0x28c0`, a tárolás a `this+0x2908` mezőt írja (`0x28c0 + 0x48 = 0x2908`). A C-ben ez a `*(float **)(param_1 + 0x2908) = pfVar18;` megfelelője.
+- Az igazolt író tehát megvan. A többi C-beli író (`0x0048f282`, `0x0048f35f`, `0x0048f395`, `0x0048f84f`, `0x0048f886`, mind `[ebp+0x48]` vagy `[esi+0x48]`) ugyanezt az eltolást használja, de az alap-regiszterük forrását **nem követtem végig**.
+- A `this+0x28c0` alobjektum zárral védett tömb: a `+0x20` (`this+0x28e0`) tulajdonos-szál, a `+0x24` (`this+0x28e4`) rekurzió-szám, a `+0xc` CS-jelző és a `+0x28` CRITICAL_SECTION. Ez a `0x00506270` zármintájával egyezik; a `+0x48` a tömbmutató (`this+0x2908`), a `+0x4c` a darabszám-jelző (`this+0x290c`).
+- **A `this` osztálya: NINCS MEG.** A `0x0048ef20` nem konstruktor (nincs vtábla-írás a törzsében). A vtáblát a hívóknál kell keresni: `0x00414940`, `0x0047b020`, `0x00536a90`, `0x005c6500`.
+
+### 33.3 `0x00586540`
+
+- A válasz a 32.5 alatt van (részben: a 8 bájtos találat-alak megvan, az ID-előállítás a `0x00586a60`-ban van).
+
+### 33.4 Cáfoló kísérletek
+
+- **33.1 cáfolata:** kerestem olyan írót, amely az 1-es ágban a `[esp+0x1b]`-et 2-n kívül más értékre állítja: nincs (a 0/1 írók a 189-192. sor ágában vannak). A `0x00506270` nem ad 2-t, ha a bejegyzés típusa nem `0x3e9`.
+- **Nyitott ellenpélda:** ha egy nyers elem felső bájtja 2 (az elem ≥ `0x02000000`), a sikertelen `0x00506270`-keresés után is 2 marad a bájtban, és a `0x0068c030` lefut. Az elemek forrása nincs megnézve, ezt nem zártam ki.
+- **33.2 cáfolata:** a `[reg+0x2908]` alakú keresés nulla írót adott; a `[edi+0x48]` alakú tárolás ezt a nullát cáfolja. Más íróhelyet nem kerestem.
+
+### 33.5 Bizonyítottsági fok
+
+- `0x006956d0` → `0x0068c030` hívási kapu (`[esp+0x1b] == 2`): **megerősített** (C-dump és capstone-diszasszembly).
+- Az 1-es → 2-es átmenet a `0x0068ac80` után: **megerősített** (asm); a C-dumpban nincs.
+- A „mikor" (melyik elem vagy tábla-bejegyzés éri el a 2-t): **feltételes**.
+- `this+0x2908` íróinak C és asm egyeztetése: **megerősített** a `0x0048f4ff` íróra; a többi alias nincs végigkövetve.
+- A `this` osztálya: **NINCS MEG**.
+
+### 33.6 Nyitott Ghidra-kérdések
+
+- Ghidra-kör kell: a `this+0x3f0` tábla bejegyzéseinek írói (a `0x00506270` olvassa: a `0x3e9` típus és a `+0x20` érték forrása); a 2-es állapot innen jön [blokkoló]
+- Ghidra-kör kell: a `0x0048ef20` egyik hívójának (`0x00414940`, `0x0047b020`, `0x00536a90`, `0x005c6500`) törzse: melyik objektum-osztály `this`-e a `0x0048ef20` bemenete, és hol van a vtábla-írás [blokkoló]

@@ -52,12 +52,19 @@ def pan_zoom_app(qt_app, tmp_path, monkeypatch):
     if importlib.util.find_spec("picasapy.app.slideshow_pan_zoom") is not None:
         from picasapy.app import slideshow_pan_zoom
 
-        # Minden hívás ugyanazt a teljes tört-ciklust kapja.
-        tortek = cycle([0.1, 0.9, 0.9, 0.9, 0.1, 0.9, 0.1])
+        # A két forrás (helyi: csere-bitek és u, v; CRT: ρ0…ρ3) külön
+        # sorozatot kap, hívási sorrendben: előbb a helyi, aztán a CRT.
+        sorozatok = cycle([
+            cycle([0.0, 0.0, 0.9, 0.1]),
+            cycle([0.9, 0.9, 0.1, 0.1]),
+        ])
+
+        def forras_gyar():
+            sorozat = next(sorozatok)
+            return lambda: next(sorozat)
+
         monkeypatch.setattr(
-            slideshow_pan_zoom,
-            "_lcg_fraction_source",
-            lambda: lambda: next(tortek),
+            slideshow_pan_zoom, "_lcg_fraction_source", forras_gyar
         )
     yield from _build_qml_app(
         qt_app, tmp_path, kepeket_keszit=_mintakepeket_keszit
@@ -163,8 +170,10 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     kozeppont_szin = ablak_kep.pixelColor(
         round(kozeppont.x() * dpr), round(kozeppont.y() * dpr)
     )
-    assert kozeppont_szin.red() >= 138, (
-        "a kirajzolt kivágás közepe a régi, középre igazított rész maradt: "
+    # A forrás közepe R≈128; a kivágás a saját alaptéglalapja közepéről indul,
+    # a ρ-eltolással, így a jobbra tolt kivágás ennél világosabb.
+    assert kozeppont_szin.red() > 128, (
+        "a kirajzolt kivágás közepe nem tolódott el a forrás közepétől: "
         f"R={kozeppont_szin.red()}"
     )
     assert float(slide.property("x")) < -3, (
