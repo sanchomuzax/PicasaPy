@@ -174,144 +174,6 @@ ListView {
     clip: true
     model: grid.ctl ? grid.ctl.feedGroups : []
 
-    // A személyalbum saját fejlécet és arcsávot kap; utána a normál feed
-    // mappacsoportjai következnek, ezért minden kép a mappájában marad.
-    header: Item {
-        id: personAlbumFeedHeader
-        objectName: "personAlbumFeedHeader"
-        readonly property bool active: grid.appWindow
-            && grid.appWindow.personAlbumName !== ""
-        width: grid.width
-        height: active ? personAlbumColumn.implicitHeight : 0
-        implicitHeight: height
-        visible: active
-
-        Column {
-            id: personAlbumColumn
-            width: parent.width
-            spacing: 0
-
-            LightboxHeader {
-                id: personAlbumHeader
-                objectName: "personAlbumHeader"
-                width: parent.width
-                personAlbumHeaderMode: true
-                personName: grid.appWindow.personAlbumName
-                personAvatarUrl: grid.appWindow.personAlbumAvatarUrl
-                personAlbumRemoveEnabled:
-                    grid.appWindow.personAlbumCanRemoveSelection
-                personAlbumThumbnailEnabled:
-                    grid.appWindow.personAlbumCanSetThumbnail
-                selectedCount: grid.appWindow.selectedIndexes
-                    ? grid.appWindow.selectedIndexes.length : 0
-                suggestionCount: grid.appWindow.personSuggestionCount
-                selectedSuggestionCount:
-                    grid.appWindow.personSelectedSuggestionIds.length
-                faceZoom: grid.appWindow.personFaceZoom
-                suggestionsOnly: grid.appWindow.personSuggestionsOnly
-                onPlayRequested: {
-                    var photos = grid.ctl ? grid.ctl.personAlbumPhotos : []
-                    if (photos.length > 0)
-                        grid.slideshowRequested(Number(photos[0].row))
-                }
-                onCollageRequested: {
-                    if (!grid.appWindow || !grid.appWindow.openCollageFromRows)
-                        return
-                    var photos = grid.ctl ? grid.ctl.personAlbumPhotos : []
-                    var rows = []
-                    for (var i = 0; i < photos.length; ++i)
-                        rows.push(Number(photos[i].row))
-                    grid.appWindow.openCollageFromRows(rows)
-                }
-                onPersonMovieRequested: {
-                    if (grid.appWindow.openPersonAlbumMovie)
-                        grid.appWindow.openPersonAlbumMovie()
-                }
-                onRemovePersonAlbumRequested: {
-                    if (grid.appWindow.removePersonAlbumSelection)
-                        grid.appWindow.removePersonAlbumSelection()
-                }
-                onSetPersonThumbnailRequested: {
-                    if (grid.appWindow.setPersonAlbumThumbnailFromSelection)
-                        grid.appWindow.setPersonAlbumThumbnailFromSelection()
-                }
-                onSelectSuggestionsRequested: {
-                    if (grid.appWindow.selectPersonSuggestions)
-                        grid.appWindow.selectPersonSuggestions()
-                }
-                onConfirmSuggestionsRequested: {
-                    if (grid.appWindow.confirmPersonSuggestions)
-                        grid.appWindow.confirmPersonSuggestions()
-                }
-                onRemoveSuggestionsRequested: {
-                    if (grid.appWindow.removePersonSuggestions)
-                        grid.appWindow.removePersonSuggestions()
-                }
-                onSuggestionsOnlyToggled: function(only) {
-                    if (grid.appWindow.setPersonSuggestionsOnly)
-                        grid.appWindow.setPersonSuggestionsOnly(only)
-                }
-                onFaceZoomToggled: function(face) {
-                    if (grid.appWindow.setPersonFaceZoom)
-                        grid.appWindow.setPersonFaceZoom(face)
-                }
-                onMoreSuggestionsRequested: {
-                    if (grid.appWindow.findMoreSuggestions)
-                        grid.appWindow.findMoreSuggestions()
-                }
-            }
-
-            Item {
-                width: parent.width
-                height: 215
-
-                ListView {
-                    id: personAlbumFaceStrip
-                    objectName: "personAlbumFaceStrip"
-                    x: 16; y: 18
-                    width: Math.max(0, parent.width - x)
-                    height: 182
-                    orientation: ListView.Horizontal
-                    spacing: 0
-                    clip: true
-                    model: grid.ctl ? grid.ctl.personAlbumPhotos : []
-
-                    delegate: Item {
-                        required property var modelData
-                        width: 162
-                        height: 182
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: 122; height: 147
-                            color: Theme.thumbCard
-                            border.width: 1
-                            border.color: Theme.thumbBorder
-                            Image {
-                                objectName: "personAlbumFaceImage"
-                                readonly property bool imageReady:
-                                    status === Image.Ready
-                                anchors.fill: parent
-                                anchors.margins: 1
-                                source: modelData.thumbUrl || ""
-                                fillMode: Image.PreserveAspectCrop
-                                asynchronous:
-                                    Qt.platform.pluginName !== "offscreen"
-                                cache: true
-                                smooth: true
-                            }
-                        }
-
-                        TapHandler {
-                            onDoubleTapped: grid.openRequested(
-                                Number(modelData.row))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // #1945: az üres rács NE legyen néma. Az eredetiben a rács közepén
     // egyetlen sor áll (`layer:thumbui/static(nothing): lightbox_bgtext`,
     // `thumbui.tre:190–193`: szülő `thumbui/albumsback`, `m_centerXY`,
@@ -1650,6 +1512,165 @@ ListView {
             }
         }
     }
+
+    // A személyalbum saját fejlécet és arcsávot kap; utána a normál feed
+    // mappacsoportjai következnek, ezért minden kép a mappájában marad.
+    header: Item {
+        id: personAlbumFeedHeader
+        objectName: "personAlbumFeedHeader"
+        readonly property bool active: grid.appWindow
+            && grid.appWindow.personAlbumName !== ""
+        width: grid.width
+        height: active ? personAlbumColumn.implicitHeight : 0
+        implicitHeight: height
+        visible: active
+        // a fejléc magassága a Loader-es tartalom elrendezése után áll be,
+        // ezért a módváltáskori igazítás korán futhat: magasságváltáskor
+        // a lista kezdőpozícióját újra a fejléchez igazítjuk
+        onHeightChanged: if (active)
+            Qt.callLater(function() { grid.alignPersonAlbumHeader() })
+
+        Column {
+            id: personAlbumColumn
+            width: parent.width
+            spacing: 0
+
+            // Személyalbum-módban épül a fejléc és az arcsáv. Mappa-nézetben
+            // nem maradhat belőle példány a fában: a mappa-fejléc gombjait
+            // objectName szerint kereső lekérdezés az elsőt találná meg, és
+            // az rejtett lenne.
+            Loader {
+                active: personAlbumFeedHeader.active
+                width: parent.width
+                sourceComponent: Component {
+                    Column {
+                        width: parent.width
+                        spacing: 0
+
+                        LightboxHeader {
+                            id: personAlbumHeader
+                            objectName: "personAlbumHeader"
+                            width: parent.width
+                            personAlbumHeaderMode: true
+                            personName: grid.appWindow.personAlbumName
+                            personAvatarUrl: grid.appWindow.personAlbumAvatarUrl
+                            personAlbumRemoveEnabled:
+                                grid.appWindow.personAlbumCanRemoveSelection
+                            personAlbumThumbnailEnabled:
+                                grid.appWindow.personAlbumCanSetThumbnail
+                            selectedCount: grid.appWindow.selectedIndexes
+                                ? grid.appWindow.selectedIndexes.length : 0
+                            suggestionCount: grid.appWindow.personSuggestionCount
+                            selectedSuggestionCount:
+                                grid.appWindow.personSelectedSuggestionIds.length
+                            faceZoom: grid.appWindow.personFaceZoom
+                            suggestionsOnly: grid.appWindow.personSuggestionsOnly
+                            onPlayRequested: {
+                                var photos = grid.ctl ? grid.ctl.personAlbumPhotos : []
+                                if (photos.length > 0)
+                                    grid.slideshowRequested(Number(photos[0].row))
+                            }
+                            onCollageRequested: {
+                                if (!grid.appWindow || !grid.appWindow.openCollageFromRows)
+                                    return
+                                var photos = grid.ctl ? grid.ctl.personAlbumPhotos : []
+                                var rows = []
+                                for (var i = 0; i < photos.length; ++i)
+                                    rows.push(Number(photos[i].row))
+                                grid.appWindow.openCollageFromRows(rows)
+                            }
+                            onPersonMovieRequested: {
+                                if (grid.appWindow.openPersonAlbumMovie)
+                                    grid.appWindow.openPersonAlbumMovie()
+                            }
+                            onRemovePersonAlbumRequested: {
+                                if (grid.appWindow.removePersonAlbumSelection)
+                                    grid.appWindow.removePersonAlbumSelection()
+                            }
+                            onSetPersonThumbnailRequested: {
+                                if (grid.appWindow.setPersonAlbumThumbnailFromSelection)
+                                    grid.appWindow.setPersonAlbumThumbnailFromSelection()
+                            }
+                            onSelectSuggestionsRequested: {
+                                if (grid.appWindow.selectPersonSuggestions)
+                                    grid.appWindow.selectPersonSuggestions()
+                            }
+                            onConfirmSuggestionsRequested: {
+                                if (grid.appWindow.confirmPersonSuggestions)
+                                    grid.appWindow.confirmPersonSuggestions()
+                            }
+                            onRemoveSuggestionsRequested: {
+                                if (grid.appWindow.removePersonSuggestions)
+                                    grid.appWindow.removePersonSuggestions()
+                            }
+                            onSuggestionsOnlyToggled: function(only) {
+                                if (grid.appWindow.setPersonSuggestionsOnly)
+                                    grid.appWindow.setPersonSuggestionsOnly(only)
+                            }
+                            onFaceZoomToggled: function(face) {
+                                if (grid.appWindow.setPersonFaceZoom)
+                                    grid.appWindow.setPersonFaceZoom(face)
+                            }
+                            onMoreSuggestionsRequested: {
+                                if (grid.appWindow.findMoreSuggestions)
+                                    grid.appWindow.findMoreSuggestions()
+                            }
+                        }
+
+                        Item {
+                            width: parent.width
+                            height: 215
+
+                            ListView {
+                                id: personAlbumFaceStrip
+                                objectName: "personAlbumFaceStrip"
+                                x: 16; y: 18
+                                width: Math.max(0, parent.width - x)
+                                height: 182
+                                orientation: ListView.Horizontal
+                                spacing: 0
+                                clip: true
+                                model: grid.ctl ? grid.ctl.personAlbumPhotos : []
+
+                                delegate: Item {
+                                    required property var modelData
+                                    width: 162
+                                    height: 182
+
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: 122; height: 147
+                                        color: Theme.thumbCard
+                                        border.width: 1
+                                        border.color: Theme.thumbBorder
+                                        Image {
+                                            objectName: "personAlbumFaceImage"
+                                            readonly property bool imageReady:
+                                                status === Image.Ready
+                                            anchors.fill: parent
+                                            anchors.margins: 1
+                                            source: modelData.thumbUrl || ""
+                                            fillMode: Image.PreserveAspectCrop
+                                            asynchronous:
+                                                Qt.platform.pluginName !== "offscreen"
+                                            cache: true
+                                            smooth: true
+                                        }
+                                    }
+
+                                    TapHandler {
+                                        onDoubleTapped: grid.openRequested(
+                                            Number(modelData.row))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     //: #857 (ADR-015): a rács sávja az EGYETLEN, ahol az album-ugrásnak
     //: értelme van — a mappafa és a párbeszédek sávja változatlan marad.
     ScrollBar.vertical: PicasaScrollBar {
