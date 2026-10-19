@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.157] - 2026-10-19
+
+- A személyalbum az eredeti szerint jelenik meg: fejlécében a személy arcképe és neve, alatta az arcok sávja, majd a mappa összes képe, a zöld visszalépő sáv nélkül (#5330).
+
 ## [0.9.156] - 2026-10-19
 
 - A Név nélküliek nézetének törzse és kerete az eredeti szürke hátterével jelenik meg (#5352).
