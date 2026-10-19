@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.158] - 2026-10-19
+
+- Stabilabbá váltak a Windows QML-tesztjei az animáció és a visszaállítás párbeszéd feltételes kivárásával (#5359).
+
 ## [0.9.157] - 2026-10-19
 
 - A személyalbum az eredeti szerint jelenik meg: fejlécében a személy arcképe és neve, alatta az arcok sávja, majd a mappa összes képe, a zöld visszalépő sáv nélkül (#5330).
