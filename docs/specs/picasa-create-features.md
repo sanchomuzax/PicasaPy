@@ -6554,6 +6554,86 @@ Mindkét hívás előtt: a gyökér nem nulla (`cmp dword ptr [0xd67914], ebx`),
 
 **Fejlesztési következmény:** nincs. A 4.4 képlete (`0x0076d900`) ezzel nem változik.
 
+#### 4.6 11. kör: a 4.4 képlet soronkénti újraolvasása, a srand-hívók és a mért eltérés (#5225, 2026-10-19)
+
+**Kérdés.** Megáll-e a 4.4 szerkezete a `0x0076d900` utasításszintű olvasatával (a segédek külön, a jelölt-alaptéglalapok felépítése, van-e középre igazító ág)? Melyik `srand`-hely seedeli a diavetítést? Hol tér el a `src/picasapy/app/slideshow_pan_zoom.py` a bináris képlettől, méréssel?
+
+**Forrás.** `annot_disasm.py` a `Picasa3.exe`-n: `0x0076d900` (1039 bájt), `0x0076d6f0` (156), `0x0076d790` (79), `0x0076d7e0` (273), `0x009b4aa0` (184), `0x00c08221` (34). A srand-hívók tulajdonosa a bináris-index `functions` és `string_xrefs` tábláiból.
+
+**Megerősített szerkezet (utasításszint, címekkel).**
+
+- `_rand` (`0x00c08221`): `state = state·0x343fd + 0x269ec3`, a kimenet `(state >> 16) & 0x7fff` (`0x00c08229`-`0x00c0823d`).
+- `0x0076d6f0(téglalap, s)`: a téglalapot a saját közepe (`cx`, `cy`) körül méretezi, `x0 = cx - s·W/2`, `x1 = cx + s·W/2`, `y0 = cy - s·H/2`, `y1 = cy + s·H/2`. Az `s` a verem `[esp+0x28]` argumentuma (`0x0076d733`-`0x0076d785`).
+- `0x0076d790(struktúra)`: a helyi LCG állapota a `[+0x20]` mezőben van, és minden hívás lépteti (`0x0076d790`-`0x0076d79f`). Ha az új állapot 16. bitje (`0x10000`) 1, a két téglalap (`A` a `+0x00`-nál, `B` a `+0x10`-nél) felcserélődik (`0x0076d7a8`-`0x0076d7da`).
+- `0x0076d7e0(téglalap, eltolás)`: az eltolást a határokhoz szorítja: `dx' = clamp(dx, -x0, [esi+8] - x1)`, `dy' = clamp(dy, -y0, [esi+0xc] - y1)`. A bal és a felső határ literál 0, a jobb és az alsó az `esi` forrásrekord egész mezője. Utána eltolja a téglalapot (`0x0076d81f`-`0x0076d8ea`).
+- `0x0076d900` menete:
+  1. `0x009b4aa0` két egész alaptéglalapot ad, `(0,0,w,h)` alakban. A kerekítés `fistp`, a bemenő arány `(forrás + 0,499) / célméret`, a végső hozzáadás `0,00001` (`0x009b4acc`-`0x009b4b57`).
+  2. `A` és `B` kezdetben egyforma. `B`-t a forrás szélesebb, illetve magasabb oldala felé tolja: jobbra `srcW - w`-vel, ha `srcW > w`; lefelé `srcH - h`-val, ha `srcH > h` (`0x0076d9dc`-`0x0076da24`, `0x0076da72`-`0x0076dac5`).
+  3. Két `0x0076d790` hívás (`0x0076da2c`, `0x0076dac7`) cserélheti `A`-t és `B`-t, a helyi LCG-ből.
+  4. `u` és `v` a helyi LCG-ből jön. Újrahúzás, amíg `|u - v| >= 0,5` (`0x0076dc82`-`0x0076dd05`; a küszöb `0x00c7dafc` = 0,5; az abszolútérték a `0x0049f5c0` `fabs`, 26 bájt).
+  5. A két jelölt skálája `s_u = 0,75 + 0,2·u` és `s_v = 0,75 + 0,2·v`, mindkettőt a saját közepe körül (`0x0076daf9`-`0x0076db3e`). A nagyobb skálájú jelölt kapja az első eltolási csoportot (`0x0076db45`-`0x0076db5f`).
+  6. Négy `_rand()` (`0x0076db61`, `0x0076db7c`, `0x0076dbe0`, `0x0076dbfb`) adja a `ρ0…ρ3` törteket. A nagyobb jelölt: `x = cx - w_n/2 + W·(0,2ρ1 - 0,1)`, `y = cy - h_n/2 + H·(0,2ρ0 - 0,1)`. A kisebb: `x = cx - w_k/2 + W·(0,2ρ3 - 0,1)`, `y = cy - h_k/2 - H·0,2ρ2` (`0x0076dc37`-`0x0076dc5f`).
+  7. Mindkét jelöltre `0x0076d7e0` szorítás (`0x0076dc63`, `0x0076dc6e`).
+
+**Középre igazító ág: nincs.** A `0x0076d900`, `0x0076d6f0` és `0x0076d7e0` törzsében nincs olyan ág, amely a forrás közepét írná a kivágásba. A kivágás közepe a jelölt saját alaptéglalapjából jön. Középre esés csak a törtek egy értékénél áll elő: a nagyobb jelöltnél `ρ1 = 0,5` az x-re és `ρ0 = 0,5` az y-ra, a kisebbnél `ρ3 = 0,5` az x-re és `ρ2 = 0` az y-ra. Ez nem ág, hanem a véletlen törtek értéke.
+
+**Srand-hívók (a tíz hely tulajdonosa az index szerint).**
+
+| hívóhely | függvény | sztring-nyom |
+|---|---|---|
+| `0x00423a6c` | `FUN_00423780` | album-kupac mag (`srand(rés ^ 0x133475)`, lásd `pmp-database.md`) |
+| `0x00565cc5` | `FUN_00565920` | UI-panel (`panelroot`, `HLISTDIV`) |
+| `0x006804c4` | `FUN_00680370` | feltöltés (`Uploads\Pending\`) |
+| `0x0071d993` | `FUN_0071d940` | nincs; hívója `FUN_0071c380` |
+| `0x0071e23b` | `FUN_0071e120` | nincs; hívója `FUN_0071c380` |
+| `0x0085b76d` | `FUN_0085b730` | azonosító-formátum (`%I64x`, `%x%x%x%x-`) |
+| `0x0087cb85` | `FUN_0087cb70` | hívója a kollázs-panel (`collagepanel/cnode_`) |
+| `0x0088fed7` | `FUN_0088fcf0` | a kollázs keverése (1.9, `VeletlenKeveres`) |
+| `0x009180df` | `FUN_00917f50` | online-állapot |
+| `0x009902b8` | `FUN_00990000` | összeomlás-jelentés, regisztrációs kulcs |
+
+Diavetítéshez egyik sem tartozik bizonyítottan. A `0x0071d993` és a `0x0071e23b` a `FUN_0071c380`-ból hívódik; ez a diavetítés indításának jelölt útja. Az index a vtábla-hívásokat nem látja, ezért az „nincs más hívó” nem negatív bizonyíték.
+
+**Mért eltérés a Python-kódtól.** Azonos törtekkel, csere nélkül: forrás 1000×500, nézet 1024×768, `u = 0,9`, `v = 0,2`, `ρ = (0,5; 0,25; 0,75; 0,1)`. Az alaptéglalap mindkét oldalon `666,67 × 500` (lebegőpontos, a bináris egész alapja nélkül). A `slideshow_pan_zoom.py` kimenete és a fenti képlet (`x`, `y` a határra szorítás után):
+
+| jelölt | `slideshow_pan_zoom.py` (x, y, w, h) | bináris 4.6 képlet (x, y, w, h) |
+|---|---|---|
+| nagyobb | 140,00 · 17,50 · 620,00 · 465,00 | 0,00 · 17,50 · 620,00 · 465,00 |
+| kisebb | 156,67 · 0,00 · 526,67 · 395,00 | 323,33 · 0,00 · 526,67 · 395,00 |
+
+Az eltérés az x-koordinátában van, és a középpont okozza: a Python mindkét jelöltet a forrás közepére (`cx = 500`) építi, a bináris a saját alaptéglalapjának közepére (`A`: `333,33`; `B`: `(srcW + w)/2 = 666,67`). A méretek és az y-koordináták egyeznek.
+
+**Szerkezeti eltérések (olvasatból, nem mérve).**
+
+- A Python egyetlen közös középponttal dolgozik. A bináris a jelölt saját alaptéglalapjának közepét használja, a `B` alaptéglalapot pedig a forrás jobb, illetve alsó széléhez tolja.
+- A méretsorrendet a Python az első húzásból adja (`meret_a` = `u`); a bináris a nagyobb skálát a `ρ0`, `ρ1` csoporthoz rendeli. A két sorrend csak akkor egyezik, ha `u > v`.
+- A cserék: a bináris két LCG-csere a skálázás előtt történik, és mindkettő húz a helyi LCG-ből. A Python egyetlen húzással dönt a visszatérési sorrendről, a skálázás után. A 4.4 „helyi viszonyítás” bekezdésében szereplő „nincs plusz húzás” ezért a bináris két csere-húzását nem említi.
+- Véletlenforrás: a bináris `u`, `v` és a csere a helyi LCG-ből jön, a `ρ`-k a CRT `_rand`-ból. A Python egyetlen generátort használ.
+- Alap: a bináris egész (`fistp`, `+0,499`), a Python lebegőpontos.
+- Mag: a Python `random.getrandbits(32)`-t használ; a bináris mag NINCS MEG.
+
+**Helyi viszonyítás helyesbítése.** A `SlideshowView.qml:752-761` a `slide` képelem sorai, nem nagyítás. A fájlban nincs `1,08`. Az 1,0 → 1,12-es nagyítás a `kenburnsaoi` (`SlideshowView.qml:847-857`): ez középre igazított és nem véletlen. A sima `kenburns` (Pan and Zoom) a `slideshow_pan_zoom.py` véletlen kivágásait használja (#5258), tehát az a „nem véletlen” állítás csak az arcos változatra igaz.
+
+**Bizonyítottsági fok: feltételes.** (A) A szerkezet és a címek utasításszintű olvasatból jönnek. (B) A második út a Python-kimenet, de az saját megvalósítás, nem független a binárisra vonatkozó olvasattól; ezért nem megerősített.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy van középre igazító ág. A `0x0076d6f0`, `0x0076d7e0` és `0x0076d900` törzsében nincs ilyen ág, és a középre esés csak a törtek értékénél áll elő (lásd fent). A cáfolat nem sikerült.
+
+**Kész, ha (a jegy pontjai).**
+
+- ✅ Képlet címekkel: 4.4 és 4.6, a 4.6 szerkezeti lépéseivel.
+- ✅ Középre igazítás: nincs külön ág (címekkel, fent).
+- ⛔ Mag és futás előtti CRT-állapot: NINCS MEG (a diavetítés srand-helye nincs azonosítva; a két lehetséges hely a `FUN_0071c380`-ból hívódik).
+- ⛔ Két egymást követő renderelt Colab-futás (job-184/185): NINCS MEG. A felvétel nincs a helyi mérőadatban, a megszerzéséhez a colab-jobs repó kell (hálózat).
+- ⛔ Teljes képernyős használat: változatlanul nyitott (4.5).
+
+**Nyitott.**
+
+- Ghidra-kör kell: `0x0071c380` - hívja-e a diavetítés indítása a `0x0071d940` vagy a `0x0071e120` függvényt, és van-e srand a hívás előtt? [blokkoló]
+- NINCS MEG: az x87 kerekítési mód (`fistp`) futás közben; megszerzés: a CRT-indítás utáni kontrollszó olvasása natív próbában (QEMU).
+- NINCS MEG: a job-184/185 képkockasor (lásd fent).
+
+**Fejlesztési következmény.** A 4.4 képlete (`0x0076d900`) szerkezetileg megáll, de a Python-megvalósítás a fenti pontokon eltér tőle (középpont, méretsorrend, cserék, véletlenforrás, alap, mag). Ezek a jegy fejlesztési pontjai; a képlet nem változik.
+
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
 A korábbi szakasz a `slideshowctrls.tre`-t idézte (két elem). **Az igazi
