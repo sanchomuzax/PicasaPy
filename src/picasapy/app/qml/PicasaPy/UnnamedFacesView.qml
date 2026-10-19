@@ -300,6 +300,7 @@ ColumnLayout {
             Layout.alignment: Qt.AlignVCenter
             // #5343: az eredeti `addname` 163×20 (respack `0x0033b098`)
             Layout.preferredWidth: 163
+            Layout.minimumWidth: 163
             Layout.preferredHeight: 20
             height: 20
             placeholderText: qsTr("Add a name")
