@@ -63,6 +63,13 @@ Rectangle {
     // (Kollázsok, Filmek, Rögzített videoklipek, …)
     property var projectFolders: []
     property bool ignoredFacesActive: false
+    // #5341: a People-csoport LÁTHATÓ sorai. Az eredetiben (job-210, 13. és
+    // 16. kép) a Névtelenek és a mellőzött sor ugyanazon a helyen váltja
+    // egymást: mellőzés után a normál nézetben csak a Névtelenek látszik, a
+    // mellőzött nézetben csak a mellőzött sor. A fejléc a látható sorokat számolja.
+    readonly property bool unnamedSlotShown: !ignoredFacesActive
+        && (unnamedFaceCount > 0 || faceScanPercent >= 0)
+    readonly property bool ignoredSlotShown: ignoredFacesActive
     // #730: a hasáb egységes sormagassága. A mappalista magasságát ebből és
     // a sordarabszámból számoljuk (a lista a görgethető hasábban a teljes
     // tartalmát kirakja), ezért nem maradhat a delegate-be égetett szám.
@@ -594,9 +601,10 @@ Rectangle {
                 label: qsTr("People")
                 // #5190: a látható sorok száma, a „Névtelenek" albumot is
                 // beleszámítva, ha van névtelen arc vagy folyik a keresés.
+                // #5341: a mellőzött sort is, ha látszik.
                 itemCount: pane.peopleModel.length
-                           + (pane.unnamedFaceCount > 0
-                              || pane.faceScanPercent >= 0 ? 1 : 0)
+                           + (pane.unnamedSlotShown ? 1 : 0)
+                           + (pane.ignoredSlotShown ? 1 : 0)
                 labelObjectName: "peopleHeader"
                 collapsed: pane.peopleCollapsed
                 onToggled: pane.toggleCollection("people")
@@ -608,8 +616,7 @@ Rectangle {
                 id: unnamedFacesItem
                 objectName: "unnamedFacesItem"
                 // Beolvasás közben a sor akkor is látszik, ha még nincs találat.
-                visible: !pane.peopleCollapsed
-                         && (pane.unnamedFaceCount > 0 || pane.faceScanPercent >= 0)
+                visible: !pane.peopleCollapsed && pane.unnamedSlotShown
                 Layout.fillWidth: true
                 Layout.preferredHeight: 22
                 color: pane.unnamedFacesActive ? Theme.panelSelectionActive
@@ -718,12 +725,11 @@ Rectangle {
                 }
             }
 
-            // #26: „Mellőzött emberek" — a Névtelenek sora ALATT, ugyanabban a
-            // gyűjteményben. Csak akkor látszik, ha van benne valami: üres
-            // albummal nem foglaljuk a helyet.
+            // #26: a mellőzött arcok sora, ugyanabban a gyűjteményben. #5341:
+            // csak a mellőzött nézetben látszik, a Névtelenek sora helyén.
             Rectangle {
                 objectName: "ignoredFacesItem"
-                visible: !pane.peopleCollapsed && pane.ignoredFaceCount > 0
+                visible: !pane.peopleCollapsed && pane.ignoredSlotShown
                 Layout.fillWidth: true
                 Layout.preferredHeight: 22
                 color: pane.ignoredFacesActive ? Theme.panelSelectionActive
@@ -741,7 +747,7 @@ Rectangle {
                     }
                     Text {
                         objectName: "ignoredFacesLabel"
-                        text: qsTr("Ignored people") + " (" + pane.ignoredFaceCount + ")"
+                        text: qsTr("Ignored") + " (" + pane.ignoredFaceCount + ")"
                         font.pixelSize: Theme.fontSize
                         color: pane.ignoredFacesActive || ignoredFacesMouse.containsMouse
                                ? Theme.panelSelectionText : Theme.textDark

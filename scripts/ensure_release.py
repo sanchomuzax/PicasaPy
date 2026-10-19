@@ -239,13 +239,13 @@ def tartalek_jegyzet(valtozasok: "Sequence[str] | None" = None) -> str:
         )
     if not valtozasok:
         return (
-            "Ez a kiadás csak verziólépést tartalmaz — a benne lévő munkák a "
+            "Ez a kiadás csak verziólépést tartalmaz: a benne lévő munkák a "
             f"korábbi kiadásokban mentek ki. A részletes leírás a "
             f"{_CHANGELOG_LINK} megfelelő szakaszában áll."
         )
     sorok = "\n".join(f"- {v}" for v in valtozasok)
     return (
-        "⚠️ Ehhez a kiadáshoz **nem készült emberi összefoglaló** — az alábbi "
+        "⚠️ Ehhez a kiadáshoz **nem készült emberi összefoglaló**: az alábbi "
         "lista a beolvadt munkák címéből áll, nem felhasználói leírás.\n\n"
         f"{sorok}\n\n"
         f"A részletes, embernek írt változásleírás a {_CHANGELOG_LINK}-be "
@@ -285,14 +285,14 @@ def ensure_release(
     for kiserlet in range(1, attempts + 1):
         letezik = runner(["gh", "release", "view", tag, "--repo", repo])
         if letezik.returncode == 0:
-            print(f"A {tag} kiadás megvan — a Releases hasáb naprakész.")
+            print(f"A {tag} kiadás megvan, a Releases hasáb naprakész.")
             return 0
 
         if check_only:
             print(
                 f"::error::A {tag} kiadás HIÁNYZIK, pedig a pyproject.toml már "
                 f"ezt a verziót mutatja. A kiadó workflow vagy elbukott, vagy "
-                f"el sem indult — nézd meg a Release workflow futásait."
+                f"el sem indult: nézd meg a Release workflow futásait."
             )
             return 1
 
@@ -300,9 +300,9 @@ def ensure_release(
             # A `gh` nem különbözteti meg a „nincs ilyen"-t a „nem érhető
             # el"-től, ezért ilyenkor NEM hozunk létre semmit, csak újra
             # megkérdezzük a következő körben.
-            print(f"A {tag} létezés-ellenőrzése átmeneti hibába futott — újra.")
+            print(f"A {tag} létezés-ellenőrzése átmeneti hibába futott, újra.")
         else:
-            print(f"A {tag} kiadás hiányzik a main mögött — pótlás ({kiserlet}.)…")
+            print(f"A {tag} kiadás hiányzik a main mögött, pótlás ({kiserlet}.)…")
             jegyzet = changelog_notes(version, changelog)
             parancs = [
                 "gh", "release", "create", tag,
@@ -330,7 +330,7 @@ def ensure_release(
 
     print(
         f"::error::A {tag} kiadás {attempts} kísérlet után sem jött létre. "
-        f"A Releases hasáb LEMARADT a main mögött — kézi pótlás kell."
+        f"A Releases hasáb LEMARADT a main mögött, kézi pótlás kell."
     )
     return 1
 
