@@ -535,6 +535,10 @@ class TestRightClickOpensTheRowsOwnMenu:
     ):
         """A „Mellőzött emberek” ugyanúgy ALBUM (`CAlbumLabel::Ignored`)."""
         view, pane, _paths = render_pane(ignored=3)
+        # #5341: a sor csak a mellőzött nézetben látszik
+        pane.setProperty("ignoredFacesActive", True)
+        sor = _child(pane, "ignoredFacesItem")
+        _var(qt_app, lambda: sor.property("visible") is True and sor.height() > 0)
 
         _right_click(qt_app, view, pane, _child(pane, "ignoredFacesItem"))
 
