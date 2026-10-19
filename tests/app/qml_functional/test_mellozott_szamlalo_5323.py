@@ -1,15 +1,17 @@
-"""#5323: egy arc mellőzése után a bal sáv „Ignored people (N)” sora azonnal a helyes számot mutatja.
+"""#5323: egy arc mellőzése után a bal sáv „Ignored (N)” sora azonnal a helyes számot mutatja.
 
 Az eredeti Picasa (picasa-colab-jobs job-210, 13. és 16. kép): az első arc „x”-e
-és a „Ignore Person” után a „Show ignored faces” váltó aktív, a bal sáv
-mellőzött-sora pedig a darabszámot mutatja. Nálunk a sor darabszáma egy
+és a „Ignore Person” után a „Show ignored faces” váltó aktív; a normál nézetben
+a bal sávban csak az „Unnamed (5)” sor látszik (13. kép), a mellőzött nézetben
+a helyén az „Ignored (1)” (16. kép, #5341). Nálunk a sor darabszáma egy
 metódushívás volt (`ignoredCount()`), amelyre a QML-kötés nem figyelt, ezért a
 mellőzés után 0 maradt.
 
 Lefedve, VALÓDI kattintásokkal:
 - a mellőzés előtt a mellőzött-sor rejtett (nincs mellőzött arc);
-- az arc „x”-e, majd a megerősítő „Ignore Person” után a sor szövege és
-  láthatósága azonnal az egyet mutatja;
+- az arc „x”-e, majd a megerősítő „Ignore Person” után a sor szövege azonnal
+  az egyet mutatja, a sor a normál nézetben rejtve marad;
+- a mellőzött nézetben a sor látszik, „Ignored (1)” felirattal;
 - a „Show ignored faces” aktív lesz, és a „Back to Unnamed” visszaváltja a
   Névtelenek nézetet, az öt arcos darabszámmal.
 """
@@ -146,7 +148,7 @@ def test_mellozes_utan_a_bal_sav_sora_a_helyes_szamot_mutatja(qml_app_5323, qt_a
     assert ignored_row is not None and ignored_label is not None
     # Mellőzés előtt nincs mellőzött arc: a sor rejtett, a darabszám nulla.
     assert ignored_row.property("visible") is False
-    assert ignored_label.property("text") == "Ignored people (0)"
+    assert ignored_label.property("text") == "Ignored (0)"
     _save_window(window, "kep_5323_elotte.png")
 
     # Valódi kattintás az első arc „x”-én, majd a megerősítő „Ignore Person”.
@@ -159,13 +161,14 @@ def test_mellozes_utan_a_bal_sav_sora_a_helyes_szamot_mutatja(qml_app_5323, qt_a
     _klikk(window, qt_app, igen_gomb)
     assert var_feltetelre(qt_app, lambda: confirm.property("visible") is False, 3.0)
 
-    # A bal sáv sora a mellőzés után azonnal az egyet mutatja.
+    # A bal sáv sora a mellőzés után azonnal az egyet mutatja, de a normál
+    # nézetben rejtve marad (job-210, 13. kép).
     assert var_feltetelre(
         qt_app,
-        lambda: ignored_label.property("text") == "Ignored people (1)",
+        lambda: ignored_label.property("text") == "Ignored (1)",
         3.0,
     ), f"a mellőzött-sor szövege: {ignored_label.property('text')!r}"
-    assert ignored_row.property("visible") is True
+    assert ignored_row.property("visible") is False
     assert face_scan.unnamedCount == 5
     _save_window(window, "kep_5323_utana.png")
 
@@ -178,6 +181,9 @@ def test_mellozes_utan_a_bal_sav_sora_a_helyes_szamot_mutatja(qml_app_5323, qt_a
     _klikk(window, qt_app, show_ignored)
     assert var_feltetelre(
         qt_app, lambda: window.property("facesAlbumMode") == "ignored", 3.0
+    )
+    assert var_feltetelre(
+        qt_app, lambda: ignored_row.property("visible") is True, 3.0
     )
 
     # „Back to Unnamed” visszavált a Névtelenek albumra, az öt arcos darabszámmal.
