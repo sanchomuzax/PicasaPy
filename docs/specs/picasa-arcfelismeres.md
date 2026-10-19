@@ -2613,6 +2613,65 @@ képkockán van mérve, és mindkettő egyező vagy indokoltan eltérő.
 - A PicasaPy aktuális renderelt fejlécének képkockája hiányzik, így az
   erőforrás-rectek és a QML-képpontok pixelpontos összevetése `NINCS MEG`.
 
+### 19.4 #5343: a fejléc `addname` és `ignore` elemének állapotfeltételei (2026-10-19, 11. Ghidra-kör)
+
+**Kérdés.** Mely állapotok mutatják vagy rejtik a fejléc `addname` („Név hozzáadása”) és `ignore` („Kijelöltek mellőzése”) elemét csoportosított, kibontott és mellőzött módban, és melyik vezérlő váltja őket? Forrás: a `0x00749ba0` C-törzse (`.ghidra11/2026-10-19-ghidra-11.txt`, 1-759. sor), a bináris-index `string_xrefs` táblája, és a `referencia/tre-eroforrasok/unknownfaceheaderpanel.tre`.
+
+**A TRE-összevetés.** A fejléc elemeinek kezdeti láthatósága és váltópárja a TRE-ben:
+
+| elem | kezdeti láthatóság | váltópár | TRE-sor |
+|---|---|---|---|
+| `cluster` („Csoportosítás arcok szerint”) | rejtett | `showall` ↔ `cluster` | 24-28 |
+| `showall` („Csoportok részletes nézete”) | látszik | `showall` ↔ `cluster` | 30-33 |
+| `showignored` („Mellőzött arcok megjelenítése”) | látszik | `showignored` ↔ `showunknown` | 38-41 |
+| `showunknown` („Vissza ide: Név nélküliek”) | rejtett | `showunknown` ↔ `showignored` | 43-47 |
+| `ignore` („Kijelöltek mellőzése”) | rejtett | nincs pár | 53-56 |
+| `addname` („Név hozzáadása”) | rejtett | nincs pár | 70-74 |
+| `addname_instructions` | rejtett | nincs pár | 58-63 |
+
+A csoportosító váltógomb (`cluster` / `showall`) és a nézetváltó (`showignored` / `showunknown`) a saját párját kapcsolja. Az `addname` és az `ignore` nincs párban: a láthatóságukat a kódnak kell állítania.
+
+**Kulcsok a binárisban.** A `string_xrefs` szerint a `0x00749ba0` hivatkozza a `showignored` (`0x00c96f28`), a `showunknown` (`0x00c96f1c`), az `ignore` (`0x00c96f8c`) és az `addname` (`0x00c96f94`) kulcsot. A `cluster` és a `showall` kulcsot a `0x0074cc00` (a fejléc parancskezelője, 9/d), a `clustering_container`-t a `0x0074c8f0` hivatkozza. A csoportosítás kapcsolóját tehát a `0x0074cc00` kezeli, nem a `0x00749ba0`.
+
+**Mikor éri el a `0x00749ba0` az `addname` / `ignore` ágat.** A mód (`this+0x298`, értékei 0, 1, 2, 3; a dumpban nincs elnevezés) akkor 2, és a `0x00448a10(gyűjtemény, album, 0)` igaz. Ez utóbbi a `]unknownface` vagy `]ignoreface` albumra (9/c) igaz. Ekkor a függvény:
+- az `ignore` kulcsot keresi (C: 139-149. sor), a találatot felszabadítja;
+- az `addname` kulccsal hívja a `this+0x2b4` objektum `vtbl+0xf0` slotját (C: 151-154. sor);
+- a `showignored` ágon a 0x20 bájtos objektum `+0x1c` jelzőjét 1-re állítja (C: 136-140. sor), és a `0x00748cc0`-t hívja;
+- a `showunknown` ágon a `CShowUnamedDBVis` objektumot építi (C: 208-241. sor).
+
+Ha a mód 2, de az album nem `]unknownface` és nem `]ignoreface`, a függvény az `addname` és az `ignore` kulcsot nem érinti (a `LAB_00749f64` ág). Ha a mód 0 vagy 1, a függvényben nincs `addname` vagy `ignore` kulcs. A csoportosítás kulcsa (`cluster`) ebben a függvényben egyáltalán nincs jelen, ezért a csoportosítás-függést ez a függvény nem dönti el.
+
+**Állapottábla.**
+
+| állapot | váltógomb | nézetváltó | `addname` | `ignore` | fok |
+|---|---|---|---|---|---|
+| csoportosított | `showall` látszik, `cluster` rejtett | `showignored` látszik | TRE szerint rejtett; a kódos láthatóság NINCS MEG | TRE szerint rejtett; a kódos láthatóság NINCS MEG | a váltópár **megerősített** (TRE); a két mező láthatósága **NINCS MEG** |
+| kibontott | `cluster` látszik, `showall` rejtett | `showignored` látszik | látszik: a fejlécben „Add a name” mező van, a csempéken nincs (job-183, 10. kép) | látszik, kijelölés nélkül szürke („Ignore Selected”) | **megerősített** élő felvétellel; a bináris oka **NINCS MEG** |
+| mellőzött | a csoportosító gomb állapota a felvételen nem látszik | `showignored` rejtett, `showunknown` látszik („Vissza ide: Név nélküliek”); a `]ignoreface` albumban, 2-es módban a `0x00749ba0` `addname` / `ignore` ága fut | a felvételen (job-210, 16. kép) a fejlécben nem szerepel | a felvételen (job-210) nincs „Ignore Selected” | a látszás **feltételes**; a `vtbl+0xf0` hatása **NINCS MEG** |
+
+Megjegyzés: a kibontott nézet állapota a `cluster` / `showall` pár kapcsolójától függ, a mellőzött nézeté a `showignored` / `showunknown` párétól. Az `addname` és az `ignore` kódos láthatóságát a fenti két pár közül egyik sem vezérli bizonyítottan.
+
+**Bizonyítottsági fok.** A váltópárok és a kezdeti láthatóság: **megerősített** (TRE-sorok, `string_xrefs`). Az `addname` / `ignore` ág feltétele (mód 2 és `]unknownface` / `]ignoreface`): **feltételes** (a kulcshívás a dumpban van, a hatása nincs). A kibontott nézetben látszásuk: **megerősített** élő felvétellel, oka **NINCS MEG**.
+
+**Két független út.** A: a TRE-sorok (fájl). B: a bináris-index `string_xrefs` (a `0x00749ba0` kulcsai) és a dump C-törzse. Mindkettő ugyanazt a párt és ugyanazt a két kulcsot adja (`showignored` / `showunknown`, `addname` / `ignore`). A két út egyezik a névről; a láthatóság hatására csak a felvétel válaszol.
+
+**Cáfoló kísérlet.** Azt vizsgáltam, hogy a `0x00749ba0` vezérli-e a `]unknownface` album csoportosított nézetének `addname` / `ignore` elemét. A C-ben a kulcs csak a 2-es módú ágban van, a 0 és 1 módban nincs. A csoportosítás kulcsa (`cluster`) a függvényben nincs jelen, ezért a csoportosítás-függést a cáfolat nem bizonyította, csak azt, hogy a függvény nem ezt dönti el.
+
+**Jegytörzs-hatás.** Fejlesztési teendő a bizonyított részből nem következik: a TRE-párok és a kezdeti láthatóság a 19. szakasz táblája szerint már egyeznek a `UnnamedFacesView.qml` állapotaival. A `addname` / `ignore` kódos láthatósága nyitott, ezért a „Kész, ha” lista nem írható elő belőle.
+
+**Megjegyzés a 12. szakasz táblájához.** Az `ignore` elem szövege az 1655. sor táblájában „Elvetés”, a magyar szótár (`referencia/i18n/hu/unknownfaceheaderpaneltext.xml`) viszont „Kijelöltek mellőzése”. A felirat forrását egy külön jegyben kell eldönteni; ezt a lapot nem módosítottam.
+
+**Nyitott.**
+
+**12. kör (2026-10-19, #5343): a `0x0074cc00` és a `0x00749ba0` válasza (részben).**
+
+- **`0x0074cc00` (516 bájt, C).** A fejléc parancskezelője nem állít `addname` vagy `ignore` elemet. A `cluster` parancsnál `FUN_0074c200(1, 0)` hívódik, a `showall` parancsnál `FUN_0074c200(0, 0)` (a flag a parancs szövegének `cluster`-összevetése). A `moresug` parancs a `this+0x2dc` objektum `+0x24` bájtját nullázza. A `cluster` és a `showall` után a függvény a `ytDrawNode` (RTTI-cast a `0x00c07db2`-vel) `vtbl+0x7c` slotját hívja a `peoplepanel/update` eseménnyel. Az `addname` és az `ignore` láthatóságát tehát a `0x0074c200` vagy a `vtbl+0x7c` célja állíthatja; egyik sincs dekompilálva, így a láthatóság NINCS MEG.
+- **`0x00749ba0`, 2-es módú ág.** A `0x00c96f94` literál (a `.rdata`-ban az `addname` sztring, ellenőrizve) az argumentum a `this+0x2b4` objektum `vtbl+0xf0` (60. slot) hívásában (C: a `FUN_00a697b0` és a `(**(code**)(**(int**)(param_1+0x2b4)+0xf0))` sor). A slot célja az objektum osztályától függ, a `this+0x2b4` írása ebben a függvényben nincs, így a show/hide/enable jelentés NINCS MEG. A `0x00748cc0` visszatérése a `0x20` bájtos objektum mutatója, amelynek `+0x1c` jelzőjét a `0x00749ba0` 1-re állítja (C: `iVar5 = FUN_00748cc0(param_1); *(iVar5+0x1c) = 1`); a `0x00748cc0` törzse NINCS MEG.
+- **Bizonyítottsági fok.** A `cluster`/`showall` flag-hozzárendelés: **feltételes** (C; a két kulcs jelenlétét a `string_xrefs` megerősíti). A `moresug` ág: **feltételes** (C). A `vtbl+0xf0` célja: **NINCS MEG**.
+
+Ghidra-kör kell (részben megválaszolva, 12. kör): 0x0074c200 - a `0x0074cc00` által hívott `FUN_0074c200(flag, 0)` törzse: a `cluster` (flag 1) és a `showall` (flag 0) váltás után mely elemek (`addname`, `ignore`) láthatóságát állítja, és milyen feltétellel [blokkoló]
+Ghidra-kör kell (részben megválaszolva, 12. kör): 0x00749ba0 - a 2-es módú ágban a `this+0x2b4` objektum osztálya és `vtbl+0xf0` (60. slot) célja az `addname` kulccsal: show, hide vagy engedélyezés; a `this+0x2b4` objektum konstruktora / írója és a `0x00748cc0` törzse is kell hozzá [blokkoló]
+
 ## 20. #5184: a személykezelés bináris oldalának eredménye (2026-10-17, 2. kör)
 
 **Hatókör:** a jegy N1, N3, N5, N6, N7 bináris oldala, valamint a felvételes N4 és N8. Az öt dekompilált függvény a `referencia/ghidra/2026-10-17-szemelykezeles.txt` fájlban van: `0x0048ef20`, `0x007ba820`, `0x00584cc0`, `0x00647270`, `0x006470d0`. A többi címet diszasszemblálás (`annot_disasm.py`) és a bináris-index élei (`xrefs`, `string_xrefs`) adják. **Az index csak a közvetlen hívásokat látja**, a vtable-hívásokat nem; a negatív állítások erre a korlátra épülnek.
@@ -3934,3 +3993,79 @@ Nincs új fejlesztői lista: a PicasaPy jelenlegi 16 jegyű azonosítója és IN
 
 - Ghidra-kör kell: a `this+0x3f0` tábla bejegyzéseinek írói (a `0x00506270` olvassa: a `0x3e9` típus és a `+0x20` érték forrása); a 2-es állapot innen jön [blokkoló]
 - Ghidra-kör kell: a `0x0048ef20` egyik hívójának (`0x00414940`, `0x0047b020`, `0x00536a90`, `0x005c6500`) törzse: melyik objektum-osztály `this`-e a `0x0048ef20` bemenete, és hol van a vtábla-írás [blokkoló]
+
+## 34. #5184, 11. Ghidra-kör: a contact ID-jelölt, a `this+0x3f0` tábla és a felvétel-kapu (2026-10-19)
+
+**Hatókör:** a 32.5 szakasz `0x00586540` sora és a három új cím: `0x00586a60`, `0x00506270`, `0x00414940`. Forrás: a 11. dump (`.ghidra11/2026-10-19-ghidra-11.txt`, 1307-1618. sor), a bináris-index hívólistái és `string_xrefs` táblája. Diszasszemblálás ehhez a három címhez nem készült.
+
+### 34.1 `0x00586a60`: kulcsellenőrző és továbbadó, nem előállító
+
+A függvény `uint FUN_00586a60(uint param_1, uint param_2, int *param_3, int param_4)`. A `this` a regiszteren érkezik (C: `in_EAX`). Sorrend:
+1. `puVar1 = *param_3` nem nulla; `(*puVar1 & 0xffffff00) != 0`; `(char)puVar1[1] != 0`. Ha nem teljesül, a visszatérés `0xffffffff`.
+2. A kulcs `(param_1, param_2)`: nem lehet mindkettő nulla, és `(param_1 & param_2) != 0xffffffff` (vagyis nem mindkét dword `-1`). Ha nem teljesül, `0xffffffff`.
+3. A `this` zárja alatt (tulajdonos `+0x20`, rekurzió `+0x24`, jelző `+0xc`, kritikus szakasz `+0x28`) hívja a `0x00588290(this, param_1, param_2)`-t.
+4. Nem nulla eredmény: `param_4 != 0` esetén `0x0057fb50`, a visszatérés `0`. Nulla eredmény: a visszatérés `9`.
+
+Következmény:
+- **Az előállítás nem ebben a függvényben van.** A `puVar3[4]`-et és a `puVar3[5]`-öt nem olvassa; a `*param_3` objektumból csak az első két mezőt nézi (`+0x0`, `+0x4`). A `puVar3[4]`, `puVar3[5]` → kulcs leképezés a hívóban (`0x00586540`, a `0x00586794` hívás előtt) vagy a `0x00588290` törzsében van. **NINCS MEG** a dumpban.
+- **A kulcs alakja:** 64 bites, két dword (`param_1`, `param_2`); a `(0, 0)` és a `(-1, -1)` pár nem érvényes. A 16 jegyű alak (32.3) nincs a formátumsztringből garantálva (a `%I64x`-nek nincs szélességkitöltése); a két dword sorrendje (melyik az alacsony rész) **NINCS MEG** ebből a törzsből.
+- Visszatérési kódok: `0` (a `0x00588290` sikeres), `9` (sikertelen), `0xffffffff` (érvénytelen objektum vagy kulcs).
+
+*Bizonyítottsági fok:* **megerősített** az ellenőrzési sorrend és a három visszatérési kód (C-törzs). **NINCS MEG** az előállított jelölt és a két dword sorrendje.
+
+Megválaszolva részben (12. kör): a `0x00588290` NEM állít elő contact ID-jelöltet, hanem 64 bites kulcs KERESŐJE. A `(param_4 | param_5) != 0` és a `(param_4 & param_5) != 0xFFFFFFFF` ellenőrzés (az `-1` érvénytelen kulcs) után a `FUN_0058fc40(param_3+0xe0, param_2)` al-táblát kéri (nem dekompilált), a bucket-indexet a `__aullrem(param_4, param_5, [al-tábla+0x1c], 0)` adja (64 bites modulo), a láncban a `puVar2[2] == param_4 && puVar2[3] == param_5` összevetés dönt, és a találat `puVar2+2` (a tárolt kulcs címe), különben 0. A jelölt előállítása a négy hívó egyikében van (`0x0058470f`, `0x00584b8e`, `0x00585c9c`, `0x00586aef`), ezek törzse nincs dekompilálva. **Bizonyítottsági fok:** a keresés logikája **feltételes** (C, egy út); a jelölt előállítása **NINCS MEG**. Ghidra-kör kell: 0x00584280, 0x00584b00, 0x00585ad0, 0x00586a60 - a hívók által átadott 64 bites kulcs előállítása [blokkoló]
+Megválaszolva részben (12. kör): a `0x00586794` `call 0x00586a60` (diszasszembly; az index `0x00586540` → `0x00586a60` éle is ezt adja). Argumentumai a C szerint: `puVar3[4]`, `puVar3[5]` (a `this+0x38` táblából a `FUN_0058fc40(this+0x38, param_2)` által adott al-tábla `+0x30` hash-mezővel indexelt láncának csomópontja: a 64 bites kulcs), `param_2` (a kulcs-sztring mutatója, a hívó 2. argumentuma), és `local_34` (kimeneti; a `0x0058677c`-`0x00586790` sorok nullázzák). A `param_3` a második objektum (`*param_3` a sztring, `param_3[9] >> 1` a darabszám). A push-sorok ellenőrzése diszasszembly-munka, nem Ghidra-kör. **Bizonyítottsági fok:** a hívás **megerősített** (asm és index); az argumentumok forrása **feltételes** (C). Ghidra-kör kell: a `0x00586540` hívásának C-je már megvan; a `param_3` objektum forrása a `0x00586540` nyolc hívójában (0x00586175, 0x00586946, 0x00586a05, 0x0058764a, 0x007d5ac7, 0x0084ceff, 0x0084d023, 0x0084edc4) [nem blokkoló]
+
+### 34.2 `0x00506270`: a `this+0x3f0` tábla olvasója
+
+`int FUN_00506270(uint *param_1)`: a `this` a `EAX`; a bemenet a `*param_1` index. A `this` zárja alatt:
+1. Ha `index >= ([this+0x3f4] >> 1)`, a visszatérés `4`. (A darabszámot `>> 1`-gyel olvassa, ahogy a `0x0042c830` és a `0x00429dc0` listáinál.)
+2. Az elem a `this+0x3f0` tábla `[index]` mezője; ha nulla, az alap-rekord a `this+0x3f8`.
+3. Ha az elem `+0x18` mezője `0x3e9` (1001, arcsablon-bejegyzés, 9/c), a `*param_1` a rekord `+0x20` mezője, a visszatérés `0`.
+4. Egyébként a visszatérés `9`.
+
+- **Írói: NINCS MEG.** A függvény csak olvas: a `this+0x3f0`, `+0x3f4`, `+0x3f8` mezőkre nincs értékadás. Az írók a dumpon kívül vannak. Keresésük a `this+0x3f0` eltolásra `find_members.py`-val lehetséges, de teljes `.text`-pásztázás csak a `paszta.py`-n át megy (SKILL 2/a); ezt a körben nem futtattam.
+- **A „2-es állapot” nem ennek a függvénynek a visszatérése.** A kódok 0, 4, 9. A 2 forrása a hívóban vagy a rekord más mezőjében van; **NINCS MEG**.
+
+*Bizonyítottsági fok:* **megerősített** a három visszatérési kód és a `0x3e9` / `+0x20` olvasat (C-törzs). **NINCS MEG** az írók és a 2-es állapot forrása.
+
+Ghidra-kör kell: 0x00506270 - a 42 hívó közül melyik olvassa a `this+0x3f0` táblát, és melyik ad 2-es állapotot a 0 / 4 / 9 kódok mellé [blokkoló]
+
+### 34.3 `0x00414940`: a `FRAddSuggesetions` beállítással kapuzott indító
+
+`int FUN_00414940(int param_1)`. A `this` a regiszteren (`ESI`) érkezik (C: `unaff_ESI`); a típusa a dumpban nincs meg. A lépések:
+1. A `this+0x34a9` jelző 1: visszatérés `0xf4241` (1000001). Különben 1-re állítja.
+2. Ha az argumentum alsó bájtja 0 (nem kényszerített hívás): tovább csak akkor megy, ha `DAT_00d67849 != 0`, `this+0x2db0 == 0` és `FUN_009a51b0(this+0x2810) >= 15.0`. A `15.0` a `0x00c7d9d8` double-értéke (a PE `.rdata`-ból olvasva). Ha nem, `this+0x34a9 = 0`, visszatérés `0xf4241`.
+3. Beállítás olvasása: `Preferences` / `FRAddSuggesetions` (a kulcs neve a binárisban elírt, a sztring a `0x00c81b7c`) a `0x004019b0`-lal. Ha hamis: `this+0x2810` = most, `this+0x34a9 = 0`, visszatérés `0`.
+4. Ha igaz: ha `DAT_00d4a62c != 0` és a `0x009a7fe0` már foglalt állapotot ad (nem nulla és `*local_24 != 0`), visszatérés `0xf4242` (1000002). Különben `0x0048ef20(this, &param_1, 0, 0, 0, 0)`, majd `this+0x2810` = most, visszatérés `0`.
+
+Hívói (a dump fejléce): `0x0047b020` (a `0x0047b189` helyen), `0x006a10b0` (a `0x006a12fa` és `0x006a1332` helyen). Ezek törzse nincs a dumpban.
+
+- **A `this` osztálya: NINCS MEG.** Ebben a függvényben nincs vtábla-írás; a típus a hívókból vagy a konstruktorból jön.
+- **A `0x0048ef20` hívásának feltétele:** a 3. és a 4. lépés; vagyis a `FRAddSuggesetions` igaz, a 15.0 küszöb teljesül (vagy kényszerített hívás), és a szálfoglalás nem ütközik.
+- **Mértékegység:** a `0x009a51b0` visszatérési egysége **NINCS MEG**; a 15.0 csak azt mondja, hogy a két QPC-mintából számolt érték ezzel vethető össze.
+
+*Bizonyítottsági fok:* **megerősített** az 1-4. lépés (C-törzs; a kulcs a `string_xrefs`-ben is megvan). **NINCS MEG** a `this` típusa és a 15.0 mértékegysége.
+
+Megválaszolva részben (12. kör): a `0x00414940` hívói az index szerint `0x0047b020` (1 hívás) és `0x006a10b0` (2 hívás). A `0x0047b189` a `push 1` (`0x0047b187`) után hívja a `0x00414940`-t (diszasszembly), és ez a `in_EAX[2] == 0` ágon fut (C). A `this` a belépéskor EAX-ben van (C: `in_EAX`); hogy ESI-be hova kerül, a függvény elejét nem ellenőriztem. A `this` típusa NINCS MEG: a `0x0047b020` egyetlen hívója a `0x004987c0` (`0x00498933`). **Bizonyítottsági fok:** a hívó és az argumentum: **megerősített** (asm és index); a `this` típusa: **NINCS MEG**. Ghidra-kör kell: 0x004987c0 - a `0x0047b020` hívásakor a `this` objektum típusa [blokkoló]
+Ghidra-kör kell: 0x006a10b0 - a két hívó (`0x006a12fa`, `0x006a1332`): azonos osztály-e a `this`, és hol van a vtábla-írás [blokkoló]
+Ghidra-kör kell: 0x009a51b0 - a visszatérési érték egysége (másodperc vagy tick) [nem blokkoló]
+
+### 34.4 A 32.5 `0x00586540` sora
+
+Részben válaszolt: a `0x00586a60` a `0x00586540` hívottja (`0x00586794`), így a jelölt-kiválasztás a `0x00586540` és a `0x00588290` törzsében van. Mindkét törzs hiányzik a dumpból, ezért a sor `[blokkoló]` marad, a hiányzó törzsek megnevezésével (33.1).
+
+### 34.5 Bizonyítottsági fok és cáfoló kísérletek
+
+- **Cáfoló (34.1):** azt állítottam, hogy a `0x00586a60` állítja elő a jelöltet. A C szerint csak ellenőriz és továbbad. **Cáfolva** a dump alapján; a `0x00588290` belső előállítása nincs kizárva.
+- **Cáfoló (34.2):** azt állítottam, hogy a `0x00506270` ír a táblába. Nincs C-értékadás a `this+0x3f0`-ra. **Cáfolva** a dump alapján (olvasó).
+- **Cáfoló (34.3):** azt állítottam, hogy a `0x00414940` vtábla-írást végez a `this`-en. A C-ben nincs. **Cáfolva** a dump alapján; a hívók nincsenek a dumpban.
+
+### 34.6 Ghidra-kör kérések egy helyen
+
+- Megválaszolva részben (12. kör): a `0x00588290` NEM állít elő contact ID-jelöltet, hanem 64 bites kulcs KERESŐJE. A `(param_4 | param_5) != 0` és a `(param_4 & param_5) != 0xFFFFFFFF` ellenőrzés (az `-1` érvénytelen kulcs) után a `FUN_0058fc40(param_3+0xe0, param_2)` al-táblát kéri (nem dekompilált), a bucket-indexet a `__aullrem(param_4, param_5, [al-tábla+0x1c], 0)` adja (64 bites modulo), a láncban a `puVar2[2] == param_4 && puVar2[3] == param_5` összevetés dönt, és a találat `puVar2+2` (a tárolt kulcs címe), különben 0. A jelölt előállítása a négy hívó egyikében van (`0x0058470f`, `0x00584b8e`, `0x00585c9c`, `0x00586aef`), ezek törzse nincs dekompilálva. **Bizonyítottsági fok:** a keresés logikája **feltételes** (C, egy út); a jelölt előállítása **NINCS MEG**. Ghidra-kör kell: 0x00584280, 0x00584b00, 0x00585ad0, 0x00586a60 - a hívók által átadott 64 bites kulcs előállítása [blokkoló]
+- Megválaszolva részben (12. kör): a `0x00586794` `call 0x00586a60` (diszasszembly; az index `0x00586540` → `0x00586a60` éle is ezt adja). Argumentumai a C szerint: `puVar3[4]`, `puVar3[5]` (a `this+0x38` táblából a `FUN_0058fc40(this+0x38, param_2)` által adott al-tábla `+0x30` hash-mezővel indexelt láncának csomópontja: a 64 bites kulcs), `param_2` (a kulcs-sztring mutatója, a hívó 2. argumentuma), és `local_34` (kimeneti; a `0x0058677c`-`0x00586790` sorok nullázzák). A `param_3` a második objektum (`*param_3` a sztring, `param_3[9] >> 1` a darabszám). A push-sorok ellenőrzése diszasszembly-munka, nem Ghidra-kör. **Bizonyítottsági fok:** a hívás **megerősített** (asm és index); az argumentumok forrása **feltételes** (C). Ghidra-kör kell: a `0x00586540` hívásának C-je már megvan; a `param_3` objektum forrása a `0x00586540` nyolc hívójában (0x00586175, 0x00586946, 0x00586a05, 0x0058764a, 0x007d5ac7, 0x0084ceff, 0x0084d023, 0x0084edc4) [nem blokkoló]
+- Ghidra-kör kell: 0x00506270 - a 42 hívó közül melyik olvassa a `this+0x3f0` táblát, és melyik ad 2-es állapotot a 0 / 4 / 9 kódok mellé [blokkoló]
+- Megválaszolva részben (12. kör): a `0x00414940` hívói az index szerint `0x0047b020` (1 hívás) és `0x006a10b0` (2 hívás). A `0x0047b189` a `push 1` (`0x0047b187`) után hívja a `0x00414940`-t (diszasszembly), és ez a `in_EAX[2] == 0` ágon fut (C). A `this` a belépéskor EAX-ben van (C: `in_EAX`); hogy ESI-be hova kerül, a függvény elejét nem ellenőriztem. A `this` típusa NINCS MEG: a `0x0047b020` egyetlen hívója a `0x004987c0` (`0x00498933`). **Bizonyítottsági fok:** a hívó és az argumentum: **megerősített** (asm és index); a `this` típusa: **NINCS MEG**. Ghidra-kör kell: 0x004987c0 - a `0x0047b020` hívásakor a `this` objektum típusa [blokkoló]
+- Ghidra-kör kell: 0x006a10b0 - a két hívó (`0x006a12fa`, `0x006a1332`): azonos osztály-e a `this`, és hol van a vtábla-írás [blokkoló]
+- Ghidra-kör kell: 0x009a51b0 - a visszatérési érték egysége (másodperc vagy tick) [nem blokkoló]
