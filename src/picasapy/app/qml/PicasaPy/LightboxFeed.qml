@@ -1525,10 +1525,11 @@ ListView {
         implicitHeight: height
         visible: active
         // a fejléc magassága a Loader-es tartalom elrendezése után áll be,
-        // ezért a módváltáskori igazítás korán futhat: magasságváltáskor
-        // a lista kezdőpozícióját újra a fejléchez igazítjuk
+        // és a lista eredete (originY) vele mozdul. Ezért magasságváltáskor
+        // azonnal a fejléchez igazítunk: a késleltetett igazítás addig a
+        // gombokat a látótéren kívülre tolja, és a kattintás mellé érne
         onHeightChanged: if (active)
-            Qt.callLater(function() { grid.alignPersonAlbumHeader() })
+            grid.alignPersonAlbumHeader()
 
         Column {
             id: personAlbumColumn
