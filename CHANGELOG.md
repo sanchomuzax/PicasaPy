@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.151] - 2026-10-18
+
 ## [0.9.150] - 2026-10-18
 
 - A bal sáv Emberek-csoportja az eredeti szerint: a fejléc a látható sorokat számolja, a mellőzött arcok sora „Ignored (N)” felirattal és csak a mellőzött nézetben, a Névtelenek helyén jelenik meg (#5341).
