@@ -164,6 +164,26 @@ ColumnLayout {
         }
     }
 
+    // #5343: a fejléc sávja (`unknownfaceheaderpanel/headerbase`, #eaeaea,
+    // 82 px; a bal széle 12 px-rel az ikon előtt, a teteje 7 px-rel az ikon
+    // fölött). Nulla magasságú elemben él; a fejléc felső margója (-8)
+    // kiegyenlíti a 8 px-es sorközt, így a fejléc helye nem változik. Az
+    // árnyék nem látszik a mért képen: a sáv alja közvetlenül a törzs
+    // színébe megy.
+    Item {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 0
+        Layout.alignment: Qt.AlignTop
+        Rectangle {
+            objectName: "unnamedHeaderBandFill"
+            x: -28
+            y: -7
+            width: root.width + 28
+            height: 82
+            color: Theme.canvasBg
+        }
+    }
+
     // A két eredeti fejléc-váltó ugyanazt a nézetet kapcsolja a két album
     // között (`unknownfaceheaderpanel.tre:38` és `:43`). A gazda állítja a
     // módot, így a bal oldali albumjelölés és a látható tartalom együtt vált.
@@ -171,6 +191,7 @@ ColumnLayout {
         objectName: "unknownFaceViewHeader"
         Layout.fillWidth: true
         Layout.preferredHeight: 36
+        Layout.topMargin: -root.spacing
         spacing: 5
 
         RowLayout {
@@ -187,11 +208,13 @@ ColumnLayout {
                 fillMode: Image.PreserveAspectFit
                 smooth: true
             }
+            // #5343: az eredeti címe Georgia 24 (unknownfaceheaderpanel.tre:7-8)
             Text {
                 objectName: "unnamedAlbumTitle"
                 text: root.ignoredMode
                       ? qsTr("Ignored people") : qsTr("Unnamed people")
-                font.pixelSize: Theme.fontSize + 6
+                font.family: "Georgia"
+                font.pixelSize: 24
                 color: "#68564f"
             }
         }
@@ -238,9 +261,13 @@ ColumnLayout {
     // kibontott módban a névmező és az „Ignore Selected” gomb, a felső
     // gombpár jobb szélére igazítva. Mellőzött módban a kijelölésszámláló és
     // a „Stop ignoring” ugyanitt marad.
+    // #5343: a sor magassága mindkét állapotban 27 px (a kibontott sor
+    // gombja adja), így a felirat és a rács helye nem ugrik a váltáskor; az
+    // eredetiben sem ugrik (j1_csoportositott és j1_kibontott: a felirat y=170).
     RowLayout {
         objectName: "unnamedFaceRow"
         Layout.fillWidth: true
+        Layout.preferredHeight: 27
         spacing: 6
 
         Text {
@@ -271,7 +298,8 @@ ColumnLayout {
             objectName: "unnamedNameField"
             visible: !root.ignoredMode && !root.grouped
             Layout.alignment: Qt.AlignVCenter
-            Layout.preferredWidth: 162
+            // #5343: az eredeti `addname` 163×20 (respack `0x0033b098`)
+            Layout.preferredWidth: 163
             Layout.preferredHeight: 20
             height: 20
             placeholderText: qsTr("Add a name")
@@ -284,6 +312,10 @@ ColumnLayout {
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}
             onAccepted: root.nameSelectedFaces(text)
+            // #5343: az eredeti `unknownfaceheaderpanel/addname` súgója
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Assign a name to all of the selected faces")
+            ToolTip.delay: Theme.tooltipDelay
         }
         // #26: „Ignore" - az eredetiben a mellőzés NEM törlés volt: a
         // személy a „Mellőzött emberek" albumba került
@@ -344,7 +376,9 @@ ColumnLayout {
         visible: true
         Layout.fillWidth: true
         Layout.leftMargin: -4
-        Layout.bottomMargin: !root.ignoredMode && !root.grouped ? 3 : 8
+        // #5343: a felirat a sáv alatt, 12 px-rel a sáv alja után áll (y=170)
+        Layout.topMargin: 4
+        Layout.bottomMargin: 3
         wrapMode: Text.WordWrap
         text: root.instructionText
         font.pixelSize: Theme.fontSize
