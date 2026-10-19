@@ -7484,6 +7484,13 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_face_mov
             <translation>Yüz Filmi Oluştur</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="571" />
+            <source>Set as People Album Thumbnail</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/set_thumbnail)</extracomment>
+            <translation>Albüm Küçük Resmi Olarak Ayarla</translation>
+        </message>
+        <message>
             <source>Play Fullscreen Slideshow</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpaneltext:Tooltip(headerpanel/play)</extracomment>

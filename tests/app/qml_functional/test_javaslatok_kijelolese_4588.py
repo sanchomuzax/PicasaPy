@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
@@ -48,11 +48,16 @@ def _visual_item(root, name):
 
 def _lathato_gomb(root, name):
     item = _visual_item(root, name)
+    main_split = _visual_item(root, "mainSplit")
+    if item is None or main_split is None or not item.isVisible():
+        return False
+    center = item.mapToScene(item.boundingRect().center())
+    content_top = main_split.mapToScene(QPointF(0, 0)).y()
     return (
-        item is not None
-        and item.isVisible()
-        and item.width() > 0
+        item.width() > 0
         and item.height() > 0
+        and content_top <= center.y() <= root.height()
+        and 0 <= center.x() <= root.width()
     )
 
 

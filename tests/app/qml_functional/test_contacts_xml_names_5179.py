@@ -146,17 +146,25 @@ def test_embersor_kattintassal_a_kozponti_nevu_szemelyalbumot_nyitja(
     assert controller.viewModeName == "person"
     assert var_feltetelre(
         qt_app,
-        lambda: controller.photos.rowCount() == 1
-        and Path(controller.photos.filePathAt(0)) == photo,
+        lambda: controller.photos.rowCount() == 3
+        and photo in {
+            Path(controller.photos.filePathAt(row))
+            for row in range(controller.photos.rowCount())
+        }
+        and len(controller.personAlbumPhotos) == 1,
         3.0,
-    ), "a központi név alapján szűrt személyalbum nem mutatja a fotót"
+    ), "a teljes mappa-feed vagy a központi névhez tartozó arcsáv hiányzik"
     controller._reload_after_sync()
     assert var_feltetelre(
         qt_app,
-        lambda: controller.photos.rowCount() == 1
-        and Path(controller.photos.filePathAt(0)) == photo,
+        lambda: controller.photos.rowCount() == 3
+        and photo in {
+            Path(controller.photos.filePathAt(row))
+            for row in range(controller.photos.rowCount())
+        }
+        and len(controller.personAlbumPhotos) == 1,
         3.0,
-    ), "újratöltés után elveszett a központi név alapján szűrt fotó"
+    ), "újratöltés után eltűnt a teljes mappa-feed vagy a személy arcsávja"
 
 
 def _open_people_manager(window, qt_app):

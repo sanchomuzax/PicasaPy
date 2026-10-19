@@ -52,6 +52,19 @@ ListView {
     // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
+    readonly property bool personAlbumMode:
+        grid.appWindow && grid.appWindow.personAlbumName !== ""
+
+    function alignPersonAlbumHeader() {
+        grid.restoring = true
+        grid.contentY = grid.originY
+        grid.savedY = grid.contentY
+        grid.captureAnchor()
+        grid.restoring = false
+    }
+    onPersonAlbumModeChanged: Qt.callLater(function() {
+        grid.alignPersonAlbumHeader()
+    })
 
     // A külső fájlhúzás a kijelölés teljes fájllistáját adja át, nem csak
     // azt az indexképet, amelyről a mozdulat elindult.
@@ -160,6 +173,144 @@ ListView {
 
     clip: true
     model: grid.ctl ? grid.ctl.feedGroups : []
+
+    // A személyalbum saját fejlécet és arcsávot kap; utána a normál feed
+    // mappacsoportjai következnek, ezért minden kép a mappájában marad.
+    header: Item {
+        id: personAlbumFeedHeader
+        objectName: "personAlbumFeedHeader"
+        readonly property bool active: grid.appWindow
+            && grid.appWindow.personAlbumName !== ""
+        width: grid.width
+        height: active ? personAlbumColumn.implicitHeight : 0
+        implicitHeight: height
+        visible: active
+
+        Column {
+            id: personAlbumColumn
+            width: parent.width
+            spacing: 0
+
+            LightboxHeader {
+                id: personAlbumHeader
+                objectName: "personAlbumHeader"
+                width: parent.width
+                personAlbumHeaderMode: true
+                personName: grid.appWindow.personAlbumName
+                personAvatarUrl: grid.appWindow.personAlbumAvatarUrl
+                personAlbumRemoveEnabled:
+                    grid.appWindow.personAlbumCanRemoveSelection
+                personAlbumThumbnailEnabled:
+                    grid.appWindow.personAlbumCanSetThumbnail
+                selectedCount: grid.appWindow.selectedIndexes
+                    ? grid.appWindow.selectedIndexes.length : 0
+                suggestionCount: grid.appWindow.personSuggestionCount
+                selectedSuggestionCount:
+                    grid.appWindow.personSelectedSuggestionIds.length
+                faceZoom: grid.appWindow.personFaceZoom
+                suggestionsOnly: grid.appWindow.personSuggestionsOnly
+                onPlayRequested: {
+                    var photos = grid.ctl ? grid.ctl.personAlbumPhotos : []
+                    if (photos.length > 0)
+                        grid.slideshowRequested(Number(photos[0].row))
+                }
+                onCollageRequested: {
+                    if (!grid.appWindow || !grid.appWindow.openCollageFromRows)
+                        return
+                    var photos = grid.ctl ? grid.ctl.personAlbumPhotos : []
+                    var rows = []
+                    for (var i = 0; i < photos.length; ++i)
+                        rows.push(Number(photos[i].row))
+                    grid.appWindow.openCollageFromRows(rows)
+                }
+                onPersonMovieRequested: {
+                    if (grid.appWindow.openPersonAlbumMovie)
+                        grid.appWindow.openPersonAlbumMovie()
+                }
+                onRemovePersonAlbumRequested: {
+                    if (grid.appWindow.removePersonAlbumSelection)
+                        grid.appWindow.removePersonAlbumSelection()
+                }
+                onSetPersonThumbnailRequested: {
+                    if (grid.appWindow.setPersonAlbumThumbnailFromSelection)
+                        grid.appWindow.setPersonAlbumThumbnailFromSelection()
+                }
+                onSelectSuggestionsRequested: {
+                    if (grid.appWindow.selectPersonSuggestions)
+                        grid.appWindow.selectPersonSuggestions()
+                }
+                onConfirmSuggestionsRequested: {
+                    if (grid.appWindow.confirmPersonSuggestions)
+                        grid.appWindow.confirmPersonSuggestions()
+                }
+                onRemoveSuggestionsRequested: {
+                    if (grid.appWindow.removePersonSuggestions)
+                        grid.appWindow.removePersonSuggestions()
+                }
+                onSuggestionsOnlyToggled: function(only) {
+                    if (grid.appWindow.setPersonSuggestionsOnly)
+                        grid.appWindow.setPersonSuggestionsOnly(only)
+                }
+                onFaceZoomToggled: function(face) {
+                    if (grid.appWindow.setPersonFaceZoom)
+                        grid.appWindow.setPersonFaceZoom(face)
+                }
+                onMoreSuggestionsRequested: {
+                    if (grid.appWindow.findMoreSuggestions)
+                        grid.appWindow.findMoreSuggestions()
+                }
+            }
+
+            Item {
+                width: parent.width
+                height: 215
+
+                ListView {
+                    id: personAlbumFaceStrip
+                    objectName: "personAlbumFaceStrip"
+                    x: 16; y: 18
+                    width: Math.max(0, parent.width - x)
+                    height: 182
+                    orientation: ListView.Horizontal
+                    spacing: 0
+                    clip: true
+                    model: grid.ctl ? grid.ctl.personAlbumPhotos : []
+
+                    delegate: Item {
+                        required property var modelData
+                        width: 162
+                        height: 182
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 122; height: 147
+                            color: Theme.thumbCard
+                            border.width: 1
+                            border.color: Theme.thumbBorder
+                            Image {
+                                objectName: "personAlbumFaceImage"
+                                readonly property bool imageReady:
+                                    status === Image.Ready
+                                anchors.fill: parent
+                                anchors.margins: 1
+                                source: modelData.thumbUrl || ""
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous:
+                                    Qt.platform.pluginName !== "offscreen"
+                                cache: true
+                                smooth: true
+                            }
+                        }
+
+                        TapHandler {
+                            onDoubleTapped: grid.openRequested(
+                                Number(modelData.row))
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // #1945: az üres rács NE legyen néma. Az eredetiben a rács közepén
     // egyetlen sor áll (`layer:thumbui/static(nothing): lightbox_bgtext`,
@@ -655,6 +806,10 @@ ListView {
             })
         }
         function onFeedChanged() {
+            if (grid.personAlbumMode) {
+                Qt.callLater(function() { grid.alignPersonAlbumHeader() })
+                return
+            }
             if (grid.pendingPath !== "")
                 return   // mappaválasztás — oda ugrunk úgyis
             // #3751: a mentés-szűrő új tartalma (bekapcsolás, másik
@@ -968,6 +1123,7 @@ ListView {
             width: parent.width
             folderName: groupCol.modelData.name
             dateText: groupCol.modelData.dateText
+            personAlbumFolderMode: grid.personAlbumMode
             description: grid.ctl
                 ? (grid.ctl.descriptionRevision,
                    grid.ctl.folderDescriptionOf(groupCol.modelData.path))
@@ -1025,8 +1181,7 @@ ListView {
             //: is mutatja. A nevet és a darabszámot a gazdaablak tölti —
             //: a képfolyam nem ismeri az arc-vezérlőt, ahogy a
             //: mentés/csillagozás esetében sem.
-            personName: grid.appWindow && grid.appWindow.personAlbumName
-                        ? grid.appWindow.personAlbumName : ""
+            personName: ""
             suggestionCount: grid.appWindow
                              && grid.appWindow.personSuggestionCount !== undefined
                              ? grid.appWindow.personSuggestionCount : 0
@@ -1087,7 +1242,8 @@ ListView {
         // csak újrakötés a sorhatár-átlépéskor).
         Item {
             id: groupFlow
-            width: parent.width
+            x: grid.personAlbumMode ? 4 : 0
+            width: Math.max(0, parent.width - x)
             readonly property int totalRows: Math.ceil(
                 groupCol.modelData.count / grid.columns)
             height: totalRows * grid.cellHeight

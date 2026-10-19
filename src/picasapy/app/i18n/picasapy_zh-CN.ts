@@ -7484,6 +7484,13 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_face_mov
             <translation>创建头像视频</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="571" />
+            <source>Set as People Album Thumbnail</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/set_thumbnail)</extracomment>
+            <translation>设置为人物相册缩略图</translation>
+        </message>
+        <message>
             <source>Play Fullscreen Slideshow</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpaneltext:Tooltip(headerpanel/play)</extracomment>

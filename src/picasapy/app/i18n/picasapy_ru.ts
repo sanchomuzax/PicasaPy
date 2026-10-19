@@ -7502,6 +7502,13 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_face_mov
             <translation>Создать фильм с лицами</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="571" />
+            <source>Set as People Album Thumbnail</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/set_thumbnail)</extracomment>
+            <translation>Установить уменьшенное изображение для альбома</translation>
+        </message>
+        <message>
             <source>Play Fullscreen Slideshow</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpaneltext:Tooltip(headerpanel/play)</extracomment>

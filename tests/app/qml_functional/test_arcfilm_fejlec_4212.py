@@ -305,8 +305,9 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
         assert _varj(
             qt_app,
             lambda: vezerlo.currentPersonName == "Anna"
-            and vezerlo.photos.rowCount() == 1,
-        ), "Anna egysoros személyalbuma nem nyílt meg"
+            and vezerlo.photos.rowCount() == 3
+            and len(vezerlo.personAlbumPhotos) == 1,
+        ), "a mappa-feed vagy Anna külön arcsávja nem nyílt meg"
         vezerlo.setPeopleSort("count")
         assert [person["name"] for person in vezerlo.people] == [
             "Zoe Zed", "Anna",
