@@ -357,14 +357,29 @@ class TestIgnoredAlbum:
 
         assert ("ignoredGroups",) in stub.calls
 
-    def test_naming_is_not_offered_among_ignored_people(self, qt_app):
-        stub = _StubFaceScanController()
+    def test_ignored_people_can_be_named_and_unignore_needs_selection(self, qt_app):
+        stub = _StubFaceScanController(
+            ignored=[
+                {
+                    "label": "Ignored people (1)",
+                    "faces": [{"faceId": 4, "thumbUrl": "", "suggestedName": ""}],
+                }
+            ]
+        )
         view = _make_view(qt_app, controller=stub)
+        window = _host_in_window(qt_app, view)
         view.setProperty("mode", "ignored")
         qt_app.processEvents()
 
         assert view.findChild(QObject, "unnamedNameField").property("visible") is False
         assert view.findChild(QObject, "ignoreFacesButton").property("visible") is False
+        name_field = _wait_item(window, "ignoredFaceNameField_4")
+        assert name_field.property("placeholderText") == "Add a name"
+        assert view.findChild(QObject, "unignoreFacesButton").property("visible") is False
+
+        view.setProperty("selectedFaceIds", {"4": True})
+        view.setProperty("selectedCount", 1)
+        qt_app.processEvents()
         assert view.findChild(QObject, "unignoreFacesButton").property("visible") is True
 
     def test_unignoring_gives_the_faces_back(self, qt_app):
@@ -489,7 +504,7 @@ class TestClusterToggle:
 
         assert _instructions(view) == _TOGGLE_GROUP_IGNORE
         toggle = view.findChild(QObject, "clusterToggleButton")
-        assert toggle.property("visible") is False
+        assert toggle.property("visible") is True
 
     def test_while_grouping_runs_it_asks_to_wait(self, qt_app):
         stub = _StubFaceScanController()

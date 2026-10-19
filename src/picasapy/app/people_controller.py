@@ -40,6 +40,7 @@ from picasapy.index.faces_detected import (
 )
 from picasapy.index.people import (
     PEOPLE_SORT_MODES,
+    PersonRecord,
     people_in_index,
     person_movie_photos,
     person_photos,
@@ -87,6 +88,17 @@ def _load_ini(ini_path: Path):
     return load_document(ini_source_path(ini_path) or ini_path)
 
 
+def _arckep_hivatkozas(person: PersonRecord, saved) -> tuple:
+    """A személy arcképének (fotó-azonosító, arc-régió) párja: a mentett
+    választás, ha van, különben az első arc (ld. `PersonRecord`).
+
+    Ugyanazt a szabályt használja a bal sáv sora (`people`) és a tálca
+    személy-tokenje (#5331), hogy a két kép ne térhessen el."""
+    if saved is not None:
+        return saved.photo_id, saved.rect
+    return person.thumbnail_photo_id, person.thumbnail_rect
+
+
 class PeopleMixin:
     """A bal hasáb Emberek gyűjteménye: a könyvtárban névvel taggelt
     személyek listája, és egy névre kattintva a rá kitaggelt fotók."""
@@ -109,16 +121,8 @@ class PeopleMixin:
             saved = person_thumbnails(conn, (person.name for person in people))
             result = []
             for person in people:
-                thumbnail = saved.get(person.name.casefold())
-                photo_id = (
-                    thumbnail.photo_id
-                    if thumbnail is not None
-                    else person.thumbnail_photo_id
-                )
-                rect = (
-                    thumbnail.rect
-                    if thumbnail is not None
-                    else person.thumbnail_rect
+                photo_id, rect = _arckep_hivatkozas(
+                    person, saved.get(person.name.casefold())
                 )
                 photo = photo_by_id(conn, photo_id) if photo_id is not None else None
                 result.append(
@@ -175,6 +179,22 @@ class PeopleMixin:
         `currentAlbumToken` mintájára, a jelzése is (ld. `_init_people`)."""
         mode, param = self._view_mode
         return param if mode == "person" else ""
+
+    def _szemely_tokenadat(self, conn, name: str) -> tuple:
+        """A `name` személy tálca-tokenjének adatai (#5331): darabszám,
+        borító-fotó, arc-régió. A bal sáv sorának (`people`) ADATAIT adja
+        vissza, így a tálca nem olvassa végig újra az ini-ket minden
+        kijelöléskor. A `TrayMixin` hívja, ugyanazon az objektumon.
+        `(0, None, None)`, ha a személy nincs a listában."""
+        person = next(
+            (p for p in self._people if p.name.casefold() == name.casefold()),
+            None,
+        )
+        if person is None:
+            return 0, None, None
+        saved = person_thumbnails(conn, (name,)).get(name.casefold())
+        photo_id, rect = _arckep_hivatkozas(person, saved)
+        return person.photo_count, photo_id, rect
 
     @Slot(result="QVariantList")
     def peopleManagerContacts(self) -> list[dict]:  # noqa: N802
