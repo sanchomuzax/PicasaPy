@@ -12,18 +12,27 @@ Jelöld ki a képeket, majd:
 - a képrács mappafejlécében a kollázs-gomb mellett álló filmgomb
   (*Mozgófilmes prezentáció létrehozása*). Ez nem a kijelölt képekkel
   dolgozik, hanem **az adott fejléc mappájának összes képével** nyitja meg
-  a Mozgófilm ablakot. A személyalbum fejlécében nincs ilyen gomb, ott a
+  a Mozgófilmkészítés lapot. A személyalbum fejlécében nincs ilyen gomb, ott a
   saját filmgombok állnak.
 
 A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…**, az
 **Az Emberek albumból…** (ehhez nem kell kijelölés) és a személyalbum
-fejlécének filmgombjai szintén ezt a panelt nyitják — lásd
+fejlécének filmgombjai szintén ezt nyitják - lásd
 [Emberek](emberek.md).
 
-A **Mozgófilm** ablak három füllel nyílik: **Mozgófilm**, **Dia** és
-**Klipek**; alul az előnézet és a **Bezárás** / **Mozgófilm létrehozása**
-gomb áll. Az előnézet és a lejátszósáv a beállítások **alatt**, görgetés
-nélkül látszik.
+## A Mozgófilmkészítés lap
+
+A filmkészítő nem külön ablakban, hanem a főablakban, a **Könyvtár**
+melletti saját lapon nyílik meg (**Mozgófilmkészítés**), ahogy a
+kollázs is. A lapok között a fülekkel váltasz, a lapot a fülén lévő
+**×** zárja be.
+
+- **Bal oldalt** a beállítások hasábja áll, három füllel: **Mozgófilm**,
+  **Dia** és **Klipek (N)** (a zárójelben a film képeinek száma). A hasáb
+  alján a **Bezárás** és a **Mozgófilm létrehozása** gomb áll.
+- **Jobbra** az előnézet: sötétszürke mezőben a fekete filmkocka.
+- **Alul**, a lap teljes szélességében a lejátszósor, alatta a
+  filmcsík a film képeivel.
 
 ## A Mozgófilm fül
 
@@ -48,8 +57,8 @@ A fül tetején az áll, hány kép van kijelölve („N kép kijelölve."). Ala
 - **Célfájl:** — **nem kötelező**. Ha üresen hagyod, a program maga
   dönti el, hova és milyen néven mentse (lásd lentebb). A **Tallózás…**
   gombbal viszont te is megadhatod a helyét. A kimenet MP4-videó.
-- **Hangsáv:** — a film zenéje. A **Betöltés…** gombbal választasz
-  hangfájlt, a **Törlés** leveszi. Ha a képek egy mappából jönnek, és a
+- **Hangsáv:** — a film zenéje. Amíg nincs, **Nincs** áll mellette. A
+  **Betöltés…** gombbal választasz hangfájlt, a **Törlés** leveszi. Ha a képek egy mappából jönnek, és a
   mappához zenét adtál meg (lásd [Mappakezelő](mappakezelo.md)), az lesz
   alapból a hangsáv. Ugyanígy, ha egy albumból készítesz filmet, és az
   albumhoz be van állítva zene (az **Album tulajdonságai** ablak **Zene:** mezőjében), az album
@@ -57,7 +66,8 @@ A fül tetején az áll, hány kép van kijelölve („N kép kijelölve."). Ala
   leveszi. A **Beállítások**
   listából dönthetsz, mi legyen, ha a zene és a képek hossza nem
   egyezik: **Hangfájl csonkolása**, **Fotók hozzáillesztése a hanghoz**
-  vagy **Fotók ismétlése a zene végéig**.
+  vagy **Fotók ismétlése a zene végéig**. Hangsáv nélkül a **Törlés** és
+  ez a lista szürke.
 - Jelölők: **Képfeliratok megjelenítése** és **Dátumok megjelenítése**
   (a kép alján látszik a felirat, illetve a felvétel dátuma — feliratnak a
   képhez a PicasaPy-ban írt képfelirat kerül, és csak ha az üres, akkor a
@@ -113,6 +123,11 @@ kívülre húzol egyet, az eltávolítódik.
 A **Klipek** fülön a film képeit és szöveges diáit látod sorban, a
 filmszalagon:
 
+- **Továbbiak...** - visszavisz a **Könyvtár** lapra, hogy további
+  képeket jelölj ki. A Mozgófilmkészítés lap közben nyitva marad. A tálca
+  fölötti sáv **Vissza a Mozgófilmkészítés párbeszédpanelhez** gombja
+  visz vissza a filmhez; ott a **Kijelölt klipek hozzáadása** gombbal
+  fűzöd a filmhez az új képeket;
 - **Összes fénykép** — csúszka: a kijelölt képek hányadrészét használja
   fel a film; mellette az éppen felhasznált képek száma áll;
 - **Ne legyen szűrés a készítés ideje alapján** / **Az utolsó időszak
@@ -135,8 +150,9 @@ méretét és helyét a filmben: például „Szöveges dia  1024x768 képpont
 
 ## Az előnézet
 
-Az előnézet a beállítások alatt áll. Az **Előnézet** gomb lejátssza a
-filmet (közben **Szünet** lesz belőle). Lejátszáskor az előnézet a
+Az előnézet a lap jobb oldalán áll, a lejátszósor alatta. A lejátszógomb
+(súgója **Előnézet**) lejátssza a filmet; lejátszás közben szünetgomb
+lesz belőle (**Szünet**). Lejátszáskor az előnézet a
 filmhez hasonlóan viselkedik:
 
 - a képek a **Dia időtartama** szerint követik egymást, a **szöveges
@@ -152,12 +168,14 @@ filmhez hasonlóan viselkedik:
 - a **szöveges dia** szövegének, betűjének vagy színének változtatása
   gépelés közben is szinte azonnal látszik az előnézetben;
 - ha van **hangsáv**, az az előnézettel együtt szól: a **Szünet** megállítja,
-  az ablak bezárása leállítja. A lejátszósáv melletti hangerő-csúszkával
+  a lap bezárása leállítja. A lejátszósáv melletti hangerő-csúszkával
   állítod az előnézet hangerejét; a program megjegyzi a beállítást.
  A **Mozgófilm** fül tetején a
 **Vissza a kijelölt diához** gomb a kijelölt képhez ugrik. A két kis
 gomb a **Mozgófilm tényleges méretének
-megjelenítése (nyújtás nélkül)** és a **Lejátszás teljes képernyőn**.
+megjelenítése (nyújtás nélkül)** és a **Lejátszás teljes képernyőn**. Az
+első (1:1) alapból be van kapcsolva: az előnézet a film valódi méretében
+látszik. Ha kikapcsolod, a program ezt megjegyzi a következő filmhez is.
 
 ## Hova kerül a film, ha nem adsz meg célfájlt
 
@@ -182,7 +200,7 @@ jelzi.
 Az elkészült film a bal hasáb **Projektek** csoportjának filmek-mappájába
 kerül.
 
-Ha ugyanabban az ablakban már készítettél egy filmet, és újra a
+Ha ugyanazon a lapon már készítettél egy filmet, és újra a
 **Mozgófilm létrehozása** gombra kattintasz, a program megkérdezi:
 **Lecseréli a meglévőt, vagy újat hoz létre?** A **Meglévő cseréje** az
 előző film helyére írja az újat, az **Új létrehozása** külön fájlba menti,

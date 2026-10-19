@@ -454,13 +454,19 @@ vissza a projekthez". A **Vissza a kollázshoz** gombbal visszalépsz a
 kollázsra, a sáv jobb szélén lévő **×** pedig csak elrejti az üzenetet — a
 kollázs lapja nyitva marad. Lásd [Kollázs](kollazs.md).
 
+Ugyanez a sáv jelenik meg, ha a **Mozgófilmkészítés** lap **Továbbiak...**
+gombjával lépsz a könyvtárba; ilyenkor a gomb felirata **Vissza a
+Mozgófilmkészítés párbeszédpanelhez**. Lásd [Mozgófilm](mozgofilm.md).
+
 ### Ha albumra kattintasz
 
 Ha a bal hasábon egy **albumot** választasz ki, és közben egyetlen kép
 sincs kijelölve, a tálcán nem bélyegképek sorakoznak, hanem **egyetlen
 borítókép** a felirattal, hogy mi van kiválasztva és hány kép van benne
 — például `Kiválasztott album - 12 fotó`. Amint kijelölsz egy képet, a
-bélyegképek veszik át a helyét. A mappákra ez nem vonatkozik: a
+bélyegképek veszik át a helyét. Egy **személy albumánál** (az Emberek
+csoportban) ugyanígy egyetlen kép áll a tálcán: a személy arcképe, a
+kiválasztott album képszámával. A mappákra ez nem vonatkozik: a
 mappanézet megszokott kinézete nem változik.
 
 A tálcának **saját kijelölése** van, a rácsétól függetlenül. A tálcán
