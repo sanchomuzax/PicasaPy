@@ -3488,6 +3488,38 @@ A két út a vezérlőobjektum, a billentyűkezelő és az Escape bezárási ké
 
 **Nyitott kérdések mérlege (38.2.15).** 5 nyílt (módosítóbit-író, Ctrl+Szóköz-jelző, `[0x00d67858]` ág, bezárás utáni fókusz, korábbi tartalom/átmenet) · 3 lezárt (Ctrl+5 bitkapu, qshow vtable és kért billentyűk, Escape bezárási hívás) · 0 blokkolt · 0 hatókörön kívül.
 
+#### 38.2.16 A `0x9ccc` parancs közvetlen ága és módparamétere (#4443, 2026-10-19)
+
+**Kérdés és módszer.** A korábbi Ghidra-kör a `0x005e8a70` hívói közül nem azonosította, melyik tartozik a Nézet ▸ Időrend parancshoz. A helyi index xrefjeit, az érintett függvények utasításait (`annot_disasm.py`) és az eredeti PE ugrótábla-adatait (`pefile`) vetettem össze. Futó Picasa-mérés és Ghidra-dekompilálás ebben a körben nem történt.
+
+**Parancs → ág → bemutató.** A `0x005cb990` parancs-elosztó a `0x005cba5d` címen levonja a `0x9c42` alapazonosítót. A `0x9ccc` ezért a `0x8a` indexet adja; a PE `0x005cdbbe` bájtja `0x2f`, és a `0x005cd9fc + 4×0x2f` ugrótábla-bejegyzése (`0x005cdab8`) a `0x005cbbdd` ágra mutat. Itt `push 1` (`0x005cbbdd`), majd `push ebx` és `call 0x005e8a70` (`0x005cbbe0`) következik: a menüparancs a bemutatót **1-es módban** nyitja.
+
+Az ellenőrizhető, indexben szereplő közvetlen hívási helyek:
+
+| Hívó ág | Hívás | Mód | Azonosító / jelölő |
+|---|---:|---:|---|
+| `0x005cb990` | `0x005cbbd3` | 0 | `0x9c6d`, `0x9c9f` menüparancsok |
+| `0x005cb990` | `0x005cbbe0` | 1 | `0x9ccc` Nézet ▸ Időrend |
+| `0x005d9cc0` | `0x005da743` | 0 | `thumbui/sbutton` |
+| `0x005d9cc0` | `0x005da7ae` | 1 | `thumbui/timelinebutton` |
+| `0x005e0f70` | `0x005e146f` | 0 | `"play"` parancság |
+| `0x005e60d0` | `0x005e626f` | 0 | „4” billentyűág |
+| `0x005e60d0` | `0x005e628a` | 1 | „5” billentyűág, a `0x005696c0` kapu után |
+
+Ez az indexben látott négy közvetlen hívófüggvény hét hívási helye; nem állítás a közvetett, például vtable-hívások teljességéről.
+
+**Két független ellenőrzés.** **A út:** az utasításokból követhető az azonosító csökkentése, az ugrótábla elérése, a `0x9ccc`-hez tartozó ág és a `push 1` / célhívás. **B út:** a nyers PE-táblaolvasás a `0x2f → 0x005cbbdd` célpárt adja; az index a `0x005cb990` függvényt a `0x005e8a70` közvetlen hívójaként tartja nyilván (két hívással). A pontos `0x005cbbe0` call-site címet az utasítások azonosítják. Ettől külön, a `0x00559150` menüépítőben a `0x0055a9b0`-`0x0055aa15` utasítások az `eMenuView::ID_VIEW_TIMELINE` címkét, a `Ti&meline` feliratot, az „5” gyorsbillentyű-jelölőt és a `0x9ccc` azonosítót írják a menürekordba. Az utak a parancs azonosításában és a mód-1-es bemutatóhívásban egyeznek.
+
+**Cáfoló kísérlet.** A lehetséges szomszédos mód-0 ágat ellenőriztem: a PE ugrótáblában `0x9c6d` és `0x9c9f` a `0x005cbbd1` címre vezet, ahol a `0x005cbbd3` hívás előtt `push 0` áll. Ezzel szemben a `0x9ccc` saját táblabejegyzése `0x005cbbdd`-re vezet, ahol `push 1` áll. A nyers táblabejegyzések és a tényleges hívóutasítások ugyanazt az eredményt adják; a szomszédos ág nem cáfolja, hanem kizárja az off-by-one téves azonosítást.
+
+**Bizonyítottsági fok: megerősített** a szűk állításra, hogy a `0x9ccc` közvetlen menüútja `0x005e8a70(this, 1)`-et hív: az utasításszintű út és a nyers PE-adatok/xref egyeznek, a menüépítő pedig külön azonosítja a parancsrekordot. Ez nem dönti el a bemutató tartalmának, animációjának vagy futásidejű kapuinak viselkedését. A helyi mérési archívumban ehhez a körhöz nem volt qshow/job-188 felvétel; a kijelölés nélküli megnyitásról szóló korábbi közlés ezért ebben a munkamenetben **NINCS MEG** közvetlen mérési bizonyítékként.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x9ccc` → `0x005cbbe0` → `0x005e8a70(this, 1)`; a Ctrl+5 „5” ága is mód 1-es hívást tartalmaz (`0x005e628a`), külön kapuval. | A `TimelineView.qml` régi év-/hónap-rács; a Nézet ▸ Időrend és a Ctrl+5 inaktív, az eredeti qshow-bemutató nincs megépítve. | A visszaállítás a külön bemutató-módot és a mód-1-es eredeti utat kövesse. A kijelölés nélküli megnyitás feltételét, a tartalmat és az animációt eredeti futásban kell lezárni; ezt a statikus ág feltárása nem helyettesíti. |
+
+**Nyitott kérdés mérlege (38.2.16).** A `0x9ccc` → mód 1 közvetlen hívási útja lezárt. A qshow futásidejű K-kapui, a kijelölés nélküli viselkedés, a teljes tartalom/sorrend és az animáció továbbra is nyitott; ezeket a 38.2.14-38.2.15 nyitott pontjai részletezik.
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
