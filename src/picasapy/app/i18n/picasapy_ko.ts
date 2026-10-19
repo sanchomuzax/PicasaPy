@@ -6812,6 +6812,12 @@ picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
             <translation>무시한 인물</translation>
         </message>
         <message>
+            <source>Ignored</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ignorefacealbum</extracomment>
+            <translation>무시됨</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="586" />
             <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
