@@ -9,6 +9,8 @@ lemezen maradt fájlnéven vagy a mező értékén mérjük.
 
 from __future__ import annotations
 
+from typing import Protocol
+
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
@@ -30,6 +32,37 @@ from tests.app.qml_functional._menusor_maradek_5150_helpers import (
 
 CTRL = Qt.KeyboardModifier.ControlModifier
 CTRL_SHIFT = CTRL | Qt.KeyboardModifier.ShiftModifier
+
+
+class _FajlOlvaso(Protocol):
+    def read_bytes(self) -> bytes: ...
+
+
+def _olvass_fajlt(ut: _FajlOlvaso) -> bytes | None:
+    """A Windows írás közbeni fájlzárolását még nem olvasható állapotként jelzi."""
+    try:
+        return ut.read_bytes()
+    except PermissionError:
+        return None
+
+
+class _EgyszerZaroltFajl:
+    def __init__(self, tartalom: bytes):
+        self.tartalom = tartalom
+        self.zarolt = True
+
+    def read_bytes(self) -> bytes:
+        if self.zarolt:
+            self.zarolt = False
+            raise PermissionError("Windows fájlzár")
+        return self.tartalom
+
+
+def test_a_fajlzarolas_atmeneti_nem_kesz_allapot():
+    kep = _EgyszerZaroltFajl(b"visszaallitott kep")
+
+    assert _olvass_fajlt(kep) is None
+    assert _olvass_fajlt(kep) == b"visszaallitott kep"
 
 
 def _elem(window, nev: str):
@@ -355,7 +388,10 @@ class TestVisszaallitas:
         # Előfeltétel: a kép már mentve van. A Fájl ▸ Mentés UI-útja a megerősítés után
         # érvénytelenítette a főablak burkolóját a teszt-appban, ezért a mentést a kontroller végzi.
         controller.saveRowsToDisk([0])
-        assert varj(qt_app, lambda: kep.read_bytes() != eredeti), (
+        assert varj(
+            qt_app,
+            lambda: (tartalom := _olvass_fajlt(kep)) is not None and tartalom != eredeti,
+        ), (
             "a mentés nem írta ki a szerkesztett képet: a visszaállítás nem bizonyít"
         )
         # A Visszaállítás engedélyezése kötés: a mentés után a kijelölés újraírása frissíti.
@@ -383,7 +419,10 @@ class TestVisszaallitas:
 
         _nev_kattintasa(window, qt_app, gomb)
 
-        assert varj(qt_app, lambda: kep.read_bytes() == eredeti), (
+        assert varj(
+            qt_app,
+            lambda: (tartalom := _olvass_fajlt(kep)) is not None and tartalom == eredeti,
+        ), (
             f"a {gomb} gomb nem állította vissza az eredeti képet"
         )
 
