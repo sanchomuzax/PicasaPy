@@ -82,6 +82,9 @@ class TrayAlbumToken:
     #: a borítókép `photos.id`-ja (`scratch/albumcover`), ha van. Üres
     #: mappánál nincs miből venni — az nem hiba.
     cover_photo_id: int | None = None
+    #: a borító arc-régiója (személy-album: a személy arcképe, #5331).
+    #: Üres, ha a teljes kép a borító.
+    cover_rect: tuple[float, float, float, float] | None = None
     #: album (`CThumbUI::UpdateAlbumAlbum` — „Kiválasztott album") vagy
     #: mappa (`CThumbUI::UpdateAlbumFolder` — „Kiválasztott mappa")
     is_album: bool = False
@@ -115,6 +118,10 @@ class TrayAlbumToken:
             raise ValueError(
                 "a borító azonosítója pozitív egész legyen: "
                 f"{self.cover_photo_id!r}"
+            )
+        if self.cover_rect is not None and len(self.cover_rect) != 4:
+            raise ValueError(
+                f"a borító arc-régiója 4 számból álljon: {self.cover_rect!r}"
             )
 
 

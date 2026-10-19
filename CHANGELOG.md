@@ -7,6 +7,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.153] - 2026-10-19
+
+- A kiadási jegyzet tartalék-szövegében nincs többé gondolatjel, így a kiadás képe utólag is feltölthető (#5347).
+
+## [0.9.152] - 2026-10-18
+
+## [0.9.151] - 2026-10-18
+
+## [0.9.150] - 2026-10-18
+
+- A bal sáv Emberek-csoportja az eredeti szerint: a fejléc a látható sorokat számolja, a mellőzött arcok sora „Ignored (N)” felirattal és csak a mellőzött nézetben, a Névtelenek helyén jelenik meg (#5341).
+
+## [0.9.149] - 2026-10-18
+
+## [0.9.148] - 2026-10-18
+
+- Személy-album megnyitásakor a tálcán megjelenik az „Album Selected - N photos” jelzés a személy arcképével, ahogy az eredeti Picasában (#5331).
+
 ## [0.9.147] - 2026-10-18
 
 - Az állapotsor a kijelölés méretét a Picasa bináris egységváltásai szerint írja ki (#5332).
