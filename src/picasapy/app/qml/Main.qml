@@ -950,6 +950,61 @@ ApplicationWindow {
     readonly property string personAlbumName:
         controller && controller.currentPersonName
             ? controller.currentPersonName : ""
+    readonly property string personAlbumAvatarUrl: {
+        if (!controller || window.personAlbumName === "") return ""
+        var people = controller.people || []
+        for (var i = 0; i < people.length; ++i) {
+            if (String(people[i].name).toLocaleLowerCase()
+                    === window.personAlbumName.toLocaleLowerCase())
+                return String(people[i].headerThumbUrl
+                              || people[i].thumbUrl || "")
+        }
+        return ""
+    }
+    readonly property bool personAlbumCanRemoveSelection: {
+        if (!controller || window.personAlbumName === "") return false
+        var rows = window.selectedRows()
+        if (rows.length === 0) return false
+        if (window.personSelectedSuggestionIds.length > 0) return true
+        var people = controller.peopleOfRows(rows)
+        for (var i = 0; i < people.length; ++i) {
+            if (String(people[i].name).toLocaleLowerCase()
+                    === window.personAlbumName.toLocaleLowerCase())
+                return true
+        }
+        return false
+    }
+    readonly property bool personAlbumCanSetThumbnail: {
+        if (!controller || window.personAlbumName === "") return false
+        var rows = window.selectedRows()
+        for (var i = 0; i < rows.length; ++i) {
+            var photoId = Number(controller.photos.idAt(Number(rows[i])))
+            if (controller.canSetPersonThumbnail(
+                    photoId, window.personAlbumName)) return true
+        }
+        return false
+    }
+    function removePersonAlbumSelection() {
+        if (!controller || !window.personAlbumCanRemoveSelection) return
+        if (window.personSelectedSuggestionIds.length > 0) {
+            window.removePersonSuggestions()
+            return
+        }
+        removePeopleFacesDialog.ensure().openFor(
+            window.selectedRows(), window.personAlbumName)
+    }
+    function setPersonAlbumThumbnailFromSelection() {
+        if (!controller || !window.personAlbumCanSetThumbnail) return
+        var rows = window.selectedRows()
+        for (var i = 0; i < rows.length; ++i) {
+            var photoId = Number(controller.photos.idAt(Number(rows[i])))
+            if (controller.setPersonThumbnail(
+                    photoId, window.personAlbumName)) {
+                window.peopleFaceRevision++
+                return
+            }
+        }
+    }
     // #4391: a People-filmet a személyalbum-modell nem üres albumai adják,
     // annak tárolt sorrendjében; nem csak az éppen nyitott album sorai.
     function openPersonAlbumMovie() {
@@ -3416,8 +3471,9 @@ ApplicationWindow {
                     Layout.preferredHeight: 26
                     // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
                     // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
-                    visible: (controller && controller.filterActive !== undefined)
-                        ? controller.filterActive : false
+                    visible: window.personAlbumName === ""
+                        && ((controller && controller.filterActive !== undefined)
+                            ? controller.filterActive : false)
                     color: "#5aa865"
                     RowLayout {
                         anchors.fill: parent
@@ -3585,7 +3641,12 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.margins: 12
+                    // A Picasa személylapja közvetlenül a bal oldali
+                    // elválasztó után indul; a kártya általános kerete itt
+                    // külön vízszintes/felső behúzással állítja be a fejlécet.
+                    Layout.leftMargin: window.personAlbumName !== "" ? 0 : 12
+                    Layout.topMargin: window.personAlbumName !== "" ? 0 : 12
+                    Layout.bottomMargin: 12
                     //: #3604: a JOBB oldalon nincs kártya-rés — az eredetiben
                     //: (`albumsback`) a rácsterület flush az ablak/fiók
                     //: széléhez (`XConstraint 1, 1, 0`). A másik három oldal
@@ -3601,7 +3662,11 @@ ApplicationWindow {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: 14
+                        anchors.leftMargin:
+                            window.personAlbumName !== "" ? 0 : 14
+                        anchors.topMargin:
+                            window.personAlbumName !== "" ? 6 : 14
+                        anchors.bottomMargin: 14
                         //: #3604: a jobb belső margó a fiók-fogó sávjának
                         //: szélessége — így a rács görgetősávja pont odáig ér
                         //: (`feedScrollBar` jobb éle == `jobbFiokFogo` bal

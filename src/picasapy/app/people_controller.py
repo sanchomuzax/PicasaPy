@@ -132,6 +132,9 @@ class PeopleMixin:
                         "thumbUrl": _thumb_url(photo, arc=rect)
                         if photo is not None and rect is not None
                         else "",
+                        "headerThumbUrl": _thumb_url(photo)
+                        if photo is not None
+                        else "",
                     }
                 )
         return result
@@ -514,10 +517,11 @@ class PeopleMixin:
         #: #2187: az arc ↔ teljes kép nagyításváltó (`face_zoom` ↔
         #: `picture_zoom`) állása. A javaslat-szűrővel ellentétben a NÉZET
         #: beállítása, nem az albumé: a következő személy-album is így nyílik.
-        #: Alapból a teljes kép — a váltó bevezetése előtti viselkedés.
+        #: A #5330 Picasa 3.9 referenciaképe a teljes képes módot mutatja.
         self._arc_nagyitas = False
-        #: a személy-album legutóbb betöltött sorai — a váltó ezekre számol
-        #: keretet, új index-olvasás nélkül
+        self._szemely_arc_rects: dict[int, tuple] = {}
+        #: a személy-album legutóbb betöltött sorai: az arcsáv és a váltó
+        #: ezekből dolgozik új index-olvasás nélkül
         self._szemely_rekordok: tuple = ()
         # #1608: a `currentPersonName` a NÉZETTEL változik, a `peopleChanged`
         # viszont csak az Emberek-LISTA frissülésekor megy ki
@@ -569,21 +573,50 @@ class PeopleMixin:
         with open_index(self._db_path) as conn:
             javaslatok = suggested_album_photos(conn, name)
             if self._csak_javaslatok:
-                records = javaslatok
+                person_records = javaslatok
             else:
-                records = self._osszefuzve(
+                person_records = self._osszefuzve(
                     person_photos(
                         conn, name, central_path=central_contacts_path(self._db_path)
                     ),
                     javaslatok,
                 )
+            feed_records = self._feed_records(conn)
         elapsed = time.perf_counter() - started
         self._filter_active = True
         self._filter_status = formatting.filter_status_text(
-            records, elapsed, QLocale(), formatting.fordit
+            person_records, elapsed, QLocale(), formatting.fordit
         )
-        self._show(records)
-        self._arc_nagyitas_atvezetese(name, records)
+        self._szemely_rekordok = tuple(person_records)
+        self._show(feed_records)
+        self._arc_nagyitas_atvezetese(name, person_records)
+        # A rács a teljes könyvtári feedet jeleníti meg a személyfotók külön
+        # arcsávja alatt, az állapotsor viszont továbbra is a személyalbumot
+        # írja le.
+        self._status = formatting.status_text(
+            person_records, QLocale(), formatting.fordit, self.tr
+        )
+        self.statusChanged.emit()
+        self.personViewChanged.emit()
+
+    @Property("QVariantList", notify=personViewChanged)
+    def personAlbumPhotos(self):
+        """A személyfotók aktuális bélyegképei, a teljes feed soraihoz kötve."""
+        modell = getattr(self, "_photos", None)
+        if modell is None:
+            return []
+        result = []
+        for photo in getattr(self, "_szemely_rekordok", ()):
+            row = modell.rowOfPath(str(Path(photo.folder_path) / photo.name))
+            if row >= 0:
+                item = modell.itemAt(row)
+                item["row"] = row
+                if self._arc_nagyitas:
+                    rect = self._szemely_arc_rects.get(photo.id)
+                    if rect is not None:
+                        item["thumbUrl"] = _thumb_url(photo, arc=rect)
+                result.append(item)
+        return result
 
     @Slot(int, str, result=bool)
     def canSetPersonThumbnail(self, photo_id: int, person_name: str) -> bool:  # noqa: N802
@@ -681,16 +714,9 @@ class PeopleMixin:
         self.personViewChanged.emit()
 
     def _arc_nagyitas_atvezetese(self, name: str, records) -> None:
-        """A váltó állásának átadása a rács modelljének: arc-módban a sorok
-        a személy arcának keretét kapják, különben a teljes kép jön."""
+        """A külön arcsáv kivágásait frissíti; a mappa-feed teljes képeket tart."""
         self._szemely_rekordok = tuple(records)
-        modell = getattr(self, "_photos", None)
-        if modell is None or not hasattr(modell, "set_face_zoom"):
-            return
-        if not self._arc_nagyitas:
-            modell.set_face_zoom(None)
-            return
-        modell.set_face_zoom(self._szemely_arc_keretei(name, records))
+        self._szemely_arc_rects = self._szemely_arc_keretei(name, records)
 
     def _szemely_arc_keretei(self, name: str, records) -> dict[int, tuple]:
         """`{fotó-azonosító: (bal, fent, jobb, lent)}` a személy arcára.
@@ -895,15 +921,7 @@ class PeopleMixin:
         vissza, ha kezelte a módot (a hívó `elif`-lánca ez alapján dönt)."""
         if mode != "person":
             return False
-        with open_index(self._db_path) as conn:
-            records = person_photos(
-                conn,
-                param,
-                central_path=central_contacts_path(self._db_path),
-            )
-        self._show(records)
-        #: #2187: az új tartalom törli a modell arc-kereteit — újra kell adni
-        self._arc_nagyitas_atvezetese(param, records)
+        self._szemely_betoltese(param)
         return True
 
     # -- #422 4. lépcső: az Emberek-album kép-szintű parancsai -------------

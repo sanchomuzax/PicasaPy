@@ -7524,6 +7524,13 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_face_mov
             <translation>Ustvari film iz obrazov</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="571" />
+            <source>Set as People Album Thumbnail</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/set_thumbnail)</extracomment>
+            <translation>Nastavi kot sličico albuma z osebami</translation>
+        </message>
+        <message>
             <source>Play Fullscreen Slideshow</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpaneltext:Tooltip(headerpanel/play)</extracomment>

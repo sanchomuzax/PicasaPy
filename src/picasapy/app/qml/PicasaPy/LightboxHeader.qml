@@ -52,6 +52,7 @@ ColumnLayout {
     //: A két `faceheaderpanel` filmgomb ugyanazt a meglévő Filmkészítőt
     //: nyitja meg az aktuális személy-album képeivel.
     signal personMovieRequested()
+    signal removePersonAlbumRequested()
 
     //: #2187: a SZEMÉLY-ALBUM módja. Az eredetiben a személy-album
     //: fejléce saját panel (`faceheaderpanel`), és rajta ül a
@@ -59,6 +60,11 @@ ColumnLayout {
     //: rácsban, ugyanezzel a fejléccel jelennek meg, ezért a vezérlők
     //: ide kerülnek, ebbe a módba. Üres név = nem személy-album.
     property string personName: ""
+    property bool personAlbumHeaderMode: false
+    property bool personAlbumFolderMode: false
+    property string personAvatarUrl: ""
+    property bool personAlbumRemoveEnabled: false
+    property bool personAlbumThumbnailEnabled: false
     //: hány MÉG EL NEM DÖNTÖTT javaslat tartozik ehhez a személyhez —
     //: a gazda tölti a vezérlő `personSuggestionCount`-jából
     property int suggestionCount: 0
@@ -79,6 +85,7 @@ ColumnLayout {
     signal removeSuggestionsRequested()
     //: `moresug` — a felismerési lépcső lazítása, hogy több javaslat jöjjön
     signal moreSuggestionsRequested()
+    signal setPersonThumbnailRequested()
     //: `sug_filter` — a javaslat-szűrő állása (a gazda vezérlőjéből)
     property bool suggestionsOnly: false
     //: `sug_filter` — a szűrő átkapcsolása; az új állapotot adja át
@@ -110,6 +117,7 @@ ColumnLayout {
     //: jóváhagyni. A két állapot kizárja egymást.
     readonly property bool tovabbiJavaslatLatszik:
         header.personName !== "" && header.suggestionCount === 0
+        && !header.personAlbumHeaderMode
 
     //: A számos/szám nélküli alak választása egy helyen, hogy minden
     //: fejléc-gomb ugyanúgy viselkedjen.
@@ -129,13 +137,16 @@ ColumnLayout {
     Item {
         id: titleRow
         Layout.fillWidth: true
-        implicitHeight: Math.max(titleClip.height, syncRow.implicitHeight) + 4
+        implicitHeight: header.personAlbumHeaderMode
+            ? 86 : (header.personAlbumFolderMode
+                ? 22 : Math.max(titleClip.height, syncRow.implicitHeight) + 4)
 
         FolderIcon {
             id: folderIcon
-            size: 20
+            visible: !header.personAlbumHeaderMode
+            size: header.personAlbumFolderMode ? 30 : 20
             anchors.left: parent.left
-            anchors.leftMargin: 8
+            anchors.leftMargin: header.personAlbumFolderMode ? 12 : 8
             anchors.verticalCenter: titleClip.verticalCenter
         }
 
@@ -145,6 +156,7 @@ ColumnLayout {
         Item {
             id: titleClip
             objectName: "folderTitleClip"
+            visible: !header.personAlbumHeaderMode
             x: 50
             y: 2
             width: Math.max(
@@ -159,7 +171,7 @@ ColumnLayout {
                 text: header.folderName
                 color: Theme.folderTitle
                 font.family: "Georgia"
-                font.pointSize: 20
+                font.pointSize: header.personAlbumFolderMode ? 14 : 20
                 font.weight: Font.DemiBold
             }
 
@@ -185,6 +197,29 @@ ColumnLayout {
             }
         }
 
+        Image {
+            objectName: "personAlbumAvatar"
+            readonly property bool imageReady: status === Image.Ready
+            visible: header.personAlbumHeaderMode
+            source: header.personAvatarUrl
+            x: 12; y: 8
+            width: 59; height: 71
+            sourceSize.width: 59; sourceSize.height: 71
+            fillMode: Image.PreserveAspectFit
+            asynchronous: Qt.platform.pluginName !== "offscreen"
+        }
+
+        Text {
+            objectName: "personAlbumName"
+            visible: header.personAlbumHeaderMode
+            x: 80; y: 8
+            text: header.personName
+            color: Theme.folderTitle
+            font.pixelSize: 18
+            elide: Text.ElideRight
+            width: Math.max(0, titleRow.width - x - 110)
+        }
+
         //: #2187: az arc ↔ teljes kép nagyításváltó — MÉRT `zoom_container`
         //: (457,4)–(527,25): két 35 × 21-es gomb hézag nélkül, a fejléc
         //: JOBB FELSŐ sarkában. Nálunk ott a szinkron-sor ül, ezért elé
@@ -194,9 +229,11 @@ ColumnLayout {
             id: nagyitasSor
             objectName: "headerZoomContainer"
             visible: header.personName !== ""
-            anchors.right: syncRow.left
-            anchors.rightMargin: 8
-            anchors.verticalCenter: syncRow.verticalCenter
+            anchors.right: header.personAlbumHeaderMode
+                ? parent.right : syncRow.left
+            anchors.rightMargin: header.personAlbumHeaderMode ? 13 : 8
+            y: header.personAlbumHeaderMode
+                ? 6 : Math.max(0, (syncRow.height - height) / 2)
             spacing: 0
 
             PicasaButton {
@@ -256,11 +293,23 @@ ColumnLayout {
             }
         }
 
+        PicasaButton {
+            objectName: "headerRemovePersonButton"
+            visible: header.personAlbumHeaderMode
+            enabled: header.personAlbumRemoveEnabled
+            text: qsTr("Remove")
+            width: 88; height: 27
+            x: titleRow.width - width - 15
+            y: 58
+            onClicked: header.removePersonAlbumRequested()
+        }
+
         // jobb-felső: „Szinkronizálás az internettel" + kapcsoló — csak
         // elrendezés, letiltott (#423: funkció nélkül, funkció majd később)
         Row {
             id: syncRow
             objectName: "folderSyncRow"
+            visible: !header.personAlbumHeaderMode
             anchors.right: parent.right
             anchors.top: parent.top
             spacing: 4
@@ -282,18 +331,20 @@ ColumnLayout {
 
     Text {
         objectName: "folderDateText"
-        visible: header.dateText !== ""
+        visible: !header.personAlbumHeaderMode && header.dateText !== ""
         text: header.dateText
         color: Theme.folderDate
         font.family: "Georgia"
-        font.pointSize: 14
+        font.pointSize: header.personAlbumFolderMode ? 10 : 14
         Layout.leftMargin: 50
     }
 
     Item {
         id: gombSor
-        Layout.leftMargin: 28
-        Layout.topMargin: 4
+        Layout.leftMargin: header.personAlbumHeaderMode ? 80
+            : (header.personAlbumFolderMode ? 12 : 28)
+        Layout.topMargin: header.personAlbumHeaderMode ? -31
+            : (header.personAlbumFolderMode ? -5 : 4)
         Layout.fillWidth: true
         //: a legmagasabb gomb (a kollázs 27) — a sor magassága ennyi
         Layout.preferredHeight: 27
@@ -305,6 +356,8 @@ ColumnLayout {
             visible: header.gombLathato(objectName)
             x: header.gombX(objectName)
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset:
+                header.personAlbumHeaderMode ? -5 : 0
             width: 26; height: 22; radius: 3
             color: headerPlayHover.hovered ? "#f0f0ee" : "#ffffff"
             border.color: Theme.chromeBorder
@@ -382,6 +435,8 @@ ColumnLayout {
             visible: header.gombLathato(objectName)
             x: header.gombX(objectName)
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset:
+                header.personAlbumHeaderMode ? -5 : 0
             //: #885: LENYOMÁSRA sül el — `headerpanel/create_collage`
             //: mért `mousedown`-ja. ⚠️ Nem mond ellent a jegy
             //: táblázatának: ez a gomb a kollázs-PANELT NYITJA MEG
@@ -396,7 +451,7 @@ ColumnLayout {
             contentItem: Item {
                 Image {
                     objectName: "headerCollageIcon"
-                    source: "icons/collage-check.svg"
+                    source: "icons/collage.svg"
                     width: 16; height: 16
                     sourceSize.width: 16; sourceSize.height: 16
                     fillMode: Image.PreserveAspectFit
@@ -447,6 +502,8 @@ ColumnLayout {
             objectName: "faceHeaderMovieButton"
             x: header.gombSorVege
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset:
+                header.personAlbumHeaderMode ? -5 : 0
             visible: header.personName !== ""
             width: 29; height: 27
             hoverEnabled: true
@@ -470,8 +527,11 @@ ColumnLayout {
         PicasaButton {
             id: szemelyArcfilmGomb
             objectName: "faceHeaderFaceMovieButton"
-            x: szemelyFilmGomb.x + szemelyFilmGomb.width + header.gombKoz
+            x: szemelyFilmGomb.x + szemelyFilmGomb.width
+               + header.personHeaderExtraGap
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset:
+                header.personAlbumHeaderMode ? -5 : 0
             visible: header.personName !== ""
             width: 29; height: 27
             hoverEnabled: true
@@ -494,6 +554,31 @@ ColumnLayout {
                     fillMode: Image.PreserveAspectFit
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
+                }
+            }
+        }
+        PicasaButton {
+            id: szemelyAlbumkepGomb
+            objectName: "headerSetPersonThumbnailButton"
+            x: szemelyArcfilmGomb.x + szemelyArcfilmGomb.width
+               + header.personHeaderExtraGap
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset:
+                header.personAlbumHeaderMode ? -5 : 0
+            visible: header.personAlbumHeaderMode
+            width: 29; height: 27
+            enabled: header.personAlbumThumbnailEnabled
+            ToolTip.text: qsTr("Set as People Album Thumbnail")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: header.setPersonThumbnailRequested()
+            contentItem: Item {
+                Image {
+                    source: "icons/person-silhouette.svg"
+                    width: 15; height: 15
+                    sourceSize.width: 15; sourceSize.height: 15
+                    fillMode: Image.PreserveAspectFit
+                    anchors.centerIn: parent
                 }
             }
         }
@@ -655,6 +740,7 @@ ColumnLayout {
                           + header.gombKoz
                         : header.szemelyGombSorVege))
             anchors.verticalCenter: parent.verticalCenter
+            visible: !header.personAlbumHeaderMode
             height: 22
             text: header.feliratSzammal(qsTr("Upload")) + " ▾"
             enabled: false
@@ -667,9 +753,10 @@ ColumnLayout {
     // a Qt eltávolítja a deklaratív kötést a text property-ről). A
     // placeholder-szöveg a mezőre fedve jelenik meg, amíg üres.
     Item {
-        Layout.leftMargin: 28
-        Layout.topMargin: 6
+        Layout.leftMargin: header.personAlbumFolderMode ? 24 : 28
+        Layout.topMargin: header.personAlbumFolderMode ? 22 : 6
         Layout.fillWidth: true
+        visible: !header.personAlbumHeaderMode
         implicitHeight: descriptionField.implicitHeight
 
         TextInput {
@@ -719,10 +806,12 @@ ColumnLayout {
     //: alapértelmezett készlet jön — a fejléc próbái így változatlanul
     //: minden gombot megtalálnak.
     readonly property var gombSorrend:
-        (typeof gombsav !== "undefined" && gombsav && gombsav.sorrend)
+        header.personAlbumHeaderMode
+            ? ["headerPlayButton", "headerCollageButton"]
+            : ((typeof gombsav !== "undefined" && gombsav && gombsav.sorrend)
             ? gombsav.sorrend
             : ["headerPlayButton", "headerSelectStarredButton",
-               "headerSaveEditsButton", "headerCollageButton"]
+               "headerSaveEditsButton", "headerCollageButton"])
 
     //: Látszik-e ez a gomb? A készleten KÍVÜLI gomb (feltöltés,
     //: javaslat-vezérlők) nem testreszabható, az mindig a saját
@@ -738,6 +827,11 @@ ColumnLayout {
     //: épülő próbák pont azon a néven szólítják meg őket. Ezért marad a
     //: négy gomb a helyén, és a VÍZSZINTES pozíciót számoljuk.
     function gombX(nev, sajatSzelesseg) {
+        if (header.personAlbumHeaderMode) {
+            if (nev === "headerPlayButton") return 0
+            if (nev === "headerCollageButton") return 36
+            return 0
+        }
         var helye = header.gombSorrend.indexOf(nev)
         if (helye < 0)
             return 0
@@ -749,10 +843,14 @@ ColumnLayout {
 
     //: a gombok közti hézag — a korábbi `RowLayout` `spacing`-je
     readonly property int gombKoz: 6
+    readonly property int personHeaderExtraGap:
+        header.personAlbumHeaderMode ? 2 : header.gombKoz
 
     //: a testreszabott gombsor jobb széle (a további elemek innen
     //: folytatódnak)
     readonly property real gombSorVege: {
+        if (header.personAlbumHeaderMode)
+            return 70
         var x = 0
         for (var i = 0; i < header.gombSorrend.length; ++i)
             x += header.gombSzelessege(header.gombSorrend[i]) + header.gombKoz
@@ -763,7 +861,11 @@ ColumnLayout {
     //: Mappa nézetben a testreszabott sor és a mappa film-gombja (#4539)
     //: után folytatódik a Feltöltés.
     readonly property real szemelyGombSorVege: header.personName !== ""
-        ? szemelyArcfilmGomb.x + szemelyArcfilmGomb.width + header.gombKoz
+        ? (header.personAlbumHeaderMode
+            ? szemelyAlbumkepGomb.x + szemelyAlbumkepGomb.width
+              + header.personHeaderExtraGap
+            : szemelyArcfilmGomb.x + szemelyArcfilmGomb.width
+              + header.gombKoz)
         : mappaFilmGomb.x + mappaFilmGomb.width + header.gombKoz
 
     //: A gomb szélessége a sorrend-számításhoz. A `play` és a kollázs

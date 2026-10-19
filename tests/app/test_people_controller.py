@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QSettings
+from PySide6.QtCore import QObject, QSettings, Signal
 
 from support.jpeg_factory import make_jpeg
 
@@ -45,6 +45,8 @@ def host(qt_app, tmp_path, library):
         sync_tree(conn, library)
 
     class _Host(PeopleMixin, QObject):
+        statusChanged = Signal()
+
         def __init__(self, db_path):
             super().__init__()
             self._db_path = db_path
@@ -56,6 +58,12 @@ def host(qt_app, tmp_path, library):
 
         def _show(self, records):
             self._shown = records
+
+        def _feed_records(self, conn):
+            # Az éles AppController teljes mappa-feedjének kicsi tesztpárja.
+            from picasapy.index import all_photos
+
+            return all_photos(conn)
 
         def _get_settings(self):
             """#1767: a `people` property a rendezési módot a
@@ -150,8 +158,8 @@ class TestPeopleProperty:
 class TestShowPerson:
     def test_show_person_fills_grid(self, host):
         host.showPerson("Roy Avery")
-        assert len(host._shown) == 1
-        assert host._shown[0].name == "a.jpg"
+        assert {photo.name for photo in host._shown} == {"a.jpg", "b.jpg"}
+        assert [photo.name for photo in host._szemely_rekordok] == ["a.jpg"]
 
     def test_show_person_activates_filter(self, host):
         host.showPerson("Roy Avery")
@@ -160,12 +168,14 @@ class TestShowPerson:
 
     def test_unknown_name_gives_empty_grid(self, host):
         host.showPerson("Nincs Ilyen")
-        assert host._shown == ()
+        assert {photo.name for photo in host._shown} == {"a.jpg", "b.jpg"}
+        assert host._szemely_rekordok == ()
 
     def test_empty_name_is_a_no_op(self, host):
         host.showPerson("Roy Avery")
         host.showPerson("")
-        assert len(host._shown) == 1  # a korábbi eredmény megmaradt
+        assert {photo.name for photo in host._shown} == {"a.jpg", "b.jpg"}
+        assert [photo.name for photo in host._szemely_rekordok] == ["a.jpg"]
 
 
 class TestRefreshPeopleView:
@@ -173,7 +183,8 @@ class TestRefreshPeopleView:
         host._view_mode = ("person", "Roy Avery")
         handled = host._refresh_people_view("person", "Roy Avery")
         assert handled is True
-        assert len(host._shown) == 1
+        assert {photo.name for photo in host._shown} == {"a.jpg", "b.jpg"}
+        assert [photo.name for photo in host._szemely_rekordok] == ["a.jpg"]
 
     def test_refresh_ignores_other_modes(self, host):
         handled = host._refresh_people_view("folder", "")

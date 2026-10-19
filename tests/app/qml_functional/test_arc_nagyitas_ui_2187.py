@@ -160,6 +160,12 @@ def _racs_url(controller):
     return controller.photos.thumbUrlAt(0)
 
 
+def _szemely_arc_url(controller):
+    photos = controller.personAlbumPhotos
+    assert photos, "A személy külön arcsávjának nincs képe"
+    return photos[0]["thumbUrl"]
+
+
 class TestKattintas:
     def test_az_arc_gomb_arcra_kozelit(self, qml_app, tmp_path, qt_app):
         window, controller = _szemely_album(qml_app, tmp_path, qt_app)
@@ -167,7 +173,8 @@ class TestKattintas:
         assert "&fz=" not in _racs_url(controller)
         _kattints(window, _ablak_gombja(window, _ARC), qt_app)
         assert controller.personFaceZoom is True
-        assert "&fz=" in _racs_url(controller)
+        assert "&fz=" in _szemely_arc_url(controller)
+        assert "&fz=" not in _racs_url(controller)
         assert _ablak_gombja(window, _ARC).property("checked") is True
         assert _ablak_gombja(window, _KEP).property("checked") is False
 
@@ -177,6 +184,7 @@ class TestKattintas:
         _kattints(window, _ablak_gombja(window, _KEP), qt_app)
         assert controller.personFaceZoom is False
         assert "&fz=" not in _racs_url(controller)
+        assert "&fz=" not in _szemely_arc_url(controller)
         assert _ablak_gombja(window, _KEP).property("checked") is True
         assert _ablak_gombja(window, _ARC).property("checked") is False
 
@@ -190,6 +198,7 @@ class TestKattintas:
         assert _ablak_gombja(window, _KEP).property("checked") is True
         assert _ablak_gombja(window, _ARC).property("checked") is False
         assert "&fz=" not in _racs_url(controller)
+        assert "&fz=" not in _szemely_arc_url(controller)
 
 
 class TestSugo:

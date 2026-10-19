@@ -17,7 +17,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QSettings
+from PySide6.QtCore import QObject, QSettings, Signal
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
 from support.jpeg_factory import make_jpeg
@@ -70,6 +70,8 @@ def host(qt_app, tmp_path, library):
         conn.commit()
 
     class _Host(PeopleMixin, QObject):
+        statusChanged = Signal()
+
         def __init__(self, db_path):
             super().__init__()
             self._db_path = db_path
@@ -81,6 +83,11 @@ def host(qt_app, tmp_path, library):
 
         def _show(self, records):
             self._shown = records
+
+        def _feed_records(self, conn):
+            from picasapy.index import all_photos
+
+            return all_photos(conn)
 
         def _get_settings(self):
             if getattr(self, "_beallitasok", None) is None:
@@ -94,7 +101,7 @@ def host(qt_app, tmp_path, library):
 
 
 def _nevek(host):
-    return sorted(r.name for r in host._shown)
+    return sorted(r.name for r in host._szemely_rekordok)
 
 
 class TestJavaslatokARacsban:

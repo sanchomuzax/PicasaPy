@@ -22,7 +22,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QSettings
+from PySide6.QtCore import QObject, QSettings, Signal
 from PySide6.QtGui import QColor, QImage
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
@@ -376,6 +376,8 @@ def host(qt_app, tmp_path, library):
         conn.commit()
 
     class _Host(PeopleMixin, QObject):
+        statusChanged = Signal()
+
         def __init__(self, db_path):
             super().__init__()
             self._db_path = db_path
@@ -388,6 +390,11 @@ def host(qt_app, tmp_path, library):
 
         def _show(self, records):
             self._shown = records
+
+        def _feed_records(self, conn):
+            from picasapy.index import all_photos
+
+            return all_photos(conn)
 
         def _get_settings(self):
             if getattr(self, "_beallitasok", None) is None:
@@ -406,15 +413,16 @@ def _id(host, nev):
 
 class TestVezerlo:
     def test_alapbol_a_teljes_kep(self, host):
-        """Alapállapot: a mai viselkedés (teljes kép) — nincs vágás."""
+        """Alapállapot: a mappa-feed teljes képet, az arcsáv nem vágottat ad."""
         assert host.personFaceZoom is False
         host.showPerson("Roy Avery")
-        assert host._photos.teglalapok is None
+        assert host._photos.teglalapok == "nem hívták"
+        assert _id(host, "a.jpg") in host._szemely_arc_rects
 
     def test_bekapcsolva_a_megerositett_arc_kerete(self, host):
         host.showPerson("Roy Avery")
         host.setPersonFaceZoom(True)
-        teglalapok = host._photos.teglalapok
+        teglalapok = host._szemely_arc_rects
         assert teglalapok[_id(host, "a.jpg")] == pytest.approx(
             (0.25, 0.25, 0.75, 0.75), abs=1e-3
         )
@@ -422,13 +430,14 @@ class TestVezerlo:
     def test_bekapcsolva_a_javasolt_arc_kerete(self, host):
         host.showPerson("Roy Avery")
         host.setPersonFaceZoom(True)
-        assert _id(host, "b.jpg") in host._photos.teglalapok
+        assert _id(host, "b.jpg") in host._szemely_arc_rects
 
     def test_visszakapcsolva_a_teljes_kep(self, host):
         host.showPerson("Roy Avery")
         host.setPersonFaceZoom(True)
         host.setPersonFaceZoom(False)
-        assert host._photos.teglalapok is None
+        assert host._photos.teglalapok == "nem hívták"
+        assert host._szemely_arc_rects
         assert host.personFaceZoom is False
 
     def test_szemely_album_nelkul_nem_hat(self, host):
@@ -443,13 +452,13 @@ class TestVezerlo:
         host.setPersonFaceZoom(True)
         host.showPerson("Roy Avery")
         assert host.personFaceZoom is True
-        assert isinstance(host._photos.teglalapok, dict)
+        assert isinstance(host._szemely_arc_rects, dict)
 
     def test_a_szuro_valtasa_utan_is_vag(self, host):
         host.showPerson("Roy Avery")
         host.setPersonFaceZoom(True)
         host.setPersonSuggestionsOnly(True)
-        assert _id(host, "b.jpg") in host._photos.teglalapok
+        assert _id(host, "b.jpg") in host._szemely_arc_rects
 
     def test_a_valto_jelez(self, host, qt_app):
         host.showPerson("Roy Avery")

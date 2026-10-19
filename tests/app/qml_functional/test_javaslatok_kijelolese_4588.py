@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
@@ -46,13 +46,39 @@ def _visual_item(root, name):
     )
 
 
+def _allando_helyen(root, name):
+    """A gomb látszik, és két egymást követő ellenőrzésnél ugyanott áll.
+
+    A személyalbum megnyitásakor a kártya margója a következő elrendezési
+    körben vált (12 -> 0 px); addig a gomb még elmozdulhat, és a korai
+    kattintás mellé eshet (a CI-ben így bukott)."""
+    elozo = {}
+
+    def feltetel():
+        if not _lathato_gomb(root, name):
+            elozo.clear()
+            return False
+        pont = _visual_item(root, name).mapToScene(QPointF(0, 0))
+        hely = (round(pont.x()), round(pont.y()))
+        allando = elozo.get("hely") == hely
+        elozo["hely"] = hely
+        return allando
+
+    return feltetel
+
+
 def _lathato_gomb(root, name):
     item = _visual_item(root, name)
+    main_split = _visual_item(root, "mainSplit")
+    if item is None or main_split is None or not item.isVisible():
+        return False
+    center = item.mapToScene(item.boundingRect().center())
+    content_top = main_split.mapToScene(QPointF(0, 0)).y()
     return (
-        item is not None
-        and item.isVisible()
-        and item.width() > 0
+        item.width() > 0
         and item.height() > 0
+        and content_top <= center.y() <= root.height()
+        and 0 <= center.x() <= root.width()
     )
 
 
@@ -157,7 +183,7 @@ def test_a_szemely_album_gombja_kijeloli_es_a_muveletek_ezt_hasznaljak(
 
         assert varj_feltetelre(
             qt_app,
-            lambda: _lathato_gomb(window, "headerSelectSuggestionsButton"),
+            _allando_helyen(window, "headerSelectSuggestionsButton"),
             3.0,
         )
         kijelolo = _visual_item(window, "headerSelectSuggestionsButton")
