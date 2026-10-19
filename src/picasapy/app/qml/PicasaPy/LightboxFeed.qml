@@ -1521,9 +1521,10 @@ ListView {
         readonly property bool active: grid.appWindow
             && grid.appWindow.personAlbumName !== ""
         width: grid.width
-        // a Column implicitHeight-je csak a polish-fázisban frissül, az
-        // első megjelenéskor 0 lenne; a gyerekek magassága azonnal kész
-        height: active ? personAlbumColumn.childrenRect.height : 0
+        // A fejléc magasságát a Loader tartalma adja. A Column
+        // childrenRect-jének visszaolvasása a ListView fejléc-elrendezésével
+        // magasság-kötési hurkot okozott (#5363).
+        height: active ? personAlbumLoader.height : 0
         implicitHeight: height
         visible: active
         // a fejléc magassága a Loader-es tartalom elrendezése után áll be,
@@ -1543,8 +1544,12 @@ ListView {
             // objectName szerint kereső lekérdezés az elsőt találná meg, és
             // az rejtett lenne.
             Loader {
+                id: personAlbumLoader
                 active: personAlbumFeedHeader.active
                 width: parent.width
+                // Az item saját implicit magassága független a ListView
+                // fejlécétől; ez ad stabil méretet az első elrendezéskor.
+                height: active && item ? item.implicitHeight : 0
                 sourceComponent: Component {
                     Column {
                         width: parent.width

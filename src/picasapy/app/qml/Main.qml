@@ -3641,11 +3641,17 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    // A személyalbum saját, szűkebb keretet kap. A Név
+                    // nélküliek ugyanitt jelenik meg, de nem örökölheti az
+                    // előző személyalbum nulla margóját (#5363).
+                    readonly property bool personAlbumLayout:
+                        window.personAlbumName !== ""
+                        && !window.unnamedFacesOpen
                     // A Picasa személylapja közvetlenül a bal oldali
                     // elválasztó után indul; a kártya általános kerete itt
                     // külön vízszintes/felső behúzással állítja be a fejlécet.
-                    Layout.leftMargin: window.personAlbumName !== "" ? 0 : 12
-                    Layout.topMargin: window.personAlbumName !== "" ? 0 : 12
+                    Layout.leftMargin: personAlbumLayout ? 0 : 12
+                    Layout.topMargin: personAlbumLayout ? 0 : 12
                     Layout.bottomMargin: 12
                     //: #3604: a JOBB oldalon nincs kártya-rés — az eredetiben
                     //: (`albumsback`) a rácsterület flush az ablak/fiók
@@ -3662,10 +3668,8 @@ ApplicationWindow {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin:
-                            window.personAlbumName !== "" ? 0 : 14
-                        anchors.topMargin:
-                            window.personAlbumName !== "" ? 6 : 14
+                        anchors.leftMargin: parent.personAlbumLayout ? 0 : 14
+                        anchors.topMargin: parent.personAlbumLayout ? 6 : 14
                         anchors.bottomMargin: 14
                         //: #3604: a jobb belső margó a fiók-fogó sávjának
                         //: szélessége — így a rács görgetősávja pont odáig ér

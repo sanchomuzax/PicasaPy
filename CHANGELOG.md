@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.159] - 2026-10-19
+
+- A Név nélküliek nézete első megnyitáskor is a bal panel mellett jelenik meg, és megszűnik a személyalbum-fejléc kötési hurka (#5363).
+
 ## [0.9.158] - 2026-10-19
 
 - Stabilabbá váltak a Windows QML-tesztjei az animáció és a visszaállítás párbeszéd feltételes kivárásával (#5359).
