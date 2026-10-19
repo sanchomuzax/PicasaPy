@@ -209,20 +209,33 @@ Column {
         (typeof controller !== "undefined" && controller
          && controller.currentAlbumToken !== undefined)
             ? controller.currentAlbumToken : ""
+    // #5331: a SZEMÉLY-album is album-kijelölés az eredetiben (job-213, 29.
+    // kép: „Album Selected - 2 photos" a személy arcképével). Személy módban
+    // az album-token üres, ezért külön bemenet. A két mód nem él egyszerre.
+    readonly property string personNameOrEmpty:
+        (typeof controller !== "undefined" && controller
+         && controller.currentPersonName !== undefined)
+            ? controller.currentPersonName : ""
 
     function syncAlbumToken() {
         if (!tray.ctl
             || typeof tray.ctl.showSelectedAlbumToken !== "function")
             return
-        var mutat = tray.albumTokenOrEmpty !== ""
-                    && tray.selectedIndexesOrEmpty.length === 0
+        var mutat = tray.selectedIndexesOrEmpty.length === 0
+        if (mutat && tray.personNameOrEmpty !== ""
+            && typeof tray.ctl.showSelectedPersonToken === "function") {
+            tray.ctl.showSelectedPersonToken(tray.personNameOrEmpty)
+            return
+        }
         tray.ctl.showSelectedAlbumToken(mutat ? tray.albumTokenOrEmpty : "")
     }
-    // MIND A KÉT bemenetre újra kell értékelni — egyetlen kötésre figyelve
-    // a token hazug állapotban ragadna. A kijelölés-tükrözés MEGY ELŐRE: a
-    // `syncSelection` söpri el a nem megtartott elemeket, és a token utána
-    // kerül vissza, ha a szabály szerint kint kell lennie.
+    // MIND A HÁROM bemenetre (kijelölés, album, személy) újra kell
+    // értékelni: egyetlen kötésre figyelve a token hazug állapotban
+    // ragadna. A kijelölés-tükrözés MEGY ELŐRE: a `syncSelection` söpri el
+    // a nem megtartott elemeket, és a token utána kerül vissza, ha a
+    // szabály szerint kint kell lennie.
     onAlbumTokenOrEmptyChanged: tray.syncAlbumToken()
+    onPersonNameOrEmptyChanged: tray.syncAlbumToken()
 
     onSelectedIndexesOrEmptyChanged: {
         tray.syncTraySelection()

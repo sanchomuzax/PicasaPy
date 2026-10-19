@@ -236,26 +236,29 @@ class TrayMixin:
                 "key": token.key,
                 "photoCount": token.photo_count,
                 "isAlbum": token.is_album,
-                "coverThumbUrl": self._tray_cover_url(token.cover_photo_id),
+                "coverThumbUrl": self._tray_cover_url(
+                    token.cover_photo_id, token.cover_rect
+                ),
                 "held": token.held,
                 "used": token.used,
             }
             for token in tray.album_tokens(self._tray)
         ]
 
-    def _tray_cover_url(self, photo_id: int | None) -> str:
+    def _tray_cover_url(self, photo_id: int | None, arc=None) -> str:
         """A token borítóképének thumb-URL-je — üres sztring, ha nincs.
 
         Előbb a MEMÓRIÁBAN lévő rács-modellből (nulla adatbázis-hívás),
         aztán a más mappából tartott elemek gyorstárából, és csak
         legvégül az indexből; a megtalált rekord ugyanabba a gyorstárba
-        kerül, mint a máshonnan tartott képeké.
+        kerül, mint a máshonnan tartott képeké. Az `arc` a személy
+        arcképe (#5331): ugyanaz a kivágás, mint a bal sáv sorában.
         """
         if not photo_id:
             return ""
         for record in self._photos.photos:
             if record.id == photo_id:
-                return _thumb_url(record)
+                return _thumb_url(record, arc=arc)
         record = self._tray_foreign.get(photo_id)
         if record is None:
             with open_index(self._db_path) as conn:
@@ -263,7 +266,7 @@ class TrayMixin:
             if record is None:
                 return ""
             self._tray_foreign[photo_id] = record
-        return _thumb_url(record)
+        return _thumb_url(record, arc=arc)
 
     @Property(int, notify=heldChanged)
     def trayUnusedCount(self) -> int:
@@ -634,6 +637,45 @@ class TrayMixin:
                     key=str(album_token),
                     photo_count=len(rekordok),
                     cover_photo_id=int(rekordok[0].id),
+                    is_album=True,
+                    held=False,
+                ),
+            )
+        )
+        return True
+
+    @Slot(str, result=bool)
+    def showSelectedPersonToken(self, person_name: str) -> bool:
+        """A SZEMÉLY-album tokenje (#5331): ugyanaz a szabály, mint az
+        albumnál (`showSelectedAlbumToken`), csak a fotókat a személy adja.
+
+        A darabszám és a borító a bal sáv sorának adata (`_szemely_tokenadat`),
+        így a két szám mindig egyezik. `False`, ha nem került ki token
+        (üres név, vagy a személy nincs a listában).
+        """
+        self._ensure_tray_wired()
+        allapot = self._tray_nelkul_auto_token()
+        if not person_name:
+            self._tray_apply(allapot)
+            return False
+        try:
+            with open_index(self._db_path) as conn:
+                darab, photo_id, rect = self._szemely_tokenadat(conn, person_name)
+        except OSError as hiba:
+            raise RuntimeError(
+                f"a személy arcképe nem olvasható az indexből: {person_name}"
+            ) from hiba
+        if darab <= 0:
+            self._tray_apply(allapot)
+            return False
+        self._tray_apply(
+            tray.with_album_token(
+                allapot,
+                tray.TrayAlbumToken(
+                    key=str(person_name),
+                    photo_count=darab,
+                    cover_photo_id=photo_id,
+                    cover_rect=rect,
                     is_album=True,
                     held=False,
                 ),

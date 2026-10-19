@@ -166,7 +166,7 @@ def utokovet(
 
         kiadva = van_kiadas(verzio, repo=repo, runner=runner)
         if kiadva is None:
-            print(f"A v{verzio} létezés-ellenőrzése átmeneti hibába futott — újra.")
+            print(f"A v{verzio} létezés-ellenőrzése átmeneti hibába futott, újra.")
             continue
         if kiadva:
             continue

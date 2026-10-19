@@ -4,6 +4,58 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-19
+
+**Mozgófilm**
+
+- A Mozgófilm-készítő már nem külön ablakban nyílik, hanem a főablak
+  saját lapján (**Mozgófilmkészítés**), a Könyvtár mellett, ahogy a
+  kollázs. Bal oldalt a beállítások három fülön, jobbra az előnézet,
+  alul a lejátszósor és a filmcsík. A **Klipek** fül **Továbbiak...**
+  gombjával a könyvtárba lépsz képeket gyűjteni, a tálca fölötti
+  **Vissza a Mozgófilmkészítés párbeszédpanelhez** gomb visz vissza.
+  Lásd [Mozgófilm](features/mozgofilm.md).
+- Az előnézet valódi méretű (1:1) megjelenítése alapból be van
+  kapcsolva, és a program megjegyzi, ha kikapcsolod.
+- Hangsáv nélkül a **Törlés** gomb és a hang-beállítások listája szürke.
+
+**Emberek és arcok**
+
+- A **Név nélküliek** névmezőjének ajánlólistájában egy személyre
+  kattintva az arc azonnal az ő nevét kapja. Lásd
+  [Emberek és arcok](features/emberek.md).
+- A mellőzött arcok nézetének fejléce **Mellőzött emberek** címet és
+  arcszámot mutat; a **Mellőzés visszavonása** gomb csak akkor látszik,
+  ha kijelöltél arcot.
+- A bal hasábon a mellőzött arcok száma a mellőzés után azonnal frissül.
+- A Név nélküliek fejlécgombjai az eredeti Picasa betűméretével
+  jelennek meg, és szürkék, amikor nem használhatók.
+- Egy személy albumát kiválasztva a tálcán a személy arcképe és a
+  kiválasztott album képszáma látszik, ahogy a többi albumnál.
+
+**Szerkesztés és effektek**
+
+- A régi Picasában készült **irányított** fényerő-, élesség- és
+  telítettség-állítások (a képhez mentett szerkesztésekből) már
+  megjelennek a képen.
+- Ha egy kép mentett szerkesztései között a program által nem ismert
+  effekt van, az utána következő szerkesztések sem futnak le, ahogy az
+  eredeti Picasában.
+- A régi Picasa **szivárvány** színsávos effektje (ha egy képre az
+  eredetiben tetted rá) most megjelenik a képen.
+- A **Polaroid** keret átlátszó részén a háttérszín látszik, ha előtte
+  olyan effekt futott, amely átlátszó területet hagyott.
+
+**Egyéb**
+
+- A program mindenhol **PicasaPy** néven nevezi magát; ahol az eredeti
+  Picasára utal (például az adatok átvételénél), ott továbbra is Picasa
+  áll. Több nyelven a név ragozott alakja is javult.
+- A Helyek panel térképének betöltése közben az eredeti Picasa
+  betöltésjelző képe látszik.
+- Az állapotsoron a kijelölés mérete a nagyságához illő egységben
+  jelenik meg (bájt, KB, MB, GB vagy TB).
+
 ## 2026-10-18
 
 **Emberek és arcok**
