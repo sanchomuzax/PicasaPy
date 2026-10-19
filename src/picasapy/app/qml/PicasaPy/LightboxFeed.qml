@@ -1655,6 +1655,7 @@ ListView {
                                                 Qt.platform.pluginName !== "offscreen"
                                             cache: true
                                             smooth: true
+                                            mipmap: true
                                         }
                                     }
 
