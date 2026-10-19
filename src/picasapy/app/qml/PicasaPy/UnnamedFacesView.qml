@@ -182,6 +182,17 @@ ColumnLayout {
             height: 82
             color: Theme.canvasBg
         }
+        // #5352: a sáv alatti törzs az eredeti szürke háttere (job-208:
+        // #e2e2e2 = `chromeBg`); a sötét témában a mai szín marad.
+        Rectangle {
+            objectName: "unnamedBodyFill"
+            visible: !Theme.dark
+            x: -28
+            y: 75
+            width: root.width + 28
+            height: Math.max(0, root.height - 75)
+            color: Theme.chromeBg
+        }
     }
 
     // A két eredeti fejléc-váltó ugyanazt a nézetet kapcsolja a két album
