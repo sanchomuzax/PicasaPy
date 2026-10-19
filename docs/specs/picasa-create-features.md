@@ -4844,7 +4844,7 @@ Nyitott kérdések: 0 nyílt · 7 lezárva · 7 blokkolt · 0 hatókörön kív�
 
 **Kérdés.** Melyik kép marad meg a küszöbön belüli csoportból, és láncolt vagy párosított-e a ritkítás? (A G/4 9. pont 1-7. tételei.)
 
-**Válasz (`ordering = 0`, a „Legjobb átmenetek" rádió).** Nem az első, nem az utolsó és nem a legjobb minőségű kép marad meg. A kiválasztás **láncolt**: a horgonyból indul (alapállapotban a 0. pozíció, az időrendben legkorábbi kép), és minden lépésben azt a még nem választott jelöltet veszi, amelynek HOG-távolsága az utoljára megtartott képtől a legkisebb. A csoportkizárás csak az **aktuális** lánctagot érinti: egy csoport több tagja is bekerülhet, ha a lánc más csoportokon át tér vissza. A csoportosítás is láncolt (a szomszédos bemeneti képek között, G szakasz).
+**Válasz (`ordering = 0`, a „Legjobb átmenetek" rádió).** A kód nem az első vagy az utolsó képet választja pozíció alapján, és nem azonosít külön minőségi mezőt; nincs minden időcsoporthoz rögzített egyetlen kép. A kiválasztás **láncolt**: a horgonyból indul (alapállapotban a 0. pozíció, az időrendben legkorábbi kép), és minden lépésben azt a még nem választott jelöltet veszi, amelynek az aktuális középponthoz számolt, regisztrált getterekből képzett **súlyozott pontszáma a legkisebb**. A HOG getter súlya `1.0`; a Neven getter `0.4` súllyal csak a `Preferences\SmartMultiPersonTrans` lekérdezésekor kapott igaz érték és a `[obj+0x6f4]` kapu mellett kerül be (`0x00824090`). A beállításkimeneti lokális változó a Preferences-lekérdezés előtt nullázódik, de a mérendő Windows-profil tárolt értéke nincs meg. A csoportkizárás csak az **aktuális** lánctagot érinti: egy csoport több tagja is bekerülhet, ha a lánc más csoportokon át tér vissza. A csoportosítás is láncolt (a szomszédos bemeneti képek között, G szakasz).
 
 **Bizonyítottsági fok: megerősített** a kiválasztási szabályra (két független út egyezik, 125 natív eset), **feltételes** a bemeneti feltételekre (lásd „Ami még nem zárult le").
 
@@ -4858,7 +4858,7 @@ Nyitott kérdések: 0 nyílt · 7 lezárva · 7 blokkolt · 0 hatókörön kív�
 3. **Lépés** `c` körül, irány `it` (kezdetben előre, +1). Ablak: előre `(c-1, RB[c])`, hátra `(LB[c], c+1)`; `LB = -1`, `RB = N` (az `0x81e5a0` szentinelei, spec 3407). Az első irányváltás után (`b2`) az előre-határ `-1`, a hátra-határ `N`. **Spirál:** `d` = +1, -1, +2, -2, … (`0x81d4ca`-`0x81d4db`: `d = -d`, ha `d > 0`, akkor `d += 1`), a jelölt `p = c + d`.
 4. **Jelölt:** `0 <= p < N`, nincs zárva, csoportja különbözik `c` csoportjától (`0x81d400`-`0x81d428`), és előre `p > lo`, hátra `p < hi`. Legfeljebb **100 jelölt** (`cmp eax, 0xc8`, azaz 2·100, `0x81d4e4`).
 5. **Irányváltás:** ha a jelöltek száma **15 alatt** van, és a spirál mindkét határt elérte, a kör nem választ, hanem irányt vált: `it = -it` (első alkalommal `b2 = true`), másodszor `it = 0` (mindkét irány). Hogy ez a választás helyett áll-e, azt a `d + c` helyzete dönti el a határokhoz képest (dekompilátum 605-618. sor). Ha nincs jelölt, a sorozat rövidebb marad a kértnél.
-6. **Költség:** `cost(p) = d_HOG(c, p)` (súly 1,0; Neven nélkül). Választás szigorú `<`-lel, kezdőérték `1e8` (`0x00c7da00`, bináris 0x4cbebc20), holtversenyben a spirálban korábbi jelölt nyer; ha egy sem éri el az 1e8-at, a 0. jelölt a tartalék.
+6. **Költség:** `cost(p) = Σ_g w_g · getter_g(c, p)` (`0x0081d730`-`0x0081d78c`; a getterlista `[obj+0x504]`, darabszáma `[obj+0x508]`, súlyai `[obj+0x50c]`). A HOG-tag `1.0 · d_HOG(c,p)`; a Neven-tag a Neven getter 0,4 súlyú kimenete, csak a fent megadott beállítási és kapufeltételekkel. A Neven-kimenet képi jelentése NINCS MEG. A QEMU-fixture V1-V3 HOG-only regisztrációval futott, ezért natív egyezésük a Neven-tag bekapcsolt esetére nem bizonyíték. Választás szigorú `<`-lel, kezdőérték `1e8` (`0x00c7da00`, bináris 0x4cbebc20), holtversenyben a spirálban korábbi jelölt nyer; ha egy sem éri el az 1e8-at, a 0. jelölt a tartalék.
 7. A választott lesz az új `c`, és a sorozat következő eleme.
 
 `d_HOG(a, b) = Σ (a_i - b_i)^2 / (a_i + b_i + ε)`, `ε = 1e-8` (`0x00873e40`).
@@ -4868,9 +4868,11 @@ Nyitott kérdések: 0 nyílt · 7 lezárva · 7 blokkolt · 0 hatókörön kív�
 | állítás | forrás |
 |---|---|
 | a HOG-pontozó vtábla +8 slotja = `0x00873e40` | bináris `0x00cbdec4 + 8` |
+| getterenkénti pontszám-összegzés: `összeg += getterérték × [obj+0x50c][getter]` | bináris `0x0081d730`-`0x0081d78c` |
 | `ε = 1e-8` | bináris `0x00cf4bd8` (double, 9.99999993922529e-09) |
 | kezdőküszöb `1e8` | bináris `0x00c7da00` = 0x4cbebc20 (f32) |
 | Neven-súly `0.4` (csak SmartMultiPersonTrans) | bináris `0x00c7c838` = 0x3ecccccd (f32) |
+| Neven getter regisztrálása csak a Preferences-kulcs és `[obj+0x6f4]` kapu mellett | bináris `0x00824090` (`0x8241ef`-`0x82428f`) |
 | spirál `+1, -1, +2, -2, …` | asm `0x81d4ca`-`0x81d4db` |
 | 100 jelölt | asm `0x81d4e4` (`cmp 0xc8`) |
 | 15-ös irányváltó küszöb | dekompilátum 605. sor (`uVar6 < 0xf`); cáfoló, lásd lent |
@@ -4923,7 +4925,7 @@ F5 = [0.48,0.52,0.49,0.51,0.12,0.09,0.11,0.10]
 - **V2:** horgony 3. Az előre-jelöltek csak `[5]` (4 kizárva), kevesebb mint 15, ezért irányváltás; a kétirányú passz `[2,5,1,0]`-t ad, és az 1 nyer (d = 0,022519), nem a 0 (d = 0,029963), pedig az időrendben korábbi.
 
 **Ami még nem zárult le (feltételek):**
-- **Neven (`SmartMultiPersonTrans` be):** a 0,4-es tag külső arcfelismerő könyvtár (`0x0048c440` vtábla +0x3c hívása). Sim értéke NINCS MEG; a modell és a teszt HOG-only. Az alapértéke NINCS MEG (a Preferences-olvasó).
+- **Neven:** a 0,4-es tag külső arcfelismerő könyvtár (`0x0048c440` vtábla +0x3c hívása). Getter-kimenetének képi jelentése NINCS MEG; a modell és a teszt HOG-only. A Preferences-lekérdezés kimeneti lokálisa a hívás előtt nulla (`0x00824090`, `0x8241ef`-`0x824228`), de a mérendő Windows-profil tárolt értéke NINCS MEG.
 - **Jellemzővektor forrása (`0x00873cb0`):** G/6 részlegesen vizsgálta. A hossz, a cella- és iránysorrend, valamint az egyesített kimeneti vektor normálása NINCS MEG; a G/4 teszt előre megadott vektorokat használt.
 - **Pozíciósorrend (`[obj+0x4f0]`):** a dátum szerinti rendezés feltételes (G/3c). Egyenlő dátumnál a sorrend nincs ellenőrizve.
 - **Horgony a felhasználói állapotból (`0x008223e0`, `0x008226e0`):** NINCS MEG; alapállapotban -1 (0. pozíció).
@@ -4942,7 +4944,7 @@ A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.)
 
 | Eredeti (`ordering = 0`, bizonyított) | Nálunk (mérve) | Teendő |
 |---|---|---|
-| Lánc-kiválasztás: horgony, spirál-jelöltek a középponttól (+1, -1, +2, -2, …), 100 jelölt, csoportkizárás az aktuális középpontra, HOG-minimum (szigorú `<`, 1e8, tartalék: a 0. jelölt), 15-ös irányváltás, a kimenet a választás sorrendje | `src/picasapy/movie/burst.py`: a G/5 láncmodell megvan; az injektált jellemző jelenleg a korábbi színátlag, mert a `0x00873cb0` valódi HOG-vektora nincs feltárva | A lánc szerkezete és a d_HOG primitív implementálva. Az eredetit követő képkiválasztás nyitott marad, amíg a valódi HOG-vektor forrása nem ismert. |
+| Lánc-kiválasztás: horgony, spirál-jelöltek a középponttól (+1, -1, +2, -2, …), 100 jelölt, csoportkizárás az aktuális középpontra, a regisztrált HOG/engedélyezett Neven getterek súlyozott minimuma (szigorú `<`, 1e8, tartalék: a 0. jelölt), 15-ös irányváltás, a kimenet a választás sorrendje | `src/picasapy/movie/burst.py`: a G/5 láncmodell megvan; az injektált jellemző jelenleg a korábbi színátlag, mert a `0x00873cb0` valódi HOG-vektora nincs feltárva; Neven-jellemző nincs | A lánc szerkezete és a d_HOG primitív implementálva. Az eredetit követő képkiválasztás nyitott marad, amíg a HOG-vektor forrása és az esetleges Neven-tag összehasonlítható bemenete nincs bizonyítva. |
 | Csoportosítás: szomszédos, egész másodpercre kerekített idők, `delta >= T` új csoport, `T = 0`-nál nincs csoport (G szakasz) | A `burstmodethresh` az `ordering = 0` exportban csoportokat képez és befolyásolja a láncválasztást (`src/picasapy/movie/slideshow.py`, `src/picasapy/movie/burst.py`) | A három G szakaszbeli etalon implementálva; más `ordering`-ágak képkiválasztása továbbra sincs feltárva. |
 
 **Frissítés (2026-10-17, G/6):** új filmnél a „Best Transitions” rádió az alapértelmezett (`ordering = 0`).
