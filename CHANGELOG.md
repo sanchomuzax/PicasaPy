@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.163] - 2026-10-20
+
+- A Film arcokból a klipeket az arc köré vágja, és a beállítás szerint kihagyja a 136,5 képpontnál keskenyebb arcokat (#5372).
+
 ## [0.9.162] - 2026-10-20
 
 - Az új névjegy-azonosítót a Picasa saját alakjában, vezető nulla nélkül írjuk (#5368).

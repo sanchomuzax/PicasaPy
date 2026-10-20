@@ -32,10 +32,11 @@ import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 from picasapy.cvimage import dekodolj_forrast
-from picasapy.ini import IniDocument, load_or_empty
+from picasapy.ini import IniDocument, load_or_empty, parse_faces
 from picasapy.scanner import PICASA_INI_NAME
 
 from .burst import capture_groups, select_chain
+from .face_crop import face_is_usable, rect64_to_pixel_rect, render_face_crop
 
 # A kodek-négyes: MP4 konténer, széles körben elérhető OpenCV-ben.
 _FOURCC = "mp4v"
@@ -73,6 +74,7 @@ class MovieSettings:
     show_dates: bool = False
     cropfit: bool = False
     remove_low_res_faces: bool = False
+    face_movie: bool = False
     ordering: int = 0
     burstmodethresh: int = 0
 
@@ -123,6 +125,8 @@ class MovieReport:
     # #459/3: a kihagyottak közül a NEM LÉTEZŐ fájlok (elmozdítva,
     # átnevezve, törölve) — külön üzenetet érdemelnek
     missing: tuple[Path, ...] = ()
+    # Az arcfilmklipek pixeles forrás-rectjei, a `used` sorrendjében.
+    used_face_rects: tuple[tuple[int, int, int, int] | None, ...] = ()
 
 
 _DEFAULT_SETTINGS = MovieSettings()
@@ -558,6 +562,52 @@ def _picasa_caption(
     return (section.get("caption") or "").strip() if section is not None else ""
 
 
+def _picasa_face_rectangles(
+    path: Path,
+    image: np.ndarray,
+    documents: dict[Path, IniDocument | None],
+) -> tuple[tuple[np.float32, np.float32, np.float32, np.float32], ...]:
+    """A fotó Picasa-féle rect64 arcait forrásképpontokra alakítja."""
+    ini_path = path.parent / PICASA_INI_NAME
+    if ini_path not in documents:
+        try:
+            documents[ini_path] = load_or_empty(ini_path)
+        except OSError:
+            documents[ini_path] = None
+    document = documents[ini_path]
+    section = document.section(path.name) if document is not None else None
+    if section is None:
+        return ()
+    height, width = image.shape[:2]
+    result = []
+    for face in parse_faces(section.get("faces") or ""):
+        if face.is_ignored:
+            continue
+        rectangle = rect64_to_pixel_rect(face.rect, width, height)
+        if rectangle[2] > rectangle[0] and rectangle[3] > rectangle[1]:
+            result.append(rectangle)
+    return tuple(result)
+
+
+def _prepare_face_frame(
+    path: Path,
+    image: np.ndarray,
+    rectangle: tuple[float, float, float, float],
+    settings: MovieSettings,
+    ini_docs: dict[Path, IniDocument | None],
+) -> np.ndarray:
+    """A dekódolt fotót a megadott arcra keretezi és feliratozza."""
+    frame = render_face_crop(
+        image,
+        rectangle,
+        (settings.width, settings.height),
+        cropfit=settings.cropfit,
+        background=settings.background,
+    )
+    caption = _picasa_caption(path, ini_docs) if settings.show_captions else ""
+    return _fotofelirat(frame, path, settings, caption)
+
+
 def _capture_timestamp(path: Path) -> float | None:
     """A kép készítési ideje EXIF-ből, ennek hiányában fájlidőből."""
     try:
@@ -674,13 +724,21 @@ def export_movie(
 
     frames_written = 0
     used: list[Path] = []
+    used_face_rects: list[tuple[int, int, int, int] | None] = []
     skipped: list[Path] = []
     reasons: list[str] = []
     missing: list[Path] = []
     target = Path(target)
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    decoded: list[tuple[Path | None, np.ndarray, dict[str, object] | None]] = []
+    decoded: list[
+        tuple[
+            Path | None,
+            np.ndarray,
+            dict[str, object] | None,
+            tuple[int, int, int, int] | None,
+        ]
+    ] = []
     capture_times: list[float | None] = []
     ini_documents: dict[Path, IniDocument | None] = {}
     for path in paths:
@@ -691,12 +749,39 @@ def export_movie(
             reasons.append("a fájl nem található")
             continue
         try:
+            if settings.face_movie:
+                image = _decode(path)
+                rectangles = _picasa_face_rectangles(path, image, ini_documents)
+                face_count = 0
+                for rectangle in rectangles:
+                    if not face_is_usable(
+                        rectangle,
+                        remove_low_res_faces=settings.remove_low_res_faces,
+                    ):
+                        continue
+                    try:
+                        frame = _prepare_face_frame(
+                            path, image, rectangle, settings, ini_documents
+                        )
+                    except ValueError:
+                        continue
+                    pixel_rectangle = tuple(int(value) for value in rectangle)
+                    decoded.append((path, frame, None, pixel_rectangle))
+                    capture_times.append(_capture_timestamp(path))
+                    face_count += 1
+                if face_count:
+                    continue
+                skipped.append(path)
+                reasons.append(
+                    "a képen nincs a beállításnak megfelelő arc-téglalap"
+                )
+                continue
             frame = prepare_photo_frame(path, settings, ini_documents)
         except (ValueError, OSError) as error:
             skipped.append(path)
             reasons.append(str(error))
             continue
-        decoded.append((path, frame, None))
+        decoded.append((path, frame, None, None))
         capture_times.append(_capture_timestamp(path))
 
     text_frames = [
@@ -708,6 +793,7 @@ def export_movie(
                 ido=settings.frames_per_photo / settings.fps,
             ),
             slide,
+            None,
         )
         for slide in settings.text_slides
     ]
@@ -717,7 +803,7 @@ def export_movie(
         groups = capture_groups(capture_times, settings.burstmodethresh)
         # Az eredeti HOG-vektor előállítása még nincs feltárva (#4194). A
         # jelenlegi képi forrás a korábbi színátlag; ez nem eredetihű HOG.
-        features = [np.mean(frame, axis=(0, 1)) for _, frame, _ in decoded]
+        features = [np.mean(frame, axis=(0, 1)) for _, frame, _, _ in decoded]
         order = select_chain(
             groups,
             len(decoded),
@@ -772,7 +858,7 @@ def export_movie(
             alap_tartas, maradek = divmod(osszes_tartas, len(decoded))
             holds = [alap_tartas] * len(decoded)
             holds[-1] += maradek
-        for index, (path, frame, text_slide) in enumerate(decoded):
+        for index, (path, frame, text_slide, face_rectangle) in enumerate(decoded):
             if index and settings.transition_frames:
                 previous = decoded[index - 1][1]
                 for step in range(1, settings.transition_frames + 1):
@@ -805,6 +891,7 @@ def export_movie(
                 frames_written += 1
             if path is not None:
                 used.append(path)
+                used_face_rects.append(face_rectangle)
             if progress is not None:
                 progress(index + 1, len(decoded))
     finally:
@@ -829,4 +916,5 @@ def export_movie(
         missing=tuple(missing),
         reasons=tuple(reasons),
         frames=frames_written,
+        used_face_rects=tuple(used_face_rects),
     )

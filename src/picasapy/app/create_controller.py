@@ -731,6 +731,7 @@ class CreateMixin(PosterMixin):
             show_dates=bool((options or {}).get("showdates", False)),
             cropfit=bool((options or {}).get("cropfit", False)),
             remove_low_res_faces=bool((options or {}).get("removelowresfaces", False)),
+            face_movie=bool((options or {}).get("faceMovie", False)),
             ordering=max(0, min(2, int((options or {}).get("ordering", 0)))),
             burstmodethresh=max(
                 0, min(86400, int((options or {}).get("burstmodethresh", 0)))
@@ -738,7 +739,11 @@ class CreateMixin(PosterMixin):
         )
 
     @staticmethod
-    def _film_projekt(sources, settings) -> MxfProjekt:
+    def _film_projekt(
+        sources,
+        settings,
+        used_face_rects=(),
+    ) -> MxfProjekt:
         """A film állapota `.mxf`-projektként (#3191).
 
         A felület által állítható méret, hangsáv, opciók, rendezés,
@@ -755,15 +760,34 @@ class CreateMixin(PosterMixin):
             advanceinterval=float(settings.seconds_per_photo),
             transitiontime=float(settings.transition_seconds),
         )
-        atmenetek = [
-            MxfAtmenet(
-                transition=atmenet_tipus,
-                advanceinterval=alap.advanceinterval,
-                transitiontime=alap.transitiontime,
-                forras=MxfForras(index=i, filename=str(ut)),
+        atmenetek = []
+        for i, ut in enumerate(sources):
+            rectangle = (
+                used_face_rects[i]
+                if settings.face_movie and i < len(used_face_rects)
+                else None
             )
-            for i, ut in enumerate(sources)
-        ]
+            face_parameters = MxfSzovegParam()
+            if rectangle is not None:
+                face_parameters = MxfSzovegParam(
+                    facerectx0=rectangle[0],
+                    facerecty0=rectangle[1],
+                    facerectx1=rectangle[2],
+                    facerecty1=rectangle[3],
+                    facemoviesrc=1,
+                )
+            atmenetek.append(
+                MxfAtmenet(
+                    transition=atmenet_tipus,
+                    advanceinterval=alap.advanceinterval,
+                    transitiontime=alap.transitiontime,
+                    forras=MxfForras(
+                        index=i,
+                        filename=str(ut),
+                        szovegparam=face_parameters,
+                    ),
+                )
+            )
         for index, slide in enumerate(settings.text_slides):
             text_color = str(slide.get("textColor", "#ffffff")).lstrip("#")[-6:]
             try:
@@ -806,6 +830,7 @@ class CreateMixin(PosterMixin):
             curresolution=felbontas,
             musicfile=str(settings.audio_path or ""),
             audiooption=settings.audio_option,
+            facemovie=settings.face_movie,
             showcaption=settings.show_captions,
             showdates=settings.show_dates,
             cropfit=int(settings.cropfit),
@@ -985,7 +1010,9 @@ class CreateMixin(PosterMixin):
             try:
                 write_mxf(
                     Path(report.target).with_suffix(".mxf"),
-                    self._film_projekt(report.used, settings),
+                    self._film_projekt(
+                        report.used, settings, report.used_face_rects
+                    ),
                 )
             except OSError as hiba:  # pragma: no cover - írásvédett cél
                 logger.warning("a film projektfájlja nem írható: %s", hiba)
