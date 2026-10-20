@@ -1486,17 +1486,34 @@ Rectangle {
         parent: Overlay.overlay
         anchors.centerIn: parent
         modal: true
-        title: qsTr("Delete Person")
+        focus: true
+        title: qsTr("Remove People")
         property string personName: ""
         // #1599/#1748: rögzített szélesség, különben a tördelő felirat és a
         // Dialog egymás szélességéből számolna (kötési hurok)
         implicitWidth: 380 + leftPadding + rightPadding
 
-        contentItem: Label {
+        contentItem: ColumnLayout {
+            focus: true
+            Keys.onReturnPressed: peopleAlbumDeleteConfirmation.reject()
+            Keys.onEnterPressed: peopleAlbumDeleteConfirmation.reject()
             width: 380
-            text: qsTr("Are you sure you want to delete the people album \"%1\"?")
-                .arg(peopleAlbumDeleteConfirmation.personName)
-            wrapMode: Text.WordWrap
+            spacing: 8
+
+            Label {
+                objectName: "peopleAlbumDeleteMessage"
+                Layout.fillWidth: true
+                text: qsTr("Are you sure you want to delete the people album \"%1\"?")
+                    .arg(peopleAlbumDeleteConfirmation.personName)
+                wrapMode: Text.WordWrap
+            }
+
+            CheckBox {
+                objectName: "peopleAlbumDeleteOnlineFacesCheckBox"
+                Layout.fillWidth: true
+                text: qsTr("Delete tagged faces from synced Picasa Web albums, too")
+                checked: false
+            }
         }
 
         footer: RowLayout {
@@ -1506,20 +1523,30 @@ Rectangle {
 
             Button {
                 objectName: "peopleAlbumDeleteConfirmButton"
-                text: qsTr("Yes")
+                text: qsTr("Delete Album")
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: peopleAlbumDeleteConfirmation.reject()
+                Keys.onEnterPressed: peopleAlbumDeleteConfirmation.reject()
                 onClicked: peopleAlbumDeleteConfirmation.accept()
             }
             Button {
+                id: peopleAlbumDeleteCancelButton
                 objectName: "peopleAlbumDeleteCancelButton"
-                text: qsTr("No")
+                text: qsTr("Cancel")
+                focus: true
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: peopleAlbumDeleteConfirmation.reject()
+                Keys.onEnterPressed: peopleAlbumDeleteConfirmation.reject()
                 onClicked: peopleAlbumDeleteConfirmation.reject()
             }
         }
 
+        onOpened: peopleAlbumDeleteCancelButton.forceActiveFocus()
+
         onAccepted: {
             if (controller)
                 controller.savePeopleManagerChanges([
-                    {action: "delete", oldName: peopleAlbumDeleteConfirmation.personName}
+                    {action: "remove_album", oldName: peopleAlbumDeleteConfirmation.personName}
                 ])
         }
     }

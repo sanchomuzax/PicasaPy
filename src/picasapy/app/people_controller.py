@@ -312,8 +312,9 @@ class PeopleMixin:
         bejegyzések mellett csak az érintett mappák `[Contacts2]` sorait
         frissíti, így az arckapcsolatok id-je megmarad. A törlés a központi
         bejegyzést, valamint az érintett mappák névjegyeit és `faces=`
-        hivatkozásait távolítja el. Mappánként egy útvonalanként szerializált,
-        best-effort konkurenciakezelésű ini-frissítés történik.
+        hivatkozásait távolítja el. A `remove_album` csak az album arcait
+        törli; a névjegyet megtartja. Mappánként egy útvonalanként
+        szerializált, best-effort konkurenciakezelésű ini-frissítés történik.
         """
         if not changes:
             return True
@@ -325,9 +326,9 @@ class PeopleMixin:
             name = str(change.get("name", "")).strip()
             email = str(change.get("email", "")).strip()
             old_name = str(change.get("oldName", "")).strip()
-            if action not in {"create", "update", "delete"}:
+            if action not in {"create", "update", "delete", "remove_album"}:
                 return False
-            if action == "delete":
+            if action in {"delete", "remove_album"}:
                 if not old_name:
                     return False
             elif (
@@ -423,7 +424,7 @@ class PeopleMixin:
                         )
                     entries = updated_entries
                     changed_central = True
-                else:
+                elif action == "delete":
                     kept = [c for c in entries if c.name.casefold() != old_key]
                     changed_central |= len(kept) != len(entries)
                     entries = kept
@@ -450,7 +451,7 @@ class PeopleMixin:
                     == change["oldName"].casefold()
                     for contact in contacts_of(current)
                     for change in tiszta_valtozasok
-                    if change["action"] in {"update", "delete"}
+                    if change["action"] in {"update", "delete", "remove_album"}
                 ):
                     continue
 
@@ -495,6 +496,8 @@ class PeopleMixin:
                             for face in faces:
                                 if face.contact_id.casefold() in person_ids:
                                     document = without_face(document, section.name, face)
+                        if action == "remove_album":
+                            continue
                         for contact in matches:
                             document = without_contact(document, contact.person_id)
                     return document
