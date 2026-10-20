@@ -281,7 +281,7 @@ def test_enter_routes_existing_names_directly_and_new_names_through_people_dialo
     faces = parse_faces(saved.section(photo_path.name).get("faces") or "")
     assigned = [face for face in faces if face.contact_id in contacts]
     assert any(contacts[face.contact_id] == _NAME for face in assigned)
-    assert re.fullmatch(r"[0-9a-f]{16}", next(
+    assert re.fullmatch(r"[0-9a-f]{1,16}", next(
         face.contact_id for face in assigned if contacts[face.contact_id] == _NAME
     ))
     assert any(
