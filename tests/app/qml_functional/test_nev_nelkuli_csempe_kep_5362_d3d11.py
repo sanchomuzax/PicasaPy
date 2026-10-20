@@ -27,7 +27,7 @@ def test_a_csempek_arckepe_direct3d_megjelenitovel_is_latszik(tmp_path):
     ki = subprocess.run(
         [sys.executable, "-m", "pytest", str(_CEL), "-q", "-p", "no:cacheprovider",
          f"--basetemp={tmp_path / 'bt'}"],
-        capture_output=True, text=True, timeout=300, env=env,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env,
         cwd=Path(__file__).resolve().parents[3],
     )
     naplo = (ki.stdout + ki.stderr)[-6000:]
