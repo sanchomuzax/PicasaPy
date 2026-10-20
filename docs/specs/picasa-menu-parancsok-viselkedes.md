@@ -4105,10 +4105,10 @@ Jelentés: egy lépés a következő index kiválasztása, majd az új képkocka
 
 - `0x007fd800` (hívó `0x007fde80`, `0x007fe32f`): a kurzor alatti elem keresése. Bemenet: a `[this+0x2f8]` alobjektum (`lea ecx,[edi+0x2f8]`), a pont két float értéke (`ebx`), és a kimeneti mutató (`[esp+0x18]`). Az indexlistán (`[+0x80]`, darabszám `[+0x84] >> 1`) megy végig. Az elem rekordja `[+0xb0] + i*0xf8`; a téglalap bal széle `+0xdc`, felső széle `+0xe0`, jobb széle `+0xe4`, alsó széle `+0xe8` (egész számok). Találat: bal <= x < jobb és felső <= y < alsó. Az első találatnál a kimenetre a rekord `+0` mezőjét írja, és visszatér a `0x007fd770(i)` értékével. Nincs találat: `0xffffffff`.
 - A hívó csak nulla visszatérésnél folytat (`0x007fe334-0x007fe336`), és ekkor az `[esp+0x18]` értéket adja a `0x008018a0`-nak (`0x007fe338-0x007fe33e`).
-- Jelentés: a kimenet a rekord `+0` mezője, nem a listaindex. Hogy ez azonosító vagy index, **NINCS MEG**. A `0x007fd770` visszatérése **NINCS MEG**.
+- Jelentés: a kimenet a rekord `+0` mezője, nem a listaindex. Hogy ez azonosító vagy index, **NINCS MEG**. A `0x007fd770` visszatérése **LEZÁRVA (38.2.23 §6): 0**.
 - `0x007fd8c0` (hívó `0x00801cb0`, `0x00801cd8`): nem egérkeresés. A `[this+0xb4] >> 1` darabszámon megy végig. Minden `i`-re x_i = `i` * `[this+0x30]` + `[this+0x20]` (mindkettő f64), meghívja a `0x007fbab0` függvényt (`ecx = this`, x_i argumentum), majd a `0x0049f5c0`-val (`fabs`, cdecl, `ret`) a |x_i - 0,666| értéket számolja. A 0,666 a `0xcf4860` f64 konstans, pontosan 0,6660000085830688. A legkisebb távolságú `i` marad: `[this+0]` = `i`, `*param_1` = a rekord `+0` mezője.
-- Eltérés: a diszasszemblálásban a legkisebb-kereső összehasonlítása más verem-helyről olvas, mint ahová a kezdeti küszöb íródik (`0xcf4900` = 1000000,0). Ezt nem zártam le. A dekompiláció szerinti olvasat (legkisebb távolság, kezdeti küszöb 1000000) **feltételes**.
-- Visszatérés: nem nulla lehet, ha az időablak-ellenőrzés (`0x009a5210`, a `[this+0x48]` rekordjai) teljesül. A jelentése **NINCS MEG**.
+- Eltérés: a diszasszemblálásban a legkisebb-kereső összehasonlítása más verem-helyről olvas, mint ahová a kezdeti küszöb íródik (`0xcf4900` = 1000000,0). **LEZÁRVA (38.2.23 §6):** a min-tároló a verem E0+0xc helyén van, a dekompiláció helyes (legkisebb távolság, kezdeti küszöb 1000000).
+- Visszatérés: **JAVÍTVA (38.2.23 §4):** a `0x009a5210` nem időablak-ellenőrzés, hanem eltelt idő (QPC). Az időablak-vizsgálat a `0x007fd8c0` belsejében van, a `[this+0x48]` rekordjain; a visszatérés jelentése **NINCS MEG**.
 - A 0,666 szerepe (lejátszási pont vagy más) **NINCS MEG**. A kártya-sor rajzolása nincs igazolva.
 - Lánc Időrend módban: a `0x00802060` hívja a `0x00801cb0`-t, ha `[this+0x3b8] != 0`; a `0x00801cb0` csak akkor fut tovább, ha `[this+0x429] == 0` és a `0x007fd8c0` nem nullát ad. Az eredmény `[this+0x510]`-be kerül, és a `0x008018a0` állítja a `[this+0x51a]` jelzőt (38.2.21 §2).
 
@@ -4134,9 +4134,9 @@ Jelentés: egy lépés a következő index kiválasztása, majd az új képkocka
 
 - Overlay → X leképezés (megerősített, a `0x007fb210` diszasszemblálásából): a `0x00410fa0(X)` hívás előtt `lea edi,[esi+X]`, `push edi`, `mov edx, <sztring>` áll. A sztringek a `0x00cbd334`-től indulnak: `left` = `0x530`; `right` = `0x558`; `mouse` = `0x5a8`; `rollovermouse` = `0x5d0`; `exit` = `0x580`; `timeline` = `0x6c0`; `timelinedot` = `0x6e8`; `sliderthumb` = `0x710`; `startbutton` = `0x738`. A tizedik, `overlay`, helyi objektumon töltődik.
 - Mezők (dekompiláció): `X+0x08` szél, `X+0x0c` magasság, `X+0x18` bal, `X+0x1c` felső. A bal mezőt a dekompiláció `_DAT_00d34040`-nel szorozza és kerekíti (`ROUND`), a felső mezőt nem. Hogy a felső mezőnek van-e más skálázása, **NINCS MEG**.
-- Húzás-sáv (`0x007fde80` 0x201-ága, a 4. kimenet dekompiláció 892-915. sora): a sáv a `timeline` (X `0x6c0`): bal `[+0x6d8]`, szél `[+0x6c8]`. A csúszka-gomb a `sliderthumb` (X `0x710`): bal `[+0x728]`, felső `[+0x72c]`, szél `[+0x718]`, magasság `[+0x71c]`. A dekompiláció a csúszka helyét a sáv bal és jobb széle közé korlátozza; a pontos képlet **NINCS MEG**. (Feltételes: csak dekompiláció.)
+- Húzás-sáv (`0x007fde80` 0x201-ága, a 4. kimenet dekompiláció 892-915. sora): a sáv a `timeline` (X `0x6c0`): bal `[+0x6d8]`, szél `[+0x6c8]`. A csúszka-gomb a `sliderthumb` (X `0x710`): bal `[+0x728]`, felső `[+0x72c]`, szél `[+0x718]`, magasság `[+0x71c]`. A dekompiláció a csúszka helyét a sáv bal és jobb széle közé korlátozza; a pontos képlet **LEZÁRVA (38.2.23 §3)**: `[this+0x728]` = trunc(x_c - (floor(SW/2) + 3)); korábban csak dekompiláció volt, most diszasszembly is megerősíti.
 - A `sliderthumb` kattintása nem tartozik a `0x007fda80` találati vizsgálatába; a húzás-ágon megy. A húzás indítását a 38.2.21 §3 írja (`0x007fdd00`), ezt nem ellenőriztem.
-- **A dátumcsúszka leképezése (csúszka-hely -> dátum vagy képindex): NINCS MEG.**
+- **A dátumcsúszka leképezése (csúszka-hely -> dátum vagy képindex): RÉSZBEN (38.2.23 §3).** A csúszka-hely rekordsorszámot ad (i*); a dátum vagy képindex jelentése **NINCS MEG**.
 - `timelinedot`, `mouse`, `rollovermouse` és `overlay`: a `0x007fda80` nem vizsgálja őket. Kattintási céljuk **NINCS MEG**.
 - Listaikon: nem azonosítottam, melyik overlay. **NINCS MEG**.
 
@@ -4162,11 +4162,11 @@ Jelentés: egy lépés a következő index kiválasztása, majd az új képkocka
 | lista vége Időrend módban nem lépteti ki | `0x00802765` `cmp`; dekompiláció; `0x007fda00` állítja `[this+0x3b9]`-et | megerősített |
 | `[this+0x3fd]` írója | NINCS MEG | nyitott |
 | `0x007fd800` téglalap-találat, kimenet a `+0` mező | dekompiláció; `0x007fe32f-0x007fe338` diszasszemblálás; `0x007fd8c0` vége `mov [edx], ecx` | megerősített (a mező jelentése NINCS MEG) |
-| `0x007fd8c0` legkisebb távolság | dekompiláció; diszasszemblálás eltér a verem-kezelésben | feltételes |
+| `0x007fd8c0` legkisebb távolság | dekompiláció; diszasszembly (38.2.23 §4: a min-tároló E0+0xc) | megerősített |
 | `0x0049f5c0` = `fabs` | diszasszemblálás (`fabs`, `ret`) | megerősített |
 | `0x007fda80`: négy téglalap és az `1000000` | dekompiláció; `0x007fe202-0x007fe207`, `0x007fe441` | megerősített |
 | overlay-nevek és az `X` objektumok | `0x007fb210` diszasszemblálás (`0x007fb228-0x007fb4af`) | megerősített |
-| húzás-sáv (`timeline`, `sliderthumb`) | 4. kimenet dekompiláció 892-915. sor | feltételes (csak dekompiláció) |
+| húzás-sáv (`timeline`, `sliderthumb`) | diszasszembly `0x007fdd00` (38.2.23 §3) | megerősített |
 | dátumcsúszka-leképezés | NINCS MEG | nyitott |
 
 **Nyitott - következő Ghidra-körök.**
@@ -4190,6 +4190,153 @@ Jelentés: egy lépés a következő index kiválasztása, majd az új képkocka
 **A #5401 „Kész, ha” pontjai (5. kör).** (1) Képlánc: változatlan. (2) Átmenet és ütem: részben. A lista-végi viselkedés és a nem nulla visszatérés igazolt; a pumpa-hívó és az ütem **NINCS MEG**. (3) Vezérlők: a négy találati overlay (`startbutton`, `exit`, `right`, `left`) műveletei igazoltak; a csúszka és a többi overlay műveletei **NINCS MEG**. (4) Diavetítés és visszatérés: változatlan.
 
 **Fejlesztési következmény.** Terméki kódot nem írtunk. A léptetési ütem továbbra sem implementálható: hiányzik a pumpa-hívó, az időtúllépés és a `Preferences\SlideshowEffectTime` felhasználói érték. Az Időrend lista-vége viselkedése igazolt (nincs kilépés), a négy gomb műveleti leképezése igazolt, a dátumcsúszka leképezése nem.
+
+#### 38.2.23 Az Időrend bináris feltárása, 6. kör: pumpa-lánc, `left` és `right`, csúszka, kártya-görbe, `startbutton`, kilépés (#5401, 2026-10-20)
+
+**Kérdés és hatókör.** Hat kérdés a `2026-10-20-idorend-6.txt` nyolc címéről: (1) `0x005e6710`; (2) `0x007fd120` és `0x007fd150`; (3) `0x007fdd00`; (4) `0x007fbab0`; (5) `0x00802c60` és a `[this+0x2e8]` objektum; (6) `0x007fb820` és `0x007fd770`. A 38.2.22 kísérő címei közül a `0x007fd8c0` és a `0x009e6010` is kellett. Terméki kódot nem írtunk.
+
+**Bemenet és módszer.** Diszasszembly a `pe_dis.cdis` (capstone) segítségével. Az ideiglenes mentések a `.bt/` alá kerültek, a kör végén törölve. Index: `functions`, `xrefs` (függvényszintű hívások), `data_symbols`, `string_xrefs`. A vtáblák bejegyzéseit közvetlenül a `Picasa3.exe` bájtjaiból olvastam. Minden konstansnál ellenőriztem a betöltés méretét (`fld qword` = f64, `fld dword` = f32). Futásfelvétel és QEMU-futtatás nem volt.
+
+**1. `0x005e6710`: az Időrend-pumpa és az időtúllépés**
+
+- **Azonosítás (megerősített).** A `0x005e6710` a `CThumbUI::vftable` 12. bejegyzése: `0x00c9052c` + 0x30 = `0x00c9055c`, ez a `DATA` hivatkozás. A bájtokból olvasva a slot értéke `0x005e6710`.
+- **Mit csinál (megerősített).** A főablak billentyű- és parancs-előszűrője. Visszatérése `1000000` (0xf4240: a hívó elnyeli) vagy `0xf4241` (továbbadja). Ágak: `WM_KEYDOWN` (`0x100`) `F2` (`0x71`): `0x0057d430`, `0x00407610`, majd `1000000`. `F3` (`0x72`): `0x009cd8a0`, `0xf4241`. `F4` (`0x73`): `0x009cd110` és a vtábla +0x78 hívása, `0xf4241` ha a feltétel teljesül. `F5` (`0x74`): `0x004a46e0`, `0x00579480(0,1)`, `[this+0xb0]+0x166` = 1, `0x0065b840`, a végén `0xf4241`. `F11` (`0x7a`): `0x00983fc0` (teljes képernyő). `F1` (`0x70`): `0x005d0cd0` vagy `0x009cd8a0`. `WM_SYSKEYDOWN` (`0x104`) `Enter` (`0x0d`), ha `[this+0xd29] == 0`: `0x005c9740`, `1000000`. `F12` (`0x7b`), és ha a `(param_2+0x10)` 4-es bitje be van állítva: `0x005e60d0` (billentyű-kapcsoló), a visszatérése a hívó értéke. Ezek az ágak csak akkor futnak, ha `0x0056c420`, `0x0056c110`, `0x00562d00`, `0x005f2650` és `0x0057c430(4)` mind 0-t ad.
+- **Esc, Space és a nyilak nincsenek ebben a függvényben (megerősített).** Ezeket a `0x00801270` kezeli (5. pont).
+- **Hívó és pumpa (megerősített, negatív).** A `0x005e6710` nem hívja a `0x0097fc30`-at, és a függvényszintű indexben nincs közvetlen hívója: a vtábla-bejegyzés az egyetlen belépési pont. Előre 12 szintig bejárva a 11 közvetlen pumpa-hívóból egyik sem ér el `0x005e6710`, `0x005e60d0`, `0x005e8a70`, `0x008037e0`, `0x007fda00`, `0x007fb820`, `0x00802630`, `0x00801270`, `0x007fa7f0`, `0x007fda80` vagy `0x007fde80` címet. A bejárt csúcsok száma 100 és 4910 között volt. Ez csak a közvetlen hívási élekre igaz: a vtábla-hívásokat az index nem látja, ezért nem zárja ki az utat.
+- **Pumpa-lánc a `0x0097fc30`-ig: NINCS MEG.** Ghidra-kör kell: `0x005e6710` hívóhelye, vagyis a `CThumbUI` vtábla +0x30 hívása (`call [reg+0x30]`) a `0x0097fc30` hívóinak láncában. [blokkolt]
+- **Időtúllépés: NINCS MEG.** A pumpa-hívók 1, 5 vagy 10 ms-os túllépést adnak (38.2.22 §1), de az Időrend alatt futó hívó nincs azonosítva. Ugyanez a Ghidra-kör. [blokkolt]
+- **Léptetési ütem: NINCS MEG.** Az ütemet a pumpa hívója és a `Preferences\SlideshowEffectTime` együtt adja (38.2.21 §1, 38.2.22 §2). Pumpa nélkül nem mérhető. [blokkolt]
+
+**2. `0x007fd120` (`left`) és `0x007fd150` (`right`)**
+
+- **Művelet (megerősített).** `left` = `0x007fd0c0(+S, 2,0)`, `right` = `0x007fd0c0(-S, 2,0)`, ahol S = `[this+0x30]` (f64, f32-re konvertálva), a 2,0 pedig f32 az `0xcf3a48` címen (`fld dword`). A `right` az előjelet a `fchs` utasítással adja. Hívóhely: `0x007fdcda` (`left`) és `0x007fdc4e` (`right`), mindkettő a `0x007fda80`-ban.
+- **Mit csinál a `0x007fd0c0` (94 bájt, megerősített).** Az alap B: ha `[this+0x4c] >> 1` nulla, akkor `[this+0x40]` (f64). Egyébként az utolsó rekord `+0x10` mezője: rekordlista `[this+0x48]`, rekordméret 0x28, n = `[this+0x4c] >> 1`. Utána v = `0x009a5210()` (eltelt idő, lásd a helyesbítést), és egy négy dupla szerkezet készül: vtábla `0x0072df60`, B, B+dx, v, v+dy. Ezután `call 0x009e6010`, az EAX-ban a szerkezet címével. A `0x007fd0c0` `xor eax, eax`-szal tér vissza.
+- **Mit léptet: NINCS MEG.** A `0x009e6010` (236 bájt) és a `0x0072df60` vtábla nincs visszafejtve, ezért nem tudjuk, hogy a B időalap képet, gyűjteményt vagy dátumtartományt jelent. Bizonyított: B-t S-sel tolja el, a második koordinátát a `dy` értékkel (2,0 vagy 4,0) növeli.
+- **Mennyit (részben).** A lépték S = `[this+0x30]`; a dy 2,0 a `left` és a `right` hívásban. S írója NINCS MEG (4. pont), a dy jelentése NINCS MEG.
+- **Új, mért: a nyíl-billentyűk is ide jutnak.** A `0x00801270` WM_KEYDOWN ágán: `0x25` és `0x26` a `0x008014bc` ágra ugrik, onnan `0x008011b0` hívódik, amely `0x007fd0c0`-t hív. `0x27` és `0x28` a `0x008014ac` ágra ugrik, onnan `0x00801210`, amely szintén `0x007fd0c0`-t hív. A dx előjelét ezekben nem vizsgáltam (NINCS MEG, nem fő kérdés).
+
+**3. `0x007fdd00`: a `sliderthumb` húzása (megerősített, diszasszembly `0x007fdd00`-`0x007fde73`)**
+
+- **Befogás.** x a [L, L+W] közé szorítva. L = `[this+0x6d8]` (a `timeline` sáv bal széle), W = `[this+0x6c8]` (a sáv szélessége), egész számok f32-re konvertálva.
+- **Normált pozíció.** t = (x - L) / W (f32 osztás).
+- **Keresés.** Ha `[this+0x38c] >> 1` legalább 1, n = `[this+0x38c] >> 1`, és minden i < n-re d_i = |A[i] / A[n-1] - t|, ahol A = `[this+0x388]` (f64 tömb). Kezdeti küszöb 1e7 (f64 `0xcf3e88` = 10000000,0). i* = az első i, amelyre d_i szigorúan kisebb az addigi minimumnál.
+- **Kimenet.** `[this+0x514]` = i*. `[this+0x510]` = a rekord `+0` mezője, ha i* < `[this+0x3ac] >> 1` (rekordlista `[this+0x3a8]`, rekordméret 0xf8), egyébként 0.
+- **A gomb helye.** `[this+0x728]` = trunc(x_c - (floor(SW/2) + 3)), ahol x_c a befogott x, SW = `[this+0x718]` a gomb szélessége. `[this+0x72c]` (felső szél) változatlan marad. A csonkolást a `0x00c29990` végzi (lent).
+- **Dátum vagy képindex?** A leképezés sorszámot ad (i*): a csúszka helyéhez a normált A[i]/A[n-1] sor legközelebbi tagját rendeli. Hogy A dátumsor-e (és így a csúszka dátumot ad), **NINCS MEG**, mert `[this+0x388]` írója nincs nyomon követve. Ghidra-kör kell: `[this+0x388]` és `[this+0x38c]` írói, teljes pásztázással (`paszta.py`). [blokkolt]
+- **A `0x00c29990` (28 bájt).** Ha `[0xda1428]` nem nulla: `cvttsd2si` (csonkolás). Ha nulla: x87 ág (`fistp` és javítás), amely csak akkor csonkol, ha az FPU kerekítési módja csonkoló. A fájlban a jelző értéke 0, írója NINCS MEG. [blokkolt, csak a csonkolás részleteihez]
+
+**4. `0x007fbab0` (kártya-görbe) és `0x007fd8c0` (a 0,666-hoz legközelebbi kártya)**
+
+*Görbe (megerősített).* Négy pont az objektum mezőin (k = 0..3):
+- X_k: `+0x50`, `+0x5c`, `+0x68`, `+0x74`; Y_k: `+0x54`, `+0x60`, `+0x6c`, `+0x78`; W_k: `+0x58`, `+0x64`, `+0x70`, `+0x7c`.
+- Bernstein-súlyok t-ből: B0 = (1-t)^3, B1 = 3t(1-t)^2, B2 = 3t^2(1-t), B3 = t^3.
+- Konstansok (mind f64, `fld qword`): 3,0 (`0xcf39f8`), 2,0 (`0xc7d9d0`), 0,5 (`0xc72150`), és az 1,0 `fld1`-gyel.
+- Képlet: N_x = Σ B_k·X_k, N_y = Σ B_k·Y_k, D = Σ B_k·W_k. x_out = 0,5 + 0,5·(2·N_x - 1)/D; y_out = 0,5 + 0,5·(2·N_y - 1)/D; w_out = 1/D. A kimenet három f32 az EAX-ban adott pufferbe: x, y, w.
+- Ellenőrzés: a konstansok, a `fdivr`, az `fld1` és a 0,5-ös szorzás-összeadás a diszasszemblálásban megvan. A teljes x87 műveleti sorrend végigkövetése nem készült el.
+
+*Mezők írói: NINCS MEG.* A `0x007fa7f0` konstruktor `ebp`-n át nem ír a `+0x18`…`+0x7c` mezőkre (csak a `+0x48` vtábla-mutatót). A `0x007fbab0` hívói: `0x007fbce0` (`0x007fbd3a`), `0x007fc010` (`0x007fc100`), `0x007fd8c0` (`0x007fd91c`). Ghidra-kör kell: a három hívó `this`-e, és a `+0x50`…`+0x7c`, `+0x20`, `+0x30` mezők írói. [blokkolt]
+
+*Legközelebbi kártya (`0x007fd8c0`, 304 bájt, megerősített).*
+- Kezdeti küszöb: 1000000,0 (f32 `0xcf4900`).
+- Ciklus i = 0..n-1, n = `[this+0xb4] >> 1`. t_i = i·S + O, ahol S = `[this+0x30]`, O = `[this+0x20]` (f64). Hívja a `0x007fbab0`-t t_i-vel, majd d_i = |x_out - 0,666|. A 0,666 f64 az `0xcf4860` címen (0,6660000085830688).
+- Az első legkisebb d_i nyer (szigorú `<`). Az eredmény `[this+0]` = i*. A kimeneti mutató (első argumentum) a rekord `+0` mezőjét kapja (rekordlista `[this+0xb0]`, rekordméret 0xf8).
+- A minimum-tároló a verem E0+0xc helyén van; a dekompiláció és a diszasszembly egyezik.
+
+*Visszatérési érték (feltételes).* Ha |[this+0x18]| > 0,01·S (f64 `0xcf40b8` = 0,01), `al` = 0. Egyébként n2 = `[this+0x4c] >> 1`: n2 > 1 esetén 0; n2 = 0 esetén 1; n2 = 1 esetén, a = a rekord `+0x18`, b = a rekord `+0x20`: ha a = b, 1; egyébként (v - a)/(b - a) > 1,0 esetén 1, különben 0; v = `0x009a5210()`. A jelentése **NINCS MEG**.
+
+*A 0,666 szerepe.* A ciklus azt a kártyát választja, amelynek görbe-x-e (x_out) a legközelebb van 0,666-hoz. Hogy ez az aktuális kártya-e, **NINCS MEG** (a `0x00801cb0` és `0x00801cd8` hívók nincsenek visszafejtve). [blokkolt]
+
+**5. `0x00802c60`, `[this+0x2e8]`, és a `startbutton` visszahívása**
+
+- **`0x00802c60` (297 bájt, megerősített).** A `OneUpUI` konstruktora (vtábla `0x00cbd5c4`). Paraméterei: az új objektum, `param_2` = `this` (a `+0x25c` mezőbe), `param_3` = `[this+0x2e8]` (a `+0x260` mezőbe). Az objektum 0x268 bájt: foglalás `0x0097c5d0`, nullázás `0xbf37c0` (`0x007fae32`-`0x007fae39`). A visszatérés `[this+0x2dc]`-be kerül (`0x007fae55`). Ez 38.2.21 §4-gyel egyezik.
+- **`[this+0x2e8]` = `[X+0x8]` (megerősített).** A `0x007fa7f0` `mov edi, eax` sora az X-et veszi fel, és a `this`-t `mov ebp, [esp+0x34]`-gyel az új objektumból. X a `0x008037e0` (qshow-építő) `edi`-je, amelyet a `0x00803920` előtt `mov eax, edi` ad át. Hogy ez melyik objektum, **NINCS MEG**.
+- **Osztály: NINCS MEG.** A `0x008037e0` egyetlen közvetlen hívója a `0x005e8a70` (`CThumbUI::MakeTimeline`, 38.2.22 §1), ezért X feltehetően a `MakeTimeline` tulajdonosa, de ez feltételes. Ghidra-kör kell: `0x008037e0` `edi`-forrása és `[X+0x8]` osztálya. [blokkolt]
+- **A `startbutton` sorrendje (megerősített).** A `0x007fda80` `0x007fdb0a`-es hívása a `0x007fb820` (kilépési ág, 6. pont). Utána, ha `[this+0x2e8]` nem nulla: `mov ecx, [this+0x2e8]`, `mov eax, [edx+0x18]`, `call eax` (`0x007fdb3d`). Ez a vtábla +0x18 slotját hívja `(-1, azonosító)` argumentumokkal. Az azonosító `[[this+0x3ec] + [this+0x3f8]·4]` (38.2.22 §5, ebben a körben nem mértem újra).
+- **A vtábla +0x18 célja: NINCS MEG.** A `OneUpUI` vtábla 6. slotja a `0x0097b5e0`: `add ecx, 0x28`, `push ecx`, `call [0xc4055c]`. Ha a `[this+0x2e8]` objektum ugyanabból az alaposztályból való, ugyanez a `thunk`; ezt nem igazoltam. A `[0xc4055c]` célja NINCS MEG (nincs index-szimbólum és import-név). Ghidra-kör kell: `0x00c4055c` célja. [blokkolt]
+- **A diavetítés-indítási feltevés nem támogatott.** A gomb a kilépési ágat futtatja előbb, és csak utána értesíti a forrást `(-1, azonosító)`-val. Ez inkább „bezár, és az azonosítót visszaadja" mintát mutat. A forrás válaszának megfejtése nyitott.
+
+**6. `0x007fb820` (kilépési ág) és `0x007fd770` (találati ág)**
+
+- **`0x007fb820` (459 bájt, megerősített lépések).** ECX = `this`.
+  1. `[this+0x3bf] = 1`.
+  2. Ha `[this+0x3bb] == 0`:
+     - `[this+0x3be] = 0`; `0x008001c0(this, this+0x46c, -1, -1, -1, -1)` (NINCS MEG); `[this+0x3b8] = 0`; `0x009ad280(this+0x46c)` (NINCS MEG).
+     - Ha `[this+0x49c] == 0`: `0x009a8d80(...)`, különben `0x009a8ca0(...)` (NINCS MEG).
+     - `QueryPerformanceCounter` → `[this+0x520]` (f64, a kezdő idő).
+     - `old` = `0x004019b0([this+0x760])`: a `Preferences\SlideshowEffectTime` értéke. Majd `0x00401900([this+0x760], 2)`: a 2 íródik a registry-be és a gyorsítótárba (`[this+0x76c]`).
+     - Várakozás: eltelt idő = (QPC - [this+0x520]) × (1/QPF), és küszöb = `0x004019b0([this+0x760])` × 0,6 (f64 `0xcf3a70`; negatív értéknél +2^32). Amíg thr > elapsed: `0x00801f50(this)` (NINCS MEG), majd újra.
+     - `0x00401900([this+0x760], old)`: visszaállítás.
+  3. Ha `vt+0x24(this)` nem nulla, annak az eredményén `vt+0x14(0,0)` hívódik. Ha nulla, és a `[this+0x2dc]` (`OneUpUI`) vt+0x24 hívása nem nulla, azon hívódik `vt+0x14(0,0)`. Egyébként visszatérés 0. A `vt+0x14` célja NINCS MEG.
+  4. Visszatérés 0.
+- **A várakozás értéke: 2 × 0,6 = 1,2 s (a kódútra megerősített).** A 2 kiírása után a `0x004019b0` a registry-ből olvas; ha az sikeres, 2-t kapunk, ha nem, a gyorsítótárban maradt 2 az érték. Ha a registry-írás hibázik, de a kiolvasás sikerül, a régi érték × 0,6 lenne. Futásidejű ágat nem mértem: NINCS MEG.
+- **Az Escape-ág (megerősített).** A `0x00801270` (`OneUpUI` billentyű-kezelője) WM_KEYDOWN ágán (`0x0080129e`): `cmp al, 0x1b` (`0x008012a7`), `jne 0x008012bf`, különben `mov ecx, ebx` és `call 0x007fb820` (`0x008012b1`). Escape tehát közvetlenül ide vezet. A `0x007fb820` többi hívója: `0x007fdb0a` és `0x007fdbc2` (`0x007fda80`), `0x007fe171` és `0x007fe43c` (`0x007fde80`), `0x008005bb`, `0x008005e1`, `0x008007fe` (`0x008001c0`), `0x008027c8` (`0x00802630`).
+- **`0x007fd770` (129 bájt, megerősített).** Argumentum: i. x = ([this+0x8] - (i·S + O)) - (B - v'), ahol v' = `0x009e5e70(0x009a5210())`, B mint a 2. pontban; dy = `+4,0` (f32 `0xc7e4a4`). Hívja a `0x007fd0c0`-t. **Visszatérés: 0**, mert a `0x007fd0c0` `xor eax, eax`-szal tér vissza, és a `0x007fd770` `ret 4` előtt az EAX-t nem írja. A dekompiláció `void`-ja ezt nem mutatja.
+- A találati ág (`0x007fd800`) így 0-t ad, és a hívó (`0x007fde80`) nullának látja: ekkor az `[esp+0x18]` (a rekord `+0` mezője) folytatódik (38.2.22 §3). A `0x202` (felengedés) `0x007fd770(this+0x514)` hívása a húzás végén ugyanide visz (38.2.21 §3).
+
+**Helyesbítések**
+
+1. **38.2.22 §3, `0x007fd770`:** a „visszatérése NINCS MEG" **LEZÁRVA**: 0 (6. pont).
+2. **38.2.22 §3, `0x009a5210`:** az „időablak-ellenőrzés" **TÉVES**. A `0x009a5210` eltelt idő: `QueryPerformanceCounter` (`call [0xc40298]`), a cache `[0xd678e8]` = 1/QPF (a `0x007fb820` is ezt használja). Az időablak-vizsgálat a `0x007fd8c0` belsejében van (4. pont).
+3. **38.2.22 §3, legkisebb-kereső eltérés:** **LEZÁRVA**. A minimum-tároló a verem E0+0xc helyén van, a dekompiláció helyes.
+4. **38.2.22 §5, húzás-sáv és csúszka:** a „feltételes" **MEGERŐSÍTETT**. A csúszka-gomb képlete (`[this+0x728]`) **LEZÁRVA** (3. pont). A dátum-leképezés **RÉSZBEN**: a csúszka x → rekordsorszám (i*) igazolt; a dátum jelentése NINCS MEG.
+5. **38.2.18 és 38.2.22 (Escape):** az Escape-kilépés `0x007fb820`-ra megerősítve; az út közvetlen, a `0x00801270`-ból (5. pont).
+
+**Bizonyítottsági fok (38.2.23)**
+
+| állítás | bizonyíték | fok |
+|---|---|---|
+| `0x005e6710` = `CThumbUI::vftable` +0x30 | vtábla-bájtok `0x00c9055c`; DATA-él | megerősített |
+| `0x005e6710` ágai és visszatérése | dekompiláció és kapcsoló-ellenőrzés; Esc, Space, nyíl nincs | megerősített |
+| pumpa-lánc a `0x0097fc30`-ig | index, 12 szint, 11 hívó: negatív; a vtábla-hívás nem látszik | NINCS MEG |
+| `left` = +S, `right` = -S, dy = 2,0 | `fld qword [eax+0x30]`, `fchs`, `fld dword [0xcf3a48]` | megerősített |
+| `0x007fd0c0` alap B és a négy dupla szerkezet | dekompiláció és diszasszembly `0x007fd0c0`-`0x007fd11b` | megerősített |
+| `0x009e6010` szemantika | NINCS MEG | nyitott |
+| csúszka: befogás, i*, `[this+0x728]` | diszasszembly `0x007fdd00`-`0x007fde73` | megerősített |
+| csúszka: dátum vagy sorszám | `[this+0x388]` írói NINCS MEG | nyitott |
+| `0x00c29990` ágai | diszasszembly `0x00c29990`, `0x00c299c6` | megerősített (a jelző írója NINCS MEG) |
+| kártya-görbe képlete és konstansai | diszasszembly `0x007fbab0` (`fld1`, 2,0, 0,5, 3,0) | megerősített |
+| görbe-mezők írói | a konstruktor nem írja; a többi NINCS MEG | nyitott |
+| `0x007fd8c0`: i*, 1e6, 0,666 | diszasszembly `0x007fd8c0`-`0x007fd9ed` | megerősített |
+| `0x007fd8c0` visszatérési érték | diszasszembly; jelentése NINCS MEG | feltételes |
+| `0x00802c60` = OneUpUI, `[this+0x2dc]`, 0x268 | vtábla `0x00cbd5c4`; `0x007fae32`-`0x007fae55` | megerősített |
+| `[this+0x2e8]` = `[X+0x8]` | `0x007fa7f0` `mov edi, eax`, `mov edx, [edi+8]` | megerősített |
+| `[this+0x2e8]` osztálya | NINCS MEG | nyitott |
+| `startbutton` sorrendje | `0x007fdb0a`, `0x007fdb3d` | megerősített |
+| `[0xc4055c]` célja | NINCS MEG | nyitott |
+| Escape közvetlen út | `0x00801270` `0x008012a7`-`0x008012b1` | megerősített |
+| kilépési ág lépései | diszasszembly `0x007fb820`-`0x007fb9ea` | megerősített (az ismeretlen hívások NINCS MEG) |
+| várakozás 1,2 s | `mov [esp+0x10], 2` és a `0x004019b0` olvasás | megerősített a kódútra; futásidőben feltételes |
+| `0x007fd770` visszatérése 0 | `ret 4`, `xor eax, eax` a `0x007fd0c0`-ban | megerősített |
+
+**Nyitott kérdések mérlege (38.2.23)**
+
+Nyitott kérdések: 0 nyílt · 14 lezárva · 12 blokkolt · 0 hatókörön kívül · 0 csak nyitva.
+
+- **Lezárva (14):** (L1) `left` és `right` előjele és dy = 2,0; (L2) a nyíl-billentyűk a `0x007fd0c0`-ra; (L3) csúszka: befogás, i* és a gomb képlete; (L4) `0x00c29990` ágai; (L5) kártya-görbe képlete és konstansai; (L6) `0x007fd8c0` min-kereső és az eltérés; (L7) `0x00802c60` = OneUpUI, 0x268 bájt; (L8) `startbutton` sorrendje; (L9) Escape közvetlen út; (L10) kilépési ág lépéssora; (L11) 1,2 s várakozás a kódúton; (L12) `0x007fd770` visszatérése 0; (L13) `0x009a5210` javítása; (L14) pumpa-hívó negatív index-keresése 12 szinten (az index korlátaival).
+- **Blokkolt (12):** (B1) pumpa-hívó és időtúllépés; (B2) léptetési ütem; (B3) `0x009e6010` és `0x0072df60`; (B4) S és O írói; (B5) `[this+0x388]` írói és a dátum jelentése; (B6) `[0xda1428]` írója; (B7) görbe-mezők írói; (B8) `0x007fd8c0` visszatérési értéke és a 0,666 szerepe; (B9) `[X+0x8]` osztálya és X; (B10) `[0xc4055c]` célja; (B11) kilépési ág ismeretlen hívásai; (B12) registry-írás sikertelenségének ága (futásidő).
+
+**Amit KIZÁRTAM**
+
+- A `0x005e6710` nem a pumpa; a pumpa a `0x0097fc30`, és a `0x005e6710` nem hív pumpát.
+- A `left` nem `-S`-t ad: a `left` `+S`, a `right` `-S`.
+- A `0x007fd770` nem ad nem-nulla visszatérést: mindig 0.
+- A `0x009a5210` nem időablak-ellenőrzés: eltelt idő (QPC).
+- Az Escape nem a `0x00802630` listavégi ágán megy; a `0x00801270` közvetlenül hívja a `0x007fb820`-t.
+- A `startbutton` sorrendjében a diavetítés-indítás nem támogatott (lásd 5. pont).
+
+**Következő Ghidra-címek**
+
+- `Ghidra-kör kell: 0x005e6710 hívóhelye - a CThumbUI vtábla +0x30 hívása (call [reg+0x30]) a 0x0097fc30 hívóiban (0x0040e410, 0x005ffc30, 0x006f9cc0, 0x006fe630, 0x009d4d10, 0x004051b0, 0x0059e920, 0x007420f0, 0x007422d0, 0x0094aa00, 0x0094ace0); az Időrend-pumpa és időtúllépése [blokkolt]`
+- `Ghidra-kör kell: 0x009e6010 és a 0x0072df60 vtábla - mit léptet a négy dupla szerkezet (B, B+dx, v, v+dy) [blokkolt]`
+- `Ghidra-kör kell: [this+0x30] és [this+0x20] írói - a kártya-lépték (S) és eltolás (O) forrása [blokkolt]`
+- `Ghidra-kör kell: [this+0x388] és [this+0x38c] írói - a csúszka-tömb: dátum vagy sorszám [blokkolt]`
+- `Ghidra-kör kell: 0x007fbce0, 0x007fc010, 0x007fd8c0 this-hívói és a 0x007fbab0 +0x50..+0x7c mezőinek írói [blokkolt]`
+- `Ghidra-kör kell: 0x008037e0 edi-forrása (X) és [X+0x8] osztálya [blokkolt]`
+- `Ghidra-kör kell: 0x00c4055c - a 0x0097b5e0 thunk célja, a startbutton visszahívás végpontja [blokkolt]`
+- `Ghidra-kör kell: 0x008001c0, 0x009ad280, 0x009a8d80, 0x009a8ca0, 0x00801f50 és a vt+0x24 / vt+0x14 célja - a kilépési ág lépései [blokkolt]`
+- `Ghidra-kör kell: 0x007fd8c0 visszatérési értéke és a 0x00801cb0, 0x00801cd8 hívók [blokkolt]`
+- `Ghidra-kör kell: [0xda1428] írója (az x87 vagy cvttsd2si ág) [blokkolt, csak a csonkolás részleteihez]`
+- `Mérés kell (futásidő, nem Ghidra): a Preferences\SlideshowEffectTime írása sikeres-e a tulajdonos gépén (registry-próba) [blokkolt, az 1,2 s állításhoz]`
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
