@@ -14,6 +14,7 @@ from picasapy.ini import contacts_of, load_document
 from tests.support.varakozas import var_feltetelre
 
 _PERSON_ID = "aaaaaaaaaaaaaaaa"
+_PERSON_NAME = "Teszt Elek"
 _FACE_RECT = "1e00280045006e00"
 _HEIGHT_OFFSETS = (-5, 0, 5)
 
@@ -68,7 +69,7 @@ def _prepare_person(window, controller, qt_app, tmp_path, height_offset):
     ini_path = library / ".picasa.ini"
     ini_path.write_text(
         "[Contacts2]\n"
-        f"{_PERSON_ID}=Anna;anna@example.test;gaia-anna\n"
+        f"{_PERSON_ID}={_PERSON_NAME};anna@example.test;gaia-anna\n"
         "[a.jpg]\n"
         f"faces=rect64({_FACE_RECT}),{_PERSON_ID}\n",
         encoding="utf-8",
@@ -82,19 +83,19 @@ def _prepare_person(window, controller, qt_app, tmp_path, height_offset):
     pane.setProperty("peopleCollapsed", False)
     assert _wait(
         qt_app,
-        lambda: _visible_item(window, "personItem_Anna") is not None,
-    ), "az Anna Emberek-album sora nem jelent meg"
+        lambda: _visible_item(window, f"personItem_{_PERSON_NAME}") is not None,
+    ), "a Teszt Elek Emberek-album sora nem jelent meg"
     return pane, ini_path
 
 
 def _open_person_menu(window, pane, qt_app, item_name):
-    row = _visible_item(window, "personItem_Anna")
+    row = _visible_item(window, f"personItem_{_PERSON_NAME}")
     _click(qt_app, row, Qt.MouseButton.RightButton)
     menu = _find(pane, "peopleAlbumContextMenu")
     assert _wait(
         qt_app, lambda: menu is not None and menu.property("visible") is True
     ), "az Emberek-album helyi menüje nem nyílt meg"
-    assert menu.property("personName") == "Anna"
+    assert menu.property("personName") == _PERSON_NAME
     item = _find(menu, item_name)
     assert item is not None, f"a menütétel hiányzik: {item_name}"
     _click(qt_app, item)
@@ -122,8 +123,8 @@ def test_emberek_album_szerkesztes_a_kattintott_szemelyt_nyitja_meg(
     dialog = loader.property("item")
     name_field = _find(dialog, "peopleManagerNameField")
     assert name_field is not None
-    assert name_field.property("text") == "Anna"
-    assert dialog.property("selectedKey") == "contact:Anna"
+    assert name_field.property("text") == _PERSON_NAME
+    assert dialog.property("selectedKey") == f"contact:{_PERSON_NAME}"
     _click(qt_app, _find(dialog, "peopleManagerCancelButton"))
 
 
@@ -143,18 +144,58 @@ def test_emberek_album_torles_megerositest_ker_es_torli_a_szemelyt(
         lambda: confirmation is not None
         and confirmation.property("visible") is True,
     ), "a személy törléséhez nem jelent meg megerősítés"
+    cancel_button = _find(confirmation, "peopleAlbumDeleteCancelButton")
+    assert cancel_button.property("activeFocus") is True, (
+        "a Cancel nem az alapértelmezett billentyűfókusz"
+    )
+    if height_offset == 0:
+        rendered = window.grabWindow()
+        assert not rendered.isNull(), "a megerősítő ablak nem rajzolódott ki"
+        assert rendered.save(str(tmp_path / "people-album-delete-5391.png"))
     assert any(
-        contact.name == "Anna" for contact in contacts_of(load_document(ini_path))
+        contact.name == _PERSON_NAME for contact in contacts_of(load_document(ini_path))
     ), "a személy a megerősítés előtt törlődött"
 
     decisions = []
     confirmation.accepted.connect(lambda: decisions.append("accepted"))
     confirmation.rejected.connect(lambda: decisions.append("rejected"))
-    _click(qt_app, _find(confirmation, "peopleAlbumDeleteCancelButton"))
+
+    # A valódi Return billentyűnek az eredeti párbeszéd alapértelmezett
+    # Mégse gombját kell működtetnie, nem a törlést.
+    QTest.keyClick(cancel_button.window(), Qt.Key.Key_Return)
     assert _wait(qt_app, lambda: confirmation.property("visible") is False)
     assert decisions == ["rejected"]
     assert any(
-        contact.name == "Anna" for contact in contacts_of(load_document(ini_path))
+        contact.name == _PERSON_NAME for contact in contacts_of(load_document(ini_path))
+    ), "a Return törölte a névjegyet"
+    assert load_document(ini_path).section("a.jpg").get("faces") is not None, (
+        "a Return törölte az arcot"
+    )
+
+    _open_person_menu(window, pane, qt_app, "peopleAlbumMenuDelete")
+    assert _wait(qt_app, lambda: confirmation.property("visible") is True)
+    assert confirmation.property("title") == "Remove People"
+    assert _find(confirmation, "peopleAlbumDeleteMessage").property("text") == (
+        f'Are you sure you want to delete the people album "{_PERSON_NAME}"?'
+    )
+    online_faces = _find(confirmation, "peopleAlbumDeleteOnlineFacesCheckBox")
+    assert online_faces is not None
+    assert online_faces.property("text") == (
+        "Delete tagged faces from synced Picasa Web albums, too"
+    )
+    assert online_faces.property("checked") is False
+    assert _find(confirmation, "peopleAlbumDeleteConfirmButton").property("text") == (
+        "Delete Album"
+    )
+    assert _find(confirmation, "peopleAlbumDeleteCancelButton").property("text") == (
+        "Cancel"
+    )
+
+    _click(qt_app, _find(confirmation, "peopleAlbumDeleteCancelButton"))
+    assert _wait(qt_app, lambda: confirmation.property("visible") is False)
+    assert decisions == ["rejected", "rejected"]
+    assert any(
+        contact.name == _PERSON_NAME for contact in contacts_of(load_document(ini_path))
     ), "a Mégse gomb törölte a személyt"
 
     _open_person_menu(window, pane, qt_app, "peopleAlbumMenuDelete")
@@ -163,8 +204,10 @@ def test_emberek_album_torles_megerositest_ker_es_torli_a_szemelyt(
 
     assert _wait(
         qt_app,
-        lambda: _visible_item(window, "personItem_Anna") is None,
+        lambda: _visible_item(window, f"personItem_{_PERSON_NAME}") is None,
     ), "a megerősített törlés után is megmaradt az Emberek-album"
-    assert not any(
-        contact.name == "Anna" for contact in contacts_of(load_document(ini_path))
-    )
+    assert any(
+        contact.name == _PERSON_NAME for contact in contacts_of(load_document(ini_path))
+    ), "a törlés eltávolította a [Contacts2] névjegyet"
+    deleted_section = load_document(ini_path).section("a.jpg")
+    assert deleted_section is None or deleted_section.get("faces") is None
