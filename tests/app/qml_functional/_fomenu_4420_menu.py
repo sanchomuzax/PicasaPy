@@ -109,6 +109,9 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
         "A Könyvtárnézet csak megnyitott néző mellett aktív; a tiszta minta "
         "könyvtárnézetben indul."
     ),
+    "menuViewTimeline": (
+        "A Timeline funkció ebben a tiszta mintában szándékosan letiltott."
+    ),
     "menuViewAlbumThumbnails": (
         "A könyvtári bélyegkép-kapcsoló fanézetben letiltott; a teszt ezt az "
         "állapotot is meghagyja a menüsorban."

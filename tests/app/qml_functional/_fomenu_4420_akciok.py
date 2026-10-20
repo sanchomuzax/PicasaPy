@@ -238,9 +238,6 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
 
 
 def _zarj_nezot_es_fiokot(ablak, qt_app) -> None:
-    if ablak.property("timelineOpen") is True:
-        QTest.keyClick(ablak, Qt.Key.Key_Escape)
-        _varj(qt_app, lambda: ablak.property("timelineOpen") is False)
     if ablak.property("viewerOpen") is True:
         vissza = ablak.findChild(QObject, "viewerBackButton")
         if (

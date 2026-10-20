@@ -713,13 +713,6 @@ Rectangle {
             event.accepted = true
             return
         }
-        if (event.key === Qt.Key_Home || event.key === Qt.Key_End) {
-            var count = show.photosModel ? show.photosModel.rowCount() : 0
-            if (count > 0)
-                show.currentIndex = event.key === Qt.Key_Home ? 0 : count - 1
-            event.accepted = true
-            return
-        }
         if (event.key === Qt.Key_R
                 && (event.modifiers & Qt.ControlModifier)) {
             show.rotateCurrent(

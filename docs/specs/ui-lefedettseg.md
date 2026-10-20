@@ -1459,6 +1459,11 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 - „Select pictures to tag them.”
   - *szükséges segédszöveg* — Ures kijeloles utmutato szovege a Cimkek panelen; nincs talalhato eredeti megfelelo.
 
+### `PicasaPy/TimelineView.qml` - 1
+
+- „No pictures yet”
+  - *szükséges segédszöveg* - A fájl saját megjegyzése szerint ("Picasa Timeline: nincs vetíthető korszak → informatív üres állapot") a Timeline nézet maga eredeti, de ez a konkrét üres-állapot szöveg a mi saját visszajelzésünk arra a helyzetre, amikor nincs megjeleníthető korszak.
+
 ### `PicasaPy/VideoPlayerView.qml` — 1
 
 - „Unable to play this video.”
