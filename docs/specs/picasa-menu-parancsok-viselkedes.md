@@ -3520,6 +3520,25 @@ Ez az indexben látott négy közvetlen hívófüggvény hét hívási helye; ne
 
 **Nyitott kérdés mérlege (38.2.16).** A `0x9ccc` → mód 1 közvetlen hívási útja lezárt. A qshow futásidejű K-kapui, a kijelölés nélküli viselkedés, a teljes tartalom/sorrend és az animáció továbbra is nyitott; ezeket a 38.2.14-38.2.15 nyitott pontjai részletezik.
 
+#### 38.2.17 Az Időrend bemutató futás közben, Wine virtuális asztalon (#4443, job-217, 2026-10-20)
+
+**Forrás:** picasa-colab-jobs job-217, 12 képernyőkép és `xinfo.txt`. Eredeti Picasa 3.9, alapállapot (C:\PicasaTeszt, 24 kép), a Picasa a Wine virtuális asztalán (1280×1024, `wine_desktop`, #215). Lépések: Ctrl+5, majd Right, Right, Escape.
+
+**A 38.2.2 fekete kockájának oka.** A job-102-ben a qshow ablak a sima X-kijelzőn fekete maradt, és bemenetet sem kapott. A virtuális asztalon ugyanez a parancs kirajzolódik, és a billentyűket is fogadja: a fekete kép a Wine ablakkezelésének következménye volt, nem a bemutató viselkedése.
+
+**Amit a felvétel mutat (megerősített, képkockák):**
+
+| kocka | mit mutat |
+|---|---|
+| 04 (Ctrl+5 után) | teljes képernyős fekete háttér, középen kb. 600×480-as bemutatópanel: szürke háttérgörbe, jobbra fent a mappa neve („PicasaTeszt”) és dátuma („October 2026”), alatta pontozott ív, az ív végén a mappa képeinek egymásra döntött bélyegei; alul vezérlősáv (bal szélen lista-ikon, mellette balra mutató nyíl, középen balra nyíl, lejátszás, jobbra nyíl), legalul dátumcsúszka a két szélén „October 2026” felirattal |
+| 07-08 (Right után) | a panel a következő gyűjteményre vált: „Recently Updated”, „October 2026”, más háttérkép a görbe mögött; a csúszka gombja jobbra lép |
+| 11 (Escape után) | teljesen fekete kocka (a kilépés átmenete) |
+| 12 | visszatér a főablak |
+
+**Következtetés.** A Ctrl+5 kijelölés nélkül is az Időrend bemutatót nyitja; a bemutató gyűjteményenként egy kártyát mutat (név, dátum, bélyegköteg), a Right a következő gyűjteményre lép, az Escape kilép. A panel a teljes képernyőn középre igazított, fix méretű terület, körülötte fekete.
+
+**Nem dőlt el ebből a felvételből:** az átmenet animációja (a kockák 3 másodpercenként készültek), a lejátszás gomb automatikus léptetésének üteme, a lista-ikon funkciója és a csúszka húzásának hatása. Ezekhez a következő felvétel lépései: a lejátszás gomb és a lista-ikon megnyomása, 1 másodperces kockákkal.
+
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
 A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
