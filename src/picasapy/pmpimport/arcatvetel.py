@@ -38,9 +38,13 @@ irányítása: ahhoz a fotó↔album tagság kell a db3-ból, amit az
 
 from __future__ import annotations
 
-import secrets
+from collections.abc import Callable
 
-from picasapy.ini.contacts import ensure_contact, find_contact_id
+from picasapy.ini.contacts import (
+    ensure_contact,
+    find_contact_id,
+    generate_contact_id,
+)
 from picasapy.ini.document import IniDocument
 from picasapy.ini.faces import Face, parse_faces, serialize_faces, with_face
 from picasapy.pmpimport.deferredregion import DeferredFace
@@ -75,7 +79,7 @@ def arcokat_atvesz(
     photo_name: str,
     arcok: tuple[DeferredFace, ...],
     *,
-    azonosito_gyar=lambda: secrets.token_hex(8),
+    azonosito_gyar: Callable[[], str] | None = None,
 ) -> IniDocument:
     """A db3 arcainak átvétele EGY fotóra, az „A" szabály szerint.
 
@@ -83,12 +87,14 @@ def arcokat_atvesz(
     bájtjai változatlan előtagként maradnak meg.
 
     `azonosito_gyar`: az új személyazonosítót adó hívható — a teszt így tud
-    determinisztikus azonosítót adni, élesben `secrets.token_hex(8)` (a
-    `people_controller` ugyanezt használja).
+    determinisztikus azonosítót adni; alapértelmezésben a közös, `%I64x`
+    alakú kontaktazonosító-gyár dolgozik.
     """
     atveendo = atveendo_arcok(arcok)
     if not atveendo:
         return document
+    if azonosito_gyar is None:
+        azonosito_gyar = generate_contact_id
     szakasz = document.section(photo_name)
     nyers_faces = szakasz.get("faces") if szakasz is not None else None
     meglévok = parse_faces(nyers_faces or "")

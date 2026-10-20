@@ -60,6 +60,17 @@ class TestParseContactsXml:
         entries = parse_contacts_xml(MEASURED_CONTACTS_XML)
         assert parse_contacts_xml(serialize_contacts_xml(entries)) == entries
 
+    def test_round_trips_widthless_contact_id(self):
+        from picasapy.ini.contacts_xml import serialize_contacts_xml
+
+        entry = ContactXmlEntry(
+            person_id="3c067b829137b19",
+            name="Teszt Elek",
+            modified_time="2026-10-20T12:00:00+02:00",
+            local_contact="1",
+        )
+        assert parse_contacts_xml(serialize_contacts_xml((entry,))) == (entry,)
+
     def test_parses_entries(self):
         entries = parse_contacts_xml(SAMPLE_XML)
         assert entries == (

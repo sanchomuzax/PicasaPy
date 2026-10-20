@@ -18,7 +18,6 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
-import secrets
 import time
 from pathlib import Path
 
@@ -57,6 +56,7 @@ from picasapy.ini import (
     central_contacts_path,
     ensure_contact,
     find_contact_id,
+    generate_contact_id,
     load_contacts_xml,
     ini_source_path,
     load_document,
@@ -381,9 +381,9 @@ class PeopleMixin:
                     ):
                         continue
                     used_ids = {c.person_id.casefold() for c in entries}
-                    person_id = secrets.token_hex(8)
+                    person_id = generate_contact_id()
                     while person_id.casefold() in used_ids:
-                        person_id = secrets.token_hex(8)
+                        person_id = generate_contact_id()
                     entries.append(
                         ContactXmlEntry(
                             person_id=person_id,
@@ -410,9 +410,9 @@ class PeopleMixin:
                             updated_entries.append(contact)
                     if not matched:
                         used_ids = {c.person_id.casefold() for c in entries}
-                        person_id = secrets.token_hex(8)
+                        person_id = generate_contact_id()
                         while person_id.casefold() in used_ids:
-                            person_id = secrets.token_hex(8)
+                            person_id = generate_contact_id()
                         updated_entries.append(
                             ContactXmlEntry(
                                 person_id=person_id,
@@ -977,7 +977,7 @@ class PeopleMixin:
                 if new_name:
                     target_id = find_contact_id(document, new_name)
                     if target_id is None:
-                        target_id = secrets.token_hex(8)
+                        target_id = generate_contact_id()
                         document = ensure_contact(document, target_id, new_name)
                 for photo_name in names:
                     for rect in self._person_faces(document, photo_name, source_id):

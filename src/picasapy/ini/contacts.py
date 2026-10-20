@@ -16,6 +16,7 @@ A nevek elsődleges forrása egyébként a központi contacts.xml.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import secrets
 
 from .document import IniDocument
 
@@ -25,6 +26,15 @@ _SECTION_NAME = "Contacts2"
 #: Az érték kötelező token-száma (#2526). A kettes és a négyes alakot az
 #: eredeti eldobja — nem javítja, nem tölti fel üressel.
 _TOKEN_SZAM = 3
+_randbits = secrets.randbits
+
+
+def generate_contact_id() -> str:
+    """Nem nulla, véletlen 64 bites kontaktazonosító, `%I64x` alakban."""
+    while True:
+        value = _randbits(64)
+        if value:
+            return format(value, "x")
 
 
 @dataclass(frozen=True)
