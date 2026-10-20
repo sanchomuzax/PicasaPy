@@ -3746,7 +3746,7 @@ a `+0x30/+0x34` mezők; hogyan áll elő a `ordering=1/2` gráf minden élének
 költsége. Célzott következő kör:
 `Ghidra-kör kell: 0x00824090 - a Filmkészítő [obj+0x4e0] lista rekordforrása, valamint a +0x30/+0x34 mezőket előállító upstream írók [blokkoló]`
 `Ghidra-kör kell: 0x00874320 - a nyolcbájtos kimeneti elemek mezői/indexei hogyan kötődnek a fotórekordokhoz, és mi a 0x00877c50 teljes bemeneti szerződése? [blokkoló]`
-**Megválaszolva részben (23. kör, G/11):** a `0x00877c50` rétegenkénti legolcsóbb-út ciklus, a végpont-feltétel `cost[param_3] < 1e8` és `rétegszám ≥ param_4`. Az élköltség és a fotóindex-leképezés nyitott: `Ghidra-kör kell: 0x008781a0 - az élköltség rekordadatai és a költségtömb bemenete [blokkoló]`, `Ghidra-kör kell: 0x00878310 - a visszakövetés és a végső fotóindex-leképezés [blokkoló]`.
+**Megválaszolva részben (23. kör, G/11):** a `0x00877c50` rétegenkénti legolcsóbb-út ciklus, a végpont-feltétel `cost[param_3] < 1e8` és `rétegszám ≥ param_4`. A 24. körben (G/12) a két cím megválaszolódott: a rétegenkénti relaxálás és a visszakövetés szerződése megvan. Az élköltség forrása és a végső fotóindex-leképezés nyitott, lásd G/12.
 
 #### G/2. A megtartott kép kiválasztása `ordering = 0`-n — utasításszintű olvasat (2026-10-12, #4194 5. kör)
 
@@ -4764,7 +4764,7 @@ Natív futás nem készült. A `00874e40`/`00874320`/`00874ac0` dekompilátuma n
 
 1. a `burstmodethresh` csak csoportokat képez, képet nem választ (**megerősített**, G szakasz);
 2. a kiválasztó távolságot minimalizál, nem minőséget (**megerősített**, 5. pont);
-3. `ordering ≠ 0` esetén a jelöltsorozat első és utolsó eleme a gráfút végpontja (**feltételes**, 3. pont);
+3. `ordering != 0` esetén a jelöltsorozat első és utolsó eleme a gráfút végpontja (**feltételes**, 3. pont);
 4. `ordering = 0` esetén a horgony, alapesetben a 0. jelölt, megmarad (**feltételes**, 4. pont).
 
 A csoporton belül **konkrét** kimaradó kép nem nevezhető meg: a választás a getterek és az élek értékeitől függ, a `0x0081c9b0` és a `0x00877c50` dekompilátuma hiányzik (9. pont), a rekordok fotóindexe pedig nincs megmérve.
@@ -4780,7 +4780,7 @@ A csoporton belül **konkrét** kimaradó kép nem nevezhető meg: a választás
 - **Egy szakaszon belül** a `0x00877c50` legkisebb összköltségű utat ad a két határ között. A kimenetbe az út 1. elemétől az utolsóig kerül (1066-1103. sor). A kimenet kezdő eleme a 0. jelölt (982-986. sor).
 - **Kimeneti azonosító:** a kiválasztott rekord `+0x30` dwordje (1553-1554. sor). A `+0x34` dátumkulcs egy virtuális hívásba megy (1556-1559. sor).
 
-**3. Végpontok (`ordering ≠ 0`).** Az `N-1` tárolása (0x0081ba45-0x0081bad0, az allokáció sikeres ágán): `ebp = [esp+0x18] - 1`, és az `[esp+0x18]` a ciklus léptéke, amelyet a dekompilátum 880. és 915. sora `N`-nel növel (utasításszinten a `add [esp+0x14], edx` a 0x0081ba2e-n). Ez egyezik a 949-951. sorral (**megerősített**, A + B). A kezdő `0` elem írása (873. és 982-986. sor) csak az A úton igazolt.
+**3. Végpontok (`ordering != 0`).** Az `N-1` tárolása (0x0081ba45-0x0081bad0, az allokáció sikeres ágán): `ebp = [esp+0x18] - 1`, és az `[esp+0x18]` a ciklus léptéke, amelyet a dekompilátum 880. és 915. sora `N`-nel növel (utasításszinten a `add [esp+0x14], edx` a 0x0081ba2e-n). Ez egyezik a 949-951. sorral (**megerősített**, A + B). A kezdő `0` elem írása (873. és 982-986. sor) csak az A úton igazolt.
 
 Következmény (**feltételes**): a gráfúton a jelöltsorozat első és utolsó eleme megmarad; a köztes képeket a legkisebb összköltségű út dönti el. Két feltétel: (a) a jelöltlista (`param_1[0x13c]`) azonos a bemeneti sorrenddel; ha a `removelowresfaces` szűr, a „végpont" a szűrt lista végpontja. Ezt a lista írója nem igazolja. (b) A `0x00877c50` végpont-kényszere (az út az `N-1` csúcsban végződik) nincs dekompilálva.
 
@@ -4806,9 +4806,9 @@ Tűrés: 1e-6 relatív. A fixture a képlet helyességét igazolja, a jellemzőv
 
 **7. Válasz a kérdés részeire.**
 
-- **„Első kép" általános szabályként: NEM.** `ordering = 0`: horgony (feltételes). `ordering ≠ 0`: végpont (feltételes).
-- **„Utolsó kép":** csak `ordering ≠ 0`-n, és csak feltételesen végpont.
-- **„Legjobb minőség": NEM.** A kiválasztó összköltséget (`ordering ≠ 0`) vagy súlyozott párdistanciát (`ordering = 0`) minimalizál. A legkisebb távolság a középponthoz (vagy az út szomszédjához) legjobban hasonló kép. Minőségről nincs állítás.
+- **„Első kép" általános szabályként: NEM.** `ordering = 0`: horgony (feltételes). `ordering != 0`: végpont (feltételes).
+- **„Utolsó kép":** csak `ordering != 0`-n, és csak feltételesen végpont.
+- **„Legjobb minőség": NEM.** A kiválasztó összköltséget (`ordering != 0`) vagy súlyozott párdistanciát (`ordering = 0`) minimalizál. A legkisebb távolság a középponthoz (vagy az út szomszédjához) legjobban hasonló kép. Minőségről nincs állítás.
 - **„Láncszerűen" vagy „párosan"?** A csoportosítás a **szomszédhoz** mérve dolgozik (az előző BEMENETI elemhez, nem az előző megtartotthoz), és **láncolt**: egyesített csoportot képez (QEMU: `[0,3240,6480]` egy csoport). A kiválasztásban a csoportkizárás `ordering = 0`-n az **előző megtartott** (középponti) képhez mérve szól, de csak a következő lépésre; a csoporttársak később újra választhatók.
 - **Mi esik ki?** A csoport azon tagjai, amelyeket a választott út vagy a spirál nem vesz be. Hogy KONKRÉTAN melyik: **NINCS MEG**.
 
@@ -4824,7 +4824,7 @@ Tűrés: 1e-6 relatív. A fixture a képlet helyességét igazolja, a jellemzőv
 | # | kérdés | állapot | indoklás, Ghidra-kör |
 |---|---|---|---|
 | 1 | `ordering = 0`: melyik rekord a középpont és melyik a jelölt a pontozó hívásban; a 100-as jelöltlimit és a csoportkizárás C-szinten | BLOKKOLT | `Ghidra-kör kell: 0x0081c9b0: a 0x00873170 hívás argumentum-sorrendje (középpont, jelölt?), a 100-as limit és a csoportkizárás [blokkoló]` |
-| 2 | `ordering ≠ 0`: a gráfélek és a szakaszonkénti út | BLOKKOLT | `Részben (23. kör, G/11): a rétegek és a végpont-feltétel megvan; Ghidra-kör kell: 0x008781a0 és 0x00878310 [blokkoló]`; `Ghidra-kör kell: 0x00874e40: az élek halmaza, az élablak (az utolsó paraméter, N/(L-1)) és a csoportkizárás helye [blokkoló]` |
+| 2 | `ordering != 0`: a gráfélek és a szakaszonkénti út | BLOKKOLT | `Részben (24. kör, G/12): a rétegek, a végpont-feltétel, a visszakövetés és az útvektor sorrendje megvan; nyitott az élköltség forrása és a végső fotóindex-leképezés. Ghidra-kör kell: 0x0081b800, 0x00878720 [blokkoló]`; `Ghidra-kör kell: 0x00874e40: az élek halmaza, az élablak (az utolsó paraméter, N/(L-1)) és a csoportkizárás helye [blokkoló]` |
 | 3 | a szakaszonkénti darabszám alsó és felső határa | BLOKKOLT | `Ghidra-kör kell: 0x008773d0 és 0x00877820: az L-1 darabszám korlátozása, ez már U = 1-nél is hat [blokkoló]` |
 | 4 | a Neven-hasonlóság (`sim`) képlete | BLOKKOLT | `Ghidra-kör kell: 0x0048c440: a sim számítása és a visszatérési kódja [blokkoló, ha a SmartMultiPersonTrans be van kapcsolva]` |
 | 5 | a horgony forrása (`[obj+0x738]`) | BLOKKOLT | `Ghidra-kör kell: 0x008223e0 és 0x008226e0: az alapértelmezett horgony beállítása [blokkoló]` |
@@ -4858,7 +4858,7 @@ Nyitott kérdések: 0 nyílt · 7 lezárva · 7 blokkolt · 0 hatókörön kív�
 
 **11. Ami NEM bizonyított (kimondva).** A kimaradó konkrét kép; a getterek képi jelentése (a `d_Neven` sim-je); a horgony forrása UI-ból; a rádió alapállapota; a jelöltlista azonossága a bemeneti sorrenddel; a gráfélek költsége. Ezek nélkül a fotóindex-szintű eredetiség **nem állítható**.
 
-**Frissítés (2026-10-17, G/5):** a 9. pont 1. és 7. tétele `ordering = 0`-ra LEZÁRULT (G/5); a 2., 3., 4., 5. és 6. tétel nyitott maradt, a 3. csak `ordering ≠ 0`-n releváns.
+**Frissítés (2026-10-17, G/5):** a 9. pont 1. és 7. tétele `ordering = 0`-ra LEZÁRULT (G/5); a 2., 3., 4., 5. és 6. tétel nyitott maradt, a 3. csak `ordering != 0`-n releváns.
 
 #### G/5. A 10. kör (2026-10-17): a megtartott kép `ordering = 0`-n, natív mérés és dekompilátum-modell (#4194)
 
@@ -4956,9 +4956,9 @@ F5 = [0.48,0.52,0.49,0.51,0.12,0.09,0.11,0.10]
 
 **A G/5-ben kért Ghidra-függvények:** mind az ötöt dekompilálták; a részleges eredményeket és a megmaradt nyitott kérdéseket a G/6 rögzíti.
 
-A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.) csak `ordering ≠ 0`-n hatnak: a `0x0081b800` ordering-0 ága (`param_3 == 0`) a `0x0081c9b0` hívása után visszatér, és nem éri el ezeket.
+A `0x00877c50` és a `0x008773d0`/`0x00877820` szakasz-darabszámai (9. pont 3.) csak `ordering != 0`-n hatnak: a `0x0081b800` ordering-0 ága (`param_3 == 0`) a `0x0081c9b0` hívása után visszatér, és nem éri el ezeket.
 
-**A G/4 9. pont állapota G/5 után:** 1. LEZÁRVA (`ordering = 0`); 2. NYITVA (`ordering ≠ 0`); 3. csak `ordering ≠ 0`; 4. NYITVA (külső könyvtár, feltételes); 5. NYITVA; 6. NYITVA; 7. LEZÁRVA `ordering = 0`-ra, feltételekkel; 8-14. változatlan.
+**A G/4 9. pont állapota G/5 után:** 1. LEZÁRVA (`ordering = 0`); 2. NYITVA (`ordering != 0`); 3. csak `ordering ≠ 0`; 4. NYITVA (külső könyvtár, feltételes); 5. NYITVA; 6. NYITVA; 7. LEZÁRVA `ordering = 0`-ra, feltételekkel; 8-14. változatlan.
 
 **Fejlesztési teendő (#4182, Codex-kész):**
 
@@ -4988,7 +4988,7 @@ A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok
 
 **Rádió-alapállapot.** A `0x006173c0` három rádiógombot regisztrál, és a callback-adatként átadott lokális egész értékeket nullázza. Ez önmagában nem mondja meg, melyik gomb van bejelölve. A panel beállítás-beolvasója, `0x00616940`, a `Preferences` alól a `showcaptions` és `cropfit` kulcsot olvassa, majd a modell `[+0x2cc]` mezőjét `0`-ra írja (`0x00616a18`). A panelépítő `0x00618050` a `0` értékű mezőnél a `smart_order_radio` bejelölt bájtját `1`-re állítja (`0x0061881a`-tól). A beállítás-visszaolvasó `0x006175c0` ugyanezt a bejelölt rádiót `ordering = 0` értékként menti. A vizsgált új film út alapállapota tehát a „Legjobb átmenetek” rádió; ebben a beolvasóban nincs hozzá Preferences-kulcs. A panelépítő külön speciális útja a `[+0x2cc]` mezőbe `2`-t ír (`0x00618c83`), ezért a megállapítás nem terjed ki erre a speciális állapotra.
 
-**`ordering ≠ 0` ágak.** A `0x00874ac0` a jelzővektorból minden pozícióhoz a legközelebbi előző és következő megjelölt indexet tölti ki. A `0x00875ee0` ezt a segédfüggvényt használja az album/gráf jelöltút építésekor, csoport- és kiválasztási jelzőket vizsgál, és a `0x00873170` gettert hívja. A `0x00878310` az elődmutatókon visszafelé járva út-elemeket fűz egy listába. A dekompilátum több regiszterbemenete és a függvényhívó argumentumainak kapcsolata nem tisztázott, így az ordering 1 és 2 végső kiválasztási szabálya és kimeneti sorrendje **NINCS MEG**. E három eredmény utasításszintű vagy QEMU-ellenőrzése ebben a körben nem készült.
+**`ordering != 0` ágak.** A `0x00874ac0` a jelzővektorból minden pozícióhoz a legközelebbi előző és következő megjelölt indexet tölti ki. A `0x00875ee0` ezt a segédfüggvényt használja az album/gráf jelöltút építésekor, csoport- és kiválasztási jelzőket vizsgál, és a `0x00873170` gettert hívja. A `0x00878310` az elődmutatókon visszafelé járva út-elemeket fűz egy listába. A dekompilátum több regiszterbemenete és a függvényhívó argumentumainak kapcsolata nem tisztázott, így az ordering 1 és 2 végső kiválasztási szabálya és kimeneti sorrendje **NINCS MEG**. E három eredmény utasításszintű vagy QEMU-ellenőrzése ebben a körben nem készült.
 
 **Bizonyítottsági fok.** A teljes HOG-jellemzővektor leírása **nyitott**, mert a hossz, cella- és iránysorrend nem azonosítható, és a natív fixture nem futtatta a kivonót. A belső normálási művelet és az ordering ≠ 0 részfunkciói **feltételesek**, mert ezekre csak a bináris/dekompilátum út áll rendelkezésre. A rádió állítása az általános új film útra **megerősített**: a beállítás-beolvasó `0`-t ad, a panelépítő ezt a smart rádióra fordítja, a beállítás-visszaolvasó pedig ugyanazt `ordering = 0`-ként kódolja. A három lépés eltérő függvényben és két irányban ellenőrizhető.
 
@@ -5016,7 +5016,7 @@ A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok
 | a smart rádió visszaolvasása `ordering = 0` | bináris `0x006175c0`, `0x006177a3`-`0x006177a7` |
 | a speciális panelág `ordering = 2`-t ír | bináris `0x00618c83` |
 | a 3 rádió callback-lokálisai nullázódnak, de ez nem a kijelölési állapot | bináris `0x006173c0`, `0x006173c8`-`0x006173cf`; cáfolat: `0x0061881a` |
-| `ordering ≠ 0` út-kiválasztás végső sorrendje | NINCS MEG |
+| `ordering != 0` út-kiválasztás végső sorrendje | NINCS MEG |
 
 **Fejlesztési teendő (#4182, frissítve).**
 
@@ -5034,7 +5034,7 @@ A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok
 
 **Nyitott.**
 - **Válasz (G/10):** a blokkrács (4 × 7 blokk, 2016 elem), a cellánkénti 18 érték és a blokkonkénti L2-normálás megvan; a cella-irányok a `0x0088c480`-ban vannak, lásd G/10.
-- **Megválaszolva részben (23. kör, G/11):** a `0x00878310(param_2, &local_20)` két argumentuma a kezdőcsomópont indexe és az elődút-vektor címe. Az elődút iránya és a fotóindex-sorrend nyitott: `Ghidra-kör kell: 0x00878310 - a visszakövetés iránya és a végső fotóindexek sorrendje ordering = 1/2 esetén [blokkoló]`.
+- **Megválaszolva részben (23. kör, G/11):** a `0x00878310(param_2, &local_20)` két argumentuma a kezdőcsomópont indexe és az elődút-vektor címe. Az elődút iránya megvan (24. kör, G/12: az útvektor a végponttól a kezdőpontig tart). A végső fotóindex-sorrend nyitott: `Ghidra-kör kell: 0x00878720 - a visszakövetés utáni, paraméter nélkül hívott utófeldolgozás: a végső fotóindexek sorrendje ordering = 1/2 esetén [blokkoló]`.
 - Az ordering 1/2 teljes út natív QEMU-mérése nincs meg; a `0x00878310` és `0x00875ee0` kiválasztási útja csak dekompilátum alapján vizsgált. A `0x00874ac0` önálló helper függvényszintű leírása a G/3f-ben szerepel, az ordering 1/2 útba kapcsolása nincs natívan ellenőrizve.
 - Az általános új film úttól eltérő, `ordering = 2`-t beállító speciális panelág pontos felhasználói feltétele nincs meg.
 
@@ -5333,9 +5333,52 @@ Ebből: a szög [0, 2π) tartományban van (negatív esetén + W), a rekesz-inde
 
 **Lezárás (#4194, 23. kör): (a) a HOG-leíróra.** A megvalósítható rész (a HOG-leíró) megvan. A nyitott mellékkérdés a „Nem része” pont: a kiválasztási szabály (`ordering != 0`) és a bemeneti kép-forrás (`0x00873cb0`, G/9).
 
-Ghidra-kör kell: `0x008781a0 - a rétegenkénti élköltség: melyik rekordadatból (a `0x00877c50` jelölt-vektorából) áll elő, és mit ad vissza [blokkoló]`
-Ghidra-kör kell: `0x00878310 - a visszakövetés: a `param_2` kezdőcsomópont és az `&local_20` útvektor sorrendje, a végső fotóindex-leképezés [blokkoló]`
+A két cím (`0x008781a0`, `0x00878310`) a 24. körben megválaszolva, lásd G/12 alább.
 Ghidra-kör kell: `0x00878820 - a jelölt-vektor rendezése vagy nyesése a rétegek között [nem blokkoló]`
+
+#### G/12. Az élköltség, a visszakövetés és a végpont szerződése (24. kör, 2026-10-20, #4194)
+
+**Kérdés.** A G/11 két nyitott címe: `0x008781a0` (rétegenkénti élköltség) és `0x00878310` (visszakövetés: az útvektor sorrendje és a végső fotóindex-leképezés).
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-24.txt` (C, a két függvény); a hívó `0x00877c50` (`.ghidra/2026-10-20-ghidra-23.txt`, 733-1030. sor); a helyi `Picasa3.exe` diszasszemblyje (`annot_disasm.py 0x00877c50`: a hívóhely a `0x0087813b`-`0x0087814d` szakaszban, a prológus a `0x00877c50`-nél).
+
+**Hívási szerződés (asm, megerősített).** A hívóhelyen: `edx = [esp+0x50]` (kezdőcsomópont), `eax = [esp+0x54]` (végpont), `esi = [esp+0x5c]` (kimeneti útvektor objektuma), `ecx = lea [esp+0x28]` (`&local_20`, a rétegenkénti elődtár); a verembe `push ecx`, majd `push edx`. A prológus négy `push`-t tesz (`ebx`, `ebp`, `esi`, `edi`), ezért a `0x00877c50` argumentumai: gráf `esp+0x4c`, kezdőcsomópont `+0x50`, végpont `+0x54`, minimális rétegszám `+0x58`, kimeneti útvektor `+0x5c`. A C-dekompiláció az 5. argumentumot nem mutatja. A `0x00878310` az útvektort ESI-n kapja; a `&local_20` a rétegenkénti elődök tára, nem az útvektor.
+
+**A gráfobjektum (C, megerősített).** A `+0x0` mező a csomópontok száma `N` (rétegenként ugyanannyi). A `+0xc` csomópontonként 8 bájtos rekordot tart: az élek listájára mutató és az élek száma (`>> 1`). Élrekord 12 bájt: `+0x4` a célcsomópont indexe (int), `+0x8` az élköltség (float). A rétegenkénti költségtömb `N` elemű, kezdőértéke `1e8`; a kezdőcsomópont költsége 0.
+
+**`0x008781a0` (rétegenkénti relaxálás).**
+- Az élköltség itt nem keletkezik: a függvény a rekord `+0x8` float-ját olvassa. HOG-távolság, időkülönbség és súly a törzsben NINCS; ezek a gráfobjektum építőjében dőlnek el (a `0x00877c50` hívója a `0x0081bd62`-ben a `0x0081b800`).
+- Képlet: `új[c] = min(régi[u] + w(u, c))` a `(u, c)` élekre, ahol `régi[u] < 1e8` (`_DAT_00c7da00`, PE-olvasat: 100000000.0). A forrás-indexek növekvő sorrendben futnak.
+- Döntetlen: szigorú `<`, ezért a kisebb forrás-index (és a listában előbb álló él) marad.
+- Kimenet: az új költségtömb a `0x00891110(&local_8)` hívással kerül a hívó költségtömbjébe (a hívás célja a C-ben nincs kiírva); az elődtömbbe `elődtömb[c] = u` kerül.
+
+**`0x00878310` (visszakövetés).**
+- Bemenet: EAX = végpont, 1. argumentum = kezdőcsomópont, 2. argumentum = `&local_20`, ESI = kimeneti útvektor.
+- A ciklus a végponttól indul. Amíg a csomópont-index nem egyezik a kezdőcsomópont indexével, hozzáfűzi a csomópontot az útvektorhoz, majd az elődtárból (a `local_1c` szerinti rétegrekordból, visszafelé) veszi a következőt. A ciklus után a kezdőcsomópont kerül a végére.
+- Sorrend: `[végpont, előd(végpont), …, kezdőcsomópont]`, azaz időrendben fordított (megerősített: a C és a hozzáfűzés sorrendje).
+- Megállási feltétel: csomópont-index, nem rétegindex (`while (in_EAX != param_1)`). Ha a kezdőcsomópont indexe egy köztes rétegben is megjelenik az úton, a visszakövetés ott leáll. Hogy a gráfban ilyen ismétlés előfordul-e, nem vizsgáltam (feltételes).
+- A végén paraméter nélkül hívott `FUN_00878720()` az ESI-ben kapott útvektoron átrendez vagy fotóindexre képez-e, nincs dekompilálva. A végső fotóindex-leképezés innen nyitott.
+
+**Tulajdonosi export (`burstmodethresh = 0`).** A csoportosítás szabálya (G/5, megerősített): `delta < T` esetén a kép a csoportban marad, `delta >= T` esetén új csoport. `T = 0` mellett minden kép új csoport, a kiválasztás nem fut, és a bemeneti (időrendi) sorrend marad. Az export ezzel magyarázható, a kiválasztási lánc ehhez nem kell.
+
+**Bizonyítottsági fok.**
+- Hívási szerződés, ESI-kimenet, útvektor-sorrend: **megerősített** (két út: az asm a hívóhelyen és a prológuson, a C a törzsben).
+- Relaxálási képlet, döntetlen, `1e8`-határ: **megerősített** (C; a konstans PE-olvasata).
+- A `0x00891110` célja: **feltételes** (egy út).
+- Élköltség forrása (HOG, idő, súly): **NINCS MEG**.
+- Végső fotóindex-leképezés: **NINCS MEG** (`0x00878720`).
+
+**Cáfoló kísérletek.**
+1. „A `0x008781a0` számolja a HOG-távolságot": cáfolva. A törzsben nincs gradiens-, hisztogram- vagy időhívás, csak a `+0x8` olvasás.
+2. „A visszakövetés a rétegszámot nézi": cáfolva. A feltétel csomópont-index (`in_EAX != param_1`).
+3. „Az útvektor a kezdőponttól indul": cáfolva. Az első elem a végpont.
+
+**Jegy „Kész, ha” (kiválasztási szabály).** ⛔ Nem teljesül: a szabály egésze nincs meg, az élköltség forrása és a fotóindex-leképezés nyitott. A HOG-leíró (G/11) a 23. körben már lezárult.
+
+**Lezárás (#4194, 24. kör): (c).** Nem zárható, mert az élköltség és a végső leképezés hiányzik. Következő Ghidra-címek:
+
+Ghidra-kör kell: 0x00878720 - a visszakövetés utáni, paraméter nélkül hívott függvény: átrendezi-e az ESI-ben kapott útvektort, vagy fotóindexre képezi-e le; az ordering = 1/2 végső sorrendje [blokkoló]
+Ghidra-kör kell: 0x0081b800 - a `0x00877c50` gráfobjektumának (`+0xc` élrekordtábla) felépítése: ki írja a `+0x4` célindexet és a `+0x8` élköltség float-ot, és honnan jön a HOG-távolság és az időkülönbség [blokkoló]
 
 ### 2.6 A MakeMoviePanel (a „Film készítése” felület) teljes beállítás-leltára
 
@@ -6959,9 +7002,35 @@ A `.ghidra/2026-10-20-ghidra-20.txt` bemenet, nem módosított fájl.
 - **Bizonyítottsági fok.** A hívási alakok és az argumentum forrása: **megerősített** (C, egy út). A receptorok osztálya és a célok: **NINCS MEG**. A `+0xb0` = `0x00714510` azonosítás: **feltételes** (csak a slot-egyezésen alapul).
 - **Cáfoló kísérlet.** (1) Feltételeztem, hogy a `+0xb0` a `0x00714510`-et hívja: nem bizonyított, mert a receptor dinamikus. (2) Feltételeztem, hogy a `+0x5c` hívás a slideshow-setterhez vezet: nem igazolt, mert a célosztály nincs megnevezve.
 - **Lezárás (#5225): (c).** Nem zárható. A módérték forrása a receptorok osztályától függ, ezt a vtábla-írók és a hívó adja meg; ez a következő kör dolga. Következő Ghidra-címek:
-  - **Megválaszolva részben (23. kör):** a `0x008de6b0` nem a `+0xb0` receptor, hanem a Fen-ablak üzenetkezelője. A `0x008de9b0`-t a WM_COMMAND (`0x111`) ága hívja: `FUN_008de9b0(param_2 >> 0x10, param_5)`, tehát a `param_1` az üzenet wParam felső szava (értesítési kód). A `this` (`param_3`) osztálya nincs a törzsből; a `this+0x50` slot vezérlőkeresés: a WM_NOTIFY ágban az argumentum `*param_5` (az NMHDR `hwndFrom` mezője), a 0x112 ágban nincs argumentum. A `0x00714510` kérdése így nem dől el: `Ghidra-kör kell: 0x008de3c0 - a `0x008de6b0` hívója (`0x008de523`): a dialógus-objektum létrehozása, osztálya és a módértéket adó listaelemek [blokkoló]`
+  - **Megválaszolva részben (23. kör):** a `0x008de6b0` nem a `+0xb0` receptor, hanem a Fen-ablak üzenetkezelője. A `0x008de9b0`-t a WM_COMMAND (`0x111`) ága hívja: `FUN_008de9b0(param_2 >> 0x10, param_5)`, tehát a `param_1` az üzenet wParam felső szava (értesítési kód). A `this` (`param_3`) osztálya nincs a törzsből; a `this+0x50` slot vezérlőkeresés: a WM_NOTIFY ágban az argumentum `*param_5` (az NMHDR `hwndFrom` mezője), a 0x112 ágban nincs argumentum. A `0x00714510` kérdése így nem dől el: (24. kör: a `0x008de3c0` nem a receptor, lásd 4.7; a két nyitott cím: `0x008de220`, `0x008de2a0`.)
   - `Ghidra-kör kell: 0x009881d0 - a `FUN_009881d0(&lista, 0x2c)` gyűjtő: mely objektumokat ad vissza, és a 0x2c kulcs jelentése a `0x00425f60` `+0x5c` receptorának azonosításához [blokkoló]`
 - **A mag (seed).** Nyitott: a `srand` ágak (`0x0071d940` = 1, `0x0071e120` = 7) a módértéktől függnek, a mag így sem olvasható ki.
+
+#### 4.7 24. kör (2026-10-20, #5225): a `0x008de3c0` és a receptor eredete
+
+**Kérdés.** A 23. kör nyitott címe: a `0x008de3c0` (a `0x008de6b0` hívója, a `0x008de523` hívási helyen): a dialógus-objektum, annak osztálya, és a módértéket adó listaelem.
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-24.txt` (C, a `0x008de3c0` törzse); `.ghidra/2026-10-20-ghidra-23.txt` (a `0x008de6b0` C-törzse és hívási listái); a bináris-index DATA-hivatkozásai: `008de267` (a `0x008de220` törzsében) és `008de2f0` (a `0x008de2a0` törzsében) a `0x008de3c0` címére mutat.
+
+**Mit csinál a `0x008de3c0`.** Ablak-üzenetkezelő (WndProc). `WM_CREATE` (1) és `WM_NCCREATE` (0x81) csak visszatér (0, illetve 1). `WM_INITDIALOG` (0x110): `SetWindowLongA(hwnd, -0x15, lParam)`, vagyis a GWL_USERDATA-ba a lParam kerül; `this+0x20 = hwnd`; a vezérlőfa lekérdezése virtuálisan (`+0x50`, `+0xc0`, `+0xd4`), majd a `0x28` üzenet küldése egy vezérlőnek. Minden más üzenetnél, ha a GWL_USERDATA nem nulla, `return FUN_008de6b0(LVar7, hwnd, lParam)`.
+
+**Következmény a receptorra.** A `0x008de6b0` első argumentuma `__fastcall`, az ECX-ben érkezik, és a GWL_USERDATA-objektum (a `0x008de3c0` `LVar7`-je). A `0x008de9b0`-t (WM_COMMAND-ág) a `0x008de6b0` hívja, de a `+0xb0` hívás `this`-ének forrása a C-ben nincs kiírva: a `0x008de6b0` `param_3`-at objektumként dereferálja, ami argumentum-leképezési bizonytalanságot jelez. A receptor osztálya tehát a WM_INITDIALOG lParam-jának forrásától függ (feltételes).
+
+**A `0x008de3c0` nem a `+0xb0` receptor.** A törzsben nincs `+0xb0` hívás. A virtuális slotok: `+0x4`, `+0x28`, `+0x50`, `+0xc0`, `+0xd4`, `+0x134`. Közvetlen hívás a `0x00714510`-re nincs (C, megerősített). A címet kódrészlet adja át (DATA-hivatkozás a `0x008de220` és `0x008de2a0` törzsében), nem vtábla-bejegyzés.
+
+**Módérték.** A törzsben nincs `+0x37c` írás, és a `1`, `7` érték nem jelenik meg ebben a függvényben (C).
+
+**Cáfoló kísérletek.**
+1. „A `0x008de3c0` a `+0xb0` receptor”: cáfolva, a `+0xb0` nincs a törzsben.
+2. „A `0x008de3c0` közvetlenül hívja a `0x00714510`-et”: cáfolva, a hívási listában nincs.
+3. „A módértéket ez a törzs adja”: cáfolva, nincs `+0x37c` írás.
+
+**Bizonyítottsági fok.** A `0x008de3c0` ágai és a `this` = GWL_USERDATA: **megerősített** (C, egy út). A receptor osztálya: **NINCS MEG**. A `+0xb0 = 0x00714510` és a módérték (1/7): **NINCS MEG**.
+
+**Lezárás (#5225, 24. kör): (c).** A receptor osztálya a dialógus létrehozójától (a lParam forrásától) függ, ezt a dump nem tartalmazza. Következő Ghidra-címek:
+
+Ghidra-kör kell: 0x008de220 - a `0x008de3c0` címét tároló függvény: létrehozza-e a dialógus-objektumot, és mi kerül lParam-ként (a `this` osztálya) [blokkoló]
+Ghidra-kör kell: 0x008de2a0 - a `0x008de3c0` másik adatreferenciája: ugyanaz-e a létrehozó-minta, mint a `0x008de220`-é [nem blokkoló]
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
