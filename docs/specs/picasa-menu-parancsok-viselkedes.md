@@ -4384,7 +4384,7 @@ A 38.2.24 mérlege a 38.2.24 végén van; a fenti tételek egy részét az ottan
   - t_i = i·S + O, és (x, y, w) = görbe(t_i);
   - eltolás (x·W_r, y·H_r), ahol W_r = R[2] - R[0], H_r = R[3] - R[1], és R = `[OneUp+0x2c8]` (a `0x00801cb0` adja át); az R-hez viszonyított kezdőpont a mátrix-láncból nincs igazolva;
   - lépték = w · Z, Z = `[P+0x28]` (f64);
-  - átlátszóság: a kártya-rekord +0xa0 mezője = `ROUND`((1 - f(z))·256), z = max(0, (1/w - 1)/9); f64 `0xcf3ef8` = 9,0, f64 `0xcf39d8` = 256,0; f = `0x005568e0` (NINCS MEG, B4);
+  - átlátszóság: a kártya-rekord +0xa0 mezője = `ROUND`((1 - f(z))·256), z = max(0, (1/w - 1)/9); f64 `0xcf3ef8` = 9,0, f64 `0xcf39d8` = 256,0; f = `0x005568e0` (**LEZÁRVA, 38.2.25 M1:** `pow(z, 1,5)`);
   - látható lista: w > 0,1 (f64 `0xc7dd30` = 0,1); az indexek a `[P+0x80]` tömbben, darabszám `[P+0x84]>>1`; a rendezést a `0x00604480` végzi (NINCS MEG, B10).
 - **Az elrendezés index-lineáris (megerősített).** A kártyák egyenlő t-lépésre állnak egymástól, i szerint. A dátum csak az `A` tömbön keresztül léphetne be (lásd alább).
 - **`0x007fbce0` (166 bájt, megerősített).** t_i = i/10000 - 1 (f64 `0xcf42a8` = 10000,0), i = 0..19999 (`cmp esi, 0x4e20`), vagyis t ∈ [-1, 1) 0,0001-es lépéssel. Minden t_i-re hívja a `0x007fbab0`-t, és a kimeneti x-et veti össze 0,666-tal (f64 `0xcf4860`). A legkisebb |x - 0,666| adja t*-ot (az első i, szigorú `<` összehasonlítással). Visszatérés: t* (f32). Hívója a `0x007fbd90` (`0x007fbe74`); hogy mit kezd t*-gal, NINCS MEG (B12).
@@ -4401,7 +4401,7 @@ A 38.2.24 mérlege a 38.2.24 végén van; a fenti tételek egy részét az ottan
 - **`0x007fd8c0` (304 bájt, megerősített).** Kimenet: `[OneUp+0x510]`. AL = 1, ha a kiértékelés nyugalmat lát (38.2.23 szerint, feltételes).
 - **`0x00801f50` (261 bájt, a hívások megerősítve).** Ha `[this+0x50]` nem nulla, `QPC`; `vt+0x40` ellenőrzés; ha `[this+0x3ba] != 0`: `GetClientRect` a `vt+0x24()` objektum `+0x6c` HWND-jén, `0x009b49c0(&rect)` (elrendezés), `vt+0x24(-1,-1,-1,-1)`, `0x009aa670`, `0x00800950(&rect)`. Különben `0x00aa6fb0` és `0x00aa6b70`. Hívói: `0x00802110` (a körönkénti pumpa) és `0x007fb981` (a kilépés 1,2 s-os várakozása). Vagyis képernyő-frissítés; a részletek NINCS MEG (B10).
 - **Automatikus léptetés: `0x00802630` (500 bájt, megerősített lépések).** (a) Zárolás: `vt+0x18`, ha `[this+0xc] == 0`, különben `EnterCriticalSection(this+0x28)`. (b) Ismételt belépés: `GetCurrentThreadId` (import `0xc40284`) összevetése a `[this+0x20]`-szal. Ha ugyanaz a szál, `[this+0x24]` nő, és nincs új zárolás. Különben `[this+0x20]` = a szál, `[this+0x24]` = 0. (c) `[this+0x3f4]` += 1; a lista végén `[this+0x3fd]` dönt a körforgásról (0 esetén a `0x802765` ág). (d) Feloldás (`vt+0x1c`, illetve `LeaveCriticalSection(this+0x28)`), de csak ha a számláló 0. (e) Hívja a `0x00802230`-at (NINCS MEG, B5). (f) Ismétel, amíg a `0x00802230` nem nullát ad, és `[this+0x3f0] >> 1` elem van.
-- **Az időzítő (megerősített tény, nyitott kérdés).** A `[0x520]` kezdőidőt a `0x007fb820` írja (38.2.23 §6), a `0x00802630` és a `0x00802060` nem. Ha a léptetés után nincs újraindítás, az `elapsed > pref` feltétel minden képkockán igaz lenne. Hogy ez hol áll le, NINCS MEG (B5).
+- **Az időzítő (megerősített tény, nyitott kérdés).** ~~A `[0x520]` kezdőidőt a `0x007fb820` írja (38.2.23 §6), a `0x00802630` és a `0x00802060` nem.~~ **JAVÍTVA (38.2.25, 1. javítás):** a `0x00802060` is ír rá (`0x00802108`, sikeres léptetés után, `[0x518] = 0`-val); a `0x00802630` nem. Az összes író: `0x007faa2b`, `0x007fb8db`, `0x00801f30`, `0x00802108`, `0x008025cf`, `0x00802ad4`, `0x00802b33`, `0x00803150`. Ha a léptetés után nincs újraindítás, az `elapsed > pref` feltétel minden képkockán igaz lenne. Hogy ez hol áll le, NINCS MEG (B5).
 
 **4. `0x0097b5e0` és a `startbutton` visszahívása**
 
@@ -4452,18 +4452,18 @@ Lezárva (LEZÁRVA):
 - (L14) Kattintás `0x007fd770`: dy = 4,0.
 
 Blokkolt (BLOKKOLT, Ghidra-kör vagy mérés kell):
-- (B1) S = `[P+0x30]` írói.
-- (B2) P+0x50..0x7c írói.
-- (B3) `A = [OneUp+0x388]` írói, és hogy dátum-e vagy index.
-- (B4) `0x005568e0`: az átlátszóság görbéje.
-- (B5) `0x00802230` (a léptetés hatása) és az időzítő újraindítási helye (`[0x520]`).
+- (B1) S = `[P+0x30]` írói. **RÉSZBEN LEZÁRVA (38.2.25, M7):** a konstruktor (`0x007fb9f0`) 0,05 állandót ír; a többi író osztálya NINCS MEG.
+- (B2) P+0x50..0x7c írói. **RÉSZBEN LEZÁRVA (38.2.25, M8):** a konstruktor nullákat ír, a `0x007fbd90` a `runtime\bezier.txt` fájlból tölti; az osztályonkénti írók NINCS MEG.
+- (B3) `A = [OneUp+0x388]` írói, és hogy dátum-e vagy index. **RÉSZBEN (38.2.25, R3):** az Időrend-tartományban nincs író; a tartalom NINCS MEG.
+- ~~(B4) `0x005568e0`: az átlátszóság görbéje.~~ **LEZÁRVA (38.2.25, M1):** `pow(z, 1,5)`.
+- (B5) `0x00802230` (a léptetés hatása) és az időzítő újraindítási helye (`[0x520]`). **RÉSZBEN LEZÁRVA (38.2.25, M6):** az újraindítás a `0x00802108`-ban van.
 - (B6) `[0x3b8]`, `[0x3bb]`, `[0x3c1]`, `[0x3fd]`, `[0x518]` jelzők jelentése és írói.
 - (B7) X = `[OneUp+0x2e8]` osztálya és `vt(X)+0x18` célja (`startbutton`).
-- (B8) E = `0x00c29c6c` azonosítása (exp?).
-- (B9) `0x009e5b20` nem nulla ága: a `0x009e5e70` ilyenkor a visszatérési egész értéket adja pozícióként (`fild`); ennek jelentése NINCS MEG.
-- (B10) `0x008018a0` nézetfrissítése, `0x00604480` rendezése és a `0x00801f50` rajzolási lépései.
+- ~~(B8) E = `0x00c29c6c` azonosítása (exp?).~~ **LEZÁRVA (38.2.25, M2):** `exp`.
+- ~~(B9) `0x009e5b20` nem nulla ága: a `0x009e5e70` ilyenkor a visszatérési egész értéket adja pozícióként (`fild`); ennek jelentése NINCS MEG.~~ **LEZÁRVA (38.2.25, M4):** a nem nulla érték a 4 (lefoglalási hiba); a `0x009e5e70` ezt 4,0 pozícióként adja vissza.
+- (B10) `0x008018a0` nézetfrissítése, `0x00604480` rendezése és a `0x00801f50` rajzolási lépései. **RÉSZBEN (38.2.25, M5):** a `0x00604480` kulcs szerint (w, növekvő) rendez.
 - (B11) v = P+0x18 többi írója (húzás vagy sodródás kezelője).
-- (B12) `0x007fbd90`: mit kezd a t*-gal.
+- ~~(B12) `0x007fbd90`: mit kezd a t*-gal.~~ **LEZÁRVA (38.2.25, M3):** a `P+0x8` és a `P+0x20` kapja.
 - (B13) Mérés kell: a 2,0 s-os léptetés és a 0,02 s-os eltolás valós időzítése az eredeti Picasán (Colab-felmérő, nem Ghidra).
 
 **Nyitott kérdések: 0 nyílt · 14 lezárva · 13 blokkolt · 0 hatókörön kívül · 0 csak nyitva.**
@@ -4493,6 +4493,108 @@ Blokkolt (BLOKKOLT, Ghidra-kör vagy mérés kell):
 - `Ghidra-kör kell: P+0x18 (v) további írói (húzás vagy sodródás kezelője) [blokkolt]`
 - `Ghidra-kör kell: 0x008018a0 nézetfrissítése (0x004133e0, 0x004b0190, 0x0097caf0), 0x00604480 rendezés, 0x00801f50 rajzolási lépései [blokkolt]`
 - `Mérés kell (futásidő, nem Ghidra): a 2,0 s-os léptetés és a 0,02 s-os eltolás valós időzítése az eredeti Picasán (Colab-felmérő) [blokkolt]`
+
+#### 38.2.25 Az Időrend bináris feltárása, 8. kör: átlátszóság, exp, t*, a visszaadott 4, a fókusz-csere, a mezőírók (#5401, 2026-10-21)
+
+**Kérdés és hatókör.** Négy kérdés a `2026-10-21-idorend-8.txt` hat címéről, plusz a mezőírók teljes `.text`-pásztázása. (1) `0x005568e0` és `0x00c29c6c`: a kártyák átlátszóságának görbéje, és hogy az `exp`-e a CRT-ugró célja. (2) `0x007fbd90`: a t* felhasználása, és a `0x009e5b20` nem nulla ága. (3) `0x008018a0` és `0x00604480`: a fókuszált kártya cseréje, és a kártyák rendezése. (4) A `P+0x30` (S), a `P+0x50..0x7c` (vezérlőpontok) és az `A` tömb (`[OneUp+0x388]`, `[OneUp+0x38c]`) írói. Terméki kódot nem írtunk.
+
+**Bemenet és módszer.** Diszasszembly a `pe_dis.cdis` (capstone) segítségével, konstansok az `f32` és `f64` olvasóval, függvényméretek és hívóélek az index `functions` és `xrefs` tábláiból. A mezőírók pásztázása darabolt (`paszta.utasitasok`), memória-kapuval fut az egész `.text`-en, 56 másodperc alatt. Csak a `[reg+disp]` memória-operandusokat nézi, a verem (`esp`) elérését kihagyja. Ghidra-futás nem volt. Az ideiglenes fájlok a `.bt/` alatt voltak, a kör végén törölve.
+
+**Javítások a korábbi szakaszokban (a 38.2.24-ben is jelölve).**
+1. **Téves volt (38.2.24 §3):** a `0x00802060` nem ír `[0x520]`-at. Pedig ír: a `0x00802108` (`fstp qword [esi+0x520]`) a `0x00802060` ágában van. Ha a léptetés (`0x00802630`) nullát ad vissza, a függvény a `0x008020f7`-`0x00802108` között új időpontot olvas, és azt `[0x520]`-ba írja, `[0x518] = 0` mellett. Az időzítő újraindítása tehát megvan (B5 része).
+2. Lezárás, nem javítás: a 38.2.24 nyitott E-jelölése (`0x0040eac0`, `0x00c29c6c`) és az `f(z)` (`0x005568e0`) lezárult (1. kérdés).
+
+**1. Átlátszóság és exp (`0x005568e0`, `0x00c29c6c`)**
+
+- **`0x005568e0` (32 bájt, megerősített): kétargumentumos `pow` burkoló.** Két verem-argumentumot tölt az `x87` verembe (`fld dword [ebp+8]`, majd `fld dword [ebp+0xc]`), és a `0x00c0b410`-et hívja. A `0x00c0b410` (84 bájt) a `0x00c0b46d` magot hívja (78 bájt). A mag `fyl2x`-szel számol (y·log2 x), és a második (y) operandus előjelét és végtelen-ágát vizsgálja. Ez a CRT `pow` szokásos alakja.
+- **A hívó: `z` és `1,5`.** A `0x007fc010` (hívás a `0x007fc40f`-nél) az első argumentumnak `z`-t, a másodiknak `1,5`-öt ad. A `z = max(0; (1/w - 1)/9)` a `0x007fc3c8`-`0x007fc3f1` között számolódik: `fdiv qword [0xcf3ef8]` (9,0), az `fldz`/`fcom` ág a negatív értéket nullára vágja. A kitevő `fld dword [0xcf3ec4]` = 1,5 (f32). Tehát **f(z) = z^1,5**.
+- **Alfa (megerősített).** `0x007fc41f`-`0x007fc439`: `alfa = fistp(256 · (1 - f(z)))` (`fmul qword [0xcf39d8]` = 256,0), az eredmény a kártya-rekord `+0xa0` mezőjébe kerül (`mov [esi+0xa0], eax`). Ha w ≥ 1, akkor z = 0 és alfa = 256 (teljesen látható). Ha w = 0,1, akkor z = 1 és alfa = 0. A látható küszöb (`fcomp qword [0xc7dd30]` = 0,1, `0x007fc119`) egybeesik az alfa-nulla határral.
+- **A w forrása (megerősített).** A görbe harmadik kimenete (`0x007fc10e`-`0x007fc111`: `[esp+0x30]`). Ugyanez a w adja a lépték-szorzót is (`lépték = w · Z`).
+- **`0x00c29c6c` = `exp` (megerősített a konstansokból).**
+  - `0x0040eac0` (29 bájt): f32 burkoló (`fld dword [ebp+8]`, `call 0x00c29c6c`, az eredmény visszatér).
+  - `0x00c29c6c` (69 bájt): ha `[0xda1424] != 0`, és az `MXCSR` és az `x87` vezérlőszó kivétel-maszkja teljes, a gyors ág a `0x00c2a190` (24 bájt) → `0x00c2a1ae` (639 bájt, `SSE2` mag). Különben a `__cintrindisp1` (`0x00c2a48e`, 61 bájt) ág, amely a `0x00c2a51a`-t hívja (327 bájt, állapot- és hibaellenőrzés). A `0x00c2a48e` nem tartalmaz számítást.
+  - A mag konstansai: `0xcf5a40` = 1,5·2^52 (kerekítő-tolóérték); `0xcf5a60` = 92,33248261689366 (= 64/ln 2); `0xcf5a70` = 0,010830424696223417 (= ln 2/64, felső rész); `0xcf5a80` = 2,572804622327669e-14 (ln 2/64, alsó rész); `0xcf5a90`, `0xcf5a98`, `0xcf5aa0`, `0xcf5aa8`: 0,008332168, 0,166666667, 0,041666721 és 0,4999999999995663, vagyis a Taylor-sor együtthatói 1/120, 1/6, 1/24 és 1/2 közelében.
+  - Ezek `exp(x)` = 2^(k/64)·e^r redukcióra utalnak. A `0x00c29c6c` ezért `exp`.
+
+**2. t*, a vezérlőpontok forrása, és a nem nulla visszatérés**
+
+- **`0x007fbd90` (330 bájt, megerősített).** Hívója a `0x007fb9f0` konstruktor (`0x007fbaa2`). Megnyitja a `runtime\bezier.txt` fájlt (`0x0099d0c0`, a `ytIO.cpp` fájlkezelője; a sztring a függvény sztring-hivatkozása). Ha a megnyitás sikerül, 4-szer olvas `"%f %f %f\n"` alakban (`fscanf`): X_k = `P+0x50+12k`, Y_k = `P+0x54+12k`, W_k = `P+0x58+12k`, k = 0..3. Ezután `t* = 0x007fbce0()`, és `P+0x8 = t*` (f32), `P+0x20 = t*` (f64). Ha a megnyitás nem sikerül, az olvasás és a t*-beállítás kimarad; a vezérlőpontok a konstruktor nulláin maradnak.
+- **t* definíciója (megerősített, `0x007fbce0`, 166 bájt).** `t_i = i/10000 - 1` (i = 0..19999, `cmp esi, 0x4e20`; az 1,0 a `0xc7e328`-ban van). Minden t_i-re hívja a `0x007fbab0` görbét, és `|x(t_i) - 0,666|` (`0xcf4860`) minimumát keresi. A kezdő legjobb távolság 1 000 000 (`0xcf3dc0`). A szigorú `<` miatt az első minimum nyer. Visszatérés: t* (f32).
+- **A t* felhasználása (megerősített).** t* az a görbe-paraméter, ahol a kártya x-koordinátája a legközelebb van 0,666-hoz. `P+0x20` (O, a kártya-eltolás) kezdőértéke t*. `P+0x8` a felső korlát: `0x007fc071`, `O ← [P+8]`; az alsó korlát `0x007fc07e`: `O ← [P+8] - (n-1)·S`. Ez a 38.2.24 képlete.
+- **A `0x009e5b20` nem nulla ága (megerősített, 753 bájt).** A függvény a rekord-listát tömöríti. Ha nincs mit tömöríteni (`t < rekord[0].end`, vagy nincs lejárt rekord), 0-val tér vissza (`0x009e5b52`, `0x009e5df1`). Ha van lejárt rekord, új tömbbe másolja azokat, ahol `t < end`, és mindig az utolsót; a sikeres másolás is 0-val tér vissza. A **nem nulla** érték csak a 4, a `mov eax, 4` (`0x009e5d57`, `0x009e5d70`), vagyis a lefoglalás-hiba ága.
+  - **A hívó `0x009e5e70` (285 bájt)** (hívás a `0x009e5ea0`-nál) a nem nulla értéket `fild dword [esp+0xc]`-vel veszi át (`0x009e5ead`), és **4,0-t ad vissza pozícióként** (`ret 8`, `0x009e5eb6`). A pozíció-számítás ilyenkor nem fut le. Ez a bináris viselkedése; hogy szándékos-e, NINCS MEG.
+
+**3. A fókuszált kártya cseréje (`0x008018a0`, `0x00604480`)**
+
+- **`0x008018a0` (1029 bájt, megerősített).** Ha `[OneUp+0x50c]` már egyezik az EAX-ban kapott értékkel, visszatér. Különben:
+  1. `[OneUp+0x50c] = EAX` (`0x008018b8`): a kijelölt kártya indexe. A hívók: `0x00801ce5` (a `0x00801cb0`-ból; EAX = `[OneUp+0x510]`, a `0x007fd8c0` kimenete), `0x007fe33e`, `0x00803953`.
+  2. `0x004133e0` (→ `0x0097adb0`, 86 bájt), majd `0x004b0190(új index)` (499 bájt; zárolás, két vtábla-hívás, `call eax` és `call edx`; a célok NINCS MEG).
+  3. A régi `[OneUp+0x3ec]` lista felszabadítása (`0x0097caf0`), majd új lista építése a forrás-listából (`local_64`), a `local_5c` jelzőivel szűrve. Az eredmény a `[OneUp+0x3ec]` mutató és a `[OneUp+0x3f0] >> 1` darab (`0x008018fa`-`0x00801bc4`).
+  4. `[OneUp+0x51a] = 1` (`0x00801c19`): a frissítés-jelző. Olvasója a `0x007fb560` (a `0x007fb540` függvényben).
+  5. `0x008014d0` (967 bájt): négyszer `_rand`-ot hív, a `[OneUp+0x3ec]` listát olvassa (`0x00801570`), és a `0x00803c10`, `0x007fa5b0`, `0x009a8bc0` függvényeket hívja.
+  6. `0x00413490` (139 bájt): `CloseHandle` és `DeleteCriticalSection` hívás (felszabadító ág).
+- **Mit vált a kártyacsere (kép, gyűjtemény, dátumfelirat).** NINCS MEG. A bináris állapot: az index (`[OneUp+0x50c]`) és a lista (`[OneUp+0x3ec]`) átíródik, a frissítés-jelző beáll, és a `0x008014d0` lefut. Az index olvasói: `0x008018a0` (összehasonlítás) és `0x00801cf0` (`0x00801d8e`: kimeneti mutatón adja vissza; hívója NINCS MEG). Hogy a három látható rész közül melyiket frissíti, a `0x008014d0` és a `0x004b0190` célja dönti el.
+- **`0x00604480` (464 bájt, megerősített): helyben, stabil, alulról felfelé összefésülő rendezés.** A `0x00604660` (135 bájt) egy menetnyi összefésülést végzi. A rendezett tömb a `[P+0x80]` (darab: `[P+0x84] >> 1`), a kulcs a `0x007fc010` helyi f32 tömbje (`[esp+0x20]`, a w-értékek, `0x007fc253`). Növekvő sorrend: a kisebb kulcs kerül elé, az egyenlők megtartják a sorrendjüket (`key[a] <= key[b]`). Visszatérés: 0, lefoglalási hibánál 4. A hívó `0x007fc48a` a visszatérést nem nézi; a kulcs-tömböt utána szabadítja fel (`0x007fc4a0`-`0x007fc4a9`).
+  - A 11 hívó közül az Időrend-tartományban csak a `0x007fc48a` van.
+  - A rajzoló ciklus iránya (`0x00801f50`) nincs olvasva: a rajzolási sorrend NINCS MEG.
+
+**4. Mezőírók: teljes `.text`-pásztázás**
+
+A pásztázás a `[reg+disp]` alakokat látja. Az Időrend-tartomány `0x007f0000`-`0x0080ffff`. A mutatón át írt mezők (`fscanf` argumentuma, `rep movsd`, `memcpy`) nem látszanak.
+
+| mező | írók a tartományban | megállapítás |
+|---|---|---|
+| S = `P+0x30` (f64) | `0x007fba9a` (`0x007fb9f0`, konstruktor: `fstp qword [esi+0x30]`), továbbá `0x00809a26` (`0x00809a10`), `0x00809cb3` (`0x00809c50`) és `0x00809037` (`0x00808fc0`, `[reg+0x328]`) | a konstruktor értéke `fld qword [0xcf4e30]` = 0,04999999888241291 (a 0,05 f32-es kerekítése). S tehát állandó, nem számolt. A három másik író osztálya NINCS MEG. |
+| vezérlőpontok `P+0x50..0x7c` | konstruktor `0x007fb9f0` (`0x007fba06`-`0x007fba28`): nullák (`fldz`). Betöltés: `0x007fbd90` (`fscanf`, mutatón át). Más osztályok ugyanezeket a displacementeket írják (például `0x007fa3d0`, `0x007f7250`, `0x0080f380`). | forrás: a `runtime\bezier.txt` (4 sor, 3 szám). Az osztályonkénti írók NINCS MEG. |
+| `A` = `[OneUp+0x388]`, `[OneUp+0x38c]` | az Időrend-tartományban **nincs író**. Olvasók: `0x007fdd00` (`0x007fdd7b`-`0x007fdda3`) és `0x007ffc90` (`0x007ffd6d`-`0x007ffe57`). A tartományon kívül mintegy 60 író, köztük `0x00818eb0` (`0x00818ed1`-`0x00818f08`). | a 0x388 mutató és a 0x38c darab (×2 jelzővel) egy tömböt ír le. A `0x00818eb0` vtáblája `0xcbdde4`, a `OneUpUI` vtáblája `0xcbd5c4`: más osztály. A tartalom dátum vagy index: **NINCS MEG**. Hívója: `0x006214e0`, amely maga is ír `[ebp+0x388]`-at (`0x00621b03`, `0x00621b31`, `0x00621ba9`). |
+
+**Nyitott kérdések mérlege (38.2.25)**
+
+Lezárva:
+- (M1) `0x005568e0` = `pow` (z^1,5) (B4).
+- (M2) `0x0040eac0` = `exp`; a `0x00c29c6c` `exp`-ugró (B8).
+- (M3) t* definíciója és felhasználása: `P+0x8`, `P+0x20` (B12).
+- (M4) `0x009e5b20` nem nulla ága: 4, és a `0x009e5e70` 4,0-t ad (B9).
+- (M5) A `0x00604480` rendezés kulcsa w, növekvő, helyben (B10 része).
+- (M6) `[0x520]` írói, és az újraindítás helye: `0x00802108` (B5 része).
+- (M7) S = `0x007fb9f0` konstansa: 0,05 (B1 része).
+- (M8) A vezérlőpontok forrása: a `runtime\bezier.txt` fájl (B2 része).
+
+Részben:
+- (R1) B1: S három másik írójának (`0x00809a26`, `0x00809cb3`, `0x00809037`) osztálya.
+- (R2) B2: a `P+0x50..0x7c` írók osztályai.
+- (R3) B3: az A-író (`0x00818eb0`) és a forrás (`0x006214e0`) ismert; a tartalom nincs.
+
+Blokkolt:
+- (B3) Az A tartalma: dátum vagy index.
+- (B6) `[0x3b8]`, `[0x3bb]`, `[0x3c1]`, `[0x3fd]`, `[0x518]` jelentése. Írók a pásztázás szerint: `[0x3c1]` és `[0x3fd]` csak a `0x007fa7f0` konstruktorban, `[0x3b8]` a `0x007fa7f0`, `0x007fb820`, `0x007fda00`, `0x007fde80` és `0x00803110` függvényekben.
+- (B7) X osztálya és `vt(X)+0x18` célja (`startbutton`).
+- (B10) `0x008014d0`, `0x004b0190` és a `0x00801f50` rajzolási lépései.
+- (B11) v = P+0x18 többi írója. Ebben a körben nincs vizsgálva.
+- (B13) Mérés kell (futásidő).
+- (N1) A fókusz-csere fogyasztója: kép, gyűjtemény vagy dátumfelirat. NINCS MEG.
+
+**Nyitott kérdések: 0 nyílt · 8 lezárva · 3 részben · 7 blokkolt · 0 hatókörön kívül · 0 csak nyitva.**
+
+**Amit KIZÁRTAM**
+
+- A `0x00c29c6c` nem `log` és nem `pow`: a konstansok (64/ln 2, ln 2/64, a polinom) `exp`-re utalnak.
+- A `0x005568e0` nem `exp(z)`: a második argumentum a kitevő (1,5).
+- A `0x009e5b20` nem nulla ága nem számít pozíciót: a visszatérési értéke a lefoglalási hibakód (4).
+- Az S (`P+0x30`) nem a `0x007fc010`-ban íródik, és nem számolt érték: a konstruktor állandója.
+- A `[OneUp+0x388]` nem íródik az Időrend-tartományban. A mutatón át írt eseteket nem zártam ki.
+
+**Következő Ghidra-címek**
+
+- `Ghidra-kör kell: 0x008014d0 - mit rajzol vagy frissít a [OneUp+0x3ec] listából (a fókusz-csere kimenete: kép, gyűjtemény vagy dátumfelirat) [blokkoló]`
+- `Ghidra-kör kell: 0x004b0190 - a két vtábla-hívás (call eax, call edx) célja, és a forrás-lista (local_64, local_5c) eredete [blokkoló]`
+- `Ghidra-kör kell: 0x006214e0 - a 0x00818eb0-nek átadott (mutató, darab) pár forrása, vagyis mi az [OneUp+0x388]/[0x38c] tartalma (dátum vagy index) [blokkoló]`
+- `Ghidra-kör kell: 0x00818eb0 (vtábla 0xcbdde4) - melyik osztály, és azonos-e az OneUp objektummal [blokkoló]`
+- `Ghidra-kör kell: 0x00808fc0, 0x00809a10, 0x00809c50 - melyik osztály írja a P+0x30 és a P+0x50..0x6d mezőit [blokkoló]`
+- `Ghidra-kör kell: 0x007fb9f0 hívója (0x007fa7f0) - mi állítja be az esi-t, vagyis melyik objektum a P [nem blokkolja a fő utat]`
+- `Ghidra-kör kell: 0x007f9a40 és 0x00802e20 - a P+0x58..0x80 írásainak forrás- és cél-objektuma [nem blokkolja a fő utat]`
+- `Ghidra-kör kell: 0x00802630 visszatérési értékének jelentése, és az időzítő-újraindítás (0x00802108) feltétele [nem blokkolja a fő utat]`
+- `Ghidra-kör kell: 0x0099d0c0 és 0x00980ec0 - a runtime\bezier.txt útvonal alap-könyvtára [nem blokkolja a fő utat]`
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
