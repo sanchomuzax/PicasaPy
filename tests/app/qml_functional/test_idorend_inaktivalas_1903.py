@@ -14,13 +14,11 @@ _MAIN = (_QML.parent / "Main.qml").read_text(encoding="utf-8")
 
 
 class TestAktivBelepesiPontok:
-    def test_a_toolbar_gomb_es_az_aktiv_allapot_megvan(self):
-        blokk = blokk_horgonyra(
-            _TOOLBAR, 'objectName: "toolbarTimelineButton"'
-        )
-        assert 'text: qsTr("Timeline")' in blokk
-        assert "checked: toolbar.timelineActive" in blokk
-        assert "onClicked: toolbar.timelineRequested()" in blokk
+    def test_a_fejlecben_nincs_idorend_gomb(self):
+        """Az eredeti fejlécében nincs Időrend-gomb (#1903, bináris
+        `0x007fb210`): a vezérlők a teljes képernyős rátéten ülnek."""
+        assert 'objectName: "toolbarTimelineButton"' not in _TOOLBAR
+        assert "timelineRequested" not in _TOOLBAR
 
     def test_a_menu_es_a_gazdaablak_ugyanazt_a_modot_nyitja(self):
         menu = blokk_horgonyra(_MENU, 'objectName: "menuViewTimeline"')
@@ -35,11 +33,8 @@ class TestAktivBelepesiPontok:
         assert "onActivated: window.toggleTimeline()" in shortcut
         assert "selectedIndex" not in shortcut
 
-    def test_a_valodi_menu_es_toolbar_elemenek_aktivak(self, qml_app, qt_app):
+    def test_a_valodi_menu_aktiv_es_nincs_fejlecgomb(self, qml_app, qt_app):
         window = qml_app[0]
         menu_item = window.findChild(QObject, "menuViewTimeline")
-        toolbar_button = window.findChild(QObject, "toolbarTimelineButton")
         assert menu_item is not None and menu_item.property("enabled") is True
-        assert toolbar_button is not None
-        assert toolbar_button.property("enabled") is True
-        assert toolbar_button.property("visible") is True
+        assert window.findChild(QObject, "toolbarTimelineButton") is None

@@ -89,19 +89,16 @@ class TestAszukAblak:
 
 
 class TestIdorendGomb:
-    """A fejléc Időrend gombja ugyanazt a bemutatót nyitja, mint a menü."""
+    """Az eredeti fejlécében nincs Időrend-gomb (#1903); az Időrend a
+    Nézet ▸ Időrend menüből és a Ctrl+5-tel nyílik (#5377)."""
 
-    def test_idorend_gomb_van_a_savon(self, qml_app, qt_app):
+    def test_NINCS_idorend_gomb_a_savon(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        assert window.findChild(QObject, "toolbarTimelineButton") is not None
+        assert window.findChild(QObject, "toolbarTimelineButton") is None
 
-    def test_eredeti_gombfeliratot_es_aktiv_allapotot_hasznal(self):
+    def test_a_forrasban_sincs_benne(self):
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        blokk = blokk_horgonyra(forras, 'objectName: "toolbarTimelineButton"')
-        assert 'text: qsTr("Timeline")' in blokk
-        assert "checked: toolbar.timelineActive" in blokk
-        assert "ToolTip.text: qsTr(\"Timeline view of all your photos\")" in blokk
-        assert "onClicked: toolbar.timelineRequested()" in blokk
+        assert 'objectName: "toolbarTimelineButton"' not in forras
 
     def test_a_MENUTETEL_aktiv_es_ugyanazt_a_jelzest_kuldi(self):
         menu = (_TOOLBAR.parent / "PicasaMenuBar.qml").read_text(

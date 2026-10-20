@@ -2988,10 +2988,6 @@ ApplicationWindow {
         // #1421: az eszköztár `newalbum` gombja UGYANOTT köt ki, mint a
         // Fájl ▸ Új album… és a kép-helyimenü tétele — egy út, egy dialógus.
         onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
-        // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
-        // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
-        timelineActive: window.timelineOpen
-        onTimelineRequested: window.toggleTimeline()
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
         // Nézet ▸ Mappanézet almenü (#1454) — egy állapot, két felület.
         //: #1956: KÉT őr kell, mert KÉT külön hiba fenyeget:

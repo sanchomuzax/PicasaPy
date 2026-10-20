@@ -143,21 +143,6 @@ def test_view_menu_click_opens_timeline(qml_app, qt_app):
     assert _child(window, "timelineView").isVisible()
 
 
-def test_toolbar_button_click_opens_timeline(qml_app, qt_app):
-    window, _controller, _engine = qml_app
-    button = _child(window, "toolbarTimelineButton")
-    assert button.property("enabled") is True
-    center = button.mapToScene(button.boundingRect().center())
-    QTest.mouseClick(
-        window,
-        Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier,
-        QPoint(round(center.x()), round(center.y())),
-    )
-    assert wait_until(qt_app, lambda: window.property("timelineOpen") is True)
-    assert _child(window, "timelineView").isVisible()
-
-
 @pytest.mark.parametrize("height", [795, 800, 805])
 def test_timeline_render_geometry_tracks_window_height(qml_app, qt_app, height):
     window, _controller, _engine = qml_app
