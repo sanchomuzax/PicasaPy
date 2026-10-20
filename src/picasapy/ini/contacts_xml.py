@@ -27,7 +27,7 @@ from .contacts import contacts_of
 from .document import IniDocument
 
 _SECTION_NAME = "Contacts2"
-_CONTACT_ID = re.compile(r"^[0-9a-fA-F]{16}$")
+_CONTACT_ID = re.compile(r"^[0-9a-fA-F]{1,16}$")
 
 
 @dataclass(frozen=True)
@@ -117,7 +117,7 @@ def serialize_contacts_xml(entries: tuple[ContactXmlEntry, ...]) -> str:
     root = ElementTree.Element("contacts")
     for entry in entries:
         if not _CONTACT_ID.fullmatch(entry.person_id):
-            raise ValueError("A contacts.xml azonosítója 16 hex jegy legyen.")
+            raise ValueError("A contacts.xml azonosítója 1-16 hex jegy legyen.")
         try:
             modified = datetime.fromisoformat(entry.modified_time)
         except ValueError as exc:

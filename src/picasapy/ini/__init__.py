@@ -12,6 +12,7 @@ from .contacts import (
     contacts_of,
     ensure_contact,
     find_contact_id,
+    generate_contact_id,
     with_contact,
     without_contact,
 )
@@ -157,6 +158,7 @@ __all__ = [
     "encode_rect64",
     "ensure_contact",
     "find_contact_id",
+    "generate_contact_id",
     "is_projects_category",
     "is_custom_collection_category",
     "is_valid_folder_date",

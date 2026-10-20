@@ -97,6 +97,26 @@ class TestAzAtveendoArcokSzurese:
 
 
 class TestAzIniBeIras:
+    def test_new_contact_id_is_compact_in_contact_and_face_rows(
+        self, monkeypatch
+    ) -> None:
+        import picasapy.pmpimport.arcatvetel as arcatvetel_module
+
+        monkeypatch.setattr(
+            arcatvetel_module, "generate_contact_id", lambda: "c82fcc"
+        )
+
+        updated = arcokat_atvesz(
+            parse_document(""),
+            "kep.jpg",
+            (DeferredFace(rect=_rect(), name="Kiss Anna"),),
+        )
+
+        text = updated.serialize()
+        assert "[Contacts2]\r\nc82fcc=Kiss Anna;;" in text
+        assert "),c82fcc" in text
+        assert "0000000000c82fcc" not in text
+
     def test_ures_iniben_letrejon_a_faces_es_a_kontakt(self) -> None:
         dok = parse_document("")
         uj = arcokat_atvesz(

@@ -138,3 +138,17 @@ class TestEnsureContact:
         document = ensure_contact(parse_document(SAMPLE), "B8E4117CF1D6615B", "Más Név")
         # nincs második, csupa-nagybetűs bejegyzés
         assert len(contacts_of(document)) == 2
+
+
+def test_new_contact_id_is_widthless_hex_and_keeps_legacy_id(monkeypatch):
+    import picasapy.ini.contacts as contacts_module
+    from picasapy.ini.contacts import generate_contact_id
+
+    values = iter((0, 0x00C82FCC))
+    monkeypatch.setattr(contacts_module, "_randbits", lambda bits: next(values))
+    assert generate_contact_id() == "c82fcc"
+
+    old_id = "00c82fcc12345678"
+    original = parse_document(f"[Contacts2]\n{old_id}=Régi;;\n")
+    assert find_contact_id(original, "Régi") == old_id
+    assert ensure_contact(original, old_id, "Új név") == original
