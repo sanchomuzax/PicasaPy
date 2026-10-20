@@ -239,6 +239,32 @@ class IniDocument:
                 return replace(self, sections=sections)
         return self
 
+    def with_removed_preserving_section(
+        self, section_name: str, key: str
+    ) -> IniDocument:
+        """Kulcs törlése a szakasz megtartásával, akkor is, ha üres marad.
+
+        A Picasa a csillag levétele után üres képszakaszt hagy a
+        `.picasa.ini`-ben; ezt a viselkedést követő írók használják ezt az
+        API-t. A szokásos :meth:`with_removed` továbbra is eltávolítja az
+        üressé vált szakaszt.
+        """
+        target = self.section(section_name)
+        if target is None:
+            return self
+        folded = key.casefold()
+        lines = list(target.lines)
+        for index, line in enumerate(lines):
+            if isinstance(line, KeyValueLine) and line.key.casefold() == folded:
+                del lines[index]
+                updated = replace(target, lines=tuple(lines))
+                sections = tuple(
+                    updated if section is target else section
+                    for section in self.sections
+                )
+                return replace(self, sections=sections)
+        return self
+
     def with_renamed_section(self, old_name: str, new_name: str) -> IniDocument:
         """Szekció átnevezése (fájl-átnevezéskor, #15): a tartalom (kulcsok,
         ismeretlen/komment sorok) bitre pontosan megmarad, csak a

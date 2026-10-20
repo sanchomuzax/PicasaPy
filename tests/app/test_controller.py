@@ -233,7 +233,8 @@ class TestToggleStar:
         controller.selectFolder(str(library / "nyaralas"))
         _do_photo_op(controller, lambda: controller.toggleStar(0))  # IMG_0001: csillag levétele
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
-        # a kiürült szekció el is tűnik — csak az biztos, hogy csillag nincs
+        # #5396: a kulcs törlődik, az eredeti Picasához hasonló üres szakasz megmarad.
+        assert "[IMG_0001.jpg]" in ini_text
         assert "star=yes" not in ini_text
         assert controller.photos.photos[0].star is False
 
@@ -323,13 +324,13 @@ class TestToggleStar:
         assert "rotate=rotate(1)" not in szoveg
 
     def test_toggle_twice_restores_ini_bytes(self, controller, library):
-        # Round-trip invariáns: fel + le = bitre azonos .picasa.ini.
+        # #5396: az eredeti üres képszakaszt megtart a csillag levételekor.
         ini = library / "nyaralas" / ".picasa.ini"
         before = ini.read_bytes()
         controller.selectFolder(str(library / "nyaralas"))
         _do_photo_op(controller, lambda: controller.toggleStar(1))
         _do_photo_op(controller, lambda: controller.toggleStar(1))
-        assert ini.read_bytes() == before
+        assert ini.read_bytes() == before + b"[IMG_0002.jpg]\n"
 
     def test_search(self, controller):
         controller.search("naplemente")
