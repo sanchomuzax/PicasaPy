@@ -504,8 +504,9 @@ class TestMasNezetbenATeljesLista:
         )
 
     def test_idorendben_a_teljes_lista_utana_ismet_szurt(self, app, qt_app):
-        """Az Időrend bemutató a teljes könyvtárat takarja, a mentés-szűrő
-        állapotát nem cseréli le; bezárás után ugyanaz a szűrt rács tér vissza."""
+        """⚠️ Az Időrend belépési pontjai inaktívak (#1903: a menütétel
+        szürke, a Ctrl+5 nem sül el), tehát valódi kattintással nem nyitható
+        - az állapotot közvetlenül állítjuk."""
         window, controller, _e, _v, _lib, _cel = app
         _nyisd_a_mentest(window, qt_app)
         assert controller.photos.rowCount() == 3
