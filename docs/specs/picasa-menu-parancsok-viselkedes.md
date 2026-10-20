@@ -4544,9 +4544,9 @@ A pásztázás a `[reg+disp]` alakokat látja. Az Időrend-tartomány `0x007f000
 
 | mező | írók a tartományban | megállapítás |
 |---|---|---|
-| S = `P+0x30` (f64) | `0x007fba9a` (`0x007fb9f0`, konstruktor: `fstp qword [esi+0x30]`), továbbá `0x00809a26` (`0x00809a10`), `0x00809cb3` (`0x00809c50`) és `0x00809037` (`0x00808fc0`, `[reg+0x328]`) | a konstruktor értéke `fld qword [0xcf4e30]` = 0,04999999888241291 (a 0,05 f32-es kerekítése). S tehát állandó, nem számolt. A három másik író osztálya NINCS MEG. |
+| S = `P+0x30` (f64) | `0x007fba9a` (`0x007fb9f0`, konstruktor: `fstp qword [esi+0x30]`), továbbá `0x00809a26` (`0x00809a10`), `0x00809cb3` (`0x00809c50`) és `0x00809037` (`0x00808fc0`, `[reg+0x328]`) | a konstruktor értéke `fld qword [0xcf4e30]` = 0,04999999888241291 (a 0,05 f32-es kerekítése). S tehát állandó, nem számolt. A három másik író osztálya NINCS MEG. **JAVÍTVA (38.2.26, 4. szakasz):** a `0x00809a26` ideiglenes objektumot ír (nem P); a `0x00809037` a gazda `+0x328` mezőjét írja, a gazda a hívó `this`-e, és nincs igazolva, hogy OneUp; a `0x00809cb3` nyitott. |
 | vezérlőpontok `P+0x50..0x7c` | konstruktor `0x007fb9f0` (`0x007fba06`-`0x007fba28`): nullák (`fldz`). Betöltés: `0x007fbd90` (`fscanf`, mutatón át). Más osztályok ugyanezeket a displacementeket írják (például `0x007fa3d0`, `0x007f7250`, `0x0080f380`). | forrás: a `runtime\bezier.txt` (4 sor, 3 szám). Az osztályonkénti írók NINCS MEG. |
-| `A` = `[OneUp+0x388]`, `[OneUp+0x38c]` | az Időrend-tartományban **nincs író**. Olvasók: `0x007fdd00` (`0x007fdd7b`-`0x007fdda3`) és `0x007ffc90` (`0x007ffd6d`-`0x007ffe57`). A tartományon kívül mintegy 60 író, köztük `0x00818eb0` (`0x00818ed1`-`0x00818f08`). | a 0x388 mutató és a 0x38c darab (×2 jelzővel) egy tömböt ír le. A `0x00818eb0` vtáblája `0xcbdde4`, a `OneUpUI` vtáblája `0xcbd5c4`: más osztály. A tartalom dátum vagy index: **NINCS MEG**. Hívója: `0x006214e0`, amely maga is ír `[ebp+0x388]`-at (`0x00621b03`, `0x00621b31`, `0x00621ba9`). |
+| `A` = `[OneUp+0x388]`, `[OneUp+0x38c]` | az Időrend-tartományban **nincs író**. Olvasók: `0x007fdd00` (`0x007fdd7b`-`0x007fdda3`) és `0x007ffc90` (`0x007ffd6d`-`0x007ffe57`). A tartományon kívül mintegy 60 író, köztük `0x00818eb0` (`0x00818ed1`-`0x00818f08`). | a 0x388 mutató és a 0x38c darab (×2 jelzővel) egy tömböt ír le. A `0x00818eb0` vtáblája `0xcbdde4`, a `OneUpUI` vtáblája `0xcbd5c4`: más osztály. A tartalom dátum vagy index: **NINCS MEG**. Hívója: `0x006214e0`, amely maga is ír `[ebp+0x388]`-at (`0x00621b03`, `0x00621b31`, `0x00621ba9`). **JAVÍTVA (38.2.26, 2. szakasz):** a `0x00818eb0` írásai a friss `ytFlyingNode` objektumon vannak (`0x0062177b`: `mov edi, eax`), nem a OneUp-on; a (mutató, darab) pár nem létezik. A `0x006214e0` a `[p+0x388]`-ba a kártya SORSZÁMÁT írja (p osztálya NINCS MEG), a `[+0x38c]`-be nem ír. |
 
 **Nyitott kérdések mérlege (38.2.25)**
 
@@ -4561,9 +4561,9 @@ Lezárva:
 - (M8) A vezérlőpontok forrása: a `runtime\bezier.txt` fájl (B2 része).
 
 Részben:
-- (R1) B1: S három másik írójának (`0x00809a26`, `0x00809cb3`, `0x00809037`) osztálya.
+- (R1) B1: S három másik írójának (`0x00809a26`, `0x00809cb3`, `0x00809037`) osztálya. **RÉSZBEN (38.2.26, 4. szakasz):** a `0x00809a26` ideiglenes objektum, nem P; a `0x00809037` gazdájának osztálya NINCS MEG.
 - (R2) B2: a `P+0x50..0x7c` írók osztályai.
-- (R3) B3: az A-író (`0x00818eb0`) és a forrás (`0x006214e0`) ismert; a tartalom nincs.
+- (R3) B3: az A-író (`0x00818eb0`) és a forrás (`0x006214e0`) ismert; a tartalom nincs. **LEZÁRVA (38.2.26, 2. szakasz):** a tartalom sorszám; a `0x00818eb0` `ytFlyingNode`-ot ír.
 
 Blokkolt:
 - (B3) Az A tartalma: dátum vagy index.
@@ -4572,7 +4572,7 @@ Blokkolt:
 - (B10) `0x008014d0`, `0x004b0190` és a `0x00801f50` rajzolási lépései.
 - (B11) v = P+0x18 többi írója. Ebben a körben nincs vizsgálva.
 - (B13) Mérés kell (futásidő).
-- (N1) A fókusz-csere fogyasztója: kép, gyűjtemény vagy dátumfelirat. NINCS MEG.
+- (N1) A fókusz-csere fogyasztója: kép, gyűjtemény vagy dátumfelirat. NINCS MEG. **RÉSZBEN (38.2.26, 1. szakasz):** a `[OneUp+0x2ec]` rekord-tömböt írja (0xf8 bájt); a három látható rész azonosítása NINCS MEG.
 
 **Nyitott kérdések: 0 nyílt · 8 lezárva · 3 részben · 7 blokkolt · 0 hatókörön kívül · 0 csak nyitva.**
 
@@ -4588,13 +4588,98 @@ Blokkolt:
 
 - `Ghidra-kör kell: 0x008014d0 - mit rajzol vagy frissít a [OneUp+0x3ec] listából (a fókusz-csere kimenete: kép, gyűjtemény vagy dátumfelirat) [blokkoló]`
 - `Ghidra-kör kell: 0x004b0190 - a két vtábla-hívás (call eax, call edx) célja, és a forrás-lista (local_64, local_5c) eredete [blokkoló]`
-- `Ghidra-kör kell: 0x006214e0 - a 0x00818eb0-nek átadott (mutató, darab) pár forrása, vagyis mi az [OneUp+0x388]/[0x38c] tartalma (dátum vagy index) [blokkoló]`
-- `Ghidra-kör kell: 0x00818eb0 (vtábla 0xcbdde4) - melyik osztály, és azonos-e az OneUp objektummal [blokkoló]`
-- `Ghidra-kör kell: 0x00808fc0, 0x00809a10, 0x00809c50 - melyik osztály írja a P+0x30 és a P+0x50..0x6d mezőit [blokkoló]`
+- ~~`Ghidra-kör kell: 0x006214e0 - a 0x00818eb0-nek átadott (mutató, darab) pár forrása, vagyis mi az [OneUp+0x388]/[0x38c] tartalma (dátum vagy index) [blokkoló]`~~ **JAVÍTVA (38.2.26, 2. szakasz):** nincs (mutató, darab) pár; `[p+0x388]` a sorszám. Hátra van: `p` osztálya (38.2.26 következő Ghidra-címei).
+- ~~`Ghidra-kör kell: 0x00818eb0 (vtábla 0xcbdde4) - melyik osztály, és azonos-e az OneUp objektummal [blokkoló]`~~ **LEZÁRVA (38.2.26, 2. szakasz):** `ytFlyingNode`, nem a OneUp.
+- `Ghidra-kör kell: 0x00808fc0, 0x00809a10, 0x00809c50 - melyik osztály írja a P+0x30 és a P+0x50..0x6d mezőit [blokkoló]` **RÉSZBEN (38.2.26, 4. szakasz):** a `0x00809a10` ideiglenes objektumot ír (nem P); a `0x00808fc0` gazdája a hívó `this`-e; a `0x00809c50` nyitott.
 - `Ghidra-kör kell: 0x007fb9f0 hívója (0x007fa7f0) - mi állítja be az esi-t, vagyis melyik objektum a P [nem blokkolja a fő utat]`
 - `Ghidra-kör kell: 0x007f9a40 és 0x00802e20 - a P+0x58..0x80 írásainak forrás- és cél-objektuma [nem blokkolja a fő utat]`
 - `Ghidra-kör kell: 0x00802630 visszatérési értékének jelentése, és az időzítő-újraindítás (0x00802108) feltétele [nem blokkolja a fő utat]`
 - `Ghidra-kör kell: 0x0099d0c0 és 0x00980ec0 - a runtime\bezier.txt útvonal alap-könyvtára [nem blokkolja a fő utat]`
+
+#### 38.2.26 Az Időrend bináris feltárása, 9. kör: a fókuszcsere, a `0x388` tartalma, a kártyák forrása, az S-írók (#5401, 2026-10-21)
+
+**Kérdés és hatókör.** Négy kérdés a `2026-10-21-idorend-9.txt` nyolc címéről. (1) `0x008014d0` és `0x004b0190`: mi frissül a `[OneUp+0x3ec]` listából a fókuszcsere után, és mire kellenek a négy `_rand`-hívás. (2) `0x006214e0` és `0x00818eb0`: mi van az `[OneUp+0x388]` és a `[0x38c]` mezőben, és honnan jön a (mutató, darab) pár. (3) `0x00802e20` és `0x007f9a40`: hogyan épülnek a kártyák, melyik gyűjteményből és milyen sorrendben. (4) `0x00808fc0` és `0x00809a10`: az S (`P+0x30`) további írói, és melyik osztály. Terméki kódot nem írtunk.
+
+**Módszer.** A Ghidra-C-kódot és a hívóéleket a bemeneti fájl adja. A diszasszembly a `pe_dis.cdis` (capstone) segítségével készült, függvényenként: a capstone az első érvénytelen bájtnál megáll: a `0x007f0000`-tól indított egyben olvasás 5326 utasítás után leállt, ezért függvényenként olvastunk. Konstansok az `f32`/`f64` olvasóval. A függvénylista és a hívóélek az index `functions` és `xrefs` tábláiból jöttek. Ghidra-futás nem volt. Ideiglenes fájlok a `.bt/` alatt voltak, a kör végén törölve.
+
+**Javítások a korábbi szakaszokban** (a 38.2.25-ben is jelölve):
+1. **A `[OneUp+0x388]` írója nem a `0x00818eb0`.** A 38.2.25 §4 szerint a `0x00818eb0` írja a `[OneUp+0x388]` és `[0x38c]` mezőket. Ez téves. A `0x006214e0` a `0x0062177b`-ben (`mov edi, eax`) a `0x0097c5d0(0x398)` friss blokkját teszi az `EDI`-be, és a `0x0062178d`-es hívás ehhez a blokkhoz tartozik. A `0x00818eb0` mezőit a friss `ytFlyingNode` kapja (vtábla `0xcbdde4`).
+2. **Az `A` tömb (mutató, darab) párja nem igazolt.** A 38.2.25 ezt feltételezte. Ezen az úton nincs ilyen pár (2. szakasz).
+3. **S-írók.** A 38.2.25 §4 három S-írót sorolt fel: `0x00809a26`, `0x00809037`, `0x00809cb3`. A `0x00809a26` ideiglenes objektumot ír, nem P-t. A `0x00809037` a gazda `+0x328` mezőjét írja (4. szakasz). A `0x00809cb3` nyitott.
+
+**1. A fókuszcsere: `0x008014d0`, `0x004b0190`**
+
+Hívóélek: a `0x008014d0` hívója a `0x008018a0` (`0x00801c95`) és a `0x008037e0` (`0x008039d1`). A `0x008018a0` a fókuszcsere: beállítja az `[OneUp+0x50c]` indexet, újraépíti a `[OneUp+0x3ec]` listát (írások `0x00801907`-`0x00801b9c`), majd `[OneUp+0x51a] = 1`-et állít (`0x00801c19`). A `0x008014d0` ez után fut.
+
+- **A `[OneUp+0x3ec]` lista nem frissül a `0x008014d0`-ban.** A függvény csak olvassa (`0x00801570`: `mov esi, [edi+0x3ec]`). A lista írói: a `0x008018a0` (újraépítés) és a `0x007fb5a0`. A `0x007fb5a0` a törlési út része: a `0x007fae90` hívja, ami egy törlő metódus (adat-hivatkozás: `0x00cbd66c`). Nullázza a `[+0x3ec]`, `[+0x2ec]` mezőket, a `[+0x2f0]` jelzőit maszkolja, és a `0x0097d370`-et hívja. Ezért nem frissítő.
+- **Az elemek egész azonosítók.** A `0x008018a0` C-kódjában a `[OneUp+0x3ec]` elemei `uint` értékek, és a szűrő bájt-tömbje (`local_5c`) ugyanezzel az azonosítóval indexel. Az elem tehát nem objektum-mutató. Hogy ez kép-, gyűjtemény- vagy dátumfelirat-azonosító, NINCS MEG: a `local_64` forrása a `0x008018a0` C-kódjában nem látszik.
+- **Mit csinál a `0x008014d0`.** Minden elemre (`0x00801523`-`0x0080157a`) hívja az `[OneUp+0x2e4]` objektum vtábla-első metódusát: `(azonosító, &info, 1)`. Az `info` egy 0x24 bájtos verem-struktúra. Ezután egy 0xf8 bájtos kártya-rekordot állít össze a `0x007fa5b0` konstruktorral (az első dword `-1`, `+0xa0 = 0x100`, `+0xa4 = 1,0`, `+0xc8 = 1`), beírja a négy `_rand`-értéket, és a `0x00803b50` másolóval a `[OneUp+0x2ec]` tömb végére teszi (`0x008017f3`). A darabszám `[OneUp+0x2f0] >> 1`. Ha a `[+0x2f0]` bit 0 jelzője be van állítva, nincs új elem.
+- **Ami frissül:** a `[OneUp+0x2ec]` rekord-tömb (0xf8 bájtos rekordok). A `[OneUp+0x3ec]` nem. Hogy a három látható rész (kép, gyűjtemény, dátumfelirat) közül melyiket frissíti, NINCS MEG: a `[OneUp+0x2e4]` objektum osztálya és a metódusa nincs megmérve. Az `[OneUp+0x2e4]` értéke a `0x007fa7f0` konstruktorban a C-kód szerint `*(in_EAX+0x10)`, ahol az `in_EAX` a `0x008037e0` paraméter-struktúrája (`0x00803920`: `mov eax, edi`, `call 0x7fa7f0`).
+- **A négy `_rand`-hívás.** Minden kártya-rekordhoz két kezdő pozíció és két elmozdulás-tényező jön. Az `r` a `_rand` értéke `[0,1)`-re normálva. A rekord-mezők a `0x803b50` másolásának sorrendjében (`+0xcc..+0xd8`):
+
+  | rekord-mező | képlet | tartomány |
+  |---|---|---|
+  | `+0xcc` | r(D) - 0,5 | [-0,5; 0,5) |
+  | `+0xd0` | r(C) - 0,5 | [-0,5; 0,5) |
+  | `+0xd4` | (r(B) - 0,5) · 0,15 | [-0,075; 0,075) |
+  | `+0xd8` | (-r(A) + e) · 0,15, ahol e = 0,5, ha `[OneUp+0x3bc]` nem nulla, különben 0 | legfeljebb 0,15 abszolút értékben |
+
+  Az `r(A)`-`r(D)` a négy `_rand`-hívás sorrendje. A `[OneUp+0x3bc]` jelzőt a függvény olvassa (`0x008015cb`), de a jelentése NINCS MEG. A `0x007fe600` írja a `+0xcc` és `+0xd0` mezőket: `+0xcc` nő a `+0xd4` tényezővel, `+0xd0` a `+0xd8` tényezővel egy léptetési lépésben (`0x007fe650`-`0x007fe6fc`), és visszafogás (`fcom`) követi. Vagyis a négy érték közül kettő a kezdő pozíció, kettő a léptetésenkénti elmozdulás. Az `a` és `b` tényezők pontos jelentése, és a visszafogás határai NINCS MEG.
+- **`0x004b0190`.** Az `in_EAX` `+0xc4` objektumát zárolja (kritikus szakasz, vagy vtábla-zárolás a `+0x74` jelzőtől függően). Majd az `+0x48` objektum vtábla `+0x2c` metódusát hívja az új indexszel (`param_1`). Ezután a hívó `ESI` objektumába (`unaff_ESI`) tizennyolc mutatót köt: `+0x68 = in_EAX+0x29c`, `+0xa4 = in_EAX+0x2a4`, és hat pár az `[in_EAX+0x2a8]`, `[+0x2ac]`, `[+0x2b0]`, `[+0x2b8]`, `[+0x2b4]`, `[+0x2bc]` objektumok `+0xcc`/`+0xd4` mezőire (`+0x6c..+0x7c`, `+0x84` és `+0xa0..+0xb4`, `+0xbc`), továbbá két pár az `[+0x2c8]` és `[+0x2d0]` objektumok `+4`/`+0x10` mezőire. Visszatérés 0, vagy -1, ha az `unaff_ESI+0x5c` vagy `+0x64` nulla. A függvény nem ír sem `[OneUp+0x3ec]`-be, sem rekord-tömbbe. A kötés célja és az `in_EAX` osztálya NINCS MEG.
+
+**2. `[OneUp+0x388]` és `[0x38c]`; a (mutató, darab) pár (`0x006214e0`, `0x00818eb0`)**
+
+- **A `0x006214e0` első paramétere (`p`).** A verem első paramétere (`0x006214e8`: `mov ebp, [esp+0x174]`). A `0x00623d49` hívóban az `EBX`. A `0x0061edc5` hívóban a vizsgált ablakban nem látszik. A `p` osztálya NINCS MEG, ezért az, hogy `p` a OneUp, nincs igazolva.
+- **`p+0x388` a kiválasztott kártya SORSZÁMA.** Bizonyítékok: (a) írások: `0x00621b03` (`mov [ebp+0x388], edi`), `0x00621b31` (`mov [ebp+0x388], eax`), `0x00621ba9` (`-1`, ha nincs elem). (b) A kód a darabszámhoz köti: `FUN_00610b90()` (az elemek száma) mínusz egy a felső korlát (a bemeneti C-kód 636-651. sora). (c) Az olvasott forrás, `[p+0x298]+0x380` (`0x0062156a`), szintén index. Dátum-művelet a függvényben nincs.
+- **`p+0x38c` a `0x006214e0`-ban nem íródik** (asm: nulla találat). A OneUp kódtartományában (`0x007f0000`-`0x0080ffff`) sincs író, csak olvasó (`0x007fdd00`, `0x007ffc90`). A (mutató, darab) pár hipotézise ezért nem igazolt.
+- **A `0x00818eb0` bemenete két `f32` (x, y).** A `0x006214e0` a `&local_164` címet adja (`0x00621784`-`0x00621788`: `lea edx, [esp+0x14]`, `push edx`). A `0x00818eb0` az `EDI`-n át a friss blokkba írja: `[+0x388] = x`, `[+0x38c] = y`, `[+0x390] = x`, `[+0x394] = y` (a C-kódban `unaff_EDI[0xe2..0xe5]`). A kezdő és a cél pont tehát egyezik. Utána `0x009debd0(x, y)`. A friss blokk `ytFlyingNode`, vtábla `0xcbdde4` (rtti-index).
+- **Dátumcsúszka: NINCS MEG.** A `0x006214e0`-ban nincs csúszka-kezelés (a csúszka a `0x00a52890`-ben van, 38.2.6). Hogy a `[+0x388]` sorszám hogyan képezi le a csúszkát, nincs megmérve.
+
+**3. Az Időrend építése: `0x00802e20`, `0x007f9a40`**
+
+- **`0x007f9a40` a kártya-objektum konstruktora.** A hívó `0x005e81e0`: `0x005e8437`-nél `0x0097c5d0(0x37c)` foglal, `0x005e8469`-nél `mov esi, eax`, `0x005e846b`-nél `call 0x7f9a40`. A vtábla `ytAnimSprite::vftable` (`0x00cbd2a4`). Az `EDI` a hívó verem-struktúrája (`lea edi, [esp+0x28]`, `0x005e8465`), NEM a `OneUp+0x2f8` P.
+- **Kezdő pozíció.** `[+0x144] = (EDI+8) · 0,5`, `[+0x148] = (EDI+0xc) · 0,5`, az előjel-javítás `2^32`-vel (`0xcf3ac0`). Ez minden kártyán ugyanaz: a közös kiindulópont a hívó struktúrájából jön.
+- **A `DAT_00d676c8` számláló az ÉLŐ kártyák száma, nem sorszám.** `+ 1` a `0x007f9a62`-ben (C-kód), `- 1` a `0x007fa212`-ben (a `ytAnimSprite` `0x007f9cd0` metódusában). Olvasói: `0x007f9b16`, `0x007f9b42`. Az index xrefs-ében nincs adat-hivatkozás, ezért a teljes `.text` pásztázásból jön (függvényenként).
+- **Véletlen paraméterek** (`r` a `[0,1)`-re normált véletlen, `n` a számláló a `+1` után): `[+0x35c] = (r-1) · 0,4 + 0,3`, `[+0x360] = ((r-1) - 0,5) · 0,3`, `[+0x364]` = a `[1,2)` tartományú érték, `[+0x368] = (r-1) - 0,5`, `[+0x36c] = n · (r-1) · 0,03`, `[+0x370] = 2π · (r-1)`, `[+0x374] = (r-1) · 0,1`. A `[+0x354] = -1,0` (f32, `0xcf3ed0`), a `[+0x358]` a hívott `param_2` (forrás-objektum).
+- **Gyanú, nem bizonyított.** A `0x005e8443`-`0x005e8464` sorban a hívó az f32 értéket (1,0, vagy `0xcf3a70` = 0,6) a verem első paraméterébe teszi. A hívó a `[esp+0x50]`-et bájtként ellenőrzi, majd a paraméter-összeállításkor dword-ként olvassa, ami a Ghidra C-kódjával nem egyeztethető össze biztosan. A `0x007f9a40` a paramétert bájtként tárolja (`[ESI+0xde]`). Hogy ez tényleges típuseltérés-e, NINCS MEG.
+- **A sorrend.** A kártyák létrehozási sorrendje a `0x005e81e0` ciklusának sorrendje. A ciklus elemei 0xc8 bájtosak (`0x005e8283`: `add esi, 0xc8`). A kártya-hívás a `0x005e8330`-`0x005e84d7` blokkban van, a belépés feltételei között szerepel a `0x009c2fc0` visszatérése (`[eax+0x20c]`, `[eax+0x213]` jelzők). A két szakasz viszonya és a megjelenítési sorrend (a `0x009df290` hívás után) NINCS MEG.
+- **Gyűjtemény (album, mappa): NINCS MEG.** A 38.2.18 szerinti `CThumbUI+0x2c0` kollekciós állítást ebben a körben nem mértük újra.
+- **`0x00802e20`.** Ha `DAT_00d67914` nem nulla, az aktív objektum a `0x009c2fc0` visszatérése, különben nulla. A `0x00c07db2` argumentumai RTTI-típusleírók (`ytDrawNode`, `ytBicubicNode`), ez dinamikus cast. Sikeres cast után nullázza a `+0x36c..+0x378` és `+0x358` mezőket, a `+8` mezőt `|= 7`-tel jelöli, és meghívja a `0x00a54b70(param_1, 1, 1, 0, 1, -1, -1, -1, -1)`-et. A cél objektum `ytBicubicNode`; ebben a függvényben nincs sorrendi művelet. Hívói: `0x008036b9` és `0x00803723` (`0x008032e0`). A `param_1` tartalma NINCS MEG.
+
+**4. S (`P+0x30`) írói (`0x00808fc0`, `0x00809a10`)**
+
+- **P és S.** `P = OneUp+0x2f8`: a `0x007fa7f0` `lea esi, [ebp+0x2f8]` (`0x007fa84a`), majd `call 0x007fb9f0` (`0x007fa850`). Így `S = P+0x30 = OneUp+0x328`.
+- **`0x00809a10`** (`ytUIEvent` konstruktor, vtábla `ytUIEvent::vftable`). A `+0x30` és `+0x34` írás (`0x00809a26`, `0x00809a29`) az `EAX` objektumba megy. A két hívó ideiglenes objektumot ad: `0x0080c24a` előtt `lea eax, [esp+0x18]` (`0x0080c241`), `0x00a54089` előtt `lea eax, [esp+0x98]` (`0x00a5407f`). **Nem S-író.**
+- **`0x00808fc0`** (`CAutoCompleteListBox` konstruktor). A `0x00809037` írás `[edx+0x328]`-ba megy, ahol `edx = [this+0x1c]` (a gazda), és az érték `[this+0x24]` (ha nulla, `0x18`, `0x00809028`). A gazda a hívó saját `this`-e: `0x0040e7b0` (`mov eax, ebx`, `0x0040e862`), `0x0060e260` (`mov eax, esi`, `0x0060e27e`), `0x00640670` (`mov eax, ebp`, `0x00640b4d`), `0x006464a0` (`mov eax, ebp`, `0x0064698e`), `0x0064a680` (`mov eax, ebp`, `0x0064aae2`). Egyik hívó sincs a `0x007f0000`-`0x0080ffff` tartományban. S-írás csak akkor volna, ha a gazda OneUp, és ezt nem láttuk. **Nem igazolt S-író.**
+- **`0x00809cb3`** (`0x00809c50`): NINCS MEG, ebben a körben nem vizsgáltuk.
+- **Osztály összefoglalva:** a P+0x30 írója a P konstruktora (`0x007fb9f0`, 0,05). A többi mért író közül a `0x00809a10` nem P-író. A `0x00808fc0` nem igazoltan P-író. A `0x00809c50`-t nem néztük meg.
+
+**Mérleg (38.2.26).** Nyitott kérdések: 1 nyílt · 5 lezárva · 4 blokkolt · 0 hatókörön kívül · 5 részben.
+
+- lezárva: a `0x008014d0` nem írja a `[OneUp+0x3ec]`-et; `[+0x388]` sorszám; nincs (mutató, darab) pár; `P = OneUp+0x2f8`, `S = OneUp+0x328`; a `0x00809a10` nem S-író.
+- részben: a négy `_rand` szerepe; a `0x004b0190` kötései; a sorrend (a hívási sorrend igazolt, a forrás nem); a `0x00802e20` szerepe; a `0x00808fc0` gazdája.
+- blokkolt: a rekord-elem típusa (kép, gyűjtemény, dátumfelirat); a `p` osztálya; a dátumcsúszka; a gyűjtemény forrása.
+- nyílt: a `0x00809c50` (S harmadik írója).
+
+**Amit KIZÁRTAM**
+- A `[OneUp+0x388]` sorszám, nem (mutató, darab) pár.
+- A `0x00818eb0` nem a OneUp mezőit írja, hanem a friss `ytFlyingNode`-ét.
+- A `0x007fb5a0` nem frissíti a `[OneUp+0x3ec]` listát: a törlési út része.
+- A `DAT_00d676c8` nem a kártyák sorszáma; az élő kártyák számát követi.
+- A `0x00809a10` nem írja a P-t: ideiglenes objektum mezőit nullázza.
+- A `0x007f9a40` `EDI`-je nem a `OneUp+0x2f8` P; a hívó verem-struktúrája.
+- A `0x00809037` csak akkor S-író, ha a gazda OneUp. A hívók ezt nem mutatják.
+
+**Következő Ghidra-címek**
+- `Ghidra-kör kell: 0x006223b0 és 0x0061df10 - a 0x006214e0 első paraméterének (p) eredete és osztálya, vagyis hogy p a OneUp-e [blokkoló]`
+- `Ghidra-kör kell: 0x008018a0 - a local_64 forrás-lista eredete (a [OneUp+0x3ec] elemei uint azonosítók: melyik gyűjteményből) [blokkoló]`
+- `Ghidra-kör kell: 0x008037e0 - a paraméter-struktúra (EDI) eredete, és a +0x10 objektum osztálya ([OneUp+0x2e4], a vtábla-első hívás célja) [blokkoló]`
+- `Ghidra-kör kell: 0x005e81e0 - a 0xc8 bájtos elemek forrása (0x005e8283), a 0x009c2fc0 visszatérésének jelentése, és a gyűjtemény (album, mappa) azonosítása [blokkoló]`
+- `Ghidra-kör kell: 0x007fe600 - a két tényező (a, b) forrása és a visszafogás határai a kártya-rekord léptetésében [nem blokkolja a fő utat]`
+- `Ghidra-kör kell: 0x004b0190 - az in_EAX (+0xc4, +0x2a8..+0x2d0) és az unaff_ESI objektum osztálya, és a kötések célja [nem blokkolja a fő utat]`
+- `Ghidra-kör kell: 0x0040e7b0, 0x0060e260, 0x00640670, 0x006464a0, 0x0064a680 - a CAutoCompleteListBox gazdájának osztálya (a hívó this-e) [nem blokkolja a fő utat]`
+- `Ghidra-kör kell: 0x00809c50 - a P+0x30 (S) harmadik írója (0x00809cb3): melyik osztály [nem blokkolja a fő utat]`
+- `Ghidra-kör kell: 0x005e8443 - a 0x007f9a40 első paraméterének típusa (f32 vagy bájt), és a hívó paraméter-összeállítása [nem blokkolja a fő utat]`
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
