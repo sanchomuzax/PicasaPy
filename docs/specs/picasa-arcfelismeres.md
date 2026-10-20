@@ -4517,3 +4517,14 @@ Ghidra-kör kell: 0x006a41e0 - a `(szülő, név, 0x13320004, &kimenet, 1)` look
 - **Kész, ha:** a Colab-diff megmutatja, melyik fájl és melyik bájt változik személyszintű mellőzésnél, és a `src/` ehhez igazodik.
 
 **Módosított fájlok (28. kör).** `docs/specs/picasa-arcfelismeres.md` (ez a 37.9/b szakasz); `docs/specs/00-index.md` (a sor elején egy 28. kör-előtag). Kódhoz (`src/`, `tests/`) nem nyúltam.
+
+### 37.10 Felvétel (2026-10-20, #5184 N5 és N6): a személyalbum menüje és a „Delete People Album” hatása
+
+*Forrás:* picasa-colab-jobs job-222 (előtte), job-223 (a megerősítő ablak), job-224 (utána); Picasa 3.9, alapállapot, két arc a „Teszt Elek” névhez (a job-213 lépései szerint).
+
+- **A személyalbum jobb gombos menüje** (job-222, 31. kép): Edit People Album..., Select All, Clear Selection, Invert Selection, Refresh Thumbnails, Sort Album By, Delete People Album. **Személyszintű mellőzés (Ignore) ebben a menüben nincs**; az N5 mellőzése tehát nem innen érhető el.
+- **A megerősítő ablak** (job-223, 33. kép): címe „Remove People”, szövege `Are you sure you want to delete the people album "Teszt Elek"?`, alatta a `Delete tagged faces from synced Picasa Web albums, too` jelölőnégyzet (üres), gombok: Delete Album és Cancel; **az alapértelmezett a Cancel** (a job-223 Return-je nem törölt).
+- **Az N6 válasza: a törlés hatása a fájlokra** (job-222 és job-224 `.picasa.ini`): a törlés után mindkét képnél **eltűnik a `faces=` sor**, tehát az arc-régió is törlődik, nem névtelen lesz. A **`[Contacts2]` sor megmarad** (`<azonosító>=Teszt Elek;;`). Az adatbázisban (`db3`) az `albumdata_albumcontactids`, `albumdata_date`, `albumdata_inisync`, `albumdata_token`, `albumdata_uid`, `imagedata_backuphash` oszlop és a `facetemplatesV2_0.db` változik (md5 szerint).
+- **Bizonyítottsági fok:** megerősített (felvétel, két független futás: a job-223 Cancel-lel változatlan, a job-224 Delete Album-mal változott). Az időzítés: a változás a megerősítés után 8 másodpercen belül a fájlban van.
+- **Nálunk:** a megerősítő ablak más (cím, gombok, jelölőnégyzet), és a törlés a `[Contacts2]` sort is törli. A megvalósítás: #5391.
+- **Lezárás (N6): (a)**, a #5391 fejlesztési jeggyel. Az N5 (személyszintű mellőzés) ebből a menüből nem érhető el; a belépési pontja a Személykezelő (Eszközök ▸ Személykezelő) felvételével keresendő.
