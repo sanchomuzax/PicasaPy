@@ -6697,30 +6697,34 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
     <context>
         <name>FolderPane</name>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1319" />
-            <source>Delete Person</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: contactmgr:contactmgr/delete.title;stringres:ContactManagerDlg::DeleteContact</extracomment>
-            <translation>Person löschen</translation>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1490" />
+            <source>Remove People</source>
+            <extracomment>DeleteMessage::UnknownPeopleTitle
+picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::UnknownPeopleTitle</extracomment>
+            <translation>Personen entfernen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1323" />
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1506" />
             <source>Are you sure you want to delete the people album "%1"?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>DeleteMessage::DeletePeopleAlbum
+picasapy-origin: picasapy</extracomment>
             <translation>Möchten Sie das Personenalbum „%1“ wirklich löschen?</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1333" />
-            <source>Yes</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
-            <translation>Ja</translation>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1514" />
+            <source>Delete tagged faces from synced Picasa Web albums, too</source>
+            <extracomment>ThumbUI::DeleteOnlinePeople
+picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::DeleteOnlinePeople</extracomment>
+            <translation>Getaggte Gesichter auch aus synchronisierten Picasa-Webalben löschen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1339" />
-            <source>No</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nein</translation>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="1535" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Abbrechen</translation>
         </message>
         <message>
             <source>Calculating…</source>
@@ -6779,7 +6783,8 @@ picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
         </message>
         <message>
             <source>Delete Album</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>DeleteMessage::DeleteAlbumTitle;DeleteMessage::DeleteAlbumYesButton
+picasapy-origin: picasapy</extracomment>
             <translation>Album löschen</translation>
         </message>
         <message>

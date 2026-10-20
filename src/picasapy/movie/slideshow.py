@@ -35,7 +35,7 @@ from picasapy.cvimage import dekodolj_forrast
 from picasapy.ini import IniDocument, load_or_empty, parse_faces
 from picasapy.scanner import PICASA_INI_NAME
 
-from .burst import capture_groups, select_chain
+from .burst import capture_groups, hog_descriptor, select_chain
 from .face_crop import face_is_usable, rect64_to_pixel_rect, render_face_crop
 
 # A kodek-négyes: MP4 konténer, széles körben elérhető OpenCV-ben.
@@ -800,14 +800,28 @@ def export_movie(
     if settings.ordering == 2:
         decoded.sort(key=lambda entry: entry[0].stat().st_mtime if entry[0] else float("inf"))
     elif settings.ordering == 0 and len(decoded) > 1:
+        # Az eredeti a felvételi idő szerint rendez (a tulajdonos 2026-10-19-i
+        # exportja, #5386); ismeretlen idejű kép a végére kerül, sorrendtartóan.
+        rend = sorted(
+            range(len(decoded)),
+            key=lambda i: (capture_times[i] is None, capture_times[i] or 0.0),
+        )
+        decoded = [decoded[i] for i in rend]
+        capture_times = [capture_times[i] for i in rend]
+    if settings.ordering == 0 and len(decoded) > 1 and settings.burstmodethresh > 0:
         groups = capture_groups(capture_times, settings.burstmodethresh)
-        # Az eredeti HOG-vektor előállítása még nincs feltárva (#4194). A
-        # jelenlegi képi forrás a korábbi színátlag; ez nem eredetihű HOG.
-        features = [np.mean(frame, axis=(0, 1)) for _, frame, _, _ in decoded]
+
+        features: dict[int, np.ndarray] = {}
+
+        def feature_for_index(index: int) -> np.ndarray:
+            if index not in features:
+                features[index] = hog_descriptor(decoded[index][1])
+            return features[index]
+
         order = select_chain(
             groups,
             len(decoded),
-            feature_for_index=features.__getitem__,
+            feature_for_index=feature_for_index,
         )
         decoded = [decoded[index] for index in order]
     decoded.extend(text_frames)

@@ -37,6 +37,7 @@ _QML_LITERAL = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
 # Az eredeti Picasa neve, amely MARAD. Kulcs: a szövegrészlet, érték: az indok.
 KIVETEL = {
     "Web Albums": "Google Picasa Web Albums: a megszűnt külső szolgáltatás neve.",
+    "Web albums": "Ugyanez kisbetűvel, az eredeti Remove People ablak jelölőnégyzetében (#5391).",
     "Import from Picasa": "az eredeti Picasa adatainak átvétele (menüpont, ablak).",
     "previous Picasa installation": "a gépen korábban telepített eredeti Picasa.",
     "Picasa2": "az eredeti Picasa2 adatmappa neve.",

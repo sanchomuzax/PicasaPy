@@ -19,6 +19,24 @@ _ZOLI = "cccccccccccccccc"
 _CENTRAL_ANNA = "1111111111111111"
 _CENTRAL_ZOLI = "2222222222222222"
 _MODIFIED = "2026-08-15T18:42:17+02:00"
+_JOB_222_INI = (
+    "[Contacts2]\n"
+    "80a7d5f66b7ebe94=Teszt Elek;;\n"
+    "[portre_1_ff.jpg]\n"
+    "faces=rect64(27c00680d8ffdb3f),80a7d5f66b7ebe94\n"
+    "backuphash=64812\n"
+    "[portre_2_szines.jpg]\n"
+    "faces=rect64(29402955d87fb57f),80a7d5f66b7ebe94\n"
+    "backuphash=14160\n"
+)
+_JOB_224_INI = (
+    "[Contacts2]\n"
+    "519e4ce68e5e4425=Teszt Elek;;\n"
+    "[portre_1_ff.jpg]\n"
+    "backuphash=29119\n"
+    "[portre_2_szines.jpg]\n"
+    "backuphash=29119\n"
+)
 
 
 def _host(db_path):
@@ -209,3 +227,30 @@ def test_rename_and_delete_touch_only_folders_with_the_person(tmp_path):
     central = load_contacts_xml(_central_path(host))
     assert all(contact.name != "Anita" for contact in central)
     assert any(contact.name == "Zoli" for contact in central)
+
+
+def test_delete_people_album_matches_job222_and_job224_ini_pair(tmp_path):
+    """Törléskor a face sorok tűnnek el, a Contacts2 névjegy megmarad."""
+    from support.jpeg_factory import make_jpeg
+
+    library = tmp_path / "job-222-library"
+    library.mkdir()
+    make_jpeg(library / "portre_1_ff.jpg")
+    make_jpeg(library / "portre_2_szines.jpg")
+    ini_path = library / ".picasa.ini"
+    ini_path.write_text(_JOB_222_INI, encoding="utf-8")
+    host = _setup_host(tmp_path, library)
+
+    assert host.savePeopleManagerChanges(
+        [{"action": "remove_album", "oldName": "Teszt Elek"}]
+    )
+
+    expected = _JOB_224_INI.replace(
+        "519e4ce68e5e4425", "80a7d5f66b7ebe94"
+    ).replace("backuphash=29119", "backuphash=<run-specific>")
+    actual = (
+        ini_path.read_text(encoding="utf-8")
+        .replace("backuphash=64812", "backuphash=<run-specific>")
+        .replace("backuphash=14160", "backuphash=<run-specific>")
+    )
+    assert actual == expected
