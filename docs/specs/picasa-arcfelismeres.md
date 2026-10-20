@@ -4528,3 +4528,13 @@ Ghidra-kör kell: 0x006a41e0 - a `(szülő, név, 0x13320004, &kimenet, 1)` look
 - **Bizonyítottsági fok:** megerősített (felvétel, két független futás: a job-223 Cancel-lel változatlan, a job-224 Delete Album-mal változott). Az időzítés: a változás a megerősítés után 8 másodpercen belül a fájlban van.
 - **Nálunk:** a megerősítő ablak más (cím, gombok, jelölőnégyzet), és a törlés a `[Contacts2]` sort is törli. A megvalósítás: #5391.
 - **Lezárás (N6): (a)**, a #5391 fejlesztési jeggyel. Az N5 (személyszintű mellőzés) ebből a menüből nem érhető el; a belépési pontja a Személykezelő (Eszközök ▸ Személykezelő) felvételével keresendő.
+
+### 37.11 Felvétel (2026-10-20, #5184 N5): a People párbeszédablak, és nincs személyszintű mellőzés
+
+*Forrás:* picasa-colab-jobs job-225 (az Eszközök menü), job-226 (Eszközök ▸ People Manager); Picasa 3.9, alapállapot, egy „Teszt Elek” személy két arccal.
+
+- **Az Eszközök menü** (job-225, 31. kép): Folder Manager..., Upload Manager... (szürke), People Manager..., Configure Photo Viewer... (szürke), Configure Screensaver... (szürke), Back Up Pictures..., Batch Upload..., Adjust Date and Time..., Upload ▸, Geotag ▸, Experimental ▸, Configure Buttons..., Options....
+- **A People párbeszédablak** (job-226, 34. kép): címe „People”; bal oldalon `Search:` mező és a személyek listája (itt egy sor: „Teszt Elek”), alatta a **Delete Person** és **New Person** gomb; jobb oldalon a kijelölt személy arcképe, „2 Photos in Picasa”, `Name:` és `Email(s):` mező, a „Sync Face Tags with Web Albums” jelölőnégyzet (szürke) és a **Revert** gomb (szürke); alul **Manage Online Contacts** (szürke), **Refresh Contacts** (szürke), **OK** és **Cancel**.
+- **Az N5 válasza:** személyszintű mellőzés (Ignore) **sem a személyalbum menüjében (37.10), sem a People párbeszédablakban nincs**. A Picasa 3.9-ben a mellőzés arcszintű: a csempe X gombja és a kibontott nézet „Ignore Selected” gombja (job-209, job-210, job-218), az arc kulcsa `ffffffffffffffff` lesz (34.11). Az `albumcontactids` tábla (37.9) a személyalbumok névjegy-hozzárendelése, nem mellőzési lista.
+- **Bizonyítottsági fok:** megerősített (felvétel: mindkét menü és a párbeszédablak teljes tartalma látszik).
+- **Lezárás (N5): (b)** lezárható: nincs személyszintű mellőzés, tehát nincs megvalósítandó eltérés; az arcszintű mellőzés a PicasaPy-ban az eredeti szerint működik (`face_ignore_ini.py`, `ffffffffffffffff`).
