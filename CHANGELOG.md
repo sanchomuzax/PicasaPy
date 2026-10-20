@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.164] - 2026-10-20
+
+- Stabilabb lett a Személyek panel névadási tesztje: a névjegy-azonosítót az 1-16 jegyű alakban is elfogadja (#5368).
+
 ## [0.9.163] - 2026-10-20
 
 - A Film arcokból a klipeket az arc köré vágja, és a beállítás szerint kihagyja a 136,5 képpontnál keskenyebb arcokat (#5372).
