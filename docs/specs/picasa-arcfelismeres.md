@@ -3972,7 +3972,7 @@ Az eredeti két olvasási/persistálási kódrészletben a formátumsztring `%I6
 ### 32.5 Nyitott Ghidra-kérdések
 
 - Ghidra-kör kell: `0x00586e20` - melyik belső ág módosítja a Contacts2 adatot, és milyen feltétellel hívja vagy ütemezi az INI-véglegesítést [blokkoló]
-- Ghidra-kör kell: `0x007b81e0`, `0x007b9630`, `0x007ba060` - a Choose esemény callbackje, a `0x00586e20` elérésének útja és a kiírás pillanata [blokkoló]
+- **Megválaszolva (23. kör, 37. szakasz):** a `0x007b9630` és a `0x007ba060` mindketten hívja a `0x007b81e0` Choose-kezelőt. A `[Contacts2]` kiírásának időzítése futásidejű adat: Colab-felvétel javasolt (37.4), a statikus hívási út nyitott: `Ghidra-kör kell: 0x007b9f20 - a `0x007ba060` egyik hívója: a személytörlés után fut-e a lista-újraépítés, és hívja-e a `0x0045a9d0`-t [nem blokkoló]`
 - **Válasz [részben] (#5184, 2026-10-18, 11. kör):** a `0x00586540` nem állítja elő a contact ID-t, hanem keres. A `this+0x38` alatti térképobjektumból (`0x0058fc40`) a kulcs hash-értéke (`0x00409df0`) szerint kiválasztott láncolt listát járja végig, és az első, `0x006f9890` egyezés-ellenőrzésen átmenő elem `+0x10` és `+0x14` dword-jét másolja a `param_4`-be (a C-dumpban: `*param_4 = puVar3[4]; param_4[1] = puVar3[5];`). A visszaadott alak tehát **8 bájt** (két dword): ez a memóriabeli találat mérete. A második ág (`0x00586a60`, bemenete a `puVar3[4]`, `puVar3[5]`) állítja elő a jelölt azonosítót, és a `param_3` karakterláncával hasonlít össze, 2 bájtonként (széles karakter, valószínűleg UTF-16). Bizonyítottsági fok: **feltételes** (egy út: a C-törzs). Az „eredeti tárolt alak szélessége" **NINCS MEG**: a 8 bájt a memória-elem mérete; az INI-ben tárolt alak külön kérdés (a `%I64x` formátum 16 hexa-jegy, 30.4).
   - Ghidra-kör kell: `0x00586a60` - a contact ID-jelölt előállítása a `puVar3[4]`, `puVar3[5]` bemenetből, és a `param_2` kulcs alakja [blokkoló]
 
@@ -4295,7 +4295,46 @@ A pontok mind ki vannak mondva és minden nyitott részhez konkrét J2-J8 felvé
 
 **22. kör, N6 (`0x007b81e0`, a Choose-callback): nem ír közvetlenül a `Contacts2`-be.** A törzs (`.ghidra/2026-10-20-ghidra-22.txt`, 898-1152. sor): ha a `param_1[0x57]` jelző be van kapcsolva, és a kiválasztott név mutatói (`param_1[0x54]`, `param_1[0x55]`) egyeznek a tároltakkal, a `ContactManagerDlg::OK`, különben a `ContactManagerDlg::Choose` naplóüzenetet adja a `piVar7` objektum `+0x68` slotjának. A törzsben nincs `0x00586e20` és nincs `0x00587110` hívás.
 - **Bizonyítottsági fok.** A közvetlen hívási lista: **megerősített** (C). A `+0x68` slot célja és a hívottak (`0x00588460`, `0x005c2100`, `0x005c7620`, `0x007b8d20`) szerepe: **NINCS MEG**. A közvetett írás kizárva nincs.
-- **Lezárás (N6): (c).** Következő Ghidra-címek: `0x00586e20` (a 27. szakasz szerint nem a `Contacts2` írója; a kiíró kérdése ezért a `0x006956d0` láncon marad) és a két hívó, `0x007b9630` és `0x007ba060`, amelyek a Choose-ágat kiváltják [blokkoló].
+- **Lezárás (N6): (c).** Következő Ghidra-címek: `0x00586e20` (a 27. szakasz szerint nem a `Contacts2` írója; a kiíró kérdése ezért a `0x006956d0` láncon marad) és a két hívó, `0x007b9630` és `0x007ba060`, amelyek a Choose-ágat kiváltják [blokkoló]. (Frissítés, 23. kör: a két hívó megvan, lásd a 37. szakaszt.)
 - **Kész, ha (#5184, N5 és N6).** ⛔ Nem teljesül: N5 és N6 továbbra is nyitott; a feltárt részek (olvasó, hívási lánc, Choose-ág) a spec-lapon vannak, az eltéréshez nincs mért különbség, ezért nincs fejlesztői lista.
 
 **Colab-mérés kell:** J7 B2 (N1); Red.dll összehasonlító próba és eredménylista (N3); személyszintű Ignore Person ini- és album-összevetés (N5); törlés utáni, bezárás utáni és újraindítás utáni mentés összevetése (N6); J6 Ctrl-kijelölés (N7). A mérőadat-archívum célzott taglistájában ehhez a feladathoz nem volt mérési csomag, ezért nem bontottam ki és nem hoztam létre ideiglenes `.bt` fájlt.
+
+## 37. #5184, 23. kör (2026-10-20): a Choose-hívók, az INI-kiírás időzítése és a Colab-javaslat
+
+**Hatókör:** az N6 második fele: a `0x007b9630` és a `0x007ba060` (a Choose-ág két hívója), és hogy a `[Contacts2]` mikor íródik törlés után. Forrás: `.ghidra/2026-10-20-ghidra-23.txt` (C, 1191-1687. sor). Diszasszembly ehhez nem készült.
+
+### 37.1 A két függvény (C, megerősített)
+
+- `0x007b9630` (`thiscall`; `param_1` a személykezelő állapota, `param_2` a vezérlő nevének sztringje, `param_3` az értékforrás objektum, vtábla-hívással olvasott értékkel). A kulcsnév szerint ágazik: `contacts`, `fullname`, `emails`, `sync`, `search`. A `contacts` ágban a kijelölt sor (`param_1+0x80`) frissül, a `search` ágban a `0x007b7f00` hívódik (a szűrés szó nem bizonyított). Az ágak végén közös záró rész van: a kijelölt sor jelző bájtja (`this+0x78` + index) `|= 1`, a vezérlő szövege frissül. Mindkét ágban hívja a `0x007b81e0`-t (Choose).
+- `0x007ba060` (`0x007ba060(char param_1)`): listaújraépítés. Várakozik a `DAT_00d689cc` eseményre (5000 ms), nullázza a jelzőtömböt (`_memset`), visszaállítja a kijelölést a függőben tartott kulcspárral (`this+0x148`, `+0x14c` → `this+0x13c`), végül hívja a `0x007b81e0`-t. INI-író hívás nincs benne.
+- Hívóik: a `0x007b9630` egyetlen hivatkozása adatreferencia (`0x00cb7bd4`, visszahívás-tábla). A `0x007ba060`-t a `0x007b93c0` (`0x007b95ff`) és a `0x007b9f20` (`0x007b9fdb`) hívja.
+
+### 37.2 Bizonyítottsági fok
+
+- Mindkét függvény hívja a `0x007b81e0`-t (Choose): **megerősített** (C, 1422., 1453. és 1664. sor).
+- A `0x007b9630` visszahívás-táblából hívódik (`0x00cb7bd4`): **megerősített** (index). A tábla tulajdonosa: **NINCS MEG**.
+- A `[Contacts2]` kiírásának pillanata (törlés, Choose vagy bezárás): **NINCS MEG**. Futásidejű adat.
+
+### 37.3 Cáfoló kísérlet
+
+- Feltételeztem, hogy a `0x007b9630` vagy a `0x007ba060` közvetlenül írja a `[Contacts2]`-t: cáfolva a közvetlen hívási listán (nincs `0x00586e20`, `0x0068c030`, `0x0069b240`, `0x0045a9d0`). A vtábla-hívások (`+0x18`, `+0x48`, `+0xf8`) célja nincs megnevezve, ezért a közvetett írás nem zárható ki teljesen.
+
+### 37.4 Lezárás (N6 időzítés): Colab-felvétel
+
+Az időzítés futásidejű adat, a binárisból nem dönthető el. Javasolt felvétel (a `behavior` típusú feladatot a tulajdonos `jovahagyva` címkéjével lehet indítani):
+
+1. Új, üres mappa két képpel, az egyik a „Teszt Elek” személlyel (a job-186/187 mappája: `PicasaTeszt`).
+2. A `.picasa.ini` másolata az első lépés előtt, és másodpercenként összevetés a fájllal.
+3. Eszközök ▸ Személykezelő: a személy kijelölése, majd a Choose művelet. Az összevetés rögzíti, megjelenik-e azonnal a `[Contacts2]` sor.
+4. „Delete Person”: összevetés újra; majd a Személykezelő bezárása (OK), és az összevetés újra.
+5. Eredmény: három időpont (Choose, törlés, bezárás), ahol a `[Contacts2]` sor megjelenik vagy eltűnik. Ez dönti el az N6 időzítését.
+
+A (c) lépés helyett ez a felvétel javasolt, mert a kérdés futásidejű. A statikus rész (a két hívó) nem blokkoló.
+
+### 37.5 Kész, ha (#5184, N6 időzítés)
+
+- ⛔ Nem teljesül: az időzítés (törlés, Choose vagy bezárás) nincs mérve. A hívási út részben feltárt (37.1), a kiírás pillanata nyitott.
+
+Ghidra-kör kell: `0x007b9f20 - a `0x007ba060` egyik hívója: a személytörlés után fut-e a lista-újraépítés, és hívja-e a `0x0045a9d0`-t [nem blokkoló]`
+Ghidra-kör kell: `0x007b93c0 - a `0x007ba060` másik hívója: a Choose-ág vagy a törlés útja [nem blokkoló]`
