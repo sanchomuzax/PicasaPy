@@ -3724,7 +3724,7 @@ y = fl32( c × 0,5 × H' × r1 / 32768 ), ahol H = `[this+0x478]` (`param_1[0x11
 - `Ghidra-kör kell: 0x007fb540 - a 0x00802230 hívóinak gyakorisága, mert ez tolja a léptetési időzítést [blokkoló]`
 - ~~`Ghidra-kör kell: 0x005e95cc - a BigSlideshow2 nem nulla ága, amely az alapértelmezett 1 mellett fut [blokkoló]`~~ **JAVÍTVA (38.2.20, 4. szakasz):** a `0x005e95cc` közös pont a zéró-ág után, nem külön ág; a nem nulla ág a `uStack_d0` listát ellenőrzi, a `[this+0x3084]` objektumot építi és a `MP3SlideshowPath` értéket olvassa.
 - `Ghidra-kör kell: 0x00a516c0, 0x00a51740, 0x00a517c0 - a 0x00a52890 hit-test függvényei és a kattintási cél [blokkoló]`
-- `Ghidra-kör kell: 0x00803110 - a [this+0x2dc] objektum felépítése, és hogy azonos-e a this-szel (a Space-visszatéréshez) [blokkoló]`
+- ~~`Ghidra-kör kell: 0x00803110 - a [this+0x2dc] objektum felépítése, és hogy azonos-e a this-szel (a Space-visszatéréshez) [blokkoló]`~~ **JAVÍTVA (38.2.21, 4. szakasz):** `[this+0x2dc]` OneUpUI, és az `esi` azonos a `this`-szel.
 - `Ghidra-kör kell: 0x00802c20, 0x00aa6f40 - a szüneteltetés mellékhatása [nem blokkoló] (a `0x0097e510` azonosítva: `ShowCursor`-váltás, 38.2.20, 7. szakasz)`
 - `Ghidra-kör kell: 0x009a4890, 0x00407a20 - a registry-olvasó és az objektum-építő alapérték-kezelése (az alapértékek megerősítése) [nem blokkoló]`
 - `Ghidra-kör kell: a [this+0x408] és [this+0x40c] olvasóinak pásztázása (paszta.py, teljes .text) [nem blokkoló]`
@@ -3766,11 +3766,11 @@ A léptetés hajtója a **`0x0097fc30` üzenethurok** (diszasszembly, megerősí
 - `PeekMessageA` (IAT `0x00c40844`, betöltés `0x0097fc84`), a hurok többi ága a `DispatchMessageA`, `TranslateMessage`, `TranslateAcceleratorA`, `IsDialogMessageA` importokat is használja (index).
 - `MsgWaitForMultipleObjects` (IAT `0x00c40720`), hívás `0x0098032a`: `nCount = [0xd69424] >> 1`; `pHandles = [0xd69420]`, ha `nCount != 0`; `fWaitAll = 0`; `dwMilliseconds` = a függvény első paramétere (`[ebp+8]`, `0x0098030f`); `dwWakeMask = 0x4FF` (QS_ALLINPUT).
 - Csak akkor vár, ha az eltelt idő 0,005 s-nál kisebb (`0x009802f9-0x00980308`: `fcomp dword [0x00cf4b50]`, az érték f32 = 0,005; ha nem kisebb, a `jp 0x00980373` átugorja a várakozást). Az eltelt idő `((a - b) / QPF)`, ahol `a = [esp+0x38]`, `b = [esp+0x70]` (két QPC-érték). Az időbélyegek forrása **NINCS MEG**.
-- Az időtúllépés a hívótól jön. Tíz hívóhely van (az utolsó `push` a `call` előtt, diszasszembly):
+- Az időtúllépés a hívótól jön. Tíz hívóhely van (az utolsó `push` a `call` előtt, diszasszembly): **JAVÍTVA (38.2.21, 1. szakasz):** tizenegy van, a kimaradt `0x006fb417` 1 ms-os.
   - 1 ms: `0x0040e4b1` (`0x0040e410`), `0x005fff71` (`0x005ffc30`), `0x006fe680` (`0x006fe630`), `0x009d4dc6` (`0x009d4d10`);
   - 5 ms: `0x00405a55` (`0x004051b0`), `0x0059ec5e` (`0x0059e920`), `0x0074227c` (`0x007420f0`), `0x0074239c` (`0x007422d0`);
   - 10 ms: `0x0094ab72` (`0x0094aa00`), `0x0094ad8c` (`0x0094ace0`).
-- A hurok a `0x00982270` bejárót hívja (`0x0097feac`, dekompiláció és diszasszembly), a zárolt szakaszon belül. A `0x00982270`-ben nincs közvetlen `call [reg+4]` (a callback slot+4 hívása), ezért a bejárás és a `0x00803ab0` callback közti lánc **NINCS MEG**.
+- A hurok a `0x00982270` bejárót hívja (`0x0097feac`, dekompiláció és diszasszembly), a zárolt szakaszon belül. A `0x00982270`-ben nincs közvetlen `call [reg+4]` (a callback slot+4 hívása), ezért a bejárás és a `0x00803ab0` callback közti lánc **NINCS MEG**. **JAVÍTVA (38.2.21, 1. szakasz):** a visszahívást a pumpa maga hívja, a `0x0097fff5`-nél (`call [vtable+4]`), a bejárón kívül.
 
 **Válasz (1):** a léptetést a `0x0097fc30` üzenethurok hajtja (megerősített). Az Időrend alatt futó pumpa azonosítása (a tíz hívó közül melyik, a `0x0094aa00` vagy `0x0094ace0` a 10 ms-os jelölt) **NINCS MEG**, ezért a periódus is **NINCS MEG**. A 38.2.19 `S másodperc` értéke küszöb, nem periódus (lásd 7. szakasz).
 
@@ -3781,7 +3781,7 @@ Diszasszembly (`0x007fb540-0x007fb58f`, megerősített):
 - Ciklus: a `vtable[1]` predikátum (`0x00408b30`: `InterlockedCompareExchange`-olvasás, a `[this+8] != 0` esetén igaz) ellenőrzése után, ha `[this+0x51a] != 0`, hívja a `0x00802230(this, 1)`-et, majd nullázza a jelzőt (`0x007fb571`). Ezután `Sleep(0x32)` (50 ms, `0x007fb57a`), és újra a predikátum.
 - Egy iterációban legfeljebb egy hívás, és egy iteráció legalább 50 ms. Felső korlát: 20 hívás másodpercenként.
 - A ciklus hívója a `QDrawable::vftable` 2. slotja (`0x00cbd674` = `0x007fb540`). A tényleges indirekt hívó **NINCS MEG**.
-- A jelzőt a `0x00801c19` állítja (`mov byte [edi+0x51a], 1`, a `0x008018a0` függvényben). Ennek hívói: a `0x00801cb0` (ezt a `0x00802060` hívja `0x00802087`-nél, ha `[this+0x3b8] != 0`), valamint a `0x008037e0` és a `0x007fde80`. A beállítás gyakorisága **NINCS MEG**.
+- A jelzőt a `0x00801c19` állítja (`mov byte [edi+0x51a], 1`, a `0x008018a0` függvényben). Ennek hívói: a `0x00801cb0` (ezt a `0x00802060` hívja `0x00802087`-nél, ha `[this+0x3b8] != 0`), valamint a `0x008037e0` és a `0x007fde80`. A beállítás gyakorisága **RÉSZBEN JAVÍTVA (38.2.21, 2. szakasz):** a hívók és a feltételeik megvannak.
 - Sorrend-megfigyelés (diszasszembly): a jelzőt a hívás **után** törli, zár nélkül. A hívás alatti írást a törlés elveszti. Ez a bináris sorrend; a következménye csak párhuzamos íráskor számít (feltételes).
 
 **Válasz (2):** a `0x00802230` hívása legfeljebb 20 Hz, és csak akkor, ha a `[this+0x51a]` jelző 1. A jelző beállításának gyakorisága **NINCS MEG**.
@@ -3797,7 +3797,7 @@ Diszasszembly (`0x007fb540-0x007fb58f`, megerősített):
 **4. A 0x005e95cc (BigSlideshow2 nem nulla ág).**
 
 - `0x005e9409-0x005e9425` (diszasszembly): a `Preferences\BigSlideshow2` olvasása (alapérték 1), majd `test eax,eax; jne 0x005e95cc`.
-- A `0x005e95cc` **közös pont**: a zéró-ág (`BigSlideshow2 == 0`, a kollekció-bejárás a `0x004a0980` darabszámmal és a `this+0x90` callbackkel) utáni `FUN_00401000(); piStack_b0 = 0; FUN_00401000();` sorok kezdete (dekompiláció, a törzs 533. sora). Nem nulla értéknél a zéró-ág kimarad.
+- A `0x005e95cc` **közös pont**: a zéró-ág (`BigSlideshow2 == 0`, a kollekció-bejárás a `0x004a0980` darabszámmal és a `this+0x90` callbackkel) utáni `FUN_00401000(); piStack_b0 = 0; FUN_00401000();` sorok kezdete (dekompiláció, a törzs 533. sora). **JAVÍTVA (38.2.21, 5. szakasz):** a közös pont a 529-531. sor, az 533. sor az `IDS_MUST_SELECT` ágé. Nem nulla értéknél a zéró-ág kimarad.
 - Utána (`0x005e95e6`): `test [esp+0x30], 0xfffffffe; je 0x005e97ce`. A `0x005e97ce` az `IDS_MUST_SELECT` ág (dekompiláció): üres kiválasztás hibát ad.
 - Képforrás: a `uStack_d0` lista (dekompiláció, 212-285. sor). A Shift-ágban (`GetAsyncKeyState(0x10)`, dekompiláció 245. sor) a `[this+0xaf]+0x4ec` provider-listát járja be, és 13 típuskódra szűr: 2, 3, 6, 7, 13, 31, 14, 18, 24, 22, 27, 28, 26. A Ctrl (0x11) állapotát a `cStack_d9` jelző adja. A Ctrl és Shift nélküli alapút feltöltése (dekompiláció 350-447. sor) **NINCS MEG**.
 - Rendezés: **NINCS MEG** (a rendezési mező és sorrend nincs feltárva).
@@ -3874,25 +3874,182 @@ Diszasszembly (`0x007fb540-0x007fb58f`, megerősített):
 | `0x005e95cc` közös pont, `uStack_d0` ellenőrzés | diszasszembly `0x005e9425`, `0x005e95e6`; dekompiláció 533. sor | megerősített |
 | `MP3SlideshowPath` olvasása a nem nulla ágban | diszasszembly `0x005e9628-0x005e964d`; sztring `0x00c97920` | megerősített (a kulcs); felhasználói érték NINCS MEG |
 | 13 típuskódos szűrő a Shift-ágban | dekompiláció 245-256. sor | feltételes (dekompiláció) |
-| Ctrl nélküli képforrás, rendezés | NINCS MEG | nyitott |
+| Ctrl nélküli képforrás, rendezés | **RÉSZBEN (38.2.21, 5. szakasz):** rendezés nincs, körforgatás van; a forrás NINCS MEG | nyitott |
 | `0x0097e510` = ShowCursor-váltás | diszasszembly, IAT `0x00c40700` | megerősített |
 | `0x00803110`: esi = `[X+0x25c]`, nincs írás `[+0x3f4]` | diszasszembly, teljes törzs | megerősített |
-| `X` típusa, `esi == this` | NINCS MEG | nyitott |
+| `X` típusa, `esi == this` | **JAVÍTVA (38.2.21, 4. szakasz):** OneUpUI, és `[X+0x25c]` = this | megerősített |
 | `0x00a516c0/0x00a51740/0x00a517c0` = eseménykonstruktor | dekompiláció (vftable-írás, mezők), hívóhelyek | feltételes (dekompiláció, nincs diszasszembly) |
 | találati vizsgálat és vezérlő-leképezés, dátumcsúszka | NINCS MEG (`0x009e4630` belseje) | nyitott |
 
 **Nyitott - következő Ghidra-körök.**
 
-- `Ghidra-kör kell: 0x0097fc30 - a [esp+0x38] és [esp+0x70] időbélyegek forrása, a 0x00980373 utáni feldolgozó ág, és a 0x00982270 callback-hívása [blokkoló]`
-- `Ghidra-kör kell: 0x0094aa00 és 0x0094ace0 - melyik a 10 ms-os pumpa, és fut-e az Időrend alatt [blokkoló]`
-- `Ghidra-kör kell: 0x007fb540 slot+8 hívója (CreateThread / _beginthreadex hívóhelyek vagy QDrawable-futtató), és a 0x008018a0 hívóinak gyakorisága (0x007fde80) [blokkoló]`
-- `Ghidra-kör kell: 0x005e8a70 - a uStack_d0 lista feltöltése a Ctrl és Shift nélküli ágban (dekompiláció 350-447. sor), a rendezési mező [blokkoló]`
-- `Ghidra-kör kell: 0x009e4630, 0x0052d3c0, 0x0052d430 - az ytUIEvent találati és elosztási útja, a csúszka és a gombok leképezése [blokkoló]`
-- `Ghidra-kör kell: 0x007fa7f0 a 0x007fae55 körül - az [this+0x2dc] objektum típusa, és hogy [X+0x25c] == this [blokkoló]`
+- `Ghidra-kör kell: 0x0097fc30 - a [esp+0x38] és [esp+0x70] időbélyegek forrása, a 0x00980373 utáni feldolgozó ág, és a 0x00982270 callback-hívása [blokkoló]` **RÉSZBEN JAVÍTVA (38.2.21, 1. szakasz):** a visszahívás nem a 0x00982270-ből hívódik, hanem a pumpából (`0x0097fff5`).
+- ~~`Ghidra-kör kell: 0x0094aa00 és 0x0094ace0 - melyik a 10 ms-os pumpa, és fut-e az Időrend alatt [blokkoló]`~~ **SZŰKÍTVE (38.2.21, 1. szakasz):** mindkettő webböngésző-pumpa. Az Időrend-pumpa a `0x0097fc30` hívói közül **NINCS MEG** (`Ghidra-kör kell: 0x00983430, 0x00983fc0, 0x00982bf0 [blokkoló]`).
+- `Ghidra-kör kell: 0x007fb540 slot+8 hívója (CreateThread / _beginthreadex hívóhelyek vagy QDrawable-futtató), és a 0x008018a0 hívóinak gyakorisága (0x007fde80) [blokkoló]` **RÉSZBEN JAVÍTVA (38.2.21, 2. szakasz):** a 0x008018a0 hívói: 0x007fde80 (0x007fe33e), 0x00801cb0 (0x00801ce5), 0x008037e0 (0x00803953). A 0x007fb540 közvetett hívója még NINCS MEG.
+- `Ghidra-kör kell: 0x005e8a70 - a uStack_d0 lista feltöltése a Ctrl és Shift nélküli ágban (dekompiláció 350-447. sor), a rendezési mező [blokkoló]` **RÉSZBEN JAVÍTVA (38.2.21, 5. szakasz):** a 350-453. sor körforgatás, rendezés nincs; az Időrend-ág forrása NINCS MEG.
+- `Ghidra-kör kell: 0x009e4630, 0x0052d3c0, 0x0052d430 - az ytUIEvent találati és elosztási útja, a csúszka és a gombok leképezése [blokkoló]` **RÉSZBEN JAVÍTVA (38.2.21, 3. szakasz):** az elosztó és a típusok megvannak; a csúszka és a gombok leképezése NINCS MEG.
+- `Ghidra-kör kell: 0x007fa7f0 a 0x007fae55 körül - az [this+0x2dc] objektum típusa, és hogy [X+0x25c] == this [blokkoló]` **JAVÍTVA (38.2.21, 4. szakasz):** OneUpUI, és `[X+0x25c]` = this.
 - `Ghidra-kör kell: 0x009db610, 0x009ab410, 0x00aa40a0 - a CarefulEnhance beállítás vizuális hatása [nem blokkoló]`
 - `Ghidra-kör kell: 0x0097da20 - a 0xd69420 / 0xd69424 várakozási tömb tartalma; ha nCount = 0, a MsgWait csak időtúllépés és bemenet [nem blokkoló]`
 
 **Fejlesztési következmény.** Terméki kódot nem írtunk. A léptetés periódusa (melyik pumpa, milyen időtúllépéssel) még nincs megállapítva, ezért nem implementálható. A CarefulEnhance vizuális hatása, a képforrás Ctrl nélküli ága és a dátumcsúszka leképezése is nyitott. Az 1, 5 és 10 ms pumpaidők nem tekinthetők az Időrend periódusának.
+
+#### 38.2.21 Az Időrend bináris feltárása, 4. kör: üzenethurok és léptetési ütem, a jelző írói, találat és elosztás, OneUpUI, alapút (#5401, 2026-10-20)
+
+**Kérdés és hatókör.** A 38.2.20 nyitott tételei öt kérdésben: (1) melyik üzenethurok fut az Időrend alatt, és mi a léptetési ütem; (2) ki és milyen gyakran állítja a `[this+0x51a]` jelzőt; (3) a `0x009e4630`, `0x0052d3c0` és `0x0052d430` találati és elosztási útja, a vezérlők és a dátumcsúszka; (4) a `0x007fa7f0` `[this+0x2dc]` objektuma, és teljesül-e `[X+0x25c] == this`; (5) a `0x005e8a70` alapútjának feltöltése és rendezése.
+
+**Bemenet és eszközök.** A `2026-10-20-idorend-4.txt` kilenc függvénye, az `idorend-1` `0x005e8a70` és `0x008037e0` dekompilációja, a `pe_dis` diszasszemblálása (capstone), és a helyi index (`functions`, `rtti`). Futásfelvétel és QEMU-futtatás nem volt.
+
+**Módszer.** Ahol egy állítás után `diszasszembly` áll, a bájtokat a `pe_dis` adta. Ahol `dekompiláció` áll, csak a Ghidra-kimenetből származik. A sorszámok a kimenetek fájlsorai (a dekompiláció törzse a fájl 69. sorától indul, így a 350-453. sor a `0x005e8a70` fájl 350-453. sora). A konstansok típusát a betöltő utasítás dönti el (`fcomp qword`, `fcomp dword`).
+
+**Javítások a korábbi szakaszokban.** Az érintett sorok át vannak húzva és jelölve.
+- 38.2.20 §1: a pumpának **tizenegy** közvetlen hívója van, nem tíz. A kimaradt `0x006fb417` `push 1`-gyel 1 ms-os.
+- 38.2.20 §1: a visszahívást **nem** a `0x00982270` bejáró hívja. A pumpa hívja közvetlenül, a `0x0097fff5`-nél.
+- 38.2.20 §1: a `0x0094aa00` és a `0x0094ace0` webböngésző-pumpa (`about:blank`, `ytCallback<WebBrowser>`), a tartalmuk szerint nem Időrend-specifikus.
+- 38.2.20 §4: a közös pont a fájl 529-531. sora. Az 533. sor az `IDS_MUST_SELECT` ágé.
+- 38.2.20 §6 és 38.2.19 §3: `X` **OneUpUI**, és `esi` azonos a `this`-szel (4. szakasz).
+- Dekompiláció-hiba: a `0x007fe33e` hívása a dekompilációban argumentum nélkülinek látszik. A diszasszembly szerint EAX a `0x007fd800` kimeneti mezőjéből jön (2. szakasz).
+
+**1. Üzenethurok és léptetési ütem.**
+
+- **Hurok:** a `0x0097fc30` (megerősített: `PeekMessageA`, `MsgWaitForMultipleObjects`). Az Időrend alatti közvetlen hívója **NINCS MEG**. A tizenegy közvetlen hívó időtúllépése (diszasszembly, az utolsó `push` a `call` előtt):
+  - 1 ms: `0x0040e4b1`, `0x005fff71`, `0x006fb417`, `0x006fe680`, `0x009d4dc6`;
+  - 5 ms: `0x00405a55`, `0x0059ec5e`, `0x0074227c`, `0x0074239c`;
+  - 10 ms: `0x0094ab72`, `0x0094ad8c`.
+- **A 10 ms-os jelöltek:** a `0x0094aa00` `about:blank` lapot nyit (kimenet 404. sor), a `0x0094ace0` `ytCallback<WebBrowser>` objektumot hoz létre (501. sor). Az Időrend alatti futásukat nem zártuk ki, a tartalmuk alapján viszont nem Időrend-specifikusak. A hívóik: a `0x0094aa00`-nak három (`0x00593450`, `0x006fc7d0`, `0x006fcb60`), a `0x0094ace0`-nak tíz (441-451. sor). **NINCS MEG**, melyik fut az Időrend alatt.
+- **Egy pumpa-kör (megerősített, kimenet és diszasszembly):**
+  1. Üzenetkeret: legfeljebb 10 ms üzenetfeldolgozás. A `0x0097fe11` `fcomp qword` ellenőrzi a `0x00cf40b8` = 0,01 s értéket (kimenet 137-138. sor).
+  2. A `0x00982270` összeállítja a bejegyzések listáját (`0x0097feac`, kimenet 168. sor).
+  3. Minden bejegyzésre lejárat-ellenőrzés: `(most - [+0x18]) × (1/QPF) × 1000 >= [+0x20]` (kimenet 195-197. sor; `0x0097ff79` `fmul qword` a `0x00cf3e10` = 1000,0).
+  4. Hívás: `mov edx,[esi]`, `mov eax,[edx+4]`, `call eax` (`0x0097ffe3-0x0097fff5`, diszasszembly). Ez a bejegyzés vtable-jének 1. slotja, `ecx = esi`, és argumentum a `(most - [+0x10]) / QPF` dupla szám. A `ytCallback<QDrawable>` vtable (`0x00cbd6c8`) 1. slotja a `0x00803ab0` (index-RTTI és a slot-érték egyezik).
+  5. `0x00803ab0` (diszasszembly `0x00803ab0-0x00803aec`): ha `[+8]` (a QDrawable) nulla, `-1`. Egyébként `[+0x18] = QPC` (`0x00803ad4`), és ha `[QDrawable+0x3bf] == 0`, `0x00802060`. Egyébként `-1`.
+  6. A visszatérés kezelése (kimenet 207-210. sor): `>= 0` → `[+0x20]` lesz az érték; `-2` → a kör többi lejárt bejegyzése kimarad; `-1` → a bejegyzés eltávolítása (kimenet 211-317. sor). A `0x00802060` soha nem ad `0`-t.
+- **A léptetés döntése (`0x00802060`, diszasszembly `0x00802060-0x00802125`):**
+  1. `[this+0x3bb] != 0` (szünet): visszatérés `1`.
+  2. `[this+0x3b8] != 0`: `0x00801cb0` (`0x00802087`). Ha a jelző még nem nulla, az 5. pont.
+  3. `[this+0x518] != 0`: léptetés.
+  4. Egyébként léptetés, ha `S < (most - [this+0x520]) / QPF` másodpercben. Az `S` a `Preferences\SlideshowEffectTime` egész értéke (`0x004019b0`, `0x008020ae-0x008020b4`), negatív értéknél `+2^32` (`0x008020c5`). Az összehasonlítás `fcomp qword` (`0x008020cb`).
+  5. Egyébként, ha `[this+0x3c1] != 0`: léptetés (`0x008020d6-0x008020dd`).
+  6. Léptetés: `0x00802630` (`0x008020e1`). Nulla visszatérésnél `[this+0x518] = 0` és `[this+0x520] = most` (`0x00802101-0x00802108`). Nem nulla visszatérésnél `-1`.
+  7. Nincs léptetés, vagy sikeres léptetés után: `0x00801f50` hívása, `[this+0x3fc] = 0`, és `-2` (`0x0080210e-0x0080211c`).
+- **Ütem (következtetés):**
+  - A léptetés legkorábbi időpontja `S` másodperc a `[this+0x520]` óta. Ez küszöb, nem periódus (a 38.2.20 7. szakasza megerősítve).
+  - A tényleges időpont a pumpa-kör ritmusától függ. Üzenetmentes körben a pumpa az `MsgWaitForMultipleObjects`-nél vár `param_1` ezredmásodpercig, ha a kör 5 ezredmásodpercnél rövidebb volt (`0x009802fd`, `fcomp dword` a `0x00cf4b50` = 0,005). Üzenet azonnal felébreszti. A `param_1` a hívó időtúllépése (1, 5 vagy 10 ms). Hogy melyik hívó, **NINCS MEG**, ezért a pontos ütem sincs meg.
+  - Szünet után a bejegyzés `[+0x20]` értéke 1 ms: a `0x00802060` `1`-et ad, a pumpa tárolja. Más írót a feltárt kódban nem találtunk. A teljes `.text` pásztázása nem futott.
+
+**2. A `[this+0x51a]` jelző.**
+
+- **Író: `0x008018a0` (diszasszembly).** A jelzőt csak akkor írja (`0x00801c19`, `mov byte [edi+0x51a], 1`), ha a bemeneti érték (EAX) eltér a `[this+0x50c]` mezőtől: `0x008018ac` `cmp [edi+0x50c], eax`, `0x008018b2` `je 0x801ca3`, ami átugorja a törzset. Az új értéket a `0x008018b8` tárolja.
+- **Hívók, három (diszasszembly):**
+  - a) `0x007fe33e`, a `0x007fde80` egéreseményében, a `0x201` (bal gomb) ágban, ha `[this+0x3b8] != 0` és a `0x007fd800` nullát ad (`0x007fe336`). EAX a `0x007fd800` kimeneti mezője (`mov eax,[esp+0x18]`, `0x007fe338`).
+  - b) `0x00801ce5`, a `0x00801cb0`-ban. EAX = `[this+0x510]` (`0x00801ce1`), amelyet a `0x007fd8c0` írt (az `[this+0x510]` címét `0x00801cd5`-nél adja át). A `0x00801cb0` csak akkor fut, ha `[this+0x429] == 0` és a `0x007fd8c0` nem nullát ad (`0x00801cc6-0x00801cdf`). A `0x00801cb0`-t a `0x00802060` hívja, ha `[this+0x3b8] != 0` és nincs szünet (`0x00802087`).
+  - c) `0x00803953`, a `0x008037e0` (`qshow`-építő) törzsében. EAX = `0` (`0x0080394f`), és a hívás csak akkor történik, ha `[ecx+4] & 0xfffffffe` nulla (`0x00803946-0x0080394d`).
+- **Gyakoriság.** A jelző akkor lesz `1`, ha a bemeneti érték változik. Az a) eset egéresemény-szinten fut, az Időrend módban. A b) eset minden pumpa-körben fut, az Időrend módban és szünet nélkül, ha a találat változik. A c) eset egyszer, az építésnél, feltétellel. A `0x007fd800` és a `0x007fd8c0` kimenete a kurzor alatti elem indexe: **feltételes**, a jelentését Ghidra-kör igazolja.
+- **Olvasó: `0x007fb540` (diszasszembly `0x007fb540-0x007fb58f`).** Ciklus: ha `[this+0x51a] != 0`, meghívja a `0x00802230(this, 1)`-et, majd törli a jelzőt (`0x007fb571`). Utána `Sleep(0x32)` (50 ms, `0x007fb57a`). Legfeljebb 20 újrarajzolás másodpercenként. A ciklust a `QDrawable::vftable` 2. slotja hívja (`0x00cbd674`); az indirekt hívó **NINCS MEG**.
+- A `0x00802230` többi hívója a 38.2.19 szerint: `0x007fda00` (`1` jelzővel) és `0x00801130` (`0`-val, folytatáskor).
+
+**Válasz (2):** a jelzőt a `0x008018a0` írja, és csak változáskor. Három hívója van. A `0x007fb540` 50 ezredmásodpercenként olvassa, ezért az újrarajzolás legfeljebb 20 Hz.
+
+**3. Találat, elosztás, vezérlők.**
+
+- **Win32 üzenet → típus.** A `0x00a52890` üzenetkezelő (dekompiláció). `0x200` → `2` és `3` (kimenet 1430, 1460. sor). `0x201` → `1` (1491. sor). `0x203` → `0xd` (1543. sor). `0x207` → `7` és `4` (1584, 1599. sor). `0x208` → `8` (1633. sor). A `0x202` és a `0x204` a `0x1c` ágba ugrik, ahol a `4` és az `5` van (1786, 1812. sor). `0x20a` → `0x00a516c0` (1686. sor). Az egyedi `0x8000008`, `0x8000009` és `0x800000a` üzenetek a 38.2.20 szerint a `0x00a517c0` (`0x11`, `0x12`) és a `0x00a51740` (`0x10`) függvényekhez tartoznak.
+- **Konstruktor `0x0052d3c0` (dekompiláció, kimenet 1497-1523. sor):** a vtable `ytUIEvent::vftable`, a típus a `+8`-ban, a pozíciópár a `+0x5c` és `+0x60` mezőben, a negyedik paraméter a `+0x24`-ben. **Destruktor `0x0052d430` (1552-1554. sor):** a vtable visszaállítása, a `0x00401000` hívása (szerepe **NINCS MEG**), és `+0x68 = 0`.
+- **Elosztó `0x009e4630` (dekompiláció, kimenet 1037-1467. sor):**
+  - Típusvizsgálat (1376-1424. sor): `1` és `0xd` → a `0x4c` slot. Ha az elem `[+0x205]` nem nulla, és a hívás `1000000`-t ad, az elem a `*param_3` kimeneti mezőbe kerül. `2` és `3` → a `0x54` slot (kapu: `[+0x206]`). `4` → a `0x50` slot (`[+0x205]`). `0x13` → a `0x58` slot (`[+0x82]`).
+  - Találat: a gyermekeken megy végig (1094-1095. sor, a `[+0x91]` láncon). A határoló téglalapot a `0x20` slot adja (1269. sor), és az esemény pozíciójával hasonlítja össze (1270. sor, `(iStack_c0 < iStack_b8) && (iStack_bc < iStack_b4)`).
+  - Visszatérési kódok: `1000000` (kezelve), `0xf4242`, `0xf4243`. A rekurzió az 1295. és 1438. sorban van.
+- **Slot-térkép** (index-RTTI, `OneUpUI::vftable`): `0x20` → `0x00a6cd10`; `0x4c` → `0x00a52820` (ez hívja a `0x009e4630`-t, kimenet 998. sor); `0x50` → `0x00401570`; `0x54` → `0x00803180`; `0x58` → `0x008032e0`; `0x74` → `0x00a54050`. A `QDrawable::vftable` 11. slotja (`0x00cbd698` = `0x00cbd66c + 0x2c`) a `0x007fde80` (diszasszembly).
+- **A QDrawable egérkezelője (`0x007fde80`, 11. slot):**
+  - `0x201` (bal gomb): ha `[this+0x3b8] == 0`, a `0x00801130` (szünet-váltás; diszasszembly `0x007fe1e6-0x007fe1f6`). Ha `[this+0x3b8] != 0`: a `0x007fda80` hívása, és ha az `1000000`, kilépés (`0x007fe202-0x007fe207`). Majd a `[+0x6c8]`-`[+0x72c]` mezőkből számolt tartománnyal való összevetés (kimenet 892-930. sor). Ha a pont a tartományban van, húzás indul (`[+0x429] = 1`, `0x007fdd00`), egyébként `[+0x428] = 1` (`0x007fe2b9-0x007fe31b`). Végül a `0x007fd800` és a `0x008018a0` (2. szakasz).
+  - `0x202` (felengedés, kimenet 876-882. sor): ha `[+0x429]`, a `0x007fd770(this+0x514)`; majd `[+0x428] = [+0x429] = 0`.
+  - `0x203` és `0x204` (dupla és jobb gomb, dekompiláció 855-875. sor): ha `[+0x3b8] == 0`, a `0x007fda00` (Időrend-váltás). Egyébként a `0x007fda80`, majd a `[+0x2e8]` objektum `vtable+0x18` hívása a `[+0x3ec][+0x3f8]` elemmel. Ezt az ágat a diszasszembly nem ellenőrizte.
+  - A `0x201` blokkban van egy `0x203`-as ellenőrzés (`0x007fe346`, `cmp [edx+4], 0x203`, utána `[+0x3b8] = 0` és `[+0x428] = 0`). A blokkba csak `0x201` esemény léphet be (`0x007fe1d9-0x007fe1e0`), ezért ez az ág **nem fut** (kizárva).
+  - Görgő (`0x20a`, kimenet 939-971. sor, dekompiláció): ha a `GetAsyncKeyState` szerint a `DAT_00d4a490` gomb lenyomva van, nem fut. Egyébként lépésenként a `0x008011b0` (pozitív) vagy a `0x00801210` (negatív) hívás.
+- **Vezérlők.** A `sliderthumb`, `timelinedot`, `startbutton`, `exit` és a listaikon kattintása: **NINCS MEG**. A `0x007fb210` csak betölti az overlay-neveket (38.2.18), az elemekhez tartozó osztály és kattintás-kezelő nincs összekötve.
+- **Dátumcsúszka: NINCS MEG.** A kódban csak egy lineáris skálázás van: az egérmozgás koordinátája (`0x007fde80`, kimenet 802-808. sor, dekompiláció): `x_logikai = x_kliens × ([+0x2d0] - [+0x2c8]) / kliens-szélesség`, az `y` hasonlóan `[+0x2d4] - [+0x2cc]` és a magasság szerint. Eltolás nincs. Ez a kurzor-koordináták skálája, nem a dátumcsúszka leképezése. A `[+0x2c8]`-`[+0x2d4]` mezőket a konstruktor (`0x007fa7f0`, kimenet 1582-1917. sor) nem írja.
+
+**Válasz (3):** az elosztás megvan (`0x00a52890` → `0x0052d3c0` → `0x009e4630` → típus szerinti slot). A konstruktor és a destruktor megvan. A vezérlők kattintási célja és a dátumcsúszka leképezése **NINCS MEG**.
+
+**4. A `[this+0x2dc]` objektum és `[X+0x25c] == this`.**
+
+- `0x007fa7f0` (QDrawable konstruktor, kimenet 1899-1907. sor): a `0x0097c5d0(0x268)` foglalás és `memset` (diszasszembly `0x007fae32-0x007fae39`), majd `0x00802c60(X, this, [this+0x2e8])` (`0x007fae4a`: `push ecx`, `push ebp`, `push esi`). A visszatérés a `[this+0x2dc]`-be kerül (1907. sor).
+- `0x00802c60` (diszasszembly `0x00802c60-0x00802d86`): az első argumentum `X` (az `ebx`-be kerül). `[ebx+0x25c] = eax` (`0x00802c79`), ahol az `eax` a második argumentum, vagyis `this`: a `0x00a518b0` hívás `ret 4`-gyel (`0x00a51bb2`) takarítja a saját argumentumát, így a `[esp+0x18]` a második argumentumra mutat. `[ebx+0x260] = ecx` (`0x00802c9d`) a harmadik argumentum, a `[this+0x2e8]`. Visszatérés: `X` (`0x00802d82`, `mov eax, ebx`, `ret 0xc`).
+- Vtable: `[X] = 0xcbd5c4` (`0x00802c7f`), `[X+0x48] = 0xcbd650` (`0x00802c85`), `[X+0x58] = 0xcbd660` (`0x00802c8c`). Az index RTTI-ja mindhárom címre `OneUpUI::vftable`.
+- **Válasz (4):** `[this+0x2dc]` egy **`OneUpUI`** objektum, mérete `0x268` bájt (megerősített: RTTI és foglalási méret). **`[X+0x25c] == this`: igen** (megerősített). `X` és `this` különböző objektum. Ezért a `0x00803110` `esi = [X+0x25c]` sora a QDrawable-re mutat, és a szünetből való visszatérés a `this` jelzőit állítja (38.2.19 §3).
+
+**5. A `0x005e8a70` alapútja (kimenet 350-453. sor).**
+
+- **A forrás.** A `local_c0` (forráslista) és a `local_bc` (darabszám) az Időrend-ágban (`param_2 = 1`) nullázódik (kimenet 209-210. sor). A `local_c0 = param_1` (127. sor) csak a `param_2 == 0` ágban van, és az a 192. vagy 195. sorban visszatér. A dekompiláció szerint tehát az Időrend-ágban a forrás üres. Ez ellentmond a 38.2.17 futásfelvételének (kártyák), ezért a dekompiláció vagy a változó-azonosítás hibás lehet. A forrás eredete **NINCS MEG**.
+- **A feltöltés (ha a forrás nem üres).** Körforgatás: a `param_1[0x399]` (bájt-eltolás `0xe64`) értékével egyező első elemtől a forrás végéig (350-385. sor), majd a 0. elemtől a találatig (410-453. sor). Ha nincs találat, az eredeti sorrend. Ha `param_1[0x399] == -1`, a `0x00891110` hívás és üres lista (341. sor).
+- **Rendezés: nincs.** A 350-453. sorban nincs rendező hívás. A hívások: `0x0097c810` (növelés) és `0x0097caf0` (felszabadítás).
+- **Üres lista:** a 532. sor (`(uStack_d0 & 0xfffffffe) == 0`) az `IDS_MUST_SELECT` ágra visz.
+- **A Ctrl- és Shift-ágak** (kimenet 231-330. sor) más úton töltik a listát (`0x0049e1e0`, a `piStack_b0` mutatóval, 313. sor); ez nem az alapút.
+- **Válasz (5):** a rendezés nincs. A kiválasztott elem köré forgatás van. Az Időrend-ág forrása **NINCS MEG**, és a dekompiláció szerint üres.
+
+**Nyitott kérdések mérlege.** A nyitva maradt tételek mind a 38.2.20-ból örököltek, ezért a munkasorba (`picasapy-agent`, `memory/nyitott-kerdesek-sor.md`) kerülnek; ezt a hívónak kell frissítenie. Saját, ebben a körben feltett kérdés nincs nyitva.
+
+- Lezárva ebben a körben (7): (a) a visszahívás útja a pumpából (`0x0097fff5`); (b) a léptetési döntés (`0x00802060`); (c) a `[this+0x51a]` írói és hívói; (d) `X` típusa és `[X+0x25c] == this`; (e) a `0x203`-ág kizárása a `0x201` blokkban; (f) a `0x007fb540` ciklus és a 20 Hz felső korlát; (g) a MsgWait küszöb (5 ms) és az üzenetkeret (10 ms).
+- Örökölt, nyitva (9): (1) az Időrend-pumpa azonosítása és a hívó időtúllépése; (2) a `0x00802630` léptetés-törzse és a nem nulla visszatérés; (3) a `0x007fd800` és a `0x007fd8c0` kimenetének jelentése; (4) a vezérlők kattintás-leképezése; (5) a dátumcsúszka leképezése; (6) az Időrend-ág alapút-forrása; (7) a `Preferences\SlideshowEffectTime` felhasználói értéke (mérés); (8) a `0x0094aa00` és a `0x0094ace0` hívói; (9) a `0x007fb540` közvetett hívója.
+
+Nyitott kérdések: 9 nyílt (örökölt) · 7 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak nyitva (saját).
+
+**Bizonyítottsági fok (38.2.21).**
+
+| állítás | bizonyíték | fok |
+|---|---|---|
+| üzenethurok `0x0097fc30` | diszasszembly `0x0098030f-0x0098032a` (38.2.20) | megerősített |
+| tizenegy közvetlen hívó, 1/5/10 ms | diszasszembly, az utolsó `push` | megerősített |
+| az Időrend-pumpa azonosítása | NINCS MEG | nyitott |
+| a 10 ms-os jelöltek webböngésző-jellegűek | dekompiláció 404, 501. sor | feltételes |
+| visszahívás a pumpából, `call [vtable+4]` | diszasszembly `0x0097ffe3-0x0097fff5` | megerősített |
+| a visszahívás a `0x00803ab0` | index-RTTI és `0xcbd6c8+4` | megerősített |
+| a `0x00803ab0` visszatérései | diszasszembly `0x00803abc-0x00803aec` | megerősített |
+| a `0x00802060` döntési sora | diszasszembly `0x00802066-0x00802125` | megerősített |
+| léptetési küszöb: `S` másodperc | diszasszembly `0x008020b9-0x008020d4` | megerősített (küszöb) |
+| az `S` felhasználói értéke | NINCS MEG | nyitott |
+| szünet után az intervallum 1 ms | diszasszembly (`1` visszatérés), dekompiláció 207-209. sor | megerősített (író); más író NINCS MEG |
+| a pumpa várakozása 5 ezredmásodpercnél rövidebb körben | diszasszembly `0x009802f9-0x00980308` | megerősített |
+| a `[+0x51a]` írója és feltétele | diszasszembly `0x008018ac-0x008018b2`, `0x00801c19` | megerősített |
+| a `[+0x51a]` három hívója | diszasszembly | megerősített |
+| a hívók gyakorisága | a feltételek összevetése | feltételes |
+| az olvasó 50 ms, legfeljebb 20 Hz | diszasszembly `0x007fb540-0x007fb58f` | megerősített |
+| a `0x007fd800` kimenete EAX-ban | diszasszembly `0x007fe32f-0x007fe33e` | megerősített |
+| `0x007fde80` a QDrawable 11. slotja | index-RTTI és `0xcbd698` olvasása | megerősített |
+| a `0x203` ág a `0x201` blokkban nem fut | diszasszembly `0x007fe1d9-0x007fe346` | megerősített (kizárás) |
+| ytUIEvent-konstruktor, destruktor, típustábla | dekompiláció 1376-1424, 1497-1554. sor | feltételes |
+| slot-térkép (`0x4c`-`0x58`) | index-RTTI, `OneUpUI::vftable` | megerősített (a slot-szám); feltételes (az objektum) |
+| vezérlők kattintása | NINCS MEG | nyitott |
+| dátumcsúszka leképezése | NINCS MEG | nyitott |
+| `[+0x2dc]` = `OneUpUI` | index-RTTI `0xcbd5c4`, foglalás 0x268 | megerősített |
+| `[X+0x25c] == this` | diszasszembly `0x00802c79`, `0x00a51bb2`, `0x007fae4a` | megerősített |
+| az alapút forrása az Időrend-ágban | dekompiláció 209-210. sor | feltételes (ellentmondás a 38.2.17-tel) |
+| az alapút nem rendez | dekompiláció 350-453. sor, hívások | feltételes |
+
+**Amit KIZÁRTAM (38.2.21).**
+- A `0x0097fc30` időtúllépése nem az eltelt idő; a hívó adja.
+- A `0x00982270` nem hívja a visszahívást.
+- A `0x0094aa00` és a `0x0094ace0` a tartalmuk szerint nem Időrend-specifikus pumpa (a hívási kapcsolatot nem zártuk ki).
+- `X` nem a QDrawable: külön, `0x268` bájtos OneUpUI objektum.
+- A `0x007fe33e` hívásakor EAX nem a dekompiláció szerinti `0`, hanem a `0x007fd800` kimeneti mezője.
+- A `0x203` ág a `0x201` blokkban nem fut.
+- A `0x00802060` nem ad `0`-t.
+
+**Fejlesztési következmény.** Terméki kódot nem írtunk. A léptetési ütem nem implementálható: hiányzik az Időrend-pumpa és a registry-érték. A `OneUpUI` és a `[this+0x2dc]` kapcsolat most már bináris. A kattintási cél és a dátumcsúszka leképezése nyitott, ezért a menüpont és a `Ctrl+5` bekötését a mostani ismeretek alapján nem lehet megírni.
+
+**Következő Ghidra-körök.**
+
+- `Ghidra-kör kell: 0x00983430, 0x00983fc0, 0x00982bf0 - a qshow-ablak futtató hurka, és hogy a 0x0097fc30 11 hívója közül melyik fut az Időrend alatt, milyen időtúllépéssel [blokkoló]`
+- `Ghidra-kör kell: 0x00802630 - a léptetés törzse, és a nem nulla visszatérés (-1, a bejegyzés eltávolítása) [blokkoló]`
+- `Ghidra-kör kell: 0x00982270 - a bejegyzés-lista felépítése és sorrendje [nem blokkoló]`
+- `Ghidra-kör kell: 0x007fd800, 0x007fd8c0 - a találati index kimenete és a visszatérési érték jelentése [blokkoló]`
+- `Ghidra-kör kell: 0x007fda80 - a 0x201 Időrend-ág hívott függvénye és az 1000000 visszatérés [blokkoló]`
+- `Ghidra-kör kell: 0x007fb210 - az overlay-elemek rajz- és találati téglalapjai, és a sliderthumb, timelinedot, startbutton, exit, listaikon kattintás-kezelői [blokkoló]`
+- `Ghidra-kör kell: 0x00a6cd10, 0x00a52820, 0x00401570, 0x00803180, 0x008032e0 - az OneUpUI kattintás-kezelői és a határoló téglalap, és hogy a 0x009e4630 melyik objektumon fut [blokkoló]`
+- `Ghidra-kör kell: 0x005e8a70 - a local_c0 és a local_bc írói az Időrend-ágban (kimenet 209-210. sor), és a forrás-lista eredete; diszasszembly-ellenőrzés [blokkoló]`
+- `Ghidra-kör kell: 0x0094aa00 és 0x0094ace0 hívói (0x00593450, 0x006fc7d0, 0x006fcb60, és a 0x0094ace0 tíz hívója) - Időrend-e [nem blokkoló]`
+- `Ghidra-kör kell: 0x006f9cc0 - az 1 ms-os 0x0097fc30 hívó (0x006fb417) kontextusa, qshow-e [nem blokkoló]`
+- `Ghidra-kör kell: 0x00a52890 - a típuskódok diszasszemblált ellenőrzése (1, 2, 3, 4, 5, 0xd, 7, 8) [nem blokkoló]`
+- Mérés kell (nem Ghidra): a `Preferences\SlideshowEffectTime` felhasználói értéke a tulajdonos gépén (futó Picasa vagy a registry-kulcs) [blokkoló a léptetési ütem pontos értékéhez]
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
