@@ -8539,9 +8539,10 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/newalbum)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
-            <source>Show photos on a timeline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Prikaži fotografije na vremenskoj traci</translation>
+            <source>Timeline view of all your photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/timelinebutton)</extracomment>
+            <translation>Prikaz svih fotografija na vremenskoj liniji</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />

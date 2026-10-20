@@ -62,8 +62,8 @@ Rectangle {
     signal newAlbumRequested()
     //: #1421: az eredeti `timelinebutton` — ugyanaz a nézetváltás,
     //: mint a Nézet ▸ Időrend (Ctrl+5).
-    //: A nézet nyitva van-e — a gomb aktív állapotához. A hívó köti;
-    //: alapértéke false, hogy a próbák stub-jain se legyen undefined.
+    property bool timelineActive: false
+    signal timelineRequested()
     //: #1421: a `flatview`/`folderview` pár — a bal hasáb lapos vagy
     //: fa elrendezése. A vezérlő a `FolderHierarchyController`, ami
     //: ÖNÁLLÓ context property; a hívó köti be, a próbák stub-jain
@@ -123,7 +123,7 @@ Rectangle {
     // elrejtőzik, és a mező a gombsor mögé húzódik a felszabadult helyre
     // (#3603). A főablak legkisebb szélessége (a tálca igénye) ma ennél
     // nagyobb, a küszöb tehát a sáv saját biztosítéka.
-    readonly property real leftButtonsRight: 247
+    readonly property real leftButtonsRight: 412
     readonly property real searchMinWidth: 120
     readonly property real compactWidth: Math.max(
         (leftButtonsRight + 2) / 0.4,
@@ -355,32 +355,10 @@ Rectangle {
             sourceComponent: captureMoviePanelComponent
             onLoaded: item.open()
         }
-        // #1421: az `timelinebutton` — a NÉZET már megvolt (Nézet ▸ Időrend,
-        // Ctrl+5, `timeline_controller.py`), csak az eszköztárról hiányzott.
-        //
-        // Mért méret: 132 × 28 (`konyvtar-ablak-meretek.md` 2.) — ez az
-        // egyetlen FELIRATOS a három kihelyezett gomb közül, ezért fér is
-        // bele a szöveg (az `newalbum` 29 × 22-je nem fért, ld. ott).
-        //
-        // ⚠️ Szűk ablaknál elrejtőzik (#423), és `Layout.minimumWidth: 0`,
-        // hogy a zsugorodási sorrend érintetlen maradjon.
-        // #1903: az „Időrend" váltógomb ELTÁVOLÍTVA a fejlécből.
-        //
-        // A tulajdonos élesben jelentette (két képernyőképpel), és a
-        // bináris megerősíti: az eredeti Időrend NEM rácsnézet, hanem
-        // TELJES KÉPERNYŐS, ANIMÁLT BEMUTATÓ a diavetítő motorján
-        // (`oneup/timeline` + `BigSlideshow2`, `0x008037e0`), saját
-        // RÁTÉTES vezérlősávval (`overlays/timeline` · `timelinedot` ·
-        // `sliderthumb` · `startbutton` · `exit`, `0x007fb210`).
-        //
-        // ⇒ A fejlécben ilyen gomb az eredetiben NEM LÉTEZIK: az Időrend
-        // vezérlői a teljes képernyős rátéten ülnek. Amíg a valódi nézet
-        // nincs megépítve, a belépési pont nem kínálhatja fel magát —
-        // egy kattintható gomb, ami mást ad, mint amit ígér, rosszabb,
-        // mint a hiánya (#936).
-        //
-        // A `Nézet ▸ Időrend` menütétel HELYE megmarad (az eredetiben
-        // létezik), csak inaktív — ld. PicasaMenuBar.qml.
+        // A #1903 ideiglenesen eltávolította ezt a gombot, amíg a régi
+        // rács helyett el nem készült az eredeti teljes képernyős mód.
+        // A #5377 most ugyanahhoz a teljes képernyős bemutatóhoz köti,
+        // mint a Nézet ▸ Időrend menüpontot és a Ctrl+5 billentyűt.
         // #1808 → VISSZAVONVA: a rács-nagyító KAPCSOLÓGOMBJA nincs itt.
         //
         // A gomb `thumbui/loupehit`-ből mért, és a lánca MŰKÖDIK is — a
@@ -417,6 +395,22 @@ Rectangle {
         // ide egy későbbi kör „hiányzó gombként". A felfedezhetőséget a
         // gomb buboréksúgója adja („húzd a képek fölött"); az eredeti
         // erre nem ad támpontot — mérve külön egérmutatót SEM használ.
+        // #5377: a teljes képernyős Időrend elérhető marad az eszköztárról.
+        PicasaButton {
+            objectName: "toolbarTimelineButton"
+            text: qsTr("Timeline")
+            checkable: true
+            checked: toolbar.timelineActive
+            visible: !toolbar.toolbarCompact
+            x: 280
+            y: 3
+            width: 132
+            height: 28
+            ToolTip.text: qsTr("Timeline view of all your photos")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: toolbar.timelineRequested()
+        }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
         // `searchcontainer.tre`-jének `filter_label` kényszere szerint
         // (`YConstraint 0, 0, -4`) a csík TETEJÉTŐL −4px-re ül, azaz a

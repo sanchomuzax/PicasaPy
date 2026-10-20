@@ -1142,24 +1142,11 @@ MenuBar {
             text: qsTr("&Slideshow") + "\tCtrl+4"
             onTriggered: bar.slideshowRequested()
         }
-        // #1903: a tétel HELYE megmarad — az eredetiben létezik —, de
-        // INAKTÍV, amíg a valódi Időrend nincs megépítve.
-        //
-        // A tulajdonos élesben jelentette (két képernyőképpel), és a
-        // bináris megerősíti: az eredeti Időrend TELJES KÉPERNYŐS,
-        // ANIMÁLT BEMUTATÓ a diavetítő motorján (`oneup/timeline` +
-        // `BigSlideshow2`, `0x008037e0`), saját rátétes vezérlősávval
-        // (`0x007fb210`) és „Időrend előkészítése…" fázissal
-        // (`CThumbUI::MakeTimeline`). A miénk lapos rács volt — más
-        // felépítés, más vezérlők, más motor.
-        //
-        // A szürke tétel az őszinte állapot: a funkció helye megvan, a
-        // tartalma nincs kész. Egy kattintható tétel, ami mást ad, mint
-        // amit ígér, rosszabb, mint a hiánya (#936).
+        // #5377: a teljes képernyős gyűjteménykártyás bemutató.
         MenuItem {
             objectName: "menuViewTimeline"
             text: qsTr("Ti&meline") + "\tCtrl+5"
-            enabled: false
+            enabled: true
             onTriggered: bar.timelineRequested()
         }
         MenuSeparator {}

@@ -8521,14 +8521,16 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/newalbum)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
-            <source>Show photos on a timeline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>A képek megjelenítése időrendben</translation>
+            <source>Timeline view of all your photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/timelinebutton)</extracomment>
+            <translation>Az összes fotó megtekintése időrendben</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
             <source>Timeline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(thumbui/timelinebutton)</extracomment>
             <translation>Időrend</translation>
         </message>
         <message>

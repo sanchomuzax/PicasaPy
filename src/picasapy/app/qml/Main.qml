@@ -129,6 +129,8 @@ ApplicationWindow {
         }
     }
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
+    property bool timelineSlideshowActive: false
+    property int visibilityBeforeTimeline: Window.Windowed
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
     //: jelöl ki — ez szándékos, ld. LightboxFeed.qml.
@@ -1782,17 +1784,34 @@ ApplicationWindow {
                              : window.valtsFiokLapot("properties")
     }
 
-    // -- időrend nézet (#24, Ctrl+5) -----------------------------------------
-    // A teljes könyvtár dátum szerinti, korszakokra bontott áttekintése
-    // (TimelineView.qml) — a nézőt nem lehet vele egyszerre nyitva tartani,
-    // a diavetítéshez hasonlóan (startSlideshow) teljes képernyős réteg.
+    // -- időrend nézet (#5377, Ctrl+5) ---------------------------------------
+    function closeTimeline() {
+        if (!window.timelineOpen)
+            return
+        window.timelineOpen = false
+        if (!window.timelineSlideshowActive)
+            window.visibility = window.visibilityBeforeTimeline
+    }
+
     function toggleTimeline() {
         if (window.timelineOpen) {
-            window.timelineOpen = false
+            window.closeTimeline()
             return
         }
-        timelineController.reload()
+        window.visibilityBeforeTimeline = window.visibility
+        if (timelineController)
+            timelineController.reload()
+        window.visibility = Window.FullScreen
         window.timelineOpen = true
+    }
+
+    function startTimelineSlideshow(collectionIndex) {
+        if (!timelineController)
+            return
+        timelineController.setCurrentCollection(collectionIndex)
+        window.timelineSlideshowActive = true
+        window.timelineOpen = false
+        window.startSlideshow(0)
     }
 
     // #4569: az eredeti F11 a képnéző teljes képernyős módját kapcsolja.
@@ -1817,14 +1836,10 @@ ApplicationWindow {
         onActivated: window.toggleViewerFullscreen()
     }
 
-    // #1903: a `Ctrl+5` NEM sül el, amíg a valódi Időrend nincs kész — a
-    // menütétel is inaktív. A billentyű így nem kerülhet meg egy szürke
-    // menüpontot (a #1686 fordított esete: ott a billentyű MŰKÖDÖTT,
-    // miközben a tétel helyfoglaló volt, és a funkciót csak az érte el,
-    // aki ismerte a gyorsbillentyűt).
+    // #5377: kijelölés nélkül is megnyitja a teljes képernyős bemutatót.
     Shortcut {
         sequence: "Ctrl+5"
-        enabled: false
+        enabled: !window.viewerOpen && !slideshow.visible
         onActivated: window.toggleTimeline()
     }
 
@@ -1859,9 +1874,16 @@ ApplicationWindow {
     }
     function exitSlideshow() {
         var wasScreensaver = slideshow.screensaverMode
-        window.visibility =
-            window.visibilityBeforeSlideshow === Window.FullScreen
-                ? Window.Windowed : window.visibilityBeforeSlideshow
+        var fromTimeline = window.timelineSlideshowActive
+        window.visibility = fromTimeline
+            ? (window.visibilityBeforeTimeline === Window.FullScreen
+                ? Window.Windowed : window.visibilityBeforeTimeline)
+            : (window.visibilityBeforeSlideshow === Window.FullScreen
+                ? Window.Windowed : window.visibilityBeforeSlideshow)
+        if (fromTimeline) {
+            window.timelineSlideshowActive = false
+            return
+        }
         if (wasScreensaver)
             return
         if (slideshow.currentIndex >= 0) {
@@ -1987,7 +2009,7 @@ ApplicationWindow {
         searchOptionsOpen: toolbar.searchOptionsOpen
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
         //: contentItem nem kapja meg a teljes ablakot.
-        visible: !window.slideshowRunning
+        visible: !window.slideshowRunning && !window.timelineOpen
         // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
         id: picasaMenuBar
         //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
@@ -2001,6 +2023,7 @@ ApplicationWindow {
         // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
         // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
         onReturnToLibraryRequested: photoViewer.kerBezaras()
+        onTimelineRequested: window.toggleTimeline()
         onUnhideRequested: window.unhideHiddenSelection()
         onWriteXmpFacesDialogRequested:
             xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
@@ -2938,6 +2961,7 @@ ApplicationWindow {
         // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) — a
         // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
         visible: !window.viewerOpen && window.libraryFrameVisible
+                 && !window.timelineOpen
         searchSuggestionsVisible: searchSuggestionsBox.visible
         onSearchSuggestionKeyPressed: function(key) {
             if (key === Qt.Key_Down)
@@ -2966,6 +2990,8 @@ ApplicationWindow {
         onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
         // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
+        timelineActive: window.timelineOpen
+        onTimelineRequested: window.toggleTimeline()
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
         // Nézet ▸ Mappanézet almenü (#1454) — egy állapot, két felület.
         //: #1956: KÉT őr kell, mert KÉT külön hiba fenyeget:
@@ -3059,7 +3085,8 @@ ApplicationWindow {
         // #305: null-őr
         photosModel: !controller ? null
             : slideshow.screensaverMode ? controller.screensaverPhotos
-            : controller.photos
+            : window.timelineSlideshowActive && timelineController
+                ? timelineController.slideshowPhotos : controller.photos
         // #1640: a megjelenítési mód a vetített képre is hat — a kötés innen
         // adja át, hogy a dia URL-je módváltáskor újraértékelődjön
         displayMode: controller ? controller.displayMode : ""
@@ -3183,26 +3210,18 @@ ApplicationWindow {
         onDeleteRequested: picasaMenuBar.activateDeleteCommand()
     }
 
-    // #24: Időrend nézet (Ctrl+5) — a teljes könyvtár korszak-áttekintése;
-    // egy bélyegképre kattintva a fő rácsban jelenítjük meg a képet
-    // (mappaváltás a bekötő selectFolder-jén át, majd a néző az
-    // odakerült sor alapján — rowOfId, a keresési-találat minta szerint).
+    // #5377: a gyűjteménykártyás bemutató teljes képernyős rétege.
     TimelineView {
         id: timelineView
         objectName: "timelineView"
         anchors.fill: parent
+        z: 90
         visible: window.timelineOpen
-        // #305: null-őr — a timelineController is null lehet átmenetileg
-        // a QML-engine leépítésekor
-        periodsModel: timelineController ? timelineController.periods : []
-        onClosed: window.timelineOpen = false
-        onPhotoChosen: function(photoId, folderPath) {
-            window.timelineOpen = false
-            controller.selectFolder(folderPath)
-            var row = controller.photos.rowOfId(photoId)
-            if (row >= 0) {
-                window.openPhotoViewer(row)
-            }
+        dataController: timelineController
+        collectionsModel: timelineController ? timelineController.collections : []
+        onClosed: window.closeTimeline()
+        onSlideshowRequested: function(index) {
+            window.startTimelineSlideshow(index)
         }
     }
 
@@ -4614,7 +4633,7 @@ ApplicationWindow {
         // gyereke (`thumbui/bottombevel_base` + `outputlayout.tre`), tehát a
         // projekt-lapon a panellel együtt tűnik el — a felszabaduló sávot a
         // vászon kapja meg.
-        visible: window.libraryFrameVisible
+        visible: window.libraryFrameVisible && !window.timelineOpen
         appWindow: window
         onPhotosDroppedOnTray: function(rows) {
             if (controller && rows && rows.length > 0)

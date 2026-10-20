@@ -89,42 +89,25 @@ class TestAszukAblak:
 
 
 class TestIdorendGomb:
-    """⚠️ A gomb a #1903-ban VISSZAVONVA — a mérés MEGDŐLT.
+    """A fejléc Időrend gombja ugyanazt a bemutatót nyitja, mint a menü."""
 
-    Ez az osztály eredetileg azt állította, hogy az „Időrend" váltógomb
-    ott van az eszköztáron (a #1421 mért helyével és méretével). A
-    tulajdonos élesben jelentette, két képernyőképpel, hogy amit a gomb
-    megnyit, az **nem az eredeti funkció**: a Picasa Időrendje TELJES
-    KÉPERNYŐS, ANIMÁLT BEMUTATÓ a diavetítő motorján
-    (`oneup/timeline` + `BigSlideshow2`, `0x008037e0`), saját RÁTÉTES
-    vezérlősávval (`overlays/timeline` · `timelinedot` · `sliderthumb` ·
-    `startbutton` · `exit`, `0x007fb210`) és „Időrend előkészítése…"
-    fázissal — a miénk lapos rács volt hónap-fejlécekkel.
-
-    ⇒ A fejlécben ilyen gomb az eredetiben ezen a helyen NEM létezik: az
-    Időrend vezérlői a teljes képernyős rátéten ülnek. A #1421 mérése a
-    HELYET és a MÉRETET jól adta meg, de rossz funkcióhoz — a felirat
-    egyezése („Timeline" → „Időrend") nem jelenti, hogy ugyanazt a
-    funkciót építettük meg.
-
-    A tesztek ezért **megfordultak**: azt őrzik, hogy a gomb NINCS ott,
-    amíg a valódi nézet nincs megépítve (#1903). A többi kihelyezett gomb
-    (Új album, lapos/fa nézetváltó) érintetlen — azok mérése áll.
-    """
-
-    def test_NINCS_idorend_gomb_a_savon(self, qml_app, qt_app):
+    def test_idorend_gomb_van_a_savon(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        assert window.findChild(QObject, "toolbarTimelineButton") is None
+        assert window.findChild(QObject, "toolbarTimelineButton") is not None
 
-    def test_a_forrasban_sincs_benne(self):
+    def test_eredeti_gombfeliratot_es_aktiv_allapotot_hasznal(self):
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        assert 'objectName: "toolbarTimelineButton"' not in forras
+        blokk = blokk_horgonyra(forras, 'objectName: "toolbarTimelineButton"')
+        assert 'text: qsTr("Timeline")' in blokk
+        assert "checked: toolbar.timelineActive" in blokk
+        assert "ToolTip.text: qsTr(\"Timeline view of all your photos\")" in blokk
+        assert "onClicked: toolbar.timelineRequested()" in blokk
 
-    def test_a_MENUTETEL_helye_megmarad(self):
-        """A hely az eredetiben létezik — csak a tartalma nincs kész."""
+    def test_a_MENUTETEL_aktiv_es_ugyanazt_a_jelzest_kuldi(self):
         menu = (_TOOLBAR.parent / "PicasaMenuBar.qml").read_text(
             encoding="utf-8"
         )
-        assert 'objectName: "menuViewTimeline"' in menu
-
+        blokk = blokk_horgonyra(menu, 'objectName: "menuViewTimeline"')
+        assert "enabled: true" in blokk
+        assert "onTriggered: bar.timelineRequested()" in blokk
 

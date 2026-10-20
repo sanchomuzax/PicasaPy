@@ -108,7 +108,7 @@ class TestMegjelenitesiMod:
         )
 
     def test_a_nyugdijazott_remote_desktop_tetel_tiltott(self, nezet_app, qt_app):
-        window, _controller, _engine = nezet_app
+        window, controller, _engine = nezet_app
         almenu_nyit(window, qt_app, ("menuViewDisplayMode",))
         tetel = _objektum(window, "menuViewDisplayModeRemoteDesktop")
         assert tetel is not None, "a Remote Desktop tétel hiányzik"
@@ -169,18 +169,21 @@ class TestDiavetitesEsIdorend:
         QTest.keyClick(window, Qt.Key.Key_Escape)
         assert varj(qt_app, lambda: window.property("slideshowRunning") is False)
 
-    def test_az_idorend_tetel_tiltott_es_a_kattintasa_nem_nyit_semmit(self, nezet_app, qt_app):
+    def test_az_idorend_tetel_aktiv_es_a_kattintasa_bemutatot_nyit(self, nezet_app, qt_app):
         window, controller, _engine = nezet_app
         elokeszit(window, qt_app, controller)
         almenu_nyit(window, qt_app)
         tetel = _objektum(window, "menuViewTimeline")
         assert tetel is not None and tetel.property("visible") is True
-        assert tetel.property("enabled") is False, "az Időrend nincs még kész"
+        assert tetel.property("enabled") is True
 
         kozep = tetel.mapToScene(tetel.boundingRect().center()).toPoint()
         QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kozep)
         qt_app.processEvents()
 
+        assert varj(qt_app, lambda: window.property("timelineOpen") is True)
+        QTest.keyClick(window, Qt.Key.Key_Escape)
+        assert varj(qt_app, lambda: window.property("timelineOpen") is False)
         assert window.property("slideshowRunning") is False
         assert window.property("activeDrawerTab") == ""
 
