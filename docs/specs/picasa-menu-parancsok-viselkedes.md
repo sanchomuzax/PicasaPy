@@ -3537,6 +3537,8 @@ Ez az indexben látott négy közvetlen hívófüggvény hét hívási helye; ne
 
 **Következtetés.** A Ctrl+5 kijelölés nélkül is az Időrend bemutatót nyitja; a bemutató gyűjteményenként egy kártyát mutat (név, dátum, bélyegköteg), a Right a következő gyűjteményre lép, az Escape kilép. A panel a teljes képernyőn középre igazított, fix méretű terület, körülötte fekete.
 
+**Billentyűk és kattintás (job-219, job-220, 2026-10-20, megerősített, képkockák).** A vezérlősávra adott egérkattintás (lejátszás 640,690; lista-ikon 366,690) a job-219-ben semmit nem változtatott, a billentyűk igen. A job-220-ban a **szóköz** az aktuális kártya gyűjteményét teljes képernyős diavetítésként indítja: az első kép (a szürke átmenet) fekete háttéren, nagyítva jelenik meg, majd kisebbre vált (6. és 12. kocka, a halvány „PicasaTeszt” felirattal); az End, Left és Home billentyűkre képről képre lép (13. kocka: a színtábla, 17. kocka: egy űrkép); az Escape kilép a főablakba (20-21. kocka).
+
 **Nem dőlt el ebből a felvételből:** az átmenet animációja (a kockák 3 másodpercenként készültek), a lejátszás gomb automatikus léptetésének üteme, a lista-ikon funkciója és a csúszka húzásának hatása. Ezekhez a következő felvétel lépései: a lejátszás gomb és a lista-ikon megnyomása, 1 másodperces kockákkal.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
