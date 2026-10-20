@@ -1,7 +1,7 @@
 """A „Rács" táblázat maradék vezérlői VALÓDI kattintással (#5135, 3. rész).
 
 Lefedve:
-- `timelineThumbMouseArea` - az idővonal bélyegképe megnyitja a nézetet;
+- a teljes képernyős Időrend szóközre a gyűjtemény diavetítését indítja;
 - a `moreSuggestionsButton` hiányzik a Név nélküliek albumából, mert a #5183
   eltávolította a közös névsor műveleteit ebből a nézetből.
 
@@ -19,8 +19,9 @@ from __future__ import annotations
 
 from PySide6.QtCore import QMetaObject, Qt, Slot
 from PySide6.QtQuick import QQuickWindow
+from PySide6.QtTest import QTest
 
-from test_racs_vezerlok_valodi_5135 import _kattints_elemre, _varj, _vizualis
+from test_racs_vezerlok_valodi_5135 import _varj, _vizualis
 from test_unnamed_faces_view import _StubFaceScanController, _make_view
 
 
@@ -33,23 +34,28 @@ class _Keresoes(_StubFaceScanController):
 
 
 class TestIdovonalBelyeg:
-    def test_a_belyegkep_valodi_kattintasra_megnyitja_a_nezot(self, qml_app, qt_app):
-        window, controller, _engine = qml_app
+    def test_a_szokozev_valodi_billentyure_elinditja_a_gyujtemeny_vetitest(
+        self, qml_app, qt_app
+    ):
+        window, _controller, _engine = qml_app
         window.show()
         window.requestActivate()
         QMetaObject.invokeMethod(window, "toggleTimeline", Qt.ConnectionType.DirectConnection)
         qt_app.processEvents()
         assert _varj(qt_app, lambda: window.property("timelineOpen") is True)
-        assert _varj(qt_app, lambda: _vizualis(window, "timelineThumbMouseArea") is not None)
-        belyeg = _vizualis(window, "timelineThumbMouseArea")
+        idorend = _vizualis(window, "timelineView")
+        assert idorend is not None
+        idorend.forceActiveFocus()
 
-        _kattints_elemre(qt_app, window, belyeg)
+        QTest.keyClick(window, Qt.Key.Key_Space)
 
-        assert _varj(qt_app, lambda: window.property("viewerOpen") is True), (
-            "a bélyegkép kattintás nem nyitotta meg a nézetet"
-        )
+        vetites = _vizualis(window, "slideshowView")
+        assert _varj(qt_app, lambda: vetites is not None and vetites.isVisible())
         assert window.property("timelineOpen") is False
-        assert controller.currentFolder != ""
+        assert window.property("viewerOpen") is False
+
+        QTest.keyClick(window, Qt.Key.Key_Escape)
+        assert _varj(qt_app, lambda: not vetites.isVisible())
 
 
 class TestTovabbiJavaslatok:

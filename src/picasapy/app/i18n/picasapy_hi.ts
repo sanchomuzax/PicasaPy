@@ -8518,9 +8518,10 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/newalbum)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
-            <source>Show photos on a timeline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>समयरेखा पर फ़ोटो दिखाएं</translation>
+            <source>Timeline view of all your photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/timelinebutton)</extracomment>
+            <translation>आपके सभी फ़ोटो का समय-रेखा दृश्य</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />

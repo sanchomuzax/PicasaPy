@@ -8518,9 +8518,10 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/newalbum)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
-            <source>Show photos on a timeline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mostrar fotografias numa linha do tempo</translation>
+            <source>Timeline view of all your photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/timelinebutton)</extracomment>
+            <translation>Vista cronológica de todas as fotografias</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="0" />
