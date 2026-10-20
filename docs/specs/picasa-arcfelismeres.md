@@ -4419,3 +4419,101 @@ Ez a „Névjegyek frissítése” (Refresh Contacts) ág, nem törlés. A `0x00
 **Bizonyítottsági fok.** Az 1. és 2. pont: megerősített (két út: a vtábla PE-olvasata és az asm). A 3. pont: feltételes. A `0x007b9ff0` közvetett hívójának azonosítása: NINCS MEG.
 
 **Lezárás (N6, 26. kör): (c).** A törlés utáni lista-újraépítés nincs a törlési ágban, és nincs a `0x007b9ff0`-ban. A kérdés a `0x007b9ff0` hívójáig vezet (a `ContactManagerDlg` vtábla 100. slotjáig). Ghidra-kör kell: a `0x007b9ff0` közvetett hívója (a vtábla-slot 100 használója). A pásztázás nem találja, mert nincs közvetlen `+0x190` hívás; cím még nincs. A következő lépés a generikus útválasztók és a `0x00cb7be4` vtábla-bejegyzés környezetének vizsgálata [blokkoló]
+
+### 37.9 27. kör (2026-10-20, #5184, a 22. Ghidra-kör): a `0x00448fb0` táblája az `albumcontactids` oszlop betöltött tömbje; a tábla-író a `0x00499610` (N5)
+
+**Kérdés.** Ki írja a `0x00448fb0` olvasó táblát (`this+0x27a0` = `[esi+0x58]`, `esi = this+0x2748`), mit tartalmaz a 64 bites elem, és mi váltja ki. Ez az N5 (személyszintű mellőzés) kérdése.
+
+**Módszer.** A `paszta.py` darabolt pásztázása a teljes `.text`-re (2 884 879 utasítás, `0x00401000` .. `0x00c3f15b`), szöveges dekódolással (`detail=False`), memóriakapuval. A pásztázás nyers rekordjai ideiglenesek voltak, nincsenek a repóban.
+
+**Kontrollok (pozitív ismert minták, mindkettő átment).**
+- K1: a `0x00448fb0` közvetlen hívóhelyei pontosan a Ghidra-kör 21 címe (`0x0041a24b` … `0x007a5eaa`).
+- K2: a `0x00448fb0` törzsében (a mért méret 186 bájt) megvan a fejléc-mutató olvasása `mov eax, dword ptr [esi + 0x58]` (`0x00449009`), a `+0x4c` és `+0x48` olvasás (`0x00449010`, `0x0044901d`), és az alapérték olvasása `mov ecx, dword ptr [esi + 0x60]` (`0x00449044`), `mov edx, dword ptr [esi + 0x64]` (`0x0044904a`).
+
+**A bázis (megerősített).** `add esi, 0x2748` a `0x00448fbc`-ben. A `+0x27a0` mezőre (`this`-relatív) a teljes `.text`-ben nincs íráshely, két olvasás van (`mov eax, dword ptr [edi + 0x27a0]`, `0x0043a4d3` és `0x0043a4e6`, a `0x00439a80`-ban), és egy `lea` (`0x0043a501`, `+0x27a8`). A `+0x27ac`-re nincs találat. A tábla-író tehát a bázis-eltolt `[reg+0x58]` alakban kereshető.
+
+**A tábla-író (megerősített, két független út).**
+- **A út (a betöltés kódja).** A `0x00495be0` (a `0xc8230c` vtábla 6-os slotja, a bináris olvasata) `cmp dword ptr [esi + 0x54], 0` után, ha a mező nulla, meghívja a `0x00499610`-t (`0x00495c3f`). A `0x00499610` (63 bájt): `push 0x13320004` (`0x00499629`), `call 0x006a41e0` (`0x00499630`), `mov dword ptr [esi + 0x54], eax` (`0x0049963e`), `add eax, 0x284` (`0x00499643`), `mov dword ptr [esi + 0x58], eax` (`0x00499648`). Az `0x00499648` a `0x00499610` egyetlen `[esi+0x58]`-író utasítása; a `0x00499610` hívója (index) egyedül a `0x00495be0`.
+- **B út (a konstruktor és az oszlopnév).** A `0x00415790` (`CThumbDB` konstruktora, spec 1828. sor) `lea eax, [ebp + 0x2748]` (`0x00415bbc`) után `call 0x00495360`-at hív. A `0x00495360` `mov dword ptr [esi + 0x4c], eax` (név), `mov dword ptr [esi + 0x50], edx` (szülő) írást végez, a név sztringje a `push 0xc80e34` (`0x00415b9b`), amely `.rdata`-ban `albumcontactids`. Ugyanitt `mov dword ptr [esi + 0x58], edi` (`0x004953a6`) előtt `xor edi, edi` áll, tehát a konstruktor nullára állítja a táblamutatót és az alapértéket.
+- A két út független: A a futásidejű betöltést írja le, B a konstruktor nevét és a `.rdata` sztringet.
+
+**Mi van a táblában.** A `0x006a41e0` a `(szülő, név, 0x13320004, &kimenet, 1)` hívásra ad egy fogantyút; a tábla a fogantyú `+0x284` mezője. Az oszlop neve `albumcontactids`. Az elem 64 bites (`uint64`): a mért típuskód `0x4` (spec 14.5.4), a `0x13320004` alsó szava `0x0004`, ami ezzel egyezik; a felső szó jelentése NINCS MEG. A spec 3.4/b mérése szerint az oszlop az albumsor-indexhez (`]facealbum:N`) rendelt kontakt-azonosító, a 118 sorból 9 nem nulla, és mind a 9 hexben egyezik a `contacts.xml` `id=` mezőjével. **A 64 bites érték tehát személy kontakt-azonosító, nem mellőzési lista.**
+
+**Az olvasó szerepe.** A `0x00448c90` hívja a `0x00448fb0`-t (`0x00448cac`); ez a spec 649. sorában leírt „személy albuma van kiválasztva” predikátum forrása: nem nulla `albumcontactids` = személy-album.
+
+**Mi váltja ki.** A lusta betöltés az első olvasáskor fut: a `0x00448fb0` (Ghidra-kör 22, C-törzs) a `[this+0x2754] == 0` ágon hívja a `(this+0x2748)+0x18` vtábla-slotot, a `0x00495be0` pedig csak akkor hívja a `0x00499610`-t, ha `[sub+0x54] == 0`. A `0x00495be0` nem ír vissza; a lemezre írás útja NINCS MEG.
+
+**Személyszintű mellőzés (N5): NINCS MEG a hatása; a tábla nem a mellőzési lista.**
+- A `0x005fdc30` és a `0x00640340` (az „Ignore Person” sztringek függvényei, 21.4) az indexben nem hívja a láncot (`0x00448fb0`, `0x00495be0`, `0x00499610`, `0x006a41e0`), és nincs bennük `[reg+0x58]` íráshely (a `.bt` pásztázás szerint). Ez index-szintű negatív állítás: a vtábla-hívásokat az index nem látja, ezért **feltételes**.
+- A `[reg+0x58]` alakú írások teljes listája a `.text`-ben 1861 találat; a bázis nélküli íráshelyek kizárása NEM történt meg. Az „egyetlen tábla-író” állítás csak a `this+0x2748` bázisra és a konstruktor-láncra igaz.
+
+**Cáfoló kísérletek.**
+1. „A tábla-író a `0x00448fb0` törzsében van”: cáfolva; a törzs csak olvas (K2).
+2. „A tábla a személyszintű mellőzés listája”: cáfolva az oszlopnévvel (`albumcontactids`, B út) és a mért kontakt-azonosító-egyezéssel (9/9).
+3. „Az Ignore Person írja a táblát”: feltételes cáfolás (index-szintű, lásd fent); vtábla-hívás nem zárható ki.
+
+**Bizonyítottsági fok.**
+- A `this+0x27a0` = `albumcontactids` tábla: **megerősített** (A és B út).
+- A tábla-író `0x00499648` és a betöltési lánc (`0x00495be0` → `0x00499610` → `0x006a41e0`): **megerősített** (asm; a vtábla-olvasat a binárisból).
+- Az elem típusa (`uint64`) és jelentése (kontakt-azonosító): **megerősített**, mérés (spec 3.4/b, 14.5.4) és a `0x13320004` alsó szava.
+- A `0x006a41e0` belseje (fájlból tölt-e, visszaír-e): **NINCS MEG**.
+- A mellőzés hatása a táblára: **NINCS MEG**.
+
+**Kész, ha (#5184, N5).** ⛔ Nem teljesül: a tábla azonosítva, a mellőzés és a hatása nyitott.
+
+**Lezárás (c).** Következő Ghidra-cím:
+
+Ghidra-kör kell: 0x006a41e0 - a `(szülő, név, 0x13320004, &kimenet, 1)` lookup: fájlból (pmp) tölt-e, van-e visszaírási útja a `+0x284` táblába, és a személyszintű mellőzés írja-e ugyanezt az oszlopot [blokkoló]
+
+**Colab-javaslat (futásidejű adat, a `behavior` feladathoz a tulajdonos `jovahagyva` címkéje kell).**
+1. Új, üres mappa két képpel; az egyik a „Teszt Elek” személyhez tartozik (`PicasaTeszt`).
+2. Az első lépés előtt másolat a `.picasa.ini`-ról és az `albumdata_albumcontactids` (db3/pmp) fájlról.
+3. A személy-album `]facealbum:N` sorának `albumcontactids` mezőjét rögzíteni (nem nulla = személy-album).
+4. Eszközök ▸ Személykezelő: mellőzés (Ignore Person) egy külön futásban, majd a két fájl bájt-diffje és a sor újraolvasása.
+5. Eredmény: ha az `albumcontactids` nullázódik vagy átmozdul, a mellőzés a személy-album predikátumot (`0x00448c90`) érinti; ha nem, a mellőzés a tábla más írójában van.
+
+**Nálunk (`src/`, greppel, 2026-10-20).** Az `albumcontactids` név 0 találat a `src/` alatt. Fejlesztési lista a 4. lépés eredménye nélkül nem készülhet.
+
+**Módosított fájlok.** `docs/specs/picasa-arcfelismeres.md` (37.9); `docs/specs/00-index.md` (egy mondat a fájl sorában). A munkafa `.bt/` mappájában ideiglenes elemzőszkriptek és a rekordok (nem törölve).
+
+### 37.9/b 28. kör (2026-10-20, #5184): a `0x006a41e0` C-je és a pmp-olvasó (`0x006a2cd0`) megvan; a fájl-betöltés rekord-állapottól függ; a mellőzés írója NINCS MEG (c)
+
+**Kérdés.** A 37.9 lezárása: (1) a `(szülő, név, 0x13320004, &kimenet, 1)` hívás fájlból tölt-e; (2) van-e visszaírási út a `+0x284` táblába; (3) a személyszintű mellőzés írja-e ugyanazt az `albumcontactids` oszlopot.
+
+**A hívás (megerősített, asm).** A `0x00499610` argumentumai fordított sorrendben: `push 1` (`0x00499622`, ötödik), a helyi kimenet címe (`lea ecx,[esp+4]`, `push ecx`, negyedik), `push 0x13320004` (`0x00499629`, harmadik), a név (`[esi+0x4c]+4`, vagy 0, második), a szülő (`[esi+0x50]`, első). A visszatérési érték csak a státusz (`test eax,eax`, `0x00499635`). Sikernél a kimenet kerül `[esi+0x54]`-be (`0x0049963e`), és `+0x284` kerül `[esi+0x58]`-ba (`0x00499648`). A 37.9 leírása ezen a ponton helyes.
+
+**A `0x006a41e0` C-je (megerősített, `.ghidra/2026-10-20-ghidra-13.txt`).** A függvény maga nem nyit fájlt. Három kimenete van:
+- **Találat** (a név egyezik a szülő `+0x58` listájának egy csomópontjával): a kimenet a csomópont `+0x04` mezőjére mutat. Ha a csomópont `+0x08` bájtjának bit 0-ja be van állítva, meghívja a `0x006a7090`-t (betöltés, lásd lent). Ha a tárolt típus (`+0x10`) eltér a kéréstől, a `0x006a2a30` felszabadítja a `+0x32c` puffert, és a rekord állapota 2 lesz.
+- **Nincs találat, `param_5 = 1`, és a `0x006a84e0` (tiszta-név predikátum) 0**: a `0x006a85c0` lefoglal egy 0x334 bájtos rekordot, beláncolja a szülő `+0x54` listájába, majd a `0x006a6ff0` állapotát 2-re állítja (`mov dword ptr [ebx+8], 2`, `0x006a7004`). **A frissen létrehozott rekord tehát nem tölt fájlból.**
+- Egyéb esetben 9 (nem található).
+
+**A fájl-olvasó (megerősített, asm, `0x006a2cd0`, 413 bájt).** A `"%s_%s.%s"` formátumszöveggel (`sprintf`) `<szülő+0x60>_<kulcs>.pmp` nevet képez (`0x006a2d01`-`0x006a2d09`), megnyitja (`0x00991870`), a `+0x10` mezőbe 4 bájtot olvas, majd a `+0x08` mezőbe 4 bájtot, végül a törzset a `0x006d1e40`-nel a `+0x14` tagba tölti. Hibaüzenetei a `.\thumblab\CPropertyMap.cpp` forrásfájlra hivatkoznak. Ha a fájl nincs meg, a visszatérés 2 (`0x006a2d56`).
+
+**Mikor fut a betöltés.** A `0x006a2cd0`-t a `0x006a7090` hívja, és csak ha a rekord `+0x08` mezője 1 (`cmp dword ptr [esi+8], 1`, `0x006a7094`). A `0x006a7090`-t a `0x006a41e0` találati ága hívja bit 0 esetén. A `0x006a41e0` által létrehozott rekord `+0x08` mezője 2, tehát **a frissen létrehozott `albumcontactids` rekord nem olvas fájlt**. Fájlt csak az a rekord olvas be, amely állapot 1-gyel maradt: az xref-index szerint a `0x006a85c0`-t a `0x006a68b0` is hívja, de a `0x006a6ff0`-t nem, tehát az ott létrehozott rekord állapot 1 marad. Hogy az `albumcontactids` rekordot melyik út hozza létre először: **NINCS MEG** (a `0x006a68b0` hívási lánca nincs végigkövetve). A `0x006a7090`-nak 10 hívóhelye van, tehát általános betöltő-ellenőrzés, nem N5-specifikus.
+
+**Visszaírási út a `+0x284` táblába (1. kérdés második fele).** A `0x006a41e0`, a `0x006a85c0`, a `0x006a6ff0` és a `0x006a2cd0` nem ír `+0x284`-et. A fájl törzse a `+0x14` tagba olvasódik (`0x006d1e40`). A `+0x284` tábla írója: **NINCS MEG**.
+
+**Mellőzés (3. kérdés).** A `0x006a41e0` közvetlen hívói (a Ghidra-kör HÍVÓK-listája): a nyolc csomagoló (`0x00499550`-`0x00499710`) és nyolc további hely (`0x006a4670`, `0x006a46c0`, `0x006a5060`, `0x006a5590`, `0x006a5a60`, `0x006a5c60`, `0x006a61f0`, `0x006a63f0`). A `0x005fdc30` és a `0x00640340` közöttük nincs. Vtábla-hívás nem látszik, ezért ez feltételes. Az `src/picasapy/pmpimport/arcatvetel.py` az ini `ffffffffffffffff` értékét mellőzésnek veszi (arc-szint, rect64 mező), de nem bizonyított, hogy a személyszintű albumoszlopban is ez a szentinel.
+
+**Bizonyítottsági fok.**
+- A hívás alakja és a rekord-állapot logika: **megerősített** (a `0x006a41e0` C-je, és a `0x006a6ff0`, `0x006a7090`, `0x006a2cd0` asm: a C és az asm egymástól független út).
+- A fájlnév (`<szülő+0x60>_<kulcs>.pmp`) és a fájl-olvasó: **megerősített** (asm és a beépített formátumszöveg); egyezik a `src/picasapy/pmpimport/table.py` `<tábla>_<oszlop>.pmp` konvenciójával. A `+0x60` sztring szerepe a szülőhöz: **feltételes** (a `0x006a7090` `edx`-ét a `0x006a41e0` hívásában nem követtem végig a gépi kódban).
+- A `+0x284` írója és a mellőzés hatása: **NINCS MEG**.
+
+**Kész, ha (#5184, N5).** ⛔ Nem teljesül: a fájl-olvasás és a rekord-állapot tisztázva, a tábla írója és a mellőzés hatása nyitott.
+
+**Lezárás (c).** Nem zárható. Megnevezett következő lépések:
+1. **Bináris, Ghidra nélkül:** a `0x006a68b0` hívási lánca (ki hozza létre az állapot-1 rekordot), mert ettől függ, hogy az első lookup beolvas-e fájlt. Asm-szinten elvégezhető.
+2. **Colab-felvétel** (futásidejű adat; a `behavior` feladathoz a tulajdonos `jovahagyva` címkéje kell):
+   a. Új, üres mappa két képpel; az egyik a „Teszt Elek” személyhez tartozik.
+   b. Másolat a `.picasa.ini`-ról és a `<prefix>_albumcontactids.pmp` fájlról (a prefix a `+0x60` sztring; a db3 mappa neve várható, nincs megerősítve).
+   c. Személyszintű mellőzés (Ignore Person) egyetlen futásban, majd a két fájl bájt-diffje. Külön figyelni, megjelenik-e `ffffffffffffffff` a `.pmp`-ben és a `.picasa.ini` `rect64` mezőiben.
+   d. Ha a `.pmp` nem változik, a mellőzés nem ezt az oszlopot írja, és a tábla-író más úton van (ekkor a `0x006a41e0` nem a kulcs).
+
+**Jegytörzs-javaslat (N5).**
+- **Eredeti:** a `0x006a41e0` (lookup) fájlt csak a `0x006a2cd0` olvas, `<szülő+0x60>_<kulcs>.pmp` néven, és csak állapot-1 rekordon. A személyszintű mellőzés hatása az `albumcontactids` oszlopra: NINCS MEG.
+- **Nálunk (`src/`, greppel, 2026-10-20):** az `albumcontactids` név 0 találat a `src/` és a `tests/` alatt. A `.pmp` olvasó: `src/picasapy/pmpimport/table.py`. A mellőzés: `src/picasapy/pmpimport/arcatvetel.py` az `ffffffffffffffff`-et arc-szintű mellőzésként kezeli; személyszintű oszlopra nincs szabály.
+- **Teendő:** nincs fejlesztési teendő a Colab-diff előtt. Utána: ha a `.pmp` változik, a mellőzés írási helyét a `pmpimport` modulba kell bekötni.
+- **Kész, ha:** a Colab-diff megmutatja, melyik fájl és melyik bájt változik személyszintű mellőzésnél, és a `src/` ehhez igazodik.
+
+**Módosított fájlok (28. kör).** `docs/specs/picasa-arcfelismeres.md` (ez a 37.9/b szakasz); `docs/specs/00-index.md` (a sor elején egy 28. kör-előtag). Kódhoz (`src/`, `tests/`) nem nyúltam.
