@@ -7212,7 +7212,37 @@ Ghidra-kör kell: 0x008de2a0 - a `0x008de3c0` másik adatreferenciája: ugyanaz-
 
 **Lezárás (#5225, 27. kör): (c).** A kimeneti paraméter útja a Win32WindowImp-re lezárva (negatív eredmény). A `[edi+4]` osztálya nyitott, és az 1/7 módérték ebből dől el.
 
-Ghidra-kör kell: 0x008d7550 - a Fen::Win32WindowImp-et létrehozó függvény 1. argumentuma (`mov eax,[esp+8]` @`0x008d75b8`, a `0x008ddea0` `eax`-e), és hogy a diavetítés dialógusában melyik objektum példánya adja; a hívók közvetett hívásként keresendők (`find_data_refs.py 0x008d7550 --data`) [blokkoló]
+**Válasz (28. kör): NINCS MEG ésszerű lépésben.** Az első argumentum szerződése a binárisból megvan (a Win32WindowImp `this+4` mezője, lásd 4.7/e). A hívók viszont virtuális, közvetett hívások (874 hívóhely), a diavetítés dialógusának objektuma nem azonosítható, ezért a módérték (1 vagy 7) és a mag sem dől el. A lezárás a 4.7/e szakaszban.
+
+#### 4.7/e A 28. kör (2026-10-20, #5225): a `0x008d7550` szerződése, vtábla-helye és hívói
+
+**Kérdés.** Melyik objektum az első argumentuma (`mov eax,[esp+8]` @`0x008d75b8`), amit a diavetítés dialógusa ad; ebből a `+0x37c` módérték (1 vagy 7) és a mag.
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-28.txt` (`FUN_008d7550`: C-törzs, hívók, hívottak); asm: `annot_disasm.py` a `0x008d7550` (123 bájt) és a `0x008ddea0` (64 bájt) címre; bináris-index: `rtti`, `xrefs`, `functions`, `string_xrefs`; `find_data_refs.py 0x008d7550 --data`; bájtszintű pásztázás a `paszta.py` kapuján át (`memoria_kapu()` első lépésként).
+
+**1. A szerződés (bináris, feltételes: egy út).**
+- `ret 8` (@`0x008d75c2`, `0x008d75c8`): a függvény két stack-argumentumot vesz, a hívó nem takarít. Az `ecx` (this) nem olvasódik.
+- A `push esi` (@`0x008d7570`) után a `[esp+8]` (@`0x008d75b8`) a bejövő első argumentum (a belépési `esp`-hez képest `[E+4]`). A második argumentumot (`[E+8]`) a 123 bájtos törzs egyetlen utasítása sem olvassa.
+- A `call 0x008ddea0` (@`0x008d75bc`) az `eax`-ot adja át. A konstruktor első utasítása `mov dword ptr [esi+4], eax` (@`0x008ddea0`), a vtábla `0x00cced4c`, a visszatérési érték az új objektum (`mov eax, esi`, @`0x008ddedd`). Vagyis a Fen::Win32WindowImp `this+4` mezője az első argumentum.
+- Ha a `0x0097c5d0(0x40)` foglalás nullát ad, a függvény nullát ad vissza (`je 0x8d75c5`).
+
+**2. A vtábla-hely (megerősített, két független út).** A: a bináris-index `rtti` táblája szerint a `Fen::Win32::vftable` (`0x00cce3a4`) 5. tagja (`0x00cce3b8`, azaz `+0x14`) a `0x008d7550`; más vtáblában nincs. B: `find_data_refs.py 0x008d7550 --data` egyetlen találatot ad, ugyanerre a címre (`.rdata`). Közvetlen `call` vagy `jmp` a `0x008d7550`-re a teljes .text bájtszintű pásztázásában nincs. Tehát a hívók virtuális hívások, a vevő `Fen::Win32` (vagy a slotot örökítő) objektum.
+
+**3. A hívóhelyek.** A teljes .text-ben a `mov R, [X+0x14]` ... `call R` alakú helyek száma 874 (a `call R` előtt legfeljebb 12 utasításon belül). Ebből 356-nál a 12 utasításos ablakban legalább két `push` áll, control-flow utasítás nélkül. Közvetlen `call [reg+0x14]` alak nincs (a találatok csak `[esp+0x14]`-re mutatnak). A `string_xrefs` szerint a `slideshow`, `diavet`, `BigSlide`, `ThumbUISlide` és `CDSlide` sztringeket használó 27 függvényben egyetlen jelölt sincs. Ez az index függvényhatáraira épül, ezért csak tájékoztató.
+
+**Bizonyítottsági fok.** A szerződés (két argumentum, az első a `this+4`, a második nem olvasódik): feltételes, egy út (a két asm-törzs kézi olvasata; a Ghidra C nem adja a paramétert, `FUN_008d7550(void)`, így a második út hiányzik). A vtábla-hely (slot 5): megerősített (két út). A hívóhelyek halmaza: feltételes (12 utasításos ablak, index-függvényhatárok). A diavetítés hívója, a módérték (1 vagy 7) és a mag: NINCS MEG.
+
+**Cáfoló kísérletek.** (1) „Van közvetlen hívója”: cáfolva, nincs `call` vagy `jmp` a célra. (2) „A diavetítés ága a sztringes függvények egyikében hívja”: a 27 függvényben nincs jelölt. Gyenge cáfolat, mert a függvényhatárokat az index adja, és a sztringhez tartozó függvény hiányozhat belőle. (3) „A második argumentum a módérték”: cáfolva, a törzs nem olvassa a `[E+8]`-at.
+
+**Miért nem dönthető el ésszerű lépésben.** A dialógus-objektum azonosításához a 356 (vagy a 874) hívóhely vevőjét kellene visszakövetni: minden helyen a `[X]` vtábla-forrását, a konstruktort és az osztályt. Ez sok, egyenként visszakövetett hely. A mag (a `srand` magja, lásd 4.6 és a 13. kör) a 13. kör szerint egy lista elemének indexe, a lista eredete NINCS MEG, ezért futásidejű adatnak tekintendő. A módérték is a hívó futásidejű állapotából jöhet.
+
+**#5225 „Kész, ha” pontjai (28. kör).**
+- ✅ Képlet címekkel: a 4.4 és a 4.6 szakasz (`0x0076d900`, `0x0076d6f0`, `0x0076d7e0`, `0x00c08221`, konstanscímek). A kódban: `src/picasapy/app/slideshow_pan_zoom.py` (#5351). Greppel ellenőriztem (2026-10-20): a konstansok (0,75; 0,2; 0,1; 0,5; 0,499; 0,00001; 32768) és a négy eltolás előjele (`_eltolas`) egyezik a 4.4 táblájával. A tesztfájlt ebben a körben nem futtattam.
+- ✅ Középre igazítás: nincs, sem a binárisban (4.4), sem a kódban.
+- ⛔ Mag (a futás előtti CRT-állapot számszerűen): NINCS MEG. A kód docstringje is ezt rögzíti.
+- ⛔ Módérték (1 vagy 7) és a dialógus-objektum: NINCS MEG.
+
+**Lezárás (#5225, 28. kör): (a) a képletre; a magra és a módértékre nyitott (Nem része).** A megvalósítható rész (a képlet) kész és a kódban van. A mag és a módérték a binárisból ebben a körben nem dönthető el, ezért a „Nem része” pontba kerülnek. Új kutatási jegy kell hozzájuk (a jelentésben).
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
