@@ -1839,7 +1839,7 @@ ApplicationWindow {
     // #5377: kijelölés nélkül is megnyitja a teljes képernyős bemutatót.
     Shortcut {
         sequence: "Ctrl+5"
-        enabled: !window.viewerOpen && !slideshow.visible
+        enabled: !window.viewerOpen && !slideshow.visible && !window._szovegmezoneVanFokusz
         onActivated: window.toggleTimeline()
     }
 
