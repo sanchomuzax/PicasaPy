@@ -4038,18 +4038,158 @@ Nyitott kérdések: 9 nyílt (örökölt) · 7 lezárva · 0 blokkolt · 0 ható
 
 **Következő Ghidra-körök.**
 
-- `Ghidra-kör kell: 0x00983430, 0x00983fc0, 0x00982bf0 - a qshow-ablak futtató hurka, és hogy a 0x0097fc30 11 hívója közül melyik fut az Időrend alatt, milyen időtúllépéssel [blokkoló]`
-- `Ghidra-kör kell: 0x00802630 - a léptetés törzse, és a nem nulla visszatérés (-1, a bejegyzés eltávolítása) [blokkoló]`
-- `Ghidra-kör kell: 0x00982270 - a bejegyzés-lista felépítése és sorrendje [nem blokkoló]`
-- `Ghidra-kör kell: 0x007fd800, 0x007fd8c0 - a találati index kimenete és a visszatérési érték jelentése [blokkoló]`
-- `Ghidra-kör kell: 0x007fda80 - a 0x201 Időrend-ág hívott függvénye és az 1000000 visszatérés [blokkoló]`
-- `Ghidra-kör kell: 0x007fb210 - az overlay-elemek rajz- és találati téglalapjai, és a sliderthumb, timelinedot, startbutton, exit, listaikon kattintás-kezelői [blokkoló]`
+- ~~`Ghidra-kör kell: 0x00983430, 0x00983fc0, 0x00982bf0 - a qshow-ablak futtató hurka, és hogy a 0x0097fc30 11 hívója közül melyik fut az Időrend alatt, milyen időtúllépéssel [blokkoló]`~~ **RÉSZBEN JAVÍTVA (38.2.22, 1. szakasz):** a három függvény nem hurok (méret-értesítés, teljes képernyős váltás, `ytWindow` konstruktor). A futtató hívó és az időtúllépés **NINCS MEG**, lásd `Ghidra-kör kell: 0x005e6710` a 38.2.22 szakaszban.
+- ~~`Ghidra-kör kell: 0x00802630 - a léptetés törzse, és a nem nulla visszatérés (-1, a bejegyzés eltávolítása) [blokkoló]`~~ **JAVÍTVA (38.2.22, 2. szakasz):** a léptetés törzse igazolt; a callee nem nulla visszatérése `3`, a hívó `0x00802060` ezt `-1`-re képezi.
+- ~~`Ghidra-kör kell: 0x00982270 - a bejegyzés-lista felépítése és sorrendje [nem blokkoló]`~~ **JAVÍTVA (38.2.22, 1. szakasz):** a `0x00982270` a globális tömb rendezetlen másolata; a sorrend a hozzáfűzési sorrend.
+- ~~`Ghidra-kör kell: 0x007fd800, 0x007fd8c0 - a találati index kimenete és a visszatérési érték jelentése [blokkoló]`~~ **RÉSZBEN JAVÍTVA (38.2.22, 3. szakasz):** a `0x007fd800` a kurzor alatti elem rekordjának `+0` mezőjét adja, vagy `-1`-et; a `0x007fd8c0` a 0,666 konstanshoz legközelebbi kártyát keresi. A `+0` mező és a `0x007fd770` visszatérésének jelentése **NINCS MEG**.
+- ~~`Ghidra-kör kell: 0x007fda80 - a 0x201 Időrend-ág hívott függvénye és az 1000000 visszatérés [blokkoló]`~~ **JAVÍTVA (38.2.22, 4. szakasz):** a `0x007fda80` négy overlay-téglalap találati függvénye; az `1000000` a kezelt kattintás jele.
+- ~~`Ghidra-kör kell: 0x007fb210 - az overlay-elemek rajz- és találati téglalapjai, és a sliderthumb, timelinedot, startbutton, exit, listaikon kattintás-kezelői [blokkoló]`~~ **RÉSZBEN JAVÍTVA (38.2.22, 5. szakasz):** az overlay-nevek és az objektumok összerendelése megvan; a négy találati téglalap a `startbutton`, `exit`, `right`, `left` overlay-eké. A rajz, a `sliderthumb` húzásának hatása és a többi overlay kattintása **NINCS MEG**.
 - `Ghidra-kör kell: 0x00a6cd10, 0x00a52820, 0x00401570, 0x00803180, 0x008032e0 - az OneUpUI kattintás-kezelői és a határoló téglalap, és hogy a 0x009e4630 melyik objektumon fut [blokkoló]`
 - `Ghidra-kör kell: 0x005e8a70 - a local_c0 és a local_bc írói az Időrend-ágban (kimenet 209-210. sor), és a forrás-lista eredete; diszasszembly-ellenőrzés [blokkoló]`
 - `Ghidra-kör kell: 0x0094aa00 és 0x0094ace0 hívói (0x00593450, 0x006fc7d0, 0x006fcb60, és a 0x0094ace0 tíz hívója) - Időrend-e [nem blokkoló]`
-- `Ghidra-kör kell: 0x006f9cc0 - az 1 ms-os 0x0097fc30 hívó (0x006fb417) kontextusa, qshow-e [nem blokkoló]`
+- ~~`Ghidra-kör kell: 0x006f9cc0 - az 1 ms-os 0x0097fc30 hívó (0x006fb417) kontextusa, qshow-e [nem blokkoló]`~~ **RÉSZBEN (38.2.22, 1. szakasz):** statikus hívási úton a `0x008037e0`-tól 9 szinten nem érhető el; a kontextus **NINCS MEG**.
 - `Ghidra-kör kell: 0x00a52890 - a típuskódok diszasszemblált ellenőrzése (1, 2, 3, 4, 5, 0xd, 7, 8) [nem blokkoló]`
 - Mérés kell (nem Ghidra): a `Preferences\SlideshowEffectTime` felhasználói értéke a tulajdonos gépén (futó Picasa vagy a registry-kulcs) [blokkoló a léptetési ütem pontos értékéhez]
+
+#### 38.2.22 Az Időrend bináris feltárása, 5. kör: hurok, léptetés, találat, négy téglalap, csúszka-sáv (#5401, 2026-10-20)
+
+**Kérdés és hatókör.** A 38.2.21 „Következő Ghidra-címek” nyolc címét dolgoztuk fel: `0x00983430`, `0x00983fc0`, `0x00982bf0`, `0x00802630`, `0x007fd800`, `0x007fd8c0`, `0x007fda80`, `0x00982270`. Öt kérdés volt: (1) melyik futtató hurok és időtúllépés fut az Időrend alatt, és milyen a bejegyzés-lista sorrendje; (2) mit csinál egy léptetés, és mit jelent a nem nulla visszatérés; (3) mi a találati kimenet; (4) mi a `0x007fda80`, és mit jelent az `1000000`; (5) hogyan kattintanak a vezérlők, és hogyan képződik le a dátumcsúszka.
+
+**Bemenet és módszer.** Az `idorend-5` nyolc Ghidra-blokkja, és az `idorend-1` a `0x007fb210` miatt. A bináris index (`functions`, `xrefs`) csak függvényszintű `call` éleket tartalmaz: 78 901 sor, vtable- és függvénymutató-hivatkozás nincs benne. A sorok `from_address` mezője a hívó függvény kezdőcíme (például `0x004051b0`), nem a hívóhely; a hívóhelyet a diszasszemblálás adja (például `0x0040e4b1`). A diszasszemblálás a `pe_dis` modulból jött (capstone). Futásfelvétel és QEMU-futtatás nem volt. Terméki kódot nem írtunk.
+
+**1. Futtató hurok, időtúllépés, bejegyzés-sorrend.**
+
+Három cím nem hurok. Mindhárom a qshow-építőből (`0x008037e0`) hívódik:
+
+- `0x00982bf0` (hívóhely `0x008038ec`): a `ytWindow` konstruktora (a vtable `ytWindow::vftable`). Tárolja a cím szövegét (`0x00985ff0`), és meghívja a `0x00983670` függvényt (ablak létrehozása, belseje **NINCS MEG**).
+- `0x00983430` (hívóhely `0x00803983`): `GetClientRect` a `[this+0x6c]` ablakra, majd `0x00983a60(szél, magasság)`. Ha a kliensterület nem üres és `[this+0x64]` nem nulla, a `[this+0x64]` objektum vtable `+0x20` slotját hívja `(-1, -1, -1, -1)` argumentumokkal. Méret-értesítés.
+- `0x00983fc0` (hívóhelyek `0x0080398f` és `0x005e68c5`, utóbbi a `0x005e6710`-ben): teljes képernyős váltás. Nem nulla paraméternél: a menü eltávolítása (`SetMenu` NULL), a `[this+0x70]` ablak megszüntetése (`DestroyWindow`), a stílus beállítása `0x96000000` vagy `0x96080000` értékre a `(*DAT_00d69524)` függvénypointeren a `-16` (`GWL_STYLE`) indexszel, és a képernyő méretére állítás (`GetSystemMetrics` 0 és 1; ha `0x00983b50` nem nulla, a `DAT_00d678b0` pointeren át). Nulla paraméternél visszaállítás: `SetMenu`, `0x00982ee0`, vtable `+0x10`, és ha a 2-es bit be van állítva, `SetWindowPos`. A `DAT_00d69524` célját nem ellenőriztem.
+
+Tehát a qshow-építő létrehozza az ablakot (`0x00982bf0`), értesíti a méretéről (`0x00983430`), és teljes képernyőre kapcsolja (`0x00983fc0`).
+
+A futtató hurok a `0x0097fc30` (38.2.20 §1: `PeekMessageA`, `MsgWaitForMultipleObjects`). Közvetlen hívói (függvényszint) tizenegyen vannak:
+
+- 1 ms: `0x0040e410`, `0x005ffc30`, `0x006f9cc0` (hívóhely `0x006fb417`), `0x006fe630`, `0x009d4d10`;
+- 5 ms: `0x004051b0`, `0x0059e920`, `0x007420f0`, `0x007422d0`;
+- 10 ms: `0x0094aa00`, `0x0094ace0` (webböngésző-pumpa, 38.2.21 §1).
+
+**Melyik hívó fut az Időrend alatt: NINCS MEG.** A bináris index nem köti össze a hívókat a qshow-val:
+
+- `0x008037e0` egyetlen közvetlen hívója `0x005e8a70` (`CThumbUI::MakeTimeline`). Ennek hívói: `0x005cb990`, `0x005d9cc0`, `0x005e0f70`, `0x005e60d0`. A `0x005d9cc0` és a `0x005e0f70` hívója `0x005de8e0`; a `0x005e60d0` hívója `0x005e6710`.
+- A `0x005cb990`, `0x005de8e0` és `0x005e6710` láncának tetején nincs közvetlen hívó az indexben. Valószínűleg függvénymutatón vagy vtable-on keresztül indul; ezt nem igazoltam.
+- Egyik pumpa-hívóból sincs közvetlen hívási út `0x005e8a70`-hez vagy `0x008037e0`-hoz 9 szinten. Fordítva: a `0x008037e0`-ból 9 szinten elért 971 függvény között nincs pumpa-hívó.
+- A `0x005e6710` hívja a `0x005e60d0`-t és a `0x00983fc0`-t is. Ez jelölt az Időrend-parancs kezelőjének, nem igazolt.
+
+Ezért az időtúllépés is **NINCS MEG**: a 38.2.21 szerinti 1, 5 és 10 ms közül nem tudjuk, melyik érvényes.
+
+**Bejegyzés-lista sorrendje (megerősített).** A `0x00982270` (hívója a pumpa, `0x0097feac`) a globális `DAT_00d69418` tömböt (darabszám: `DAT_00d6941c >> 1`) másolja a helyi pillanatképbe `_memcpy`-vel. Rendezés nincs. A másoláson kívül csak a kapacitás-növelés (`0x0097c810`), a felszabadítás (`0x0097caf0`) és egy zárolás (`0x0074cf40` vagy `0x009829f0`, belseje **NINCS MEG**) van. A pumpa ebben a sorrendben hívja a bejegyzéseket. A globális tömb sorrendje a hozzáfűzés sorrendje (38.2.19 §4: `0x0097d150`, arg2 = 0). Egy elem törlése után a tömörítés módja **NINCS MEG**.
+
+**Léptetési ütem: NINCS MEG.** A legkorábbi léptetés S másodperc az utolsó léptetés után (38.2.21 §1, `Preferences\SlideshowEffectTime`). A tényleges időpont a pumpa-hívó időtúllépésétől függ, ezért **NINCS MEG**.
+
+**2. A léptetés törzse (`0x00802630`).** Megerősített (dekompiláció és diszasszemblálás: `0x00802696`, `0x00802765`, `0x008026e9`).
+
+- Zárolás: `[this+0x0c]` nulla esetén a vtable `+0x18` hívása, egyébként `EnterCriticalSection([this+0x28])`. A tulajdonos szál a `[this+0x20]`, a rekurzió a `[this+0x24]` mezőben van.
+- Darabszám `[this+0x3f0] >> 1`. Ha nulla (`0x0080263a`): `0x009a8a30`, `0x009a8ca0([this+0x160])`, `0x009a8bc0`, és visszatér `0`-val.
+- Ha az index `[this+0x3f4]` nem kisebb a darabszámnál (lista vége):
+  - `[this+0x3fd] != 0` (`0x00802696`): az index `-1`, majd +1 után `0`. Csendes körbefordulás, nincs hívás.
+  - `[this+0x3fd] == 0`: ha `[this+0x3b9] == 0`, meghívja a `0x007fb820` függvényt (38.2.18 szerint ez az `Escape` kilépési ága), feloldja a zárolást, és visszatér `3`-mal. Ha `[this+0x3b9] != 0` (`0x00802765`): az index `0`, a `0x007fda00` átmenet-indítás, feloldás, visszatérés `0`-val.
+- Egyébként az index +1 (`0x008026ac`), feloldás, majd `0x00802230(this, 0)` (`0x008026e9`). Ha ez `0`-t ad, a léptetés `0`-val tér vissza. Ha `4` vagy `-1`, a ciklus újra fut.
+
+Jelentés: egy lépés a következő index kiválasztása, majd az új képkocka a `0x00802230` nulla paraméteres változatával (38.2.19 §1: új véletlen eltolás). A lépés nem hív átmenet-indítót. Az átmenet-indító (`0x007fda00`) csak a lista végi újraindításkor fut.
+
+**Nem nulla visszatérés.** A dekompiláció szerint csak `3` jöhet létre. A hívó `0x00802060` (`0x008020e1`, diszasszemblálás): `test eax,eax`; nulla esetén a normál út (`0x008020f2`), nem nulla esetén `or eax,-1`, azaz `-1`. A pumpában a `-1` a bejegyzés eltávolítása (38.2.21 §1). A `mov eax,3` sort nem ellenőriztem diszasszemblálással.
+
+**Következmény (megerősített).** A `0x007fda00` állítja `[this+0x3b9] = 1`-re (38.2.19 §2). Ezért Időrend módban a lista vége nem lépteti ki a futtatót: a `[this+0x3fd]` értékétől függően csendesen körbefordul, vagy újraindítja az Időrendet. A `[this+0x3fd]` írója **NINCS MEG**.
+
+**3. Találati kimenet (`0x007fd800`, `0x007fd8c0`).**
+
+- `0x007fd800` (hívó `0x007fde80`, `0x007fe32f`): a kurzor alatti elem keresése. Bemenet: a `[this+0x2f8]` alobjektum (`lea ecx,[edi+0x2f8]`), a pont két float értéke (`ebx`), és a kimeneti mutató (`[esp+0x18]`). Az indexlistán (`[+0x80]`, darabszám `[+0x84] >> 1`) megy végig. Az elem rekordja `[+0xb0] + i*0xf8`; a téglalap bal széle `+0xdc`, felső széle `+0xe0`, jobb széle `+0xe4`, alsó széle `+0xe8` (egész számok). Találat: bal <= x < jobb és felső <= y < alsó. Az első találatnál a kimenetre a rekord `+0` mezőjét írja, és visszatér a `0x007fd770(i)` értékével. Nincs találat: `0xffffffff`.
+- A hívó csak nulla visszatérésnél folytat (`0x007fe334-0x007fe336`), és ekkor az `[esp+0x18]` értéket adja a `0x008018a0`-nak (`0x007fe338-0x007fe33e`).
+- Jelentés: a kimenet a rekord `+0` mezője, nem a listaindex. Hogy ez azonosító vagy index, **NINCS MEG**. A `0x007fd770` visszatérése **NINCS MEG**.
+- `0x007fd8c0` (hívó `0x00801cb0`, `0x00801cd8`): nem egérkeresés. A `[this+0xb4] >> 1` darabszámon megy végig. Minden `i`-re x_i = `i` * `[this+0x30]` + `[this+0x20]` (mindkettő f64), meghívja a `0x007fbab0` függvényt (`ecx = this`, x_i argumentum), majd a `0x0049f5c0`-val (`fabs`, cdecl, `ret`) a |x_i - 0,666| értéket számolja. A 0,666 a `0xcf4860` f64 konstans, pontosan 0,6660000085830688. A legkisebb távolságú `i` marad: `[this+0]` = `i`, `*param_1` = a rekord `+0` mezője.
+- Eltérés: a diszasszemblálásban a legkisebb-kereső összehasonlítása más verem-helyről olvas, mint ahová a kezdeti küszöb íródik (`0xcf4900` = 1000000,0). Ezt nem zártam le. A dekompiláció szerinti olvasat (legkisebb távolság, kezdeti küszöb 1000000) **feltételes**.
+- Visszatérés: nem nulla lehet, ha az időablak-ellenőrzés (`0x009a5210`, a `[this+0x48]` rekordjai) teljesül. A jelentése **NINCS MEG**.
+- A 0,666 szerepe (lejátszási pont vagy más) **NINCS MEG**. A kártya-sor rajzolása nincs igazolva.
+- Lánc Időrend módban: a `0x00802060` hívja a `0x00801cb0`-t, ha `[this+0x3b8] != 0`; a `0x00801cb0` csak akkor fut tovább, ha `[this+0x429] == 0` és a `0x007fd8c0` nem nullát ad. Az eredmény `[this+0x510]`-be kerül, és a `0x008018a0` állítja a `[this+0x51a]` jelzőt (38.2.21 §2).
+
+**4. A `0x007fda80` és az `1000000`.**
+
+- Hívók a `0x007fde80`-ban: `0x007fe1fd` (a 0x201-ágban, ha `[this+0x3b8] != 0`; diszasszemblálva) és `0x007fe15f` (nem ellenőriztem).
+- Bemenet: `x = [this+0x420]`, `y = [this+0x424]` (float). A függvény a `this`-t az ESI-ből olvassa (`unaff_ESI` a dekompilációban; `mov esi,edi` a `0x007fe1fb` címen).
+- Négy téglalap. Az `X` az overlay-objektum alap-offsetje (5. szakasz):
+
+| sorrend | X | overlay | bal, felső, szél, magasság | művelet | visszatérés |
+|---|---|---|---|---|---|
+| A | `0x738` | `startbutton` | `+0x750`, `+0x754`, `+0x740`, `+0x744` | `0x007fb820`, majd `[this+0x2e8]` vtable `+0x18` hívása `(-1, azonosító)` | `1000000` |
+| B | `0x580` | `exit` | `+0x598`, `+0x59c`, `+0x588`, `+0x58c` | `0x007fb820` | `1000000` |
+| C | `0x558` | `right` | `+0x570`, `+0x574`, `+0x560`, `+0x564` | `0x007fd150` | `1000000` |
+| D | `0x530` | `left` | `+0x548`, `+0x54c`, `+0x538`, `+0x53c` | `0x007fd120` | `1000000` |
+| - | - | - | - | nincs találat | `0xf4241` (1000001) |
+
+- Azonosító: `[ [this+0x3ec] + [this+0x3f8]*4 ]`, ha `[this+0x3f8] >= 0`, egyébként `0`. Ez az utoljára megjelenített elem (`[this+0x3f8]` az utolsó megjelenített index, 38.2.19 és 38.2.21).
+- Az `[this+0x2e8]` objektum osztálya **NINCS MEG**. A `0x007fa7f0` építő a harmadik paraméterként adja (38.2.20 §6).
+- Az `1000000` jelentése: a kattintás egy négy overlay egyikébe esett, és a kezelő kész. A `0x007fde80`-ban `cmp eax,0xf4240` és `je 0x007fe441` (`0x007fe202-0x007fe207`); a `0x007fe441` ága `mov eax,0xf4240` és a függvény kilépése. Húzás nem indul. A `0xf4241` esetén a `0x007fde80` a húzás-ággal folytatja (`0x007fe20d`).
+
+**5. Vezérlők és dátumcsúszka.**
+
+- Overlay → X leképezés (megerősített, a `0x007fb210` diszasszemblálásából): a `0x00410fa0(X)` hívás előtt `lea edi,[esi+X]`, `push edi`, `mov edx, <sztring>` áll. A sztringek a `0x00cbd334`-től indulnak: `left` = `0x530`; `right` = `0x558`; `mouse` = `0x5a8`; `rollovermouse` = `0x5d0`; `exit` = `0x580`; `timeline` = `0x6c0`; `timelinedot` = `0x6e8`; `sliderthumb` = `0x710`; `startbutton` = `0x738`. A tizedik, `overlay`, helyi objektumon töltődik.
+- Mezők (dekompiláció): `X+0x08` szél, `X+0x0c` magasság, `X+0x18` bal, `X+0x1c` felső. A bal mezőt a dekompiláció `_DAT_00d34040`-nel szorozza és kerekíti (`ROUND`), a felső mezőt nem. Hogy a felső mezőnek van-e más skálázása, **NINCS MEG**.
+- Húzás-sáv (`0x007fde80` 0x201-ága, a 4. kimenet dekompiláció 892-915. sora): a sáv a `timeline` (X `0x6c0`): bal `[+0x6d8]`, szél `[+0x6c8]`. A csúszka-gomb a `sliderthumb` (X `0x710`): bal `[+0x728]`, felső `[+0x72c]`, szél `[+0x718]`, magasság `[+0x71c]`. A dekompiláció a csúszka helyét a sáv bal és jobb széle közé korlátozza; a pontos képlet **NINCS MEG**. (Feltételes: csak dekompiláció.)
+- A `sliderthumb` kattintása nem tartozik a `0x007fda80` találati vizsgálatába; a húzás-ágon megy. A húzás indítását a 38.2.21 §3 írja (`0x007fdd00`), ezt nem ellenőriztem.
+- **A dátumcsúszka leképezése (csúszka-hely -> dátum vagy képindex): NINCS MEG.**
+- `timelinedot`, `mouse`, `rollovermouse` és `overlay`: a `0x007fda80` nem vizsgálja őket. Kattintási céljuk **NINCS MEG**.
+- Listaikon: nem azonosítottam, melyik overlay. **NINCS MEG**.
+
+**6. Javítások a korábbi szakaszokban.**
+
+- 38.2.21 „Következő Ghidra-címek” első tétele: a `0x00983430`, `0x00983fc0`, `0x00982bf0` nem a futtató hurok (1. szakasz). A futtató a `0x0097fc30`.
+- 38.2.21 §1: a `0x00802630` nem nulla visszatérése `3`; a `-1` a hívó (`0x00802060`) leképezése (2. szakasz).
+- 38.2.21 §1: a `0x00982270` sorrendje igazolt: rendezetlen másolat (1. szakasz).
+- 38.2.21 §3: a `0x007fe33e` hívó EAX-értéke a `0x007fd800` kimeneti mezője: megerősítve (`mov eax,[esp+0x18]`, `0x007fe338`).
+- 38.2.21 §3: a `0x007fda80` a 0x201 Időrend-ág négy téglalapos találati függvénye (4. szakasz).
+
+**Bizonyítottsági fok (38.2.22).**
+
+| állítás | bizonyíték | fok |
+|---|---|---|
+| `0x00982bf0`, `0x00983430`, `0x00983fc0` nem hurok | dekompiláció; hívóhelyek `0x008038ec`, `0x00803983`, `0x0080398f`, `0x005e68c5` | megerősített |
+| futtató hurok: `0x0097fc30` | 38.2.20 §1, diszasszemblálás | megerősített |
+| az Időrend alatti pumpa-hívó | index: nincs közvetlen hívási út 9 szinten | NINCS MEG |
+| az időtúllépés | a hívótól függ | NINCS MEG |
+| bejegyzés-lista sorrendje | `0x00982270` `_memcpy`, rendezés nélkül; `0x0097d150` hozzáfűzés | megerősített |
+| léptetés törzse | dekompiláció `0x00802630`; diszasszemblálás `0x00802696`, `0x00802765`, `0x008026e9` | megerősített |
+| nem nulla visszatérés: `3`, a hívó `-1` | dekompiláció; `0x008020e1` diszasszemblálás | megerősített (`mov eax,3` nem ellenőrzött) |
+| lista vége Időrend módban nem lépteti ki | `0x00802765` `cmp`; dekompiláció; `0x007fda00` állítja `[this+0x3b9]`-et | megerősített |
+| `[this+0x3fd]` írója | NINCS MEG | nyitott |
+| `0x007fd800` téglalap-találat, kimenet a `+0` mező | dekompiláció; `0x007fe32f-0x007fe338` diszasszemblálás; `0x007fd8c0` vége `mov [edx], ecx` | megerősített (a mező jelentése NINCS MEG) |
+| `0x007fd8c0` legkisebb távolság | dekompiláció; diszasszemblálás eltér a verem-kezelésben | feltételes |
+| `0x0049f5c0` = `fabs` | diszasszemblálás (`fabs`, `ret`) | megerősített |
+| `0x007fda80`: négy téglalap és az `1000000` | dekompiláció; `0x007fe202-0x007fe207`, `0x007fe441` | megerősített |
+| overlay-nevek és az `X` objektumok | `0x007fb210` diszasszemblálás (`0x007fb228-0x007fb4af`) | megerősített |
+| húzás-sáv (`timeline`, `sliderthumb`) | 4. kimenet dekompiláció 892-915. sor | feltételes (csak dekompiláció) |
+| dátumcsúszka-leképezés | NINCS MEG | nyitott |
+
+**Nyitott - következő Ghidra-körök.**
+
+- `Ghidra-kör kell: 0x005e6710 - a függvénymutató-hivatkozásai (vtable, parancstábla), és a 0x0097fc30 hívóig vezető lánc; az Időrend-pumpa és az időtúllépése [blokkoló]`
+- `Ghidra-kör kell: 0x007fd120, 0x007fd150 - a left és right overlay műveleteinek törzse [blokkoló]`
+- `Ghidra-kör kell: 0x007fdd00 - a sliderthumb húzásának hatása: csúszka-hely -> dátum vagy képindex [blokkoló]`
+- `Ghidra-kör kell: 0x007fbab0 - a kártya x-pozíciójának képlete (this+0x50, this+0x54, this+0x58) [blokkoló a rajzoláshoz]`
+- `Ghidra-kör kell: 0x007fa7f0, 0x00802c60 - a [this+0x2e8] objektum osztálya és a startbutton visszahívás célja [blokkoló]`
+- `Ghidra-kör kell: 0x007fd770 - a 0x007fd800 találati ágának visszatérése [nem blokkoló]`
+- `Ghidra-kör kell: 0x0074cf40, 0x009829f0, 0x0097d370 - a 0x00982270 zárolása és a törlés tömörítési módja [nem blokkoló]`
+- `Ghidra-kör kell: 0x007fe15f - a 0x007fde80 második 0x007fda80 hívóhelyének ága [nem blokkoló]`
+- `Ghidra-kör kell: 0x007fb820 - a kilépési ág törzse (Escape) [nem blokkoló]`
+- `Ghidra-kör kell: [this+0x3fd] írói (teljes .text pásztázás, paszta.py) [nem blokkoló]`
+
+**Nyitott kérdések mérlege (38.2.22).** `Nyitott kérdések: 11 nyílt · 9 lezárva · 5 blokkolt (a blokkolók a Ghidra-listában)`
+
+- **LEZÁRVA:** (a) a három függvény nem hurok; (b) a `0x00802630` léptetés-törzse; (c) a nem nulla visszatérés `3`, a hívónál `-1`; (d) a bejegyzés-lista sorrendje; (e) a `0x007fd800` téglalap-találata; (f) a `0x0049f5c0` = `fabs`; (g) a `0x007fda80` négy téglalapja és az `1000000`; (h) az overlay → `X` leképezés; (i) Időrend módban a lista vége nem lép ki.
+- **NYITVA:** a pumpa-hívó és az időtúllépés; a léptetési ütem; a `[this+0x3fd]` írója; a `0x007fd8c0` visszatérésének jelentése; a `+0` mező jelentése és a `0x007fd770`; a `0x007fd8c0` összehasonlító slotja (feltételes); a `timelinedot`, `mouse`, `rollovermouse`, `overlay` és listaikon kattintása; a dátumcsúszka-leképezés; az `[this+0x2e8]` osztálya; a felső mező skálázása.
+
+**A #5401 „Kész, ha” pontjai (5. kör).** (1) Képlánc: változatlan. (2) Átmenet és ütem: részben. A lista-végi viselkedés és a nem nulla visszatérés igazolt; a pumpa-hívó és az ütem **NINCS MEG**. (3) Vezérlők: a négy találati overlay (`startbutton`, `exit`, `right`, `left`) műveletei igazoltak; a csúszka és a többi overlay műveletei **NINCS MEG**. (4) Diavetítés és visszatérés: változatlan.
+
+**Fejlesztési következmény.** Terméki kódot nem írtunk. A léptetési ütem továbbra sem implementálható: hiányzik a pumpa-hívó, az időtúllépés és a `Preferences\SlideshowEffectTime` felhasználói érték. Az Időrend lista-vége viselkedése igazolt (nincs kilépés), a négy gomb műveleti leképezése igazolt, a dátumcsúszka leképezése nem.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
