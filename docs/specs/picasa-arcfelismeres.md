@@ -2700,6 +2700,18 @@ Megjegyzés: a kibontott nézet állapota a `cluster` / `showall` pár kapcsoló
 
 - **Következő cím (c).** `0x0078b750`: a `+0x528` névmutató olvasója és az `addname` láthatóság (vagy annak hiánya) legközelebbi döntési pontja; ennek hívóját kell megnevezni. A 15. kör korábbi tétele (`0x008564f0`) nyitott marad.
 
+#### 19.4/b 16. kör (2026-10-20, #5343): a három címre válasz; a `0x0078b750` NEM láthatóság
+
+*Forrás:* `.ghidra/2026-10-20-ghidra-16.txt` (C: `0x008564f0`, `0x0074ad40`); `.ghidra/2026-10-20-ghidra-15.txt` (C: `0x00717810`); `.ghidra/2026-10-20-ghidra-17.txt` (C: `0x0078b750`, 1200-1309. sor). Ez a szakasz felülírja a 19.4 végi „Következő cím (c)” sort.
+
+- **`0x008564f0`: szövegbeállító, nem láthatóság vagy engedélyezés (megerősített, C, egy út).** A `this` `+0x330` bájtját nullázza, a `+0x320` dword-öt `-1`-re állítja. Ha az EAX-ben kapott szövegmutató nem üres (fejléc-ellenőrzés, első bájt nem nulla), a szöveget másolja (`FUN_009869a0`, `FUN_00989f80`, `FUN_005c2100`), különben `+0x32c = 0`. Végül `FUN_00856610(this, 0)`. Hívói a `0x00717810`-ben (`0x007179c5`, `0x00717a10`) és a `0x00856ec0`-ban vannak.
+- **A láthatóság-kapu a `0x00717810`-ben van, nem ebben.** A `0x00717810` létrehozó ágában a `param_4 != 0` esetén `+0x339 = 1`-et ír a szövegcsomópontba; ennek jelentése NINCS MEG.
+- **A `0x0074ad40` `*param_3` rekordja: hivatkozásszámlálós karakterlánc (megerősített, C, két hely).** A `0x00717810` a `*param_3` mutatót sztringként kezeli: nem nulla, `*puVar3 & 0xffffff00` nem nulla, és `puVar3[1]` első bájt nem nulla; csak ekkor hívja a `0x008564f0`-t. A `0x0074ad40` ezt a `0x009ae560("PeopleAlbum::ConfirmText", 1)` eredményeként adja át. Tehát a `*param_3` nem csomópont, hanem a `PeopleAlbum::ConfirmText` megerősítő szövege. Bizonyítottság: **feltételes** (a két hely egy forrás C-jéből származik; asm-összevetés nincs).
+- **`0x0078b750`: nem vezérli sem az `addname`, sem az `ignore` láthatóságát (megerősített, C, egy út).** A `this+0x528` mezőt (`param_1[0x14a]`) csak érvényességi ellenőrzésre használja (fejléc nem nulla, első bájt nem nulla). A függvény a gyermekelemek közül választ célelemet: a `+0x5a` nem nulla elemeket kihagyja, a kiválasztottra `+0x5d = 1`-et és `+0x59 = 1`-et ír; visszatérése `1000000` (név-ág) vagy `0xf4241` (nincs találat). A `+0x5a` jelentése (rejtett-e) ebből nem derül ki: **feltételes**.
+- **Hívója: NINCS MEG.** A `0x00cb4928` adatcím egy vtábla-slotban szerepel (DATA-xref), közvetlen `call` nincs; a vtábla osztálya nincs megnevezve.
+- **Cáfoló kísérlet.** (1) Azt feltételeztem, hogy a `0x008564f0` láthatóságot ír: cáfolva, a `+0x330`, `+0x320` és `+0x32c` szöveg-állapot. (2) Azt, hogy a `0x0078b750` a `+0x528`-ból vezérli a láthatóságot: cáfolva, a mező csak érvényességi feltétel.
+- **Következő cím (c).** A `addname`/`ignore` állapotfeltétele nyitott. A `0x0078b750` vtábla-hívóját (a `0x00cb4928` slotot) kell azonosítani, és a `0x00717810` `+0x339` jelentését. Blokkoló a fejléc-elemek láthatóságához.
+
 ## 20. #5184: a személykezelés bináris oldalának eredménye (2026-10-17, 2. kör)
 
 **Hatókör:** a jegy N1, N3, N5, N6, N7 bináris oldala, valamint a felvételes N4 és N8. Az öt dekompilált függvény a `referencia/ghidra/2026-10-17-szemelykezeles.txt` fájlban van: `0x0048ef20`, `0x007ba820`, `0x00584cc0`, `0x00647270`, `0x006470d0`. A többi címet diszasszemblálás (`annot_disasm.py`) és a bináris-index élei (`xrefs`, `string_xrefs`) adják. **Az index csak a közvetlen hívásokat látja**, a vtable-hívásokat nem; a negatív állítások erre a korlátra épülnek.
@@ -4135,6 +4147,18 @@ Részben válaszolt: a `0x00586a60` a `0x00586540` hívottja (`0x00586794`), íg
 - **Cáfoló kísérlet.** (1) Azt állítottam, hogy a `0x0084d090` számlálóval állítja elő a kulcsot. Cáfolva: a számláló csak a tömb indexe, a kulcs a `vtbl+0x78` kimenetéből jön. (2) Azt állítottam, hogy a véletlen kulcs a `0x0084d090`-ból ered. Cáfolva a közvetlen hívás-listán (nincs RNG-hívás); a `0x00584280`-on át még nem zártam le, ezért feltételes. (3) Azt állítottam, hogy a `(0,0)` kulcs bekerül a halmazba. Cáfolva (`je 0x0084d43a`).
 
 - **Következő cím (c).** `0x0084dc30`: a `0x0084d090` egyetlen hívója (0x0084dcfc), amely a két objektumlistát adja; ebből derül ki a `vtbl+0x78` osztálya és a 0x20-as rekordok kulcsának eredete. Másodsorban a `0x00584280` 13. dumpbeli C-je (365-761. sor), a `0x005848b1`-et megelőző feltétel miatt.
+
+### 34.10 16. kör (2026-10-20, #5184): a `0x005848b1` előtti feltétel; a `0x0084dc30` listaforrása részben
+
+*Forrás:* `annot_disasm.py` a `0x00584280` (1859 bájt) címen, a `0x005848b1` körüli sorok; `.ghidra/2026-10-20-ghidra-13.txt` (C: 306-345. sor a `0x00584280` relatív számozásával); `.ghidra/2026-10-20-ghidra-17.txt` (C és HÍVÓK-fejléc: `0x0084dc30`).
+
+- **A `0x005848b1` (`call 0x5875d0`) elé eső feltétel (megerősített, asm, egy út).** A `0x00584280` ciklusában a `[esp+0x34]`-en át elérhető lista `[edx+eax]` eleme (`ecx`) csak akkor vezet a véletlen-ágra, ha: a mutató nem nulla (`0x0058488b`), a fejléc `[eax] & 0xffffff00` nem nulla (`0x0058488f`), és `[eax+4]` első bájt nem nulla (`0x00584897`). Bármelyik hiánya a `0x005848bb`-re ugrik, a véletlen ág kihagyásával. Tehát a véletlen kulcs-ág csak **nem üres nevű** elemre fut. A C-ben a `FUN_005875d0` hívás (345. sor) a `iVar16 == 0` ágon belül van; az elem-feltétel asm-ből igazolt.
+- **A `(-1,-1)` elérés (feltételes).** A 34.9 szerint a `(-1,-1)` kulcs string nélkül is bekerülhet a halmazba. Ha ugyanabba a listába kerül, amelyet a fenti ciklus bejár, az üres név miatt kihagyódik, és nem éri el a véletlen ágat. A listaazonosság NINCS MEG.
+- **A `0x0084dc30` két listája: részben (megerősített, HÍVÓK-fejléc).** A függvénynek egyetlen közvetlen hívója van: `0x006df399`, a `0x006df1f0`-ban. A két lista (`param_3`, `param_4`) forrása ez a hívó; a hívó törzse nincs olvasva: **NINCS MEG**.
+- **A `vtbl+0x78` célja: NINCS MEG.** A hívás `(**(code **)(**(int **)(iVar4 + *param_3)) + 0x78)()` (C: 185. sor); a célt a listaelem osztályának vtáblája adja, és az osztály nincs azonosítva.
+- **Bizonyítottsági fok.** A `0x005848b1` előtti elem-feltétel: **megerősített** (asm, egy út). A `(-1,-1)` elérés: **feltételes**. A listaforrás és a `vtbl+0x78` célja: **NINCS MEG**.
+- **Cáfoló kísérlet.** Azt feltételeztem, hogy a `0x00584280` a `(-1,-1)` bejegyzésre is elágazik a véletlen kulcs felé: cáfolva az üres név kihagyásával, ha ugyanabban a listában van. A listaazonosság nem cáfolt.
+- **Következő cím (c).** `0x006df1f0`: a `0x0084dc30` egyetlen közvetlen hívója; a `param_3`/`param_4` listák feltöltése és a listaelemek vtábla-osztálya (a `+0x78` slot célja). Blokkoló a `(-1,-1)` elérés és a `+0x78` cél eldöntéséhez.
 
 ## 35. #5185, negyedik kutatói kör: nyolcpontos eredeti/nálunk leltár (2026-10-19)
 
