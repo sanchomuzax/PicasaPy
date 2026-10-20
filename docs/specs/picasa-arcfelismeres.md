@@ -2726,7 +2726,15 @@ Megjegyzés: a kibontott nézet állapota a `cluster` / `showall` pár kapcsoló
 
 **Cáfoló kísérlet.** Azt a könnyen adódó feltevést próbáltam cáfolni, hogy a csempe „Add a name” mezője az `unknownfaceheaderpanel/addname`. A cáfolat sikerült: a `.tre`-elem rejtett, a fejlécben az összes kijelölt arcra vonatkozó eszköztippje van, míg a csempemező külön, `faceclusterpanel_%d_addname` néven, a `0x00787dd0`-ben jön létre; a job-208 kibontott nézete a fejlécmezőt, a job-163 pedig a csempe alatti mezőket külön mutatja. A két forrás ugyanazzal a bizonyítási mércével egyezik.
 
-Ghidra-kör kell: 0x00787dd0 - a `faceclusterpanel_%d_addname` csempevezérlő Enter- és javaslatelem-kattintási callbackje, valamint a People/ContactManager párbeszéd megnyitásáig vezető út [blokkoló]
+**Válasz (2026-10-20): a csempe névmezője és a `Choose`-ág útja.** Csak binárisból igazolt részek:
+
+- **Névmező.** A `0x00787dd0` soronként hozza létre a csempe-vezérlőket: `faceclusterpanel_%d_addname` (`0x00cb4660`, ez a névmező), és ha a `this+0x518` bájt nem nulla, `faceclusterpanel_%d_ignore` (`0x00cb46d0`). Mindkét sztring csak ebben a függvényben hivatkozik (`string_xrefs`). A vezérlő osztálya (`FUN_00a63c80`) NINCS MEG.
+- **`Choose`-ág.** A `Choose` (`0x00cb7270`) és a `ContactManagerDlg::Choose` (`0x00cb7278`) sztringet csak a `0x007b81e0` használja, a `0x00787dd0` nem. A közvetlen hívási élek szerint a `0x00787dd0`-ból lefelé 3 szinten (146 függvény) és a `0x007b81e0`-ba felfelé 4 szinten (12 függvény) nincs átfedés. Az összekötés tehát vtábla- vagy callback-hívás.
+- **Enter és javaslat-kattintás.** NINCS MEG. A dekompilált törzsből nem olvasható ki a kezelő célfüggvénye: a `FUN_009ccdf0`, `FUN_009df290` és `FUN_0077fad0` hívások célja nincs dekompilálva.
+
+Ghidra-kör kell: 0x007853e0 - a `0x00787dd0` közvetlen hívója (a hívója `0x00783de0`): melyik vezérlőhöz köti a csempelistát, és hol van az Enter-callback [blokkoló]
+Ghidra-kör kell: 0x007899e0 - a `0x00787dd0` második hívója; az indexben nincs közvetlen hívója (vtábla?): ki hívja és mikor [blokkoló]
+Ghidra-kör kell: 0x007b81e0 hívói (`0x007b7b10`, `0x007b9630`, `0x007ba060`) - melyik ág vezet a `Choose`-hoz a csempéből [blokkoló]
 
 ## 20. #5184: a személykezelés bináris oldalának eredménye (2026-10-17, 2. kör)
 
@@ -4307,9 +4315,26 @@ A pontok mind ki vannak mondva és minden nyitott részhez konkrét J2-J8 felvé
 - **Hívási lánc (megerősített, C, egy út).** A `0x0045a9d0` hívottjai között nincs `0x0068c030` (a HÍVOTTAK fejléc), tehát ez a függvény közvetlenül nem ír az INI-be. Egyetlen hívója a `0x0047e77e` (a `0x0047e470`-ben).
 - **Bizonyítottsági fok.** A hívottak listája és a `.picasa.ini` ág: **megerősített**. A kiíró és a szakasznév (`[Contacts2]`): **NINCS MEG**. Az időzítés: **NINCS MEG** (a hívó nincs dekompilálva). A 8 bájtos elemek forrása: **NINCS MEG**; alakjuk megegyezik a `0x00448fb0` 64 bites elemeivel, ez azonos listát nem bizonyít.
 - **Cáfoló kísérlet.** Feltételeztem, hogy ez az ág írja a `[Contacts2]` szakaszt: cáfolva (olvasó hívás, a `0x0068c030` nincs a hívottak között).
-- **Lezárás (N6): (c).** Következő Ghidra-címek:
-  - `Ghidra-kör kell: 0x0047e470 - a `0x0045a9d0` hívója: mikor fut a mentés, és a személytörlés után-e [blokkoló]`
-  - `Ghidra-kör kell: 0x006956d0 - a 30. szakasz szerinti `0x006956d0` → `0x0068c030` INI-íróút belépési pontja: ez írja a `[Contacts2]` szakaszt? [blokkoló]`
+- **Lezárás (N6): (c).** A 2026-10-20-i bináris körben a `0x0047e470` és a `0x006956d0` kérdésére válasz született, lásd alább. A maradó Ghidra-címek a szakasz végén vannak.
+
+**Válasz (2026-10-20): a `0x0047e470` hívási lánca és a mentés.**
+- **Hívási lánc.** A `0x0045a9d0` egyetlen hívója a `0x0047e470` (hívási hely: `0x0047e77e`). A `0x0047e470` egyetlen hívója a `0x006a10b0` (`0x006a12da`). A `0x006a10b0`-t a `0x006a1350` hívja három helyen (`0x006a14cd`, `0x006a193c`, `0x006a1972`), és a `0x006a1350`-nek nincs közvetlen hívója az indexben.
+- **Korrekció.** A korábbi `0x006a12fa` és `0x006a1332` címek nem a `0x006a10b0` hívói: a `0x006a10b0` belsejében lévő `call 0x00414940` helyek.
+- **Mentés.** A mentő `0x0069b240` közvetlen hívója csak a `0x00692210`, aminek nincs közvetlen hívója. A `0x0047e470` és a `0x0045a9d0` hívottjai között nincs `0x0069b240`. Mikor fut a mentés: NINCS MEG.
+- **Személytörlés után.** A törlési függvények (`0x007ba820`, `0x007b9630`, `0x007ba060`) lefelé 6 szinten sem érik el a `0x0047e470`-t és a `0x0045a9d0`-t. A `0x0047e470` felfelé bejárása a `0x006a1350`-nál áll meg, mert az nem hívott. A törlés utáni futás tehát közvetett hívásra épül: NINCS MEG.
+
+**Válasz (2026-10-20): a `0x006956d0` és a `Contacts2`.** Részben igen: a hívási lánc eljut a `Contacts2` sztringig. Hogy a `0x00586e20` ténylegesen kiírja-e a szakaszt, még nyitott.
+- `0x006956d0` a `0x0068c030`-at csak akkor hívja (`0x00697557`), ha a `[esp+0x1b]` bájt 2 (`cmp byte ptr [esp + 0x1b], 2`, `0x00697540`). A 2-es értéket a `0x00696d36` írja, a `0x0068ac80` hívás után, a `cmp al, 1` (`0x00696d0e`) ágon. Az `al` bemenete NINCS MEG.
+- `0x0068c030` (654 bájt) az INI-fájlt IAT-hívással nyitja (`push 0xc0000000`, `0x0068c060`-`0x0068c068`). A bejegyzés-ciklus után (a visszaugrás `0x0068c212`-nél van) hívja a `0x0068ac20`-at (`0x0068c225`).
+- A `0x0068ac20` hívja a `0x00586e20`-at (`0x0068ac5a`), a `0x00586e20` pedig a `Contacts2` sztringet tolja (`push 0xc9105c`, `0x00586e52`).
+- A `0x0069b240` mentés is hívja a `0x0068c030`-at, tehát a mentés is ide jut.
+- A `0x006956d0` törzsében magában nincs `Contacts2` sztring (`string_xrefs`).
+- **Nyitott:** a `0x00586e20` belső ága. Hogy a sorokat kiírja-e, vagy csak nevet állít elő és olvas, NINCS MEG. Ez összhangban van a 28.3/a helyesbítéssel: a 27.1 "nem író" olvasata nem áll.
+
+Ghidra-kör kell: 0x00586e20 - a `Contacts2` tolása után a `0x00985ff0`, `0x0040eef0`, `0x005863f0` és a `call edx` ág: mit ír a fájlba [blokkoló]
+Ghidra-kör kell: 0x0068ac20 - a `0x0069ceb0` két hívása és a `0x00586e20` hívás feltétele (szakasz-fejléc vagy sorok) [blokkoló]
+Ghidra-kör kell: 0x006a1350 - ki hívja közvetve (vtábla-slot vagy táblázat), és a három hívási hely (`0x006a14cd`, `0x006a193c`, `0x006a1972`) mikor fut: betöltés, mentés vagy törlés után [blokkoló]
+Ghidra-kör kell: 0x00692210 - a `0x0069b240` mentés közvetett hívója (vtábla-slot): melyik objektum, és fut-e a `Delete Person` után [blokkoló]
 
 **22. kör, N6 (`0x007b81e0`, a Choose-callback): nem ír közvetlenül a `Contacts2`-be.** A törzs (`.ghidra/2026-10-20-ghidra-22.txt`, 898-1152. sor): ha a `param_1[0x57]` jelző be van kapcsolva, és a kiválasztott név mutatói (`param_1[0x54]`, `param_1[0x55]`) egyeznek a tároltakkal, a `ContactManagerDlg::OK`, különben a `ContactManagerDlg::Choose` naplóüzenetet adja a `piVar7` objektum `+0x68` slotjának. A törzsben nincs `0x00586e20` és nincs `0x00587110` hívás.
 - **Bizonyítottsági fok.** A közvetlen hívási lista: **megerősített** (C). A `+0x68` slot célja és a hívottak (`0x00588460`, `0x005c2100`, `0x005c7620`, `0x007b8d20`) szerepe: **NINCS MEG**. A közvetett írás kizárva nincs.
@@ -4481,7 +4506,15 @@ Ez a „Névjegyek frissítése” (Refresh Contacts) ág, nem törlés. A `0x00
 
 **Lezárás (c).** Következő Ghidra-cím:
 
-Ghidra-kör kell: 0x006a41e0 - a `(szülő, név, 0x13320004, &kimenet, 1)` lookup: fájlból (pmp) tölt-e, van-e visszaírási útja a `+0x284` táblába, és a személyszintű mellőzés írja-e ugyanezt az oszlopot [blokkoló]
+**Válasz (2026-10-20): a `(szülő, név, 0x13320004, &kimenet, 1)` lookup három kérdése.** A 37.9/b részletei (a betöltő-lánc és a fájlnév) binárisban megerősítve; az alábbi kiegészítésekkel:
+
+1. **Fájlból tölt-e (pmp).** Igen, de csak a bit 0-s csomópontokon. A találati ágon a bit 0 esetén a `0x006a7090` fut, és ha `[esi+8] == 1`, hívja a `0x006a2cd0`-t (`0x006a7094`). A `0x006a2cd0` a `pmp` sztringgel (`0x00ca80f4`) és a `%s_%s.%s` formátummal (`0x00ca80f8`) nevet állít össze, és fájlt nyit. A `string_xrefs` nem listázza a három betűs `pmp` sztringet, ezért a sztring-keresés üres eredményt adna; a címet diszasszemblálásból és a `pe_dis.read` olvasásából igazoltam. Az 1-es állapot kiosztója: NINCS MEG (37.9/b).
+2. **Visszaírás a `+0x284` táblába.** A `0x006a41e0`-ben nincs `0x284` (diszasszemblálás: 0 találat). A `+0x284` a lookup által visszaadott rekordon belül van. A `0x00499610` a rekord mutatóját (`[esi+0x54]`) és a `rekord+0x284` címet (`[esi+0x58]`) tárolja, írás a rekordba nincs. A másik hívó, a `0x006a5590` az `add ebx, 0x284` (`0x006a5691`) után a `+0x20` (tulajdonos-szál) és a `+0x24` (számláló) mezőket írja (`0x006a56aa`-`0x006a572a`); ezek ugyanazok, mint a `0x006a41e0` zárprotokolljában. A `+0x284` adatmezőinek írója: NINCS MEG.
+3. **Ugyanazt az oszlopot írja-e a személyszintű mellőzés.** NINCS MEG. A `0x13320004` kulcsot két hívó használja: a `0x00499610` (hívója a `0x00495be0`, sztring nélkül, közvetlen hívó nélkül) és a `0x006a5590` (hívói a `0x00431570`, `%I64u` sztringgel, és a `0x00441ed0`, sztringjei `.picasa.ini`, `category`, `location`). A személy-mellőzés jelöltjei (`0x005fdc30`, `0x00640340`, `0x0056c5a0`) lefelé 3 szinten nem érik el ezeket. Ez vtábla-hívást nem zár ki.
+
+Ghidra-kör kell: 0x00495be0 - a `0x00499610` (`0x13320004`, a `+0x284` kimenet) hívója: ki és mikor tölti be az `albumcontactids` táblát [blokkoló]
+Ghidra-kör kell: 0x0056c5a0 - a `Ignore Person` parancs közvetett hívási lánca (vtábla-slot): melyik `0x1332000x` kulcsot írja [blokkoló]
+Ghidra-kör kell: 0x006a5590 zárblokkja (`0x006a5691`-`0x006a572a`): a `+0x284` objektum adatmezőinek írója [nem blokkoló]
 
 **Colab-javaslat (futásidejű adat, a `behavior` feladathoz a tulajdonos `jovahagyva` címkéje kell).**
 1. Új, üres mappa két képpel; az egyik a „Teszt Elek” személyhez tartozik (`PicasaTeszt`).
