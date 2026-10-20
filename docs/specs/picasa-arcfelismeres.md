@@ -443,9 +443,9 @@ Mindhárom elérhető a jobb fiók **Emberek** paneljéből
 >
 > | lenyomva | mi történik |
 > |---|---|
-> | **Ctrl** | `0x006038b0` — **`RemoveAllFaceData`**: MINDEN arc-adat és személyi album törlése + teljes újrakeresés |
-> | **Shift** | `0x00603a20` — **`ResetAllFaces`**: minden személyi album törlése, az arcok a „Név nélküliek" albumba |
-> | semmi | `0x0057daa0` — csak a **kijelölés** arcainak alaphelyzetbe állítása |
+> | **Ctrl** | `0x006038b0` - **`RemoveAllFaceData`**: MINDEN arc-adat és személyi album törlése + teljes újrakeresés |
+> | **Shift** | `0x00603a20` - **`ResetAllFaces`**: minden személyi album törlése, az arcok a „Név nélküliek" albumba |
+> | semmi | `0x0057daa0` - csak a **kijelölés** arcainak alaphelyzetbe állítása |
 >
 > Mindkét romboló ág egy **belső kapcsolóhoz is kötött**
 > (`byte [0xd67849] != 0`) — vagyis alapállapotban feltehetően rejtett,
@@ -884,7 +884,7 @@ utasítás-, illetve forrásszinten olvasva.*
 
 #### 9/e A személy-album „Szintén ezeken a fotókon:” listája KIHAGYJA a nézett személyt (2026-10-01, #3678)
 
-*Forrás: `0x0064c340` · `0x0064d197`–`0x0064d260` · `0x0063df90` (`0x0063e02c`) · `0x006c1ac0` (`0x006c1cfc`, `0x006c1d06`) · **`0x006c4630`** (`0x006c46f3`) · `0x0064d660` · `0x00647df0` — két egymástól független olvasat (lásd a bizonyítottsági fokot).*
+*Forrás: `0x0064c340` · `0x0064d197`-`0x0064d260` · `0x0063df90` (`0x0063e02c`) · `0x006c1ac0` (`0x006c1cfc`, `0x006c1d06`) · **`0x006c4630`** (`0x006c46f3`) · `0x0064d660` · `0x00647df0` - két egymástól független olvasat (lásd a bizonyítottsági fokot).*
 
 **Kérdés (#3678):** a személy albumában a lista a kijelölt képek megnevezett embereit mutatja; szerepel-e benne maga a nézett személy is?
 
@@ -932,7 +932,7 @@ A felvett arcból egyelemű csoport lesz (`0x006c48c5`, `0x006c4974`), és `0x00
 
 #### 9/f A mellőzött arc a nézőben; a kézi hozzáadás; a személy-mező értékkészlete (2026-10-01, #3793)
 
-*Forrás: élő mérés (eredeti angol Picasa 3.9.141, `picasa-colab-jobs` #72, #73, #74, #75; kulcsképek: `Colab EN 37 - Mellozott arc a nezoben.png`, `Colab EN 38 - Nem mellozott nev nelkuli arc a nezoben.png`) · `0x00483cb0` (`0x00483ff0`–`0x00484012`) · `0x0064c340` → `0x0064bb70` (`0x0064c227`) → `0x006c63d0` (`0x006c63fd`) · `0x00642c10` · `0x00641960` · `0x004841f0` (`0x004842c2`–`0x004842f9`) · `0x0049d560` · `0x0092c450` (`0x0092c476`) · `0x00484820` · `0x0049d390` · `0x007d55f0` · `0x00644900` · `0x006443e0` · `0x0064a410` — két egymástól független olvasat egyezik.*
+*Forrás: élő mérés (eredeti angol Picasa 3.9.141, `picasa-colab-jobs` #72, #73, #74, #75; kulcsképek: `Colab EN 37 - Mellozott arc a nezoben.png`, `Colab EN 38 - Nem mellozott nev nelkuli arc a nezoben.png`) · `0x00483cb0` (`0x00483ff0`-`0x00484012`) · `0x0064c340` → `0x0064bb70` (`0x0064c227`) → `0x006c63d0` (`0x006c63fd`) · `0x00642c10` · `0x00641960` · `0x004841f0` (`0x004842c2`-`0x004842f9`) · `0x0049d560` · `0x0092c450` (`0x0092c476`) · `0x00484820` · `0x0049d390` · `0x007d55f0` · `0x00644900` · `0x006443e0` · `0x0064a410` - két egymástól független olvasat egyezik.*
 
 **A kérdés (#3793):** mit mutat az eredeti nézője a mellőzött (`ffffffffffffffff`) arcon?
 
@@ -1173,7 +1173,7 @@ A korábbi állítás („a menüben nincs gyorsbillentyű, de a futásidejű
 `CreateAcceleratorTableA` tartalma nincs feltárva") most **teljes** lett.
 
 A binárisban **egyetlen** `CreateAcceleratorTableA` hívás van
-(`0x0092321a`, IAT `0x00c406e4` — pefile-lal ellenőrizve), és a hívás
+(`0x0092321a`, IAT `0x00c406e4` - pefile-lal ellenőrizve), és a hívás
 környezete szó szerint ez:
 
 ```asm
@@ -4236,3 +4236,55 @@ A pontok mind ki vannak mondva és minden nyitott részhez konkrét J2-J8 felvé
 - **J6:** People Manager kijelölés, OK, Cancel és Escape külön; contacts/ini/db3 állapot előtt/után.
 - **J7:** import/új mappa/új kép indítása, megnevezett fotón másik arc, kizárt mappa és pontos küszöbállások; Red.dll paramétert becsülni tilos.
 - **J8:** eredeti profil `contacts.xml`, `.picasa.ini` és db3 másolata minden művelet előtt, után, bezáráskor és újraindítás után.
+
+## 36. #5184, helyi Codex-kutatói kör: N1-N8 végállapot és Red.dll-cél (2026-10-20)
+
+**Hatókör:** a jegy teljes kérdéslistájának összefoglalása a jelenlegi spec, a munkafa forrása, a helyi Picasa3.exe/Red.dll és a feladatban átadott job-186/job-187 leírásai alapján. A GitHubot nem használtam. A nyers job-186/job-187 képkockák és az eredeti futtatási profil nincsenek a munkafában vagy a célzottan leltározott mérőadat-archívumban, ezért a Colab-leírásokat nem állítom újraellenőrzött képi mérésnek.
+
+### 36.1 A „Kész, ha” pontjai
+
+| Pont | Állapot | Eredmény és bizonyíték |
+|---|---|---|
+| **N1** - talál-e további ismeretlen arcot egy névvel jelölt fotón | ⛔ **BLOKKOLT** | Az eredeti futás kimenete **NINCS MEG**. A vizsgált, sorba állító kód nem hasonlít nevet, de a felismerés utáni út tovább szűrhet (`0x0048ef20`, `0x0048af60`; 20-24. szakasz). A PicasaPy forrása kihagyja azt a fotót, amelynek ini-adatai között már azonosított arc van (`src/picasapy/app/face_scan_controller.py:470-475`). Döntő mérés: J7 B2 kontroll, azonos képet név nélkül már egyszer feldolgozva, majd névvel és második ismeretlen arccal. |
+| **N3** - eredeti arány/küszöb a 960 px-es, 0,9-es YuNethez képest | ⛔ **BLOKKOLT** | Eredeti felismerési arány és 960 px-es bemeneti méret: **NINCS MEG**. A Preferences bináris alapértékei: `FRSuggestionThreshold=0,85` (`0x0048aabc`), `FRSuggestionSingleThreshold=0,90` (`0x0048ac6f`), `FRSortThreshold=0,85` (`0x0048acda`), `FRRecommendIncludeLimit=0,50` (`0x0048ad46`); az utóbbi a kép-futtató ajánlásba vételi szűrője, amely `0,50` floatot hasonlít (`0x0048e1f0`, `0x0048e33e`), nem bizonyított Red.dll-detektor-küszöb. Ezek neve és szerepe alapján sem igazolt, hogy azonos skálán vannak a feladatban megadott YuNet `0,9`-cel. A Picasa3.exe `0x006cde50` a Red.dll objektum `+0x44` slotját hívja (29.4); a Red.dll PE-táblája a `REDENTRY` exportot `0x10001930`-ra (RVA `0x00001930`) teszi. Az export a `0x1021ae7c` objektumot adja; annak vtable-je `0x101aadc4`, a `+0x44` bejegyzés `0x10001570`, amely a `0x100057c0` belső függvényhez delegál. Ez a híd megerősíti a hívási célt, de a Red.dll belső méretezési és döntési küszöbét, valamint az eredeti arányt nem. |
+| **N4** - látszik-e alapból keret és név | ✅ **LEZÁRVA** | A job-187 átadott mérése szerint a megnevezett arcon alapból sem keret, sem név nem látszik. A PicasaPy nézőjében `facesVisible: false`, és a mentett régiók megjelenítése ehhez kötött (`PhotoViewer.qml:354, 3643-3658`; `FacesOverlay.qml:20-22, 78-106`), tehát a két oldal egyezik. A nyers job-187 kép helyben nem érhető el; a mérési állítás forrása a feladatban átadott jegyzet. |
+| **N5** - személyszintű mellőzés útja és hatása az arcokra | ⛔ **BLOKKOLT** | A binárisban a megerősítő szöveg „move this person to the ignored people album” (`0x00c99830`), de a személyszintű művelet tárolóírása és az érintett arcok `faces=`-hatása **NINCS MEG**. A fejlécsáv `ignore` útjának (`0x005c9b00` → `0x00449090`) eredményét nem szabad automatikusan azonosítani ezzel a személykezelő-művelettel (24.3, 28.4/a). |
+| **N6** - személy törlése és az arcok hatása | ⛔ **BLOKKOLT** | A `0x007ba820` a megerősítés után egy aktív sort kezel; feltételesen hívja a `0x005836f0`-t, majd a `0x00584cc0`-t, végül eltávolítja a sort a felületi listából (20.4). A `[Contacts2]` tartós írásának időzítése és a törölt személyhez tartozó `faces=` sorok sorsa **NINCS MEG** (32.6). |
+| **N7** - egy vagy több kijelölés | ⛔ **RÉSZBEN BLOKKOLT** | A Név nélküliek többes kijelölése megerősített: a job-180 Ctrl+A után hat arcot jelölt ki, és a bináris kijelölt-listát jár be (20.5). A Személykezelő egyszeres/többszörös modellje **NINCS MEG**: a `contactmgr.fen` listaeleme nem ad kijelölési módot, a job-186 egy kiválasztott sort mutat; egyik sem próbálja ki a második sor Ctrl-kattintását. A döntő, kockázatmentes J6 próba: sor 1, majd Ctrl+kattintás a 2. sorra, képkocka és Delete Person állapotának rögzítése. |
+| **N8** - referencia-képernyőkép a Személykezelőről | ✅ **LEZÁRVA** | A feladatban átadott job-186, 24. kép leírása rögzíti a 631×351 People ablakot: balra üres Search mező, egyedüli és kijelölt „Teszt Elek” sor, Delete Person/New Person; jobbra arckép, „1 Photo in Picasa”, Name/Email(s), szürke Sync Face Tags/Revert; alul szürke Manage Online Contacts/Refresh Contacts, OK és Cancel. A `.fen` erőforrás és a régebbi helyi People-képkocka az elrendezést/vezérlőket külön is alátámasztja, de az utóbbi üres listás, ezért nem bizonyítja az aktív sor vagy méret részletét. A job-186 nyers képkocka helyben nincs. |
+
+### 36.2 Bizonyítottsági fok, két út és cáfoló kör
+
+**Összesített fok: feltételes.** N4 és N8 lezárható a megadott mérési jegyzetekkel. A Red.dll `+0x44` célja cím szerint feltárt, de N3 lényege (eredeti méret, detektálási küszöb és arány) nyitott. N1, N5, N6 és a N7 Személykezelő-ága szintén nyitott; ezért a jegy „Kész, ha” feltételei nem teljesültek.
+
+- **A út - bináris és erőforrás:** a Picasa3.exe `0x006cde50` hívása a Red.dll `+0x44` slotjára, a Red.dll export/vtable PE-adatai és a `0x10001570` diszasszemblálása azonos hívási célt ad. A `contactmgr.fen` csak a lista-vezérlőt írja le; kijelölési mód nincs benne.
+- **B út - felvételi jegyzet és külön réteg:** a job-187 N4-leírását a PicasaPy QML alapállapotával vetettem össze; a job-186 N8-leírásának vezérlőit a `.fen` és a másik állapotú helyi képkocka ellenőrzi. Egyezés csak a megfigyelt N4 alapállapotára és az N8 elrendezési elemeire áll; a felvételek képi részleteit nem ellenőriztem újra.
+- **Cáfoló próba (N3):** megpróbáltam igazolni, hogy a gyári `0,90` az eredeti arcdetektor küszöbe. A `FRSuggestionSingleThreshold` 90-es gyári értékét a `0x0048ac6f` olvassa, míg a kép-futtató a `FRRecommendIncludeLimit` mezőt (`0,50`) hasonlítja (`0x0048e33e`). Ez megcáfolja a `0,90 = YuNet score threshold` azonosságot, de nem adja meg a Red.dll saját döntési skáláját. A cáfolat ugyanazon bináris bizonyítékrenddel ellenőrzött; az eredeti skála továbbra is **NINCS MEG**.
+- **Cáfoló próba (N7):** ellenőriztem azt a következtetést, hogy a `0x007ba820` egy aktív sort olvas, tehát a lista szükségképpen egyszeres kijelölésű. A job-186 egy sora, a törlési kezelő egy sorra épülő útja és a `contactmgr.fen` hiányzó módjelzője nem zárja ki, hogy Ctrl-kattintáskor több sor kijelölhető legyen. A hipotézis nem áll meg: N7 nyitva marad.
+- **Cáfoló próba (N1):** a sorba állító függvényekben kerestem név-összehasonlítást; a vizsgált út nem ad ilyet. Ez nem cáfolja, hogy a felismerés utáni lépés szűrhet, tehát az eredeti runtime kimenet nélkül nem zárja le N1-et.
+
+### 36.3 Eredeti / nálunk / teendő
+
+| Kérdés | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| N1 | NINCS MEG, hogy névvel jelölt fotón talál-e másik arcot. | A forrás a már azonosított arcot tartalmazó fotót kihagyja (`face_scan_controller.py:470-475`). | J7 B2 kontroll. Csak igazolt eredeti eltérés után készüljön fejlesztői lista. |
+| N3 | A Preferences értékek és a Picasa EXE `0,50` szűrője binárisból megvan; a Red.dll tényleges méretezése, belső küszöbe és felismerési aránya NINCS MEG. | A feladatban megadott és a forrásban rögzített referencia a YuNet 960 px / 0,9 (`detector.py:42,49`); ez nem igazoltan azonos skálájú az eredeti értékekkel. | J7: kontrollált méret- és küszöbpróba, azonos képkészlettel és eredménylistával; a Red.dll függvénylánc célzott Ghidra-köre. |
+| N4 | Alapból nincs keret és név (job-187 jegyzet). | A mentett arcok láthatósága alapból ki van kapcsolva. | Nincs igazolt eltérés, nincs fejlesztői feladat. |
+| N5 | A személyszintű írás és az arcokra gyakorolt hatás NINCS MEG. | Az eredeti művelettel való élő összevetést nem végeztem el. | J4: személyszintű Ignore Person előtt/után `faces=`, `[Contacts2]`, ignored album; külön a névtelen és nevezett arc. |
+| N6 | A sor eltávolításának memóriabeli útja ismert; tartós mentés és arc-hatás NINCS MEG. | Az eredeti viselkedéssel való élő összevetés nincs megmérve. | J5/J8: Delete Person előtt/után és bezárás/újraindítás után `.picasa.ini`, `contacts.xml`, db3 diff. |
+| N7 | A Név nélküliek többes kijelölése megvan; People Manager kijelölése NINCS MEG. | QML-forrás szerint egy `currentIndex`-et választ; PicasaPy futásidejű összevetés nem készült. | J6 Ctrl-kattintásos sorpróba, majd kijelölés és Delete Person állapota. |
+| N8 | A job-186 referencia leírása megvan; a nyers képkocka helyben nincs. | Kód- és élő képernyő-összevetés nem készült ebben a körben. | A referenciát a People Manager vizuális auditjának mércéjeként kell használni; eltérésből külön UI-fejlesztési jegy csak képi összevetés után adható. |
+
+**Fejlesztési következmény:** jelenleg nincs olyan N-pont, ahol a mért eredeti viselkedés igazolt eltérést mutatna a PicasaPy-tól. Ezért nincs Codex-kész fejlesztői lista és nem javaslok kódmódosító jegyet. A következő munkák bizonyítékgyűjtések: J4, J5/J8, J6 és J7/B2. Nincs új, külön kutatási jegy; ezek a #5184 nyitott részei.
+
+### 36.4 Nyitott
+
+**Ghidra-kör kell:** 0x100057c0 - a Red.dll `REDENTRY` `+0x44` hívási láncában a detektor tényleges bemeneti mérete, pontszám-skálája és döntési küszöbe [blokkoló]
+
+**Ghidra-kör kell:** 0x00448fb0 - a `this+0x27a0` tábla írói és a 64 bites érték jelentése, amelytől a személy-mellőzés predikátuma függ (N5) [blokkoló]
+
+**Ghidra-kör kell:** 0x0045a9d0 - a `.picasa.ini` út `Contacts2` mentési ága és az írás időzítése (N6) [blokkoló]
+
+**Ghidra-kör kell:** 0x007b81e0, 0x007b9630, 0x007ba060 - a Choose callback és a `Contacts2` írásához vezető út (N6) [blokkoló]
+
+**Colab-mérés kell:** J7 B2 (N1); Red.dll összehasonlító próba és eredménylista (N3); személyszintű Ignore Person ini- és album-összevetés (N5); törlés utáni, bezárás utáni és újraindítás utáni mentés összevetése (N6); J6 Ctrl-kijelölés (N7). A mérőadat-archívum célzott taglistájában ehhez a feladathoz nem volt mérési csomag, ezért nem bontottam ki és nem hoztam létre ideiglenes `.bt` fájlt.
