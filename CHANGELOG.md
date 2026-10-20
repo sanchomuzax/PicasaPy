@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.165] - 2026-10-20
+
+- Az alapbeállítású Mozgófilm a képeket felvételi idő szerint, átrendezés nélkül teszi egymás után, ahogy az eredeti; sorozatnál a válogatás HOG-leírót használ (#5386).
+
 ## [0.9.164] - 2026-10-20
 
 - Stabilabb lett a Személyek panel névadási tesztje: a névjegy-azonosítót az 1-16 jegyű alakban is elfogadja (#5368).
