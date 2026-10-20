@@ -540,6 +540,8 @@ rendezésének három módja** (`Preferences\peoplesort`), ld.
 
 ⭐ **2026-10-18 (#5184, 31-32. szakasz): teljes .text-pásztázás; a Contacts2 névjegy-tárolási jelöltje `0x00586e20`, az INI-kiírás a `0x00484820` útján jut a `WriteFile`-ig; a Choose utáni megjelenés mért, a pontos callback és ID-forrás nyitott (N6 BLOKKOLT).**
 
+⭐ **2026-10-20 (#5185, bináris kör): a 0x00787dd0, 0x006a41e0, 0x0047e470, 0x006956d0 Ghidra-kérdések válasza részben; a csempe Choose-ága és a személyszintű mellőzés oszlopa NINCS MEG; a `0x006a41e0` pmp-ága igazolt (`0x006a2cd0`); a `0x006956d0` → `0x0068c030` → `0x0068ac20` → `Contacts2` lánc megvan, a `0x00586e20` kiírása nyitott.**
+
 ⭐ **2026-10-18 (#5185, 28. szakasz) - a személykezelés leltára: a 8 pont mind RÉSZBEN, a „Learn more” cím KÉSZ (`0x0074c760`); új [Contacts2]-jelöltek (`0x00586e20`, `0x00587110`), a 27.1 olvasata vitatott.**
 
 ⭐ **2026-10-19 (#5185, 35. szakasz): mind a nyolc pont Eredeti/Nálunk/Teendő táblában; az Escape-helyesbítés után a csempe Escape nyitott; `PeopleAlbumUseFaceSrc=1` → `face_zoom` a `0x005e5290`/`0x00767e50` diszasszemblálásából (feltételes); a javaslatok, People Manager, tárolási időzítés és felismerési futás több része továbbra is nyitott, J2-J8 felvételi útjával.**
