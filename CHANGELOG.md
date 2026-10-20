@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.171] - 2026-10-21
+
+- A csillag levétele megőrzi az üres képszakaszt a `.picasa.ini` fájlban (#5396).
+
 ## [0.9.170] - 2026-10-20
 
 - A Névtelenek és a mellőzött arcok csempéi a megnyitott albumon kívüli fotókat is betöltik. (#5407).

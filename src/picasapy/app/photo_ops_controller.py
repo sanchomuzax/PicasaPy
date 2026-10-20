@@ -493,7 +493,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             def mutate(document):
                 if new_star:
                     return document.with_value(photo.name, "star", "yes")
-                return document.with_removed(photo.name, "star")
+                return document.with_removed_preserving_section(
+                    photo.name, "star"
+                )
 
             update_document(ini_path, mutate, backup=True)
             return {"star": int(new_star)}
