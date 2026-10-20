@@ -5033,7 +5033,7 @@ A `0x0088c1a0` belső műveleteiből ennyi olvasható ki: a feldolgozó ciklusok
 5. Az ordering 1/2 ág csak azután nevezhető eredetinek, ha az út költsége, kiválasztott indexei és végső sorrendje bizonyított.
 
 **Nyitott.**
-- `Ghidra-kör kell: 0x0088c1a0 - a köztes tömbök és a végső HOG-vektor mezőnkénti összekötése, a vektor hossza, cella- és iránysorrend, valamint a normálási blokkok pontos tartománya [blokkoló]`
+- **Válasz (G/10):** a blokkrács (4 × 7 blokk, 2016 elem), a cellánkénti 18 érték és a blokkonkénti L2-normálás megvan; a cella-irányok a `0x0088c480`-ban vannak, lásd G/10.
 - `Ghidra-kör kell: 0x00877c50 - a 0x00878310 hívási argumentumai, az elődút iránya és a végső fotóindexek sorrendje ordering = 1/2 esetén [blokkoló]`
 - Az ordering 1/2 teljes út natív QEMU-mérése nincs meg; a `0x00878310` és `0x00875ee0` kiválasztási útja csak dekompilátum alapján vizsgált. A `0x00874ac0` önálló helper függvényszintű leírása a G/3f-ben szerepel, az ordering 1/2 útba kapcsolása nincs natívan ellenőrizve.
 - Az általános új film úttól eltérő, `ordering = 2`-t beállító speciális panelág pontos felhasználói feltétele nincs meg.
@@ -5241,10 +5241,42 @@ Ebből: a szög [0, 2π) tartományban van (negatív esetén + W), a rekesz-inde
 - **Bizonyítottsági fok.** A getter-mezők és a `0x0048c440` törzse: **megerősített** (C és asm). A `+0x30` kulcs szerepe a keresésben: **feltételes** (a `0x006b6a50` keresőt nem olvastam végig). A `this+0x34` jelentése: **feltételes** (a feltöltője NINCS MEG). A súlyok és a megtartott kép: **NINCS MEG**.
 - **Cáfoló kísérlet.** (1) Azt feltételeztük, hogy a HOG-getter a `+0x30`/`+0x34` mezőket olvassa: cáfolva, a törzsben nincs ilyen eltolás. (2) Azt, hogy a `+0x34` a rekord mezője: cáfolva, a `0x008742a0` a getter-objektumról (`param_1`) olvassa.
 - **Lezárás (#4194): (c).** A (b) nem lehetséges, mert a megtartott képre nincs két független út. Az (a) sem, mert a jegy Eredeti oszlopa a súlyokat és a HOG-vektort kéri. Következő Ghidra-címek:
-  - `Ghidra-kör kell: 0x00874e40 - a pontszám összegzése: a HOG- és a Neven-távolság szorzói, a 0x00873170 burkoló és a két vtábla-hívás, valamint a kiválasztott jelölt visszatérési indexe [blokkoló]`
-  - `Ghidra-kör kell: 0x0088c1a0 - a this+0x54 bejegyzés HOG-vektorának tartalma és hossza [blokkoló a select_chain cseréjéhez]`
+  - **Válasz (G/10):** a `0x00874e40` nem ad vissza indexet (`void`), és nem a megtartott kép útja `ordering = 0`-n; a Neven-szorzó nincs benne, csak a bájtflag szerinti `-2^-63` szorzó. Lásd G/10.
+  - **Válasz (G/10):** a `this+0x54` bejegyzés 2016 elemű, 4 × 7 blokkos, L2-normált vektor; a cella-irányok nyitottak (`0x0088c480`, lásd G/10).
   - A 2026-10-19-es export a hálózati mappában van; ezt a kör nem olvasta (a NAS-tilalom miatt), és a viselkedési ellenőrzés a felhasználó kérésében marad.
 - **Nyitott kérdések mérlege.** 0 nyílt · 1 lezárva (a getter-mezők) · 2 blokkolt (a súlyok és a megtartott kép; a `select_chain` cseréje) · 0 hatókörön kívül · 0 csak nyitva.
+
+#### G/10. A 20. kör (2026-10-20, #4194): a `0x00874e40` gráfépítő és a `0x0088c1a0` HOG-blokkok
+
+*Forrás:* `.ghidra/2026-10-20-ghidra-20.txt`: a `0x00874e40` C-törzse (14-768. sor), a `0x0088c1a0` C-törzse (771-914. sor), a HÍVÓK és HÍVOTTAK fejlécek. Kiegészítő: a 3514-3546. sor (`ordering != 0` ág), a 3906. sor (a `0xcf4968` konstans PE-olvasata) és a G/8 (`0x00c7e328`, 5178. sor).
+
+**Kérdés 1 (`0x00874e40`):** melyik kép marad egy sorozatból? Ez a pontszám-összegzés súlyait és a visszatérési indexet kérdezi.
+
+**Válasz 1: a `0x00874e40` nem ad vissza képet.** A függvény `void`, nincs visszatérési indexe. A `0x0081b800` az `ordering != 0` ágon hívja (a `0x0081bbac` hívóhelyen), a kiválasztást pedig a `0x00877c50` végzi (legkisebb összköltségű út). Az `ordering = 0` ágon (alapbeállítás, a tulajdonos exportja) a `0x0081c9b0` dönt, lásd G/5.
+
+- **Pontszám-összegzés (megerősített, C, egy út).** A törzsben nincs súlyozott összeg és nincs getter-ciklus. A `0x00873170` hívás (390. sor) a `local_3c` float-tömbbe jelöltenként egy értéket ír; a `local_44` a jelöltek indexlistája, a középpont `local_74`. Ha a `*param_4` bájttömb `p` indexű eleme nem nulla, az érték `(float)_DAT_00cf4968` szorzót kap. Ez a konstans `-2^-63` (PE-olvasás: kb. -1,0842·10^-19). Más szorzó nincs. A Neven-tag 0,4-es súlya nem ebben a függvényben van (lásd G/5, `0x00824090`).
+- **Élszűrés (megerősített, C).** A jelölt-ablak szélét `c + param_7`-ről lefelé csökkenti, amíg az index az elemszám (`*param_1`) alatt van és a `*param_3` dátumtábla különbsége legfeljebb `0x16e` (366). Egy középponthoz legfeljebb 150 (`0x96`) jelölt kerül a listába. Az élek a `param_1[3]` és a `param_1[5]` listákba íródnak, 12 bájtos rekordokként. A `0x16e` egysége NINCS MEG.
+- **Kimenet.** A függvény a `param_1+2` mezőt 1-re állítja, és kilép. Ez a gráf, nem egy kiválasztott kép.
+- **Bizonyítottsági fok.** A `void` és a `0x00873170`-os hívás: **megerősített** (C). A `-2^-63` szorzó: **megerősített** (PE). A bájtflag forrása (`*param_4`): **NINCS MEG** (3946. sor). A kiválasztási szabály `ordering != 0`-ra: **NINCS MEG** (a `0x00877c50` a következő cím).
+- **Cáfoló kísérlet.** A jegy feltételezése szerint ez a sorozat-kiválasztó. Cáfolva: nincs visszatérési érték, és a `0x0081b800` a kiválasztást a `0x00877c50` után végzi. Súlyozott összeg sincs (csak a flag-szorzó), tehát a 0,4-es Neven-súly nem innen jön.
+
+**Kérdés 2 (`0x0088c1a0`):** a HOG-vektor tartalma: cellák, irányok, normálás.
+
+**Válasz 2: a blokkrács és a normálás megvan, a cella-irányok nincsenek.**
+
+- **Rács (megerősített, C és G/8).** A külső ciklus 4 lépést tesz (`0x20`), a belső 7-et (`0x38`): 4 × 7 = 28 blokk. Az (a, b) blokk a (a+i, b+j) cellák 2×2 ablaka, i, j ∈ {0, 1}. A kimeneti index `504a + 72b + 36i + 18j + m`, m = 0..17. A teljes vektor 2016 float.
+- **Cellánként 18 érték (megerősített, C).** A cellarekord 19 float (G/8). A blokk minden cellából a 0..17. mezőt másolja két 9-es lépésben (`iVar5 = 0xc` és `0x30`). A 18. mező (index 18) nem kerül a blokkba.
+- **Normálás (megerősített, C és PE).** Blokkonként `S = Σ x²` a 72 elemen, majd `d = sqrt(S + c)`, ahol `c = _DAT_00c7e328 = 1.0` (PE: `000000000000f03f`). Ezután minden elem `x / d`. Nincs második normálás és nincs levágás.
+- **Cella-irányok: NINCS MEG.** A cellahisztogram (gradiens-szög, rekeszek száma, előjel) a `0x0088c480`-ban és a `0x0088cd10`-ben van. A `0x0088c480` nincs dekompilálva, a `0x0088c1a0` nem olvassa a gradienst. A 18 érték tehát a cella 0..17. mezője, de hogy melyik irányrekesz, azt nem mondja meg.
+- **Bizonyítottsági fok.** A rács, a 72 elemű blokk, a 2016 elem és a normálási képlet: **megerősített** (két út: a C-törzs és a G/6 utasításszintű olvasata egyezik). A cellánkénti irányok: **NINCS MEG**. Az `1.0` konstans: **megerősített** (PE).
+- **Cáfoló kísérlet.** (1) A G/6-ban feltételezett L2-Hys normálás: cáfolva, egyetlen osztásciklus van. (2) A 4 cella × 19 érték blokk: cáfolva, a 19. mező nem másolódik.
+
+**Lezárás (#4194): (c).** Az `ordering = 0` kiválasztási szabály megvan (G/5, két független út). Az (a) lezárás nem lehetséges: a Codex-kész jegytörzs a HOG-vektort kéri, a cellahisztogram nélkül a vektor nem reprodukálható. A (b) sem: az irányrész és a Neven-tag nyitott. Következő Ghidra-címek:
+
+- `Ghidra-kör kell: 0x0088c480 - a cellahisztogram: gradiens-szög, rekeszek száma és előjele, a bemeneti kép-struktúra (az argumentum nélküli hívás forrása) [blokkoló]`
+- `Ghidra-kör kell: 0x0088cd10 - az 5 × 8 cellarács felépítése és a 19 floatos cellarekord mezősorrendje [nem blokkoló]`
+
+**Jegytörzs-hatás.** A tulajdonos exportja `burstmodethresh = 0` mellett készült, tehát nincs csoportosítás (G/5, Kész ha 1. pont). Csoportok nélkül a „melyik kép marad egy sorozatból" kérdés nem merül fel, a sorrendet viszont a `ordering = 0` lánc adná. Az export időrendje nincs megmagyarázva: a lánc a legkorábbi képből indul, és a jellemzőtávolság szerint választ. Hogy az időrend ebből következik-e, azt a HOG-vektor nélkül nem lehet ellenőrizni.
 
 ### 2.6 A MakeMoviePanel (a „Film készítése” felület) teljes beállítás-leltára
 
@@ -6852,10 +6884,25 @@ Ez a kód kontrollmérése, nem eredeti Picasa-renderkocka; a képlet és a kód
 
 **Frissített nyitott kérdések:**
 
-- `Ghidra-kör kell: 0x008de9b0 - a 0x008debe4 +0xb0 virtuális hívás dinamikus célja a 0x00714510 setter-e, és honnan kapja az egyetlen argumentumát? [blokkoló]`
-- `Ghidra-kör kell: 0x00425f60 - a 0x00426f28 +0x5c virtuális hívás célosztálya/célfüggvénye; van-e a slideshow-ágban bizonyított adatút a CSelectionNode +0xb0 setterhez? [blokkoló]`
+- **Válasz (21. kör):** a `0x008debe4` `+0xb0` hívás receptora dinamikus, célja nem bizonyított; az argumentuma a 38. sor kimeneti paramétere (`local_c`). Lásd lent.
+- **Válasz (21. kör):** a `0x00426f28` `+0x5c` hívásának célosztálya nincs megnevezve, nem ad bizonyított utat a `CSelectionNode +0xb0` beállítóhoz. Lásd lent.
 
 A `.ghidra/2026-10-20-ghidra-20.txt` bemenet, nem módosított fájl.
+
+**21. kör (2026-10-20, #5225): a `0x008de9b0` `+0xb0` hívásának receptora dinamikus, a `0x00425f60` `+0x5c` hívásának célja nincs megnevezve; a setter-út nem bizonyított.**
+
+*Forrás:* `.ghidra/2026-10-20-ghidra-21.txt`: a `0x008de9b0` C-törzse (14-127. sor), a `0x00425f60` C-törzsének `+0x5c` hívóhelye (1536. sor).
+
+- **A `0x008de9b0` hívási alakja (megerősített, C).** A függvény a `this` (`in_EAX`) vtábla `+0x50` slotját több helyen hívja (38., 48., 109., 112. sor). A `+0xb0` hívás (113. sor, a jegyben a `0x008debe4` címen) a 112. sor visszatérésén hívódik. Feltételei: `piVar8[0x1a] == -1` (45-46. sor), `piVar8[1] == 0x80` (104. sor), és a `+0x140` vtábla-hívás nem ad `3`-at (105-106. sor).
+- **Az argumentum forrása (megerősített, C).** A `local_c` a 38. sor `+0x50` hívásának kimeneti paramétere (`&local_c`), a bemenete a függvény első stack-argumentuma (`param_1`). Nem literál. A `param_1` értékét a hívó, a `0x008de6b0` adja, a `0x008de9b0` egyetlen hívója.
+- **A receptor és a célfüggvény: NINCS MEG.** A receptor a `this` `+0x50` slotjának visszatérése, osztálya nincs azonosítva. A `0x00714510` a hét jelölt egyike (19. kör); a slot-egyezés nem igazolja a célt.
+- **A `0x00425f60` `+0x5c` hívása (megerősített, C).** A `0x00426f28` (1536. sor) a `local_181c+0x48` beágyazott objektum vtábla `+0x5c` slotját hívja, egyszer minden elemre a `FUN_009881d0(&lista, 0x2c)` által töltött listából (`piStack_1824 >> 1` darab). A receptor minden iterációban ugyanaz. A célosztály és a célfüggvény: **NINCS MEG**. Ebből nem következik út a `0x00714510`-hez, és nem ad módértéket (1/7).
+- **Bizonyítottsági fok.** A hívási alakok és az argumentum forrása: **megerősített** (C, egy út). A receptorok osztálya és a célok: **NINCS MEG**. A `+0xb0` = `0x00714510` azonosítás: **feltételes** (csak a slot-egyezésen alapul).
+- **Cáfoló kísérlet.** (1) Feltételeztem, hogy a `+0xb0` a `0x00714510`-et hívja: nem bizonyított, mert a receptor dinamikus. (2) Feltételeztem, hogy a `+0x5c` hívás a slideshow-setterhez vezet: nem igazolt, mert a célosztály nincs megnevezve.
+- **Lezárás (#5225): (c).** Nem zárható. A módérték forrása a receptorok osztályától függ, ezt a vtábla-írók és a hívó adja meg; ez a következő kör dolga. Következő Ghidra-címek:
+  - `Ghidra-kör kell: 0x008de6b0 - a 0x008de9b0 hívója: a `this` osztálya, a `param_1` értéke és forrása, és a `this` `+0x50` slotjának célja [blokkoló]`
+  - `Ghidra-kör kell: 0x009881d0 - a `FUN_009881d0(&lista, 0x2c)` gyűjtő: mely objektumokat ad vissza, és a 0x2c kulcs jelentése a `0x00425f60` `+0x5c` receptorának azonosításához [blokkoló]`
+- **A mag (seed).** Nyitott: a `srand` ágak (`0x0071d940` = 1, `0x0071e120` = 7) a módértéktől függnek, a mag így sem olvasható ki.
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
