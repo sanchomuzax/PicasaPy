@@ -4366,4 +4366,31 @@ Ez a „Névjegyek frissítése” (Refresh Contacts) ág, nem törlés. A `0x00
 
 **Lezárás (#5184, 24. kör): (c).** A személytörlés útja feltehetően a `0x007b93c0` (a `0x007ba060` másik hívója); ez nincs a dumpban. Az időzítés (37.4) továbbra is Colab-felvétel. Következő Ghidra-cím:
 
-Ghidra-kör kell: `0x007b93c0 - a személytörlés útja: a `0x007ba060` másik hívója (`0x007b95ff`); fut-e utána lista-újraépítés, és hívja-e a `0x0045a9d0`-t (N6) [blokkoló]`
+### 37.7 25. kör (2026-10-20, #5184): a `0x007b93c0` a Névjegyek frissítése, a törlés a `0x007b99a0` `delete` ága
+
+**Kérdés.** A 37.6 kérdése: a `0x007b93c0` a személytörlés útja-e; fut-e utána lista-újraépítés; hívja-e a `0x0045a9d0`-t (N6).
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-25.txt` (C, a `0x007b93c0` törzse); `.ghidra/2026-10-20-ghidra-23.txt` (a `0x007ba060` törzse); `referencia/ghidra/2026-10-17-szemelykezeles-4.txt` (a `0x007b99a0` C-törzse); a bináris-index `functions`, `xrefs`, `string_xrefs`, `rtti` és `data_symbols` táblája.
+
+**1. A `0x007b93c0` a Névjegyek frissítése, nem a törlés (megerősített).**
+- Vtábla: a 25. dump DATA-hivatkozása `0x00cb7a7c`; ez a `ContactManagerDlg::vftable` (`0x00cb7a54`) 10. slotja (`0x28`). Az index rtti-listája is ezt mutatja.
+- Sztring (index `string_xrefs`): a `refresh_contacts` a `0x007b93c0`, a `0x007b99a0` és a `0x007b9f20` törzsében van; a `delete` csak a `0x007b81e0` és a `0x007b99a0` törzsében. A `0x007b93c0`-ban nincs `delete`.
+- Lista-újraépítés: `0x007b93c0` → `0x007ba060` (hívóhely `0x007b95ff`). Ez ugyanaz a lista-újraépítő, amelyet a 37.6 `0x007b9f20` ága hív. A `0x007ba060` közvetlen hívottjai között nincs `0x0045a9d0`, a `0x007b93c0` közvetlen hívottjai között sincs.
+
+**2. A törlés útja: a `0x007b99a0` `delete` ága (megerősített, C).** A `0x007b99a0` a `ContactManagerDlg` vtábla 82. slotja (DATA-hivatkozás `0x00cb7b9c`; `0x00cb7b9c - 0x00cb7a54 = 0x148`; az index rtti-listája csak 64 elemet tart, ezért a slotot a címből számoltam). A parancs-sztring (`param_2+0x40`) `delete` összevetése után közvetlenül meghívja a `0x007ba820`-t, és visszatér. Az ágban más hívás nincs.
+- A `0x007ba820` közvetlen hívottjai (index, 25 cím): `0x005836f0` és `0x00584cc0` (a memóriabeli kötés bontása, 21.5), `0x0051a120`, `0x009ae560` (6×), `0x00926c20` stb. Köztük nincs `0x007ba060` és nincs `0x0045a9d0`. A `0x007ba820` egyetlen hívója a `0x007b99a0`.
+
+**3. Bejárás az indexben (feltételes).** A `0x007ba820`-ból három szintig 147 függvény érhető el; ezek között nincs `0x007ba060` és `0x0045a9d0`. A `0x007b93c0`-ból a `0x007ba060` egy szinten van, a `0x0045a9d0` három szinten sincs. A vtábla-hívásokat az index nem látja, ezért a negatív állítás csak a közvetlen hívási szintre áll.
+
+**Válasz a kérdésre.**
+- A személytörlés után a `0x007b99a0` a `delete` ágban közvetlenül visszatér: lista-újraépítés a törlés ágában nincs (megerősített).
+- A `0x0045a9d0` nincs a törlés közvetlen hívási láncában (feltételes).
+- Ha a törlés után lista-újraépítés fut, az a `0x007b99a0` hívójának (a parancs-szétosztónak) az ágában lehet. Ennek hívója nincs az indexben.
+
+**Index-ellenőrzés (eltérés, nincs eldöntve).** A `0x0045a9d0` közvetlen hívóinak egyetlen `call` éle van az indexben: a `0x0047e470` (amelyet a `0x006a10b0` hív). A 21.5 szakasz szerinti `0x00587110` → `0x0045a9d0` hívás nincs meg az indexben: a `0x00587110`-nek 16 hívása van, egyik sem a `0x0045a9d0`. A 21.5 állítást újra kell nézni.
+
+**Cáfoló kísérletek.** (1) „A `0x007b93c0` a személytörlés": cáfolva, nincs `delete` sztring és nincs `0x007ba820`-hívás benne. (2) „A törlés után a `0x007ba060` fut": cáfolva a közvetlen hívási szinten. (3) „A `0x007b93c0` hívja a `0x0045a9d0`-t": cáfolva az indexben (nincs él, három szinten sem).
+
+**Bizonyítottsági fok.** A `0x007b93c0` a Névjegyek frissítése: megerősített (vtábla-slot és sztring-hivatkozás). A törlési ág hívásai: megerősített (C). A lista-újraépítés hiánya a törlés után és a `0x0045a9d0` hiánya: feltételes.
+
+**Lezárás (N6, 25. kör): (c).** A kérdés a `0x007b99a0` hívójáig vezet, amelynek címe vtábla-hívás helyéről pásztázással jön ki. Ghidra-kör kell: a `0x007b99a0` hívója (feltételezetten a `call [reg+0x148]` parancs-szétosztó), amelynek ágán a törlés után lista-újraépítés futhat [blokkoló]
