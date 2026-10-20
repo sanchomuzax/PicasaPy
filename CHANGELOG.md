@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.168] - 2026-10-20
+
+- A Nézet ▸ Időrend (Ctrl+5) újra működik: teljes képernyős bemutató gyűjteménykártyákkal, ahonnan a szóköz diavetítést indít, ahogy az eredetiben (#5377).
+
 ## [0.9.167] - 2026-10-20
 
 - Stabilabb lett a márkanév-ellenőrzés: a Picasa Web albumok kisbetűs alakja is a külső szolgáltatás neve (#5391).
