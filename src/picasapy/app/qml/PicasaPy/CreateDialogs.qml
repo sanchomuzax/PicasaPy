@@ -37,7 +37,7 @@ Item {
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
     //: #4331 / `ID_FACES`: a 30. szakasz szerinti kijelölt képeket adja át
-    //: a meglévő filmkészítőnek. Az arc-kivágás adatútja a #4400-ra vár.
+    //: a meglévő filmkészítőnek az arc-kivágáshoz.
     function openFaceMovie() {
         var rows = dialogs.appWindow.selectedIndexes
         if (!rows || rows.length === 0) return
@@ -1080,6 +1080,7 @@ Item {
                     showdates: movieShowDates.checked,
                     cropfit: movieCropToFit.checked,
                     removelowresfaces: movieRemoveLowResFaces.checked,
+                    faceMovie: movieDialog.personMovieMode,
                     burstmodethresh: movieBurstThresholdSeconds,
                 })
             close()
