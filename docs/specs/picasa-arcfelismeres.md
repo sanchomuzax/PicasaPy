@@ -3972,7 +3972,7 @@ Az eredeti két olvasási/persistálási kódrészletben a formátumsztring `%I6
 ### 32.5 Nyitott Ghidra-kérdések
 
 - Ghidra-kör kell: `0x00586e20` - melyik belső ág módosítja a Contacts2 adatot, és milyen feltétellel hívja vagy ütemezi az INI-véglegesítést [blokkoló]
-- **Megválaszolva (23. kör, 37. szakasz):** a `0x007b9630` és a `0x007ba060` mindketten hívja a `0x007b81e0` Choose-kezelőt. A `[Contacts2]` kiírásának időzítése futásidejű adat: Colab-felvétel javasolt (37.4), a statikus hívási út nyitott: `Ghidra-kör kell: 0x007b9f20 - a `0x007ba060` egyik hívója: a személytörlés után fut-e a lista-újraépítés, és hívja-e a `0x0045a9d0`-t [nem blokkoló]`
+- **Megválaszolva (23. kör, 37. szakasz):** a `0x007b9630` és a `0x007ba060` mindketten hívja a `0x007b81e0` Choose-kezelőt. A `[Contacts2]` kiírásának időzítése futásidejű adat: Colab-felvétel javasolt (37.4), a statikus hívási út a 24. körben (37.6): a `0x007b9f20` a Névjegyek frissítése ága, nem a személytörlés útja; a törlés útja feltehetően a `0x007b93c0` (37.6)
 - **Válasz [részben] (#5184, 2026-10-18, 11. kör):** a `0x00586540` nem állítja elő a contact ID-t, hanem keres. A `this+0x38` alatti térképobjektumból (`0x0058fc40`) a kulcs hash-értéke (`0x00409df0`) szerint kiválasztott láncolt listát járja végig, és az első, `0x006f9890` egyezés-ellenőrzésen átmenő elem `+0x10` és `+0x14` dword-jét másolja a `param_4`-be (a C-dumpban: `*param_4 = puVar3[4]; param_4[1] = puVar3[5];`). A visszaadott alak tehát **8 bájt** (két dword): ez a memóriabeli találat mérete. A második ág (`0x00586a60`, bemenete a `puVar3[4]`, `puVar3[5]`) állítja elő a jelölt azonosítót, és a `param_3` karakterláncával hasonlít össze, 2 bájtonként (széles karakter, valószínűleg UTF-16). Bizonyítottsági fok: **feltételes** (egy út: a C-törzs). Az „eredeti tárolt alak szélessége" **NINCS MEG**: a 8 bájt a memória-elem mérete; az INI-ben tárolt alak külön kérdés (a `%I64x` formátum 16 hexa-jegy, 30.4).
   - Ghidra-kör kell: `0x00586a60` - a contact ID-jelölt előállítása a `puVar3[4]`, `puVar3[5]` bemenetből, és a `param_2` kulcs alakja [blokkoló]
 
@@ -4336,5 +4336,34 @@ A (c) lépés helyett ez a felvétel javasolt, mert a kérdés futásidejű. A s
 
 - ⛔ Nem teljesül: az időzítés (törlés, Choose vagy bezárás) nincs mérve. A hívási út részben feltárt (37.1), a kiírás pillanata nyitott.
 
-Ghidra-kör kell: `0x007b9f20 - a `0x007ba060` egyik hívója: a személytörlés után fut-e a lista-újraépítés, és hívja-e a `0x0045a9d0`-t [nem blokkoló]`
-Ghidra-kör kell: `0x007b93c0 - a `0x007ba060` másik hívója: a Choose-ág vagy a törlés útja [nem blokkoló]`
+**Megválaszolva (24. kör, 37.6):** a `0x007b9f20` nem a személytörlés útja, lásd 37.6.
+
+### 37.6 24. kör (2026-10-20, #5184): a `0x007b9f20` nem a személytörlés útja
+
+**Kérdés.** A `0x007ba060` egyik hívója (`0x007b9fdb`, a `0x007b9f20`-ban): a személytörlés után fut-e a lista-újraépítés, és hívja-e a `0x0045a9d0`-t (N6).
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-24.txt` (C, a `0x007b9f20` törzse); `.ghidra/2026-10-20-ghidra-23.txt` (a `0x007ba060` fejléce és törzse); a bináris-index HÍVÓK- és HÍVOTTAK-listái; a PE-olvasat: a `0x00cb7ba8` címen a dword `0x007b9f20`.
+
+**Mit csinál a `0x007b9f20`.**
+1. A `0x00985ff0("refresh_contacts")` sztringgel indul.
+2. A `0x009b37a0` eredménye `-1`, és a `0x007a4770` eredménye `0`, akkor a jelző magas bájtja 1.
+3. Ha a jelző 1: a `this+0x68` objektum `+0x54` slotját hívja 0-val, újra a `refresh_contacts` sztringgel, a `this` `+0x114` slotját, majd `0x007ba060((char)this[0x57])`-t.
+
+Ez a „Névjegyek frissítése” (Refresh Contacts) ág, nem törlés. A `0x0045a9d0` nincs a törzsben.
+
+**A `0x007ba060`.** Két hívója van: `0x007b93c0` (`0x007b95ff`) és `0x007b9f20` (`0x007b9fdb`). A törzse (C, 37.1): várakozik a `DAT_00d689cc` eseményre, nullázza a jelzőtömböt, visszaállítja a kijelölést, és hívja a `0x007b81e0` Choose-t. A lista-újraépítés tehát ebben a függvényben van, nem a hívóban.
+
+**Hívja-e a `0x0045a9d0`-t?** A `0x007ba060` és a `0x007b9f20` HÍVOTTAK-listájában (index) nincs `0x0045a9d0`. Ez az indexből származó negatív állítás: a közvetlen `call` kizárható, a vtábla-hívás nem zárható ki (az index azt nem látja), és a `0x007b81e0` vagy a `0x007b44e0` közvetett útja sincs kizárva.
+
+**Bizonyítottsági fok.**
+- A `0x007b9f20` ágai és a `refresh_contacts` sztring: **megerősített** (C, egy út).
+- Hogy ez nem a törlés útja: **feltételes** (a sztring és a hívásláncok alapján; a `0x00cb7ba8` tábla tulajdonos-osztálya NINCS MEG).
+- A `0x0045a9d0` hívása: **NINCS MEG** (közvetett út nincs kizárva).
+
+**Cáfoló kísérletek.**
+1. „A `0x007b9f20` a törlés után fut”: a sztring és az ág alapján nem igazolódik; ez feltételes állítás.
+2. „A `0x007ba060` közvetlenül hívja a `0x0045a9d0`-t”: az index szerint nem, vtábla-hívásra nem zárható ki.
+
+**Lezárás (#5184, 24. kör): (c).** A személytörlés útja feltehetően a `0x007b93c0` (a `0x007ba060` másik hívója); ez nincs a dumpban. Az időzítés (37.4) továbbra is Colab-felvétel. Következő Ghidra-cím:
+
+Ghidra-kör kell: `0x007b93c0 - a személytörlés útja: a `0x007ba060` másik hívója (`0x007b95ff`); fut-e utána lista-újraépítés, és hívja-e a `0x0045a9d0`-t (N6) [blokkoló]`
