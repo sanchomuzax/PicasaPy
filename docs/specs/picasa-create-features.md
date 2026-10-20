@@ -5433,9 +5433,67 @@ Ghidra-kör kell: `0x00878820 - a jelölt-vektor rendezése vagy nyesése a rét
 
 **Lezárás (#4194, 26. kör): (c).** A kiválasztási szabály még nincs teljesen meg: a provider osztálya, a jelzőbájt jelentése és a csoportazonosító-tömb bemenete hiányzik.
 
-Ghidra-kör kell: 0x0081ae10 - a `+0x6cc`/`+0x6d4` csoportazonosító-tömb feltöltése: a dátum- és küszöbbemenet, és a `param_4` forrása [nem blokkoló a költségre, blokkoló a csoportosításra]
+**Válasz (27. kör, #4194):** a provider osztálya és a `+8` slot megvan (HOG, `0x00873e40`); a `0x0081ae10` kimenete és küszöb-argumentuma megvan, a küszöb forrása és a dátum-mező nyitott. Részletek és bizonyítottsági fok: G/14.
 
-Asm-lépés (nem Ghidra, ebben a körben nem futtattam): a `this+0x504` írói a `0x0081b800` osztályában (`find_members.py`, a `0x504` eltolás); ebből derül ki a provider osztálya és a `+8` slot célja [blokkoló]
+#### G/14. A 27. kör (2026-10-20): a provider osztálya, a csoportazonosító-tömb bemenetei, és a T=0 eltérés (#4194)
+
+**Kérdés.** (1) A `0x00873170` a `this+0x504` tömb 0. elemének `+8` slotját hívja: melyik osztály, és HOG-e vagy Neven-tag az élköltség? (2) A `0x0081ae10` a `+0x6cc` csoportazonosító-tömböt tölti: mi a dátum- és a küszöbbemenete?
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-27.txt` (a `0x00873170` és a `0x0081ae10` C-törzse); `.ghidra/2026-10-20-ghidra-25.txt` és `-26.txt` (a hívóhelyek); asm (`annot_disasm.py`): `0x00824090` (662 bájt), `0x0081fab0` (369), `0x0081fc30` (a hívóhely körül), `0x0081b800` (4514), `0x006175c0` (a hívás környéke), `0x00819680` (145), `0x00819850` (51), `0x00873e40` (454, az eleje); bináris-index: `rtti` (vtábla-slotok), `xrefs` (konstruktor-hívók).
+
+##### G/14/1. Az élköltség provider-osztálya: HOG (megerősített, két út)
+
+- A provider-tömb a gráfobjektum `this+0x504` mezőjében van (elemszám: `this+0x508`), a súlytömb `this+0x50c` (méret: `this+0x510`). A `0x0081fab0` tölti: az első argumentum a provider (`mov [eax+edx*4], ecx` @`0x0081fb4b`), a második a súly (`fstp [eax+edx*4]` @`0x0081fc01`).
+- A `0x00873170` a `this+0x504` tömb 0. elemét kapja: `O = *(*param_2)`, a 25. dumpban a `param_2` a `this+0x504` címe.
+- **Út A (vezérlési folyam).** A `0x00824090` (a Filmkészítő építője) @`0x008241bf` hívja a HOG-konstruktort (`0x00819680`), @`0x008241e1` `fld1` (súly 1,0), @`0x008241ea` `call 0x81fab0`: ez az első hozzáadás, tehát index 0. A Neven-konstruktor (`0x00819850`) csak @`0x0082425c`-nél van, a HOG után, súllyal `[0x00c7c838]` (@`0x00824284`; az értéke nincs kiolvasva), tehát index 1. A `0x0081fc30` ugyanezt teszi: @`0x00821174` HOG-konstruktor, @`0x0082119b` `fld1`, @`0x008211a4` `call 0x81fab0`; Neven-hívás nincs benne.
+- **Út B (adat- és vtábla-lánc, a vezérlési folyamtól független).** A HOG-konstruktor @`0x0081968a` írja a `0x00cbdec4` vtáblát; a `rtti` tábla szerint slotjai: +0 `0x00819720`, +4 `0x00873510`, **+8 `0x00873e40`**. A Neven-konstruktor @`0x0081985f` a `0x00cbded4` vtáblát írja, slotjai `0x00819890`, `0x00874010`, `0x008742a0` (+8).
+- Eredmény: a `+8` slot a HOG-osztályé, `0x00873e40`. A Neven-slot (`0x008742a0`) ebből a két építőből nem hívódik.
+- A két élépítő (`0x00875ee0` @`0x00876aa9`, és `0x00874e40` @`0x00875653`) egyaránt a 0. elemet adja át: a `0x00874e40`-ben `mov ecx,[eax]; mov edx,[ecx]; push edx` (@`0x0087564d`-`0x00875652`), a `0x00875ee0`-ben `*(undefined4 *)*param_2`.
+
+**Bizonyítottsági fok (1).** Az osztály és a slot: megerősített (A és B egyezik). A `0x00873e40` képlete: feltételes. Ebben a körben csak a törzs elejét olvastam (gyorsítótár a `[this+0x4c]` tömbön; a `0x00873cb0` index szerint épít HOG-vektort); a χ²-összeg záró részét nem olvastam újra. A G/3c `d_hog` a hivatkozás.
+
+**Cáfoló kísérletek (1).** (a) „a Neven-tag adja az élköltséget”: cáfolva, mindkét építő a 0. elemet adja át, a `0x008742a0` nincs hívva. (b) „a HOG az 1. elem”: cáfolva, a `0x00824090` első hozzáadása a HOG (@`0x008241ea`). (c) „a súly bekerül az élköltségbe”: a két építő nem olvassa a súlytömböt. Teljes .text-seprés (újraszinkronizált, 2 886 751 utasítás): a `+0x504`…`+0x510` memóriaoperandusokat 177 utasításban találja, 44 függvényben (és öt, függvényen kívüli találatban), de ezek többsége más osztályé. Hogy melyik olvassa a Neven-súlyt, nem dől el: NINCS MEG.
+
+##### G/14/2. A `0x0081ae10` bemenetei
+
+- **Kimenet.** A `+0x6cc` (adatmutató) és a `+0x6d0` (elemszám·2 | jelző) csoportazonosító-tömb. A `+0x6d4` a párja: a `0x0081b800` a `param_4 == 0` ágban a `+0x6d4` (`param_1+0x1b5`) tömböt adja át, amelyet a `0x0081ae10` nem tölt.
+- **Csoportszabály (megerősített: a törzs és a G/5 QEMU-mérés egyezik).** A `0x0081ae10` a `this+0x4f4` elemszámon (`>>1`) megy végig. A dátumot a `0x004edf60` iterátor adja, 64 bites, 100 ns-os egységben; a `+5 000 000` és a `/10 000 000` kerekítés másodpercre. Új csoport, ha a szomszédos különbség nagyobb vagy egyenlő a küszöbbel (`delta >= T`).
+- **Küszöb (`T`).** A `0x0081ae10` `param_1` argumentuma a `0x0081b800` 4. stack-argumentuma: `cmp dword ptr [esp+0x50], 0` @`0x0081b8be`, `mov edx,[esp+0x50]` @`0x0081b8c5`, `push edx` @`0x0081b8c9`, `call 0x81ae10` @`0x0081b8ca`. A prológus `sub esp,0x30` és 4 `push`, így a 4. argumentum a `[esp+0x50]`. Az egyetlen hívó a `0x006175c0` (index). Ott @`0x00617801`-`0x00617810` a 4. argumentum a `mov edx,[esp+0x14]` értéke (`push edx` @`0x00617806`). `T = 0` esetén a `0x0081ae10` nem fut (`je` @`0x0081b8cf`).
+- **A `s²·X` számítás helye.** A `0x006177de`-`0x006177f8` blokk (`fld [esp+0x18]` = s, `fild [ebp+0x48c]` = X, két `fmulp`, `call 0xc29990`) eredménye `eax`-ban marad, és a **2.** argumentumként (`push eax` @`0x00617808`) kerül át, nem a 4.-ként. A 4. argumentum [esp+0x14]-je a `0x006176b4` (`fstp`) és a `0x006176fe` (`mov [esp+0x14], eax`) környékén íródik; ennek számítása nyitott. A D szakasz `⌊s²·86400⌋` képletének összevetése a 4. argumentummal tehát még nem zárult le.
+- **Dátum-mező.** A `0x004edf60` (753 bájt) olvassa. Hogy a mező EXIF-es felvételi idő (`DateTimeOriginal`) vagy fájlidő, nincs megnevezve. Nálunk: `src/picasapy/movie/slideshow.py:611` (`_capture_timestamp`: EXIF 36867, majd 306, majd fájl mtime).
+
+**Bizonyítottsági fok (2).** A kimenet és a csoportszabály: megerősített. A küszöb-argumentum helye: megerősített (asm, a prológus-számítással). A küszöb értékének forrása (a 4. argumentum): NINCS MEG. A dátum-mező jelentése: NINCS MEG.
+
+##### G/14/3. A kiválasztás szerződése, a Nálunk-eltérések, és a fejlesztői jegytörzs
+
+**Eredeti (a bináris és a mérések szerint).**
+1. Időcsoport: szomszédos, egész másodpercre kerekített idők, `delta >= T` új csoport (megerősített: QEMU, G/5).
+2. Kiválasztó: horgony (`[obj+0x738]`, vagy a 0. elem), spirál +1, -1, +2, -2 …, legfeljebb 100 jelölt, a csoport kizárva (G/2c és G/3b-G/3d; asm: feltételes).
+3. Pontszám: az élköltség, bizonyítottan a HOG-távolság (`0x00873e40`, G/14/1); szigorú minimum, döntetlennél a korábbi (feltételes).
+4. **T = 0 (alapbeállítás): időrendben marad.** Mérés: a 2026-10-19-i export (6 kép, `ordering` = 0, `burstmodethresh` = 0); a kimenet a `DateTimeOriginal` szerinti sorrend. A kimenet megerősített; a mechanizmus (a `+0x6d4` tömb) nincs visszafejtve.
+
+**Nálunk (a mai kód, `src/` greppel ellenőrizve).** `src/picasapy/movie/slideshow.py:803-812`: `capture_groups(capture_times, settings.burstmodethresh)`, majd `select_chain(...)`, a jellemző `np.mean(frame, axis=(0, 1))` (színátlag; a kódkomment szerint ez nem az eredeti HOG). A `burstmodethresh` alapértéke 0 (`slideshow.py:79`), a `ordering` alapértéke 0 (`slideshow.py:78`).
+- **Eltérés 1 (hiba az alapbeállításban).** T = 0 esetén a `capture_groups` minden képet külön csoportba tesz, így a `select_chain` átrendezi a filmet. Reprodukció (a projekt saját kódja, csak olvasva): `capture_groups([1,2,3,4,5,6], 0)` → `[0,1,2,3,4,5]`; a `select_chain` egy szintetikus jellemzővel `[0,3,4,5,2,1]`-et ad. A natív export időrendet mutat.
+- **Eltérés 2.** A jellemző színátlag, nem HOG-vektor.
+
+**Teendő (Codex-kész, fejlesztői jegytörzs):**
+1. `slideshow.py`: T = 0 esetén a `select_chain` ne fusson, a film időrendben maradjon. Teszt: T = 0 és hat kép esetén a sorrend megegyezik a bemenettel (az export mérését tükrözi).
+2. `feature_for_index`: HOG-vektort kell adni a színátlag helyett. A leírás a G/11 szakaszban van (18 előjeles rekesz, s = 9/π, a szög `atan2(dy, dx)` a győztes csatornán, 8×8 cella, 19 float; `0x0088c480`, `0x0088cd10`). A `d_hog` (χ², 1e-8) már megvan, és egyezik a G/3c képlettel.
+3. Neven-tag: nem kerül az élköltségbe; ehhez nincs fejlesztői teendő.
+
+**Kész, ha (kiválasztási szabály).**
+- ✅ Az élköltség provider-osztálya és `+8` slotja, bizonyítottsági fokkal, két úttal (G/14/1).
+- ✅ A csoportszabály mint mért rész (G/5, QEMU), és a T = 0 kimenet mérése (export).
+- ⛔ A kiválasztó spirál és minimum egy úton áll (asm). A HOG-vektor egyezése a natív kimenettel nincs mérve (a natív futtatás a 4. körben a gyűjteményobjektum rekonstrukciójánál elakadt).
+- ✅ A fejlesztői teendő kimondva (Eredeti | Nálunk | Teendő), a #4182-höz kapcsolva.
+
+**Nem része (nyitott mellékkérdések; a mai kód viselkedését tartjuk meg).** (i) A 4. argumentum (küszöb) forrása, a `[esp+0x14]` a `0x006176fe`-nél. (ii) A dátum-mező jelentése a `0x004edf60`-ban (EXIF vs fájlidő). (iii) A `this+0x6f8` jelzőbájt jelentése: a 26. kör szerint, ha be van állítva, az élköltség a `_DAT_00cf4968` szorosa (PE-olvasat, ~2^-63); ez a Neven-taghoz vagy az arcokhoz kötődhet. (iv) A horgony forrása (`[obj+0x738]` írója, `0x008223e0`). (v) A Neven-súly (`this+0x50c`) olvasója a gráfobjektumra nézve.
+
+**Lezárás (#4194, 27. kör): (a).** A megvalósítható rész (élköltség = HOG, csoportszabály, T = 0 időrend) megvan. A nyitott mellékkérdések a „Nem része” pontban vannak, és nem zárják ki a fejlesztői listát. A fejlesztői lista az alapbeállítású T = 0 hibát is tartalmazza.
+
+Ghidra-kör kell: 0x004edf60 - a dátum-mező: a rekord melyik mezőjét olvassa (EXIF `DateTimeOriginal` vagy fájlidő), és ki tölti a `[this+0x3f0]` táblát [nem blokkoló: a mai kód EXIF-et használ]
+
+Ghidra-kör kell: 0x006176fe - a `0x006175c0` `[esp+0x14]` (a `0x0081b800` 4. argumentuma, a küszöb) számítása, és az `s²·X` eredmény (2. argumentum) szerepe [nem blokkoló: a fejlesztői lista a küszöböt a felhasználói értékből veszi]
 
 ### 2.6 A MakeMoviePanel (a „Film készítése” felület) teljes beállítás-leltára
 
@@ -7132,7 +7190,29 @@ Ghidra-kör kell: 0x008de2a0 - a `0x008de3c0` másik adatreferenciája: ugyanaz-
 2. „A módérték-író a `call [reg+0xb0]` alakban van": cáfolva, ilyen alak nincs a `.text`-ben.
 3. „A `0x008debed` literált ad át": cáfolva, kimeneti paraméter a forrás.
 
-**Lezárás (#5225, 26. kör): (c).** A módérték-író helye megvan, az értéke nem konstans a binárisban. Ghidra-kör kell: 0x00a4a070 - a `Fen::Win32WindowImp` `+0x50` slotja, amelyet a `0x008de9b0` két helyen hív: a `0x008de9d0`-ban milyen értéket ír a kimeneti paraméterbe (a módérték), és a `0x008debdc`-ben visszaadott objektum osztálya [blokkoló]. A diavetítés-kapcsolat (a `0x008de220` dialógus azonosítása) külön nyitott, nem blokkoló.
+**Lezárás (#5225, 26. kör): (c).** A módérték-író helye megvan, az értéke nem konstans a binárisban. A `0x00a4a070` kérdéseit a 27. kör megválaszolta (4.7/d). A diavetítés-kapcsolat (a `0x008de220` dialógus azonosítása) külön nyitott, nem blokkoló.
+
+#### 4.7/d A 27. kör (2026-10-20, #5225): a `0x00a4a070` slot nem ír kimeneti paramétert; a módérték ezen az úton 0 (feltételes)
+
+**Kérdés.** (1) A `0x008de9d0`-ban (a `[edi+0x50]` első hívása) milyen értéket ír a kimeneti paraméterbe a módérték? (2) A `0x008debdc`-ben (a második `[edi+0x50]` hívás) visszaadott objektum osztálya?
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-27.txt` (a `0x00a4a070` C-törzse: `return *(undefined4 *)(param_1 + 4)`); asm (`annot_disasm.py`): `0x00a4a070` (4 bájt: `8b 41 04 c3`), `0x008de9b0` (694 bájt), `0x008d7550` (123 bájt), `0x008ddea0` (64 bájt); bináris-index: `rtti` (a `Fen::Win32WindowImp::vftable`, `0x00cced4c` 21. slotja, azaz +0x50, a `0x00a4a070`), `xrefs`.
+
+**1. Az első hívás nem ír kimeneti paramétert (a Win32WindowImp-slotra, megerősített).**
+- A `0x00a4a070` törzse `mov eax,[ecx+4]; ret`: a `this+4` mezőt adja vissza EAX-ben; a stack-argumentumot nem olvassa és nem írja.
+- A `0x008de9b0` a kimeneti helyet a hívás előtt nullázza: `xor ebx,ebx` (@`0x008de9b9`), majd `mov [esp+0x1c], ebx` @`0x008de9cc`, a két `push` után. Ez ugyanaz a cím, mint a `lea eax,[esp+0x14]` @`0x008de9c1` által adott kimeneti paraméter (`push eax` @`0x008de9c5`). A slot nem ír, tehát a kimenet 0 marad.
+- Az olvasás a `mov ecx,[esp+0x14]` @`0x008debde`, ez a `+0xb0` hívás argumentuma. Az esp-követés a `0x008debde`-ig nem teljes (több kilépési ág, köztük a `0x008deb92`-es `ret 8`), ezért a „0” feltételes.
+- Következmény: a 26. kör állítása („az érték a `0x008de9d0` kimeneti paramétere”, 1 vagy 7) a Win32WindowImp-slotra cáfolva. Az `edi` dinamikus osztálya más +0x50 implementációval felülírhatná ezt. A `0x00a4a070`-et 25 vtábla használja, ezek is nem írnak kimenetet; a többi slot-implementáció nincs végigellenőrizve.
+
+**2. A második hívás (0x008debdc) objektuma a `this+4` mező.** A slot a `this+4`-et adja vissza, és a `0x008debe4` ezt a `+0xb0` vtábla-hívás receptoraként használja. A `Fen::Win32WindowImp` konstruktora (`0x008ddea0`, a vtábla `0x00cced4c` írásával) első utasítása `mov [esi+4], eax`: a `+4` a konstruktor bemeneti `eax`-e. A konstruktort a `0x008d7550` hívja @`0x008d75bc`; az `eax` a `mov eax,[esp+8]` (@`0x008d75b8`) értéke, vagyis a `0x008d7550` 1. argumentuma. A `0x008d7550` és a `0x008ddee0` nem hívódik közvetlenül az indexben (közvetett hívás: vtábla vagy függvénymutató). Az objektum osztálya: NINCS MEG.
+
+**Bizonyítottsági fok.** A Win32WindowImp-slot nem ír kimeneti paramétert: megerősített (4 bájtos törzs és asm). A kimenet értéke ezen az úton 0: feltételes (az esp-követés nem teljes). A `[edi+4]` objektum osztálya: NINCS MEG. A módérték 1 vagy 7 volta: NINCS MEG.
+
+**Cáfoló kísérletek.** (1) „a `0x008de9d0` az 1 vagy 7 értéket írja ki”: cáfolva a Win32WindowImp-slotra, a slot nem ír. (2) „a `0x00a4a070` a kimeneti paramétert tölti”: cáfolva a 4 bájtos törzsből. (3) „a kimenet a hívás után íródik”: a hívás (`0x008de9d0`) és az olvasás (`0x008debde`) között nincs olyan írás, amely a kimeneti címet érné; az esp-követés nélkül ez feltételes.
+
+**Lezárás (#5225, 27. kör): (c).** A kimeneti paraméter útja a Win32WindowImp-re lezárva (negatív eredmény). A `[edi+4]` osztálya nyitott, és az 1/7 módérték ebből dől el.
+
+Ghidra-kör kell: 0x008d7550 - a Fen::Win32WindowImp-et létrehozó függvény 1. argumentuma (`mov eax,[esp+8]` @`0x008d75b8`, a `0x008ddea0` `eax`-e), és hogy a diavetítés dialógusában melyik objektum példánya adja; a hívók közvetett hívásként keresendők (`find_data_refs.py 0x008d7550 --data`) [blokkoló]
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
