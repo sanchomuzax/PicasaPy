@@ -4642,7 +4642,7 @@ Hívóélek: a `0x008014d0` hívója a `0x008018a0` (`0x00801c95`) és a `0x0080
 - **A `DAT_00d676c8` számláló az ÉLŐ kártyák száma, nem sorszám.** `+ 1` a `0x007f9a62`-ben (C-kód), `- 1` a `0x007fa212`-ben (a `ytAnimSprite` `0x007f9cd0` metódusában). Olvasói: `0x007f9b16`, `0x007f9b42`. Az index xrefs-ében nincs adat-hivatkozás, ezért a teljes `.text` pásztázásból jön (függvényenként).
 - **Véletlen paraméterek** (`r` a `[0,1)`-re normált véletlen, `n` a számláló a `+1` után): `[+0x35c] = (r-1) · 0,4 + 0,3`, `[+0x360] = ((r-1) - 0,5) · 0,3`, `[+0x364]` = a `[1,2)` tartományú érték, `[+0x368] = (r-1) - 0,5`, `[+0x36c] = n · (r-1) · 0,03`, `[+0x370] = 2π · (r-1)`, `[+0x374] = (r-1) · 0,1`. A `[+0x354] = -1,0` (f32, `0xcf3ed0`), a `[+0x358]` a hívott `param_2` (forrás-objektum).
 - **Gyanú, nem bizonyított.** A `0x005e8443`-`0x005e8464` sorban a hívó az f32 értéket (1,0, vagy `0xcf3a70` = 0,6) a verem első paraméterébe teszi. A hívó a `[esp+0x50]`-et bájtként ellenőrzi, majd a paraméter-összeállításkor dword-ként olvassa, ami a Ghidra C-kódjával nem egyeztethető össze biztosan. A `0x007f9a40` a paramétert bájtként tárolja (`[ESI+0xde]`). Hogy ez tényleges típuseltérés-e, NINCS MEG.
-- **A sorrend.** *(RÉSZBEN JAVÍTVA, 38.2.27 §1: a 0xc8 bájtos ciklus csak a mód-2 ágban van, a kártya-objektum a ciklusok után, hívásonként legfeljebb egyszer készül.)* A kártyák létrehozási sorrendje a `0x005e81e0` ciklusának sorrendje. A ciklus elemei 0xc8 bájtosak (`0x005e8283`: `add esi, 0xc8`). A kártya-hívás a `0x005e8330`-`0x005e84d7` blokkban van, a belépés feltételei között szerepel a `0x009c2fc0` visszatérése (`[eax+0x20c]`, `[eax+0x213]` jelzők). A két szakasz viszonya és a megjelenítési sorrend (a `0x009df290` hívás után) NINCS MEG.
+- **A sorrend.** *(JAVÍTVA, 38.2.28 §2: nincs 0xc8 bájtos ciklus. A `0x005e8283` `add esi, 0xc8` vtábla-eltolás, nem rekordméret. A kártya-objektum hívásonként legfeljebb egyszer készül, ciklus nélkül.)* A kártyák létrehozási sorrendje a `0x005e81e0` hívásainak sorrendje. A kártya-hívás a `0x005e8330`-`0x005e84d7` blokkban van, a belépés feltételei között szerepel a `0x009c2fc0` visszatérése (`[eax+0x20c]`, `[eax+0x213]` jelzők). A két szakasz viszonya és a megjelenítési sorrend (a `0x009df290` hívás után) NINCS MEG.
 - **Gyűjtemény (album, mappa): NINCS MEG.** A 38.2.18 szerinti `CThumbUI+0x2c0` kollekciós állítást ebben a körben nem mértük újra.
 - **`0x00802e20`.** Ha `DAT_00d67914` nem nulla, az aktív objektum a `0x009c2fc0` visszatérése, különben nulla. A `0x00c07db2` argumentumai RTTI-típusleírók (`ytDrawNode`, `ytBicubicNode`), ez dinamikus cast. Sikeres cast után nullázza a `+0x36c..+0x378` és `+0x358` mezőket, a `+8` mezőt `|= 7`-tel jelöli, és meghívja a `0x00a54b70(param_1, 1, 1, 0, 1, -1, -1, -1, -1)`-et. A cél objektum `ytBicubicNode`; ebben a függvényben nincs sorrendi művelet. Hívói: `0x008036b9` és `0x00803723` (`0x008032e0`). A `param_1` tartalma NINCS MEG.
 
@@ -4674,7 +4674,7 @@ Hívóélek: a `0x008014d0` hívója a `0x008018a0` (`0x00801c95`) és a `0x0080
 - ~~`Ghidra-kör kell: 0x006223b0 és 0x0061df10 - a 0x006214e0 első paraméterének (p) eredete és osztálya, vagyis hogy p a OneUp-e [blokkoló]`~~ **LEZÁRVA (38.2.27 §3):** `p` a `MakeMoviePanel`.
 - `Ghidra-kör kell: 0x008018a0 - a local_64 forrás-lista eredete (a [OneUp+0x3ec] elemei uint azonosítók: melyik gyűjteményből) [blokkoló]`
 - `Ghidra-kör kell: 0x008037e0 - a paraméter-struktúra (EDI) eredete, és a +0x10 objektum osztálya ([OneUp+0x2e4], a vtábla-első hívás célja) [blokkoló]`
-- ~~`Ghidra-kör kell: 0x005e81e0 - a 0xc8 bájtos elemek forrása (0x005e8283), a 0x009c2fc0 visszatérésének jelentése, és a gyűjtemény (album, mappa) azonosítása [blokkoló]`~~ **RÉSZBEN LEZÁRVA (38.2.27 §1):** a visszatérés és a 0xc8-as ciklus megvan; a gyűjtemény-azonosítás a 0x00506400 és 0x00475250 körét kéri.
+- ~~`Ghidra-kör kell: 0x005e81e0 - a 0xc8 bájtos elemek forrása (0x005e8283), a 0x009c2fc0 visszatérésének jelentése, és a gyűjtemény (album, mappa) azonosítása [blokkoló]`~~ **RÉSZBEN LEZÁRVA (38.2.27 §1):** a visszatérés megvan. A 0xc8-as „ciklus” vtábla-eltolás volt, nem rekordméret (JAVÍTVA, 38.2.28 §2). A gyűjtemény-azonosítás a 0x00506400 és 0x00475250 körét kérte (38.2.28 §1).
 - ~~`Ghidra-kör kell: 0x007fe600 - a két tényező (a, b) forrása és a visszafogás határai a kártya-rekord léptetésében [nem blokkolja a fő utat]`~~ **RÉSZBEN LEZÁRVA (38.2.27 §2):** a bolyongás és a visszafogás megvan; a kezdőérték a 0x008014d0-ból jön (még nincs újramérve).
 - `Ghidra-kör kell: 0x004b0190 - az in_EAX (+0xc4, +0x2a8..+0x2d0) és az unaff_ESI objektum osztálya, és a kötések célja [nem blokkolja a fő utat]`
 - `Ghidra-kör kell: 0x0040e7b0, 0x0060e260, 0x00640670, 0x006464a0, 0x0064a680 - a CAutoCompleteListBox gazdájának osztálya (a hívó this-e) [nem blokkolja a fő utat]`
@@ -4690,7 +4690,7 @@ Hívóélek: a `0x008014d0` hívója a `0x008018a0` (`0x00801c95`) és a `0x0080
 **Javítások a korábbi szakaszokban** (a 38.2.26-ban is jelölve):
 1. **A `p` nem `OneUp`, hanem `MakeMoviePanel`.** A 38.2.26 §2 ezt feltételezte. A `0x006214e0` két közvetlen hívója a `0x0061df10` és a `0x006223b0`, és mindkettő a `MakeMoviePanel::vftable` virtuális metódusa (§3). A `[+0x388]` tehát a `MakeMoviePanel` mezője: a film-sáv (`filmstrip`) kiválasztott elemének sorszáma.
 2. **Az `a` és `b` tényezők változnak.** A 38.2.26 §1 nyitva hagyta, mi a két tényező. Az utasítások szerint a `0x007fe600` minden lépésben módosítja őket (§2).
-3. **A kártya-objektum nem a 0xc8 bájtos ciklusban készül.** A 38.2.26 §3 szerint a kártyák sorrendje a ciklus sorrendje. A 0xc8 bájtos ciklus csak a mód-2 ágban van (§1). A kártya-objektum a ciklusok után, hívásonként legfeljebb egyszer készül.
+3. **A kártya-objektum nem ciklusban készül (JAVÍTVA, 38.2.28 §2).** A 38.2.26 §3 szerint a kártyák sorrendje a ciklus sorrendje. Ez téves: nincs 0xc8 bájtos ciklus. A kártya-objektum hívásonként legfeljebb egyszer készül.
 
 **1. kérdés: a kártyák forrása és a `0x009c2fc0` visszatérése**
 
@@ -4700,8 +4700,8 @@ Hívóélek: a `0x008014d0` hívója a `0x008018a0` (`0x00801c95`) és a `0x0080
 
 *A `0x005e81e0` lépései: LEZÁRVA.*
 1. `0x005c76b0(0,0,1,1)` (`0x005e8205`): nem nulla visszatérésnél kilép.
-2. `0x00506400` tölti a `L` listát a `*(this+0x2bc) + 0xf8` objektumtól (`0x005e823d`). Minden hívásban lefut.
-3. Mód-2 ágban (`bl = 2`, `0x005e8242`): ciklus a `L` 0xc8 bájtos rekordjain (`0x005e8260`-`0x005e82b2`; a léptetés `add esi, 0xc8` a `0x005e8283`-nál). Rekordonként vtábla-hívás.
+2. `0x00506400` **nem tölti** a `L` listát (JAVÍTVA, 38.2.28 §1). A `*(this+0x2bc) + 0xf8` objektum `this`-ével helyben átírja az `L` már meglévő azonosítóit (`0x005e823d`). Minden hívásban lefut.
+3. Mód-2 ágban (`bl = 2`, `0x005e8242`): ciklus az `L` 4 bájtos azonosítóin (`0x005e8260`-`0x005e82b2`). **JAVÍTVA (38.2.28 §2):** nincs 0xc8 bájtos rekord. Az `add esi, 0xc8` (`0x005e8283`) vtábla-eltolás. Azonosítónként két virtuális hívás ugyanazon a beágyazott objektumon: `vt[0xcc]`, majd `vt[0xc8]`.
 4. Más módban (`0x005e82d3`): `0x00475250` (`0x005e82e7`), az EDX-ben a `]star` sztring címe (`0xc811d4`). Hogy ez melyik argumentum, és mit jelent a `]star`, NINCS MEG.
 5. Kártya-ág: a `0x0097c5d0(0x37c)` foglalás (`0x005e8437`), a konstruktor `0x007f9a40` (`0x005e846b`), utána `0x009df290` (`0x005e8478`). Ez a ciklusok után van.
 
@@ -4795,6 +4795,106 @@ Lépések az asm-sorrendben (`0x007fe63a`-`0x007fe799`):
 - `Ghidra-kör kell: 0x0061b460 és a film-sáv objektum +0x46c mezőjének írói (a 0x005b8d50 összegzett mezője) [nem blokkoló a dátumnál]`
 - `Ghidra-kör kell: 0x00641000 - a 0x0060e260 hívójának osztálya (0x00641491) [nem blokkoló]`
 - `Ghidra-kör kell: 0x00646d70 - a 0x006464a0 hívójának osztálya és a dátumcsúszkához vezető kapcsolata [nem blokkoló]`
+
+#### 38.2.28 Az Időrend bináris feltárása, 11. kör: az `L` forrása, a befűzés, a frissítési lánc és a bemenet (#5401, 2026-10-21)
+
+**Kérdés és hatókör.** Négy kérdés a `2026-10-21-idorend-11.txt` öt címéről (`0x00506400`, `0x00475250`, `0x009df290`, `0x007fe7c0`, `0x007ffc90`), és a 38.2.27 „Következő Ghidra-címek” listájának ezekhez tartozó pontjai. (1) Honnan jön a kártyák listája (`L`), melyik gyűjtemény, milyen sorrendben, és mit jelent a `]star`. (2) Mi a megjelenítési sorrend a kártyák létrehozása után. (3) A `0x007fe600` mozgás-frissítés hívási üteme. (4) Mit olvas a `0x007ffc90`: csúszkát vagy kártya-indexet, és van-e dátum-leképezés.
+
+**Módszer.** A bemeneti C-kód adta a vázat. A döntő lépéseket diszasszemblálás igazolta (`pe_dis.cdis`), a konstansokat `pe_dis.f32` és `pe_dis.f64` olvasta. A hívóéleket a bináris-index `xrefs` táblája és a bemeneti `HÍVÓK` listák adták. Figyelem: az `xrefs` `from_address` mezője a hívó függvény belépési címe, nem a hívóhely. A hívóhelyet a `HÍVÓK` lista és a diszasszemblálás adta. A közvetett hívást abszolút mutatók bináris-pásztázása mutatta ki. Ghidra-futás nem volt. Ideiglenes fájl a `.bt/` alatt keletkezett, a kör végén törölve.
+
+**Javítások a korábbi szakaszokban** (a helyeken is jelölve):
+1. **A `0x00506400` nem tölti az `L` listát** (38.2.27 §1, 2. pont). Helyben átírja az `L` már meglévő azonosítóit. Minden azonosítóhoz a `*(this+0x2bc)+0xf8` objektum `+0x3f0` táblájában (`+0x3f4` a darabszám) keresi a csomópontot. Ha a tábla eleme nulla, a `+0x3f8` csomópontot használja. Ha a csomópont `+0x18` mezője `0x3e9`, az azonosító helyére a csomópont `+0x20` mezője kerül. A sorrend nem változik. Bizonyíték: `0x00506400` C-kód, és asm (`0x00506402`-`0x00506453`).
+2. **Nincs 0xc8 bájtos rekord-ciklus** (38.2.27 §1, 3. pont; 38.2.27 „Javítások” 3. pontja; 38.2.26 „A sorrend” és 3. pontja). A mód-2 ág az `L` 4 bájtos azonosítóin lép (`ebx` 0-tól `n-1`-ig, `0x005e8260`-`0x005e82b2`). Az `add esi, 0xc8` (`0x005e8283`) vtábla-eltolás. A `0x005e826a` a `*(this+0x2bc)+0x48` beágyazott objektum (`O`) vtábla-mutatóját tölti be. Azonosítónként két virtuális hívás `O`-n: `vt[0xcc]` (`(azonosító, 1)`, logikai eredmény), majd `vt[0xc8]` (`(azonosító, az előző ellentéte)`). A második hívás nem nulla eredménye kilépteti a ciklust.
+3. **A kártya-objektum nem ciklusban készül** (38.2.26 §3 és 38.2.27 „Javítások” 3. pontja). A `0x005e8430`-`0x005e8482` ágban, hívásonként legfeljebb egyszer készül.
+
+**1. kérdés: az `L` forrása, a gyűjtemény és a sorrend**
+
+*Az `L` nullázása és a `0x005c76b0` hívása: LEZÁRVA (asm).* A `0x005e81e0` a kimeneti `L`-t (`[esp+0x18]` a mutató, `[esp+0x1c]` a darabszám) nullázza (`0x005e81fd`-`0x005e8201`), majd `0x005c76b0`-nak adja (`0x005e8205`, EAX = `L`, argumentumok `0,0,1,1`). Nem nulla visszatérésnél kilép (`0x005e820c`-`0x005e820e`). Nulla visszatérésnél a `0x005e823d`-nél a `0x00506400` következik.
+
+*Az `L` tartalma: NINCS MEG.* A `0x005c76b0` (asm `0x005c76b0`-`0x005c7758`) a régi puffert felszabadítja, a darabszámot nullázza (`0x005c76bb`-`0x005c76d1`), majd az argumentumok és a `this` mezői szerint ágazik:
+- Ha az első argumentum nulla (a `0x005e81e0` hívása ilyen), az ág a `0x005c76fd`-nál folytatódik. Ha a `[this+0xeac]` objektum nem nulla, és `[[this+0xeac]+0x3c9]` nem nulla, a kimenetet annak `vt[0xdc]` hívása adja (`0x005c7710`-`0x005c771f`). Különben a `[this+0xea8]` és a `0x007166c0` hívás (`0x005c7743`).
+- Ha az első argumentum nem nulla, és `[this+0xea4]` nem nulla, a `0x005c7ef0` hívás következik (`0x005c76eb`).
+- A bináris-index szerint a `0x005c76b0` közvetlenül hívja a `0x005c7830`-at.
+- A `0x005c7830` a `0x00506400`-at és a `0x009c2fc0`-t hívja. Sztring-hivatkozásai: `Preferences`, `editpanel/preview`, `PeopleAlbumUseFaceSrc`. Ez beállítás-olvasásra utal, a gyűjteményt nem igazolja.
+Hogy melyik ág fut a `0x005e81e0` hívásában, és mit tölt a `0x005c7830`, a `0x007166c0` és a `vt[0xdc]`: NINCS MEG.
+
+*Mód 2 (`bl = 2`): LEZÁRVA (asm).* Az `L` azonosítóin növekvő indexszel megy (`0x005e8260`-`0x005e82b2`). Az első nem nulla eredménynél kilép, és felszabadítja az `L`-t (`0x005e82b6`-`0x005e82c4`). A sorrend az `L` sorrendje.
+
+*A `]star` ág (mód nem 2): LEZÁRVA (hívás).* A `0x005e82d3`-`0x005e82e7` a `0x00475250`-t hívja. EDX = `0xc811d4`, a bájtok szerint `]star\0`. A stack-argumentumok: `*(this+0x2bc)`, `&L`, a mód-bájt (`bl`), és `1`. A `0x00475250` a `*(this+0x2bc)+0x68` táblában keresi a kulcsot. Mód-bájt nulla esetén a `0x004da1d0`, különben a `0x004d9aa0` hívódik, mindkettő `&L`-t kap kimenetként. Nem nulla visszatérésnél a `0x005e81e0` kilép (`0x005e82ee`-`0x005e82f0`). A két keresőfüggvény belseje és a `this+0x68` tábla tartalma: NINCS MEG. A `]star` csillagozott gyűjteményre utalhat, de ez nincs igazolva.
+
+*A gyűjtemény (album, mappa, dátum-csoport, csillagos): NINCS MEG.* Mód 2-ben az `L` a `0x005c76b0` kimenete. Más módban a `]star` tábla eleme. Egyik sem igazolt gyűjtemény.
+
+*A sorrend: RÉSZBEN.* A `0x00506400` nem változtatja az elemek sorrendjét. Mód 2-ben a vtábla-hívások az `L` sorrendjében futnak. Az `L` kezdeti sorrendje a `0x005c76b0`-tól függ: NINCS MEG.
+
+**2. kérdés: a `0x009df290`, a befűzés és a megjelenítési sorrend**
+
+*A `0x009df290` nem rendez: LEZÁRVA (C és asm).* Az EDI kártyát (`0x005e8478`-ban hívják) az ESI tároló pointertömbjének végére fűzi. A tömb a `+0x198`-ban van, a darabszám a `+0x19c` mezőben, `>>1` értékkel (a legkisebb bit jelző; `0x009df2bd`-`0x009df2cb`). Befűzéskor a kártya `+0x244` mezője a tároló lesz, a `+0x213` bájt nulla lesz, a `+0x8` mező alsó három bitje pedig 1 lesz (C-kód). Ha a kártya már ugyanabban a tárolóban van (`+0x213` nulla, `+0x244` egyezik), nem fűzi be újra (`0x009df2ac`-`0x009df2ae`). Ha a tömb bővítése nem sikerül, 4-et ad vissza.
+
+*A tároló kiválasztása: LEZÁRVA (asm).* A `0x009df290` ESI-je a `0x005e8424`-ben betöltött `[X+0x244]`. Itt `X` a `this+0x3280` (ha nulla, a `this+0x327c`). Ha `X+0x213` nem nulla, nincs befűzés (`0x005e842c`-`0x005e8430`). Ez megerősíti a 38.2.27 „Kártya-kapuk” (a) pontját.
+
+*Egy kártya hívásonként, ciklus nélkül: LEZÁRVA (asm).* `0x005e8437` (`0x0097c5d0(0x37c)`), `0x005e846b` (konstruktor `0x007f9a40`), `0x005e8478` (`0x009df290`). A három hívás egyszer fut egymás után.
+
+*A kártyák sorrendje: LEZÁRVA.* A befűzés sorrendje a `0x005e81e0` hívásainak sorrendje. A hívók: `0x005d9cc0` (`0x005db0c5`), `0x005e60d0` (`0x005e6587`), `0x00760240` (`0x007606fd`).
+
+*A megjelenítési sorrend a befűzés után: NINCS MEG.* A `0x009df290` nem rendez, a tároló `+0x198` tömbjét olvasó függvény pedig nincs a bemenetben.
+
+*Az Időrend-oldali lista (`0x007fe7c0`): ellentmondás, NINCS MEG.* A `0x007fe7c0` a `0x00604480`-at hívja (stdcall, `ret 4`, `0x006044d8`) egy négymezős struktúrával (`0x007fe921`-`0x007fe93a`). `P+0` a lista mutatója, `P+4` a darabszám bájtban, `P+8` az alternatív lista, `P+0xc` a kulcs-tömb holdere. A `P+0`, `P+4` és `P+8` a hívás előtt nullát kap. A függvényben más írás ezekre nincs. A `0x00604480` ezért nem rendez (`1 < n` nem teljesül). A kirajzoló ciklus (`0x007fe966`-`0x007fe979`) a `P+4`-et olvassa darabszámnak: nulla, tehát nulla iteráció. Ez ellentmond annak, hogy a függvény kártyákat rajzol. Vagy a dekompilált és az asm-olvasat hiányos, vagy a lista más úton kerül a `P`-be: NINCS MEG.
+
+**3. kérdés: a `0x007fe600` hívási üteme: RÉSZBEN**
+
+*A `0x007fe600` feltétele: LEZÁRVA (asm).* A `0x007fe7c0` a `0x007fe7cf`-`0x007fe7e1` ágon hívja (`0x007fe7e9`), ha `[this+0x3bc]` vagy `[this+0x3bd]` nem nulla. Ha mindkettő nulla, a függvény a `0x007fee5f`-re ugrik. Hívásonként legfeljebb egyszer fut.
+
+*A `0x007fe7c0` hívója: LEZÁRVA (index és HÍVÓK).* Egyetlen hívóhely: `0x007ffc9d` a `0x007ffc90`-ben, feltétel nélkül (ez a függvény első hívása).
+
+*A `0x007ffc90` hívója: LEZÁRVA (index és HÍVÓK).* Két hívóhely a `0x00800a30`-ban: `0x00800d46` és `0x00801003`. A `0x00800a30` `this`-e (EBP) azonos a `0x007ffc90` `in_EAX`-ével: `mov eax, ebp` (`0x00800d33`, `0x00800ff0`).
+
+*A `0x00800a30` hívója: NINCS MEG (közvetett hívás).* A bináris-index szerint nincs közvetlen CALL-hívója. Egyetlen abszolút mutató mutat rá a bináris `0x00cbd6ac` címén, és ez igazított cím. Ez a `QDrawable::vftable` (`0x00cbd66c`, rtti) 16. bejegyzése (0-tól számolva). A hívási ütem tehát egy `QDrawable`-típusú objektum vtábla-hívásától függ. Hogy ki hívja, és milyen gyakran: NINCS MEG.
+
+*A két hívóhely feltétele: RÉSZBEN.* A `0x00800d46` a `0x00800cc5`-`0x00800ccb` ágon fut, ha `[this+0x3b8]` nem nulla (`bl` ekkor nulla, `0x00800c22`). Ha nulla, a `0x008010c7`-re ugrik. A `0x00801003` a `0x00800eaa`-`0x00800ec7` ágon fut. Ehhez `[this+0x3b8]`, `[this+0x44c]` és `[this+0x474]` mind nem nulla. A hívóhely a `0x00800ed8`-`0x00800f19` ciklus törzsén kívül van (a ciklus a `0x00800f19`-nél zárul). A teljes útvonal: NINCS MEG.
+
+*A `0x007fe600` hívási üteme: NINCS MEG.* Hívásonként egyszer fut, feltétel szerint. Az ütemet a `0x00800a30` hívója adja (lásd fent).
+
+**4. kérdés: mit olvas a `0x007ffc90`, és van-e dátum-leképezés: RÉSZBEN**
+
+*A bemenete: idő-alapú, nem kártya-index: LEZÁRVA (asm).* A `0x00800a30` a két hívóhelyen `trunc(256 · v)` értéket ad át. A szorzó `0xcf39d8` = 256,0 (`0x00800d1b`). A csonkolás a `fistp` (`0x00800d39`) és a `or eax, 0xc00` (`0x00800d2a`) miatt. A `v` a `0x009a51b0` visszatérése: a `this+0x430` QPC-kezdőértéktől (`lea esi, [ebp+0x430]`, `0x00800cd3`) eltelt másodperc. A `0x009a51b0` `(QPC most - *arg) · (1/QPF)` értéket ad (asm `0x009a51b0`-`0x009a51fe`). A `v` nullára vágódik, ha negatív (`0x00800cfe`-`0x00800d0f`). Az első eltelt-idő értékét `1,0`-hoz hasonlítja (`0xc79c88`, f32). Ha kisebb, a második hívás értékét használja (`0x00800cf9`). Ha nem kisebb (`0x00800cf6` `jp` ugrás), a `0x00800d17` a `[esp+0x14]` mezőt olvassa, amelyet ez az ág nem írt: NINCS MEG.
+A csúszka-kezelő (`0x00a52890`, 38.2.6) nem hívja a `0x007ffc90`-et. A közvetlen hívók listája csak a `0x00800a30`.
+
+*Mit olvas a `0x007ffc90`: LEZÁRVA (C).*
+1. A nyers bemenetet (`iVar2`) adja tovább: `0x007fd180`-nak (`in_EAX+0x2f8`), `0x007fee70`-nek, `0x007fe540`-nek (négyszer), és a `0x009ab690`-nak a `+0x6c0`, `+0x6e8` és `+0x710` vezérlőkre.
+2. Százalékot számol: `(bemenet · 100) >> 8`. Ezt a `0x009ab690` kapja a `+0x620` és `+0x5f8` vezérlőre.
+3. Olvassa az `A` tömböt: az Időrend `+0x388` f64 tömbjét, darabszám `+0x38c >> 1`. Az elemek hányadosa az utolsó elemmel: `A[i] / A[n-1]`.
+4. Olvassa a `+0x6cc`, `+0x6dc` és `+0x6f4` egész-mezőket (elrendezés).
+Nem olvas kártya-indexet. A 0xf8 bájtos rekordokat (`+0x2ec`) nem éri el, és a bemenetével nem indexel. A három hívott függvény (`0x007fd180`, `0x007fee70`, `0x007fe540`) belseje és a `0x009ab690` szerepe: NINCS MEG.
+
+*Dátum-leképezés a `0x007ffc90`-ben: LEZÁRVA, nincs.* A függvény nem alakít dátumot csúszkaértékké. Az `A` hányadosait csak egymással hasonlítja. Az egyenlő egymás utáni hányadosok futamot alkotnak (a futam hosszát a C-kódban a `param_1` tartja). A kezdeti összehasonlító érték `0xcf3f58` = -1,0. A futamhossz nulla, egy vagy három esetén a `+0x700` és `+0x704` mezőt írja, és a `0x009ab690` a nyers bemenettel hívódik. A `+0x704` eltolása 0, 7 vagy 14 (`local_24`). Kettes és négynél nagyobb futamnál nincs írás. Ez csoport-jelölés, nem csúszka-leképezés.
+
+*A `+0x700` írása: RÉSZBEN.* A `0x00c29990` (asm `0x00c29990`-`0x00c299aa`): ha `[0xda1428]` nem nulla, az FPU veremtetejének (`st0`) csonkolt egész értéke (`cvttsd2si`, `0x00c299a5`). A másik ág (`0x00c299c6`) célja, és az `st0` forrása a hívóban: NINCS MEG.
+
+*Az `A` tartalma (dátum vagy sorszám): NINCS MEG.* Az Időrend-tartományban nincs írója (38.2.25). A 38.2.23 szerint a `0x007fdd00` a csúszka-tört `t`-hez a legközelebbi `A[i]/A[n-1]` tagot keresi. Ez sorszámot ad. Hogy `A` dátumsor-e: nincs igazolva.
+
+**Mérleg (38.2.28).** Nyitott kérdések: 9 nyílt (8 blokkolt, 1 nem blokkoló) · 13 lezárva · 0 hatókörön kívül · 0 csak nyitva.
+- Lezárva: az `L` nullázása és a `0x005c76b0` hívása; a mód-2 sorrend; a `]star` hívás formája; a `0x00506400` működése; a `0x009df290` befűzése (nincs rendezés); a tároló kiválasztása; egy kártya hívásonként; a kártyák sorrendje = a hívások sorrendje; a `0x007fe600` feltétele; a `0x007fe7c0` és a `0x007ffc90` hívója; a `0x007ffc90` olvasási készlete; a dátum-leképezés hiánya a `0x007ffc90`-ben.
+- Blokkolt: az `L` tartalma; a gyűjtemény; a `]star` kulcs jelentése; a megjelenítési sorrend; az Időrend-lista ellentmondása; a `0x00800a30` hívója és üteme; a bemenet 1,0-os ága; az `A` tartalma. A `0x009ab690` és a három társ szerepe is ide tartozik a kártya-index kérdéshez.
+
+**Amit KIZÁRTAM**
+- A `0x00506400` nem tölti az `L`-t, helyben ír.
+- A `0x009df290` nem rendez, és a tároló `+0x198` tömbjén kívül nem ír.
+- A `0x007ffc90` nem kártya-indexet olvas. Nem éri el a `+0x2ec` rekordokat.
+- A `0x007ffc90` bemenete nem a `0x007fe600` `T`-je. A `0x00800a30` a `this+0x430`-tól számol, a `0x007fe600` a `this+0x528`-tól.
+- A `0x00800a30` nem közvetlen CALL-célpont, hanem a `QDrawable` vtábla 16. eleme.
+- A `0x007ffc90` közvetlen hívója nem a csúszka-kezelő (`0x00a52890`).
+- A `]star` nem igazolt csillagos gyűjtemény.
+
+**Következő Ghidra-címek**
+- `Ghidra-kör kell: 0x005c76b0 - az L-építő teljes C-kódja: a nulla első argumentum ágának [this+0xeac] vt[0xdc] hívása, a 0x007166c0 és a 0x005c7830 célja, és mi kerül L-be. [blokkoló a gyűjteménykérdésnél]`
+- `Ghidra-kör kell: 0x004da1d0 és 0x004d9aa0 - a ]star kulcs keresése a *(this+0x2bc)+0x68 táblában, és az L-kimenet tartalma. [blokkoló a gyűjteménykérdésnél]`
+- `Ghidra-kör kell: 0x007fe7c0 - a 0x00604480 rendező-listájának (P+0, P+4) írója: hol töltődik a lista, és miért nulla a hívás előtt. [blokkoló a megjelenítési sorrendnél]`
+- `Ghidra-kör kell: a tároló-objektum (this+0x3280, illetve this+0x327c) +0x198 mezőjének olvasói: a kártyák megjelenítési sorrendje a 0x009df290 után. [blokkoló a sorrend-kérdésnél]`
+- `Ghidra-kör kell: a QDrawable::vftable (0x00cbd66c) 16. slotja (0x00cbd6ac): a vtábla-hívóhelyek, az osztály, amelyik hívja, és a hívási ütem; a 0x00800d46 és 0x00801003 teljes útvonala. [blokkoló a hívási ütemnél]`
+- `Ghidra-kör kell: 0x00800a30 - a this+0x430 QPC-kezdőértékének írói, és a 0x00800d17 [esp+0x14] ága (a 1,0-nál nem kisebb eset). [blokkoló a bemenet-kérdésnél]`
+- `Ghidra-kör kell: 0x009ab690, 0x007fd180, 0x007fee70 és 0x007fe540 - a nyers bemenet szerepe ezekben: kártya-index, csúszka vagy más. [blokkoló a kártya-index kérdésnél]`
+- `Ghidra-kör kell: az OneUp +0x388 (A) írói - dátum vagy sorszám (38.2.25 és 38.2.27 szerint az Időrend-tartományban nincs író). [blokkoló a dátumkérdésnél]`
+- `Ghidra-kör kell: 0x00c299c6 - a 0x00c29990 másik ága, és az st0 forrása a 0x007ffc90 hívásakor. [nem blokkoló]`
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
