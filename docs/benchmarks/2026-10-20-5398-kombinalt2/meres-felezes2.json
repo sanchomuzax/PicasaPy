@@ -1,0 +1,67 @@
+[
+  {
+    "kep": "k02.jpg",
+    "lanc": "warm=1;sat=1,0.350000;IR=1,0.000000;HeatMap=1,0.000000,0.000000;",
+    "forras_meret": "1280x720",
+    "export_meret": "1280x720",
+    "render_meret": "1280x720",
+    "meret_elter": false,
+    "de": 1.666,
+    "de_nyers": 2.194,
+    "ssim": 0.9919,
+    "itelet": "egyezik",
+    "kihagyott": []
+  },
+  {
+    "kep": "k03.jpg",
+    "lanc": "autolight=1;sat=1,0.350000;",
+    "forras_meret": "1280x853",
+    "export_meret": "1280x853",
+    "render_meret": "1280x853",
+    "meret_elter": false,
+    "de": 0.669,
+    "de_nyers": 1.015,
+    "ssim": 0.9957,
+    "itelet": "egyezik",
+    "kihagyott": []
+  },
+  {
+    "kep": "k04.jpg",
+    "lanc": "HDR=1,20.000000,3.000000,0.000000;",
+    "forras_meret": "1280x853",
+    "export_meret": "1280x853",
+    "render_meret": "1280x853",
+    "meret_elter": false,
+    "de": 0.0,
+    "de_nyers": 2.27,
+    "ssim": 1.0,
+    "itelet": "egyezik",
+    "kihagyott": []
+  },
+  {
+    "kep": "k05.jpg",
+    "lanc": "sat=1,0.350000;HDR=1,20.000000,3.000000,0.000000;",
+    "forras_meret": "1280x807",
+    "export_meret": "1280x807",
+    "render_meret": "1280x807",
+    "meret_elter": false,
+    "de": 0.0,
+    "de_nyers": 2.906,
+    "ssim": 1.0,
+    "itelet": "egyezik",
+    "kihagyott": []
+  },
+  {
+    "kep": "k06.jpg",
+    "lanc": "warm=1;sat=1,0.350000;IR=1,0.000000;HeatMap=1,0.000000,0.000000;HDR=1,20.000000,3.000000,0.000000;",
+    "forras_meret": "1280x597",
+    "export_meret": "1280x597",
+    "render_meret": "1280x597",
+    "meret_elter": false,
+    "de": 2.233,
+    "de_nyers": 2.196,
+    "ssim": 0.9755,
+    "itelet": "eltér",
+    "kihagyott": []
+  }
+]

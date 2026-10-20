@@ -729,3 +729,53 @@ Módszer: tíz szabad licencű kép (`minta-kombinalt` készlet a Colab-végreha
 | k10 | 0,00 | 8,04 | 8,04 | 8,34 | eltér: 4. `colorfix`, amit a PicasaPy nem renderel | #5296 |
 
 Következtetés: a tíz kombinációból hat egyezik az eredetivel. Négy eltérés rétegre visszavezetve: két, eddig „nem renderelendő”-nek tartott tag (`rainbow`, `colorfix`; #5296), a Polaroid viselkedése bizonyos előző rétegek után (#5299), és a Vignette a vágott, kiegyenesített kép után (#5300).
+
+## Kombinált effektláncok, 2. kör (#5398, 2026-10-20)
+
+Módszer: a `minta-kombinalt` készlet (a `kellekek` kiadás `minta-kombinalt.tar.gz` fájlja, SHA-256 szerint ellenőrizve) k01-k10 képei és az eredeti Picasa 3.9 exportjai (job-228, `export__kNN.jpg`). A képek szabad licencűek; a szerzőket és a licenceket a csomag `SZERZOI.txt` fájlja sorolja fel. A PicasaPy a teljes láncot futtatja (`picasapy.render.chain.apply_filters`), a kimenetet az exportéval azonos JPEG-mintavételezéssel és kvantálótáblákkal kódoljuk (`tools/golden/jpeg_reference.py`), majd az átlagos CIE76 ΔE-t mérjük az exporthoz (`analyze_validation_kit.py`, `mean_de`; küszöb 2,0, 6,0 fölött rossz). A `compare_render.py pair` ugyanerre a láncra a nyers ΔE-t adja, JPEG-egyeztetés nélkül: az egyező képeken 0,54 és 1,74 között van, a k02-n 2,912, a k03-on 5,775. A nyers ΔE is ugyanazt az ítéletet adja mind a tíz képen. A `compare_render.py` pixel-tűrés szerinti ítéletét nem használtuk: az szigorúbb, k01-et és k04-et is „eltér”-nek jelöli 1 alatti ΔE mellett. A renderelt kép mérete minden képen egyezik az exportéval; a k04, k06 és k08 mérete a vágás és a keret miatt változik. A `ChainReport.skipped` lista üres, tehát a renderer egyetlen tagot sem hagyott ki.
+
+| kép | csoport | lánc röviden | ΔE | ítélet |
+|---|---|---|---:|---|
+| k01 | 1 | autolight, warm, sat, glow, HDR, HeatMap, IR | 0,981 | egyezik |
+| k02 | 1 | warm, sat, IR, HeatMap, HDR, glow | 2,802 | eltér |
+| k03 | 1 | autolight, sat, HDR, IR, glow, HeatMap | 5,968 | eltér |
+| k04 | 2 | crop64, radblur, Holga, Matte | 0,515 | egyezik |
+| k05 | 2 | tilt, FocalZoom, radtint, Lomo | 0,067 | egyezik |
+| k06 | 2 | crop64, Polaroid, RoundedEdges, radsat | 0,734 | egyezik |
+| k07 | 3 | dir_sat, blur, Matte, RoundedEdges | 0,000 | egyezik |
+| k08 | 3 | PencilSketch, Polaroid, MuseumMatte | 0,388 | egyezik |
+| k09 | 4A | sat, Vignette, dir_tint, Matte, colortemp, radblur | 0,197 | egyezik |
+| k10 | 4B | radblur, colortemp, Matte, dir_tint, Vignette, sat | 0,010 | egyezik |
+
+A csoportok a README szerint: 1 = le nem fedett tagok; 2 = crop64 vagy tilt előtag; 3 = erős előző réteg, utána keret; 4 = a sorrend (4A és 4B fordított).
+
+Következtetés:
+
+- Nyolc kép egyezik, kettő eltér: k02 (2,802) és k03 (5,968). Mindkettő az 1. csoportból való, és a 6,0-s rossz-küszöb alatt marad: közelítő, nem rossz.
+- A 2., 3. és 4. csoport minden lánca egyezik. A 4. csoport fordított sorrendje is (k09 és k10: 0,197 és 0,010), így a sorrend gyanúja ezen a csoporton nem igazolódott.
+- Tisztázottak (egyező képen szerepelnek, összesen 25 különböző tag): autolight, warm, sat, glow, HDR, HeatMap, IR (k01); crop64, radblur, Holga, Matte (k04); tilt, FocalZoom, radtint, Lomo (k05); Polaroid, RoundedEdges, radsat (k06); dir_sat, blur (k07); PencilSketch, MuseumMatte (k08); Vignette, dir_tint, colortemp (k09). Ez az adott láncra igaz, nem minden kontextusra.
+- Nincs olyan tag, amely csak az eltérő képeken fordul elő. A k02 és a k03 tagjai mind szerepelnek az egyező k01-ben. A k01-hez képest k02-ből az autolight, k03-ból a warm hiányzik, és a sorrend is más. A ΔE ezt nem tudja szétválasztani, ezért a hibás tagot most nem lehet megnevezni. A gyanúsítottak (glow, HDR, HeatMap, IR) mind szerepelnek a k01-ben, amely egyezik.
+- Az 1. körben eltérő Polaroid (#5299) és Vignette (#5300) más láncban szerepel itt, és ott egyezik: a Polaroid a k06-ban és a k08-ban, a Vignette a k09-ben és a k10-ben.
+
+Felezés (`docs/benchmarks/2026-10-20-5398-kombinalt2/felezes.ini`, a Colab-feladat `picasa_ini_be` szövege): a k02 és a k03 első három rétege (k02: warm, sat, IR; k03: autolight, sat, HDR). Ha ez eltér, a hiba az első három rétegben van, és a következő lépés a negyedelés (1-2 réteg). Ha egyezik, a hiba a második három rétegben van (k02: HeatMap, HDR, glow; k03: IR, glow, HeatMap), és ott bontjuk tovább.
+
+A felezés eredménye (job-229, `felezes.ini`): a k02 első három rétege (warm, sat, IR) egyezik (ΔE 0,29), a k03 első három rétege (autolight, sat, HDR) eltér (2,57).
+
+Második felezés (job-230, `felezes2.ini`, mérés: `meres-felezes2.json`):
+
+| kép | lánc | ΔE | ítélet |
+|---|---|---:|---|
+| k02 | warm, sat, IR, HeatMap | 1,666 | egyezik |
+| k03 | autolight, sat | 0,669 | egyezik |
+| k04 | HDR | 0,000 | egyezik |
+| k05 | sat, HDR | 0,000 | egyezik |
+| k06 | warm, sat, IR, HeatMap, HDR | 2,233 | eltér |
+
+A k04 és a k05 0,000-s értéke azt jelenti, hogy a PicasaPy kimenete az export JPEG-beállításaival kódolva bitre azonos az exporttal. A nyers ΔE 2,27 és 2,91: ez csak a JPEG-kódolás zaja.
+
+Következtetés:
+
+- A HDR maga pontos. Önmagában és a telítettség után is bitre egyezik, és a sorrend sem hiba: ha a HDR-t a lánc elejére tesszük, a k03 ΔE-je 5,28, a k06-é 28,09 lesz.
+- A HDR felnagyítja a bemenete eltérését. A kimenete `be + C·(be - elm)`, így a bemenet helyi eltérése `C = 3`-nál nagyjából (1 + C)-szeresére, négyszeresére nő. A k03-ban az autolight és a sat eltérése 0,669, a HDR után 2,57: a szorzó 3,8. Ugyanez látszik, ha a saját HDR-ünket a Picasa JPEG-ként mentett autolight+sat exportjára futtatjuk: a JPEG-zaj is felnagyítódik, a ΔE 3,63.
+- Az eltérés forrása tehát a HDR előtti tagokban van, azoknak a maradékában, amely önmagában a küszöb alatt marad: az autolight és a sat együtt 0,669 (a k03-ban), a HeatMap az IR után +1,38 (a k02-ben az első három réteg 0,29, a negyedikkel 1,666). Ezek külön-külön egyeznek, csak a HDR mögött lépik át a küszöböt.
+- A k06-ot más képen mértük, mint a k02 négyrétegű láncát, ezért a HDR előtti ΔE-je nincs külön mérve. Az ítélete ugyanezzel a felnagyítással magyarázható, de ez nincs kimérve.
