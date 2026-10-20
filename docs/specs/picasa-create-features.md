@@ -5404,8 +5404,38 @@ Ghidra-kör kell: `0x00878820 - a jelölt-vektor rendezése vagy nyesése a rét
 
 **Jegy „Kész, ha” (kiválasztási szabály).** ⛔ Nem teljesül: az élköltség összetétele nincs megírva. Nálunk: a `src/picasapy/movie/burst.py` `select_chain` a HOG-χ²-távolságot (`d_hog`) pontozza, Neven-tag és időkülönbség nélkül; a jellemzőforrás injektált. Fejlesztői (a) lista a költségképlet nélkül nem írható meg.
 
-**Lezárás (#4194, 25. kör): (c).** Ghidra-kör kell: 0x00875ee0 - az élrekord célindexének és élköltségének írója; a HOG-távolság és az időkülönbség bemeneti forrása (a `param_1+0x1b3`/`+0x1b5` és `+0x1b7`/`+0x1b9` tömbök) [blokkoló]
-Ghidra-kör kell: 0x00874e40 - a másik építő: mikor hívódik (`[0x1da] != 0` vagy `param_3 == 2`), és ugyanazt a költséget számolja-e [nem blokkoló]
+**Lezárás (#4194, 25. kör): (c).** A `0x00875ee0` kérdéseit a 26. kör részben megválaszolta (lásd G/13b). Ghidra-kör kell: 0x00874e40 - a másik építő: mikor hívódik (`[0x1da] != 0` vagy `param_3 == 2`), és ugyanazt a költséget számolja-e [nem blokkoló]
+
+#### G/13b. A 26. kör (2026-10-20): a `0x00875ee0` törzse, az élrekord írói, a költség és a bemenetek (#4194)
+
+**Kérdés.** A G/13 két nyitott pontja: (1) ki írja az élrekord célindexét és élköltségét a `0x00875ee0`-ban; (2) a HOG-távolság és az időkülönbség honnan jön (a `param_1+0x1b3`/`+0x1b5` és `+0x1b7`/`+0x1b9` tömbökből, vagy máshonnan).
+
+**Forrás.** `.ghidra/2026-10-20-ghidra-26.txt` (C, a `0x00875ee0` törzse); `.ghidra/2026-10-20-ghidra-25.txt` (a hívó `0x0081b800`: a 127. és 132. sor, a hívóhely a 266. sor); `referencia/ghidra/2026-10-17-film-idoszuro-2.txt` (a `0x00873170` C-törzse, 2204. sortól). Az `int *` indexelés miatt a dekompilátum `+0x1b3` jelölése bájtban `+0x6cc` (4 × 0x1b3); a `+0x141` = `+0x504`, a `+0x13e` = `+0x4f8`, az `+0x1be` = `+0x6f8`, az `+0x1d1` = `+0x744`.
+
+**1. Az élrekord értékei (C, megerősített).** A `0x00875ee0` minden horgony `c` és jelölt `k` párra három értéket állít össze: forrás `c` (`local_34`), cél `local_30 = local_84[k]` (a jelölt pozíciója a rendezett sorban), költség `local_2c = local_64[k]` (a getter kimenete). Ezt a 12 bájtos rekordot a `FUN_00878760(&local_34)` hívás adja át, három helyen. A C-törzsből látszik, hogy a rekord egy ideiglenes vektorba kerül (`local_4c`, mérete `local_48`), és az utána következő ciklus másolja a csomópont-listákba: a horgony előre-listájába (`param_1[3] + c*8`, `+0xc`), a horgony `param_1[5] + c*8` (`+0x14`) listájába, és a harmadik hívásnál a cél `param_1[5] + cél*8` listájába, a forrás és a cél felcserélve. A `0x00878760` törzse nincs dumpolva, a `this` átadása a C-ben nem látszik; a `+0x4` cél és `+0x8` költség mezőkiosztás a G/12 szerinti (feltételes).
+
+**2. A költség: gyorsítótáras getter a provider `+8` slotjából (C, megerősített a hívási lánc).** A `0x00875ee0` egyetlen költséghívást tesz: `FUN_00873170(*(*param_2), horgony, &jelöltek, &költségek, 0)`. Az első argumentum a provider objektum, `O = *(*param_2)`, vagyis a `this+0x504` mutatón át elért burkoló első mezője. A `0x00873170` a `(**(code **)(*O + 8))(horgony, jelölt)` vtábla-hívással kéri a távolságot, és gyorsítótárat használ: a kulcs `O[+0xc] * horgony + jelölt` (64 bites), találatnál a tárolt float. A költségtömb kezdőértéke 1,0 (`0x3f800000`).
+
+**3. Jelzőbájt-szorzó (C, a művelet megerősített; a jelentése nincs meg).** Ha a jelölt elemre a `*param_3` (a `this+0x6f8` bájt-vektora) nem nulla, a költség a `_DAT_00cf4968` szorosára változik. A konstans a G/2b szerint negatív és nagyságrendileg 2^-63, így a jelölt költsége gyakorlatilag nulla; ez a PE-olvasatra támaszkodik. A jelzőbájt jelentése: NINCS MEG.
+
+**4. Időkülönbség (C, megerősített a törzsre).** A `0x00875ee0` törzsében nincs időtag. Az idő egyetlen úton jut be: a `*param_4` egész tömb (a hívó `+0x6cc`, ha a `param_4` nem nulla, különben `+0x6d4`) a csoportkizárásban szerepel, a jelölt csoportja nem lehet a horgonyé. A tömböt a `0x0081ae10` állítja elő (a hívó 132. sora); a dátum- és küszöbbemenete NINCS MEG.
+
+**5. HOG-távolság (C, megerősített a törzsre).** A `0x00875ee0` nem hívja a HOG-leírót (`0x0088c480`, `0x0088cd10`), és a `0x0081ae10`-t sem. A távolság a provider `+8` slotjából jön (2. pont). Ha a provider a HOG-osztály, a slot a `0x00873e40` (G/2c; a dekompilátuma a `2026-10-17-film-4400-4194.txt`-ben van). A Neven-tag (G/3: `SmartMultiPersonTrans` és `+0x6f4`) egy összetett objektum slotjában lenne; ez a `0x00875ee0`-ból nem látszik.
+
+**Cáfoló kísérletek.**
+1. „A `0x00875ee0` számolja a HOG-távolságot": cáfolva, a törzsben nincs HOG-leíró hívás; a távolság egyetlen getter-hívásból jön.
+2. „Az időkülönbség az élköltségbe kerül": cáfolva a törzsre; az idő csak egyenlőség-vizsgálatot ad a csoportazonosítón át.
+3. „A `0x00875ee0` írja a célt a memóriába": részben cáfolva: az értékeket ő állítja elő, a memóriaírás a `0x00878760`-ban van.
+
+**Bizonyítottsági fok.** Az értékek előállítása és a getter-hívás: megerősített (C; a hívási élek az indexszel egyeznek). A provider osztálya és a `+8` slot célja: NINCS MEG. A jelzőbájt jelentése: NINCS MEG. Az időkülönbség forrása (a `0x0081ae10` bemenete): NINCS MEG.
+
+**Jegy „Kész, ha” (kiválasztási szabály).** ⛔ Nem teljesül: az élköltség összetétele (provider osztály, jelzőbájt, Neven-tag) hiányzik, ezért nincs olyan fejlesztői (a) lista, amely a `select_chain` cseréjéhez elég lenne. A 25. kör „Nálunk” megállapítását ebben a körben nem ellenőriztem újra.
+
+**Lezárás (#4194, 26. kör): (c).** A kiválasztási szabály még nincs teljesen meg: a provider osztálya, a jelzőbájt jelentése és a csoportazonosító-tömb bemenete hiányzik.
+
+Ghidra-kör kell: 0x0081ae10 - a `+0x6cc`/`+0x6d4` csoportazonosító-tömb feltöltése: a dátum- és küszöbbemenet, és a `param_4` forrása [nem blokkoló a költségre, blokkoló a csoportosításra]
+
+Asm-lépés (nem Ghidra, ebben a körben nem futtattam): a `this+0x504` írói a `0x0081b800` osztályában (`find_members.py`, a `0x504` eltolás); ebből derül ki a provider osztálya és a `+8` slot célja [blokkoló]
 
 ### 2.6 A MakeMoviePanel (a „Film készítése” felület) teljes beállítás-leltára
 
@@ -7063,8 +7093,46 @@ A `.ghidra/2026-10-20-ghidra-20.txt` bemenet, nem módosított fájl.
 - **A `+0xb0` receptor (vtábla-index, feltételes).** A `0x00714510` a 44. slotban (`+0xb0`) csak három vtáblában áll: `CSelectionNode::vftable` (`0x00cad5b4`), `CAlbumSelectionNode::vftable` (`0x00cb46f4`) és `CFoundFaceSelectionNode::vftable` (`0x00cb483c`). A `Fen::Win32WindowImp` vtáblájának nincs 44. slotja, tehát a `this` nem a `+0xb0` receptor; a receptor a kiválasztás-csomópont család egyike. Feltétel: az index rtti-listája teljes, a futásidejű objektum nincs követve.
 - **Módérték (1 vagy 7): NINCS MEG.** A `+0x37c` írása és olvasása nincs a 25. dumpban; a 21. kör dumpjában nincs `37c` (grep). A `0x00714510` hívóhelye vtábla-hívás (`call [reg+0xb0]`), amelyet a közvetlen hívási gráf nem lát.
 - **Cáfoló kísérletek.** (1) „A `this` a `+0xb0` receptor": cáfolva, a `Fen::Win32WindowImp` vtáblájában nincs 44. slot. (2) „A `0x008de220` közvetlenül hívja a `0x00714510`-et": cáfolva, a hívottak között nincs (CreateDialogIndirectParamA, FUN_008decc0, GlobalFree, IsIconic, ShowWindow, FUN_00512030). (3) „Az 1/7 érték a `0x008de220`-ban van": cáfolva, a törzsben nincs ilyen literál.
-- **Lezárás (#5225, 25. kör): (c).** A módérték írója vtábla-hívás helyén van, ezért a címe nem adható meg a közvetlen hívási gráfból: a `call [reg+0xb0]` hívóhelyeit pásztázással kell megtalálni (`paszta.py`, a memória-kapuval első lépésként). Ghidra-kör kell: a diavetítés-beállító `+0xb0` hívásának címe (a pásztázás után; még nincs cím) [blokkoló]
+- **Lezárás (#5225, 25. kör): (c).** A módérték írója vtábla-hívás helyén van, ezért a címe nem adható meg a közvetlen hívási gráfból: a `call [reg+0xb0]` hívóhelyeit pásztázással kell megtalálni (`paszta.py`, a memória-kapuval első lépésként). A 26. körben a hívóhely megvan (`0x008debed`, lásd 4.7/c); a módérték forrása a `0x008de9d0` hívás kimeneti paramétere.
 Ghidra-kör kell: 0x008de2a0 - a `0x008de3c0` másik adatreferenciája: ugyanaz-e a létrehozó-minta, mint a `0x008de220`-é [nem blokkoló]
+
+#### 4.7/c A 26. kör (2026-10-20, #5225): a `+0xb0` pásztázás és a módérték forrása
+
+**Kérdés.** A 25. kör (c) pontja: a diavetítés módértékének írója, a `+0xb0` vtábla-hívóhelyek pásztázással.
+
+**Pásztázás (bináris, megerősített).** `.bt/pasztazas.py` (a munkafában; a hívó takarít). A teljes `.text` egy menetben, `paszta.utasitasok()` darabolt kimenetével; a `memoria_kapu()` az első lépés, külső plafonnal (`MemoryMax=2400M`, `MemorySwapMax=0`). Dekódolt utasítás: 2 884 879; csúcs RSS 94 MiB.
+- A jelzett forma, `call dword ptr [reg+0xb0]`: **0 találat**. A fordító a vtábla-hívást nem így írja: ez a memóriaforma a `.text`-ben nincs.
+- A `mov reg, dword ptr [obj+0xb0]` + `call reg` forma (6 utasításon belül): **9 találat**.
+
+| hívóhely | hívó függvény | argumentum (12 utasításos ablak) |
+|---|---|---|
+| `0x0051569d` | `0x005154f0` | `push 2` |
+| `0x0057366f` | `0x005733f0` | `push 9` |
+| `0x0061fdbf` | `0x0061df10` | nincs literál |
+| `0x0062050c` | `0x0061df10` | nincs literál |
+| `0x0071c53e` | `0x0071c4f0` | `push 2` |
+| `0x0074b0e0` | `0x0074ad40` | `push 6` |
+| `0x007a90bc` | `0x007a90a0` | `push esi` |
+| `0x008debed` | `0x008de9b0` | `push ecx` (a `[esp+0x14]` kimeneti érték, lásd lent) |
+| `0x0094fdb0` | `0x0094fc90` | regiszter (`esi`) |
+
+- Literál 1 vagy 7: **nincs** a kilenc találat között. Sztring-hivatkozás a hívó függvényekben: egyiknek sincs (`string_xrefs`).
+- A diavetítés-kapcsolat: a `0x008debed` a `0x008de9b0`-ban van, amelyet a 23. kör szerint a WM_COMMAND-ág hív. A `0x008de220` dialógus diavetítéshez kötése még nincs igazolva.
+
+**A hívóhely (C és asm, megerősített).** A `0x008debe4` a `[edx+0xb0]` slotot tölti, a `0x008debed` a `call edx`; a `this` az `eax`, amelyet a `[edi+0x50]` második hívása (`0x008debdc`) ad vissza. Az argumentum `ecx = [esp+0x14]`. Ez nem a függvény paramétere: a `0x008de9c1` (`lea eax,[esp+0x14]`; `push eax`) a `[edi+0x50]` első hívásának (`0x008de9d0`) kimeneti paramétere, a hívás tölti ki. A `0x008de9b0` `sub esp,0x10` és négy `push`-a után a `[esp+0x14]` helyi változó; az első stack-paraméter a `[esp+0x24]`.
+
+**A setter (C és asm, megerősített).** A `0x00714510` (17 bájt): `this+8 |= 4; this+0x37c = arg`. Ez a `+0xb0` slot célja a `CSelectionNode`, `CAlbumSelectionNode` és `CFoundFaceSelectionNode` vtáblákban (25. kör). Ha a `0x008debdc` által visszaadott receptor e három osztály egyike, a módérték (`+0x37c`) a `0x008de9d0` kimeneti paramétere.
+
+**Eredmény.** A módérték nem literál a binárisban. A `+0xb0` írója feltételesen a `0x008debed`; az értéke a `0x008de9d0` hívás kimeneti paramétere, amelyet a `[edi+0x50]` állít elő. Ez a slot a `Fen::Win32WindowImp` vtáblájában (`0x00cced4c`) a `0x00a4a070`. Az `edi` osztálya feltételes (a 4.7/b szerint `Fen::Win32WindowImp` vagy leszármazott). A kimeneti érték konkrét 1 vagy 7 volta: NINCS MEG.
+
+**Bizonyítottsági fok.** A pásztázás eredménye (0 és 9 találat): megerősített a teljes lineáris bejáráson; a bejárás dekódolása feltételes, mert a lineáris dekódolás elcsúszhat az utasításhatárokon. A hívóhely és a setter: megerősített (asm + C). A `0x00a4a070` mint slot-cél: feltételes. A módérték értéke: NINCS MEG.
+
+**Cáfoló kísérletek.**
+1. „A diavetítéshez tartozó függvénycsoportban van 1 vagy 7 literálú `+0xb0` hívás": cáfolva a kilenc találatra.
+2. „A módérték-író a `call [reg+0xb0]` alakban van": cáfolva, ilyen alak nincs a `.text`-ben.
+3. „A `0x008debed` literált ad át": cáfolva, kimeneti paraméter a forrás.
+
+**Lezárás (#5225, 26. kör): (c).** A módérték-író helye megvan, az értéke nem konstans a binárisban. Ghidra-kör kell: 0x00a4a070 - a `Fen::Win32WindowImp` `+0x50` slotja, amelyet a `0x008de9b0` két helyen hív: a `0x008de9d0`-ban milyen értéket ír a kimeneti paraméterbe (a módérték), és a `0x008debdc`-ben visszaadott objektum osztálya [blokkoló]. A diavetítés-kapcsolat (a `0x008de220` dialógus azonosítása) külön nyitott, nem blokkoló.
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 

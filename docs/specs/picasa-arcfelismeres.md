@@ -4393,4 +4393,29 @@ Ez a „Névjegyek frissítése” (Refresh Contacts) ág, nem törlés. A `0x00
 
 **Bizonyítottsági fok.** A `0x007b93c0` a Névjegyek frissítése: megerősített (vtábla-slot és sztring-hivatkozás). A törlési ág hívásai: megerősített (C). A lista-újraépítés hiánya a törlés után és a `0x0045a9d0` hiánya: feltételes.
 
-**Lezárás (N6, 25. kör): (c).** A kérdés a `0x007b99a0` hívójáig vezet, amelynek címe vtábla-hívás helyéről pásztázással jön ki. Ghidra-kör kell: a `0x007b99a0` hívója (feltételezetten a `call [reg+0x148]` parancs-szétosztó), amelynek ágán a törlés után lista-újraépítés futhat [blokkoló]
+**Lezárás (N6, 25. kör): (c).** A kérdés a `0x007b99a0` hívójáig vezet. A 26. körben a hívó azonosítva (`0x007b9ff0`), a törlés utáni lista-újraépítés nincs benne; a `0x007b9ff0` közvetett hívója NINCS MEG (lásd 37.8).
+
+### 37.8 26. kör (2026-10-20, #5184): a törlés hívója a `0x007b9ff0`, a törlés után nincs lista-újraépítés benne
+
+**Kérdés.** A 37.7 N6 pontja: a törlés utáni lista-újraépítés útja. A 37.7 feltevése: a hívó a `call [reg+0x148]` parancs-szétosztó.
+
+**Pásztázás (bináris, megerősített).** A 4.7/c szerinti `.bt/pasztazas.py` menettel. `call dword ptr [reg+0x148]`: **0 találat**. `mov reg, dword ptr [obj+0x148]` + `call reg`: **3 találat**: `0x007ba056` (a `0x007b9ff0`-ban), `0x008d580f` (a `0x008d57c0`-ban), `0x008df00d` (a `0x008def90`-ban). A `+0x190` (vtábla-slot 100) forma: **0 találat**.
+
+**1. A `0x007ba056` a törlés hívója (megerősített).** A `0x007b9ff0` (111 bájt) a `ContactManagerDlg` vtábla 100. slotja (`0x00cb7be4`, PE-olvasat: `0x007b9ff0`). Asm: `0x007ba049 mov eax,[esi]`, `0x007ba04b mov edx,[eax+0x148]`, `0x007ba051 push 0`, `0x007ba053 push ebx`, `0x007ba054 mov ecx,esi`, `0x007ba056 call edx`. A vtábla `+0x148` slotja (`0x00cb7b9c`) `0x007b99a0`-t tartalmaz (PE-olvasat). Tehát a hívás a `ContactManagerDlg`-objektumon a `0x007b99a0`-t (`delete` ág) éri el, ha az objektum osztálya a `ContactManagerDlg`, és nem írja felül a slotot.
+
+**2. A törlés után nincs lista-újraépítés a `0x007b9ff0`-ban (asm, megerősített).** A `0x007ba056` `call edx` után a `0x007ba058`-tól csak az epilógus jön (`pop edi; pop esi; pop ebx; pop ecx; ret 8`). A `0x007b99a0` törlési ága (37.7) a `0x007ba820`-t hívja, és visszatér.
+
+**3. A `0x007b9ff0` hívója nem látszik közvetlen hívásban (feltételes).** Az index `xrefs` táblájában nincs közvetlen `call` a `0x007b9ff0`-ra; a pásztázás a `+0x190` vtábla-hívást sem találja. A hívó tehát közvetett (vtábla vagy általános útválasztó).
+
+**4. A másik két `+0x148`-hívás** (`0x008d580f`, `0x008df00d`) nem a `ContactManagerDlg` tartományában van; osztályukat nem vizsgáltam (NINCS MEG).
+
+**Korrekció a 37.7-hez.** A 37.7 feltételezte, hogy a `call [reg+0x148]` parancs-szétosztó. Ez nem igaz: a `0x007ba056` egy metódus (`0x007b9ff0`, vtábla-slot 100) belsejében van, nem szétosztóban.
+
+**Cáfoló kísérletek.**
+1. „A törlés hívója a parancs-szétosztó": cáfolva (1. pont).
+2. „A törlés után a `0x007b9ff0` frissíti a listát": cáfolva (2. pont, asm).
+3. „A `0x0045a9d0` a törlés hívási láncában van": nem vizsgáltam újra ebben a körben; a 37.7 feltételes állítása változatlan.
+
+**Bizonyítottsági fok.** Az 1. és 2. pont: megerősített (két út: a vtábla PE-olvasata és az asm). A 3. pont: feltételes. A `0x007b9ff0` közvetett hívójának azonosítása: NINCS MEG.
+
+**Lezárás (N6, 26. kör): (c).** A törlés utáni lista-újraépítés nincs a törlési ágban, és nincs a `0x007b9ff0`-ban. A kérdés a `0x007b9ff0` hívójáig vezet (a `ContactManagerDlg` vtábla 100. slotjáig). Ghidra-kör kell: a `0x007b9ff0` közvetett hívója (a vtábla-slot 100 használója). A pásztázás nem találja, mert nincs közvetlen `+0x190` hívás; cím még nincs. A következő lépés a generikus útválasztók és a `0x00cb7be4` vtábla-bejegyzés környezetének vizsgálata [blokkoló]
