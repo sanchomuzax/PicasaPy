@@ -212,6 +212,24 @@ class TestKnownNames:
 
 
 class TestAddFace:
+    def test_new_contact_id_matches_contacts_and_faces_without_padding(
+        self, helper, photo, monkeypatch
+    ):
+        import picasapy.app.faces_helper as faces_helper_module
+
+        monkeypatch.setattr(
+            faces_helper_module, "generate_contact_id", lambda: "c82fcc"
+        )
+
+        assert helper.addFace(
+            str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, "Kis Éva"
+        )
+
+        text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "[Contacts2]\nc82fcc=Kis Éva;;" in text
+        assert "),c82fcc" in text
+        assert "0000000000c82fcc" not in text
+
     @pytest.mark.parametrize("name", ["", "   ", " \t "])
     def test_empty_name_does_not_modify_ini(self, helper, photo, name):
         ini = photo.parent / ".picasa.ini"

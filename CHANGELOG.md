@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.162] - 2026-10-20
+
+- Az új névjegy-azonosítót a Picasa saját alakjában, vezető nulla nélkül írjuk (#5368).
+
 ## [0.9.161] - 2026-10-20
 
 - A Név nélküliek csempéinek arcképét a Windows-CI is ellenőrzi, szoftveres és Direct3D 11 megjelenítővel (#5362).

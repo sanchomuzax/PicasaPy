@@ -183,10 +183,13 @@ def _text_descendant(item, expected: str):
     return None
 
 
-def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app, tmp_path):
+@pytest.mark.parametrize("height_offset", _WINDOW_HEIGHT_OFFSETS)
+def test_unnamed_album_welcome_name_and_people_manager_flow(
+    qml_app_5183, qt_app, tmp_path, height_offset
+):
     window, _controller, engine = qml_app_5183
     window.setWidth(1280)
-    window.setHeight(1005)
+    window.setHeight(1005 + height_offset)
     qt_app.processEvents()
 
     face_scan = engine.rootContext().contextProperty("faceScanController")
@@ -392,7 +395,8 @@ def test_unnamed_album_welcome_name_and_people_manager_flow(qml_app_5183, qt_app
         for entry in contacts_of(document)
         if entry.name == "Teszt Elek"
     )
-    assert len(contact.person_id) == 16
+    assert 1 <= len(contact.person_id) <= 16
+    assert contact.person_id == format(int(contact.person_id, 16), "x")
     assert contact.email == contact.gaia_id == ""
     assert any(
         face.contact_id == contact.person_id

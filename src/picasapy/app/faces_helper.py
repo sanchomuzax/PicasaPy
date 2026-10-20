@@ -17,7 +17,6 @@ ini-írás önmagában is gyors (kis fájl), a szinkron hívás itt egyszerűbb.
 
 from __future__ import annotations
 
-import secrets
 import sqlite3
 from pathlib import Path
 
@@ -31,6 +30,7 @@ from picasapy.ini import (
     central_contacts_path,
     ensure_contact,
     find_contact_id,
+    generate_contact_id,
     has_ini_source,
     load_or_empty,
     parse_faces,
@@ -318,7 +318,7 @@ class FacesHelper(QObject):
         existing = find_contact_id(document, clean_name)
         if existing is not None:
             return document, existing
-        new_id = secrets.token_hex(8)
+        new_id = generate_contact_id()
         return ensure_contact(document, new_id, clean_name), new_id
 
     def _contact_name_resolver(self) -> ContactNameResolver:

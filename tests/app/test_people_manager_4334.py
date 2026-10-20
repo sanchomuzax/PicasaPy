@@ -143,9 +143,30 @@ def test_new_contact_goes_to_central_store_without_changing_folder_ini(
     assert not ini_path.with_name(".picasa.ini.bak").exists()
     contacts = load_contacts_xml(_central_path(host))
     bela = next(contact for contact in contacts if contact.name == "Béla")
-    assert len(bela.person_id) == 16
+    assert 1 <= len(bela.person_id) <= 16
+    assert bela.person_id == format(int(bela.person_id, 16), "x")
     assert bela.local_contact == "1"
     assert datetime.fromisoformat(bela.modified_time).utcoffset() is not None
+
+
+def test_new_contact_id_uses_unpadded_hex_in_central_store(tmp_path, monkeypatch):
+    import picasapy.app.people_controller as people_controller_module
+
+    monkeypatch.setattr(
+        people_controller_module, "generate_contact_id", lambda: "c82fcc"
+    )
+    library = _library(tmp_path / "library", _ANNA_A, "Anna")
+    host = _setup_host(tmp_path, library)
+
+    assert host.savePeopleManagerChanges(
+        [{"action": "create", "name": "Béla", "email": ""}]
+    )
+
+    bela = next(
+        contact for contact in load_contacts_xml(_central_path(host))
+        if contact.name == "Béla"
+    )
+    assert bela.person_id == "c82fcc"
 
 
 def test_rename_and_delete_touch_only_folders_with_the_person(tmp_path):
