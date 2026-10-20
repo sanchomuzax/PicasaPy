@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.170] - 2026-10-20
+
+- A Névtelenek és a mellőzött arcok csempéi a megnyitott albumon kívüli fotókat is betöltik. (#5407).
+
 ## [0.9.169] - 2026-10-20
 
 - Visszavonva: a Nézet ▸ Időrend egy képkockára épített utánzata nem az eredeti animált bemutató, ezért a menüpont és a Ctrl+5 újra inaktív, amíg a funkció a binárisból teljesen fel nincs tárva (#5377).
