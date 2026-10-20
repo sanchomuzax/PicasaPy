@@ -3,9 +3,9 @@
 #144 óta ASZINKRON provider: a Qt alapból egyetlen image-loader szálon
 hívná a szinkron providert, itt viszont saját QThreadPool (max 4 szál)
 dolgozik — az OpenCV a dekódolás alatt elengedi a GIL-t, így RPi5-ön a
-4 mag ténylegesen párhuzamosan generál. A provider nem ér el adatbázist:
-a controller regisztrálja nála az aktuális fotók (útvonal, mtime, méret)
-hármasait.
+4 mag ténylegesen párhuzamosan generál. A controller regisztrálja nála az
+aktuális fotókat; az albumon kívüli arc-csempék azonosítóját a szolgáltató
+szükség esetén az indexből oldja fel.
 
 Szálkezelés (#53 GIL↔Qt deadlock-osztály): a pool-szálakon KIZÁRÓLAG
 érték-típusú Qt-objektum (QImage) készül, QObject nem; a kész képet a
@@ -53,7 +53,7 @@ from PySide6.QtQuick import (
 )
 
 from picasapy.edit.session import EditSession
-from picasapy.index import PhotoRecord
+from picasapy.index import PhotoRecord, open_index, photo_by_id
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import serialize_filters
 from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
@@ -293,10 +293,17 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
     # ténylegesen elbukott.
     brokenImageDetected = Signal(str)
 
-    def __init__(self, cache: ThumbnailCache, max_threads: int | None = None):
+    def __init__(
+        self,
+        cache: ThumbnailCache,
+        max_threads: int | None = None,
+        index_path: str | Path | None = None,
+    ):
         super().__init__()
         self._cache = cache
+        self._index_path = Path(index_path) if index_path is not None else None
         self._registry: dict[str, PhotoRecord] = {}
+        self._registry_lock = threading.Lock()
         # #142: lustán értelmezett filters-láncok — kulcs a nyers
         # filters= sztring, érték az (ops, crc32) pár
         self._ops_cache: dict[str, tuple[tuple, int]] = {}
@@ -345,7 +352,9 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         a filters= lánc parse-a LUSTA, először requestImage-kor fut (és az
         eredmény lánconként cache-elődik), így 50k fotó regisztrálása is
         olcsó marad."""
-        self._registry = {str(photo.id): photo for photo in photos}
+        updated = {str(photo.id): photo for photo in photos}
+        with self._registry_lock:
+            self._registry = updated
 
     def register_additional_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
         """#23: fotók hozzáadása a MEGLÉVŐ regisztráció mellé (nem cseréli
@@ -364,7 +373,8 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             (`dedup_controller.DEDUP_THUMB_ID_BASE`, #298).
         Új hívó ide vegyen fel magának új sávot."""
         extra = {str(photo.id): photo for photo in photos}
-        self._registry = {**self._registry, **extra}
+        with self._registry_lock:
+            self._registry = {**self._registry, **extra}
 
     def photo_record(self, photo_id: str) -> PhotoRecord | None:
         """A regisztrált fotó rekordja (#338 effekt-bélyegképek): a
@@ -380,9 +390,44 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         if not ids:
             return
         excluded = set(ids)
-        self._registry = {
-            key: value for key, value in self._registry.items() if key not in excluded
-        }
+        with self._registry_lock:
+            self._registry = {
+                key: value
+                for key, value in self._registry.items()
+                if key not in excluded
+            }
+
+    def _photo_for_render(self, photo_id: str) -> PhotoRecord | None:
+        """Az album-regisztrációból, majd szükség esetén az indexből old fel.
+
+        A `requestImageResponse` pool-szálán fut, ezért az indexkapcsolatot
+        helyben nyitja meg és zárja le; SQLite-kapcsolatot nem oszt meg a Qt
+        szálai között. Az indexből talált rekordot immutábilis szótárcserével
+        jegyzi meg a következő kéréshez.
+        """
+        key = photo_id.split("?", 1)[0]
+        photo = self._registry.get(key)
+        if photo is not None or self._index_path is None:
+            return photo
+        try:
+            index_id = int(key)
+        except ValueError:
+            return None
+
+        with open_index(self._index_path) as conn:
+            photo = photo_by_id(conn, index_id)
+        if photo is None:
+            return None
+
+        with self._registry_lock:
+            # Egy közben érkezett album-regisztráció vagy másik feloldó
+            # friss rekordja elsőbbséget élvezzen.
+            current = self._registry
+            existing = current.get(key)
+            if existing is not None:
+                return existing
+            self._registry = {**current, key: photo}
+        return photo
 
     def _resolved_ops(self, photo: PhotoRecord) -> tuple[tuple, int]:
         """A kép (ops, crc32) párja lusta parse-szal (#142) — az azonos
@@ -604,7 +649,7 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         for szint in self._cache.levels:
             if jelenlegi < szint and szint >= hosszabb:
                 return self._render_szinten(photo_id, szint) or image
-        photo = self._registry.get(photo_id.split("?")[0])
+        photo = self._photo_for_render(photo_id)
         if photo is not None and not self._resolved_ops(photo)[0]:
             eredeti = arc_eredetibol(
                 Path(photo.folder_path) / photo.name,
@@ -632,7 +677,7 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         """A kész (szerkesztett, forgatott) thumbnail; null-QImage, ha a
         forrás nem dekódolható — a hívó ebből csinál placeholdert."""
         # az URL-ben ?r=<lépés> cache-buster jöhet — az id az első rész
-        photo = self._registry.get(photo_id.split("?")[0])
+        photo = self._photo_for_render(photo_id)
         if photo is None:
             return QImage()
         path = Path(photo.folder_path) / photo.name

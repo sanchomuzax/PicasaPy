@@ -1371,7 +1371,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         size=cache_size,
         max_bytes=_THUMB_CACHE_LIMIT_BYTES,
     )
-    provider = _lazy_app_symbol("ThumbnailProvider")(thumb_cache)
+    provider = _lazy_app_symbol("ThumbnailProvider")(
+        thumb_cache, index_path=data_dir / "index.db"
+    )
     AppController = _lazy_app_symbol("AppController")
     controller = AppController(
         data_dir / "index.db",

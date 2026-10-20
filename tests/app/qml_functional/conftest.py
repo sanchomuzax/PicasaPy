@@ -199,7 +199,8 @@ def _build_qml_app(
             collage_prefs.OUTPUT_DIR_KEY, str(tmp_path / "kollazs-kimenet")
         )
     provider = ThumbnailProvider(
-        ThumbnailCache(tmp_path / "thumbs", size=belyegkep_meret)
+        ThumbnailCache(tmp_path / "thumbs", size=belyegkep_meret),
+        index_path=db,
     )
     controller = AppController(db, (str(lib),), provider, settings=settings)
     email_controller = None
