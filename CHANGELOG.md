@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.161] - 2026-10-20
+
+- A Név nélküliek csempéinek arcképét a Windows-CI is ellenőrzi, szoftveres és Direct3D 11 megjelenítővel (#5362).
+
 ## [0.9.160] - 2026-10-20
 
 - A Visszaállítás ellenőrzése Windows alatt is kivárja, amíg a kép mentése és visszaállítása befejeződik (#5359).

@@ -95,6 +95,9 @@ WINDOWS_SENSITIVE_TESTS = frozenset({
     "tests/app/test_eltunt_gyoker_vedelme_1560.py",
     "tests/app/test_fileops_controller.py",
     "tests/app/test_folder_hierarchy.py",
+    # #5362: a Név nélküliek csempéi a tulajdonos Windows 11-es gépén üresek voltak
+    "tests/app/qml_functional/test_nev_nelkuli_csempe_kep_5362.py",
+    "tests/app/qml_functional/test_nev_nelkuli_csempe_kep_5362_d3d11.py",
     "tests/app/test_hatterkep_windows_2985.py",
     "tests/app/test_indulasi_fusteszt_699.py",
     "tests/app/test_kepernyovedo_tetlenseg_4613.py",
