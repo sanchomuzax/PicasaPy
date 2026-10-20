@@ -2724,7 +2724,7 @@ is tartalmaz, de az időintervallum-rekord double mezőit olvassa. Mindkettő
 hamis pozitív, ezért az offset-egyezés vagy a lépésköz önmagában nem
 azonosítja a cropfogyasztót.
 
-Ghidra-kör kell: 0x0049d560 — kösd össze a `.picasa.ini` `faces=` ágának
+Ghidra-kör kell: 0x0049d560 - kösd össze a `.picasa.ini` `faces=` ágának
 `rect64`-feldolgozását azzal az `imagedata_facerect` oszloppal, amelyet a
 `0x00446610` olvas; döntsd el, hogy a `0x0049d560` parserút írja-e ezt az
 oszlopot. [blokkoló]
@@ -3744,9 +3744,9 @@ Nyitott: melyik konkrét fotórekord-index felel meg egy kiválasztott
 jelöltnek; ki írja a Filmkészítő `[obj+0x4e0]` rekordlistáját; mit jelentenek
 a `+0x30/+0x34` mezők; hogyan áll elő a `ordering=1/2` gráf minden élének
 költsége. Célzott következő kör:
-`Ghidra-kör kell: 0x00824090 — a Filmkészítő [obj+0x4e0] lista rekordforrása, valamint a +0x30/+0x34 mezőket előállító upstream írók [blokkoló]`
-`Ghidra-kör kell: 0x00874320 — a nyolcbájtos kimeneti elemek mezői/indexei hogyan kötődnek a fotórekordokhoz, és mi a 0x00877c50 teljes bemeneti szerződése? [blokkoló]`
-`Ghidra-kör kell: 0x00877c50 — az ordering=1/2 út minden élköltsége mely rekordadatokból áll elő, és hogyan lesz a végső útból fotóindex? [blokkoló]`
+`Ghidra-kör kell: 0x00824090 - a Filmkészítő [obj+0x4e0] lista rekordforrása, valamint a +0x30/+0x34 mezőket előállító upstream írók [blokkoló]`
+`Ghidra-kör kell: 0x00874320 - a nyolcbájtos kimeneti elemek mezői/indexei hogyan kötődnek a fotórekordokhoz, és mi a 0x00877c50 teljes bemeneti szerződése? [blokkoló]`
+`Ghidra-kör kell: 0x00877c50 - az ordering=1/2 út minden élköltsége mely rekordadatokból áll elő, és hogyan lesz a végső útból fotóindex? [blokkoló]`
 
 #### G/2. A megtartott kép kiválasztása `ordering = 0`-n — utasításszintű olvasat (2026-10-12, #4194 5. kör)
 
@@ -4091,10 +4091,10 @@ forrása **NYITOTT**.
 
 **Nyitott.**
 
-- `Ghidra-kör kell: 0x00824090 — a [obj+0x4e0] rekordlista forrása és a +0x30/+0x34 mezők tényleges upstream írói [blokkoló]`
-- `Ghidra-kör kell: 0x008223e0 — a +0x738 horgonyként visszaadott kulcs forrása, és mely Filmkészítő állapotból ered [blokkoló]`
-- `Ghidra-kör kell: 0x008226e0 — a második horgony-előkészítő ág kimeneti vektorának viszonya a +0x738 horgonyhoz [blokkoló]`
-- `Ghidra-kör kell: 0x0048c440 — a Neven getter 0/1 értékének fotórekord-szemantikája [blokkoló]`
+- `Ghidra-kör kell: 0x00824090 - a [obj+0x4e0] rekordlista forrása és a +0x30/+0x34 mezők tényleges upstream írói [blokkoló]`
+- `Ghidra-kör kell: 0x008223e0 - a +0x738 horgonyként visszaadott kulcs forrása, és mely Filmkészítő állapotból ered [blokkoló]`
+- `Ghidra-kör kell: 0x008226e0 - a második horgony-előkészítő ág kimeneti vektorának viszonya a +0x738 horgonyhoz [blokkoló]`
+- `Ghidra-kör kell: 0x0048c440 - a Neven getter 0/1 értékének fotórekord-szemantikája [blokkoló]`
 - Az eredeti Picasa Colab UI-futtatása 4–6 ismert készítési idejű képen, legalább két csúszkaállással; a konkrét nyertes fotóindex **NINCS MEG**. A hozzáférési út a jegy szerint a #181 videó-visszaadása.
 - A `[obj+0x720]/[obj+0x728]` határtáblák nem-sentinel írói és a `ordering=1/2` költségút külön nyitottak maradnak.
 
@@ -6391,10 +6391,10 @@ csak azt írja, hogy az „arc” változat erősebben nagyít
 
 **Nyitott, a fejlesztést blokkoló kérdések:**
 
-- `Ghidra-kör kell: 0x00812470 — honnan kerül a this+0x48 időzített sáv memóriájába a 0xf8 bájtos rekord, ki állítja be a +0x8-as régióazonosítót, és igazolható-e .picasa.ini faces= kapcsolat vagy többarcos kiválasztás? [blokkoló]`
-- `Ghidra-kör kell: 0x005e8a70 — a BigSlideshow2 hogyan köti a teljes képernyős renderelőt a ThumbUISlideShow::transition beállításhoz; eljut-e a kiválasztott átmenet a ytDoubleAffineAOITransitionNode osztályhoz? [blokkoló]`
-- `Ghidra-kör kell: 0x0076ed30 — a két négyfloatos AOI-paraméter melyik bemeneti kép célterületét állítja, és hogyan kerül ez a +0x414 / +0x438 interpolált képkockákra? [blokkoló]`
-- `Ghidra-kör kell: 0x0076eb40 — a +0x414 és +0x438 interpolált tömb melyik bemeneti képkockához tartozik, mi a t tartománya, és melyik a renderelt kezdő-/végállapot? [blokkoló]`
+- `Ghidra-kör kell: 0x00812470 - honnan kerül a this+0x48 időzített sáv memóriájába a 0xf8 bájtos rekord, ki állítja be a +0x8-as régióazonosítót, és igazolható-e .picasa.ini faces= kapcsolat vagy többarcos kiválasztás? [blokkoló]`
+- `Ghidra-kör kell: 0x005e8a70 - a BigSlideshow2 hogyan köti a teljes képernyős renderelőt a ThumbUISlideShow::transition beállításhoz; eljut-e a kiválasztott átmenet a ytDoubleAffineAOITransitionNode osztályhoz? [blokkoló]`
+- `Ghidra-kör kell: 0x0076ed30 - a két négyfloatos AOI-paraméter melyik bemeneti kép célterületét állítja, és hogyan kerül ez a +0x414 / +0x438 interpolált képkockákra? [blokkoló]`
+- `Ghidra-kör kell: 0x0076eb40 - a +0x414 és +0x438 interpolált tömb melyik bemeneti képkockához tartozik, mi a t tartománya, és melyik a renderelt kezdő-/végállapot? [blokkoló]`
 
 **Bizonyítottság:** a név- és osztályregisztráció megerősített (regisztráló, statikus rekord és RTTI-vtáblák); a filmkészítő arc-lekérési út feltételes (utasításszintű olvasat, de az azonosító forrása nyitott); a vetítés teljes viselkedése nyitott. A `kenburnsaoi` tényleges, archoz tartó vetítési képkockáihoz renderelt ellenőrzés szükséges.
 
@@ -6488,10 +6488,10 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 **A megmaradt nyitott kérdések.**
 
 - `Ghidra-kör kell (pontosítva, 4.5): a 0x008037e0 által az oneup/transtype csomóponton hívott +0x68/+0x6c célok osztálya és vtáblája; elérheti-e a 0x00771e60 vagy a 0x0074e670 útját? [blokkoló]`
-- `Ghidra-kör kell: 0x008287b0 — mi a 0x0074e670 által használt interfész-vtábla-hívás konkrét célja, és milyen objektumot ad át a pin/AOI út következő szakaszának? [blokkoló]`
-- `Ghidra-kör kell: 0x00812470 — mi tölti fel a this+0x48 időzített sáv rekordjait, és ki állítja be a rekord +0x8 régióazonosítóját; van-e bizonyítható faces= adatút? [blokkoló]`
-- `Ghidra-kör kell: 0x00812aa0 — hogyan képeződik le pontosan a this+0x1a8 időzített rekord a this+0x7ec téglalapra, és melyik téglalap melyik átmeneti végállapothoz tartozik? [blokkoló]`
-- `Ghidra-kör kell: 0x0076e880 — a +0x414 és +0x438 tömbökből milyen bemeneti képkocka lesz, és hogyan jut el a két végállapot a renderelőhöz? [blokkoló]`
+- `Ghidra-kör kell: 0x008287b0 - mi a 0x0074e670 által használt interfész-vtábla-hívás konkrét célja, és milyen objektumot ad át a pin/AOI út következő szakaszának? [blokkoló]`
+- `Ghidra-kör kell: 0x00812470 - mi tölti fel a this+0x48 időzített sáv rekordjait, és ki állítja be a rekord +0x8 régióazonosítóját; van-e bizonyítható faces= adatút? [blokkoló]`
+- `Ghidra-kör kell: 0x00812aa0 - hogyan képeződik le pontosan a this+0x1a8 időzített rekord a this+0x7ec téglalapra, és melyik téglalap melyik átmeneti végállapothoz tartozik? [blokkoló]`
+- `Ghidra-kör kell: 0x0076e880 - a +0x414 és +0x438 tömbökből milyen bemeneti képkocka lesz, és hogyan jut el a két végállapot a renderelőhöz? [blokkoló]`
 - Renderelt frame-pár vagy frame-sorozat, amely az arc nélküli és arcos dián a tényleges induló-/végállapotot igazolja: **NINCS MEG**. A célterület-mérés (3. kör) önmagában nem ilyen mérés.
 
 **Bizonyítottsági fok ebben a körben: nyitott.** Az egyedi függvényutasítások a fenti címeken olvashatók, de a `BigSlideshow2` → AOI kapcsolat, a `faces=` eredet és a renderelt mozgás nincs két független úttal megerősítve. Következésképp nincs átadható, eredeti Picasa-viselkedést leíró kezdő-/végképlet vagy küszöb.
@@ -6716,23 +6716,32 @@ Mindkét hívás előtt: a gyökér nem nulla (`cmp dword ptr [0xd67914], ebx`),
 
 Diavetítéshez egyik sem tartozik bizonyítottan. A `0x0071d993` és a `0x0071e23b` a `FUN_0071c380`-ból hívódik; ez a diavetítés indításának jelölt útja. Az index a vtábla-hívásokat nem látja, ezért az „nincs más hívó” nem negatív bizonyíték.
 
-**Mért eltérés a Python-kódtól (ELAVULT: a #5351 előtti kódot írja le, lásd a 18. kört).** Azonos törtekkel, csere nélkül: forrás 1000×500, nézet 1024×768, `u = 0,9`, `v = 0,2`, `ρ = (0,5; 0,25; 0,75; 0,1)`. Az alaptéglalap mindkét oldalon `666,67 × 500` (lebegőpontos, a bináris egész alapja nélkül). A `slideshow_pan_zoom.py` kimenete és a fenti képlet (`x`, `y` a határra szorítás után):
+**Korábbi mért eltérés (történeti adat; a #5351 előtti kód, nem a jelenlegi megvalósítás).** Azonos törtekkel, csere nélkül: forrás 1000×500, nézet 1024×768, `u = 0,9`, `v = 0,2`, `ρ = (0,5; 0,25; 0,75; 0,1)`. Az alaptéglalap mindkét oldalon `666,67 × 500` (lebegőpontos, a bináris egész alapja nélkül). A régi `slideshow_pan_zoom.py` kimenete és a fenti képlet (`x`, `y` a határra szorítás után):
 
 | jelölt | `slideshow_pan_zoom.py` (x, y, w, h) | bináris 4.6 képlet (x, y, w, h) |
 |---|---|---|
 | nagyobb | 140,00 · 17,50 · 620,00 · 465,00 | 0,00 · 17,50 · 620,00 · 465,00 |
 | kisebb | 156,67 · 0,00 · 526,67 · 395,00 | 323,33 · 0,00 · 526,67 · 395,00 |
 
-Az eltérés az x-koordinátában van, és a középpont okozza: a Python mindkét jelöltet a forrás közepére (`cx = 500`) építi, a bináris a saját alaptéglalapjának közepére (`A`: `333,33`; `B`: `(srcW + w)/2 = 666,67`). A méretek és az y-koordináták egyeznek.
+Az eltérés az x-koordinátában volt: a régi Python-kód mindkét jelöltet a forrás közepére (`cx = 500`) építette, a bináris a saját alaptéglalapjának közepére (`A`: `333,33`; `B`: `(srcW + w)/2 = 666,67`). A méretek és az y-koordináták egyeztek.
 
-**Szerkezeti eltérések (olvasatból, nem mérve).**
+**A #5351 előtti kód eltérései (történeti leírás, nem a jelenlegi megvalósítás).**
 
 - A Python egyetlen közös középponttal dolgozik. A bináris a jelölt saját alaptéglalapjának közepét használja, a `B` alaptéglalapot pedig a forrás jobb, illetve alsó széléhez tolja.
 - A méretsorrendet a Python az első húzásból adja (`meret_a` = `u`); a bináris a nagyobb skálát a `ρ0`, `ρ1` csoporthoz rendeli. A két sorrend csak akkor egyezik, ha `u > v`.
 - A cserék: a bináris két LCG-csere a skálázás előtt történik, és mindkettő húz a helyi LCG-ből. A Python egyetlen húzással dönt a visszatérési sorrendről, a skálázás után. A 4.4 „helyi viszonyítás” bekezdésében szereplő „nincs plusz húzás” ezért a bináris két csere-húzását nem említi.
 - Véletlenforrás: a bináris `u`, `v` és a csere a helyi LCG-ből jön, a `ρ`-k a CRT `_rand`-ból. A Python egyetlen generátort használ.
 - Alap: a bináris egész (`fistp`, `+0,499`), a Python lebegőpontos.
-- Mag: a Python `random.getrandbits(32)`-t használ; a bináris mag NINCS MEG.
+- Mag: a régi Python-út `random.getrandbits(32)`-t használt; a bináris mag NINCS MEG.
+
+**Jelenlegi kód kontrollmérése (#5351; 18. kör).** Forrás 1000×500, nézet 1024×768, csere nélkül; `u=29491/32768`, `v=6554/32768`, `ρ=(16384,8192,24576,3277)/32768`. A bináris-alap egész mérete 667×500. A `pan_zoom_rectangles(...)` mért kimenete:
+
+| jelölt | jelenlegi kód (x, y, w, h) |
+|---|---|
+| A | 0,00 · 17,50 · 620,31 · 465,00 |
+| B | 323,04 · 0,00 · 526,93 · 395,00 |
+
+Ez a kód kontrollmérése, nem eredeti Picasa-renderkocka; a képlet és a kód közös forrású levezetése miatt önmagában nem független bináris-megerősítés. A bitpontos futásidejű véletlenszám-sorozat és az alkalmazandó `+0x37c` ág továbbra sincs meg.
 
 **Helyi viszonyítás helyesbítése.** A `SlideshowView.qml:752-761` a `slide` képelem sorai, nem nagyítás. A fájlban nincs `1,08`. Az 1,0 → 1,12-es nagyítás a `kenburnsaoi` (`SlideshowView.qml:847-857`): ez középre igazított és nem véletlen. A sima `kenburns` (Pan and Zoom) a `slideshow_pan_zoom.py` véletlen kivágásait használja (#5258), tehát az a „nem véletlen” állítás csak az arcos változatra igaz.
 
@@ -6754,7 +6763,7 @@ Az eltérés az x-koordinátában van, és a középpont okozza: a Python mindk�
 - NINCS MEG: az x87 kerekítési mód (`fistp`) futás közben; megszerzés: a CRT-indítás utáni kontrollszó olvasása natív próbában (QEMU).
 - NINCS MEG: a job-184/185 képkockasor (lásd fent).
 
-**Fejlesztési következmény.** A 4.4 képlete (`0x0076d900`) szerkezetileg megáll, de a Python-megvalósítás a fenti pontokon eltér tőle (középpont, méretsorrend, cserék, véletlenforrás, alap, mag). Ezek a jegy fejlesztési pontjai; a képlet nem változik.
+**Fejlesztési következmény.** A #5351 szerinti kód a 18. kör kontrollvektorán a 4.4 képlet szerkezetét követi. Bitpontos eredeti véletlenszám-sorozat azonban nem állítható, amíg nem ismert, hogy a diavetítés melyik `+0x37c` ágat használja és melyik magérték jut a CRT-be.
 
 **12. kör (2026-10-19, #5225): a diavetítés indítási lánca és a `srand`.** (A 4.6 szakasz nincs a munkafában, ezért ide került.)
 
@@ -6797,36 +6806,56 @@ Az eltérés az x-koordinátában van, és a középpont okozza: a Python mindk�
 - **Cáfoló kísérlet.** (1) Azt feltételeztem, hogy a `1` vagy `7` literál a `0x00783de0` közelében íródik: cáfolva, a teljes `.text` pásztázása ilyet nem talál. (2) Azt feltételeztem, hogy a `slideshow_pan_zoom.py` még a régi, közös középpontú képletet használja: cáfolva, a jelenlegi kód A/B-alapú, és a 4.6 vektorán a fenti értékeket adja.
 - **Lezárás (#5225).** A képlet-rész lezárható, (a) jegytörzs-javaslat. Eredeti: a `0x0076d900` (4.4 és 4.6, címekkel). Nálunk: `src/picasapy/app/slideshow_pan_zoom.py` (#5351), a 4.6 vektorán mért értékekkel. Teendő kódra: nincs a képletre; a 4.6 elavult táblázatát a spec-ben ki kell cserélni (ez a fenti bekezdés). Kész, ha (képlet): ✅ címekkel; ✅ középre igazító ág nincs (4.6); ✅ a kód a tesztvektoron a 4.6 képletéből, egész alappal számolt értékeket adja. Nem része: a diavetítés CRT-magja (a `0x0071d940` és a `0x0071e120` `srand`-ágai) és a `+0x37c` mód (melyik ág a diavetítésé). Ez a két kérdés új kutatási jegyet kap; a futásidejű képkocka-mérés (job-184/185) és a teljes képernyős út külön marad.
 
-**19. kör (2026-10-20, #5225): a `0x00714510` a `CSelectionNode` 44. slotja; a hét hívó közül négy literállal ad értéket (2, 2, 9, 6), az 1 és a 7 paraméteren át érkezik; a diavetítés ága NINCS MEG.**
+**19. kör helyesbítése (2026-10-20, #5225): a `0x00714510` a `CSelectionNode` 44. slotja; a teljes `.text`-keresés hét `+0xb0`-s diszpécselési jelöltet talált, de közülük kettő négyargumentumos hívás, ezért nem azonosítható közvetlenül az egyargumentumos setterrel; a diavetítés ága NINCS MEG.**
 
 *Forrás:* `.ghidra/2026-10-20-ghidra-19.txt` (a `0x00714510` C-kódja); a PE-olvasás a három slot-címre és a COL-okra; a teljes `.text` `mov reg,[reg+0xB0]` + `call reg` mintázatának keresése (139 betöltés, 14 utasításos ablak); `annot_disasm.py` és a hívóhelyek környezete; a bináris-index `xrefs` táblája.
 
 - **A vtábla és az osztály (megerősített, PE-olvasás).** A `0x00714510` a 44. slot (eltolás `0xB0`) három vtáblában: `CSelectionNode` (vtábla `0x00cad5b4`, COL `0x00d0a50c`, 50 slot; a slot címe `0x00cad664`), `CAlbumSelectionNode` (vtábla `0x00cb46f4`, COL `0x00d0d258`, 61 slot; `0x00cb47a4`), `CFoundFaceSelectionNode` (vtábla `0x00cb483c`, COL `0x00d0d1a8`, 61 slot; `0x00cb48ec`). Mindhárom this-eltolása 0, és a leszármazottak a 44. slotot nem írják felül.
-- **A hívók (megerősített, asm, a teljes `.text`-re).** A fordító a `0xB0`-s slotot `mov reg,[reg+0xB0]` + `call reg` alakban hívja. A 139 betöltésből 11-nél van `call` 14 utasításon belül. Ebből 7 hívás ad argumentumot (a setter), a másik négy (`0x0061fdb7`, `0x00620504`, `0x007a90b6`, `0x0094fda8`) argumentum nélküli, tehát nem ez a setter. A `call [reg+0xB0]` alak nulla találat.
+- **A `+0xb0` diszpécselési jelöltek (asm, teljes `.text`; a célosztályt külön kell igazolni).** A `0x00714510` setter egy argumentumot olvas a `[esp+4]`-ről és `ret 4`-gyel tér vissza (`0x00714510`-`0x0071451e`). A teljes `.text` keresése 139 `mov reg,[reg+0xb0]` betöltést talált; 11-nél volt közeli `call reg`, ezek közül 7 adott át argumentumot. Négy hívás egy-egy literált ad át (2, 2, 9, 6), egy paraméteres hívás egy argumentumot ad át (`0x008de9b0`), kettő pedig négy argumentumot ad át (`0x004331c0`, `0x00433680`). Az utóbbi kettő `+0xb0`-s célfüggvénye ABI alapján nem azonosítható közvetlenül a `0x00714510` setterrel. A másik négy közeli hívás (`0x0061fdb7`, `0x00620504`, `0x007a90b6`, `0x0094fda8`) nem adott át argumentumot. A `call [reg+0xb0]` alakra nulla találat volt.
 
-| hívó függvény | hívóhely | argumentum |
+| `+0xb0`-s hívójelölt | hívóhely | átadott argumentum(ok) |
 |---|---|---|
 | `FUN_005154f0` | `0x00515695` | literál `2` |
 | `FUN_0071c4f0` | `0x0071c534` | literál `2` |
 | `FUN_005733f0` | `0x00573667` | literál `9` |
 | `FUN_0074ad40` | `0x0074b0d8` | literál `6` |
-| `FUN_004331c0` | `0x004335f9` | paraméter (`[esp+0x44]`) |
-| `FUN_00433680` | `0x00433a2e` | paraméter (`[ebp+0x14]`) |
-| `FUN_008de9b0` | `0x008debe4` | paraméter (`[esp+0x14]`) |
+| `FUN_004331c0` | `0x004335f9` | négy stack-argumentum; a hívó `0x006ed5e0` negyedik paramétere dinamikus |
+| `FUN_00433680` | `0x00433a2e` | négy stack-argumentum |
+| `FUN_008de9b0` | `0x008debe4` | egy dinamikus stack-argumentum (`[esp+0x14]`); a vtable-célosztály nincs azonosítva |
 
-- **Az 1 és a 7 (megerősített a hívóhelyekig, NINCS MEG a forrásig).** Literál `1` vagy `7` egyetlen setter-hívásnál sincs. A paraméteres hívókat felfelé: a `0x004331c0`-t `0x006ed5e0` (hívóhely `0x006ee2cb`, az argumentum `[ebp+0x84]`-ből jön) és `0x007b2210` (hívóhely `0x007b2380`) hívja; a `0x00433680`-at a `0x0049f440` ugrással adja tovább, és az indexben nincs közvetlen hívója; a `0x008de9b0`-t `0x008de6b0` hívja (hívóhely `0x008de92b`). A láncot ebben a körben két szintig követtem, a literál nem került elő.
+- **Az `1` és a `7` (NINCS MEG a forrásig).** Egyik egyargumentumos jelölt hívó sem ad át közvetlenül `1`-et vagy `7`-et literálként. A `0x008de9b0` egyargumentumos `+0xb0` hívásának paraméterét a `0x008de6b0` adja tovább, de a dinamikus célobjektum osztálya és a paraméter előállítása nincs dekompilálva. A `0x004331c0` és `0x00433680` paraméteres `+0xb0` hívásai négyargumentumosak, ezért önmagukban nem bizonyítják a `0x00714510` setter elérését. A `0x006ed5e0`-t és a `0x007b2210`-et a `0x004331c0` hívja; az előbbi UploadImage-hibakezelési út, az utóbbi albumtörlés (`AlbumDeleter::progress`), egyik sem slideshow-bizonyíték.
 - **A diavetítés ága (NINCS MEG).** A `0x00783de0` (a `CAlbumSelectionNode` és a `CFoundFaceSelectionNode` 30. slotja) a `+0x37c` szerint ágaz: 5-6 → `0x007853e0`, 10 → `0x00785020`, egyébként `0x0071c380`. Ez utóbbi a `CSelectionNode` 30. slotja, és benne 1 → `0x0071d940`, 7 → `0x0071e120`. Hogy melyik objektum melyik értéket kapja, az a fenti paraméteres láncon dől el.
-- **Bizonyítottsági fok.** A vtábla, a 44. slot és a hét setter-hívóhely: **megerősített** (PE és asm). A négy literál (2, 2, 9, 6): **megerősített** (asm). Az 1 és a 7 forrása: **NINCS MEG**. A diavetítés módértéke: **NINCS MEG**.
-- **Cáfoló kísérlet.** (1) Azt feltételeztük, hogy az 1 vagy a 7 literálként íródik a setter hívóinál: cáfolva, a hét hívóban nincs ilyen literál. (2) Azt, hogy a közvetlen memória-hívás (`call [reg+0xB0]`) is használja a slotot: cáfolva, nulla találat.
-- **Lezárás (#5225): (a) jegytörzs-javaslat.**
-  - *Eredeti.* A képlet a `0x0076d900`-ban van (4.4 és 4.6). A setter `0x00714510` a `CSelectionNode` 44. slotja, hét hívóhellyel (fent).
+- **Bizonyítottsági fok.** A vtábla, a 44. slot és a négy `CSelectionNode`-család-vtábla-bejegyzés: **megerősített** (PE/RTTI). A hét `+0xb0`-s hívójelölt és a négy literál (2, 2, 9, 6): **megerősített** (asm), de a célosztályok egyezése nincs mindegyiknél bizonyítva. Az `1`/`7` forrása és a diavetítés módértéke: **NINCS MEG**.
+- **Cáfoló kísérlet.** (1) Azt feltételeztük, hogy az 1 vagy a 7 literálként íródik valamely egyargumentumos `+0xb0` jelölt hívónál: cáfolva, az öt ABI-kompatibilis jelölt közül egyik sem ad ilyen literált; a két négyargumentumos hívás pedig nem azonosítható közvetlenül a setterrel. (2) Azt, hogy a közvetlen memória-hívás (`call [reg+0xb0]`) is használja a slotot: cáfolva, nulla találat.
+- **Lezárás (#5225): a képlet-port átadható, a magot kérő kutatás nyitott.**
+  - *Eredeti.* A képlet a `0x0076d900`-ban van (4.4 és 4.6). A `0x00714510` setter a `CSelectionNode` 44. slotja; a teljes `.text`-pásztázás hét `+0xb0`-s hívójelöltet talált, amelyek közül a célosztály/ABI egyezése további ellenőrzést igényel.
   - *Nálunk (mérve a `src/` alatt).* A `src/picasapy/app/slideshow_pan_zoom.py` `qml_pan_zoom_rectangles` függvénye (a `controller.py:573` és a `screensaver_mode.py:97` hívja) a 4.6 szerkezetét követi (#5351). Mag nélkül (`seed=None`) a `_lcg_fraction_source` a `random.getrandbits(32)`-ből húz, így a sorozat nem a binárisé. A jegy Nálunk-sora (`SlideshowView.qml:752-761`, középre igazított 1,08 / 1,12) elavult: a fájlban az 1,08 nincs meg, az 1,12 a 856. sorban áll, és a 752-761 sorokat nem vizsgáltam tovább.
   - *Teendő.* A jegytörzs Nálunk-sorát kell cserélni. A bitpontos egyezéshez a mag kell, ez a Nem része.
-  - *Kész, ha.* ✅ képlet címekkel (4.4, 4.6); ✅ nincs középre igazító ág (4.6); ✅ a kód a 4.6 tesztvektorán a képletből számol (a 18. körben mért értékek); ⛔ a mag a binárisból: NINCS MEG, ez a Nem része.
+  - *Kész, ha.* ✅ képlet címekkel (4.4, 4.6); ✅ nincs középre igazító ág (4.6); ✅ a kód a 4.6 kontrollvektorán a képlet szerkezetét követi (a 18. kör mérése); ⛔ a slideshow mód és a kiválasztott CRT-mag a binárisból: NINCS MEG, ez a kutatás nyitott része.
 - **Nem része (nyitott mellékkérdések).**
-  - `Ghidra-kör kell: 0x006ed5e0 - a 0x004331c0 paraméterének forrása: melyik hívó ad 1-et vagy 7-et a 0x006ed5e0 és a 0x007b2210 láncon, és melyik objektum a diavetítésé [blokkoló a diavetítés módértékéhez]`
+  - `Ghidra-kör kell: 0x008de9b0 - a 0x008debe4 +0xb0 virtuális hívás dinamikus célja a 0x00714510 setter-e, és honnan kapja az egyetlen argumentumát? [blokkoló]`
+  - `Ghidra-kör kell: 0x00425f60 - a 0x00426f28 +0x5c virtuális hívás célosztálya/célfüggvénye; van-e a slideshow-ágban bizonyított adatút a CSelectionNode +0xb0 setterhez? [blokkoló]`
   - A diavetítés srand-magja: NINCS MEG. A binárisból nem olvasható ki, ha futásidejű állapotból jön. Ezt két egymás utáni, azonos bemenetű Pan and Zoom diavetítés képkockáinak összevetése dönti el (a job-184/185 kiterjesztése): azonos kimenet állandó magra, eltérő kimenet időalapú magra utal.
 - **Nyitott kérdések mérlege.** 2 lezárva (a vtábla és a hívók) · 2 blokkolt (az 1/7 forrása és a diavetítés ága; a mag) · 0 hatókörön kívül · 0 csak nyitva.
+
+**20. kör (2026-10-20, #5225): a `0x006ed5e0` upload-út, a `0x004331c0` négyargumentumos virtuális hívása nem bizonyítja a `0x00714510` settert; az 1/7 forrása és a diavetítés ága továbbra is nyitott.**
+
+*Forrás:* `.ghidra/2026-10-20-ghidra-20.txt` (`FUN_006ed5e0` C-kódja és hívói); a bináris-index `string_xrefs`, `xrefs` és RTTI táblái; `annot_disasm.py` a `0x00714510`, `0x004331c0`, `0x00433680`, `0x008de9b0`, `0x00425f60` környezetében; a korábban, a `paszta.py` `memoria_kapu()` kapuján át végzett teljes `.text`-pásztázás eredménye.
+
+- **A `0x006ed5e0` útja (feltételes, két független út egyezik).** (A) A Ghidra C-kimenet egyetlen közvetlen hívóként a `0x006f18a0`-t adja, a függvény pedig `UploadImage:InvalidPendingImage`, `UploadImage:AlbumFetchError`, `UploadImage::AlbumNotFound`, `UploadImage:NoAlbum` és `UploadPhoto::DoesNotExist` hibákhoz fut; a `0x004331c0` segéd negyedik argumentuma a `param_1[0x15]`. (B) Ettől függetlenül a bináris-index `string_xrefs` ugyanezeket az `UploadImage`/`UploadPhoto` hibaüzeneteket rendeli a `0x006ed5e0`-hoz, az indexelt hívási lánc pedig a `0x006f18a0`-n át az UploadManager hibakezeléséhez vezet. A két út az upload-besorolásban egyezik.
+- **A módérték ebből az útból nem olvasható ki.** A `0x006ed5e0` a `0x004331c0`-t hívja, és a Ghidra C negyedik argumentuma `param_1[0x15]`. A `0x004331c0` diszasszemblyje viszont a `0x004335f9`-nél egy `+0xb0` virtuális hívásra **négy** stack-argumentumot készít elő (`0x004335ff`-`0x0043360a`); e hívás dinamikus célosztálya nincs azonosítva, és ABI alapján nem azonosítható közvetlenül a `0x00714510` egyargumentumos, `ret 4` setterrel. Ezért a `param_1[0x15]` nem bizonyítja az `1`/`7` setterértéket.
+- **Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a `0x006ed5e0` lenne a slideshow `1`/`7` beállítója: a feltöltési hibaüzenetek és a `0x006f3cd0` (`UploadManager::process_error`) → `0x006f18a0` → `0x006ed5e0` hívási út az upload-besorolást erősíti. A közbeiktatott `0x004331c0` négyargumentumos `+0xb0` hívása az ABI-kontrollon sem egyezik a `0x00714510` setterével. Kontrollként a másik `0x004331c0` hívó, `0x007b2210` string-xrefje `"Deleting album: %s"` / `AlbumDeleter::progress`; ez sem slideshow-bizonyíték. A független mérce a Ghidra C/hívó és a bináris-index string-/xref-út; egyik sem azonosítja az `1`/`7` setterforrást.
+- **Két megmaradt Ghidra-kérdés (blokkoló).** (1) `0x008de9b0`: a `0x008debe4` egyargumentumos `+0xb0` hívásának dinamikus célja valóban a `0x00714510`-e, és honnan kapja az argumentumát (`0x008de6b0` hívó)? (2) `0x00425f60`: a slideshow-gyökerek alatti jelölt `0x00426f28` `+0x5c` hívásának célosztálya/célfüggvénye mi, és vezet-e bizonyított adatút a `CSelectionNode` `+0xb0` setterhez? A `0x0049f440` → `0x00433680` út csak vtable-jelölt; a `0x00433680` saját `+0xb0` hívása is négyargumentumos, ezért ezt sem szabad a setterrel azonosítani.
+- **Lezárás (#5225): (c) célzott Ghidra-kör szükséges.** Következő batch-címek: `0x008de9b0` (a setter-alakú, egyargumentumos `+0xb0` hívás célja és értéke) és `0x00425f60` (a slideshow-leszármazott `+0x5c` hívás fogadója/célja, valamint az esetleges út a `+0x37c` setterig). Az első dönti el, hogy a paraméteres `+0xb0` jelölt valóban setter-e; a második a slideshow-kapcsolatot vizsgálja. Ha a diavetítés `1`/`7` módja megvan, a megfelelő seedág pontos bináris képlete a `0x0071d940` vagy `0x0071e120` függvényből olvasható ki.
+- **Bizonyítottsági fok.** A `0x006ed5e0` upload-besorolása: **megerősített** (Ghidra C/hívó és független string-/xref-út egyezik). A `0x00426f28` vtable `+0x5c` hívás ténye és a `0x004331c0`/`0x00433680` négyargumentumos `+0xb0` hívási alakja: **megerősített** (utasításszintű diszasszembly). Hogy a `0x008debe4` célja a `0x00714510` setter-e, a slideshow-kapcsolat, az `1`/`7` módforrás és a kiválasztott seedág: **NINCS MEG**.
+- **Kódhatás.** Kódmódosítást ez a kör nem indokol: a képlet portja (#5351) már megvan, de a módérték/seed bináris szerinti hozzárendelése blokkolóan nyitott.
+
+**Frissített nyitott kérdések:**
+
+- `Ghidra-kör kell: 0x008de9b0 - a 0x008debe4 +0xb0 virtuális hívás dinamikus célja a 0x00714510 setter-e, és honnan kapja az egyetlen argumentumát? [blokkoló]`
+- `Ghidra-kör kell: 0x00425f60 - a 0x00426f28 +0x5c virtuális hívás célosztálya/célfüggvénye; van-e a slideshow-ágban bizonyított adatút a CSelectionNode +0xb0 setterhez? [blokkoló]`
+
+A `.ghidra/2026-10-20-ghidra-20.txt` bemenet, nem módosított fájl.
 
 ### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
 
