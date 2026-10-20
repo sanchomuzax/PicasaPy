@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.167] - 2026-10-20
+
+- Stabilabb lett a márkanév-ellenőrzés: a Picasa Web albumok kisbetűs alakja is a külső szolgáltatás neve (#5391).
+
 ## [0.9.166] - 2026-10-20
 
 - A személyalbum törlése (Delete People Album) eltávolítja a személy arcait, megtartja a névjegyet, és az eredeti megerősítő ablakot mutatja (#5391).
