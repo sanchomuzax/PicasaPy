@@ -1161,7 +1161,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>הצג תגי עזרה</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>לחץ פעם אחת כדי לצאת מתצוגת עריכה</translation>
@@ -1193,8 +1193,9 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>קבצים:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
             <translation>זהה כפילויות בעת הייבוא</translation>
         </message>
         <message>
@@ -1291,6 +1292,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>שמור תמונות מיובאות ב-</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>שמור תמונות מיובאות ב-</translation>

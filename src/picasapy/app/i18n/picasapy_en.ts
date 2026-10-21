@@ -1160,10 +1160,10 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Show tooltips</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
-            <translation>Single click to exit the editing view</translation>
+            <translation>Single-click to exit Edit View</translation>
         </message>
         <message>
             <source>Language:</source>
@@ -1192,9 +1192,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Files:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Detect duplicates on import</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>Detect duplicates while importing</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1290,9 +1291,14 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Import destination folder:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
-            <translation>Import destination folder:</translation>
+            <translation>Save imported pictures in:</translation>
         </message>
         <message>
             <source>Browse...</source>

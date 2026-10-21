@@ -295,8 +295,11 @@ BEALLITASOK = {
         "Quicktime-filmek (.MOV)", "options/SupportQuicktime.title"),
     ("OptionsTabGeneral", "Help improve PicasaPy:"): (
         "Részvétel a PicasaPy fejlesztésében:", "options/labelgroup16.title"),
-    ("OptionsTabGeneral", "Import destination folder:"): (
+    ("OptionsTabGeneral", "Save imported pictures in:"): (
         "Importált képek mentési helye:", "options/labelgroup34.title"),
+    ("OptionsTabGeneral", "Detect duplicates while importing"): (
+        "Másodpéldányok észlelése az importálás során",
+        "options/autoexclude.title"),
     ("OptionsTabGeneral", "Never check for updates"): (
         "Ne keressen frissítést", "options/item24.title"),
     ("OptionsTabGeneral", "Prompt before downloading updates"): (
@@ -305,7 +308,7 @@ BEALLITASOK = {
     ("OptionsTabGeneral", "Send anonymous usage statistics"): (
         "Névtelen használati statisztikák küldése a Google részére",
         "options/usagestats.title"),
-    ("OptionsTabGeneral", "Single click to exit the editing view"): (
+    ("OptionsTabGeneral", "Single-click to exit Edit View"): (
         "Szerkesztési nézetből való kilépés egy kattintással",
         "options/SingleClickExit.title"),
     ("OptionsTabGeneral", "User interface:"): (
@@ -420,7 +423,9 @@ BEALLITASOK_ELAVULT = {
         "Full movie", "Let me choose each time I send a picture",
         "Send embedded pictures and captions (Outlook only)", "Send movies as:"),
     "OptionsTabFileTypes": ("In addition to JPEG, also show these file types:",),
-    "OptionsTabGeneral": ("English",),
+    "OptionsTabGeneral": (
+        "English", "Detect duplicates on import",
+        "Single click to exit the editing view"),
     "OptionsTabPrinting": (
         "Printer quality (Windows only):", "Resizing algorithm quality:",
         "Use high resolution previews (slower)", "Very sharp (Lanczos-8)"),
