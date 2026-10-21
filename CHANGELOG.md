@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.179] - 2026-10-21
+
+- A tiszta profilos teszt az export-eredmény OK gombját a párbeszéd saját gombsorában keresi, és bukáskor megnevezi a gomb helyét (#5461).
+
 ## [0.9.178] - 2026-10-21
 
 - A tiszta profilos teszt bukáskor megnevezi, melyik felugró maradt nyitva az export után (#5444).
