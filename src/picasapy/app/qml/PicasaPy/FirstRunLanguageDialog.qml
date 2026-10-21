@@ -54,7 +54,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 wrapMode: Text.WordWrap
-                text: qsTr("PicasaPy is now available in your system's native language.\nWould you like to switch PicasaPy from English to this language?")
+                text: qsTr("Picasa is now available in your system's native language.\nWould you like to switch Picasa from English to this language?")
             }
         }
 
