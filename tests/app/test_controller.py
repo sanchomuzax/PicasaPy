@@ -330,7 +330,9 @@ class TestToggleStar:
         controller.selectFolder(str(library / "nyaralas"))
         _do_photo_op(controller, lambda: controller.toggleStar(1))
         _do_photo_op(controller, lambda: controller.toggleStar(1))
-        assert ini.read_bytes() == before + b"[IMG_0002.jpg]\n"
+        # Az új sor a fájl meglévő sorvégét örökli (Windowson CRLF).
+        sorveg = b"\r\n" if b"\r\n" in before else b"\n"
+        assert ini.read_bytes() == before + b"[IMG_0002.jpg]" + sorveg
 
     def test_search(self, controller):
         controller.search("naplemente")
