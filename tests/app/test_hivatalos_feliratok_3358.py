@@ -317,25 +317,25 @@ BEALLITASOK = {
         "Csoportküszöb:", "options/labelgroup181.title"),
     ("OptionsTabNameTags", "Enable face detection"): (
         "Arcfelismerés bekapcsolása", "options/enablefacedetection.title"),
-    ("OptionsTabNameTags", "Store name tags in the file"): (
+    ("OptionsTabNameTags", "Store name tags in photo"): (
         "Névcímkék tárolása a fotón", "options/persistfacetofile.title"),
     ("OptionsTabNameTags", "Upload people album thumbnails to Google Contacts"): (
         "Az Emberek album indexképeinek feltöltése a Google Címtárba",
         "options/uploadcontactphotos.title"),
     ("OptionsTabNetwork", "Detailed log information"): (
         "Részletes naplóadatok", "options/item140.title"),
-    ("OptionsTabNetwork", "Disable logging"): (
+    ("OptionsTabNetwork", "Disable Logging"): (
         "Naplózás letiltása", "options/item137.title"),
     ("OptionsTabNetwork", "Log all network information"): (
         "Az összes hálózati információ naplózása", "options/item141.title"),
-    ("OptionsTabNetwork", "Log file:"): ("Napló:", "options/labelgroup142.title"),
+    ("OptionsTabNetwork", "Log:"): ("Napló:", "options/labelgroup142.title"),
     ("OptionsTabNetwork", "Minimal log information"): (
         "Minimális mennyiségű naplóadat", "options/item139.title"),
-    ("OptionsTabNetwork", "Network logging level:"): (
+    ("OptionsTabNetwork", "Network log level:"): (
         "Hálózati események naplózási szintje:", "options/labelgroup135.title"),
     ("OptionsTabNetwork", "Proxy password:"): (
         "Jelszó a proxyhoz:", "options/labelgroup132.title"),
-    ("OptionsTabNetwork", "Proxy username (Windows only):"): (
+    ("OptionsTabNetwork", "Proxy username:"): (
         "Felhasználónév a proxyhoz:", "options/labelgroup130.title"),
     ("OptionsTabPrinting", "Available print sizes:"): (
         "Rendelkezésre álló nyomtatási méretek:", "options/label107.title"),
@@ -401,6 +401,20 @@ BEALLITASOK = {
     ("OptionsTabWebAlbums", "When syncing large files, upload previews first"): (
         "Nagyméretű fájlok szinkronizálásakor a program először az "
         "előnézeteket töltse fel", "options/PWAStriped.title"),
+    # #5482: a feltöltési méret öt tétele a `CGeneralPrefsPage` sztringjei
+    ("OptionsTabWebAlbums", "Original size (slowest upload)"): (
+        "Eredeti méret (leglassabb feltöltés)", "CGeneralPrefsPage::Original"),
+    ("OptionsTabWebAlbums", "Best for web sharing (2048px)"): (
+        "Ideális internetes megosztáshoz (2048 képpont)",
+        "CGeneralPrefsPage::2048"),
+    ("OptionsTabWebAlbums", "Recommended: 1600 pixels (for prints, screensavers, and sharing)"): (
+        "Ajánlott: 1600 képpont (nyomatokhoz, képernyővédőkhöz és megosztáshoz)",
+        "CGeneralPrefsPage::1600"),
+    ("OptionsTabWebAlbums", "Medium: 1024 pixels (for sharing)"): (
+        "Közepes: 1024 képpont (megosztáshoz)", "CGeneralPrefsPage::1024"),
+    ("OptionsTabWebAlbums", "Small: 800 pixels (for blogs and webpages)"): (
+        "Kicsi: 800 képpont (blogokhoz és weboldalakhoz)",
+        "CGeneralPrefsPage::800"),
 }
 
 #: #3572: a lecserélt angol forrásszövegek — a Beállítások füleiről eltűntek
@@ -421,7 +435,14 @@ BEALLITASOK_ELAVULT = {
         "Add a watermark to all photo uploads:",
         "Don't confirm each sync (use previous settings)",
         "Keep original picture quality (uses more storage)",
-        "Upload name tags", "Upload previews first for large files"),
+        "Upload name tags", "Upload previews first for large files",
+        # #5482: a régi, rövidített feliratú méretlista
+        "Original size"),
+    # #5482: a Hálózat és a Névcímkék fül régi felirat-szövegei
+    "OptionsTabNetwork": (
+        "Network logging level:", "Disable logging", "Log file:",
+        "Proxy username (Windows only):"),
+    "OptionsTabNameTags": ("Store name tags in the file",),
 }
 
 
