@@ -7,7 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.9.177] - 2026-10-21
+## [0.9.176] - 2026-10-21
 
 - A Név nélküliek javaslatlistája és a People ablak keresője az eredeti Picasa szerint szó elejére keres és rangsorol; a People ablak duplikált névnél kérdez, üres névnél és mentési hibánál üzen, a törlés megerősítést kér. (#5437).
 
