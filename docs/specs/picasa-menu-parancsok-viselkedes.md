@@ -5327,7 +5327,89 @@ Megpróbáltam cáfolni, hogy a `0x00800950` vagy a `0x009aa670` olvassa a kárt
 
 `QEMU`-próba és `Wine`-felvétel nem készült. A helyi program `PE32` `Windows` `GUI` bináris, csak a `qemu-i386` `Linux` felhasználói módú futtató érhető el; `qemu-system-i386` és `Wine` nem található. A mérőcsomag archívumában a `job-220` keresése nem adott találatot.
 
-**A 38.2.31 hiánylistájának 15. kör utáni állapota.** A fenti húsz tétel státuszát a 38.2.31-ben frissítettem. Lezárva a közvetlen rekordlánc negatív válasza, a quad-mezők szerepe, az easing-képlet, a másodperc-egység és léptetési út, valamint az Időrend három gombja. Nyitott maradt a teljes képkártya és forráshalmaz, a rajzolási sorrend, a csúszka dátumjelentése, a callback pontos üteme, a főablak billentyűi, a kilépési cél és a korábbi CThumbUI `editoneup` hívó. A részletek és a frissített címek a 38.2.31 tételes listája felett vannak.
+**A 38.2.31 hiánylistájának 15. köre történeti állapot.** A 16. kör az alábbi tételes listával frissíti mind a húsz pontot. A régi lista megmarad, hogy a korábbi kör megállapításai visszakereshetők legyenek.
+
+**A 38.2.31 nyitott pontjainak 16. kör utáni állapota.**
+
+1. **NINCS MEG.** A képek forráshalmaza, csoportosítása, elemszáma és rendezési mezője. A `[this+0x3ec]`, `[this+0x3f0]`, `[this+0x3f4]` mezők használata ismert, a szolgáltató típusa és adata nem. Lásd 38.2.33/1.
+2. **LEZÁRVA a megnevezett közvetlen láncra.** A `0x00800950` és `0x009aa670` nem olvassa a `+0x2ec` rekordot. A teljes bináris rekordfogyasztója **NINCS MEG**. Lásd 38.2.33/2.
+3. **NINCS MEG.** A rétegek tényleges kirajzolási sorrendje. A `0x00a42c20`, `0x009a9c90` és `0x00a3f490` nem sorrend-kezelő, hanem általános kép-újramintavételező út. Lásd 38.2.33/3.
+4. **LEZÁRVA a közvetlen szerepükre.** A négy `quad`-mező párosítása ismert, korábbi íróik nem. Lásd 38.2.32/3.
+5. **LEZÁRVA.** A keverő képlete a korábbi szakaszban rögzített. Lásd a 38.2.31 listáját.
+6. **NINCS MEG.** A két keverő páratlan utolsó pixel ága. Következő címek: `0x009dc1c0`, `0x009dc4b0`.
+7. **NINCS MEG.** A `DAT_00d695d4` írói. Következő cím: `0x00d695d4` adat-hivatkozási vizsgálata.
+8. **NINCS MEG.** A `0x20` mód segédei. Következő címek: `0x009a8a30`, `0x009a8ad0`, `0x009a8bc0`.
+9. **NINCS MEG.** A `YUV` forrássíkjainak feltöltése. Következő címek: `0x00737120`, `0x007383b0`, `0x009bd150`, `0x009dd4f0`, `0x0097caf0`.
+10. **LEZÁRVA.** A görbe képlete binárisból, a kimeneti minták pedig `qemu-i386` futással ellenőrzöttek. Lásd 38.2.33/7.
+11. **LEZÁRVA az időegységre és a léptetési útvonalra.** A tényleges automatikus léptetés periódusa és a `callback` üteme **NINCS MEG**. Lásd 38.2.33/5.
+12. **LEZÁRVA.** A `0.6` és `2^32` küszöbök forrásai rögzítettek. Lásd a 38.2.31 listáját.
+13. **NINCS MEG.** Az `A` tömb írói és a dátum-hozzárendelés. A legközelebbi sorszám kiválasztásának útja ismert. Következő címek: `0x007fdd00`, `0x008001c0` és az `A` tömb teljes bináris írókeresése.
+14. **LEZÁRVA.** A `prev`, `next` és `timeline` parancs közvetlen útjai ismertek. Lásd 38.2.32/5 és 38.2.33/4.
+15. **LEZÁRVA a `qshow` billentyűútjára.** A szóköz, a nyilak és az Escape közvetlen ágai ismertek. A főablak globális billentyűútja a 16. pontban nyitott. Lásd 38.2.33/6.
+16. **NINCS MEG.** A főablak globális billentyűi és a listaikon célja. Következő címek: `0x005e60d0`, `0x005e6710`, a `0x005c9740` Enter-ág és a listaikon eseménycélja.
+17. **NINCS MEG.** A teljes képernyős mód bizonyítása és a kilépés utáni nézet. Új út: `0x00802c20` -> `0x009833a0`; a virtuális hívások céljai továbbra is nyitottak. Lásd 38.2.33/6.
+18. **NINCS MEG, nem blokkoló az Időrendhez.** Az `editoneup` hívó osztálya. Következő cím: `0x00af45f0` és az 56 hívóhely.
+19. **LEZÁRVA a binárisból levezetett pályára és görbére.** Az eredeti kód `qemu-i386` futása a görbe értékeit ellenőrizte. A kártya forrása és képernyőn mért mozgása **NINCS MEG**. Lásd 38.2.33/7.
+20. **LEZÁRVA a `qshow` callback létrehozására és regisztrációjára.** A `0x007fae76` a `0x00803b00` konstruktorral létrehozott objektumot `1` jelzővel a `0x0097d150`-nek adja. Az ütemező meghívási periódusa **NINCS MEG**. Lásd 38.2.33/5.
+
+**Mérleg a 16. kör után:** 20 tétel, 10 lezárva a megadott szűk kérdésre, 10 nyitott. A lezárás több pontnál nem jelenti a teljes viselkedés lezárását: a fenti tételekben külön megneveztem a nyitva maradó részfeladatot.
+
+#### 38.2.33 Az Időrend bináris feltárása, 16. kör: forráslánc, vezérlők, `callback` és visszatérés (#5401, 2026-10-21)
+
+**Hatókör és módszer.** A kör a `2026-10-21-idorend-16.txt` helyi dekompilációs jegyzet címhelyeit, az eredeti `Picasa3.exe` függvényeit és a bináris indexet használta. Az utasításokat a helyi `pe_dis` eszköz olvasta. A teljes `.text` címhivatkozás-keresése a `paszta.memoria_kapu()` hívással indult; egy korábbi, `detail=False` próbálkozás operandus-lekérdezési hibával leállt, ezért nem szolgált leletként. A helyes pásztázás eredményei lent szerepelnek. Az eredeti program egy teljes ablakos futása nem történt meg.
+
+**1. A képhalmaz, elemszám és sorrend: NINCS MEG.** A `0x008037e0` létrehozza a `qshow` nézetet és elindítja az `overlay`-ek építését. A `[this+0x3ec]` indexelt azonosítólistát, a `[this+0x3f0]` elemszámot, a `[this+0x3f4]` aktuális indexet tartja; a `0x00802230` a listából az aktuális azonosítóval kér tartalmat. A `0x008014d0` `0xf8` bájtos rekordot épít. E címek egyike sem állapítja meg, melyik album vagy mappa szolgáltat, hány kép kerül bele futáskor, illetve milyen dátummező szerint rendez. A szolgáltató típusa, az egyes rekordok és az `A` csúszkatömb jelentése továbbra is **NINCS MEG**. Következő célzott vizsgálat: `0x008037e0`, `0x00802230`, `0x008014d0`, valamint a `[this+0x3ec]` és `+0x2ec` mezők írói.
+
+**2. A kártya képe, felirata és kerete: NINCS MEG.** A `0x009aa720` a neki átadott `bitmap` leíróból választ `GDI` objektumot, majd `BitBlt` hívást végez. A közvetlen hívó `0x009aa670` képleírókat és téglalapokat ad át, nem a `+0x2ec` kártyarekord címét. A `0x00800950` `FillRect`-tel kitölt egy téglalapot. Így e lánc nem azonosítja a kártya képének, feliratának vagy keretének forrását. A `+0x2ec` rekordot olvasó teljes binárisbeli függvény **NINCS MEG**. Következő vizsgálat: a rekord címének és a `bitmap` leíró előállításának hívói, különösen `0x008014d0`, `0x008001c0` és a rajzolási út.
+
+**3. Az `overlay`-rétegek sorrendje: NINCS MEG.** A korábbi jelöltek, `0x00a42c20`, `0x009a9c90` és `0x00a3f490`, általános `ytResampler` útba tartoznak. A függvénytörzsek képméreteket, forráspuffereket és transzformációkat kezelnek; ez nem ad rétegsorrendet. A `0x007fb210` az `overlay`-objektumokat felépíti és erőforrásokat tölt be, de a tényleges rajzolási sorrend címét nem azonosítottam. Cáfoló ellenőrzésként a jelölt függvények törzsét és hivatkozási környezetét vizsgáltam: a rajzolási sorrend hipotézisét a `resampler` adatkezelés cáfolja. Ez a próba nem bizonyítja, hogy másik függvényben nincs sorrendkezelés. Következő vizsgálat: `0x007fb210`, `0x008001c0`, `0x00800a30` és a rétegkirajzoló bejárása.
+
+**4. Vezérlők.** A `0x007fde80` a `qshow` egéreseményeit osztályozza, a `0x007fda80` négy találati téglalapot vizsgál. A két első `hitbox` a `0x007fb820` ágra, a jobbra és balra eső `hitbox` a `0x007fd150`, illetve `0x007fd120` léptetőre vezet. A hozzájuk tartozó `startbutton` és `exit` erőforrás-nevek szerinti párosítás a rekordgeometrián alapul, ezért feltételes. A névvel ellátott `oneup/timeline` parancs a `0x008032e0` diszpécserből a `0x007fda00` ágra vezet; ez nem bizonyítja, hogy a `timelinedot` képe ugyanazt az eseményt váltja ki. A listaikon eseménycélja, a pont kattintási célja és a billentyűvel való aktiválásuk **NINCS MEG**. A `0x007fdd00` a csúszka vízszintes helyéből az `A` tömb értékeihez legközelebbi sorszámot választja, de az értékek dátumjelentése és írói **NINCS MEG**.
+
+**5. Automatikus léptetés és `callback`.** A `0x007fae76` egy 0x28 bájtos objektumot hoz létre, meghívja rá a `0x00803b00` konstruktort, majd az objektumot és az `1` jelzőt átadja a `0x0097d150` regisztrációs útnak. A konstruktor a `0x00803b0f` ponton ideiglenesen az alap `ytCallBase` `vtable`-t állítja be, majd a `0x00803b3d` ponton a `ytCallback<QDrawable>` `vtable`-t (`0x00cbd6c8`). Ennek metódustáblájában a `0x00803ab0` szerepel. A `0x0097d150` az `1` jelzőnél a `callback`-objektumot a globális listába helyezi. Ez lezárja, melyik objektum regisztrálódik.
+
+A `0x007fb540` `worker` ciklusában a `0x007fb578` utasítás `Sleep(0x32)` hívást készít elő. Ez 50 ms alvási argumentum, nem a képléptetés periódusa. A ciklus csak a jelző beállásakor hívja a `0x00802230(this,1)` függvényt. A `0x00803ab0` `callback` `QPC` időt kér, és a `0x00802060` küszöbvizsgálatához vezet. A `0x004019b0` által szolgáltatott `Preferences\SlideshowEffectTime` érték másodpercben van, de ez a küszöb nem bizonyítja, hogy a `callback` vagy a léptetés milyen gyakran fut. A tényleges periódus **NINCS MEG**. Következő vizsgálat: a `0x0097fc30` pump hívója, a `callback`-lista végigjárása, valamint a `0x007fb540` jelzőjének beállítói.
+
+**6. Szóköz, bemutatóba lépés és kilépés.** A `0x00801270` `WM_KEYDOWN` ága az `Escape` `0x1b` billentyűt a `0x007fb820` ágra küldi. A szóköz `0x20` a `[this+0x3bb]` állapotot váltja a `0x00801130`-on át; a folytató `0x00803110` időadatot rögzít, majd ugyanezt az állapotváltást és az aktuális indexet használja. Bekapcsoláskor a `0x00801130` meghívja a `0x00802c20`-at, majd a `[this+0x3ba]` állapottól függően a `0x00aa6f40`-et. A `0x00aa6f40` közvetlenül nem nyit teljes képernyős ablakot, így a teljes képernyős bemutató célja ebből az útból nem következik. A bal egérgomb `0x201` lenyomása is ide vezet, ha `[this+0x3b8]` nulla. A `0x008032e0` `oneup/auto` és `oneup/auto2` parancsa a `0x00803110`-et hívja. A `oneup/timeline` külön a `0x007fda00` inicializáló ágat hívja; a dupla kattintás `0x203` vagy `0x204` ugyanezt az ágat éri el, ha `[this+0x3b8]` nulla.
+
+A bal és fel nyíl a `0x008011b0` léptető útjára, a jobb és le nyíl a `0x00801210` útjára vezet (`0x00801270`). A mozgásban lévő kártya az animációs léptetést, az álló nézet az előző vagy következő indexet használja; lásd 38.2.32/5. Ez a `qshow` saját billentyűútja, nem a főablak globális billentyűkezelője.
+
+A `0x008032e0` `oneup/exit` ága először a fogadó objektum `vtable` `+0x24` helyét hívja, majd a kapott objektum `vtable` `+0x14` helyét két nulla argumentummal. Az `Escape` útja a `0x007fb820` függvényen át ugyancsak virtuális híváshoz jut. A célfüggvényeket a vizsgált címek nem oldják fel. A teljes képernyős ablakmód, a kilépés utáni célablak és az Időrendbe visszaállított index vagy nézet **NINCS MEG**. A `0x009833a0` a `0x00802c20` egyik ágán szerepel; a virtuális `+0x28` hívás címzettjét és jelentését külön fel kell oldani. A `0x00aa6f40` önmagában nem teljes képernyős ablaknyitó, közvetlenül csak lebegőpontos környezeti segédműveletet és egy virtuális `+0x84` hívást tartalmaz.
+
+**7. Pálya, méret, átlátszóság és görbe.** A binárisból levezetett pálya és időfüggés a 38.2.32-ben szereplő képletekkel változatlan: `pos(t)=B0+sum(E(u_j)*dx_j)`, ahol `u_j=(t'-v_j)/(end_j-v_j)`, `t'=t+0.02`, a kártya paramétere `t_i=i*S+O`, a görbe kimenete `(x,y,w)`, a méret `w*Z`, az `alpha=ROUND((1-pow(z,1.5))*256)`, ahol `z=max(0,(1/w-1)/9)`. A képletek útja a `0x0072df60`, a `0x009e5ac0` és a 38.2.32-ben felsorolt konstanscímek. A képernyőn mért kezdőhely, a kártyarekordhoz kötött forrás, valamint az `affine` mátrixból eredő forgatás **NINCS MEG**.
+
+A `0x0072df60` görbéjét az eredeti bináris `qemu-i386` futtatásával külön is mértem. A `0x009e5ac0` normalizáló függvény ugyanabban a mérésben adta a `K=1.00057676899` értéket. A mért bemenet és kimenet:
+
+| `u` bemenet | `E(u)` kimenet | forrás |
+|---:|---:|---|
+| `0.0` | `0.0` | mérés (`qemu-i386`, `0x0072df60`) |
+| `-0.25` | `0.0` | mérés (`qemu-i386`, `0x0072df60`) |
+| `0.125` | `0.368091643` | mérés (`qemu-i386`, `0x0072df60`) |
+| `0.25` | `0.76789844` | mérés (`qemu-i386`, `0x0072df60`) |
+| `0.5` | `0.969087183` | mérés (`qemu-i386`, `0x0072df60`) |
+| `0.75` | `0.996315122` | mérés (`qemu-i386`, `0x0072df60`) |
+| `0.875` | `0.999008954` | mérés (`qemu-i386`, `0x0072df60`) |
+| `1.0` | `1.0` | mérés (`qemu-i386`, `0x0072df60`) |
+
+Ez az izolált függvénymérés nem futtatja a `qshow` ablakot. `Wine`-felvétel és sűrű képkockasorozat nem áll rendelkezésre, a mérőadat-archívumban a korábbi `job-220` képek sem voltak meg.
+
+**Bizonyítottsági fok.** A 16. kör összesített foka **feltételes**, mert a képek forráshalmaza, a kártyafogyasztó, az `overlay`-sorrend, a tényleges léptetési periódus és a visszatérési ablak nyitott. A `callback`-regisztrációt két külön bizonyíték egyezteti: az utasításszintű objektum-létrehozási és regisztrációs út (`0x007fae76`, `0x00803b00`, `0x0097d150`), valamint a teljes `.text` pásztázásban talált `vtable`-beállítás (`0x00803b3d`) és az `RTTI` metódustáblája (`0x00cbd6c8`, `0x00803ab0`). A görbe képletének kimenetét a diszasszemblálás és a bináris kóddal végzett `qemu-i386` mérés egymástól függetlenül ellenőrzi. Ezek a megerősített részleletek nem zárják le a nyitott funkciókat.
+
+**Cáfoló kísérlet.** Azt vizsgáltam, hogy a `0x00a42c20`, `0x009a9c90` vagy `0x00a3f490` kódja rendezi-e az `overlay`-rétegeket. A függvények képpuffer-, képméret- és transzformációs műveleteket végeznek; nem olvasnak `overlay`-listát vagy rétegsorszámot. A hivatkozási környezet és a függvénytörzsek ugyanazt mutatják, ezért a konkrét címekre vonatkozó állítást az ellenőrzés megerősíti: ezek nem az `overlay`-sorrend meghatározói. Globális negatív állítást ebből nem teszek.
+
+**A következő, blokkoló `Ghidra`-kérdések.**
+
+- `Ghidra-kör kell: 0x00802230 - a lista szolgáltatójának típusa, forráshalmaza, elemszáma és rendezési mezője [blokkoló]`
+- `Ghidra-kör kell: 0x008014d0, 0x008001c0, 0x009aa720 - ki olvassa a +0x2ec rekordot, és honnan jön a kártya képe, felirata, kerete [blokkoló]`
+- `Ghidra-kör kell: 0x007fb210 - az overlay-objektumok tényleges kirajzolási sorrendje [blokkoló]`
+- `Ghidra-kör kell: 0x007fde80 - a timelinedot és a listaikon pontos egér- és billentyűútja [blokkoló]`
+- `Ghidra-kör kell: 0x007fdd00 - az A tömb írói, dátumjelentése és a csúszkához kötése [blokkoló]`
+- `Ghidra-kör kell: 0x0097fc30, 0x007fb540, 0x00803ab0 - a callback-pumpa periódusa és a qshow automatikus léptetésének pontos üteme [blokkoló]`
+- `Ghidra-kör kell: 0x00802c20, 0x009833a0, 0x00aa6f40 - a teljes képernyős bemutató célja és az Időrendbe visszatérés [blokkoló]`
+- `Ghidra-kör kell: 0x008032e0, 0x007fb820 - az exit vtable +0x24 és +0x14 hívásainak célja, a visszatérési nézet és index [blokkoló]`
+- `Ghidra-kör kell: 0x005e60d0, 0x005e6710 - a főablak globális Space, nyíl és listaikon billentyűútja [blokkoló]`
+
+`Ghidra`-kört igényelnek még a 38.2.31 nyitott, nem Időrend-specifikus tételei: `0x009dc1c0`, `0x009dc4b0`, `0x00d695d4`, `0x009a8a30`, `0x009a8ad0`, `0x009a8bc0`, `0x00737120`, `0x007383b0`, `0x009bd150`, `0x009dd4f0`, `0x0097caf0`, továbbá a nem blokkoló `0x00af45f0`.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
