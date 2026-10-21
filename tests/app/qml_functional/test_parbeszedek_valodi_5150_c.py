@@ -36,7 +36,7 @@ hívás és nincs `.emit()`. A párbeszédek takarításához a `close` hívás 
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QObject, QUrl, Slot
+from PySide6.QtCore import QObject, QSettings, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 
 from conftest import _build_qml_app
@@ -121,6 +121,35 @@ class TestAltalanosFul:
 
         assert _varj(qt_app, lambda: bool(importer.property("autoExclude")) is not elotte), (
             "a Duplikátumok felismerése jelölő nem állította az importálót"
+        )
+        _zar(qt_app, beallitasok)
+
+    def test_a_duplikatumok_jelolo_valodi_kattintassal_menti_az_erteket(
+        self, parbeszed_app, qt_app
+    ):
+        """#5473: a valódi kattintás a Duplikátumok jelölőn a közös
+        `import/autoexclude` kulcsot is átírja, és a lemezre kerül. A kiindulást
+        a teszt maga állítja be: a beállítás-tár a teszt-munkamenetben közös,
+        tehát a korábbi tesztek maradékára nem szabad hagyatkozni."""
+        window, controller, engine = parbeszed_app
+        _elokeszit(window, qt_app, controller)
+        importer = engine.rootContext().contextProperty("importSourceController")
+        importer.setAutoExclude(True)
+        beallitasok = _beallitasok_megnyit(window, qt_app)
+        jelolo = _gyerek(beallitasok, "optionsAutoExcludeCheck")
+        assert jelolo.property("checked") is True, (
+            "a Duplikátumok jelölő nem a bekapcsolt állapotot mutatja"
+        )
+
+        _klikk_ablakban(qt_app, beallitasok, jelolo)
+
+        assert _varj(qt_app, lambda: jelolo.property("checked") is False), (
+            "a kattintás nem kapcsolta ki a Duplikátumok jelölőt"
+        )
+        # a sync kiírja az importáló tárát a lemezre; az új példány már onnan olvas
+        importer._get_settings().sync()
+        assert QSettings("PicasaPy", "PicasaPy").value("import/autoexclude") == "false", (
+            "a kikapcsolt Duplikátumok jelölő értéke nem került a lemezre"
         )
         _zar(qt_app, beallitasok)
 
