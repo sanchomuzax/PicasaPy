@@ -22,12 +22,13 @@ def test_first_run_prompt_uses_the_original_picasa_copy():
     )
     qml = qml_path.read_text(encoding="utf-8")
 
-    assert 'Picasa is now available in your system\'s native language.' in qml
-    assert 'Would you like to switch Picasa from English to this language?' in qml
+    # A saját név PicasaPy (#5294), a mondat többi része az eredetié (#5458).
+    assert 'PicasaPy is now available in your system\'s native language.' in qml
+    assert 'Would you like to switch PicasaPy from English to this language?' in qml
     assert 'title: qsTr("Confirm")' in qml
     assert 'text: qsTr("Yes")' in qml
     assert 'text: qsTr("No")' in qml
-    assert "PicasaPy is now available" not in qml
+    assert "Picasa is now available" not in qml
 
 
 @pytest.fixture
