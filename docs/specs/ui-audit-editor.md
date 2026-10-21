@@ -3608,3 +3608,36 @@ szürke vonal:  x₀ + 41 + 44k = 441 + 44k (mod 44 egyezik)   y₀ + 41 + 44k =
 **Forgatás közben a háló ÁLL** (#70/6, a csúszka jobbra kattintva): a kép fordul el alatta, a vonalak vízszintesek és függőlegesek maradnak, ugyanazokon a képpontokon.
 
 **Nálunk:** a néző (`PhotoViewer.qml`) a Kiegyenesítés közben nem rajzol hálót → fejlesztés: #3924.
+
+## Az `AutoPlayMovies` rejtett Preferences-kulcs (#5466, 2026-10-21)
+
+**Bizonyítottsági fok: megerősített.** A két külön használófüggvény utasításai
+egyaránt olvassák az `AutoPlayMovies` kulcsot, és mindkettő 1-es alapértéket
+ad át. Az utasításszintű eredményt a Preferences segédfüggvények szerepét
+leíró 6.2. szakasz is alátámasztja a `picasa-email-kuldes.md` lapon.
+
+| út | bináris bizonyíték | következtetés |
+|---|---|---|
+| `0x00593880` | `0x00593fdb` kulcs (`0x00c91f74`), `0x00593fe0` szekció (`0x00c7eafc`), `0x00593ff0` alapérték `1`, majd `0x00593ff8` → `0x00407a20` és `0x00594001` → `0x004019b0` | a `Preferences\AutoPlayMovies` olvasása, hiányzó kulcsnál `1` |
+| `0x00594820` | `0x00594c3f` kulcs (`0x00c91f74`), `0x00594c44` szekció (`0x00c7eafc`), `0x00594c54` alapérték `1`, majd `0x00594c5c` → `0x00407a20` és `0x00594c65` → `0x004019b0` | ugyanannak a kulcsnak külön kódútból végzett olvasása, hiányzó kulcsnál `1` |
+
+A két hivatkozó cím a bináris `string_xrefs` indexben is szerepel. A teljes
+`.text` szakasz közvetlen `0x00c91f74` operandus-keresése ugyanezt a két
+utasítást találta. Mindkét használó az olvasó `0x004019b0`-t hívja; egyik sem
+adja át ezt a kulcsot az író `0x00401900`-nak. Ezért a beállítás **alapértéke
+1**, vagyis bekapcsolt állapot, ha a tárolt érték hiányzik.
+
+**Felhasználói felület nincs.** A telepített `runtime/*.fen` sablonokban,
+köztük a kilenc lapos `options.fen` fájlban nincs `AutoPlayMovies` vagy
+automatikus videólejátszási vezérlő. Az ott szereplő `SupportMovies` a
+fájltípus-szűrőhöz, a `PlayMP3Tracks` pedig a diavetítés zenéjéhez tartozik.
+A menüben az általános `Options...` / `Beállítások...` parancs nyitja meg a
+beállításokat, de nincs külön, pipálható videólejátszási menüpont. A vizsgált
+stringres-adatokban sincs ehhez tartozó felirat vagy azonosító; a hasonló
+`INSTALLRES_autoplaydescr` a Windows-os képmásolási AutoPlay kérdés szövege.
+
+**Eredmény:** az eredeti Picasában ez rejtett `Preferences`-kulcs, nem
+felhasználói kapcsoló. Nincs hozzá beállításlap, `.fen` vezérlő, menütétel,
+felirat vagy stringres-azonosító. A PicasaPy jelenlegi, felhasználói kapcsoló
+nélküli állapota ebből a szempontból megfelel az eredetinek; fejlesztői jegy
+nem indokolt.
