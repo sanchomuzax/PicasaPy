@@ -14,6 +14,27 @@ from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     varj,
 )
 from tests.app.qml_functional._racs_maradek_5150_helpers import kep_cellaja
+from tests.app.qml_functional.conftest import _build_qml_app
+from tests.support.jpeg_factory import make_minta_jpeg
+
+
+@pytest.fixture
+def qml_app(qt_app, tmp_path):
+    """A valódi bélyegkép-szolgáltató két mintázatos képpel: a teszt képe a
+    kiadásba kerül, a csempéken látható képnek kell lennie (picasapy-agent
+    #225)."""
+
+    def kepek(lib):
+        make_minta_jpeg(lib / "a.jpg", size=(320, 160), seed=3)
+        make_minta_jpeg(lib / "b.jpg", size=(100, 100), seed=6)
+
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=kepek,
+        belyegkep_meret=256,
+        valodi_belyegkep=True,
+    )
 
 
 def _gyerek(window, object_name: str):
