@@ -115,17 +115,6 @@ def test_csempebol_uj_szemely_mentese_az_arcot_is_hozzarendeli(
 
     name = _find_item(window, "peopleManagerNameField")
     assert name.property("text") == "Nora Kertesz"
-    if height_offset == 0:
-        image = window.grabWindow()
-        assert not image.isNull()
-        assert image.save(
-            str(
-                Path(__file__).resolve().parents[3]
-                / ".bt"
-                / "people_manager_new_person.png"
-            )
-        )
-
     _click(qt_app, _find_item(window, "peopleManagerOkButton"))
     assert var_feltetelre(qt_app, lambda: dialog.property("visible") is False, 3.0)
     assert var_feltetelre(qt_app, lambda: face_scan.unnamedCount == 5, 3.0)
