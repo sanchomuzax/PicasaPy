@@ -161,7 +161,6 @@ _PRINT_OPTION_SIZES = (
     "CDSIZE",
     "PASSPORT",
     "CONTACT",
-    "TELJES_OLDAL",
 )
 
 
@@ -245,7 +244,8 @@ class PrintController(QObject):
         sizes = set(_PRINT_OPTION_SIZES)
         result = []
         defaults = tuple(
-            meret.name for meret in alapmeretek_teruleti_mereshez()
+            meret if isinstance(meret, str) else meret.name
+            for meret in alapmeretek_teruleti_mereshez()
         )
         for key, default in zip(_PRINT_SIZE_PRESET_KEYS, defaults, strict=True):
             value = str(self._settings.value(key, default))
@@ -261,7 +261,7 @@ class PrintController(QObject):
 
     @Slot(result=list)
     def printOptionSizes(self) -> list[str]:  # noqa: N802
-        """Az `options.fen` 17 elemű `ytPrintSizes` listája (#4318)."""
+        """Az `options.fen` 16 elemű méretlistája, FullPage nélkül (#5492)."""
         return list(_PRINT_OPTION_SIZES)
 
     @Slot(str, result=bool)

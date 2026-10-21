@@ -94,6 +94,9 @@ def _valassz_combo(ablak, qt_app, combo, index):
         and lista.property("contentHeight") > 0
         and lista.property("height") > 0,
     ), "a nyomtatásiméret-lista tartalma nem épült fel"
+    assert lista.property("count") == 16, (
+        "az Opciók méretlistája nem az eredeti 16 tételű, FullPage nélküli lista"
+    )
     sor_magassag = lista.property("contentHeight") / lista.property("count")
     cel_scroll = (index + 0.5) * sor_magassag - lista.property("height") / 2
     cel_scroll = max(
@@ -156,11 +159,11 @@ def test_metrikus_terulet_ot_alapmerete_a_nyomtatas_fulon_latszik(
     print_ctl = engine.rootContext().contextProperty("printController")
     print_ctl._settings.setValue(LANGUAGE_KEY, "en")
     vart = [
-        ("M5X8CM", "5 x 8 cm"),
-        ("M9X13CM", "9 x 13 cm"),
         ("M10X15CM", "10 x 15 cm"),
         ("M13X18CM", "13 x 18 cm"),
+        ("M15X20CM", "15 x 20 cm"),
         ("M20X25CM", "20 x 25 cm"),
+        ("CONTACT", "Contact Sheet"),
     ]
     meret_azonositok = _lista(print_ctl.printOptionSizes())
     for index, (nev, felirat) in enumerate(vart):
@@ -227,7 +230,8 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     assert combo.property("enabled") is True, "a méretválasztó le van tiltva"
     print_ctl = engine.rootContext().contextProperty("printController")
     meretek = _lista(print_ctl.printOptionSizes())
-    assert len(meretek) == 17, "a beállítási lista nem a 17 eredeti nyomatméret"
+    assert len(meretek) == 16, "a beállítási lista nem a 16 eredeti nyomatméret"
+    assert "TELJES_OLDAL" not in meretek, "a Teljes oldal tévesen választható az Opciókban"
     elvart_meretek = ["M3_5X5", "M4X6", "M5X7", "M8X10", "M4X5"]
     for index, nev in enumerate(elvart_meretek):
         combo = _ismetlo_elem(
