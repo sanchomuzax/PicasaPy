@@ -93,3 +93,31 @@ def make_jpeg(
         segment = _app13_segment(caption, keywords, encoding, charset_marker)
         path.write_bytes(raw[:2] + segment + raw[2:])
     return path
+
+
+def make_minta_jpeg(path, size=(320, 240), seed: int = 0) -> None:
+    """Mintázatos szintetikus próbakép: színátmenet, csíkok és körök.
+
+    A kiadásképeken a rács csempéinek látható képet kell mutatniuk; az
+    egyszínű próbakép a felületen üres négyzetnek látszik (picasapy-agent
+    #225). A `seed` képenként más színt és elrendezést ad.
+    """
+    from PIL import ImageDraw
+
+    szel, mag = size
+    alap = ((seed * 67) % 256, (seed * 131 + 80) % 256, (seed * 29 + 160) % 256)
+    kep = Image.new("RGB", size)
+    rajz = ImageDraw.Draw(kep)
+    for y in range(mag):
+        arany = y / max(mag - 1, 1)
+        szin = tuple(int(c * (1 - arany) + (255 - c) * arany) for c in alap)
+        rajz.line((0, y, szel, y), fill=szin)
+    lepes = max(szel // 8, 4)
+    for x in range(-mag, szel, lepes):
+        rajz.line((x, mag, x + mag, 0), fill=(255 - alap[0], alap[2], alap[1]), width=3)
+    for i in range(3):
+        r = max(min(szel, mag) // (4 + i), 4)
+        cx = (seed * 37 + i * szel // 3) % szel
+        cy = (seed * 53 + i * mag // 2) % mag
+        rajz.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(alap[2], 255 - alap[1], alap[0]))
+    kep.save(path, "JPEG", quality=92)

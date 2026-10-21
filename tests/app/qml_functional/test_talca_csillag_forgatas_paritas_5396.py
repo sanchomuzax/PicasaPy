@@ -10,7 +10,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from picasapy.ini import KeyValueLine, load_document
-from support.jpeg_factory import make_jpeg
+from support.jpeg_factory import make_minta_jpeg
 from support.qt_wait import wait_for_photo_op
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from tests.app.qml_functional.conftest import _build_qml_app
@@ -18,16 +18,21 @@ from tests.app.qml_functional.conftest import _build_qml_app
 
 @pytest.fixture
 def csillag_forgatas_app(qt_app, tmp_path):
+    # A valódi bélyegkép-szolgáltató és mintázatos képek: a teszt képe a
+    # kiadásba kerül, és ott a csempéken látható képnek kell lennie
+    # (picasapy-agent #225).
     yield from _build_qml_app(
         qt_app,
         tmp_path,
         kepeket_keszit=_keszits_kepeket,
+        belyegkep_meret=256,
+        valodi_belyegkep=True,
     )
 
 
 def _keszits_kepeket(mappa: Path) -> None:
     for sorszam in range(1, 8):
-        make_jpeg(mappa / f"{sorszam}.jpg", size=(80, 60))
+        make_minta_jpeg(mappa / f"{sorszam}.jpg", size=(320, 240), seed=sorszam)
 
 
 def _qml_bejaras(gyoker):
