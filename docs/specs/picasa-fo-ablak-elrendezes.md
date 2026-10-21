@@ -810,8 +810,8 @@ A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML
 
 | eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
 |---|---|---|---|---|---|---|
-| `E-mail program:` csoport, 1. tétel: `Let me choose each time I send pictures` | `mailprog` (`0x00ca9b80`), vezérlőnév; kijelölése a `EmailPrepType` (`0x00ca9b48`) és `DoNotPromptForEmailPref` (`0x00ca9b58`) értékéből jön | alapértelmezettként az 1. tétel (`EmailPrepType=3`, `DoNotPromptForEmailPref=0`; `0x006e1710`, `0x006e1735`, `0x006e1771-0x006e1807`) | `optionsMailChooseRadio` (2. helyen) | `mail/useDefaultClient` (hamis) | hamis | ELTÉR (sorrend: az eredetiben az 1., nálunk a 2. tétel; csoportfelirat: `Mail program:`) |
-| 2. tétel: `Use my computer's default e-mail program` | `defaultmail` (`0x00ca9b94`) | NYITVA | `optionsMailDefaultRadio` (1. helyen) | `mail/useDefaultClient` (igaz) | igaz | ELTÉR (felirat: `Use this computer's default email program`) |
+| `E-mail program:` csoport, 1. tétel: `Let me choose each time I send pictures` | `mailprog` (`0x00ca9b80`), vezérlőnév; kijelölése a `EmailPrepType` (`0x00ca9b48`) és `DoNotPromptForEmailPref` (`0x00ca9b58`) értékéből jön | alapértelmezettként az 1. tétel (`EmailPrepType=3`, `DoNotPromptForEmailPref=0`; `0x006e1710`, `0x006e1735`, `0x006e1771-0x006e1807`) | `optionsMailChooseRadio` (1. helyen) | `mail/useDefaultClient` (hamis) | hamis | ELTÉR (csoportfelirat: `Mail program:`) |
+| 2. tétel: `Use my computer's default e-mail program` | `defaultmail` (`0x00ca9b94`) | NYITVA | `optionsMailDefaultRadio` (2. helyen) | `mail/useDefaultClient` (hamis) | hamis | ELTÉR (felirat: `Use this computer's default email program`) |
 | 3. tétel: `Use my Google account` | a `mailprog` 3. tétele, nincs külön kulcs | - | `optionsMailGoogleRadio` (letiltva) | nincs | - | HIÁNYZIK (letiltott; nálunk nincs Google-fiók-integráció) |
 | `Size for multiple pictures:` (csúszka 0-7, 8 fokozat: 160 ... 1600 képpont) | `picsize` (`0x00ca9b8c`, vezérlőnév); a tárolt képpontérték kulcsa `EmailExportSize` (`0x00ca9b70`) | 480 képpont, 2. pozíció (`0x006e1756`, leképezés: `0x006e59e0`) | `optionsMailSizeSlider`, `optionsMailSizeValue` | `mail/exportSize` | 480 (`email_controller.py`) | ELTÉR (felirat: `Multiple photo size`; a 8 fokozat egyezik) |
 | `Size for single pictures:`, 1. tétel: `Same as multiple (%s pixels)` | `EmailSinglePicture` (`0x00ca9b18`), a vezérlőérték 0/1 | alapérték 0: 1. tétel; 1 = `Original size` (`0x006e16cb-0x006e16f3`, ellenőrző olvasás: `0x0073f394`) | `optionsMailSingleSameRadio` | `mail/singlePictureOriginal` | hamis (`email_controller.py`) | ELTÉR (csoportfelirat: `Single picture size:`; a tétel szövege egyezik) |
@@ -852,8 +852,10 @@ A fejléc (`Display JPEG files and:`) egyezik. Az összevetés Windows-blokkot h
 |---|---|---|---|---|---|---|
 | `Available print sizes:` (5 popup: `print1` ... `print5`, 3+2 oszlop) | `print%d` (`0x00ca9bb8`), nincs a regisztrálóban | 16 tétel, a sorrendet lásd a 13. szakaszban (`0x006e5d70`, `0x00775ce0`); a kiválasztott érték alapértéke külön nincs megadva | `optionsPrintSizeCombo0` ... `4` (5 legördülő, 3+2 oszlop) | előbeállítás-kulcsok (`print_controller.py`) | területi készletből indul (`print_controller.py`) | ELTÉR (a saját lista sorrendje eltér, és `FullPage`-et is tartalmaz) |
 | `Previews:` / `Use high quality previews (slower)` | `PrintProxyPreview` (`0x00ca9a40`) | 1 (`0x006e0d74`; a gyors proxy az alap) | `optionsPrintHiResPreviewCheck` (megfordított: jelölt = nem proxy) | `printing/proxyPreview` | jelöletlen | EGYEZIK |
-| `Printer quality:` (Windows) / `Compatible (half-res)`, `High Quality (full-res)` | `PrinterQuality` (`0x00ca9a18`) | 2 (`0x006e0d47-0x006e0d51`); 2 = `Compatible`, 3 = `High Quality` (`0x006e23e7-0x006e23ea`, mentés: `0x006e419f-0x006e41a6`) | `optionsPrintQualityCompatibleRadio`, `optionsPrintQualityHighQualityRadio` (csak Windows) | `printing/printerQuality` | `compatible` | ELTÉR (a nálunk használt szöveges kulcs és érték eltér az eredeti 2/3 egész kódtól; az alapválasztás egyezik) |
-| `Print resampler quality:` / `General (Lanczos-3)`, `Extra sharp (Lanczos-8)` | `PrintResamplerQuality` (`0x00ca9a28`) | **5 = 1. rádió**, **8 = 2. rádió** (`0x006e238d-0x006e24a7`, visszaírás: `0x006e4224-0x006e4255`) | `optionsPrintResizeGeneralRadio` (3), `optionsPrintResizeSharpRadio` (8) | `printing/resamplerQuality` | 3 (`print_controller.py`) | ELTÉR (az eredeti 5-öt ír az 1. rádióhoz; nálunk ugyanez a rádió 3-at tárol) |
+| `Printer quality:` (Windows) / `Compatible (half-res)`, `High Quality (full-res)` | `PrinterQuality` (`0x00ca9a18`) | 2 = `Compatible`, 3 = `High Quality`; alapérték 2 (`0x006e0d47`-`0x006e0d51`; olvasás `0x006e23e7`, mentés `0x006e419f`) | `optionsPrintQualityCompatibleRadio`, `optionsPrintQualityHighQualityRadio` (csak Windows) | `printing/printerQuality` | 2 = `Compatible`, 3 = `High Quality`; alapérték 2 | EGYEZIK |
+| `Print resampler quality:` / `General (Lanczos-3)`, `Extra sharp (Lanczos-8)` | `PrintResamplerQuality` (`0x00ca9a28`) | 5 = `General (Lanczos-3)`, 8 = `Extra sharp (Lanczos-8)`; alapérték 5 (`0x006e0d5a`; olvasás `0x006e238d`-`0x006e24a7`, mentés `0x006e4224`-`0x006e4255`) | `optionsPrintResizeGeneralRadio` (5), `optionsPrintResizeSharpRadio` (8) | `printing/resamplerQuality` | 5 = General, 8 = Extra sharp; alapérték 5 | EGYEZIK (a korábbi 3-as érték a General választást jelenti) |
+
+Az eredeti `PrintResamplerQuality` 5-ös tárolt értéke a Lanczos-3 szűrősugarat választja; a PicasaPy ezt a belső 3-as sugárra fordítja rendereléskor. A korábbi PicasaPy-beállításban mentett 3-as érték betöltéskor szintén a General rádiót jelenti, de az új választás már 5-ként mentődik.
 
 ### 7. Hálózat (Network)
 
@@ -909,7 +911,7 @@ Egy megjegyzés a saját kódunkról: az `email_controller.py` docstringjei 480-
 
 ### 11. Összesítés
 
-**58 sor:** 11 EGYEZIK · 29 ELTÉR · 16 HIÁNYZIK · 2 NYITVA.
+**58 sor:** 13 EGYEZIK · 27 ELTÉR · 16 HIÁNYZIK · 2 NYITVA.
 
 | fül | EGYEZIK | ELTÉR | HIÁNYZIK | NYITVA |
 |---|---:|---:|---:|---:|
@@ -917,12 +919,12 @@ Egy megjegyzés a saját kódunkról: az `email_controller.py` docstringjei 480-
 | E-Mail | 0 | 7 | 2 | 0 |
 | Fájltípusok | 1 | 9 | 0 | 1 |
 | Diavetítés | 2 | 0 | 0 | 1 |
-| Nyomtatás | 1 | 3 | 0 | 0 |
+| Nyomtatás | 3 | 1 | 0 | 0 |
 | Hálózat | 0 | 2 | 3 | 0 |
 | Webalbumok | 0 | 0 | 8 | 0 |
 | Névcímkék | 3 | 2 | 1 | 0 |
 
-A két legfontosabb számbeli eltérés továbbra is a klaszter-küszöb (eredeti 85, nálunk 70) és a nyomtatási átméretező tárolt értéke. Az eredeti 5 az első, Lanczos-3 rádiót jelenti; a PicasaPy ugyanahhoz a felirathoz 3-at tárol. Ez a számkódok kompatibilitását érinti, a felirat szerinti választást nem.
+A fő megmaradt mérhető eltérés a klaszter-küszöb alapértéke (bináris 85, nálunk 70); a nyomtatási méretlista eltérését a #5492 viszi. A 70 értéke a kódban SFace-hez kalibrált, ezért a változtatás előtt külön mérés kell.
 
 ### 12. Megvalósítási jegy-javaslatok és nyitott kérdések
 
