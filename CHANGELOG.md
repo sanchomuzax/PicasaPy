@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.181] - 2026-10-21
+
+- Metrikus területi beállításnál a nyomtatási gyorsválasztók alapértéke az eredeti Picasáé (10x15, 13x18, 15x20, 20x25 cm és Indexképek), az Opciók méretlistájában pedig nincs Teljes oldal tétel (#5492).
+
 ## [0.9.180] - 2026-10-21
 
 - Az induláskori nyelvi kérdés az eredeti Picasa angol megfogalmazását használja, a program saját nevével (PicasaPy) (#5458).
