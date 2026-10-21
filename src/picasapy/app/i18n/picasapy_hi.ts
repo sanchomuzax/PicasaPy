@@ -1658,10 +1658,10 @@ picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::t
     <context>
         <name>OptionsTabNetwork</name>
         <message>
-            <source>Proxy username (Windows only):</source>
+            <source>Proxy username:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/proxygroup.title;options:options/labelgroup130.title</extracomment>
-            <translation>प्रॉक्सी उपयोगकर्ता नाम (केवल Windows):</translation>
+picasapy-origin-key: options:options/labelgroup130.title</extracomment>
+            <translation>प्रॉक्सी उपयोगकर्ता का नाम:</translation>
         </message>
         <message>
             <source>Proxy password:</source>
@@ -1676,16 +1676,16 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/autoproxy.title;optio
             <translation>नेटवर्क सेटिंग का अपने आप पता लगाएं</translation>
         </message>
         <message>
-            <source>Network logging level:</source>
+            <source>Network log level:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loglevelgroup.title;options:options/labelgroup135.title</extracomment>
+picasapy-origin-key: options:options/labelgroup135.title</extracomment>
             <translation>नेटवर्क लॉग स्तर:</translation>
         </message>
         <message>
-            <source>Disable logging</source>
+            <source>Disable Logging</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/disable_item.title;options:options/item137.title</extracomment>
-            <translation>लॉगिंग बंद करें</translation>
+picasapy-origin-key: options:options/item137.title</extracomment>
+            <translation>लॉग करना अक्षम करें</translation>
         </message>
         <message>
             <source>Log errors only</source>
@@ -1712,9 +1712,9 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/all_item.title;option
             <translation>सभी नेटवर्क जानकारी लॉग करें</translation>
         </message>
         <message>
-            <source>Log file:</source>
+            <source>Log:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loggroup.title;options:options/labelgroup142.title</extracomment>
+picasapy-origin-key: options:options/labelgroup142.title</extracomment>
             <translation>लॉग:</translation>
         </message>
         <message>
@@ -1733,9 +1733,34 @@ picasapy-origin-key: options:options/labelgroup145.title</extracomment>
             <translation>डिफ़ॉल्ट अपलोड आकार:</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>मूल आकार</translation>
+            <source>Original size (slowest upload)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::Original</extracomment>
+            <translation>मूल आकार (सबसे धीमा अपलोड)</translation>
+        </message>
+        <message>
+            <source>Best for web sharing (2048px)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::2048</extracomment>
+            <translation>वेब साझाकरण के लिए सर्वश्रेष्ठ (2048px)</translation>
+        </message>
+        <message>
+            <source>Recommended: 1600 pixels (for prints, screensavers, and sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1600</extracomment>
+            <translation>सुझाए गए: 1600 पिक्सेल (प्रिंट, स्क्रीनसेवर और साझा करने के लिए)</translation>
+        </message>
+        <message>
+            <source>Medium: 1024 pixels (for sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1024</extracomment>
+            <translation>मध्यम: 1024 पिक्सेल (साझा करने के लिए)</translation>
+        </message>
+        <message>
+            <source>Small: 800 pixels (for blogs and webpages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::800</extracomment>
+            <translation>छोटा: 800 पिक्सेल (ब्लॉग और वेबपृष्ठों के लिए)</translation>
         </message>
         <message>
             <source>When syncing large files, upload previews first</source>
@@ -1806,7 +1831,7 @@ picasapy-origin-key: options:options/labelgroup181.title</extracomment>
             <translation>समूह सीमा:</translation>
         </message>
         <message>
-            <source>Store name tags in the file</source>
+            <source>Store name tags in photo</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
             <translation>फ़ोटो में नाम टैग संगृहीत करें</translation>

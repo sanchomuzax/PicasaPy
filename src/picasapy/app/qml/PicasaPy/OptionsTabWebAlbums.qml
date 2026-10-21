@@ -17,15 +17,34 @@ import QtQuick.Layouts
 // itt "confirmsync" lenne).
 ColumnLayout {
     id: root
+    objectName: "optionsWebAlbumsTab"
     spacing: 10
     enabled: false
+
+    readonly property var prefs: (typeof controller !== "undefined" && controller)
+        ? controller : null
 
     RowLayout {
         spacing: 8
         Text { text: qsTr("Default upload size:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
+        // #5482: az eredeti sablon öt tétele, a sablon sorrendjében (a
+        // `CGeneralPrefsPage` sztringjei). A hosszú tételek csonkolódnak, de
+        // nem szélesítik a fület; a kiválasztott méretet a controller tárolja,
+        // a hiányzó kulcsnál az 1600 (2. index) van kiválasztva.
         PicasaComboBox {
             objectName: "optionsWebUploadSizeCombo"
-            model: ["800px", "1024px", "1600px", qsTr("Original size")]
+            Layout.fillWidth: true
+            Layout.minimumWidth: 0
+            model: [qsTr("Original size (slowest upload)"),
+                    qsTr("Best for web sharing (2048px)"),
+                    qsTr("Recommended: 1600 pixels (for prints, screensavers, and sharing)"),
+                    qsTr("Medium: 1024 pixels (for sharing)"),
+                    qsTr("Small: 800 pixels (for blogs and webpages)")]
+            currentIndex: root.prefs && root.prefs.webUploadSizeIndex !== undefined
+                ? root.prefs.webUploadSizeIndex : 2
+            onActivated: if (root.prefs
+                    && typeof root.prefs.setWebUploadSizeIndex === "function")
+                root.prefs.setWebUploadSizeIndex(currentIndex)
         }
     }
     CheckBox {

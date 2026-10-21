@@ -1658,10 +1658,10 @@ picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::t
     <context>
         <name>OptionsTabNetwork</name>
         <message>
-            <source>Proxy username (Windows only):</source>
+            <source>Proxy username:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/proxygroup.title;options:options/labelgroup130.title</extracomment>
-            <translation>Nome de utilizador do proxy:</translation>
+picasapy-origin-key: options:options/labelgroup130.title</extracomment>
+            <translation>Nome de utilizador de proxy:</translation>
         </message>
         <message>
             <source>Proxy password:</source>
@@ -1676,16 +1676,16 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/autoproxy.title;optio
             <translation>Detectar automaticamente as definições de rede</translation>
         </message>
         <message>
-            <source>Network logging level:</source>
+            <source>Network log level:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loglevelgroup.title;options:options/labelgroup135.title</extracomment>
+picasapy-origin-key: options:options/labelgroup135.title</extracomment>
             <translation>Nível de registo da rede:</translation>
         </message>
         <message>
-            <source>Disable logging</source>
+            <source>Disable Logging</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/disable_item.title;options:options/item137.title</extracomment>
-            <translation>Desativar registo</translation>
+picasapy-origin-key: options:options/item137.title</extracomment>
+            <translation>Desativar início de sessão</translation>
         </message>
         <message>
             <source>Log errors only</source>
@@ -1712,10 +1712,10 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/all_item.title;option
             <translation>Registar todas as informações de rede</translation>
         </message>
         <message>
-            <source>Log file:</source>
+            <source>Log:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loggroup.title;options:options/labelgroup142.title</extracomment>
-            <translation>Ficheiro de registo:</translation>
+picasapy-origin-key: options:options/labelgroup142.title</extracomment>
+            <translation>Registo:</translation>
         </message>
         <message>
             <source>Browse...</source>
@@ -1733,9 +1733,34 @@ picasapy-origin-key: options:options/labelgroup145.title</extracomment>
             <translation>Tamanho de carregamento predefinido:</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tamanho original</translation>
+            <source>Original size (slowest upload)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::Original</extracomment>
+            <translation>Tamanho original (carregamento mais lento)</translation>
+        </message>
+        <message>
+            <source>Best for web sharing (2048px)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::2048</extracomment>
+            <translation>Otimizado para partilha na Web (2048 pixels)</translation>
+        </message>
+        <message>
+            <source>Recommended: 1600 pixels (for prints, screensavers, and sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1600</extracomment>
+            <translation>Recomendado: 1600 pixels (para impressões, proteções de ecrã e partilha)</translation>
+        </message>
+        <message>
+            <source>Medium: 1024 pixels (for sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1024</extracomment>
+            <translation>Médio: 1024 pixels (para partilha)</translation>
+        </message>
+        <message>
+            <source>Small: 800 pixels (for blogs and webpages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::800</extracomment>
+            <translation>Pequeno: 800 pixels (para blogues e páginas Web)</translation>
         </message>
         <message>
             <source>When syncing large files, upload previews first</source>
@@ -1806,7 +1831,7 @@ picasapy-origin-key: options:options/labelgroup181.title</extracomment>
             <translation>Limite de grupo:</translation>
         </message>
         <message>
-            <source>Store name tags in the file</source>
+            <source>Store name tags in photo</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
             <translation>Armazenar etiquetas de nome nas fotografias</translation>
