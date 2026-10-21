@@ -20,7 +20,7 @@ Ez a lap a #5186 gyűjtő harmadik kötegének húsz lezárt jegyét veti össze
 | #4560 Háttérszín felirat | EGYEZIK | `picasa-effekt-feliratok.md` 75; `stringres-en-hu.tsv` 1823 | nincs |
 | #4561 csempe-előnézet a frissített láncról | NEM DÖNTHETŐ EL | `ui-audit-editor.md` 2900; kód: `editorpanel_logika.js` 76-84 | élő próba: két egymás utáni effekt után a csempék bélyegképe |
 | #4562 filmszalag hét férőhellyel | EGYEZIK | `szerkeszto-felso-sav.md` 5.1-5.3 | nincs |
-| #4570 AutoPlayMovies kapcsoló | ELTÉR | bináris `0x00c91f74`; `ui-audit-editor.md` 3252 | A videó automatikus lejátszása kapcsolható legyen a beállításokban |
+| #4570 AutoPlayMovies kapcsoló | EGYEZIK | bináris `0x00c91f74`; `ui-audit-editor.md` #5466 szakasz | nincs: az eredeti kulcs is rejtett, alapértéke 1 |
 | #4571 Névtelenek csempéi arcot mutatnak | EGYEZIK | `picasa-arcfelismeres.md` (Névtelenek nézet) | nincs |
 | #4572 névtelen arc kattintásra keret | EGYEZIK | `picasa-arcfelismeres.md` 943-944; bináris `0x00ca0f44` | nincs |
 | #4574 `Add a person manually` gomb | NEM DÖNTHETŐ EL | `picasa-arcfelismeres.md` 943 | Colab-felvétel: az Emberek panel kijelölés nélkül, névtelen és mellőzött arc kijelölésével, látszik-e a gomb |
@@ -69,10 +69,10 @@ Ez a lap a #5186 gyűjtő harmadik kötegének húsz lezárt jegyét veti össze
 
 ### #4570 Az AutoPlayMovies beállítás szabályozza, hogy a videó megnyitáskor magától elindul-e
 
-- **Eredeti:** az `AutoPlayMovies` sztring a bináris `0x00c91f74` címen van, két függvény hivatkozza (`0x00593880`, `0x00594820`). A `docs/specs/ui-audit-editor.md` 3252. sora `Preferences` kulcsként írja le. A felirat és a hely nincs a specben, és a `stringres-en-hu.tsv` nem tartalmaz ilyen feliratot. Az alapérték az eredetiben nincs mérve.
+- **Eredeti:** a `0x00593880` és `0x00594820` két külön kódútból olvassa a `Preferences\AutoPlayMovies` kulcsot. Mindkettő 1-es alapértéket ad át (`0x00593ff0`, `0x00594c54`); a kulcs a `0x00c91f74` címen van. A teljes `.text` közvetlen hivatkozás-keresése csak e két használatot találta. A `runtime/*.fen`, a menü és a stringres ellenőrzése nem talált hozzá felhasználói vezérlőt vagy feliratot. Részletes bizonyíték: `ui-audit-editor.md`, „Az `AutoPlayMovies` rejtett Preferences-kulcs” szakasz.
 - **Nálunk:** a beállítás be van kötve. `src/picasapy/app/appearance_controller.py` 26-28 (kulcs `view/autoPlayMovies`, a kódkomment szerint alapérték igaz), 97-98 (olvasás), 176-190 (property és `setAutoPlayMovies`). A `VideoPlayerView.qml` 21-24. sora és 106. sora a megnyitáskor elindítja a lejátszást. Felhasználói felület nincs: a `setAutoPlayMovies`-nek nincs QML-hívója, így a beállítás csak a beállítások fájlján keresztül érhető el.
-- **Ítélet:** ELTÉR. A jegy azt várja, hogy a felhasználó kapcsolhassa a beállítást, és ez nem teljesül. A jegy „Nálunk ma” szakasza (a `grep` nulla találatot ad) elavult: a beállítás már be van kötve.
-- **Teendő:** A videó automatikus lejátszása kapcsolható legyen a beállításokban. A felirat és a hely Colab-felvételből derítendő ki (a Picasa beállítás-párbeszédének képe, ahol az `AutoPlayMovies` kapcsoló van).
+- **Ítélet:** EGYEZIK a kapcsoló láthatósága szempontjából: az eredetiben sincs felhasználói vezérlő. A „Nálunk ma” leírása a beállítás bekötéséről továbbra is érvényes.
+- **Teendő:** nincs. Az eredetihez sem tartozik felirat vagy beállításlap, ezért fejlesztői jegy nem indokolt.
 
 ### #4571 A Névtelenek album csempéi az arcot mutatják, nem a fotó közepét
 

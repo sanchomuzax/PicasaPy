@@ -767,6 +767,179 @@ adatmásolási viselkedése.*
 
 ---
 
+## A Beállítások (Opciók) párbeszéd fülenkénti összevetése a binárissal (2026-10-21, #5470)
+
+> **Bizonyítottsági fok:** a kulcsok és a regisztrált alapértékek **bináris** (cím megadva). A fülfeliratok és a vezérlőtípusok a **sablonból** vannak (`runtime/options.fen`; a kezelő kulcs-hivatkozásai egyeznek vele). Ahol az alapérték sem a regisztrálóból, sem a kezelő ágaiból nincs igazolva, ott **NYITVA** áll, és a Ghidra-kör neve a 12. szakaszban van.
+
+### 1. Forrás, módszer, eltérések
+
+- **Kezelő:** `0x006e1100` (9 494 bájt, `CGeneralPrefsPage`). Mind a nyolc fül vezérlőit ez építi, és ez olvassa a kulcsaikat.
+- **Alapérték-regisztráló:** `0x006e0cb0` (590 bájt), 39 regisztrálási hívással. 31 hívás a `0x006e0a70`-et használja (`push <alapérték>`, `mov eax, <kulcs>`), 7 a `0x006e0b20`-at (egész kulcs: `eax` az alapérték, `ecx` a kulcs sztringje), 1 a `0x006e0bc0`-at. A `0x006e0b20` a `Preferences\<kulcs>` értéket olvassa, és az alapértéket adja vissza, ha nincs tárolt érték.
+- **Olvasó:** `0x00407a20`, a `Preferences\<kulcs>` értéke. Az alapértéket a hívó adja át: a `ReportStats` olvasásánál ez `-1` (`0x006e1327`), és az eredményt `cmp eax, -1` ellenőrzi (`0x006e1340`).
+- **Sablon:** `runtime/options.fen`, 262 sor, **nyolc** `<tab>`. A bináris SHA-256-jának első nyolc jegye (`644b7bec`) egyezik a sablon telepítésének `Picasa3.exe`-jével.
+- **Eltérés a feladatleírástól:** a feladat hét fület említ. A sablon, a kezelő kulcs-hivatkozásai és a PicasaPy `OptionsDialog.qml` is **nyolc** fület ír le: Általános, E-Mail, Fájltípusok, Diavetítés, Nyomtatás, Hálózat, Webalbumok, Névcímkék. A fejléc „9 fül" megjegyzése is téves.
+- **Csak Mac (nem vonatkozik):** `Show help tags` (`ShowTooltips`, `os="mac"`), `When a camera is connected, launch:` (`plugInCameraActionChoice`), a fájltípusok `os="mac"` blokkja. Az összevetés alapja a Windows-felirat.
+
+**Státuszok**
+
+- **EGYEZIK**: a felirat, a kulcs (vagy a funkció) és az alapérték megegyezik.
+- **ELTÉR**: van megfelelő vezérlő, de a felirat, a kulcs, az alapérték vagy a vezérlőtípus más. Egy eltérő felirat önmagában is ELTÉR.
+- **HIÁNYZIK**: nincs működő megfelelő vezérlő (a nálunk lévő elem letiltott, rejtett, vagy nincs is).
+- **NYITVA**: az alapérték nincs igazolva. Sem EGYEZIK, sem ELTÉR nem állítható, amíg a 12. szakasz Ghidra-köre nem dönt.
+
+A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML-elem, kulcs, alapérték), **állapot**. A zárójelben álló címek a kulcs sztringjének címei (`0x00…`), illetve az alapérték regisztrálásának utasítás-címei (`0x006e…`).
+
+### 2. Általános (General)
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `Use special effects` | `UITransitions` (`0x00c88e08`) | 1 (`0x006e0ce0`) | `optionsUiTransitionsCheck` | `view/uiTransitions` | igaz | EGYEZIK |
+| `Show tooltips` | `ShowTooltips` (`0x00ca9a08`) | 1 (`0x006e0ced`) | `optionsShowTooltipsCheck` | `view/showTooltips` | igaz | EGYEZIK |
+| `Single-click to exit Edit View` | `SingleClickExit` (`0x00c8e614`) | 0 (`0x006e0cfa`) | `optionsSingleClickExitCheck` | `view/singleClickExit` | hamis | ELTÉR (felirat: `Single click to exit the editing view`) |
+| `Detect duplicates while importing` | `autoexclude` (`0x00c8875c`) | 1 (`0x006e0d31`) | `optionsAutoExcludeCheck` | `import/autoexclude` | hamis | ELTÉR (alapérték; felirat: `Detect duplicates on import`) |
+| `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheButton` (gomb, megerősítéssel) | nincs (művelet) | - | ELTÉR (kapcsoló helyett gomb; felirat: `Clear Cache...`) |
+| `Delete from disk without confirmation` | `DoNotConfirmDeleteFromDisk` (`0x00c98f48`) | 0 (`0x006e0d14`) | `optionsSkipDeleteConfirmCheck` | megerősítési döntés: `delete` | hamis | EGYEZIK |
+| `Remove from album without confirmation` | `DoNotConfirmRemoveFromAlbum` (`0x00c98f64`) | 0 (`0x006e0d24`) | `optionsSkipRemoveConfirmCheck` | megerősítési döntés: `removeFromAlbum` | hamis | EGYEZIK |
+| `Send anonymous usage stats to Google` | `ReportStats` (`0x00c80118`), nincs a regisztrálóban | NYITVA (az olvasó alapértéke `-1`, `0x006e1327`) | `optionsUsageStatsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; felirat: `Send anonymous usage statistics`) |
+| `Privacy...` (link) | `privacy` (`0x00ca9af8`), cél: sablon szerinti súgó-URL | - | `optionsPrivacyLink` | nincs (külső URL) | - | ELTÉR (cél: nálunk `policies.google.com/privacy`) |
+| `Automatic updates:` (popup: `Update automatically`, `Ask before downloading updates`, `Don't check for updates`) | `AutoUpgradeCheck` (`0x00c860e0`, alapérték 1 a `0x006e0cb9`-en), `AutoUpgradeAsk` (`0x00c860d0`, alapérték 0 a `0x006e0cc6`-on) | NYITVA (a popup tételeinek kulcs-leképezése nincs visszafejtve) | `optionsUpdateModeCombo` (letiltva, 3 tétel) | nincs | 0. tétel | HIÁNYZIK (letiltott, nincs frissítő; felirat: `Prompt before downloading updates`, `Never check for updates`) |
+| `Language:` (popup, Windows) | `language` (`0x00c9fdec`, a 2026-09-24-es szakasz szerint; 42 tétel a `0x006e5e10`-ben) | -1 (nincs beállítva, `0x00406103`) | `optionsLanguageCombo` | `general/language` | rendszer | ELTÉR (2 nyelv a 41 helyett, lásd „A nyelvválasztó” szakaszt) |
+| `Save imported pictures in:` (`Browse...`) | `importdest` (`0x00ca9b0c`), nincs a regisztrálóban | NYITVA | `optionsImportDestField`, `optionsImportDestBrowseButton` | `import/defaultdestination` | NYITVA | ELTÉR (felirat: `Import destination folder:`) |
+
+### 3. E-Mail
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `E-mail program:` csoport, 1. tétel: `Let me choose each time I send pictures` | `mailprog` (`0x00ca9b80`), a csoport kulcsa | NYITVA | `optionsMailChooseRadio` (2. helyen) | `mail/useDefaultClient` (hamis) | hamis | ELTÉR (sorrend: az eredetiben az 1., nálunk a 2. tétel; csoportfelirat: `Mail program:`) |
+| 2. tétel: `Use my computer's default e-mail program` | `defaultmail` (`0x00ca9b94`) | NYITVA | `optionsMailDefaultRadio` (1. helyen) | `mail/useDefaultClient` (igaz) | igaz | ELTÉR (felirat: `Use this computer's default email program`) |
+| 3. tétel: `Use my Google account` | a `mailprog` 3. tétele, nincs külön kulcs | - | `optionsMailGoogleRadio` (letiltva) | nincs | - | HIÁNYZIK (letiltott; nálunk nincs Google-fiók-integráció) |
+| `Size for multiple pictures:` (csúszka 0-7, 8 fokozat: 160 ... 1600 képpont) | `picsize` (`0x00ca9b8c`, vezérlőnév); a párosított kulcs `EmailExportSize` (`0x00ca9b70`) nincs a regisztrálóban | NYITVA | `optionsMailSizeSlider`, `optionsMailSizeValue` | `mail/exportSize` | 480 (saját konstans, a `mailer/command.py`-ban; nem bináris) | ELTÉR (felirat: `Multiple photo size`; a 8 fokozat egyezik) |
+| `Size for single pictures:`, 1. tétel: `Same as multiple (%s pixels)` | `EmailSinglePicture` (`0x00ca9b18`), nincs a regisztrálóban | NYITVA | `optionsMailSingleSameRadio` | `mail/singlePictureOriginal` | hamis | ELTÉR (csoportfelirat: `Single picture size:`; a tétel szövege egyezik) |
+| 2. tétel: `Original size` | `EmailSinglePicture` | NYITVA | `optionsMailSingleOriginalRadio` | `mail/singlePictureOriginal` | hamis | NYITVA |
+| `Send movies as:`, 1. tétel: `First frame` | `EmailMovie` (`0x00ca9b2c`), nincs a regisztrálóban | NYITVA | `optionsMailMovieFirstFrameRadio` | `mail/movieFull` | hamis | ELTÉR (csoportfelirat: nálunk `Send videos as:`) |
+| 2. tétel: `Full movie` | `EmailMovie` | NYITVA | `optionsMailMovieFullRadio` | `mail/movieFull` | hamis | ELTÉR (felirat: nálunk `Full film`) |
+| `Send inline photos and captions (Outlook only)` (Windows) | `UseHTMLMailer` (`0x00ca9b38`), nincs a regisztrálóban | NYITVA | `optionsMailUseHtmlCheck` (letiltva) | nincs | - | HIÁNYZIK (letiltott; csak Windows/Outlook) |
+
+### 4. Fájltípusok
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `.BMP` | `SupportBMP` (`0x00c80fd4`) | 1 (`0x006e0e64`) | `optionsFileTypeBmpCheck` | `library/fileTypes/bmp` | igaz | ELTÉR (felirat: `.bmp`) |
+| `.GIF` | `SupportGIF` (`0x00c81010`) | 0 (`0x006e0e7e`) | `optionsFileTypeGifCheck` | `library/fileTypes/gif` | igaz | ELTÉR (alapérték: 0 és igaz; felirat: `.gif`) |
+| `.PNG` | `SupportPNG` (`0x00c81004`) | 0 (`0x006e0e8b`) | `optionsFileTypePngCheck` | `library/fileTypes/png` | igaz | ELTÉR (alapérték: 0 és igaz; felirat: `.png`) |
+| `.TGA` | `SupportTGA` (`0x00c86388`) | 0 (`0x006e0e98`) | `optionsFileTypeTgaCheck` | `library/fileTypes/tga` | igaz | ELTÉR (alapérték: 0 és igaz; felirat: `.tga`) |
+| `.TIF, .TIFF` | `SupportTIF` (`0x00c80fec`) | 1 (`0x006e0e47`) | `optionsFileTypeTiffCheck` | `library/fileTypes/tiff` | igaz | ELTÉR (felirat: `.tif, .tiff`) |
+| `.WEBP` | `SupportWEBP` (`0x00c80ff8`) | 1 (`0x006e0e57`) | `optionsFileTypeWebpCheck` | `library/fileTypes/webp` | igaz | ELTÉR (felirat: `.webp`; a szkenner a `.webp`-t nem indexeli, lásd #2344) |
+| `.PSD (Photoshop)` | `SupportPSD` (`0x00c80fe0`) | 1 (`0x006e0e71`) | `optionsFileTypePsdCheck` | `library/fileTypes/psd` | igaz | ELTÉR (felirat: `.psd (Photoshop)`) |
+| `RAW formats` | `SupportRAW` (regisztráló: `0x006e0ea5`) | 1 (`0x006e0ea5`) | `optionsFileTypeRawCheck` | `library/fileTypes/raw` | igaz | EGYEZIK |
+| `Supported Formats` (link a RAW mellett) | nincs kulcs; cél: sablon szerinti súgó-URL | - | `optionsFileTypeSupportedFormatsLink` (belső RAW-lista) | nincs | - | ELTÉR (cél: a sablonban külső súgó, nálunk belső ablak) |
+| `Movies (.AVI, .MPG, .ASF, .WMV)` | `SupportMovies` (`0x00c8101c`), számított | számított (NYITVA) | `optionsFileTypeMoviesCheck` (felirat: `Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)`) | `library/fileTypes/movies` | igaz | ELTÉR (felirat: a Mac-os lista; alapérték: számított és igaz) |
+| `Quicktime Movies (.MOV)` | `SupportQuicktime` (`0x00c86358`), számított (`0x006e0e1c`) | számított (NYITVA) | `optionsFileTypeQuickTimeCheck` | `library/fileTypes/quicktime` | igaz | NYITVA (a felirat egyezik; az alapérték telepítéstől függ) |
+
+A fejléc (`Display JPEG files and:`) egyezik. Az összevetés Windows-blokkot használ, mert a PicasaPy `OptionsTabFileTypes.qml` fejléce szerint a két csoport egyesített.
+
+### 5. Diavetítés (Slideshow)
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `Loop slideshow` | `LoopSlideshow` (`0x00ca9a54`) | 0 (`0x006e0df4`) | `optionsSlideshowLoopCheck` | `view/slideshowLoop` | hamis | EGYEZIK |
+| `Play music tracks during slideshow` | `PlayMP3Tracks` (`0x00ca9a64`) | 1 (`0x006e0e01`) | `optionsSlideshowPlayMusicCheck` | `view/slideshowMusicEnabled` | igaz | EGYEZIK |
+| `Select a folder of music tracks:` + `Browse...` | `MP3SlideshowPath` (`0x00c97920`), nincs a regisztrálóban | NYITVA | `optionsSlideshowMusicPathField`, `optionsSlideshowMusicBrowseButton` | `view/slideshowMusicFolder` | üres | NYITVA (a felirat és a funkció egyezik; az alapérték nincs igazolva) |
+
+### 6. Nyomtatás (Printing)
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `Available print sizes:` (5 popup: `print1` ... `print5`, 3+2 oszlop) | `print%d` (`0x00ca9bb8`), nincs a regisztrálóban | NYITVA (a tételek nincsenek kiolvasva) | `optionsPrintSizeCombo0` ... `4` (5 legördülő, 3+2 oszlop) | előbeállítás-kulcsok (`print_controller.py`) | NYITVA | NYITVA (az elrendezés egyezik; a tételek és az alapértékek nincsenek igazolva) |
+| `Previews:` / `Use high quality previews (slower)` | `PrintProxyPreview` (`0x00ca9a40`) | 1 (`0x006e0d74`; a gyors proxy az alap) | `optionsPrintHiResPreviewCheck` (megfordított: jelölt = nem proxy) | `printing/proxyPreview` | jelöletlen | EGYEZIK |
+| `Printer quality:` (Windows) / `Compatible (half-res)`, `High Quality (full-res)` | `PrinterQuality` (`0x00ca9a18`), nincs a regisztrálóban | NYITVA | `optionsPrintQualityCompatibleRadio`, `optionsPrintQualityHighQualityRadio` (csak Windows) | `printing/printerQuality` | `compatible` | NYITVA |
+| `Print resampler quality:` / `General (Lanczos-3)`, `Extra sharp (Lanczos-8)` | `PrintResamplerQuality` (`0x00ca9a28`) | **5** (`0x006e0d5a`, a `0x006e0b20` egész-regisztrálóban) | `optionsPrintResizeGeneralRadio` (3), `optionsPrintResizeSharpRadio` (8) | `printing/resamplerQuality` | 3 | ELTÉR (alapérték: bináris 5, nálunk 3; az 5 és a két rádió közti leképezés NYITVA) |
+
+### 7. Hálózat (Network)
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `Proxy username:` (Windows) | `ProxyUser` (`0x00ca9bc0`), nincs a regisztrálóban | NYITVA | `optionsNetworkProxyUserField` (letiltva, üres) | nincs | - | HIÁNYZIK (letiltott; felirat: `Proxy username (Windows only):`) |
+| `Proxy password:` (Windows) | `ProxyPass` (`0x00ca9bcc`), nincs a regisztrálóban | NYITVA | `optionsNetworkProxyPasswordField` (letiltva) | nincs (a jelszót nem tároljuk) | - | HIÁNYZIK (letiltott; szándékos, a jelszó-tárolás nem kell) |
+| `Automatically detect network settings` | `autoProxy` (`0x00ca9bec`), nincs a regisztrálóban | NYITVA | `optionsNetworkAutoDetectCheck` (letiltva) | nincs | igaz (statikus) | HIÁNYZIK (letiltott) |
+| `Network log level:` (popup, 5 tétel) | `LogLevel` (`0x00ca9bf8`); alapérték 2 (`0x006e2b05`, a `0x006e2aff` olvasóban) | 2 | `optionsNetworkLogLevelCombo` (5 tétel) | `Preferences/LogLevel` | 2 | ELTÉR (felirat: `Network logging level:`; az első tétel: `Disable logging`, az eredetiben `Disable Logging`) |
+| `Log:` (csak olvasható útvonal) | nincs kulcs (vezérlőnév: `log`) | - | `optionsNetworkLogPathField` (olvasható) | nincs (rögzített `network.log`) | - | ELTÉR (felirat: `Log file:`; a funkció egyezik) |
+
+⚠️ A `loglevel` nevű második sztring (`0x00ca9c04`) olvasása **0** alapértékkel fut (`0x006e2b39`, `xor esi, esi`). Hogy melyik olvasó tartozik a popupba, az a 12. szakasz kérdése.
+
+### 8. Webalbumok (Web Albums)
+
+Az egész fül **letiltott** (`enabled: false` az `OptionsTabWebAlbums.qml` gyökerén). Fülcím: a sablon `Web Albums`, a bináris a `CGeneralPrefsPage::WebAlbumsTabEs` kulcsnál `Google Photos`-t ad (`0x00ca9a98`, `0x00c92398`); melyik ág érvényes a vizsgált buildben, az NYITVA.
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `Default upload size:` (popup, 5 tétel: `Original size (slowest upload)`, `Best for web sharing (2048px)`, `Recommended: 1600 pixels ...`, `Medium: 1024 pixels (for sharing)`, `Small: 800 pixels ...`) | `PWADefaultSize` (`0x00ca9c80`) | **1600** (`0x006e0d84`, a `0x006e0b20`-ban; az érték a `0x006e0d7a`-n) | `optionsWebUploadSizeCombo` (letiltva, 4 tétel: `800px`, `1024px`, `1600px`, `Original size`) | nincs | 800px (0. tétel) | HIÁNYZIK (letiltott; a 2048-as tétel hiányzik, az alapérték 1600 és 800px eltér) |
+| `When syncing large files, upload previews first` | `PWAStriped` (`0x00ca9c60`) | 0 (`0x006e0dda`) | `optionsWebStripedUploadCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték egyezik) |
+| `Preserve original image quality (uses more storage)` | `PWAUseHiQualityJPEG` (`0x00ca9c6c`) | 0 (`0x006e0de7`) | `optionsWebKeepJpegQualityCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték egyezik) |
+| `Sync starred photos only` | `PWAStarred` (`0x00ca9c44`) | 0 (`0x006e0db7`) | `optionsWebStarredOnlyCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték egyezik) |
+| `Don't confirm every sync (use the above settings)` | `confirmsync::disable` (`0x00c96d24`), nincs a regisztrálóban | NYITVA | `optionsWebConfirmSyncDisableCheck` (letiltva) | nincs | - | HIÁNYZIK (letiltott) |
+| `Include with photo uploads` (`Name Tags:` csoport) | `enablefruploads` (vezérlőnév, `0x00ca9abc`), `FREnableUploads` (`0x00c802bc`) | 1 (`0x006e0ecf`) | `optionsWebUploadNameTagsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték is eltér: 1 és hamis) |
+| `Add a watermark for all photo uploads:` | `haswatermark` (`0x00ca9de4`), nincs a regisztrálóban | NYITVA | `optionsWebWatermarkCheck` (letiltva) | nincs | - | HIÁNYZIK (letiltott) |
+| vízjel szövegmező (a sablonban: `Stamp photos with your name, a web domain, or a copyright notice.`) | `PWAWatermark` (`0x00ca9df4`), nincs a regisztrálóban | NYITVA | `optionsWebWatermarkTextField` (letiltva) | nincs | - | HIÁNYZIK (letiltott; a súgószöveg is hiányzik) |
+
+A `JPEG Quality:`, `Syncing:` és `Watermarks:` csoportcímek is hiányoznak.
+
+### 9. Névcímkék (Name Tags)
+
+| eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
+|---|---|---|---|---|---|---|
+| `Enable face detection` (vezérlőnév `enablefacedetection`, `0x00ca9e04`) | `BgFaceDetectThread` (`0x00c7ecd4`); a párosítás a kezelőben egymás mellett van (`0x006e3145`, `0x006e3178`) | 1 (`0x006e0eb2`) | `optionsFaceDetectionCheck` | `faces/automaticDetection` | igaz | EGYEZIK |
+| `Enable suggestions:` (vezérlőnév `enablefacesuggestions`, `0x00ca9e18`) | `FRAddSuggesetions` (`0x00c81b7c`, a bináris névben elgépelés) (`0x006e31ee`, `0x006e321e`) | 1 (`0x006e0ec2`) | `optionsFaceSuggestionsCheck` | `faces/suggestionsEnabled` | igaz | EGYEZIK |
+| `Suggestion threshold:` (csúszka, 10 lépés: 50-95) | `FRSuggestionThreshold` (`0x00c81cc0`); vezérlőnév `facethresh0` (`0x00ca9e44`) | **85** (`0x006e0ed5`, a `0x006e0b20`-ban) | `optionsFaceSuggestionThresholdSlider` (50-95, 5-ös lépés) | `faces/suggestStep` | 85 | EGYEZIK |
+| `Cluster threshold:` (csúszka, 10 lépés: 50-95) | `FRSortThreshold` (`0x00c81cf4`); vezérlőnév `facethresh1` (`0x00ca9e50`) | **85** (`0x006e0ee8`, a `0x006e0b20`-ban) | `optionsFaceClusterThresholdSlider` | `faces/clusterStep` | **70** | ELTÉR (alapérték: 85 és 70; a 70 a kódban SFace-kalibrált érték, ezért mérés nélkül nem változtatható) |
+| `Store name tags in photo` (vezérlőnév `persistfacetofile`, `0x00ca9e30`) | `PersistFaceToFile` (`0x00c81bdc`), nincs a regisztrálóban | NYITVA | `optionsFacePersistToFileCheck` (felirat: `Store name tags in the file`) | `faces/writeXmpOnName` | igaz | ELTÉR (felirat: nálunk `in the file`; alapérték NYITVA) |
+| `Upload people album thumbnails to Google Contacts` | `uploadcontactphotos` (`0x00ca9ad8`), nincs a regisztrálóban | NYITVA | `optionsFaceUploadContactPhotosCheck` (rejtett, magassága 0) | nincs | - | HIÁNYZIK (rejtett; a szolgáltatás megszűnt, a döntés a QML fejlécében) |
+
+### 10. Regisztrált vagy hivatkozott, de vezérlő nélküli kulcsok
+
+- `AutoInfoCheck` (alapérték 1, `0x006e0cd3`): nincs vezérlő a sablonban.
+- `PWASyncOrder` (alapérték 1, `0x006e0dc4`): nincs vezérlő.
+- `SupportAudio` (alapérték 0, `0x006e0e3a`): nincs vezérlő.
+- `PWADefaultSizeES` (alapérték 2048, `0x006e0d97`): a Google-ág alapértéke, nincs vezérlő.
+- `PWAShareAccess`: alapérték NYITVA (a regisztráló `eax`-e az előző hívás visszatérési értékéből jön, `0x006e0da7`).
+- `EmailPrepType` (`0x00ca9b48`), `DoNotPromptForEmailPref` (`0x00ca9b58`), `EmailExportSize` (`0x00ca9b70`): a kezelő hivatkozza, a sablonban nincs vezérlő.
+
+Egy megjegyzés a saját kódunkról: az `email_controller.py` 310-315. és 331-335. sorának docstringje „alapérték 480" és „alapérték 0" állítást tesz. Ezek a bináris regisztrálóban nincsenek igazolva, ezért nem tekinthetők bináris értéknek.
+
+### 11. Összesítés
+
+**58 sor:** 11 EGYEZIK · 26 ELTÉR · 16 HIÁNYZIK · 5 NYITVA.
+
+| fül | EGYEZIK | ELTÉR | HIÁNYZIK | NYITVA |
+|---|---:|---:|---:|---:|
+| Általános | 4 | 6 | 2 | 0 |
+| E-Mail | 0 | 6 | 2 | 1 |
+| Fájltípusok | 1 | 9 | 0 | 1 |
+| Diavetítés | 2 | 0 | 0 | 1 |
+| Nyomtatás | 1 | 1 | 0 | 2 |
+| Hálózat | 0 | 2 | 3 | 0 |
+| Webalbumok | 0 | 0 | 8 | 0 |
+| Névcímkék | 3 | 2 | 1 | 0 |
+
+A két legfontosabb mérhető eltérés: a klaszter-küszöb alapértéke (bináris 85, nálunk 70), és a nyomtatási átméretező alapértéke (bináris 5, nálunk 3). Mindkettő a regisztráló utasításaiból jön. A klaszter-küszöb 70 értéke a kódban SFace-hez kalibrált, ezért a változtatás előtt mérés kell. A nyomtatási alapérték 3 a PicasaPy saját választása, a bináris 5 jelentése pedig nincs visszafejtve: ez a Ghidra-kör után dönthető el.
+
+### 12. Megvalósítási jegy-javaslatok és nyitott kérdések
+
+A jegyek szövege (fülenként egy, „Eredeti:” sorral) a `.codex-jelentes.md`-ben van. Egy jegyet sem nyitottunk, mert ez a kör nem nyúl a GitHubhoz. Fülenként egy jegy készül a HIÁNYZIK/ELTÉR tételekre: Általános, E-Mail, Fájltípusok, Nyomtatás, Hálózat, Webalbumok, Névcímkék. A Diavetítés fülnek nincs HIÁNYZIK/ELTÉR tétele, ezért nem kap jegyet.
+
+**Ghidra-körök, amelyek a NYITVA sorokat zárnák:**
+
+- Ghidra-kör kell: `0x006e1100` - a `-1` (nincs beállítva) ág a nem regisztrált kulcsoknál (`ReportStats`, `0x006e1340`-től), vagyis mit mutat a vezérlő, ha a kulcs nincs tárolva.
+- Ghidra-kör kell: `0x006e1100` - a `loglevel` (`0x00ca9c04`, olvasó `0x006e2b3b`, alapérték 0) és a `LogLevel` (`0x00ca9bf8`, alapérték 2) közül melyik a popup kulcsa.
+- Ghidra-kör kell: `0x006e1100` - a `PrintResamplerQuality` (`0x00ca9a28`, olvasók `0x006e238d`, `0x006e24a7`) értékének leképezése a két rádióra (5 ↔ 3 és 8).
+- Ghidra-kör kell: `0x006e1100` - a `Web Albums` fülcím elágazása (`WebAlbumsTabEs`, `0x006e1116`), hogy a vizsgált buildben melyik felirat látszik.
+- Ghidra-kör kell: `0x006e0bc0` és `0x006e0d51` - az ezekben a regisztrálásokban használt kulcs, és a `PWAShareAccess` alapértéke.
+- Ghidra-kör kell: `0x006e1100` - a popupok (`AutoUpgradeCheck`/`AutoUpgradeAsk`, `picsize`, `print1`-`print5`) tételeinek kulcs-leképezése.
+
+**Ami ebben a körben nincs igazolva:** a `picsize`, `mailprog`, `EmailSinglePicture`, `EmailMovie`, `PrinterQuality` és a többi regisztrálatlan kulcs alapértéke. Ezek NYITVA maradnak a fenti Ghidra-kör eredményéig.
+
+---
+
 ## A MEGŐRZÖTT elrendezés-állapot — mit ír ki a Picasa, hova, mikor (2026-09-03)
 
 > **Bizonyítottság: megerősített.** Minden állítás mellett cím vagy

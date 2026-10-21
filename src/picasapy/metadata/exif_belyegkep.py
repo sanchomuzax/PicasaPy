@@ -11,7 +11,8 @@ Spec: `docs/specs/picasa-metaadat-tulajdonsagok.md` 16. H) és I).
   Lanczos-3 menet (`resize_image(..., lanczos3=True)`).
 * **JPEG:** q85 (IJG-táblák), 4:2:0, baseline, optimalizált Huffman, JFIF 1.01,
   sűrűségegység 0, 1:1. Ha az EXIF-blokk nem fér az APP1-be, a hívó a
-  minőséget 15-tel csökkenti (`MINOSEGEK`: 85 → 10).
+  minőséget 15-tel csökkenti (`MINOSEGEK`: 85 → 10); 10-en sem fér el, akkor
+  a hívó az EXIF-et elhagyja (spec 16. H) 4., #5459).
 * Az ICC-átalakítás alapból ki van kapcsolva (`EnableColorManagement` = 0),
   nálunk sincs.
 
