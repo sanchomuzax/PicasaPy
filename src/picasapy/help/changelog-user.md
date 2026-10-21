@@ -4,6 +4,46 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-21
+
+**Átnevezés**
+
+- Az **F2** és a **Fájl ▸ Átnevezés…** egyetlen képnél is a **Fájlok
+  átnevezése** ablakot nyitja, a **Dátum** és **Képfelbontás**
+  jelölőkkel. Az Enter átnevez, és a kép utána kijelölve marad. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+
+**Emberek és arcok**
+
+- **Az Emberek album törlése** már nem törli a személyt a
+  névjegyzékből, csak leveszi a nevét az arcairól. A megerősítő ablak
+  az eredeti Picasáé (**Album törlése** / **Mégse**), és az Enter a
+  Mégse. Lásd [Emberek és arcok](features/emberek.md).
+- A személy albumának fejléce az eredeti szerint mutatja a személy
+  arcképét és nevét, alatta az arcok sávját; a fejlécben **Eltávolítás**
+  gomb és indexkép-beállító gomb is van.
+- A bal hasábon a mellőzött arcok sora (**Figyelmen kívül hagyva
+  (N)**) csak a mellőzött nézetben látszik, a Névtelenek helyén; a
+  csoport fejlécének száma a látható sorokat számolja.
+- A Név nélküliek nézetének fejléce, címe és névmezője az eredeti
+  kinézetét kapta, a nézet szürke háttérrel jelenik meg, és első
+  megnyitáskor sem csúszik a bal hasáb alá.
+- A Névtelenek és a mellőzött arcok csempéi akkor is betöltődnek, ha a
+  kép nem a megnyitott albumban van.
+
+**Mozgófilm**
+
+- Az arcokból készülő filmben minden klip az arcra van keretezve, és a
+  **Kis felbontású arcok eltávolítása** jelölő kihagyja a túl kicsi
+  arcokat. Lásd [Mozgófilm](features/mozgofilm.md).
+- **A legjobb átmenetek** rendezés a képeket a felvételük ideje szerint
+  teszi egymás után, ahogy az eredeti Picasa.
+
+**Diavetítés**
+
+- A diavetítés **Pásztázás és nagyítás** mozgásának kivágásai közelebb kerültek az
+  eredeti Picasáéhoz.
+
 ## 2026-10-19
 
 **Mozgófilm**

@@ -74,15 +74,17 @@ A fül tetején az áll, hány kép van kijelölve („N kép kijelölve."). Ala
   fájlba más program által írt leírás),
   **Teljes képkockás fotó körbevágása** (a kép kitölti a kockát, a széle
   levágódik, ahelyett hogy fekete sáv maradna) és **Kis felbontású arcok
-  eltávolítása**. Ez utóbbi jelölő ma még **nem hat** a filmre: csak a
-  film projektfájljába kerül.
+  eltávolítása**. Ez utóbbi jelölő csak az **arcokból készülő** filmre
+  hat: kihagyja belőle a túl kicsi arcokat (lásd
+  [Emberek](emberek.md)). Más filmnél csak a film projektfájljába kerül.
 - **Diák rendezése:** **A legjobb átmenetek** (új filmnél ez az
   alapérték), **Album szerint** vagy **Időrend**. A **legjobb
-  átmenetek** sorrendben a program a színükben egymáshoz közeli képeket
-  teszi egymás után, a gyors egymásutánban készült képeket (például egy
-  sorozatfelvétel kockáit) pedig a készítési idejük szerint egy csoportban
-  kezeli. A készítési időt a kép felvételi adataiból veszi, ha ilyen
-  nincs, a fájl dátumából.
+  átmenetek** sorrendben a program a képeket a **felvételük ideje
+  szerint** teszi egymás után, ahogy az eredeti Picasa; az ismeretlen
+  idejű képek a végére kerülnek. Ha a **Klipek** fülön az időszűrő
+  csúszkája nem nullán áll, az adott időn belül készült képeket (például
+  egy sorozatfelvétel kockáit) egy csoportnak veszi, és a csoporton belül
+  az egymáshoz leginkább hasonló képeket teszi egymás mellé.
 
 Az **OK** helyett a **Mozgófilm létrehozása** gomb indítja a munkát;
 célfájl nélkül is nyomható.
@@ -132,7 +134,9 @@ filmszalagon:
   fel a film; mellette az éppen felhasznált képek száma áll;
 - **Ne legyen szűrés a készítés ideje alapján** / **Az utolsó időszak
   képeinek eltávolítása: N** — az időszűrő csúszkája. Ma még **nem
-  szűri** a filmet: az értéke csak a film projektfájljába kerül;
+  hagy ki** képet a filmből; **A legjobb átmenetek** rendezésnél
+  viszont ettől függ, mely képeket kezel egy csoportként (lásd a
+  **Mozgófilm** fület), és az értéke a film projektfájljába is bekerül;
 - **Újraszámolás** — újraépíti a filmszalagot, és a **Mozgófilm** fülre
   lép. Ha már vettél fel **szöveges diát**, a program előbb rákérdez: „Az új
   film létrehozásakor minden hozzáadott szöveges dia törlődik. Biztosan

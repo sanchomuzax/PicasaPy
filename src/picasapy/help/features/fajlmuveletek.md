@@ -18,13 +18,17 @@ nincs kijelölt kép.
 
 **Fájl ▸ Átnevezés…** (F2), vagy a kép helyi menüjéből.
 
-Írd be az új nevet. Több kép egyszerre is átnevezhető — ilyenkor a
-program sorszámozza őket. A párbeszédben bekapcsolhatod, hogy a névbe
-kerüljön bele a **Dátum** és a **Képfelbontás** is; alul példát mutat,
-hogyan fog kinézni a kész név.
+Egy és több kijelölt képnél is ugyanaz a **Fájlok átnevezése** ablak
+nyílik meg. Írd be az új nevet. Több kép egyszerre is átnevezhető -
+ilyenkor a program sorszámozza őket. A **Befoglalás a fájlnévbe:** alatt
+bekapcsolhatod, hogy a névbe kerüljön bele a **Dátum** és a
+**Képfelbontás** is; alul példát mutat, hogyan fog kinézni a kész név. A
+kiterjesztést nem kell beírnod, a fájl megtartja a sajátját.
 
-A névmezőben az **Enter** elfogadja az új nevet (ugyanaz, mint az OK), az
-**Esc** pedig megszakítja az átnevezést.
+A névmezőben az **Enter** elfogadja az új nevet (ugyanaz, mint az
+**Átnevezés** gomb), a **Mégse** és az **Esc** megszakítja az
+átnevezést. Egyetlen kép átnevezése után a kép **kijelölve marad**, így
+rögtön folytathatod vele a munkát.
 
 - A **Dátum** a felvétel **dátumát és idejét** (másodpercre) teszi a
   névbe, a számítógéped területi beállítása szerinti formában. A
