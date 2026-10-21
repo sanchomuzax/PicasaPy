@@ -6,8 +6,9 @@ A kulcsok az eredeti hasonlítójából valók (`docs/specs/album-sorrend.md`
 - **Dátum** — a kép metaadat-dátuma (`taken_at`, a felülírással együtt); ennek
   hiányában a BEFAGYASZTOTT fájlidő (`photo_date.datum_kulcs`, a mappa-rendezés
   közös kulcsa); egyenlőségnél a név,
-- **Név** — természetes összevetés: a számjegy-sorozat számértékként, az
-  ASCII `A–Z` kisbetűsítve, a számjegy-sorozat minden nem-számjegy elé kerül,
+- **Név**: természetes összevetés UTF-8 bájtokon: a számjegy-sorozat 32 bites
+  előjel nélküli számként körbefordul, az ASCII `A-Z` kisbetűsödik, a többi
+  bájt kulcsa az előjeles bájtérték mínusz `0x100`,
 - **Méret** — fájlméret,
 - **Fordított** — kulcs nélkül, a tárolt sorrendet megfordítja.
 
@@ -28,34 +29,32 @@ from .queries import PhotoRecord
 SortMode = Literal["date", "name", "size", "reverse"]
 SORT_MODES: tuple[str, ...] = ("date", "name", "size", "reverse")
 
-#: A szám-szakasz a nem-számjegy elé kerül (az eredeti `c − 0x100` trükkje).
-_DIGITS_RANK = 0
-_CHAR_RANK = 1
 
-
-def natural_name_key(name: str) -> tuple[tuple[int, int], ...]:
+def natural_name_key(name: str) -> tuple[int, ...]:
     """A név természetes összevetésének kulcsa.
 
-    A számjegy-sorozat számértékként hasonlít, és minden nem-számjegy elé
-    kerül; az ASCII `A–Z` kisbetűsítve hasonlít (a nem ASCII karakter
-    változatlan kódponttal). A tuple-összevetés az „egyik a másik előtagja"
-    esetet is helyesen (a rövidebb elöl) adja.
+    Az eredeti Picasa kódútjának megfelelően UTF-8 bájtokat hasonlít: a
+    számjegy-sorozat értéke előjel nélküli 32 biten körbefordul, az ASCII
+    `A-Z` kisbetűsödik, a többi bájt kulcsa pedig az előjeles bájtérték mínusz
+    `0x100` (32 bites előjel nélküli alakban). A tuple-összevetés a közös
+    előtag utáni folytatást és a rövidebb név előresorolását is megőrzi.
     """
-    key: list[tuple[int, int]] = []
+    key: list[int] = []
+    encoded = name.encode("utf-8")
     index = 0
-    while index < len(name):
-        char = name[index]
-        if "0" <= char <= "9":
-            end = index
-            while end < len(name) and "0" <= name[end] <= "9":
-                end += 1
-            key.append((_DIGITS_RANK, int(name[index:end])))
-            index = end
+    while index < len(encoded):
+        byte = encoded[index]
+        if 0x30 <= byte <= 0x39:
+            number = 0
+            while index < len(encoded) and 0x30 <= encoded[index] <= 0x39:
+                number = (number * 10 + encoded[index] - 0x30) & 0xFFFFFFFF
+                index += 1
+            key.append(number)
             continue
-        code = ord(char)
-        if "A" <= char <= "Z":
-            code += 0x20
-        key.append((_CHAR_RANK, code))
+        if 0x41 <= byte <= 0x5A:
+            byte += 0x20
+        signed_byte = byte if byte < 0x80 else byte - 0x100
+        key.append((signed_byte - 0x100) & 0xFFFFFFFF)
         index += 1
     return tuple(key)
 
