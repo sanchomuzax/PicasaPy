@@ -4869,3 +4869,60 @@ Az N1-hez rögzíteni kell egy fotót, amelyen egy arc már névvel szerepel és
 - Colab-felvétel kell az N1 és N3 tényleges felismerési kimenetéhez és az N7 Ctrl-többes kijelöléséhez.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (39. szakasz); `docs/specs/00-index.md` (#5184 aktuális állapotának rövid összefoglalója). Kódhoz és tesztekhez nem nyúltam.
+
+## 40. #5184, helyi Codex-kutatói kör: a Red.dll döntési útja és N1/N3/N7 státusza (2026-10-21)
+
+**Keret.** Az eredeti Picasa helyben nem futtatható (`wine` nincs), Colab-felvétel nem volt elérhető, ezért az eredeti program viselkedéséről nem készült új mérés. A mérőadat-archívum vizsgált taglistájában nem volt #5184-hez tartozó felvétel; nem bontottam ki semmit, ideiglenes fájl nem készült. A helyi bináris indexet, a meglévő Ghidra-leleteket és az eredeti Red.dll-t vizsgáltam. A teljes Red.dll `.text` pásztázása a `paszta.py` eszközén keresztül, `paszta.memoria_kapu()` első műveletként futott.
+
+### 40.1 N1: a névvel megjelölt fotó további arca továbbra is eldöntetlen
+
+**Bináris út.** A felismerési kapu `0x00414940` hívja a képenkénti útvonalat, `0x0048ef20`-at. A meglévő dekompilációban a képenkénti út az állapotot, gyorsítótárat és a detektálásból visszaadott jelölteket kezeli; benne nem látszik közvetlen személynév-összehasonlítás. A jelöltgyűjtés `0x0048af60` útján a `0x0048bae0` az indexkulcs rekordját ellenőrzi, nem kontaktnevet. A munkaszál kezelője `0x004987c0` a `0x0047b020`-at hívja; ez a munkatétel állapotától függően a felismerési kapuhoz vagy a képenkénti útvonalhoz jut. Ezekből nem következik, hogy a név szerinti kizárás nincs egy korábbi sor-összeállítóban vagy a meg nem értett munkatétel előállításakor.
+
+**Független ellenőrzés.** A helyi INI-korpuszban előfordul névvel ellátott és mellőzött arcot együtt tartalmazó sor, de az INI a mentett arckijelölést írja le, nem az eredeti futás összes detektálását. A `,0` rekord nem bizonyít ismeretlen arcot: a `0x0092c450` olvasó és a `0x0049d560` bontó eldobja. A két út egyező eredménye: az elérhető statikus út és az INI-adat nem dönti el az N1-et.
+
+**Cáfoló kísérlet.** Próbáltam a képenkénti útban olyan feltételt találni, amely a nevet vagy a névjegy azonosítóját vizsgálja. A `0x0048ef20` olvasata és a külön indexrekord-ellenőrzés (`0x0048bae0`) nem mutat ilyet. Ez a cáfoló ugyanazzal a mércével csak a megvizsgált függvényekre érvényes; a teljes felismerési sorra nem általánosítható.
+
+**Eredmény: NEM DÖNTHETŐ EL.** Döntő felvétel: egy fotón egy már névhez rendelt és egy név nélküli arc, összevetve ugyanannak a fotónak a korábban nem feldolgozott, név nélküli kontrollállapotával; a felvétel rögzítse a detektált arcokat és az előtte/utána `faces=` adatot. A `0x004987c0` Ghidra-dekompilációja tisztázhatja a munkatétel kezelését, de a futásmérést nem helyettesíti.
+
+### 40.2 N3: a Red.dll pontszámot ad vissza, a végső küszöb és méret nincs meg
+
+**Bináris út.** A Picasa Red-hídja (`0x006cde50`) a vtable `+0x44` metódusát hívja; a Red.dll `0x10001570` belépője továbbadja a hívást a `0x100057c0` rutinnak. A `0x100057c0` bemeneteket ellenőriz, majd jelöltenként meghívja a kapott objektum vtable `+0x40` metódusát (`0x10005858` környéke), és az egy jelölthöz tartozó pontszámok maximumát teszi a kimenetbe. Ebben a rutinban nem látszik képméretezés vagy a végső elfogadást eldöntő küszöb-összehasonlítás. A callback célja és az azt meghívó konfigurációs út nincs meg, ezért a rutinból nem állapítható meg a detektor küszöbe.
+
+**Független ellenőrzés.** A teljes Red.dll `.text` utasításszintű pásztázásában a `MainSizeArr` címkének egy, az `epi_CONFIDENCE` címkének két közvetlen hivatkozása van; ezek paraméternevek, nem értékek. A 960 decimális értéknek megfelelő `0x3c0` két találata pointer-eltolásként jelenik meg, nem képméretként. A 0,9 IEEE-754 értékének (`0x3f666666`) közvetlen utasításbeli előfordulása nulla. Ez a pásztázás az utasítások közvetlen értékeit fedi le; nem zár ki adatból, konfigurációból vagy futás közben feloldott callbackből származó értéket. A Picasa oldali `FRSuggestionSingleThreshold=0,90` (`0x0048ac6f`) és `FRRecommendIncludeLimit=0,50` (`0x0048e1f0`, összehasonlítás `0x0048e33e`) külön, javaslatszűrő értékek; egyik sem bizonyítja a Red detektorküszöbét. A két út egybehangzóan azt mutatja, hogy pontos Red-küszöb és bemeneti méret nincs meg.
+
+**Cáfoló kísérlet.** Megvizsgáltam azt az ellenérvet, hogy a Picasa `0,90` beállítása a Red küszöbe, illetve hogy a Red `.text`-ben talált `0x3c0` a 960 képpontos célméret. Az első érték a Picasa oldali javaslatszűrőhöz tartozik; a két `0x3c0` találat pointer-eltolás. Az ellenpróba nem kapcsolja ezeket a Red döntéséhez, ezért az azonosság nem áll meg. A közvetlen találatok hiánya nem bizonyítja, hogy a méret vagy küszöb máshol sincs.
+
+**Eredmény: NEM DÖNTHETŐ EL.** A felismerési arányhoz azonos, tételes képkészlet, képenként ellenőrzött arccímkék és mindkét program nyers találatai kellenek. A méret és a küszöb bináris úton való lezárásához a `0x100057c0` vtable `+0x40` callback tényleges célját és döntési ágát kell dekompilálni, majd a bemeneti méretet adó hívót azonosítani. A PicasaPy 960 px / 0,9 beállítása csak összehasonlítási alap, az eredeti Picasa értékének nem bizonyítéka.
+
+### 40.3 N7: a Név nélküliek többes művelete igazolt, a People Manager modellje nyitott
+
+**People Manager.** A `contactmgr.fen` `contacts` listája nem deklarál kijelölési módot. A `0x007b9630` a változáskezelésben egy aktuális indexet olvas, a `0x007ba820` törlési út pedig az aktuális személyen dolgozik. A job-186 felvétel egy személyt mutat. Ezek összeillenek az egyszeres kijelöléssel, de nem bizonyítják, hogy a vezérlő tiltja-e Ctrl/Shift többes kijelölést. Függetlenül nézve az erőforrás és az egy-indexes kódút sem ad többes kijelölésre tiltást, a job-186 pedig második sort nem próbál ki. A két út egyezik abban, hogy a kijelölési mód nem dőlt el.
+
+**Név nélküliek.** A `0x006470d0` a kijelölt elemek listáján iterál; a job-180 felvételén Ctrl+A hat csempét jelölt ki. Ez igazolja, hogy a nézetben a többes kijelölés és több kijelölt elemre alkalmazott művelet létezik. A korábbi felvétel nem döntötte el a Ctrl-kattintás és Shift-kattintás pontos viselkedését.
+
+**Cáfoló kísérlet.** A People Manager egy-indexes ágából egyszeres kijelölésre következtettem volna. Az erőforrás nem tartalmaz erre vonatkozó módjelzőt, a job-186 nem teszteli a második sort, így ezt a következtetést nem lehet igazolni. A Név nélküliek Ctrl+A felvétele ezzel szemben cáfolja azt az általános állítást, hogy minden arclista csak egy elemet enged kijelölni. Ugyanazt a mércét alkalmazva: a Név nélküliek többes kijelölése megerősített, a People Manageré nyitott.
+
+**Eredmény.** A Név nélküliek: többes kijelölés igazolt (`0x006470d0`, job-180); a Ctrl/Shift részletek nyitottak. A People Manager: NEM DÖNTHETŐ EL; legalább két személyt kell megjeleníteni, a másodikra Ctrl-, majd külön Shift-kattintást végezni, és rögzíteni a kijelölést, a Delete Person gomb állapotát, majd a törlést Mégsével megszakítani.
+
+### 40.4 A #5184 „Kész, ha” pontjai
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| N1, névvel ellátott fotón további ismeretlen arc | ⛔ Nyitott | A statikus felismerési út nem mutat közvetlen névszűrőt, de a futás eredménye NINCS MEG; §40.1. |
+| N3, eredeti felismerési arány, küszöb és méret | ⛔ Nyitott | A Red rutin pontszámot gyűjt, a callback döntése, mérete és a mérési arány NINCS MEG; §40.2. |
+| N4, alapértelmezett keret és név | ✅ Lezárt | Job-187: a névvel ellátott arcon alapból nincs keret és név; §39. |
+| N5, személyszintű mellőzés | ✅ Lezárt | Job-222..226 és §37.11: ilyen funkció nincs, a mellőzés arcszintű. |
+| N6, személy törlése | ✅ Lezárt | Job-222/224 és §37.10: a `faces=` adat törlődik, a `[Contacts2]` sor megmarad, a Mégse az alapértelmezett; javítás #5391. |
+| N7, kijelölési modell | ⚠️ Részben lezárt | Név nélküliek: többes kijelölés igazolt (`0x006470d0`, job-180). People Manager és a Ctrl/Shift részletek nyitottak; §40.3. |
+| N8, People Manager referencia | ✅ Lezárt | Job-186: 631×351 referenciafelvétel és ablakleírás; §39. |
+
+**Bizonyítottsági fok: nyitott.** Két egymástól független statikus/dinamikus út egyik nyitott pontra sem ad teljes választ. Ahol két út összevethető volt, az egyező eredmény a bizonyíték elégtelensége volt, nem az eredeti viselkedés eldöntése. Az Név nélküliek többes művelete megerősített, de nem zárja le a People Managerre és az egérmódosítókra vonatkozó N7-et.
+
+**Fejlesztési következmény:** nincs bizonyított eltérés az eredeti Picasa és a PicasaPy között az N1, N3 vagy a People Manager N7 ponton, ezért fejlesztői jegy és kódlista nem indokolt. Új kutatási jegy sem szükséges: a megmaradt kérdések a #5184-ben vannak.
+
+**Nyitott:**
+- `Ghidra-kör kell: 0x100057c0 - a vtable +0x40 callback célja, a confidence elfogadási feltétele és a Red bemeneti méretét beállító hívó [blokkoló]`
+- `Ghidra-kör kell: 0x004987c0 - a 0x0047b020 munkatételének mezői és előzetes, személyhez kötött kizárása`
+- Colab-felvétel kell N1-hez, az eredeti felismerési arányhoz és mérethez, valamint a People Manager és Név nélküliek Ctrl/Shift viselkedéséhez.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (40. szakasz); `docs/specs/00-index.md` (#5184 friss állapota). Kódhoz és tesztekhez nem nyúltam.
