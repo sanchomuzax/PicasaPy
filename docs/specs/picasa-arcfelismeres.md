@@ -2350,14 +2350,14 @@ külön névadási felület.
 | Csempék, mezők, X, méret és sorrend | Csoportosított nézetben álló arc-kivágások jelennek meg; a job-163 4. és 8. képe soronként öt csempét mutat, mindegyik alatt saját **„Add a name”** mezővel, a csempe jobb felső sarkában kis X-szel. A komment csak közelítő csempeméretet rögzít, ezért a pontos pixelméret **NINCS MEG**. A pontos arcbélyeg-sorrend és a felvételen látható csoporthatárok nincsenek leírva a kommentben: **NINCS MEG**. A job-208 (9. kép) ugyanazt az öt oszlopos elrendezést adja, hat egyarcú csoporttal; csoporthatár ilyen mintán nem látszik, ahhoz többarcú csoport kell (19.1, 5. pont). | A `face_scan_controller.py:812-858` az arc-csoportokat csoportazonosító szerint növekvően, a még nem csoportosított elemeket a végén adja vissza; összecsukva csak csoportonkénti előnézetet ad. A `UnnamedFacesView.qml:355-410` 194 × 198-as rácscellát és 146 × 172-es arckivágást állít be; a `UnnamedFacesView.qml:482-508` minden archoz saját, 172 px széles „Add a name” mezőt ad. A csempe X-e a `UnnamedFacesView.qml:417-440` sorokban van. | A csoportosított alapállapot és az egyedi mező/X felvétellel igazolt. Ne vegyük át a közelítő pixelméretet pontos adatként. A Picasa pontos csempesorrendjéhez és csoporthatáraihoz külön képkocka-leírás kell. |
 | Fejlécmező és a csempe névmezője | A binárisban a **fejléc** `addname` parancsa a jobb fiók PeoplePaneljéhez jut (`0x00602970`), amely ott `headerautocomplete` és `header_editbox` mezőt hoz létre (`0x00640670`, `peoplepanel_text.tre`). Ez a panelmező útja. A Név nélküliek **csempéjének** saját „Add a name” mezője külön, élő úttal igazolt (`job-163`, 4. és 8. kép; `job-66`). | A Név nélküliek csempéjén saját `TextField` van (`UnnamedFacesView.qml:482-508`); a jobb oldali People panel sormezője külön komponens (`PeoplePanelRow.qml:149-166`). A job-167 útvonalon a csempe mezője Enterre mindig People ablakot kér (`Main.qml:3690-3692`; `PeoplePanel.qml:192-210`). A jobb fiók meglévő névre történő Enter-kezelése ettől eltér (#5199; `PeoplePanel.qml:192-205`). | A „névmező inline panelmező” állítás csak a fejléc `header_editbox` mezőjére vonatkozik; a Név nélküliek csempéjének saját mezője van. A két út ne legyen összemosva. |
 | Új név, People ablak és tárolás | A csempe mezőjébe írt **„Teszt Elek”** után Enterre **„People”** ablak nyílik. A Search mezőbe a név előre be van írva és ki van jelölve; a névlista üres, a **„Delete Person”** és **„OK”** tiltott, a **„New Person”** aktív. Jobbra „Name:” és „Email(s):” mező, szürke „Sync Face Tags with Web Albums” jelölő és „Revert”; alul „Manage Online Contacts”, „Refresh Contacts”, „OK”, „Cancel” (`job-163`, 14-19. kép). Az új személy OK-ja után a bal sávban `People (2)`, `Unnamed (5)`, `Teszt Elek (1)` látszik (`job-167`, 18. kép). A `.picasa.ini`-ben `[Contacts2]` alatt `<azonosító>=Teszt Elek;;`, a fotó szakaszában `faces=rect64(…),<azonosító>` szerepel (`job-66`; `job-167`, 18. kép). A job-66 helyesbítése szerint ez is a csempe-mező útja. A job-213 (a futás végén) ugyanezt a szerkezetet mutatja két fotóval: a `[Contacts2]` alatt egy sor, `3c067b829137b19=Teszt Elek;;`, és mindkét fotó `faces=` sora ugyanarra az azonosítóra mutat. Az azonosító 15 jegyű (32. szakasz). | A csempe Enter-kezelője kiüríti a mezőt és jelzi a beírt arcot/nevet (`UnnamedFacesView.qml:501-508`); a `Main.qml:3690-3692` ezt People ablakra küldi. A `PeopleManagerDialog.qml:53-98` előtölti a Search mezőt, meglévő találatnál kiválasztja a kontaktot; a `PeopleManagerDialog.qml:146-170` kezeli a „New Person” műveletet; a `PeopleManagerDialog.qml:241-289, 299-380, 381-473, 485-510` adja az OK/Choose útját, a kereső/listát, a névjegymezőket és az alsó gombokat, majd menti és a kijelölt arcra alkalmazza. A `face_scan_controller.py:861-923` a sikeres arcot megnevezettként rögzíti, frissíti a mappát és az arcszámot; a `faces_helper.py:265-295` az érintett `.picasa.ini`-t írja. | Az új név útja és eredménye a job-163/167 felvételi jegyzeteiben szerepel. A `[Contacts2]` és `faces=` adatot a job-66 ugyanebből a csempe-mezőből mérte; ez nem másik felületi útvonal. |
-| Meglévő név, javaslatlista, Choose és Escape | A mezőbe írt `Tes` alatt javaslatlista jelenik meg arcképpel és **„Teszt Elek”** névvel (`job-167`, 22. kép). A teljes név Enterre People ablakot nyit, a `Teszt Elek` személy kijelölve, „1 Photo in Picasa” adatsorral, **„Choose”** gombbal (`job-167`, 26-30. kép). A felvétel nem kattintott a Choose-ra, ezért az arc a Név nélküliek között maradt. Az ismeretlen `Valami` keresés üres listát és Name mezőt, tiltott OK-t ad; Escape bezárja az ablakot változtatás nélkül (`job-167`, 32-34. kép). | A csempe mező részleges szövegre a névjegyek között kis-nagybetűtől független részsztringet keres; a felugró listában kép és név jelenik meg (`UnnamedFacesView.qml:371-385, 512-589`). A csempe Enter útja meglévő névnél is People ablakot nyit, a meglévő kontakt kiválasztásával és **Choose** gombbal (#5192; `PeoplePanel.qml:192-210`; `PeopleManagerDialog.qml:82-93, 499-505`). A listabeli javaslat-elemre kattintáshoz nincs külön aktiváló kezelő a csempe popupjában (`UnnamedFacesView.qml:547-587`). | A javaslatlista, a People ablak, a Choose felirata és az ismeretlen névnél People Search Escape a job-167 felvételi jegyzetében szerepel. A javaslatelem kattintásának rögzítése nyitott. A Choose utáni állapot lezárva, lásd a következő sort (helyesbítve, job-179). |
+| Meglévő név, javaslatlista, Choose és Escape | A mezőbe írt `Tes` alatt javaslatlista jelenik meg arcképpel és **„Teszt Elek”** névvel (`job-167`, 22. kép). A teljes név Enterre People ablakot nyit, a `Teszt Elek` személy kijelölve, „1 Photo in Picasa” adatsorral, **„Choose”** gombbal (`job-167`, 26-30. kép). A felvétel nem kattintott a Choose-ra, ezért az arc a Név nélküliek között maradt. Az ismeretlen `Valami` keresés üres listát és Name mezőt, tiltott OK-t ad; Escape bezárja az ablakot változtatás nélkül (`job-167`, 32-34. kép). | A csempe mező részleges szövegre a névjegyek között kis-nagybetűtől független részsztringet keres; a felugró listában kép és név jelenik meg (`UnnamedFacesView.qml:371-385, 512-589`). A csempe Enter útja meglévő névnél is People ablakot nyit, a meglévő kontakt kiválasztásával és **Choose** gombbal (#5192; `PeoplePanel.qml:192-210`; `PeopleManagerDialog.qml:82-93, 499-505`). **Javítva (2026-10-21, #5437):** a javaslat-elemre kattintás van. A `UnnamedFacesView.qml:650-652` `MouseArea`-ja a `submitName(personName)`-et hívja (#5285), tehát ugyanazt az utat, mint az Enter. A korábbi „nincs aktiváló kezelő” állítás a régebbi sorokra (547-587) vonatkozott; a kattintás élő viselkedése még nincs mérve. | A javaslatlista, a People ablak, a Choose felirata és az ismeretlen névnél People Search Escape a job-167 felvételi jegyzetében szerepel. A javaslatelem kattintásának kódja megvan (lásd fent); az élő kattintás mérése nyitott. A Choose utáni állapot lezárva, lásd a következő sort (helyesbítve, job-179). |
 | Choose után: a meglévő személyhez rendelés | A csempe-mezőbe írt meglévő név Enter után a People ablak nyílik, a meglévő személy kijelölve, a jóváhagyó gomb **„Choose”** (`job-167`, `job-179`). A Choose-ra kattintva az ablak bezárul, az arc a meglévő személyhez kerül: `Unnamed (5)` → `Unnamed (4)`, `Teszt Elek (1)` → `Teszt Elek (2)`. A `.picasa.ini`-ben egy `[Contacts2]`-bejegyzés marad, mindkét fotó `faces=` sora ugyanarra az azonosítóra mutat (`job-179`). | #5182 (0.9.123) óta a People ablak Choose-útját valódi kattintásos teszt fedi (d789d91de). | Zárva (`job-179`): nincs nyitott tétel. Referencia a megvalósításhoz: a két számláló-változás és a `.picasa.ini` egy `[Contacts2]`-bejegyzése. |
 | Arc mellőzése az X-szel és a fejléc gombjával | A csempe X-ére kattintva **„Ignore People”** megerősítés jelenik meg, majd a **„Ignore Person”** jóváhagyása az arcot mellőzöttként menti: `faces=rect64(27c00680d8ffdb3f),ffffffffffffffff` (`job-64`; a megerősítés képkockája: „Colab EN 36”). Az eredeti fájlkimenet után a mellőzött arc a „Mellőzött emberek” albumba tartozik (15.3/b.1). A fejléc **„Ignore Selected”** gombja csak a kibontott nézetben látszik, kijelölés nélkül szürke (`job-183`, 10. kép). A megerősítő ablak (job-209, 10. kép): cím „Ignore People”; szöveg: „Are you sure you want to move this person to the ignored people album?”; jelölőnégyzet: „Don't ask again, always ignore”; gombok: „Ignore Person” (alapértelmezett) és „Cancel”. A mellőzés után (job-210, 13. kép) a bal sáv sora „Unnamed (5)”, a fejléc „5 Face(s)”, a mellőzött csempe eltűnik, a „Show ignored faces” gomb aktív lesz. A szöveg a binárisban is megvan (28.4/a). | A csempe X és a kibontott nézet fejlécének **„Ignore Selected”** gombja is megerősítést kér (`UnnamedFacesView.qml:417-440, 273-295, 849-909`), majd a FaceScanController mellőzött állapotba teszi az arcot (`face_scan_controller.py:1138-1166`). A csoportosított nézet fejlécében nincs „Ignore Selected” gomb (helyesbítve, job-183). A fejléc „Show ignored faces” gombja akkor aktív, ha van mellőzött arc (`UnnamedFacesView.qml:223-229`); a külön nézetben a „Stop ignoring” visszahozza a kijelölt arcokat (`Main.qml:3275-3280`; `UnnamedFacesView.qml:279-284, 924-949`). A megerősítő ablak szövege, jelölőnégyzete és gombfeliratai egyeznek az eredetivel (`UnnamedFacesView.qml:876-911`; `PeoplePanel.qml:447-473`). | Az X útját és a `.picasa.ini` eredményét a job-64 jegyzete rögzíti. A job-162/163 a kezdeti „Show ignored faces” gombot mutatja, job-163 4. képén szürkén. A megerősítő ablakot és a mellőzött állapotot a job-209/210 lépéssora írja le; a személyszintű mellőzés (N5) külön felvétel. |
 | Mellőzött nézet és visszahozás | Az eredetiben a „Show ignored faces” után (job-210, 16. kép) a cím „Ignored people”, alatta „1 Face(s)”; a bal sáv sora „Ignored (1)”; a jobb felső gomb „Back to Unnamed”; az útmutató „Select someone you know and add a name.”; a csempén nincs X, de van „Add a name” mező. A leírás nem említ csempénkénti visszahozó gombot, és a „Back to Unnamed” utáni csempe neve nincs mérve. | A „Show ignored faces” és a „Back to Unnamed” felirata egyezik az eredetivel (`UnnamedFacesView.qml:225`, `:232`). Két eltérés a kódban: a bal sáv sora „Ignored people (N)” (`FolderPane.qml:744`), az eredetinél „Ignored (N)”; a mellőzött nézetben nincs „N Face(s)” sor, mert a `unnamedAlbumFaceCount` (`UnnamedFacesView.qml:249`) csak nem mellőzött módban látszik, az eredetinél „1 Face(s)”. A „Stop ignoring” (`UnnamedFacesView.qml:296`) a kijelölt arcokat hozza vissza; az eredetinél a megfelelő gomb nincs megmérve. | Kész, ha a bal sáv felirata és a darabszám-sor a job-210 szerint jelenik meg (képkocka-összevetéssel), és a visszahozás felvétele (a csempe neve a „Back to Unnamed” után) megvan. |
 
 ### 19.1 Nyitott kérdések és megszerzésük
 
-1. **Javaslatelemre kattintás:** nyisd meg a Név nélküliek albumot; a kezdőképkockáról válassz egy csempe „Add a name” mezőt; `kattint [x,y]`, `gepel <meglévő név részlete>`, `var_ablak`; kattints a látható javaslat képére vagy nevére, majd `var_ablak`. Rögzítsd, megnyílik-e a People ablak, megváltozik-e az arc állapota és csökken-e a Név nélküliek száma.
+1. **Javaslatelemre kattintás** (a kód megvan: `UnnamedFacesView.qml:650-652`, #5285; a mérés nyitott): nyisd meg a Név nélküliek albumot; a kezdőképkockáról válassz egy csempe „Add a name” mezőt; `kattint [x,y]`, `gepel <meglévő név részlete>`, `var_ablak`; kattints a látható javaslat képére vagy nevére, majd `var_ablak`. Rögzítsd, megnyílik-e a People ablak, megváltozik-e az arc állapota és csökken-e a Név nélküliek száma.
 2. **Choose utáni állapot** (lezárva, `job-179`): a csempe-mezőbe írt meglévő név után, a **Choose** gombra kattintva bezárul az ablak, az arc a meglévő személyhez kerül; a `.picasa.ini`-ben egy `[Contacts2]`-bejegyzés marad (lásd a táblázatot).
 3. **Escape a csempe mezőjében:** új futásban kattints a csempe mezőjébe, gépelj egy még be nem fejezett nevet, majd `billentyu Escape`, `var_ablak`. Rögzítsd a mező tartalmát, a javaslatpopupot és az esetleges People ablakot.
 4. **Ctrl/Shift/húzásos kijelölés** (a Ctrl+A-t a `job-180` már mutatta: mind a hat csempe kijelölve, 15. kép; a többi nyitott): külön futásban kattints egy csempére és rögzítsd az alapot; utána külön próbáld `billentyu Ctrl` + kattintás egy másik csempére, `billentyu Shift` + kattintás egy másik csempére, majd külön `huz [x1,y1] [x2,y2]` két csempe között. Mindegyik után `var_ablak`; a pontokat a ténylegesen kirajzolt képkockáról válaszd ki. Rögzítsd a kijelölt kereteket, a „No Selection”/kijelölésszámot és a tálcát.
@@ -4329,7 +4329,7 @@ Ghidra-kör kell: 0x0068ac20 - a `0x0069ceb0` két hívása és a `0x00586e20` h
 Ghidra-kör kell: 0x006a1350 - ki hívja közvetve (vtábla-slot vagy táblázat), és a három hívási hely (`0x006a14cd`, `0x006a193c`, `0x006a1972`) mikor fut: betöltés, mentés vagy törlés után [blokkoló]
 Ghidra-kör kell: 0x00692210 - a `0x0069b240` mentés közvetett hívója (vtábla-slot): melyik objektum, és fut-e a `Delete Person` után [blokkoló]
 
-**22. kör, N6 (`0x007b81e0`, a Choose-callback): nem ír közvetlenül a `Contacts2`-be.** A törzs (`.ghidra/2026-10-20-ghidra-22.txt`, 898-1152. sor): ha a `param_1[0x57]` jelző be van kapcsolva, és a kiválasztott név mutatói (`param_1[0x54]`, `param_1[0x55]`) egyeznek a tároltakkal, a `ContactManagerDlg::OK`, különben a `ContactManagerDlg::Choose` naplóüzenetet adja a `piVar7` objektum `+0x68` slotjának. A törzsben nincs `0x00586e20` és nincs `0x00587110` hívás.
+**22. kör, N6 (`0x007b81e0`, a Choose-callback): nem ír közvetlenül a `Contacts2`-be.** A törzs (`.ghidra/2026-10-20-ghidra-22.txt`, 898-1152. sor): ha a `param_1[0x57]` jelző be van kapcsolva, és a kiválasztott név mutatói (`param_1[0x54]`, `param_1[0x55]`) egyeznek a tároltakkal, a `ContactManagerDlg::OK` kulcs szövegét, különben a `ContactManagerDlg::Choose` kulcs szövegét adja a `piVar7` objektum `+0x68` slotjának. **Javítva (2026-10-21, #5437):** ez nem naplóüzenet, hanem az OK-gomb feliratának beállítása (38.7 szakasz). A törzsben nincs `0x00586e20` és nincs `0x00587110` hívás.
 - **Bizonyítottsági fok.** A közvetlen hívási lista: **megerősített** (C). A `+0x68` slot célja és a hívottak (`0x00588460`, `0x005c2100`, `0x005c7620`, `0x007b8d20`) szerepe: **NINCS MEG**. A közvetett írás kizárva nincs.
 - **Lezárás (N6): (c).** Következő Ghidra-címek: `0x00586e20` (a 27. szakasz szerint nem a `Contacts2` írója; a kiíró kérdése ezért a `0x006956d0` láncon marad) és a két hívó, `0x007b9630` és `0x007ba060`, amelyek a Choose-ágat kiváltják [blokkoló]. (Frissítés, 23. kör: a két hívó megvan, lásd a 37. szakaszt.)
 - **Kész, ha (#5184, N5 és N6).** ⛔ Nem teljesül: N5 és N6 továbbra is nyitott; a feltárt részek (olvasó, hívási lánc, Choose-ág) a spec-lapon vannak, az eltéréshez nincs mért különbség, ezért nincs fejlesztői lista.
@@ -4582,3 +4582,190 @@ Ghidra-kör kell: 0x006a5590 zárblokkja (`0x006a5691`-`0x006a572a`): a `+0x284`
 - **Az N5 válasza:** személyszintű mellőzés (Ignore) **sem a személyalbum menüjében (37.10), sem a People párbeszédablakban nincs**. A Picasa 3.9-ben a mellőzés arcszintű: a csempe X gombja és a kibontott nézet „Ignore Selected” gombja (job-209, job-210, job-218), az arc kulcsa `ffffffffffffffff` lesz (34.11). Az `albumcontactids` tábla (37.9) a személyalbumok névjegy-hozzárendelése, nem mellőzési lista.
 - **Bizonyítottsági fok:** megerősített (felvétel: mindkét menü és a párbeszédablak teljes tartalma látszik).
 - **Lezárás (N5): (b)** lezárható: nincs személyszintű mellőzés, tehát nincs megvalósítandó eltérés; az arcszintű mellőzés a PicasaPy-ban az eredeti szerint működik (`face_ignore_ini.py`, `ffffffffffffffff`).
+
+## People ablak és névjavaslat: teljes viselkedés binárisból (#5437)
+
+**Hatókör és források.** Ez a szakasz a People ablakot (`contactmgr.fen`, `ContactManagerDlg`), a csempe névjavaslatát (`PeoplePanel::AutoCompleteProvider`) és a névjegytárat (`ContactManager`) írja le. Forrás: `referencia/ghidra/2026-10-21-people-dlg.txt` (a `0x007b7910`, `0x007ba4f0`, `0x007b86b0`, `0x007b8f80`, `0x007b8d20`, `0x007b7f00`, `0x007cfae0`, `0x0085a1a0` blokkjai); `2026-10-21-ac-gyors.txt` (a `0x00643940`, `0x00643580`, `0x00643720`, `0x006437b0`, `0x006436b0`, `0x007bdb00`, `0x007b7580`, `0x00589640`, `0x00589760`, `0x0058aaf0`, `0x0058ad60`, `0x0058af90`, `0x00809050`, `0x00809280` blokkjai); a korábbi dumpok: `2026-10-17-szemelykezeles-6.txt` (`0x007bb660`), `2026-10-17-szemelykezeles-4.txt` (`0x007b99a0`), `2026-10-17-szemelykezeles-5.txt` (`0x007baf50`, csak a hívási lista és a sztringek), `2026-10-20-ghidra-22.txt` (`0x007b81e0`), `2026-10-20-ghidra-23.txt` (`0x007b9630`), `2026-10-21-koteg-1021b.txt` (`0x007b7b10`), és az index (`functions`, `xrefs`, `string_xrefs`, `rtti`). A feladatban megnevezett `~/Documents/PicasaPy/.ghidra/` könyvtár nincs meg; a dumpok a `~/picasapy-agent/referencia/ghidra/` alatt vannak. A `2026-10-21-autocomplete.txt` nincs meg, ezért a popup megjelenítése NINCS MEG.
+
+**Jelölések.** „Binárisból”: C-dumpban vagy az indexben látszik, a cím mellett. „Következtetés”: a hívási mintából vagy a sztringből következik, nem a függvény nevéből. „NINCS MEG”: a dumpokban nincs meg; mellette a Ghidra-cím, amelyet kérni kell.
+
+### 38.1 Az ablak felépítése és az állapotgép
+
+- **Vezérlők (binárisból).** A `0x007b8f80` betölti a `contactmgr` erőforrást (`FUN_0060dc30("contactmgr")`), és értékfigyelőt köt öt vezérlőre: `contacts` (lista), `fullname`, `emails`, `search` és `sync`. A `sync` sztring nincs az indexben; a `count` (`0x00cb71dc`) és a `gplus` (`0x00cb71ec`) közti helyről következtetve `sync` (következtetés).
+- **Állapot (binárisból).** A `this+0x158` mező (dumpban `param_1[0x56]`). Értékei: `0` = nincs munkamenet (a `0x007b9630` azonnal visszatér); `1` = böngészés; `2` = meglévő személy módosítva; `3` = új személy (a `0x007ba4f0` írja). A validálás (`0x007bb660`) a `2` és `3` értéknél dolgozik. A `contacts` ág (a lista kijelölés-változása) validál, ha az állapot nem `1`, majd `1`-re állít. A mezőmódosítás `1`-ről `2`-re lép (a `0x007b9630` végén).
+- **Kijelölt sor (binárisból).** A `this+0x13c` (dumpban `param_1[0x4f]`), kezdeti értéke `-1` (`0x007b8f80`). A `contacts` ág a lista kijelölt indexét egyetlen értékként olvassa (vtábla `+0xc`). Ez erős jel az egyes kijelölés mellett, de a többes kijelölést nem zárja ki: N7 nyitva marad.
+- **Sortömb (binárisból).** A rekord 0x30 bájtos; a tömb `this+0xe0`, a darabszám `this+0xe4`. Szűrt nézet: a leképezés `this+0x100`, a darabszáma `this+0x104`, a szűrés jelzője `this+0x114`. Sor-jelzőbájtok: `this+0x134`. Kiválasztott név mutatói: `this+0x150` és `this+0x154`. Választás-mód jelző: `this+0x15c`. A `0x007b8f80` `0`-ra állítja; a dumpokban más író nincs (**NINCS MEG**: a `1`-re állító kód).
+
+### 38.2 A sor felirata (`0x007b7910`)
+
+Binárisból:
+- **Csillag-előtag.** A `* ` jel akkor jelenik meg, ha a sor jelzőbájtjának 0. bitje (`this+0x134`) be van kapcsolva, és a sor nem üres új sor. Üres új sor: nulla azonosító, nincs név, és a 0x20-as mező nulla. A bitet a mezőmódosítás állítja (a `0x007b9630` végén, `|= 1`). Jelentése „módosított, mentetlen” (következtetés).
+- **Név.** Ha mindkét névrész nem üres: `%s, %s`. Ha csak az egyik: az. A két rész forrása a `0x007b5600` (145 bájt, nincs dumpolva): **NINCS MEG**, melyik a vezetéknév.
+- **Üres név.** Ha van azonosító, a felirat a `%I64x` alak (két dword, kisbetűs hexadecimális). Ha nincs azonosító, a `ContactManagerDlg::NewContact` kulcs szövege. Ez ugyanaz a `%I64x` formátum, amelyről a 32.3 szakasz írt.
+
+### 38.3 Felépítés és szűrés gépeléskor
+
+- **Újraépítés (`0x007b7f00`).** Minden sorra meghívja a `0x007b7910`-t, a kijelölt sort a régi kulcs alapján visszaállítja, majd a lista-vezérlőn a kijelölést (`+0x7c` slot) és egy rajzolás-jelzőt (`+0x10c`, `0` és `1`) hív. Következtetés: rajzolás tiltása és engedélyezése.
+- **Szűrés gépeléskor (binárisból, `0x007b9630` `search` ága).** A `search` mező változása: először `0x007bb660` (validálás; 2. vagy 3. állapotban párbeszédet is dobhat), aztán `0x007b7f00` (újraépítés), végül `0x007b81e0` (gombállapot). A szűrés szabálya (kis- és nagybetű, ékezet, szóhatár) a `0x007b4990` és a `0x007b5260` törzsében van: **NINCS MEG** (Ghidra-kör: `0x007b4990`, `0x007b5260`).
+- **Fájl-API a láncban.** A `0x007b7f00` közvetlen hívottjai között nincs fájl-API. A lista: `0x00401000`, `0x0052e490`, `0x007b4990`, `0x007b5260`, `0x007b7910`, `0x007b7b10`, `0x008e3710`, `0x0097caf0`, `0x00985a60`, `0x00985ff0`, `InterlockedIncrement`, `InterlockedDecrement`. A `0x007b4990` és a `0x007b5260` mélyebb lánca nem ismert: **NINCS MEG**, olvas-e lemezt.
+
+### 38.4 Csempéből nyitás, előtöltés, New Person
+
+- **Megnyitás.** A `0x0085a1a0` a `/c/ui/ContactManager` erőforrásból hozza létre a párbeszédet (a `0x0085a120` hívásával; a sztring `ContactManagerDlg::GoogleContacts`). Egyetlen hívója a `0x00720dd0` (index-xref). A csempe Enter-útja a `0x00720dd0`-ig: **NINCS MEG** (Ghidra-kör: a `0x00720dd0` hívója `0x0071f740`; a `0x00787dd0` (a csempe-kártya gombjainak és feliratainak építője, `Add a name`) hívói `0x007853e0` és `0x007899e0`; az Enter-cél azonosítása nyitott (19. szakasz, 5. pont)).
+- **Előtöltés.** A Search mező előtöltését (a csempe szövege) a megnyitó útvonalon nem láttam: **NINCS MEG**. A 2026-10-17 job-167 felvétel szerint a mező előre ki van töltve és kijelölve (19. szakasz).
+- **New Person (`0x007ba4f0`, binárisból).** Lépésről lépésre:
+  1. Ha az állapot nem `1`, előbb `0x007bb660` (38.5).
+  2. Az állapot `3`.
+  3. A `search` mező szövege (`0xec` és `0x18` slot) a lekérdezés tárolójába (`this+0x140`) kerül.
+  4. Új sor a sortömb végére: a jelzőtömb bővül, az új sor jelzőbitje `|= 1`, az állapotbit `0x2`, ha van név, különben `0x4`. A feltétel forrása a dekompilátorban elveszett (`piStack_4c`): **NINCS MEG** a pontos feltétel.
+  5. A `ContactManagerDlg::NewContact` szöveg a `0x008e3710`-nek megy. Célja **NINCS MEG**.
+  6. A kijelölés `0`, `this+0x13c = 0`, majd lista-újraépítés a `0x007b7f00`-val, lekérdezés nélkül (következtetés: a második argumentum `0`, tehát nincs szűrés; a dekompilátor `unaff_retaddr` értelmezése bizonytalan).
+  7. Fókusz a `fullname` mezőre (`0xbc` slot; a slot neve **NINCS MEG**).
+  - Hogy a `search` szövegből lesz-e az új sor neve, azt a `0x007b56a0` dönti el (**NINCS MEG**).
+
+### 38.5 Validálás jóváhagyáskor és új személynél (`0x007bb660`)
+
+Binárisból (`2026-10-17-szemelykezeles-6.txt`). Hívói: `0x007b9630` (2 hely), `0x007b99a0` (az `ok` parancs) és `0x007ba4f0` (New Person).
+- **Nincs teendő:** ha az állapot nem `2` és nem `3`, a visszatérés `0`.
+- **Üres név** (`2` vagy `3`, és nincs jelző): a doboz címe `ContactManagerDlg::InvalidContact`, gombja `ContactManagerDlg::Ok`, üzenete `ContactManagerDlg::EmptyContactMsg` (a szöveg: „Empty People are not allowed. Person will be reverted.”, a sztring-sorrendből következtetve). Utána `0x007bb370`, a visszatérés `0xf4242` (nem menthető). A sor visszaáll.
+- **Hiányzó teljes név** (`2`): `ContactManagerDlg::EmptyFullNameMsg` (szöveg: „Unable to remove a Person's name. Change will be reverted.”, következtetés), modális doboz (`0x009ba4d0` és `0x009bab50`): cím `ContactManagerDlg::InvalidContact`, gomb `ContactManagerDlg::Ok` (a dekompilált hívásból a szerepek következtetettek), utána visszaállítás.
+- **Új személy** (`3`): a `0x00585ad0` a gyűjteményben duplát keres. Találatnál a `0x0058ff00` kijelöli a találatot, a `0x007b7f00` a találatra szűr. Ezután:
+  - e-mail egyezés: `ContactManagerDlg::DupEmailMsg` (`You already have a person with the email address '%s'…`, a teljes szöveg a sztringek indexéből);
+  - név egyezés: `ContactManagerDlg::DupNameMsg` („You already have a person with the name '%s'. Are you sure you want to create a new person?”);
+  - egyéb: `ContactManagerDlg::DupContact` (szöveg **NINCS MEG**).
+  - Kérdés: cím `ContactManagerDlg::DupFoundTitle`, gombok `ContactManagerDlg::Yes` és `ContactManagerDlg::No` (modális). „Igen”: `0x007bb370` hívódik, a visszatérés az eredménye. „Nem”: nincs mentés, a visszatérés `0`.
+- **Nincs duplikátum:** a visszatérés `0`, és a `0x007bb370` NEM hívódik meg. A mentés a hívóban van (**NINCS MEG** a hívó).
+
+### 38.6 Név és e-mail szerkesztése
+
+- **Rekord-frissítés (`0x007b8d20`).** Beírja a `fullname` és az `emails` szövegét a sor rekordjába (az e-mail a `+0x1c` mezőbe, a név másik mezőbe; a pontos név-mező **NINCS MEG**). A `+0x24` bájtot 1-re állítja. A `0x0098b6e0` 8 bájtos értékét a `+0x10` mezőbe írja (**NINCS MEG**, mi az: a törzs hiányzik).
+- **`[0x15d]` jelző.** A `0x007b8d20`-ban `0`, ha az e-mail elemzése (`0x00939690`, törzse **NINCS MEG**) sikeres és a szöveg nem üres, különben `1`.
+- **Ellentmondás (NINCS MEG).** A `0x007b81e0` akkor adja az `InvalidEmail` üzenetet, ha `[0x15d] == 0`. A két állítás együtt azt jelentené, hogy a helyes e-mail adja a hibát. A dumpok alapján nem dönthető el, melyik olvasat a helyes; a dekompilátor a feltétel ágait megfordíthatta.
+- **Engedélyezés (következtetés).** A `0x007b81e0` a `fullname` és `emails` vezérlők engedélyezését a `0x00588460` eredményétől teszi függővé (**NINCS MEG** a függvény neve és törzse). A mintából: ha a `0x00588460` nem nulla, a két mező tiltott.
+- **Megjelenés.** A `0x007b7b10` (`2026-10-21-koteg-1021b.txt`, a blokk a 679. sortól) a `fullname`, `emails` és `online_contact` mezőket tölti fel. A `thumb`, `count` és `gplus` részt a `0x007b86b0` állítja.
+
+### 38.7 Gombállapotok, felirat, státusz (`0x007b81e0`)
+
+Binárisból (`2026-10-20-ghidra-22.txt`, a `0x007b81e0` blokkja). Hívói: `0x007b7b10`, `0x007b9630` (2 hely), `0x007ba060`. Ez a függvény frissíti az egész felületet.
+- **`delete`:** engedélyezett, ha van kijelölt sor (`cStack_14` jelző; forrása részben **NINCS MEG**).
+- **`fullname`, `emails`:** a 38.6 szerint.
+- **`revert`:** engedélyezett, ha a kijelölt sor 0. bitje be van kapcsolva (következtetés a `puStack_58 = flags & 1` értékadásból; a beállító slot neve **NINCS MEG**).
+- **`sync`:** a sor állapotbitjeiből, az érték `(flags & 6) != 4` (következtetés az értelmezésről).
+- **`count`:** láthatóság a `cStack_14` jelzőtől (a slot neve **NINCS MEG**).
+- **`ok`:** a `DAT_00c9ad6c` vezérlő (a neve az indexben nincs; az OK-gomb a legvalószínűbb, következtetés). Engedélyezett, kivéve ha a kijelölt sor üres nevű és nincs jelzője (`bVar3`).
+- **OK / Choose felirat.** Ha `[0x57]` (`this+0x15c`) be van kapcsolva ÉS a kijelölt név mutatói (`[0x54]`, `[0x55]`) egyeznek a tároltakkal, a felirat a `ContactManagerDlg::OK` szövege, különben a `ContactManagerDlg::Choose` szövege. A `[0x57]`, `[0x54]` és `[0x55]` írói a dumpokban **NINCS MEG** (csak a `0x007b8f80` nullázza őket). Ez blokkolja a Choose-szabály tesztelését.
+- **Státusz.** A `status` címkét (`0xe8` slot) állítja. Az `InvalidFullName` és `InvalidEmail` szövegek ide mennek, ha az `unaff_BP` jelző be van kapcsolva; melyik hívó kapcsolja be: **NINCS MEG**.
+
+### 38.8 Parancsok: OK, Mégse, Revert, Delete, Online, Refresh (`0x007b99a0`)
+
+Binárisból (a parancsnevek a dispatcher sztring-összevetéséből):
+- **`ok` (OK és Choose):** `0x007bb660` (validálás). Ha nem `0`, a párbeszéd marad nyitva. Utána `0x007baf50` (mentés; hibaüzenet `ContactManagerDlg::UpdateFailed`: „Failed to update person!”; a törzse nincs elemezve), majd bezárás: `0x008d2720(…, 0)`.
+- **`cancel` (Mégse):** `0x008d2720(…, param_3)`. Nincs validálás, nincs mentés, nincs kérdés.
+- **`create` (New Person):** `0x007ba4f0` (38.4).
+- **`delete`:** `0x007ba820` (1826 bájt). Sztringek: `ContactManagerDlg::ConfirmDelete` (megerősítés), `ContactManagerDlg::DontWarn` („Don't warn me about this in the future”, a beállítás a `Preferences` csoportban), és az online-használat figyelmeztetése: `ContactManagerDlg::DeleteSubjectWarning` és a `…ES` változat (a törlés az online fotók címkéit lecsatolhatja). A figyelmeztetés feltétele **NINCS MEG** (a `0x007ba820` elágazásai nincsenek dumpolva).
+- **`revert`:** `0x007bb370`. Szerepe **NINCS MEG**: a „will be reverted” üzenetek is ide mutatnak, de a `0x007bb370` a „Yes” ágban is hívódik (38.5), ezért nem egyértelmű, hogy visszaállítás.
+- **`online` (Manage Online Contacts):** megnyitja a `https://www.google.com/contacts` címet. Ha van piszkos sor, előbb kérdés: `ContactMangerDlg::PersistBeforeSync` („Save changes?”, cím `…PersistBeforeSyncTitle`), gombok `ContactManagerDlg::Cancel` és `ContactManagerDlg::Ok` (`2026-10-17-szemelykezeles-4.txt`, az `online` ág).
+- **`refresh_contacts`:** `0x007b9f20` (199 bájt; `2026-10-20-ghidra-24.txt`).
+
+### 38.9 A csempe névjavaslata: lista, rajzolás, elfogadás
+
+- **Vtábla (binárisból).** A `PeoplePanel::AutoCompleteProvider` vtáblája `0x00ca1740` (RTTI). A vtábla eltolásai (DATA-hivatkozásokból):
+  - `+0x00` = `0x00643940`: lekérdezés. Bemenet: a gépelt szöveg. Kimenet: a találati tömb, 8 bájtos elemek (sztringmutató és jelzőbájt).
+  - `+0x14` = `0x007bdb00`: a Google+-körök ajánlója felé ágazik (`0x007bdc40`, `0x007be010`). A sztringek (`Everyone in your circles`, `Visible to anyone on the web.`) alapján ez másik lista, nem a névjegytár (következtetés).
+  - `+0x20` = `0x00643580`, `+0x24` = `0x00643720`, `+0x28` = `0x006437b0`, `+0x2c` = `0x006436b0`.
+- **`0x00643940` (binárisból).**
+  - Üres szöveg: a forrás az alkalmazás-objektum (`DAT_00d67668`, `+0x102c`) tagjaiból jön (`+0xeac`, `+0x2bc`). A forráslistát a `0x00491980` állítja elő (sztring: `FRAddSuggesetions`), a darabszámot a `0x007b53a0` ellenőrzi.
+  - Nem üres szöveg: előbb `0x007b4990(szöveg)` (lekérdezés), majd ugyanaz a forrás.
+  - **Korlát:** a `0x00643940` nem vág le; a kimenet darabszáma a forrás darabszáma. A forrás korlátja **NINCS MEG**.
+  - **Sorrend:** a forrás sorrendjét másolja (`0x005c2020` ciklus). A forrás rendezése **NINCS MEG**.
+  - Közvetlen hívottjai között nincs fájl-API (`0x00491980`, `0x007b4990`, `0x007b53a0`, `0x00448c90`, `0x007166c0`, `0x009c2fc0`, memória-műveletek). A mélyebb lánc **NINCS MEG**.
+- **`0x006436b0` (`+0x2c`).** A sor azonosítóját (8 bájt) adja a `0x0044d650`-nek az alkalmazás-objektummal. A célfüggvény szerepe (kiválasztás vagy megnyitás) **NINCS MEG**. Valószínűleg ez az elfogadás útja (következtetés).
+- **`0x006437b0` (`+0x28`).** Név alapján darabszámot számol (`*param_4`). Ha pontosan egy egyezés van, azt a `0x00585770` feloldja. Hívója **NINCS MEG** (a csempe Enter-útja?).
+- **Popup billentyűi (`0x00809050`, `CAutoCompleteListBox`, vtábla `0x00cbd8ec`).**
+  - `VK_DOWN` (0x28): a következő elem. Az utolsónál körbefut, ha a `+0x20` jelző be van kapcsolva; különben nincs kijelölés.
+  - `VK_UP` (0x26): az előző elem; az elsőnél ugyanez fordítva.
+  - `VK_RETURN` (0x0d): az aktuális elem (`0x009df260`) elfogadása (`0x00a54b70`).
+  - Egyéb billentyű: `0xf4241`, nincs kezelve (a szülő kapja, például Escape).
+  - Kijelölt elem: a 8 bájtos elem `+4` dword-jének 0. bitje (`|= 1`).
+  - **Nyitott:** használja-e a csempe popupja ezt az osztályt (**NINCS MEG**).
+- **Görgetés (`0x00809280`).** A popup görgetése `index × elemmagasság` (`param_1[9] * param_1[4]`), plusz a `+0xbc`/`+0xc0` eltolás.
+- **Megjelenítés, elrejtés, kép.** A popup megjelenítése és elrejtése (`0x00809360`, `0x008095c0`), a találat rajzolása és a kép (arc vagy sziluett): **NINCS MEG** (38.11, 13. tétel).
+
+### 38.10 Korrekciók a korábbi szakaszokban (2026-10-21, #5437)
+
+1. **36. szakasz, 22. kör (N6):** a `ContactManagerDlg::OK` és a `ContactManagerDlg::Choose` kulcs nem naplóüzenet, hanem az OK-gomb szövege (38.7). A „tárolt” név-mutatók (`[0x54]`, `[0x55]`) írói **NINCS MEG**. A hibás mondat a helyén javítva.
+2. **19. szakasz, „Meglévő név, javaslatlista, Choose és Escape” sor:** a javaslat-elemre kattintás **megvan** a kódban (`UnnamedFacesView.qml:650-652`: `MouseArea` → `submitName(personName)`, #5285). A korábbi „nincs aktiváló kezelő” állítás a régebbi sorokra (547-587) vonatkozott. A hibás mondat a helyén javítva; az élő kattintás mérése nyitott.
+3. **N7 (kijelölés):** erősödött, nem zárult. A `0x007b9630` `contacts` ága egyetlen indexet olvas (38.1). A többes kijelölés kizárásához a `0x007ba820` és a lista-vezérlő kijelölési módja kell (**NINCS MEG**).
+4. **A 32., 35. és 37. szakasz állításai megmaradnak:** a `0x007b81e0` nem hív `0x00586e20`-t (a hívottjai között nincs), és a `0x007bb660` csak a `2` és `3` állapotban fut.
+
+### 38.11 Ghidra-kérések (sorrendben)
+
+1. `0x007b4990` (2252 bájt): a név-lekérdezés és szűrés törzse, a People-lista és a csempe-javaslat közös része. Ebből dől el a 38.3 és 38.9 egyezési szabálya. **[blokkoló: Q2]**
+2. `0x007b5260` (315 bájt): a People-lista szűrő-predikátuma. **[blokkoló: szűrés]**
+3. `0x00491980` (2139 bájt): az AC forráslista (`FRAddSuggesetions`). **[blokkoló: Q3]**
+4. `0x007b53a0`, `0x00448c90`, `0x007166c0`: a `0x00643940` feltételei.
+5. `0x007b5600` (145 bájt): a sor két névrészének forrása és sorrendje.
+6. `0x007bb370` (734 bájt): a függő változás lezárása; a „Yes” ág, a `revert` és az üres név ág közös törzse.
+7. `0x00585ad0` és `0x0058ff00`: a duplikátum-keresés és a találat kijelölése.
+8. `0x00588460`: a `fullname` és `emails` engedélyezésének feltétele.
+9. `0x0098b6e0`, `0x007b56a0`, `0x00939690`, `0x00585770`: a 8 bájtos érték forrása, a név-hozzáadás, az e-mail elemzés és a név-feloldás.
+10. A `[0x54]`, `[0x55]`, `[0x57]` írói: a `0x00787dd0` (a csempe-kártya építője) hívói `0x007853e0` és `0x007899e0`; a `0x00720dd0` hívója `0x0071f740`.
+11. A névjegytár háttere: `0x0058e750` (a `DownloadContacts` hívója), `0x0058a030` (1999 bájt) törzse, az `ytAsyncQueue<ContactManager::DownloadJob>` munkás-függvénye (vtábla `0x00c91614`), az `IContactManagerHandler` értesítő metódusai (vtábla `0x00c908b4`), és a `0x00589760` hívói.
+12. `0x007baf50` (1031 bájt) törzse: a mentés írási útja a Contacts2 írásáig.
+13. `0x00809360`, `0x008095c0`, `0x0063a5e0`, `0x0064f090`, `0x0060f980`: a popup megjelenítése, elrejtése és rajzolása. A dump megvan (`referencia/ghidra/2026-10-21-autocomplete.txt`), ebben a körben nem dolgoztuk fel.
+14. `0x0085a120` és `0x0071f740`: a People-ablak megnyitásának teljes útja.
+
+### 38.12 A névjegytár: háttér, memória, értesítés (Q3)
+
+- **Háttérsor (binárisból).** A `ContactManager` vtáblája `0x00c91564` (RTTI). Van letöltő-sora: `ytAsyncQueue<ContactManager::DownloadJob>` (vtábla `0x00c91614`), és megfigyelő-listája: `ytArray<IContactManagerHandler*, 1, ytBaseThread>` (vtábla `0x00c9163c`). Az interfész: `IContactManagerHandler` (vtábla `0x00c908b4`). Ezek szerint a letöltés háttérben, sorban fut, és az eredményt megfigyelők kapják. A szál indítása és az értesítés hívási helye **NINCS MEG**.
+- **Letöltő-függvények.** A vtábla `+0x2c` (`0x0058aaf0`, „Downloading Focus Groups”) és `+0x30` (`0x0058ad60`, „Downloading Focus Contacts”) slotja. Mindkettő a `this+0x38` térképet használja (`0x0058fc40` a keresés). A feldolgozás naplója: „Processing Focus Contacts - %d found, updated %s” (`0x0058caa0`), „Processing Focus Groups - %d found, updated %s” (`0x0058b4e0`). A térkép a memóriában él; a lemezre mentés útja **NINCS MEG**.
+- **Indítás.** A `DownloadContacts` (`0x0058a030`) hívója: `0x0058e750`. Mikor fut (indulás, időzítő, kérésre): **NINCS MEG**.
+- **Gépeléskor (binárisból).** A 38.3 és 38.9 közvetlen hívottjai között nincs fájl-API. A `0x00643940` és a `0x007b7f00` mélyebb lánca **NINCS MEG** (`0x007b4990`, `0x007b5260`, `0x00491980`).
+- **Online létrehozás (binárisból).** A vtábla `+0x24` slotja (`0x00589760`) „Create person contact: focus %s, result %d” naplóval hoz létre személyt a `Focus` (online) szolgáltatásban. Ha nem sikerül, 15 és 30 másodperc között várakozva újrapróbálkozik, legfeljebb négyszer (`_rand`, `(rand & 15) + 15` másodperc). Háttérszálú online művelet. Hogy a People OK-útja hívja-e: **NINCS MEG** (a `0x007bb660` hívottjai között nincs).
+
+### 38.13 Összevetés a mi kódunkkal
+
+| Téma | Eredeti (binárisból) | Nálunk | Teendő |
+|---|---|---|---|
+| Csempéből nyitás | `0x0085a1a0` tölti be a `/c/ui/ContactManager` erőforrást; hívó `0x00720dd0`; a csempe útja NINCS MEG | `UnnamedFacesView.qml` `submitName` → `root.nameSubmitted`; `Main.qml:3690-3692`; `PeopleManagerDialog.openForFace` | 38.11, 10. és 14. tétel |
+| Előtöltés | NINCS MEG (megnyitó útvonal); job-167 szerint előtöltve és kijelölve | `beginSession`: `initialSearch` előtölti; egyező név kijelölése; egyébként nincs kijelölés | a kódban nincs teendő |
+| Lista szűrése | `search` ág: `0x007bb660` → `0x007b7f00` → `0x007b81e0`; a szabály NINCS MEG | `filteredEntries`: a név részsztring, kis- és nagybetű független, ékezet-érzéketlenség nincs | a szabály a `0x007b4990` után |
+| Sor-felirat | `* ` előtag módosított sornál; `%s, %s` vagy `%I64x` névtelennél | a név, `* ` nélkül | 9. teendő |
+| New Person | validál, állapot `3`, a `search` szöveg a névnek megy (következtetés), kijelölés `0`, fókusz `fullname` | `addPerson`: draft sor a `searchField` szövegével, fókusz a `nameField`-re | 1. teendő (duplikátum) |
+| Név szerkesztése | `0x007b8d20`: rekord-írás, módosított bit, újracímkézés | `_updateSelected`, csak a másolatban | nincs |
+| E-mail | `emails`; engedélyezés a `0x00588460`-tól (NINCS MEG) | csak ha `localContactIds` nem üres | a `0x00588460` után |
+| Duplikátum jóváhagyáskor | mód `3`: `DupNameMsg` / `DupEmailMsg`, Igen/Nem | nincs | 1. teendő |
+| Üres név | `EmptyContactMsg`, visszaállítás | `canCommit()` hamis, az OK tiltott, nincs üzenet | 2. teendő |
+| Mentési hiba | `Failed to update person!` | `savePeopleManagerChanges` hamis → csendes `return` | 3. teendő |
+| Revert | `revert` → `0x007bb370` (szerep NINCS MEG); engedélyezés a módosított bitre | `revertSelected`; engedélyezve, ha van kijelölés | 4. teendő |
+| Delete | `ConfirmDelete` + „Don't warn me” (Preferences) + online figyelmeztetés | azonnal törli a másolatból | 5. teendő |
+| OK / Choose | ugyanaz a `ok` parancs; a felirat: `[0x57]` és név-egyezés; a felirat íróit NINCS MEG | `Choose`, ha arcmódban van kijelölt, nem új sor | 6. teendő |
+| Mégse | bezárás, nincs validálás | `close()`, nincs kérdés | egyezik |
+| Sync Face Tags | élő vezérlő, állapotbitek | tiltott | döntés (online funkció) |
+| Manage Online / Refresh | URL-nyitás, mentés-kérdés; folyamatjelző | tiltott | döntés |
+| Csempe-javaslat: lista | `0x00643940`, forrás `0x00491980`; nincs korlát; forrás-sorrend | `refreshNameSuggestions`: teljes lista, név szerint rendezve (`peopleManagerContacts`); nincs korlát; a popup 170 px magas | a korlát és a sorrend NINCS MEG |
+| Csempe-javaslat: egyezés | NINCS MEG (`0x007b4990`) | részsztring, `toLocaleLowerCase` | a `0x007b4990` után |
+| Csempe-javaslat: billentyűk | `0x00809050`: Fel/Le/Enter elfogadja a kijelöltet; körbefutás jelző | Enter a beírt szöveget küldi (`submitName(text)`); a listán nincs billentyűkezelés | 7. teendő |
+| Csempe-javaslat: kattintás | `0x006436b0` → `0x0044d650` (célja NINCS MEG) | `MouseArea` → `submitName(personName)` (#5285) | élő mérés |
+| Csempe-javaslat: kép | NINCS MEG | `thumbUrl` vagy `icons/person-silhouette.svg` | 13. Ghidra-tétel |
+| Névjegytár betöltése | memória-tömb (`this+0x38`), háttérsor (`ytAsyncQueue`), online letöltés | `peopleManagerContacts()` minden hívásra megnyitja az adatbázist és minden mappa `.picasa.ini`-jét | 8. teendő |
+
+### 38.14 Megvalósítás előtt: a teendők (sorrendben)
+
+1. **Duplikátum új személynél:** név és e-mail egyezésnél Igen/Nem kérdés jóváhagyáskor (`PeopleManagerDialog.qml`, `commitChanges`). A szöveg a Picasa szövege, magyarul a `picasapy_hu.ts`-ben.
+2. **Üres név:** üzenet és a sor visszaállítása (`EmptyContactMsg`), nem csak a tiltott OK.
+3. **Mentési hiba:** a `savePeopleManagerChanges` hamis eredménye üzenetet adjon (`UpdateFailed` megfelelője), ne csendes visszatérés.
+4. **Revert:** engedélyezés csak módosított sornál; a visszaállítás a mentett értékre. A `0x007bb370` szerepének tisztázása után.
+5. **Delete:** megerősítő párbeszéd, „ne figyelmeztess” beállítás a PicasaPy beállításaiban. Az online figyelmeztetés feltétele NINCS MEG.
+6. **OK / Choose felirat:** a binárisbeli szabály (`[0x57]` és név-egyezés) csak az írók azonosítása után változtatható. Addig marad a jelenlegi szabály.
+7. **Billentyűk a javaslat-popupban:** Fel, Le és Enter (a kijelölt elem elfogadása). Előbb el kell dönteni, hogy a csempe popupja a `CAutoCompleteListBox` osztályt használja-e (NINCS MEG).
+8. **Gyorsítótár (#5435 óta megvan):** a `peopleManagerContacts()` eredményét a `people_controller.py` tárolja, és csak mentéskor, frissítéskor vagy mappaváltozáskor számolja újra. A `refreshNameSuggestions` a tárolt listát olvassa. Indok: a bináris gépelési útja közvetlenül nem olvas fájlt, a mi kódunk minden gépelésnél megnyitja az adatbázist és minden `.picasa.ini`-t. (Mérés nincs; ez a kód-olvasásból adódó eltérés.)
+9. **Sor-felirat:** a `* ` jel módosított sornál és a névtelen kontakt megjelenítése (`%I64x`) döntést kér. Nem tekintjük hibának.
+
+**Mérés nélkül nem változtatandó:** a szűrési szabály, a sorrend és a korlát (38.11, 1-3. tétel).
+
+### 38.15 Bizonyítottsági fok
+
+- **Binárisból igazolt:** a vezérlők és a figyelők (38.1), a parancsok sorrendje (38.8), a validálás ágai (38.5), a sor-felirat fő szabálya (38.2), a csempe-lista vtábla-szerkezete és a popup billentyűi (38.9), a háttérsor vtábla-azonosítói (38.12).
+- **Következtetés (hívási mintából):** a `* ` jel jelentése, a gombállapotok értelmezése, a `+0x10c` és `+0x7c` slotok szerepe, és hogy a `search` szövegből lesz az új név.
+- **NINCS MEG:** a szűrési és egyezési szabály, a forráslista és a rendezés, a csempe-popup osztálya és képe, a Choose-szabály íróinak azonosítása, a névjegytár háttérszálának indítása, és a mentés lemezre írási útja.
