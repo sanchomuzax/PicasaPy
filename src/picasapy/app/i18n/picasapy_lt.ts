@@ -1162,7 +1162,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Rodyti pagalbos žymas</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>Vieną kartą spustelėkite, kad uždarytumėte Redagavimo rodinį</translation>
@@ -1194,9 +1194,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Failai:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Importuojant aptikti dublikatus</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>Aptikti dublikatus importuojant</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1292,6 +1293,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importuotas nuotraukas išsaugoti į:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>Importuotas nuotraukas išsaugoti į:</translation>
@@ -1660,9 +1666,9 @@ picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::t
     <context>
         <name>OptionsTabNetwork</name>
         <message>
-            <source>Proxy username (Windows only):</source>
+            <source>Proxy username:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/proxygroup.title;options:options/labelgroup130.title</extracomment>
+picasapy-origin-key: options:options/labelgroup130.title</extracomment>
             <translation>Tarpinio serverio naudotojo vardas:</translation>
         </message>
         <message>
@@ -1678,16 +1684,16 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/autoproxy.title;optio
             <translation>Automatiškai aptikti tinklo nustatymus</translation>
         </message>
         <message>
-            <source>Network logging level:</source>
+            <source>Network log level:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loglevelgroup.title;options:options/labelgroup135.title</extracomment>
+picasapy-origin-key: options:options/labelgroup135.title</extracomment>
             <translation>Tinklo registravimo lygis:</translation>
         </message>
         <message>
-            <source>Disable logging</source>
+            <source>Disable Logging</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/disable_item.title;options:options/item137.title</extracomment>
-            <translation>Išjungti žurnalų rašymą</translation>
+picasapy-origin-key: options:options/item137.title</extracomment>
+            <translation>Išjungti registravimą į žurnalą</translation>
         </message>
         <message>
             <source>Log errors only</source>
@@ -1714,9 +1720,9 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/all_item.title;option
             <translation>Registruoti visą tinklo informaciją</translation>
         </message>
         <message>
-            <source>Log file:</source>
+            <source>Log:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loggroup.title;options:options/labelgroup142.title</extracomment>
+picasapy-origin-key: options:options/labelgroup142.title</extracomment>
             <translation>Žurnalas:</translation>
         </message>
         <message>
@@ -1735,9 +1741,34 @@ picasapy-origin-key: options:options/labelgroup145.title</extracomment>
             <translation>Numatytasis įkėlimo dydis:</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pradinis dydis</translation>
+            <source>Original size (slowest upload)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::Original</extracomment>
+            <translation>Pradinis dydis (lėčiausias įkėlimas)</translation>
+        </message>
+        <message>
+            <source>Best for web sharing (2048px)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::2048</extracomment>
+            <translation>Labiausiai tinka norint bendrinti žiniatinklyje (2 048 tašk.)</translation>
+        </message>
+        <message>
+            <source>Recommended: 1600 pixels (for prints, screensavers, and sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1600</extracomment>
+            <translation>Rekomenduojama: 1 600 taškų (spaudiniams, ekrano užsklandoms ir bendrinti)</translation>
+        </message>
+        <message>
+            <source>Medium: 1024 pixels (for sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1024</extracomment>
+            <translation>Vidutinė: 1 024 taškai (bendrinti)</translation>
+        </message>
+        <message>
+            <source>Small: 800 pixels (for blogs and webpages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::800</extracomment>
+            <translation>Mažas: 800 taškų (tinklaraščiams ir tinklalapiams)</translation>
         </message>
         <message>
             <source>When syncing large files, upload previews first</source>
@@ -1808,7 +1839,7 @@ picasapy-origin-key: options:options/labelgroup181.title</extracomment>
             <translation>Sankaupos slenkstis:</translation>
         </message>
         <message>
-            <source>Store name tags in the file</source>
+            <source>Store name tags in photo</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
             <translation>Išsaugoti vardų žymas nuotraukoje</translation>

@@ -785,7 +785,7 @@ adatmásolási viselkedése.*
 - **EGYEZIK**: a felirat, a kulcs (vagy a funkció) és az alapérték megegyezik.
 - **ELTÉR**: van megfelelő vezérlő, de a felirat, a kulcs, az alapérték vagy a vezérlőtípus más. Egy eltérő felirat önmagában is ELTÉR.
 - **HIÁNYZIK**: nincs működő megfelelő vezérlő (a nálunk lévő elem letiltott, rejtett, vagy nincs is).
-- **NYITVA**: az alapérték nincs igazolva. Sem EGYEZIK, sem ELTÉR nem állítható, amíg a 12. szakasz Ghidra-köre nem dönt.
+- **NYITVA**: az eredeti érték vagy leképezés nincs teljesen igazolva. A következő bizonyítási lépés a 12. szakaszban szerepel.
 
 A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML-elem, kulcs, alapérték), **állapot**. A zárójelben álló címek a kulcs sztringjének címei (`0x00…`), illetve az alapérték regisztrálásának utasítás-címei (`0x006e…`).
 
@@ -800,9 +800,9 @@ A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML
 | `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheButton` (gomb, megerősítéssel) | nincs (művelet) | - | ELTÉR (kapcsoló helyett gomb; felirat: `Clear Cache...`) |
 | `Delete from disk without confirmation` | `DoNotConfirmDeleteFromDisk` (`0x00c98f48`) | 0 (`0x006e0d14`) | `optionsSkipDeleteConfirmCheck` | megerősítési döntés: `delete` | hamis | EGYEZIK |
 | `Remove from album without confirmation` | `DoNotConfirmRemoveFromAlbum` (`0x00c98f64`) | 0 (`0x006e0d24`) | `optionsSkipRemoveConfirmCheck` | megerősítési döntés: `removeFromAlbum` | hamis | EGYEZIK |
-| `Send anonymous usage stats to Google` | `ReportStats` (`0x00c80118`), nincs a regisztrálóban | NYITVA (az olvasó alapértéke `-1`, `0x006e1327`) | `optionsUsageStatsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; felirat: `Send anonymous usage statistics`) |
+| `Send anonymous usage stats to Google` | `ReportStats` (`0x00c80118`), nincs a regisztrálóban | `-1` hiányzó értéknél (`0x006e1327`); a jelölőnégyzet hamis/üres (`0x006e1340-0x006e13dc`), az „nincs tárolva” jelző külön megmarad (`0x006e1354`) | `optionsUsageStatsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; felirat: `Send anonymous usage statistics`) |
 | `Privacy...` (link) | `privacy` (`0x00ca9af8`), cél: sablon szerinti súgó-URL | - | `optionsPrivacyLink` | nincs (külső URL) | - | ELTÉR (cél: nálunk `policies.google.com/privacy`) |
-| `Automatic updates:` (popup: `Update automatically`, `Ask before downloading updates`, `Don't check for updates`) | `AutoUpgradeCheck` (`0x00c860e0`, alapérték 1 a `0x006e0cb9`-en), `AutoUpgradeAsk` (`0x00c860d0`, alapérték 0 a `0x006e0cc6`-on) | NYITVA (a popup tételeinek kulcs-leképezése nincs visszafejtve) | `optionsUpdateModeCombo` (letiltva, 3 tétel) | nincs | 0. tétel | HIÁNYZIK (letiltott, nincs frissítő; felirat: `Prompt before downloading updates`, `Never check for updates`) |
+| `Automatic updates:` (popup: `Update automatically`, `Ask before downloading updates`, `Don't check for updates`) | `AutoUpgradeCheck` (`0x00c860e0`, alapérték 1 a `0x006e0cb9`-en), `AutoUpgradeAsk` (`0x00c860d0`, alapérték 0 a `0x006e0cc6`-on) | alapértékük az 1. tétel; a teljes leképezést lásd a 13. szakaszban (`0x006e14a7-0x006e1519`) | `optionsUpdateModeCombo` (letiltva, 3 tétel) | nincs | 0. tétel | HIÁNYZIK (letiltott, nincs frissítő; felirat: `Prompt before downloading updates`, `Never check for updates`) |
 | `Language:` (popup, Windows) | `language` (`0x00c9fdec`, a 2026-09-24-es szakasz szerint; 42 tétel a `0x006e5e10`-ben) | -1 (nincs beállítva, `0x00406103`) | `optionsLanguageCombo` | `general/language` | rendszer | ELTÉR (2 nyelv a 41 helyett, lásd „A nyelvválasztó” szakaszt) |
 | `Save imported pictures in:` (`Browse...`) | `importdest` (`0x00ca9b0c`), nincs a regisztrálóban | NYITVA | `optionsImportDestField`, `optionsImportDestBrowseButton` | `import/defaultdestination` | NYITVA | ELTÉR (felirat: `Import destination folder:`) |
 
@@ -810,14 +810,14 @@ A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML
 
 | eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
 |---|---|---|---|---|---|---|
-| `E-mail program:` csoport, 1. tétel: `Let me choose each time I send pictures` | `mailprog` (`0x00ca9b80`), a csoport kulcsa | alapból kijelölve (`0x006e1710`-`0x006e1807`) | `optionsMailChooseRadio` (1. helyen) | `mail/useDefaultClient` (hamis) | hamis | ELTÉR (csoportfelirat: `Mail program:`) |
+| `E-mail program:` csoport, 1. tétel: `Let me choose each time I send pictures` | `mailprog` (`0x00ca9b80`), vezérlőnév; kijelölése a `EmailPrepType` (`0x00ca9b48`) és `DoNotPromptForEmailPref` (`0x00ca9b58`) értékéből jön | alapértelmezettként az 1. tétel (`EmailPrepType=3`, `DoNotPromptForEmailPref=0`; `0x006e1710`, `0x006e1735`, `0x006e1771-0x006e1807`) | `optionsMailChooseRadio` (1. helyen) | `mail/useDefaultClient` (hamis) | hamis | ELTÉR (csoportfelirat: `Mail program:`) |
 | 2. tétel: `Use my computer's default e-mail program` | `defaultmail` (`0x00ca9b94`) | NYITVA | `optionsMailDefaultRadio` (2. helyen) | `mail/useDefaultClient` (hamis) | hamis | ELTÉR (felirat: `Use this computer's default email program`) |
 | 3. tétel: `Use my Google account` | a `mailprog` 3. tétele, nincs külön kulcs | - | `optionsMailGoogleRadio` (letiltva) | nincs | - | HIÁNYZIK (letiltott; nálunk nincs Google-fiók-integráció) |
-| `Size for multiple pictures:` (csúszka 0-7, 8 fokozat: 160 ... 1600 képpont) | `picsize` (`0x00ca9b8c`, vezérlőnév); a párosított kulcs `EmailExportSize` (`0x00ca9b70`) nincs a regisztrálóban | NYITVA | `optionsMailSizeSlider`, `optionsMailSizeValue` | `mail/exportSize` | 480 (saját konstans, a `mailer/command.py`-ban; nem bináris) | ELTÉR (felirat: `Multiple photo size`; a 8 fokozat egyezik) |
-| `Size for single pictures:`, 1. tétel: `Same as multiple (%s pixels)` | `EmailSinglePicture` (`0x00ca9b18`), nincs a regisztrálóban | NYITVA | `optionsMailSingleSameRadio` | `mail/singlePictureOriginal` | hamis | ELTÉR (csoportfelirat: `Single picture size:`; a tétel szövege egyezik) |
-| 2. tétel: `Original size` | `EmailSinglePicture` | NYITVA | `optionsMailSingleOriginalRadio` | `mail/singlePictureOriginal` | hamis | NYITVA |
-| `Send movies as:`, 1. tétel: `First frame` | `EmailMovie` (`0x00ca9b2c`), nincs a regisztrálóban | NYITVA | `optionsMailMovieFirstFrameRadio` | `mail/movieFull` | hamis | ELTÉR (csoportfelirat: nálunk `Send videos as:`) |
-| 2. tétel: `Full movie` | `EmailMovie` | NYITVA | `optionsMailMovieFullRadio` | `mail/movieFull` | hamis | ELTÉR (felirat: nálunk `Full film`) |
+| `Size for multiple pictures:` (csúszka 0-7, 8 fokozat: 160 ... 1600 képpont) | `picsize` (`0x00ca9b8c`, vezérlőnév); a tárolt képpontérték kulcsa `EmailExportSize` (`0x00ca9b70`) | 480 képpont, 2. pozíció (`0x006e1756`, leképezés: `0x006e59e0`) | `optionsMailSizeSlider`, `optionsMailSizeValue` | `mail/exportSize` | 480 (`email_controller.py`) | ELTÉR (felirat: `Multiple photo size`; a 8 fokozat egyezik) |
+| `Size for single pictures:`, 1. tétel: `Same as multiple (%s pixels)` | `EmailSinglePicture` (`0x00ca9b18`), a vezérlőérték 0/1 | alapérték 0: 1. tétel; 1 = `Original size` (`0x006e16cb-0x006e16f3`, ellenőrző olvasás: `0x0073f394`) | `optionsMailSingleSameRadio` | `mail/singlePictureOriginal` | hamis (`email_controller.py`) | ELTÉR (csoportfelirat: `Single picture size:`; a tétel szövege egyezik) |
+| 2. tétel: `Original size` | `EmailSinglePicture` | 1 = 2. tétel; alapértékként nincs kiválasztva (`0x006e16cb-0x006e16f3`) | `optionsMailSingleOriginalRadio` | `mail/singlePictureOriginal` | hamis (`email_controller.py`) | ELTÉR (a kulcs nálunk külön logikai beállítás) |
+| `Send movies as:`, 1. tétel: `First frame` | `EmailMovie` (`0x00ca9b2c`), a vezérlőérték 0/1 | alapérték 0: 1. tétel; 1 = `Full movie` (`0x006e16d3-0x006e16f3`, ellenőrző olvasás: `0x0073f3b5`) | `optionsMailMovieFirstFrameRadio` | `mail/movieFull` | hamis (`email_controller.py`) | ELTÉR (csoportfelirat: nálunk `Send videos as:`) |
+| 2. tétel: `Full movie` | `EmailMovie` | 1 = 2. tétel; alapértékként nincs kiválasztva (`0x006e16d3-0x006e16f3`) | `optionsMailMovieFullRadio` | `mail/movieFull` | hamis (`email_controller.py`) | ELTÉR (felirat: nálunk `Full film`) |
 | `Send inline photos and captions (Outlook only)` (Windows) | `UseHTMLMailer` (`0x00ca9b38`), nincs a regisztrálóban | NYITVA | `optionsMailUseHtmlCheck` (letiltva) | nincs | - | HIÁNYZIK (letiltott; csak Windows/Outlook) |
 
 ### 4. Fájltípusok
@@ -850,7 +850,7 @@ A fejléc (`Display JPEG files and:`) egyezik. Az összevetés Windows-blokkot h
 
 | eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
 |---|---|---|---|---|---|---|
-| `Available print sizes:` (5 popup: `print1` ... `print5`, 3+2 oszlop) | `print%d` (`0x00ca9bb8`), nincs a regisztrálóban | NYITVA (a tételek nincsenek kiolvasva) | `optionsPrintSizeCombo0` ... `4` (5 legördülő, 3+2 oszlop) | előbeállítás-kulcsok (`print_controller.py`) | NYITVA | NYITVA (az elrendezés egyezik; a tételek és az alapértékek nincsenek igazolva) |
+| `Available print sizes:` (5 popup: `print1` ... `print5`, 3+2 oszlop) | `print%d` (`0x00ca9bb8`), nincs a regisztrálóban | 16 tétel, a sorrendet lásd a 13. szakaszban (`0x006e5d70`, `0x00775ce0`); a kiválasztott érték alapértéke külön nincs megadva | `optionsPrintSizeCombo0` ... `4` (5 legördülő, 3+2 oszlop) | előbeállítás-kulcsok (`print_controller.py`) | területi készletből indul (`print_controller.py`) | ELTÉR (a saját lista sorrendje eltér, és `FullPage`-et is tartalmaz) |
 | `Previews:` / `Use high quality previews (slower)` | `PrintProxyPreview` (`0x00ca9a40`) | 1 (`0x006e0d74`; a gyors proxy az alap) | `optionsPrintHiResPreviewCheck` (megfordított: jelölt = nem proxy) | `printing/proxyPreview` | jelöletlen | EGYEZIK |
 | `Printer quality:` (Windows) / `Compatible (half-res)`, `High Quality (full-res)` | `PrinterQuality` (`0x00ca9a18`) | 2 = `Compatible`, 3 = `High Quality`; alapérték 2 (`0x006e0d47`-`0x006e0d51`; olvasás `0x006e23e7`, mentés `0x006e419f`) | `optionsPrintQualityCompatibleRadio`, `optionsPrintQualityHighQualityRadio` (csak Windows) | `printing/printerQuality` | 2 = `Compatible`, 3 = `High Quality`; alapérték 2 | EGYEZIK |
 | `Print resampler quality:` / `General (Lanczos-3)`, `Extra sharp (Lanczos-8)` | `PrintResamplerQuality` (`0x00ca9a28`) | 5 = `General (Lanczos-3)`, 8 = `Extra sharp (Lanczos-8)`; alapérték 5 (`0x006e0d5a`; olvasás `0x006e238d`-`0x006e24a7`, mentés `0x006e4224`-`0x006e4255`) | `optionsPrintResizeGeneralRadio` (5), `optionsPrintResizeSharpRadio` (8) | `printing/resamplerQuality` | 5 = General, 8 = Extra sharp; alapérték 5 | EGYEZIK (a korábbi 3-as érték a General választást jelenti) |
@@ -867,11 +867,11 @@ Az eredeti `PrintResamplerQuality` 5-ös tárolt értéke a Lanczos-3 szűrősug
 | `Network log level:` (popup, 5 tétel) | `LogLevel` (`0x00ca9bf8`); alapérték 2 (`0x006e2b05`, a `0x006e2aff` olvasóban) | 2 | `optionsNetworkLogLevelCombo` (5 tétel) | `Preferences/LogLevel` | 2 | ELTÉR (felirat: `Network logging level:`; az első tétel: `Disable logging`, az eredetiben `Disable Logging`) |
 | `Log:` (csak olvasható útvonal) | nincs kulcs (vezérlőnév: `log`) | - | `optionsNetworkLogPathField` (olvasható) | nincs (rögzített `network.log`) | - | ELTÉR (felirat: `Log file:`; a funkció egyezik) |
 
-⚠️ A `loglevel` nevű második sztring (`0x00ca9c04`) olvasása **0** alapértékkel fut (`0x006e2b39`, `xor esi, esi`). Hogy melyik olvasó tartozik a popupba, az a 12. szakasz kérdése.
+`loglevel` (`0x00ca9c04`) a FEN legördülő vezérlőneve, nem második `Preferences`-kulcs. A kezelő a `Preferences\LogLevel` értéket olvassa 2 alapértékkel (`0x006e2aed-0x006e2b0d`), majd a kapott indexet a `loglevel` nevű vezérlőhöz köti. A `0x006e2b39`-nél nullázott helyi érték a különleges vezérlő-összeállításban szerepel; ott nincs új `Preferences\loglevel` olvasás.
 
 ### 8. Webalbumok (Web Albums)
 
-Az egész fül **letiltott** (`enabled: false` az `OptionsTabWebAlbums.qml` gyökerén). Fülcím: a sablon `Web Albums`, a bináris a `CGeneralPrefsPage::WebAlbumsTabEs` kulcsnál `Google Photos`-t ad (`0x00ca9a98`, `0x00c92398`); melyik ág érvényes a vizsgált buildben, az NYITVA.
+Az egész fül **letiltott** (`enabled: false` az `OptionsTabWebAlbums.qml` gyökerén). A bináris a `0x006e1116`-nál hívott feltétel nem nulla eredményére a `web_albums_tab` címkét `Google Photos`-ra állítja (`0x00ca9a98`, `0x00c92398`); nulla esetén a sablon `Web Albums` címe marad. A feltétel futás közbeni eredmény, nem rögzített buildcímke; részlete a 13. szakaszban.
 
 | eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
 |---|---|---|---|---|---|---|
@@ -903,41 +903,145 @@ A `JPEG Quality:`, `Syncing:` és `Watermarks:` csoportcímek is hiányoznak.
 - `PWASyncOrder` (alapérték 1, `0x006e0dc4`): nincs vezérlő.
 - `SupportAudio` (alapérték 0, `0x006e0e3a`): nincs vezérlő.
 - `PWADefaultSizeES` (alapérték 2048, `0x006e0d97`): a Google-ág alapértéke, nincs vezérlő.
-- `PWAShareAccess`: alapérték NYITVA (a regisztráló `eax`-e az előző hívás visszatérési értékéből jön, `0x006e0da7`).
-- `EmailPrepType` (`0x00ca9b48`), `DoNotPromptForEmailPref` (`0x00ca9b58`), `EmailExportSize` (`0x00ca9b70`): a kezelő hivatkozza, a sablonban nincs vezérlő.
+- `PWAShareAccess` (`0xc7e1e0`): alapérték 0 (`0x006e0da0-0x006e0da7`).
+- `EmailPrepType` (`0x00ca9b48`): alapérték 3 (`0x006e1710`); `DoNotPromptForEmailPref` (`0x00ca9b58`): alapérték 0 (`0x006e1735`); `EmailExportSize` (`0x00ca9b70`): alapérték 480 (`0x006e1756`). Ezek a kezelő belső állapotát adják, a sablonban nincs külön vezérlőjük.
+- A `0x006e0bc0` függvény a `Preferences\PWAWatermark` karakterláncot olvassa (`0xc7e1b0`); ez nem regisztráló hívás. A `0x006e0d51` hívás a `PrinterQuality` kulcsot (`0x00ca9a18`) regisztrálja 2 alapértékkel (`0x006e0d47`).
 
-Egy megjegyzés a saját kódunkról: az `email_controller.py` 310-315. és 331-335. sorának docstringje „alapérték 480" és „alapérték 0" állítást tesz. Ezek a bináris regisztrálóban nincsenek igazolva, ezért nem tekinthetők bináris értéknek.
+Egy megjegyzés a saját kódunkról: az `email_controller.py` docstringjei 480-as méret- és 0-s egyképes alapértéket írnak. A #5483 ezeket már közvetlenül igazolja az eredeti kezelőben (`0x006e1756`, `0x006e16cb-0x006e16f3`); a `DoNotPromptForEmailPref=0` alapértéket pedig a `0x006e1735` adja.
 
 ### 11. Összesítés
 
-**58 sor:** 13 EGYEZIK · 25 ELTÉR · 16 HIÁNYZIK · 4 NYITVA.
+**58 sor:** 13 EGYEZIK · 27 ELTÉR · 16 HIÁNYZIK · 2 NYITVA.
 
 | fül | EGYEZIK | ELTÉR | HIÁNYZIK | NYITVA |
 |---|---:|---:|---:|---:|
 | Általános | 4 | 6 | 2 | 0 |
-| E-Mail | 0 | 6 | 2 | 1 |
+| E-Mail | 0 | 7 | 2 | 0 |
 | Fájltípusok | 1 | 9 | 0 | 1 |
 | Diavetítés | 2 | 0 | 0 | 1 |
-| Nyomtatás | 3 | 0 | 0 | 1 |
+| Nyomtatás | 3 | 1 | 0 | 0 |
 | Hálózat | 0 | 2 | 3 | 0 |
 | Webalbumok | 0 | 0 | 8 | 0 |
 | Névcímkék | 3 | 2 | 1 | 0 |
 
-A fő megmaradt mérhető eltérés a klaszter-küszöb alapértéke (bináris 85, nálunk 70). A 70 értéke a kódban SFace-hez kalibrált, ezért a változtatás előtt külön mérés kell.
+A fő megmaradt mérhető eltérés a klaszter-küszöb alapértéke (bináris 85, nálunk 70); a nyomtatási méretlista eltérését a #5492 viszi. A 70 értéke a kódban SFace-hez kalibrált, ezért a változtatás előtt külön mérés kell.
 
 ### 12. Megvalósítási jegy-javaslatok és nyitott kérdések
 
 A jegyek szövege (fülenként egy, „Eredeti:” sorral) a `.codex-jelentes.md`-ben van. Egy jegyet sem nyitottunk, mert ez a kör nem nyúl a GitHubhoz. Fülenként egy jegy készül a HIÁNYZIK/ELTÉR tételekre: Általános, E-Mail, Fájltípusok, Nyomtatás, Hálózat, Webalbumok, Névcímkék. A Diavetítés fülnek nincs HIÁNYZIK/ELTÉR tétele, ezért nem kap jegyet.
 
-**Ghidra-körök, amelyek a NYITVA sorokat zárnák:**
+**A #5483 hat kérdésének állapota:** a 13. szakasz mindegyikre bináris című választ ad. Az általános `-1` viselkedésre vonatkozó állítás a `ReportStats` konkrét olvasójára korlátozódik; nem általánosítható minden beállítástípusra.
 
-- Ghidra-kör kell: `0x006e1100` - a `-1` (nincs beállítva) ág a nem regisztrált kulcsoknál (`ReportStats`, `0x006e1340`-től), vagyis mit mutat a vezérlő, ha a kulcs nincs tárolva.
-- Ghidra-kör kell: `0x006e1100` - a `loglevel` (`0x00ca9c04`, olvasó `0x006e2b3b`, alapérték 0) és a `LogLevel` (`0x00ca9bf8`, alapérték 2) közül melyik a popup kulcsa.
-- Ghidra-kör kell: `0x006e1100` - a `Web Albums` fülcím elágazása (`WebAlbumsTabEs`, `0x006e1116`), hogy a vizsgált buildben melyik felirat látszik.
-- Ghidra-kör kell: `0x006e0bc0` és `0x006e0d51` - az ezekben a regisztrálásokban használt kulcs, és a `PWAShareAccess` alapértéke.
-- Ghidra-kör kell: `0x006e1100` - a popupok (`AutoUpgradeCheck`/`AutoUpgradeAsk`, `picsize`, `print1`-`print5`) tételeinek kulcs-leképezése.
+**További nyitott kérdések:**
 
-**Ami ebben a körben nincs igazolva:** a `picsize`, `defaultmail`, `EmailSinglePicture`, `EmailMovie` és a többi regisztrálatlan kulcs alapértéke. Ezek NYITVA maradnak a fenti Ghidra-kör eredményéig.
+- Ghidra-kör kell: `0x00431290` - a `LastUserESState` és az aktuális felhasználó objektumának pontos szemantikai kapcsolata a Webalbumok címfeltételében. A címváltó ág ettől függetlenül ismert, ezért ez nem blokkolja a #5483 választ.
+
+Az ezen kívüli két NYITVA sor a fájltípusok QuickTime alapértékére és a diavetítés zene-mappájára vonatkozik; ezek nem a #5483 által feltett kérdések.
+
+### 13. #5483: a kezelő olvasói és a legördülők értékei
+
+**Vizsgálat:** az érintett függvényeket külön, utasításszinten olvastam ki az eredeti binárisból. Teljes `.text` pásztázás nem történt. A sablon tételei a `runtime/options.fen` fájlból valók.
+
+#### 1. `PrintResamplerQuality`
+
+- A regisztráló az `0x00ca9a28` kulcshoz 5-öt ad alapértékül (`0x006e0d5a`).
+- A kezelő a `0x006e238d` olvasóban 5-öt ad alapértékül, majd a `0x006e249a-0x006e24a7` kódrész a `PrintResamplerQuality` értékét 5-tel hasonlítja össze. Az 5 a `General (Lanczos-3)` első rádiót választja; minden más érték a `Extra sharp (Lanczos-8)` rádiót választja.
+- A külön mentőút (`0x006e4224-0x006e4255`) az első rádió állapotából 5-öt, a másodikéból 8-at készít. Ez az ellenkező irányú út is megerősíti a leképezést.
+- **Válasz:** 5 = első rádió, 8 = második rádió; alapértelmezés 5, tehát az első rádió.
+- **Bizonyítottság:** megerősített. A kezelő olvasója és a külön mentőfüggvény egymástól független irányból ugyanazt a két értéket adja; a rádiók feliratát a sablon adja.
+
+#### 2. Hálózati napló legördülője
+
+- A beállítás a `Preferences\LogLevel` (`0x00ca9bf8`), olvasási alapértéke 2 (`0x006e2aed-0x006e2b0d`). A kezelő a 0-5 tartomány fölötti értéket 5-re korlátozza (`0x006e2b12-0x006e2b25`).
+- A sablonbeli legördülő vezérlő neve `loglevel` (`0x00ca9c04`, `runtime/options.fen`). A kezelő ezt a nevet használja vezérlőazonosítóként (`0x006e2b39` és `0x006e2c04`); ezen a helyen nem olvas `Preferences\loglevel` beállítást.
+- **Válasz:** a legördülő beállításkulcsa `LogLevel`; a kisbetűs `loglevel` a vezérlő neve. Alapértelmezett kijelölés a 2. indexű, `Minimal log information` tétel.
+- **Bizonyítottság:** megerősített. A beállításolvasás a binárisban a `LogLevel` sztringhez kötődik, a sablon pedig a látható vezérlőt `loglevel` néven azonosítja.
+
+#### 3. E-Mail beállítások
+
+| vezérlő vagy kulcs | alapérték és értékleképezés | bináris cím |
+|---|---|---|
+| `mailprog` vezérlőnév | Az alapértelmezett `EmailPrepType=3` és `DoNotPromptForEmailPref=0` mellett az 1. tétel, `Let me choose each time I send pictures`. Ha a rákérdezés tiltott, `EmailPrepType=3` a 2. tétel, `Use my computer's default e-mail program`; `EmailPrepType=5` a 3. tétel, `Use my Google account`. A `mailprog` maga nem tárolt beállításkulcs. | `0x006e1710`, `0x006e1735`, `0x006e1763-0x006e1807` |
+| `picsize` vezérlőnév | A tényleges méretkulcs `EmailExportSize`, alapértéke 480 képpont. A csúszka indexei: 0=160, 1=320, 2=480, 3=640, 4=800, 5=1024, 6=1200, 7=1600 képpont. | `0x006e1756`, `0x006e59e0-0x006e5a4a` |
+| `EmailSinglePicture` | Alapérték 0: `Same as multiple`; 1: `Original size`. | `0x006e16cb-0x006e16f3`; független olvasás: `0x0073f394` |
+| `EmailMovie` | Alapérték 0: `First frame`; 1: `Full movie`. | `0x006e16d3-0x006e16f3`; független olvasás: `0x0073f3b5` |
+
+Az `EmailSinglePicture` és `EmailMovie` beállításokat a kezelő nulla alapértékkel adja át; az email-küldési útvonalak ezeket külön is nulla alapértékkel olvassák (`0x0073f340`, `0x0073f394-0x0073f3d1`, illetve `0x0074303b`, `0x007430a1-0x007430d8`). A 0/1 sorrend a sablonban látható két rádiógomb sorrendjével egyezik.
+
+#### 4. Frissítés és nyomtatási méret legördülők
+
+Az automatikus frissítés sablonsorrendje: `Update automatically`, `Ask before downloading updates`, `Don't check for updates`.
+
+| `AutoUpgradeCheck` | `AutoUpgradeAsk` | kijelölt tétel | alapérték |
+|---:|---:|---|---|
+| 1 | 0 | `Update automatically` | igen |
+| 1 | 1 | `Ask before downloading updates` | nem |
+| 0 | figyelmen kívül marad | `Don't check for updates` | nem |
+
+Az olvasó alapértékei `AutoUpgradeCheck=1` és `AutoUpgradeAsk=0` (`0x006e145e-0x006e149b`). A `0x006e14a7-0x006e1519` ág a fenti három állapotot a sablon sorrendjéhez rendeli. Így az alapértelmezés az első tétel.
+
+A `print1`-`print5` vezérlők mindegyikéhez ugyanaz a 16 elemű lista épül fel. A `0x006e5d70` indexenként egy belső kódot ad, a `0x00775ce0` ezt a kódot felirattá alakítja:
+
+| index | enum | tétel |
+|---:|---:|---|
+| 0 | 5 | `Wallet` |
+| 1 | 2 | `3.5 x 5` |
+| 2 | 1 | `4 x 6` |
+| 3 | 3 | `5 x 7` |
+| 4 | 4 | `8 x 10` |
+| 5 | 6 | `5 x 8 cm` |
+| 6 | 7 | `9 x 13 cm` |
+| 7 | 8 | `10 x 15 cm` |
+| 8 | 9 | `13 x 18 cm` |
+| 9 | 10 | `15 x 20 cm` |
+| 10 | 11 | `20 x 25 cm` |
+| 11 | 12 | `CD Cover Size` |
+| 12 | 13 | `Contact Sheet` |
+| 13 | 14 | `Passport` |
+| 14 | 15 | `3 x 4` |
+| 15 | 16 | `4 x 5` |
+
+Az enum 0 (`FullPage`) a feliratfüggvényben létezik (`0x00cb36f4`), de a 16 elemes menüindex-tábla nem adja vissza (`0x006e5d70-0x006e5dfd`). Az öt vezérlő létrehozási ciklusa a `print1`-`print5` neveket állítja elő (`0x006e2260-0x006e2273`). A kiválasztott nyomtatási méret alapértéke ettől külön kérdés; ebben a feladatban a tételsorrend volt a kérdés.
+
+**Bizonyítottság:** a frissítési leképezés megerősített a kezelő ága és a sablon sorrendje alapján. A nyomtatási lista feltételes: az index-tábla és a feliratválasztó utasításszintű kiolvasása egymással összhangban van, de ehhez a sorrendhez nem találtam második, független bináris útvonalat.
+
+#### 5. `-1` hiányzó beállítás
+
+- A kezelő a `ReportStats` értékét `-1` alapértékkel olvassa (`0x006e1327`), majd `-1`-et vizsgál (`0x006e1340-0x006e1354`) és külön hiányzóérték-jelzőt állít be.
+- A jelölőnégyzet logikai értéke csak akkor igaz, ha a tárolt érték pontosan 1 (`0x006e13d4-0x006e13dc`). Hiányzó beállításnál, amikor az olvasó `-1`-et ad vissza, a vezérlő hamis, vagyis nincs bejelölve. A vezérlő a sablonban egy egyszerű checkbox.
+- **Válasz:** a vizsgált ágban a `ReportStats` checkbox nincs bejelölve, ha nincs tárolt értéke. Ez nem általános állítás minden, regisztrálatlan kulcsról.
+- **Bizonyítottság:** megerősített az olvasó ága, a checkbox sablondefiníciója és a mentőútban megismételt `-1` alapérték alapján (`0x006e3a0a-0x006e3a15`).
+
+#### 6. Webalbumok címe, `0x006e0bc0` és `0x006e0d51`
+
+- A `0x006e1116` a `0x00431290` feltételt hívja. Nem nulla eredménynél a `web_albums_tab` cím `Google Photos` lesz (`0x006e1121-0x006e1164`, címkulcs `0x00ca9a98`, szöveg `0x00c92398`). Nulla eredménynél az ág a sablon `Web Albums` címét hagyja meg.
+- A feltétel a `Preferences\LastUserESState` értékét 0 alapértékkel olvassa (`0x004312ae-0x004312cb`), és egy aktuális felhasználói állapotobjektum eredményét is felhasználja. A két forrás pontos szemantikai kapcsolata nyitott; a címváltó ág maga bizonyított.
+- A `0x006e0bc0` függvény a `Preferences\PWAWatermark` karakterláncot olvassa (`0xc7e1b0`, `0x006e0bdc-0x006e0bfa`). Ez getter, nem regisztráció.
+- A `0x006e0d51` egy regisztrálási hívás: a `PrinterQuality` (`0x00ca9a18`) alapértéke 2 (`0x006e0d47-0x006e0d51`). A kapcsolódó `PWAShareAccess` kulcs (`0xc7e1e0`) alapértéke 0 (`0x006e0da0-0x006e0da7`).
+- A `PrinterQuality` olvasója 2-t hasonlít (`0x006e23e7-0x006e23ea`): a 2 az első, `Compatible (half-res)` rádiót választja, a 3 a második, `High Quality (full-res)` rádiót. A külön mentőút 2-t ír az első és 3-at a második rádió állapotára (`0x006e419f-0x006e41a6`); a feliratsorrend a `runtime/options.fen`-ből való.
+- **Bizonyítottság:** a címág és a regisztrált kulcsok megerősítettek. Csak a `LastUserESState` feltétel felhasználói jelentése maradt nyitva.
+
+#### Független utak és cáfoló ellenőrzés
+
+- **A út:** a kezelő (`0x006e1100`) olvasási, ág- és vezérlő-hozzárendelési utasításai.
+- **B út:** külön mentőút (`0x006e3990`, benne a `PrinterQuality` 2/3 és a `PrintResamplerQuality` 5/8 visszaírása), az email küldő függvények (`0x0073f320`, `0x00743030`), valamint a kezelőtől különálló `runtime/options.fen` vezérlőnevek és tételfeliratok.
+- A két út a `PrinterQuality` 2/3, a nyomtatási átméretező 5/8 leképezésében és az e-mail alapértékekben egyezik. A printméret-lista sorrendjénél a második út nem független, ezért az a rész feltételes marad.
+- **Cáfoló kísérlet:** ellenőriztem azt az alternatív feltevést, hogy az 5 a második, Extra sharp rádióhoz tartozik. A mentőút a nem kiválasztott második rádió esetén 5-öt, a kiválasztásakor 8-at ír (`0x006e424e-0x006e4255`), ezért az alternatív feltevés nem áll meg. A két állapotot a mentőút és az olvasó út külön-külön is ugyanazzal a mércével írja le.
+- **Összesített bizonyítottsági fok:** feltételes, mert a printméret-tételek sorrendjéhez csak egy bináris útvonal bizonyult függetlennek, és a Webalbumok címfeltételének pontos felhasználói szemantikája nyitva maradt.
+
+#### Fülenkénti fejlesztési jegyjavaslat
+
+| fül | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| Általános | A frissítés alapja az automatikus ellenőrzés. A `ReportStats` hiányzó értéke üres checkboxot mutat. | A frissítés legördülő le van tiltva, nincs beállításkulcsa; a használati statisztika jelölője szintén le van tiltva. | Ha a frissítő megvalósul, a három választást az `AutoUpgradeCheck`/`AutoUpgradeAsk` leképezésével kell kötni. A hiányzó `ReportStats` érték maradjon kikapcsolt alapállapot. |
+| E-Mail | Három `mailprog` választás; a `picsize` mögött a `EmailExportSize` képpontértéke van; `EmailSinglePicture` és `EmailMovie` 0/1 rádióválasztás. | A két aktív levelezőválasztás sorrendje fordított, a Google-fiók választás letiltott helyőrző. A képméret és a két rádió alapállapota megfelel az eredeti viselkedésnek. | A levélküldési választást az eredeti sorrendhez igazítani, vagy explicit értékleképezéssel tárolni; a 480 képpontos alapértéket és a 0/1 rádióleképezést megtartani. |
+| Nyomtatás | A `PrinterQuality` 2 = Compatible, 3 = High Quality; a nyomtatási lista sorrendje a fenti 16 tétel; a resampler 5 = General, 8 = Extra sharp. | A minőséget szöveges `compatible`/`highQuality` érték tárolja. A `print_controller.py` listája más sorrendű és a `FullPage` tételt is tartalmazza. A resampler `General` értéke 3, az `Extra sharp` értéke 8. | A nyomtatási minőségnél az eredeti 2/3 értékeket a két rádióhoz kötni; a legördülők sorrendjét az eredeti 16 tételhez igazítani; a `FullPage` eltérést tudatosan kezelni. A resampler beállításrétegében az eredeti 5/8 értékeket a meglévő megjelenítési minőségekhez rendelni úgy, hogy az algoritmus számkódja ne keveredjen össze velük. |
+| Hálózat | A `LogLevel` beállítás alapja 2; a vezérlő neve `loglevel`. | A `Preferences/LogLevel` beállítást használja 2 alapértékkel, a QML vezérlőneve `optionsNetworkLogLevelCombo`. | A jelenlegi beállításkötés megtartása; a specifikációban a tárolt kulcs és a vezérlőnév külön fogalomként szerepeljen. |
+| Webalbumok | A fülcím feltételtől függően `Web Albums` vagy `Google Photos`; a `PWAWatermark` külön beállítás. | A teljes fül le van tiltva, címe `Web Albums`. | Ha a fül ismét aktív lesz, a címet a binárisban igazolt feltételhez kötni; a feltétel pontos termékjelentését a `0x00431290` Ghidra-kör tisztázza. |
+
+**Nyitott:**
+
+- Ghidra-kör kell: `0x00431290` - a `LastUserESState` és az aktuális felhasználói állapot pontos szemantikai kapcsolata.
 
 ---
 

@@ -217,9 +217,11 @@ class TestDuplicateExclusion:
         assert by_name["eredeti.jpg"]["duplicate"] is True
         assert by_name["uj.jpg"]["duplicate"] is False
 
-    def test_autoexclude_off_by_default_keeps_duplicates_selected(
+    def test_autoexclude_on_by_default_excludes_duplicates(
         self, make_controller, provider, tmp_path, added
     ):
+        """#5473: a Picasa `autoexclude` alapértéke 1, tehát a másodpéldányok
+        alapból kimaradnak, ha a kapcsolót még senki nem állította."""
         library = tmp_path / "konyvtar"
         library.mkdir()
         make_jpeg(library / "eredeti.jpg", size=(64, 64))
@@ -234,11 +236,22 @@ class TestDuplicateExclusion:
         make_jpeg(source / "eredeti.jpg", size=(64, 64))
 
         controller = make_controller(provider, added.append, index_path=index_db)
-        assert controller.autoExclude is False
+        assert controller.autoExclude is True
         items, _count = _scan(controller, str(source))
 
         assert items[0]["duplicate"] is True
-        assert items[0]["excluded"] is False
+        assert items[0]["excluded"] is True
+
+    def test_mentett_kikapcsolas_felulirja_az_alapertelmezest(
+        self, make_controller, provider, tmp_path, added, settings
+    ):
+        settings.setValue("import/autoexclude", "false")
+
+        controller = make_controller(
+            provider, added.append, index_path=tmp_path / "index.db"
+        )
+
+        assert controller.autoExclude is False
 
     def test_autoexclude_on_excludes_duplicates_by_default(
         self, make_controller, provider, tmp_path, added
@@ -282,12 +295,14 @@ class TestDuplicateExclusion:
         controller = make_controller(provider, added.append, index_path=index_db)
         _scan(controller, str(source))
 
+        # #5473: az alapérték már bekapcsolt, tehát a kikapcsolás módosítja a
+        # kijelölést (a bekapcsolás itt nem változtatna semmit)
         updates = []
         controller.selectionChanged.connect(lambda items: updates.append(items))
-        controller.setAutoExclude(True)
+        controller.setAutoExclude(False)
 
         assert len(updates) == 1
-        assert updates[0][0]["excluded"] is True
+        assert updates[0][0]["excluded"] is False
 
     def test_no_duplicates_when_index_is_missing(self, make_controller, provider, tmp_path, added):
         source = tmp_path / "kartya"
