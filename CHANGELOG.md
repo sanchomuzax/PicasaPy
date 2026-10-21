@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.173] - 2026-10-21
+
+- A tálca forgatása után a rács és a tálca bélyegképe is azonnal elfordul (#5428).
+
 ## [0.9.172] - 2026-10-21
 
 - Az egyképes F2-es átnevezés most a Picasa „Rename Files” párbeszédét és működését használja. (#5396).
