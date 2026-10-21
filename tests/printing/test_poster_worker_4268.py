@@ -53,10 +53,10 @@ def test_worker_writes_page_list_when_stdout_and_stderr_are_unavailable(tmp_path
     assert completed.stderr == ""
     assert json.loads(result.read_text(encoding="utf-8")) == {
         "pages": [
-            str(tmp_path / "0-0-source.png"),
-            str(tmp_path / "0-1-source.png"),
-            str(tmp_path / "1-0-source.png"),
-            str(tmp_path / "1-1-source.png"),
+            str(tmp_path / "0-0-source.jpg"),
+            str(tmp_path / "1-0-source.jpg"),
+            str(tmp_path / "0-1-source.jpg"),
+            str(tmp_path / "1-1-source.jpg"),
         ]
     }
 
