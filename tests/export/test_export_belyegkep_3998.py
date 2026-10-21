@@ -196,18 +196,35 @@ class TestMinosegVisszalepes:
         jpeg = _belyegkep(ki)[1]
         assert jpeg == b"\xff\xd8" + bytes([55]) * 2998
 
-    def test_ha_10_sem_fer_el_nincs_ifd1_de_a_tobbi_frissul(self, tmp_path, monkeypatch):
+    def test_ha_10_sem_fer_el_az_exif_elmarad(self, tmp_path, monkeypatch):
+        """Spec 16. H) 4.: 10-en sem fér el → az EXIF teljesen kiürül, a forrásé sem megy át."""
         hivasok = self._hamis(
             monkeypatch, {q: 70000 for q in (85, 70, 55, 40, 25, 10)}
         )
         source, regi = _forras_elonezettel(tmp_path)
         ki = _frissit(source, 1000, 700)
         assert hivasok == [85, 70, 55, 40, 25, 10]
-        tiff = _exif_torzs(ki)
-        assert tiff is not None and _ifd1(tiff)[1] is None
+        assert _exif_torzs(ki) is None
         assert regi not in ki
-        uj = piexif.load(b"Exif\x00\x00" + tiff)
-        assert uj["0th"][piexif.ImageIFD.Software] == b"PicasaPy"
+
+
+def _nagy_usercomment_forras(tmp_path, meret=65000):
+    """Forrás, amelynek EXIF-je önmagában majdnem tele van: a bélyegkép már nem fér el."""
+    exif = piexif.dump(
+        {
+            "0th": {piexif.ImageIFD.Make: b"Kamera"},
+            "Exif": {piexif.ExifIFD.UserComment: b"ASCII\x00\x00\x00" + b"x" * (meret - 8)},
+        }
+    )
+    return _forras(tmp_path, exif=exif)
+
+
+def test_valodi_tulmeretes_exif_elmarad(tmp_path):
+    """Nem monkeypatch: a forrás EXIF-je maga túlméretes a bélyegképpel együtt."""
+    ki = _frissit(_nagy_usercomment_forras(tmp_path), 1000, 700)
+    assert _exif_torzs(ki) is None
+    assert b"Kamera" not in ki
+    assert ki.startswith(b"\xff\xd8")
 
 
 def test_kodolasi_hiba_nem_buktatja_az_exportot(tmp_path, monkeypatch, caplog):
