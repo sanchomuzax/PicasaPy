@@ -469,9 +469,56 @@ PicasaPy ugyanennek a lépésnek a helyi útján 16.16-os egész erősítéssel
 alkalmazza (`src/picasapy/render/curves.py`, `apply_lut`). Ez a különbség az
 LUT felbontása és a kimeneti kvantálás/dither lépése; nem a hisztogram-
 vágópontok vagy a rétegsorrend eltérése. A natív `fistp` kerekítési módját
-ez a függvényszakasz önmagában nem dönti el. Forrás: `mérés (684-es
-autolight alap pár: átlagos ΔE 0,23)`; az eredeti lépéssor: `bináris
-(0x0090c1e0, 0x0090bc60)`.
+ez a függvényszakasz önmagában nem dönti el, mert a `0x0090c1e0` nem állítja
+be az x87 vezérlőszót: a `0x0090c27f` `fistp` az aktuális vezérlőszó
+kerekítési módját használja. Ez a függvényre korlátozott disassembly-állítás;
+a teljes program minden vezérlőszó-módosításáról nem következik belőle semmi.
+Az utasítás bájtjai `DB 5C 24 14` (`fistp dword ptr [esp+0x14]`). Forrás:
+`bináris (0x0090c1e0, 0x0090c27f)`.
+
+**#5425 QEMU-mérés (2026-10-21).** A natív `0x0090c1e0` közvetlen
+futtatásakor a friss QEMU-folyamat x87 vezérlőszava `0x037f`; pontos félértékes
+LUT-bemenetekkel a `fistp` `0,5 → 0` és `1,5 → 2` eredményt ad, vagyis ebben
+a környezetben párosra kerekít. A bemeneti float32 paraméterek `gamma=1,0`,
+`black=-1/256`; `white=509,99609375` adta az első LUT-elem `0,5` bemenetét,
+`white=169,99609375` pedig az `1,5`-öt. A függvény után a vezérlőszó `0x037f`
+maradt.
+Az irányítást ellenőrző próbákban `0x027f` ugyanezt adta; `0x077f` (lefelé),
+`0x0b7f` (felfelé) és `0x0f7f` (levágás) vezérlőszóval a két félérték
+eredménye rendre `0/1`, `1/2`, illetve `0/1`. Ez igazolja, hogy a függvény
+az aktív módot követi, nem kényszerít feltétel nélkül párosra kerekítést.
+Forrás: `mérés (QEMU, natív 0x0090c1e0, 0x037f/0x027f/0x077f/0x0b7f/0x0f7f)`.
+
+Egy másik, önálló betöltővel és próbasorral végzett QEMU-futtatás az eredeti
+`fistp` után rögzítette a pontos bemenő floatot és a vágás előtti egész
+eredményt. `gamma=1,0` mellett az alábbi első LUT-elemeket mérte:
+
+| `black=white` float32 | FISTP bemenet | FISTP nyers eredmény | LUT[0] a vágás után |
+|---:|---:|---:|---:|
+| -1/512 (`0xbb000000`) | 127,5 | 128 | 128 |
+| -3/512 (`0xbbc00000`) | 382,5 | 382 | 382 |
+| +1/512 (`0x3b000000`) | -127,5 | -128 | 0 |
+| +3/512 (`0x3bc00000`) | -382,5 | -382 | 0 |
+
+A vezérlőszó a harness elején, minden hívás előtt és után, valamint mind az
+1024 `fistp` után `0x037f` maradt; a harness nem állította át. A megfigyelő a
+`0x0090c283`-nál, a változatlan `fistp` után olvasta ki a nyers értéket és a
+bemeneti floatot, majd visszajátszotta az elvett utasításokat. Ez a mérés a
+négy előjeles félértékkel külön is azonosítja a legközelebbi páros módot. A két
+QEMU-út egyezik: a `0x037f` alapállapot párosra kerekít. Az alkalmazáskörnyezet
+tényleges vezérlőszavát ez nem állapítja meg. Forrás: `mérés (független QEMU-
+betöltő, natív 0x0090c1e0 és 0x0090c27f, 4 előjeles félérték; megfigyelő
+0x0090c283)`.
+
+A mai kódon a 684-es autolight alap pár újramérése átlagos ΔE 0,23; ez az alapállapot,
+nem a natív kerekítési maradék. A #5398 k03 mérési naplóban az
+`autolight,sat,HDR` részlánc átlagos ΔE 2,57, így a #5425 `< 2,0` elfogadási pontja
+még nincs teljesítve. A natív alkalmazó továbbra is a 16 bites LUT-elemek
+között interpolál, közös pixelenkénti mintát ad a csatornákhoz, majd jobbra
+tol és vág; ennek teljes PicasaPy-egyezését a kerekítési mérés önmagában nem
+igazolja. Forrás: `mérés (684-es alap pár, mai PicasaPy: átlagos ΔE 0,23)`;
+`mérés (#5398 k03 autolight+sat+HDR: átlagos ΔE 2,57)`; a natív lépéssor:
+`bináris (0x0090bc60, 0x0090bd25, 0x0090bd9f)`.
 
 ## 2.4 Kontraszt — `0x0090c2c0`
 
