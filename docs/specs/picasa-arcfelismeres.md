@@ -4947,7 +4947,7 @@ Az N1-hez rögzíteni kell egy fotót, amelyen egy arc már névvel szerepel és
 
 **Nyitott:**
 - `Ghidra-kör kell: 0x100057c0 - a [param_3+8]+0x74 objektum vtable +0x40 callbackjének tényleges célja, a döntési küszöb és az azt beállító méret-adat útja; a Picasa3.exe hívó 0x006cde50 [blokkoló]`
-- **A munkaszál útja részben feltárt (41.1):** a `0x004987c0` és `0x0047b020` C-dumpja megadja a sorba állítás és a képenkénti hívás útját, de a munkatétel `+0x10` állapotbájtjának jelentése NINCS MEG. Az eredmény arról, hogy a már megnevezett fotón a futó eredeti talál-e további arcot, Colab-felvételt igényel.
+- **A munkaszál útja részben feltárt (41.1):** a `0x004987c0` és `0x0047b020` C-dumpja megadja a sorba állítás és a képenkénti hívás útját, de a munkatétel `+0x10` jelzőbájtjának jelentése NINCS MEG. Az eredmény arról, hogy a már megnevezett fotón a futó eredeti talál-e további arcot, Colab-felvételt igényel.
 - Colab-felvétel kell N1-hez, az eredeti felismerési arányhoz és mérethez, valamint a People Manager és Név nélküliek Ctrl/Shift viselkedéséhez.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (40. szakasz); `docs/specs/00-index.md` (#5184 friss állapota). Kódhoz és tesztekhez nem nyúltam.
@@ -4976,7 +4976,7 @@ Az N1-hez rögzíteni kell egy fotót, amelyen egy arc már névvel szerepel és
 
 ### 41.3 N7: a People Manager listájának kijelölési módja felvételt igényel
 
-A `runtime/contactmgr.fen` `contacts` listája csak a nevet, szélességet, magasságot, függőleges görgetést, rejtett fejlécet és egy oszlopot deklarálja (`10-13. sor`). Nincs benne kijelölési módot megadó attribútum. Ez a saját Picasa-erőforrásleíró, nem natív `LVS_SINGLESEL` bit, ezért a hiányzó attribútumból nem következtetek egyszeres kijelölésre. A job-186 24. képe egy kiválasztott személyt mutat, de nem próbál második sort kijelölni. **N7 People Manager ága NINCS MEG**; kell a felvétel legalább két személlyel, külön Ctrl-kattintással és külön Shift-kattintással, kijelölt sorokkal és a `Delete Person` állapotával. A törlést Mégsével kell megszakítani.
+A `runtime/contactmgr.fen` `contacts` listája csak a nevet, szélességet, magasságot, függőleges görgetést, rejtett fejlécet és egy oszlopot deklarálja (`10-13. sor`). Nincs benne kijelölési módot megadó attribútum. Ez a a Picasa saját erőforrás-leírója, nem natív `LVS_SINGLESEL` bit, ezért a hiányzó attribútumból nem következtetek egyszeres kijelölésre. A job-186 24. képe egy kiválasztott személyt mutat, de nem próbál második sort kijelölni. **N7 People Manager ága NINCS MEG**; kell a felvétel legalább két személlyel, külön Ctrl-kattintással és külön Shift-kattintással, kijelölt sorokkal és a `Delete Person` állapotával. A törlést Mégsével kell megszakítani.
 
 **Bizonyítottság.** A Név nélküliek többes kijelölése külön már igazolt (`0x006470d0`, job-180); ez nem dönti el a People Manager listáját. A People Managerre vonatkozó státusz **nyitott**.
 
