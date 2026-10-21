@@ -5954,13 +5954,13 @@ A 38.2.36 §6 blokkolt tételei:
 **Találat-feltétel (0x007fd800, asm).** A pont (x, y) az `ebx` által mutatott két f32 (`[ebx]`, `[ebx+4]`). A rekord határai egész mezők: bal `+0xdc`, felső `+0xe0`, jobb `+0xe4`, alsó `+0xe8`. Találat: bal <= x, x < jobb, felső <= y, y < alsó (`0x007fd838`-`0x007fd879`). Az indexlista sorrendjében az első találat nyer. Találatnál `*kimenet := rekord +0` (`0x007fd89f`-`0x007fd8a7`).
 
 **2. 0x00803b50: a rekord +0 mezőjének forrása (RÉSZBEN LEZÁRVA).**
-- A 0x00803b50 másoló. Nem ad új értéket, csak átmásolja a forrás rekordot. A dekompiláció szerint: `*dst = *src` (+0); `FUN_00a6a7d0(dst+4)` (a +4 alobjektum felépítése, forrás nélkül); a `+0xa0`, a `+0xa4`-`+0xcb`, a `+0xcc`-`+0xeb` és az `+0xf0`-`+0xf7` másolása. Nem másolódik: a `+0x4`-`+0x9f` (a +4 alobjektum) és a `+0xec`-`+0xef`.
+- A 0x00803b50 másoló. Nem ad új értéket, csak átmásolja a forrás rekordot. A dekompiláció szerint: `*dst = *src` (+0); `FUN_00a6a7d0(dst+4)` (JAVÍTVA 38.2.39 §1: a +4 alobjektum másolása, EAX = a forrás +4 mezője, nem „forrás nélkül"); a `+0xa0`, a `+0xa4`-`+0xcb`, a `+0xcc`-`+0xeb` és az `+0xf0`-`+0xf7` másolása. Nem másolódik: a `+0xec`-`+0xef`. (JAVÍTVA 38.2.39 §1: a `+0x4`-`+0x9f` is másolódik, a 0x00a6a7d0-on át.)
 - Hívói a 0x008014d0-ban: `0x0080178d` (a régi tömb elemeinek másolása növeléskor) és `0x008017f3` (az új rekord másolása a tömb végére). A 0x007fc7c0-ban is hívódik (`0x007fcd9d`, `0x007fce84`). Azt a függvényt nem néztük meg (lásd §9).
 - A `0x008017f3` forrása a helyi rekord: `lea eax, [esp+0x50]` (`0x008017ed`), majd `push eax` (forrás) és `push ecx` (cél: `[this+0x2ec] + darab*0xf8`). A helyi rekordot a `0x00801580` előtt a 0x007fa5b0 konstruktor építi: `lea ecx, [esp+0x50]` (`0x0080157c`), `call 0x7fa5b0`.
 - A 0x007fa5b0 utolsó írása a +0 mezőre: `mov dword ptr [esi], 0xffffffff` (`0x007fa63c`), utána `ret` (`0x007fa645`). A helyi rekord +0 értéke tehát `-1`.
 - A 0x008014d0 dekompilált törzsében a helyi rekordra más írás nincs. A rekordra írás a `+0x98`, `+0x9c` (0 értékkel, 9.txt 161-162. sor) és a `+0xcc`-`+0xd8` (P, Q, a, b) mezőkön van. A `+0x30` (`iStack_cc`) a másolás után olvasódik és felszabadul, majd a ciklus végén 0-ra íródik (9.txt 158-172. sor). A `0x00a6aa00` célja `T = esp+0x64` (`0x0080159f`), ami a rekord +4 címe, ezért a +0-t nem írja. Az esp-relatív teljes asm-átvizsgálás nem készült.
-- **Következtetés.** A 0x008014d0 által épített rekordok +0 mezője **-1**. Nem azonosító, nem dátum, nem index. Az azonosító a `[this+0x3ec]` listából jön (`local_138` indexszel), és a `[this+0x2e4]` objektum vt+0 hívásába megy az info-pufferbe (`0x00801523`-`0x0080157a`). Az info a kép forrása (lásd §6). A kulcs tehát ezeken a kártyákon nem azonosít. Ez a következtetés két feltételen áll: az info-kitöltő nem ír a rekord +0 mezőjére (lásd §9), és a 0x007fc7c0 út sem ír másik értéket (lásd §9).
-- A tömbbeli rekord +0x30 mezőjének írója NINCS MEG. A 0x00803b50 nem másolja, a +4 alobjektum felépítője (0x00a6a7d0) írhatja, ha az alobjektum 0x2c bájtnál nagyobb. Ghidra-kör kell (§9).
+- **Következtetés.** A 0x008014d0 által épített rekordok +0 mezője **-1**. Nem azonosító, nem dátum, nem index. Az azonosító a `[this+0x3ec]` listából jön (`local_138` indexszel), és a `[this+0x2e4]` objektum vt+0 hívásába megy az info-pufferbe (`0x00801523`-`0x0080157a`). Az info a kép forrása (lásd §6). A kulcs tehát ezeken a kártyákon nem azonosít. Ez a következtetés két feltételen áll: az info-kitöltő nem ír a rekord +0 mezőjére (lásd §9), és a 0x007fc7c0 út sem ír másik értéket (JAVÍTVA 38.2.39 §1: a 0x007fc7c0 ír, a listakulcsot. A `-1` csak a 0x008014d0 tömbjére igaz.).
+- A tömbbeli rekord +0x30 mezőjének írója (JAVÍTVA 38.2.39 §2): a 0x00803b50 másolja a 0x00a6a7d0-on át (a cél +0x30-át a forrás értéke írja felül), a konstruktor nullázza. Közvetlen író a 0x008014d0 törzsében nincs. A 0x00a6aa00 alias-írása NINCS MEG (38.2.39 U1).
 
 **3. 0x007fbab0: a Bézier-kimenet és a legközelebbi kártya (LEZÁRVA).**
 - A 0x007fbab0 egy racionális köbös Bézier-pontot számol. Bemenet: t (f32, veremben), `this` = ECX, a kontrollpontok a `this`-ből. A függvénynek egyetlen kilépése van (`0x007fbcdc`, `ret 4`). Kimenet: három f32 az EAX mutatta címen: `[EAX]` = out0, `[EAX+4]` = out1, `[EAX+8]` = out2 (a Ghidra C szerint).
@@ -5971,11 +5971,11 @@ A 38.2.36 §6 blokkolt tételei:
 - Ha minden súly 1, akkor D = 1, és (out0, out1) a görbe pontja. Ez algebrai következmény, nem mérés.
 - **A legközelebbi kártya (0x007fd8c0).** A `this` az obj (`this+0x2f8`). A kimenet mutatója a 0x00801cb0 szerint a `this+0x510` (38.2.37 §2).
   1. `[obj+0] := 0` (`0x007fd8d9`). Ha N = `[obj+0xb4] >> 1` nulla, a függvény 0-val kilép, és nem ír kulcsot (`0x007fd9dd`).
-  2. Minden i = 0..N-1 esetén: t_i = i·`[obj+0x30]` + `[obj+0x20]` (f64; i < 0 esetén +2^32). out0_i a 0x007fbab0(t_i) kimenete, d_i = |out0_i - 0.666| (`0x0049f5c0` = fabs).
+  2. Minden i = 0..N-1 esetén: t_i = i·`[obj+0x30]` + `[obj+0x20]` (f64; i < 0 esetén +2^32). out0_i a 0x007fbab0(t_i) kimenete, d_i = |out0_i - 0.666| (`0x0049f5c0` az abszolút érték függvénye).
   3. Ha d_i < min (a kezdeti min 1000000.0), akkor min := d_i és `[obj+0] := i`. Az első legkisebb nyer (szigorú `<`, `0x007fd943`-`0x007fd950`).
-  4. Kimenet: `*kimenet := rekord[i*] +0` (`0x007fd967`-`0x007fd97a`). A §2 szerint ez `-1` a 0x008014d0 rekordjain.
+  4. Kimenet: `*kimenet := rekord[i*] +0` (`0x007fd967`-`0x007fd97a`). A §2 szerint ez `-1` a 0x008014d0 rekordjain. **(JAVÍTVA 38.2.39 §1: a rekordtömb az `obj+0xb0`, vagyis T+0x3a8, és ezt a 0x007fc7c0 építi. Ezen a +0 a listakulcs, nem `-1`.)**
   5. Visszatérési érték (AL, `0x007fd97c`-`0x007fd9e9`): 0, ha nem teljesül |`[obj+0x18]`| <= 0.01·`[obj+0x30]` (`0x007fd981`-`0x007fd991`). Különben legyen c = `[obj+0x4c] >> 1`, X = `[obj+0x48]`, a = X+0x18, b = X+0x20. Ha c >= 2, az érték 0. Ha c = 0, az érték 1. Ha c = 1, az érték 1, ha a = b, vagy ha v > 1.0, ahol v = (0x009a5210() - a) / (b - a). Egyébként 0.
-  - A `0x009a5210` értéke NINCS MEG (§9).
+  - A `0x009a5210` értéke LEZÁRVA (38.2.39 §5): az első hívás óta eltelt másodperc.
 - Pontosítás: a „legközelebbi kártya" nem térbeli távolság. d_i a görbe x-kimenetének távolsága a 0.666 célértéktől. A t_i a kártya indexéből (i) jön.
 
 **4. 0x004b0190: a kulcsos hívás mellékhatásai (RÉSZBEN LEZÁRVA).**
@@ -6018,13 +6018,164 @@ A 38.2.36 §6 blokkolt tételei:
 
 **8. Nyitott kérdések mérlege (38.2.38).** 0 nyílt · 3 lezárva (Q1, Q3, Q5) · 2 részben (Q2, Q4) · 5 blokkolt (§9, az első öt tétel) · 1 nem blokkoló (§9, a hatodik tétel) · 0 hatókörön kívül · 0 csak nyitva.
 
-**9. A következő Ghidra-körök (38.2.38).** A 38.2.37 §10 többi tétele változatlan.
+**9. A következő Ghidra-körök (38.2.38).** A 38.2.37 §10 többi tétele változatlan. **Állapot: a 38.2.39 §7 táblázata frissíti ezt a listát.**
 - `Ghidra-kör kell: 0x007fc7c0 - a második rekordépítő: a 0x007fa5b0 utáni +0 írások, és melyik [this+0x2ec] tömböt tölti. [blokkoló: a -1 általánosításához]`
 - `Ghidra-kör kell: 0x00a6a7d0 - a +4 alobjektum felépítése: ír-e a +0x30 mezőbe (a 0x00803b50 nem másolja a +0x30-at). [blokkoló]`
 - `Ghidra-kör kell: 0x008014d0 vt+0 hívása (0x00801523-0x0080157a) - a [this+0x2e4] objektum vt+0 célja; ír-e az info (rekord-0x28 és rekord között) végén túl a rekord +0 mezőjébe. [blokkoló a -1 következtetéshez]`
 - `Ghidra-kör kell: 0x004b01f2 - az indirekt vt+0x2c hívás célja, az [L+0x48] objektum vtábla-címe és konstruktora; ír-e ESI+0x60-0x67-be. [blokkoló]`
 - `Ghidra-kör kell: 0x009a5210 - a visszatérési érték v, amelytől a 0x007fd8c0 c = 1 ága függ. [blokkoló]`
 - `Ghidra-kör kell: 0x009aaae0 hívóhelyei (16 db) - melyik hívó adja az ECX korlát-téglalapját a 0x009aab60-nak. [nem blokkoló]`
+
+#### 38.2.39 Az Időrend bináris feltárása, 22. kör: a kulcs a rekordban, a két vt+0 hívás, a +0x30 mező, a kép másolása, az idő és a konstruktor (#5401, 2026-10-21)
+
+**Hatókör és módszer.** A hat kért cím a `2026-10-21-idorend-22.txt` dekompilálásából való. A hívóláncot és a döntő ágakat `pe_dis` (`cdis`) diszasszemblálta. A hívóhelyeket a bináris index `xrefs` táblája adta, és bájt-szintű `e8` kereséssel ellenőriztem. Az indexben két hívóhely a hívó függvény belépési címét mutatja, nem a hívó utasítást: a `0x008037e0` valódi hívója `0x005e9787` (az index `0x005e8a70`-et ír), a `0x007fd8c0` valódi hívója `0x00801cd8` (az index `0x00801cb0`-at ír). Ez a bináris-index csapdái között már leírt tanulság, most újra láttam. Kódot nem módosítottam, ezért CI-őr nem futott. Ideiglenes fájl nem készült.
+
+**Fogalmak.**
+- **Rekord**: 0xf8 (248) bájtos elem. Két tömbben van:
+  - **T+0x2ec tömb** (darabszám: T+0x2f0). A 0x008014d0 építi.
+  - **T+0x3a8 tömb** (darabszám: T+0x3ac). A 0x007fc7c0 építi. Ez az `obj+0xb0` tömb, mert `obj = T+0x2f8`.
+- **T**: az Időrend-objektum, 0x890 bájt. A 0x008037e0 foglalja (0x008038fb-0x00803905: `push 0x890`, `call 0x97c5d0`). Vtáblája `0xcbd66c` (a 0x007fa7f0 írja, 0x007fa804).
+- **Kép-alobjektum**: a rekord +0x04-től +0x9f-ig tartó 0x9c bájt. A 0x00a6a7d0 másolja.
+- **Info-puffer**: 0x28 bájt, közvetlenül a rekord előtt (rekord-0x28). A 0x008014d0 veremében az info címe a 0x0080156b `lea esi,[esp+0x2c]` (a `push 1` után), a rekordé a 0x0080157c `lea ecx,[esp+0x50]`. A különbség 0x28.
+
+**Helyesbítések a korábbi szakaszokban (JAVÍTVA).**
+- **38.2.38 §2**: a 0x00803b50 a +0x4-+0x9f mezőt is másolja. A 0x00803b65 (`lea eax,[ebp+4]`) és a 0x00803b68 (`push ecx`, ecx = a cél +4) után a 0x00803b69 `call 0x00a6a7d0` a forrás +4 alobjektumából másol a cél +4 alobjektumába. A „forrás nélkül" leírás téves volt.
+- **38.2.38 §2 és §3**: a `-1` következtetés csak a T+0x2ec tömbre (0x008014d0) igaz. A legközelebbi kártya keresése (0x007fd8c0) a T+0x3a8 tömbön dolgozik, és ott a +0 a listakulcs (§1).
+- **38.2.38 §2**: a +0x30 írója nem NINCS MEG: a másolás és a konstruktor írja, lásd §2b.
+- **38.2.38 §3**: a 0x009a5210 értéke nem NINCS MEG, lásd §5.
+
+**1. 0x007fc7c0: a második rekordépítő (LEZÁRVA).**
+
+Igen, a 0x007fc7c0 ír a rekord +0 mezőjébe, és ez a listakulcs. Tehát a kulcs nem mindig `-1`.
+
+- A `this` a T+0x2f8 (0x007fc7ca `mov edi,eax`; a hívó 0x008039bf `lea eax,[esi+0x2f8]`, majd 0x008039c5 `call 0x7fc7c0`). A tömb a `[this+0xb0]`, vagyis T+0x3a8. Csak ez a hívóhely hívja (bájt-keresés).
+- A helyi rekordot a 0x007fa5b0 konstruktor építi (0x007fcc6e `lea ecx,[esp+0x70]`, 0x007fcc72 `call 0x7fa5b0`). A konstruktor a +0 mezőbe -1-et ír.
+- A 0x007fcc77 `mov edx,[ebx+esi*4]` a kulcsot tölti az `edx`-be. A kulcs a `local_158[iVar8]` elem, vagyis az első ciklusban a 0x004ae4e0 kimenetéből gyűjtött azonosító.
+- A 0x007fcca0 `mov [esp+0x84],edx` a kulcsot a rekord +0 mezőjére írja (E a függvény belépéskori esp-je; ekkor esp = E-0x14, a cím E+0x70). Ez felülírja a konstruktor -1-jét.
+- A tömbbe másolás: 0x007fce7e-0x007fce84 (`lea edx,[esp+0x70]`, `push edx`, `push eax`, `call 0x803b50`). A tömb elemének +0 mezője tehát a kulcs.
+- A kép forrása ennél a hívónál a 0x004ae430 kimenete (a helyi `out` a `lea eax,[esp+0x44]`, vagyis E+0x30). A 0x00a6aa00 hívás (0x007fcca7) után, ha a visszatérés nem nulla (0x007fccac-0x007fccb0), a függvény azonnal visszatér ezzel az értékkel. A hívó (0x008039c5) a visszatérést nem vizsgálja.
+
+**Mit jelent ez?** A legközelebbi kártya kulcsa (a 0x007fd8c0 `*kimenet := rekord+0` lépése) a T+0x3a8 tömb +0 mezője, tehát a listakulcs. A `-1` csak a T+0x2ec tömbön (0x008014d0) igaz.
+
+**2. 0x008014d0: a vt+0 hívás és a +0x30 mező (RÉSZBEN: a cél NINCS MEG).**
+
+**2a. A vt+0 hívás (0x00801523-0x0080157a).**
+- Ha `[T+0x2e4]` nulla, a hívás kimarad: 0x00801523 `cmp [edi+0x2e4],ebp` (EBP = 0 a 0x008014de `xor ebp,ebp` óta), 0x0080155d `je 0x80157c`.
+- `obj2 = [T+0x2e4]` (0x0080155f). A vtábla `[obj2]` (0x00801565). A célcím a vtábla 0. slotja, vagyis `[vtábla+0]` (0x00801567). A hívás `call edx` (0x0080157a), ECX = obj2.
+- Argumentumok: a kulcs (`[T+0x3ec][i]`, 0x00801570-0x00801576), az info-puffer címe, és 1.
+- A visszatérési értéket a hívó nem használja.
+- A hívó után nincs `add esp`, ezért a 12 bájt argumentum takarítását a hívott félnek kell végeznie. Ezt a hívott törzs nem igazolja, a kódalakból következtetek rá.
+- Az obj2 eredete: a 0x007fa7f0 konstruktor a bemeneti blokk +0x10 mezőjét írja T+0x2e4-be (0x007fa81b-0x007fa81e). A bemeneti blokk a 0x005e8a70 veremében van (0x005e9782 `lea ecx,[esp+0x64]`). A +0x10 mezőt a 0x005e9750 (`mov [esp+0x74],esi`) vagy a 0x005e974a (`mov [esp+0x74],eax`, előtte `add eax,0x4c`) írja. Melyik ág fut, az a 0x005e9745 `je` előtti flagtől függ. Azt nem néztem végig.
+- A vt+0 az info-puffer címét kapja argumentumként. A 0x00a6aa00 ezt az info-puffert használja: a `this` az info-puffer (0x008015a4 `lea eax,[esp+0x3c]`, 0x008015a8 `call 0x00a6aa00`), és a 0x00a6aa00 az info +0x8 és +0xc mezőjét olvassa. Mindkettőnek pozitívnak kell lennie, különben a visszatérés 4 (0x00a6aa1b-0x00a6aa27).
+- **A cél: NINCS MEG.** Az obj2 osztályát és a vtábla 0. slotját nem azonosítottam. Ghidra-kör kell: U2.
+
+**2b. A +0x30 mező írója (LEZÁRVA a másolási és a konstruktor-útra).**
+- A konstruktorban a 0x007fa5b0 a 0x00512390-et hívja, EDI = rekord+4 mellett (0x007fa5b4, 0x007fa5b7). A 0x005123c5 `mov [edi+0x2c],esi` nullázza a rekord +0x30 mezőt. ESI = 0, mert a 0x00512394 `xor esi,esi` óta nem változott (a 0x009a8a30 hívás push/pop-olja az esi-t).
+- A másolásban (0x00803b50 → 0x00a6a7d0): a cél +0x30 mezőjét a 0x00a6a830 előbb felszabadítja és nullázza (0x00a6a853-0x00a6a863). Utána a 0x00a6a7d0 a forrás értékét másolja (0x00a6a81f `rep movsd`). A cél +0x30 tehát a forrás +0x30 értékét kapja.
+- A 0x008014d0 törzsében a helyi rekord +0x30 mezőjére egyetlen közvetlen írás van: a ciklus végi nullázás (dekompilált sor: `iStack_cc = 0`). Ez nullát ír.
+- A 0x00a6aa00 csak olvassa a +0x2c és +0x30 mezőket (0x00a6aaf2-0x00a6aaf5). A törzsben `[reg+0x2c]` alakú írás nincs.
+- Ezért a +0x30 0 marad. Ez az állítás a 0x00a6aa00 alias-írásától függ, ezt az U1 tétel zárná le.
+
+**3. 0x00a6a7d0: szerep a kép útjában (LEZÁRVA).**
+
+- A függvény a kép-alobjektum (0x9c bájt) másoló-értékadása: `cél := forrás`. EAX = a forrás (this), a veremben a cél címe. A rekordmásolóban (0x00803b50) a forrás a forrásrekord +4 mezője, a cél a célrekord +4 mezője.
+- Lépései (0x00a6a7d0-0x00a6a821):
+  1. Azonos cím esetén nincs teendő (0x00a6a7da).
+  2. A cél régi tartalmát a 0x00a6a830 szabadítja fel és nullázza: a cél első mezőjét (számláló-blokk mutató) és a +0x2c mezőt (a rekord +0x30). A hívás előtt az `esi` a cél (0x00a6a7de-0x00a6a7e0).
+  3. A forrás első mezője: ha 0, a 0x0097c5d0(4) új, 4 bájtos blokkot foglal, a forrásba írja, és a számlálót 2-re állítja (0x00a6a7e5-0x00a6a801). Ha nem 0, `InterlockedIncrement` (0x00a6a803-0x00a6a804). Így a két példány **ugyanazt a számláló-blokkot osztja meg**.
+  4. A 0x009a8ca0 a forrás rekord+8 belső objektumából a cél rekord+8 objektumába másol (0x00a6a80d-0x00a6a811).
+  5. A forrás 0x27 dword-jét (0x9c bájt) a célba másolja (0x00a6a818-0x00a6a81f, `rep movsd`). Ez a 4. lépés eredményét felülírja.
+- Szerep: a számláló-blokkot megosztja. A 0x9c bájt többi részét nyers másolattal viszi át, számlálás nélkül. A pixelpuffer (a mutatók mögött) sorsa NINCS MEG.
+- Hol van a kép útjában: a 0x00803b50 minden tömbbeli rekordmásolása ezen megy át. A kép-alobjektumot a 0x00a6aa00 tölti (0x008015a8 a 0x008014d0-ban, 0x007fcca7 a 0x007fc7c0-ban). A másolat és az eredeti ugyanazt a számláló-blokkot mutatja.
+
+**4. 0x004b01f2 (a 0x004b0190 zárt hívása): vt+0x2c (RÉSZBEN: a cél NINCS MEG).**
+
+- `L = [P+0xc4]` (0x004b01dd `mov eax,[edi+0xc4]`). `edx = [L+0x48]` (0x004b01e3): az objektum vtáblája, mert az objektum a `L+0x48` címen áll. `edx = [edx+0x2c]` (0x004b01e6): ez a vtábla 11. slotja. `ECX = L+0x48` (0x004b01e9): az objektum címe, vagyis a `this`. A veremben ESI (0x004b01f0 `push esi`) és a kulcs (0x004b01f1 `push eax`), majd `call edx` (0x004b01f2).
+- **A cél NINCS MEG.** A vtábla címét nem azonosítottam, mert az L konstruktora hiányzik. Ghidra-kör kell: U3.
+- ESI+0x60-0x67 (a `local_64`): a 0x004b0190 törzsében nincs közvetlen írás. A 499 bájtos törzs utasításait diszasszemblálva átnéztem. Az ESI+0x60-0x67 tartományba eső hivatkozás egyetlen van: a 0x004b02df `cmp dword ptr [esi+0x64],edi`, ez olvasás. A lehetséges író a 11. slot hívott függvénye, de annak törzse nem ismert. **NINCS MEG.**
+
+**5. 0x009a5210: az idő (LEZÁRVA).**
+
+- A visszatérési érték az x87 ST(0)-ban, 80 bites lebegőpontos szám: `(QPC_most - QPC_első) * (1/QPF)`, vagyis másodperc. A QPC és a QPF a Windows nagy felbontású órája (a hívott Win32 függvények: `QueryPerformanceCounter`, `QueryPerformanceFrequency`).
+- Az „első" a folyamat első 0x009a5210-hívása: a `_DAT_00d678f0` globális nulla-ellenőrzése (dekompilált C: `if (_DAT_00d678f0 == 0.0)`). Ezért az első hívás értéke közel 0. A frekvencia reciproka a `_DAT_00d678e8` globálisban van, az első hívás állítja be.
+- A 0x007fd8c0 döntése (asm):
+  - Kapu (0x007fd98c-0x007fd991): ha `|[obj+0x18]| > 0.01*[obj+0x30]`, a függvény 0-val tér vissza, és nem hívja a 0x009a5210-et. Különben a hívás fut (0x007fd993).
+  - c = `[obj+0x4c] >> 1` (0x007fd998-0x007fd99d). c >= 2: 0. c = 0: 1 (0x007fd9a4-0x007fd9e7).
+  - c = 1: X = `[obj+0x48]`, a = `[X+0x18]`, b = `[X+0x20]`. Ha a = b (0x007fd9ac-0x007fd9b4): 1. Különben v = (t - a) / (b - a), ahol t a 0x009a5210 visszatérése (0x007fd9b6-0x007fd9c2). Az eredmény 1, ha v > 1.0 (0x007fd9c4-0x007fd9cf, a 1.0 a `[0xc7e328]`). Különben 0.
+- Vagyis a 0x009a5210 a t időt adja. A c = 1 ágban ebből lesz a v arány, amely azt mutatja, hol tart az eltelt idő a [a, b] intervallumban.
+
+**6. 0x007fa5b0: a rekord-konstruktor mezőkiosztása (LEZÁRVA az írt mezőkre).**
+
+A konstruktor a 0x00512390-et (a +4 alobjektum alapkonstruktora) és a 0x009a8a30-at (a rekord +8 belső objektumának konstruktora) hívja. Ezek és a saját írásai:
+
+| rekord-offset | érték a konstruktor után | író címe |
+|---|---|---|
+| +0x00 | -1 (0xffffffff) | 0x007fa63c |
+| +0x04 | 0 (a számláló-blokk mutató) | 0x00512396 |
+| +0x08 | 0 | 0x00512398 |
+| +0x0c | 0 | 0x005123b4 |
+| +0x10 | 0 | 0x005123b7 |
+| +0x14 | 0 | 0x005123ba |
+| +0x18 | 0 | 0x005123bd, 0x009a8a6b |
+| +0x1c | word 1 | 0x0051239a |
+| +0x1e | word 0 | 0x005123a0 |
+| +0x20 | 0 | 0x005123a4 |
+| +0x24 | 0 | 0x005123a7 |
+| +0x28 | -1 | 0x005123aa |
+| +0x2c | 0 | 0x005123b1, 0x009a8a4d |
+| +0x30 | 0 | 0x005123c5 |
+| +0x94 | 0 | 0x005123c8 |
+| +0x98 | 0 | 0x005123d4 |
+| +0x9c | 0 | 0x005123ce |
+| +0xa0 | 0x100 | 0x007fa632 |
+| +0xa4 | 1.0 (f32) | 0x007fa5be |
+| +0xa8 | 0.0 (f32) | 0x007fa5cf |
+| +0xac | 0.0 (f32) | 0x007fa5d6 |
+| +0xb0 | 0.0 (f32) | 0x007fa5dc |
+| +0xb4 | 1.0 (f32) | 0x007fa5f6 |
+| +0xb8 | 0.0 (f32) | 0x007fa5e2 |
+| +0xbc | 0.0 (f32) | 0x007fa5e8 |
+| +0xc0 | 0.0 (f32) | 0x007fa5ee |
+| +0xc4 | 1.0 (f32) | 0x007fa5fc |
+| +0xc8 | bájt 1 | 0x007fa5c4 |
+| +0xcc | 0.0 (f32) | 0x007fa602 |
+| +0xd0 | 0.0 (f32) | 0x007fa608 |
+| +0xd4 | 0.0 (f32) | 0x007fa60e |
+| +0xd8 | 0.0 (f32) | 0x007fa614 |
+| +0xdc | 0 | 0x007fa61a |
+| +0xe0 | 0 | 0x007fa620 |
+| +0xe4 | 0 | 0x007fa626 |
+| +0xe8 | 0 | 0x007fa62c |
+
+- Nem íródik a konstruktorban: +0x34-+0x8f, +0xec-+0xf7, és a +0x94-+0x9f közötti bájtok nagy része (csak a +0x94, +0x98, +0x9c dword-ök vannak nullázva). Ezek jelentése **NINCS MEG**.
+- A 0x00803b50 másolja a +0xf0-+0xf7 mezőt (0x00803bef-0x00803bf6, `fld/fstp qword`), tehát a nem inicializált értéket is átviszi. A +0xec-+0xef nem másolódik.
+
+**7. A 38.2.38 nyitott listájának állapota (§9) és az új Ghidra-címek.**
+
+| 38.2.38 §9 tétel | állapot | mit mutat |
+|---|---|---|
+| 0x007fc7c0: második rekordépítő, +0 írás | LEZÁRVA (§1) | ír: a listakulcs (0x007fcca0, 0x007fce84). A tömb: T+0x3a8. |
+| 0x00a6a7d0: +4 alobjektum, a +0x30 írója | LEZÁRVA a másolási útra (§2b, §3) | a +0x30-at a másolás írja a forrásból. Az alias-írás a 0x00a6aa00-ban: U1. |
+| 0x008014d0 vt+0 hívás: cél és túlírás | BLOKKOLT (§2a) | a cél obj2 vtáblájának 0. slotja, obj2 = T+0x2e4. Az obj2 osztálya NINCS MEG: U2. |
+| 0x004b01f2: vt+0x2c cél, local_64 | BLOKKOLT (§4) | a cél a `[L+0x48]` vtáblájának 11. slotja. A vtábla NINCS MEG: U3. |
+| 0x009a5210: visszatérési érték | LEZÁRVA (§5) | eltelt másodperc az első hívás óta |
+| 0x009aaae0 hívóhelyei (16 db) | NINCS MEG, nem blokkoló | ebben a körben nem néztem meg: U6 |
+
+**Új Ghidra-körök (38.2.39):**
+- `Ghidra-kör kell: 0x005e9750 (FUN_005e8a70) - az ESI értéke és a 0x005e9745 előtti flagforrás; az obj2 osztálya és a vt+0 célja. [blokkoló: 0x008014d0 vt+0 cél]` (U2)
+- `Ghidra-kör kell: 0x004b01e3 - az [L+0x48] objektum konstruktora (a vtábla címe) és a vt+0x2c cél. [blokkoló: 0x004b01f2 cél és local_64]` (U3)
+- `Ghidra-kör kell: 0x0080157a (a vt+0 hívott függvénye, az U2 után) - ír-e az info-puffer (rekord-0x28) végén túl a rekord +0 mezőre. [blokkoló: a -1 túlírási kérdés]` (U4)
+- `Ghidra-kör kell: 0x00a6aa00 - a teljes törzs, különösen a kép-alobjektum írói és a rekord +0x30. [nem blokkoló, de a +0x30 = 0 állítás feltétele]` (U1)
+- `Ghidra-kör kell: 0x008014d0 T+0x2ec tömbjének olvasói. [nem blokkoló]` (U5)
+- `Ghidra-kör kell: 0x009aaae0 hívóhelyei (16 db). [nem blokkoló]` (U6)
+
+**Amit KIZÁRTAM (megdőlt állítások).**
+- „A kulcs mindig `-1`”: megdőlt a legközelebbi kártyára (T+0x3a8 tömb).
+- „A 0x00803b50 nem másolja a +0x4-+0x9f mezőt”: megdőlt.
+- „A 0x00a6a7d0 forrás nélkül épít”: megdőlt.
+- „A 0x009a5210 értéke NINCS MEG”: megdőlt, LEZÁRVA.
+
+**Nyitott kérdések mérlege (38.2.39).** 3 blokkolt (vt+0 cél, vt+0x2c cél, local_64) · 3 nem blokkoló NINCS MEG (U1, U5, U6) · 5 lezárva (§1, a +0x30 másolási útja, §3, §5, §6 az írt mezőkre) · 0 csak nyitva.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
