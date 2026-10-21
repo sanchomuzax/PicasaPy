@@ -98,10 +98,18 @@ def _nyisd_meg_a_nezot(window, qt_app):
     )
 
 
-def _varj_export_ok_gombokra(window, qt_app):
-    """Megvárja, hogy az export eredménypárbeszéd OK gombja készen álljon."""
+def _varj_export_ok_gombokra(window, qt_app, parbeszed=None):
+    """Megvárja, hogy az export eredménypárbeszéd OK gombja készen álljon.
+
+    Ha a párbeszéd adott, csak a saját gombsorában keres: az ablak egészében
+    egy másik felugró OK gombja is látható lehet, és a kattintás oda menne
+    (#5461).
+    """
+    gyoker = parbeszed.property("footer") if parbeszed is not None else None
+    if not isinstance(gyoker, QQuickItem):
+        gyoker = window.contentItem()
     jeloltek = [
-        item for item in _bejark(window.contentItem())
+        item for item in _bejark(gyoker)
         if isinstance(item, QQuickItem)
         and str(item.property("text") or "").strip().casefold() == "ok"
     ]
@@ -381,10 +389,13 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
         "a nyitott export-eredmény DeferredDialog nem látszik a felugrók között: "
         f"{felugrok!r}"
     )
-    ok_gombok = _varj_export_ok_gombokra(window, qt_app)
+    ok_gombok = _varj_export_ok_gombokra(window, qt_app, eredmeny)
     _kattint_item(ok_gombok[-1], qt_app)
     assert _var(qt_app, lambda: eredmeny.property("opened") is False), (
-        "az export eredmény-párbeszéd nem zárult be az OK kattintás után"
+        "az export eredmény-párbeszéd nem zárult be az OK kattintás után; "
+        f"OK-jelöltek: {len(ok_gombok)}, a gomb közepe: "
+        f"{ok_gombok[-1].mapToScene(QPointF(ok_gombok[-1].width() / 2, ok_gombok[-1].height() / 2))}, "
+        f"ablak: {window.width()}x{window.height()}, felugrók: {_nyitott_felugrok(window)!r}"
     )
     assert _var(qt_app, lambda: not _nyitott_felugrok(window)), (
         "az export eredmény-párbeszéd bezáró animációja nem ért véget; "
