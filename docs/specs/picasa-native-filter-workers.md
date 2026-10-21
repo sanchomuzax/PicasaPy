@@ -348,11 +348,13 @@ futna, a mintahúzásaik **összefésülődnének**.
 Hogy a csővezeték futtat-e valaha **két szűrőláncot egyidejűleg**. A hét
 burkoló nem indít szálat, de a felettük lévő szint nincs átnézve.
 
-**A gyakorlati összegzés:** egyetlen kép, egyetlen szálon futó feldolgozása
-**bitre reprodukálható** — a vetőmag (`0x2D8228BE`, 2.2 helyesbítése), a
-képpont-sorrend (2.2/b) és a csempézés hiánya (ez a szakasz) együtt ezt adják
-ki. A golden-teszt ezért **tűrés nélkül** írható meg, ha a mérés
-egyszálú, egy képre vonatkozik.
+**A reprodukálhatóság korlátja (#5427):** a `0x2D8228BE` a generátor
+vetőmagja, de a worker elé kerülő állapotot a folyamatban korábban elfogyasztott
+minták is meghatározzák. A mag kiterjesztése sem a NumPy `RandomState` szokásos
+MT19937-kezdőállapota; a natív `0x00aa28f0` eljárást a #5427 vizsgálata írja le
+lent. Ezért a bitre egyezés csak akkor következik a seedből, ha a worker induló
+globális állapota is azonos. Az egy képre és egy szálra vonatkozó korábbi
+feltétel önmagában ehhez nem elég.
 
 ## 2.2/d Csökkenő tábla: a `(delta · r)` eltolása ELŐJEL NÉLKÜLI (2026-09-28, 392. kör, #3867)
 
@@ -512,13 +514,68 @@ betöltő, natív 0x0090c1e0 és 0x0090c27f, 4 előjeles félérték; megfigyel�
 
 A mai kódon a 684-es autolight alap pár újramérése átlagos ΔE 0,23; ez az alapállapot,
 nem a natív kerekítési maradék. A #5398 k03 mérési naplóban az
-`autolight,sat,HDR` részlánc átlagos ΔE 2,57, így a #5425 `< 2,0` elfogadási pontja
+`autolight,sat,HDR` részlánc átlagos ΔE 2,57, így a #5427 `< 2,0` elfogadási pontja
 még nincs teljesítve. A natív alkalmazó továbbra is a 16 bites LUT-elemek
 között interpolál, közös pixelenkénti mintát ad a csatornákhoz, majd jobbra
 tol és vág; ennek teljes PicasaPy-egyezését a kerekítési mérés önmagában nem
 igazolja. Forrás: `mérés (684-es alap pár, mai PicasaPy: átlagos ΔE 0,23)`;
 `mérés (#5398 k03 autolight+sat+HDR: átlagos ΔE 2,57)`; a natív lépéssor:
 `bináris (0x0090bc60, 0x0090bd25, 0x0090bd9f)`.
+
+### #5427 - a natív magkiterjesztés és a 684-es mérőpár (2026-10-21)
+
+A dither-generátor magját a `0x00aa28f0` terjeszti ki 624 szavas állapottá.
+A bináris utasításai szerint `state[0] = seed`, majd `i = 1..623` esetén
+`state[i] = (1664525 * (state[i-1] xor (state[i-1] >> 30)) + i) mod 2^32`;
+a `1664525` szorzó bináris értéke `0x0019660d`. A worker állapotmutatója
+`0x00d67f70`, az indexé `0x00d67f74`, így a generátor folyamat-globális.
+Forrás: `bináris (0x00aa28f0, 0x0090bc60, 0x0090bd25)`.
+
+A 684-es csomagban az `autolight__alap.jpg` mérete 960×640; SHA-256:
+`170510965b768d685ceef017859c51acc6ce848c2d22be192a53ece49096f55e`.
+A csatornánkénti, 3072-es hisztogramküszöb mellett mért szinthatárok
+`low=4`, `high=251`. A `.picasa.ini` szerint a szűrő `autolight=1,`.
+Forrás: `mérés (684-es mérőpár, autolight__alap.jpg és .picasa.ini)`.
+
+A `0x00aa28f0`-t, utána a natív `0x0090c1e0` LUT-építőt és `0x0090bc60`
+alkalmazót közvetlenül futtató QEMU-próba a `0x2D8228BE` binárisból igazolt
+maggal, `0x037f` x87 vezérlőszóval és friss állapottal készült. A natív LUT
+256 vizsgált bejegyzése egyezett a Python 16 bites LUT-tal. A teljes, 614400
+képpontos natív kimenetet az utasításokból külön megírt Python-modell is
+614400/614400 képponton egyezően adta vissza (eltérő csatornabájt: 0).
+Ez a QEMU-harness vezérlőszó-beállítása; a teljes Picasa-folyamat vezérlőszavát
+nem méri.
+Forrás: `mérés (QEMU, 0x00aa28f0 → 0x0090c1e0 → 0x0090bc60; független Python-modell)`;
+mag: `bináris (0x00c32520, 0x00aa28f0)`.
+
+Az átlagos CIE76 ΔE a Picasa-export JPEG-hez képest:
+
+| út | átlagos ΔE | exporttal azonos képpontok |
+|---|---:|---:|
+| jelenlegi 8 bites PicasaPy | 0,229123323268 | 392552 / 614400 |
+| meglévő Python 16 bites út NumPy `RandomState` mintáival | 0,257249513364 | 352339 / 614400 |
+| natív QEMU worker, tiszta magállapotból | 0,257396463954 | 352300 / 614400 |
+
+Forrás: `mérés (684-es mérőpár; CIE76, Picasa-export JPEG; QEMU natív worker)`.
+Az eredmény cáfolja, hogy a 16 bites LUT és a worker lépéssora önmagában
+javítja a mérőpár egyezését: a tiszta magállapotú natív futás ΔE-je nagyobb a
+jelenlegi 8 bites úténál. A helyes natív magkiterjesztés tehát nem oldotta meg
+a különbséget. A mintakészlet leírása szerint 180 beállított képet jelöl ki
+egyetlen exportálásra; az `0x00d67f74` index és a 624 szavas állapot közvetlenül
+az adott kép autolight hívása előtt nincs megmérve. A bemeneti dekódolás és a
+folyamatban előtte elfogyasztott minták hatása nincs egymástól elválasztva.
+Forrás: `mérés (684-es mérőpár, QEMU)`; a köteg leírása: `mérés (OLVASS-EL.txt)`;
+hiányzó hívás előtti állapot: `NINCS MEG`.
+
+**Következmény:** a `0x0090bc60` LUT-interpolációja és pixelenkénti
+mintavételezése QEMU-futtatásban egyezik az utasításszintű modellel, de a 684-es
+export eltérő kimenetének oka nyitott. A következő döntő mérés az eredeti
+exportkörnyezetben az `0x00d67f74` és a `0x00d67f7c` állapotának rögzítése
+közvetlenül a 684-es kép `0x0090bc60` hívása előtt; emellett külön kell
+ellenőrizni a QEMU bemenet és a Picasa által feldolgozott dekódolt pixeladat
+egyezését. A teljes CRT-indítási útvonalat és a 180-képes exportot ez a QEMU
+harness nem futtatta. Forrás: `NINCS MEG (684-es Picasa-hívás előtti RNG-állapot,
+dekóderkimenet)`.
 
 ## 2.4 Kontraszt — `0x0090c2c0`
 
