@@ -62,11 +62,19 @@ class TestNyomtatasElonezetLapozas:
             f"az előnézet nem két lapos: {szoveg.property('text')!r}"
         )
 
+        # #5520: az önálló ablak első kattintása aktiválás nélkül elveszhet
+        dialog.requestActivate()
+        assert _varj(qt_app, lambda: dialog.property("active") is True), (
+            "a nyomtatási párbeszéd nem lett aktív"
+        )
+        kovetkezo = _elem(window, "printPreviewNextButton")
+        assert _varj(qt_app, lambda: kovetkezo.property("enabled") is True), (
+            "a Következő gomb nem lett engedélyezett"
+        )
         _kattints_mindenablakban(qt_app, "printPreviewNextButton")
         assert _varj(qt_app, lambda: szoveg.property("text") == "2 / 2"), (
             "a Következő gomb nem léptette az előnézetet"
         )
-        kovetkezo = _elem(window, "printPreviewNextButton")
         assert kovetkezo.property("enabled") is False
 
         _kattints_mindenablakban(qt_app, "printPreviewPrevButton")
