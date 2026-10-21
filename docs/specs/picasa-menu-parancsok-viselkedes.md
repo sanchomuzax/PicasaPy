@@ -4041,7 +4041,7 @@ Nyitott kérdések: 9 nyílt (örökölt) · 7 lezárva · 0 blokkolt · 0 ható
 - ~~`Ghidra-kör kell: 0x00983430, 0x00983fc0, 0x00982bf0 - a qshow-ablak futtató hurka, és hogy a 0x0097fc30 11 hívója közül melyik fut az Időrend alatt, milyen időtúllépéssel [blokkoló]`~~ **RÉSZBEN JAVÍTVA (38.2.22, 1. szakasz):** a három függvény nem hurok (méret-értesítés, teljes képernyős váltás, `ytWindow` konstruktor). A futtató hívó és az időtúllépés **NINCS MEG**, lásd `Ghidra-kör kell: 0x005e6710` a 38.2.22 szakaszban.
 - ~~`Ghidra-kör kell: 0x00802630 - a léptetés törzse, és a nem nulla visszatérés (-1, a bejegyzés eltávolítása) [blokkoló]`~~ **JAVÍTVA (38.2.22, 2. szakasz):** a léptetés törzse igazolt; a callee nem nulla visszatérése `3`, a hívó `0x00802060` ezt `-1`-re képezi.
 - ~~`Ghidra-kör kell: 0x00982270 - a bejegyzés-lista felépítése és sorrendje [nem blokkoló]`~~ **JAVÍTVA (38.2.22, 1. szakasz):** a `0x00982270` a globális tömb rendezetlen másolata; a sorrend a hozzáfűzési sorrend.
-- ~~`Ghidra-kör kell: 0x007fd800, 0x007fd8c0 - a találati index kimenete és a visszatérési érték jelentése [blokkoló]`~~ **RÉSZBEN JAVÍTVA (38.2.22, 3. szakasz):** a `0x007fd800` a kurzor alatti elem rekordjának `+0` mezőjét adja, vagy `-1`-et; a `0x007fd8c0` a 0,666 konstanshoz legközelebbi kártyát keresi. A `+0` mező és a `0x007fd770` visszatérésének jelentése **NINCS MEG**.
+- ~~`Ghidra-kör kell: 0x007fd800, 0x007fd8c0 - a találati index kimenete és a visszatérési érték jelentése [blokkoló]`~~ **RÉSZBEN JAVÍTVA (38.2.22, 3. szakasz):** a `0x007fd800` a kurzor alatti elem rekordjának `+0` mezőjét adja, vagy `-1`-et; a `0x007fd8c0` a 0,666 konstanshoz legközelebbi kártyát keresi. A `+0` mező jelentése **NINCS MEG**. A `0x007fd770` visszatérése **LEZÁRVA** (38.2.23 §6, 38.2.38 §1: 0).
 - ~~`Ghidra-kör kell: 0x007fda80 - a 0x201 Időrend-ág hívott függvénye és az 1000000 visszatérés [blokkoló]`~~ **JAVÍTVA (38.2.22, 4. szakasz):** a `0x007fda80` négy overlay-téglalap találati függvénye; az `1000000` a kezelt kattintás jele.
 - ~~`Ghidra-kör kell: 0x007fb210 - az overlay-elemek rajz- és találati téglalapjai, és a sliderthumb, timelinedot, startbutton, exit, listaikon kattintás-kezelői [blokkoló]`~~ **RÉSZBEN JAVÍTVA (38.2.22, 5. szakasz):** az overlay-nevek és az objektumok összerendelése megvan; a négy találati téglalap a `startbutton`, `exit`, `right`, `left` overlay-eké. A rajz, a `sliderthumb` húzásának hatása és a többi overlay kattintása **NINCS MEG**.
 - `Ghidra-kör kell: 0x00a6cd10, 0x00a52820, 0x00401570, 0x00803180, 0x008032e0 - az OneUpUI kattintás-kezelői és a határoló téglalap, és hogy a 0x009e4630 melyik objektumon fut [blokkoló]`
@@ -6251,13 +6251,13 @@ Igazolt:
 Tehát a kulcs az 1-es típusú, +0x18 = 0 jelzőjű sorok +0x14 mezője a sorlistában.
 
 NINCS MEG:
-- A +0x14 jelentése: azonosító, dátum vagy index. A +0x14 írói nincsenek megnézve. A 0x004a0720 (feltehetően a sorrekord konstruktora) első része (0x004a0720-0x004a076d) a +0x0-+0x9 bájtokat, a +0xc sztringet és a +0x10 mezőt írja. A +0x14 írása ebben a részben nincs. Ghidra-kör kell: `0x004a0720 - a törzs második fele (0x004a076d után) és a 0x004b2ab4 hívóhely - a sorrekord +0x14 írója` (U7).
+- A +0x14 jelentése: azonosító, dátum vagy index. A +0x14 írói nincsenek megnézve. **JAVÍTVA (38.2.41 §1):** az író a `0x004a0773`, az érték a hívó második argumentuma. A 0x004a0720 (feltehetően a sorrekord konstruktora) első része (0x004a0720-0x004a076d) a +0x0-+0x9 bájtokat, a +0xc sztringet és a +0x10 mezőt írja. A +0x14 írása ebben a részben nincs. Ghidra-kör kell: `0x004a0720 - a törzs második fele (0x004a076d után) és a 0x004b2ab4 hívóhely - a sorrekord +0x14 írója` (U7).
 
 **5. A kártya-lista újraépítése (NINCS MEG: a kulcs típusa és a kattintási ág nélkül nem írható le).**
 
 Igazolt (index xrefs, függvényszint):
 - A 0x008014d0 hívói: 0x008037e0 (az Időrend indulása, 0x008039d1) és 0x008018a0 (a fókuszcsere, 0x00801c95).
-- A 0x008018a0 hívói: 0x007fde80 (az egér-kezelő, a 38.2.36 §1 szerint), 0x00801cb0 (nincs azonosítva) és 0x008037e0.
+- A 0x008018a0 hívói: 0x007fde80 (az egér-kezelő, a 38.2.36 §1 szerint), 0x00801cb0 (**JAVÍTVA, 38.2.41 §3:** a léptetési pumpa hívója) és 0x008037e0.
 - A kártyák kulcsa a `[T+0x3ec]` listából jön (asm 0x00801570 `mov esi,[edi+0x3ec]`, 0x00801576 `mov eax,[esi+eax*4]`). Ennek írója a 0x008018a0 (a 38.2.34 szerint; ebben a körben nem néztem).
 
 NINCS MEG:
@@ -6289,6 +6289,136 @@ Ghidra-kör kell: `0x007fde80 - a 0x008018a0 hívás feltétele (melyik kattint�
 - „A 0x005e9750 az M ≠ 0 ág”: CÁFOLVA. A 0x005e9750 az M = 0 ág.
 
 **Nyitott kérdések mérlege (38.2.40).** 9 tétel NINCS MEG (U1-U9, §6). Mindegyik mellett Ghidra-cím áll. Becsült érték nincs.
+
+**Frissítve (38.2.41 §4):** 7 tétel NINCS MEG (U1-U6, U8), U7 LEZÁRVA, U9 LEZÁRVA. Az új tételek (U10-U15) és a Ghidra-címeik a 38.2.41 §4 táblázatában vannak.
+
+#### 38.2.41 Az Időrend bináris feltárása, 24. kör: a sorrekord +0x14 írója, a kattintási út, a 0x00801cb0 és a lista kulcsa (#5401, 2026-10-21)
+
+**Válasz röviden.**
+1. A sorrekord `+0x14` mezőjét a `0x004a0773` írja. Az értéke a hívó második argumentuma. Az 1-es típusú sorban ez az `i` sorszám, a `[L+0x138]` tábla egy sorának indexe. Nem kép-azonosító és nem dátum. Az, hogy a sor album vagy mappa, **NINCS MEG**.
+2. A `0x008018a0` (a fókusz váltása) bal gombos kattintásra fut Időrend módban, ha a pont egy kártya téglalapjába esik, és nem a négy overlay egyikébe. A négy overlay két gomb (`startbutton`, `exit`) és két nyíl (`left`, `right`), ezekre nem fut le.
+3. A `0x00801cb0` nem kattintási függvény. A léptetési pumpa hívja minden körben, és ő is válthat fókuszt.
+4. Hogy a kattintás után melyik képhalmaz jelenik meg: **NINCS MEG**. Lásd a „A felhasználó szemével” szakaszt a végén.
+
+**Hatókör és módszer.** A bemenet a `2026-10-21-idorend-24.txt` volt, három címmel: `0x004a0720`, `0x007fde80` és `0x00801cb0`. A hívóhelyeket az index `xrefs` táblája és a `pe_dis.cdis` adta. A dekompiláció csak kiindulópont volt, a döntő lépéseket asm-ben néztem meg. Kódot nem módosítottam, ezért CI-őr nem futott. Ideiglenes fájl nem keletkezett, a `.bt/` nem jött létre.
+
+**Bizonyítottsági fok.** Az asm-ből igazolt állítások erősek. Ami korábbi körből származik, azt `(korábban igazolt: 38.2.x)` jelöli. Ami csak dekompilációból látszik, azt külön írom.
+
+**Fogalmak.**
+- **L** = a lista objektum. A `0x004b8470` belépésekor az EAX (`0x004b8477 mov edi,eax`). Ez ugyanaz a lista, amelynek sorai a `[L+0x158]` tömbben vannak (korábban igazolt: 38.2.40 §4).
+- **i** = egy sor sorszáma az `[L+0x138]` táblában. A sorok 36 bájtosak, a típus a sor `+0xc` mezőjében van. A darabszám `[L+0x13c] >> 1` (`0x004b29e0-0x004b29e6`).
+- **rec** = egy kártya-rekord, 0xf8 bájtos. A `[this+0x2f8]` alobjektum `+0xb0` tömbjében van (`0x007fd800`).
+
+**1. A sorrekord +0x14 mezője (Q1).**
+
+Igazolt:
+- **Az író:** `0x004a0773 mov [esi+0x14],edx`. Az EDX értéke a `0x004a0761 mov edx,[esp+0x14]` után a hívó második argumentuma (param_2). A `0x004a07d5 ret 0x10` miatt a hívott takarít, a hívó nem.
+- **Az argumentumok sorrendje:** a hívó az utolsónak tolt értéket adja az első argumentumnak. A `0x004a078d mov [esi+0x30],edx` a típust írja (az első argumentumot). A második argumentum az utolsó előtt tolt érték.
+- **A 12 hívóhely:**
+
+| hívóhely | a hívóhely függvénye | típus (+0x30) | +0x14 (a 2. argumentum) |
+|---|---|---|---|
+| `0x004b1acb` | `0x004b1a90` | 8 | `-1` (konstans) |
+| `0x004b1eac` | `0x004b1c80` | 5 | `[ebp]` (`0x004b1e99`) |
+| `0x004b22ce` | `0x004b1c80` | 2 | `0` |
+| `0x004b2ab4` | `0x004b29d0` | 1 | EDI = `i` (lásd lent) |
+| `0x004b2f9a` | `0x004b2e10` | 3 | EBP (NINCS MEG) |
+| `0x004b3281` | `0x004b2e10` | EBP (NINCS MEG) | `[esp+0x6c]` (NINCS MEG) |
+| `0x004b35a2` | `0x004b34a0` | 2 | `0` |
+| `0x004b3886` | `0x004b3770` | 2 | EBX (NINCS MEG) |
+| `0x004b3b50` | `0x004b3770` | 2 | EBX (NINCS MEG) |
+| `0x004b3f4b` | `0x004b3770` | 2 | `1` |
+| `0x004b7f17` | `0x004b7f00` | 9 | `-1` |
+| `0x004b81fd` | `0x004b80d0` | 2 | EBP (NINCS MEG) |
+
+- **Az 1-es típusú sor útja** (ez a lista kulcsa):
+  - A `0x004b8470` ciklusa `esi` 0-tól fut a `([L+0x14c] >> 1) - 1` értékig (`0x004b858c`, `0x004b85cd-0x004b85da`). Ha `[L+0x9d] != 0`, a `0x004461a0(i)` szűrőnek igaznak kell lennie (`0x004b85a0-0x004b85bf`).
+  - A hívott sorszám `i = [[L+0x148] + esi*4]` (`0x004b85a6-0x004b85ac`). A hívás előtt `EAX = i` (`0x004b85c6`), a ctx-mutató a verem tetején van (`0x004b85c1-0x004b85c5`).
+  - A `0x004b29d0` belépésekor `EDI = EAX = i` (`0x004b29db`). A ctx+0x48 mező az L (`0x004b851b mov [esp+0x60],edi` miatt).
+  - Ha `i <= [L+0x13c] >> 1` (`0x004b29ea jbe`), a `[L+0x138] + 36*i + 0xc` mezőt nézi. Ha ez 2, folytat. Különben `1000000` a visszatérés (`0x004b29f0-0x004b29fe`, `0x004b2a1a`).
+  - A folytatásban `ESI = 0` (`0x004b2a0a xor esi,esi`). A `0x004b2ab4` hívásban: param_1 = 1, param_2 = EDI = `i`, param_3 = ESI = 0 (+0x18).
+- **Eredmény:** az 1-es típusú sorban `+0x14 = i` és `+0x18 = 0`. Feltétel: a közbülső hívások nem írják az ESI-t. Ezt a szokásos konvencióból feltételezem. A `0x0044ddd0`, `0x004a8c60`, `0x00448a10`, `0x004b3770` és a vt+0x18 hívás törzsét nem néztem végig.
+- **A kulcstömb:** a `0x004ae4e0` a sor `+0x14`-ét a kimenet `+0x14`-ébe másolja (korábban igazolt: 38.2.40 §4). A `0x007fc7c0` gyűjti, a hívója a `0x008037e0`, az Időrend indulása (xref). A kimeneti rekord az `esp+0x30` címen van, ezt a `[esp+0x60]` (+0x30) és a `[esp+0x48]` (+0x18) ellenőrzés megerősíti. A gyűjtés feltétele: +0x30 = 1 (`0x007fc8c8`) és +0x18 = 0 (`0x007fc8d3`). Ha igaz, a `[esp+0x44]` (a kimenet +0x14) bekerül a kulcstömbbe (`0x007fc955-0x007fc966`).
+- **Mit jelent az `i`:** nem kép-azonosító és nem dátum. A `0x004b29d0` 36 bájtos sorként címzi (`0x004b29f6-0x004b29f9`). Hogy a tábla sora album vagy mappa, **NINCS MEG**.
+
+NINCS MEG:
+- Az `[L+0x148]` írói és a `0x004b8470` hívója. Ezek adják az `i` értékeket. Ghidra-kör kell: `0x004b8ee0 - a 0x004b8470 hívója és az [L+0x148] írói (U10)`.
+- Az `[L+0x138]` tábla tulajdonosa és a `+0xc == 2` jelentése. Azt is el kell dönteni, hogy az `i == darab` eset valóban olvas-e (a `jbe` miatt). Ghidra-kör kell: `0x004b29d0 - az L osztálya, a sor típusmezőjének jelentése, a darabszám-határ (U11)`.
+- Az EBP és az EBX forrása a többi hívóhelyen. Ghidra-kör kell: `0x004b2e10, 0x004b3770, 0x004b80d0 - a hívott függvények EBP és EBX forrása (U12)`.
+
+**2. A kattintási út (Q2).**
+
+Igazolt a `0x007fde80` (a QDrawable egérkezelője) bal gomb lenyomás (0x201) ágában:
+1. `[this+0x3b8] == 0` (nincs Időrend mód): `0x00801130`, és kilépés (`0x007fe1e6-0x007fe1f6`, korábban igazolt: 38.2.22 §4). A `0x008018a0` tehát csak Időrend módban fut.
+2. `0x007fda80`, a négy overlay. Találatnál `1000000` és kilépés (`0x007fe1fd-0x007fe207`). A négy overlay: `startbutton` (X = 0x738), `exit` (0x580), `right` (0x558, `0x007fd150`), `left` (0x530, `0x007fd120`). Korábban igazolt: 38.2.22 §4.
+3. Húzás-jelzők: `[this+0x429]` vagy `[this+0x428]` lesz 1 (`0x007fe2ff-0x007fe31b`). Mindkét ág a `0x007fe322`-re fut, tehát a csúszka-húzás is idáig jut.
+4. `0x007fd800(this+0x2f8, this+0x420, &out)` (`0x007fe32f`). A kurzor alatti rekordot keresi: a `[this+0x2f8]` alobjektum indexlistáján megy végig, és a rekord téglalapját nézi (`+0xdc`, `+0xe0`, `+0xe4`, `+0xe8`). Nincs találat: `-1`. Találatnál a kimenetre a rekord `+0` mezője kerül, a visszatérés a `0x007fd770(i)` értéke, ami 0 (korábban igazolt: 38.2.23 §6, 38.2.38 §1).
+5. `test eax,eax` és `jne 0x007fe35d` (`0x007fe334-0x007fe336`). Ha 0: `EAX = [esp+0x18]` (a rekord `+0` mezője), `ECX = this`, `call 0x008018a0` (`0x007fe338-0x007fe33e`).
+- A `0x007fd770(i)` a `0x007fd0c0`-t hívja, amelyet a nyíl-billentyűk is használnak (korábban igazolt: 38.2.23 §6).
+- A `0x007fe346` utáni `0x203` ellenőrzés az üzenet mezőjét olvassa újra. Normál úton 0x201 van benne, ezért nem fut le (korábban igazolt: 38.2.21, lezárva (e) pont).
+
+Ebből a kérdésre adott válasz:
+- **Kártya:** igen. Bal gomb, Időrend mód, nem overlay, és a pont egy rekord téglalapjában van.
+- **Háttér** (nincs rekord): nem, mert a `0x007fd800` `-1`-et ad.
+- **Léptető nyilak** (`left`, `right`): nem. Az overlay-ág `1000000`-rel előbb kilép.
+- **`startbutton` és `exit`:** nem, ezek is overlay-ok.
+- **Csúszka-húzás:** ugyanazon az úton fut. A `0x008018a0` csak akkor hívódik, ha a pont egy rekord téglalapjában van. Hogy a csúszka és a kártyasor téglalapjai átfedhetnek-e, **NINCS MEG** (asm-vizsgálat kell).
+
+Dekompiláció alapján (asm nincs ellenőrizve): dupla gomb (0x203) és jobb gomb (0x204) esetén nem a `0x008018a0` fut. Időrend módban a `0x007fda80` után `0x007fb820` (kilépés) fut, majd a `[this+0x2e8]` objektum vt+0x18 hívása `(-1, azonosító)` argumentumokkal. Az azonosító `[[this+0x3ec] + [this+0x3f8]*4]`. A `startbutton` ugyanezt a kilépés-és-hívás utat járja (korábban igazolt: 38.2.22 §4).
+
+**3. A 0x00801cb0 (Q3).**
+
+Igazolt:
+- Egyetlen hívóhelye a `0x00802087` címen van, a `0x00802060` függvényben (xref és asm).
+- A `0x00802060` akkor hívja, ha `[this+0x3bb] == 0` és `[this+0x3b8] != 0` (`0x00802066`, `0x00802078`, `0x0080207e-0x00802085`, `0x00802087`).
+- A törzs (dekompiláció): `0x007fc010(this+0x2f8, this+0x2c8)`. Ha `[this+0x429] == 0` és `0x007fd8c0(this+0x510) != 0`, akkor `0x008018a0` fut, EAX = `[this+0x510]` (korábban igazolt: 38.2.21 §2, `0x00801ce1-0x00801ce5`).
+- A `0x007fde80` hívottjai között nincs `0x00801cb0`. Tehát nem a kattintási úton van.
+
+Szerepe: a léptetési pumpa minden körében (Időrend módban) a 0,666 konstanshoz legközelebbi kártyát keresi (`0x007fd8c0`, korábban igazolt: 38.2.22 §3). Ha ez változott, a `0x008018a0` fókuszt vált. Tehát két út vezet a fókusz-váltáshoz: a kattintás (`0x007fde80`) és a pumpa (`0x00801cb0`).
+
+NINCS MEG: a `0x007fc010` törzse (az elrendezés frissítése). Ghidra-kör kell: `0x007fc010 - mit frissít a [this+0x2f8] alobjektumban (U13)`.
+
+**4. A 38.2.40 nyitott listája (Q5).**
+
+| tétel | állapot (38.2.41) | mit mutat | Ghidra-cím |
+|---|---|---|---|
+| U1, 0x00a6aa00 teljes törzs | NINCS MEG (változatlan) | - | `0x00a6aa00` |
+| U2, obj2 osztálya és vt+0 célja | RÉSZBEN LEZÁRVA (változatlan) | obj2 = M+0x4c, vagy 0 | `0x005e8a70` (M írója), M+0x4c vt+0 |
+| U3, L+0x48 vtábla és 11. slot | NINCS MEG (változatlan) | - | `0x004b0190` P osztálya, L+0x48 konstruktora |
+| U4, 0x0080157a túlírás | NINCS MEG (változatlan) | a rekord címe a `ret 0xc` feltevéstől függ | `0x008014d0` vt+0 hívott függvénye |
+| U5, T+0x2ec olvasói | NINCS MEG (változatlan) | - | `0x008014d0` T+0x2ec olvasói |
+| U6, 0x009aaae0 hívóhelyei | NINCS MEG (változatlan) | - | `0x009aaae0` |
+| U7, sorrekord +0x14 írója | **LEZÁRVA (§1)** | írója `0x004a0773`; értéke a hívó 2. argumentuma; az 1-es típusnál `i` | - |
+| U8, P' = [T+0x3a4] és írója | NINCS MEG (változatlan; új: a `0x007fc7c0` hívója a `0x008037e0`) | - | `0x008037e0`, `0x007fa7f0` (T+0x3a4 írói) |
+| U9, 0x008018a0 kattintási ága | **LEZÁRVA (§2, §3)** | kártya-találat, Időrend, bal gomb, nem overlay; a `0x00801cb0` a pumpa-hívó | - |
+| U10 (új) | NINCS MEG | az `i` értékek forrása: az `[L+0x148]` írói | `0x004b8ee0` (hívó), `0x004b8470` |
+| U11 (új) | NINCS MEG | az `[L+0x138]` tábla tulajdonosa, a `+0xc == 2` jelentése, a `jbe` határ | `0x004b29d0`, `0x004b8ee0` (az L osztálya) |
+| U12 (új) | NINCS MEG | a hívott függvények EBP/EBX forrása a +0x14 értéknél; a `0x004b3281` típusa lehet 1 | `0x004b2e10`, `0x004b3770`, `0x004b80d0` |
+| U13 (új) | NINCS MEG | a rekord `+0` mezőjének írója; a `0x008018a0` `local_64` forrása (a kulcstömb-e) | `0x007fa7f0`, `0x007fc010`, `0x008018a0` |
+| U14 (új) | NINCS MEG (a 38.2.25 óta nyitott) | a `0x008014d0` törzse: mit rajzol a `[OneUp+0x3ec]` listából | `0x008014d0` |
+| U15 (új) | NINCS MEG | a `[this+0x2e8]` objektum osztálya és vt+0x18 célja (startbutton, dupla kattintás) | `0x007fa7f0` (3. paraméter), az objektum vt+0x18 célja |
+
+**Helyesbítések (38.2.41).**
+- A 38.2.22 §3 összefoglaló sorában a `0x007fd770` visszatérése még NINCS MEG volt. A 38.2.23 §6 és a 38.2.38 §1 már lezárta (0). A sort javítottam.
+- A 38.2.40 §4 szerint a +0x14 írói nincsenek megnézve. Most megnéztem (§1).
+- A 38.2.40 §5 szerint a 0x00801cb0 nincs azonosítva. Most azonosítottam (§3).
+
+**Amit KIZÁRTAM.**
+- „A `+0x14` kép-azonosító vagy dátum”: CÁFOLVA. A `0x004b29d0` 36 bájtos táblasor címzésére használja.
+- „A `0x00801cb0` a kattintási úton van”: CÁFOLVA. A `0x007fde80` hívottjai között nincs.
+- „A `0x008018a0` csak egérkattintásra fut”: CÁFOLVA. A pumpa is hívja.
+- „Minden 1-es típusú sor `+0x18` mezője 0”: nem általánosítható. A `0x004b2ab4` ágban igaz, de a `0x004b3281` típusa EBP, ezért ott más is lehet (U12).
+
+**Nyitott kérdések mérlege (38.2.41).** 6 új tétel (U10-U15). A 38.2.40 listájából 7 tétel NINCS MEG (U1-U6, U8), U7 és U9 LEZÁRVA. Mindegyik mellett Ghidra-cím áll. Becsült érték nincs.
+
+#### A felhasználó szemével
+
+Nem dőlt el, melyik képhalmaz jelenik meg. Ami igazolt:
+- Kártyára bal gombbal kattintva a sor a kattintott kártya felé mozdul (`0x007fd770` → `0x007fd0c0`). A program a kártya `+0` mezőjét teszi meg kijelölt kulcsnak (`0x008018a0`), és újrarajzolja a nézetet (`0x008014d0`).
+- A kulcsok a lista sorainak sorszámai (`i`). Az Időrend indulásakor ezekből gyűjtött kulcstömb épül (`0x007fc7c0`).
+- Dupla vagy jobb gombra (csak dekompiláció szerint) az Időrend kilép (`0x007fb820`), és a visszahívás a legutoljára mutatott kulcsot kapja.
+
+Hiányzó címek: `0x008014d0` (mit rajzol a kulcs alapján) és `0x007fa7f0` (a rekord `+0` mezőjének írója, vagyis hogy a kártya kulcsa melyik sorhoz tartozik).
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
