@@ -303,13 +303,18 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     @Slot(int, object, object)
     def _on_photo_field_updated(self, photo_id: int, record, after=None) -> None:
         if record is not None:
+            # A provider regiszterét a modell értesítése ELŐTT frissítjük.
+            # Az update_photo revisionChanged/dataChanged jele azonnal
+            # újraértékelheti a QML Image.source kötését, amely rögtön az új
+            # URL-lel kér képet. Ha a provider csak utána kapja meg a
+            # forgatott rekordot, ezt az első kérést még a régi rekordból
+            # rendereli, a Qt URL-cache pedig később is azt tartja meg.
+            frissitett = tuple(
+                record if photo.id == photo_id else photo
+                for photo in self._photos.photos
+            )
+            self._provider.register_photos(frissitett)
             self._photos.update_photo(photo_id, record)
-            # a thumbnail-provider saját (memóriabeli) nyilvántartását is
-            # frissíteni kell (forgatás!) — ezt eddig a teljes _show()
-            # tette meg; célzott frissítésnél nem fut _show(), ezért itt
-            # pótoljuk (olcsó, csak a jelen nézet listáját írja újra, nem
-            # lemezműveletet indít)
-            self._provider.register_photos(self._photos.photos)
         # #1443: az utómunka a sor frissítése után fut. `record is None`
         # esetén is lefut: ha a kép eltűnt az indexből, a nézetnek pláne
         # frissülnie kell. #3830 esetén az utómunka a következő forgatást
