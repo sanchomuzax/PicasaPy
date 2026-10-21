@@ -165,15 +165,16 @@ METRIKUS_KESZLET: tuple[NyomatMeret, ...] = (
     NyomatMeret.TELJES_OLDAL,
 )
 
-#: Az eredeti Picasa öt gyorsválasztójának metrikus indulóértékei (#4435).
-#: A PicasaPy katalógusában szereplő 15×20 cm és Teljes oldal ettől külön
-#: marad; ezek nem részei az eredeti ötösnek.
-METRIKUS_ALAPMERETEK: tuple[NyomatMeret, ...] = (
-    NyomatMeret.M5X8CM,
-    NyomatMeret.M9X13CM,
+#: Az eredeti Picasa öt gyorsválasztójának metrikus indulóértékei (#5492).
+#: A nyers PrintSize értékek popup-indexek; a `0x006e5d70` leképezés után
+#: ezek a méretazonosítók jelennek meg. A Contact Sheet QML-azonosító,
+#: ezért nem fizikai `NyomatMeret`.
+METRIKUS_ALAPMERETEK: tuple[NyomatMeret | str, ...] = (
     NyomatMeret.M10X15CM,
     NyomatMeret.M13X18CM,
+    NyomatMeret.M15X20CM,
     NyomatMeret.M20X25CM,
+    "CONTACT",
 )
 
 #: Az eredeti Picasa öt gyorsválasztójának angolszász indulóértékei (#4435).
@@ -206,11 +207,12 @@ def keszlet_teruleti_mereshez() -> tuple[NyomatMeret, ...]:
     return HUVELYK_KESZLET
 
 
-def alapmeretek_teruleti_mereshez() -> tuple[NyomatMeret, ...]:
+def alapmeretek_teruleti_mereshez() -> tuple[NyomatMeret | str, ...]:
     """Az öt gyorsválasztó induló értéke a területi mértékegység szerint.
 
     Ezeket a mentett PrintSize0–4 beállítások felülírják; a bővebb
-    ytPrintSizes-katalógussal nem azonos a lista.
+    ytPrintSizes-katalógussal nem azonos a lista. A `CONTACT` a QML
+    azonosítója, mert az Indexképek nem fizikai nyomatméret.
     """
     if _metrikus_teruleti_meres():
         return METRIKUS_ALAPMERETEK

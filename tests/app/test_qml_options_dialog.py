@@ -1551,7 +1551,9 @@ class TestEmailTabLiveSettings:
         assert _child(window, "optionsMailSizeSlider").property("value") == 2
         assert "480" in _child(window, "optionsMailSizeValue").property("text")
         assert _child(window, "optionsMailSingleSameRadio").property("checked") is True
-        assert _child(window, "optionsMailDefaultRadio").property("checked") is True
+        # #5485: kulcs nélkül a sablon első, küldésenkénti választása aktív.
+        assert _child(window, "optionsMailChooseRadio").property("checked") is True
+        assert _child(window, "optionsMailDefaultRadio").property("checked") is False
 
 
 class TestGeneralTabAutoExclude:
