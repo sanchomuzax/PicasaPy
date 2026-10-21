@@ -18068,6 +18068,83 @@ picasapy-origin-key: stringres:ContactManagerDlg::Choose</extracomment>
             <translation>เลือก</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Duplicate Person Found</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::DupFoundTitle</extracomment>
+            <translation>พบบุคคลที่ซ้ำกัน</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>You already have a person with the name '%s'. Are you sure you want to create a new person?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::DupNameMsg</extracomment>
+            <translation>คุณมีบุคคลที่ใช้ชื่อ \'%s\' แล้ว คุณต้องการสร้างบุคคลใหม่หรือไม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>You already have a person with the email address '%s'. Are you sure you want to create a new person?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::DupEmailMsg</extracomment>
+            <translation>คุณมีบุคคลที่มีที่อยู่อีเมล \'%s\' แล้ว คุณต้องการสร้างบุคคลใหม่หรือไม่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Invalid Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::InvalidContact</extracomment>
+            <translation>บุคคลไม่ถูกต้อง</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Empty People are not allowed.  Person will be reverted.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::EmptyContactMsg</extracomment>
+            <translation>ไม่อนุญาตให้ว่างเปล่า บุคคลจะถูกเปลี่ยนกลับ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Unable to remove a Person's name. Change will be reverted.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::EmptyFullNameMsg</extracomment>
+            <translation>ไม่สามารถนำชื่อบุคคลออกได้ การเปลี่ยนแปลงจะถูกเปลี่ยนกลับ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Failed to update person!</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::UpdateFailed</extracomment>
+            <translation>การอัปเดตบุคคลล้มเหลว</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Are you sure you want to delete this person?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::ConfirmDelete</extracomment>
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการลบบุคคลนี้</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Don't warn me about this in the future</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::DontWarn</extracomment>
+            <translation>ไม่ต้องเตือนฉันเกี่ยวกับเรื่องนี้อีก</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::Yes</extracomment>
+            <translation>ใช่</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::No</extracomment>
+            <translation>ไม่ใช่</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="383" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

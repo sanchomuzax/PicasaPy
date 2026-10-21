@@ -74,6 +74,7 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .face_ignore_ini import ini_faces_of, match_named_regions
 from .models import _thumb_url
+from .people_name_matching import filter_and_sort_people
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
 # és a lemezhiba is KEZELT hiba, nem néma adatvesztés
@@ -210,13 +211,13 @@ class PeopleMixin:
 
     @Slot(str, result="QVariantList")
     def nameSuggestions(self, prefix: str) -> list[dict]:  # noqa: N802
-        """Név-részszó szerinti javaslatok a már betöltött cache-ből.
+        """Bináris névszavas javaslatok a már betöltött cache-ből.
 
         Ez a leütésenként hívott út szándékosan nem tölti fel a cache-t és
         nem érinti a tárolót. A nézet megnyitásakor a
         `prepareNameSuggestions()` készíti elő az adatot.
         """
-        needle = QLocale().toLower(str(prefix or "").strip())
+        needle = str(prefix or "").strip()
         if not needle:
             return []
         contacts = getattr(self, "_people_manager_contacts_cache", None)
@@ -224,9 +225,15 @@ class PeopleMixin:
             return []
         return [
             dict(contact)
-            for contact in contacts
-            if needle
-            in QLocale().toLower(str(contact.get("name", "")))
+            for contact in filter_and_sort_people(contacts, needle)
+        ]
+
+    @Slot("QVariantList", str, result="QVariantList")
+    def filterPeopleManagerEntries(self, entries, typed: str):  # noqa: N802
+        """A People-ablak keresője is ugyanazt az egyezést és sorrendet kéri."""
+        return [
+            dict(entry)
+            for entry in filter_and_sort_people(entries or (), typed)
         ]
 
     @Slot(result="QVariantList")

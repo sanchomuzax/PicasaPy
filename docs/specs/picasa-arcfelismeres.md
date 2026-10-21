@@ -4770,3 +4770,47 @@ Binárisból (a parancsnevek a dispatcher sztring-összevetéséből):
 - **Binárisból igazolt:** a vezérlők és a figyelők (38.1), a parancsok sorrendje (38.8), a validálás ágai (38.5), a sor-felirat fő szabálya (38.2), a csempe-lista vtábla-szerkezete és a popup billentyűi (38.9), a háttérsor vtábla-azonosítói (38.12).
 - **Következtetés (hívási mintából):** a `* ` jel jelentése, a gombállapotok értelmezése, a `+0x10c` és `+0x7c` slotok szerepe, és hogy a `search` szövegből lesz az új név.
 - **NINCS MEG:** a szűrési és egyezési szabály, a forráslista és a rendezés, a csempe-popup osztálya és képe, a Choose-szabály íróinak azonosítása, a névjegytár háttérszálának indítása, és a mentés lemezre írási útja.
+
+### 38.16 Név-egyezés és rendezés (2026-10-21, #5437)
+
+A következő két szabályt a `2026-10-21-people-egyezes.txt`,
+`2026-10-21-people-egyezes2.txt`, `2026-10-21-people-szuro.txt` és
+`2026-10-21-people-rang.txt` Ghidra-dumpok igazolják. Ez a pont a 38.11-ben
+nyitva hagyott egyezést és rendezést pontosítja.
+
+1. **Egyezési szabály.** A szöveg kisbetűs alakját kell összevetni. Az ASCII
+   és a nem ASCII betűk kisbetűsödnek, de az ékezetek nem olvadnak össze:
+   például az `é` nem egyezik az `e` betűvel. Szókarakter az ASCII betű,
+   számjegy, kettőspont és minden nem ASCII karakter. Minden más ASCII
+   karakter elválasztó, többek között a szóköz, kötőjel, pont, vessző,
+   aposztróf és aláhúzásjel.
+
+   Ha a gépelt keresés szavai `q[0..n-1]`, a név szavai pedig `w[0..m-1]`,
+   akkor van egyezés, ha létezik olyan `i`, amelyre `q[0..n-2]` rendre pontosan
+   megegyezik `w[i..i+n-2]` szavaival, és `q[n-1]` a következő névszó eleje.
+   Egy keresőszó a név bármelyik szavának elejével egyezhet. Üres keresésnél
+   minden név egyezik. Például a `ki` illeszkedik a `Kiss Anna` és az
+   `Anna Kiss` névre, a `Nagykiss` névre nem; az `anna k` illeszkedik az
+   `Anna Kiss` névre, a `kiss anna` nem; a `jean-p` illeszkedik a
+   `Jean-Pierre` névre.
+
+   A `people_name_matching.py` egyetlen tiszta Python-függvénye valósítja meg
+   a szabályt. Ezt használja a csempe `nameSuggestions` javaslatlistája és a
+   People ablak `filteredEntries` keresője is.
+
+2. **Rendezés.** Nem üres keresésnél a rendezési kulcsok sorrendben:
+   a még nem mentett, azonosító nélküli új személy; az a teljes név, amely a
+   gépelt szöveggel kezdődik kisbetűs összevetésben; a névszavas egyezés; majd
+   a döntetlen feloldása a név ASCII kisbetűs alakjával. A rendezés stabil.
+   A binárisban látott két adatjelző (`0x007b4140`, `0x007b4120`) jelentése és
+   a második lista névegyezése (`0x007b43e0`) nincs feltárva, ezért ezek nem
+   részei a szabálynak. A szűrés után a névszavas egyezési kulcs minden
+   megmaradó elemnél igaz.
+
+   Üres keresésnél nincs új személy vagy prefix szerinti előresorolás; csak a
+   név ASCII kisbetűs alakja dönt, stabil rendezéssel. Az ASCII kis-nagybetű
+   különbségtől eltekintő összehasonlítás nem vonja össze az ékezeteket.
+
+   A `CAutoCompleteListBox` `+0x20` jelzőjének értéke nincs megállapítva, ezért
+   a javaslatlista Fel és Le billentyűje nem fut körbe. A kijelölt javaslat
+   Enterrel fogadható el; kijelölés hiányában a mező gépelt szövege indul el.
