@@ -196,8 +196,55 @@ class PeopleMixin:
         photo_id, rect = _arckep_hivatkozas(person, saved)
         return person.photo_count, photo_id, rect
 
+    @Slot()
+    def prepareNameSuggestions(self) -> None:  # noqa: N802
+        """A csempe-javaslatok közös névjegy-cache-ét tölti fel.
+
+        A QML a Név nélküliek nézet megnyitásakor hívja, így az első
+        leütéskor már csak a memóriabeli listát kell szűrnie.
+        """
+        if getattr(self, "_people_manager_contacts_cache", None) is None:
+            self._people_manager_contacts_cache = tuple(
+                self._build_people_manager_contacts()
+            )
+
+    @Slot(str, result="QVariantList")
+    def nameSuggestions(self, prefix: str) -> list[dict]:  # noqa: N802
+        """Név-részszó szerinti javaslatok a már betöltött cache-ből.
+
+        Ez a leütésenként hívott út szándékosan nem tölti fel a cache-t és
+        nem érinti a tárolót. A nézet megnyitásakor a
+        `prepareNameSuggestions()` készíti elő az adatot.
+        """
+        needle = QLocale().toLower(str(prefix or "").strip())
+        if not needle:
+            return []
+        contacts = getattr(self, "_people_manager_contacts_cache", None)
+        if contacts is None:
+            return []
+        return [
+            dict(contact)
+            for contact in contacts
+            if needle
+            in QLocale().toLower(str(contact.get("name", "")))
+        ]
+
     @Slot(result="QVariantList")
     def peopleManagerContacts(self) -> list[dict]:  # noqa: N802
+        """A központi névjegytár és a mappák kontaktjainak gyorsítótárazott
+        uniója.
+
+        A People-kezelő és a csempe-javaslatok ugyanazt az egy példányt
+        használják. A visszatérő sorok másolatai nem engedik, hogy egy QML
+        fogyasztó módosítsa a közös cache-t.
+        """
+        self.prepareNameSuggestions()
+        return [
+            dict(contact)
+            for contact in self._people_manager_contacts_cache
+        ]
+
+    def _build_people_manager_contacts(self) -> list[dict]:
         """A központi névjegytár és a mappák kontaktjainak uniója.
 
         A központi id mellett a listában minden mappánkénti `[Contacts2]` id
@@ -299,6 +346,19 @@ class PeopleMixin:
                 contact["name"].casefold(), ""
             )
         return contacts
+
+    def _invalidate_people_manager_contacts_cache(self) -> None:
+        """Névjegy-, arcadat- vagy mappa-frissítés után újraépíti a cache-t.
+
+        Csak akkor olvas újra, ha a cache-t már használtuk; így az indulás
+        nem kap újabb, szükségtelen ini-söprést. A `peopleChanged` a
+        betöltött People-lista, a `syncFinished` a mappák újraolvasásának
+        meglévő jelzése.
+        """
+        was_loaded = getattr(self, "_people_manager_contacts_cache", None) is not None
+        self._people_manager_contacts_cache = None
+        if was_loaded:
+            self.prepareNameSuggestions()
 
     def _people_contacts_path(self) -> Path:
         """A PicasaPy központi tárának contacts/contacts.xml fájlja."""
@@ -508,11 +568,13 @@ class PeopleMixin:
             return False
 
         self._reload_after_sync()
+        self._invalidate_people_manager_contacts_cache()
         return True
 
     def _init_people(self) -> None:
         """A konstruktorból hívandó kezdeti állapot (a `people` mezőé)."""
         self._people: tuple = ()
+        self._people_manager_contacts_cache: tuple[dict, ...] | None = None
         #: #2187: a javaslat-szűrő (`sug_filter`) állapota. Nézetenként
         #: NEM tartjuk meg: a személy-album minden megnyitása a teljes
         #: listával indul, ahogy az eredeti fejléce is.
@@ -540,6 +602,14 @@ class PeopleMixin:
         status_changed = getattr(self, "statusChanged", None)
         if status_changed is not None:
             status_changed.connect(self.personViewChanged)
+        # A side-pane betöltésének/újrarendezésének és a mappák
+        # újraolvasásának jelzései érvénytelenítik a névjegy-pillanatképet.
+        people_changed = getattr(self, "peopleChanged", None)
+        if people_changed is not None:
+            people_changed.connect(self._invalidate_people_manager_contacts_cache)
+        sync_finished = getattr(self, "syncFinished", None)
+        if sync_finished is not None:
+            sync_finished.connect(self._invalidate_people_manager_contacts_cache)
 
     def _load_people(self, conn) -> None:
         """CSAK az Emberek-lista frissítése, saját ini-söpréssel.
