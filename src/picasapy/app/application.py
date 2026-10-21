@@ -1747,6 +1747,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         face_detection_enabled=controller.faceDetectionEnabledFor,
     )
     engine.rootContext().setContextProperty("faceScanController", face_scan_controller)
+    face_scan_controller.unnamedCountChanged.connect(
+        controller._invalidate_people_manager_contacts_cache
+    )
     controller.syncFinished.connect(face_scan_controller.scanNewFaces)
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().

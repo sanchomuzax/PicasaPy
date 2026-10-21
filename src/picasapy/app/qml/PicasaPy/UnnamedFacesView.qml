@@ -79,6 +79,12 @@ ColumnLayout {
         root.facesModel = faces
     }
 
+    function prepareNameSuggestions() {
+        if (typeof controller !== "undefined" && controller
+                && controller.prepareNameSuggestions)
+            controller.prepareNameSuggestions()
+    }
+
     function toggleFace(faceId) {
         var current = root.selectedFaceIds
         if (current[faceId]) {
@@ -136,7 +142,11 @@ ColumnLayout {
             + "&answer=156272"
     }
 
-    Component.onCompleted: reload()
+    Component.onCompleted: {
+        reload()
+        if (root.visible)
+            root.prepareNameSuggestions()
+    }
     onModeChanged: {
         root.clearSelection()
         root.grouped = true
@@ -144,6 +154,7 @@ ColumnLayout {
     }
     onGroupedChanged: { clearSelection(); reload() }
     onVisibleChanged: if (visible) {
+        root.prepareNameSuggestions()
         root.grouped = true
         reload()
         root.showWelcomeIfFirstOpen()
@@ -421,19 +432,12 @@ ColumnLayout {
 
             function refreshNameSuggestions() {
                 var needle = faceNameField.text.trim().toLocaleLowerCase()
-                var ctl = typeof controller !== "undefined" ? controller : null
-                if (!needle || !ctl) {
+                if (!needle || typeof controller === "undefined" || !controller
+                        || !controller.nameSuggestions) {
                     faceCard.nameSuggestions = []
                     return
                 }
-                var people = ctl.peopleManagerContacts()
-                var matches = []
-                for (var i = 0; i < people.length; ++i) {
-                    if (String(people[i].name).toLocaleLowerCase()
-                            .indexOf(needle) >= 0)
-                        matches.push(people[i])
-                }
-                faceCard.nameSuggestions = matches
+                faceCard.nameSuggestions = controller.nameSuggestions(needle)
             }
 
             // #5285: a névadás egy útja Enterre és a javaslat kattintására

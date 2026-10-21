@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.175] - 2026-10-21
+
+- A Név nélküliek csempéinek név-javaslatai már az első leütésre megjelennek (#5435).
+
 ## [0.9.174] - 2026-10-21
 
 - A tiszta profilos exportteszt megvárja, amíg az eredményablak OK gombja láthatóvá és engedélyezetté válik (#5432).
