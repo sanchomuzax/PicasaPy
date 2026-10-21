@@ -20,7 +20,7 @@ ColumnLayout {
         spacing: 10
 
         Text {
-            text: qsTr("Proxy username (Windows only):")
+            text: qsTr("Proxy username:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
@@ -51,7 +51,7 @@ ColumnLayout {
 
     RowLayout {
         spacing: 8
-        Text { text: qsTr("Network logging level:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
+        Text { text: qsTr("Network log level:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
         PicasaComboBox {
             id: logLevelCombo
             objectName: "optionsNetworkLogLevelCombo"
@@ -63,7 +63,7 @@ ColumnLayout {
                 model.map(function(t) { return logLevelMetrics.advanceWidth(t) })))
                 + leftPadding + rightPadding + (indicator ? indicator.width : 0)
             FontMetrics { id: logLevelMetrics; font: logLevelCombo.font }
-            model: [qsTr("Disable logging"), qsTr("Log errors only"),
+            model: [qsTr("Disable Logging"), qsTr("Log errors only"),
                     qsTr("Minimal log information"), qsTr("Detailed log information"),
                     qsTr("Log all network information")]
             currentIndex: root.prefs && root.prefs.networkLogLevel !== undefined
@@ -76,7 +76,7 @@ ColumnLayout {
 
     RowLayout {
         spacing: 8
-        Text { text: qsTr("Log file:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
+        Text { text: qsTr("Log:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
         TextField {
             objectName: "optionsNetworkLogPathField"
             Layout.fillWidth: true
