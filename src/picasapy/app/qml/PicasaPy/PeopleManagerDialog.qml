@@ -28,13 +28,20 @@ Dialog {
     property int pendingFaceId: -1
     property string pendingFaceName: ""
     property string pendingPersonName: ""
+    property string pendingDuplicateKind: ""
+    property string pendingDuplicateValue: ""
+    property string pendingMessageAction: ""
+    property string messageTitle: ""
+    property string messageText: ""
     property var faceScanController: null
     readonly property int personRowHeight: Math.max(16, Theme.fontSize + 3)
     readonly property var filteredEntries: {
-        var needle = searchField.text.trim().toLocaleLowerCase()
-        return manager.entries.filter(function(entry) {
-            return entry.name.toLocaleLowerCase().indexOf(needle) >= 0
-        })
+        var needle = searchField.text.trim()
+        if (manager.controller
+                && manager.controller.filterPeopleManagerEntries)
+            return manager.controller.filterPeopleManagerEntries(
+                manager.entries, needle)
+        return manager.entries
     }
 
     function syncSelectionToFilteredEntries() {
@@ -42,6 +49,13 @@ Dialog {
             return entry.key === manager.selectedKey
         })
         if (selectedIndex < 0) {
+            // A kijelölt, módosított rekord keresés közben is szerkeszthető
+            // marad, akkor is, ha a megváltozott neve már nem illik a szűrőre.
+            if (manager.selectedIsDirty()) {
+                if (contactList.currentIndex !== -1)
+                    contactList.currentIndex = -1
+                return
+            }
             manager.selectedKey = ""
             manager.selectedContactIds = []
             manager.selectedLocalContactIds = []
@@ -189,11 +203,26 @@ Dialog {
         nameField.text = draftName
         emailField.text = ""
         manager.settingFields = false
-        contactList.currentIndex = manager.filteredEntries.length - 1
+        contactList.currentIndex = manager.filteredEntries.findIndex(
+            function(item) { return item.key === entry.key }
+        )
         nameField.forceActiveFocus()
     }
 
-    function deleteSelected() {
+    function selectedIsDirty() {
+        var selected = manager.selectedEntry()
+        if (!selected)
+            return false
+        if (selected.isNew)
+            return true
+        var original = manager.originalEntries.find(function(entry) {
+            return entry.key === selected.key
+        })
+        return !original || selected.name !== original.name
+            || selected.email !== original.email
+    }
+
+    function removeSelectedDraft() {
         if (manager.selectedKey === "")
             return
         manager.entries = manager.entries.filter(function(entry) {
@@ -214,6 +243,19 @@ Dialog {
         }
     }
 
+    function requestDeleteSelected() {
+        var selected = manager.selectedEntry()
+        if (!selected)
+            return
+        if (typeof confirmSettings !== "undefined" && confirmSettings
+                && confirmSettings.isSuppressed("peopleManagerDelete")) {
+            manager.removeSelectedDraft()
+            return
+        }
+        deleteDontWarnCheck.checked = false
+        deleteDialog.open()
+    }
+
     function revertSelected() {
         if (manager.selectedKey === "")
             return
@@ -227,17 +269,7 @@ Dialog {
             })
             manager.selectContact(original)
         } else {
-            manager.entries = manager.entries.map(function(entry) {
-                if (entry.key !== manager.selectedKey)
-                    return entry
-                var copy = manager._copy(entry)
-                copy.name = ""
-                copy.email = ""
-                return copy
-            })
-            manager.selectContact(manager.entries.find(function(entry) {
-                return entry.key === manager.selectedKey
-            }))
+            manager.removeSelectedDraft()
         }
     }
 
@@ -250,25 +282,83 @@ Dialog {
     function canCommit() {
         for (var i = 0; i < manager.entries.length; ++i) {
             var entry = manager.entries[i]
-            if (!entry.name.trim() || /[;\r\n]/.test(entry.name)
+            if (/[;\r\n]/.test(entry.name)
                 || /[;\r\n]/.test(entry.email))
                 return false
         }
-        if (manager.pendingFaceId >= 0) {
-            var selected = manager.selectedEntry()
-            if (!selected || !selected.name.trim())
-                return false
+        return manager.pendingFaceId < 0 || manager.selectedEntry() !== null
+    }
+
+    function showMessage(title, message, afterAction) {
+        manager.messageTitle = title
+        manager.messageText = message
+        manager.pendingMessageAction = afterAction || ""
+        messageDialog.open()
+    }
+
+    function validateNames() {
+        for (var i = 0; i < manager.entries.length; ++i) {
+            var entry = manager.entries[i]
+            if (entry.name.trim())
+                continue
+            if (entry.key !== manager.selectedKey)
+                manager.selectContact(entry)
+            var original = manager.originalEntries.find(function(item) {
+                return item.key === entry.key
+            })
+            manager.showMessage(
+                qsTr("Invalid Person"),
+                original
+                    ? qsTr("Unable to remove a Person's name. Change will be reverted.")
+                    : qsTr("Empty People are not allowed.  Person will be reverted."),
+                "revert"
+            )
+            return false
         }
         return true
     }
 
-    function commitChanges() {
+    function findDuplicate(entry) {
+        var name = String(entry.name || "").trim().toLocaleLowerCase()
+        var email = String(entry.email || "").trim().toLocaleLowerCase()
+        for (var i = 0; i < manager.originalEntries.length; ++i) {
+            var original = manager.originalEntries[i]
+            if (original.name.trim().toLocaleLowerCase() === name)
+                return {kind: "name", value: original.name}
+            if (email && String(original.email || "").trim().toLocaleLowerCase()
+                    === email)
+                return {kind: "email", value: original.email}
+        }
+        return null
+    }
+
+    function commitChanges(duplicatesConfirmed) {
+        if (!manager.validateNames())
+            return
+
         var personToAssign = null
         if (manager.pendingFaceId >= 0) {
             personToAssign = manager.selectedEntry()
-            if (!personToAssign || !personToAssign.name.trim())
+            if (!personToAssign)
                 return
         }
+
+        if (!duplicatesConfirmed) {
+            for (var createdIndex = 0; createdIndex < manager.entries.length;
+                 ++createdIndex) {
+                var candidate = manager.entries[createdIndex]
+                if (!candidate.isNew)
+                    continue
+                var duplicate = manager.findDuplicate(candidate)
+                if (duplicate) {
+                    manager.pendingDuplicateKind = duplicate.kind
+                    manager.pendingDuplicateValue = duplicate.value
+                    duplicateDialog.open()
+                    return
+                }
+            }
+        }
+
         var changes = []
         for (var i = 0; i < manager.originalEntries.length; ++i) {
             var original = manager.originalEntries[i]
@@ -297,8 +387,12 @@ Dialog {
                 })
             }
         }
-        if (!controller || !controller.savePeopleManagerChanges(changes))
+        if (!controller || !controller.savePeopleManagerChanges(changes)) {
+            manager.showMessage(
+                qsTr("People"), qsTr("Failed to update person!"), ""
+            )
             return
+        }
         if (manager.pendingFaceId >= 0) {
             var personName = personToAssign.name.trim()
             if (!manager.faceScanController
@@ -392,7 +486,7 @@ Dialog {
                         objectName: "peopleManagerDeleteButton"
                         text: qsTr("Delete Person")
                         enabled: manager.selectedKey !== ""
-                        onClicked: manager.deleteSelected()
+                        onClicked: manager.requestDeleteSelected()
                     }
                     Button {
                         objectName: "peopleManagerNewButton"
@@ -491,7 +585,7 @@ Dialog {
                     Button {
                         objectName: "peopleManagerRevertButton"
                         text: qsTr("Revert")
-                        enabled: manager.selectedKey !== ""
+                        enabled: manager.selectedIsDirty()
                         onClicked: manager.revertSelected()
                     }
                 }
@@ -526,12 +620,107 @@ Dialog {
                       && !manager.selectedEntry().isNew
                       ? qsTr("Choose") : qsTr("OK")
                 enabled: manager.canCommit()
-                onClicked: manager.commitChanges()
+                onClicked: manager.commitChanges(false)
             }
             Button {
                 objectName: "peopleManagerCancelButton"
                 text: qsTr("Cancel")
                 onClicked: manager.close()
+            }
+        }
+    }
+
+    Dialog {
+        id: duplicateDialog
+        objectName: "peopleManagerDuplicateDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        title: qsTr("Duplicate Person Found")
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        onOpened: {
+            standardButton(Dialog.Yes).text = qsTr("Yes")
+            standardButton(Dialog.Yes).objectName = "peopleManagerDuplicateYes"
+            standardButton(Dialog.No).text = qsTr("No")
+            standardButton(Dialog.No).objectName = "peopleManagerDuplicateNo"
+        }
+        onAccepted: manager.commitChanges(true)
+        onRejected: {
+            manager.pendingDuplicateKind = ""
+            manager.pendingDuplicateValue = ""
+        }
+
+        Label {
+            objectName: "peopleManagerDuplicateMessage"
+            Layout.preferredWidth: 410
+            wrapMode: Text.WordWrap
+            text: manager.pendingDuplicateKind === "email"
+                ? qsTr("You already have a person with the email address '%s'. Are you sure you want to create a new person?")
+                    .replace("%s", manager.pendingDuplicateValue)
+                : qsTr("You already have a person with the name '%s'. Are you sure you want to create a new person?")
+                    .replace("%s", manager.pendingDuplicateValue)
+        }
+    }
+
+    Dialog {
+        id: messageDialog
+        objectName: "peopleManagerMessageDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        title: manager.messageTitle
+        modal: true
+        standardButtons: Dialog.Ok
+        onOpened: {
+            standardButton(Dialog.Ok).text = qsTr("OK")
+            standardButton(Dialog.Ok).objectName = "peopleManagerMessageOk"
+        }
+        onAccepted: {
+            if (manager.pendingMessageAction === "revert")
+                manager.revertSelected()
+            manager.pendingMessageAction = ""
+        }
+
+        Label {
+            objectName: "peopleManagerMessageText"
+            Layout.preferredWidth: 410
+            wrapMode: Text.WordWrap
+            text: manager.messageText
+        }
+    }
+
+    Dialog {
+        id: deleteDialog
+        objectName: "peopleManagerDeleteDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        title: qsTr("Delete Person")
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        onOpened: {
+            standardButton(Dialog.Yes).text = qsTr("Yes")
+            standardButton(Dialog.Yes).objectName = "peopleManagerDeleteYes"
+            standardButton(Dialog.No).text = qsTr("No")
+            standardButton(Dialog.No).objectName = "peopleManagerDeleteNo"
+        }
+        onAccepted: {
+            if (deleteDontWarnCheck.checked && typeof confirmSettings !== "undefined"
+                    && confirmSettings)
+                confirmSettings.setSuppressed("peopleManagerDelete", true)
+            manager.removeSelectedDraft()
+        }
+
+        ColumnLayout {
+            spacing: 8
+            Label {
+                Layout.preferredWidth: 410
+                wrapMode: Text.WordWrap
+                text: qsTr("Are you sure you want to delete this person?")
+                    + "\r\n"
+            }
+            CheckBox {
+                id: deleteDontWarnCheck
+                objectName: "peopleManagerDeleteDontWarn"
+                text: qsTr("Don't warn me about this in the future")
             }
         }
     }

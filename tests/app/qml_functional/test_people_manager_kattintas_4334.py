@@ -212,6 +212,15 @@ def test_eszközök_kattintas_kezelovel_menti_a_neveket_es_emberek_albumokat(
     _open_manager(window, qt_app)
     _select_contact(window, qt_app, "Anita")
     _click(qt_app, _dialog_item(window, "peopleManagerDeleteButton"))
+    delete_dialog = _find(window, "peopleManagerDeleteDialog")
+    assert _wait(
+        qt_app,
+        lambda: delete_dialog is not None
+        and delete_dialog.property("visible") is True,
+    )
+    assert _find(window, "peopleManagerDeleteDontWarn") is not None
+    _click(qt_app, _find(window, "peopleManagerDeleteYes"))
+    assert delete_dialog.property("visible") is False
     _click(qt_app, _dialog_item(window, "peopleManagerOkButton"))
     assert _wait(
         qt_app,
