@@ -18,11 +18,8 @@ Item {
     function openRename(row) {
         renameDialog.openFor(row)
     }
-    // #366 (rename.fen paritás — tömeges mód): a kijelölés TÖBB sorára
-    // egyszerre. Az egyfájlos F2-út (openRename/renameDialog) változatlan —
-    // ez egy külön dialógus, amely dátum-/felbontás-utótag jelölőnégyzeteket
-    // és élő fájlnév-előnézetet ad (az integrátor Main.qml-bekötése:
-    // ld. a jelentést).
+    // #366/#5396 (rename.fen paritás): a F2 és a menüsáv a kijelölés
+    // összes sorát ezen a külön dialóguson nevezi át, egyetlen képnél is.
     function openRenameMany(rows) {
         renameManyDialog.openFor(rows)
     }
@@ -168,12 +165,17 @@ Item {
     Dialog {
         id: renameManyDialog
         objectName: "renameManyDialog"
-        title: qsTr("Rename...")
+        title: qsTr("Rename Files")
         modal: true
         anchors.centerIn: parent
         standardButtons: Dialog.Ok | Dialog.Cancel
         property var rows: []
-        onOpened: standardButton(Dialog.Ok).text = qsTr("Rename")
+        // A Mégse is a saját fordításunkat kapja: a Qt szabványgombja a
+        // rendszer nyelvét követné, és vegyes nyelvű lenne a párbeszéd.
+        onOpened: {
+            standardButton(Dialog.Ok).text = qsTr("Rename")
+            standardButton(Dialog.Cancel).text = qsTr("Cancel")
+        }
         function acceptButtonText() {
             return standardButton(Dialog.Ok) ? standardButton(Dialog.Ok).text : ""
         }
@@ -207,12 +209,15 @@ Item {
         }
         onAccepted: {
             var base = renameManyField.text.trim()
-            if (base.length > 0 && controller)
+            if (base.length > 0 && controller) {
+                if (rows.length === 1 && appWindow)
+                    appWindow.prepareRenameSelection(rows[0], previewText)
                 controller.renamePhotosMany(
                     rows, base, includeDateCheck.checked, includeSizeCheck.checked)
+            }
         }
         ColumnLayout {
-            spacing: 8
+            spacing: 4
             Text {
                 objectName: "renameManySelectionLabel"
                 text: qsTr(
@@ -230,7 +235,7 @@ Item {
             TextField {
                 id: renameManyField
                 objectName: "renameManyField"
-                width: 300
+                Layout.preferredWidth: 25 * Theme.fontSize
                 font.pixelSize: Theme.fontSize
                 // #4879: a fájlnév hossza korlátos (a Windows 255 karakter)
                 maximumLength: 200
@@ -240,31 +245,40 @@ Item {
                 validator: RegularExpressionValidator {
                     regularExpression: /^[^\\\/:*?"<>|]*$/
                 }
+                onAccepted: renameManyDialog.accept()
                 onTextChanged: renameManyDialog.updatePreview()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
             }
             RowLayout {
                 objectName: "renameManyIncludeRow"
-                spacing: 16
+                spacing: 0
                 Text {
+                    Layout.alignment: Qt.AlignTop
                     text: qsTr("Include in filename:")
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
-                CheckBox {
-                    id: includeDateCheck
-                    objectName: "renameManyDateCheck"
-                    text: qsTr("Date")
-                    onCheckedChanged: renameManyDialog.updatePreview()
-                    onToggled: renameManyDialog.saveFlags()
-                }
-                CheckBox {
-                    id: includeSizeCheck
-                    objectName: "renameManySizeCheck"
-                    text: qsTr("Image resolution")
-                    onCheckedChanged: renameManyDialog.updatePreview()
-                    onToggled: renameManyDialog.saveFlags()
+                ColumnLayout {
+                    spacing: 0
+                    CheckBox {
+                        id: includeDateCheck
+                        objectName: "renameManyDateCheck"
+                        font.pixelSize: Theme.fontSize
+                        padding: 2
+                        text: qsTr("Date")
+                        onCheckedChanged: renameManyDialog.updatePreview()
+                        onToggled: renameManyDialog.saveFlags()
+                    }
+                    CheckBox {
+                        id: includeSizeCheck
+                        objectName: "renameManySizeCheck"
+                        font.pixelSize: Theme.fontSize
+                        padding: 2
+                        text: qsTr("Image resolution")
+                        onCheckedChanged: renameManyDialog.updatePreview()
+                        onToggled: renameManyDialog.saveFlags()
+                    }
                 }
             }
             Text {

@@ -5965,6 +5965,13 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;s
             <translation>重命名...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="168" />
+            <source>Rename Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: rename:rename/window1.title</extracomment>
+            <translation>重命名文件</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="62" />
             <source>Move to Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

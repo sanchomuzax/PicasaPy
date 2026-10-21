@@ -37,6 +37,7 @@ class TestIndulaskorNemEpulFel:
         window, _controller, _engine = qml_app
         for nev in (
             "renameDialog",
+            "renameManyDialog",
             "deleteConfirmDialog",
             "batchProgressDialog",
             "fileOpsErrorDialog",
