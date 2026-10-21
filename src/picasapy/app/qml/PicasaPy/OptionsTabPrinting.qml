@@ -188,18 +188,18 @@ ColumnLayout {
                     text: qsTr("Compatible (half-res)")
                     ButtonGroup.group: qualityGroup
                     checked: root.printCtl
-                        ? root.printCtl.printerQuality() === "compatible" : true
-                    onToggled: if (root.printCtl && checked)
-                        root.printCtl.setPrinterQuality("compatible")
+                        ? root.printCtl.printerQuality() === 2 : true
+                    onClicked: if (root.printCtl)
+                        root.printCtl.setPrinterQuality(2)
                 }
                 RadioButton {
                     objectName: "optionsPrintQualityHighQualityRadio"
                     text: qsTr("High Quality (full-res)")
                     ButtonGroup.group: qualityGroup
                     checked: root.printCtl
-                        ? root.printCtl.printerQuality() === "highQuality" : false
-                    onToggled: if (root.printCtl && checked)
-                        root.printCtl.setPrinterQuality("highQuality")
+                        ? root.printCtl.printerQuality() === 3 : false
+                    onClicked: if (root.printCtl)
+                        root.printCtl.setPrinterQuality(3)
                 }
             }
         }
@@ -223,9 +223,9 @@ ColumnLayout {
                     text: qsTr("General (Lanczos-3)")
                     ButtonGroup.group: resizeGroup
                     checked: root.printCtl
-                        ? root.printCtl.printResamplerQuality() === 3 : true
-                    onToggled: if (root.printCtl && checked)
-                        root.printCtl.setPrintResamplerQuality(3)
+                        ? root.printCtl.printResamplerQuality() === 5 : true
+                    onClicked: if (root.printCtl)
+                        root.printCtl.setPrintResamplerQuality(5)
                 }
                 RadioButton {
                     objectName: "optionsPrintResizeSharpRadio"
@@ -233,7 +233,7 @@ ColumnLayout {
                     ButtonGroup.group: resizeGroup
                     checked: root.printCtl
                         ? root.printCtl.printResamplerQuality() === 8 : false
-                    onToggled: if (root.printCtl && checked)
+                    onClicked: if (root.printCtl)
                         root.printCtl.setPrintResamplerQuality(8)
                 }
             }

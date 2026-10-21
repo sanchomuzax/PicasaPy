@@ -1665,10 +1665,10 @@ picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::t
     <context>
         <name>OptionsTabNetwork</name>
         <message>
-            <source>Proxy username (Windows only):</source>
+            <source>Proxy username:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/proxygroup.title;options:options/labelgroup130.title</extracomment>
-            <translation>שם משתמש של Proxy (Windows בלבד):</translation>
+picasapy-origin-key: options:options/labelgroup130.title</extracomment>
+            <translation>‏שם משתמש Proxy:</translation>
         </message>
         <message>
             <source>Proxy password:</source>
@@ -1683,15 +1683,15 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/autoproxy.title;optio
             <translation>זהה הגדרות רשת באופן אוטומטי</translation>
         </message>
         <message>
-            <source>Network logging level:</source>
+            <source>Network log level:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loglevelgroup.title;options:options/labelgroup135.title</extracomment>
-            <translation>רמת רישום ביומן הרשת:</translation>
+picasapy-origin-key: options:options/labelgroup135.title</extracomment>
+            <translation>רמת רישום ברשת:</translation>
         </message>
         <message>
-            <source>Disable logging</source>
+            <source>Disable Logging</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/disable_item.title;options:options/item137.title</extracomment>
+picasapy-origin-key: options:options/item137.title</extracomment>
             <translation>השבת רישום ביומן</translation>
         </message>
         <message>
@@ -1719,9 +1719,9 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/all_item.title;option
             <translation>רשום את כל פרטי הרשת</translation>
         </message>
         <message>
-            <source>Log file:</source>
+            <source>Log:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loggroup.title;options:options/labelgroup142.title</extracomment>
+picasapy-origin-key: options:options/labelgroup142.title</extracomment>
             <translation>יומן:</translation>
         </message>
         <message>
@@ -1740,9 +1740,34 @@ picasapy-origin-key: options:options/labelgroup145.title</extracomment>
             <translation>‏RDM1:CE01:5OBAmd:X: ברירת מחדל של גודל העלאה:</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>גודל מקורי</translation>
+            <source>Original size (slowest upload)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::Original</extracomment>
+            <translation>גודל מקורי (ההעלאה האיטית ביותר)</translation>
+        </message>
+        <message>
+            <source>Best for web sharing (2048px)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::2048</extracomment>
+            <translation>הטוב ביותר לשיתוף באינטרנט (2,048 פיקסלים)</translation>
+        </message>
+        <message>
+            <source>Recommended: 1600 pixels (for prints, screensavers, and sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1600</extracomment>
+            <translation>מומלץ: 1,600 פיקסלים (לתדפיסים, שומרי מסך ושיתוף)</translation>
+        </message>
+        <message>
+            <source>Medium: 1024 pixels (for sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1024</extracomment>
+            <translation>בינוני: 1,024 פיקסלים (לשיתוף)</translation>
+        </message>
+        <message>
+            <source>Small: 800 pixels (for blogs and webpages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::800</extracomment>
+            <translation>קטן: 800 פיקסלים (לבלוגים ודפי אינטרנט)</translation>
         </message>
         <message>
             <source>When syncing large files, upload previews first</source>
@@ -1813,7 +1838,7 @@ picasapy-origin-key: options:options/labelgroup181.title</extracomment>
             <translation>סף אשכולות:</translation>
         </message>
         <message>
-            <source>Store name tags in the file</source>
+            <source>Store name tags in photo</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
             <translation>שמור תגי שמות בתמונה</translation>
