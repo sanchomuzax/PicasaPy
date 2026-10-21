@@ -119,7 +119,12 @@ def _varj_export_ok_gombokra(window, qt_app):
     # Windowson a felugró nyitó animációja alatt a gomb még mozog, és a
     # kattintás mellé eshet: a helyzetének három egymást követő mérésen
     # azonosnak kell lennie (vö. az animált fiókok kattintási csapdája).
-    gomb = ok_gombok[-1]
+    _varj_allo_gombra(ok_gombok[-1], qt_app, "az export eredmény-párbeszéd OK gombja")
+    return ok_gombok
+
+
+def _varj_allo_gombra(gomb, qt_app, nev: str):
+    """Megvárja, hogy a gomb helyzete és átlátszatlansága beálljon."""
     helyzetek = []
 
     def _all_a_helyzet():
@@ -128,9 +133,8 @@ def _varj_export_ok_gombokra(window, qt_app):
         return len(helyzetek) >= 3 and len(set(helyzetek[-3:])) == 1 and helyzetek[-1][2] == 1.0
 
     assert _var(qt_app, _all_a_helyzet, 10.0), (
-        f"az export eredmény-párbeszéd OK gombja nem állt meg: {helyzetek[-3:]!r}"
+        f"{nev} nem állt meg: {helyzetek[-3:]!r}"
     )
-    return ok_gombok
 
 
 def _kepmappa(tmp_path_factory) -> Path:
@@ -356,6 +360,8 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
     ]
     _QML_REFS.extend(gombok)
     assert gombok, "az export párbeszéd Export gombja nem található"
+    # Windowson a nyíló párbeszéd animációja alatt a kattintás mellé eshet (#5444).
+    _varj_allo_gombra(gombok[-1], qt_app, "az export párbeszéd Export gombja")
     _kattint_item(gombok[-1], qt_app)
     assert _var(qt_app, lambda: any(cel.rglob("*.jpg")), 30.0), (
         "az export nem készített JPEG-et a kiválasztott célmappában"

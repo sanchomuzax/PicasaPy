@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.177] - 2026-10-21
+
+- A tiszta profilos teszt az Export gombra is megvárja, hogy a párbeszéd beálljon, így Windowson sem kattint mellé (#5444).
+
 ## [0.9.176] - 2026-10-21
 
 - A Név nélküliek javaslatlistája és a People ablak keresője az eredeti Picasa szerint szó elejére keres és rangsorol; a People ablak duplikált névnél kérdez, üres névnél és mentési hibánál üzen, a törlés megerősítést kér. (#5437).
