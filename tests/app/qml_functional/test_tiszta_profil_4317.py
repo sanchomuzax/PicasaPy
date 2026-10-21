@@ -387,7 +387,8 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
         "az export eredmény-párbeszéd nem zárult be az OK kattintás után"
     )
     assert _var(qt_app, lambda: not _nyitott_felugrok(window)), (
-        "az export eredmény-párbeszéd bezáró animációja nem ért véget"
+        "az export eredmény-párbeszéd bezáró animációja nem ért véget; "
+        f"nyitva maradt: {_nyitott_felugrok(window)!r}"
     )
     assert not app["attempts"], f"exportálás közben hálózati próbálkozás történt: {app['attempts']}"
 
