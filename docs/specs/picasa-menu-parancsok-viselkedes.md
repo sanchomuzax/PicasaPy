@@ -4960,9 +4960,9 @@ Egyébként, ha `[this+0xe64] != -1` és az `L` bit-0 jelzője nulla, az `L`-be 
 
 *Ki hívja a `vt[0x40]`-et: LEZÁRVA (asm).* A `0x00801f50` `0x00801f5a`-`0x00801f76`: ha `[this+0x50]` nem nulla, a `QueryPerformanceCounter` után `mov eax,[[this]+0x40]`, majd `call eax` (ECX = `this`). A `this` az Időrend-objektum (a `[this+0x50]`, `[this+0x3ba]` mezők alapján). Ugyanebben a tartományban öt másik `+0x40`-es hívóhely van (`0x00807d3b`, `0x00807d8b`, `0x00809be7`, `0x0080c4fe`, `0x0080df11`); ezek objektuma nincs mérve, és hogy a `0x00809be7` a `0x00800a30`-t éri-e el: NINCS MEG.
 
-*A pumpa: LEZÁRVA (asm, index).* A `0x00801f50` hívója a `0x00802060` (pumpa), a `0x00802110`-nál. A pumpát a `0x00803ab0` hívja, és ez a `vt[0x60]` (`0x00cbd6cc`). A `0x008037e0` (az Időrend felépítője) a pumpát a `0x008039f6`-nál hívja; ciklusban való futását nem mértük.
+*A pumpa: LEZÁRVA (asm, index).* A `0x00801f50` hívója a `0x00802060` (pumpa), a `0x00802110`-nál. A pumpát a `0x00803ab0` hívja, és ez a `ytCallback<QDrawable>::vftable` 1. slotja (`0x00cbd6cc`; a korábbi „`vt[0x60]`” jelölés **JAVÍTVA**, 38.2.31 §1). A `0x008037e0` (az Időrend felépítője) a pumpát a `0x008039f6`-nál hívja; ciklusban való futását nem mértük.
 
-*A `vt[0x60]` hívói: NINCS MEG.* A `.text`-ben 31 közvetett `+0x60`-as hívóhely van (bájt-pásztázás). Az Időrend-objektumon hívó közülük nincs azonosítva. Ez adja a frissítés ütemét.
+*A `vt[0x60]` hívói: NINCS MEG.* A `.text`-ben 31 közvetett `+0x60`-as hívóhely van (bájt-pásztázás). Az Időrend-objektumon hívó közülük nincs azonosítva. **JAVÍTVA (38.2.31 §1):** a közülük egyik sem a `0x00803ab0`-hoz tartozik; a callback a `+0x4` slotján át hívódik. Ez adja a frissítés ütemét.
 
 *Mit rajzol: RÉSZBEN.* A `0x00800a30` a `[this+0x3ba]` jelzőtől függően két ágon fut (C-kód, az asm a hívásokat igazolja):
 - `[this+0x3ba] != 0`: a `0x00aa6f40` után a renderer, a `0x008001c0` (OneUpUI, 38.2.24), `(this, this+0x3c4, -1, -1, -1, -1)` argumentumokkal (`0x00800c1b`).
@@ -4991,7 +4991,7 @@ Egyébként, ha `[this+0xe64] != -1` és az `L` bit-0 jelzője nulla, az `L`-be 
 - `Ghidra-kör kell: a [this+0x2bc]+0x48 objektum osztálya, a vt[0xc8] és vt[0xcc] célja (csillag-állapot olvasása és írása). [blokkoló a mód-2 kérdésnél]`
 - `Ghidra-kör kell: 0x00410fa0 és 0x007f9a40 - a stars/yes és stars/no kép betöltése és megjelenítése. [nem blokkoló]`
 - ~~`Ghidra-kör kell: 0x00760240 és 0x007606fd - a harmadik hívó: mód és feltételek. [nem blokkoló]`~~ **LEZÁRVA (38.2.30 §3):** a `0x007606fd` az `editoneup/star` ágban van; az indítás (`0x005de8e0`) része nyitott: lásd a 38.2.30 listáját.
-- `Ghidra-kör kell: a vt[0x60] (0x00cbd6cc, 0x00803ab0) 31 közvetett hívóhelyéből azok, amelyek az Időrend-objektumon hívnak. [blokkoló a frissítés-ütemnél]`
+- `Ghidra-kör kell: a 31 közvetett `+0x60`-as hívóhely (38.2.29) közül azok, amelyek az Időrend-objektumon hívnak. **JAVÍTVA (38.2.31 §1):** a `0x00803ab0`-hoz nem tartoznak. [blokkoló a frissítés-ütemnél]`
 - `Ghidra-kör kell: 0x008001c0 belseje - mit rajzol a téglalap-listára és a teljes ablakra (kártyák, csúszka, gombok). [blokkoló a rajzolás-kérdésnél]` **RÉSZBEN LEZÁRVA (38.2.30 §1):** a képmásoló ág és a hívóhelyek megvannak; a kártya, csúszka és gomb kérdés nyitott.
 - `Ghidra-kör kell: a 0x009ab690 hívásainak célja a +0x620 és +0x5f8 mezőn: melyik vezérlő a csúszka. [blokkoló a csúszka-kérdésnél]`
 - `Ghidra-kör kell: 0x00809b40 - a this osztálya, és hogy a 0x00809be7 vt+0x40 hívása a 0x00800a30-t éri-e el. [nem blokkoló]`
@@ -5045,7 +5045,7 @@ A `0x00802a90` és a `0x00802ae0` szerepe NINCS MEG. A `[this+0x3b8]` ágat a `0
 - (c) A kártyák képe és felirata: NINCS MEG. Nem igazolt, hogy bélyegkép vagy gyűjtemény-borító, és az sem, hogy dátum vagy gyűjteménynév.
 - (d) Sorrend a hívón belül (`0x00800a30`): a `[this+0x3ba] != 0` ágban `0x00aa6f40` (`0x00800bf5`), majd `0x008001c0` (`0x00800c1b`). A téglalap-ágban (38.2.29 §3 szerint a téglalap-lista után) `0x008001c0` a `0x00800f04`-nél fut; ha `[this+0x3b8] == 0`, a `0x00801079`-nél, a teljes ablakra.
 
-**2. kérdés: a `0x00803ab0` (pumpa-belépő, `vt[0x60]`)** (LEZÁRVA, asm)
+**2. kérdés: a `0x00803ab0` (pumpa-belépő, a `ytCallback<QDrawable>` 1. slotja)** (LEZÁRVA, asm; a korábbi „`vt[0x60]`” jelölés **JAVÍTVA**, 38.2.31 §1)
 
 Egy hívásban, sorrendben:
 1. `[this+8]` nulla: visszatérés `-1` (`0x00803abc`-`0x00803ac0`). Nincs további hívás.
@@ -5074,8 +5074,8 @@ Külső hívás tehát kettő van: `QueryPerformanceCounter` és `0x00802060`. A
 *A `0x00760240` (parancsnév-lánc LEZÁRVA, az indítás RÉSZBEN).*
 - Parancsnév-lánc, sorrendben: `exit`, `plusone`, `minusone`, `auto`, `auto2`, `prev`, `next`, `rotateleft`, `rotateright`, `star`, `captionbutton`. Ágak: `exit` → `FUN_0075de50`; `plusone` és `minusone` → `FUN_0075f960(this, …)`; `auto` és `auto2` → léptetés-indítás (`QPC` a `[this+0x3338]`-ba, `[this+0x3370] = [this+0xe64]`); `prev` és `next` → `FUN_0075fac0`; `rotateleft` és `rotateright` → `FUN_005eef30(this, 0x10e)`, illetve `0x5a`; `star` → a `0x007606fd` hívás; `captionbutton` → `FUN_00a54b70`.
 - Belépési pont: a `0x005e0090` hívás a `0x005de8e0` függvényből (asm `0x005e008f`-`0x005e0090`). Az argumentum `[esp+0x10]` (a `this`), a parancsnév a `[esp+0x14]`-ben van. A hívás csak akkor fut, ha `call 0x00987030` (a `0xc96b74` objektumon, `0x005e007e`) nem nullát ad (`0x005e0083`-`0x005e0089`).
-- Hogy a `0x005de8e0`-t ki hívja: NINCS MEG. Az indexben nincs közvetlen hívója (38.2.22), tehát függvénymutatón vagy vtáblán át indul.
-- Köze az Időrendhez: NEM igazolt. Az 54.4 szakasz szerint az `editoneup/` névtér az egyképes nézeté. A `0x00760240` `this`-ének típusa NINCS MEG, és a `0x005e81e0` három hívóhelye három különböző helyről jön (bélyegkép-nézet, főablak Ctrl+8, egyképes nézet).
+- Hogy a `0x005de8e0`-t ki hívja: NINCS MEG. Az indexben nincs közvetlen hívója (38.2.22), tehát függvénymutatón vagy vtáblán át indul. **RÉSZBEN JAVÍTVA (38.2.31 §4):** a `0x005de8e0` a `CThumbUI::vftable` (`0x00c9052c`) `+0x58` slotja, a DATA-hivatkozás `0x00c90584` ennek a címe; a közvetlen hívó még NINCS MEG.
+- Köze az Időrendhez: **LEZÁRVA (38.2.31 §4):** a parancsnév-láncban nincs `timeline`, közvetlen parancs-kapcsolat nincs. Az 54.4 szakasz szerint az `editoneup/` névtér az egyképes nézeté. A `0x00760240` `this`-e CThumbUI (**JAVÍTVA, 38.2.31 §4**), és a `0x005e81e0` három hívóhelye három különböző helyről jön (bélyegkép-nézet, főablak Ctrl+8, egyképes nézet).
 
 **4. kérdés: a 38.2.24-38.2.28 kártya-állításai** (JAVÍTVA)
 
@@ -5087,22 +5087,176 @@ Külső hívás tehát kettő van: `QueryPerformanceCounter` és `0x00802060`. A
 - Lezárva: a hat hívóhely és az argumentumaik; a `param_2 ≠ 0` ág sorrendje; a `0x00803ab0` hívásai; a `0x00802060` ágai; a `0x007606fd` hívóhelye; a `0x005e81e0` három hívóhelye; a `0x00760240` parancsnév-lánca és a `0x005e0090` hívóhely; a `[this+0x3b8]` ág; a renderer `+0x2ec`-mentessége (JAVÍTVA).
 
 **Következő Ghidra-címek**
-- `Ghidra-kör kell: 0x00aa6180 és 0x009dc040 - a quad-blit és a sorkeverő belseje: melyik síkba írnak, és mit jelent a négy tömb és az alfa. [blokkoló a képkocka-tartalomnál]`
-- `Ghidra-kör kell: 0x007fa280, 0x009dc1c0, 0x009dc4b0 és 0x00737210 - a jelző-ágak (mód 0x10, mód 0x20 és a YUV-sáv) tartalma. [blokkoló a kártya, csúszka és gomb kérdésnél]`
-- `Ghidra-kör kell: 0x007fb820 - a kilépési hurok, és a 0x008005bb, 0x008005e1, 0x008007fe hívóhelyek: indít-e kilépést a renderer a jelző-ágakból. [blokkoló a jelző-ágak kérdésnél]`
+- `Ghidra-kör kell: 0x00aa5fb0, és a 0x00aa6180 asm-ja a 3-6. paraméter olvasására - a négy tömb forrása (38.2.31 §2). [blokkoló a képkocka-tartalomnál]`
+- `Ghidra-kör kell: 0x009a8a30, 0x009a8ad0 és 0x009a8bc0 - a 0x20-as mód segédeinek tartalma (38.2.31 §3; a 0x007fa280, 0x009dc1c0, 0x009dc4b0 és 0x00737210 jelző-ágai LEZÁRVA). [blokkoló a 0x20-as mód kérdésnél]`
+- `Ghidra-kör kell: a `this+0x50` objektum vtábla `+0x14` slotjának célja (a 0x007fb820 végén hívott cím; a kilépés célja). **RÉSZBEN JAVÍTVA (38.2.31 §3):** a 0x007fb820 végén van vt+0x14(0,0) hívás, a renderer 0x008005bb, 0x008005e1, 0x008007fe ágai ezt érik el. [blokkoló a kilépésnél]`
 - `Ghidra-kör kell: 0x00802a90 és 0x00802ae0 - a két hívó függvény szerepe, és miért a this+0x46c képet kérik. [nem blokkoló]`
 - `Ghidra-kör kell: 0x00801cb0 - a [this+0x3b8] ágának célja (a 0x00802060 hívja). [nem blokkoló]`
-- `Ghidra-kör kell: 0x005de8e0 - ki hívja (függvénymutató vagy vtábla), honnan jön a parancsnév, és mi a 0x00987030 és a 0xc96b74 objektum. [blokkoló az indítás kérdésnél]`
-- `Ghidra-kör kell: 0x00760240 - a this-objektum típusa (egyképes nézet vagy Időrend), és a [this+0x3338], [this+0x3370] mezők írói. [blokkoló az Időrend-kapcsolatnál]`
-- `Ghidra-kör kell: 0x00801f50 - a rajzolási lépés belseje: a kártya-rekordok valódi rajzolója (kártya, csúszka, gomb). [blokkoló a kártya-kérdésnél]`
+- `Ghidra-kör kell: 0x00af45f0 - a CThumbUI vtábla `+0x58` egyetlen közvetlen hívóhelyének objektum-osztálya; a 0x005de8e0 vtábla-slot már azonosítva (38.2.31 §4). [blokkoló az indítás kérdésnél]`
+- `Ghidra-kör kell: 0x00760240 - a [this+0x3338], [this+0x3370], [this+0xe64] és [this+0x27c] mezők írói (a `this` CThumbUI, 38.2.31 §4). [nem blokkoló: a parancsnév-lánc nem tartalmaz timeline-t]`
+- `Ghidra-kör kell: 0x00800950 és 0x009aa670 - a 0x00801f50 rajzolási ágának belseje (38.2.31 §1): a kártya-rajzoló. [blokkoló a kártya-kérdésnél]`
 - `Ghidra-kör kell: 0x0040eac0 és 0x009e5ac0 - a nemlineáris átmeneti görbe. [nem blokkoló]`
-- `Ghidra-kör kell: a 0x00803ab0 (vt[0x60]) 31 közvetett hívóhelye, amelyek az Időrend-objektumon hívnak (38.2.29, változatlan). [blokkoló a frissítés-ütemnél]`
+- `Ghidra-kör kell: a 31 közvetett `+0x60`-as hívóhely (38.2.29) melyik objektumon hívnak; a `0x00803ab0`-hoz nem kötődnek (38.2.31 §1). [blokkoló a frissítés-ütemnél]`
 
 **Amit KIZÁRTAM**
 - A `0x008001c0` nem rajzol kártya-rekordot: `+0x2ec` hivatkozás 0 darab.
 - A `0x00803ab0` a `QPC`-n és a `0x00802060`-on kívül mást nem hív.
 - A `0x00803ab0` `this`-e EAX-ben megy át, nem az ECX-ben, amelyet a `QPC` felülírhatna.
 - A `0x007606fd` nem külön függvény: a `0x00760240` belsejében van.
+
+#### 38.2.31 Az Időrend bináris feltárása, 14. kör: a kártya-rajzoló, a keverő síkjai, a jelző-ágak, a CThumbUI-slot és a hiány (#5401, 2026-10-21)
+
+**Kérdés és hatókör.** Öt kérdés a `2026-10-21-idorend-14.txt` tíz címéről, a 38.2.30 „Következő Ghidra-címek” listájából: `0x00801f50`, `0x00aa6180`, `0x009dc040`, `0x007fa280`, `0x009dc1c0`, `0x009dc4b0`, `0x00737210`, `0x007fb820`, `0x005de8e0`, `0x00760240`. A bemeneti C-kód adta a vázat. A döntő állításokat a `Picasa3.exe` asm-je, a bináris-index és a nyers bájtok igazolták. Ghidra-futás nem volt.
+
+**Módszer.**
+- `pe_dis.cdis`: asm a `0x00800520`-`0x00800549`, `0x0080051f`-`0x00800525` és `0x007fb930`-`0x007fb9e3` tartományokban (hívási argumentumok, a végső hívássor).
+- Bináris-index (`rtti`, `data_symbols`, `xrefs`, `functions`): vtábla-slotok és hivatkozások.
+- Nyers bájtok: `0x00c7c828` (a 16 bites maszk), `0x00d695d4` (a `DAT_00d695d4` kezdőértéke a fájlban), `0x00cf3a70`, `0x00cf3ac0`, `0x00cf3a08` (f64).
+- Bájt-pásztázás a `.text` nyers tartalmán (Python `re`): a CThumbUI `+0x58` slot hívóhelyei (4. kérdés).
+- Ideiglenes fájlok a `.bt/` alatt, a kör végén törölve.
+
+**Javítások a korábbi szakaszokban** (a helyeken is jelölve):
+1. **A `vt[0x60]` jelölés JAVÍTVA** (38.2.29 pumpa-bekezdés és Ghidra-lista, 38.2.30 §2 címe). A `0x00803ab0` nem a `vt[0x60]`-on van. A `0x00cbd6cc` a `ytCallback<QDrawable>::vftable` (`0x00cbd6c8`) 1. slotja, vagyis `+0x4`. A `QDrawable::vftable` (`0x00cbd66c`) RTTI-listája 18 bejegyzésű (72 bájt), a `0x00cbd66c + 0x60` tehát nem ennek a táblának a slotja. A három nézeti vtábla (`CThumbUI`, `OneUpUI`, `CTransTimeline::UI`) `+0x60` slotja mind `0x00a56470`. A 38.2.21 §4 szerinti `mov eax,[edx+4]; call eax` a helyes leírás. A 38.2.29 „31 `+0x60`-as hívóhelye” ezért nem a `0x00803ab0`-hoz tartozik.
+2. **A `0x005de8e0` hívója RÉSZBEN JAVÍTVA** (38.2.30 §3). A vtábla-slot most azonosítva: `CThumbUI` `+0x58`. A közvetlen hívó még NINCS MEG.
+3. **A `0x00760240` `this`-e JAVÍTVA** (38.2.30 §3): CThumbUI.
+4. **„Köze az Időrendhez: NEM igazolt” LEZÁRVA** (38.2.30 §3): a parancsnév-láncban nincs `timeline`.
+5. **A `0x007fb820` „kilépési hurok” neve JAVÍTVA** (38.2.30 §3 és Ghidra-lista). A függvény képkocka-renderelést és várakozást végez, majd a végén ugyanazt a vt-hívássort futtatja, mint a `oneup/exit` ág. Lásd 3. kérdés.
+6. **A `0x00aa6180` négy tömbje** (38.2.30 §1): a hívási sorrend MEGERŐSÍTVE (asm), a szerepük NINCS MEG (lásd 2. kérdés).
+
+**1. kérdés: a `0x00801f50` valódi kártya-rajzoló-e? NEM (LEZÁRVA).**
+
+*Mit csinál* (LEZÁRVA, 14. bemenet 1-69. sor). Ha `[this+0x50] != 0`:
+1. QPC.
+2. Ha a `vt+0x40` hívás nulla, és `[this+0x3ba] != 0`: a `vt+0x24` objektum `+0x6c` HWND-jének kliensterülete (`GetClientRect`) adja a téglalapot. `FUN_009b49c0` ebből és a `this+0x3cc`, `this+0x3d0` mezőkből számol; kimenete `this+0x3dc` és `this+0x3e0`.
+3. `vt+0x24(-1, -1, -1, -1)`, majd `FUN_009aa670(this+0x3c4, -1, -1, -1, -1)` és `FUN_00800950(&téglalap)`.
+4. Egyébként `FUN_00aa6fb0()` és `FUN_00aa6b70()`.
+
+*Kártya-rekord: NEM.* A C-törzsben nincs `+0x2ec` mező, és nincs sztring. A függvény a `+0x50`, `+0x3ba`, `+0x3c4`, `+0x3cc`, `+0x3d0`, `+0x3dc`, `+0x3e0` mezőket érinti, a `+0x6c` mezőt a `vt+0x24` objektumon.
+
+*Hívóhelyek* (LEZÁRVA, index és 14. bemenet). `0x007fb981` (a `0x007fb820`-ban) és `0x00802110` (a `0x00802060` pumpában, a rajzolási lépés).
+
+*`timeline`, `timelinedot`, `sliderthumb`, gombok: NEM ebben a függvényben* (LEZÁRVA, nincs névsztring). A 38.2.1 szerint az overlay-rétegeket a `0x007fb210` tölti be. Rajzolásuk NINCS MEG.
+
+*Ami nincs meg:* a kártya képe, felirata, kerete és sorrendje a `0x00800950` vagy a `0x009aa670` láncában lehet. Ghidra-kör kell: `0x00800950` és `0x009aa670`.
+
+**2. kérdés: a `0x00aa6180` és a `0x009dc040` síkjai, a négy tömb és az alfa** (a képlet LEZÁRVA, a tömbök szerepe NINCS MEG).
+
+*0x009dc040* (LEZÁRVA). Paraméterek: `param_1` = alfa `a`, `param_2` = cél (32 bites sorok), `param_3` = `p3`, `param_4` = `p4`, `param_5` = pixelszám. Ha `a ≠ 0`, `s = a - 1`, különben `s = 0`.
+- A `0x00c7c828` nyers bájtjai `ff 00 ff 00 ff 00 ff 00`, little-endian qword: `0x00ff00ff00ff00ff`. A 16 bites sávok maszkja tehát `0x00ff`. A súlyok: `255 - s = 256 - a` és `s = a - 1`.
+- A `DAT_00d695d4` fájlbeli kezdőértéke `05`, nem nulla, ezért az else-ág fut: `p3` súlya `256 - a`, `p4` súlya `a - 1`. A másik ág a két súlyt felcseréli. A 14. bemenetben a flagnek nincs írója, csak olvasata; az írók NINCS MEG.
+- Csatornánként `(p3·(256-a) + p4·(a-1)) >> 8`, a telítés 0..255-re szorít. Egy lépésben két pixel (64 bit).
+- A páratlan utolsó pixel skalár ága `p3 + ((p4-p3)·s >> 8)`. Ez a párhuzamos rész második formájával egyezik, de más a kerekítése. A különbség nagyságát nem mértük.
+- A függvény csak `param_2`-be ír. `a = 256` esetén a kimenet `p4`, `a = 1` esetén `p3`. Az `a` tehát a `p4` súlya, körülbelül `(a-1)/256`.
+
+*0x00aa6180* (szerkezet LEZÁRVA, a hívási sorrend asm-ből). A `0x008001c0` `0x00800541`-es hívása tíz argumentumot ad át (asm; a `0x00800899`-es hívás is `add esp,0x28`-cal takarít, a részletét nem néztük végig):
+1. `a` (alfa);
+2. a cél-bitmap (`+4` a sor-lépés pixelben, `+8` a szélesség, `+0x10` a pixelcím);
+3. `this+0x444`;
+4. `this+0x46c`;
+5. `this+0x4bc`;
+6. `this+0x4e4` (asm: `0x0080051f` `lea edx,[ebp+0x4e4]`, `0x00800525` `push edx`);
+7-10. négy `-1` (a C szerint `x0`, `y0`, `x1`, `y1`).
+
+Ha `a ≠ 0`, soronként két temp-sor készül (`FUN_00aa5fb0(temp1, n, x0)` és `FUN_00aa5fb0(temp2, n, x0, y)`), majd `0x009dc040(a, cél+x0, temp1+x0, temp2+x0, n)`. Ha `a = 0`, a `FUN_00aa5fb0` másol.
+
+*A négy tömb: NINCS MEG.* A `0x00aa6180` Ghidra-C a 3-6. paramétert nem olvassa; csak az `param_1`, `param_2` és a 7-10. szerepel. A temp-sorokat a `FUN_00aa5fb0` tölti, és annak forrása NINCS MEG. Ghidra-kör kell: `0x00aa5fb0`, és a `0x00aa6180` asm-ja a 3-6. paraméter (`+0xc`-`+0x18`) olvasására.
+
+*Célsík* (LEZÁRVA). A `0x008001c0` `param_2`-je. A `0x007fb820` hívásában `this+0x46c` (`piVar5 = param_1 + 0x11b`, és `0x11b·4 = 0x46c`); a `0x00800a30` hívásában a 38.2.30 táblázata szerint `this+0x3c4`.
+
+*Alfa.* `a = ROUND(256·t)` (38.2.30 §1), így `t` az átmenet előrehaladása `p3`-ról `p4`-re.
+
+*Páratlan pixel iránya: NINCS MEG (asm kell).* A C szerint a `0x009dc040` utolsó pixele a párhuzamos else-ággal egyezik. A `0x009dc1c0` és a `0x009dc4b0` utolsó pixele viszont ellentétes a saját párhuzamos ágával. Ezt asm-ban kell ellenőrizni. Ghidra-kör kell: a két függvény utolsó pixel ágának asm-ja.
+
+**3. kérdés: a jelző-ágak tartalma, és indít-e kilépést a renderer** (a függvények LEZÁRVA; a kilépés RÉSZBEN LEZÁRVA).
+
+| függvény | tartalom (C, LEZÁRVA) | kilépés |
+|---|---|---|
+| `0x007fa280` | Ha `[this+0x23c] & 0x40` és `[this+0x244] == 0x20`: `0x009a8ad0([+0x214], [+0x1f8])`, majd visszatér. Különben az `EDI` mutatta struktúrát nullázza (`+0`, `+0x16`, `+0x18`, `+0x1c`, `+0x24`, `+4`, `+8`, `+0xc`; `+0x14` = 1; `+0x20` = -1), és hívja a `0x009a8a30()`-t. Hívói: `0x0080080e` (`0x008001c0`), `0x007fa339` (`FUN_007fa300`). | nem |
+| `0x009dc1c0` | 565-ös (RGB565) sávos keverés. `param_6` súlya `255-s`, `param_7` súlya `s`. Kimenet `param_2`, sor-lépés `param_3` bájt, szélesség `param_4`, sorok `param_5`. Nincs DAT-flag. Hívó: `0x008008d7` (`0x008001c0`, a 38.2.30 szerinti 0x10-es ág). | nem |
+| `0x009dc4b0` | 32 bites keverés metszéssel. Cél `param_2`, forrás `ESI` és `EDI` (regiszteres bemenet, a hívó értéke NINCS MEG). A DAT-flag a párhuzamos részt nem változtatja, mindkét ág azonos. Hívók: `0x00800830` (`0x008001c0`), `0x0076c5e7` (`FUN_0076c570`), `0x00a560be` (`FUN_00a54b70`), `0x00bd0aaa` (`FUN_00bd0700`). | nem |
+| `0x00737210` | `a ≠ 0`: két temp-sor a `[ESI+8]` és `[ESI+0x10]` síkokból (`FUN_00aa5fb0`), majd `0x009dc040(a, cél, sík1, sík2, [ESI])`. `a = 0`: `FUN_00aa5fb0` másolás. Hívók: `0x00737f43` (`FUN_007376a0`), `0x00800784` (`0x008001c0`). | nem |
+| `0x007fb820` | Lásd lent. | RÉSZBEN: a végén `vt+0x14(0,0)` |
+
+*0x007fb820* (LEZÁRVA, C és asm `0x007fb930`-`0x007fb9e3`).
+1. `[this+0x3bf] = 1`.
+2. Ha `[this+0x3bb] == 0`: `[this+0x3be] = 0`; a renderer `0x008001c0(this, this+0x46c, -1 x4)`; ha `[this+0x3b8] != 0`, nullázza; `0x009ad280(this+0x46c)`; ha `[this+0x49c] == 0`, `0x009a8d80(this+0x46c, -1 x4)`, különben `0x009a8ca0(this+0x46c)`. QPC-t ír a `[this+0x520]`-ba. `r = 0x004019b0()`. Várakozó ciklus: amíg `r · 0,6 > t` (`0x00cf3a70` = 0,6; `t` az eltelt idő másodpercben, a QPC-ből), hívja a `0x00801f50`-t. A hívottak között nincs várakozó API (`Sleep`). Végül `0x00401900`.
+3. A `[this+0x3bb]` értékétől függetlenül: `vt+0x24` a `this`-en (`0x007fb99f`). Ha nulla, a `this+0x2dc` objektum `vt+0x24` hívása (`0x007fb9ac`); ha ez is nulla, `return 0`. Egyébként a `vt+0x24` hívások (`0x007fb9bf`, `0x007fb9d2`) után a végső `vt+0x14(0, 0)` (`0x007fb9df`, `call eax`).
+4. Visszatérési érték mindig `0`.
+
+*Kilépés? RÉSZBEN LEZÁRVA.* A `0x007fb820` nem hív zárófüggvényt. A harmadik lépés hívássora (`vt+0x24` a `this`-en, majd `vt+0x14(0,0)`) a 38.2.1 leírása szerint azonos a `oneup/exit` ágéval (`0x008032e0`). Ez LEZÁRVA a sorrend azonosságára. A `vt+0x14` célja, és hogy ez bezárja-e a nézetet, NINCS MEG. Ghidra-kör kell: a `this+0x50` objektum vtábla `+0x14` slotjának célja.
+
+A renderer jelző-ágaiból (`0x008005bb`, `0x008005e1`, `0x008007fe`) ez a végső hívássor fut, ha a `0x007fb820` belép. A pumpa léptetése (`0x008027c8`) is hívja. A 38.2.30 „kilépési hurok” elnevezése ezért félrevezető: a függvény képkocka-várakozás és egy végső vt-hívás.
+
+**4. kérdés: ki indítja az `editoneup/` parancsokat, és mi a `this` típusa** (RÉSZBEN LEZÁRVA).
+
+*A `0x005de8e0` vtábla-slot* (LEZÁRVA). A `CThumbUI::vftable` (`0x00c9052c`, 40 bejegyzés) 22. slotja (`+0x58`) `0x005de8e0`. A bináris-index DATA-hivatkozása `0x00c90584` = `0x00c9052c + 0x58`. Az RTTI-listázott vtáblák közül ez az egyetlen, amelyik `0x005de8e0`-t tartalmaz. Az `OneUpUI::vftable` (`0x00cbd5c4`) `+0x58` slotja `0x008032e0`, a `CTransTimeline::UI::vftable` (`0x00cbdcec`) `+0x58` slotja `0x005baa00`. Tehát `0x005de8e0` a `CThumbUI` virtuális metódusa.
+
+*A `0x005de8e0` hívási lánca* (LEZÁRVA, C). A `*(param_2+0x20) == 0x8000004` (parancs-esemény) ágban: `FUN_009cd040()`, majd a `FUN_00987030(0)` kapuk sora. A kapu nem nulla eredménye után hívja a `0x00760240`-t (asm: `0x005e0090`), az `editoneup/` parancs nevével. A kapuk tartalma NINCS MEG.
+
+*Ki hívja a CThumbUI `+0x58` slotját?* (NINCS MEG.) A `.text` bájt-pásztázása (`0x00401000`-tól, a nyers fájlon) három mintát talált:
+- Közvetlen `call [reg+0x58]` (`ff 5x 58`): 1 találat, `0x00af472f` (`ff 51 58`, `call [ecx+0x58]`), a `FUN_00af45f0`-ban (534 bájt). Az `ECX` a `[esp+0x24]`-ből jön. A függvény QPC-jellegű időszámítást végez (`fild`, `fdiv` a `0x00cf3a08` = 100,0 értékkel). Az objektum osztálya NINCS MEG.
+- `call [esp+0x58]` (`ff 54 24 58`): 3 találat, nem vtábla-hívás; kizárva.
+- `mov reg,[reg+0x58]`, utána `call reg` (`8b 4x 58` és `ff dx`, 8 bájton belül): 56 találat. Bármelyik vtáblát jelölhetik; az osztályuk NINCS MEG.
+
+A pásztázás találatlista, nem kizárás: a vtábla-hívás más kódolással is készülhet. Ghidra-kör kell: `0x00af45f0`, és a 56 betöltés-hívóhely osztálya.
+
+*A `0x00760240` `this`-e* (LEZÁRVA). A `0x00760240` egyetlen hívója a `0x005e0090` (a `0x005de8e0`-ban), és a `this` a `0x005de8e0` `this`-e. Ez a slot a CThumbUI-é, tehát a `this` CThumbUI-objektum. Egy RTTI-n kívüli, CThumbUI-ból örökölt osztály ugyanezt a slotot kaphatja; ezt nem zártuk ki.
+
+*Egyképes nézet vagy Időrend?* (LEZÁRVA: nem Időrend-elosztó.) A parancsnév-lánc 11 nevet tartalmaz, mindegyik `editoneup/` előtagú: `exit`, `plusone`, `minusone`, `auto`, `auto2`, `prev`, `next`, `rotateleft`, `rotateright`, `star`, `captionbutton` (14. bemenet, 2899-3464. sor). `timeline` nincs köztük. A `this` tehát nem a OneUpUI, hanem a CThumbUI (rácsnézet). Az `editoneup/` névtér az egyképes nézet parancsait hordozza, de a címzett a rács-osztály.
+
+*Időrend-kapcsolat* (LEZÁRVA: nincs közvetlen parancs-kapcsolat). A 38.2.1 szerint a `CThumbUI::MakeTimeline` (`0x005e943d`) indítja az Időrendet; ez a CThumbUI és az Időrend közötti út. A `0x005de8e0` → `0x00760240` lánc viszont nem ad Időrend-parancsot.
+
+*Megfigyelés* (NEM igazolt). A CThumbUI és az OneUpUI is a `+0x58` slotot foglalja (`0x005de8e0`, `0x008032e0`). Ez közös eseménykezelő-slotra utalhat; ezt nem igazoltuk.
+
+**5. kérdés: mennyi hiányzik az Időrend teljes viselkedéséhez?**
+
+Tételes lista, mindegyik LEZÁRVA vagy NINCS MEG.
+
+1. Kártyák rajzolása (kép, felirat, keret, sorrend): **NINCS MEG.** Ghidra-kör kell: `0x00800950`, `0x009aa670`.
+2. A kártya-rekord (`+0x2ec`, 0xf8 bájt) fogyasztója: **NINCS MEG.** Ghidra-kör kell: a `+0x2ec` olvasói a `0x00800950` és `0x009aa670` láncban.
+3. Az overlay-rétegek (`timeline`, `timelinedot`, `sliderthumb`, `startbutton`, `left`, `right`) rajzolása: **NINCS MEG.** Ghidra-kör kell: `0x007fb210` és a `0x00800950` lánc.
+4. A quad-blit forrásai (`this+0x444`, `+0x46c`, `+0x4bc`, `+0x4e4`): **NINCS MEG.** Ghidra-kör kell: `0x00aa5fb0`, és a `0x00aa6180` 3-6. paraméterének olvasása.
+5. A keverő képlete (`0x009dc040`, `0x009dc4b0`, `0x009dc1c0`, `0x00737210`: súlyok, maszk, kerekítés, telítés): **LEZÁRVA.**
+6. A páratlan utolsó pixel iránya a `0x009dc1c0` és a `0x009dc4b0` ágában: **NINCS MEG.** Ghidra-kör kell: a két függvény utolsó pixel ágának asm-ja.
+7. A `DAT_00d695d4` írói: **NINCS MEG.** Ghidra-kör kell: a `0x00d695d4` írásának keresése (DATA-hivatkozások és bájt-pásztázás).
+8. A 0x20-as mód hívott segédei (`0x009a8a30`, `0x009a8ad0`, `0x009a8bc0`): **NINCS MEG.** Ghidra-kör kell: ezek törzse.
+9. A YUV-sáv forrás-síkjainak feltöltése (`[ESI+8]`, `[ESI+0x10]`): **NINCS MEG.** Ghidra-kör kell: `0x00737120`, `0x007383b0`, `0x009bd150`, `0x009dd4f0`, `0x0097caf0`.
+10. A nemlineáris átmeneti görbe: **NINCS MEG.** Ghidra-kör kell: `0x0040eac0`, `0x009e5ac0`.
+11. A frissítési ütem: a `0x004019b0` visszatérési értékének mértékegysége, és a `0x00802630` léptetés tartalma: **NINCS MEG.** Ghidra-kör kell: `0x004019b0`, `0x00802630`.
+12. Az időküszöb konstansai: `0x00cf3a70` = 0,6 és `0x00cf3ac0` = 2^32 (negatív korrekció): **LEZÁRVA.**
+13. A csúszka (`sliderthumb`) húzása és értékkötése: **NINCS MEG.** Ghidra-kör kell: `0x00a52890` (a 38.2.1 szerinti örökölt kezelő) és a sliderthumb találat-vizsgálata.
+14. A gombok törzsei: `oneup/prev` és `next` (`0x00802980`, `0x008029f0`), `oneup/timeline` (`0x007fda00`, `0x00802230`), és az `editoneup/*` parancsok (`0x0075de50`, `0x0075f960`, `0x0075fac0`, `0x005eef30`, `0x00a54b70`, `0x005e81e0`): **NINCS MEG.** Ghidra-kör kell: ezek törzse.
+15. Billentyűk az Időrend alatt, a OneUpUI útja: **LEZÁRVA** (38.2.1: a `WM_KEYDOWN` és `WM_KEYUP` virtuális metódusa nem ad műveletet).
+16. Billentyűk a főablakban: **NINCS MEG.** Ghidra-kör kell: `0x005e60d0` (globális billentyűkezelő) és `0x005e6587`.
+17. A kilépés célja (`vt+0x14(0, 0)`) és a visszatérési nézet: **NINCS MEG.** Ghidra-kör kell: a `this+0x50` objektum vtábla `+0x14` slotjának célja.
+18. Az `editoneup/` parancsokat indító hívó (a CThumbUI `+0x58` hívója): **NINCS MEG.** Ghidra-kör kell: `0x00af45f0` és a 56 betöltés-hívóhely.
+19. A kártya-animátor mozgása (38.2.24-38.2.28 állításai): **NINCS MEG**, ebben a körben nem mértük újra. Ghidra-kör kell: a 38.2.24-38.2.28 mozgás-állításainak újramérése (`0x007fe600` ciklus).
+20. A pumpa `+0x60`-as hívóhelyei (38.2.29, 31 pásztázási találat): **NINCS MEG.** Ghidra-kör kell: melyik objektumon hívják.
+
+**Mérleg:** 20 tétel · 3 lezárva (5., 12., 15.) · 17 nincs meg.
+
+**Amit KIZÁRTAM**
+- A `0x00801f50` nem kártya-rajzoló (nincs `+0x2ec`, nincs sztring).
+- A `0x007fa280`, `0x009dc1c0`, `0x009dc4b0` és `0x00737210` nem hív kilépő rutint.
+- A `0x005de8e0` nem az egyképes nézet (OneUpUI) slotja: a OneUpUI `+0x58` slotja a `0x008032e0`.
+- A `0x00760240` nem Időrend-elosztó: nincs `timeline` a parancsnév-láncban.
+- A `0x00803ab0` nem a QDrawable `+0x60` slotja.
+
+**Következő Ghidra-címek**
+- `Ghidra-kör kell: 0x00800950 és 0x009aa670 - a 0x00801f50 rajzolási ágának belseje: kártya, felirat, keret, sorrend, és a +0x2ec olvasása. [blokkoló a kártya-kérdésnél]`
+- `Ghidra-kör kell: 0x00aa5fb0, és a 0x00aa6180 asm-ja a 3-6. paraméter olvasására - a négy tömb forrása. [blokkoló a quad-blit kérdésnél]`
+- `Ghidra-kör kell: 0x009dc1c0 és 0x009dc4b0 utolsó pixel ága (asm), és a 0x00d695d4 írói. [nem blokkoló a szerkezetnél, a pontos képhez kell]`
+- `Ghidra-kör kell: 0x009a8a30, 0x009a8ad0, 0x009a8bc0, 0x009a8ca0, 0x009a8d80, 0x009ad280 - a 0x20-as mód és a 0x007fb820 keretének segédei. [blokkoló a 0x20-as mód kérdésnél]`
+- `Ghidra-kör kell: 0x00737120, 0x007383b0, 0x009bd150, 0x009dd4f0, 0x0097caf0 - a YUV-sáv síkjainak forrása. [nem blokkoló]`
+- `Ghidra-kör kell: 0x00af45f0 - a CThumbUI +0x58 egyetlen közvetlen hívóhelyének objektum-osztálya ([ecx] forrása), és a 56 betöltés-hívóhely osztálya. [blokkoló az editoneup-indító kérdésnél]`
+- `Ghidra-kör kell: a this+0x50 objektum vtábla +0x14 slotjának célja (a 0x007fb820 és a 0x008032e0 végén hívott cím). [blokkoló a kilépésnél]`
+- `Ghidra-kör kell: 0x007fb210 - az overlay-rétegek rajzolója (timeline, timelinedot, sliderthumb, startbutton, left, right). [blokkoló a gombok és a csúszka kérdésnél]`
+- `Ghidra-kör kell: 0x00a52890 - a sliderthumb húzása és értékkötése. [blokkoló a csúszka kérdésnél]`
+- `Ghidra-kör kell: 0x00802630 és 0x004019b0 - a léptetés tartalma és a frissítési küszöb mértékegysége. [blokkoló a mozgás-ütemnél]`
+- `Ghidra-kör kell: 0x00802980, 0x008029f0, 0x007fda00, 0x00802230 - a prev/next és a timeline gombok törzse. [blokkoló a gombok kérdésnél]`
+- `Ghidra-kör kell: 0x005e60d0 és 0x005e6587 - a főablak billentyűkezelője az Időrend alatt. [blokkoló a billentyűknél]`
+- `Ghidra-kör kell: 0x0040eac0 és 0x009e5ac0 - a nemlineáris átmeneti görbe. [nem blokkoló]`
+- `Ghidra-kör kell: 0x0075de50, 0x0075f960, 0x0075fac0, 0x005eef30, 0x00a54b70, 0x005e81e0 - az editoneup/ parancsok törzse (nem Időrend, de a 0x00760240 lánc célja). [nem blokkoló az Időrendhez]`
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
