@@ -4814,3 +4814,55 @@ nyitva hagyott egyezést és rendezést pontosítja.
    A `CAutoCompleteListBox` `+0x20` jelzőjének értéke nincs megállapítva, ezért
    a javaslatlista Fel és Le billentyűje nem fut körbe. A kijelölt javaslat
    Enterrel fogadható el; kijelölés hiányában a mező gépelt szövege indul el.
+
+## 39. #5184, helyi Codex-kutatói kör (2026-10-21): N1, N3, N7 nyitva marad
+
+**Keret.** Az eredeti Picasa helyi futtatója nem állt rendelkezésre (`wine` nincs), Colab-végrehajtó eszköz nem volt elérhető, ezért eredeti futásmérést nem végeztem. A mérőadat-archívumban nem volt a feladathoz tartozó csomag; nem bontottam ki, `.bt` ideiglenes fájl nem készült. GitHubot nem használtam.
+
+### 39.1 N1: a helyi INI-korpusz nem válaszolja meg az eredeti felismerését
+
+A `research/testdata` 71 `.picasa.ini` fájljának összesített feldolgozása 11 `faces` rekordot talált: 10 névvel ellátottat, 1 mellőzöttet, 0 `,0` rekordot. A privát helyi INI-korpusz pillanatképének aggregált feldolgozása 4 973 `faces=` sort, 8 713 rekordot, 6 022 névvel ellátott, 696 nullaazonosítós és 1 995 mellőzött rekordot talált; 361 sorban volt névvel ellátott és mellőzött arc együtt, névvel ellátott és nullaazonosítós arc együtt 0 sorban. **Forrás:** mérés (két helyi korpusz aggregált feldolgozása; személyes útvonalak és nevek nem kerültek a kimenetbe).
+
+A nullaazonosítós `faces=...,0` bejegyzés nem arc: az eredeti `0`-olvasó `-1`-et ad (`0x0092c450`), a bontó pedig a bejegyzést a téglalappal együtt eldobja (`0x0049d560`). Az `ffffffffffffffff` a mellőzött arc értéke (`0x00484bc3`; §9/f). **Forrás:** bináris (Picasa3.exe, címek a táblában). Ezért a korpuszban talált vagy hiányzó nullaazonosítós sorból nem következik, hogy az eredeti talált-e ismeretlen arcot egy már megnevezett fotón. A PicasaPy ilyen, már azonosított arcot tartalmazó fotót kihagy a saját felismerésből (`src/picasapy/app/face_scan_controller.py:470-475`); ez csak a mi viselkedésünket igazolja.
+
+### 39.2 N3: a Red.dll belső küszöbe és az eredeti felismerési arány NINCS MEG
+
+A Red.dll-ben az alábbi pontos sztringek vannak: `MainSizeArr` (`0x101affbc`), `epi_CONFIDENCE` (`0x101b0130`), `soft confidence =` (`0x101b2638`), `object size ratio =` (`0x101b3250`). **Forrás:** bináris (Red.dll, megadott virtuális címeken kiolvasott sztringek). Ezek címkék, nem küszöbértékek; a `0x100057c0` belső útján lévő értékekhez és a tényleges döntési feltételhez nincs utasításszintű lelet.
+
+A Preferences `FRSuggestionSingleThreshold=0,90` értéke (`0x0048ac6f`) nem bizonyítja, hogy a Red.dll detektorküszöbe is 0,90: a kép-futtató külön `FRRecommendIncludeLimit=0,50` szűrőt hasonlít (`0x0048e1f0`, `0x0048e33e`; §36.1). **Forrás:** bináris (Picasa3.exe, hivatkozott címek). Az eredeti és a PicasaPy felismerési aránya azonos, rögzített képkészleten mérve **NINCS MEG**.
+
+### 39.3 N7: a People lista kijelölési módja nincs eldöntve
+
+A `contactmgr.fen` `contacts` listája nem tartalmaz kijelölési módot; a `0x007b9630` ág egy kijelölt indexet olvas. **Forrás:** bináris (a People Manager erőforrása; Picasa3.exe `0x007b9630`). A job-186 felvétel egy kiválasztott személyt mutat, de nem próbál második sort Ctrl-kattintással hozzáadni. Ezért a többes kijelölést nem zárja ki; N7 nyitott.
+
+### 39.4 A #5184-ben felsorolt pontok aktuális állapota
+
+| Pont | Eredmény | Bizonyíték |
+|---|---|---|
+| N1 | ⛔ Nyitott | Az eredeti runtime-kimenet NINCS MEG; a helyi INI-adatok nem tárolják bizonyítóan az ismeretlen arcokat (§39.1). |
+| N3 | ⛔ Nyitott | Az eredeti belső méretezési/döntési értékek és a pontos felismerési arány NINCS MEG (§39.2). |
+| N4 | ✅ Lezárt | Job-187: névvel ellátott arcon alapból nincs keret és név. |
+| N5 | ✅ Lezárt | Job-222..226, §§37.10-37.11: személyszintű mellőzés nincs; a mellőzés arcszintű. |
+| N6 | ✅ Lezárt | Job-222/224, §37.10: a személy törlése eltávolítja a `faces=` sort, a `[Contacts2]` sort megtartja; a Cancel az alapértelmezett. Javítás: #5391. |
+| N7 | ⛔ Nyitott | Job-186 csak egy sort mutat; a Ctrl-többes kijelölést nem tesztelte (§39.3). |
+| N8 | ✅ Lezárt | Job-186: People Manager referenciafelvétele (631×351), lásd a jegyhez adott felvételi leírást. |
+
+### 39.5 Két független út és cáfoló kísérletek
+
+**Összesített bizonyítottsági fok: nyitott.** A helyi korpuszok aggregált mérése (A út) és az eredeti parser utasításszintű kezelése (`0x0092c450`, `0x0049d560`; B út) egymástól függetlenül mutatja, hogy az INI-korpusz nem használható az N1 bizonyítására; egyik sem mondja meg, mit ismert fel az eredeti futás. N3-nál a Preferences összehasonlító útja és a Red.dll sztringei külön forrásból származnak, de egyik sem ad belső küszöbértéket. N7-nél a bináris egy indexet olvasó ága és az erőforrás kijelölésimód-jelző nélküli listája nem bizonyítja a vezérlő többes kijelölési képességét.
+
+- **Cáfoló kísérlet, N1:** próbáltam a nullaazonosítós `faces=...,0` adatot ismeretlen arcnak tekinteni. A §9/f parser-szabálya ezt cáfolja: a rekord nem kerül be arcként; a mért korpuszban nincs olyan sor, amely névvel ellátott és nullaazonosítós arcot együtt tartalmazna. Az ellenpróba ugyanazzal a mércével történt: az ini rekord nem az eredeti felismerési kimenet, N1 nyitva marad.
+- **Cáfoló kísérlet, N3:** próbáltam a `FRSuggestionSingleThreshold=0,90` értéket az eredeti arcdetektor küszöbével azonosítani. A külön `FRRecommendIncludeLimit=0,50` összehasonlító út és a Red.dll belső címkéi nem kapcsolják a 0,90-et a detektor döntéséhez; az azonosság nem áll meg. Az ellenpróba sem adott belső pontszámot vagy küszöböt, ezért N3 nyitva marad.
+- **Cáfoló kísérlet, N7:** az egyetlen indexet olvasó ág alapján felmerülhet az egyszeres kijelölés. Ellenőriztem az ellenpéldát: az erőforrás nem rögzít kijelölési módot, és nincs Ctrl-kattintásos felvétel. Így az egyszeres kijelölés következtetése nem igazolható; N7 nyitva marad.
+
+### 39.6 Következő döntő mérés és jegyjavaslat
+
+Az N1-hez rögzíteni kell egy fotót, amelyen egy arc már névvel szerepel és van mellette legalább egy külön, névhez nem rendelt arc; a felvétel mutassa az eredeti találatát és az előtte/utána állapotot. Az N3-hoz ettől különálló, előzetes arccímkéktől mentes, pontosan felsorolt képkészlet kell, képenkénti ellenőrzött arcjelölésekkel. Ugyanazokat a képeket kell feldolgoztatni az eredetivel és a PicasaPy YuNetjével a feladatban megadott 960 px / 0,9 beállítással; a nyers találatlistákból, csak a tényleges képkészlet nevezőjével számolható összehasonlító arány, extrapoláció nélkül. Az N7-hez legalább két személy sorát kell megjeleníteni, az első kijelölése után Ctrl-kattintással a másodikat is kijelölni, majd a lista és a Delete Person gomb állapotát rögzíteni; a törlést a felvételben Mégsével kell megszakítani.
+
+**Fejlesztési következmény:** nincs igazolt eredeti/PicasaPy eltérés, ezért nincs kódmódosító fejlesztői lista vagy új fejlesztői jegy. Új kutatási jegy sem kell: az N1, N3 és N7 a #5184 nyitott részei maradnak.
+
+**Nyitott:**
+- `Ghidra-kör kell: 0x100057c0 - a Red.dll feldolgozó bemeneti mérete, confidence értéke és tényleges elfogadási küszöbe hogyan kerül felhasználásra a döntő ágban? [blokkoló]`
+- Colab-felvétel kell az N1 és N3 tényleges felismerési kimenetéhez és az N7 Ctrl-többes kijelöléséhez.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (39. szakasz); `docs/specs/00-index.md` (#5184 aktuális állapotának rövid összefoglalója). Kódhoz és tesztekhez nem nyúltam.
