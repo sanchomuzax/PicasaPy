@@ -6376,7 +6376,7 @@ Igazolt:
 
 Szerepe: a léptetési pumpa minden körében (Időrend módban) a 0,666 konstanshoz legközelebbi kártyát keresi (`0x007fd8c0`, korábban igazolt: 38.2.22 §3). Ha ez változott, a `0x008018a0` fókuszt vált. Tehát két út vezet a fókusz-váltáshoz: a kattintás (`0x007fde80`) és a pumpa (`0x00801cb0`).
 
-NINCS MEG: a `0x007fc010` törzse (az elrendezés frissítése). Ghidra-kör kell: `0x007fc010 - mit frissít a [this+0x2f8] alobjektumban (U13)`.
+NINCS MEG: a `0x007fc010` törzse (az elrendezés frissítése). Ghidra-kör kell: `0x007fc010 - mit frissít a [this+0x2f8] alobjektumban (U13)`. **Új állapot (38.2.42 §3):** RÉSZBEN LEZÁRVA; a maradék: `0x007fbab0`, `0x005568e0`, `0x007fa650`, `0x00604480`.
 
 **4. A 38.2.40 nyitott listája (Q5).**
 
@@ -6394,7 +6394,7 @@ NINCS MEG: a `0x007fc010` törzse (az elrendezés frissítése). Ghidra-kör kel
 | U10 (új) | NINCS MEG | az `i` értékek forrása: az `[L+0x148]` írói | `0x004b8ee0` (hívó), `0x004b8470` |
 | U11 (új) | NINCS MEG | az `[L+0x138]` tábla tulajdonosa, a `+0xc == 2` jelentése, a `jbe` határ | `0x004b29d0`, `0x004b8ee0` (az L osztálya) |
 | U12 (új) | NINCS MEG | a hívott függvények EBP/EBX forrása a +0x14 értéknél; a `0x004b3281` típusa lehet 1 | `0x004b2e10`, `0x004b3770`, `0x004b80d0` |
-| U13 (új) | NINCS MEG | a rekord `+0` mezőjének írója; a `0x008018a0` `local_64` forrása (a kulcstömb-e) | `0x007fa7f0`, `0x007fc010`, `0x008018a0` |
+| U13 (új) | **JAVÍTVA (38.2.42 §3):** a `0x007fc010` NEM írja a rekord `+0` mezőjét (a régi `0x007fc010` hivatkozás téves). A `0x008018a0` `local_64` forrása a `0x004b0190` kimenete (38.2.42 §5). A rekord `+0` írója: `0x007fcca0` (38.2.40 §4), a kattintási rekordé NINCS MEG. | `0x007fcca0`, `0x004b0190`, `0x007fc010` (nem ír `+0`-t) |
 | U14 (új) | NINCS MEG (a 38.2.25 óta nyitott) | a `0x008014d0` törzse: mit rajzol a `[OneUp+0x3ec]` listából | `0x008014d0` |
 | U15 (új) | NINCS MEG | a `[this+0x2e8]` objektum osztálya és vt+0x18 célja (startbutton, dupla kattintás) | `0x007fa7f0` (3. paraméter), az objektum vt+0x18 célja |
 
@@ -6411,6 +6411,8 @@ NINCS MEG: a `0x007fc010` törzse (az elrendezés frissítése). Ghidra-kör kel
 
 **Nyitott kérdések mérlege (38.2.41).** 6 új tétel (U10-U15). A 38.2.40 listájából 7 tétel NINCS MEG (U1-U6, U8), U7 és U9 LEZÁRVA. Mindegyik mellett Ghidra-cím áll. Becsült érték nincs.
 
+**Frissítve (38.2.42 §6):** U7 és U9 LEZÁRVA (változatlan). RÉSZBEN LEZÁRVA: U2, U10, U11, U13 (és JAVÍTVA, lásd a táblázat U13 sorát), U14. NINCS MEG: U1, U3 (bővült), U4, U5, U6, U8, U12, U15, és az új U16-U21. A részletek és a Ghidra-címek a 38.2.42 §6 táblázatában vannak.
+
 #### A felhasználó szemével
 
 Nem dőlt el, melyik képhalmaz jelenik meg. Ami igazolt:
@@ -6419,6 +6421,142 @@ Nem dőlt el, melyik képhalmaz jelenik meg. Ami igazolt:
 - Dupla vagy jobb gombra (csak dekompiláció szerint) az Időrend kilép (`0x007fb820`), és a visszahívás a legutoljára mutatott kulcsot kapja.
 
 Hiányzó címek: `0x008014d0` (mit rajzol a kulcs alapján) és `0x007fa7f0` (a rekord `+0` mezőjének írója, vagyis hogy a kártya kulcsa melyik sorhoz tartozik).
+
+**Frissítve (38.2.42 §4 és §5):** a `0x008014d0` nem rajzol közvetlenül; kulcsonként kártya-rekordot épít a `[this+0x2ec]` tömbbe. A kattintás után a kulcslistát a `0x004b0190` adja, nem a `0x007fa7f0`. A melyik-képhalmaz kérdés továbbra is NINCS MEG (lásd a 38.2.42 szakasz végét).
+
+#### 38.2.42 Az Időrend bináris feltárása, 25. kör: a lista rendezése, a `jbe` határ, a kártya-építő és a kattintási kulcs (#5401, 2026-10-21)
+
+**Válasz röviden.**
+1. **Q1, a lista.** A `0x004b8ee0` tölti a `[L+0x148]` listát. A listába az `i` sorszám kerül, és csak azoké a soroké, amelyeknek a `+0xc` mezője nem nulla. Ezután a `0x004baaa0` rendezi a listát a `0x004a7890` összehasonlítóval. A rendezés kulcsa NINCS MEG. A `+0xc` mező forrása, vagyis a sortábla írója, szintén NINCS MEG.
+2. **Q2, az L és a `jbe`.** L a `0x004b8ee0` és a `0x004b8470` tagfüggvényeinek this-je. Neve és vtáblája NINCS MEG. A `+0xc == 2` kapu megvan, a 2-es érték jelentése NINCS MEG. A `jbe` miatt az `i == darab` eset tényleg olvas: a tábla logikai végén túli elemet nézi. Hogy ez előfordul-e, NINCS MEG.
+3. **Q3, a `0x007fc010` és a `0x008014d0`.** A `0x007fc010` a `[this+0x2f8]` alobjektum sebességét és görgetési állását írja, a látható elemek listáját, és minden elem alfa- és mátrixmezőit. A `0x008014d0` nem rajzol: a kulcslistából kulcsonként egy kártya-rekordot épít a `[this+0x2ec]` tömbbe. Hogy ki rajzolja ezt a tömböt, NINCS MEG.
+4. **Q4, a felhasználó szemével.** Nem dől el: melyik képhalmaz jelenik meg, NINCS MEG. Lásd a szakasz végét.
+5. **Q5.** A 38.2.41 nyitott listája frissítve (§6). A 38.2.41 U13 sorát javítottam, mert a `0x007fc010` nem írja a rekord `+0` mezőjét.
+
+**Hatókör és módszer.** A bemenet a `2026-10-21-idorend-25.txt` volt, négy címmel: `0x004b8ee0`, `0x004b29d0`, `0x007fc010`, `0x008014d0`. Az asm-ellenőrzés `pe_dis.cdis`-szel történt. Kiterjedt a `0x004baaa0` és a `0x009a8bc0` teljes törzsére, a `0x008018a0` belépésére és a K listát író utasításaira (index-keresés alapján), valamint a `0x004a7890` és a `0x004b8470` elejére. A hívóhelyeket az index `xrefs` táblája adta, ez csak a direkt hívásokat látja, a vtábla-hívásokat nem. A konstansokat a bináris nyers bájtjaiból olvastam ki. Kódot nem módosítottam, ezért CI-őr nem futott.
+
+**Bizonyítottsági fok.** Az asm-ből igazolt állítások erősek. Ami csak a dekompilációból látszik, azt külön jelölöm.
+
+**Fogalmak (új).**
+- **L**: a `0x004b8ee0` és a `0x004b8470` belépési EAX-a (`0x004b8eed`, `0x004b8477`). Lista: `[L+0x148]` (mutató), darab: `[L+0x14c] >> 1`, a bit 0 külön jelző (`[L+0x14c] & 1`). Sortábla: `[L+0x138]`, 36 bájtos sorok, darab: `[L+0x13c] >> 1`.
+- **P**: `[OneUp+0x2f4]`. A `0x004b0190` hívásakor EAX = P (`0x008018ce`, a hívás `0x008018e0`). `L = [P+0xc4]` (38.2.40 §0).
+- **K**: `[OneUp+0x3ec]`, a kulcslista. Darab: `[OneUp+0x3f0] >> 1`.
+- **C**: `[OneUp+0x2ec]`, a kártya-rekordok tömbje, rekordonként 0xf8 bájt. Darab: `[OneUp+0x2f0] >> 1`.
+- **S**: `[OneUp+0x2f8]`, az alobjektum. A rekordtömbje `[S+0xb0]`, darab: `[S+0xb4] >> 1`.
+
+**1. Az i-lista (Q1).**
+
+Igazolt (asm):
+- Az írás helye: `0x004b90b4 mov [eax+edx*4], edi`. Az `edi` a ciklusváltozó, vagyis a sor sorszáma (`i`). A ciklus `0`-tól `darab - 1`-ig megy (`0x004b90d0`, `0x004b90da`).
+- A sort csak akkor írja a listába, ha a `+0xc` mezője nem nulla (`0x004b9028`, `0x004b902d`), és a bit 0 nulla (`0x004b9036`, `0x004b9039`). Ha a bit 1, a lista üres marad.
+- A darab eggyel nő (`0x004b90c7`). A `0x004b86d0(i)` hívás minden nem nulla sorra megtörténik, a bit 0 értékétől függetlenül (`0x004b90cb`).
+- A lista minden híváskor újraépül. A régi puffer felszabadul, a mutató nullázódik (`0x004b9003`, `0x004b9013`), majd új puffer készül (`0x004b908c`).
+- Ha a darab nulla, a függvény a `0x004b8f58` ágon visszatér. Ekkor nem építi újra a listát, és nem hívja a `0x004b8470`-et (`0x004b8f35`-`0x004b8f8b`).
+- A listaépítés után, feltétel nélkül, a `0x004baaa0` fut (`0x004b916b`). Előtte, ha `[L+0xdc] == 2`, a `0x004b8d00(L)` hívódik (`0x004b90e4`-`0x004b90ee`). Utána a `0x004b8470` következik (`0x004b9192`).
+- A `0x004baaa0` a listán dolgozik. A forrás `[[esi+8]]`, ahol `[esi+8]` a `&L+0x148` (`0x004baaf9`-`0x004bab02`). A darab `[L+0x14c] >> 1` (`0x004baabf`-`0x004baac7`). Egy memóriafoglaló hívással (`0x0097c5d0`, `darab * 4` bájt) segédpuffert kér (`0x004baada`), és egy alulról felfelé haladó összefésüléses rendezést futtat. Az összehasonlító a `0x004a7890(a, b, L)` (`0x004bab9f`). A segédpuffert a végén felszabadítja (`0x0097caf0`, `0x004bac72`). A túlélő puffer a lista lehet: a hívó nem tárol el visszatérési értéket, a `[L+0x148]` mutatót pedig ebben a kötegben nem láttam felülírni. Ez erős, de a végső pufferről a paritás-ág végigkövetése nélkül állítom.
+- A rendezés kulcsa a `0x004a7890` törzsében van, és az a globális `DAT_00d67678` értékétől függ. A hívó (`0x004b9150`) állítja be az `esp+0x28` objektumra bizonyos feltétel mellett, és `0x004b9176`-ban nullázza. Nulla globálisnál a `0x004a7890` másik ágra megy (`0x004a78a7`). A kulcs törzse NINCS MEG.
+
+Következtetés:
+- A listába azoknak a soroknak az `i` sorszáma kerül, amelyeknek a `+0xc` mezője nem nulla, feltéve hogy a bit 0 nulla.
+- A sorrend a rendezés kulcsától függ. Ezt nem igazoltam, ezért az index-sorrend nem állítható.
+- A 38.2.41 §1 kérdésére (ki adja az `i` értékeket): a `0x004b8ee0` ciklusának változója.
+- A `+0xc` mező a `[L+0x138]` sortáblából jön. A tábla írói NINCS MEG.
+- A bit 0 írója NINCS MEG. A `0x004b8ee0` csak megőrzi (`0x004b900b`).
+
+**2. Az L osztálya, a `+0xc == 2` kapu és a `jbe` (Q2).**
+
+- **L osztálya**: NINCS MEG (a név és a vtábla-cím). Igazolt, hogy L a `0x004b8ee0` és a `0x004b8470` tagfüggvényeinek this-je. A `0x004b8ee0` L vtábla-slotjait hívja: `vt+0x18` a zároláshoz (`0x004b8f18`), `vt+0x1c` a feloldáshoz (`0x004b8f7b`, `0x004b91e1`). Ha `L+0xc` nulla, a vtábla-zár megy, különben a kritikus szakasz `L+0x28` (`0x004b8f04`).
+- **A `0x004b29d0` kapuja (`+0xc == 2`)**: a belépési EAX az `i` (`0x004b29db`). A `ctx` a verem argumentuma, `L = [ctx+0x48]` (`0x004b29d5`-`0x004b29e0`).
+  - Ha `i <= darab` (`0x004b29e8`, `0x004b29ea jbe`), akkor `bl` azt adja, hogy a `[L+0x138] + 36*i + 0xc` mező értéke 2-e (`0x004b29f0`-`0x004b29fe`). Különben `bl = 0`.
+  - A `0x0044ddd0(ctx+0x4c, i, &out)` hívás (`0x004b2a11`) a kapu ELŐTT fut, a sor típusától függetlenül.
+  - `bl = 0` esetén a visszatérés `1000000` (`0x004b2a1a`).
+  - A kapu tényét az asm igazolja. A 2-es típus jelentése NINCS MEG.
+- **A `jbe` határ (`i == darab`)**: igen, olvas. A `jbe` egyenlőségnél is ugrik, ezért `i == darab` esetén a `[L+0x138] + 36*darab + 0xc` címről olvas (`0x004b29f9`). Ez a sor a tábla logikai végén túl van. Hogy a puffer kapacitása elég-e, és mi a tartalma, NINCS MEG: a tábla növelő kódja nincs a kötegben. Ha a `[L+0x138]` mutató NULL és `darab = 0`, a cím `0xc` lenne. Ennek előfordulása NINCS MEG.
+- **Előfordul-e `i == darab`**: csak akkor, ha a darab (`[L+0x13c]`) a listaépítés után, a `0x004b8470` hívása előtt csökken. Az út közben ezek futnak: `0x004b86d0` (a listaépítés alatt), `0x004b8d00`, `0x004a6dc0`, `0x004baaa0`, `0x004a7010`. Nem zárható ki, hogy valamelyik írja az `[L+0x13c]` mezőt. Ez NINCS MEG.
+
+**3. A `0x007fc010` (Q3, első fele).**
+
+Hívó: `0x00801cb0` (`0x00801cc1`). A hívás `0x007fc010(S, this+0x2c8)`. A `this+0x2c8` a téglalap, a második argumentum. Asm-ben igazolt írások és számítások:
+- **a)** `S+0x18` (double, sebesség): `× 0.95` (`0x007fc085` fld, `0x007fc08a` fmul a `0x00cf40b0` double-lel, amely 0.95, `0x007fc09e` fstp).
+- **b)** `S+0x20` (double, görgetési állás): `S+0x20 += S+0x18`, majd hozzáadja a `0x009e5f90(0x009a5210())` lánc értékét (`0x007fc01b`, `0x007fc029`, `0x007fc02e`-`0x007fc039`). Utána a `[S+8, S+8 - (n-1) × S+0x30]` tartományba szorítja (`0x007fc045`-`0x007fc07e`). Itt `n = [S+0xb4] >> 1` (`0x007fc031`-`0x007fc037`). Az `n = 0` esetre a `0x00cf3ac0` (2^32) korrekció szolgál (`0x007fc055`).
+  - A `0x009a5210` és a `0x009e5f90` függvények törzse NINCS MEG. A C kód szerint a láncuk értékét adja a görgetéshez.
+- **c)** `S+0x80` (lista) és `S+0x84` (darab, bit 0 jelzővel): azoknak az elemeknek az indexe, amelyeknek `z > 0.1`. A 0.1 a `0x00c7dd30` double (`0x007fc119`, lebegőpontos összehasonlítás). A lista foglalása és felszabadítása: `0x007fc17e`, `0x007fc191`. A lista-írás C alapján igazolt, asm-ben nincs végigellenőrizve.
+- **d)** Minden elemre (`i = 0..n-1`, a rekord `[S+0xb0] + i * 0xf8`):
+  - Az elem `(x, y, z)` értéke a `0x007fbab0` visszatérése (`0x007fc100`). Forrása NINCS MEG.
+  - `rec+0xa0` (int, alfa): `round((1 - E(d, 1.5)) * 256)`. Asm: `d = (1/z - 1) / 9` (`0x007fc3d4` fdiv a `0x00cf3ef8` double-lel, amely 9.0; 0 alá nem engedve, C). Az `1.5` a `0x00cf3ec4` float (`0x007fc3f3` fld). Az `E` a `0x005568e0` hívás (`0x007fc40f`). A `256` a `0x00cf39d8` double (`0x007fc423` fmul), a kerekítés `fistp` (`0x007fc431`), a tárolás `0x007fc439`. Az `E` törzse NINCS MEG.
+  - `rec+0xa4` ... `rec+0xcc`: 3×3 mátrix. Asm: `0x007fc27d lea eax,[eax+edx+0xa4]`; a tíz dword másolása C alapján. A tartalma C szerint: skála `z * S+0x28`, eltolás a `this+0x2c8` téglalap szélességével és magasságával.
+  - `0x007fa650(rec)` hívás (`0x007fc44b`). Törzse NINCS MEG.
+- **e)** A ciklus után `0x00604480` (`0x007fc48a`). Törzse NINCS MEG.
+
+Nem ír: a rekord `+0` mezőjét. (Lásd a §7 kizártakat.)
+
+**4. A `0x008014d0` (Q3, második fele).**
+
+- Hívók: `0x008018a0` (`0x00801c95`) és `0x008037e0` (`0x008039d1`). A `this` a belépéskor az EDI (`0x008014d0` első utasítása: `mov ecx,[edi+0x2ec]`).
+- Bemenet: a K kulcslista (`0x00801570` `mov esi,[edi+0x3ec]`, `0x00801576` `mov eax,[esi+eax*4]`), darab `[this+0x3f0] >> 1` (`0x0080150f`).
+- Elő-takarítás: ha a C tömb nem nulla, `0x00803c10` fut (`0x008014e5`), majd `[this+0x2f0] &= 1` és `[this+0x2ec] = 0` (`0x008014ea`, `0x008014f1`).
+- Minden kulcsra:
+  1. Ha `[this+0x2e4]` (az obj2) nem nulla: `obj2.vt[0](k, &info, 1)` (`0x0080155f`-`0x0080157a`). A hívó három argumentumot tesz a verembe, és nem takarít (nincs `add esp`). Ezért a hívottnak 0xc bájtot kell kiengednie, különben a verem romlana. Ez szerződés; a törzs NINCS MEG.
+  2. `0x007fa5b0` építi a kártya-rekordot (`0x00801580`).
+  3. `0x00a6aa00(-1, -1, -1, -1)` (`0x008015a8`): egy referencia-számlált temp objektum.
+  4. Négy `rand` hívás (`0x008015ad`, `0x008015be`, `0x00801633`, `0x00801644`), a kártya kis eltolásához.
+  5. A rekord bekerül a C tömbbe: `0x00803b50` másolás (`0x0080178d`, `0x008017f3`), a tömb növelése `0x00c0769f` (`0x0080173b`) és `0x004010e0` (`0x0080175a`) hívással.
+  6. A temp objektum felszabadítása: `InterlockedDecrement` (`0x0080181a`), majd `0x009a8bc0` (`0x00801862`, `0x0080186b`).
+- A `this`-re írt mezők: `+0x2ec` és `+0x2f0` (asm: `0x008014f1`, `0x008017c7`, `0x0080180b`). Más írás nincs.
+- **Nem rajzol.** A direkt hívások között nincs rajzoló. A `0x009a8bc0` egy képpufferszerű temp objektumot szabadít fel: a `[esi+8] * [esi+0xc] * 4` bájtot visszaadja a memória-számlálónak (`0x009a8bf4`-`0x009a8c0d`). Ez erős. Az `obj2.vt[0]` célja indirekt hívás, ezért nem zárható ki, hogy rajzol-e (U2).
+- **Kapcsolat a kattintással**: a 38.2.41 §2 szerint a kattintás kártya-keresése a `0x007fd800` hívással az `S+0xb0` rekordjain megy. A `0x008014d0` a C tömböt építi. Hogy a kettő ugyanaz-e, vagyis hogy a C tömb másolódik-e az `S+0xb0` tömbbe, NINCS MEG (U5).
+
+**5. A kattintás láncolata (kiegészíti a 38.2.41 §2-t).**
+- `0x008018a0`: `__fastcall`, `ECX` = this, `EAX` = az új kulcs. Ha `[this+0x50c]` már egyenlő az `EAX`-szel, a függvény a `0x00801ca3`-ra ugrik (`0x008018ac`, `0x008018b2`). Különben `[this+0x50c] = EAX` (`0x008018b8`).
+- Új kulcslista: `0x004b0190` hívás `EAX = [this+0x2f4]` és a kulcs argumentummal. A kimenet az `esp+0x20` objektumba kerül (`0x008018ce`-`0x008018e0`). A régi K felszabadul, és az új K a `0x00801b77` íráskor kerül a `[this+0x3ec]` mezőbe.
+- Ez megerősíti a 38.2.40 §5 állítását: a K írója a `0x008018a0`. Egyben bővíti a 38.2.41 U3 sorát: a `0x004b0190` nem csak a P osztálya, a kattintási kulcslista forrása is.
+- A függvény végén `0x008014d0` (`0x00801c95`), utána `0x00413490` (`0x00801c9e`). A `0x00413490` törzse NINCS MEG.
+
+**6. A 38.2.41 nyitott listájának frissítése (Q5).**
+
+| tétel | állapot (38.2.42) | mit mutat | Ghidra-cím |
+|---|---|---|---|
+| U1, 0x00a6aa00 teljes törzs | NINCS MEG (változatlan) | a `0x008014d0` hívja `(-1, -1, -1, -1)` argumentumokkal; referencia-számlált temp objektum | `0x00a6aa00` |
+| U2, obj2 osztálya és vt+0 célja | RÉSZBEN LEZÁRVA: a hívás módja megvan (§4), a cél NINCS MEG | a kártya-adat visszahívása | `0x005e8a70` (M írója), M+0x4c vt+0 |
+| U3, L+0x48 vtábla, 11. slot, P osztálya | NINCS MEG, BŐVÜLT: a `0x004b0190` a kattintási kulcslistát is adja (§5) | P = `[OneUp+0x2f4]`, L = `[P+0xc4]` | `0x004b0190` (törzs) |
+| U4, 0x0080157a túlírás | NINCS MEG: a hívó nem takarít, a hívottnak 0xc bájtot kell kiengednie (szerződés, §4) | a vt+0 törzse dönt | `0x008014d0` vt+0 célja (U2) |
+| U5, T+0x2ec olvasói | NINCS MEG: a `0x008014d0` írja a C tömböt | a rajzoló, és a C és az `S+0xb0` kapcsolata | a `[this+0x2ec]` olvasói: pásztázás |
+| U6, 0x009aaae0 hívóhelyei | NINCS MEG (változatlan) | - | `0x009aaae0` (xrefs) |
+| U7, sorrekord +0x14 írója | LEZÁRVA (38.2.41 §1) | - | - |
+| U8, P' = [T+0x3a4] és írója | NINCS MEG (változatlan) | - | `0x007fa7f0` (T+0x3a4 írója) |
+| U9, 0x008018a0 kattintási ága | LEZÁRVA (38.2.41 §2-3) | - | - |
+| U10, a 0x004b8470 hívója és az [L+0x148] írói | RÉSZBEN LEZÁRVA: hívó a `0x004b8ee0` (`0x004b9192`), írója a `0x004b8ee0`, és a `0x004baaa0` rendezi (§1) | a rendezés kulcsa és a `0x004b8d00` (L-et kap) nyitott | `0x004a7890` (U16), `0x004b8d00` (U17) |
+| U11, L osztálya, +0xc == 2, jbe | RÉSZBEN LEZÁRVA: L a `0x004b8ee0` és `0x004b8470` this-je, a `jbe` olvas `i == darab`-nál (§2) | L neve és vtáblája, a 2-es típus jelentése, a sortábla írói | L konstruktora (U3); `0x004b86d0` (darab-írás?); a sortábla írói: pásztázás |
+| U12, EBP/EBX forrása a hívottakban | NINCS MEG (változatlan; most nem vizsgáltam) | - | `0x004b2e10`, `0x004b3770`, `0x004b80d0` |
+| U13, 0x007fc010 | JAVÍTVA és RÉSZBEN LEZÁRVA (§3): nem írja a rekord `+0` mezőt; a többi írás megvan | az elem `(x, y, z)` és az E görbe NINCS MEG | `0x007fbab0`, `0x005568e0`, `0x007fa650`, `0x00604480` (U18, U19) |
+| U14, 0x008014d0 törzse | RÉSZBEN LEZÁRVA (§4): nincs rajzoló hívás, a C tömböt épít K-ból | a C olvasója NINCS MEG (U5) | U5, `0x007fa5b0` (U20) |
+| U15, startbutton vt+0x18 | NINCS MEG (változatlan) | - | `0x007fa7f0` (3. paraméter), a vt+0x18 célja |
+| U16 (új), a rendezés kulcsa | NINCS MEG | a `0x004a7890` összehasonlító; a `DAT_00d67678` globálist a hívó (`0x004b9150`) állítja | `0x004a7890`, `0x004b9150` |
+| U17 (új), 0x004b8d00 | NINCS MEG | L-et kap (az `[L+0xdc] == 2` ág); ír-e `[L+0x13c]`-t vagy `[L+0x148]`-at | `0x004b8d00` |
+| U18 (új), az E görbe | NINCS MEG | az `E(d, 1.5)` függvény, amely az alfát adja | `0x005568e0` |
+| U19 (új), rekord-utólag és ciklus-utáni lépés | NINCS MEG | a `0x007fa650` a rekord utólagos lépése, a `0x00604480` a ciklus utáni lépés | `0x007fa650`, `0x00604480` |
+| U20 (új), kártya-rekord építése | NINCS MEG | a `0x007fa5b0` az obj2 kimenetéből építi a rekordot | `0x007fa5b0` |
+| U21 (új), a kattintás környéke | NINCS MEG | a `0x004b0190` előtti `0x004133e0` kimenete (`esp+0x1c`), és a `0x00413490` törzse | `0x004133e0`, `0x00413490` |
+
+Helyesbítés (38.2.42): a 38.2.41 U13 sora téves volt (a `0x007fc010` nem ír rekord `+0`-t). A 38.2.41 §3 NINCS MEG tétele a `0x007fc010` törzséről most részben lezárva. A 38.2.41 U3 sora bővült (a `0x004b0190` a kulcslistát adja a kattintáskor).
+
+**7. Amit KIZÁRTAM.**
+- „A `0x007fc010` írja a rekord `+0` mezőjét”: CÁFOLVA. Az asm-ben az írásai: `S+0x18`, `S+0x20`, `S+0x80`, `S+0x84`, `rec+0xa0`, `rec+0xa4`-től a mátrix.
+- „A `0x008014d0` a K-ból rajzol”: CÁFOLVA, nincs direkt rajzoló hívás. Az `obj2.vt[0]` célja nyitott (U2).
+- „Az i-lista sorrendje a sorindex-sorrend”: NEM IGAZOLT, mert a `0x004baaa0` rendez.
+- „A `jbe` nem olvas `i == darab`-nál”: CÁFOLVA (`0x004b29ea`).
+- „A `0x008018a0` nem írja a K listát”: CÁFOLVA. A 38.2.40 §5 állítása helyes (`0x00801907`, `0x00801b77`).
+- „A `0x004b8470` hívója csak a `0x004b8ee0`”: igaz a direkt hívásokra (index és asm), de az index nem lát vtábla-hívást, ezt nem zártam ki.
+
+**Nyitott kérdések mérlege (38.2.42).** 21 tétel: a 38.2.41 listája (U1-U15) és az új U16-U21. LEZÁRVA: 2 (U7, U9). RÉSZBEN LEZÁRVA: 5 (U2, U10, U11, U13, U14). NINCS MEG: 14, mindegyik mellett Ghidra-cím vagy konkrét pásztázási út. Blokkolt: 0. Hatókörön kívül: 0. Cím és pásztázási út nélkül: 0. Az U16-U21 hat tétel új ebben a körben, ezeket a következő körben le kell zárni.
+
+#### A felhasználó szemével
+
+Kattintáskor a kártya kulcsa lesz a kijelölt kulcs, és a program új kulcslistát kér a P-objektumtól. Minden kulcshoz új kártyát épít, az adatát a kulcs szerinti visszahívás adja.
+
+Hogy egy kulcs melyik képeket jelenti (albumot vagy mappát), nem derült ki, ezért melyik képhalmaz jelenik meg: NINCS MEG.
+
+Hiányzó címek: `0x004b0190` (ez adja az új kulcslistát), `0x005e8a70` és az `M+0x4c` vt+0 (ez tölti ki a kártya adatát), `0x007fa5b0` (a kártya-rekord építése), és a `[this+0x2ec]` olvasója (U5), amely a kártyákat megjeleníti.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
