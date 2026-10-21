@@ -775,7 +775,40 @@ A k04 és a k05 0,000-s értéke azt jelenti, hogy a PicasaPy kimenete az export
 
 Következtetés:
 
-- A HDR maga pontos. Önmagában és a telítettség után is bitre egyezik, és a sorrend sem hiba: ha a HDR-t a lánc elejére tesszük, a k03 ΔE-je 5,28, a k06-é 28,09 lesz.
-- A HDR felnagyítja a bemenete eltérését. A kimenete `be + C·(be - elm)`, így a bemenet helyi eltérése `C = 3`-nál nagyjából (1 + C)-szeresére, négyszeresére nő. A k03-ban az autolight és a sat eltérése 0,669, a HDR után 2,57: a szorzó 3,8. Ugyanez látszik, ha a saját HDR-ünket a Picasa JPEG-ként mentett autolight+sat exportjára futtatjuk: a JPEG-zaj is felnagyítódik, a ΔE 3,63.
-- Az eltérés forrása tehát a HDR előtti tagokban van, azoknak a maradékában, amely önmagában a küszöb alatt marad: az autolight és a sat együtt 0,669 (a k03-ban), a HeatMap az IR után +1,38 (a k02-ben az első három réteg 0,29, a negyedikkel 1,666). Ezek külön-külön egyeznek, csak a HDR mögött lépik át a küszöböt.
-- A k06-ot más képen mértük, mint a k02 négyrétegű láncát, ezért a HDR előtti ΔE-je nincs külön mérve. Az ítélete ugyanezzel a felnagyítással magyarázható, de ez nincs kimérve.
+- A HDR kontrolljai az adott méréseken pontosak: a `HDR` és a `sat, HDR` kimenet JPEG-egyeztetés után ΔE 0,000 (job-230, k04-k05). Ez ezekre a bemenetekre bizonyítja a bájtegyezést.
+- A k03 `autolight, sat` mérése ΔE 0,669 (job-230), az első három réteg `autolight, sat, HDR` mérése ΔE 2,57 (job-229). A két átlagos CIE76 ΔE értékből nem számítható ki a pixelenkénti HDR-erősítés: a metrika nem lineáris, és a két mérés nem köztes pixeleket hasonlít. A korábbi általános „négyszereződés” és 3,8-as ΔE-szorzó ezért nincs bizonyítva.
+- A k02 első három rétegének ΔE-je 0,29 (job-229), a negyedik `HeatMap` hozzáadásával mért ΔE 1,666 (job-230). Ezek külön láncmérések; a különbség nem izolálja a HeatMap pixelenkénti hozzájárulását.
+- A binárisban mindkét keresett taghoz van konkrét PicasaPy-eltérés. Az `autolight` eredeti útja `0x008f80c0 → 0x0090c3b0 → 0x0090c1e0 → 0x0090bc60`: 16 bites 8.8 LUT-ot interpolál és képpontonként egy, mindhárom csatornára közös MT-mintával ditherel; a helyi út 16.16-os erősítésből 8 bites LUT-ot képez, `np.rint`-tel kerekít és dither nélkül alkalmaz. A pontos leírás a [`picasa-native-filter-workers.md`](picasa-native-filter-workers.md) 2.3. szakaszában van.
+- A `HeatMap` eredeti HSV→RGB útja `0x00bbbcf0 → 0x00bbbbf0 → 0x00bbbe20`; a p/q/t számítás x87 köztes pontjai és tárolásai a `0x00bbbf67`-`0x00bbbf9d` tartományban vannak. A jelenlegi Python-kód float64 köztes értékek után float32-re tárol; a QEMU-kontroll a `filterdesc.xml` stoplistáján 5/768 eltérő RGB-bájtot mért (részletek a [`filterdesc-registry.md`](filterdesc-registry.md) HSV-szakaszában). A műveletsorrend a leíró és a helyi lánc szerint egyezik; az eltérés a köztes pontosság/számítási sorrend.
+
+### #5403 - az autolight és a HeatMap eltérő lépése
+
+| tag | bináris lépés | PicasaPy | megállapítás |
+|---|---|---|---|
+| `autolight` | `0x0090c1e0`: 16 bites 8.8 LUT; `0x0090bc60`: közös pixelenkénti dither, interpoláció, `>>8`, vágás | `_native_levels_lut`: 16.16-os erősítésből 8 bites LUT; `apply_lut`: `np.rint`, dither nélkül | A kimeneti LUT felbontása és kvantálása eltér. A `fistp` félértékeknél használt kerekítési módja ebből a függvényszakaszból `NINCS MEG`. |
+| `HeatMap` | `0x00bbbe20`, benne a p/q/t x87-szekvencia `0x00bbbf67`-`0x00bbbf9d` | `glimmer_ops.py`: float64 köztes műveletek, majd float32 tárolás; végül csonkolás | Az eltérés a HSV→RGB p/q/t köztes pontosságában és számítási sorrendjében van; a stoppozíciók és a HeatMap műveleteinek XML-sorrendje egyezik. QEMU-mérés: 5/768 RGB-bájt. |
+
+**Független utak.** A út: célzott utasításszintű disassembly és a pozitív xref-lánc
+adja az autolight hívási sorrendjét, a LUT `fistp`/vágását és a ditheres
+alkalmazót; a PE-adatból olvasott `0x00cf4200` értéke 65280. A HeatMap-nél
+ugyanez a célzott olvasás az x87 p/q/t tartományt azonosítja. B út: a
+PicasaPy alkalmazóútjának közvetlen forrásvizsgálata és az eredeti Picasa
+exporttal végzett 684-es önálló autolight-pár mérése (átlagos ΔE 0,23); a
+HeatMap B útja az eredeti kódot futtató QEMU és a külön Python-referencia
+összevetése, amely az XML-stoplistán 5/768 eltérő bájtot ad. A két út
+ugyanazt az eltérő feldolgozási lépést jelöli.
+
+**Cáfoló kísérlet.** A sorrendhibát ellenőriztem a telepített
+`filterdesc.xml` HeatMap-műveletsorával és a PicasaPy
+`glimmer_tone.py` hívási sorrendjével: mindkettő előbb szürkít, majd
+HSV-színátmenetet alkalmaz, így ez a sorrendhipotézis nem áll meg. A HDR-t
+mint önálló eltérésforrást a job-230 `HDR` és `sat, HDR` kontrolljai cáfolják
+az ottani képen (mindkettő ΔE 0,000); ez nem cáfolja, hogy a HDR egy másik
+tag előzetes pixeleltérését továbbalakíthatja.
+
+**Bizonyítottság és határ.** A két algoritmuskülönbség **megerősített**: az
+utasításszintű bináris olvasás és az attól független implementáció-/pixel-
+ellenőrzés ugyanazt a lépést jelöli. A job-229/230 konkrét láncok ΔE-jének
+pixelenkénti felbontása viszont nyitott, mert a `k02`/`k03` forrás- és
+közbenső képei nincsenek meg a helyi mérőcsomagban. Ez nem módosítja a két
+eltérő natív lépés azonosítását.
