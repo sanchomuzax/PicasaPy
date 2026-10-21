@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.174] - 2026-10-21
+
+- A tiszta profilos exportteszt megvárja, amíg az eredményablak OK gombja láthatóvá és engedélyezetté válik (#5432).
+
 ## [0.9.173] - 2026-10-21
 
 - A tálca forgatása után a rács és a tálca bélyegképe is azonnal elfordul (#5428).
