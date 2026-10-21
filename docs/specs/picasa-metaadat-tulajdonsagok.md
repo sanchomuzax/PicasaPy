@@ -2178,9 +2178,9 @@ a `0x009ecfb8` felülírás hozza. A pixelpontos egyezés nem mérhető (a JPEG-
 - **minőség-visszalépés:** ha az EXIF-író hibát ad, vagy a blokk > `0xfffd` bájt (`0x009ed10b`–`0x009ed115`), a
   minőség 15-tel csökken (`0x009ed12e`–`0x009ed141`): 85 → 70 → 55 → 40 → 25 → 10; 10-en sem fér el → az EXIF
   teljesen kiürül (`0x009ed1be`). A mért legnagyobb APP1 6858 bájt, tehát mindig az első próba ment át.
-  **Nálunk (tudatos eltérés, #3998):** ha 10-en sem fér el, a bélyegkép nélküli EXIF megy tovább (az eredeti
-  az egészet eldobja). Indok: az ág a mérés szerint elérhetetlen, és ha mégis előfordulna, a forrás dátum-,
-  szerző- és tájolás-adatainak elvesztése rosszabb, mint egy hiányzó bélyegkép.
+  **Nálunk (#5459):** az eredetivel egyezően, ha 10-en sem fér el, az EXIF elmarad. A korábbi eltérés (#3998:
+  a bélyegkép nélküli EXIF ment tovább) megszűnt. Bélyegkép nélküli exportnál (kimenet legfeljebb 300 px) nincs
+  minőség-visszalépés, ott a 64 KiB fölötti forrás-EXIF bájtra megy át (#3961).
 
 **5. Elhelyezés az EXIF-blokkban** (`0x00a7ade0` 1-es mód, `0x00a7afcd`–`0x00a7b0bd`; kiírás `0x00a7c720`):
 két új tag az IFD1-ben, `0x201` és `0x202` (LONG, darabszám 1); a kiíró a bélyegképet a TIFF-puffer **végére**
