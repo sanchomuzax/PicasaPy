@@ -427,6 +427,7 @@ ColumnLayout {
             required property var modelData
             objectName: "unnamedFaceCard_" + faceCard.modelData.faceId
             property var nameSuggestions: []
+            property int selectedSuggestionIndex: -1
             width: unnamedFacesGrid.cellWidth
             height: unnamedFacesGrid.cellHeight
 
@@ -435,9 +436,11 @@ ColumnLayout {
                 if (!needle || typeof controller === "undefined" || !controller
                         || !controller.nameSuggestions) {
                     faceCard.nameSuggestions = []
+                    faceCard.selectedSuggestionIndex = -1
                     return
                 }
                 faceCard.nameSuggestions = controller.nameSuggestions(needle)
+                faceCard.selectedSuggestionIndex = -1
             }
 
             // #5285: a névadás egy útja Enterre és a javaslat kattintására
@@ -445,7 +448,17 @@ ColumnLayout {
             function submitName(name) {
                 faceNameField.text = ""
                 faceCard.nameSuggestions = []
+                faceCard.selectedSuggestionIndex = -1
                 root.nameSubmitted(faceCard.modelData.faceId, name)
+            }
+
+            function acceptSelectedSuggestion() {
+                var selectedIndex = faceCard.selectedSuggestionIndex
+                if (selectedIndex < 0 || selectedIndex >= faceCard.nameSuggestions.length)
+                    return false
+                faceCard.submitName(
+                    String(faceCard.nameSuggestions[selectedIndex].name || ""))
+                return true
             }
 
             Column {
@@ -565,12 +578,32 @@ ColumnLayout {
                     }
                     TextFieldContextArea {}
                     onAccepted: {
+                        if (faceCard.acceptSelectedSuggestion())
+                            return
                         var name = text.trim()
                         if (!name)
                             return
                         faceCard.submitName(name)
                     }
                     onTextEdited: faceCard.refreshNameSuggestions()
+                    Keys.onPressed: function(event) {
+                        var count = faceCard.nameSuggestions.length
+                        if (count === 0)
+                            return
+                        if (event.key === Qt.Key_Down) {
+                            faceCard.selectedSuggestionIndex = Math.min(
+                                count - 1,
+                                faceCard.selectedSuggestionIndex + 1
+                            )
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Up) {
+                            faceCard.selectedSuggestionIndex =
+                                faceCard.selectedSuggestionIndex < 0
+                                ? count - 1
+                                : Math.max(0, faceCard.selectedSuggestionIndex - 1)
+                            event.accepted = true
+                        }
+                    }
                 }
             }
 
@@ -622,6 +655,12 @@ ColumnLayout {
                         property string thumbUrl: String(modelData.thumbUrl || "")
                         width: ListView.view.width
                         height: 40
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "transparent"
+                            border.color: Theme.panelSelectionActive
+                            border.width: faceCard.selectedSuggestionIndex === index ? 1 : 0
+                        }
                         Image {
                             objectName: "unnamedFaceSuggestionImage_"
                                         + faceCard.modelData.faceId + "_" + index
@@ -653,7 +692,10 @@ ColumnLayout {
                         // nevezi meg, ugyanazon az úton, mint az Enter
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: faceCard.submitName(parent.personName)
+                            onClicked: {
+                                faceCard.selectedSuggestionIndex = index
+                                faceCard.submitName(parent.personName)
+                            }
                         }
                     }
                 }
