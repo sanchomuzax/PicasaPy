@@ -1160,7 +1160,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>도움말 태그 표시</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>한 번 클릭하여 수정보기 종료</translation>
@@ -1192,9 +1192,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>파일:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>가져올 때 중복 파일 감지</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>가져오는 동안 중복 사진 감지</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1290,6 +1291,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>가져온 사진 저장 위치:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>가져온 사진 저장 위치:</translation>

@@ -1160,7 +1160,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Mostrar etiquetas de ajuda</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>Um clique para sair da Vista de edição</translation>
@@ -1192,9 +1192,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Ficheiros:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Detectar duplicatas durante a importação</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>Detectar duplicados durante a importação</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1290,6 +1291,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Guardar imagens importadas no:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>Guardar imagens importadas no:</translation>

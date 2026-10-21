@@ -1162,7 +1162,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Zobrazit tagy nápovědy</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>Kliknutí ukončí zobrazení pro úpravy</translation>
@@ -1194,9 +1194,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Soubory:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Při importu vyhledávat duplicity</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>Během importu rozpoznávat duplicity</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1292,6 +1293,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Uložit importované fotky do:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>Uložit importované fotky do:</translation>

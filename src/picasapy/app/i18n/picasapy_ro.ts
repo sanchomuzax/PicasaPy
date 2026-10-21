@@ -1162,7 +1162,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Afişaţi etichetele de ajutor</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>Faceţi un singur clic pentru a ieşi din modul Editare</translation>
@@ -1194,9 +1194,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Fişiere:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Detectaţi duplicatele la importare</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>Detectaţi dublurile în timpul importului</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1292,6 +1293,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Salvaţi fotografiile importate în:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>Salvaţi fotografiile importate în:</translation>
