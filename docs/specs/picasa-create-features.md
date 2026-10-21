@@ -6176,6 +6176,124 @@ alobjektum osztályának RTTI-je, és azon belül a `+0x2a4` olvasói.
 | Exportálás TiVo DVR-re… | `ID_TIVO` | a `plugins/ytITivo.yti` plugin (TiVo Desktop-integráció) |
 | Indexképek nyomtatása… | `ID_FILE_PRINTCONTACTSHEET` | a Contact Sheet kollázs-típus nyomtatási párja |
 
+### 3.1 Poszterlapokra bontás és kimenet (#5469, 2026-10-21)
+
+**Bizonyítottsági fok: feltételes.** A parancs bekötése, a vezérlőnevek, a
+rács elemszáma, a kimeneti mappa és névminta, valamint a JPEG-minőség útja
+bináris címmel alátámasztható. Az átfedéses téglalap pontos képlete, a
+papírmérethez igazított levágás, az első megnyitás alapértékei, egy mentőopció
+jelentése és a metaadat-kezelés nem dőlt el; ezek nélkül a teljes viselkedés
+nem tekinthető lezártnak.
+
+#### Parancskezelő, vezérlők és beállítások
+
+Az `ID_POSTER` parancsazonosító `0x9d30`; a diszpécser `0x005cc150` címe a
+`0x00530c10` kezelőt hívja. A kezelő a `0x007387c0` konstruktorral építi fel a
+`poster` párbeszédet. A kötőfüggvény `0x00738a70` a `factor`, `paper` és
+`overlap` nevű vezérlőket olvassa vissza. A `factor` listaindexéhez 2-t ad,
+így a vezérlő értékei a 200%-os és 1000%-os nagyításokhoz tartozó 2 és 10
+közötti osztószámot adják.
+
+A `paper` választás utolsó értékének megőrzését a párbeszéd `0x00738800`
+függvénye végzi; a méretlista a területi beállítástól függ: metrikus esetben
+`10x15` és `20x25`, amerikai esetben `4x6` és `8.5x11`. Ezek a méretnevek a
+`0x00738800` függvényben, a `CPosterDlg::size1` és `CPosterDlg::size2` fordítási
+kulcsokban szerepelnek. A konstruktor a három vezérlő háttérmezőit nullázza,
+de ez önmagában nem bizonyítja, hogy első megnyitáskor melyik listaelem látszik:
+a teljes, első indítási alapérték és a tárolási névtér nincs meg. A
+`paper` kulcs olvasása és az utolsó választás visszaállítása igazolt
+(`0x0073883e`-`0x00738862`); a `factor` és az `overlap` tartós kulcsa nincs
+megállapítva.
+
+#### Lapszám, papírméret és DPI
+
+A kezelő a nagyítási lista indexéből `N=2..10` osztószámot képez, majd két,
+`0`-tól `N-1`-ig futó ciklussal `N×N` képkimenetet állít elő. A forrás két
+képponttengelyét egyenként `N` egyenlő részre osztja; a határokat lebegőpontos
+értékekből egész koordinátává alakítja (`0x00530d6f`-`0x00531081`). Ez a kód
+nem számít lapméretből képpontméretet, és nem olvas DPI-értéket. A párbeszéd
+`paper` mezőjének indexe a kezelő lapgeneráló részében nem jelenik meg, ezért
+a papírméret és a DPI kapcsolatára **NINCS MEG** bizonyíték. Nyitott marad,
+hogy más, közvetett hívási út használja-e ezt a választást.
+
+#### Átfedés
+
+Az `overlap` jelölő a párbeszédben hamis értékről indul (`0x007387c0`), a
+kezelő pedig csak bejelölt állapotnál lép az átfedéses ágba
+(`0x00530eb4`). Ebben az ágban a bináris a `0xcf4f20` címen levő
+`1.100000023841858` és a `0xcf50b0` címen levő `-0.10000002384185791`
+konstanst használja, majd egy x87 koordináta-transzformációval állítja elő a
+kimeneti határokat. Az ág és a konstansok igazoltak, de a transzformáció
+eredője nincs teljesen visszafejtve, ezért az átfedés pontos szélessége és az
+egyes szélek kiterjesztési iránya **NINCS MEG**. Megszerzéséhez a
+`0x00530c10` célzott Ghidra-dekompilációja és aszimmetrikus, jelölt képpel
+készült eredeti programfelvétel kell.
+
+#### Levágás és képarány
+
+A leíró súgója azt tanácsolja, hogy a csonkolás elkerüléséhez a forrásképet a
+papírral azonos méretarányra kell vágni. Ez nem mondja meg, hogy eltérő
+képaránynál a program melyik oldalt, milyen irányban és hol vágja le. A
+binárisban azonos arányú forrásrács készül, de a papírmérethez igazított
+levágás helye és iránya **NINCS MEG**. A kérdést a `0x00530c10` Ghidra-köre
+és különböző képarányú, ismert mintájú képekkel végzett Colab-felvétel dönti
+el.
+
+#### Kimeneti mappa, név, formátum, minőség és metaadat
+
+A kezelő a `%d-%d-%s` formátumot használja (`0x00c89808`); a két egész
+argumentum oszlop, majd sor sorrendű, a harmadik mező a forrás alapnevéből és
+eredeti kiterjesztéséből áll (`0x00531124`-`0x00531134`, `0x0049ff10`). Az
+eredeti forráskönyvtárat megtartó útvonal-objektumot az `0x004089e0` hozza
+létre; az új nevet a `0x009a37b0` állítja be, majd a `0x009a3620` a végső
+kiterjesztést `.jpg`-re állítja. A fájlt a `0x009d6010` író `wb` módban
+nyitja meg (`0x009d6041`-`0x009d6053`). Az eredeti mappába tehát
+`<oszlop>-<sor>-<alapnév>.jpg` kerül.
+
+A poszterkezelő a mentőnek `1`, `4` és `90` értékeket ad át
+(`0x00531191`-`0x005311a5`). A `0x009d6010` általános ága a
+`0x009d64e0` → `0x009d7120` → `0x009d53e0` útvonalon adja tovább ezeket. A
+`90` érték a `0x00ad3b30` JPEG-kvantálási útjába jut; ott a `100-90`, majd
+kétszeres átskálázás eredménye 20, amelyet a `0x00c75260` és `0x00c75360`
+kvantálótáblákra alkalmazó `0x00ad3970` használ. Ez alátámasztja a JPEG
+kimenetet és a 90-es minőségi paramétert; a `4` opció jelentése **NINCS
+MEG**. A metaadat megőrzése vagy eltávolítása **NINCS MEG**; ezt eredeti
+kimeneti fájl metaadatainak forrásképpel történő összevetése dönti el.
+
+#### Nálunk és a megvalósítási következmény
+
+Jelenlegi kódunk ugyan `N×N` rácsot készít, de az átfedést cellánként a
+cellaméret 10%-aként számolja, `sor-oszlop-eredetifájlnév` sorrendet és a
+forrás kiterjesztését használja, valamint nem ad át explicit JPEG-minőséget
+(`src/picasapy/printing/poster.py`). Az eredeti sorrend
+`oszlop-sor-alapnév.jpg`, a forrás mappájában, JPEG-minőség 90-nel. A
+`paper_size` paramétert a vágáshoz nem használja. Az átfedés pontos geometriája,
+a levágás, az első indítási alapértékek, a `4` íróopció és a metaadat-kezelés
+fejlesztés előtt további Ghidra-kört vagy Colab-felvételt igényel.
+
+#### Cáfoló kísérlet
+
+Ellenőriztem azt az alternatív feltevést, hogy a Poszter az kontaktlap-nyomtató
+kezelőt használja. A `0x005ddb80` gyorsgomb-kezelő `makeposter` ága a
+`0x00530c10`-et hívja, a `printcontactsheet` ág pedig külön útvonalon a
+`0x00744ee0`-et. A két művelet nem ugyanaz a kezelő; ez a cáfoló kísérlet
+egyező eredményt adott a külön menüparancs diszpécserével.
+
+#### Nyitott kérdések és megszerzésük
+
+- Ghidra-kör kell: `0x00530c10` - az átfedéses x87 koordináta-transzformáció
+  pontos képlete, a határok kerekítése, valamint a vágási irány [blokkoló].
+- Ghidra-kör kell: `0x009d6010` - a `{1, 4, 90}` íróbeállítások közül a `4`
+  pontos jelentése, valamint az, hogy a mentő milyen képadatot ír a JPEG-be
+  [blokkoló].
+- Colab-felvétel kell: eredeti programból készített poszter ismert
+  aszimmetrikus és eltérő képarányú képből, be- és kikapcsolt átfedéssel; a
+  kimeneti fájlok helyének, nevének, pixelhatárainak, bájtformátumának és
+  metaadatainak rögzítésével.
+- Colab-felvétel kell: friss beállítási profillal megnyitott párbeszéd és
+  második megnyitás, hogy az első indítási alapértékek és a `factor`, `paper`,
+  `overlap` tartós kulcsai igazolhatók legyenek.
+
 ### 2.8/c A mappa-fejléc FILM-gombja — alapból látszik (2026-10-09, #4539)
 
 *A #4539 első kérdése: van-e film-gomb a MAPPA fejlécében, és alapból látszik-e.
