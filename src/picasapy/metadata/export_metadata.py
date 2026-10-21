@@ -29,8 +29,9 @@ hibánál a régi bájtmásolás a kimenet (`bajtmasolas`).
   bélyegkép (`exif_belyegkep`: 160 px, előfelezés + Lanczos-3, q85) kerül a
   blokk végére, akkor is, ha a forrásban nem volt EXIF; egyébként nincs IFD1.
   Ha az APP1 nem fér a 64 KiB-ba, a bélyegkép minősége 15-tel csökken
-  (85 → 10); 10-en sem fér el → bélyegkép nélkül megy tovább az EXIF (az
-  eredeti itt az egész EXIF-et eldobja; mi a forrás többi tagjét megtartjuk).
+  (85 → 10); 10-en sem fér el → az EXIF elmarad, az egész (#5459; az eredeti
+  is így tesz, spec 16. H) 4.). Bélyegkép nélkül (kimenet ≤ 300 px) nincs
+  minőség-visszalépés: ha az EXIF így sem fér el, a forrás szegmense megy bájtra.
 * XMP: a meglévő megmarad, `xmp:ModifyDate` = az export ideje, az `exif:`
   névtérből csak a két dátum marad (16. B). Ha a forrásnak nincs XMP-je:
   metaadat nélküli forrásnál (se EXIF, se XMP) a `copy_signature` mért
@@ -93,6 +94,9 @@ _NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #: az `exif:` névtérből ezek maradnak (spec 16. B) 5.)
 _EXIF_MARAD = frozenset({"DateTimeOriginal", "DateTimeDigitized"})
 _EXIF_VERZIO = b"0220"  # a metaadat nélküli forrás eredeti exportjában mért
+#: az `_exif_szegmens` jelzése: a blokk a bélyegképpel sem fér el, az EXIF elmarad
+#: (spec: `picasa-metaadat-tulajdonsagok.md` 16. H) 4., `0x009ed1be`)
+_EXIF_KIURITVE = b""
 _INTEROP_VERZIO = b"0100"  # spec 16. G) 3d
 #: a JPEG SOF-markerei (a 0xC4 DHT, 0xC8 JPG és 0xCC DAC nem az)
 _SOF_MARKEREK = frozenset({0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF})
@@ -252,7 +256,8 @@ def _exif_szegmens(
     forras_meret: tuple[int, int] | None = None,
     taken_at_override: datetime | None = None,
 ) -> bytes | None:
-    """A frissített EXIF-APP1, vagy `None` (akkor a forrásé megy bájtra)."""
+    """A frissített EXIF-APP1. `None`: hiba, akkor a forrásé megy bájtra.
+    `_EXIF_KIURITVE`: a blokk túlméretes, az EXIF elmarad."""
     valtozasok = _exif_valtozasok(
         size,
         now,
@@ -262,17 +267,25 @@ def _exif_szegmens(
     if forras_meret is not None:
         valtozasok += _interop_valtozasok(forras_meret)
     kicsi = _vedett_kep("bélyegkép", lambda: _kicsinyitett_kep(encoded))
-    if kicsi is not None:
-        for minoseg in exif_belyegkep.MINOSEGEK:
-            jpeg = _belyegkep_jpeg(kicsi, minoseg)
-            if jpeg is None:
-                break
-            szegmens = _app1_ha_elfer(
-                _EXIF_ID, frissitett_tiff(tiff, valtozasok, uj_ifd1=lambda jpeg=jpeg: jpeg)
-            )
-            if szegmens is not None:
-                return szegmens
-    # nincs (vagy nem fér el) bélyegkép: az IFD1 akkor sem a forrásé
+    if kicsi is None:
+        return _exif_belyegkep_nelkul(tiff, valtozasok)
+    for minoseg in exif_belyegkep.MINOSEGEK:
+        jpeg = _belyegkep_jpeg(kicsi, minoseg)
+        if jpeg is None:
+            # kódolási hiba: a bélyegkép nélkül megy tovább, az EXIF megmarad
+            return _exif_belyegkep_nelkul(tiff, valtozasok)
+        szegmens = _app1_ha_elfer(
+            _EXIF_ID, frissitett_tiff(tiff, valtozasok, uj_ifd1=lambda jpeg=jpeg: jpeg)
+        )
+        if szegmens is not None:
+            return szegmens
+    # spec 16. H) 4.: 10-en sem fér el → az EXIF teljesen kiürül
+    return _EXIF_KIURITVE
+
+
+def _exif_belyegkep_nelkul(tiff: bytes | None, valtozasok: list[Valtozas]) -> bytes | None:
+    """Az EXIF bélyegkép nélkül: az IFD1 akkor sem a forrásé. `None`, ha nem fér
+    a 64 KiB-ba: akkor a forrás szegmense megy bájtra (#3961)."""
     return _app1_ha_elfer(_EXIF_ID, frissitett_tiff(tiff, valtozasok, uj_ifd1=lambda: None))
 
 
@@ -448,7 +461,8 @@ def _frissitett_szegmensek(
             ki[exif_i] = exif_uj
         else:
             ki.insert(0, exif_uj)
-    return ki
+    # a kiürített (üres) EXIF nem megy ki (spec 16. H) 4.)
+    return [s for s in ki if s]
 
 
 def frissitett_metaadat(
