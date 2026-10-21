@@ -133,10 +133,15 @@ A **Mégse** gomb kilép a kézi hozzáadásból.
 A bal hasáb **Emberek** csoportjában minden névhez tartozik egy album. A
 névre jobbgombbal kattintva:
 
-- **Az Emberek album törlése** — megerősítés után (*Biztosan törli a
-  személyi albumot?*, **Igen** / **Nem**) kiveszi a személyt a
-  névjegyzékből, ugyanúgy, mint a személyek kezelésének **Személy
-  törlése** gombja;
+- **Az Emberek album törlése** - a **Személyek eltávolítása** ablakban
+  rákérdez (*Biztosan törli a(z) "…" személyi albumot?*). Az **Album
+  törlése** gomb leveszi a nevet a személy összes arcáról, így a képek
+  kikerülnek az albumból, **a személy viszont a névjegyzékben marad**
+  (a személyek kezelése ablakban továbbra is megtalálod). A **Mégse**
+  semmit nem változtat; az ablakban az **Enter** is a Mégse, hogy
+  véletlenül ne törölj. Az ablakban látszik egy jelölőnégyzet a
+  szinkronizált Picasa Webalbumokról is: ez a megszűnt szolgáltatásra
+  vonatkozik, a PicasaPy-ban nincs hatása;
 - **Az Emberek album szerkesztése…** — megnyitja a személyek
   kezelése ablakot (lásd lentebb), az adott személy kijelölésével;
 - **Az összes kijelölése** (Ctrl+A), **Kijelölés törlése** (Ctrl+D) és
@@ -197,8 +202,13 @@ száma áll (például „37 arc"). Itt:
   sarkában lévő **✕**. A program rákérdez — „Biztosan áthelyezi ezt a
   személyt a Mellőzött emberek albumba?" —, és a **Ne kérdezzen újból,
   mindig hagyja figyelmen kívül** pipával legközelebb kérdés nélkül
-  mellőz. A mellőzött arcok a **Mellőzött emberek** alá kerülnek; a bal
-  hasábon a mellettük álló szám a mellőzés után azonnal frissül.
+  mellőz. A mellőzött arcok a **Mellőzött emberek** alá kerülnek.
+- A bal hasáb Emberek csoportjában a mellőzött arcok sora
+  (**Figyelmen kívül hagyva (N)**) csak akkor látszik, amikor a
+  mellőzött arcokat nézed: ilyenkor a **Névtelenek** sorának helyén áll,
+  a szokásos nézetben pedig a Névtelenek sora látszik helyette. A
+  csoport fejlécében álló szám a ténylegesen látható sorokat számolja.
+  A zárójelben álló szám a mellőzés után azonnal frissül.
 - A fejléc **Mellőzött arcok megjelenítése** gombjával (szürke, amíg
   nincs mellőzött arc) átváltasz a mellőzött arcokra. Ott a fejléc címe
   **Mellőzött emberek**, alatta az arcok száma. Ha kijelölsz egy vagy több
@@ -337,6 +347,20 @@ azok érvényesek maradnak.
 A végén összegzést kapsz: hány fájlba írt, hányat hagyott ki, és ha volt
 hiba, mi volt az első.
 
+## A személy albumának fejléce
+
+Egy személy albumát megnyitva a rács tetején a fejléc bal oldalán a
+személy **arcképe** és **neve** áll, alatta a személy arcainak sávja,
+utána a képek.
+
+A fejlécben egy **Eltávolítás** gomb is van. Akkor élénk, ha olyan képet
+jelöltél ki, amelyen ennek a személynek az arca szerepel (vagy amelyen
+erre a névre javaslat vár). Megnyomva a kijelölt képekről - megerősítés
+után - leveszi a személy nevét; ha a kijelölésen javaslat vár, azt veti
+el. Mellette egy kis ikongomb (súgója: **Beállítás indexképként az
+Emberek albumban**) a kijelölt kép arcát teszi meg a személy arcképének
+- ugyanazt teszi, mint a lent leírt helyi menüs parancs.
+
 ## Javaslatok jóváhagyása egy személy albumában
 
 Ha egy személy albumát nyitod meg, a rács **kétféle képet mutat**: azokat,
@@ -450,5 +474,11 @@ működik: az összes nem üres személyalbum képeiből indítja a
 
 A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…** a kijelölt
 képekkel nyitja meg a [Filmkészítőt](mozgofilm.md), 1024 × 768-as
-alapmérettel. A parancs csak kijelölt képnél él. A filmbe ma a képek
-egészben kerülnek, nem az arcra vágva.
+alapmérettel. A parancs csak kijelölt képnél él.
+
+Az arcokból készülő filmben minden klip **az arcra van keretezve**: a
+program az arcot a kocka közepére igazítja, és köré vágja a képet. Ha egy
+képen több megjelölt arc van, mindegyikből külön klip lesz. Az olyan kép,
+amelyen nincs használható arc, kimarad a filmből. Ha a
+[Filmkészítőben](mozgofilm.md) bekapcsolod a **Kis felbontású arcok
+eltávolítása** jelölőt, a túl kicsi (keskeny) arcok is kimaradnak.
