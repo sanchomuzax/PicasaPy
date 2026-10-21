@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.178] - 2026-10-21
+
+- A tiszta profilos teszt bukáskor megnevezi, melyik felugró maradt nyitva az export után (#5444).
+
 ## [0.9.177] - 2026-10-21
 
 - A tiszta profilos teszt az Export gombra is megvárja, hogy a párbeszéd beálljon, így Windowson sem kattint mellé (#5444).
