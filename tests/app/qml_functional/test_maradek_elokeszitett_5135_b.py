@@ -93,6 +93,11 @@ class TestNyomtatasElonezetLapozas:
         assert _varj(qt_app, lambda: dialog.property("active") is True), (
             "a nyomtatási párbeszéd nem lett aktív"
         )
+        # #5520: a nyitás utáni átméretezés (`meretezesIdozito`) lecsengése
+        # előtt a gomb elmozdulhat a lenyomás és a felengedés között
+        assert _varj(
+            qt_app, lambda: dialog.property("meretezesFuggoben") is False
+        ), "a nyomtatási párbeszéd méretezése nem csengett le"
         kovetkezo = _elem(window, "printPreviewNextButton")
         assert _varj(qt_app, lambda: kovetkezo.property("enabled") is True), (
             "a Következő gomb nem lett engedélyezett"
