@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 import shiboken6
-from PySide6.QtCore import QObject, QPoint, QPointF, Qt, QUrl
+from PySide6.QtCore import QObject, QPoint, QPointF, QTimer, Qt, QUrl
 from PySide6.QtGui import QImage, QImageWriter
-from PySide6.QtQuick import QQuickItem
+from PySide6.QtQuick import QQuickItem, QQuickWindow
 from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
@@ -96,6 +96,41 @@ def _nyisd_meg_a_nezot(window, qt_app):
     assert _var(qt_app, lambda: window.property("viewerOpen") is True), (
         "a képrács valódi dupla kattintása nem nyitotta meg a nézőt"
     )
+
+
+def _varj_export_ok_gombokra(window, qt_app):
+    """Megvárja, hogy az export eredménypárbeszéd OK gombja készen álljon."""
+    jeloltek = [
+        item for item in _bejark(window.contentItem())
+        if isinstance(item, QQuickItem)
+        and str(item.property("text") or "").strip().casefold() == "ok"
+    ]
+    assert jeloltek, "az export eredmény-párbeszéd OK gombja nem található"
+    assert _var(
+        qt_app,
+        lambda: any(item.isVisible() and item.isEnabled() for item in jeloltek),
+        10.0,
+    ), "az export eredmény-párbeszéd OK gombja nem vált láthatóvá és engedélyezetté"
+    ok_gombok = [
+        item for item in jeloltek if item.isVisible() and item.isEnabled()
+    ]
+    _QML_REFS.extend(ok_gombok)
+    assert ok_gombok, "az export eredmény-párbeszéd OK gombja nem található"
+    # Windowson a felugró nyitó animációja alatt a gomb még mozog, és a
+    # kattintás mellé eshet: a helyzetének három egymást követő mérésen
+    # azonosnak kell lennie (vö. az animált fiókok kattintási csapdája).
+    gomb = ok_gombok[-1]
+    helyzetek = []
+
+    def _all_a_helyzet():
+        pont = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
+        helyzetek.append((round(pont.x()), round(pont.y()), round(gomb.opacity(), 2)))
+        return len(helyzetek) >= 3 and len(set(helyzetek[-3:])) == 1 and helyzetek[-1][2] == 1.0
+
+    assert _var(qt_app, _all_a_helyzet, 10.0), (
+        f"az export eredmény-párbeszéd OK gombja nem állt meg: {helyzetek[-3:]!r}"
+    )
+    return ok_gombok
 
 
 def _kepmappa(tmp_path_factory) -> Path:
@@ -340,14 +375,7 @@ def _lep_export_valodi_menu_es_kattintas(tiszta_app, qt_app, tmp_path_factory):
         "a nyitott export-eredmény DeferredDialog nem látszik a felugrók között: "
         f"{felugrok!r}"
     )
-    ok_gombok = [
-        item for item in _bejark(window.contentItem())
-        if isinstance(item, QQuickItem)
-        and str(item.property("text") or "").strip().casefold() == "ok"
-        and item.isVisible() and item.isEnabled()
-    ]
-    _QML_REFS.extend(ok_gombok)
-    assert ok_gombok, "az export eredmény-párbeszéd OK gombja nem található"
+    ok_gombok = _varj_export_ok_gombokra(window, qt_app)
     _kattint_item(ok_gombok[-1], qt_app)
     assert _var(qt_app, lambda: eredmeny.property("opened") is False), (
         "az export eredmény-párbeszéd nem zárult be az OK kattintás után"
@@ -1027,3 +1055,35 @@ def test_vorosszem_diagnosztika_nem_olvassa_a_torolt_kattintasi_celpontot(
     eredmeny = _vorosszem_diagnosztika(Ablak(), Edit(), None, None, adatok)
 
     assert "cél=editToolRedeye/QQuickItem" in eredmeny
+
+
+@pytest.mark.parametrize("ablakmagassag_eltolas", [-5, 0, 5])
+def test_export_ok_gomb_var_a_lathato_es_engedelyezett_allapotra(
+    qt_app, ablakmagassag_eltolas,
+):
+    """Az export bezárása csak a ténylegesen kész OK gombbal történhet."""
+    window = QQuickWindow()
+    window.resize(240, 120 + ablakmagassag_eltolas)
+    gomb = QQuickItem(window.contentItem())
+    gomb.setProperty("text", "OK")
+    gomb.setWidth(80)
+    gomb.setHeight(30)
+    gomb.setVisible(False)
+    gomb.setEnabled(False)
+    window.show()
+
+    lathatova_valas = QTimer(window)
+    lathatova_valas.setSingleShot(True)
+    lathatova_valas.timeout.connect(lambda: gomb.setVisible(True))
+    lathatova_valas.start(50)
+    engedelyezes = QTimer(window)
+    engedelyezes.setSingleShot(True)
+    engedelyezes.timeout.connect(lambda: gomb.setEnabled(True))
+    engedelyezes.start(100)
+    try:
+        assert _varj_export_ok_gombokra(window, qt_app) == [gomb]
+    finally:
+        lathatova_valas.stop()
+        engedelyezes.stop()
+        window.close()
+        _QML_REFS.clear()
