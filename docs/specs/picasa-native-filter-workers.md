@@ -450,6 +450,29 @@ leképezés, nem két egymás utáni lépés** — a részletek és a numerikus
 következmények a [`filters-decoded.md`](filters-decoded.md) „A `finetune2`
 SZERKEZETE" szakaszában.
 
+### #5403 - az `autolight` kimeneti kvantálása
+
+Az Auto Contrast callbackje (`0x008f80c0`) a `0x0090c3b0` útján előbb a
+`0x0090c1e0` LUT-építőt, majd a `0x0090bc60` alkalmazót hívja. A LUT 256
+értékét 16 bites 8.8 formában építi: a `0x00cf4200` skálakonstans értéke
+65280 (`0xFF00`), a `0x0090c27f` `fistp`-je egészíti ki az értéket, majd a
+`0x0090c287`-`0x0090c29b` tartomány 0 és `0xFF00` közé vágja. Az alkalmazó
+képpontonként egy MT-mintát vesz (`0x0090bd25`), ezt mindhárom csatornához
+közösen használja, interpolál a szomszédos LUT-elemek között, majd a
+`0x0090bd9f` utáni `>> 8` és a 0-255 vágás adja a kimeneti bájtot.
+Forrás: `bináris (0x008f80c0, 0x0090c3b0, 0x0090c1e0, 0x0090bc60,
+0x00cf4200)`.
+
+PicasaPy ugyanennek a lépésnek a helyi útján 16.16-os egész erősítéssel
+épít közvetlenül 8 bites LUT-ot (`src/picasapy/render/ops.py`,
+`_native_levels_lut`), majd `np.rint`-tel bájtra kerekíti és dither nélkül
+alkalmazza (`src/picasapy/render/curves.py`, `apply_lut`). Ez a különbség az
+LUT felbontása és a kimeneti kvantálás/dither lépése; nem a hisztogram-
+vágópontok vagy a rétegsorrend eltérése. A natív `fistp` kerekítési módját
+ez a függvényszakasz önmagában nem dönti el. Forrás: `mérés (684-es
+autolight alap pár: átlagos ΔE 0,23)`; az eredeti lépéssor: `bináris
+(0x0090c1e0, 0x0090bc60)`.
+
 ## 2.4 Kontraszt — `0x0090c2c0`
 
 Ugyanaz az alkalmazó, más LUT-építő (`0x0090c100`):
