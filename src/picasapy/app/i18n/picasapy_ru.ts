@@ -1162,7 +1162,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Показывать всплывающие подсказки</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>Выходить из режима редактирования одним нажатием мыши</translation>
@@ -1194,9 +1194,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Файлы:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Искать дубликаты при импорте</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>Находить копии при импорте</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1292,6 +1293,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Папка для импорта:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>Папка для импорта:</translation>
@@ -1660,10 +1666,10 @@ picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::t
     <context>
         <name>OptionsTabNetwork</name>
         <message>
-            <source>Proxy username (Windows only):</source>
+            <source>Proxy username:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/proxygroup.title;options:options/labelgroup130.title</extracomment>
-            <translation>Имя пользователя прокси-сервера (только для Windows):</translation>
+picasapy-origin-key: options:options/labelgroup130.title</extracomment>
+            <translation>Прокси-сервер (имя пользователя):</translation>
         </message>
         <message>
             <source>Proxy password:</source>
@@ -1678,16 +1684,16 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/autoproxy.title;optio
             <translation>Автоматически определять настройки сети</translation>
         </message>
         <message>
-            <source>Network logging level:</source>
+            <source>Network log level:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loglevelgroup.title;options:options/labelgroup135.title</extracomment>
-            <translation>Уровень ведения сетевого журнала:</translation>
+picasapy-origin-key: options:options/labelgroup135.title</extracomment>
+            <translation>Сетевой журнал:</translation>
         </message>
         <message>
-            <source>Disable logging</source>
+            <source>Disable Logging</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/disable_item.title;options:options/item137.title</extracomment>
-            <translation>Отключить ведение журнала</translation>
+picasapy-origin-key: options:options/item137.title</extracomment>
+            <translation>Не сохранять данные</translation>
         </message>
         <message>
             <source>Log errors only</source>
@@ -1714,9 +1720,9 @@ picasapy-origin-key: gpuploader_options:gpuploader_options/all_item.title;option
             <translation>Сохранять все сетевые данные</translation>
         </message>
         <message>
-            <source>Log file:</source>
+            <source>Log:</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_options:gpuploader_options/loggroup.title;options:options/labelgroup142.title</extracomment>
+picasapy-origin-key: options:options/labelgroup142.title</extracomment>
             <translation>Журнал:</translation>
         </message>
         <message>
@@ -1735,9 +1741,34 @@ picasapy-origin-key: options:options/labelgroup145.title</extracomment>
             <translation>Размер добавляемых файлов:</translation>
         </message>
         <message>
-            <source>Original size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Исходный размер</translation>
+            <source>Original size (slowest upload)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::Original</extracomment>
+            <translation>Исходный размер (макс. время загрузки)</translation>
+        </message>
+        <message>
+            <source>Best for web sharing (2048px)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::2048</extracomment>
+            <translation>Оптимальный для Интернета (2048 пикс.)</translation>
+        </message>
+        <message>
+            <source>Recommended: 1600 pixels (for prints, screensavers, and sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1600</extracomment>
+            <translation>Рекомендуемый: 1600 пикс. (для печати, заставок, обмена и пересылки)</translation>
+        </message>
+        <message>
+            <source>Medium: 1024 pixels (for sharing)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::1024</extracomment>
+            <translation>Средний: 1024 пикс. (для обмена и пересылки)</translation>
+        </message>
+        <message>
+            <source>Small: 800 pixels (for blogs and webpages)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::800</extracomment>
+            <translation>Минимальный: 640 пикс. (для блогов и веб-страниц)</translation>
         </message>
         <message>
             <source>When syncing large files, upload previews first</source>
@@ -1808,7 +1839,7 @@ picasapy-origin-key: options:options/labelgroup181.title</extracomment>
             <translation>Точность подборки фотографий:</translation>
         </message>
         <message>
-            <source>Store name tags in the file</source>
+            <source>Store name tags in photo</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/persistfacetofile.title</extracomment>
             <translation>Сохранять отметки в метаданных фотографий</translation>
