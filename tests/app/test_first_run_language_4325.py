@@ -2,10 +2,32 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QSettings
 
 from picasapy.app import language_controller
+
+
+def test_first_run_prompt_uses_the_original_picasa_copy():
+    qml_path = (
+        Path(__file__).resolve().parents[2]
+        / "src"
+        / "picasapy"
+        / "app"
+        / "qml"
+        / "PicasaPy"
+        / "FirstRunLanguageDialog.qml"
+    )
+    qml = qml_path.read_text(encoding="utf-8")
+
+    assert 'Picasa is now available in your system\'s native language.' in qml
+    assert 'Would you like to switch Picasa from English to this language?' in qml
+    assert 'title: qsTr("Confirm")' in qml
+    assert 'text: qsTr("Yes")' in qml
+    assert 'text: qsTr("No")' in qml
+    assert "PicasaPy is now available" not in qml
 
 
 @pytest.fixture

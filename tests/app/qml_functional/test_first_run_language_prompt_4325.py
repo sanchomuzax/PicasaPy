@@ -80,8 +80,8 @@ def test_startup_language_prompt_stores_real_click(
 
     assert clicked == [button_name], "a prompt gombjára nem történt valódi kattintás"
     assert prompt_text == [
-        "PicasaPy is now available in your system's native language.\n"
-        "Would you like to switch PicasaPy from English to this language?"
+        "Picasa is now available in your system's native language.\n"
+        "Would you like to switch Picasa from English to this language?"
     ]
     assert prompt_icon and prompt_icon[0].endswith("/assets/icon.png")
     assert result == expected_language
