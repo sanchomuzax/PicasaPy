@@ -106,6 +106,10 @@ ApplicationWindow {
     onThumbSizeChanged: if (controller) controller.setThumbCellSize(thumbSize)
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
+    // #5396: átnevezéskor a fájl útvonal alapján új fotóazonosítót kaphat
+    // az indexfrissítésben; a következő modell-reset visszateszi a kijelölést.
+    property string _pendingRenamePhotoId: ""
+    property string _pendingRenameTargetPath: ""
     // #142: a kijelölés set-alakban (sor → true) — a rács-cellák O(1)
     // lookupja; az indexOf-os kötés O(cellák × kijelöltek) volt, ami
     // Ctrl+A-nál minden cellán végigjárta a teljes kijelölés-listát
@@ -671,6 +675,15 @@ ApplicationWindow {
             return sor >= 0 ? [sor] : []
         }
         return window.selectedRows()
+    }
+
+    function prepareRenameSelection(row, newName) {
+        if (!controller || !newName) return
+        var oldPath = controller.photos.filePathAt(Number(row))
+        var separator = oldPath.lastIndexOf("/")
+        if (separator < 0) return
+        _pendingRenamePhotoId = controller.photos.idAt(Number(row))
+        _pendingRenameTargetPath = oldPath.substring(0, separator + 1) + newName
     }
 
     function photoActionIndex() {
@@ -1249,6 +1262,29 @@ ApplicationWindow {
             window.selectedIndex = window._pendingAnchorId.length > 0
                 ? controller.photos.rowOfId(parseInt(window._pendingAnchorId, 10))
                 : -1
+            // Az átnevezett fájl új útvonal miatt új adatbázis-id-t kaphat.
+            // Csak akkor helyettesítjük a régi azonosítót, ha az már eltűnt
+            // a modellből és az új útvonal megjelent; sikertelen átnevezésnél
+            // a régi ID-alapú állapot marad érvényben.
+            if (window._pendingRenamePhotoId.length > 0
+                    && window._pendingRenameTargetPath.length > 0) {
+                var ujSor = controller.photos.rowOfPath(
+                    window._pendingRenameTargetPath)
+                var regiId = parseInt(window._pendingRenamePhotoId, 10)
+                if (ujSor >= 0
+                        && controller.photos.rowOfId(regiId) < 0
+                        && window._pendingSelectedIds.indexOf(regiId) >= 0) {
+                    var ujKijeloles = window.selectedIndexes.slice()
+                    if (ujKijeloles.indexOf(ujSor) < 0)
+                        ujKijeloles.push(ujSor)
+                    ujKijeloles.sort(function (a, b) { return a - b })
+                    window.selectedIndexes = ujKijeloles
+                    if (window._pendingAnchorId === window._pendingRenamePhotoId)
+                        window.selectedIndex = ujSor
+                }
+                window._pendingRenamePhotoId = ""
+                window._pendingRenameTargetPath = ""
+            }
         }
     }
 
@@ -1878,8 +1914,9 @@ ApplicationWindow {
         id: shortcutRename
         sequence: "F2"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: if (!window.viewerOpen && window.selectedIndex >= 0)
-                         fileOpsDialogs.ensure().openRename(window.selectedIndex)
+        onActivated: if (!window.viewerOpen && window.photoActionRows().length > 0)
+                         fileOpsDialogs.ensure().openRenameMany(
+                             window.photoActionRows())
     }
     Shortcut {
         id: shortcutExportSelection
@@ -2155,10 +2192,9 @@ ApplicationWindow {
         //: #1404: a menüpont is a MEGERŐSÍTÉSEN át töröl
         onClearGeotagRequested:
             clearGeotagDialog.ensure().openFor(window.photoActionRows())
-        // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
-        onRenameRequested: window.photoActionRows().length > 1
-            ? fileOpsDialogs.ensure().openRenameMany(window.photoActionRows())
-            : fileOpsDialogs.ensure().openRename(window.photoActionIndex())
+        // #5396: egy és több kijelölt képnél is a mért `rename.fen`-dialógus
+        // nyílik; a forrásfájl kiterjesztését és előnézetét az kezeli.
+        onRenameRequested: fileOpsDialogs.ensure().openRenameMany(window.photoActionRows())
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
         //: #3504: a kiadás-panel mentés-üzemmódja a könyvtár alján — a

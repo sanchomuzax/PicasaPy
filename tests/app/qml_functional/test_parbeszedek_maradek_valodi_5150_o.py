@@ -349,15 +349,20 @@ class TestAtnevezes:
         uj = mappa / "uj_nev.jpg"
         assert regi.exists() and not uj.exists(), "a teszt fájlai nem a várt állapotban vannak"
         tetel_kattintasa(window, qt_app, "&File", "menuFileRename")
-        assert varj(qt_app, lambda: latszik(window, "renameDialog")), (
+        assert varj(qt_app, lambda: latszik(window, "renameManyDialog")), (
             "az Átnevezés párbeszéd nem nyílt meg"
         )
-        mezo = _elem(window, "renameField")
-        _nev_kattintasa(window, qt_app, "renameField")
+        mezo = _elem(window, "renameManyField")
+        _nev_kattintasa(window, qt_app, "renameManyField")
         QTest.keyClick(mezo.window(), Qt.Key.Key_A, CTRL)
-        _gepeld(mezo.window(), qt_app, "uj_nev.jpg")
+        # A Picasa Rename Files mezőjébe csak az alapnév kerül; a
+        # kiterjesztést az élő Example sor teszi hozzá.
+        _gepeld(mezo.window(), qt_app, "uj_nev")
 
-        _kattints(qt_app, _gomb_felirattal(_elem(window, "renameDialog"), "Rename"))
+        _kattints(
+            qt_app,
+            _gomb_felirattal(_elem(window, "renameManyDialog"), "Rename"),
+        )
 
         assert varj(qt_app, lambda: uj.exists() and not regi.exists()), (
             "az Átnevezés mezőbe írt név nem nevezte át a fájlt, a mappa: "

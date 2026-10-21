@@ -1,4 +1,4 @@
-"""Az Átnevezés párbeszéd szövegmezője: Enter elfogad, Escape mégse (#5207).
+"""Az átnevező párbeszéd szövegmezője: Enter elfogad, Escape mégse (#5207).
 
 A párbeszédet a Fájl ▸ Átnevezés… tétel VALÓDI kattintása nyitja. A mezőbe
 karakterenként gépelünk a billentyűzet eseményeivel (`QTest.keyClick`), majd
@@ -66,11 +66,11 @@ def _atnevezes_megnyitasa(window, menu_bar, qt_app):
     """
     _megnyit(menu_bar, qt_app, "&File")
     _klikk(qt_app, window, _gyerek(window, "menuFileRename"))
-    assert _varj(qt_app, lambda: _latszik(window, "renameDialog")), (
+    assert _varj(qt_app, lambda: _latszik(window, "renameManyDialog")), (
         "a Fájl ▸ Átnevezés… nem nyitotta meg a párbeszédet"
     )
     _aktival(qt_app, window)
-    mezo = _gyerek(window, "renameField")
+    mezo = _gyerek(window, "renameManyField")
     assert _varj(qt_app, lambda: mezo.property("activeFocus") is True), (
         "az Átnevezés mezője nem kapta meg a fókuszt"
     )
@@ -86,8 +86,8 @@ class TestAtnevezesBillentyu:
         regi = controller.photos.itemAt(0)["name"]
         mezo = _atnevezes_megnyitasa(window, menu_bar, qt_app)
 
-        _gepel(window, qt_app, "uj_nev.jpg")
-        assert mezo.property("text") == "uj_nev.jpg", (
+        _gepel(window, qt_app, "uj_nev")
+        assert mezo.property("text") == "uj_nev", (
             "a gépelés nem jutott el a szövegmezőbe"
         )
         QTest.keyClick(window, Qt.Key.Key_Return)
@@ -96,7 +96,7 @@ class TestAtnevezesBillentyu:
             "az Enter nem fogadta el az új nevet: a fájl nem nevezódött át"
         )
         assert not (mappa / regi).exists(), "a régi néven maradt a fájl"
-        assert _varj(qt_app, lambda: not _latszik(window, "renameDialog")), (
+        assert _varj(qt_app, lambda: not _latszik(window, "renameManyDialog")), (
             "az Enter után az Átnevezés párbeszéd nyitva maradt"
         )
 
@@ -108,13 +108,13 @@ class TestAtnevezesBillentyu:
         regi = controller.photos.itemAt(0)["name"]
         mezo = _atnevezes_megnyitasa(window, menu_bar, qt_app)
 
-        _gepel(window, qt_app, "masik.jpg")
-        assert mezo.property("text") == "masik.jpg", (
+        _gepel(window, qt_app, "masik")
+        assert mezo.property("text") == "masik", (
             "a gépelés nem jutott el a szövegmezőbe"
         )
         QTest.keyClick(window, Qt.Key.Key_Escape)
 
-        assert _varj(qt_app, lambda: not _latszik(window, "renameDialog")), (
+        assert _varj(qt_app, lambda: not _latszik(window, "renameManyDialog")), (
             "az Escape nem zárta be az Átnevezés párbeszédet"
         )
         assert (mappa / regi).exists(), "az Escape után a fájl elveszett"

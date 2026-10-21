@@ -85,7 +85,7 @@ class TestKepAtnevezes:
             almenu_utvonal=("menuPictureBatchEdit",),
         )
 
-        assert varj(qt_app, lambda: latszik(window, "renameDialog")), (
+        assert varj(qt_app, lambda: latszik(window, "renameManyDialog")), (
             "a Kép ▸ Csoportos szerkesztés ▸ Átnevezés kattintás nem nyitotta meg a párbeszédet"
         )
 

@@ -183,10 +183,10 @@ class TestAtnevezesEsMentes:
 
         _fajl_tetelt_kattint(window, qt_app, "menuFileRename")
 
-        assert _varj(qt_app, lambda: _latszik(window, "renameDialog")), (
+        assert _varj(qt_app, lambda: _latszik(window, "renameManyDialog")), (
             "a Fájl ▸ Átnevezés… nem nyitotta meg a párbeszédet"
         )
-        _zar_ha_nyitva(window, qt_app, "renameDialog")
+        _zar_ha_nyitva(window, qt_app, "renameManyDialog")
 
     def test_a_mentes_valodi_kattintassal_megerositeset_keri(self, fajl_app, qt_app):
         window, controller, _engine = fajl_app
