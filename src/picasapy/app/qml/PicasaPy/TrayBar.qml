@@ -763,10 +763,11 @@ Column {
                         // középre VÁGVA — nem aránytartó illesztés.
                         width: height
                         source: !tray.ctl || !tray.appWindow ? ""
-                            : trayScratchBack.heldCount > 0
-                              ? tray.ctl.heldThumbUrlAt(index)
-                              : tray.ctl.photos.thumbUrlAt(
-                                    Number(tray.appWindow.selectedIndexes[index]))
+                            : (tray.photoRevision,
+                               trayScratchBack.heldCount > 0
+                               ? tray.ctl.heldThumbUrlAt(index)
+                               : tray.ctl.photos.thumbUrlAt(
+                                     Number(tray.appWindow.selectedIndexes[index])))
                         // #1600: a bélyegkép-textúra a Qt gyorsítótárában KÖZÖS a
                         // ráccsal, ami mipmapot kér (#83). Eltérő beállítás mellett a
                         // Qt „Mipmap settings changed” figyelmeztetést ad, és
