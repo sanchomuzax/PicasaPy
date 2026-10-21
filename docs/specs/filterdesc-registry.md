@@ -6792,8 +6792,8 @@ az egyenletes stoppozíciókat, míg a HSV-worker a leíró explicit
 | | állapot |
 |---|---|
 | Eredeti | A stoppozíció float32 LUT-index; a három QEMU-kontroll kimenete a külön Python-referenciával bájtra egyezett. Forrás: `bináris (0x00bbc260, 0x00bbbcf0)`; `mérés (qemu-i386 + Python)` |
-| Nálunk | A `[0.5,1.5]` és `[300,400]` kontrollban a `hsv_gradient_map` kimenete bájtra egyezett. A HeatMap XML-stoplistán 5/768 RGB-bájt tért el: `x = 207, 210, 216, 219, 222` indexeken a natív/helyi zöld bájtpárok rendre `86/85`, `70/69`, `38/37`, `22/21`, `6/5`. Ez a színkonverter x87-kerekítési sorrendje, nem a stopskála eltérése. Forrás: `mérés (QEMU ↔ PicasaPy, 256 × 3 bájt)`; kód: `src/picasapy/render/glimmer_ops.py:878–886` |
-| Teendő | Külön fejlesztési tételként a `_hsv_rgb_lut_f32` p/q/t műveleti sorrendjét és float32 tárolási pontjait kell a natív x87-szekvenciához igazítani, majd a fenti HeatMap-listán 768/768 bájtos QEMU-egyezést kell elérni. Ez nem része a position-skála módosításának. Forrás: `bináris (0x00bbbf67–0x00bbbf9d)`; `mérés (QEMU ↔ PicasaPy)` |
+| Nálunk | A mostani kódon (a #4309 után) a HeatMap XML-stoplistán és a `[0.5,1.5]` kontrollon is 0/768 RGB-bájt tér el a natív lánctól (QEMU, `0x037F` és `0x027F` FPU-vezérlőszóval egyaránt; #5403, 2026-10-21). A korábban mért 5/768 eltérés (`x = 207, 210, 216, 219, 222`, zöld csatorna, natív/helyi `86/85`, `70/69`, `38/37`, `22/21`, `6/5`) a #4309 előtti kódé: a `t = v·(1 - s·(1 - f))` tagban az `(1 - f)` és az `s·(1 - f)` köztes float32-kerekítése adta, a natív x87 ezeket kiterjesztett pontossággal tartja. Forrás: `mérés (QEMU ↔ PicasaPy, 256 × 3 bájt, a 12bb2d9cd és a 4d6c9a821^ kódon)`; kód: `src/picasapy/render/glimmer_ops.py` |
+| Teendő | Nincs: a #4309 a float64-es köztes számolással a natív kimenettel bájtra egyezik. A `t` tag utasításszintű címleképezése a `0x00bbbe20`-ban nincs külön kiolvasva. |
 
 **Bizonyítottsági fok: megerősített** a pozícióskálára és a stopkeresés
 végpontkezelésére: A — a fenti utasításszintű adatút; B — az eredeti
