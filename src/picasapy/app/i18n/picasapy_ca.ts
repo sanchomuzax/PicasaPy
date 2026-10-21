@@ -1161,7 +1161,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Mostra les etiquetes d'ajuda</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>Fes un sol clic per sortir de la visualització de modificació</translation>
@@ -1193,9 +1193,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Fitxers:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Detecta les fotos duplicades en importar</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>S'han detectat duplicats en importar</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1291,6 +1292,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Desa les imatges importades a:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>Desa les imatges importades a:</translation>

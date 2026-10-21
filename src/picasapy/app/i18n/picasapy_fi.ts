@@ -1161,7 +1161,7 @@ picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
             <translation>Näytä ohjetagit</translation>
         </message>
         <message>
-            <source>Single click to exit the editing view</source>
+            <source>Single-click to exit Edit View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SingleClickExit.title</extracomment>
             <translation>Sulje muokkausnäkymä yhdellä klikkauksella</translation>
@@ -1193,9 +1193,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Tiedostot:</translation>
         </message>
         <message>
-            <source>Detect duplicates on import</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tunnista kaksoiskappaleet tuonnin yhteydessä</translation>
+            <source>Detect duplicates while importing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/autoexclude.title</extracomment>
+            <translation>Tunnista kaksoiskappaleet tuotaessa</translation>
         </message>
         <message>
             <source>Clear Cache...</source>
@@ -1291,6 +1292,11 @@ picasapy-origin-key: options:options/item24.title</extracomment>
         </message>
         <message>
             <source>Import destination folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tallenna tuodut kuvat kohteeseen:</translation>
+        </message>
+        <message>
+            <source>Save imported pictures in:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup34.title</extracomment>
             <translation>Tallenna tuodut kuvat kohteeseen:</translation>
