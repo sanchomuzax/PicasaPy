@@ -43,3 +43,15 @@ def test_a_ket_spec_a_nagyfajl_kuszob_alatt_marad_kivetel_nelkul():
     assert regi_ut not in nagy_fajl_or.KIVETELEK
     assert REGI_LAP.stat().st_size < nagy_fajl_or.KUSZOB
     assert UJ_LAP.stat().st_size < nagy_fajl_or.KUSZOB
+
+
+def test_a_bemutato_kutatas_masodik_lapon_folytatodik_5599():
+    masodik = GYOKER / "docs/specs/picasa-idorend-bemutato-kutatas.md"
+    szoveg = masodik.read_text(encoding="utf-8")
+
+    assert "#### 38.2.61 " in szoveg
+    assert "#### 38.2.61 " not in UJ_LAP.read_text(encoding="utf-8").replace(
+        "#### 38.2.61 és a további szakaszok", ""
+    )
+    assert masodik.stat().st_size < nagy_fajl_or.KUSZOB
+    assert "picasa-idorend-bemutato-kutatas.md" in menu.VISELKEDES_LAP
