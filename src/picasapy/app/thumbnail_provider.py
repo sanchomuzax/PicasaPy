@@ -52,6 +52,7 @@ from PySide6.QtQuick import (
     QQuickTextureFactory,
 )
 
+from picasapy.cvimage import read_image_bytes
 from picasapy.edit.session import EditSession
 from picasapy.index import PhotoRecord, open_index, photo_by_id
 from picasapy.ini import PhotoCropReader
@@ -735,7 +736,12 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             _log.warning("thumbnail nem készült el: %s", path)
             self.brokenImageDetected.emit(str(photo.id))
             return QImage()
-        image = QImage(str(thumb))
+        # A Windows CI-ben a közvetlen QImage(path) egy frissen írt cache-fájlt
+        # is olvashatatlannak jelzett (#5542). A Python fájl-API olvassa be,
+        # majd Qt a bájtokat dekódolja; így a Qt fájlútvonal-megnyitása nem
+        # változtathat egy cache-olvasási hibát téves sérültfotó-jelzéssé.
+        payload = read_image_bytes(thumb)
+        image = QImage.fromData(payload.tobytes()) if payload is not None else QImage()
         if image.isNull():
             _log.warning("cache-elt thumbnail nem olvasható: %s", thumb)
             self.brokenImageDetected.emit(str(photo.id))
