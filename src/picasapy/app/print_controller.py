@@ -161,7 +161,6 @@ _PRINT_OPTION_SIZES = (
     "CDSIZE",
     "PASSPORT",
     "CONTACT",
-    "TELJES_OLDAL",
 )
 
 
@@ -245,7 +244,8 @@ class PrintController(QObject):
         sizes = set(_PRINT_OPTION_SIZES)
         result = []
         defaults = tuple(
-            meret.name for meret in alapmeretek_teruleti_mereshez()
+            meret if isinstance(meret, str) else meret.name
+            for meret in alapmeretek_teruleti_mereshez()
         )
         for key, default in zip(_PRINT_SIZE_PRESET_KEYS, defaults, strict=True):
             value = str(self._settings.value(key, default))
@@ -261,7 +261,7 @@ class PrintController(QObject):
 
     @Slot(result=list)
     def printOptionSizes(self) -> list[str]:  # noqa: N802
-        """Az `options.fen` 17 elemű `ytPrintSizes` listája (#4318)."""
+        """Az `options.fen` 16 elemű méretlistája, FullPage nélkül (#5492)."""
         return list(_PRINT_OPTION_SIZES)
 
     @Slot(str, result=bool)
@@ -293,34 +293,64 @@ class PrintController(QObject):
     def setPrintProxyPreview(self, enabled: bool) -> None:  # noqa: N802
         self._settings.setValue("printing/proxyPreview", bool(enabled))
 
-    @Slot(result=str)
-    def printerQuality(self) -> str:  # noqa: N802
-        """A Windows-only FEN fél- vagy teljes felbontású nyomtatási módja."""
-        value = str(self._settings.value("printing/printerQuality", "compatible"))
-        return value if value in {"compatible", "highQuality"} else "compatible"
+    @Slot(result=int)
+    def printerQuality(self) -> int:  # noqa: N802
+        """Az eredeti `PrinterQuality` módja: 2 = kompatibilis, 3 = kiváló."""
+        value = self._settings.value("printing/printerQuality", 2)
+        if isinstance(value, str):
+            regi_szoveges = {"compatible": 2, "highQuality": 3}
+            if value in regi_szoveges:
+                return regi_szoveges[value]
+            try:
+                value = int(value)
+            except ValueError:
+                return 2
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return 2
+        return value if value in {2, 3} else 2
 
-    @Slot(str)
-    def setPrinterQuality(self, value: str) -> None:  # noqa: N802
-        if value in {"compatible", "highQuality"}:
+    @Slot(int)
+    def setPrinterQuality(self, value: int | str) -> None:  # noqa: N802
+        """A minőséget 2/3-ként menti, a régi szöveges hívókat is elfogadva."""
+        if isinstance(value, str):
+            value = {"compatible": 2, "highQuality": 3}.get(value, value)
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return
+        if value in {2, 3}:
             self._settings.setValue("printing/printerQuality", value)
 
     def _printer_output_scale(self) -> float:
         """Az options.fen minősége: kompatibilis fél, magas teljes felbontás."""
-        return 0.5 if self.printerQuality() == "compatible" else 1.0
+        return 0.5 if self.printerQuality() == 2 else 1.0
 
     @Slot(result=int)
     def printResamplerQuality(self) -> int:  # noqa: N802
-        """A nyomtatási átméretező Lanczos-sugara (3 vagy 8)."""
+        """Az eredeti `PrintResamplerQuality` értéke: 5 vagy 8.
+
+        A régi PicasaPy-beállítás 3-as értéke ugyanazt a General rádiót
+        jelenti, ezért olvasáskor 5-re normalizáljuk, íráskor viszont már
+        csak az eredeti 5/8 értékeket mentjük.
+        """
         try:
-            value = int(self._settings.value("printing/resamplerQuality", 3))
+            value = int(self._settings.value("printing/resamplerQuality", 5))
         except (TypeError, ValueError):
-            return 3
-        return value if value in {3, 8} else 3
+            return 5
+        if value in {3, 5}:
+            return 5
+        return 8 if value == 8 else 5
 
     @Slot(int)
     def setPrintResamplerQuality(self, value: int) -> None:  # noqa: N802
-        if int(value) in {3, 8}:
+        if int(value) in {5, 8}:
             self._settings.setValue("printing/resamplerQuality", int(value))
+
+    def _print_resampler_radius(self) -> int:
+        """Az eredeti 5-ös beállítás Lanczos-3 szűrősugárra fordítása."""
+        return 3 if self.printResamplerQuality() == 5 else 8
 
     def _keszlet(self) -> tuple[NyomatMeret, ...]:
         """A rendszer területi mértékegységéhez tartozó készlet (#4435)."""
@@ -1061,7 +1091,7 @@ class PrintController(QObject):
                 oszlopok,
                 fejlec,
                 alcim,
-                self.printResamplerQuality(),
+                self._print_resampler_radius(),
                 self._printer_output_scale(),
             )
         except (RuntimeError, ValueError):
@@ -1296,7 +1326,7 @@ class PrintController(QObject):
                     mode,
                     options,
                     self._lap_kesz,
-                    self.printResamplerQuality(),
+                    self._print_resampler_radius(),
                     self._printer_output_scale(),
                 )
             else:
@@ -1306,7 +1336,7 @@ class PrintController(QObject):
                     images,
                     mode,
                     self._lap_kesz,
-                    self.printResamplerQuality(),
+                    self._print_resampler_radius(),
                     self._printer_output_scale(),
                 )
         except RuntimeError:
@@ -1563,7 +1593,7 @@ class PrintController(QObject):
                     mode,
                     options,
                     _ELONEZET_DPI,
-                    self.printResamplerQuality(),
+                    self._print_resampler_radius(),
                     self._printer_output_scale(),
                     use_proxy=self.printProxyPreview(),
                 )

@@ -217,7 +217,9 @@ class TestParancssor:
 
         def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
             egy = " ".join(args)
-            if "--name-only" in egy:
+            if args[:2] == ["git", "show"]:
+                kimenet = "- A változásnapló-sorok külön fájlban készülhetnek (#4165).\n"
+            elif "--name-only" in egy:
                 kimenet = "src/picasapy/render/vivid.py\nchangelog.d/4165.md\n"
             elif "-- changelog.d/4165.md" in egy:
                 kimenet = darab_diff
@@ -246,7 +248,9 @@ class TestParancssor:
 
         def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
             egy = " ".join(args)
-            if "--name-only" in egy:
+            if args[:2] == ["git", "show"]:
+                kimenet = "# Nincs felhasználói bejegyzés.\n"
+            elif "--name-only" in egy:
                 kimenet = "src/picasapy/render/vivid.py\nchangelog.d/4165.md\n"
             elif "-- changelog.d/4165.md" in egy:
                 kimenet = ures_darab_diff
@@ -261,7 +265,45 @@ class TestParancssor:
         assert kod == 1
         kimenet = capsys.readouterr().out
         assert "::error" in kimenet
-        assert "changelog.d/<jegyszám>.md" in kimenet
+        assert "changelog.d/4165.md:1: # Nincs felhasználói bejegyzés." in kimenet
+
+    @pytest.mark.parametrize(
+        ("tartalom", "hibas_sor"),
+        [
+            ("- Két jegy szerepel (#4165, #4166).\n", "- Két jegy szerepel (#4165, #4166)."),
+            ("- Hiányzik a záró pont (#4165)\n", "- Hiányzik a záró pont (#4165)"),
+            ("", "üres"),
+        ],
+    )
+    def test_hibas_changelog_darabnal_megnevezi_a_fajlt_es_a_sort(
+        self,
+        tartalom: str,
+        hibas_sor: str,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egy = " ".join(args)
+            if "--name-only" in egy:
+                kimenet = "changelog.d/4165.md\n"
+            elif args[:2] == ["git", "show"]:
+                kimenet = tartalom
+            else:
+                kimenet = ""
+            return subprocess.CompletedProcess(args, 0, kimenet, "")
+
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=futtat,
+        )
+
+        assert kod == 1
+        kimenet = capsys.readouterr().out
+        assert "changelog.d/4165.md" in kimenet
+        assert hibas_sor in kimenet
 
     def test_belso_valtozas_atmegy_bejegyzes_nelkul(self, tmp_path: Path) -> None:
         naplo = tmp_path / "CHANGELOG.md"
