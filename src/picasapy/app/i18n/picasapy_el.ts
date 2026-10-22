@@ -11447,6 +11447,12 @@ picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;string
             <translation>δευτερόλεπτα</translation>
         </message>
         <message>
+            <source>second</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUpUI::second</extracomment>
+            <translation>δευτερόλεπτο</translation>
+        </message>
+        <message>
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Κοπή</translation>

@@ -1123,7 +1123,8 @@ Rectangle {
                     horizontalAlignment: Text.AlignHCenter
                     //: másodperc-jelölés a szám után (az eredeti `tps` mezője)
                     //: #3574: `OneUpUI::Format` „%1$d %2$s” — a szó kiírva
-                    text: show.seconds + " " + qsTr("seconds")
+                    //: #5546: az eredeti `0x0080304c` `cmp esi, 1` után `OneUpUI::second` / `OneUpUI::seconds`
+                    text: show.seconds + " " + (show.seconds === 1 ? qsTr("second") : qsTr("seconds"))
                     color: "#ffffff"
                     font.pixelSize: Theme.fontSize - 2
                 }
