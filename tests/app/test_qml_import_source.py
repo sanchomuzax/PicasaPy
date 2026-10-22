@@ -278,6 +278,9 @@ class TestDuplicateExclusion:
         # könyvtárba (`lib`) — pontosan ugyanezt a tartalmat visszük be
         # forrásként, hogy bitre azonos (duplikátum) legyen.
         make_jpeg(source / "a.jpg", size=(320, 160))
+        # #5473: az alapérték bekapcsolt, a kattintás most kikapcsolna; a teszt
+        # a kikapcsolt kiindulásból mér, hogy a bekapcsolás kizárja a másolatot
+        _import_source_controller(engine).setAutoExclude(False)
 
         _scan(dialog, source, engine, qt_app)
 

@@ -182,6 +182,19 @@ def _varj(qt_app, kor: int = 10) -> None:
         QTest.qWait(20)
 
 
+def _vard_a_lathatosagot(elem, qt_app, vart: bool, mp: float = 5.0) -> bool:
+    """A kötések a mappák betöltése után frissülnek, Windowson lassabban
+    (#5495): a láthatóságot határidővel várjuk, nem egy eseménykör után."""
+    import time
+
+    hatar = time.monotonic() + mp
+    while time.monotonic() < hatar:
+        if elem.property("visible") is vart:
+            return True
+        _varj(qt_app, 1)
+    return elem.property("visible") is vart
+
+
 class TestARacsSzuroModban:
     """[KRITIKUS] a jobb oldali rács a mentetlen FÁJLOKRA szűkül."""
 
@@ -413,7 +426,7 @@ class TestATajekoztatasARacson:
         grid = _elem(window, "photoGrid")
         assert grid.property("count") == 0
         szoveg = _elem(window, "gridEmptyText")
-        assert szoveg.property("visible") is True
+        assert _vard_a_lathatosagot(szoveg, qt_app, True)
         # `thumbui/lightbox_bgtext` Text2 — az eredeti mentés-ág szövege,
         # ugyanaz, amit a bal hasáb `mentesAllapotSzoveg`-je is használ
         assert szoveg.property("text") == "All Files are backed up in this set"
@@ -438,10 +451,9 @@ class TestATajekoztatasARacson:
         assert wait_for_all_background_workers(30.0)
         host = _nyisd_a_mentest(window, qt_app)
         szoveg = _elem(window, "gridEmptyText")
-        assert szoveg.property("visible") is True
+        assert _vard_a_lathatosagot(szoveg, qt_app, True)
         host.setProperty("kivalasztott", -1)
-        qt_app.processEvents()
-        assert szoveg.property("visible") is False
+        assert _vard_a_lathatosagot(szoveg, qt_app, False)
 
     def test_szamolas_alatt_a_racs_a_regi_tartalmat_tartja(
         self, app, qt_app, monkeypatch

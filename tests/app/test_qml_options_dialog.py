@@ -165,7 +165,7 @@ class FakeFaceScanController(QObject):
         self.calls = []
         self.suggestions_enabled = True
         self.suggestion_threshold = 85
-        self.cluster_threshold = 70
+        self.cluster_threshold = 85
         self.persist_face_to_file = True
         self.setting_calls = []
 
@@ -1057,9 +1057,9 @@ class TestFaceDetectionOption:
         assert suggestions.property("enabled") is True
         assert suggestions.property("checked") is True
         assert suggestion_slider.property("value") == 85
-        assert cluster_slider.property("value") == 70
+        assert cluster_slider.property("value") == 85
         assert suggestion_value.property("text") == "85"
-        assert cluster_value.property("text") == "70"
+        assert cluster_value.property("text") == "85"
         assert suggestion_ticks.property("tickCount") == 10
         assert cluster_ticks.property("tickCount") == 10
         assert persist.property("checked") is True
@@ -1551,7 +1551,9 @@ class TestEmailTabLiveSettings:
         assert _child(window, "optionsMailSizeSlider").property("value") == 2
         assert "480" in _child(window, "optionsMailSizeValue").property("text")
         assert _child(window, "optionsMailSingleSameRadio").property("checked") is True
-        assert _child(window, "optionsMailDefaultRadio").property("checked") is True
+        # #5485: kulcs nélkül a sablon első, küldésenkénti választása aktív.
+        assert _child(window, "optionsMailChooseRadio").property("checked") is True
+        assert _child(window, "optionsMailDefaultRadio").property("checked") is False
 
 
 class TestGeneralTabAutoExclude:
