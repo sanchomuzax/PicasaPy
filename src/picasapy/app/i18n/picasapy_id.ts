@@ -11447,6 +11447,12 @@ picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;string
             <translation>detik</translation>
         </message>
         <message>
+            <source>second</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUpUI::second</extracomment>
+            <translation>detik</translation>
+        </message>
+        <message>
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Potong</translation>
