@@ -39,7 +39,10 @@ REPORT = REPO / "docs" / "menu-lefedettseg.md"
 #: A puszta névfelsorolás nem feltárás — ezek a lapok csak LISTÁZNAK.
 NEVSOR_LAPOK = {"picasa-menu-leltar.md"}
 #: Itt áll a tényleges viselkedés (mit indít, mit ír, mikor).
-VISELKEDES_LAP = "picasa-menu-parancsok-viselkedes.md"
+VISELKEDES_LAP = (
+    "picasa-menu-parancsok-viselkedes.md",
+    "picasa-idorend-viselkedes.md",
+)
 
 #: Parancsok, amelyek viselkedése NEM ezen az egy lapon, hanem egy saját,
 #: mélyebb spec-lapon van feltárva.
@@ -85,6 +88,13 @@ def _mashol_feltart() -> set[str]:
         szoveg = lapok.get(lap, "")
         ki |= {p for p in parancsok if p in szoveg}
     return ki
+
+
+def _viselkedes_lap_nevek() -> tuple[str, ...]:
+    """A fő viselkedési lapok nevei; a régi teszt-felülírás sztringje is lehet."""
+    if isinstance(VISELKEDES_LAP, str):
+        return (VISELKEDES_LAP,)
+    return tuple(VISELKEDES_LAP)
 
 #: Nem építjük meg — a Picasa Web / Google+ / YouTube szolgáltatások 2016
 #: (az `ID_DELETE_EMPTY_ALBUMS` felirata kimondja: „Üres ONLINE albumok törlése";
@@ -149,7 +159,9 @@ def _lapok() -> dict[str, str]:
 def merd() -> dict:
     parancsok = _parancsok()
     lapok = _lapok()
-    viselkedes = lapok.get(VISELKEDES_LAP, "")
+    viselkedes = "\n".join(
+        lapok.get(lap, "") for lap in _viselkedes_lap_nevek()
+    )
     mashol = _mashol_feltart()
     ki: dict[str, list[str]] = {
         "viselkedes": [], "erdemi": [], "csak_nev": [],
@@ -192,6 +204,7 @@ def markdown(m: dict) -> str:
     n = len(m["osszes"])
     hatokor = n - len(m["hatokoron_kivul"])
     kesz = len(m["viselkedes"])
+    viselkedes_lapok = "`, `".join(_viselkedes_lap_nevek())
     sorok = [
         "# Menü-lefedettség — GENERÁLT, ne szerkeszd kézzel",
         "",
@@ -211,7 +224,7 @@ def markdown(m: dict) -> str:
         "",
         "| állapot | darab | mit jelent |",
         "|---|---:|---|",
-        f"| ✅ **viselkedés feltárva** | {len(m['viselkedes'])} | a `{VISELKEDES_LAP}`-on "
+        f"| ✅ **viselkedés feltárva** | {len(m['viselkedes'])} | a `{viselkedes_lapok}` lapokon "
         f"vagy egy saját spec-lapon (`VISELKEDES_MAS_LAPON`): mit indít, mit ír, mikor |",
         f"| 🟡 érdemi lapon szerepel | {len(m['erdemi'])} | valamit tudunk róla, de a viselkedése nincs végigvive |",
         f"| ⚠️ **csak a neve** | {len(m['csak_nev'])} | egyedül a leltárban — a felirata és a helye |",
