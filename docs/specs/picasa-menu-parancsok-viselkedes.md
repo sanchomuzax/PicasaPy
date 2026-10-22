@@ -7733,7 +7733,7 @@ Nincs két-három mondatos összefoglaló, mert Q1 nem dőlt el. A hiányzó cí
 **Válasz röviden.**
 1. **Q1, a `0x00506830` (U46): LEZÁRVA.** A törzs igazolt. A második verem-argumentum (`[esp+8]`) a kimeneti pár címe. Ha az index a darabszámon belül van, a `0x00891110` átmásolja a listát a párba. A `this` nem a `[ebx+0xf8]` tartalma, hanem a cím: `lea eax,[ebx+0xf8]`. A `0x00891110` az első argumentumába nem ír, azt csak olvassa.
 2. **Q2, a listába kerülő azonosító (U47, U52): LEZÁRVA.** A `0x00493050` és a `0x004d9aa0` bemenő listájába a `0x00456610` `param_3`-a kerül (`[ebp+0xc]`). Ezt mindkét `]star`-ágban az asm igazolja. Hogy ez kép, album vagy személy: NINCS MEG.
-3. **Q3, a `0x004e5740` (U49): RÉSZBEN.** A visszatérési érték az EAX, vagyis a `0x004e5070` eredménye. A kimenet a konténerbe kerül: a visszatérési index helyére a `[elem+0x18]` érték megy. Az index eredete NINCS MEG, mert a `0x00467ca0` verem-kerete ellentmondásos (§5).
+3. **Q3, a `0x004e5740` (U49): RÉSZBEN.** A visszatérési érték az EAX, vagyis a `0x004e5070` eredménye. A kimenet a konténerbe kerül: a visszatérési index helyére a `[elem+0x18]` érték megy. ⚠️ JAVÍTVA (38.2.51 §5): a visszatérési index a `0x004e5070` eredménye (LEZÁRVA); a `0x00467ca0` verem-kerete a 38.2.51 §1-2 szerint oldódott meg.
 4. **Q4, a `0x00447800` (U50): RÉSZBEN.** A hívás `(owner, index, flag)` alakú. A függvény az owner tábláját írja. A tábla bővítésekor az új helyeket egyforma értékkel tölti fel. Abból, hogy az index melyik elemhez tartozik, nem látszik semmi: NINCS MEG.
 5. **A felhasználó szemével:** nincs két-három mondatos összefoglaló, mert a fő kérdés nem dőlt el. A hiányzó címek a §6-ban vannak.
 
@@ -7770,7 +7770,7 @@ Nincs két-három mondatos összefoglaló, mert Q1 nem dőlt el. A hiányzó cí
 - **Visszatérési érték.** A `0x4e5740` a `0x004e5070` eredményét adja vissza. A hívás a `0x4e578f`-nél van, a `mov edi,eax` a `0x4e5794`-nél (dekompilátum: 463. és 585. sor). A `0x4e5070` egy verem-argumentumot kap, az elemet (`push esi`, `0x4e578c`). A konténert EDI-ben kapja (`mov edi,ebp`, `0x4e578d`). A kilépése `ret 4` (`0x4e5205`). A hívó a 0xffffffff értéket "nincs" jelként kezeli (dekompilátum: 484. sor). Hogy a `0x4e5070` mikor ad -1-et, NINCS MEG. Egy kilépési ág látszik, a `sub eax,1` (`0x4e5200`).
 - **Kimenet a konténerbe (`auStack_7ae0`).** A konténer `+0x480` objektumának tömbjébe, a visszatérési index helyére, a `[elem+0x18]` érték kerül (`mov ecx,[esi+0x18]`, `0x4e57b7`; dekompilátum: 487. és 558. sor). Emellett a `[konténer+0x4d4]` eggyel nő (`0x4e57a8`). Végül a `0x004ed450` hívódik (`0x4e579d`), a konténer `this`-ével és a visszatérési indexszel.
 - **Az `auStack_7ae0` azonosítása.** A Ghidra-nevekből: `uStack_7e78` = `[esp+0x48]` a `0x4680ed`-nél, és `auStack_7ae0` = `[esp+0x3e0]` a `0x4680de`-nél. Ha a Ghidra-nevek a belépési esp-hez képest vannak (ezt feltételezem), mindkettő esp = E-0x7ec0. Ez egyezik. Az esp levezetése az §5-ben van, és az nincs eldöntve.
-- **Nyitva.** (a) A `0x4e5070` minden kilépési ága, a -1 útja is. (b) A `0x4e5070` indexe és a `0x506830` indexe: mindkettő a `+0x3f0` tömböt olvassa (`0x4e50c9`, `0x506887`). Hogy ugyanaz-e a tömb és az index, NINCS MEG. (c) A `[elem+0x18]` jelentése. Ez adja a fő kérdés válaszát.
+- **Nyitva.** (a) A `0x4e5070` minden kilépési ága, a -1 útja is. (b) ⚠️ JAVÍTVA (38.2.51 §4): a `0x4e5070` és a `0x506830` indexe ugyanazt a szerkezetet (`+0x3f0`) használja, de két külön objektumon, NEM ugyanaz a tábla. (c) A `[elem+0x18]` íróját megtaláltuk (`0x0040f9de`, 38.2.51 §3); a jelentése NINCS MEG (38.2.51 §5, U53).
 
 ##### §4 Q4: a `0x00447800` (U50): RÉSZBEN
 
@@ -7785,7 +7785,7 @@ Nincs két-három mondatos összefoglaló, mert Q1 nem dőlt el. A hiányzó cí
   6. Ha az index -1, a függvény kilép, és nem ír.
 - **Mihez tartozik az index?** Ebből NEM látszik. Az index a tábla pozíciója. Az új helyek mind ugyanazt az `owner+0x1e64` értéket kapják, tehát az index nem kap saját értéket. A hivatkozásszámos minta (`InterlockedIncrement`, a 0x7f-es határ) a `0x004d9aa0` név-objektumaival egyezik (dekompilátum). Ez csak minta, a típus nincs igazolva. Hogy a tábla melyik gyűjteményhez tartozik: NINCS MEG. Az `index` forrása (`uVar17`) az §5.
 
-##### §5 A verem-keret és az index forrása: ellentmondás
+##### §5 A verem-keret és az index forrása: ellentmondás **⚠️ JAVÍTVA, LEZÁRVA (38.2.51 §1-2)**
 
 - **Prológus.** `mov eax,0x7ea8` és `call 0x00bf6b80` (`0x467ca0`-`0x467ca5`): verem-foglalás. A rutin neve nincs megnézve. Utána a biztonsági süti: `mov eax,[0xd24004]`, `xor eax,esp`, `mov [esp+0x7ea4],eax` (`0x467caa`-`0x467cb1`). Ha a foglalás után az esp E-0x7ea8, a süti az E-4 címen van.
 - **Pushok.** Négy push (`0x467cbf`-`0x467cc8`: ebx, ebp, esi, edi). Utána `push ebp` (`0x467cd8`) és `push 1` (`0x467cdb`). A `mov ebx,[esp+0x7eb0]` (`0x467cc0`) a belépési első argumentumot (E+4) tölti az EBX-be, ha az esp ekkor E-0x7eac.
@@ -7809,7 +7809,7 @@ Nem blokkolók, de a U50-hez kellenek:
 
 - 38.2.49 §1.2: a `this` nem `[ebx+0xf8]`, hanem `lea eax,[ebx+0xf8]`, vagyis cím. ⚠️ JAVÍTVA.
 - 38.2.49 §1.2: a kimeneti pár tartalma NINCS MEG volt. Most LEZÁRVA: a `0x00891110` célja.
-- 38.2.49 §1.4: az `uVar17 = [esp+0x7ebc]` állítás KÉTSÉGES (§5).
+- 38.2.49 §1.4: az `uVar17 = [esp+0x7ebc]` állítás **⚠️ JAVÍTVA (38.2.51 §2)**: az asm-olvasás helyes, de az első verem-argumentumot olvassa, nem ciklusindexet.
 - 38.2.49 §6: a `0x00891110` LEZÁRVA (§1).
 
 ##### §8 Amit KIZÁRTAM
@@ -7817,9 +7817,9 @@ Nem blokkolók, de a U50-hez kellenek:
 - „A `0x00891110` az első argumentumába ír”: CÁFOLVA. A forrást csak olvassa (§1).
 - „A `this` a `[ebx+0xf8]` tartalma”: CÁFOLVA. Ez a cím (§1).
 - „A `0x00447800` index-függő azonosítót ír a táblába”: CÁFOLVA. Minden új hely ugyanazt az `owner+0x1e64` értéket kapja (§4).
-- „A `[esp+0x7ebc]` a ciklusindex”: NEM ZÁRHATÓ, KÉTSÉGES (§5). Nem igazolt, és nincs kizárva sem.
+- „A `[esp+0x7ebc]` a ciklusindex”: **⚠️ CÁFOLVA (38.2.51 §2):** az első verem-argumentum (`E+4`), nem ciklusindex.
 
-##### §9 Nyitott lista (38.2.50 §9)
+##### §9 Nyitott lista (38.2.50 §9; felülírta: 38.2.51 §9)
 
 Nyitott kérdések mérlege (38.2.50): 52 tétel · 12 lezárva · 24 részben · 16 nincs meg. Az előző mérleg (38.2.49): 52 · 11 · 25 · 16. Változás: U46 RÉSZBEN → LEZÁRVA. A 38.2.49 §9 tábla felülíródott.
 
@@ -7881,6 +7881,212 @@ Nyitott kérdések mérlege (38.2.50): 52 tétel · 12 lezárva · 24 részben �
 **A felhasználó szemével**
 
 Nincs két-három mondatos összefoglaló, mert a fő kérdés (az elem fajtája) nem dőlt el. A hiányzó címek: `0x00467ca0` (az index forrása és a `+0x18` mező írója), `0x004e5070` (a visszatérési érték) és `0x00449a00` (a másolt lista használata).
+
+#### 38.2.51 Az Időrend bináris feltárása, 34. kör: a verem-alap, az elem `+0x18` mezője és a két tábla (#5401, 2026-10-22)
+
+**Kérdés és hatókör.** A 38.2.50 nyitott tételei: a `0x00467ca0` prológusa és az elem (1), a `0x004e5070` argumentuma, ágai és indexe (2), a `0x00449a00` (3) és a U50 három függvénye (4). A fő kérdés az elem fajtája (kép, album, személy). Bemenet: a `2026-10-21-idorend-34.txt` hat címe, a 38.2.50 §6 és §9 lista. Kódot nem módosítottunk, ezért a CI-őrök nem futottak.
+
+**Válasz röviden.**
+1. **Q1, a prológus és a verem-alap: LEZÁRVA.** A törzs verem-alapja `E-0x7eb8` (E: a belépési esp), nem `E-0x7ec0`. A prológus két push-a (0 és 1) a `0x00467cec` hívás argumentuma: a `0x004e47d0` (`ret 8`) felveszi őket. A záró kód (`0x0046d72e`) ezt igazolja (§1).
+2. **Q1, az `[esp+0x7ebc]` forrása: LEZÁRVA.** Ez az `E+4`, a függvény első verem-argumentuma. A törzs nem írja, a hat hívó utolsó push-ként adja. Nem ciklusindex, és nem a `0x004e5070` eredménye (§2).
+3. **Q1, az elem és a `+0x18` írója: RÉSZBEN.** Az elem `E-0x7c24`-en kezdődik, 0x144 bájt. A `+0x18` mezőt a `0x0040f980` konstruktor írja (`0x0040f9de`). Az érték a `0x004680be`-nél push-olt `eax`: `2`, ha az `arg2` nem nulla. Nulla `arg2` esetén a `0x00a4c140` visszatérési értéke, ami NINCS MEG (§3).
+4. **Q2, a `0x004e5070`: LEZÁRVA.** Az elem egyetlen használata a `0x00509350` hívás, amely az elemből másolja a rekordot. Három visszatérési ág van. A `+0x3f0` index NEM azonos a `0x00506830` indexével: a szerkezet azonos, de más objektumon van (§4).
+5. **Q2 folytatás: a `+0x18` útja.** A `0x004e5740` az értéket a konténer `+0x480` objektumának `T2` táblájába írja, a `0x004e5070` indexe szerinti helyre (§5). Hogy a `T2` olvasója mit tesz a számmal: NINCS MEG (U53).
+6. **Q3, a `0x00449a00`: RÉSZBEN.** A függvény nem a `0x00506830` párját kapja, hanem a `0x00484bbd` ciklus egy tételét. A tételt a `0x004db180` dolgozza fel, a `this+0x68` objektum zárja alatt. A lista és a pár kapcsolata NINCS MEG (U41, §5).
+7. **Q4, U50: RÉSZBEN.** A `0x004ed450` a konténert zárolja, és a `+0x54` alobjektum vtábla 8. slotját hívja az indexszel. A `0x005c2100` szöveg-értékadás. A `0x004da1d0` NINCS MEG (§5).
+8. **Q5, a fő kérdés (az elem fajtája): NINCS MEG.** A `+0x18` értéke nincs jelentéshez kötve. A hiányzó címek a §6-ban, a U53 és U54 tételen. A „felhasználó szemével” rész a végén.
+
+**Hatókör és módszer.** Két eszköz: a `pe_dis.cdis` diszasszemblálás és a bemeneti Ghidra-dekompilátum. A verem-kérdéshez új módszert használtunk: a `0x00467ca0` CFG-jén propagáltuk az esp E-hez képesti eltolását (ideiglenes szkript a `.bt/` alatt, a kör végén törölve). Minden utasításhoz kiszámoltuk a mélységet. Hívásnál a hívott függvény `ret N` értékét adtuk hozzá. A közvetlen hívottak `ret` értékét a kódjukból olvastuk ki. Az IAT- és vtábla-hívásnál (nincs közvetlen cél) a közvetlenül előtte álló push-ok számát vettük, stdcall-feltevéssel. Ezek a helyek másodlagosak. A `0x00467ca0` és a `0x0046a80d` között a propagálás ütközésmentes. Az eredményt a záró kóddal (`0x0046d72e`) ellenőriztük.
+
+**Bizonyítottsági fok (38.2.51).**
+
+| állítás | bizonyíték | fok |
+|---|---|---|
+| a törzs alapja `E-0x7eb8` | `0x004e47d0` `ret 8` (a `0x00467cec` hívásnál); záró kód `0x0046d72e`-`0x0046d746` | megerősített (asm) |
+| a függvény `ret 0xc`, három verem-argumentum | `0x0046d746` (`ret 0xc`) | megerősített |
+| `[esp+0x7ebc]` = `E+4` | mélység-követés; nincs írás `E+0`-`E+0x10` területre | megerősített (asm) |
+| a hat hívó utolsó push-a az index | diszasszembly, hívóhelyek (§2 táblája) | megerősített |
+| az elem `E-0x7c24`, a `+0x18` írója `0x0040f9de` | `lea` a `0x004680ca`, `call 0x0040f980` (ret 8) | megerősített |
+| az `eax = 2` ág feltételei | ugrások `0x00468081`, `0x00468092`, `0x0046809d` | megerősített (asm) |
+| a `0x00a4c140` visszatérési értéke | nem vizsgáltuk a visszatérést | NINCS MEG |
+| a `0x004e5070` három visszatérési ága | diszasszembly és dekompilátum | megerősített |
+| a `0x004e5070` és a `0x00506830` objektuma különbözik | `0x00506830` `this` = `lea eax,[ebx+0xf8]` (38.2.50 §1); a konténer a `0x00467ca0` verem-objektuma | megerősített |
+| `T2[index]` írása | `0x004e5a13`-`0x004e5a26` | megerősített (asm) |
+| a `T2` olvasói | nem vizsgáltuk | NINCS MEG |
+| a `0x00449a00` egy tételt kap | `0x00484bc3` hívás, `[esi+ebp*4]` | megerősített (hívóhely) |
+| a lista és a pár kapcsolata | nem követtük vissza a `0x00484bbd` `esi`-t | NINCS MEG |
+
+##### §1 Q1: a prológus és a verem-alap (LEZÁRVA)
+
+- `0x00467ca0`: `mov eax,0x7ea8`, `call 0x00bf6b80` (`__alloca_probe`): az esp `E-0x7ea8`.
+- A süti: `mov [esp+0x7ea4],eax` (`0x00467cb1`), azaz `E-4`.
+- Négy push (`0x00467cbf`-`0x00467cc9`): ebx, ebp, esi, edi. Az esp `E-0x7eb8`. A mentett regiszterek helye: ebx `E-0x7eac`, ebp `E-0x7eb0`, esi `E-0x7eb4`, edi `E-0x7eb8`.
+- `xor ebp,ebp` (`0x00467cd6`), majd `push ebp` (`0x00467cd8`, értéke 0) és `push 1` (`0x00467cdb`). Ezután `call 0x004e47d0` (`0x00467cec`). A `0x004e47d0` `ret 8`-cal tér vissza, tehát ez a két push az argumentuma. A hívás után az esp `E-0x7eb8`.
+- A hívás előtti írások (`0x00467cdd`, `0x00467ce1`, `0x00467ce5`) `E-0x7ec0` mellett történnek. A dekompilátum `local_7e9c = param_2` sora ezt megerősíti.
+
+Az `E-0x7eb8` bizonyítékai:
+- a. A záró kód (`0x0046d72e`): `mov ecx,[esp+0x7eb4]` (a süti `E-4`), majd négy pop (`0x0046d735`-`0x0046d738`: edi, esi, ebp, ebx), `add esp,0x7ea8`, `ret 0xc`. A süti csak akkor van `[esp+0x7eb4]`-en, ha az esp `E-0x7eb8`, és a négy pop a prológus mentett regisztereit olvassa vissza.
+- b. A `0x00467d94`-`0x00467d98` ágban egy második `push ebp; push ebp; call 0x004e47d0` után `jmp 0x0046d72c` következik. Ez is `E-0x7eb8`-cal érkezik a záró kódba.
+- c. A Ghidra-nevek egy része `E-0x7eb8`-hoz illik (például `local_7e90` és `local_7e60`, mindkettő a hívás utáni írás), más része `E-0x7ec0`-hoz (§7).
+
+Következmény: a függvény `ret 0xc`-vel tér vissza, tehát három verem-argumentuma van. Ezek `E+4` (arg1), `E+8` (arg2) és `E+0xc` (arg3). A Ghidra-szignatúra csak kettőt mutat.
+
+##### §2 Q1: az `[esp+0x7ebc]` forrása (LEZÁRVA)
+
+- A törzs ezt olvassa a `0x00468171` (`cmp ecx,[esp+0x7ebc]`) és a `0x0046817d` címen, és további negyven helyen. A `0x0046810d` után `esi = this+0x16b8`, a `[esi+0x58]` tábla (`[this+0x1710]`) darabszáma `[+0x4c]>>1`, adata `[+0x48]`. Ha az index kisebb a darabszámnál (`0x00468178`), a `0x0046818e` hívás a `0x005c2100`-zal másolja az elemet a `[esp+0x124]` helyre.
+- Az index címe `E-0x7eb8+0x7ebc = E+4`, az első verem-argumentum.
+- Írás a `E+0`-`E+0x10` területre a törzsben: nincs. A törzs 330 feloldott írását ellenőriztük, egy sem esik ide.
+- A hat hívóhely. Az arg1 az utolsó push, az arg2 az előtte lévő push:
+
+| hívóhely | hívó függvény | arg1 (az index) | arg2 |
+|---|---|---|---|
+| `0x0046584d` | `0x00465710` | `ebp` | `eax` (`&[esp+0x14]`) |
+| `0x00539b0a` | `0x00539020` | `edx` (a `[eax]` a `0x00539afe`-nél) | `0` |
+| `0x0053b0c5` | `0x0053a790` | `ecx` | `0` (`ebp`) |
+| `0x006b1d6f` | `0x006b1d20` | `ebp` | `esi` |
+| `0x006b3d21` | `0x006b39b0` | `eax` | `esi+0x34` |
+| `0x00803dfb` | `0x00803d40` | `esi` | `ebx+0x8c` |
+
+- Következtetés: az index a hívó által adott szám. Hogy a hívóban az `ebp`, `ecx`, `eax`, `esi` vagy `edx` mit jelent, NINCS MEG, a hívó-láncot nem követtük vissza.
+
+##### §3 Q1: az elem és a `+0x18` mező írója (RÉSZBEN)
+
+- Az elem: `lea esi,[esp+0x29c]` (`0x004680ca`). Az esp itt `E-0x7ec0`, így az elem `E-0x7c24`-en kezdődik, 0x144 bájt hosszú. A `0x004e5740` ezt az `esi`-t kapja (`0x004680e8`).
+- A törzsben a `lea` mutatók közül kettő (`0x00467d13`, `0x00467d5e`) az elem `+0x54` alobjektumára mutat. Ezt a `0x00415790` (ret 8) és a `0x00417770` építi. Ez nem a `+0x18` mező.
+- A `+0x18` írója: `0x0040f980` (ret 8), `0x0040f9de`: `mov [esi+0x18],ecx`. ESI = az elem, az `lea` óta nem változott. ECX = az első verem-argumentum (a `[esp+8]` a push után), vagyis a `0x004680be`-nél push-olt `eax`. A `+0x14` mező a második argumentumot kapja, az 1-et (`push 1`, `0x004680bc`).
+- A `0x0040f980` többi írása: `+0` = a `[E-0x28a8]` mutató (a `0x004680c3` `lea`-ja), `+0x04` és `+0x0c` = a `[edi]` (nulla), `+0x08` és `+0x10` = a `[edi+4]` (nulla), `+0x14` = 1, `+0x18` = az `eax`, `+0x1c` = 0, `+0x1d` = 1, `+0x1e` = 0 (szó), `+0x20` = -1, `+0x24` = 0, `+0x28` = 0.
+- Az `eax` értéke a `0x004680be`-nél:
+  - Ha az `arg2` (a `0x00467ccc`-ben másolt E+8, `[esp+0x48]`) nem nulla, a `0x0046809d` (`cmp esi,ebp`) után az ág a `0x004680bc`-re ugrik, és az `eax` = **2** (`mov eax,2`, `0x00468083`). Ehhez az is kell, hogy `ebx = 0` (`0x00468081`) és a `[esp+0x1b]` bájt nulla (`0x00468092`).
+  - Ha az `arg2` nulla, az `eax` a `0x00a4c140` visszatérési értéke (`0x004680b3`, bemenet `[E-0x28a8]+4`, vagy 0). Ennek a visszatérési értéke NINCS MEG.
+- Az `arg2` a `0x00539b0a` és a `0x0053b0c5` hívóban nulla, ezek tehát a második ágon futnak. A többi hívóban az `arg2` a táblában szereplő regiszter értéke. Ezt nem követtük vissza.
+- Mit jelent a `2`: NINCS MEG. A `+0x18` később a `0x00509350` (rekordba másolás, §4) és a `0x004e5740` (`T2` tábla, §5) lépésben szerepel, de egyik sem mondja meg, hogy a szám kép-, album- vagy személy-tételt jelöl.
+- Két további ág (`0x0046a8a2` és `0x0046a8ad`) a `0x00468081` és a `0x00468092` ugrások célja. Ha ezek más elem-építést jelentenek, a `+0x18` értéke ott más lehet: NINCS MEG (U54).
+
+##### §4 Q2: a `0x004e5070` (LEZÁRVA)
+
+- Belépés: `ret 4`, egy verem-argumentum, az elem. A konténer EDI-ben van (`0x004e5740`, `mov edi,ebp`, `0x004e578d`).
+- Az elem használata: egyetlen helyen, a beszúrás végén. `call 0x00509350` (`0x004e51f1`), ESI = az új rekord. A `0x00509350` az első argumentumot (EBX = `[esp+0xc]`, az elem) másolja a rekordba: `[esi+0x20] ← [ebx+0x20]`, `[esi+0x18] ← [ebx+0x18]`, és a többi mezőt (`+0x04`-`+0x14`, a bájtok `+0x1c`-`+0x1e`). Az elem tehát bemenet, a `0x00509350` nem írja.
+- Visszatérési ágak (a `+0x3f4` mező 0. bitje a jelző, a többi bit a darabszám):
+  - a. A jelző 1: nincs beszúrás. A visszatérés `darabszám-1`, üres táblánál `-1`.
+  - b. A jelző 0, és a tábla a növelés után nem nulla: a `table[darabszám]` helyre új, 0x2c bájtos rekord kerül (a `+0x424` foglaló, ha az üres, akkor `0x0097c5d0`). A mezők nullázódnak: `+0x20 = -1`, `+0x1c = 0`, `+0x1d = 0`, `+0x1e = 0xffff`. Utána a `0x00509350` másolás. A visszatérés a régi darabszám, vagyis az új rekord indexe.
+  - c. A jelző 0, de a tábla nulla (a növelés nem sikerült vagy nulla kapacitás): nincs beszúrás, a visszatérés `darabszám-1`.
+- Kapacitás: kis darabszámnál a kapacitás kettő-hatványonként duplázódik (`0x0097c810`, realloc), nagy darabszámnál 0x400-as lépésekben nő. Nulla kapacitásnál a `0x0097caf0` szabadít.
+- A `0x00509350` hívás a (b) ágban mindig megtörténik: a rekord hiányában az `iVar5` a `+0x3f8` címre esik vissza, ami nem nulla. Ez kódolvasás, futtatással nem próbáltuk.
+- Index-azonosság a `0x00506830` indexével: a két függvény szerkezete azonos (`+0x3f0` tábla, `+0x3f4` darabszám és jelző, `+0x3f8` alapelem), de más objektumon dolgoznak.
+  - `0x004e5070`: EDI = a `0x00467ca0` verem-konténere, `[esp+0x3e0]` (`0x004680de`-nél `E-0x7ad8`).
+  - `0x00506830`: `this` = `lea eax,[ebx+0xf8]` (38.2.50 §1), vagyis a hívó (`0x00484a62`) objektumának belseje.
+  - Két külön tábla, két külön index-tér. NEM azonos.
+
+##### §5 Q3, Q4 és a `T2` tábla (U41, U50, U53)
+
+- A `0x004e5740` érték-ága: `ebx = [konténer+0x480]` (`0x004e57a2`). A `0x004e57b7` `mov ecx,[esi+0x18]` veszi az elem `+0x18` mezőjét. Ezután az `ebx` objektum zárja (`[ebx+0x20]` tulajdonos, `[ebx+0x24]` számláló, `[ebx+0x28]` CRITICAL_SECTION), majd a `0x004e5a13` ág.
+  - `0x004e5a13`: `eax = [esi+0x48]` (a `T2 = [ebx+0x58]` adata), `ecx = [esp+0x18]` (az érték). Ha `T2[index]` nem egyezik vele, a `0x004e5a26` `mov [eax],ecx` az értéket a `T2[index]` helyre írja. Utána `call 0x006a2a60` a `[ebx+0x50]+0x4c` objektumon (a tábla jelzője).
+  - Ha az index nagyobb vagy egyenlő a darabszámmal (`0x004e581b`, `0x004e5821`), a `T2` nő (`0x004e5892`).
+- A `0x004e5740` visszatérése az index: `0x004e5886` `mov eax,edi`, és az `edi` a `0x004e585b`-nél `[esp+0x14]`, ami a `0x004e5070` eredménye (`0x004e5794`). Ez LEZÁRVA.
+- A `0x004ed450` (`ret 4`, hívás `0x004e579d`): `eax` = a konténer, az index az argumentum. Zárolja a konténert, majd `call [edx+8]` a `[esi+0x54]` alobjektumon, az indexszel. A konténer értesítése az új indexről. A `[esi+0x54]` osztálya és a vtábla 8. célja NINCS MEG.
+- Mit olvas a `T2`: NINCS MEG (U53). Az érték tehát a `T2`-be kerül, de nem tudjuk, ki és mire használja.
+- **Q3, a `0x00449a00` (U41).** `ret 4`, `this` = ECX (a `0x00484bc1` `mov ecx,ebx`). Egy verem-argumentum: a `0x00484bbd` ciklus `[esi+ebp*4]` tétele. A függvény: `eax = [this+0x2e94]` (ha nem nulla, `+4`, egyébként 0), push eax (név), push tétel, `eax = this+0x68`, `call 0x004db180`, `setne al`. A `0x004db180` a `this+0x68` objektumot zárolja (ESI = EAX, `[esi+0x20]`, `[esi+0x24]`, `[esi+0x28]`). A `[esi+0xc]` jelző alapján vagy az EnterCriticalSection hívódik, vagy a `[edx+0x18]` vtábla-hívás. A bool eredmény jelentése NINCS MEG. A `0x00506830` párja nem ez a bemenet: a `0x00484bbd` ciklus `esi`-je nincs visszakövetve, ezért a kapcsolat NINCS MEG.
+- **Q4, U50.**
+  - `0x004ed450` (ret 4): lásd fent.
+  - `0x005c2100` (ret 0): `edi = eax` (cél), `esi` (forrás). Ha a két mutató különbözik, a `0x00401000` kiadja a régit, átveszi az újat, és a hivatkozásszámláló mintáját (`cmp ecx,0x80`) követi. Szöveg-érték másolása, megerősítve a `0x0046818e` hívóhelyről.
+  - `0x004da1d0` (ret 0xc): NINCS MEG. Csak az első sorokat néztük (`[edi]` null-ellenőrzés, `[eax+4]` teszt). A 38.2.50 §2 szerinti fogadó, nem a fő kérdés útja.
+
+##### §6 Ghidra-címek a következő körhöz
+
+Blokkolók a fő kérdésre (az elem fajtája):
+- `0x004e5a13` és a `T2` olvasói: a `[konténer+0x480]` objektum osztálya, és a `[obj+0x58]` tábla olvasói (U53). Ghidra-kör kell: a `0x004e5740` `ebp+0x480` objektumának osztálya, és a `[obj+0x58]` olvasói.
+- `0x00a4c140`: a visszatérési érték (`eax`) a `0x00a4c1ad` és a `0x00a4c6a0` ágon (U54), az `arg2 = 0` esethez.
+- `0x0046a8a2` és `0x0046a8ad`: a `0x00468081` és a `0x00468092` ugrások célja, más elem-építés `+0x18` értékkel (U54).
+
+Nem blokkolók:
+- `0x00484820`: az `esi` forrása a `0x00484bbd` ciklus előtt, és hogy a lista a `0x00506830` párja-e (U41).
+- `0x004db180`: a `this+0x68` objektum osztálya és a `[edx+0x18]` vtábla-cél (U41).
+- `0x004ed450`: a `[esi+0x54]` objektum osztálya és a vtábla 8. slotjának célja (U50).
+- `0x004da1d0`: a fogadó teljes törzse (U47, U52; nem a fő kérdés útja).
+
+##### §7 Javítások a korábbi szakaszokban (⚠️ JAVÍTVA)
+
+- 38.2.50 §5 (A/B ellentmondás): **LEZÁRVA**. A (B) eset igaz: a törzs `E-0x7eb8`-on fut. Az (A) eset hamis, mert a `0x004e47d0` felveszi a két prológus-push-t.
+- 38.2.50 §8 („a `[esp+0x7ebc]` a ciklusindex”): **JAVÍTVA**. Az `E+4`, az első verem-argumentum (§2).
+- 38.2.50 §3 (b): **JAVÍTVA**. Két külön objektum, NEM ugyanaz a tábla (§4).
+- 38.2.50 §3 (c): a `+0x18` írója megvan (`0x0040f980`, §3). A jelentése NINCS MEG.
+- 38.2.50 §3 („a kimenet a konténerbe kerül”): **pontosítva**. A `[konténer+0x480]` objektum `T2` táblájának `index` eleme kapja, nem közvetlenül a konténer (§5).
+- 38.2.49 §1.4 (`uVar17 = [esp+0x7ebc]`): a kiolvasás helyes, de az „index” nem ciklusindex, hanem az első verem-argumentum (§2).
+- A Ghidra-nevek a `0x00467ca0` törzsében NEM egységesek. A `local_4` az indexet nevezi, pedig `E+4`. A `uStack_7e78` és a `local_7e70` nevek egy része `E-0x7eb8`-hoz, más része `E-0x7ec0`-hoz illik. A Ghidra-szignatúra (`param_3`, `param_4`) nem mutatja az `E+0xc` argumentumot. **Ezért a verem-slotot ettől fogva nem a Ghidra-névből azonosítjuk, hanem a mélység-követéssel.** A 38.2.45-38.2.50 szakaszok Ghidra-neveit ezzel a megszorítással kell olvasni.
+
+##### §8 Amit KIZÁRTAM
+
+- „Az index a `0x004e5070` visszatérési indexe”: **CÁFOLVA** (§2). Az index a hívó argumentuma.
+- „A `[esp+0x7ebc]` ciklusindex”: **CÁFOLVA** (§2).
+- „A `0x004e5070` és a `0x00506830` ugyanazt a táblát olvassa”: **CÁFOLVA** (§4). Két külön objektum.
+- „A `[elem+0x18]` a `0x00509350`-ben íródik”: **CÁFOLVA**. A `0x00509350` olvassa az elemet, és a rekordba másol (§4).
+- „A `0x00449a00` a `0x00506830` párját kapja”: **CÁFOLVA**. Egy tételt kap (§5).
+- „A `0x004e5740` visszatérése a `+0x18` érték”: **CÁFOLVA**. A visszatérése az index (§5).
+
+##### §9 Nyitott lista (38.2.51 §9)
+
+Nyitott kérdések mérlege (38.2.51): 54 tétel · 12 lezárva · 24 részben · 18 nincs meg. Az előző mérleg (38.2.50): 52 · 12 · 24 · 16. Új tétel: U53 és U54 (mindkettő NINCS MEG, mindkettő a fő kérdést blokkolja). Állapotváltozás nincs, de az U41, U49 és U50 szövege frissült. A 38.2.50 §9 tábla felülíródott.
+
+| U | állapot | mit mond most | cím |
+|---|---|---|---|
+| U1 | NINCS MEG (változatlan) | a `0x00a6aa00` teljes törzse | `0x00a6aa00` |
+| U2 | RÉSZBEN (változatlan) | az obj2 osztálya és a vt+0 cél | `0x005e8a70`, `M+0x4c` vt+0 |
+| U3 | RÉSZBEN (változatlan) | a mód-tartó (`obj`, névhasználat) igazolt; az `L` osztálya NINCS MEG | `0x004a7890`, `0x004baaa0` |
+| U4 | NINCS MEG (változatlan) | a `0x008014d0` vt+0 hívott függvénye | `0x008014d0` |
+| U5 | NINCS MEG (változatlan) | a `[this+0x2ec]` olvasói | pásztázás |
+| U6 | NINCS MEG (változatlan) | a `0x009aaae0` hívóhelyei | `0x009aaae0` |
+| U7 | LEZÁRVA (38.2.41 §1) | a sorrekord `+0x14` írója | - |
+| U8 | NINCS MEG (változatlan) | a `P' = [T+0x3a4]` írója | `0x007fa7f0` |
+| U9 | LEZÁRVA (38.2.41 §2-3) | a kattintási ág | - |
+| U10 | RÉSZBEN (változatlan) | a `0x004b8470` hívója és az `[L+0x148]` írói | `0x004b8ee0` |
+| U11 | RÉSZBEN (változatlan) | az `L` osztálya, `+0xc == 2`, `jbe` | `0x004b29d0` |
+| U12 | NINCS MEG (változatlan) | az EBP/EBX forrása a hívottakban | `0x004b2e10`, `0x004b3770`, `0x004b80d0` |
+| U13 | RÉSZBEN (változatlan) | a `0x007fc010` | `0x007fc010` |
+| U14 | RÉSZBEN (változatlan) | a `0x008014d0` törzse | `0x008014d0` |
+| U15 | NINCS MEG (változatlan) | a startbutton vt+0x18 | `0x007fa7f0` |
+| U16 | RÉSZBEN (változatlan) | a rendező kulcssorrendje igazolt; a G-táblák feltöltése U37 | `0x004a7890`, `0x004baaa0` |
+| U17 | NINCS MEG (változatlan) | a `0x004b8d00` | `0x004b8d00` |
+| U18 | NINCS MEG (változatlan) | az `E` görbe | `0x005568e0` |
+| U19 | NINCS MEG (változatlan) | a rekord-utólagos és a ciklus-utáni lépés | `0x007fa650`, `0x00604480` |
+| U20 | NINCS MEG (változatlan) | a kártya-rekord építése | `0x007fa5b0` |
+| U21 | LEZÁRVA (38.2.43 §2) | a CSlice konstruktor és a destruktor-lánc | `0x004133e0`, `0x00413490` |
+| U22 | RÉSZBEN (változatlan) | a `0x004406f0` a vt+0x2c cél; a `[L+0x48]` vtábla újra nincs igazolva | `0x00402f90`, U36 |
+| U23 | LEZÁRVA a törzs (38.2.44 §2) | a sor neve | `0x004a71e0` |
+| U24 | RÉSZBEN (38.2.48 §2) | a 4. mód igazolt; az 1. mód dupla a `0x00450bd0` (U32); a 0. mód a `G+0x18` tábla (forrása NINCS MEG) | `0x004502e0`, `0x004ae0d0`, `0x004a7890` |
+| U25 | LEZÁRVA (38.2.48 §3) | a `0x00987030` törzse | `0x00987030`, `0x004a7ad4` |
+| U26 | NINCS MEG (változatlan) | a K-másolás törzse | `0x00801915`-`0x00801bc4` |
+| U27 | NINCS MEG (változatlan) | az `M+0x64c` és `M+0x650` írása | `0x005e8a70` |
+| U28 | LEZÁRVA (38.2.45 §1) | a kulcs NÉV | `0x004dca40`, `0x004406f0` |
+| U29 | RÉSZBEN (38.2.45 §2) | a `[X+0x1034]` CThumbDB írója LEZÁRVA; az `L` írója U36 | `0x00402f90`, U36 |
+| U30 | RÉSZBEN (38.2.45 §4) | a G-szerep LEZÁRVA; a táblák feltöltése U37 | `0x004b94a0`, U37 |
+| U31 | RÉSZBEN (38.2.46 §3.2) | a bemenet igazolt; a statisztika neve NINCS MEG | `0x00450100` |
+| U32 | RÉSZBEN (38.2.49 §3, új) | a `0x00450bd0` 64 bites maximum-számítása igazolt; a 64 bites érték jelentése, a `0x0098b650` és a `0x006c9d60` NINCS MEG | `0x00450bd0`, `0x0098b650`, `0x006c9d60` |
+| U33 | RÉSZBEN (38.2.47 §3.3) | a mód forrása parancs-ágankénti konstans; a parancsazonosító és az ág párosítása NINCS MEG | `0x005cb990`, `0x005d9cc0`, `0x004b07c0` |
+| U34 | NINCS MEG (változatlan) | az OLEAUT32 184. sorszám neve | IAT `0x00c405c8` |
+| U35 | RÉSZBEN (38.2.46 §1.3) | a literál szövege `token`; a rekord `+5` mezőjének tartalma NINCS MEG | `0x00415790`, `0x00985ff0`, `0x004941f0` |
+| U36 | RÉSZBEN (38.2.47 §3.5) | az `[X+0x2c0]` a mód-tartó (ha `X = V`); az `X = V` NINCS MEG (U43) | `0x004b07c0`, `0x005d30f0`, `0x004502e0` |
+| U37 | RÉSZBEN (38.2.47 §2.2) | a G-veremszerkezetet a hívó állítja be; a tartalmának feltöltése NINCS MEG | `0x004b94a0`, `0x004b8ee0` |
+| U38 | LEZÁRVA (38.2.46 §2.2) | egyesítő rendezés; a kulcsot a `0x004a7890` adja | `0x004baaa0`, `0x004a7890` |
+| U39 | RÉSZBEN (38.2.47 §2.1) | az `obj` a hívó `this`-e; a `0x004b94a0` első argumentuma O = `[X+0x2c0]` (38.2.49 §4) | `0x004b8ee0`, `0x006dc4c0`, `0x005fe130` |
+| U40 | RÉSZBEN (38.2.48 §1.3) | a név-tábla írói igazoltak; az elemek fajtája NINCS MEG (U49, U50) | `0x00456610`, `0x00448560`, `0x004da1d0` |
+| U41 | RÉSZBEN (38.2.51 §5) | a `0x00449a00` egy tételt kap, nem a párt; a `0x004db180` a `this+0x68` objektumot zárolja; a lista és a pár kapcsolata NINCS MEG (a `0x00484820` `esi`-forrása) | `0x00449a00`, `0x004db180`, `0x00484bbd`, `0x00484820` |
+| U42 | RÉSZBEN (38.2.48 §1.3) | az írók megvannak; az azonosító (`param_3`) forrása a 0x467ca0 és a 0x425f60 útjában az index, de a fajtája NINCS MEG | `0x00456610`, `0x00448560` |
+| U43 | NINCS MEG (változatlan) | az `X` azonos-e a `V = [[0xd67668]+0x102c]`-vel | `0x005cb9aa`, `0x004b07e8`, `0x006dc4c0` |
+| U44 | RÉSZBEN (38.2.48 §2) | mindkét kulcs mechanikája LEZÁRVA; a dupla tartalma U32 | `0x004ae0d0`, `0x004507e0` |
+| U45 | LEZÁRVA (38.2.49 §4) | a `0x005fe130` hívója és a `0x0056c5a0` első verem-argumentuma: O = `[X+0x2c0]`; X forrása nincs felvéve külön | `0x005fe130`, `0x0056c5a0` |
+| U46 | LEZÁRVA (38.2.50 §1) | a törzs, a kimeneti pár és a `this` igazolt; a `0x00891110` a célba ír, a forrást csak olvassa | `0x00506830`, `0x00484a70`, `0x00484a5c`, `0x00891110` |
+| U47 | LEZÁRVA (38.2.50 §2) | a lista elemének azonosítója a `0x00456610` `param_3`-a; a fajta NINCS MEG (U42) | `0x00493050`, `0x0045a8a6`, `0x0045a89b` |
+| U48 | NINCS MEG (változatlan) | a `[owner+0x2e9c]` és a `[owner+0x2e94]` név írói, és a viszonyuk | `0x004489dc`, `0x00449a00` |
+| U49 | RÉSZBEN (38.2.51 §4-5) | visszatérés és index LEZÁRVA (a `0x004e5070` három ága; a `0x004e5740` az indexszel tér vissza); a `+0x18` kimenete a `T2[index]` (`0x004e5a13`); a `T2` olvasója NINCS MEG (U53) | `0x004e5740`, `0x004e5070`, `0x004e5a13` |
+| U50 | RÉSZBEN (38.2.51 §5) | `0x004ed450` = konténer-zár és vt+8 hívás az indexszel; `0x005c2100` = szöveg-értékadás; `0x004da1d0` NINCS MEG | `0x004ed450`, `0x005c2100`, `0x004da1d0` |
+| U51 | LEZÁRVA (38.2.49 §4) | a `0x004b94a0` első verem-argumentuma `[X+0x2c0]`, X a `0x0056c5a0` első argumentuma | `0x0056d2b6`, `0x0056c5a0` |
+| U52 | LEZÁRVA (38.2.50 §2) | a bemenő lista eleme a `0x00456610` `param_3`-a (asm); a fajta NINCS MEG | `0x004d9aa0`, `0x00458aeb`, `0x00458ad8`, `0x00458ae4` |
+| U53 | NINCS MEG (új, 38.2.51 §5; blokkolja a fő kérdést) | a `[konténer+0x480]` `T2` tábla olvasói, és az ott tárolt szám (elem `+0x18`) jelentése | `0x004e5a13`, `0x004e5740` |
+| U54 | NINCS MEG (új, 38.2.51 §3; blokkolja a fő kérdést) | a `+0x18` többi ága: a `0x00a4c140` eredménye (`arg2 = 0`) és a `0x0046a8a2` / `0x0046a8ad` ágak | `0x00a4c140`, `0x0046a8a2`, `0x0046a8ad` |
+
+**A felhasználó szemével**
+
+Nincs két-három mondatos összefoglaló, mert a fő kérdés (az elem fajtája) nem dőlt el. Ami már áll: a verembe épített elem `+0x18` mezőjébe a törzs vagy a `2` számot, vagy egy visszatérési értéket ír, és ez a szám a rekord mellé kerül. Hogy ez kép, album vagy személy, azt három hiányzó cím dönti el: `0x004e5a13` (ki olvassa a `T2` táblát), `0x00a4c140` (az `arg2 = 0` ág értéke), és `0x0046a8a2`, `0x0046a8ad` (a másik két elem-építő ág).
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
