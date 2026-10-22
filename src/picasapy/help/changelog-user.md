@@ -4,6 +4,51 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-22
+
+**Emberek és arcok**
+
+- A **Személyek kezelése** ablak keresője és az arcok alatti névjavaslat
+  a nevek szavainak elejére illeszt, ahogy az eredeti Picasa: az „an"
+  beírására az „Anna Kiss" és a „Kiss Andrea" is megjelenik. A javaslat
+  már az első leütésre látszik, és a nyilakkal is választhatsz belőle.
+  Lásd [Emberek és arcok](features/emberek.md).
+- A **Személy törlése** előtt a program rákérdez; üres névnél
+  **Érvénytelen személy** üzenetet ad, és már létező névvel vagy e-mail
+  címmel új személy felvételekor megkérdezi, biztos-e benne. A
+  **Visszaállítás** csak módosított személynél használható.
+
+**Beállítások**
+
+- Az **Általános** fülön a **Másodpéldányok észlelése az importálás
+  során** (korábbi nevén Duplikátumok észlelése importáláskor) alapból
+  be van kapcsolva. Lásd [Beállítások](features/beallitasok.md).
+- Az **E-mail** fülön a két levelezőprogram-választás sorrendje az
+  eredetié: elöl a **Minden képküldésnél kiválasztom**.
+- A **Nyomtatás** fül öt méretválasztójában már nincs ott a FullPage
+  (annak saját gombja van), és metrikus környezetben az alapértékek az
+  eredetiéi: 10 × 15, 13 × 18, 15 × 20, 20 × 25 cm és az **Indexképek**.
+  Lásd [Nyomtatás](features/nyomtatas.md).
+
+**Poszter**
+
+- A poszterlapok mindig JPEG-ként készülnek, és a fájlnevükben előbb az
+  oszlop, aztán a sor száma áll, ahogy az eredeti Picasában. Lásd
+  [Poszter](features/poszter.md).
+
+**Rendezés és exportálás**
+
+- A **Név** szerinti rendezés az eredeti Picasa sorrendjét követi: az
+  ékezetes betűvel kezdődő nevek az A-tól Z-ig tartó nevek elé kerülnek.
+  Lásd [Könyvtár](features/konyvtar.md).
+- Ha egy kép metaadatai túl terjedelmesek, az exportált képből az EXIF
+  kimarad, ahogy az eredetiben. Lásd [Exportálás](features/exportalas.md).
+
+**Javítás**
+
+- A képtálca forgatógombja után a bélyegkép azonnal elfordulva
+  látszik a tálcán és a rácsban is.
+
 ## 2026-10-21
 
 **Átnevezés**

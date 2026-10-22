@@ -89,8 +89,8 @@ tábla `0x00d6ead8`): `ID_NAMESORT` = `0x9cd3`, `ID_DATESORT` = `0x9cd4`,
 (`0x00731905`, `0x0073194f`, `0x00731999`, `0x007319cd`).
 
 **A kezelő.** A fő parancskezelő (`0x005cb990`) ugrótáblája
-(`0x005cba5d`: `id − 0x9c42`, bájttábla `0x005cdb34`, címtábla
-`0x005cd9fc`; `0x005cd4fa`: `id − 0xa02e`, `0x005cdfe0`/`0x005cdefc`):
+(`0x005cba5d`: `id - 0x9c42`, bájttábla `0x005cdb34`, címtábla
+`0x005cd9fc`; `0x005cd4fa`: `id - 0xa02e`, `0x005cdfe0`/`0x005cdefc`):
 
 | parancs | célcím | hívás | mód |
 |---|---|---|---:|
@@ -99,10 +99,26 @@ tábla `0x00d6ead8`): `ID_NAMESORT` = `0x9cd3`, `ID_DATESORT` = `0x9cd4`,
 | `0x9cd5` Méret | `0x005cc103` | `0x005e5ce0(ui, 5, shift)` | 5 |
 | `0xa0d0` Fordított | `0x005cd868` | `0x005e5ce0(ui, 12, 0)` | 12 |
 
-A harmadik argumentum a **Shift** állapota (`GetKeyState(0x10)` felső bitje,
-`0x005cc09d`–`0x005cc0aa`), de csak ha a `[0x00d67849]` bájt nem nulla;
-különben 0. *(A `[0x00d67849]` jelentése NINCS MEG; a megszerzés útja: a
-bájt íróinak pásztázása.)*
+A harmadik argumentum a **Shift** állapota. Ha a `[0x00d67849]` bájt nulla,
+a kezelő 0-t ad át (`0x005cc07d`-`0x005cc098`). Ha nem nulla, a
+`0x005cc09f` a `0x00c406f8` importrekeszen át `GetAsyncKeyState(0x10)`-et
+hív; az importtábla a rekeszt `USER32.dll!GetAsyncKeyState`-ként nevezi meg.
+A kód a visszatérési érték 15. bitjét veszi ki (`shr eax, 0xf; and al, 1`,
+`0x005cc0a5`-`0x005cc0a8`), és ezt adja át Shiftként (`0x005cc0aa`-
+`0x005cc0b6`). A név- és méretrendezés kezelője ugyanilyen feltételt használ
+(`0x005cc0c0`, `0x005cc103`).
+
+**A `[0x00d67849]` jelentése és írói (#5501, LEZÁRVA).** A teljes `.text`
+pásztázás 2 884 879 utasításban 139 abszolút címre mutató bájtos hivatkozást talált; ezek
+közül két írás van. A `0x005760e0` függvényben a `0x005763f9`-`0x00576412`
+közötti `ShowWindow`, `SetFocus`, `BringWindowToTop` és
+`SetForegroundWindow` hívások után a `0x00576419` 1-et ír a bájtba. A
+`0x00a52890` függvényben a `0x00a52e55` a 0x1c üzenetágat választja, majd a
+`0x00a52e5e`-`0x00a52e66` a paraméter +8 mezőjének alsó bájtját írja a
+bájtba. A 0x1c üzenet a `WM_ACTIVATEAPP`; így a jelző az alkalmazás
+aktiválási állapotát követi. A két író és az olvasó közötti kapcsolatot a
+teljes pásztázás, az utasítások és az importtábla egymástól függetlenül
+igazolják.
 
 **Az alkalmazó: `0x005e5ce0`.**
 
@@ -124,21 +140,48 @@ egyszeri paramétere. Ami megmarad, az a **rendezett lista** (a
 `wordhash.dat`-ban), és az újraindítás után is az látszik.
 
 **A kulcsok** (`0x004efce0` → `0x006b9b50`, ugrótábla `0x006b9db8`, csak
-a 2–7. módra):
+a 2-7. módra):
 
 | mód | célcím | kulcs | egyenlőségnél |
 |---:|---|---|---|
 | 3 Dátum | `0x006b9be0` | a `thumbindex` rekord **1. FILETIME-ja** (`+4`/`+8`, a kép metaadat-dátuma, `pmp-database.md` 10.3) | a név-összevetés (`0x006b9bf2` → `0x006b9c28`) |
-| 5 Méret | `0x006b9b69` | fájlméret (`+0x14`) | nincs: `a < b` → −1, különben +1 |
-| 6 Név | `0x006b9c28` | a rekord neve, **természetes összevetéssel**: a számjegy-sorozat számértékként (`0x006b9cdc`–`0x006b9d06`), az ASCII `A–Z` kisbetűsítve (`0x006b9d0f`–`0x006b9d1a`), a számjegy-sorozat minden nem-számjegy elé kerül (a nem-számjegy `c − 0x100`, előjel nélkül hasonlítva, `0x006b9d22`, `0x006b9d71`) | 0 lehet (azonos szöveg `0x006b9ca8`; az egyik a másik előtagja `0x006b9d86`–`0x006b9d8e`) |
+| 5 Méret | `0x006b9b69` | fájlméret (`+0x14`) | nincs: `a < b` → -1, különben +1 |
+| 6 Név | `0x006b9c28` | a rekord neve, **bájtonkénti természetes összevetéssel**: a számjegy-sorozatot számként gyűjti (`0x006b9cdc`-`0x006b9d06`), csak az ASCII `A-Z` tartományt hajtja kisbetűvé (`0x006b9d0f`-`0x006b9d1a`), a nem számjegy bájt kulcsa `c - 0x100` előjeles kiterjesztés után (`0x006b9d1f`-`0x006b9d22`); összehasonlítás unsigned módon (`0x006b9d71`-`0x006b9d75`) | 0 lehet (azonos szöveg `0x006b9ca8`; az egyik a másik előtagja `0x006b9d86`-`0x006b9d8e`) |
 
-> **NYITOTT KÉRDÉS (2.4 név-kulcs):** a `c − 0x100` trükk 8 bites karakterre
-> igazolt; 16 bites karakternél és 10+ jegyű számsorozatnál (32 bites érték
-> túlcsordul?) a viselkedés NINCS igazolva (ld. a 7. szakasz).
+> **Határesetek (#5501, LEZÁRVA).** A `0x006b9c28` rutin bájtokat olvas:
+> `mov al, byte ptr [esi]` (`0x006b9cda`), `mov dl, byte ptr [edi]`
+> (`0x006b9cd0`), és a két mutatót egyesével lépteti (`0x006b9cec`,
+> `0x006b9d36`, `0x006b9d77`). A Picasa belső sztringjei NT alatt UTF-8-asak
+> (`binaris-regeszet-modszertan.md` 21.2, a `MultiByteToWideChar` hívások
+> `0x009affd9`, `0x009afff7` és `0x009b0011`), ezért például az `á` és az
+> `ő` UTF-8 bájtjai külön-külön mennek át az összehasonlítón. A rutin nem
+> dekódol Unicode-kódpontot, és nem végez ékezetes kisbetűsítést.
+>
+> ASCII `A-Z` esetén a kód `+0x20`-at alkalmaz (`0x006b9d13`-`0x006b9d1a`;
+> a másik oldal `0x006b9d5c`-`0x006b9d64`). Minden más bájtot `movsx`-szel
+> terjeszt előjelesre, majd `0x100`-at von le (`0x006b9d1f`-`0x006b9d22`,
+> `0x006b9d69`-`0x006b9d6c`). A két 32 bites kulcs összevetése `cmp` és
+> unsigned `jb`/`ja` utasításokkal történik (`0x006b9d71`-`0x006b9d75`).
+>
+> A számszakasz felhalmozója 32 bites `eax`: a `lea` utasítások a korábbi
+> érték tízszereséhez adják a következő számjegyet (`0x006b9cff`-
+> `0x006b9d02`). Túlcsordulásvizsgálat vagy számszakasz-hossz szerinti
+> döntés nincs. Az érték modulo `2^32` fordul körbe, majd unsigned
+> összehasonlítás következik: `4294967295` még belefér, `4294967296` értéke
+> `eax`-ban 0 lesz. Az azonos számértékű szakaszok után a rutin a következő
+> bájtokkal folytatja az összehasonlítást (`0x006b9d77`-`0x006b9d80`).
+>
+> **Eltérés a PicasaPy mai rendezésétől:** a `natural_name_key` Python
+> Unicode-kódpontokat hasonlít és a teljes számjegy-sorozatot tetszőleges
+> pontosságú `int`-té alakítja (`src/picasapy/index/album_sort.py`). Konkrét
+> eltérés: az eredeti a `4294967296` számértéket 0-ként hasonlítja, ezért a
+> `4294967296` nevű szakasz a `1` elé kerül; a PicasaPy a teljes értéket
+> hasonlítja, ezért a `1` kerül elé. A fejlesztési jegyjavaslat a 2.7
+> szakaszban van.
 
-Irány: a kisebb kerül előre (`0x0049e298`: negatív eredménynél csere) —
-**növekvő**, dátumnál a legrégebbi elöl. Shift: `+0x558` = 1 →
-a `0x004efd84`–`0x004efd9b` ág a −1-et +1-re, minden mást −1-re fordítja
+Irány: a kisebb kerül előre (`0x0049e298`: negatív eredménynél csere),
+**növekvő**, dátumnál a legrégebbi elöl. Shift: `+0x558` = 1 esetén a
+`0x004efd84`-`0x004efd9b` ág a -1-et +1-re, minden mást -1-re fordítja
 (csökkenő).
 
 ### 2.5 A 11-es „prioritás" mód nem a kézi sorrend (1. kérdés)
@@ -147,33 +190,62 @@ A `0x0071c650` (a rács listaépítője, `CSelectionNode` vtábla 49. rés) a
 nézet elemeinek rekordindexét (`[elem+0xb4]`) gyűjti a `[+0x36c]` listába
 (a `[elem+0x5a]`/`[elem+0x5b]` jelzős elemeket kihagyva), és
 
-- **0-s módban nem rendez** (`0x0071c8a1`–`0x0071c8a5`): a nézet a lista
+- **0-s módban nem rendez** (`0x0071c8a1`-`0x0071c8a5`): a nézet a lista
   sorrendjében áll;
 - 12-es módban fordított sorrendben gyűjt (`0x0071c689`), rendezés nélkül;
 - minden más módban `0x0071f030`-cal rendez, amelynek két hasonlítója
   (`0x0071f220`, `0x0071f270`) csak a `CThumbDB`-t kéri el (`0x007184e0`)
   és a `0x004efce0`-at hívja. **Ebben a láncban nincs más kulcsforrás.** A
-  `0x004efce0` a `CThumbDB+0x554` módra ágazik (`0x004efd6b`–`0x004efd77`):
-  a 2–7. módon kívül **állandó −1**, tehát a 8. és a 11. mód itt nem ad
+  `0x004efce0` a `CThumbDB+0x554` módra ágazik (`0x004efd6b`-`0x004efd77`):
+  a 2-7. módon kívül **állandó -1**, tehát a 8. és a 11. mód itt nem ad
   értelmes sorrendet.
 
 A rács módja a konstruktorban **0** (`0x00714b95`, `CSelectionNode`
 ktor `0x00714990`); a `CAlbumSelectionNode` ktor (`0x0077fd80`) nem írja
-felül. A beállító (`0x0071c4f0`) csak virtuálisan érhető el (közvetlen
-hívása a teljes `.text`-ben 0); a `[vtábla+0xc0]` virtuális hívások
-pásztázása (38 hívóhely) állandó argumentumot csak `0xc`-vel talált
-(`0x0061397a`, `0x006170b9`, `0x006183c2`, `0x006218b1` — Film;
-`0x00831308`, `0x00831fe8` — kollázs). A `CThumbDB+0x554` íróinak
-pásztázása (14 találat): a menü (`0x005e5de2`, 3/5/6), állandó 3
-(`0x0048aeed`, `0x0055fb94`, `0x005e9004`), 0 az inicializáláskor
-(`0x004e459e`) és a beállító (`0x0071c525`); 11-et egyik sem ír.
+felül. A beállító (`0x0071c4f0`) virtuálisan érhető el; közvetlen hívása
+nem látszik a teljes `.text` pásztázásában. A beállító egyetlen paraméterét
+beírja a `CSelectionNode+0x2c0` mezőbe (`0x0071c517`-`0x0071c51a`) és a
+`CThumbDB+0x554` mezőbe (`0x0071c520`-`0x0071c525`). A 11-es értéket is
+elfogadja: a `mode - 2` index 9-ként a `0x0071c640` ugrótábla-bejegyzéshez
+vezet, amely a `0x0071c5cd` ágra mutat. Ez azt bizonyítja, hogy a beállító
+kezeli a 11-es módot; önmagában nem bizonyítja, hogy valamelyik futó
+hívóhely ezt az értéket átadja.
 
-⇒ **A kézi sorrend a 0-s mód + a tárolt lista sorrendje; a 11-es mód
-kulcsa nem kell hozzá.** Hogy a 11-es módot egyáltalán beállítja-e valami,
-az hat, regiszter-argumentumú `[vtábla+0xc0]` hívóhelyen múlik
-(`0x007b235d`, `0x008de46a`, `0x0094fbd8`, `0x0094fc58`, `0x00972884`,
-`0x00ab903d`; az osztályuk NINCS MEG) — a sorrend tárolásának kérdését ez
-nem érinti.
+A teljes `.text` pásztázása 38 `[vtábla+0xc0]` hívóhelyet talált. A hat
+ismert rácsmód-hívás mind `0xc` értéket ad át, vagyis 12-t
+(`0x0061397a`, `0x006170b9`, `0x006183c2`, `0x006218b1` a film-ágon;
+`0x00831308`, `0x00831fe8` a kollázs-ágon). A `0x0071c4f0` célfüggvény a
+`CSelectionNode`, `CAlbumSelectionNode` és `CFoundFaceSelectionNode`
+vtáblák `+0xc0` résén található (`0x00cad5b4`, `0x00cb46f4`,
+`0x00cb483c`; az adott rések értéke `0x0071c4f0`).
+
+A hat további, regiszterrel hívott hely közül a `0x00972884` a
+`MediaResumableUploadStream` / `ResumableStream` objektumon belüli hívás;
+annak `+0xc0` résértéke `0x009727f0`, nem a módbeállító. A `0x00ab903d`
+`CBaseVideoRenderer` / `CPVRenderer` objektumon belüli hívás; annak
+`+0xc0` résértéke `0x00ab8e10`. A maradék négy hívóhely címzettjének
+futásidejű típusa és a regiszterből vagy mezőből érkező argumentuma az
+utasításszintű vizsgálatból nem dönthető el. Közvetlen 11-es literál egyik
+hívásnál sem látszik. A `.text` pásztázása a `+0x554` eltoláson nyolc
+írásalakot talált; a mezőazonosság nélkül ezekből nem következik
+`CThumbDB`-módérték. A rendezési kezelő ismert értékei 3, 5, 6 és 12
+(`0x005cc07d`-`0x005cd868`, `0x005e5de2`).
+
+=> **A kézi sorrend a 0-s mód és a tárolt lista sorrendje; a 11-es mód
+kulcsa nem kell hozzá.** A `0x004efce0` hasonlítóban a 11-es mód a 2-7.
+módon kívüli ágra esik, amely állandó -1-et ad (`0x004efd6b`-
+`0x004efd77`), ezért ott nem kap értelmes rendezési kulcsot. Hogy valamelyik
+ismeretlen címzettű virtuális hívás a `0x0071c4f0` módbeállítót éri-e el,
+és dinamikusan 11-et ad-e át, **NINCS MEG**. A következő vizsgálathoz
+dekompilálás kell:
+
+`Ghidra-kör kell: 0x007b235d - az [ebx+0x6c]+0x48 címzettobjektum típusa és a +0xc0 hívás argumentumának forrása; elérheti-e a CSelectionNode módbeállítóját? [blokkoló]`
+
+`Ghidra-kör kell: 0x008de46a - az edi címzettobjektum típusa és a +0xc0 hívás argumentumának forrása; elérheti-e a CSelectionNode módbeállítóját? [blokkoló]`
+
+`Ghidra-kör kell: 0x0094fbd8 - az ebp címzettobjektum típusa és a két +0xc0 hívás argumentumának forrása; elérheti-e bármelyik a CSelectionNode módbeállítóját 11-es értékkel? [blokkoló]`
+
+`Ghidra-kör kell: 0x0094fc58 - az ebp címzettobjektum típusa és a két +0xc0 hívás argumentumának forrása; elérheti-e bármelyik a CSelectionNode módbeállítóját 11-es értékkel? [blokkoló]`
 
 ### 2.6 Mérés: a `wordhash.dat` formátuma és a tárolt listák
 
@@ -220,6 +292,45 @@ ez **tárolt, nem számolt** sorrend. *(Hogy pontosan melyik művelet hozta
 létre — a #1557 „másolat mentése" vagy a #1645-ben leírt húzás —, abból az
 egy pillanatképből nem dönthető el: „előtte" állapot nincs, ld.
 `pmp-database.md`, a #4591 helyesbítése.)*
+
+### 2.7 #5501 kutatói kör (2026-10-21)
+
+| kérdés | eredmény | bizonyíték |
+|---|---|---|
+| név-összevetés határesetei | bájtonként olvas; az UTF-8 bájtokat nem dekódolja; a számszakasz 32 bites `eax`-ban modulo `2^32` körbefordul, hossz szerinti döntés nincs | `0x006b9cda`, `0x006b9cd0`, `0x006b9d77`, `0x006b9cff`-`0x006b9d06`, `0x006b9d71`-`0x006b9d75`; UTF-8 réteg: `binaris-regeszet-modszertan.md` 21.2 |
+| Shift-feltétel bájtja | az alkalmazás aktiválási állapotát követi; két író van, a Shift-figyelést a `GetAsyncKeyState` 15. bitjére kapuzza | teljes `.text` pásztázás: 2 884 879 utasítás, 139 bájtos hivatkozás; írók `0x00576419`, `0x00a52e66`; olvasó `0x005cc07d`-`0x005cc0aa`; IAT `0x00c406f8` |
+| a rács 11-es módjának beállítása | **NINCS MEG**; a beállító elfogadja a 11-et, de négy ismeretlen címzettű virtuális hívás dinamikus argumentuma nem vezethető le | `0x0071c517`-`0x0071c525`, ugrótábla `0x0071c640` -> `0x0071c5cd`; teljes `.text` pásztázás: 38 `+0xc0` hívóhely |
+
+**Bizonyítottsági fok: feltételes.** Az első két válasz utasításszinten olvasható
+és a független újralevezetés egyezett. A Shift-út másik ellenőrzése a teljes
+`.text` pásztázás, a PE importrekesz feloldása és a két író külön
+utasításszintű ellenőrzése volt. A 11-es tényleges beállítása nyitva marad:
+az ismert rácshívások 12-t adnak át, a setter 11-et is elfogad, a négy
+ismeretlen címzett és dinamikus argumentum miatt negatív állítás nem tehető.
+
+**Cáfoló kísérlet.** Ellenőriztem azt a lehetséges cáfolatot, hogy a 11-es
+módot a setter nem is kezeli. A `mode - 2` ugrótábla 9. bejegyzése a
+`0x0071c5cd` ágra visz, ezért ez a feltevés megdőlt: a setter támogatja a
+11-es értéket. A híváslistában közvetlen 11-es literál nincs; a négy
+ismeretlen címzett dinamikus típusa és argumentuma Ghidra nélkül nem
+dönthető el.
+
+**Eredeti / nálunk / teendő: a név-rendezés fejlesztési jegyjavaslata**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| UTF-8 bájtok szerinti összevetés; csak ASCII `A-Z` hajtás; a nem számjegy bájt előjeles kiterjesztés után `c - 0x100`; a számérték 32 bites, modulo `2^32` | `natural_name_key` Python Unicode-kódpontot és tetszőleges pontosságú egész számot használ (`src/picasapy/index/album_sort.py`) | A kulcsot byte szintű összehasonlításra cserélni, az ASCII hajtást, a nem számjegy képletet és a 32 bites körbefordulást megőrizni. A fejlesztési jegy a 2.7 szakasz „Kész, ha" pontjaival nyitható meg. |
+
+Javasolt fejlesztési jegy „Kész, ha" pontjai:
+
+- A név-rendező a Picasa kódútjával azonos eredményt ad ASCII és UTF-8
+  ékezetes neveknél; az ékezetes betűket nem hajtja kisbetűvé. A `z` és `á`
+  pár sorrendje kövesse a bájtonkénti kulcsot.
+- A számszakasz-összevetés modulo `2^32` működik; a `4294967295` és
+  `4294967296`, a vezető nullák és azonos maradékú számszakaszok viselkedése
+  a bináris utasításokkal egyezik.
+- Az előtag, azonos számérték utáni folytatás és a növekvő/csökkenő irány
+  megmarad, és mindegyik viselkedésre automatizált egységteszt készül.
 
 ---
 
@@ -398,16 +509,19 @@ viszont menüből kattintható:
 - **Kódszintű**: hogy a rács elemlistája a `CSlice` listájának sorrendjében
   épül — a 2.3 húzás a pozíciót közvetlenül a listába írja, ami ezzel
   egyezik; élőben a 5. pont futása erősíti meg.
+- **Feltételes** (#5501, 2.7): a név-összevetés és a Shift-feltétel
+  utasításszinten megvan, a független újralevezetés egyezett; a rács 11-es
+  módját ténylegesen meghívó út dinamikus típusa és argumentuma NINCS MEG.
 
 ## 7. Nyitott kérdések mérlege
 
-`3 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 5 lezárva · 1 NINCS MEG · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
 | hol tárolódik a kézi (húzott) sorrend | **LEZÁRVA** — a `]album:<token>` szó listája a `wordhash.dat`-ban (2.1, 2.3) |
 | mit állít a „Sort Album By", és megmarad-e | **LEZÁRVA** — egyszeri átrendezés (mód 6/3/5, Shift = csökkenő, 12 = megfordítás); a lista marad meg, mód nem tárolódik (2.4) |
 | a 11-es mód kulcsa | **LEZÁRVA** a kérdés szempontjából — a kézi sorrendhez nem kell kulcs (2.5) |
-| a név-összevetés határesetei (2.4) | **NYITOTT** — nem igazolt: a 8 bites `c − 0x100` trükk 16 bites (nem ASCII) karakternél, és a 10+ jegyű számsorozat (32 bites érték) viselkedése; a megvalósítás itt Unicode-kódpontot és tetszőleges pontosságú egészet használ |
-| a `[0x00d67849]` (a Shift-figyelés feltétele) jelentése | **NYITOTT** — út: a bájt íróinak pásztázása |
-| ki állítja a rács 11-es módját (ha valami) | **NYITOTT** — út: a hat regiszter-argumentumú `[vtábla+0xc0]` hívóhely osztályának azonosítása (2.5) |
+| a név-összevetés határesetei (2.4) | **LEZÁRVA** - a rutin bájtonként olvas, a 32 bites számszakasz modulo `2^32` körbefordul, hossz szerinti döntés nincs; a PicasaPy Python-kódja ettől eltér (2.4, 2.7) |
+| a `[0x00d67849]` (a Shift-figyelés feltétele) jelentése | **LEZÁRVA** - az alkalmazás aktiválási állapotát követi; két írója van, és nem nulla értéknél `GetAsyncKeyState`-ből olvassa a Shift állapotát (2.4) |
+| ki állítja a rács 11-es módját (ha valami) | **NINCS MEG** - a setter kezeli a 11-et, de négy címzett objektum és dinamikus argumentum nem vezethető le; célzott Ghidra-kör kell a `0x007b235d`, `0x008de46a`, `0x0094fbd8`, `0x0094fc58` címekről (2.5, 2.7) |

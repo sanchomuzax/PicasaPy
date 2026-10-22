@@ -42,7 +42,7 @@ alapján várnál.
   kattintás kell. Alapból ki van kapcsolva. A kép nagyított
   állapotában a húzás ettől függetlenül a képet mozgatja.
 
-**Fájlok:** a **Duplikátumok észlelése importáláskor** kapcsoló, a
+**Fájlok:** a **Másodpéldányok észlelése az importálás során** kapcsoló, a
 **Törlés a lemezről megerősítés nélkül**, az **Eltávolítás az albumból
 megerősítés nélkül** és a **Gyorsítótár ürítése…** gomb — lásd lentebb.
 
@@ -98,10 +98,11 @@ Ha bekapcsolod a **Törlés a lemezről megerősítés nélkül** pipát, a
 program a törlésnél nem kérdez rá többé. Ugyanezt beállíthatod magában a
 törlés-megerősítő ablakban is, a **Ne kérdezze meg újra** pipával.
 
-### Duplikátumok észlelése importáláskor
+### Másodpéldányok észlelése az importálás során
 
 Ha be van kapcsolva, az importálás kihagyja azokat a képeket, amik már
-benne vannak a könyvtáradban. Ugyanez a kapcsoló az importáló ablakban
+benne vannak a könyvtáradban. Alapból be van kapcsolva, ahogy az eredeti
+Picasában; ha egyszer kikapcsolod, a program megjegyzi. Ugyanez a kapcsoló az importáló ablakban
 **Duplikátumok kizárása** néven látszik — a két hely **ugyanazt az egy
 beállítást** mutatja, tehát amit az egyiken átállítasz, a másikon is
 látszik.
@@ -146,10 +147,11 @@ maradnak.
 
 - **Rendelkezésre álló nyomtatási méretek** — öt választólista. Ezek
   adják a **Nyomtatás** ablakban a méretlista alatti öt gyorsgombot (a
-  hatodik, **FullPage** gomb állandó). Az alapértékük a számítógéped
-  **területi beállításától** függ: metrikus mértékegységnél 5 × 8,
-  9 × 13, 10 × 15, 13 × 18 és 20 × 25 cm, hüvelykesnél Tárcaméret,
-  3,5 × 5, 4 × 6, 5 × 7 és 8 × 10. A választásod megmarad.
+  hatodik, **FullPage** gomb állandó, ezért a listákban nem is
+  szerepel). Az alapértékük a számítógéped **területi beállításától**
+  függ: metrikus mértékegységnél 10 × 15, 13 × 18, 15 × 20 és
+  20 × 25 cm, ötödiknek pedig az **Indexképek**; hüvelykesnél
+  Tárcaméret, 3,5 × 5, 4 × 6, 5 × 7 és 8 × 10. A választásod megmarad.
 - **Előnézetek:** **Magas minőségű előnézetek használata (lassabb)** —
   a nyomtatási előnézet pontosabb, de lassabban készül el.
 - **Nyomtató minősége:** **Kompatibilis (ötven százalékos felbontás)**
