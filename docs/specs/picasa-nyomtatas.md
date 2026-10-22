@@ -36,65 +36,63 @@ A funkció a PicasaPy-ban a „később mérlegelendő" körbe tartozik
 A panelen **öt** gyorsgomb van hozzájuk: `3x5button`, `4x6button`,
 `5x7button`, `8x10button`, `walletbutton`, plus `fullbutton`.
 
-## Az öt gyorsválasztó induló értéke — területi mérés, mentett `PrintSize` (2026-10-06, #4394)
+## Az öt gyorsválasztó induló értéke - területi mérés, mentett `PrintSize` (#4394, #5489)
 
-**Bizonyítottsági fok: megerősített** az indulóérték-szabályra. A
-`FUN_006e5ab0` a `GetLocaleInfoA`-t hívja `0x400` (felhasználó alapértelmezett
-területi beállítása), `0x0d` (`LOCALE_IMEASURE`) és 2 bájtos kimeneti
-pufferrel (`0x006e5acf`–`0x006e5b27`). Ha a visszakapott első karakter `0`,
-az egyik ötös indul; minden más eredménynél a másik. Ez **területi mérési
-rendszer**, nem felületnyelv- vagy országkód-választás.
+**Bináris eredmény:** a `0x006e5ab0` a `GetLocaleInfoA`-t hívja `0x400`
+lokálazonosítóval, `0x0d` (`LOCALE_IMEASURE`) információtípussal és 2 bájtos
+kimeneti pufferrel (`0x006e5acf`-`0x006e5b27`). Ha az első karakter `'0'`,
+a metrikus alapérték-tömböt választja; minden más eredménynél, beleértve a
+lekérdezési hibát, a hüvelyk-alapú tömböt (`0x006e5b31`-`0x006e5b5f`). Ez
+területi mérési rendszer, nem felületnyelv- vagy országkód-választás.
 
-Az alapértékek a `FUN_006e5ab0` tömbjeiből indulnak, majd a
-`FUN_006e5d70` indexleképezésén át jutnak el a `FUN_00775ce0`
-`ytPrintSizes`-felirataihoz:
+A hiányzó `Preferences\PrintSize%d` kulcsok nyers alapértékei, majd az
+`0x006e5d70` popup-index leképezésén és a `0x00775ce0` címkefüggvényen át
+látható méretcímkék:
 
-| `GetLocaleInfoA` eredmény | `PrintSize0–4` nyers alapértéke | végső `ytPrintSizes`-lista |
+| `GetLocaleInfoA` eredmény | `PrintSize0`-`PrintSize4` nyers alapértéke | megjelenő `ytPrintSizes` címkék |
 |---|---|---|
-| `'0'` (`LOCALE_IMEASURE`, metrikus) | `[7, 8, 9, 10, 12]` | `e5x8cm` · `e9x13cm` · `e10x15cm` · `e13x18cm` · `e20x25cm` |
+| `'0'` (`LOCALE_IMEASURE`, metrikus) | `[7, 8, 9, 10, 12]` | `e10x15cm` · `e13x18cm` · `e15x20cm` · `e20x25cm` · `eContact` |
 | egyéb vagy lekérdezési hiba | `[0, 1, 2, 3, 4]` | `eWallet` · `e3x5` · `e4x6` · `e5x7` · `e8x10` |
 
+A metrikus címkesor a #4394 korábbi táblájának helyesbítése. Az ott megadott
+`e5x8cm`, `e9x13cm`, `e10x15cm`, `e13x18cm`, `e20x25cm` sor nem következik a
+bináris leképezésből.
+
 **A mentett beállítás felülírja az induló értéket.** A `0x006e5ab0`
-`Preferences\PrintSize%d` kulcsokat olvas (`%d` = 0–4); a területi
-alapértéket adja át alapállapotként, és a beolvasott 0–15 közötti értéket
-használja helyette (`0x006e5b66`–`0x006e5c69`). A mentési út külön
+`Preferences\PrintSize%d` kulcsokat olvas (`%d` = 0-4); a területi
+alapértéket adja át hiányzó értéknél, és a beolvasott 0-15 közötti értéket
+használja helyette (`0x006e5b66`-`0x006e5d0b`). A mentési út külön
 `FUN_006e3990`: ugyanazokat a kulcsokat állítja elő (`0x006e42f4`) és a
-`Preferences`-író segédnek adja át (`0x006e4366`–`0x006e438f`). A kiválasztott
-méret külön kulcsa a `PrintLastSize` (`0x00744ba8`–`0x00744bba`); ez nem az
-öt gyorsválasztó listája.
+`Preferences`-író segédnek adja át (`0x006e4366`-`0x006e438f`). A kiválasztott
+nyomtatási méret külön kulcsa a `PrintLastSize` (`0x00744ba8`-`0x00744bba`);
+ez nem az öt `PrintSize` gyorsválasztó listája.
 
 ### Két független út és cáfoló ellenőrzés
 
-- **A — működési út:** a `0x006e5ab0` utasításai közvetlenül olvassák a
-  `GetLocaleInfoA(0x400, 0x0d, …, 2)` eredményét, választanak a két
-  alapérték-tömb között, majd `Preferences\PrintSize%d`-n keresztül veszik
-  figyelembe a mentett értéket.
-- **B — xref- és címkeút:** az index `GetLocaleInfoA`-import xrefje a
-  `0x006e5ab0` hívást jelöli; a `PrintSize%d` string-xrefek a beolvasó
-  (`0x006e5ab0`) és az író (`0x006e3990`) utat külön azonosítják. Ettől
-  függetlenül a `0x006e5d70` leképezése és a `0x00775cea` utasításból
-  használt, `0x00775ee0` címen lévő ugrótábla a 17 címke indexeit adja.
-  Ez a nyers táblából visszaolvasva a metrikus indexeket `[8, 9, 10, 11,
-  13]`-ra, a hüvelykeseket `[5, 2, 1, 3, 4]`-re oldja fel. A printpanel
-  feliratai a `0x00743700`-hoz xrefelnek, a `0x00744a00` pedig meghívja ezt
-  az útvonalat. A két út azonos öt méretet ad mindkét területi ághoz.
-- **Cáfoló kör:** azt próbáltam cáfolni, hogy a jegyben közölt magyar
-  ötös (`5x8`, `13x18`, `9x13`, `20x25`, `10x15 cm`) tagjai megegyeznek a
-  friss metrikus alapértékkel. Az ugrótábla nyers címeinek vizsgálata után
-  a címkék halmaza **egyezik pontosan**: `5x8`, `9x13`, `10x15`, `13x18`,
-  `20x25 cm`; a sorrend tér el. Ez cáfolja azt a feltevést, hogy a jegyben
-  látott eltérés más méretcsaládot bizonyít. A korábbi, sorrendi
-  switch-feltevést a nyers ugrótábla cáfolta; a címkéket ennek alapján
-  javítottam. A jegyben szereplő magyar gép tényleges `PrintSize0–4`
-  értékei **NINCSENEK MEG** — a mérőadatban nincs registry-pillanatkép vagy
-  tiszta profilú futás. Mentett preferencia magyarázhatja a sorrendet, de
-  erre nincs gépadat, ezért ez nyitott lehetőség, nem megállapítás.
+- **A út:** az `0x006e5ab0` utasításai olvassák a `GetLocaleInfoA` eredményét,
+  választanak a két alapérték-tömb között, majd a `Preferences\PrintSize%d`
+  kulcs értékét vagy hiányzó-kulcs alapértékét teszik a kimeneti listába.
+- **B út:** a nyomtatási képernyő építője, `0x00743700`, ugyanezt az öt
+  értéket olvassa, és mindegyiket a `0x006e5d70` és `0x00775ce0` függvényen
+  keresztül jeleníti meg; emellett a `0x00775f30` függvényből kéri a
+  `ytPrintTip` súgószöveget. Ez megerősíti a gyorsválasztók használatát és
+  címkéit, de a popup teljes sorrendjéhez nem független út, mert ugyanazt a
+  `0x006e5d70` leképezést használja.
+- **Cáfoló kör:** a régi metrikus címkesort az `0x006e5ab0` fallback
+  értékeivel, az `0x006e5d70` mind a 16 leképezésével és a `0x00775ce0`
+  enum-címkéivel ellenőriztem. Az eredmény `10x15`, `13x18`, `15x20`,
+  `20x25 cm`, majd `Contact Sheet`; a régi sor nem áll meg. Külön próbáltam
+  a `ytPrintTip` táblát önálló sorrendforrásként használni, de csak a
+  `0x00743700` hívja, és ez is a közös méretleképezésből kapja az enumot.
+- **Bizonyítottság:** a hiányzó kulcs nyers számai binárisak. A popup
+  címkéinek sorrendje **feltételes**, mert csak az `0x006e5d70` állítja elő
+  a teljes listát. A második, képernyőbeli út ugyanazt a függvényt használja.
 
 ### Eredeti / nálunk / teendő
 
 | Eredeti Picasa | PicasaPy (mért forrásviselkedés) | Teendő |
 |---|---|---|
-| A `LOCALE_IMEASURE` metrikus ága az öt méretet `5x8`, `9x13`, `10x15`, `13x18`, `20x25 cm` sorrendben adja; a hüvelykes ág Tárca, `3,5x5`, `4x6`, `5x7`, `8x10`. A mentett `PrintSize0–4` elsőbbséget kap. | A `src/picasapy/printing/dpi.py:164–179` a `hu` felületnyelvet tekinti metrikusnak. A `keszlet_nyelvhez('hu')` kiértékelése 7 elemet ad (`5x8`, `9x13`, `10x15`, `13x18`, `15x20`, `20x25`, Teljes oldal), az `('en')` 8-at (Tárca, `3x4`, `3,5x5`, `4x5`, `4x6`, `5x7`, `8x10`, Teljes oldal). A tényleges gépbeállítást nem olvastuk ki. | A méretcsalád kiválasztását a felhasználó területi mérési rendszeréhez kell kötni, a felületnyelvtől külön. A PicasaPy bővebb listájának elemszámát és a „Teljes oldal” elemét ez a változtatás ne módosítsa; a kiválasztott méret mentése maradjon külön állapot. A jegy 32. leltári ötösét ne használjuk bináris alapértelmezésként, amíg tiszta profilú mérés nem igazolja. |
+| A `LOCALE_IMEASURE` metrikus ága az öt alapértéket `10x15`, `13x18`, `15x20`, `20x25 cm`, `Contact Sheet` címkeként jeleníti meg; a másik ág Tárca, `3.5x5`, `4x6`, `5x7`, `8x10`. A hiányzó `PrintSize0`-`PrintSize4` kulcsok alapértékei binárisból jönnek. | A `src/picasapy/printing/dpi.py:171-186` jelenlegi metrikus alapértéke `5x8`, `9x13`, `10x15`, `13x18`, `20x25 cm`; a hüvelykes ág Tárca, `3.5x5`, `4x6`, `5x7`, `8x10`. A `src/picasapy/app/print_controller.py:262-265` a 17 elemű opciólistát adja vissza `TELJES_OLDAL` elemmel. | A hiányzó kulcs metrikus alapértékeit bináris viselkedésre igazítani. Az Opciók popuphoz külön 16 elemű listát adni, `FullPage` nélkül; a nyomtatási képernyő külön `fullbutton`-ját megtartani. A sorrend csak feltételesen igazolt, ezt a fejlesztői jegy és a komment is jelezze. |
 
 **Fejlesztői kész, ha:**
 

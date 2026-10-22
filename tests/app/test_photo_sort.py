@@ -61,6 +61,16 @@ _BLOKKOK = (
 
 
 class TestAHatokorABlokkonBelul:
+    def test_nev_szerint_a_bajtos_albumkulcsot_hasznalja(self):
+        kepek = (
+            _Photo("/a", "ő"),
+            _Photo("/a", "Z"),
+            _Photo("/a", "á"),
+            _Photo("/a", "a"),
+        )
+
+        assert _names(sort_folder_blocks(kepek, "name")) == ["á", "ő", "a", "Z"]
+
     def test_a_datum_a_blokkon_belul_rendez_novekvo_sorrendben(self):
         assert _names(sort_folder_blocks(_BLOKKOK, "date")) == [
             "a1.jpg",
