@@ -8806,7 +8806,7 @@ Belépés: `stdcall`, `ret 0x10`. Verem-argumentumok: `[ebp+8]` a `this` (`P+0xf
   - a `0x005931c0` a `[X+0x3094] != 0` esetén hívja a `0x00595db0`-t X-szel;
   - a `0x00595db0` a `0x00595f3c`-ben hívja a `0x00425f60`-t; az argumentumai `[ebp+0x2bc]` (M, ha az `ebp` X) és `[ebp+0x309c]`;
   - a `0x00425f60` index-hívói: `0x00595db0`, `0x00467ca0`, `0x0046d7d0` (az utóbbi kettő T2-olvasó, 38.2.53 §3);
-  - a `0x004eec80` és a `0x004ef040` T2-betöltők (38.2.53 §3 (b)); az index szerint mindkettőt a `0x00425f60` hívja. ⚠️ PONTOSÍTVA (38.2.58 §4, §7): a `0x004eec80` T2-t ír (`T2[idx] = 4`) és a `+0x18`-at osztályozza; a `0x004ef040` a `+0x18`-at írja. A hívási helyek: `0x00426d33`, illetve `0x004264d9` és `0x00426cac`.
+  - a `0x004eec80` és a `0x004ef040` T2-betöltők (38.2.53 §3 (b)); az index szerint mindkettőt a `0x00425f60` hívja. ⚠️ JAVÍTVA (38.2.59 §7): ez tévedés, a `0x004eec80`-nak három hívója van (`0x00425cc0`, `0x00425f60`, `0x00505030`). ⚠️ PONTOSÍTVA (38.2.58 §4, §7): a `0x004eec80` T2-t ír (`T2[idx] = 4`) és a `+0x18`-at osztályozza; a `0x004ef040` a `+0x18`-at írja. A hívási helyek: `0x00426d33`, illetve `0x004264d9` és `0x00426cac`.
   - NINCS MEG: a `0x00425f60` és a `0x00595db0` `this`-e, és hogy a B ág melyik T2-t olvassa. ⚠️ FRISSÍTVE (38.2.58 §2, §4): a `0x00595db0` `this`-e X (egy argumentum), a B ág T2-olvasója a `0x004eec80`; a hívás feltételei NINCS MEG.
 
 **Döntés.** Az irányt nem kell lezárni. A B ágon a `0x00425f60` és a `0x00595db0` `this`-e dönti el, hogy a fájltípus-kód olvasódik-e ott. A 38.2.56 §6 `0x00425f60` tétele (nem blokkoló) ezzel blokkoló lett.
@@ -8898,7 +8898,7 @@ Ebből még nem derül ki, hogy az Időrend képeket, albumokat vagy személyeke
 1. **Q1, a `0x00425f60`: közvetlenül nem, közvetve igen.** A saját törzsében nincs elem-`+0x18` olvasás. A függvény meghívja a `0x004eec80`-at (`0x00426d33`), amely olvassa és átírja az elem `+0x18` mezőjét, és a `0x004ef040`-et (`0x004264d9`, `0x00426cac`), amely `+0x18`-ba ír.
 2. **Q2, a `0x00595db0`: nincs T2-olvasás a hívás előtt.** X az egyetlen argumentum. A törzsben nincs T2-mezőre címzés. A hívás előtt az `M` vtábla +0x24 hívása és a `0x006bb1d0` hívás van, ezek törzse NINCS MEG.
 3. **Q3, a `0x006a70e0`: végig olvasva, a `0x13320000` ágra.** Nem ír értéket, csak a sor-indexet ellenőrzi, szükség esetén bővíti a tömböt, és megjelöli a tulajdonost. A `redo` kulcs nem jut be a függvénybe.
-4. **Fő kérdés (U53): RÉSZBEN marad, de a B ágon van mért olvasó.** A `0x004eec80` olvassa a `+0x18` kódot, az `S` kódokra jelzőt állít, és a `+0x18` mezőt `4`-re írja. Hogy ez mikor fut, azt három feltétel dönti el; ezek és az `A` azonosítása NINCS MEG.
+4. **Fő kérdés (U53): RÉSZBEN marad, de a B ágon van mért olvasó.** A `0x004eec80` olvassa a `+0x18` kódot, az `S` kódokra jelzőt állít, és a `+0x18` mezőt `4`-re írja. Hogy ez mikor fut, azt három feltétel dönti el; ezek és az `A` azonosítása NINCS MEG. ⚠️ PONTOSÍTVA (38.2.59 §1): a három feltétel asm-szinten ismert, az `A` azonosítva (`P+0xf8`); a feltételek bemenetei NINCS MEG.
 
 ##### §1 Q1: a `0x00425f60` és az elem `+0x18`
 
@@ -8906,7 +8906,7 @@ Ebből még nem derül ki, hogy az Időrend képeket, albumokat vagy személyeke
 - **Saját törzs.** A `+0x18` operandus 11 előfordulása (`0x00426394`-`0x00428be9`). Két verem-helyi (`cmp byte ptr [ebp+0x18]`). Kilenc vtábla-hívás: egy objektum vtábla 6-os slotját hívja (`mov edx,[eax+0x18]`, majd `call edx`). Elem-olvasás nincs.
 - **Hívott `0x004eec80`, `0x00426d33`.** Argumentumok: `push edi` (idx), `push edx` (az `edx` a `[esp+0x80]`, vagyis az `A`).
 - **Hívott `0x004ef040`, `0x004264d9` és `0x00426cac`.** A harmadik argumentum az érték. Az első helyen `eax`, a másodikon `esi`. A másodiknál `esi = 0x18`, ha a `byte ptr [eax+4]` nem nulla (`0x00426c93`); egyébként az `esi` előző értéke, ez NINCS MEG.
-- **Az `A` írói.** A `[esp+0x80]` (a dekompilátumban `local_1800`) két helyen változik: `0x00428382` (a `0x009d61e0` hívás a címét kapja) és `0x004289af` (`fistp`, egész szám). Melyik az utolsó írás a `0x00426d33` előtt: NINCS MEG.
+- **Az `A` írói.** A `[esp+0x80]` (a dekompilátumban `local_1800`) két helyen változik: `0x00428382` (a `0x009d61e0` hívás a címét kapja) és `0x004289af` (`fistp`, egész szám). Melyik az utolsó írás a `0x00426d33` előtt: NINCS MEG. ⚠️ JAVÍTVA (38.2.59 §1): egyik író sincs a `0x00426d2a` úton, az `A` a prológus értéke (`P+0xf8`).
 
 ##### §2 Q2: a `0x00595db0`
 
@@ -8933,7 +8933,7 @@ Ebből még nem derül ki, hogy az Időrend képeket, albumokat vagy személyeke
 - **A ág (változatlan).** `0x00566270` → `0x0045ff60` → `0x0069f710` → `0x006a63f0` → `0x006a70e0` (§3). A `+0x18` ezen az ágon nem olvasódik (38.2.57 §4).
 - **B ág, a lánc.** `0x005662eb` → `0x005931c0` → `0x00595db0` → `0x00425f60` → (feltételesen) `0x004eec80` vagy `0x004ef040`.
   - A `0x00425f60` elején a dekompilátum szerint `FUN_004edf60()` visszatérését és a `local_1778` mutatót vizsgálja; ha a feltétel nem teljesül, a függvény azonnal visszatér. A `0x004edf60` jelentése NINCS MEG.
-  - A `0x004eec80` hívása (`0x00426d33`) akkor fut, ha (a) a dekompilátum szerint `pcStack_1844 != 0` vagy `cStack_158c == 0`, és (b) gépi kódban ellenőrizve: a `[esp+0xdc]` vagy a `[esp+0xe0]` kisebb kettőnél, vagy a `pcVar27` nem nulla (`0x00426cfd`-`0x00426d28`). A `pcVar27` a `pcStack_1844`, vagy 3, ha a `p_Stack_15cc` vagy a `p_Stack_15c8` kisebb kettőnél. A `pcStack_1844` a `0x005b1570` visszatérése. A `[esp+0xdc]` és a `[esp+0xe0]` a `local_17ac` méret-struktúrából jön, amelyet az `M+0x58` vtábla +4 hívása tölt (dekompilátum). Az (a) és a (b) bemenete NINCS MEG.
+  - A `0x004eec80` hívása (`0x00426d33`) akkor fut, ha (a) a dekompilátum szerint `pcStack_1844 != 0` vagy `cStack_158c == 0`, és (b) gépi kódban ellenőrizve: a `[esp+0xdc]` vagy a `[esp+0xe0]` kisebb kettőnél, vagy a `pcVar27` nem nulla (`0x00426cfd`-`0x00426d28`). A `pcVar27` a `pcStack_1844`, vagy 3, ha a `p_Stack_15cc` vagy a `p_Stack_15c8` kisebb kettőnél. A `pcStack_1844` a `0x005b1570` visszatérése. ⚠️ PONTOSÍTVA (38.2.59 §2): az EAX a kilépéskor ágtól függ. A `[esp+0xdc]` és a `[esp+0xe0]` a `local_17ac` méret-struktúrából jön, amelyet az `M+0x58` vtábla +4 hívása tölt (dekompilátum). Az (a) és a (b) bemenete NINCS MEG. ⚠️ PONTOSÍTVA (38.2.59 §1): a két kapu asm-szinten ismert, a bemenetek továbbra is NINCS MEG.
   - A `0x004ef040` két hívásának feltétele NINCS MEG.
 - **A `0x004eec80` két része.**
   1. T2 rész, ha `T2 != 0` és `idx != -1`. Ha az `idx` a kapacitáson belül van, és `T2[idx] != 4`: `T2[idx] = 4`, majd a figyelő értesítése (`0x006a2a60`, `0x004eeeb9`-`0x004eeebc`). Ha nincs elég kapacitás: a T2 bővítése, az új rekeszek kitöltése `[C+0x5c]`-vel, majd `T2[idx] = 4` (`0x004eee90`) és értesítés. Hogy mire használják a T2-t: NINCS MEG.
@@ -8959,12 +8959,12 @@ Ebből még nem derül ki, hogy az Időrend képeket, albumokat vagy személyeke
 | a `0x006a70e0` két verem-argumentumú, az index EAX-ben | gépi kód `0x006a64bd`-`0x006a64c6`, `ret 8` | megerősített |
 | a `0x006a70e0` nem kap `redo` kulcsot | a hívó két argumentumot tol (`0x006a64c4`-`0x006a64c5`) | megerősített |
 | a `0x006a70e0` `0x13320000` ága nem ír értéket | dekompilátum, a teljes ág olvasása | megerősített |
-| az `A` azonossága (`[esp+0x80]`) | két író: `0x00428382`, `0x004289af` | NINCS MEG |
+| az `A` azonossága (`[esp+0x80]`) | ⚠️ JAVÍTVA (38.2.59 §1): a két író nincs a `0x00426d2a` úton; a prológus értéke `P+0xf8` | megerősített |
 | a `0x004eec80` hívásának feltétele | gépi kód `0x00426cfd`-`0x00426d28`; a kapu többi része dekompilátum | részben (a bemenetek NINCS MEG) |
 | a `0x004ef040` két hívásának értéke | gépi kód `0x004264d9`, `0x00426cac` | részben (a második érték NINCS MEG) |
 | a `+0x18` írói teljes listája | közvetlen címzés pásztázása | részben (a `rep movs` és a mutató-másolás nem látszik) |
 
-##### §6 Ghidra-címek a következő körhöz
+##### §6 Ghidra-címek a következő körhöz (felülírva: lásd 38.2.59 §6)
 
 **Blokkoló (B ág):**
 - `0x004edf60`: a `0x00425f60` belépési kapuja (visszatérés és `local_1778` teszt). [blokkoló]
@@ -9000,7 +9000,7 @@ Ebből még nem derül ki, hogy az Időrend képeket, albumokat vagy személyeke
 - „A `0x004eec80` csak T2-t ír”: CÁFOLVA (az elem `+0x18`-at is olvassa és írja).
 - „A `+0x18` íróinak listája teljes”: NEM ZÁRHATÓ (a pásztázás csak a közvetlen címzést látja; a `rep movs` és a mutató-másolás nem).
 
-##### §9 Nyitott lista (38.2.58 §9)
+##### §9 Nyitott lista (38.2.58 §9, felülírva: lásd 38.2.59 §9)
 
 Nyitott kérdések mérlege (38.2.58): 54 tétel · 12 lezárva · 26 részben · 16 nincs meg. Az előző (38.2.57): ugyanez. Új tétel nincs. Változás a tartalomban: U49 és U53.
 
@@ -9012,6 +9012,261 @@ Nyitott kérdések mérlege (38.2.58): 54 tétel · 12 lezárva · 26 részben �
 **A felhasználó szemével**
 
 Ha a rutin lefut, a B ágon minden vizsgált tételnél megnézi a fájltípust, a legtöbb ismert kép-, videó-, hang- és szöveges típusra jelzőt állít, majd a tételt `4`-es kódra írja át. Hogy ez a képernyőn mit jelent, és hogy a rutin az Időrendnél egyáltalán lefut-e, még nincs megmérve, ezért az irányt nem zárjuk le.
+
+#### 38.2.59 Az Időrend bináris feltárása, 42. kör: a `0x004eec80` feltételei, első argumentuma és a jelző (#5401, 2026-10-22)
+
+**Kérdés és hatókör.** A 38.2.58 §6 címei és a fő kérdés (U53): (1) mikor fut le a `0x004eec80`, és mi az első argumentuma; (2) hívja-e a `0x004edf60` vagy a `0x005b1570` a `0x004eec80`-at, és milyen argumentummal; (3) a `+0x4dd` jelző olvasói és hatásuk. Bemenet: `2026-10-22-idorend-42.txt` (a három dekompilátum és a hívólistáik), a 41. kör `0x00425f60` dekompilátuma (`2026-10-22-idorend-41.txt`), a 38.2.58 §4 és §6, és a bináris: `pe_dis.cdis` (asm), a `.text` teljes pásztázása (`paszta.utasitasok`, a `+ 0x4dd]` és a `+ 0x4de]` operandusra szűrve), az index `functions` és `xrefs` táblája, valamint egy vezérlésgráf-bejárás a `0x00425f60` törzsében. Kódot nem módosítottunk, a CI-őrök nem futottak (nincs kódváltozás). A bejáró szkript a scratchpadban volt, a kör végén törölve.
+
+**Válasz röviden.**
+
+1. **Q1: a `0x004eec80` három feltétele asm-szinten áll, az első argumentum azonosítva.** A hívás a `0x00425f60`-ban van (`0x00426d33`). Akkor fut, ha (1) a `0x005b1570` visszatérése nem `0xf4242`, és a `cStack_1586` nulla; (2) a `pcStack_1844` nem nulla, vagy a `cStack_158c` nulla; (3) a `[esp+0xdc]` vagy a `[esp+0xe0]` kisebb kettőnél, vagy a `pcVar27` nem nulla. Az első argumentum `P+0xf8`, ahol `P` a `0x00425f60` első argumentuma. A B ágon `P = [X+0x2bc]`, tehát az első argumentum `[X+0x2bc]+0xf8`. A második argumentum az `idx`.
+2. **Q2: nem.** A `0x004edf60` és a `0x005b1570` egyike sem hívja a `0x004eec80`-at. A `0x004edf60` első argumentuma ugyanez a `P+0xf8`.
+3. **Q3: egy olvasó van.** A teljes `.text`-ben a `+0x4dd` jelzőt a `0x004fbb30` olvassa. Ha nem nulla, a függvény a tárolt elemek vtábla `+8` slotját hívja, utána `+0x4de = 1`, `+0x4dd = 0`, és meghívja a `0x00411cf0`-at. A jelzőt tizenegy függvény írja.
+4. **Fő kérdés (U53): RÉSZBEN marad, nem zárjuk le most.** A hívás feltételei és az első argumentum mért. A három állapotmező (`pcStack_1844`, `cStack_158c`, `cStack_1586`) és a méret-mezők (`[esp+0xdc]`, `[esp+0xe0]`, `[esp+0x2b4]`, `[esp+0x2b8]`) forrása NINCS MEG. A felhasználói hatás nincs megmérve (§4). ⚠️ PONTOSÍTVA (38.2.60 §3): a `pcStack_1844`-nek négy írója van; a `cStack_158c`-nek és a `cStack_1586`-nak nincs közvetlen írója. ⚠️ FRISSÍTVE (38.2.60 §4): LEZÁRVA.
+
+##### §1 Q1: a hívás, az első argumentum és a három feltétel
+
+**A hívóhely.** `0x00426d2a`-`0x00426d33` (asm): `mov edx, [esp+0x80]`, `push edi`, `push edx`, `call 0x4eec80`. Stdcall, `ret 8`. Az első argumentum (`A`) a `[esp+0x80]`, a második (`idx`) az `edi`. Az `edi` a `0x426474` `mov edi, esi` miatt az `esi`, az `esi` utolsó írása a `0x4263ba` `mov esi, [ebp+0xc]`, tehát a `0x00425f60` második argumentuma.
+
+**Az első argumentum: `A = P+0xf8`.**
+- A prológusban (`0x425f94`-`0x425f9b`): `lea eax, [ebx+0xf8]`, ahol `ebx = [ebp+8] = P`. Ezután `push ecx`, majd `mov [esp+0x84], eax`. A három belépési push után a törzs bázisa `B`, így a `[esp+0x84]` a `B+0x80`, vagyis a `[esp+0x80]`.
+- A törzsben a `[esp+0x80]` két helyen íródik: `0x42837a` (`lea ecx, [esp+0x80]`, a címét a `0x9d61e0` hívás kapja) és `0x4289af` (`fistp dword ptr [esp+0x80]`, az `[esp+0xc8]` kerekítése). A visszafelé vezérlésgráf-bejárás a `0x426d2a`-tól a `0x425f60` belépéséig 360 csomópontot ér el, és sem a két író, sem más írás nincs közöttük. A prológus `0x425f9b`-es tárolása az egyetlen író az úton. A `0x425f60` és a `0x425f9b` között nincs ugrás, tehát ez a tárolás minden úton lefut: az `A` a `P+0xf8` ezen a hívóhelyen.
+- Ellenőrzés a Ghidra-névadással: a dekompilátum `local_1800` neve és az asm `[esp+0x80]` összege `0x1880`. Ugyanez a pár: `uStack_17a4`/`[esp+0xdc]`, `p_Stack_15cc`/`[esp+0x2b4]`, `cStack_158c`/`[esp+0x2f4]`, `pcStack_1844`/`[esp+0x3c]`. A dekompilátum a 280. sorban (`local_1800 = param_1 + 0x3e`) és a 945. sorban (a `0x4289af` fistp-je) írja a változót. A 945. sor nincs az úton.
+- **A B ágon.** A `0x00595f3c` hívásban (38.2.58 §2) az első argumentum `[X+0x2bc]` (`M`), a második `[X+0x309c]`. Tehát `A = [X+0x2bc]+0xf8`.
+
+**A hívás előtti kapuk (a `0x00425f60` törzsében).**
+- `0x426013`-`0x426015`: a `0x004edf60` visszatérése (EAX) nem nulla, kilépés (`EAX = 2`). A `0x004edf60`-t a `0x42600e`-nál hívja; a két stack-argumentum `A` (`P+0xf8`) és a kimeneti rekord (`B+0x108`), az `in_EAX` az `idx`.
+- `0x426062`-`0x42607f`: a `[esp+0x108]` mutató nulla, vagy a mutatott dword `& 0xffffff00` nulla, vagy a `+4` bájt nulla: kilépés.
+- `0x426081`-`0x426089`: a rekord típusa (`[esp+0x120]`, a `+0x18` mező másolata) 4: kilépés a `0x426d69`-en (dekompilátum: `0x00412790`). A `0x4eec80` a tétel típusát 4-re írja (38.2.58 §4), tehát a következő `0x425f60`-futás ezt a tételt kihagyja.
+
+**A három feltétel, amely a hívást eldönti.** A `0x426d33` hívás csak akkor fut, ha mind a három igaz:
+
+1. **Nincs korai kilépés a `0x005b1570` után.** `pcStack_1844 != 0xf4242` (`0x426571`-`0x426576`), és `cStack_1586 == 0` (`0x4265d1`-`0x4265d9`). Ha a `cStack_1586` nem nulla, a `0x4265e2` a `0x425cc0`-t hívja, lásd §7.
+2. **Első kapu.** `pcStack_1844 != 0`, vagy `cStack_158c == 0` (`0x42663f`-`0x426647`: `test eax, eax`, `jne 0x426cf8`, majd `cmp byte ptr [esp+0x2f4], al`, `je 0x426cf8`; az `al` itt nulla, mert a `jne` nem ugrott). Ha egyik sem igaz, a `0x426654` ágon nincs hívás.
+3. **Második kapu.** `[esp+0xdc] < 2` vagy `[esp+0xe0] < 2` vagy `pcVar27 != 0` (`0x426d14`-`0x426d28`). A `pcVar27` (az EAX) 3, ha `[esp+0x2b4] < 2` vagy `[esp+0x2b8] < 2` (`0x426cfd`-`0x426d0f`), egyébként a `pcStack_1844`. Ha egyik sem igaz, a `0x426d7a` ágon megy tovább.
+
+##### §2 Q2: a `0x004edf60` és a `0x005b1570`
+
+- **A `0x004edf60` nem hívja a `0x004eec80`-at.** A `0x004eec80` index-hívóinak listájában (`0x425cc0`, `0x425f60`, `0x505030`) nincs benne, és a `0x004edf60` dekompilált hívottjai között sincs a `0x004eec80`. Feladata a tétel rekordjának kiolvasása: az `A` az első, a kimeneti rekord a második argumentum, az `idx` az EAX-ben. A típus a rekord `+0x18` mezőjében van.
+- **A `0x005b1570` nem hívja a `0x004eec80`-at** (ugyanez a két bizonyíték). A `0x00425f60` a `0x4264b1`-nél hívja: `this` = `B+0x1f8` (a `lea ecx, [esp+0x200]` két push után áll, a törzs bázisához képest `B-8+0x200`), első argumentum a fájlnév (`[esp+0x38]`, a rekord `+4` mezője), második a típus-kimenet (`[esp+0x70]`). Ez a rutin számolja a típus-kódot. A `[esp+0x70]` lesz a `0x4264d9`-es `0x004ef040` hívás harmadik argumentuma, vagyis a tétel `+0x18` mezőjébe íródik.
+- **Pontosítás a `0x005b1570` visszatérésére (38.2.58 §4).** A dekompilátum `void`-nak mutatja, de a hívó az EAX-et használja. A közös kilépés (`0x5b1b3a`) előtt az EAX ágtól függ: `0x5b1988`: `0xf4242`; `0x5b19bf`: a `local_a4c` állapotkód (az `0x5acf40` hívás után); `0x5b19b3`: a `0x5b1460` visszatérése (nincs mérve); `0x5b1b1c`: 2; `0x5b1b38`: 0. Tehát a `pcStack_1844` a legtöbb ágon állapotkód, de nem mindenütt.
+
+##### §3 Q3: a `+0x4dd` jelző írói, olvasója és hatása
+
+**Közvetlen `+ 0x4dd]` címzés a teljes `.text`-ben (2 884 879 utasítás), 15 találat:**
+
+| cím | függvény | művelet |
+|---|---|---|
+| `0x004e4504` | `FUN_004e41f0` | `mov byte ptr [ebp+0x4dd], bl` (az érték NINCS MEG) |
+| `0x004e823d` | `FUN_004e80d0` | `= 1` |
+| `0x004e9325` | `FUN_004e91f0` | `= 1` |
+| `0x004e942c`, `0x004e993d`, `0x004e9a1c` | `FUN_004e9400` | `= 1` (három hely) |
+| `0x004eb378` | `FUN_004ea360` | `= 1` |
+| `0x004ec048` | `FUN_004ebff0` | `= 1` |
+| `0x004eef70` | `FUN_004eec80` | `= 1` (az `S` halmaz tétele, 38.2.58 §4) |
+| `0x004f8ea6` | `FUN_004f8ae0` | `= 1` |
+| `0x004f97a0` | `FUN_004f9450` | `= 1` |
+| `0x004f98fe` | `FUN_004f97f0` | `= 1` |
+| `0x004fbac7` | `FUN_004fb9c0` | `= 1` |
+| `0x004fbb79` | `FUN_004fbb30` | `= 0` (a kiürítés) |
+| `0x004fbb30` | `FUN_004fbb30` | `cmp byte ptr [esi+0x4dd], 0` (az egyetlen olvasó) |
+
+**Mit csinál a `0x004fbb30`, ha a jelző be van állítva** (asm `0x4fbb30`-`0x4fbb89`):
+1. Ha `[esi+0x4dd] == 0`: visszatér (`0x4fbb85`).
+2. Ha nem nulla, és `[esi+0x488]` legalább kettő (`test ..., 0xfffffffe`): végigmegy az `i < [esi+0x488] >> 1` elemen. Minden elemre: `obj = [[esi+0x484] + i*4]`, és az `obj` vtábla `+8` slotját hívja, `this` az `obj`, argumentum `esi`.
+3. Utána `[esi+0x4de] = 1`, `[esi+0x4dd] = 0`, és `call 0x00411cf0` (172 bájt, a célja NINCS MEG). ⚠️ LEZÁRVA (38.2.60 §2): zár, puffer ürítése, elengedés.
+
+**A hívói.** Az index szerint hét hívó van: `0x004e91f0`, `0x004e9400` (három hely), `0x004ea360`, `0x004ebff0`, `0x004f8ae0`, `0x004f9450`, `0x004fb9c0`. Mind a hét szintén ír a jelzőbe (a táblázat szerint). A `0x004fbb30` nem állítja be az `esi`-t, a hívó adja. Hogy a hívó `esi`-je az `A`-e, NINCS MEG.
+
+**A `+0x4de` jelző.** Két cím van a `.text`-ben: `0x004e450a` (`mov byte ptr [ebp+0x4de], bl`, a `FUN_004e41f0`-ban) és `0x004fbb72` (`= 1`, a `0x004fbb30`-ban). Közvetlen címzésű olvasót nem találtunk.
+
+##### §4 Fő kérdés (U53) és a döntés
+
+**Állapot: RÉSZBEN marad.** Mért: a három feltétel (§1), az `A` azonossága (§1), a két további hívóhely (`0x425cc0`, `0x505030`, §7), és a jelző egy olvasója (§3). NINCS MEG: a `pcStack_1844`, a `cStack_158c`, a `cStack_1586`, a `[esp+0xdc]`, a `[esp+0xe0]`, a `[esp+0x2b4]` és a `[esp+0x2b8]` értéke. A törzsben ezekre nincs közvetlen `[esp+X]` írás, tehát vagy mutatón át íródnak, vagy más úton kapják; ezt nem néztük meg.
+
+**Döntés: nem zárjuk le most.** A három állapotmező forrása egy Ghidra-körrel lekérdezhető (§6), és a jelző olvasója már mért. ⚠️ FRISSÍTVE (38.2.60 §4): az U53 LEZÁRVA. A következő kör feladata egyetlen kérdés: honnan jönnek a három állapotmező. Ha ezt a következő kör sem nevezi meg, U53 lezárandó, és ezek maradnak NINCS MEG: a három állapotmező és a méret-mezők forrása, a `0x004fbb30` hívóinak `esi`-je, a `0x004fbb30` vtábla-hívásainak célja, és a `0x00411cf0` hatása.
+
+**A felhasználó szemével**
+
+Ebből még nem derül ki, mit lát a felhasználó az Időrendben. Ha a jelző be van állítva, a Picasa a tárolt elemeken vtábla-hívásokat végez, és ezek képernyőn látható hatása még nincs megmérve. A tétel típusa közben 4-re áll, így a következő feldolgozásnál kimarad; hogy ez mit jelent a képen, szintén nincs megmérve.
+
+##### §5 Bizonyítottsági fok (38.2.59)
+
+| állítás | bizonyíték | fok |
+|---|---|---|
+| a hívás első argumentuma `[esp+0x80]`, második `edi` (`idx`) | asm `0x426474`, `0x426d2a`-`0x426d33`, `0x4263ba` | megerősített |
+| `A = P+0xf8`, és nincs más író a hívás előtt | asm `0x425f94`-`0x425f9b`; ősök-bejárás (360 csomópont); dekompilátum 280. és 945. sor | megerősített (a bejárás nem követi a push-eltolású írásokat a teljes törzsben; a `[esp+0x6c]`-`[esp+0x9c]` tartományt ellenőriztük) |
+| a három feltétel címei és ágai | asm `0x426571`, `0x4265d1`, `0x42663f`-`0x426649`, `0x426cfd`-`0x426d28` | megerősített |
+| a `[esp+0xdc]`, `[esp+0xe0]`, `[esp+0x2b4]`, `[esp+0x2b8]`, `[esp+0x2f4]`, `[esp+0x2fa]` írói | nincs közvetlen `[esp+X]` írás a törzsben | NINCS MEG (mutatón át íródhatnak) |
+| a `0x004edf60` és a `0x005b1570` nem hívja a `0x004eec80`-at | index `xrefs`; dekompilátum hívottjai | megerősített |
+| a `0x005b1570` EAX-e a kilépéskor ágtól függ | asm `0x5b1988`, `0x5b19b3`, `0x5b19bf`, `0x5b1b1c`, `0x5b1b38` | megerősített |
+| a `0x004eec80` hívóhelye három | index `xrefs` | megerősített |
+| a `+0x4dd` olvasója egy | teljes `.text` pásztázás `+ 0x4dd]` címzésre | megerősített (csak közvetlen címzés) |
+| a `0x004fbb30` hatása: vtábla-hívás, majd `+0x4de`, `+0x4dd` és `0x411cf0` | asm `0x4fbb30`-`0x4fbb89` | megerősített; a hívott célok NINCS MEG |
+| a `0x425cc0` és a `0x505030` hívási feltétele | asm részben | részben (a vtábla-hívások eredménye NINCS MEG) |
+| a felhasználó által látott hatás | nincs | NINCS MEG |
+
+##### §6 Ghidra-címek a következő körhöz (felülírja a 38.2.58 §6-ot; felülírva: lásd 38.2.60 §6)
+
+**Blokkoló (U53):**
+- `0x005b1570`: a `this` (`B+0x1f8`) és a visszatérési állapot. A `cStack_158c` és a `cStack_1586`, valamint a `p_Stack_15cc`/`p_Stack_15c8` mutatóforrása, ha a `this`-ből jön. [blokkoló]
+- Az `M+0x58` objektum vtábla `+4` célja: ez tölti a `[esp+0xdc]` és `[esp+0xe0]` méret-struktúrát (38.2.58 §4). [blokkoló]
+- `0x004fbb30` hívói: `0x004e91f0`, `0x004e9400`, `0x004ea360`, `0x004ebff0`, `0x004f8ae0`, `0x004f9450`, `0x004fb9c0`. Az `esi` értéke (az `A`-e?). [blokkoló a jelző hatásához] ⚠️ LEZÁRVA (38.2.60 §1): az esi-értékek megvannak; az `A`=R kérdés NINCS MEG.
+- `0x004fbb30` vtábla `+8` célja (a gyerek-elemek) és `0x00411cf0`. [blokkoló a felhasználói kérdésre]
+
+**Nem blokkoló:**
+- `0x00425cc0` (a `0x425db5`-nél hívja a `0x4eec80`-at): a belépés mért (EAX ∈ {`0xf462d`, `0xf462e`, `3`}), a vtábla-hívások és a `0x425d83`-`0x425da1` importhívások eredménye nincs végigolvasva.
+- `0x00505030` (a `0x505123`-nál hívja): `A` az első argumentum (nincs `+0xf8`), `idx` a `0x4efa20` kimenete (`[esp+0x50]`). Kapu: a `0x4019b0` eredménye nulla (`0x505110`) és `idx != -1` (`0x505118`). A `0x4efa20` és a `0x4019b0` törzse nincs végigolvasva.
+- `0x004e41f0`: a `bl` érték forrása (`0x4e4504`, `0x4e450a`).
+
+##### §7 Javítások a korábbi szakaszokban
+
+- **38.2.57 §4 és 38.2.58 §4: „az index szerint mindkettőt a `0x00425f60` hívja”.** ⚠️ JAVÍTVA: a `0x004eec80` hívóinak index-listája három függvény: `0x00425cc0` (`0x425db5`), `0x00425f60` (`0x426d33`) és `0x00505030` (`0x505123`). A `0x004ef040` hívói: a `0x00425f60` két helyen (`0x4264d9`, `0x426cac`), továbbá `0x0053ca40`, `0x0053de70` és `0x0053e8d0`.
+- **38.2.58 §1, „Az `A` írói”, és §5, „az `A` azonossága”.** ⚠️ JAVÍTVA: egyik író sincs a `0x426d2a` úton (§1), az `A` a `P+0xf8`.
+- **38.2.58 §4, a `pcStack_1844` és a három feltétel.** ⚠️ PONTOSÍTVA: a visszatérés ágtól függ (§2), a feltételek asm-szinten ismertek (§1).
+- **Kiegészítés (nem javítás):** a `cStack_1586 != 0` ágon a `0x00425f60` a `0x425cc0`-t hívja (`0x4265e2`), amely a `0x425db5`-nél a `0x4eec80`-at. Az `A` itt is `P+0xf8` (a `0x425cc0` első argumentuma a `P`), az `idx` a `0x425cc0` `this`-e (az `edi`). Ezt a 38.2.58 §4 nem említette.
+
+##### §8 Amit KIZÁRTAM
+
+- „A `0x004eec80` csak a `0x00425f60`-ból hívódik”: CÁFOLVA (három hívó, §7).
+- „A `0x004edf60` vagy a `0x005b1570` hívja a `0x004eec80`-at”: CÁFOLVA (§2).
+- „Az `A`-t a `0x42837a` vagy a `0x4289af` írja a `0x426d2a` előtt”: CÁFOLVA (§1; a bejárásban egyik sincs).
+- „A `0x005b1570` EAX-e mindig a státuszkód”: CÁFOLVA (§2).
+- „A `+0x4dd` jelzőnek több olvasója van”: a közvetlen címzésű pásztázás szerint CÁFOLVA. Mutatón át olvasás nem zárható ki.
+- „A `+0x4de` jelzőt olvassa valaki”: NEGATÍV a közvetlen címzésű pásztázás szerint (nincs olvasó).
+
+##### §9 Nyitott lista (38.2.59 §9, felülírva: lásd 38.2.60 §9)
+
+Nyitott kérdések mérlege (38.2.59): 54 tétel · 12 lezárva · 26 részben · 16 nincs meg. Az előző (38.2.58) ugyanez. Új tétel nincs. Változás a tartalomban: U49 és U53 szövege.
+
+| U | állapot | mit mond most | cím |
+|---|---|---|---|
+| U49 | RÉSZBEN (38.2.58 §1, §4) | a `+0x18` a `0x004e5740`-ben a `T2[index]`-be kerül; a `0x004eec80` és a `0x004ef040` olvassa vagy írja a `+0x18`-at; az `A` = `P+0xf8` (38.2.59 §1). Hogy az `A` az Időrend elemeit tartalmazza-e: NINCS MEG | `0x004e5740`, `0x004eec80`, `0x004ef040`, `0x00467ca0`, `0x0046d7d0` |
+| U53 | RÉSZBEN (38.2.59 §1-§4) | a hívás három feltétele asm-szinten áll; `A = P+0xf8` (B ágon `[X+0x2bc]+0xf8`); a három állapotmező és a méret-mezők forrása NINCS MEG; a két további hívóhely (`0x425cc0`, `0x505030`) részben mért; a jelző egy olvasója mért, a hatása NINCS MEG | `0x005b1570`, `0x004edf60`, `0x004fbb30`, `0x00425cc0`, `0x00505030`, `0x00411cf0` |
+
+#### 38.2.60 Az Időrend bináris feltárása, 43. kör: a `0x004fbb30` hívói, a `0x00411cf0` és az U53 lezárása (#5401, 2026-10-22)
+
+**Kérdés és hatókör.** A 38.2.59 §6 blokkoló címei (`0x004fbb30`, `0x00411cf0`, `0x004f8ae0`, `0x004e91f0`) és az U53 lezárása. Bemenet: `2026-10-22-idorend-43.txt` (a négy dekompilátum és a hívólistáik), a 38.2.59 §1-§9, és a bináris: `pe_dis.cdis` (gépi kód), az index `functions`, `xrefs` és `rtti` táblája. Kódot nem módosítottunk, a CI-őrök nem futottak (nincs kódváltozás). Ideiglenes fájl nem keletkezett: a vizsgálat `python -c` hívásokkal futott.
+
+**Válasz röviden.**
+
+1. **Q1, a hívók ESI-je.** A `0x004fbb30`-at kilenc hívóhelyről hívják, hét függvényből. A kilenc helyen az ESI belső forrása (regiszter vagy verem-argumentum) megvan. Az objektum a `0x004ebff0` `this`-ére (R) vezethető vissza a `0x004e9400`-ból induló láncon (T = R). A `0x004f9450` és a `0x004fb9c0` hívóhelyeinek objektuma NINCS MEG, mert a hívóikat nem követtük vissza (§1). A 38.2.59 három állapotmezője (`pcStack_1844`, `cStack_158c`, `cStack_1586`) NEM a `0x004fbb30` mezői: ezek a `0x00425f60` veremében vannak. A `0x004fbb30` saját mezői a `+0x4dd` (indító jelző), a `+0x4de` (kész jelző) és a `+0x488` (darabszám).
+2. **Q2, a `0x00411cf0`.** Zárat vesz az EAX-ban kapott objektumon, kiüríti a pufferét, majd elengedi a zárat. Az állapotjelzőkkel (`+0x4dd`, `+0x4de`) nincs köze (§2).
+3. **Q3, döntés: az U53 LEZÁRVA, „a binárisból statikusan nem dönthető el”.** A három állapotmező forrása nincs meg (§3, §4). A `pcStack_1844` írója megvan, de az értéke ágtól függ. A `cStack_158c` és a `cStack_1586` írója nincs meg. A felhasználói hatás ezért nincs leírva; a §4 mondja meg, milyen élő felvétel döntené el.
+4. **Q4, a nyitott lista.** Az U53 RÉSZBEN-ből LEZÁRVA lett. Új Ghidra-cím nincs, mert a forrás nincs meg (§6, §9).
+
+##### §1 Q1: a `0x004fbb30` kilenc hívóhelye és az ESI
+
+A kilenc hívóhely hét függvényben van. A `0x004fbb30` a hívás elején ellenőrzi a `+0x4dd` jelzőt: ha nulla, azonnal visszatér. Ha nem nulla, a tételek vtábla +8 metódusát hívja, majd a `+0x4de` jelzőt 1-re, a `+0x4dd` jelzőt 0-ra állítja, és meghívja a `0x00411cf0`-at.
+
+| hívóhely | hívó függvény | az ESI a hívásnál | honnan jön | objektum |
+|---|---|---|---|---|
+| `0x004e93dc` | `0x004e91f0` | a belépéskori EAX (`0x004e91f8`: `mov esi, eax`; az ESI később nem íródik) | a `0x004e9400` adja: a `0x004e9442` és a `0x004e9970` előtt EAX = EDI | T |
+| `0x004e9433` | `0x004e9400` | EDI (`0x004e942a`: `mov esi, edi`) | az EDI a belépéskori EAX (`0x004e9409`: `mov edi, eax`) | T |
+| `0x004e9762` | `0x004e9400` | EDI (`0x004e9760`: `mov esi, edi`) | ugyanaz | T |
+| `0x004e994b` | `0x004e9400` | EDI (`0x004e9949`: `mov esi, edi`) | ugyanaz | T |
+| `0x004ebce8` | `0x004ea360` | EBX (`0x004ebce6`: `mov esi, ebx`). Az EBX a `0x004ebc77`-ben töltődik újra a `[esp+0x24]` helyről, ahová a belépéskor az 1. verem-argumentum került (`0x004ea38a`) | a `0x004e9400` tolja: `push edi` (`0x004e9674`), tehát az 1. argumentum T | T |
+| `0x004ec04f` | `0x004ebff0` | ECX a belépéskor (`0x004ec011`: `mov esi, ecx`) | a gyökér: az indexben nincs közvetlen hívója | R |
+| `0x004f8ead` | `0x004f8ae0` | EBP (`0x004f8ea4`: `mov esi, ebp`). Az EBP az 1. verem-argumentum (`0x004f8b2d`) | a `0x004e80d0`-ból (`push ebp`), ahol az EBP a `0x004e80d0` 1. argumentuma, és a `0x004e9400` ezt `push edi`-vel adja (EDI = T). A `0x004f8ef0`-ból (`push edi`), ahol az EDI a belépéskori EAX, és a `0x004e91f0` és a `0x004e9400` ezt T-vel hívja | T a `0x004e91f0` és a `0x004e9400` láncán |
+| `0x004f97a7` | `0x004f9450` | EBX (`0x004f979e`: `mov esi, ebx`). Az EBX az 1. verem-argumentum (`0x004f9454`) | NINCS MEG: a hívók argumentuma nincs visszakövetve | NINCS MEG |
+| `0x004fbace` | `0x004fb9c0` | EDI (`0x004fbac5`: `mov esi, edi`). Az EDI a belépéskori EAX (`0x004fb9c5`) | NINCS MEG: az index a `0x005cf5b0`-t adja hívónak, a hívóhelyét nem néztük meg | NINCS MEG |
+
+- **A T és az R ugyanaz az objektum.** A `0x004ebff0` a `0x004ec573`-ban `mov eax, esi` után hívja a `0x004e9400`-at, és az ESI itt R (a `0x004ebff0` `this`-e). Tehát a `0x004e9400` `this`-e (T) R. A `0x004e9400`-ból induló hívások (`0x004e91f0`, `0x004ea360`, `0x004e80d0`, `0x004f8ef0`) T-t adnak tovább.
+- **R osztálya.** A `0x004ebff0` az RTTI-tábla szerint a `ytDirScanner::vftable` (VA `0x00c86be0`) 2. slotja, és a `ytDirScannerWindows::vftable` (VA `0x00ca81f8`) 2. slotja is. Tehát R egy könyvtár-letapogató példány (ytDirScanner, vagy annak Windows-leszármazottja). A `0x004f8ae0` is könyvtárakat jár be: meghajtó-betűből épít útvonalat, és `GetDriveTypeA`-t hív.
+- **Az A = R kérdés.** A `0x00425f60` az A = P+0xf8 objektumot adja a `0x004eec80`-nak (38.2.59 §1). Az A és a letapogató-lánc is a `+0x3f0` és `+0x3f8` tételtömböt használja. Mindkét lánc a `+0x4dd` jelzőt használja: a `0x004eec80` A+0x4dd-et állít, a `0x004fbb30` R+0x4dd-et olvas. Hogy A és R ugyanaz a példány, NINCS MEG.
+
+##### §2 Q2: a `0x00411cf0`
+
+- **Mit csinál.** Az EAX-ban kapott objektumot (O) veszi (`0x00411cf0`-`0x00411d9b`):
+  1. Zárat vesz a tulajdonos szálon. A `GetCurrentThreadId` eredményét az O+0x20 mezővel veti össze, a számlálót az O+0x24 tartja. Ha a zár nincs ennél a szálnál, az O+0xc bájt szerint kritikus szakaszt (O+0x28) vagy a vtábla +0x18 hívását használja.
+  2. Ha O+0x470 nem nulla, a `0x0097caf0`-nak adja át. Ez felszabadítás jellegű hívás; a törzsét nem néztük meg.
+  3. Az O+0x474 mező csak a 0. bitjét tartja meg. Az O+0x470 és az O+0x478 nulla lesz.
+  4. Elengedi a zárat. Rekurziónál csak a számlálót csökkenti. Egyébként O+0x20 = 0, és a kritikus szakaszt vagy a vtábla +0x1c hívását használja.
+- **Hol hívják.** Négy hívóhely van az index szerint: `0x004fbb80` (a `0x004fbb30` végén), `0x00412403` (a `0x00412400`-ban), `0x0046e056` (a `0x0046d7d0`-ban), `0x004fdc16` (a `0x004fd1c0`-ban). A `0x004fbb80`-nál EAX = ESI = O (`0x004fbb70`: `mov eax, esi`), tehát a `0x004fbb30` objektuma.
+- **Kapcsolat az állapotmezőkkel: nincs.** A `0x00411cf0` az O+0x20, O+0x24, O+0xc, O+0x28, O+0x470, O+0x474 és O+0x478 mezőket írja vagy olvassa. A `+0x4dd` és a `+0x4de` jelzőket nem. A `0x004fbb30` ezeket a hívás előtt állítja be (`+0x4de = 1`, `+0x4dd = 0`), és a `0x00411cf0` nem írja felül őket. A 38.2.59 három állapotmezőjéhez semmi köze nincs.
+- **Ugyanaz a zárszerkezet.** A `0x004f8ae0` saját zárkódja ugyanezeket a mezőket használja (O+0x20, O+0x24, O+0xc, O+0x28). A két függvény tehát ugyanarra a zárszerkezetre épül. Ez nem bizonyítja, hogy ugyanaz az osztály.
+
+##### §3 Q1 folytatása: a három állapotmező forrása (38.2.59 §4)
+
+A három állapotmező a `0x00425f60` veremében van. A `0x004fbb30` nem olvassa őket.
+
+| mező | verem-hely (`0x00425f60`) | közvetlen írók | olvasók | forrás |
+|---|---|---|---|---|
+| `pcStack_1844` | `[esp+0x3c]` | `0x004264b6` (`mov [esp+0x3c], eax`, a `0x005b1570` hívása után); `0x0042693a` (`mov [esp+0x3c], edx`); `0x00426e12` (`mov [esp+0x3c], eax`); `0x00426e62`: `lea edx, [esp+0x3c]`, mutatóként átadva a `0x004d8da0`-nak (írja-e, nincs megnézve) | legalább nyolc hely, például `0x00426497`, `0x0042656d`, `0x004265db`, `0x004269a4` | RÉSZBEN. A `0x004264b6` írás mért: a `0x005b1570` EAX-e. Ez ágtól függően tér vissza: `0xf4242`, a `0x005acf40` állapotkódja (`local_a4c`), a `0x005b1460` visszatérése (nincs mérve), `2`, vagy `0`. A három másik író értéke NINCS MEG. |
+| `cStack_158c` | `[esp+0x2f4]` | nincs közvetlen író | `0x00426647` (`cmp byte ptr [esp+0x2f4], al`) | NINCS MEG |
+| `cStack_1586` | `[esp+0x2fa]` | nincs közvetlen író | `0x004265d1` (`cmp byte ptr [esp+0x2fa], 0`) | NINCS MEG |
+
+- **A két bájt környéke.** A `0x004264aa`-ben `lea ecx, [esp+0x200]` adja a `0x005b1570` `this`-ét. Ez a `0x00425f60` törzsében a `+0x1f8` offsetű objektum. Ebben a `cStack_158c` a `+0xfc`, a `cStack_1586` a `+0x102` bájt. A `0x005b1570` törzse (`mov ebx, ecx` a `0x005b15b4`-ben, tehát a `this` EBX-ben) az `[ebx+0xfd]` és az `[ebx+0x101]` bájtot olvassa. A `+0xfc` és a `+0x102` nem szerepel a `0x005b1570` olvasásai között. A `0x00425f60` a hívás előtt az `[esp+0x2f5]` és az `[esp+0x2f6]` bájtot írja (`0x00426383`, `0x004263a8`, `0x004263b2`, `0x004263d4`). Ezek a szomszédos mezők, nem a két állapotbájt.
+- **A `0x004efa20` nem írja a két bájtot.** A `0x00426525`-`0x00426536` hívásban a `0x004efa20`-nak két verem-argumentum jut: az 1. `&[esp+0x2f0]` (a függvény csak a benne lévő mutatót olvassa), a 2. `&[esp+0x38]` (ide írja az `idx`-et: `mov [edx], eax`). A `0x004ed7d0`-t, amit a `0x004efa20` hív, nem néztük meg.
+- **Állapot.** A `pcStack_1844` írója megvan, de az értéke nincs. A `cStack_158c` és a `cStack_1586` írója nincs megnevezve.
+
+##### §4 Döntés: az U53 LEZÁRVA
+
+A 38.2.59 §4 szerint az U53 akkor lezárandó, ha a három állapotmező forrása nincs meg. Nincs meg. Ezért az U53 lezárva: **a binárisból statikusan nem dönthető el.**
+
+A `pcStack_1844` írója megvan (a `0x005b1570` EAX-e), de az értéke ágtól függ, és két ág (a `0x005acf40` állapotkódja és a `0x005b1460` visszatérése) nincs mérve. A `cStack_158c` és a `cStack_1586` írója nincs meg. A `0x004eec80` hívási feltételei (38.2.59 §1) mind a három állapotmezőre épülnek, ezért azok sem dönthetők el.
+
+Ezért nincs „A felhasználó szemével” szakasz: a forrás nincs meg, a felhasználói hatás nem vezethető le.
+
+**NINCS MEG (az U53 lezárásakor):**
+- `pcStack_1844`: a `0x005acf40` állapotkódja (`local_a4c`), a `0x005b1460` visszatérése, és a három másik író értéke (`0x0042693a`, `0x00426e12`, és a `0x00426e62`-ben `lea`-val mutatóként átadott `0x004d8da0` hívás, ha ír rá).
+- `cStack_158c` és `cStack_1586`: az írójuk. A `0x005b1570` `this`-ében a `+0xfc` és a `+0x102` mezők írói, és a `0x005b1570` hívott függvényei (`0x005acf40`, `0x005b1460`), ha `this`-en át írnak.
+- Az `M+0x58` objektum vtábla +4 célja, és a `[esp+0xdc]`, `[esp+0xe0]`, `[esp+0x2b4]`, `[esp+0x2b8]` méret-mezők forrása.
+- A `0x004fbb30` vtábla +8 célja (a tételek metódusa), és ennek a hatása.
+- Az A (`P+0xf8`) és az R (a letapogató-példány) azonossága (§1).
+- A `0x004ebff0` (R-et adó) hívója: az indexben nincs közvetlen hívó.
+
+**Mi dönthetné el élőben.** A `+0x4dd` jelzőn átírt tételek (kód 4) látható hatását nem a belső mezők mutatják meg, hanem egy élő Picasa 3.9 példány. Ehhez egy mappa kell, amely kép, videó, hang, szöveges fájl és `.url` fájlt tartalmaz. Az Időrend nézetet először egy elemmel, majd legalább két, vegyes típusú elemmel kell megnyitni. Rögzítendő: az Időrend képernyőképe, a látható elemek száma és típusa, a mappa fájllistája, és az, hogy az elemek a nézetben megjelennek-e. Ezt két helyen lehet futtatni: a Colab-os Picasa-végrehajtón (`tipus:behavior`, csak a tulajdonos `jovahagyva` címkéjével), vagy a tulajdonos Windows-gépén. A Colab-útvonalat nem mértük, nem tudjuk, hogy a Wine alatti Picasa kirajzolja-e az Időrend nézetet, ezért a Windows-gép a biztosabb út.
+
+##### §5 Bizonyítottsági fok (38.2.60)
+
+| állítás | bizonyíték | fok |
+|---|---|---|
+| a `0x004fbb30`-at kilenc hívóhelyről, hét függvényből hívják | index `xrefs` és a dekompilátum hívólistája | megerősített |
+| az ESI belső forrása a kilenc hívóhelyen | gépi kód: a belépési regiszter vagy az 1. verem-argumentum visszakövetése | megerősített |
+| a `0x004e9400`-ból induló láncon az objektum T | gépi kód `0x004e9409`, `0x004e9674`, `0x004e9442`, `0x004e9970` | megerősített |
+| a `0x004ebff0` `this`-e (R) a `0x004e9400` `this`-e (T) | gépi kód `0x004ec011`, `0x004ec571`-`0x004ec573` | megerősített |
+| a `0x004ebff0` a `ytDirScanner` vtábla 2. slotja | RTTI-tábla (`rtti.csv`), a `0x00c86be0` és `0x00ca81f8` vtábla, a vtábla-scan két találata | megerősített |
+| a `0x004ebff0`-nak nincs közvetlen hívója az indexben | index `xrefs` | megerősített (vtábla-hívás nincs kizárva) |
+| a `0x00411cf0` zárat vesz, puffert ürít, elenged | gépi kód `0x00411cf0`-`0x00411d9b` | megerősített |
+| a `0x00411cf0` nem írja a `+0x4dd` és `+0x4de` mezőt | gépi kód: az írt mezők listája | megerősített |
+| a `0x005b1570` `this`-e a `[esp+0x200]`, azaz `+0x1f8` | gépi kód `0x004264aa`, `0x005b15b4` | megerősített |
+| a `0x00425f60` három állapotmezőjének írói | a teljes `0x00425f60` közvetlen `[esp+X]` és `lea` szkennelése | részben (mutatón át íródás nincs zárva) |
+| a `0x004efa20` nem írja a `cStack_158c`-t és a `cStack_1586`-ot | gépi kód `0x00426525`-`0x00426536` és a `0x004efa20` törzse | megerősített a közvetlen írásokra; a `0x004ed7d0` nincs megnézve |
+| az A = R azonosság | nincs | NINCS MEG |
+| a felhasználói hatás | nincs | NINCS MEG |
+
+##### §6 Ghidra-címek a következő körhöz
+
+Nincs új Ghidra-cím. A 38.2.59 §6 szerint Ghidra-címet csak akkor adunk, ha a forrás megvan és csak egy részlet hiányzik. Itt a forrás nincs meg, az U53 lezárva. A 38.2.59 §6 címeinek állapota:
+- `0x004fbb30` hívói: LEZÁRVA (§1). Az ESI-források megvannak.
+- `0x00411cf0`: LEZÁRVA (§2).
+- `0x005b1570` (`local_a4c` és a `0x005b1460` ágak): NINCS MEG, nem kérjük, mert az U53 lezárva.
+- `0x004fbb30` vtábla +8 célja: NINCS MEG, nem kérjük.
+- `M+0x58` vtábla +4 célja: NINCS MEG, nem kérjük.
+
+##### §7 Javítások a korábbi szakaszokban
+
+- **38.2.59 §3 (a `0x00411cf0` „a célja NINCS MEG”).** ⚠️ LEZÁRVA (§2): zár, puffer ürítése, elengedés.
+- **38.2.59 §6 (a `0x004fbb30` hívóinak esi-je, „az A-e?”).** ⚠️ LEZÁRVA (§1): az esi-értékek megvannak. Az A = R kérdés nincs igazolva.
+- **38.2.59 §4 és §9 (a három állapotmező forrása NINCS MEG).** ⚠️ PONTOSÍTVA (§3): a `pcStack_1844`-nek négy írója van, a `0x005b1570` EAX-e az egyik. A `cStack_158c` és a `cStack_1586` közvetlen írója nincs a törzsekben.
+
+##### §8 Amit KIZÁRTAM
+
+- „A `0x004fbb30` olvassa a 38.2.59 három állapotmezőjét”: CÁFOLVA. A törzse csak a `+0x484`, `+0x488`, `+0x4dd` és `+0x4de` mezőt használja az `esi`-n.
+- „A `0x00411cf0`-nak köze van a `+0x4dd` vagy `+0x4de` jelzőhöz”: CÁFOLVA (§2).
+- „A `0x004efa20` írja a `cStack_158c`-t vagy a `cStack_1586`-ot”: CÁFOLVA a közvetlen írásokra (§3). A `0x004ed7d0`-t nem néztük meg.
+- „A `0x004fbb30` esi-je A”: NEM IGAZOLT, és az A = R sem zárt ki.
+- „A `0x004ebff0` nincs vtáblában”: CÁFOLVA, a `ytDirScanner` és a `ytDirScannerWindows` vtáblája is tartalmazza (§1).
+- „A `0x004ea360` 1. argumentuma minden hívásban T”: csak a `0x004e9400`-ból induló hívásra igazoltuk.
+
+##### §9 Nyitott lista (38.2.60 §9)
+
+Nyitott kérdések mérlege (38.2.60): 54 tétel · 13 lezárva · 25 részben · 16 nincs meg. Az előző (38.2.59): 54 · 12 · 26 · 16. Változás: az U53 RÉSZBEN-ből LEZÁRVA lett. Az U49 szövege nem változott.
+
+| U | állapot | mit mond most | cím |
+|---|---|---|---|
+| U53 | LEZÁRVA (38.2.60 §4): a binárisból statikusan nem dönthető el | a három állapotmező forrása nincs meg: a `pcStack_1844` írója megvan, de az értéke ágtól függ (a `0x005acf40` és a `0x005b1460` nincs mérve); a `cStack_158c` és a `cStack_1586` írója nincs meg. A `0x004fbb30` a `+0x4dd` jelzőn dolgozik a `0x004ebff0` (ytDirScanner) példányán; az A = R azonosság NINCS MEG. A felhasználói hatás NINCS MEG: élő felvétel kell (§4) | `0x005b1570`, `0x005acf40`, `0x005b1460`, `0x004ebff0`, `0x004fbb30` (vtábla +8) |
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
