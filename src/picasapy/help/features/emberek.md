@@ -192,7 +192,7 @@ száma áll (például „37 arc"). Itt:
   leütésre a mező alatt egy lista mutatja, mely meglévő személyek neve
   illik a beírt szövegre, arcképükkel együtt. A program a név
   **szavainak elejére** illeszt: az „an" beírására az „Anna Kiss" és a
-  „Kiss Andrea" is megjelenik, a „Joanna" viszont nem. Több szónál a
+  „Kiss Andrea" is megjelenik, a „Hanna" viszont nem. Több szónál a
   szavaknak egymás után kell következniük a névben. Ha a listában egy
   személyre kattintasz, az arc azonnal az ő nevét kapja, a mező kiürül.
   A **le** és **fel** nyíllal is kijelölhetsz egy személyt a listában,
