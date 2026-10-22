@@ -991,9 +991,14 @@ Rectangle {
                 height: controlsRow.buttonHeight
                 onClicked: show.stop()
             }
+            //: #5541: az eredetiben a `oneup.tre` 75-81. sorában a ◀ és a ▶▶ gombon
+            //: `mousedown` van; a kezelőjük a `0x008032e0`. Ezért LENYOMÁSRA léptet,
+            //: nyomva tartva nem ismétel.
             PicasaButton {
+                objectName: "slideshowPrevButton"
                 text: "◀"; width: 34
                 height: controlsRow.buttonHeight
+                lenyomasra: true
                 onClicked: show.goBack()
             }
             PicasaButton {
@@ -1003,10 +1008,12 @@ Rectangle {
                 height: controlsRow.buttonHeight
                 onClicked: show.togglePause()
             }
+            //: #5541: ld. fent, a ◀ gombnál.
             PicasaButton {
                 objectName: "slideshowNextButton"
                 text: "▶▶"; width: 38
                 height: controlsRow.buttonHeight
+                lenyomasra: true
                 onClicked: show.advance()
             }
             PicasaButton {

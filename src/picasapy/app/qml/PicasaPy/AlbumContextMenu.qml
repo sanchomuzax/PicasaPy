@@ -12,14 +12,12 @@ import QtQuick.Controls
 // feloldja az ellentmondást: a 13-ból NÉGY feltöltés-azonosító
 // (`ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS`, `ID_UPLOAD_ALBUM_TO_LIGHTHOUSE`,
 // `ID_UPLOAD_TO_GOOGLE_PLUS_PHOTOS`, `ID_UPLOAD_TO_LIGHTHOUSE`), és ezek
-// összesen KÉT különböző feliratot adnak: „Feltöltés a Google Fotókba…" és
-// „Feltöltés a Picasa Webalbumokba…". Vagyis 11 KÜLÖNBÖZŐ felirat van, és
-// a menü most mind a 11-et tartalmazza — kitalált tétel nélkül.
+// két különböző feltöltési feliratot használnak.
 //
 // #757: a tizenkettedik felirat mégis előkerült — az `Album::SortAlbumBy`
-// („Album rendezésének alapja…"), amit a #422-es végigvezetés az `ID_`
-// előtag hiánya miatt nem vett be a sorba. A feliratok azóta szó szerint (a
-// `&`-mnemonikkal együtt) az eredetiek.
+// („Album rendezésének alapja…”), amit a #422-es végigvezetés az `ID_`
+// előtag hiánya miatt nem vett be a sorba. A felirat az eredeti `&`-mnemonikot
+// is tartalmazza.
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
 // szürkén LÁTSZANAK (#416, spec 5.1.). Az album törlése (#4598), a
@@ -147,16 +145,6 @@ PicasaMenu {
         text: qsTr("Upload to Google &Photos...")
         placeholder: false
         // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
-        retired: true
-    }
-    // `Album::ID_UPLOAD_TO_LIGHTHOUSE` — a Picasa félbehagyott átnevezése
-    // miatt a régi felirat is ott maradt a menüben (spec 5.6.: a mappa-menü
-    // már „Google Fotók", ez még „Picasa Webalbumok"). Ugyanúgy megszűnt
-    // szolgáltatás, tehát véglegesen szürke.
-    PicasaMenuItem {
-        objectName: "albumMenuUploadToWebAlbums"
-        text: qsTr("Upload to &Picasa Web Albums...")
-        placeholder: false
         retired: true
     }
     MenuItem {
