@@ -2739,6 +2739,8 @@ Ghidra-kör kell: 0x007b81e0 hívói (`0x007b7b10`, `0x007b9630`, `0x007ba060`) 
 
 ### 19.6 #5185, 2026-10-22: a csempe-mező billentyűkezelője, a Choose-felirat feltétele és a People-megnyitás útja
 
+> ⚠️ **Helyesbítve a 19.7-ben** (2026-10-22, második kör): (1) a `0x00a644bb` nem Escape-ág, hanem a közös „nincs kezelve” kilépés; (2) a `[this+0x35a]` nem a javaslatlista nyitott állapota, hanem a csempe tulajdonsága; (3) a `0x00809360` egérútja elfogad; (4) a `0x0085a1a0` nem a People-ablak. A többi állítás érvényben marad, a NINCS MEG pontokat a 19.7 viszi tovább.
+
 *Forrás:* `Picasa3.exe` (SHA-256 `644b7bec…ddc96`, egyezik az index `meta.json`-jával; image base `0x00400000`). Az index `functions`, `rtti` (a vtábla-slotok a `kind` oszlopban) és `xrefs` táblái. Ghidra-dumpok: `2026-10-20-arc-5185.txt` (`0x00787dd0`), `2026-10-20-ghidra-13.txt` (`0x00783de0`), `2026-10-21-koteg-1021b.txt` (`0x007853e0`, `0x007899e0`), `2026-10-21-people-szuro.txt` (`0x0071f740`, `0x00720dd0`), `2026-10-21-people-dlg.txt` (`0x0085a1a0`), `2026-10-20-ghidra-22.txt` (`0x007b81e0`). Helyi diszasszemblálás (`annot_disasm.py`) a `0x00a63c80`, `0x00a62970`, `0x00a64050`, `0x00a65170`, `0x007b81e0` és `0x007b8f80` függvényeken, valamint a People-dialógus függvényeinek íráskeresése. Ez a szakasz a 19.5 és a 35.9 nyitott pontjait viszi tovább: a `0x007853e0`, `0x007899e0` és `0x007b81e0` hívóit és törzsét a 2026-10-20/21-es dumpok már tartalmazzák, ezért ezekre most nincs újabb Ghidra-kérés.
 
 **Jelölések.** „Megerősített”: két független úton (utasításszintű olvasat és RTTI/dump) egyezik. „Erős”: egy út bizonyított, a második csak a viselkedési konvencióra illeszkedik. „Feltételes”: egy út. „NINCS MEG”: a dumpokban és a diszasszemblálásban nincs meg; mellette a kérendő Ghidra-cím.
@@ -2840,6 +2842,103 @@ Ha ezek a felvételek megvannak, a 19.6 NINCS MEG pontjai a J9-J12 képkockáiva
 - **HATÓKÖRÖN KÍVÜL:** 0.
 
 Nyitott kérdések: 0 nyílt · 3 lezárva · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”
+
+### 19.7 #5185, 2026-10-22, második kör: az Escape, a kattintás, az Enter-út és a `[this+0x15c]` írói
+
+*Forrás:* `Picasa3.exe` (image base `0x00400000`); a bináris-index `functions`, `xrefs` (csak `call` élek) és `rtti` (vtábla-slotok) táblái; helyi diszasszemblálás (`annot_disasm.py`) a `0x00a64050`, `0x00a65170`, `0x00a54b70`, `0x00a62970`, `0x00a63c80`, `0x00809050`, `0x00809360`, `0x0085a1a0`, `0x007b81e0`, `0x007b8f80`, `0x007b9240` és `0x009df260` függvényen; a 2026-10-22-es Ghidra-kiírás C-törzsei (`referencia/ghidra/2026-10-22-ghidra-sor-220-226.txt`); és két teljes `.text`-pásztázás (`paszta.py`, 2 884 879 utasítás, index-független): az egyik a `+0x15c`, `+0x384`, `+0x35a`, `+0x359`, `+0x366` és `+0x368` írásait, a másik a `+0x140`-`+0x154` hozzáféréseit gyűjtötte. A „Q2” (Enter-út a People-ablakig), „Q3” (javaslat-kattintás) és „Q4” (Escape és a csempe-állapot) jelöléseket a 19.6 kérés-soraiból vettem át; a spec nem definiálja őket.
+
+**Jelölések:** ugyanazok, mint a 19.6-ban.
+
+#### A. Helyesbítések a 19.6-hoz
+
+| A 19.6 állítása | Mit mutat a bináris | Hol |
+|---|---|---|
+| a `0x00a644bb` az Escape-ága | általános „nincs kezelve, a szülő kapja” kilépés: `mov eax, 0xf4241`, `ret 0xc`; nincs külön Escape-ág | `0x00a644b9`-`0x00a644c6` |
+| a `[this+0x35a]` a javaslatlista nyitott állapota | tulajdonság: a konstruktor nullázza, a gyári `0x00a63c80` a sablonjáról másolja; a nyitott állapot nem ez | `0x00a62b41`, `0x00a63cfd`-`0x00a63d04` |
+| a `0x00809360` egérútja nem elfogadás | mindkét ágában hívja az elfogadó rutint, a `0x00a54b70`-et | `0x008093ef`, `0x00809521` |
+| a People-megnyitó a `0x0085a1a0`, a `0x0085a120` a `/c/ui/ContactManager` erőforrást tölti be | a `0x0085a1a0` 0x150 bájtos kupac-objektumot foglal (`push 0x150`, `call 0x97c5d0`, 0x150 bájt `memset`); a People-ablak (`ContactManagerDlg`) `+0x15c` mezőt használ, legalább 0x15d bájtos; a `0x0085a120` (Ghidra-C) „ContactManagerDlg::GoogleContacts” nevű 800×600-as ablakot hoz létre, ContactsBrowser-vtáblákkal (feltételesen az online-névjegyek böngészője) | `0x0085a1a6`-`0x0085a1ad`, `0x0085a1c7`, `0x007b84fa` |
+
+#### B. Escape (Q4): a csempe nem fogyasztja, a szülő reakciója NINCS MEG
+
+- **Eseménykapu** (megerősített, `0x00a645a7`-`0x00a645e4`): a kezelő csak akkor dolgoz fel billentyűt, ha az esemény `[+0x64]` jelzőjében a `0x10` bit áll, vagy ha a jelzők `0xe` maszkja nulla és a billentyűkód egyezik a `[this+0x384]`-gyel. Egyébként `0xf4241` (a szülő kapja).
+- **`[this+0x384]` állandóan 0** (megerősített): az osztályban egyetlen írója a konstruktor (`0x00a62b5f`; `xor ebx, ebx` a `0x00a62988`-nál). A teljes `.text`-pásztázás 28 közvetlen `+0x384`-írást talált 25 függvényben. Ezek egyike sem a ytButtonNode vtábla-tagja, és egyik sincs a hét csempe-kezelő (`0x00a64050`, `0x00a65170`, `0x00a54b70`, `0x00809360`, `0x00809050`, `0x009df260`, `0x009e3c70`) közvetlen hívási zárlatában (278 függvény). Lea-alias írás a pásztázással nem zárható ki.
+- **Következmény:** az „Escape-páros” ág (`eax = 1`, `0x00a645f2`-`0x00a645fa`) sosem igaz, a `0x00a64633` commit-ág Escape-re nem fut. Escape-re a csempe mindkét állapotban `0xf4241`-et ad.
+- **Enter (0x0d):** `[this+0x35a] == 0` esetén commit (`0x00a64625`); `[this+0x35a] != 0` esetén `0xf4241`, a szülő kapja. **Szóköz (0x20):** commit mindkét esetben (`0x00a6462a`, `0x00a6460e`).
+- **Az „Add a name” felirat visszaállítása és a gépelt szöveg elvetése NINCS MEG:** ez a szülő kezelőjétől függ. A `0xf4241` a csempe `+0x74` slotját hívó közvetett hívótól jön; a hívó nincs azonosítva. Belépési pont jelöltje: a `0x00608c00` ugró-thunk és a `0x00ce48e8` vtábla-hivatkozás.
+
+*Bizonyítottsági fok:* a kapu és a három kimenet **megerősített** (utasításolvasat és a Ghidra-C `case 0x17` ága, két út); a `[this+0x384] = 0` **megerősített** (konstruktor-érték és teljes pásztázás).
+
+#### C. Enter-út a People-ablakig (Q2): a közvetlen hívási zárlat nem ér oda; a vtábla-élek jelöltek
+
+- **A commit-ág** (megerősített, utasítás és C): `[this+0x368] := 0x100` (`0x00a6463e`); `elem := 0x009df260(this)` (`0x00a64678`); ha `elem ≠ 0`, `0x00a54b70(elem, …)` (`0x00a6467e`); majd a `[vtábla+0x78](0, 1)` hívás, ami a `0x00a65170` (`0x00a64683`-`0x00a6468e`); visszatérés `0xf4240`.
+- **A `0x009df260`** (megerősített, utasítás és C; `0x009df260`-`0x009df285`): a `[+0x244]` láncon felfelé keresi az első olyan csomópontot, amelynek `[+0x213]` jelzője nem nulla, és ennek a **szülőjét** adja vissza; ha nincs ilyen, nullát. Az „elem” tehát nem a csempe.
+- **`0x00a54b70`** (6375 B): az első argumentum (az elem) az `esi`-ben van (`0x00a54b81`). 22 egyedi közvetlen hívott, egyik sem People-kapcsolt. Közvetett hívások az elem vtábla `+0x18`, `+0x1c`, `+0x24`, `+0x3c` és `+0x60` slotjain. Az elem osztálya **NINCS MEG**.
+- **`0x00a65170`** (337 B): 8 közvetlen hívott, egyik sem People-kapcsolt. Közvetett hívások: a csempe `+0x04` (0x009d79f0) és `+0x08` (0x009d7a00) slotja, valamint a szülő `ytButtContainer` `+0x78` slotja (0x00aa11c0).
+- **Közvetlen hívási zárlat** (index; megerősített korlátként): 14 belépési pont (a csempe-kezelők `0x00a64050`, `0x00a65170`, `0x00a54b70`, `0x00809360`, `0x00809050`, `0x009e3c70`, `0x009df260`, `0x00a652d0`, és a szülő-oldali `0x00783de0`, `0x007899e0`, `0x007853e0`, `0x00787dd0`, `0x0071c380`, `0x00aa11c0`) zárlata 589 függvény, 12 szintig bejárva. Ebben nincs: `0x0085a1a0`, `0x00720dd0`, `0x0071f740`, `0x0051ab50`, `0x007ab710`, `0x007b81e0`, `0x007b9240`, `0x007b8f80`, `0x005e9e80`, `0x005ff8c0`, `0x0064d7d0`, `0x006db730`. **Pozitív kontroll:** a `0x0051ab50` → `0x0071f740` → `0x00720dd0` → `0x0085a1a0` lánc (3 szint) ugyanezzel a zárlat-kóddal megtalálható. Az index csak közvetlen `call` éleket tartalmaz; a vtábla- és visszahívás-élek hiányoznak. ⇒ a csempe közvetlen hívásai nem vezetnek a People-ablakig.
+- **Jelölt vtábla-élek** (a láncok megerősítve, a csatlakozás a csempéhez nincs):
+  - a `PeoplePanel::AutoCompleteProvider` vtábla (`0x00ca1774`) `+0x04` slotja: `0x00644010` → `0x0064d7d0` (név-megnyitó) → `0x007b9240`;
+  - ugyanennek az osztálynak a `0x00ca1780` vtáblája `+0x10` slotja: `0x0063e370` → `0x006443e0` → `0x0064d7d0`;
+  - a `ListboxACParentHandler` vtábla (`0x00ca17dc`) `+0x0c` slotja: `0x0063eb20` → `0x00641850` → `0x006443e0` → `0x0064d7d0`.
+- **Feltételes mechanizmus:** a `[this+0x35a] = 1` jelzőt a `ytSuperButtonCreator` vtábla `+0x0c` slotja (`0x00a69f50`) írja. Ha a név-csempék prototípusai ilyenek, az Enter mindig a szülőhöz megy (`0xf4241`). A szülő lehet az AC-tulajdonos (`ListboxACParentHandler` vagy `PeoplePanel::AutoCompleteProvider`); ha van kijelölt javaslat, az elfogadás a `0x00a54b70`, ha nincs, az AC-tulajdonos a név-megnyitóig juthat. A szülő → AC-tulajdonos él **NINCS MEG**.
+- **Tény a felvételből:** a picasa-colab-jobs job-163 szerint az új név Enter után a People-ablak nyílt, tehát az út létezik; a statikus zárlatból hiányzik.
+
+*Bizonyítottsági fok:* a commit-ág és a `0x009df260` **megerősített**; a közvetlen zárlat (és a pozitív kontroll) **megerősített** index-korlátozással; a vtábla-láncok **megerősítettek** a saját szakaszukban, a csatlakozás a csempéhez **NINCS MEG**.
+
+#### D. Javaslatra kattintás (Q3): elfogadás, a név-írás helye NINCS MEG
+
+- **A `0x00809360`** a `CAutoCompleteListBox` vtábla `+0x14` slotja (RTTI, megerősített). A nulla indexű ág (`call edx`, majd `ret 4`) nem hívja az elfogadást. A nem nulla ágak mindkettője hívja a `0x00a54b70`-et (`0x008093ef`, `0x00809521`; a C-kiírás azonos). ⇒ **a kattintás elfogadás**, nem csak kijelölés.
+- **A VK_RETURN ág** (`0x00809050`, `CAutoCompleteListBox` `+0x24`): a `0x009df260` után a `0x00a54b70`-et hívja (`0x008090c0`, `0x00809211`); közvetett hívása nincs.
+- **Ablak nélkül nevet ad-e?** A `0x00a54b70` közvetlen hívásai között nincs People-megnyitó. A név-írás helye (az elem osztálya és a `+0x18`, `+0x1c`, `+0x24`, `+0x3c`, `+0x60` vtábla-célok) **NINCS MEG**. Megszerzés: a J11 felvétel (`faces=` sor diffje) és a `0x00a54b70` elem-osztályának azonosítása.
+
+#### E. `[this+0x15c]` írói: a nem-nulla író a `0x007b9240`; a többi író osztálya NINCS MEG
+
+- **Olvasó:** a `0x007b81e0` (`ebp` = az objektum), **bájt-méretű**: `cmp byte ptr [ebp+0x15c], 0` (`0x007b84fa`, `0x007b856f`). A 19.6 „`[this+0x15c] != 0`” jelölése bájtra vonatkozik.
+- **Nulla író:** a `0x007b8f80` (konstruktor, 671 B): `mov byte ptr [esi+0x15c], bl` (`0x007b9037`), és `bl = 0` (`xor ebx, ebx`, `0x007b8fa7`). Megerősített.
+- **Nem-nulla író:** a `0x007b9240` (187 B): `mov byte ptr [esi+0x15c], 1` (`0x007b924e`). Ugyanebben a függvényben a `+0x148`, `+0x14c`, `+0x150` és `+0x154` mezőket a `0x005863f0` eredményéből tölti (`0x007b92c5`-`0x007b92e8`). Megerősített (utasításszint).
+- **Közvetlen hívók:** a `0x007b9240` ← `0x005e9e80`, `0x0064d7d0`, `0x006db730`; a `0x007b8f80` ← `0x005e9e80`, `0x005ff8c0`, `0x0064d7d0`, `0x006db730`.
+- **A People-ablak (`ContactManagerDlg`) létrehozói** verem-objektumot használnak (`lea eax, [esp+X]` a `call 0x007b8f80` előtt): `0x005ff8c0` (105 B, csak konstruktor), `0x005e9e80` (1436 B; sztringek: „People”, „FRSelectNewPeopleAlbum”, „Preferences”, „]expeople:%d”), `0x0064d7d0` (230 B), `0x006db730` (1322 B). Hívóik: `0x005cb990` (8291 B; `peoplepanel/*` sztringek) → `0x005ff8c0`; `0x005e39a0`, `0x005e9890` → `0x005e9e80`; `0x00644010`, `0x006443e0` → `0x0064d7d0`; `0x006dc030` → `0x006db730`.
+- **„Csak ez a két író”: NINCS MEG.** A teljes `.text`-ben 46 objektum-relatív (nem `esp`-alapú) `+0x15c`-írás van. Egyik sem a `ContactManagerDlg` vtábla-tagja vagy annak közvetlen hívottja; ez a mérés a `0x007b8f80`-at és a `0x007b9240`-et sem találja, mert azok nem vtábla-tagok. A 46 függvény osztálya NINCS MEG. A `+0x140`-`+0x154` mezőkkel való együttes előfordulás nem választ szét (24 függvény érinti mindkettőt). Nincs bizonyíték arra, hogy egyik a People-objektumra ír, de nem is zárható ki.
+- **A Choose-feltétel** (a 19.6 szerint; újra ellenőrizve): `[this+0x15c] == 0` esetén nincs felirat-csere; különben `[+0x150] == [esp+0x20]` és `[+0x154] == [esp+0x24]` esetén „OK”, egyébként „Choose” (`0x007b853b`-`0x007b8557`). A „Choose” tehát csak a `0x007b9240` jelző után jelenhet meg.
+
+*Bizonyítottsági fok:* a két ismert író **megerősített** (utasítás és teljes pásztázás, két út); a „csak ez a két író” állítás **NINCS MEG**.
+
+#### F. Cáfoló kísérletek
+
+1. „A `0x00a644bb` Escape-ág.” Cáfolva: az oda ugró ágak mind a közös `0xf4241` kilépés.
+2. „Az Escape-páros commit elérhető.” Cáfolva: `[this+0x384]` állandóan 0 (konstruktor-érték és pásztázás; a pásztázás a közvetlen eltolás-írást fogja).
+3. „A csempe Enter-útja közvetlen hívással eléri a People-ablakot.” Cáfolva a közvetlen zárlatban, pozitív kontrollal ellenőrizve. A job-163 felvétel szerint az út létezik, tehát a hiány a vtábla-élekben van.
+4. „A `0x0085a1a0` a People-ablak.” Cáfolva: 0x150 bájtos kupac-objektum, a People-ablak `+0x15c`-ig terjedő mezőt használ.
+5. „A `[this+0x15c]` egyetlen írója a `0x007b8f80`.” Cáfolva: a `0x007b9240` nem-nulla írása.
+6. „A `[this+0x35a]` a javaslatlista nyitott állapota.” Cáfolva: a konstruktor nullázza, a gyári függvény másolja. A prototípus-azonosítás (`[this+0x508]`, `[this+0x50c]`) feltételes.
+7. „A kattintás csak kijelöl.” Cáfolva: mindkét ág hívja a `0x00a54b70`-et.
+
+#### G. Ghidra-kör kérések (egységes alakban)
+
+Ghidra-kör kell: 0x0063eb20 - a `ListboxACParentHandler` vtábla (0x00ca17dc) `+0x0c` célja: a 0x00641850 és 0x006443e0 láncon át a 0x0064d7d0 név-megnyitóig; ki hívja ezt a slotot a csempe-listából [blokkoló: Q2]
+Ghidra-kör kell: 0x00644010 - a `PeoplePanel::AutoCompleteProvider` vtábla (0x00ca1774) `+0x04` célja: a 0x0064d7d0 hívásának feltétele és a kiváltó Enter-ág [blokkoló: Q2]
+Ghidra-kör kell: 0x0063e370 - a `PeoplePanel::AutoCompleteProvider` vtábla (0x00ca1780) `+0x10` célja, és a 0x006443e0 hívásának feltétele [blokkoló: Q2]
+Ghidra-kör kell: 0x005cb990 - a 0x005ff8c0 (ContactManagerDlg konstruktor) hívója: a `peoplepanel/header_editbox` és a `peoplepanel/manual_add_editbox` kezelőjéből vezet-e út ide [blokkoló: Q2]
+Ghidra-kör kell: 0x00a54b70 - az első argumentum (elem) osztálya, és a `[esi]+0x18`, `+0x1c`, `+0x24`, `+0x3c`, `+0x60` vtábla-hívások célja: ír-e nevet ablak nélkül [blokkoló: Q3]
+Ghidra-kör kell: 0x00608c00 - a csempe `+0x74` slotjának (0x00a64050) hívója: a `0xf4241`-et kapó szülő kezelője [blokkoló: Q4]
+
+Nem blokkoló, a 19.6 listájából örökölt: `0x0078ae90` (a csempe-lista újraépítési feltétele) - a dump megvan, a kör nem dolgozta fel.
+
+#### H. Colab-lépéssor (a fennmaradó NINCS MEG pontokra)
+
+- **J9** (új név, Enter): megvan, a job-163: a People-ablak nyílt.
+- **J10** (lista nyitva, meglévő név, Enter): mérendő, fogadja-e el a listaelemet, vagy nyílik-e a People-ablak; `.picasa.ini` diff.
+- **J11** (lista nyitva, kattintás a javaslat sorára): mérendő, változik-e a `faces=` sor ablak nélkül, vagy nyílik-e a People-ablak.
+- **J12** (a) lista nyitva, gépelt szöveg, Escape; (b) lista zárva, gépelt szöveg, Escape: mérendő, visszaáll-e az „Add a name” felirat, elvetődik-e a gépelés, és változik-e a `.picasa.ini`.
+
+Minden lépésnél: képkocka, a bal sávi számlálók (`Unnamed (N)`, `Teszt Elek (M)`) és a `.picasa.ini` sorai a művelet előtt és után.
+
+#### I. Mérleg
+
+Nyitott kérdések: 0 nyílt · 7 lezárva · 4 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”
+
+- **LEZÁRVA (7):** (1) a `0x00a644bb` nem Escape-ág; (2) a csempe Escape-re nem fogyasztja a billentyűt (`0xf4241`); (3) `[this+0x384]` állandóan 0; (4) a kattintás elfogad (`0x00a54b70`); (5) a `0x0085a1a0` nem a People-ablak; (6) a `[this+0x15c]` nulla írója a `0x007b8f80`, nem-nulla írója a `0x007b9240`; (7) a `[this+0x35a]` tulajdonság, nem állapot.
+- **BLOKKOLT (4):** (1) az Enter-út a People-ablakig (vtábla-él, jelöltek a C szakaszban); (2) a javaslat-kattintás név-írása ablak nélkül (az elem osztálya); (3) az Escape hatása (a szülő kezelője); (4) a `[this+0x15c]` többi 46 írójának osztálya.
+- **HATÓKÖRÖN KÍVÜL:** 0.
 
 ## 20. #5184: a személykezelés bináris oldalának eredménye (2026-10-17, 2. kör)
 
