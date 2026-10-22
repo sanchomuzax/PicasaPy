@@ -5781,3 +5781,96 @@ A célrekord az `X` csomópont; a 0x0047b020 `this`-e `X+4` (45.1). Így a 0x004
 **Nyitott kérdések mérlege (45.15-45.19):** 1 helyesbítés (45.12 „Producer-jelölt" ELVETVE) · 0 lezárva · 3 blokkolt (N1, N3, N7) · 0 hatókörön kívül · 0 csak nyitva.
 
 **Módosított fájlok (45.15-45.19):** `docs/specs/picasa-arcfelismeres.md` (új 45.15-45.19 szakasz; a 45.12 „Producer-jelölt" állítását a 45.15 elveti); `docs/specs/00-index.md` (a lap sorában új bejegyzés).
+
+### 45.20 N1: a jelző forrásrekordja, a termelői lánc és a munkasor-kapcsolat (2026-10-22, 231-235. köteg)
+
+**Hatókör.** A 45.18 első három kérése (`0x0047e470`, `0x0045a9d0`, `0x00484820`) C-kódja a `referencia/ghidra/2026-10-22-ghidra-sor-231-235.txt` kötegből származik; a C-t az asm (`annot_disasm.py`, helyi capstone) ellenőrizte. A hívási térképet indextől független módon mértem: `paszta.memoria_kapu()`, majd egyetlen teljes `.text`-pásztázás (`paszta.utasitasok(detail=False)`, 2 884 879 utasítás), amely minden `call` és `j*` célt összevet a kért címekkel. A közvetett (vtábla- és regiszteres) hívásokat ez a térkép nem látja.
+
+**Helyesbítés (45.16).** A 45.16 „a célrekord (`eax`) az `X` csomópont" állítása nincs igazolva. Az asm szerint a másolat célja a `0x0045a9d0` verem-rekordja (`[esp+0x70]`, hét dword), amelyet a `0x0049d560` első argumentumként kap (`0x0045b8f7`). A rekord `+0x4` mezőjét (`[esp+0x74]`) a `0x0045a9d0` darabszámként olvassa (`>> 1`). Hogy ez a rekord lesz-e a munkasor-csomópont `X`, azt a `0x0049d560` és a `0x004841f0` célja dönti el. Ez NINCS MEG (45.22).
+
+**Megerősített: a forrásrekord `{0, 0, d8, d4}`.** Asm, a `0x0045a9d0`-ban:
+- `0x0045b4b5`: `call 0x0042a440` (gyorsítótár-út, `param_3` nemnulla esetén). Ha `al = 0`, a `0x0045b4c8`-`0x0045b4e3` ágban a `this+0x48` alobjektum vtábla-slotja `+0xd4` hívódik: `ecx = this+0x48`, argumentumok: a kép-index, `&[esp+0x4c]` (d8) és `&[esp+0x50]` (d4).
+- `0x0045b4e5`-`0x0045b4f9`: `edx = [esp+0x4c]` (d8), `ecx = [esp+0x50]` (d4). Mindkettő nem lehet nulla.
+- `0x0045b8ae`-`0x0045b8e4`: a `{0, 0, d8, d4}` forrás `[esp+0x38]`-tól áll; a `0x0045b8e8` hívja a `0x004985e0`-t, a célja `[esp+0x70]`.
+- `0x004985e0` (36 bájt): cél `+0x8 = forrás+0x0`, `+0xc = forrás+0x4`, `+0x10 = forrás+0x8`, `+0x14 = forrás+0xc`; a `+0x0`, `+0x4` és `+0x18` nulla.
+
+Második előállító, ugyanaz a minta: a `0x00484820`-ban a `0x00484a0c`-`0x00484a2f` sorok `call eax`-ja a `[vtábla+0xd4]` hívás (`ecx = esi`, az alobjektum), argumentumok: a kép-index, `&[esp+0xdc]` (d8), `&[esp+0xcc]` (d4). A `0x00484a31`-`0x00484a57` sorokban ezek a `{0, 0, d8, d4}` rekordba kerülnek, majd `call 0x004985e0`.
+
+**A jelző (megerősített elrendezés).** A munkatétel jelző bájtja (`X+0x14`, a `0x0047b020` szerint az `item+0x10`) a `d4` alsó bájtja. Mivel előtte a `d4 ≠ 0` kapu áll, a jelző csak akkor nulla, ha a `d4` a 256 többszöröse.
+
+**Termelői lánc (direkt hívások, indextől független térkép):**
+
+| cél | direkt hívási hely(ek) |
+|---|---|
+| `0x0047b020` (munkatétel-feldolgozó) | `0x00498933` (a `0x004987c0`-ban) |
+| `0x0045a9d0` | `0x0047e77e` (a `0x0047e470`-ben) |
+| `0x0047e470` | `0x006a12da` (a `0x006a10b0`-ban) |
+| `0x004985e0` (másolat) | `0x0042884d` (a `0x00425f60`-ban), `0x0045b8e8` (a `0x0045a9d0`-ban), `0x00484a57` (a `0x00484820`-ban) |
+| `0x0049d560` | `0x0045b8f7` (a `0x0045a9d0`-ban) |
+| `0x0048e590` | `0x0049002a` (a `0x0048ef20`-ban) |
+
+A `0x0047e470` `param_3` (`cVar2`) képzése csak C-szinten olvasott: a `0x0045a9d0` `param_3 = 0` esetén kötelezően a vtábla-hívást végzi, `param_3 = 1` esetén előbb a `0x0042a440` próbálkozik. Ennek asm-ellenőrzése nincs elvégezve.
+
+**Feltételes: mit jelent a `d4`.** A `d4` a `+0xd4` metódus kimeneti paramétere. Az alobjektum osztálya és a slot célja NINCS MEG. Ha a `d4` a Picasa-vektor alakja (darabszám `<<1`, a 0. bit jelző, mint a `0x0048b840`-nél a `[rekord+4] >> 1`), akkor a jelző a darabszám és a jelzőbit együttes alsó bájtja. Ha csak a darabszám, akkor a képen lévő arcrekordok száma. A jelenlegi bizonyíték a két lehetőséget nem választja szét.
+
+**Cáfoló kísérlet (15.2).** Azt próbáltam megcáfolni, hogy a `+0x14`-et csak a másolat írja. A direkt hívási térkép három másolási helyet ad, más direkt hívású író nincs. A cáfolat gyenge: vtábla- és regiszteres hívásokat a térkép nem lát, a `d4` jelentését pedig nem vizsgáltam.
+
+**Mit mond ez N1-re.** A `0x0047b020` nemnulla ága (`0x0047b031`-`0x0047b049`, megerősített, 45.2) nem futtat képenkénti felismerést. Ez érvényes minden olyan képre, amelynek `d4 & 0xff ≠ 0`. Hogy ez a névvel rendelkező fotókra esik-e, attól függ, mit jelent a `d4`, és ez NINCS MEG. A munkatétel-út és a munkasor kapcsolata sincs lezárva.
+
+**Bizonyítottsági fok.** A rekordelrendezés és a jelzőbájt forrása megerősített (asm, két előállító, egy másoló). A `d4` jelentése feltételes. A munkasor-kapcsolat NINCS MEG.
+
+### 45.21 N3: a Red-betöltés argumentumai és a kép-rekord darabszáma (2026-10-22)
+
+**Megerősített: a betöltő hívói és argumentumai.**
+- A `0x006ccd90` három argumentumot kap (`ret 0xc`). Két hívója van: `0x00871e39` (a `0x00871d70`-ben, közvetlen) és `0x006cccbb` (a `0x006cccb0`-ban, amely a `0x00ca8754` detektor-vtábla 0. slotja, közvetve hívott).
+- A `0x00871e39` hívás csak akkor fut le, ha a `0x00871d70` második argumentuma nulla (`cmp ebp, esi`, `jne 0x00871e4b` a `0x00871e28`-nál). Argumentumai: (1) a `this`, a hívó verem-objektuma (`[esp+0x98]`; a közvetlenül előtte `[esp+0x94]`-re írt vtábla `0x00ca8754`); (2) a hívó objektum `+0x54` mezőjének sztringadata, vagy üres sztring (`0x00c7f979`), ha nulla; (3) a `[0x00d689f0]` globális sztring és a `"plugins"` (`0x00c818c4`) összefűzése (a `0x00408390` hívás, a művelet nincs azonosítva).
+- A `0x006ccd90` csak akkor tölti be a Red-motort (`0x006cc9e0(&0x00d35e40, útvonal)`), ha `[0x00d35e48] = 0` vagy `[0x00d35e44] = 0` (`0x006ccdd0`-`0x006ccde0`). Nemnulla visszatérés: `-1`.
+- Sikeres ág: a REDENTRY-objektum (`[0x00d35e44]`) vtábla 0. slotja, `ecx = REDENTRY`, argumentumok: `this+8` (kimeneti fogantyú) és a 2. argumentum sztringadata (vagy `0x00c7f979`). A visszatérési érték `eax`.
+- Hibaág (`eax = 0`, `0x006ccf34`): `this` vtábla `+0x10` slotja `(20.0, 10000.0)`, a `+0x14` slotja `(45.0)`. Ezek a `0x006cd070` (`"set range"`, `0x00ca872c`) és a `0x006cd0d0` (`"set roll"`, `0x00ca8738`) slotok. Mindkettő a REDENTRY-nek továbbít, és csak akkor, ha `[0x00d35e48] ≠ 0` és `[0x00d35e44] ≠ 0`; különben `-1`.
+- Sikeres fogantyú esetén a 4. és az 5. slot nem hívódik.
+
+**Megerősített konstansok** (`.rdata`, pefile): `0x00cf4974` = 20.0 (`0x41a00000`), `0x00cf4348` = 10000.0 (`0x461c4000`), `0x00cf4c38` = 45.0 (`0x42340000`). Sztringek: `"Red.dll"` `0x00ca8724`, `"plugins"` `0x00c818c4`, üres sztring `0x00c7f979`, `"set range"` `0x00ca872c`, `"set roll"` `0x00ca8738`.
+
+**Mértékegység és szerep: NINCS MEG.** A két float a REDENTRY `set range` és `set roll` metódusának argumentuma. A Red-oldali egység és jelentés (arcméret-tartomány, pixel vagy más) nincs megnézve, ezért a 960 képpontos értékhez nem köthető.
+
+**Cáfoló kísérlet.** Azt vizsgáltam, lehet-e a `set range` (20.0, 10000.0) a 960 px-es méret. Ebből a kötegből ez sem igazolható, sem cáfolható: a betöltő-ág nem tartalmaz 960-as immediate-t, de a Red-oldal `set range` implementációja nincs megvizsgálva, a futásidejű méret pedig a rekordból is jöhet.
+
+**A kép-rekord darabszáma (megerősített a `0x0048e5da` oldalról).**
+- `0x0048e590` (belépés): az 1. argumentum a `this` (`esi`), a 2. a megszakítási jelző (`ebx`), a 4. a kép-rekord (`ebp`). A `0x0048e5cb` `jne` ugyanezekkel az értékekkel ugrik a `0x0048e5da`-ra.
+- `0x0048e5e9`: `call 0x0048b840` (`this`, rekord, jelző).
+- `0x0048e617`: `mov esi, [ebp+4]` és `shr esi, 1`. A kép-rekord darabszáma: `[rekord+4] >> 1`.
+- A rekord elemei dword-ök (`0x0048b840`: `[rekord+0] + i*4`), tehát a darabszám nem képpontméret.
+- A rekordot a `0x0048ef20` építi (a `0x0049002a`-nál hívja a `0x0048e590`-t). A `0x0048ef20` C-kódja nincs a kötegben: NINCS MEG.
+
+**Mit mond ez N3-ra.** A „kép-rekord mérete" a rekord darabszáma (dword-elemek), nem képpont. A 960 px-es méret ebből a láncból nem olvasható ki. A detektor bemeneti mérete és belső küszöbe továbbra is NINCS MEG (45.11, 45.17).
+
+**Bizonyítottsági fok.** A betöltő argumentumai és a konstansok megerősítettek (asm, két hívó, `.rdata`). A `set range` és a `set roll` szerepe feltételes, csak a bináris sztringjeiből következik. A darabszám-képlet megerősített; a rekord eredete NINCS MEG.
+
+### 45.22 Ghidra-kör kérések (új, sorrendben)
+
+- Ghidra-kör kell: 0x0048ef20 - a `0x0048e590` 4. argumentumának (kép-rekord) összeállítása: melyik vektorból, milyen dword-elemekkel, és a `0x0047b149` hívás argumentumai. [blokkoló N3]
+- Ghidra-kör kell: 0x006cc9e0 - a Red-betöltő: a `(&0x00d35e40, útvonal)` argumentumok értelme, és a `0x00d35e44` / `0x00d35e48` beállítása. [blokkoló N3]
+- Ghidra-kör kell: REDENTRY (`0x00d35e44`) vtábla `+0x4c` célja és a kép-doboz kereső slot C-kódja (a 45.18 5. pontja, még nyitva). [blokkoló N3]
+- Ghidra-kör kell: 0x0042a440 - a gyorsítótár-út: honnan adja a `d8` / `d4` párt (hívói: `0x0044844e`, `0x0045b4b5`). [blokkoló N1]
+- Ghidra-kör kell: 0x006a10b0 - a `0x0047e470` hívója: a `this` osztálya, a `+0x48` alobjektum vtáblája, és a `+0xd4` slot célja a `d8` / `d4` kimenettel. [blokkoló N1]
+- Ghidra-kör kell: 0x004841f0 - a `0x0045a9d0` által felépített rekord-vektor (`[esp+0x74]`, a `0x0045b8fc` körül) célja: munkasor-beszúrás vagy `.picasa.ini`-írás. [blokkoló N1]
+- Ghidra-kör kell: 0x0049d560 - a hét dword-os célrekord beszúrása a vektorba: a második argumentum (`local_f4`) szerepe. [blokkoló N1]
+
+### 45.23 Állapot, mérleg, „Kész, ha"
+
+| pont | állapot | mivel |
+|---|---|---|
+| N1 | BLOKKOLT | a jelzőbájt forrása megerősített (45.20); a `d4` jelentése és a munkasor-kapcsolat NINCS MEG; Ghidra-kör a 45.22 szerint (0x004841f0, 0x0049d560, 0x0042a440, 0x006a10b0); a döntő a kétarcú Colab-felvétel (43.4) |
+| N3 | BLOKKOLT, részben | a Red-betöltés argumentumai megerősítettek (45.21); a darabszám-képlet megerősített; a rekord eredete (0x0048ef20), a detektor bemeneti mérete és a 960 px NINCS MEG (45.22) |
+| N7 | BLOKKOLT | változatlan (45.5, 44.3) |
+| N4, N5, N6, N8 | LEZÁRVA | változatlan (36-37. szakasz) |
+
+**A 45.18 kérései:** 1. (`0x0047e470`): a hívó és a `param_3` képzése C-szinten, asm nélkül; 2. (`0x0045a9d0`, `ecx`-ág): a `d4`, megerősített; 3. (`0x00484820`): a `+0xd4` slot célja NINCS MEG (45.22); 4. (`0x006ccd90`): lezárva (45.21); 5. (REDENTRY `+0x4c`): nyitva (45.22); 6. (`0x0048b840`): a darabszám-képlet lezárva, a rekord eredete nyitva (45.21).
+
+**„Kész, ha" pontonként (45.20-45.21):** N1: ✅ a jelzőbájt forrása bináris címekkel (`0x0045b4e5`-`0x0045b8e8`, `0x00484a0c`-`0x00484a57`, `0x004985e0`); ⛔ a `d4` jelentése és a munkasor-kapcsolat. N3: ✅ a betöltő hívói és argumentumai (`0x00871e39`, `0x006ccd90`), a konstansok (`0x00cf4974`, `0x00cf4348`, `0x00cf4c38`) és a darabszám-képlet (`0x0048e617`); ⛔ a detektor bemeneti mérete és a 960 px. N7: ⛔ változatlan.
+
+**Megvalósítandó eltérés:** ebből a körből nincs bizonyított eltérés. A jelzőbájt-szabály és a Red-konstansok ismertek, de a PicasaPy-oldali megfelelő változtatás egyike sincs igazolva. A 0,9-es YuNet-beállítás és a 960 px-es méret összevetése továbbra sem érvényes (45.3, 45.11).
+
+**Nyitott kérdések mérlege (45.20-45.23):** 0 csak nyitva · 3 blokkolt (N1, N3, N7) · 0 hatókörön kívül · 0 lezárva új kérdésből. Helyesbítés: 1 (a 45.16 „célrekord = X" állítása, lásd 45.20).
+
+**Módosított fájlok (45.20-45.23):** `docs/specs/picasa-arcfelismeres.md` (új 45.20-45.23 szakasz a 45. szakasz után; a 45.16 célrekord-állítása helyesbítve). A `docs/specs/00-index.md`-t nem módosítottam, azt a hívó vezeti.

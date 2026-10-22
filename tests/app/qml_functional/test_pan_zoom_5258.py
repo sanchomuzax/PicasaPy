@@ -114,8 +114,12 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     assert varj_feltetelre(
         qt_app, lambda: popup.property("visible"), masodperc=10.0
     ), "a Pan and Zoom választó nem nyílt ki"
+    # a legördülő már látszhat, mielőtt a lista sorai létrejönnek (#5592)
+    assert varj_feltetelre(
+        qt_app, lambda: _lista_sor(lista, 1) is not None, masodperc=10.0
+    ), "a választó listájának sorai nem jöttek létre"
     sor = _lista_sor(lista, 1)
-    assert sor is not None and sor.property("modelData") == "Pan and Zoom"
+    assert sor.property("modelData") == "Pan and Zoom"
     sor_ablaka = sor.window()
     sor_pont = _kozep(sor)
     QTest.mouseClick(
