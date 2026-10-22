@@ -6805,7 +6805,7 @@ Hiányzó címek a következő körhöz: `0x004dca40` (U28: a bejegyzés tartalm
 - „Az `IThumbDB` vtábla slot 11 a `0x004406f0`": CÁFOLVA. Az `IThumbDB::vftable` slot 11 értéke `0x00c07709`.
 - „Az `[L+0x48]` objektum `IThumbDB`": CÁFOLVA a RTTI szerint. A `0x00c81fa4` vtábla `CThumbDB`.
 
-**§9. Frissítés (38.2.45): a 38.2.44 nyitott listája.** A lista 40 tétel: a 34 régi (U1-U34) és hat új (U35-U40). A változásokat a 38.2.45 §1-§5 indokolja.
+**§9. Frissítés (38.2.45): a 38.2.44 nyitott listája.** A lista 40 tétel: a 34 régi (U1-U34) és hat új (U35-U40). A változásokat a 38.2.45 §1-§5 indokolja. **Ezt a listát a 38.2.46 §9 váltja fel (29. kör).**
 
 | tétel | állapot (38.2.45 után) | mit mutat | Ghidra-cím |
 |---|---|---|---|
@@ -6845,7 +6845,7 @@ Hiányzó címek a következő körhöz: `0x004dca40` (U28: a bejegyzés tartalm
 | U34 | NINCS MEG (változatlan) | az OLEAUT32 184. sorszám neve (Windows-os `oleaut32.dll` kell) | IAT `0x00c405c8` |
 | U35 (új) | RÉSZBEN (38.2.45 §1.4) | a név forrása: a regisztráló a rekord `[ebx+5]` szövegmezőjét viszi; a 0xc80d68 literál tartalma és az `ebx` rekord típusa NINCS MEG | adat-olvasás `0x00c80d68`; `0x00985ff0`, `0x004941f0` |
 | U36 (új) | NINCS MEG | `L = [P+0xc4]` írói; a `P` a `0x008018a0` `this+0x2f4` mezője | pásztázás a `+0xc4` írásaira; `[this+0x2f4]` írói |
-| U37 (új) | NINCS MEG | a G-táblák (`[G+0x1c]`, `[G+0x18]`, `[G+0xc]`) feltöltése a `0x004b94a0` 637. sora előtt | `0x004a6dc0` |
+| U37 (új) | NINCS MEG; ⚠️ **HELYESBÍTVE (38.2.46 §2.1):** a `0x004a6dc0` zároló, nem feltöltő | a G-táblák (`[G+0x1c]`, `[G+0x18]`, `[G+0xc]`) feltöltése a `0x004b94a0` 637. sora előtt | `0x004a6dc0` (zároló) |
 | U38 (új) | NINCS MEG | a `0x004baaa0` rendező törzse (a `0x004b94a0` 665. sora) | `0x004baaa0` |
 | U39 (új) | NINCS MEG | a `0x00450100` bemenete: a `0x004502e0` helyi objektumának tartalma; a `0x0049cd60` sorrendje | `0x0049cd60`, `0x004502e0` |
 | U40 (új) | NINCS MEG | a keresőlista elemei (képek vagy albumok) és az író | `0x004db4f0`, `0x004db720` (az album-sorrend.md 2.1 szerint, a kötegen kívül) |
@@ -6946,7 +6946,7 @@ Hiányzó címek: `0x00801915`-`0x00801bc4` (U26); a keresőlista elemeinek ír�
 - „A `0x00450100` a teljes listát összegzi”: **NEM IGAZOLT** (§5).
 
 **§8. Ghidra-címek a következő körhöz.**
-- `0x004a6dc0` (U37): a G-táblák feltöltése, a `0x004b94a0` 637. sora.
+- `0x004a6dc0` (U37): a G-táblák feltöltése, a `0x004b94a0` 637. sora. ⚠️ **HELYESBÍTVE (38.2.46 §2.1):** ez zároló, nem feltöltő.
 - `0x004baaa0` (U38): a rendező törzse, a `0x004b94a0` 665. sora.
 - `0x0049cd60` és `0x004502e0` (U39): a rendezett sorindex-lista szolgáltatója, és a helyi dátum-objektum feltöltése a `0x0045070e` hívás előtt.
 - `0x00801915`-`0x00801bc4` (U26): a K-másolás törzse.
@@ -6958,6 +6958,179 @@ Hiányzó címek: `0x00801915`-`0x00801bc4` (U26); a keresőlista elemeinek ír�
 **Helyesbítések a korábbi szakaszokban (38.2.45).**
 1. 38.2.44 §1.5: a „0x004dca40 tölti ki a bejegyzést” mondat téves, javítva (§1.1).
 2. 38.2.44 §3.8: az 1, 2, 3 értékű írások nem mód-írások, javítva (§3).
+
+#### 38.2.46 Az Időrend bináris feltárása, 29. kör: a név-tábla, a rendezők, a mód-író és a sor-érték (#5401, 2026-10-21)
+
+**Válasz röviden.**
+1. **Q1, a név-tábla és a képhalmaz (U40): RÉSZBEN.** A név-tábla egy `CIndexer` (`L+0x68`). A `0x004db4f0` a `wordhash.dat` fájlba menti, a `0x004db720` onnan tölti be. A listák elemei 4 bájtos egész azonosítók. A binárisban három kulcs-előtag van: `]album:`, `]facealbum:%d` és `]expeople:%d`. Ez albumokra és személyekre utal. Hogy egy bejegyzéshez mely képek tartoznak: **NINCS MEG**. Ghidra-kör kell: `0x004db180` és `0x004db300` (a lista-író függvények).
+2. **Q2, a G-táblák (U37): a feltételezés CÁFOLVA.** A `0x004a6dc0` nem tölt fel táblát, hanem zárol: az `L` objektumot és hét alobjektumát. A G-táblák feltöltése: **NINCS MEG**. Ghidra-kör kell: a `0x004b94a0` 637. sorának előtti hívások.
+   **Q2b, a rendezés (U38): LEZÁRVA.** A `0x004baaa0` egyesítő rendezés 4 bájtos elemekre. A kulcsot a `0x004a7890` hasonlító adja.
+3. **Q3, a 4. mód bemenete (U39): RÉSZBEN.** A `0x0049cd60` növekvő rendezés egy index-listán, dupla kulcs szerint. A `0x004502e0` soronként: a sor listájának minden eleméhez egy FILETIME-ot vesz, azt OLE-dátummá alakítja (`0x0098b650`), és a dátumok tömbjét a `0x00450100` összesítőnek adja. Ennek kimenete a sor értéke. A sor-objektum azonossága (`L`?): **NINCS MEG**.
+4. **Q4, a mód-érték (`L+0xd8`, U33): RÉSZBEN.** A mód-értéket a `0x004b07c0` írja: `[objektum+0xd8] = edx`, `[objektum+0x165] = cl`. Két hívója van: `0x005d9cc0` (mód 2 és mód 0, fix számmal) és `0x005d30f0` (az `edx` forrása: **NINCS MEG**). A `0x0054c4b0` nem mód-író, saját eseménykódot ír. Hogy a mód-író objektum az `L`: **NINCS MEG** (U36).
+5. **Q5, a felhasználó szemével: NINCS MEG.** Ezért nincs ilyen szakasz. Hiányzó cím: a képhalmaz (`0x004db180`, `0x004db300`) és a kártyák másolása (`0x00801915`-`0x00801bc4`, U26).
+
+**Hatókör és módszer.** A bemenet a `2026-10-21-idorend-29.txt` hét címe: `0x004a6dc0`, `0x004baaa0`, `0x0049cd60`, `0x004502e0`, `0x0054c4b0`, `0x004db4f0`, `0x004db720`. Az asm a `pe_dis.cdis`-szel készült. A hívókat, a stringeket, a vtáblát és a függvényméreteket a bináris index adta. Az index a hívásokat függvény-szinten adja, ezért a hívóhelyeket asm-ben kerestem meg. A vtábla-hívások nem látszanak az indexből. Ideiglenes fájl nem készült, a `.bt/` nem jött létre. Kódot nem módosítottam, ezért a CI-őrök nem futottak.
+
+**Bizonyítottsági fok.** Az asm-ből igazolt állítás erős. A dekompilációból jövő állítást jelölöm. A `0x00c7ccf8` konstans értékét olvasással ellenőriztem.
+
+**§1. Q1: a név-tábla és a képhalmaz (U40).**
+
+**§1.1 A tábla és a mentés.**
+- A `CIndexer::vftable` a `0x00c85fc4` címen hat slotot tartalmaz (`data_symbols`: `pointer[6]`). A slotok: `0x004de190`, `0x004db4f0`, `0x004db720`, `0x00a4a070`, `0x00a4a080`, `0x00a4a090` (`rtti`). A `0x00c85fc8` és a `0x00c85fcc` adat-hivatkozásai a `0x004db4f0`-ra és a `0x004db720`-ra mutatnak. Így a `0x004db4f0` a vt+0x04, a `0x004db720` a vt+0x08 slot.
+- `0x004db4f0` (553 bájt, mentés, dekompiláció). Megnyitja a `wordhash.dat` fájlt (`0x009917f0`), kiír egy 4 bájtos értéket (`_DAT_00d678e0`), majd a `this+0xc` szótárat a `0x00704500` írja ki. A zárolása a 38.2.45-ben leírt mintát követi (tulajdonos-szál, számláló, kritikus szakasz).
+- `0x004db720` (449 bájt, betöltés, dekompiláció). A `this+0xc` szótárat a `0x007046e0` olvassa be. Három hibaüzenete van: `Inconsistent dictionary.PoolSize()`, `wordhash.dat file: excess data`, `wordhash.dat: incorrect entity count`. Ellenőrzi, hogy a `this+0x20` értéke `0x10000`, és hogy a fájlban megadott darabszám legalább a legnagyobb listaelem + 1. Ebből következik: a listák elemei egész azonosítók, a fájl pedig tárolja az azonosítók darabszámát.
+
+**§1.2 A kulcs és az előtagok.**
+- A `0x004dca40` keresőt az indexben 17 függvény hívja. Köztük a `0x004406f0` (a kulcs útja, 38.2.45 §1.2), és a CIndexer két belső függvénye: `0x004db180` (378 bájt) és `0x004db300` (487 bájt).
+- Kulcs-előtagok a bináris stringjeiben:
+  - `]album:` (`0x00c811c4`): hívói `0x0041c340`, `0x00440bc0`, `0x004a51f0`, `0x004aca00`, `0x004b94a0`.
+  - `]facealbum:%d` (`0x00c810b4`): hívói `0x00419d10`, `0x0047d2b0`, `0x0055d120`.
+  - `]expeople:%d`: hívói `0x00449a30` és `0x0048c570`.
+  - A `0x004a7890` és a `0x004b94a0` a `]album` és a `]facealbum` szöveget is használja.
+- Az album-kulcs jelenléte igazolt. Hogy az előtag a kulcsba íródik, vagy csak vizsgálatra szolgál: **NINCS MEG**.
+
+**§1.3 A név forrása (U35).**
+- A `0x00c80d68` címen a `token` szó áll (`string_xrefs`; hívói `0x00415790`, `0x009788a0`, `0x00978e40`). A `0x00415790` (CThumbDB konstruktor) ezt tolja a verembe, utána a rekord `+5` szövegmezőjét (`lea eax,[ebx+5]`), majd a `0x00985ff0` sztring-építést hívja. Az eredményt a `0x004941f0` veszi fel az `L+0xaf0` objektumba (38.2.45 §1.4).
+- Az album-sorrend.md szerint ez az album-rekord token-je. A rekord típusa és a `+5` mező tartalma: **NINCS MEG**.
+
+**§1.4 Mely képek (U40).**
+- Az elemek egész azonosítók. Hogy képek vagy albumok azonosítói: **NINCS MEG**.
+- Ghidra-kör kell: `0x004db180` (hívói: `0x00449a00`, `0x00449a30`, `0x00474630`, `0x004755d0`, `0x00483cb0`) és `0x004db300` (hívói: `0x0048c570`, `0x007d6db0`). Mindkettő hívja a `0x004dca40`-et. Melyik ír azonosítót a listába, és milyen azonosítót: **NINCS MEG**.
+
+**§2. Q2: a G-táblák (U37) és a rendezés (U38).**
+
+**§2.1 A `0x004a6dc0` zároló (U37).**
+- Hívóhelyek: `0x004b8ee0` (`0x004b90fd`) és `0x004b94a0` (`0x004b96cd`). Mindkettő előtt `mov eax,[esi+0xc4]` áll (`0x004b96c3`, `0x004b90f3`). Mindkét hívásban a `this` tehát a `[objektum+0xc4]`. A `0x004b94a0`-ban a `P` az objektum, így a `this` ott az `L = [P+0xc4]`.
+- A függvény egy nyolc mutatós őr-struktúrát tölt ki, és zárolja a mutatott objektumokat: `L`, `L+0x8c8`, `L+0x928`, `L+0xbb0`, `L+0xb50`, `L+0xc10`, `L+0xc78`, `L+0xaf0`. A dekompilátum `int*` számolásban adja a mezőket. A bájt-címek: `0x232` = `+0x8c8`, `0x24a` = `+0x928`, `0x2d4` = `+0xb50`, `0x2ec` = `+0xbb0`, `700` = `+0xaf0`, `0x304` = `+0xc10`, `0x31e` = `+0xc78`.
+- Minden zárolás ugyanazt a mintát követi: tulajdonos-szál a `+0x20`, számláló a `+0x24`, kritikus szakasz a `+0x28` mezőben. A törzsében nincs adatírás, csak zárolás (dekompiláció). Ez zároló, nem feltöltő.
+- A G-táblák feltöltője: **NINCS MEG**. Ghidra-kör kell: a `0x004b94a0` 637. sorának hívásai, és az `L+0x8c8`, `L+0x928`, `L+0xb50`, `L+0xbb0`, `L+0xc10`, `L+0xc78` objektumok írói.
+
+**§2.2 A `0x004baaa0` rendezés (U38).**
+- Egyesítő rendezés (alulról felfelé). Az elemek 4 bájtos értékek, a darabszám a lista méretének fele. Előtte egy ellenőrző hívás fut (`0x004bb0e0`).
+- Két elemet így hasonlít: `0x004a7890(param_1[3], második, első)`. Ha az eredmény negatív, a két elem cserélődik. Az egyesítést a `0x004bb040` végzi, a foglalás a `0x0097c5d0`, a felszabadítás a `0x0097caf0`.
+- Hívói: `0x004b8ee0` (`0x004b916b`) és `0x004b94a0` (`0x004b974a`).
+- Mi szerint rendez: a `0x004a7890` kulcsa szerint (38.2.43 §3, ebben a körben nem mérve): bájt-jelző (`G+8`), a sor neve (`0x004a71e0`), a mód-szám (`L+0xd8`), a második név, és a csökkenő jelző (`L+0x165`).
+- LEZÁRVA: a rendező törzse és a hasonlító szerepe igazolt. A kulcs tartalma a 38.2.43-ból van.
+
+**§3. Q3: a 4. mód bemenete (U39).**
+
+**§3.1 A `0x0049cd60` rendező.**
+- Dekompiláció alapján: alulról felfelé egyesítő rendezés 4 bájtos indexekre. A kulcs egy dupla-tömb: `*(double*)(*(int*)param_1[3] + index*8)`. Növekvő sorrend. Egyenlő kulcsnál a régi sorrend marad (stabil).
+- 14 hívóhely: `0x00450122` (a `0x00450100`-ban), `0x007fc4f2` (a `0x007fc4c0`-ban), 8 hely a `0x0088ed40`-ban, 4 hely a `0x00894d50`-ben.
+
+**§3.2 A `0x004502e0` soronkénti érték.**
+- Az első paraméter (`param_1`, a belépéskor `[esp+0xf4]`) egy objektum, és az eredmény ide íródik: `*param_1` (dekompiláció). Az objektum `+0x48` címén beágyazott CThumbDB van, mert az asm ott látja a vtábla-mutatót.
+- Első lépés (asm: `0x00450305`-`0x00450312`): a CThumbDB vt+0x2c hívása a sor kulcsával. Ez a `0x004406f0` (38.2.44 §1). Ez adja a sor listáját, a darabszám a méret fele.
+- Második lépés, ciklus minden elemre (asm: `0x00450618`-`0x00450639`). A ciklus indexe az `edi` regiszterben van (a hurok elejét nem néztem végig).
+  - `eax = [objektum+0x4e8] + 4*edi` (a tömb megfelelő eleme),
+  - ha ez a mutató nulla, `eax = objektum+0x4f0`, különben `eax` maga a mutató,
+  - `eax += 4`, majd `call 0x0098b650`.
+  Vagyis a FILETIME a rekord `+4` mezőjéből jön, vagy a fix `objektum+0x4f4` mezőből, ha a mutató nulla.
+- Harmadik lépés: a `0x0098b650` (87 bájt) FILETIME-ot alakít át. Először egy két paraméteres Windows-hívás (`0x00c403f0`) helyi FILETIME-ot ír, majd egy három paraméteres hívás (`0x00c403e8`), végül a `0x00c405c8` import ad egy double-t. Az alakja (SYSTEMTIME és double kimenet) OLE-dátum átalakítóra utal, a neve U34. Ha a FILETIME mindkét szava nulla, a visszatérés a `0x00c7ccf8` címen álló double: olvasva **949998.0**. Hogy ez mit jelent: **NINCS MEG**.
+- Negyedik lépés: a dátumok tömbje a `0x00450100` bemenete (`lea edx,[esp+0x10]` a `0x00450709` címen). A `[esp+0x10]` a mutató, a `[esp+0x14]` a méret (a darabszám kétszerese). A `0x00450100` kimenete a sor értéke (`0x0045071a`).
+- Hívók: a `0x004a7890` két helyről hívja (`0x004a7e3c`, `0x004a7e4e`), vagyis a hasonlító két sorra külön kiszámolja az értéket.
+
+**§3.3 Mi NINCS MEG (U39).**
+- A `0x004a7890` által átadott objektum azonossága (az `L`?): **NINCS MEG**.
+- A `[objektum+0x4e8]` tömb írója és a `[objektum+0x4f4]` alapértelmezett FILETIME írója: **NINCS MEG**.
+- A `0x00c403f0`, `0x00c403e8` importok neve: az index nem adja, **NINCS MEG**.
+- A `0x00450100` összesítő neve (medián, minimum vagy más): **NINCS MEG** (U31).
+
+**§4. Q4: a mód-író, a hívói és az `L+0xd8` (U33).**
+
+**§4.1 A `0x004b07c0` mód-író** (75 bájt, `ret 4`, asm).
+- Bemenet: az első verembeli argumentum az objektum (`[esp+4]`). A `edx` a mód, a `cl` a csökkenő jelző. Mindkettőt a hívó adja.
+- Lépések: ha az `[objektum+0xd8]` és az `[objektum+0x165]` már egyezik a bemenettel, a visszatérés `0xf4242` (nincs változás). Különben `[objektum+0x165] = cl`, majd `[objektum+0xd8] = edx` (`0x004b07e2`). Ha a `[0xd67668]` globális objektum `+0x102c` mezője nem nulla, meghívja a `0x006dc4c0`-t (neve és hatása: **NINCS MEG**).
+- Tehát az `L+0xd8` mód-értéke és az `L+0x165` csökkenő jelzője ettől a függvénytől jön, ha a mutatott objektum az `L`. Ez egyezik a 38.2.43 §3 szerinti hasonlító kulcsával.
+- A 38.2.44 §3.8 már „register-íróként" nevezte meg. Most az asm mutatja, hogy mindkét mezőt ő írja.
+
+**§4.2 A hívók.**
+- `0x005d9cc0` (7153 bájt, a `thumbui/...` parancsok kezelője). Két hívóhely: `0x005db20c` (előtte `mov edx, 2`, azaz mód 2) és `0x005db26f` (előtte `xor edx, edx`, azaz mód 0). A `cl` a `[objektum+0x165]`-ből jön, az objektum a `[ebx+0x2c0]`. A két hívóhely előtt egy táblabejárás áll (`cmp eax, 0xc96600`, illetve `cmp eax, 0xc96614`). A tábla tartalma: **NINCS MEG**.
+- `0x005d30f0` (171 bájt). Ha a `[edi+0xea0]` nulla, a visszatérés `4`. Különben a `[edi+0x24c]` számláló nő, a `[edi+0x250]` nullázódik, és a `0x004b07c0` hívódik a `[edi+0x2c0]` objektummal. Az `edx` és a `cl` ebben a részben nincs beállítva, a hívótól jön. Hívója az indexben: `0x005cb990`. Az `edx` forrása: **NINCS MEG**.
+
+**§4.3 Amit kizártam a mód-írásról.**
+- `0x0054c4b0` (`[esi+0xd8] = 0`, majd a `0x0054bad0` eseményhurok): a saját objektumának eseménykódja. Hívói: `0x0054c540` (`0x0054c59b`) és `0x00465fd0` (`0x00465fd3`). Nem mód-író.
+- `0x006d2180` (5188 bájt): a `+0xd8` mezőbe a foglalás (`0x0097c810`) és a felszabadítás (`0x0097caf0`) eredménye kerül. Ez puffer-mutató, nem mód.
+- A `mov [reg+0xd8], reg` bájt-keresés 132 találatot adott. Ebből sok hamis (rossz igazítás, SIB-bájtok). Ezeket nem néztem végig, ezért más íróról nincs döntés.
+
+**§4.4 Az `[X+0x2c0]` és az `L`.** A `0x005d9cc0` és a `0x005d30f0` mód-hívása a `[X+0x2c0]` objektumot adja. Hogy ez az `L = [P+0xc4]`: **NINCS MEG** (U36). Ghidra-kör kell: a `0x005d9cc0` eleje (az `ebx` beállítása), a `0x005cb990` (az `edx` forrása), és a `[P+0xc4]` és a `[X+0x2c0]` összevetése.
+
+**§5. Q5: a felhasználó szemével.** Nincs ilyen szakasz, mert a kérdés nem dőlt el. Hiányzó cím:
+- a képhalmaz írója: `0x004db180` és `0x004db300` (U40),
+- a kártyák másolása: `0x00801915`-`0x00801bc4` (U26),
+- a G-tábla feltöltője: a `0x004b94a0` 637. sora előtt (U37).
+
+Ami már áll: a kattintás a kulcsot a név-táblából keresi ki (38.2.45 §6), és a találat egész azonosítók listája. Hogy ezek képek vagy albumok azonosítói: **NINCS MEG**.
+
+**§6. Helyesbítések a korábbi szakaszokban.**
+1. A 38.2.45 §8 és a 38.2.44 §9 U37 sora azt írta, hogy a `0x004a6dc0` a G-táblák feltöltése. Ez téves: zároló (§2.1). ⚠️ HELYESBÍTVE a két helyen.
+
+**§7. Amit KIZÁRTAM (38.2.46).**
+- „A `0x004a6dc0` tölti a G-táblákat”: **CÁFOLVA** (§2.1).
+- „A `0x0054c4b0` vagy a `0x0054bad0` írja az Időrend módját”: **CÁFOLVA** (§4.3).
+- „A `0x006d2180` írja a `+0xd8` mód-mezőt”: **CÁFOLVA** (§4.3, puffer).
+- „A `0x0049cd60` a 4. mód összesítője”: **CÁFOLVA**, ez rendező (§3.1).
+
+**§8. Ghidra-címek a következő körhöz.**
+- `0x004db180` és `0x004db300` (U40): a `0x004dca40` két belső hívója. Írnak-e listát, és mit (képet vagy albumot).
+- `0x00449a00`, `0x00449a30`, `0x00474630`, `0x004755d0`, `0x00483cb0`, `0x0048c570`, `0x007d6db0`: a két belső függvény hívói. Ezek adják be az azonosítókat.
+- `0x0041c340` (U40, U35): a `]album:` és a `]album` szövegek egyik hívója.
+- `L+0x8c8`, `L+0x928`, `L+0xb50`, `L+0xbb0`, `L+0xc10`, `L+0xc78` (U37): a G-táblák feltöltője, a `0x004b94a0` 637. sora előtt.
+- `0x00c7ccf8` (949998.0): a nulla FILETIME jelentése (U39).
+- `0x00450100` (U31): a statisztika neve.
+- `0x005cb990` (U33): a `0x005d30f0` hívója, az `edx` forrása.
+- `0x005d9cc0` eleje (U36): az `ebx` és a `+0x2c0` mező azonossága az `L`-lel.
+- `0x006dc4c0` (U33): a mód-író frissítése.
+- `0x0054c540` (U33): a `0x0054c4b0` `esi` objektumának azonossága. Ez nem mód-író, csak a kontextus kell hozzá.
+
+**§9. Nyitott lista (38.2.46), a 38.2.44 §9 helyett.**
+
+Nyitott kérdések mérlege (38.2.46): 40 tétel · 6 lezárva · 16 részben · 18 nincs meg.
+
+| U | állapot | mit mond most | cím |
+|---|---|---|---|
+| U1 | NINCS MEG (változatlan) | a `0x00a6aa00` teljes törzse | `0x00a6aa00` |
+| U2 | RÉSZBEN (változatlan) | az obj2 osztálya és a vt+0 cél | `0x005e8a70`, `M+0x4c` vt+0 |
+| U3 | RÉSZBEN (változatlan) | az `L` osztálya és írója még nincs igazolva | `0x00402f90` (kész), U36 |
+| U4 | NINCS MEG (változatlan) | a `0x008014d0` vt+0 hívott függvénye | `0x008014d0` |
+| U5 | NINCS MEG (változatlan) | a `[this+0x2ec]` olvasói | pásztázás |
+| U6 | NINCS MEG (változatlan) | a `0x009aaae0` hívóhelyei | `0x009aaae0` |
+| U7 | LEZÁRVA (38.2.41 §1) | a sorrekord `+0x14` írója | - |
+| U8 | NINCS MEG (változatlan) | a `P' = [T+0x3a4]` írója | `0x007fa7f0` |
+| U9 | LEZÁRVA (38.2.41 §2-3) | a kattintási ág | - |
+| U10 | RÉSZBEN (változatlan) | a `0x004b8470` hívója és az `[L+0x148]` írói | `0x004b8ee0` |
+| U11 | RÉSZBEN (változatlan) | az `L` osztálya, `+0xc == 2`, `jbe` | `0x004b29d0` |
+| U12 | NINCS MEG (változatlan) | az EBP/EBX forrása a hívottakban | `0x004b2e10`, `0x004b3770`, `0x004b80d0` |
+| U13 | RÉSZBEN (változatlan) | a `0x007fc010` | `0x007fc010` |
+| U14 | RÉSZBEN (változatlan) | a `0x008014d0` törzse | `0x008014d0` |
+| U15 | NINCS MEG (változatlan) | a startbutton vt+0x18 | `0x007fa7f0` |
+| U16 | RÉSZBEN (38.2.46 §2.2, §3.1) | a rendezők és a szűrő szerepe igazolt; a G-táblák feltöltése NINCS MEG | `0x004b94a0`, `0x004baaa0`, `0x0049cd60`, U37 |
+| U17 | NINCS MEG (változatlan) | a `0x004b8d00` | `0x004b8d00` |
+| U18 | NINCS MEG (változatlan) | az `E` görbe | `0x005568e0` |
+| U19 | NINCS MEG (változatlan) | a rekord-utólagos és a ciklus-utáni lépés | `0x007fa650`, `0x00604480` |
+| U20 | NINCS MEG (változatlan) | a kártya-rekord építése | `0x007fa5b0` |
+| U21 | LEZÁRVA (38.2.43 §2) | a `CSlice` konstruktor és a destruktor-lánc | `0x004133e0`, `0x00413490` |
+| U22 | RÉSZBEN (38.2.45 §1.2) | a `0x004406f0` a vt+0x2c cél; a `[L+0x48]` vtábla `0x00c81fa4`-e még nincs újra igazolva | `0x00402f90`, U36 |
+| U23 | LEZÁRVA a törzs (38.2.44 §2); a forrás U30 | a sor neve: két tábla-lépés, a cella név-objektumra mutat | `0x004a71e0` |
+| U24 | RÉSZBEN (38.2.46 §3.2) | a 4. mód soronkénti értéke igazolt (FILETIME, OLE-dátum, `0x00450100`); az 1. és a 0. mód NINCS MEG | `0x004502e0`, `0x00450bd0` (U32) |
+| U25 | NINCS MEG (változatlan) | a négy `0x00987030` hívás a két üres-név ágban | `0x00987030` |
+| U26 | NINCS MEG (változatlan) | a K-másolás törzse | `0x00801915`-`0x00801bc4` |
+| U27 | NINCS MEG (változatlan) | az `M+0x64c` és `M+0x650` írása | `0x005e8a70` |
+| U28 | LEZÁRVA (38.2.45 §1) | a kulcs NÉV: a tömbindex után a `0x004dca40` név szerinti keresése | `0x004dca40`, `0x004406f0` |
+| U29 | RÉSZBEN (38.2.45 §2) | a `[X+0x1034]` CThumbDB írója LEZÁRVA; az `L` írója U36 | `0x00402f90`, U36 |
+| U30 | RÉSZBEN (38.2.45 §4) | a G-szerep LEZÁRVA; a táblák feltöltése NINCS MEG | `0x004b94a0`, U37 |
+| U31 | RÉSZBEN (38.2.46 §3.2) | a bemenet igazolt (`0x004502e0`); a statisztika neve NINCS MEG | `0x00450100` |
+| U32 | NINCS MEG (változatlan) | az 1. mód összesítője | `0x00450bd0` belső ága |
+| U33 | RÉSZBEN (38.2.46 §4) | a mód-író a `0x004b07c0` (`edx` = mód); hívói `0x005d9cc0` (2 és 0) és `0x005d30f0` (az `edx` forrása NINCS MEG); az objektum azonossága U36 | `0x004b07c0`, `0x005cb990` |
+| U34 | NINCS MEG (változatlan) | az OLEAUT32 184. sorszám neve (Windows-os `oleaut32.dll` kell) | IAT `0x00c405c8` |
+| U35 | RÉSZBEN (38.2.46 §1.3) | a literál szövege `token`; a rekord `+5` mezőjének típusa és a név tartalma NINCS MEG | `0x00415790`, `0x00985ff0`, `0x004941f0` |
+| U36 | NINCS MEG | az `L = [P+0xc4]` írói, és hogy a mód-író `[X+0x2c0]` objektuma az `L` | pásztázás; `0x005d9cc0` eleje; `0x005cb990` |
+| U37 | NINCS MEG (feltételezés CÁFOLVA, 38.2.46 §2.1) | a G-táblák feltöltője; a `0x004a6dc0` zároló | `0x004b94a0` (637. sor előtt), `L+0x8c8`, `L+0x928`, `L+0xb50`, `L+0xbb0`, `L+0xc10`, `L+0xc78` |
+| U38 | LEZÁRVA (38.2.46 §2.2) | egyesítő rendezés 4 bájtos elemekre; a kulcsot a `0x004a7890` hasonlító adja | `0x004baaa0`, `0x004a7890` |
+| U39 | RÉSZBEN (38.2.46 §3) | a `0x0049cd60` rendező és a `0x004502e0` soronkénti érték igazolt; a sor-objektum és a `[obj+0x4e8]` tömb írója NINCS MEG | `0x0049cd60`, `0x004502e0`, `0x00c7ccf8` |
+| U40 | RÉSZBEN (38.2.46 §1) | a név-tábla `CIndexer`, a fájl `wordhash.dat`, az elemek egész azonosítók, az előtagok `]album:`, `]facealbum:%d`, `]expeople:%d`; a képhalmaz NINCS MEG | `0x004db180`, `0x004db300` |
+
+A 38.2.44 §9 listáját ez a lista váltja fel.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
