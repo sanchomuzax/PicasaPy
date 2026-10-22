@@ -10713,7 +10713,7 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_UPLOAD</extracomment>
             <source>Upload to a Collaborative Web Album</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_COLLAB</extracomment>
-            <translation>Subir a un álbum conjunto de Álbumes web de Picasa</translation>
+            <translation>Subir a un álbum web colaborativo</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2441" />
