@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.183] - 2026-10-22
+
+- A változásnapló őre ellenőrzi a darabok sorformáját, és a verzióemelő hibás darabnál nem emeli a verziót (#5507).
+
 ## [0.9.182] - 2026-10-22
 
 - A név szerinti rendezés ékezeteknél és hosszú számsorozatoknál a Picasa bájtszintű kulcsát követi (#5504).
