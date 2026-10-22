@@ -5358,7 +5358,7 @@ A `runtime/contactmgr.fen` listaelem-leírása nem ad meg kijelölési módot. A
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 44. szakasz: a `0.50`-es javaslati határ és N1/N3/N7 állapota).
 
-## 45. #5184, helyi Claude-munkás kutatói kör: a munkasor-csomópont, a két küszöb és a Red-belépések (2026-10-22)
+## 45. #5184, helyi kutatói kör: a munkasor-csomópont, a két küszöb és a Red-belépések (2026-10-22)
 
 **Hatókör.** A N1, N3 és N7 pont. A 43-44. szakasz Ghidra-kérései közül a `0x0047b020`, `0x0048ef20`, `0x006cde50` útját vizsgáltam. A `0x100057c0` és `0x10001570` C-kimenete a 2026-10-22-i privát Ghidra-köteg (`referencia/ghidra/2026-10-22-ghidra-sor-158-198*.txt`); a többi címet diszasszemblálással (`annot_disasm.py`) és korlátos `.text`-pásztázással (`paszta.py`, `memoria_kapu()` első műveletként) ellenőriztem. Futó Colab-mérés nem állt rendelkezésre.
 
