@@ -8776,7 +8776,7 @@ Belépés: `stdcall`, `ret 0x10`. Verem-argumentumok: `[ebp+8]` a `this` (`P+0xf
 
 ##### §3 Q3: a `[X+0x3094]` és a `[X+0x30a0]` írói
 
-**Módszer.** `paszta.utasitasok(detail=False)` a teljes `.text`-en, 2884879 utasítás. Találat: `+0x3094` 127, `+0x30a0` 44. Írásnak számít, ha a memória-operandus az első operandus, és a mnemonic nem `cmp`, `test`, `push`, `call`, `jmp`, `lea` vagy `bt`. Ebből írás: `+0x3094` nyolc, `+0x30a0` négy.
+**Módszer.** `paszta.utasitasok(detail=False)` a teljes `.text`-en, 2884879 utasítás. Találat: `+0x3094` 127, `+0x30a0` 44. Írásnak számít, ha a memória-operandus az első operandus, és az utasítás neve nem `cmp`, `test`, `push`, `call`, `jmp`, `lea` vagy `bt`. Ebből írás: `+0x3094` nyolc, `+0x30a0` négy.
 
 | író | mező (bázisregiszter) | írt érték | címek | hívó |
 |---|---|---|---|---|
