@@ -10693,7 +10693,7 @@ picasapy-origin-key: stringres:eMenuFile::ID_GETMYSTUFF_ES</extracomment>
             <source>Upload to Google &amp;Photos</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_UPLOAD</extracomment>
-            <translation>Google 포토에 업로드</translation>
+            <translation>Google 포토에 업로드(&amp;P)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2435" />

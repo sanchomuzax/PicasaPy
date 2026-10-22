@@ -10719,7 +10719,7 @@ picasapy-origin-key: stringres:eMenuFile::ID_GETMYSTUFF_ES</extracomment>
             <source>Upload to Google &amp;Photos</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_UPLOAD</extracomment>
-            <translation>Įkelti į „Google“ nuotraukas</translation>
+            <translation>&amp;Įkelti į „Google“ nuotraukas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2435" />
