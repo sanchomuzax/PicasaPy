@@ -4525,6 +4525,11 @@ Ez a „Névjegyek frissítése” (Refresh Contacts) ág, nem törlés. A `0x00
 
 2026-10-21-i állapot: a `0x00495be0` betöltési útja és a `0x006a5590` adatírása a 41. szakaszban lezárva. Az Ignore Person adatkulcsa ott nyitott marad; a következő cél a `0x006a0d30` által használt vektor tárolási útja.
 
+**Lezárva (2026-10-21, 42.4):** a `0x00495be0` a `CColumn<unsigned___int64,1,322043908>::vftable` 6. slotja (`0x00c8230c`, slotcím `0x00c82324`). Ha a `param_1+0x54` még nulla, zárolás alatt meghívja a `0x00499610`-t (`0x00495c3f`); ez a lusta oszlop-lookup kiváltója. Ez önmagában nem jelenti, hogy minden esetben fájlt olvas: a `.pmp` betöltés továbbra is a 37.9/b-ben leírt rekordállapottól függ.
+
+**Visszavonva a #5184 szempontjából (2026-10-21, 42.4):** a `0x0056c5a0` a `ID_IGNOREPEOPLE` feliratot és menüpont-állapotot kezeli, nem bizonyított kattintáskezelő. A `0x1332000x` írókulcs **NINCS MEG**; az N5-öt lezáró felvétel szerint a People Managerben és a személyalbum menüjében nincs személyszintű mellőzés, ezért ez a kulcs nem szükséges az N5 válaszához. Nem állítom, hogy a függvényben látható minden közvetett ág írói lánca ismert.
+Ghidra-kör kell: 0x006a5590 zárblokkja (`0x006a5691`-`0x006a572a`): a `+0x284` objektum adatmezőinek írója [nem blokkoló]
+
 **Colab-javaslat (futásidejű adat, a `behavior` feladathoz a tulajdonos `jovahagyva` címkéje kell).**
 1. Új, üres mappa két képpel; az egyik a „Teszt Elek” személyhez tartozik (`PicasaTeszt`).
 2. Az első lépés előtt másolat a `.picasa.ini`-ról és az `albumdata_albumcontactids` (db3/pmp) fájlról.
@@ -4930,8 +4935,8 @@ Az N1-hez rögzíteni kell egy fotót, amelyen egy arc már névvel szerepel és
 
 | Pont | Állapot | Bizonyíték |
 |---|---|---|
-| N1, névvel ellátott fotón további ismeretlen arc | ⛔ Nyitott | A statikus felismerési út nem mutat közvetlen névszűrőt, de a futás eredménye NINCS MEG; §40.1. |
-| N3, eredeti felismerési arány, küszöb és méret | ⛔ Nyitott | A Red rutin pontszámot gyűjt, a callback döntése, mérete és a mérési arány NINCS MEG; §40.2. |
+| N1, névvel ellátott fotón további ismeretlen arc | ⛔ Nyitott | A `0x0047b020` munkatétel `+0x10` jelzője miatt a képenkénti út elmaradhat; hogy ez névvel jelölt fotót kizár-e, NINCS MEG; §41.1. |
+| N3, eredeti felismerési arány, küszöb és méret | ⛔ Nyitott | A `0x100057c0` callback-pontszámokat rangsorol; a callback döntése, a bemeneti méret és a mérési arány NINCS MEG; §41.2. |
 | N4, alapértelmezett keret és név | ✅ Lezárt | Job-187: a névvel ellátott arcon alapból nincs keret és név; §39. |
 | N5, személyszintű mellőzés | ✅ Lezárt | Job-222..226 és §37.11: ilyen funkció nincs, a mellőzés arcszintű. |
 | N6, személy törlése | ✅ Lezárt | Job-222/224 és §37.10: a `faces=` adat törlődik, a `[Contacts2]` sor megmarad, a Mégse az alapértelmezett; javítás #5391. |
@@ -4943,8 +4948,8 @@ Az N1-hez rögzíteni kell egy fotót, amelyen egy arc már névvel szerepel és
 **Fejlesztési következmény:** nincs bizonyított eltérés az eredeti Picasa és a PicasaPy között az N1, N3 vagy a People Manager N7 ponton, ezért fejlesztői jegy és kódlista nem indokolt. Új kutatási jegy sem szükséges: a megmaradt kérdések a #5184-ben vannak.
 
 **Nyitott:**
-- `Ghidra-kör kell: 0x100057c0 - a vtable +0x40 callback célja, a confidence elfogadási feltétele és a Red bemeneti méretét beállító hívó [blokkoló]`
-- `Ghidra-kör kell: 0x004987c0 - a 0x0047b020 munkatételének mezői és előzetes, személyhez kötött kizárása`
+- `Ghidra-kör kell: 0x100057c0 - a [param_3+8]+0x74 objektum vtable +0x40 callbackjének tényleges célja, a döntési küszöb és az azt beállító méret-adat útja; a Picasa3.exe hívó 0x006cde50 [blokkoló]`
+- **A munkaszál útja részben feltárt (41.1):** a `0x004987c0` és `0x0047b020` C-dumpja megadja a sorba állítás és a képenkénti hívás útját, de a munkatétel `+0x10` jelzőbájtjának jelentése NINCS MEG. Az eredmény arról, hogy a már megnevezett fotón a futó eredeti talál-e további arcot, Colab-felvételt igényel.
 - Colab-felvétel kell N1-hez, az eredeti felismerési arányhoz és mérethez, valamint a People Manager és Név nélküliek Ctrl/Shift viselkedéséhez.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (40. szakasz); `docs/specs/00-index.md` (#5184 friss állapota). Kódhoz és tesztekhez nem nyúltam.
@@ -5015,3 +5020,75 @@ A `0x006a5590` a `0x006a41e0` lookupot `0x13320004` kulccsal hívja (`0x006a55fc
 - Az Ignore Person kör Colab-felvétele a 0x9c9a parancs után a `.picasa.ini`, PMP és db3 változásával együtt kell, ha a bináris virtuális útja nem zárható le.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (37.9/b helyesbítés és 41. szakasz). Kódhoz és tesztekhez nem nyúltam.
+
+## 42. #5184, helyi Codex-kutatói kör (2026-10-21): a munkatétel, a Red.dll és a kijelölés
+
+**Keret.** A vizsgált Ghidra-bemenet: `/tmp/claude-1000/-home-sancho-Documents-PicasaPy/d86876a8-e263-4853-bac9-646a0ac9656a/scratchpad/2026-10-21-arc-5184.txt`, benne a `0x004987c0`, `0x0047b020`, `0x00495be0` és `0x0056c5a0` függvényekkel. A `Red.dll` helyben olvasható, ezért a `0x100057c0` célfüggvényt a helyi `pefile` és Capstone eszközzel, kizárólag a célcím környezetében diszasszembláltam. A mérőadat-archívum fájllistájában a `5184`, `5185`, `face`, `person`, `people` és megadott job-minták egyikére sem találtam illő nevet; nem bontottam ki semmit, `.bt` ideiglenes fájl nem készült. GitHubhoz, kódhoz és tesztekhez nem nyúltam.
+
+### 42.1 N1: a munkatétel állapotjelzője és a tényleges arctalálat nyitott
+
+**A munkasor útja.** A `0x004987c0` leemel egy sort a belső munkasorból, majd a `0x00498933` helyen meghívja a `0x0047b020`-t. A munkaszál-kezelőben nem látható név vagy kontakt-azonosító összehasonlítás. A `0x0047b020` a munkatétel nem-nullaságát és állapotmezőit ellenőrzi. Ha a bájt `+0x10` nem nulla, `0x0048bd80`-at hív és visszatér; a nulla ág továbblép a további kapukhoz. Az `+0x10` bájt jelentése és írója NINCS MEG. Az engedélyező `FRAddSuggesetions` ág a `0x0048ef20` képenkénti útvonalat hívja (`0x0047b149`). A teljes, 379 bájtos helyi diszasszemblálás megerősíti az állapotvizsgálatot, az ágakat és a `0x0048ef20` hívását. Forrás: a Ghidra-dump `0x004987c0` része, 22-203. sor; `0x0047b020` része, 222-291. sor; bináris `0x0047b020` `0x0047b020`-tól `0x0047b19a`-ig.
+
+**Korlát.** A vizsgált kódban nincs közvetlen név- vagy kontakt-azonosító összehasonlítás, de az ismeretlen jelentésű `+0x10` jelző a `0x0048ef20` hívása előtt másik ágra visz. Ezért nem állapítható meg, hogy a már megnevezett fotót kizárja-e, és az sem, hogy a `0x0048ef20` eredménye új, név nélküli arcot tartalmaz-e. N1 végső válasza **NINCS MEG**. Döntő mérés: ugyanazon fotó, egy névhez rendelt arccal és egy külön név nélküli arccal; rögzíteni kell az eredeti találatot és az előtte/utána `faces=` sort, kontrollként ugyanazt a fotót korábbi arckijelölés nélkül is futtatva.
+
+**Bizonyítottság.** A két vizsgált függvény vezérlési útja **feltételes**: a Ghidra C-dump és a helyi diszasszemblálás egyezik, de ugyanazt a bináris utat mutatja, tehát nem két független bizonyítás. Az `+0x10` írója, a jelző jelentése és az N1 runtime-eredménye **nyitott**.
+
+### 42.2 N3: a Red.dll elérhető, a `0x100057c0` pontszám-rendező, nem a végső küszöb
+
+**A Red.dll rutinja.** A DLL kép-alapcíme `0x10000000`; a `0x100057c0` a `.text` szakaszban van. A rutin két tömbön jár, jelöltenként meghívja a `[param_3+8]+0x74` objektum `vtable+0x40` slotját (`0x10005847`-`0x10005859`), a visszakapott lebegőpontos értékek közül a legnagyobbat választja, és azt a kimeneti tömbbe írja (`0x100058d2`-`0x100058d8`). A `0x100057c0`-tól `0x1000590d`-ig tartó vezérlési útban nincs olyan konstans-összehasonlítás, amely elfogadási küszöböt adna, és nincs képméretező művelet. Ez a rutin az értékeket rangsorolja; a detektor elfogadási döntését és bemeneti képméretét nem adja meg.
+
+**Hívási lánc.** A Picasa3.exe `0x006cde50` a Red objektum `vtable+0x44` metódusát hívja (`0x006cdf03`-`0x006cdf06`). A Red.dll `0x101aadc4` vtable-jének `+0x44` bejegyzése `0x10001570`; ez a csomagoló a `0x100057c0`-t hívja (`0x100015a2`). A Picasa oldali hívó tehát azonosított, de a callback tényleges célja és az azt vezérlő méretadat forrása **NINCS MEG**.
+
+**N3 eredmény.** Az eredeti felismerési küszöb, bemeneti méret és pontos felismerési arány **NINCS MEG**. A Picasa Preferences oldali `FRSuggestionSingleThreshold=0,90` (`0x0048ac6f`) nem azonosítható a Red callback küszöbével; a `FRRecommendIncludeLimit=0,50` (`0x0048ad46`, összehasonlítás a `0x0048e33e` helyen) külön ajánlás-szűrő. Arányhoz továbbra is azonos, tételes képkészlet és képenkénti nyers eredmény kell mindkét programból.
+
+**Bizonyítottság.** A Red-rutin pontszámgyűjtő szerepe **megerősített**: az utasításszintű olvasatot a Picasa3.exe hívási útja és a Red vtable-bejegyzése támasztja alá. A N3 termékértékei ettől még **nyitottak**.
+
+### 42.3 N7: a People Manager listájának kijelölési módja felvételt igényel
+
+A `runtime/contactmgr.fen` `contacts` listája csak a nevet, szélességet, magasságot, függőleges görgetést, rejtett fejlécet és egy oszlopot deklarálja (`10-13. sor`). Nincs benne kijelölési módot megadó attribútum. Ez a a Picasa saját erőforrás-leírója, nem natív `LVS_SINGLESEL` bit, ezért a hiányzó attribútumból nem következtetek egyszeres kijelölésre. A job-186 24. képe egy kiválasztott személyt mutat, de nem próbál második sort kijelölni. **N7 People Manager ága NINCS MEG**; kell a felvétel legalább két személlyel, külön Ctrl-kattintással és külön Shift-kattintással, kijelölt sorokkal és a `Delete Person` állapotával. A törlést Mégsével kell megszakítani.
+
+**Bizonyítottság.** A Név nélküliek többes kijelölése külön már igazolt (`0x006470d0`, job-180); ez nem dönti el a People Manager listáját. A People Managerre vonatkozó státusz **nyitott**.
+
+### 42.4 A korábbi Ghidra-kérések lezárása és az N5 határa
+
+- **`0x00495be0`: lezárva.** A Ghidra-dump 305-363. sora és a helyi diszasszemblálás egyezően mutatja, hogy a `param_1+0x54 == 0` feltétel alatt hívja a `0x00499610`-t (`0x00495c3f`). Az index RTTI-adata a `0x00495be0` címet a `CColumn<unsigned___int64,1,322043908>::vftable` (`0x00c8230c`) 6. slotjához rendeli; a hivatkozás `0x00c82324`. A hívás a `0x13320004` kulcsú oszlop lusta lekéréséhez tartozik, nem bizonyít minden esetben fájlolvasást. A 37.9/b-ben leírt rekordállapot szabály marad érvényben.
+- **`0x0056c5a0`: a #5184 N5 kéréséből visszavonva, nem kulcsértékkel megválaszolva.** A Ghidra-dump 864-889. sora `ID_IGNOREPEOPLE` feliratot tölt be és menüpontokat engedélyez vagy tilt; ez menü-állapot frissítés, nem azonosított kattintáskezelő. Az N5 termékállítását a job-222..226 felvételei zárják le: a személyalbum menüjében és a People Managerben nincs személyszintű mellőzés, a mellőzés arcszintű. A `0x1332000x` írókulcs értéke továbbra is **NINCS MEG**, de az N5 lezárásához nem szükséges. A kódolt menüpont esetleges másik felülethez tartozó tárolási útja külön kérdés lenne, ezért nem nyitok hozzá új jegyet ebben a körben.
+
+### 42.5 Bizonyítottsági fok, független utak és cáfoló próbák
+
+**Összesített fok: nyitott.** A `0x00495be0` feltételes lookupja és a Red.dll `0x100057c0` pontszám-összesítő útja binárisból megvan. N1 teljes felismerési kimenete, N3 küszöbe/mérete/aránya és N7 People Manager kijelölési módja mérés nélkül nem dönthető el.
+
+- **A út, N1:** a Ghidra C-dump `0x004987c0` és `0x0047b020` törzse megmutatja a munkasort, a `+0x10` jelző elágazását és a `0x0048ef20` hívást.
+- **B út, N1:** a helyi diszasszemblálás megerősíti a `0x0047b020` állapotvizsgálatát és hívási sorrendjét. Ez ugyanannak a bináris kódnak más megjelenítése, nem független út. A két nézet egyezik a vezérlési folyamatról, de a jelző jelentéséről és az eredeti futás eredményéről nem ad bizonyítékot.
+- **A út, N3:** a Red.dll `0x100057c0` helyi utasításai a callback pontszámok maximumát választják.
+- **B út, N3:** a Red.dll `0x101aadc4` vtable-adat, `0x10001570` csomagoló és Picasa3.exe `0x006cde50` hívó egymástól külön PE-adatokkal és utasításokkal igazolja a hívási láncot. Egyik út sem ad küszöböt, méretet vagy felismerési arányt.
+- **A út, `0x00495be0`:** a C-dump a null `+0x54` kaput és a `0x00499610` hívást mutatja.
+- **B út, `0x00495be0`:** a teljes helyi diszasszemblálás ugyanezt a feltételt és hívási címet adja; az index RTTI-je a metódust a megfelelő `CColumn<unsigned___int64,1,322043908>` vtable-hez rendeli.
+
+**Cáfoló kísérletek.**
+
+1. **N1:** megpróbáltam a munkatétel útjából következtetni arra, hogy a névvel ellátott fotó mindig felismerésre kerül. A `+0x10` bájt nem nulla ága a `0x0048bd80` hívása után visszatér; a jelző jelentése és írója nincs meg. A biztos feldolgozásra vonatkozó következtetés nem áll meg. Az ellenőrzés azonos statikus útból származik, az eredeti runtime-kimenetet nem cáfolja.
+2. **N3:** megpróbáltam a `0,90` Preferences értéket a Red küszöbével azonosítani. A Red rutin csak a callback értékeket rangsorolja, a Picasa `0,90` külön preferenciaágban olvasott érték; az azonosságot semmi nem támasztja alá. A `0x100057c0` kódjában nincs képméretet beállító ág sem.
+3. **N7:** megpróbáltam a job-186 egy kiválasztott sorából egyszeres kijelölésre következtetni. A felvétel nem tesztel második sort, a `.fen` nem ad kijelölési módot; a feltevés nem igazolható.
+4. **N5 / `0x0056c5a0`:** megpróbáltam ezt az állapotfrissítőt a `0x1332000x` oszlop írójának tekinteni. A C-dump csak a `ID_IGNOREPEOPLE` menüfelirat és állapot kezelését mutatja; a függvény nem adja meg a kattintáskezelőt vagy a tartós kulcsot. A job-222..226 mérések a #5184 N5 kérdését ettől függetlenül lezárják.
+
+### 42.6 A #5184 „Kész, ha” pontjai és fejlesztési következmény
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| N1, névvel ellátott fotón új, ismeretlen arc | ⛔ Nyitott | A munkatétel `+0x10` jelzője megkerülheti a `0x0048ef20` hívást; a jelző jelentése és az eredeti futás eredménye NINCS MEG; kell a kontrollált Colab-felvétel. |
+| N3, eredeti felismerési arány, küszöb és bemeneti méret | ⛔ Nyitott | A `0x100057c0` max pontszámot választ; a callback döntése, bemeneti mérete és mért aránya NINCS MEG. |
+| N4, alapértelmezett keret és név | ✅ Lezárt | Job-187: a névvel ellátott arcon alapból nincs keret és név. |
+| N5, személyszintű mellőzés | ✅ Lezárt | Job-222..226: nincs személyszintű mellőzés a vizsgált személyalbum- és People Manager felületen; az arc mellőzése a csempe művelete. |
+| N6, személy törlése és az arcok | ✅ Lezárt | Job-222/224: a `faces=` adat törlődik, a `[Contacts2]` sort megtartja; a javítás a #5391-ben ment ki. |
+| N7, kijelölési modell | ⛔ Részben nyitott | Név nélküliek: többes kijelölés igazolt (`0x006470d0`, job-180). People Manager: Ctrl/Shift felvétel kell. |
+| N8, People Manager referencia | ✅ Lezárt | Job-186, 24. kép: a 631×351 ablak és vezérlői rögzítve. |
+
+**Fejlesztési következmény.** N1, N3 és N7 esetén nincs mért eltérés az eredeti és a PicasaPy között, mert az eredeti viselkedés nincs teljesen megmérve. Ezért most nem indokolt fejlesztői jegy vagy `Eredeti / nálunk / teendő` kódlista. A következő lépések a #5184-hez tartozó Colab-felvételek; új kutatási jegy nem kell.
+
+**Nyitott:**
+- N1: `Ghidra-kör kell: 0x0047b020 - a munkatétel +0x10 állapotbájt írójának azonosítása és jelentése; kizárhatja-e a névvel ellátott fotót a képenkénti felismerési útból? [blokkoló]`; továbbá Colab-felvétel névhez rendelt és név nélküli arccal ugyanazon fotón, kontrollfutással.
+- N3: `Ghidra-kör kell: 0x100057c0 - a [param_3+8]+0x74 objektum vtable +0x40 callbackjének tényleges célja, az elfogadási küszöb és a bemeneti méretet adó út [blokkoló]`; továbbá összehasonlító Colab-futás tételes képkészleten.
+- N7: Colab-felvétel legalább két személlyel, Ctrl- és Shift-kijelöléssel.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (a 37.9-es régi Ghidra-kérések státusza, a 40.4-es nyitott lista és az új 41. szakasz). Kódhoz és tesztekhez nem nyúltam.
