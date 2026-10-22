@@ -361,20 +361,23 @@ de az animáció tartalma, iránya és időzítése **NINCS MEG**.
 teljes dekompilálását adja (`referencia/ghidra/2026-10-17-qshow-diavetites.txt`,
 `CÍM 0x005e942e`). Az Időrend bemutatóág lekéri az indexelt kollekció
 elemszámát (`0x004a0980`), `0`-tól végigmegy rajta, és minden indexre a
-`CThumbUI` vtable `+0x90` metódusát hívja. A qshow felépítőjének
-(`0x008037e0`) átadja ezt a listát, valamint a `0x400` × `0x300` logikai
-vászonértékeket. A `FUN_005e8a70` ezen ágában nem látszik dátummezőt olvasó
-komparátor vagy rendezőhívás: a függvény az aktuális indexelt kollekció
-sorrendjét fogyasztja; a kollekció upstream forrása és sorrendképzése nyitott.
+`CThumbUI` vtable `+0x90` metódusát hívja. Ugyanebben az ágban a qshow
+felépítőjét (`0x008037e0`) a `0x400` × `0x300` logikai vászonértékekkel hívja.
+A hurok kimenete és a qshow descriptor-bemenete közötti kapcsolat nincs
+igazolva. A `0x005e8a70` ezen ágában nem látszik dátummezőt olvasó komparátor
+vagy rendezőhívás; ez önmagában nem bizonyítja a descriptor upstream
+sorrendjét. A qshow közvetlen bemeneti mezőjének adatútját és nyitott
+kollekciójelentését a 38.2.63 §1 rögzíti.
 
 **Második út - helyi diszasszembly és RTTI.** A `0x005e942e-0x005e94f1`
 utasításai ugyanezt az elemszám → indexhurok → vtable `+0x90` láncot mutatják.
 A `0x00562cc0` thunk a `CThumbUI+0x2bc` objektum vtable `+0x20` helyére
 továbbít. Az RTTI szerint a `CThumbDB` vtable `+0x20` bejegyzése
 `0x00423300`, és a Ghidra-köteg ezt a függvényt is indexparaméterrel működő
-adatlekérdezőként dekompilálja. Ez a két út egyezik a szolgáltató-interfész
-alakjában; nem bizonyítja, hogy az adott futásidejű `+0x2bc` példány maga
-`CThumbDB`, és nem nevezi meg a képhalmazt.
+adatlekérdezőként dekompilálja. A 38.2.63 §1 külön megerősíti, hogy a
+`CThumbUI+0x2bc` mezőbe tett objektum `CThumbDB`; ez nem azonosítja a qshow
+`CThumbUI+0x2c0` bemeneti mezője mögötti kollekciót, és nem bizonyítja, hogy
+az indexhurok kimenete a qshow descriptor-listája.
 
 **A léptető és az Auto Play.** A `0x008032e0` `oneup/prev` és `oneup/next`
 ágai rendre a `0x00802980` és `0x008029f0` függvényeket hívják. Ezek az
@@ -401,10 +404,10 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A qshow az aktuális CThumbUI indexelt kollekció sorrendjét járja be; a forráshalmaz, upstream sorrend, cím-/dátumkártyák nyitottak. A `prev`/`next` a oneup listán léptet, az Auto Play állapotot vált. | `TimelineView.qml` év/hónap rács, nem qshow; a menü és Ctrl+5 letiltott, a QML-ben nincs qshow-vezérlősáv. | A bemutatót külön, teljes képernyős módként kell specifikálni. A listát a bizonyított aktuális kollekcióból építsd; ne vezess be új dátumsorrendet a forrás tisztázása nélkül. A rács-vissza és Exit bekötését csak a callback céljának feltárása után add meg. |
+| Egy bináris adatút szerint a qshow közvetlen bemenete a `CThumbUI+0x2c0` mezőből származik (**feltételes**); a `0x008018a0` a kapott descriptor elemeit sorrendben fűzi a oneup listába. A kollekció jelentése, elemlistája és upstream sorrendje nyitott. A `prev`/`next` a oneup listán léptet, az Auto Play állapotot vált. | `TimelineView.qml` év/hónap rács, nem qshow; a menü és Ctrl+5 letiltott, a QML-ben nincs qshow-vezérlősáv. | A bemutatót külön, teljes képernyős módként kell specifikálni. A `+0x2c0` mögötti kollekciót és a sorrendet további feltárásig ne nevezd meg. A rács-vissza és Exit bekötését csak a callback céljának feltárása után add meg. |
 | A parancsnév `thumbui/timelinebutton` megvan, de a `thumbui.tre` elem `m_hidden`; a 2026-10-17-i út nem igazolt látható fejlécgombot. | Nincs aktív Időrend-eszköztárgomb. | A menü és Ctrl+5 újraaktiválása megfelel a jegynek; látható eszköztárgomb az eredetivel való paritásban nem bizonyított, ezt termékdöntésként külön kell kezelni. |
 
-**Bizonyítottsági fok: feltételes.** A kollekcióbejárás és a szolgáltató virtuális interfésze két eltérő vizsgálati úton egyezik. A parancsok egy része célzott diszasszemblyből és erőforrás-nevekből követhető, de a qshow billentyűi, az overlayek kattintási céljai, a rács-vissza, az Exit visszatérési nézete, a kártyák tartalma/sorrendje és a tényleges animáció továbbra sincs eldöntve.
+**Bizonyítottsági fok: feltételes.** A `CThumbUI+0x2bc` Flipbook-szolgáltató útját a kód és RTTI egymástól függetlenül alátámasztja; a qshow `CThumbUI+0x2c0` bemeneti lánca egy statikus bináris adatútból ismert, szemantikája nyitott. A parancsok egy része célzott diszasszemblyből és erőforrás-nevekből követhető, de a qshow billentyűi, az overlayek kattintási céljai, a rács-vissza, az Exit visszatérési nézete, a kártyák tartalma/sorrendje és a tényleges animáció továbbra sincs eldöntve.
 
 **Nyitott:**
 
@@ -424,7 +427,7 @@ cáfolja, nem az upstream kollekció korábbi rendezését.
 - **Bizonyított: üres listánál nem indul a bemutató.** A `0x005e8a70` mód-1 ágában a `FUN_005d2a70()` és a `[this+0x2c0]+0x154` (0 vagy 1) ellenőrzése után, valamint a függvény végén, ha az összegyűjtött tömb (`uStack_d0`) üres, az `IDS_MUST_SELECT` üzenettel tér vissza. A `0x008037e0` (a qshow-építő) csak ezután hívódik, és egyetlen hívója van: a `0x005e8a70`. (dekompilátum + diszasszembly)
 - **Bizonyított: a tömb CSAK a Flipbook + Ctrl + Shift ágban töltődik.** A feltételek: `Preferences\Flipbook` kulcs, `GetAsyncKeyState(0x11)` és `(0x10)`, valamint az aktív ablak (`DAT_00d67849`). A forrás `[this+0x2bc]` (a szolgáltató), az elemszám `[+0x4ec] >> 1`, a rekord elérése `+0xf8` (`0x004edf60`). A rekord típuskódja szerint szűr: 2, 3, 6, 7, 13, 14, 18, 22, 24, 26, 27, 28, 31 (a kódok jelentése **NINCS MEG**). A sorrend **fordított**: az elemszám-1 indextől 1-ig, a 0. elem kimarad. (dekompilátum + diszasszembly)
 - **Ellentmondás (mérve):** Shift nélkül, a Flipbook beállítástól függetlenül, a tömb üres marad, tehát a mód-1 ág `IDS_MUST_SELECT`-re fut, nem qshow-ra. ⚠️ **HELYESBÍTVE (38.2.8):** ez téves: a `0x007164b0` Shift nélkül is tölt, a `[this+0xeac]` elemeiből. Az eredeti (téves) indoklás: a tömb-slotok (`[esp+0x2c]`, `[esp+0x30]`, `[esp+0x40]`, `[esp+0x44]`) íróhelyei ezt mutatják: a nullázás (`0x005e8dc1`-`0x005e8dcd`) után csak olyan írások vannak, amelyek a már üres `local_c0`-ból másolnak (`0x005e9178`-`0x005e929a`). **Ez nincs összhangban a 38.2.2 megfigyelésével** (job-102: Ctrl+5 után qshow látszott). Lehetséges magyarázat: a felvételen Shift volt lenyomva, ez nincs rögzítve.
-- **Feltételes: a rács listája.** A `0x004039f0` a főablakot (`ytFrameWindow`, vtable `0x00cd95c0`) és egy 0x3710 bájtos objektumot hozza létre (konstruktor `0x005643e0`, paraméterei `param_1+0x1030` és `+0x1038`); a `FUN_0040bf70` tölti. Ez a CThumbUI-nak tűnik (a `0x005e8a70` `this`-e is ilyen, a `+0x2bc`/`+0x2c0` mezőkkel), de nem bizonyított. A rács lista-forrása ettől még nincs igazolva, a qshow-é pedig nincs.
+- **Pontosítva (38.2.63):** a `0x004039f0` a főablakot (`ytFrameWindow`, vtable `0x00cd95c0`) és egy 0x3710 bájtos objektumot hoz létre; a `0x005643e0` konstruktora `CThumbUI::vftable`-t ír, így az objektum `CThumbUI`. A `FUN_0040bf70` tölti, de a rácslista forrása nincs igazolva. Egy statikus bináris adatút szerint a qshow bemenete a `CThumbUI+0x2c0` mezőből származik (**feltételes**); a mező mögötti kollekció jelentése nyitott.
 - **Nyitott: a „Preparing timeline…” ciklus kimenete.** A ciklus (`0x005e8a70`, dekompilátum 1215-1259. sor) `FUN_004a0980()` elemszámon megy 0-tól felfelé, és minden indexre a `this->vt+0x90` hívást végzi, elemenként a `piStack_6c` folyamatjelző-objektumnak adva. Hogy ez-e a qshow listája, nincs igazolva.
 
 ##### 2. Vezérlők és billentyűk
@@ -7053,3 +7056,94 @@ Az alfa-határ körüli további QEMU-próbák: `t=0,6799999475`, `0,6800000072`
 - `Ghidra-kör kell: 0x008032e0 - az Exit célja és a visszatérő gyűjtemény/képpozíció [blokkoló]`
 
 **Új kutatási jegyjavaslat.** Nincs; a nyitva maradt kérdések a #5401 elfogadási pontjaihoz tartoznak, nem külön feladatok.
+
+#### 38.2.63 A qshow billentyűútja, a listaépítés és a csúszka indexleképezése (#5401, 2026-10-22)
+
+**Hatókör és módszer.** A nyolc, a 38.2.62 végén felsorolt cím Ghidra-kimenete elkészült (belső Ghidra-referencia, 2026-10-22, sor 202-209). A döntő ágakat külön, függvényenkénti `annot_disasm.py` diszasszemblálás ellenőrizte az eredeti `Picasa3.exe`-ből. A `CThumbUI+0x2c0` és a qshow `+0x388` mező közvetlen íróit célzott, darabolt `paszta.py` `.text`-pásztázás kereste; a `paszta.memoria_kapu()` a pásztázás előtt lefutott. A mérőadat-archívumban nem volt Időrend/qshow-felvételhez tartozó tag, ezért ebben a körben futás közbeni képkockafelvétel és QEMU-mérés nem készült. A régi Ghidra-kéréslista aktuális állapota: a célfüggvények dekompilálása elkészült; a maradék kérdések e szakasz Nyitott listájában vannak.
+
+##### §1 A képlánc bemenetének egy része és a sorrend
+
+**A út - utasítások és adatfolyam.** A `0x004039f0` `0x3710` bájtos `CThumbUI`-objektumot foglal, majd a `0x005643e0` konstruktornak a hívó `[X+0x1030]` és `[X+0x1038]` mezőjét adja át (`0x00403d9e`-`0x00403db8`; Ghidra-kimenet: `2026-10-22-ghidra-sor-202-209.txt`, `0x004039f0`). A konstruktor a `[this]` mezőbe a `0x00c9052c` `CThumbUI::vftable`-t, továbbá a `+0x2bc`, `+0x2c0` és `+0x2c4` mezőbe kapott értékeket írja (`0x00564507`, `0x005644fa`, `0x00564616`, `0x0056461c`). A külön `[X+0x1034]` mezőt a `0x00402f90` a `0x00415790` eredményével tölti (`0x00402fd3`-`0x00402fdc`); ez nem a `0x004039f0` konstruktorának átadott két mező egyike.
+
+**B út - független RTTI/vtable-ellenőrzés.** Az index `rtti` táblája a `0x00c9052c` címet `CThumbUI::vftable`-ként, a `0x00c81f78` címet `CThumbDB::vftable`-ként azonosítja. Ettől független gépikód-út, hogy a `0x00415790` konstruktor a `[this]` mezőbe a `0x00c81f78` vtable-címet írja (`0x004157fd`), a `0x00562cc0` thunk pedig a `CThumbUI+0x2bc` objektum vtable `+0x20` helyére továbbít. Ezek együtt azonosítják a `+0x2bc` szolgáltató osztályát `CThumbDB`-ként; ez az objektum nem azonos a qshow `+0x2c0` bemeneti mezőjével.
+
+A qshow bemeneti lánca külön követhető. A `0x005e8a70` a `0x005e96d9` címen a `CThumbUI+0x2c0` értékét az átadott paraméterrekord `+0x14` mezőjébe írja; a `0x008037e0` ezt a rekordot továbbadja a `0x007fa7f0` oneup-konstruktornak, amely a paraméter `+0x14` mezőjét a saját `+0x2f4` mezőjébe másolja (`0x007fa83b`-`0x007fa83e`). A `0x008018a0` ezt a `[this+0x2f4]` bemenetet adja át a `0x004b0190`-nek. **Független út:** a `0x005e9434` ugyanezt a `CThumbUI+0x2c0` mezőt adja át a `0x004a0980` elemszám-kérőnek; a `0x005e9490` indexhurok ezután a `CThumbUI` vtable `+0x90` metódusát hívja, a `0x00562cc0` thunk pedig a külön `CThumbUI+0x2bc` `CThumbDB` objektum vtable `+0x20` helyére továbbít. Az első, közvetlen descriptor-átadási lánc egy útból ismert (**feltételes**); a második, ettől külön count/index út megerősíti, hogy a `+0x2c0` mezőt ugyanebben a MakeTimeline ágban is használják. Ez nem bizonyítja, hogy a count/index hurok kimenete azonos a qshow descriptor-listájával. A `+0x2c0` mögötti kollekció típusa, album-/mappa-tagsága és elemlistája nincs meg.
+
+**Pontosítás a 38.2.6/38.2.8 korábbi olvasatához.** A `0x005e96eb` külön a `[CThumbUI+0xeac]` értékét tölti a hívó paraméterrekord `+4` mezőjébe (`0x005e96fc`-`0x005e9709`). A oneup-konstruktor ezt a másik argumentumot a `0x007fb9f0`-nek adja át, amely a `[oneup+0x2f8]+4`, vagyis `oneup+0x2fc` mezőbe másolja (`0x007fa844`-`0x007fa850`, `0x007fb9f3`). Ez külön adat a közvetlen descriptor-bemenettől (`CThumbUI+0x2c0` → `oneup+0x2f4`); önmagában nem bizonyítja, hogy szűrő, és a régi `[this+0xeac]` köztes lista qshow-descriptorral való kapcsolata nincs meg.
+
+A `0x008018a0` a `0x004b0190` által kapott descriptor elemszámát `[descriptor+4] >> 1` alakban olvassa, majd a descriptor 0-tól növelt indexével járja be. A bejárás a `+0x3ec` tömbbe fűzi az elfogadott pointereket, és a jelző alapján kizárt elemeket kihagyja (`0x00801964`-`0x00801bd5`). Ebben az építőhurokban nem látható komparátorhívás: az átadott descriptor sorrendjét követi. A `0x004b0190`-et kiszolgáló objektum osztálya és a descriptor upstream rendezése nincs meg; a gyűjteményenkénti elemszám és képlista sem következik ebből.
+
+##### §2 A qshow billentyűi és az automatikus lejátszás hívásútja
+
+A `0x008037e0` állítja elő a qshow `QDrawable` objektumát, és a `0x007fa7f0`-nel hozza létre az oneup-objektumot. A `0x007fa7f0` a `0x00cbd66c` (`QDrawable::vftable`) vtable-t állítja be; ennek indexelt metóduslistájában a `+0x30` slot címe `0x00801270`. Ez és a közvetlen utasításolvasás egymástól függetlenül köti a `0x00801270`-et a qshow billentyűkezelőjéhez.
+
+A `0x00801270` csak `WM_KEYDOWN` (`0x100`) üzenetet dolgoz fel; a nulla és `WM_CHAR` (`0x102`) üzenet visszatér. A billentyűágak:
+
+| Billentyű | Bináris hívásút | Pontos határ |
+|---|---|---|
+| Escape (`0x1b`) | `0x00801270` → `0x007fb820` | A jelenlegi objektum vtable `+0x24` getterét hívja; a qshow-építő által beállított cél a `qshow` nevű `ytWindow` gazdaablak (`0x00982bf0`, vtable `0x00cd87fc`), ennek `+0x14` slotja `0x00983270`, amelyet `(0,0)` argumentummal hív (`0x007fb998`-`0x007fb9df`). A gazdaablak-metódus végső navigációs hatása és a visszaállított nézet/pozíció nyitott. |
+| Bal (`0x25`) / fel (`0x26`) | `0x00801270` → belső ág `0x008014bc` → `0x008011b0` | Timeline módban a `0x007fd0c0`-t hívja a `[this+0x2f8]+0x30` értékével és a bináris `0x00cf3a48` címen tárolt `2.0f` értékkel. Ez az argumentumirány; a látható képek térbeli iránya a `0x007fd0c0` teljes állapota nélkül nincs meg. Timeline módon kívül, ha `[this+0x3bb] != 0`, a `0x00802980` előző-eleme út fut; egyébként a `0x00802ae0` hívódik. |
+| Jobb (`0x27`) / le (`0x28`) | `0x00801270` → belső ág `0x008014ac` → `0x00801210` | Timeline módban a `0x007fd0c0` hívás ugyanazt a mezőt adja át, de `-2.0f` argumentummal. Timeline módon kívül, ha `[this+0x3bb] != 0`, a `0x008029f0` következő-eleme út fut; egyébként a `0x00802a90` hívódik. |
+| Szóköz (`0x20`) | Ha `[this+0x3bb] != 0`, a `0x00803110` hívódik `[this+0x2dc]` argumentummal; ha nulla, a `0x00801130` hívódik. A külön Ctrl-ág `[this+0x3ba]=1`-et ír és `0xf4240`-t ad vissza. | A bináris hívásút bizonyított; ebből önmagában nem következik, hogy a képernyő teljes képernyős diavetítésre vált, és az sem, hogyan áll vissza. |
+
+A handler további ágakat is tartalmaz a `0`-`9` és a Ctrl+`F`/`B`/`O` billentyűkre; ezek pontos felhasználói jelentése ebben a körben nincs feltárva. Home/End (`0x23`/`0x24`) explicit ága nincs.
+
+A `0x008032e0` név szerinti eseménykezelőjében a `oneup/auto` és `oneup/auto2` a `0x00803110`-et hívja; a `oneup/timeline` a `0x00802be0`-t, majd a `0x007fda00`-t. A `oneup/exit` a tulajdonos vtable-jának `+0x24` függvényétől kért objektum vtable-jának `+0x14` függvényét hívja két nulla argumentummal. A `0x008037e0` a `0x00982bf0`-gel létrehozott `qshow` gazdaablakot (RTTI-adatszimbólum: `ytWindow::vftable`, `0x00cd87fc`) a oneup `+0x50` mezőjébe állítja (`0x00803977`-`0x0080397f`, setter: `0x007fa480`); a `ytWindow` vtable `+0x14` slotja a `0x00983270`. Az Escape `0x007fb820` és a gomb Exit útja így ehhez a gazdaablak-metódushoz jut `(0,0)` argumentummal (`0x007fb998`-`0x007fb9df`, `0x0080355d`-`0x00803573`). A visszatérő objektum azonosított, de a gazdaablak-metódus végső navigációs hatása és a folytatási nézet/pozíció nyitott. Az `overlays/startbutton` név azonossága a `oneup/auto` eseménnyel nincs bizonyítva. A `0x007fb210` az `overlays/timeline`, `overlays/timelinedot` és `overlays/sliderthumb` elemeket kéri le; ez az elemneveket és létrehozásukat igazolja.
+
+A qshow egérkezelője a `0x007fde80`. Timeline módban bal gomb lenyomásakor (`WM_LBUTTONDOWN=0x201`) a vezérlő téglalapjai alapján állítja a `[this+0x429]` húzásjelzőt vagy a `[this+0x428]` másik sávjelzőt. A húzáság azonnal meghívja a `0x007fdd00` csúszka-leképezőt; húzás közbeni egérmozgás ugyancsak oda jut. Egérfelengedéskor (`WM_LBUTTONUP=0x202`) a húzáság a `0x007fd770`-nek adja át a `[this+0x514]` indexet, majd törli a két jelzőt. A sávjelző további hatása és a `0x007fd770` felhasználói jelentése nincs teljesen azonosítva. A `0x007fb210` az `overlays/timeline`, `overlays/timelinedot` és `overlays/sliderthumb` elemeket kéri le; a `timelinedot`, `startbutton` és listaikon teljes kattintási/húzási működése továbbra sem következik az elemnevekből.
+
+Az automatikus léptetés küszöbe korábban megerősítve lett: a `0x00802060` a QPC-ből számolt eltelt másodpercet a `Preferences\SlideshowEffectTime` egész másodpercben megadott `T` értékével hasonlítja össze, és a túllépéskor léptető utat hív. A callback frissítési periódusa és az aktív futásidejű `T` nincs meg; a pumpa 50 ms-os alvása legfeljebb 20 frissítést/másodpercet ad, ha a jelző be van állítva. A `T` küszöb ezért nem azonos a bizonyított, állandó automatikus léptetési ütemmel (38.2.34 §1, §3; 38.2.34 §5 cáfoló ellenőrzése).
+
+##### §3 A dátumcsúszka képernyőkoordináta-leképezése
+
+A `0x007fdd00` az egér x koordinátáját a `[this+0x6d8]` és `[this+0x6d8]+[this+0x6c8]` közötti szakaszra korlátozza, majd `t=(x-lo)/(hi-lo)` normalizált értéket képez. Az `A` tömb `[this+0x388]`, az elemszám `[this+0x38c]>>1`; minden indexnél az `A[i]/A[n-1]` arányt hasonlítja `t`-hez, és a legkisebb abszolút eltérésű indexet választja. A feltétel szigorú `<`, így azonos eltérésnél az első talált index marad. A választott index a `[this+0x514]` mezőbe kerül; az indexelt elem pointere a `[this+0x3a8]+i*0xf8` címről lesz kiválasztva, ha `i < [this+0x3ac]>>1`, különben a kijelölt pointer nulla. A thumb x koordinátáját a `0x00c29990` helper eredménye és a `[this+0x728]` mező alapján frissíti, az y-t a `[this+0x72c]` mezőről állítja vissza.
+
+**Korlát.** Az `A` tömb elemeinek jelentése nincs meg; a kód önmagában nem bizonyítja, hogy azok dátumok, Unix-idők vagy más időkoordináták. Ezért a képernyő x → normalizált arány → tömbindex leképezés pontos, a dátumérték leképezése és az eredeti adatmező nincs meg. A `0x00c29990` helper teljes kerekítési viselkedése sincs e körben feloldva.
+
+##### §4 Bizonyíték, független utak és cáfoló kísérlet
+
+| Állítás | Forrás |
+|---|---|
+| A `CThumbUI+0x2bc` mezőbe tett objektum `CThumbDB`; ez különbözik a qshow inputjától. | bináris (`0x004039f0`, `0x005643e0`, `0x00415790`) + RTTI (`0x00c9052c`, `0x00c81f78`) |
+| A qshow bemeneti pointerlánca a `CThumbUI+0x2c0` mezőtől oneup `+0x2f4`-ig és a descriptor-szolgáltatóig. | bináris (`0x005e96d9`, `0x008037e0`, `0x007fa7f0`, `0x008018a0`) - feltételes, egy közvetlen adatút |
+| A MakeTimeline count/index út a `CThumbUI+0x2c0` mezőt használja; az elemkérő vtable-hívás külön `+0x2bc` szolgáltatóhoz jut. | bináris (`0x005e9434`, `0x005e9490`, `0x00562cc0`) + RTTI (`0x00c81f78`) |
+| Az `0x008018a0` a kapott descriptor elemeit sorrendben appendeli a `+0x3ec` tömbbe, jelző alapján kihagyva egyes elemeket; a forráskollekció jelentése és upstream rendezése nincs azonosítva. | bináris (`0x008018a0`, `0x004b0190`) |
+| A `0x00801270` a QDrawable qshow-objektum billentyűkezelő-helye; Escape, nyilak és szóköz közvetlen híváságai a táblázat szerintiek. | bináris (`0x00801270`, `0x007fa7f0`) + RTTI (`0x00cbd66c`) |
+| A csúszka x→index képlete, a kiválasztott mezők és a szigorú tie-kezelés. | bináris (`0x007fdd00`) |
+| A csúszka húzás- és felengedési útja a qshow egérkezelőjéből a leképezőig, majd a `0x007fd770`-ig. | bináris (`0x007fde80`, `0x007fdd00`, `0x007fd770`) |
+| A gomb Exit és Escape visszatérő objektuma a `0x00982bf0` által létrehozott `qshow` `ytWindow` host; oneup `+0x50` → host `vtable+0x14` (`0x00983270`). | bináris, két külön Exit/Escape hívásút (`0x008037e0`, `0x00982bf0`, `0x007fa480`, `0x007fb820`, `0x008032e0`, `0x00983270`) + RTTI/vtable (`0x00cd87fc`) |
+| A `+0x2c0` és `+0x388` mezők közvetlen íróinak célzott keresése nem kötötte az összes azonos offset-találatot a qshow/QDrawable osztályhoz. | bináris (`paszta.py` `.text`-pásztázás; `paszta.memoria_kapu()` volt az első művelet) |
+| Az `A` tömb dátumjelentése, a teljes gyűjteményi forrás és a konkrét elemkészlet. | NINCS MEG |
+| A teljes képkockánkénti pálya, a rétegek/képtartalom, a `timelinedot`/listaikon teljes vezérlése, valamint a qshow host metódusának végső navigációs hatása és a visszaállított nézet/index. | NINCS MEG |
+| E körbeli futásidejű qshow-képkocka-felvétel vagy QEMU-kimenet. | NINCS MEG |
+
+**A két független út.** A út: `0x005e96d9` → qshow argumentum `+0x14` → oneup `+0x2f4` → `0x004b0190`; ez egy közvetlen pointerlánc, ezért önmagában **feltételes**. B út: a `0x005e9434` a `CThumbUI+0x2c0` értékével kér elemszámot a `0x004a0980`-től, majd a `0x005e9490` indexel, és a CThumbUI vtable `+0x90` metódusán, illetve a `0x00562cc0` thunkon át a külön `CThumbUI+0x2bc`/`CThumbDB` providerhez jut. Ez külön megerősíti, hogy ugyanaz a mező a MakeTimeline count/index útban is szerepel, de nem bizonyítja a két hurok kimenetének azonosságát vagy a kollekció album-/mappa-jelentését. Az Exit-gomb és Escape külön hívásútja egyaránt a `qshow` gazdaablak `+0x14` slotjához jut; RTTI/vtable-adat azonosítja a gazdaablakot `ytWindow`-ként. A QDrawable helybesorolást a konstruktor/vtable-adat és a billentyűkezelő utasításai támasztják alá. A billentyű-, egér- és csúszka-utasítássorok felhasználói hatása továbbra is **feltételes**; a teljes animáció vizuális hatása nincs meg.
+
+**Cáfoló kísérlet.** Azt a feltevést próbáltam cáfolni, hogy a főablak `0x005e60d0` kezelője maga a qshow billentyűkezelője, és hogy a nyilak minden állapotban közvetlenül előző/következő képet léptetnek. A `0x00801270` közvetlen diszasszemblálása a `WM_KEYDOWN` ágat és a timeline módú `0x007fd0c0` hívást mutatja; a QDrawable vtable `0x00cbd66c` metóduslistája a `0x00801270`-et a `+0x30` eseményhelyre teszi. A `0x005e60d0` Ghidra-kimenete külön főablak-kezelő. A próba megcáfolja mindkét feltevést; a címosztályozást az assembly és az attól független RTTI/vtable út egyaránt alátámasztja.
+
+**Bizonyítottsági fok.** A teljes #5401 **nyitott**. A `CThumbUI+0x2bc` mezőbe tett objektum `CThumbDB` osztálya, a gomb Exit/Escape célobjektuma (`qshow` `ytWindow`) és a QDrawable billentyűkezelő-helyének besorolása **megerősített** (külön vtable/callback-út + RTTI/vtable-adat). A qshow közvetlen bemeneti pointerlánca (`CThumbUI+0x2c0` → oneup `+0x2f4`) egy közvetlen statikus adatútból ismert, ezért **feltételes**; a `+0x2c0` mögötti kollekció szemantikája **nyitott**. A közvetlenül olvasható billentyű-, egér- és csúszka-utasítássorok felhasználói hatása **feltételes**, mert hiányzik a gyűjteményt megnevező út és a vizuális mérés. A §38.2.34 automatikus léptetési `T` küszöbe ismert, a tényleges periódus nem; a §38.2.61-62 mozgás-részletei nem zárják le a teljes, képkockánkénti animációt.
+
+##### §5 A #5401 „Kész, ha” pontjainak állapota
+
+1. ⛔ **Képlánc, forráshalmaz, sorrend, gyűjteményenkénti darabszám és elemlista:** a qshow közvetlen pointerlánca a `CThumbUI+0x2c0` mezőtől indul (feltételes, egy bináris út); ettől külön a MakeTimeline count/index út is olvassa ezt a mezőt, az elemkérő pedig a `+0x2bc` `CThumbDB` providert hívja. A `+0x2c0` kollekciószemantikája, a konkrét tagok és darabszámok NINCS MEG (`0x005e96d9`, `0x005e9434`, `0x005e9490`, `0x008018a0`).
+2. ⛔ **Pálya, méret, forgatás, alfa, időzítés, háttér és kártyarajz:** a 38.2.34, 38.2.61 és 38.2.62 igazolt részképletei mellett hiányzik a teljes képkocka → transzformáció → rajzréteg lánc és az élő képkockafelvétel. E körben nem állítok teljes mozgásképletet.
+3. ⛔ **Vezérlők:** a billentyűágak, csúszka húzás/felengedés útja és normalizált indexképlete részben megvan; a dátumtömb jelentése, a `timelinedot`, `startbutton`, listaikon és automatikus lépés tényleges periódusa nyitott. Az Exit/Escape a qshow `ytWindow` host `0x00983270` metódusához jut; a végső navigációs hatás nincs meg.
+4. ⛔ **Diavetítésbe lépés és kilépés:** a Space/Auto kódút bizonyított (`0x00801270` → `0x00803110` vagy `0x00801130`), az automatikus léptetés `T` másodperces küszöbe ismert; az Exit/Escape célobjektuma a qshow `ytWindow` host, de a gazdaablak-metódusának végső képernyője, a folytatási gyűjtemény/képindex és a tényleges callback-periódus nincs bizonyítva.
+
+##### §6 Nyitott
+
+- A `CThumbUI+0x2c0` mező egy CThumbUI-adatútban olvasott; a `0x005643e0` konstruktor `[this+0x2c0]` mezőjébe az EAX-ben kapott értéket írja (`0x005644fa`), a `0x004039f0` pedig a konstruktor `+0x2c0` argumentumát a hívó `[X+0x1038]` mezőjéből adja. A teljes `.text` offset-pásztázás sok más osztálybeli `+0x2c0` találatot is ad, ezért a konkrét írók osztályhoz kötése nélkül azok nem nevezhetők meg. Nyitott: a `[X+0x1038]` érték forrása és a kollekciójelentés; megszerzés: az `0x004039f0` szülőobjektumának azonosítása és a `[X+0x1038]` mezőíróinak `paszta.py`-jal, `memoria_kapu()` elsőként történő célzott pásztázása.
+- `Ghidra-kör kell: 0x004b0190 - a [source+0xc4] vtable +0x2c szolgáltatója milyen descriptor-t állít elő, mi az objektumosztály és mi határozza meg a sorrendet [blokkoló]`
+- A qshow `+0x388` pointer közvetlen íróját a `paszta.py` teljes `.text` pásztázása nem rendelte hozzá a QDrawable osztályhoz; ugyanaz az eltolás más osztályokban is előfordul. Az `A[i]`/`A[n-1]` értékek időbeli jelentése NINCS MEG. Megszerzés: a QDrawable vtable ismert metódusainak célzott ellenőrzése, majd a talált segéd- vagy helyfoglaló út `+0x388`-ra író kódjának osztályhoz kötése.
+- `Ghidra-kör kell: 0x007fd0c0 - a timeline nyílargumentumok állapotátmenete és az +0x2f8 alobjektumon látható eredmény [blokkoló]`
+- `Ghidra-kör kell: 0x00802ae0 - a nem timeline, nem automatikus bal/fel billentyűág művelete [blokkoló]`
+- `Ghidra-kör kell: 0x00802a90 - a nem timeline, nem automatikus jobb/le billentyűág művelete [blokkoló]`
+- `Ghidra-kör kell: 0x007fde80 - a [this+0x428] sávjelző és a 0x007fd770 utáni út felhasználói hatása, valamint a név szerinti overlay/listaikon hit-test kötése [blokkoló]`
+- A gomb Exit és Escape visszatérő objektuma a qshow `ytWindow` host; a `+0x14` metódus `0x00983270` végső navigációs hatása és a visszaállított nézet/index NINCS MEG.
+- `Ghidra-kör kell: 0x00983270 - a qshow ytWindow::vftable+0x14 metódus képernyő-/nézetváltási hatása és az esetleg megőrzött kollekció/elemindex [blokkoló]`
+- Futás közbeni megerősítés: qshow Exit/Escape előtt és után rögzíteni a megjelenő ablakot, kollekciót és elemindexet; ez a `0x00983270` statikus olvasatát ellenőrzi.
+- A `0x009dc040` kompozíciója és a `0x008001c0` → `0x00aa6180` képpuffer-rétegsorrendje NINCS MEG.
+- `Ghidra-kör kell: 0x009dc040 - az alfa-keverő pixel- és rétegszemantikája [blokkoló]`
+- QEMU-val számszerűen vezérelt qshow-futás és sűrű, igazoló Wine-képkocka-felvétel NINCS MEG; megszerzéséhez a forráskollekciót és az aktív lejátszási állapotot rögzítve kell futtatni.
+
+**Új kutatási jegyjavaslat.** Nincs; mindegyik nyitott tétel a #5401 négy elfogadási pontjához tartozik.
