@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.186] - 2026-10-22
+
+- A diavetítő ◀ és ▶▶ gombja már a lenyomás pillanatában lép, ahogy az eredeti Picasában (#5541).
+- A bélyegképek a gyorsítótárból bájtként töltődnek be, így Windowson egy fájlmegnyitási hiba miatt nem jelenik meg tévesen a sérült fotóról szóló ablak (#5542).
+- A diavetítő kijelzési ideje legfeljebb 20 másodpercre állítható, ahogy az eredeti Picasában (#5544).
+- A diavetítő angol felületen 1 másodpercnél „1 second”-ot ír, ahogy az eredeti Picasa (#5546).
+- A bélyegkép-gyorstár egy fájljának átmeneti olvashatatlansága már nem jelzi sérültnek a fotót: a program legfeljebb háromszor, összesen kevesebb mint fél másodpercig újrapróbálja, szükség esetén újraírja a bélyegképet (#5553).
+- A menüparancsok viselkedési leírásának Időrend-szakasza külön dokumentumba került (#5559).
+
 ## [0.9.185] - 2026-10-22
 
 - A fotómenü a Picasa Web Albums feliratot a billentyűjelöléssel együtt mutatja, az albummenü pedig csak az eredeti Google Fotók feltöltési tételt tartalmazza (#5519).
