@@ -13,7 +13,7 @@
 
 | állapot | darab | mit jelent |
 |---|---:|---|
-| ✅ **viselkedés feltárva** | 138 | a `picasa-menu-parancsok-viselkedes.md`-on vagy egy saját spec-lapon (`VISELKEDES_MAS_LAPON`): mit indít, mit ír, mikor |
+| ✅ **viselkedés feltárva** | 138 | a `picasa-menu-parancsok-viselkedes.md`, `picasa-idorend-viselkedes.md` lapokon vagy egy saját spec-lapon (`VISELKEDES_MAS_LAPON`): mit indít, mit ír, mikor |
 | 🟡 érdemi lapon szerepel | 0 | valamit tudunk róla, de a viselkedése nincs végigvive |
 | ⚠️ **csak a neve** | 0 | egyedül a leltárban — a felirata és a helye |
 | ⛔ **sehol** | 0 | egyetlen spec sem említi |
@@ -32,4 +32,3 @@ két kör nem ütközik és nem kell egyeztetni.
 ## ⚠️ Csak a neve ismert (0)
 
 *(egy sincs)*
-

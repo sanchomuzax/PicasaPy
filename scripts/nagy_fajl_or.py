@@ -43,11 +43,6 @@ KUSZOB = 1_000_000
 
 #: Szándékosan a repóban tartott, küszöb fölötti fájlok — útvonal → indok.
 KIVETELEK: dict[str, str] = {
-    "docs/specs/picasa-menu-parancsok-viselkedes.md": (
-        "a menüparancsok viselkedési spec-je az Időrend-körökkel (#5401, "
-        "38.2.x) 1 MB fölé nőtt; az Időrend-szakaszok külön fájlba "
-        "költöznek, ha a sorban álló spec-PR-ok beolvadtak, addig kivétel"
-    ),
     "docs/assets/notebooklm-infografika.png": (
         "a projekt kutatási infografikája, a README-ből hivatkozva (5,2 MB)"
     ),
