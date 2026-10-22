@@ -165,7 +165,7 @@ class FakeFaceScanController(QObject):
         self.calls = []
         self.suggestions_enabled = True
         self.suggestion_threshold = 85
-        self.cluster_threshold = 70
+        self.cluster_threshold = 85
         self.persist_face_to_file = True
         self.setting_calls = []
 
@@ -1057,9 +1057,9 @@ class TestFaceDetectionOption:
         assert suggestions.property("enabled") is True
         assert suggestions.property("checked") is True
         assert suggestion_slider.property("value") == 85
-        assert cluster_slider.property("value") == 70
+        assert cluster_slider.property("value") == 85
         assert suggestion_value.property("text") == "85"
-        assert cluster_value.property("text") == "70"
+        assert cluster_value.property("text") == "85"
         assert suggestion_ticks.property("tickCount") == 10
         assert cluster_ticks.property("tickCount") == 10
         assert persist.property("checked") is True

@@ -171,7 +171,7 @@ ColumnLayout {
                     stepSize: 5
                     snapMode: Slider.SnapAlways
                     showTicks: false
-                    value: root.faceCtl ? root.faceCtl.clusterThreshold() : 70
+                    value: root.faceCtl ? root.faceCtl.clusterThreshold() : 85
                     onMoved: if (root.faceCtl)
                         root.faceCtl.setClusterThreshold(value)
                 }

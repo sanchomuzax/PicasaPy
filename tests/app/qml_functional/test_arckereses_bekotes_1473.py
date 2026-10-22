@@ -438,7 +438,7 @@ class TestCsoportositas:
         beállításaiból érkezik, mint a kézi csoportosító gombnál.
         """
         import picasapy.app.face_scan_controller as controller_module
-        from picasapy.faces.clustering import step_to_threshold
+        from picasapy.faces.clustering import cluster_step_to_threshold, step_to_threshold
         from picasapy.index import face_groups, open_index
 
         lenyomatolo = _HamisLenyomatolo()
@@ -476,7 +476,7 @@ class TestCsoportositas:
         assert kapott_beallitasok == [
             {
                 "suggest_threshold": step_to_threshold(90),
-                "cluster_threshold": step_to_threshold(75),
+                "cluster_threshold": cluster_step_to_threshold(75),
                 "named_centroids": None,
             }
         ]
