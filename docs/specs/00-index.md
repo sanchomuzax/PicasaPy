@@ -544,7 +544,7 @@ rendezésének három módja** (`Preferences\peoplesort`), ld.
 
 ⭐ **2026-10-18 (#5185, 28. szakasz) - a személykezelés leltára: a 8 pont mind RÉSZBEN, a „Learn more” cím KÉSZ (`0x0074c760`); új [Contacts2]-jelöltek (`0x00586e20`, `0x00587110`), a 27.1 olvasata vitatott.**
 
-⭐ **2026-10-19 (#5185, 35. szakasz): mind a nyolc pont Eredeti/Nálunk/Teendő táblában; az Escape-helyesbítés után a csempe Escape nyitott; `PeopleAlbumUseFaceSrc=1` → `face_zoom` a `0x005e5290`/`0x00767e50` diszasszemblálásából (feltételes); a javaslatok, People Manager, tárolási időzítés és felismerési futás több része továbbra is nyitott, J2-J8 felvételi útjával.**
+⭐ **2026-10-21 (#5185, 35. és 35.6 szakasz): mind a nyolc pont Eredeti/Nálunk/Teendő táblában; az Escape-helyesbítés után a csempe Escape nyitott; `PeopleAlbumUseFaceSrc=1` → `face_zoom` a `0x005e5290`/`0x00767e50` diszasszemblálásából (feltételes); a javaslatok, People Manager, tárolási időzítés és felismerési futás több része továbbra is nyitott, J2-J8 felvételi útjával; a munkafa tényleges verziója 0.9.179, a People párbeszéd `.fen`-szerkezete és a PicasaPy QML-elrendezés forrásolvasata a 35.6-ban szerepelnek.**
 
 ⭐ **2026-10-17 (#5184, 20. szakasz) - a személykezelés bináris pontjai: 1 lezárva (N4), 6 blokkolt.** A detektor belépési pontja és a küszöb útja megvan (`0x0048e1f0`; nulla → `this+0x3498`). A sorba állító két függvényében nincs név-feltétel, de a felismerés utáni ág és egy Colab-mérés dönt. A Ghidra-kérések a 20.7 szakaszban vannak.
 
@@ -1789,6 +1789,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [forras-audit-5186-1.md](forras-audit-5186-1.md) | #5455: a #5186 gyűjtő első húsz lezárt jegyének összevetése az eredeti Picasa 3.9-cel. |
 | [forras-audit-5186-2.md](forras-audit-5186-2.md) | #5453: a #5186 gyűjtő húsz lezárt jegyének eredeti Picasa 3.9 forrás- és mai PicasaPy-összevetése; nyitott Colab- és renderelt mérésekkel. |
 | [forras-audit-5186-3.md](forras-audit-5186-3.md) | #5454: a #5186 gyűjtő harmadik húsz lezárt jegyének összevetése az eredeti Picasa 3.9-cel. |
+| [forras-audit-5186-4.md](forras-audit-5186-4.md) | #5527: a negyedik köteg kilenc jegyének eredeti Picasa 3.9 forrás- és mai PicasaPy-összevetése; #4563 eltérés, célzott Colab-felvételekre váró pontokkal. |
 
 ## Viselkedés és funkciók
 
