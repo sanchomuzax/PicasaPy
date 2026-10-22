@@ -6360,7 +6360,7 @@ Mérete a csomagban **797 × 50** képpont; a fölötte lebegő felirat
 | elem | méret | típus / szerep | felirat |
 |---|---|---|---|
 | `exit` | **74 × 35** | kilépés a diavetítőből, ikon + felirat | **Kilépés a diavetítőből** |
-| `timeline` | **157 × 35** | ugrás az idővonalra | **Időrend** |
+| `timeline` | **157 × 35** | a teljes képernyős qshow Időrend módjának indítása | **Időrend** |
 | `rotateleft` · `rotateright` | **26 × 34** | forgatás | — |
 | `prev` | **26 × 30** | előző kép | — |
 | `auto` (lejátszás) | **36 × 36** | indít/szünet | — |
@@ -6427,25 +6427,130 @@ nagyrészt megszűnt.
 | a leltár eleme | nálunk (`SlideshowView.qml`) |
 |---|---|
 | `exit` | ✅ `slideshowExitButton` |
-| **`timeline`** | ❌ **nincs — és ez SZÁNDÉKOS** (ld. lent) |
+| **`timeline`** | ❌ nincs a diavetítőben; a meglévő `TimelineView.qml` év/hónap-rács nem az eredeti qshow Időrend módja |
 | `rotateleft` · `rotateright` | ✅ (`↺` · `↻`) |
 | `prev` · `auto` · `next` | ✅ (`◀` · `slideshowPlayButton` · `▶▶`) |
 | `star` | ✅ `slideshowStarButton` |
 | `transtype` (`popuplist`) | ✅ `slideshowTransitionBox` |
-| `captionbutton` (kétállású) | ✅ `slideshowCaptionModeButton` |
+| `captionbutton` (kétállású BE/KI) | ⚠️ `slideshowCaptionModeButton`: háromállapotú (felirat / fájlnév / nincs), ezért nem azonos az eredeti láthatóságkapcsolóval |
 | `dtclip` (`tpslabel` + `minusone` + `tps` + `plusone`) | ✅ `slideshowTimeBlock` |
 | **`minusone`/`plusone` `setautorepeat 1`** | ✅ **2026-09-15 óta** (`autoRepeat: true`) |
 | a sáv lebegése/elrejtése | ✅ `HoverHandler` + `slideshowHideTimer` |
 
-#### ⛔ Miért NINCS `timeline` gomb — és miért helyes így
+#### ⚠️ A `timeline` gomb a qshow Időrend módja, nem a könyvtárrácsé
 
-A gomb az **Időrend nézetre** ugrik, ami nálunk **nincs megépítve**: a
-menütétel is kifejezetten INAKTÍV (`PicasaMenuBar.qml:827`, „amíg a valódi
-Időrend nincs megépítve"), a nézet maga a **#24** hatóköre. Egy működő
-gomb, ami nem visz sehová, a #936 szabályába ütközne („a kattintható
-vezérlő, ami mást ad, mint amit ígér, rosszabb, mint a hiánya").
+Az eredeti `oneup/timeline` a teljes képernyős **qshow Időrend módba** visz
+(a kattintási és inicializáló ág részletei a 2/b/2 pontban, a qshow belépési
+útja a [`picasa-menu-parancsok-viselkedese.md`](picasa-menu-parancsok-viselkedese.md)
+38.2.16-38.2.17 pontjában). Ez nem az alkalmazásablakon belüli dátumrács.
+A `TimelineView.qml` év/hónap-rács létezik, de a Nézet ▸ Időrend menü és a
+Ctrl+5 inaktív (`PicasaMenuBar.qml:827`), a vetítő sávjában pedig nincs
+qshow-vezérlő. A két nézetet nem szabad azonosként kezelni.
 
-⇒ A `timeline` gomb a **#24-gyel együtt** kerül be, nem előbb.
+⇒ Az eredeti gomb működése binárisból ismert; a qshow teljes tartalmának és
+átmenetének megvalósítási részletei külön nyitott kutatási kérdések.
+
+### 2/b/2 - A `timeline` és a `captionbutton` kattintási ága (#5547, 2026-10-22)
+
+**A `timeline` kattintása és módja.** A `0x008032e0` (`OneUpUI` esemény-
+elosztó) a `oneup/timeline` nevet a `0x008034ce`-`0x008034fe` ágban
+azonosítja, majd a `0x00803522` címen meghívja a `0x007fda00`-t. Ez nem a
+főablak dátumrácsára vált: a `0x007fda00` a qshow-objektumot csak akkor
+állítja át, ha `[this+0x2d8] != 0` és `[this+0x538] != 0`; a negatív
+`[this+0x3f4]` értéket nullázza, a `0x0097e510(0)` segédet hívja, beállítja
+`[this+0x3be] := 1`-et, lekéri az időt a `0xc40298` függvényimporton át,
+majd `0x00802230(this, 1)`-et hív. Ezután `[this+0x3ba] := 0`,
+`[this+0x3bb] := 0`, `[this+0x3b8] := 1` és `[this+0x3b9] := 1`.
+Az Időrend-mód jelzőjét a qshow eseménykezelője (`0x007fde80`) is olvassa;
+az Időrend-lista építője `0x008018a0` (részletek: a menü-parancsok spec
+38.2.35-38.2.42). A `0x00802230` már a meglévő `[this+0x3ec]` listából
+veszi az aktuális azonosítót, véletlen eltolásokat készít, a
+`[this+0x2e4]` forrásobjektum virtuális metódusától kér tartalmat, frissíti
+a puffert és QPC-időt ment (`0x008022ba`-`0x00802629`). A lista
+szolgáltatója, az adott kép/felirat forrása és a futásidejű ütemezés
+**NINCS MEG**; a `0x00802630` automatikus léptetőút ugyanezt a függvényt
+`0` paraméterrel hívja, míg a `0x007fda00` a `1` paraméteres ágat indítja.
+
+**A gomb láthatósága.** A `0x008037e0` `Preferences\BigSlideshow2`-t
+olvassa, a lekérdezés alapértékét `1`-re állítja, majd a `0x004019b0`
+visszatérési értékéből számít egy lokális jelzőt. A `oneup/timeline` akkor
+kap mutató (`+0x68`) hívást, ha mindhárom feltétel igaz:
+
+1. a `0x004019b0` lekérdezés eredménye nem nulla;
+2. `[0x00d33958]` értéke `0x10` vagy `0x20`;
+3. a `0x008037e0` második paraméterének második bájtja nulla.
+
+Ellenkező esetben a timeline csomópont rejtő (`+0x6c`) hívást kap, a
+`oneup/transtype` pedig fordítva: mutatást, illetve rejtést. A
+`0x0097e030` a `[0x00d33958]` értékét a GDI `GetDeviceCaps` függvény
+`BITSPIXEL` (`0x0c`) lekérdezéséből írja; ez a képpontonkénti bitek száma,
+nem a korábban nyitva hagyott bemutatómód-jelző. A második bájt forrása a
+`0x005e8a70` `param_2` argumentuma: a `thumbui/timelinebutton` 1-et, a
+`thumbui/sbutton` 0-t ad át (38.2.16). A root és a név szerinti csomópont
+létezése szintén szükséges ahhoz, hogy a láthatósági hívás lefusson.
+
+**A `captionbutton` kattintási ága.** A `0x008032e0` `0x00803373`-
+`0x008033b7` közötti ága megkeresi a `oneup/captionbutton` csomópontot,
+összeveti a `[node+0x359]` állapotjelző bájtot, majd a `oneup/caption` csomópontot
+mutatja (`0x009cd730`) vagy rejti (`0x009cd760`). Ebben az ágban
+`[node+0x359]`-be **nem ír**. Az erőforrás (`oneup.tre:121`) a
+`caption_yesicon` / `caption_icon` párost `showtarget` / `hidetarget`
+kapcsolatként deklarálja, tehát az eredeti feliratvezérlő kétállapotú.
+
+Az `ytButtonNode::vftable` (`0x00ce4874`) `+0x78` slotja a `0x00a65170`;
+ez a metódus a saját `this+0x359` mezőjét írja (`0x00a651ae`,
+`0x00a651e1`, `0x00a6525f`), majd a `0x00a64a10` felé eseményt indít.
+Ez **lehetséges író**, de a binárisból nem igazolt, hogy a
+`oneup/captionbutton` futásidejű objektuma `ytButtonNode`, vagy hogy az adott
+kattintás ezen a sloton éri el a `0x008032e0`-t. Mérés (a `paszta.py`
+teljes `.text` pásztázása, memória-kapuval): 2 884 879 utasításban 218
+közvetlen `+0x359` hivatkozás és 47 íróhely; az írójelölt tehát nem egyedi.
+Az eseményút feltételesen követhető: a `0x00a65170` a `0x00a64a10`-en át
+`0x8000004` kódú eseményt indít; a `0x009e3b00` a `[this+0x213]` értékétől
+függően a szülő `+0x58` vagy `+0x70` slotját hívja, a `OneUpUI` `+0x58`
+slotja pedig `0x008032e0`. A konkrét TRE-erőforrás runtime vtable-je,
+útválasztási bájtja és szülőkapcsolata hiányzik, ezért ez az út nem bizonyítja,
+hogy a kattintás a jelölt írót használja. A pontos objektum-/eseménykapcsolat:
+
+`Ghidra-kör kell: 0x00a65170 - a oneup/captionbutton futásidejű vtable-je, a [+0x213] útválasztási jelzője és szülőlánca; eléri-e a kattintás a +0x78 → 0x00a64a10 → 0x009e3b00 → OneUpUI +0x58 útvonalat? [blokkoló]`
+
+**Két független út.** A) Az `0x008032e0` utasításszintű olvasása azonosítja a
+`timeline` hívását, a feliratbájt olvasását és a két láthatósági segédet;
+az `0x007fda00` külön diszasszemblálása mutatja a qshow-állapotírást.
+B) A `0x008037e0` hívási ágai és az `0x0097e030` adatútja egymástól
+függetlenül megadják a `timeline`/`transtype` fordított láthatóságát és a
+`BITSPIXEL` eredetét; a `0x005e8a70` módparaméter-hívói a második bájt
+jelentését erősítik. A `captionbutton` esetén a teljes `.text`-pásztázás
+azt erősíti meg, hogy a diszpécserág nem író, de a konkrét erőforrás és az
+`ytButtonNode` író slot közötti él továbbra is hiányzik.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a `timeline` a főablaki
+év/hónap-rácsot jelenti: az eseményág célját (`0x007fda00`), az általa
+beállított `+0x3b8` állapotot és annak qshow-fogyasztóit (`0x007fde80`,
+`0x008018a0`) külön követtem. Az út a teljes képernyős qshow Időrend módba
+vezet; a rácsra mutató kapcsolat nem része ennek az útnak. Azt is próbáltam
+cáfolni, hogy a `0x00803373` ág írja a `+0x359`-et: az utasításokban csak
+összehasonlítás és show/hide hívás van, a teljes pásztázás pedig más
+íróhelyeket talált. Ez megerősíti, hogy a vizsgált ág maga nem az író; a
+konkrét kattintási író azonosítása ettől továbbra is nyitott.
+
+| vezérlő | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| `timeline` | `0x00803522` → `0x007fda00`: a qshow Időrend-mód állapotát indítja; láthatósága a fenti feltételektől függ. | A könyvtári `TimelineView.qml` dátumrács létezik; a vetítő sávban nincs qshow-vezérlő. | Ha termékparitás kell, külön qshow bemutatómódot tervezzünk; a dátumrácsot ne kössük be ennek helyettesítőjeként. Az animáció/tartalom részletei előbb nyitott kutatást igényelnek. |
+| `captionbutton` | A `.tre` két ikonállapotot deklarál; a `0x00803381` olvassa a `+0x359`-et és az alapján mutat/rejt. A kattintási író **NINCS MEG**; `0x00a65170` csak jelölt. | `slideshowCaptionModeButton` három módot vált: felirat / fájlnév / nincs. | A láthatóságkapcsolót válasszuk külön a felirat tartalmi módjától, vagy dokumentáljuk a három mód eltérő terméki célját. Az eredeti kattintásíró bekötését a blokkoló Ghidra-kör döntse el. |
+
+**Bizonyítottsági fok: nyitott a teljes jegyre.** A `timeline` mód és
+láthatósági feltétele két egymást ellenőrző bináris útból
+**megerősített**. A feliratgomb olvasó-/show-hide ága és kétállapotú
+erőforrása **megerősített**; az adott kattintás `+0x359`-írója nyitott,
+`0x00a65170` csak feltételes jelölt.
+
+**A #5547 „Kész, ha” mérlege.** ✅ A `timeline` kattintásának célja és a
+láthatósági feltétel megvan bináris címmel; a gomb a qshow Időrend-módba
+vezet, nem a főablaki dátumrácsba. ✅ A feliratág olvasó/show-hide
+viselkedése binárisból megvan; az adott kattintási íróra adott indokolt
+statikus negatív (az elosztóág nem ír, a lehetséges író futásidejű
+bekötése nincs meg) és a célzott Ghidra-kérdés fent szerepel.
 
 #### ⚠️ Az ismétlés SEBESSÉGE nincs mérve
 
