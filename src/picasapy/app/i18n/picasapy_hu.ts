@@ -9005,10 +9005,10 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
             <translation>Teljes elérési út másolása</translation>
         </message>
         <message>
-            <source>Upload to Picasa Web Albums...</source>
+            <source>Upload to &amp;Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Feltöltés a Picasa Webalbumokba…</translation>
+            <translation>Feltöltés a &amp;Picasa Webalbumokba...</translation>
         </message>
         <message>
             <source>Block from Uploading</source>
@@ -15838,12 +15838,6 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <translation>&amp;Album rendezésének alapja...</translation>
-        </message>
-        <message>
-            <source>Upload to &amp;Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Feltöltés a &amp;Picasa Webalbumokba...</translation>
         </message>
         <message>
             <source>Upload to Google &amp;Photos...</source>
