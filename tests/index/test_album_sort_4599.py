@@ -1,9 +1,10 @@
 """#4599 (ADR-016): az album rendezési kulcsai és a hely szerinti sorrend.
 
 A kulcsok a `docs/specs/album-sorrend.md` 2.4 szakaszából valók: Név =
-természetes összevetés (számjegy-sorozat számként, ASCII kisbetűsítve, a
-számjegy-sorozat minden nem-számjegy elé), Dátum = metaadat-dátum (egyenlőségnél
-név), Méret = fájlméret; Shift = csökkenő, Fordított = kulcs nélkül megfordít.
+UTF-8 bájtokon természetes összevetés (32 bites számérték modulo, ASCII
+`A-Z` kisbetűsítése, előjeles nem-számjegy kulcs), Dátum = metaadat-dátum
+(egyenlőségnél név), Méret = fájlméret; Shift = csökkenő, Fordított = kulcs
+nélkül megfordít.
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ class TestTermeszetesNev:
     def test_az_ascii_nagybetu_kisbetukent_hasonlit(self):
         assert _nev_szerint(["b.jpg", "A.jpg", "c.jpg"]) == ["A.jpg", "b.jpg", "c.jpg"]
 
-    def test_a_szamjegy_sorozat_minden_nem_szamjegy_ele_kerul(self):
+    def test_a_kis_szamszakasz_a_peldabeli_bajtkulcsok_elott_all(self):
         assert _nev_szerint(["a.jpg", "9.jpg", "_.jpg", "~.jpg"]) == [
             "9.jpg", "_.jpg", "a.jpg", "~.jpg",
         ]
@@ -44,6 +45,26 @@ class TestTermeszetesNev:
     def test_nem_ascii_betu_nem_kisbetusodik(self):
         # az eredeti csak az ASCII A–Z-t kisbetűsíti: az `É` nem esik az `é` mellé
         assert natural_name_key("É") != natural_name_key("é")
+
+    def test_utf8_bajtok_szerint_rendez_az_ascii_es_az_ekezetes_neveket(self):
+        assert _nev_szerint(["á", "ő", "Z", "a"]) == ["á", "ő", "a", "Z"]
+
+    def test_a_szamszakasz_32_bites_modulo_utan_hasonlit(self):
+        assert _nev_szerint(["x4294967295", "xz", "x4294967296", "x1"]) == [
+            "x4294967296",
+            "x1",
+            "xz",
+            "x4294967295",
+        ]
+
+    def test_a_nagy_szam_es_a_bajtkulcs_unsigned_erteke_osszevetheto(self):
+        assert _nev_szerint(["x4294967295", "xz"]) == ["xz", "x4294967295"]
+
+    def test_vezeto_nullak_es_azonos_maradek_utani_folytatas(self):
+        assert natural_name_key("x0002") == natural_name_key("x2")
+        assert _nev_szerint(
+            ["x0002b", "x4294967296b", "x02", "x0a", "x2a"]
+        ) == ["x0a", "x4294967296b", "x02", "x2a", "x0002b"]
 
     def test_nagy_szamsorozat_sem_dob(self):
         assert natural_name_key("9" * 40 + ".jpg") > natural_name_key("1.jpg")

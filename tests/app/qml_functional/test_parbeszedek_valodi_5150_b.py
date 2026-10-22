@@ -27,7 +27,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import QPointF, Property, QObject, Signal, Slot
 
 from conftest import _build_qml_app
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
@@ -272,20 +272,53 @@ def _email_fulon(window, qt_app):
 
 
 class TestEmailFul:
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
     def test_a_valasztas_radio_valodi_kattintassal_a_sajat_levelezot_kapcsolja(
-        self, email_app, qt_app
+        self, email_app, qt_app, magassag_elteres
     ):
         window, controller, engine = email_app
         _elokeszit(window, qt_app, controller)
         beallitasok = _email_fulon(window, qt_app)
+        beallitasok.setProperty(
+            "height", beallitasok.property("height") + magassag_elteres
+        )
+        qt_app.processEvents()
         levelezo = engine.rootContext().contextProperty("emailController")
+        valasztas = _gyerek(beallitasok, "optionsMailChooseRadio")
+        alapertelmezett = _gyerek(beallitasok, "optionsMailDefaultRadio")
+        google = _gyerek(beallitasok, "optionsMailGoogleRadio")
+        valasztas_y = valasztas.mapToScene(
+            QPointF(valasztas.width() / 2, valasztas.height() / 2)
+        ).y()
+        alapertelmezett_y = alapertelmezett.mapToScene(
+            QPointF(alapertelmezett.width() / 2, alapertelmezett.height() / 2)
+        ).y()
+        google_y = google.mapToScene(
+            QPointF(google.width() / 2, google.height() / 2)
+        ).y()
+        assert valasztas_y < alapertelmezett_y < google_y, (
+            "az e-mail rádiók nem a sablon szerinti választás, alapértelmezett, Google sorrendben állnak"
+        )
+        assert valasztas.property("checked") is True, (
+            "kulcs hiányában az első e-mail rádiónak kell kijelölve lennie"
+        )
+        assert google.property("enabled") is False
+
         _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsMailDefaultRadio"))
         assert _varj(qt_app, lambda: levelezo.property("useDefaultClient") is True)
+        assert levelezo._settings.value("mail/useDefaultClient") in (
+            True,
+            "true",
+        )
 
-        _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsMailChooseRadio"))
+        _klikk_ablakban(qt_app, beallitasok, valasztas)
 
         assert _varj(qt_app, lambda: levelezo.property("useDefaultClient") is False), (
             "a Választás radio kattintása nem állította át a levelezőt"
+        )
+        assert levelezo._settings.value("mail/useDefaultClient") in (
+            False,
+            "false",
         )
         _zar(qt_app, beallitasok)
 

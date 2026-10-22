@@ -1789,6 +1789,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [forras-audit-5186-1.md](forras-audit-5186-1.md) | #5455: a #5186 gyűjtő első húsz lezárt jegyének összevetése az eredeti Picasa 3.9-cel. |
 | [forras-audit-5186-2.md](forras-audit-5186-2.md) | #5453: a #5186 gyűjtő húsz lezárt jegyének eredeti Picasa 3.9 forrás- és mai PicasaPy-összevetése; nyitott Colab- és renderelt mérésekkel. |
 | [forras-audit-5186-3.md](forras-audit-5186-3.md) | #5454: a #5186 gyűjtő harmadik húsz lezárt jegyének összevetése az eredeti Picasa 3.9-cel. |
+| [forras-audit-5186-4.md](forras-audit-5186-4.md) | #5527: a negyedik köteg kilenc jegyének eredeti Picasa 3.9 forrás- és mai PicasaPy-összevetése; #4563 eltérés, célzott Colab-felvételekre váró pontokkal. |
 
 ## Viselkedés és funkciók
 
