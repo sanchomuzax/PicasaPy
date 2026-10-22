@@ -9056,7 +9056,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
             <translation>‏&amp;نسخ المسار بالكامل</translation>
         </message>
         <message>
-            <source>Upload to Picasa Web Albums...</source>
+            <source>Upload to &amp;Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>‏تحميل إلى أ&amp;لبومات الويب بيكاسا...</translation>
@@ -11509,6 +11509,12 @@ picasapy-origin-key: oneuptext:Text(oneup/tpslabel);tooltips:Text(editoneup/tpsl
             <source>seconds</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;stringres:uploadmgr::seconds</extracomment>
+            <translation>ثانية</translation>
+        </message>
+        <message>
+            <source>second</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUpUI::second</extracomment>
             <translation>ثانية</translation>
         </message>
         <message>
@@ -15888,12 +15894,6 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <translation>‏ت&amp;صنيف الألبوم بحسب</translation>
-        </message>
-        <message>
-            <source>Upload to &amp;Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>‏تحميل إلى أ&amp;لبومات الويب بيكاسا...</translation>
         </message>
         <message>
             <source>Upload to Google &amp;Photos...</source>

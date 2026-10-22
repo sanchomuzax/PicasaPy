@@ -89,7 +89,7 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     assert float(show.height()) > 0, "a vetítőnek nincs kirajzolási területe"
 
     controller.setSlideshowCaptionMode("none")
-    controller.setSlideshowSeconds(30)
+    controller.setSlideshowSeconds(20)
     QMetaObject.invokeMethod(
         show, "start", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
     )

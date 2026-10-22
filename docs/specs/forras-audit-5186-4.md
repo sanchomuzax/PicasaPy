@@ -15,8 +15,8 @@ futtattam.
 
 ## Következtetés
 
-Az eredeti forrás alapján a #4563 mai ismétlése eltérés; a #4546 és #4547
-egyezik. A többi hat tételnél a kód és az erőforrás részben egyezik, de a
+A #4563 mai ismétlése egyezik az eredetivel (lásd a javítást lent); a #4546 és
+#4547 egyezik. A többi hat tételnél a kód és az erőforrás részben egyezik, de a
 felhasználói felületen látható eredeti állapotot célzott Colab-felvételnek kell
 lezárnia.
 
@@ -42,7 +42,7 @@ viselkedést.
 | #4543 | `editpanel.tre:219-229,958-962` megjeleníti a `thumbui/circlecursor` elemet és a `RetoucherHandler`-t; az `editpanel/retouchtarget` xrefje `0x005f74a0`. Ez a retusáló kört/kezelőt igazolja, de nem a cél- és forráskörök külön állapotát. | `PhotoViewer.qml:3862-3882,3906-3944` rögzíti az első kattintás célját, a második kattintás forrását, és külön cél-, forrás- és egérkurzorkört rajzol; a vezérlő útja `edit_controller.py:1727-1747`. | **NYITOTT az eredeti két kör viselkedésére.** Colab-felvétel kell: retusálás aktiválása; első kattintás a célon; egérmozgatás a forrásra; a cél és a mozgó forrás/kurzorjelölő rögzítése; második kattintás utáni állapot rögzítése. |
 | #4546 | `edittextpanel.tre:19-22` adja a betűtípus-legördülőt. A `0x0062d750` szövegpanel-építő a `edittextpanel/fontfamily` elemet használja és meghívja a `0x00825e90` betűcsalád-lekérdezőt; utóbbi a GDI32 `EnumFontFamiliesExW` importot (`0x0092348a`) hívja (`0x00825ef8`). | `EditorTextPanel.qml:121-131` a kontroller listáját mutatja; `edit_controller.py:937-943` és `render/text_fonts.py:98-137` Qt alatt a telepített rendszer-betűcsaládokat kéri le. | **EGYEZIK - megerősített.** Az eredeti szövegpanel betűcsaládokat enumerál; a mai alkalmazás a Qt rendszer-betűkészletét kínálja. |
 | #4547 | `edittextpanel.tre:75-97` három külön erőforrásréteget rendel a balra, középre és jobbra igazításhoz. A `runtime/respack.yt` három rétegének pixelképe különböző vonaligazítást mutat. | `EditorTextPanel.qml:238-288` külön `AlignIcon` elemeket és igazítási értékeket ad; `AlignIcon.qml:20-35` ezek szerint helyezi el a vonalakat. | **EGYEZIK - megerősített.** Az eredeti ikonok különbözők, és a mai három jel is különbözik. A képpont-pontosságú alakazonosság nem volt a jegy állítása. |
-| #4563 | A `oneup.tre:75-81` nézőbeli `oneup/prev` és `oneup/next` gombokra `mousedown`-t ad, `setautorepeat`-et nem. Ugyanebben az erőforrásban a `plusone`/`minusone` kap `setautorepeat`-et (`:133-143`). A `0x008032e0` kattintási ágai a `0x00802980`/`0x008029f0` léptetőket hívják; a `0x00803180` ismétlő hurka külön egérgörgő-esemény (`0x20a`). | `PhotoViewer.qml:1855-1863,2021-2029` `autoRepeat: true`-t állít be mindkét nézőgombra. | **ELTÉR - megerősített.** A korábbi `szerkeszto-felso-sav.md:193-197` hivatkozás a `filmcontainer` filmszalag-nyilaira vonatkozik, nem a `oneup` nézőgombokra. Teendő: a két nézőgombból törölni az `autoRepeat: true`-t és az arra hivatkozó megjegyzést; a filmszalag gombjainak ismétlését ez nem érinti. |
+| #4563 | A `oneup.tre:75-81` nézőbeli `oneup/prev` és `oneup/next` gombokra `mousedown`-t ad, `setautorepeat`-et nem. Ugyanebben az erőforrásban a `plusone`/`minusone` kap `setautorepeat`-et (`:133-143`). A `0x008032e0` kattintási ágai a `0x00802980`/`0x008029f0` léptetőket hívják; a `0x00803180` ismétlő hurka külön egérgörgő-esemény (`0x20a`). | `PhotoViewer.qml:1855-1863,2021-2029` `autoRepeat: true`-t állít be mindkét nézőgombra. | **EGYEZIK (javítva, 2026-10-22).** A `oneup.tre` a diavetítő vezérlősávja (`stripback`, `exit`, `timeline`, `auto`, `plusone`/`minusone`), nem a szerkesztőnézőé. A néző `viewerPrevButton`/`viewerNextButton` gombja a `filmcontainer` kör alakú léptetőnyila (`globalbuttons/lfs_n`, `rfs_n`), amelyen `m_autorepeat` áll (`szerkeszto-felso-sav.md` 5.4), tehát a mai `autoRepeat: true` helyes. A korábbi „ELTÉR” verdikt téves volt; a #5529 ezért lezárva változtatás nélkül. |
 | #4596 | A bináris `0x00520fa0` az `Import Files/Folder` címet (`0x00c88d70`) használja; az `acquirepanel_text.tre:114-115` kommentelt súgója „folder … or single images from disk” szöveget tartalmaz. A cím és a kommentelt súgó a fájlforrás szándékát jelzi, de nem bizonyítja az aktív fájlválasztó műveletét. | `ImportSourceDialog.qml:368-377,978-1004` `FileDialog.OpenFiles`-t használ; `import_source_controller.py:795-814` a kijelölt fájlokat beolvassa; `importsource.py:254-286` egyedi fájlútvonalakból épít forrást. | **NYITOTT az eredeti tényleges fájlkijelölésre; a mai kód támogatja.** Colab-felvétel kell: az eredeti importpanelről fájlt tallózni, legalább egy kiválasztott képet importálni, majd a kiválasztott kép megjelenését rögzíteni. |
 
 ## A két független út
@@ -56,7 +56,7 @@ viselkedést.
 | #4543 | A `.tre` retusáló overlayt és körkurzort nevez meg. | A külön xref (`0x005f74a0`) a `retouchtarget` vezérlőt is azonosítja, de egyik út sem mondja meg a két kör láthatósági sorrendjét. | A két eredeti út a retusáló/target vezérlőt igazolja, nem a cél-/forráskör viselkedését. |
 | #4546 | A `0x0062d750` a szövegpanel betűlista-elemét építi. | A `0x00825e90` `EnumFontFamiliesExW`-t hívja; a két függvény között bináris hívási él van. | Egyezik: a szövegpanel rendszerbetűket kér le. |
 | #4547 | A `.tre` három külön ikonréteghez rendeli a három igazítógombot. | A respackből kivont három réteg pixelei eltérően igazított vonalakat adnak. | Egyezik; a mai kód külön jeleket rajzol. |
-| #4563 | A `oneup.tre` a prev/next gomboknál csak `mousedown`-t ad, ismétlést nem; a `picasa-eger-es-kijeloles.md` 7. szakaszának ismétlő-listája is csak a plusz/mínusz gombokat sorolja fel. | A `0x008032e0` a prev/next parancsot kezeli; a külön ismétlő út `0x00803180`-ban az egérgörgőé. | Egyezik: az eredeti nem kér tartott gombos ismétlést; a mai kód eltér. |
+| #4563 | A `oneup.tre` a prev/next gomboknál csak `mousedown`-t ad, ismétlést nem; a `picasa-eger-es-kijeloles.md` 7. szakaszának ismétlő-listája is csak a plusz/mínusz gombokat sorolja fel. | A `0x008032e0` a prev/next parancsot kezeli; a külön ismétlő út `0x00803180`-ban az egérgörgőé. | Javítva: a `oneup` léptetők a diavetítőé; a néző gombjai a `filmcontainer` ismétlő nyilai, a mai kód egyezik. |
 | #4596 | A `0x00520fa0` fájlokat és mappát nevező címe. | A kommentelt tooltip egyedi képeket említ, de aktív fájlválasztásra nincs bizonyíték. | Nem elegendő az eredeti tényleges működés eldöntéséhez. |
 
 ## Cáfoló kísérlet
@@ -85,15 +85,9 @@ az eredményt adta, ezért a `filmcontainer`-re hivatkozó korábbi egyezés hib
 
 ## Javasolt jegytörzs-bővítés
 
-### #4563 - fejlesztői teendő
+### #4563 - nincs fejlesztői teendő (javítva, 2026-10-22)
 
-| | lelet |
-|---|---|
-| **Eredeti** | A `oneup/prev` és `oneup/next` a `oneup.tre` szerint `mousedown` gomb, automatikus ismétlés nélkül; a kattintást a `0x008032e0` ágai a `0x00802980` és a `0x008029f0` léptetőre vezetik. A `m_autorepeat` a filmszalag másik vezérlőpárjához tartozik. |
-| **Nálunk** | A `PhotoViewer.qml` előző/következő gombja `autoRepeat: true`. |
-| **Teendő** | A `viewerPrevButton` és `viewerNextButton` `autoRepeat: true` sorának törlése, a két elavult megjegyzés javítása. A filmszalag saját ismétlése maradjon a maga vezérlőin. |
-
-**Kész, ha:** a néző előző/következő gombja egy lenyomásra egy képet lép; a filmszalag nyilai továbbra is nyomva tartva ismételnek; a kódmegjegyzés a `oneup.tre` forrásra hivatkozik.
+⚠️ Az itt korábban javasolt teendő (az `autoRepeat: true` törlése) téves volt: a `oneup.tre` a diavetítő sávját írja le. A néző két léptetője a `filmcontainer` nyila (`globalbuttons/lfs_n`, `rfs_n`), amelyen `m_autorepeat` áll (`szerkeszto-felso-sav.md` 5.4). A mai viselkedés egyezik; a #5529 változtatás nélkül lezárva. A `0x008032e0` ágai (`0x00802980`, `0x008029f0`) a diavetítő léptetőit hívják.
 
 A többi tételnél a jelenlegi bizonyíték vagy egyezést mutat, vagy a fenti Colab-felvételre vár; fejlesztői módosítást egyikre sem javaslok a nyitott eredeti viselkedés kitalálása nélkül.
 

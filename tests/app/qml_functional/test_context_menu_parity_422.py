@@ -99,7 +99,6 @@ TETELSOR: dict[str, dict[str, str]] = {
         "albumMenuSortAlbumBy": "Album rendezésének alapja...",
         "albumMenuOnlineActions": "Online műveletek",
         "albumMenuUploadToGooglePhotos": "Feltöltés a Google Fotókba...",
-        "albumMenuUploadToWebAlbums": "Feltöltés a Picasa Webalbumokba...",
         "albumMenuExportAsHtml": "Exportálás HTML-oldalként...",
     },
 }

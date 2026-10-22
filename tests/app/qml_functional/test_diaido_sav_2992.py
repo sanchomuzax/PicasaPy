@@ -92,8 +92,19 @@ class TestADiaidoBlokk:
         vetito.setProperty("seconds", 1)
         assert _nevvel(vetito, "slideshowTimeMinus").property("enabled") is False
 
+    def test_19_rol_a_PLUSZ_meg_a_20_ra_visz(self, vetito):
+        """#5544: a felső határ 20; 19-ről még egy lépés jár."""
+        vetito.setProperty("seconds", 19)
+        plusz = _nevvel(vetito, "slideshowTimePlus")
+        assert plusz.property("enabled") is True
+        kapott = []
+        vetito.secondsChosen.connect(kapott.append)
+        plusz.clicked.emit()
+        assert kapott == [20]
+
     def test_a_FELSO_hataron_a_plusz_tiltott(self, vetito):
-        vetito.setProperty("seconds", 30)
+        """#5544: 20-nál a `+` letiltott (nem 30-nál, mint régen)."""
+        vetito.setProperty("seconds", 20)
         assert _nevvel(vetito, "slideshowTimePlus").property("enabled") is False
 
     def test_a_diaido_a_TEMPOT_is_allitja(self, vetito):
