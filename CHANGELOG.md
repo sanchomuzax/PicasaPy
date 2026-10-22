@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.185] - 2026-10-22
+
+- A fotómenü a Picasa Web Albums feliratot a billentyűjelöléssel együtt mutatja, az albummenü pedig csak az eredeti Google Fotók feltöltési tételt tartalmazza (#5519).
+
+## [0.9.184] - 2026-10-22
+
+- A Névcímkék csoportküszöb-csúszkája alapból 85-ön áll, a meglévő csoportosítási küszöb megőrzésével (#5512).
+
 ## [0.9.183] - 2026-10-22
 
 - A változásnapló őre ellenőrzi a darabok sorformáját, és a verzióemelő hibás darabnál nem emeli a verziót (#5507).

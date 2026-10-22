@@ -38,10 +38,11 @@ mért referenciaérték, nem saját becslés. Erre a pontra hangoljuk a skála
 közepét: a [MIN_SIMILARITY, MAX_SIMILARITY] = [0.20, 0.55] tartomány úgy
 lett választva, hogy a Picasa-lépcsőzés KÖZEPÉHEZ közeli lépcső (70) essen
 egybe az SFace 0.363-as referenciájával — ez indokolja a CSOPORTOSÍTÁS
-alapértelmezett lépcsőjét (70 → kb. 0.356). A JAVASLAT — mivel egy
-MEGLÉVŐ, elnevezett személyhez társít, tehát tévedése látványosabb, mint
-egy névtelen csoport téves összevonása — szigorúbb, magasabb lépcsőt kap
-(85 → kb. 0.472)."""
+kalibrációs pontját (régi 70 → kb. 0.356). A felületi 85-ös lépcső ehhez a
+ponthoz kerül leképezésre. A JAVASLAT, mivel egy MEGLÉVŐ, elnevezett
+személyhez társít, tehát tévedése látványosabb, mint egy névtelen csoport
+téves összevonása, változatlanul a közös lineáris leképezést és szigorúbb
+küszöböt használ (85 → kb. 0.472)."""
 
 from __future__ import annotations
 
@@ -59,20 +60,51 @@ PICASA_STEPS: tuple[int, ...] = (50, 55, 60, 65, 70, 75, 80, 85, 90, 95)
 MIN_SIMILARITY = 0.20
 MAX_SIMILARITY = 0.55
 
-#: Alapértelmezett lépcsők (a modul-docstring indoklása szerint).
-DEFAULT_CLUSTER_STEP = 70
+#: A csoportküszöb kalibrációs pontja a korábbi közös leképezésen.
+CLUSTER_CALIBRATION_STEP = 70
+
+#: Alapértelmezett felületi lépcsők (a Picasa options.fen alapján).
+DEFAULT_CLUSTER_STEP = 85
 DEFAULT_SUGGEST_STEP = 85
 
 
 def step_to_threshold(step: int) -> float:
-    """Egy Picasa-lépcső (50–95) átváltása a saját hasonlósági skálánkra,
-    lineáris interpolációval a `[MIN_SIMILARITY, MAX_SIMILARITY]` sávban."""
+    """Az eredeti közös/javaslat-lépcső lineáris SFace-leképezése.
+
+    A csoportküszöb felületi lépcsőjéhez a `cluster_step_to_threshold`
+    függvény tartja meg az 50-95-ös tartományt és a külön kalibrált 85-ös
+    alapállást.
+    """
     lo, hi = PICASA_STEPS[0], PICASA_STEPS[-1]
     fraction = (step - lo) / (hi - lo)
     return MIN_SIMILARITY + fraction * (MAX_SIMILARITY - MIN_SIMILARITY)
 
 
-DEFAULT_CLUSTER_THRESHOLD = step_to_threshold(DEFAULT_CLUSTER_STEP)
+def cluster_step_to_threshold(step: int) -> float:
+    """A csoportküszöb lépcsőjét a kalibrált SFace-skálára váltja.
+
+    A 85-ös felületi alapállás a korábbi 70-es lépcső küszöbét őrzi meg.
+    A 50 és 95 végpont továbbra is a jelenlegi hasonlósági sáv két végét adja;
+    a két szakasz lineáris és monoton.
+    """
+    lo, hi = PICASA_STEPS[0], PICASA_STEPS[-1]
+    calibrated = step_to_threshold(CLUSTER_CALIBRATION_STEP)
+    if step <= DEFAULT_CLUSTER_STEP:
+        fraction = (step - lo) / (DEFAULT_CLUSTER_STEP - lo)
+        return MIN_SIMILARITY + fraction * (calibrated - MIN_SIMILARITY)
+    fraction = (step - DEFAULT_CLUSTER_STEP) / (hi - DEFAULT_CLUSTER_STEP)
+    return calibrated + fraction * (MAX_SIMILARITY - calibrated)
+
+
+def threshold_to_cluster_step(threshold: float) -> int:
+    """A küszöbhöz legközelebbi, érvényes csoport-lépcsőt adja vissza."""
+    return min(
+        PICASA_STEPS,
+        key=lambda step: abs(cluster_step_to_threshold(step) - threshold),
+    )
+
+
+DEFAULT_CLUSTER_THRESHOLD = cluster_step_to_threshold(DEFAULT_CLUSTER_STEP)
 DEFAULT_SUGGEST_THRESHOLD = step_to_threshold(DEFAULT_SUGGEST_STEP)
 
 
