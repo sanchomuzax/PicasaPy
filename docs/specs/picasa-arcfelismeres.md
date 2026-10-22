@@ -4345,7 +4345,7 @@ A pontok mind ki vannak mondva és minden nyitott részhez konkrét J2-J8 felvé
 Ghidra-kör kell: 0x00586e20 - a `Contacts2` tolása után a `0x00985ff0`, `0x0040eef0`, `0x005863f0` és a `call edx` ág: mit ír a fájlba [blokkoló]
 Ghidra-kör kell: 0x0068ac20 - a `0x0069ceb0` két hívása és a `0x00586e20` hívás feltétele (szakasz-fejléc vagy sorok) [blokkoló]
 Ghidra-kör kell: 0x006a1350 - ki hívja közvetve (vtábla-slot vagy táblázat), és a három hívási hely (`0x006a14cd`, `0x006a193c`, `0x006a1972`) mikor fut: betöltés, mentés vagy törlés után [blokkoló]
-Ghidra-kör kell: 0x00692210 - a `0x0069b240` mentés közvetett hívója (vtábla-slot): melyik objektum, és fut-e a `Delete Person` után [blokkoló]
+Ghidra-kör eredménye (2026-10-21): a `0x00692210` az `AlignedImageCollection` és a `PrepareCollection` vtable-jének közös 27. slotja; a People Manager `Delete Person` utáni közvetett futása NINCS MEG. Lásd a 41. szakaszt. Következő cél: a `0x00584cc0` és `0x005836f0` törlés utáni virtuális hívási útja.
 
 **22. kör, N6 (`0x007b81e0`, a Choose-callback): nem ír közvetlenül a `Contacts2`-be.** A törzs (`.ghidra/2026-10-20-ghidra-22.txt`, 898-1152. sor): ha a `param_1[0x57]` jelző be van kapcsolva, és a kiválasztott név mutatói (`param_1[0x54]`, `param_1[0x55]`) egyeznek a tároltakkal, a `ContactManagerDlg::OK` kulcs szövegét, különben a `ContactManagerDlg::Choose` kulcs szövegét adja a `piVar7` objektum `+0x68` slotjának. **Javítva (2026-10-21, #5437):** ez nem naplóüzenet, hanem az OK-gomb feliratának beállítása (38.7 szakasz). A törzsben nincs `0x00586e20` és nincs `0x00587110` hívás.
 - **Bizonyítottsági fok.** A közvetlen hívási lista: **megerősített** (C). A `+0x68` slot célja és a hívottak (`0x00588460`, `0x005c2100`, `0x005c7620`, `0x007b8d20`) szerepe: **NINCS MEG**. A közvetett írás kizárva nincs.
@@ -4520,12 +4520,10 @@ Ez a „Névjegyek frissítése” (Refresh Contacts) ág, nem törlés. A `0x00
 **Válasz (2026-10-20): a `(szülő, név, 0x13320004, &kimenet, 1)` lookup három kérdése.** A 37.9/b részletei (a betöltő-lánc és a fájlnév) binárisban megerősítve; az alábbi kiegészítésekkel:
 
 1. **Fájlból tölt-e (pmp).** Igen, de csak a bit 0-s csomópontokon. A találati ágon a bit 0 esetén a `0x006a7090` fut, és ha `[esi+8] == 1`, hívja a `0x006a2cd0`-t (`0x006a7094`). A `0x006a2cd0` a `pmp` sztringgel (`0x00ca80f4`) és a `%s_%s.%s` formátummal (`0x00ca80f8`) nevet állít össze, és fájlt nyit. A `string_xrefs` nem listázza a három betűs `pmp` sztringet, ezért a sztring-keresés üres eredményt adna; a címet diszasszemblálásból és a `pe_dis.read` olvasásából igazoltam. Az 1-es állapot kiosztója: NINCS MEG (37.9/b).
-2. **Visszaírás a `+0x284` táblába.** A `0x006a41e0`-ben nincs `0x284` (diszasszemblálás: 0 találat). A `+0x284` a lookup által visszaadott rekordon belül van. A `0x00499610` a rekord mutatóját (`[esi+0x54]`) és a `rekord+0x284` címet (`[esi+0x58]`) tárolja, írás a rekordba nincs. A másik hívó, a `0x006a5590` az `add ebx, 0x284` (`0x006a5691`) után a `+0x20` (tulajdonos-szál) és a `+0x24` (számláló) mezőket írja (`0x006a56aa`-`0x006a572a`); ezek ugyanazok, mint a `0x006a41e0` zárprotokolljában. A `+0x284` adatmezőinek írója: NINCS MEG.
-3. **Ugyanazt az oszlopot írja-e a személyszintű mellőzés.** NINCS MEG. A `0x13320004` kulcsot két hívó használja: a `0x00499610` (hívója a `0x00495be0`, sztring nélkül, közvetlen hívó nélkül) és a `0x006a5590` (hívói a `0x00431570`, `%I64u` sztringgel, és a `0x00441ed0`, sztringjei `.picasa.ini`, `category`, `location`). A személy-mellőzés jelöltjei (`0x005fdc30`, `0x00640340`, `0x0056c5a0`) lefelé 3 szinten nem érik el ezeket. Ez vtábla-hívást nem zár ki.
+2. **Visszaírás a `+0x284` táblába.** A `0x006a41e0`-ben nincs `0x284` (diszasszemblálás: 0 találat). A `+0x284` a lookup által visszaadott rekordon belül van. A `0x00499610` a rekord mutatóját (`[esi+0x54]`) és a `rekord+0x284` címet (`[esi+0x58]`) tárolja, írás a rekordba nincs. **Javítás, 2026-10-21:** a másik hívó, a `0x006a5590`, a `0x13320004` kulcs alatt kéri le a rekordot (`0x006a55fc`), majd a `rekord+0x284` objektumot zárolja. A törzs a `rekord+0x2cc` vektor `in_EAX` indexű, 8 bájtos elemébe írja a `param_3` és `param_4` értéket, majd a `0x006a2a60`-nal érvényteleníti a gyorsítótárat (`0x006a56f5`-`0x006a5705`). Tehát a `0x006a5590` adatmezőket is ír, nem csak zármezőket.
+3. **Ugyanazt az oszlopot írja-e a mellőzés.** NINCS MEG. **Javítás, 2026-10-21:** a `0x0056c5a0` csak a helyi menüt állítja össze; az `ID_IGNOREPEOPLE` parancsazonosítója `0x9c9a`. A `0x005cb990` diszpécser ugrótáblája a `0x9c9a` parancsot a `0x005c9b00` kezelőhöz irányítja (`0x005cdb8c`, `0x005cd9fc`, `0x005cbaef`-`0x005cbb14`). Ez a kezelő a `0x006a0d30` vektormásoló segédet hívja. A `0x006a5590`-hez vezető kapcsolat és a mellőzés által írt `0x1332000x` kulcs nincs bizonyítva; a virtuális hívások miatt a közvetlen hívási index hiánya önmagában nem kizárás. Lásd a 41. szakaszt.
 
-Ghidra-kör kell: 0x00495be0 - a `0x00499610` (`0x13320004`, a `+0x284` kimenet) hívója: ki és mikor tölti be az `albumcontactids` táblát [blokkoló]
-Ghidra-kör kell: 0x0056c5a0 - a `Ignore Person` parancs közvetett hívási lánca (vtábla-slot): melyik `0x1332000x` kulcsot írja [blokkoló]
-Ghidra-kör kell: 0x006a5590 zárblokkja (`0x006a5691`-`0x006a572a`): a `+0x284` objektum adatmezőinek írója [nem blokkoló]
+2026-10-21-i állapot: a `0x00495be0` betöltési útja és a `0x006a5590` adatírása a 41. szakaszban lezárva. Az Ignore Person adatkulcsa ott nyitott marad; a következő cél a `0x006a0d30` által használt vektor tárolási útja.
 
 **Colab-javaslat (futásidejű adat, a `behavior` feladathoz a tulajdonos `jovahagyva` címkéje kell).**
 1. Új, üres mappa két képpel; az egyik a „Teszt Elek” személyhez tartozik (`PicasaTeszt`).
@@ -4950,3 +4948,70 @@ Az N1-hez rögzíteni kell egy fotót, amelyen egy arc már névvel szerepel és
 - Colab-felvétel kell N1-hez, az eredeti felismerési arányhoz és mérethez, valamint a People Manager és Név nélküliek Ctrl/Shift viselkedéséhez.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (40. szakasz); `docs/specs/00-index.md` (#5184 friss állapota). Kódhoz és tesztekhez nem nyúltam.
+
+## 41. #5185, 2026-10-21: a Ghidra-kérések részleges lezárása
+
+**Hatókör.** A négy átadott dekompiláció és a helyi diszasszemblálás alapján a 37.9/b régi állításait javítom. A People Manager `Delete Person` útjának közvetett folytatása és az `Ignore Person` adatkulcsa továbbra sem dőlt el. Minden cím a Picasa3.exe 3.9.141.259 betöltési címe.
+
+### 41.1 `0x00692210`: két gyűjteményosztály közös metódusa, a törlés utáni futás nyitott
+
+`0x00692210` a `param_1+0x1b0` elemtömbjén iterál, majd elemről elemre a `0x0069b240` mentést hívja. A bináris RTTI két, azonos slotot tartalmazó vtable-t nevez meg: `AlignedImageCollection::vftable` (`0x00ca7d8c`) és `PrepareCollection::vftable` (`0x00ca7c54`). Mindkét vtable-ben a függvény a `+0x6c`, azaz 27-es indexű slotban áll (1-től számozva a 28. bejegyzés). Ez a kód tehát nem a `ContactManagerDlg` metódusa, hanem a két gyűjteményosztály közös művelete.
+
+A People Manager `Delete Person` kezelője `0x007b99a0`-ból hívja a `0x007ba820`-at. A törlési ág a `0x005836f0` és a `0x00584cc0` segédeket hívja, majd eltávolítja az aktuális sort. A vizsgált statikus út közvetlenül nem hívja a `0x00692210`-et. A `0x005836f0` és `0x00584cc0` további virtuális hívásai nincsenek végigkövetve, ezért a későbbi, közvetett futás **NINCS MEG**.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x00692210` a `AlignedImageCollection` és a `PrepareCollection` közös vtable-slotja, `+0x6c` (index 27). A Delete Person közvetlen útja nem hívja; utólagos virtuális hívás nem kizárt. | Nincs azonos nevű gyűjteményosztály a People Manager útjában; a PicasaPy saját kontakt- és arcadat-szolgáltatásokat használ (`people_controller.py`, `face_scan_controller.py`). | A futás eldöntéséig nincs kódváltoztatás. Következő statikus cél a `0x00584cc0` és `0x005836f0` virtuális hívási útja; futásidejű állításhoz Delete Person utáni eredeti felvétel vagy trace kell. |
+
+### 41.2 `albumcontactids`: első olvasáskor kérdezi le, a PMP-adatot csak meglévő, 1-es állapotú rekord olvassa be
+
+A `0x00415790` konstruktorlánca a `0x00495360`-on keresztül `albumcontactids` nevű oszlopot hoz létre. A személyalbum-ág a `0x00448fb0`-ban olvassa ezt az oszlopot. Ha az oszlop kimeneti mutatója még null (`[this+0x2754] == 0`), a kód a virtuális `+0x18` sloton keresztül a `0x00495be0` betöltőhöz jut. Ez a `CColumn` metódus zárol, majd null kimenetnél meghívja a `0x00499610`-et. Az utóbbi `0x13320004` kulccsal kérdezi le a property rekordot (`0x00499629`), a kimeneti rekordot `[esi+0x54]`-be, a rekord `+0x284` címét `[esi+0x58]`-ba teszi (`0x0049963e`, `0x00499648`).
+
+A PMP-fájl tényleges olvasása egy további, feltételes lépés: a `0x006a41e0` találati ága a bit 0 beállított rekordnál hívja a `0x006a7090`-et, amely `+0x08 == 1` esetén meghívja a `0x006a2cd0` olvasót. Az új rekord állapota 2, így az újonnan létrehozott rekord ezen az ágon nem olvas PMP-fájlt. Tehát a személyalbum adatútja a null első olvasásakor inicializálja az oszloplekérdezést; PMP-tartalom csak akkor töltődik, ha a megtalált rekord meglévő, 1-es állapotú.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `albumcontactids` lekérdezése a `0x00448fb0` személyalbum-út első oszlopolvasásakor indul; a `0x13320004` property PMP-tartalma a rekord állapotától függően töltődik (`0x00495be0`, `0x00499610`, `0x006a41e0`, `0x006a7090`, `0x006a2cd0`). | Az `albumcontactids` oszlopnévnek nincs közvetlen megfelelője a `src/picasapy/` alatt; a PicasaPy saját adatbázis-sémát és általános PMP-importert használ. Ez önmagában nem bizonyít felhasználói viselkedésbeli eltérést. | Nincs igazolt megvalósítási eltérés, ezért nincs kódteendő. |
+
+### 41.3 `Ignore Person`: a menüparancs kezelője ismert, a `0x1332000x` kulcs nem
+
+A `0x0056c5a0` helyi menü-összeállító a `0x13d` kontextuságban felveszi az `ID_IGNOREPEOPLE` parancsot (`0x0056c5a0`, a sztring feloldása és `0x00562930` menühozzáadás). A bináris ugrótábla a `0x9c9a` parancsot a `0x005cbaef` címre irányítja; ez a blokk a `0x005c9b00` kezelőt hívja (`0x005cbb14`). A kapcsolat két ellenőrizhető eleme: a menüépítő a `0x9c9a` parancsot engedélyezi, az ugrótábla `0x5cdb8c` bájtja a `0x5cd9fc` táblán keresztül a `0x5cbaef` célra mutat.
+
+A `0x005c9b00` a `.picasa.ini` feldolgozó út része, és meghívja a `0x006a0d30` vektormásolót. A megvizsgált útból nem vezetett le `0x1332000x` kulcs. A `0x006a5590` más függvény, amely bizonyítottan `0x13320004` kulccsal dolgozik, de a `0x005c9b00`-ból hozzá vezető hívás nem igazolt. A `0x005c9b00` virtuális hívásai miatt nem állítom, hogy az útban sehol sincs további property írás.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Az `ID_IGNOREPEOPLE` a `0x9c9a` parancsazonosítón át a `0x005c9b00` kezelőhöz jut. Az általa írt PMP/property-kulcs **NINCS MEG**. Az arc-szintű `.picasa.ini` mellőzés mért jele `ffffffffffffffff` (job-210, 34.11). | A `PeoplePanel.qml` egy arcra hívja a `faceScanController.ignoreFaces` műveletet (`PeoplePanel.qml:230`, `face_scan_controller.py:1180`), amely ugyanezt a `ffffffffffffffff` arc-jelölőt írja a `.picasa.ini`-be. | A mért arc-szintű viselkedés egyezik; property-kulcs eltérés nem igazolt. Következő bináris cél: `0x006a0d30` vektorának eredete és hívóobjektuma, majd annak virtuális írója. |
+
+### 41.4 `0x006a5590`: a `0x13320004` rekord 8 bájtos elempárjának írója
+
+A `0x006a5590` a `0x006a41e0` lookupot `0x13320004` kulccsal hívja (`0x006a55fc`). A sikeres lookup után zárolja a rekord `+0x284` alobjektumát, majd a rekord `+0x2cc` tömbjének `in_EAX` indexű, 8 bájtos elemében összehasonlítja és szükség esetén beírja a `param_3` és `param_4` dword értékeket (`0x006a56f5`-`0x006a5705`). Eltérés esetén a `0x006a2a60` gyorsítótár-érvénytelenítőt hívja. A `+0x284` alobjektum `+0x20` és `+0x24` tagjai a szálazonosító és a zárszámláló; ezek csak a zárolás részei, nem a teljes művelet.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `0x006a5590` a `0x13320004` property rekord `+0x2cc` tömbjének egy 64 bites elemét írja, index szerint. Közvetlen hívói: `0x00431570` és `0x00441ed0`. | A PicasaPy forrásban nincs közvetlen `albumcontactids` nevű tároló vagy ennek a PMP-rekordnak megfelelő adatmező; a PMP-t általános importkód olvassa. | Ez a belső adatmodell különbsége, megfigyelt felhasználói eltérés nélkül. Kódváltoztatás nem igazolt. |
+
+### 41.5 Bizonyítottság, két út és cáfoló kör
+
+**Összesített fok: feltételes.** A két gyűjteményosztály-slot, az `albumcontactids` első olvasási útja és a `0x006a5590` adatírása megerősített. A `Delete Person` utáni közvetett futás és az `Ignore Person` által írt property-kulcs nyitott, ezért a teljes kör nem tekinthető lezártnak.
+
+- **A út, dekompiláció:** a `0x00692210`, `0x00495be0`, `0x0056c5a0` és `0x006a5590` C-törzsei, továbbá a törlési út `0x007ba820` -> `0x005836f0` -> `0x00584cc0` hívásai.
+- **B út, bináris adatok és helyi diszasszemblálás:** a két RTTI-vtable `0x00692210`-slotja; a `0x00499610` `0x13320004` argumentuma és rekordmutatói; a `0x005cb990` ugrótáblája; a `0x006a5590` elempáríró utasításai. A loader-ágat a külön `0x006a41e0`, `0x006a7090` és `0x006a2cd0` kódjai egészítik ki. Az A és B út a lezárt részeken egyezik.
+- **Cáfoló kísérlet:** próbáltam megcáfolni, hogy a `0x006a5590` a mellőzés írója. A `0x9c9a` parancs a diszpécserben a `0x005c9b00`-hoz jut, amelynek megfigyelt közvetlen segédje `0x006a0d30`; a `0x006a5590` közvetlen hívói a `0x00431570` és `0x00441ed0`. Ez a vizsgált statikus út nem igazolja a feltételezett kapcsolatot, de a virtuális hívások miatt nem cáfolja teljesen. Ugyanezzel a mércével a `0x13320004` Ignore Person-kulcs nyitva marad.
+
+### 41.6 A kiegészítés „Kész, ha” pontjai
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| 1. `0x00692210` objektuma és Delete Person utáni futása | ⚠️ Részben | Az objektumosztályok megerősítettek; a törlés utáni közvetett futás NINCS MEG (§41.1). |
+| 2. Ki és mikor olvassa az `albumcontactids` táblát | ✅ | Első oszlopolvasás: `0x00448fb0` -> `0x00495be0` -> `0x00499610`; PMP-fájl csak meglévő, 1-es állapotú rekordnál (§41.2). |
+| 3. Ignore Person által írt `0x1332000x` kulcs | ⛔ Nyitott | A menüparancs útja a `0x005c9b00`-ig bizonyított; a kulcs és a virtuális író NINCS MEG (§41.3). |
+| 4. A `+0x284` objektum adatmezőinek írója | ✅ | `0x006a5590`, kulcs `0x13320004`, elemírás a rekord `+0x2cc` tömbjében (§41.4). |
+| 5. PicasaPy-eltérés és teendő | ⚠️ Részben | Arc-szintű ignore jelölő egyezik a mért eredetivel; a People Manager törlés utáni hívási útja és az Ignore Person property-kulcsa nyitott, így ezek viselkedés-összevetése hiányos. |
+
+**Nyitott:**
+- `Ghidra-kör kell: 0x00584cc0 - a Delete Person utáni virtuális callbacklánc eléri-e a 0x00692210-et [blokkoló]`
+- `Ghidra-kör kell: 0x006a0d30 - az Ignore Person út vektormásolójának tárolója, virtuális írója és esetleges 0x1332000x kulcsa [blokkoló]`
+- Az Ignore Person kör Colab-felvétele a 0x9c9a parancs után a `.picasa.ini`, PMP és db3 változásával együtt kell, ha a bináris virtuális útja nem zárható le.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (37.9/b helyesbítés és 41. szakasz). Kódhoz és tesztekhez nem nyúltam.

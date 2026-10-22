@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.182] - 2026-10-22
+
+- A név szerinti rendezés ékezeteknél és hosszú számsorozatoknál a Picasa bájtszintű kulcsát követi (#5504).
+
+## [0.9.181] - 2026-10-21
+
+- Metrikus területi beállításnál a nyomtatási gyorsválasztók alapértéke az eredeti Picasáé (10x15, 13x18, 15x20, 20x25 cm és Indexképek), az Opciók méretlistájában pedig nincs Teljes oldal tétel (#5492).
+
+## [0.9.180] - 2026-10-21
+
+- Az induláskori nyelvi kérdés az eredeti Picasa angol megfogalmazását használja, a program saját nevével (PicasaPy) (#5458).
+- Az export túlméretes EXIF-blokknál az eredeti Picasához hasonlóan az egész EXIF-et elhagyja (#5459).
+- A Beállítások Általános fülének három felirata az eredeti Picasa szövegét használja, a Másodpéldányok észlelése az importálás során jelölő pedig alapból be van kapcsolva (#5473).
+- A poszterlapok neve oszlop-sor sorrendben készül, mindig JPEG formátumban, 90-es minőséggel (#5475).
+- Az Opciók ablak Hálózat, Webalbumok és Névcímkék fülének feliratai az eredeti Picasa szövegét használják (#5482).
+- A Nyomtatás és E-Mail beállításai az eredeti minőségértékeket, alapértelmezéseket és rádiósorrendet követik (#5485).
+
 ## [0.9.179] - 2026-10-21
 
 - A tiszta profilos teszt az export-eredmény OK gombját a párbeszéd saját gombsorában keresi, és bukáskor megnevezi a gomb helyét (#5461).
