@@ -8991,7 +8991,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
             <translation>&amp;Tüm Yolu Kopyala</translation>
         </message>
         <message>
-            <source>Upload to Picasa Web Albums...</source>
+            <source>Upload to &amp;Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>&amp;Picasa Web Albümleri'ne Yükle...</translation>
@@ -15825,12 +15825,6 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <translation>&amp;Albüm Sıralama Ölçütü</translation>
-        </message>
-        <message>
-            <source>Upload to &amp;Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>&amp;Picasa Web Albümleri'ne Yükle...</translation>
         </message>
         <message>
             <source>Upload to Google &amp;Photos...</source>

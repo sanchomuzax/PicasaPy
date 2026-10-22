@@ -9,9 +9,8 @@ Time") mellett `minusone` / `tps` / `plusone` hármas áll, és a
 Nálunk a vetítő `intervalMs`-e 3000 volt — az alapérték tehát stimmelt,
 de nem volt se vezérlő, se megőrzés.
 
-⚠️ **A tartomány NINCS kimérve.** Az eredeti alsó/felső korlátja nem
-szerepel a specben; a 1–30 másodperc a mi választásunk, és a kód ezt ki is
-mondja. Ha egyszer kimérjük, ez a szám cserélhető.
+A tartomány mérve (#5544): 1 és 20 másodperc közé szorul. A felső határ a
+korábbi 30 volt; az ellenőrzés a `test_diaido_felso_hatar_5544.py`-ben van.
 """
 
 from __future__ import annotations
@@ -74,8 +73,8 @@ class TestADiaido:
     def test_a_hatarok_MAGUK_elfogadottak(self, controller):
         controller.setSlideshowSeconds(1)
         assert controller.slideshowSeconds == 1
-        controller.setSlideshowSeconds(30)
-        assert controller.slideshowSeconds == 30
+        controller.setSlideshowSeconds(20)
+        assert controller.slideshowSeconds == 20
 
     def test_a_SERULT_beallitas_az_alapertekre_esik(self, controller, tmp_path):
         from PySide6.QtCore import QSettings

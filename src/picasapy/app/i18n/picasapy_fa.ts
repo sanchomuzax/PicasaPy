@@ -8991,7 +8991,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
             <translation>‏رونوشت مسیر&amp;کامل</translation>
         </message>
         <message>
-            <source>Upload to Picasa Web Albums...</source>
+            <source>Upload to &amp;Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>‏آپلود در &amp;Picasa Web Albums…</translation>
@@ -15825,12 +15825,6 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <translation>‏مرتب‌سازی &amp;آلبوم بر اساس</translation>
-        </message>
-        <message>
-            <source>Upload to &amp;Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>‏آپلود در &amp;Picasa Web Albums…</translation>
         </message>
         <message>
             <source>Upload to Google &amp;Photos...</source>

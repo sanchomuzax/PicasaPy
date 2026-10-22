@@ -8991,7 +8991,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
             <translation>전체 경로 복사(&amp;P)</translation>
         </message>
         <message>
-            <source>Upload to Picasa Web Albums...</source>
+            <source>Upload to &amp;Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Picasa 웹앨범에 업로드(&amp;P)...</translation>
@@ -15825,12 +15825,6 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <translation>앨범 정렬 기준(&amp;A)</translation>
-        </message>
-        <message>
-            <source>Upload to &amp;Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Picasa 웹앨범에 업로드(&amp;P)...</translation>
         </message>
         <message>
             <source>Upload to Google &amp;Photos...</source>

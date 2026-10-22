@@ -231,7 +231,6 @@ class TestAlbumMenu:
         [
             "albumMenuOnlineActions",
             "albumMenuUploadToGooglePhotos",
-            "albumMenuUploadToWebAlbums",
         ],
     )
     def test_a_megszunt_szolgaltatas_tetele_valodi_kattintasra_nem_csinal_semmit(

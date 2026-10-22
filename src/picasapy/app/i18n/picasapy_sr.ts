@@ -9017,7 +9017,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
             <translation>Копирај целу &amp;путању</translation>
         </message>
         <message>
-            <source>Upload to Picasa Web Albums...</source>
+            <source>Upload to &amp;Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>Отпреми у &amp;Picasa веб-албуме...</translation>
@@ -15852,12 +15852,6 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <translation>Сортирај &amp;албум према</translation>
-        </message>
-        <message>
-            <source>Upload to &amp;Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Отпреми у &amp;Picasa веб-албуме...</translation>
         </message>
         <message>
             <source>Upload to Google &amp;Photos...</source>

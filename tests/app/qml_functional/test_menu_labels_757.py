@@ -102,9 +102,6 @@ FELIRATOK: dict[str, dict[str, tuple[str, str]]] = {
             "Upload to Google &Photos...",
             "Album::ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS",
         ),
-        "albumMenuUploadToWebAlbums": (
-            "Upload to &Picasa Web Albums...", "Album::ID_UPLOAD_TO_LIGHTHOUSE"
-        ),
         "albumMenuExportAsHtml": (
             "E&xport as HTML Page...", "Album::ID_ALBUM_MAKE_WEB"
         ),

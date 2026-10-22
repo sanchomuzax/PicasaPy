@@ -481,7 +481,7 @@ PicasaMenu {
 
     PicasaMenuItem {
         objectName: "contextMenuUploadToWebAlbums"
-        text: qsTr("Upload to Picasa Web Albums...")
+        text: qsTr("Upload to &Picasa Web Albums...")
         placeholder: false
         // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
         retired: true
