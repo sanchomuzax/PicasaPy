@@ -5991,3 +5991,71 @@ A `meroadat.tar` összes `.picasa.ini` tagját bejáró mérés `matching_ini_co
 - N7: két személyes People Manager felvétel: első sor, Ctrl+kattintás, Shift-kattintás és a Delete Person gomb állapota.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 47. szakasz: N1 mérőadat-leltár, N3 Red.dll/red.cfg utánkövetés, N7 kijelölőút pontosítása).
+
+## 48. #5184, helyi utánkövetés: az N1 jelző írója és az N3 virtuális célja továbbra sem azonosítható (2026-10-23)
+
+**Hatókör.** A Picasa3.exe teljes `.text` szakaszát a kötelező `paszta.py` úton, `paszta.memoria_kapu()` hívással pásztáztam; a helyi mérés 2 884 879 utasítást dolgozott fel. A Red.dll-ben csak célzott függvényeket és a `vfr_VdeFaceFinder` vtable-adatát olvastam. Futó Picasa/Colab UI-felvétel és új, címkézett arcmérés nem volt. Kódot, tesztet, hálózatot és NAS-t nem érintettem.
+
+### 48.1 N1: az `[item+0x10]` kapu megvan, a névhez kötés nincs
+
+- A `0x0047b020` utasításai az `[item+0x10]` bájtot vizsgálják. Nem nulla értéknél a `0x0048bd80` ágra mennek és visszatérnek; ezen az útvonalon nem hívják a `0x0048ef20`-at. Ez a kapu hatását bizonyítja, a bájt jelentését nem.
+- A 45.20-ban feltárt másolási út szerint a munkasor `X+0x14` jelző bájtja a `{0,0,d8,d4}` forrásrekord `d4` alsó bájtjából jön (`0x004985e0`); a worker az `X+4` elem `+0x10` mezőjét olvassa. A megelőző `d4 != 0` kapu és a másolás megmagyarázza a bájt útját, de **nem** a `d4` jelentését.
+- A `paszta.memoria_kapu()` után végzett teljes utasításvizsgálat a közvetlen `+0x10`/`+0x14` eltolású olvasásokat és írásokat kereste. A `+0x14` sok, egymástól független függvényben előfordul, ezért az eltolás önmagában nem azonosítja a munkatétel-mezőt vagy annak szemantikáját. A pásztázás nem köti össze a `d4` kimenetet a `faces=` rekorddal, a névvel vagy egy konkrét arccal; közvetett/vtable-írókat sem old fel.
+- A PicasaPy forrása a már azonosított arcot tartalmazó képet kiveszi a saját új arcfelismerési sorából (`face_scan_controller.py`, `_build_pending`). **NINCS MEG**, hogy az eredeti ugyanilyen képen felkínál-e egy további, ismeretlen arcot. A `meroadat.tar` kontrollhiánya a 47.3-ban már mérve van; új megfelelő minta nem került elő.
+
+**N1 mérlege:** a bájt másolási útja ismert, a `d4` szemantikája és a megnevezett fotóhoz kötése nyitott; a kért eredeti viselkedés ebből nem következik. Döntő bizonyíték: ugyanazon kétarcú fotó ellenőrzött eredeti Picasa-felvétele név nélkül, majd az egyik arc megnevezése után, a Név nélküliek listájával és a `faces=` állapot rögzítésével.
+
+### 48.2 N3: a `vfr_VdeFaceFinder` `+0x40` slotja nem azonosítható a pontszámoló hívással
+
+- A Red.dll RTTI-indexe a `0x101c867c` címet `vfr_VdeFaceFinder::vftable`-ként jelöli. A vtable fájlbeli dwordjai szerint a `+0x40` slot célja `0x10021ad0`, a `+0x5c` sloté `0x100b07b0`.
+- A `0x10021ad0` helyi diszasszemblye a `[this+0x30]` mező és a bemeneti objektum `[+4]` mezője között a `0x10005e40` segédfüggvényt hívja. A segéd a régi/új objektum számlálóit módosítja, nulla számlálónál az objektum első virtuális metódusát hívja. A `0x10021ad0` törzsében nincs lebegőpontos pontszámítás.
+- Ettől külön a `0x100057c0` a stack-paraméterláncból elért objektum vtable `+0x40` slotját hívja, és az így kapott float értékek maximumát írja a kimeneti tömbbe. A vtable-t az objektum `+0x74` mezőjéből olvassa; a statikus adatokból nincs igazolva, hogy ez a `vfr_VdeFaceFinder` példánya. Emiatt a `0x10021ad0` címet nem szabad a pontszámoló callback céljaként vagy a belső detektor azonosítójaként átvenni.
+- A Picasa oldali `0x006cde50` Red-belépés egy hat DWORD-os blokkot továbbít; ezekből a diszasszembly nem állít elő bizonyított szélesség/magasság párt. A belső detektorküszöb, a bemeneti képméret és az eredeti felismerési arány **NINCS MEG**. A korábbi 0,50 és 0,85 hasonlósági/javaslati értékek nem ezek az értékek (45.3, 46.2).
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| `vfr_VdeFaceFinder` vtable `+0x40` célja | bináris (`Red.dll`, `0x101c867c` → `0x10021ad0`; RTTI-index és nyers vtable-adat) | feltételes a vtable-címre; nem bizonyítja az aktív példányt |
+| `0x10021ad0` tag-/objektumkezelő út, nem látható pontszámítás | bináris (`0x10021ad0`, `0x10005e40`) | feltételes, utasításszintű olvasat |
+| A `0x100057c0` által használt virtuális pontszámoló cél osztálya | NINCS MEG | nyitott |
+| Eredeti detektorküszöb, bemeneti képméret és mért felismerési arány | NINCS MEG | nyitott; azonos, címkézett képkészleten kell mérni |
+
+**Cáfoló kísérlet.** Megpróbáltam igazolni, hogy a `vfr_VdeFaceFinder` `+0x40` slotja a `0x100057c0` floatot visszaadó pontszámoló callbackja. A vtable adatából a cél `0x10021ad0`; annak és a `0x10005e40`-nek az utasításolvasata tag-/objektumkezelést mutat, nem pontszámítást, miközben a `0x100057c0` a virtuális hívás után floatot fogyaszt. A feltevést elvetettem. Ellenőrző út: az RTTI-index vtable-címe és a Red.dll nyers vtable-dwordja egyezik, a célfüggvény utasításai pedig közvetlenül visszaellenőrzik a hívott segédet. Ez a cáfolat csak a két `+0x40` cél azonosságát veti el; a Red detektorát nem azonosítja.
+
+### 48.3 N7 és a lezárt pontok
+
+Az eredeti `contactmgr.fen` továbbra sem deklarál kijelölési módot. A `0x007b9630` egy aktuális indexet tárol, a `0x007ba820` pedig ezt az indexet használja a `Delete Person` úton. A két forrás egyezik az aktuális sor kezelésében, de egyik sem zárja ki a Ctrl/Shift-tel történő többszörös kijelölést. **N7 nyitott**; két személyes felvétel kell az első kattintás, Ctrl-kattintás, Shift-kattintás és a törlőgomb állapotának rögzítésével.
+
+N4, N5, N6 és N8 állapota változatlanul lezárt a korábban hivatkozott felvételekkel és a #5391 javítással (46.3, 47.3).
+
+### 48.4 Két független út és bizonyítottság
+
+- **N1, A út:** `0x0047b020` utasításai bizonyítják a nemnulla jelző korai visszatérését; a 45.20 két producerben és a másolóban mutatja a `d4` bájt útját. **B út:** a kapuzott, memóriakorlátos teljes `.text`-pásztázás megmutatja, hogy a mezőeltolás nem egyedi szerkezeti azonosító. Ezek nem adnak `d4`-jelentést vagy névkapcsolatot; a kért eredeti viselkedés nyitott.
+- **N3, A út:** a `0x100057c0` callback dinamikus `+0x40` hívása és a lebegőpontos maximum kimenet. **B út:** a `0x101c867c` vtable-adat és a `0x10021ad0` utasításai. Ezek egyeznek abban, hogy a `vfr_VdeFaceFinder` slotcélját nem lehet a callback céljaként igazolni; a tényleges osztály/cél nyitott.
+- **N7, A út:** a `contactmgr.fen` listadefiníciója. **B út:** a konstruktor, az eseménykezelő és a törlési út bináris olvasata. Ezek egyeznek az egy aktuális index kezelésében, de a kijelölési mód nem következik belőlük.
+
+**Összesített bizonyítottsági fok: nyitott.** N1, N3 és N7 eredeti termékviselkedése nincs lezárva, ezért eltérés vagy fejlesztendő viselkedés nem bizonyított. A `picasapy-research` zárás előtti Opus-ügynökös, friss kontextusú újralevezetése ebben a helyi eszközkészletben nem volt elérhető; emiatt e kör egyetlen új állítása sem kap `megerősített` minősítést.
+
+### 48.5 A jegy „Kész, ha” pontjai és következő lépés
+
+| Jegypont | Állapot | Bizonyíték / szükséges felvétel |
+|---|---|---|
+| N1: névvel rendelkező fotón új, ismeretlen arc | ⛔ Nyitott | a jelzőmásolat útja ismert (`0x004985e0`); a `d4` jelentése, névkapcsolat és a második arc ajánlása NINCS MEG; ugyanazon kétarcú fotó név előtti/utáni eredeti felvétele kell |
+| N3: eredeti felismerési arány, küszöb és bemeneti méret | ⛔ Nyitott | `0x100057c0` pontszám-út megvan; eredeti küszöb/méret NINCS MEG; páros mérés kell rögzített, címkézett képkészleten |
+| N4: keret és név alapértelmezett láthatósága | ✅ Lezárt | mérés (`job-187`) |
+| N5: személyszintű mellőzés | ✅ Lezárt | mérés (`job-222..226`): csak arcszintű mellőzés |
+| N6: személy törlése és arcokra gyakorolt hatása | ✅ Lezárt | mérés (`job-222/224`), javítás (#5391) |
+| N7: People Manager kijelölési modellje | ⛔ Nyitott | `contactmgr.fen` és bináris kezelőút megvan; két személyes Ctrl/Shift-felvétel kell |
+| N8: referencia-képernyőkép | ✅ Lezárt | mérés (`job-186`, 24. kép) |
+
+**Javasolt jegytörzs-bővítés:** „A spec 48. szakasza rögzíti a helyi utánkövetést. N4/N5/N6/N8 lezárt; N1/N3/N7 nyitott. A `0x0047b020` jelzőkapuja nem bizonyítja a név szerinti kizárást. A `vfr_VdeFaceFinder` `+0x40` célja `0x10021ad0`, ezért nem azonosítható a `0x100057c0` pontszámoló callbackjával. Eltérés a PicasaPyhoz képest nem bizonyított; megvalósítási jegy nem indokolt. A lezáráshoz N1 kétarcú név előtti/utáni felvétel, N3 azonos címkézett képkészleten mért pár, N7 két személyes Ctrl/Shift-felvétel kell.”
+
+**Fejlesztői lista:** nincs bizonyított eltérés, ezért nincs `Eredeti / nálunk / teendő` implementációs lista. **Új kutatási jegy:** nem javasolt, mindhárom hiányzó eredmény a #5184 része.
+
+**Nyitott:**
+- Ghidra-kör kell: 0x00484820 - a `[vtable+0xd4]` kimeneti `d4` jelentése és kapcsolata a névvel rendelkező arccal [N1 bináris alút; a futásidejű döntést nem blokkolja].
+- Ghidra-kör kell: 0x100057c0 - a stack-paraméterláncból elért objektum `+0x74` mezőjén át hívott vtable `+0x40` tényleges osztálya/célja, valamint a képméret és küszöb forrása [blokkoló N3 bináris alút].
+- N1: kétarcú kontrollfotó név előtti/utáni eredeti Picasa-felvétellel.
+- N3: azonos címkézett képkészlet mindkét programban, az eredeti detektorküszöb és bemeneti méret azonosításával.
+- N7: két személyes People Manager Ctrl/Shift-felvétel a `Delete Person` állapotával.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 48. szakasz); `docs/specs/00-index.md` (a 48. szakasz állapot-összefoglalója).
