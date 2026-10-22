@@ -89,7 +89,7 @@ az eredményt adta, ezért a `filmcontainer`-re hivatkozó korábbi egyezés hib
 
 | | lelet |
 |---|---|
-| **Eredeti** | A `oneup/prev` és `oneup/next` a `oneup.tre` szerint `mousedown` gomb, automatikus ismétlés nélkül. A `m_autorepeat` a filmszalag másik vezérlőpárjához tartozik. |
+| **Eredeti** | A `oneup/prev` és `oneup/next` a `oneup.tre` szerint `mousedown` gomb, automatikus ismétlés nélkül; a kattintást a `0x008032e0` ágai a `0x00802980` és a `0x008029f0` léptetőre vezetik. A `m_autorepeat` a filmszalag másik vezérlőpárjához tartozik. |
 | **Nálunk** | A `PhotoViewer.qml` előző/következő gombja `autoRepeat: true`. |
 | **Teendő** | A `viewerPrevButton` és `viewerNextButton` `autoRepeat: true` sorának törlése, a két elavult megjegyzés javítása. A filmszalag saját ismétlése maradjon a maga vezérlőin. |
 
