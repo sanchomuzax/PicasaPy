@@ -69,13 +69,20 @@ def _latvanyelemek(root):
 
 
 def _mappasor(window, path: Path):
+    row = _mappasor_if_present(window, path)
+    if row is not None:
+        return row
+    raise AssertionError(f"A mappasor nem található: {path}")
+
+
+def _mappasor_if_present(window, path: Path):
     for item in _latvanyelemek(window.contentItem()):
         if (
             item.property("kind") == "folder"
             and Path(item.property("path") or "") == path
         ):
             return item
-    raise AssertionError(f"A mappasor nem található: {path}")
+    return None
 
 
 def _mappasor_latszik(window, path: Path) -> bool:
@@ -91,6 +98,91 @@ def _ablakpont(window, item) -> QPoint:
         window.contentItem(), QPointF(item.width() / 2, item.height() / 2)
     )
     return QPoint(round(scene_point.x()), round(scene_point.y()))
+
+
+def _thumb_mouse_area(window, index: int):
+    for item in _latvanyelemek(window.contentItem()):
+        if (
+            item.objectName() == "thumbMouseArea"
+            and item.parentItem() is not None
+            and int(item.parentItem().property("index")) == index
+        ):
+            return item
+    return None
+
+
+def _varj_stabil_ablakpontokra(qt_app, window, *keresok):
+    """Megvárja, hogy a keresett elemek és ablakbeli helyük stabil legyen."""
+    elozo_items = ()
+    elozo_geometry = None
+    stabil_korok = 0
+    stabil_items = ()
+    stabil_points = ()
+
+    def stabil():
+        nonlocal elozo_items, elozo_geometry, stabil_korok
+        nonlocal stabil_items, stabil_points
+        items = tuple(kereso() for kereso in keresok)
+        if any(item is None for item in items):
+            elozo_items = ()
+            elozo_geometry = None
+            stabil_korok = 0
+            return False
+
+        scene_items = tuple(_latvanyelemek(window.contentItem()))
+        if any(
+            not any(candidate == item for candidate in scene_items) for item in items
+        ):
+            elozo_items = ()
+            elozo_geometry = None
+            stabil_korok = 0
+            return False
+
+        geometry = []
+        for item in items:
+            if not item.isVisible() or item.width() <= 0 or item.height() <= 0:
+                elozo_items = ()
+                elozo_geometry = None
+                stabil_korok = 0
+                return False
+            point = _ablakpont(window, item)
+            if not (
+                0 <= point.x() < window.width()
+                and 0 <= point.y() < window.height()
+            ):
+                elozo_items = ()
+                elozo_geometry = None
+                stabil_korok = 0
+                return False
+            geometry.append(
+                (
+                    point.x(),
+                    point.y(),
+                    round(item.width(), 3),
+                    round(item.height(), 3),
+                )
+            )
+
+        aktualis = tuple(geometry)
+        try:
+            same_items = len(items) == len(elozo_items) and all(
+                current == previous
+                for current, previous in zip(items, elozo_items, strict=True)
+            )
+        except RuntimeError:
+            same_items = False
+        if same_items and aktualis == elozo_geometry:
+            stabil_korok += 1
+        else:
+            stabil_korok = 0
+        elozo_items = items
+        elozo_geometry = aktualis
+        stabil_items = items
+        stabil_points = tuple(_ablakpont(window, item) for item in items)
+        return stabil_korok >= 2
+
+    _varj(qt_app, stabil, "a QML-elemek ablakbeli helye stabil legyen")
+    return stabil_items, stabil_points
 
 
 def _mappat_kivalaszt(window, controller, qt_app, path: Path) -> None:
@@ -158,7 +250,6 @@ def test_eltunt_celre_dobas_nem_indit_fajlmuveletet(
 ):
     window, controller, engine = qml_app_5177
     window.resize(window.width(), window.height() + height_delta)
-    qt_app.processEvents()
     library = Path(controller._roots[0])
     source = library / "forras"
     target = library / "cel"
@@ -169,36 +260,48 @@ def test_eltunt_celre_dobas_nem_indit_fajlmuveletet(
     _fileops = engine.rootContext().contextProperty("fileOpsController")
     finished = QSignalSpy(_fileops.batchFinished)
     failed = QSignalSpy(_fileops.operationFailed)
+
+    _varj(
+        qt_app,
+        lambda: not controller._sync_running and not controller._dirty_running,
+        "az induláskori indexfrissítés fejeződjön be",
+    )
+    # A watcher leállítása a törlés ELŐTT a stale-row állapotot tartja fenn
+    # a dobásig, ha ebben a fixture-ben elindult figyelő.
+    watcher = controller._watcher
+    if watcher is not None:
+        watcher.stop()
+    _varj_stabil_ablakpontokra(
+        qt_app,
+        window,
+        lambda: _mappasor_if_present(window, target),
+    )
     shutil.rmtree(target)
     assert not target.exists()
 
     _mappat_kivalaszt(window, controller, qt_app, source)
     window.setProperty("selectedIndexes", [0])
     qt_app.processEvents()
-    # A sor szándékosan elavult marad: a ledobás a watcher frissítése előtt érkezik.
-    _mappasor(window, target)
-    mouse_area = next(
-        item
-        for item in _latvanyelemek(window.contentItem())
-        if item.objectName() == "thumbMouseArea"
-        and int(item.parentItem().property("index")) == 0
+    # A sor szándékosan elavult marad; a teszt a frissítés előtti állapotot tartja fenn.
+    (mouse_area, _target_row), (start, end) = _varj_stabil_ablakpontokra(
+        qt_app,
+        window,
+        lambda: _thumb_mouse_area(window, 0),
+        lambda: _mappasor_if_present(window, target),
     )
-    drag_proxy = next(
-        item
-        for item in _latvanyelemek(window.contentItem())
-        if item.objectName() == "thumbDragProxy"
-        and int(item.property("photoIndex")) == 0
+    assert mouse_area.contains(
+        mouse_area.mapFromItem(window.contentItem(), QPointF(start))
     )
-    drop_area = next(
-        item
-        for item in _latvanyelemek(window.contentItem())
-        if item.objectName() == f"folderDropArea_{target}"
-    )
-    start = _ablakpont(window, mouse_area)
-    end = _ablakpont(window, _mappasor(window, target))
     QTest.mouseMove(window, start)
     QTest.mousePress(window, Qt.MouseButton.LeftButton, pos=start)
-    qt_app.processEvents()
+    _varj(
+        qt_app,
+        lambda: mouse_area.property("pressed") is True
+        and any(
+            item == mouse_area for item in _latvanyelemek(window.contentItem())
+        ),
+        "a lenyomott bélyegkép-delegátum maradjon a jelenetben",
+    )
     assert mouse_area.property("pressed") is True
     delta = end - start
     distance = max(abs(delta.x()), abs(delta.y()))
@@ -210,6 +313,17 @@ def test_eltunt_celre_dobas_nem_indit_fajlmuveletet(
         QTest.mouseMove(window, point)
         qt_app.processEvents()
     assert mouse_area.property("dragging") is True
+    drag_proxy = next(
+        item
+        for item in _latvanyelemek(window.contentItem())
+        if item.objectName() == "thumbDragProxy"
+        and int(item.property("photoIndex")) == 0
+    )
+    drop_area = next(
+        item
+        for item in _latvanyelemek(window.contentItem())
+        if item.objectName() == f"folderDropArea_{target}"
+    )
     assert _attached_drag(drag_proxy).property("active") is True
     assert drop_area.property("enabled") is True
     QTest.mouseRelease(window, Qt.MouseButton.LeftButton, pos=end)
