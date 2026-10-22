@@ -8991,7 +8991,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_COPY_PATH</extracomment>
             <translation>पूर्ण &amp;पथ प्रतिलिपि करें</translation>
         </message>
         <message>
-            <source>Upload to Picasa Web Albums...</source>
+            <source>Upload to &amp;Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>&amp;Picasa वेब एल्बम में अपलोड करें...</translation>
@@ -15819,12 +15819,6 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <translation>&amp;एल्बम को इसके द्वारा क्रमित करें</translation>
-        </message>
-        <message>
-            <source>Upload to &amp;Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>&amp;Picasa वेब एल्बम में अपलोड करें...</translation>
         </message>
         <message>
             <source>Upload to Google &amp;Photos...</source>

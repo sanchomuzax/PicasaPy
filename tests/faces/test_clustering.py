@@ -8,12 +8,17 @@ import numpy as np
 
 from picasapy.faces.clustering import (
     DEFAULT_CLUSTER_THRESHOLD,
+    DEFAULT_CLUSTER_STEP,
     DEFAULT_SUGGEST_THRESHOLD,
+    MAX_SIMILARITY,
+    MIN_SIMILARITY,
     PICASA_STEPS,
     FaceGroupCentroid,
     assign_face,
+    cluster_step_to_threshold,
     cosine_similarity,
     step_to_threshold,
+    threshold_to_cluster_step,
 )
 
 
@@ -49,6 +54,30 @@ class TestStepToThreshold:
         # a javaslat (elnevezett személyhez társítás) tévedése látványosabb,
         # mint egy névtelen csoport téves összevonása — ezért szigorúbb
         assert DEFAULT_SUGGEST_THRESHOLD > DEFAULT_CLUSTER_THRESHOLD
+
+
+class TestClusterStepToThreshold:
+    def test_default_85_keeps_the_existing_calibrated_cluster_threshold(self):
+        assert DEFAULT_CLUSTER_STEP == 85
+        assert cluster_step_to_threshold(DEFAULT_CLUSTER_STEP) == step_to_threshold(70)
+        assert DEFAULT_CLUSTER_THRESHOLD == step_to_threshold(70)
+
+    def test_cluster_mapping_is_strictly_increasing_inside_the_sface_range(self):
+        thresholds = [cluster_step_to_threshold(step) for step in PICASA_STEPS]
+
+        assert all(
+            left < right
+            for left, right in zip(thresholds, thresholds[1:], strict=False)
+        )
+        assert MIN_SIMILARITY <= thresholds[0]
+        assert thresholds[-1] <= MAX_SIMILARITY
+
+    def test_suggestion_mapping_stays_on_the_original_linear_scale(self):
+        assert abs(step_to_threshold(85) - 0.4722222222222222) < 1e-12
+
+    def test_legacy_threshold_migration_chooses_nearest_cluster_step(self):
+        assert threshold_to_cluster_step(step_to_threshold(70)) == 85
+        assert threshold_to_cluster_step(step_to_threshold(85)) == 90
 
 
 class TestAssignFace:
