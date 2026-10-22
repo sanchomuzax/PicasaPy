@@ -208,7 +208,11 @@ a többi mappa sorrendje marad. A **Fordított sorrend** a mostani
 sorrendet fordítja meg. Utána a képeket húzással tovább igazíthatod.
 
 A **Név** szerinti rendezés a számokat számként kezeli: a `kep2.jpg` a
-`kep10.jpg` elé kerül, nem mögé.
+`kep10.jpg` elé kerül, nem mögé. A kis- és nagybetű nem számít. A
+számmal kezdődő nevek jönnek elöl, utánuk az ékezetes (vagy más, nem
+angol ábécébeli) betűvel kezdődők, és csak ezek után az A-tól Z-ig
+tartó nevek: az `Ábel.jpg` tehát az `alma.jpg` elé kerül. Az eredeti
+Picasa is így rendez.
 
 > A főmenü **Mappa ▸ Rendezés** almenüje mást csinál: azt dönti el, milyen
 > sorrendben kövessék egymást a **mappák** a rácsban (dátum, név, méret

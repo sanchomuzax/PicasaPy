@@ -177,7 +177,7 @@ def _inditsd_a_kimenetet(
     source = controller.photos.filePathAt(0)
     source_folder = source.rsplit("/", 1)[0]
     names = [
-        f"{row}-{column}-color_patches.jpg"
+        f"{column}-{row}-color_patches.jpg"
         for row in range(2)
         for column in range(2)
     ]
@@ -206,10 +206,10 @@ def _inditsd_a_kimenetet(
         "0-0-color_patches.jpg": original_pixels[
             overlap_range[0] : overlap_range[1], overlap_range[0] : overlap_range[1]
         ],
-        "0-1-color_patches.jpg": original_pixels[
+        "1-0-color_patches.jpg": original_pixels[
             overlap_range[0] : overlap_range[1], inner_range[0] : inner_range[1]
         ],
-        "1-0-color_patches.jpg": original_pixels[
+        "0-1-color_patches.jpg": original_pixels[
             inner_range[0] : inner_range[1], overlap_range[0] : overlap_range[1]
         ],
         "1-1-color_patches.jpg": original_pixels[
@@ -217,7 +217,9 @@ def _inditsd_a_kimenetet(
         ],
     }
     for name, pixels in expected.items():
-        encoded_ok, encoded_expected = cv2.imencode(".jpg", pixels)
+        encoded_ok, encoded_expected = cv2.imencode(
+            ".jpg", pixels, [cv2.IMWRITE_JPEG_QUALITY, 90]
+        )
         assert encoded_ok
         jpeg_expected = cv2.imdecode(encoded_expected, cv2.IMREAD_COLOR)
         with Image.open(Path(source_folder, name)) as page:

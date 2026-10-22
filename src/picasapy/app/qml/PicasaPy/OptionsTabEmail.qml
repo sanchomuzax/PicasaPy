@@ -34,8 +34,8 @@ ColumnLayout {
             color: Theme.ink
         }
         RadioButton {
-            objectName: "optionsMailDefaultRadio"
-            text: qsTr("Use this computer's default email program")
+            objectName: "optionsMailChooseRadio"
+            text: qsTr("Let me choose each time I send pictures")
             ButtonGroup.group: mailGroup
             implicitHeight: 22
             // #3661: a hivatalos magyar felirat az ablak keskeny állásában
@@ -52,14 +52,14 @@ ColumnLayout {
             }
             // #1572: a `!== undefined` a hiányzó tulajdonságra véd.
             checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)
-                ? root.mailCtl.useDefaultClient : true
+                ? !root.mailCtl.useDefaultClient : true
             onToggled: if (root.mailCtl && checked)
-                root.mailCtl.setUseDefaultClient(true)
+                root.mailCtl.setUseDefaultClient(false)
         }
     }
     RadioButton {
-        objectName: "optionsMailChooseRadio"
-        text: qsTr("Let me choose each time I send pictures")
+        objectName: "optionsMailDefaultRadio"
+        text: qsTr("Use this computer's default email program")
         ButtonGroup.group: mailGroup
         implicitHeight: 22
         Layout.leftMargin: mailProgramLabel.implicitWidth + 8
@@ -73,8 +73,10 @@ ColumnLayout {
             wrapMode: Text.WordWrap
             verticalAlignment: Text.AlignVCenter
         }
-        checked: root.mailCtl ? !root.mailCtl.useDefaultClient : false
-        onToggled: if (root.mailCtl && checked) root.mailCtl.setUseDefaultClient(false)
+        checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)
+            ? root.mailCtl.useDefaultClient : false
+        onToggled: if (root.mailCtl && checked)
+            root.mailCtl.setUseDefaultClient(true)
     }
     // #2432: az eredetiben HÁROM gomb van (`options/radio42.title` = „A
     // Google Fiók használata”). A PicasaPy-nak nincs Google-fiók-
@@ -85,9 +87,8 @@ ColumnLayout {
     // a tiltás kimondja, hogy nem működik. Egy engedélyezett, de kattintásra
     // semmit nem tevő gomb volna a rossz megoldás (#1895).
     //
-    // ⚠️ A SORRENDRŐL a jegy nem állít semmit: az `options` panel
-    // respack-geometriája nincs meg, tehát a képernyőn hol áll a három gomb,
-    // az NINCS MÉRVE. A harmadik helye itt a mienk, nem az eredetié.
+    // #5485: a sablon sorrendjében az első tétel a küldésenkénti választás,
+    // a második a számítógép alapértelmezett levelezője.
     RadioButton {
         objectName: "optionsMailGoogleRadio"
         text: qsTr("Use my Google Account")

@@ -51,10 +51,13 @@ from picasapy.faces import model_download
 from picasapy.faces.detector import FaceDetector, rescale_face_detection
 from picasapy.faces.embedder import FaceEmbedder
 from picasapy.faces.clustering import (
+    CLUSTER_CALIBRATION_STEP,
     DEFAULT_CLUSTER_STEP,
     DEFAULT_SUGGEST_STEP,
     PICASA_STEPS,
+    cluster_step_to_threshold,
     step_to_threshold,
+    threshold_to_cluster_step,
 )
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
@@ -198,7 +201,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     modelDownloadPercentChanged = Signal()
     AUTOMATIC_DETECTION_KEY = "faces/automaticDetection"
     SUGGESTIONS_ENABLED_KEY = "faces/suggestionsEnabled"
-    CLUSTER_STEP_KEY = "faces/clusterStep"
+    CLUSTER_STEP_KEY = "faces/clusterStep2"
+    LEGACY_CLUSTER_STEP_KEY = "faces/clusterStep"
     UNNAMED_WELCOME_SHOWN_KEY = "faces/unnamedWelcomeShown"
 
     def __init__(
@@ -325,12 +329,28 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     @Slot(result=int)
     def clusterThreshold(self) -> int:  # noqa: N802 — QML-slot-stílus
-        """A csoportküszöb SFace-hez kalibrált 50–95-ös lépcsője."""
-        return self._kuszob_lepcso(self.CLUSTER_STEP_KEY, DEFAULT_CLUSTER_STEP)
+        """A csoportküszöb 50-95-ös felületi lépcsője (#5512)."""
+        stored = self._settings.value(self.CLUSTER_STEP_KEY, None)
+        if stored is not None:
+            return self._kuszob_lepcso(self.CLUSTER_STEP_KEY, DEFAULT_CLUSTER_STEP)
+
+        legacy = self._settings.value(self.LEGACY_CLUSTER_STEP_KEY, None)
+        if legacy is None:
+            return DEFAULT_CLUSTER_STEP
+        try:
+            legacy_step = int(legacy)
+        except (TypeError, ValueError):
+            legacy_step = CLUSTER_CALIBRATION_STEP
+        legacy_step = self._ervenyes_kuszob_lepcso(
+            legacy_step, CLUSTER_CALIBRATION_STEP
+        )
+        migrated = threshold_to_cluster_step(step_to_threshold(legacy_step))
+        self._settings.setValue(self.CLUSTER_STEP_KEY, migrated)
+        return migrated
 
     @Slot(int)
     def setClusterThreshold(self, step: int) -> None:  # noqa: N802 — QML-slot-stílus
-        """A csoportküszöb mentése; az érték az SFace-skálára alakul át."""
+        """A csoportküszöb felületi lépcsőjének mentése (#5512)."""
         self._settings.setValue(
             self.CLUSTER_STEP_KEY,
             self._ervenyes_kuszob_lepcso(step, DEFAULT_CLUSTER_STEP),
@@ -1655,7 +1675,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 grouped = group_unnamed_faces(
                     conn,
                     suggest_threshold=step_to_threshold(suggest_step),
-                    cluster_threshold=step_to_threshold(cluster_step),
+                    cluster_threshold=cluster_step_to_threshold(cluster_step),
                     named_centroids=None if suggestions_enabled else {},
                 )
                 conn.commit()

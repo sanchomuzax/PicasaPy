@@ -52,11 +52,15 @@ def test_exif_es_picasa_szerkesztesek_bekerulnek_a_poszterlapokba(
                 row * height // 2 : (row + 1) * height // 2,
                 column * width // 2 : (column + 1) * width // 2,
             ]
-            encoded_ok, encoded_expected = cv2.imencode(".jpg", tile)
+            encoded_ok, encoded_expected = cv2.imencode(
+                ".jpg", tile, [cv2.IMWRITE_JPEG_QUALITY, 90]
+            )
             assert encoded_ok
             expected_pixels = cv2.imdecode(encoded_expected, cv2.IMREAD_COLOR)
             page = next(
-                path for path in files if path.name.startswith(f"{row}-{column}-")
+                path
+                for path in files
+                if path.name.startswith(f"{column}-{row}-")
             )
             actual_pixels = cv2.imdecode(
                 np.frombuffer(page.read_bytes(), dtype=np.uint8), cv2.IMREAD_COLOR

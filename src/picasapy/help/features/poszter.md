@@ -29,11 +29,13 @@ Az **OK** elindítja a munkát, a **Mégse** elveti.
 ## Mi lesz belőle
 
 A lapok a **forráskép mellé, ugyanabba a mappába** kerülnek, és a
-fájlnevük elején a lap helye áll: **sor-oszlop-eredetifájlnév**, nullától
-számolva. Egy `nyaralas.jpg`-ból 200%-nál például `0-0-nyaralas.jpg`,
-`0-1-nyaralas.jpg`, `1-0-nyaralas.jpg` és `1-1-nyaralas.jpg` lesz. A
-lapok ugyanabban a formátumban készülnek, mint az eredeti kép; az
-eredetit a program nem változtatja meg.
+fájlnevük elején a lap helye áll: előbb az **oszlop**, aztán a **sor**
+száma, nullától számolva, majd az eredeti fájlnév. Egy `nyaralas.png`-ből
+200%-nál például `0-0-nyaralas.jpg`, `1-0-nyaralas.jpg`
+(a felső sor jobb oldali lapja), `0-1-nyaralas.jpg` és
+`1-1-nyaralas.jpg` lesz. A lapok az eredeti kép formátumától függetlenül
+mindig **JPEG**-ként készülnek, jó minőségben, ahogy az eredeti
+Picasában; az eredeti képet a program nem változtatja meg.
 
 A poszter a kép **szerkesztett** változatából készül (vágás, forgatás,
 effektek), és a fényképezőgép által megjelölt tájolás szerint helyesen

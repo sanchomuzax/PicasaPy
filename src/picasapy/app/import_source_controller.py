@@ -103,10 +103,13 @@ AFTER_COPY_DELETE_ALL = "delete_all"  # "Delete everything on card"
 _VALID_NAMING_MODES = (NAMING_MANUAL, NAMING_BY_DATE, NAMING_TODAY)
 _VALID_AFTER_COPYING = (AFTER_COPY_LEAVE, AFTER_COPY_DELETE_COPIED, AFTER_COPY_DELETE_ALL)
 
-# #441: "Exclude Duplicates" — QSettings-kulcs (a jegy szövege szerint
+# #441: "Exclude Duplicates" - QSettings-kulcs (a jegy szövege szerint
 # "autoexclude", a Picasa eredeti `options.fen`/`General` lapjának
 # megfelelő beállítás-nevét követve, ld. `docs/specs/picasa-fen-dialogs.md`).
+# #5473: az eredeti alapértéke 1 (bekapcsolva); ez érvényes, ha a kulcs még
+# nincs mentve. A mentett érték mindig felülírja.
 AUTOEXCLUDE_SETTINGS_KEY = "import/autoexclude"
+AUTOEXCLUDE_DEFAULT = "true"
 
 # #441: a forrásválasztó legördülőjében az eredeti a KORÁBBI importok
 # listáját kínálta (`LastImport…`) a „Choose…" mellett — így a rendszeresen
@@ -433,7 +436,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         return self._settings
 
     def _read_auto_exclude(self) -> bool:
-        value = self._get_settings().value(AUTOEXCLUDE_SETTINGS_KEY, "false")
+        value = self._get_settings().value(
+            AUTOEXCLUDE_SETTINGS_KEY, AUTOEXCLUDE_DEFAULT
+        )
         if isinstance(value, bool):
             return value
         return str(value).strip().lower() in ("true", "1")

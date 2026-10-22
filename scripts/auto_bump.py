@@ -43,6 +43,25 @@ _VERZIO_SOR = re.compile(r'^(version\s*=\s*")([^"]+)(")', re.MULTILINE)
 _DARAB_SOR = re.compile(r"^- .+ \(#\d+\)\.$")
 
 
+def ellenoriz_darab_tartalmat(
+    szoveg: str,
+) -> tuple[list[str], list[tuple[int, str]]]:
+    """Visszaadja a nem üres sorokat és a hibás (sorszám, sor) párokat."""
+    sorok: list[str] = []
+    hibas_sorok: list[tuple[int, str]] = []
+    for sorszam, sor in enumerate(szoveg.splitlines(), start=1):
+        sor = sor.strip()
+        if not sor:
+            continue
+        if _DARAB_SOR.fullmatch(sor):
+            sorok.append(sor)
+        else:
+            hibas_sorok.append((sorszam, sor))
+    if not sorok and not hibas_sorok:
+        hibas_sorok.append((1, "(üres fájl)"))
+    return sorok, hibas_sorok
+
+
 def kovetkezo_verzio(verzio: str) -> str:
     """A patch-szám eggyel emelve: `0.8.28` → `0.8.29`.
 
@@ -82,11 +101,16 @@ def _valtozasnaplo_darabok(changelog: Path) -> tuple[list[Path], list[str]]:
 
     sorok: list[str] = []
     for fajl in fajlok:
-        darab_sorai = [sor.strip() for sor in fajl.read_text(encoding="utf-8").splitlines() if sor.strip()]
-        if not darab_sorai or any(not _DARAB_SOR.fullmatch(sor) for sor in darab_sorai):
+        darab_sorai, hibas_sorok = ellenoriz_darab_tartalmat(
+            fajl.read_text(encoding="utf-8")
+        )
+        if hibas_sorok:
+            hibak = "; ".join(
+                f"sor {sorszam}: {sor}" for sorszam, sor in hibas_sorok
+            )
             raise ValueError(
                 f"A változásnapló-darab minden sora ilyen legyen: "
-                f"- … (#jegyszám). — {fajl}"
+                f"- … (#jegyszám). Hibás: {fajl}: {hibak}"
             )
         sorok.extend(darab_sorai)
     return fajlok, sorok
@@ -150,6 +174,12 @@ def main(argv: list[str] | None = None) -> int:
     elemzo.add_argument("--datum", required=True, help="ISO dátum a CHANGELOG-hoz")
     elemzo.add_argument("--gyoker", type=Path, default=_GYOKER)
     args = elemzo.parse_args(argv)
+
+    try:
+        _valtozasnaplo_darabok(args.gyoker / "CHANGELOG.md")
+    except (OSError, ValueError) as exc:
+        print(f"::error title=Hibás változásnapló-darab::{exc}", file=sys.stderr)
+        return 1
 
     regi, uj = emeld_a_pyprojectet(args.gyoker / "pyproject.toml")
     volt_szakasz = zard_le_a_changelogot(
