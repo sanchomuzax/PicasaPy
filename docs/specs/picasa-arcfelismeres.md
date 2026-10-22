@@ -5873,3 +5873,62 @@ A `0x0047e470` `param_3` (`cVar2`) képzése csak C-szinten olvasott: a `0x0045a
 **Nyitott kérdések mérlege (45.20-45.23):** 0 csak nyitva · 3 blokkolt (N1, N3, N7) · 0 hatókörön kívül · 0 lezárva új kérdésből. Helyesbítés: 1 (a 45.16 „célrekord = X" állítása, lásd 45.20).
 
 **Módosított fájlok (45.20-45.23):** `docs/specs/picasa-arcfelismeres.md` (új 45.20-45.23 szakasz a 45. szakasz után; a 45.16 célrekord-állítása helyesbítve). A `docs/specs/00-index.md`-t nem módosítottam, azt a hívó vezeti.
+
+## 46. #5184, helyi kutatói kör: az új Ghidra-köteg pontosít, de N1/N3/N7 nyitva marad (2026-10-22)
+
+**Hatókör.** A 2026-10-22-i `ghidra-sor-241-246.txt` C-kódját (`0x0048ef20`, `0x006cc9e0`, `0x0042a440`, `0x006a10b0`, `0x004841f0`, `0x0049d560`) a bináris-index mérete alapján célzott helyi diszasszemblálással vetettem össze. A Red.dll `0x100057c0` és `0x10001570` dekompilált útját a helyi Capstone-kimenet ellenőrzi. Futó Picasa és új Colab-felvétel ebben a körben nem volt; a mérőadat-archívumban nincs ehhez a kérdéshez használható arckészlet. Kódhoz, tesztekhez, GitHubhoz és NAS-hoz nem nyúltam.
+
+### 46.1 N1: két külön jelzőút, a névhez kötés továbbra sincs meg
+
+- **A jelző, amely a `0x0047b020` útját kapuzza:** a helyi asm a `0x0047b031`-en az `[item+0x10]` bájtot ellenőrzi. Nem nulla értéknél a `0x0048bd80`-at hívja, majd a `0x0047b049`-en visszatér; ezen az ágon nincs `0x0048ef20` hívás. Nulla értéknél a későbbi kapuk után a `0x0047b149` hívja a `0x0048ef20`-at. Ez csak az adott worker útvonal viselkedését bizonyítja, a bájt név szerinti jelentését nem.
+- **Másik, ettől különböző jelző a `0x0047e470`-ben:** a Ghidra C-kód a `0x004edf60`-nal töltött helyi rekord `+0x1d` bájtján vizsgálja a `0x02` bitet. Beállított bitnél korán kilép, így azon a híváson nem jut el a `0x0045a9d0`-ig. Ez nem azonos a `0x0047e470` később képzett `cVar2` értékkel, amelyet a `0x0045a9d0` kap; a két jelzőt és a `0x0047b020` `[item+0x10]` bájtját nem szabad egyetlen név- vagy arctulajdonságnak összevonni.
+- **A munkasor-környezet:** a `0x006a10b0` egy sort vesz ki (`0x00506270`), majd az `unaff_EDI+0x14` objektummal a `0x0047e470`-et hívja. Ez megerősíti a worker-hívási kapcsolatot, de a sorrekordot nem kapcsolja össze névvel vagy kontaktazonosítóval.
+- **A kimeneti rekord útja:** a `0x0042a440` egy ismeretlen `this+0x48` vtable `+0xd8` metódusát hívja, majd `.picasa.ini`-t nyitó és feldolgozó útvonalat használ; a `d8`/`d4` kimenetek szemantikája nincs meg. A `0x004841f0` C-törzse rekordvektoron jár, az `UnknownPerson` sztringre hivatkozik és több segédfüggvényt hív, de a vizsgált törzs nem nevezi meg a munkasor beszúrását. A `0x0049d560` sztringből rekordokat készít, de az `X` munkatétellel való azonosságot nem állapítja meg.
+
+**N1 mérlege:** megerősített az adott bájt- és bitkapuk vezérlési hatása; **NINCS MEG**, hogy bármelyik a már megnevezett fotó/arc jelzője-e, és hogy a második, ismeretlen arcot az eredeti utána felajánlja-e. A döntő továbbra is ugyanannak a kétarcú fotónak a név előtti és név utáni eredeti Picasa-felvétele, név nélküli kontrollal (43.4).
+
+### 46.2 N3: a `0x0048ef20` gyűjteményt állít elő; a Red callback pontszámot, nem detektorküszöböt ad
+
+- **Picasa oldali bemenet:** a `0x0047b020` a munkatétel `+8` mezőjét adja át harmadik argumentumként, a `+0xc` mezőt pedig floatként a negyedik argumentumba. A `0x0048ef20` harmadik argumentuma nem nulla esetén egy négybájtos, egy elemes belső listát készít ebből az értékből; nulla esetén másik listát kér le. A `0x0048f039` a tárolt elemszámot egész `shr 1` utasítással állítja elő. A `0x0049002a` a `0x0048e590`-et hívja. Ez a rekord/lista útja, nem pixelpuffer vagy szélesség-magasság pár bizonyítéka. Az érték mezőjének személyes vagy képi jelentése ebből a törzsből nem következik.
+- **A Red.dll oldali út:** a `0x100057c0` két rekordhalmazt jár be, a rekordok első DWORD-jából `>> 2` értéket ad a virtuális `+0x40` műveletnek, majd a belső ciklus legnagyobb float eredményét írja külső elemenként a kimeneti tömbbe (`0x10005869`-`0x10005888`, `0x100058d2`-`0x100058d8`). A `0x10001570` csak siker-/hibavisszatérést csomagol. A Red-függvényben nincs olyan bizonyíték, amely a belső arcdetektor küszöbét vagy a bemeneti kép méretét megadná.
+- **A dekompiláló típuskorlátja:** a Red C-kimenet a `0x100057ed` nullával való összevetését float-összehasonlításként jeleníti meg. A tényleges utasítás `cmp dword ptr [ebp+0x1c], 0`; ezt a veremhelyet a `0x1000582e` később a maximumgyűjtés nullázására használja. A `0x0048ef20` elemszámát is floatként mutatja a C-kimenet, míg az asm `shr eax,1`-et hajt végre. A típusos szemantikát ezért az utasításokból kell megállapítani, nem a Ghidra által kiosztott C-típusból.
+
+**N3 mérlege:** a `0,50` (FRRecommendIncludeLimit), illetve a `0,85` (FRSuggestionThreshold) a korábban azonosított hasonlósági/javaslati út értékei; ezek nem igazolják a Red detektorának küszöbét. Az eredeti belső detektorküszöb, bemeneti képméret és pontos felismerési arány **NINCS MEG**. A PicasaPy helyi forrásában deklarált `0,9` és `960 px` az eredeti Red-beállításokkal nem hasonlítható össze mérés nélkül. A szükséges arányméréshez tételes, címkézett, változatlan képkészleten kell mindkét program futását mérni (43.4; 45.6).
+
+### 46.3 N7 és a már lezárt pontok
+
+`contactmgr.fen` nem deklarál kijelölési módot, `0x007b9630` egy korábban vizsgált útja egy kijelölt indexet olvas, a job-186 felvétel pedig csak egy sort mutat. Ezek együtt sem bizonyítják, hogy Ctrl- vagy Shift-kattintással nem jelölhető ki több személy. **N7 NINCS MEG**; két személlyel kell rögzíteni az első kattintást, a Ctrl-kattintást és a Shift-kattintást, valamint a `Delete Person` gomb állapotát.
+
+| jegypont | állapot | bizonyíték |
+|---|---|---|
+| N1: névvel rendelkező fotón további ismeretlen arc | ⛔ Nyitott | A worker-kapu binárisan ismert (`0x0047b020`), de a jelző és a név/arc kapcsolata, valamint a második arc eredménye NINCS MEG. |
+| N3: eredeti arány, detektorküszöb és bemeneti méret | ⛔ Nyitott | Red-pontszámút bináris (`0x100057c0`, `0x10001570`); a három keresett eredeti érték NINCS MEG. |
+| N4: a keret és név alapértelmezett láthatósága | ✅ Lezárt | Mérés (`job-187`): a megnevezett arcon alapból nincs keret és név. |
+| N5: személyszintű mellőzés | ✅ Lezárt | Mérés (`job-222..226`): nincs személyszintű Ignore; a mellőzés arcszintű. |
+| N6: személy törlése és hatása az arcokra | ✅ Lezárt | Mérés (`job-222/224`): a `faces=` sor törlődik, a `[Contacts2]` megmarad; a javítás #5391. |
+| N7: People Manager kijelölési modellje | ⛔ Nyitott | Többes kijelölést próbáló, két személyes felvétel NINCS MEG. |
+| N8: People Manager referencia-képernyőkép | ✅ Lezárt | Mérés (`job-186`, 24. kép): a 631×351 ablak és vezérlői rögzítve. |
+
+### 46.4 Két független út, cáfoló próba és bizonyítottság
+
+- **A út (N1):** a `0x0047b020` helyi utasításszintű olvasata megmutatja az `[item+0x10]` kaput és a `0x0048ef20` hívás előtti visszatérést. **B út:** a külön `0x006a10b0` → `0x0047e470` worker-lánc C-kódja megmutatja, hogy a munkasor-kivétel és a `0x0045a9d0` előtti másik két kapu külön út. A két út egyezik abban, hogy léteznek kapuk; egyik sem köti azokat bizonyítottan a névhez rendelt archoz.
+- **A út (N3):** a Picasa `0x0048ef20` gyűjtemény-/hívási útja. **B út:** a Red.dll `0x100057c0` + `0x10001570` pontszám- és visszatérési útja. Külön modul- és hívási rétegből származnak; mindkettő összeegyeztethető a hasonlósági pontszám számításával, de egyik sem ad Red-detektorküszöböt, pixelméretet vagy mért arányt.
+- **Cáfoló próba:** azt próbáltam igazolni, hogy a Red C-kódban megjelenő nullára vonatkozó feltétel a Red detektorküszöbe. A Capstone `0x100057ed`-nél egész DWORD-összehasonlítást mutat; a `0x1000582e` ugyanazt a veremhelyet a maximum pontszám nullázására írja. A Red callback további utasításai maximumot választanak és tömbbe írnak. A hipotézis nem áll meg. A cáfolót ugyanazon közvetlen utasításolvasattal ellenőriztem; a virtuális `+0x40` művelet matematikája ettől még külön ismeretlen.
+- **Összesített bizonyítottsági fok: nyitott.** A kapuk, gyűjteményművelet és Red-pontszámút utasításszinten ellenőrzött. N1, N3 termékértékei és N7 kijelölési modellje nincsenek eldöntve; eltérés a PicasaPyhoz képest nem bizonyított.
+
+### 46.5 A jegy „Kész, ha” pontjai, jegytörzs és további munka
+
+**Pontonként:** N1 ⛔ (kétarcú név előtti/utáni mérés kell); N3 ⛔ (tételes, címkézett képkészleten pontos eredeti mérés, valamint a Red-detektor mérete és küszöbe kell); N4 ✅; N5 ✅; N6 ✅; N7 ⛔ (két személyes Ctrl/Shift-felvétel kell); N8 ✅. A jegy ezért **nem zárható le**.
+
+**Javasolt jegytörzs-bővítés:** „A spec 46. szakasza rögzíti az új bináris kör eredményét. N4, N5, N6 és N8 bizonyítékkal lezárva; N1, N3 és N7 továbbra is nyitott. A `0x0047b020` jelzőág nem bizonyítja a név szerinti kizárást; a `0x100057c0` maximum-hasonlóságot ír, nem ad detektorküszöböt. Eltérés nincs bizonyítva, ezért jelenleg nincs megvalósítási jegy. A lezáráshoz N1 kétarcú név előtti/utáni felvétele, N3 fagyasztott mintán mért eredeti/PicasaPy arány, Red-küszöb és bemeneti méret, N7 pedig két személyes Ctrl/Shift-felvétel kell.”
+
+**Fejlesztői lista:** nincs; az „Eredeti / nálunk / teendő” összevetéshez N1/N3/N7 eredeti mérései hiányoznak, bizonyított eltérés nincs.
+
+**Új kutatási jegy:** nem javasolt; mindhárom hiányzó mérés a #5184 nyitott kérdése.
+
+**Nyitott:**
+- N1: kétarcú fotó, egyik arc megnevezése után a második arc Név nélküliek/javaslat eredményének rögzítése, előtte/utána `faces=` kontrollal.
+- N3: azonos, címkézett képkészleten mért arány mindkét alkalmazásban; a Red belső küszöbe és bemeneti mérete. Ghidra-kör kell: 0x0048ec30 - a `0x0048e5da` közvetett hívásai közül a detektor célja, a beméretezés és küszöb [blokkoló N3]. Ghidra-kör kell: 0x101c867c - a `vfr_VdeFaceFinder` detektáló slotja, küszöbe és bemeneti mérete [blokkoló N3].
+- N7: két személyes People Manager Ctrl-/Shift-kijelölési felvétel, a törlőgomb állapotával.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 46. szakasz; frissíti a #5184 pontonkénti állapotát). A `docs/specs/00-index.md`-t a hívó frissíti.
