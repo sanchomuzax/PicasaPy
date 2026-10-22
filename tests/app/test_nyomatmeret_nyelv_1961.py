@@ -70,7 +70,7 @@ class TestATeruletiMereshezIgazodoKeszlet:
             (
                 "en",
                 QLocale.MeasurementSystem.MetricSystem,
-                ["M5X8CM", "M9X13CM", "M10X15CM", "M13X18CM", "M20X25CM"],
+                ["M10X15CM", "M13X18CM", "M15X20CM", "M20X25CM", "CONTACT"],
             ),
             (
                 "hu",
@@ -97,11 +97,44 @@ class TestATeruletiMereshezIgazodoKeszlet:
         ctl._settings.setValue("printing/sizePreset1", "M8X10")
         assert ctl.printSizePresets() == [
             "M8X10",
-            "M9X13CM",
+            "M13X18CM",
+            "M15X20CM",
+            "M20X25CM",
+            "CONTACT",
+        ]
+
+    def test_a_mentett_teljes_oldal_gyorsvalaszto_a_teruleti_alapra_esik_vissza(
+        self, tmp_path, monkeypatch
+    ):
+        ctl = _vezerlo(
+            tmp_path,
+            "en",
+            monkeypatch,
+            QLocale.MeasurementSystem.MetricSystem,
+        )
+        ctl._settings.setValue("printing/sizePreset5", "TELJES_OLDAL")
+
+        assert ctl.printSizePresets() == [
             "M10X15CM",
             "M13X18CM",
+            "M15X20CM",
             "M20X25CM",
+            "CONTACT",
         ]
+
+    def test_az_opciok_meretlistaja_tizenhat_tetelu_teljes_oldal_nelkul(
+        self, tmp_path, monkeypatch
+    ):
+        ctl = _vezerlo(
+            tmp_path,
+            "en",
+            monkeypatch,
+            QLocale.MeasurementSystem.MetricSystem,
+        )
+
+        meretek = ctl.printOptionSizes()
+        assert len(meretek) == 16
+        assert "TELJES_OLDAL" not in meretek
 
 
 class TestATaroltMeret:
