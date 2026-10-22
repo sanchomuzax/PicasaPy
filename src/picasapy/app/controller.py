@@ -588,12 +588,12 @@ class AppController(
         #: be; a felső korlát a legrövidebb dia-idő (1 s) fele
         return max(0, min(value, 500))
 
-    #: #2992: a diaidő alsó/felső korlátja. ⚠️ NINCS KIMÉRVE — az eredeti
-    #: `minusone`/`plusone` gombjainak határa nem szerepel a specben
-    #: (`picasa-create-features.md`: csak az alapérték, 3 másodperc). Ez a
-    #: mi választásunk; ha egyszer kimérjük, cserélhető.
+    #: #2992, #5544: a diaidő alsó/felső korlátja, mérve. Az eredeti `+`/`-`
+    #: gombjai után az érték 1 és 20 közé szorul: az alsó határ
+    #: `0x00802b6d` (`fld1`), a felső `0x00802b7e` (a `0x00cf4974` konstans,
+    #: f32 = 20,0).
     SLIDESHOW_SECONDS_MIN = 1
-    SLIDESHOW_SECONDS_MAX = 30
+    SLIDESHOW_SECONDS_MAX = 20
 
     @Property(int, notify=statusChanged)
     def slideshowSeconds(self):  # noqa: N802 — QML-property-konvenció

@@ -1139,10 +1139,13 @@ Rectangle {
                     width: 26
                     height: controlsRow.buttonHeight
                     text: "+"
-                    //: #2992: `oneup/plusone` — ugyanaz az auto-ismétlés,
+                    //: #2992: `oneup/plusone` - ugyanaz az auto-ismétlés,
                     //: mint a párjánál (ld. ott az indoklást).
                     autoRepeat: true
-                    enabled: show.seconds < 30
+                    //: #5544: a felső határ 20 (mérve). Ez a szám a
+                    //: `controller.py` SLIDESHOW_SECONDS_MAX konstansával
+                    //: egyezik; a vetítő nem lát vezérlőt, ezért nem onnan olvassa.
+                    enabled: show.seconds < 20
                     onClicked: show.secondsChosen(show.seconds + 1)
                 }
             }
