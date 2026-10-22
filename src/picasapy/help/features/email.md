@@ -73,10 +73,9 @@ E-mail fülén — bármikor visszaállíthatod.)
 
 Az **Eszközök ▸ Beállítások… ▸ E-mail** fülön:
 
-- **Levelezőprogram** — **A számítógép alapértelmezett
-  levelezőprogramjának használata**, vagy **Minden képküldésnél
-  kiválasztom** (ilyenkor mindig megjelenik a választó lap). A **Google
-  Fiók használata** szürke.
+- **Levelezőprogram:** **Minden képküldésnél kiválasztom** (ilyenkor
+  mindig megjelenik a választó lap), vagy **A számítógép alapértelmezett
+  levelezőprogramjának használata**. A **Google Fiók használata** szürke.
 - **Több kép mérete** — csúszka: ekkora hosszabbik oldalra kicsinyíti a
   képeket küldés előtt. A csúszka mellett a pillanatnyi érték látszik
   képpontban.
