@@ -1034,7 +1034,7 @@ Rectangle {
                 objectName: "slideshowTransitionBox"
                 height: controlsRow.buttonHeight
                 width: 150
-                //: a 22 soros lista a képernyő alján álló sáv fölé nyílik
+                //: a lista a képernyő alján álló sáv fölé nyílik
                 popup.y: -popup.implicitHeight
                 model: show.atmenetek.map(function (a) { return a.nev })
                 currentIndex: {
