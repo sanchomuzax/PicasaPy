@@ -77,7 +77,10 @@ def make_poster_tiles(
     paper_size: str,
     overlap: bool,
 ) -> tuple[Path, ...]:
-    """A képet a forrásmappába írt, sorszámozott fájlokra vágja.
+    """A képet JPEG-poszterlapokra vágja a forrás mappájába.
+
+    A lapok neve ``<oszlop>-<sor>-<alapnév>.jpg``, és 90-es JPEG-
+    minőséggel készülnek.
 
     A `paper_size` érték része a nyilvános API-nak, hogy a párbeszéd a
     kiválasztott méretet átadhassa. Mivel csak a 4x6-os eset vágása mért,
@@ -97,9 +100,9 @@ def make_poster_tiles(
 
     height, width = image.shape[:2]
     count = magnification_percent // 100
-    extension = path.suffix.lower() or ".jpg"
+    extension = ".jpg"
     if not cv2.haveImageWriter(extension):
-        raise ValueError(f"Nem támogatott képfájl-kiterjesztés: {extension}")
+        raise ValueError("A JPEG-formátumú poszterlap nem írható.")
 
     encoded_pages: list[tuple[Path, bytes]] = []
     for row in range(count):
@@ -107,10 +110,12 @@ def make_poster_tiles(
         for column in range(count):
             left, right = _tile_bounds(width, count, column, overlap)
             tile = image[top:bottom, left:right]
-            ok, encoded = cv2.imencode(extension, tile)
+            ok, encoded = cv2.imencode(
+                extension, tile, [cv2.IMWRITE_JPEG_QUALITY, 90]
+            )
             if not ok:
-                raise OSError(f"A poszterlap nem kódolható: {row}-{column}")
-            target = path.with_name(f"{row}-{column}-{path.name}")
+                raise OSError(f"A poszterlap nem kódolható: {column}-{row}")
+            target = path.with_name(f"{column}-{row}-{path.stem}{extension}")
             encoded_pages.append((target, encoded.tobytes()))
 
     for target, data in encoded_pages:

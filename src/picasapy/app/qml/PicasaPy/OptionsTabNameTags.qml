@@ -217,7 +217,7 @@ ColumnLayout {
             objectName: "optionsFacePersistToFileCheck"
             Layout.fillWidth: true
             Layout.preferredHeight: 22
-            text: qsTr("Store name tags in the file")
+            text: qsTr("Store name tags in photo")
             enabled: !!root.faceCtl
             checked: root.faceCtl ? root.faceCtl.persistFaceToFile() : true
             onToggled: if (root.faceCtl)

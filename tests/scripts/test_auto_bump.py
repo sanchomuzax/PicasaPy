@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+import subprocess
+import sys
 
 import pytest
 
@@ -130,6 +132,40 @@ def test_ures_darabkonyvtar_nem_valtoztat_a_korabbi_kimeneten(tmp_path):
         "- Régi sor (#1).\n\n"
         "## [0.8.28] – 2026-08-20\n"
     ).encode("utf-8")
+
+
+def test_hibas_darabnal_a_parancs_nem_irja_at_a_fajlokat(tmp_path):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject_tartalom = '[project]\nversion = "0.9.179"\n'
+    pyproject.write_text(pyproject_tartalom, encoding="utf-8")
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog_tartalom = "# Napló\n\n## [Nem kiadott]\n"
+    changelog.write_text(changelog_tartalom, encoding="utf-8")
+    darabok = tmp_path / "changelog.d"
+    darabok.mkdir()
+    (darabok / "5458.md").write_text(
+        "- Két jegyszám került egy sorba (#5458, #5476).\n", encoding="utf-8"
+    )
+
+    eredmeny = subprocess.run(
+        [
+            sys.executable,
+            str(_UT),
+            "--datum",
+            "2026-10-21",
+            "--gyoker",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+
+    assert eredmeny.returncode != 0
+    assert pyproject.read_text(encoding="utf-8") == pyproject_tartalom
+    assert changelog.read_text(encoding="utf-8") == changelog_tartalom
 
 
 class TestWorkflowBekotes:
