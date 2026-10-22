@@ -5932,3 +5932,48 @@ A `0x0047e470` `param_3` (`cVar2`) képzése csak C-szinten olvasott: a `0x0045a
 - N7: két személyes People Manager Ctrl-/Shift-kijelölési felvétel, a törlőgomb állapotával.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 46. szakasz; frissíti a #5184 pontonkénti állapotát). A `docs/specs/00-index.md`-t a hívó frissíti.
+
+## 47. #5184, helyi utánkövetés: a People-lista egy aktuális indexet tart; a kijelölési modell nyitott (2026-10-22)
+
+**Hatókör.** Célzott indexlekérdezés és utasításszintű diszasszemblálás a People Manager útján; a helyi `Red.dll` `vfr_VdeFaceFinder` vtáblájának és a `red.cfg`-nek ellenőrzése; a mérőadat-archívum `.picasa.ini` tagjainak bejárása. Teljes `.text`-pásztázás nem történt. A `red.cfg` elemzéséhez a meglévő, csak olvasó parser futott; sem az archívumból, sem máshonnan nem bontottam ki fájlt a `.bt` alá.
+
+### 47.1 N7: a kezelő egy aktuális sort tárol, de a Ctrl/Shift-viselkedés nyitott
+
+- Az eredeti `runtime/contactmgr.fen` a `contacts` elemet `<list>`-ként deklarálja; a listán nincs kijelölési módot vagy jelölőnégyzeteket megadó attribútum.
+- A `ContactManagerDlg` konstruktorában a `0x007b900d` a `this+0x13c` mezőt `0xffffffff` kezdőértékre állítja. A `0x007b9630` `contacts` eseményágán a listakomponens `[vtable+0x0c]` metódusának visszatérését ebbe az egy skalármezőbe írja. A vtable-kapcsolat a konstruktor által a `this+0xbc` alobjektumba tett `0x00cb7bd0` táblával egyezik.
+- A `0x007ba820` Delete Person útja ugyanezt az indexet ellenőrzi a listahosszal szemben, majd az indexelt sort dolgozza fel. Ez egyetlen aktuális sor kezelését bizonyítja.
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| A People Manager kezelőútja egy aktuális kiválasztott indexet tárol és használ | bináris (`0x007b900d`, `0x007b9630`, `0x007ba820`, `0x00cb7bd0`) | megerősített erre a belső állapotra |
+| Ctrl/Shift-tel egyszerre több személy kijelölhető-e | NINCS MEG; a fenti getter többes kijelölésnél is visszaadhatja az aktuális sort | nyitott; két személyes felvétel kell |
+
+**Cáfoló próba.** Azt próbáltam levezetni, hogy az egyetlen tárolt index bizonyítja az egyszeres kijelölést. A többes kijelölésű vezérlő is tarthat egy aktuális sort, ezért ez nem cáfolja a Ctrl/Shift-támogatást. Az eredeti listavezérlő tényleges módját továbbra is csak a két személyes felvétel dönti el.
+
+### 47.2 N3: a `vfr_VdeFaceFinder` parancságának számai nem detektorküszöbök
+
+- A `Red.dll` `0x101c867c` táblájának 28 egymást követő bejegyzése `.text`-címre mutat; az ezt követő dword `0x101fc5a8` nem kódcím. A `+0x5c` slot célja `0x100b07b0`.
+- A `0x100b07b0` által használt `0x101c8608` diagnosztikai sztring a `vfr_VdeFaceFinder::execute` metódust nevezi meg. A kód a `0x101b2cd4` (`set range`), `0x101b3d2c` (`set roll`) és `0x101c54bc` (`set roll step range`) parancsokat kezeli. A `0x101e9308` címen olvasott `float32` érték 180,0; a kód a `set roll` ágon használja, így ez nem az arcdetektor küszöbének vagy bemeneti képméretének bizonyítéka.
+- A golden kapun átment `esm_parse.py` a `red.cfg` SHA-256 értékét `916d69fd9a412ea937b49f3b0b1401076193dc9be096b3af71921aeba6f51835`-ként, a DLL-ét `da370693b59d89e7d48646d9617f5f595e371f8e1828cb1aa9f12530a17c8233`-ként adta. A gyökér `vfr_VdeFaceFinder` rekord offsetje `0x7`, verziója 201, de a parser a payload sémáját nem értelmezi. A parser által `vfr_SowGrowStampClusterer` osztályúként azonosított `0x22d07e` objektum float32 hármasa `0.699999988079071 / 0.9800000190734863 / 1.0` (nyers bájtok: `33 33 33 3f 48 e1 7a 3f 00 00 80 3f`); ez nem a detektor objektuma.
+
+**Cáfoló próba.** A `0x100b07b0` slotot és a `red.cfg` ismert float32 paraméterhármasát próbáltam a detektorküszöb jelöltjeként igazolni. Az első parancsszövegei a roll/range ágakat azonosítják; a második hármas osztálya `vfr_SowGrowStampClusterer`. Mindkét jelöltet elvetettem N3 küszöbeként. A `vfr_VdeFaceFinder` payloadja, a belső detektorküszöb, a bemeneti képméret és a pontos arány **NINCS MEG**.
+
+### 47.3 N1: az archívum nem tartalmazza a szükséges címkézett kontrollt
+
+A `meroadat.tar` összes `.picasa.ini` tagját bejáró mérés `matching_ini_count 0` eredményt adott a `faces=` vagy `[Contacts2]` adatot tartalmazó fájlokra. Ez azt jelenti, hogy ebből az archívumból nem állítható össze név előtti/utáni, kétarcú kontrollmérés; önmagában nem állítja, hogy a többi archívumbeli képen nincs arc. N1 bináris jelzőútját a 45-46. szakaszok tárgyalják, a névhez kötést és az eredeti második arctalálatát ez a vizsgálat nem dönti el.
+
+| Jegypont | Állapot e kör után | Bizonyíték |
+|---|---|---|
+| N1 | ⛔ Nyitott | archívum-mérés: 0 releváns `.picasa.ini`; név előtti/utáni eredeti Picasa-felvétel kell |
+| N3 | ⛔ Nyitott | bináris (`0x101c867c`, `0x100b07b0`, `0x101c8608`); küszöb/méret NINCS MEG; páros mért arány nincs |
+| N7 | ⛔ Nyitott | bináris (`0x007b9630`, `0x007ba820`): egy aktuális index; Ctrl/Shift-felvétel NINCS MEG |
+| N4, N5, N6, N8 | ✅ Lezárt | a 46.3-ban hivatkozott felvételek és jegyjavítás |
+
+**A két független út.** N7 A út: a `contactmgr.fen` listadefiníciója; B út: a `ContactManagerDlg` vtable-ja, a kijelölésváltozási kezelő és a törlési út utasításai. Ezek egyeznek abban, hogy a kezelő egy aktuális indexet használ; a többes kijelölést nem döntik el. N3 A út: a `0x101c867c` vtable-slot címe és a `0x100b07b0` kódja; B út: a metódusdiagnosztika/parancsszövegek és a `red.cfg` osztályozott rekordjai. Ezek egyeznek abban, hogy a vizsgált 180,0 és a Stamp-hármas nem a keresett detektorküszöb. Egyik pont teljes termékviselkedése sem zárható le két bizonyított úttal.
+
+**Nyitott:**
+- N1: kétarcú kép név előtti/utáni Picasa-felvétele `faces=` kontrollal; a munkasor jelzőjének személyhez kötése továbbra is nyitott.
+- N3: Ghidra-kör kell: 0x101c867c - az aktív detektáló slot célja, a bemeneti képméret és a küszöb forrása [blokkoló N3]. Az arányhoz azonos, címkézett képkészlet kell mindkét programban.
+- N7: két személyes People Manager felvétel: első sor, Ctrl+kattintás, Shift-kattintás és a Delete Person gomb állapota.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 47. szakasz: N1 mérőadat-leltár, N3 Red.dll/red.cfg utánkövetés, N7 kijelölőút pontosítása).
