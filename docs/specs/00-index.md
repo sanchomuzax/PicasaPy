@@ -1843,6 +1843,7 @@ lezárva** (`0x0085d550`, `0x0085df30`, `0x00cf3f68`, `0x00cf4218`). **A 40. té
 | [picasa-lebego-ertesito.md](picasa-lebego-ertesito.md) | A lebegő értesítősáv (`CNotifierPopup`) — képernyőfelvétel- és import-értesítés, kattintás-viselkedés. ⚠️ **Az „a geometria NYITOTT" megjegyzés 2026-08-24-én ELAVULTNAK bizonyult:** a geometria mérve van (a lap „Geometria — mérve a binárisból" szakasza), a pozicionálás dekompilálva (`SPI_GETWORKAREA` + 144 képpont). **Ami tényleg nyitva volt: a cella élettartama és az animáció ütemforrása** — a cella élettartama **LEZÁRVA 2026-08-26** (abszolút határidő `cella+0xb8`, képkockánként ellenőrizve), az ütemforrás **LEZÁRVA 2026-08-30** (a vtable 0x60 rekesze: `CNotifierPopup::vftable` 25. rekesz = `0x006575b0`). Jegy: **#1130** |
 | [vorosszem-eszkoz-terve.md](vorosszem-eszkoz-terve.md) | A vörösszem-eszköz terve |
 | [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) | A vágás-eszköz állapota — 19 arány, egyéni arányok, 3 javaslat |
+| [picasa-diavetito-sav.md](picasa-diavetito-sav.md) | #5537: a diavetítő vezérlősávja az eredeti `oneup.tre` szerint: a csoportok, a feliratok, a lenyomásra lépés és a kijelzési idő határa; 7 jegyjavaslat |
 
 ## Nyelv és megjelenés
 

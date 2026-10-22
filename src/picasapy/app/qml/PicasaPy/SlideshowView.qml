@@ -991,9 +991,14 @@ Rectangle {
                 height: controlsRow.buttonHeight
                 onClicked: show.stop()
             }
+            //: #5541: az eredetiben a `oneup.tre` 75-81. sorában a ◀ és a ▶▶ gombon
+            //: `mousedown` van; a kezelőjük a `0x008032e0`. Ezért LENYOMÁSRA léptet,
+            //: nyomva tartva nem ismétel.
             PicasaButton {
+                objectName: "slideshowPrevButton"
                 text: "◀"; width: 34
                 height: controlsRow.buttonHeight
+                lenyomasra: true
                 onClicked: show.goBack()
             }
             PicasaButton {
@@ -1003,10 +1008,12 @@ Rectangle {
                 height: controlsRow.buttonHeight
                 onClicked: show.togglePause()
             }
+            //: #5541: ld. fent, a ◀ gombnál.
             PicasaButton {
                 objectName: "slideshowNextButton"
                 text: "▶▶"; width: 38
                 height: controlsRow.buttonHeight
+                lenyomasra: true
                 onClicked: show.advance()
             }
             PicasaButton {
@@ -1123,7 +1130,8 @@ Rectangle {
                     horizontalAlignment: Text.AlignHCenter
                     //: másodperc-jelölés a szám után (az eredeti `tps` mezője)
                     //: #3574: `OneUpUI::Format` „%1$d %2$s” — a szó kiírva
-                    text: show.seconds + " " + qsTr("seconds")
+                    //: #5546: az eredeti `0x0080304c` `cmp esi, 1` után `OneUpUI::second` / `OneUpUI::seconds`
+                    text: show.seconds + " " + (show.seconds === 1 ? qsTr("second") : qsTr("seconds"))
                     color: "#ffffff"
                     font.pixelSize: Theme.fontSize - 2
                 }
@@ -1132,10 +1140,13 @@ Rectangle {
                     width: 26
                     height: controlsRow.buttonHeight
                     text: "+"
-                    //: #2992: `oneup/plusone` — ugyanaz az auto-ismétlés,
+                    //: #2992: `oneup/plusone` - ugyanaz az auto-ismétlés,
                     //: mint a párjánál (ld. ott az indoklást).
                     autoRepeat: true
-                    enabled: show.seconds < 30
+                    //: #5544: a felső határ 20 (mérve). Ez a szám a
+                    //: `controller.py` SLIDESHOW_SECONDS_MAX konstansával
+                    //: egyezik; a vetítő nem lát vezérlőt, ezért nem onnan olvassa.
+                    enabled: show.seconds < 20
                     onClicked: show.secondsChosen(show.seconds + 1)
                 }
             }
