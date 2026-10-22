@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.187] - 2026-10-22
+
+- A diavetítés átmenet-választójának megjegyzése már nem tüntet fel elavult elemszámot (#5560).
+- Az Eszközök ▸ Feltöltés almenüben megjelent a három letiltott szolgáltatás, és javult a Google Fotók importfelirata. (#5570).
+- A spanyol felületen a közös webalbumba feltöltés menüpontja már nem a régi programnevet írja. (#5575).
+
 ## [0.9.186] - 2026-10-22
 
 - A diavetítő ◀ és ▶▶ gombja már a lenyomás pillanatában lép, ahogy az eredeti Picasában (#5541).
