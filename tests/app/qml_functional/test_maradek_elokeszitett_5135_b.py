@@ -14,6 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from PySide6.QtCore import QPointF
 from test_maradek_elokeszitett_5135 import (
     _elem,
     _filmet_nyit,
@@ -32,6 +33,31 @@ try:
     _QTPRINTSUPPORT_VAN = True
 except ImportError:  # pragma: no cover
     _QTPRINTSUPPORT_VAN = False
+
+
+def _legfelso_elem(gyoker, pont):
+    """A pont alatti legmélyebb látható elem neve (a kattintás célpontja)."""
+    elem = gyoker
+    while True:
+        helyi = elem.mapFromScene(pont)
+        gyerek = elem.childAt(helyi.x(), helyi.y())
+        if gyerek is None:
+            return elem
+        elem = gyerek
+
+
+def _lapozo_allapot(dialog, gomb) -> str:
+    kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2))
+    cel = _legfelso_elem(gomb.window().contentItem(), kozep)
+    return (
+        f"oldal={dialog.property('previewPage')}"
+        f"/{dialog.property('previewPageCount')}, "
+        f"gomb={gomb.property('enabled')} {gomb.width()}x{gomb.height()} "
+        f"@({kozep.x():.0f},{kozep.y():.0f}), "
+        f"ablak={gomb.window().width()}x{gomb.window().height()}, "
+        f"a pont alatt: {cel.objectName()!r} ({type(cel).__name__}, "
+        f"{cel.metaObject().className()})"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -62,11 +88,25 @@ class TestNyomtatasElonezetLapozas:
             f"az előnézet nem két lapos: {szoveg.property('text')!r}"
         )
 
+        # #5520: az önálló ablak első kattintása aktiválás nélkül elveszhet
+        dialog.requestActivate()
+        assert _varj(qt_app, lambda: dialog.property("active") is True), (
+            "a nyomtatási párbeszéd nem lett aktív"
+        )
+        # #5520: a nyitás utáni átméretezés (`meretezesIdozito`) lecsengése
+        # előtt a gomb elmozdulhat a lenyomás és a felengedés között
+        assert _varj(
+            qt_app, lambda: dialog.property("meretezesFuggoben") is False
+        ), "a nyomtatási párbeszéd méretezése nem csengett le"
+        kovetkezo = _elem(window, "printPreviewNextButton")
+        assert _varj(qt_app, lambda: kovetkezo.property("enabled") is True), (
+            "a Következő gomb nem lett engedélyezett"
+        )
         _kattints_mindenablakban(qt_app, "printPreviewNextButton")
         assert _varj(qt_app, lambda: szoveg.property("text") == "2 / 2"), (
-            "a Következő gomb nem léptette az előnézetet"
+            "a Következő gomb nem léptette az előnézetet: "
+            + _lapozo_allapot(dialog, kovetkezo)
         )
-        kovetkezo = _elem(window, "printPreviewNextButton")
         assert kovetkezo.property("enabled") is False
 
         _kattints_mindenablakban(qt_app, "printPreviewPrevButton")
