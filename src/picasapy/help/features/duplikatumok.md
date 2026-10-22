@@ -91,5 +91,6 @@ történni.
 
 Az importáló ablak **Duplikátumok kizárása** jelölője azokat a képeket
 hagyja ki, amik már benne vannak a könyvtáradban. Ugyanez a beállítás a
-**Beállítások ▸ Általános** fülön is megvan **Duplikátumok észlelése
-importáláskor** néven — a két hely ugyanazt az egy kapcsolót mutatja.
+**Beállítások ▸ Általános** fülön is megvan **Másodpéldányok észlelése
+az importálás során** néven: a két hely ugyanazt az egy kapcsolót
+mutatja. Alapból be van kapcsolva.

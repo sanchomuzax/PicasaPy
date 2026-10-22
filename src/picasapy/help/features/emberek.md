@@ -188,11 +188,15 @@ száma áll (például „37 arc"). Itt:
   megjelenik. Jelölj ki egy vagy több arcot, írd be a nevet a mezőbe, és
   nyomj Entert: a név az összes kijelölt arcra rákerül. A **Kijelöltek
   mellőzése** gomb a kijelölt arcokat egyszerre teszi félre.
-- Minden arc alatt saját **Név hozzáadása** mező áll. Gépelés közben a
-  mező alatt egy lista mutatja, mely meglévő személyek neve illik a
-  beírt szövegre, arcképükkel együtt. Ha a listában egy személyre
-  kattintasz, az arc azonnal az ő nevét kapja, a mező kiürül. Az Enter
-  viszont **mindig** a
+- Minden arc alatt saját **Név hozzáadása** mező áll. Már az első
+  leütésre a mező alatt egy lista mutatja, mely meglévő személyek neve
+  illik a beírt szövegre, arcképükkel együtt. A program a név
+  **szavainak elejére** illeszt: az „an" beírására az „Anna Kiss" és a
+  „Kiss Andrea" is megjelenik, a „Joanna" viszont nem. Több szónál a
+  szavaknak egymás után kell következniük a névben. Ha a listában egy
+  személyre kattintasz, az arc azonnal az ő nevét kapja, a mező kiürül.
+  A **le** és **fel** nyíllal is kijelölhetsz egy személyt a listában,
+  és ilyenkor az Enter neki adja az arcot. Kijelölés nélkül az Enter a
   személyek kezelése ablakot nyitja meg: meglévő névnél az ablak a
   személyt jelöli ki, és a **Kiválasztás** gomb adja hozzá az arcot; új
   névnél az új személyt ott hagyod jóvá. Ha a program tippel valakire, a név mellett
@@ -239,16 +243,33 @@ az arcnak** tekinti, és nem mutatja kétszer.
 Az **Eszközök ▸ Személyek kezelése…** egy ablakot nyit, ahol az ismert
 személyek névjegyzékét rendezed:
 
-- a bal oldali listában a személyek állnak, fölötte **Keresés:** mező;
+- a bal oldali listában a személyek névsorban állnak, fölötte
+  **Keresés:** mező. A keresés a nevek **szavainak elejére** illeszt,
+  ugyanúgy, mint az arcok alatti névmező (lásd fent). Gépelés közben
+  elöl állnak az új, még el nem mentett bejegyzések, utánuk azok a
+  nevek, amelyek a beírt szöveggel kezdődnek, és csak utánuk a többi
+  találat;
 - **Új személy** — új, még üres nevű bejegyzést vesz fel;
-- **Személy törlése** — kiveszi a kijelöltet a névjegyzékből;
+- **Személy törlése**: kiveszi a kijelöltet a névjegyzékből. Előtte a
+  program rákérdez („Biztosan törli ezt a személyt?”); az **Igen**
+  töröl, a **Nem** meghagyja. Ha bejelölöd **A jövőben ne jelenjen meg
+  ez a figyelmeztetés.** pipát, legközelebb kérdés nélkül töröl;
 - a kijelölt személynél látod a hozzá tartozó fotók számát és az
   **Ismerős azonosítója:** mezőt, a **Név:** és az **E-mail:** mező
   szerkeszthető; a **Visszaállítás** a kijelölt személy módosításait
-  elveti.
+  elveti. A gomb csak akkor használható, ha a kijelölt személyen
+  változtattál.
 
 A változtatások az **OK** gombra lépnek életbe (a **Mégse** eldobja
-őket); az OK addig szürke, amíg valamelyik személy neve üres. A nevek a
+őket). Ha valamelyik személy neve üresen maradt, az OK megnyomására egy
+**Érvénytelen személy** üzenet jelenik meg: új bejegyzésnél az, hogy
+adatok nélkül nem vehetsz fel személyt, meglévőnél az, hogy a név nem
+távolítható el. Az üzenet után a program az adott bejegyzést
+visszaállítja. Ha új személyt olyan névvel vagy e-mail címmel veszel
+fel, ami már létezik, a program megkérdezi (**Már létező személy**),
+biztosan új személyt akarsz-e létrehozni; a **Nem** visszavisz a
+szerkesztéshez. Ha a mentés nem sikerül, „A személy frissítése nem
+sikerült.” üzenetet látod. A nevek a
 közös névjegytárba kerülnek, a mappák `.picasa.ini` fájlja pedig csak
 azoknál a mappáknál változik, ahol az érintett személy szerepel. E-mail
 címet csak olyan személyhez lehet menteni, akinek már van névcímkéje
