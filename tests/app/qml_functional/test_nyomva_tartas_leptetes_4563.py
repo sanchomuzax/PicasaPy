@@ -1,15 +1,13 @@
-"""#4563: a néző ◀ és ▶ léptetőgombjai nyomva tartva folyamatosan lépnek.
+"""#5529: a néző ◀ és ▶ gombja nyomva tartva is csak egyszer lép.
 
-Az eredetiben a `prev`/`next` gombok lenyomásra hatnak ÉS ismétlődnek
-(`m_autorepeat`). Nálunk a `PicasaButton` lenyomásra sülő ága egy saját
-`MouseArea`-ban él, amely el is nyeli az eseményt — a Qt beépített
-`autoRepeat`-je ezért sosem indul, és a gomb felengedés nélkül csak egyszer
-lép.
+Az eredeti `oneup/prev` és `oneup/next` `mousedown` gomb, de nincs rajtuk
+`setautorepeat` (`oneup.tre:75-81`). A külön `plusone`/`minusone` gombok
+ismételnek (`oneup.tre:133-143`), ezért az ismétlést csak a néző két
+kép-léptetőjéről vesszük le.
 
-A próba VALÓDI egér-lenyomással méri a viselkedést a nézőben: lenyomva tartva
-többet léptet egynél, felengedéskor megáll, és a végén tiltott gombbal nem
-lép tovább. Ablakmagassággal −5 / 0 / +5 px-en fut, mert a léptetőgombok
-helye a felső sáv magasságától függ.
+A próba VALÓDI egér-lenyomással tartja nyomva mindkét gombot legalább 800 ms-ig,
+és pontosan egy képlépést vár. Az ablakmagasságot -5, 0 és +5 px-en is méri,
+mert a kattintási pontot a gomb aktuális helyéből kell venni.
 """
 
 from __future__ import annotations
@@ -21,15 +19,11 @@ import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
-
 from support.jpeg_factory import make_jpeg
 
-_MAPPA = "nyomva_tartas_4563"
+_MAPPA = "nyomva_tartas_5529"
 _KEPEK = 40
-#: ennyi ideig tartjuk nyomva a gombot — a Qt alapértelmezett ismétlési
-#: késleltetése (300 ms) után több léptetésnek kell megtörténnie
-_TARTAS_MS = 1200
-_FELENGEDES_UTANI_MS = 600
+_TARTAS_MS = 800
 
 
 def _walk(item: QQuickItem):
@@ -58,14 +52,6 @@ def _var(qt_app, predicate, seconds: float = 10.0) -> bool:
     return False
 
 
-def _varj(qt_app, ms: int) -> None:
-    """Eseményhurok futtatása `ms` ezredmásodpercig (a Timer-ek ettől jönnek)."""
-    deadline = time.monotonic() + ms / 1000
-    while time.monotonic() < deadline:
-        qt_app.processEvents()
-        time.sleep(0.005)
-
-
 def _folder_start(controller) -> int:
     for row in range(controller.photos.rowCount()):
         if _MAPPA in controller.photos.filePathAt(row):
@@ -74,7 +60,7 @@ def _folder_start(controller) -> int:
 
 
 def _nyit(qml_app, qt_app):
-    """A negyven képes próbamappa megnyitva a nézőben, az első képen."""
+    """A negyven képes próbamappa megnyitva a nézőben, középső képpel."""
     window, controller, _engine = qml_app
     folder = Path(controller.watchedFolders[0]) / _MAPPA
     folder.mkdir(exist_ok=True)
@@ -94,24 +80,20 @@ def _nyit(qml_app, qt_app):
     window.setProperty("selectedIndex", start)
     viewer = _elem(window, "photoViewer")
     assert viewer is not None, "a nézőt nem találom"
-    viewer.setProperty("currentIndex", start)
+    viewer.setProperty("currentIndex", start + 20)
     window.setProperty("viewerOpen", True)
     assert _var(qt_app, lambda: window.property("viewerOpen") is True)
-    qt_app.processEvents()
+    assert _var(qt_app, lambda: viewer.property("currentIndex") == start + 20)
     return window, viewer, start
 
 
 def _kozep(gomb):
-    """A gomb közepe az ablak koordinátáiban — ugyanúgy, mint egy egérkattintás."""
+    """A gomb közepe az ablak koordinátáiban, valódi egérkattintáshoz."""
     return gomb.mapToScene(gomb.boundingRect().center()).toPoint()
 
 
 def _lenyom(gomb, qt_app) -> None:
-    """VALÓDI egér-lenyomás az ABLAKON.
-
-    A `sendEvent` egy elemre nem jut el a `MouseArea`-ig; az ablakon át
-    kézbesített esemény igen (ugyanaz a mintát követi, mint a `_lenyom`
-    a `test_lenyomasra_sul_885.py`-ben)."""
+    """Az ablakon át kézbesített valódi lenyomás eléri a `MouseArea`-t."""
     QTest.mousePress(
         gomb.window(), Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         _kozep(gomb),
@@ -127,87 +109,61 @@ def _felenged(gomb, qt_app) -> None:
     qt_app.processEvents()
 
 
+def _lenyomva_tart(
+    gomb, qt_app, viewer, kiindulo_index: int, vart_index: int, tartas_ms: int
+) -> None:
+    lenyomas_ideje = time.monotonic()
+    _lenyom(gomb, qt_app)
+    tortent_lepes = _var(
+        qt_app,
+        lambda: viewer.property("currentIndex") != kiindulo_index,
+    )
+    hatarido = lenyomas_ideje + tartas_ms / 1000
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        time.sleep(0.005)
+    _felenged(gomb, qt_app)
+    assert tortent_lepes, "a gomb lenyomásra nem lépett képet"
+    assert viewer.property("currentIndex") == vart_index, (
+        f"nyomva tartva a gomb a {vart_index} helyett "
+        f"{viewer.property('currentIndex')} indexre lépett"
+    )
+
+
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
-class TestNyomvaTartasLeptetes:
-    def test_nyomva_tartva_tobbet_lep_mint_egyet(
-        self, qml_app, qt_app, height_delta
-    ):
-        window, viewer, start = _nyit(qml_app, qt_app)
-        window.setHeight(window.height() + height_delta)
-        qt_app.processEvents()
-        gomb = _elem(window, "viewerNextButton")
-        assert gomb is not None, "a ▶ gomb nem található"
-        assert _var(qt_app, lambda: gomb.isVisible() and gomb.property("enabled"))
+def test_a_nezo_leptetoi_nyomva_tartva_sem_ismetlik(
+    qml_app, qt_app, height_delta
+):
+    window, viewer, start = _nyit(qml_app, qt_app)
+    elvart_magassag = window.height() + height_delta
+    window.setHeight(elvart_magassag)
+    assert _var(qt_app, lambda: window.height() == elvart_magassag)
 
-        _lenyom(gomb, qt_app)
-        # A lassú (windowsos) futón a fix 1,2 s alatt csak 2 lépés fért bele
-        # (main-CI, 2026-10-14): a hármadik lépést nyomva tartva várjuk ki.
-        _var(qt_app, lambda: viewer.property("currentIndex") - start >= 3, seconds=10.0)
-        _felenged(gomb, qt_app)
+    kovetkezo = _elem(window, "viewerNextButton")
+    elozo = _elem(window, "viewerPrevButton")
+    assert kovetkezo is not None, "a ▶ gomb nem található"
+    assert elozo is not None, "a ◀ gomb nem található"
+    assert _var(
+        qt_app,
+        lambda: kovetkezo.isVisible() and kovetkezo.property("enabled")
+        and elozo.isVisible() and elozo.property("enabled"),
+    ), "a néző két léptetőgombja nem épült fel"
 
-        lepesek = viewer.property("currentIndex") - start
-        assert lepesek >= 3, (
-            f"nyomva tartva a ▶ csak {lepesek} lépést tett, "
-            "pedig folyamatosan léptetnie kell"
-        )
+    if height_delta == 0:
+        kep = window.grabWindow()
+        assert not kep.isNull(), "a néző képernyőképe üres"
+        output = Path(__file__).resolve().parents[3] / ".bt" / "kep5529.png"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        assert kep.save(str(output)), f"a néző képe nem menthető: {output}"
 
-    def test_felengedeskor_megall(self, qml_app, qt_app, height_delta):
-        window, viewer, start = _nyit(qml_app, qt_app)
-        window.setHeight(window.height() + height_delta)
-        qt_app.processEvents()
-        gomb = _elem(window, "viewerNextButton")
-        assert gomb is not None
+    kezdet = start + 10
+    viewer.setProperty("currentIndex", kezdet)
+    assert _var(qt_app, lambda: viewer.property("currentIndex") == kezdet)
+    _lenyomva_tart(
+        kovetkezo, qt_app, viewer, kezdet, kezdet + 1, _TARTAS_MS
+    )
 
-        _lenyom(gomb, qt_app)
-        _varj(qt_app, _TARTAS_MS)
-        _felenged(gomb, qt_app)
-        felengedve = viewer.property("currentIndex")
-        _varj(qt_app, _FELENGEDES_UTANI_MS)
-
-        assert viewer.property("currentIndex") == felengedve, (
-            "felengedés után is léptet a ▶ gomb"
-        )
-        assert felengedve > start
-
-    def test_a_bal_gomb_is_nyomva_tartva_lep(self, qml_app, qt_app, height_delta):
-        window, viewer, _start = _nyit(qml_app, qt_app)
-        window.setHeight(window.height() + height_delta)
-        qt_app.processEvents()
-        # Előbb a mappa közepére lépünk, hogy legyen hova visszafelé lépni.
-        viewer.setProperty("currentIndex", _start + 20)
-        qt_app.processEvents()
-        gomb = _elem(window, "viewerPrevButton")
-        assert gomb is not None, "a ◀ gomb nem található"
-        assert _var(qt_app, lambda: gomb.isVisible() and gomb.property("enabled"))
-
-        _lenyom(gomb, qt_app)
-        _var(qt_app, lambda: _start + 20 - viewer.property("currentIndex") >= 3, seconds=10.0)
-        _felenged(gomb, qt_app)
-
-        lepesek = _start + 20 - viewer.property("currentIndex")
-        assert lepesek >= 3, (
-            f"nyomva tartva a ◀ csak {lepesek} lépést tett"
-        )
-
-    def test_a_konyvtar_vegen_a_tiltott_gomb_leall(
-        self, qml_app, qt_app, height_delta
-    ):
-        """Az utolsó képnél a ▶ tiltott: a tartás nem léphet tovább."""
-        window, controller, _engine = qml_app
-        window.setHeight(window.height() + height_delta)
-        qt_app.processEvents()
-        _window, viewer, _start = _nyit(qml_app, qt_app)
-        utolso = controller.photos.rowCount() - 1
-        viewer.setProperty("currentIndex", utolso - 1)
-        qt_app.processEvents()
-        gomb = _elem(window, "viewerNextButton")
-        assert gomb is not None
-        assert _var(qt_app, lambda: gomb.property("enabled"))
-
-        _lenyom(gomb, qt_app)
-        _varj(qt_app, _TARTAS_MS)
-        _felenged(gomb, qt_app)
-
-        assert viewer.property("currentIndex") == utolso, (
-            "az utolsó képen túl is léptetett a ▶ gomb"
-        )
+    kezdet = start + 20
+    viewer.setProperty("currentIndex", kezdet)
+    assert _var(qt_app, lambda: viewer.property("currentIndex") == kezdet)
+    _lenyomva_tart(elozo, qt_app, viewer, kezdet, kezdet - 1, _TARTAS_MS)

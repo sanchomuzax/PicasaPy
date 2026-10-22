@@ -1854,11 +1854,9 @@ Rectangle {
                 // (`#5A7BBB`) — két különböző elem.
                 PicasaButton {
                     objectName: "viewerPrevButton"
-                    //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
-                    //: (`oneup/prev`, `oneup/next` — `Property mousedown 1`).
+                    //: #5529: a `oneup/prev` lenyomásra hat, de nincs rajta
+                    //: `setautorepeat` (`oneup.tre:75-81`).
                     lenyomasra: true
-                    //: #4563: `m_autorepeat` — nyomva tartva folyamatosan lép
-                    autoRepeat: true
                     onClicked: viewer.previous()
                     enabled: viewer.hasPrevious()
                     Layout.preferredWidth: 30
@@ -2020,11 +2018,9 @@ Rectangle {
                 }
                 PicasaButton {
                     objectName: "viewerNextButton"
-                    //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
-                    //: (`oneup/prev`, `oneup/next` — `Property mousedown 1`).
+                    //: #5529: a `oneup/next` lenyomásra hat, de nincs rajta
+                    //: `setautorepeat` (`oneup.tre:75-81`).
                     lenyomasra: true
-                    //: #4563: `m_autorepeat` — nyomva tartva folyamatosan lép
-                    autoRepeat: true
                     onClicked: viewer.next()
                     enabled: viewer.hasNext()
                     Layout.preferredWidth: 30
