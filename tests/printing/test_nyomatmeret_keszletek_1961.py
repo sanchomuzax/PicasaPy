@@ -144,12 +144,17 @@ class TestATeruletiMeresValasztas:
             monkeypatch, QLocale.MeasurementSystem.MetricSystem
         )
         assert keszlet_teruleti_mereshez() == METRIKUS_KESZLET
-        assert [m.name for m in alapmeretek_teruleti_mereshez()] == [
-            "M5X8CM",
-            "M9X13CM",
+        # #5492: a preset tömb popup-indexei a méret-azonosító leképezésén
+        # keresztül lesznek a bináris szerinti címkék.
+        assert [
+            m if isinstance(m, str) else m.name
+            for m in alapmeretek_teruleti_mereshez()
+        ] == [
             "M10X15CM",
             "M13X18CM",
+            "M15X20CM",
             "M20X25CM",
+            "CONTACT",
         ]
 
     @pytest.mark.parametrize(
@@ -162,7 +167,10 @@ class TestATeruletiMeresValasztas:
     def test_angolszasz_katalogus_es_ot_alapmeret(self, monkeypatch, rendszer):
         self._meresi_rendszer(monkeypatch, rendszer)
         assert keszlet_teruleti_mereshez() == HUVELYK_KESZLET
-        assert [m.name for m in alapmeretek_teruleti_mereshez()] == [
+        assert [
+            m if isinstance(m, str) else m.name
+            for m in alapmeretek_teruleti_mereshez()
+        ] == [
             "TARCA",
             "M3_5X5",
             "M4X6",

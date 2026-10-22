@@ -37,8 +37,10 @@ from .clustering import (
     AssignmentResult,
     FaceGroupCentroid,
     assign_face,
+    cluster_step_to_threshold,
     cosine_similarity,
     step_to_threshold,
+    threshold_to_cluster_step,
 )
 from .detector import (
     FaceDetection,
@@ -75,6 +77,7 @@ __all__ = [
     "FaceLandmarks",
     "ModelSpec",
     "assign_face",
+    "cluster_step_to_threshold",
     "compute_alignment_geometry",
     "cosine_similarity",
     "default_model_path",
@@ -85,5 +88,6 @@ __all__ = [
     "missing_specs",
     "resolve_model_path",
     "step_to_threshold",
+    "threshold_to_cluster_step",
     "total_missing_bytes",
 ]

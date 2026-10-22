@@ -34,7 +34,10 @@ Az exportált képbe a program frissíti a metaadatokat: a módosítás
 ideje az export ideje lesz, a kép mérete a kimenet tényleges mérete, a
 hiányzó szerző- és készítésidő-mezők pótlódnak, a fényképezőgép saját
 adatai pedig megmaradnak. A 300 képpontnál nagyobb JPEG-be a program kis
-beágyazott előnézetet is tesz, ahogy az eredeti Picasa.
+beágyazott előnézetet is tesz, ahogy az eredeti Picasa. Ha egy kép
+metaadatai olyan terjedelmesek, hogy a kis előnézettel együtt sem férnek
+el a JPEG-fájlban, az exportált képből a fényképezőgép adatai (EXIF)
+kimaradnak; az eredeti Picasa is így tesz.
 
 Ha a célmappa már létezik, a program megkérdezi, felülírja-e.
 
