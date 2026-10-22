@@ -934,7 +934,7 @@ A jegyek szövege (fülenként egy, „Eredeti:” sorral) a `.codex-jelentes.md
 
 **További nyitott kérdések:**
 
-- Ghidra-kör kell: `0x00431290` - a `LastUserESState` és az aktuális felhasználó objektumának pontos szemantikai kapcsolata a Webalbumok címfeltételében. A címváltó ág ettől függetlenül ismert, ezért ez nem blokkolja a #5483 választ.
+- A #5516 által kijelölt `0x00431290` adatútja és a fül, valamint a feltöltési menü feliratváltása tisztázódott a 13.6/a. pontban. A gomb látható feliratának állapotválasztása külön nyitott maradt, ott a következő célzott Ghidra-kérdés szerepel.
 
 Az ezen kívüli két NYITVA sor a fájltípusok QuickTime alapértékére és a diavetítés zene-mappájára vonatkozik; ezek nem a #5483 által feltett kérdések.
 
@@ -1015,11 +1015,14 @@ Az enum 0 (`FullPage`) a feliratfüggvényben létezik (`0x00cb36f4`), de a 16 e
 #### 6. Webalbumok címe, `0x006e0bc0` és `0x006e0d51`
 
 - A `0x006e1116` a `0x00431290` feltételt hívja. Nem nulla eredménynél a `web_albums_tab` cím `Google Photos` lesz (`0x006e1121-0x006e1164`, címkulcs `0x00ca9a98`, szöveg `0x00c92398`). Nulla eredménynél az ág a sablon `Web Albums` címét hagyja meg.
-- A feltétel a `Preferences\LastUserESState` értékét 0 alapértékkel olvassa (`0x004312ae-0x004312cb`), és egy aktuális felhasználói állapotobjektum eredményét is felhasználja. A két forrás pontos szemantikai kapcsolata nyitott; a címváltó ág maga bizonyított.
+- A `0x00431290` előbb a `0x00926c20` által elért Gaia-állapotból kérdez. Ha a kapott kliens `vtable+0x10(0,0,1)` próbája igaz, ugyanazt a metódust `vtable+0x10(8,0,1)` paraméterrel hívja, az eredményt visszaadja, majd `0x00401900`-n át a `Preferences\LastUserESState` kulcsba írja (`0x0043129b-0x00431310`). A `0x00970440` metódus a 8-as paramétert `1 << 8` maszkká alakítja, majd a kliens `+0x1c4` mezőjének `0x100` bitjét vizsgálja (`0x009704a2-0x009704b1`), a kliens-előfeltételek teljesülése esetén.
+- Ha nincs használható kliensállapot, a függvény a beállítást olvassa a `0x004019b0` olvasóval. A lokális érték előtte nulla (`0x004312c3`), a visszatérési érték pedig `!= 0` (`0x00431316-0x0043131d`): a mentett `0` hamis, bármely nem nulla érték igaz. Hiányzó kulcs ezen az ágon ezért hamis eredményt ad.
+- A `0x0059cac0` szintén írja ugyanezt a kulcsot: a `0x0059cb46`-nál kért 8-as állapotértéket a `0x0059cb59` a `0x00401900` íróhoz adja. A `paszta.py` teljes utasításpásztázása a `LastUserESState` literál öt hivatkozását találta (`0x004312ae`, `0x0059cae2`, `0x005df988`, `0x00734ecb`, `0x0074a827`); ezek közül az első kettő az író út, a másik három az olvasó út.
+- Új profilban a hiányzó kulcs csak akkor határozza meg az eredményt, ha a kliensállapot hiányzik vagy a fenti próbája hamis. Ebben az esetben a feltétel hamis, így a fül `Web Albums`, a menüpont pedig `Upload to &Picasa Web Albums...`. Ha a kliensállapot próbája igaz, a beállításkulcs hiánya nem döntő, mert a bitből kapott eredményt a függvény elmenti és visszaadja. Egy ténylegesen frissen indított profil kliensállapotának mért értéke nincs meg.
 - A `0x006e0bc0` függvény a `Preferences\PWAWatermark` karakterláncot olvassa (`0xc7e1b0`, `0x006e0bdc-0x006e0bfa`). Ez getter, nem regisztráció.
 - A `0x006e0d51` egy regisztrálási hívás: a `PrinterQuality` (`0x00ca9a18`) alapértéke 2 (`0x006e0d47-0x006e0d51`). A kapcsolódó `PWAShareAccess` kulcs (`0xc7e1e0`) alapértéke 0 (`0x006e0da0-0x006e0da7`).
 - A `PrinterQuality` olvasója 2-t hasonlít (`0x006e23e7-0x006e23ea`): a 2 az első, `Compatible (half-res)` rádiót választja, a 3 a második, `High Quality (full-res)` rádiót. A külön mentőút 2-t ír az első és 3-at a második rádió állapotára (`0x006e419f-0x006e41a6`); a feliratsorrend a `runtime/options.fen`-ből való.
-- **Bizonyítottság:** a címág és a regisztrált kulcsok megerősítettek. Csak a `LastUserESState` feltétel felhasználói jelentése maradt nyitva.
+- **Bizonyítottság:** a címág, a regisztrált kulcsok és a #5516 által vizsgált `LastUserESState` adatút megerősítettek. A fotótálca gombján a látható feliratot kiválasztó ág maradt nyitva.
 
 #### Független utak és cáfoló ellenőrzés
 
@@ -1027,7 +1030,22 @@ Az enum 0 (`FullPage`) a feliratfüggvényben létezik (`0x00cb36f4`), de a 16 e
 - **B út:** külön mentőút (`0x006e3990`, benne a `PrinterQuality` 2/3 és a `PrintResamplerQuality` 5/8 visszaírása), az email küldő függvények (`0x0073f320`, `0x00743030`), valamint a kezelőtől különálló `runtime/options.fen` vezérlőnevek és tételfeliratok.
 - A két út a `PrinterQuality` 2/3, a nyomtatási átméretező 5/8 leképezésében és az e-mail alapértékekben egyezik. A printméret-lista sorrendjénél a második út nem független, ezért az a rész feltételes marad.
 - **Cáfoló kísérlet:** ellenőriztem azt az alternatív feltevést, hogy az 5 a második, Extra sharp rádióhoz tartozik. A mentőút a nem kiválasztott második rádió esetén 5-öt, a kiválasztásakor 8-at ír (`0x006e424e-0x006e4255`), ezért az alternatív feltevés nem áll meg. A két állapotot a mentőút és az olvasó út külön-külön is ugyanazzal a mércével írja le.
-- **Összesített bizonyítottsági fok:** feltételes, mert a printméret-tételek sorrendjéhez csak egy bináris útvonal bizonyult függetlennek, és a Webalbumok címfeltételének pontos felhasználói szemantikája nyitva maradt.
+- **Összesített bizonyítottsági fok:** feltételes, mert a printméret-tételek sorrendjéhez csak egy bináris útvonal bizonyult függetlennek, és a Webalbumok gombfeliratának kiválasztása nyitva maradt.
+
+##### 6/a. #5516: a `LastUserESState` és a változó feliratok
+
+| felület és hívóhely | igaz eredmény | hamis eredmény | bizonyíték |
+|---|---|---|---|
+| Opciók, Webalbumok fül (`0x006e1116`) | `Google Photos` | `Web Albums` | A címkulcs `0x00ca9a98`, az igaz ág szövege `0x00c92398`; a hamis ág a `runtime/options.fen` sablonszövegét hagyja meg, amely a binárisban `0x00c7ec40`. |
+| Webalbumok címkéje (`0x0059b23e`) | `Google Photos` | `Web Albums` | A `NCWebAlbums::Label1ES` / `NCWebAlbums::Label1` erőforrás és a `0x00c92398` / `0x00c7ec40` szövegág. |
+| Feltöltési menütétel (`0x00730797`, `0x00731057`) | `Upload to Google &Photos...` | `Upload to &Picasa Web Albums...` | A két menüépítő ugyanazt a jelzőbájtot vizsgálja (`0x00730db5-0x00730e1b`, `0x00731602-0x00731668`); szövegek: `0x00cadde8`, `0x00cade2c`. |
+| Fotótálca feltöltőgomb | NINCS MEG, hogy igaz eredménynél melyik látható. | NINCS MEG, hogy hamis eredménynél melyik látható. | A bináris erőforráspár: `CThumbUI::ShareButtonLabelEs` = `Upload to Google Photos` (`0x00c8fbb4`, `0x00c8fb9c`) és `CThumbUI::ShareButtonLabel` = `Upload` (`0x00cb1030`, `0x00c88680`). A `0x00573e20` a feltétel eredményét a `thumbui/webupload_icon` tulajdonságnak adja át (`0x00573e2d-0x00573e40`), és az ES gombszöveget is felépíti (`0x00573eb8-0x00573ed0`). A `0x00749ba0` a beállításból olvas és az alap gombszöveget állítja (`0x0074a827-0x0074a896`). Azt, hogy a felület melyik gombszöveget jeleníti meg az állapot alapján, ezekből az utasításokból nem lehet bizonyítani. |
+
+A feltétel további, nem fül- vagy menüfelirat jellegű felhasználói szövegeket is választ: frissítési figyelmeztetés (`0x0059fa04`), korábbi import állapota (`0x005d2d41`), címkézett arcok online törlése (`0x005fd9de`), albumok eltávolításának megerősítése (`0x0067a230`), letöltési feliratok és ablakcím (`0x006fa2a2`, `0x006fa2f6`, `0x006fa83c`), névcímke-figyelmeztetés (`0x0074c51e`), személytörlési figyelmeztetés (`0x007ba97c`), album szinkronizálási kérdés (`0x007df263`) és importmenü (`0x007f92eb`). A true ág ezeknél Google Photos vagy Google+ Photos, a false ág Web Albums vagy Picasa Web Albums szöveget választ; az utóbbi két címen csak true ágú szöveg szerepel.
+
+**Független ellenőrzés és cáfoló kísérlet:** az utasításszintű `cdis` és a megadott Ghidra-levezetés egyezett a két ágról, a nulla alapértékről és az írásról. Külön index- és `paszta.py`-pásztázás ugyanazt az öt kulcshivatkozást, két író útvonalat és a 45 közvetlen hívóutasítást adta; egy friss kontextusú bináris újralevezetés ugyanerre a feltételre jutott. Cáfoló feltevésként ellenőriztem, hogy a hiányzó `LastUserESState` minden esetben hamisat jelent-e. Ez megdőlt: ha a kliensállapot próbája igaz, a függvény a `0x100` állapotbitet menti és adja vissza, a kulcs olvasási ágának kihagyásával (`0x004312d4-0x00431310`, `0x009704a2-0x009704b1`). A cáfolatot a második levezetés is ugyanazzal az utasításszintű mércével ellenőrizte.
+
+**A #5516 felirat-összevetése:** a PicasaPy Opciók Webalbumok füle `Web Albums`, ami a hiányzó kulcsos, kliens nélküli alapággal egyezik. A `FolderContextMenu.qml` csak a Google Photos menüszöveget, a `PhotoContextMenu.qml` csak a `Upload to Picasa Web Albums...` változatot, az `AlbumContextMenu.qml` pedig mindkét változatot statikusan tartalmazza, miközben az eredeti ugyanannak a feltöltési tételnek a szövegét választja. A fotómenü régi változatából hiányzik az eredeti `&` billentyűjelölés. A `TrayBar.qml` jelenlegi `Upload to Google Photos` felirata eltér az eredeti `Upload` alap erőforrástól, de az eredeti gomb látható feliratának feltételválasztása még nincs bizonyítva.
 
 #### Fülenkénti fejlesztési jegyjavaslat
 
@@ -1037,11 +1055,13 @@ Az enum 0 (`FullPage`) a feliratfüggvényben létezik (`0x00cb36f4`), de a 16 e
 | E-Mail | Három `mailprog` választás; a `picsize` mögött a `EmailExportSize` képpontértéke van; `EmailSinglePicture` és `EmailMovie` 0/1 rádióválasztás. | A két aktív levelezőválasztás sorrendje fordított, a Google-fiók választás letiltott helyőrző. A képméret és a két rádió alapállapota megfelel az eredeti viselkedésnek. | A levélküldési választást az eredeti sorrendhez igazítani, vagy explicit értékleképezéssel tárolni; a 480 képpontos alapértéket és a 0/1 rádióleképezést megtartani. |
 | Nyomtatás | A `PrinterQuality` 2 = Compatible, 3 = High Quality; a nyomtatási lista sorrendje a fenti 16 tétel; a resampler 5 = General, 8 = Extra sharp. | A minőséget szöveges `compatible`/`highQuality` érték tárolja. A `print_controller.py` listája más sorrendű és a `FullPage` tételt is tartalmazza. A resampler `General` értéke 3, az `Extra sharp` értéke 8. | A nyomtatási minőségnél az eredeti 2/3 értékeket a két rádióhoz kötni; a popup listából a `FullPage`-t külön képernyőműveletbe kivezetni. A teljes 16 elem sorrendjét csak független második bináris igazolás után átírni. A resampler beállításrétegében az eredeti 5/8 értékeket a meglévő megjelenítési minőségekhez rendelni úgy, hogy az algoritmus számkódja ne keveredjen össze velük. |
 | Hálózat | A `LogLevel` beállítás alapja 2; a vezérlő neve `loglevel`. | A `Preferences/LogLevel` beállítást használja 2 alapértékkel, a QML vezérlőneve `optionsNetworkLogLevelCombo`. | A jelenlegi beállításkötés megtartása; a specifikációban a tárolt kulcs és a vezérlőnév külön fogalomként szerepeljen. |
-| Webalbumok | A fülcím feltételtől függően `Web Albums` vagy `Google Photos`; a `PWAWatermark` külön beállítás. | A teljes fül le van tiltva, címe `Web Albums`. | Ha a fül ismét aktív lesz, a címet a binárisban igazolt feltételhez kötni; a feltétel pontos termékjelentését a `0x00431290` Ghidra-kör tisztázza. |
+| Webalbumok | A fül és egy Webalbumok címke `Web Albums` vagy `Google Photos`; a feltöltési menüpont `Upload to &Picasa Web Albums...` vagy `Upload to Google &Photos...`. A gomb erőforráspárja `Upload` / `Upload to Google Photos`, de a látható szöveget választó út nyitott. | A fül letiltott és `Web Albums`; a mappa-menüben csak a Google Photos szöveg, a fotómenüben csak a Picasa Web Albums változat, az albummenüben mindkettő szerepel; a fotótálca gombja `Upload to Google Photos`. | A letiltott feltöltési menüpont(ok) feliratát igazítani az eredeti egyetlen, állapotfüggő tételéhez. A gomb feliratát csak a kiválasztó út bináris tisztázása után egyeztetni. |
 
 **Nyitott:**
 
-- Ghidra-kör kell: `0x00431290` - a `LastUserESState` és az aktuális felhasználói állapot pontos szemantikai kapcsolata.
+- Ghidra-kör kell: `0x00573e20` - a `thumbui/webupload_icon` állapot melyik `CThumbUI::ShareButtonLabel` vagy `CThumbUI::ShareButtonLabelEs` látható feliratot választja ki.
+- Ghidra-kör kell: `0x00749ba0` - a `LastUserESState` beolvasása után hogyan választja ki a tálcagomb látható feliratát a `ShareButtonLabel` és `ShareButtonLabelEs` erőforrások közül.
+- NINCS MEG: egy ténylegesen frissen indított profilnál elérhető-e a Gaia kliensállapot, és a `0x100` bitje igaz-e. A bináris fallbackja bizonyított, de a friss profil tényleges futásidejű ágához mérés kell.
 
 
 #### 7. #5489: a Nyomtatás méretlistájának második bináris ellenőrzése
