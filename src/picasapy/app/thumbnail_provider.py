@@ -38,6 +38,7 @@ import itertools
 import logging
 import os
 import threading
+import time
 import zlib
 from collections.abc import Iterable
 from collections import OrderedDict, deque
@@ -720,31 +721,38 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         #: egyértelműen meghatározza a képpontokat, így a Qt URL-kulcsú
         #: gyorstárába nem ragadhat be más szintű kép.
         szint = szint_from_thumb_id(photo_id)
-        if ops:
-            thumb = self._cache.get_or_create_edited(
-                path,
-                mtime_ns,
-                size_bytes,
-                ops,
-                szint,
-                crop=crop,
-                crop_ini_readable=crop_ini_readable,
-            )
-        else:
-            thumb = self._cache.get_or_create(path, mtime_ns, size_bytes, szint)
+        def kesz_thumb():
+            if ops:
+                return self._cache.get_or_create_edited(
+                    path,
+                    mtime_ns,
+                    size_bytes,
+                    ops,
+                    szint,
+                    crop=crop,
+                    crop_ini_readable=crop_ini_readable,
+                )
+            return self._cache.get_or_create(path, mtime_ns, size_bytes, szint)
+
+        thumb = kesz_thumb()
         if thumb is None:
             _log.warning("thumbnail nem készült el: %s", path)
             self.brokenImageDetected.emit(str(photo.id))
             return QImage()
-        # A Windows CI-ben a közvetlen QImage(path) egy frissen írt cache-fájlt
-        # is olvashatatlannak jelzett (#5542). A Python fájl-API olvassa be,
-        # majd Qt a bájtokat dekódolja; így a Qt fájlútvonal-megnyitása nem
-        # változtathat egy cache-olvasási hibát téves sérültfotó-jelzéssé.
-        payload = read_image_bytes(thumb)
-        image = QImage.fromData(payload.tobytes()) if payload is not None else QImage()
+        image = _olvass_cache_kepet(thumb)
+        if image.isNull():
+            # A cache-fájl olvashatatlansága nem a fotó sérülése (#5553): a
+            # bélyegkép a forrásból újraírható. Sérültfotó-jelzés csak akkor
+            # megy, ha a forrásból sem készül bélyegkép.
+            thumb.unlink(missing_ok=True)
+            thumb = kesz_thumb()
+            if thumb is None:
+                _log.warning("thumbnail nem készült el: %s", path)
+                self.brokenImageDetected.emit(str(photo.id))
+                return QImage()
+            image = _olvass_cache_kepet(thumb)
         if image.isNull():
             _log.warning("cache-elt thumbnail nem olvasható: %s", thumb)
-            self.brokenImageDetected.emit(str(photo.id))
             return image
         if rotate:
             # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
@@ -757,3 +765,22 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         if ops:
             self._memo.put(memo_key, image)
         return image
+
+
+#: A frissen írt cache-fájl olvasásának újrapróbái (#5553): a Windows CI-n
+#: a fájl rövid ideig olvashatatlan lehet az írás után.
+_CACHE_OLVASAS_VARAKOZASOK = (0.05, 0.1, 0.2)
+
+
+def _olvass_cache_kepet(thumb: Path) -> QImage:
+    """A cache-elt bélyegkép a Python fájl-API-n át beolvasva (#5542),
+    átmeneti hibánál rövid várakozással újrapróbálva (#5553)."""
+    for varakozas in (*_CACHE_OLVASAS_VARAKOZASOK, None):
+        payload = read_image_bytes(thumb)
+        if payload is not None:
+            image = QImage.fromData(payload.tobytes())
+            if not image.isNull():
+                return image
+        if varakozas is not None:
+            time.sleep(varakozas)
+    return QImage()
