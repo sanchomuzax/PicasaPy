@@ -113,7 +113,7 @@ ColumnLayout {
         Item { Layout.minimumWidth: 176; Layout.preferredWidth: 176 }
         CompactCheckBox {
             objectName: "optionsSingleClickExitCheck"
-            text: qsTr("Single click to exit the editing view")
+            text: qsTr("Single-click to exit Edit View")
             Layout.fillWidth: true
             enabled: typeof controller !== "undefined" && controller !== null
                      && controller.singleClickExitEnabled !== undefined
@@ -150,7 +150,7 @@ ColumnLayout {
         // ÉLŐ (#2893): az importáláskori másodpéldány-észlelés. UGYANAZT az
         // `import/autoexclude` kulcsot írja, amit az importáló párbeszéd
         // „Exclude Duplicates" jelölője (`importSourceController`,
-        // `AUTOEXCLUDE_SETTINGS_KEY`) — két külön állapot tilos: amit itt
+        // `AUTOEXCLUDE_SETTINGS_KEY`) - két külön állapot tilos: amit itt
         // beállítasz, azt ott is látod, és viszont.
         //
         // Eddig szürke helyfoglaló volt, azzal az indoklással, hogy „nincs
@@ -158,14 +158,11 @@ ColumnLayout {
         // nem igaz: a forrás-beolvasás megjelöli a másodpéldányokat, és
         // eszerint hagyja ki őket a válogatásból.
         //
-        // ⚠️ A felirat: a `picasa-menu-parancsok-viselkedes.md` az
-        // `options.fen`-ből „Detect duplicates **while importing**" alakot
-        // idéz, nálunk „on import" áll. A kettő ugyanazt jelenti, és a fen
-        // teljes szövegkiírása nincs a lapon — a feliratot ezért NEM
-        // írjuk át egyetlen idézet alapján.
+        // #5473: a felirat a binárisból igazolt angol forrás
+        // (`options/autoexclude.title`), az alapértéke pedig bekapcsolt (1).
         CompactCheckBox {
             objectName: "optionsAutoExcludeCheck"
-            text: qsTr("Detect duplicates on import")
+            text: qsTr("Detect duplicates while importing")
             Layout.fillWidth: true
             //: A jelölő CSAK akkor él, ha van kihez kötni: vezérlő nélkül
             //: (próbákban, leépítés közben) a pipa semmit nem tárolna el —
@@ -459,7 +456,7 @@ ColumnLayout {
 
         Text {
             objectName: "optionsImportDestinationLabel"
-            text: qsTr("Import destination folder:")
+            text: qsTr("Save imported pictures in:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
             Layout.minimumWidth: 176
