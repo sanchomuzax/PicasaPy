@@ -1235,7 +1235,7 @@ Ez az indexben látott négy közvetlen hívófüggvény hét hívási helye; ne
 
 Az ismert `CTransTimeline` cím (`0x00816b00`) nem a qshow képkocka-frissítőjeként azonosítható: közvetlen utasításolvasata `<CTransTimeline>`, `<defaulttrans>` és ismételt `<trans>` XML-elemeket ír, benne filmátmenet-paraméterekkel. Hívásai a `0x006175c0`, `0x00618050`, `0x0061d020` és `0x00814250` körüli filmkészítő útban vannak; a `CTransTimeline` vtable írói `0x0080f395` és `0x0080f620`, UI-vtable írója `0x0080f3fa`. A qshow animációjának jelöltje a külön `0x00802230`, de annak képlete nyitott. A `0x007fb210` csak a `timeline`, `timelinedot`, `sliderthumb`, `startbutton`, `exit` és további overlay-erőforrásokat tölti be és skálázza; ez nem bizonyítja sem azok rajzolási képletét, sem kattintási műveletét. A fekete háttér és a kártya elemei kizárólag a korábbi job-217 feljegyzésből ismertek; a binárisból e körben nem sikerült a teljes rajzútjukat azonosítani.
 
-**3. Vezérlők és időzítés.** A `0x008032e0` OneUpUI-ág kezeli a `oneup/timeline` kattintását, a `oneup/exit` visszahívását, valamint a külön `prev`/`next` parancsokat; ez önmagában nem köti az alsó overlay `startbutton`, `exit` vagy listaikon grafikáit ezekhez a parancsokhoz. A qshow billentyűkezelője (`0x00801270`) `WM_KEYDOWN`-on a Bal/Fel kódot előző elemre (`0x008011b0`), a Jobb/Le kódot következő elemre (`0x00801210`) irányítja. Escape a `0x007fb820` kilépési ágat hívja. A szóköz a `[this+0x3bb]` automatikus lejátszási jelző ágát váltja; ez statikusan egyezik az `Auto Play` vezérlő útjával, de nem azonosít önmagában teljes képernyős diavetítés-ablak létrehozását.
+**3. Vezérlők és időzítés.** A `0x008032e0` OneUpfelületi ág kezeli a `oneup/timeline` kattintását, a `oneup/exit` visszahívását, valamint a külön `prev`/`next` parancsokat; ez önmagában nem köti az alsó overlay `startbutton`, `exit` vagy listaikon grafikáit ezekhez a parancsokhoz. A qshow billentyűkezelője (`0x00801270`) `WM_KEYDOWN`-on a Bal/Fel kódot előző elemre (`0x008011b0`), a Jobb/Le kódot következő elemre (`0x00801210`) irányítja. Escape a `0x007fb820` kilépési ágat hívja. A szóköz a `[this+0x3bb]` automatikus lejátszási jelző ágát váltja; ez statikusan egyezik az `Auto Play` vezérlő útjával, de nem azonosít önmagában teljes képernyős diavetítés-ablak létrehozását.
 
 Az automatikus továbblépés küszöbe kiolvasható. A `0x00802060` a `0x009a51b0` helperrel számít eltelt időt: `QPC_now - QPC_start`, szorozva a `QueryPerformanceFrequency` reciprokával; a QPC-kezdőérték a `[this+0x520]` mezőben van. Ezután a `0x4019b0` getterrel beolvassa a `[this+0x760]` (`Preferences\SlideshowEffectTime`) értéket, egész másodpercként lebegőpontos értékké alakítja, és az eltelt QPC-másodperccel hasonlítja össze. Ha a beállított érték kisebb az eltelt időnél, a `0x00802630` léptető út fut. A `[this+0x760]` értékét a `0x00802ff0` `second`/`seconds` felirattal jeleníti meg, így a beállítás mértékegysége két külön kódútból is másodperc. A `0x007fa7f0` felépítő a `Preferences\SlideshowEffectTime` olvasóhívásnak 3-as kezdeti értéket ad át (`0x007facd3`-`0x007fad05`); az aktív felhasználói értéket ez nem rögzíti. A frissítő callback üteme, vagyis az ellenőrzés milyen időközönként fut le, **NINCS MEG**; így a beállítási küszöb ismert, a tényleges képkocka-/léptetési időpont nem. A callback címe a `ytCallback<QDrawable>::vftable` (`0x00cbd6c8`) `+0x04` elemében `0x00803ab0`; a vtable-t a `0x00803b00` állítja be. A QDrawable felépítő ezt a callback-objektumot a `0x007fae76` helyen átadja a `0x0097d150`-nek. Maga a callback (`0x00803ab0`) QPC-értéket ír, majd a `[QDrawable+0x3bf]` jelző nullás ágában meghívja a `0x00802060` frissítőt. A callback regisztrációs út egy része tehát megvan, de az eseménylista ütemezője és periódusa nincs feloldva.
 
@@ -1259,7 +1259,7 @@ Az automatikus időlépésre szintén két út áll rendelkezésre. **A út:** `
 | mozgás képlete, görbéje, iránya és időtartama | NINCS MEG | nyitott |
 | `SlideshowEffectTime` beállított értéke a QPC-eltelt másodperchez hasonlítva | bináris `0x00802060`, `0x009a51b0`; második út: `0x00802ff0`, `0x007facd3` | megerősített (küszöb, nem frissítési ütem) |
 | overlay kattintás/húzás, csúszka dátumleképezése, listaikon funkciója | NINCS MEG | nyitott |
-| szóköz látható diavetítés-váltása és pontos visszatérési állapota | mérés: korábbi job-220 feljegyzés, nyers adat most NINCS MEG; bináris `0x00801270`, `0x007fb820` | nyitott |
+| szóköz állapotfüggő ága, a qshow `[+0x3b8]` mező írása és a pontos visszatérés | bináris `0x00801270`, `0x00803110`; Ghidra/objektumkapcsolat: 38.2.21 §4; mérés: job-220 nyers adat NINCS MEG | a feltételes 0-s módág megerősített; a futásidejű látvány és visszatérés nyitott |
 | `CTransTimeline` (`0x00816b00`) film-XML-szerializáló | bináris `0x00816b00`; független RTTI/vtable/xref és `picasa-create-features.md` 2.4. | megerősített |
 
 **Nyitott - következő pontos lépések.**
@@ -1268,7 +1268,7 @@ Az automatikus időlépésre szintén két út áll rendelkezésre. **A út:** `
 - `Ghidra-kör kell: 0x00802230 - a qshow-átmenet képenkénti pozíció/méret/forgatás/átlátszóság függvénye, easingje, végpontjai és időtartam-mechanizmusa [blokkoló]`
 - `Ghidra-kör kell: 0x00a52890 - a sliderthumb, timelinedot, startbutton, exit és listaikon hit-test/callback útja, valamint a csúszka dátum-/képlista-leképezése [blokkoló]`
 - `Ghidra-kör kell: 0x0097d150 - a 0x007fae76 callback-objektum átadásának eseménylista-útja, a QPC-frissítés forrása és a pontos ütemezési periódus [blokkoló]`
-- `Ghidra-kör kell: 0x00801130 - a szóköz/Auto Play ág teljes diavetítés-váltási útja, valamint a visszatéréskor megőrzött gyűjtemény és képpozíció [blokkoló]`
+- ~~`Ghidra-kör kell: 0x00801130 - a szóköz/Auto Play ág teljes diavetítés-váltási útja, valamint a visszatéréskor megőrzött gyűjtemény és képpozíció [blokkoló]`~~ A statikus, állapotfüggő átmenetet a 38.2.65 rögzíti; nyitott marad a futásidejű előfeltétel és a visszatéréskor megőrzött gyűjtemény/képpozíció.
 
 **A #5401 „Kész, ha” pontjai.** (1) Képlánc és forráshalmaz: ⛔ csak az indexelt lista bejárása ismert; a forrás, sorrend és elemlista nyitott. (2) Átmenet: ⛔ az indítóút és a QPC-kezdés ismert, a mozgásfüggvény nincs meg; QEMU-futtatás nem történt, mert nincs qshow-UI-harness. (3) Vezérlők: ⛔ a billentyűk statikus ága részben ismert, de az overlayek műveletei, csúszkaleképezés és frissítési periódus nyitott; a régi felvétel csak megerősítés. (4) Diavetítés és visszatérés: ⛔ a Space jelzőág és az Escape bezárási út ismert, a látható átmenet és a visszatérési pozíció nincs binárisan/futásban lezárva.
 
@@ -7052,7 +7052,7 @@ Az alfa-határ körüli további QEMU-próbák: `t=0,6799999475`, `0,6800000072`
 - `Ghidra-kör kell: 0x00aa5fb0 - a this+0x444 és this+0x46c descriptorok képi forrása és a kártya/háttér tartalma [blokkoló]`
 - `Ghidra-kör kell: 0x00a52890 - a timelinedot, sliderthumb, startbutton, exit és listaikon teljes eseményútja, a csúszka leképezésével [blokkoló]`
 - `Ghidra-kör kell: 0x005e60d0 - a szóköz, nyíl, Home/End és Escape qshow alatti billentyűútja [blokkoló]`
-- `Ghidra-kör kell: 0x00801130 - a Space/Auto Play ág teljes diavetítés-váltási útja és a megőrzött állapot [blokkoló]`
+- A Space/Auto Play statikus, állapotfüggő módváltási útját a 38.2.64 és a 38.2.65 bontja ki; a futásidejű előfeltétel és a visszatérő gyűjtemény/képpozíció mérésként nyitott.
 - `Ghidra-kör kell: 0x008032e0 - az Exit célja és a visszatérő gyűjtemény/képpozíció [blokkoló]`
 
 **Új kutatási jegyjavaslat.** Nincs; a nyitva maradt kérdések a #5401 elfogadási pontjaihoz tartoznak, nem külön feladatok.
@@ -7084,7 +7084,7 @@ A `0x00801270` csak `WM_KEYDOWN` (`0x100`) üzenetet dolgoz fel; a nulla és `WM
 | Escape (`0x1b`) | `0x00801270` → `0x007fb820` | A jelenlegi objektum vtable `+0x24` getterét hívja; a qshow-építő által beállított cél a `qshow` nevű `ytWindow` gazdaablak (`0x00982bf0`, vtable `0x00cd87fc`), ennek `+0x14` slotja `0x00983270`, amelyet `(0,0)` argumentummal hív (`0x007fb998`-`0x007fb9df`). A gazdaablak-metódus végső navigációs hatása és a visszaállított nézet/pozíció nyitott. |
 | Bal (`0x25`) / fel (`0x26`) | `0x00801270` → belső ág `0x008014bc` → `0x008011b0` | Timeline módban a `0x007fd0c0`-t hívja a `[this+0x2f8]+0x30` értékével és a bináris `0x00cf3a48` címen tárolt `2.0f` értékkel. Ez az argumentumirány; a látható képek térbeli iránya a `0x007fd0c0` teljes állapota nélkül nincs meg. Timeline módon kívül, ha `[this+0x3bb] != 0`, a `0x00802980` előző-eleme út fut; egyébként a `0x00802ae0` hívódik. |
 | Jobb (`0x27`) / le (`0x28`) | `0x00801270` → belső ág `0x008014ac` → `0x00801210` | Timeline módban a `0x007fd0c0` hívás ugyanazt a mezőt adja át, de `-2.0f` argumentummal. Timeline módon kívül, ha `[this+0x3bb] != 0`, a `0x008029f0` következő-eleme út fut; egyébként a `0x00802a90` hívódik. |
-| Szóköz (`0x20`) | Ha `[this+0x3bb] != 0`, a `0x00803110` hívódik `[this+0x2dc]` argumentummal; ha nulla, a `0x00801130` hívódik. A külön Ctrl-ág `[this+0x3ba]=1`-et ír és `0xf4240`-t ad vissza. A `0x00803110` a belső objektumon törli a `+0x3b8` és `+0x428` jelzőt, rögzíti a QPC-értéket, meghívja a `0x00801130`-at, majd a `+0x50` gazdaobjektum aktív tartalmát a `+0x25c` objektumra állítja a `0x00802be0` útján. | A statikus objektumváltási út bizonyított. A korábbi job-220 felvétel teljes képernyős diavetítést rögzít, de a nyers képkockák most nem elérhetők; a konkrét visszatérő gyűjtemény és index nyitott. |
+| Szóköz (`0x20`) | Ha `[this+0x3bb] != 0`, a `0x00803110` hívódik `[this+0x2dc]` argumentummal; ha nulla, a `0x00801130` hívódik. A külön Ctrl-ág `[this+0x3ba]=1`-et ír és `0xf4240`-t ad vissza. | A módváltás állapotfüggő: a `+0x3bb != 0` ág a 0-s diavetítési módba állít; a nulla ág csak a `+0x3bb` állapotkezelőjét hívja. Részletek és a két bináris út: 38.2.65. A visszatérési nézet és index nyitott. |
 
 A handler további ágakat is tartalmaz a `0`-`9` és a Ctrl+`F`/`B`/`O` billentyűkre; ezek pontos felhasználói jelentése ebben a körben nincs feltárva. Home/End (`0x23`/`0x24`) explicit ága nincs.
 
@@ -7128,7 +7128,7 @@ A `0x007fdd00` az egér x koordinátáját a `[this+0x6d8]` és `[this+0x6d8]+[t
 1. ⛔ **Képlánc, forráshalmaz, sorrend, gyűjteményenkénti darabszám és elemlista:** a qshow közvetlen pointerlánca a `CThumbUI+0x2c0` mezőtől indul (feltételes, egy bináris út); ettől külön a MakeTimeline count/index út is olvassa ezt a mezőt, az elemkérő pedig a `+0x2bc` `CThumbDB` providert hívja. A `+0x2c0` kollekciószemantikája, a konkrét tagok és darabszámok NINCS MEG (`0x005e96d9`, `0x005e9434`, `0x005e9490`, `0x008018a0`).
 2. ⛔ **Pálya, méret, forgatás, alfa, időzítés, háttér és kártyarajz:** a 38.2.34, 38.2.61 és 38.2.62 igazolt részképletei mellett hiányzik a teljes képkocka → transzformáció → rajzréteg lánc és az élő képkockafelvétel. E körben nem állítok teljes mozgásképletet.
 3. ⛔ **Vezérlők:** a billentyűágak, csúszka húzás/felengedés útja és normalizált indexképlete részben megvan; a dátumtömb jelentése, a `timelinedot`, `startbutton`, listaikon és automatikus lépés tényleges periódusa nyitott. Az Exit/Escape a qshow `ytWindow` host `0x00983270` metódusához jut; a végső navigációs hatás nincs meg.
-4. ⛔ **Diavetítésbe lépés és kilépés:** a Space/Auto kódút bizonyított (`0x00801270` → `0x00803110` vagy `0x00801130`), az automatikus léptetés `T` másodperces küszöbe ismert; az Exit/Escape célobjektuma a qshow `ytWindow` host, de a gazdaablak-metódusának végső képernyője, a folytatási gyűjtemény/képindex és a tényleges callback-periódus nincs bizonyítva.
+4. ⛔ **Diavetítésbe lépés és kilépés:** a Space két állapotágát és a `+0x3b8=0` átmenetet a 38.2.65 részletezi; a futásidejű előfeltétel és az Escape utáni gyűjtemény/index nyitott. Az automatikus léptetés `T` másodperces küszöbe ismert; az Exit/Escape célobjektuma a qshow `ytWindow` host, de a gazdaablak-metódusának végső képernyője és a tényleges callback-periódus nincs bizonyítva.
 
 ##### §6 Nyitott
 
@@ -7140,6 +7140,8 @@ A `0x007fdd00` az egér x koordinátáját a `[this+0x6d8]` és `[this+0x6d8]+[t
 - A `0x00983270` dekompilálása elkészült: a nulla paraméterű ág WM_CLOSE-t kér a qshow `+0x6c` HWND-jére, a másik ág az aktuális szál ablakait járja be. A képernyőn megjelenő visszatérési állapotot és a megőrzött kollekció/indexet csak futás közbeni, előtte-utána felvétel dönti el.
 - Futás közbeni megerősítés: qshow Exit/Escape előtt és után rögzíteni a megjelenő ablakot, kollekciót és elemindexet; ez a `0x00983270` statikus olvasatát ellenőrzi.
 - A `0x009dc040` dekompilálása és QEMU-ellenőrzése elkészült (38.2.64); nyitott a hívók képpuffer- és rétegszemantikája, valamint a `0x008001c0` → `0x00aa6180` rétegsorrend.
+- A `0x00802ae0` és `0x00802a90` közvetlen mezőhatása a 38.2.66-ben rögzítve; hogy a pufferürítés és az `+0x3f4` változása milyen felhasználói eredményt ad, NINCS MEG.
+- A `0x007fde80` koordináta-, egérüzenet- és flag-ágai a 38.2.66-ben rögzítve; a `+0x428`/`+0x429` vezérlők `timelinedot`/`sliderthumb` nevű overlayhez rendelése és a listaikon hit-testje NINCS MEG.
 - QEMU-val számszerűen vezérelt qshow-futás és sűrű, igazoló Wine-képkocka-felvétel NINCS MEG; megszerzéséhez a forráskollekciót és az aktív lejátszási állapotot rögzítve kell futtatni.
 
 **Új kutatási jegyjavaslat.** Nincs; mindegyik nyitott tétel a #5401 négy elfogadási pontjához tartozik.
@@ -7198,3 +7200,121 @@ Ez a keverő műveletét és a forrásirány kapcsolását igazolja a fenti beme
 | A `0x005e8a70` Időrend útja oneup/qshow bemutatót épít; Space a `0x00801270` állapotágán és a `0x00803110` host-objektumváltásán át jut a külön tartalomobjektumig. A gyűjtemény és a mozgás teljes képlete nyitott. | A `TimelineController.reload()` az index összes nem rejtett fotóját kéri le; a `picasapy.timeline.build_periods()` EXIF `taken_at`/befagyasztott fájlidő szerint év-hónapra csoportosít; a `TimelineView.qml` görgethető bélyegképrácsot rajzol, kattintásra a fő nézőt nyitja. Forrás: `src/picasapy/app/timeline_controller.py`, `src/picasapy/timeline.py`, `src/picasapy/app/qml/PicasaPy/TimelineView.qml`. | A #5377 teljes animált bemutatójának fejlesztői specifikációját csak a képlista, rendezés, mozgás/rajzréteg, vezérlők és visszatérési állapot lezárása után lehet pontosan megadni; a mostani bizonyíték nem ad becslésmentes, teljes implementációs listát. |
 
 **Nyitott kérdések mérlege (38.2.64).** A Space/Auto és Exit statikus útja, valamint az alfa-keverő számszerű művelete már dokumentált. Nyitva marad a #5401 mind a négy elfogadási pontja: teljes képlánc; a képátmenet és rétegek teljes időfüggése; a timelinedot/startbutton/listaikon és dátumcsúszka tényleges jelentése, illetve autoplay periódusa; valamint a teljes képernyős diavetítésből visszaálló gyűjtemény és képpozíció.
+
+#### 38.2.65 A szóköz állapotfüggő ága és a `+0x3b8=0` mezőírás (#5401, 2026-10-22)
+
+**Hatókör.** Ez a szakasz a 38.2.63 szóköz-sorát pontosítja. Statikusan bizonyítható, hogy a szóköz nem minden állapotban ugyanazt a hívásutat hajtja végre. A `0x00803110` a `[edi+0x25c]` objektum `+0x3b8` mezőjét nullára írja; a 38.2.21 §4 Ghidra-eredménye azonosítja `edi`-t OneUpUI-ként, és `[edi+0x25c] = this` kapcsolatot rögzít, tehát az írás a qshow aktuális objektumán történik. A futásidejű kezdőállapotot és a kilépés utáni nézetet ez a kör nem mérte meg.
+
+##### §1 A billentyűág és az állapotmódosítás
+
+A `0x00801270` csak `WM_KEYDOWN` (`0x100`) esetén jut a billentyűágakhoz (`0x00801299`). A szóköz (`0x20`) vizsgálata a `0x008012df` címen történik. A külön Ctrl-ág után a `0x00801310` a `[this+0x3bb]` bájtot ellenőrzi:
+
+- Ha a bájt nem nulla, a kezelő a `[this+0x2dc]` mezőt átadva meghívja a `0x00803110`-et (`0x00801310`-`0x0080131f`). A hívott függvény a `[oneup+0x25c]` állapoton: `esi`: ellenőrzi a `+0x3be` jelzőt; nem nulla értéknél előbb a `0x00801cf0`-et hívja. Ezután `+0x518=1`-et ír, lekéri a QPC-t, `+0x3b8=0`-t és `+0x428=0`-t ír, az időbélyeget `+0x520`-ba teszi, majd újrahívja a `0x00801130`-at (`0x0080311d`-`0x0080315c`).
+- Ha a bájt nulla, a billentyűkezelő közvetlenül a `0x00801130`-at hívja (`0x00801332`-`0x00801334`), a `0x00803110` kihagyásával. A `0x00801130` a `+0x3bb` értékét nullára/nem nullára billenti, de a függvényben nincs `+0x3b8`-írás; ezért ez az ág önmagában nem bizonyít módváltást.
+
+A frissen indított Időrendben a `0x007fda00` `[this+0x3bb]=0`-t állít be (38.2.9). A külön Ctrl-ágon kívüli **első Space** ezért a `0x00801130`-ra jut, és a `sete` művelet 1-re billenti a jelzőt; maga ez a függvény nem írja a `+0x3b8` mezőt. A `0x00802060` nem léptet, amikor a `+0x3bb` nem nulla (38.2.34). Ha a jelző a következő billentyűig nem változik, a **következő Space** a `0x00803110`-et hívja: ez a qshow `[this+0x3b8]` mezőjét nullázza, majd a `0x00801130` a `+0x3bb`-t ismét nullára billenti. A qshow-építő nulla módága a `0x00801cf0` diavetítési út. Az első Space által meghívott `0x00802c20` és `0x00aa6f40` belső/indirekt mellékhatásai nincsenek teljesen feltárva, ezért nem állítható, hogy kizárólag a második Space okoz minden látható módváltozást. Ez a statikus hívássor, nem futás közbeni képkocka-megfigyelés.
+
+##### §2 A 0-s mód azonosítása és a független hívóút
+
+A qshow-építő `0x008037e0` a paraméterrekord `+1` bájtja alapján választ: nulla esetén a `0x00801cf0`-et hívja (`0x008039de`-`0x008039fe`); nem nulla esetén a `0x007fda00`-t (`0x008039e2`-`0x008039e7`). A 38.2.9 szerint a `0x007fda00` a qshow saját `this+0x3b8` mezőjére `1`-et ír. A 38.2.21 §4 a `0x00803110` bemeneti objektumláncában `[edi+0x25c] = this`-t igazolja, ezért a Space-ág nullázása ugyanazon qshow-állapotmezőt éri el. A konstruktor nulla paraméterágának célfüggvénye a `0x00801cf0` diavetítési út; a nem nulla ága indítja az Időrend-módot.
+
+**Független hívóút:** a `0x008032e0` név szerinti `oneup/auto` és `oneup/auto2` eseményágai külön-külön hívják a `0x00803110`-et (`0x00803486`, `0x008034c5`). Ez a billentyűkezelőtől független UI-belépési pont ugyanazt a módváltó rutint használja; a qshow-építő külön módválasztó ága a rutin által beállított nulla értéket a diavetítési úthoz köti.
+
+Az átmenet nem bizonyít új ablak létrehozását: a `0x00803110` az állapotmezőket módosítja, és csak akkor hívja a `0x00802be0`-t, ha a oneup `+0x50` hostmezője nem nulla (`0x00803161`-`0x0080316e`). A korábbi job-220 feljegyzés szóközre teljes képernyős diavetítést ír, de az eredeti képkockasorozat és a `+0x3bb` kezdőértéke nem áll rendelkezésre; ez a megfigyelés itt nem függetlenül reprodukált mérés.
+
+##### §3 Index és visszatérés
+
+A `0x00803110` közvetlenül nem írja a `[state+0x3f4]` indexet. Ha a belépéskor `[state+0x3be] != 0`, az előtte meghívott `0x00801cf0` a `0x00801f25` címen eggyel csökkenti a `+0x3f4` értéket. A függvényútból ezért csak az állítható, hogy az index közvetlen írása hiányzik, de a feltételes előhívás módosíthatja; a tényleges kezdő index, a kilépéskori visszatérő elem és nézet **NINCS MEG**. A job-220 korábbi „visszatér a főablakba” megjegyzése nem azonosítja, hogy onnan az Időrend folytatódik-e.
+
+##### §4 Bizonyíték, független utak és cáfoló kísérlet
+
+| Állítás | Forrás |
+|---|---|
+| Szóközre a `[this+0x3bb] != 0` ág a `0x00803110`-et, a nulla ág közvetlenül a `0x00801130`-at hívja. | bináris (`0x00801270`, `0x00801310`-`0x00801334`) |
+| A `0x00803110` a `+0x3b8` módmezőt nullára állítja; a feltételes előhívás `0x00801cf0`. | bináris (`0x00803110`, `0x0080311d`-`0x0080315c`) |
+| A qshow módjelző bájt nulla értéke a `0x00801cf0`-hez, nem nulla értéke az Időrend `0x007fda00` útjához vezet. | bináris (`0x008037e0`, `0x008039de`-`0x008039fe`; 38.2.9) |
+| Időrend-indításkor `[this+0x3bb]=0`; a nem nulla jelző mellett a `0x00802060` nem léptet. | bináris (`0x007fda00`; `0x00802060`; 38.2.9, 38.2.34) |
+| A `oneup/auto` és `oneup/auto2` a billentyűúttól függetlenül ugyanazt a `0x00803110` rutint hívja. | bináris (`0x008032e0`, `0x00803486`, `0x008034c5`) |
+| A `+0x3bb` nulla ágának `0x00801130` hívása nem ír `+0x3b8`-at. | bináris (`0x00801130`) |
+| Az első flag-billentő ág helperlánca: `0x00801130` → `0x00802c20` és feltételesen `0x00aa6f40`; az utóbbi vtable `+0x84` hívást, a `0x00802c20` feltételesen `0x009833a0` host/callback útvonalat tartalmaz. | bináris (`0x00801130`, `0x00802c20`, `0x00aa6f40`, `0x009833a0`); az indirekt callbackek qshow-módra gyakorolt hatása NINCS MEG |
+| A `+0x3f4` index csak a feltételes `0x00801cf0` előhívásban csökken; a visszatérési index/nézet. | bináris (`0x00801cf0`, `0x00801f25`); a futásidejű visszatérés NINCS MEG |
+| A korábbi job-220 futásban a szóközt diavetítésbe lépésként jegyezték fel. | mérés (`job-220`; nyers képkockák és állapotbájt nélkül, nem reprodukált) |
+
+**A két független út.** A út: a `0x00801270` billentyűágának nyers utasításolvasása és a `0x00803110` törzse megadja a feltételt, a `+0x3b8=0` írást és a flag visszabillentését (a `[edi+0x25c]=this` objektumkapcsolatot a 38.2.21 §4 dekompilációja adja). B út: a külön `0x008037e0` qshow-építő módjelző bájtja nulla esetén a `0x00801cf0` diavetítési ágat, nem nulla esetén a `0x007fda00` Időrend-indítást hívja; ez utóbbi a saját `[this+0x3b8]=1` és `[this+0x3bb]=0` mezőket állítja be (38.2.9). A két kódút ugyanazon qshow-objektum `+0x3b8` mezőjének 0-s diavetítési és 1-es Időrend-állapotát adja. A külön `0x008032e0` `oneup/auto`/`auto2` felületi ág ugyancsak a `0x00803110`-et hívja.
+
+**Cáfoló kísérlet.** Azt a tág feltevést vizsgáltam, hogy a szóköz minden állapotból közvetlenül meghívja a módváltó rutint. Frissen indított Időrendnél a `0x007fda00` `[this+0x3bb]=0`-t állít be, ezért a Ctrl-ágon kívüli Space-re a `0x00801270` közvetlenül a `0x00801130`-at hívja; ez a közvetlen hívás nem a `0x00803110`. A feltevés, hogy minden Space ugyanarra a módváltó hívásra jut, cáfolva. Az `0x00801130` további helperjeinek indirekt, látható hatása ettől még külön nyitott.
+
+**Bizonyítottsági fok: megerősített, szűk statikus hívásállításra.** A qshow `[+0x3bb] != 0` állapotában a Space a `0x00803110`-et hívja, amely a qshow `[+0x3b8]` mezőjét nullázza; a külön qshow-építő nulla módága a `0x00801cf0` diavetítési út. Friss Időrend-indításnál a flag 0-ról indul és a közvetlen első Space a `0x00801130`-at választja. Az első Space helperjeinek indirekt hatása, a futó állapot és a képkockákon látható váltás, valamint az Escape utáni visszatérés **nyitott**. QEMU- vagy új Wine-felvétel ebben a körben nem készült.
+
+##### §5 A #5401 „Kész, ha” pontjainak frissítése
+
+1. ⛔ **Képlánc és forráshalmaz:** ez a vizsgálat nem változtat a 38.2.63 nyitott megállapításain.
+2. ⛔ **Teljes pálya és rajzolás:** a Space módágának feltárása nem egészíti ki a teljes képkockánkénti mozgást vagy a rétegrajzolást.
+3. ⛔ **Vezérlők:** a szóköz egyik feltételes ága megvan; a dátumcsúszka, a `timelinedot`, a `startbutton`, a listaikon és az automatikus léptetés élő üteme továbbra is hiányos.
+4. ⛔ **Diavetítésbe lépés és kilépés:** statikusan megerősített, hogy `+0x3bb != 0` esetén Space a módot nullázó `0x00803110`-et hívja; friss Időrend-indításnál a közvetlen első Space a flag-billentő ágat választja. Az első ág helperjeinek esetleges látható hatása, az élő előfeltétel, a képkockaeredmény, az Escape utáni nézet és a folytatási index nincs mérve.
+
+##### §6 Nyitott
+
+- Futásidejű mérés szükséges a szóköz előtt a `[this+0x3bb]`, a `[edi+0x25c]+0x3be` érték, utána a látható mód és `+0x3f4` index rögzítésére; a mérésen a `0x00801270` → `0x00803110` statikus út ellenőrizhető.
+- Ghidra-kör kell: 0x00aa6f40: az `[esi+0x26c]` objektum vtable `+0x84` callback célja, és módosítja-e a qshow `+0x3b8`/`+0x3bb` mezőit az első Space flag-billentő ágában [blokkoló]
+- Ghidra-kör kell: 0x009833a0: a `[esi+0x64]` objektum vtable `+0x28` callbackjeinek és a `0x00983430` útjának hatása a qshow `+0x3b8`/`+0x3bb` állapotára [blokkoló]
+- A `0x00983270` gazdaablak-metódus végső navigációs hatása, valamint hogy Escape után az Időrend melyik gyűjteménnyel és elemmel folytatódik, **NINCS MEG**.
+- QEMU-val számszerűen vezérelt futás és sűrű Wine-képkocka-sorozat nem készült.
+
+**Új kutatási jegyjavaslat.** Nincs; ezek továbbra is a #5401 elfogadási pontjai.
+
+#### 38.2.66 Egérkoordináták, húzásjelzők és módfüggő nyílágak (#5401, 2026-10-22)
+
+**Hatókör.** A `0x007fde80` egérkezelő már meglévő Ghidra-kimenetét az eredeti bináris függvényenkénti diszasszemblyével vetettem össze; a billentyűburkolókat és a két nem-automatikus háttérágat is közvetlenül olvastam. A vezérlőnevek és a látható eredmény futásidejű hozzárendelése ettől még nincs meg.
+
+##### §1 Egérkoordináta és Timeline-módbeli húzás
+
+A `0x007fde80` az esemény `x/y` koordinátáját a host kliensméretéből és a qshow `[+0x2c8,+0x2d0] × [+0x2cc,+0x2d4]` belső téglalapjából skálázza:
+
+```text
+x' = x_event * (([this+0x2d0] - [this+0x2c8]) / (client.right - client.left))
+y' = y_event * (([this+0x2d4] - [this+0x2cc]) / (client.bottom - client.top))
+```
+
+Timeline állapotban (`[this+0x3b8] != 0`) balgomb-lenyomáskor (`WM_LBUTTONDOWN=0x201`) a `[this+0x6d8]`, `[this+0x6dc]`, `[this+0x6c8]`, `[this+0x6cc]`, `[this+0x718]`, `[this+0x728]`, `[this+0x71c]`, `[this+0x72c]` mezőkből ellenőrzési téglalapot képez. Az eredmény szerint a `[this+0x429]` húzásjelzőt állítja be és meghívja a `0x007fdd00` leképezőt, vagy a `[this+0x428]` jelzőt állítja be. Húzás közbeni egérmozgás (`WM_MOUSEMOVE=0x200`) a `+0x429` esetén ismét a `0x007fdd00`-hoz jut; a `+0x428` esetén a `[this+0x310]` értékét módosítja a kurzor x-eltéréséből és a `0x00cf3fa8`/`0x00cf3fb0` konstansokból.
+
+Egérfelengedéskor (`WM_LBUTTONUP=0x202`) a `+0x429` ág a `[this+0x514]` értéket átadja a `0x007fd770`-nek, majd mindkét húzásjelzőt törli (`0x007fde80`, `0x007fe1a4`-`0x007fe1cf`). Az offset- és hívásút bizonyított; a `+0x428`/`+0x429` jelzők `timelinedot`/`sliderthumb` nevű overlayekhez rendelése, valamint a `+0x310` mező látható szerepe **NINCS MEG**.
+
+Ugyanebben a kezelőben a `0x203` vagy `0x204` egérüzenet `[this+0x3b8]==0` esetén a `0x007fda00` módváltót hívja; nem nulla állapotban a `0x007fda80`-at, majd a feltétel sikerén a `0x007fb820`-at és opcionálisan a `[this+0x2e8]` objektum vtable `+0x18` slotját hívja. Ebből a vezérlőn végrehajtott gépi hívásút állítható, de az overlay neve és a felhasználó által látott eredmény nincs bizonyítva.
+
+##### §2 A nyilak a qshow állapotától függnek
+
+Bal/fel esetén a `0x008011b0`, jobb/le esetén a `0x00801210` fut. Mindkettő előbb a `[this+0x3b8]`-at vizsgálja:
+
+| Állapot | Bal/fel | Jobb/le | Közvetlenül bizonyított hatás |
+|---|---|---|---|
+| `+0x3b8 != 0` | `0x007fd0c0` a `+0x2f8` alobjektum `[+0x30]` mezőjével és `+2.0f` irányargumentummal | `0x007fd0c0` ugyanazzal a mezővel, `-2.0f` irányargumentummal | Az Időrend-ág a két irányt eltérő előjellel adja át; a képernyőn látható irány és képpozíció a teljes `0x007fd0c0` állapot nélkül nem nevezhető meg. |
+| `+0x3b8 == 0`, `+0x3bb != 0` | `0x00802980` | `0x008029f0` | Az előző/következő elem hívásútja (38.2.63). |
+| `+0x3b8 == 0`, `+0x3bb == 0` | `0x00802ae0` | `0x00802a90` | Mindkettő a `0x008001c0`-t hívja a `+0x46c` pufferrel, majd `+0x518=1`-et és QPC-időt ír `+0x520`-ba. Csak a bal/fel ág csökkenti a `+0x3f4` mezőt kettővel, és negatív eredménynél `-1`-re állítja. A különbség felhasználói jelentése nincs meg. |
+
+##### §3 Bizonyíték, utak és cáfoló kísérlet
+
+| Állítás | Forrás |
+|---|---|
+| Klienskoordináta skálázása a qshow belső téglalapjára. | bináris (`0x007fde80`, `0x007fdefe`-`0x007fdf5f`) |
+| `+0x429` húzás → `0x007fdd00`; felengedéskor `+0x514` → `0x007fd770`; mindkét jelző törlése. | bináris (`0x007fde80`, `0x007fdfaa`-`0x007fdfb2`, `0x007fe1a4`-`0x007fe1cf`) |
+| Bal egérgomb `+0x428` ágának `[+0x310]` módosítása. | bináris (`0x007fde80`, `0x007fdf6c`-`0x007fdf9b`) |
+| A négy nyílbillentyű-út `+0x3b8`/`+0x3bb` feltételei és célhívásai. | bináris (`0x008011b0`, `0x00801210`) |
+| Nem-automatikus bal/fel ág `+0x3f4 -= 2`, ha nulla alá csúszik `-1`; jobb/le ágban nincs közvetlen `+0x3f4` írás. | bináris (`0x00802ae0`, `0x00802a90`) |
+| Az overlayek név szerinti azonosítása és húzás közbeni felhasználói látvány. | NINCS MEG |
+
+**A két kódút.** A út: `0x007fde80` eseményágai közvetlenül kezelik a koordinátát, a jelzőket és a `0x007fdd00`/`0x007fd770` hívásokat. B út: a `0x00801270` billentyűkezelő a nyilakat a külön `0x008011b0`/`0x00801210` wrapperekhez irányítja, amelyek eltérő `[+0x3b8]` és `[+0x3bb]` állapotokban külön függvényeket hívnak; a `0x00802ae0`/`0x00802a90` utasításolvasása ellenőrzi a mezőmódosítás különbségét. Ezek a statikus hívás- és mezőállítások egyeznek; a vezérlőnevek és látható hatás **feltételes**, mert élő UI-mérés nem készült.
+
+**Cáfoló kísérlet.** Azt a feltevést próbáltam cáfolni, hogy a nyilak minden állapotban ugyanazt az Időrend-mozgatást végzik. A wrapperek utasításszintű ágai különválasztják a `+0x3b8 != 0` Időrend-ágat a nulla módtól; utóbbiban a `+0x3bb` újabb elágazást ad, és a `+0x3bb==0` bal/fel út `+0x3f4` mezőt módosít. A minden állapotra vonatkozó feltevés cáfolva. A cáfoló ellenőrzés külön elolvasta a két célfüggvényt: `0x00802ae0` írja a `+0x3f4`-et, `0x00802a90` nem. Ez a felhasználói látványt nem azonosítja.
+
+**Bizonyítottsági fok: feltételes.** A mód- és jelzőfüggő gépi híváságakat az utasítások rögzítik; a teljes egérvezérlő név szerinti kötése, az `+0x310` szemantikája, a `+0x3f4` felhasználói hatása és a látható mozgás futásidejű megerősítése hiányzik.
+
+**A #5401 „Kész, ha” állapota.** A 3. pont (vezérlők) részben teljesült: a koordináta-skálázás, az egér húzás/felengedés hívásútja és a mód-/jelzőfüggő nyílágak statikusan le vannak írva. A `timelinedot`, `sliderthumb`, `startbutton`, listaikon, dátumtömb, automatikus léptetés üteme és a teljes felhasználói működés továbbra is nyitott. A 1., 2. és 4. pontot ez a rész nem zárja le.
+
+##### §4 Nyitott
+
+- Mérés szükséges annak megállapításához, hogy a `+0x428`/`+0x429` jelzők és a `[this+0x310]` melyik képernyőelemhez, illetve milyen látható változáshoz tartoznak.
+- A `0x007fd770` indexmódosító hatása és a `+0x514` érték jelentése futás közben nincs megmérve.
+- A qshow módjelző, a nyílbillentyűk útja és a húzás viselkedésének QEMU-/Wine-ellenőrzése nem készült.
+
+**Új kutatási jegyjavaslat.** Nincs; ezek továbbra is a #5401 vezérlő-elfogadási pontjához tartoznak.
