@@ -5357,3 +5357,72 @@ A `runtime/contactmgr.fen` listaelem-leírása nem ad meg kijelölési módot. A
 - Ghidra-kör kell: `0x006cde50`: a Red.dll-nek átadott képleíró méretmezője honnan származik és milyen egységű; történik-e ezen az adapterúton képméretezés?
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 44. szakasz: a `0.50`-es javaslati határ és N1/N3/N7 állapota).
+
+## 45. #5184, helyi Claude-munkás kutatói kör: a munkasor-csomópont, a két küszöb és a Red-belépések (2026-10-22)
+
+**Hatókör.** A N1, N3 és N7 pont. A 43-44. szakasz Ghidra-kérései közül a `0x0047b020`, `0x0048ef20`, `0x006cde50` útját vizsgáltam. A `0x100057c0` és `0x10001570` C-kimenete a 2026-10-22-i privát Ghidra-köteg (`referencia/ghidra/2026-10-22-ghidra-sor-158-198*.txt`); a többi címet diszasszemblálással (`annot_disasm.py`) és korlátos `.text`-pásztázással (`paszta.py`, `memoria_kapu()` első műveletként) ellenőriztem. Futó Colab-mérés nem állt rendelkezésre.
+
+### 45.1 Korrekció: a `worker+0x6c` nem létrehozott objektum, hanem a sorból kivett csomópont
+
+A 34.7 és 34.8 szakasz a `0x0047b020` `this`-ét a `worker+0x6c` objektum `+4` alobjektumaként írja le, létrehozóját nyitva hagyva. A kód szerint a `0x004987c0` munkasor-hurok a sorból kivett csomópontot (C: `piVar1`) a worker `+0x6c` mezőjébe teszi (C: `param_1[0x1b] = piVar1`; asm: `0x0049886a`, `0x004989fe`, `mov [esi+0x6c], …`), majd a `0x0049892d`-`0x00498933` helyen `eax = [esi+0x6c] + 4` értékkel hívja a `0x0047b020`-t. Vagyis `X = [worker+0x6c]` a kivett csomópont, az item pedig `X+4`.
+
+A munkatétel mezői `X`-re vetítve (így a 43.1 és 44.2 „+0x10 jelzője" az `X+0x14`):
+
+| item-offszet | `X`-offszet | jelentés |
+|---|---|---|
+| `+0x0` | `X+0x4` | a felismerő `this` (a `0x0048ef20` első argumentuma) |
+| `+0x8` | `X+0xc` | mód: nulla esetén `0x00414940(1)` |
+| `+0xc` | `X+0x10` | küszöb (float): a `0x0048ef20` negyedik argumentuma |
+| `+0x10` | `X+0x14` | jelzőbájt: nemnulla esetén nincs képenkénti felismerés |
+
+Bizonyítottsági fok: **feltételes** (egy kódút; az asm és a dekompilált C ugyanezt adja, de ez nem két független út). A csomópont létrehozója és a jelzőbájt írója nincs megtalálva (45.7).
+
+### 45.2 N1: a nemnulla jelző ága nem hívja a felismerőt
+
+- `0x0047b031`-`0x0047b038` (asm): ha a `byte [item+0x10]` nem nulla, a függvény `0x0048bd80(this)` hívás után `0xf4240`-et ad vissza, és nem hívja a `0x0048ef20`-at.
+- A `0x0048bd80` (888 bájt) közvetlen hívásai között nincs `0x0048ef20` (asm, a teljes függvény hívásai ellenőrizve; a közvetett `call eax` és `call edx` célok nem oldhatók fel). A törzs zárat (`this+0x2818`, `this+0x28c0`), időbélyeget (`this+0x2868`) és állapot-mezőket kezel. Ez összhangban van a 14.5.2 szakasz „felszabadító/átméretező ág" besorolásával, és nem felismerés.
+- Nulla jelzőnél és nulla módnál: `0x0047b04f` → `0x0047b187`: `push 1; call 0x00414940`. Nem nulla módnál a `0x0048ef20` hívás a `0x0047b149`-nél.
+
+Következtetés N1-re: a jelzővel megjelölt munkatétel nem fut képenkénti felismerésen. Hogy a névvel jelölt fotóra beáll-e a jelző, és a jelző mit jelent (névvel jelölt vagy már feldolgozott), **NINCS MEG**, mert a jelző írója nem azonosítható (45.7).
+
+### 45.3 N3: a 0,85 és a 0,50 a hasonlósági skála küszöbei, nem a detektoré
+
+- **Negyedik argumentum (asm, egy kódút):** `0x0047b055` `fld dword [eax+0xc]` (`X+0x10`), `0x0047b062` mentés a veremre, `0x0047b13f` `fstp dword [esp]` a negyedik argumentum helyére, `0x0047b149` `call 0x0048ef20`.
+- **Nulla küszöb (asm):** a `0x0048ef20` `0x0048fabd`-`0x0048fad3` ágában `fucom` a nullával; ha az argumentum `0.0`, `fld dword [this+0x3498]` tölti be az értéket (alapérték 0,85, `FRSuggestionThreshold`), különben az argumentum marad. A `0x00414940` (21. szakasz) nulla értéket ad át, ott tehát 0,85 él.
+- **0,50 (`this+0x34a4`, `FRRecommendIncludeLimit`), float-ként (asm):** `0x0048e252`-`0x0048e25a` `fld dword [ebp+0x34a4]` → `[esp+0x20]`; `0x0048e33e`-`0x0048e342` `fcomp st(1)` a pontszámmal. A C-dump `(DWORD)` konverziója a dekompiláló mellékterméke (a 21.2 és 27.2 szakasz is ezt állapította meg; most asm-mal ellenőrizve).
+- **A pontszám forrása (feltételes):** a `0x0048e1f0` pontszámai a `param_9` `+0x2c` slot (`0x006cde50`) kimenetei. A `0x006cde50` a `REDENTRY` (`0x00d35e44`) `+0x44` slotját hívja (`0x10001570` → `0x100057c0`), amely leírónként a mintákkal vett legnagyobb hasonlóságot írja. Ez **leírók hasonlósága**, nem arcdetektálás. A 20-27. szakaszok „detektor-hívás" megnevezése ezért pontosítandó.
+
+Következtetés N3-ra: az eredeti 0,85 (javaslati küszöb) és 0,50 (befogadási határ) a Red-hasonlósági skálán működik. A PicasaPy 0,9-es YuNet-konfidenciája a detektoré. A két szám összevetése nem érvényes. Az eredeti arcdetektor belső küszöbe és bemeneti mérete **NINCS MEG**.
+
+### 45.4 Red.dll: a `+0x40` és `+0x44` belépés (asm)
+
+- `REDENTRY` vtábla (`0x101aadc4`): `+0x40` = `0x100014d0`, `+0x44` = `0x10001570`.
+- `0x100014d0` (csomagoló) → `0x10005610` (SEH-burkolt) → `0x10108d10`. A `0x10005610` a `[esi]`, `[esi+0x4]`, `[esi+0x8]`, `[esi+0x10]` mezőkkel és a `[ebp+0x1c]` argumentum `+0x18` címével hívja a `0x10108d10`-et; az eredményt `[esi+0x14]`-be írja. A `+0x40` slot valószínűleg a detektor útja (feltételes); Picasa-oldali hívója nincs megtalálva.
+- A `REDENTRY` globálist (`0x00d35e44`) 25 Picasa-függvény olvassa a `0x006cccd0`-`0x006cf970` tartományban (indextől független pásztázás). A `+0x40` hívót közvetett hívás miatt nem azonosítottam.
+- A `0x006cde50` átadott méretmezője (a `param_2[5]` rekord második dword-je, `>> 1`) a `this+0x2908` tábla bejegyzése (25.9 és 27. szakasz); a tábla írója NINCS MEG.
+
+### 45.5 N7: a lista definíciója nem ad kijelölési módot
+
+`runtime/contactmgr.fen` (mért olvasat): `<list name="contacts" width="250" height="17li" scroll="v" header="hide">`, benne `<column width="fill"/>`. Kijelölési attribútum nincs; a döntés a kódban van (`0x007b9630`, 44.3), ezt ebben a körben nem követtem végig. A döntő felvétel a 44.3 szerinti két személyes Colab-mérés.
+
+### 45.6 Mérőadat
+
+A `~/.local/share/picasapy-meroadat/meroadat.tar` tagjainak `arc|face|szemel|people|person` szűrése csak `nev_*.jpg` exportokat ad; arcfelismerési mérőkészlet nincs benne. N3 saját oldali mért aránya ezért nem készült.
+
+### 45.7 Nyitott, Ghidra-kérések
+
+- Ghidra-kör kell: (cím NINCS MEG): a munkasor termelője, amely a csomópont `+0x4`, `+0x8`, `+0xc`, `+0x10` mezőit kitölti és a worker sorába (`worker+0x58` fej, `worker+0x68` farok) fűzi. A `0x004987c0` csak fogyasztó. [blokkoló N1]
+- Ghidra-kör kell: 0x0048bae0: a `0x0048e5da` hívója; ha ez a képenkénti arcdetektor, a belső küszöb és a bemeneti méret. [blokkoló N3]
+- Ghidra-kör kell: 0x10108d10 (Red.dll): a `[esi+0x0/0x4/0x8/0x10]` mezők értelme, és hol van a küszöb vagy a méret. [blokkoló N3]
+- Ghidra-kör kell: 0x0048bd80: a nemnulla jelző ágának C-törzse (zár, időbélyeg, állapot). [nem blokkoló]
+
+### 45.8 Állapot
+
+| pont | állapot | mivel |
+|---|---|---|
+| N1 | BLOKKOLT | a jelző írója és jelentése NINCS MEG; Colab-kétarcú felvétel (43.4) és a termelő Ghidra-köre kell |
+| N3 | BLOKKOLT, részben | a javaslati küszöb (0,85), a befogadási határ (0,50) és a hasonlósági jelleg megvan; a detektor-küszöb és a bemeneti méret NINCS MEG |
+| N7 | BLOKKOLT | Colab-felvétel (44.3) |
+| N4, N5, N6, N8 | LEZÁRVA | változatlan (36-37. szakasz) |
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 45. szakasz; a 34.7-34.8 csomópont-értelmezését a 45.1 helyesbíti); `docs/specs/00-index.md` (a lap sora).
