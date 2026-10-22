@@ -938,9 +938,9 @@ A jegyek szövege (fülenként egy, „Eredeti:” sorral) a `.codex-jelentes.md
 
 Az ezen kívüli két NYITVA sor a fájltípusok QuickTime alapértékére és a diavetítés zene-mappájára vonatkozik; ezek nem a #5483 által feltett kérdések.
 
-### 13. #5483: a kezelő olvasói és a legördülők értékei
+### 13. #5483 / #5489: a kezelő olvasói és a legördülők értékei
 
-**Vizsgálat:** az érintett függvényeket külön, utasításszinten olvastam ki az eredeti binárisból. Teljes `.text` pásztázás nem történt. A sablon tételei a `runtime/options.fen` fájlból valók.
+**Vizsgálat:** a #5483 az érintett függvényeket külön, utasításszinten olvasta ki. A #5489 kiegészítő körében a teljes `.text` darabolt pásztázása a `paszta.py` eszközzel történt. A sablon tételei a `runtime/options.fen` fájlból valók.
 
 #### 1. `PrintResamplerQuality`
 
@@ -1001,7 +1001,7 @@ A `print1`-`print5` vezérlők mindegyikéhez ugyanaz a 16 elemű lista épül f
 | 14 | 15 | `3 x 4` |
 | 15 | 16 | `4 x 5` |
 
-Az enum 0 (`FullPage`) a feliratfüggvényben létezik (`0x00cb36f4`), de a 16 elemes menüindex-tábla nem adja vissza (`0x006e5d70-0x006e5dfd`). Az öt vezérlő létrehozási ciklusa a `print1`-`print5` neveket állítja elő (`0x006e2260-0x006e2273`). A kiválasztott nyomtatási méret alapértéke ettől külön kérdés; ebben a feladatban a tételsorrend volt a kérdés.
+Az enum 0 (`FullPage`) a feliratfüggvényben létezik (`0x00cb36f4`), de a 16 elemes menüindex-tábla nem adja vissza (`0x006e5d70-0x006e5dfd`). Az öt vezérlő létrehozási ciklusa a `print1`-`print5` neveket állítja elő (`0x006e2260-0x006e2273`). A hiányzó kulcsok öt alapértékét, a nyomtatási képernyő fogyasztóit, a sztringtáblát és a `FullPage` helyét a 7. pont igazolja.
 
 **Bizonyítottság:** a frissítési leképezés megerősített a kezelő ága és a sablon sorrendje alapján. A nyomtatási lista feltételes: az index-tábla és a feliratválasztó utasításszintű kiolvasása egymással összhangban van, de ehhez a sorrendhez nem találtam második, független bináris útvonalat.
 
@@ -1035,13 +1035,159 @@ Az enum 0 (`FullPage`) a feliratfüggvényben létezik (`0x00cb36f4`), de a 16 e
 |---|---|---|---|
 | Általános | A frissítés alapja az automatikus ellenőrzés. A `ReportStats` hiányzó értéke üres checkboxot mutat. | A frissítés legördülő le van tiltva, nincs beállításkulcsa; a használati statisztika jelölője szintén le van tiltva. | Ha a frissítő megvalósul, a három választást az `AutoUpgradeCheck`/`AutoUpgradeAsk` leképezésével kell kötni. A hiányzó `ReportStats` érték maradjon kikapcsolt alapállapot. |
 | E-Mail | Három `mailprog` választás; a `picsize` mögött a `EmailExportSize` képpontértéke van; `EmailSinglePicture` és `EmailMovie` 0/1 rádióválasztás. | A két aktív levelezőválasztás sorrendje fordított, a Google-fiók választás letiltott helyőrző. A képméret és a két rádió alapállapota megfelel az eredeti viselkedésnek. | A levélküldési választást az eredeti sorrendhez igazítani, vagy explicit értékleképezéssel tárolni; a 480 képpontos alapértéket és a 0/1 rádióleképezést megtartani. |
-| Nyomtatás | A `PrinterQuality` 2 = Compatible, 3 = High Quality; a nyomtatási lista sorrendje a fenti 16 tétel; a resampler 5 = General, 8 = Extra sharp. | A minőséget szöveges `compatible`/`highQuality` érték tárolja. A `print_controller.py` listája más sorrendű és a `FullPage` tételt is tartalmazza. A resampler `General` értéke 3, az `Extra sharp` értéke 8. | A nyomtatási minőségnél az eredeti 2/3 értékeket a két rádióhoz kötni; a legördülők sorrendjét az eredeti 16 tételhez igazítani; a `FullPage` eltérést tudatosan kezelni. A resampler beállításrétegében az eredeti 5/8 értékeket a meglévő megjelenítési minőségekhez rendelni úgy, hogy az algoritmus számkódja ne keveredjen össze velük. |
+| Nyomtatás | A `PrinterQuality` 2 = Compatible, 3 = High Quality; a nyomtatási lista sorrendje a fenti 16 tétel; a resampler 5 = General, 8 = Extra sharp. | A minőséget szöveges `compatible`/`highQuality` érték tárolja. A `print_controller.py` listája más sorrendű és a `FullPage` tételt is tartalmazza. A resampler `General` értéke 3, az `Extra sharp` értéke 8. | A nyomtatási minőségnél az eredeti 2/3 értékeket a két rádióhoz kötni; a popup listából a `FullPage`-t külön képernyőműveletbe kivezetni. A teljes 16 elem sorrendjét csak független második bináris igazolás után átírni. A resampler beállításrétegében az eredeti 5/8 értékeket a meglévő megjelenítési minőségekhez rendelni úgy, hogy az algoritmus számkódja ne keveredjen össze velük. |
 | Hálózat | A `LogLevel` beállítás alapja 2; a vezérlő neve `loglevel`. | A `Preferences/LogLevel` beállítást használja 2 alapértékkel, a QML vezérlőneve `optionsNetworkLogLevelCombo`. | A jelenlegi beállításkötés megtartása; a specifikációban a tárolt kulcs és a vezérlőnév külön fogalomként szerepeljen. |
 | Webalbumok | A fülcím feltételtől függően `Web Albums` vagy `Google Photos`; a `PWAWatermark` külön beállítás. | A teljes fül le van tiltva, címe `Web Albums`. | Ha a fül ismét aktív lesz, a címet a binárisban igazolt feltételhez kötni; a feltétel pontos termékjelentését a `0x00431290` Ghidra-kör tisztázza. |
 
 **Nyitott:**
 
 - Ghidra-kör kell: `0x00431290` - a `LastUserESState` és az aktuális felhasználói állapot pontos szemantikai kapcsolata.
+
+
+#### 7. #5489: a Nyomtatás méretlistájának második bináris ellenőrzése
+
+Ez a rész a #5483-ban kiolvasott listát egészíti ki a #5489 második bináris
+ellenőrzésével. A vezérlőneveket a helyi `runtime/options.fen` adja; a
+viselkedést a `Picasa3.exe` utasításai igazolják.
+
+##### 1. A `0x00775ce0` feliratfüggvény fogyasztói
+
+Az `0x00775ce0` közvetlen hívói a teljes `.text` `paszta.py`-val végzett
+darabolt pásztázásában:
+
+| felhasználás | hívó és hívási cím | bináris bizonyíték |
+|---|---|---|
+| Opciók, Nyomtatás fül: a 16 popup-tétel felépítése | `0x006e1100`, hívás `0x006e22c3` | a `print%d` vezérlőciklus `0x006e2260`-nál indul; a ciklus `0x006e5d70` kódját adja a `0x00775ce0`-nak, majd hozzáadja a visszaadott feliratot (`0x006e22b0`-`0x006e2338`) |
+| Nyomtatási képernyő: az öt mentett gyorsválasztó címkéje | `0x00743700`, hívás `0x00743819` | a panel a `PrintSize0`-`PrintSize4` értékeket beolvassa, majd a `0x006e5d70` és `0x00775ce0` útján címkézi őket (`0x0074373d`, `0x0074380c`-`0x0074382a`) |
+
+A `0x00743700` ugyanitt a külön `0x00775f30` függvényt is hívja
+(`0x0074382a`). Ez a `ytPrintTip` súgókulcsait adja vissza. A teljes
+utasításpásztázásban `0x00775f30` egyetlen közvetlen hívója `0x00743700`;
+a `0x006e5d70` harmadik hívása `0x00744693`, a nyomtatási képernyő
+választás-ellenőrző ágában.
+
+A két felület ugyanazt a leképezést és ugyanazt a méretfelirat-függvényt
+használja. A nyomtatási képernyő öt mentett gyorsválasztót mutat, nem a teljes
+16 elemű popup-listát. Ez a második fogyasztó igazolja a közös használatot,
+de nem ad független, második forrást a 16 elem sorrendjére.
+
+##### 2. A popup szövege és sorrendje
+
+A `0x00775ce0` a `ytPrintSizes::` kulcsokat adja át a szövegfeloldó függvénynek
+(`0x009ae560`). Példák: `Wallet` / `ytPrintSizes::eWallet`
+(`0x00cb3788`, `0x00cb3790`), `4 x 6` / `ytPrintSizes::e4x6`
+(`0x00cb3718`, `0x00cb3720`), és `FullPage` / `ytPrintSizes::eFullPage`
+(`0x00cb36f4`, `0x00cb3700`). A képernyőn használt leírások külön
+`ytPrintTip::` kulcsok: például a `0x00775f30` `ytPrintTip::eFullPage`
+kulcsot adja át (`0x00cb392c`).
+
+A `ytPrintSizes` a címke- és enum-feloldó tábla; a popup sorrendjét a
+`0x006e5d70` 16 elemű leképezése állítja elő. Mindegyik sornál az első cím
+a leképezésben tárolt enumérték, a második a `ytPrintSizes` címkeágának
+címe:
+
+| popup-index | enumérték | felirat | bináris címek |
+|---:|---:|---|---|
+| 0 | 5 | `Wallet` | `0x006e5d76`, `0x00775d82` |
+| 1 | 2 | `3.5 x 5` | `0x006e5d7d`, `0x00775d2b` |
+| 2 | 1 | `4 x 6` | `0x006e5d85`, `0x00775d0e` |
+| 3 | 3 | `5 x 7` | `0x006e5d8d`, `0x00775d48` |
+| 4 | 4 | `8 x 10` | `0x006e5d95`, `0x00775d65` |
+| 5 | 6 | `5 x 8 cm` | `0x006e5d9d`, `0x00775d9f` |
+| 6 | 7 | `9 x 13 cm` | `0x006e5da5`, `0x00775dbc` |
+| 7 | 8 | `10 x 15 cm` | `0x006e5dad`, `0x00775dd9` |
+| 8 | 9 | `13 x 18 cm` | `0x006e5db5`, `0x00775df6` |
+| 9 | 10 | `15 x 20 cm` | `0x006e5dbd`, `0x00775e13` |
+| 10 | 11 | `20 x 25 cm` | `0x006e5dc5`, `0x00775e30` |
+| 11 | 12 | `CD Cover Size` | `0x006e5dcd`, `0x00775e4d` |
+| 12 | 13 | `Contact Sheet` | `0x006e5dd5`, `0x00775e6a` |
+| 13 | 14 | `Passport` | `0x006e5ddd`, `0x00775e87` |
+| 14 | 15 | `3 x 4` | `0x006e5de5`, `0x00775ea4` |
+| 15 | 16 | `4 x 5` | `0x006e5ded`, `0x00775ec1` |
+
+A `0x00775ce0` enum-ágainak sorrendje `FullPage`, `4 x 6`, `3.5 x 5`,
+`5 x 7`, `8 x 10`, `Wallet` (`0x00775cf1`-`0x00775d82`), ami nem a popup
+sorrendje. A méretfelirat-függvény enum szerint választ címkét; az
+`0x006e5d70` rendezi át a popup-indexeket. A `ytPrintTip` ugyanazokhoz az
+enumértékekhez ad külön súgószöveget, nem második popup-listát.
+
+##### 3. Hiányzó kulcs esetén az öt alapérték
+
+A `0x006e5ab0` a `GetLocaleInfoA` függvényt hívja `0x400` lokálazonosítóval,
+`0x0d` (`LOCALE_IMEASURE`) információtípussal és 2 bájtos pufferrel
+(`0x006e5acf`-`0x006e5b27`). Ha az eredmény első bájtja `'0'`, a függvény a
+metrikus tömböt használja; minden más eredménynél, beleértve a sikertelen
+lekérdezést, a hüvelyk-alapú tömböt (`0x006e5b31`-`0x006e5b5f`). A tömbök
+utáni `Preferences\PrintSize%d` olvasásban a hiányzó kulcs az átadott
+alapértéket kapja (`0x006e5b66`-`0x006e5ba7`); az index 0-4, az érvényes
+mentett érték 0-15 (`0x006e5c64`-`0x006e5d0b`).
+
+Az `options.fen` vezérlőciklusa `print1`-től `print5`-ig halad
+(`0x006e2260`-`0x006e226e`), és rendre az öt `PrintSize0`-`PrintSize4`
+értékből állítja be a popup kijelölését (`0x006e2341`-`0x006e2367`). A
+hiányzó-kulcs alapértékek és az általuk kijelölt `ytPrintSizes` címkék:
+
+| mértékág | `print1` | `print2` | `print3` | `print4` | `print5` | bináris cím |
+|---|---|---|---|---|---|---|
+| `LOCALE_IMEASURE='0'` | `10 x 15 cm` (7) | `13 x 18 cm` (8) | `15 x 20 cm` (9) | `20 x 25 cm` (10) | `Contact Sheet` (12) | `0x006e5ab0`, `0x006e5d70`, `0x00775ce0` |
+| minden más eredmény vagy hiba | `Wallet` (0) | `3.5 x 5` (1) | `4 x 6` (2) | `5 x 7` (3) | `8 x 10` (4) | `0x006e5ab0`, `0x006e5d70`, `0x00775ce0` |
+
+Zárójelben a popup-index áll. Az alapértékek a `Preferences\PrintSize0`-
+`Preferences\PrintSize4` kulcsokra vonatkoznak, nem a vezérlőnevekre. A
+`print1`-`print5` vezérlőazonosítók (`0x00ca9bb8`, `0x006e2260`-`0x006e226e`).
+
+##### 4. A `FullPage` helye
+
+A `0x00775ce0` és a `0x00775f30` tartalmaz `FullPage` méret- és súgócímkét
+(`0x00775cf1`, `0x00775f41`). A popup 0-15 indexet ad át a
+`0x006e5d70`-nek; a visszaadott enumértékek 5, 2, 1, 3, 4, majd 6-16,
+tehát a 0 enumérték nem kerül a `print1`-`print5` popupokba
+(`0x006e5d70`-`0x006e5df7`). A nyomtatási képernyő külön `fullbutton`
+vezérlőt használ (`0x007439a6`, sztringcím `0x00cb07b0`), és annak saját
+`ytPrintSizes::eFullPage` / `ytPrintTip::eFullPage` címkéje van.
+
+##### Független utak, cáfoló ellenőrzés és bizonyítottság
+
+- **A út:** az Opciók kezelője `0x006e1100` felépíti a 16 listatételt a
+  `0x006e5d70` leképezésével, címkézi őket a `0x00775ce0`-val, majd a
+  `0x006e5ab0` eredményéből állítja be a vezérlők alapértékét.
+- **B út:** a nyomtatási képernyő `0x00743700` a `0x006e5ab0` öt értékét
+  olvassa, és ugyanazokat a `0x006e5d70` / `0x00775ce0` függvényeket hívja;
+  mellettük a külön `0x00775f30` tooltip-függvényt használja.
+- **Egyezés:** a két felület ugyanazt a közös leképezést használja. A B út
+  ezért megerősíti a másik felületen való használatot és a címkék jelentését,
+  de nem független sorrendforrás. A teljes popup-sorrend bizonyítottsága
+  **feltételes** marad: egyetlen listázó leképezés áll rendelkezésre, a
+  `0x006e5d70`.
+- **Cáfoló kísérlet:** azt próbáltam cáfolni, hogy a `ytPrintTip` külön
+  sorrendet ad a méretlistához, és azt, hogy a régi nyomtatási spec metrikus
+  címkéi helyesek. A teljes `.text` pásztázás a `0x00775ce0` két közvetlen
+  hívóját találta (`0x006e1100`, `0x00743700`), a `0x00775f30` egy hívója
+  `0x00743700`; a második felület is az első leképezését használja. A bináris
+  lánc `[7,8,9,10,12]` értékekre a `10 x 15 cm`, `13 x 18 cm`, `15 x 20 cm`,
+  `20 x 25 cm`, `Contact Sheet` címkéket adja. A korábbi
+  `picasa-nyomtatas.md` metrikus címkesora ezzel nem egyezik, ezért lent
+  helyesbítettem. A cáfoló eredményt az alapérték-tömb, a map-függvény, a
+  címkefüggvény és a képernyőbeli fogyasztó utasításaival ellenőriztem.
+
+**Bizonyítottsági fok:** a `print1`-`print5` hiányzó-kulcs nyers alapértékei
+és a címke-feloldásuk bináris utasításokból visszafejthető. A teljes 16 tétel
+sorrendje **feltételes**, mert a második felhasználó ugyanazt a
+`0x006e5d70` leképezést használja; független második sorrendforrást nem
+találtam. Ez a #5489 feltételét teljesítő, kimondott ok, nem becsült érték.
+
+##### Eredeti / nálunk / teendő
+
+| | Eredeti Picasa | PicasaPy a munkafában | Teendő |
+|---|---|---|---|
+| `print1`-`print5` tételek | A 16 tétel sorrendjét a fenti tábla adja; `FullPage` nincs a popupban (`0x006e5d70`, `0x00775ce0`). | `printOptionSizes()` a `_PRINT_OPTION_SIZES` 17 tételét adja vissza, sorrendben `M3X4`, `M3_5X5`, `M4X5`, `M4X6`, `M5X7`, `M8X10`, `M5X8CM`, `M9X13CM`, `M10X15CM`, `M13X18CM`, `M15X20CM`, `M20X25CM`, `TARCA`, `CDSIZE`, `PASSPORT`, `CONTACT`, `TELJES_OLDAL` (`src/picasapy/app/print_controller.py:147-165, 262-265`). | A popup listából a `FullPage`-t külön képernyőgombba kivezetni. A 16 elem sorrendjét ne írjuk át a jelenlegi feltételes bizonyíték alapján; ehhez előbb független második bináris forrás kell. |
+| hiányzó `PrintSize0`-`PrintSize4` | Metrikus: `10x15`, `13x18`, `15x20`, `20x25 cm`, `Contact Sheet`; más ág: Tárca, `3.5x5`, `4x6`, `5x7`, `8x10` (`0x006e5ab0`-`0x006e5b5f`, majd a címkézők). | A metrikus alaplista `5x8`, `9x13`, `10x15`, `13x18`, `20x25 cm`; a hüvelyk-alaplista Tárca, `3.5x5`, `4x6`, `5x7`, `8x10` (`src/picasapy/printing/dpi.py:171-186`). | A hiányzó kulcs metrikus alapértékeit az eredeti bináris szerinti listára igazítani; a mentett választás elsőbbségét megtartani. A hüvelyk-alapértékek már egyeznek. |
+
+**Nyitva:** a 16 elemű popup-sorrendhez nincs független második forrás. A
+Ghidra-dekompilálás nem oldaná fel a hiányt: a második ismert képernyőbeli út
+is a közös `0x006e5d70` függvényt hívja (`0x00743700`, `0x00744693`). A
+feltételes minősítés oka ezért lezárt kutatási megállapítás; új, külön
+listázó adatszimbólum vagy másik felület felfedezése nyitná újra.
 
 ---
 

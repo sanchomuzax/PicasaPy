@@ -37,6 +37,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from kiadas_szukseges import kiadasra_erdemes  # noqa: E402
+from auto_bump import ellenoriz_darab_tartalmat  # noqa: E402
 
 Runner = Callable[[list[str]], "subprocess.CompletedProcess[str]"]
 
@@ -453,6 +454,49 @@ def main(
         )
         return 1
     fajlok = [s for s in (valtozott.stdout or "").splitlines() if s.strip()]
+
+    # A diff nevezi meg, mely darabok tartoznak ehhez a PR-hez; a HEAD-beli
+    # teljes tartalmat ellenőrizzük, így módosított fájlnál a változatlan
+    # sorok sem maradnak ki. A törölt darabnak nincs ellenőrizhető tartalma.
+    darab_utvonalak = runner(
+        [
+            "git",
+            "-c",
+            "core.quotepath=false",
+            "diff",
+            "--name-only",
+            "--diff-filter=ACMR",
+            f"{beallitas.base}...{beallitas.head}",
+            "--",
+            "changelog.d",
+        ]
+    )
+    if darab_utvonalak.returncode != 0:
+        print(
+            "::error title=A CHANGELOG-darabok diffje nem olvasható::"
+            "A módosított darabok listájának lekérése elbukott: "
+            f"{(darab_utvonalak.stderr or '').strip()[:200]}"
+        )
+        return 1
+    for fajl in (darab_utvonalak.stdout or "").splitlines():
+        if not _DARAB_UTVONAL.fullmatch(fajl):
+            continue
+        tartalom = runner(["git", "show", f"{beallitas.head}:{fajl}"])
+        if tartalom.returncode != 0:
+            print(
+                "::error title=A CHANGELOG-darab nem olvasható::"
+                f"A `{fajl}` fájl ellenőrzése elbukott: "
+                f"{(tartalom.stderr or '').strip()[:200]}"
+            )
+            return 1
+        _, hibas_sorok = ellenoriz_darab_tartalmat(tartalom.stdout or "")
+        if hibas_sorok:
+            for sorszam, sor in hibas_sorok:
+                print(
+                    "::error title=Hibás CHANGELOG-darab::"
+                    f"{fajl}:{sorszam}: {sor}"
+                )
+            return 1
 
     erdemi = [f for f in fajlok if kell_bejegyzes([f])]
 

@@ -30,7 +30,12 @@ ColumnLayout {
         "PASSPORT": qsTr("Passport"),
         "CONTACT": qsTr("Contact Sheet")
     })
-    readonly property var printSizeIds: printCtl ? printCtl.printOptionSizes() : []
+    // #5492: FullPage a nyomtatási képernyő külön gombja, nem Opció.
+    readonly property var printSizeIds: printCtl
+        ? printCtl.printOptionSizes().filter(function (id) {
+            return id !== "TELJES_OLDAL"
+        })
+        : []
     readonly property var printSizeLabels: printSizeIds.map(function (id) {
         return root.printSizeLabelById[id] || id
     })
