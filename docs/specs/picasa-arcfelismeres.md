@@ -5397,7 +5397,7 @@ Következtetés N3-ra: az eredeti 0,85 (javaslati küszöb) és 0,50 (befogadás
 ### 45.4 Red.dll: a `+0x40` és `+0x44` belépés (asm)
 
 - `REDENTRY` vtábla (`0x101aadc4`): `+0x40` = `0x100014d0`, `+0x44` = `0x10001570`.
-- `0x100014d0` (csomagoló) → `0x10005610` (SEH-burkolt) → `0x10108d10`. A `0x10005610` a `[esi]`, `[esi+0x4]`, `[esi+0x8]`, `[esi+0x10]` mezőkkel és a `[ebp+0x1c]` argumentum `+0x18` címével hívja a `0x10108d10`-et; az eredményt `[esi+0x14]`-be írja. A `+0x40` slot valószínűleg a detektor útja (feltételes); Picasa-oldali hívója nincs megtalálva.
+- `0x100014d0` (csomagoló) → `0x10005610` (SEH-burkolt) → `0x10108d10`. A `0x10005610` a `[esi]`, `[esi+0x4]`, `[esi+0x8]`, `[esi+0x10]` mezőkkel és a `[ebp+0x1c]` argumentum `+0x18` címével hívja a `0x10108d10`-et; az eredményt `[esi+0x14]`-be írja. A `+0x40` slot NEM a detektor útja, hanem a klaszterező (`createClusterSubSet`), helyesbítve a 45.9 szakaszban. Picasa-oldali hívója nincs megtalálva.
 - A `REDENTRY` globálist (`0x00d35e44`) 25 Picasa-függvény olvassa a `0x006cccd0`-`0x006cf970` tartományban (indextől független pásztázás). A `+0x40` hívót közvetett hívás miatt nem azonosítottam.
 - A `0x006cde50` átadott méretmezője (a `param_2[5]` rekord második dword-je, `>> 1`) a `this+0x2908` tábla bejegyzése (25.9 és 27. szakasz); a tábla írója NINCS MEG.
 
@@ -5425,4 +5425,71 @@ A `~/.local/share/picasapy-meroadat/meroadat.tar` tagjainak `arc|face|szemel|peo
 | N7 | BLOKKOLT | Colab-felvétel (44.3) |
 | N4, N5, N6, N8 | LEZÁRVA | változatlan (36-37. szakasz) |
 
-**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 45. szakasz; a 34.7-34.8 csomópont-értelmezését a 45.1 helyesbíti); `docs/specs/00-index.md` (a lap sora).
+### 45.9 Helyesbítés: a REDENTRY `+0x40` klaszterező, nem detektor (megerősített)
+
+A 45.4 szakasz „a `+0x40` valószínűleg a detektor útja" állítása téves. Két független úton ellenőriztem:
+
+- **Út A (Ghidra C, a 2026-10-22-i köteg):** a `0x10108d10` törzsének hibaüzenet-literálja a függvény nevét adja: `uint32 vtk_Relator::createClusterSubSet( const void* const* templatePtrArrA, uint32 numberOfTemplatesA, uint32 maxSubSetSizeA, uint32* indexArrA ) const`. A törzs klaszter-részhalmazt állít elő, az index-tömböt (`param_5`) tölti, és a darabszámot adja vissza.
+- **Út B (nem Ghidra, `pefile` és `capstone`):** a literál kezdő virtuális címe `0x101d5f28` (`.rdata`). Ez a cím négy utasítás immediate-operandusa a `0x10108d10` első 0x1200 bájtjában: `0x10108d4c` (`mov [ebp+0x60], 0x101d5f28`), `0x10108d7c`, `0x10108da3`, `0x10108dd7` (`push 0x101d5f28`).
+
+**A lánc (asm):** a REDENTRY vtábla a `0x101aadc4`-en; a `+0x40` slot értéke `0x100014d0`. A `0x100014d0` a `0x10005610`-et hívja (`0x10001502`), a `0x10005610` pedig a `0x10108d10`-et (`0x10005665`). A `+0x44` slot (`0x10001570`) a `0x100057c0`-t hívja (`0x100015a2`): ez a 45.3 szerinti pontszám-út.
+
+**Küszöb és méret a `0x10108d10`-ben:** a törzsben nincs lebegőpontos összehasonlítás, tehát küszöb nincs. A `param_4` változatlanul adódik tovább a `vtk_Relator` metódusának; a szignatúra sorrendje szerint ez a maximális részhalmaz-méret. A számítást a `vtk_Relator` objektum vtábla-hívása végzi (`vtábla +0x34`); ennek a modulnak a belső küszöbét nem vizsgáltam.
+
+**Bizonyítottsági fok:** megerősített (a két út ugyanarra a törzsre mutat: a függvénynév és a literál-hivatkozás). **Cáfoló kísérlet:** ha a `+0x40` detektor volna, a törzsben képpufferen kellene dolgozni. A Ghidra-törzs bemenete mintatömb-mutató és index-tömb, képpuffer-művelet nincs benne. Ez gyenge cáfolat, mert a `vtk_Relator` objektum belsejét nem néztem meg.
+
+### 45.10 N3: a detektor-jelölt a `vfr_VdeFaceFinder` (RTTI megerősített, vtábla feltételes)
+
+- A `plugins/Red.dll`-ben megvan a `.?AVvfr_VdeFaceFinder@@` RTTI-név. Az x86 MSVC-séta (típusleíró → teljes objektumleíró → vtábla) három objektumleírót talál. A második vtáblája `0x101c867c`, első 16 slotja kódcímekre mutat (a teljes hosszt nem mértem). Az első találat „vtáblája" (`0x101c86f0`) slotjai nem kódcímek, ezért elvetve.
+- **A Picasa-oldali belépés:** a `0x0048e590` (74 bájt) a `this+0x2e14` bájtot vizsgálja. Ha ez nulla, vagy a `this+0x2e10` mező (a detektor-objektum) nulla, a `0x0045f0c0`-t hívja (`0x0048e5b8`). Ha a `this+0x2e10` nem nulla, a `jne 0x0048e5da` (`0x0048e5cb`) a `0x0048e5da`-ra ugrik. A teljes `.text`-pásztázás (`paszta.py`, 2 884 879 utasítás, `memoria_kapu()` első lépés) szerint a `0x0048e5da` címére mutató utasítás a teljes `.text`-ben ez az egy.
+- **Index-korlát:** az index `xrefs` táblája csak `call` éleket tartalmaz (78 901 sor, `kind = call`), ugróutasítás-élek nincsenek. Ezért a 45.7 kérdésére („a `0x0048e5da` hívója") az index nem ad választ; a korábbi index-negatív állítások (22-23. szakasz) erre a korlátra épültek. Itt a jne-él a bizonyíték.
+- **A `0x0048e5da` (1613 bájt) hívásai:** közvetlen: `0x0048e1f0` (2 hívási hely, a pontszámoló, 45.3), `0x0048bae0` (indexelt gyorsítótár), `0x0048ec30` (7 hívási hely), `0x0048b840`, `0x004145a0`, `0x00407610`, `0x009a51b0`, `0x0097c810`, `0x0097caf0`. Közvetett: `call eax` (`0x0048e826`, `[vtábla+0x18]`), `call edx` (`0x0048e88a`, `0x0048e8ce`, `[vtábla+0x1c]`), és IAT-hívások (`0xc40284`, `0xc4055c`, `0xc402a8`). A `[edi+0x20]` (tulajdonos-azonosító), `[edi+0x24]` (mélység) és `[edi+0xc]` (jelzőbájt) mezők a `0x0048bd80` zárminta szerint zárkezelésre utalnak, nem detektálásra.
+- **Következtetés:** a detektor-hívás nincs közvetlenül a `0x0048e5da` törzsében. Jelöltek: a `0x0048ec30` (a `0x0048e5da` hét hívási helye; a közvetett hívásait nem néztem végig), és a `vfr_VdeFaceFinder` vtábla egyik slotja.
+
+**Bizonyítottsági fok:** feltételes. A `0x0048e590 → 0x0048e5da` kapcsolat megerősített (jne-asm és teljes pásztázás); a detektor-hívás helye NINCS MEG.
+
+### 45.11 N3 mérleg: a detektor küszöbe és bemeneti mérete NINCS MEG
+
+- A 960 px és a detektor belső küszöbe továbbra sincs igazolva. A 45.3 szerint a 0,85 és a 0,50 a Red-hasonlósági skála küszöbei; ezt ebben a körben semmi nem módosította.
+- Mért felismerési arány: nincs (45.6: a mérőadatban nincs arcfelismerési mérőkészlet). NINCS MEG.
+- Állapot: **BLOKKOLT**, Ghidra-kör kell (lásd lent).
+
+**Ghidra-kör kérések (új, egységes alakban):**
+- Ghidra-kör kell: 0x0048ec30 - a `0x0048e5da` hét hívási helyének célja; melyik közvetett (vtábla-) hívás hívja a detektor-objektum (`this+0x2e10`) metódusát, és a hívás körüli bemeneti méretezés és küszöb. [blokkoló N3]
+- Ghidra-kör kell: Red.dll `0x101c867c` vtábla (`vfr_VdeFaceFinder`): melyik slot a detektálás belépési pontja, és benne a küszöb és a bemeneti méret. [blokkoló N3]
+- Ghidra-kör kell: 0x0045f0c0 - a `this+0x2e10` objektum előállítása (hívás, ha a `this+0x2e14` bájt vagy a `this+0x2e10` mező nulla): a létrehozott objektum vtábla-címe és a konstruktor-paraméterei. [blokkoló N3]
+
+### 45.12 N1: a munkatétel jelzője, a sortöltő és a producer-jelölt (feltételes)
+
+- **Megerősített (Ghidra C és capstone asm egyezik):** a `0x0047b031`-`0x0047b049` tartományban nemnulla jelzőnél `call 0x0048bd80`, majd `mov eax, 0xf4240` és `ret`. A `0x0048ef20` ebben az ágban nincs. A `0x0048bd80` a korai kilépésben `0xf4242`-t ad vissza, de a hívó ezt eldobja: a visszatérés `0xf4240`.
+- **Sorfűzés:** a `0x00498630` (105 bájt) a fejet (`0x0049865c`: `[esi+0x58] = edi`) és a farkat (`0x0049866a`: `[esi+0x68] = edi`) ugyanazzal a regiszterrel írja, vagyis üres sorba fűz. Az index szerint hívó függvénye egy: `0x0047bee0`.
+- **Producer-jelölt: `0x0047bee0`** (feltételes). Az index 86 bájtnak írja, de a törzs csak a `0x0047c0d9`-nél ér `ret`-re, tehát a függvényhatár nem egyértelmű. A törzs hívja a `0x00498630`-at (`0x0047befd`), továbbá a `0x0047baf0`-t, a `0x00446200`-at, a `0x0047c320`-at és a `0x006a02e0`-at. A `0x0047bee0`-`0x0047c0d9` tartományban a csomópont `+0x4`...`+0x14` mezőire direkt írás nincs (szűrővel mérve). A `0x0047c024` a bemeneti rekord `+0xc` bájtját olvassa (`cmp byte ptr [esi+0xc], 0`).
+- **Mezőíró-jelölt: `0x004985e0`** (36 bájt, `0x004985e0`-`0x00498603`): `[eax+0xc] = esi`, `[eax+0x10] = esi`, `[eax+0x14] = [ecx+0xc]`. Vagyis a csomópont `+0x14` mezője (az item `+0x10`) a forrásrekord `+0xc` bájtjából másolódik. Az index szerint hívói: `0x00425f60`, `0x0045a9d0`, `0x00484820`. A `0x0047bee0` nem hívja, tehát a két jelölt közötti kapcsolat nincs igazolva.
+- **Ellentmondás a 45.1 táblával:** a `0x004985e0` a `+0xc` és `+0x10` mezőt ugyanabból a regiszterből (`esi`) írja. A 45.1 kiosztása (`+0x8` mód, `+0xc` küszöb, float) ezt nem fedi, ezért a 45.1 mezőkiosztása feltételes.
+- **Nem vizsgált:** a `0x0047baf0`, `0x0047c320`, `0x00446200` és `0x006a02e0` `+0x14` írásai, valamint a sorfűzés (`0x0047befd`) és a mezőkitöltés sorrendje.
+
+**Bizonyítottsági fok:** feltételes. A nemnulla ág viselkedése megerősített; a jelző írója NINCS MEG. **Cáfoló kísérlet:** a `0x0047bee0` nem írja közvetlenül a `+0x14`-et (szűrővel mérve). Ez a cáfoló a két jelöltet nem zárja ki: a jelző a hívott függvényekben vagy a `0x004985e0`-ban lehet.
+
+**Ghidra-kör kérés (új):**
+- Ghidra-kör kell: 0x0047bee0 - a munkatétel-termelő: a `0x0047baf0`, `0x0047c320` és `0x004985e0` `+0x14` írása, és a `0x004985e0` hívói (`0x00425f60`, `0x0045a9d0`, `0x00484820`) melyik rekordot adják át (a rekord `+0xc` bájtjának jelentése). [blokkoló N1]
+
+### 45.13 N7: változatlan
+
+Ebben a körben nem vizsgáltam. A 45.5 és a 44.3 állapota marad (BLOKKOLT, a két személyes Colab-felvétel a döntő).
+
+### 45.14 Állapot, mérleg, „Kész, ha"
+
+| pont | állapot | mivel |
+|---|---|---|
+| N1 | BLOKKOLT | a nemnulla ág megerősítve (45.12); a jelző írója NINCS MEG; jelöltek `0x0047bee0` (termelő) és `0x004985e0` (+0x14 írója), összekötés nincs; a döntő a kétarcú Colab-felvétel (43.4) |
+| N3 | BLOKKOLT, részben | a Red-szint eldőlt: `+0x40` klaszterező (45.9), `+0x44` pontszám (45.3); a detektor-jelölt `vfr_VdeFaceFinder`, belépés és küszöb NINCS MEG (45.10-45.11) |
+| N7 | BLOKKOLT | változatlan (45.5, 44.3) |
+| N4, N5, N6, N8 | LEZÁRVA | változatlan (36-37. szakasz) |
+
+**„Kész, ha" pontonként (45.9-45.14):** N1: ⛔ az írót nem találtuk; ✅ a nemnulla ág viselkedése. N3: ⛔ a detektor-küszöb és a méret NINCS MEG; ✅ a 0,85 és a 0,50 a Red-hasonlósági skála küszöbe, nem a detektoré (45.3). N7: ⛔.
+
+**Megvalósítandó eltérés:** ebből a körből nincs. A detektor küszöbe és a 960 px-es méret ismeretlen, ezért a 0,9-es YuNet-beállítás összevetése továbbra sem érvényes (45.3). Új kutatási jegy javasolt a jelentésben.
+
+**Nyitott kérdések mérlege (45.9-45.14):** 1 lezárva (helyesbítés: a 45.4 `+0x40` állítása) · 3 blokkolt (N1, N3, N7) · 0 hatókörön kívül · 0 csak nyitva.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 45. szakasz; a 34.7-34.8 csomópont-értelmezését a 45.1 helyesbíti; a 45.4 `+0x40` állítását a 45.9 helyesbíti; a 45.9-45.14 új); `docs/specs/00-index.md` (a lap sora).
