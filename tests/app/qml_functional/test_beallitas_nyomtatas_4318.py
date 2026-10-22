@@ -94,6 +94,9 @@ def _valassz_combo(ablak, qt_app, combo, index):
         and lista.property("contentHeight") > 0
         and lista.property("height") > 0,
     ), "a nyomtatásiméret-lista tartalma nem épült fel"
+    assert lista.property("count") == 16, (
+        "az Opciók méretlistája nem az eredeti 16 tételű, FullPage nélküli lista"
+    )
     sor_magassag = lista.property("contentHeight") / lista.property("count")
     cel_scroll = (index + 0.5) * sor_magassag - lista.property("height") / 2
     cel_scroll = max(
@@ -155,12 +158,26 @@ def test_metrikus_terulet_ot_alapmerete_a_nyomtatas_fulon_latszik(
 
     print_ctl = engine.rootContext().contextProperty("printController")
     print_ctl._settings.setValue(LANGUAGE_KEY, "en")
+    assert print_ctl.printResamplerQuality() == 5
+    assert (
+        _gyerek(options, "optionsPrintResizeGeneralRadio").property("checked")
+        is True
+    )
+    assert (
+        _gyerek(options, "optionsPrintResizeSharpRadio").property("checked")
+        is False
+    )
+    assert print_ctl.printerQuality() == 2
+    assert (
+        _gyerek(options, "optionsPrintQualityCompatibleRadio").property("checked")
+        is True
+    )
     vart = [
-        ("M5X8CM", "5 x 8 cm"),
-        ("M9X13CM", "9 x 13 cm"),
         ("M10X15CM", "10 x 15 cm"),
         ("M13X18CM", "13 x 18 cm"),
+        ("M15X20CM", "15 x 20 cm"),
         ("M20X25CM", "20 x 25 cm"),
+        ("CONTACT", "Contact Sheet"),
     ]
     meret_azonositok = _lista(print_ctl.printOptionSizes())
     for index, (nev, felirat) in enumerate(vart):
@@ -227,7 +244,8 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     assert combo.property("enabled") is True, "a méretválasztó le van tiltva"
     print_ctl = engine.rootContext().contextProperty("printController")
     meretek = _lista(print_ctl.printOptionSizes())
-    assert len(meretek) == 17, "a beállítási lista nem a 17 eredeti nyomatméret"
+    assert len(meretek) == 16, "a beállítási lista nem a 16 eredeti nyomatméret"
+    assert "TELJES_OLDAL" not in meretek, "a Teljes oldal tévesen választható az Opciókban"
     elvart_meretek = ["M3_5X5", "M4X6", "M5X7", "M8X10", "M4X5"]
     for index, nev in enumerate(elvart_meretek):
         combo = _ismetlo_elem(
@@ -283,7 +301,8 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     )
     general = _gyerek(options, "optionsPrintResizeGeneralRadio")
     _kattints(options, qt_app, general)
-    assert print_ctl._settings.value("printing/resamplerQuality") == 3
+    assert print_ctl._settings.value("printing/resamplerQuality") == 5
+    assert print_ctl.printResamplerQuality() == 5
     lanczos3_png = tmp_path / "lanczos3-elonezet.png"
     assert print_ctl.renderPreviewPage(
         [0, 1], "fit", "auto", 1, 0, str(lanczos3_png), ""
@@ -299,13 +318,15 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     quality_high = _gyerek(options, "optionsPrintQualityHighQualityRadio")
     if quality_compatible.isVisible():
         _kattints(options, qt_app, quality_high)
+        assert print_ctl._settings.value("printing/printerQuality") == 3
         _kattints(options, qt_app, quality_compatible)
     else:
         assert quality_compatible.property("visible") is False, (
             "a nyomtatóminőség csoport csak Windowson látható a FEN szerint"
         )
-        print_ctl.setPrinterQuality("compatible")
-    assert print_ctl._settings.value("printing/printerQuality") == "compatible"
+        print_ctl.setPrinterQuality(2)
+    assert print_ctl._settings.value("printing/printerQuality") == 2
+    assert print_ctl.printerQuality() == 2
     assert print_ctl._printer_output_scale() == 0.5
     compatible_pdf = tmp_path / "kompatibilis-fel-felbontasu-nyomat.pdf"
     assert print_ctl.renderPrintPreviewPdf(
@@ -314,14 +335,15 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     if quality_high.isVisible():
         _kattints(options, qt_app, quality_high)
     else:
-        print_ctl.setPrinterQuality("highQuality")
-    assert print_ctl._settings.value("printing/printerQuality") == "highQuality"
+        print_ctl.setPrinterQuality(3)
+    assert print_ctl._settings.value("printing/printerQuality") == 3
+    assert print_ctl.printerQuality() == 3
     assert print_ctl._printer_output_scale() == 1.0
     high_pdf = tmp_path / "teljes-felbontasu-nyomat.pdf"
     assert print_ctl.renderPrintPreviewPdf(
         [0, 1], "fit", "auto", str(high_pdf)
     )
-    print_ctl.setPrinterQuality("compatible")
+    print_ctl.setPrinterQuality(2)
     assert print_ctl._printer_output_scale() == 0.5
     assert compatible_pdf.read_bytes() != high_pdf.read_bytes(), (
         "a fél- és teljes felbontású nyomtatás azonos PDF-et adott"
@@ -358,13 +380,44 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
         f"a gyorsgomb után a tényleges lapkiosztás nem változott: "
         f"{alap_lapok} → {uj_lapok}"
     )
-
     pdf = tmp_path / "beallitott-meret.pdf"
     assert print_ctl.renderPrintPreviewPdf([0, 1], "fit", "auto", str(pdf))
     assert pdf.is_file() and pdf.stat().st_size > 0
     lapok = len(re.findall(rb"/Type\s*/Page[^s]", pdf.read_bytes()))
     assert lapok == uj_lapok, (
         f"a PDF {lapok} lapot tartalmaz, a nyomtató elrendező {uj_lapok}-et jelzett"
+    )
+
+
+@pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+def test_regi_harmas_general_radio_kattintasa_otmenti_az_eredeti_szamot(
+    qml_app, qt_app, magassag_elteres
+):
+    window, _controller, engine = qml_app
+    print_ctl = engine.rootContext().contextProperty("printController")
+    print_ctl._settings.setValue("printing/resamplerQuality", 3)
+
+    menu = _gyerek(window, "menuToolsOptions")
+    QMetaObject.invokeMethod(menu, "triggered", Qt.ConnectionType.DirectConnection)
+    assert _varj(
+        qt_app,
+        lambda: window.findChild(QObject, "optionsDialog") is not None
+        and window.findChild(QObject, "optionsDialog").property("visible"),
+    ), "a Beállítások ablaka nem nyílt meg"
+    options = _gyerek(window, "optionsDialog")
+    options.setProperty("height", options.height() + magassag_elteres)
+    _kattints(options, qt_app, _gyerek(options, "optionsTabPrinting"))
+    assert _varj(
+        qt_app,
+        lambda: _gyerek(options, "optionsTabStack").property("currentIndex") == 4,
+    ), "a Nyomtatás fül nem nyílt meg"
+
+    general = _gyerek(options, "optionsPrintResizeGeneralRadio")
+    assert print_ctl.printResamplerQuality() == 5
+    assert general.property("checked") is True
+    _kattints(options, qt_app, general)
+    assert print_ctl._settings.value("printing/resamplerQuality") == 5, (
+        "a régi 3-as General értékű rádióra kattintás nem mentette az eredeti 5-öt"
     )
 
 
