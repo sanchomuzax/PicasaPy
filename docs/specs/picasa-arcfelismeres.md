@@ -6157,3 +6157,59 @@ Az eredeti `contactmgr.fen` csak egy `<list name="contacts">` elemet ír le kije
 - N7: két személyes People Manager Ctrl/Shift-felvétel a `Delete Person` állapotával.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 49. szakasz: a `0x10001570` wrapper visszaellenőrzése, a `0.50` hasonlósági határ és N1/N3/N7 mérlegének pontosítása).
+
+## 50. #5184, helyi bizonyíték- és mérőadat-ellenőrzés (2026-10-23)
+
+Ez a kör a korábbi 48-49. szakasz N1/N3/N7 következtetéseit ellenőrizte újra a helyi bináris-index, a Picasa3.exe és Red.dll utasításai, a már rendelkezésre álló Ghidra-kimenet, a mérőadat-archívum, valamint a PicasaPy jelenlegi megvalósítása alapján. Az eredeti program futásidejű felvétele nem állt rendelkezésre.
+
+### 50.1 Bizonyíték és eredmény kérdésenként
+
+| Kérdés / állítás | Bizonyíték és forrás | Eredmény |
+|---|---|---|
+| N1: ad-e az eredeti további, ismeretlen arcot egy névvel rendelkező fotón? | A `0x0047b020` a munkatétel `[item+0x10]` bájtját vizsgálja (`0x0047b031`), nemnulla értéknél korán visszatér. A `0x004985e0` a forrásrekord `+0xc` dwordját a munkatétel `+0x14` helyére másolja. A flag névhez rendelése és a második arc ajánlása **NINCS MEG**. A mérőadat-archívumban **15** `.picasa.ini` egyikében sincs `faces=`, `[Contacts2]`, `]facealbum:` vagy `ffffffffffffffff` marker. | ⛔ Nyitott; ugyanazon kétarcú fotó eredeti, név előtti/utáni felvétele kell. |
+| N1: mit bizonyít a PicasaPy kihagyási szabálya? | A `src/picasapy/app/face_scan_controller.py` munkasor-építője (474-495. sor) és futó munkásának kapuja (1563-1567. sor) egyaránt kihagyja azt a fotót, amelyhez már azonosított arc tartozik. Ez a PicasaPy saját viselkedését rögzíti; az eredetiét nem. | Nincs bizonyított eltérés az eredetihez képest. |
+| N3: mi az eredeti pontos felismerési aránya, belső küszöbe és bemeneti mérete? | A `0x100057c0` Red.dll-függvény a virtuális `+0x40` hívások pontszámai közül a maximumot írja a kimeneti tömbbe; a közvetlen `0x10001570` hívó csak státuszt vizsgál. A callback tényleges célja, a belső detektorküszöb, a bemeneti méret és az azonos címkézett adaton mért arány **NINCS MEG**. A feladatban megadott PicasaPy-viszonyítás 960 px / 0.9 YuNet-beállítás; az eredeti megfelelői nem állapíthatók meg ebből. | ⛔ Nyitott; páros, címkézett mérés és a Red belső útjának feltárása kell. |
+| N3: mire vonatkozik a bináris `0.50`? | A `0x0048aab0` beállító a `FRRecommendIncludeLimit` alapértékét 50-re teszi, majd a `0xcf3a08` helyen tárolt `100.0` értékkel osztja; a `0x0048e1f0` ugyanezt a mezőt használja a Red-pontszámmal való összevetésben. A `0x006cde50` vtable-slot a Red státuszát alakítja logikai eredménnyé. | A `0.50` pontos, binárisból származó ajánlás-befogadási határ, nem a Red belső detektorküszöbe. |
+| N7: egy vagy több személy jelölhető ki a People Managerben? | A `contactmgr.fen` 10-13. sora nem deklarál kijelölési módot. A `0x007b9630` aktuális indexet tárol, a `0x007ba820` az indexelt sort használja a törléshez; ezek nem döntik el a Ctrl/Shift-működést. A helyi mérőadatban nem találtam People Manager-felvételt. | ⛔ Nyitott; két személyes kattintás/Ctrl-kattintás/Shift-kattintás felvétel kell. |
+| N4/N5/N6/N8 | Korábbi, hivatkozott mérések: N4 `job-187`; N5 `job-222..226`; N6 `job-222/224` és #5391; N8 `job-186`, 24. kép. | ✅ Lezárt a 36.3, 37.10-37.11 és 48-49. szakasz szerint. |
+
+Az archívum-leltár **900** JPG-t, **15** INI-t és **1** PNG-t mutatott. A PNG pontos mérete **358×121** pixel; képe magyar PicasaPy-exportablakot mutat **6** képpel és **1** exporthibával, így nem eredeti Picasa-felvétel, és nem használható N7 bizonyítékaként. A 15 INI markerellenőrzése nem ad személy-/arccímkét; a képek tartalmáról vagy eredeti felismerési eredményéről nem következtettem. Minden fenti darabszám és képméret forrása: `mérés (meroadat.tar leltára és a kibontott, ideiglenes fájlok tartalmi/képi vizsgálata)`.
+
+### 50.2 Független utak és bizonyítottság
+
+- **N3 `0.50`, A út:** a `0x0048aab0` alapérték-beállító, a `0xcf3a08` bináris double-konstans és a mezőbe írás adja a `50 / 100.0` értéket. **B út:** a külön `0x0048e1f0` fogyasztó ugyanazt a mezőt hasonlítja a Red-eredménnyel, a `0x006cde50` pedig a Red státusz-slotja. A két út egyezik abban, hogy ez az ajánlási ág határa. Ez a részállítás **megerősített**; nem zárja le N3 detektorküszöbét, méretét vagy arányát.
+- **N1:** a bináris jelzőút (`0x0047b020`, `0x004985e0`) és a mérőadat-archívum tartalmi vizsgálata két külön forrástípus, de egyik sem mutatja az eredeti futásidejű ajánlást. E két út nem ad igen/nem választ.
+- **N7:** a `contactmgr.fen` erőforrás és a bináris esemény-/törlési út egyezik az aktuális sor/index kezelésében, de egyik sem teszteli a Ctrl/Shift többes kijelölést.
+
+**Összesített bizonyítottsági fok: nyitott.** A pontos `0.50` ajánlási határ részállítása megerősített; N1, N3 felismerési aránya/belső detektorküszöbe/bemeneti mérete és N7 kijelölési modellje nyitott. Eredeti termékviselkedésbeli eltérés nincs bizonyítva, így fejlesztői teendő sem következik.
+
+### 50.3 Cáfoló kísérlet
+
+Megpróbáltam a hiányzó arcjelölés egyik lehetséges magyarázatát alátámasztani: a `faces=` rekordban a `,0` érték talán egy névtelen arc kódja. A `0x0092c450` validáló út hiányzó/üres/értéktelen azonosítón hibával tér vissza; a `0x0049d560` csak sikeres validálás után fűzi hozzá a nyolc dwordos arcrekordot. A két külön függvény utasításait külön ellenőrizve ez a `,0`-értelmezés nem áll meg. A cáfoló ellenőrzése ugyanazzal a mércével történt; eredménye csak ezt a hamis nyomot zárja ki, N1 eredeti futásidejű válaszát nem adja meg.
+
+N3-ra cáfoló feltevésként a `0.50` ajánlási határt és a PicasaPy `0.9` értékét próbáltam azonos jelentésű detektorküszöbnek tekinteni. A beállító és fogyasztó külön bináris útja, illetve a Red `0x10001570` státuszhívója ezt megcáfolja: a `0.50` a Picasa pontszám-alapú ajánlási ágáé. A cáfoló eredményét külön ellenőriztem a `0x0048e1f0` összehasonlítási és `0x0048aab0` beállítási útjával; a Red belső küszöbe ettől továbbra is **NINCS MEG**.
+
+### 50.4 A jegy „Kész, ha” pontjai és következő lépés
+
+| Jegypont | Állapot | Bizonyíték / szükséges lépés |
+|---|---|---|
+| N1: névvel rendelkező fotón további, ismeretlen arc | ⛔ Nyitott | A jelző kapuja ismert, jelentése nem; mérőadatban nincs kétarcú, név előtti/utáni eredeti kontroll. Készíts felvételt ugyanarról a kétarcú fotóról a név felvétele előtt és után, rögzítsd a Név nélküliek listáját és a `faces=` állapotot. |
+| N3: felismerési arány és küszöb a 960 px / 0.9 YuNet-viszonyításhoz képest | ⛔ Nyitott | A bináris `0.50` ajánlási határ nem detektorküszöb. Mérj azonos, címkézett készletet mindkét programban; rögzítsd a Red tényleges bemeneti méretét és belső küszöbét is. |
+| N4: keret és név alapértelmezett láthatósága | ✅ Lezárt | `mérés (job-187, 36.3)`. |
+| N5: személyszintű mellőzés útja és hatása | ✅ Lezárt | `mérés (job-222..226, 37.11)`: ilyen személyszintű funkció nincs; a mellőzés arcszintű. |
+| N6: személytörlés útja és hatása az arcokra | ✅ Lezárt | `mérés (job-222/224, 37.10)`; a javítás #5391-gyel kiment. |
+| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ Nyitott | A helyi lelet csak az aktuális sort igazolja. Rögzíts két névvel, majd első kattintás, Ctrl-kattintás és Shift-kattintás után a kijelölést és `Delete Person` állapotát; a törlést ne hagyd jóvá. |
+| N8: People Manager referencia-képernyőkép | ✅ Lezárt | `mérés (job-186, 24. kép, 36.3)`. |
+
+**Javasolt jegytörzs-bővítés:** „A spec 50. szakasza rögzíti a helyi keresztellenőrzést. A `0x0047b020`/`0x004985e0` jelzőút nem bizonyítja, hogy az eredeti kihagyja a névvel rendelkező képen maradó arcot; az archívum nem tartalmaz megfelelő kontrollt. A `0.50` a Picasa Red-pontszámú ajánlás-befogadási határa, nem a Red detektorküszöbe. N1, N3 (belső küszöb, méret, arány) és N7 nyitott; N4/N5/N6/N8 lezárt. Eredeti eltérés nincs bizonyítva, ezért fejlesztői feladat nem indokolt. Folytatás: N1 név előtti/utáni kétarcú eredeti felvétel; N3 azonos címkézett képkészlet és Red bemeneti paraméterei; N7 két személy Ctrl/Shift-kijelölésének felvétele.”
+
+**Fejlesztői lista:** nincs bizonyított eltérés, így nincs `Eredeti / nálunk / teendő` implementációs lista. **Új kutatási jegy:** nem javasolt; a nyitott felvételek a #5184 részei.
+
+**Nyitott:**
+- Ghidra-kör kell: 0x00484820: a `[vtable+0xd4]` kimeneti `d4` jelentése és kapcsolata a névvel rendelkező arccal.
+- Ghidra-kör kell: 0x100057c0: a dinamikus `vtable+0x40` callback tényleges célosztálya, a Red belső detektorküszöbe és a bemeneti képméret forrása [blokkoló].
+- N1: kétarcú, név előtti/utáni eredeti Picasa-felvétel `faces=` kontrollal.
+- N3: azonos címkézett képkészleten mért arány mindkét programban.
+- N7: két személyes People Manager Ctrl/Shift-felvétel a `Delete Person` állapotával.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 50. szakasz: N1/N3/N7 helyi bizonyíték- és mérőadat-auditja, a `0.50` jelentésének megerősítése és a lezáró felvételek rögzítése).
