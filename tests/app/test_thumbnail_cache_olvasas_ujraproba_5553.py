@@ -41,7 +41,7 @@ def test_atmeneti_olvasasi_hiba_utan_a_kep_betoltodik(qt_app, tmp_path, monkeypa
     provider, photos = _provider(tmp_path)
     olvas, hivasok = _hibas_olvaso(2)
     monkeypatch.setattr(provider_module, "read_image_bytes", olvas)
-    monkeypatch.setattr(provider_module.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(provider_module, "_alszik", lambda _s: None)
     jelzesek = []
     provider.brokenImageDetected.connect(jelzesek.append)
 
@@ -57,7 +57,7 @@ def test_tartos_cache_olvasasi_hiba_ujrageneral_es_nem_jelez_serultet(
 ):
     provider, photos = _provider(tmp_path)
     monkeypatch.setattr(provider_module, "read_image_bytes", lambda _p: None)
-    monkeypatch.setattr(provider_module.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(provider_module, "_alszik", lambda _s: None)
     jelzesek = []
     provider.brokenImageDetected.connect(jelzesek.append)
 
@@ -74,7 +74,7 @@ def test_a_cache_fajl_olvashatatlansaga_utan_ujrairja_a_belyegkepet(
     kesz = list((tmp_path / "thumbs").rglob("*.jpg"))
     assert len(kesz) == 1
     kesz[0].write_bytes(b"csonka")
-    monkeypatch.setattr(provider_module.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(provider_module, "_alszik", lambda _s: None)
     jelzesek = []
     provider.brokenImageDetected.connect(jelzesek.append)
 

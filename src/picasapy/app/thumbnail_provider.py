@@ -770,6 +770,8 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
 #: A frissen írt cache-fájl olvasásának újrapróbái (#5553): a Windows CI-n
 #: a fájl rövid ideig olvashatatlan lehet az írás után.
 _CACHE_OLVASAS_VARAKOZASOK = (0.05, 0.1, 0.2)
+# modulszintű fogantyú, hogy a teszt ne a globális time.sleep-et írja át (#1375)
+_alszik = time.sleep
 
 
 def _olvass_cache_kepet(thumb: Path) -> QImage:
@@ -782,5 +784,5 @@ def _olvass_cache_kepet(thumb: Path) -> QImage:
             if not image.isNull():
                 return image
         if varakozas is not None:
-            time.sleep(varakozas)
+            _alszik(varakozas)
     return QImage()
