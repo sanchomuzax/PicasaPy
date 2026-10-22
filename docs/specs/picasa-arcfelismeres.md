@@ -5237,3 +5237,77 @@ A `runtime/contactmgr.fen` `contacts` listája csak a nevet, szélességet, maga
 - N3: a belső vtable-cél, az elfogadási küszöb, a Red.dll tényleges bemeneti mérete és az eredeti felismerési arány **NINCS MEG**; Colabban rögzített mintán kell mérni a megfigyelt arányt és a javaslatokat. Belső küszöböt csak a nyers pontszám és a döntő ág megfigyelése zár le.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 43. szakasz; a 42.1 és 42.2 csak ⚠️ jelölést kapott).
+
+## 44. #5184, helyi Codex-kutatói kör: a Picasa javaslati küszöbe és a nyitott N-pontok (2026-10-22)
+
+**Hatókör.** A szakasz a 43. szakasz N1/N3 eredményét frissíti a `0x0048aab0`, `0x0048e1f0` és `0x006cde50` utasításainak célzott olvasatával, továbbá összefoglalja a jegy hét pontjának állapotát. Ghidra-dekompilálás és futó Colab/Picasa mérés ebben a munkamenetben nem volt elérhető. A `0x0048aab0` és `0x0048e1f0` diszasszemblálását, valamint a korlátos teljes `.text` pásztázást a helyi eszközökkel végeztem; a pásztázás első művelete a `paszta.memoria_kapu()` volt.
+
+### 44.1 N3: a `0.50` ismert Red-hasonlósági javaslati határ, nem a detektor küszöbe
+
+A `0x0048aab0` beállításbetöltő a `FRRecommendIncludeLimit` kulcs alapértelmezett értékét `50`-re állítja (`0x0048aba9`), majd a `0x00cf3a08` címen tárolt `100.0` double konstanssal osztja, és az eredményt a `this+0x34a4` mezőbe teszi (`0x0048ad74`, `0x0048ad8c`-`0x0048ad98`). Az így kapott alapérték pontosan **`0.50`**. Mivel ez Preferences-beállítás, ez az alapérték; a felhasználói beállítás által felülírt futásidejű értéket nem mértem.
+
+A különálló `0x0048e1f0` fogyasztó betölti ezt a mezőt, meghívja a `CNevenVision` `+0x2c` útját (`0x0048e2eb`-`0x0048e2f1`; a cél `0x006cde50`), majd a visszakapott Red-pontszámokat a mező értékével veti össze (`0x0048e330`-`0x0048e349`). A Red.dll `0x100057c0` útja a leírókhoz tartozó hasonlósági pontszámok maximumát adja vissza. Ezért a `0.50` a Red által visszaadott személy-/javaslati pontszám befogadási határa ezen a Picasa-ágon. Nem bizonyítja a Red arcdetektor belső confidence-küszöbét.
+
+A `0x006cde50` híd a leíróból származó mezőket továbbítja; a függvényben nincs `960` képpontos konstans vagy képméretező művelet. Ez csak erről a függvényről állít valamit, nem zárja ki, hogy a méretet egy korábbi hívó vagy a Red.dll másik rétege módosítja. Az eredeti Red-bemenet tényleges képpontmérete, a detektor belső küszöbe és a rögzített készleten mért felismerési arány továbbra is **NINCS MEG**. A PicasaPy jelenlegi `960`-as méretkorlátja és `0.9`-es YuNet confidence értéke a forrásban (`src/picasapy/faces/detector.py:49`, `:42`) ellenőrizhető; a Picasa `0.50`-es hasonlósági határa másik feldolgozási szakaszban működik, ezért a két küszöb közvetlen számbeli összevetése nem érvényes.
+
+| Állítás vagy érték | Forrás | Bizonyítottság |
+|---|---|---|
+| `FRRecommendIncludeLimit` alapértéke `50`; az osztó `100.0`; az eltárolt határ `0.50` | bináris (`0x00c81d04`, `0x0048aab0`, `0x0048aba9`, `0x00cf3a08`, `0x0048ad74`, `0x0048ad8c`) | megerősített |
+| A `this+0x34a4` értékkel a Picasa a Red-visszatérési pontszámokat hasonlítja össze | bináris (`0x0048e1f0`, `0x0048e2eb`, `0x0048e330`-`0x0048e349`) | megerősített |
+| A Red-visszatérési pontszám jelölőnként a mintákkal kapott hasonlóságok maximuma | bináris (`0x100057c0`; hívó: `0x10001570`) | megerősített a 43.2-ben dokumentált hatókörön belül |
+| Eredeti arcdetektor confidence-küszöbe, Red tényleges képbemeneti mérete és felismerési aránya | NINCS MEG | nyitott |
+| PicasaPy összehasonlító alapértékei: `960` px és `0.9` YuNet-score | mérés (forrásellenőrzés: `detector.py:49`, `:42`) | PicasaPy-forrásérték, nem eredeti Picasa-mérés |
+
+### 44.2 N1: a mezőíró és a névvel jelölt fotó további arca továbbra is nyitott
+
+A `0x0047b020` továbbra is a munkatétel `+0x10` bájtját olvassa, de a teljes `.text` indextől független, `paszta.py`-val végzett átvizsgálása nem kötötte egyik írásjelöltet sem ehhez az objektumhoz. A friss pásztázás **139** egybájtos, `+0x10` eltolású jelöltet adott az `esp`/`ebp` bázisú operandusalakok kizárásával. Ez a keresés nem fedi le a szélesebb írásokat és az összes lehetséges bázis- és álnévalakot; ezért nem bizonyítja, hogy nincs író. A mező írója, jelentése, valamint az, hogy az eredeti egy már megnevezett fotón felajánl-e másik, ismeretlen arcot, **NINCS MEG**.
+
+| Állítás vagy érték | Forrás | Bizonyítottság |
+|---|---|---|
+| A munkatétel `+0x10` bájtját a `0x0047b020` olvassa | bináris (`0x0047b031`, `0x0047b035`, `0x0047b049`) | feltételes a mező jelentésére nézve |
+| 139 egybájtos írásjelölt az `+0x10` eltolásra; `esp`/`ebp` bázis kizárva | mérés (`paszta.py`, teljes `.text`, `memoria_kapu()` után) | feltételes keresési eredmény; az író NINCS MEG |
+| Névvel jelölt fotón további ismeretlen arc megjelenik-e | NINCS MEG | nyitott |
+
+### 44.3 N7: a People Manager egy- vagy többes kijelölése felvételre vár
+
+A `runtime/contactmgr.fen` listaelem-leírása nem ad meg kijelölési módot. A `0x007b9630` egy korábban vizsgált útja egy kijelölt indexet olvas; ez önmagában nem zárja ki, hogy a vezérlő Ctrl/Shift-tel több elemet is kijelölhessen. A job-186 egyetlen személyt tartalmazó ablakfelvétele sem dönti el a modellt. N7 **NINCS MEG**; a döntő felvétel két külön személy mellett: első sor kattintása, Ctrl+kattintás a másodikra, majd Shift+kattintás a másodikra, mindhárom állapotról képernyőkép és a kapcsolódó gombok állapotának rögzítése.
+
+| Állítás vagy érték | Forrás | Bizonyítottság |
+|---|---|---|
+| A lista definíciójában nincs kijelölési mód megadva | mérés (az eredeti `runtime/contactmgr.fen` erőforrásának vizsgálata) | feltételes; a futásidejű viselkedést nem dönti el |
+| Egy kijelölt index olvasása a vizsgált kezelőútban | bináris (`0x007b9630`) | feltételes a teljes lista kijelölési modelljére nézve |
+| Ctrl-/Shift-többes kijelölés a People Managerben | NINCS MEG | nyitott |
+
+### 44.4 A két független út és a cáfoló próbák
+
+**N3, két út.** A út: a `0x0048aab0` beállító olvasata megadja az alapértéket (`50`), a `100.0` osztót és a `this+0x34a4` mezőbe írt `0.50`-et. B út: a külön `0x0048e1f0` fogyasztó ugyanezt a mezőt használja a `0x006cde50`/Red útból visszatérő pontszámok összevetéséhez. A két út egyezik: az eredetiben létezik egy pontos `0.50`-es Red-pontszám/javaslati határ. Ez nem a Red belső detektorküszöbének bizonyítéka.
+
+**N1, két út.** A út a `0x0047b020` közvetlen utasításolvasata; B út a teljes `.text` pásztázása. Egyeznek abban, hogy a mező olvasása megvan, de az íróhoz és a mező jelentéséhez egyik sem ad bizonyítékot. N1 viselkedéséről csak az eredeti futás mérése dönt.
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni azt az értelmezést, hogy a `0.50` ugyanazt méri, mint a PicasaPy YuNet `0.9` confidence küszöbe. A Red `0x100057c0` pontszámot állít elő, a Picasa külön `0x0048e1f0` ága pedig később hasonlítja ezt a pontszámot a `0.50`-hez; a `0x006cde50` híd utasításai sem tartalmaznak `960`-as méretbeállítást. A közvetlen egyenértékűség hipotézise nem áll meg: különböző feldolgozási szakaszok számairól van szó. Ez a cáfoló kör ugyanakkor nem azonosítja a Red belső confidence-küszöbét vagy a bemeneti méretet.
+
+**N1 cáfoló kísérlet.** Azt próbáltam igazolni, hogy a `+0x10` eltolás egyedileg elvezet a munkatétel írójához. A teljes szakaszban talált 139 jelölt ezt cáfolta; egyiket sem lehetett bizonyítékkal a munkatétel objektumához rendelni. Az eredményt ugyanazzal a korláttal ellenőriztem, amellyel kerestem: egy- vagy szélesebb írások, `esp`/`ebp`-alapú címzés és regiszter-álnevek maradhatnak ki, ezért a keresés nem bizonyít íróhiányt.
+
+**Összesített bizonyítottsági fok: nyitott.** A N3 `0.50`-es javaslati határa két független bináris út alapján megerősített részlelet. A jegy egésze nyitott, mert N1 viselkedése, N3 eredeti felismerési aránya/belső detektorküszöbe/bemeneti mérete és N7 kijelölési módja nincs megmérve.
+
+### 44.5 A jegy „Kész, ha” pontjai
+
+| Pont | Eredmény | Bizonyíték |
+|---|---|---|
+| N1: a névvel rendelkező fotón talál-e további ismeretlen arcot | ⛔ | NINCS MEG; eredeti Picasa-mérés kell két arccal, egy megnevezett arccal és név nélküli kontrollal. |
+| N3: eredeti felismerési arány és küszöb a PicasaPy `960` px / `0.9` beállításához képest | ⛔ | A Picasa Red-javaslati határa `0.50` (bináris: `0x0048aab0`, `0x0048e1f0`), de ez nem a YuNet confidence megfelelője; a Red belső detektorküszöbe, tényleges bemeneti mérete és mért aránya NINCS MEG. |
+| N4: alapból látszik-e a keret és név a megnevezett arcon | ✅ | Mérés (`job-187`): alapból nincs keret és név; az Emberek panel zárva. |
+| N5: személyszintű mellőzés útja és hatása | ✅ | Mérések (`job-222..226`): nincs személyszintű mellőzés a People Managerben/személyalbumban; a mellőzés arcszintű. |
+| N6: személytörlés útja és hatása az arcokra | ✅ | Mérések (`job-222..226`): a „Delete People Album” törli a `faces=` sorokat, a `[Contacts2]` sort megtartja, a Cancel az alapértelmezett; a javítás a #5391-gyel megvalósult. |
+| N7: a People Manager kijelölési modellje | ⛔ | NINCS MEG; két személyes Ctrl-/Shift-kijelölési felvétel kell. |
+| N8: referencia-képernyőkép a People Managerről | ✅ | Mérés (`job-186`, 24. kép): 631×351 px-es People ablak, személylista, adatmezők és gombok rögzítve. |
+
+**Fejlesztési eltérés:** a rendelkezésre álló bizonyíték nem igazol eltérést a PicasaPy és az eredeti között N1, N3 vagy N7 esetén. A `0.50` és `0.9` eltérő jelentése önmagában nem fejlesztési hiba; fejlesztői jegyet ezért nem javaslok.
+
+**Nyitott:** N1: a `+0x10` írója/jelentése és a név utáni további arctalálat; N3: a Red belső detektorküszöbe, képbemeneti mérete és a mért felismerési arány; N7: Ctrl-/Shift-kijelölés. A viselkedési és aránykérdésekhez az eredeti Picasa/Colab-felvétel a döntő; statikus eredményből nem becsülhetők.
+
+- Ghidra-kör kell: `0x0047b020`: melyik író állítja a bemeneti munkatétel `+0x10` állapotjelző bájtját, és mit jelent az állapot?
+- Ghidra-kör kell: `0x100057c0`: milyen típusú pontszámot ad a `[param_3+8]+0x74` objektum vtable `+0x40` célfüggvénye, és hol van a callbacktől különálló Red-arcdetektor elfogadási küszöbe? [blokkoló]
+- Ghidra-kör kell: `0x006cde50`: a Red.dll-nek átadott képleíró méretmezője honnan származik és milyen egységű; történik-e ezen az adapterúton képméretezés?
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 44. szakasz: a `0.50`-es javaslati határ és N1/N3/N7 állapota).
