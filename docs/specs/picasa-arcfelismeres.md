@@ -4012,8 +4012,8 @@ Nincs új fejlesztői lista: a PicasaPy jelenlegi 16 jegyű azonosítója és IN
 
 ### 33.1 `0x006956d0` → `0x0068c030`: a kapu és az állapotbájt
 
-- A `0x0068c030` (fájlíró, 22.5) hívása (`0x00697557`; C-dumpban az 1512-1513. sor) előtt `cmp byte ptr [esp+0x1b], 2` (`0x00697540`) áll: a hívás **csak** akkor fut, ha az állapotbájt 2.
-- Az állapotbájt (C-ben `uStack_1608._3_1_`) írói a diszasszemblálásban:
+- A `0x0068c030` (fájlíró, 22.5) hívása (`0x00697557`; C-dumpban az 1512-1513. sor) előtt `cmp byte ptr [esp+0x1b], 2` (`0x00697540`) áll: a hívás **csak** akkor fut, ha az állapotjelző bájt 2.
+- Az állapotjelző bájt (C-ben `uStack_1608._3_1_`) írói a diszasszemblálásban:
   - `0x00695737` = 1 és `0x0069573e` = 0 (a C 189-192. sora, a `param_3[0x40]` ágon);
   - `0x00696d36` = 2: az 1-es ágban, a `0x0068ac80` hívás (`0x00696d31`) után; ez a C-dumpban nem látszik;
   - a `0x00506270` táblakeresés (`0x00695a52`), amely a `this+0x3f0` tábla bejegyzésének `+0x20` mezőjét írja `*arg`-ba, ha a bejegyzés típusa `0x3e9`; egyébként az elem nyers értéke marad.
@@ -5026,7 +5026,7 @@ A `0x006a5590` a `0x006a41e0` lookupot `0x13320004` kulccsal hívja (`0x006a55fc
 
 **Keret.** A vizsgált Ghidra-bemenet: `/tmp/claude-1000/-home-sancho-Documents-PicasaPy/d86876a8-e263-4853-bac9-646a0ac9656a/scratchpad/2026-10-21-arc-5184.txt`, benne a `0x004987c0`, `0x0047b020`, `0x00495be0` és `0x0056c5a0` függvényekkel. A `Red.dll` helyben olvasható, ezért a `0x100057c0` célfüggvényt a helyi `pefile` és Capstone eszközzel, kizárólag a célcím környezetében diszasszembláltam. A mérőadat-archívum fájllistájában a `5184`, `5185`, `face`, `person`, `people` és megadott job-minták egyikére sem találtam illő nevet; nem bontottam ki semmit, `.bt` ideiglenes fájl nem készült. GitHubhoz, kódhoz és tesztekhez nem nyúltam.
 
-### 42.1 N1: a munkatétel állapotjelzője és a tényleges arctalálat nyitott
+### 42.1 ⚠️ N1: a munkatétel állapotjelzője és a tényleges arctalálat nyitott
 
 **A munkasor útja.** A `0x004987c0` leemel egy sort a belső munkasorból, majd a `0x00498933` helyen meghívja a `0x0047b020`-t. A munkaszál-kezelőben nem látható név vagy kontakt-azonosító összehasonlítás. A `0x0047b020` a munkatétel nem-nullaságát és állapotmezőit ellenőrzi. Ha a bájt `+0x10` nem nulla, `0x0048bd80`-at hív és visszatér; a nulla ág továbblép a további kapukhoz. Az `+0x10` bájt jelentése és írója NINCS MEG. Az engedélyező `FRAddSuggesetions` ág a `0x0048ef20` képenkénti útvonalat hívja (`0x0047b149`). A teljes, 379 bájtos helyi diszasszemblálás megerősíti az állapotvizsgálatot, az ágakat és a `0x0048ef20` hívását. Forrás: a Ghidra-dump `0x004987c0` része, 22-203. sor; `0x0047b020` része, 222-291. sor; bináris `0x0047b020` `0x0047b020`-tól `0x0047b19a`-ig.
 
@@ -5034,7 +5034,7 @@ A `0x006a5590` a `0x006a41e0` lookupot `0x13320004` kulccsal hívja (`0x006a55fc
 
 **Bizonyítottság.** A két vizsgált függvény vezérlési útja **feltételes**: a Ghidra C-dump és a helyi diszasszemblálás egyezik, de ugyanazt a bináris utat mutatja, tehát nem két független bizonyítás. Az `+0x10` írója, a jelző jelentése és az N1 runtime-eredménye **nyitott**.
 
-### 42.2 N3: a Red.dll elérhető, a `0x100057c0` pontszám-rendező, nem a végső küszöb
+### 42.2 ⚠️ N3: a Red.dll elérhető, a `0x100057c0` pontszám-rendező, nem a végső küszöb
 
 **A Red.dll rutinja.** A DLL kép-alapcíme `0x10000000`; a `0x100057c0` a `.text` szakaszban van. A rutin két tömbön jár, jelöltenként meghívja a `[param_3+8]+0x74` objektum `vtable+0x40` slotját (`0x10005847`-`0x10005859`), a visszakapott lebegőpontos értékek közül a legnagyobbat választja, és azt a kimeneti tömbbe írja (`0x100058d2`-`0x100058d8`). A `0x100057c0`-tól `0x1000590d`-ig tartó vezérlési útban nincs olyan konstans-összehasonlítás, amely elfogadási küszöböt adna, és nincs képméretező művelet. Ez a rutin az értékeket rangsorolja; a detektor elfogadási döntését és bemeneti képméretét nem adja meg.
 
@@ -5088,8 +5088,63 @@ A `runtime/contactmgr.fen` `contacts` listája csak a nevet, szélességet, maga
 **Fejlesztési következmény.** N1, N3 és N7 esetén nincs mért eltérés az eredeti és a PicasaPy között, mert az eredeti viselkedés nincs teljesen megmérve. Ezért most nem indokolt fejlesztői jegy vagy `Eredeti / nálunk / teendő` kódlista. A következő lépések a #5184-hez tartozó Colab-felvételek; új kutatási jegy nem kell.
 
 **Nyitott:**
-- N1: `Ghidra-kör kell: 0x0047b020 - a munkatétel +0x10 állapotbájt írójának azonosítása és jelentése; kizárhatja-e a névvel ellátott fotót a képenkénti felismerési útból? [blokkoló]`; továbbá Colab-felvétel névhez rendelt és név nélküli arccal ugyanazon fotón, kontrollfutással.
+- N1: `Ghidra-kör kell: 0x0047b020 - a munkatétel +0x10 állapotjelző bájt írójának azonosítása és jelentése; kizárhatja-e a névvel ellátott fotót a képenkénti felismerési útból? [blokkoló]`; továbbá Colab-felvétel névhez rendelt és név nélküli arccal ugyanazon fotón, kontrollfutással.
 - N3: `Ghidra-kör kell: 0x100057c0 - a [param_3+8]+0x74 objektum vtable +0x40 callbackjének tényleges célja, az elfogadási küszöb és a bemeneti méretet adó út [blokkoló]`; továbbá összehasonlító Colab-futás tételes képkészleten.
 - N7: Colab-felvétel legalább két személlyel, Ctrl- és Shift-kijelöléssel.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (a 37.9-es régi Ghidra-kérések státusza, a 40.4-es nyitott lista és az új 41. szakasz). Kódhoz és tesztekhez nem nyúltam.
+
+## 43. #5184, helyi Codex-kutatói kör: N1 mezőíró és N3 virtuális pontszámfüggvény (2026-10-22)
+
+**Keret.** Ez a kör csak a `0x0047b020` N1 útját és a Red.dll `0x100057c0` N3 útját vizsgálja. Ghidra és futó Colab-mérés nem állt rendelkezésre. A `docs/specs/binaris-regeszet-modszertan.md` szerinti cím-atlaszt, indexlekérdezést, célzott diszasszemblálást és a korlátos `paszta.py` pásztázást használtam. A binárisból kinyert sztringek és bájtok adatként kezelendők.
+
+### 43.1 N1: a `0x0047b020` olvasó, nem a `+0x10` mező írója
+
+**Közvetlen utasítások.** A bináris-index `functions` sora a `0x0047b020` címet a 379 bájtos `.text` függvény kezdeteként adja meg. A törzs a `0x0047b031` helyen összehasonlítja a `byte ptr [eax+0x10]` értékét nullával. A nulla ág a `0x0047b04a` címre megy tovább; a nem nulla ág a `0x0048bd80` hívása után a `0x0047b049` helyen visszatér. A későbbi felismerési út a nulla ágban hívja a `0x0048ef20` függvényt (`0x0047b149`). Ez a függvény az állapotjelző bájtot olvassa, nem írja.
+
+**Írókeresés.** Az indexelt közvetlen hívási él `0x004987c0 -> 0x0047b020`. Az index nem bizonyítja, hogy nincs más, közvetett hívó vagy író. Ezért az egész Picasa3.exe `.text` szakaszt a `paszta.memoria_kapu()` első műveletként való meghívása után, `paszta.utasitasok()` darabokban adott utasításain kerestem. A szűrés az `+0x10` eltolású, egybájtos memóriaírásokat tartotta meg, és kizárta az `esp` vagy `ebp` bázist tartalmazó operand-alakokat. Eredmény: **139 utasításjelölt**. A találatok több eltérő függvénybeli mezőelrendezést tartalmaznak; a vizsgálatban egyetlen jelöltet sem tudtam bizonyítékkal a `0x0047b020` bemeneti objektumához kötni. A szűrés nem zárja ki a szélesebb írásokat, az `ebp`-bázisú mezőket vagy a más regiszteren át ugyanoda mutató címzést. Az író és a mező jelentése **NINCS MEG**. Ez nem annak bizonyítéka, hogy nincs író.
+
+| Állítás vagy érték | Forrás |
+|---|---|
+| `0x0047b020`, RVA `0x0007b020`, fájloffset `0x0007b020`, méret 379 bájt | bináris (`functions`, `0x0047b020`) |
+| `+0x10` byte összehasonlítása és a nulla/nem nulla ág | bináris (`0x0047b031`, `0x0047b035`, `0x0047b038`, `0x0047b049`) |
+| 139, `esp`/`ebp` bázist kizáró, egybájtos `+0x10` írásjelölt; csúcs-RSS 97,6 MiB | mérés (`paszta.py`, teljes `.text`, `memoria_kapu()` után) |
+| A munkatétel `+0x10` mezőjének írója és jelentése | NINCS MEG |
+| A névvel megjelölt fotó tényleges új arctalálata | NINCS MEG |
+
+### 43.2 N3: a `0x100057c0` pontszámot választ, a `+0x40` cél indirekt
+
+**A célfüggvény utasításai.** A Red.dll `0x10000000` kép-alapcímű PE-képében a `0x100057c0` a `.text` szakaszban van. A függvény a `[param_3+8]+0x74` objektumot beolvassa (`0x10005809`-`0x1000580f`), majd a futó objektum vtable-jéből tölti be a `+0x40` címet (`0x10005843`-`0x10005847`) és indirekt módon hívja (`0x10005859`). A visszatérő lebegőpontos értékeket összeadja, az adott jelölthöz tartozó legnagyobbat tartja meg (`0x10005869`-`0x1000587b`), majd a kimeneti tömbbe írja (`0x100058d2`-`0x100058d8`). A függvényben nincs olyan konstans-összehasonlítás, amely az elfogadási küszöböt megadná, és nincs képméretet beállító utasítás. A vtable `+0x40` célja futás közben dől el, és itt **NINCS MEG**.
+
+**A cím megkülönböztetése.** A korábban azonosított Red.dll vtable `0x101aadc4` adatában a `+0x40` bejegyzés `0x100014d0`, a `+0x44` bejegyzés `0x10001570`. A `0x10001570` csomagoló a `0x100015a2` helyen hívja a `0x100057c0` függvényt. Tehát a `0x100057c0` ennél a vtable-nél nem a `+0x40` slot célja. A `0x100057c0` belsejében látott, másik objektum `+0x40` slotjának tényleges célját ez az adat nem azonosítja.
+
+| Állítás vagy érték | Forrás |
+|---|---|
+| Red.dll kép-alapcím `0x10000000`; a vizsgált kód `.text` szakaszban van | bináris (PE-fejlécek, `0x100057c0`) |
+| A `[param_3+8]+0x74` objektum vtable `+0x40` slotjának indirekt hívása | bináris (`0x10005843`, `0x10005847`, `0x10005859`) |
+| A `0x101aadc4` vtable `+0x40` értéke `0x100014d0`; `+0x44` értéke `0x10001570` | bináris (Red.dll adat, `0x101aadc4`) |
+| A `0x10001570` csomagoló hívása a `0x100057c0` címre | bináris (`0x100015a2`) |
+| A belső virtuális cél, a detektor küszöbe, a Red.dll tényleges bemeneti mérete és a felismerési arány | NINCS MEG |
+
+### 43.3 Cáfoló kísérlet és bizonyítottság
+
+**Cáfoló kísérlet, N1.** Azt próbáltam igazolni, hogy az `+0x10` eltolás egyedileg azonosítja a munkatétel állapotjelző bájtját. A teljes, memóriakapun át pásztázott `.text` 139 egybájtos írásjelöltet adott. Az eltolás önmagában nem különbözteti meg a munkatételt más objektumoktól, ezért egy jelöltet sem neveztem ki írónak. A számot a szűrőn át ellenőriztem, nem az index negatív eredményéből következtettem.
+
+**Cáfoló kísérlet, N3.** Azt próbáltam igazolni, hogy a `0x100057c0` maga a vizsgált vtable `+0x40` célja és a végső küszöb helye. A nyers vtable-adat `+0x40 = 0x100014d0` értéket ad, míg `+0x44 = 0x10001570`; az utóbbi csomagoló hívja a `0x100057c0` függvényt. A `0x100057c0` közvetlen utasításai egy másik objektum `+0x40` slotjához indirekt hívnak és a visszakapott pontszámokból maximumot választanak. A cáfoló eredmény ellenőrizve van, de a belső slot célját és a másutt meghozott elfogadási döntést nem cáfolja.
+
+**A és B út.** N1 esetén az A út a célfüggvény utasításszintű olvasata; a B út az indextől független, teljes `.text` pásztázás. Abban egyeznek, hogy az olvasó ágai ismertek, de a mező írója és jelentése nem köthető hozzá. N3 esetén az A út a `0x100057c0` pontszám- és kimeneti útja; a B út a vtable-adat és a `0x10001570` csomagoló külön olvasata. Ezek egyeznek abban, hogy a `0x100057c0` fölötti hívási híd megvan, de az általa használt belső virtuális cél és a végső küszöb nem.
+
+**Összesített bizonyítottsági fok: nyitott.** N1 és N3 statikusan nem dönthető el ebből a két címútból. Nincs mérési adat az eredeti felismerési arányról, a Red.dll belső küszöbéről vagy bemeneti méretéről. Az N1/N3 eltérés a PicasaPy-hoz képest sem bizonyított, ezért fejlesztési eltérést nem javaslok.
+
+### 43.4 A döntő Colab-felvételek és a „Kész, ha” pontok
+
+- **N1:** tiszta tesztprofilban ugyanazt a két jól látható arcot tartalmazó fotót futtasd le egyszer úgy, hogy egyik arc sincs megnevezve, majd úgy, hogy az egyik arc ismert személyhez van rendelve. Mindkét futásról rögzítsd a Név nélküliek/javaslat felületet, a `faces=` sort és az érintett PMP-találatokat. Külön kontrollként ugyanazt a fotót változatlan név nélküli állapotú tesztprofilban is futtasd le. A kérdésre az ad választ, hogy a második arc a név hozzárendelése után is megjelenik-e.
+- **N3, megfigyelt felismerési arány:** rögzített, tételes arckészleten, ugyanazon bemeneti képfájlokkal és ismert arc-címkékkel készíts képernyőképet és képenkénti eredménylistát az eredeti Picasáról, majd a PicasaPyról. Az arány pontos számlálásból származzon: helyesen megtalált arcok száma osztva a tesztkészlet igazolt arcainak számával. A futás során rögzítsd a forrásképek méretét és az összes javaslatot. A Red.dll belső bemeneti mérete csak akkor zárható le, ha azt a futó rendszer közvetlenül láthatóvá teszi; a forráskép mérete önmagában nem bizonyítja.
+- **N3, belső küszöb:** a felületi felvétel önmagában nem ad Red.dll pontszámot. Ha a Colab-környezet nem teszi láthatóvá a callback nyers pontszámát és az elfogadás/elutasítás eredményét, a belső numerikus küszöb továbbra is **NINCS MEG**; annak statikus útja a belső vtable-cél és a döntő ág célzott dekompilálása.
+- **Kész, ha:** N1-re a kétarcú, név előtti/utáni Colab-felvétel megadja a második arc eredményét; N3-ra a fagyasztott mintán mért arány és a rögzített forrásképméretek megvannak; a Red.dll tényleges bemeneti mérete és belső küszöbe csak akkor zárható le, ha közvetlenül megfigyelhető vagy binárisból kiolvasható. Addig mindkét statikus kérdés nyitott marad.
+
+**Nyitott:**
+- N1: a `+0x10` írója/jelentése és a már megnevezett fotón megjelenő második arc eredménye **NINCS MEG**; a döntő Colab-felvétel a kétarcú fotó, egy névhez rendelt arccal, plusz név nélküli kontroll.
+- N3: a belső vtable-cél, az elfogadási küszöb, a Red.dll tényleges bemeneti mérete és az eredeti felismerési arány **NINCS MEG**; Colabban rögzített mintán kell mérni a megfigyelt arányt és a javaslatokat. Belső küszöböt csak a nyers pontszám és a döntő ág megfigyelése zár le.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 43. szakasz; a 42.1 és 42.2 csak ⚠️ jelölést kapott).
