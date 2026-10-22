@@ -92,17 +92,28 @@ def _mappat_kivalaszt(window, controller, qt_app, path: Path) -> None:
     )
 
 
-def _elso_kep_kijelolese(
-    window, controller, qt_app, source: Path, rows: list[int] | None = None
-) -> Path:
+def _kep_sora(controller, kep: Path) -> int:
+    # #5556: a rács a könyvtár összes képét mutatja, a sorrendjük gépfüggő,
+    # ezért a sort az útvonal alapján keressük.
+    utvonalak = _racs_utvonalai(controller)
+    assert kep in utvonalak, f"a kép nincs a rácsban: {kep}"
+    return utvonalak.index(kep)
+
+
+def _kepek_kijelolese(
+    window, controller, qt_app, source: Path, nevek: tuple[str, ...]
+) -> list[int]:
     _mappat_kivalaszt(window, controller, qt_app, source)
-    kep = source / "atvitt-a.jpg"
-    assert Path(controller.photos.filePathAt(0)) == kep
-    kijelolt_sorok = [0] if rows is None else rows
+    kijelolt_sorok = sorted(_kep_sora(controller, source / nev) for nev in nevek)
     window.setProperty("selectedIndexes", kijelolt_sorok)
     qt_app.processEvents()
     assert list(window.property("selectedIndexes")) == kijelolt_sorok
-    return kep
+    return kijelolt_sorok
+
+
+def _elso_kep_kijelolese(window, controller, qt_app, source: Path) -> Path:
+    _kepek_kijelolese(window, controller, qt_app, source, ("atvitt-a.jpg",))
+    return source / "atvitt-a.jpg"
 
 
 def _racs_utvonalai(controller) -> list[Path]:
@@ -142,7 +153,10 @@ class TestMappasorraHuzas:
         qt_app.processEvents()
         source = Path(controller.currentFolder) / "forras"
         target = source.parent / "cel"
-        _elso_kep_kijelolese(window, controller, qt_app, source, [0, 1])
+        kijelolt_sorok = _kepek_kijelolese(
+            window, controller, qt_app, source, ("atvitt-a.jpg", "atvitt-b.jpg")
+        )
+        huzott_sor = kijelolt_sorok[0]
         source_photos = [source / "atvitt-a.jpg", source / "atvitt-b.jpg"]
         target_photos = [target / path.name for path in source_photos]
         revision = controller.photos.revision
@@ -151,13 +165,13 @@ class TestMappasorraHuzas:
             item
             for item in _latvanyelemek(window.contentItem())
             if item.objectName() == "thumbMouseArea"
-            and int(item.parentItem().property("index")) == 0
+            and int(item.parentItem().property("index")) == huzott_sor
         )
         drag_proxy = next(
             item
             for item in _latvanyelemek(window.contentItem())
             if item.objectName() == "thumbDragProxy"
-            and int(item.property("photoIndex")) == 0
+            and int(item.property("photoIndex")) == huzott_sor
         )
         drop_area = next(
             item
@@ -197,7 +211,7 @@ class TestMappasorraHuzas:
         if hasattr(row_payload, "toVariant"):
             row_payload = row_payload.toVariant()
         photo_rows = [int(row) for row in row_payload]
-        assert photo_rows == [0, 1]
+        assert sorted(photo_rows) == kijelolt_sorok
         assert drop_area.property("enabled") is True
         QTest.mouseRelease(window, Qt.MouseButton.LeftButton, pos=end)
 
