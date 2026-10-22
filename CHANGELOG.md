@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.184] - 2026-10-22
+
+- A Névcímkék csoportküszöb-csúszkája alapból 85-ön áll, a meglévő csoportosítási küszöb megőrzésével (#5512).
+
 ## [0.9.183] - 2026-10-22
 
 - A változásnapló őre ellenőrzi a darabok sorformáját, és a verzióemelő hibás darabnál nem emeli a verziót (#5507).
