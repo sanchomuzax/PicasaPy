@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.184] - 2026-10-22
+
+- A Névcímkék csoportküszöb-csúszkája alapból 85-ön áll, a meglévő csoportosítási küszöb megőrzésével (#5512).
+
+## [0.9.183] - 2026-10-22
+
+- A változásnapló őre ellenőrzi a darabok sorformáját, és a verzióemelő hibás darabnál nem emeli a verziót (#5507).
+
+## [0.9.182] - 2026-10-22
+
+- A név szerinti rendezés ékezeteknél és hosszú számsorozatoknál a Picasa bájtszintű kulcsát követi (#5504).
+
 ## [0.9.181] - 2026-10-21
 
 - Metrikus területi beállításnál a nyomtatási gyorsválasztók alapértéke az eredeti Picasáé (10x15, 13x18, 15x20, 20x25 cm és Indexképek), az Opciók méretlistájában pedig nincs Teljes oldal tétel (#5492).

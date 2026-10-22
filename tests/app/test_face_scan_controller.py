@@ -729,6 +729,61 @@ class _FaceSettings:
 
 
 class TestNameTagOptions:
+    def test_cluster_step_migrates_legacy_setting_to_the_new_scale(self, qt_app, tmp_path):
+        from picasapy.faces.clustering import cluster_step_to_threshold, step_to_threshold
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        settings = _FaceSettings({"faces/clusterStep": 70})
+        ctl = _make_controller(qt_app, tmp_path, root, settings=settings)
+
+        assert ctl.CLUSTER_STEP_KEY == "faces/clusterStep2"
+        assert ctl.clusterThreshold() == 85
+        assert cluster_step_to_threshold(ctl.clusterThreshold()) == step_to_threshold(70)
+        assert settings.values[ctl.CLUSTER_STEP_KEY] == 85
+        assert "faces/clusterStep" in settings.values
+        settings.values["faces/clusterStep"] = 95
+        assert ctl.clusterThreshold() == 85
+
+    def test_cluster_step_migration_rounds_legacy_threshold_to_nearest_step(
+        self, qt_app, tmp_path
+    ):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        settings = _FaceSettings({"faces/clusterStep": 85})
+        ctl = _make_controller(qt_app, tmp_path, root, settings=settings)
+
+        assert ctl.clusterThreshold() == 90
+        assert settings.values[ctl.CLUSTER_STEP_KEY] == 90
+
+    def test_cluster_step_v2_setting_is_used_for_grouping_only(self, qt_app, tmp_path, monkeypatch):
+        import picasapy.app.face_scan_controller as controller_module
+        from picasapy.faces.clustering import cluster_step_to_threshold, step_to_threshold
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        settings = _FaceSettings(
+            {
+                "faces/suggestionsEnabled": False,
+                "faces/suggestStep": 90,
+                "faces/clusterStep2": 75,
+            }
+        )
+        ctl = _make_controller(qt_app, tmp_path, root, settings=settings)
+        kapott = {}
+
+        def csoportosits(_conn, **kwargs):
+            kapott.update(kwargs)
+            return 0
+
+        monkeypatch.setattr(controller_module, "group_unnamed_faces", csoportosits)
+        megjott, _ = _run(ctl.embeddingFinished, ctl.computeEmbeddings)
+
+        assert megjott is True
+        assert kapott["suggest_threshold"] == step_to_threshold(90)
+        assert kapott["cluster_threshold"] == cluster_step_to_threshold(75)
+        assert ctl.waitForBackgroundWorkers(5.0)
+
     def test_options_preferences_read_defaults_and_persist_changes(
         self, qt_app, tmp_path
     ):
@@ -739,7 +794,7 @@ class TestNameTagOptions:
 
         assert ctl.suggestionsEnabled() is True
         assert ctl.suggestionThreshold() == 85
-        assert ctl.clusterThreshold() == 70
+        assert ctl.clusterThreshold() == 85
         assert ctl.persistFaceToFile() is True
 
         ctl.setSuggestionsEnabled(False)
@@ -760,7 +815,7 @@ class TestNameTagOptions:
         self, qt_app, tmp_path, monkeypatch
     ):
         import picasapy.app.face_scan_controller as controller_module
-        from picasapy.faces.clustering import step_to_threshold
+        from picasapy.faces.clustering import cluster_step_to_threshold, step_to_threshold
 
         root = tmp_path / "kepek"
         root.mkdir()
@@ -768,7 +823,7 @@ class TestNameTagOptions:
             {
                 "faces/suggestionsEnabled": False,
                 "faces/suggestStep": 90,
-                "faces/clusterStep": 75,
+                "faces/clusterStep2": 75,
             }
         )
         ctl = _make_controller(qt_app, tmp_path, root, settings=settings)
@@ -785,7 +840,7 @@ class TestNameTagOptions:
         assert megjott is True
         assert kapott == {
             "suggest_threshold": step_to_threshold(90),
-            "cluster_threshold": step_to_threshold(75),
+            "cluster_threshold": cluster_step_to_threshold(75),
             "named_centroids": {},
         }
         assert ctl.waitForBackgroundWorkers(5.0)

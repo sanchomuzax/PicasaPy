@@ -46,8 +46,9 @@ A párbeszédben beállítható:
   A lista alatt hat **gyorsgomb** áll: öt tetszőleges méret és a
   **FullPage**. Az ötöt a **Beállítások ▸ Nyomtatás** fülön te
   választod meg ([Beállítások](beallitasok.md)); alapból metrikus
-  környezetben 5 × 8, 9 × 13, 10 × 15, 13 × 18 és 20 × 25 cm, hüvelykesben
-  Tárcaméret, 3,5 × 5, 4 × 6, 5 × 7 és 8 × 10.
+  környezetben 10 × 15, 13 × 18, 15 × 20 és 20 × 25 cm, valamint az
+  **Indexképek**, hüvelykesben Tárcaméret, 3,5 × 5, 4 × 6, 5 × 7 és
+  8 × 10.
 
   A **FullPage** felirata magyar felületen is angolul áll: az eredeti
   Picasa is így írta, és ezen nem változtatunk.
