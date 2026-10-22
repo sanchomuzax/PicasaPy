@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.support.qml_blokk import blokk_horgonyra
+
 _QML = (
     Path(__file__).resolve().parents[2]
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
@@ -41,7 +43,7 @@ NYUGDIJAZOTT = (
     # külső Google-integrációk, amiknek a Picasa-oldali kapcsolata megszűnt
     "Publish to Blogger...",
     "Order Prints...",
-    "Import From Google Photos...",
+    "Import from Google Photos...",
     # #4640: Google-szolgáltatásra épült, Wine alatt a Picasa maga tiltotta le
     "Check for Updates",
 )
@@ -79,7 +81,7 @@ def _tetel_sora(forras: str, felirat: str) -> str:
     )
     talalat = minta.findall(forras)
     assert len(talalat) == 1, f"{felirat!r}: {len(talalat)} találat"
-    return talalat[0]
+    return blokk_horgonyra(forras, f'qsTr("{felirat}")')
 
 
 class TestANyugdijazottak:

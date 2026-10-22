@@ -49,7 +49,7 @@ def _source() -> str:
 # (angol felirat, van-e hozzá az auditban gyorsbillentyű-felirat a menüben)
 HIANYZOTT_TETELEK = [
     # Fájl
-    ("Import From Google Photos...", None),
+    ("Import from Google Photos...", None),
     # #4330: a külső megnyitás elkészült; a menüfelirat és az élő
     # `Ctrl+Shift+O` ugyanabban a változtatásban került vissza.
     ("Open File(s) in an Editor", "Ctrl+Shift+O"),

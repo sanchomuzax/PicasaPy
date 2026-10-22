@@ -742,8 +742,13 @@ MenuBar {
             text: qsTr("&Import From...") + "\tCtrl+M"
             onTriggered: bar.importSourceRequested()
         }
-        // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
-        PicasaMenuItem { text: qsTr("Import From Google Photos..."); placeholder: false; retired: true }  // #638
+        // #638/#5570: nyugdíjazott Google Fotók-import; az eredeti „from” kisbetűs.
+        PicasaMenuItem {
+            objectName: "menuFileImportFromGooglePhotos"
+            text: qsTr("Import from Google Photos...")
+            placeholder: false
+            retired: true
+        }  // #5570
         MenuSeparator {}
         // #4330: a kijelölt fájlokat a rendszer alapértelmezett
         // alkalmazásában nyitja meg; a billentyű a Main.qml-ben ugyanide fut.
@@ -2412,8 +2417,32 @@ MenuBar {
             onTriggered: bar.adjustTimestampRequested()
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
-        PicasaMenu { title: qsTr("U&pload"); enabled: false }
+        // #5570: a job-237 mérés és a 6/b-6/c specifikáció szerinti, megszűnt
+        // külső szolgáltatások tételei. Csak az almenü nyitható meg; a három
+        // PicasaMenuItem retired jelölése szürkén és kattinthatatlanul tartja
+        // őket. A feliratokban az `&` az eredeti mnemonik helye.
+        PicasaMenu {
+            objectName: "menuToolsUpload"
+            title: qsTr("U&pload")
+            PicasaMenuItem {
+                objectName: "menuToolsUploadGooglePhotos"
+                text: qsTr("Upload to Google &Photos")
+                placeholder: false
+                retired: true
+            }
+            PicasaMenuItem {
+                objectName: "menuToolsUploadCollaborativeAlbum"
+                text: qsTr("Upload to a Collaborative Web Album")
+                placeholder: false
+                retired: true
+            }
+            PicasaMenuItem {
+                objectName: "menuToolsUploadYouTube"
+                text: qsTr("Upload to &YouTube")
+                placeholder: false
+                retired: true
+            }
+        }
         // #530: a Geocímke almenü élesedett — az export motorja kész
         // (export/kml.py + earth.py). A feliratok a bináris index szerint:
         // eMenuTools::Geotag = "&Geotag", ID_EXPORT_EARTH =

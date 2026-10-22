@@ -65,7 +65,7 @@ VART: dict[str, list[str]] = {
         "Add Folder to Picasa...",
         "Add File to Picasa...",
         "Import From...",
-        "Import From Google Photos...",
+        "Import from Google Photos...",
         SZ,
         "Open File(s) in an Editor",
         SZ,
