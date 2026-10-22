@@ -42,6 +42,7 @@ NEVSOR_LAPOK = {"picasa-menu-leltar.md"}
 VISELKEDES_LAP = (
     "picasa-menu-parancsok-viselkedes.md",
     "picasa-idorend-viselkedes.md",
+    "picasa-idorend-bemutato-kutatas.md",
 )
 
 #: Parancsok, amelyek viselkedése NEM ezen az egy lapon, hanem egy saját,
