@@ -934,7 +934,7 @@ A jegyek szövege (fülenként egy, „Eredeti:” sorral) a `.codex-jelentes.md
 
 **További nyitott kérdések:**
 
-- A #5516 statikus felirattérképe és a Tools ▸ Feltöltés menü külön építési útja tisztázódott a 13.6/a-c. pontban. NINCS MEG a tiszta profil `0x00431290`-eredménye: a job-237 jelentés nem rögzíti a Gaia-próba visszatérési értékeit, a nyers mérőtag pedig nem található az archívumban. A fotótálca feliratának futásidejű láthatóságát a job-237 jelentés már rögzíti.
+- A #5516 statikus felirattérképe és a Tools ▸ Feltöltés menü külön építési útja tisztázódott a 13.6/a-c. pontban. A tiszta profil `0x00431290`-eredménye a job-238 mérésből hamis: az Opciók webalbum-fülének címe `Web Albums` (lásd lent). A fotótálca feliratának futásidejű láthatóságát a job-237 jelentés rögzíti.
 
 Az ezen kívüli két NYITVA sor a fájltípusok QuickTime alapértékére és a diavetítés zene-mappájára vonatkozik; ezek nem a #5483 által feltett kérdések.
 
@@ -1087,7 +1087,7 @@ A statikus feltételágak és a PicasaPy-forrás összevetése alapján a fül, 
 
 **Nyitott:**
 
-- NINCS MEG: a friss profil `0x00431290`-eredménye. A job-237 jelentés csak azt rögzíti, hogy nem volt `LastUserESState` kulcs, és hogy az Eszközök ▸ Feltöltés, a fotótálca és a Fájl menü milyen szöveget mutatott; a Gaia-kliens első próbájának és a kliens `+0x1c4` mezője `0x100` bitjének értékét nem adja meg. A hiányzó kulcs önmagában nem dönti el a választ, mert sikeres Gaia-próba esetén a függvény a `0x100` bitet adja vissza és ezt írja a kulcsba (`0x004312d4-0x00431310`, `0x009704a2-0x009704b1`). A `meroadat.tar`-ban nincs job-237 tag vagy nyers futáskimenet. Következő lépés: tiszta Windows-profilban rögzíteni a `0x00431290`-ben a `vtable+0x10(0,0,1)` és - ha az első próba igaz - a `vtable+0x10(8,0,1)` visszatérési értékét, a kulcs új értékét, a Web Albums fül címét és a fotó-környezetmenü szövegét. Ehhez futásidejű mérés kell; új Ghidra-kör nem szükséges.
+- **LEZÁRVA (job-238, 2026-10-22):** friss profilban (első indítás, `LastUserESState` kulcs nélkül) az Eszközök ▸ Opciók fülsora `General · E-Mail · File Types · Slideshow · Printing · Network · Web Albums · Name Tags`; a webalbum-fül címe `Web Albums`. Mivel a `0x006e1116` csak nem nulla eredményre írja át a címet `Google Photos`-ra, a `0x00431290` friss profilban **hamis** eredményt ad, és a mérés után a kulcs sem jelent meg a registryben. Ebből a feltételes felületek hamis ága érvényes: a fül `Web Albums`, a két fotó-környezetmenü `Upload to &Picasa Web Albums...`. A PicasaPy mindkettőt így mutatja (`OptionsDialog.qml`, `PhotoContextMenu.qml`), tehát itt nincs eltérés. A Gaia-próba belső visszatérési értékeit a mérés nem bontja ki; a felületi következmény ettől függetlenül eldőlt. A megmaradt két eltérést (Eszközök ▸ Feltöltés almenü, `Import from`) a #5570 viszi.
 
 
 #### 7. #5489: a Nyomtatás méretlistájának második bináris ellenőrzése
