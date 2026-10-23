@@ -833,11 +833,12 @@ le (`ret 0xc`). A törzsben közvetlenül mérhető:
   bővíti (`0x00778ccf` → `0x00c0769f`).
 
 ⇒ A célzott dekompiláció megdöntötte a korábbi szerepattribúciót, de a
-**laponkénti útlevélkép-darabszámot nem adta meg**: a `FUN_00778640` nem egy
-útlevélhez égetett darabszámot olvas, hanem futásidejű layout-állapotból épít
-rekordokat. A darabszám ezért továbbra is **NINCS MEG**. A következő gépi út a
-`this+0x50`, `this+0x1c` és a lapméretet adó hívói állapotának visszakövetése;
-terméki kódot ehhez nem írunk.
+**laponkénti útlevélkép-darabszámot akkor még nem adta meg**: a
+`FUN_00778640` nem útlevélhez égetett darabszámot olvas, hanem futásidejű
+layout-állapotból épít rekordokat. A következő gépi lépés: a
+`this+0x50`, `this+0x1c` és a lapméretet adó hívói állapotának
+visszakövetése: a 2026-09-26-i #363 körben lezárult; a végső leletet lásd
+az alábbi „LEZÁRVA” szakaszban.
 
 ### Eredeti / nálunk / teendő
 
@@ -846,13 +847,11 @@ terméki kódot ehhez nem írunk.
 | passport-méret | `0x00775660` → `0x00cf3a48` = **2,0 × 2,0 hüvelyk** | passport-layout nincs meg | a fizikai méret lelete használható |
 | közös előkészítő | 11 layout-osztály slot-1-e: `FUN_00778190`, **305 bájt**; két slot-2-hívás | — | szerepe dokumentálva, nem csempézőként |
 | tényleges geometriai csempéző | 11 layout-osztály slot-2-je: `FUN_00778640`, **1960 bájt** | — | `this+0x50` / `this+0x1c` és a lapméret-hívó visszakövetése |
-| passport darabszám | **NINCS MEG** | — | a futásidejű rekordtömb tényleges darabszáma szükséges |
+| passport darabszám | 2026-09-19-én **NINCS MEG**; a #363 kör ezt később lezárta: friss munkánál 1, újrahasznált munkánál a beállított szám marad |: | történeti állapot; a részletes lelet az alábbi „LEZÁRVA” szakaszban |
 | indexkép-rács | — | `DEFAULT_COLUMNS = 4`; az érintett nyomtatási próbák **65/65** zöldek; A4, 300 dpi, 17 kép, 4 oszlop mellett **20** hely/lap és 1 lap, 3 oszlop mellett **12** hely/lap és 2 lap (`[12, 5]`) | ez a jelenlegi saját indexkép-út, nem az eredeti passport-lelet |
 
-**Nyitott kérdések mérlege — e kör saját kérdései:** 1 nyílt · 0 lezárva ·
-0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva". A következő gépi lépés
-nevesítve marad: a `FUN_00778640` futásidejű oldal- és layout-állapotának
-visszakövetése.
+**A 2026-09-19-i kör végállapota (történeti):** 1 nyílt kérdés maradt,
+amelyet a 2026-09-26-i #363 kör az alábbiak szerint lezárt.
 
 *Forrás: `FUN_00776e20` (`0x00776e20`–`0x00776f45`), az ugrótábla
 `0x007771ac`; célzott dekompiláció: `0x00775660`, `0x00778190`,
@@ -911,12 +910,17 @@ Minden lap a saját második menetével kapja a térközét: a részben teli uto
 
 | | eredeti | nálunk (`app/print_controller.py`) | teendő |
 |---|---|---|---|
-| egy lapon | a nyomatméretű cellák (pl. 4 × 6 hüvelyk) rácsba rendezve a nyomtató papírján | **minden példány külön oldal**, és az oldal maga a nyomatméret (`:1053`–`:1054`: a vászon = a méret hüvelykben × DPI) | cellarács a papíron |
-| laptörés | a túlcsorduló cella a következő lap első cellája | nincs értelmezve (1 példány = 1 oldal) | a fenti szabály |
-| sorrend | A, A, B, B | A, A, B, B (`:874`–`:885`; a komment szerint „nincs kimérve”) | megvan, a komment helyesbítendő: kimérve |
-| tájolás | amelyik kevesebb lapot ad, döntetlennél az eredeti | az első kép alakja dönti el (`:1041`–`:1047`) | a lapszám szerinti választás |
+| egy lapon | a nyomatméretű cellák (pl. 4 × 6 hüvelyk) rácsba rendezve a nyomtató papírján | az `_grid_for_job()` a papír nyomtatható területén rácsot épít; a lapot és a méretű cellákat külön kezeli | **EGYEZIK** a cellarács alapmodellje; teljes képi egyezéshez azonos nyomtatón kell mérni |
+| laptörés | a túlcsorduló cella a következő lap első cellája | a `grid_layout` a cellákat új lapra viszi, a `printPageCount()` ugyanezt a rácsot számolja | **EGYEZIK** a laptörés szabálya |
+| sorrend | A, A, B, B | a forrásképek sorban, képenként a példányok (`_run()`/`_paint_pages()`) | **EGYEZIK**; a #55 eredeti élő mérés az A,A,B,B mintát is igazolja |
+| tájolás | az elrendező a nyomtatható területet és a cellákat két állásban próbálja; az élő #55 referencia álló A4 lapon két fekvő 4×6 cellát mutat egymás alatt | AUTO esetén az A4/papírlap álló marad, a cella tájolása közül a kevesebb lapot adó nyer (`_grid_for_job()` → `choose_page_orientation`) | **EGYEZIK** a mért Passport/4×6 papírviselkedéssel; más méretek teljes kimeneti paritása külön mérendő |
 
-Fejlesztés: **#3647**.
+**A #3647 megvalósítása jelenleg a forrásban megvan.** A fenti régi
+„minden példány külön oldal” összehasonlító cellák a megvalósítás előtti
+állapotot írták le; a `_grid_for_job()`/`grid_layout` alapú kód a lapra
+rendezett rácsot, a laptörést és a példánysorrendet használja. A táblázat
+most a jelenlegi kódot rögzíti. A PicasaPy által renderelt Passport-nyomat
+teljes képi egyezése az eredetivel azonos nyomtatón továbbra sincs mérve.
 
 #### ✅ Élőben mérve (2026-09-26, picasa-colab-jobs #55; PDF-nyomtató, A4, 300 dpi)
 
