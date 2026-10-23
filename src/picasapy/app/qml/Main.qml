@@ -1874,7 +1874,7 @@ ApplicationWindow {
     // Az Időrend kijelölés nélkül is megnyitható.
     Shortcut {
         sequence: "Ctrl+5"
-        enabled: !window.viewerOpen && !slideshow.visible
+        enabled: !window._szovegmezoneVanFokusz && !window.viewerOpen && !slideshow.visible
         onActivated: window.toggleTimeline()
     }
 
