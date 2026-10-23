@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.190] - 2026-10-23
+
+- A Nézet ▸ Időrend és a Ctrl+5 teljes képernyős, animált Időrend-bemutatót nyit gyűjteménykártyákkal, csúszkával és léptetéssel (#5377).
+
 ## [0.9.189] - 2026-10-23
 
 - A diavetítés felső kattintósávja ugyanúgy váltja a lejátszást, mint a lejátszás gomb (#5649).
