@@ -5069,7 +5069,7 @@ hibára „Failed to capture frame" jelenik meg. A magyar alakok a fenti
 háromjegyű sorszámozással**. A mappa `.picasa.ini`-je itt is **csak
 létrehozáskor** íródik.
 
-**JPEG-minőség: 85.** A `0x00592033`–`0x00592067` út a `0x009d6010`
+**JPEG-minőség: 85.** A `0x00592033`-`0x00592067` út a `0x009d6010`
 írófüggvényt hívja `{1, 4, 0x55}` beállításblokkal; a `0x00ad3b30` a
 `0x55` értéket 85-ként erősíti meg. A `4` opció jelentése nincs megállapítva.
 

@@ -39,7 +39,7 @@ import numpy as np
 #: A képkocka kiterjesztése — mérve (`0x00c80a50`).
 KEPKOCKA_KITERJESZTES = ".jpg"
 
-#: A videóból mentett JPEG minősége — mérve (`0x00592033`–`0x00592067`).
+#: A videóból mentett JPEG minősége - mérve (`0x00592033`-`0x00592067`).
 KEPKOCKA_JPEG_MINOSEG = 85
 
 #: A natív egyediesítő `0x1000`-ig emeli a számlálót (`0x00993a1a`).
