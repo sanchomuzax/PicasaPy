@@ -2885,3 +2885,40 @@ HELYE és a nem ASCII kódolás: **nem vizsgálva**, ld. fent.*
 **#4597 kutatási állapot (2026-10-11):** megfejtve — a mappa rejtése az ini
 `P2category` mezőjében, a jelszó a db3 `catdata` `info` oszlopában él
 (`picasa-menu-parancsok-viselkedes.md`, 32.3.1).
+
+### #5700: A jelszavas gyűjtemény teljes útja és a PicasaPy eltérései (2026-10-23)
+
+**Következtetés.** A Picasa 3.9 gyűjteményenként kezel jelszólenyomatot: a
+gyűjtemény helyi menüjének `Add/Change a password...` parancsa a
+`catdata.info` mezőbe ír, megnyitáskor pedig a jelszóellenőrző ág kapuzza a
+gyűjtemény elérését. A „Rejtett mappák” jelszófelajánlása ettől külön út:
+csak a **Mappa elrejtése** művelet után, üres lenyomatnál és a letiltó
+beállítás hiányában jelenik meg. A PicasaPy rejtett mappákra már tud jelszót,
+de általános gyűjteményre nem; a mai út globális QSettings-lenyomatot használ.
+
+| lépés | Eredeti Picasa 3.9 | PicasaPy ma | teendő |
+|---|---|---|---|
+| menü és belépés | **Bináris:** `0x00732680` regisztrálja a `Collection::ID_COL_PASSWORD` (`0x00cae4c0`) / `&Add/Change a password...` (`0x00cae4dc`) parancsot; az azonosító `0x9d56`, a `0x005cb990` diszpécserből a `0x005eb910` kezelőbe jut. | A `CollectionContextMenu.qml:48-52` ugyanazt a feliratot adja, de a nem rejtett gyűjteménynél `placeholder`; a `PicasaMenuItem.qml:67` letiltja. A rejtett mappáknál aktív. **ELTÉR.** | A jelszóparancs legyen aktív minden jelszóval védhető felhasználói gyűjteménynél; a jelszó a kiválasztott gyűjteményhez tartozzon. |
+| megnyitás / feloldás | **Bináris:** `0x004ab650` és `0x005ec440` nem üres `catdata.info` esetén a `Please enter a password to open this collection` (`0x00c83260`) / `Password Entry` (`0x00c832a8`) párbeszédet nyitja. Egyezés továbbenged, Mégse megszakít; hibás jelszónál ugyanazt a bekérőágat ismétli. | A „Nézet → Rejtett képek” út zárolt állapotban feloldást kér (`Main.qml:2090`, `HiddenPasswordDialog.qml:51-60`), de ez egyetlen globális rejtettmappa-jelszó. **ELTÉR** az általános, gyűjteményenkénti zárolásban. | Gyűjteményenként ellenőrizze és kapuzza a megnyitást; a Mégse ne tegye láthatóvá a tartalmat. |
+| jelszó beállítása és cseréje | **Bináris:** `0x005eb910`; új jelszó (`0x00c979f8`), ismétlés (`0x00c97aa0`), eltérésjelzés (`0x00c97b04`). Meglévő, még fel nem oldott jelszónál előbb a `0x004ab650` ágat hívja. Üres új érték töröl (`0x00c97a68`). | A `HiddenPasswordDialog.qml:91-113` kér megerősítést; a törlés külön gomb (`:128-137`). A `Main.qml:5020-5025` beállításkor közvetlenül ír; az út nem ellenőrzi a régi jelszót. **Részben egyezik** a megerősítéssel, **ELTÉR** a régi jelszó megkövetelésében és a törlési műveletben. | Zárolt jelszó cseréje/törlése előtt kérje a meglévő jelszót; az üres új jelszó eredeti jelentését dokumentáltan kezelje. |
+| jelszóajánlat elrejtéskor | **Bináris:** a `0x005cb990` `0x9c72` (Hide Folder) ága `1` értékkel, a `0x9cd0` (Unhide Folder) ága `0` értékkel hívja a `0x005ee2a0`-t. A függvény csak az `1` ágon és üres `catdata.info` mellett ajánlja fel az `Add Password` / `Don't Add Password` párbeszédet. **Unhide-kor nem kérdez.** | A `setShowHidden()` (`controller.py:1268-1280`) nem ajánl jelszót; a jelszó menüből külön állítható be. **ELTÉR.** | A felajánlást a mappa elrejtéséhez kösse, ne a rejtett képek megjelenítési kapcsolójához. |
+| „ne kérdezze újra” beállítás és alapérték | **Bináris:** `Preferences\\DoNotConfirmHiddenPwd` (`0x00c97db4`, olvasás `0x005ee3af`, írás `0x005ee4c5` / `0x00401900`) tiltja az ajánlatot. A beállításolvasó alapként a `0x00c7f514` címen álló `*` bájtot adja át (`0x00407a20`); hogy hiányzó registry-értéknél ebből mi lesz a jelölő tényleges alapállapota, **NINCS MEG**. Megszerzés: friss Windows-profilon, hiányzó kulcs mellett indítsd el a Hide Folder ágat, rögzítsd a pipa kezdeti állását és az első írás értékét. | Nincs `DoNotConfirmHiddenPwd` megfelelője és nincs automatikus felajánlás. **ELTÉR.** | A funkciót és a letiltási beállítást pótolni; az alapállapotot csak a fenti célzott méréssel egyeztesse. |
+| lenyomat és tárolási kimenet | **Bináris:** MD5 (`0x00ab3640`) → 32 kisbetűs hex (`0x00a4d420`), a kiválasztott `catdata` sor `info` mezőjébe (`0x005ebc52`, `0x00c812cc`) kerül. A jelszóút a gyűjtemény elérési állapotát kapuzza, nem a fájltitkosítást állapítja meg; a mappakezelő 32.3.1-ben mért eredmény szerint a képfájlok a lemezen maradnak. | Alapból Picasa-kompatibilis MD5 (`hidden_password.py:70-80`), külön választva sózott PBKDF2; a lenyomat a `QSettings("PicasaPy", "PicasaPy")` `view/hiddenPasswordHash` kulcsába kerül (`controller.py:1150-1158`). A Picasa-import a rejtett mappa `catdata.info` lenyomatát veszi át (`picasa_import_controller.py:88-91, 195-200`), nem a felhasználói gyűjteményekét. **EGYEZIK** az ASCII jelszó Picasa-kompatibilis MD5-alakja; **ELTÉR** a per-gyűjteményes tárolásban és a választható modern alakban. | A tárolás őrizze meg a gyűjteményenkénti hozzárendelést és az importált Picasa-rejtett jelszó működését; a modern formátum maradjon kifejezetten inkompatibilisként jelölve. |
+| hibás jelszó szövege | **Bináris:** a két gyűjtemény-ellenőrző ág ismétli a bekérést külön hibaüzenet nélkül. A `Please provide a valid password` szöveg (`0x00c856c0`) egyetlen `.text`-használata `0x004cbf55`, a beépített HTTP-szerver `0x004cbc60` függvénye; ez nem gyűjteményjelszó. | Hibánál külön `Wrong password` megerősítő ablakot mutat, majd újranyitja a bekérést (`Main.qml:5028-5051`). **ELTÉR.** | Ha a Picasa-út követése a cél, tartsa a hibát a bekérőn belül, külön HTTP-szerverüzenet nélkül. |
+| fájlok védelmi hatóköre | **Bináris:** a fenti jelszóág a gyűjtemény elérési állapotát ellenőrzi; a rejtés tartós kategóriaértéke a mappa `.picasa.ini`-jében van (`0x00446012`-`0x00446017`). A mappakezelő 32.3.1-ben mért eredmény szerint a képfájlok a lemezen maradnak. | A párbeszéd kimondja, hogy a fájlok a lemezen maradnak és fájlkezelővel elérhetők (`HiddenPasswordDialog.qml:140-149`). **EGYEZIK** a felhasználónak tett adatvédelmi ígéret hatókörében. | A figyelmeztetés maradjon látható a jelszóbeállításnál. |
+| nem ASCII jelszó | **NINCS MEG:** `0x00a4cdd0` a NUL-ig számolt bájtokat adja az MD5-nek, de az eredeti karakterkódolás nem igazolt. Megszerzés: az eredeti Picasában azonos ASCII és ékezetes jelszóval írás/újranyitás, majd a `catdata.info` lenyomatainak összevetése. | `hidden_password.py:79` UTF-8 bájtokat hash-el. **EGYEZIK** csak ASCII-ra; ékezetes jelszó kompatibilitása nyitott. | Ne állítsunk ékezetes jelszóra kompatibilitást, amíg a kontrollált minta nincs meg. |
+| elfelejtett jelszó helyreállítása | **NINCS MEG:** a vizsgált beállító és ellenőrző ág nem bizonyít helyreállítási eljárást. Megszerzés: eredeti Picasa UI-ban hibás jelszó után az összes felajánlott helyreállító/eltávolító út kontrollált kipróbálása. | Van „Remove the password” művelet (`HiddenPasswordDialog.qml:128-137`), régi jelszó ellenőrzése nélkül. | Az eredeti helyreállítási viselkedés ne legyen feltételezve; a régi jelszó nélküli törlés külön igazolt eltérés a fenti sorban. |
+
+**Két út és cáfoló ellenőrzés.** A közvetlen diszasszemblálás (`0x00732680`,
+`0x005cb990`, `0x005eb910`, `0x005ee2a0`, `0x004ab650`, `0x005ec440`) a
+menü-, elrejtési-, ellenőrzési- és írási láncot adja. Ettől külön a
+`string_xrefs` és a `paszta.py`-val végzett, teljes `.text` pásztázás a
+bekérőszövegek hivatkozásait egyeztette; a `0x00c856c0` címet kizárólag a
+HTTP-szerver függvényében találta. A cáfoló jelölt tehát megdőlt: a
+a `Please provide a valid password` szöveg nem a gyűjteményhibát jelzi.
+
+**Bizonyítottság:** a menü → gyűjteményenkénti jelszóírás, a Hide Folder
+felajánlásának feltétele, a hibás jelszó ismétlése, a tárolási mező és a
+PicasaPy összevetés **megerősített**. Nyitva maradt a `DoNotConfirmHiddenPwd`
+hiányzó kulcs melletti tényleges alapállapota, a nem ASCII kódolás és az
+elfelejtett jelszó eredeti helyreállítása.
