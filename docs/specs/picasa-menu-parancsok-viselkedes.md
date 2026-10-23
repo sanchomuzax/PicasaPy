@@ -1293,7 +1293,9 @@ A binárisból három, egymásra épülő réteg olvasható ki:
 Továbbá a `ShowHidden` beállítás (`0x00440af0`, `0x005643e0`, `0x005c9300`,
 `0x0067bda0`) kapcsolja a megjelenítést.
 
-**Vagyis az elrejtés adatvédelmi funkció**, nem csak nézeti szűrő.
+**Vagyis az elrejtés gyűjteménybe sorolás és felületi hozzáférési kapu**,
+nem fájltitkosítás: a PicasaPy figyelmeztetése és a képfájlok lemezen
+maradása a 32.3.1 / #5700 mérésével egyezik.
 
 **Nálunk (#4597 kódvizsgálat):** a fotó-szintű `photos.hidden` mellett a
 mappa-szintű `folders.hidden` is létezik (`index/schema.py:377`, `:501–515`).
@@ -1409,7 +1411,7 @@ vagy egyéni gyűjteményből elrejtett mappa tehát megjelenítés után a
 | megjelenítés | `P2category=Folders on Disk` | `folders.hidden=0` |
 | Picasában rejtett mappa nálunk | — | a `P2category=Hidden Folders` mappát az `is_custom_collection_category` **egyéni gyűjteménynek** sorolja (a `Hidden Folders` nincs a `_BUILTIN_CATEGORIES`-ban), tehát **látható** „Hidden Folders" nevű egyéni gyűjteményként jelenik meg |
 | `category=` visszaesés | `P2category` üresnél a `category` kulcs | a `read_folder_category` csak a `P2category`-t olvassa |
-| jelszó | db3 `catdata` `Hidden Folders` sor `info` (hex MD5) | `QSettings` `view/hiddenPasswordHash`; a db3-átvétel (`pmpimport/`) a `catdata`-t nem olvassa |
+| jelszó | db3 `catdata` `Hidden Folders` sor `info` (hex MD5) | `QSettings` `view/hiddenPasswordHash`; a Picasa-import a rejtett mappa `catdata.info` értékét átveszi (`picasa_import_controller.py`), felhasználói gyűjteményekét nem |
 
 #### Nyitott kérdések mérlege (32.3.1)
 
@@ -2356,15 +2358,21 @@ javított horgony adta a menüsáv-építőből (`0x00559150`):
 *(A `ID_WALLPAPER` névtere `eMenuCreate` — a **Létrehozás** menüé, nem a
 Nézeté.)*
 
-### 38.1 ⭐ „Rejtett képek" — a bekapcsolás JELSZÓT AJÁNL
+### 38.1 ⭐ „Mappa elrejtése": a művelet jelszót ajánl
 
-Az állapot a `Preferences\ShowHidden` kulcsban él; az olvasó/író
-`0x005c9300` (a `Preferences` ág, `ShowHidden` kulcs az egyetlen két
-sztringje), amit a fő parancskezelő (`0x005cb990`) hív.
+Az `ID_VIEW_SHOWHIDDEN` nézeti állapot a `Preferences\ShowHidden` kulcsban
+él; az olvasó/író `0x005c9300`-t a fő parancskezelő (`0x005cb990`) hívja.
+Ez külön működés a következő, Hide/Unhide parancs után futó jelszóajánlattól.
 
-**Ami eddig sehol nem szerepelt nálunk:** ugyanez a parancskezelő
-**kétszer** hívja a `0x005ee2a0`-t is, és az egy párbeszédet tesz fel, ha
-a „Rejtett mappák" gyűjtemény **nincs jelszóval védve**:
+**A `0x005cb990` parancskezelő két külön műveletből hívja** a
+`0x005ee2a0`-t: a `0x9c72` „Hide Folder" ág `1`-et, a `0x9cd0` „Unhide
+Folder" ág `0`-t ad át. A `0x005ee2a0` az `1` ágon választja a `Hidden
+Folders` gyűjteményt, és csak akkor ajánl jelszót, ha annak `catdata.info`
+mezője üres. A `0` ág `Folders on Disk`-re sorol vissza, és nem futtatja a
+jelszóajánlatot. **Tehát a felajánlás a Mappa elrejtése művelethez tartozik,
+nem a „Rejtett képek" nézeti kapcsoló bekapcsolásához.**
+
+Az ajánlat párbeszédének elemei:
 
 | elem | sztring |
 |---|---|
@@ -2378,15 +2386,17 @@ A függvény a `Preferences` ág mellett a `Folders on Disk`, `Hidden
 Folders` és `state` sztringeket is használja — vagyis a gyűjtemény
 állapotát nézi meg, mielőtt kérdez.
 
-⇒ **A „Rejtett képek megjelenítése" nem puszta szűrő-kapcsoló: a Picasa
-az első bekapcsoláskor felajánlja a gyűjtemény jelszavas védelmét, és a
-„ne kérdezd többet" választ külön kulcsban őrzi.**
+⇒ **A „Mappa elrejtése" művelet jelszó nélküli rejtettmappa-gyűjteménynél
+felajánlja a jelszavas védelmet, és a „ne kérdezd többet"
+választ külön kulcsban őrzi.** A „Rejtett képek" nézeti kapcsoló önmagában
+nem indítja el ezt a felajánlást.
 
-*(Bizonyítottsági fok: **megerősített** a párbeszéd léte, szövegei,
-gombjai és a két registry-kulcs; **feltételes** az, hogy pontosan a
-BEkapcsoláskor kérdez — a `0x005cb990` két hívóhelye a be- és a kikapcsoló
-ág is lehet. A gombfeliratok iránya („Add Password") viszont a
-bekapcsolás felé mutat.)*
+*(Bizonyítottsági fok: **megerősített** a parancság, a feltétel, a párbeszéd
+szövegei/gombjai és a beállítás olvasása/írása. A `DoNotConfirmHiddenPwd`
+hiányzó kulcsa melletti tényleges pipa-alapállapot **NINCS MEG**: a
+`0x00407a20` ugyan a `0x00c7f514` címen álló `*` karaktert adja át a
+beállításolvasónak, de ennek az effektív logikai értéke nem következik a
+kiolvasott utasításokból.)*
 
 ### 38.2 Idővonal — egy közös „bemutató-mód" kezelő
 
@@ -2421,35 +2431,36 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
-| `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
+| `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; a nézeti kapcsoló önmagában **nem** indít jelszóajánlatot. Az ajánlat a `0x9c72` Hide Folder parancs után fut (`0x005cb990` → `0x005ee2a0`, 38.1). | A kapcsoló megvan és őrződik; zárolt állapotban feloldást kér. A jelszavas menütétel aktív a Rejtett mappáknál, de felhasználói gyűjteményeknél placeholder; automatikus jelszóajánlat és `DoNotConfirmHiddenPwd` megfelelő nincs. | **ELTÉR:** pótolni a Hide Folder utáni ajánlatot és a külön letiltási beállítást; az általános gyűjteményjelszó a #416-hoz tartozó fejlesztési bővítés. |
 | `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.3 és a 38.2.61-78 szakaszokban rögzített külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, dátumcsúszka és mért mozgásképletek. | **#5377:** a `TimelineView.qml` teljes képernyős, mappakártyás bemutató; a Nézet-menü és `Ctrl+5` aktív. A QEMU-pontok, valódi billentyűk, egérvezérlők és referencia-képkocka tesztjei: `tests/app/test_timeline_motion_5377.py`, `tests/app/qml_functional/test_idorend_bemutato_5377.py`. A gyűjtemény eredeti forrása és dátumjelentése továbbra is nyitott a #5401-ben. Az eredeti fejlécben nincs Időrend-eszköztárgomb: a `thumbui.tre` a gombot `m_hidden`-ként jelöli. | A felület és a mért részmozgás megvalósult; a képlánc/dátumforrás nyitott kérdéseit ne találgassuk. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
 
 ```
-Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 2 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a három parancsazonosító (38. bevezető); a `ShowHidden`
-  tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
+  tárolása, a Hide Folder jelszóajánlatának hívási feltétele és teljes
+  szövegkészlete (38.1); az
   Időrend `oneup`/overlay belépési útja (38.2.1); a háttérkép teljes írási
   lánca, a stílusértékekkel együtt (38.3).
 - **NYITVA (`#4443`; a 2. Ghidra-köteg állapota a 38.2.6-ban):** a 38.2.3 futó mérése lezárta a képernyő képi
   összetételét. Nyitott maradt a bemeneti mappák/albumok halmaza és sorrendje,
   a jobb halom és időskála jelentése, a gombok művelete, a billentyűk, az
   animáció és a kilépés célja. Ezekhez fókuszált, eredeti Picasa-futtatás kell.
-- **BLOKKOLT:** hogy a jelszó-ajánlat a BE- vagy a KIkapcsoláskor jön-e.
-  A `0x005cb990` két hívóhelye statikusan nem különbözteti meg őket.
-  **Mi kell hozzá:** egy megfigyelés élő Picasán — a „Nézet ▸ Rejtett
-  képek" be-, majd kikapcsolása, és melyiknél jön a párbeszéd. Ez a
-  #416 megvalósításáig **nem blokkol semmit**, ezért nem kér külön
-  `felhasználóra-vár` jegyet.
+- **NYITVA:** a `DoNotConfirmHiddenPwd` hiányzó kulcsa mellett a pipa
+  tényleges alapállapota. **Mi kell hozzá:** friss Windows-profilon, e kulcs
+  nélkül Hide Folder parancs, a pipa kezdeti állásának és a mentett értéknek
+  rögzítése; a `0x00407a20` `*` alapkaraktere önmagában nem mondja meg a
+  jelölő állapotát.
 
 ### Amit KIZÁRTAM
 
-- **„A »Rejtett képek« puszta szűrő-kapcsoló"** — megdőlt: jelszó-ajánló
-  párbeszéd tartozik hozzá, saját „ne kérdezd többet" kulccsal (38.1).
+- **„A Rejtett képek kapcsoló indítja a jelszó-ajánlatot"**: megdőlt:
+  azt a Hide Folder (`0x9c72`) parancs indítja; Unhide (`0x9cd0`) és a
+  `ID_VIEW_SHOWHIDDEN` ág nem (38.1).
 - **„A háttérkép az eredeti képfájlra mutat"** — megdőlt: a Picasa
   **BMP-t ír** a saját `Backgrounds` mappájába, és arra mutat (38.3).
 - **„A háttérkép nyújtva/csempézve kerül ki"** — megdőlt: mindkét
