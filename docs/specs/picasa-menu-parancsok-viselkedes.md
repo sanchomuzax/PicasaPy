@@ -5138,7 +5138,7 @@ egyébként a **#1398** (másodpéldány-szűrés) témája.
 | **csak filmek szűrője** | `moviesearch` | **nincs** | ua. |
 | **dátum-tartomány (csúszka!)** | `timeslider/scaleslider` | **nincs** | ua. |
 | webalbum-szűrő | `webview` | — | **hatókörön kívül** |
-| `searchoptions` csoport | hasonlóság, másodpéldány, gép | nincs | **külön kör** (jelzés, ld. 59.3) |
+| `searchoptions` csoport | `similarthumb`/`loadsim`/`clearsim`, `dupesearch`, `digicam` (`0x005d8810`; vezérlő-xref: `0x005d8280`) | mintaképes hasonlóság és másodpéldány-keresés **megvan**; a gép szerinti szűrés ezen a körön kívül | hasonlóság: a #5660 összevetése a 60.4. szakaszban; másodpéldány: #1398; `digicam`: külön feltárandó |
 ### Nyitott kérdések mérlege (59.)
 
 ```
@@ -5170,7 +5170,7 @@ leltárból**: az 59.3 jelezte, hogy a `searchoptions` csoport a
 `.tre`-leltárban nem szerepel önálló panelként, tehát a mérés soha nem
 adja ki. A binárisból (`0x005d8810`, `0x005e60d0`).*
 
-### 60.1 A csoport öt vezérlője
+### 60.1 A `searchoptions` csoport deklarációi
 
 | elem | mit csinál |
 |---|---|
@@ -5202,30 +5202,129 @@ keresősávból érhető el, hanem **menüből** is. *(A menütétel az
 
 | | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
-| másodpéldány-keresés | `dupesearch`, menüből is | **megvan** — teljes motor (`dedup/`: `phash.py`, `similar.py`, sávos jelöltszűrés) + `DedupDialog.qml` | — |
-| **hasonlóság-keresés MINTAKÉPPEL** | `similarthumb` + `loadsim`/`clearsim`, saját adatbázissal és eredmény-albummal | **nincs** — a mi `similar.py`-unk **csoportokat** keres, nem „ehhez hasonlót" | **ÚJ JEGY** |
-| az indexépítés jelzése | „Updating similarity database…" | — | ua. |
-| eredmény-album | „Similarity Search Results" | — | ua. |
-| **gép szerinti szűrés** | `digicam` | **nincs** | ua. |
-| „mindet mutasd" | `viewallbutton` | a szűrők kikapcsolása | — |
+| másodpéldány-keresés | `dupesearch` (`0x0040bf70`, `0x005cb990`, `0x005d47e0`) | **megvan**: teljes motor (`dedup/`: `phash.py`, `similar.py`, sávos jelöltszűrés) + `DedupDialog.qml` | ezen a jegyen kívül |
+| **hasonlóság-keresés mintaképpel** | `similarthumb`, `loadsim`, `clearsim`; aktív keresőút (`0x005d8810` → `0x007ea000`) | **megvan**: `SimilarityMixin`, egy kiválasztott képből indul; a dHash/Hamming-motor nem az eredeti rekordformátum | a részletes eltéréseket és nyitott kérdéseket lásd a 60.4. szakaszban |
+| indexépítés jelzése | „Updating similarity database (will be fast next time)" (`0x007ead60`) | ugyanaz a felirat a QML-ben; csak hiányzó dHash esetén jelenik meg | **EGYEZIK a felirat**; az eredeti kiváltási feltétel külön ellenőrzendő |
+| eredményfelirat | „Similarity Search Results" / `CAlbumState::SimSearchResults` (`0x004ad4e0`) | ugyanaz a felirat a hasonlósági eredménysávon; belső nézetmódunk különbözik | **EGYEZIK a felirat**; a találatok tagsága és sorrendje nyitott |
 
-⚠️ **A `dedup` és a hasonlóság-keresés NEM ugyanaz.** A miénk azt
-kérdezi: *„mely képek duplikátumai egymásnak?"* — a Picasáé azt:
-*„mely képek hasonlítanak ERRE?"* A motor (dHash + Hamming) közös lehet,
-a felhasználói kérdés más.
+⚠️ **A `dedup` és a mintaképes hasonlóság-keresés NEM ugyanaz.** A
+duplikátum-csoportosítás azt kérdezi: *„mely képek duplikátumai egymásnak?"*;
+a mintaképes keresés azt: *„mely képek hasonlítanak ERRE?"* A PicasaPy-ban
+mindkettő megvan, de a #5660 összevetése külön algoritmust és adattárolást
+igazol: az eredeti 380 bájtos rekordokat használ, a PicasaPy 64 bites
+dHash-t és Hamming-távolságot. A találatok viselkedési azonossága a nyitott
+eredeti küszöb/rangsor miatt még nincs bizonyítva.
+
+### 60.4 #5660: a hasonlóság-keresés teljes útja és a PicasaPy-eltérések (2026-10-23)
+
+**A vizsgált eredeti:** a helyi `Picasa3.exe` PE-verziója 3.9.141.259.
+Az alábbi címek a bináris RVA-címei. A `searchoptions` erőforrás kivonata a
+megadott `runtime/respack.yt` fájlból, memóriában készült; a bináris nem
+került a repóba.
+
+| Eredeti: cím vagy `NINCS MEG` | Nálunk | Teendő |
+|---|---|---|
+| **Keresés indítása:** `Ctrl+F7` → `searchoptions/loadsim`, parancsazonosító `0x15` (`0x005e62e8`); a kezelő `0x005d8810`, a keresőútban `0x007ea000` fut. | `Main.qml` `Ctrl+F7`-re a kijelölés első sorát adja a `showSimilarTo()`-nak. | **EGYEZIK** az indító billentyű és az egy mintaképes kérdés. A több kijelölt kép eredeti kezelése **NINCS MEG**; megszerzés: a `0x005d8810` célzott dekompilálása és a `0x005d8810`-hez tartozó kijelölési ág visszakövetése. |
+| **Minta törlése:** `Ctrl+F8` → `searchoptions/clearsim`, parancsazonosító `0x16` (`0x005e631d`). | `Ctrl+F8` és látható „Clear Sample” gomb hívja a `clearSimilarity()`-t. | **EGYEZIK** a törlés művelete; nálunk a törlés gomb látható. |
+| **Menübelépés:** a vizsgált menüleltárban és a `searchoptions` erőforrásban nem találtunk hasonlóság-kereső menüpontot. Ez nem bizonyítja a hiányát. **NINCS MEG**; megszerzés: a `0x005cb990` menüparancs-kezelő és a menüépítő teljes parancs-hozzárendelésének visszakövetése, valamint a menü-erőforrások cím szerinti ellenőrzése. | A `PicasaMenuBar.qml`-ben nem találtunk külön menüparancsot; a belépés a `Ctrl+F7`. | **Nyitott**; menühiányra nem nyitunk fejlesztési jegyet, amíg az eredeti parancs-hozzárendelés nincs lezárva. |
+| **Keresősáv/párbeszéd:** `searchoptions/similarthumb` hivatkozásai `0x005d8280` és `0x005d8810`; a `tre:searchoptions` kivonatában a `similarrect`, `similarthumb`, `similarclip`, `loadsim` és `clearsim` sora komment. Külön modális hasonlóság-párbeszédet nem azonosítottunk. **NINCS MEG**, hogy van-e másik erőforrásból épített párbeszéd; megszerzés: az összes `.fen`/`.tre` erőforrás cím szerinti átnézése, majd a `0x005d8810` teljes vezérlőhívás-láncának célzott követése. | Nincs külön keresőpárbeszéd: a kijelölésből indul a keresés, a minta és a „Clear Sample” az eredménysávon látható. | A felület elhelyezése eltér. A kívánt termékviselkedést a paritásjegy határozza meg; a párbeszéd kérdése nyitott. |
+| **Nincs minta őr:** a `0x005d8810` ág a `[edi+0xe64] == -1` értéknél kilép (`0x005d8b85`-`0x005d8b95`). | Nincs kijelölésnél a `keressHasonlot()` visszatér; kijelölésnél az első sort használja. | **EGYEZIK** a „kijelölés nélkül nincs keresés” viselkedés. Az eredeti többes kijelölésre vonatkozó szabály nyitott (lásd az első sort). |
+| **Rejtett beállítás: eredményhatár:** a `Preferences\RankMax` értéket a `0x005d90c6` olvassa; hiányában a `0x005d90de` 1000-et ad át. A visszatérő érték és a találatszám összevetése látszik (`0x005d90fa`), de az ebből következő rangsorolás/levágás pontos szemantikája **NINCS MEG**; megszerzés: `0x005d8810` célzott dekompilálása. | A `SimilarityMixin` nem olvas `RankMax`-ot, és nem alkalmaz találatszám-korlátot. | A mező jelenléte eltér, de felhasználói kimeneti eltérés még nem bizonyított; előbb tisztázni kell a bináris ág jelentését. |
+| **Rejtett beállítás: átméretezés:** `Preferences\ResampleFilter2`, alapérték 6 (`0x00a3f507`, `0x00a3f51c`); a hasonlóság-frissítési lánc hivatkozik az értékre. A 6-os mód Lanczos-4-ként szerepel a `filters-decoded.md`-ben. | A dHash a `cv2`-vel redukáltan dekódolt szürke képet 9×8-ra kicsinyíti `INTER_AREA`-val; nem olvassa ezt a Picasa-beállítást. | **ELTÉR** az előfeldolgozás és a kapcsolódó beállítás. Az egyezés céljához a Picasa előfeldolgozásának pontos átültetése szükséges. |
+| **Hasonlósági adatbázis:** a fájlnév `distims.db` a `0x005d8bbe` címen jelenik meg; a tároló `CBlockFile`, a fix rekord 380 bájt (`0x007eb652`-`0x007eb661`; részletek a fenti #447 szakaszban). A teljes fájlút **NINCS MEG**; megszerzés: a `0x005d8810`-ből a fájlnév feloldásának követése és a `CBlockFile` megnyitási paramétereinek dekompilálása. | Az SQLite index `photo_hashes` táblája útvonal/mtime/méret kulcsú 64 bites dHash-t tárol. | **ELTÉR** a belső tárolási formátum. Ennek átültetése csak akkor indokolt, ha a termék célja a Picasa-találatokkal való viselkedési paritás. |
+| **Összehasonlító jellemző és rangsor:** az eredeti 380 bájtos rekord felépítésének egy része ismert, a `0x007e95f0` és `0x007ea000` keresési/szűrési szemantikája, a távolságképlet, küszöb, sorrend és a minta saját találatként való kezelése viszont **NINCS MEG**. Megszerzés: célzott Ghidra-dekompilálás e két függvényről; az elérhető diszasszemblálás után ez a maradék kérdés. | A `SimilarityMixin` dHash-t számol és Hamming-távolságot használ; a saját `HASONLOSAG_KUSZOB = 14` értéke forráskódban rögzített saját döntés. A mintát is visszaadja (önmagától mért távolsága 0), a találatokat az index lekérdezési sorrendjében adja. | **ELTÉR** az ismert algoritmusszinten. A pontos Picasa-küszöb, mintakezelés és sorrend birtokában kell eldönteni a paritásmódosítást; a 14 nem eredeti Picasa-érték. |
+| **Folyamatjelzés:** „Updating similarity database (will be fast next time)”, `CSimSearch::updating` (`0x007ead60`). | Ugyanez a felirat, a háttérszámítás állapotához kötve; csak hiányzó dHash esetén jelenik meg. | **EGYEZIK** a felirat. Az eredeti megjelenítési feltétel és az üres/adathibás képek hatása **NINCS MEG**; megszerzés: `0x007ead60` célzott dekompilálása és a frissítő visszahívásainak követése. |
+| **Kimeneti név:** „Similarity Search Results” és `]sim` albumtoken (`0x004ad4e0`). | Az eredménysáv ugyanazt a „Similarity Search Results” feliratot mutatja; saját `similar` nézetmód. | **EGYEZIK** a látható név; a virtuális album tokenjének és a találati listának a teljes megfeleltetése **NINCS MEG**. Megszerzés: `0x004ad4e0` és a `0x005d8810`-ból eredő albumállapot dekompilálása. |
+
+#### A #5660 által igazolt eltérések fejlesztési jegy-vázlata
+
+Az algoritmus és a beállítások jelentése még nyitott, ezért a kutatás nem
+állítja, hogy a jelenlegi PicasaPy-találatok konkrét tesztképeken eltérnek.
+Az alábbi jegytörzs a **bizonyított megvalósítási eltérések** paritási
+feladatát írja le; a nyitott bináris szemantika lezárása a megvalósítás
+előfeltétele.
+
+**Cím:** A mintaképes hasonlóság-keresés Picasa 3.9-paritása
+
+**Eredeti:** A Picasa 3.9.141.259 `distims.db` adatbázist és 380 bájtos
+rekordot használ (`0x005d8bbe`, `0x007eb652`). Az összehasonlítás pontos
+képlete, sorrendje és a `RankMax` működése még célzott dekompilálást igényel.
+
+**Nálunk:** A mintaképes keresés dHash/Hamming-alapú, saját 14 bites
+küszöbbel; nincs `RankMax` találatkorlát és nem használja az eredeti
+`ResampleFilter2` beállítást.
+
+**Teendő:** A bináris maradék szemantikájának lezárása után a találati
+tagságot, sorrendet, korlátot és előfeldolgozást a Picasa-viselkedéshez
+igazítani, vagy a mért eltérést termékdöntésként rögzíteni; a jelenlegi
+látható „Clear Sample” gombot külön, tudatos PicasaPy-felületi többletként
+megtartani vagy termékdöntéssel módosítani.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `tre:searchoptions` minta- és törlővezérlői kommenteltek, miközben a `Ctrl+F7`/`Ctrl+F8` parancs aktív (`0x005e62e8`, `0x005e631d`). | A gyorsbillentyűk mellett látható „Clear Sample” gomb van az eredménysávon. | A gomb legyen dokumentált, tudatos felületi többlet; a paritásmódosítás ne tüntesse el véletlenül. |
+| `distims.db` és 380 bájtos rekord (`0x005d8bbe`, `0x007eb652`); keresési jellemző/rangsor `0x007e95f0`/`0x007ea000` | `photo_hashes.dhash`, 64 bit, Hamming-küszöb 14 | A nyitott bináris képlet, küszöb, sorrend és `RankMax`-szemantika lezárása után a kereső kimenetét az eredetihez igazítani, vagy a mért eltérést dokumentált termékdöntéssé tenni. |
+| `Preferences\ResampleFilter2`, alapérték 6 (`0x00a3f507`, `0x00a3f51c`) | saját redukált dekódolás és `INTER_AREA`; a beállítást nem használja | A Picasa előfeldolgozásával való összehasonlítás alapján paritás esetén átvenni a módot és alapértéket. |
+| `Preferences\RankMax`, alapérték 1000 (`0x005d90c6`, `0x005d90de`); pontos hatás nyitott | nincs ilyen beállítás vagy eredménykorlát | A dekompilált jelentés szerint bevezetni a beállítást és azonos rangsorolt találatkorlátot. |
+
+**Kész, ha:**
+
+- a `0x007e95f0` és `0x007ea000` dekompilálásával dokumentált a Picasa jellemző,
+  összehasonlítási képlete, sorrendje és `RankMax`-viselkedése;
+- a PicasaPy ugyanazon rögzített képkészleten azonos mintaképet, találati
+  tagságot, sorrendet és találatszámot ad, vagy a termékdöntés név szerint
+  rögzíti az elfogadott eltéréseket;
+- a `ResampleFilter2` alapértéke és hatása egyezik a dokumentált eredeti
+  viselkedéssel, vagy a tudatos eltérés felhasználói dokumentációba kerül;
+- a meglévő `Ctrl+F7`, `Ctrl+F8`, eredményfelirat és üres kijelölés viselkedés
+  nem romlik, és a látható „Clear Sample” többletvezérlő tudatosan megmarad
+  vagy egy termékdöntés dokumentálja a változtatását.
+
+#### Bizonyítottság, cáfoló kör és fennmaradó kérdések
+
+**Bizonyítottsági fok: feltételes.** Két külön út megerősíti, hogy a
+hasonlóság-keresés nem pusztán kikommentezett rajz: (A) az utasításszintű
+útvonal az aktív `Ctrl+F7` ágat a `0x005d8810` kezelőhöz, onnan a
+`0x007ea000` keresőhöz vezeti; (B) az indexelt string-xref-ek külön a
+`searchoptions/similarthumb` vezérlőhivatkozásait és a
+`CAlbumState::SimSearchResults` kimeneti függvényt (`0x004ad4e0`) azonosítják,
+amelyet a keresőkezelő hív. A pontos erőforrás-kivonat megerősíti, hogy a
+felületi sorok közben ki vannak kommentezve. A PicasaPy-oldali billentyű,
+minta, küszöb és eredménysáv külön ellenőrizhető a QML/Python-forrásban. A
+teljes eredményszemantika azonban a keresőfüggvények dekompilálása nélkül nem
+dönthető el.
+
+**Cáfoló kísérlet:** a „kommentelt vezérlők ⇒ a funkció nem létezik” állítást
+az aktív `Ctrl+F7`-ág és a `0x005d8810` → `0x007ea000` → `0x004ad4e0`
+keresési/eredménylánc cáfolja. A cáfoló saját kontrollja: a tényleges
+`tre:searchoptions` kivonat igazolja, hogy a felületi vezérlők valóban
+kommenteltek. Így a pontosított állítás az, hogy **a vezérlők rejtettek, a
+bináris funkció pedig parancsúton aktív**.
+
+**Nyitott:**
+
+- `Ghidra-kör kell: 0x007ea000: a hasonlósági eredmény-lista kiválasztása/rangsorolása: a RankMax hogyan hat, mi a rendezés/maximum, és benne van-e a mintakép? [blokkoló]`
+- `Ghidra-kör kell: 0x007e95f0: a 380 bájtos distims.db rekordok összehasonlító képlete/küszöbe és a kihagyási esetek. [blokkoló]`
+- `Ghidra-kör kell: 0x005d8810: az egyes/multiple kijelölés kezelése, a külön párbeszéd vagy panel megnyitása és a RankMax ág teljes vezérlési útja. [blokkoló]`
+- `Ghidra-kör kell: 0x007ead60: pontosan mikor indul és milyen feltételekkel áll le az adatbázis-frissítés/felirat. [blokkoló]`
+- A külön menüparancs vagy modális párbeszéd megléte nincs lezárva; a megszerzési út a fenti táblázatban áll.
 
 ### Nyitott kérdések mérlege (60.)
 
 ```
-Nyitott kérdések: 0 nyílt · 3 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 3 lezárva · 3 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
-- **LEZÁRVA:** a csoport öt vezérlője (60.1); a hasonlósági adatbázis és
-  az eredmény-album (60.2); a `dupesearch` második belépési pontja (60.3).
-- **BLOKKOLT:** a hasonlósági adatbázis **helye és formátuma** (a
-  `0x007e95f0` — az egyetlen hívó — sztringjei az indexben üresek).
-  **Mi kell hozzá:** célzott dekompiláció. **A jegyet nem blokkolja:** a
-  mi `phash`-motorunk adja a tartalmat, a tárolás a mi döntésünk.
+- **LEZÁRVA:** a `searchoptions`-ban deklarált elemek és a kikommentezett
+  vezérlők elkülönítése (60.1, #5660); a `distims.db`-hez tartozó
+  380-bájtos rekord és a `Similarity Search Results` kimeneti név (60.2,
+  #447/#5660); a `dupesearch` második belépési pontja (60.3).
+- **NYÍLT:** van-e külön menübelépés: a #5660 táblázata megadja a
+  megszerzés útját.
+- **BLOKKOLT:** a keresési képlet/rangsor, a `RankMax` hatása, a kijelölési
+  és felületnyitási ág, valamint a frissítés pontos feltételei. **Mi kell
+  hozzá:** a 60.4-ben megadott célzott Ghidra-körök. A 380 bájtos rekord
+  mérete és részleges szerkezete már ismert; ez nem maga a blokkoló kérdés.
 
 *(Záró mondat a 45.1 szerint: ez a csoport a leltárban nem szerepel,
 ezért „hiányzó vezérlő" mérőszáma sincs — a hiányt a fenti tábla mondja
