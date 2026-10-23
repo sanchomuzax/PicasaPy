@@ -6243,16 +6243,63 @@ N3-ra cáfoló feltevésként a `0.50` ajánlási határt és a PicasaPy `0.9` �
 | N4: keret és név alapértelmezett láthatósága | ✅ Lezárt | Mérés (`job-187`, 36.3). |
 | N5: személyszintű mellőzés útja és hatása | ✅ Lezárt | Mérés (`job-222..226`, 37.11): csak arcszintű mellőzés. |
 | N6: személy törlése és hatása az arcokra | ✅ Lezárt | Mérés (`job-222/224`, 37.10); a javítás #5391-gyel kiment. |
-| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ Nyitott | A People Manager két személyes, első kattintás/Ctrl/Shift és `Delete Person` állapotot rögzítő felvétele NINCS MEG. |
+| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ Részben nyitott | A Név nélküliek többes kijelölése megerősített: a job-180 Ctrl+A felvételén hat arc van kijelölve, a `0x006470d0` pedig a kijelölt elemeket járja (20.5, 36.1, 40.3). A People Manager Ctrl/Shift-modellje NINCS MEG: a `contactmgr.fen` nem ad kijelölési módot, a bináris egy aktuális indexet használ, a job-186 csak egy sort mutat; két személyes felvétel kell. |
 | N8: People Manager referencia-képernyőkép | ✅ Lezárt | Mérés (`job-186`, 24. kép, 36.3). |
 
 **Fejlesztési következmény:** nincs bizonyított eltérés a PicasaPy és az eredeti között, ezért megvalósítási jegy nem indokolt. Új kutatási jegy sem kell: N1, N3 és N7 hiányzó eredményei a #5184-ben maradnak.
 
 **Nyitott:**
-- Ghidra-kör kell: 0x0042a440: a `vtable+0xd4` célosztálya és a `d8`/`d4` kimenet jelentése, valamint ennek kapcsolata a `0x004985e0`-val másolt munkatétellel [N1 bináris alút; a futásidejű döntéshez mérés kell].
-- Ghidra-kör kell: 0x100057c0: a dinamikus `vtable+0x40` callback tényleges célosztálya, a Red belső detektorküszöbe és a bemeneti képméret forrása [blokkoló].
+- Ghidra-kör kell: 0x0042a440: a `vtable+0xd4` célosztálya és a `d8`/`d4` kimeneti mezők jelentése, különösen a `d4` kapcsolatának tisztázása a `0x004985e0`-val másolt munkatételhez.
+- Ghidra-kör kell: 0x100a3a50: a már dekompilált közvetítő hívási láncán keresztül azonosítsd, ki állítja be a `[this+0x10]` objektumot és mi az élő `+0x40` cél; kövesd tovább, hol hasonlítják az eredményt a detektor elfogadási határához (a `0x100a8240` jelöltben ez nem látható). [blokkoló]
+- Ghidra-kör kell: 0x006cde50: a Red felé továbbított hat DWORD-os blokkban mely mezők adják a képméretet és a detektor képbemenetét?
 - N1: azonos kétarcú fotó eredeti Picasa-felvétele a személy megnevezése előtt és után.
 - N3: azonos címkézett képkészleten mindkét program mért aránya, valamint a Red tényleges mérete és küszöbe.
 - N7: két személyes People Manager felvétel, a Ctrl/Shift-kijelölés és a `Delete Person` állapotának rögzítésével.
 
-**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 51. szakasz: a cache-segéd kulcsainak célzott ellenőrzése, N1 határának pontosítása és a #5184 pontonkénti státusza); `docs/specs/00-index.md` (a lap aktuális nyitott állapotának átvezetése).
+**A jelen kutatási kör módosításai:** `docs/specs/picasa-arcfelismeres.md` (az 51.3 N7-státusz pontosítása, új 51.4-51.5 leletek és a megmaradt kérdések); `docs/specs/00-index.md` (az 51.4-51.5 és N7 részállapotának összefoglalása).
+
+### 51.4 N1: a `0x004985e0` rekordmásoló hívói nem azonosítják a `d4` jelentését
+
+**Hatókör.** A bináris-index `functions` és `xrefs` táblájából ellenőriztem a `0x004985e0` méretét és közvetlen hívóit, majd a másolót és mindhárom indexelt hívóhelyet a helyi, célzott Capstone-olvasattal vetettem össze. A mérőarchívumból csak a 15 `.picasa.ini` tagot bontottam ki a `.bt/5184-codex/ini/` könyvtárba; JPG-t és képernyőképet nem bontottam ki.
+
+- Az index a `0x004985e0` függvényt **36 bájtosként** tartja nyilván. Az utasításai a kimenet `+0x0` és `+0x4` dwordját nullázva, a bemenet `+0x0`, `+0x4`, `+0x8`, `+0xc` dwordját a kimenet `+0x8`, `+0xc`, `+0x10`, `+0x14` helyére másolják, majd a kimenet `+0x18` dwordját nullázzák (`0x004985e0`-`0x00498603`). A rutin nem értelmezi és nem teszteli a másolt `+0xc` értéket.
+- Az index **három közvetlen hívóhelyet** ad; a célzott diszasszemblálás mindhárom `call 0x004985e0` utasítást visszaigazolja:
+
+| Hívóhely | Hívófüggvény | Helyi támpont | Mit bizonyít |
+|---|---|---|---|
+| `0x0042884d` | `0x00425f60` | A függvény sztring-xrefjei között `geoview`, `moviestart`, `avgcolor`, `DigicamPictureThreshold` és `DigicamPictureThreshold2` is van. | A másoló ebben a hívóban általánosabb képadat-út része; ez a kontextus önmagában nem nevezi meg a `d4` mezőt. |
+| `0x0045b8e8` | `0x0045a9d0` | A függvény a `.picasa.ini` sztringre hivatkozik; a másolt rekordot a `0x0049d560` kapja meg. | Az INI-olvasási útból érkező hívás megvan, de a rekord utolsó dwordjának szemantikája itt sem derül ki. |
+| `0x00484a57` | `0x00484820` | A függvény sztring-xrefjei között `.picasa.ini`, `faces` és `FRWriteFaceDataINI` szerepel; a megelőző `0x00484a0c`-`0x00484a2f` virtuális `+0xd4` hívásból veszi a `d8`/`d4` kimeneteket. | A `faces`-írási kontextus igazolja, hogy ugyanaz a másoló arcadatos útban is szerepel; nem fejti meg, mit jelent a virtuális hívás `d4` kimenete. |
+
+**Két független út.** **A út:** az SQLite-index mindhárom hívót a `0x004985e0`-hoz köti, a `0x00484820` string-xrefjei pedig az INI- és `faces`-írási kontextust jelzik. **B út:** a három hívó célzott utasításolvasatában külön-külön látható a `call 0x004985e0`, a rutin saját utasításai pedig a fenti négy dword másolását mutatják. A két út egyezik a hívási térképben és a másoló adatmozgató szerepében. A `d4` jelentésére nézve egyik sem döntő.
+
+**Cáfoló kísérlet.** Azt próbáltam igazolni, hogy a `d4` egyszerűen az arcok száma, mert az egyik hívó a `faces`-írás útján van. A hipotézishez a másoló testében vagy a többi hívóban arc-darabszámot dekódoló műveletet kerestem. A `0x004985e0` csak dwordokat másol, és ugyanezt a másolót a `.picasa.ini`-olvasó, valamint a másik képadat-hívó is használja; ezért a darabszám-értelmezés **nem igazolt**. A cáfoló ellenőrzése ugyanazon index- és utasításszintű mércével történt. Ez nem zárja ki, hogy a `d4` egy másik, dinamikusan hívott függvényben kap jelentést.
+
+**Mérőadat-ellenőrzés.** A korábban relevánsnak tekintett archívumtagokat újra kibontva **15** `.picasa.ini` összesen **27 267 bájt**; `faces=`, `[Contacts2]`, `]facealbum:` és `ffffffffffffffff` mintára **0** találat volt. Ez nem ad N1-hez címkézett kontrollt, és az archívum JPG-inek arctartalmáról nem következtettem.
+
+**Eredmény N1-re.** Az `[item+0x10]` korai kapuja és a `d4` másolási útja dokumentált, de a `d4` jelentése és a névhez rendelt archoz való viszonya **NINCS MEG**. A már megnevezett képen felajánlott második arcot továbbra is csak ugyanazon kétarcú fotó név előtti/utáni eredeti Picasa-felvétele dönti el. N1 nyitott; eredeti/PicasaPy-eltérés és fejlesztői teendő nem bizonyított.
+
+### 51.5 N3: a Red.dll köztes virtuális ugrása ellenőrizhető, a végső cél nem
+
+**Helyi, célzott ellenőrzés.** A helyi Red.dll RTTI-vtáblájának `vfr_SdkRelator` `+0x40` bejegyzése a `0x101c65ac` címen a `0x100a3a50` címet tartalmazza. A függvény 10 bájtja (`0x100a3a50`-`0x100a3a59`) ezt a közvetett utat valósítja meg:
+
+```asm
+0x100a3a50  mov ecx, [ecx+0x10]
+0x100a3a53  mov eax, [ecx]
+0x100a3a55  mov eax, [eax+0x40]
+0x100a3a58  jmp eax
+```
+
+A külön `vfr_FusedRelator` `+0x40` vtable-bejegyzése (`0x101c7254`) a `0x100a8240` címre mutat. Ez a helyi, nyers vtable-olvasat és a `0x100a3a50` utasításai együtt igazolják, hogy a `vfr_SdkRelator` átirányít a `[this+0x10]` objektum saját `+0x40` slotjára. **Nem igazolják**, hogy ez a dinamikus objektum `vfr_FusedRelator`, és nem mutatnak küszöb-összehasonlítást. A 35.14-ben rögzített RTTI- és szignatúra-út a `vfr_FusedRelator::sim` `0x100a8240` jelöltet azonosítja, de a futásidejű objektumhoz kötést nem.
+
+**Meglévő Ghidra-kimenet.** A helyi `2026-10-23-ghidra-sor-265-red.txt` és `2026-10-23-sor-271-red.txt` azonos C-kifejezést rögzíti a `[param_1+0x10]` objektum `+0x40` slotjára történő dinamikus hívásról. Mindkét kimenet figyelmeztet, hogy a Ghidra nem állította helyre az ugrótáblát, és a közvetett ugrást hívásként kezelte. Ez kiegészítő egyezés a pointer-láncra; a két azonos jelentés nem két külön bizonyítási út, és az ugrás tényére a nyers utasítás (`jmp eax`) az irányadó.
+
+**A `0x100a8240` jelölt célzott utasításolvasata.** A szignatúra-xref által `vfr_FusedRelator::sim`-ként azonosított belépési pontban a `0x100a8353`-`0x100a8364` és `0x100a83f2`-`0x100a8403` blokkok ismét `vtable+0x40` virtuális műveletet hívnak; a visszakapott float-értékeket a rutin eltárolja, illetve súlyozottan összesíti (`0x100a8366`-`0x100a839f`, `0x100a8427`-`0x100a847b`). A vizsgált kód a hosszakat hasonlítja, és float-értéket nullához viszonyít (`0x100a842d`); elfogadási ponthatár összehasonlítása **nem látható ebben a rutinban**. Ez nem zárja ki a hívóban vagy a dinamikus `+0x40` célban végzett küszöbölést, és nem kapcsolja a jelöltet a `vfr_SdkRelator` beágyazott példányához.
+
+**Két független út.** **A út:** a Red.dll RTTI-adat és a korábban azonosított szignatúra-xref a `vfr_SdkRelator`/`vfr_FusedRelator` osztályneveket, valamint a `0x100a8240` `sim` jellegű jelöltjét adja (35.14). **B út:** a Red.dll nyers vtable-dwordjai (`0x101c65ac`, `0x101c7254`) és a frissen célzottan dekódolt `0x100a3a50` bájtok megmutatják az átirányítás pontos utasításait. A két út egyezik a dinamikus második lépcsőben; egyik sem bizonyítja a `[this+0x10]` példány típusát vagy a végső elfogadási küszöböt.
+
+**Cáfoló kísérlet.** Azt próbáltam alátámasztani, hogy a dinamikus második cél biztosan `vfr_FusedRelator::sim` (`0x100a8240`). A `vfr_SdkRelator` slot közvetlen célja azonban a `0x100a3a50`, amely a `[this+0x10]` objektum slotját futásidőben olvassa, majd oda ugrik. A `vfr_FusedRelator` külön vtable-bejegyzése megadja a jelölt címét, de nem köti hozzá ezt a beágyazott objektumot; a hipotézis ezért nem igazolt. A cáfoló ellenőrzése ugyanazzal a mércével történt a nyers vtable-adatokon és a célfüggvény utasításain.
+
+**N3 mérlege.** A PicasaPy YuNet-alapértéke a forrásban `0.9` (`src/picasapy/faces/detector.py:42`), a korlátozott detektálási méret `960` képpont (`:49`). Az eredeti Picasa `0.50` értéke a `FRRecommendIncludeLimit` javaslat-befogadási határa, nem bizonyított Red-detektorküszöb (49.1). A `0x100a8240` jelölt rutinban nincs látható végső elfogadási határ, így a keresést a dinamikus célra és a hívókra kell továbbvinni. **NINCS MEG:** a Red belső detektorküszöbe, a tényleges bemeneti képmérete és azonos címkézett képkészleten mért felismerési aránya. Az eredeti bináris címkéje a `0.50` javaslati határ; a YuNet `0.9`-cel való score-összehasonlítás ebből nem következik. A felismerési arányhoz mindkét program azonos, címkézett képkészletén végzett pontos mérés kell.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (51.4: az N1 rekordmásolójának három hívója; 51.5: a Red.dll dinamikus `+0x40` ugrásának helyi visszaellenőrzése; az 51.3 N7 mérlege külön rögzíti a Név nélküliek és a People Manager állapotát); `docs/specs/00-index.md` (az 51.4-51.5 lelet és az N7 részállapot összefoglalása).
