@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.196] - 2026-10-23
+
+- A Nyomtatás felülvizsgálata rákérdez, ha minden kép gyenge minőségű, és az eltávolítás megerősítése után megszakítja a nyomtatást (#5682).
+
 ## [0.9.195] - 2026-10-23
 
 - A Passport nyomtatási mód megtartja a beállított példányszámot, az új munkák pedig továbbra is 1 példánnyal indulnak. (#5669).
