@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.188] - 2026-10-23
+
+- A Print Screen gomb mostantól BMP-képernyőképet ment a Képernyőfelvételek projektmappába, és értesít a mentésről (#5639).
+
 ## [0.9.187] - 2026-10-22
 
 - A diavetítés átmenet-választójának megjegyzése már nem tüntet fel elavult elemszámot (#5560).
