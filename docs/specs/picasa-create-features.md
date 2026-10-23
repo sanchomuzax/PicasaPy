@@ -6170,7 +6170,7 @@ alobjektum osztályának RTTI-je, és azon belül a `+0x2a4` olvasói.
 |---|---|---|
 | Poszter készítése… | `ID_POSTER` | dialógusa megvan: `runtime/poster.fen` — nagyítás 200–1000% tíz lépésben, papírméret-választó, **„Overlap tiles"** jelölő; a súgó-szöveg: *„ha nem akarsz vágni, vágd a képet a papír méretére"* |
 | Beállítás háttérképként | `ID_WALLPAPER` | egyképes asztali háttér (a kollázs-panelnek külön `Desktop Background` gombja van) |
-| Hozzáadás a képernyővédőhöz… | `ID_SCREENSAVER` | a képek `screensaver=yes` ini-kulcsot kapnak (`picasa-ini-format.md`); a `saverlist.txt` tárolja a listát |
+| Hozzáadás a képernyővédőhöz… | `ID_SCREENSAVER` | a bináris a `]screensaver` albumcímkét és a `#db3\saverlist.txt` listát frissíti; a `CAlbumState` a címkét `screensaver` INI-kulcsra képezi, de a menüút tényleges `.picasa.ini`-írása nincs igazolva. Részletek: `picasa-menu-parancsok-viselkedes.md` 35.3. |
 | Ajándék CD készítése… | `ID_BURNCD` | a `cdautorun/` mappa tartalma megy a lemezre (Windows autorun + Mac `.app`), dialógus: `runtime/cdchoose.fen` |
 | Közzététel a Bloggeren… | `ID_EXPORT_SENDTOBLOGGER` | a `buttons/core-lh2.pbz` `custombutton/blogger` gombja: `verb="hybrid"`, URL `https://photos.blogger.com/picasa-post.g` — a szolgáltatás megszűnt |
 | Exportálás TiVo DVR-re… | `ID_TIVO` | a `plugins/ytITivo.yti` plugin (TiVo Desktop-integráció) |
