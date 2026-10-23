@@ -6357,3 +6357,36 @@ A külön `vfr_FusedRelator` `+0x40` vtable-bejegyzése (`0x101c7254`) a `0x100a
 - **Címek:** `0x100a3a50`, `0x101c656c`, `0x101c60ec`, `0x101c7214`, `0x100a8240`
 - **Eredmény:** EGYEZIK
 - **A bíráló tényei:** az SDK `+0x40` slotja a `0x100a3a50` átirányítóhoz vezet; az utasítások a `[this+0x10]` objektum saját `+0x40` slotjára ugranak. A `vfr_FusedRelator` `+0x40` slotja `0x100a8240`, de csak akkor tényleges cél, ha a belső objektum ezt a táblát használja. A StdClusterRelator táblái nem igazolják az SDK → StdCluster → Fused hívási sort. A vizsgált függvényekben végső elfogadási küszöb nem bizonyítható; hiányzik a runtime típus és a pontszámot felhasználó döntési hely.
+
+## 52. #5185, a névforrások és a Red.dll-ág független helyi ellenőrzése (2026-10-23)
+
+**Hatókör.** A `2026-10-22-ghidra-sor-197-200.txt`, `2026-10-22-ghidra-sor-198-hivo.txt` és `2026-10-22-ghidra-sor-252-red.txt` Ghidra-kimeneteket a helyi Picasa 3.9.141.259 bináris célzott Capstone-diszasszemblálásával és az index hívó-/sztring-hivatkozásaival vetettem össze. A Red.dll `0x100057c0` és `0x10001570` kódjához a meglévő Ghidra-kimenetet és a külön helyi utasításolvasatot ellenőriztem. Új Picasa/Colab futás és profilfájl-diff nem készült.
+
+### 52.1 A 7. pont: névforrások és a `contacts.xml` mentési időpontja
+
+- A `0x00581920` külön `contacts.xml` (`0x00c90e74`) és `backup.xml` (`0x00c90e94`) útvonalat nyit a parser számára (`0x00991650`); a sikeres `backup.xml`-helyreállítási ág meghívja a `0x00580110` XML-írót (`0x00581bcb`). A `0x00580110` `contacts` gyökeret és névjegymezőket állít elő, majd a `0x009c15a0` írósegéden át a `contacts.xml`-be ír. A címeknél látható fájlút és íróhívás megerősített; ez a helyreállítási ág önmagában nem azonosít felhasználói műveletet.
+- A rendes `#contacts\` mentési út a `0x0041ba40` → `0x00586bd0` lánc. A `0x00586bd0` csak a `[edi+0x13c]` jelző beállított ágában hívja a `0x00580110`-et (`0x00586c31`-`0x00586c49`). A betöltési út külön: `0x0041ee10` → `0x00586d00` → `0x00581920`; a hívó a `+0x13d` bájtot állítja, ez nem bizonyítja a `+0x13c` írási jelzőt vagy egy People Manager-művelet időpontját.
+- A `0x0066f2b0` külön másolási út: egyetlen indexelt közvetlen hívója a `0x0066f470`, amelynek hivatkozásai a Burn/Backup felülethez tartoznak. Ez nem bizonyíték a szokásos névjegy-mentés indítására.
+- **NINCS MEG:** hogy névadás, People Manager OK/Cancel, javaslat elfogadása, törlés, alkalmazásbezárás vagy újraindítás pontosan mikor módosítja a `contacts.xml`-t, a `.picasa.ini`-t és a db3-at. A bináris hívási út nem helyettesíti a fájlrendszeri előtte/utána mérést; J8 szükséges.
+
+### 52.2 A 8. pont: Red.dll pontszámút és a végső küszöb
+
+- A Red.dll `0x100057c0` a bemeneti leírók és minták `vtable+0x40` hasonlósági értékei közül a legnagyobbat írja az eredménytömbbe. A `0x10001570` ennek a rutinnak a visszatérési státuszát ellenőrzi, nem a float-pontszámot. E két függvényben végső pontküszöb-összevetés nem látható.
+- A `0x100a3a50` közvetítő a `[this+0x10]` objektum dinamikus `+0x40` slotjára ugrik. A slot tényleges célosztálya és a pontszám elfogadásának helye továbbra sincs feloldva; a `vfr_FusedRelator::sim` (`0x100a8240`) csak jelölt (51.5, 51.8). A Picasa EXE `FRRecommendIncludeLimit=0,50` összevetése (`0x0048e1f0`, `0x0048e33e`) külön, utólagos ajánlásba-vételi szűrő; nem a Red.dll detektorküszöbének bizonyítéka.
+- **NINCS MEG:** a Red.dll végső felismerési küszöbe, a tényleges bemeneti képméret, valamint a felismerés indítási és kihagyási feltétele. A küszöb eldöntéséhez a dinamikus callback és pontszámfogyasztó döntési ágának célzott feltárása, az indításhoz/kihagyáshoz J7, az arányhoz azonos címkézett képkészleten végzett pontos mérés kell. Becsült szám nem adható át.
+
+### 52.3 Független utak, cáfoló próba és bizonyítottság
+
+- **A út:** a Ghidra C-kimenet (`0x00581920`, `0x00580110`, `0x100057c0`, `0x10001570`) megmutatja a fájlágakat, az XML-írót és a státusz-/pontszámkezelést.
+- **B út:** a helyi, célzott Capstone-olvasat végigköveti a hívásokat és feltételeket; az indexelt hívó- és sztring-xrefek külön a `#contacts\` útvonalhoz kötik a `0x0041ba40`-et, valamint a `0x0066f2b0`-t a `0x0066f470` Backup-hívójához. A Red.dll-nél a nyers utasítások egyeznek a Ghidra-változattal: a `0x100057c0` pontszámot ír, a wrapper pedig státuszt vizsgál. A dokumentált részállítások így **megerősítettek**; az eredeti futási időzítés és küszöb **nyitott**.
+- **Cáfoló kísérlet:** azt próbáltam igazolni, hogy a `0x0066f2b0` a People Manager rendes profilírója, mivel `contacts.xml`-t használ. A függvény forrásként a `contacts.xml`-t és célként a `backup.xml`-t adja át a másoló műveletnek; a hívója `0x0066f470`, a hívási környezet Backup/Burn-panel erőforrásokra mutat. A Ghidra-törzs és az ettől külön ellenőrzött hívó-/sztring-xref ugyanazt mutatja, ezért ezt a besorolást elvetem. Külön ellenőriztem azt a küszöbfeltevést is, hogy a `0x100057c0` vagy a `0x10001570` végezné a végső összevetést: a `0x100057c0` float-összevetése (`0x1000586c`) csak az aktuális legjobb jelöltet választja, a `0x10001570` pedig státuszt tesztel; fix, végső felismerési küszöb egyik vizsgált törzsben sem látható. Ez a két függvényre korlátozott negatív lelet, nem zárja ki a dinamikus callbackben vagy más pontszámfogyasztóban lévő küszöböt.
+
+### 52.4 Független újralevezetés
+
+- **Bíráló:** `independent_binary_review`, friss kontextussal, a következtetés előzetes közlése nélkül.
+- **Ellenőrzés:** eredeti Picasa3.exe és Red.dll hash-e az index `meta.json` értékével egyezik; célzottan vizsgálta a `0x00580110`, `0x00581920`, `0x0041ba40`, `0x00586bd0`, `0x100057c0` és `0x10001570` címeket, teljes `.text`-pásztázás nélkül.
+- **Eredmény:** a `contacts.xml` íróút, a piszkos jelző ága, a betöltési lánc és a Red wrapper/core szerepe **egyezik**. A bíráló jelezte, hogy a `0x100057c0` tartalmaz float-összevetést (`0x1000586c`); ez a legjobb jelölt frissítése, nem fix küszöb. A 52.3 cáfoló próbáját ennek megfelelően pontosítottam. A bíráló a `0x0066f2b0` másolási irányát önállóan nem állapította meg; a forrás/cél állítás a 35.10-ben hivatkozott korábbi Ghidra-törzsből származik.
+
+**A #5185 „Kész, ha” állapota.** Az 1-6. pont továbbra is részleges a 35.3 táblázat nyitott felvételei szerint. A 7. pontban a bináris olvasó/író út és a külön Backup-másoló út dokumentált, de a műveletenkénti lemezre írás és a `.picasa.ini`/db3 diff nyitott (J8). A 8. pontban a pontszámgyűjtő és a wrapper szerepe dokumentált, de a Red.dll végső küszöbe, bemeneti mérete, scan-indítása és kihagyása nyitott (J7, célzott nyomkövetés a binárisban). Így mind a nyolc ponthoz van leírt eredmény vagy konkrét nyitott megszerzési út, de a teljes „Kész, ha” feltétel **nem teljesült**; bizonyított PicasaPy-eltérés és fejlesztői teendő nincs.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 52. szakasz: a 7-8. pont független bináris-ellenőrzése, cáfoló próba és nyitott mérések).
