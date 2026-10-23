@@ -37,7 +37,7 @@ sorrend, ezt bizonyítékként nem használom.
 |---|---|---|---|---|
 | `exit` | `stripback`, `m_offsetLB` (40-42) | bal | 1 | EGYEZIK |
 | `transtype` | `stripback`, `m_offsetLB` (103-105) | bal | 7 | ELTÉR |
-| `timeline` | `centergroup`, `m_offsetLB` (59-61) | közép, bal almás | nincs | ELTÉR |
+| `timeline` | `centergroup`, `m_offsetLB` (59-61) | közép, bal almás | 2 (feltételesen) | ELTÉR |
 | `prev` | `centergroup`, `m_offsetLB` (75-77) | közép, bal almás | 2 | ELTÉR |
 | `auto` | `centergroup`, `m_offsetB` + `m_centerX` (71-73) | közép, középső | 3 | ELTÉR |
 | `next` | `centergroup`, `m_offsetLB` (79-81) | közép, bal almás | 4 | ELTÉR |
@@ -61,7 +61,7 @@ helye egyezik.
 | 1. `exit` felirat | `oneuptext.tre:7-8` („Exit”) | `SlideshowView.qml:990` (`"✕ " + qsTr("Exit")`) | EGYEZIK (a szöveg). A ✕ jel nincs a `.tre`-ben. |
 | 2. `exit` ikon | `oneup.tre:28-29` (`oneup/exit_icon`, `m_buttoniconleft`). Az ikon grafikája `NINCS MEG`. | `SlideshowView.qml:990` (✕ jel) | NINCS MEG |
 | 3. `exit` művelet | `0x00803527`-`0x00803573`: a vezérlő vtábla `+0x24` metódusa egy objektumot ad. Ennek vtábla `+0x14` metódusát hívja `(0, 0)` argumentumokkal. A célobjektum `NINCS MEG`. | `SlideshowView.qml:992` (`show.stop()`) | NINCS MEG |
-| 4. `timeline` gomb | `oneup.tre:59-61`, felirat `oneuptext.tre:4-5` („Timeline”). Kattintási ág: `0x00803500`-`0x00803522` (`0x00cbd528`), a `0x007fda00` hívással. | nincs (a `SlideshowView.qml` nem tartalmaz `timeline` elemet) | ELTÉR (hiányzik) |
+| 4. `timeline` gomb | `oneup.tre:59-61`, felirat `oneuptext.tre:4-5` („Timeline”). Kattintási ág: `0x00803500`-`0x00803522` (`0x00cbd528`), a `0x007fda00` hívással. | `SlideshowView.qml` `slideshowTimelineButton`; a `Main.qml` a vetítés lezárása után a menüvel közös `toggleTimeline()`-t hívja. | ELTÉR (a PicasaPy-beli belépési út alkalmazás-szintű) |
 | 5. `auto` (lejátszás, szünet) | `oneup.tre:71-73`, ikon `67-69`. Kattintási ág: `0x00803486` (`0x00cbd510`), a `0x00803110` hívással. | `SlideshowView.qml:999-1004` (`togglePause()`, 1004) | EGYEZIK (a funkció) |
 | 6. `auto2` | `oneup.tre:20-23` (gyökér-gyermek, a sáv felett, 97 képpontot hagyva az alja fölött). Kattintási ág: `0x008034c5` (`0x00cbd51c`), a `0x00803110` hívással. A kattintási célként való elérhetősége `NINCS MEG`: a `.tre`-ben nincs találat-jelző. | nincs megfelelő | NINCS MEG |
 | 7. `prev` | `oneup.tre:75-77` (`Property mousedown 1`). Kattintási ág: `0x008035ab` (`0x00cbd43c`), a `0x00802980` hívással (a léptetés `[+0x3f4]` mezőjét csökkenti). Lenyomásra sül el: `0x00a643f8`-`0x00a64425`; a felengedési ág `0x00a64556`-`0x00a6455d` kihagyja. | `SlideshowView.qml:994-997` (`onClicked: show.goBack()`, 997). Nincs `lenyomasra`. | ELTÉR (felengedésre sül el) |
@@ -69,12 +69,28 @@ helye egyezik.
 | 9. `rotateleft` | `oneup.tre:87-88`. Kattintási ág: `0x008036f2`-`0x00803723` (`0x00cbd454`), a `[+0x260]` objektum vtábla `+8` hívása `-1` iránnyal. | `SlideshowView.qml:1012-1016` (`rotateCurrent(-1)`, 1016) | EGYEZIK (a funkció és az irány). Az `↺` glifa `NINCS MEG`. |
 | 10. `rotateright` | `oneup.tre:90-91`. Kattintási ág: `0x0080368a`-`0x008036b8` (`0x00cbd468`), a `[+0x260]` objektum vtábla `+8` hívása `+1` iránnyal. | `SlideshowView.qml:1018-1022` (`rotateCurrent(1)`, 1022) | EGYEZIK (a funkció és az irány). Az `↻` glifa `NINCS MEG`. |
 | 11. `star` | `oneup.tre:97-98`. Kattintási ág: `0x00803733`-`0x008037be` (`0x00cbd4c4`), a `[+0x260]` objektum vtábla `+4` hívása a gomb állapotbájtjával. | `SlideshowView.qml:1057-1061` (`starCurrent()`, 1061) | EGYEZIK (a funkció) |
-| 12. `transtype` (átmenet-választó) | `oneup.tre:103-105`. A kattintáskezelő nem ágazik rá. A név csak a `0x008037e0` láthatóság-kezelőben szerepel (`0x00803a30`-`0x00803a83`). A lista tartalma és a választás útja `NINCS MEG`. | `SlideshowView.qml:1024-1039` (`PicasaComboBox`, mindig látszik) | ELTÉR (láthatóság) |
+| 12. `transtype` (átmenet-választó) | `oneup.tre:103-105`. A kattintáskezelő nem ágazik rá. A név csak a `0x008037e0` láthatóság-kezelőben szerepel (`0x00803a30`-`0x00803a83`). A lista tartalma és a választás útja `NINCS MEG`. | `SlideshowView.qml` `slideshowTransitionBox`, a Timeline gombbal kölcsönösen kizáró láthatósággal. | EGYEZIK (láthatóság; a lista útja külön lelet) |
 | 13. feliratgomb (`captionbutton`) | `oneup.tre:121-124` (`showtarget caption_yesicon`, `hidetarget caption_icon`), `oneup.tre:168-170` (`oneup/caption`). Kattintási ág: `0x00803373`-`0x008033b7` (`0x00cbd4d0`). A `[+0x359]` állapotbájt alapján a `0x009cd730` mutat, a `0x009cd760` rejt az `oneup/caption` elemen (`0x00cbd4a8`). | `SlideshowView.qml:1045-1056`. `feliratModok` a 120. sorban, a ciklus 1051-1055. | ELTÉR (2 állapot a binárisban, 3 a mai kódban) |
 | 14. `plusone` (+) | `oneup.tre:133-135` (`setautorepeat 1`). Kattintási ág: `0x008033e3`-`0x00803401` (`0x00cbd4f0`), a `0x00802ff0` hívása `+1,0` értékkel. A felső határ `20`: `0x00802b7e`-`0x00802b8f` (`0x00cf4974`, f32 = 20,0). | `SlideshowView.qml:1131-1139` (autoRepeat 1137, `enabled: show.seconds < 30` 1138) | ELTÉR (felső határ: 30 a mai kódban, 20 a binárisban) |
 | 15. `minusone` (-) | `oneup.tre:141-143` (`setautorepeat 1`). Kattintási ág: `0x00803438`-`0x00803447` (`0x00cbd500`), a `0x00802ff0` hívása `-1,0` értékkel (`0x00cf3ed0`). Az alsó határ `1`: `0x00802b6d` (`fld1`). | `SlideshowView.qml:1093-1107` (autoRepeat 1105, `enabled: show.seconds > 1` 1106) | EGYEZIK |
 | 16. „Display Time” felirat | `oneuptext.tre:10-11` (`Text oneup/tpslabel`) | `SlideshowView.qml:1088` (`qsTr("Display Time")`) | EGYEZIK |
 | 17. kijelzési idő értéke, egyes szám | `0x0080304c`-`0x0080305d`: `cmp esi, 1`. Egyes szám: `OneUpUI::second` (`0x00cb23d0`). Többes szám: `OneUpUI::seconds` (`0x00cb23e8`). Formátum: `OneUpUI::Format` (`0x00cb2404`), `%d %s` (`0x00cb23fc`). | `SlideshowView.qml:1126` (`show.seconds + " " + qsTr("seconds")`) | ELTÉR (angol felületen „1 seconds”; a magyar fordítás mindkét esetben „másodperc”) |
+
+### #5653: a Timeline gomb és az átmenet-választó láthatósága
+
+A `slideshowTimelineButton` akkor látszik, ha a `Preferences/BigSlideshow2`
+értéke igaz (hiányzó kulcsnál 1), a képernyőmélység 16 vagy 32 bit, és a
+vetítést nem az Időrend-bemutatóból indították. Minden más esetben a
+`slideshowTransitionBox` látszik; a két elem láthatósága fordított. A
+képernyőmélység a host `QScreen` értéke, a tesztek a QML tulajdonságot
+helyettesíthetik.
+
+Az eredeti `0x007fda00` a qshow belső Időrend-módját állítja be (a
+`picasa-create-features.md` 2/b/2 pontja). A #5653 felületi szerződése szerint
+a PicasaPy-gomb a meglévő Nézet ▸ Időrend belépést használja: bezárja a
+diavetítést, majd a `Main.qml` `toggleTimeline()` függvényén keresztül a #5377
+`TimelineView`-ját nyitja meg. Ez a PicasaPy belépési útja, nem állítás a két
+belső mód bináris azonosságáról.
 
 ## 3. Eltérések és jegyjavaslatok
 

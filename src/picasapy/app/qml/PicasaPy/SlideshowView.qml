@@ -34,6 +34,14 @@ Rectangle {
     property bool _resyncing: false
     property bool screensaverMode: false
     property bool screensaverInputArmed: false
+    // #5653: az eredeti oneup láthatósági feltételei. A képernyőmélység
+    // tesztben felülírható; az éles értéket a host adja át QScreenből.
+    property bool bigSlideshow2: true
+    property int screenDepth: 0
+    property bool timelineSlideshow: false
+    readonly property bool timelineButtonVisible: bigSlideshow2
+        && (screenDepth === 16 || screenDepth === 32)
+        && !timelineSlideshow
     //: #2992: a diaidő MÁSODPERCBEN, a sáv ± gombjaival állítható
     //: (`tpslabel`/`minusone`/`tps`/`plusone`). Az alapérték 3 — mérve
     //: (`SlideshowEffectTime`, `0x007facd3`). A hívó a vezérlőhöz köti,
@@ -135,6 +143,7 @@ Rectangle {
     signal closed()
     signal starToggled(int index)
     signal rotateRequested(int index, int delta)
+    signal timelineRequested()
     //: #433: a választó nem ír közvetlenül a beállításba — a gazda dönti el,
     //: hova kerül (a `starToggled`/`rotateRequested` mintája).
     signal transitionPicked(string kulcs)
@@ -1007,6 +1016,13 @@ Rectangle {
             //: `mousedown` van; a kezelőjük a `0x008032e0`. Ezért LENYOMÁSRA léptet,
             //: nyomva tartva nem ismétel.
             PicasaButton {
+                objectName: "slideshowTimelineButton"
+                text: qsTr("Timeline")
+                height: controlsRow.buttonHeight
+                visible: show.timelineButtonVisible
+                onClicked: show.timelineRequested()
+            }
+            PicasaButton {
                 objectName: "slideshowPrevButton"
                 text: "◀"; width: 34
                 height: controlsRow.buttonHeight
@@ -1046,6 +1062,7 @@ Rectangle {
                 objectName: "slideshowTransitionBox"
                 height: controlsRow.buttonHeight
                 width: 150
+                visible: !show.timelineButtonVisible
                 //: a lista a képernyő alján álló sáv fölé nyílik
                 popup.y: -popup.implicitHeight
                 model: show.atmenetek.map(function (a) { return a.nev })

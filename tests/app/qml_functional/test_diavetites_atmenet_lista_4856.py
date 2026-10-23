@@ -37,6 +37,12 @@ def _gyerek(gyoker, nev):
     return obj
 
 
+def _atmenetvalasztot_engedelyez(controller):
+    """Az átmenet-listát tesztelő próbáknál kapcsoljuk ki a BigSlideshow2-t."""
+    controller._get_settings().setValue("Preferences/BigSlideshow2", False)
+    controller.statusChanged.emit()
+
+
 def _kozep(item):
     return item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
 
@@ -65,6 +71,16 @@ def _valaszto_megnyitasa(window, qt_app, show, combo, controls, popup):
     assert varj_feltetelre(
         qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
     ), "az egérmozgatás nem jelenítette meg a vezérlősávot"
+    # #5653: a Timeline-gomb rejtése után a választó helye elmozdulhat; a
+    # kattintás előtt megvárjuk a teljesen megjelent sávot
+    assert varj_feltetelre(
+        qt_app,
+        lambda: controls.property("opacity") >= 0.99 and combo.isVisible(),
+        masodperc=10.0,
+    ), "a vezérlősáv és az átmenet-választó nem jelent meg teljesen"
+    pont = _kozep(combo)
+    QTest.mouseMove(window, QPoint(round(pont.x()), round(pont.y())))
+    qt_app.processEvents()
     _egerrel_kattint(window, combo)
     assert varj_feltetelre(
         qt_app, lambda: popup.property("visible"), masodperc=10.0
@@ -97,7 +113,8 @@ def mentett_kenburnsaoi(tmp_path):
 
 
 def test_a_valaszto_pontosan_a_het_eredeti_atmenetet_mutatja(qml_app, qt_app):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
+    _atmenetvalasztot_engedelyez(controller)
     show = _gyerek(window, "slideshowView")
     combo = _gyerek(window, "slideshowTransitionBox")
     popup = _gyerek(window, "picasaComboPopup")
@@ -108,13 +125,17 @@ def test_a_valaszto_pontosan_a_het_eredeti_atmenetet_mutatja(qml_app, qt_app):
     assert combo.property("count") == len(_DIAVETITES_ATMENETEK), (
         "a diavetítés átmenet-választója nem hét tételt tartalmaz"
     )
-    assert _lathato_sorok(lista) == [
-        nev for _kulcs, nev in _DIAVETITES_ATMENETEK
-    ], "a legördülő látható sorai nem a 4.3 szerinti hét elem"
+    vart = [nev for _kulcs, nev in _DIAVETITES_ATMENETEK]
+    # a legördülő már látszhat, mielőtt minden sora létrejön (#5592)
+    varj_feltetelre(qt_app, lambda: _lathato_sorok(lista) == vart, masodperc=10.0)
+    assert _lathato_sorok(lista) == vart, (
+        "a legördülő látható sorai nem a 4.3 szerinti hét elem"
+    )
 
 
 def test_az_alapertek_dissolve(qml_app, qt_app):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
+    _atmenetvalasztot_engedelyez(controller)
     show = _gyerek(window, "slideshowView")
     combo = _gyerek(window, "slideshowTransitionBox")
 
@@ -126,6 +147,7 @@ def test_mentett_kenburnsaoi_betoltesekor_dissolve_lesz(
     mentett_kenburnsaoi, qml_app, qt_app
 ):
     window, controller, _engine = qml_app
+    _atmenetvalasztot_engedelyez(controller)
     show = _gyerek(window, "slideshowView")
     combo = _gyerek(window, "slideshowTransitionBox")
 
