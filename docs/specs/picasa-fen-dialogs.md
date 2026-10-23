@@ -361,16 +361,19 @@ feltehetően futásidőben rejtve van).
 
 ### 3.5 `rename.fen` — Fájlok tömeges átnevezése (V1)
 
+Vizsgált bináris: `Picasa3.exe`; PE-erőforrás `FileVersion=3.9.141.259`,
+`ProductVersion=3.9.141`.
+
 - `label width="fill"` — "1 file(s) selected for rename.", `<bind format="%s file(s) selected for rename." source="files" attr="title">` — dinamikus darabszám-behelyettesítés
 - `spacer amount="0"`
 - `label title="Please enter a new name for these files:"`
 - `edit width="25em" name="newname" filter="filename"`
 - `group align="center"`:
   - `labelgroup title="Include in filename:"`: `check title="Date" name="date"`, `check title="Image resolution" name="size"`
-- `label title="Example:" width="fill" height="2li" name="sample"` — élő előnézet a végleges fájlnévről
+- `label title="Example:" width="fill" height="2li" name="sample"`: az eredeti rögzített mintaszövege; nem a kijelölt fájl végleges nevének előnézete
 - `buttongroup`: `button "Rename" type="accept" name="rename"`, `button "Cancel" type="cancel"`
 
-Az eredeti élő előnézet mintái a binárisban szó szerint szerepelnek:
+Az eredeti `Example:` előnézethez használt minták a binárisban szó szerint szerepelnek:
 
 | előnézeti adat | eredeti érték és hely |
 |---|---|
@@ -378,27 +381,36 @@ Az eredeti élő előnézet mintái a binárisban szó szerint szerepelnek:
 | Image resolution | **` 640x480`** (`0x00c89a4c`, `RenameDialog::samplesize`, `0x00c89a58`) |
 | minta felirata | **`Example: `** (`0x00c89a74`) |
 
-A dátum összeállításakor a `:` és `/` karaktereket `-` váltja fel
-(`0x005332e0`–`0x005332ec`), így a dátum-idő fájlnévben használható alakot
-kap. Az előnézeti dialógusban egy névmező és a két fenti jelölőnégyzet van;
-sorszámmező nincs. A sorszám képzett része az eredménynek, nem külön vezérlő.
+Az eredeti előnézetet a `0x00532960` rutin állítja elő: a `newname` mező
+értékéhez a `0x00532710` által a két jelölő állása szerint kiválasztott
+beégetett mintát fűzi, majd a `0x00c80a50` címen levő `.jpg` kiterjesztést.
+Tehát a `0x00c89a18` és `0x00c89a4c` értékei **előnézeti minták**, nem
+bizonyítékai az átnevezett fájlok pontos dátum- vagy kiterjesztés-formátumának.
 
-#### Eredeti / PicasaPy / teendő (#366 pontosítása)
+A tényleges, fájlonkénti feldolgozás a `0x00532ec0` útvonalon történik. A
+bináris a fénykép dátum/idő értékét a `0x0098b650` és `0x0098c470` rutinokkal
+formázza, majd a `0x005332e0`-`0x005332ec` utasításokban a `:` és `/`
+karaktereket `-`-re cseréli. A felbontást a `0x00c89a9c` formátumsztringdel
+(`" %dx%d"`, használata: `0x00533358`) állítja elő. A teljes célút és a
+fájlrendszeri művelet további szabályai a jelen statikus olvasásból nem
+következnek.
 
-| | eredeti, binárisból | PicasaPy jelenlegi állapota | teendő |
-|---|---|---|---|
-| dátum-utótag | ` 08-01-2004 2-30-45 PM`; `:` és `/` → `-` (`0x00c89a18`, `0x005332e0`–`0x005332ec`) | `taken_at[:10]`, dátum-idő nélküli ISO-dátum (`src/picasapy/fileops/rename.py`, `_build_stem`) | az élő előnézethez és átnevezéshez egyeztesd a dátum-idő alakot és kötőjeles időelválasztást |
-| felbontás-utótag | ` 640x480` (`0x00c89a4c`) | `widthxheight`, a formátum egyezik | nincs formátumeltérés |
-| sorszámozás | nincs sorszámmező a dialógusban; az eredeti név-előnézet az első képet mutatja | automatikus `név`, `név-1`, `név-2`… | maradjon automatikus; ne kerüljön külön mező a dialógusba |
-| ütközés és `.picasa.ini` | **NINCS MEG** | ütközés-előellenőrzés; fájlátnevezéskor az ini-szekciót is átviszi (`rename_photo`) | eredeti szabályhoz célzottan fel kell oldani a gomb utáni útvonalat |
+#### Eredeti / PicasaPy / teendő (#366, #5698)
 
-**Nyitott bináriskérdés:** a kezelő (`0x00532c70`) a
-`RenameDialog::vftable` (`0x00c8ba24`) `+0x114` slotját hívja; a slot célja
-`0x008d2640`, amelynek függvényhatárát az index nem tartalmazza. A további
-átnevezési út, az ütközéskezelés és az ini-szekciók követése ezért nincs
-igazolva. Következő célzott lépés: `Ghidra-kör kell: 0x008d2640 — a Rename
-gomb végrehajtási útja, az ütközés szabálya és a .picasa.ini szekciók
-átvezetése [blokkoló]`.
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Menü és indítás:** a jegy útvonala `Kép > Csoportos szerkesztés > Átnevezés`. A menü-diszpécser `0x005cb990` tartalmazza a `0x00532ec0` hívást (`0x005cc4e9`); az F2-kezelő `0x005e6710` szintén ezt hívja. A lokális menüleltár a `Batch Edit` almenüt rögzíti, de a `Rename` gyermek parancsazonosítóját nem. | A `File > Rename... F2` és a `Picture > Batch Edit > Rename... F2` ugyanazt a `renameRequested` jelet küldi (`PicasaMenuBar.qml`). | **NINCS MEG** a bináris menüparancs és a `Batch Edit > Rename` pontos kapcsolata. Megszerzés: a `0x005cb990` elágazási táblájának (`0x005cdc30`, `0x005cde04`) célzott visszafejtése, majd egyeztetés a menü-erőforrással. |
+| **Párbeszéd és alapmező:** `rename.fen:1-17`; a `newname` mezőt olvasó rutinok `0x00532960`, `0x00532c70`; a címke frissítése `0x00532960`. Névmező, `files`-ből kötött darabszám, dátum/felbontás jelölő, Example, Rename/Cancel. A `.fen` nem ad meg előre kitöltött nevet. | A QML ugyanezeket a mezőket és feliratokat használja; a darabszám a sorok számából jön, megnyitáskor kiüríti a névmezőt (`FileOpsDialogs.qml:182-194, 222-225`). | **EGYEZIK** a mezőkészlet, a darabszámkijelzés és az üres kezdeti név (`rename.fen`; `0x00532960`). |
+| **Dátum/felbontás jelölők alapértéke:** a Preferences/rename alatt tárolt `RenameUseDate` (`0x00c899e0`) és `RenameUseSize` (`0x00c899f0`) kulcsokat a konstruktor `0x00532070` olvassa; a hozzájuk tartozó mezőket előtte nullázza. | A `renameUseDate/Size` hiányzó beállításnál `False` értéket ad (`photo_ops_controller.py:169-174, 730-740`). | **EGYEZIK**: friss beállításnál mindkét jelölő kikapcsolt. |
+| **A jelölők módosított állásának megőrzése:** a kulcsok beolvasása bizonyított (`0x00532070`), a visszaírás helye és feltétele ebből a függvényből nem állapítható meg. | A QSettings minden kapcsoláskor elmenti a két jelölő állását (`photo_ops_controller.py:742-747`). | **NINCS MEG.** Megszerzés: `Ghidra-kör kell: 0x008d2640: a RenameDialog jelölőinek módosított állása visszaíródik-e a Preferences/rename kulcsokba?` |
+| **Névmező szűrése:** a `rename.fen:7` `filter="filename"` attribútumot ad át; a filter-regisztráló `0x008e30e0` a `filename` esetén a `0x008e3160` callbacket állítja be. | A mező tiltja a `\\ / : * ? " < > |` karaktereket és 200 karakterre korlátoz (`FileOpsDialogs.qml:235-247`). | **NINCS MEG** az eredeti callback pontos karakter- és hosszhatára. Megszerzés: `Ghidra-kör kell: 0x008e3160: a filename filter pontos megengedett karakterei és hosszhatára [blokkoló]`. |
+| **Dátumutótag:** a `0x00532ec0` útvonal per-fájl dátum/időt formáz (`0x0098b650`, `0x0098c470`), majd `:` és `/` → `-` (`0x005332e0`-`0x005332ec`). A `0x00c89a18` minta ` 08-01-2004 2-30-45 PM` csak a párbeszéd előnézetéhez tartozik. | A `format_taken_at` a `QLocale` dátum- és időformáját használja, fájlnévben a tiltott elválasztókat `-`-re cseréli (`rename.py:198-215`). Pontmérés: `en_US`, `2004-08-01T14:30:45` → `8-1-2004 2-30-45 PM`. | **NINCS MEG** az eredeti tényleges kimenet ugyanilyen dátummal és rögzített Windows-területi beállítással. Megszerzés: Picasa 3.9 mérése egy dátumot és időt tartalmazó mintafájlon, azonos területi beállítással; a statikus előnézeti példa nem helyettesíti ezt. |
+| **Felbontás-utótag:** `%dx%d` (`0x00c89a9c`), per-fájl használat `0x00533358`; párbeszéd-minta ` 640x480` (`0x00c89a4c`). | `widthxheight` (`rename.py:233-235`); a mért `640x480` bemenetre `640x480` kimenet. | **EGYEZIK** a formátum; az eredeti és a PicasaPy is az adott fénykép szélességét/magasságát használja (`0x00532ec0`, `0x00533332`-`0x00533361`; `photo_ops_controller.py:759-765`). |
+| **Előnézet:** a `0x00532710` a jelölők szerint a rögzített dátum- és méretmintát használja; a `0x00532960` `Example: ` (`0x00c89a74`) címkével, beégetett `.jpg`-vel (`0x00c80a50`) állítja elő. Nem a kijelölt fájlból olvas. | A `renamePreview` a kijelölés első sorának tényleges dátumát, felbontását és kiterjesztését használja (`FileOpsDialogs.qml:195-203`, `photo_ops_controller.py:749-769`, `rename.py:238-262`). | **ELTÉR.** A kompatibilitási cél szerint az előnézetet az eredeti rögzített mintájához kell igazítani; külön fejlesztési jegytörzs lent. |
+| **Sorszám és kiterjesztés a tényleges kimenetben:** a `.fen`-ben nincs sorszámmező; a rutin fájlonként járja a kijelölést (`0x00533200`-`0x00533361`), majd `0x00533517` címen meghívja a `0x00479870` műveletet. A pontos sorszámképzés és az eredeti kiterjesztés kezelése nem bizonyított. | Automatikus `név`, `név-1`, `név-2`… sorszámozás; az eredeti kiterjesztést megtartja (`rename.py:238-262, 324-330`). | **NINCS MEG.** Megszerzés: `Ghidra-kör kell: 0x00532ec0: a teljes célfájlnév képzése, különösen a sorszám és az eredeti kiterjesztés [blokkoló]`. |
+| **Ütközés, fájlművelet, `.picasa.ini`:** a `0x00532ec0` a `0x00479870` rutinon keresztül hajt végre műveletet, de az ütközési szabály és az ini-szekciók sorsa nem következik a vizsgált utasításokból. | Előellenőrzi a teljes köteg célütközéseit, átnevezi a fájlt, átviszi az ini-szekciót és a kísérő `- Originals` fájlt; futás közbeni részleges hiba után nincs köteg-szintű visszagörgetés (`rename.py:42-105, 265-352`). | **NINCS MEG.** Megszerzés: `Ghidra-kör kell: 0x00479870: az eredeti fájlrendszeri átnevezés, ütközéskezelés és metaadat-/adatbázis-követés [blokkoló]`. A korábbi `0x008d2640` kérés nem ezt a műveletet célozta; az a `0x00532c70`-ből elért általános objektum-visszahívás, ezért törölve. |
+
+**Bizonyítottság:** az előnézet eltérése megerősített. A bináris út (`0x00532710` + `0x00532960`, rögzített minták és `.jpg`) és a PicasaPy út (`renamePreview` → első kijelölt sor tényleges adatai/kiterjesztése) egymástól függetlenül ugyanazt az eltérést mutatja. Cáfoló próbában a `0x00532960` teljes függvényében kerestem kijelölt fájlra vagy fájl-metaadatra mutató bemenetet: ilyen nincs; a rutin a `newname` mezőt, a két statikus mintát és a `.jpg` konstansot használja. A `rename.fen` `sample` mezője és a PicasaPy controller első-sort olvasó útja ezt külön is ellenőrzi.
 
 ### 3.6 `move_database.fen` — Adatbázis áthelyezése (V1)
 
