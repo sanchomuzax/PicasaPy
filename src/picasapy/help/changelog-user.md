@@ -4,6 +4,37 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-23
+
+**Diavetítés**
+
+- A vetítés megjelenítési ideje legfeljebb **20 másodperc**, mint az
+  eredeti Picasában (eddig 30 volt). Egy másodpercnél a sáv „1
+  másodperc" feliratot ír. Lásd [Nézegetés: néző, diavetítés, videó](features/nezegetes.md).
+- A vezérlősáv **◀** és **▶▶** gombja már a lenyomáskor lép, és nyomva
+  tartva nem ismétel.
+
+**Emberek és arcok**
+
+- A **Beállítások ▸ Névcímkék** fülön a **Csoportküszöb** csúszkája
+  alapból **85**-ön áll, mint az eredetiben. A csoportosítás ettől nem
+  változik: a korábban beállított érték ugyanúgy hat, csak a csúszka más
+  számot mutathat. Lásd [Beállítások](features/beallitasok.md).
+
+**Menük**
+
+- Az **Eszközök ▸ Feltöltés** almenü kinyílik, és az eredeti három
+  tételét mutatja (Google Fotók, közös szerkesztésű webalbum, YouTube).
+  Mind a három megszűnt szolgáltatás, ezért szürke. Lásd
+  [Ami még nem érhető el](features/meg-nem-erheto-el.md).
+- Az album helyi menüjéből kikerült a szintén megszűnt **Feltöltés a
+  Picasa Webalbumokba…** tétel; a kép helyi menüjében megmaradt, szürkén.
+
+**Javítások**
+
+- Ha egy indexkép átmenetileg nem olvasható a gyorstárból, a program
+  újra elkészíti, és a fotót nem jelöli sérültnek.
+
 ## 2026-10-22
 
 **Emberek és arcok**

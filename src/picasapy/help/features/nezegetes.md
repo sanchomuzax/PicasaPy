@@ -294,16 +294,19 @@ amint elhagyod, újraindul a visszaszámlálás. A sávon:
 
 - **✕ Kilépés**;
 - **◀** előző, **▶** / **❚❚** lejátszás és szünet, **▶▶** következő;
+  az előző és a következő gomb már a **lenyomás pillanatában** lép, és
+  nyomva tartva sem ismétel: egy lenyomás egy kép;
 - **↺** és **↻** forgatás — a vetítés közbeni forgatás megmarad;
 - **átmenet-választó** (lásd lentebb);
 - **feliratmód** gombja — körbejár a három állás közt: a felirat (**T**),
   a fájlnév (**F**), vagy semmi (**—**);
 - **★** csillagozás — ez is megmarad;
-- **Megjelenítési idő** — a **−** és a **+** gombbal 1 és 30 másodperc
+- **Megjelenítési idő** — a **mínusz** és a **plusz** gombbal 1 és 20 másodperc
   közt állítható, hogy meddig álljon egy kép. A két gomb közt a kiírt
-  érték látszik, például „5 másodperc".
+  érték látszik, például „5 másodperc" (vagy egynél „1 másodperc").
   A gombot **nyomva tartva** folyamatosan léptet, nem kell
-  huszonkilencszer kattintani.
+  tizenkilencszer kattintani. A 20-as felső határnál a plusz, az 1-esnél
+  a mínusz gomb szürke lesz.
 
 A választott átmenet, feliratmód és megjelenítési idő **megmarad** a következő
 vetítésre és a következő indításig is.
