@@ -15,14 +15,18 @@
 >
 > A hiányzó 24-ből **hat platform-változat** (Mac/Win: Finder,
 > „Információ lekérése", „A Mac rendszerben", TiVo ×2, iPhoto-import),
-> és további **kilenc megszűnt szolgáltatáshoz** kötődik (Picasa
-> Webalbumok, FTP-közzététel, YouTube, közös szerkesztésű albumok,
-> Google Earth, telepítő-eltávolítás). Az **érdemi** hiányra mind van
-> nyitott jegy: **#1398** (másodpéldány-kereső) · **#1399** (szín
+> és további **nyolc, megszűnt szolgáltatáshoz vagy külső komponenshez**
+> kötődik (Picasa Webalbumok, YouTube, közös szerkesztésű albumok,
+> Google Earth, telepítő-eltávolítás). Az FTP-közzététel nem ilyen szolgáltatás:
+> a #5709 vizsgálat szerint az eredeti bináris általános FTP-kiszolgálóra
+> feltöltő útvonalat tartalmaz; a PicasaPy-ból hiányzik. Így a fennmaradó
+> tíz tétel érdemi funkcióhiány. A korábban azonosított kilencre van nyitott
+> jegy: **#1398** (másodpéldány-kereső) · **#1399** (szín
 > szerinti keresés) · **#1401** (Útlevélkép) · **#1402** (adatbázis
 > áthelyezése) · **#1403** (arcok XMP-be) · **#1404** (geocímke-törlés) ·
 > **#1405** (keresés mentése) · **#1406** (címke albumként) ·
-> **#1408** (arc-film).
+> **#1408** (arc-film). A tizedik, FTP-közzétételi hiányhoz a #5709 jelentés
+> javasolt fejlesztői jegytörzset ad.
 >
 > ⚠️ A mérés **felirat-egyezésen** alapul, tehát egy átfogalmazott
 > menüpontot „hiányzónak" jelölhet — minden tétel külön ellenőrzendő
@@ -414,7 +418,7 @@ nem csak beírható volt, hanem menüből is elérhető.
 | magyar felirat | megjegyzés |
 |---|---|
 | **Útlevélkép…** | igazolványkép-elrendezés nyomtatáshoz — eddig sehol nem szerepelt |
-| Közzététel FTP-n keresztül… | a HTML-export FTP-feltöltéssel (#351 rokona) |
+| Közzététel FTP-n keresztül… | az eredeti bináris HTML-export FTP-feltöltő útja (#5709); a PicasaPy-ban hiányzik |
 | Keresési eredmények mentése… | a keresés eredménye **albumként** rögzítve |
 | Címke megjelenítése albumként… | egy címke virtuális albummá emelése |
 | Arcinformációk írása XMP-adatokba… | a `faces=` → XMP export kézi indítása (#26 rokona) |

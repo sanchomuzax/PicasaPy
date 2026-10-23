@@ -806,8 +806,8 @@ another picture?”. A `0x00531c60` visszafejtett hibaága a
 a nulla arcú eset címe „Try another picture?”, szövege „Can't find any
 faces”, egyetlen OK gombbal. A többarcú eset élő szövege még nincs külön
 mérve. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a
-Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (tiltva) · Show
-Duplicate Files · Search for ▸ · Save search results… · Show tag as
+Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (PicasaPy kihagyja) ·
+Show Duplicate Files · Search for ▸ · Save search results… · Show tag as
 album… · Passport photo… · Delete empty online albums… · Choose database
 location… · Write faces to XMP…). Jegy: **#1401**.
 
@@ -1325,7 +1325,9 @@ A binárisból három, egymásra épülő réteg olvasható ki:
 Továbbá a `ShowHidden` beállítás (`0x00440af0`, `0x005643e0`, `0x005c9300`,
 `0x0067bda0`) kapcsolja a megjelenítést.
 
-**Vagyis az elrejtés adatvédelmi funkció**, nem csak nézeti szűrő.
+**Vagyis az elrejtés gyűjteménybe sorolás és felületi hozzáférési kapu**,
+nem fájltitkosítás: a PicasaPy figyelmeztetése és a képfájlok lemezen
+maradása a 32.3.1 / #5700 mérésével egyezik.
 
 **Nálunk (#4597 kódvizsgálat):** a fotó-szintű `photos.hidden` mellett a
 mappa-szintű `folders.hidden` is létezik (`index/schema.py:377`, `:501–515`).
@@ -1441,7 +1443,7 @@ vagy egyéni gyűjteményből elrejtett mappa tehát megjelenítés után a
 | megjelenítés | `P2category=Folders on Disk` | `folders.hidden=0` |
 | Picasában rejtett mappa nálunk | — | a `P2category=Hidden Folders` mappát az `is_custom_collection_category` **egyéni gyűjteménynek** sorolja (a `Hidden Folders` nincs a `_BUILTIN_CATEGORIES`-ban), tehát **látható** „Hidden Folders" nevű egyéni gyűjteményként jelenik meg |
 | `category=` visszaesés | `P2category` üresnél a `category` kulcs | a `read_folder_category` csak a `P2category`-t olvassa |
-| jelszó | db3 `catdata` `Hidden Folders` sor `info` (hex MD5) | `QSettings` `view/hiddenPasswordHash`; a db3-átvétel (`pmpimport/`) a `catdata`-t nem olvassa |
+| jelszó | db3 `catdata` `Hidden Folders` sor `info` (hex MD5) | `QSettings` `view/hiddenPasswordHash`; a Picasa-import a rejtett mappa `catdata.info` értékét átveszi (`picasa_import_controller.py`), felhasználói gyűjteményekét nem |
 
 #### Nyitott kérdések mérlege (32.3.1)
 
@@ -2388,15 +2390,21 @@ javított horgony adta a menüsáv-építőből (`0x00559150`):
 *(A `ID_WALLPAPER` névtere `eMenuCreate` — a **Létrehozás** menüé, nem a
 Nézeté.)*
 
-### 38.1 ⭐ „Rejtett képek" — a bekapcsolás JELSZÓT AJÁNL
+### 38.1 ⭐ „Mappa elrejtése": a művelet jelszót ajánl
 
-Az állapot a `Preferences\ShowHidden` kulcsban él; az olvasó/író
-`0x005c9300` (a `Preferences` ág, `ShowHidden` kulcs az egyetlen két
-sztringje), amit a fő parancskezelő (`0x005cb990`) hív.
+Az `ID_VIEW_SHOWHIDDEN` nézeti állapot a `Preferences\ShowHidden` kulcsban
+él; az olvasó/író `0x005c9300`-t a fő parancskezelő (`0x005cb990`) hívja.
+Ez külön működés a következő, Hide/Unhide parancs után futó jelszóajánlattól.
 
-**Ami eddig sehol nem szerepelt nálunk:** ugyanez a parancskezelő
-**kétszer** hívja a `0x005ee2a0`-t is, és az egy párbeszédet tesz fel, ha
-a „Rejtett mappák" gyűjtemény **nincs jelszóval védve**:
+**A `0x005cb990` parancskezelő két külön műveletből hívja** a
+`0x005ee2a0`-t: a `0x9c72` „Hide Folder" ág `1`-et, a `0x9cd0` „Unhide
+Folder" ág `0`-t ad át. A `0x005ee2a0` az `1` ágon választja a `Hidden
+Folders` gyűjteményt, és csak akkor ajánl jelszót, ha annak `catdata.info`
+mezője üres. A `0` ág `Folders on Disk`-re sorol vissza, és nem futtatja a
+jelszóajánlatot. **Tehát a felajánlás a Mappa elrejtése művelethez tartozik,
+nem a „Rejtett képek" nézeti kapcsoló bekapcsolásához.**
+
+Az ajánlat párbeszédének elemei:
 
 | elem | sztring |
 |---|---|
@@ -2410,15 +2418,17 @@ A függvény a `Preferences` ág mellett a `Folders on Disk`, `Hidden
 Folders` és `state` sztringeket is használja — vagyis a gyűjtemény
 állapotát nézi meg, mielőtt kérdez.
 
-⇒ **A „Rejtett képek megjelenítése" nem puszta szűrő-kapcsoló: a Picasa
-az első bekapcsoláskor felajánlja a gyűjtemény jelszavas védelmét, és a
-„ne kérdezd többet" választ külön kulcsban őrzi.**
+⇒ **A „Mappa elrejtése" művelet jelszó nélküli rejtettmappa-gyűjteménynél
+felajánlja a jelszavas védelmet, és a „ne kérdezd többet"
+választ külön kulcsban őrzi.** A „Rejtett képek" nézeti kapcsoló önmagában
+nem indítja el ezt a felajánlást.
 
-*(Bizonyítottsági fok: **megerősített** a párbeszéd léte, szövegei,
-gombjai és a két registry-kulcs; **feltételes** az, hogy pontosan a
-BEkapcsoláskor kérdez — a `0x005cb990` két hívóhelye a be- és a kikapcsoló
-ág is lehet. A gombfeliratok iránya („Add Password") viszont a
-bekapcsolás felé mutat.)*
+*(Bizonyítottsági fok: **megerősített** a parancság, a feltétel, a párbeszéd
+szövegei/gombjai és a beállítás olvasása/írása. A `DoNotConfirmHiddenPwd`
+hiányzó kulcsa melletti tényleges pipa-alapállapot **NINCS MEG**: a
+`0x00407a20` ugyan a `0x00c7f514` címen álló `*` karaktert adja át a
+beállításolvasónak, de ennek az effektív logikai értéke nem következik a
+kiolvasott utasításokból.)*
 
 ### 38.2 Idővonal — egy közös „bemutató-mód" kezelő
 
@@ -2453,35 +2463,36 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
-| `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
+| `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; a nézeti kapcsoló önmagában **nem** indít jelszóajánlatot. Az ajánlat a `0x9c72` Hide Folder parancs után fut (`0x005cb990` → `0x005ee2a0`, 38.1). | A kapcsoló megvan és őrződik; zárolt állapotban feloldást kér. A jelszavas menütétel aktív a Rejtett mappáknál, de felhasználói gyűjteményeknél placeholder; automatikus jelszóajánlat és `DoNotConfirmHiddenPwd` megfelelő nincs. | **ELTÉR:** pótolni a Hide Folder utáni ajánlatot és a külön letiltási beállítást; az általános gyűjteményjelszó a #416-hoz tartozó fejlesztési bővítés. |
 | `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.3 és a 38.2.61-78 szakaszokban rögzített külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, dátumcsúszka és mért mozgásképletek. | **#5377:** a `TimelineView.qml` teljes képernyős, mappakártyás bemutató; a Nézet-menü és `Ctrl+5` aktív. A QEMU-pontok, valódi billentyűk, egérvezérlők és referencia-képkocka tesztjei: `tests/app/test_timeline_motion_5377.py`, `tests/app/qml_functional/test_idorend_bemutato_5377.py`. A gyűjtemény eredeti forrása és dátumjelentése továbbra is nyitott a #5401-ben. Az eredeti fejlécben nincs Időrend-eszköztárgomb: a `thumbui.tre` a gombot `m_hidden`-ként jelöli. | A felület és a mért részmozgás megvalósult; a képlánc/dátumforrás nyitott kérdéseit ne találgassuk. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
 
 ```
-Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 2 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a három parancsazonosító (38. bevezető); a `ShowHidden`
-  tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
+  tárolása, a Hide Folder jelszóajánlatának hívási feltétele és teljes
+  szövegkészlete (38.1); az
   Időrend `oneup`/overlay belépési útja (38.2.1); a háttérkép teljes írási
   lánca, a stílusértékekkel együtt (38.3).
 - **NYITVA (`#4443`; a 2. Ghidra-köteg állapota a 38.2.6-ban):** a 38.2.3 futó mérése lezárta a képernyő képi
   összetételét. Nyitott maradt a bemeneti mappák/albumok halmaza és sorrendje,
   a jobb halom és időskála jelentése, a gombok művelete, a billentyűk, az
   animáció és a kilépés célja. Ezekhez fókuszált, eredeti Picasa-futtatás kell.
-- **BLOKKOLT:** hogy a jelszó-ajánlat a BE- vagy a KIkapcsoláskor jön-e.
-  A `0x005cb990` két hívóhelye statikusan nem különbözteti meg őket.
-  **Mi kell hozzá:** egy megfigyelés élő Picasán — a „Nézet ▸ Rejtett
-  képek" be-, majd kikapcsolása, és melyiknél jön a párbeszéd. Ez a
-  #416 megvalósításáig **nem blokkol semmit**, ezért nem kér külön
-  `felhasználóra-vár` jegyet.
+- **NYITVA:** a `DoNotConfirmHiddenPwd` hiányzó kulcsa mellett a pipa
+  tényleges alapállapota. **Mi kell hozzá:** friss Windows-profilon, e kulcs
+  nélkül Hide Folder parancs, a pipa kezdeti állásának és a mentett értéknek
+  rögzítése; a `0x00407a20` `*` alapkaraktere önmagában nem mondja meg a
+  jelölő állapotát.
 
 ### Amit KIZÁRTAM
 
-- **„A »Rejtett képek« puszta szűrő-kapcsoló"** — megdőlt: jelszó-ajánló
-  párbeszéd tartozik hozzá, saját „ne kérdezd többet" kulccsal (38.1).
+- **„A Rejtett képek kapcsoló indítja a jelszó-ajánlatot"**: megdőlt:
+  azt a Hide Folder (`0x9c72`) parancs indítja; Unhide (`0x9cd0`) és a
+  `ID_VIEW_SHOWHIDDEN` ág nem (38.1).
 - **„A háttérkép az eredeti képfájlra mutat"** — megdőlt: a Picasa
   **BMP-t ír** a saját `Backgrounds` mappájába, és arra mutat (38.3).
 - **„A háttérkép nyújtva/csempézve kerül ki"** — megdőlt: mindkét
@@ -5098,10 +5109,13 @@ létrehozáskor** íródik.
 
 ⚠️ **Ami nyitva marad:** hogy a `[obj+0x68]` alapnév pontosan mit
 tartalmaz (a forrásvideó neve? időbélyeg?) — a mezőt a hívó tölti, és a
-függvényben nincs rá literál. **Megszerzés:** a `0x00591dd0` hívójának
-dekompilációja (az index `xrefs` táblája nem tartalmazza — a hívás
-közvetett). **A megvalósítást nem blokkolja:** a mappa, a kiterjesztés és
-a sorszámozás megvan.
+függvényben nincs rá literál. A `0x005952d0` `capture_frame` ága
+(`0x0059578f`) a `[ebp+0x3098]` mezőt adja át a `0x00592170` konstruktornak;
+az tárolja `[obj+0x68]`-on, amelyet a `0x00591dd0` felhasznál. **Megszerzés:**
+célzott Ghidra-adatfolyam-vizsgálat a `0x005952d0`-ban. A meglévő
+`2026-10-21-koteg-1021b.txt` csak a diszpécserből induló hívást sorolja, a
+mező eredetét és jelentését nem mutatja. **A megvalósítást nem blokkolja:** a
+mappa, a kiterjesztés és a sorszámozás megvan.
 
 
 #### A panel állapotszövegei — a hivatalos magyar fordítással
@@ -5702,23 +5716,20 @@ Ugyanaz a kezelő (`0x005952d0`):
 ⇒ A videó nem csak lejátszható: **vágható**, és **képkocka menthető
 belőle**.
 
-### 64.3 Nálunk: a TÁROLÁS megvan, a FUNKCIÓ nincs
+### 64.3 Nálunk: a 2026-09-01-i hiányállapot azóta megváltozott (#1838)
 
-**Mérve — és ez a lényeg:** a `moviestart` és `movieend` tokent a
-rendszerünk **ismeri és megőrzi**:
+A fenti 2026-09-01-i mérés a funkció beépítése előtti állapotot rögzíti.
+A mai kódban a vágás, annak visszaállítása és a képkocka mentése is elérhető.
+A teljes képkocka-mentési út és a binárissal való összevetés a **64.5**
+szakaszban áll.
 
-| hol | mit tesz |
-|---|---|
-| `ini/filter_registry.py:148–149` | a két token a regiszterben |
-| `render/registry_data.py:512–513` | „Start Point" / „End Point" néven |
-| `render/chain.py:220` | a `_NOOP_MARKERS` közt — **átmegy a láncon, nem vész el** |
-
-⇒ **A round-trip biztonságos**: ha egy Picasából örökölt videón van
-vágás, azt nem töröljük ki. **Beállítani viszont nem tudjuk** — a
-QML-fában nincs `setin`/`setout`/`trim` vezérlő, és képkocka-mentés sincs.
-
-*(Ez a jó fajta állapot: a formátum-kompatibilitás megelőzte a
-funkciót, tehát a funkció pótlása nem jár adatvesztés-kockázattal.)*
+| művelet | nálunk, a jelenlegi kódban | bizonyíték |
+|---|---|---|
+| `setin` / `setout` / `trimslider` | megvan; a kiválasztott időpontokat a vezérlő `moviestart` / `movieend` tokenként írja | `app/movie_trim_controller.py`; `app/qml/PicasaPy/VideoPlayerView.qml`; `app/qml/PicasaPy/PhotoViewer.qml` |
+| `reset_trim` | megvan | `app/movie_trim_controller.py`; `app/qml/PicasaPy/VideoEditPanel.qml` |
+| `capture_frame` | megvan; a videó jelenlegi lejátszási pozíciójából ment képkockát | `app/frame_capture_controller.py`; `movie/frame_capture.py`; `app/qml/PicasaPy/VideoEditPanel.qml` |
+| a `moviestart` / `movieend` round-trip | a tokenek megmaradnak, és a vezérlő írni is tudja őket | `ini/movie_trim.py`; `ini/filter_registry.py`; `app/movie_trim_controller.py` |
+| YouTube-export | nincs | a megvalósítás hatóköre továbbra is a #432 / #2529 alatt áll |
 
 ### 64.4 A maradék kis panelek
 
@@ -5767,8 +5778,110 @@ vezérlője és a képkocka-mentés; a csoportosztás nincs mérve.)*
 
 - **„A videóhoz csak lejátszás tartozik"** — megdőlt: vágás be-/kimeneti
   ponttal, visszaállítással és képkocka-mentéssel (64.1–64.2).
-- **„A `moviestart`/`movieend` tokent nem ismerjük"** — megdőlt: a
+- **„A `moviestart`/`movieend` tokent nem ismerjük”**: megdőlt: a
   regiszterben és a render-láncban is ott van, megőrizve (64.3).
+
+### 64.5 #5710: a képkocka-mentés teljes útja és a mai összevetés
+
+**Bizalmi fok: feltételes.** Két független út megerősíti, hogy a megadott
+`snapshot` címek a kamerához, a `movieeditpanel/capture_frame` pedig a
+videónézőhöz tartozik. A további eredeti részletek címzett diszasszemblálásból,
+a maiak a forrásból vagy megnevezett mérésből jönnek; nem mindegyik értéket
+ellenőriztem második, független módszerrel. Az eredeti fájlnév-tő értéke, a
+`4` íróopció jelentése és a dekódolt képkocka pixelpontos egyezése nincs meg.
+
+Az eredeti videóképkocka-művelet neve `movieeditpanel/capture_frame`
+(`0x00c91ecc`), kezelője a `0x005952d0`; a `0x0059578f` ága a
+`0x00592170`-en át indítja a `CCaptureFrame` munkát, amelyet a
+`0x00591dd0` végez el. Ez **panelgomb**, nem menüparancs. A megadott
+`snapshot` címek egy másik művelethez, a webkamera-pillanatképhez tartoznak:
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| `0x00c9dc50` `snapshot` → `0x006274f0`: webkamera-panel, külön állókép-rögzítési parancs | `CaptureMoviePanelPopup.qml`, külön kamerafunkció | Ne keverjük a videóból mentett képkockával. |
+| `0x00c9ddcc` `snapshot.jpg` → `0x00628ec0`: a webkamera-pillanatkép rögzített fájlneve | A kamerakód `snapshot` kimenete; a videókocka-kód nem ezt a literált használja | **Nem** a videó-képkocka eredeti fájlneve. |
+| `0x00c9df04` `/snapshot` → `0x0062a720`: webkamera-panel eseménye | Külön a videónéző `capture_frame` jelzésétől | Ne keverjük a két útvonalat. |
+| `0x00c91ecc`; kezelő `0x005952d0`, ág `0x0059578f`: videónéző paneljén „Take Snapshot”; a jelenlegi lejátszási pozícióból indít mentést | `VideoEditPanel.qml:39-46`; `VideoPlayerView.qml:48-56`; `PhotoViewer.qml:2231-2234, 3382-3386` | **EGYEZIK**: ugyanaz a panelművelet és a pillanatnyi pozíció. |
+| `0x005952d0` → `0x00592170` → `0x00591dd0`: a gomb háttérben futó mentéshez vezet; nincs fájlválasztó párbeszéd vagy képkocka-specifikus `Preferences`-kapcsoló ezen az ágon | A QML a vezérlőnek adja át a sort és az aktuális pozíciót; nincs mentési párbeszéd vagy külön képkocka-beállítás | **EGYEZIK**; a kamera `Preferences\\capturemoviesize` értéke a kamerás felvételi méret, nem ez a művelet. |
+| `0x00591f5f`-`0x00591f7b`, `0x00c91808` `CCaptureFrame::CaptureFolder`: `<Képek>/Picasa/<honosított Captured Videos>`; magyar név „Rögzített videoklipek” | `frame_capture_controller.py:35-49`: `pictures_dir()/Picasa`, a meglévő ismert nyelvű mappa nyer, különben a mai nyelv szerinti `CAPTURED_VIDEOS` mappa | **EGYEZIK** új mappánál. Ha csak más nyelvű mappa létezik, **ELTÉR** az eredetitől; ez a #1131-ben dokumentált, szándékos újrafelhasználási szabály. |
+| `0x00591fc5`, `0x00591fd5`, `0x00591ff0` → `0x00445a30`: új célmappánál `[Picasa] P2category=Projects (internal)` sort ír a `.picasa.ini`-be; létező mappát nem jelöl újra | `frame_capture.py:92-101` csak a mappát hozza létre és a JPEG-et írja; nem jelöli a mappát | **ELTÉR**: új célmappánál a projektjelölő hiányzik; fejlesztési teendő. |
+| `0x00592003`-`0x0059200a`, `0x005921a6`-`0x005921aa`: a fájlnév-tő a konstruktor `[obj+0x68]` mezőjéből jön, értéke nem literál | `frame_capture_controller.py:98-100`, `movie/frame_capture.py:48-55`: a videófájl törzse, üres/tiltott névnél `frame` | **NINCS MEG**, honnan jön és mit tartalmaz az eredeti tő. Megszerzés: célzott Ghidra-adatfolyam-vizsgálat `0x005952d0`-ban. A `2026-10-21-koteg-1021b.txt` csak a diszpécserhívást sorolja, a mező jelentését nem. |
+| `0x00993650` (`%s-%03lu`), számlálóhatár `0x1000`: kötőjeles, legalább háromjegyű sorszám, felső határ 4096 | `frame_capture.py:58-75`: `alapnév.jpg`, majd `alapnév-001.jpg` … `alapnév-4096.jpg` | **EGYEZIK** a sorszámozási szabály; a névtő egyezése nyitott. |
+| `0x0059200f` (`.jpg`), `0x00592033`-`0x00592067` → `0x009d6010`: JPEG; íróblokk `{1, 4, 0x55}`. A harmadik érték 85-ös minőségi paraméter (`0x00ad3b30`; másik hívóút: `picasa-kollazs-felulet.md`, 1642. sor) | `frame_capture.py:35-36, 98-101`: `.jpg` kódolás `cv2.imencode`-del, minőségi paraméter nélkül. A helyi OpenCV 4.10.0 implicit DQT-táblája eltér az explicit 85-ösétől (**mérés**) | A kiterjesztés **EGYEZIK**; a JPEG-konfiguráció **ELTÉR**: a 85-ös minőség nincs explicit megadva. A `4` opció hatása nyitott. |
+| `0x00591e78`-`0x00591f35`, `0x00591f30`, `0x00592091`, `0x00592115`: négy állapot: rögzítés, mentés, siker, hiba | `frame_capture_controller.py:82-86, 102-116`; `PhotoViewer.qml:3395-3440`: csak a végső siker/hiba jelzése jut el a felületre | **ELTÉR**: a két köztes állapotjelzés hiányzik. |
+
+**Kimeneti mappa és besorolás.** Az eredeti mappajelölő csak akkor íródik,
+amikor a könyvtár újonnan jön létre. Nálunk a képkocka mentője közvetlenül
+`mkdir`-t és fájlírást végez, ezért az új mappa `P2category=Projects
+(internal)` nélkül marad. A projektgyűjtemény besorolását a `.picasa.ini`
+`P2category` mezője adja (`app/project_folder_names.py:34-35`,
+`index/project_folders.py:1`). A javításnak az `ini/` csomag meglévő író API-ját
+kell használnia.
+
+**A fájlnév nyitott része.** A diszasszemblálás megmutatja az adatfolyamot:
+`0x005952d0` átadja a `CThumbUI` `[ebp+0x3098]` mezőjét a `0x00592170`
+konstruktornak; az `[obj+0x68]` mezővé válik, amelyet a `0x00591dd0` a
+`.jpg` kiterjesztés elé fűz. Ez nem bizonyítja, hogy a tő a videó fájlneve.
+Ezért a jelenlegi videótő nem minősíthető sem egyezőnek, sem eltérőnek.
+
+**Kimeneti minőség.** Az eredeti `{1, 4, 85}` paraméterblokkja binárisból
+igazolt; a harmadik mező 85-ös JPEG-minőségét a közös író másik hívóútja
+erősíti meg. A PicasaPy kódja nem ad át minőségi paramétert. A helyi mérést
+ugyanazon 16×16×3 `uint8` képkockán végeztem: OpenCV 4.10.0 implicit DQT-je
+eltért az explicit 85-ös hívás DQT-jétől. Ez **mért helyi eltérés**, nem állítás
+minden telepített OpenCV-verzióról. A bináris `{1,4,85}` blokk `4` mezőjének
+szemantikája és a teljes JPEG-bájtsor PicasaPy-val való egyezése **NINCS MEG**;
+a `0x009d6010` íróút célzott Ghidra-vizsgálata, illetve azonos videóból készült
+eredeti és PicasaPy-képkocka golden-párja dönti el.
+
+**A pontos képkocka.** Az eredeti a lejátszó pozícióját 100 ns-os értékből
+másodpercre alakítja (`0x005957f3`, `0x0059581b`-`0x00595825`, konstans:
+`0x00cf3e88`); nálunk a QML `media.position` ezredmásodpercet ad át, amit a
+vezérlő a dekódernek továbbít (`VideoPlayerView.qml:54-56`,
+`frame_capture_controller.py:88-109`). A két kódút ugyanazt a felhasználói
+pozíciót célozza, de a kiválasztott dekóderképkocka azonossága **NINCS MEG**.
+Megszerezhető azonos videófájl mindkét programban rögzített pozíciójának
+mentésével és a két képkocka összevetésével; a helyi mérőarchívumban és a
+`research/testdata/` alatt nincs videóminta. A jelen jegy név/hely/formátum
+hatókörét ez nem módosítja.
+
+#### Bizonyítékutak és cáfoló kör
+
+- **A út: utasításszint:** a `0x005952d0` panelparancs `capture_frame` ága →
+  `0x00592170` objektumkonstruktor → `0x00591dd0` munkafüggvény; ebből jön a
+  pozíció, útvonal, `.jpg`, egyediesítés, projektjelölő és írónak adott blokk.
+- **B út: független adat- és forrásoldal:** a `string_xrefs` külön a
+  `0x00c91ecc` videóparancsot rendeli a `0x00593880`, `0x00594820` és
+  `0x005952d0` függvényekhez; a három ticketben megadott `snapshot`-sztring
+  ezzel szemben rendre a `0x006274f0`, `0x00628ec0`, `0x0062a720` kameraútjára
+  mutat. A jelenlegi QML ugyanezt a kettéválást valósítja meg:
+  `VideoEditPanel.qml` vs. `CaptureMoviePanelPopup.qml`. A két út egyezik.
+- **Cáfoló próbálkozás:** azt próbáltam igazolni, hogy a `snapshot.jpg` és a
+  `/snapshot` a videónéző mentési útjának része. A sztringhivatkozások és a
+  `0x005952d0` videóparancs diszasszemblálása ezt megcáfolja: a `snapshot.jpg`
+  a `0x00628ec0` kamera-állókép mentője; a videó worker dinamikus
+  `[obj+0x68]`-ból és `.jpg` literálból épít nevet. A cáfolatot ugyanazzal a
+  címszintű ellenőrzéssel ellenőriztem; nem maradt ellenpélda.
+
+#### Nyitott kérdések
+
+- **BLOKKOLT (örökölt):** az eredeti képkocka fájlnév-töve. Ghidra-kör kell:
+  `0x005952d0`: a `0x00592170` harmadik argumentumaként átadott
+  `[ebp+0x3098]` érték eredete és pontos tartalma [blokkoló].
+- **BLOKKOLT (örökölt, a `picasa-create-features.md` írókérdésének
+  kiegészítése):** Ghidra-kör kell: `0x009d6010`: a képkocka `{1,4,85}`
+  blokkjában a `4` opció jelentése és az író pontos JPEG-adatútja. A meglévő
+  kimenet a `{1,4,90}` poszterhívás minőségi mezőjét azonosítja, de a `4`
+  opciót nem fejti meg.
+- **BLOKKOLT (mérés):** a dekóder által kiválasztott képkocka egyezése; kell
+  hozzá azonos forrásvideó és rögzített lejátszási pozíció mindkét programban.
+- **LEZÁRVA:** gomb és feldolgozási út; mentési párbeszéd/beállítás hiánya;
+  célmappa és `.jpg`; sorszám; hiányzó `.picasa.ini` jelölő; helyi JPEG-DQT
+  eltérés; a két köztes állapotüzenet hiánya.
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 3 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
 
 ## 65. tétel — a KETTŐS NÉZET (2-up) NEM összehasonlítás, hanem KÉT SZERKESZTÉS (2026-09-01)
 
@@ -7191,3 +7304,129 @@ erős állításaira épülnek; a nyitottak a meglévő saját mechanizmusainkka
    csak névvel, ütközésnél hiba.
 
 Mindkettő külön jegy tárgya; itt csak a bizonyíték áll.
+
+## ⛳ #5709: Közzététel FTP-n: eredeti út és PicasaPy-eltérések (2026-10-23)
+
+### Következtetés
+
+A Picasa 3.9 binárisban az Eszközök → Kísérleti → Közzététel FTP-n keresztül
+parancs végig van kötve: a közös HTML-export párbeszédből FTP-módba lép, mentett
+fiókot választ, majd fájlokat tölt fel és távoli fájlokat takarít. A PicasaPy
+HTML-exportja helyi weboldalt készít, de FTP-menüpontja, fiókkezelője és
+feltöltője nincs. A bináris útja megerősített; a teljes fiókpárbeszéd mezőinek
+képernyőn látható neve, a `secure` mező jelentése és a `webUrl` végső felhasználása
+nyitva marad.
+
+Vizsgált bináris: a megadott Picasa3.exe PE-verzióadata szerint
+FileVersion 3.9.141.259 (mérés: PE FileVersion).
+
+### Eredeti felhasználói út
+
+1. A 0x00559150 menüépítőben a 0x0055c295 környezetében szerepel az
+   eMenuTools::ID_FTPWEB kulcs (0x00c8df04), a felirat pedig a
+   0x00c8df1c címen áll: Publish via FTP... A menürekord parancsazonosítója
+   0x9d54; a Kísérleti almenü első tétele.
+2. A 0x005c90a0 regisztrálja a 0x9d54 parancsot. A 0x005cb990 parancságában
+   a 0x9d54 eset a 0x005e7490(1) hívásra fut. Ha nincs kijelölt mappa vagy
+   album, a 0x005e7490 a „You must select a Folder or Album to export”
+   üzenetet adja; egyébként a szokásos webexport.fen párbeszédet nyitja
+   (0x007f4be0), és az FTP-jelzőt adja át a callbacknek (0x007f6cc0).
+3. A közös webexport párbeszéd tartalmazza a címmezőt, célmappa-választót,
+   sablonlistát, leírást és előnézetet, továbbá az öt képméretet és a
+   mozgókép-módot. A méret és film mód részletes, címekkel igazolt
+   megfeleltetése a lap 6.1. szakaszában van.
+4. FTP-módban a 0x007f6d50 callback a 0x005e7370 fiókválasztóhoz lép
+   (AMgrSelect). A fiókválasztás/fiókkezelés a 0x005cfff0 környékén kezeli
+   a hozzáadást, szerkesztést, törlést és kapcsolat-ellenőrzést. A bináris
+   üzenetei többek között: `Please specify a name!`, `This user name already exists!`,
+   `You have successfully verified the connection!` és
+   `Unable to verify the connection. Please check your settings.`
+5. A 0x007f6d50 a kiválasztott profillal a 0x00957630 FTP-szinkronizálót
+   indítja. A WinINet-hívások között FtpOpenFileA, InternetWriteFile,
+   FtpCreateDirectoryA, FtpSetCurrentDirectoryA, FtpFindFirstFileA,
+   FtpDeleteFileA és FtpRemoveDirectoryA szerepel. A státuszszövegek:
+   `Initializing connection…`, `Uploading images…` és
+   `Cleaning up remote files…`. A feltöltő a webexportból létrehozott helyi
+   weboldal fájljait használja; az elavult távoli fájlok törlésének pontos
+   feltétele nyitott.
+
+### Beállítások és alapértékek
+
+| Beállítás | Eredeti, a binárisban | PicasaPy |
+|---|---|---|
+| Képméret | EGYEZIK: 0 = eredeti, 1024, 800, 640, 320; alapérték Preferences\WebExportSize = 3, vagyis 640 px (0x007f5310). | EGYEZIK: ugyanezek a választások és 640 px alapérték; QSettings-kulcs: webexport/size (WebExportController, sizes.py). |
+| Mozgókép mód | EGYEZIK: Első képkocka / Teljes mozgófilm; alapérték Preferences\WebExportMovie = 0, vagyis Első képkocka (0x007f5355). | EGYEZIK: ugyanezek a módok és alapérték; QSettings-kulcs: webexport/movieFull. |
+| Célmappa | A 0x007f52b0 a Preferences\WebExportPath értéket olvassa és a 0x007f5e80 menti. Hiányzó értéknél a 0x00996230 által feloldott Personal mappához a bináris 0x00cbc7f8 `Picasa HTML Exports` nevet fűzi a 0x007f53a7 útvonalon. | Eltér: a rendszer Képek mappája / „Picasa HTML exportok” az alap (webexport_controller.py); a célmappa nincs QSettings-be mentve, csak a párbeszéd objektumában marad meg. |
+| Sablon | A Preferences\WebExportTemplate kulcsot a 0x007f52b0 olvassa és a 0x007f5e80 menti; üres tárolt értéknél a párbeszéd alapindexe 0. | Részben egyezik: az alapindex 0, de a sablonválasztást a PicasaPy nem menti QSettings-be; a templateIndex a párbeszéd kezdeti állapota. |
+| Sablon-előnézet | A webexport.fen sablonlistát, leírást és élő előnézetet ír le (a helyi telepítés erőforrása, 1-16. sor). | Eltér: sablonleírás és sematikus kép van; élő, sablonból renderelt előnézet nincs (WebExportDialog.qml). |
+| FTP-fiókok | AccountMGR alatt a kulcsok: ftpUser (0x00cb9ecc), ftpPass (0x00cb9ed4), ftpDomain (0x00cb9edc), ftpRoot (0x00cb9ee8), webUrl (0x00cb9ef0), secure (0x00cb9ef8). A hiányzó szövegértékek alapja az üres 0x00c7f979; a secure mező alapértéke 0 (0x007e8340). | NINCS MEG: nincs FTP-fiók- vagy beállítási réteg a src/picasapy alatt. |
+| Fióktárolás | A kulcsok olvasása/írása a HKCU beállítási rétegen át történik, AccountMGR névtérrel (0x007e8340, 0x007e89e0, 0x007e8f80; olvasó segéd: 0x00407630). A teljes fizikai registry-útvonal NINCS MEG; megszerzés: a 0x00407630/0x00407ea0 registry-kulcs-összeállításának célzott követése. | NINCS MEG: nincs megfelelő fióktároló. |
+| Fiókpárbeszéd pontos mezőcímkéi és elrendezése | NINCS MEG: a helyi runtime FEN-leírók között nincs FTP/AMgr párbeszéd. Megszerzés: Windows alatt az AMgr hozzáadás/szerkesztés párbeszéd megnyitása és a mezők/feliratok rögzítése, vagy az AMgr erőforrás célzott kibontása. | NINCS MEG: nincs megfelelő párbeszéd. |
+| Oldalcím induló értéke | NINCS MEG: a webexport.fen edit mezőt mutat, de a futáskor előtöltött szöveget a fájl nem rögzíti. Megszerzés: a webexport párbeszéd megnyitása a Picasa 3.9-ben, kijelölt mappával és albummal. | A QML albumTitle üres sztringgel indul; eltérhet az eredeti előtöltéstől. |
+| FTP-kiszolgáló és távoli gyökér | ftpDomain és ftpRoot értékek kerülnek a CFtpSync kapcsolat/útvonal-ellenőrzésébe; címek: 0x00958a00 (Verifying Domain…, Verifying root path…) és 0x00967c00 (InternetConnectA). | NINCS MEG: FTP-kapcsolat és távoli útvonalkezelés nincs. |
+| FTP-port | Az InternetConnectA hívás 0x00967c35 címen a 0x15 portértéket adja át, azaz 21; a fiókkulcsok között külön portbeállítás nincs. | NINCS MEG: nincs FTP-kapcsolat vagy portbeállítás. |
+| webUrl és secure mező jelentése | NINCS MEG: a webUrl végső felhasználása és a secure fiókmező FTP-műveletre gyakorolt hatása nem bizonyított. Megszerzés: az AccountMGR objektummező fogyasztóinak célzott követése a 0x007e81b0 és 0x007f6d50 körül, majd Windowsos fiókpárbeszéd-mérés. | NINCS MEG: ezeknek nincs megfelelője. |
+| Kimenet | FTP-módban a helyi HTML-webexport fájljai kerülnek a kiválasztott fiók ftpRoot könyvtárába; az FTP-réteg könyvtárat hozhat létre, fájlt ír és távoli fájlokat takarít (0x00957630; importok a bináris-index imports táblájában). | Eltér: csak a helyi HTML-galéria jön létre; FTP-feltöltés nincs a webexport motorban vagy menüben. |
+
+### Tételes összevetés: Eredeti | Nálunk | Teendő
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Menüpont és parancs.** 0x00559150 / 0x0055c295; szöveg 0x00c8df1c; parancs 0x9d54; diszpécser 0x005cb990. | PicasaPy-ban nincs FTP-menüelem; a QML-ben csak a kihagyást jelző megjegyzés található. | A termékjegy döntse el és valósítsa meg az FTP-módú menüpont bekötését a meglévő HTML-export párbeszédbe. |
+| **Méret és film mód.** Alap: 640 px és Első képkocka; mindkettő megmarad a következő indításra (0x007f5310, 0x007f5355, 0x007f5e80). | EGYEZIK: alapérték és felhasználói választás megőrzése megvan. | Nincs teendő. |
+| **Célmappa és sablon megőrzése.** Preferences\WebExportPath és Preferences\WebExportTemplate (0x007f52b0, 0x007f5e80); alapút `Personal/Picasa HTML Exports`. | Célmappa Képek/Picasa HTML exportok; a cél és a sablonválasztás nincs újraindítások között megőrizve. | Külön paritásjegyben állítsa helyre a célmappa- és sablonválasztás megőrzését, és döntse el, hogy az alapútvonal egyezzen-e a Personal/Picasa HTML Exports útvonallal. |
+| **FTP-fiók és feltöltés.** AccountMGR 0x00cb9ec0, fiókválasztó 0x005e7370, fiókkezelő 0x005cfff0, CFtpSync 0x00957630; távoli gyökérrel és az InternetConnectA 0x00967c35 címen átadott 21-es porttal. | Nincs fiókkezelő vagy FTP-feltöltés. | Valósítsa meg a fiókválasztás/kezelés és a webexport-fájlok FTP-szinkronizálásának útját. A mezőcímkéket, a secure működését és a webUrl használatát ne következtesse ki a mezőnevekből; előbb zárja le a nyitott bizonyítást. |
+| **Élő sablon-előnézet.** A párbeszéd építője 0x007f4be0; mérés: a szállított runtime/webexport.fen 1-16. sora. | Nálunk sematikus előnézet látható. | A fejlesztőjegyben rögzítse, hogy a meglévő egyszerűsített előnézet elfogadott eltérés-e; ha paritás a cél, a sablont élőben kell megjeleníteni. |
+
+### A két független út
+
+**A: utasítás-/hívásút:** a 0x0055c295 menürekordtól a 0x005cb990
+0x9d54 ágán át a 0x005e7490(1), 0x007f6cc0, 0x007f6d50, 0x005e7370 és
+0x00957630 függvényekig. Ez bizonyítja a menüparancs, a közös párbeszéd,
+az account-választó és az FTP-szinkron kapcsolatát.
+
+**B: külön WinINet-/sztringút:** a bináris-index imports táblája a 0x00957630
+függvényhez rendeli az FtpDeleteFileA és FtpRemoveDirectoryA importokat; a
+CFtpSync állapotüzenetek ugyanott az `init`/`uploading`/`cleanup` lépéseket nevezik
+meg. A 0x00967d30 az FtpOpenFileA és InternetWriteFile hívásokat, a 0x00967f70
+a FtpCreateDirectoryA hívást, a 0x009680e0 a FtpSetCurrentDirectoryA hívást
+tartalmazza. A két út egyezik: ez tényleges feltöltő/szinkronizáló, nem csupán
+kapcsolat-ellenőrző párbeszéd.
+
+### Cáfoló kör
+
+1. **Feltevés:** az FTP csak egy elhagyott vagy letiltott menüfelirat. **Cáfolat:**
+   az egész .text-en, kizárólag a paszta.memoria_kapu() hívása után végigfuttatott
+   pásztázás megtalálta a 0x9d54 kódhivatkozást a 0x005c90dc címen; a meglévő
+   Ghidra-kimenet a 0x005cb990 dispatchertől a 0x005e7490(1) hívásig mutat.
+   Ezzel a „csak halott felirat” feltevés megdőlt. Ez nem bizonyítja a menü
+   minden futásállapotában látható/engedélyezett voltát.
+2. **Feltevés:** a CFtpSync csak fiók-ellenőrzésre szolgál. **Cáfolat:**
+   a 0x007f6d50 az FTP-jelző ágában kiválasztott fiókkal a 0x00957630
+   szinkronizálót hívja; ettől független importút igazolja a fájlírást és
+   távoli törlést. A két bizonyíték egyezik.
+
+### Nyitott kérdések
+
+- NINCS MEG: a fiókpárbeszéd mezőinek pontos felirata, sorrendje, a jelszó
+  maszkolása és az esetleges secure jelölőnégyzet látható neve. Megszerzés:
+  Picasa 3.9 Windowsos példányán az AMgr Add/Edit ablak rögzítése vagy a
+  kapcsolódó erőforrás célzott kibontása.
+- NINCS MEG: a secure profilmező tényleges hatása az FTP-kapcsolatra, illetve
+  a webUrl felhasználása feltöltés után. Megszerzés: a profilrekord fogyasztóinak
+  célzott visszakövetése a 0x007e81b0/0x007f6d50 útvonalon és kontrollált
+  Windows-mérés.
+- NINCS MEG: az elavult távoli fájlok törlésének pontos egyezési/törlési
+  szabálya. Megszerzés: a 0x00957630 cleanup ág és a 0x00956c70 távoli
+  fájllistázó összevetése a 0x00967d30 feltöltővel; ha az adatszerkezet
+  diszasszemblálással nem válik egyértelművé, célzott Ghidra-kör.
+- NINCS MEG: az eredeti és a PicasaPy webexport-címmezőjének azonos-e az
+  induló értéke. Megszerzés: Picasa 3.9-ben külön kijelölt mappával és
+  albummal megnyitni a párbeszédet, és rögzíteni a mezőt.
+
+### Bizonyítottsági fok
+
+**Megerősített:** a menüparancs → közös HTML-export → mentett FTP-fiók →
+WinINet-feltöltés/takarítás útja két, egymástól független bináris útból
+igazolható. **Feltételes:** a teljes, képernyőn látható fiókbeállítások és a
+secure/webUrl szemantikája runtime/erőforrás-bizonyíték nélkül nem zárható le.
