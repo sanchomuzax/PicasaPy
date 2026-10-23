@@ -101,6 +101,9 @@ Dialog {
         parent: Overlay.overlay
         closePolicy: Popup.NoAutoClose
         anchors.centerIn: parent
+        // rögzített szélesség: a cím és a tartalom implicitWidth-je
+        // különben kötési hurkot ad (#918-őr)
+        width: 320
 
         contentItem: RowLayout {
             spacing: 10
