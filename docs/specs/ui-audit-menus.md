@@ -108,7 +108,7 @@ tartalmilag megegyeznek a Mappa-éval.
 | Helyek | — | igen | megvan, működik |
 | Szerkesztési vezérlők megjelenítése | — | **nem** | hiányzik (szerkesztő panel láthatóság-kapcsoló) |
 | Diavetítés | Ctrl+4 | igen | gyorsbillentyű nincs |
-| Időrend | Ctrl+5 | igen | gyorsbillentyű nincs |
+| Időrend | Ctrl+5 | igen | aktív; kijelölés nélkül teljes képernyős bemutatót nyit (#5377) |
 | Keresési opciók | — | **nem** | hiányzik |
 | Kis képek *(feltehetően „Thumbnails Only")* | — | **nem** | hiányzik; pontos jelentése a képekből nem egyértelmű, valószínűleg mappacím nélküli indexkép-rács |
 | Rejtett képek | — | igen | megvan, működik |

@@ -169,20 +169,16 @@ class TestDiavetitesEsIdorend:
         QTest.keyClick(window, Qt.Key.Key_Escape)
         assert varj(qt_app, lambda: window.property("slideshowRunning") is False)
 
-    def test_az_idorend_tetel_tiltott_es_a_kattintasa_nem_nyit_semmit(self, nezet_app, qt_app):
+    def test_az_idorend_tetel_valodi_kattintassal_megnyitja_a_bemutatot(self, nezet_app, qt_app):
         window, controller, _engine = nezet_app
         elokeszit(window, qt_app, controller)
-        almenu_nyit(window, qt_app)
-        tetel = _objektum(window, "menuViewTimeline")
-        assert tetel is not None and tetel.property("visible") is True
-        assert tetel.property("enabled") is False, "az Időrend nincs még kész"
-
-        kozep = tetel.mapToScene(tetel.boundingRect().center()).toPoint()
-        QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kozep)
-        qt_app.processEvents()
-
+        tetel_kattintasa(window, qt_app, "menuViewTimeline")
+        assert varj(qt_app, lambda: window.property("timelineOpen") is True), (
+            "a Nézet ▸ Időrend kattintás nem nyitotta meg a bemutatót"
+        )
+        timeline = _objektum(window, "timelineView")
+        assert timeline is not None and varj(qt_app, timeline.isVisible)
         assert window.property("slideshowRunning") is False
-        assert window.property("activeDrawerTab") == ""
 
 
 class TestOldalsavPanelek:

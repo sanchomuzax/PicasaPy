@@ -6437,18 +6437,20 @@ nagyrészt megszűnt.
 | **`minusone`/`plusone` `setautorepeat 1`** | ✅ **2026-09-15 óta** (`autoRepeat: true`) |
 | a sáv lebegése/elrejtése | ✅ `HoverHandler` + `slideshowHideTimer` |
 
-#### ⚠️ A `timeline` gomb a qshow Időrend módja, nem a könyvtárrácsé
+#### ⚠️ Az eredeti `timeline` gomb a qshow Időrend módja, nem a könyvtárrácsé
 
 Az eredeti `oneup/timeline` a teljes képernyős **qshow Időrend módba** visz
 (a kattintási és inicializáló ág részletei a 2/b/2 pontban, a qshow belépési
 útja a [`picasa-menu-parancsok-viselkedese.md`](picasa-menu-parancsok-viselkedese.md)
 38.2.16-38.2.17 pontjában). Ez nem az alkalmazásablakon belüli dátumrács.
-A `TimelineView.qml` év/hónap-rács létezik, de a Nézet ▸ Időrend menü és a
-Ctrl+5 inaktív (`PicasaMenuBar.qml:827`), a vetítő sávjában pedig nincs
-qshow-vezérlő. A két nézetet nem szabad azonosként kezelni.
+A #5377 a `TimelineView.qml`-ben teljes képernyős, mappakártyás Időrend-
+bemutatót valósít meg; a Nézet ▸ Időrend és a Ctrl+5 aktív. A PicasaPy
+fejlécében nincs Időrend-gomb: a binárisban mért eredeti `timeline` gomb
+`m_hidden`, és a bemutató vezérlői a teljes képernyős ablakban vannak. A
+gyűjtemény-forrás és a dátumjelentés nyitott kérdéseit a #5401 tartja nyilván.
 
-⇒ Az eredeti gomb működése binárisból ismert; a qshow teljes tartalmának és
-átmenetének megvalósítási részletei külön nyitott kutatási kérdések.
+⇒ Az eredeti gomb útja binárisból ismert; a bemutató felületi mozgásának
+mért részképletei a #5377-ben elkészültek, a gyűjtemény-forrás kutatása nyitott.
 
 ### 2/b/2 - A `timeline` és a `captionbutton` kattintási ága (#5547, 2026-10-22)
 

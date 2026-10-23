@@ -92,7 +92,8 @@ def test_mind_a_48_eredeti_keymaprekeszhez_van_osszevetesi_sor():
             )
 
     idorend = sorok[23]
-    assert _allapot(idorend[4]) == "nem cél" and "#4443" in idorend[4]
+    # #5377 óta az Időrend (Ctrl+5) megvalósított, működő funkció
+    assert _allapot(idorend[4]) == "megvan és működik" and "#5377" in idorend[4]
     tisztazando = [s for s in sorok if _allapot(s[4]) == "tisztázandó"]
     assert all(len(s[4]) > len("tisztázandó") for s in tisztazando), (
         "a tisztázandó billentyűk indoka hiányzik"

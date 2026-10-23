@@ -1,8 +1,7 @@
-"""Az Időrend belépési pontjai inaktívak, amíg a valódi nézet nincs kész - #1903.
+"""Az Időrend belépési pontjai a valódi teljes képernyős módra vezetnek (#5377).
 
-A tulajdonos élesben jelentette, két képernyőképpel (PicasaPy vs. Picasa 3),
-és a bináris megerősíti: **az eredeti Időrend nem rácsnézet**, hanem TELJES
-KÉPERNYŐS, ANIMÁLT BEMUTATÓ a diavetítő motorján.
+Az eredeti Időrend nem rácsnézet, hanem teljes képernyős bemutató saját
+rátétes vezérlősávval. A fejlécben nincs Időrend-gomb.
 
 | bizonyíték | mit mond |
 |---|---|
@@ -15,19 +14,11 @@ KÉPERNYŐS, ANIMÁLT BEMUTATÓ a diavetítő motorján.
 más motor.** A fejlécbe tett váltógomb az eredetiben ezen a helyen nem
 létezik - az Időrend vezérlői a teljes képernyős rátéten ülnek.
 
-## Amit ez a kör tesz - és amit NEM
+## Belépési pontok
 
-A valódi nézet megépítése külön kör (a görbe alakja, a képek elhelyezése és
-az animáció időzítése **nincs feltárva**). Ez a kör csak annyit tesz, hogy a
-felület **ne ígérjen olyat, amit nem ad**:
-
-* a fejléc váltógombja eltűnik,
-* a `Nézet ▸ Időrend` **inaktív**, a `Ctrl+5` nem sül el,
-* a menütétel **HELYE és FELIRATA megmarad** - az eredetiben létezik, csak
-  a tartalma nincs kész.
-
-Egy kattintható vezérlő, ami mást ad, mint amit ígér, rosszabb, mint a
-hiánya (#936).
+* a fejlécben nincs Időrend-gomb,
+* a `Nézet ▸ Időrend` aktív,
+* a `Ctrl+5` kijelölés nélkül is megnyitja a bemutatót.
 """
 
 from __future__ import annotations
@@ -62,7 +53,7 @@ class TestAFejlecGomb:
         assert "timelineActive" not in _TOOLBAR
 
     def test_a_gazdaablak_sem_koti_be(self):
-        assert "onTimelineRequested" not in _MAIN
+        assert "onTimelineRequested: window.toggleTimeline()" in _MAIN
         assert "timelineActive:" not in _MAIN
 
 
@@ -73,30 +64,30 @@ class TestAMenutetel:
         assert 'objectName: "menuViewTimeline"' in _MENU
         assert 'text: qsTr("Timeline") + "\\tCtrl+5"' in _MENU
 
-    def test_a_tetel_INAKTIV(self):
-        assert "enabled: false" in blokk_horgonyra(
+    def test_a_tetel_aktiv(self):
+        assert "enabled: true" in blokk_horgonyra(
             _MENU, 'objectName: "menuViewTimeline"'
         )
 
 
 class TestABillentyu:
-    def test_a_Ctrl5_NEM_sul_el(self):
-        """A billentyű nem kerülheti meg a szürke menüpontot - a #1686
-        fordított esete: ott a billentyű MŰKÖDÖTT, miközben a tétel
-        helyfoglaló volt."""
-        assert "enabled: false" in blokk_horgonyra(
-            _MAIN, 'sequence: "Ctrl+5"'
-        )
+    def test_a_Ctrl5_aktiv(self):
+        blokk = blokk_horgonyra(_MAIN, 'sequence: "Ctrl+5"')
+        # aktív, de a néző, a vetítés és a szövegmező-fókusz alatt nem sül el
+        assert "enabled: false" not in blokk
+        for feltetel in ("!window.viewerOpen", "!slideshow.visible",
+                         "!window._szovegmezoneVanFokusz"):
+            assert feltetel in blokk
 
 
 class TestAKirajzoltFelulet:
-    def test_a_menutetel_szurke_a_valodi_ablakban(self, qml_app, qt_app):
+    def test_a_menutetel_aktiv_a_valodi_ablakban(self, qml_app, qt_app):
         from PySide6.QtCore import QObject
 
         window, _controller, _engine = qml_app[:3]
         tetel = window.findChild(QObject, "menuViewTimeline")
         assert tetel is not None, "a menütétel eltűnt a kirajzolt ablakból"
-        assert tetel.property("enabled") is False
+        assert tetel.property("enabled") is True
 
     def test_nincs_idorend_gomb_a_kirajzolt_fejlecben(self, qml_app, qt_app):
         from PySide6.QtCore import QObject

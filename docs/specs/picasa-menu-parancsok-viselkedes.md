@@ -2353,7 +2353,7 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
-| `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.3 szerint külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, 1:1 időskála és fogantyú. A billentyűk, gombműveletek, animáció és kilépési cél továbbra is **NINCS MEG**. | A legacy `TimelineView.qml` év/hónap-rács megmarad; a Nézet-menü és `Ctrl+5` tiltott, eszköztárgomb nincs. | A teljes megvalósítás előtt a 38.2.2 és a 38.2.3 nyitott kérdéseit mérni kell. A jegy eszköztárgomb-kérésével szemben a csomagolt `thumbui.tre` az eredeti gombot `m_hidden`-ként jelöli; látható gombot ne vegyünk át bizonyíték nélkül. |
+| `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.3 és a 38.2.61-78 szakaszokban rögzített külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, dátumcsúszka és mért mozgásképletek. | **#5377:** a `TimelineView.qml` teljes képernyős, mappakártyás bemutató; a Nézet-menü és `Ctrl+5` aktív. A QEMU-pontok, valódi billentyűk, egérvezérlők és referencia-képkocka tesztjei: `tests/app/test_timeline_motion_5377.py`, `tests/app/qml_functional/test_idorend_bemutato_5377.py`. A gyűjtemény eredeti forrása és dátumjelentése továbbra is nyitott a #5401-ben. Az eredeti fejlécben nincs Időrend-eszköztárgomb: a `thumbui.tre` a gombot `m_hidden`-ként jelöli. | A felület és a mért részmozgás megvalósult; a képlánc/dátumforrás nyitott kérdéseit ne találgassuk. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
@@ -2385,10 +2385,9 @@ Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kív�
   **BMP-t ír** a saját `Backgrounds` mappájába, és arra mutat (38.3).
 - **„A háttérkép nyújtva/csempézve kerül ki"** — megdőlt: mindkét
   registry-érték `"0"` ⇒ **középre** (38.3).
-- **„A `timelineRequested` jelzésünknek van aktív fogyasztója”** — a jelenlegi
-  QML-ben nincs ilyen bekötés: a `PicasaMenuBar.qml` deklarálja és kibocsátja,
-  de `Main.qml` nem kapcsol rá kezelőt; a Nézet-tétel és `Ctrl+5` tiltott.
-  *(A forráskeresésben csak a deklaráció és kibocsátás található.)*
+- **„A `timelineRequested` jelzésünknek van aktív fogyasztója”**: ez a
+  2026-08-31-i forrásállapotban igaz volt; a #5377 óta a `Main.qml` a
+  `toggleTimeline()`-t hívja rá, a Nézet-menü és `Ctrl+5` pedig aktív.
 
 ## 39. tétel — a `printoptions` panel: TIZENEGY beállítás-kulcs (2026-08-31)
 

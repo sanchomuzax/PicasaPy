@@ -143,7 +143,11 @@ def _idovonal(ctrl):
 
     idovonal = TimelineController(ctrl._db_path, ctrl._provider)
     idovonal.reload()
-    return sorted(p["name"] for k in idovonal.periods for p in k["photos"])
+    return sorted(
+        photo["name"]
+        for collection in idovonal.collections
+        for photo in collection["photos"]
+    )
 
 
 def _hasonlok(ctrl):

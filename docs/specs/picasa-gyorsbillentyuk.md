@@ -596,7 +596,7 @@ A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a
 | 23 | `Main.qml` — diavetítés | `Ctrl+4` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
 | 24 | `Main.qml` — címkékpanel | `Ctrl+T` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
 | 25 | `Main.qml` — tulajdonságpanel | `Alt+Return` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
-| 26 | `Main.qml` — időrend | `Ctrl+5` | Állandóan tiltott (`enabled: false`). |
+| 26 | `Main.qml`: Időrend-bemutató | `Ctrl+5` | Aktív, ha a néző és a diavetítés nem nyitott; kijelölés nélkül is megnyitja a teljes képernyős bemutatót (#5377). |
 | 27 | `Main.qml` — átnevezés | `F2` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. A kijelölés kezelőfeltétel, nem külön `Shortcut`-kapu. |
 | 28 | `Main.qml` — exportálás mappába | `Ctrl+Shift+S` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
 | 29 | `Main.qml` — `shortcutDeleteFromDiskGrid` | `Ctrl+Delete` | Könyvtárnézet; `viewerOpen == false`, nincs szövegfókusz és van kijelölt sor. |
@@ -2100,7 +2100,7 @@ Az állapot mező értékei:
 | 21 | Ctrl+3 | Szerkesztési nézet | sequence=Ctrl+3 → megjelenítés és szerkesztés | **megvan és működik** | Könyvtárnézet; néző nélkül; szövegfókusz nélkül | tests/app/qml_functional/test_enter_megnyit_1417.py |
 | 22 | Ctrl+K | A keymap-komment szerint Kulcsszavak; a mért menürekord nem ad hozzá Ctrl+K-t | objectName=tagsPanelAltShortcut → PicasaPy-alias a Címkék panelhez | **nem cél — a 2.4 és 3.3 szerint a komment elavult, a tényleges Picasa-kötés Ctrl+T** | A PicasaPy-alias csak könyvtárnézetben és szövegfókusz nélkül él | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
 | 23 | Ctrl+4 | Diavetítés | sequence=Ctrl+4 → diavetítés indítása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/test_qml_slideshow.py |
-| 24 | Ctrl+5 | Időrend | sequence=Ctrl+5 → állandóan tiltott | **nem cél — a Ctrl+5 szándékosan inaktív a #4443-ig** | Mindig tiltott | tests/app/test_qml_timeline.py |
+| 24 | Ctrl+5 | Időrend | sequence=Ctrl+5 → a TimelineView teljes képernyős bemutatója | **megvan és működik (#5377)** | A néző és diavetítés bezárva; kijelölés nem kell | `tests/app/qml_functional/test_idorend_bemutato_5377.py` |
 | 25 | Ctrl+Shift+P | Indexképek nyomtatása | objectName=shortcutPrintContactSheet → indexkép-nyomtatás | **megvan és működik** | A Mappa-menütétellel azonosan mindig aktív; kijelöléstől és szövegfókusztól független | tests/app/qml_functional/test_indexkep_nyomtatas_1590.py |
 | 26 | Ctrl+W | A keymap-komment szerint weboldal export; a mért menüsávban nincs ilyen billentyű | sequence=Ctrl+W → csak projektlap bezárása | **nem cél — a 10.7 szerint az eredeti dispatchben sincs Ctrl+W ág; a projektlap parancsa PicasaPy-funkció** | Csak nyitott projektlapnál; szövegfókusz nélkül | tests/app/qml_functional/test_projektlap_billentyuk_2170.py |
 | 27 | Ctrl+R | Forgatás jobbra | sequence=Ctrl+R → aktuális kijelölés vagy nézőkép forgatása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/qml_functional/test_photo_menu_commands.py |
