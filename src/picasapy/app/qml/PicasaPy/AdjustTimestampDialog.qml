@@ -19,7 +19,9 @@ Dialog {
     property int calendarYear: 2000
     property int calendarMonth: 0
 
-    title: qsTr("Adjust Photo Date - %1 items").arg(photoRows.length)
+    title: photoRows.length > 1
+        ? qsTr("Adjust Photo Date - %1 items").arg(photoRows.length)
+        : qsTr("Adjust Photo Date")
     modal: true
     width: 540
     parent: Overlay.overlay
@@ -71,11 +73,58 @@ Dialog {
         standardButton(Dialog.Cancel).objectName = "adjustTimestampCancel"
     }
 
-    onAccepted: timestampController.adjustPhotoDates(
-        photoRows,
-        currentDateTime,
-        ujDatumSzoveg() + " " + ujIdo.textFromValue(ujIdo.value, Qt.locale()),
-        relativeButton.checked)
+    onAccepted: {
+        var mutatJelzest = photoRows.length > 0
+        if (mutatJelzest)
+            timestampProgress.open()
+        try {
+            var elindult = timestampController.adjustPhotoDates(
+                photoRows,
+                currentDateTime,
+                ujDatumSzoveg() + " "
+                    + ujIdo.textFromValue(ujIdo.value, Qt.locale()),
+                relativeButton.checked)
+            if (mutatJelzest && !elindult)
+                timestampProgress.close()
+        } catch (error) {
+            if (mutatJelzest)
+                timestampProgress.close()
+            throw error
+        }
+    }
+
+    Dialog {
+        id: timestampProgress
+        objectName: "adjustTimestampProgress"
+        title: qsTr("Setting photo dates")
+        modal: true
+        parent: Overlay.overlay
+        closePolicy: Popup.NoAutoClose
+        anchors.centerIn: parent
+
+        contentItem: RowLayout {
+            spacing: 10
+
+            BusyIndicator {
+                objectName: "adjustTimestampProgressSpinner"
+                running: timestampProgress.visible
+            }
+
+            Text {
+                objectName: "adjustTimestampProgressText"
+                text: qsTr("Setting image time")
+                color: Theme.ink
+                font.pixelSize: Theme.fontSize
+            }
+        }
+    }
+
+    Connections {
+        target: root.timestampController
+        function onTimestampAdjustmentFinished() {
+            timestampProgress.close()
+        }
+    }
 
     contentItem: ColumnLayout {
         spacing: 12
