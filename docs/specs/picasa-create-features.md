@@ -6028,9 +6028,9 @@ UTF-16-ra, és a **széles** API-t hívja; csak a 9x-ágon megy a nyers ANSI
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Főablak-panel a `panelroot` alatt. A `MakeMoviePanel::ResCreate` saját C++ erőforrásosztály, nem bizonyíték külön felső szintű ablakra. | A `src/picasapy/app/qml/PicasaPy/CreateDialogs.qml:362-372` `movieDialog` eleme külön `Dialog`, 700 egység széles, magassága legfeljebb 720, illetve a főablak magassága mínusz 24. `modal: false`. | A filmkészítő tartalma a főablak nézetébe kerüljön. A meglévő filmvezérlő és előnézeti logika maradjon használatban. |
-| Bal oldalon füles beállító hasáb, jobb oldalon előnézet, alul a filmcsík. A `.tre` kényszerei a főablakhoz igazítják a panelt. | A beállításlapok és az előnézet a párbeszédablak tartalmában vannak. A külön ablakkeret miatt a jelenlegi elrendezés szűkebb területre kerül. | A bal hasáb és a jobb oldali előnézet az eredeti elemfát kövesse. A filmcsík az előnézeti terület alján maradjon. A tervvászon koordinátái legyenek kiinduló arányok, ne rögzített képernyőméretek. |
-| A `cancel` elem súgója `Close Movie Maker panel`, és az Escape billentyű is aktiválja. A parancs-elosztó cancel ága a `panelroot/picasatab` könyvtárlapra vált (`0x0061df10`, `0x00620f77`). A klipgyűjtő nézetből a `Back to Movie Maker` gomb visz vissza a filmkészítőbe (`0x0056c2b0`). | A `movieCancelButton` bezárja a párbeszédablakot. | A `Close` és az Escape a könyvtárlapra lépjen vissza. A klipek könyvtárból való kiválasztása után maradjon elérhető a `Back to Movie Maker` visszatérés. |
+| Főablak-panel a `panelroot` alatt. A `MakeMoviePanel::ResCreate` saját C++ erőforrásosztály, nem bizonyíték külön felső szintű ablakra. | A `CreateDialogs.qml` `movieDialog` eleme `Item`; a főablak dokumentumlapjának aktív állapotában látszik (`Main.qml:369`, `CreateDialogs.qml:361-380`). | **EGYEZIK** a főablakba ágyazott panel szerkezete. |
+| Bal oldalon füles beállító hasáb, jobb oldalon előnézet, alul a filmcsík. A `.tre` kényszerei a főablakhoz igazítják a panelt. | A QML a 800 × 534-es tervvászonhoz tartozó bal hasábot, jobb oldali előnézetet és alsó filmszalagot arányos skálázással építi fel (`CreateDialogs.qml:1120-1145`, `moviePreviewPanel`). | **EGYEZIK** az elem-elrendezés szerkezete; a futásidejű képpont-azonosság **NINCS MEG** (megszerzés: azonos 800 × 534-es ablakon képernyőkép-összevetés). |
+| A `cancel` elem bezárja a panelt; az Escape is a könyvtárlapra visz. A `Back to Movie Maker` visszatérés címe: `0x0056c2b0`. | A `movieCancelButton` a `movieDialog.close()`-t hívja; a `DocumentTabStrip` aktív projektlapra engedélyezett Escape-parancsa zár, a klipgyűjtő vissza gombja a `returnToMovieMaker()`-t hívja (`Main.qml:489-501`, `DocumentTabStrip.qml:145-157`). | **EGYEZIK** a bezárás, Escape és visszatérés útja. |
 
 #### A tervvászon elemei
 
@@ -6057,21 +6057,9 @@ Az `edittabbase` és a `tabpanel` méretei az eredeti `800 × 534` tervvászon a
 
 Az ellenhipotézis az volt, hogy a `movieparent` `window` típusú erőforrás miatt maga a Film-készítő is külön ablak lehet. A szülőfa ezt cáfolja: a `movieparent` a `moviebk` gyereke, és `m_hidden` jelölést kap; a teljes felület alapja ezzel szemben a `root` gyerekeként deklarált `basepanel`. A binárisban a `MakeMoviePanel` osztály gyárútja is a `panelroot/makemoviepanel` felületi elemhez vezet. A külön Win32 ablakosztály neve és az egyes `RT_DIALOG` sablonazonosítók MakeMoviePanelhez rendelése NINCS MEG. Megszerzésük útja a `0x00579550` erőforrás-létrehozó és a `0x006129c0` osztálygyár hívási láncának folytatása, majd az érintett PE-erőforrások azonosítóinak hozzárendelése. Ez nem változtat a két pozitív út egyező elrendezési bizonyítékán.
 
-#### Fejlesztői pontok
+#### A #5262 korábbi teendőinek állapota (#5664, 2026-10-23)
 
-Ha a filmkészítő elrendezését a kutatás alapján át kell alakítani:
-
-1. A `CreateDialogs.qml` külön `movieDialog` ablakát cseréld a főablak tartalmi területén megjelenő filmkészítő nézetre. A meglévő filmvezérlő és előnézeti műveletek maradjanak bekötve.
-2. A füles beállításokat a bal hasábba, a film előnézetét jobbra, a filmcsíkot az előnézet aljára rendezd. A fenti tervvászon-méretekhez igazodó arányokat használd, miközben a rendelkezésre álló főablak-mérethez rugalmasan igazodsz.
-3. A `Close` és Escape állítsa vissza a könyvtárlapot. A klipek kiválasztásához megnyitott könyvtárnézetből a `Back to Movie Maker` térjen vissza ugyanahhoz a filmprojekt-nézethez.
-4. A filmkészítés, a projektfájl megnyitása és az előnézet működése maradjon meg a nézetváltás után.
-
-**Kész, ha:**
-
-- a Film-készítő a főablak tartalmi területét használja, külön párbeszédablak nélkül;
-- a bal beállító hasáb, a jobb előnézet és az alsó filmcsík a fenti erőforrás-geometriának felel meg, és a panel nem lóg ki a főablakból;
-- a `Close` és az Escape a könyvtárlapra vezet vissza, a klipgyűjtőből pedig működik a `Back to Movie Maker` út;
-- a filmkészítés, projektfájl és előnézet meglévő funkciói tovább működnek.
+A korábbi „külön `Dialog`” leírás elavult volt: a mostani QML-ben a Filmkészítő már főablakba ágyazott `Item`. A táblázatban szereplő szerkezeti, bezárási és visszatérési pontok a forrás alapján **EGYEZNEK**; ezért ezekhez nem tartozik új fejlesztői jegytörzs. A tervvászon és az élő ablak képpontjainak egyezése **NINCS MEG**; a megszerzés módja a két program képernyőképének összevetése azonos méretű ablakban.
 
 ### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) - MŰKÖDÉS
 
@@ -6449,6 +6437,159 @@ csak a testreszabhatóságot érintené — az nálunk nincs kimondva.
 ⛔ **Nem mért:** a gomb pixel-geometriája. Az eredeti képernyőképen a gomb
 nagyjából a kollázs méretű (a 29 × 27 a faceheaderpanel mért értéke);
 nálunk ugyanez a méret van.
+
+### 2.8/d #5664: Filmkészítés: az eredeti és a PicasaPy összevetése (2026-10-23)
+
+Az eredeti a helyi `Picasa3.exe` verzióadata szerint **3.9.141.259** (a verzióadat kiolvasása). Az összevetés a bináris célzott diszasszemblálására és a jelenlegi `src/picasapy/` forrásra épül. A mérőadat-archívumban nem volt összevethető `.wmv`/film-kimenet; a képkockák bájtszintű vagy vizuális azonosságát ezért nem állítom.
+
+Minden eredeti értéknél bináris cím vagy `NINCS MEG` szerepel. A PicasaPy oldali pontos értékek forrás-olvasási mérések (`mérés (statikus forrásellenőrzés: …)`); futó alkalmazásból mért képpontértéket nem állítok.
+
+**Helyesbítés a G/3c és G/14/3 korábbi „Nálunk” állapotához:** az ottani színátlagos (`np.mean`) jellemző és a `T=0`-nál futó láncválasztó állítások a 2026-10-20-i forrásállapotot írják le, nem a mait. A jelenlegi `slideshow.py:803-821` csak pozitív küszöbnél hívja a `select_chain`-t, és a `burst.py` `hog_descriptor`/`d_hog` útját használja. A korábbi fejlesztői teendők ezért **forráskód-szinten teljesültek**; a renderelt képsorrend natív kimenettel való egyezése továbbra is nyitott.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Belépés:** `Létrehozás ▸ Film` → `eMenuCreateMovie::ID_MAKEMOVIE`, a `panelroot/makemoviepanel` betöltése (`0x0057cb60`, `0x00c8f184`). | **Menü:** `Create ▸ Movie ▸ New Movie…`, majd `movieRequested` → `openMovie()` → filmkészítő lap (`PicasaMenuBar.qml:2295-2312`, `Main.qml:2246`, `CreateDialogs.qml:38`). | A funkció ugyanoda jut, de nálunk egy menüszinttel mélyebb és a címke `New Movie…`. **Eltérés:** A jegytörzs-javaslat A. |
+| **Panel:** a főablakba ágyazott panel, nem külön párbeszédablak; létrehozása `0x00579550`, felületi azonosító `0x00c8f184`. | `movieDialog` valójában `Item`, a főablak Movie Maker dokumentumlapján jelenik meg (`Main.qml:369-380`, `CreateDialogs.qml:361-380`). | **EGYEZIK.** Lásd a 2.7-es szakasz helyesbítését; nincs panel-átalakítási teendő. |
+| **Elrendezés és visszaút:** bal oldali fülek, jobb előnézet, alsó filmszalag; bezárás és Escape vissza a könyvtárlapra (`0x001f0122`, `0x001f0005`, `0x001eee2f`, `0x00620f77`); a klipgyűjtő visszaútja `0x0056c2b0`. | A QML ugyanezt a bal/jobb/alsó struktúrát és a `Close`, Escape, `Back to Movie Maker` utakat használja (`CreateDialogs.qml:1120-1145`, `Main.qml:476-501`, `DocumentTabStrip.qml:145-157`). | **EGYEZIK** a szerkezet és az útvonalak. A tervvászon és az élő képernyőkép pixel-egyezése **NINCS MEG**; megszerzés: azonos ablakméretű Windows- és PicasaPy-képernyőkép. |
+| **Felbontás:** hét azonos méret, normál film alapértéke `640×480` (index 1), arc-filmé `1024×768` (index 3): tábla `0x00c7db50`, választás `0x00616b29`/`0x00616b50`. | Ugyanez a hét elem és alapindex szerepel (`CreateDialogs.qml:471-506`, `create_controller.py:214-242`). Az arc-film választását nem mentjük vissza, a normál filmét igen. | **EGYEZIK.** Nincs teendő. |
+| **Kapcsolók:** `Show Captions` és `Full frame photo crop` alapból ki; `Remove Low Resolution Faces` alapból ki; valódi méretű előnézet alapból be (`0x00616961`, `0x00616981`, `0x00616a08`, `0x00618ab4`). | Ugyanezek az alapértékek (`create_controller.py:100-106`, `CreateDialogs.qml:1360-1410`, `MoviePreviewFrame.qml`). | **EGYEZIK.** A `Show Dates` eredeti első megnyitáskori jelölőállása **NINCS MEG**; megszerzés: friss Picasa-beállításokkal a panel megnyitása, vagy a `0x00618050` inicializáló ágának végigkövetése. Nálunk a QML jelölő alapértéke hamis (`CreateDialogs.qml:1390`). |
+| **Rendezés és időszűrő:** a `Best Transitions` az alapértelmezett rádió (`0x00618050`, `0x00620132`); a sorozatküszöb induló értéke `0` (`0x00616a26`). | Ugyanaz a rendezési alapérték és `burstslider`-kezdőérték (`CreateDialogs.qml:1390-1415`, `1683-1725`). A `burstmodethresh=0` esetén a láncválasztó nem fut (`slideshow.py:803-821`). | **EGYEZIK** a megerősített induló állapot és a `T=0` időrendi viselkedés. A `Total Photos` csúszka Picasa-féle induló százaléka **NINCS MEG**; megszerzés: friss Windows-profilon a `0x00618050`/`0x00616d40` út és a csúszka értékének mérése. Nálunk az összes kép az induló választás (`CreateDialogs.qml:1697-1704`). |
+| **Diaidő:** első használatkor `4,0 s`; a `Preferences\slideduration` olvasása és írása (`0x00619c80`, `0x006223b0`), alapérték-konstans `0x00cf3d30` = `4,0`, a beolvasott érték határa `1..300 s` (`0x00619d87`-`0x00619da0`, `0x00cf4010`). | `movieSeconds.value=30`, a felirat a tízzel osztott értéket mutatja: `3,0 s`; csúszkahatár `1..10 s`, lépés `0,5 s`. A vezérlő nem ment `slideduration`-t (`CreateDialogs.qml:1277-1290`). | **ELTÉRÉS:** állítsuk az első használat alapértékét `4,0 s`-ra, mentsük a választást, és tegyük elérhetővé az eredeti `1..300 s` tartományt. Jegytörzs-javaslat B. |
+| **Átmenet:** a 22 átmenet kulcsa közös (`0x00771a10`); a kiválasztott típust a `Preferences\makemovietransition` tárolja (`0x00619c80`, `0x006223b0`). Első használatkor kiválasztott típus **NINCS MEG**; megszerzés: friss Windows-profil mérése, vagy a `0x00619c80` kezdő modellágának teljes követése. | Ugyanazt a 22 kulcsot kínáljuk; a QML `transitionIndex` kezdőértéke 1 (`dissolve`), a választás az alkalmazás futása alatt megmarad, de beállításként nem íródik le (`CreateDialogs.qml:389`, `1250-1257`). | **ELTÉRÉS:** a választás újraindítás utáni megőrzése hiányzik; a natív első használati alapérték mérése előtt ne változtassuk a `dissolve` alapot. Jegytörzs-javaslat B. |
+| **Átfedés:** az `.mxf`-ben `transitiontime` mező van (`0x00816440`, `0x008152f0`); a panel első megnyitáskori értéke **NINCS MEG**. Megszerzés: friss Windows-profilon megnyitni, illetve a `0x00619c80` → `0x0061b090` inicializálási út értékét követni. | `0,5 s` az induló érték; a jelenlegi csúszka felső határa az aktuális diaidő 90%-a, legalább `0,1 s` (`CreateDialogs.qml:1311-1327`). | **NINCS MEG** az eredeti panelinduló érték; eltérést és teendőt addig nem állítunk. |
+| **Hangsáv:** három opció (Truncate / Fit / Loop; listaépítő `0x00613b50`); Windows szűrő MP3/WMA, Mac MP3/M4A (`0x0061e48c`); a projekt `musicfile` mezője `0x008152f0`/`0x00816b00`. Friss filmnél a mappazene automatikus kiválasztása **NINCS MEG**; megszerzés: olyan Windows-profilos próba, ahol a forrásmappában engedélyezett zene van. | Ugyanaz a három opció és platformfüggő fájlszűrő (`CreateDialogs.qml:1190-1228`, `2318-2335`). Ha a forrásalbum/mappa engedélyezett zenét tartalmaz, a PicasaPy automatikusan betölti (`CreateDialogs.qml:773-782`, `create_controller.py:112-158`). | Az opciólista és szűrő **EGYEZIK**. A mappazene automatikus kiválasztása lehetséges eltérés, de az eredeti viselkedés **NINCS MEG**; ezért fejlesztési teendőt nem javaslunk. |
+| **Szöveges dia:** 12 stílus, 16 méret; a minta szövege `Text`; alapbetűtípus `Arial` (`0x0061ec39`, `0x00619c80`, `0x0061a0bf`). | Ugyanaz a 12 stílus és 16 méret; minta `Text`, méretindex 4 (=16); a betűcsalád a Qt-n telepített betűkből épül (`CreateDialogs.qml:1500-1545`). | A stílusok, méretek és mintaszöveg **EGYEZNEK**. A kiválasztott első Qt-betűcsalád pontos induló értéke környezetfüggő, ezért **NINCS MEG**; megszerzés: futó PicasaPy frissebb telepítésen, fontlista és kiválasztott elem mérése. |
+| **Célmappa:** automatikusan a Picasa Filmek-mappája, sikertelen létrehozáskor Windows Videók-mappa (`0x0061cf20`, `0x00620af9`-`0x00620b1d`); nincs célfájl-választó. | Cél megadása nélkül ugyanez az automatikus könyvtárút és rendszer Videók tartalék; emellett választható `Browse…` SaveFile párbeszéd van (`create_controller.py:659-679`, `CreateDialogs.qml:1420-1435`, `2308-2316`). | Az alapértelmezett út **EGYEZIK**; a célfájl-választó PicasaPy-bővítés. A bővítés legyen egyértelműen opcionális, az automatikus alapút maradjon közvetlenül használható. |
+| **Fájlnév:** előző kimenet újrahasználata (`0x00620998`), egyébként a `CMakeMoviePanel::deffilename` (`slideshowmovie` / `diavetites_jellegu_film`, `0x00620ab1`, sztring `0x00c9d31c`), ütközéskor szóköz nélküli sorszám (`0x00993030`). | Ha az összes forrás egy mappából jön, a mappa neve lesz az alapnév; több mappánál a `diavetites_jellegu_film`; ütközésnél sorszámoz (`create_controller.py:659-679`, `movie_output.py:49-52`, `97-110`). | **ELTÉRÉS:** üres címnél egységesen az eredeti alapnevet használjuk, ne a forrásmappát. A korábbi sikeres útvonal újrahasználata már támogatott. Jegytörzs-javaslat C. |
+| **Videó:** WMV kimenet a Windows Media SDK-val (`WMCreateWriter`, `0x00549240`); a kiterjesztést a `0x00c81a44` literállal a `0x00620b84` fűzi hozzá. | `.mp4`, `mp4v` FourCC (`movie_output.py:52`, `movie/slideshow.py:27-28`). | **ELTÉRÉS**, a jelenlegi hordozhatósági döntés szándékos. Javasolt jegy: Windows alatt választható natív WMV-kimenet, más platformon az MP4 maradjon. Jegytörzs-javaslat D. |
+| **Projekt:** `Movies/autosave.mxf`, szerkesztés közbeni automatikus mentés (`0x0068a4b0`, `CMakeMoviePanel::autosave`); a korábbi kimenet cseréje vagy új fájl lehet (`0x00620421`). | A filmprojekt `.mxf` oldalfájlja csak sikeres export után íródik (`create_controller.py:1008-1022`); a betöltött projekt ismét szerkeszthető, új exportkor cserélhető vagy új fájlként menthető (`CreateDialogs.qml:1044-1060`, `2126-2160`). | A csere/új fájl választás **EGYEZIK**. **ELTÉRÉS:** a befejezetlen munka nem kerül automatikus mentésre. Jegytörzs-javaslat E; az eredeti mentés pontos időzítése külön **NINCS MEG** (a `0x0061df10` mentési hívási pontjainak Windows-mérése). |
+| **Képsorrend:** a `T=0` alapállapot időrendet hagy; a burst-csoporton belül HOG-összehasonlítást használ (`0x0081ae10`, `0x00873e40`). | A jelenlegi kód `T=0` esetén nem hív láncválasztót; `T>0` esetén HOG-jellemzőt és HOG-távolságot használ (`slideshow.py:803-821`, `burst.py:17-70`, `151-200`). | A feltárt szabály **EGYEZIK**; a teljes renderelt sorrend natív kimeneti mérésével való egyezése **NINCS MEG**, mert nincs összevethető film-mérőadat. Megszerzés: azonos, időbélyeges képkészlet Picasa és PicasaPy általi exportja, kimeneti képsorrend rögzítésével. |
+
+#### Bizonyítottsági fok és két független út
+
+**Összesített fok: feltételes.** A belépési pont/panel egyezése, a diaidő-eltérés, a fájlnév-eltérés és a konténerkülönbség **megerősített**; több friss-profil alapérték, a mappazene viselkedése és a natív render teljes képsorrendje nyitott.
+
+- **A út: utasításszintű bináris olvasás:** `0x00619c80` a `0x00cf3d30` qwordot adja a `Preferences\slideduration` alapértékeként; a kulcsra író `0x006223b0` megvan. A renderút `0x00549240`-nél a WMF SDK `WMCreateWriter` hívásába jut.
+- **B út: adat/xref és a másik programréteg:** a bináris-index `string_xrefs` a `slideduration` kulcsot a `0x00619c80` és `0x006223b0` függvényhez köti; a PE-ből közvetlenül olvasott `0x00cf3d30` bájtjai `00 00 00 00 00 00 10 40`, azaz `4,0` double. A mai QML-en ettől függetlenül a `value: 30` és a `/10` kijelzés `3,0 s`; a kimeneti oldalon pedig a PicasaPy `OUTPUT_SUFFIX = ".mp4"` és `_FOURCC = "mp4v"` literálja szerepel. Az utak az eltérésekre egyeznek.
+
+#### Cáfoló kísérlet
+
+Megpróbáltam cáfolni a diaidő-eltérést azzal a lehetőséggel, hogy a `4,0` nem a friss panel alapja, hanem csak egy másik átmenetmező konstansa. A `0x00619cbe` utasítás a `0x00cf3d30` értékét betölti, majd a `0x00619cdf`-nél megnevezett `slideduration` kulcs olvasása előtt alapértékként adja át; a PE-adat ugyanott pontosan `4,0`. A QML-beli állandó és az osztás külön forráságon `3,0 s`-ot ad. A cáfoló hipotézis nem állta ki az ellenőrzést; a külön xref- és PE-adatút ugyanezt az eredményt igazolja.
+
+A második cáfoló kör a régi állítást vizsgálta, hogy a mai panel külön `Dialog`: a QML elem típusa `Item`, láthatósága a főablak dokumentumlapjához kötött, és az `openMovieMakerTab()` erre a lapra navigál. A főablak és a `DocumentTabStrip` külön ellenőrzése is az ágyazott lapot erősíti; ezért a régi „külön ablak” állítást visszavontam.
+
+#### A jegy „Kész, ha” pontjai
+
+- ✅ **Táblázat minden sorhoz bináris címmel vagy megszerzési úttal:** a fenti táblázat minden eredeti sort címmel vagy `NINCS MEG` + konkrét útvonallal jelöl.
+- ✅ **Megerősített eltérésekhez jegytörzs:** az A-F javaslat lent teljes „Eredeti / Nálunk / Teendő / Kész, ha” tartalommal szerepel.
+- ✅ **Egyező pontok kimondva:** a táblázat `EGYEZIK` jelöléseket használ.
+
+#### Javasolt jegytörzs-bővítés
+
+##### A. A Filmkészítő menüpontja legyen az eredetihez közvetlen
+
+**Eredeti:** `Létrehozás ▸ Film` közvetlenül indítja a `ID_MAKEMOVIE` parancsot (`0x0057cb60`).
+
+**Nálunk:** a `Create ▸ Movie ▸ New Movie…` egy további almenüszintet használ.
+
+**Teendő:** a `New Movie…` műveletet emeld közvetlenül a `Create` menübe, miközben a külön arc- és People-film parancsok megmaradnak.
+
+**Kész, ha:**
+
+- a `Create ▸ Movie` egy lépésben nyitja a meglévő Movie Maker dokumentumlapot;
+- a tálca és a mappa-fejléc jelenlegi film-belépése továbbra is ugyanazt az oldalt nyitja;
+- a face és People album filmút külön parancsa változatlanul elérhető.
+
+##### B. A diaidő alapértéke és mentése kövesse a Picasát
+
+**Eredeti:** friss beállításnál `4,0 s`; a `Preferences\slideduration` és `Preferences\makemovietransition` beállítást olvassa/írja (`0x00619c80`, `0x006223b0`). A diaidő `1..300 s` tartományú (`0x00cf3d30`, `0x00cf4010`); az első átmenettípus **NINCS MEG**.
+
+**Nálunk:** `3,0 s`, `1..10 s`, `0,5 s` lépés; az új diaidő nem marad meg alkalmazás-újraindítás után. Az átmenetválasztás futás közben megmarad, újraindítás után visszaáll a kódbeli alapértékre.
+
+**Teendő:** állítsd be a natív `4,0 s` indulóértéket, mentsd a választott diaidőt és átmenettípust tartós beállításba, és illeszd a diaidő választási tartományát a binárisban mért határokhoz. Az átmenet első használati alapértékét csak a friss-profil mérés után hangold át.
+
+**Kész, ha:**
+
+- friss profilban az induló érték `4,0 s`;
+- a `1..300 s` közötti értékek megadhatók és nem csonkulnak;
+- a kiválasztott érték a program újraindítása után is betöltődik;
+- a kiválasztott átmenettípus újraindítás után is betöltődik;
+- az első használati átmenet-alapérték csak a mért Picasa-értékkel változik;
+- a filmprojekt `.mxf` diaideje továbbra is felülírja az alapértéket projekt megnyitásakor.
+
+##### C. A névtelen film kimeneti neve kövesse az eredeti alapnevet
+
+**Eredeti:** előző útvonal újrafelhasználása (`0x00620998`); máskülönben `slideshowmovie` / `diavetites_jellegu_film` (`0x00620ab1`, kulcsszöveg `0x00c9d31c`); ütközéskor szóköz nélküli sorszám (`0x00993030`).
+
+**Nálunk:** egy forrásmappa esetén a mappa neve, több mappa esetén az eredeti alapnév kerül a fájlnévre.
+
+**Teendő:** az automatikus fájlnévképzés használja következetesen a honosított Picasa-alapnevet; a névvel megadott célfájl maradjon érintetlen.
+
+**Kész, ha:**
+
+- üres célfájl esetén az alapnév `diavetites_jellegu_film`;
+- ütközéskor a sorszám szóköz nélkül kerül a névtő mögé;
+- projektből újraexportáláskor a korábbi kimeneti útvonal felajánlása megmarad.
+
+##### D. Natív WMV-kimenet Windowson, MP4 más platformon
+
+**Eredeti:** a film a Windows Media SDK `WMCreateWriter` útján készül (`0x00549240`); a `.wmv` kiterjesztést a `0x00c81a44` literálból a `0x00620b84` fűzi hozzá.
+
+**Nálunk:** minden platformon `.mp4`/`mp4v` készül.
+
+**Teendő:** Windowson adj natív WMV-író ágat; a jelenlegi MP4-író maradjon a nem támogatott platformok hordozható útja.
+
+**Kész, ha:**
+
+- Windowson a felhasználó az eredeti WMV-kimenetet tudja választani;
+- a WMV fájlnév `.wmv`, a tartalma Windows Media Writerrel készül;
+- ahol az SDK nem érhető el, az MP4-kimenet változatlanul használható;
+- a projekt `.mxf` a ténylegesen elkészült videó mellé kerül.
+
+##### E. Szerkesztés közbeni filmprojekt-visszaállítás
+
+**Eredeti:** a panel az `Movies/autosave.mxf` projektet automatikusan menti és következő megnyitáskor visszaállítható (`0x0068a4b0`, `CMakeMoviePanel::autosave`). A pontos mentési időzítés **NINCS MEG**.
+
+**Nálunk:** `.mxf` csak sikeres videóexport után készül; a bezárt vagy megszakadt, még nem exportált szerkesztés nem állítható vissza.
+
+**Teendő:** mentsd a szerkesztésben lévő klip-, dia- és beállításállapotot helyreállítható filmprojektként, és ajánld fel a visszaállítást újraindításkor. A Picasa mentési időzítését ne rögzítsd becslésként; mérd meg a fejlesztés előtt.
+
+**Kész, ha:**
+
+- a még ki nem exportált filmkliplista és szöveges diák automatikus mentésből visszaállíthatók;
+- a helyreállítás nem írja felül és nem törli a korábbi kész videót;
+- a helyreállított projekt exportálható, majd a kész videó mellé rendes `.mxf` projektfájl kerül;
+- a mentés pontos kiváltási feltételét és időzítését dokumentált mérés támasztja alá.
+
+##### F. A célfájl-választó maradjon választható bővítés
+
+**Eredeti:** nincs célfájl-választó (`0x0061cf20`); a Filmek-mappa és a fájlnév automatikusan készül.
+
+**Nálunk:** van `Browse…` SaveFile vezérlő, de üresen hagyva a program ugyanúgy automatikusan választ célmappát és fájlnevet.
+
+**Teendő:** tartsd meg az explicit célfájl-választást választható bővítésként; az alapértelmezett `Create Movie` út ne kérjen mentési párbeszédet.
+
+**Kész, ha:**
+
+- `Browse…` megnyitása önkéntes, és elhagyásával a film közvetlenül a natív alapkönyvtárba kerül;
+- egy megadott fájlútvonalat a program változtatás nélkül használ;
+- a célfájl-választó nem válik kötelező lépéssé.
+
+#### Új kutatási jegyjavaslatok
+
+- **Film Maker friss profil alapértékei**: a diaidőn kívüli pontos induló értékek (`Show Dates`, `Total Photos`, első átmenet, átfedés, első hangsáv, fontlista). Keresd a `0x00618050`, `0x00619c80`, `0x0061b090` indítási ágait, majd mérj tiszta Picasa 3.9 profilon; a mappazene ellenőrzéséhez használj engedélyezett mappazenét tartalmazó forrásmappát.
+- **Natív filmkimeneti profil**: képkockasebesség, bitráta és WMV profil mezői. Keresd a `0x00549240` `WMCreateWriter` hívási láncát, vagy készíts ugyanazon képkészletből Picasa-exportot; a jelenlegi mérőadat-archívumban összevethető film nincs.
+
+#### Nyitott
+
+- Első megnyitáskori átmenettípus, átfedés, `Show Dates`, `Total Photos`, hangsáv és betűlista: a fenti megszerzési utak szerint **NINCS MEG**.
+- A burst-rendezés teljes natív kimeneti sorrendjének pixel/képkocka szintű egyezése: **NINCS MEG**; a mérőadat-archívumban nincs összevethető film.
+- A befejezetlen natív autosave pontos időzítése: **NINCS MEG**; célzott Windows-mérés szükséges.
+- Ehhez a körhöz új Ghidra-kör **nem szükséges**: a megállapított eltérésekhez az utasításszintű út elég; a nyitott induló értékeket futó, friss profilú Picasa-méréssel lehet eldönteni.
+
+#### Módosított fájl
+
+- `docs/specs/picasa-create-features.md`: a 2.7-es panel-összevetés mai forrásra helyesbítve; a 2.8/d-ben a #5664 táblája, független utak, cáfoló kör, jegy-elfogadási pontok, 6 jegytörzs és nyitott kutatási utak.
 
 ## 2/b. A diavetítés vezérlősávja — teljes leltár a binárisból (#433, 2026-08-15)
 
