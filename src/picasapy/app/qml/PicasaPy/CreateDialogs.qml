@@ -1011,14 +1011,12 @@ Item {
             movieClipList.currentIndex = movieClipSources.length + index
         }
         function recomputeMovie() {
-            if (movieSlides.length > 0) {
-                movieRecomputeConfirm.ask(
-                    "askapplyconfirm",
-                    qsTr("This will generate a new movie removing all the text slides you added. Are you sure?")
-                )
-                return
-            }
-            applyMovieRecompute()
+            // #5668: az eredeti minden kézi újraszámolás előtt kérdez,
+            // akkor is, ha nincs eltávolítandó szövegdia.
+            movieRecomputeConfirm.ask(
+                "askapplyconfirm",
+                qsTr("This will generate a new movie removing all the text slides you added. Are you sure?")
+            )
         }
         function applyMovieRecompute() {
             movieSlides = []
