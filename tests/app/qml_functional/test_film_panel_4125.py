@@ -10,6 +10,11 @@ from PySide6.QtTest import QTest
 from picasapy.lazy_cv2 import cv2
 from picasapy.movie.mxf import read_mxf
 from picasapy.movie.slideshow import _ffmpeg_exe
+from tests.support.varakozas import var_feltetelre
+
+
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _elem(gyoker, nev):
@@ -140,8 +145,17 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         film_parbeszed = _elem(window, "movieDialog")
         assert _darab(film_parbeszed.property("movieClipSources")) == 2
         _kattintas(window, qt_app, _elem(window, "movieTabClips"))
+        clip_panel = _elem(window, "movieTabPanelClips")
+        torles = _elem(window, "movieDeleteClipButton")
+        assert _varj(
+            qt_app,
+            lambda: clip_panel.isVisible()
+            and torles.isVisible()
+            and torles.property("width") > 0
+            and torles.property("height") > 0,
+        ), "a Clips lap gombjai nem álltak be kattintható helyre"
         _elem(window, "movieClipList").setProperty("currentIndex", 1)
-        _kattintas(window, qt_app, _elem(window, "movieDeleteClipButton"))
+        _kattintas(window, qt_app, torles)
         assert _darab(film_parbeszed.property("movieClipSources")) == 1
         _kattintas(window, qt_app, _elem(window, "movieAddClipsButton"))
         assert _darab(film_parbeszed.property("movieClipSources")) == 2
