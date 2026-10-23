@@ -3357,34 +3357,128 @@ zár, tehát a **Mégse eldobja** a szerkesztést.
 (`QuickTagsConfigDialog.qml:36`), tehát a szerkesztés **elvethető**, mint
 az eredetiben. **Nincs eltérés.**
 
-### 43.4 Három elem téves riasztás volt
+### 43.4 Három elem szerepel az erőforrásban; a működésük külön ellenőrzendő
 
-`recent_checkbox`, `recent_checkbox_label`, `autofill` — mindhárom megvan
-(`quickTagsReserveRecentCheck` 84., felirat 86., `quickTagsAutoFillCheck`
-92. sor). A felirat egy szóban tér el („Reserve **the** top two
-buttons…"), ezért nem párosult gépi úton. Felülbírálva.
+`recent_checkbox`, `recent_checkbox_label`, `autofill`: mindhárom vezérlő
+megvan nálunk (`quickTagsReserveRecentCheck`, `QuickTagsConfigDialog.qml:127-142`;
+`quickTagsAutoFillCheck`, `:144-158`). A felirat egy szóban tér el
+(„Reserve **the** top two buttons…”), ezért nem párosult gépi úton. A
+vezérlők puszta jelenléte **nem** bizonyít viselkedési egyezést: a #5659
+összevetése szerint a Legutóbbiak beállítás alapértéke és a két gomb megjelenítése
+egyezik, de kikapcsolt állapotban az előzményfrissítő út eltér; az Autofill
+is eltér (43.2.1).
 
-### Eredeti / nálunk / teendő
+### 43.2.1 ⭐ Teljes út és viselkedés (#5659, 2026-10-23)
 
-*Forrás: `quicktagconfig.tre:87` (`quicktagconfig/autofill`).*
+Az eredeti belépés a **Nézet → Címkék** panel (`0xd6e018`, parancs
+`0x9d2c`, menüsáv-építő `0x00559150`; híd `0x0065ab50`). A panel
+`quick_config` eleme nyitja a `QuickTagConfigDlg` ablakot (`0x00639c00`,
+`0x0063d840`). A `quicktagconfig` erőforrás tíz szerkesztőt (`edit_0..9`),
+„Reserve top two buttons for recently used tags” jelölőt, „Autofill empty
+boxes above with commonly used tags” műveletet, OK és Cancel vezérlőt ír
+le. Az `0x0083ea00` a tíz mezőt olvassa/kezeli; az `0x0083f3f0` a
+`quicktags::tag%d` kulcsokat olvassa `]empty` alapértékkel.
 
-| | eredeti (mérve) | nálunk (**mérve**) | teendő |
-|---|---|---|---|
-| gyorscímke-helyek | **10** (`edit_0..9`, `cmp eax, 0xa`) | **10** (`quickTagField0..9`) | ✅ **KÉSZ** (#1788) |
-| „felső kettő a legutóbbiaknak" | `quicktags::enable_recents` | megvan | — |
-| automatikus kitöltés | `quicktagconfig/autofill` | megvan | — |
-| tárolás | `Preferences\quicktags::tag%d` | QSettings | — |
-| gombok | **OK + Mégse** (elvethető) | **OK + Mégse** (elvethető) | ✅ **KÉSZ** (#1788) |
+| Eredeti | Nálunk (statikus forráskód-olvasás) | Teendő |
+|---|---|---|
+| **Belépés:** Nézet → Címkék (`0xd6e018`, cmd `0x9d2c`, `0x00559150` → `0x0065ab50`); a panel gyors beállítása `quick_config` (`0x00639c00`, `0x0063d840`). | Nézet → Tags / Ctrl+T (`PicasaMenuBar.qml:1071-1076`, `Main.qml:3948-3952`); a fogaskerék nyitja a párbeszédet (`TagsPanel.qml:234-248`). | **EGYEZIK**: ugyanaz a panel és beállítóút. |
+| **Mezők:** tíz címke (`edit_0..9`; `0x0083efa2`, `cmp eax, 0xa`); üres kulcs alapértéke `]empty` (`0x0083f3f0`). | Tíz `quickTagField0..9` mező; a hiányzó beállítás üres sztringekkel egészül ki (`QuickTagsConfigDialog.qml:83-124`, `keywords_controller.py:235-244`). | **EGYEZIK**: 10 szerkeszthető hely, üres alapérték. |
+| **Legutóbbiak:** `Preferences\quicktags::enable_recents`, hiányzó kulcsnál `1` (`0x0063c7d0`, `0x00639c00`); bekapcsolva az első két gomb a `recent0/1`-et mutatja (`0x0063c7d0`, `0x0063c120`). | `quickTags/reserveRecentForTop2`, hiányzó kulcsnál `True`; a gomblista első két elemét írja felül (`keywords_controller.py:298-307`, `:320-331`). | **EGYEZIK**: az alapérték és a két látható hely egyezik. |
+| **Előzményfrissítő út:** a címke-hozzáadó (`0x0063bed0`) csak bekapcsolt `quicktags::enable_recents` mellett hívja a `0x0063c120` frissítőt (`0x0063c05a-0x0063c08a`); ez a segéd a `recent%d` értékeket beolvassa és a panel két előzményhelyét frissíti (`0x0063c303-0x0063c371`, ciklushatár: `0x0063c578-0x0063c57e`). **A tartós `recent%d`-írás hatása nincs igazolva.** | Az `addKeywordToRows` minden érvényes címkénél meghívja a `_record_recent_quick_tag`-et a beállítástól függetlenül; ez QSettings-listát ír, míg a beállítás csak a gombok megjelenítését kapuzza (`keywords_controller.py:149-162`, `:250-261`, `:320-331`). | **ELTÉRÉS a kikapcsolt állapot útjában:** nálunk az előzménylista frissül, az eredeti kihagyja a frissítő hívást. A bináris későbbi/persistált látható eredménye **NINCS MEG**; ne állítsunk róla többet. |
+| **Autofill:** egyszeri kitöltő művelet; a `0x0083f580` a közös címkelistából az üres szerkesztőmezőkbe ír, meglévő címkét/duplikátumot átugrik, és a Legutóbbiak kapcsolótól függően a 0. vagy 2. mezőtől indul. A párbeszéd a `quicktagconfig/autofill` vezérlőt köti be (`0x0083ea00`); ehhez nem olvas/ír tartós Autofill-beállítást. Felirat: `quicktagconfig_text.tre`, `0x0083ea00`. | Tartós `quickTags/autoFillFrequent` jelölőnégyzet, alapértéke `False`; bekapcsolva a `quickTagButtons` minden lekéréskor dinamikusan tölti az üresen maradt gombokat az index gyakorisági sorrendjéből (`QuickTagsConfigDialog.qml:144-158`, `keywords_controller.py:309-342`). | **ELTÉRÉS:** a jelölőnégyzet helyett egyszeri kitöltés írja be az üres konfigurációs mezőket; az eredményt a felhasználó az OK-val menti. |
+| **Gyorscímke kimenete:** a `quicktag_%d` esemény a `0x0063bed0` hozzáadási útjára jut (`0x0063a5e0` → `0x0063bed0`); a panel frissítőhívását a Legutóbbiak kapcsoló kapuzza. A tartós fájlíró teljes útja **NINCS MEG**; megszerzés: a `0x0063bed0` → `0x0063b960` utáni modell-/íróhívások követése, majd ellenőrzött, címkézés előtti/utáni mintafájl-mérés. | A kijelölt sorokra ad címkét; JPEG-nél IPTC Keywords írás, íráshiba vagy más formátum esetén `.picasa.ini` `keywords=` fallback és index-frissítés (`keywords_controller.py:149-162`, `:176-231`). | **NINCS DÖNTÉS** az írási paritásról: a bináris íróút megszerzése után hasonlítható össze. |
+| **Párbeszéd:** OK / Cancel; a tíz `quicktags::tag%d` mező és a `quicktags::enable_recents` értékét kezeli/menti (`0x0083ea00`, `0x0083f3f0`, `0x0083f2f0`). | OK / Cancel; a mezők és kapcsolók QSettings-be íródnak, Mégse megnyitáskori állapotra állít vissza (`QuickTagsConfigDialog.qml:36`, `:60-75`). | **EGYEZIK**: a mentés és elvetés látható eredménye egyezik. |
+
+**Autofill-cáfoló kör.** A `quicktagconfig/autofill` ugyanazt a `tag_group`
+szülőt és `m_hit_childlabel` jelölést kapja, mint a `recent_checkbox`, ezért
+elsőre kapcsolónak is tűnhet (`quicktagconfig.tre:15-17`, `:83-89`). Ezt
+ellenőriztem az eseménykezelővel: az `0x0083f580` a mezők setterét hívja,
+nem tárolókulcsot; az `0x0083ea00` csak a vezérlő meglétét/állapotát rendezi.
+A vizsgált kattintási eseménykezelőben és a párbeszéd betöltő/mentő útjában
+nincs tartós Autofill-beállítás olvasása vagy írása. A következtetés ezért az
+eseménykezelő, a párbeszédépítő és az erőforrás egymástól külön ellenőrzött
+nyomára épül, nem pusztán a feliratra.
+
+**A Legutóbbiak cáfoló köre.** A kezdeti értelmezés szerint a `0x0063c120` két
+`recent%d` rekordot ír. Ezt a segédfüggvény utasításszintű ellenőrzése
+cáfolta: a vizsgált út `Preferences`-ből olvassa ezeket a kulcsokat, majd a
+panel két előzményhelyét kezeli; közvetlen írás nem látható. Ettől
+függetlenül a `0x0063bed0` feltételes hívása és a `0x0063c7d0` betöltő
+ágazása egyaránt igazolja, hogy a kikapcsolt jelző mellett az eredeti nem
+hívja a frissítőt és nem használja a `recent%d` értékeket a két gombon.
+A későbbi/persistált látható hatás nyitott marad.
+
+**Nyitott részletek:** az `0x0063d260` által kapott közös címkelista pontos
+forrása és sorrendje **NINCS MEG**. Megszerzés: a `0x0063c7d0`-ban az
+`[this+0x268]` listát előállító hívás és a `0x0063d260` bemenetének
+adatútját végigkövetni, majd kontrollált címkekészleten megfigyelni az
+Autofill sorrendjét. Az Autofill-vezérlő pontos vizuális típusa/állapotjelzése
+is **NINCS MEG**: a `.tre` kattintható elemet jelez, az építő állapotjelző bájtot
+állít, de a statikus adat nem dönti el a widget megjelenését. Megszerzés:
+elszigetelt Picasa-profilban nyisd meg a panelt, rögzítsd a vezérlőt kattintás
+előtt és után, és figyeld meg a képernyőn maradó állapotot. A bináris
+gyorscímke-kimenet fájlíró útja is nyitott, ld. a táblázat sora.
+
+### Javasolt jegytörzs-bővítés (#5659)
+
+#### A. Eredeti Autofill-művelet
+
+**Eredeti:** az „Autofill empty boxes above with commonly used tags” egyszeri
+művelet, amely az üres konfigurációs mezőket tölti ki; a Legutóbbiak kapcsoló
+bekapcsolt állapotában az első két helyet kihagyja.
+
+**Nálunk:** a párbeszédben tartós jelölőnégyzet van; bekapcsoláskor a
+gyorscímke-gombok dinamikusan, indexelt gyakorisági lista alapján jelennek
+meg. A konfigurációs mezők nem telnek meg ettől.
+
+**Teendő:** a tartós automatikus megjelenítést cserélni egyszeri „üres
+mezők kitöltése” működésre; a vezérlő pontos vizuális formáját csak az
+eredeti felület kontrollált megfigyelése után rögzíteni. A művelet ne írja
+felül a kézzel beállított értékeket vagy a fenntartott legfelső két mezőt.
+
+**Kész, ha:**
+
+- [ ] a művelet csak üres mezőket tölt ki;
+- [ ] bekapcsolt Legutóbbiak mellett a 0-1. hely érintetlen marad, kikapcsolt
+  Legutóbbiak mellett a kitöltés a 0. helytől indul;
+- [ ] a megjelenített címkék megegyeznek a konfigurációba írt mezőkkel, és
+  OK után tartósak;
+- [ ] a vezérlő képernyőn látható formája és kattintás utáni állapota a
+  bináris izolált profilban végzett megfigyelés alapján van megvalósítva;
+- [ ] a pontos jelöltlista/sorrend a bináris további vizsgálata után van
+  rögzítve; amíg ez nyitott, nem kerül bele becsült rendezési szabály.
+
+#### B. A Legutóbbiak kikapcsolásakor az előzmény ne változzon
+
+**Eredeti:** `quicktags::enable_recents=0` mellett a hozzáadási út kihagyja
+a `0x0063c120` előzményfrissítő hívását; a segédfüggvény közvetlen tartós
+írása és a későbbi visszakapcsolás eredménye nincs meg.
+
+**Nálunk:** a `quickTagsReserveRecent` állapotától függetlenül frissítjük a
+QSettings-ben tárolt előzménylistát; a gombok megjelenítését külön kapuzzuk.
+
+**Teendő:** a binárisban igazolt hívási feltétellel összhangban a legutóbbiak listáját
+csak bekapcsolt „felső két hely a legutóbbiaknak” állapotban frissíteni.
+
+**Kész, ha:**
+
+- [ ] kikapcsolt állapotban végzett címkézés nem hívja meg és nem írja át az
+  előzményfrissítő listát;
+- [ ] bekapcsolt állapotban a friss címke az első helyre kerül, duplikáció
+  nélkül.
+
 ### Nyitott kérdések mérlege (43.)
 
 ```
-Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 4 nyílt (az Autofill jelöltlistája és vezérlőjének vizuális/állapot-viselkedése; a bináris fájlíró útja; a legutóbbiak frissítőjének későbbi/persistált látható hatása) · 4 lezárva · 2 megerősített fejlesztési eltérés
 ```
 
 - **LEZÁRVA:** a megfeleltetési fájl átvilágítása — a `collagepanel` volt
   az egyetlen elavult sor (43.1); a gyorscímke-helyek száma két
   független forrásból (leltár + ciklushatár, 43.2); a tárolási kulcsok
-  (43.2); a párbeszéd gombkészletének eltérése (43.3).
+  és az OK/Cancel viselkedés (43.2-43.3). A #5659 két, forráskóddal is
+  összevetett eltérést igazolt (Autofill; kikapcsolt Legutóbbiak beállítás melletti
+  frissítőhívás). A Legutóbbiak későbbi, tartós látható hatása nyitott.
 
 ### Amit KIZÁRTAM
 
@@ -3392,9 +3486,9 @@ Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kív�
   ellenőrzés mind a 74 soron, nulla találat (43.1).
 - **„A `makemoviepanel` sora is elavult"** — megdőlt: a QML-fában nincs
   filmkészítő panel, a sor állítása helyes; az a hiány valódi (43.1).
-- **„A gyorscímke-helyek száma nyolc"** — megdőlt: az eredetiben tíz
-  (43.2). *(A mi nyolcunk saját döntés volt, de sehol nem volt kimondva,
-  hogy eltérés.)*
+- **„A gyorscímke-helyek száma nyolc"**: megdőlt: az eredetiben és a mai
+  kódban is tíz van (`0x0083efa2`, `QuickTagsConfigDialog.qml:115-124`). A
+  korábbi PicasaPy-állapot nyolc helye a #1788-cal megszűnt (43.2).
 
 ## 44. tétel — a `buttonmgr`: a Picasa gombsávja BŐVÍTHETŐ VOLT (2026-08-31)
 
