@@ -114,6 +114,8 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
     qml_app, qt_app, index, kulcs
 ):
     window, controller, _engine = qml_app
+    controller._get_settings().setValue("Preferences/BigSlideshow2", False)
+    controller.statusChanged.emit()
     show = _gyerek(window, "slideshowView")
     combo = _gyerek(window, "slideshowTransitionBox")
     popup = _gyerek(window, "picasaComboPopup")

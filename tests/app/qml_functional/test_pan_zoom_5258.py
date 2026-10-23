@@ -78,6 +78,8 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     pan_zoom_app, qt_app, tmp_path, delta
 ):
     window, controller, _engine = pan_zoom_app
+    controller._get_settings().setValue("Preferences/BigSlideshow2", False)
+    controller.statusChanged.emit()
     vart_ablakmagassag = window.height() + delta
     window.setHeight(vart_ablakmagassag)
     assert varj_feltetelre(

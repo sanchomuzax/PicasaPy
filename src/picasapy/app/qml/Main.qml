@@ -3104,6 +3104,9 @@ ApplicationWindow {
         id: slideshow
         objectName: "slideshowView"
         anchors.fill: parent
+        bigSlideshow2: controller ? controller.bigSlideshow2 : true
+        screenDepth: controller ? controller.slideshowScreenDepth : 0
+        timelineSlideshow: window.timelineSlideshowActive
         panZoomRectanglesProvider: function(
             sourceWidth, sourceHeight, viewWidth, viewHeight
         ) {
@@ -3152,6 +3155,12 @@ ApplicationWindow {
         }
         onSecondsChosen: function (masodperc) {
             controller.setSlideshowSeconds(masodperc)
+        }
+        // #5653: ugyanaz az Időrend-belépés, mint a Nézet menüben; a vetítés
+        // bezárása előbb lefuttatja az exitSlideshow visszaállítását.
+        onTimelineRequested: {
+            slideshow.stop()
+            window.toggleTimeline()
         }
         onClosed: window.exitSlideshow()
         onStarToggled: function(index) { controller.toggleStar(index) }

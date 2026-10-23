@@ -24,6 +24,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
+from PySide6.QtGui import QGuiApplication
 
 from picasapy import network_log, web_upload_size
 from picasapy.hidden_password import egyezik as jelszo_egyezik
@@ -531,6 +532,22 @@ class AppController(
         egyezéssel) a jelölőnégyzet állapotát, a `watchedFolders` mintáját
         követve."""
         return list(self._face_excluded_roots)
+
+    #: #5653: az eredeti `Preferences/BigSlideshow2` kapcsoló: hiányzó
+    #: értéknél az eredeti 1-es alapértékkel.
+    @Property(bool, notify=statusChanged)
+    def bigSlideshow2(self):  # noqa: N802 - QML-property-konvenció
+        value = self._get_settings().value("Preferences/BigSlideshow2", 1)
+        if value in (False, "false", "False", "0", 0):
+            return False
+        return True
+
+    #: #5653: a `GetDeviceCaps(BITSPIXEL)` Qt-megfelelője; a vetítő QML-je
+    #: ezt a megnevezett értéket ellenőrzi (16 vagy 32 bit).
+    @Property(int, notify=statusChanged)
+    def slideshowScreenDepth(self):  # noqa: N802 - QML-property-konvenció
+        screen = QGuiApplication.primaryScreen()
+        return screen.depth() if screen is not None else 0
 
     #: #433: a diavetítés MEGŐRZÖTT beállításai. Az eredeti a `Preferences`
     #: alá teszi őket (`SlideshowEffectTime`, `captionmode`); nálunk a saját

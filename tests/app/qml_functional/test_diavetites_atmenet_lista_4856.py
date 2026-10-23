@@ -37,6 +37,12 @@ def _gyerek(gyoker, nev):
     return obj
 
 
+def _atmenetvalasztot_engedelyez(controller):
+    """Az átmenet-listát tesztelő próbáknál kapcsoljuk ki a BigSlideshow2-t."""
+    controller._get_settings().setValue("Preferences/BigSlideshow2", False)
+    controller.statusChanged.emit()
+
+
 def _kozep(item):
     return item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
 
@@ -97,7 +103,8 @@ def mentett_kenburnsaoi(tmp_path):
 
 
 def test_a_valaszto_pontosan_a_het_eredeti_atmenetet_mutatja(qml_app, qt_app):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
+    _atmenetvalasztot_engedelyez(controller)
     show = _gyerek(window, "slideshowView")
     combo = _gyerek(window, "slideshowTransitionBox")
     popup = _gyerek(window, "picasaComboPopup")
@@ -114,7 +121,8 @@ def test_a_valaszto_pontosan_a_het_eredeti_atmenetet_mutatja(qml_app, qt_app):
 
 
 def test_az_alapertek_dissolve(qml_app, qt_app):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
+    _atmenetvalasztot_engedelyez(controller)
     show = _gyerek(window, "slideshowView")
     combo = _gyerek(window, "slideshowTransitionBox")
 
@@ -126,6 +134,7 @@ def test_mentett_kenburnsaoi_betoltesekor_dissolve_lesz(
     mentett_kenburnsaoi, qml_app, qt_app
 ):
     window, controller, _engine = qml_app
+    _atmenetvalasztot_engedelyez(controller)
     show = _gyerek(window, "slideshowView")
     combo = _gyerek(window, "slideshowTransitionBox")
 

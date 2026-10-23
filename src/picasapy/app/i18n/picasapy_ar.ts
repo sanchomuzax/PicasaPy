@@ -11528,6 +11528,13 @@ picasapy-origin-key: oneuptext:Text(oneup/tpslabel);tooltips:Text(editoneup/tpsl
             <translation>وقت العرض</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/SlideshowView.qml" />
+            <source>Timeline</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: oneuptext:Label(oneup/tllabel)</extracomment>
+            <translation>الترتيب الزمني</translation>
+        </message>
+        <message>
             <source>seconds</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;stringres:uploadmgr::seconds</extracomment>
