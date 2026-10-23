@@ -8,8 +8,11 @@ osztálynevet visszaadó függvény `0x00590ec0`.
 
 Az induláskori állapotkezelő (`0x0040bf70`) a `Preferences` szekció
 `EnableScreenCap` kulcsát olvassa. A kiolvasás előtt az alapérték DWORD-ja
-`1` (`0x0040ca13`); a `0x00407a20` az általános beállításolvasó. Nulla
-értéknél a `Scrapture` objektum és a figyelőszál nem jön létre. Nem nulla
+`1` (`0x0040ca13`); a `0x00407a20` az általános beállításolvasó. Ez
+HKCU-t ad át (`HKEY_CURRENT_USER`, `0x80000001`, `0x00407a3b`) a
+`0x00408060` kulcsútvonal-olvasónak; a szekció és kulcs itt
+`Preferences\EnableScreenCap`. Nulla értéknél a `Scrapture` objektum és a
+figyelőszál nem jön létre. Nem nulla
 értéknél az objektum megkapja a `Scrapture::vftable` címet
 (`0x00c91728`, `0x0040ca6f`), és indul a `0x0097b350` szálindító.
 
@@ -159,7 +162,7 @@ képfájl-indexelés és a buborék-kattintás navigációja nyitott.
 
 | Állítás | Forrás |
 |---|---|
-| `EnableScreenCap`, alapérték `1`, objektum/szál létrehozása | bináris (`0x0040bf70`, `0x0040ca13`, `0x0040ca6f`, `0x0040ca78`) |
+| HKCU `Preferences\EnableScreenCap`, alapérték `1`, objektum/szál létrehozása | bináris (`0x0040bf70`, `0x0040ca13`, `0x0040ca6f`, `0x0040ca78`, `0x00407a3b`) |
 | Print Screen / Print ismételt lekérdezés és Ctrl/Alt mód | bináris (`0x00591470`, `0x00590f40`) |
 | Virtuális asztal és GDI-másolás | bináris (`0x00590f40`, `0x009aa990`) |
 | Név, ütközési sorszám, kiterjesztés | bináris (`0x00c916c8`, `0x00cd8d64`, `0x00993650`, `0x00c865cc`) |
@@ -173,11 +176,13 @@ képfájl-indexelés és a buborék-kattintás navigációja nyitott.
 | A képfájl azonnali indexelése | NINCS MEG; a `0x004f92c0`/`0x004e7d10` út célfüggvényeit kell követni |
 | A buborék kattintási célja | NINCS MEG; a `0x0057d1e4` vtable `+0x68` hívás célfüggvényét kell azonosítani |
 
-Ghidra-kör kell: 0x004f92c0, 0x004e7d10, 0x004e31a0: az útvonal-keresés csak meglévő könyvtári elemet talál-e, vagy a friss BMP-t is indexeli [blokkoló]
-
+Ghidra-kör kell: 0x004f92c0: az útvonal-keresés csak meglévő könyvtári elemet talál-e, vagy a friss BMP-t is indexeli [blokkoló]
+Ghidra-kör kell: 0x004e7d10: a bejárt gyűjteményadat tartalmazhatja-e már a friss BMP-t [blokkoló]
+Ghidra-kör kell: 0x004e31a0: az ág indexbe ír vagy csak meglévő elemet keres [blokkoló]
 Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás célfüggvénye és a `clickview` művelet kattintási célja [blokkoló]
-
-Ghidra-kör kell: 0x00923110, 0x0097fc30, 0x00855770: az accelerator-/üzenetút eléri-e a `Scrapture`-t vagy a `0x00590f40` függvényt [blokkoló]
+Ghidra-kör kell: 0x00923110: az acceleratortábla tartalmaz-e képernyőkép-indító parancsot [blokkoló]
+Ghidra-kör kell: 0x0097fc30: az accelerator-/üzenetút továbbít-e képernyőkép-indítást [blokkoló]
+Ghidra-kör kell: 0x00855770: az üzenetciklus eléri-e a `Scrapture`-t vagy a `0x00590f40` függvényt [blokkoló]
 
 Futásidejű mérés kell: eredeti Windows Picasában a kurzor láthatósága a mentett BMP-n; ugyanott a fájl indexbe kerülésének és a buborék-kattintásnak a sorrendje.
 
