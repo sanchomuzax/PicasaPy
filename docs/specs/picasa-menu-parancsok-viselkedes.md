@@ -766,9 +766,18 @@ mintát követi az `unsharp`/`unsharp2` is. Jegy: **#1409**.
 0x00531d98  cmp ecx, 2            ; ⇐ pontosan EGY arc
 ```
 
-Három felirat: `Passport0` = „Nem találhatók arcok", `Passport1` = „Úgy
-tűnik, több arc van a képen.", `Passportfail` = „Megpróbálkozik egy másik
-képpel?" ~~(kérdés ⇒ igen/nem párbeszéd)~~ ⛔ **HELYESBÍTVE élő méréssel (2026-09-26, picasa-colab-jobs #49/#50):** a `Passportfail` a hibaablak **CÍME** („Try another picture?”); az ablakban hiba-ikon, a `Passport0`/`Passport1` szöveg („Can't find any faces”) és **egyetlen OK gomb** — nem igen/nem kérdés. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (tiltva) · Show Duplicate Files · Search for ▸ · Save search results… · Show tag as album… · Passport photo… · Delete empty online albums… · Choose database location… · Write faces to XMP…). Jegy: **#1401**.
+Három erőforráskulcs ismert: `Passport0` = „Can't find any faces",
+`Passport1` = „There appear to be multiple faces.”, `Passportfail` = „Try
+another picture?”. A `0x00531c60` visszafejtett hibaága a
+`Passportfail` címet és a `Passport0` törzsszöveget adja át; ebben az
+ágban nincs `Passport1`-re választás. **Élő mérés (#49/#50, 2026-09-26):**
+a nulla arcú eset címe „Try another picture?”, szövege „Can't find any
+faces”, egyetlen OK gombbal. A többarcú eset élő szövege még nincs külön
+mérve. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a
+Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (tiltva) · Show
+Duplicate Files · Search for ▸ · Save search results… · Show tag as
+album… · Passport photo… · Delete empty online albums… · Choose database
+location… · Write faces to XMP…). Jegy: **#1401**.
 
 #### ⭐ A KIVÁGÁS GEOMETRIÁJA — kimérve (2026-09-12, #1401)
 
@@ -782,9 +791,13 @@ téglalapot ad; a kód a `+0x10`/`+0x14`/`+0x18`/`+0x1c` mezőket
 `fild` melletti `fadd [0xcf39e4]` a szokásos előjel nélküli javítás
 (`0xcf39e4` **float** alakja `4294967296,0` = 2³²), nem geometria.
 
-**2. Kerekítés kifelé.** `bal`-ból és `fent`-ből `−0,5`, `jobb`-hoz és
-`lent`-hez `+0,5`, majd `fistp` (`0x00531efa`–`0x00531f5a`; a konstans
-`0xc72150` = **0,5**).
+**2. A kerekítés utasításai.** `bal`-ból és `fent`-ből `-0,5`, `jobb`-hoz
+és `lent`-hez `+0,5`, majd `fistp` (`0x00531efa`-`0x00531f5a`; a konstans
+`0xc72150` = **0,5**). A `fistp` pontos kerekítését félúton meghatározó
+futásidejű FPU kerekítési mód **NINCS MEG**; ezért a kivonás/hozzáadás
+önmagában nem bizonyít „kifelé kerekítést”. Megszerzése: a konverziót
+befolyásoló FPU-vezérlőszó visszakövetése a Passport-hívásig, vagy ismert
+félpixel- és egészpixel-koordinátájú bemenetek élő futtatása.
 
 **3. A függőleges ráhagyás — ez volt a hiányzó arány:**
 
@@ -884,12 +897,52 @@ keresőtábla (`0x006e5d76`–`0x006e5ded`; `index ≥ 0x10` ⇒ `1`):
 *Bizonyítottsági fok: **megerősített** — az ugrótábla és a keresőtábla is
 a `.rdata`/`.text` bájtjaiból olvasva, nem sorrendi következtetés.*
 
-#### Ami MÉG nincs mérve
+#### A fizikai méret és az oldalkiosztás lezárva
 
-Az `ePassport` **fizikai mérete** (mm/hüvelyk) és a lapelrendezés. A
-névtábla csak nevet ad; a méretet a nyomtatási rajzoló (`0x00776180`,
-1085 b — ugyanaz, ami a #1780 szegély/felirat beállításait fogyasztja)
-vagy egy hozzá tartozó mérettábla adja. Ez a következő gépi lépés.
+Az `ePassport` mérete **2 × 2 hüvelyk**, a példányszám induló értéke 1, és
+a lapra rendezés/laptörés is feltárt; a részletes bináris bizonyítékot és
+az élő Picasa-mérést lásd a [`picasa-nyomtatas.md`](picasa-nyomtatas.md)
+17. szakaszának #1401/#3646 részeiben. A #5658 összevetése következik.
+
+### 24/c: #5658: az eredeti útlevélkép és a PicasaPy tételes összevetése
+
+Az EXE PE-verzióadata: **Picasa 3.9.141.259**. Fontos címjavítás:
+`0x00c89994` (`CThumbUI::Passportfail`) és `0x00c899c4`
+(`CThumbUI::Passport0`) adatszöveg-kulcsok, nem függvénybelépési pontok;
+a tényleges kezelő `0x00531c60`.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Menü és diszpécser.** Bináris: `0x00559150` (menüépítő), `0x00c8de18` (`eMenuTools::ID_PASSPORT`), `0x00c8de30` (`&Passport photo...`), `0x005cb990` (`0x9def` ág → `0x00531c60`). | `PicasaMenuBar.qml` ugyanazt a Tools ▸ Experimental menüpontot és feliratot adja, majd a `Main.qml` a passport vezérlőnek adja át. **EGYEZIK.** | Lezárható. A címjegyzékben a `0x00c89994`/`0x00c899c4` értékeket adatkulcsként, ne belépési pontként hivatkozzuk. |
+| **Bemeneti kép.** Bináris: `0x00531c60` a `this+0x399` képre futtatja az arcellenőrzést; a `-1` index korai visszatérés. | `Main.qml` a `photoActionRows()` első sorát adja át. Egyetlen kijelölt képnél **EGYEZIK**. Több kijelölt képnél az eredeti kiválasztási sorrend/viselkedés **NINCS MEG**; megszerzés: Picasa 3.9-ben két kijelölt képpel indítsd a menüpontot, rögzítsd melyik képre fut. | Egyképes út lezárható; több kijelölésre ne állítsunk egyezést az élő ellenőrzésig. |
+| **Arcok száma.** Bináris: `0x00531d8c` hívja a `0x0047ae90`-et; `0x00531d95`-`0x00531d98` a tárolt arcdarabszámot pontosan egyre vizsgálja. | `classify_face_count()` csak az egy arcot engedi tovább. A darabszám-feltétel **EGYEZIK**. | Lezárható a döntési feltétel; az érzékelők kimenetének egyezése külön nyitott pont. |
+| **Arcfelismerő motor.** Bináris: a kezelő `0x0047ae90`-et hív; a virtuális hívás és a detektor pontos modellje, küszöbei, illetve normalizált téglalapjainak eredete **NINCS MEG**. Megszerzés: célzott Ghidra-kör `0x0047ae90`-re, utána azonos, címkézett képkészleten eredeti/PicasaPy detektálás és arcdoboz-összevetés. | `FaceDetectorYN` YuNet `face_detection_yunet_2023mar.onnx` modellt használ; score 0,9, NMS 0,3, topK 5000, legnagyobb detektálási méret 960 px (`faces/detector.py`). | Eredményparitást ne állítsunk. A célzott bináris feltárás és a mérőkészlet nélkül nincs pontos egyezési állítás. |
+| **Sikertelen arcellenőrzés.** Bináris: `0x00531c60` nem-egy-arc ága a `CThumbUI::Passportfail` címet és a `CThumbUI::Passport0` törzset adja át. Élő mérés (#49/#50): nulla arcnál „Try another picture?” / „Can't find any faces” / egy OK. | Nulla arcnál ugyanez a cím, szöveg és OK gomb. Több arcnál a QML `Passport1`-et („There appear to be multiple faces.”) mutat. Az eredeti handler visszafejtett ága ott is `Passport0`-t ad át, tehát a szöveg **ELTÉR**. | A többarcú PicasaPy-hiba törzsszövege kövesse az eredeti `Passport0`-t; élő többarcú eredeti UI-val még erősítsük meg. |
+| **Kivágási arány és alak.** Bináris: `0x00531efa`-`0x00531f5a` arc-téglalap; `0x00cf39f8` = 3,0, `0x00cf3a70` = 0,6; `0x00531faa`-`0x00531ffd` négyzetesítés és képszélre korlátozás. | A `faces/passport.py` ugyanazt az 1/3 felső és 0,6 alsó ráhagyást, középre igazított négyzetet és független szélső korlátokat alkalmazza. **EGYEZIK** az arány/alak szabálya. | Lezárható az arány- és határszabály. |
+| **Kivágási kerekítés.** Bináris: `0x00531efa`-`0x00531f5a` félpixeles eltolásokat és `fistp`-t használ; a futásidejű FPU-kerekítési mód **NINCS MEG**. | A `passport_crop_rect()` a kezdeti arcéleknél `floor`/`ceil`, a további határoknál Python `round()` műveletet használ. Az utasítássor **ELTÉR**; a pixelkülönbség konkrét képen **NINCS MEG**. A forrás docstringjének „legfeljebb egy képpont” állítása nincs méréssel igazolva. Megszerzés: eredeti és Py kimenet összevetése ismert tört/egész határeseteket és képszéli arcokat lefedő címkézett mintákon. | A PicasaPy eredményét a bináris kerekítési menetéhez kell igazítani; készre csak a FPU-mód tisztázása és bájtszinten egyező kivágási aranyminták után jelentsük. |
+| **Sikeres kimenet útja és mérete.** Bináris: `0x00531c60` → `0x0056b5c0` → `0x006b0200` → `0x00579910(2)` → `0x00744d00(0xf)` nyomtatási munkát indít; `0x00775ce0` enumtábla szerint `0xf` = `ePassport`, fizikai mérete `0x00775660` → `0x00cf3a48` = 2 × 2 hüvelyk. | A kivágás a gyorsítótár `passport.png` fájljába kerül, majd a PicasaPy nyomtatási előnézetét nyitja `PASSPORT` (2 × 2 hüvelyk) mérettel. Nincs külön szerkesztőbe ugrás vagy végleges képfájl-mentés. **EGYEZIK** a felhasználói kimenet fő útja és mérete. | Lezárható a nyomtatási út és fizikai méret; az ideiglenes fájl reprezentációja nem felhasználói kimenet. |
+| **Friss nyomtatási beállítások.** Bináris: az új beállításcsomag `0x00860f60`/`0x00860f78` szerint 1 példány; a Passport-kezelő (`0x00744d00`) nem írja felül a már létező példányszámot. Élő mérés (#54): Crop to Fit, 1 példány, nincs gyorsméret-előválasztó. | A nyomtatási nézet Passport módban `fill` (Crop to Fit), 1 példány, a Passport nem gyorspreset. **EGYEZIK** friss állapotban. | Lezárható a friss belépési állapot. |
+| **Meglévő példányszám.** Bináris: a nyomtatási munka újrahasznált állapotában a `0x00744d00` nem írja felül a `numberprints` mezőt; új csomagnál az alap 1 (`0x00860f60`-`0x00860f78`). | A `PrintDialog.qml` Passport módba váltáskor mindig `copies = 1` értéket állít be, az előző általános értéket csak a Passport módból kilépésre menti el. **ELTÉR** a már nyitott/újrahasznált munka példányszámának megtartásában. | A meglévő nyomtatási munka példányszámát Passport-belépéskor is az eredeti viselkedés szerint kezeljük; a friss munka maradjon 1. |
+| **Szegély/felirat 11 alapértéke.** Bináris: `text=0` (`0x0085f8c7`), `textplacement=0` (`0x0085f8fa`), `textfont=Arial` (`0x0085f9db`), `textsize=12` (`0x0085f963`), `textcolor=0` (`0x0085f994`), `wrap=0` (`0x0085f927`), `border=0` (`0x0085f7b2`), `bordersize=10` (`0x0085f7f0`), `bordercolor=0` (`0x0085f827`), `borderedge=0` (`0x0085f85a`), `evenborder=1` (`0x0085f88d`). | `PrintOptions` alapértékei ugyanezek (`printing/options.py`). **EGYEZIK.** | Lezárható; a feliratforrás és elhelyezés kódjai a §317-ben vannak. |
+| **Példányok papírlapra rendezése.** Bináris: `0x00778640` cellákat sorfolytonos rácsba rendez, `0x00778190` választ tájolást; a nyomtató papírján történő tördelést a #55 PDF-mérés is igazolta. | Az `app/print_controller.py` `_grid_for_job()` és `grid_layout` cellarácsot, lapváltást és sorfolytonos példánysorrendet valósít meg. A fő rács/laptörés-szabály **EGYEZIK**; a Py által renderelt Passport-lap azonos nyomtatón történő teljes geometriai egyezése **NINCS MEG**. Megszerzés: ugyanaz a kép, példányszám, nyomtató és papír az eredetiben és a PicasaPy-ban, előnézet/PDF-oldalméretek és pixelek összevetésével. | A rácsviselkedés lezárható forráskódszinten; képi egyezést ne állítsunk az azonos eszközös összehasonlításig. |
+| **Felirat tartalma saját metaadatokkal.** Bináris: hogy a Passport-út a `usecaption`/`usefilename`/`useexif` módokhoz pontosan mely képrekordot adja, **NINCS MEG**. Megszerzés: `0x00744d00`-tól a `printoptions::text` fogyasztóig visszakövetni, majd mindhárom módot élő eredeti képen mérni. | A Py által létrehozott ideiglenes `PhotoRecord` neve `passport.png`, `caption=None`, `taken_at=None` (`print_controller.py::_passport_record`). | Nincs igazolt eltérés, amíg az eredeti szövegforrása nem bizonyított. A fenti kódkülönbség lehetséges hatását célzott eredeti/Py mintán kell eldönteni. |
+| **Nyomtató/cél alapértelmezése.** Bináris: az első Passport-nyomtatási panelen kiválasztott nyomtató és alapcél **NINCS MEG**. Megszerzés: Picasa 3.9 tiszta profillal, telepített alapértelmezett és PDF-nyomtató mellett mérd a panel induló választását. | A Py listáján a PDF-cél az első és alapértelmezett választás. | Az eltérés mértékét az eredeti élő mérés után állapítsuk meg; ne állítsunk egyezést. |
+
+**Bizonyítottsági fok: feltételes.** A menü→diszpécser→kezelő→nyomtatási munka lánc, a crop-szabály és az enum/2 hüvelykes méret bináris útja a jelenlegi forrással egyezik; az arcdetektor kimenete, a félpixeles crop eredménye, a kiválasztási él-esetek és a teljes nyomati képazonosság nincs megmérve.
+
+**Két független út.** A: a meglévő Ghidra-visszafejtés és a célzott utasításszintű olvasás ugyanazt a `0x00531c60` arc- és hibaágat, majd a `0x00744d00` nyomtatási ágat adja. B: az SQLite sztring-xrefjei a `0x00559150` menüépítőt, a `0x005cb990` diszpécsert és a `0x00744d00` Passport-feliratokat külön mutatják; a független élő #49/#50 és #54 mérések igazolják a no-face panelt, illetve a Crop to Fit/1 példány indulást. A két út ezekben a pontokban egyezik; a detektor- és teljes renderelési egyezésre nem adnak választ.
+
+**Cáfoló próba.** Megpróbáltam igazolni azt a korábbi feltevést, hogy több arc esetén az eredeti kezelő `Passport1`-et ad át. A `0x00531c60` Ghidra-kimenetének nem-egy-arc ága és a helyi disassembly ugyanezt cáfolja: a hibaág a `CThumbUI::Passport0` kulcsot tölti be. A `Passport1` erőforrás létezik, de ebből a függvényből nincs hozzá hivatkozás; globális használatáról nem teszek negatív állítást.
+
+#### Nyitva
+
+- `Ghidra-kör kell: 0x0047ae90: az Útlevélkép detektorának virtuális hívásaiból milyen modellt/adatot, küszöböt és normalizált arcdobozt ad vissza [blokkoló]`.
+- Eredeti/Py azonos képkészletes arcdetektor-paritás: mérj az eredeti és a `FaceDetectorYN` által elfogadott arcok számával és téglalapjaival; mérőadat-archívumban releváns minta nem volt.
+- A PicasaPy félpixeles crop eredménye, a többarcú eredeti párbeszéd tényleges szövege, több kijelölt kép sorrendje, a felirat-metaadat forrása, az eredeti kezdőnyomtató és az azonos nyomtatón készült teljes Passport-lap képi egyezése a táblázatban megadott módszerrel szerezhető meg.
+
+#### Javasolt jegytörzs-bővítés (#5658)
+
+Az összevetés igazolt eltérései és a lezárható pontok a fenti táblázatban állnak. A kivágási kerekítés, a többarcú hibaüzenet és a meglevő nyomtatási munka példányszámának kezelése fejlesztést indokol; a még nyitott detektor-, metaadat- és nyomtatócél-kérdésekhez ne rendeljünk becsült eredményt.
 
 ### 25. `ID_PICTURE_GEOUNTAG`
 
@@ -1822,20 +1875,32 @@ self-álló gomb: `buttonlabel:{FF04B854-3029-46ff-B762-FB9AF417F93F}` =
 
 ### 35.3 Képernyővédő — a `saverlist.txt` és a telepítés-ellenőrzés
 
-Az `Add to Screensaver` (`0x00531900`) kétszintű:
+Az eredeti Létrehozás ▸ `Add to Screensaver` parancs (`ID_SCREENSAVER`,
+`0x9d5c`) a `0x00531900` kezelőhöz vezet. Album kijelölésekor megerősítést
+kér (`addtosaver::warning`); elfogadás után a `0x00531a20` hozzáadja a
+képeket, majd a hívó `1` argumentuma miatt a Windows képernyővédő-telepítő
+útját is meghívja. A Tools ▸ `Configure Screensaver...` (`ID_TOOLS_CONFIG_SCREENSAVER`,
+`0x9dc9`) ugyanerre a `0x00531ac0` kezelőre vezet.
 
-1. **album-szintű kijelölésnél** megerősítés: `addtosaver::warning` —
-   „Are you sure you want to add all of the selected album's images?";
-2. a hozzáadás motorja (`0x00531a20`) — **minden állapot megnevezve:**
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Menüpont és felirat egyezik.** `0x00559150` menüfeliratai: `Add to &Screensaver...` és `Configure Screensaver...`; a `0x005cb990` diszpécser a `0x9d5c` / `0x9dc9` esetet a `0x00531900` / `0x00531ac0` címre irányítja. | `PicasaMenuBar.qml:2285-2288` és `2386-2388`: ugyanezek a menük és feliratok. | **EGYEZIK**: a felirat és a menühely lezárható. |
+| **Album-megerősítés.** `0x00531900`; szövegcím `0x00c89880`: „Are you sure you want to add all of the selected album's images?". | `Main.qml:716-722`, `2900-2917`: album nézetben ugyanilyen megerősítő szöveg. | **EGYEZIK**: az albumra vonatkozó kérdés lezárható. |
+| **Tagság és lista.** `0x00531a20` kezeli a `]screensaver` tokent (`0x00c811dc`) és a `#db3\saverlist.txt` fájlt (`0x00c81ae4`); ugyanezt a listaírót (`0x004755f0`) használja a `0x0041ba40` és a `0x004a82d0` is. A `0x004755f0` `%s\n` formátummal, `w` módban ír. A mért profilmappában a `saverlist.txt` **0 bájt**, ezért nem üres fájlból a sorok tartalmát nem igazolja. | `screensaver_controller.py:41-46, 65-102, 289-305`: a forrásválasztás és a menüből hozzáadott képek a PicasaPy QSettings-be (`screensaver/sources`, `screensaver/photoPaths`) kerülnek; a közvetlen hozzáadás bekapcsolja a `photos:selected` forrást. | **ELTÉR.** Ha az eredeti Picasa-állapot átvétele cél, külön importáló feladat kell. A `saverlist.txt` nem üres mintáját egy képernyővédőhöz legalább egy képet hozzáadó Picasa 3.9-profilból kell megszerezni. |
+| **Az INI-kulcs kapcsolata nyitott.** A `0x004a51f0` `CAlbumState` figyelő a `]screensaver` tokent a `screensaver` kulcsra képezi; a `0x00456610` metaadat-olvasó ismeri ezt a kulcsot. A figyelő fájlba írása, illetve hogy a menüparancs ezt az írási utat is kiváltja-e, **NINCS MEG**. | A PicasaPy menüútja a fenti QSettings-mezőket írja; `.picasa.ini`-kulcsot ez a kódút nem állít. | **NYITOTT.** A `0x004a51f0` callback útját kell követni a tényleges `.picasa.ini`-írásig; ehhez egy nem üres képszakasz `screensaver` kulcsának művelet előtti/utáni összevetése kell. |
+| **Hozzáadás utáni telepítés.** `0x00531900` igaz argumentummal hívja a `0x00531a20`-at; az `0x00531a20` ezután meghívja a `0x00531ac0`-at. Ez a `HKLM\Software\Google\Google Photos Screensaver\AppPath` értéket keresi, majd `rundll32.exe desk.cpl,InstallScreenSaver %s` parancsot indít; hiányzó telepítésnél „The screensaver hasn't been installed." üzenetet ad. | `Main.qml:709-714`: hozzáadás után csak „Added %1 pictures to Screensaver.” visszajelzés jelenik meg. | **ELTÉR.** Ha Windows-kompatibilitás cél, a külön telepített képernyővédő OS-útját platformfüggően kell kezelni. |
+| **Konfigurálás.** A Tools-parancs diszpécsere (`0x005cb990`) a `0x00531ac0`-at hívja; az utóbbi az előző sorban leírt Windows `desk.cpl` telepítő/beállító belépést indítja. A képernyővédő saját beállítómezői nem követhetők ebből a hívásból. | `Main.qml:2135`, `2890-2897`: a saját `ScreensaverDialog.qml` nyílik meg. | **ELTÉR.** A helyi QML-beállító nem az eredeti Windows-rendszerút. Az eredeti külön program mezőihez lásd az alábbi `NINCS MEG` sort. |
+| **Az eredeti képernyővédő beállításai, alapértékei és képi kimenete: NINCS MEG.** A `0x00531ac0` az `AppPath` értékhez irányít, de az érték által mutatott program nincs a kutatási példányban. Megszerzés: egy működő Picasa 3.9 Windows-profilból olvasd ki ezt az `AppPath` értéket, szerezd meg az általa mutatott külön programot, majd tiszta Windows-felhasználói profilon rögzítsd a beállító ablak mezőit, kezdőértékeit és a futó kimenetet. | **Mérés a PicasaPy-forráskódban:** `ScreensaverDialog.qml:22-28, 40-59, 171-237`; `screensaver_controller.py:105-117, 179-193`; `screensaver_idle.py:39-41`. Effektusok `Cut`, `Dissolve`, `Dissolve through black`, `Dissolve through white`, `Pan and Zoom`; 1-30 mp, alap 3 mp; felirat alapból be; tétlenség 1-120 perc, alap 10 perc. Első forrásválasztáskor a figyelt gyökerek, ezek hiányában az összes nem üres mappa indul kijelölve (`screensaver_controller.py:105-117`). | **NINCS MEG**: a külső program és tiszta profilos mérés nélkül eredeti értéket nem szabad átvenni vagy becsülni. |
+| **Régi profil migrációja.** `0x0040e180` a `Preferences\SaverUpgradedTo25` jelzőt ellenőrzi, feloldja a `0x00c80354` `IDS_SCREENSAVERFOLDER` erőforrást, és meghívja a `0x004f7fc0`-at; annak nulla eredménye a `0x00531a20` hívásához vezet. Ha ez is nullával tér vissza, a `0x00401900` beállítja a migrációs jelzőt. A vizsgált PicasaPy-kódútban nincs ennek megfelelő migráció. | A képernyővédő forrásait a fenti PicasaPy QSettings és az index adja. | **NYITOTT.** A mappából pontosan mely elemek kerülnek át, és mit jelent a `0x004f7fc0` eredménye, Ghidra-dekompilálást igényel; lásd a Nyitott részt. |
+| **Automatikus indítás/kimenet.** A `desk.cpl`-út Windows képernyővédő-telepítést indít; az eredeti program idle-küszöbe, alapértéke és vetítési viselkedése **NINCS MEG** (megszerzés az előző AppPath-programmal és a Windows beállítófelületén). | `ScreensaverWindow.qml:9-47` teljes képernyős, fekete ablakot és ismétlődő, zene nélküli vetítést indít. A `SlideshowView.qml:248-260, 687-723, 907-936` **250 ms** után egér- vagy billentyűbevitelre kilép (`mérés` a forráskódban: `screensaverInputTimer.interval`, `SlideshowView.qml:687-692`). A `swayidle`-alapú tétlenségindítás csak támogatott wlroots Wayland-asztalon érhető el; saját autostart-bejegyzés nélkül alapból ki van kapcsolva (`screensaver_idle.py:36-55, 88-101, 284-293`). | **NYITOTT.** Az eredeti külső program futó kimenetével és a Windows képernyővédő-beállításaival kell összevetni. |
 
-| elem | bizonyíték |
-|---|---|
-| tagság tokenje | `]screensaver` belső token (írás/törlés `0x531a3d`/`0x531a88`) — az ini-korpuszban `screensaver=` sor **nincs**: a tagság nem a `.picasa.ini`-ben él |
-| a képernyővédő listája | **`saverlist.txt`** a **`#db3\`** mappában (`0x531a8d`–`0x531a93`) — ugyanott, ahol az adatbázis |
-| telepítve van-e | `Software\Google\Google Photos Screensaver` → `AppPath` (registry, `0x531ae2`–`0x531aec`) |
-| nincs telepítve | `CThumbUI::InstallScreensaver` → **`rundll32.exe desk.cpl,InstallScreenSaver %s`** (`ShellExecute`, „open" ige — `0x531bcf`–`0x531c0f`); hiba: `CImageOutput::noscr` = „A képernyővédő nem lett telepítve." |
-| folyamat | `CImageOutput::scrprog` = „Hozzáadás a képernyővédőhöz" |
-| konfigurálás | `Configure Screensaver` (`0x00531ac0`): ugyanabból a registryből indítja a képernyővédő beállítóját |
+**Bizonyítottsági fok: nyitott.** A menüpont, az albummegerősítés, a belső token/lista frissítése és a Windows indítóparancs utasításszinten követhető; a külön képernyővédő-program beállításai, alapértékei és vetítése nem hozzáférhetők.
+
+**Két független út:** (A) `0x00531900` → `0x00531a20` utasításszintű nyomvonala megnevezi a tokent, a listát és az utólagos `0x00531ac0` hívást; (B) a `0x0041ba40` / `0x004a82d0` külön perzisztencia-út ugyanazt a `0x004755f0` listaírót használja, a `0x00439a80` pedig a `]screensaver` tokent külön albumnévhez köti. Az utak a DB-token/lista szerepében egyeznek.
+
+**Cáfoló kör:** azt az állítást próbáltam megdönteni, hogy a tagság csak a DB-listában létezik, `.picasa.ini`-kapcsolata nincs. A `0x004a51f0` a tokent `screensaver` kulcsra képezi, tehát a kizáró állítás megdőlt. A cáfolat ellenőrzése ugyanazzal a bizonyítási mércével: ez a binárisban látható kulcsválasztást igazolja, de az élő fájlba írást és a menüparancs azon keresztüli hatását nem; ezek nyitva maradnak.
+
+**A #5661-hez tartozó nyitott utak:** a külön AppPath-program tiszta profilos megszerzése; a `saverlist.txt` nem üres mintája; valamint a régi profil migrációs ágának és az INI-figyelő fájlírásának lezárása. A meglévő `picasa-ini-format.md` és `picasa-create-features.md` állításai ennek megfelelően különválasztják a felismerhető `screensaver` INI-kulcsot a bizonyított DB-listaúttól.
 
 A Google Fotók-képernyővédő **külön telepítésű program** (#453) — a
 `desk.cpl`-hívás Windows-specifikus. Jegy: **#453**, **#32**.
@@ -1846,10 +1911,10 @@ képernyővédő-beállító és előnézet készült. A források a kijelölt m
 albumok és a Létrehozás menüből hozzáadott képek; a beállításokat a QSettings
 őrzi. Az effekt-, diaidő- és feliratbeállítás a helyi teljes képernyős
 diavetítéshez tartozik. A vetítés egérmozgásra vagy billentyűre kilép.
-Asztali környezeti tétlenségjelhez kötött automatikus indítás nincs benne; ez
-külön integrációs feladat. A korábbi specifikáció az eredeti külön Windowsos
-kiegészítő teljes beállítómezőit nem sorolta fel, ezért ez a Linuxos felület a
-jegyen kért helyi forrásokra és a PicasaPy diavetítési beállításaira épül.
+Asztali környezeti tétlenségjelhez kötött automatikus indítás csak a
+PicasaPy-ban támogatott wlroots Wayland-asztalokon érhető el. Az eredeti
+külön Windowsos kiegészítő beállítómezői és alapértékei továbbra is nyitottak;
+a fenti #5661-összevetés megadja a megszerzés útját.
 
 ### 35.4 TiVo-export — Windows-only menü, akció-kereten át
 
@@ -1926,12 +1991,14 @@ egyértelműen követhető — a motor és az állapothordozók viszont megvanna
 ### Nyitott kérdések mérlege (35.)
 
 ```
-Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kívül-javaslat · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 4 lezárva · 0 blokkolt · 2 hatókörön kívül-javaslat · 0 csak-nyitva
 ```
 
+- **NYÍLT**: az eredeti képernyővédő külön programjának beállításai,
+  alapértékei, kimenete, valamint az INI-figyelő fájlírása (35.3).
 - **LEZÁRVA** (mind címmel): a poszter papírméret-listája és nyelvi
-  feltétele (35.2); a képernyővédő három állapothordozója (35.3); a
-  TiVo-akció kerete (35.4); a 1000-es küszöb és gombfelirat (35.5); a
+  feltétele (35.2); a TiVo-akció kerete (35.4); a 1000-es küszöb és
+  gombfelirat (35.5); a
   mentés két állapothordozója (35.6).
 - **HATÓKÖRÖN KÍVÜL-JAVASLAT** (tulajdonosi döntést kér): a TiVo-export
   megvalósítása; az operációs rendszer tétlenségi jeléhez kötött automatikus
@@ -1939,9 +2006,11 @@ Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kív�
 
 ### Amit KIZÁRTAM
 
-- **„A screensaver-tagság a `.picasa.ini`-ben él"** — megdőlt: a
-  `]screensaver` token a korpuszban nem jelenik meg kulcsként; a lista a
-  `#db3\saverlist.txt`-ben él.
+- **„A screensaver-tagságot kizárólag a `.picasa.ini` tárolja": nincs
+  igazolva:** a vizsgált korpuszban nincs `screensaver=` minta, és a
+  `#db3\saverlist.txt` külön listája ismert; ugyanakkor a `0x004a51f0`
+  callback a `]screensaver` tokent `screensaver` INI-kulcsra képezi. A
+  tényleges fájlírás és a menüút kapcsolata nyitott (35.3).
 - **„A `0x6032f0` a backup-kezelője"** — megdőlt: az a jobbfiók-átváltó
   (`RIGHTDRAWEROFFSET`); a `thumbui/backup` matchelőágának ugrása a
   sztring-lánc matcher esethatárára esik — a valódi motor a `il_BurnPanel`
