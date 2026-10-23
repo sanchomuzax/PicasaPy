@@ -22,7 +22,9 @@ A szál belépője `0x0097aeb0`; a vtable `+0x08` rekeszéből hívja a
 `Sleep(0x14)`-gyel vár a következő ellenőrzésig. A vizsgált út tehát
 háttérszálas ismételt billentyű-lekérdezés. A `paszta.py` teljes `.text`
 pásztázása a `0x00590f40` címre egyetlen közvetlen hívást talált:
-`0x005914f1`-et, a fenti billentyűfigyelőből. A `Scrapture::vftable`
+`0x005914f1`-et, a fenti billentyűfigyelőből. A 2026-10-23-i kapuzott
+újrafutás (`paszta.memoria_kapu(1536)`) 2 884 879 utasítást dolgozott fel,
+és ugyanezt az egyetlen közvetlen hívást adta. A `Scrapture::vftable`
 (`0x00c91728`) `+0x08` rekesze szintén `0x00591470`-re mutat; a teljes
 szövegszakasz közvetlen címhivatkozásai a táblára a beállítási ág
 `0x0040ca6f` és a konstruktor `0x00590ef5` utasításai.
@@ -38,7 +40,8 @@ hiányát nem bizonyítják.
 **Külön menü-/accelerator-indító ág: NINCS MEG.** A meglévő Ghidra-kimenet
 a `0x0097fc30` üzenetciklusban `TranslateAcceleratorA`-t mutat a
 `DAT_00d4a4d4` gyorsbillentyű-táblával, de nem azonosítja a tábla tartalmát
-vagy a rögzítőhöz vezető parancsot. A független `.text`-pásztázás egyetlen
+vagy a rögzítőhöz vezető parancsot. A második, ugyanígy kapuzott teljes
+`.text`-pásztázás szintén 2 884 879 utasítást dolgozott fel, és egyetlen
 abszolút hivatkozást talált a `DAT_00d4a4d4` címére: az olvasást
 `0x0097fd18`-nál; ez sem mutatja meg a tábla feltöltését. A `0x00923110`
 meglévő kimenete egy
