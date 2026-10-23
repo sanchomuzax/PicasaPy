@@ -9066,6 +9066,20 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>Kinukunan ang frame...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>Sine-save sa Mga Nakunang Mga Video</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Na-save ang %1 sa Mga Nakuhang Video</translation>

@@ -5050,6 +5050,11 @@ A `0x00591dd0` (927 b) a videóból mentett képkocka (`capture_frame`,
 ⇒ **Két külön funkció (webkamera + videó-képkocka) osztozik egy
 mappán.** Aki bármelyiket megvalósítja, a másik helyét is eldönti.
 
+**A képkocka-mentés négy állapota:** előbb „Capturing frame...",
+aztán „Saving to Captured Videos"; sikerre a mentett fájl nevét mutatja,
+hibára „Failed to capture frame" jelenik meg. A magyar alakok a fenti
+`CCaptureFrame::captureframeprog1..4` táblában állnak.
+
 **A képkocka-fájl NEVE is megvan** (`0x00591fa6`–`0x0059203c`):
 
 | lépés | mit tesz | cím |
@@ -5063,6 +5068,10 @@ mappán.** Aki bármelyiket megvalósítja, a másik helyét is eldönti.
 ⇒ A képkocka **JPEG**, ugyanabban a mappában, **ugyanazzal a kötőjeles
 háromjegyű sorszámozással**. A mappa `.picasa.ini`-je itt is **csak
 létrehozáskor** íródik.
+
+**JPEG-minőség: 85.** A `0x00592033`–`0x00592067` út a `0x009d6010`
+írófüggvényt hívja `{1, 4, 0x55}` beállításblokkal; a `0x00ad3b30` a
+`0x55` értéket 85-ként erősíti meg. A `4` opció jelentése nincs megállapítva.
 
 ⚠️ **Ami nyitva marad:** hogy a `[obj+0x68]` alapnév pontosan mit
 tartalmaz (a forrásvideó neve? időbélyeg?) — a mezőt a hívó tölti, és a

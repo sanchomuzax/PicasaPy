@@ -12,6 +12,7 @@ mappa közös).
 from __future__ import annotations
 
 from pathlib import Path
+from threading import Event
 
 import numpy as np
 import pytest
@@ -83,6 +84,55 @@ def _varj(vezerlo, qt_app, timeout_s: float = 5.0) -> None:
 
 
 class TestKepkockaVezerlo:
+    def test_a_koztes_allapotok_a_dekodolas_es_iras_sorrendjeben_jonnek(
+        self, keret, qt_app, monkeypatch
+    ):
+        from picasapy.app import frame_capture_controller
+
+        dekoder_indult = Event()
+        dekodolas_folytatasa = Event()
+        iro_indult = Event()
+        iras_folytatasa = Event()
+        allapotok = []
+
+        def fake_decode(*_args):
+            dekoder_indult.set()
+            assert dekodolas_folytatasa.wait(5.0)
+            return np.zeros((6, 8, 3), dtype=np.uint8)
+
+        def fake_save(*_args):
+            iro_indult.set()
+            assert iras_folytatasa.wait(5.0)
+            return Path("frame.jpg")
+
+        monkeypatch.setattr(frame_capture_controller, "dekodolj_kepkockat", fake_decode)
+        monkeypatch.setattr(frame_capture_controller, "mentsd_a_kepkockat", fake_save)
+        vezerlo, _ = keret()
+        vezerlo.movieFrameCapturing.connect(lambda: allapotok.append("rögzítés"))
+        vezerlo.movieFrameSaving.connect(lambda: allapotok.append("mentés"))
+        vezerlo.movieFrameCaptured.connect(lambda _path: allapotok.append("siker"))
+
+        vezerlo.captureMovieFrame(0, 0)
+        try:
+            assert dekoder_indult.wait(5.0), "a dekódolás nem indult el"
+            assert allapotok == ["rögzítés"]
+
+            dekodolas_folytatasa.set()
+            assert iro_indult.wait(5.0), "a fájlírás nem indult el"
+            from tests.support.varakozas import var_feltetelre
+
+            assert var_feltetelre(
+                qt_app, lambda: len(allapotok) == 2, 5.0
+            ), "a mentési állapot nem jutott el a Qt eseményhurokig"
+            assert allapotok == ["rögzítés", "mentés"]
+
+            iras_folytatasa.set()
+            _varj(vezerlo, qt_app)
+            assert allapotok == ["rögzítés", "mentés", "siker"]
+        finally:
+            dekodolas_folytatasa.set()
+            iras_folytatasa.set()
+
     def test_fotora_nem_csinal_semmit(self, keret, qt_app):
         """A `capture_frame` videó-parancs; fényképre hívva nem indul munka."""
         vezerlo, celmappa = keret(nev="kep.jpg", kind="photo")

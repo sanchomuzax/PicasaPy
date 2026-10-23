@@ -9080,6 +9080,20 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>Képkocka rögzítése...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>Mentés a Rögzített videoklipek albumba</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>A(z) %1 mentve a Rögzített videoklipek albumba</translation>
