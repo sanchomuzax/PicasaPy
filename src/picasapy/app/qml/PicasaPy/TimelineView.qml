@@ -11,7 +11,6 @@ Window {
     color: "#000000"
     flags: Qt.Window | Qt.FramelessWindowHint
     visible: false
-    visibility: Window.Windowed
 
     readonly property int fullscreenVisibility: Window.FullScreen
     readonly property int windowedVisibility: Window.Windowed
