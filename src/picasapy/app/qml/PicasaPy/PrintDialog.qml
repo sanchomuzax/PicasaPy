@@ -267,12 +267,19 @@ Window {
         }
     }
 
-    function removeLowQualityReviewPictures() {
+    function isLowQualityReviewPicture(kep) {
+        return Number(kep.qualityCode) === 0
+    }
+
+    // A `kivalaszt` szerinti képek kivétele a felülvizsgálatból: a sor-
+    // indexesek a `rows`-ból mennek ki, a rekordosak (tálca, útlevél) a
+    // vezérlő kizárási listájába.
+    function removeReviewPicturesWhere(kivalaszt) {
         var sorok = []
         var rekordAzonositok = []
         for (var i = 0; i < printWindow.reviewList.length; ++i) {
             var kep = printWindow.reviewList[i]
-            if (Number(kep.qualityCode) !== 0) continue
+            if (!kivalaszt(kep)) continue
             var sor = Number(kep.row)
             if (sor >= 0) sorok.push(sor)
             else rekordAzonositok.push(Number(kep.recordId))
@@ -281,6 +288,36 @@ Window {
             printWindow.printCtl.excludeReviewPictures(rekordAzonositok)
         if (sorok.length > 0) printWindow.removeReviewRows(sorok)
         else printWindow.frissitsdAMinoseget()
+    }
+
+    // #5682 / 0x0085cce0 („Remove Low Quality Pictures"): ha a listában van
+    // legalább egy nem alacsony minőségű kép, nincs kérdés, csak az
+    // alacsonyak törlődnek. Ha MINDEN kép alacsony, az eredeti megerősítést
+    // kéri (removeAllConfirm): az Igen törli az összes képet és megszakítja
+    // a nyomtatást, a Nem nem változtat a listán.
+    function removeLowQualityReviewPictures() {
+        var mindAlacsony = printWindow.reviewList.length > 0
+            && printWindow.reviewList.every(printWindow.isLowQualityReviewPicture)
+        if (mindAlacsony) {
+            removeAllConfirm.open()
+            return
+        }
+        printWindow.removeReviewPicturesWhere(printWindow.isLowQualityReviewPicture)
+    }
+
+    // Az Igen ága (0x0085cce0): minden kép törlése, majd a hívó a
+    // `printpanel/pcancelbutton` műveletet küldi (0x00745726), ami nálunk a
+    // nyomtatási ablak Close gombja: a nyomtatás nem készül el.
+    function removeAllReviewPicturesAndCancel() {
+        printWindow.removeReviewPicturesWhere(function () { return true })
+        printWindow.cancelReview()
+        printWindow.visible = false
+    }
+
+    // A felülvizsgálat Mégse-ága (printReviewCancelButton): visszatér a
+    // méretválasztóhoz, a nyomtatás elmarad.
+    function cancelReview() {
+        printWindow.reviewOpen = false
     }
 
     function acceptReviewAndPrint() {
@@ -1290,7 +1327,60 @@ Window {
                 PicasaButton {
                     objectName: "printReviewCancelButton"
                     text: qsTr("Cancel")
-                    onClicked: printWindow.reviewOpen = false
+                    onClicked: printWindow.cancelReview()
+                }
+            }
+        }
+    }
+
+    // #5682 / 0x0085cce0: a „Remove Low Quality Pictures" megerősítése,
+    // ha MINDEN kép alacsony minőségű. Nincs „Ne kérdezze meg újra"
+    // jelölő (ld. CollageDialogs.qml, „Miért nem ConfirmDialog"): a törlés
+    // visszafordíthatatlan, ezért nem nyelhető el némán. Escape-pel vagy a
+    // Nem gombbal semmi nem változik.
+    Dialog {
+        id: removeAllConfirm
+        objectName: "printRemoveAllDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        // a nyomtatási ablak saját palettája sötét lehet: a háttér a téma
+        // tartalompaneljéé, mint a többi kérdésé
+        background: Rectangle {
+            color: Theme.contentPanel
+            border.width: 1
+            border.color: Theme.chromeBorder
+        }
+
+        ColumnLayout {
+            spacing: 12
+
+            Text {
+                objectName: "printRemoveAllMessage"
+                Layout.preferredWidth: 340
+                text: qsTr("This will remove all of your pictures and cancel printing. Would you like to continue?")
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                spacing: 8
+
+                PicasaButton {
+                    objectName: "printRemoveAllYesButton"
+                    text: qsTr("Remove and Cancel")
+                    onClicked: {
+                        removeAllConfirm.close()
+                        printWindow.removeAllReviewPicturesAndCancel()
+                    }
+                }
+                PicasaButton {
+                    objectName: "printRemoveAllNoButton"
+                    text: qsTr("Don't Remove")
+                    onClicked: removeAllConfirm.close()
                 }
             }
         }
