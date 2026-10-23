@@ -425,7 +425,12 @@ P:\testdata\2025-05-xx\IMG_20250501_093058.jpg
 
 Vagyis a csillagozás **nem csak a `.picasa.ini` `star=yes` kulcsában él** —
 a Picasa egy **lapos, teljes listát is vezet** róla. A `saverlist.txt`
-(képernyővédő-album) ugyanez a formátum; a mintában **0 bájt**.
+(képernyővédő-album) ugyanahhoz a bináris listakiíróhoz (`0x004755f0`)
+kerül, amely elemenként `%s\n` alakot ír; ebben a profilmintában azonban
+**0 bájt**, ezért a nem üres saverlista tényleges tartalma/mérése hiányzik.
+Megszerzés: Picasa 3.9-profilban egy kép képernyővédőhöz adása után a
+`#db3\saverlist.txt` kiolvasása; a minta tartalmát ne a `starlist.txt`
+alapján következtessük ki.
 
 #### `scanlist.txt` — a meghajtó-szintű be/kizárás, élő minta
 

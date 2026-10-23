@@ -1875,20 +1875,32 @@ self-álló gomb: `buttonlabel:{FF04B854-3029-46ff-B762-FB9AF417F93F}` =
 
 ### 35.3 Képernyővédő — a `saverlist.txt` és a telepítés-ellenőrzés
 
-Az `Add to Screensaver` (`0x00531900`) kétszintű:
+Az eredeti Létrehozás ▸ `Add to Screensaver` parancs (`ID_SCREENSAVER`,
+`0x9d5c`) a `0x00531900` kezelőhöz vezet. Album kijelölésekor megerősítést
+kér (`addtosaver::warning`); elfogadás után a `0x00531a20` hozzáadja a
+képeket, majd a hívó `1` argumentuma miatt a Windows képernyővédő-telepítő
+útját is meghívja. A Tools ▸ `Configure Screensaver...` (`ID_TOOLS_CONFIG_SCREENSAVER`,
+`0x9dc9`) ugyanerre a `0x00531ac0` kezelőre vezet.
 
-1. **album-szintű kijelölésnél** megerősítés: `addtosaver::warning` —
-   „Are you sure you want to add all of the selected album's images?";
-2. a hozzáadás motorja (`0x00531a20`) — **minden állapot megnevezve:**
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Menüpont és felirat egyezik.** `0x00559150` menüfeliratai: `Add to &Screensaver...` és `Configure Screensaver...`; a `0x005cb990` diszpécser a `0x9d5c` / `0x9dc9` esetet a `0x00531900` / `0x00531ac0` címre irányítja. | `PicasaMenuBar.qml:2285-2288` és `2386-2388`: ugyanezek a menük és feliratok. | **EGYEZIK**: a felirat és a menühely lezárható. |
+| **Album-megerősítés.** `0x00531900`; szövegcím `0x00c89880`: „Are you sure you want to add all of the selected album's images?". | `Main.qml:716-722`, `2900-2917`: album nézetben ugyanilyen megerősítő szöveg. | **EGYEZIK**: az albumra vonatkozó kérdés lezárható. |
+| **Tagság és lista.** `0x00531a20` kezeli a `]screensaver` tokent (`0x00c811dc`) és a `#db3\saverlist.txt` fájlt (`0x00c81ae4`); ugyanezt a listaírót (`0x004755f0`) használja a `0x0041ba40` és a `0x004a82d0` is. A `0x004755f0` `%s\n` formátummal, `w` módban ír. A mért profilmappában a `saverlist.txt` **0 bájt**, ezért nem üres fájlból a sorok tartalmát nem igazolja. | `screensaver_controller.py:41-46, 65-102, 289-305`: a forrásválasztás és a menüből hozzáadott képek a PicasaPy QSettings-be (`screensaver/sources`, `screensaver/photoPaths`) kerülnek; a közvetlen hozzáadás bekapcsolja a `photos:selected` forrást. | **ELTÉR.** Ha az eredeti Picasa-állapot átvétele cél, külön importáló feladat kell. A `saverlist.txt` nem üres mintáját egy képernyővédőhöz legalább egy képet hozzáadó Picasa 3.9-profilból kell megszerezni. |
+| **Az INI-kulcs kapcsolata nyitott.** A `0x004a51f0` `CAlbumState` figyelő a `]screensaver` tokent a `screensaver` kulcsra képezi; a `0x00456610` metaadat-olvasó ismeri ezt a kulcsot. A figyelő fájlba írása, illetve hogy a menüparancs ezt az írási utat is kiváltja-e, **NINCS MEG**. | A PicasaPy menüútja a fenti QSettings-mezőket írja; `.picasa.ini`-kulcsot ez a kódút nem állít. | **NYITOTT.** A `0x004a51f0` callback útját kell követni a tényleges `.picasa.ini`-írásig; ehhez egy nem üres képszakasz `screensaver` kulcsának művelet előtti/utáni összevetése kell. |
+| **Hozzáadás utáni telepítés.** `0x00531900` igaz argumentummal hívja a `0x00531a20`-at; az `0x00531a20` ezután meghívja a `0x00531ac0`-at. Ez a `HKLM\Software\Google\Google Photos Screensaver\AppPath` értéket keresi, majd `rundll32.exe desk.cpl,InstallScreenSaver %s` parancsot indít; hiányzó telepítésnél „The screensaver hasn't been installed." üzenetet ad. | `Main.qml:709-714`: hozzáadás után csak „Added %1 pictures to Screensaver.” visszajelzés jelenik meg. | **ELTÉR.** Ha Windows-kompatibilitás cél, a külön telepített képernyővédő OS-útját platformfüggően kell kezelni. |
+| **Konfigurálás.** A Tools-parancs diszpécsere (`0x005cb990`) a `0x00531ac0`-at hívja; az utóbbi az előző sorban leírt Windows `desk.cpl` telepítő/beállító belépést indítja. A képernyővédő saját beállítómezői nem követhetők ebből a hívásból. | `Main.qml:2135`, `2890-2897`: a saját `ScreensaverDialog.qml` nyílik meg. | **ELTÉR.** A helyi QML-beállító nem az eredeti Windows-rendszerút. Az eredeti külön program mezőihez lásd az alábbi `NINCS MEG` sort. |
+| **Az eredeti képernyővédő beállításai, alapértékei és képi kimenete: NINCS MEG.** A `0x00531ac0` az `AppPath` értékhez irányít, de az érték által mutatott program nincs a kutatási példányban. Megszerzés: egy működő Picasa 3.9 Windows-profilból olvasd ki ezt az `AppPath` értéket, szerezd meg az általa mutatott külön programot, majd tiszta Windows-felhasználói profilon rögzítsd a beállító ablak mezőit, kezdőértékeit és a futó kimenetet. | **Mérés a PicasaPy-forráskódban:** `ScreensaverDialog.qml:22-28, 40-59, 171-237`; `screensaver_controller.py:105-117, 179-193`; `screensaver_idle.py:39-41`. Effektusok `Cut`, `Dissolve`, `Dissolve through black`, `Dissolve through white`, `Pan and Zoom`; 1-30 mp, alap 3 mp; felirat alapból be; tétlenség 1-120 perc, alap 10 perc. Első forrásválasztáskor a figyelt gyökerek, ezek hiányában az összes nem üres mappa indul kijelölve (`screensaver_controller.py:105-117`). | **NINCS MEG**: a külső program és tiszta profilos mérés nélkül eredeti értéket nem szabad átvenni vagy becsülni. |
+| **Régi profil migrációja.** `0x0040e180` a `Preferences\SaverUpgradedTo25` jelzőt ellenőrzi, feloldja a `0x00c80354` `IDS_SCREENSAVERFOLDER` erőforrást, és meghívja a `0x004f7fc0`-at; annak nulla eredménye a `0x00531a20` hívásához vezet. Ha ez is nullával tér vissza, a `0x00401900` beállítja a migrációs jelzőt. A vizsgált PicasaPy-kódútban nincs ennek megfelelő migráció. | A képernyővédő forrásait a fenti PicasaPy QSettings és az index adja. | **NYITOTT.** A mappából pontosan mely elemek kerülnek át, és mit jelent a `0x004f7fc0` eredménye, Ghidra-dekompilálást igényel; lásd a Nyitott részt. |
+| **Automatikus indítás/kimenet.** A `desk.cpl`-út Windows képernyővédő-telepítést indít; az eredeti program idle-küszöbe, alapértéke és vetítési viselkedése **NINCS MEG** (megszerzés az előző AppPath-programmal és a Windows beállítófelületén). | `ScreensaverWindow.qml:9-47` teljes képernyős, fekete ablakot és ismétlődő, zene nélküli vetítést indít. A `SlideshowView.qml:248-260, 687-723, 907-936` **250 ms** után egér- vagy billentyűbevitelre kilép (`mérés` a forráskódban: `screensaverInputTimer.interval`, `SlideshowView.qml:687-692`). A `swayidle`-alapú tétlenségindítás csak támogatott wlroots Wayland-asztalon érhető el; saját autostart-bejegyzés nélkül alapból ki van kapcsolva (`screensaver_idle.py:36-55, 88-101, 284-293`). | **NYITOTT.** Az eredeti külső program futó kimenetével és a Windows képernyővédő-beállításaival kell összevetni. |
 
-| elem | bizonyíték |
-|---|---|
-| tagság tokenje | `]screensaver` belső token (írás/törlés `0x531a3d`/`0x531a88`) — az ini-korpuszban `screensaver=` sor **nincs**: a tagság nem a `.picasa.ini`-ben él |
-| a képernyővédő listája | **`saverlist.txt`** a **`#db3\`** mappában (`0x531a8d`–`0x531a93`) — ugyanott, ahol az adatbázis |
-| telepítve van-e | `Software\Google\Google Photos Screensaver` → `AppPath` (registry, `0x531ae2`–`0x531aec`) |
-| nincs telepítve | `CThumbUI::InstallScreensaver` → **`rundll32.exe desk.cpl,InstallScreenSaver %s`** (`ShellExecute`, „open" ige — `0x531bcf`–`0x531c0f`); hiba: `CImageOutput::noscr` = „A képernyővédő nem lett telepítve." |
-| folyamat | `CImageOutput::scrprog` = „Hozzáadás a képernyővédőhöz" |
-| konfigurálás | `Configure Screensaver` (`0x00531ac0`): ugyanabból a registryből indítja a képernyővédő beállítóját |
+**Bizonyítottsági fok: nyitott.** A menüpont, az albummegerősítés, a belső token/lista frissítése és a Windows indítóparancs utasításszinten követhető; a külön képernyővédő-program beállításai, alapértékei és vetítése nem hozzáférhetők.
+
+**Két független út:** (A) `0x00531900` → `0x00531a20` utasításszintű nyomvonala megnevezi a tokent, a listát és az utólagos `0x00531ac0` hívást; (B) a `0x0041ba40` / `0x004a82d0` külön perzisztencia-út ugyanazt a `0x004755f0` listaírót használja, a `0x00439a80` pedig a `]screensaver` tokent külön albumnévhez köti. Az utak a DB-token/lista szerepében egyeznek.
+
+**Cáfoló kör:** azt az állítást próbáltam megdönteni, hogy a tagság csak a DB-listában létezik, `.picasa.ini`-kapcsolata nincs. A `0x004a51f0` a tokent `screensaver` kulcsra képezi, tehát a kizáró állítás megdőlt. A cáfolat ellenőrzése ugyanazzal a bizonyítási mércével: ez a binárisban látható kulcsválasztást igazolja, de az élő fájlba írást és a menüparancs azon keresztüli hatását nem; ezek nyitva maradnak.
+
+**A #5661-hez tartozó nyitott utak:** a külön AppPath-program tiszta profilos megszerzése; a `saverlist.txt` nem üres mintája; valamint a régi profil migrációs ágának és az INI-figyelő fájlírásának lezárása. A meglévő `picasa-ini-format.md` és `picasa-create-features.md` állításai ennek megfelelően különválasztják a felismerhető `screensaver` INI-kulcsot a bizonyított DB-listaúttól.
 
 A Google Fotók-képernyővédő **külön telepítésű program** (#453) — a
 `desk.cpl`-hívás Windows-specifikus. Jegy: **#453**, **#32**.
@@ -1899,10 +1911,10 @@ képernyővédő-beállító és előnézet készült. A források a kijelölt m
 albumok és a Létrehozás menüből hozzáadott képek; a beállításokat a QSettings
 őrzi. Az effekt-, diaidő- és feliratbeállítás a helyi teljes képernyős
 diavetítéshez tartozik. A vetítés egérmozgásra vagy billentyűre kilép.
-Asztali környezeti tétlenségjelhez kötött automatikus indítás nincs benne; ez
-külön integrációs feladat. A korábbi specifikáció az eredeti külön Windowsos
-kiegészítő teljes beállítómezőit nem sorolta fel, ezért ez a Linuxos felület a
-jegyen kért helyi forrásokra és a PicasaPy diavetítési beállításaira épül.
+Asztali környezeti tétlenségjelhez kötött automatikus indítás csak a
+PicasaPy-ban támogatott wlroots Wayland-asztalokon érhető el. Az eredeti
+külön Windowsos kiegészítő beállítómezői és alapértékei továbbra is nyitottak;
+a fenti #5661-összevetés megadja a megszerzés útját.
 
 ### 35.4 TiVo-export — Windows-only menü, akció-kereten át
 
@@ -1979,12 +1991,14 @@ egyértelműen követhető — a motor és az állapothordozók viszont megvanna
 ### Nyitott kérdések mérlege (35.)
 
 ```
-Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kívül-javaslat · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 4 lezárva · 0 blokkolt · 2 hatókörön kívül-javaslat · 0 csak-nyitva
 ```
 
+- **NYÍLT**: az eredeti képernyővédő külön programjának beállításai,
+  alapértékei, kimenete, valamint az INI-figyelő fájlírása (35.3).
 - **LEZÁRVA** (mind címmel): a poszter papírméret-listája és nyelvi
-  feltétele (35.2); a képernyővédő három állapothordozója (35.3); a
-  TiVo-akció kerete (35.4); a 1000-es küszöb és gombfelirat (35.5); a
+  feltétele (35.2); a TiVo-akció kerete (35.4); a 1000-es küszöb és
+  gombfelirat (35.5); a
   mentés két állapothordozója (35.6).
 - **HATÓKÖRÖN KÍVÜL-JAVASLAT** (tulajdonosi döntést kér): a TiVo-export
   megvalósítása; az operációs rendszer tétlenségi jeléhez kötött automatikus
@@ -1992,9 +2006,11 @@ Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kív�
 
 ### Amit KIZÁRTAM
 
-- **„A screensaver-tagság a `.picasa.ini`-ben él"** — megdőlt: a
-  `]screensaver` token a korpuszban nem jelenik meg kulcsként; a lista a
-  `#db3\saverlist.txt`-ben él.
+- **„A screensaver-tagságot kizárólag a `.picasa.ini` tárolja": nincs
+  igazolva:** a vizsgált korpuszban nincs `screensaver=` minta, és a
+  `#db3\saverlist.txt` külön listája ismert; ugyanakkor a `0x004a51f0`
+  callback a `]screensaver` tokent `screensaver` INI-kulcsra képezi. A
+  tényleges fájlírás és a menüút kapcsolata nyitott (35.3).
 - **„A `0x6032f0` a backup-kezelője"** — megdőlt: az a jobbfiók-átváltó
   (`RIGHTDRAWEROFFSET`); a `thumbui/backup` matchelőágának ugrása a
   sztring-lánc matcher esethatárára esik — a valódi motor a `il_BurnPanel`
