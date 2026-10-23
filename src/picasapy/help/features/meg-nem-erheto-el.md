@@ -20,10 +20,6 @@ fölöslegesen.
 - Időrend (Ctrl+5) — a nézet még nem készült el, ezért a menüpont és a
   billentyű is inaktív
 
-**Eszközök**
-
-- Feltöltés (almenü)
-
 (A **Súgó** menü tételei közül a **Súgó - tartalom és tárgymutató** az
 **F1** billentyűvel együtt, valamint a **Billentyűkódok** **működik**:
 az előbbi ezt a súgót nyitja meg — lásd [A beépített súgó](sugo.md) —,
@@ -63,6 +59,9 @@ lesz** működő szolgáltatás:
 - Papírképek rendelése…
 - Közzététel a Bloggeren…
 - Feltöltéskezelő…, Csoportos feltöltés…, Feltöltés
+- Az **Eszközök ▸ Feltöltés** almenü három tétele: Feltöltés a Google
+  Fotókba, Feltöltés közös szerkesztésű webalbumba, Feltöltés a YouTube
+  webhelyre. Az almenü kinyílik, de a tételei szürkék.
 - Feltöltés a Picasa Webalbumokba…, Feltöltés a Google Fotókba…,
   Gyors feltöltés, Feltöltés tiltása, Online műveletek
 - Picasa-fórumok, Online információ, Termékkiadási tájékoztató,

@@ -203,7 +203,10 @@ akkor érdemes elővenni, ha ez a letöltés nem sikerül.
     kell lennie a hasonlóságnak, hogy a program nevet javasoljon;
   - **Csoportküszöb:** — minél nagyobb az érték, annál szigorúbban
     gyűjti egy csoportba az arcokat.
-  Mindkettő 50 és 95 között, ötösével állítható.
+  Mindkettő 50 és 95 között, ötösével állítható, és alapból **85**-ön
+  áll, mint az eredeti Picasában. Ha korábban átállítottad a
+  csoportküszöböt, a csoportosítás ugyanúgy viselkedik, mint addig, csak a
+  csúszka most más számot mutathat.
 - **Névcímkék tárolása a fotón** — ha be van kapcsolva (alapból be van),
   egy arc elnevezésekor a program az arc adatait a kép mellé egy XMP
   kísérőfájlba is kiírja.
