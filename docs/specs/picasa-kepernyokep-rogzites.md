@@ -13,11 +13,12 @@ HKCU-t ad át (`HKEY_CURRENT_USER`, `0x80000001`, `0x00407a3b`) a
 `0x00408060` kulcsútvonal-olvasónak; a szekció és kulcs itt
 `Preferences\EnableScreenCap`. Ugyanebben a kódrészben a függvény létrehozza
 a `Scrapture` objektumot (`0x0040ca49`-`0x0040ca75`), majd meghívja a
-`0x0097b350` szálindítót (`0x0040ca78`). A lokális diszasszemblálásból nem
-dönthető el, hogy a kiolvasott érték nulla volta kihagyja-e ezt az
-objektum-/szálindítást: a beállítás olvasása és az indítás egy helyen
-látható, de a köztük lévő feltételes értékút nincs bizonyítva. **NINCS MEG**;
-a `0x0040bf70` célzott dekompilálása kell.
+`0x0097b350` szálindítót (`0x0040ca78`). A `0x004019b0` a beolvasott értéket
+adja vissza (`0x0040ca24`); a függvény nulla ellen hasonlítja
+(`0x0040ca41`), és nulla esetén a `0x0040ca9d` címre ugrik, az objektum- és
+szálindító ág mögé. Nem nulla értéknél végrehajtja az objektumlétrehozást,
+majd a szálindítást. A `EnableScreenCap` alapértéke tehát `1`; a `0` letiltja
+ezt a figyelőszálat.
 
 A szál belépője `0x0097aeb0`; a vtable `+0x08` rekeszéből hívja a
 `0x00591470` metódust. Ez a metódus először a `Scrapture` vtable `+0x04`
@@ -175,19 +176,26 @@ callback dinamikus címzettjének osztálya nincs bizonyítva.
 
 ## 5. Független ellenőrzési utak és cáfoló próba
 
-**A út: előállító:** a `0x0040bf70` beállításolvasása és objektum-/szálindítása
-→ `0x0097b350`/`0x0097aeb0` → a `Scrapture` vtable `+0x08` rekeszén
-`0x00591470` → a vtable `+0x04` állapotvizsgálója → billentyűlekérdezés
-→ `0x00590f40` → `0x009ad2d0` BMP-írás. A kapcsolóérték és a
-szálindítás közti feltétel, valamint a `+0x04` állapotjelentése külön nyitott
-kérdés.
+**A út: beállítás és vezérlési út utasításszinten:** a `0x0040bf70`
+`Preferences\EnableScreenCap` olvasása `1` alapértékkel, a visszaadott érték
+nulla-ellenőrzése (`0x0040ca41`-`0x0040ca47`), majd a nem nulla ágon az
+objektum- és szálindítás (`0x0040ca49`-`0x0040ca78`). A szál
+`0x0097aeb0` belépője a `Scrapture` vtable `+0x08` metódusát hívja
+(`0x0097af1c`-`0x0097af23`), ez a `0x00591470`; a billentyűfigyelő
+közvetlenül hívja a `0x00590f40` rögzítőt (`0x005914f1`), amely a
+`0x009ad2d0` BMP-írót használja. A vtable `+0x04` állapotvizsgálójának
+jelentése ettől külön nyitott.
 
-**B út: osztályadat és fogyasztó:** a `Scrapture::vftable` nyers
-rekeszei (`0x00c91728`) a `0x00591470` figyelőmetódust és a `0x00408b30`
-`+0x04` állapotvizsgálót adják; a `0x00591470` diszasszemblálása szerint
-az utóbbi nem nulla eredménye kilépést, nulla eredménye további billentyű-
-lekérdezést jelent. A külön
-főablak-üzenetkezelő (`0x00601090`) a rögzítő `0x63617042` és
+**B út: független hivatkozáslánc és fogyasztók:** a beállításkezelő a
+`0x00c91728` `Scrapture::vftable` címet írja az objektumba
+(`0x0040ca6f`-`0x0040ca75`); a vtable `+0x08` rekesze `0x00591470`.
+Külön a `0x0097b350` a `0x0097aeb0` szálbelépőt adja át
+(`0x0097b3a3`), amely a saját vtable `+0x08` rekeszét hívja
+(`0x0097af1c`-`0x0097af23`). A teljes `.text` pásztázás a
+`0x00590f40` egyetlen közvetlen hívójaként a billentyűfigyelő
+`0x005914f1` utasítását találta. Ez a hivatkozáslánc a beállításolvasástól
+függetlenül ugyanarra a háttérbeli billentyűfigyelőre és rögzítőhívásra mutat.
+A külön főablak-üzenetkezelő (`0x00601090`) a rögzítő `0x63617042` és
 `0x63617043` üzeneteit a `0x00445a30` kategorizáló, illetve a
 `0x0057d080` értesítő útvonalra viszi. Az utóbbi útvonal `Screenshot
 saved`/`click to view` kulcsait használja, és a meglévő Picasa-képernyőkép
@@ -235,18 +243,18 @@ kattintási callbacket; a kattintási cél továbbra is nyitott.
 
 ## 7. Bizonyítottság és nyitott irányok
 
-**Összesített fok: feltételes.** A `Preferences\EnableScreenCap` olvasása és
-`1` alapértéke, a billentyűmódok, fájlnév-képzés, BMP-kimenet,
+**Összesített fok: feltételes.** A `Preferences\EnableScreenCap` olvasása,
+`1` alapértéke és nulla értéknél a figyelőszál kihagyása, a billentyűmódok,
+fájlnév-képzés, BMP-kimenet,
 mappalétrehozás, mappabesorolás és buborék binárisból visszakereshető; a
-kapcsoló és a szálindítás közti feltétel, valamint a teljes képernyő
-többmonitoros terjedelme, a kurzor képpontbeli jelenléte, a
+teljes képernyő többmonitoros terjedelme, a kurzor képpontbeli jelenléte, a
 menü/accelerator út, az azonnali képfájl-indexelés és a buborék kattintási
 célja nyitott. A külön ellenőrzési utak a BMP-író tartalmán, a
 mappabesorolásnál és a buboréknál egyeznek.
 
 | Állítás | Forrás |
 |---|---|
-| HKCU `Preferences\EnableScreenCap` olvasása, alapérték `1`; objektum/szál ugyanabban a függvényben, de a kapcsoló feltételes hatása | bináris (`0x0040bf70`, `0x0040ca13`, `0x0040ca6f`, `0x0040ca78`, `0x00407a3b`); a kapcsolat: NINCS MEG |
+| HKCU `Preferences\EnableScreenCap` olvasása; alapérték `1`; nulla értéknél az objektum- és szálindítás átugrása | bináris (`0x0040bf70`, `0x0040ca13`, `0x0040ca24`, `0x0040ca41`-`0x0040ca47`, `0x0040ca49`-`0x0040ca78`, `0x00407a3b`) |
 | Print Screen / Print ismételt lekérdezés és Ctrl/Alt mód | bináris (`0x00591470`, `0x00590f40`) |
 | Figyelőciklus állapotkapuja, rögzítés utáni várakozás és ismételt lekérdezés | bináris (`0x0059147d`-`0x00591488`, `0x005914f6`-`0x00591518`, `0x00c91728`, `0x00408b30`; `WaitForSingleObject` import `0x00921d4c`, `Sleep` import `0x00921ba0`); a `+0x04` állapotjelentése és kapcsolata a preferenciával: NINCS MEG |
 | Virtuális asztal célzása, képernyőhatár-vágás és GDI-másolás; többmonitoros eredmény | bináris (`0x00590f40`, `0x009aa990`); többmonitoros kimenet: NINCS MEG, futásidejű mérés kell |
@@ -262,13 +270,12 @@ mappabesorolásnál és a buboréknál egyeznek.
 | Névütközés kezdő sorszáma és növelése | bináris (`0x00993a96`, `0x00993b56`, `0x00cd8d64`) |
 | A képfájl azonnali indexelése | NINCS MEG; a meglévő Ghidra-kimenet a `0x004f92c0` → `0x004e7d10` utat és az `0x004e31a0` indirekt vtable-hívását mutatja, de a konkrét callback hatását nem |
 | A buborék kattintási célja | NINCS MEG; a `0x0057d1e4` vtable `+0x68` hívás célfüggvényét kell azonosítani |
-| A `EnableScreenCap` nulla értéke letiltja-e a szálat; a vtable `+0x04` állapotkapujának jelentése; menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; Ghidra-kör a `0x0040bf70` feltételes értékútjához; a `0x00408b30` helperének célja és állapotforrása következő helyi irányként a `0x00c40328` mutató inicializálásának és használatának követése; a meglévő `0x0097fc30` dekompilált kimenete a `DAT_00d4a4d4` táblával hívja a `TranslateAcceleratorA`-t, a tábla feltöltési és parancsútja még nincs összekötve a `Scrapture` objektummal |
+| A vtable `+0x04` állapotkapujának jelentése; menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; az állapotkapuhoz a `0x00408b30` helper célját és állapotforrását, majd a `0x00c40328` mutató inicializálását és használatát kell követni; az acceleratorhoz a `0x0097fc30` által olvasott `DAT_00d4a4d4` tábla feltöltési és parancsútját kell a `Scrapture` objektummal összekötni |
 | Főablak nélküli ágon a rendszer melyik `ShellExecute` API-t választja | NINCS MEG; a `0x00c33b68` a `0x00d6fc58` alapján választ `ShellExecuteA` (`0x009239a8`) és `ShellExecuteW` (`0x00923998`) között; a globális érték eredetét és platformjelentését kell feloldani |
 
 Ghidra-kör kell: 0x004e31a0: a `0x004f92c0` → `0x004e7d10` keresési út az `param_3 + 0x344 + 0x10` sloton mely konkrét callbacket hívja, és az a friss képfájlt indexbe írja-e vagy csak keres [blokkoló]. A meglévő `0x004e31a0` dekompilált kimenet az indirekt hívást mutatja, a célfüggvényt nem.
 Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás konkrét célfüggvénye és a `clickview` művelet kattintási navigációja [blokkoló]. A meglévő dekompilált kimenet a hívást és a kulcsot mutatja, a célfüggvényt nem.
 Ghidra-kör kell: 0x0097fc30: a `DAT_00d4a4d4` HACCEL-tábla létrehozási/feltöltési útja és parancsazonosítói indíthatják-e a `Scrapture`-t vagy a `0x00590f40`-et [blokkoló]. A meglévő dekompilált kimenet a `TranslateAcceleratorA` hívást mutatja, de a tábla tartalmát és a rögzítőhöz vezető parancsot nem.
-Ghidra-kör kell: 0x0040bf70: a `Preferences\EnableScreenCap` kiolvasott értéke melyik feltételes ágon vezérli a `Scrapture` objektum és a `0x0097b350` figyelőszál létrehozását; a `0x0040ca13` alapérték és a `0x0040ca6f`/`0x0040ca78` indítás közti kapcsolatot kell feloldani [blokkoló].
 Ghidra-kör kell: 0x00c33b68: a meglévő `2026-10-23-sor-277-280.txt` kimenet a `ShellExecuteA`/`ShellExecuteW` választást mutatja, de nem azonosítja, mi állítja elő a belépéskor használt `in_CF` feltételt; a `0x00d6fc58` eredetét és a platformfeltételt kell feloldani.
 
 Futásidejű mérés kell: eredeti Windows Picasában a kurzor láthatósága a mentett BMP-n; többmonitoros rendszeren a kimeneti BMP téglalapja; a fájl indexbe kerülésének pillanata és a buborék kattintási célja; továbbá a dátum-idő szövegalakja a cél-locale alatt.
