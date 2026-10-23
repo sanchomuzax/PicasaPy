@@ -70,7 +70,7 @@ Window {
         animationDurationMs = duration
         transitionProgress = 0
         animationStartedAt = Date.now()
-        if (timelineController) {
+        if ((typeof timelineController !== "undefined" && timelineController)) {
             var nextOffsets = timelineController.randomOffsets(
                 currentOffset[0], currentOffset[1],
                 Math.floor(Math.random() * 32768),
@@ -98,7 +98,7 @@ Window {
         dragX = x
         var ratio = Math.max(0, Math.min(1,
             (x - sliderArea.x) / Math.max(1, sliderArea.width)))
-        pendingSliderIndex = timelineController
+        pendingSliderIndex = (typeof timelineController !== "undefined" && timelineController)
             ? timelineController.sliderIndex(show.sliderValues(), ratio) : -1
     }
 
@@ -108,7 +108,7 @@ Window {
             show.animateTo(pendingSliderIndex, 4000)
     }
 
-    readonly property var frameTransforms: timelineController
+    readonly property var frameTransforms: (typeof timelineController !== "undefined" && timelineController)
         ? timelineController.frameAt(
               transitionProgress,
               currentOffset[0], currentOffset[1],
@@ -124,7 +124,7 @@ Window {
     readonly property real currentLayerOpacity: currentLayerAlpha / 256.0
     readonly property real previousLayerOpacity:
         (255 - currentLayerAlpha) / 256.0
-    readonly property var dotsModel: timelineController
+    readonly property var dotsModel: (typeof timelineController !== "undefined" && timelineController)
         ? timelineController.dotPositions(
               sliderValues(), 0, Math.max(0, sliderArea.width - 4), 7,
               28, 0, 10)
@@ -192,7 +192,7 @@ Window {
             var elapsed = Date.now() - show.animationStartedAt
             var progress = Math.max(0, Math.min(1,
                 elapsed / Math.max(1, show.animationDurationMs)))
-            show.transitionProgress = timelineController
+            show.transitionProgress = (typeof timelineController !== "undefined" && timelineController)
                 ? timelineController.easingAt(progress) : progress
             if (progress >= 1) {
                 show.transitionProgress = 1
@@ -248,7 +248,7 @@ Window {
                 var values = show.sliderValues()
                 var firstPhoto = currentDeck.count > 0
                     ? currentDeck.itemAt(0) : null
-                if (!timelineController || values.length === 0 || !firstPhoto)
+                if (!(typeof timelineController !== "undefined" && timelineController) || values.length === 0 || !firstPhoto)
                     return []
 
                 // A qshow mért A[i]/A[n-1] aránya és a duplikált pontok
@@ -342,7 +342,7 @@ Window {
                 required property int index
                 property var photo: show.photoAt(show.currentIndex, index)
                 property real curveParameter: 0.94
-                property var curve: timelineController
+                property var curve: (typeof timelineController !== "undefined" && timelineController)
                     ? timelineController.bezierAt(curveParameter)
                     : ({ x: 0.5, y: 0.7, z: 1 })
                 width: 82 * curve.z
@@ -408,7 +408,7 @@ Window {
                 required property int index
                 property var photo: show.photoAt(show.currentIndex + 1, index)
                 property real curveParameter: 1.0
-                property var curve: timelineController
+                property var curve: (typeof timelineController !== "undefined" && timelineController)
                     ? timelineController.bezierAt(curveParameter)
                     : ({ x: 0.5, y: 0.7, z: 1 })
                 width: 82 * curve.z
@@ -466,7 +466,7 @@ Window {
                 required property int index
                 property var photo: show.photoAt(show.previousIndex, index)
                 property real curveParameter: 0.94
-                property var curve: timelineController
+                property var curve: (typeof timelineController !== "undefined" && timelineController)
                     ? timelineController.bezierAt(curveParameter)
                     : ({ x: 0.5, y: 0.7, z: 1 })
                 width: 82 * curve.z
@@ -753,7 +753,7 @@ Window {
                 height: 18
                 radius: 9
                 y: 5
-                x: timelineController
+                x: (typeof timelineController !== "undefined" && timelineController)
                     ? timelineController.sliderThumbX(
                           show.draggingSlider ? show.dragX
                               : sliderArea.x
