@@ -833,6 +833,27 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Adicionar outra cópia de cada foto a ser impressa</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
+            <translation>Essa ação removerá todas as imagens e cancelará a impressão. Deseja continuar?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Remove and Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedallyesbutton</extracomment>
+            <translation>Remover e cancelar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Don't Remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
+            <translation>Não remover</translation>
+        </message>
     </context>
     <context>
         <name>PrintOptionsPanel</name>
