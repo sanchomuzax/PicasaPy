@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.195] - 2026-10-23
+
+- A Passport nyomtatási mód megtartja a beállított példányszámot, az új munkák pedig továbbra is 1 példánnyal indulnak. (#5669).
+
 ## [0.9.194] - 2026-10-23
 
 - A Film készítése újraszámolása előtt üres dia-listánál is megerősítést kérünk; a „Ne kérdezzen újra” beállítás csak az Igen választással rögzül. (#5668).
