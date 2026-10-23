@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.191] - 2026-10-23
+
+- A diavetítés sávján a Timeline gomb az Időrend-bemutatót nyitja, és az eredeti feltételek szerint vált az átmenet-választóval (#5653).
+
 ## [0.9.190] - 2026-10-23
 
 - A Nézet ▸ Időrend és a Ctrl+5 teljes képernyős, animált Időrend-bemutatót nyit gyűjteménykártyákkal, csúszkával és léptetéssel (#5377).
