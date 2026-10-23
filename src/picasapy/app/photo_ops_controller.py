@@ -171,6 +171,11 @@ def tukrozes_mutacio(document, nev: str, flags: int):
 # megnyitásig megmarad.
 RENAME_USE_DATE_KEY = "RenameUseDate"
 RENAME_USE_SIZE_KEY = "RenameUseSize"
+# A `rename.fen` Example sora a rögzített Picasa-mintákat fűzi az alapnévhez;
+# ezek szándékosan függetlenek a kijelölt fájl metaadataitól (#5702).
+RENAME_SAMPLE_DATE = " 08-01-2004 2-30-45 PM"
+RENAME_SAMPLE_SIZE = " 640x480"
+RENAME_SAMPLE_EXTENSION = ".jpg"
 
 
 class PhotoOpsMixin(BackgroundWorkerMixin):
@@ -750,9 +755,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     def renamePreview(
         self, rows, base_name: str, include_date: bool, include_size: bool
     ) -> str:
-        """A `rename.fen` élő előnézete: a kijelölés ELSŐ fájljának végleges
-        neve, ha most elfogadnák a dialógust (sorszám nélkül — ő az első a
-        sorban). Tiszta lekérdezés, nem ír semmit."""
+        """A kijelölés első képének tényleges célneve, sorszám nélkül.
+
+        A dialógus elfogadásakor ez tartja életben a meglévő átnevezési út
+        célútvonalát; a látható, rögzített `Example` mintát a
+        `renameSamplePreview` állítja elő.
+        """
         photos = self._rows_to_photos(rows)
         if not photos or not (base_name or "").strip():
             return ""
@@ -766,6 +774,25 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         return preview_name(
             base_name.strip(), item,
             include_date=include_date, include_size=include_size, sequence=0,
+        )
+
+    @Slot(list, str, bool, bool, result=str)
+    def renameSamplePreview(
+        self, rows, base_name: str, include_date: bool, include_size: bool
+    ) -> str:
+        """A `rename.fen` Example sora a Picasa rögzített mintáival.
+
+        Csak azt ellenőrzi, hogy van-e kijelölés; dátumot, felbontást és
+        kiterjesztést nem olvas a fájlokból.
+        """
+        base_name = (base_name or "").strip()
+        if not rows or not base_name:
+            return ""
+        date_sample = RENAME_SAMPLE_DATE if include_date else ""
+        size_sample = RENAME_SAMPLE_SIZE if include_size else ""
+        return (
+            f"{base_name}{date_sample}{size_sample}"
+            f"{RENAME_SAMPLE_EXTENSION}"
         )
 
     @Slot(list, str, bool, bool)
