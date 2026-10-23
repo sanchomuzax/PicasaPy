@@ -766,9 +766,18 @@ mintát követi az `unsharp`/`unsharp2` is. Jegy: **#1409**.
 0x00531d98  cmp ecx, 2            ; ⇐ pontosan EGY arc
 ```
 
-Három felirat: `Passport0` = „Nem találhatók arcok", `Passport1` = „Úgy
-tűnik, több arc van a képen.", `Passportfail` = „Megpróbálkozik egy másik
-képpel?" ~~(kérdés ⇒ igen/nem párbeszéd)~~ ⛔ **HELYESBÍTVE élő méréssel (2026-09-26, picasa-colab-jobs #49/#50):** a `Passportfail` a hibaablak **CÍME** („Try another picture?”); az ablakban hiba-ikon, a `Passport0`/`Passport1` szöveg („Can't find any faces”) és **egyetlen OK gomb** — nem igen/nem kérdés. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (tiltva) · Show Duplicate Files · Search for ▸ · Save search results… · Show tag as album… · Passport photo… · Delete empty online albums… · Choose database location… · Write faces to XMP…). Jegy: **#1401**.
+Három erőforráskulcs ismert: `Passport0` = „Can't find any faces",
+`Passport1` = „There appear to be multiple faces.”, `Passportfail` = „Try
+another picture?”. A `0x00531c60` visszafejtett hibaága a
+`Passportfail` címet és a `Passport0` törzsszöveget adja át; ebben az
+ágban nincs `Passport1`-re választás. **Élő mérés (#49/#50, 2026-09-26):**
+a nulla arcú eset címe „Try another picture?”, szövege „Can't find any
+faces”, egyetlen OK gombbal. A többarcú eset élő szövege még nincs külön
+mérve. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a
+Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (tiltva) · Show
+Duplicate Files · Search for ▸ · Save search results… · Show tag as
+album… · Passport photo… · Delete empty online albums… · Choose database
+location… · Write faces to XMP…). Jegy: **#1401**.
 
 #### ⭐ A KIVÁGÁS GEOMETRIÁJA — kimérve (2026-09-12, #1401)
 
@@ -782,9 +791,13 @@ téglalapot ad; a kód a `+0x10`/`+0x14`/`+0x18`/`+0x1c` mezőket
 `fild` melletti `fadd [0xcf39e4]` a szokásos előjel nélküli javítás
 (`0xcf39e4` **float** alakja `4294967296,0` = 2³²), nem geometria.
 
-**2. Kerekítés kifelé.** `bal`-ból és `fent`-ből `−0,5`, `jobb`-hoz és
-`lent`-hez `+0,5`, majd `fistp` (`0x00531efa`–`0x00531f5a`; a konstans
-`0xc72150` = **0,5**).
+**2. A kerekítés utasításai.** `bal`-ból és `fent`-ből `-0,5`, `jobb`-hoz
+és `lent`-hez `+0,5`, majd `fistp` (`0x00531efa`-`0x00531f5a`; a konstans
+`0xc72150` = **0,5**). A `fistp` pontos kerekítését félúton meghatározó
+futásidejű FPU kerekítési mód **NINCS MEG**; ezért a kivonás/hozzáadás
+önmagában nem bizonyít „kifelé kerekítést”. Megszerzése: a konverziót
+befolyásoló FPU-vezérlőszó visszakövetése a Passport-hívásig, vagy ismert
+félpixel- és egészpixel-koordinátájú bemenetek élő futtatása.
 
 **3. A függőleges ráhagyás — ez volt a hiányzó arány:**
 
@@ -884,12 +897,52 @@ keresőtábla (`0x006e5d76`–`0x006e5ded`; `index ≥ 0x10` ⇒ `1`):
 *Bizonyítottsági fok: **megerősített** — az ugrótábla és a keresőtábla is
 a `.rdata`/`.text` bájtjaiból olvasva, nem sorrendi következtetés.*
 
-#### Ami MÉG nincs mérve
+#### A fizikai méret és az oldalkiosztás lezárva
 
-Az `ePassport` **fizikai mérete** (mm/hüvelyk) és a lapelrendezés. A
-névtábla csak nevet ad; a méretet a nyomtatási rajzoló (`0x00776180`,
-1085 b — ugyanaz, ami a #1780 szegély/felirat beállításait fogyasztja)
-vagy egy hozzá tartozó mérettábla adja. Ez a következő gépi lépés.
+Az `ePassport` mérete **2 × 2 hüvelyk**, a példányszám induló értéke 1, és
+a lapra rendezés/laptörés is feltárt; a részletes bináris bizonyítékot és
+az élő Picasa-mérést lásd a [`picasa-nyomtatas.md`](picasa-nyomtatas.md)
+17. szakaszának #1401/#3646 részeiben. A #5658 összevetése következik.
+
+### 24/c: #5658: az eredeti útlevélkép és a PicasaPy tételes összevetése
+
+Az EXE PE-verzióadata: **Picasa 3.9.141.259**. Fontos címjavítás:
+`0x00c89994` (`CThumbUI::Passportfail`) és `0x00c899c4`
+(`CThumbUI::Passport0`) adatszöveg-kulcsok, nem függvénybelépési pontok;
+a tényleges kezelő `0x00531c60`.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Menü és diszpécser.** Bináris: `0x00559150` (menüépítő), `0x00c8de18` (`eMenuTools::ID_PASSPORT`), `0x00c8de30` (`&Passport photo...`), `0x005cb990` (`0x9def` ág → `0x00531c60`). | `PicasaMenuBar.qml` ugyanazt a Tools ▸ Experimental menüpontot és feliratot adja, majd a `Main.qml` a passport vezérlőnek adja át. **EGYEZIK.** | Lezárható. A címjegyzékben a `0x00c89994`/`0x00c899c4` értékeket adatkulcsként, ne belépési pontként hivatkozzuk. |
+| **Bemeneti kép.** Bináris: `0x00531c60` a `this+0x399` képre futtatja az arcellenőrzést; a `-1` index korai visszatérés. | `Main.qml` a `photoActionRows()` első sorát adja át. Egyetlen kijelölt képnél **EGYEZIK**. Több kijelölt képnél az eredeti kiválasztási sorrend/viselkedés **NINCS MEG**; megszerzés: Picasa 3.9-ben két kijelölt képpel indítsd a menüpontot, rögzítsd melyik képre fut. | Egyképes út lezárható; több kijelölésre ne állítsunk egyezést az élő ellenőrzésig. |
+| **Arcok száma.** Bináris: `0x00531d8c` hívja a `0x0047ae90`-et; `0x00531d95`-`0x00531d98` a tárolt arcdarabszámot pontosan egyre vizsgálja. | `classify_face_count()` csak az egy arcot engedi tovább. A darabszám-feltétel **EGYEZIK**. | Lezárható a döntési feltétel; az érzékelők kimenetének egyezése külön nyitott pont. |
+| **Arcfelismerő motor.** Bináris: a kezelő `0x0047ae90`-et hív; a virtuális hívás és a detektor pontos modellje, küszöbei, illetve normalizált téglalapjainak eredete **NINCS MEG**. Megszerzés: célzott Ghidra-kör `0x0047ae90`-re, utána azonos, címkézett képkészleten eredeti/PicasaPy detektálás és arcdoboz-összevetés. | `FaceDetectorYN` YuNet `face_detection_yunet_2023mar.onnx` modellt használ; score 0,9, NMS 0,3, topK 5000, legnagyobb detektálási méret 960 px (`faces/detector.py`). | Eredményparitást ne állítsunk. A célzott bináris feltárás és a mérőkészlet nélkül nincs pontos egyezési állítás. |
+| **Sikertelen arcellenőrzés.** Bináris: `0x00531c60` nem-egy-arc ága a `CThumbUI::Passportfail` címet és a `CThumbUI::Passport0` törzset adja át. Élő mérés (#49/#50): nulla arcnál „Try another picture?” / „Can't find any faces” / egy OK. | Nulla arcnál ugyanez a cím, szöveg és OK gomb. Több arcnál a QML `Passport1`-et („There appear to be multiple faces.”) mutat. Az eredeti handler visszafejtett ága ott is `Passport0`-t ad át, tehát a szöveg **ELTÉR**. | A többarcú PicasaPy-hiba törzsszövege kövesse az eredeti `Passport0`-t; élő többarcú eredeti UI-val még erősítsük meg. |
+| **Kivágási arány és alak.** Bináris: `0x00531efa`-`0x00531f5a` arc-téglalap; `0x00cf39f8` = 3,0, `0x00cf3a70` = 0,6; `0x00531faa`-`0x00531ffd` négyzetesítés és képszélre korlátozás. | A `faces/passport.py` ugyanazt az 1/3 felső és 0,6 alsó ráhagyást, középre igazított négyzetet és független szélső korlátokat alkalmazza. **EGYEZIK** az arány/alak szabálya. | Lezárható az arány- és határszabály. |
+| **Kivágási kerekítés.** Bináris: `0x00531efa`-`0x00531f5a` félpixeles eltolásokat és `fistp`-t használ; a futásidejű FPU-kerekítési mód **NINCS MEG**. | A `passport_crop_rect()` a kezdeti arcéleknél `floor`/`ceil`, a további határoknál Python `round()` műveletet használ. Az utasítássor **ELTÉR**; a pixelkülönbség konkrét képen **NINCS MEG**. A forrás docstringjének „legfeljebb egy képpont” állítása nincs méréssel igazolva. Megszerzés: eredeti és Py kimenet összevetése ismert tört/egész határeseteket és képszéli arcokat lefedő címkézett mintákon. | A PicasaPy eredményét a bináris kerekítési menetéhez kell igazítani; készre csak a FPU-mód tisztázása és bájtszinten egyező kivágási aranyminták után jelentsük. |
+| **Sikeres kimenet útja és mérete.** Bináris: `0x00531c60` → `0x0056b5c0` → `0x006b0200` → `0x00579910(2)` → `0x00744d00(0xf)` nyomtatási munkát indít; `0x00775ce0` enumtábla szerint `0xf` = `ePassport`, fizikai mérete `0x00775660` → `0x00cf3a48` = 2 × 2 hüvelyk. | A kivágás a gyorsítótár `passport.png` fájljába kerül, majd a PicasaPy nyomtatási előnézetét nyitja `PASSPORT` (2 × 2 hüvelyk) mérettel. Nincs külön szerkesztőbe ugrás vagy végleges képfájl-mentés. **EGYEZIK** a felhasználói kimenet fő útja és mérete. | Lezárható a nyomtatási út és fizikai méret; az ideiglenes fájl reprezentációja nem felhasználói kimenet. |
+| **Friss nyomtatási beállítások.** Bináris: az új beállításcsomag `0x00860f60`/`0x00860f78` szerint 1 példány; a Passport-kezelő (`0x00744d00`) nem írja felül a már létező példányszámot. Élő mérés (#54): Crop to Fit, 1 példány, nincs gyorsméret-előválasztó. | A nyomtatási nézet Passport módban `fill` (Crop to Fit), 1 példány, a Passport nem gyorspreset. **EGYEZIK** friss állapotban. | Lezárható a friss belépési állapot. |
+| **Meglévő példányszám.** Bináris: a nyomtatási munka újrahasznált állapotában a `0x00744d00` nem írja felül a `numberprints` mezőt; új csomagnál az alap 1 (`0x00860f60`-`0x00860f78`). | A `PrintDialog.qml` Passport módba váltáskor mindig `copies = 1` értéket állít be, az előző általános értéket csak a Passport módból kilépésre menti el. **ELTÉR** a már nyitott/újrahasznált munka példányszámának megtartásában. | A meglévő nyomtatási munka példányszámát Passport-belépéskor is az eredeti viselkedés szerint kezeljük; a friss munka maradjon 1. |
+| **Szegély/felirat 11 alapértéke.** Bináris: `text=0` (`0x0085f8c7`), `textplacement=0` (`0x0085f8fa`), `textfont=Arial` (`0x0085f9db`), `textsize=12` (`0x0085f963`), `textcolor=0` (`0x0085f994`), `wrap=0` (`0x0085f927`), `border=0` (`0x0085f7b2`), `bordersize=10` (`0x0085f7f0`), `bordercolor=0` (`0x0085f827`), `borderedge=0` (`0x0085f85a`), `evenborder=1` (`0x0085f88d`). | `PrintOptions` alapértékei ugyanezek (`printing/options.py`). **EGYEZIK.** | Lezárható; a feliratforrás és elhelyezés kódjai a §317-ben vannak. |
+| **Példányok papírlapra rendezése.** Bináris: `0x00778640` cellákat sorfolytonos rácsba rendez, `0x00778190` választ tájolást; a nyomtató papírján történő tördelést a #55 PDF-mérés is igazolta. | Az `app/print_controller.py` `_grid_for_job()` és `grid_layout` cellarácsot, lapváltást és sorfolytonos példánysorrendet valósít meg. A fő rács/laptörés-szabály **EGYEZIK**; a Py által renderelt Passport-lap azonos nyomtatón történő teljes geometriai egyezése **NINCS MEG**. Megszerzés: ugyanaz a kép, példányszám, nyomtató és papír az eredetiben és a PicasaPy-ban, előnézet/PDF-oldalméretek és pixelek összevetésével. | A rácsviselkedés lezárható forráskódszinten; képi egyezést ne állítsunk az azonos eszközös összehasonlításig. |
+| **Felirat tartalma saját metaadatokkal.** Bináris: hogy a Passport-út a `usecaption`/`usefilename`/`useexif` módokhoz pontosan mely képrekordot adja, **NINCS MEG**. Megszerzés: `0x00744d00`-tól a `printoptions::text` fogyasztóig visszakövetni, majd mindhárom módot élő eredeti képen mérni. | A Py által létrehozott ideiglenes `PhotoRecord` neve `passport.png`, `caption=None`, `taken_at=None` (`print_controller.py::_passport_record`). | Nincs igazolt eltérés, amíg az eredeti szövegforrása nem bizonyított. A fenti kódkülönbség lehetséges hatását célzott eredeti/Py mintán kell eldönteni. |
+| **Nyomtató/cél alapértelmezése.** Bináris: az első Passport-nyomtatási panelen kiválasztott nyomtató és alapcél **NINCS MEG**. Megszerzés: Picasa 3.9 tiszta profillal, telepített alapértelmezett és PDF-nyomtató mellett mérd a panel induló választását. | A Py listáján a PDF-cél az első és alapértelmezett választás. | Az eltérés mértékét az eredeti élő mérés után állapítsuk meg; ne állítsunk egyezést. |
+
+**Bizonyítottsági fok: feltételes.** A menü→diszpécser→kezelő→nyomtatási munka lánc, a crop-szabály és az enum/2 hüvelykes méret bináris útja a jelenlegi forrással egyezik; az arcdetektor kimenete, a félpixeles crop eredménye, a kiválasztási él-esetek és a teljes nyomati képazonosság nincs megmérve.
+
+**Két független út.** A: a meglévő Ghidra-visszafejtés és a célzott utasításszintű olvasás ugyanazt a `0x00531c60` arc- és hibaágat, majd a `0x00744d00` nyomtatási ágat adja. B: az SQLite sztring-xrefjei a `0x00559150` menüépítőt, a `0x005cb990` diszpécsert és a `0x00744d00` Passport-feliratokat külön mutatják; a független élő #49/#50 és #54 mérések igazolják a no-face panelt, illetve a Crop to Fit/1 példány indulást. A két út ezekben a pontokban egyezik; a detektor- és teljes renderelési egyezésre nem adnak választ.
+
+**Cáfoló próba.** Megpróbáltam igazolni azt a korábbi feltevést, hogy több arc esetén az eredeti kezelő `Passport1`-et ad át. A `0x00531c60` Ghidra-kimenetének nem-egy-arc ága és a helyi disassembly ugyanezt cáfolja: a hibaág a `CThumbUI::Passport0` kulcsot tölti be. A `Passport1` erőforrás létezik, de ebből a függvényből nincs hozzá hivatkozás; globális használatáról nem teszek negatív állítást.
+
+#### Nyitva
+
+- `Ghidra-kör kell: 0x0047ae90: az Útlevélkép detektorának virtuális hívásaiból milyen modellt/adatot, küszöböt és normalizált arcdobozt ad vissza [blokkoló]`.
+- Eredeti/Py azonos képkészletes arcdetektor-paritás: mérj az eredeti és a `FaceDetectorYN` által elfogadott arcok számával és téglalapjaival; mérőadat-archívumban releváns minta nem volt.
+- A PicasaPy félpixeles crop eredménye, a többarcú eredeti párbeszéd tényleges szövege, több kijelölt kép sorrendje, a felirat-metaadat forrása, az eredeti kezdőnyomtató és az azonos nyomtatón készült teljes Passport-lap képi egyezése a táblázatban megadott módszerrel szerezhető meg.
+
+#### Javasolt jegytörzs-bővítés (#5658)
+
+Az összevetés igazolt eltérései és a lezárható pontok a fenti táblázatban állnak. A kivágási kerekítés, a többarcú hibaüzenet és a meglevő nyomtatási munka példányszámának kezelése fejlesztést indokol; a még nyitott detektor-, metaadat- és nyomtatócél-kérdésekhez ne rendeljünk becsült eredményt.
 
 ### 25. `ID_PICTURE_GEOUNTAG`
 
