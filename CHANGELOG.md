@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.194] - 2026-10-23
+
+- A Film készítése újraszámolása előtt üres dia-listánál is megerősítést kérünk; a „Ne kérdezzen újra” beállítás csak az Igen választással rögzül. (#5668).
+
 ## [0.9.193] - 2026-10-23
 
 - Az effektek színválasztója pipettát kapott: a képre kattintva a kattintott képpont színe lesz az effekt színe (#5674).
