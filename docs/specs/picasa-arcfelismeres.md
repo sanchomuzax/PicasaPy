@@ -6304,7 +6304,40 @@ A külön `vfr_FusedRelator` `+0x40` vtable-bejegyzése (`0x101c7254`) a `0x100a
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (51.4: az N1 rekordmásolójának három hívója; 51.5: a Red.dll dinamikus `+0x40` ugrásának helyi visszaellenőrzése; az 51.3 N7 mérlege külön rögzíti a Név nélküliek és a People Manager állapotát); `docs/specs/00-index.md` (az 51.4-51.5 lelet és az N7 részállapot összefoglalása).
 
-### 51.6 #5185 Red.dll: a `StdClusterRelator` `+0x40` céljelöltjének ellenőrzése (2026-10-23)
+### 51.6 N3: a `vfr_VdeFaceFinder` névvel ellátott érzékenység-beállítást továbbít, de a pontküszöb nyitott (2026-10-23)
+
+**Célzott Red.dll-ellenőrzés.** A Red.dll bináris-indexének `rtti` és `string_xrefs` tábláiból, majd a DLL nyers vtable-adataiból ellenőriztem a `vfr_VdeFaceFinder` beállító ágát; a `0x100b07b0` és `0x100af210` függvényeket a teljes, indexelt függvényméretükben, célzott Capstone-diszasszemblálással olvastam. A Picasa futtatása és arányteszt nem történt.
+
+- A Red.dll RTTI `vfr_VdeFaceFinder::vftable` bejegyzése (`0x101c867c`) a `+0x5c` slotban (`0x101c86d8`) a `0x100b07b0` címet tartalmazza. Az index `string_xrefs` táblája a `0x101c8664` `set sensitivity` sztringet ehhez a függvényhez rendeli.
+- A `0x100b07b0` kódja a `set sensitivity` ágon a kapott floatot betölti (`0x100b0b04`), a `this+0x4c` objektum vtable-jának `+0x50` függvényét hívja (`0x100b0b01`-`0x100b0b0f`), és ezt a floatot argumentumként adja át. Ez a beállítási szerződés bizonyítja, hogy van névvel jelölt érzékenység-átadási út; **nem** bizonyítja, hogy az érték az arc-jelöltek elfogadási küszöbe.
+- A `vde_Detector::vftable` nyers bejegyzése (`0x101ce0cc + 0x50`) a `0x10021af0` címet tartalmazza. A függvény bájtjai `32 c0 c2 04 00` (`xor al,al; ret 4`), tehát ez a bázis-vtáblahely hamis értéket ad vissza. A futásidejű `[this+0x4c]` gyermek pontos dinamikus osztálya és az esetleges felülírt metódus **NINCS MEG**.
+- A `red.cfg` parser-ellenőrzése az első `vfr_VdeFaceFinder` objektumot a fájloffszeten `0x7` azonosította, de a parser az osztály payload-mezőit nem fejti vissza. A tényleges konfigurált érzékenységi érték és annak pontszámhoz való leképezése **NINCS MEG**.
+
+**Két független út.** **A út:** a Red.dll indexének RTTI- és sztring-xref rekordjai, valamint az önálló nyers vtable-dword egyezően a `vfr_VdeFaceFinder` `set sensitivity` beállító függvényére mutatnak (`0x101c867c`, `0x101c8664`, `0x101c86d8`). **B út:** a `0x100b07b0` célzott utasításolvasata közvetlenül mutatja, hogy a megnevezett ág floatot továbbít a gyermek `+0x50` virtuális slotjára. A két út egyezik a beállítóút létezésében; egyik sem azonosít elfogadási küszöböt vagy pontszám-skálát. A teljes N3 ezért **nyitott**, a részállítás: hogy a beállítóút létezik: **megerősített**.
+
+**Cáfoló kísérlet.** Azt próbáltam ellenőrizni, hogy a `0x100af210` `inProcess` függvényben megjelenő `0.0001` a felismerési pontszám küszöbe-e. A függvény a `0x100af4bc` környezetében `π` és `180.0` segítségével szögértékeket alakít, majd a kiszámolt abszolút eltérést hasonlítja a `0x101e94c0` double konstanshoz (`0.0001`, `0x100af585`). Ez a helyi, utasításszintű adatfolyam szög-eltéréshez köti a konstansot, nem az arcfelismerési pontszámhoz; a küszöb-hipotézist **nem támasztotta alá**. A cáfolót ugyanazon nyers konstans- és utasításolvasattal ellenőriztem. Ez nem bizonyítja, hogy máshol nincs pontküszöb.
+
+### 51.7 A #5184 „Kész, ha” pontjai és a nyitott munkák
+
+| Pont | Eredmény | Bizonyíték és forrás |
+|---|---|---|
+| N1: névvel rendelkező fotón további, ismeretlen arc | ⛔ Nyitott | Az `[item+0x10]` kapu és a `0x004985e0` rekordmásolási út dokumentált (51.4), de a jelző írója és a névvel jelölt archoz való kapcsolata **NINCS MEG**. A `.picasa.ini` mérőadat 15 fájljában nincs címkézett kontroll (`mérés: 15 fájl, 27 267 bájt, 0 arc/jelölés-minta`); ugyanazon kétarcú képről, név előtt és után kell eredeti felvétel. |
+| N3: eredeti felismerési arány és küszöb a YuNet 960 px / 0,9 viszonyában | ⛔ Nyitott | A Red.dll `set sensitivity` float-átadási út binárisan azonosított (51.6), de az effektív érték, annak küszöb-jelentése, a bemeneti méret és az egyező címkézett adaton mért arány **NINCS MEG**. A `0.50` a `FRRecommendIncludeLimit` javaslati határ, nem a Red detektorküszöbe (49.1, 50.1). |
+| N4: a keret és a név alapból látszik-e | ✅ Lezárt | Eredeti felvétel `job-187`: a megnevezett arcon alapból sem keret, sem név nem látszott (36.3). |
+| N5: személyszintű mellőzés útja és hatása | ✅ Lezárt | Eredeti felvétel `job-222..226`: ilyen személyszintű funkció nincs a személyalbumban vagy a People Managerben; a mellőzés arcszintű (37.11, 48.5). |
+| N6: személy törlése és hatása az arcokra | ✅ Lezárt | Eredeti felvétel `job-222/224`: a „Delete People Album” eltávolítja a `faces=` sorokat, megtartja `[Contacts2]`, a megerősítésben Cancel az alapértelmezett; javítás #5391 (37.10). |
+| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ Részben nyitott | A Név nélküliek Ctrl+A többes kijelölése felvétellel igazolt (`job-180`; 20.5, 36.1, 40.3). A People Manager egy kijelölt sort mutató `job-186` képe és az egy aktuális sort tároló bináris út nem dönti el a Ctrl/Shift többes kijelölést; két személyes felvétel kell (51.3, 51.5). |
+| N8: referencia-képernyőkép a People Managerről | ✅ Lezárt | Eredeti felvétel `job-186`, 24. kép: 631×351-es People ablak egy kiválasztott „Teszt Elek” személlyel és a leírt mezőkkel (36.3). |
+
+**Nyitott és szükséges következő lépések.** N1-hez a fenti kétarcú név előtti/utáni eredeti felvétel kell; N3-hoz ugyanazon címkézett képkészlet mérése mindkét programban, továbbá a Red konfigurált értékének és tényleges képméretének azonosítása; N7-hez két személyes People Manager felvétel kell első kattintás, Ctrl-kattintás és Shift-kattintás után. A meglévő `0x0047b020` Ghidra-kimenet csak olvassa az `in_EAX+0x10` jelzőt, a jelző írójára vonatkozó kérés már szerepel a 43.1-ben; a Red `0x10001570` kimenet pedig státuszt ellenőriz. Az új, külön kérdés a most azonosított út, amely az érzékenységi (`set sensitivity`) értéket felhasználja:
+
+- `Ghidra-kör kell: 0x100af210: a VdeFaceFinder inProcess dinamikus hívásláncában azonosítsa, hol olvasódik a set sensitivity ágon továbbadott float, és összevetik-e arc-pontszámmal elfogadási küszöbként. [blokkoló]`
+
+**Fejlesztési következmény.** Eredeti/PicasaPy eltérés nincs bizonyítva, ezért megvalósítási jegy és `Eredeti / nálunk / teendő` kódlista nem indokolt. Új kutatási jegy sem szükséges: N1, N3 és N7 a #5184-en belüli, konkrét felvétellel eldönthető nyitott pontok.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 51.6: a Red.dll `set sensitivity` út és a cáfoló próba; új 51.7: a #5184 pontonkénti lezárási állapota, megmaradt Ghidra-kérések és konkrét felvételek); `docs/specs/00-index.md` (a friss N3-lelet és N1/N3/N7 nyitott állapota).
+
+### 51.8 #5185 Red.dll: a `StdClusterRelator` `+0x40` céljelöltjének ellenőrzése (2026-10-23)
 
 **A vtáblák határa.** A Red-index `data_symbols` sora a `vfr_StdClusterRelator::vftable` táblát a `0x101c60ec` címen `pointer[14]` / 56 bájtként tartja nyilván; a hozzá tartozó RTTI-adat 14 célcímet sorol, az utolsó (`0x101c6120`) `0x100a1f20`. A nyers Red.dll ugyanezt adja: a 14. dword `0x100a1f20`, tehát a főtábla legutolsó bejegyzése a `+0x34` slot, `+0x40` slot nincs benne. A külön `vfr_StdClusterRelator` résztábla (`0x101c6128`) egyetlen dword (`0x100a1ed0`), így abban sincs `+0x40` bejegyzés. Ezzel szemben a `vfr_SdkRelator` főtábla (`0x101c656c`, `pointer[23]`) `+0x40` slotja `0x100a3a50`, a `vfr_FusedRelator` főtábláé (`0x101c7214`, `pointer[23]`) `0x100a8240`. A `0x100a3a50` utasításai a `[this+0x10]` objektum `+0x40` slotjára ugranak (51.5).
 
