@@ -712,7 +712,7 @@ def test_a_mozgofilm_elemei_a_mercehez_igazodnak(movie_app, qt_app):
         lambda: _elem(window, "movieAudioPathLabel").property("text") == "Egyik sem",
     )
     assert _elem(window, "movieSecondsLabel").property("text") == "Dia időtartama:"
-    assert _elem(window, "movieSecondsValueLabel").property("text") == "3.0 mp"
+    assert _elem(window, "movieSecondsValueLabel").property("text") == "4.0 mp"
 
     dialog = _elem(window, "movieDialog")
     image = _elem(window, "moviePreviewTransitionImage")

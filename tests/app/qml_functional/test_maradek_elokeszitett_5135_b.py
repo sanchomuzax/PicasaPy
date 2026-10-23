@@ -154,6 +154,20 @@ class TestFilmEgyKlip:
         _kattint(window, qt_app, _elem(window, "movieTabClips"))
         _elem(window, "movieClipList").setProperty("currentIndex", 1)
         solo = _elem(window, "movieSoloClip")
+        # a Clips lap a fülváltás után rendeződik át (CI): a jelölő akkor
+        # kattintható, ha már a lapon áll és a helye két mérés között sem mozdul
+        helyek = []
+
+        def _allando_hely():
+            if not (solo.isVisible() and solo.width() > 0 and solo.height() > 0):
+                return False
+            if _elem(window, "movieTabs").property("currentIndex") != 2:
+                return False
+            hely = solo.mapToScene(QPointF(0, 0))
+            helyek.append((hely.x(), hely.y(), solo.width()))
+            return len(helyek) >= 2 and helyek[-1] == helyek[-2]
+
+        assert _varj(qt_app, _allando_hely), "a Clips lap nem rendeződött el"
         _kattint(window, qt_app, solo)
         assert _varj(qt_app, lambda: solo.property("checked") is True), (
             "a Csak ezt a klipet jelölő nem jelölődött be"

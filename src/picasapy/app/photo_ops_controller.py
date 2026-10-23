@@ -392,7 +392,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-photowrite")
 
-    def _run_photo_writes(self, jobs, after=None) -> None:
+    def _run_photo_writes(self, jobs, after=None, on_error=None) -> None:
         """Több kép írása SOROSAN, EGYETLEN háttérszálon (#2915).
 
         Képenként külön szálat indítani versenyhelyzet: a kijelölés képei
@@ -404,7 +404,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         `jobs`: `(photo_id, perform)` párok; a `perform()` a teljes lassú
         munka, ugyanúgy, mint a `_run_photo_write`-nál. Az `after` utómunka
-        a GUI-szálon, a KÖTEG végén fut le egyszer.
+        a GUI-szálon, a KÖTEG végén fut le egyszer. Az `on_error` lezáró
+        visszahívás bármilyen workerhiba esetén lefut.
         """
         self._ensure_photo_ops_wired()
         jobs = tuple(jobs)
@@ -425,6 +426,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                         )
             except _WRITE_ERRORS as error:
                 self.photoOpFailed.emit(str(error))
+                if on_error is not None:
+                    on_error()
+            except BaseException:
+                if on_error is not None:
+                    on_error()
+                raise
 
         self._start_background(worker, name="picasapy-photowrite-koteg")
 

@@ -100,9 +100,9 @@ class TestMovieDialog:
         assert slider is not None
         assert "PicasaSlider" in slider.metaObject().className()
         assert slider.property("from") == 10
-        assert slider.property("to") == 100
+        assert slider.property("to") == 3000
         assert slider.property("stepSize") == 5
-        assert slider.property("value") == 30  # 3,0 mp alapértelmezés
+        assert slider.property("value") == 40  # 4,0 mp alapértelmezés
 
 
 class TestResultDialog:
