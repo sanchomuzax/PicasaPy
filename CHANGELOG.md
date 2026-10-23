@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.197] - 2026-10-23
+
+- A Film készítése az eredeti szerint nevezi el a kimenetet: a felület nyelvén a Picasa alapnevét adja, és ugyanabban a munkamenetben az előző film nevét ajánlja újra (#5676).
+
 ## [0.9.196] - 2026-10-23
 
 - A Nyomtatás felülvizsgálata rákérdez, ha minden kép gyenge minőségű, és az eltávolítás megerősítése után megszakítja a nyomtatást (#5682).
