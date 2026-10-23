@@ -168,6 +168,18 @@ class TestQuickTagButtonsReserveRecent:
 
 
 class TestQuickTagButtonsWithoutReserve:
+    def test_adding_tag_without_reserving_recents_keeps_history_unchanged(
+        self, controller
+    ):
+        controller.addKeywordToRows([0], "korábbi első")
+        controller.addKeywordToRows([1], "korábbi második")
+        korabbi = controller._quick_tag_recent()
+
+        controller.setQuickTagsReserveRecent(False)
+        controller.addKeywordToRows([2], "új címke")
+
+        assert controller._quick_tag_recent() == korabbi
+
     def test_top_two_show_configured_labels_when_not_reserved(self, controller):
         controller.setQuickTagsReserveRecent(False)
         controller.setQuickTagLabel(0, "első mező")
