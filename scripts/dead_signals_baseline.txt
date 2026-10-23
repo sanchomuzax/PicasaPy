@@ -25,3 +25,4 @@
 
 app/dedup_controller.py::scanStarted #1003 — a másolatkereső indulását a felület nem jelzi (a scanProgress/scanFinished VISZONT be van kötve a DedupDialogban)
 app/face_scan_controller.py::scanProgress #1003 — az arcszkennelés haladása a DedupDialog azonos nevű kezelője miatt hamisan élőnek látszott; saját QML-fogadó nincs
+app/screen_capture.py::saved BELSŐ - a háttérszál mentési jelzését a Python-vezérlő továbbítja a QML-nek szánt screenCaptureSaved jelzésre

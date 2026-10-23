@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 24.**
+**Felületről el nem ért vezérlő-tag: 28.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -125,6 +125,10 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py` | BELSŐ — az application.py:704 tölti fel a fát |
 | `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |
 | `folderHierarchyController` | `setAlbumThumbs` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleAlbumThumbs-t hívja, az hívja ezt |
+| `screenCaptureController` | `enabled` | Property | `app/screen_capture.py` | BELSŐ - a mentett EnableScreenCap beállításból induláskor dől el a figyelő állapota; a #5639 nem tesz hozzá beállítási felületet |
+| `screenCaptureController` | `isListening` | Property | `app/screen_capture.py` | BELSŐ - az alkalmazásfolyamat figyelőszál-állapota, a QML-nek nem kell megjelenítenie |
+| `screenCaptureController` | `setEnabled` | Slot | `app/screen_capture.py` | BELSŐ - a beállítás Python-API-ja a figyelő indításához/leállításához; a felületi beállításvezérlő nincs a #5639 hatókörében |
+| `screenCaptureController` | `shutdown` | Slot | `app/screen_capture.py` | BELSŐ - az application.py hívja az alkalmazás leállításakor |
 | `startupStatus` | `busy` | Property | `app/startup_status.py` | ELDÖNTVE (#1487) — a nyitóképernyő SZÁNDÉKOSAN a saját `busy: !root.ready` alakját számolja (`SplashScreen.qml:42`): egyetlen forrásból (`ready`) vezeti le, így nem lehet a kettő ellentmondásban. A property marad, mert a `report`/`finish` (mindkettő BELSŐ) ugyanennek az objektumnak az indítási API-ja, és a próbák innen olvassák az állapotot. |
 | `startupStatus` | `report` | Slot | `app/startup_status.py` | BELSŐ — az indítás lépéseit az application.py jelenti be |
 | `startupStatus` | `finish` | Slot | `app/startup_status.py` | BELSŐ — az indítás végét az application.py jelenti be |

@@ -233,13 +233,13 @@ vagy mappára navigálást. Mivel a `0x0057d080` dinamikus hívásának címzett
 nincs ehhez az osztályhoz kötve, ez a hasonló rekeszeltolás nem azonosítja a
 kattintási callbacket; a kattintási cél továbbra is nyitott.
 
-## 6. PicasaPy: jelenlegi állapot
+## 6. PicasaPy: állapot a #5639 után
 
-| Eredeti Picasa | PicasaPy a forrás áttekintésekor | Következő fejlesztési munka |
+| Eredeti Picasa | PicasaPy #5639 után | Következő fejlesztési munka |
 |---|---|---|
-| Ismételt billentyű-lekérdezés és rejtett `EnableScreenCap` kapcsoló | Nincs rögzítő vagy bekötött gyorsbillentyű | Preferencia és háttérbeli rögzítőút, a fenti billentyűmódokkal |
-| BMP a `Picasa\Screen Captures` projektmappába | `ProjectFolderKind.SCREEN_CAPTURES` és honosított név létezik (`src/picasapy/app/project_folder_names.py`); képfájlíró nincs | BMP-kimenet, ütközéskor sorszám, célmappa előkészítése és projektbesorolás |
-| Mentés után `Screenshot saved` értesítés | A `PicasaNotifier.qml` képernyőfelvételi eseményt nem köt be; a forráskód megjegyzése is hiányzó funkcióként nevezi meg | Kimeneti útvonal átadása az értesítőnek és „megtekintés” művelet |
+| Ismételt billentyű-lekérdezés és rejtett `EnableScreenCap` kapcsoló | A `Preferences/EnableScreenCap` alapértéke bekapcsolt; Windows alatt a háttérfigyelő a Print Screen/Print billentyűt kérdezi le. Linuxon és Wayland alatt a globális figyelés kimarad. | A Windowsos futásidejű viselkedés további mérése a 7. szakasz nyitott pontjai szerint |
+| Asztal/Ctrl/Alt célmódok, locale szerinti fájlnév és tömörítetlen BMP a `Picasa\Screen Captures` projektmappába | A Windowsos GDI-forrás a három célmódot használja; a kimenet 24 bites BMP, ütközéskor `-001` alakú sorszámmal. A mappanév honosított, a `.picasa.ini` `P2category=Projects (internal)` értéket kap. | A többmonitoros terjedelem, a kurzor képpontbeli jelenléte és a pontos dátum-idő alak továbbra is futásidejű mérésre vár |
+| Mentés után `Screenshot saved` értesítés a kimeneti útvonallal | A `PicasaNotifier.qml` a sikeresen mentett fájl útvonalával jeleníti meg az értesítést. | Az eredeti értesítés kattintási célja és a fájl azonnali indexelésének időzítése továbbra is nyitott |
 
 ## 7. Bizonyítottság és nyitott irányok
 

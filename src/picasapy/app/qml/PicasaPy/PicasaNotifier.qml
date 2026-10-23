@@ -279,10 +279,9 @@ Window {
     // A rákötött események
     // ------------------------------------------------------------------
     //
-    // Kettő van, mindkettő MEGLÉVŐ, ma némán lefutó műveleté. A többi
-    // esemény (képernyőfelvétel, „N kép érkezett") külön jegyé: az
-    // előbbihez nálunk maga a funkció hiányzik, az utóbbihoz mappafigyelő
-    // kell.
+    // Három bekötés van: az importálás, a képernyőfelvétel és a már
+    // meglévő műveletek lezárása. A „N kép érkezett" értesítéshez külön
+    // mappafigyelő kell.
 
     //: `CAcquireUI::donenotifer` / `errornotifer` — az importálás két záró
     //: állapota. A nevük a binárisban maga mondja ki, hogy értesítőbe
@@ -296,6 +295,19 @@ Window {
             else
                 notifier.notify("import", qsTr("Completed Importing"),
                                 qsTr("click to view"), "")
+        }
+    }
+
+    //: #5639: a képernyőfelvétel sikeres mentése a fájl teljes útvonalát
+    //: adja át; a felirat és a megtekintési tipp hivatalos Picasa-szöveg.
+    Connections {
+        target: typeof screenCaptureController !== "undefined"
+                ? screenCaptureController : null
+        function onScreenCaptureSaved(path) {
+            if (!path)
+                return
+            notifier.notify("screen-capture", qsTr("Screenshot saved"),
+                            qsTr("click to view"), path)
         }
     }
 

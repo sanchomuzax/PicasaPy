@@ -136,6 +136,7 @@ _LAZY_APP_SYMBOLS = {
     "PrintController": ".print_controller",
     "RelocateController": ".relocate_controller",
     "SecondPreview": ".second_preview",
+    "ScreenCaptureController": ".screen_capture",
     "ThumbnailProvider": ".thumbnail_provider",
     "TimelineController": ".timeline_controller",
     "WebExportController": ".webexport_controller",
@@ -1670,7 +1671,15 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók
     # + import-útvonal); innentől már csak kontextus-bekötés következik.
     timeline.mark("QML-motor létrehozása és import-útvonalak")
+    ScreenCaptureController = _lazy_app_symbol("ScreenCaptureController")
+    screen_capture_controller = ScreenCaptureController(
+        settings=QSettings("PicasaPy", "PicasaPy"), parent=app
+    )
+    app.aboutToQuit.connect(screen_capture_controller.shutdown)
     engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty(
+        "screenCaptureController", screen_capture_controller
+    )
     engine.rootContext().setContextProperty(
         "cameraCaptureController", camera_capture_controller
     )
@@ -1764,6 +1773,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         engine.load(str(_APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         progress_log.mark("Main.qml betöltése sikertelen: nem jött létre főablak")
+        screen_capture_controller.shutdown()
         return 1
     progress_log.mark("Main.qml betöltve; főablak létrejött")
 
@@ -1778,6 +1788,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     #: füstpróba pontosan azt nem mutatta volna meg, amiért van.
     if onellenorzes:
         print("onellenorzes: a felulet felepult", flush=True)
+        screen_capture_controller.shutdown()
         controller.shutdown()
         edit_controller.cancelPendingPreview()
         edit_controller.waitForBackgroundWorkers(2.0)
@@ -1883,6 +1894,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         smoke_probe._timer.stop()
     startup_maintenance.cancel()
     startup_maintenance.waitForBackgroundWorkers(2.0)
+    screen_capture_controller.shutdown()
     controller.shutdown()
     # #547: a szerkesztő háttér-renderét külön kell lezárni — az
     # `edit_controller` önálló objektum, nem része a `controller.shutdown()`

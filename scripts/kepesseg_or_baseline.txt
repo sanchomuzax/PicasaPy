@@ -79,6 +79,10 @@ folderHierarchyController.setFolders BELSŐ — az application.py:704 tölti fel
 startupStatus.report BELSŐ — az indítás lépéseit az application.py jelenti be
 startupStatus.finish BELSŐ — az indítás végét az application.py jelenti be
 faceScanController.scanNewFaces BELSŐ — az application.py a controller.syncFinished jelére köti; az új képek vizsgálata szinkron után indul, nem QML-eseményből
+screenCaptureController.enabled BELSŐ - a mentett EnableScreenCap beállításból induláskor dől el a figyelő állapota; a #5639 nem tesz hozzá beállítási felületet
+screenCaptureController.isListening BELSŐ - az alkalmazásfolyamat figyelőszál-állapota, a QML-nek nem kell megjelenítenie
+screenCaptureController.setEnabled BELSŐ - a beállítás Python-API-ja a figyelő indításához/leállításához; a felületi beállításvezérlő nincs a #5639 hatókörében
+screenCaptureController.shutdown BELSŐ - az application.py hívja az alkalmazás leállításakor
 
 # -- MÉRVE: még el nem döntött esetek (a #1476 zárójelentése sorolja fel) --
 # Ezekre a bevezetéskor NEM volt jegy. Külön-külön kell eldönteni: felület
