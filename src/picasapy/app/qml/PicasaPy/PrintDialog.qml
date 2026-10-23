@@ -403,8 +403,9 @@ Window {
         && (!printWindow.pdfSelected || printWindow.pdfTarget.length > 0)
 
     //: #1401: az útlevél-mód be- vagy kikapcsolása a vezérlőn ÉS a nézeten.
-    //: Bekapcsoláskor a felhasználó illesztése és példányszáma félre-
-    //: kerül; a következő sima nyitás visszaadja őket.
+    //: Bekapcsoláskor az általános mód illesztése és példányszáma félre-
+    //: kerül; Passport módba lépéskor a példányszám nem változik. A következő
+    //: sima nyitás visszaadja az általános mód beállításait.
     function valtsdAzUtlevelet(utlevelUrl) {
         if (printWindow.printCtl)
             printWindow.printCtl.clearPassportSource()
@@ -415,7 +416,6 @@ Window {
                 printWindow.mentettBeallitas = {
                     fitMode: printWindow.fitMode, copies: printWindow.copies }
             printWindow.fitMode = "fill"
-            printWindow.copies = 1
         } else if (printWindow.mentettBeallitas !== null) {
             printWindow.fitMode = printWindow.mentettBeallitas.fitMode
             printWindow.copies = printWindow.mentettBeallitas.copies
