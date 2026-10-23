@@ -151,7 +151,8 @@ Window {
     onPrinterNameChanged: printWindow.frissitsdAPapiradatot()
     Component.onCompleted: printWindow.frissitsdAPapiradatot()
 
-    property string fitMode: "fit"          // PrintFitMode.FIT / .FILL
+    // #5681: a Picasa első megnyitáskor Crop to Fit módot választott.
+    property string fitMode: "fill"         // PrintFitMode.FIT / .FILL
     property string orientation: "auto"     // PrintOrientation
 
     // #1590: indexkép-elrendezés (több bélyegkép egy lapon). A rács
@@ -1019,13 +1020,19 @@ Window {
                     objectName: "printFitRadio"
                     text: qsTr("Whole picture")
                     checked: printWindow.fitMode === "fit"
-                    onClicked: printWindow.fitMode = "fit"
+                    onClicked: {
+                        printWindow.fitMode = "fit"
+                        printWindow.frissitsdAzElonezetet()
+                    }
                 }
                 RadioButton {
                     objectName: "printFillRadio"
                     text: qsTr("Fill the page (crop)")
                     checked: printWindow.fitMode === "fill"
-                    onClicked: printWindow.fitMode = "fill"
+                    onClicked: {
+                        printWindow.fitMode = "fill"
+                        printWindow.frissitsdAzElonezetet()
+                    }
                 }
             }
         }
