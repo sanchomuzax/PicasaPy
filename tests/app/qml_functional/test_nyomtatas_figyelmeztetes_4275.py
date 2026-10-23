@@ -169,17 +169,25 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
             "Gyenge minőségű képek eltávolítása"
         )
 
-        # 2. kimenet: minden gyenge minőségű kép eltávolítása.
+        # 2. kimenet: a lista MINDEN képe alacsony minőségű, ezért az
+        # eredeti megerősítést kéri (0x0085cce0, #5682); a Nem nem változtat.
         panel = _nyisd_meg_az_atnezest(dialog, qt_app)
+        sorok_elotte = _lista(dialog.property("rows"))
         _kattints(_elem(dialog, "printReviewRemoveLowButton"), qt_app)
+        kerdes = _elem(dialog, "printRemoveAllDialog")
         assert varj_feltetelre(
             qt_app,
-            lambda: _lista(dialog.property("quality"))["total"] == 0,
+            lambda kerdes=kerdes: kerdes.property("visible") is True,
             masodperc=10.0,
         )
-        assert _elem(dialog, "printReviewEmptyText").property("text") == (
-            "Nincs több nyomtatni való kép."
+        _kattints(_elem(dialog, "printRemoveAllNoButton"), qt_app)
+        assert varj_feltetelre(
+            qt_app,
+            lambda kerdes=kerdes: kerdes.property("visible") is False,
+            masodperc=10.0,
         )
+        assert _lista(dialog.property("rows")) == sorok_elotte
+        assert _lista(dialog.property("quality"))["total"] == 2
         assert panel.property("visible") is True
 
         # 3. kimenet: Mégse visszatér a méretválasztóhoz, a képek megmaradnak.
