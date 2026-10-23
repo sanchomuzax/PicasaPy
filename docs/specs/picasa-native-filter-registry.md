@@ -650,3 +650,43 @@ színtér-kezelést kap.
 
 *Bizonyítottsági fok: megerősített* (a gyár ciklushatára, a konstruktor
 mind a hét mezőértéke, és a `tint` callback három utasítása).
+
+## Az effektpanel színválasztója: eredeti és PicasaPy (#5662, 2026-10-23)
+
+### A két eredeti vezérlőréteg
+
+Az `editpanel/colorwheel%d` effektvezérlőt nem szabad összekeverni a
+`colorpickerpanel` felugró panellel. A `0x00653fb0` függvény a
+`0x00ca2514` című `colorpickerpanel` típusnevet adja vissza; ez a
+panelosztály neve, nem a teljes kattintási út. A Filtered B&W panelépítője
+(`0x0050cf90`) hivatkozik a `CDesaturateFilter::pickcolor` és a `Pick Color`
+sztringre, a leírófeldolgozó (`0x008ff550`) pedig a `<colorwheel>` mezőt
+értelmezi. Így a színkerék szerkesztőmező és a felugró választó külön réteg.
+
+A felugró panel osztályát a `ColorPickerPanel::vftable` azonosítja
+(`0x00ca2564`); annak paletta-/MRU-építője `0x00654290`. Ez öt MRU-rekeszhez
+olvassa a `Preferences` `picker::mru_%d` értékeit. A `0x00654e30` útja a
+kiválasztott színt öt rekeszen át ismétlődés nélkül és eltárolja. A pipetta
+viselkedését nem pusztán az ikonból következtetjük: a RTTI a
+`BackbufferPickerHandler` és `BitmapPickerHandler` vtable-jét külön névvel
+rögzíti (`0x00ca2620`, `0x00ca2648`); metódusaik (`0x00655150`, `0x006553d0`)
+képpontszínt vesznek a kattintott koordinátán, majd a panel színbeállító
+útjához (`0x00654ab0`, `0x00654c30`) adják. A `pickerpanel.tre` külön a
+`globalbuttons/dropper_n` és `dropper_h` pipettagombot tartalmazza. A
+geometriát a [`szerkeszto-panel-meretek.md`](szerkeszto-panel-meretek.md)
+„A színválasztó komponensei” része már a `pickerpanel.tre` és a `respack.yt`
+alapján méri.
+
+### Eredeti | Nálunk | Teendő
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Belépés.** A Filtered B&W effekt paneljén van `Pick Color` színkerék (`0x0050cf90`, `0x008ff550`; a sztring címe `0x00c87088`). A felugró osztály neve `colorpickerpanel` (`0x00653fb0` → `0x00ca2514`). | Az effekt színparamétere `EditorParamPanel.qml`-ben `TextColorSwatches`; a „Pick Color” gomb nyitja a `ColorSpectrumPicker` felugrót. | **EGYEZIK** a színparaméter szerkeszthetősége. A colorwheel-kattintás és a panelosztály közti natív dinamikus kötés pontos belépési pontja **NINCS MEG**; lásd a nyitott kérdést. |
+| **Pipetta.** A natív választóban van képpontot mintázó út: `BackbufferPickerHandler` (`0x00655150`) és `BitmapPickerHandler` (`0x006553d0`), panelen át `0x00654ab0` / `0x00654c30`; az ikonréteg `globalbuttons/dropper_n/_h`. | Az effekt `TextColorSwatches` csak ezt a 8 rögzített színt kínálja: `#ffffff`, `#000000`, `#ff0000`, `#ffff00`, `#00a651`, `#0072bc`, `#ff7f27`, `#a349a4`, továbbá spektrumot és MRU-t. A `pickNeutralColor` kizárólag a `finetune2` semleges színét írja át (`PhotoViewer.qml` → `EditController.pickNeutralColor`); nem érhető el az effekt színmezőjéből. | **ELTÉR.** A generikus effekt-színválasztóba képpontmintázó mód kell, amely a kiválasztott színt a mezőhöz és az effekt előnézetéhez küldi. |
+| **Panel és MRU-geometria.** A panel 225×225; az öt `mru_0…4` mező 26×26, x=51, 82, 113, 144, 175; a palettaréteg 181×147 az (20,15) ponton. Forrás: `pickerpanel.tre` + `respack.yt` mérés; a réteg betöltési útja `0x00654290`. Az eredeti MRU-sor y-koordinátája **NINCS MEG**; megszerzés: az öt réteg rect-adatának pontos kiolvasása a `respack.yt`-ből. | A `ColorSpectrumPicker` 225×225; 5 darab 26×26 MRU ugyanazon x-koordinátákon, y=13; spektrum 181×147 az (20,48) ponton. | A panelméret, a rekeszszám, a rekeszméret és x-osztás **EGYEZIK**. Az MRU y-helyzetét nem hasonlítottuk össze, mert az eredeti érték **NINCS MEG**. Az azonos méretű palettaréteg és spektrum helye eltér; a két natív palettakép színkészlete **NINCS MEG**. Megszerzés: a `respack.yt` `pickerpanel/palette_0` és `_1` rétegének dekódolása és a két palettamód működésének mérése. |
+| **MRU-beállítás.** A panel `Preferences` alatt a `picker::mru_%d` családot olvassa és írja; öt helyet tart fenn, ismétlődő színt nem hagy a sorban (`0x00654290`, `0x00654e30`). | Öt QSettings-kulcs: `picker/mru_0…4`; az új színt előre teszi, ismétlődést kiszűri (`EditController.recentPickerColors`, `rememberPickerColor`). Üres profilnál a mi kezdeti értékünk `""`. | Az öt tartós, deduplikált MRU **EGYEZIK**. A tárhely-kulcsok neve/névtere eltér. Az eredeti hiányzó kulcsainak első induláskori értéke **NINCS MEG**; megszerzés: tiszta Picasa-profilon a Preferences-értékek mérése vagy a `0x00407a20` / `0x004019b0` alapértékút célzott visszafejtése. |
+| **Natív Glimmer-színmezők alapértékei.** Az eredeti `filterdesc.xml` `selectedColor` értékei: Border outer/inner `#000000/#ffffff`; DropShadow shadow/background `#000000/#ffffff`; MuseumMatte outer/inner `#1a0e03/#f0eae4`; Polaroid outer `#e2e2e2`; RoundedEdges és Sixties outer `#ffffff`; TwoTone first/second `#004488/#ffff00`. A leíró színmezőit a `0x008ff550` dolgozza fel. | A PicasaPy `effect_params.py` ugyanezeket az értékeket adja az effektpanelnek. | **EGYEZIK** mind a 11 natív színmező értéke (a két mezős effekteknél mezőnként). |
+| **Régi colorwheel új effekt alapértéke.** Az `ansel`, `tint`, `dir_tint`, `radtint` XML-leírójában `<colorwheel>` van; `selectedColor` attribútum nincs. A `<presets>` `pixel` értékét nem tekintjük automatikusan a picker induló színének. | A PicasaPy `effect_params.py` a négy mező kezdőértékének `#ffffff`-et ad. | Az eredeti üres profilú picker induló színe **NINCS MEG**; a `presets/pixel` és a picker megjelenített színének viszonya nem bizonyított. Megszerzés: a natív betöltési út célzott visszafejtése vagy friss profilban mért első megnyitás. Ebből a körből nem állítható alapérték-egyezés vagy eltérés. |
+| **Kiválasztás kimenete.** A natív leíró a kiválasztott színt effekt-paraméterként köti a művelethez; az örökölt Filtered B&W `ansel` út `filters=` színparamétere `AARRGGBB` (a láncformátumot lásd a [`picasa-ini-format.md`](picasa-ini-format.md) `desat`/`ansel` részében és a `filterdesc-registry.md` `ImageFilters::PickColor` részében, `0x008fee80`). | A `TextColorSwatches` színt ad vissza az `EditorParamPanel`-nek; az előnézet a `previewEffect` útján frissül, az Alkalmaz az `applyEffectWithParams` útján menti a `filters=` értéket, a Mégse eldobja az előnézetet. A `format_param_values` a legacy színkerekeknél `ffRRGGBB`-t ír. | **EGYEZIK** abban, hogy a választás az effekt színparaméterét és előnézetét módosítja, majd az alkalmazott láncparaméterbe kerül. A kiválasztóban történő színmintavétel kivétel: a fenti pipetta-eltérés miatt hiányzik. |
+
+**Bizonyítottsági fok.** A pipetta eltérése **megerősített**: (A) a natív handler-metódusok képpontszínt olvasnak és a panel színbeállító útjára adják; (B) ettől függetlenül a natív `dropper` gombréteg és a handler-osztályok RTTI-je is létezik. A PicasaPy ellenőrzése két külön úton egyezik: (A) a teljes színmező QML-útja csak paletta/spektrum/MRU bemenetet köt be; (B) az egyetlen képpontmintázó slot a `finetune2` semleges színére ír. A natív nyitási esemény, az üres profil induló színe és a két natív palettakép tényleges színkészlete nyitva marad.

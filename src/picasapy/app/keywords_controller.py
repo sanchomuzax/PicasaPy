@@ -148,11 +148,12 @@ class KeywordsMixin:
 
     @Slot(list, str)
     def addKeywordToRows(self, rows, keyword: str) -> None:
-        """Címke hozzáadása a kijelölt képekhez (már meglévőt nem duplikál)."""
+        """Címke hozzáadása; az előzményt csak aktív Legutóbbiak mellett frissíti."""
         keyword = _clean_keyword(keyword)
         if not keyword:
             return
-        self._record_recent_quick_tag(keyword)
+        if self.quickTagsReserveRecent:
+            self._record_recent_quick_tag(keyword)
 
         def transform(keywords: tuple[str, ...]) -> tuple[str, ...]:
             if keyword.casefold() in (k.casefold() for k in keywords):
