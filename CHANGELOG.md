@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.199] - 2026-10-23
+
+- A Nyomtatás párbeszéd első megnyitáskor Crop to Fit módban indul, és módváltás után az előnézet is frissül. (#5681).
+
 ## [0.9.198] - 2026-10-23
 
 - Az Arcfilm beállításai külön Options fülre kerültek, az eredeti alapértékek megőrzésével (#5670).
