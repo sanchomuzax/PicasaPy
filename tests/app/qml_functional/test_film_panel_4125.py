@@ -146,6 +146,13 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         _kattintas(window, qt_app, _elem(window, "movieAddClipsButton"))
         assert _darab(film_parbeszed.property("movieClipSources")) == 2
         _kattintas(window, qt_app, _elem(window, "movieRecomputeButton"))
+        ujraszamolas = window.findChild(QObject, "movieRecomputeConfirmDialog")
+        assert ujraszamolas is not None, "hiányzik az újraszámolás megerősítő párbeszéde"
+        assert ujraszamolas.property("visible") is True, (
+            "az üres szövegdia-listás újraszámolás előtt is meg kell erősíteni"
+        )
+        _kattintas(window, qt_app, _elem(window, "movieRecomputeConfirmYesButton"))
+        assert ujraszamolas.property("visible") is False
         assert _elem(window, "movieTabs").property("currentIndex") == 0
         film_parbeszed.setProperty("targetFile", QUrl.fromLocalFile(str(tmp_path / "film.mp4")).toString())
         film_parbeszed.setProperty("audioOption", 2)
@@ -212,7 +219,11 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         if film_parbeszed is not None:
             film_parbeszed.close()
             qt_app.processEvents()
-        for nev in ("movieProgressDialog", "createResultDialog"):
+        for nev in (
+            "movieRecomputeConfirmDialog",
+            "movieProgressDialog",
+            "createResultDialog",
+        ):
             dialog = window.findChild(QObject, nev)
             if dialog is not None:
                 dialog.close()

@@ -224,6 +224,9 @@ Rectangle {
     // semleges színe `#rrggbb` alakban, üres string = nincs kijelölve
     property string neutralColor: ""
     signal neutralPickerToggled()
+    // #5674: az effekt-színparaméter pipettája: a célparaméter indexe, -1 = ki.
+    // Ilyenkor a néző a kattintást a színparaméter mintavételeként adja tovább.
+    property int effectColorPickerTarget: -1
     // #551: a szín-varázspálca NEM az autocolor szűrőt teszi a láncra: a
     // finetune2 „semleges szín" (p4) mezőjét állítja be automatikusan
     // választott színnel — a Picasa saját .picasa.ini-je bizonyítja
@@ -368,6 +371,8 @@ Rectangle {
         if (panel.paramPanelSuspended) return
         if (panel.paramPanelActive) {
             panel.paramPanelSuspended = true
+            // #5674: a felfüggesztett alpanel pipettája nem marad élesen
+            panel.effectColorPickerTarget = -1
             return
         }
         panel.activeTab = tabIndex
