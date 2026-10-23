@@ -628,3 +628,57 @@ A `0x004a57a0` a `[state+0xc4]+0xf8` objektum `+0x3f4` elemszámából indul, in
 - Ghidra-kör kell: `0x00439a80`: az objektum `+0xaf0` mezőjét használó `]album`, `]screensaver` és `]web_` ágak írják-e a qshow által olvasott tokenlistát [blokkoló]
 
 **Új kutatási jegyjavaslat.** Nincs; ez a képlánc-forrás #5401-en belüli nyitott kérdése.
+
+#### 38.2.75 A `+0xaf0` találatok nem azonosítják a qshow tokenlista íróját (#5401, 2026-10-23)
+
+**Hatókör.** A 38.2.74-ben nyitva hagyott `0x00419d10` és `0x00439a80` címeket a `functions` indexből vett mérettel diszasszembláltam (`4877`, illetve `9820` bájt). Ezután a teljes `.text` streaming vizsgálata a `paszta.memoria_kapu()` hívással indult, és a `+0xaf0`, `+0xb00`, `+0xb04` operandusokra szűrt. A `grep -il` talált Ghidra-fájlokat, amelyek e címeket hívóként említik, de `CÍM 0x00419d10` vagy `CÍM 0x00439a80` dekompilált törzs nincs a meglévő kimenetekben. Wine nem érhető el ezen a környezeten; futó qshow-mérés nem készült.
+
+**A jelölt függvények közvetlen mezőművelete.** A `0x00419d10` a `0x0041a8a8` címen a `[ebp+0xaf0]` címét veszi; utána a beágyazott cím `+0x20` és `+0x24` mezőjét vizsgálja/módosítja (`0x0041a8b0`-`0x0041a8c7`). A függvényben nem találtam közvetlen dword-írást az alapobjektum `[ebp+0xaf0]` mezőjére. A `0x00439a80` hasonlóan a `[ebx+0xaf0]` címét veszi a `0x00439ce1`, `0x00439f4c` és `0x0043bfc2` helyeken; az ezeket követő utasítások a beágyazott objektum `+0x20`/`+0x24` mezőit olvassák vagy módosítják, de az alapobjektum `+0xaf0` mezőjére közvetlen tárolást e függvényben nem találtam. A függvényekhez társított sztringek (`]facealbum:%d`, `]expeople:%d`, illetve `]album`, `]screensaver`, `]web_`) önmagukban nem bizonyítják, hogy ezek a qshow tokenoszlopát töltik.
+
+**Független kontroll és hamis pozitív.** A memória-kapuval indított teljes pásztázás a `0x0073fe68` címen szintén talált `+0xaf0` írást: `mov dword ptr [ebx+0xaf0], ecx`. A függvénycím (`0x0073f320`) az RTTI-ben a `CImageOutput::vftable` metódusaként szerepel. Ez függetlenül megmutatja, hogy a puszta `+0xaf0` eltolás nem azonosít qshow- vagy CThumbDB-mezőt. A teljes pásztázásban a `+0xaf0`/`+0xb00`/`+0xb04` minták stack-lokális előfordulásokat is adtak; ezeket nem számoltam objektummező-bizonyítéknak.
+
+**Következtetés és bizonyítottság.** **Feltételes:** a két jelölt törzsében nincs közvetlen írás az alapobjektum `+0xaf0` mezőjére; az utasításolvasatot a teljes, kapuval végzett pásztázás és az RTTI-osztályellenőrzés korlátozza. A függvények által hívott rutinok a beágyazott objektum belsejét közvetetten módosíthatják, ezért egyik cím sem zárható ki a tokenlista feltöltéséből. Az eddigi adat nem dönti el, hogy ezek az objektumok a qshow `CThumbDB`-jéhez tartoznak-e.
+
+**Cáfoló kísérlet.** Azt az állítást próbáltam cáfolni, hogy minden `[reg+0xaf0]` írás a CThumbDB tokenoszlopához tartozik. A `0x0073fe68` írás `CImageOutput` metódusban van, így az offsetre önmagában támaszkodó azonosítás megbukik. A cáfolatot a függvény címének RTTI-tagságával ellenőriztem. Ez nem cáfolja, hogy a `0x00419d10` vagy `0x00439a80` hívott segédjei közvetetten módosítanak egy tokenoszlopot; ilyen hívott út jelentését nem állapítottam meg.
+
+| Állítás | Forrás |
+|---|---|
+| A `0x00419d10` és `0x00439a80` az alapobjektum `+0xaf0` mezőjének címét veszi, majd a belső objektum `+0x20`/`+0x24` mezőivel dolgozik; közvetlen alapmező-írás nem látszik. | bináris (`0x00419d10`, `0x0041a8a8`-`0x0041a8c7`; `0x00439a80`, `0x00439ce1`, `0x00439f4c`, `0x0043bfc2`) |
+| A `+0xaf0` közvetlen írás egy `CImageOutput` metódusban is előfordul. | bináris (`0x0073fe68`, függvény `0x0073f320`) + RTTI (`CImageOutput::vftable`, `0x00cb037c`) |
+| A két jelölt függvény közvetett hívásai módosítják-e a qshow `CThumbDB` tokenoszlopát; a qshow `[+0x50c]` tényleges tokenje és a lista futásidejű tartalma. | NINCS MEG |
+
+**A #5401 „Kész, ha” pontjai.** (1) ⛔ A tokenoszlop adatútja tisztult, de a konkrét token, képek, dátumkulcs, sorrend és elemszám nincs meg. (2) ⛔ A teljes képkockánkénti pálya, időzítés és rétegrajzolás nyitott. (3) ⛔ A dátumcsúszka értelmezése, a `timelinedot`/listaikon teljes működése és a tényleges autoplay-periódus nyitott. (4) ⛔ A diavetítés után visszaálló nézet és képindex nyitott.
+
+**Nyitott.**
+
+- Ghidra-kör kell: `0x00419d10`: a `[this+0xaf0]` beágyazott objektum hívásai módosítják-e a qshow CThumbDB tokenoszlopát, és milyen típusú a hívó által átadott objektum. A meglévő Ghidra-fájlok ezt a címet csak hívóként listázzák, a függvénytörzs nincs dekompilálva. [blokkoló]
+- Ghidra-kör kell: `0x00439a80`: a `]album`, `]screensaver` és `]web_` ágak mely oszlopokat/listákat állítják, és elérik-e a qshow CThumbDB tokenoszlopát. A meglévő Ghidra-fájlok ezt a címet csak hívóként listázzák, a függvénytörzs nincs dekompilálva. [blokkoló]
+- A qshow aktuális `[this+0x50c]` értéke, a tokenlista teljes sorrendje és a `CSlice+0x64` képrekordjai: **NINCS MEG**. Megszerzésükhöz ugyanazon futó qshow-mérésben kell rögzíteni e mezőket; ehhez Wine-futtatókörnyezet szükséges, ami itt nem áll rendelkezésre.
+
+**Új kutatási jegyjavaslat.** Nincs; ez továbbra is a #5401 képlánc-elfogadási pontja.
+
+#### 38.2.76 Az egérfelengedés animációs rekordot ütemez (#5401, 2026-10-23)
+
+**Hatókör.** A 38.2.63-ban dokumentált csúszka-felengedési hívást (`0x007fde80` → `0x007fd770`) összevetettem az animátor kiértékelőjével és rekord-hozzáfűzőjével (`0x009e5e70`, `0x009e6010`). A `0x007fd770` Ghidra-kimenete már megvan (`2026-10-21-idorend-21.txt`); a kis segédek utasításait az eredeti PE-ből ellenőriztem. A qshow élő képernyőjét vagy ezt a teljes hívási láncot QEMU-ban nem futtattam.
+
+**A felengedési út.** Ha az egérkezelő húzásjelzője aktív, a `WM_LBUTTONUP` ág a `[this+0x514]` indexet a `0x007fd770`-nek adja át (`0x007fde80`, `0x007fe1a4`-`0x007fe1cf`). A `0x007fd770` a P animátor aktuális vagy utolsó végpontját olvassa, lekéri a QPC-alapú másodpercet (`0x009a5210`), majd a `P+0x38` interpolátort kiértékeli (`0x009e5e70`). Ezután az indexet és a P `+8`, `+0x20`, `+0x30` mezőit használó eltolást ad át a `0x007fd0c0`-nak. Az útvonal a kiválasztott indexet időbeli pozícióvá alakítja, de nem azonosítja az indexhez tartozó konkrét képet vagy dátumot; a `P+0x30` kártyaköz szerepe és írójának hiánya a 38.2.24 §1-ben van rögzítve.
+
+A `0x007fd770` második argumentuma a PE `0x00c7e4a4` címén levő `0x40800000` f32 konstans, azaz pontosan `4.0`. A `0x007fd0c0` az aktuális QPC-másodpercet (`0x009a5210`) és ezt az időtartamot teszi az új, 0x28 bájtos animátorrekord kezdő- és végidejévé, majd a `0x009e6010`-on át a rekordlistához fűzi. A rekord kiértékelésénél a `0x009e5e70` az időintervallumra normalizált értéket a rekord `0x0072df60` easing-függvényének adja át; ennek görbéjét és QEMU-pontjait a `picasa-idorend-viselkedes.md` 38.2.24 §1 és 38.2.32 már rögzíti. A binárisbeli 4,0 másodperc a belső animátorrekord időtartama; önmagában nem bizonyítja a felhasználó által látott kép vagy dátum mozgását.
+
+**A két független út.** A út: az egér-felengedés diszasszemblálása az indexet a `0x007fd770`-nek adja; a függvény a `0x007fd0c0`-t hívja a `0x00c7e4a4` konstanssal. B út: a bal/jobb vezérlők (`0x007fd120`, `0x007fd150`) és a qshow nyílágai (`0x00801270` → `0x008011b0`/`0x00801210`) ugyanezt a `0x007fd0c0` rekordkészítőt hívják, ott `2.0` másodperces időtartammal; a 38.2.24 §1 ezt és a rekord `kezdőérték/végérték/kezdőidő/végidő` mezőit külön rögzíti. A két út egyezik abban, hogy a felengedés a közös időalapú animátorba ütemezett frissítést ad, de a 4,0 másodperces paraméter csak az egérút sajátja.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a csúszka felengedése közvetlenül beállítja a kiválasztott képet vagy az animátor kurzorát. A teljes `0x007fd770` utasítássor az aktuális állapot és interpoláció kiolvasása után `0x007fd0c0`-t hívja; az utóbbi új rekordot épít, a `0x009e6010` pedig a rekordot a tömbhöz fűzi. Közvetlen képindex-írás nem látható ezen az útvonalon, így a „közvetlen ugrás” feltevés megbukik. Ez nem bizonyítja a qshow képernyőn látható mozgás irányát, dátumjelentését vagy végállapotát.
+
+| Állítás | Forrás |
+|---|---|
+| Egérfelengedéskor a `[this+0x514]` index a `0x007fd770`-hez kerül. | bináris (`0x007fde80`, `0x007fe1a4`-`0x007fe1cf`) |
+| A `0x007fd770` a QPC-időt és a `P+0x38` interpolációját olvassa, majd a `0x007fd0c0` frissítőn át folytatja. | bináris (`0x007fd770`, `0x009a5210`, `0x009e5e70`, `0x007fd0c0`) |
+| Az egérút az animátorrekordot 4,0 másodperces belső időtartammal készíti; az `0x009e6010` a rekordot a tömbhöz fűzi. | bináris (`0x00c7e4a4` = f32 4,0; `0x007fd0c0`, `0x009e6010`); QPC-másodperc: `0x009a5210` |
+| A felengedés által kiválasztott indexhez tartozó konkrét dátum, kép és látható mozgás/végállapot. | NINCS MEG |
+| A teljes egér-felengedési híváslánc QEMU-eredménye és sűrű qshow-képkocka-felvétele. | NINCS MEG |
+
+**Bizonyítottsági fok.** **Megerősített** a belső híváslánc és a rekord 4,0 másodperces időtartama: a csúszkaág, a közös rekordkészítő és az ettől független nyílvezérlő út egyezik; az időalapot a QPC-frekvenciával osztó `0x009a5210` adja. **Feltételes** a felhasználói „animált keresés” megfogalmazás, mert a képernyőn látható eredmény nincs rögzítve.
+
+**A #5401 „Kész, ha” pontjai.** (1) ⛔ A kiválasztott index/animátor kapcsolat pontosabb, de a dátumtömb, a képek és forráskollekciók nincsenek meg. (2) ⛔ A rekord időzítése és easing-függvénye ismert, a teljes képkockánkénti kártyapálya és rétegrajzolás nyitott. (3) ⛔ A húzás felengedésének 4,0 másodperces belső rekordja igazolt; a dátummező jelentése, `timelinedot`, listaikon és tényleges autoplay-ütem nyitott. (4) ⛔ A diavetítésből visszatérő nézet és képindexe nincs meg.
+
+**Nyitott.** A `[this+0x514]`-hez kiválasztott indexből előálló dátum és képtartalom; az `A` tömb és a P `+8`, `+0x20`, `+0x30` mezők forrás-/időjelentése; a célzott animátorérték képkockánkénti képernyőhatása. Ezekhez a qshow adatait és sűrű képkockáit ugyanazon Wine-futásban kell rögzíteni. Új Ghidra-kör ehhez a `0x007fd770` hívási lánchoz nem szükséges.
