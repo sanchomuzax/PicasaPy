@@ -35,10 +35,16 @@ az API-nak átadott típusérték `5`); négy közvetlen hívója van:
 útvonalat támasztják alá, de az indirekt gyorsbillentyű- vagy menü-dispatch
 hiányát nem bizonyítják.
 
-**Külön menüindító ág: NINCS MEG.** A következő célzott irány az
-acceleratortábla létrehozójának (`0x00923110`), a
-`TranslateAcceleratorA`-t hívó feldolgozónak (`0x0097fc30`) és az
-üzenetciklusnak (`0x00855770`) az összekötése a rögzítővel.
+**Külön menü-/accelerator-indító ág: NINCS MEG.** A meglévő Ghidra-kimenet
+a `0x0097fc30` üzenetciklusban `TranslateAcceleratorA`-t mutat a
+`DAT_00d4a4d4` gyorsbillentyű-táblával, de nem azonosítja a tábla tartalmát
+vagy a rögzítőhöz vezető parancsot. A független `.text`-pásztázás egyetlen
+abszolút hivatkozást talált a `DAT_00d4a4d4` címére: az olvasást
+`0x0097fd18`-nál; ez sem mutatja meg a tábla feltöltését. A `0x00923110`
+meglévő kimenete egy
+külön általános táblakészítőt mutat, kapcsolatát ezzel a fő ciklussal nem
+igazolja. A következő célzott irány a fő ciklus HACCEL-táblájának
+feltöltése és parancsútja, majd ennek összevetése a `Scrapture` objektummal.
 
 | Módosító | A `0x00591470` által átadott cél |
 |---|---|
@@ -57,9 +63,14 @@ Alt mellett a kurzor alatti ablak. A `0x00590f40` `GetWindowRect`-tel kéri
 le a cél téglalapját, majd a `GetSystemMetrics` `0x4c`, `0x4d`, `0x4e`,
 `0x4f` azonosítóival (`SM_X/Y/CX/CYVIRTUALSCREEN`) a virtuális képernyő
 határaihoz igazítja. A képet a képernyő DC-jéből a `0x009aa990`-en át
-hívott GDI `BitBlt` másolja. Az alapmód ezért a virtuális asztal
-képernyőterületét célozza, a csatlakoztatott monitorokkal együtt; a Ctrl és
-Alt ablakméretű területet ad.
+hívott GDI `BitBlt` másolja. Az alapmód a `GetDesktopWindow` téglalapját
+célozza, és azt a virtuális képernyő határaihoz vágja; Ctrl és Alt esetén a
+kiválasztott ablak téglalapját vágja ugyanígy. Ez a virtuális asztali
+rögzítési útvonalat bizonyítja, de a statikus kód nem dönti el, hogy a
+`GetWindowRect(GetDesktopWindow())` futásidejű téglalapja a másodlagos
+monitorokat is lefedi-e. Így az sem bizonyított, hogy egy kimeneti fájl az
+összes csatlakoztatott monitor képét tartalmazza. **NINCS MEG**; ehhez
+Windows alatt, több monitorral végzett rögzítés és a mentett kép mérése kell.
 
 **Kurzor:** a Picasa kódja a `GetCursorPos`-t az Alt-módú célablak
 kiválasztására használja. A `0x00590f40` → `0x009aa990` rögzítési útban
@@ -73,10 +84,11 @@ ellenőrizni.
 
 | Tulajdonság | Binárisból kiolvasott érték |
 |---|---|
-| Alapnév-beállítás | `Scrapture::defaultname`; hiányzó értéknél `Fullscreen capture` (`0x00c916dc`, `0x00c916c8`) |
-| Első fájlnév | `Scrapture::defaultname` hiányában `Fullscreen capture.bmp`, ha ez még nem létezik |
-| Névütközés | A `0x00993650` a `%s-%03lu` (`0x00cd8d64`) mintával a fájlnév-komponenshez fűz sorszámot. A számláló `1`-ről indul (`0x00993a96`); ütközéskor a meglévő számot növeli (`0x00993b56`). A kiterjesztés külön komponensként marad a `.bmp`-nél (`0x009a37b0`, `0x009a3930`), ezért az első ütközés utáni példa `Fullscreen capture-001.bmp`. A háromjegyű alak minimumszélesség, a sorszám nem időbélyeg. |
-| Formátum | BMP: a `0x00590f40` `.bmp` kiterjesztést fűz hozzá (`0x00c865cc`); a `0x009ad2d0` `wb` módban nyit fájlt és `BM` fejlécet ír. |
+| Alapnév | A kiválasztott ablak címét olvassa (`0x00590fec`-`0x0059100a`, `0x00986200`). Ha nincs használható cím, a `Scrapture::defaultname` beállítást kéri le (`0x00c916dc`); ennek hiányában `Fullscreen capture` az alap (`0x00c916c8`). |
+| Dátum-idő | A `0x0098b6e0` dátum-idő értékéből a `0x0098c470` `VarBstrFromDate`-tel készít szöveget (`0x00c405c4`, LCID `0x400`, flags `0`); a szöveg egy szóközzel kerül az alapnév után (`0x00591067`-`0x00591094`). A pontos megjelenítési alak a futásidejű locale-tól függ, ezért **NINCS MEG** egyetlen állandó formátumként. |
+| Fájlnév | Minta: `<ablakcím vagy tartalék alapnév> <locale szerinti dátum-idő>.bmp`. Ha nincs cím és a beállítás sincs megadva, az alap `Fullscreen capture`; a `.bmp` kiterjesztés a `0x00591099` utasításnál kerül hozzá. |
+| Névütközés | A `0x00993650` a `%s-%03lu` (`0x00cd8d64`) mintával a fájlnév-komponenshez fűz sorszámot. A számláló `1`-ről indul (`0x00993a96`); ütközéskor növeli (`0x00993b56`). A kiterjesztés külön komponensként marad a `.bmp`-nél (`0x009a37b0`, `0x009a3930`), ezért az első ütközés utáni minta `<alapnév> <dátum-idő>-001.bmp`. A háromjegyű alak minimumszélesség; a sorszám nem időbélyeg. |
+| Formátum | A `0x009ad2d0` `wb` módban nyit fájlt, `BM` aláírást ír (`0x009ad382`, `0x009ad387`), majd 40 bájtos `BITMAPINFOHEADER`-t, 54 bájtos képadat-eltolást, 1 síkot, 24 bit/pixelt és 0 tömörítési értéket állít be (`0x009ad3e4`-`0x009ad469`). A képpontokat soronként 3 bájttal írja (`0x009ad550`-`0x009ad569`): ez 24 bites, tömörítetlen BMP. |
 | JPEG-minőség | Nem alkalmazható: ez az út BMP-t ír; JPEG-minőségi értéket nem olvas. |
 | Célmappa | A `Scrapture::capturepath` alapértéke `Picasa\Screen Captures\` (`0x00c9170c`, `0x00c916f4`); erőforrás magyarul `Picasa\Képernyőfelvételek\` is lehet. |
 
@@ -102,12 +114,20 @@ gyűjteménybe kerül. Ez mappaszintű besorolás, nem bizonyíték a képfájl
 adatbázisba írásának pontos időzítésére.
 
 A BMP-író (`0x009ad2d0`) meghívása után a `0x00590f40` `0x63617043`
-üzenetet küld a kimeneti útvonallal (`0x005913ac`-`0x005913c5`). A főablak ezt a `0x0057d080`
+üzenetet küld a kimeneti útvonallal (`0x005913ac`-`0x005913c5`). A hívó
+nem ellenőrzi az író visszatérési értékét az üzenet előtt; ezért a `capC`
+önmagában a mentés sikerét nem bizonyítja. A főablak ezt a `0x0057d080`
 értesítő-ágra továbbítja (`0x00601090`, `0x00601f33`-`0x00601f76`). A
 `0x0057d080` a `Screenshot saved` és `click to view` szövegeket használja
-(`0x00c8ab60`, `0x00c90394`), majd értesítést jelenít meg. A buborék
-létezését az eredeti Picasáról készült képernyőkép is megerősíti
+(szövegek: `0x00c8ab60`, `0x00c90394`; kulcsok: `0x00c8ab74`,
+`0x00c903a4`), majd értesítést jelenít meg. A buborék létezését az eredeti
+Picasáról készült képernyőkép is megerősíti
 ([picasa-lebego-ertesito.md](picasa-lebego-ertesito.md), 1. ág).
+
+Ha nincs főablak-fogantyú, a rögzítő a `DAT_00d695b8` függvénymutatót hívja
+`open` művelettel és a kimeneti fájl útvonalával (`0x005913cf`-`0x005913f0`).
+A függvénymutató pontos célja ezen a leleten nincs feloldva; a hívás nem ad
+bizonyítékot arra, hogy a buborék a mappára navigál.
 
 **Nyitott:** a `0x0057d080` a buborék előtt meghív egy útvonal-kereső
 útvonalat (`0x004f92c0` → `0x004e7d10`); az utóbbi bejárja a gyűjtemény
@@ -130,19 +150,26 @@ főablak-üzenetkezelő (`0x00601090`) a rögzítő `0x63617042` és
 `0x63617043` üzeneteit a `0x00445a30` kategorizáló, illetve a
 `0x0057d080` értesítő útvonalra viszi. Az utóbbi útvonal `Screenshot
 saved`/`click to view` kulcsait használja, és a meglévő Picasa-képernyőkép
-függetlenül igazolja a buborékot. **Az utak a mappabesorolásnál és a
-buboréknál egyeznek.** A képfájl azonnali indexelésére nem adnak két
-egyező bizonyítékot.
+függetlenül igazolja a buborékot. A BMP-típusra külön ellenőrzés a
+`0x009ad2d0` író fejléc- és képpontútja (`BM`, 24 bit/pixel, 0 tömörítés),
+nem pusztán a hívó által hozzáfűzött kiterjesztés. **Az utak a
+mappabesorolásnál, a BMP-formátumnál és a buboréknál egyeznek.** A képfájl
+azonnali indexelésére nem adnak két egyező bizonyítékot.
 
-**Cáfoló próba: „a Print Screen-hook indítja a rögzítést”:** megkerestem
+**Cáfoló próba 1: „a `.bmp` csak kiterjesztés, a tartalom lehet JPEG”:**
+követtem a hívótól a `0x009ad2d0` íróig, majd a fejlécmezőket és a
+képpontírást is ellenőriztem. Az író `BM` fejlécet, 24 bit/pixelt és 0
+tömörítést állít be, majd három bájtot ír képpontonként; a JPEG-hipotézist
+ez a második, íróoldali bizonyíték cáfolja.
+
+**Cáfoló próba 2: „a Print Screen-hook indítja a rögzítést”:** megkerestem
 a rögzítőfüggvény közvetlen hívásait a teljes `.text`-ben, majd külön
-követtem a `SetWindowsHookExA` egyetlen importált hívóját. A közvetlen
-címhivatkozás-pásztázás csak a `0x005914f1` billentyűfigyelőből jövő
-hívást találta. A hook-jelölt `0x0097de80` más függvény; a rögzítőhöz nem
-vezet közvetlen hivatkozás, és a `Scrapture` útja saját maga kérdezi le a
-billentyűállapotot (`0x00591470`). A billentyűkampó-feltevés tehát nem cáfolja a
-billentyűfigyelő út bizonyítékát. Ez a próba **nem** zárja ki az indirekt
-menü-/accelerator-útvonalat; annak keresése a fenti nyitott irány.
+követtem a `SetWindowsHookExA` hívóját. A közvetlen hívás-pásztázás csak a
+`0x005914f1` billentyűfigyelőből jövő hívást találta; a hook-jelölt
+`0x0097de80`-tól nem vezetett közvetlen hivatkozás a rögzítőhöz. A
+`Scrapture` útja saját maga kérdezi le a billentyűállapotot
+(`0x00591470`). Ez a próba a közvetlen hook-utat nem támasztja alá, de az
+indirekt accelerator-/menü-dispatchot **nem** zárja ki.
 
 ## 6. PicasaPy: jelenlegi állapot
 
@@ -154,37 +181,38 @@ menü-/accelerator-útvonalat; annak keresése a fenti nyitott irány.
 
 ## 7. Bizonyítottság és nyitott irányok
 
-**Összesített fok: feltételes.** Az indítási kapu, a billentyűmódok, a
-BMP-kimenet, a mappalétrehozás és a Projektek-besorolás binárisból
-visszakereshető, a két ellenőrzési út pedig a mappabesorolásnál és a
-buboréknál egyezik. A kurzor tényleges képpontbeli jelenléte, az azonnali
-képfájl-indexelés és a buborék-kattintás navigációja nyitott.
+**Összesített fok: feltételes.** A beállításkapu, billentyűmódok,
+fájlnév-képzés, BMP-kimenet, mappalétrehozás, mappabesorolás és buborék
+binárisból visszakereshető; a külön ellenőrzési utak a BMP-író tartalmán,
+a mappabesorolásnál és a buboréknál egyeznek. A teljes képernyő többmonitoros
+terjedelme, a kurzor képpontbeli jelenléte, a menü/accelerator út, az azonnali
+képfájl-indexelés és a buborék kattintási célja nyitott.
 
 | Állítás | Forrás |
 |---|---|
 | HKCU `Preferences\EnableScreenCap`, alapérték `1`, objektum/szál létrehozása | bináris (`0x0040bf70`, `0x0040ca13`, `0x0040ca6f`, `0x0040ca78`, `0x00407a3b`) |
 | Print Screen / Print ismételt lekérdezés és Ctrl/Alt mód | bináris (`0x00591470`, `0x00590f40`) |
-| Virtuális asztal és GDI-másolás | bináris (`0x00590f40`, `0x009aa990`) |
-| Név, ütközési sorszám, kiterjesztés | bináris (`0x00c916c8`, `0x00cd8d64`, `0x00993650`, `0x00c865cc`) |
-| BMP-fejléc és fájlírás | bináris (`0x009ad2d0`) |
+| Virtuális asztal célzása, képernyőhatár-vágás és GDI-másolás; többmonitoros eredmény | bináris (`0x00590f40`, `0x009aa990`); többmonitoros kimenet: NINCS MEG, futásidejű mérés kell |
+| Ablakcím/tartalék név, locale-függő dátum-idő, ütközési sorszám, kiterjesztés | bináris (`0x00986200`, `0x00c916c8`, `0x0098b6e0`, `0x0098c470`, `0x00cd8d64`, `0x00993650`, `0x00c865cc`) |
+| 24 bites, tömörítetlen BMP-fejléc és képpontírás | bináris (`0x009ad2d0`, `0x009ad382`-`0x009ad569`) |
 | Célmappa létrehozása | bináris (`0x00590f40`, `0x009a3db0`, `0x00d6957c`, `0x00c337aa`) |
 | Projektek-besorolás | bináris (`0x00601090`, `0x00445a30`, `0x00c809e8`, `0x00c7ec64`) |
-| Értesítő buborék | bináris (`0x00601090`, `0x0057d080`, `0x00c8ab60`, `0x00c90394`); mérés (eredeti Picasa-képernyőkép, 2026-08-20) |
+| Értesítő buborék; főablak nélkül `open` műveletű indirekt hívás | bináris (`0x00601090`, `0x0057d080`, `0x005913cf`-`0x005913f0`, `0x00c8ab60`, `0x00c90394`); mérés (eredeti Picasa-képernyőkép, 2026-08-20) |
+| Fájlíró után jön-e `capC` csak siker esetén | bináris (`0x005913ac`-`0x005913c5`): nincs visszatérésiérték-ellenőrzés, ezért az üzenet nem igazolja a sikeres mentést |
 | Kurzor bekerül-e a BMP-be | NINCS MEG; Windows-futásidejű mérés kell |
 | Egyetlen közvetlen hívó a `0x00590f40`-hez; `Scrapture` vtable-kapcsolat | bináris (`paszta.py` teljes `.text` pásztázás; `0x005914f1`, `0x00c91728`, `0x0040ca6f`, `0x00590ef5`) |
 | Névütközés kezdő sorszáma és növelése | bináris (`0x00993a96`, `0x00993b56`, `0x00cd8d64`) |
-| A képfájl azonnali indexelése | NINCS MEG; a `0x004f92c0`/`0x004e7d10` út célfüggvényeit kell követni |
+| A képfájl azonnali indexelése | NINCS MEG; a meglévő Ghidra-kimenet a `0x004f92c0` → `0x004e7d10` utat és az `0x004e31a0` indirekt vtable-hívását mutatja, de a konkrét callback hatását nem |
 | A buborék kattintási célja | NINCS MEG; a `0x0057d1e4` vtable `+0x68` hívás célfüggvényét kell azonosítani |
+| Menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; a meglévő `0x0097fc30` dekompilált kimenete a `DAT_00d4a4d4` táblával hívja a `TranslateAcceleratorA`-t, a tábla feltöltési és parancsútja még nincs összekötve a `Scrapture` objektummal |
+| Főablak nélküli `open` hívás pontos API-célja | NINCS MEG; a `DAT_00d695b8` függvénymutató inicializálását/feloldását kell követni |
 
-Ghidra-kör kell: 0x004f92c0: az útvonal-keresés csak meglévő könyvtári elemet talál-e, vagy a friss BMP-t is indexeli [blokkoló]
-Ghidra-kör kell: 0x004e7d10: a bejárt gyűjteményadat tartalmazhatja-e már a friss BMP-t [blokkoló]
-Ghidra-kör kell: 0x004e31a0: az ág indexbe ír vagy csak meglévő elemet keres [blokkoló]
-Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás célfüggvénye és a `clickview` művelet kattintási célja [blokkoló]
-Ghidra-kör kell: 0x00923110: az acceleratortábla tartalmaz-e képernyőkép-indító parancsot [blokkoló]
-Ghidra-kör kell: 0x0097fc30: az accelerator-/üzenetút továbbít-e képernyőkép-indítást [blokkoló]
-Ghidra-kör kell: 0x00855770: az üzenetciklus eléri-e a `Scrapture`-t vagy a `0x00590f40` függvényt [blokkoló]
+Ghidra-kör kell: 0x004e31a0: a `0x004f92c0` → `0x004e7d10` keresési út az `param_3 + 0x344 + 0x10` sloton mely konkrét callbacket hívja, és az a friss képfájlt indexbe írja-e vagy csak keres [blokkoló]. A meglévő `0x004e31a0` dekompilált kimenet az indirekt hívást mutatja, a célfüggvényt nem.
+Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás konkrét célfüggvénye és a `clickview` művelet kattintási navigációja [blokkoló]. A meglévő dekompilált kimenet a hívást és a kulcsot mutatja, a célfüggvényt nem.
+Ghidra-kör kell: 0x0097fc30: a `DAT_00d4a4d4` HACCEL-tábla létrehozási/feltöltési útja és parancsazonosítói indíthatják-e a `Scrapture`-t vagy a `0x00590f40`-et [blokkoló]. A meglévő dekompilált kimenet a `TranslateAcceleratorA` hívást mutatja, de a tábla tartalmát és a rögzítőhöz vezető parancsot nem.
+Ghidra-kör kell: 0x00590f40: a főablak nélküli ág `DAT_00d695b8` függvénymutatójának inicializálása és pontos API-célja; a meglévő dekompilált kimenet csak az indirekt hívást mutatja.
 
-Futásidejű mérés kell: eredeti Windows Picasában a kurzor láthatósága a mentett BMP-n; ugyanott a fájl indexbe kerülésének és a buborék-kattintásnak a sorrendje.
+Futásidejű mérés kell: eredeti Windows Picasában a kurzor láthatósága a mentett BMP-n; többmonitoros rendszeren a kimeneti BMP téglalapja; továbbá a fájl indexbe kerülésének pillanata és a buborék kattintási célja.
 
 ## Hivatkozások
 
