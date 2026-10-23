@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.200] - 2026-10-24
+
+- A dátummódosító egy képnél elemszám nélküli címet mutat, kötegben pedig futásjelzést ad (#5703).
+
 ## [0.9.199] - 2026-10-23
 
 - A Nyomtatás párbeszéd első megnyitáskor Crop to Fit módban indul, és módváltás után az előnézet is frissül. (#5681).

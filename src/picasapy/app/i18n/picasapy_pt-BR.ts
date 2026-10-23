@@ -17962,10 +17962,31 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <translation>Dom</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="23" />
             <source>Adjust Photo Date - %1 items</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ajustar data das fotos — %1 itens</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="24" />
+            <source>Adjust Photo Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: offsettime:offsettime/window1.title</extracomment>
+            <translation>Ajustar data da foto</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="99" />
+            <source>Setting photo dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTimeThread::SettingDates</extracomment>
+            <translation>Definindo a data das fotos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="115" />
+            <source>Setting image time</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTime:Progress</extracomment>
+            <translation>Definindo a hora da imagem</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
