@@ -682,3 +682,41 @@ A `0x007fd770` második argumentuma a PE `0x00c7e4a4` címén levő `0x40800000`
 **A #5401 „Kész, ha” pontjai.** (1) ⛔ A kiválasztott index/animátor kapcsolat pontosabb, de a dátumtömb, a képek és forráskollekciók nincsenek meg. (2) ⛔ A rekord időzítése és easing-függvénye ismert, a teljes képkockánkénti kártyapálya és rétegrajzolás nyitott. (3) ⛔ A húzás felengedésének 4,0 másodperces belső rekordja igazolt; a dátummező jelentése, `timelinedot`, listaikon és tényleges autoplay-ütem nyitott. (4) ⛔ A diavetítésből visszatérő nézet és képindexe nincs meg.
 
 **Nyitott.** A `[this+0x514]`-hez kiválasztott indexből előálló dátum és képtartalom; az `A` tömb és a P `+8`, `+0x20`, `+0x30` mezők forrás-/időjelentése; a célzott animátorérték képkockánkénti képernyőhatása. Ezekhez a qshow adatait és sűrű képkockáit ugyanazon Wine-futásban kell rögzíteni. Új Ghidra-kör ehhez a `0x007fd770` hívási lánchoz nem szükséges.
+
+#### 38.2.77 A csúszka index- és hüvelykujj-leképezésének QEMU-kontrollja (#5401, 2026-10-23)
+
+**Hatókör és mérési állapot.** A `0x007fdd00` eredeti gépi kódját `qemu-i386` alatt futtattam. A qshow-objektumot és a tömböket kézzel állítottam be: alsó x-határ `100`, szélesség `400`, `A=[0; 0,25; 0,5; 1]` (f64), négy `0xf8` bájtos rekordmutató (`0x20000000`-`0x20000003`), hüvelykujjszélesség `24`, y `27`. Ez kontrollált függvénypróba, nem futó qshow vagy valódi dátum-/képhalmaz mérése. Az ELF és assembler ideiglenes fájljai a munkafa `.bt/` könyvtárába kerültek.
+
+**A út-bináris.** A `0x007fdd00` az egér x értékét az alsó határ és az alsó határ plusz sávszélesség közé korlátozza, majd a sávon belüli normalizált arányt hasonlítja az `A[i]/A[n-1]` értékekhez. A legkisebb abszolút eltérésű indexet a `[this+0x514]` mezőbe írja; egyező eltérésnél a szigorú `<` összehasonlítás miatt a korábbi index marad. A rekordmutató a `[this+0x3a8]+i*0xf8` címből jön, a listahosszt a `[this+0x3ac]>>1` adja. A hüvelykujj x-pozícióját a sávon belüli egérarányból, a `[this+0x718]` hüvelykujjszélességből és a `[this+0x6d8]` kezdőpontból állítja elő; y-t a `[this+0x72c]` értékére teszi vissza. A pontos mezőút és összehasonlítás az eredeti utasításokban látható (`0x007fdd00`-`0x007fde73`).
+
+**B út-eredeti gépi kód QEMU-ban.** Az alábbi értékeket a qshow-objektumból olvastam ki minden hívás után; a thumb-koordináták egész kimenetek.
+
+| x bemenet | kiválasztott index | rekordmutató | hüvelykujj x | forrás |
+|---:|---:|---:|---:|---|
+| 50 | 0 | `0x20000000` | 85 | mérés (`qemu-i386`, `0x007fdd00`) |
+| 100 | 0 | `0x20000000` | 85 | mérés (`qemu-i386`, `0x007fdd00`) |
+| 150 | 0 | `0x20000000` | 135 | mérés (`qemu-i386`, `0x007fdd00`) |
+| 200 | 1 | `0x20000001` | 185 | mérés (`qemu-i386`, `0x007fdd00`) |
+| 300 | 2 | `0x20000002` | 285 | mérés (`qemu-i386`, `0x007fdd00`) |
+| 400 | 2 | `0x20000002` | 385 | mérés (`qemu-i386`, `0x007fdd00`) |
+| 500 | 3 | `0x20000003` | 485 | mérés (`qemu-i386`, `0x007fdd00`) |
+| 550 | 3 | `0x20000003` | 485 | mérés (`qemu-i386`, `0x007fdd00`) |
+
+A megadott tesztállapotban a thumb-kimenet `100 + t*400 - 15`, ahol `t` a korlátozott x sávon belüli aránya; a 15 a 24 széles teszt-thumb fél szélessége és a binárisban hozzáadott 3 egység összege. Ez csak a megadott bemenetek mérési leírása, nem dátumképlet.
+
+**A két független út.** Az A út a diszasszemblálásból vezeti le a határkorlátozást, az arányok szerinti legközelebbi indexválasztást és a szigorú összehasonlítást. A B út ugyanezeket az eredeti PE-kód futtatásával, beállított qshow-mezőkkel méri; a széleken azonos kimenet, köztes pontokon a várt index és thumb-koordináta jelenik meg. A két út a kontrollált állapotra egyezik.
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni azt az olvasatot, hogy döntetlen távolságnál az első index marad. Az `x=150` a `0` és `0,25`, az `x=400` a `0,5` és `1` közötti felező. Ha az összehasonlítás a későbbi jelöltet is elfogadná, ezeknél az index `1`, illetve `3` lenne; az eredeti függvény QEMU-kimenete `0`, illetve `2`. A próba ezért nem cáfolta a binárisból olvasott szigorú `<` szabályt. Ugyanebben a futásban az `x=50`/`100` és az `x=500`/`550` párok az alsó, illetve felső határ korlátozását is kontrollálták.
+
+**Bizonyítottsági fok.** **Megerősített** a `0x007fdd00` indexválasztása, határkorlátozása és hüvelykujj-kimenete a fenti kézzel épített tesztállapotra: az utasításszintű levezetés és az eredeti gépi kód QEMU-eredménye egyezik, a döntetlen- és határpróbákkal. **NINCS MEG** az `A` tömb valódi qshow-forrása és jelentése, ezért nem állítható, hogy a kiválasztott index dátumot, Unix-időt vagy egy adott képet jelöl; a felhasználói felületen látható húzás- és végállapotot ez a próba nem mutatja.
+
+| Állítás | Forrás |
+|---|---|
+| A csúszka indexválasztása, határkorlátozása és thumb-pozíciószámítása a `0x007fdd00` függvényben. | bináris (`0x007fdd00`-`0x007fde73`) |
+| A nyolc bemeneti x koordinátához tartozó index, rekordmutató és thumb-x. | mérés (`qemu-i386`, eredeti `Picasa3.exe`, `0x007fdd00`, kézzel épített qshow-állapot) |
+| Az `A` tömb valódi előállítója, mezőjelentése, dátum-/képtartalma. | NINCS MEG |
+| A csúszka valós qshow-futásban látható animációja és dátumra vetített értéke. | NINCS MEG |
+
+**A #5401 „Kész, ha” pontjai.** (1) ⛔ A csúszka által választott tömbindex futtatásos kontrollja nem azonosítja a képhalmaz forrását, dátumkulcsát vagy sorrendjét. (2) ⛔ Ez a mérés nem egészíti ki a képkockánkénti pályát vagy a rétegrajzolást. (3) ⛔ A csúszka x→index és thumb-x leképezése kontrollált állapotra QEMU-val igazolt; az `A` dátumjelentése, a `timelinedot`, listaikon és a valós autoplay-periódus továbbra is nyitott. (4) ⛔ A diavetítésbe váltás és a visszatérő nézet/képindex továbbra sincs futás közben mérve.
+
+**Nyitott.** Az `A` tömb valódi írója, értelmezése, teljes elemlistája és a hozzá kötött képek; a valós qshow húzás közbeni és felengedés utáni képernyőállapota. A valódi állapot és képkockák rögzítéséhez célzott Wine-futás kell; a helyi környezetben Wine nincs. A 38.2.75-ben felsorolt `0x00419d10` és `0x00439a80` Ghidra-kérések változatlanul szükségesek a tokenlista feltöltési útjának eldöntéséhez.
