@@ -139,7 +139,15 @@ class TestAlbumMenu:
         return token
 
     def _album_menu(self, window, qt_app, token):
-        sor = keres_vizualis(window, f"albumItem_{token}")
+        # a sor előbb látható, mint ahogy méretet kap (Windows-CI): megvárjuk
+        nev = f"albumItem_{token}"
+        assert varj(
+            qt_app,
+            lambda: (s := keres_vizualis(window, nev)) is not None
+            and s.width() > 0
+            and s.height() > 0,
+        ), f"{nev}: az album sora nem kapott méretet"
+        sor = keres_vizualis(window, nev)
         kattints(window, qt_app, sor, Qt.MouseButton.RightButton)
         menu = gyerek(window, "albumContextMenu")
         assert varj(qt_app, lambda: menu.property("visible") is True), (
