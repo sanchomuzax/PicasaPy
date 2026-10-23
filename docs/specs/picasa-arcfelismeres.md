@@ -4434,7 +4434,7 @@ A `0x005e5290` a `Preferences\\PeopleAlbumUseFaceSrc` értékének 1 alapérték
 | Pont | Állapot | Bizonyíték |
 |---|---|---|
 | 1. Név nélküliek nézet, fejléc, csoport, méret/sorrend, tálca/kijelölés | ⛔ Részben | Job-162/163/207/208: nézet, felirat, csoportváltás és üres kezdőtálca. Colab #63, `Colab EN 36`: a névmezők 172×20 px-esek; a hat látható arcképkeret mérete képkockához kötve megvan (19.1, 5. pont). Más felbontás skálázása, stabil sorrend/csoporthatár és Ctrl/Shift/húzás tálcahatása nyitott. |
-| 2. Arc kijelölése, névmező, javaslat, Enter/OK, cél/lista | ⛔ Részben | Job-163/167/179 és `0x00787dd0`, `0x007b81e0`: csempe-mező, People/Choose és névjegy-kiegészítés. A 19.7 szerint a `CAutoCompleteListBox` `param_2 != 0` ágai az elfogadó rutint hívják (`0x00809360` → `0x00a54b70`), de a csempe-popup bekötése és az utána következő állapot nyitott. Escape-re a csempe visszaadja az eseményt (`0x00a644bb` → `0xf4241`; `[this+0x384]` nulla); a szülő viselkedése és a mező visszaállítása nyitott. A névablak nélküli tartós arc-hozzárendelés, a csempe Enter útja a People ablakig és a Ctrl/Shift/húzás nyitott.
+| 2. Arc kijelölése, névmező, javaslat, Enter/OK, cél/lista | ⛔ Részben | Job-163/167/179 és `0x00787dd0`, `0x007b81e0`: csempe-mező, People/Choose és névjegy-kiegészítés. A felhasználói Enter-viselkedés mért: új névnél a People ablak nyílik meg (job-163, 11-19. kép); meglévő névnél a People ablak a `Choose` gombbal nyílik meg (job-167, 22., 26-30. kép), majd a `Choose` hozzárendeli az arcot a személyhez (job-179). A bináris eseményút részlete nyitott: a `CAutoCompleteListBox` `param_2 != 0` ágai az elfogadó rutint hívják (`0x00809360` → `0x00a54b70`), de a csempe-popup bekötése és a javaslatelem elfogadása utáni állapot nincs felmérve (19.7). Escape-re a csempe visszaadja az eseményt (`0x00a644bb` → `0xf4241`; `[this+0x384]` nulla); a szülő viselkedése és a mező visszaállítása nyitott. A névablak nélküli javaslat-elfogadás tartós arc-hozzárendelése, valamint a Ctrl/Shift/húzás kijelölési szabálya nyitott.
 | 3. Arcfelismerési javaslat és elfogadás/elutasítás | ⛔ Részben | Job-207 súgó; job-213-ban nem volt javaslat. A bináris parancs-hozzárendelés megerősített: addname → 0x00646d70, yes → 0x00646ec0, no → 0x00647020 (26.3). A javaslat UI-ja és tartós elfogadási/elutasítási kimenete nyitott. |
 | 4. Mellőzés és visszahozás | ⛔ Részben | Job-209/210: X, megerősítés, ignored nézet, `ffffffffffffffff` sentinel; a vizsgált People Manager/személyalbum felületeken a job-222..226 szerint nincs személyszintű Ignore (37.11). A kibontott Név nélküliek fejlécének `Ignore Selected` művelete és a `Back to Unnamed` utáni állapot nyitott. |
 | 5. Személy-album műveletei | ⛔ Részben | Job-213 nézet és zoomikonok; job-222/223/224 jegyzet a törlés megerősítését és ini/db3 hatását dokumentálja (37.10). Zoomkattintás, átnevezés és teljes album-összevonás nyitott. |
@@ -4647,7 +4647,7 @@ Második cáfoló próbaként azt vizsgáltam, hogy a `contacts.xml` beolvasása
 #### 8. Arcfelismerés: a Red.dll callback második virtuális lépcsője
 
 - A `0x100057c0` leírópáronként a `vtable+0x40` művelet pontszámai közül a maximumot írja a kimeneti tömbbe (`0x10005847`-`0x10005880`, `0x100058d2`-`0x100058d8`). A `0x10001570` a visszatérési `EAX` státuszkódot teszteli (`0x100015aa`), nem a float-pontszámot. Ezekben a két függvényben nincs végső küszöb-összehasonlítás; ez csak erre a két kódrészre vonatkozó negatív állítás.
-- A Red RTTI-indexben a `vfr_SdkRelator::vftable` címe `0x101c656c`; a `+0x40` slotja `0x100a3a50`. A Ghidra C-kimenet és a közvetlen utasításolvasat szerint a `0x100a3a50` a `[ecx+0x10]` mezőre lép, majd annak `vtable+0x40` címére ugrik (`0x100a3a50`-`0x100a3a58`). Ez egy további dinamikus virtuális hívás, nem küszöb-összehasonlítás.
+- A Red RTTI-indexben a `vfr_SdkRelator::vftable` címe `0x101c656c`; a `+0x40` slotja `0x100a3a50`. A Ghidra C-kimenet és a közvetlen utasításolvasat szerint a `0x100a3a50` a `[ecx+0x10]` mezőre lép, majd annak `vtable+0x40` címére ugrik (`0x100a3a50`-`0x100a3a58`). A 2026-10-23-i Ghidra-kimenet egyetlen adathivatkozást sorol fel (`0x101c65ac`), közvetlen hívót nem, és a közvetett ugrás célját nem tudja visszanyerni; ezért ez egy további dinamikus virtuális hívás, nem küszöb-összehasonlítás, és a célosztály továbbra sem azonosított.
 - Független osztály- és slotjelölt: a `vfr_FusedRelator::vftable` címe `0x101c7214`; a nyers `+0x40` bejegyzés `0x101c7254` értéke `0x100a8240`. Az indexelt sztring-xref a `0x101c70b0` literált a `0x100a8240` függvényhez köti: `virtual float vfr_FusedRelator::sim(const uint32* arr1A, int32 arr1SizeA, const uint32* arr2A, int32 arr2SizeA) const`. Ez azt bizonyítja, hogy a FusedRelator egyik `+0x40` megvalósítása tömbök hasonlósági pontszámát adja vissza; **nem** bizonyítja, hogy a `0x100a3a50` által futásidőben elért `[this+0x10]` objektum ilyen típusú. A `red.cfg` statikus leltára tartalmaz `vfr_SdkRelator` gyökeret (`0x22b08a` fájloffset), de a parser a modellobjektumok belső sémáját nem fejti vissza. Így a tényleges objektumpéldány, a dinamikus hívás célja és a végső küszöb **NINCS MEG**; a konfigurációban szereplő osztály önmagában nem bizonyítja, hogy ez az adott hívás objektuma.
 - A Picasa EXE `FRRecommendIncludeLimit=0,50` összehasonlítása az ajánlási út szűrője (35.10), nem a `0x100057c0`-ban vagy `0x10001570`-ben mért detektorküszöb. A `red.cfg` `vfr_SowGrowStampClusterer` rekordjának `0.7` eleme (`0x22d07e` fájloffset) szintén nem azonosítható a keresett végső küszöbként: a parser csak a rekord osztályát és nyers payloadját azonosítja, a modellmezők szemantikáját nem.
 
@@ -6215,3 +6215,44 @@ N3-ra cáfoló feltevésként a `0.50` ajánlási határt és a PicasaPy `0.9` �
 - N7: két személyes People Manager Ctrl/Shift-felvétel a `Delete Person` állapotával.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 50. szakasz: N1/N3/N7 helyi bizonyíték- és mérőadat-auditja, a `0.50` jelentésének megerősítése és a lezáró felvételek rögzítése).
+
+## 51. #5184, helyi utánkövetés: a cache-segéd képadatokat olvas; N1 továbbra is nyitott (2026-10-23)
+
+**Hatókör.** A 45.20-ban nyitva hagyott N1 `d4`-mezőútját szűkítettem a `0x0042a440` cache-segédjének vizsgálatával. Az index `functions` és `string_xrefs` tábláját kérdeztem le, majd a 652 bájtos `0x0042a570` teljes függvényt a helyi `annot_disasm.py`/Capstone úton olvastam. A `meroadat.tar` archívumból kizárólag a 15 `.picasa.ini` tagot bontottam ki ideiglenesen a `.bt` alá; képfájlt nem bontottam ki. Futó Picasa-felvétel, Colab-felvétel, kód- és tesztmódosítás nem történt.
+
+### 51.1 N1: a cache-segéd ismert kulcsai geometriaiak, de a munkajelző jelentése nem következik
+
+- A bináris-index a `0x0042a570` függvényméretét **652 bájtban** adja meg. A teljes utasításszintű olvasat a `0x0042a58f` körül a `width`, `0x0042a5e3` körül a `height`, `0x0042a649`-nél a `crop`, `0x0042a6b1`-nél a `rect64`/`rect64(%I64x)`, majd `0x0042a744`-nél a `rotate` kulcsot használja. A `rect64` szöveges értéket a `0x0042a6d8` `sscanf`-hívása olvassa.
+- Az index `string_xrefs` rekordjai ugyanezeket a címeket rendelik a `0x0042a570` függvényhez: `width` (`0x00c80ac4`), `height` (`0x00c80acc`), `rotate` (`0x00c80ad4`), `rect64` (`0x00c81460`) és `rect64(%I64x)` (`0x00cd9554`). A `0x0042a440` dekompilált útja ezt a segédet `.picasa.ini`-objektummal hívja.
+- Ez a lelet csak azt rögzíti, hogy a vizsgált cache-ágban ezek a képméret-, vágás- és forgatáskulcsok látszanak. Nem azonosítja a `0x0047b020` által vizsgált munkatétel `[item+0x10]` jelzőjének jelentését, a `d4` mező személyhez kötését vagy az új arc ajánlását. A másik előállító `vtable+0xd4` célja sem ismert. **N1 tehát nyitott**; a név előtti/utáni, azonos kétarcú fotón végzett eredeti Picasa-felvétel továbbra is a döntő mérés.
+- A mérőadat-archívum célzott `.picasa.ini` vizsgálata: **15 fájl**, összesen **27 267 bájt**, `faces=`, `[Contacts2]`, `]facealbum:` vagy `ffffffffffffffff` mintára **0 találat**. Ez az archívumban nincs címkézett N1-kontrollra vonatkozó mérés; nem állít semmit az archívum JPG-inek arctartalmáról.
+
+### 51.2 Két független út, cáfoló próba és bizonyítottság
+
+- **A út:** az indexelt `string_xrefs` a `0x0042a570` függvényhez köti a fenti képadat-kulcsokat; a `functions` tábla a függvény pontos méretét adja.
+- **B út:** a helyi Capstone-olvasat a teljes 652 bájtos függvényt végigkövetve ugyanazokat a kulcscímeket és a `rect64`-érték feldolgozását mutatja. A `0x0042a440` `.picasa.ini`-hívási környezete ettől külön ellenőrzi, hogy a segéd a cache-ágon fut.
+- A két út egyezik abban, hogy a közvetlenül megfigyelt kulcsok képadat-geometriát írnak le. **A segéd kulcshasználatára vonatkozó részállítás megerősített; N1 teljes viselkedése nyitott**, mert ez nem köti össze a `d4` mezőt a névvel rendelkező arccal.
+- **Cáfoló kísérlet:** azt próbáltam igazolni, hogy a `0x0042a570` közvetlenül a névvel rendelkező arcok `faces=` listáját olvassa. A teljes, indexben 652 bájtos függvényt és külön a sztring-xref rekordokat ellenőrizve csak a fenti `width`/`height`/`crop`/`rect64`/`rotate` kulcsokat találtam. Ezt a hipotézist ennél a segédnél elvetem. A cáfolatot ugyanazzal a mércével ellenőriztem; az eredmény **nem** zárja ki, hogy egy másik vtable-ág vagy későbbi feldolgozó arcadatot kezel.
+
+### 51.3 A #5184 „Kész, ha” pontjai és következő lépés
+
+| Jegypont | Állapot | Bizonyíték / hiányzó mérés |
+|---|---|---|
+| N1: névvel rendelkező fotón további ismeretlen arc | ⛔ Nyitott | A `0x0047b020` korai kapuja és a `0x0042a570` cache-kulcsai ismertek; a `d4` jelentése és az eredeti második arctalálata NINCS MEG. Azonos kétarcú fotó név előtti/utáni Picasa-felvétele kell, a Név nélküliek és a `faces=` állapot rögzítésével. |
+| N3: eredeti felismerési arány, belső küszöb és bemeneti méret a 960 px / 0,9 YuNet-viszonyhoz képest | ⛔ Nyitott | A bináris `0,50` a Picasa Red-pontszámú javaslati határa (50. szakasz), nem a Red belső detektorküszöbe. A belső küszöb, bemeneti méret és azonos címkézett készleten mért arány NINCS MEG. |
+| N4: keret és név alapértelmezett láthatósága | ✅ Lezárt | Mérés (`job-187`, 36.3). |
+| N5: személyszintű mellőzés útja és hatása | ✅ Lezárt | Mérés (`job-222..226`, 37.11): csak arcszintű mellőzés. |
+| N6: személy törlése és hatása az arcokra | ✅ Lezárt | Mérés (`job-222/224`, 37.10); a javítás #5391-gyel kiment. |
+| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ Nyitott | A People Manager két személyes, első kattintás/Ctrl/Shift és `Delete Person` állapotot rögzítő felvétele NINCS MEG. |
+| N8: People Manager referencia-képernyőkép | ✅ Lezárt | Mérés (`job-186`, 24. kép, 36.3). |
+
+**Fejlesztési következmény:** nincs bizonyított eltérés a PicasaPy és az eredeti között, ezért megvalósítási jegy nem indokolt. Új kutatási jegy sem kell: N1, N3 és N7 hiányzó eredményei a #5184-ben maradnak.
+
+**Nyitott:**
+- Ghidra-kör kell: 0x0042a440: a `vtable+0xd4` célosztálya és a `d8`/`d4` kimenet jelentése, valamint ennek kapcsolata a `0x004985e0`-val másolt munkatétellel [N1 bináris alút; a futásidejű döntéshez mérés kell].
+- Ghidra-kör kell: 0x100057c0: a dinamikus `vtable+0x40` callback tényleges célosztálya, a Red belső detektorküszöbe és a bemeneti képméret forrása [blokkoló].
+- N1: azonos kétarcú fotó eredeti Picasa-felvétele a személy megnevezése előtt és után.
+- N3: azonos címkézett képkészleten mindkét program mért aránya, valamint a Red tényleges mérete és küszöbe.
+- N7: két személyes People Manager felvétel, a Ctrl/Shift-kijelölés és a `Delete Person` állapotának rögzítésével.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 51. szakasz: a cache-segéd kulcsainak célzott ellenőrzése, N1 határának pontosítása és a #5184 pontonkénti státusza); `docs/specs/00-index.md` (a lap aktuális nyitott állapotának átvezetése).
