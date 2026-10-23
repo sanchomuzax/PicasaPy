@@ -5066,10 +5066,13 @@ létrehozáskor** íródik.
 
 ⚠️ **Ami nyitva marad:** hogy a `[obj+0x68]` alapnév pontosan mit
 tartalmaz (a forrásvideó neve? időbélyeg?) — a mezőt a hívó tölti, és a
-függvényben nincs rá literál. **Megszerzés:** a `0x00591dd0` hívójának
-dekompilációja (az index `xrefs` táblája nem tartalmazza — a hívás
-közvetett). **A megvalósítást nem blokkolja:** a mappa, a kiterjesztés és
-a sorszámozás megvan.
+függvényben nincs rá literál. A `0x005952d0` `capture_frame` ága
+(`0x0059578f`) a `[ebp+0x3098]` mezőt adja át a `0x00592170` konstruktornak;
+az tárolja `[obj+0x68]`-on, amelyet a `0x00591dd0` felhasznál. **Megszerzés:**
+célzott Ghidra-adatfolyam-vizsgálat a `0x005952d0`-ban. A meglévő
+`2026-10-21-koteg-1021b.txt` csak a diszpécserből induló hívást sorolja, a
+mező eredetét és jelentését nem mutatja. **A megvalósítást nem blokkolja:** a
+mappa, a kiterjesztés és a sorszámozás megvan.
 
 
 #### A panel állapotszövegei — a hivatalos magyar fordítással
@@ -5670,23 +5673,20 @@ Ugyanaz a kezelő (`0x005952d0`):
 ⇒ A videó nem csak lejátszható: **vágható**, és **képkocka menthető
 belőle**.
 
-### 64.3 Nálunk: a TÁROLÁS megvan, a FUNKCIÓ nincs
+### 64.3 Nálunk: a 2026-09-01-i hiányállapot azóta megváltozott (#1838)
 
-**Mérve — és ez a lényeg:** a `moviestart` és `movieend` tokent a
-rendszerünk **ismeri és megőrzi**:
+A fenti 2026-09-01-i mérés a funkció beépítése előtti állapotot rögzíti.
+A mai kódban a vágás, annak visszaállítása és a képkocka mentése is elérhető.
+A teljes képkocka-mentési út és a binárissal való összevetés a **64.5**
+szakaszban áll.
 
-| hol | mit tesz |
-|---|---|
-| `ini/filter_registry.py:148–149` | a két token a regiszterben |
-| `render/registry_data.py:512–513` | „Start Point" / „End Point" néven |
-| `render/chain.py:220` | a `_NOOP_MARKERS` közt — **átmegy a láncon, nem vész el** |
-
-⇒ **A round-trip biztonságos**: ha egy Picasából örökölt videón van
-vágás, azt nem töröljük ki. **Beállítani viszont nem tudjuk** — a
-QML-fában nincs `setin`/`setout`/`trim` vezérlő, és képkocka-mentés sincs.
-
-*(Ez a jó fajta állapot: a formátum-kompatibilitás megelőzte a
-funkciót, tehát a funkció pótlása nem jár adatvesztés-kockázattal.)*
+| művelet | nálunk, a jelenlegi kódban | bizonyíték |
+|---|---|---|
+| `setin` / `setout` / `trimslider` | megvan; a kiválasztott időpontokat a vezérlő `moviestart` / `movieend` tokenként írja | `app/movie_trim_controller.py`; `app/qml/PicasaPy/VideoPlayerView.qml`; `app/qml/PicasaPy/PhotoViewer.qml` |
+| `reset_trim` | megvan | `app/movie_trim_controller.py`; `app/qml/PicasaPy/VideoEditPanel.qml` |
+| `capture_frame` | megvan; a videó jelenlegi lejátszási pozíciójából ment képkockát | `app/frame_capture_controller.py`; `movie/frame_capture.py`; `app/qml/PicasaPy/VideoEditPanel.qml` |
+| a `moviestart` / `movieend` round-trip | a tokenek megmaradnak, és a vezérlő írni is tudja őket | `ini/movie_trim.py`; `ini/filter_registry.py`; `app/movie_trim_controller.py` |
+| YouTube-export | nincs | a megvalósítás hatóköre továbbra is a #432 / #2529 alatt áll |
 
 ### 64.4 A maradék kis panelek
 
@@ -5735,8 +5735,110 @@ vezérlője és a képkocka-mentés; a csoportosztás nincs mérve.)*
 
 - **„A videóhoz csak lejátszás tartozik"** — megdőlt: vágás be-/kimeneti
   ponttal, visszaállítással és képkocka-mentéssel (64.1–64.2).
-- **„A `moviestart`/`movieend` tokent nem ismerjük"** — megdőlt: a
+- **„A `moviestart`/`movieend` tokent nem ismerjük”**: megdőlt: a
   regiszterben és a render-láncban is ott van, megőrizve (64.3).
+
+### 64.5 #5710: a képkocka-mentés teljes útja és a mai összevetés
+
+**Bizalmi fok: feltételes.** Két független út megerősíti, hogy a megadott
+`snapshot` címek a kamerához, a `movieeditpanel/capture_frame` pedig a
+videónézőhöz tartozik. A további eredeti részletek címzett diszasszemblálásból,
+a maiak a forrásból vagy megnevezett mérésből jönnek; nem mindegyik értéket
+ellenőriztem második, független módszerrel. Az eredeti fájlnév-tő értéke, a
+`4` íróopció jelentése és a dekódolt képkocka pixelpontos egyezése nincs meg.
+
+Az eredeti videóképkocka-művelet neve `movieeditpanel/capture_frame`
+(`0x00c91ecc`), kezelője a `0x005952d0`; a `0x0059578f` ága a
+`0x00592170`-en át indítja a `CCaptureFrame` munkát, amelyet a
+`0x00591dd0` végez el. Ez **panelgomb**, nem menüparancs. A megadott
+`snapshot` címek egy másik művelethez, a webkamera-pillanatképhez tartoznak:
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| `0x00c9dc50` `snapshot` → `0x006274f0`: webkamera-panel, külön állókép-rögzítési parancs | `CaptureMoviePanelPopup.qml`, külön kamerafunkció | Ne keverjük a videóból mentett képkockával. |
+| `0x00c9ddcc` `snapshot.jpg` → `0x00628ec0`: a webkamera-pillanatkép rögzített fájlneve | A kamerakód `snapshot` kimenete; a videókocka-kód nem ezt a literált használja | **Nem** a videó-képkocka eredeti fájlneve. |
+| `0x00c9df04` `/snapshot` → `0x0062a720`: webkamera-panel eseménye | Külön a videónéző `capture_frame` jelzésétől | Ne keverjük a két útvonalat. |
+| `0x00c91ecc`; kezelő `0x005952d0`, ág `0x0059578f`: videónéző paneljén „Take Snapshot”; a jelenlegi lejátszási pozícióból indít mentést | `VideoEditPanel.qml:39-46`; `VideoPlayerView.qml:48-56`; `PhotoViewer.qml:2231-2234, 3382-3386` | **EGYEZIK**: ugyanaz a panelművelet és a pillanatnyi pozíció. |
+| `0x005952d0` → `0x00592170` → `0x00591dd0`: a gomb háttérben futó mentéshez vezet; nincs fájlválasztó párbeszéd vagy képkocka-specifikus `Preferences`-kapcsoló ezen az ágon | A QML a vezérlőnek adja át a sort és az aktuális pozíciót; nincs mentési párbeszéd vagy külön képkocka-beállítás | **EGYEZIK**; a kamera `Preferences\\capturemoviesize` értéke a kamerás felvételi méret, nem ez a művelet. |
+| `0x00591f5f`-`0x00591f7b`, `0x00c91808` `CCaptureFrame::CaptureFolder`: `<Képek>/Picasa/<honosított Captured Videos>`; magyar név „Rögzített videoklipek” | `frame_capture_controller.py:35-49`: `pictures_dir()/Picasa`, a meglévő ismert nyelvű mappa nyer, különben a mai nyelv szerinti `CAPTURED_VIDEOS` mappa | **EGYEZIK** új mappánál. Ha csak más nyelvű mappa létezik, **ELTÉR** az eredetitől; ez a #1131-ben dokumentált, szándékos újrafelhasználási szabály. |
+| `0x00591fc5`, `0x00591fd5`, `0x00591ff0` → `0x00445a30`: új célmappánál `[Picasa] P2category=Projects (internal)` sort ír a `.picasa.ini`-be; létező mappát nem jelöl újra | `frame_capture.py:92-101` csak a mappát hozza létre és a JPEG-et írja; nem jelöli a mappát | **ELTÉR**: új célmappánál a projektjelölő hiányzik; fejlesztési teendő. |
+| `0x00592003`-`0x0059200a`, `0x005921a6`-`0x005921aa`: a fájlnév-tő a konstruktor `[obj+0x68]` mezőjéből jön, értéke nem literál | `frame_capture_controller.py:98-100`, `movie/frame_capture.py:48-55`: a videófájl törzse, üres/tiltott névnél `frame` | **NINCS MEG**, honnan jön és mit tartalmaz az eredeti tő. Megszerzés: célzott Ghidra-adatfolyam-vizsgálat `0x005952d0`-ban. A `2026-10-21-koteg-1021b.txt` csak a diszpécserhívást sorolja, a mező jelentését nem. |
+| `0x00993650` (`%s-%03lu`), számlálóhatár `0x1000`: kötőjeles, legalább háromjegyű sorszám, felső határ 4096 | `frame_capture.py:58-75`: `alapnév.jpg`, majd `alapnév-001.jpg` … `alapnév-4096.jpg` | **EGYEZIK** a sorszámozási szabály; a névtő egyezése nyitott. |
+| `0x0059200f` (`.jpg`), `0x00592033`-`0x00592067` → `0x009d6010`: JPEG; íróblokk `{1, 4, 0x55}`. A harmadik érték 85-ös minőségi paraméter (`0x00ad3b30`; másik hívóút: `picasa-kollazs-felulet.md`, 1642. sor) | `frame_capture.py:35-36, 98-101`: `.jpg` kódolás `cv2.imencode`-del, minőségi paraméter nélkül. A helyi OpenCV 4.10.0 implicit DQT-táblája eltér az explicit 85-ösétől (**mérés**) | A kiterjesztés **EGYEZIK**; a JPEG-konfiguráció **ELTÉR**: a 85-ös minőség nincs explicit megadva. A `4` opció hatása nyitott. |
+| `0x00591e78`-`0x00591f35`, `0x00591f30`, `0x00592091`, `0x00592115`: négy állapot: rögzítés, mentés, siker, hiba | `frame_capture_controller.py:82-86, 102-116`; `PhotoViewer.qml:3395-3440`: csak a végső siker/hiba jelzése jut el a felületre | **ELTÉR**: a két köztes állapotjelzés hiányzik. |
+
+**Kimeneti mappa és besorolás.** Az eredeti mappajelölő csak akkor íródik,
+amikor a könyvtár újonnan jön létre. Nálunk a képkocka mentője közvetlenül
+`mkdir`-t és fájlírást végez, ezért az új mappa `P2category=Projects
+(internal)` nélkül marad. A projektgyűjtemény besorolását a `.picasa.ini`
+`P2category` mezője adja (`app/project_folder_names.py:34-35`,
+`index/project_folders.py:1`). A javításnak az `ini/` csomag meglévő író API-ját
+kell használnia.
+
+**A fájlnév nyitott része.** A diszasszemblálás megmutatja az adatfolyamot:
+`0x005952d0` átadja a `CThumbUI` `[ebp+0x3098]` mezőjét a `0x00592170`
+konstruktornak; az `[obj+0x68]` mezővé válik, amelyet a `0x00591dd0` a
+`.jpg` kiterjesztés elé fűz. Ez nem bizonyítja, hogy a tő a videó fájlneve.
+Ezért a jelenlegi videótő nem minősíthető sem egyezőnek, sem eltérőnek.
+
+**Kimeneti minőség.** Az eredeti `{1, 4, 85}` paraméterblokkja binárisból
+igazolt; a harmadik mező 85-ös JPEG-minőségét a közös író másik hívóútja
+erősíti meg. A PicasaPy kódja nem ad át minőségi paramétert. A helyi mérést
+ugyanazon 16×16×3 `uint8` képkockán végeztem: OpenCV 4.10.0 implicit DQT-je
+eltért az explicit 85-ös hívás DQT-jétől. Ez **mért helyi eltérés**, nem állítás
+minden telepített OpenCV-verzióról. A bináris `{1,4,85}` blokk `4` mezőjének
+szemantikája és a teljes JPEG-bájtsor PicasaPy-val való egyezése **NINCS MEG**;
+a `0x009d6010` íróút célzott Ghidra-vizsgálata, illetve azonos videóból készült
+eredeti és PicasaPy-képkocka golden-párja dönti el.
+
+**A pontos képkocka.** Az eredeti a lejátszó pozícióját 100 ns-os értékből
+másodpercre alakítja (`0x005957f3`, `0x0059581b`-`0x00595825`, konstans:
+`0x00cf3e88`); nálunk a QML `media.position` ezredmásodpercet ad át, amit a
+vezérlő a dekódernek továbbít (`VideoPlayerView.qml:54-56`,
+`frame_capture_controller.py:88-109`). A két kódút ugyanazt a felhasználói
+pozíciót célozza, de a kiválasztott dekóderképkocka azonossága **NINCS MEG**.
+Megszerezhető azonos videófájl mindkét programban rögzített pozíciójának
+mentésével és a két képkocka összevetésével; a helyi mérőarchívumban és a
+`research/testdata/` alatt nincs videóminta. A jelen jegy név/hely/formátum
+hatókörét ez nem módosítja.
+
+#### Bizonyítékutak és cáfoló kör
+
+- **A út: utasításszint:** a `0x005952d0` panelparancs `capture_frame` ága →
+  `0x00592170` objektumkonstruktor → `0x00591dd0` munkafüggvény; ebből jön a
+  pozíció, útvonal, `.jpg`, egyediesítés, projektjelölő és írónak adott blokk.
+- **B út: független adat- és forrásoldal:** a `string_xrefs` külön a
+  `0x00c91ecc` videóparancsot rendeli a `0x00593880`, `0x00594820` és
+  `0x005952d0` függvényekhez; a három ticketben megadott `snapshot`-sztring
+  ezzel szemben rendre a `0x006274f0`, `0x00628ec0`, `0x0062a720` kameraútjára
+  mutat. A jelenlegi QML ugyanezt a kettéválást valósítja meg:
+  `VideoEditPanel.qml` vs. `CaptureMoviePanelPopup.qml`. A két út egyezik.
+- **Cáfoló próbálkozás:** azt próbáltam igazolni, hogy a `snapshot.jpg` és a
+  `/snapshot` a videónéző mentési útjának része. A sztringhivatkozások és a
+  `0x005952d0` videóparancs diszasszemblálása ezt megcáfolja: a `snapshot.jpg`
+  a `0x00628ec0` kamera-állókép mentője; a videó worker dinamikus
+  `[obj+0x68]`-ból és `.jpg` literálból épít nevet. A cáfolatot ugyanazzal a
+  címszintű ellenőrzéssel ellenőriztem; nem maradt ellenpélda.
+
+#### Nyitott kérdések
+
+- **BLOKKOLT (örökölt):** az eredeti képkocka fájlnév-töve. Ghidra-kör kell:
+  `0x005952d0`: a `0x00592170` harmadik argumentumaként átadott
+  `[ebp+0x3098]` érték eredete és pontos tartalma [blokkoló].
+- **BLOKKOLT (örökölt, a `picasa-create-features.md` írókérdésének
+  kiegészítése):** Ghidra-kör kell: `0x009d6010`: a képkocka `{1,4,85}`
+  blokkjában a `4` opció jelentése és az író pontos JPEG-adatútja. A meglévő
+  kimenet a `{1,4,90}` poszterhívás minőségi mezőjét azonosítja, de a `4`
+  opciót nem fejti meg.
+- **BLOKKOLT (mérés):** a dekóder által kiválasztott képkocka egyezése; kell
+  hozzá azonos forrásvideó és rögzített lejátszási pozíció mindkét programban.
+- **LEZÁRVA:** gomb és feldolgozási út; mentési párbeszéd/beállítás hiánya;
+  célmappa és `.jpg`; sorszám; hiányzó `.picasa.ini` jelölő; helyi JPEG-DQT
+  eltérés; a két köztes állapotüzenet hiánya.
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 3 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
 
 ## 65. tétel — a KETTŐS NÉZET (2-up) NEM összehasonlítás, hanem KÉT SZERKESZTÉS (2026-09-01)
 
