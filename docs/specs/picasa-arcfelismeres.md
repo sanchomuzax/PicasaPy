@@ -6215,3 +6215,44 @@ N3-ra cáfoló feltevésként a `0.50` ajánlási határt és a PicasaPy `0.9` �
 - N7: két személyes People Manager Ctrl/Shift-felvétel a `Delete Person` állapotával.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 50. szakasz: N1/N3/N7 helyi bizonyíték- és mérőadat-auditja, a `0.50` jelentésének megerősítése és a lezáró felvételek rögzítése).
+
+## 51. #5184, helyi utánkövetés: a cache-segéd képadatokat olvas; N1 továbbra is nyitott (2026-10-23)
+
+**Hatókör.** A 45.20-ban nyitva hagyott N1 `d4`-mezőútját szűkítettem a `0x0042a440` cache-segédjének vizsgálatával. Az index `functions` és `string_xrefs` tábláját kérdeztem le, majd a 652 bájtos `0x0042a570` teljes függvényt a helyi `annot_disasm.py`/Capstone úton olvastam. A `meroadat.tar` archívumból kizárólag a 15 `.picasa.ini` tagot bontottam ki ideiglenesen a `.bt` alá; képfájlt nem bontottam ki. Futó Picasa-felvétel, Colab-felvétel, kód- és tesztmódosítás nem történt.
+
+### 51.1 N1: a cache-segéd ismert kulcsai geometriaiak, de a munkajelző jelentése nem következik
+
+- A bináris-index a `0x0042a570` függvényméretét **652 bájtban** adja meg. A teljes utasításszintű olvasat a `0x0042a58f` körül a `width`, `0x0042a5e3` körül a `height`, `0x0042a649`-nél a `crop`, `0x0042a6b1`-nél a `rect64`/`rect64(%I64x)`, majd `0x0042a744`-nél a `rotate` kulcsot használja. A `rect64` szöveges értéket a `0x0042a6d8` `sscanf`-hívása olvassa.
+- Az index `string_xrefs` rekordjai ugyanezeket a címeket rendelik a `0x0042a570` függvényhez: `width` (`0x00c80ac4`), `height` (`0x00c80acc`), `rotate` (`0x00c80ad4`), `rect64` (`0x00c81460`) és `rect64(%I64x)` (`0x00cd9554`). A `0x0042a440` dekompilált útja ezt a segédet `.picasa.ini`-objektummal hívja.
+- Ez a lelet csak azt rögzíti, hogy a vizsgált cache-ágban ezek a képméret-, vágás- és forgatáskulcsok látszanak. Nem azonosítja a `0x0047b020` által vizsgált munkatétel `[item+0x10]` jelzőjének jelentését, a `d4` mező személyhez kötését vagy az új arc ajánlását. A másik előállító `vtable+0xd4` célja sem ismert. **N1 tehát nyitott**; a név előtti/utáni, azonos kétarcú fotón végzett eredeti Picasa-felvétel továbbra is a döntő mérés.
+- A mérőadat-archívum célzott `.picasa.ini` vizsgálata: **15 fájl**, összesen **27 267 bájt**, `faces=`, `[Contacts2]`, `]facealbum:` vagy `ffffffffffffffff` mintára **0 találat**. Ez az archívumban nincs címkézett N1-kontrollra vonatkozó mérés; nem állít semmit az archívum JPG-inek arctartalmáról.
+
+### 51.2 Két független út, cáfoló próba és bizonyítottság
+
+- **A út:** az indexelt `string_xrefs` a `0x0042a570` függvényhez köti a fenti képadat-kulcsokat; a `functions` tábla a függvény pontos méretét adja.
+- **B út:** a helyi Capstone-olvasat a teljes 652 bájtos függvényt végigkövetve ugyanazokat a kulcscímeket és a `rect64`-érték feldolgozását mutatja. A `0x0042a440` `.picasa.ini`-hívási környezete ettől külön ellenőrzi, hogy a segéd a cache-ágon fut.
+- A két út egyezik abban, hogy a közvetlenül megfigyelt kulcsok képadat-geometriát írnak le. **A segéd kulcshasználatára vonatkozó részállítás megerősített; N1 teljes viselkedése nyitott**, mert ez nem köti össze a `d4` mezőt a névvel rendelkező arccal.
+- **Cáfoló kísérlet:** azt próbáltam igazolni, hogy a `0x0042a570` közvetlenül a névvel rendelkező arcok `faces=` listáját olvassa. A teljes, indexben 652 bájtos függvényt és külön a sztring-xref rekordokat ellenőrizve csak a fenti `width`/`height`/`crop`/`rect64`/`rotate` kulcsokat találtam. Ezt a hipotézist ennél a segédnél elvetem. A cáfolatot ugyanazzal a mércével ellenőriztem; az eredmény **nem** zárja ki, hogy egy másik vtable-ág vagy későbbi feldolgozó arcadatot kezel.
+
+### 51.3 A #5184 „Kész, ha” pontjai és következő lépés
+
+| Jegypont | Állapot | Bizonyíték / hiányzó mérés |
+|---|---|---|
+| N1: névvel rendelkező fotón további ismeretlen arc | ⛔ Nyitott | A `0x0047b020` korai kapuja és a `0x0042a570` cache-kulcsai ismertek; a `d4` jelentése és az eredeti második arctalálata NINCS MEG. Azonos kétarcú fotó név előtti/utáni Picasa-felvétele kell, a Név nélküliek és a `faces=` állapot rögzítésével. |
+| N3: eredeti felismerési arány, belső küszöb és bemeneti méret a 960 px / 0,9 YuNet-viszonyhoz képest | ⛔ Nyitott | A bináris `0,50` a Picasa Red-pontszámú javaslati határa (50. szakasz), nem a Red belső detektorküszöbe. A belső küszöb, bemeneti méret és azonos címkézett készleten mért arány NINCS MEG. |
+| N4: keret és név alapértelmezett láthatósága | ✅ Lezárt | Mérés (`job-187`, 36.3). |
+| N5: személyszintű mellőzés útja és hatása | ✅ Lezárt | Mérés (`job-222..226`, 37.11): csak arcszintű mellőzés. |
+| N6: személy törlése és hatása az arcokra | ✅ Lezárt | Mérés (`job-222/224`, 37.10); a javítás #5391-gyel kiment. |
+| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ Nyitott | A People Manager két személyes, első kattintás/Ctrl/Shift és `Delete Person` állapotot rögzítő felvétele NINCS MEG. |
+| N8: People Manager referencia-képernyőkép | ✅ Lezárt | Mérés (`job-186`, 24. kép, 36.3). |
+
+**Fejlesztési következmény:** nincs bizonyított eltérés a PicasaPy és az eredeti között, ezért megvalósítási jegy nem indokolt. Új kutatási jegy sem kell: N1, N3 és N7 hiányzó eredményei a #5184-ben maradnak.
+
+**Nyitott:**
+- Ghidra-kör kell: 0x0042a440: a `vtable+0xd4` célosztálya és a `d8`/`d4` kimenet jelentése, valamint ennek kapcsolata a `0x004985e0`-val másolt munkatétellel [N1 bináris alút; a futásidejű döntéshez mérés kell].
+- Ghidra-kör kell: 0x100057c0: a dinamikus `vtable+0x40` callback tényleges célosztálya, a Red belső detektorküszöbe és a bemeneti képméret forrása [blokkoló].
+- N1: azonos kétarcú fotó eredeti Picasa-felvétele a személy megnevezése előtt és után.
+- N3: azonos címkézett képkészleten mindkét program mért aránya, valamint a Red tényleges mérete és küszöbe.
+- N7: két személyes People Manager felvétel, a Ctrl/Shift-kijelölés és a `Delete Person` állapotának rögzítésével.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 51. szakasz: a cache-segéd kulcsainak célzott ellenőrzése, N1 határának pontosítása és a #5184 pontonkénti státusza); `docs/specs/00-index.md` (a lap aktuális nyitott állapotának átvezetése).
