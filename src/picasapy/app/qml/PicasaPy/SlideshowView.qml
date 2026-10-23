@@ -910,6 +910,18 @@ Rectangle {
             }
         }
     }
+    // #5649: az eredeti `oneup/auto2` teljes szélességű, 14 px magas
+    // kattintósávja a vetítő tetején. Ugyanazt a műveletet hívja, mint a
+    // lejátszás gomb; a `MouseArea` átlátszó, a képet nem takarja el.
+    MouseArea {
+        objectName: "slideshowAuto2Area"
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 14
+        acceptedButtons: Qt.LeftButton
+        onClicked: show.togglePause()
+    }
     WheelHandler {
         enabled: show.screensaverMode && show.screensaverInputArmed
         onWheel: show.stop()
