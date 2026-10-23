@@ -6429,13 +6429,15 @@ A külön `vfr_FusedRelator` `+0x40` vtable-bejegyzése (`0x101c7254`) a `0x100a
 
 - A PicasaPy forrásban a YuNet alap-küszöbe **0,9**, a detektálásra korlátozott leghosszabb oldal **960 képpont** (`src/picasapy/faces/detector.py`). Ezek a mi beállításaink, nem az eredeti Red-modell értékei.
 - A `0,50` eredeti, binárisból kiolvasott érték továbbra is a `FRRecommendIncludeLimit` javaslat-befogadási határa (`0x0048aab0`, `0x0048e1f0`), nem bizonyíték a Red arcdetektor küszöbére (49.1).
-- A korábbi Red.dll-olvasat (`0x100057c0`, `0x10001570`, `0x100a8240`, `0x100af210`, `0x100b07b0`) pontszámgyűjtést, státuszellenőrzést és egy dinamikus érzékenység-átadási utat mutatott; nem azonosította a futásidejű osztályt, a beállított értéket vagy a végső elfogadási határt.
+- A célzott Red.dll-utasításolvasás pontosítja a korábbi eredményt: a `0x100057c0` a dinamikus `vtable+0x40` hívások visszatérő floatjai közül a futó maximumot tartja meg (`0x10005859`, `0x10005869`-`0x10005878`), majd a kimeneti tömbbe írja (`0x100058d2`-`0x100058d8`). A `0x10001570` a hívás státuszkódját kezeli (`0x100015a2`, `0x100015aa`-`0x100015bb`); e két függvényben nincs végső arcelutasítási küszöb-összevetés. A virtuális `+0x40` cél belső működése továbbra sem ismert.
+- A korábbi Red.dll-olvasat (`0x100a8240`, `0x100af210`, `0x100b07b0`) pontszámgyűjtést és dinamikus érzékenység-átadási utat mutatott; nem azonosította a futásidejű osztályt, a beállított értéket vagy a Red detektor tényleges elfogadási határát.
 - A friss, független címellenőrzés egy további Red-ágat azonosított: a `vsi_FaceViewDetector::runOnOneWindow` VA `0x10103870`, és a `0x10103c14` körüli kód az összegzett pontszámot egy objektum `+0x1c` mezőjével hasonlítja össze. A `vsi_WeakClassifier` `threshold =` mező szerializálása a `0x10107d70` címen látható (`threshold =` szöveg: `0x101d5800`). Ezek nem adják meg a futó Picasa által használt mező értékét, a Red tényleges bemeneti WxH-ját vagy az azonos címkézett képkészleten kapott arányt. A `red.cfg`-ellenőrző jelenlegi parsere az osztály-payloadot nem fejti vissza.
 - **Eredmény:** N3 **nyitott**; a felismerési arány, a tényleges Red-bemeneti méret és az effektív elfogadási érték mind **NINCS MEG**. Döntő út: azonos címkézett képkészlet rögzített futtatása mindkét programban, a Red-nek átadott tényleges képméret és betöltött modellértékek egyidejű rögzítésével.
 
 ### 53.3 N7: a People Manager többes kijelölése nem dőlt el
 
 - A `contactmgr.fen` `contacts` listája nem ad meg kijelölési módot. A job-186 People Manager-kép egyetlen kijelölt személyt mutat; egyik tény sem bizonyít egy- vagy többes kijelölést. A PicasaPy QML egy aktuális sort kezel, de ez csak a mi oldalunk viselkedése.
+- A PicasaPy forrásában a People Manager `selectedKey` állapota egyetlen kulcs (`PeopleManagerDialog.qml:21`); a lista sora a `ListView.isCurrentItem` állapotot emeli ki, kattintáskor pedig a `currentIndex` értékét és a `selectContact(modelData)` hívást állítja (`:442-478`). A Név nélküliek nézete ettől különálló, többes arc-kijelölési modellt használ: a `selectedFaceIds` térkép egyenként kapcsolható, a `selectedCount` ebből számolódik (`UnnamedFacesView.qml:41-42, 88-96`), a csempekattintás ezt hívja (`:489-491`), a „Ignore Selected” pedig a kijelölt kulcsok listáját adja át (`:365-370`). Ez a mi forráskódunkat írja le; az eredeti People Manager kijelölési módját nem dönti el.
 - A Név nélküliek nézet többes kijelölése külön bizonyított (`job-180`); ez nem bizonyítja, hogy a People Manager ugyanazt a modellt használja.
 - **Cáfoló kísérlet:** a `Select All` címke hivatkozásait próbáltam a People Manager többes kijelölésének statikus bizonyítékaként használni. A független audit a `0x007325a0` és `0x007348f0` hivatkozókat Publish/Collage-környezethez, a `0x007331e0` címet pedig az `Address::ID_SELECTALL` szerkesztőmenühöz kötötte. A függvénykörnyezetek visszaellenőrzése ezt az érvet megcáfolta: ezek nem People Manager-bizonyítékok.
 - **Eredmény:** N7 **részben nyitott**: a Név nélküliek többes kijelölése bizonyított, a People Manager Ctrl/Shift-módja **NINCS MEG**. Döntő mérés: két személy felvétele után képernyőkép az első sor kattintása, Ctrl+kattintás és Shift+kattintás után, hogy látható legyen, megmarad-e mindkét kijelölés.
@@ -6466,7 +6468,22 @@ A külön `vfr_FusedRelator` `+0x40` vtable-bejegyzése (`0x101c7254`) a `0x100a
 - N3: Ghidra-kör kell: `0x10103870`: kövesd a `runOnOneWindow` által összehasonlított `+0x1c` mező összes beállító/betöltő útját a `red.cfg`-ig, és vizsgáld meg, hogyan kapcsolódik hozzá a `0x10107d70` `vsi_WeakClassifier threshold` szerializáló; a meglévő `0x100af210` kimenet ezt a `vsi_` ágat nem válaszolja meg. [blokkoló]
 - N7: két személyes People Manager felvétel kattintás, Ctrl+kattintás és Shift+kattintás után.
 
-**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 53. szakasz: a helyi Codex-audit, a független ellenőrzés, a friss cáfoló próba és a #5184 pontonkénti állapota).
+### 53.6 2026-10-23-i célzott Red.dll- és PicasaPy-kijelölés-ellenőrzés
+
+**Red.dll, közvetlen utasításolvasás.** A helyi `Red.dll`-ben a `0x100057c0` minden külső elemhez meghívja a virtuális `+0x40` metódust (`0x10005859`), a visszaadott floatot a futó legnagyobb floattal hasonlítja össze (`0x10005869`-`0x10005873`), és csak a nagyobb értékkel frissíti a maximumot (`0x10005875`-`0x10005878`). A maximum kerül az eredménytömbbe (`0x100058d2`-`0x100058d8`). A `0x100057c0` sikeres bemenetnél `EAX=0`-val, az őrfeltétel hibájánál `EAX=1`-gyel tér vissza (`0x100058e3`, `0x100058f7`). A `0x10001570` ezt a státuszt alakítja: nemnulla eredménynél hibaágra lép és `-1`-et ad (`0x100015aa`-`0x100015b6`), nullánál `0`-t (`0x100015b9`-`0x100015bb`). A wrapper nem hasonlítja össze az arcpontszámot elfogadási küszöbbel.
+
+**Független keresztellenőrzés.** A Picasa3.exe `0x0048e1f0` javaslati útja külön összeveti a Red.dll-től kapott pontszámot a `FRRecommendIncludeLimit` mezővel (`0x0048e330`-`0x0048e349`; az alapérték `0,50`, lásd 44.1). Ez megerősíti, hogy az alkalmazás a Red eredményét hasonlósági pontszámként is fogyasztja, és a javaslat-befogadási határt egy későbbi Picasa-ág alkalmazza. Nem zárja ki, hogy az ismeretlen virtuális `+0x40` metódus vagy a Red másik rétege saját detektorküszöböt használ. A friss kontextusú, vak újralevezetés egyezett a fenti, szűk következtetéssel; a bíráló a `0x10005869`-`0x10005878`, `0x100058d2`-`0x100058f7` és `0x100015aa`-`0x100015bb` utasításokat olvasta. A 52.5-ben rögzített Red.dll-Picasa3.exe verziópárosítási bizonytalanság ettől nem oldódik fel.
+
+**Cáfoló kísérlet.** Megpróbáltam a `0x10001570`-et végső elfogadó/elutasító döntésnek tekinteni. A Red.dll közvetlen diszasszemblálása a `0x100015a2` hívást, a `0x100015aa` státusztesztet, a hibaág `0xffffffff` értékét és a sikerág nullázását mutatja; a függvény nem vizsgál floatot. A vak újralevezetés ugyanezt adta. Ez megcáfolja a wrapperre vonatkozó küszöb-hipotézist, de nem cáfolja a virtuális `+0x40` célban vagy a Red másik rétegében lévő küszöb lehetőségét.
+
+### 🔁 Független újralevezetés
+- **bíráló:** `fresh_red_rederive` (friss kontextus, a kutató magyarázata nélkül)
+- **cím:** `0x100057c0`
+- **eredmény:** EGYEZIK
+- **a bíráló tényei:** a visszaadott float a futó maximummal hasonlítódik össze, a nagyobb érték frissíti azt; a függvény 0/1 státuszt ad, a `0x10001570` pedig 0/-1 visszatérési értékre alakítja. A virtuális cél és annak esetleges belső küszöbe nem vezethető le ezekből a címekből.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (az 53.2 N3 és 53.3 N7 bizonyítékai pontosítva; új 53.6 Red.dll- és PicasaPy-utánkövetés, független újralevezetés és cáfoló próba).
+
 
 ## 54. #5185, 2026-10-23: a 7-8. pont célzott bináris-auditja
 
