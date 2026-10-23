@@ -3060,6 +3060,23 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self.toolsChanged.emit()
         return True
 
+    @Slot(float, float, result=str)
+    def pickEffectColor(self, nx: float, ny: float) -> str:  # noqa: N802
+        """Az effekt-színparaméter pipettája (#5674): a képre kattintott
+        pont színe `#rrggbb` alakban.
+
+        Csak adja vissza a színt: sem láncot, sem ini-t nem ír. A paramétert
+        a QML állítja be a `panel.updateParamValue`-n át, így az Alkalmaz/Mégse
+        az effekt szokásos útját járja be. Üres sztring, ha a pont nem
+        mintavételezhető (nincs aktív szerkesztés, nincs regisztrált előnézet,
+        vagy a pont a képen kívül esik).
+        """
+        sample = self._provider.sample_color(self._kulcs, nx, ny)
+        if sample is None:
+            return ""
+        red, green, blue = sample
+        return f"#{red:02x}{green:02x}{blue:02x}"
+
     @Slot(bool)
     def figyeldAShiftet(self, kell: bool) -> None:  # noqa: N802 — QML-slot
         """A Shift követésének be-/kikapcsolása (#798).

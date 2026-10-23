@@ -702,7 +702,7 @@ lapszám csökkenésekor **magától visszaigazítja** a lapozót.
 | példányszám | `IDS_COPIES` + `numberprints` | megvan (`:373`, #1819) |
 | lapszám | `%d of %d` → `previewnumber` | megvan (`:466`, `%1 / %2`, magyar cserével) |
 | nyomtató neve | `printername` | megvan (`printerName`, `:72`) |
-| **papíradatok** | **`paperinfo`** | **NINCS** — a `PrintDialog.qml`-ben nincs papírméret-kijelző (a `print_controller.py:314` `pageLayout()`-ja megvan, de nem jelenik meg) |
+| **papíradatok** | **`paperinfo`** | **megvan**: `PrintDialog.qml:142-152, 967-980` és `print_controller.py:631` (`paperInfo()`); a `#5663` újraellenőrzése javítja az előző, elavult „NINCS” állítást |
 | állapotsor | `statustext` | megvan (a minőség-üzenet) |
 
 ## ⛳ A 17 nyomtatási méret FIZIKAI mérete — az ugrótáblából (2026-09-17, 318. kör, #1401)
@@ -910,10 +910,10 @@ Minden lap a saját második menetével kapja a térközét: a részben teli uto
 
 | | eredeti | nálunk (`app/print_controller.py`) | teendő |
 |---|---|---|---|
-| egy lapon | a nyomatméretű cellák (pl. 4 × 6 hüvelyk) rácsba rendezve a nyomtató papírján | az `_grid_for_job()` a papír nyomtatható területén rácsot épít; a lapot és a méretű cellákat külön kezeli | **EGYEZIK** a cellarács alapmodellje; teljes képi egyezéshez azonos nyomtatón kell mérni |
-| laptörés | a túlcsorduló cella a következő lap első cellája | a `grid_layout` a cellákat új lapra viszi, a `printPageCount()` ugyanezt a rácsot számolja | **EGYEZIK** a laptörés szabálya |
-| sorrend | A, A, B, B | a forrásképek sorban, képenként a példányok (`_run()`/`_paint_pages()`) | **EGYEZIK**; a #55 eredeti élő mérés az A,A,B,B mintát is igazolja |
-| tájolás | az elrendező a nyomtatható területet és a cellákat két állásban próbálja; az élő #55 referencia álló A4 lapon két fekvő 4×6 cellát mutat egymás alatt | AUTO esetén az A4/papírlap álló marad, a cella tájolása közül a kevesebb lapot adó nyer (`_grid_for_job()` → `choose_page_orientation`) | **EGYEZIK** a mért Passport/4×6 papírviselkedéssel; más méretek teljes kimeneti paritása külön mérendő |
+| egy lapon | a nyomatméretű cellák (pl. 4 × 6 hüvelyk) rácsba rendezve a nyomtató papírján | **több nyomatméretű cella egy papírlapon**, `grid_pages()` és `_paint_pages()` (`printing/grid_layout.py:130-199`, `print_controller.py:1874-1933`) | **EGYEZIK** szerkezetileg; az alábbi élő minták ellenőrzik |
+| laptörés | a túlcsorduló cella a következő lap első cellája | a következő lapra folytatja a `grid_pages()` (`printing/grid_layout.py:140-145,159-199`) | **EGYEZIK** |
+| sorrend | A, A, B, B | A, A, B, B: a lap cellái `first + offset` sorrendben készülnek (`print_controller.py:1899-1904`) | **EGYEZIK**; az élő minták: Colab EN 29/30 |
+| tájolás | amelyik kevesebb lapot ad, döntetlennél az eredeti | `choose_page_orientation()` a két cellatájolás közül a kevesebb lapút választja (`printing/grid_layout.py:202-229`) | **EGYEZIK** a kiválasztási szabály; az oldal tájolását nem forgatja el |
 
 **A #3647 megvalósítása jelenleg a forrásban megvan.** A fenti régi
 „minden példány külön oldal” összehasonlító cellák a megvalósítás előtti
@@ -942,3 +942,125 @@ Kulcsképek: `research/testdata/screenshot/Colab EN 29 - Print, 4x6, 5 copies (1
 - **eredmény:** EGYEZIK
 - **a bíráló tényei:** a túlcsorduló sor nem vész el: a lap lezárása és hozzáfűzése után (0x00778c58–0x00778da5) 0x00778dd5 jb 0x0077871a új lapot indít az érintetlen kép- és példányszámlálóval; a kimeneti tömb eleme egy lap (12 bájt, cellavektor); a 0x00778190 a kevesebb lapot adó tájolást választja, döntetlennél az eredetit, nulla lapnál a másikat, mindkettő nulla → −1.
 - **költség:** 116881 token
+
+## #5663: a teljes nyomtatási út összevetése
+
+**Hatókör:** menübelépés, párbeszéd, méret- és minőségbeállítások, alapértékek,
+alacsony minőségű képek eltávolítása és a lapokra rendezett kimenet.
+A vizsgált `Picasa3.exe` PE-verzióadata `ProductVersion=3.9.141`,
+`FileVersion=3.9.141.259`. Az eredeti bináris címei RVA-címek. A PicasaPy-hivatkozások
+forráskód-olvasásból származnak; az itt jelzett nyitott kimeneti kérdésekhez
+nem következtetek vizuális egyezésre a kód szerkezete alapján.
+
+**Bizonyítottsági fok:** a `removeall` bináris ága **megerősített** (két
+független bináris út és külön felülvizsgálat egyezik; az élő UI-viselkedés
+nem futott). A forrásoldali alapértékek és vezérlők összevetése **feltételes**
+(bináris/spec-erőforrás és aktuális forráskód közvetlen egyezése; nincs élő
+futtatás). A párbeszéd teljes geometriája és a nyomtatási raszter **nyitott**,
+az alábbi megszerzési utakkal.
+
+### Eredeti | Nálunk | Teendő
+
+| Eredeti Picasa 3.9 (bináris cím) | PicasaPy (forrás) | Teendő |
+|---|---|---|
+| **Fájl ▸ Nyomtatás / Ctrl+P:** `cmd 0xe107`, menü-adat `0x00d6db18`; a nyomtatási képernyő építője `0x00743700` | **EGYEZIK:** `PicasaMenuBar.qml:630-636,847-851`; `Main.qml:1191-1198` nyitja meg a párbeszédet és rögzíti a célképsorokat | Nincs teendő a menübelépőn. A néző/slideshow célkép-bináris útjának teljes egyezése **NINCS MEG**; megszerzés: a `0x00743700` hívóinak és a kijelölést előállító hívóláncnak célzott diszasszembly-összevetése. |
+| **Mappa/Album ▸ Indexképek nyomtatása / Ctrl+Shift+P:** `cmd 0x9c94`, menü-adat `0x00d6e274`; parancs-elosztó `0x00559150` | **EGYEZIK:** `PicasaMenuBar.qml:637-647`; a kontaktmód `Main.qml:1199-1209` ugyanazt a nyomtatási párbeszédet nyitja indexkép-módban | Nincs teendő a belépőn; a lapelrendezés a contact sheet külön szabálya, nem a méretcellás rács. |
+| **Nyomatméret-lista:** 17 azonosító; a leképező `0x00776e20`, az eredeti képernyő építője `0x00743700` | A méretválasztó `PrintDialog.qml:652-676`; a vezérlő a területi 7/8 tételes készletet adja (`print_controller.py:355-398`), benne Full Page-dzsel; QML ehhez `CONTACT`-ot fűz (`PrintDialog.qml:453-461`). Nem az eredeti 17-es katalógus. | Bővítsük az eredeti ismert méretekkel. A CD-borító mérete **NINCS MEG**: a `0x00776f0a` `[objektum+0xa0]` táblájának pontos példányértékét és inicializálóját kell visszafejteni; becsült dimenziót ne adjunk hozzá. |
+| **Eredeti induló méret:** Full Page, Crop to Fit, egy példány; ez a Picasa 3.9.141 PDF-nyomtatós felvételen látható (Colab EN 29/30); példányszám-alapérték `0x00860f78` | Méret: az első megnyitáskor Full Page (`print_controller.py:359-398`); példányszám 1 (`PrintDialog.qml:104-108`). A példányszám **EGYEZIK**; a méret induló felvétele alapján **EGYEZIK**. | Nincs teendő az alapméret/példányszám páron. A bináris `PrintLastSize` tartós felülírása továbbra is elsődleges; a felvétel csak az első indítási állapotot bizonyítja. |
+| **Vágás/illesztés:** `printpanel/croptoggle` alapállapot `setpressed 1` (`printpanel.tre:155-158`), frissítés `0x00745aa4` | `PrintDialog.qml:154` alapértéke `fit` = „Whole picture”; a Crop választó `fill` (`:1018-1028`). **ELTÉR.** | Első megnyitáskor a Picasa Crop to Fit módjával egyező `fill` legyen az alapérték; a felhasználó továbbra is választhasson teljes képet. |
+| **Nyomtatólista és telepítő-beállítás:** az aktuális nyomtatónév `0x00745bcc`; a `printpanel/psetupbutton` a driver `DocumentProperties`-útját nyitja (`0x00861750`) | Választható rendszer-nyomtatók és PDF (`PrintDialog.qml:920-963`); a beállítógomb `openPrinterSetup()`-ot hívja. A kódút eltér, de a tényleges párbeszéd és driver-beállítások egyezése **NINCS MEG**. | Megszerzés: Windows alatt ugyanarra a kiválasztott nyomtatóra nyissa meg mindkét Setup gombot; vesse össze az elérhető tulajdonságlapokat és a mentés utáni papíradatot. |
+| **`printoptions` belépő:** a `printpanel/captionoptionsbutton` ága a panel építőjéhez vezet (`0x00743980`); kezelő `0x0085e800` | **EGYEZIK** a panel jelenlétében és különállásában: `PrintDialog.qml:617-623,1158-1165`; a PicasaPy `PrintOptionsPanel.qml` nyílik | Nincs teendő a belépőn; a tizenegy alapértéket lásd alább, a Cancel tartós hatása nyitott. |
+| **Minőségi sávok:** `DPIWarning=150` (`0x0085c1fa`), `DPISevere=100` (`0x0085c28a`); minősítő `0x0085c1e0`, `0x0085c270` | `printing/dpi.py:32-55` ugyanazt a 150/100 alapértéket és a két küszöb összeadásából kapott kódot használja. **EGYEZIK.** | Nincs teendő az osztályozási alapértékeken. |
+| **Képenkénti minőségi mód:** állapotvizsgáló `0x00745f80`; író `0x00746060`. Az író alapértékei Normál `PrinterQuality=2` (`0x0074609a`) és `PrinterUseTiles=0` (`0x007460b8`); Normál mód írása `2/0` (`0x007460c5`, `0x007460de`), Optimalizált mód írása `1/1` (`0x007460fa`, `0x0074610b`); a módjelző feltétele `PrinterQuality != 1001` és `PrinterUseTiles != 0` (`0x00745f80`). | A nyomtatási párbeszédben nincs ilyen kapcsoló. A Beállítások „Nyomtatás” lapján külön `PrinterQuality` rádiócsoport van `2`/`3` értékkel (`OptionsTabPrinting.qml:171-203`, `print_controller.py:296-328`); `PrinterUseTiles`-nek nincs megfelelője. **ELTÉR** a vezérlő helye és az állapotpár. | Hozzuk vissza a párbeszédbe az eredeti Normál/Optimalizált módot az eredeti nyers állapotpárral; a tényleges nyomatminőség megfelelőségét külön, azonos nyomtatási adaton kell mérni. |
+| **Alacsony minőségű képek eltávolítása:** műveleti kezelő `0x0085cce0`; a kérdés szövegkulcsa `0x00cc3450`, Igen `0x00cc33d4`, Nem `0x00cc33a0`. Csak ha minden sor alacsony minőségű, kérdez rá; vegyes listánál csendben csak az alacsonyakat törli. Igen: töröl és megszakítja a nyomtatást (`0x00745726`-`0x0074572b`); Nem: érintetlenül hagyja. | **ELTÉR:** `PrintDialog.qml:269-283,1265-1270` azonnal törli az összes alacsony minőségű sort; nincs megerősítés. Ha minden kép eltűnt, a `:285-289,1277-1286` nem nyomtat és nem zárja be a párbeszédet. | Vegyes listánál csak az alacsonyakat távolítsa el, megerősítés nélkül. Ha mind alacsony, jelenjen meg az eredeti figyelmeztetés; Nem ne változtasson, Igen ürítse a sort, szakítsa meg és zárja a nyomtatási párbeszédet. |
+| **Papíradat:** `printpanel/paperinfo`, feltöltés `0x00745bde` (`0x00745980` állapotfrissítő) | `PrintDialog.qml:142-152,967-980`, `PrintController.paperInfo()`: kijelzi a kiválasztott lap adatait. **EGYEZIK** a mező jelenlétében. | Nincs teendő a mező jelenlétén; a szöveg/tördelés pixelpontos egyezése nincs mérve. |
+| **Lapokra rendezés:** elrendező `0x00778640`, tájolás-választó `0x00778190`, lapgeneráló hívó `0x007774b0`; a túlcsorduló cella a következő lapra kerül. | `grid_layout.py:130-229`, `_paint_pages()` `print_controller.py:1874-1933`. **EGYEZIK** a lap/túlcsordulás/sorrend/tájolás szabálya; az A4-es 4×6 és Wallet minták egyezését Colab EN 29/30 méri. | Nincs teendő a rácsszabályon. Más nyomtató- és papírméreteken a pixeles kimeneti egyezés **NINCS MEG**; megszerzés: azonos forrásképek, méret, Crop to Fit, példányszám és PDF/nyomtató beállítás mellett eredeti/PicasaPy kimenet raszteres összevetése. |
+| **Lapon belüli térköz/kicsinyítés:** a konstansok 0,2 (`0x00cf4748`/`0x00c7e4b0`) és 0,975 (`0x00cf4a30`); a 0,2 viszonyítási alapja **NINCS MEG** | `grid_layout.py:42-56` a cellamérethez viszonyított arányként használja a 0,2-t, amit a kód saját döntésként jelöl | NINCS MEG; megszerzés: a `0x00778640` összes konstans-xrefjénél kövesd végig, milyen méret és mértékegység a 0,2 alapja; addig ne állítsunk teljes térköz-paritást. |
+| **Párbeszéd teljes képi elrendezése és kimeneti raszter:** a panel erőforrása `printpanel.tre`; a GDI `StartDocA`/`EndDoc` import-hivatkozások `0x00861bb0`, `StartPage`/`EndPage` `0x00862000` | `PrintDialog.qml` saját modális ablaka, a panelgeometria pontos vizuális egyezése nincs mérve; kimenet `QPrinter`/`QPainter` (`print_controller.py:857-908,1874-1933`). Az elemek és az eltérő backend ellenére a teljes vizuális paritás **NINCS MEG**. | Megszerzés: eredeti Picasa 3.9.141 és PicasaPy képernyőkép- és PDF-kimenet egymás mellé tétele azonos DPI/papír/nyomtató beállítással; geometria és raszter külön jegyzendő. |
+
+### A `printoptions` tizenegy alapértéke
+
+Az eredeti címek a `0x0085f7a0` betöltő alapérték-ágai; a PicasaPy
+alapértékei a `printing/options.py:43-57` `PrintOptions` mezői. Mindegyik
+sor **EGYEZIK** a mai forrás alapértékével:
+
+| Beállítás | Eredeti alapérték (bináris cím) | PicasaPy alapérték | Teendő |
+|---|---|---:|---|
+| `text` / szövegforrás | 0 (`0x0085f8c7`) | 0 | **EGYEZIK** |
+| `textplacement` | 0 (`0x0085f8fa`) | 0 | **EGYEZIK** |
+| `textfont` | Arial (`0x0085f9db`) | Arial | **EGYEZIK** |
+| `textsize` | 12 (`0x0085f963`) | 12 | **EGYEZIK** |
+| `textcolor` | 0 (`0x0085f994`) | 0 | **EGYEZIK** |
+| `wrap` | 0 (`0x0085f927`) | hamis | **EGYEZIK** |
+| `border` | 0 (`0x0085f7b2`) | hamis | **EGYEZIK** |
+| `bordersize` | 10 (`0x0085f7f0`) | 10 | **EGYEZIK** |
+| `bordercolor` | 0 (`0x0085f827`) | 0 | **EGYEZIK** |
+| `borderedge` | 0 (`0x0085f85a`) | hamis | **EGYEZIK** |
+| `evenborder` | 1 (`0x0085f88d`) | igaz | **EGYEZIK** |
+
+### `removeall`: bináris megerősítő ág
+
+A címben megadott `CPrintDlg::removedall`, `removedallnobutton` és
+`removedallyesbutton` címek a binárisban **sztring-/erőforráskulcsok**, nem
+függvények; az xrefjük a `0x0085cce0` műveletkezelőre vezet. Ez a kezelő
+végigiterálja a minőségi rekordokat (`this+0x104`, 0x14-es rekordköz, minőségi
+jelző `+0x10`). Ha akár egy nem alacsony minőségű kép van, nincs párbeszéd,
+és csak a nulla jelzőjű képek törlődnek. Ha minden kép alacsony minőségű,
+megerősítést kér a `0x009bac20` segéddel:
+
+- Nem: „Don't Remove” (`0x00ca7190`), nincs törlés.
+- Igen: „Remove and Cancel” (`0x00cc33c0`), törlés, majd a hívó a
+  `printpanel/pcancelbutton` műveletet küldi (`0x00745726`-`0x0074572b`).
+- Kérdés: „This will remove all of your pictures and cancel printing.
+  Would you like to continue?” (`0x00cc33f8`), kulcsa `0x00cc3450`.
+
+**Független utak:** (A) a `0x0085cce0` utasításai megmutatják az összes
+alacsony minőségű kontra kevert-listás ágat; (B) az xref-/adatút és a
+`0x007451a0` minőségi rekordot előállító útja ugyanahhoz a `+0x10` jelzőhöz
+vezet, majd az `0x00745726` kimeneti ág a nyomtatás megszakítását mutatja.
+Ezek a bináris utak egyeznek; a független felülvizsgálat is ugyanerre jutott.
+
+**Cáfoló kísérlet:** a vegyes (egy Low + egy Best/Good) ellenpéldát a ciklus
+ágain végigkövettem: a számlálófeltétel átugorja a megerősítést, a törlőhívás
+csak a nulla jelzőjű rekordokat kapja. Az „összes rossz esetén minden
+eltávolítás rákérdez” értelmezés ezért nem áll meg. Élő UI-futtatás nem volt.
+
+### Javasolt jegytörzs-bővítések
+
+#### A Nyomtatás első megnyitáskor Crop to Fit módot válasszon
+
+- **Eredeti:** `printpanel/croptoggle` `setpressed=1` (`printpanel.tre:155-158`), állapotfrissítő `0x00745aa4`.
+- **Nálunk:** a `PrintDialog.qml:154` `fit`/Whole picture módot állít alapnak; a `fill`/Fill the page (crop) külön rádió (`:1025-1028`).
+- **Teendő:** a friss párbeszéd Crop to Fit módban induljon; a felhasználó kézzel továbbra is választhassa a teljes képet.
+- **Kész, ha:** első megnyitáskor a vágás módja aktív; a választás és a tényleges nyomtatási előnézet/kimenet ugyanazt az illesztési módot használja; az útlevél külön alapállapotát a meglévő útlevél-ág nem veszíti el.
+
+#### Az összes alacsony minőségű kép eltávolítása kérdezzen rá és szakítsa meg a nyomtatást
+
+- **Eredeti:** kezelő `0x0085cce0`, kérdés `0x00cc3450`, Nem `0x00cc33a0`, Igen `0x00cc33d4`, megszakítás `0x00745726`.
+- **Nálunk:** `PrintDialog.qml:269-283,1265-1270` azonnal töröl; üres listán `:285-289` nem indít nyomtatást, de nem is zárja a párbeszédet.
+- **Teendő:** vegyes minőségnél a Low képek némán törlődjenek; ha minden kép Low, a Picasa kérdésével egyező Igen/Nem döntés történjen. Igen ürítse a listát és szakítsa meg a munkát; Nem hagyja változatlanul.
+- **Kész, ha:** vegyes lista nem kérdez rá és a jó képek megmaradnak; minden-Low lista pontosan egyszer kérdez; Nem után a lista változatlan; Igen után a lista üres, a nyomtatás az eredeti `pcancelbutton` műveleti ágán megszakad, és nem készül nyomat.
+
+#### Tegyük elérhetővé az eredeti Picasa nyomatméreteit
+
+- **Eredeti:** `ytPrintSizes` 17 azonosítója; méretleképező `0x00776e20`, panel építője `0x00743700`. Az `eCDSize` táblázata a `0x00776f0a` ágon, `[objektum+0xa0]`-nél van.
+- **Nálunk:** `PrintDialog.qml:453-461,652-676` a területi 7/8 tételes készletet és `CONTACT`-ot mutatja, a többi ismert eredeti méretet nem.
+- **Teendő:** az eredeti méretazonosítókat és azok sorrendjét tegye választhatóvá; az `eCDSize` maradjon letiltva, amíg a pontos méretérték és initializer nincs kiolvasva.
+- **Kész, ha:** minden fizikai méret az eredeti `0x00776e20` értékeiből számolt méretet használ; Full Page a nyomtatható területhez igazodik; CD-borító mérete becslés nélkül, az `[objektum+0xa0]` pontos értékéből jön; az indexkép és az Útlevél külön útja nem keveredik össze a fizikai nyomatméretekkel.
+
+#### Hozzuk vissza a Normál/Optimalizált módot a nyomtatási párbeszédbe
+
+- **Eredeti:** módállapot `0x00745f80`, író `0x00746060`; Normál alapérték `2/0` (`0x0074609a`, `0x007460b8`), a módírás `2/0` (`0x007460c5`, `0x007460de`), Optimalizált `1/1` (`0x007460fa`, `0x0074610b`).
+- **Nálunk:** a párbeszéd nem tartalmaz ilyen kapcsolót; a Beállítások lap külön `PrinterQuality=2/3` választót ad, `PrinterUseTiles` megfelelő nélkül (`OptionsTabPrinting.qml:171-203`, `print_controller.py:296-328`).
+- **Teendő:** az eredeti per-job módválasztót és nyers állapotpárt a nyomtatási párbeszédben jelenítsük meg; a jelenlegi Beállítások-rádióval való kapcsolatot ne tekintsük kimeneti egyezésnek mérés nélkül.
+- **Kész, ha:** a két állapot az eredeti nyers értékpárral tartósan tárolódik és visszaolvasható; a párbeszéd állapota a nyomtatási előnézettel együtt frissül; azonos tesztképen készült eredeti/PicasaPy kimenet összevetése megmondja, mi felel meg ténylegesen az optimalizált nyomatnak.
+
+### Nyitott
+
+- **NINCS MEG:** `eCDSize` pontos fizikai mérete; kiolvasási út: `0x00776f0a` `[objektum+0xa0]` példánytábla, initializer és hívó.
+- **NINCS MEG:** a teljes panel pixelszintű elrendezésének egyezése; út: eredeti Windows futás képernyőképe és a `printpanel.tre`/PicasaPy QML ugyanazon állapotú geometriájának összevetése.
+- **NINCS MEG:** a nyomtatás célképe viewer/slideshow állapotban; út: `0x00743700` hívói és a kiválasztott/listázott képek előállítási útjának diszasszembly-összevetése.
+- **NINCS MEG:** a kiválasztott nyomtató Setup gombjának pontos UI- és mentési egyezése; út: az eredeti `0x00861750` DocumentProperties-út és a PicasaPy `openPrinterSetup()` ugyanazon Windows-nyomtatón való egymás melletti futtatása, a `paperInfo()` értékének utólagos összevetésével.
+- **NINCS MEG:** az eredeti 0,2 térköz-küszöb viszonyítási alapja (`0x00cf4748`, `0x00c7e4b0`); út: a `0x00778640` konstans-xrefek operandusláncának további diszasszembly-olvasása, és csak ha az nem dönti el, célzott dekompilálás.
+- **NINCS MEG:** a GDI és QPrinter kimenet pontos raszteregyezése; út: ugyanazon mérőképek, méret, papír, felbontás, Crop to Fit és példányszám mellett PDF-kimenetek raszter-összevetése.
+- **NINCS MEG:** a `printoptions` „Mégse” gomb ténylegesen visszaállítja-e a tartós értékeket az eredeti programban. A bináris a `0x0085f7a0` betöltőt hívja (`0x0085e8a1`-`0x0085e8e5`), de a vezérlők korábbi azonnali írása miatt a nettó hatás **NINCS MEG**. Út: eredeti Windows futásban állíts egy beállítást, kattints a Mégse gombra, majd olvasd vissza a Preferences értékét.
