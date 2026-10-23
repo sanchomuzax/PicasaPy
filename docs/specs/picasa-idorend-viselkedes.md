@@ -1907,7 +1907,7 @@ Jelentés: egy lépés a következő index kiválasztása, majd az új képkocka
 - **Kimenet.** `[this+0x514]` = i*. `[this+0x510]` = a rekord `+0` mezője, ha i* < `[this+0x3ac] >> 1` (rekordlista `[this+0x3a8]`, rekordméret 0xf8), egyébként 0.
 - **A gomb helye.** `[this+0x728]` = trunc(x_c - (floor(SW/2) + 3)), ahol x_c a befogott x, SW = `[this+0x718]` a gomb szélessége. `[this+0x72c]` (felső szél) változatlan marad. A csonkolást a `0x00c29990` végzi (lent).
 - **Dátum vagy képindex?** A leképezés sorszámot ad (i*): a csúszka helyéhez a normált A[i]/A[n-1] sor legközelebbi tagját rendeli. Hogy A dátumsor-e (és így a csúszka dátumot ad), **NINCS MEG**, mert `[this+0x388]` írója nincs nyomon követve. Ghidra-kör kell: `[this+0x388]` és `[this+0x38c]` írói, teljes pásztázással (`paszta.py`). [blokkolt]
-- **A `0x00c29990` (28 bájt).** Ha `[0xda1428]` nem nulla: `cvttsd2si` (csonkolás). Ha nulla: x87 ág (`fistp` és javítás), amely csak akkor csonkol, ha az FPU kerekítési módja csonkoló. A fájlban a jelző értéke 0, írója NINCS MEG. [blokkolt, csak a csonkolás részleteihez]
+- **A `0x00c29990` (28 bájtos gyors-diszpécser; helyesbítve a 38.2.78 QEMU-mérésével).** Ha `[0xda1428] != 0`, a gyors ág közvetlenül a `cvttsd2si` (`0x00c299a5`) utasítást használja, amely nullához csonkol; egyébként a `0x00c299c6` x87 ág fut (`functions`-index: 117 bájt): `fistp`-pel kezdeti egész részt képez, majd a `0x00c299e9`-`0x00c29a23` előjel-/törtrész-korrekciós utasításokkal javítja az eredményt. A korábbi állítás, hogy ez az ág csak csonkoló FPU-kerekítési mód mellett csonkol, **HIBÁS VOLT**: QEMU-ban a gyors- és x87 ág is nullához csonkolt a 38.2.78 kontrollértékein, mind a négy tesztelt control word mellett. A PE-adatban `[0xda1428]=0`; az írója és a futó qshow értéke **NINCS MEG**.
 
 **4. `0x007fbab0` (kártya-görbe) és `0x007fd8c0` (a 0,666-hoz legközelebbi kártya)**
 
@@ -2556,6 +2556,8 @@ Nem olvas kártya-indexet. A 0xf8 bájtos rekordokat (`+0x2ec`) nem éri el, és
 
 *A `+0x700` írása: RÉSZBEN.* A `0x00c29990` (asm `0x00c29990`-`0x00c299aa`): ha `[0xda1428]` nem nulla, az FPU veremtetejének (`st0`) csonkolt egész értéke (`cvttsd2si`, `0x00c299a5`). A másik ág (`0x00c299c6`) célja, és az `st0` forrása a hívóban: NINCS MEG.
 
+**HELYESBÍTÉS (38.2.78).** A korábbi `0x00c299c6`-kérdés az eredeti gépi kód olvasatával lezárult: a `0x007ffc90` az `st0`-ba a 38.2.78-ban rögzített x-képletet teszi, a lassú konverter pedig `0x00c299c6`-nál kezdődik. A korábbi állítás, hogy az x87 ág csak csonkoló FPU-kerekítési módnál ad csonkolt eredményt, hibás volt. A `fistp` kontrollértékei a FPU control worddal változtak, a `0x00c29990` eredeti QEMU-futtatása viszont mind a gyors, mind az x87 ágon és mind a négy vizsgált control worddal nullához csonkolt a 38.2.78 bemenetein. A valós qshow `[0xda1428]` értéke/írója továbbra is **NINCS MEG**.
+
 *Az `A` tartalma (dátum vagy sorszám): NINCS MEG.* Az Időrend-tartományban nincs írója (38.2.25). A 38.2.23 szerint a `0x007fdd00` a csúszka-tört `t`-hez a legközelebbi `A[i]/A[n-1]` tagot keresi. Ez sorszámot ad. Hogy `A` dátumsor-e: nincs igazolva.
 
 **Mérleg (38.2.28).** Nyitott kérdések: 9 nyílt (8 blokkolt, 1 nem blokkoló) · 13 lezárva · 0 hatókörön kívül · 0 csak nyitva.
@@ -2580,7 +2582,7 @@ Nem olvas kártya-indexet. A 0xf8 bájtos rekordokat (`+0x2ec`) nem éri el, és
 - `Ghidra-kör kell: 0x00800a30 - a this+0x430 QPC-kezdőértékének írói, és a 0x00800d17 [esp+0x14] ága (a 1,0-nál nem kisebb eset). [blokkoló a bemenet-kérdésnél]`
 - `Ghidra-kör kell: 0x009ab690, 0x007fd180, 0x007fee70 és 0x007fe540 - a nyers bemenet szerepe ezekben: kártya-index, csúszka vagy más. [blokkoló a kártya-index kérdésnél]`
 - `Ghidra-kör kell: az OneUp +0x388 (A) írói - dátum vagy sorszám (38.2.25 és 38.2.27 szerint az Időrend-tartományban nincs író). [blokkoló a dátumkérdésnél]`
-- `Ghidra-kör kell: 0x00c299c6 - a 0x00c29990 másik ága, és az st0 forrása a 0x007ffc90 hívásakor. [nem blokkoló]`
+- A korábbi `0x00c299c6` Ghidra-kérés lezárva a 38.2.78-ban: az eredeti asm megadja az x87 ág törzsét, a `0x007ffc90` hívás x87-bemenetét pedig a mezőképlet rögzíti; a kontrollált QEMU-mérés mindkét konverziós ágat ellenőrizte. Új Ghidra-kör nem szükséges ehhez a kérdéshez.
 
 #### 38.2.29 Az Időrend bináris feltárása, 12. kör: az `L` tartalma, a csillag-jelző sprite és a QDrawable-hívási lánc (#5401, 2026-10-21)
 
