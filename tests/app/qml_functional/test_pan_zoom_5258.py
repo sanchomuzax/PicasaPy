@@ -107,6 +107,16 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     assert varj_feltetelre(
         qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
     ), "a kattintás nem mutatta meg a vetítő vezérlősávját"
+    # #5653: a sáv beúszása és a Timeline-gomb rejtése után a választó helye
+    # elmozdulhat; a kattintás helyét a teljesen megjelent sávon számoljuk
+    assert varj_feltetelre(
+        qt_app,
+        lambda: controls.property("opacity") >= 0.99 and combo.isVisible(),
+        masodperc=10.0,
+    ), "a vezérlősáv és az átmenet-választó nem jelent meg teljesen"
+    combo_pont = _kozep(combo)
+    QTest.mouseMove(window, QPoint(round(combo_pont.x()), round(combo_pont.y())))
+    qt_app.processEvents()
     QTest.mouseClick(
         window,
         Qt.MouseButton.LeftButton,
