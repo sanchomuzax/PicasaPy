@@ -3390,9 +3390,9 @@ A `render` útja (2.6/c) a **`0x006204ec`**-nél megnézi a
 
 | érték | jelentés | mi történik |
 |:--:|---|---|
-| **0** (Igen) | alkalmazd | átvált a `makemoviepanel/tab3`-ra és elsüti a `recompute` parancsot — **a film nem készül el most** |
-| **2** (Mégse) | ne csinálj semmit | a művelet elmarad |
-| egyéb (Nem, vagy a kapu ki van kapcsolva) | menj tovább | a függő módosítások **eldobódnak**, a film a legutóbb alkalmazott állapotból készül |
+| **0** (a konkrét gombcímke-eredménykód leképezés **NINCS MEG**) | `recompute` | átvált a `makemoviepanel/tab3`-ra és elsüti a `recompute` parancsot: **a film nem készül el most** |
+| **2** (a konkrét gombcímke-eredménykód leképezés **NINCS MEG**) | kilépés | a művelet elmarad |
+| egyéb (a konkrét gombcímke-eredménykód leképezés **NINCS MEG**, vagy a kapu kihagyása) | menj tovább | a render/export folytatódik |
 
 ⛔ **A „Ne kérdezze meg újra" itt NEM azt jelenti, hogy alkalmaz.** A kapu
 ilyenkor **1**-et ad (`0x0061defe`), ami a fenti tábla harmadik sora:
@@ -5494,6 +5494,123 @@ Ghidra-kör kell: `0x00878820 - a jelölt-vektor rendezése vagy nyesése a rét
 Ghidra-kör kell: 0x004edf60 - a dátum-mező: a rekord melyik mezőjét olvassa (EXIF `DateTimeOriginal` vagy fájlidő), és ki tölti a `[this+0x3f0]` táblát [nem blokkoló: a mai kód EXIF-et használ]
 
 Ghidra-kör kell: 0x006176fe - a `0x006175c0` `[esp+0x14]` (a `0x0081b800` 4. argumentuma, a küszöb) számítása, és az `s²·X` eredmény (2. argumentum) szerepe [nem blokkoló: a fejlesztői lista a küszöböt a felhasználói értékből veszi]
+
+### 2.5/d Az Arcfilm teljes útja: eredeti ↔ PicasaPy (#5657, 2026-10-23)
+
+**Címhelyesbítés.** A jegyben megadott `0x00c9cf28` és `0x00c9cf68` nem
+kód-belépési pontok, hanem az eredeti bináris karakterláncai:
+`CMakeFaceMoviePanel::askapplyswitchconfirm`, illetve
+`CMakeFaceMoviePanelRememberDialog`. A hívható segéd a **`0x0061dcf0`**;
+a render-parancsot fogadó panelkezelő a **`0x0061df10`**. A következő
+összevetés a menütől a kimenetig követi a bizonyítható részeket; a
+`NINCS MEG` soroknál a megszerzés útját is megadja.
+
+| Útlépés | Eredeti (bináris cím) | Nálunk (mai forrás) | Teendő |
+|---|---|---|---|
+| Menü és belépés | Két parancs: `ID_FACES` és `ID_FACESRANDOM`; a `0x0057cb60` diszpécser a `+0x4f0` / `+0x4f1` módjelzőt állítja (`0x0057cc69`, `0x0057cc7a`). A menü szövegei: `0x00c8d93c`, `0x00c8d908`. | `PicasaMenuBar.qml:2300-2324` ugyanezt a két tételt adja; `Main.qml:2247-2248` a kijelölt arcok, illetve az Emberek-albumok útjára kapcsol. | **EGYEZIK** a két menüpont és a két mód szintjén. |
+| Emberek-albumok forráslistája | A `0x008226e0` az albumazonosítókat járja végig, az üres alsó képlistát kihagyja, és nem rendez át (`2.5`, `0x00822715`, `0x0082274f-0x00822775`, `0x008229f0-0x008229fb`). | `Main.qml:1031-1035`, `people_controller.py:144-155`, `index/people.py:210-256`: minden nem üres személyalbum képei, a személylista sorrendjében; a képeket az index `folder_path, name` szerint rendezi. | Az albumlista szűrése egyezik. Az eredeti alsó lista képsorrendjének és a mi mappanév szerinti sorrendünknek az azonossága **NINCS MEG**; ehhez ugyanazon képkészlet eredeti panel-kivonata és a két képlista soronkénti összevetése kell. |
+| Kijelölt képek arcadata | A panel arc-módja megvan (`0x0057cb60`, `0x00616b42-0x00616b5f`), a timeline az átadott régióazonosítót használja (`0x00813c50`), de a `this+0x48` rekordlista és az azonosító eredete nem bizonyított (`2.5/c`, `0x00812470`). | `CreateDialogs.qml:41-47, 786-805`, `movie/slideshow.py:565-589, 752-778`: a kijelölt képek `.picasa.ini` `faces=` téglalapjai közül minden nem figyelmen kívül hagyott, használható arc külön képkockát ad. | Az adatút azonossága **NINCS MEG**. A már meglévő Ghidra-kérdés: `0x00812470`: mi tölti a timeline 0xf8 bájtos rekordjait, ki írja a `+0x8` régióazonosítót, és kötődik-e `faces=`-hez vagy több-arcos kiválasztáshoz; az elkészült `2026-10-17-idorend-film-sav.txt` csak a rekord mintavételezését/másolását mutatja. Ne kérjük ugyanazt újra. |
+| Filmkészítő felület | A `0x00618050` építi a közös MakeMoviePanelt. Az Arcfilm harmadik fülének kulcsa `CMakeMoviePanel::face_movie_tab3_label` (`0x00c9c5f8`, xref `0x006173c0`); a stringres EN értéke „Options” (a `2.6` vezérlőleltár), a kliptálca külön vezérlői a 2.5/c-ben vannak. | `Main.qml:363-371, 474-481` dokumentumlapot nyit; `CreateDialogs.qml:1130-1148` a fülek `Movie`, `Slide`, `Clips`. Az opciók a `Movie` fülre, a hossz-/burst-szűrő és a kliptálca a `Clips` fülre került (`CreateDialogs.qml:1158-1414, 1669-1760`). | **ELTÉR** az opciók fülszintű csoportosítása. A viselkedési eltérést lásd a render-kapuban; az elrendezés termékdöntés, alább külön jegyvázlat. |
+| Beállítások és igazolt alapértékek | Felbontáslista: hét érték `0x00c7db50`; Arcfilm-kulcs `facemakemovieres`, alapindex 3 (`0x00616b42-0x00616b5f`), amely 1024×768. A `showcaptions` és `cropfit` olvasó alapja 0 (`0x00616961-0x0061699a`); `showdates`, `removelowresfaces`, illetve a többi modelljelző nullázása `0x006169f0-0x00616a26`; az új film `ordering=0` és a „Best Transitions” kijelölése `0x00616a18`, `0x0061881a`; a burst-alap 0 (`0x00616a26`). A `facemakemovieres` teljes `.text`-beli hivatkozás-ellenőrzése csak olvasót talált; kontrollként a normál `makemovieres` írója is előkerült (`0x00619431-0x00619469`, 2.8/b). | `CreateDialogs.qml:480-505, 1278-1320, 1336-1414, 1690-1717`: ugyanaz a hét felbontás, Arcfilm alapindex 3, kapcsolók hamisak, Smart/Best Transitions kijelölve, burst-csúszka 0, hosszcsúszka 1, diaidőcsúszka 30 (= 3,0 s), átfedés 0,5 s; `create_controller.py:100-105, 222-242` ugyanilyen Arcfilm-felbontási alapot ad, és nem írja vissza a kiválasztott Arcfilm-felbontást. | **EGYEZIK** a bizonyított felbontás-, kapcsoló-, rendezés- és burst-alapértékekben. Az eredeti hosszcsúszka-induló `t`, diaidő és átfedés-induló érték **NINCS MEG**. Megszerzés: `0x00613b50` panelépítő és `0x0061adf0`/`0x0061ae80` frissítő célzott követése; a tényleges widget-induló értéket friss Picasa-profillal végzett pontos UI-méréssel kell igazolni. A mérőarchívum fájllistájában Arcfilm/film/MXF fixture nincs. |
+| Újraszámolás megerősítése | `0x0061df10`: a `recompute` parancs alapból megnyitja az `askapplyconfirm` dialógust; a szöveg a szöveges diák törlésére figyelmeztet (`0x0061e078`, `0x00c9d0b8`), a „Do not ask again” csak az Igen ággal tárolódik (`0x0061e0f7-0x0061e12c`). | `CreateDialogs.qml:999-1021, 2288-2293` ugyanezt a kulcsot és kérdésszöveget használja; csak akkor kérdez, ha vannak szöveges diák. A `ConfirmDialog.qml:59-79` a bejelölést csak az Igen (`onAccepted`) ágon jegyzi meg. | **RÉSZBEN EGYEZIK**: a romboló eset megerősítést kap, és az „emlékezz” Igenhez kötött; nálunk üres szövegdia-listánál nincs kérdés. A feltétel eltérése igazolt; lásd a harmadik jegyvázlatot. |
+| Render előtti `askapplyswitchconfirm`-kapu | A `0x0061df10` render-ágában a `0x006204ec` ellenőrzi a `+0x4f0/+0x4f1` jelzőket, majd `vt[0xb0]`-n hívja a `0x0061dcf0`-et (`0x00620502-0x0062050c`). A segéd alapból 0-ra inicializálja a `Preferences\CMakeFaceMoviePanel::askapplyswitchconfirm` kulcsot, és a kapu feltételeinek teljesülésekor Opciók-üzenetet jelenít meg (`0x0061dd5a-0x0061de9d`; erőforráscímek `0x00c9cf28`, `0x00c9cf68`, szöveg `0x00c9cfd0`). A caller eredményága: 0 → `recompute`; 2 → megszakítás; egyéb → render/export folytatása (`0x00620510-0x006205a5`). A dialógus Cancel/No/Yes gombjainak konkrét eredménykód-leképezése **NINCS MEG**. A pipa bármely dialógusválasz után beállítja a kulcsot 1-re, ha be volt jelölve (`0x0061dea9-0x0061dedf`); a későbbi elnyomott kapu 1-et ad, tehát folytatja a renderelést, nem alkalmaz. A jelzők „függő beállítás” jelentése a 2.5/c végén feltételes: a dialógus szövege ezt mondja, de a `+0x4f0` a panelépítés egy másik ágában is állhat. | A `CreateDialogs.qml:1059-1087` a létrehozáskor a pillanatnyi vezérlőértékeket adja át az `exportMovie`-nak; `create_controller.py:690-739, 912-983` ezekből közvetlenül épít `MovieSettings`-et. A `src/picasapy` alatt nincs `askapplyswitchconfirm` vagy függő/alap-állapotot tároló megfelelő. A meglévő `askapplyconfirm` kizárólag a szöveges diák miatti újraszámolást védi. | **ELTÉR: igazolt termékteendő-jelölt.** PicasaPy-ban a változtatás azonnal érvényesül filmkészítéskor; az eredeti render-ág kódjai szerint a 0 újraszámol és nem exportál, a 2 megszakít, más eredmény exportál. A kódok és a Cancel/No/Yes címkék leképezése még nyitott. Lásd az első jegyvázlatot. |
+| Fájl-kimenet | A panel a Picasa/Movies (honosítva) mappába, alapértelmezett névvel és `.wmv` kiterjesztéssel ment; ha kell, a My Videos tartalékot használja (`0x0061cf20`, `0x00620af9-0x00620b1d`, `0x00620ab1`, `.wmv`: `0x00620b84`). | `app/movie_output.py` ugyanazt a mappát, nevet, ütközés-sorszámozást és tartalékot követi; a film `.mp4`, mellette `.mxf` projekt készül (`create_controller.py:954-1016`). | Mappa/név/automatikus út **EGYEZIK**. A `.wmv`→`.mp4` eltérés igazolt, de a kódban kimondottan szándékos (#1977: a Windows Media SDK csak Windowson érhető el); a kutatás nem javasol „visszajavítást” és nem nyit duplikált fejlesztési jegyet. |
+
+**Bizonyítottsági fok.** A render előtti kapu eltérése **megerősített**: az A út az eredeti két függvény utasításszintű vezérlésfolyama és visszatérési ágai; a B út a PicasaPy QML→controller→`MovieSettings` adatfolyama, valamint a helyi forrásszöveg teljes `rg` keresése. A felbontáslista/alapértékek is **megerősítettek** (bináris értékek + független mai QML/controller értékek). A menu-szintű Emberek-album-szűrés **megerősített**; a képen belüli rekord-sorrend és arcazonosító adatút **nyitott**. A fülszervezés és a kimeneti formátum eltérése a két forrásréteg közvetlen összeolvasásával igazolt.
+
+**A két független út.**
+
+- **A: eredeti bináris:** célzott diszasszemblálás: a `0x0061df10` `render` ága `0x006204ec`-től meghívja a vtable `+0xb0` slotot; a `0x0061dcf0` mutatja meg a `askapplyswitchconfirm` beolvasását, a párbeszédet, a pipa-írást és a visszatérést. A hívó `0`/`2`/egyéb ágain külön ellenőriztem a recompute/cancel/export eredményt.
+- **B: független visszakötés és mai megvalósítás:** az önálló bináris-ellenőrzés az eredeti EXE SHA-256-át egyezőnek találta az indexelt 3.9.141.259 fájllal, majd a MakeMoviePanel vtable `+0xb0` slotját kötötte vissza a `0x0061dcf0` helperhez; ez külön út a `0x0061df10` közvetlen diszasszemblálásától. A mai QML `Create Movie` gombja `startMovieExport`-ot hív, az aktuális mezők a controllerben közvetlenül `MovieSettings`-sé válnak. A külön `recomputeMovie` út csak a szöveges diák védelmi kérdése; a teljes runtime Python/QML kódban az eredeti beállításkulcs nincs. A két bináris út egyezik a kapu meglétében, a mai forrásút pedig igazolja, hogy ilyen render előtti kapu nálunk nincs.
+
+**Cáfoló kísérlet (15.2).** Azt próbáltam megcáfolni, hogy a PicasaPy futásidejű kódjából hiányzik a kapu: a pontos `askapplyswitchconfirm` kulcsot az `app/` Python/QML-részben kerestem, az `i18n/` TS erőforrásfájlokat külön kezelve, majd végigkövettem a Create Movie → `startMovieExport` → controller útvonalat. A preference-kulcs és a Remember-dialog futásidejű használata nem található; a dialog neve viszont fordítási metaadatként szerepel az i18n-fájlokban, ami önmagában nem bizonyít bekötött párbeszédet. A létrehozási út kapu vagy alkalmazott/piszkozat-állapot-ellenőrzés nélkül a jelenlegi vezérlőértékeket exportálja. Ellenpróbaként a meglévő `askapplyconfirm` megtalálható, de csak a `recomputeMovie` hívja, szöveges diák esetén. Ez a kódhely nem cáfolja a render előtti kapu hiányát; a közvetlen adatút és a bináris render-ág összevetése mellett a következtetés **megerősített**.
+
+**Javasolt jegytörzs-bővítés.**
+
+1. **Az Arcfilm render előtti alkalmazási kapujának pótlása**
+
+   **Javasolt cím:** Arcfilm: kezelje a render előtt a nem alkalmazott Opciókat.
+
+   **Eredeti:** `CMakeFaceMoviePanel::askapplyswitchconfirm`,
+   `0x0061dcf0`; alapbeállítás 0. A párbeszéd Cancel/No/Yes gombokat mutat;
+   a render hívója 0 eredménynél újraszámol és nem exportál, 2-nél megszakít,
+   más eredménynél folytatja a render/export ágat. A gombcímkék és az
+   eredménykódok megfeleltetése **NINCS MEG**.
+
+   **Nálunk:** a Create Movie út a pillanatnyi értékeket közvetlenül
+   exportálja; nincs Arcfilm függő/alkalmazott állapot és nincs külön
+   `askapplyswitchconfirm`.
+
+   **Teendő:** ha termékdöntés az eredeti viselkedés követése, válaszd szét
+   az Opciók szerkesztett és utoljára alkalmazott állapotát, és a Create
+   Movie előtt implementáld a három döntési ágat és a külön megjegyzett
+   `askapplyswitchconfirm` kulcsot. A Cancel/No/Yes eredménykód-leképezését
+   implementáció előtt a `0x009bab50` párbeszéd-eredményútján vagy pontos
+   UI-méréssel kell igazolni; ne rendelj hozzá becsült kódot. Az eredeti
+   pipa-viselkedést ne keverd a `recomputeMovie` `askapplyconfirm` kulcsával.
+
+   **Kész, ha:**
+   - az eredeti gombcímke-kód leképezés binárisan vagy pontos UI-méréssel
+     igazolt, és a 0/2/egyéb ág a megfelelő felhasználói választ követi;
+   - újraszámolásra váltáskor az aktuális kattintás nem készít filmet;
+   - a folytatás az utoljára alkalmazott Opciókat használja;
+   - megszakításkor nem ír kimenetet;
+   - a pipa beállítja a `askapplyswitchconfirm` értékét bármelyik válasz
+     mellett, az elnyomott későbbi kapu pedig az eredeti szerint folytatja
+     a renderelést;
+   - nem függő Opcióknál a render kérdés nélkül indul, a `recompute`
+     `askapplyconfirm` útja pedig külön marad.
+
+2. **Az Opciók fül összevetése a Movie Maker lapjával**
+
+   **Javasolt cím:** Filmkészítő: adjon külön Opciók fület az Arcfilmhez.
+
+   **Eredeti:** a beállítások az `Options` fülön, a klipek kezelése a
+   külön kliptálcán van (`0x00618050`, 2.5/c).
+
+   **Nálunk:** a beállítások a `Movie` fülön, a hossz-, burst- és kliptálca
+   vezérlők a `Clips` fülön vannak.
+
+   **Teendő:** termékdöntés után vagy állítsd vissza a külön `Options`
+   fület, vagy jelöld a mostani fülszervezést elfogadott felületi eltérésnek.
+
+   **Kész, ha:** a döntés dokumentált; visszaállítás esetén az összes eredeti
+   Opció-vezérlő egy külön `Options` fülön jelenik meg, az értékek/defaultok
+   változatlanok, és a filmcsík/előnézet/készítés tovább működik.
+
+3. **Az újraszámolási kérdés feltételének rögzítése**
+
+   **Javasolt cím:** Filmkészítő: rögzítse az üres szövegdia-lista újraszámolási viselkedését.
+
+   **Eredeti:** az `askapplyconfirm` alapból minden `recompute` parancs előtt
+   kérdez (`0x0061df10`, `0x0061dfa9-0x0061e0f7`), ha a kulcs nincs
+   elnyomva.
+
+   **Nálunk:** csak akkor kérdez, ha van szöveges dia; egyébként rögtön
+   újraszámol (`CreateDialogs.qml:999-1008`).
+
+   **Teendő:** dokumentáld a feltételes megerősítést elfogadott eltérésként,
+   vagy termékdöntés után állítsd vissza az eredeti, minden kézi `recompute`
+   előtti kérdést.
+
+   **Kész, ha:** a viselkedésről szóló termékdöntés rögzítve van; visszaállítás
+   esetén a kérdés diák nélkül is megjelenik, a „ne kérdezze meg újra” csak
+   Igen után tárolódik, és a szöveges diák törlése kizárólag Igenre történik.
+
+**Nyitott.**
+
+- Ghidra-kör kell: 0x009bab50: a 0x009ba4d0-vel felépített Cancel/No/Yes párbeszéd melyik gombhoz milyen eredménykódot ad; a meglévő 0x0061df10-dekompilátum csak a 0/2/egyéb hívóágakat mutatja [blokkoló].
+- Az eredeti képlista sorrendje az Emberek-albumon belül: NINCS MEG; a
+  `0x008226e0` megőrzi a kapott sorrendet, de az alsó vtable-lista rendezése
+  nincs megnevezve. Picasa futásból származó forrás-/kimeneti listával kell
+  összevetni a mai `ORDER BY folder_path, name` sorrendet.
+- Az eredeti Arcfilm téglalap-azonosító és a `faces=` forrás kapcsolata:
+  meglévő, még meg nem válaszolt kérdés a `0x00812470`-hez (lásd 2.5/c és
+  `referencia/ghidra/2026-10-17-idorend-film-sav.txt`); az ismert kimenet a
+  timeline-rekord mintavételezését mutatja, az upstream rekordírót nem.
+- A hosszcsúszka alapállása, diaidő, átmenet- és átfedés-alapérték az
+  eredeti Arcfilmben: NINCS MEG; a megszerzési út a táblázatban. Ezek nélkül
+  ezen értékek egyezéséről vagy eltéréséről nem állítok semmit.
 
 ### 2.6 A MakeMoviePanel (a „Film készítése” felület) teljes beállítás-leltára
 
