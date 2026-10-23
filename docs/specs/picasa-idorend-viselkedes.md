@@ -4358,7 +4358,7 @@ Hogy a lista mely képeket jelenti (album, mappa, dátumtartomány vagy az egés
 
 **§1.3 Név-javítás (JAVÍTVA).** A 38.2.42 U3 sorában, a 38.2.43 §1.4-ben és §6 U22-ben a `0x00c81fa4` vtáblát `IThumbDB`-nek írtam, az `album-sorrend.md` 2.1 szakasza nyomán. Ez téves:
 - Az `IThumbDB::vftable` címe `0x00c82544`. Ennek +0x2c slotja `0x00c07709`, nem `0x004406f0`.
-- A `0x00c81fa4` a `CThumbDB` vtáblája (RTTI). Az `album-sorrend.md` 2.1 szakaszát ebben a körben nem módosítottam, de a névhibát ott is javítani kell.
+- A `0x00c81fa4` a `CThumbDB` vtáblája (RTTI). Az `album-sorrend.md` 2.1 és 2.4 szakaszának régi `IThumbDB` címkéjét a 38.2.74 javította.
 
 **§1.4 Az [L+0x48] osztálya (NINCS MEG).**
 - A `0x00c81fa4` címet két kódhely írja a `[reg+0x48]` mezőbe: `0x00415804` (a `0x00415790` függvényben) és `0x0041777f` (a `0x00417770` függvényben).
