@@ -42,7 +42,7 @@ a könyvtár-nézetben **0 = „rendezés nélkül, a lista sorrendjében"**.
 | lépés | cím | mit mutat |
 |---|---|---|
 | az album-rekord osztálya | `CSlice`, vtábla `0x00c81e94`, ktor `0x004133e0` | RTTI |
-| a rekord kitöltése | `IThumbDB` vtábla (`0x00c81fa4`) `+0x2c` rése = **`0x004406f0`** | kiolvassa az album `token`-jét (`[db+0xaf0]`, a regisztráló `0x004158d5`–`0x004158f4` szerint a `token` oszlop), majd `0x004408ef` → `0x004dca40(token, slice)` |
+| a rekord kitöltése | a `CThumbDB` másodlagos vtáblájának (`0x00c81fa4`) `+0x2c` rése = **`0x004406f0`** | kiolvassa az album `token`-jét (`[db+0xaf0]`, a regisztráló `0x004158d5`-`0x004158f4` szerint a `token` oszlop), majd `0x004408ef` → `0x004dca40(token, slice)` |
 | a keresés | **`0x004dca40`** | a `CIndexer` (`db+0x68`, ktor `0x004d8560`; `.\thumblab\CIndexer.cpp`) hash-táblájában (`[+0x60]`, `[+0x58]` vödörszám) `_stricmp`-pel (`0x004dcacf`) keresi a szót; találatnál **`slice+0x60` = a szó, `slice+0x64` = a szó listája** (`0x004dcb11`–`0x004dcb17`), `slice+0x5c` = az index |
 | az index perzisztens | a regisztráló `0x004166c9`: `m_index` = `db+0x68`, a felülete `db+0xb0` (= `+0x48`), ugyanúgy, mint az `m_albumData`-é (`0x00416b45`, `db+0x988`/`+0x9d0`) | a perzisztált táblák közé tartozik |
 | az író | `0x004db4f0` (a felület vtáblája `0x00c85fc4`, 1. rés) | csak ha a piszkos-jelző áll (`[felület+8]`, lekérdező `0x00a4a080`); `wordhash.dat`-ot nyit, a hash-táblát `0x00704500`-zal írja ki, utána nulláz (`0x004db6b0`) |
@@ -123,7 +123,7 @@ igazolják.
 **Az alkalmazó: `0x005e5ce0`.**
 
 1. Az aktuális nézet album-sorindexe `[[ui+0xeac]+0x3c0]`; a `CSlice`-t
-   `0x004133e0` építi, `0x004b0190` tölti (`IThumbDB+0x2c`, ld. 2.1).
+   `0x004133e0` építi, `0x004b0190` tölti (`CThumbDB` másodlagos vtable `+0x2c`, ld. 2.1).
 2. **Zárja a `CSlice`-t** (`0x005e5d53`–`0x005e5d72`, `+0x18`) — az
    ellenőrzőösszeg elmentődik.
 3. Mód 12 → `0x00878720`: a lista **helyben megfordítva**.
