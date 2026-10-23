@@ -72,9 +72,12 @@ class TestAMenutetel:
 
 class TestABillentyu:
     def test_a_Ctrl5_aktiv(self):
-        assert "enabled: !window.viewerOpen && !slideshow.visible" in blokk_horgonyra(
-            _MAIN, 'sequence: "Ctrl+5"'
-        )
+        blokk = blokk_horgonyra(_MAIN, 'sequence: "Ctrl+5"')
+        # aktív, de a néző, a vetítés és a szövegmező-fókusz alatt nem sül el
+        assert "enabled: false" not in blokk
+        for feltetel in ("!window.viewerOpen", "!slideshow.visible",
+                         "!window._szovegmezoneVanFokusz"):
+            assert feltetel in blokk
 
 
 class TestAKirajzoltFelulet:
