@@ -126,8 +126,19 @@ Picasáról készült képernyőkép is megerősíti
 
 Ha nincs főablak-fogantyú, a rögzítő a `DAT_00d695b8` függvénymutatót hívja
 `open` művelettel és a kimeneti fájl útvonalával (`0x005913cf`-`0x005913f0`).
-A függvénymutató pontos célja ezen a leleten nincs feloldva; a hívás nem ad
-bizonyítékot arra, hogy a buborék a mappára navigál.
+A `0x00c80fc0` cím ASCII tartalma `open`. A mutatót inicializáló helyi
+diszasszemblálás két ágat mutat: a `0x00c33b6a` utasítás a
+`0x009b2890`-et írja be; a `0x00c33b7a` az `0x00c405e0` címen tárolt
+függvénymutatót. Az utóbbi nyers PE-értéke `0x009239a8`, amelyet az
+importjegyzék `ShellExecuteA`-ként azonosít. A `0x009b2890` függvény a
+`0x00c40630` címen levő mutatón át hív; annak PE-értéke `0x00923998`, az
+importjegyzék szerint `ShellExecuteW`. Így mindkét feloldott ág a fájl
+`ShellExecute`-tel, `open` művelettel történő megnyitását kéri. A
+`0x00c33b68` a `0x00d6fc58` értékét `0x80000000`-hez hasonlítja: ha kisebb,
+a `ShellExecuteW`-t tartalmazó `0x009b2890`-et állítja be; ha legalább
+ekkora, az `0x00c405e0`-n át a `ShellExecuteA`-t. A globális érték
+platformonkénti jelentése nincs feloldva. Ez a fájlt adja át a shellnek;
+nem bizonyítja, hogy a buborék a mappára navigál.
 
 **Nyitott:** a `0x0057d080` a buborék előtt meghív egy útvonal-kereső
 útvonalat (`0x004f92c0` → `0x004e7d10`); az utóbbi bejárja a gyűjtemény
@@ -137,6 +148,10 @@ indexbe. A `0x0057d080` a `clickview` műveletet is előkészíti, de a kattint�
 viselkedést a `0x0057d1e4`-nél hívott, az objektum vtable-jéből vett
 `+0x68` metódus valósítja meg; ennek célfüggvénye és navigációs célja itt
 **NINCS MEG**.
+
+Az `open` ág `ShellExecuteA`/`ShellExecuteW` feloldását nem szabad a fenti
+buborék-kattintással azonosítani: a két művelet külön útvonal, és a kattintási
+callback dinamikus címzettjének osztálya nincs bizonyítva.
 
 ## 5. Független ellenőrzési utak és cáfoló próba
 
@@ -156,6 +171,11 @@ nem pusztán a hívó által hozzáfűzött kiterjesztés. **Az utak a
 mappabesorolásnál, a BMP-formátumnál és a buboréknál egyeznek.** A képfájl
 azonnali indexelésére nem adnak két egyező bizonyítékot.
 
+A főablak nélküli `open` API-nál az A út az inicializáló utasításokból követi
+a két mutatóágat (`0x00c33b68`-`0x00c33b7a`); a B út külön a nyers PE
+mutatóértékeit (`0x00c405e0`, `0x00c40630`) és az importjegyzék API-neveit
+veti össze. Mindkettő ugyanazt az ANSI/Unicode `ShellExecute`-választást adja.
+
 **Cáfoló próba 1: „a `.bmp` csak kiterjesztés, a tartalom lehet JPEG”:**
 követtem a hívótól a `0x009ad2d0` íróig, majd a fejlécmezőket és a
 képpontírást is ellenőriztem. Az író `BM` fejlécet, 24 bit/pixelt és 0
@@ -170,6 +190,14 @@ követtem a `SetWindowsHookExA` hívóját. A közvetlen hívás-pásztázás cs
 `Scrapture` útja saját maga kérdezi le a billentyűállapotot
 (`0x00591470`). Ez a próba a közvetlen hook-utat nem támasztja alá, de az
 indirekt accelerator-/menü-dispatchot **nem** zárja ki.
+
+**Cáfoló próba 3: „a buborék `+0x68` hívása a `CNotifierPopup` kattintási
+metódusa”:** a `CNotifierPopup::vftable` nyers rekeszét külön ellenőriztem;
+`0x00ca28b4` valóban a `0x00659340` címre mutat. A `0x00659340`
+diszasszemblálása animációs/nézetfrissítő műveletet mutat, nem fájlmegnyitást
+vagy mappára navigálást. Mivel a `0x0057d080` dinamikus hívásának címzettje
+nincs ehhez az osztályhoz kötve, ez a hasonló rekeszeltolás nem azonosítja a
+kattintási callbacket; a kattintási cél továbbra is nyitott.
 
 ## 6. PicasaPy: jelenlegi állapot
 
@@ -198,6 +226,7 @@ képfájl-indexelés és a buborék kattintási célja nyitott.
 | Célmappa létrehozása | bináris (`0x00590f40`, `0x009a3db0`, `0x00d6957c`, `0x00c337aa`) |
 | Projektek-besorolás | bináris (`0x00601090`, `0x00445a30`, `0x00c809e8`, `0x00c7ec64`) |
 | Értesítő buborék; főablak nélkül `open` műveletű indirekt hívás | bináris (`0x00601090`, `0x0057d080`, `0x005913cf`-`0x005913f0`, `0x00c8ab60`, `0x00c90394`); mérés (eredeti Picasa-képernyőkép, 2026-08-20) |
+| Főablak nélküli `open` ág API-választása | bináris (`0x00c33b68`-`0x00c33b7a`, `0x00c405e0` → `0x009239a8` `ShellExecuteA`, `0x009b2890` → `0x00c40630` → `0x00923998` `ShellExecuteW`; `0x00c80fc0` = `open`) |
 | Fájlíró után jön-e `capC` csak siker esetén | bináris (`0x005913ac`-`0x005913c5`): nincs visszatérésiérték-ellenőrzés, ezért az üzenet nem igazolja a sikeres mentést |
 | Kurzor bekerül-e a BMP-be | NINCS MEG; Windows-futásidejű mérés kell |
 | Egyetlen közvetlen hívó a `0x00590f40`-hez; `Scrapture` vtable-kapcsolat | bináris (`paszta.py` teljes `.text` pásztázás; `0x005914f1`, `0x00c91728`, `0x0040ca6f`, `0x00590ef5`) |
@@ -205,12 +234,12 @@ képfájl-indexelés és a buborék kattintási célja nyitott.
 | A képfájl azonnali indexelése | NINCS MEG; a meglévő Ghidra-kimenet a `0x004f92c0` → `0x004e7d10` utat és az `0x004e31a0` indirekt vtable-hívását mutatja, de a konkrét callback hatását nem |
 | A buborék kattintási célja | NINCS MEG; a `0x0057d1e4` vtable `+0x68` hívás célfüggvényét kell azonosítani |
 | Menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; a meglévő `0x0097fc30` dekompilált kimenete a `DAT_00d4a4d4` táblával hívja a `TranslateAcceleratorA`-t, a tábla feltöltési és parancsútja még nincs összekötve a `Scrapture` objektummal |
-| Főablak nélküli `open` hívás pontos API-célja | NINCS MEG; a `DAT_00d695b8` függvénymutató inicializálását/feloldását kell követni |
+| Főablak nélküli ágon a rendszer melyik `ShellExecute` API-t választja | NINCS MEG; a `0x00c33b68` a `0x00d6fc58` alapján választ `ShellExecuteA` (`0x009239a8`) és `ShellExecuteW` (`0x00923998`) között; a globális érték eredetét és platformjelentését kell feloldani |
 
 Ghidra-kör kell: 0x004e31a0: a `0x004f92c0` → `0x004e7d10` keresési út az `param_3 + 0x344 + 0x10` sloton mely konkrét callbacket hívja, és az a friss képfájlt indexbe írja-e vagy csak keres [blokkoló]. A meglévő `0x004e31a0` dekompilált kimenet az indirekt hívást mutatja, a célfüggvényt nem.
 Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás konkrét célfüggvénye és a `clickview` művelet kattintási navigációja [blokkoló]. A meglévő dekompilált kimenet a hívást és a kulcsot mutatja, a célfüggvényt nem.
 Ghidra-kör kell: 0x0097fc30: a `DAT_00d4a4d4` HACCEL-tábla létrehozási/feltöltési útja és parancsazonosítói indíthatják-e a `Scrapture`-t vagy a `0x00590f40`-et [blokkoló]. A meglévő dekompilált kimenet a `TranslateAcceleratorA` hívást mutatja, de a tábla tartalmát és a rögzítőhöz vezető parancsot nem.
-Ghidra-kör kell: 0x00590f40: a főablak nélküli ág `DAT_00d695b8` függvénymutatójának inicializálása és pontos API-célja; a meglévő dekompilált kimenet csak az indirekt hívást mutatja.
+Ghidra-kör kell: 0x00c33b68: a `0x00d6fc58` globális érték eredete és a feltétel platformjelentése, hogy eldőljön, a főablak nélküli képernyőkép-ág mikor választ `ShellExecuteA`-t és mikor `ShellExecuteW`-t; a meglévő Ghidra-kimenetek között erre a címre nincs találat.
 
 Futásidejű mérés kell: eredeti Windows Picasában a kurzor láthatósága a mentett BMP-n; többmonitoros rendszeren a kimeneti BMP téglalapja; továbbá a fájl indexbe kerülésének pillanata és a buborék kattintási célja.
 
