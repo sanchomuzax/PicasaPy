@@ -36,13 +36,22 @@ Ctrl-módot. A rögzítés után a metódus `WaitForSingleObject`-ot hív a
 `DAT_00d689cc` fogantyúra `0x7d0` milliszekundumos időkorláttal, majd
 `Sleep(0x14)` következik; ezután újra meghívja a vtable `+0x04` állapotvizsgálót
 (`0x0059150f`-`0x00591518`), és nulla eredménynél visszatér a
-billentyű-lekérdezéshez. A vtable-metódus állapotának jelentése és
-kapcsolata az `EnableScreenCap` beállítással **NINCS MEG**. A vizsgált út
-tehát háttérszálas, ismételt billentyű-lekérdezés. A `paszta.py` teljes `.text`
+billentyű-lekérdezéshez. A `0x00408b30` állapotvizsgáló a
+`[0x00c40328]` függvénymutatón át hívja az `InterlockedCompareExchange` API-t;
+a mutató binárisbeli értéke `0x00921d20`, az importjegyzék ezt az API-t
+azonosítja. A hívás az objektum `+8` mezőjén végez atomikus tesztet nulla
+csere- és nulla összehasonlító értékkel, majd a korábbi nem nulla értéket
+`1`-re képezi. A hívó nem nulla eredménynél kilép, így ezen az útvonalon a
+mező kilépési állapotjelzőként működik; azt viszont **NINCS MEG**, hogy melyik
+útvonal állítja át a mezőt és mi a teljes életciklusa. Az `EnableScreenCap`
+beállítás az objektum és a szál létrehozását kapuzza, de a mező kezelése és e
+beállítás közötti további kapcsolat **NINCS MEG**. A vizsgált út tehát
+háttérszálas, ismételt billentyű-lekérdezés. A `paszta.py` teljes `.text`
 pásztázása a `0x00590f40` címre egyetlen közvetlen hívást talált:
 `0x005914f1`-et, a fenti billentyűfigyelőből. A 2026-10-23-i kapuzott
-újrafutás (`paszta.memoria_kapu(1536)`) 2 884 879 utasítást dolgozott fel,
-és ugyanezt az egyetlen közvetlen hívást adta. A `Scrapture::vftable`
+újrafutás (`paszta.memoria_kapu()`, alapértelmezett 2048 MiB-os korláttal)
+2 884 879 utasítást dolgozott fel, és ugyanezt az egyetlen közvetlen hívást
+adta. A `Scrapture::vftable`
 (`0x00c91728`) `+0x08` rekesze szintén `0x00591470`-re mutat; a teljes
 szövegszakasz két közvetlen címhivatkozása közül az egyik az állapotkezelő
 `0x0040ca6f`, a másik a konstruktor `0x00590ef5` utasítása.
@@ -58,10 +67,10 @@ hiányát nem bizonyítják.
 **Külön menü-/accelerator-indító ág: NINCS MEG.** A meglévő Ghidra-kimenet
 a `0x0097fc30` üzenetciklusban `TranslateAcceleratorA`-t mutat a
 `DAT_00d4a4d4` gyorsbillentyű-táblával, de nem azonosítja a tábla tartalmát
-vagy a rögzítőhöz vezető parancsot. A második, ugyanígy kapuzott teljes
-`.text`-pásztázás szintén 2 884 879 utasítást dolgozott fel, és egyetlen
-abszolút hivatkozást talált a `DAT_00d4a4d4` címére: az olvasást
-`0x0097fd18`-nál; ez sem mutatja meg a tábla feltöltését. A `0x00923110`
+vagy a rögzítőhöz vezető parancsot. Ugyanez a kapuzott teljes `.text`-
+pásztázás 2 884 879 utasítást dolgozott fel, és egyetlen abszolút
+hivatkozást talált a `DAT_00d4a4d4` címére: az olvasást `0x0097fd18`-nál;
+ez sem mutatja meg a tábla feltöltését. A `0x00923110`
 meglévő kimenete egy
 külön általános táblakészítőt mutat, kapcsolatát ezzel a fő ciklussal nem
 igazolja. A következő célzott irány a fő ciklus HACCEL-táblájának
@@ -184,7 +193,9 @@ objektum- és szálindítás (`0x0040ca49`-`0x0040ca78`). A szál
 (`0x0097af1c`-`0x0097af23`), ez a `0x00591470`; a billentyűfigyelő
 közvetlenül hívja a `0x00590f40` rögzítőt (`0x005914f1`), amely a
 `0x009ad2d0` BMP-írót használja. A vtable `+0x04` állapotvizsgálójának
-jelentése ettől külön nyitott.
+utasításszintű szerepe külön is feloldható: a `0x00408b30` az objektum `+8`
+mezőjének nem nulla állapotát adja vissza, a hívó erre kilép
+(`0x0059147d`-`0x00591488`). A mező átállítási helye és életciklusa nyitott.
 
 **B út: független hivatkozáslánc és fogyasztók:** a beállításkezelő a
 `0x00c91728` `Scrapture::vftable` címet írja az objektumba
@@ -256,7 +267,7 @@ mappabesorolásnál és a buboréknál egyeznek.
 |---|---|
 | HKCU `Preferences\EnableScreenCap` olvasása; alapérték `1`; nulla értéknél az objektum- és szálindítás átugrása | bináris (`0x0040bf70`, `0x0040ca13`, `0x0040ca24`, `0x0040ca41`-`0x0040ca47`, `0x0040ca49`-`0x0040ca78`, `0x00407a3b`) |
 | Print Screen / Print ismételt lekérdezés és Ctrl/Alt mód | bináris (`0x00591470`, `0x00590f40`) |
-| Figyelőciklus állapotkapuja, rögzítés utáni várakozás és ismételt lekérdezés | bináris (`0x0059147d`-`0x00591488`, `0x005914f6`-`0x00591518`, `0x00c91728`, `0x00408b30`; `WaitForSingleObject` import `0x00921d4c`, `Sleep` import `0x00921ba0`); a `+0x04` állapotjelentése és kapcsolata a preferenciával: NINCS MEG |
+| Figyelőciklus állapotkapuja, rögzítés utáni várakozás és ismételt lekérdezés | bináris (`0x0059147d`-`0x00591488`, `0x005914f6`-`0x00591518`, `0x00c91728`, `0x00408b30`, `[0x00c40328]` → `0x00921d20` `InterlockedCompareExchange`; `WaitForSingleObject` import `0x00921d4c`, `Sleep` import `0x00921ba0`); a `+8` mező írója/életciklusa: NINCS MEG |
 | Virtuális asztal célzása, képernyőhatár-vágás és GDI-másolás; többmonitoros eredmény | bináris (`0x00590f40`, `0x009aa990`); többmonitoros kimenet: NINCS MEG, futásidejű mérés kell |
 | Ablakcím/tartalék név, locale-függő dátum-idő, ütközési sorszám, kiterjesztés | bináris (`0x00986200`, `0x00c916c8`, `0x0098b6e0`, `0x0098c470`, `0x00cd8d64`, `0x00993650`, `0x00c865cc`) |
 | 24 bites, tömörítetlen BMP-fejléc és képpontírás | bináris (`0x009ad2d0`, `0x009ad382`-`0x009ad569`) |
@@ -270,7 +281,7 @@ mappabesorolásnál és a buboréknál egyeznek.
 | Névütközés kezdő sorszáma és növelése | bináris (`0x00993a96`, `0x00993b56`, `0x00cd8d64`) |
 | A képfájl azonnali indexelése | NINCS MEG; a meglévő Ghidra-kimenet a `0x004f92c0` → `0x004e7d10` utat és az `0x004e31a0` indirekt vtable-hívását mutatja, de a konkrét callback hatását nem |
 | A buborék kattintási célja | NINCS MEG; a `0x0057d1e4` vtable `+0x68` hívás célfüggvényét kell azonosítani |
-| A vtable `+0x04` állapotkapujának jelentése; menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; az állapotkapuhoz a `0x00408b30` helper célját és állapotforrását, majd a `0x00c40328` mutató inicializálását és használatát kell követni; az acceleratorhoz a `0x0097fc30` által olvasott `DAT_00d4a4d4` tábla feltöltési és parancsútját kell a `Scrapture` objektummal összekötni |
+| A `+8` állapotmező írója/életciklusa; menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; a `0x00408b30` tesztje és a `0x00c40328` mutatója feloldott, a `Scrapture` objektum `+8` mezőjének írási és leállítási útját kell követni; az acceleratorhoz a `0x0097fc30` által olvasott `DAT_00d4a4d4` tábla feltöltési és parancsútját kell a `Scrapture` objektummal összekötni |
 | Főablak nélküli ágon a rendszer melyik `ShellExecute` API-t választja | NINCS MEG; a `0x00c33b68` a `0x00d6fc58` alapján választ `ShellExecuteA` (`0x009239a8`) és `ShellExecuteW` (`0x00923998`) között; a globális érték eredetét és platformjelentését kell feloldani |
 
 Ghidra-kör kell: 0x004e31a0: a `0x004f92c0` → `0x004e7d10` keresési út az `param_3 + 0x344 + 0x10` sloton mely konkrét callbacket hívja, és az a friss képfájlt indexbe írja-e vagy csak keres [blokkoló]. A meglévő `0x004e31a0` dekompilált kimenet az indirekt hívást mutatja, a célfüggvényt nem.
