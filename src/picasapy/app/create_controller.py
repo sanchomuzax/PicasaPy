@@ -38,6 +38,7 @@ Sikeres mentés után a piszkozat betöltötte a szerepét, ezért eldobjuk.
 from __future__ import annotations
 
 import logging
+import math
 import sqlite3
 from pathlib import Path
 from xml.etree import ElementTree
@@ -97,6 +98,11 @@ _MOVIE_TRANSITIONS = (
     "pushdown", "circlein", "circleout", "kenburns", "kenburnsaoi",
     "timelapse", "rect",
 )
+_MOVIE_SLIDE_DURATION_KEY = "slideduration"
+_MOVIE_TRANSITION_KEY = "makemovietransition"
+_MOVIE_SLIDE_DURATION_DEFAULT = 4.0
+_MOVIE_SLIDE_DURATION_MIN = 1.0
+_MOVIE_SLIDE_DURATION_MAX = 300.0
 _MOVIE_PREFERENCES = {
     "captions": ("CMakeMoviePanel::showcaptions", False),
     "cropfit": ("CMakeMoviePanel::cropfit", False),
@@ -242,6 +248,55 @@ class CreateMixin(PosterMixin):
         """A hét eredeti méret közül a választott index megőrzése."""
         index = max(0, min(6, int(index)))
         self._get_settings().setValue("makemovieres", index)
+        self.moviePreferencesChanged.emit()
+
+    @Property(float, notify=moviePreferencesChanged)
+    def movieSlideDuration(self) -> float:  # noqa: N802
+        """A filmkészítő diaideje másodpercben (`Preferences\\slideduration`)."""
+        raw = self._get_settings().value(
+            _MOVIE_SLIDE_DURATION_KEY, _MOVIE_SLIDE_DURATION_DEFAULT
+        )
+        try:
+            seconds = float(raw)
+        except (TypeError, ValueError, OverflowError):
+            return _MOVIE_SLIDE_DURATION_DEFAULT
+        if not math.isfinite(seconds):
+            return _MOVIE_SLIDE_DURATION_DEFAULT
+        return max(
+            _MOVIE_SLIDE_DURATION_MIN,
+            min(_MOVIE_SLIDE_DURATION_MAX, seconds),
+        )
+
+    @Slot(float)
+    def setMovieSlideDuration(self, seconds: float) -> None:  # noqa: N802
+        """A diaidő mentése az eredeti 1–300 másodperces tartományban."""
+        try:
+            ertek = float(seconds)
+        except (TypeError, ValueError, OverflowError):
+            ertek = _MOVIE_SLIDE_DURATION_DEFAULT
+        if not math.isfinite(ertek):
+            ertek = _MOVIE_SLIDE_DURATION_DEFAULT
+        ertek = max(
+            _MOVIE_SLIDE_DURATION_MIN,
+            min(_MOVIE_SLIDE_DURATION_MAX, ertek),
+        )
+        self._get_settings().setValue(_MOVIE_SLIDE_DURATION_KEY, ertek)
+        self.moviePreferencesChanged.emit()
+
+    @Property(str, notify=moviePreferencesChanged)
+    def movieTransition(self) -> str:  # noqa: N802
+        """A filmkészítő átmenetkulcsa, alapból a jelenlegi `dissolve`."""
+        value = str(
+            self._get_settings().value(_MOVIE_TRANSITION_KEY, "dissolve")
+        )
+        return value if value in _MOVIE_TRANSITIONS else "dissolve"
+
+    @Slot(str)
+    def setMovieTransition(self, transition: str) -> None:  # noqa: N802
+        """Az ismert átmenetkulcs mentése a `Preferences` tárba."""
+        if transition not in _MOVIE_TRANSITIONS:
+            return
+        self._get_settings().setValue(_MOVIE_TRANSITION_KEY, transition)
         self.moviePreferencesChanged.emit()
 
     @Property(int, notify=moviePreferencesChanged)
