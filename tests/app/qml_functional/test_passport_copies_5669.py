@@ -86,7 +86,7 @@ def test_passport_megtartja_a_darabszamot_es_kilepeskor_visszaallitja(
     nyomtatas = _elem(window, "printDialog")
     _parbeszedmagassag(nyomtatas, qt_app, magassag_elteres)
     assert nyomtatas.property("copies") == 1
-    assert nyomtatas.property("fitMode") == "fit"
+    assert nyomtatas.property("fitMode") == "fill"  # #5681: Crop to Fit az induló mód
 
     # A felhasználó a normál módjában három példányt kér.
     _kattints(nyomtatas, qt_app, _elem(nyomtatas, "printCopiesPlusButton"))
@@ -131,7 +131,7 @@ def test_passport_megtartja_a_darabszamot_es_kilepeskor_visszaallitja(
     )
     _parbeszedmagassag(nyomtatas, qt_app, magassag_elteres)
     assert nyomtatas.property("passport") is False
-    assert nyomtatas.property("fitMode") == "fit"
+    assert nyomtatas.property("fitMode") == "fill"
     assert nyomtatas.property("copies") == 3
     _kattints(nyomtatas, qt_app, _elem(nyomtatas, "printCloseButton"))
     assert var_feltetelre(
