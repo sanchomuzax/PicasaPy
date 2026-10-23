@@ -13,10 +13,12 @@ Hat függvény hivatkozza (`0x0040bf70`, `0x005cb990` — a főablak
 parancs-diszpécsere —, `0x005d47e0`, `0x005d8810`, `0x005e60d0`,
 `0x00660c80`).
 
-## 2. A keresési sáv TELJES elemlistája — 6 élő, 13 HALOTT
+## 2. A keresési sáv TELJES elemlistája: 6 élő, 13 kommentelt
 
 `searchoptions.tre`. A `#` előtaggal kezdődő sorok **ki vannak kommentezve**,
-tehát a 3.9-ben nem léteznek.
+tehát ezekből az erőforrásból nem épül fel vezérlő. Ez a felületi elemre
+vonatkozó állítás; önmagában nem bizonyítja, hogy az adott művelethez nincs
+aktív parancs vagy másik felületi út.
 
 ### Élő (6)
 
@@ -32,21 +34,28 @@ tehát a 3.9-ben nem léteznek.
 | `searchoptions/label_search1` | font12, `m_offsetRT` | jobbra igazított felirat |
 | **`searchoptions/facesearch`** | `m_hidden` | az arckeresés jelzője |
 | **`searchoptions/dupesearch`** | `m_hidden` | **a másodpéldány-keresés jelzője** |
-### ⛔ HALOTT ebben a build-ben (13)
+### A `searchoptions` erőforrásban kikommentezett elemek (13)
 
 `searchbase` · `boxleft` · `boxright` · `digicam` · **`similarrect`** ·
 **`similarthumb`** · **`similarclip`** · **`loadsim`**(+label) ·
 **`clearsim`**(+label) · **`savetoalbum`** · `label_searchall` ·
 `label_searchnewer` · `label_search2` · `timecontainer`
 
-**Két következmény, amit ki kell mondani:**
+**Két következmény, amit külön kell választani:**
 
-1. **A „hasonló képek" keresés NEM LÉTEZIK a 3.9-ben.** A hozzá tartozó öt
-   elem (`similarrect`, `similarthumb`, `similarclip`, `loadsim`, `clearsim`)
-   mind kikommentezve. ⚠️ **Nálunk viszont VAN**
-   (`src/picasapy/dedup/phash.py` dhash + `similar.py`) — ez tehát
-   **többlet**, nem hiánypótlás. Nem hiba, de tudni kell róla: az eredetiben
-   nincs megfelelője.
+1. A felsorolt hasonlósági **vezérlők nem jönnek létre a
+   `searchoptions.tre` erőforrásból**, mert a soraik kommentek. Ez önmagában
+   nem bizonyítja, hogy a funkció hiányzik a binárisból: a `Ctrl+F7` ág
+   (`0x005e62e8`, `searchoptions/loadsim`, parancsazonosító `0x15`) a
+   `0x005d8810` kezelőhöz jut; a törlés `Ctrl+F8`-on (`0x005e631d`,
+   `searchoptions/clearsim`, azonosító `0x16`) aktív. A keresőút a
+   `0x007ea000` függvényt hívja, majd az eredményt a
+   `0x004ad4e0` („Similarity Search Results") állapotban jeleníti meg.
+   ⚠️ **Tehát a Picasa 3.9-ben a mintaképes hasonlóság-keresés létezik, de a
+   felsorolt panelvezérlők ebben az erőforrásban rejtettek.** A PicasaPy-ban
+   is van egyképes hasonlóság-keresés (`app/similarity_controller.py`); a
+   motor és a találati viselkedés összevetését a menüparancs-specifikáció
+   60.4. szakasza tartalmazza.
 2. **A `savetoalbum` GOMB halott, de a MENÜPONT él** — az
    `eMenuTools::ID_SAVESEARCH` („Keresési eredmények mentése…") a leltárban
    szerepel. A keresés mentése tehát **menüből** megy, nem a sáv gombjáról.
@@ -776,4 +785,3 @@ törzs hosszabb, mint amennyit a dekódoló egy hívásban ad, **darabold**.
 nulla-védelem megerősített** (címenként kiolvasva); az **elemenkénti
 átalakító függvény NINCS MEG**; a `+0x001`, `+0x15A`, `+0x15B`
 (összesen 3 bájt) továbbra is ismeretlen.*
-
