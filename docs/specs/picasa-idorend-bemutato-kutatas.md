@@ -809,3 +809,31 @@ A keresés ellenpéldát is adott az eltolás-alapú azonosításhoz: a teljes `
 **Nyitott.** A `qshow+0x388`/`+0x38c` tényleges írója, a tömb elemeinek előállítása és a token-/dátum-/képadatok kapcsolata **NINCS MEG**. A fenti negatív ellenőrzés csak a `0x007f0000`-`0x00810000` terület közvetlen utasításaira szól; a globális eltolásegyezések osztályazonosítása nélkül nem bizonyítanak qshow-adatot. A futó UI-val és valós adatállapottal végzett méréshez Wine kell, amely ezen a gépen nem érhető el. A `0x00419d10`/`0x00439a80` törzsek elkészültek; az általuk hívott segédek nyitott kérdéseit a 38.2.75 sorolja.
 
 **Új kutatási jegyjavaslat.** Nincs; az `A` tömb írója és jelentése továbbra is a #5401 képlánc-/vezérlő-elfogadási pontjába tartozik.
+
+#### 38.2.80 Futásidejű qshow-adatfelvételhez nincs helyi Colab-hozzáférés (#5401, 2026-10-23)
+
+**Hozzáférési mérés.** A számítógép- és böngészőleltár ebben a Codex-munkamenetben üres (`apps=[]`, `browsers=[]`). A helyi eszközellenőrzés `qemu-i386`-ot talál, de `wine`/`wine64` programot nem; a qemu-s függvénypróba nem futó Win32 `qshow`-ablak, ezért nem adhatja meg annak élő mezőit vagy billentyűfókuszát.
+
+**A mérőarchívum ellenőrzése.** A `~/.local/share/picasapy-meroadat/meroadat.tar` tagjegyzéke 944 bejegyzést tartalmaz; a teljes névlistában nincs `qshow`, `timeline`, `job-220`, `job-102`, `#5401` vagy `#5377` névvel azonosított mérési tétel. A `3229-lanc-sorrend` tag négy, azonos forrásképből készült szerkesztési sorrend-próba (`OLVASS-EL.txt`); nem Időrend-képhalmaz. Az archívumból nem bontottam ki semmit a `.bt` alá. A névlista-vizsgálat nem zárja ki, hogy egy más néven szereplő JPEG qshow-képkockát ábrázoljon; ilyen képek tartalmát nem ellenőriztem.
+
+**A mai PicasaPy-állapot, kontrollált futás.** A `TimelineController.reload()` az index összes nem rejtett fotóját adja az év/hónap szerinti csoportosítónak (`src/picasapy/app/timeline_controller.py:73-90`); az EXIF `taken_at`, ennek hiányában a befagyasztott `sort_mtime_ns` adja a dátumot (`src/picasapy/timeline.py:47-90`). A QML `ListView`-t és korszakonkénti `GridView`-t rajzol (`src/picasapy/app/qml/PicasaPy/TimelineView.qml:61-125`), az Escape és a Bezárás az overlayt zárja (`TimelineView.qml:31-32,56-59`). A `Ctrl+5` gyorsbillentyű és a Nézet-menütétel jelenleg letiltott (`Main.qml:1861-1865`; `PicasaMenuBar.qml:1164-1168`). A Qt-mentes `build_periods()` kontrollált, öt rekordos futásának kimenete: `(2026, 10, (2, 4, 1))`, `(2025, 6, (3,))`, `(0, 0, (5,))`; a hónapcsoportok csökkenő sorrendűek, a dátum nélküli rekord a végére kerül, az azonos dátumú 2 és 4 rekord sorrendje megmarad. Ez a mai kód viselkedése, nem eredeti Picasa-paritásmérés.
+
+| Állítás | Forrás |
+|---|---|
+| A mai csoportosító kontrollált kimenete, év/hónap- és képdátum-sorrendje, valamint az ismeretlen dátumú csoport helye. | mérés (`PYTHONPATH=src`, `build_periods()` öt kontrollált `TimelinePhoto` rekorddal, 2026-10-23; `timeline.py:93-132`) |
+| A mai controller minden indexelt, nem rejtett fotót csoportosít; a menü és Ctrl+5 tiltott. | mérés (forrásleolvasás: `timeline_controller.py:73-90`, `Main.qml:1861-1865`, `PicasaMenuBar.qml:1164-1168`) |
+| E munkamenetben nincs elérhető Colab-tab vagy más megnyitott alkalmazás/böngésző. | mérés (CUA-alkalmazás- és böngészőleltár: üres) |
+| Helyben `qemu-i386` elérhető, `wine`/`wine64` nem. | mérés (`command -v`, 2026-10-23) |
+| A mérőarchívum 944 tagbejegyzése között nincs név szerint qshow/Időrend/job-220/job-102 felvétel. | mérés (`meroadat.tar` teljes tagjegyzéke; név szerinti keresés) |
+| A `3229-lanc-sorrend` készlet nem Időrend-fixture. | mérés (`meroadat.tar:3229-lanc-sorrend/OLVASS-EL.txt`) |
+| A futó qshow `+0x50c` értéke, a `+0x388` tömb elemei és a hozzájuk rendelt képek/dátumok. | NINCS MEG |
+
+**Két független út.** A út: a CUA-leltár nem mutat megnyitott böngészőt vagy alkalmazást, amin Colab-futás mérhető lenne. B út: a helyi végrehajtható-program ellenőrzés és a mérőarchívum tagjegyzéke sem ad futó Picasát vagy név szerint azonosított qshow-felvételt. A két út abban egyezik, hogy ebben a munkamenetben nincs hozzáférhető futásidejű minta; ez környezeti tény, nem a Picasa viselkedéséről szóló bizonyíték.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy az archívumban nincs azonosítható Időrend-mérés: mind a 944 tag nevét megvizsgáltam a qshow/Időrend és a korábbi job-azonosítók mintáira. Név szerint egyező tétel nem volt. A cáfolat határa a fájlnevezés: a más néven levő képek képtartalma nem lett átvizsgálva, így az eredmény nem állítja, hogy az archívum minden képe irreleváns.
+
+**Bizonyítottsági fok.** **Megerősített** a hozzáférési hiány a fenti, egymástól különböző környezet- és archívum-ellenőrzésre nézve. A termékviselkedés és a qshow mezők tényleges értékei továbbra is **nyitottak**; ebből a körből azokhoz új bináris- vagy futásidejű lelet nem született.
+
+**A #5401 „Kész, ha” pontjai.** (1) ⛔ A tokenindex, forráshalmaz, képek, dátumkulcs, sorrend és elemszám nem lett futó qshow-n megmérve. (2) ⛔ Nem készült új képkocka- vagy mozgásmérés. (3) ⛔ A vezérlők, `A`-tömb-jelentés és tényleges autoplay-periódus nem lett futó állapotban megmérve. (4) ⛔ Nem készült Space/Escape előtti-utáni nézet- és képindexfelvétel.
+
+**Nyitott; megszerzésének pontos útja.** A következő méréshez ugyanabban az elérhető Colab-futásban kell: (a) rögzíteni egy előre ismert, eltérő kép- és dátumadatú forráskészletet, valamint azt, hogy mappa, album vagy Picture Tray van kiválasztva; (b) a qshow megnyitásakor és a vezérlők használata után kiolvasni a `qshow+0x50c`, `+0x2f8` kiválasztott `0xf8` rekordját, a `+0x388`/`+0x38c` tömböt és a CThumbDB-token → `CSlice+0x64` → képrekord kapcsolatot; (c) azonos futásban képkockákat és a Space/Escape előtti-utáni nézetet, kollekciót és indexet rögzíteni. Csak ezek az adatok döntik el a 38.2.63-79 nyitott pontjait; újabb, azonos kérdésű statikus eltoláskeresés nem helyettesíti ezt a mérést.
