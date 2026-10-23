@@ -16982,6 +16982,12 @@ picasapy-origin-key: stringres:CAcquireUI::errornotifer</extracomment>
             <translation>Помилка імпортування</translation>
         </message>
         <message>
+            <source>Screenshot saved</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::screensaved</extracomment>
+            <translation>Знімок екрана збережено</translation>
+        </message>
+        <message>
             <source>click to view</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::clickview</extracomment>
@@ -17014,6 +17020,15 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Потрібно вибрати зображення для повороту.</translation>
+        </message>
+    </context>
+    <context>
+        <name>ScreenCapture</name>
+        <message>
+            <source>Fullscreen capture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Scrapture::defaultname</extracomment>
+            <translation>Зйомка на весь екран</translation>
         </message>
     </context>
     <context>

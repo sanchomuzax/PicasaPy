@@ -16968,6 +16968,12 @@ picasapy-origin-key: stringres:CAcquireUI::errornotifer</extracomment>
             <translation>שגיאה ביבוא</translation>
         </message>
         <message>
+            <source>Screenshot saved</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::screensaved</extracomment>
+            <translation>צילום מסך שמור</translation>
+        </message>
+        <message>
             <source>click to view</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::clickview</extracomment>
@@ -17000,6 +17006,15 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>כדי לסובב יש לבחור תמונות.</translation>
+        </message>
+    </context>
+    <context>
+        <name>ScreenCapture</name>
+        <message>
+            <source>Fullscreen capture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Scrapture::defaultname</extracomment>
+            <translation>תמונת מסך מלא</translation>
         </message>
     </context>
     <context>

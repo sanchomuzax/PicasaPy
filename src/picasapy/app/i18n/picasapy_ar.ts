@@ -17024,6 +17024,12 @@ picasapy-origin-key: stringres:CAcquireUI::errornotifer</extracomment>
             <translation>خطأ في الاستيراد</translation>
         </message>
         <message>
+            <source>Screenshot saved</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::screensaved</extracomment>
+            <translation>تم حفظ لقطة الشاشة</translation>
+        </message>
+        <message>
             <source>click to view</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::clickview</extracomment>
@@ -17056,6 +17062,15 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>يجب أن توجد صور محددة للتدوير.</translation>
+        </message>
+    </context>
+    <context>
+        <name>ScreenCapture</name>
+        <message>
+            <source>Fullscreen capture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Scrapture::defaultname</extracomment>
+            <translation>التقاط بملء الشاشة</translation>
         </message>
     </context>
     <context>

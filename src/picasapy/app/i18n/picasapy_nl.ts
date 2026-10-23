@@ -16955,6 +16955,12 @@ picasapy-origin-key: stringres:CAcquireUI::errornotifer</extracomment>
             <translation>Fout tijdens het importeren</translation>
         </message>
         <message>
+            <source>Screenshot saved</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::screensaved</extracomment>
+            <translation>Screenshot opgeslagen</translation>
+        </message>
+        <message>
             <source>click to view</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::clickview</extracomment>
@@ -16987,6 +16993,15 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Er moeten afbeeldingen zijn geselecteerd om te roteren.</translation>
+        </message>
+    </context>
+    <context>
+        <name>ScreenCapture</name>
+        <message>
+            <source>Fullscreen capture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Scrapture::defaultname</extracomment>
+            <translation>Vastleggen in volledig scherm</translation>
         </message>
     </context>
     <context>
