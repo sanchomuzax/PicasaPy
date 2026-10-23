@@ -806,8 +806,8 @@ another picture?”. A `0x00531c60` visszafejtett hibaága a
 a nulla arcú eset címe „Try another picture?”, szövege „Can't find any
 faces”, egyetlen OK gombbal. A többarcú eset élő szövege még nincs külön
 mérve. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a
-Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (tiltva) · Show
-Duplicate Files · Search for ▸ · Save search results… · Show tag as
+Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (PicasaPy kihagyja) ·
+Show Duplicate Files · Search for ▸ · Save search results… · Show tag as
 album… · Passport photo… · Delete empty online albums… · Choose database
 location… · Write faces to XMP…). Jegy: **#1401**.
 
@@ -7202,3 +7202,129 @@ erős állításaira épülnek; a nyitottak a meglévő saját mechanizmusainkka
    csak névvel, ütközésnél hiba.
 
 Mindkettő külön jegy tárgya; itt csak a bizonyíték áll.
+
+## ⛳ #5709: Közzététel FTP-n: eredeti út és PicasaPy-eltérések (2026-10-23)
+
+### Következtetés
+
+A Picasa 3.9 binárisban az Eszközök → Kísérleti → Közzététel FTP-n keresztül
+parancs végig van kötve: a közös HTML-export párbeszédből FTP-módba lép, mentett
+fiókot választ, majd fájlokat tölt fel és távoli fájlokat takarít. A PicasaPy
+HTML-exportja helyi weboldalt készít, de FTP-menüpontja, fiókkezelője és
+feltöltője nincs. A bináris útja megerősített; a teljes fiókpárbeszéd mezőinek
+képernyőn látható neve, a `secure` mező jelentése és a `webUrl` végső felhasználása
+nyitva marad.
+
+Vizsgált bináris: a megadott Picasa3.exe PE-verzióadata szerint
+FileVersion 3.9.141.259 (mérés: PE FileVersion).
+
+### Eredeti felhasználói út
+
+1. A 0x00559150 menüépítőben a 0x0055c295 környezetében szerepel az
+   eMenuTools::ID_FTPWEB kulcs (0x00c8df04), a felirat pedig a
+   0x00c8df1c címen áll: Publish via FTP... A menürekord parancsazonosítója
+   0x9d54; a Kísérleti almenü első tétele.
+2. A 0x005c90a0 regisztrálja a 0x9d54 parancsot. A 0x005cb990 parancságában
+   a 0x9d54 eset a 0x005e7490(1) hívásra fut. Ha nincs kijelölt mappa vagy
+   album, a 0x005e7490 a „You must select a Folder or Album to export”
+   üzenetet adja; egyébként a szokásos webexport.fen párbeszédet nyitja
+   (0x007f4be0), és az FTP-jelzőt adja át a callbacknek (0x007f6cc0).
+3. A közös webexport párbeszéd tartalmazza a címmezőt, célmappa-választót,
+   sablonlistát, leírást és előnézetet, továbbá az öt képméretet és a
+   mozgókép-módot. A méret és film mód részletes, címekkel igazolt
+   megfeleltetése a lap 6.1. szakaszában van.
+4. FTP-módban a 0x007f6d50 callback a 0x005e7370 fiókválasztóhoz lép
+   (AMgrSelect). A fiókválasztás/fiókkezelés a 0x005cfff0 környékén kezeli
+   a hozzáadást, szerkesztést, törlést és kapcsolat-ellenőrzést. A bináris
+   üzenetei többek között: `Please specify a name!`, `This user name already exists!`,
+   `You have successfully verified the connection!` és
+   `Unable to verify the connection. Please check your settings.`
+5. A 0x007f6d50 a kiválasztott profillal a 0x00957630 FTP-szinkronizálót
+   indítja. A WinINet-hívások között FtpOpenFileA, InternetWriteFile,
+   FtpCreateDirectoryA, FtpSetCurrentDirectoryA, FtpFindFirstFileA,
+   FtpDeleteFileA és FtpRemoveDirectoryA szerepel. A státuszszövegek:
+   `Initializing connection…`, `Uploading images…` és
+   `Cleaning up remote files…`. A feltöltő a webexportból létrehozott helyi
+   weboldal fájljait használja; az elavult távoli fájlok törlésének pontos
+   feltétele nyitott.
+
+### Beállítások és alapértékek
+
+| Beállítás | Eredeti, a binárisban | PicasaPy |
+|---|---|---|
+| Képméret | EGYEZIK: 0 = eredeti, 1024, 800, 640, 320; alapérték Preferences\WebExportSize = 3, vagyis 640 px (0x007f5310). | EGYEZIK: ugyanezek a választások és 640 px alapérték; QSettings-kulcs: webexport/size (WebExportController, sizes.py). |
+| Mozgókép mód | EGYEZIK: Első képkocka / Teljes mozgófilm; alapérték Preferences\WebExportMovie = 0, vagyis Első képkocka (0x007f5355). | EGYEZIK: ugyanezek a módok és alapérték; QSettings-kulcs: webexport/movieFull. |
+| Célmappa | A 0x007f52b0 a Preferences\WebExportPath értéket olvassa és a 0x007f5e80 menti. Hiányzó értéknél a 0x00996230 által feloldott Personal mappához a bináris 0x00cbc7f8 `Picasa HTML Exports` nevet fűzi a 0x007f53a7 útvonalon. | Eltér: a rendszer Képek mappája / „Picasa HTML exportok” az alap (webexport_controller.py); a célmappa nincs QSettings-be mentve, csak a párbeszéd objektumában marad meg. |
+| Sablon | A Preferences\WebExportTemplate kulcsot a 0x007f52b0 olvassa és a 0x007f5e80 menti; üres tárolt értéknél a párbeszéd alapindexe 0. | Részben egyezik: az alapindex 0, de a sablonválasztást a PicasaPy nem menti QSettings-be; a templateIndex a párbeszéd kezdeti állapota. |
+| Sablon-előnézet | A webexport.fen sablonlistát, leírást és élő előnézetet ír le (a helyi telepítés erőforrása, 1-16. sor). | Eltér: sablonleírás és sematikus kép van; élő, sablonból renderelt előnézet nincs (WebExportDialog.qml). |
+| FTP-fiókok | AccountMGR alatt a kulcsok: ftpUser (0x00cb9ecc), ftpPass (0x00cb9ed4), ftpDomain (0x00cb9edc), ftpRoot (0x00cb9ee8), webUrl (0x00cb9ef0), secure (0x00cb9ef8). A hiányzó szövegértékek alapja az üres 0x00c7f979; a secure mező alapértéke 0 (0x007e8340). | NINCS MEG: nincs FTP-fiók- vagy beállítási réteg a src/picasapy alatt. |
+| Fióktárolás | A kulcsok olvasása/írása a HKCU beállítási rétegen át történik, AccountMGR névtérrel (0x007e8340, 0x007e89e0, 0x007e8f80; olvasó segéd: 0x00407630). A teljes fizikai registry-útvonal NINCS MEG; megszerzés: a 0x00407630/0x00407ea0 registry-kulcs-összeállításának célzott követése. | NINCS MEG: nincs megfelelő fióktároló. |
+| Fiókpárbeszéd pontos mezőcímkéi és elrendezése | NINCS MEG: a helyi runtime FEN-leírók között nincs FTP/AMgr párbeszéd. Megszerzés: Windows alatt az AMgr hozzáadás/szerkesztés párbeszéd megnyitása és a mezők/feliratok rögzítése, vagy az AMgr erőforrás célzott kibontása. | NINCS MEG: nincs megfelelő párbeszéd. |
+| Oldalcím induló értéke | NINCS MEG: a webexport.fen edit mezőt mutat, de a futáskor előtöltött szöveget a fájl nem rögzíti. Megszerzés: a webexport párbeszéd megnyitása a Picasa 3.9-ben, kijelölt mappával és albummal. | A QML albumTitle üres sztringgel indul; eltérhet az eredeti előtöltéstől. |
+| FTP-kiszolgáló és távoli gyökér | ftpDomain és ftpRoot értékek kerülnek a CFtpSync kapcsolat/útvonal-ellenőrzésébe; címek: 0x00958a00 (Verifying Domain…, Verifying root path…) és 0x00967c00 (InternetConnectA). | NINCS MEG: FTP-kapcsolat és távoli útvonalkezelés nincs. |
+| FTP-port | Az InternetConnectA hívás 0x00967c35 címen a 0x15 portértéket adja át, azaz 21; a fiókkulcsok között külön portbeállítás nincs. | NINCS MEG: nincs FTP-kapcsolat vagy portbeállítás. |
+| webUrl és secure mező jelentése | NINCS MEG: a webUrl végső felhasználása és a secure fiókmező FTP-műveletre gyakorolt hatása nem bizonyított. Megszerzés: az AccountMGR objektummező fogyasztóinak célzott követése a 0x007e81b0 és 0x007f6d50 körül, majd Windowsos fiókpárbeszéd-mérés. | NINCS MEG: ezeknek nincs megfelelője. |
+| Kimenet | FTP-módban a helyi HTML-webexport fájljai kerülnek a kiválasztott fiók ftpRoot könyvtárába; az FTP-réteg könyvtárat hozhat létre, fájlt ír és távoli fájlokat takarít (0x00957630; importok a bináris-index imports táblájában). | Eltér: csak a helyi HTML-galéria jön létre; FTP-feltöltés nincs a webexport motorban vagy menüben. |
+
+### Tételes összevetés: Eredeti | Nálunk | Teendő
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| **Menüpont és parancs.** 0x00559150 / 0x0055c295; szöveg 0x00c8df1c; parancs 0x9d54; diszpécser 0x005cb990. | PicasaPy-ban nincs FTP-menüelem; a QML-ben csak a kihagyást jelző megjegyzés található. | A termékjegy döntse el és valósítsa meg az FTP-módú menüpont bekötését a meglévő HTML-export párbeszédbe. |
+| **Méret és film mód.** Alap: 640 px és Első képkocka; mindkettő megmarad a következő indításra (0x007f5310, 0x007f5355, 0x007f5e80). | EGYEZIK: alapérték és felhasználói választás megőrzése megvan. | Nincs teendő. |
+| **Célmappa és sablon megőrzése.** Preferences\WebExportPath és Preferences\WebExportTemplate (0x007f52b0, 0x007f5e80); alapút `Personal/Picasa HTML Exports`. | Célmappa Képek/Picasa HTML exportok; a cél és a sablonválasztás nincs újraindítások között megőrizve. | Külön paritásjegyben állítsa helyre a célmappa- és sablonválasztás megőrzését, és döntse el, hogy az alapútvonal egyezzen-e a Personal/Picasa HTML Exports útvonallal. |
+| **FTP-fiók és feltöltés.** AccountMGR 0x00cb9ec0, fiókválasztó 0x005e7370, fiókkezelő 0x005cfff0, CFtpSync 0x00957630; távoli gyökérrel és az InternetConnectA 0x00967c35 címen átadott 21-es porttal. | Nincs fiókkezelő vagy FTP-feltöltés. | Valósítsa meg a fiókválasztás/kezelés és a webexport-fájlok FTP-szinkronizálásának útját. A mezőcímkéket, a secure működését és a webUrl használatát ne következtesse ki a mezőnevekből; előbb zárja le a nyitott bizonyítást. |
+| **Élő sablon-előnézet.** A párbeszéd építője 0x007f4be0; mérés: a szállított runtime/webexport.fen 1-16. sora. | Nálunk sematikus előnézet látható. | A fejlesztőjegyben rögzítse, hogy a meglévő egyszerűsített előnézet elfogadott eltérés-e; ha paritás a cél, a sablont élőben kell megjeleníteni. |
+
+### A két független út
+
+**A: utasítás-/hívásút:** a 0x0055c295 menürekordtól a 0x005cb990
+0x9d54 ágán át a 0x005e7490(1), 0x007f6cc0, 0x007f6d50, 0x005e7370 és
+0x00957630 függvényekig. Ez bizonyítja a menüparancs, a közös párbeszéd,
+az account-választó és az FTP-szinkron kapcsolatát.
+
+**B: külön WinINet-/sztringút:** a bináris-index imports táblája a 0x00957630
+függvényhez rendeli az FtpDeleteFileA és FtpRemoveDirectoryA importokat; a
+CFtpSync állapotüzenetek ugyanott az `init`/`uploading`/`cleanup` lépéseket nevezik
+meg. A 0x00967d30 az FtpOpenFileA és InternetWriteFile hívásokat, a 0x00967f70
+a FtpCreateDirectoryA hívást, a 0x009680e0 a FtpSetCurrentDirectoryA hívást
+tartalmazza. A két út egyezik: ez tényleges feltöltő/szinkronizáló, nem csupán
+kapcsolat-ellenőrző párbeszéd.
+
+### Cáfoló kör
+
+1. **Feltevés:** az FTP csak egy elhagyott vagy letiltott menüfelirat. **Cáfolat:**
+   az egész .text-en, kizárólag a paszta.memoria_kapu() hívása után végigfuttatott
+   pásztázás megtalálta a 0x9d54 kódhivatkozást a 0x005c90dc címen; a meglévő
+   Ghidra-kimenet a 0x005cb990 dispatchertől a 0x005e7490(1) hívásig mutat.
+   Ezzel a „csak halott felirat” feltevés megdőlt. Ez nem bizonyítja a menü
+   minden futásállapotában látható/engedélyezett voltát.
+2. **Feltevés:** a CFtpSync csak fiók-ellenőrzésre szolgál. **Cáfolat:**
+   a 0x007f6d50 az FTP-jelző ágában kiválasztott fiókkal a 0x00957630
+   szinkronizálót hívja; ettől független importút igazolja a fájlírást és
+   távoli törlést. A két bizonyíték egyezik.
+
+### Nyitott kérdések
+
+- NINCS MEG: a fiókpárbeszéd mezőinek pontos felirata, sorrendje, a jelszó
+  maszkolása és az esetleges secure jelölőnégyzet látható neve. Megszerzés:
+  Picasa 3.9 Windowsos példányán az AMgr Add/Edit ablak rögzítése vagy a
+  kapcsolódó erőforrás célzott kibontása.
+- NINCS MEG: a secure profilmező tényleges hatása az FTP-kapcsolatra, illetve
+  a webUrl felhasználása feltöltés után. Megszerzés: a profilrekord fogyasztóinak
+  célzott visszakövetése a 0x007e81b0/0x007f6d50 útvonalon és kontrollált
+  Windows-mérés.
+- NINCS MEG: az elavult távoli fájlok törlésének pontos egyezési/törlési
+  szabálya. Megszerzés: a 0x00957630 cleanup ág és a 0x00956c70 távoli
+  fájllistázó összevetése a 0x00967d30 feltöltővel; ha az adatszerkezet
+  diszasszemblálással nem válik egyértelművé, célzott Ghidra-kör.
+- NINCS MEG: az eredeti és a PicasaPy webexport-címmezőjének azonos-e az
+  induló értéke. Megszerzés: Picasa 3.9-ben külön kijelölt mappával és
+  albummal megnyitni a párbeszédet, és rögzíteni a mezőt.
+
+### Bizonyítottsági fok
+
+**Megerősített:** a menüparancs → közös HTML-export → mentett FTP-fiók →
+WinINet-feltöltés/takarítás útja két, egymástól független bináris útból
+igazolható. **Feltételes:** a teljes, képernyőn látható fiókbeállítások és a
+secure/webUrl szemantikája runtime/erőforrás-bizonyíték nélkül nem zárható le.
