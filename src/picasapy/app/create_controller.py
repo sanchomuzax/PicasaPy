@@ -198,6 +198,9 @@ class CreateMixin(PosterMixin):
     #: visszaállítást felajánló párbeszéd (a párbeszédet a kollázs-panel
     #: sorozata építi, ez itt a vezérlő-oldali horog).
     collageDraftAvailableChanged = Signal()
+    #: #5676: a munkamenet utolsó sikeres filmkimenete. A következő, céllal
+    #: nem rendelkező film ennek a NEVÉT és MAPPÁJÁT használja (0x00620998).
+    _elozo_film_cel: Path | None = None
 
     def _ensure_collage_wired(self) -> None:
         """Lusta, egyszeri állapot-inicializálás (a `TrayMixin.
@@ -656,7 +659,7 @@ class CreateMixin(PosterMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-collage")
 
-    def _alapertelmezett_film_cel(self, sources) -> Path:
+    def _alapertelmezett_film_cel(self) -> Path:
         """A film célfájlja, ha a felhasználó nem adott meg egyet (#1977).
 
         A mappa a `Picasa` alatti (meglévő vagy honosított) Filmek-mappa,
@@ -664,19 +667,28 @@ class CreateMixin(PosterMixin):
         Projektek gyűjteménye nem tudja hova sorolni (ugyanaz a hiba,
         amit a kollázsnál a `write_album_ini` javított).
 
-        A fájlnév töve a KÖZÖS forrásmappa neve; ha a képek több mappából
-        jönnek, a mért alapnév (`diavetites_jellegu_film`).
+        A név (#5676): ha a munkamenetben már készült kimenet, annak a neve
+        ÉS mappája (`0x00620998`); különben a felület nyelvének honosított
+        alapneve (`CMakeMoviePanel::deffilename`). A forrásmappa neve nem
+        számít, az eredeti sem abból nevez el.
         """
         from . import movie_output
+        from .collage_output import _felulet_nyelve
 
-        # A `_get_settings()` a többi ág mintája (ld. a piszkozat-mappát
-        # a 124. sorban) — enélkül a próbák a VALÓDI `~/Képek`-be írnának.
-        beallitott = self._get_settings().value(movie_output.OUTPUT_DIR_KEY)
-        mappa = movie_output.tartalek_mappa(movie_output.output_dir(beallitott))
+        nyelv = _felulet_nyelve()
+        elozo = self._elozo_film_cel
+        if elozo is not None:
+            mappa, cim = elozo.parent, elozo.stem
+        else:
+            # A `_get_settings()` a többi ág mintája (ld. a piszkozat-mappát
+            # a 124. sorban), enélkül a próbák a VALÓDI `~/Képek`-be írnának.
+            beallitott = self._get_settings().value(movie_output.OUTPUT_DIR_KEY)
+            mappa = movie_output.output_dir(beallitott, nyelv)
+            # üres cím: a `safe_stem` a nyelv honosított alapnevére esik
+            cim = ""
+        mappa = movie_output.tartalek_mappa(mappa)
         movie_output.write_album_ini(mappa, mappa.name)
-        szulok = {Path(s).parent for s in sources}
-        cim = next(iter(szulok)).name if len(szulok) == 1 else ""
-        return movie_output.output_path(mappa, cim)
+        return movie_output.output_path(mappa, cim, nyelv)
 
     #: #1977 REGRESSZIÓ (#2185): ez a dekorátor korábban ITT állt, de a
     #: `_alapertelmezett_film_cel` beszúrása ALÁJA került, és így a
@@ -954,11 +966,12 @@ class CreateMixin(PosterMixin):
         if not target:
             # #1977: cél nélkül NEM hibázunk — az eredeti sem kér célfájlt.
             # A mappát a program adja (`Picasa`/honosított Filmek), a nevet
-            # a forrásmappa címéből képezzük, ütközésnél sorszámozva. Ha a
-            # mappa nem hozható létre, a rendszer Videók mappája a tartalék
+            # a munkamenet előző kimenete vagy a nyelv honosított alapneve
+            # adja (#5676), ütközésnél sorszámozva. Ha a mappa nem hozható
+            # létre, a rendszer Videók mappája a tartalék
             # (`0x00620af9`–`0x00620b1d`), és ez SEM hibaüzenet.
             try:
-                target = str(self._alapertelmezett_film_cel(sources))
+                target = str(self._alapertelmezett_film_cel())
             except OSError as hiba:
                 # A részletet NAPLÓZZUK, nem a felhasználónak mondjuk: az
                 # `OSError` szövege fejlesztői (errno, útvonal), és a
@@ -1016,6 +1029,10 @@ class CreateMixin(PosterMixin):
                 )
             except OSError as hiba:  # pragma: no cover - írásvédett cél
                 logger.warning("a film projektfájlja nem írható: %s", hiba)
+            # #5676: a következő üres céllal indított film ennek a nevét
+            # és mappáját kapja. A kimenet sikere után áll be, így a kudarcos
+            # próba nem írja felül az előzőt.
+            self._elozo_film_cel = Path(report.target)
             # #1539: az `.mp4` INDEXELT médiatípus (scanner/filetypes.py),
             # tehát a rácsra való — ugyanaz a helyzet, mint a kollázsnál.
             self.noteOutputWritten(str(report.target))

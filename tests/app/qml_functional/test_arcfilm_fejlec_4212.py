@@ -126,6 +126,19 @@ def _kattints(ablak, qt_app, elem: QQuickItem) -> None:
     qt_app.processEvents()
 
 
+def _arcfilm_opciokra(ablak, qt_app) -> None:
+    """A felbontás és a többi Arcfilm-beállítás a harmadik fülön van."""
+    ful = ablak.findChild(QObject, "movieTabOptions")
+    assert ful is not None, "az Arcfilm Options füle nem található"
+    _kattints(ablak, qt_app, ful)
+    options_page = ablak.findChild(QObject, "movieTabPanelOptions")
+    assert options_page is not None, "az Arcfilm Options lap nem található"
+    assert _varj(
+        qt_app,
+        lambda: options_page.property("visible"),
+    ), "az Arcfilm Options lap nem nyílt meg"
+
+
 def _popup_kattintas(elem: QQuickItem, qt_app) -> None:
     """Valódi kattintás a felugró menü saját ablakában, friss geometriával."""
     assert elem.isVisible() and elem.isEnabled(), (
@@ -237,6 +250,7 @@ def test_a_film_menu_kijelolt_kepei_arcfilmkent_filmet_hoznak_letre(
             assert film.property("personMovieMode") is True, (
                 "a Filmkészítő nem az arcfilm beállítási módjában nyílt meg"
             )
+            _arcfilm_opciokra(ablak, qt_app)
             meret = ablak.findChild(QObject, "movieHeightBox")
             assert meret is not None
             assert meret.property("currentIndex") == vezerlo.faceMovieResolutionIndex, (
@@ -430,6 +444,7 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
                     assert [Path(ut).name for ut in utak] == [
                         "anna-a.jpg", "zoe-a.jpg", "zoe-b.jpg",
                     ], f"a Filmkészítő képsora nem a forrásmodell sorrendje: {utak!r}"
+                    _arcfilm_opciokra(ablak, qt_app)
                     meret = ablak.findChild(QObject, "movieHeightBox")
                     assert meret is not None
                     assert meret.property("currentIndex") == 3, (
@@ -448,6 +463,7 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             assert film is not None and _varj(
                 qt_app, lambda: film.property("visible")
             )
+            _arcfilm_opciokra(ablak, qt_app)
             assert ablak.findChild(QObject, "movieHeightBox").property(
                 "currentIndex"
             ) == 6, "a személyalbum-film nem a facemakemovieres tárolt indexét használja"
@@ -462,6 +478,7 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             assert film is not None and _varj(
                 qt_app, lambda: film.property("visible")
             )
+            _arcfilm_opciokra(ablak, qt_app)
             film.setProperty("targetFile", QUrl.fromLocalFile(
                 str(tmp_path / "anna-film.mp4")
             ).toString())

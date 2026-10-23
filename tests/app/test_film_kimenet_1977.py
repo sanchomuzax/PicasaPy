@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 from picasapy.app.movie_output import (
-    FILENAME_STEM,
+    honositott_alapnev,
     output_dir,
     output_path,
     safe_stem,
@@ -35,17 +35,17 @@ from picasapy.app.movie_output import (
 class TestAzAlapnev:
     def test_a_MERT_magyar_alapnev(self):
         """`CMakeMoviePanel::deffilename` magyar oszlopa."""
-        assert FILENAME_STEM == "diavetites_jellegu_film"
+        assert honositott_alapnev("hu") == "diavetites_jellegu_film"
 
     def test_ures_cimre_az_alapnev_jon(self):
-        assert safe_stem("") == FILENAME_STEM
-        assert safe_stem(None) == FILENAME_STEM
+        assert safe_stem("", "hu") == "diavetites_jellegu_film"
+        assert safe_stem(None, "hu") == "diavetites_jellegu_film"
 
     def test_a_tiltott_karakterek_kiesnek(self):
         assert safe_stem('nyar/2025:*?"<>|') == "nyar2025"
 
     def test_a_csak_pontokbol_allo_cim_is_az_alapnevre_esik(self):
-        assert safe_stem("...") == FILENAME_STEM
+        assert safe_stem("...", "hu") == "diavetites_jellegu_film"
 
 
 class TestACelmappa:
@@ -81,7 +81,7 @@ class TestACelfajl:
         assert output_path(tmp_path, "Nyaralás") == tmp_path / "Nyaralás2.mp4"
 
     def test_ures_cimre_az_alapnev(self, tmp_path):
-        assert output_path(tmp_path, "") == tmp_path / f"{FILENAME_STEM}.mp4"
+        assert output_path(tmp_path, "", "hu") == tmp_path / "diavetites_jellegu_film.mp4"
 
 
 class TestATartalek:

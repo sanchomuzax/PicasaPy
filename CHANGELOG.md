@@ -7,6 +7,30 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.198] - 2026-10-23
+
+- Az Arcfilm beállításai külön Options fülre kerültek, az eredeti alapértékek megőrzésével (#5670).
+
+## [0.9.197] - 2026-10-23
+
+- A Film készítése az eredeti szerint nevezi el a kimenetet: a felület nyelvén a Picasa alapnevét adja, és ugyanabban a munkamenetben az előző film nevét ajánlja újra (#5676).
+
+## [0.9.196] - 2026-10-23
+
+- A Nyomtatás felülvizsgálata rákérdez, ha minden kép gyenge minőségű, és az eltávolítás megerősítése után megszakítja a nyomtatást (#5682).
+
+## [0.9.195] - 2026-10-23
+
+- A Passport nyomtatási mód megtartja a beállított példányszámot, az új munkák pedig továbbra is 1 példánnyal indulnak. (#5669).
+
+## [0.9.194] - 2026-10-23
+
+- A Film készítése újraszámolása előtt üres dia-listánál is megerősítést kérünk; a „Ne kérdezzen újra” beállítás csak az Igen választással rögzül. (#5668).
+
+## [0.9.193] - 2026-10-23
+
+- Az effektek színválasztója pipettát kapott: a képre kattintva a kattintott képpont színe lesz az effekt színe (#5674).
+
 ## [0.9.192] - 2026-10-23
 
 - Kikapcsolt Legutóbbiak mellett a Gyorscímkézés nem módosítja az előzménylistát (#5665).
