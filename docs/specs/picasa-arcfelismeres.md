@@ -6390,3 +6390,57 @@ A külön `vfr_FusedRelator` `+0x40` vtable-bejegyzése (`0x101c7254`) a `0x100a
 **A #5185 „Kész, ha” állapota.** Az 1-6. pont továbbra is részleges a 35.3 táblázat nyitott felvételei szerint. A 7. pontban a bináris olvasó/író út és a külön Backup-másoló út dokumentált, de a műveletenkénti lemezre írás és a `.picasa.ini`/db3 diff nyitott (J8). A 8. pontban a pontszámgyűjtő és a wrapper szerepe dokumentált, de a Red.dll végső küszöbe, bemeneti mérete, scan-indítása és kihagyása nyitott (J7, célzott nyomkövetés a binárisban). Így mind a nyolc ponthoz van leírt eredmény vagy konkrét nyitott megszerzési út, de a teljes „Kész, ha” feltétel **nem teljesült**; bizonyított PicasaPy-eltérés és fejlesztői teendő nincs.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 52. szakasz: a 7-8. pont független bináris-ellenőrzése, cáfoló próba és nyitott mérések).
+
+## 53. #5184, helyi Codex-kör: N1/N3/N7 futásidejű döntése nyitott (2026-10-23)
+
+**Hatókör és korlát.** A helyi eredeti Picasa 3.7 bináris, a Picasa 3.9 indexei, a Red.dll, a `red.cfg`, a hozzáférhető mérőadat-archívum és a PicasaPy forrása alapján ellenőriztem az előző körök N1/N3/N7 nyitott pontjait. Az eredeti Picasa nem futott, Colab-felvétel nem készült: a helyi felmérő `gh api ... POST .../issues` hívással ad fel feladatot, GitHub-hozzáférés pedig ebben a munkamenetben kifejezetten tiltott. A teljes `.text`-pásztázást nem ismételtem meg.
+
+### 53.1 N1: a névvel rendelkező képen maradó másik arcra nincs futásidejű adat
+
+- A PicasaPy saját kódja a felismerésből kihagyja azt a fotót, amelyen már van megnevezett arc (`FaceScanController._build_pending`, `src/picasapy/app/face_scan_controller.py:474-496`). Ez a mi viselkedésünket írja le, az eredeti Picasáét nem.
+- A `meroadat.tar` 944 tagjából célzottan csak a 15 `.picasa.ini` tagot bontottam ki; ezek összesen **27 267 bájtosak**. A `faces=`, `[Contacts2]`, `]facealbum:` és `ffffffffffffffff` jelölésekre **0** találat volt. A képállományok arctartalmáról ebből nem következtettem.
+- A helyi Picasa-diszasszemblálás (`0x0047b020`, `0x004985e0`, `0x00484820`) az előző szakaszokban dokumentált kaput, rekordmásolást és `faces`-írói kontextust mutatja, de a munkajelző íróját és a név utáni újbóli felismerést nem köti össze. A friss független audit az `]unknownface` xrefeket is ellenőrizte; azok sem döntik el a névadás utáni állapotot.
+- **Eredmény:** N1 **nyitott**, PicasaPy-eltérés nem bizonyított. Döntő mérés: ugyanaz a legalább kétarcú kép eredeti Picasában a másik arc megnevezése előtt és után; mindkét állapotban rögzítendő a Név nélküliek nézet és a képen tárolt `faces=` adat.
+
+### 53.2 N3: a Red végső küszöbe, bemeneti mérete és mért aránya továbbra sincs meg
+
+- A PicasaPy forrásban a YuNet alap-küszöbe **0,9**, a detektálásra korlátozott leghosszabb oldal **960 képpont** (`src/picasapy/faces/detector.py`). Ezek a mi beállításaink, nem az eredeti Red-modell értékei.
+- A `0,50` eredeti, binárisból kiolvasott érték továbbra is a `FRRecommendIncludeLimit` javaslat-befogadási határa (`0x0048aab0`, `0x0048e1f0`), nem bizonyíték a Red arcdetektor küszöbére (49.1).
+- A korábbi Red.dll-olvasat (`0x100057c0`, `0x10001570`, `0x100a8240`, `0x100af210`, `0x100b07b0`) pontszámgyűjtést, státuszellenőrzést és egy dinamikus érzékenység-átadási utat mutatott; nem azonosította a futásidejű osztályt, a beállított értéket vagy a végső elfogadási határt.
+- A friss, független címellenőrzés egy további Red-ágat azonosított: a `vsi_FaceViewDetector::runOnOneWindow` VA `0x10103870`, és a `0x10103c14` körüli kód az összegzett pontszámot egy objektum `+0x1c` mezőjével hasonlítja össze. A `vsi_WeakClassifier` `threshold =` mező szerializálása a `0x10107d70` címen látható (`threshold =` szöveg: `0x101d5800`). Ezek nem adják meg a futó Picasa által használt mező értékét, a Red tényleges bemeneti WxH-ját vagy az azonos címkézett képkészleten kapott arányt. A `red.cfg`-ellenőrző jelenlegi parsere az osztály-payloadot nem fejti vissza.
+- **Eredmény:** N3 **nyitott**; a felismerési arány, a tényleges Red-bemeneti méret és az effektív elfogadási érték mind **NINCS MEG**. Döntő út: azonos címkézett képkészlet rögzített futtatása mindkét programban, a Red-nek átadott tényleges képméret és betöltött modellértékek egyidejű rögzítésével.
+
+### 53.3 N7: a People Manager többes kijelölése nem dőlt el
+
+- A `contactmgr.fen` `contacts` listája nem ad meg kijelölési módot. A job-186 People Manager-kép egyetlen kijelölt személyt mutat; egyik tény sem bizonyít egy- vagy többes kijelölést. A PicasaPy QML egy aktuális sort kezel, de ez csak a mi oldalunk viselkedése.
+- A Név nélküliek nézet többes kijelölése külön bizonyított (`job-180`); ez nem bizonyítja, hogy a People Manager ugyanazt a modellt használja.
+- **Cáfoló kísérlet:** a `Select All` címke hivatkozásait próbáltam a People Manager többes kijelölésének statikus bizonyítékaként használni. A független audit a `0x007325a0` és `0x007348f0` hivatkozókat Publish/Collage-környezethez, a `0x007331e0` címet pedig az `Address::ID_SELECTALL` szerkesztőmenühöz kötötte. A függvénykörnyezetek visszaellenőrzése ezt az érvet megcáfolta: ezek nem People Manager-bizonyítékok.
+- **Eredmény:** N7 **részben nyitott**: a Név nélküliek többes kijelölése bizonyított, a People Manager Ctrl/Shift-módja **NINCS MEG**. Döntő mérés: két személy felvétele után képernyőkép az első sor kattintása, Ctrl+kattintás és Shift+kattintás után, hogy látható legyen, megmarad-e mindkét kijelölés.
+
+### 53.4 Független utak és bizonyítottság
+
+- **A út:** a helyi Picasa/Red index `functions`, `xrefs`, `string_xrefs`, `rtti` rekordjai; a teljes, címre szűkített Capstone-olvasatok; a `red.cfg` feldolgozójának kimenete; a `contactmgr.fen`; továbbá a PicasaPy forrása. Ezek együtt megadják, mely kódutak és saját oldali beállítások ismertek, de a nyitott viselkedésekhez szükséges futásidejű adatot nem.
+- **B út:** a friss kontextusban, spec és előzetes következtetés nélkül dolgozó független bíráló a `]unknownface` xrefeket, a Red `0x10103870`/`0x10107d70` útját, a People Manager menühivatkozását és a félrevezető `Select All` hivatkozásokat ellenőrizte. N1/N3/N7 esetén ugyanarra jutott: a binárisban talált nyomok nem helyettesítik a hiányzó eredeti Picasa-felvételt vagy címkézett aránymérést.
+- **Egyezés:** a két út az ismert kódútvonalakban egyezik, de egyik sem ad futásidejű választ N1-re, N3-ra vagy N7-re. Ezért ezek a kérdések **nyitottak**; viselkedési állításuk nem minősíthető megerősítettnek. A 0,50 javaslati határra, a PicasaPy 0,9/960 beállításaira és az N4/N5/N6/N8 korábbi felvételeire vonatkozó állítások saját forrásukkal külön alátámasztottak.
+
+### 53.5 A #5184 „Kész, ha” pontjai
+
+| Pont | Eredmény | Bizonyíték / hiányzó adat |
+|---|---|---|
+| N1: talál-e az eredeti további ismeretlen arcot névvel rendelkező fotón | ⛔ Nyitott | Az eredeti Picasa név előtti/utáni, azonos kétarcú képen végzett felvétele **NINCS MEG**; a helyi archívum 15 INI-je nem tartalmaz arc-kontrollt. |
+| N3: eredeti arány és Red-küszöb a YuNet 960 px / 0,9 viszonyában | ⛔ Nyitott | Effektív Red-érték, Red-bemeneti WxH és azonos címkézett adaton mért arány **NINCS MEG**; `0,50` csak a javaslati határ. |
+| N4: keret és név alapértelmezett láthatósága | ✅ Lezárt | Eredeti felvétel `job-187` (36.3): a megnevezett arcon alapból egyik sem látszik. |
+| N5: személyszintű mellőzés útja és hatása | ✅ Lezárt | Eredeti felvétel `job-222..226` (37.11): személyszintű mellőzés nincs, a mellőzés arcszintű. |
+| N6: személy törlése és hatása az arcokra | ✅ Lezárt | Eredeti felvétel `job-222/224` (37.10); a javítás #5391-gyel kiment. |
+| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ Részben nyitott | Név nélküliek többes kijelölése `job-180`-nal igazolt; People Manager Ctrl/Shift-felvétele **NINCS MEG**. |
+| N8: People Manager referencia-képernyőkép | ✅ Lezárt | Eredeti felvétel `job-186`, 24. kép (36.3). |
+
+**Fejlesztési következmény.** Eredeti/PicasaPy-eltérés nem bizonyított, ezért kódmódosítási lista és fejlesztői jegy nem indokolt. Új kutatási jegy sem kell: a három nyitott pont a #5184-ben marad.
+
+**Nyitott / következő megszerzési út:**
+- N1: eredeti Picasa kétarcú fotóval, név előtti és név utáni képernyő- és `faces=`-felvétel.
+- N3: ugyanazon címkézett adatkészlet Picasa/PicasaPy futtatása; a Red betöltött paramétereinek és tényleges bemeneti képméretének rögzítése.
+- N3: Ghidra-kör kell: `0x10103870`: kövesd a `runOnOneWindow` által összehasonlított `+0x1c` mező összes beállító/betöltő útját a `red.cfg`-ig, és vizsgáld meg, hogyan kapcsolódik hozzá a `0x10107d70` `vsi_WeakClassifier threshold` szerializáló; a meglévő `0x100af210` kimenet ezt a `vsi_` ágat nem válaszolja meg. [blokkoló]
+- N7: két személyes People Manager felvétel kattintás, Ctrl+kattintás és Shift+kattintás után.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 53. szakasz: a helyi Codex-audit, a független ellenőrzés, a friss cáfoló próba és a #5184 pontonkénti állapota).
