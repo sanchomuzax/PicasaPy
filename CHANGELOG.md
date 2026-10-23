@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.189] - 2026-10-23
+
+- A diavetítés felső kattintósávja ugyanúgy váltja a lejátszást, mint a lejátszás gomb (#5649).
+
 ## [0.9.188] - 2026-10-23
 
 - A Print Screen gomb mostantól BMP-képernyőképet ment a Képernyőfelvételek projektmappába, és értesít a mentésről (#5639).
