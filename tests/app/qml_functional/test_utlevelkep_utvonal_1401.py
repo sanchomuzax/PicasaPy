@@ -245,7 +245,8 @@ class TestANyomtatasiNezet:
         qt_app.processEvents()
         assert nezet.property("passport") is False
         assert nezet.property("printSize") != "PASSPORT"
-        assert nezet.property("fitMode") == "fit"
+        # #5681: a következő sima nyomtatás a Crop to Fit alapállással tér vissza.
+        assert nezet.property("fitMode") == "fill"
         assert _elem(nezet, "printSizeBox").property("currentIndex") >= 0
         assert _elem(nezet, "printSelectionText").property("text").startswith(
             "Pictures to print: 2"
