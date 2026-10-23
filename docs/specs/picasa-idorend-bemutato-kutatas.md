@@ -624,26 +624,30 @@ A `0x004a57a0` a `[state+0xc4]+0xf8` objektum `+0x3f4` elemszámából indul, in
 
 **Nyitott.** A qshowban kiválasztott token és a CThumbDB tokenlista feltöltő útja **NINCS MEG**; megszerzéséhez a futó qshow `[this+0x50c]` értékét, a `0x004406f0` bemeneti listáját és a visszaadott `CSlice+0x64` elemeit ugyanazon mérési futásban kell rögzíteni, majd az `0x008018a0` kártyaépítésével összevetni. A `0x00419d10` eltolás-találata önmagában nem azonosít qshow-listaírót; a bináris index e függvényhez `]facealbum:%d` és `]expeople:%d` sztring-xrefeket ad, ami önmagában sem bizonyít, sem zár ki további kapcsolatot.
 
-- Ghidra-kör kell: `0x00419d10`: az objektum `+0xaf0` mezőjén keresztüli tokenlista-műveletek a qshow tokenlistájának írói-e [blokkoló]
-- Ghidra-kör kell: `0x00439a80`: az objektum `+0xaf0` mezőjét használó `]album`, `]screensaver` és `]web_` ágak írják-e a qshow által olvasott tokenlistát [blokkoló]
+- A két korábban kért törzs elkészült; a dekompilált eredményt és a fennmaradó segédfüggvény-kérdéseket lásd a 38.2.75-ben.
 
 **Új kutatási jegyjavaslat.** Nincs; ez a képlánc-forrás #5401-en belüli nyitott kérdése.
 
 #### 38.2.75 A `+0xaf0` találatok nem azonosítják a qshow tokenlista íróját (#5401, 2026-10-23)
 
-**Hatókör.** A 38.2.74-ben nyitva hagyott `0x00419d10` és `0x00439a80` címeket a `functions` indexből vett mérettel diszasszembláltam (`4877`, illetve `9820` bájt). Ezután a teljes `.text` streaming vizsgálata a `paszta.memoria_kapu()` hívással indult, és a `+0xaf0`, `+0xb00`, `+0xb04` operandusokra szűrt. A `grep -il` talált Ghidra-fájlokat, amelyek e címeket hívóként említik, de `CÍM 0x00419d10` vagy `CÍM 0x00439a80` dekompilált törzs nincs a meglévő kimenetekben. Wine nem érhető el ezen a környezeten; futó qshow-mérés nem készült.
+**Hatókör.** A 38.2.74-ben nyitva hagyott `0x00419d10` és `0x00439a80` címeket a `functions` indexből vett mérettel diszasszembláltam (`4877`, illetve `9820` bájt). A korábbi Ghidra-kérés után mindkét függvény törzse megjelent a `2026-10-23-sor-277-280.txt` kimenetben; ezt az eredeti utasításokkal és a hívói kontextussal ellenőriztem. A teljes `.text` streaming vizsgálata korábban a `paszta.memoria_kapu()` hívással indult, és a `+0xaf0`, `+0xb00`, `+0xb04` operandusokra szűrt. Wine nem érhető el ezen a környezeten; futó qshow-mérés nem készült.
 
-**A jelölt függvények közvetlen mezőművelete.** A `0x00419d10` a `0x0041a8a8` címen a `[ebp+0xaf0]` címét veszi; utána a beágyazott cím `+0x20` és `+0x24` mezőjét vizsgálja/módosítja (`0x0041a8b0`-`0x0041a8c7`). A függvényben nem találtam közvetlen dword-írást az alapobjektum `[ebp+0xaf0]` mezőjére. A `0x00439a80` hasonlóan a `[ebx+0xaf0]` címét veszi a `0x00439ce1`, `0x00439f4c` és `0x0043bfc2` helyeken; az ezeket követő utasítások a beágyazott objektum `+0x20`/`+0x24` mezőit olvassák vagy módosítják, de az alapobjektum `+0xaf0` mezőjére közvetlen tárolást e függvényben nem találtam. A függvényekhez társított sztringek (`]facealbum:%d`, `]expeople:%d`, illetve `]album`, `]screensaver`, `]web_`) önmagukban nem bizonyítják, hogy ezek a qshow tokenoszlopát töltik.
+**A jelölt függvények közvetlen mezőművelete.** A `0x00419d10` Ghidra-törzse a `param_1+0xaf0` mezőn át a vtable `+0x18`/`+0x1c` helyeit hívja a zárolási útban. A látható rekordműveletek a `param_1+0xb48`, `+0xb4c` és `+0x68` mezőkhöz tartoznak; a függvény `"]facealbum:%d"` és `"]expeople:%d"` kulcsokat épít, majd a `0x004dcf60` rutint is hívja. A `0x00439a80` Ghidra-törzse a `param_1[700]` (`+0xaf0`) mező vtable `+0x18`/`+0x1c` hívásait használja zárolásra. A `"]web_"` és `"]screensaver"` ágak további index-/rekordműveleteket végeznek; a `0x00439960` és `0x004dca40` hívását a diszasszembly is mutatja. A két törzs nem azonosítja a hívó objektumot a qshow CThumbDB-jeként, és nem köti a látható rekordokat a qshow `+0x388` tömbjéhez.
 
 **Független kontroll és hamis pozitív.** A memória-kapuval indított teljes pásztázás a `0x0073fe68` címen szintén talált `+0xaf0` írást: `mov dword ptr [ebx+0xaf0], ecx`. A függvénycím (`0x0073f320`) az RTTI-ben a `CImageOutput::vftable` metódusaként szerepel. Ez függetlenül megmutatja, hogy a puszta `+0xaf0` eltolás nem azonosít qshow- vagy CThumbDB-mezőt. A teljes pásztázásban a `+0xaf0`/`+0xb00`/`+0xb04` minták stack-lokális előfordulásokat is adtak; ezeket nem számoltam objektummező-bizonyítéknak.
 
-**Következtetés és bizonyítottság.** **Feltételes:** a két jelölt törzsében nincs közvetlen írás az alapobjektum `+0xaf0` mezőjére; az utasításolvasatot a teljes, kapuval végzett pásztázás és az RTTI-osztályellenőrzés korlátozza. A függvények által hívott rutinok a beágyazott objektum belsejét közvetetten módosíthatják, ezért egyik cím sem zárható ki a tokenlista feltöltéséből. Az eddigi adat nem dönti el, hogy ezek az objektumok a qshow `CThumbDB`-jéhez tartoznak-e.
+**A két független út.** A út: a Ghidra-törzsek megmutatják, hogy a `+0xaf0` mindkét függvényben zárolási vtable-hívás bemenete, miközben külön rekord-/indexmezőkön zajlik a látható munka. B út: az eredeti PE diszasszemblye igazolja a hívási helyeket; a hívói xrefek és a `#tmp`, `]facealbum`, `]expeople`, `]web_`, `]screensaver` sztringek külön adatútból adják a műveleti kontextust, a kapus pásztázás pedig RTTI-vel ellenőrzött `CImageOutput`-találatot ad azonos eltolásra. A két út az eltolás-alapú osztályazonosítás korlátjában egyezik; a segédek közvetett hatására egyik sem ad végleges választ.
 
-**Cáfoló kísérlet.** Azt az állítást próbáltam cáfolni, hogy minden `[reg+0xaf0]` írás a CThumbDB tokenoszlopához tartozik. A `0x0073fe68` írás `CImageOutput` metódusban van, így az offsetre önmagában támaszkodó azonosítás megbukik. A cáfolatot a függvény címének RTTI-tagságával ellenőriztem. Ez nem cáfolja, hogy a `0x00419d10` vagy `0x00439a80` hívott segédjei közvetetten módosítanak egy tokenoszlopot; ilyen hívott út jelentését nem állapítottam meg.
+**Következtetés és bizonyítottság.** **Feltételes:** a két függvényben nincs közvetlen tárolás az alapobjektum `+0xaf0` mezőjére; a Ghidra-törzs és az utasításszintű olvasat egyezik abban, hogy e mező a zárolási útban szerepel. A `0x00419d10` látható `+0xb48`/`+0xb4c` műveletei és a `0x00439a80` kulcs-/indexágai nem bizonyítják a qshow CThumbDB tokenlistáját. A hívott segédek közvetett módosítása és a hívó objektumok pontos típusa továbbra sincs eldöntve.
+
+**Cáfoló kísérlet.** Azt a jelöltet vizsgáltam, hogy a két függvény a `+0xaf0` egyezés miatt maga a qshow CThumbDB tokenoszlopának írója. A Ghidra-törzsek és a diszasszembly a mezőt zárolási vtable-hívásként mutatja; a látható rekordműveletek más mezőket érintenek. A korábbi ellenpélda szerint ugyanezt az eltolást a `0x0073f320` `CImageOutput` metódusa is írja (`0x0073fe68`), RTTI-azonosítással. Ez cáfolja az eltolásból önmagában levont osztályazonosítást, de nem cáfolja a hívott segédek közvetett hatását.
 
 | Állítás | Forrás |
 |---|---|
-| A `0x00419d10` és `0x00439a80` az alapobjektum `+0xaf0` mezőjének címét veszi, majd a belső objektum `+0x20`/`+0x24` mezőivel dolgozik; közvetlen alapmező-írás nem látszik. | bináris (`0x00419d10`, `0x0041a8a8`-`0x0041a8c7`; `0x00439a80`, `0x00439ce1`, `0x00439f4c`, `0x0043bfc2`) |
+| A `0x00419d10` és `0x00439a80` a `+0xaf0` mezőt vtable `+0x18`/`+0x1c` zárolási útján használja; ez nem azonosítja a qshow tokenlistáját. | bináris (`0x00419d10`, `0x00439a80`; Ghidra: `2026-10-23-sor-277-280.txt`; diszasszembly) |
+| A `0x00419d10` `]facealbum:%d`/`]expeople:%d` ágai a `+0xb48`/`+0xb4c` és `+0x68` mezőkkel dolgoznak. | bináris (`0x00419d10`, `0x004dcf60`; string xrefek) |
+| A `0x00439a80` `]web_`/`]screensaver` ágai index-/rekordsegédeket hívnak. | bináris (`0x00439a80`, `0x00439960`, `0x004dca40`) |
+| A két jelölt függvényt a `#tmp`-t kezelő `0x0041b580`, illetve a DB-ágakat kezelő `0x0041ba40`/`0x0041ee10` hívja. | bináris xref + diszasszembly (`0x0041b5d9`, `0x0041ba9c`, `0x0041f915`; `#tmp`, `#contacts`, `]screensaver`, `starlist.txt`, `Preferences`) |
 | A `+0xaf0` közvetlen írás egy `CImageOutput` metódusban is előfordul. | bináris (`0x0073fe68`, függvény `0x0073f320`) + RTTI (`CImageOutput::vftable`, `0x00cb037c`) |
 | A két jelölt függvény közvetett hívásai módosítják-e a qshow `CThumbDB` tokenoszlopát; a qshow `[+0x50c]` tényleges tokenje és a lista futásidejű tartalma. | NINCS MEG |
 
@@ -651,8 +655,8 @@ A `0x004a57a0` a `[state+0xc4]+0xf8` objektum `+0x3f4` elemszámából indul, in
 
 **Nyitott.**
 
-- Ghidra-kör kell: `0x00419d10`: a `[this+0xaf0]` beágyazott objektum hívásai módosítják-e a qshow CThumbDB tokenoszlopát, és milyen típusú a hívó által átadott objektum. A meglévő Ghidra-fájlok ezt a címet csak hívóként listázzák, a függvénytörzs nincs dekompilálva. [blokkoló]
-- Ghidra-kör kell: `0x00439a80`: a `]album`, `]screensaver` és `]web_` ágak mely oszlopokat/listákat állítják, és elérik-e a qshow CThumbDB tokenoszlopát. A meglévő Ghidra-fájlok ezt a címet csak hívóként listázzák, a függvénytörzs nincs dekompilálva. [blokkoló]
+- Ghidra-kör kell: 0x004dcf60: a `0x00419d10` által a `+0x68` alobjektumon hívott rutin milyen adatot olvas vagy módosít, és kapcsolatban áll-e a qshow CThumbDB tokenoszlopával? [blokkoló]
+- Ghidra-kör kell: 0x00439960: a `0x00439a80` `]screensaver`/`]web_` útján hívott segédje csak az indexelőben keres, vagy a qshow CThumbDB tokenlistáját is módosítja? A meglévő `0x004dca40` kimenet a kereső segédet mutatja, de ezt a hívó segédet nem. [blokkoló]
 - A qshow aktuális `[this+0x50c]` értéke, a tokenlista teljes sorrendje és a `CSlice+0x64` képrekordjai: **NINCS MEG**. Megszerzésükhöz ugyanazon futó qshow-mérésben kell rögzíteni e mezőket; ehhez Wine-futtatókörnyezet szükséges, ami itt nem áll rendelkezésre.
 
 **Új kutatási jegyjavaslat.** Nincs; ez továbbra is a #5401 képlánc-elfogadási pontja.
@@ -719,7 +723,7 @@ A megadott tesztállapotban a thumb-kimenet `100 + t*400 - 15`, ahol `t` a korl�
 
 **A #5401 „Kész, ha” pontjai.** (1) ⛔ A csúszka által választott tömbindex futtatásos kontrollja nem azonosítja a képhalmaz forrását, dátumkulcsát vagy sorrendjét. (2) ⛔ Ez a mérés nem egészíti ki a képkockánkénti pályát vagy a rétegrajzolást. (3) ⛔ A csúszka x→index és thumb-x leképezése kontrollált állapotra QEMU-val igazolt; az `A` dátumjelentése, a `timelinedot` kattintási/vezérlőműködése (statikus pozícióképlete: 38.2.78), a listaikon és a valós autoplay-periódus továbbra is nyitott. (4) ⛔ A diavetítésbe váltás és a visszatérő nézet/képindex továbbra sincs futás közben mérve.
 
-**Nyitott.** Az `A` tömb valódi írója, értelmezése, teljes elemlistája és a hozzá kötött képek; a valós qshow húzás közbeni és felengedés utáni képernyőállapota. A valódi állapot és képkockák rögzítéséhez célzott Wine-futás kell; a helyi környezetben Wine nincs. A 38.2.75-ben felsorolt `0x00419d10` és `0x00439a80` Ghidra-kérések változatlanul szükségesek a tokenlista feltöltési útjának eldöntéséhez.
+**Nyitott.** Az `A` tömb valódi írója, értelmezése, teljes elemlistája és a hozzá kötött képek; a valós qshow húzás közbeni és felengedés utáni képernyőállapota. A valódi állapot és képkockák rögzítéséhez célzott Wine-futás kell; a helyi környezetben Wine nincs. A `0x00419d10` és `0x00439a80` törzse elkészült; a nyitott segédfüggvény-kérdéseket a 38.2.75 sorolja.
 
 #### 38.2.78 A `timelinedot` statikus kirajzolási képlete és duplikált arányai (#5401, 2026-10-23)
 
@@ -771,8 +775,7 @@ A tesztállapotban a végső `r_i=1`, így az x-kimenet 295; a függvény y-alap
 
 **Nyitott.**
 
-- Ghidra-kör kell: `0x00419d10`: mely hívott rutin módosítja a `CThumbDB` tokenoszlopát, és milyen objektumtípust kap a hívó? A meglévő kimenet csak hívóként sorolja, a törzset nem tartalmazza. [blokkoló]
-- Ghidra-kör kell: `0x00439a80`: a `]album`, `]screensaver` és `]web_` ágak mely listát/oszlopot állítják, és elérik-e a qshow `CThumbDB` tokenoszlopát? A meglévő kimenet csak hívóként sorolja, a törzset nem tartalmazza. [blokkoló]
+- A `0x00419d10` és `0x00439a80` dekompilált törzse, illetve a fennmaradó segédfüggvény-kérdések: lásd 38.2.75.
 - A `qshow+0x388` tömb valódi előállítója és értelmezése, a tokenhez tartozó képek/dátumok, a listaikon működése, a teljes rajzolási/animációs felvétel, az autoplay üteme, valamint a Space utáni visszatérés helye és indexe: **NINCS MEG**. A felvételhez Wine-futtatás és ugyanazon qshow-állapot képernyőképe és memóriakivonata kell; Wine ezen a gépen nem érhető el.
 
 **Új kutatási jegyjavaslat.** Nincs; ezek a #5401 nyitott elfogadási pontjai.
@@ -803,6 +806,6 @@ A keresés ellenpéldát is adott az eltolás-alapú azonosításhoz: a teljes `
 
 **A #5401 „Kész, ha” pontjai.** (1) ⛔ A kártyarendező közvetlenül nem az `A`-tömb írója; a gyűjtemények, képhalmaz, dátumkulcs, sorrend és elemazonosítók továbbra sincsenek meg. (2) ⛔ A korábban leírt kártyapálya-részletek mellett a teljes képkockánkénti út, időgörbe, rétegsorrend, háttér és kártyarajzolás nincs kész. (3) ⛔ A `timelinedot` és a csúszka statikus olvasási/rajzolási része dokumentált, de az `A` valódi szemantikája, a listaikon, a vezérlőhatások és a valós autoplay-ütem nyitott. (4) ⛔ A diavetítés tényleges futásidejű váltása és az Időrendbe visszatérő nézet/képindex nincs mérve.
 
-**Nyitott.** A `qshow+0x388`/`+0x38c` tényleges írója, a tömb elemeinek előállítása és a token-/dátum-/képadatok kapcsolata **NINCS MEG**. A fenti negatív ellenőrzés csak a `0x007f0000`-`0x00810000` terület közvetlen utasításaira szól; a globális eltolásegyezések osztályazonosítása nélkül nem bizonyítanak qshow-adatot. A futó UI-val és valós adatállapottal végzett méréshez Wine kell, amely ezen a gépen nem érhető el. A 38.2.75-ben felsorolt `0x00419d10` és `0x00439a80` Ghidra-kérések a tokenlista forrására továbbra is blokkolók.
+**Nyitott.** A `qshow+0x388`/`+0x38c` tényleges írója, a tömb elemeinek előállítása és a token-/dátum-/képadatok kapcsolata **NINCS MEG**. A fenti negatív ellenőrzés csak a `0x007f0000`-`0x00810000` terület közvetlen utasításaira szól; a globális eltolásegyezések osztályazonosítása nélkül nem bizonyítanak qshow-adatot. A futó UI-val és valós adatállapottal végzett méréshez Wine kell, amely ezen a gépen nem érhető el. A `0x00419d10`/`0x00439a80` törzsek elkészültek; az általuk hívott segédek nyitott kérdéseit a 38.2.75 sorolja.
 
 **Új kutatási jegyjavaslat.** Nincs; az `A` tömb írója és jelentése továbbra is a #5401 képlánc-/vezérlő-elfogadási pontjába tartozik.
