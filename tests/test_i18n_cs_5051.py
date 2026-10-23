@@ -5,6 +5,8 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
+from picasapy.app.i18n.dictionary import qt_text
+
 
 CS_TS = (
     Path(__file__).resolve().parents[1]
@@ -104,7 +106,7 @@ def _messages():
 
 
 def _translation_text(translation):
-    return "".join(translation.itertext()) if translation is not None else ""
+    return qt_text(translation)
 
 
 def _translation_forms(translation):
@@ -122,7 +124,7 @@ def _shortcut_count(text):
 
 def test_czech_translation_has_no_unfinished_messages():
     unfinished = [
-        f"{context}: {message.findtext('source')}"
+        f"{context}: {qt_text(message.find('source'))}"
         for context, message in _messages()
         if (message.find("translation") is not None)
         and message.find("translation").get("type") == "unfinished"
@@ -137,7 +139,7 @@ def test_czech_translation_has_no_unfinished_messages():
 def test_czech_translation_preserves_placeholders_and_shortcuts():
     mismatches = []
     for context, message in _messages():
-        source = message.findtext("source") or ""
+        source = qt_text(message.find("source"))
         translation = message.find("translation")
         key = (context, source)
 
@@ -165,6 +167,6 @@ def test_czech_numerus_messages_have_three_nonempty_forms():
         translation = message.find("translation")
         forms = translation.findall("numerusform") if translation is not None else []
         if len(forms) != 3 or any(not (form.text or "").strip() for form in forms):
-            errors.append(f"{context}: {message.findtext('source')}")
+            errors.append(f"{context}: {qt_text(message.find('source'))}")
 
     assert not errors, "A cseh többes alakok hibásak: " + "; ".join(errors[:8])

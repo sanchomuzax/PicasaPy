@@ -133,6 +133,22 @@ def test_hianyzik_a_pontos_nyelvi_kulcs_nem_hasznal_masik_szovegegyezo_sort(tmp_
     assert _tr(message) == ("unfinished", None)
 
 
+def test_qt_byte_nodes_are_part_of_catalog_message_keys():
+    root = ET.Element("TS")
+    context = ET.SubElement(root, "context")
+    ET.SubElement(context, "name").text = "Ctx"
+    message = ET.SubElement(context, "message")
+    source = ET.SubElement(message, "source")
+    source.text = "First line"
+    byte = ET.SubElement(source, "byte", {"value": "xd"})
+    byte.tail = "\nSecond line"
+    ET.SubElement(message, "translation").text = "Fordítás"
+
+    _message, key = gen._message_keys(root)[0]
+
+    assert key == ("Ctx", "First line\r\nSecond line", "", 0)
+
+
 def test_kulonbozo_irasjelu_elem_nem_parosodik_automatikusan(tmp_path):
     hu = _ts("hu_HU", [("Files...", None, "Fájlok..."), ("Plain", None, "Kezdőlap")])
     out = _futtat(
