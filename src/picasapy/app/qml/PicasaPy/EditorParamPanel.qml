@@ -107,6 +107,45 @@ Flickable {
         default: return key
         }
     }
+
+    // #5674: a színmező melletti pipetta: ugyanaz a kis, négyzetes ikonos
+    // gomb, mint a Finomhangolás fül pipettája (ott az `IconButton`).
+    component EffectPipetteButton: Rectangle {
+        id: pipette
+        property bool active: false
+        signal clicked()
+
+        implicitWidth: 24
+        implicitHeight: 24
+        radius: 3
+        border.width: 1
+        border.color: Theme.chromeBorder
+        color: pipette.active
+               ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
+                         Theme.selectionBlue.b, 0.45)
+               : (pipetteMouse.pressed ? Qt.darker(Theme.buttonBg, 1.15)
+                                       : Theme.buttonBg)
+
+        Image {
+            anchors.centerIn: parent
+            width: 18
+            height: 12
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            source: "icons/pipetta.svg"
+        }
+        MouseArea {
+            id: pipetteMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: pipette.clicked()
+        }
+        ToolTip.visible: pipetteMouse.containsMouse
+        ToolTip.text: qsTr("Pick Color")
+        ToolTip.delay: Theme.tooltipDelay
+    }
+
     objectName: "editorEffectParamScroll"
     anchors.bottomMargin: 6
     clip: true
@@ -303,15 +342,36 @@ Flickable {
                     visible: paramRow.controlKind === "color"
                     text: panel.paramLabel(paramRow.modelData.label)
                 }
-                TextColorSwatches {
-                    id: paramColorSwatches
-                    objectName: "effectParamColor" + paramRow.index
+                // #5674: a színmező mellett a pipetta. A sor a színmező
+                // szélességéig tart, így a színmező x-helye változatlan.
+                RowLayout {
                     visible: paramRow.controlKind === "color"
-                    showRecentColors: true
-                    // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
-                    // "color" mező nélküli payloadot is küldhetnek
-                    currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
-                    onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
+                    spacing: 6
+                    TextColorSwatches {
+                        id: paramColorSwatches
+                        objectName: "effectParamColor" + paramRow.index
+                        showRecentColors: true
+                        // #5674: a paraméter PILLANATNYI értékét mutatja, mint
+                        // a csúszka, így a pipetta eredménye is látszik rajta.
+                        // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
+                        // "color" mező nélküli payloadot is küldhetnek
+                        currentColor: panel.paramEffectValues
+                                      && panel.paramEffectValues.length > paramRow.index
+                                      && panel.paramEffectValues[paramRow.index]
+                            ? panel.paramEffectValues[paramRow.index]
+                            : (paramRow.modelData.color ? paramRow.modelData.color : "#000000")
+                        onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
+                    }
+                    EffectPipetteButton {
+                        objectName: "effectParamPipette" + paramRow.index
+                        // a MRU-sor (y = 15, 26 px) középvonalára ül
+                        Layout.alignment: Qt.AlignTop
+                        Layout.topMargin: 16
+                        active: panel.effectColorPickerTarget === paramRow.index
+                        onClicked: panel.effectColorPickerTarget =
+                            panel.effectColorPickerTarget === paramRow.index
+                                ? -1 : paramRow.index
+                    }
                 }
             }
         }

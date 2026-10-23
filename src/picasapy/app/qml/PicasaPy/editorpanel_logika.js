@@ -167,6 +167,7 @@ function closeParamPanel() {
     var wasSuspended = panel.paramPanelSuspended
     panel.paramPanelActive = false
     panel.paramPanelSuspended = false
+    panel.effectColorPickerTarget = -1
     panel.paramEffectName = ""
     panel.paramEffectLabel = ""
     panel.paramEffectParams = []
