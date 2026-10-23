@@ -2535,25 +2535,24 @@ kikapcsolódnak.** Ez a mi `printing/contact_sheet.py`-unkat közvetlenül
 
 | | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
-| a panel | önálló `printoptions` párbeszéd, 22 vezérlővel | **nincs** — a `PrintDialog.qml` (383 sor) elrendezést, nyomtatót, lapra-illesztést és tájolást kínál, keret/felirat vezérlőt **egyet sem** | ÚJ JEGY |
-| felirat/szegély a nyomaton | négyféle forrás, háromféle hely, szegély-négyes | a `printing/` csomagban (`layout.py`, `contact_sheet.py`) **nincs** felirat- vagy szegély-kód | ua. |
-| tárolás | 11 tartós `Preferences`-kulcs | — | QSettings, ugyanezzel a bontással |
-| indexképnél | a beállítások **tiltva**, saját magyarázó szöveggel | nincs mit tiltani | a szöveg átvehető |
-| a Beállítások „Nyomtatás" füle | **külön panel** | megvan (`OptionsTabPrinting.qml`, 59 sor) | ne keverjük össze a kettőt |
+| a panel | önálló `printoptions` párbeszéd, 22 vezérlővel | **megvan** külön `PrintOptionsPanel.qml` panelként; az elrendezés nem az eredeti 22 vezérlő egy-az-egyben másolata | a PicasaPy-panel létezése **EGYEZIK**; teljes geometriája és nyomtatási kimenetének azonossága a #5663-ban nyitott |
+| felirat/szegély a nyomaton | négyféle forrás, háromféle hely, szegély-négyes | megvan a `PrintOptionsPanel.qml` vezérlőiben és a `printing/options.py` tizenegy tartós mezőjében | a #5663 táblája összeveti az alapértékeket; a kimeneti raszter azonossága nincs mérve |
+| tárolás | 11 tartós `Preferences`-kulcs | megvan 11 QSettings-kulccsal (`printing/options.py:43-77`) | a tárolt kulcsok és alapértékek **EGYEZNEK**; a Cancel nettó, tartós visszaállítási hatása nyitott |
+| indexképnél | a beállítások **tiltva**, saját magyarázó szöveggel | a PicasaPy panel `contactSheet` módban letiltja a szerkesztést | funkcionális korlátozás **EGYEZIK**; a magyarázó szöveg pontos UI-paritása nincs mérve |
+| a Beállítások „Nyomtatás" füle | **külön panel** | megvan (`OptionsTabPrinting.qml`); ez a nyomtató/minőség-beállítások helye, nem a `PrintOptionsPanel` | a két felület szétválasztása **EGYEZIK** |
 
 ### Nyitott kérdések mérlege (39.)
 
 ```
-Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 4 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a tizenegy kulcs és a teljes írás→olvasás lánc (39.1); a
   vezérlő-készlet csoportosítása (39.2); az indexkép-tiltás és a szövege (39.3).
-- **HATÓKÖRÖN KÍVÜL:** a numerikus **alapértékek** (bordersize, textsize,
-  szín-értékek) kiolvasása a betöltő veremkezeléséből. A betűtípusé mérve
-  (`Arial`); a többinél a stack-slotokból való következtetés a 34.1-ben
-  leírt elcsúszás-kockázatot hozná, és a megvalósításhoz nem kell: a
-  szerződés a **kulcsnevek és a jelentésük**.
+- **LEZÁRVA:** a tizenegy numerikus és szöveges alapérték kiolvasása, a
+  39.5-ös bináris alapérték-táblával és a #5663 PicasaPy-összevetésével.
+- **NYITOTT:** a „Mégse” utáni tartós érték-visszaállítás nettó hatása;
+  lásd a 39.3 helyesbítését.
 
 ### Amit KIZÁRTAM
 
@@ -2564,7 +2563,7 @@ Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kív�
   panel; a fül a nyomtató-oldali beállításoké, a `printoptions` a **nyomat
   kinézetéé**.
 
-### 39.3 A három gomb VISELKEDÉSE — és hogy a Mégse VISSZATÖLT (2026-09-02)
+### 39.3 A három gomb VISELKEDÉSE: a Mégse visszaolvassa a beállításokat (2026-09-02; helyesbítve #5663)
 
 A kezelő `0x0085e800`; a három ág **külön** viselkedik:
 
@@ -2574,14 +2573,19 @@ A kezelő `0x0085e800`; a három ág **külön** viselkedik:
 | `printoptions/apply` | „Alkalmaz" | **csak frissíti az előnézetet** (`0x00745980`) — a panel **nyitva marad** | `0x0085e937`–`0x0085e95d` |
 | `printoptions/ok` | „OK" | `0x00745f50`, majd **bezárja** a panelt (`[panel+0x258]->vt[0x14](0,0)`) | `0x0085e9ab`–`0x0085e9c9` |
 
-⭐ **Ebből következik, hogyan működik a panel:** minden vezérlő **azonnal**
-kiírja a maga `Preferences`-kulcsát, ahogy a felhasználó rákattint (a
-kezelő minden ága `GetPreference` + `SetPreference` párral zárul). Az
-„Alkalmaz" ezért **nem ment** — csak újrarajzoltatja az előnézetet; a
-„Mégse" pedig **nem eldob**, hanem **visszaolvassa** a korábbi értékeket.
+⭐ A bináris utasításai szerint a beállításvezérlők kezelője a saját
+`Preferences`-kulcsát olvassa/írja, az „Alkalmaz” frissíti az előnézetet,
+bezárás nélkül, a „Mégse” pedig meghívja a `0x0085f7a0` betöltőt, frissíti az
+előnézetet és bezár. Ez **a beolvasási hívást bizonyítja, nem a tartós
+visszaállítást**: ha a vezérlők korábban már kiírták az új értéket, a
+betöltő ugyanazt az új értéket olvashatja vissza.
 
-⇒ **Ha a felhasználó a panelt az ablak X-ével zárja be, a módosításai
-BENT MARADNAK.** A visszavonás egyedül a „Mégse" gombhoz kötött.
+**NINCS MEG:** a „Mégse” ténylegesen visszaállítja-e a korábbi, tartós
+értékeket, és az ablak X-e milyen eredményt hagy. Megszerzési út: eredeti
+Windows futásban módosíts egy kulcsot, kattints a Mégse gombra, majd olvasd vissza a
+`Preferences` értékét; az X-es esetet külön futásban ellenőrizd. A
+PicasaPy ezzel szemben a panelnyitáskor snapshotot készít, majd Mégsére ezt
+állítja vissza (`PrintOptionsPanel.qml:104-112,139-144`).
 
 ### 39.4 A két rádiócsoport ÉRTÉKKÉSZLETE — mérve
 
@@ -3106,19 +3110,19 @@ elég kimondani.
 
 | | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
-| **DPI-őr** | legkisebb DPI kiírása + „kicsik" száma + „Ellenőrzés" felszólítás | **nincs semmi** — a `PrintDialog.qml` 383 sorában nincs felbontás-ellenőrzés | **ÚJ JEGY** |
-| nyomatméret-gombok | 3,5×5 · 4×6 · 5×7 · 8×10 · tárca | a `PrintDialog` „egy kép / indexkép + oszlopszám" bontást ad, **méretgombok nincsenek** | ua. |
-| a méret megjegyzése | `Preferences\PrintLastSize` | nincs | ua. |
-| példányszám fotónként | +/− gombpár | nincs | ua. |
-| előnézet-lapozás | prev/next + „%d / %d" | a párbeszédben nincs lapozó előnézet | ua. |
-| nyomtató-őr | „A printer must be installed…" | a nyomtatólista üres marad, saját üzenet nélkül | kis kiegészítés |
-| szegély/szöveg gomb | a `printoptions`-t nyitja | — | a #1780 párja |
-| `froogle` | megszűnt szolgáltatás | — | **hatókörön kívül** |
+| **DPI-őr** | minőségi sávok és ellenőrzési állapot; számoló `0x0085c060`, panelfrissítő `0x00745980` | megvan a minőségi felülvizsgálat (`PrintDialog.qml:269-289`); a 150/100 küszöb **EGYEZIK** (`printing/dpi.py:32-55`) | az osztályozási alapértékeken nincs teendő; az összes Low eltávolítási kérdés a #5663 eltérés |
+| nyomatméret-választó | 17 méret (`0x00776e20`), hat gyorsgombhely a `0x00743700` képernyőépítőben | méretlista és öt menthető gyorsgomb + Full Page (`PrintDialog.qml:652-705`); a teljes 17-es katalógus hiányos | lásd #5663 fejlesztői jegytörzs; CD méret **NINCS MEG**, megszerzés: `0x00776f0a` táblája |
+| a méret megjegyzése | `Preferences\PrintLastSize`, írás `0x00744ba8`-`0x00744bba` | a `PrintController.printSize()`/`setPrintSize()` a méretet tartósan kezeli (`print_controller.py:373-398`) | **EGYEZIK** a tartós méretválasztás; nincs külön teendő |
+| példányszám fotónként | +/- gombpár; alapérték `0x00860f78` | van képenkénti darabszám, alap 1 (`PrintDialog.qml:104-108`; vezérlők a párbeszédben) | **EGYEZIK** a példányszám-alapállapot és a képenkénti jelentés |
+| előnézet-lapozás | `previewnumber`, `prevbutton`, `nextbutton`; `0x00745980` | lapozható előnézet és lapszám (`PrintDialog.qml:109-119`, `:466`, navigációs gombok) | **EGYEZIK** funkcionálisan; pixelpontos felület nincs mérve |
+| nyomtató-őr | eredeti panel tartalmazza a telepített nyomtató nélküli figyelmeztetést | PicasaPy PDF célpontot mindig kínál; a hardvernyomtató nélküli eredeti/PicasaPy felületi válasz **NINCS MEG** | megszerzés: eredeti Windows futásban nyomtató nélküli állapot és PicasaPy azonos állapotának képernyőképe |
+| szegély/szöveg gomb | a `printoptions` panelt nyitja; `0x00743980` | a párbeszéd `PrintOptionsPanel.qml`-t nyit | a panel nyitása **EGYEZIK**; tartalmi/raszter-paritás: lásd #5663 |
+| `froogle` | kellékkereső belépés `0x00744750` | nincs megfelelő szolgáltatás | **hatókörön kívül** |
 
 ### Nyitott kérdések mérlege (40.)
 
 ```
-Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a DPI-őr létezése, szövegei és a hozzá tartozó „Ellenőrzés"
@@ -3766,7 +3770,7 @@ hiba.**
 | `acquirepanel` | egyképes előnézet next/prev helyett **bélyegkép-rács** | a rács egyszerre mutatja a készletet; funkcionálisan erősebb | — |
 | `quicktagconfig` | **8** hely az eredeti **10** helyett | eredetileg saját döntés, **indoka nincs rögzítve** ⇒ a jegy kéri a pótlást | #1788 |
 | `quicktagconfig` | csak **Bezárás**, nincs OK/Mégse | a párbeszéd azonnal ír; **kimondatlan volt** ⇒ a jegy döntést kér | #1788 |
-| `printoptions` | nálunk **nincs** a panel | még nincs megvalósítva — ez hiány, nem eltérés | #1780 |
+| `printoptions` | külön `PrintOptionsPanel.qml` panelként megvan, a tizenegy alapérték egyezik; a teljes geometria és kimeneti raszter nincs mérve | a „nincs megvalósítva” állítás elavult; lásd a #5663 tábláját és nyitott kérdéseit | #5663 |
 | `buttonmgr` | a **gombletöltés** nem készül el | a `picasa.smo` kiszolgáló megszűnt | #1792 |
 | `acquirepanel` | a **feltöltés/megosztás** blokk nem készül el | Picasa Web Albums megszűnt | — |
 | `printpanel` | a **`froogle`** gomb nem készül el | a Froogle megszűnt | #1782 |
