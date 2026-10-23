@@ -1,12 +1,10 @@
-"""Időrend nézet (#24, Ctrl+5): a `picasapy.timeline` csoportosítás
-Qt/QML-hídja - a teljes könyvtár fotóit év/hónap szerinti korszakokra
-bontva adja a `TimelineView.qml`-nek.
+"""Teljes képernyős Időrend bemutató (#5377), Qt/QML-híd.
 
-Dátum-forrás (rögzített döntés, #24): elsődlegesen az EXIF `taken_at`
-(a sync már kiolvasta, ld. `picasapy.index.sync`), ennek hiányában
-(RAW/videó, vagy olvashatatlan EXIF) a fájl ideje - ld.
-`picasapy.timeline.resolve_date`. Ez a bevett fallback-elv, nem
-projekt-specifikus kompromisszum: a séma `mtime_ns`-e mindig kitöltött.
+Az eredeti képlánc és az `A` tömb dátumjelentése még nyitott (#5401). A
+felvétel szerint látható mappakártyákat ezért a helyi index mappánkénti
+csoportosításából építi. A kártya dátuma a mappa legrégebbi ismert képdátuma;
+a csúszka a képek tényleges dátumtartományát mutatja. A képek mappán belüli
+sorrendje az index stabil névsorrendje.
 
 #2486: a fájlidő itt is a BEFAGYASZTOTT, első látáskori érték
 (`PhotoRecord.sort_mtime_ns`), nem az élő `mtime`. Enélkül ugyanaz az
@@ -18,28 +16,33 @@ ugyanarról a képről mondott volna mást. A döntés lapja:
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.index import PhotoRecord, all_photos, open_index
-from picasapy.timeline import (
-    TimelinePeriod,
-    TimelinePhoto,
-    build_periods,
-    record_date,
-)
+from picasapy.timeline import record_date
 
-from .models import _has_edits, _thumb_url
+from .models import PhotoGridModel, _has_edits, _thumb_url
+from ..timeline_motion import (
+    DEFAULT_BEZIER_POINTS,
+    frame_transforms,
+    random_slide_offsets,
+    rational_cubic_bezier,
+    slider_index,
+    slider_thumb_x,
+    slideshow_easing,
+    timeline_dot_positions,
+)
 
 
 class TimelineController(QObject):
-    """Csak-olvasó vezérlő: a `reload()` az indexből építi a korszak-
-    listát; a QML (`TimelineView.qml`) ebből rajzol korszak-fejléceket
-    + bélyegkép-rácsot. A fotó-kattintás (mappaváltás + néző-megnyitás)
-    a Main.qml dolga - ez a controller csak adatot ad."""
+    """A teljes könyvtár mappakártyáit és mozgásképleteit szolgáltatja a QML-nek.
 
-    periodsChanged = Signal()
+    """
+
+    collectionsChanged = Signal()
 
     def __init__(self, db_path: Path, provider, parent: QObject | None = None):
         """`provider`: a MEGLÉVŐ (az AppControllerrel közös) ThumbnailProvider
@@ -48,14 +51,100 @@ class TimelineController(QObject):
         super().__init__(parent)
         self._db_path = db_path
         self._provider = provider
-        self._periods: list[dict] = []
+        self._collections: list[dict] = []
+        self._collection_records_by_folder: dict[str, tuple[PhotoRecord, ...]] = {}
+        self._collection_slideshow_model: PhotoGridModel | None = None
 
-    @Property("QVariantList", notify=periodsChanged)
-    def periods(self) -> list:
-        """A korszakok QML-nek: {year, month, label, count, photos}
-        dict-ek listája - SOHA ne Python tuple, a QML csak listát fogad
-        el kötésként (ld. MEMORY-tanulság)."""
-        return self._periods
+    @Property("QVariantList", notify=collectionsChanged)
+    def collections(self) -> list:
+        """A teljes könyvtár mappakártyái, legrégebbi képdátum szerint."""
+        return self._collections
+
+    @Slot(float, result="QVariantMap")
+    def bezierAt(self, t: float) -> dict:
+        """A runtime/bezier.txt négy pontjából számolt görbehely (38.2.61)."""
+        x, y, z = rational_cubic_bezier(t, DEFAULT_BEZIER_POINTS)
+        return {"x": x, "y": y, "z": z}
+
+    @Slot(float, result=float)
+    def easingAt(self, progress: float) -> float:
+        return slideshow_easing(progress)
+
+    @Slot(float, float, float, float, float, bool, result="QVariantMap")
+    def frameAt(
+        self,
+        progress: float,
+        current_x: float,
+        current_y: float,
+        previous_x: float,
+        previous_y: float,
+        previous_present: bool,
+    ) -> dict:
+        return frame_transforms(
+            progress,
+            current_offset=(current_x, current_y),
+            previous_offset=(previous_x, previous_y),
+            previous_present=previous_present,
+        )
+
+    @Slot(float, float, int, int, int, int, result="QVariantMap")
+    def randomOffsets(
+        self,
+        previous_x: float,
+        previous_y: float,
+        rand_y: int,
+        rand_x: int,
+        width: int,
+        height: int,
+    ) -> dict:
+        current, previous = random_slide_offsets(
+            (previous_x, previous_y),
+            rand_y=rand_y,
+            rand_x=rand_x,
+            width=width,
+            height=height,
+        )
+        return {"current": list(current), "previous": list(previous)}
+
+    @Slot("QVariantList", float, result=int)
+    def sliderIndex(self, values: list, ratio: float) -> int:
+        return slider_index(values, ratio)
+
+    @Slot(float, int, int, int, result=int)
+    def sliderThumbX(self, x: float, left: int, width: int, thumb_width: int) -> int:
+        return slider_thumb_x(
+            x, left=left, width=width, thumb_width=thumb_width
+        )
+
+    @Slot("QVariantList", int, int, int, int, int, int, result="QVariantList")
+    def dotPositions(
+        self,
+        values: list,
+        x_start: int,
+        track_span_minus_four: int,
+        dot_width: int,
+        y_top: int,
+        track_spacing: int,
+        dot_height: int,
+    ) -> list:
+        return timeline_dot_positions(
+            values,
+            x_start=x_start,
+            track_span_minus_four=track_span_minus_four,
+            dot_width=dot_width,
+            y_top=y_top,
+            track_spacing=track_spacing,
+            dot_height=dot_height,
+        )
+
+    @Slot(str, result=QObject)
+    def slideshowModel(self, folder_path: str) -> QObject:
+        """Az Időrend-kártya saját mappájára szűrt diavetítésmodellt adja."""
+        if self._collection_slideshow_model is None:
+            self._collection_slideshow_model = PhotoGridModel(self)
+        records = self._collection_records_by_folder.get(folder_path, ())
+        self._collection_slideshow_model.set_photos(records)
+        return self._collection_slideshow_model
 
     @Slot()
     def reload(self) -> None:
@@ -76,44 +165,94 @@ class TimelineController(QObject):
         # ez szuperhalmaza bármely szűkebb (mappa/keresés) nézetnek, tehát
         # a főrács regisztrációját sosem szűkíti (nem veszít kulcsot)
         self._provider.register_photos(records)
-        by_id = {record.id: record for record in records}
-        timeline_photos = tuple(
-            TimelinePhoto(
-                photo_id=record.id,
-                date=record_date(record),
-            )
-            for record in records
-        )
         locale = QLocale()
-        self._periods = [
-            self._period_to_qml(period, by_id, locale)
-            for period in build_periods(timeline_photos)
-        ]
-        self.periodsChanged.emit()
+        self._collections = self._collections_to_qml(records, locale)
+        self.collectionsChanged.emit()
 
-    def _period_to_qml(
-        self, period: TimelinePeriod, by_id: dict[int, PhotoRecord], locale: QLocale
-    ) -> dict:
-        photos = [
-            self._photo_to_qml(by_id[photo.photo_id])
-            for photo in period.photos
-            if photo.photo_id in by_id
-        ]
-        return {
-            "year": period.year,
-            "month": period.month,
-            "label": self._period_label(period, locale),
-            "count": len(photos),
-            "photos": photos,
+    def _collections_to_qml(self, records: tuple, locale: QLocale) -> list[dict]:
+        grouped: dict[str, list[PhotoRecord]] = {}
+        for record in records:
+            grouped.setdefault(record.folder_path, []).append(record)
+        self._collection_records_by_folder = {
+            folder_path: tuple(photos)
+            for folder_path, photos in grouped.items()
         }
 
-    def _period_label(self, period: TimelinePeriod, locale: QLocale) -> str:
-        if period.year == 0 and period.month == 0:
-            return self.tr("Unknown date")
-        month_name = locale.standaloneMonthName(
-            period.month, QLocale.FormatType.LongFormat
+        prepared = []
+        all_dates = [
+            photo_date
+            for record in records
+            if (photo_date := record_date(record)) is not None
+        ]
+        first_date = min(all_dates) if all_dates else None
+        last_date = max(all_dates) if all_dates else None
+        first_label = self._date_label(first_date, locale)
+        last_label = self._date_label(last_date, locale)
+
+        for folder_path, photos in grouped.items():
+            dates = [
+                photo_date
+                for photo in photos
+                if (photo_date := record_date(photo)) is not None
+            ]
+            # A kártya egyetlen dátuma a csoport legkorábbi képdátuma.
+            # A Picasa saját A-tömbjének szemantikája a #5401-ben nyitott.
+            card_date = min(dates) if dates else None
+            prepared.append((card_date, folder_path, photos))
+
+        prepared.sort(
+            key=lambda item: (
+                item[0] is None,
+                item[0] or date.max,
+                Path(item[1]).name.casefold(),
+                item[1].casefold(),
+            )
         )
-        return f"{period.year}. {month_name}"
+        first_ordinal = first_date.toordinal() if first_date else None
+        date_span = (
+            last_date.toordinal() - first_ordinal
+            if first_ordinal is not None and last_date is not None
+            else 0
+        )
+
+        result = []
+        for card_date, folder_path, photos in prepared:
+            if card_date is None:
+                slider_position = 1.0 if first_ordinal is not None else 0.0
+            elif first_ordinal is None or date_span <= 0:
+                slider_position = 0.0
+            else:
+                slider_position = (
+                    card_date.toordinal() - first_ordinal
+                ) / date_span
+            result.append(
+                {
+                    "name": Path(folder_path).name or folder_path,
+                    "folderPath": folder_path,
+                    "dateLabel": self._date_label(card_date, locale),
+                    "dateValue": card_date.toordinal() if card_date else None,
+                    "firstDateLabel": first_label,
+                    "lastDateLabel": last_label,
+                    "sliderPosition": slider_position,
+                    "count": len(photos),
+                    # A kártya legfeljebb négy képből álló, egymásra döntött
+                    # bélyegköteget mutat; a teljes rekordlista a
+                    # diavetítésmodellben marad.
+                    "photos": [
+                        self._photo_to_qml(photo) for photo in photos[:4]
+                    ],
+                }
+            )
+        return result
+
+    @staticmethod
+    def _date_label(value, locale: QLocale) -> str:
+        if value is None:
+            return ""
+        month = locale.standaloneMonthName(
+            value.month, QLocale.FormatType.LongFormat
+        )
+        return f"{month[:1].upper()}{month[1:]} {value.year}"
 
     @staticmethod
     def _photo_to_qml(photo: PhotoRecord) -> dict:

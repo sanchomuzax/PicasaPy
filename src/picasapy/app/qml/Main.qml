@@ -133,6 +133,8 @@ ApplicationWindow {
         }
     }
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
+    property bool timelineSlideshowActive: false
+    property var timelineSlideshowModel: null
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
     //: jelöl ki — ez szándékos, ld. LightboxFeed.qml.
@@ -1818,10 +1820,8 @@ ApplicationWindow {
                              : window.valtsFiokLapot("properties")
     }
 
-    // -- időrend nézet (#24, Ctrl+5) -----------------------------------------
-    // A teljes könyvtár dátum szerinti, korszakokra bontott áttekintése
-    // (TimelineView.qml) - a nézőt nem lehet vele egyszerre nyitva tartani,
-    // a diavetítéshez hasonlóan (startSlideshow) teljes képernyős réteg.
+    // -- Időrend bemutató (#5377, Ctrl+5) ------------------------------------
+    // Mappakártyás, teljes képernyős bemutató a dátumcsúszkával.
     function toggleTimeline() {
         if (window.timelineOpen) {
             window.timelineOpen = false
@@ -1829,6 +1829,24 @@ ApplicationWindow {
         }
         timelineController.reload()
         window.timelineOpen = true
+    }
+
+    function startTimelineSlideshow(folderPath) {
+        if (!controller || !folderPath)
+            return
+        var collectionModel = timelineController
+            ? timelineController.slideshowModel(folderPath) : null
+        if (!collectionModel || collectionModel.rowCount() <= 0)
+            return
+        window.timelineOpen = false
+        controller.selectFolder(folderPath)
+        window.timelineSlideshowModel = collectionModel
+        window.timelineSlideshowActive = true
+        window.visibilityBeforeSlideshow = window.visibility
+        window.visibility = Window.FullScreen
+        slideshow.start(0)
+        if (!slideshow.visible)
+            window.exitSlideshow()
     }
 
     // #4569: az eredeti F11 a képnéző teljes képernyős módját kapcsolja.
@@ -1853,14 +1871,10 @@ ApplicationWindow {
         onActivated: window.toggleViewerFullscreen()
     }
 
-    // #1903: a `Ctrl+5` NEM sül el, amíg a valódi Időrend nincs kész - a
-    // menütétel is inaktív. A billentyű így nem kerülhet meg egy szürke
-    // menüpontot (a #1686 fordított esete: ott a billentyű MŰKÖDÖTT,
-    // miközben a tétel helyfoglaló volt, és a funkciót csak az érte el,
-    // aki ismerte a gyorsbillentyűt).
+    // Az Időrend kijelölés nélkül is megnyitható.
     Shortcut {
         sequence: "Ctrl+5"
-        enabled: false
+        enabled: !window.viewerOpen && !slideshow.visible
         onActivated: window.toggleTimeline()
     }
 
@@ -1895,11 +1909,17 @@ ApplicationWindow {
     }
     function exitSlideshow() {
         var wasScreensaver = slideshow.screensaverMode
+        var wasTimelineSlideshow = window.timelineSlideshowActive
         window.visibility =
             window.visibilityBeforeSlideshow === Window.FullScreen
                 ? Window.Windowed : window.visibilityBeforeSlideshow
         if (wasScreensaver)
             return
+        if (wasTimelineSlideshow) {
+            window.timelineSlideshowActive = false
+            window.timelineSlideshowModel = null
+            return
+        }
         if (slideshow.currentIndex >= 0) {
             if (window.viewerOpen) {
                 photoViewer.show(slideshow.currentIndex)
@@ -2024,7 +2044,7 @@ ApplicationWindow {
         searchOptionsOpen: toolbar.searchOptionsOpen
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
         //: contentItem nem kapja meg a teljes ablakot.
-        visible: !window.slideshowRunning
+        visible: !window.slideshowRunning && !window.timelineOpen
         // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
         id: picasaMenuBar
         //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
@@ -2038,6 +2058,7 @@ ApplicationWindow {
         // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
         // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
         onReturnToLibraryRequested: photoViewer.kerBezaras()
+        onTimelineRequested: window.toggleTimeline()
         onUnhideRequested: window.unhideHiddenSelection()
         onWriteXmpFacesDialogRequested:
             xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
@@ -3095,6 +3116,7 @@ ApplicationWindow {
         // #305: null-őr
         photosModel: !controller ? null
             : slideshow.screensaverMode ? controller.screensaverPhotos
+            : window.timelineSlideshowActive ? window.timelineSlideshowModel
             : controller.photos
         // #1640: a megjelenítési mód a vetített képre is hat — a kötés innen
         // adja át, hogy a dia URL-je módváltáskor újraértékelődjön
@@ -3219,26 +3241,16 @@ ApplicationWindow {
         onDeleteRequested: picasaMenuBar.activateDeleteCommand()
     }
 
-    // #24: Időrend nézet (Ctrl+5) - a teljes könyvtár korszak-áttekintése;
-    // egy bélyegképre kattintva a fő rácsban jelenítjük meg a képet
-    // (mappaváltás a bekötő selectFolder-jén át, majd a néző az
-    // odakerült sor alapján - rowOfId, a keresési-találat minta szerint).
+    // #5377: a Picasa Időrend külön teljes képernyős ablak, saját vezérlőkkel.
     TimelineView {
         id: timelineView
         objectName: "timelineView"
-        anchors.fill: parent
+        transientParent: window
         visible: window.timelineOpen
-        // #305: null-őr - a timelineController is null lehet átmenetileg
-        // a QML-engine leépítésekor
-        periodsModel: timelineController ? timelineController.periods : []
+        collectionsModel: timelineController ? timelineController.collections : []
         onClosed: window.timelineOpen = false
-        onPhotoChosen: function(photoId, folderPath) {
-            window.timelineOpen = false
-            controller.selectFolder(folderPath)
-            var row = controller.photos.rowOfId(photoId)
-            if (row >= 0) {
-                window.openPhotoViewer(row)
-            }
+        onSlideshowRequested: function(folderPath) {
+            window.startTimelineSlideshow(folderPath)
         }
     }
 

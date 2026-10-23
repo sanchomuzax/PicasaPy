@@ -238,6 +238,15 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
 
 
 def _zarj_nezot_es_fiokot(ablak, qt_app) -> None:
+    if ablak.property("timelineOpen") is True:
+        idorend = ablak.findChild(QObject, "timelineView")
+        assert idorend is not None, "a megnyitott Időrend ablaka hiányzik"
+        QTest.keyClick(idorend, Qt.Key.Key_Escape)
+        assert _varj(
+            qt_app,
+            lambda: ablak.property("timelineOpen") is False
+            and idorend.isVisible() is False,
+        ), "az Időrend nem zárult be a tiszta menüpróba visszaállításakor"
     if ablak.property("viewerOpen") is True:
         vissza = ablak.findChild(QObject, "viewerBackButton")
         if (
@@ -456,6 +465,14 @@ def _akcio(
     elsult = []
     sor.triggered.connect(lambda *_args: elsult.append(True))
     _kattints(qt_app, sor)
+    if nev == "menuViewTimeline":
+        idorend = ablak.findChild(QObject, "timelineView")
+        assert idorend is not None, "a Timeline menükezelő nem hozott létre ablakot"
+        assert _varj(
+            qt_app,
+            lambda: ablak.property("timelineOpen") is True
+            and idorend.isVisible(),
+        ), "a Timeline menüpont nem nyitotta meg a bemutatót"
 
     _varj(
         qt_app,
@@ -487,6 +504,8 @@ def _akcio(
         )
     utana = _allapot(ablak, vezerlo, minta)
     hatasok = _kulonbsegek(elotte, utana)
+    if nev == "menuViewTimeline":
+        hatasok.append("a teljes képernyős Időrend bemutató megnyílt")
     for dialogus in _lathato_dialogusok(ablak):
         dialogusnev = dialogus.objectName() or _osztalynev(dialogus)
         if dialogusnev not in dialogusok_elotte:
