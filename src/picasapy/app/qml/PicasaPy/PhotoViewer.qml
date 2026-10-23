@@ -2722,6 +2722,7 @@ Rectangle {
                             TapHandler {
                                 enabled: viewer.layoutMode !== "1up"
                                     && !editorPanel.neutralPickerActive
+                                    && editorPanel.effectColorPickerTarget < 0
                                     && !paintMaskArea.aktiv
                                     && !(viewer.aktivOldal === "bal"
                                          && (editorPanel.cropActive
@@ -2840,6 +2841,7 @@ Rectangle {
                             TapHandler {
                                 enabled: viewer.layoutMode !== "1up"
                                     && !editorPanel.neutralPickerActive
+                                    && editorPanel.effectColorPickerTarget < 0
                                     && !paintMaskArea.aktiv
                                     && !(viewer.aktivOldal === "jobb"
                                          && (editorPanel.cropActive
@@ -3778,6 +3780,37 @@ Rectangle {
                         }
                     }
 
+                    //: #5674: az effekt-színparaméter pipettája: ugyanazon a
+                    //: KIRAJZOLT képen mintavesz, mint a semleges szín pipettája.
+                    //: A szín a cél-paraméter sorába megy, és a legutóbbi színek
+                    //: közé is bekerül (ugyanaz az út, mint a színminta).
+                    MouseArea {
+                        id: effectColorPickArea
+                        objectName: "effectColorPickArea"
+                        parent: photoArea.fokuszKep
+                        visible: editorPanel.effectColorPickerTarget >= 0
+                        enabled: editorPanel.effectColorPickerTarget >= 0
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
+                        cursorShape: Qt.CrossCursor
+                        onClicked: function(mouse) {
+                            if (!editController) return
+                            var hex = editController.pickEffectColor(
+                                mouse.x / Math.max(1, width),
+                                mouse.y / Math.max(1, height))
+                            if (hex !== "") {
+                                editorPanel.updateParamValue(
+                                    editorPanel.effectColorPickerTarget, hex)
+                                editController.rememberPickerColor(hex)
+                            }
+                            editorPanel.effectColorPickerTarget = -1
+                        }
+                    }
+
                     //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
                     //: szülő — a retusálás a TÉNYLEGESEN szerkesztett félen
                     //: megy, ne a másik (nem kijelölt) képen.
@@ -4328,6 +4361,7 @@ Rectangle {
                     function aktivAtfedoAlatt(x, y) {
                         return benneVan(paintMaskArea, x, y)
                             || benneVan(neutralPickArea, x, y)
+                            || benneVan(effectColorPickArea, x, y)
                             || benneVan(retouchClickArea, x, y)
                             || benneVan(redeyeDragArea, x, y)
                             || benneVan(textClickArea, x, y)
