@@ -641,20 +641,25 @@ adja.
 *(Összevetésül: a `PrinterQuality`-nak nyolc hivatkozója van, köztük három
 a motorban: `0x00861190`, `0x008613b0`, `0x008614a0`.)*
 
-### Nálunk (forrás-olvasás, 2026-10-24)
+### PicasaPy renderer-raszter teszt (2026-10-24, #5760)
 
-A #5684 `83555b635` commitja bevezeti a párbeszéd rádiókapcsolóját és a
-`printerOptimized()` / `setPrinterOptimized()` tárolót: az eredeti
-`2/0` vagy `1/1` pár a `printing/jobPrinterQuality` és
-`printing/jobPrinterUseTiles` beállításokba kerül, majd a párbeszéd
-frissíti az előnézetet. A rajzoló út viszont a meglévő globális
-`printerQuality()` értékéből számolt `_printer_output_scale()`-t kapja; a
-per-job kulcsokat nem olvassa. Így a #5684 kapcsolója tárolja a módot, de a
-nyomtatási raszterre még nincs hatása.
+A #5684 `83555b635` commitja tárolja a párbeszédben az eredeti `2/0` vagy
+`1/1` párt a `printing/jobPrinterQuality` és
+`printing/jobPrinterUseTiles` kulcsokban. A #5760 a nyomtatás és az
+előnézet rajzoló útját a feladatonkénti `PrinterQuality`-hoz kötötte:
+`_printer_job_output_scale()` az Optimalizált `q=1` módban `1/1`; a Normál
+módban a Beállítások minőségét követi (`q=2` esetén `1/2`, a nyitott `q=3`
+teljes felbontású mód `1/1` marad, hogy a meglévő beállítás ne vesszen el).
 
-**Checkout-eltérés:** a jelen munkafa `HEAD`-je `f9f84e589`, és nem tartalmazza
-a `83555b635` commitot. A jelenlegi forrásban ezért a #5684 kapcsoló sem
-látható; a fenti PicasaPy-összevetés a megadott #5684 commitra vonatkozik.
+Kimeneti raszterteszt: ugyanaz a `160×80` forráskép és `80×40` cél mellett
+a Normál `q=2` mód `40×20`, az Optimalizált `q=1` mód `80×40` köztes
+rasztert ad. A `PrinterUseTiles` 0 vagy 1 értéke egyik méretet sem változtatja;
+az érték csak az eredeti pár tárolásában szerepel. A teszt:
+`tests/app/test_print_quality_raster_5760.py`.
+
+Ez a mérés a renderer köztes raszterét rögzíti. A végső PDF-felbontás és a
+GDI/QPrinter kimenetek pixelszintű egyezése továbbra is nyitott; a `q=3`
+feliratkonfliktust ez a feladat nem oldja fel.
 
 ---
 
@@ -1032,7 +1037,7 @@ az alábbi megszerzési utakkal.
 | **Nyomtatólista és telepítő-beállítás:** az aktuális nyomtatónév `0x00745bcc`; a `printpanel/psetupbutton` a driver `DocumentProperties`-útját nyitja (`0x00861750`) | Választható rendszer-nyomtatók és PDF (`PrintDialog.qml:920-963`); a beállítógomb `openPrinterSetup()`-ot hívja. A kódút eltér, de a tényleges párbeszéd és driver-beállítások egyezése **NINCS MEG**. | Megszerzés: Windows alatt ugyanarra a kiválasztott nyomtatóra nyissa meg mindkét Setup gombot; vesse össze az elérhető tulajdonságlapokat és a mentés utáni papíradatot. |
 | **`printoptions` belépő:** a `printpanel/captionoptionsbutton` ága a panel építőjéhez vezet (`0x00743980`); kezelő `0x0085e800` | **EGYEZIK** a panel jelenlétében és különállásában: `PrintDialog.qml:617-623,1158-1165`; a PicasaPy `PrintOptionsPanel.qml` nyílik | Nincs teendő a belépőn; a tizenegy alapértéket lásd alább, a Cancel tartós hatása nyitott. |
 | **Minőségi sávok:** `DPIWarning=150` (`0x0085c1fa`), `DPISevere=100` (`0x0085c28a`); minősítő `0x0085c1e0`, `0x0085c270` | `printing/dpi.py:32-55` ugyanazt a 150/100 alapértéket és a két küszöb összeadásából kapott kódot használja. **EGYEZIK.** | Nincs teendő az osztályozási alapértékeken. |
-| **Képenkénti minőségi mód:** állapotvizsgáló `0x00745f80`; író `0x00746060`. Az író alapértékei Normál `PrinterQuality=2` (`0x0074609a`) és `PrinterUseTiles=0` (`0x007460b8`); Normál mód írása `2/0` (`0x007460c5`, `0x007460de`), Optimalizált mód írása `1/1` (`0x007460fa`, `0x0074610b`); a módjelző feltétele `PrinterQuality != 1001` és `PrinterUseTiles != 0` (`0x00745f80`). | A #5684 `83555b635` commitja a párbeszédben tárolja a `2/0` és `1/1` párokat (`printerOptimized()` / `setPrinterOptimized()`), és frissíti az előnézetet; a nyomtatás továbbra is a globális `printerQuality()` alapján választ léptéket. A jelen checkout `f9f84e589` nem tartalmazza a #5684 commitot. **ELTÉR**: a per-job mód nincs a tényleges kimenetre kötve. | Kössük a per-job `PrinterQuality`-t az előnézet és a nyomtatási rajzolás közös minőségi léptékére: Normál `q=2` → `1/q` renderer-koordináta-szorzó, Optimalizált `q=1` → `1` szorzó. A `PrinterUseTiles` ne vezessen be csempézett küldést, mert az eredeti renderer nem olvassa. Kész, ha a `2/0` és `1/1` állapot megmarad és visszaolvasható, a két mód renderer-koordináta léptékét a bináris `1/q` szerint köti be, és azonos tesztképes PDF-összevetés rögzíti a cél-téglalap, az oldalméret és a kimeneti raszter eredetihez viszonyított értékét. |
+| **Képenkénti minőségi mód:** állapotvizsgáló `0x00745f80`; író `0x00746060`. Az író alapértékei Normál `PrinterQuality=2` (`0x0074609a`) és `PrinterUseTiles=0` (`0x007460b8`); Normál mód írása `2/0` (`0x007460c5`, `0x007460de`), Optimalizált mód írása `1/1` (`0x007460fa`, `0x0074610b`); a módjelző feltétele `PrinterQuality != 1001` és `PrinterUseTiles != 0` (`0x00745f80`). | A #5684 `83555b635` commitja tárolja a `2/0` és `1/1` per-job párokat (`printerOptimized()` / `setPrinterOptimized()`). A #5760 a nyomtatás és előnézet rajzoló útjába a per-job `1/q` skálát kötötte; a `160×80` forrás és `80×40` cél köztes rasztere Normál módban `40×20`, Optimalizált módban `80×40` (`tests/app/test_print_quality_raster_5760.py`). A `PrinterUseTiles` egyik kimeneti rasztert sem változtatja. | A két mód köztes renderer-raszterének eltérése és a csempézési jelző figyelmen kívül hagyása teszttel rögzített. A végső PDF-felbontás, célgeometria és GDI/QPrinter pixelszintű egyezése nyitott; a `q=3` feliratkonfliktus szintén külön nyitott kérdés. |
 | **Alacsony minőségű képek eltávolítása:** műveleti kezelő `0x0085cce0`; a kérdés szövegkulcsa `0x00cc3450`, Igen `0x00cc33d4`, Nem `0x00cc33a0`. Csak ha minden sor alacsony minőségű, kérdez rá; vegyes listánál csendben csak az alacsonyakat törli. Igen: töröl és megszakítja a nyomtatást (`0x00745726`-`0x0074572b`); Nem: érintetlenül hagyja. | **ELTÉR:** `PrintDialog.qml:269-283,1265-1270` azonnal törli az összes alacsony minőségű sort; nincs megerősítés. Ha minden kép eltűnt, a `:285-289,1277-1286` nem nyomtat és nem zárja be a párbeszédet. | Vegyes listánál csak az alacsonyakat távolítsa el, megerősítés nélkül. Ha mind alacsony, jelenjen meg az eredeti figyelmeztetés; Nem ne változtasson, Igen ürítse a sort, szakítsa meg és zárja a nyomtatási párbeszédet. |
 | **Papíradat:** `printpanel/paperinfo`, feltöltés `0x00745bde` (`0x00745980` állapotfrissítő) | `PrintDialog.qml:142-152,967-980`, `PrintController.paperInfo()`: kijelzi a kiválasztott lap adatait. **EGYEZIK** a mező jelenlétében. | Nincs teendő a mező jelenlétén; a szöveg/tördelés pixelpontos egyezése nincs mérve. |
 | **Lapokra rendezés:** elrendező `0x00778640`, tájolás-választó `0x00778190`, lapgeneráló hívó `0x007774b0`; a túlcsorduló cella a következő lapra kerül. | `grid_layout.py:130-229`, `_paint_pages()` `print_controller.py:1874-1933`. **EGYEZIK** a lap/túlcsordulás/sorrend/tájolás szabálya; az A4-es 4×6 és Wallet minták egyezését Colab EN 29/30 méri. | Nincs teendő a rácsszabályon. Más nyomtató- és papírméreteken a pixeles kimeneti egyezés **NINCS MEG**; megszerzés: azonos forrásképek, méret, Crop to Fit, példányszám és PDF/nyomtató beállítás mellett eredeti/PicasaPy kimenet raszteres összevetése. |
@@ -1112,9 +1117,8 @@ eltávolítás rákérdez” értelmezés ezért nem áll meg. Élő UI-futtatá
 #### Kösse a Normál/Optimalizált módot a nyomtatási raszterhez
 
 - **Eredeti:** módállapot `0x00745f80`, író `0x00746060`; a renderer Normál `PrinterQuality=2` mellett `1/2`, Optimalizált `PrinterQuality=1` mellett `1` koordináta-szorzót használ (`0x0086240e`-`0x0086244d`). `PrinterUseTiles` módosítja a panelállapotot és tárolt párt, de nincs rajzoló-út olvasója (`paszta.py`, `0x00745fa7`, `0x007460a3`). A végső PDF-felbontás nyitott a `q=3` feliratkonfliktus miatt.
-- **Nálunk:** a #5684 `83555b635` commit tárolja és visszaolvassa a `2/0` és `1/1` per-job párt, az előnézetet frissíti; a nyomtatási rajzoló `_printer_output_scale()`-ja viszont a globális `printerQuality()`-t használja, nem a per-job értéket. A jelen checkout `HEAD=f9f84e589` nem tartalmazza a #5684 commitot.
-- **Teendő:** a per-job `PrinterQuality`-t kösse be a nyomtatási rajzolóba és az előnézetbe. A `PrinterUseTiles` értéket tárolja vissza az eredeti pár részeként, de ne rendelje hozzá csempézett küldéshez.
-- **Kész, ha:** a `2/0` és `1/1` állapot tartós és visszaolvasható; teszt rögzíti a két renderer-skála kimeneti hatását; azonos forrásképes, azonos PDF-nyomtatós mérés összeveti az eredeti és PicasaPy cél-téglalapját, oldalméretét és kimeneti raszterét mindkét módban.
+- **Nálunk:** a #5684 `83555b635` commit tárolja és visszaolvassa a `2/0` és `1/1` per-job párt. A #5760 a nyomtatási és előnézeti rajzolóútból a feladatonkénti `PrinterQuality` értéket olvassa, és `1/q` skálát alkalmaz; a teszt a `160×80` forrás és `80×40` cél mellett a Normál `40×20` és Optimalizált `80×40` köztes rasztert rögzíti. A `PrinterUseTiles` csak tárolódik.
+- **Állapot:** a renderer-skála eltérése és a `PrinterUseTiles` kimenetre gyakorolt hatástalansága kész és tesztelt. A PDF végső rasztere, célgeometriája, oldalmérete, valamint az eredeti GDI és a QPrinter kimenet pixelpontos egyezése statikusan nem dönthető el, és itt nem volt mérve; ez nyitva marad.
 
 ### Nyitott
 
