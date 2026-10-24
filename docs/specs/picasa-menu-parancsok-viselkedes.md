@@ -5377,7 +5377,7 @@ A nullázott rangakkumulátorhoz (`_memset`, `0x005d8f9d`) először egyszer hoz
 
 **Mintakép.** A pontozó teljes bemenetén végigiterál, és a `0x007e95f0`/`0x007ea000` útban nincs forrásazonosító szerinti önkizárás; a `0x005d8810` pedig a kapott CBlockFile-adatbázist adja át a keresőnek (`0x005d8cbf`). Ha a forrás rekordja szerepel benne, érvényes (`+0xb0 != 0`) és friss jellemzőket tartalmaz, önmagához képest a három jellemzőtávolság nulla; az időeltérése is nulla. **A tényleges adatbázisbeli tagság NINCS MEG**: a mérőadat-csomagban nem volt futtatható `distims.db`-minta, ezért a saját rekord biztos találatként való visszaadása dinamikusan nem bizonyított. **Fok: feltételes** (statikus önkizárás-hiány + feltételes rekordtagság).
 
-**Független utak és fok.** (A) a bináris közvetlen utasításolvasása, Ghidra-dekompilálása és PE-konstansai; (B) az eredeti célfüggvények QEMU-mérése. Az RGB565-képlet és a `0x00604480` növekvő iránya **megerősített**. A 216 bájtos és nyolcfloat-képlet, a háromrang-összeg, a távolságküszöb hiánya, a kezelő `r_sim + 2 × r_time` súlyozása, a `RankMax` levágása, valamint a mintarekord adatbázisbeli jelenléte nem kapott teljesen független, teljes útú mérési kontrollt; ezek **feltételesek**, illetve a tagság **nyitott**. A 216 bájtos helper közvetlen QEMU-próbája SIGSEGV-vel végződött; az abból származó számértéket nem használom bizonyítékként.
+**Független utak és fok.** (A) a bináris közvetlen utasításolvasása, Ghidra-dekompilálása és PE-konstansai; (B) az eredeti célfüggvények QEMU-mérése. Az RGB565-képlet és a `0x00604480` növekvő iránya **megerősített**. A 216 bájtos és nyolc float képlete, a háromrang-összeg, a távolságküszöb hiánya, a kezelő `r_sim + 2 × r_time` súlyozása, a `RankMax` levágása, valamint a mintarekord adatbázisbeli jelenléte nem kapott teljesen független, a teljes úton végzett mérési kontrollt; ezek **feltételesek**, illetve a tagság **nyitott**. A 216 bájtos helper közvetlen QEMU-próbája SIGSEGV-vel végződött; az abból származó számértéket nem használom bizonyítékként.
 
 **Cáfoló kísérlet.** A rendezőnél a csökkenő sorrend hipotézisét próbáltam cáfoló bemenettel: `[3,1,2]` csökkenő eredménye `[0,2,1]` volna, a QEMU-mérés viszont `[1,2,0]` lett, tehát a csökkenő hipotézis megbukott. A vörös/zöld/kék egyetlen-bites próbák a másik irányból is ellenőrizték a RGB-képlet `/64` skáláját. A `r_sim + 2 × r_time` teljes kezelőkulcsra nem készült QEMU-teszt; ezt a két egymás utáni, azonos akkumulátorba író disassembly-hurok alapján **feltételesnek** hagyom.
 
@@ -5489,7 +5489,7 @@ Nyitott kérdések: 2 nyílt · 4 lezárva · 3 blokkolt · 0 hatókörön kív�
   útját), és mit jelöl a rekord `+0xb0` bájtja (`0x007e95f0`).
 - **BLOKKOLT:** az `OLEAUT32.Ordinal_184` export/skála feloldása, a mintarekord
   tényleges adatbázisbeli tagsága, a többes kijelölési és felületnyitási ág,
-  valamint a frissítés pontos feltételei. **Mi kell hozzá:** helyi ordinaltábla
+  valamint a frissítés pontos feltételei. **Mi kell hozzá:** helyi ordinal-tábla
   vagy kontrollált időmérés; eredeti futásban mentett `distims.db` vagy
   megfelelő QEMU-adat; a többi kérdés célzott bináris-út. A keresőképletek,
   rangösszegek és `RankMax`-vágás a 60.4.1-ben állnak.
