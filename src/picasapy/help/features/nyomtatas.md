@@ -32,20 +32,21 @@ A párbeszédben beállítható:
   lapbeállító ablakát nyitja meg (papírméret, tájolás, margók). Amit ott
   elfogadsz, azt a következő nyomtatás használni fogja. PDF-be
   nyomtatásnál a gomb szürke: ott nincs nyomtató, amit beállíts.
-- **Nyomatméret** — a méretlista a számítógéped **területi
-  mértékegysége** szerint metrikus vagy hüvelykes (nem a felület nyelvétől
-  függ). Metrikus környezetben: **5 × 8 cm**, **9 × 13 cm**,
-  **10 × 15 cm**, **13 × 18 cm**, **15 × 20 cm**, **20 × 25 cm** és a
-  **FullPage** (a teljes oldal). Hüvelykes környezetben: **Tárcaméret**,
-  3 × 4, 3,5 × 5, 4 × 5, 4 × 6, 5 × 7, 8 × 10 és a **FullPage**. Az
-  **Indexképek** mindkét listában a méretválasztó további tétele — ez
-  nem méret, hanem a sok kis kép egy lapra (lásd lentebb). A lista
-  **alapból a FullPage**-en áll; a választásod megmarad a következő
-  nyomtatásig.
+- **Nyomatméret**: a lista az eredeti Picasa összes nyomatméretét
+  kínálja, az eredeti sorrendben: 3 × 4, 3,5 × 5, 4 × 5, 4 × 6, 5 × 7
+  és 8 × 10 hüvelyk, **5 × 8 cm**, **9 × 13 cm**, **10 × 15 cm**,
+  **13 × 18 cm**, **15 × 20 cm**, **20 × 25 cm**, **Tárcaméret**,
+  **CD-borító mérete**, **Útlevél**, **Indexképek** és **FullPage** (a
+  teljes oldal). A **CD-borító mérete** szürke, nem választható. Az
+  **Indexképek** nem méret, hanem a sok kis kép egy lapra (lásd
+  lentebb). A lista **alapból a FullPage**-en áll; a választásod
+  megmarad a következő nyomtatásig.
 
   A lista alatt hat **gyorsgomb** áll: öt tetszőleges méret és a
   **FullPage**. Az ötöt a **Beállítások ▸ Nyomtatás** fülön te
-  választod meg ([Beállítások](beallitasok.md)); alapból metrikus
+  választod meg ([Beállítások](beallitasok.md)). Az öt gomb alapértéke
+  a számítógéped **területi mértékegységétől** függ (nem a felület
+  nyelvétől): metrikus
   környezetben 10 × 15, 13 × 18, 15 × 20 és 20 × 25 cm, valamint az
   **Indexképek**, hüvelykesben Tárcaméret, 3,5 × 5, 4 × 6, 5 × 7 és
   8 × 10.
@@ -58,7 +59,9 @@ A párbeszédben beállítható:
   kevesebb lap kell; **Álló** vagy **Fekvő** választásával te döntöd el.
 - **Illesztés a laphoz**: **A teljes kép**, vagy a **Lapkitöltés
   (vágással)** — utóbbinál a kép kitölti a helyét, a széle pedig
-  levágódik.
+  levágódik. A párbeszéd első megnyitáskor a **Lapkitöltés
+  (vágással)** állással indul, ahogy az eredeti Picasa. Ha átváltasz, a
+  kis előnézet azonnal az új illesztést mutatja.
 - **Példány képenként**.
 
 Ha a nyomatméret helyén az **Indexképek** áll, a **Példány képenként**, a
@@ -95,6 +98,12 @@ Három kimenet közül választasz:
 - **eltávolítod** a képeket: a **Kijelölt elemek eltávolítása** a listában
   kijelölt képet, a **Gyenge minőségű képek eltávolítása** az összes
   gyengét kiveszi a nyomtatásból (a képfájl nem törlődik);
+  ha viszont **minden** kép gyenge minőségű, a **Gyenge minőségű képek
+  eltávolítása** előbb rákérdez: „Ezzel a művelettel eltávolítja az
+  összes képet, és leállítja a nyomtatást. Folytatja?" Az **Eltávolítás
+  és megszakítás** kiveszi mind a képeket, és bezárja a nyomtatási
+  ablakot, nyomtatás nélkül; az **Eltávolítás mellőzése** semmit nem
+  változtat;
 - **mégis kinyomtatod** őket: az **OK**;
 - vagy **megszakítod** a **Mégse** gombbal, és más nyomatméretet
   választasz.
