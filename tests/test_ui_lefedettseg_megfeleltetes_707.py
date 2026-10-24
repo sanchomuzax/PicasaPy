@@ -377,3 +377,21 @@ class TestJegy4131:
 
         web_megjegyzes = elemek["thumbui/visitweb"]["megjegyzes"].casefold()
         assert "megszűnt" in web_megjegyzes
+
+
+class TestJegy5719:
+    """A Fotónéző teljes képernyős indulásának mért lefedettsége."""
+
+    def test_setup_ui_option3_megvan_es_kimeneti_proba_fedi(self, elem_sorok, panel_sorok):
+        elemek = {sor["elem"]: sor for sor in elem_sorok}
+        panelek = {sor["panel"]: sor for sor in panel_sorok}
+
+        elem = elemek["setup/ui_option3"]
+        assert elem["allapot"] == "megvan"
+        assert "PicasaPy/PhotoViewerSettingsDialog.qml" in elem["bizonyitek"]
+        assert (
+            "tests/app/qml_functional/test_fotonezo_beallitasok_4333.py"
+            in elem["bizonyitek"]
+        )
+        assert "setup" in panelek
+        assert panelek["setup"]["allapot"] == "parositva"

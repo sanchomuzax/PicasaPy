@@ -4,13 +4,14 @@ Mixin-osztály (a `library_controller.LibraryMixin` és társai mintájára): a
 végleges `AppController` örökli majd (a bekötés — az öröklés-lista bővítése
 a `controller.py`-ban — forró fájl, az integrátor dolga, ld. issue).
 
-A gyűjteménynevek és a csukott állapot QSettings-ben élnek. A mappák
-besorolása a `.picasa.ini` `[Picasa] P2category` kulcsából olvasódik, és az
-írás/migráció az `ini/` csomag API-ján halad át."""
+A gyűjteménynevek, a csukott állapot és a jelszó-lenyomatok QSettings-ben
+élnek. A mappák besorolása a `.picasa.ini` `[Picasa] P2category` kulcsából
+olvasódik, és az írás/migráció az `ini/` csomag API-ján halad át."""
 
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
@@ -23,6 +24,8 @@ from picasapy.ini import (
     update_document,
     with_folder_category,
 )
+from picasapy.hidden_password import egyezik as jelszo_egyezik
+from picasapy.hidden_password import picasa_lenyomat
 from picasapy.scanner import PICASA_INI_NAME
 
 from .custom_collections import (
@@ -64,7 +67,12 @@ class CustomCollectionsMixin:
         return [
             {
                 "name": c.name,
-                "folders": [f for f in c.folders if f not in hidden],
+                "folders": (
+                    []
+                    if c.password_hash
+                    and c.name not in self._unlocked_custom_collections
+                    else [f for f in c.folders if f not in hidden]
+                ),
                 "closed": c.closed,
             }
             for c in self._load_custom_collections()
@@ -72,6 +80,8 @@ class CustomCollectionsMixin:
 
     def _init_custom_collections(self) -> None:
         """A konstruktorból hívandó; átveszi a korábbi QSettings-tagságot."""
+        if not hasattr(self, "_unlocked_custom_collections"):
+            self._unlocked_custom_collections: set[str] = set()
         if hasattr(self, "_custom_collection_categories"):
             return
         self._custom_collection_categories: dict[str, tuple[str, ...]] = {}
@@ -105,13 +115,150 @@ class CustomCollectionsMixin:
             tuple(self._custom_collection_categories.items()),
         )
 
+    def _collection_by_name(self, name: str) -> CustomCollection | None:
+        return next(
+            (
+                collection
+                for collection in self._load_custom_collections()
+                if collection.name == name
+            ),
+            None,
+        )
+
+    def _store_collection_password(
+        self, name: str, password_hash: str, *, authenticated: bool
+    ) -> bool:
+        collections = self._load_custom_collections()
+        if not any(collection.name == name for collection in collections):
+            return False
+        updated = tuple(
+            replace(collection, password_hash=password_hash)
+            if collection.name == name
+            else collection
+            for collection in collections
+        )
+        if updated == collections:
+            return False
+        self._save_custom_collections(updated)
+        if authenticated or not password_hash:
+            self._unlocked_custom_collections.add(name)
+        else:
+            self._unlocked_custom_collections.discard(name)
+        self.customCollectionsChanged.emit()
+        self._refresh_custom_collection_password_view()
+        return True
+
+    def _refresh_custom_collection_password_view(self) -> None:
+        refresh = getattr(self, "_refresh_view", None)
+        if callable(refresh):
+            refresh()
+
+    @Slot(str, result=bool)
+    def collectionPasswordSet(self, name: str) -> bool:  # noqa: N802
+        """Van-e lenyomat a megnevezett felhasználói gyűjteményhez."""
+        collection = self._collection_by_name(name)
+        return bool(collection and collection.password_hash)
+
+    def collectionPasswordLocked(self, name: str) -> bool:  # noqa: N802
+        """A jelszavas gyűjtemény zárolt, amíg ebben a munkamenetben fel nem oldják.
+
+        Python-oldali állapotlekérdezés a belső vezérlőhöz; a QML felület
+        műveleteket kér a dedikált párbeszéden keresztül.
+        """
+        collection = self._collection_by_name(name)
+        if collection is None or not collection.password_hash:
+            return False
+        self._init_custom_collections()
+        return name not in self._unlocked_custom_collections
+
+    @Slot(str, str, result=bool)
+    def verifyCollectionPassword(  # noqa: N802
+        self, name: str, password: str
+    ) -> bool:
+        """A gyűjtemény jelszavának ellenőrzése mellékhatás nélkül."""
+        collection = self._collection_by_name(name)
+        return bool(
+            collection
+            and collection.password_hash
+            and jelszo_egyezik(collection.password_hash, password)
+        )
+
+    @Slot(str, str, result=bool)
+    def unlockCollection(self, name: str, password: str) -> bool:  # noqa: N802
+        """A megfelelő jelszó csak a megnevezett gyűjteményt oldja fel."""
+        if not self.verifyCollectionPassword(name, password):
+            return False
+        self._init_custom_collections()
+        self._unlocked_custom_collections.add(name)
+        self.customCollectionsChanged.emit()
+        self._refresh_custom_collection_password_view()
+        return True
+
+    @Slot(str, str, str, result=bool)
+    def setCollectionPassword(  # noqa: N802
+        self, name: str, password: str, verification: str
+    ) -> bool:
+        """Új jelszó beállítása; a nyílt jelszó nem kerül mentésre."""
+        collection = self._collection_by_name(name)
+        if (
+            collection is None
+            or collection.password_hash
+            or not password
+            or password != verification
+        ):
+            return False
+        self._init_custom_collections()
+        return self._store_collection_password(
+            name, picasa_lenyomat(password), authenticated=False
+        )
+
+    @Slot(str, str, str, str, result=bool)
+    def changeCollectionPassword(  # noqa: N802
+        self, name: str, current_password: str, password: str, verification: str
+    ) -> bool:
+        """Jelszócsere csak az aktuális jelszó és az ismétlés egyezésekor."""
+        if (
+            not self.verifyCollectionPassword(name, current_password)
+            or not password
+            or password != verification
+        ):
+            return False
+        return self._store_collection_password(
+            name, picasa_lenyomat(password), authenticated=True
+        )
+
+    @Slot(str, str, result=bool)
+    def clearCollectionPassword(  # noqa: N802
+        self, name: str, current_password: str
+    ) -> bool:
+        """Jelszó eltávolítása az aktuális jelszó igazolása után."""
+        if not self.verifyCollectionPassword(name, current_password):
+            return False
+        return self._store_collection_password(name, "", authenticated=True)
+
+    def _locked_custom_collection_folders(self) -> frozenset[str]:
+        """A még fel nem oldott jelszavas gyűjtemények útvonalai."""
+        self._init_custom_collections()
+        return frozenset(
+            folder
+            for collection in self._load_custom_collections()
+            if collection.password_hash
+            and collection.name not in self._unlocked_custom_collections
+            for folder in collection.folders
+        )
+
     def _save_custom_collections(
         self, collections: tuple[CustomCollection, ...]
     ) -> None:
-        # A tagság az ini-ben él; a beállításban csak a nevek és a csukott
-        # állapot marad. A korábbi JSON-alakot a migráció külön kezeli.
+        # A tagság az ini-ben él; a beállítás a nevek, a csukott állapot és
+        # a jelszó-lenyomatok tárolója. Nyílt jelszót nem írunk ki.
         definitions = tuple(
-            CustomCollection(name=c.name, closed=c.closed) for c in collections
+            CustomCollection(
+                name=c.name,
+                closed=c.closed,
+                password_hash=c.password_hash,
+            )
+            for c in collections
         )
         self._get_settings().setValue(
             CUSTOM_COLLECTIONS_SETTING_KEY, serialize_custom_collections(definitions)
@@ -149,6 +296,7 @@ class CustomCollectionsMixin:
                     name=collection.name,
                     folders=tuple(failed_paths),
                     closed=collection.closed,
+                    password_hash=collection.password_hash,
                 )
             )
 
@@ -242,6 +390,9 @@ class CustomCollectionsMixin:
                 effective = self._write_folder_category(folder, new.name)
                 if effective is not None:
                     self._set_cached_folder_category(folder, effective)
+            if old_name in self._unlocked_custom_collections:
+                self._unlocked_custom_collections.discard(old_name)
+                self._unlocked_custom_collections.add(new.name)
         self._save_custom_collections(renamed)
 
     @Slot(str)
@@ -257,6 +408,7 @@ class CustomCollectionsMixin:
                 )
                 if effective is not None:
                     self._set_cached_folder_category(folder, effective)
+        self._unlocked_custom_collections.discard(name)
         self._save_custom_collections(delete_collection(current, name))
 
     @Slot(str, str)
@@ -318,5 +470,7 @@ class CustomCollectionsMixin:
         return bool(jelenlegi) and not maradna
 
     def _closed_collection_folders(self) -> frozenset[str]:
-        """A bezárt gyűjtemények mappái — a nézet-szűrés bemenete (#461)."""
-        return closed_collection_folders(self._load_custom_collections())
+        """A bezárt és még fel nem oldott gyűjtemények mappái."""
+        return closed_collection_folders(self._load_custom_collections()) | (
+            self._locked_custom_collection_folders()
+        )

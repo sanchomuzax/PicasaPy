@@ -278,6 +278,24 @@ ELAVULT_FORDITAS = (
 )
 
 
+def _qt_szoveg(elem) -> str:
+    """Qt TS-szöveg a `<byte>` CR/LF- és szóközjelöléseivel együtt."""
+    if elem is None:
+        return ""
+    reszek = [elem.text or ""]
+    for gyerek in elem:
+        if gyerek.tag == "byte":
+            ertek = gyerek.get("value", "")
+            try:
+                reszek.append(chr(int(ertek[1:], 16) if ertek.startswith("x") else int(ertek)))
+            except (TypeError, ValueError):
+                reszek.append("")
+        else:
+            reszek.append(_qt_szoveg(gyerek))
+        reszek.append(gyerek.tail or "")
+    return "".join(reszek)
+
+
 def _uzenetek() -> list[tuple[str, str, str]]:
     """A `.ts` összes üzenete: (kontextus, forrás, fordítás).
 
@@ -292,10 +310,10 @@ def _uzenetek() -> list[tuple[str, str, str]]:
         nev = kontextus.findtext("name") or ""
         for uzenet in kontextus.iter("message"):
             if uzenet.get("numerus") == "yes":
-                forditas = uzenet.findtext("translation/numerusform") or ""
+                forditas = _qt_szoveg(uzenet.find("translation/numerusform"))
             else:
-                forditas = uzenet.findtext("translation") or ""
-            sorok.append((nev, uzenet.findtext("source") or "", forditas))
+                forditas = _qt_szoveg(uzenet.find("translation"))
+            sorok.append((nev, _qt_szoveg(uzenet.find("source")), forditas))
     return sorok
 
 

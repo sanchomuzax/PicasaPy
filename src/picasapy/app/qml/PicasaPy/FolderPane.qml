@@ -191,6 +191,7 @@ Rectangle {
     signal folderChosen(string path)
     // #3461: a Rejtett mappák fejlécének „Jelszó megadása/módosítása…" tétele
     signal hiddenPasswordRequested()
+    signal collectionPasswordRequested(string collectionName)
     signal starredChosen()
     signal albumChosen(string token)
     signal personChosen(string name)
@@ -1820,7 +1821,13 @@ Rectangle {
     // fejlécre kötve (pane.openCollectionContextMenu).
     CollectionContextMenu {
         id: collectionContextMenu
-        onPasswordRequested: pane.hiddenPasswordRequested()
+        onPasswordRequested: {
+            if (collectionContextMenu.hiddenCollection)
+                pane.hiddenPasswordRequested()
+            else
+                pane.collectionPasswordRequested(
+                    collectionContextMenu.collectionName)
+        }
         onRenameRequested: {
             pane._renamingCollection = collectionContextMenu.collectionName
             newCollectionDialog.initialName = collectionContextMenu.collectionName

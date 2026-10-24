@@ -16,20 +16,14 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject
 
+from tests.app.qml_functional._helyfoglalo_minta import helyfoglalo_tetelek
+
 
 def _tetel(window, nev: str):
     tetel = window.findChild(QObject, nev)
     assert tetel is not None, f"{nev} nem található"
     return tetel
 
-
-def _helyfoglalo(window):
-    """Egy még meg nem valósított (helyfoglaló) menütétel — a minta-tétel
-    (korábban a „Search &Options”, #4641 óta működik) nem rögzített."""
-    for obj in window.findChildren(QObject):
-        if obj.property("placeholder") is True and obj.property("text"):
-            return obj
-    raise AssertionError("nincs helyfoglaló menütétel")
 
 
 def _cimkeszin(tetel) -> str:
@@ -39,23 +33,23 @@ def _cimkeszin(tetel) -> str:
 
 
 def test_a_letiltott_tetel_szurke(qml_app, qt_app):
-    window, _controller, _ = qml_app
+    window, _controller, engine = qml_app
     window.setProperty("selectedIndexes", [])
     window.setProperty("selectedIndex", -1)
     qt_app.processEvents()
 
     mentes = _tetel(window, "menuFileSave")
-    helyfoglalo = _helyfoglalo(window)
+    helyfoglalo = helyfoglalo_tetelek(window, engine)[0]
 
     assert mentes.property("enabled") is False
     assert _cimkeszin(mentes) == _cimkeszin(helyfoglalo)
 
 
 def test_az_engedelyezett_tetel_nem_szurke(qml_app, qt_app):
-    window, _controller, _ = qml_app
+    window, _controller, engine = qml_app
 
     mentes_ki = _tetel(window, "menuToolsBackup")
-    helyfoglalo = _helyfoglalo(window)
+    helyfoglalo = helyfoglalo_tetelek(window, engine)[0]
 
     assert mentes_ki.property("enabled") is True
     assert _cimkeszin(mentes_ki) != _cimkeszin(helyfoglalo)
@@ -63,7 +57,7 @@ def test_az_engedelyezett_tetel_nem_szurke(qml_app, qt_app):
 
 def test_a_tiltas_feloldasa_visszaadja_a_szint(qml_app, qt_app):
     """Ugyanaz a tétel: tiltva szürke, a kijelölés után újra élő színű."""
-    window, _controller, _ = qml_app
+    window, _controller, engine = qml_app
     window.setProperty("selectedIndexes", [])
     window.setProperty("selectedIndex", -1)
     qt_app.processEvents()
