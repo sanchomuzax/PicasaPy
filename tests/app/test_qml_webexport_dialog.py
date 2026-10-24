@@ -18,6 +18,7 @@ class FakeWebExportController(QObject):
     webExportStarted = Signal()
     webExportProgress = Signal(int, int)
     webExportFinished = Signal(str, int)
+    ftpPublishFinished = Signal(str, int)
     webExportFailed = Signal(str)
 
     def __init__(self):

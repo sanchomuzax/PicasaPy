@@ -392,6 +392,8 @@ MenuBar {
     signal printContactSheetRequested()
     // #351: Mappa → Exportálás weboldalként… (webexport.fen)
     signal webExportRequested()
+    // #5713: Eszközök → Kísérleti → közzététel FTP-fiókra.
+    signal ftpPublishRequested()
     // #530: Google Earth-export a kijelölt (geocímkézett) képekből
     signal earthExportRequested()
     // #1589: `ID_VIEW_EARTH` — ugyanaz a KML, de utána MEG IS NYITJA a
@@ -2473,7 +2475,15 @@ MenuBar {
             }
         }
         PicasaMenu {
+            objectName: "menuToolsExperimental"
             title: qsTr("Experimental")
+            // #5713: az eredeti menü első Kísérleti tétele (`ID_FTPWEB`),
+            // most már a közös HTML-export párbeszédből FTP-re publikál.
+            MenuItem {
+                objectName: "menuToolsPublishFtp"
+                text: qsTr("Publish via FTP...")
+                onTriggered: bar.ftpPublishRequested()
+            }
             // #2142: a duplikátum-kereső az eredetiben a KÍSÉRLETI almenü
             // MÁSODIK tétele (`eMenuTools::ID_DUPES`, „Show Duplicate
             // Files"), nem a felső szinté. A #1794 mérte ki az Eszközök

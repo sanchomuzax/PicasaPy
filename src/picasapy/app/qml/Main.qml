@@ -2206,6 +2206,8 @@ ApplicationWindow {
         }
         // #351: Exportálás weboldalként
         onWebExportRequested: webExportDialog.open()
+        // #5713: ugyanaz a webexport-párbeszéd FTP-közzétételi módban.
+        onFtpPublishRequested: webExportDialog.ensure().openFtp()
         // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
         onEarthExportRequested: exportDialogs.ensure().openGoogleEarth()
         // #1589: ugyanaz a párbeszéd, de a kiírás után MEGNYITJA a fájlt
