@@ -20,6 +20,24 @@ from xml.etree import ElementTree
 QML = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "qml"
 TS = QML.parent / "i18n" / "picasapy_hu.ts"
 
+
+def _qt_szoveg(elem) -> str:
+    """Qt TS-szöveg a `<byte>` CR/LF- és szóközjelöléseivel együtt."""
+    if elem is None:
+        return ""
+    reszek = [elem.text or ""]
+    for gyerek in elem:
+        if gyerek.tag == "byte":
+            ertek = gyerek.get("value", "")
+            try:
+                reszek.append(chr(int(ertek[1:], 16) if ertek.startswith("x") else int(ertek)))
+            except (TypeError, ValueError):
+                reszek.append("")
+        else:
+            reszek.append(_qt_szoveg(gyerek))
+        reszek.append(gyerek.tail or "")
+    return "".join(reszek)
+
 #: #3555: a `CGeneralPrefsPage::LangChange` angol alapszövege
 NYELVVALTAS_KERDES = (
     "Change the language PicasaPy uses?\n\nIt will change the next time "
@@ -229,9 +247,11 @@ def test_a_magyar_forditas_is_a_hivatalos_szoveg() -> None:
     fa = ElementTree.parse(TS)
     talalt: dict[str, set[str]] = {}
     for uzenet in fa.iter("message"):
-        forras = uzenet.findtext("source") or ""
+        forras = _qt_szoveg(uzenet.find("source"))
         if forras in HIVATALOS:
-            talalt.setdefault(forras, set()).add(uzenet.findtext("translation") or "")
+            talalt.setdefault(forras, set()).add(
+                _qt_szoveg(uzenet.find("translation"))
+            )
     for felirat, (magyar, _azonosito) in HIVATALOS.items():
         assert felirat in talalt, f"nincs fordítási bejegyzés: „{felirat}”"
         assert talalt[felirat] == {magyar}, (
@@ -454,8 +474,8 @@ def _kontextus_forditasai() -> dict[tuple[str, str], set[str]]:
             forditas = uzenet.find("translation")
             if forditas is not None and forditas.get("type") in ("obsolete", "vanished"):
                 continue
-            talalt.setdefault((nev, uzenet.findtext("source") or ""), set()).add(
-                "" if forditas is None else (forditas.text or ""))
+            talalt.setdefault((nev, _qt_szoveg(uzenet.find("source"))), set()).add(
+                "" if forditas is None else _qt_szoveg(forditas))
     return talalt
 
 

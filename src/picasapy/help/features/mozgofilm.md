@@ -48,12 +48,14 @@ A fül tetején az áll, hány kép van kijelölve („N kép kijelölve."). Ala
   **Törlés** (a kép beúszik: balra, jobbra, felülről, alulról és
   átlósan), **Tolás**, **Kör**, **Pásztázás és nagyítás**, **Pásztázás
   és nagyítás - arc**, **Gyorsítás** és **Négyszög**. Alapból a
-  **Szétoszlás** áll.
+  **Szétoszlás** áll; amit választasz, azt a program megjegyzi a
+  következő filmre is.
 - **Átfedés** — mennyire csúsznak egymásba az átmenetnél a képek
   (másodpercben); legfeljebb a dia idejének 90%-a.
-- **Dia időtartama:** — mennyi ideig látszik egy kép. 1,0 és 10,0
+- **Dia időtartama:** mennyi ideig látszik egy kép. 1 és 300
   másodperc között állítható, fél másodperces lépésekben; az
-  alapértelmezés 3,0 másodperc.
+  alapértelmezés 4,0 másodperc, ahogy az eredeti Picasában. Amit
+  beállítasz, azt a program megjegyzi a következő filmre is.
 - **Célfájl:** — **nem kötelező**. Ha üresen hagyod, a program maga
   dönti el, hova és milyen néven mentse (lásd lentebb). A **Tallózás…**
   gombbal viszont te is megadhatod a helyét. A kimenet MP4-videó.
@@ -138,9 +140,12 @@ filmszalagon:
   viszont ettől függ, mely képeket kezel egy csoportként (lásd a
   **Mozgófilm** fület), és az értéke a film projektfájljába is bekerül;
 - **Újraszámolás** — újraépíti a filmszalagot, és a **Mozgófilm** fülre
-  lép. Ha már vettél fel **szöveges diát**, a program előbb rákérdez: „Az új
-  film létrehozásakor minden hozzáadott szöveges dia törlődik. Biztosan
-  folytatja?" — így nem vész el némán a kézzel felvett dia;
+  lép. Előtte a program **mindig** rákérdez: „Az új film létrehozásakor
+  minden hozzáadott szöveges dia törlődik. Biztosan folytatja?", akkor
+  is, ha még nincs szöveges diád. Ha a kérdésnél bekapcsolod a **Ne
+  kérdezze meg újra** jelölőt, a program csak akkor jegyzi meg, ha az
+  **Igen** gombot nyomod; a **Nem** vagy a **Mégse** mellett legközelebb
+  újra kérdez;
 - **Kijelölt klipek hozzáadása** — a könyvtárban kijelölt képeket a film
   végére fűzi;
 - **Kijelölt klip eltávolítása** — kiveszi a kijelölt képet (vagy diát)
@@ -187,9 +192,12 @@ látszik. Ha kikapcsolod, a program ezt megjegyzi a következő filmhez is.
   (`Filmek`, `Mozgófilmek` vagy `Movies` — ha valamelyik már létezik, a
   program abba ír). Ha ez a mappa nem hozható létre, a rendszer Videók
   mappájába ment.
-- A **fájlnév** annak a mappának a nevéből lesz, ahonnan a képek jönnek.
-  Ha több különböző mappából válogattál, a program saját alapnevet
-  használ.
+- A **fájlnév** az eredeti Picasa alapneve a felület nyelvén: magyar
+  felületen `diavetites_jellegu_film`, angolon `slideshowmovie`. Nem
+  számít, melyik mappából jönnek a képek.
+- Ha a program futása alatt már készítettél filmet célfájl nélkül, a
+  következő ugyanazt a nevet és mappát kapja (sorszámmal, lásd
+  lent).
 - Ha ilyen nevű fájl már van ott, a program **sorszámot** tesz a név
   végére.
 - Az így megnyitott mappa magától megjelenik a bal hasáb **Projektek**
