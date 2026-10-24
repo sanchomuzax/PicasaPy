@@ -79,6 +79,10 @@ def dekodolj_kepkockat(video_utvonal: str | Path, position_ms: int):
 class FrameCaptureMixin:
     """`captureMovieFrame` — a `movieeditpanel/capture_frame` párja."""
 
+    #: a képkocka dekódolása folyamatban
+    movieFrameCapturing = Signal()
+    #: a fájl mentése folyamatban
+    movieFrameSaving = Signal()
     #: a képkocka elkészült — a mentett fájl teljes útvonalával
     #: (`CCaptureFrame::captureframeprog3` üzenetének adata)
     movieFrameCaptured = Signal(str)
@@ -99,6 +103,8 @@ class FrameCaptureMixin:
         alapnev = kepkocka_alapneve(video)
         pozicio = max(0, int(position_ms))
 
+        self.movieFrameCapturing.emit()
+
         def munka() -> None:
             try:
                 kocka = dekodolj_kepkockat(video, pozicio)
@@ -106,6 +112,7 @@ class FrameCaptureMixin:
                     logger.warning("#1838: nem olvasható képkocka: %s", video)
                     self.movieFrameCaptureFailed.emit()
                     return
+                self.movieFrameSaving.emit()
                 cel = mentsd_a_kepkockat(kocka, capture_folder(), alapnev)
             except Exception:
                 logger.exception("#1838: a képkocka mentése elbukott: %s", video)
