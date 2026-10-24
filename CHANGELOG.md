@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.207] - 2026-10-24
+
+- A színválasztó az eredeti, kétmódú HSL-palettát, színmintákat és MRU-rekeszeket mutatja; a kollázs az 1-es módot használja (#5730).
+- Az arcmodell-letöltés hálózati hibájának tesztje Windows-on is megvárja a hibaüzenetet (#5764).
+
 ## [0.9.206] - 2026-10-24
 
 - A felhasználói gyűjtemények jelszóval zárolhatók, és a jelszó gyűjteményenként tárolódik (#5704).
