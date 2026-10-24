@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.215] - 2026-10-25
+
+- Egyetlen kép átnevezésekor az F2 és a Fájl ▸ Átnevezés a Rename Files párbeszédet nyitja meg, a fájlnév kiterjesztés nélküli részét kijelölve (#5804).
+
 ## [0.9.214] - 2026-10-24
 
 - A Címkék helyi menü tesztje a jobbklikk előtt megvárja, hogy a címkesor megálljon az ablakban (#5797).
