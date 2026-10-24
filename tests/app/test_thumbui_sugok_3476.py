@@ -55,7 +55,7 @@ def test_a_vezerlo_a_hivatalos_angolt_mondja(fajl, nev, _ctx, angol, _magyar):
     blokk = blokk_horgonyra((_QML / fajl).read_text(encoding="utf-8"), f'"{nev}"')
     if nev == "viewerBackButton":
         assert 'ToolTip.text: viewer.quickViewerMode' in blokk
-        assert "? " + _qml_literal("Launch Picasa") in blokk
+        assert "? " + _qml_literal("Launch PicasaPy") in blokk
         assert ": " + _qml_literal(angol) in blokk
     else:
         assert "ToolTip.text: " + _qml_literal(angol) in blokk, (

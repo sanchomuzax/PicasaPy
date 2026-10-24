@@ -9309,15 +9309,15 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>Natrag u biblioteku</translation>
         </message>
         <message>
-            <source>Edit in Picasa</source>
+            <source>Edit in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Uređivanje na usluzi Picasa</translation>
+            <translation>Uređivanje na usluzi PicasaPy</translation>
         </message>
         <message>
-            <source>Launch Picasa</source>
+            <source>Launch PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pokreni Picasa</translation>
+            <translation>Pokreni PicasaPy</translation>
         </message>
         <message>
             <source>Zoom In</source>

@@ -9283,15 +9283,15 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>R&amp;egressar à fototeca</translation>
         </message>
         <message>
-            <source>Edit in Picasa</source>
+            <source>Edit in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Editar no Picasa</translation>
+            <translation>Editar no PicasaPy</translation>
         </message>
         <message>
-            <source>Launch Picasa</source>
+            <source>Launch PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Iniciar o Picasa</translation>
+            <translation>Iniciar o PicasaPy</translation>
         </message>
         <message>
             <source>Zoom In</source>

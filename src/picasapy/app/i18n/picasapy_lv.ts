@@ -9309,15 +9309,15 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>Bibliotēka</translation>
         </message>
         <message>
-            <source>Edit in Picasa</source>
+            <source>Edit in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Rediģēt, izmantojot Picasa</translation>
+            <translation>Rediģēt, izmantojot PicasaPy</translation>
         </message>
         <message>
-            <source>Launch Picasa</source>
+            <source>Launch PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Palaist Picasa</translation>
+            <translation>Palaist PicasaPy</translation>
         </message>
         <message>
             <source>Zoom In</source>

@@ -9297,15 +9297,15 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>Vissza a könyvtárhoz</translation>
         </message>
         <message>
-            <source>Edit in Picasa</source>
+            <source>Edit in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Szerkesztés a Picasában</translation>
+            <translation>Szerkesztés a PicasaPy-ban</translation>
         </message>
         <message>
-            <source>Launch Picasa</source>
+            <source>Launch PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Picasa indítása</translation>
+            <translation>PicasaPy indítása</translation>
         </message>
         <message>
             <source>Zoom In</source>

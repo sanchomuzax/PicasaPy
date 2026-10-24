@@ -1760,10 +1760,10 @@ Rectangle {
                     objectName: "viewerBackButton"
                     font.pixelSize: Theme.fontSize
                     text: viewer.quickViewerMode
-                        ? qsTr("Edit in Picasa") : qsTr("Back to Library")
+                        ? qsTr("Edit in PicasaPy") : qsTr("Back to Library")
                     //: #3476: az eredeti `thumbui/albumview` súgója
                     ToolTip.text: viewer.quickViewerMode
-                        ? qsTr("Launch Picasa")
+                        ? qsTr("Launch PicasaPy")
                         : qsTr("Return to organized thumbnails")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
@@ -5281,8 +5281,8 @@ Rectangle {
             y: parent.height - 800 + 744
             width: 119; height: 19
             leftPadding: 30
-            text: qsTr("Edit in Picasa")
-            ToolTip.text: qsTr("Launch Picasa")
+            text: qsTr("Edit in PicasaPy")
+            ToolTip.text: qsTr("Launch PicasaPy")
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
             onClicked: viewer.kerBezaras()

@@ -9283,15 +9283,15 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>Επιστροφή στη Βιβλιοθήκη</translation>
         </message>
         <message>
-            <source>Edit in Picasa</source>
+            <source>Edit in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Επεξεργασία στο Picasa</translation>
+            <translation>Επεξεργασία στο PicasaPy</translation>
         </message>
         <message>
-            <source>Launch Picasa</source>
+            <source>Launch PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Εκκίνηση του Picasa</translation>
+            <translation>Εκκίνηση του PicasaPy</translation>
         </message>
         <message>
             <source>Zoom In</source>

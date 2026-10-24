@@ -9296,15 +9296,15 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>חזרה לספרייה</translation>
         </message>
         <message>
-            <source>Edit in Picasa</source>
+            <source>Edit in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>‏ערוך ב-Picasa</translation>
+            <translation>‏ערוך ב-PicasaPy</translation>
         </message>
         <message>
-            <source>Launch Picasa</source>
+            <source>Launch PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>הפעל את Picasa</translation>
+            <translation>הפעל את PicasaPy</translation>
         </message>
         <message>
             <source>Zoom In</source>

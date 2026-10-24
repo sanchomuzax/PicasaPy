@@ -9282,15 +9282,15 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>Quay lại Thư viện</translation>
         </message>
         <message>
-            <source>Edit in Picasa</source>
+            <source>Edit in PicasaPy</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Chỉnh sửa trong Picasa</translation>
+            <translation>Chỉnh sửa trong PicasaPy</translation>
         </message>
         <message>
-            <source>Launch Picasa</source>
+            <source>Launch PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Khởi chạy Picasa</translation>
+            <translation>Khởi chạy PicasaPy</translation>
         </message>
         <message>
             <source>Zoom In</source>
