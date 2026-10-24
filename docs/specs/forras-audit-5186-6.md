@@ -11,7 +11,7 @@ a nyers job-képek nem találhatók a helyi mérőadat-archívumban.
 
 A #4551 három megnevezett, rögzített vágásgombja nincs a mai kódban; a három
 eredeti előnézet viszont megmaradt, és mellettük PicasaPy-saját címet és
-stratégiafeliratot mutat. A #4572 és #4579 állítása a forrásfeltételek mellett
+stratégia-feliratot mutat. A #4572 és #4579 állítása a forrásfeltételek mellett
 igazolt. A #4846 teljes képi állítása render-összevetésre vár; a #5121 meglévő
 album melletti viselkedése a már dokumentált Colab-mérések szerint egyezik.
 
@@ -72,7 +72,7 @@ feljegyzések és a mai QML eltérő mércéjével újraellenőrizve.
   hozzá tartozó adat elérhető. A sorok hiánya adat nélküli képnél nem
   ellentmondás; a JPEG-minőség alacsony tartományának eltérése szándékos.
 - **#4846 - ⛔** Az irányok a forrásképpel egyeznek; a forma „egyszerűsített”
-  állítása csak a mai QML renderképével dönthető el.
+  állítása csak a mai QML renderelt képével dönthető el.
 - **#5121 - ✅** A korábban rögzített Colab-esetekben meglévő album mellett a
   fejléc, sorvége és `+` nem készít új albumot; az album saját sora abba az
   albumba adja a képeket. A mai QML ugyanígy választ külön új-album és
@@ -112,7 +112,7 @@ tájolás és a rajzeltérések külön vannak rögzítve.
   - Ghidra-kör kell: 0x00762540 - a `CAlbumList` mely ága és hová teszi be a `+0x30 = 4` sort, ha már van album, és a sor mely területe fogadja a dropot? [blokkoló]
   - Ghidra-kör kell: 0x00565920 - a konstruktor melyik hívási útja tölti fel a `+0x2c0` albumlistát, és a 4-es sor beszúrása függ-e az albumok számától? [blokkoló]
 - #5121: a korábbi Colab-felvételek nyers képei helyben nem elérhetők; ha a
-  jegy döntéséhez újravizsgálat kell, rögzítsük a listát nulla és egy saját
+  jegy döntéséhez újbóli vizsgálat kell, rögzítsük a listát nulla és egy saját
   albummal, majd húzzunk ugyanazt a képet a `newalbumprompt` sorra, fejlécére,
   sorok közé/alá, valamint a `+` céljára; ellenőrizzük az új album nevét,
   sorát és a képek célalbumát.
