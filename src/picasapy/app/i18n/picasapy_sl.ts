@@ -2194,6 +2194,66 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         </message>
     </context>
     <context>
+        <name>CollectionPasswordDialog</name>
+        <message>
+            <source>Password Entry</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryTitle</extracomment>
+            <translation>Vnos gesla</translation>
+        </message>
+        <message>
+            <source>Please enter a password to open this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryPrompt</extracomment>
+            <translation>Če želite odpreti to zbirko, vnesite geslo.</translation>
+        </message>
+        <message>
+            <source>Please enter a password to use for this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryOpenPrompt</extracomment>
+            <translation>Prosimo, vnesite geslo, ki ga želite uporabiti za to zbirko</translation>
+        </message>
+        <message>
+            <source>Please verify your password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyPrompt</extracomment>
+            <translation>Potrdite svoje geslo</translation>
+        </message>
+        <message>
+            <source>The passwords did not match.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
+            <translation>Gesli nista enaki.</translation>
+        </message>
+        <message>
+            <source>Please provide a valid password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vnesite veljavno geslo</translation>
+        </message>
+        <message>
+            <source>Stronger protection (Picasa cannot open it)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Močnejša zaščita (Picasa je ne more odpreti)</translation>
+        </message>
+        <message>
+            <source>&amp;Add/Change a password...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
+            <translation>&amp;Dodaj/spremeni geslo ...</translation>
+        </message>
+        <message>
+            <source>Remove the password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Odstrani geslo</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>Odpri</translation>
+        </message>
+    </context>
+    <context>
         <name>FolderContextMenu</name>
         <message>
             <source>Move to Collection...</source>
@@ -8693,6 +8753,32 @@ Sprememba bo uveljavljena ob naslednjem zagonu aplikacije PicasaPy.</translation
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(panelroot/makemovietab)</extracomment>
             <translation>Ustvari film</translation>
+        </message>
+        <message>
+            <source>Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
+            <translation>Dodaj geslo</translation>
+        </message>
+        <message>
+            <source>The "Hidden Folders" collection is not currently password protected.
+Would you like to add a password now?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
+            <translation>Zbirka »Skrite mape« trenutno ni zaščitena z geslom.
+Ali želite nastaviti geslo zdaj?</translation>
+        </message>
+        <message>
+            <source>Don't Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
+            <translation>Ne dodaj gesla</translation>
+        </message>
+        <message>
+            <source>Do not ask me again.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>Ne sprašuj ponovno.</translation>
         </message>
     </context>
     <context>

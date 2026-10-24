@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 
-// Közös spektrumválasztó szöveg-, körvonal- és effekt-színekhez (#4548).
-// A 225×225-ös panelen az öt MRU-rekesz, a 181×147-es HSV-paletta és a
-// teljes színskála külön kattintható; az aktuális szín azonnal érvényesül.
+// Az eredeti 225×225-ös `pickerpanel`: öt MRU-rekesz, 30 színminta és a
+// mért HSL-paletta. A palettakép a specifikáció RGB-horgonyaiból készül;
+// az eredeti erőforrás-kép nem kerül a repóba (#5730).
 Popup {
     id: picker
     objectName: "colorSpectrumPicker"
@@ -11,11 +11,11 @@ Popup {
     property Item anchorItem: null
     property string currentColor: "#ffffff"
     property var recentColors: ["", "", "", "", ""]
-    property real hue: 0
-    property real saturation: 0
-    property real brightness: 1
-    readonly property alias spectrumFieldItem: spectrumField
-    readonly property alias hueSpectrumItem: hueSpectrum
+    // A natív panel `palette` tulajdonságának megfelelő mód. A Popup örökölt
+    // `palette` tulajdonsága miatt a saját neve `paletteMode`.
+    property int paletteMode: 0
+
+    readonly property alias spectrumFieldItem: paletteArea
 
     signal colorPicked(string hex)
 
@@ -34,53 +34,87 @@ Popup {
                               anchorItem.mapToItem(parent, 0,
                                                    anchorItem.height).y)) : 0
 
+    readonly property var paletteSamples: [
+        "#63001e", "#b10039", "#895227", "#c47338", "#d39815",
+        "#e9a518", "#ffbd00", "#ffd154", "#c8c866", "#e3e274",
+        "#629c33", "#85cd44", "#8ab28d", "#a8d8ab", "#00727c",
+        "#00b2bd", "#87a2b0", "#a6c7d7", "#a9d1e7", "#cde7f6",
+        "#007bc4", "#0091e1", "#002455", "#004baa", "#586695",
+        "#778cca", "#38175a", "#692dac", "#c88dac", "#e3a1c4"
+    ]
+
+    readonly property var emptyRecentColors: [
+        "#00b2bd", "#87a2b0", "#007bc4", "#00727c", "#692dac"
+    ]
+
     background: Rectangle {
         color: Theme.canvasBg
         border.width: 1
         border.color: Theme.chromeBorder
     }
 
-    function syncFromCurrentColor() {
-        var selected = Qt.color(currentColor)
-        if (selected.hsvHue >= 0)
-            hue = selected.hsvHue
-        saturation = selected.hsvSaturation
-        brightness = selected.hsvValue
+    function _pickPalettePixel(mouseX, mouseY) {
+        var x = Math.max(2, Math.min(179, Math.floor(mouseX) + 2))
+        var y = Math.max(56, Math.min(144, Math.floor(mouseY) + 56))
+        picker.colorPicked(colorPalette.colorAt(x, y, picker.paletteMode))
     }
 
-    function channelHex(value) {
-        var hex = Math.max(0, Math.min(255, Math.round(value * 255)))
-                         .toString(16)
-        return hex.length < 2 ? "0" + hex : hex
-    }
+    Item {
+        id: paletteArea
+        objectName: picker.objectName + "Spectrum"
+        x: 20
+        y: 15
+        width: 181
+        height: 147
 
-    function selectedHex() {
-        var selected = Qt.hsva(hue, saturation, brightness, 1)
-        return "#" + channelHex(selected.r)
-                   + channelHex(selected.g)
-                   + channelHex(selected.b)
-    }
+        Image {
+            id: paletteBitmap
+            objectName: picker.objectName + "PaletteImage"
+            anchors.fill: parent
+            source: "image://colorpalette/palette" + picker.paletteMode
+            sourceSize: Qt.size(181, 147)
+            fillMode: Image.Stretch
+            smooth: false
+            asynchronous: false
+            cache: false
+        }
 
-    function publishColor() {
-        picker.colorPicked(picker.selectedHex())
-    }
+        Repeater {
+            model: picker.paletteSamples
 
-    function pickHue(position, extent) {
-        hue = Math.max(0, Math.min(1, position / Math.max(1, extent)))
-        publishColor()
-    }
+            delegate: Rectangle {
+                required property string modelData
+                required property int index
 
-    function pickSaturationAndBrightness(xPosition, yPosition, extentWidth,
-                                         extentHeight) {
-        saturation = Math.max(0, Math.min(1,
-                                          xPosition / Math.max(1, extentWidth)))
-        brightness = 1 - Math.max(0, Math.min(1,
-                                             yPosition / Math.max(1, extentHeight)))
-        publishColor()
-    }
+                objectName: picker.objectName + "PaletteSample" + index
+                x: 1 + index * 6
+                y: 28
+                width: 6
+                height: 12
+                color: modelData
 
-    onCurrentColorChanged: syncFromCurrentColor()
-    Component.onCompleted: syncFromCurrentColor()
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: picker.colorPicked(parent.modelData)
+                }
+            }
+        }
+
+        MouseArea {
+            objectName: picker.objectName + "SpectrumInput"
+            x: 2
+            y: 56
+            width: 178
+            height: 89
+            cursorShape: Qt.CrossCursor
+            onClicked: picker._pickPalettePixel(mouse.x, mouse.y)
+            onPositionChanged: {
+                if (pressed)
+                    picker._pickPalettePixel(mouse.x, mouse.y)
+            }
+        }
+    }
 
     Repeater {
         model: picker.recentColors
@@ -90,112 +124,23 @@ Popup {
             required property int index
 
             objectName: picker.objectName + "Recent" + index
+            property string recentColor: modelData || ""
+            property string baseColor: picker.emptyRecentColors[index]
             x: 51 + index * 31
-            y: 13
+            y: 15
             width: 26
             height: 26
-            color: modelData || "transparent"
-            border.width: 1
-            border.color: Theme.chromeBorder
+            color: recentColor || baseColor
+            border.width: recentColor.toLowerCase() === picker.currentColor.toLowerCase()
+                          ? 2 : 1
+            border.color: recentColor.toLowerCase() === picker.currentColor.toLowerCase()
+                          ? Theme.selectionBlue : Theme.chromeBorder
 
             MouseArea {
                 anchors.fill: parent
-                enabled: parent.modelData !== ""
+                enabled: parent.recentColor !== ""
                 cursorShape: Qt.PointingHandCursor
-                onClicked: picker.colorPicked(parent.modelData)
-            }
-        }
-    }
-
-    Rectangle {
-        id: spectrumField
-        objectName: picker.objectName + "Spectrum"
-        x: 20
-        y: 48
-        width: 181
-        height: 147
-        color: Qt.hsva(picker.hue, 1, 1, 1)
-        clip: true
-
-        Rectangle {
-            anchors.fill: parent
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0; color: "#ffffffff" }
-                GradientStop { position: 1; color: "#00ffffff" }
-            }
-        }
-        Rectangle {
-            anchors.fill: parent
-            gradient: Gradient {
-                GradientStop { position: 0; color: "#00000000" }
-                GradientStop { position: 1; color: "#ff000000" }
-            }
-        }
-        MouseArea {
-            objectName: picker.objectName + "SpectrumInput"
-            anchors.fill: parent
-            cursorShape: Qt.CrossCursor
-            onClicked: picker.pickSaturationAndBrightness(
-                           mouse.x, mouse.y, parent.width, parent.height)
-            onPositionChanged: {
-                if (pressed)
-                    picker.pickSaturationAndBrightness(
-                                mouse.x, mouse.y, parent.width, parent.height)
-            }
-        }
-    }
-
-    Rectangle {
-        x: 20
-        y: 198
-        width: 181
-        height: 12
-        color: picker.currentColor
-        border.width: 1
-        border.color: Theme.chromeBorder
-    }
-
-    Rectangle {
-        id: hueSpectrum
-        objectName: picker.objectName + "HueSpectrum"
-        x: 20
-        y: 213
-        width: 181
-        height: 10
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop { position: 0.00; color: "#ff0000" }
-            GradientStop { position: 0.17; color: "#ffff00" }
-            GradientStop { position: 0.33; color: "#00ff00" }
-            GradientStop { position: 0.50; color: "#00ffff" }
-            GradientStop { position: 0.67; color: "#0000ff" }
-            GradientStop { position: 0.83; color: "#ff00ff" }
-            GradientStop { position: 1.00; color: "#ff0000" }
-        }
-        border.width: 1
-        border.color: Theme.chromeBorder
-
-        Rectangle {
-            objectName: picker.objectName + "HueMarker"
-            x: Math.max(0, Math.min(parent.width - width,
-                                     picker.hue * parent.width - width / 2))
-            y: -2
-            width: 4
-            height: parent.height + 4
-            color: "transparent"
-            border.width: 1
-            border.color: Theme.ink
-        }
-
-        MouseArea {
-            objectName: picker.objectName + "HueInput"
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: picker.pickHue(mouse.x, parent.width)
-            onPositionChanged: {
-                if (pressed)
-                    picker.pickHue(mouse.x, parent.width)
+                onClicked: picker.colorPicked(parent.recentColor)
             }
         }
     }

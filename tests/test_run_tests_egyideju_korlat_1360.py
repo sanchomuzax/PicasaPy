@@ -132,6 +132,17 @@ class TestHelyFoglalas:
         monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda hely: True)
         assert run_tests._foglalj_helyet(1) is None, "elvette az élő futás helyét"
 
+    def test_a_regi_foglalas_elo_PID_mellett_sem_blokkol(self, tmp_path, monkeypatch) -> None:
+        """Más PID-névtérből maradt foglalás (#5779): a rögzített PID a gazdán
+        él (például a 2-es), de a hely a kor-szabálynál régebbi."""
+        import os
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
+        hely = run_tests._foglalj_helyet(1)
+        regi = hely.stat().st_mtime - run_tests._MARADEK_KOR_S - 60
+        os.utime(hely, (regi, regi))
+        monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda hely: True)
+        assert run_tests._foglalj_helyet(1) is not None, "a régi foglalás örökre blokkol"
+
     def test_a_varakozo_NEM_foglal_helyet(self, tmp_path, monkeypatch) -> None:
         """A lényeg: aki vár, az nem vesz el helyet a többiektől."""
         monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")

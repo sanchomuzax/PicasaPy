@@ -7,6 +7,28 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.208] - 2026-10-24
+
+- A hasonlósági keresés a Picasa három képi jellemzője és rangsora alapján rendezi és korlátozza a találatokat (#5744).
+- A helyi tesztfuttató a más PID-névtérből maradt, régi foglalást is felszabadítja (#5779).
+- A szerkesztő #415-ös tesztje a közös, biztonságos lebontást használja (#5782).
+
+## [0.9.207] - 2026-10-24
+
+- A színválasztó az eredeti, kétmódú HSL-palettát, színmintákat és MRU-rekeszeket mutatja; a kollázs az 1-es módot használja (#5730).
+- Az arcmodell-letöltés hálózati hibájának tesztje Windows-on is megvárja a hibaüzenetet (#5764).
+
+## [0.9.206] - 2026-10-24
+
+- A felhasználói gyűjtemények jelszóval zárolhatók, és a jelszó gyűjteményenként tárolódik (#5704).
+- A webexport alapmappájának régi tesztje a nem windowsos utat méri, így Windowson sem bukik (#5714).
+- Teszt rögzíti, hogy a név szerinti rendezés a Picasa 3.9 bájtsorrendjét, ASCII-kisbetűsítését és 32 bites számsorrendjét követi (#5718).
+- A Fotónéző beállítóablakának teljes képernyős indítás jelölője az eredeti Picasa hivatalos feliratát és forráskulcsát kapja; a beállítás újranyitás után is megmarad (#5719).
+
+## [0.9.205] - 2026-10-24
+
+- A HTML-export párbeszéd megjegyzi a célmappát és a sablont; Windowson a Személyes mappából indul (#5714).
+
 ## [0.9.204] - 2026-10-24
 
 - A videóból mentett képkocka új mappáját a Projektek gyűjteménybe sorolja, JPEG-minőségét 85-re állítja, és mentési állapotokat mutat (#5715).

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from PySide6.QtCore import (
     QMetaObject,
@@ -46,12 +48,14 @@ def _click_item(window, item, qt_app, x_ratio=0.5, y_ratio=0.5):
 
 
 def _click_point(window, qt_app, x, y):
+    point = QPoint(round(x), round(y))
     QTest.mouseClick(
         window,
         Qt.MouseButton.LeftButton,
-        pos=QPoint(round(x), round(y)),
+        pos=point,
     )
     qt_app.processEvents()
+    return point
 
 
 def _pick_from_spectrum(window, swatches, qt_app, image_path):
@@ -68,23 +72,13 @@ def _pick_from_spectrum(window, swatches, qt_app, image_path):
     assert abs(swatches.property("spectrumPickerHeight") - 225) <= 3
     window.grabWindow().save(str(image_path.with_name(image_path.stem + "-open.png")))
 
-    _click_point(
+    # A natív HSL-mező egyszerre választ színárnyalatot és világosságot;
+    # külön hue-sáv nincs a panel alatt (#5730).
+    clicked_point = _click_point(
         window,
         qt_app,
-        swatches.property("hueSceneX") + swatches.property("hueWidth") * 0.72,
-        swatches.property("hueSceneY") + 5,
-    )
-    assert swatches.property("spectrumPickerVisible"), (
-        "a spektrumsávra számolt kattintás kívülre esett: "
-        f"x={swatches.property('hueSceneX')}, "
-        f"y={swatches.property('hueSceneY')}, "
-        f"width={swatches.property('hueWidth')}"
-    )
-    _click_point(
-        window,
-        qt_app,
-        swatches.property("spectrumSceneX") + swatches.property("spectrumWidth") * 0.72,
-        swatches.property("spectrumSceneY") + swatches.property("spectrumHeight") * 0.28,
+        swatches.property("spectrumSceneX") + 90.5,
+        swatches.property("spectrumSceneY") + 100.5,
     )
 
     rendered = window.grabWindow()
@@ -92,10 +86,8 @@ def _pick_from_spectrum(window, swatches, qt_app, image_path):
     assert rendered.save(str(image_path)), f"nem menthető a render: {image_path}"
     dpr = rendered.devicePixelRatio()
     pixel = rendered.pixelColor(
-        round((swatches.property("spectrumSceneX")
-               + swatches.property("spectrumWidth") * 0.72) * dpr),
-        round((swatches.property("spectrumSceneY")
-               + swatches.property("spectrumHeight") * 0.28) * dpr),
+        math.floor(clicked_point.x() * dpr),
+        math.floor(clicked_point.y() * dpr),
     )
     return pixel
 

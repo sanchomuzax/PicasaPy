@@ -2191,6 +2191,66 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         </message>
     </context>
     <context>
+        <name>CollectionPasswordDialog</name>
+        <message>
+            <source>Password Entry</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryTitle</extracomment>
+            <translation>Καταχώρηση κωδικού πρόσβασης</translation>
+        </message>
+        <message>
+            <source>Please enter a password to open this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryPrompt</extracomment>
+            <translation>Εισαγάγετε κωδικό πρόσβασης για το άνοιγμα της συλλογής</translation>
+        </message>
+        <message>
+            <source>Please enter a password to use for this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryOpenPrompt</extracomment>
+            <translation>Πληκτρολογήστε κωδικό για τη χρήση της συλλογής</translation>
+        </message>
+        <message>
+            <source>Please verify your password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyPrompt</extracomment>
+            <translation>Επαληθεύστε τον κωδικό πρόσβασης</translation>
+        </message>
+        <message>
+            <source>The passwords did not match.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
+            <translation>Οι κωδικοί πρόσβασης δεν ταιριάζουν.</translation>
+        </message>
+        <message>
+            <source>Please provide a valid password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Εισαγάγετε έναν έγκυρο κωδικό πρόσβασης</translation>
+        </message>
+        <message>
+            <source>Stronger protection (Picasa cannot open it)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ισχυρότερη προστασία (το Picasa δεν μπορεί να τον ανοίξει)</translation>
+        </message>
+        <message>
+            <source>&amp;Add/Change a password...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
+            <translation>&amp;Προσθήκη/αλλαγή κωδικού πρόσβασης...</translation>
+        </message>
+        <message>
+            <source>Remove the password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Κατάργηση κωδικού πρόσβασης</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>Άνοιγμα</translation>
+        </message>
+    </context>
+    <context>
         <name>FolderContextMenu</name>
         <message>
             <source>Move to Collection...</source>
@@ -8654,6 +8714,32 @@ It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(panelroot/makemovietab)</extracomment>
             <translation>Δημιουργία ταινίας</translation>
+        </message>
+        <message>
+            <source>Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
+            <translation>Προσθήκη κωδικού πρόσβασης</translation>
+        </message>
+        <message>
+            <source>The "Hidden Folders" collection is not currently password protected.
+Would you like to add a password now?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
+            <translation>Η συλλογή "Κρυμμένοι φάκελοι" δεν προστατεύεται με κωδικό πρόσβασης.
+Θέλετε να προσθέσετε έναν κωδικό πρόσβασης τώρα;</translation>
+        </message>
+        <message>
+            <source>Don't Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
+            <translation>Να μην προστεθεί κωδικός πρόσβασης</translation>
+        </message>
+        <message>
+            <source>Do not ask me again.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>Να μην εμφανιστεί ξανά η ερώτηση.</translation>
         </message>
     </context>
     <context>

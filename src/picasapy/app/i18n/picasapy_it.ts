@@ -2192,6 +2192,66 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         </message>
     </context>
     <context>
+        <name>CollectionPasswordDialog</name>
+        <message>
+            <source>Password Entry</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryTitle</extracomment>
+            <translation>Inserimento password</translation>
+        </message>
+        <message>
+            <source>Please enter a password to open this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryPrompt</extracomment>
+            <translation>Inserisci una password per aprire la raccolta</translation>
+        </message>
+        <message>
+            <source>Please enter a password to use for this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryOpenPrompt</extracomment>
+            <translation>Inserisci una password da utilizzare per la raccolta</translation>
+        </message>
+        <message>
+            <source>Please verify your password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyPrompt</extracomment>
+            <translation>Verifica la password.</translation>
+        </message>
+        <message>
+            <source>The passwords did not match.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
+            <translation>Le password non corrispondono.</translation>
+        </message>
+        <message>
+            <source>Please provide a valid password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Inserire una password valida</translation>
+        </message>
+        <message>
+            <source>Stronger protection (Picasa cannot open it)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Protezione più forte (Picasa non può aprirlo)</translation>
+        </message>
+        <message>
+            <source>&amp;Add/Change a password...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
+            <translation>&amp;Aggiungi/modifica password...</translation>
+        </message>
+        <message>
+            <source>Remove the password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rimuovi la password</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>Apri</translation>
+        </message>
+    </context>
+    <context>
         <name>FolderContextMenu</name>
         <message>
             <source>Move to Collection...</source>
@@ -8667,6 +8727,32 @@ La modifica avrà effetto al prossimo avvio di PicasaPy.</translation>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(panelroot/makemovietab)</extracomment>
             <translation>Crea filmato</translation>
+        </message>
+        <message>
+            <source>Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
+            <translation>Aggiungi password</translation>
+        </message>
+        <message>
+            <source>The "Hidden Folders" collection is not currently password protected.
+Would you like to add a password now?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
+            <translation>La raccolta "Cartelle nascoste" non è al momento protetta da password.
+Aggiungere una password ora?</translation>
+        </message>
+        <message>
+            <source>Don't Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
+            <translation>Non aggiungere password</translation>
+        </message>
+        <message>
+            <source>Do not ask me again.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>Non chiedere nuovamente.</translation>
         </message>
     </context>
     <context>

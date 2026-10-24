@@ -2191,6 +2191,66 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         </message>
     </context>
     <context>
+        <name>CollectionPasswordDialog</name>
+        <message>
+            <source>Password Entry</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryTitle</extracomment>
+            <translation>ป้อนรหัสผ่าน</translation>
+        </message>
+        <message>
+            <source>Please enter a password to open this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryPrompt</extracomment>
+            <translation>กรุณาป้อนรหัสผ่านเพื่อเปิดคอลเล็กชันนี้</translation>
+        </message>
+        <message>
+            <source>Please enter a password to use for this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryOpenPrompt</extracomment>
+            <translation>กรุณาป้อนรหัสผ่านเพื่อใช้งานคอลเล็กชันนี้</translation>
+        </message>
+        <message>
+            <source>Please verify your password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyPrompt</extracomment>
+            <translation>กรุณาตรวจสอบรหัสผ่านของคุณ</translation>
+        </message>
+        <message>
+            <source>The passwords did not match.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
+            <translation>รหัสผ่านไม่ตรง</translation>
+        </message>
+        <message>
+            <source>Please provide a valid password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โปรดป้อนรหัสผ่านที่ถูกต้อง</translation>
+        </message>
+        <message>
+            <source>Stronger protection (Picasa cannot open it)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การป้องกันที่เข้มงวดยิ่งขึ้น (Picasa เปิดไม่ได้)</translation>
+        </message>
+        <message>
+            <source>&amp;Add/Change a password...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
+            <translation>&amp;เพิ่ม/เปลี่ยนรหัสผ่าน...</translation>
+        </message>
+        <message>
+            <source>Remove the password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>นำรหัสผ่านออก</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>เปิด</translation>
+        </message>
+    </context>
+    <context>
         <name>FolderContextMenu</name>
         <message>
             <source>Move to Collection...</source>
@@ -8654,6 +8714,32 @@ It will change the next time PicasaPy is opened.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(panelroot/makemovietab)</extracomment>
             <translation>สร้างภาพยนตร์</translation>
+        </message>
+        <message>
+            <source>Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
+            <translation>เพิ่มรหัสผ่าน</translation>
+        </message>
+        <message>
+            <source>The "Hidden Folders" collection is not currently password protected.
+Would you like to add a password now?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
+            <translation>คอลเล็กชัน "โฟลเดอร์ส่วนตัว" ไม่ได้รับการป้องกันโดยรหัสผ่าน
+คุณต้องการเพิ่มรหัสผ่านตอนนี้เลยหรือไม่</translation>
+        </message>
+        <message>
+            <source>Don't Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
+            <translation>อย่าเพิ่มรหัสผ่าน</translation>
+        </message>
+        <message>
+            <source>Do not ask me again.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>ไม่ต้องถามฉันอีก</translation>
         </message>
     </context>
     <context>
