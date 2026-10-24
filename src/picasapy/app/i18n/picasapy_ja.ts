@@ -1900,6 +1900,12 @@ picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
     <context>
         <name>WebExportDialog</name>
         <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>FTP から投稿...</translation>
+        </message>
+        <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>HTML ページとしてエクスポート...</translation>
@@ -2011,6 +2017,93 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>閉じる</translation>
         </message>
+        <message>
+            <source>FTP account:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP アカウント:</translation>
+        </message>
+        <message>
+            <source>Manage...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>管理...</translation>
+        </message>
+        <message>
+            <source>Publish</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
+            <translation>公開しています...</translation>
+        </message>
+        <message>
+            <source>Published %1 file(s) to %2.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 個のファイルを %2 に公開しました。</translation>
+        </message>
+        <message>
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP アカウントの管理</translation>
+        </message>
+        <message>
+            <source>Account name:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>アカウント名:</translation>
+        </message>
+        <message>
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP サーバー:</translation>
+        </message>
+        <message>
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>ユーザー名:</translation>
+        </message>
+        <message>
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>パスワード:</translation>
+        </message>
+        <message>
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>リモートフォルダー:</translation>
+        </message>
+        <message>
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>保存済みのパスワードを保持するには空欄にしてください。</translation>
+        </message>
+        <message>
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>アカウントを削除できませんでした。</translation>
+        </message>
+        <message>
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>新規</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>削除</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>キャンセル</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
+            <translation>保存</translation>
+        </message>
     </context>
     <context>
         <name>WebExportController</name>
@@ -2038,6 +2131,76 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <source>Unknown web export template: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>不明なウェブエクスポートテンプレート: %1</translation>
+        </message>
+        <message>
+            <source>Choose an FTP account first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>先に FTP アカウントを選択してください。</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>保存済みの FTP パスワードを利用できません。</translation>
+        </message>
+        <message>
+            <source>The system key store is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>システムのキー保管庫を利用できません。</translation>
+        </message>
+        <message>
+            <source>FTP publication failed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP での公開に失敗しました: %1</translation>
+        </message>
+        <message>
+            <source>The account name, server, and user name are required.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>アカウント名、サーバー、ユーザー名が必要です。</translation>
+        </message>
+        <message>
+            <source>FTP account fields cannot contain line breaks.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP アカウントの各欄に改行を含めることはできません。</translation>
+        </message>
+        <message>
+            <source>The server address is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>サーバーアドレスが無効です。</translation>
+        </message>
+        <message>
+            <source>A password is required for a new account.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>新しいアカウントにはパスワードが必要です。</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is missing.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>保存済みの FTP パスワードがありません。</translation>
+        </message>
+        <message>
+            <source>The selected FTP account was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>選択した FTP アカウントが見つかりません。</translation>
+        </message>
+        <message>
+            <source>The local web export folder was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ローカルのウェブ書き出しフォルダーが見つかりません。</translation>
+        </message>
+        <message>
+            <source>The web export cannot contain symbolic links.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ウェブ書き出しにシンボリックリンクを含めることはできません。</translation>
+        </message>
+        <message>
+            <source>A web export contains an unsafe file name.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ウェブ書き出しに安全でないファイル名が含まれています。</translation>
+        </message>
+        <message>
+            <source>The FTP root folder path is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP ルートフォルダーのパスが無効です。</translation>
         </message>
     </context>
     <context>
@@ -10094,6 +10257,12 @@ picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
             <translation>XMP に顔を書き込み...</translation>
+        </message>
+        <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>FTP から投稿...</translation>
         </message>
         <message>
             <source>Show &amp;tag as album...</source>

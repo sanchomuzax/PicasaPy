@@ -1900,6 +1900,12 @@ picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
     <context>
         <name>WebExportDialog</name>
         <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>Δημοσίευση μέσω FTP...</translation>
+        </message>
+        <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Εξαγωγή ως σελίδα HTML...</translation>
@@ -2011,6 +2017,93 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Κλείσιμο</translation>
         </message>
+        <message>
+            <source>FTP account:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Λογαριασμός FTP:</translation>
+        </message>
+        <message>
+            <source>Manage...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Διαχείριση...</translation>
+        </message>
+        <message>
+            <source>Publish</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
+            <translation>γίνεται δημοσίευση...</translation>
+        </message>
+        <message>
+            <source>Published %1 file(s) to %2.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Δημοσιεύτηκαν %1 αρχεία στο %2.</translation>
+        </message>
+        <message>
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Διαχείριση λογαριασμών FTP</translation>
+        </message>
+        <message>
+            <source>Account name:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Όνομα λογαριασμού:</translation>
+        </message>
+        <message>
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Διακομιστής FTP:</translation>
+        </message>
+        <message>
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>Όνομα χρήστη:</translation>
+        </message>
+        <message>
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>Κωδικός πρόσβασης:</translation>
+        </message>
+        <message>
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Απομακρυσμένος φάκελος:</translation>
+        </message>
+        <message>
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Αφήστε το κενό για να διατηρήσετε τον αποθηκευμένο κωδικό πρόσβασης.</translation>
+        </message>
+        <message>
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Δεν ήταν δυνατή η διαγραφή του λογαριασμού.</translation>
+        </message>
+        <message>
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: buzzupload_text:Label(buzzupload/newalbum2);upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>Νέο</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>Διαγραφή</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Ακύρωση</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
+            <translation>Αποθήκευση</translation>
+        </message>
     </context>
     <context>
         <name>WebExportController</name>
@@ -2038,6 +2131,76 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <source>Unknown web export template: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Άγνωστο πρότυπο εξαγωγής ιστού: %1</translation>
+        </message>
+        <message>
+            <source>Choose an FTP account first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Επιλέξτε πρώτα έναν λογαριασμό FTP.</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ο αποθηκευμένος κωδικός FTP δεν είναι διαθέσιμος.</translation>
+        </message>
+        <message>
+            <source>The system key store is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ο χώρος αποθήκευσης κλειδιών του συστήματος δεν είναι διαθέσιμος.</translation>
+        </message>
+        <message>
+            <source>FTP publication failed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η δημοσίευση μέσω FTP απέτυχε: %1</translation>
+        </message>
+        <message>
+            <source>The account name, server, and user name are required.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Απαιτούνται το όνομα λογαριασμού, ο διακομιστής και το όνομα χρήστη.</translation>
+        </message>
+        <message>
+            <source>FTP account fields cannot contain line breaks.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Τα πεδία λογαριασμού FTP δεν μπορούν να περιέχουν αλλαγές γραμμής.</translation>
+        </message>
+        <message>
+            <source>The server address is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η διεύθυνση του διακομιστή δεν είναι έγκυρη.</translation>
+        </message>
+        <message>
+            <source>A password is required for a new account.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Απαιτείται κωδικός πρόσβασης για νέο λογαριασμό.</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is missing.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Λείπει ο αποθηκευμένος κωδικός FTP.</translation>
+        </message>
+        <message>
+            <source>The selected FTP account was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Δεν βρέθηκε ο επιλεγμένος λογαριασμός FTP.</translation>
+        </message>
+        <message>
+            <source>The local web export folder was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Δεν βρέθηκε ο τοπικός φάκελος εξαγωγής ιστού.</translation>
+        </message>
+        <message>
+            <source>The web export cannot contain symbolic links.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η εξαγωγή ιστού δεν μπορεί να περιέχει συμβολικούς συνδέσμους.</translation>
+        </message>
+        <message>
+            <source>A web export contains an unsafe file name.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Μια εξαγωγή ιστού περιέχει μη ασφαλές όνομα αρχείου.</translation>
+        </message>
+        <message>
+            <source>The FTP root folder path is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η διαδρομή του ριζικού φακέλου FTP δεν είναι έγκυρη.</translation>
         </message>
     </context>
     <context>
@@ -10094,6 +10257,12 @@ picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
             <translation>Εγγραφή προσώπων στο XMP...</translation>
+        </message>
+        <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>Δημοσίευση μέσω FTP...</translation>
         </message>
         <message>
             <source>Show &amp;tag as album...</source>

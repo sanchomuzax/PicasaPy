@@ -5,10 +5,11 @@ Eszközök ▸ Kísérleti): Publish via FTP… · Show Duplicate Files · Searc
 · Save search results… · Show tag as album… · Passport photo… · Delete
 empty online albums… · Choose database location… · Write faces to XMP….
 
-Nálunk a FTP és a törölt online albumok hatókörön kívül vannak. A
-`Choose database location…` a mért 8. hely volt, nálunk a kilencből
-az első állt — ez a teszt a kattintással megnyitott almenü TÉNYLEGES
-sorrendjét méri (objectName-ek ÉS a képernyőn elfoglalt y-koordináta).
+Nálunk a FTP-közzététel már elérhető, a törölt online albumok kezelése maradt
+hatókörön kívül. A `Choose database location…` a mért 8. hely volt, nálunk
+korábban a kilencből az első állt — ez a teszt a kattintással megnyitott
+almenü TÉNYLEGES sorrendjét méri (objectName-ek ÉS a képernyőn elfoglalt
+y-koordináta).
 
 A saját tételek (Manage Duplicates, Compact Database) a csoportjukban
 maradnak: a duplikátum-kezelő a Show Duplicate Files mellett, az
@@ -36,6 +37,7 @@ _ABLAKMAGASSAG_ELTOLASOK = (-5, 0, 5)
 # A mért sorrend, a nálunk is meglévő tételekre szűkítve, plusz a saját
 # tételek a csoportjukban (a duplikátum-kezelő a keresés mellett).
 _VART_SORREND = (
+    "menuToolsPublishFtp",
     "menuToolsDedup",
     "menuToolsDedupManager",
     "Search for...",
