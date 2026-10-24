@@ -18,8 +18,9 @@ Item {
     function openRename(row) {
         renameDialog.openFor(row)
     }
-    // #366/#5396 (rename.fen paritás): a F2 és a menüsáv a kijelölés
-    // összes sorát ezen a külön dialóguson nevezi át, egyetlen képnél is.
+    // #366/#5396/#5804 (rename.fen paritás): az F2 és a menüsáv a kijelölés
+    // összes sorát ugyanazon a dialóguson nevezi át. Egyetlen képnél a mező
+    // a kiterjesztés nélküli nevet tölti elő és jelöli ki.
     function openRenameMany(rows) {
         renameManyDialog.openFor(rows)
     }
@@ -181,7 +182,15 @@ Item {
         function openFor(rowList) {
             if (!rowList || rowList.length === 0) return
             rows = rowList
-            renameManyField.text = ""
+            var initialName = ""
+            if (controller && rowList.length === 1) {
+                var fileName = String(
+                    controller.photos.itemAt(Number(rowList[0])).name || "")
+                var extensionStart = fileName.lastIndexOf(".")
+                initialName = extensionStart > 0
+                    ? fileName.substring(0, extensionStart) : fileName
+            }
+            renameManyField.text = initialName || ""
             // #4879: a két jelölő állása megmarad (RenameUseDate/RenameUseSize)
             var useDate = controller ? controller.renameUseDate() : false
             var useSize = controller ? controller.renameUseSize() : false
@@ -190,6 +199,7 @@ Item {
             updatePreview()
             open()
             renameManyField.forceActiveFocus()
+            renameManyField.selectAll()
         }
         // A `rename.fen` Example sora a név és a jelölők alapján frissül,
         // de a dátum-/méretminta és a .jpg kiterjesztés rögzített (#5702).
