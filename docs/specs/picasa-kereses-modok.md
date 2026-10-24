@@ -474,7 +474,7 @@ színkezelő-beállítás (`0x00a3df50`), a profiltranszformáció-építő
 ki. A két út a feltételes, forrásleíró előtti ICC-transzformációban egyezik.
 Cáfoló próbában azt ellenőriztem, hogy minden bemenet feltétlenül ezen
 megy-e át: a `0x009d69d5`-`0x009d69d9` profilkapu, a `0x00a3f2f0`
-profilfeltételei és a `0x009d6e07`-`0x009d6e0f` nullakapujai kizárják az
+profilfeltételei és a `0x009d6e07`-`0x009d6e0f` nullaellenőrzései kizárják az
 általános, feltétel nélküli állítást; a feltételes ICC-ágat viszont nem
 cáfolják.
 
