@@ -7,7 +7,7 @@ nézet. Az élő mérés (picasa-colab-jobs #49/#50/#54) a mérce:
 - nulla/több arcnál egy OK gombos ablak, címe „Try another picture?",
   a főablak FÖLÖTT, láthatóan;
 - egy arcnál párbeszéd nélkül a nyomtatási nézet: Útlevél méret, Crop to
-  Fit, 1 példány, előnézet „1 / 1", és egyik kész méret sincs kijelölve.
+  Fit, 1 példány, előnézet „1 / 1", és az eredeti Passport méretazonosító.
 """
 
 from __future__ import annotations
@@ -190,8 +190,12 @@ class TestAHibaablak:
 
 
 class TestANyomtatasiNezet:
-    def test_egy_arcnal_a_meglevo_nyomtatasi_nezet_nyilik(self, qml_app, qt_app):
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+    def test_egy_arcnal_a_meglevo_nyomtatasi_nezet_nyilik(
+        self, qml_app, qt_app, magassag_elteres
+    ):
         window, _controller, engine = qml_app
+        window.setProperty("height", window.height() + magassag_elteres)
         ctl = _passport_vezerlo(engine, _HamisDetektor([_arc(140, 40, 180, 90)]))
         _menubol_inditja(window, qt_app, ctl)
 
@@ -213,8 +217,12 @@ class TestANyomtatasiNezet:
         assert _elem(nezet, "printFillRadio").property("checked") is True
 
         meretvalaszto = _elem(nezet, "printSizeBox")
-        assert meretvalaszto.property("currentIndex") == -1, (
-            "egy kész méret ki van jelölve"
+        ertek = nezet.property("printSizeIds")
+        azonositok = ertek.toVariant() if hasattr(ertek, "toVariant") else ertek
+        assert meretvalaszto.property("currentIndex") == azonositok.index(
+            "PASSPORT"
+        ), (
+            "az eredeti Passport azonosító nincs kijelölve az útlevélkép-úton"
         )
         assert meretvalaszto.property("displayText") == "Passport"
 

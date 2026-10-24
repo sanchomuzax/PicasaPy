@@ -1,10 +1,11 @@
-"""PrintController: kijelölt képek nyomtatása (#32, RÉSZLEGES kör) —
+"""PrintController: kijelölt képek nyomtatása (#32, részleges kör) —
 a nyomatméret CELLAKÉNT rácsba rendezve a papíron, laptöréssel (#3647,
 `picasapy.printing.grid_layout`), és #1590 óta az INDEXKÉP is (több
 bélyegkép egy lapon, `printContactSheet`). A Picasa teljes nyomtatási
-sablonrendszere (`print.fen`/`reviewprint.fen`, a `ytPrintSizes` mind a 17
-mérete) NEM ebben a körben készül el — a `ytPrintSizes::eContact`
-(„Indexképek") viszont igen.
+sablonrendszere (`print.fen`/`reviewprint.fen`) nem ebben a körben készül
+el. A #5683 óta a `ytPrintSizes` mind a 17 azonosítóját megkapja a QML
+méretválasztó; az `eContact` külön indexképelrendezést indít, az ismeretlen
+fizikai méretű `eCDSize` pedig letiltva marad.
 
 Önálló QObject — a `WebExportController`/`RelocateController` mintáját
 követve NEM az `AppController` mixinje, hogy a `controller.py`/`Main.qml`
@@ -83,7 +84,6 @@ from picasapy.printing.dpi import (
     NyomatMeret,
     alapmeretek_teruleti_mereshez,
     effektiv_dpi,
-    keszlet_teruleti_mereshez,
     minoseg_osszegzes,
     nyomtatasi_minoseg_kod,
 )
@@ -161,6 +161,29 @@ _PRINT_OPTION_SIZES = (
     "CDSIZE",
     "PASSPORT",
     "CONTACT",
+)
+
+#: A `ytPrintSizes` katalógus az eredeti stringres-táblázat sorrendjében.
+#: `CDSIZE` megjelenik, de nincs fizikai mérete és a QML-ben letiltott;
+#: `CONTACT` indexkép-elrendezés, nem `NyomatMeret`.
+_PICASA_PRINT_SIZE_IDS = (
+    "M3X4",
+    "M3_5X5",
+    "M4X5",
+    "M4X6",
+    "M5X7",
+    "M8X10",
+    "M5X8CM",
+    "M9X13CM",
+    "M10X15CM",
+    "M13X18CM",
+    "M15X20CM",
+    "M20X25CM",
+    "TARCA",
+    "CDSIZE",
+    "PASSPORT",
+    "CONTACT",
+    "TELJES_OLDAL",
 )
 
 
@@ -352,49 +375,39 @@ class PrintController(QObject):
         """Az eredeti 5-ös beállítás Lanczos-3 szűrősugárra fordítása."""
         return 3 if self.printResamplerQuality() == 5 else 8
 
-    def _keszlet(self) -> tuple[NyomatMeret, ...]:
-        """A rendszer területi mértékegységéhez tartozó készlet (#4435)."""
-        return keszlet_teruleti_mereshez()
-
     def _alapmeret(self) -> NyomatMeret:
-        """A készlet alapértelmezett mérete: **Teljes oldal** (#3733).
+        """A nyomatkatalógus alapértelmezett mérete: **Teljes oldal** (#3733).
 
         A `docs/specs/picasa-nyomtatas.md` élő mérése (Colab EN 29/30,
         picasa-colab-jobs #55) szerint az eredeti nyomtatási nézet
-        alapállása FullPage — mindkét készletben ez az utolsó tétel
-        (`TELJES_OLDAL`), ugyanaz a méret mindkét területi készletben. Korábban itt
-        a mért 4×6/10×15 cm állt, ami az eredetiben csak GOMB, nem
-        alapállás."""
+        alapállása FullPage — a listában ez az utolsó tétel
+        (`TELJES_OLDAL`), minden területi beállításban ugyanazzal az
+        alapmérettel. Korábban itt a mért 4×6/10×15 cm állt, ami az
+        eredetiben csak GOMB, nem alapállás."""
         return NyomatMeret.TELJES_OLDAL
 
-    #: A QML-nek átadott méretnevek — a `NyomatMeret` tagjainak nevei.
-    #: A felirat a QML dolga, ide csak az azonosító kell.
+    #: A QML-nek átadott eredeti `ytPrintSizes` azonosítók. A területi
+    #: beállítás csak az öt gyorsgomb alapértékét választja, a katalógust nem.
     @Slot(result=list)
     def printSizes(self) -> list[str]:  # noqa: N802 — QML-stílus
-        """A területi mértékegységhez tartozó nyomatméretek azonosítói (#4435).
-
-        A `#3712-review` a korábbi Full Page nélküli ötöst javította;
-        a #4257 az eredeti sorrendben egészíti ki a hiányzó méretekkel."""
-        return [tag.name for tag in self._keszlet()]
+        """A teljes, eredeti sorrendű `ytPrintSizes` katalógus (#5683)."""
+        return list(_PICASA_PRINT_SIZE_IDS)
 
     @Slot(result=str)
     def printSize(self) -> str:  # noqa: N802 — QML-stílus
         """A megjegyzett nyomatméret (`PrintLastSize`), alapból Teljes oldal.
 
-        #4435: a tárolt érték túléli a területi mérés váltását, ezért a MÁSIK készlet
-        tételét nem adhatjuk vissza — a párbeszéd olyan méretet mutatna,
-        ami nincs is a listájában."""
+        #5683: a teljes katalógus mindkét területi rendszerben elérhető, így
+        a mentett méretet a területi beállítás nem teszi listán kívülivé."""
         alap = self._alapmeret()
         tarolt = self._settings.value("print/lastSize", alap.name)
-        nevek = {tag.name for tag in self._keszlet()}
+        nevek = set(NyomatMeret.__members__)
         return tarolt if tarolt in nevek else alap.name
 
     @Slot(str)
     def setPrintSize(self, nev: str) -> None:  # noqa: N802 — QML-stílus
-        """A nyomatméret megjegyzése. A készleten kívüli nevet nem
-        tároljuk el — egy elgépelt (vagy másik készletbeli) érték némán
-        elrontaná a következő indulást."""
-        if nev in {tag.name for tag in self._keszlet()}:
+        """A fizikai nyomatméret megjegyzése; a külön utak nem tartósak."""
+        if nev in NyomatMeret.__members__:
             self._settings.setValue("print/lastSize", nev)
             self._meret_felulirva = None
 

@@ -9,7 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Signal, Slot
 
 from picasapy.index import open_index, sync_tree, update_photo_fields
 from picasapy.metadata.tiff_helyben import (
@@ -231,6 +231,8 @@ def _photo_datetime(photo) -> datetime:
 class TimestampAdjustmentMixin:
     """A PhotoOpsMixin háttéríró útját használó indexművelet."""
 
+    timestampAdjustmentFinished = Signal()
+
     @Slot(int, result="QVariantMap")
     def adjustTimestampPreview(self, row: int) -> dict[str, str]:
         photos = self._photos.photos
@@ -305,7 +307,18 @@ class TimestampAdjustmentMixin:
             jobs.append((photo.id, write_file))
         # A teljes újraszkennelés az EXIF-ből olvassa vissza a dátumot, a
         # végső lekérdezés pedig újraszámolja az aktív dátum szerinti sorrendet.
-        self._run_photo_writes(jobs, after=self._refresh_view)
+        def befejezes() -> None:
+            self.timestampAdjustmentFinished.emit()
+
+        def sikeres_befejezes() -> None:
+            try:
+                self._refresh_view()
+            finally:
+                befejezes()
+
+        self._run_photo_writes(
+            jobs, after=sikeres_befejezes, on_error=befejezes
+        )
         return True
 
     def _reindex_folder_keeping_times(

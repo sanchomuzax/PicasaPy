@@ -128,6 +128,14 @@ def _valassz_a_legorduloben(dialog, qt_app, cel_azonosito):
         qt_app, lambda: box.findChild(QObject, "picasaComboList") is not None
     ), "a legördülő nem nyílt meg (a felugró listája nem épült fel)"
     lista = box.findChild(QObject, "picasaComboList")
+    assert _varakozzon(qt_app, lambda: float(lista.property("contentHeight")) > 0), (
+        "a legördülő listamodellje nem épült fel"
+    )
+    magassag = float(lista.property("contentHeight"))
+    sor_magassag = magassag / len(azonositok)
+    max_gorgetes = max(0.0, magassag - float(lista.height()))
+    lista.setProperty("contentY", min(cel_index * sor_magassag, max_gorgetes))
+    qt_app.processEvents()
 
     tetel = _legordulo_tetele(qt_app, lista, cel_index)
     _kattints_kozepere(dialog, qt_app, tetel)
@@ -155,8 +163,10 @@ class TestAMeretlistaResze:
         feliratok = _lista(dialog.property("printSizeLabels"))
 
         assert azonositok == [
-            "TARCA", "M3X4", "M3_5X5", "M4X5", "M4X6", "M5X7",
-            "M8X10", "TELJES_OLDAL", "CONTACT",
+            "M3X4", "M3_5X5", "M4X5", "M4X6", "M5X7", "M8X10",
+            "M5X8CM", "M9X13CM", "M10X15CM", "M13X18CM", "M15X20CM",
+            "M20X25CM", "TARCA", "CDSIZE", "PASSPORT", "CONTACT",
+            "TELJES_OLDAL",
         ]
         assert [feliratok[azonositok.index(nev)] for nev in (
             "M3X4", "M3_5X5", "M4X5", "M4X6"
