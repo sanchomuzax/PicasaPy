@@ -234,6 +234,22 @@ ApplicationWindow {
         photoViewer.show(row)
     }
 
+    // A közvetlen fájlargumentumos indulás ugyanazt a viewer-ablakmódot
+    // használja, mint a Photo Viewer beállítása. Külön függvényben van, hogy
+    // a rendes Component.onCompleted út és a QML-funkcióteszt is ezt hívja.
+    function startQuickViewer() {
+        if (!window.quickViewerLaunch) return
+        window.visibilityBeforeViewer = window.visibility
+        var fullscreenStartup = controller
+            && controller.viewerFullscreenStartup !== undefined
+            ? controller.viewerFullscreenStartup : true
+        window.visibility = fullscreenStartup
+            ? Window.FullScreen : Window.Windowed
+        window.viewerVisibilityManaged = true
+        window.viewerOpen = true
+        photoViewer.show(0)
+    }
+
     function nezdEsSzerkeszd() {
         if (window.viewerOpen) return
         var sorok = window.selectedRows()
@@ -2059,7 +2075,8 @@ ApplicationWindow {
         searchOptionsOpen: toolbar.searchOptionsOpen
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
         //: contentItem nem kapja meg a teljes ablakot.
-        visible: !window.slideshowRunning && !window.timelineOpen
+        visible: !window.quickViewerLaunch
+                 && !window.slideshowRunning && !window.timelineOpen
         // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
         id: picasaMenuBar
         //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
@@ -2983,12 +3000,7 @@ ApplicationWindow {
         //: #3070: a megjelenítési mód kezdőállapota a felület színein
         window.frissitsdAMegjelenitesiPalettat()
         if (window.quickViewerLaunch) {
-            window.visibilityBeforeViewer = window.visibility
-            window.visibility = controller.viewerFullscreenStartup
-                ? Window.FullScreen : Window.Windowed
-            window.viewerVisibilityManaged = true
-            window.viewerOpen = true
-            photoViewer.show(0)
+            window.startQuickViewer()
             return
         }
         initialScanDialog.openIfNeeded()
@@ -3008,6 +3020,7 @@ ApplicationWindow {
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
     header: MainToolbar {
         id: toolbar
+        objectName: "mainToolbar"
         // #741/4: a nézőben (és így a szerkesztőben) NINCS alkalmazás-szintű
         // eszköztár. A binárisban a szerkesztő felső 40 képpontos sávjában
         // egyetlen elem van, az `editpanel/albumview` („Vissza a
@@ -4712,7 +4725,7 @@ ApplicationWindow {
         // gyereke (`thumbui/bottombevel_base` + `outputlayout.tre`), tehát a
         // projekt-lapon a panellel együtt tűnik el — a felszabaduló sávot a
         // vászon kapja meg.
-        visible: window.libraryFrameVisible
+        visible: window.libraryFrameVisible && !window.quickViewerLaunch
         appWindow: window
         onPhotosDroppedOnTray: function(rows) {
             if (controller && rows && rows.length > 0)
