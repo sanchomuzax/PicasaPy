@@ -297,7 +297,11 @@ amint elhagyod, újraindul a visszaszámlálás. A sávon:
   az előző és a következő gomb már a **lenyomás pillanatában** lép, és
   nyomva tartva sem ismétel: egy lenyomás egy kép;
 - **↺** és **↻** forgatás — a vetítés közbeni forgatás megmarad;
-- **átmenet-választó** (lásd lentebb);
+- **Időrend** gomb vagy **átmenet-választó** (lásd lentebb): a kettő
+  közül mindig csak az egyik látszik. Az eredeti Picasához hasonlóan
+  16 vagy 32 bites színmélységű képernyőn az **Időrend** gomb áll itt,
+  ami az Időrend bemutatót (lásd lentebb) nyitja meg; más képernyőn, és ha
+  a vetítést az Időrendből indítottad, az átmenet-választó;
 - **feliratmód** gombja — körbejár a három állás közt: a felirat (**T**),
   a fájlnév (**F**), vagy semmi (**—**);
 - **★** csillagozás — ez is megmarad;
@@ -310,6 +314,10 @@ amint elhagyod, újraindul a visszaszámlálás. A sávon:
 
 A választott átmenet, feliratmód és megjelenítési idő **megmarad** a következő
 vetítésre és a következő indításig is.
+
+A vetített kép **legfelső, keskeny sávjára** kattintva szünetel vagy
+folytatódik a vetítés, ugyanúgy, mint a lejátszás gombbal. A sáv nem
+látszik, és nem takarja a képet.
 
 ### Átmenetek
 
@@ -335,6 +343,22 @@ Ha egy korábbi változatban olyan átmenetet választottál, ami ebben a
 listában már nincs, a vetítés a **Szétoszlás** átmenettel indul. A többi átmenet
 (például az arcra közelítő változat) a [Mozgófilm](mozgofilm.md)
 készítőjében maradt meg.
+
+## Időrend
+
+A **Nézet ▸ Időrend** (Ctrl+5) teljes képernyős, animált bemutatót nyit a
+könyvtáradról. Minden mappa egy **kártya**: a képei egymásra rakott
+fotókként látszanak, mellette a mappa neve és dátuma. A kártyák a mappák
+legrégebbi képének dátuma szerint követik egymást.
+
+- A **→** és **←** billentyűvel, vagy a sáv nyílgombjaival a következő,
+  illetve az előző mappára lépsz.
+- Az alsó **csúszkán** húzva nagyobbat ugorhatsz az időben; két oldalán
+  a könyvtár első és utolsó dátuma áll.
+- A **Szóköz** vagy a lejátszás gomb az éppen látott mappa
+  **diavetítését** indítja. A vetítésből kilépve a könyvtárba kerülsz,
+  ahol ez a mappa van megnyitva.
+- Az **Esc** vagy a sáv bezáró gombja kilép az Időrendből.
 
 ## Megjelenítési mód
 

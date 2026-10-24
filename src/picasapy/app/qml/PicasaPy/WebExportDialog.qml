@@ -67,21 +67,33 @@ Window {
         if (typeof webExportController !== "undefined"
                 && webExportController) {
             webExportWindow.templates = webExportController.listWebExportTemplates()
-            //: #534: a célmappa ELŐRE ki van töltve — az eredetiben is van
-            //: alapértelmezés (`Picasa HTML Exports`), a „(nincs kijelölve)"
-            //: állapot minden exportnál tallózást kényszerített. A már
-            //: kiválasztott mappát nem írjuk felül.
+            //: #5714: a mentett útvonalat tölti vissza; az első megnyitáskor
+            //: a vezérlő adja a platform szerinti alapmappát.
+            var prefs = {
+                "targetDir": "",
+                "templateId": "",
+                "sizeIndex": 3,
+                "movieFull": false
+            }
+            if (typeof webExportController.webExportPrefs === "function")
+                prefs = webExportController.webExportPrefs()
             if (webExportWindow.targetFolder.length === 0) {
-                webExportWindow.targetFolder =
-                    webExportController.defaultWebExportTarget()
+                webExportWindow.targetFolder = prefs.targetDir
+                    || webExportController.defaultWebExportTarget()
             }
-            // #4610: a legutóbbi választásból indul, ahogy az eredeti is
-            // a `WebExportSize`/`WebExportMovie` kulcsból
-            if (typeof webExportController.webExportPrefs === "function") {
-                var prefs = webExportController.webExportPrefs()
-                sizeBox.currentIndex = prefs.sizeIndex
-                movieBox.currentIndex = prefs.movieFull ? 1 : 0
+            // A korábban mentett sablont azonosító alapján keressük; üres vagy
+            // már nem telepített azonosítónál az eredeti 0. index az alap.
+            var savedTemplateIndex = 0
+            for (var i = 0; i < webExportWindow.templates.length; ++i) {
+                if (webExportWindow.templates[i].id === prefs.templateId) {
+                    savedTemplateIndex = i
+                    break
+                }
             }
+            webExportWindow.templateIndex = savedTemplateIndex
+            // #4610: a méret és a film módja is a mentett beállításból indul.
+            sizeBox.currentIndex = prefs.sizeIndex
+            movieBox.currentIndex = prefs.movieFull ? 1 : 0
         }
         webExportWindow.visible = true
     }

@@ -68,6 +68,7 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+1 | Kis indexképek |
 | Ctrl+2 | Normál indexképek |
 | Ctrl+4 | Diavetítés |
+| Ctrl+5 | Időrend: teljes képernyős bemutató a mappáidról - lásd [Nézegetés](nezegetes.md) |
 | Ctrl+T | Címkék panel nyitása/zárása |
 | Ctrl+K | Címkék panel (ugyanaz, mint a Ctrl+T) |
 | Ctrl+0 | A jobb oldali panel be- és kikapcsolása |
@@ -161,6 +162,28 @@ felszabadítja az arányt.
 | Ctrl+A | Az összes kijelölése |
 | Ctrl+D | Kijelölés törlése |
 | Del | A kijelölt képek eltávolítása a kollázsból |
+
+## Képernyőkép (csak Windowson)
+
+Amíg a PicasaPy fut, **Windowson** a **Print Screen** gomb képernyőképet
+készít, akkor is, ha épp egy másik program ablakában dolgozol:
+
+| billentyű | mit rögzít |
+|---|---|
+| Print Screen | a teljes képernyőt |
+| Ctrl+Print Screen | az előtérben lévő ablakot |
+| Alt+Print Screen | az egérmutató alatti ablakot |
+
+A kép BMP-fájlként a Képek mappád `Picasa\Képernyőfelvételek` almappájába
+kerül (angol felületen `Screen Captures`). A neve a rögzített ablak címe
+és a mentés időpontja; a teljes képernyőnél **Teljes képernyő
+rögzítése**. A mappa a bal hasáb **Projektek** csoportjában jelenik meg.
+Mentés után a program értesítést mutat: **A képernyőfelvétel mentése
+sikerült**.
+
+Linuxon ez a funkció nem működik: ott a rendszer nem engedi, hogy egy
+program a többi ablak billentyűit figyelje. A Print Screen ott azt
+teszi, amit a rendszered beállítása szerint szokott.
 
 ## Súgó
 

@@ -386,7 +386,10 @@ Item {
         property string audioFile: ""
         property bool audioFileFromFolderMusic: false
         property int audioOption: 0
-        property int transitionIndex: 1
+        property int transitionIndex: controller
+                && controller.movieTransition !== undefined
+                && typeof controller.movieTransition === "string"
+            ? Math.max(0, transitionKeys.indexOf(controller.movieTransition)) : 1
         property bool personMovieMode: false
         property int movieResolutionIndex: 1
         property bool movieShowCaptionsEnabled:
@@ -527,7 +530,7 @@ Item {
             Math.max(
                 0.5,
                 (movieSeconds && movieSeconds.value !== undefined
-                    ? movieSeconds.value : 30) / 10)
+                    ? movieSeconds.value : 40) / 10)
         readonly property real previewDurationSeconds:
             previewSlideDurationSeconds * previewItemCount
         function formatPreviewTime(seconds) {
@@ -1266,7 +1269,15 @@ Item {
                                 qsTr("Pan and Zoom"), qsTr("Pan and Zoom - face"),
                                 qsTr("Time Lapse"), qsTr("Rectangle")]
                             currentIndex: movieDialog.transitionIndex
-                            onCurrentIndexChanged: movieDialog.transitionIndex = currentIndex
+                            onCurrentIndexChanged: {
+                                movieDialog.transitionIndex = currentIndex
+                                if (controller
+                                        && typeof controller.setMovieTransition === "function"
+                                        && currentIndex >= 0
+                                        && currentIndex < movieDialog.transitionKeys.length)
+                                    controller.setMovieTransition(
+                                        movieDialog.transitionKeys[currentIndex])
+                            }
                             onActivated: movieDialog.transitionIndex = currentIndex
                         }
                         RowLayout {
@@ -1283,7 +1294,7 @@ Item {
                                 objectName: "movieSecondsValueLabel"
                                 text: qsTr("%1 Sec").arg(
                                     ((movieSeconds && movieSeconds.value !== undefined
-                                        ? movieSeconds.value : 30) / 10).toFixed(1))
+                                        ? movieSeconds.value : 40) / 10).toFixed(1))
                                 color: Theme.ink
                             }
                             Item { Layout.fillWidth: true }
@@ -1293,7 +1304,15 @@ Item {
                             objectName: "movieSeconds"
                             Layout.preferredWidth: Math.round(parent.width * 0.5)
                             Layout.alignment: Qt.AlignHCenter
-                            from: 10; to: 100; stepSize: 5; value: 30
+                            from: 10; to: 3000; stepSize: 5
+                            value: controller
+                                && controller.movieSlideDuration !== undefined
+                                ? Math.round(controller.movieSlideDuration * 10) : 40
+                            onMoved: {
+                                if (controller
+                                        && typeof controller.setMovieSlideDuration === "function")
+                                    controller.setMovieSlideDuration(value / 10.0)
+                            }
                             grooveThickness: 9
                             grooveInset: 3
                             handleWidth: 16
@@ -1330,7 +1349,7 @@ Item {
                             from: 0; to: Math.max(
                                 0.1,
                                 (movieSeconds && movieSeconds.value !== undefined
-                                    ? movieSeconds.value : 30) / 10 * 0.9)
+                                    ? movieSeconds.value : 40) / 10 * 0.9)
                             value: Math.min(0.5, to); stepSize: 0.1
                             grooveThickness: 9
                             grooveInset: 3
@@ -2362,7 +2381,7 @@ Item {
         interval: Math.max(
             500,
             (movieSeconds && movieSeconds.value !== undefined
-                ? movieSeconds.value : 30) * 100)
+                ? movieSeconds.value : 40) * 100)
         repeat: true
         onRunningChanged: {
             if (!moviePreviewMusicLoader.item) return

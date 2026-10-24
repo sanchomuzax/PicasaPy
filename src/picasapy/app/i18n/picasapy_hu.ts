@@ -9080,6 +9080,20 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>Képkocka rögzítése...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>Mentés a Rögzített videoklipek albumba</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>A(z) %1 mentve a Rögzített videoklipek albumba</translation>
@@ -17989,10 +18003,32 @@ picasapy-origin-key: confirm:confirm/no.title</extracomment>
             <translation>V</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="23" />
             <source>Adjust Photo Date - %1 items</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dátum módosítása – %1 fotó</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OffsetPhotoDate:Title</extracomment>
+            <translation>Fotó dátumának módosítása - %1 elem.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="24" />
+            <source>Adjust Photo Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: offsettime:offsettime/window1.title</extracomment>
+            <translation>Fotó dátumának módosítása</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="99" />
+            <source>Setting photo dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTimeThread::SettingDates</extracomment>
+            <translation>Fotók dátumának beállítása</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="115" />
+            <source>Setting image time</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTime:Progress</extracomment>
+            <translation>Kép idejének beállítása</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
