@@ -7,8 +7,6 @@ import unicodedata
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
-_QT_SPECIAL_TEXT = re.compile(r"\r|[ \t]+(?=\r?\n)")
-
 ORIGIN_PREFIX = "picasapy-origin:"
 ORIGIN_KEY_PREFIX = "picasapy-origin-key:"
 ORIGIN_PICASAPY = "picasapy"
@@ -23,82 +21,12 @@ def load_catalog(data: bytes) -> ET.Element:
     return root
 
 
-def qt_text(element: ET.Element | None) -> str:
-    """Qt TS-szövegelem visszaadása a köztes `<byte>` csomópontok dekódolásával."""
-    if element is None:
-        return ""
-
-    parts = [element.text or ""]
-    for child in element:
-        if child.tag == "byte":
-            value = child.get("value", "")
-            codepoint = int(value[1:], 16) if value.startswith("x") else int(value)
-            parts.append(chr(codepoint))
-        else:
-            parts.append(qt_text(child))
-        parts.append(child.tail or "")
-    return "".join(parts)
-
-
 def dump_catalog(root: ET.Element) -> bytes:
-    """A kanonikus UTF-8 Qt TS alak.
-
-    A Qt TS-ben a carriage return, illetve a sortörés előtti szóköz/tab
-    `<byte>` elemmel őrizhető meg. A nyers `\r` XML-írása sorvégként
-    normalizálódna, a szóköz pedig git whitespace hibát okozna, ezért ezeket
-    a tartalmi szövegben Qt-féle byte-jelölésre alakítjuk.
-    """
+    """A kanonikus UTF-8 Qt TS alak — ugyanaz a fa mindig ugyanazokat a bájtokat adja."""
     if root.tag != "TS":
         raise ValueError(f"nem Qt TS szótár: {root.tag!r}")
-    _encode_qt_special_text(root)
     ET.indent(root, space="    ")
     return ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\n"
-
-
-def _split_qt_special_text(value: str) -> tuple[str, list[ET.Element]]:
-    """CR-t és sortörés előtti szóközt/tabet Qt TS `<byte>` elemmé alakít."""
-    nodes: list[ET.Element] = []
-    prefix = value
-    previous = None
-    cursor = 0
-    for match in _QT_SPECIAL_TEXT.finditer(value):
-        middle = value[cursor : match.start()]
-        if previous is None:
-            prefix = middle
-        else:
-            previous.tail = (previous.tail or "") + middle
-
-        raw = match.group()
-        values = ["xd"] if raw == "\r" else ["x20" if char == " " else "x9" for char in raw]
-        for byte_value in values:
-            previous = ET.Element("byte", {"value": byte_value})
-            nodes.append(previous)
-        cursor = match.end()
-
-    if nodes:
-        nodes[-1].tail = (nodes[-1].tail or "") + value[cursor:]
-    return prefix, nodes
-
-
-def _encode_qt_special_text(element: ET.Element) -> None:
-    """Qt TS-hez kódolja a CR-t és a láthatatlan sorvégi szóközöket."""
-    if element.text:
-        prefix, nodes = _split_qt_special_text(element.text)
-        if nodes:
-            element.text = prefix
-            for position, byte in enumerate(nodes):
-                element.insert(position, byte)
-
-    for child in list(element):
-        _encode_qt_special_text(child)
-        if child.tail:
-            prefix, nodes = _split_qt_special_text(child.tail)
-            if nodes:
-                child.tail = prefix
-                position = list(element).index(child) + 1
-                for byte in nodes:
-                    element.insert(position, byte)
-                    position += 1
 
 
 def message_origin(message: ET.Element) -> str | None:

@@ -11,6 +11,14 @@ from tests.support.varakozas import var_feltetelre
 _ABLAKMAGASSAG_ELTOLASOK = (-5, 0, 5)
 
 
+
+@pytest.fixture(autouse=True)
+def _jelszoajanlat_nelkul(qml_app):
+    """#5704: elrejtés után jelszóajánlat nyílna; ez a teszt az ini-írást méri."""
+    from picasapy.app.confirm_settings import set_confirm_suppressed
+
+    set_confirm_suppressed(qml_app[1]._get_settings(), "DoNotConfirmHiddenPwd", True)
+
 def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     return var_feltetelre(qt_app, feltetel, masodperc)
 

@@ -2062,12 +2062,12 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>Please provide a valid password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>請輸入有效的密碼</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>更強的保護（Picasa 無法開啟）</translation>
         </message>
         <message>
             <source>&amp;Add/Change a password...</source>
@@ -2078,7 +2078,7 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>移除密碼</translation>
         </message>
         <message>
             <source>Open</source>
@@ -8199,11 +8199,11 @@ picasapy-origin: picasapy</extracomment>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo.<byte value="x20" />
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>已將紅眼修正套用至 %1。
-若移除所有編輯，就無法使用「重做」還原紅眼修正。<byte value="x20" />
+若移除所有編輯，就無法使用「重做」還原紅眼修正。 
 確定要永久移除這些修正嗎？</translation>
         </message>
         <message>
@@ -8559,11 +8559,12 @@ picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
             <translation>新增密碼</translation>
         </message>
         <message>
-            <source>The "Hidden Folders" collection is not currently password protected.<byte value="xd" />
+            <source>The "Hidden Folders" collection is not currently password protected.
 Would you like to add a password now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
-            <translation>「隱藏資料夾」群組還沒有密碼保護。您想現在加上密碼嗎？</translation>
+            <translation>「隱藏資料夾」群組還沒有密碼保護。
+您想現在加上密碼嗎？</translation>
         </message>
         <message>
             <source>Don't Add Password</source>

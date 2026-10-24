@@ -2062,12 +2062,12 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>Please provide a valid password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>โปรดป้อนรหัสผ่านที่ถูกต้อง</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>การป้องกันที่เข้มงวดยิ่งขึ้น (Picasa เปิดไม่ได้)</translation>
         </message>
         <message>
             <source>&amp;Add/Change a password...</source>
@@ -2078,7 +2078,7 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>นำรหัสผ่านออก</translation>
         </message>
         <message>
             <source>Open</source>
@@ -8199,11 +8199,11 @@ picasapy-origin: picasapy</extracomment>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo.<byte value="x20" />
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>ใช้การแก้ตาแดงกับ %1 แล้ว
-หากนำการแก้ไขทั้งหมดออก จะกู้คืนการแก้ตาแดงด้วยการทำซ้ำไม่ได้<byte value="x20" />
+หากนำการแก้ไขทั้งหมดออก จะกู้คืนการแก้ตาแดงด้วยการทำซ้ำไม่ได้ 
 แน่ใจหรือไม่ว่าต้องการลบการแก้ไขเหล่านี้ถาวร?</translation>
         </message>
         <message>
@@ -8559,12 +8559,12 @@ picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
             <translation>เพิ่มรหัสผ่าน</translation>
         </message>
         <message>
-            <source>The "Hidden Folders" collection is not currently password protected.<byte value="xd" />
+            <source>The "Hidden Folders" collection is not currently password protected.
 Would you like to add a password now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
-            <translation>คอลเล็กชัน "โฟลเดอร์ส่วนตัว" ไม่ได้รับการป้องกันโดยรหัสผ่าน<byte value="xd" />
- คุณต้องการเพิ่มรหัสผ่านตอนนี้เลยหรือไม่</translation>
+            <translation>คอลเล็กชัน "โฟลเดอร์ส่วนตัว" ไม่ได้รับการป้องกันโดยรหัสผ่าน
+คุณต้องการเพิ่มรหัสผ่านตอนนี้เลยหรือไม่</translation>
         </message>
         <message>
             <source>Don't Add Password</source>

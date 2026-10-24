@@ -2063,12 +2063,12 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>Please provide a valid password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>יש להזין סיסמה חוקית</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>הגנה חזקה יותר (Picasa אינה יכולה לפתוח אותן)</translation>
         </message>
         <message>
             <source>&amp;Add/Change a password...</source>
@@ -2079,7 +2079,7 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>הסר את הסיסמה</translation>
         </message>
         <message>
             <source>Open</source>
@@ -7109,7 +7109,7 @@ picasapy-origin-key: instructionpanel_text:Text1(instructionpanel/body)</extraco
 
 כדי להתעלם מאדם מסוים, לחץ על הלחצן 'X' בתמונה הממוזערת של הפרצוף.
 
-הצעות: לאחר מתן שם למישהו, PicasaPy עשוי להציע עוד פרצופים מתאימים לאדם זה. לחץ על האלבום של מישהו כדי להציג ולאשר (או לדחות) הצעות כלשהן.<byte value="x20" />
+הצעות: לאחר מתן שם למישהו, PicasaPy עשוי להציע עוד פרצופים מתאימים לאדם זה. לחץ על האלבום של מישהו כדי להציג ולאשר (או לדחות) הצעות כלשהן. 
 
 
  לחץ על 'מידע נוסף' לקבלת מידע על התכונה הזו.</translation>
@@ -8210,11 +8210,11 @@ picasapy-origin: picasapy</extracomment>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo.<byte value="x20" />
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>תיקוני עיניים אדומות הוחלו על %1.
-אם תסיר את כל העריכות, לא ניתן יהיה לשחזר את תיקוני העיניים האדומות באמצעות „בצע מחדש”.<byte value="x20" />
+אם תסיר את כל העריכות, לא ניתן יהיה לשחזר את תיקוני העיניים האדומות באמצעות „בצע מחדש”. 
 להסיר את התיקונים לצמיתות?</translation>
         </message>
         <message>
@@ -8572,11 +8572,11 @@ picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
             <translation>הוסף סיסמה</translation>
         </message>
         <message>
-            <source>The "Hidden Folders" collection is not currently password protected.<byte value="xd" />
+            <source>The "Hidden Folders" collection is not currently password protected.
 Would you like to add a password now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
-            <translation>‏האוסף "תיקיות מוסתרות" אינו מוגן בסיסמה כרגע.<byte value="xd" />
+            <translation>‏האוסף "תיקיות מוסתרות" אינו מוגן בסיסמה כרגע.
 האם ברצונך להוסיף סיסמה כעת?</translation>
         </message>
         <message>

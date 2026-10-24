@@ -43,7 +43,6 @@ from picasapy.app.i18n.dictionary import (
     match_original_translation,
     message_origin,
     missing_count,
-    qt_text,
     set_message_origin,
 )
 from picasapy.app.language_controller import OWN_LANGUAGE_NAMES, SUPPORTED_LANGUAGES
@@ -158,8 +157,8 @@ def _hungarian_text(message: ET.Element) -> str:
         return ""
     forms = translation.findall("numerusform")
     if forms:
-        return qt_text(forms[0])
-    return qt_text(translation)
+        return forms[0].text or ""
+    return translation.text or ""
 
 
 def _single_picasa_origin_key(message: ET.Element) -> str | None:
@@ -190,7 +189,7 @@ def _message_keys(root: ET.Element) -> list[tuple[ET.Element, _Key]]:
     for context in root.iter("context"):
         name = context.findtext("name") or ""
         for message in context.findall("message"):
-            source = qt_text(message.find("source"))
+            source = message.findtext("source") or ""
             comment = message.findtext("comment") or ""
             count = seen.get((name, source, comment), 0)
             seen[(name, source, comment)] = count + 1

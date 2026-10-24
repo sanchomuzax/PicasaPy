@@ -5029,7 +5029,7 @@ ApplicationWindow {
             ConfirmDialog {
                 namePrefix: "hiddenPasswordOffer"
                 title: qsTr("Add Password")
-                message: qsTr("The \"Hidden Folders\" collection is not currently password protected.\r\nWould you like to add a password now?")
+                message: qsTr("The \"Hidden Folders\" collection is not currently password protected.\nWould you like to add a password now?")
                 yesText: qsTr("Add Password")
                 noText: qsTr("Don't Add Password")
                 rememberText: qsTr("Do not ask me again.")
@@ -5044,7 +5044,7 @@ ApplicationWindow {
         function onHiddenPasswordOfferRequested() {
             hiddenPasswordOfferDialog.ensure().ask(
                 "DoNotConfirmHiddenPwd",
-                qsTr("The \"Hidden Folders\" collection is not currently password protected.\r\nWould you like to add a password now?"))
+                qsTr("The \"Hidden Folders\" collection is not currently password protected.\nWould you like to add a password now?"))
         }
     }
 

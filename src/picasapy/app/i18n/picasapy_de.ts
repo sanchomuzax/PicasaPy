@@ -2063,12 +2063,12 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>Please provide a valid password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bitte geben Sie ein gültiges Passwort ein</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Stärkerer Schutz (Picasa kann darauf nicht zugreifen)</translation>
         </message>
         <message>
             <source>&amp;Add/Change a password...</source>
@@ -2079,7 +2079,7 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Passwort entfernen</translation>
         </message>
         <message>
             <source>Open</source>
@@ -8210,7 +8210,7 @@ picasapy-origin: picasapy</extracomment>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo.<byte value="x20" />
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Die Korrektur roter Augen wurde auf %1 angewendet.
@@ -8572,12 +8572,11 @@ picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
             <translation>Passwort hinzufügen</translation>
         </message>
         <message>
-            <source>The "Hidden Folders" collection is not currently password protected.<byte value="xd" />
+            <source>The "Hidden Folders" collection is not currently password protected.
 Would you like to add a password now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
-            <translation>Die Sammlung "Passwortgeschützte Ordner" ist derzeit nicht passwortgeschützt.<byte value="x20" />
-                <byte value="xd" />
+            <translation>Die Sammlung "Passwortgeschützte Ordner" ist derzeit nicht passwortgeschützt.
 Wollen Sie jetzt ein Passwort hinzufügen?</translation>
         </message>
         <message>

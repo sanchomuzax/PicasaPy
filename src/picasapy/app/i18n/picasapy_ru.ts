@@ -2064,12 +2064,12 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>Please provide a valid password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Введите действительный пароль</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Повышенная защита (Picasa не сможет открыть папку)</translation>
         </message>
         <message>
             <source>&amp;Add/Change a password...</source>
@@ -2080,7 +2080,7 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Удалить пароль</translation>
         </message>
         <message>
             <source>Open</source>
@@ -8221,11 +8221,11 @@ picasapy-origin: picasapy</extracomment>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo.<byte value="x20" />
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Исправления эффекта красных глаз применены к %1.
-Если удалить все правки, восстановить исправления красных глаз повтором действия не удастся.<byte value="x20" />
+Если удалить все правки, восстановить исправления красных глаз повтором действия не удастся. 
 Вы уверены, что хотите удалить исправления навсегда?</translation>
         </message>
         <message>
@@ -8585,11 +8585,11 @@ picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
             <translation>Добавить пароль</translation>
         </message>
         <message>
-            <source>The "Hidden Folders" collection is not currently password protected.<byte value="xd" />
+            <source>The "Hidden Folders" collection is not currently password protected.
 Would you like to add a password now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
-            <translation>Коллекция "Скрытые папки" в настоящее время не защищена паролем.<byte value="xd" />
+            <translation>Коллекция "Скрытые папки" в настоящее время не защищена паролем.
 Добавить пароль?</translation>
         </message>
         <message>

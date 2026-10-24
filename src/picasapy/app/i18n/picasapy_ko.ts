@@ -2062,12 +2062,12 @@ picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
         <message>
             <source>Please provide a valid password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>유효한 비밀번호를 입력하세요</translation>
         </message>
         <message>
             <source>Stronger protection (Picasa cannot open it)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>더 강력한 보호 (Picasa에서 열 수 없음)</translation>
         </message>
         <message>
             <source>&amp;Add/Change a password...</source>
@@ -2078,7 +2078,7 @@ picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
         <message>
             <source>Remove the password</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>비밀번호 제거</translation>
         </message>
         <message>
             <source>Open</source>
@@ -8199,11 +8199,11 @@ picasapy-origin: picasapy</extracomment>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo.<byte value="x20" />
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1에 적목 수정이 적용되었습니다.
-모든 수정 사항을 제거하면 적목 수정은 다시 실행으로 복구할 수 없습니다.<byte value="x20" />
+모든 수정 사항을 제거하면 적목 수정은 다시 실행으로 복구할 수 없습니다. 
 적목 수정을 영구적으로 제거하시겠습니까?</translation>
         </message>
         <message>
@@ -8559,11 +8559,11 @@ picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
             <translation>비밀번호 추가</translation>
         </message>
         <message>
-            <source>The "Hidden Folders" collection is not currently password protected.<byte value="xd" />
+            <source>The "Hidden Folders" collection is not currently password protected.
 Would you like to add a password now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
-            <translation>현재 "숨겨진 폴더"는 비밀번호로 보호되고 있지 않습니다.<byte value="xd" />
+            <translation>현재 "숨겨진 폴더"는 비밀번호로 보호되고 있지 않습니다.
 비밀번호를 설정하시겠습니까?</translation>
         </message>
         <message>

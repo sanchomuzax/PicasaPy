@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
 import xml.etree.ElementTree as ET
 from pathlib import Path
-
-import pytest
 
 from picasapy.app.language_controller import (
     OWN_LANGUAGE_NAMES,
@@ -173,48 +172,6 @@ def test_all_dictionaries_round_trip_byte_for_byte_and_report_missing_rows(capsy
         print("Hiányzó aktív fordítások nyelvenként:")
         for code, count in summaries:
             print(f"{code:5s} {count:4d}")
-
-
-def test_qt_catalog_encodes_carriage_return_as_a_byte_node():
-    from picasapy.app.i18n.dictionary import dump_catalog, load_catalog
-
-    catalog = ET.Element("TS")
-    context = ET.SubElement(catalog, "context")
-    ET.SubElement(context, "name").text = "Prompt"
-    message = ET.SubElement(context, "message")
-    ET.SubElement(message, "source").text = "Prompt"
-    translation = ET.SubElement(message, "translation")
-    translation.text = "Első sor.\r\nMásodik sor."
-
-    serialized = dump_catalog(catalog)
-
-    assert b"\r" not in serialized
-    assert b'<byte value="xd" />' in serialized
-    restored = load_catalog(serialized).find(".//translation")
-    assert restored is not None
-    assert restored.text == "Első sor."
-    assert restored.find("byte").get("value") == "xd"
-    assert restored.find("byte").tail == "\nMásodik sor."
-
-
-def test_ts_writer_encodes_spaces_before_linebreaks():
-    from picasapy.app.i18n.dictionary import dump_catalog, load_catalog
-
-    catalog = ET.Element("TS")
-    context = ET.SubElement(catalog, "context")
-    message = ET.SubElement(context, "message")
-    translation = ET.SubElement(message, "translation")
-    translation.text = "Első sor. \nMásodik sor."
-
-    serialized = dump_catalog(catalog)
-
-    assert b'<byte value="x20" />' in serialized
-    assert "Első sor. \nMásodik sor.".encode() not in serialized
-    restored = load_catalog(serialized).find(".//translation")
-    assert restored is not None
-    assert restored.text == "Első sor."
-    assert restored.find("byte").get("value") == "x20"
-    assert restored.find("byte").tail == "\nMásodik sor."
 
 
 def _message_keys(path: Path) -> set[tuple[str, str]]:

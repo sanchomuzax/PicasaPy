@@ -8209,11 +8209,11 @@ picasapy-origin: picasapy</extracomment>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo.<byte value="x20" />
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
 Are you sure you want to remove the fixes forever?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>A(z) %1 képen vörösszemjavítások történtek.
-Ha eltávolít minden szerkesztést, a vörösszemjavításokat később nem lehet újra alkalmazni.<byte value="x20" />
+Ha eltávolít minden szerkesztést, a vörösszemjavításokat később nem lehet újra alkalmazni. 
 Biztos, hogy végleg eltávolítja a javításokat?</translation>
         </message>
         <message>
@@ -8569,12 +8569,12 @@ picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
             <translation>Jelszó hozzáadása</translation>
         </message>
         <message>
-            <source>The "Hidden Folders" collection is not currently password protected.<byte value="xd" />
+            <source>The "Hidden Folders" collection is not currently password protected.
 Would you like to add a password now?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
-            <translation>A "Rejtett mappák" gyűjteményt jelenleg nem védi jelszó.<byte value="xd" />
- Szeretne most megadni egy jelszót?</translation>
+            <translation>A "Rejtett mappák" gyűjteményt jelenleg nem védi jelszó.
+Szeretne most megadni egy jelszót?</translation>
         </message>
         <message>
             <source>Don't Add Password</source>
