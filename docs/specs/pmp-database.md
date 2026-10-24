@@ -1933,27 +1933,32 @@ További rögzített tények: a figyelési sor hossza **5**; a kötési cím kü
 tagváltozóból (`+0x58`) jön, tehát a `localhost`-ra kötés is adat, nem
 beégetett érték — ez illeszkedik az `AllowRemoteWeb` kapcsolóhoz.
 
-**Amit korábban NYITVA maradt — LEZÁRVA (2026-08-30): nincs „preferált
-kezdőérték".** A `0x004c0d10` / `0x004c0db0` konstruktor **a `+0x54`-et
-egyszer sem írja** — a Start (`0x00a5b180`) a `+0x54` mezőt olvassa
-(`movzx ecx, word ptr [esi+0x54]`), ami a `0xbf37c0` mamorícentemzés után
-**0**. A `bind(0)` a Windows rendszer-szabad portot oszt ki ⇒ a szerver
-**minden indításkor a rendszer egy efemer portján áll**; a `%d`-t használó
-URL-minták (a `0x004cd010` `http://localhost:%d/%s/` stb.) a ténylegesen
-kapott portot szövik az ÚJRA; az „ha foglalt, nullázd és újrapróbálkozz"
-ág (`0x00a5b1eb`) gyakorlatilag sosem fut, mert a `%d` porton nincs fix
-kedvenc. **Statikusan nincs kézzel beállítható port-bemenet** — a
-felhasználónak semmilyen UI-vezérlő nem állíthatja; a
-`AllowRemoteWeb` csak a cím-korlátot oldja, a portot nem.
+**Helyesbítés (#5781):** a konstruktorok (`0x004c0d10` / `0x004c0db0`)
+tényleg nem írják a `+0x54` portmezőt, de ez nem jelenti azt, hogy a port
+mindig efemer. A „Network sharing options” PE-párbeszéd (`RT_DIALOG #300`)
+egyedi portvezérlője a `Preferences\AllowRemoteWeb` kulcsot használja; a
+dialog útja `0`-t (kikapcsolva), `-1`-et (hálózati megosztás automatikus
+porttal) vagy pozitív egyedi portot állít elő (`0x007e58d0`, mentőút
+`0x007e5730`). A szerver indítója `0x00a5b490` nem nulla értéknél a kulcsot
+a `+0x54` portmezőbe másolja, a címet `0.0.0.0`-ra állítja, majd a `-1`-et
+`0` portra normalizálja. Nulla értéknél megmarad a helyi cím (`127.0.0.1`;
+`0x004ccf4c`) és a `0` port. Így a `bind(0)` csak az automatikus módban
+ad efemer portot; pozitív érték esetén a szerver először a megadott portot
+próbálja.
 
-A projekt módszertani óvása („a struktúra-offszet alapú nyom félrevezet")
-itt is igaz volt: a `+0x54` mezőt a konstruktorok **szándékosan nem**
-inicializálják, mert a rendszer-tényleges-port a cél.
+Az eredeti portmező-megállapítás tehát részben igaz marad: `0x00a5b180` a
+socketből visszaolvassa a ténylegesen kapott portot, a `%d` URL-mintákat
+ezzel tölti, és a foglalt pozitív portról nullára váltva újrapróbálkozik.
+**Helytelen volt** a korábbi következtetés, hogy nincs UI-portvezérlő, és
+hogy `AllowRemoteWeb` csak címkorlátot jelölte: a kulcs a megosztás
+bekapcsolását és a portértéket együtt kódolja. A párbeszéd, a kulcs mentése
+és a socket portbeállítása a [beépített webszerver specifikációjában](picasa-beepitett-webszerver.md)
+van részletezve.
 
-*Bizonyítottsági fok: **megerősített** a teljes felállítási sorrend, a
-tartalék-ág, a backlog (a diszasszemblált kódból) és a „nincs preferált
-kezdőérték" lezárás (a `0x004c0d10`/`0x004c0db0` konstruktorok
-diszasszemblálásából: a `+0x54`-et egyik sem írja, az efemer).*
+*Bizonyítottsági fok: **megerősített** a portérték útjára - az egyik
+független út a dialog PE-erőforrása és kezelője (`0x007e58d0` /
+`0x007e5730`), a másik a `CLocalServer` indítója és socketkötése
+(`0x00a5b490` / `0x00a5b180`).*
 
 ---
 
