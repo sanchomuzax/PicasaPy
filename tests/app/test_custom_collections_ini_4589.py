@@ -96,8 +96,9 @@ def test_existing_qsettings_assignment_migrates_to_ini_and_round_trips(
         {"name": "tech", "folders": [str(library / "tech")], "closed": False},
     ]
     migrated = json.loads(settings.value("collections/custom"))
+    # #5704: a gyűjteményenkénti jelszó-lenyomat is a sor része (üres = nincs)
     assert migrated == [
-        {"name": "Régi gyűjtemény", "folders": [], "closed": False}
+        {"name": "Régi gyűjtemény", "folders": [], "closed": False, "password_hash": ""}
     ]
 
 

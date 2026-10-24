@@ -7,6 +7,34 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.207] - 2026-10-24
+
+- A színválasztó az eredeti, kétmódú HSL-palettát, színmintákat és MRU-rekeszeket mutatja; a kollázs az 1-es módot használja (#5730).
+- Az arcmodell-letöltés hálózati hibájának tesztje Windows-on is megvárja a hibaüzenetet (#5764).
+
+## [0.9.206] - 2026-10-24
+
+- A felhasználói gyűjtemények jelszóval zárolhatók, és a jelszó gyűjteményenként tárolódik (#5704).
+- A webexport alapmappájának régi tesztje a nem windowsos utat méri, így Windowson sem bukik (#5714).
+- Teszt rögzíti, hogy a név szerinti rendezés a Picasa 3.9 bájtsorrendjét, ASCII-kisbetűsítését és 32 bites számsorrendjét követi (#5718).
+- A Fotónéző beállítóablakának teljes képernyős indítás jelölője az eredeti Picasa hivatalos feliratát és forráskulcsát kapja; a beállítás újranyitás után is megmarad (#5719).
+
+## [0.9.205] - 2026-10-24
+
+- A HTML-export párbeszéd megjegyzi a célmappát és a sablont; Windowson a Személyes mappából indul (#5714).
+
+## [0.9.204] - 2026-10-24
+
+- A videóból mentett képkocka új mappáját a Projektek gyűjteménybe sorolja, JPEG-minőségét 85-re állítja, és mentési állapotokat mutat (#5715).
+
+## [0.9.203] - 2026-10-24
+
+- A Nyomtatás párbeszéd méretválasztója az eredeti Picasa méreteit mutatja az eredeti sorrendben; a nem mért CD-borító letiltva marad (#5683).
+
+## [0.9.202] - 2026-10-24
+
+- A kötegelt átnevezés Example előnézete a Picasa rögzített dátum-, felbontás- és .jpg-mintáját mutatja. (#5702).
+
 ## [0.9.201] - 2026-10-24
 
 - A Film készítése megjegyzi a diaidőt és az átmenet választását, a diaidő új alapértéke 4 másodperc, 1-300 másodperc között állítható. (#5675).

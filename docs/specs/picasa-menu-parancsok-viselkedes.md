@@ -2464,7 +2464,7 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; a nézeti kapcsoló önmagában **nem** indít jelszóajánlatot. Az ajánlat a `0x9c72` Hide Folder parancs után fut (`0x005cb990` → `0x005ee2a0`, 38.1). | A kapcsoló megvan és őrződik; zárolt állapotban feloldást kér. A jelszavas menütétel aktív a Rejtett mappáknál, de felhasználói gyűjteményeknél placeholder; automatikus jelszóajánlat és `DoNotConfirmHiddenPwd` megfelelő nincs. | **ELTÉR:** pótolni a Hide Folder utáni ajánlatot és a külön letiltási beállítást; az általános gyűjteményjelszó a #416-hoz tartozó fejlesztési bővítés. |
-| `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.3 és a 38.2.61-78 szakaszokban rögzített külön, fekete `qshow` bemutatóablak, mappanév + hónap/év, két képhalom, pontozott ív, négy vezérlő, dátumcsúszka és mért mozgásképletek. | **#5377:** a `TimelineView.qml` teljes képernyős, mappakártyás bemutató; a Nézet-menü és `Ctrl+5` aktív. A QEMU-pontok, valódi billentyűk, egérvezérlők és referencia-képkocka tesztjei: `tests/app/test_timeline_motion_5377.py`, `tests/app/qml_functional/test_idorend_bemutato_5377.py`. A gyűjtemény eredeti forrása és dátumjelentése továbbra is nyitott a #5401-ben. Az eredeti fejlécben nincs Időrend-eszköztárgomb: a `thumbui.tre` a gombot `m_hidden`-ként jelöli. | A felület és a mért részmozgás megvalósult; a képlánc/dátumforrás nyitott kérdéseit ne találgassuk. |
+| `ID_VIEW_TIMELINE` (`0x9ccc`) | A 38.2.3 és 38.2.61-81 szakaszok; a job-239 képsora a `2009_majus` → `2014_november` → `2019_marcius` → `2021_eltero_fajlido` sorrendet és hónap/év-feliratot mutatja, majd `PicasaTeszt` és `Recently Updated` (38.2.81). A 2021-es címke az EXIF-hónappal egyezik a 2023-as fájlidő helyett. A részmozgásképletek QEMU-val ellenőrzöttek; pontos animációhossz és teljes képkocka-lánc nincs meg. | **#5377:** a `TimelineController` minden indexelt, nem rejtett képet `folder_path` szerint csoportosít, kártyánként a legkorábbi `record_date`-et és legfeljebb négy bélyeget adja; csak mappakategóriát épít. A QML Right/Left váltása 2000 ms, a csúszka felengedése 4000 ms; Space mappaszűrt diavetítést kér, Escape bezárja a nézetet (`src/picasapy/app/timeline_controller.py:161-252`; `TimelineView.qml:85-109,210-223`). Ez forrásleolvasás, nem futásmérés. | A négy fixture-mappa neve, darabszáma és látható időrendje a #5377 követelményeibe rögzíthető. A qshow teljes forráslistája/tokenje, a csúszka dátumértéke, az automatikus ütem, a Space utáni visszatérő kép és a teljes mozgás nyitott; ezekről a #5377 nem állíthat ismeretlen nélküli paritást a #5401 újabb futásidejű mérése előtt. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
@@ -5093,6 +5093,11 @@ A `0x00591dd0` (927 b) a videóból mentett képkocka (`capture_frame`,
 ⇒ **Két külön funkció (webkamera + videó-képkocka) osztozik egy
 mappán.** Aki bármelyiket megvalósítja, a másik helyét is eldönti.
 
+**A képkocka-mentés négy állapota:** előbb „Capturing frame...",
+aztán „Saving to Captured Videos"; sikerre a mentett fájl nevét mutatja,
+hibára „Failed to capture frame" jelenik meg. A magyar alakok a fenti
+`CCaptureFrame::captureframeprog1..4` táblában állnak.
+
 **A képkocka-fájl NEVE is megvan** (`0x00591fa6`–`0x0059203c`):
 
 | lépés | mit tesz | cím |
@@ -5106,6 +5111,10 @@ mappán.** Aki bármelyiket megvalósítja, a másik helyét is eldönti.
 ⇒ A képkocka **JPEG**, ugyanabban a mappában, **ugyanazzal a kötőjeles
 háromjegyű sorszámozással**. A mappa `.picasa.ini`-je itt is **csak
 létrehozáskor** íródik.
+
+**JPEG-minőség: 85.** A `0x00592033`-`0x00592067` út a `0x009d6010`
+írófüggvényt hívja `{1, 4, 0x55}` beállításblokkal; a `0x00ad3b30` a
+`0x55` értéket 85-ként erősíti meg. A `4` opció jelentése nincs megállapítva.
 
 ⚠️ **Ami nyitva marad:** hogy a `[obj+0x68]` alapnév pontosan mit
 tartalmaz (a forrásvideó neve? időbélyeg?) — a mezőt a hívó tölti, és a

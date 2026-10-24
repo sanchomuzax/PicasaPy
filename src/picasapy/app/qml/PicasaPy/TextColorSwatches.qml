@@ -19,6 +19,9 @@ Item {
     id: swatches
     // #4283/#4548: az effekt- és a szöveg-színválasztóban is látható az MRU-sor.
     property bool showRecentColors: false
+    // A szöveg- és effektválasztó alapértelmezett módja 0; a kollázs
+    // háttérszín-választója ugyanezt a panelt az 1-es profillal használja.
+    property int paletteMode: 0
     // Keskeny panelhez (a szövegpanel két, egymás melletti példánya): az MRU
     // és a színkerék 3 × 2-es, 12 px-es mini-rácsban ül a paletta mellett
     // (#4548: a 260 px-es panelbe a két példány így fér el, ld. #656 őr);
@@ -48,17 +51,6 @@ Item {
     readonly property real spectrumHeight:
         spectrumPickerLoader.item
             ? spectrumPickerLoader.item.spectrumFieldItem.height : 147
-    readonly property real hueSceneX:
-        spectrumPickerLoader.item
-            ? spectrumPickerLoader.item.x
-                + spectrumPickerLoader.item.hueSpectrumItem.x : 0
-    readonly property real hueSceneY:
-        spectrumPickerLoader.item
-            ? spectrumPickerLoader.item.y
-                + spectrumPickerLoader.item.hueSpectrumItem.y : 0
-    readonly property real hueWidth:
-        spectrumPickerLoader.item
-            ? spectrumPickerLoader.item.hueSpectrumItem.width : 181
     signal colorPicked(string hex)
     // #506: a "palette" néven elnevezve elfedte az Item/Control
     // beépített `palette` tulajdonságát (Qt-figyelmeztetés induláskor)
@@ -179,6 +171,7 @@ Item {
                 anchorItem: swatches
                 currentColor: swatches.displayedColor
                 recentColors: swatches.recentColors
+                paletteMode: swatches.paletteMode
                 onColorPicked: (hex) => swatches.chooseColor(hex)
             }
         }

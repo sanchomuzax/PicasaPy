@@ -683,10 +683,106 @@ alapján méri.
 |---|---|---|
 | **Belépés.** A Filtered B&W effekt paneljén van `Pick Color` színkerék (`0x0050cf90`, `0x008ff550`; a sztring címe `0x00c87088`). A felugró osztály neve `colorpickerpanel` (`0x00653fb0` → `0x00ca2514`). | Az effekt színparamétere `EditorParamPanel.qml`-ben `TextColorSwatches`; a „Pick Color” gomb nyitja a `ColorSpectrumPicker` felugrót. | **EGYEZIK** a színparaméter szerkeszthetősége. A colorwheel-kattintás és a panelosztály közti natív dinamikus kötés pontos belépési pontja **NINCS MEG**; lásd a nyitott kérdést. |
 | **Pipetta.** A natív választóban van képpontot mintázó út: `BackbufferPickerHandler` (`0x00655150`) és `BitmapPickerHandler` (`0x006553d0`), panelen át `0x00654ab0` / `0x00654c30`; az ikonréteg `globalbuttons/dropper_n/_h`. | Az effekt `TextColorSwatches` csak ezt a 8 rögzített színt kínálja: `#ffffff`, `#000000`, `#ff0000`, `#ffff00`, `#00a651`, `#0072bc`, `#ff7f27`, `#a349a4`, továbbá spektrumot és MRU-t. A `pickNeutralColor` kizárólag a `finetune2` semleges színét írja át (`PhotoViewer.qml` → `EditController.pickNeutralColor`); nem érhető el az effekt színmezőjéből. | **ELTÉR.** A generikus effekt-színválasztóba képpontmintázó mód kell, amely a kiválasztott színt a mezőhöz és az effekt előnézetéhez küldi. |
-| **Panel és MRU-geometria.** A panel 225×225; az öt `mru_0…4` mező 26×26, x=51, 82, 113, 144, 175; a palettaréteg 181×147 az (20,15) ponton. Forrás: `pickerpanel.tre` + `respack.yt` mérés; a réteg betöltési útja `0x00654290`. Az eredeti MRU-sor y-koordinátája **NINCS MEG**; megszerzés: az öt réteg rect-adatának pontos kiolvasása a `respack.yt`-ből. | A `ColorSpectrumPicker` 225×225; 5 darab 26×26 MRU ugyanazon x-koordinátákon, y=13; spektrum 181×147 az (20,48) ponton. | A panelméret, a rekeszszám, a rekeszméret és x-osztás **EGYEZIK**. Az MRU y-helyzetét nem hasonlítottuk össze, mert az eredeti érték **NINCS MEG**. Az azonos méretű palettaréteg és spektrum helye eltér; a két natív palettakép színkészlete **NINCS MEG**. Megszerzés: a `respack.yt` `pickerpanel/palette_0` és `_1` rétegének dekódolása és a két palettamód működésének mérése. |
-| **MRU-beállítás.** A panel `Preferences` alatt a `picker::mru_%d` családot olvassa és írja; öt helyet tart fenn, ismétlődő színt nem hagy a sorban (`0x00654290`, `0x00654e30`). | Öt QSettings-kulcs: `picker/mru_0…4`; az új színt előre teszi, ismétlődést kiszűri (`EditController.recentPickerColors`, `rememberPickerColor`). Üres profilnál a mi kezdeti értékünk `""`. | Az öt tartós, deduplikált MRU **EGYEZIK**. A tárhely-kulcsok neve/névtere eltér. Az eredeti hiányzó kulcsainak első induláskori értéke **NINCS MEG**; megszerzés: tiszta Picasa-profilon a Preferences-értékek mérése vagy a `0x00407a20` / `0x004019b0` alapértékút célzott visszafejtése. |
+| **Panel és MRU-geometria.** A panel 225×225; az öt `mru_0…4` mező 26×26, x=51, 82, 113, 144, 175, **y=15** (rétegrekord: `pickerpanel/rect: mru_0` = (51,15)-(77,41)); a palettaréteg 181×147 az (20,15) ponton (`pickerpanel/palette_0` és `_1`, rétegrekord). Betöltési út: `0x00654290`. **Bizonyítottsági fok: erős.** A rétegrekord mért (`respack.py list` és a 13 bájtos fejléc); a [respack-formátum 10.2](picasa-respack-format.md) szerint a hely a rétegrekordból jön, a szülő `pickerpanel/base` (12,8) eltolása a binárisban nincs külön visszafejtve. | A `ColorSpectrumPicker` 225×225; 5 darab 26×26 MRU ugyanazon x-koordinátákon, y=13; spektrum 181×147 az (20,48) ponton. | A panelméret, a rekeszszám, a rekeszméret és x-osztás **EGYEZIK**. Az MRU y-helyzete **ELTÉR**: nálunk 13, az eredeti 15 (2 px); javítás: `ColorSpectrumPicker.qml:94`. A palettaréteg helye **ELTÉR**: az eredeti (20,15), nálunk a spektrum (20,48), 33 px. A két palettakép színkészletét és a palettamód-váltót a következő sor méri. |
+| **Palettamód és színkészlet.** Két palettakép van: `pickerpanel/palette_0` és `palette_1`, mindkettő 181×147 (rétegrekord). **Váltó:** a `Property palette N` tulajdonság (`N` = 0 vagy 1). A `0x00653ff0` a `palette` nevű tulajdonság sztringjét `%d` formátummal olvassa (`0xca2528` a név, `0xc81844` a formátum), és a `[obj+0x2f8]` mezőbe írja (`0x006540d2`); a `0x00654290` a `%s/palette_%d` névvel csak ezt az egy réteget tölti be. **Alap: 0.** A konstruktor (`0x00654150`) nullázza a mezőt (`0x00654209`), és a `pickerpanel.tre` nem ad tulajdonságot. A `.tre` példányai: `palette 1` csak a `collagepanel/picker_panel` (`bkgcolorpick`) példányon áll; `palette 0` a `makemoviepanel` bkg/text, a `printoptions` border/text és az `edittextpanel` fill/outline példányokon. **Színkészlet (mért, dekódolt pixelek):** a felső 56 sor (0-55) mindkét palettán bájtra azonos: 4996 telt képpont, 204 különböző RGB. Az alatti sorokban (56-146) a `palette_0` 16 380 telt képpontján 15 223 különböző RGB van, átlagos telítettség 59,0%, fényerő 69,2%; a `palette_1`-en 13 880 különböző RGB, telítettség 40,9%, fényerő 61,7%. A `#palette_0 old` és `#palette_1 old` rétegek (180×111) nincsenek a `.tre`-ben, nem töltődnek be. **Bizonyítottsági fok:** a váltó és az alap **erős** (egy kódúton: tulajdonságolvasó, konstruktor-nullázás, `.tre`-példányok); a színkészlet **megerősített** (a pixelek számlálása és a két kirenderelt kép szerkezeti egyezése). | **Egy palettamód van.** A színmező a `ColorSpectrumPicker.qml:113-117` `spectrumField` elemében: `Qt.hsva(hue, 1, 1, 1)` alapszín, rá vízszintes fehér-átlátszó és függőleges átlátszó-fekete átmenet (HSV-négyzet), 181×147 az (20,48) ponton. Nincs felső színsáv és nincs második palettakép. Alatta két vízszintes sáv van (y=198, 181×12; y=213, 181×10), amelyeknek az eredeti `pickerpanel`-rétegkészletben nincs megfelelője. | **ELTÉR**, és a palettamód hiányzik. A két palettakép szerkezetét (felső 56 soros színsáv, alatta a mért átmenet) nálunk nem követjük. Teendő: a spektrumterület kövesse az eredeti szerkezetet. A pixelképet nem másoljuk a repóba: a `respack.py` jogi megjegyzése szerint a kinyert grafika nem terjeszthető; a szerkezetet és a mért színstatisztikát követjük. A `palette` tulajdonság (0/1) bevezetése a `bkgcolorpick` példányhoz a fejlesztői jegy döntése. |
+| **MRU-beállítás.** A panel a `Preferences` szakaszból olvassa és írja a `picker::mru_%d` kulcsokat (sablon: `0xca254c`; hívó: `0x00654290` ciklusa, `0x006543d5`); öt helyet tart fenn, ismétlődő színt nem hagy a sorban (`0x00654e30`). **Hiányzó vagy üres kulcs első értéke: `"*"`** (egy bájt, 0x2A). A `0x00407a20` a `0x00407aba`-`0x00407ace` ágon: ha a kulcs nincs, vagy az érték üres, a `0xc7f514` literált adja ki (`push 0xc7f514; mov eax, 1`; a literál tartalma `*`). A `0x80000001` (HKEY_CURRENT_USER) a `0x00407a43` hívásban áll. A `0x004019b0` a kulcsot `0xf003f` (KEY_ALL_ACCESS), majd `0x20019` (KEY_READ) maszkkal nyitja; a visszakapott sztring mutatóját a `0x00654290` az MRU-réteg `+0x268` mezőjébe írja (`0x006543e9`). **Bizonyítottsági fok: erős** (egy kódúton; az ágazás és a literál külön ellenőrizve; futtatott Picasa-mérés nincs). | Öt QSettings-kulcs: `picker/mru_0…4`; az új színt előre teszi, ismétlődést kiszűri (`EditController.recentPickerColors`, `rememberPickerColor`). Üres profilnál a mi kezdeti értékünk `""` (`edit_controller.py:557`), a rekesz átlátszó (`ColorSpectrumPicker.qml:97`). | Az öt tartós, deduplikált MRU **EGYEZIK**. A tárhely-kulcsok neve/névtere eltér. **Üres profil: ELTÉR.** Az eredeti `"*"`, nálunk `""`. A `"*"` megjelenése a rekeszben **NINCS MEG** (az MRU-réteg `+0x268` mezőjének rajzolója nincs visszafejtve), ezért a `""` → `"*"` átállításról még nem születhet döntés; első lépés a rajzoló visszafejtése. |
+| **Üres MRU-rekesz rajza (K5).** A `0x00407a20` hiányzó kulcs ága (`0x00407ace`) a `0x00c7f514` címen lévő `2a 00` bájtsort adja (`"*"`). A `0x009a4890` `0x009a490d` utasítása a `0x2a` első bájtot külön kezeli, és a `0x009a4939` ponton nulla EAX-szal tér vissza; a `0x00654290` a `0x004019b0` eredményét a `ytColorRectNode +0x268` színmezőjébe írja (`0x006543de-0x006543e9`). A nullaszínű dinamikus réteg nem rajzol színt (`0x00a66570`, `0x00a65a50`). Alatta az aktív `pickerpanel/mru_0` erőforrás egyszínű, teljesen fedő 26×26-os `#00B2BD` rétege marad; a keretet a `pickerpanel/bezels` adja. Forrás: bináris és `pickerpanel.tre` + `respack.yt` pontos pixelmérés. | A `ColorSpectrumPicker.qml` üres MRU-modellje öt `""`; a delegate `modelData || "transparent"` kitöltést használ, kerettel. | **MEGERŐSÍTETT ELTÉR.** Az eredeti hiányzó kulcs nem ad átlátszó MRU-négyzetet: a statikus színréteg látszik. A `mru_0…4` pontos statikus kitöltése: `#00B2BD`, `#87A2B0`, `#007BC4`, `#00727C`, `#692DAC` (mind 26×26, alpha=255; `respack.yt` pixelmérés). Fejlesztési jegyjavaslat: az üres MRU-rekeszek jelenítsék meg a megfelelő eredeti alapkitöltést. |
+| **A paletta alatti sávok (K6).** A `pickerpanel` paletta 181×147-es, `(20,15)`-től `(201,162)`-ig; az aktív `base` réteg `(12,8)`-`(215,179)`. A `.tre`-ben nincs alsó sáv/slider réteg; a `docbounds` alpha=0. A `ColorPickerPanel` vtable-jének 29. bejegyzése megegyezik a `ytDrawNode` megfelelő bejegyzésével (`0x009e3c70`); a panelépítő (`0x00654290`) az öt MRU-színréteget, a `ResCreate`-út (`0x00653ff0`) a palettaképet hozza létre. | `ColorSpectrumPicker.qml` két további sávot rajzol: aktuális szín `y=198, h=12`; hue-gradiens `y=213, h=10` (`ColorSpectrumPicker.qml:150-165`). | **MEGERŐSÍTETT ELTÉR.** Az eredeti panel építési/rajzolási útján és aktív `pickerpanel/*` erőforrásai között nincs a paletta alatti két sávnak megfelelő elem. A két QML-sávhoz fejlesztési jegyjavaslat: eltávolításuk az eredeti panelhez igazodó felugróból. |
 | **Natív Glimmer-színmezők alapértékei.** Az eredeti `filterdesc.xml` `selectedColor` értékei: Border outer/inner `#000000/#ffffff`; DropShadow shadow/background `#000000/#ffffff`; MuseumMatte outer/inner `#1a0e03/#f0eae4`; Polaroid outer `#e2e2e2`; RoundedEdges és Sixties outer `#ffffff`; TwoTone first/second `#004488/#ffff00`. A leíró színmezőit a `0x008ff550` dolgozza fel. | A PicasaPy `effect_params.py` ugyanezeket az értékeket adja az effektpanelnek. | **EGYEZIK** mind a 11 natív színmező értéke (a két mezős effekteknél mezőnként). |
-| **Régi colorwheel új effekt alapértéke.** Az `ansel`, `tint`, `dir_tint`, `radtint` XML-leírójában `<colorwheel>` van; `selectedColor` attribútum nincs. A `<presets>` `pixel` értékét nem tekintjük automatikusan a picker induló színének. | A PicasaPy `effect_params.py` a négy mező kezdőértékének `#ffffff`-et ad. | Az eredeti üres profilú picker induló színe **NINCS MEG**; a `presets/pixel` és a picker megjelenített színének viszonya nem bizonyított. Megszerzés: a natív betöltési út célzott visszafejtése vagy friss profilban mért első megnyitás. Ebből a körből nem állítható alapérték-egyezés vagy eltérés. |
+| **Régi colorwheel új effekt alapértéke.** Az `ansel`, `tint`, `dir_tint`, `radtint` XML-leírójában `<colorwheel>` van; `selectedColor` attribútum nincs. A `<presets>` `pixel` értékét nem tekintjük automatikusan a picker induló színének. | A PicasaPy `effect_params.py` a négy mező kezdőértékének `#ffffff`-et ad. | Az eredeti üres profilú picker induló színe **NINCS MEG**; a `presets/pixel` és a picker megjelenített színének viszonya nem bizonyított. Megszerzés: a natív betöltési út célzott visszafejtése vagy friss profilban mért első megnyitás. Ebből a körből nem állítható alapérték-egyezés vagy eltérés. (A MRU-rekeszek `"*"` alapértéke más kérdés: az a rekesz tartalma, nem a panel induló színe.) |
 | **Kiválasztás kimenete.** A natív leíró a kiválasztott színt effekt-paraméterként köti a művelethez; az örökölt Filtered B&W `ansel` út `filters=` színparamétere `AARRGGBB` (a láncformátumot lásd a [`picasa-ini-format.md`](picasa-ini-format.md) `desat`/`ansel` részében és a `filterdesc-registry.md` `ImageFilters::PickColor` részében, `0x008fee80`). | A `TextColorSwatches` színt ad vissza az `EditorParamPanel`-nek; az előnézet a `previewEffect` útján frissül, az Alkalmaz az `applyEffectWithParams` útján menti a `filters=` értéket, a Mégse eldobja az előnézetet. A `format_param_values` a legacy színkerekeknél `ffRRGGBB`-t ír. | **EGYEZIK** abban, hogy a választás az effekt színparaméterét és előnézetét módosítja, majd az alkalmazott láncparaméterbe kerül. A kiválasztóban történő színmintavétel kivétel: a fenti pipetta-eltérés miatt hiányzik. |
 
-**Bizonyítottsági fok.** A pipetta eltérése **megerősített**: (A) a natív handler-metódusok képpontszínt olvasnak és a panel színbeállító útjára adják; (B) ettől függetlenül a natív `dropper` gombréteg és a handler-osztályok RTTI-je is létezik. A PicasaPy ellenőrzése két külön úton egyezik: (A) a teljes színmező QML-útja csak paletta/spektrum/MRU bemenetet köt be; (B) az egyetlen képpontmintázó slot a `finetune2` semleges színére ír. A natív nyitási esemény, az üres profil induló színe és a két natív palettakép tényleges színkészlete nyitva marad.
+#### Palettamód és színkészlet: mérési szabály
+
+A két natív réteget a `respack.yt` dekódolója 181×147 RGBA-képpé bontja
+(rect: `x=[20,201), y=[15,162)`, réteg-alfa: 256/256, RLE-kódolás: 1,
+26 607 képpont rétegenként). A nyers rétegadat külön RLE-dekódolásának RGBA-
+kimenete bájtról bájtra egyezik a PNG dekódolt RGBA-pixeladataival. A két kép
+10 227 egyező és 16 380
+eltérő képpontot tartalmaz; az eltérések a fő mezőben vannak (`x=1…180`,
+`y=56…146`). Az `y=0…55` felső sáv teljesen azonos.
+
+A színmező belsejének mért szabálya:
+
+```text
+H(x) = a két szomszédos, lent felsorolt (x,100) RGB-minta HSL-színárnyalata
+       közötti lineáris interpoláció, fokban
+L(y) = a két szomszédos, lent felsorolt (90,y) RGB-minta HSL-világossága
+       közötti lineáris interpoláció, 0…255 skálán
+S0   = 163/253; S1 = 97/253
+RGBm(x,y) = round-half-up(sRGB_HSL_to_RGB(H(x), Sm, L(y)/255) × 255)
+```
+
+A képlet mérési tartománya mindkét módnál `x=2…179`, `y=56…144`;
+a határmaszk és a közös felső grafika nem része a modellnek. A színárnyalat-
+horgonyok a `palette_0` `(x,100)` pontjainak egész RGB-értékei, `x =
+1,6,11,…,176,180`; a világosság-horgonyok ugyanennek a képnek a `(90,y)`
+pixelei, `y = 56,61,…,141,144`. A HSL-értékeket a felsorolt 8 bites
+RGB-mérésekből a szabványos, 8 bites sRGB-kódértékeken értelmezett HSL-képlet
+adja (`H∈[0°,360°)`, `S,L∈[0,1]`); szabad illesztett paraméter nincs.
+
+```text
+H-horgonyok: x:(R,G,B)
+1:(213,64,62); 6:(210,64,47); 11:(210,87,47); 16:(210,115,47);
+21:(210,143,47); 26:(210,169,47); 31:(210,192,47); 36:(210,209,47);
+41:(196,210,47); 46:(175,210,47); 51:(149,210,47); 56:(121,210,47);
+61:(95,210,47); 66:(70,210,47); 71:(52,210,47); 76:(47,210,55);
+81:(47,210,75); 86:(47,210,102); 91:(47,210,130); 96:(47,210,157);
+101:(47,210,183); 106:(47,210,204); 111:(47,204,210); 116:(47,184,210);
+121:(47,160,210); 126:(47,132,210); 131:(47,105,210); 136:(47,79,210);
+141:(47,59,210); 146:(48,47,210); 151:(67,47,210); 156:(91,47,210);
+161:(119,47,210); 166:(148,47,210); 171:(174,47,210); 176:(196,47,210);
+180:(212,62,213)
+
+L-horgonyok: y:(R,G,B)
+56:(234,250,241); 61:(219,247,232); 66:(199,242,220);
+71:(176,238,205); 76:(150,233,189); 81:(124,226,172);
+86:(99,221,156); 91:(76,217,143); 96:(58,212,130);
+101:(45,209,122); 106:(42,195,114); 111:(38,179,105);
+116:(34,158,92); 121:(29,135,79); 126:(24,112,65);
+131:(19,89,52); 136:(15,69,41); 141:(11,52,31); 144:(9,44,26)
+```
+
+`S0` és `S1` a két kép `(90,100)` színéből adódik: `palette_0` RGB
+`(47,210,124)`, `palette_1` RGB `(80,177,125)`; mindkettő HSL-világossága
+128,5/255. A nyers erőforrás-képekből számolt belső tartomány hibája:
+
+| Mód | Pontosan egyező pixel | Átlagos abszolút csatornahiba | Maximum csatornahiba |
+|---|---:|---:|---:|
+| `palette_0` | 4 626 / 15 842 (29,20%) | 0,381475 csatornaszint | 3 csatornaszint |
+| `palette_1` | 4 870 / 15 842 (30,74%) | 0,435467 csatornaszint | 3 csatornaszint |
+
+Képletpróba (helyi képpont-koordináta, elvárt RGB): `(90,100)` `#2FD27C` /
+`#50B17D`; `(45,100)` `#B4D22F` / `#9FB150`; `(135,100)` `#2F53D2` /
+`#5065B1`; `(90,56)` `#EAFAF1` / `#EDF6F1`; `(90,144)` `#092C1A` /
+`#10251A` (`palette_0` / `palette_1`). Az egyszerű, egyenletesen léptetett
+árnyalat- és lineáris világosságtengely ellenpróbája (H: 0°…300° egyenletesen
+x mentén; L: a két y-végpont között lineárisan) rosszabb eredményt ad:
+átlagos csatornahiba 4,037 / 3,802, maximum 25 / 19; ezért ez a leegyszerűsítés
+nem reprodukálja a mért profilt. A mező szélén (`x=1` vagy `180`, illetve
+`y=145…146`) a fenti belső modellre a maximumhiba 19 szintre nő; a képlet
+nem állít teljes 181×147 képpontra pontos rajzolást.
+
+A felső sáv 30 közös, egyenként 6×12 képpontos mintából áll (`y=43…54`,
+`x=1…180`), ezért képletes színátmenet helyett a mért fix színkészlet kell:
+`#63001E, #B10039, #895227, #C47338, #D39815, #E9A518, #FFBD00,
+#FFD154, #C8C866, #E3E274, #629C33, #85CD44, #8AB28D, #A8D8AB,
+#00727C, #00B2BD, #87A2B0, #A6C7D7, #A9D1E7, #CDE7F6, #007BC4,
+#0091E1, #002455, #004BAA, #586695, #778CCA, #38175A, #692DAC,
+#C88DAC, #E3A1C4`.
+
+**Bizonyítottsági fok.** A palettamező HSL-szabálya **megerősített**: (A) a
+37 árnyalat- és 19 világosság-horgonypontból, szabad paraméter nélkül
+felépített tengelyprofil legfeljebb 3 csatornaszint eltéréssel adja vissza
+mindkét mód belső mezőjét; (B) független HSL-kalibráció az
+`(x+y) mod 5 = 0` képpontokat ellenőrzőhalmaznak kihagyva ugyanott
+legfeljebb 2 csatornaszint hibát mért. A bináris út ettől külön
+megerősíti, hogy a `palette` egész értéke a statikus `palette_0` / `_1`
+erőforrás nevének kiválasztására szolgál, nem a natív futásidejű színképlet
+forrása. A pipetta eltérése továbbra is **megerősített**: (A) a natív
+handler-metódusok képpontszínt olvasnak és a panel színbeállító útjára adják;
+(B) ettől függetlenül a natív `dropper` gombréteg és a handler-osztályok
+RTTI-je is létezik. A PicasaPy ellenőrzése két külön úton egyezik: (A) a
+teljes színmező QML-útja csak paletta/spektrum/MRU bemenetet köt be; (B) az
+egyetlen képpontmintázó slot a `finetune2` semleges színére ír. A natív
+nyitási esemény továbbra is nyitott; az MRU-alapérték a fenti MRU-sor szerint lezárult (#5728). A #5734 K5 és K6 válasza **megerősített**: K5-höz (A) a hiányzó beállítás `"*"` alapértékének kiolvasása, a parser külön `0x2a` ága és a `ytColorRectNode` színmezője; (B) ettől függetlenül az aktív, teljesen fedő `mru_0` erőforrás és a `bezels` réteg pontos mérése. K6-hoz (A) a `pickerpanel/*` rétegek pontos listája és határai; (B) a `ColorPickerPanel` vtable-bejegyzésének összevetése a `ytDrawNode`-éval, valamint a panelépítő és `ResCreate` út dinamikus elemkészlete. Cáfoló körként a rejtett régi palettarétegek, a rejtett `mru_5`, a `docbounds` és a releváns egyedi vtable-metódusok is ellenőrizve lettek; egyik sem ad alsó sávot. A natív nyitási esemény, az effektpaletták tényleges színkészlete és a teljesen új picker induló színe továbbra is nyitva marad.
