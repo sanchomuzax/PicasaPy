@@ -120,13 +120,28 @@ ApplicationWindow {
             s[selectedIndexes[k]] = true
         selectedSet = s
     }
-    property bool viewerOpen: false
+    readonly property bool quickViewerLaunch:
+        controller ? controller.quickViewActive === true : false
+    property bool viewerOpen: quickViewerLaunch
     // #4656: a néző saját megjelenítési módot kap, bezáráskor visszaáll az
     // előző ablakállapot. A valódi megnyitás külön belépőn fut át, így a
     // közvetlen állapotbeállítások (például a QML-próbapadban) nem váltanak módot.
     property int visibilityBeforeViewer: Window.Windowed
     property bool viewerVisibilityManaged: false
     onViewerOpenChanged: {
+        // A gyorsnézet a könyvtár beolvasása előtt indul. Bezáráskor
+        // takarítsuk el az ideiglenes listát, és csak ekkor kérjük a rendes
+        // könyvtár betöltését.
+        if (!window.viewerOpen && window.quickViewerLaunch) {
+            controller.returnToLibraryFromQuickView()
+            Qt.callLater(function() {
+                initialScanDialog.openIfNeeded()
+                collageDraftDialog.openIfNeeded()
+                if (typeof discoveryController !== "undefined"
+                        && discoveryController)
+                    discoveryController.discoverAtStartup()
+            })
+        }
         if (!window.viewerOpen && window.viewerVisibilityManaged) {
             window.visibility = window.visibilityBeforeViewer
             window.viewerVisibilityManaged = false
@@ -2967,6 +2982,15 @@ ApplicationWindow {
         if (controller) controller.setThumbCellSize(window.thumbSize)
         //: #3070: a megjelenítési mód kezdőállapota a felület színein
         window.frissitsdAMegjelenitesiPalettat()
+        if (window.quickViewerLaunch) {
+            window.visibilityBeforeViewer = window.visibility
+            window.visibility = controller.viewerFullscreenStartup
+                ? Window.FullScreen : Window.Windowed
+            window.viewerVisibilityManaged = true
+            window.viewerOpen = true
+            photoViewer.show(0)
+            return
+        }
         initialScanDialog.openIfNeeded()
         // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
         // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
@@ -3216,6 +3240,14 @@ ApplicationWindow {
             controller.showPerson(name)
         }
         onPlayRequested: window.startSlideshow(currentIndex)
+        onStarRequested: function(row) {
+            if (controller) controller.toggleStar(row)
+        }
+        onRotateRequested: function(row, delta) {
+            if (!controller) return
+            if (delta < 0) controller.rotateLeft(row)
+            else controller.rotateRight(row)
+        }
         // #1002: a néző csak JELEZ — a panel feltöltése és a lapváltás
         // a gazdáé, ugyanúgy, ahogy a `CollagePanel` jelzéseinél.
         onEditCollageRequested: function(path) {
@@ -3227,7 +3259,10 @@ ApplicationWindow {
             window.openSavedMovie(path)
         }
         onClosed: {
+            var quickViewWasActive = controller
+                && controller.quickViewActive === true
             window.viewerOpen = false
+            if (quickViewWasActive) return
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
             window.selectedIndexes = [currentIndex]
             // a szerkesztések (filters=) azonnal látsszanak a rácson —

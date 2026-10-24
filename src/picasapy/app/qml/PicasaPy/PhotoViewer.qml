@@ -278,6 +278,8 @@ Rectangle {
     signal closed()
     // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
     signal playRequested()
+    signal starRequested(int row)
+    signal rotateRequested(int row, int delta)
     //: #1002: a megnyitott kollázs újranyitása SZERKESZTÉSRE. A néző
     //: csak JELEZ — a lapváltás és a panel feltöltése a gazdáé.
     signal editCollageRequested(string path)
@@ -317,6 +319,11 @@ Rectangle {
     // nem kell hozzányúlni; önálló (teszt-)példányosításnál a kapcsoló
     // hiányzik → a panel rejtve marad.
     readonly property var appWindow: Window.window
+    readonly property bool quickViewerMode: appWindow
+        && appWindow.quickViewerLaunch === true
+    // A Picasa Web Albums feltöltése kivezetett funkció; a gomb csak
+    // képességjelzésként jelenik meg, ezért a kezelőfelület nem aktiválhatja.
+    readonly property bool quickUploadAvailable: false
     readonly property bool propertiesOpen: appWindow
         && appWindow.propertiesPanelOpen === true
 
@@ -1705,6 +1712,37 @@ Rectangle {
                 anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 8
+                // #5762: a külön fájllistás indítás a műveletsáv első
+                // három parancsát a spec sorrendjében mutatja. Egy
+                // egérkattintás 0,05-ös csúszkalépés, ugyanaz, mint egy
+                // görgőkattanás; az 1:1 külön a mért zoom-detentre lép.
+                PicasaButton {
+                    objectName: "viewerQuickZoomInButton"
+                    visible: viewer.quickViewerMode
+                    text: "+"
+                    ToolTip.text: qsTr("Zoom In")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: viewer.lepjZoom(0.05)
+                }
+                PicasaButton {
+                    objectName: "viewerQuickZoomOutButton"
+                    visible: viewer.quickViewerMode
+                    text: "−"
+                    ToolTip.text: qsTr("Zoom Out")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: viewer.lepjZoom(-0.05)
+                }
+                PicasaButton {
+                    objectName: "viewerQuickZoomActualButton"
+                    visible: viewer.quickViewerMode
+                    text: "1:1"
+                    ToolTip.text: qsTr("Zoom to 1:1")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: viewer.zoomActual()
+                }
                 // #1993: a MÉRT alak — ikonos, KÉTSOROS gomb.
                 //
                 // Az ikon az `editpanel/albumview_icon` (17 × 15), színe a
@@ -1717,9 +1755,12 @@ Rectangle {
                 PicasaButton {
                     objectName: "viewerBackButton"
                     font.pixelSize: Theme.fontSize
-                    text: qsTr("Back to Library")
+                    text: viewer.quickViewerMode
+                        ? qsTr("Edit in Picasa") : qsTr("Back to Library")
                     //: #3476: az eredeti `thumbui/albumview` súgója
-                    ToolTip.text: qsTr("Return to organized thumbnails")
+                    ToolTip.text: viewer.quickViewerMode
+                        ? qsTr("Launch Picasa")
+                        : qsTr("Return to organized thumbnails")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
                     Layout.preferredWidth: 118
@@ -1831,13 +1872,10 @@ Rectangle {
                            viewerTopBar.width - width - 8))
                 PicasaButton {
                     objectName: "viewerPlayButton"
+                    visible: !viewer.quickViewerMode
                     text: "▶ " + qsTr("Play")
                     font.pixelSize: Theme.fontSize
-                    //: #1857: ehhez a négy gombhoz (lejátszás, előző,
-                    //: következő, „Létrehozás most") NINCS kimért eredeti
-                    //: felirat — a szöveg SAJÁT, leíró magyar, a mért
-                    //: testvérek hangnemében. Ez tudatos eltérés.
-                    ToolTip.text: qsTr("Start slideshow")
+                    ToolTip.text: qsTr("Play Slideshow")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
                     onClicked: viewer.playRequested()
@@ -1875,9 +1913,19 @@ Rectangle {
                             anchors.centerIn: parent
                         }
                     }
-                    ToolTip.text: qsTr("Previous picture")
+                    ToolTip.text: qsTr("Previous Photo")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
+                }
+                PicasaButton {
+                    objectName: "viewerQuickPlayButton"
+                    visible: viewer.quickViewerMode
+                    text: "▶ " + qsTr("Play")
+                    font.pixelSize: Theme.fontSize
+                    ToolTip.text: qsTr("Play Slideshow")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: viewer.playRequested()
                 }
                 // #1905: a szalag CSAK a jelenlegi kép mappáját mutatja.
                 //
@@ -2041,9 +2089,107 @@ Rectangle {
                             anchors.centerIn: parent
                         }
                     }
-                    ToolTip.text: qsTr("Next picture")
+                    ToolTip.text: qsTr("Next Photo")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
+                }
+                // #5762: a spec 12.8.2-ben szerepel, de a PicasaPy ezt a
+                // szolgáltatást (#422) már kivezette; a gomb látható, de
+                // nem indít feltöltést.
+                PicasaButton {
+                    objectName: "viewerQuickUploadButton"
+                    visible: viewer.quickViewerMode
+                    enabled: viewer.quickUploadAvailable
+                    width: 30; height: 28
+                    padding: 0
+                    Accessible.name: qsTr("Quick Upload")
+                    ToolTip.text: qsTr("Quick Upload")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    contentItem: Image {
+                        source: "icons/upload.svg"
+                        width: 17; height: 17
+                        sourceSize.width: 17; sourceSize.height: 17
+                        fillMode: Image.PreserveAspectFit
+                    }
+                }
+                PicasaButton {
+                    objectName: "viewerQuickRotateLeftButton"
+                    visible: viewer.quickViewerMode
+                    width: 30; height: 28
+                    padding: 0
+                    ToolTip.text: qsTr("Rotate counter-clockwise")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: viewer.rotateRequested(
+                        viewer._kijeloltSort(), -1)
+                    contentItem: Image {
+                        source: "icons/tray-rotate-left.svg"
+                        width: 15; height: 17
+                        sourceSize.width: 15; sourceSize.height: 17
+                        fillMode: Image.PreserveAspectFit
+                    }
+                }
+                PicasaButton {
+                    objectName: "viewerQuickRotateRightButton"
+                    visible: viewer.quickViewerMode
+                    width: 30; height: 28
+                    padding: 0
+                    ToolTip.text: qsTr("Rotate clockwise")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: viewer.rotateRequested(
+                        viewer._kijeloltSort(), 1)
+                    contentItem: Image {
+                        source: "icons/tray-rotate-right.svg"
+                        width: 15; height: 17
+                        sourceSize.width: 15; sourceSize.height: 17
+                        fillMode: Image.PreserveAspectFit
+                    }
+                }
+                PicasaButton {
+                    objectName: "viewerQuickStarButton"
+                    visible: viewer.quickViewerMode
+                    width: 30; height: 28
+                    padding: 0
+                    ToolTip.text: qsTr("Star")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: viewer.starRequested(
+                        viewer._kijeloltSort())
+                    contentItem: Image {
+                        source: viewer.photosModel && viewer.currentIndex >= 0
+                            ? (viewer.photosModel.revision,
+                               viewer.photosModel.starAt(viewer.currentIndex)
+                                 ? "icons/tray-star-on.svg"
+                                 : "icons/tray-star.svg")
+                            : "icons/tray-star.svg"
+                        width: 17; height: 17
+                        sourceSize.width: 17; sourceSize.height: 17
+                        fillMode: Image.PreserveAspectFit
+                    }
+                }
+                PicasaButton {
+                    id: viewerMoreOptionsButton
+                    objectName: "viewerQuickMoreOptionsButton"
+                    visible: viewer.quickViewerMode
+                    width: 30; height: 28
+                    padding: 0
+                    Accessible.name: qsTr("More Options")
+                    ToolTip.text: qsTr("Click to see more options")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: {
+                        var p = viewerMoreOptionsButton.mapToItem(
+                            viewer, 0, viewerMoreOptionsButton.height)
+                        viewer.openContextMenu(p.x, p.y)
+                    }
+                    contentItem: Image {
+                        source: "icons/tray-more.svg"
+                        width: 16; height: 16
+                        sourceSize.width: 16; sourceSize.height: 16
+                        fillMode: Image.PreserveAspectFit
+                    }
                 }
 
                 //: #3663: a mért sorrend a filmszalag és a ▶ UTÁN áll — a

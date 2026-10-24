@@ -488,6 +488,10 @@ class PhotoGridModel(QAbstractListModel):
         super().__init__(parent)
         self._photos: tuple[PhotoRecord, ...] = ()
         self._revision = 0
+        # #5762: a gyorsnézegető egy külön kijelölt fájlsort mutat, amely
+        # több könyvtárból is állhat. A szokásos könyvtárnézet mappahatára
+        # marad; csak a közvetlen fájl-listás indítás lép át rajta.
+        self._linear_navigation = False
         # #1436: a mappa TARTALMÁNAK rendezése („Mappa rendezésének alapja ▸").
         # A beállítást a `FolderPhotoSortMixin` tolja ide; az `is_active`
         # predikátum mondja meg, szabad-e a JELEN nézetben átrendezni (csak a
@@ -684,6 +688,15 @@ class PhotoGridModel(QAbstractListModel):
         self.beginResetModel()
         self._photos = photos
         self.endResetModel()
+        self._revision += 1
+        self.revisionChanged.emit()
+
+    def set_linear_navigation(self, enabled: bool) -> None:
+        """A fájlargumentumokkal megnyitott néző teljes sorának léptetése."""
+        enabled = bool(enabled)
+        if enabled == self._linear_navigation:
+            return
+        self._linear_navigation = enabled
         self._revision += 1
         self.revisionChanged.emit()
 
@@ -987,6 +1000,8 @@ class PhotoGridModel(QAbstractListModel):
         enabled-jének is az alapját."""
         if not 0 <= row < len(self._photos) or delta == 0:
             return row
+        if self._linear_navigation:
+            return max(0, min(len(self._photos) - 1, row + delta))
         folder = self._photos[row].folder_path
         step = 1 if delta > 0 else -1
         result = row
@@ -1023,6 +1038,8 @@ class PhotoGridModel(QAbstractListModel):
         """
         if not 0 <= row < len(self._photos):
             return [0, 0]
+        if self._linear_navigation:
+            return [0, len(self._photos)]
         folder = self._photos[row].folder_path
         kezdet = row
         while kezdet > 0 and self._photos[kezdet - 1].folder_path == folder:

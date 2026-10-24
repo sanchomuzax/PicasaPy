@@ -834,6 +834,8 @@ def _window_icon_path(platform: str = sys.platform) -> Path:
 def _install_desktop_entry() -> None:
     """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
     tálca az app_id ↔ .desktop párosításból kapja az ikont. Idempotens."""
+    from .quick_view import SUPPORTED_IMAGE_MIME_TYPES
+
     base = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share")))
     icon_target = base / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"
     icon_source = _APP_DIR / "assets" / "icon.png"
@@ -848,6 +850,7 @@ def _install_desktop_entry() -> None:
         "Icon=picasapy\n"
         "Terminal=false\n"
         "Categories=Graphics;Photography;Viewer;\n"
+        f"MimeType={';'.join(SUPPORTED_IMAGE_MIME_TYPES)};\n"
         "StartupWMClass=picasapy\n"
     )
     desktop_target = base / "applications" / "picasapy.desktop"
@@ -1219,6 +1222,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     startup_smoke, argv = argv_indulasellenorzes(argv)
     progress_log.mark("Indulási argumentumok beolvasva")
     timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
+    # #5762: a fájlok közvetlenül a viewer listájába kerülnek; a könyvtárak
+    # maradnak a könyvtárnézet gyökerei. A fájlnevek Qt-argumentumként sem
+    # szükségesek, az alkalmazás a saját listájából olvassa őket.
+    from .quick_view import parse_launch_arguments
+
+    launch_arguments = parse_launch_arguments(argv)
+    library_argv = [argv[0] if argv else "picasapy", *launch_arguments.directory_roots]
 
     for message in runtime_version_messages(PySide6.__version__, qVersion() or "ismeretlen"):
         write_console(message, error=True)
@@ -1314,7 +1324,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     progress_log.mark("Figyelt könyvtárak beolvasása elkezdődött")
     with timeline.phase("figyelt gyökerek beolvasása (WatchedFolders.txt)"):
-        roots = _resolve_roots(argv)
+        roots = _resolve_roots(library_argv)
     progress_log.mark("Figyelt könyvtárak beolvasva")
     data_dir = storage_bootstrap.data_dir
     cache_dir = storage_bootstrap.cache_dir
@@ -1383,6 +1393,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         watched_file=_watched_folders_path(),
         exclude_file=_exclude_folders_path(),
         face_excluded=read_exclude_folders(_exclude_folders_path()),
+    )
+    quick_view_started = bool(launch_arguments.photo_paths) and controller.begin_quick_view(
+        list(launch_arguments.photo_paths)
     )
     controller.syncFinished.connect(
         lambda: progress_log.mark("Az induláskori könyvtárszinkron befejeződött")
@@ -1814,6 +1827,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     def _start_and_finish() -> None:
         startup_state["first_frame_at"] = time.monotonic()
+        if quick_view_started:
+            # Ne kérdezzük le a mentett könyvtárat és ne indítsuk el a
+            # könyvtárszkennelést: a gyorsnézegető induló képsora csak a
+            # parancssorban kapott fájlokat tartalmazza.
+            startup_status.finish()
+            timeline.mark("közvetlen gyorsnézegető-indítás")
+            progress_log.mark("A gyorsnézegető megnyílt a megadott képekkel")
+            return
         # #4687: a három induláskori karbantartás külön háttérszálon, de
         # egymás után fut. Így a lassú hálózati stat nem fogja a Qt főszálat,
         # a takarítás mégis a könyvtárszinkron ELŐTT commitol.
