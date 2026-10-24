@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.206] - 2026-10-24
+
+- A felhasználói gyűjtemények jelszóval zárolhatók, és a jelszó gyűjteményenként tárolódik (#5704).
+- A webexport alapmappájának régi tesztje a nem windowsos utat méri, így Windowson sem bukik (#5714).
+- Teszt rögzíti, hogy a név szerinti rendezés a Picasa 3.9 bájtsorrendjét, ASCII-kisbetűsítését és 32 bites számsorrendjét követi (#5718).
+- A Fotónéző beállítóablakának teljes képernyős indítás jelölője az eredeti Picasa hivatalos feliratát és forráskulcsát kapja; a beállítás újranyitás után is megmarad (#5719).
+
 ## [0.9.205] - 2026-10-24
 
 - A HTML-export párbeszéd megjegyzi a célmappát és a sablont; Windowson a Személyes mappából indul (#5714).
