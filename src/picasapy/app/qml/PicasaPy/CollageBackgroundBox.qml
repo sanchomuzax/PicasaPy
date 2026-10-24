@@ -57,21 +57,21 @@ Item {
         box.paletteOpen = false
         if (box.controller)
             box.controller.setCollageBackgroundColor(hex)
+        if (typeof editController !== "undefined" && editController
+                && typeof editController.rememberPickerColor === "function")
+            editController.rememberPickerColor(String(hex))
     }
 
-    //: A felugró paletta színei — öt sor: szürkék, meleg, zöld, kék, lila/barna.
-    readonly property var swatchColors: [
-        "#000000", "#333333", "#555555", "#777777",
-        "#999999", "#bbbbbb", "#dddddd", "#ffffff",
-        "#8b1a1a", "#c0392b", "#e74c3c", "#e67e22",
-        "#f39c12", "#f1c40f", "#f7dc6f", "#fdebd0",
-        "#145a32", "#1e8449", "#27ae60", "#2ecc71",
-        "#7dcea0", "#a9dfbf", "#d5f5e3", "#eafaf1",
-        "#154360", "#1f618d", "#2980b9", "#3498db",
-        "#7fb3d5", "#aed6f1", "#d6eaf8", "#ebf5fb",
-        "#4a235a", "#6c3483", "#8e44ad", "#a569bd",
-        "#7b4f2b", "#a9744f", "#c8a27a", "#e6d3b3"
-    ]
+    function togglePalette() {
+        box.paletteOpen = !box.paletteOpen
+    }
+
+    onPaletteOpenChanged: {
+        if (box.paletteOpen)
+            collageColorPicker.open()
+        else
+            collageColorPicker.close()
+    }
 
     // --- 6. cím -------------------------------------------------------------
 
@@ -192,6 +192,7 @@ Item {
     }
 
     Rectangle {
+        id: collageColorCircle
         objectName: "collageColorCircle"
         visible: box.mode === "solid"
         x: 140
@@ -205,7 +206,7 @@ Item {
         border.color: Theme.chromeBorder
         MouseArea {
             anchors.fill: parent
-            onClicked: box.paletteOpen = !box.paletteOpen
+            onClicked: box.togglePalette()
         }
     }
 
@@ -224,7 +225,7 @@ Item {
         fillMode: Image.PreserveAspectFit
         MouseArea {
             anchors.fill: parent
-            onClicked: box.paletteOpen = !box.paletteOpen
+            onClicked: box.togglePalette()
         }
     }
 
@@ -279,51 +280,19 @@ Item {
         onClicked: if (box.controller) box.controller.setBackgroundFromSelection()
     }
 
-    // --- 10. a felugró paletta ---------------------------------------------
+    // --- 10. az eredeti 1-es palettamódú színválasztó -----------------------
 
-    Rectangle {
+    ColorSpectrumPicker {
+        id: collageColorPicker
         objectName: "collagePickerPanel"
-        visible: box.paletteOpen && box.mode === "solid"
-        x: 48
-        y: 9
-        width: 218
-        height: 178
-        color: Theme.contentPanel
-        border.width: 1
-        border.color: Theme.chromeBorder
-        // a lap többi vezérlője fölé
-        z: 200
-
-        Grid {
-            id: swatchGrid
-            x: 5
-            y: 5
-            columns: 8
-            spacing: 2
-
-            Repeater {
-                model: box.swatchColors
-                delegate: Rectangle {
-                    id: swatch
-                    required property string modelData
-                    required property int index
-                    objectName: "collagePickerSwatch" + index
-                    width: 24
-                    height: 24
-                    color: swatch.modelData
-                    border.width:
-                        swatch.modelData.toLowerCase()
-                        === box.currentColor.toString().toLowerCase() ? 2 : 1
-                    border.color:
-                        swatch.modelData.toLowerCase()
-                        === box.currentColor.toString().toLowerCase()
-                            ? Theme.thumbSelection : Theme.chromeBorder
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: box.pickColor(swatch.modelData)
-                    }
-                }
-            }
-        }
+        paletteMode: 1
+        anchorItem: collageColorCircle
+        currentColor: box.currentColor.toString()
+        recentColors: typeof editController !== "undefined" && editController
+                      && editController.recentPickerColors !== undefined
+            ? editController.recentPickerColors : ["", "", "", "", ""]
+        onColorPicked: (hex) => box.pickColor(hex)
+        onOpened: box.paletteOpen = true
+        onClosed: box.paletteOpen = false
     }
 }
