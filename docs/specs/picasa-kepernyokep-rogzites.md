@@ -177,7 +177,7 @@ platformonkénti jelentése nincs feloldva. Ez a fájlt adja át a shellnek;
 nem bizonyítja, hogy a buborék a mappára navigál.
 
 <<<<<<< HEAD
-**Nyitott — azonnali indexelés:** a `0x0057d080` a buborék előtt meghív egy
+**Nyitott - azonnali indexelés:** a `0x0057d080` a buborék előtt meghív egy
 útvonal-kereső útvonalat (`0x004f92c0` → `0x004e7d10`); az utóbbi bejárja a
 gyűjtemény adatait, és egy ágán a `0x004e31a0` függvényt is meghívja. A
 `2026-10-24-kor-20261024.txt` Ghidra-kimenet szerint a `0x004e31a0` a
@@ -194,7 +194,7 @@ objektumot vagy a callbacket. **NINCS MEG.** A következő lépés a
 a `+0x344` mező inicializálójának és a `+0x10` callbacknek a visszafejtése,
 majd a callback indexmódosító hatásának ellenőrzése.
 
-**Nyitott — buborékkattintás:** a `0x0057d080` a `clickview` műveletet is
+**Nyitott - buborékkattintás:** a `0x0057d080` a `clickview` műveletet is
 előkészíti, de a kattintási viselkedést a `0x0057d1e4`-nél hívott, az objektum
 vtable-jéből vett `+0x68` metódus valósítja meg. A meglévő dekompilálás
 azonosítja a hívást és a `clickview` kulcsot, de nem a konkrét címzettet vagy
