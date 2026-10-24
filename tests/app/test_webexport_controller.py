@@ -182,7 +182,10 @@ class TestAzAlapertelmezettCelmappa:
     def test_a_rendszer_kepmappajabol_szarmazik(self, monkeypatch, tmp_path, controller):
         """A képmappát a RENDSZER adja (#1088) — nem `home()/Pictures`."""
         from picasapy.app import collage_output
+        from picasapy.app import webexport_controller as modul
 
+        # a nem windowsos út; a windowsos alapmappát (#5714) külön teszt méri
+        monkeypatch.setattr(modul, "_platform", lambda: "linux")
         monkeypatch.setattr(collage_output, "pictures_dir", lambda: tmp_path / "Képek")
         assert controller.defaultWebExportTarget() == str(
             tmp_path / "Képek" / "Picasa HTML exportok"
