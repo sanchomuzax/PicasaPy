@@ -127,6 +127,26 @@ def test_hungarian_catalog_marks_inherited_picasa_text_with_its_origin():
     )
 
 
+def test_viewer_fullscreen_startup_uses_original_picasa_label_and_key():
+    from picasapy.app.i18n.dictionary import message_origin
+
+    root = ET.parse(_I18N / "picasapy_hu.ts").getroot()
+    message = next(
+        message
+        for message in root.iter("message")
+        if message.findtext("source")
+        == "Fullscreen startup (requires restart of Photo Viewer to take effect)"
+    )
+    assert message.findtext("translation") == (
+        "Teljes képernyős indítás "
+        "(a Fotómegjelenítő újraindítása után lép érvénybe)"
+    )
+    assert message_origin(message) == "picasa"
+    assert "picasapy-origin-key: SETUPTEXT:setup/ui_option3" in (
+        message.findtext("extracomment") or ""
+    )
+
+
 def test_translated_picasa_row_keeps_its_origin_in_the_target_catalog():
     from picasapy.app.i18n.dictionary import message_origin
 
