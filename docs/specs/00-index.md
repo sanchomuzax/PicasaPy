@@ -508,9 +508,20 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    A `ytToolTip` saját csomópont, alapfontja binárisan `Arial` (`0x00c80a64`).
    Jegy: **#901**.
 
-### [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) — nincs nyitott kérdés
+### [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) - 3 nyitott kérdés: menü-visszahívás, `0xa03f` címke, üres album tárolója (#5808, 6.6-6.7)
 
-⭐ **2026-08-24** — a lap egyetlen nyitott kérdése (**a `folderviewpopup` ▾
+⭐ **2026-10-25 (#5808):** az eszköztár és a `Fájl → Új album…` / Ctrl+N
+azonos `thumbui/newalbum` műveletkulcsot használ. Az eszköztár
+`0x005eb810` → `0x006dc030` útja párbeszédet nyit; a `0x9d67` File-parancs
+`0x005cc5bb`-n át a `0x009cd8a0`-nak adja át a kulcsot, de a virtuális
+callback utáni cél **nyitott**. A job-250 felvételen jóváhagyás után 0 tagú
+album látszik, a `.picasa.ini` változatlan. A `0x004ada80` → `0x00443c00` →
+`0x00445b80` → `0x0045c0a0` `P2category` ág **nem igazolja önmagában a
+tartós fájlírót**. Nyitva: melyik adatbázis-/fájlíró teszi tartóssá az üres
+albumot; mi a `0xa03f` parancság UI-címkéje; és milyen virtuális callback
+köti össze a File-menü műveletét a `0x005d9cc0` név-diszpécserrel.
+
+⭐ **2026-08-24** - az akkori egyetlen nyitott kérdés (**a `folderviewpopup` ▾
 menü feliratai**) **LEZÁRVA**, és **képernyőkép nélkül**: a menüépítő
 (`0x00559150`) 20 bájtos rekordtömbjének gépi végigjárása **160
 parancsazonosítót** oldott fel egyértelműen. A ▾ menü a
