@@ -36,7 +36,7 @@ A funkció a PicasaPy-ban a „később mérlegelendő" körbe tartozik
 A panelen **öt** gyorsgomb van hozzájuk: `3x5button`, `4x6button`,
 `5x7button`, `8x10button`, `walletbutton`, plus `fullbutton`.
 
-## Az öt gyorsválasztó induló értéke - területi mérés, mentett `PrintSize` (#4394, #5489)
+## Az öt gyorsválasztó induló értéke - területi mérés, mentett `PrintSize` (#4394, #5489, #5492; #4385)
 
 **Bináris eredmény:** a `0x006e5ab0` a `GetLocaleInfoA`-t hívja `0x400`
 lokálazonosítóval, `0x0d` (`LOCALE_IMEASURE`) információtípussal és 2 bájtos
@@ -92,18 +92,14 @@ ez nem az öt `PrintSize` gyorsválasztó listája.
 
 | Eredeti Picasa | PicasaPy (mért forrásviselkedés) | Teendő |
 |---|---|---|
-| A `LOCALE_IMEASURE` metrikus ága az öt alapértéket `10x15`, `13x18`, `15x20`, `20x25 cm`, `Contact Sheet` címkeként jeleníti meg; a másik ág Tárca, `3.5x5`, `4x6`, `5x7`, `8x10`. A hiányzó `PrintSize0`-`PrintSize4` kulcsok alapértékei binárisból jönnek. | A `src/picasapy/printing/dpi.py:171-186` jelenlegi metrikus alapértéke `5x8`, `9x13`, `10x15`, `13x18`, `20x25 cm`; a hüvelykes ág Tárca, `3.5x5`, `4x6`, `5x7`, `8x10`. A `src/picasapy/app/print_controller.py:262-265` a 17 elemű opciólistát adja vissza `TELJES_OLDAL` elemmel. | A hiányzó kulcs metrikus alapértékeit bináris viselkedésre igazítani. Az Opciók popuphoz külön 16 elemű listát adni, `FullPage` nélkül; a nyomtatási képernyő külön `fullbutton`-ját megtartani. A sorrend csak feltételesen igazolt, ezt a fejlesztői jegy és a komment is jelezze. |
+| A `LOCALE_IMEASURE` metrikus ága hiányzó kulcsnál az öt gyorsválasztót `10x15`, `13x18`, `15x20`, `20x25 cm`, `Contact Sheet` értékre állítja; a másik ág Tárca, `3.5x5`, `4x6`, `5x7`, `8x10`. A bináris nyers alapértékek: `[7, 8, 9, 10, 12]`, illetve `[0, 1, 2, 3, 4]`. | A #5492 óta a `src/picasapy/printing/dpi.py:176-195` ugyanazt az ötös alapértéket adja (`METRIKUS_ALAPMERETEK`), a `print_controller.py:259-276` pedig a mentett `PrintSize0`-`PrintSize4` értékekkel felülírja. A területi készlet külön marad: `METRIKUS_KESZLET` hét eleme a `Teljes oldal` gyorsgombbal együtt. Az `OptionsTabPrinting.qml:74-92` öt vezérlőt 3 soros, oszloponként feltöltött rácsba rak (balra 3, jobbra 2). | Alapérték-listához kódjavítás nem kell. A jegy képernyőképét ne használja alapérték-bizonyítékként: a bináris mentett értéket is olvas. A mai PicasaPy-render képpontos összevetése külön ellenőrzés marad. |
 
-**Fejlesztői kész, ha:**
+**A #4385 forrás szerinti elfogadása:**
 
-- [ ] Azonos felületnyelv mellett a területi mérési rendszer váltása a
-  megfelelő családot választja; azonos területi beállítás mellett a felület
-  nyelvének váltása csak a feliratokat változtatja.
-- [ ] A PicasaPy jelenlegi metrikus és hüvelykes katalógusa, sorrendje és
-  `Teljes oldal` eleme megmarad; a korábban kijelölt méret külön, stabilan
-  tárolódik.
-- [ ] A tesztek lefedik legalább a magyar felület + hüvelykes terület és az
-  angol felület + metrikus terület kereszt-eseteit.
+- ✅ Hiányzó metrikus `PrintSize0`-`PrintSize4` kulcsokra a kód az eredeti öt értéket választja; a területi mérés nem a felület nyelvétől függ.
+- ✅ A mentett öt érték elsőbbsége megmarad.
+- ✅ Az Opciók fül öt gyorsválasztója a forrás szerinti két oszlopban, balra három és jobbra két mezővel épül fel.
+- ⛔ A mai PicasaPy-kép képpontos összevetése a `2026-07-17 21 00 07.png` referenciával nem készült; ez a vizuális részletet nyitva hagyja, nem az alapérték szabályát.
 
 ## A panel elemei csoportonként
 

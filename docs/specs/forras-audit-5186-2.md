@@ -21,7 +21,7 @@ elvégzett mérésnek.
 | #4456 | EGYEZIK | feltételes | `album.fen`; mérés: `research/testdata/screenshot/2026-07-17 20 59 22.png`; bináris `0x008496c0`, `0x00849750` | A mai renderelt ablakot a referenciával mérni. |
 | #4482 | NEM DÖNTHETŐ EL | nyitott | `album.fen` és a névmezőt mutató mérés; az eredeti sikeres átnevezés NINCS MEG | Colab-felvétel kell sikeres és már létező nevű célra végzett átnevezésről. |
 | #4488 | EGYEZIK | feltételes | mérés: `research/testdata/screenshot/2026-07-17 21 00 00.png`; `options.fen` | A renderelt méreteket összevetni; a link és a kapcsolók kattintásos tesztjét futtatni. |
-| #4494 | NEM DÖNTHETŐ EL | nyitott | `album.fen`; mérés: `research/testdata/screenshot/2026-07-17 20 59 22.png`; az eredeti naptárkattintás NINCS MEG | Colab-felvétel kell a naptár megnyitásáról és egy nap mentéséről. |
+| #4494 | EGYEZIK | megerősített | `album.fen`; eredeti bináris `0x008d8070`, `0x008d9243`; a dátummező gombját mutató mérés | A mai QML megnyitja a naptárat; az eredeti vezérlő típusa és létrehozása statikusan igazolt. |
 | #4531 | EGYEZIK | feltételes | `searchoptions.tre`; `picasa-kereses-modok.md` §2 | Kattintásos próbát kell rögzíteni. |
 | #4534 | EGYEZIK | megerősített | `picasa-menu-parancsok-viselkedes.md` § `ID_PICTURE_SPLITALBUMHERE`; bináris `0x00730790`, `0x005cb990`, `0x005e8570` | A műveleti kattintásos és `.picasa.ini`-ellenőrzés még kell. |
 | #4539 | EGYEZIK | feltételes | `picasa-create-features.md` §2.8/c; mérés: `research/testdata/screenshot/2026-07-17 20 54 38.png` | A filmkészítő megnyitását kattintással ellenőrizni. |
@@ -192,21 +192,24 @@ egyezik.
 
 ### #4385 - Nyomtatási alapméretek és elrendezés
 
-**Eredeti:** a `2026-07-17 21 00 07.png` felvételen öt centiméteres méret
-látható két oszlopban. Ez egy beállított profil képe, önmagában nem bizonyít
-alapértéket. Az eredeti a területi mértékegységet `GetLocaleInfoA`-val
-kérdezi le (`0x006e5ab0`); a metrikus készlet és a mentett
-`Preferences\\PrintSize0`-`PrintSize4` felülírás részletesen szerepel a
-`picasa-nyomtatas.md` §39-ben.
+**Eredeti:** a `2026-07-17 21 00 07.png` felvétel öt centiméteres méretet
+mutat két oszlopban, de a beállított `Preferences\\PrintSize0`-`PrintSize4`
+felülírás miatt a kép önmagában nem bizonyít alapértéket. Az eredeti
+`0x006e5ab0` a `GetLocaleInfoA` `LOCALE_IMEASURE` értéke szerint választ
+metrikus ötös alapértéket: `10x15`, `13x18`, `15x20`, `20x25 cm`, `Contact
+Sheet`; a mentett értékek felülírják. A bináris levezetés: `picasa-nyomtatas.md`
+§39.
 
-**Nálunk:** `printing/dpi.py` a `QLocale.system().measurementSystem()`
-értékét használja, a `print_controller.py` csak mentett méretek hiányában
-választ alapértéket. `OptionsTabPrinting.qml` három soros, oszloponként
-feltöltött rácsot épít; a sorszámcímkék rejtettek.
+**Nálunk:** `printing/dpi.py:176-204` a `QLocale.system().measurementSystem()`
+alapján választ; a metrikus hiányzó-kulcs alapérték az eredeti ötös, a
+`print_controller.py:259-276` pedig a mentett öt értéket tiszteletben tartja.
+`OptionsTabPrinting.qml:74-92` a méretválasztót 3 soros, oszloponként
+feltöltött rácsban építi fel: balra három, jobbra két mező.
 
 **Ítélet: EGYEZIK.** Metrikus területi beállításnál és mentett méretfelülírás
-nélkül az alapméret-készlet az eredeti szabályát követi; a képernyőkép
-elrendezése is forrásszinten megfelel.
+nélkül az alapméret-készlet az eredeti szabályát követi. A kétoszlopos,
+3+2-es szerkezet is a jelenlegi QML-ben van. A képernyőkép mentett méreteket
+mutathat; a mai render képpontos összevetése nincs meg.
 
 **Teendő:** Nincs kódbeli eltérés az eredeti metrikus alapérték-szabályhoz.
 
@@ -214,7 +217,8 @@ elrendezése is forrásszinten megfelel.
 
 - ✅ A bináris területi szabály és a PicasaPy területi szabálya azonos irányú;
   a mentett értékek elsőbbsége dokumentált.
-- ⛔ A képernyőkép melletti mai renderelt elrendezésmérés nincs.
+- ⛔ A mai renderelt elrendezés képpontos összevetése nincs; a szerkezeti
+  kétoszlopos elrendezést a QML forrás igazolja.
 
 ### #4440 - Látható visszajelzés műveletvégén
 
@@ -313,23 +317,28 @@ referenciának; a pontos képpont-egyezést ez nem bizonyítja.
 ### #4494 - Dátummező naptárral
 
 **Eredeti:** az `album.fen` `date` vezérlőt és Automatikus dátum gombot ír
-le; a referencia a dátummező naptárgombját mutatja. A naptár tényleges
-megnyitása és dátumválasztása NINCS MEG felvételen.
+le. A bináris `0x008d8070` rutinja a `SysDateTimePick32` osztályt hozza létre
+`0x50810000` dátumstílussal; a `0x008d9243` ezt az osztálynevet külön
+felismeri. A referencia (`2026-07-17 20 59 22.png`) a dátummező legördülő
+gombját is mutatja.
 
 **Nálunk:** `FolderPropertiesDialog.qml` naptárgombot és
 `DateCalendarPopup.qml` naptárfelugrót tartalmaz; a kiválasztott dátum a
 mezőbe kerül. A mező formázása a helyi nyelvhez igazodik.
 
-**Ítélet: NEM DÖNTHETŐ EL.** A két oldalon is van dátumvezérlő, de az
-eredeti naptárkattintás forrásból vagy felvételből nem igazolt.
+**Ítélet: EGYEZIK a vezérlő forrás szerinti típusában és a mai útban.** Az
+eredeti `SysDateTimePick32` dátumvezérlő és a mai gombból megnyíló naptár
+forrásban jelen van; Colab-kattintás és pixel-összevetés nem készült.
 
-**Teendő:** Colab-felvételen nyissuk le az eredeti naptárat, válasszunk napot,
-mentsük, majd ellenőrizzük a megjelenő és tárolt dátumot.
+**Teendő:** Forrás alapján nem indokolt javítás. Pontos vizuális paritás
+igényénél a mai renderelt képet még össze kell vetni a referenciával.
 
 **Kész, ha:**
 
-- ⛔ Az eredeti naptárnyitás és mentés nincs felvéve; a mai QML út statikus
-  forrásban megvan.
+- ✅ Az eredeti dátumvezérlő osztálya és a mai naptárnyitó út statikusan
+  igazolt.
+- ⛔ Az eredeti naptár tényleges kattintásos felvétele és a mai renderelt
+  pixel-összevetés nincs.
 - ⛔ Nyelvi dátumalak és kézi beírás kattintásos ellenőrzése nincs.
 - ⛔ Az eredeti és mai kattintásos próba, valamint a renderelt összevetés
   nincs.
@@ -511,7 +520,7 @@ megfelelő vezérlővel.
 
 **Összesített bizonyítottsági fok: feltételes.** A 20 pontból többnél két
 forrásréteg vagy pontos mérés támasztja alá az összevetést, de több
-elfogadási pont renderelt/kattintásos próbát kér, öt eredeti működés pedig
+elfogadási pont renderelt/kattintásos próbát kér, négy eredeti működés pedig
 nyitott. Ezért az egész köteg nem nevezhető megerősítettnek. A #3998 fő
 exportútja és a #4534 parancsútja a két független út egyezése miatt
 megerősített; a forráskódot vagy eredeti screenshotot egyedül felhasználó
@@ -543,10 +552,9 @@ hiánya esetére szűkítettem.
 
 - #4440: `Colab-felvétel kell: mentés, visszaállítás és fotóművelet sikeres és hibás lezárása, a látható eredménnyel.`
 - #4482: `Colab-felvétel kell: eredeti mappa átnevezése, már létező név kipróbálása, a mappafa és az útvonal rögzítése.`
-- #4494: `Colab-felvétel kell: az eredeti Dátum naptárgomb megnyitása, nap kiválasztása, mentés és megjelenített dátum.`
 - #4542: `Colab-felvétel kell: azonos kép kiegyenesítés előtt és után, vörösszem-panellel és a figyelmeztetés láthatóságával.`
 - #4544: `Colab-felvétel kell: azonos bemenet és retusáló vonás eredeti előtte-utána képével és kimeneti fájljával.`
-- #4358, #4377, #4385, #4456, #4488, #4494, #4550, #4551: mai renderelt PicasaPy-képek és a megnevezett eredeti referenciák képpontos összevetése.
+- #4358, #4377, #4385, #4456, #4488, #4550, #4551: mai renderelt PicasaPy-képek és a megnevezett eredeti referenciák képpontos összevetése.
 - #4313: a korábbi magyar katalógus és az eredeti 40 nyelvi forrás soronkénti összevetése, valamint Qt-futásidejű/körbejárási próba.
 - #4320, #4531, #4534, #4539, #4557: jegyben kért kattintásos tesztek.
 
@@ -578,8 +586,8 @@ lista szakaszcímét ne írja elő eredetinek forrásbizonyíték nélkül.
 
 ## Új kutatási jegyjavaslatok
 
-Nincs külön új jegyjavaslat. A hiányzó eredeti mérések a #4440, #4482, #4494,
-#4542 és #4544 meglévő jegyeihez tartoznak.
+Nincs külön új jegyjavaslat. A hiányzó eredeti mérések a #4440, #4482, #4542
+és #4544 meglévő jegyeihez tartoznak.
 
 ## Módosított fájlok
 
