@@ -622,12 +622,14 @@ def _elhagyott_hely(hely: Path) -> bool:
     el = _el_e_a_futas(hely)
     if el is False:
         return True
-    if el is True:
-        return False
     try:
-        return (time.time() - hely.stat().st_mtime) > _MARADEK_KOR_S
+        regi = (time.time() - hely.stat().st_mtime) > _MARADEK_KOR_S
     except OSError:
         return True
+    # Élő PID mellett is a kor dönt (#5779): más PID-névtérben (például a
+    # Codex homokozójában) rögzített PID a gazdán egy idegen, mindig élő
+    # folyamat lehet, és a hely örökre foglalt maradna.
+    return regi
 
 
 def _foglalj_helyet(korlat: int) -> Path | None:

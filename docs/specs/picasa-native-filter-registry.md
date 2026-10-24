@@ -661,7 +661,13 @@ Az `editpanel/colorwheel%d` effektvezérlőt nem szabad összekeverni a
 panelosztály neve, nem a teljes kattintási út. A Filtered B&W panelépítője
 (`0x0050cf90`) hivatkozik a `CDesaturateFilter::pickcolor` és a `Pick Color`
 sztringre, a leírófeldolgozó (`0x008ff550`) pedig a `<colorwheel>` mezőt
-értelmezi. Így a színkerék szerkesztőmező és a felugró választó külön réteg.
+értelmezi. A 2026-10-24-i Ghidra-kimenet szerint a `0x0050cf90` maga a
+panelvezérlőket állítja elő, kezeli a `colorwheel_container`, `colorwheel0`
+és `slidercircle0` elemeket, és a paraméterből kapott színkomponensekből
+frissíti a színkerék/slider állapotát; nincs benne kattintási koordinátáról
+vagy képpontpufferből történő olvasás. Így a színkerék szerkesztőmező és a
+felugró választó külön réteg, a `pickcolor` mező pipettakezelőhöz kötése
+pedig külön, még nyitott kérdés.
 
 A felugró panel osztályát a `ColorPickerPanel::vftable` azonosítja
 (`0x00ca2564`); annak paletta-/MRU-építője `0x00654290`. Ez öt MRU-rekeszhez
