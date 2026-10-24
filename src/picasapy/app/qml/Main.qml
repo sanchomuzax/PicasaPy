@@ -1851,26 +1851,65 @@ ApplicationWindow {
                              : window.valtsFiokLapot("properties")
     }
 
-    // -- Időrend bemutató (#5377, Ctrl+5) ------------------------------------
-    // Mappakártyás, teljes képernyős bemutató a dátumcsúszkával.
+    // -- Időrend bemutató (#5770, Ctrl+5) ------------------------------------
+    // Mappa- és albumkártyás, teljes képernyős bemutató.
+    function timelineCollectionForId(collectionId) {
+        if (!timelineController || !timelineController.collections)
+            return null
+        var keresett = String(collectionId || "")
+        for (var i = 0; i < timelineController.collections.length; ++i) {
+            var collection = timelineController.collections[i]
+            if (collection.collectionId === keresett
+                    || collection.folderPath === keresett)
+                return collection
+        }
+        return null
+    }
+
+    function selectTimelineCollection(collection) {
+        if (!controller || !collection)
+            return -1
+        toolbar.clearSearch()
+        window.clearSelection()
+        window.unnamedFacesOpen = false
+        if (collection.kind === "album")
+            controller.showAlbum(collection.albumToken)
+        else
+            controller.selectFolder(collection.folderPath)
+        var row = controller.photos.rowOfPath(collection.firstPhotoPath)
+        window.selectedIndex = row
+        window.selectedIndexes = row >= 0 ? [row] : []
+        return row
+    }
+
+    function closeTimeline() {
+        var collection = timelineView.collectionAt(timelineView.currentIndex)
+        if (collection)
+            window.selectTimelineCollection(collection)
+        window.timelineOpen = false
+    }
+
     function toggleTimeline() {
         if (window.timelineOpen) {
-            window.timelineOpen = false
+            window.closeTimeline()
             return
         }
         timelineController.reload()
         window.timelineOpen = true
     }
 
-    function startTimelineSlideshow(folderPath) {
-        if (!controller || !folderPath)
+    function startTimelineSlideshow(collectionId) {
+        if (!controller || !collectionId)
             return
-        var collectionModel = timelineController
-            ? timelineController.slideshowModel(folderPath) : null
+        var collection = window.timelineCollectionForId(collectionId)
+        if (!collection)
+            return
+        var collectionModel = timelineController.slideshowModel(
+            collection.collectionId)
         if (!collectionModel || collectionModel.rowCount() <= 0)
             return
+        window.selectTimelineCollection(collection)
         window.timelineOpen = false
-        controller.selectFolder(folderPath)
         window.timelineSlideshowModel = collectionModel
         window.timelineSlideshowActive = true
         window.visibilityBeforeSlideshow = window.visibility
@@ -3300,16 +3339,16 @@ ApplicationWindow {
         onDeleteRequested: picasaMenuBar.activateDeleteCommand()
     }
 
-    // #5377: a Picasa Időrend külön teljes képernyős ablak, saját vezérlőkkel.
+    // #5770: a Picasa Időrend külön teljes képernyős ablak, saját vezérlőkkel.
     TimelineView {
         id: timelineView
         objectName: "timelineView"
         transientParent: window
         visible: window.timelineOpen
         collectionsModel: timelineController ? timelineController.collections : []
-        onClosed: window.timelineOpen = false
-        onSlideshowRequested: function(folderPath) {
-            window.startTimelineSlideshow(folderPath)
+        onClosed: window.closeTimeline()
+        onSlideshowRequested: function(collectionId) {
+            window.startTimelineSlideshow(collectionId)
         }
     }
 
