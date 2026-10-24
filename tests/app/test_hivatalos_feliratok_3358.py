@@ -52,6 +52,11 @@ HIVATALOS = {
     "Add this tag to entire selection": (
         "A címke hozzáadása a teljes kijelölt részhez",
         "Tags::ID_APPLYTHISTAGTOSELECTION"),
+    "Search for items with this tag": (
+        "Az ilyen címkével ellátott elemek keresése",
+        "Tags::ID_FINDALLPICTURESWITHTHISTAG"),
+    "Remove this tag": (
+        "A címke eltávolítása", "Tags::ID_REMOVETHISTAG"),
     # #2921, második kör: a mappa-fejléc szinkron-felirata és az
     # adatbázis-áthelyező mappaválasztó címe
     # #4596: a fájlválasztó ABLAKCÍME (a forrás-tallózó menüje: segédszöveg)
@@ -166,7 +171,11 @@ ELOFORDULASOK = {
     "PicasaPy/HiddenPasswordDialog.qml": ["The passwords did not match."],
     "PicasaPy/SaveDialogs.qml": ["Do not ask again"],
     "PicasaPy/ConfirmDialog.qml": ["Do not ask again"],
-    "PicasaPy/TagContextMenu.qml": ["Add this tag to entire selection"],
+    "PicasaPy/TagContextMenu.qml": [
+        "Remove this tag",
+        "Search for items with this tag",
+        "Add this tag to entire selection",
+    ],
     "PicasaPy/LightboxHeader.qml": ["Sync to Web"],
     "PicasaPy/EditorParamPanel.qml": ["Feather", "Color Preservation"],
     "PicasaPy/EditorTextPanel.qml": [
