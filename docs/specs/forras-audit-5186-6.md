@@ -1,4 +1,4 @@
-# #5186 negyedik kutatói szála — öt tétel (2026-10-24)
+# #5186 negyedik kutatói szála - öt tétel (2026-10-24)
 
 A teljes jegyszöveg a munkakérésből származik. Az eredeti referencia a Picasa
 3.9.141.259. A mai állapotot a munkafa QML/Python forrásából ellenőriztem;
@@ -61,19 +61,19 @@ feljegyzések és a mai QML eltérő mércéjével újraellenőrizve.
 
 ## A jegy „Kész, ha” pontjai
 
-- **#4551 — ✅** A rögzített „Bal felső”, „Fekvő”, „Álló” vezérlők nincsenek a
+- **#4551 - ✅** A rögzített „Bal felső”, „Fekvő”, „Álló” vezérlők nincsenek a
   mai QML-ben; a három eredeti előnézet megmaradt. **Kiegészítés:** a mai
   „Suggested crops” cím és dinamikus stratégiacímkék az eredeti képen nem
   látszanak; a képi paritást célzó következő változtatásból ezeket is el kell
   távolítani.
-- **#4572 — ✅** Az EN 38 szerinti arc kattintása keretet és „Type a name”
+- **#4572 - ✅** Az EN 38 szerinti arc kattintása keretet és „Type a name”
   mezőt ad; a pozitív azonosítójú arcra a mai kód ezt az utat köti.
-- **#4579 — ✅** Mind az öt mező megfelelő sorrendben épül be, amikor a
+- **#4579 - ✅** Mind az öt mező megfelelő sorrendben épül be, amikor a
   hozzá tartozó adat elérhető. A sorok hiánya adat nélküli képnél nem
   ellentmondás; a JPEG-minőség alacsony tartományának eltérése szándékos.
-- **#4846 — ⛔** Az irányok a forrásképpel egyeznek; a forma „egyszerűsített”
+- **#4846 - ⛔** Az irányok a forrásképpel egyeznek; a forma „egyszerűsített”
   állítása csak a mai QML renderképével dönthető el.
-- **#5121 — ✅** A korábban rögzített Colab-esetekben meglévő album mellett a
+- **#5121 - ✅** A korábban rögzített Colab-esetekben meglévő album mellett a
   fejléc, sorvége és `+` nem készít új albumot; az album saját sora abba az
   albumba adja a képeket. A mai QML ugyanígy választ külön új-album és
   meglévőalbum-drop utat.
@@ -102,15 +102,15 @@ tájolás és a rajzeltérések külön vannak rögzítve.
 
 ## Nyitott
 
-- #4846: mai, ténylegesen renderelt ikoncsík — **NINCS MEG**. Döntő mérés: a
+- #4846: mai, ténylegesen renderelt ikoncsík - **NINCS MEG**. Döntő mérés: a
   jelenlegi öt fülről képernyőkép az eredeti képpel azonos méretben.
 - #5121: a Picasa listájában mikor és hová kerül a 4-es típusú sor nem üres
   albumlistánál; a listaelem és a képernyőn elérhető drop-cél összerendelése.
   A korábbi Ghidra-kimenetekben a címekhez hívási/xref-sorok vannak, teljes
   függvénytest nincs; a két kérdés a
   `picasa-konyvtar-eszkoztar-viselkedes.md:653-655` alatt már nyitva áll:
-  - Ghidra-kör kell: 0x00762540 — a `CAlbumList` mely ága és hová teszi be a `+0x30 = 4` sort, ha már van album, és a sor mely területe fogadja a dropot? [blokkoló]
-  - Ghidra-kör kell: 0x00565920 — a konstruktor melyik hívási útja tölti fel a `+0x2c0` albumlistát, és a 4-es sor beszúrása függ-e az albumok számától? [blokkoló]
+  - Ghidra-kör kell: 0x00762540 - a `CAlbumList` mely ága és hová teszi be a `+0x30 = 4` sort, ha már van album, és a sor mely területe fogadja a dropot? [blokkoló]
+  - Ghidra-kör kell: 0x00565920 - a konstruktor melyik hívási útja tölti fel a `+0x2c0` albumlistát, és a 4-es sor beszúrása függ-e az albumok számától? [blokkoló]
 - #5121: a korábbi Colab-felvételek nyers képei helyben nem elérhetők; ha a
   jegy döntéséhez újravizsgálat kell, rögzítsük a listát nulla és egy saját
   albummal, majd húzzunk ugyanazt a képet a `newalbumprompt` sorra, fejlécére,
@@ -119,11 +119,11 @@ tájolás és a rajzeltérések külön vannak rögzítve.
 
 ## Módosított fájlok
 
-- `docs/specs/forras-audit-5186-6.md` — e kör öt tételes kutatási eredménye.
-- `docs/specs/paritas-ellenorzes.md` — a #4551, #4572, #4579, #4846, #5121
+- `docs/specs/forras-audit-5186-6.md` - e kör öt tételes kutatási eredménye.
+- `docs/specs/paritas-ellenorzes.md` - a #4551, #4572, #4579, #4846, #5121
   forrás- és mai-kód állapota.
-- `docs/specs/picasa-metaadat-tulajdonsagok.md` — a #4579 G táblájának öt
+- `docs/specs/picasa-metaadat-tulajdonsagok.md` - a #4579 G táblájának öt
   elavult „nincs” celláját a mai mezőkre és feltételeikre javítottam.
-- `docs/specs/vagas-eszkoz-allapot.md` — a három crop-előnézet bekötését és a
+- `docs/specs/vagas-eszkoz-allapot.md` - a három crop-előnézet bekötését és a
   cím/felirat eltérését rögzítettem.
-- `docs/specs/00-index.md` — a kutatási lap indexbevétele.
+- `docs/specs/00-index.md` - a kutatási lap indexbevétele.
