@@ -459,7 +459,7 @@ picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Optimized</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Optimizado</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
