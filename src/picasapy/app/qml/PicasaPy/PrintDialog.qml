@@ -160,6 +160,11 @@ Window {
     property bool contactSheet: false
     property int contactColumns: 4
 
+    // #5684: az eredeti nyomtatási mód az ablak megnyitásakor a vezérlőtől
+    // töltődik be, váltáskor pedig a 2/0 vagy 1/1 állapotpárt menti. A mód
+    // tényleges hatása a nyomatra külön mérés tárgya.
+    property bool optimizedPrintMode: false
+
     //: #1401: az Útlevélkép nyitotta a nézetet — a nyomtatandó kép a
     //: kivágott, ideiglenes fájl (`printController.setPassportSource`), a
     //: méret `ePassport`. Az élő mérés (picasa-colab-jobs #54) szerint
@@ -435,10 +440,21 @@ Window {
         printWindow.nyisd([0], url, false)
     }
 
+    function valasszNyomtatasiModot(optimized) {
+        if (!printWindow.printCtl) return
+        printWindow.optimizedPrintMode = !!optimized
+        printWindow.printCtl.setPrinterOptimized(!!optimized)
+        // A specifikáció szerint a módváltás a nyomtatási előnézetet is
+        // frissíti; a nyomatra gyakorolt tényleges hatás külön jegy.
+        printWindow.frissitsdAzElonezetet()
+    }
+
     function nyisd(targetRows, utlevelUrl, contactMode) {
         printWindow.valtsdAzUtlevelet(utlevelUrl)
         if (printWindow.printCtl)
             printWindow.printCtl.clearReviewExclusions()
+        printWindow.optimizedPrintMode = printWindow.printCtl
+            ? printWindow.printCtl.printerOptimized() : false
         printWindow.rows = targetRows ? targetRows : []
         printWindow.reviewOpen = false
         printWindow.reviewList = []
@@ -594,6 +610,34 @@ Window {
                   .arg(printWindow.rows.length)
             font.pixelSize: Theme.fontSize
             color: Theme.ink
+        }
+
+        // #5684: az eredeti párbeszéd Normál/Optimalizált módválasztója.
+        // Kizárólag az eredeti nyers állapotpárt menti; a renderelési hatás
+        // nincs bekötve, amíg az eredeti és a PicasaPy kimenet nincs mérve.
+        RowLayout {
+            objectName: "printQualityModeRow"
+            Layout.fillWidth: true
+            spacing: 8
+
+            ButtonGroup { id: printQualityModeGroup }
+
+            RadioButton {
+                objectName: "printModeNormalRadio"
+                Layout.fillWidth: true
+                ButtonGroup.group: printQualityModeGroup
+                text: qsTr("Normal")
+                checked: !printWindow.optimizedPrintMode
+                onClicked: printWindow.valasszNyomtatasiModot(false)
+            }
+            RadioButton {
+                objectName: "printModeOptimizedRadio"
+                Layout.fillWidth: true
+                ButtonGroup.group: printQualityModeGroup
+                text: qsTr("Optimized")
+                checked: printWindow.optimizedPrintMode
+                onClicked: printWindow.valasszNyomtatasiModot(true)
+            }
         }
 
         // #4608: nyomtató nélküli gépen kimondja, mit kell tenni. Az
