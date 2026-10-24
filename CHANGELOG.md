@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.209] - 2026-10-24
+
+- A Címkék panel helyi menüje az eredeti sorrendben kínálja a címke eltávolítását, keresését és kijelöléshez adását. (#5755).
+
 ## [0.9.208] - 2026-10-24
 
 - A hasonlósági keresés a Picasa három képi jellemzője és rangsora alapján rendezi és korlátozza a találatokat (#5744).
