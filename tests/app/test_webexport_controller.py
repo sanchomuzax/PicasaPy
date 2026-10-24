@@ -6,6 +6,8 @@ háttérszálas eredményre."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from picasapy.app.webexport_controller import WebExportController
@@ -195,6 +197,24 @@ class TestAzAlapertelmezettCelmappa:
         controller.defaultWebExportTarget()
         assert not (tmp_path / "Képek").exists()
 
+    def test_windowson_a_personal_mappat_es_az_eredeti_nevet_hasznalja(
+        self, monkeypatch, tmp_path, controller
+    ):
+        from picasapy.app import webexport_controller as modul
+
+        hivasok = []
+        monkeypatch.setattr(modul, "_platform", lambda: "win32")
+        monkeypatch.setattr(
+            modul.QStandardPaths,
+            "writableLocation",
+            lambda hely: hivasok.append(hely) or str(tmp_path / "Személyes"),
+        )
+
+        cel = controller.defaultWebExportTarget()
+
+        assert Path(cel) == tmp_path / "Személyes" / "Picasa HTML Exports"
+        assert hivasok == [modul.QStandardPaths.StandardLocation.DocumentsLocation]
+
 
 class _MemSettings:
     """`value()`/`setValue()` páros a QSettings helyett (#4610)."""
@@ -224,17 +244,69 @@ class TestMeretvalasztoEsMozgokepMod4610:
 
     def test_alapertekek_640_es_elso_kepkocka(self, make_controller):
         controller = make_controller(lambda: [], settings=_MemSettings())
-        assert controller.webExportPrefs() == {"sizeIndex": 3, "movieFull": False}
+        assert controller.webExportPrefs() == {
+            "sizeIndex": 3,
+            "movieFull": False,
+            "targetDir": "",
+            "templateId": "",
+        }
 
     def test_a_mentett_valasztas_visszajon(self, make_controller):
         tarolo = _MemSettings({"webexport/size": 4, "webexport/movieFull": "true"})
         controller = make_controller(lambda: [], settings=tarolo)
-        assert controller.webExportPrefs() == {"sizeIndex": 4, "movieFull": True}
+        assert controller.webExportPrefs() == {
+            "sizeIndex": 4,
+            "movieFull": True,
+            "targetDir": "",
+            "templateId": "",
+        }
 
     def test_hibas_tarolt_ertek_az_alapertekre_esik(self, make_controller):
         tarolo = _MemSettings({"webexport/size": "x", "webexport/movieFull": None})
         controller = make_controller(lambda: [], settings=tarolo)
-        assert controller.webExportPrefs() == {"sizeIndex": 3, "movieFull": False}
+        assert controller.webExportPrefs() == {
+            "sizeIndex": 3,
+            "movieFull": False,
+            "targetDir": "",
+            "templateId": "",
+        }
+
+    def test_a_webexport_utvonalat_es_sablont_is_visszaadja(self, make_controller):
+        tarolo = _MemSettings(
+            {
+                "webexport/targetDir": "/sajat/webexport",
+                "webexport/templateId": "fekete",
+            }
+        )
+        controller = make_controller(lambda: [], settings=tarolo)
+
+        assert controller.webExportPrefs()["targetDir"] == "/sajat/webexport"
+        assert controller.webExportPrefs()["templateId"] == "fekete"
+
+    def test_valodi_qsettingsben_uj_vezerlonel_is_visszajon_a_cel_es_sablon(
+        self, make_controller, library, tmp_path
+    ):
+        from PySide6.QtCore import QSettings
+
+        photo = _record(library, "valodi.jpg")
+        beallitasfajl = tmp_path / "webexport.ini"
+        elso = make_controller(
+            lambda: [photo],
+            settings=QSettings(str(beallitasfajl), QSettings.Format.IniFormat),
+        )
+        cel = tmp_path / "webexport-kimenet"
+        loop = _quit_on(elso.webExportFinished)
+        elso.generateWebExport(str(cel), "feher", "Album", 3, False)
+        loop.exec()
+        assert elso.waitForExport(30.0)
+
+        masodik = make_controller(
+            lambda: [],
+            settings=QSettings(str(beallitasfajl), QSettings.Format.IniFormat),
+        )
+
+        assert Path(masodik.webExportPrefs()["targetDir"]) == cel
+        assert masodik.webExportPrefs()["templateId"] == "feher"
 
     def test_tablan_kivuli_tarolt_index_az_alapra_esik(self, make_controller):
         tarolo = _MemSettings({"webexport/size": 9})
@@ -257,7 +329,13 @@ class TestMeretvalasztoEsMozgokepMod4610:
         assert _kep_merete(target / "image" / "nagy.jpg") == 320
         assert _kep_merete(target / "thumbnail" / "nagy.jpg") == 144
         # a választás megmarad a következő megnyitásig
-        assert tarolo.values == {"webexport/size": 4, "webexport/movieFull": True}
+        mentett_cel = tarolo.values.pop("webexport/targetDir")
+        assert Path(mentett_cel) == target
+        assert tarolo.values == {
+            "webexport/size": 4,
+            "webexport/movieFull": True,
+            "webexport/templateId": "feher",
+        }
 
     def test_hibas_inditas_nem_ment(self, make_controller):
         tarolo = _MemSettings()
