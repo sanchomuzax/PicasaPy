@@ -22,8 +22,12 @@ Egy és több kijelölt képnél is ugyanaz a **Fájlok átnevezése** ablak
 nyílik meg. Írd be az új nevet. Több kép egyszerre is átnevezhető -
 ilyenkor a program sorszámozza őket. A **Befoglalás a fájlnévbe:** alatt
 bekapcsolhatod, hogy a névbe kerüljön bele a **Dátum** és a
-**Képfelbontás** is; alul példát mutat, hogyan fog kinézni a kész név. A
-kiterjesztést nem kell beírnod, a fájl megtartja a sajátját.
+**Képfelbontás** is. Alul a **Példa** sor mutatja a név felépítését,
+az eredeti Picasa rögzített mintájával: például `Nyaralás 08-01-2004
+2-30-45 PM 640x480.jpg`. A dátum, a felbontás és a `.jpg` itt mindig
+ugyanaz a minta, nem a kijelölt kép saját adata; a kész nevekbe viszont
+a képek valódi dátuma és felbontása kerül. A kiterjesztést nem kell
+beírnod, a fájl megtartja a sajátját.
 
 A névmezőben az **Enter** elfogadja az új nevet (ugyanaz, mint az
 **Átnevezés** gomb), a **Mégse** és az **Esc** megszakítja az
