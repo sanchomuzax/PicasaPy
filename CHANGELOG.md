@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.203] - 2026-10-24
+
+- A Nyomtatás párbeszéd méretválasztója az eredeti Picasa méreteit mutatja az eredeti sorrendben; a nem mért CD-borító letiltva marad (#5683).
+
 ## [0.9.202] - 2026-10-24
 
 - A kötegelt átnevezés Example előnézete a Picasa rögzített dátum-, felbontás- és .jpg-mintáját mutatja. (#5702).

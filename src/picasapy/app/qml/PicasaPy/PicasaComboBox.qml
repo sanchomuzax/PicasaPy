@@ -34,6 +34,9 @@ ComboBox {
 
     //: a kiemelt sor a felirat dobozánál ennyivel szélesebb OLDALANKÉNT
     readonly property int highlightOverhang: 4
+    //: Opcionális modell-szerep, amellyel egy hívó letilthat egy tételt.
+    //: A többi legördülőre nincs hatása.
+    property string enabledRole: ""
 
     popup: Popup {
         objectName: "picasaComboPopup"
@@ -91,6 +94,10 @@ ComboBox {
         width: control.popup.width - 4
         height: Math.round(Theme.fontSize * 1.7)
         padding: 0
+        enabled: !control.enabledRole
+                 || !(sor.modelData !== null
+                      && typeof sor.modelData === "object"
+                      && sor.modelData[control.enabledRole] === false)
         highlighted: control.highlightedIndex === index
 
         background: Rectangle {
@@ -120,6 +127,7 @@ ComboBox {
             font.pixelSize: Theme.fontSize - 1
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
+            opacity: sor.enabled ? 1.0 : 0.45
             color: sor.highlighted ? Theme.panelSelectionText : Theme.ink
         }
         //: a felirat doboza a kiemelésnél ennyivel szűkebb oldalanként

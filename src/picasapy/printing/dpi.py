@@ -60,23 +60,31 @@ def nyomtatasi_minoseg_kod(
     return int(dpi >= best_kuszob) + int(dpi >= good_kuszob)
 
 
-#: Egy hüvelyk centiméterben — a metrikus méretek innen származnak, hogy
-#: a forrásban a HIVATALOS centiméteres érték álljon, ne egy kézzel
-#: kiszámolt hüvelyk-tizedes (#1961).
+#: Egy hüvelyk centiméterben — a projekt A4-es Full Page döntéséhez.
 CM_PER_HUVELYK = 2.54
+
+#: Az eredeti `FUN_00776e20` centiméteres ága ezt a double konstansot
+#: szorozza a mérettáblázat értékeivel (`0x00cf3fe0`).
+PICASA_CM_TO_INCH = 0.3937
 
 
 def _cm(szelesseg_cm: float, magassag_cm: float) -> tuple[float, float]:
-    """Centiméteres nyomatméret hüvelykben."""
-    return (szelesseg_cm / CM_PER_HUVELYK, magassag_cm / CM_PER_HUVELYK)
+    """A Picasa centiméteres méretének hüvelykértéke a bináris szorzóval."""
+    return (
+        szelesseg_cm * PICASA_CM_TO_INCH,
+        magassag_cm * PICASA_CM_TO_INCH,
+    )
 
 
 class NyomatMeret(Enum):
-    """A nyomatméretek hüvelykben — KÉT készletben (#1782, #1961).
+    """Az ismert fizikai nyomatméretek hüvelykben (#5683).
 
     A `TARCA` az eredeti „wallet" mérete — a legkisebb a hüvelykes
-    készletben. A metrikus tagok a `ytPrintSizes::` szövegcsalád
-    centiméteres tételei (`stringres` 3478–3494)."""
+    családban. A metrikus tagok a `ytPrintSizes::` centiméteres tételei
+    (`stringres` 3478–3494), értékük az eredeti 0.3937-es szorzóból jön.
+    A `PASSPORT` fizikai méretként is 2 × 2 hüvelyk, de útlevélkép-parancsa
+    külön forrásutat használ. `CONTACT` és a még nem mért `CDSIZE` fizikai
+    méretként nincsenek felvéve."""
 
     #: A 3×4 és 4×5 hüvelykes érték a spec ugrótáblájának 6. és 7. ága
     #: (`docs/specs/picasa-nyomtatas.md`, 604–605. sor); a többi a #1782.
@@ -101,16 +109,16 @@ class NyomatMeret(Enum):
     #: eredetiben a NYOMTATÓ papírmérete adja; nekünk a minőség-számoláshoz
     #: kell egy konkrét lap, és a metrikus készlethez az A4 tartozik. Egy
     #: helyen áll, hogy mérés esetén egyetlen sort kelljen átírni.
-    TELJES_OLDAL = _cm(21.0, 29.7)
+    TELJES_OLDAL = (
+        21.0 / CM_PER_HUVELYK,
+        29.7 / CM_PER_HUVELYK,
+    )
 
     #: `ytPrintSizes::ePassport` — MÉRT, négyzet méret (#1401, az
     #: ugrótábla `0x00776e20`/`0x00776ecb`: mindkét oldal ugyanaz a **2,0**
-    #: konstans). ⚠️ SZÁNDÉKOSAN nincs sem a `HUVELYK_KESZLET`-ben, sem a
-    #: `METRIKUS_KESZLET`-ben: az eredetiben az Útlevélkép parancs — nem a
-    #: kézi méretválasztó — állítja be, ugyanúgy, ahogy az `eContact`
-    #: (Indexképek) is a saját parancsán (`printContactSheet`) át érhető
-    #: el, nem a méretlistából (ld. a Colab-mérés hat gombja: Wallet ·
-    #: 3.5x5 · 4x6 · 5x7 · 8x10 · Full Page — Passport nincs köztük).
+    #: konstans). A 17-es katalógusban választható, és a dedikált
+    #: útlevélkép-parancs emellett a kivágott forrásképet állítja be.
+    #: A régebbi területi gyorsválasztók egyikében sem szerepel.
     PASSPORT = (2.0, 2.0)
 
     @property
