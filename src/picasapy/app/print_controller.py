@@ -316,6 +316,61 @@ class PrintController(QObject):
     def setPrintProxyPreview(self, enabled: bool) -> None:  # noqa: N802
         self._settings.setValue("printing/proxyPreview", bool(enabled))
 
+    @Slot(result=bool)
+    def printerOptimized(self) -> bool:  # noqa: N802
+        """A párbeszéd eredeti optimalizált módját olvassa vissza.
+
+        A nyers pár külön kulcsot kap a PicasaPy saját `printerQuality`
+        2/3-as előnézet-felbontási beállításától. Az eredeti állapotvizsgáló
+        szerint az Optimalizált mód feltétele: `PrinterQuality != 1001` és
+        `PrinterUseTiles != 0`.
+        """
+        try:
+            quality = int(self._settings.value("printing/jobPrinterQuality", 2))
+        except (TypeError, ValueError):
+            quality = 2
+        try:
+            use_tiles = int(
+                self._settings.value("printing/jobPrinterUseTiles", 0)
+            )
+        except (TypeError, ValueError):
+            use_tiles = 0
+        return quality != 1001 and use_tiles != 0
+
+    @Slot(bool)
+    def setPrinterOptimized(self, optimized: bool) -> None:  # noqa: N802
+        """Az eredeti Picasa nyers `PrinterQuality`/`PrinterUseTiles` párját menti."""
+        self._settings.setValue(
+            "printing/jobPrinterQuality", 1 if optimized else 2
+        )
+        self._settings.setValue(
+            "printing/jobPrinterUseTiles", 1 if optimized else 0
+        )
+
+    def _printer_job_quality(self) -> int:
+        """A nyomtatási feladat eredeti `PrinterQuality` értéke (1 vagy 2)."""
+        try:
+            quality = int(self._settings.value("printing/jobPrinterQuality", 2))
+        except (TypeError, ValueError):
+            return 2
+        return quality if quality in {1, 2} else 2
+
+    def _printer_job_output_scale(self) -> float:
+        """A renderer 1/q koordinátaskálája (#5760).
+
+        Az Optimalizált mód (`PrinterQuality=1`) teljes skálát ad. A Normál
+        mód a Beállítások minőségét követi: 2 esetén 1/2, a 3-as „teljes
+        felbontású” mód 1/1 marad, mert annak hatását a spec nyitva hagyja.
+        A `PrinterUseTiles` a tárolt mód része, de a rajzoló út nem olvassa.
+        """
+        if self._printer_job_quality() == 1:
+            return 1.0
+        return 0.5 if self.printerQuality() == 2 else 1.0
+
+    def _printer_output_scale(self) -> float:
+        """Visszafelé kompatibilis név: a feladat szerinti skála."""
+        return self._printer_job_output_scale()
+
     @Slot(result=int)
     def printerQuality(self) -> int:  # noqa: N802
         """Az eredeti `PrinterQuality` módja: 2 = kompatibilis, 3 = kiváló."""
@@ -345,10 +400,6 @@ class PrintController(QObject):
             return
         if value in {2, 3}:
             self._settings.setValue("printing/printerQuality", value)
-
-    def _printer_output_scale(self) -> float:
-        """Az options.fen minősége: kompatibilis fél, magas teljes felbontás."""
-        return 0.5 if self.printerQuality() == 2 else 1.0
 
     @Slot(result=int)
     def printResamplerQuality(self) -> int:  # noqa: N802
@@ -1105,7 +1156,7 @@ class PrintController(QObject):
                 fejlec,
                 alcim,
                 self._print_resampler_radius(),
-                self._printer_output_scale(),
+                self._printer_job_output_scale(),
             )
         except (RuntimeError, ValueError):
             _log.exception("indexkép-nyomtatás: a feladat nem indítható")
@@ -1340,7 +1391,7 @@ class PrintController(QObject):
                     options,
                     self._lap_kesz,
                     self._print_resampler_radius(),
-                    self._printer_output_scale(),
+                    self._printer_job_output_scale(),
                 )
             else:
                 self._paint_pages(
@@ -1350,7 +1401,7 @@ class PrintController(QObject):
                     mode,
                     self._lap_kesz,
                     self._print_resampler_radius(),
-                    self._printer_output_scale(),
+                    self._printer_job_output_scale(),
                 )
         except RuntimeError:
             _log.exception("nyomtatás: a feladat nem indítható")
@@ -1607,7 +1658,7 @@ class PrintController(QObject):
                     options,
                     _ELONEZET_DPI,
                     self._print_resampler_radius(),
-                    self._printer_output_scale(),
+                    self._printer_job_output_scale(),
                     use_proxy=self.printProxyPreview(),
                 )
                 painter.restore()

@@ -23,6 +23,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 from picasapy.collage.page_formats import PAGE_FORMATS
 from picasapy.collage.themes import COLLAGE_THEMES, capability_map
@@ -58,7 +59,6 @@ GEOMETRIA = {
     "collageBackgroundContainer": (134, 180, 135, 49),
     "collageCurrentBackground": (140, 186, 37, 37),
     "collageBkgFromSelection": (185, 186, 71, 37),
-    "collagePickerPanel": (48, 9, 218, 178),
     "collageFormatTitle": (3, 235, 239, 15),
     "collageFormatMenu": (3, 255, 243, 21),
     "collageOrientation": (88, 280, 74, 22),
@@ -276,9 +276,15 @@ class _CollageStub(QObject):
 def _betolt(qt_app, qml: bytes, szeles: int, magas: int, stub):
     """A megadott QML valódi ablakban, kirajzolva."""
     import picasapy.app.application as app_module
+    from picasapy.app.color_palette import ColorPaletteProvider
 
     view = QQuickView()
     view.engine().addImportPath(str(app_module._APP_DIR / "qml"))
+    color_palette_provider = ColorPaletteProvider()
+    view.engine().addImageProvider("colorpalette", color_palette_provider)
+    view.engine().rootContext().setContextProperty(
+        "colorPalette", color_palette_provider
+    )
     component = QQmlComponent(view.engine())
     component.setData(qml, QUrl())
     assert [e.toString() for e in component.errors()] == []
@@ -354,6 +360,13 @@ def _kattint(qt_app, item: QQuickItem, dx=None, dy=None) -> None:
     ).toPoint()
     QTest.mouseClick(item.window(), Qt.LeftButton, Qt.NoModifier, pont)
     qt_app.processEvents()
+
+
+def _ablakmagassag(tab: QQuickItem, magas: int) -> None:
+    view = tab.property("_view")
+    tab.setHeight(magas)
+    view.resize(view.width(), magas)
+    assert view.height() == magas
 
 
 def _nyit(qt_app, tab: QQuickItem, nev: str) -> None:
@@ -634,22 +647,42 @@ def test_a_szinkor_a_jelenlegi_hatterszint_mutatja(qt_app):
 
 
 def test_a_paletta_alapbol_rejtett_es_a_szinkorre_kattintva_nyilik(qt_app):
-    """A `picker_panel` a `.tre`-ben `m_hidden` (spec 3.)."""
+    """A közös paletta a kollázs számára az 1-es módban nyílik meg."""
     tab = _tab(qt_app)
-    assert not _latszik(tab, "collagePickerPanel")
-    _kattint(qt_app, _child(tab, "collageColorCircle"))
-    assert _latszik(tab, "collagePickerPanel")
+    picker = _child(tab, "collagePickerPanel")
+    assert picker.property("paletteMode") == 1
+    for delta in (-5, 0, 5):
+        _ablakmagassag(tab, LAP_MAGASSAG + delta)
+        assert picker.property("visible") is False
+        _kattint(qt_app, _child(tab, "collageColorCircle"))
+        assert var_feltetelre(
+            qt_app, lambda: picker.property("visible"), 3.0
+        ), "az 1-es módú kollázs-paletta nem nyílt meg"
+        picker.close()
+        assert var_feltetelre(
+            qt_app, lambda: not picker.property("visible"), 3.0
+        ), "a kollázs-paletta nem zárult be határidőn belül"
 
 
 def test_a_palettarol_valasztott_szin_a_vezerlobe_megy(qt_app):
     tab = _tab(qt_app, bg_color="#000000")
     stub = tab.property("_stub")
-    _kattint(qt_app, _child(tab, "collageColorCircle"))
-    minta = _child(tab, "collagePickerSwatch3")
-    vart = QColor(minta.property("color")).name()
-    _kattint(qt_app, minta)
-    assert QColor(stub.collageBackgroundColor).name() == vart
-    assert not _latszik(tab, "collagePickerPanel")
+    picker = _child(tab, "collagePickerPanel")
+    for delta in (-5, 0, 5):
+        _ablakmagassag(tab, LAP_MAGASSAG + delta)
+        _kattint(qt_app, _child(tab, "collageColorCircle"))
+        assert var_feltetelre(
+            qt_app, lambda: picker.property("visible"), 3.0
+        ), "a paletta nem nyílt meg"
+        minta = _child(
+            picker.property("contentItem"), "collagePickerPanelPaletteSample3"
+        )
+        vart = QColor(minta.property("color")).name()
+        _kattint(qt_app, minta)
+        assert QColor(stub.collageBackgroundColor).name() == vart
+        assert var_feltetelre(
+            qt_app, lambda: not picker.property("visible"), 3.0
+        ), "a szín kiválasztása nem zárta be a palettát"
 
 
 def test_a_kijelolt_elemek_hasznalata_a_vezerlot_hivja(qt_app):

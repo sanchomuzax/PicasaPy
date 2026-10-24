@@ -16,7 +16,7 @@ import QtQuick.Layouts
 Window {
     id: webExportWindow
     objectName: "webExportDialog"
-    title: qsTr("Export as HTML Page...")
+    title: ftpMode ? qsTr("Publish via FTP...") : qsTr("Export as HTML Page...")
     modality: Qt.ApplicationModal
 
     //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
@@ -53,16 +53,31 @@ Window {
             ? webExportWindow.templates[webExportWindow.templateIndex].preview : ""
 
     property bool exporting: false
+    property bool ftpMode: false
+    property var ftpAccounts: []
+    property string selectedFtpAccountId: ""
     property int progressDone: 0
     property int progressTotal: 0
 
     property string lastError: ""
     property string lastOutputFolder: ""
+    property string lastFtpAccount: ""
     property int lastPageCount: 0
 
     function open() {
+        webExportWindow.openWithMode(false)
+    }
+
+    function openFtp() {
+        webExportWindow.openWithMode(true)
+    }
+
+    function openWithMode(publishViaFtp) {
+        webExportWindow.ftpMode = publishViaFtp === true
         webExportWindow.lastError = ""
         webExportWindow.lastOutputFolder = ""
+        webExportWindow.lastFtpAccount = ""
+        var promptForAccount = false
         //: #1956: `typeof` a NÉVRE, `&&` az ÉRTÉKRE
         if (typeof webExportController !== "undefined"
                 && webExportController) {
@@ -94,20 +109,58 @@ Window {
             // #4610: a méret és a film módja is a mentett beállításból indul.
             sizeBox.currentIndex = prefs.sizeIndex
             movieBox.currentIndex = prefs.movieFull ? 1 : 0
+            if (webExportWindow.ftpMode
+                    && typeof webExportController.ftpAccounts === "function") {
+                webExportWindow.ftpAccounts = webExportController.ftpAccounts()
+                webExportWindow.selectedFtpAccountId =
+                    webExportController.selectedFtpAccountId()
+                ftpAccountBox.currentIndex = webExportWindow.ftpAccounts.findIndex(
+                    function (account) {
+                        return account.id === webExportWindow.selectedFtpAccountId
+                    })
+                if (webExportWindow.ftpAccounts.length === 0)
+                    promptForAccount = true
+            }
         }
         webExportWindow.visible = true
+        if (promptForAccount) {
+            Qt.callLater(function () { ftpAccountDialog.openFor("") })
+        }
+    }
+
+    function refreshFtpAccounts(selectedId) {
+        if (typeof webExportController === "undefined"
+                || !webExportController
+                || typeof webExportController.ftpAccounts !== "function") return
+        webExportWindow.ftpAccounts = webExportController.ftpAccounts()
+        webExportWindow.selectedFtpAccountId = selectedId
+                || webExportController.selectedFtpAccountId()
+        ftpAccountBox.currentIndex = webExportWindow.ftpAccounts.findIndex(
+            function (account) {
+                return account.id === webExportWindow.selectedFtpAccountId
+            })
     }
 
     function startExport() {
-        if (webExportWindow.targetFolder.length === 0
+        if ((!webExportWindow.ftpMode && webExportWindow.targetFolder.length === 0)
             || webExportWindow.templateId.length === 0) return
         webExportWindow.lastError = ""
-        webExportController.generateWebExport(
-            webExportWindow.targetFolder,
-            webExportWindow.templateId,
-            webExportWindow.albumTitle,
-            sizeBox.currentIndex,
-            movieBox.currentIndex === 1)
+        if (webExportWindow.ftpMode) {
+            if (webExportWindow.selectedFtpAccountId.length === 0) return
+            webExportController.publishWebExport(
+                webExportWindow.selectedFtpAccountId,
+                webExportWindow.templateId,
+                webExportWindow.albumTitle,
+                sizeBox.currentIndex,
+                movieBox.currentIndex === 1)
+        } else {
+            webExportController.generateWebExport(
+                webExportWindow.targetFolder,
+                webExportWindow.templateId,
+                webExportWindow.albumTitle,
+                sizeBox.currentIndex,
+                movieBox.currentIndex === 1)
+        }
     }
 
     Connections {
@@ -125,6 +178,11 @@ Window {
             webExportWindow.exporting = false
             webExportWindow.lastOutputFolder = outputFolder
             webExportWindow.lastPageCount = pageCount
+        }
+        function onFtpPublishFinished(accountName, fileCount) {
+            webExportWindow.exporting = false
+            webExportWindow.lastFtpAccount = accountName
+            webExportWindow.lastPageCount = fileCount
         }
         function onWebExportFailed(message) {
             webExportWindow.exporting = false
@@ -159,11 +217,50 @@ Window {
             }
         }
 
+        // -- FTP-fiók ---------------------------------------------------------
+        RowLayout {
+            objectName: "webExportFtpAccountRow"
+            Layout.fillWidth: true
+            spacing: 8
+            visible: webExportWindow.ftpMode
+            enabled: !webExportWindow.exporting
+            Text {
+                text: qsTr("FTP account:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            PicasaComboBox {
+                id: ftpAccountBox
+                objectName: "webExportFtpAccountBox"
+                Layout.fillWidth: true
+                model: webExportWindow.ftpAccounts.map(function (account) {
+                    return account.name
+                })
+                onActivated: {
+                    if (currentIndex >= 0) {
+                        webExportWindow.selectedFtpAccountId =
+                            webExportWindow.ftpAccounts[currentIndex].id
+                        if (typeof webExportController !== "undefined"
+                                && webExportController)
+                            webExportController.selectFtpAccount(
+                                webExportWindow.selectedFtpAccountId)
+                    }
+                }
+            }
+            PicasaButton {
+                objectName: "webExportFtpAccountsButton"
+                text: qsTr("Manage...")
+                onClicked: ftpAccountDialog.openFor(
+                    webExportWindow.selectedFtpAccountId)
+            }
+        }
+
         // -- célmappa ---------------------------------------------------------
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 2
             enabled: !webExportWindow.exporting
+            visible: !webExportWindow.ftpMode
             Text {
                 text: qsTr("Save to:")
                 font.pixelSize: Theme.fontSize
@@ -323,9 +420,14 @@ Window {
 
         Text {
             objectName: "webExportResultText"
-            visible: webExportWindow.lastOutputFolder.length > 0
-            text: qsTr("Web page generated: %1 file(s) in %2")
-                  .arg(webExportWindow.lastPageCount).arg(webExportWindow.lastOutputFolder)
+            visible: webExportWindow.ftpMode
+                     ? webExportWindow.lastFtpAccount.length > 0
+                     : webExportWindow.lastOutputFolder.length > 0
+            text: webExportWindow.ftpMode
+                  ? qsTr("Published %1 file(s) to %2.")
+                    .arg(webExportWindow.lastPageCount).arg(webExportWindow.lastFtpAccount)
+                  : qsTr("Web page generated: %1 file(s) in %2")
+                    .arg(webExportWindow.lastPageCount).arg(webExportWindow.lastOutputFolder)
             color: Theme.picasaGreen
             font.pixelSize: Theme.fontSize
             wrapMode: Text.WordWrap
@@ -340,10 +442,13 @@ Window {
             Item { Layout.fillWidth: true }
             PicasaButton {
                 objectName: "webExportGenerateButton"
-                text: qsTr("Create")
+                text: webExportWindow.ftpMode ? qsTr("Publish") : qsTr("Create")
                 accent: Theme.picasaGreen
-                enabled: webExportWindow.targetFolder.length > 0
+                enabled: (webExportWindow.ftpMode
+                          || webExportWindow.targetFolder.length > 0)
                          && webExportWindow.templateId.length > 0
+                         && (!webExportWindow.ftpMode
+                             || webExportWindow.selectedFtpAccountId.length > 0)
                          && !webExportWindow.exporting
                 onClicked: webExportWindow.startExport()
             }
@@ -352,6 +457,157 @@ Window {
                 text: qsTr("Close")
                 enabled: !webExportWindow.exporting
                 onClicked: webExportWindow.visible = false
+            }
+        }
+    }
+
+    Dialog {
+        id: ftpAccountDialog
+        objectName: "ftpAccountDialog"
+        title: qsTr("Manage FTP Accounts")
+        modal: true
+        x: Math.max(0, (webExportWindow.width - width) / 2)
+        y: Math.max(0, (webExportWindow.height - height) / 2)
+        width: 390
+        standardButtons: Dialog.NoButton
+        property string editingId: ""
+        property string accountError: ""
+
+        function openFor(accountId) {
+            ftpAccountDialog.editingId = accountId || ""
+            ftpAccountDialog.accountError = ""
+            if (ftpAccountDialog.editingId.length > 0
+                    && typeof webExportController !== "undefined"
+                    && webExportController) {
+                var account = webExportController.ftpAccount(
+                    ftpAccountDialog.editingId)
+                accountNameField.text = account.name || ""
+                accountHostField.text = account.domain || ""
+                accountUserField.text = account.user || ""
+                accountRootField.text = account.root || "/"
+            } else {
+                ftpAccountDialog.beginNew()
+            }
+            accountPasswordField.text = ""
+            ftpAccountDialog.open()
+        }
+
+        function beginNew() {
+            ftpAccountDialog.editingId = ""
+            accountNameField.text = ""
+            accountHostField.text = ""
+            accountUserField.text = ""
+            accountRootField.text = "/"
+            accountPasswordField.text = ""
+            ftpAccountDialog.accountError = ""
+        }
+
+        function saveAccount() {
+            var result = webExportController.saveFtpAccount(
+                ftpAccountDialog.editingId,
+                accountNameField.text,
+                accountHostField.text,
+                accountUserField.text,
+                accountRootField.text,
+                accountPasswordField.text)
+            if (!result.ok) {
+                ftpAccountDialog.accountError = result.error
+                return
+            }
+            webExportController.selectFtpAccount(result.id)
+            webExportWindow.refreshFtpAccounts(result.id)
+            ftpAccountDialog.close()
+        }
+
+        function deleteAccount() {
+            if (ftpAccountDialog.editingId.length === 0) return
+            if (!webExportController.deleteFtpAccount(
+                    ftpAccountDialog.editingId)) {
+                ftpAccountDialog.accountError = qsTr("The account could not be deleted.")
+                return
+            }
+            ftpAccountDialog.beginNew()
+            webExportWindow.refreshFtpAccounts("")
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 8
+            Label { text: qsTr("Account name:") }
+            TextField {
+                id: accountNameField
+                objectName: "ftpAccountNameField"
+                Layout.fillWidth: true
+                TextFieldContextArea {}
+            }
+            Label { text: qsTr("FTP server:") }
+            TextField {
+                id: accountHostField
+                objectName: "ftpAccountHostField"
+                Layout.fillWidth: true
+                TextFieldContextArea {}
+            }
+            Label { text: qsTr("Username:") }
+            TextField {
+                id: accountUserField
+                objectName: "ftpAccountUserField"
+                Layout.fillWidth: true
+                TextFieldContextArea {}
+            }
+            Label { text: qsTr("Password:") }
+            TextField {
+                id: accountPasswordField
+                objectName: "ftpAccountPasswordField"
+                Layout.fillWidth: true
+                echoMode: TextInput.Password
+                TextFieldContextArea {}
+            }
+            Label { text: qsTr("Remote folder:") }
+            TextField {
+                id: accountRootField
+                objectName: "ftpAccountRootField"
+                Layout.fillWidth: true
+                TextFieldContextArea {}
+            }
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: Theme.textGray
+                text: ftpAccountDialog.editingId.length > 0
+                      ? qsTr("Leave blank to keep the saved password.") : ""
+            }
+            Text {
+                objectName: "ftpAccountErrorText"
+                visible: ftpAccountDialog.accountError.length > 0
+                text: ftpAccountDialog.accountError
+                color: Theme.brandRed
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                PicasaButton {
+                    objectName: "ftpAccountNewButton"
+                    text: qsTr("New")
+                    onClicked: ftpAccountDialog.beginNew()
+                }
+                PicasaButton {
+                    objectName: "ftpAccountDeleteButton"
+                    text: qsTr("Delete")
+                    enabled: ftpAccountDialog.editingId.length > 0
+                    onClicked: ftpAccountDialog.deleteAccount()
+                }
+                Item { Layout.fillWidth: true }
+                PicasaButton {
+                    objectName: "ftpAccountCancelButton"
+                    text: qsTr("Cancel")
+                    onClicked: ftpAccountDialog.close()
+                }
+                PicasaButton {
+                    objectName: "ftpAccountSaveButton"
+                    text: qsTr("Save")
+                    accent: Theme.picasaGreen
+                    onClicked: ftpAccountDialog.saveAccount()
+                }
             }
         }
     }

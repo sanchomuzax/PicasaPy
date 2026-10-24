@@ -152,12 +152,11 @@ class TestASorrendAForrasban:
         )
 
     def test_a_run_a_MEGTISZTITOTT_argv_t_hasznalja(self):
-        """A `--tesztuzem` sehol nem juthat el a gyökér-feloldásig.
+        """A könyvtárnézet gyökerei ne tartalmazzák a fájlargumentumokat.
 
-        A `run()` ugyanazt az `argv` nevet köti újra a megtisztított
-        listára — az invariáns tehát az, hogy az ÚJRAKÖTÉS megelőzi a
-        gyökér-feloldást. A nyers listával hívott `_resolve_roots` egy
-        `--tesztuzem` nevű mappát venne fel a könyvtárba."""
+        A `--tesztuzem` eltávolítása továbbra is előfeltétel; a #5762 óta
+        viszont a megtisztított argumentumokat is szét kell bontani, és a
+        gyökér-feloldásnak csak a könyvtárakat szabad megkapnia."""
         forras = Path(app_module.__file__).read_text(encoding="utf-8")
         run_torzs = forras.split("\ndef run(", 1)[1]
         ujrakotes = re.search(
@@ -166,10 +165,14 @@ class TestASorrendAForrasban:
         assert ujrakotes is not None, (
             "a run() nem köti újra az argv-t a megtisztított listára"
         )
-        feloldas = run_torzs.find("_resolve_roots(argv)")
-        assert feloldas >= 0, "a run() nem oldja fel a gyökereket"
-        assert ujrakotes.start() < feloldas, (
-            "a gyökér-feloldás megelőzi az argv megtisztítását"
+        kepfeldolgozas = run_torzs.find("parse_launch_arguments(argv)")
+        konyvtari_argv = run_torzs.find("library_argv =")
+        feloldas = run_torzs.find("_resolve_roots(library_argv)")
+        assert kepfeldolgozas >= 0, "a run() nem bontja szét a fájlargumentumokat"
+        assert konyvtari_argv >= 0, "a run() nem különíti el a könyvtár-argv-t"
+        assert feloldas >= 0, "a run() nem a könyvtár-argumentumokat oldja fel"
+        assert ujrakotes.start() < kepfeldolgozas < konyvtari_argv < feloldas, (
+            "az argumentum-bontás vagy a gyökér-feloldás sorrendje hibás"
         )
 
 

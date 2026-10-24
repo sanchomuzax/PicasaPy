@@ -252,6 +252,13 @@ def _build_qml_app(qt_app, tmp_path):
     timeline_controller = TimelineController(db, provider)
     controller.syncFinished.connect(timeline_controller.reload)
     engine = QQmlApplicationEngine()
+    from picasapy.app.color_palette import ColorPaletteProvider
+
+    color_palette_provider = ColorPaletteProvider()
+    engine.addImageProvider("colorpalette", color_palette_provider)
+    engine.rootContext().setContextProperty(
+        "colorPalette", color_palette_provider
+    )
     # ⚠️ #1457: a QML-motor SZINKRON szolgáltatót kap. A termékkód
     # aszinkron marad; itt a pool-szálak és a válasz-objektumok csak a
     # #999-es összeomlás-osztályt hoznák be, haszon nélkül — ezek a

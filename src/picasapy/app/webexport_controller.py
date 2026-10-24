@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import tempfile
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -46,6 +47,7 @@ from picasapy.webexport import (
     run_web_export,
 )
 from picasapy.webexport.images import prepare_photo_exports
+from picasapy.webexport.ftp_publish import FtpAccount, FtpAccountStore, FtpPublisher
 from picasapy.webexport.sizes import (
     DEFAULT_SIZE_INDEX,
     SIZE_CHOICES,
@@ -80,6 +82,8 @@ class WebExportController(BackgroundWorkerMixin, QObject):
     webExportProgress = Signal(int, int)
     # (célmappa, generált oldalak száma) — sikeres futás
     webExportFinished = Signal(str, int)
+    # (fióknév, ténylegesen feltöltött helyi fájlok száma)
+    ftpPublishFinished = Signal(str, int)
     webExportFailed = Signal(str)  # emberi nyelvű hibaüzenet
 
     def __init__(
@@ -87,6 +91,8 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         photo_source: Callable[[], Sequence[PhotoRecord]],
         parent: QObject | None = None,
         settings=None,
+        ftp_account_store: FtpAccountStore | None = None,
+        ftp_publisher: FtpPublisher | None = None,
     ) -> None:
         """`photo_source`: hívható, ami a jelenleg kiválasztott mappa/album
         `PhotoRecord`-jait adja vissza — az integrátor köti a meglévő
@@ -95,12 +101,102 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         super().__init__(parent)
         self._photo_source = photo_source
         self._settings = settings
+        self._ftp_account_store = ftp_account_store
+        self._ftp_publisher = ftp_publisher or FtpPublisher()
 
     def _get_settings(self):
         """Lusta alapértelmezés — a `controller.py` mintájára."""
         if self._settings is None:
             self._settings = QSettings("PicasaPy", "PicasaPy")
         return self._settings
+
+    def _get_ftp_accounts(self) -> FtpAccountStore:
+        if self._ftp_account_store is None:
+            self._ftp_account_store = FtpAccountStore(self._get_settings())
+        return self._ftp_account_store
+
+    @Slot(result=list)
+    def ftpAccounts(self) -> list[dict]:  # noqa: N802
+        """A felületnek csak nem titkos fiókmezőket ad vissza."""
+        return [
+            {
+                "id": account.account_id,
+                "name": account.name,
+                "domain": account.domain,
+                "user": account.user,
+                "root": account.root,
+            }
+            for account in self._get_ftp_accounts().list_accounts()
+        ]
+
+    @Slot(result=str)
+    def selectedFtpAccountId(self) -> str:  # noqa: N802
+        account = self._get_ftp_accounts().selected_account()
+        return account.account_id if account else ""
+
+    @Slot(str, result="QVariantMap")
+    def ftpAccount(self, account_id: str) -> dict:  # noqa: N802
+        account = next(
+            (
+                item
+                for item in self._get_ftp_accounts().list_accounts()
+                if item.account_id == account_id
+            ),
+            None,
+        )
+        if account is None:
+            return {}
+        return {
+            "id": account.account_id,
+            "name": account.name,
+            "domain": account.domain,
+            "user": account.user,
+            "root": account.root,
+        }
+
+    @Slot(str, str, str, str, str, str, result="QVariantMap")
+    def saveFtpAccount(
+        self,
+        account_id: str,
+        name: str,
+        domain: str,
+        user: str,
+        root: str,
+        password: str,
+    ) -> dict:  # noqa: N802
+        try:
+            account = self._get_ftp_accounts().save_account(
+                account_id=account_id,
+                name=name,
+                domain=domain,
+                user=user,
+                root=root,
+                password=password,
+            )
+            return {"ok": True, "id": account.account_id, "name": account.name}
+        except ValueError as error:
+            return {"ok": False, "error": self.tr(str(error))}
+        except Exception:  # noqa: BLE001 — a kulcstár hibája nem részletezhető
+            return {
+                "ok": False,
+                "error": self.tr("The system key store is unavailable."),
+            }
+
+    @Slot(str, result=bool)
+    def selectFtpAccount(self, account_id: str) -> bool:  # noqa: N802
+        try:
+            self._get_ftp_accounts().select_account(account_id)
+        except ValueError:
+            return False
+        return True
+
+    @Slot(str, result=bool)
+    def deleteFtpAccount(self, account_id: str) -> bool:  # noqa: N802
+        try:
+            self._get_ftp_accounts().delete_account(account_id)
+        except Exception:  # noqa: BLE001 — a kulcstár hibája esetén ne hamisítsunk sikert
+            return False
+        return True
 
     @Slot(result="QVariantMap")
     def webExportPrefs(self) -> dict:  # noqa: N802
@@ -257,6 +353,74 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             name="picasapy-webexport",
         )
 
+    @Slot(str, str, str, int, bool)
+    def publishWebExport(
+        self,
+        account_id: str,
+        template_id: str,
+        album_name: str,
+        size_index: int,
+        movie_full: bool,
+    ) -> None:  # noqa: N802
+        """Helyi, ideiglenes galériát készít, majd a teljes fájlfát feltölti."""
+        store = self._get_ftp_accounts()
+        account = next(
+            (item for item in store.list_accounts() if item.account_id == account_id),
+            None,
+        )
+        if account is None:
+            self.webExportFailed.emit(self.tr("Choose an FTP account first."))
+            return
+        try:
+            password = store.password_for(account.account_id)
+        except Exception:  # noqa: BLE001 — a kulcstár nem elérhető
+            self.webExportFailed.emit(self.tr("The system key store is unavailable."))
+            return
+        if not password:
+            self.webExportFailed.emit(self.tr("The saved FTP password is unavailable."))
+            return
+        template = next(
+            (info for info in list_templates() if info.id == template_id), None
+        )
+        if template is None:
+            self.webExportFailed.emit(
+                self.tr("Unknown web export template: %1").replace("%1", template_id)
+            )
+            return
+        try:
+            photos = tuple(self._photo_source())
+        except Exception as error:  # noqa: BLE001 — a hívó forrás hibája
+            self.webExportFailed.emit(str(error))
+            return
+        if not photos:
+            self.webExportFailed.emit(self.tr("No pictures to export."))
+            return
+        required = required_bytes_for(
+            Path(photo.folder_path) / photo.name for photo in photos
+        )
+        if not has_enough_free_space(Path(tempfile.gettempdir()), required):
+            self.webExportFailed.emit(self.tr(
+                "Sorry, there is not enough free disk space to safely "
+                "download pictures."
+            ))
+            return
+        settings = settings_for_template(
+            template.path,
+            image_size_for_index(_size_index(size_index)),
+            WebExportSettings(movie_full=bool(movie_full)),
+        )
+        try:
+            store.select_account(account.account_id)
+        except ValueError:
+            self.webExportFailed.emit(self.tr("Choose an FTP account first."))
+            return
+        self.webExportStarted.emit()
+        self._start_background(
+            self._run_ftp_publish,
+            args=(account, password, template.path, photos, album_name, settings),
+            name="picasapy-ftp-publish",
+        )
+
     def _remember_choice(
         self, size_index: int, movie_full: bool, target_dir: Path, template_id: str
     ) -> None:
@@ -292,6 +456,36 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             self.webExportFailed.emit(str(error))
             return
         self.webExportFinished.emit(str(target_dir), len(report.output_files))
+
+    def _run_ftp_publish(
+        self,
+        account: FtpAccount,
+        password: str,
+        template_dir: Path,
+        photos: tuple[PhotoRecord, ...],
+        album_name: str,
+        settings: WebExportSettings,
+    ) -> None:
+        try:
+            with tempfile.TemporaryDirectory(prefix="picasapy-ftp-") as temporary:
+                target_dir = Path(temporary)
+                image_report = prepare_photo_exports(photos, target_dir, settings)
+                self.webExportProgress.emit(len(image_report.photos), len(photos))
+                if not image_report.photos:
+                    self.webExportFailed.emit(
+                        self.tr("None of the selected pictures could be exported.")
+                    )
+                    return
+                album = AlbumExportData(name=album_name or "", photos=image_report.photos)
+                run_web_export(template_dir, target_dir, album, settings)
+                uploaded = self._ftp_publisher.upload(target_dir, account, password)
+        except Exception as error:  # noqa: BLE001 — a háttérszál hibája a felületre kerül
+            _log.warning("FTP-közzététel sikertelen: %s", error)
+            self.webExportFailed.emit(
+                self.tr("FTP publication failed: %1").replace("%1", str(error))
+            )
+            return
+        self.ftpPublishFinished.emit(account.name, uploaded)
 
 
 def _size_index(value) -> int:

@@ -1,4 +1,4 @@
-# Picasa képernyőkép-rögzítése (#5608, 2026-10-23)
+# Picasa képernyőkép-rögzítése (#5608, 2026-10-24)
 
 Az eredeti Picasa 3 képernyőkép-készítő útja. A rögzítést végző függvény a
 `0x00590f40`; a billentyűt figyelő metódus a `0x00591470`. A `Scrapture`
@@ -48,10 +48,12 @@ beállítás az objektum és a szál létrehozását kapuzza, de a mező kezelé
 beállítás közötti további kapcsolat **NINCS MEG**. A vizsgált út tehát
 háttérszálas, ismételt billentyű-lekérdezés. A `paszta.py` teljes `.text`
 pásztázása a `0x00590f40` címre egyetlen közvetlen hívást talált:
-`0x005914f1`-et, a fenti billentyűfigyelőből. A 2026-10-23-i kapuzott
-újrafutás (`paszta.memoria_kapu()`, alapértelmezett 2048 MiB-os korláttal)
-2 884 879 utasítást dolgozott fel, és ugyanezt az egyetlen közvetlen hívást
-adta. A `Scrapture::vftable`
+`0x005914f1`-et, a fenti billentyűfigyelőből. A 2026-10-23-i és a
+2026-10-24-i kapuzott futás (`paszta.memoria_kapu()`, alapértelmezett
+2048 MiB-os korláttal) egyaránt 2 884 879 utasítást dolgozott fel, és
+ugyanezt az egyetlen közvetlen hívást adta; a 2026-10-24-i futás pozitív
+kontrollja, a `0x005914f1` hívás megtalálása sikerült, a mért csúcsmemória
+86,89 MiB volt. A `Scrapture::vftable`
 (`0x00c91728`) `+0x08` rekesze szintén `0x00591470`-re mutat; a teljes
 szövegszakasz két közvetlen címhivatkozása közül az egyik az állapotkezelő
 `0x0040ca6f`, a másik a konstruktor `0x00590ef5` utasítása.
@@ -75,6 +77,10 @@ meglévő kimenete egy
 külön általános táblakészítőt mutat, kapcsolatát ezzel a fő ciklussal nem
 igazolja. A következő célzott irány a fő ciklus HACCEL-táblájának
 feltöltése és parancsútja, majd ennek összevetése a `Scrapture` objektummal.
+Az eredeti PE erőforrás-táblában nincs `RT_MENU` (típus `4`) vagy
+`RT_ACCELERATOR` (típus `9`); ez a beágyazott erőforrásként tárolt menü és
+accelerator ellen szól, de a futásidőben létrehozott vagy más úton kötött
+menüparancsot nem zárja ki.
 
 | Módosító | A `0x00591470` által átadott cél |
 |---|---|
@@ -250,14 +256,18 @@ képpontírást is ellenőriztem. Az író `BM` fejlécet, 24 bit/pixelt és 0
 tömörítést állít be, majd három bájtot ír képpontonként; a JPEG-hipotézist
 ez a második, íróoldali bizonyíték cáfolja.
 
-**Cáfoló próba 2: „a Print Screen-hook indítja a rögzítést”:** megkerestem
-a rögzítőfüggvény közvetlen hívásait a teljes `.text`-ben, majd külön
-követtem a `SetWindowsHookExA` hívóját. A közvetlen hívás-pásztázás csak a
-`0x005914f1` billentyűfigyelőből jövő hívást találta; a hook-jelölt
-`0x0097de80`-tól nem vezetett közvetlen hivatkozás a rögzítőhöz. A
-`Scrapture` útja saját maga kérdezi le a billentyűállapotot
-(`0x00591470`). Ez a próba a közvetlen hook-utat nem támasztja alá, de az
-indirekt accelerator-/menü-dispatchot **nem** zárja ki.
+**Cáfoló próba 2: „a Print Screen-hook vagy beágyazott menü-erőforrás
+indítja a rögzítést”:** megkerestem a rögzítőfüggvény közvetlen hívásait a
+teljes `.text`-ben, külön követtem a `SetWindowsHookExA` hívóját, ellenőriztem
+az importokat és az eredeti PE erőforrástípusait. A közvetlen hívás-pásztázás
+csak a `0x005914f1` billentyűfigyelőből jövő hívást találta; a
+`SetWindowsHookExA` hívója (`0x0097de80`) nincs ebben a közvetlen láncban,
+`RegisterHotKey` import nincs, és a PE-ben nincs `RT_MENU`/`RT_ACCELERATOR`
+erőforrástípus. A pozitív kontroll (`0x005914f1`) megtalálása a pásztázásban
+sikerült. A `Scrapture` útja saját maga kérdezi le a billentyűállapotot
+(`0x00591470`). Ez a közvetlen hookot és az erőforrásként tárolt menüt nem
+támasztja alá, de a futásidőben összeállított vagy indirekt
+accelerator-/menü-dispatchot **nem** zárja ki.
 
 **Cáfoló próba 3: „a buborék `+0x68` hívása a `CNotifierPopup` kattintási
 metódusa”:** a `CNotifierPopup::vftable` nyers rekeszét külön ellenőriztem;
@@ -273,11 +283,13 @@ kattintási callbacket; a kattintási cél továbbra is nyitott.
 |---|---|---|
 | Ismételt billentyű-lekérdezés és rejtett `EnableScreenCap` kapcsoló | A `Preferences/EnableScreenCap` alapértéke bekapcsolt; Windows alatt a háttérfigyelő a Print Screen/Print billentyűt kérdezi le. Linuxon és Wayland alatt a globális figyelés kimarad. | A Windowsos futásidejű viselkedés további mérése a 7. szakasz nyitott pontjai szerint |
 | Asztal/Ctrl/Alt célmódok, locale szerinti fájlnév és tömörítetlen BMP a `Picasa\Screen Captures` projektmappába | A Windowsos GDI-forrás a három célmódot használja; a kimenet 24 bites BMP, ütközéskor `-001` alakú sorszámmal. A mappanév honosított, a `.picasa.ini` `P2category=Projects (internal)` értéket kap. | A többmonitoros terjedelem, a kurzor képpontbeli jelenléte és a pontos dátum-idő alak továbbra is futásidejű mérésre vár |
-| Mentés után `Screenshot saved` értesítés a kimeneti útvonallal | A `PicasaNotifier.qml` a sikeresen mentett fájl útvonalával jeleníti meg az értesítést. | Az eredeti értesítés kattintási célja és a fájl azonnali indexelésének időzítése továbbra is nyitott |
+| Mentés után `Screenshot saved` értesítés a kimeneti útvonallal | A `PicasaNotifier.qml` a sikeresen mentett fájl útvonalával jeleníti meg az értesítést; kattintáskor az útvonalból a szülőmappát választja ki (`folderOfPath` → `controller.selectFolder`, `PicasaNotifier.qml:254`-`263`). | Az eredeti értesítés kattintási célja és a fájl azonnali indexelésének időzítése továbbra is nyitott |
 
 ## 7. Bizonyítottság és nyitott irányok
 
-**Összesített fok: feltételes.** A `Preferences\EnableScreenCap` olvasása,
+**Összesített fok: feltételes.** Az alábbi fok az egyes részállításokra
+vonatkozik; a `megerősített` jelöléshez két független bizonyítékút egyezése
+kell. A `Preferences\EnableScreenCap` olvasása,
 `1` alapértéke és nulla értéknél a figyelőszál kihagyása, a billentyűmódok,
 fájlnév-képzés, BMP-kimenet,
 mappalétrehozás, mappabesorolás és buborék binárisból visszakereshető; a
@@ -285,6 +297,17 @@ teljes képernyő többmonitoros terjedelme, a kurzor képpontbeli jelenléte, a
 menü/accelerator út, az azonnali képfájl-indexelés és a buborék kattintási
 célja nyitott. A külön ellenőrzési utak a BMP-író tartalmán, a
 mappabesorolásnál és a buboréknál egyeznek.
+
+| #5608-részpont | Bizonyított válasz | Fok |
+|---|---|---|
+| Indítás: beállítás és billentyűfigyelés | A HKCU `Preferences\EnableScreenCap` alapértéke `1`; a nem nulla ág létrehozza a figyelőt. A háttérszál a Print Screen/Print állapotát kérdezi le (`0x0040bf70`, `0x00591470`, `0x005914f1`). | megerősített |
+| Indítás: lehetséges külön menü-/accelerator-út | A közvetlen kódpásztázás egy rögzítőhívót talált, de a HACCEL-tábla feltöltése/parancsútja nincs feloldva (`0x0097fc30`, `DAT_00d4a4d4`, `0x0097fd18`). | nyitott |
+| Mit rögzít: kiválasztás és GDI-út | Asztal, előtérablak vagy kurzor alatti ablak téglalapját másolja; a virtuális képernyőhöz vágja (`0x00590f40`, `0x009aa990`). | megerősített |
+| Mit tartalmaz a kép | A kurzor képpontbeli jelenléte és a másodlagos monitorok tényleges kimeneti területe csak eredeti Windows-futásidejű méréssel dönthető el. | nyitott |
+| Kimenet | Cím/tartaléknév + locale-dátumidő + `.bmp`, ütközéskor `-001`; 24 bites, tömörítetlen BMP; a célút rekurzívan előkészül (`0x00590f40`, `0x00993650`, `0x009ad2d0`, `0x009a3db0`). | megerősített |
+| Kimenet: pontos locale-dátum-idő szöveg | A `VarBstrFromDate` locale-függő eredményének konkrét alakja eredeti Picasán, cél-locale alatt mérendő (`0x0098c470`). | nyitott |
+| Könyvtárba vétel és felület | A mappa `Projects` kategóriát kap; `Screenshot saved` értesítés jelenik meg (`0x00445a30`, `0x0057d080`); a buborékot független eredeti képernyőkép is igazolja. | megerősített |
+| Képfájl azonnali indexelése és eredeti kattintási cél | A `0x004e31a0` callbackje és a `0x0057d1e4` click-callbackje dinamikus vtable-címzett; a célfüggvényük és mellékhatásuk nincs feloldva. | nyitott |
 
 | Állítás | Forrás |
 |---|---|
